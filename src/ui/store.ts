@@ -1,0 +1,99 @@
+import { create } from "zustand";
+import { newGame, type GameState } from "../sim/50-state";
+import { tick } from "../sim/88-tick/tick";
+import { deserialize, serialize } from "../sim/91-save/save";
+import type { Speed } from "../sim/00-core/time";
+import { t } from "../i18n/en";
+
+export const SAVE_KEY = "backbone.save";
+
+export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean }
+export interface Banner { id: number; app: string; title: string; text: string; hour: number }
+
+interface Store {
+  game: GameState;
+  speed: Speed;
+  windows: Win[];
+  banners: Banner[];
+  history: Banner[];
+  advance: (hours: number) => void;
+  setSpeed: (s: Speed) => void;
+  openApp: (app: string) => void;
+  focus: (id: string) => void;
+  close: (id: string) => void;
+  minimize: (id: string) => void;
+  toggleZoom: (id: string) => void;
+  place: (id: string, box: Partial<Pick<Win, "x" | "y" | "w" | "h">>) => void;
+  notify: (app: string, title: string, text: string) => void;
+  dismiss: (id: number) => void;
+  save: (quiet?: boolean) => void;
+  newCompany: () => void;
+}
+
+let bannerId = 0;
+const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
+
+function loadGame(): { game: GameState; loaded: boolean } {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) return { game: deserialize(raw), loaded: true };
+  } catch {
+    // An unreadable save starts a new company.
+  }
+  return { game: newGame(Date.now() >>> 0), loaded: false };
+}
+
+const initial = loadGame();
+
+export const useStore = create<Store>((set, get) => ({
+  game: initial.game,
+  speed: 0,
+  windows: [],
+  banners: [],
+  history: [],
+
+  advance: (hours) => {
+    const game = { ...get().game, rng: { ...get().game.rng } };
+    for (let i = 0; i < hours; i++) {
+      for (const e of tick(game)) get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params));
+    }
+    set({ game });
+  },
+  setSpeed: (speed) => set({ speed }),
+
+  openApp: (app) => {
+    const ws = get().windows;
+    const open = ws.find((w) => w.app === app);
+    if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
+    const n = ws.length % 8;
+    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x: 96 + n * 32, y: 64 + n * 28, w: 760, h: 480, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
+  },
+  focus: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, z: topZ(windows) + 1 } : w)) })),
+  close: (id) => set(({ windows }) => ({ windows: windows.filter((w) => w.id !== id) })),
+  minimize: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, minimized: true } : w)) })),
+  toggleZoom: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, zoomed: !w.zoomed } : w)) })),
+  place: (id, box) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, ...box } : w)) })),
+
+  notify: (app, title, text) => {
+    const b = { id: ++bannerId, app, title, text, hour: get().game.hour };
+    set(({ banners, history }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50) }));
+    setTimeout(() => get().dismiss(b.id), 6000);
+  },
+  dismiss: (id) => set(({ banners }) => ({ banners: banners.filter((b) => b.id !== id) })),
+
+  save: (quiet = false) => {
+    try {
+      localStorage.setItem(SAVE_KEY, serialize(get().game));
+      if (!quiet) get().notify("Finance", t("save.done.title"), t("save.done.text"));
+    } catch {
+      get().notify("Finance", t("save.failed.title"), t("save.failed.text"));
+    }
+  },
+  newCompany: () => {
+    set({ game: newGame(Date.now() >>> 0), speed: 0, windows: [] });
+    get().save(true);
+    get().notify("Finance", t("game.new.title"), t("game.new.text"));
+  },
+}));
+
+export const loadedFromSave = initial.loaded;

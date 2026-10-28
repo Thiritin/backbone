@@ -1,0 +1,162 @@
+// Values from docs/design/economy.md; section names are noted per block.
+
+export type Budget = "low" | "medium" | "high";
+export type Skill = "low" | "medium" | "high";
+export type ProductId = "web" | "vps";
+
+export interface Profile {
+  id: string;
+  name: string;
+  budget: Budget;
+  skill: Skill;
+  mix: number;
+  wP: number;
+  wR: number;
+  wC: number;
+  lambda: number;
+  cap: number;
+  churn: number;
+  outagePenalty: number;
+  waitPenalty: number;
+  promisedHours: number;
+  // Share of this profile's buyers who want a VPS rather than web hosting; an estimate, not in the doc.
+  vpsShare: number;
+}
+
+// Market and leads (mix), Customer choice (weights), Happiness and churn (churn, penalties, response).
+export const PROFILES: Profile[] = [
+  { id: "private", name: "Private individual", budget: "low", skill: "low", mix: 0.25, wP: 0.2, wR: 0.2, wC: 0.6, lambda: 1.0, cap: 1.3, churn: 0.025, outagePenalty: 1, waitPenalty: 0.3, promisedHours: 48, vpsShare: 0 },
+  { id: "gamer", name: "Gamer", budget: "low", skill: "medium", mix: 0.15, wP: 0.5, wR: 0.3, wC: 0.2, lambda: 1.0, cap: 1.3, churn: 0.04, outagePenalty: 4, waitPenalty: 0.3, promisedHours: 48, vpsShare: 0.8 },
+  { id: "hobby", name: "Hobby developer", budget: "low", skill: "high", mix: 0.1, wP: 0.6, wR: 0.2, wC: 0.2, lambda: 1.2, cap: 1.3, churn: 0.03, outagePenalty: 2, waitPenalty: 0.3, promisedHours: 48, vpsShare: 0.9 },
+  { id: "sole", name: "Sole proprietor", budget: "medium", skill: "low", mix: 0.15, wP: 0.15, wR: 0.35, wC: 0.5, lambda: 0.6, cap: 1.6, churn: 0.012, outagePenalty: 2, waitPenalty: 0.6, promisedHours: 24, vpsShare: 0.1 },
+  { id: "small", name: "Small business", budget: "medium", skill: "medium", mix: 0.15, wP: 0.3, wR: 0.4, wC: 0.3, lambda: 0.6, cap: 1.6, churn: 0.01, outagePenalty: 3, waitPenalty: 0.6, promisedHours: 24, vpsShare: 0.4 },
+  { id: "agency", name: "Agency or startup", budget: "medium", skill: "high", mix: 0.08, wP: 0.5, wR: 0.35, wC: 0.15, lambda: 0.7, cap: 1.6, churn: 0.015, outagePenalty: 4, waitPenalty: 0.6, promisedHours: 24, vpsShare: 0.7 },
+  { id: "office", name: "Doctor's or law office", budget: "high", skill: "low", mix: 0.05, wP: 0.1, wR: 0.6, wC: 0.3, lambda: 0.3, cap: 2.5, churn: 0.006, outagePenalty: 8, waitPenalty: 1.5, promisedHours: 8, vpsShare: 0.1 },
+  { id: "shop", name: "Online shop", budget: "high", skill: "medium", mix: 0.05, wP: 0.3, wR: 0.55, wC: 0.15, lambda: 0.3, cap: 2.5, churn: 0.008, outagePenalty: 10, waitPenalty: 1.5, promisedHours: 8, vpsShare: 0.5 },
+  { id: "enterprise", name: "Enterprise", budget: "high", skill: "high", mix: 0.02, wP: 0.35, wR: 0.55, wC: 0.1, lambda: 0.25, cap: 2.5, churn: 0.004, outagePenalty: 15, waitPenalty: 1.5, promisedHours: 8, vpsShare: 0.8 },
+];
+
+export interface Competitor {
+  name: string;
+  priceFactor: number;
+  P: number;
+  R: number;
+  C: number;
+}
+
+// Customer choice, Competitors.
+export const COMPETITORS: Competitor[] = [
+  { name: "Budget giant", priceFactor: 0.8, P: 55, R: 60, C: 70 },
+  { name: "Wholesale provider", priceFactor: 0.75, P: 70, R: 65, C: 50 },
+  { name: "Developer cloud", priceFactor: 0.7, P: 85, R: 70, C: 40 },
+  { name: "Premium host", priceFactor: 1.3, P: 80, R: 90, C: 75 },
+];
+
+export const CHOICE_TAU = 12;
+
+// Market and leads, Market size: new customers per month in 2005, +8% a year.
+export const CITIES = [
+  { name: "Frankfurt", market: 1500 },
+  { name: "London", market: 1500 },
+  { name: "Paris", market: 1500 },
+  { name: "Amsterdam", market: 1000 },
+  { name: "Berlin", market: 1000 },
+  { name: "Milan", market: 1000 },
+  { name: "Vienna", market: 600 },
+  { name: "Zurich", market: 600 },
+];
+export const MARKET_GROWTH = 0.08;
+export const LEAD_CAP_SHARE = 0.25;
+// Organic leads per month at level 1 and 3 review stars, per location city.
+export const ORGANIC_BASE = { value: 20 };
+
+// Prices over time: p(y) = p2026 · m^((2026 − y) / 21), flat after 2026.
+export const priceAt = (p2026: number, m: number, year: number): number =>
+  p2026 * Math.pow(m, (2026 - Math.min(year, 2026)) / 21);
+
+export const BUDGET_SIZE: Record<Budget, number> = { low: 1, medium: 2, high: 4 };
+
+// Web hosting is fixed-price (m = 1); resold lines cost 40% of the base rate (Starting state).
+export const WEB_BASE = 6;
+export const RESOLD_COST_SHARE = 0.4;
+
+// VPS: €1.50 per GB of RAM in 2026, m = 11. Plan RAM doubling every 7 years is an estimate.
+export const vpsRatePerGb = (year: number): number => priceAt(1.5, 11, year);
+export const vpsPlanGb = (year: number): number => Math.pow(2, (year - 2005) / 7);
+
+// Hardware, Server generations.
+export const GENERATIONS = [
+  { year: 2005, ramGb: 8, watts: 250, price: 2500 },
+  { year: 2008, ramGb: 24, watts: 300, price: 3000 },
+  { year: 2011, ramGb: 64, watts: 300, price: 3500 },
+  { year: 2014, ramGb: 128, watts: 300, price: 4000 },
+  { year: 2017, ramGb: 256, watts: 350, price: 4500 },
+  { year: 2020, ramGb: 512, watts: 400, price: 5000 },
+  { year: 2023, ramGb: 1024, watts: 450, price: 5500 },
+];
+export const generationAt = (year: number): number => {
+  let g = 0;
+  GENERATIONS.forEach((gen, i) => {
+    if (gen.year <= year) g = i;
+  });
+  return g;
+};
+
+export const RACK_U_PER_MONTH = 60;
+export const BASEMENT_SLOTS = 4;
+
+// Electricity keyframes in ct/kWh (business); the basement pays 1.6×.
+const POWER_KEYS: [number, number][] = [[2005, 9], [2010, 12], [2014, 15], [2020, 18], [2022, 35], [2023, 25], [2026, 17]];
+export function businessPowerPrice(year: number): number {
+  const y = Math.min(Math.max(year, 2005), 2026);
+  for (let i = 1; i < POWER_KEYS.length; i++) {
+    const [y1, p1] = POWER_KEYS[i];
+    const [y0, p0] = POWER_KEYS[i - 1];
+    if (y <= y1) return (p0 + ((p1 - p0) * (y - y0)) / (y1 - y0)) / 100;
+  }
+  return POWER_KEYS[POWER_KEYS.length - 1][1] / 100;
+}
+
+export const SERVER_AFR = 0.08;
+export const REPAIR_HOURS = 8;
+
+// Tickets and work rates: tickets per customer per month by skill (how-to + billing + abuse).
+export const TICKETS_PER_CUSTOMER: Record<Skill, number> = { low: 0.225, medium: 0.105, high: 0.06 };
+export const TICKET_MINUTES = 19;
+export const PAYMENT_MINUTES = 2;
+export const UPGRADE_CHANCE: Record<Budget, number> = { low: 0.02, medium: 0.03, high: 0.04 };
+
+// Staff work 8 h on about 210 days a year.
+export const STAFF_HOURS_PER_MONTH = (8 * 210) / 12;
+export const tasksPerHour = (minutes: number, skill: number): number => (60 / minutes) * (0.5 + skill / 100);
+
+// Staff, Salary: role base 2026 gross per year, salary multiplier m = 0.6.
+export const ROLE_BASE = { support: 42000, bookkeeper: 38300 } as const;
+export const monthlySalary = (role: keyof typeof ROLE_BASE, skill: number, year: number): number =>
+  (priceAt(ROLE_BASE[role], 0.6, year) * 1.29 * (0.85 + 0.6 * (skill / 100))) / 12;
+
+// Billing and payment habits: share of invoices paid on time.
+export const ON_TIME: Record<Budget, number> = { low: 0.82, medium: 0.9, high: 0.65 };
+export const NEVER_PAYS: Record<Budget, number> = { low: 0.02, medium: 0.01, high: 0 };
+
+// Marketing: search ads per lead in 2026, m = 0.6.
+export const SEARCH_AD_COST: Record<Budget, number> = { low: 15, medium: 35, high: 90 };
+
+// Know-how per active contract per month.
+export const KNOW_HOW: Record<ProductId, number> = { web: 1, vps: 2 };
+
+// Net worth and level thresholds.
+export const LEVELS = [
+  { level: 1, name: "Basement Hoster", netWorth: 0, years: 0 },
+  { level: 2, name: "Garage Hero", netWorth: 15_000, years: 0 },
+  { level: 3, name: "Rack Renter", netWorth: 100_000, years: 1 },
+  { level: 4, name: "Cage Fighter", netWorth: 750_000, years: 3 },
+  { level: 5, name: "Room Service", netWorth: 5_000_000, years: 5 },
+  { level: 6, name: "Datacenter Baron", netWorth: 30_000_000, years: 8 },
+];
+
+// Clock and pacing: year each level should be reached by a reasonable player.
+export const PACING_YEAR: Record<number, number> = { 2: 2005, 3: 2007, 4: 2010, 5: 2013, 6: 2018 };
+
+export const TAX_RATE = 0.3;
+export const START_CASH = 5000;
