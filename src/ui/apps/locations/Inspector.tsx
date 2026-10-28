@@ -323,7 +323,7 @@ function LabelEdit({ device }: { device: Device }) {
 }
 
 const HEALTH = {
-  ok: ["Running", "ok"], degraded: ["Degraded", "warn"], hot: ["Running hot", "warn"], rebuilding: ["Rebuilding", "warn"],
+  ok: ["Running", "ok"], booting: ["Booting", "warn"], degraded: ["Degraded", "warn"], hot: ["Running hot", "warn"], rebuilding: ["Rebuilding", "warn"],
   maintenance: ["Maintenance", "warn"], down: ["Down", "bad"], off: ["Off", ""],
 } as const;
 const clock = (hour: number) => dateOf(hour).toISOString().slice(11, 16);
@@ -352,7 +352,9 @@ function PowerCard({ game, device }: { game: GameState; device: Device }) {
         <h3><Power />Power</h3>
         <span className={`pill ${tone}`}>{label}</span>
         <span className="grow" />
-        <input type="checkbox" role="switch" className="switch" aria-label="Power" checked={device.on} disabled={!device.rackId && !device.panel} onChange={(e) => toggle(e.target.checked)} />
+        <button className={`btn power-btn${device.on ? " on" : ""}`} disabled={!device.rackId && !device.panel} onClick={() => toggle(!device.on)}>
+          <Power />{device.on ? "Shut down" : "Power on"}
+        </button>
       </div>
       {down && (
         <Confirm title={`Power off ${devName(device)}?`}

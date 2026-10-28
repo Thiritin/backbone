@@ -232,7 +232,7 @@ Spare parts are bought in the Shop and kept in the zone's storage. You replace a
 
 **RAID.** Each server's drives run in a RAID level you choose: none, RAID 1, RAID 5, RAID 6 or RAID 10. More redundancy means less usable space and more drive failures survived. A rebuild runs at the rebuild rate you set: a fast rebuild slows the server, a slow one leaves it exposed for longer. Distributed storage pools across servers, Ceph style, are a later unlock.
 
-**Power and labels.** Any device can be powered off and on from the Locations view; everything that depends on it goes down with it. Devices can be given a custom label, and cables a custom colour.
+**Power and labels.** Any device can be powered off and on from the Locations view; everything that depends on it goes down with it. A device that is switched on boots for one hour before it carries traffic. Every port sits on the back of a device, so cables are drawn in the back view; the front shows status and activity lights. Devices can be given a custom label, and cables a custom colour.
 
 **Power feeds.** A rented position comes with one power feed at the datacenter's kW limit. You can add a second feed (B) so that servers with two power supplies survive a feed failure, or a high-density feed that raises the kW limit. The basement can get one extra household circuit. A feed that draws more than its limit trips.
 

@@ -3,7 +3,7 @@ import { brandsFor, modelById, priceOf, shopModels, SWITCH_BRAND } from "../10-c
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { connectError, drivesOf, fits, freePositions, holdsData, freeSlots, hotSwappable, moveCost, resaleValue, travelCost } from "../60-infra/status";
+import { BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, hotSwappable, moveCost, resaleValue, travelCost } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { endLease } from "../88-tick/tick";
 import { serverTaken } from "../60-infra/cluster";
@@ -347,6 +347,7 @@ export function setPower(s: GameState, deviceId: string, on: boolean): ActionRes
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId && !d.panel) return fail("error.notMounted");
+  if (on && !d.on) d.bootUntil = s.hour + BOOT_HOURS;
   d.on = on;
   return { ok: true };
 }

@@ -4,7 +4,7 @@ import { serviceOnline } from "../src/sim/40-support/status";
 import { invoiceTotal } from "../src/sim/45-billing/billing";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { nodeCapacity, nodeUsed, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
-import { freeSlots, rackPower } from "../src/sim/60-infra/status";
+import { BOOT_HOURS, deviceHealth, freeSlots, rackPower } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addNode, cordon, createCluster, drain, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
@@ -82,6 +82,10 @@ describe("starting company", () => {
     expect(outages.length).toBeGreaterThan(0);
     expect(outages.every((t) => s.services.some((v) => v.id === t.serviceId))).toBe(true);
     ok(setPower(s, "dev4", true));
+    expect(deviceHealth(s, "dev4").state).toBe("booting");
+    expect(s.services.some((v) => serviceOnline(s, v.id))).toBe(false);
+    run(s, BOOT_HOURS);
+    expect(deviceHealth(s, "dev4").state).toBe("ok");
     expect(s.services.every((v) => serviceOnline(s, v.id))).toBe(true);
   });
   it("invoices the friends in February for the hours they were up", () => {

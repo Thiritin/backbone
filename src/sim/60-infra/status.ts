@@ -179,21 +179,23 @@ function failedDown(d: Device): boolean {
 }
 
 export function deviceHealth(s: GameState, deviceId: string): {
-  state: "ok" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "off"; failed: Component[]; worn: Component[];
+  state: "ok" | "booting" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "off"; failed: Component[]; worn: Component[];
 } {
   const d = s.devices.find((x) => x.id === deviceId)!;
   const failed = d.components.filter((c) => c.failedAt !== null);
   const worn = d.components.filter((c) => c.failedAt === null && s.hour - c.installedAt >= COMPONENTS[c.kind].life * HOURS_PER_YEAR);
-  const state = !d.on ? "off" : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.rebuild ? "rebuilding"
+  const state = !d.on ? "off" : booting(s, d) ? "booting" : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.rebuild ? "rebuilding"
     : failed.some((c) => c.kind === "fan") ? "hot" : failed.length ? "degraded" : "ok";
   return { state, failed, worn };
 }
 export const HOURS_PER_YEAR = 8760;
+export const BOOT_HOURS = 1;
+export const booting = (s: GameState, d: Device) => d.on && (d.bootUntil ?? 0) > s.hour;
 
 // A device works when it has power, is switched on, and no failure or power-off swap has taken it down.
 export function working(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
-  if (!d || !d.on || !powered(s, deviceId) || failedDown(d)) return false;
+  if (!d || !d.on || booting(s, d) || !powered(s, deviceId) || failedDown(d)) return false;
   const swap = d.maintenance && d.components.find((c) => c.id === d.maintenance!.componentId);
   return !(swap && !hotSwappable(d, swap));
 }

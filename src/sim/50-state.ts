@@ -9,6 +9,7 @@ import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
 import { applications, type Candidate, type Employee } from "./47-staff/staff";
+import type { FairBooking } from "./80-business/fairs";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
 
@@ -32,6 +33,8 @@ export interface Device { id: string; model: string; brand: string; rackId: stri
   rebuild: { componentId: string; doneAt: number } | null; maintenance: { componentId: string; partId: string; doneAt: number } | null;
   // The hour the device's data was lost, if it ever was.
   dataLost: number | null;
+  // The hour a device switched on finishes booting.
+  bootUntil?: number;
 }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
@@ -103,6 +106,7 @@ export interface GameState {
   staff: Employee[];
   candidates: Candidate[];
   marketing: Marketing;
+  fairs: FairBooking[];
   clusters: Cluster[];
   workloads: Workload[];
   // Hours each service has been down since the last monthly invoice.
@@ -147,7 +151,7 @@ export const newGame = (seed: number): GameState => ({
   homeLine: { id: DEFAULT_HOME_LINE, next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
   staff: [], candidates: applications(seed, 0),
-  marketing: newMarketing(),
+  marketing: newMarketing(), fairs: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
