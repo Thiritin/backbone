@@ -64,12 +64,12 @@ export function controlPlaneUse(c: Pick<Cluster, "panel" | "platform">): Resourc
 const density = (c: Cluster) => (c.platform ? softwareById(c.platform).density : 1);
 
 // What a node can book for workloads: its capacity times the platform's density, less the control plane it hosts. With
-// Memory reservation on, RAM stops at the installed RAM.
-export function bookable(s: GameState, d: Device): Resources {
+// Memory reservation on, or for automatic placement (guard), RAM stops at the installed RAM.
+export function bookable(s: GameState, d: Device, guard = false): Resources {
   const cap = nodeCapacity(d), c = clusterOf(s, d.id);
   if (!c) return cap;
   const k = density(c), cp = c.controlPlane === d.id ? controlPlaneUse(c) : ZERO;
-  const ram = c.ramGuard ? Math.min(cap.ramGb * k, modelById(d.model).server?.ramGb ?? 0) : cap.ramGb * k;
+  const ram = c.ramGuard || guard ? Math.min(cap.ramGb * k, modelById(d.model).server?.ramGb ?? 0) : cap.ramGb * k;
   return { vcpu: cap.vcpu * k - cp.vcpu, ramGb: ram - cp.ramGb, diskGb: cap.diskGb * k - cp.diskGb };
 }
 
@@ -125,12 +125,13 @@ export const workloadsOn = (s: GameState, deviceId: string): Workload[] => s.wor
 export const serverTaken = (s: GameState, deviceId: string): boolean => !!clusterOf(s, deviceId) || s.workloads.some((w) => w.deviceId === deviceId);
 
 // The scheduler: active, working nodes with room; pack picks the busiest of them, spread the idlest. Ties keep node order.
-export function pickNode(s: GameState, cluster: Cluster, r: Resources, skip: string | null = null): string | null {
+// It books RAM only up to the installed RAM; overbooking RAM takes the player's choice of node (overbook).
+export function pickNode(s: GameState, cluster: Cluster, r: Resources, skip: string | null = null, overbook = false): string | null {
   let best: { id: string; load: number } | null = null;
   for (const n of cluster.nodes) {
     const d = s.devices.find((x) => x.id === n.deviceId);
     if (!d || n.state !== "active" || n.deviceId === skip || !working(s, d.id)) continue;
-    const cap = bookable(s, d), used = nodeUsed(s, d.id);
+    const cap = bookable(s, d, !overbook), used = nodeUsed(s, d.id);
     if (!fits(used, cap, r)) continue;
     const l = load(used, cap);
     if (!best || (cluster.placement === "pack" ? l > best.load : l < best.load)) best = { id: d.id, load: l };

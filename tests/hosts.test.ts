@@ -18,7 +18,7 @@ const ok = (r: R) => {
   return r.id!;
 };
 
-// The basement server and a second one in one cluster, a gamer with two Game S servers packed onto the basement server.
+// The basement server and a second one in one cluster, a gamer with two Game S servers the player put on the basement server.
 function setup() {
   const s = { ...newGame(1), cash: 100_000 };
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
@@ -28,8 +28,8 @@ function setup() {
   ok(addNode(s, cluster, "dev3"));
   ok(addNode(s, cluster, second));
   const gamer = addCustomer(s, "Kai Frag", "gamer");
-  ok(provisionService(s, gamer, "gameServer", { label: "Frag 1", clusterId: cluster }));
-  ok(provisionService(s, gamer, "gameServer", { label: "Frag 2", clusterId: cluster }));
+  ok(provisionService(s, gamer, "gameServer", { label: "Frag 1", clusterId: cluster, deviceId: "dev3" }));
+  ok(provisionService(s, gamer, "gameServer", { label: "Frag 2", clusterId: cluster, deviceId: "dev3" }));
   return { s, cluster, second, gamer };
 }
 
@@ -43,7 +43,16 @@ function freeze(s: GameState): SimEvent[] {
 }
 
 describe("RAM over-provisioning", () => {
-  it("books more RAM than installed by default and freezes the node once RAM in use exceeds it", () => {
+  it("places automatically only up to the installed RAM", () => {
+    const { s, cluster, second, gamer } = setup();
+    ok(provisionService(s, gamer, "gameServer", { label: "Frag 3", clusterId: cluster }));
+    expect(s.workloads.at(-1)!.deviceId).toBe(second);
+    ok(provisionService(s, gamer, "gameServer", { label: "Frag 4", clusterId: cluster }));
+    expect(nodeUsed(s, second).ramGb).toBe(8);
+    expect(provisionService(s, gamer, "gameServer", { label: "Frag 5", clusterId: cluster })).toEqual({ ok: false, error: "error.noCapacity" });
+  });
+
+  it("books more RAM than installed on a node the player picks and freezes it once RAM in use exceeds it", () => {
     const { s } = setup();
     expect(nodeUsed(s, "dev3").ramGb).toBe(8);
     expect(s.workloads.filter((w) => w.deviceId === "dev3")).toHaveLength(2);
