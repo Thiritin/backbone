@@ -1,4 +1,5 @@
 // Values from docs/design/economy.md; section names are noted per block.
+import type { Product } from "../30-customers/customers";
 
 export type Budget = "low" | "medium" | "high";
 export type Skill = "low" | "medium" | "high";
@@ -42,14 +43,21 @@ export interface Competitor {
   P: number;
   R: number;
   C: number;
+  // The products it sells; targets limits a specialist to those PROFILES ids.
+  sells: Product[];
+  targets?: string[];
 }
 
-// Customer choice, Competitors.
+const EVERYTHING: Product[] = ["webHosting", "domain", "ssl", "dns", "gameServer", "vps", "vpn", "dedicated", "storage", "cloud", "colocation"];
+
+// Customer choice, Competitors: the four archetypes plus two specialists (decision, recorded in economy.md).
 export const COMPETITORS: Competitor[] = [
-  { name: "Budget giant", priceFactor: 0.8, P: 55, R: 60, C: 70 },
-  { name: "Wholesale provider", priceFactor: 0.75, P: 70, R: 65, C: 50 },
-  { name: "Developer cloud", priceFactor: 0.7, P: 85, R: 70, C: 40 },
-  { name: "Premium host", priceFactor: 1.3, P: 80, R: 90, C: 75 },
+  { name: "Ionose", priceFactor: 0.8, P: 55, R: 60, C: 70, sells: ["webHosting", "domain", "ssl", "dns", "vps"] },
+  { name: "OVHeat", priceFactor: 0.75, P: 70, R: 65, C: 50, sells: EVERYTHING },
+  { name: "Hetzna", priceFactor: 0.7, P: 85, R: 70, C: 40, sells: ["vps", "dedicated", "storage", "cloud", "colocation"] },
+  { name: "Rackspice", priceFactor: 1.3, P: 80, R: 90, C: 75, sells: EVERYTHING },
+  { name: "Nitradoh", priceFactor: 0.9, P: 75, R: 60, C: 60, sells: ["gameServer"], targets: ["gamer"] },
+  { name: "WP Engyne", priceFactor: 1.4, P: 70, R: 80, C: 85, sells: ["webHosting"], targets: ["sole", "small", "office", "agency"] },
 ];
 
 export const CHOICE_TAU = 12;

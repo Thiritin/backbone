@@ -1,5 +1,5 @@
 import {
-  BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, Landmark, GraduationCap, LifeBuoy, ListChecks, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
+  BookOpen, ChartLine, Handshake, ChartPie, Contact, FileText, Globe, Landmark, GraduationCap, LifeBuoy, ListChecks, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -8,6 +8,8 @@ import { BillingApp } from "./billing/BillingApp";
 import { ChecklistApp } from "./checklist/ChecklistApp";
 import { FinanceApp } from "./finance/FinanceApp";
 import { MarketingApp } from "./marketing/MarketingApp";
+import { SalesApp } from "./sales/SalesApp";
+import { missingFor } from "../../sim/30-market/market";
 import type { GameState } from "../../sim/50-state";
 import { CustomersApp } from "./customers/CustomersApp";
 import { SupportApp } from "./support/SupportApp";
@@ -35,6 +37,8 @@ export const APPS: AppDef[] = [
   { name: "Shop", icon: ShoppingCart, tile: "oklch(0.6 0.15 40)", about: "Sells servers, switches and patch panels into your storage." },
   { name: "Network", icon: Globe, tile: "oklch(0.58 0.12 210)", about: "Manages transit, peering and DDoS protection." },
   { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters." },
+  { name: "Sales", icon: Handshake, tile: "oklch(0.6 0.15 145)", about: "Collects requests from customers so you can quote a price or decline.", body: SalesApp,
+    badge: (s) => s.sales.requests.filter((r) => (r.status === "open" || r.status === "countered") && !missingFor(s, r).length).length },
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: "Lists your customers with their contracts and happiness.", body: CustomersApp },
   { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets so you can answer them with templates and actions.", body: SupportApp,
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length },

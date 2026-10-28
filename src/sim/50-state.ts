@@ -10,6 +10,7 @@ import type { Ticket } from "./40-support/tickets";
 import { applications, type Candidate, type Employee } from "./47-staff/staff";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
+import { newSales, type Sales } from "./30-market/market";
 
 export const SAVE_VERSION = 2;
 
@@ -99,6 +100,8 @@ export interface GameState {
   marketing: Marketing;
   clusters: Cluster[];
   workloads: Workload[];
+  // Sales requests and lost sales (30-market).
+  sales: Sales;
   // Hours each service has been down since the last monthly invoice.
   downHours: Record<string, number>;
 }
@@ -141,6 +144,7 @@ export const newGame = (seed: number): GameState => ({
   homeLine: { id: DEFAULT_HOME_LINE, next: null },
   staff: [], candidates: applications(seed, 0),
   marketing: newMarketing(),
+  sales: newSales(),
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
