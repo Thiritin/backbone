@@ -216,12 +216,13 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     reviewN = reviewN * (23 / 24) + reviewsCount;
 
     // Money.
-    let mrr = 0, resold = 0, collectedShare = 0;
+    let mrr = 0, resold = 0, collectedShare = 0, stuck = 0;
     PROFILES.forEach((p, i) => PRODUCTS.forEach((pr, k) => {
       const v = cohorts[i][k].n * priceOf(p, pr, year) * bot.priceFactor;
       mrr += v;
       if (pr === "web") resold += cohorts[i][k].n * WEB_BASE * BUDGET_SIZE[p.budget] * RESOLD_COST_SHARE;
       collectedShare += v * (ON_TIME[p.budget] + (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * processed);
+      stuck += v * (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * (1 - processed);
     }));
     const towers = servers.filter((s) => s.tower);
     const power = towers.reduce((a) => a + (150 / 1000) * 730 * businessPowerPrice(yf) * 1.6, 0);
@@ -244,9 +245,9 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     if (bot.hires && hireUnlocked) {
       // Hire only when this month's capacity can't clear the load plus a third of the backlog.
       if (backlogT > capT / 30 && ticketLoad + backlogT / 3 > capT && cash > 3 * monthlySalary("support", 50, year)) support.push(hire(rng, month));
-      // A bookkeeper only when this month's profit pays the salary.
+      // A bookkeeper when the late payments nobody chases are worth more than the salary.
       const bookkeeper = monthlySalary("bookkeeper", 50, year);
-      if (backlogP > capP / 30 && customers + backlogP / 3 > capP && cash > 3 * bookkeeper && collectedShare - opex > bookkeeper) books.push(hire(rng, month));
+      if (stuck > bookkeeper && cash > 2 * bookkeeper) books.push(hire(rng, month));
     }
     for (const team of [support, books]) for (let w = team.length - 1; w >= 0; w--) if (rand(rng) < 0.005) team.splice(w, 1);
     for (let s = servers.length - 1; s >= 0; s--) if (month - servers[s].bought > 72) {

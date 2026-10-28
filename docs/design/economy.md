@@ -443,7 +443,7 @@ An outage goes unnoticed for the tolerance, counted on the same clock from the h
 
 Private customers and hobbyists use their sites in the evening and forgive a weekend. Gamers play at night, so a game server that is down for more than an hour hurts at any time. Businesses notice an outage during their own office hours within a morning. Shops sell and enterprises run around the clock, so they expect fast replies at night and notice every minute offline.
 
-**Balance model.** The monthly model has no hour of day. It turns a business-hours window into calendar hours by dividing by the share of business hours in a week (40 of 168), so 1 business day counts as about 34 hours. An around-the-clock customer adds the average wait for the office to open (about 15 hours: four 16-hour nights and a 64-hour weekend), since the bot runs no night shift. The steady bot only hires a bookkeeper when the month's profit pays the salary.
+**Balance model.** The monthly model has no hour of day. It turns a business-hours window into calendar hours by dividing by the share of business hours in a week (40 of 168), so 1 business day counts as about 34 hours. An around-the-clock customer adds the average wait for the office to open (about 15 hours: four 16-hour nights and a 64-hour weekend), since the bot runs no night shift. The steady bot hires a bookkeeper when the late payments nobody chases are worth more than the salary.
 
 ## Tickets and work rates
 
@@ -535,7 +535,7 @@ Resolving the ticket adds the usual +5 happiness on top. Handling an appeal take
 
 A billing action is the check plus the action, so a reminder takes 21 minutes and a suspension 66. Staff take one action per invoice per hour, the next dunning step before a suspension, oldest due date first. A marketing manager with fewer hours than a task needs gives that share of its boost: a 2-hour manager gives two thirds of the campaign boost and nothing for reviews. Forum posting scales with hours the same way.
 
-The balance model still books 2 staff minutes per customer and month for payments. With the times above a late-paying customer mix needs about 6; raising the model's figure to 6 without changing how its strategy hires bookkeepers bankrupts 17 of 20 steady runs, so it stays at 2 until the strategy hires for billing work.
+The balance model books 6 staff minutes per customer and month for payments, which matches the times above for a late-paying customer mix. Its steady bot hires a bookkeeper once the late payments left unchased in a month are worth more than a bookkeeper's salary; with that rule none of 20 steady runs goes bankrupt, and level 4 arrives in 2017.6 instead of 2018.5.
 
 **Working hours.** The player sets each employee's day to 2, 4, 6 or 8 hours (8 at hiring). The day starts at 9, Monday to Friday, so a 2-hour employee works 9 to 11. Pay is pro rata: 8 hours is the full salary, 2 hours a quarter. An action starts only if it ends within the employee's hours; whatever is left waits for the next workday. Changing the hours pays out the salary owed so far at the old hours, and the new hours count from then.
 
