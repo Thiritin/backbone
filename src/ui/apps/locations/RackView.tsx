@@ -4,7 +4,7 @@ import { euro } from "../../../sim/00-core/money";
 import { modelById, type DeviceKind } from "../../../sim/10-catalog/hardware";
 import { BASEMENT } from "../../../sim/20-world/datacenters";
 import type { Device, GameState, Location, Rack } from "../../../sim/50-state";
-import { EXTRA_CIRCUIT_KW, freePositions, isPlugged, locationOf, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
+import { EXTRA_CIRCUIT_KW, freePositions, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
 import { FEED_PRICE } from "../../../sim/88-tick/tick";
 import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveRack, sellRack, setFeed } from "../../../sim/90-actions/hardware";
 import { Stepper } from "../shop/Cart";
@@ -56,7 +56,7 @@ function rackRemotes(g: GameState, rack: Rack): RackRemote[] {
 export function RackView({ game, rack, device, onDevice, onMoved }: { game: GameState; rack: Rack; device: string | null; onDevice: (id: string | null) => void; onMoved: (locId: string | null) => void }) {
   const act = useStore((s) => s.act);
   const [side, setSide] = useState<Side>("front");
-  const [mount, setMount] = useState<{ lo: number; hi: number; top: number; left: number } | null>(null);
+  const [mount, setMount] = useState<{ unit: number; top: number; left: number } | null>(null);
   const [moving, setMoving] = useState(false);
   const [selling, setSelling] = useState(false);
   const [hot, setHot] = useState<string | null>(null);
@@ -70,9 +70,9 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
     const d = game.devices.find((x) => x.id === id), psu = d?.components.filter((c) => c.kind === "psu")[k];
     if (d && psu) togglePlug(guarded, d, psu.id);
   };
-  const openMount = (lo: number, hi: number, el: Element) => {
+  const openMount = (unit: number, el: Element) => {
     const m = main.current!.getBoundingClientRect(), r = el.getBoundingClientRect();
-    setMount({ lo, hi, top: Math.max(8, Math.min(r.top - m.top, m.height - 300)), left: Math.min(r.right - m.left + 10, m.width - 420) });
+    setMount({ unit, top: Math.max(8, Math.min(r.top - m.top, m.height - 300)), left: Math.min(r.right - m.left + 10, m.width - 420) });
   };
 
   return (
@@ -123,27 +123,27 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
 }
 
 // Stored units that fit the clicked free range; a stack fills the top of the range, each unit on top of the last.
-function MountPop({ game, rack, lo, hi, top, left, onClose, onMounted }: { game: GameState; rack: Rack; lo: number; hi: number; top: number; left: number; onClose: () => void; onMounted: (id: string) => void }) {
+function MountPop({ game, rack, unit, top, left, onClose, onMounted }: { game: GameState; rack: Rack; unit: number; top: number; left: number; onClose: () => void; onMounted: (id: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, onClose);
-  const rows = storageStacks(game, rack.locationId).filter((st) => { const h = modelById(st.model).height; return h > 0 && h <= hi - lo + 1; });
-  const where = `U${hi}`;
+  const rows = storageStacks(game, rack.locationId).filter((st) => { const h = modelById(st.model).height; return h > 0 && mountFrom(game, rack.id, h, 1, unit) !== undefined; });
+  const where = `U${unit}`;
   return (
     <div className="loc-shop" ref={ref} style={{ top, left }} role="dialog" aria-label={`Mount at ${where}`}>
       <div className="loc-shop-h"><h3>{where}</h3></div>
       <div className="loc-shop-list">
-        {rows.map((st) => <MountRow key={`${st.model}|${st.brand}`} rack={rack} st={st} lo={lo} hi={hi} onMounted={onMounted} />)}
+        {rows.map((st) => <MountRow key={`${st.model}|${st.brand}`} game={game} rack={rack} st={st} unit={unit} onMounted={onMounted} />)}
         {!rows.length && <div className="loc-shop-none">No stored unit fits</div>}
       </div>
     </div>
   );
 }
 
-function MountRow({ rack, st, lo, hi, onMounted }: { rack: Rack; st: ReturnType<typeof storageStacks>[number]; lo: number; hi: number; onMounted: (id: string) => void }) {
+function MountRow({ game, rack, st, unit, onMounted }: { game: GameState; rack: Rack; st: ReturnType<typeof storageStacks>[number]; unit: number; onMounted: (id: string) => void }) {
   const act = useStore((s) => s.act);
-  const m = modelById(st.model), max = Math.min(st.ids.length, Math.floor((hi - lo + 1) / m.height));
+  const m = modelById(st.model), max = mountMax(game, rack.id, m.height, st.ids.length, unit);
   const [count, setCount] = useState(1);
-  const n = Math.min(count, max), from = hi - n * m.height + 1;
+  const n = Math.min(count, max), from = mountFrom(game, rack.id, m.height, n, unit) ?? unit;
   const mount = () => {
     const id = st.ids[0];
     const r = act((s) => (n === 1 ? mountDevice(s, id, rack.id, from) : mountStack(s, st.model, st.brand, rack.id, n, from)));

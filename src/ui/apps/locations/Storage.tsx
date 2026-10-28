@@ -3,7 +3,7 @@ import { useState } from "react";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
 import { euro } from "../../../sim/00-core/money";
-import { freeSlots, storageStacks, travelCost } from "../../../sim/60-infra/status";
+import { freeSlots, mountFrom, mountMax, storageStacks, travelCost } from "../../../sim/60-infra/status";
 import { mountDevice, mountStack, sellDevice, shipStock } from "../../../sim/90-actions/hardware";
 import { Isometric } from "../../art/Isometric";
 import { RackFront } from "../../art/RackFront";
@@ -45,7 +45,7 @@ function Ship({ game, ids, onDone }: { game: GameState; ids: string[]; onDone: (
 
 type Mounted = (rackId: string, deviceId: string) => void;
 
-// Picks a rack of the zone, then a free slot on its front; a stack fills the clicked range from the top down.
+// Picks a rack of the zone, then a free slot on its front; a stack covers the clicked unit, its top there where it fits.
 function MountSheet({ game, stack, onClose, onMounted }: { game: GameState; stack: Stack; onClose: () => void; onMounted?: Mounted }) {
   const act = useStore((s) => s.act);
   const m = modelById(stack.model), zone = game.devices.find((d) => d.id === stack.ids[0])!.store!;
@@ -55,9 +55,10 @@ function MountSheet({ game, stack, onClose, onMounted }: { game: GameState; stac
   const [count, setCount] = useState(1);
   const rack = racks.find((r) => r.id === picked);
   const n = Math.min(count, stack.ids.length);
-  const mount = (lo: number, hi: number) => {
-    const k = Math.max(1, Math.min(n, Math.floor((hi - lo + 1) / m.height))), from = hi - k * m.height + 1, id = stack.ids[0];
-    if (!rack || !act((s) => (k === 1 ? mountDevice(s, id, rack.id, from) : mountStack(s, stack.model, stack.brand, rack.id, k, from))).ok) return;
+  const mount = (unit: number) => {
+    if (!rack) return;
+    const k = mountMax(game, rack.id, m.height, n, unit), from = mountFrom(game, rack.id, m.height, k, unit), id = stack.ids[0];
+    if (from === undefined || !act((s) => (k === 1 ? mountDevice(s, id, rack.id, from) : mountStack(s, stack.model, stack.brand, rack.id, k, from))).ok) return;
     onClose();
     onMounted?.(rack.id, id);
   };
@@ -77,7 +78,7 @@ function MountSheet({ game, stack, onClose, onMounted }: { game: GameState; stac
         {!racks.length && <div className="loc-row loc-muted">No rack in this zone</div>}
         {rack && (
           <div className="loc-mount-rack">
-            <RackFront units={rackUnits(rack)} items={rackItems(game, rack.id)} w={340} u={18} onDevice={() => {}} onFree={(lo, hi) => mount(lo, hi)} />
+            <RackFront units={rackUnits(rack)} items={rackItems(game, rack.id)} w={340} u={18} onDevice={() => {}} onFree={(unit) => mount(unit)} />
           </div>
         )}
       </div>

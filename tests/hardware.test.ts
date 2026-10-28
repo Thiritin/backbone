@@ -3,7 +3,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import { GENERATIONS, START_CASH } from "../src/sim/10-catalog/economy";
 import { brandsFor, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { freeSlots, linkStatus, portPeers, storageStacks } from "../src/sim/60-infra/status";
+import { freeSlots, linkStatus, mountFrom, mountMax, portPeers, storageStacks } from "../src/sim/60-infra/status";
 import {
   addLocation, buyDevice, buyRack, connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice,
 } from "../src/sim/90-actions/hardware";
@@ -290,5 +290,20 @@ describe("setBond and setPortGroup", () => {
     expect(err(setPortGroup(s, sw, [0, 99]))).toBe("error.unknownPort");
     expect(err(setPortGroup(s, "dev5", [0, 1]))).toBe("error.notSwitch");
     expect(err(setPortGroup(s, "x", [0, 1]))).toBe("error.unknownDevice");
+  });
+});
+
+describe("mount over a clicked unit", () => {
+  it("covers the clicked unit with the device's top there where it fits", () => {
+    const s = atYear(2005);
+    const { racks: [rack] } = colo(s);
+    mounted(s, "g1-compute", rack, 1);
+    mounted(s, "g1-compute", rack, 4);
+    expect(modelById("g1-memory").height).toBe(2);
+    expect([3, 2, 5, 10].map((u) => mountFrom(s, rack, 2, 1, u))).toEqual([2, 2, 5, 9]);
+    expect(mountFrom(s, rack, 2, 3, 10)).toBe(5);
+    expect(mountFrom(s, rack, 2, 1, 4)).toBeUndefined();
+    expect(mountMax(s, rack, 2, 5, 3)).toBe(1);
+    expect(mountMax(s, rack, 2, 5, 47)).toBe(5);
   });
 });

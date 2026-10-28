@@ -23,8 +23,7 @@ interface Props {
   // The cable to highlight; the others fade.
   hot?: string | null;
   onDevice: (id: string) => void;
-  // lo and hi are the free unit range below and including the clicked unit.
-  onFree: (lo: number, hi: number, el: Element) => void;
+  onFree: (unit: number, el: Element) => void;
   // A cable dragged from one port to another on the back.
   onConnect?: (a: End, b: End) => void;
   // A click on a power supply's inlet; psu is its index among the device's power supplies.
@@ -69,11 +68,9 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
   let y = 0;
   for (let n = units; n >= 1;) {
     if (!at.has(n)) {
-      let lo = n;
-      while (lo > 1 && !at.has(lo - 1)) lo--;
       const k = n;
       out.push(
-        <g key={`e${k}`} className="rack-free" aria-label={`U${k} free`} {...press((el) => onFree(lo, k, el))}>
+        <g key={`e${k}`} className="rack-free" aria-label={`U${k} free`} {...press((el) => onFree(k, el))}>
           <text x={pad - 8} y={y + u / 2 + fs * 0.35} textAnchor="end" fontFamily={MONO} fontSize={fs} fill={DIM}>{k}</text>
           <rect x={pad} y={y + 0.5} width={w} height={u - 1} rx="1" fill="oklch(0.2 0.006 255)" stroke="oklch(0.27 0.006 255)" strokeWidth="0.6" />
           {[pad + 6, pad + w - 6].map((cx) => <circle key={cx} cx={cx} cy={y + u / 2} r="1.6" fill="oklch(0.3 0.006 255)" />)}
