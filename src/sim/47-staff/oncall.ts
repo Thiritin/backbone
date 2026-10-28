@@ -16,6 +16,8 @@ export interface OnCall { roster: string[]; lastCall: Record<string, number>; mo
 const WEEK = 168;
 // Duty hands over on Mondays at 09:00; 3 Jan 2005 is the first Monday.
 const HANDOVER = hourOf(new Date(Date.UTC(2005, 0, 3, 9)));
+// The handover hour that starts the duty week k weeks after the one running at the hour.
+export const handover = (hour: number, k: number): number => HANDOVER + (Math.floor((hour - HANDOVER) / WEEK) + k) * WEEK;
 export const MONTHLY_HOURS = 173;
 export const REST_HOURS = 11;
 export const ALLOWANCE = { weekday: 2, weekend: 4 };
@@ -39,7 +41,7 @@ export const rotation = (s: GameState, locationId: string): Employee[] =>
 export function onCallAt(s: GameState, locationId: string, hour: number): Employee | undefined {
   const list = rotation(s, locationId);
   if (!list.length) return undefined;
-  const week = Math.floor((hour - HANDOVER) / WEEK);
+  const week = (handover(hour, 0) - HANDOVER) / WEEK;
   return list[((week % list.length) + list.length) % list.length];
 }
 // Rest of 11 hours after the last call-out hour ends.

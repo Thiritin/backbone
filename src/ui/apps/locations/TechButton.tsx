@@ -1,7 +1,7 @@
 import { Wrench } from "lucide-react";
 import { dateOf, yearOf } from "../../../sim/00-core/time";
 import { phpAt } from "../../../sim/10-catalog/platforms";
-import { nextSlot, OP_TASK, type OpKind, type TechOp } from "../../../sim/47-staff/technicians";
+import { nextSlot, OP_TASK, urgent, type OpKind, type TechOp } from "../../../sim/47-staff/technicians";
 import type { GameState } from "../../../sim/50-state";
 import { locationOf } from "../../../sim/60-infra/status";
 import { cancelOperation, queueOperation } from "../../../sim/90-actions/staff";
@@ -37,11 +37,11 @@ export function TechButton({ game, deviceId, kind, componentId = null }: { game:
     );
   }
   const d = game.devices.find((x) => x.id === deviceId), loc = d && locationOf(game, d);
-  const slot = loc && nextSlot(game, loc.id, OP_TASK[kind]);
+  const slot = loc && nextSlot(game, loc.id, OP_TASK[kind], urgent(game, { kind, deviceId, componentId }));
   if (!slot) return null;
   return (
     <button className="btn" onClick={() => act((g) => queueOperation(g, kind, deviceId, componentId))}>
-      <Wrench />{slot.name.split(" ")[0]}, <span className="num">{slotTime(game.hour, slot.hour)}</span>
+      <Wrench />{slot.name.split(" ")[0]}{slot.onCall && " (on call)"}, <span className="num">{slotTime(game.hour, slot.hour)}</span>
     </button>
   );
 }
