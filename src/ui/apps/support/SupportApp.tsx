@@ -1,6 +1,6 @@
 import { AlarmClock, ArrowUpRight, BadgeCheck, Check, CircleCheck, CircleX, Handshake, Hourglass, Inbox, Layers, Mails, Send, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
 import { useState } from "react";
-import { euro, euroCents } from "../../../sim/00-core/money";
+import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import { ACTIONS, canEscalate, isFinal, monthlyValue, TEMPLATES, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
 import { senderById, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-support/notices";
 import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
@@ -42,7 +42,7 @@ function Sla({ tk, hour }: { tk: Ticket; hour: number }) {
   if (tk.status !== "open") return <span className="sla num">{stamp(tk.updatedAt)}</span>;
   const left = tk.dueAt - hour;
   const cls = left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : "";
-  if (!tk.notice) return <span className={`sla ${cls} num`}>{due(tk.dueAt, hour)}</span>;
+  if (!tk.notice && left >= 0) return <span className={`sla ${cls} num`}>{due(tk.dueAt, hour)}</span>;
   return <span className={`sla ${cls}`}><span className="num">{span(left)}</span> {left < 0 ? "over" : "left"}</span>;
 }
 
@@ -265,9 +265,9 @@ function Thread({ tk }: { tk: Ticket }) {
           <span className="type"><K.icon />{K.label}</span>
           <span>Opened <span className="num">{stamp(tk.createdAt)}</span></span>
           {tk.status === "open"
-            ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer />{tk.notice
+            ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer />{tk.notice || left < 0
                 ? <span><span className="num">{span(left)}</span> {left < 0 ? "overdue" : "to respond"}</span>
-                : <span>Due <span className="num">{left < 0 ? "now" : due(tk.dueAt, game.hour)}</span></span>}</span>
+                : <span>Due <span className="num">{due(tk.dueAt, game.hour)}</span></span>}</span>
             : <span className="pill">{STATUS[tk.status]}</span>}
         </div>
       </div>
@@ -290,7 +290,7 @@ function Thread({ tk }: { tk: Ticket }) {
         <div>
           <div className="name"><CustomerLink id={c.id} name={c.name} /></div>
           <div className="sub">
-            {svc ? svc.label : `${services.length} services`} · <span className="num">{euro(monthly)}</span> a month · since <span className="num">{monthYear(c.since)}</span>
+            {svc ? svc.label : services.length === 1 ? services[0].label : `${services.length} services`} · <span className="num">{euroPrice(monthly)}</span> a month · since <span className="num">{monthYear(c.since)}</span>
           </div>
         </div>
         <div className="happy">

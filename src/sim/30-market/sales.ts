@@ -63,8 +63,9 @@ export function addRequest(s: GameState, r: Omit<SalesRequest, "id" | "createdAt
   return req;
 }
 
-// The hidden budget: the price ratio to the reference accepted half the time, between 0.97 and 1.24.
-const budgetOf = (r: Rng): number => 1.08 * (0.9 + 0.25 * rand(r));
+// The hidden budget: the price ratio to the reference accepted, drawn evenly from this range.
+export const BUDGET_RANGE: [number, number] = [1.08 * 0.9, 1.08 * 1.15];
+const budgetOf = (r: Rng): number => BUDGET_RANGE[0] + (BUDGET_RANGE[1] - BUDGET_RANGE[0]) * rand(r);
 
 export function newLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile)): SalesRequest {
   const who = senderFor(s.rng, profile);

@@ -42,7 +42,7 @@ export const APPS: AppDef[] = [
   { name: "Network", icon: Globe, tile: "oklch(0.58 0.12 210)", about: "Manages transit, peering and DDoS protection.", body: NetworkApp,
     badge: (s) => s.network.requests.length + s.network.attacks.length },
   { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters.", body: ProductsApp,
-    badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored || i.refund === "open")).length },
+    badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored)).length },
   { name: "Virtual machines", icon: MonitorCog, tile: "oklch(0.5 0.12 200)", about: "Starts, stops, migrates and restores the workloads on your clusters.", body: VmApp },
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: "Lists your customers with their contracts and happiness.", body: CustomersApp },
   { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets, orders and sales requests so you can answer, accept, quote or decline them.", body: SupportApp,

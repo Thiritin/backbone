@@ -1,6 +1,6 @@
 import { ChevronLeft, Contact, Cpu, FileText, History, LifeBuoy, ListChecks, Receipt, Server } from "lucide-react";
 import { useState } from "react";
-import { euro, euroCents } from "../../../sim/00-core/money";
+import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import { planOf } from "../../../sim/10-catalog/products";
 import type { Customer, Profile, Service } from "../../../sim/30-customers/customers";
 import { referenceFor } from "../../../sim/30-market/market";
@@ -13,7 +13,6 @@ import { changePrice } from "../../../sim/90-actions/sales";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
-import { APPS } from "../registry";
 import { PriceField } from "../sales/PriceField";
 import { ActivityLog } from "./ActivityLog";
 import { initials, kindOf, monthYear, moodClass, noticed, patience, PRODUCT, STATUS } from "../support/labels";
@@ -64,7 +63,7 @@ function email(c: Customer, services: Service[]): string {
   return `${local || "info"}@${domain}`;
 }
 
-const price = (v: Service) => (v.period === "hour" ? `${euro(serviceMonthly(v))} a month` : `${euroCents(v.price)} a year`);
+const price = (v: Service) => (v.period === "hour" ? `${euroPrice(serviceMonthly(v))} a month` : `${euroCents(v.price)} a year`);
 const location = (s: GameState, v: Service) => zoneOf(s, v)?.name ?? "None";
 const serviceStatus = (v: Service, r: Row) => (v.endedAt !== null ? <span className="pill">Ended</span> : r.status === "suspended" ? <span className="pill bad">Suspended</span> : <span className="pill">Active</span>);
 const InvoicePill = ({ i }: { i: Invoice }) => (
@@ -81,7 +80,7 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
   const openApp = useStore((s) => s.openApp);
   const [tab, setTab] = useState<Tab>("summary");
   const { c } = r;
-  const vms = APPS.some((a) => a.name === "Virtual machines" && a.body);
+  const vms = game.installed.includes("Virtual machines");
   const services = game.services.filter((v) => v.customerId === c.id).sort((a, b) => Number(a.endedAt !== null) - Number(b.endedAt !== null) || b.startedAt - a.startedAt);
   const invoices = game.invoices.filter((i) => i.customerId === c.id).reverse();
   const tickets = game.tickets.filter((tk) => tk.customerId === c.id).sort((a, b) => b.createdAt - a.createdAt);
@@ -133,7 +132,7 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
         </div>
       </header>
       <dl className="fin-totals cus-totals">
-        <div><dt>Monthly value</dt><dd className="num">{euro(r.monthly)}</dd></div>
+        <div><dt>Monthly value</dt><dd className="num">{euroPrice(r.monthly)}</dd></div>
         <div><dt>Open balance</dt><dd className="num">{euroCents(r.balance)}</dd></div>
         <div><dt>Customer since</dt><dd className="num">{monthYear(c.since)}</dd></div>
         <div><dt>Happiness</dt><dd><Mood c={c} /></dd></div>
@@ -165,7 +164,7 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
                   <div><dt>Happiness</dt><dd className="cus-happy"><Trend c={c} /><Mood c={c} /></dd></div>
                   <div><dt>Lifetime spend</dt><dd className="num">{euroCents(r.lifetime)}</dd></div>
                   <div><dt>Open balance</dt><dd className="num">{euroCents(r.balance)}</dd></div>
-                  <div><dt>Monthly value</dt><dd className="num">{euro(r.monthly)}</dd></div>
+                  <div><dt>Monthly value</dt><dd className="num">{euroPrice(r.monthly)}</dd></div>
                   <div><dt>Active services</dt><dd className="num">{r.services}</dd></div>
                   <div><dt>Open tickets</dt><dd className="num">{r.tickets}</dd></div>
                   <div><dt>Invoices</dt><dd className="num">{r.invoices}</dd></div>

@@ -64,13 +64,13 @@ export function ChecklistApp() {
         <Progress done={total} of={all.length} />
       </header>
       {STAGES.map((st) => (
-        <section key={st.name} className="cus-card">
+        <section key={st.name} className="chk-card">
           <h3>{st.name}<Progress done={st.goals.filter((g) => checkDone(game, g.id)).length} of={st.goals.length} /></h3>
           {st.goals.map((g) => {
             const done = checkDone(game, g.id);
             const box = <span className={`chk-box${done ? " done" : ""}`}>{done && <Check />}</span>;
             return (
-              <div key={g.id} className={`cus-row chk-row${done ? " done" : ""}`}>
+              <div key={g.id} className={`chk-row${done ? " done" : ""}`}>
                 {tracked(g.id) ? box : (
                   <button className="chk-tick" role="checkbox" aria-checked={done} aria-label={g.title} onClick={() => act((s) => toggleCheck(s, g.id))}>{box}</button>
                 )}

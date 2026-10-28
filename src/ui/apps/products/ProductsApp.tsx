@@ -27,7 +27,7 @@ export function ProductsApp() {
   const [view, setView] = useState<View>("lines");
   useFocus("Products", (f) => { if (f.kind === "cluster") setView(f.id); });
   const cluster = game.clusters.find((c) => c.id === view);
-  const open = game.lossReports.filter((r) => r.items.some((i) => !i.restored || i.refund === "open")).length;
+  const open = game.lossReports.filter((r) => r.items.some((i) => !i.restored)).length;
   const item = (id: View, label: string, icon: ReactNode, count?: number) => (
     <button key={id} className={`side-item${view === id ? " active" : ""}`} aria-pressed={view === id} onClick={() => setView(id)}>
       {icon}{label}{count !== undefined && <span className="side-count">{count}</span>}
