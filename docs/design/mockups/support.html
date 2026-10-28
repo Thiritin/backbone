@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backbone support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="shell.css">
+<style>
+  .sup-win { left: 120px; top: 44px; width: 1200px; height: 770px; }
+
+  .incident {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin: 12px 12px 0;
+    border-radius: 9px; background: var(--bad-soft); color: var(--bad-text);
+  }
+  .incident strong { font-weight: 650; }
+  .incident .grow { flex: 1; }
+  .incident .btn { height: 26px; }
+
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .panes { flex: 1; min-height: 0; display: grid; grid-template-columns: 380px minmax(0, 1fr); }
+
+  .list { border-right: 0.5px solid var(--line); overflow: auto; padding: 8px; display: grid; gap: 2px; align-content: start; }
+  .list-head { display: flex; align-items: center; gap: 8px; padding: 6px 6px 8px; }
+  .list-head h2 { font-size: 13px; font-weight: 650; }
+  .list-head .sort { margin-left: auto; color: var(--text-3); font-size: 12px; display: flex; align-items: center; gap: 4px; }
+  .list-head .sort svg.lucide { width: 13px; height: 13px; }
+
+  .tk { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; padding: 9px 10px; border-radius: 8px; }
+  .tk:hover { background: var(--hover); }
+  .tk.active { background: var(--accent-soft); }
+  .tk .who { font-weight: 600; display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .tk .who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tk .subj { grid-column: 1; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tk .meta { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+  .tk .sla { font-size: 11.5px; text-align: right; color: var(--text-3); }
+  .tk .sla.warn { color: var(--warn-text); font-weight: 600; }
+  .tk .sla.bad { color: var(--bad-text); font-weight: 600; }
+  .type { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--text-3); }
+  .type svg.lucide { width: 12px; height: 12px; }
+  .agent { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-2); }
+  .avatar { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; font-weight: 650; color: white; background: oklch(0.5 0.12 70); }
+  .typing { display: inline-flex; gap: 2px; }
+  .typing i { width: 3px; height: 3px; border-radius: 50%; background: var(--text-3); animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: 0.2s; } .typing i:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .typing i { animation: none; opacity: 0.6; } }
+
+  .detail { display: flex; flex-direction: column; min-height: 0; }
+  .d-head { padding: 16px 20px 12px; border-bottom: 0.5px solid var(--line); display: grid; gap: 8px; }
+  .d-head .top { display: flex; align-items: center; gap: 10px; }
+  .d-head h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+  .d-head .id { color: var(--text-3); }
+  .d-head .facts { display: flex; gap: 8px; align-items: center; color: var(--text-2); }
+
+  .cust { display: grid; grid-template-columns: auto 1fr auto auto; gap: 16px; align-items: center; padding: 12px 20px; border-bottom: 0.5px solid var(--line); background: var(--win-side); }
+  .cust .logo { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: oklch(0.52 0.15 350); color: white; font-weight: 700; }
+  .cust .name { font-weight: 600; }
+  .cust .sub { color: var(--text-2); font-size: 12px; }
+  .cust .k { font-size: 11.5px; color: var(--text-3); }
+  .happy { width: 150px; }
+  .happy .num { font-size: 1em; }
+  .happy .bar { height: 6px; border-radius: 3px; margin-top: 5px; background: color-mix(in oklch, var(--text) 9%, transparent); position: relative; }
+  .happy .bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--warn); }
+  .happy .bar b { position: absolute; top: -3px; width: 2px; height: 12px; background: var(--text-3); border-radius: 1px; }
+
+  .thread { flex: 1; overflow: auto; padding: 16px 20px; display: grid; gap: 12px; align-content: start; }
+  .msg { max-width: 560px; padding: 11px 14px; border-radius: 12px; background: var(--win-side); border: 0.5px solid var(--line); }
+  .msg .from { font-size: 12px; color: var(--text-3); margin-bottom: 4px; }
+  .msg p { line-height: 1.5; }
+  .event { display: flex; align-items: center; gap: 8px; color: var(--text-3); font-size: 12px; }
+  .event::before, .event::after { content: ""; height: 0.5px; flex: 1; background: var(--line); }
+  .event svg.lucide { width: 13px; height: 13px; color: var(--bad); }
+
+  .compose { border-top: 0.5px solid var(--line); padding: 14px 20px 16px; display: grid; gap: 12px; }
+  .compose h3 { font-size: 12px; font-weight: 600; color: var(--text-2); }
+  .templates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tpl { display: grid; grid-template-columns: auto 1fr; align-content: start; gap: 2px 10px; padding: 10px 12px; border-radius: 9px; border: 0.5px solid var(--line-strong); background: var(--field); cursor: pointer; }
+  .tpl:hover { border-color: var(--accent); }
+  .tpl input { grid-row: span 2; margin-top: 2px; accent-color: var(--accent); }
+  .tpl .t { font-weight: 600; }
+  .tpl .p { color: var(--text-2); font-size: 12px; }
+  .tpl:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .actions-row { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+  .check { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .check input { accent-color: var(--accent); }
+  .check.disabled { color: var(--text-3); }
+  .actions-row .grow { flex: 1; }
+</style>
+</head>
+<body>
+<div class="desktop">
+
+  <section class="window front sup-win" aria-label="Support">
+    <div class="titlebar">
+      <div class="lights"><span></span><span></span><span></span></div>
+      <h1>Support <span class="sub">7 open</span></h1>
+      <span class="tb-spacer"></span>
+      <label class="search"><i data-lucide="search"></i><input placeholder="Search tickets" aria-label="Search tickets"></label>
+    </div>
+    <div class="win-body">
+
+      <aside class="sidebar">
+        <div class="side-h">Inbox</div>
+        <a class="side-item active"><i data-lucide="inbox"></i>Open<span class="side-count">7</span></a>
+        <a class="side-item"><i data-lucide="alarm-clock"></i>Overdue<span class="side-count">2</span></a>
+        <a class="side-item"><i data-lucide="hourglass"></i>Waiting on customer<span class="side-count">4</span></a>
+        <a class="side-item"><i data-lucide="circle-check"></i>Closed today<span class="side-count">12</span></a>
+        <div class="side-h">Type</div>
+        <a class="side-item"><i data-lucide="zap-off"></i>Outage<span class="side-count">4</span></a>
+        <a class="side-item"><i data-lucide="circle-help"></i>How-to<span class="side-count">2</span></a>
+        <a class="side-item"><i data-lucide="receipt"></i>Billing<span class="side-count">1</span></a>
+        <a class="side-item"><i data-lucide="door-open"></i>Cancellation<span class="side-count">0</span></a>
+        <a class="side-item"><i data-lucide="shield-alert"></i>Abuse<span class="side-count">0</span></a>
+        <div class="side-h">Team</div>
+        <a class="side-item"><i data-lucide="user"></i>You<span class="side-count">6</span></a>
+        <a class="side-item"><i data-lucide="headset"></i>Lena Vogt<span class="side-count">1</span></a>
+      </aside>
+
+      <div class="main">
+        <div class="incident" role="status">
+          <i data-lucide="server-crash"></i>
+          <div class="grow"><strong>fra1-vps-04 offline since 13:12.</strong> 9 customers affected, 4 tickets so far.</div>
+          <button class="btn">Reply to all 4</button>
+          <button class="btn">Open rack</button>
+        </div>
+
+        <div class="panes">
+          <div class="list" role="list">
+            <div class="list-head"><h2>Open</h2><span class="sort">Time left<i data-lucide="chevron-down"></i></span></div>
+
+            <div class="tk active" role="listitem">
+              <div class="who"><span>Blumen Krause</span></div>
+              <div class="sla warn num">0:14 left</div>
+              <div class="subj">Shop down, customers can't order</div>
+              <div class="meta"><span class="type"><i data-lucide="zap-off"></i>Outage</span><span class="pill">Online shop</span><span class="pill accent">Priority</span></div>
+            </div>
+
+            <div class="tk" role="listitem">
+              <div class="who"><span>Jens Kramer</span></div>
+              <div class="sla bad num">3:05 over</div>
+              <div class="subj">How do I add a second IP address?</div>
+              <div class="meta"><span class="type"><i data-lucide="circle-help"></i>How-to</span><span class="pill">Hobby developer</span></div>
+            </div>
+
+            <div class="tk" role="listitem">
+              <div class="who"><span>Café Lindner</span></div>
+              <div class="sla bad num">1:20 over</div>
+              <div class="subj">Mailbox won't connect in Outlook</div>
+              <div class="meta"><span class="type"><i data-lucide="circle-help"></i>How-to</span><span class="pill">Sole proprietor</span></div>
+            </div>
+
+            <div class="tk" role="listitem">
+              <div class="who"><span>Praxis Dr. Hahn</span></div>
+              <div class="sla num">7:20 left</div>
+              <div class="subj">Appointment page not reachable</div>
+              <div class="meta"><span class="type"><i data-lucide="zap-off"></i>Outage</span><span class="pill">Doctor's office</span>
+                <span class="agent"><span class="avatar">LV</span>Lena<span class="typing" aria-label="answering"><i></i><i></i><i></i></span></span></div>
+            </div>
+
+            <div class="tk" role="listitem">
+              <div class="who"><span>Webagentur Nordlicht</span></div>
+              <div class="sla num">22:46 left</div>
+              <div class="subj">Three client sites are down</div>
+              <div class="meta"><span class="type"><i data-lucide="zap-off"></i>Outage</span><span class="pill">Agency</span></div>
+            </div>
+
+            <div class="tk" role="listitem">
+              <div class="who"><span>Mira Schulz</span></div>
+              <div class="sla num">20:02 left</div>
+              <div class="subj">Was I charged twice in August?</div>
+              <div class="meta"><span class="type"><i data-lucide="receipt"></i>Billing</span><span class="pill">Private</span></div>
+            </div>
+
+            <div class="tk" role="listitem">
+              <div class="who"><span>Tobias Brandt</span></div>
+              <div class="sla num">46:51 left</div>
+              <div class="subj">Server gone since lunch??</div>
+              <div class="meta"><span class="type"><i data-lucide="zap-off"></i>Outage</span><span class="pill">Gamer</span></div>
+            </div>
+          </div>
+
+          <div class="detail">
+            <div class="d-head">
+              <div class="top"><h2>Shop down, customers can't order</h2><span class="id num">#1042</span></div>
+              <div class="facts"><span class="type"><i data-lucide="zap-off"></i>Outage</span><span>Opened 13:14</span><span class="pill warn"><i data-lucide="timer"></i><span class="num">0:14</span> to first response</span></div>
+            </div>
+
+            <div class="cust">
+              <div class="logo">BK</div>
+              <div>
+                <div class="name">Blumen Krause</div>
+                <div class="sub">Online shop · VPS 2048, SSL, Backups · <span class="num">€34.90</span> a month · since Mar 2006</div>
+              </div>
+              <div class="happy">
+                <div class="k">Happiness <span class="num">41</span> of 100</div>
+                <div class="bar"><i style="width:41%"></i><b style="left:72%" title="Before the outage: 72"></b></div>
+              </div>
+              <button class="btn ghost"><i data-lucide="external-link"></i>Customer</button>
+            </div>
+
+            <div class="thread">
+              <div class="event"><i data-lucide="server-crash"></i><span><span class="num">13:12</span> fra1-vps-04 went offline: drive 2 failed</span></div>
+              <div class="msg">
+                <div class="from">Sabine Krause · <span class="num">13:14</span></div>
+                <p>Hello, our shop went down a few minutes ago. It's Thursday and the weekend orders are coming in right now. When will it be back?</p>
+              </div>
+            </div>
+
+            <div class="compose">
+              <h3>Reply</h3>
+              <div class="templates" role="radiogroup" aria-label="Reply template">
+                <label class="tpl"><input type="radio" name="tpl" checked><span class="t">Outage acknowledged</span><span class="p">We know about it and are working on a fix.</span></label>
+                <label class="tpl"><input type="radio" name="tpl"><span class="t">Outage resolved</span><span class="p">Everything is back. Sorry for the trouble.</span></label>
+                <label class="tpl"><input type="radio" name="tpl"><span class="t">Ask for details</span><span class="p">Which address or service is affected?</span></label>
+                <label class="tpl"><input type="radio" name="tpl"><span class="t">Technician assigned</span><span class="p">A technician is on site and replacing the part.</span></label>
+              </div>
+              <div class="actions-row">
+                <label class="check"><input type="checkbox" checked><span>Credit 10% (<span class="num">€3.49</span>)</span></label>
+                <label class="check disabled"><input type="checkbox" disabled>Restart service</label>
+                <span class="grow"></span>
+                <button class="btn">Send and close</button>
+                <button class="btn primary"><i data-lucide="send"></i>Send reply</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="shell.js"></script>
+<script>
+  mountShell({ app: "Support", running: ["Locations", "Finance", "Support"], badges: { Support: 7, Billing: 3 } });
+</script>
+</body>
+</html>

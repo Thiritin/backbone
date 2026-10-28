@@ -326,6 +326,28 @@ Here a is the age in years, and the chance of failing in any game hour is AFR ÷
 
 Without a spare kit in stock, a repair waits for a delivery first.
 
+**Power outages.** Grid outages are random events per city. They are far more frequent than in reality, so the player meets them in the first year.
+
+| Event | Rate | Duration | What survives it |
+| --- | --- | --- | --- |
+| City grid outage | 1.5 a year per city | Median 20 minutes, 10% last over 2 hours | Rooms with a UPS, while its battery lasts; datacenters with generators |
+| Datacenter feed failure | 0.3 a year per feed | Median 30 minutes | Servers with a second PSU on the other feed |
+| Generator fails to start | 2% of grid outages at a datacenter | Until the grid returns | Nothing on that feed |
+
+A UPS runs for its battery capacity divided by the load:
+
+```math
+\text{runtime (min)} = \frac{\text{battery Wh}}{\text{load W}} \cdot 60
+```
+
+| Item | Price in 2005 | Notes |
+| --- | --- | --- |
+| Small UPS, 1,500 VA, 600 Wh | €180 | Carries the basement shelf (0.2 kW) for about 3 hours |
+| Second feed (A+B) on a rented rack | +60% of the rack's power fee | Only protects dual-PSU servers |
+| Dual power supply | +10% of the server's price | PSU failures make up about a quarter of a server's AFR; with two PSUs they no longer take the server down, so its AFR drops from 8% to 6% |
+
+Prices follow the same yearly multipliers as other hardware (see [Prices over time](#prices-over-time)).
+
 ## Traffic and bandwidth
 
 Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 ten VPS customers fill the basement's 1 Mbit/s upload, which is the first push out of the basement.

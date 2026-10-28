@@ -1,0 +1,669 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "title": "Design System: Backbone",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Cobalt",
+        "canonical": "oklch(0.53 0.19 262)",
+        "tonalRamp": [
+          "oklch(0.15 0.19 262)",
+          "oklch(0.26 0.19 262)",
+          "oklch(0.37 0.19 262)",
+          "oklch(0.49 0.19 262)",
+          "oklch(0.6 0.19 262)",
+          "oklch(0.71 0.19 262)",
+          "oklch(0.83 0.19 262)",
+          "oklch(0.95 0.19 262)"
+        ]
+      },
+      "accent-ink": {
+        "role": "primary",
+        "displayName": "Cobalt Ink",
+        "canonical": "oklch(0.99 0.01 262)",
+        "tonalRamp": [
+          "oklch(0.15 0.01 262)",
+          "oklch(0.26 0.01 262)",
+          "oklch(0.37 0.01 262)",
+          "oklch(0.49 0.01 262)",
+          "oklch(0.6 0.01 262)",
+          "oklch(0.71 0.01 262)",
+          "oklch(0.83 0.01 262)",
+          "oklch(0.95 0.01 262)"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Cobalt Wash",
+        "canonical": "oklch(0.94 0.035 262)",
+        "tonalRamp": [
+          "oklch(0.15 0.035 262)",
+          "oklch(0.26 0.035 262)",
+          "oklch(0.37 0.035 262)",
+          "oklch(0.49 0.035 262)",
+          "oklch(0.6 0.035 262)",
+          "oklch(0.71 0.035 262)",
+          "oklch(0.83 0.035 262)",
+          "oklch(0.95 0.035 262)"
+        ]
+      },
+      "accent-text": {
+        "role": "primary",
+        "displayName": "Cobalt Text",
+        "canonical": "oklch(0.47 0.18 262)",
+        "tonalRamp": [
+          "oklch(0.15 0.18 262)",
+          "oklch(0.26 0.18 262)",
+          "oklch(0.37 0.18 262)",
+          "oklch(0.49 0.18 262)",
+          "oklch(0.6 0.18 262)",
+          "oklch(0.71 0.18 262)",
+          "oklch(0.83 0.18 262)",
+          "oklch(0.95 0.18 262)"
+        ]
+      },
+      "ok": {
+        "role": "state",
+        "displayName": "Signal Green",
+        "canonical": "oklch(0.64 0.16 150)",
+        "tonalRamp": [
+          "oklch(0.15 0.16 150)",
+          "oklch(0.26 0.16 150)",
+          "oklch(0.37 0.16 150)",
+          "oklch(0.49 0.16 150)",
+          "oklch(0.6 0.16 150)",
+          "oklch(0.71 0.16 150)",
+          "oklch(0.83 0.16 150)",
+          "oklch(0.95 0.16 150)"
+        ]
+      },
+      "ok-soft": {
+        "role": "state",
+        "displayName": "Signal Green Wash",
+        "canonical": "oklch(0.95 0.04 150)",
+        "tonalRamp": [
+          "oklch(0.15 0.04 150)",
+          "oklch(0.26 0.04 150)",
+          "oklch(0.37 0.04 150)",
+          "oklch(0.49 0.04 150)",
+          "oklch(0.6 0.04 150)",
+          "oklch(0.71 0.04 150)",
+          "oklch(0.83 0.04 150)",
+          "oklch(0.95 0.04 150)"
+        ]
+      },
+      "warn": {
+        "role": "state",
+        "displayName": "Amber",
+        "canonical": "oklch(0.75 0.15 72)",
+        "tonalRamp": [
+          "oklch(0.15 0.15 72)",
+          "oklch(0.26 0.15 72)",
+          "oklch(0.37 0.15 72)",
+          "oklch(0.49 0.15 72)",
+          "oklch(0.6 0.15 72)",
+          "oklch(0.71 0.15 72)",
+          "oklch(0.83 0.15 72)",
+          "oklch(0.95 0.15 72)"
+        ]
+      },
+      "warn-soft": {
+        "role": "state",
+        "displayName": "Amber Wash",
+        "canonical": "oklch(0.96 0.045 85)",
+        "tonalRamp": [
+          "oklch(0.15 0.045 85)",
+          "oklch(0.26 0.045 85)",
+          "oklch(0.37 0.045 85)",
+          "oklch(0.49 0.045 85)",
+          "oklch(0.6 0.045 85)",
+          "oklch(0.71 0.045 85)",
+          "oklch(0.83 0.045 85)",
+          "oklch(0.95 0.045 85)"
+        ]
+      },
+      "warn-text": {
+        "role": "state",
+        "displayName": "Amber Text",
+        "canonical": "oklch(0.52 0.12 60)",
+        "tonalRamp": [
+          "oklch(0.15 0.12 60)",
+          "oklch(0.26 0.12 60)",
+          "oklch(0.37 0.12 60)",
+          "oklch(0.49 0.12 60)",
+          "oklch(0.6 0.12 60)",
+          "oklch(0.71 0.12 60)",
+          "oklch(0.83 0.12 60)",
+          "oklch(0.95 0.12 60)"
+        ]
+      },
+      "bad": {
+        "role": "state",
+        "displayName": "Alarm Red",
+        "canonical": "oklch(0.6 0.21 25)",
+        "tonalRamp": [
+          "oklch(0.15 0.21 25)",
+          "oklch(0.26 0.21 25)",
+          "oklch(0.37 0.21 25)",
+          "oklch(0.49 0.21 25)",
+          "oklch(0.6 0.21 25)",
+          "oklch(0.71 0.21 25)",
+          "oklch(0.83 0.21 25)",
+          "oklch(0.95 0.21 25)"
+        ]
+      },
+      "bad-soft": {
+        "role": "state",
+        "displayName": "Alarm Red Wash",
+        "canonical": "oklch(0.95 0.035 25)",
+        "tonalRamp": [
+          "oklch(0.15 0.035 25)",
+          "oklch(0.26 0.035 25)",
+          "oklch(0.37 0.035 25)",
+          "oklch(0.49 0.035 25)",
+          "oklch(0.6 0.035 25)",
+          "oklch(0.71 0.035 25)",
+          "oklch(0.83 0.035 25)",
+          "oklch(0.95 0.035 25)"
+        ]
+      },
+      "bad-text": {
+        "role": "state",
+        "displayName": "Alarm Red Text",
+        "canonical": "oklch(0.52 0.19 25)",
+        "tonalRamp": [
+          "oklch(0.15 0.19 25)",
+          "oklch(0.26 0.19 25)",
+          "oklch(0.37 0.19 25)",
+          "oklch(0.49 0.19 25)",
+          "oklch(0.6 0.19 25)",
+          "oklch(0.71 0.19 25)",
+          "oklch(0.83 0.19 25)",
+          "oklch(0.95 0.19 25)"
+        ]
+      },
+      "win": {
+        "role": "neutral",
+        "displayName": "Window White",
+        "canonical": "oklch(0.99 0.004 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.004 250)",
+          "oklch(0.26 0.004 250)",
+          "oklch(0.37 0.004 250)",
+          "oklch(0.49 0.004 250)",
+          "oklch(0.6 0.004 250)",
+          "oklch(0.71 0.004 250)",
+          "oklch(0.83 0.004 250)",
+          "oklch(0.95 0.004 250)"
+        ]
+      },
+      "win-side": {
+        "role": "neutral",
+        "displayName": "Sidebar Slate",
+        "canonical": "oklch(0.962 0.007 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.007 250)",
+          "oklch(0.26 0.007 250)",
+          "oklch(0.37 0.007 250)",
+          "oklch(0.49 0.007 250)",
+          "oklch(0.6 0.007 250)",
+          "oklch(0.71 0.007 250)",
+          "oklch(0.83 0.007 250)",
+          "oklch(0.95 0.007 250)"
+        ]
+      },
+      "win-bar": {
+        "role": "neutral",
+        "displayName": "Title Bar Slate",
+        "canonical": "oklch(0.975 0.006 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.006 250)",
+          "oklch(0.26 0.006 250)",
+          "oklch(0.37 0.006 250)",
+          "oklch(0.49 0.006 250)",
+          "oklch(0.6 0.006 250)",
+          "oklch(0.71 0.006 250)",
+          "oklch(0.83 0.006 250)",
+          "oklch(0.95 0.006 250)"
+        ]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Field White",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.49 0 0)",
+          "oklch(0.6 0 0)",
+          "oklch(0.71 0 0)",
+          "oklch(0.83 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "hover": {
+        "role": "neutral",
+        "displayName": "Hover Slate",
+        "canonical": "oklch(0.94 0.01 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.01 255)",
+          "oklch(0.26 0.01 255)",
+          "oklch(0.37 0.01 255)",
+          "oklch(0.49 0.01 255)",
+          "oklch(0.6 0.01 255)",
+          "oklch(0.71 0.01 255)",
+          "oklch(0.83 0.01 255)",
+          "oklch(0.95 0.01 255)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(0.9 0.009 252)",
+        "tonalRamp": [
+          "oklch(0.15 0.009 252)",
+          "oklch(0.26 0.009 252)",
+          "oklch(0.37 0.009 252)",
+          "oklch(0.49 0.009 252)",
+          "oklch(0.6 0.009 252)",
+          "oklch(0.71 0.009 252)",
+          "oklch(0.83 0.009 252)",
+          "oklch(0.95 0.009 252)"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Strong Hairline",
+        "canonical": "oklch(0.83 0.012 252)",
+        "tonalRamp": [
+          "oklch(0.15 0.012 252)",
+          "oklch(0.26 0.012 252)",
+          "oklch(0.37 0.012 252)",
+          "oklch(0.49 0.012 252)",
+          "oklch(0.6 0.012 252)",
+          "oklch(0.71 0.012 252)",
+          "oklch(0.83 0.012 252)",
+          "oklch(0.95 0.012 252)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.22 0.02 258)",
+        "tonalRamp": [
+          "oklch(0.15 0.02 258)",
+          "oklch(0.26 0.02 258)",
+          "oklch(0.37 0.02 258)",
+          "oklch(0.49 0.02 258)",
+          "oklch(0.6 0.02 258)",
+          "oklch(0.71 0.02 258)",
+          "oklch(0.83 0.02 258)",
+          "oklch(0.95 0.02 258)"
+        ]
+      },
+      "text-2": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "canonical": "oklch(0.44 0.022 258)",
+        "tonalRamp": [
+          "oklch(0.15 0.022 258)",
+          "oklch(0.26 0.022 258)",
+          "oklch(0.37 0.022 258)",
+          "oklch(0.49 0.022 258)",
+          "oklch(0.6 0.022 258)",
+          "oklch(0.71 0.022 258)",
+          "oklch(0.83 0.022 258)",
+          "oklch(0.95 0.022 258)"
+        ]
+      },
+      "text-3": {
+        "role": "neutral",
+        "displayName": "Slate Grey",
+        "canonical": "oklch(0.5 0.018 258)",
+        "tonalRamp": [
+          "oklch(0.15 0.018 258)",
+          "oklch(0.26 0.018 258)",
+          "oklch(0.37 0.018 258)",
+          "oklch(0.49 0.018 258)",
+          "oklch(0.6 0.018 258)",
+          "oklch(0.71 0.018 258)",
+          "oklch(0.83 0.018 258)",
+          "oklch(0.95 0.018 258)"
+        ]
+      },
+      "metal": {
+        "role": "neutral",
+        "displayName": "Metal",
+        "canonical": "oklch(0.26 0.008 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.008 255)",
+          "oklch(0.26 0.008 255)",
+          "oklch(0.37 0.008 255)",
+          "oklch(0.49 0.008 255)",
+          "oklch(0.6 0.008 255)",
+          "oklch(0.71 0.008 255)",
+          "oklch(0.83 0.008 255)",
+          "oklch(0.95 0.008 255)"
+        ]
+      },
+      "metal-2": {
+        "role": "neutral",
+        "displayName": "Metal Light",
+        "canonical": "oklch(0.32 0.009 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.009 255)",
+          "oklch(0.26 0.009 255)",
+          "oklch(0.37 0.009 255)",
+          "oklch(0.49 0.009 255)",
+          "oklch(0.6 0.009 255)",
+          "oklch(0.71 0.009 255)",
+          "oklch(0.83 0.009 255)",
+          "oklch(0.95 0.009 255)"
+        ]
+      },
+      "metal-3": {
+        "role": "neutral",
+        "displayName": "Metal Lighter",
+        "canonical": "oklch(0.38 0.01 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.01 255)",
+          "oklch(0.26 0.01 255)",
+          "oklch(0.37 0.01 255)",
+          "oklch(0.49 0.01 255)",
+          "oklch(0.6 0.01 255)",
+          "oklch(0.71 0.01 255)",
+          "oklch(0.83 0.01 255)",
+          "oklch(0.95 0.01 255)"
+        ]
+      },
+      "metal-line": {
+        "role": "neutral",
+        "displayName": "Metal Seam",
+        "canonical": "oklch(0.18 0.006 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.006 255)",
+          "oklch(0.26 0.006 255)",
+          "oklch(0.37 0.006 255)",
+          "oklch(0.49 0.006 255)",
+          "oklch(0.6 0.006 255)",
+          "oklch(0.71 0.006 255)",
+          "oklch(0.83 0.006 255)",
+          "oklch(0.95 0.006 255)"
+        ]
+      },
+      "rack": {
+        "role": "neutral",
+        "displayName": "Rack Black",
+        "canonical": "oklch(0.17 0.006 255)",
+        "tonalRamp": [
+          "oklch(0.15 0.006 255)",
+          "oklch(0.26 0.006 255)",
+          "oklch(0.37 0.006 255)",
+          "oklch(0.49 0.006 255)",
+          "oklch(0.6 0.006 255)",
+          "oklch(0.71 0.006 255)",
+          "oklch(0.83 0.006 255)",
+          "oklch(0.95 0.006 255)"
+        ]
+      },
+      "desktop-night": {
+        "role": "neutral",
+        "displayName": "Desktop Night",
+        "canonical": "oklch(0.2 0.04 262)",
+        "tonalRamp": [
+          "oklch(0.15 0.04 262)",
+          "oklch(0.26 0.04 262)",
+          "oklch(0.37 0.04 262)",
+          "oklch(0.49 0.04 262)",
+          "oklch(0.6 0.04 262)",
+          "oklch(0.71 0.04 262)",
+          "oklch(0.83 0.04 262)",
+          "oklch(0.95 0.04 262)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Detail pane subject heading."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Window title bar and menu bar app name."
+      },
+      "card-title": {
+        "displayName": "Card Title",
+        "purpose": "Card headers inside panes, with a Lucide icon."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All UI text, table cells and controls."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Pills, table headers, counts and fact labels."
+      },
+      "number": {
+        "displayName": "Number",
+        "purpose": "Every number the player reads."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-win",
+        "value": "0 22px 60px -12px oklch(0 0 0 / 0.42), 0 0 0 0.5px oklch(0 0 0 / 0.28)",
+        "purpose": "Front window only."
+      },
+      {
+        "name": "shadow-win-back",
+        "value": "0 12px 34px -10px oklch(0 0 0 / 0.3), 0 0 0 0.5px oklch(0 0 0 / 0.22)",
+        "purpose": "Unfocused windows."
+      },
+      {
+        "name": "shadow-pop",
+        "value": "0 10px 30px -8px oklch(0 0 0 / 0.35), 0 0 0 0.5px oklch(0 0 0 / 0.2)",
+        "purpose": "Banners and dock tooltips."
+      },
+      {
+        "name": "control-lift",
+        "value": "0 0.5px 1px oklch(0 0 0 / 0.06)",
+        "purpose": "Buttons at rest."
+      }
+    ],
+    "motion": [
+      {
+        "name": "dock-lift",
+        "value": "transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "Dock tile lift on hover."
+      },
+      {
+        "name": "tooltip-fade",
+        "value": "opacity 120ms",
+        "purpose": "Dock tooltip reveal."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "min-desktop",
+        "value": "1280px"
+      }
+    ],
+    "themes": {
+      "dark": {
+        "selector": ":root[data-theme=\"dark\"]",
+        "win": "oklch(0.235 0.012 258)",
+        "win-side": "oklch(0.205 0.012 258)",
+        "win-bar": "oklch(0.255 0.012 258)",
+        "field": "oklch(0.27 0.012 258)",
+        "hover": "oklch(0.3 0.014 258)",
+        "line": "oklch(0.33 0.013 258)",
+        "line-strong": "oklch(0.4 0.014 258)",
+        "text": "oklch(0.95 0.006 258)",
+        "text-2": "oklch(0.78 0.012 258)",
+        "text-3": "oklch(0.64 0.014 258)",
+        "accent": "oklch(0.64 0.17 262)",
+        "accent-soft": "oklch(0.34 0.07 262)",
+        "accent-text": "oklch(0.78 0.12 262)",
+        "ok-soft": "oklch(0.32 0.06 150)",
+        "warn-soft": "oklch(0.34 0.06 75)",
+        "warn-text": "oklch(0.85 0.12 80)",
+        "bad-soft": "oklch(0.33 0.07 25)",
+        "bad-text": "oklch(0.8 0.13 25)"
+      }
+    },
+    "translucency": [
+      {
+        "name": "menubar",
+        "value": "blur(24px) saturate(1.6)"
+      },
+      {
+        "name": "dock",
+        "value": "blur(28px) saturate(1.6)"
+      },
+      {
+        "name": "banner",
+        "value": "blur(24px) saturate(1.5)"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Default action in toolbars and cards.",
+      "html": "<button class=\"ds-btn\">Cable test</button>",
+      "css": ".ds-btn { font: 13px/1.4 var(--font-ui, Inter, system-ui, sans-serif); height: 28px; padding: 0 11px; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--r-ctl, 6px); border: 0.5px solid var(--line-strong); background: var(--field); color: var(--text); box-shadow: 0 0.5px 1px oklch(0 0 0 / 0.06); font-weight: 500; cursor: pointer; } .ds-btn:hover { background: var(--hover); } .ds-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one primary action of a window, such as Add device.",
+      "html": "<button class=\"ds-btn-primary\">Add device</button>",
+      "css": ".ds-btn-primary { font: 13px/1.4 var(--font-ui, Inter, system-ui, sans-serif); height: 28px; padding: 0 11px; border-radius: var(--r-ctl, 6px); border: 0.5px solid transparent; background: var(--accent); color: var(--accent-ink); font-weight: 500; cursor: pointer; } .ds-btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); } .ds-btn-primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Low-emphasis action in card headers, such as New.",
+      "html": "<button class=\"ds-btn-ghost\">New</button>",
+      "css": ".ds-btn-ghost { font: 13px/1.4 var(--font-ui, Inter, system-ui, sans-serif); height: 28px; padding: 0 11px; border-radius: var(--r-ctl, 6px); border: 0.5px solid transparent; background: none; color: var(--text-2); font-weight: 500; cursor: pointer; } .ds-btn-ghost:hover { background: var(--hover); color: var(--text); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Search and text input in toolbars.",
+      "html": "<input class=\"ds-search\" placeholder=\"Search tickets\">",
+      "css": ".ds-search { font: 13px/1.4 var(--font-ui, Inter, system-ui, sans-serif); height: 28px; width: 200px; padding: 0 10px; border-radius: 7px; border: 0.5px solid var(--line-strong); background: var(--field); color: var(--text); } .ds-search::placeholder { color: var(--text-3); } .ds-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "",
+      "description": "Switches between views of one pane, such as Front and Rear.",
+      "html": "<div class=\"ds-seg\"><button aria-pressed=\"true\">Front</button><button>Rear</button></div>",
+      "css": ".ds-seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 7px; background: color-mix(in oklch, var(--text) 6%, transparent); } .ds-seg button { font: 13px/1.4 var(--font-ui, Inter, system-ui, sans-serif); border: 0; background: none; height: 24px; padding: 0 10px; border-radius: 5px; font-weight: 500; color: var(--text-2); cursor: pointer; } .ds-seg button[aria-pressed=\"true\"] { background: var(--field); color: var(--text); box-shadow: 0 0.5px 2px oklch(0 0 0 / 0.15); } .ds-seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Sidebar",
+      "kind": "nav",
+      "refersTo": "sidebar-item-active",
+      "description": "Window sidebar with grouped rows, mono counts and a cobalt active row.",
+      "html": "<nav class=\"ds-side\"><div class=\"ds-side-h\">Locations</div><a class=\"ds-side-item\">Basement</a><a class=\"ds-side-item active\">Rack A07<span>1</span></a><a class=\"ds-side-item\">Deliveries<span>1</span></a></nav>",
+      "css": ".ds-side { font: 13px/1.4 var(--font-ui, Inter, system-ui, sans-serif); width: 210px; background: var(--win-side); padding: 10px 8px; } .ds-side-h { font-size: 11px; font-weight: 650; color: var(--text-3); padding: 2px 8px 4px; } .ds-side-item { display: flex; align-items: center; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--text); cursor: pointer; } .ds-side-item span { margin-left: auto; color: var(--text-3); font: 11.5px var(--font-num, 'JetBrains Mono', monospace); } .ds-side-item:hover { background: var(--hover); } .ds-side-item.active, .ds-side-item.active span { background: var(--accent); color: var(--accent-ink); }"
+    },
+    {
+      "name": "State Pills",
+      "kind": "chip",
+      "refersTo": "pill",
+      "description": "Status labels; colour only for device and SLA state.",
+      "html": "<span class=\"ds-pill ok\">Online</span> <span class=\"ds-pill warn\">Degraded</span> <span class=\"ds-pill bad\">Down</span> <span class=\"ds-pill\">Server</span>",
+      "css": ".ds-pill { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 10px; font: 550 11.5px var(--font-ui, Inter, sans-serif); background: color-mix(in oklch, var(--text) 7%, transparent); color: var(--text-2); } .ds-pill.ok { background: var(--ok-soft); color: color-mix(in oklch, var(--ok) 70%, var(--text)); } .ds-pill.warn { background: var(--warn-soft); color: var(--warn-text); } .ds-pill.bad { background: var(--bad-soft); color: var(--bad-text); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat bordered group inside a window pane.",
+      "html": "<section class=\"ds-card\"><h3>Port groups</h3><div class=\"ds-card-b\">LACP, <span class=\"ds-num\">2 Gbit/s</span></div></section>",
+      "css": ".ds-card { font: 13px/1.4 var(--font-ui, Inter, system-ui, sans-serif); width: 320px; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); color: var(--text); } .ds-card h3 { font-size: 12.5px; font-weight: 650; padding: 11px 14px; border-bottom: 0.5px solid var(--line); margin: 0; } .ds-card-b { padding: 12px 14px; color: var(--text-2); } .ds-num { font-family: var(--font-num, 'JetBrains Mono', monospace); font-variant-numeric: tabular-nums; font-size: 0.94em; }"
+    },
+    {
+      "name": "Notification Banner",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Translucent top-right notification with an app tile.",
+      "html": "<div class=\"ds-banner\"><div class=\"ds-b-icon\"></div><div><div class=\"ds-b-app\">Support</div><div class=\"ds-b-title\">New ticket</div><div class=\"ds-b-text\">Server fra1-vps-04 is not reachable.</div></div></div>",
+      "css": ".ds-banner { font: 13px/1.4 var(--font-ui, Inter, system-ui, sans-serif); width: 344px; display: grid; grid-template-columns: 32px 1fr; gap: 10px; padding: 11px 12px; border-radius: 14px; background: var(--banner); color: var(--text); box-shadow: var(--shadow-pop); backdrop-filter: blur(24px) saturate(1.5); } .ds-b-icon { width: 32px; height: 32px; border-radius: 8px; background: oklch(0.62 0.19 35); } .ds-b-app { font-size: 11.5px; color: var(--text-2); font-weight: 500; } .ds-b-title { font-weight: 600; } .ds-b-text { color: var(--text-2); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Operator's Desktop",
+    "overview": "Backbone is a real macOS-grade desktop where the only rich drawing is the hardware itself. The chrome is quiet and native: a translucent menu bar, a frosted dock, windows with traffic lights and soft shadows, and dense sidebars and tables in cool slate neutrals. Against that calm surface, racks, switches, servers and patch panels are drawn in code with real port counts, SFP cages and live status LEDs, and the same fronts reappear as miniatures wherever a device is shown.\n\nThe interface is dense in the way a working admin tool is dense. Body text sits at 13px, rows are 28 to 34px tall, and several windows stay open at once over a night map of Western Europe's backbone. Every number is set in JetBrains Mono so columns line up. Light and dark modes share one token set, switched on the root element.",
+    "keyCharacteristics": [
+      "Native desktop chrome with translucency on the menu bar, dock and notification banners.",
+      "One cobalt accent for selection and primary actions.",
+      "Green, amber and red appear only for device and SLA state.",
+      "Code-drawn hardware fronts on near-black metal are the visual signature.",
+      "Hairline 0.5px borders and tonal layering separate regions inside windows."
+    ],
+    "rules": [
+      {
+        "name": "The Reserved State Rule",
+        "body": "Green, amber and red mean device or SLA state and nothing else. Prices, revenue, plan figures and other business numbers use neutral text, and a figure turns red or amber only when it reports a failure or a breach.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Accent Rule",
+        "body": "Cobalt is the only interactive colour. Selection, primary action and focus all use it; no second accent hue exists in the chrome.",
+        "section": "colors"
+      },
+      {
+        "name": "The Native Chrome Exception",
+        "body": "The window traffic lights (oklch(0.68 0.2 27), oklch(0.83 0.16 85), oklch(0.72 0.18 145)) and the per-app dock tile colours are part of the macOS world and are exempt from both rules above. They never appear inside window content.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Numbers Rule",
+        "body": "Every number the player reads, including cash, dates, counts, ports, IPs and prices, is set in JetBrains Mono with tabular figures at 0.94em of the surrounding size.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Labels and headings are sentence case at normal tracking. The hierarchy comes from weight and size, and the system has no uppercase tracked labels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Focus Has Weight Rule",
+        "body": "Only the front window gets the deep shadow; focus is shown by elevation and title-bar opacity rather than by colour.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Flat Content Rule",
+        "body": "Cards and lists inside a window carry no shadow. They sit on the window with a 0.5px line-strong border.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do take every colour from the shell tokens so light and dark mode switch together.",
+      "Do set every number in JetBrains Mono with tabular figures.",
+      "Do keep green, amber and red for device and SLA state, and show business figures in neutral text.",
+      "Do use Lucide icons at 16px with a 1.75 stroke inside windows.",
+      "Do draw hardware in code and reuse the same front wherever that device appears.",
+      "Do give only the front window the deep shadow."
+    ],
+    "donts": [
+      "Don't colour prices, revenue or plan figures green or red to mean good or bad.",
+      "Don't introduce a second accent hue in the chrome.",
+      "Don't put shadows on cards or lists inside a window.",
+      "Don't build screens as a dashboard of floating cards or style app windows as a hacker terminal. The technician terminal is the one console surface, and it sits on near-black metal inside a normal window.",
+      "Don't add uppercase tracked labels or eyebrows above headings."
+    ]
+  }
+}

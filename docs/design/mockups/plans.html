@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backbone plans</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="shell.css">
+<style>
+  .plans-win { left: 100px; top: 44px; width: 1240px; height: 580px; }
+
+  .main { flex: 1; min-width: 0; overflow: auto; padding: 18px 22px 22px; display: grid; gap: 18px; align-content: start; }
+  .head { display: flex; align-items: center; gap: 10px; }
+  .head h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+  .head .sub { color: var(--text-2); }
+  .head .grow { flex: 1; }
+
+  .card { border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); }
+  .card h3 { font-size: 12.5px; font-weight: 650; padding: 11px 14px; border-bottom: 0.5px solid var(--line); display: flex; align-items: center; gap: 8px; }
+  .card h3 .pill, .card h3 .btn { margin-left: auto; }
+  .card .table th { background: var(--field); }
+  .card .table tr:last-child td { border-bottom: 0; }
+
+  .table td.name { font-weight: 600; }
+  .table tr.editing td { background: var(--accent-soft); }
+  .table tr.editing:hover td { background: var(--accent-soft); }
+  .cell-in { width: 84px; height: 26px; padding: 0 8px; text-align: right; font-family: "JetBrains Mono", monospace; font-size: 12px; border-radius: var(--r-ctl); border: 0.5px solid var(--accent); background: var(--win); color: var(--text); }
+  .old { color: var(--text-3); text-decoration: line-through; margin-right: 6px; }
+  .vs { display: inline-flex; min-width: 52px; justify-content: flex-end; }
+
+  .lower { display: grid; grid-template-columns: 0.85fr 1fr 1.35fr; gap: 18px; align-items: start; }
+
+  .meters { display: grid; gap: 14px; padding: 14px; }
+  .meter { display: grid; gap: 6px; }
+  .meter .row { display: flex; justify-content: space-between; gap: 10px; }
+  .meter .k { color: var(--text-2); }
+  .bar { height: 8px; border-radius: 4px; background: color-mix(in oklch, var(--text) 8%, transparent); overflow: hidden; position: relative; }
+  .bar i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+  .bar b { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--text-2); }
+  .meter .note { font-size: 12px; color: var(--text-3); }
+
+  .kv { display: grid; grid-template-columns: 1fr auto; gap: 10px 12px; padding: 14px; align-items: center; }
+  .kv dt { color: var(--text-2); white-space: nowrap; }
+  .kv dd { text-align: right; }
+  .kv .sep { grid-column: 1 / -1; height: 0.5px; background: var(--line); }
+  .delta-up, .delta-down { color: var(--text); }
+  .card .foot { display: flex; gap: 8px; justify-content: flex-end; padding: 0 14px 14px; }
+</style>
+</head>
+<body>
+<div class="desktop">
+
+  <section class="window front plans-win" aria-label="Products">
+    <div class="titlebar">
+      <div class="lights"><span></span><span></span><span></span></div>
+      <h1>Products <span class="sub">VPS</span></h1>
+      <span class="tb-spacer"></span>
+      <label class="search"><i data-lucide="search"></i><input placeholder="Search plans" aria-label="Search plans"></label>
+    </div>
+    <div class="win-body">
+
+      <aside class="sidebar">
+        <div class="side-h">Products</div>
+        <a class="side-item"><i data-lucide="globe"></i>Web hosting<span class="side-count">3</span></a>
+        <a class="side-item active"><i data-lucide="server"></i>VPS<span class="side-count">4</span></a>
+        <a class="side-item"><i data-lucide="gamepad-2"></i>Game servers<span class="side-count">2</span></a>
+        <a class="side-item locked"><i data-lucide="lock"></i>Mail</a>
+        <a class="side-item locked"><i data-lucide="lock"></i>Dedicated servers</a>
+        <a class="side-item locked"><i data-lucide="lock"></i>Colocation</a>
+        <div class="side-h">Shared</div>
+        <a class="side-item"><i data-lucide="puzzle"></i>Add-ons<span class="side-count">3</span></a>
+        <a class="side-item"><i data-lucide="tag"></i>Discounts</a>
+      </aside>
+
+      <div class="main">
+        <div class="head">
+          <h2>VPS</h2>
+          <span class="sub">Runs on cluster fra1-vps · 62 customers · <span class="num">€875</span> MRR</span>
+          <span class="grow"></span>
+          <button class="btn"><i data-lucide="copy"></i>Duplicate plan</button>
+          <button class="btn primary"><i data-lucide="plus"></i>New plan</button>
+        </div>
+
+        <div class="card">
+          <table class="table">
+            <thead><tr>
+              <th>Plan</th><th class="r">vCPU</th><th class="r">RAM</th><th class="r">Storage</th><th class="r">Traffic</th>
+              <th class="r">Price</th><th>Contract</th><th class="r">Market rate</th><th class="r">vs market</th><th class="r">Sold</th><th></th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td class="name">VPS 512</td><td class="r num">1</td><td class="r num">512 MB</td><td class="r num">10 GB</td><td class="r num">100 GB</td>
+                <td class="r num">€9.90</td><td>Monthly</td><td class="r num">€12.50</td><td class="r"><span class="vs num">0.79×</span></td><td class="r num">41</td>
+                <td class="r"><button class="btn icon ghost" aria-label="Edit VPS 512"><i data-lucide="pencil"></i></button></td>
+              </tr>
+              <tr>
+                <td class="name">VPS 1024</td><td class="r num">1</td><td class="r num">1 GB</td><td class="r num">20 GB</td><td class="r num">250 GB</td>
+                <td class="r num">€17.90</td><td>Monthly</td><td class="r num">€19.90</td><td class="r"><span class="vs num">0.90×</span></td><td class="r num">14</td>
+                <td class="r"><button class="btn icon ghost" aria-label="Edit VPS 1024"><i data-lucide="pencil"></i></button></td>
+              </tr>
+              <tr class="editing">
+                <td class="name">VPS 2048</td><td class="r num">2</td><td class="r num">2 GB</td><td class="r num">40 GB</td><td class="r num">500 GB</td>
+                <td class="r"><input class="cell-in" value="€22.90" aria-label="Price for VPS 2048"></td>
+                <td><select class="field" aria-label="Contract for VPS 2048"><option>Monthly</option><option>12 months</option></select></td>
+                <td class="r num">€27.00</td><td class="r"><span class="vs num">0.85×</span></td><td class="r num">6</td>
+                <td class="r"><button class="btn icon ghost" aria-label="Close editing"><i data-lucide="x"></i></button></td>
+              </tr>
+              <tr>
+                <td class="name">VPS 4096</td><td class="r num">4</td><td class="r num">4 GB</td><td class="r num">80 GB</td><td class="r num">1 TB</td>
+                <td class="r num">€69.00</td><td>12 months</td><td class="r num">€59.00</td><td class="r"><span class="vs num">1.17×</span></td><td class="r num">1</td>
+                <td class="r"><button class="btn icon ghost" aria-label="Edit VPS 4096"><i data-lucide="pencil"></i></button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="lower">
+          <div class="card">
+            <h3><i data-lucide="puzzle"></i>Add-ons<button class="btn ghost"><i data-lucide="plus"></i>Add</button></h3>
+            <table class="table">
+              <thead><tr><th>Add-on</th><th class="r">Price</th><th class="r">Sold</th></tr></thead>
+              <tbody>
+                <tr><td>SSL certificate</td><td class="r num">€4.00</td><td class="r num">19</td></tr>
+                <tr><td>Daily backups</td><td class="r num">€6.00</td><td class="r num">11</td></tr>
+                <tr><td>Extra IP address</td><td class="r num">€2.00</td><td class="r num">7</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <h3><i data-lucide="cpu"></i>Cluster fra1-vps<span class="pill warn">1 host offline</span></h3>
+            <div class="meters">
+              <div class="meter">
+                <div class="row"><span class="k">RAM sold</span><span class="num">50.5 of 56 GB</span></div>
+                <div class="bar"><i style="width: 90%; background: var(--warn)"></i><b style="left: 95%" title="Stop selling at 95%"></b></div>
+                <div class="note">8 GB are on fra1-vps-04, which is offline.</div>
+              </div>
+              <div class="meter">
+                <div class="row"><span class="k">vCPU sold</span><span class="num">71 of 112</span></div>
+                <div class="bar"><i style="width: 63%; background: var(--accent)"></i><b style="left: 95%"></b></div>
+              </div>
+              <div class="meter">
+                <div class="row"><span class="k">Storage sold</span><span class="num">1.0 of 2.8 TB</span></div>
+                <div class="bar"><i style="width: 36%; background: var(--accent)"></i><b style="left: 95%"></b></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3><i data-lucide="calculator"></i>Price change for VPS 2048</h3>
+            <dl class="kv">
+              <dt>Price</dt><dd class="num"><span class="old">€24.90</span>€22.90</dd>
+              <dt>Existing customers</dt>
+              <dd><div class="seg" role="group" aria-label="Existing customers"><button aria-pressed="true">Keep old price</button><button>Move to new</button></div></dd>
+              <div class="sep" role="presentation"></div>
+              <dt>New sales a month</dt><dd class="num"><span class="delta-up">3.1</span> instead of 1.8</dd>
+              <dt>MRR in 6 months</dt><dd class="num"><span class="delta-up">+€157</span></dd>
+              <dt>RAM needed in 6 months</dt><dd class="num"><span class="delta-down">+15.6 GB</span></dd>
+            </dl>
+            <div class="foot">
+              <button class="btn">Cancel</button>
+              <button class="btn primary">Apply price</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="shell.js"></script>
+<script>
+  mountShell({ app: "Products", running: ["Locations", "Finance", "Support", "Products"], badges: { Support: 7, Billing: 3 } });
+</script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backbone desktop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="shell.css">
+<style>
+  .loc-win { left: 28px; top: 56px; width: 844px; height: 452px; }
+  .fin-win { left: 888px; top: 340px; width: 536px; height: 462px; }
+
+  .loc-body { flex: 1; display: grid; grid-template-columns: 360px 1fr; min-height: 0; }
+  .map { position: relative; border-right: 0.5px solid var(--line); background: var(--map-bg); overflow: hidden; }
+  .map svg { display: block; width: 100%; height: 100%; }
+  .sites { overflow: auto; padding: 14px; }
+  .site-list { border-radius: 10px; border: 0.5px solid var(--line-strong); background: var(--field); overflow: hidden; }
+  .site { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 12px 14px; border-bottom: 0.5px solid var(--line); }
+  .site:last-child { border-bottom: 0; }
+  .site:hover { background: var(--hover); }
+  .site.selected { background: var(--accent-soft); }
+  .site h2 { font-size: 13.5px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+  .site .what { grid-column: 1; color: var(--text-2); }
+  .site .facts { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .stat .k { font-size: 11.5px; color: var(--text-3); }
+  .stat .v { font-weight: 550; margin-top: 1px; }
+  .meter { height: 2px; border-radius: 1px; background: color-mix(in oklch, var(--text) 9%, transparent); margin-top: 5px; overflow: hidden; }
+  .meter i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+  .meter i.warn { background: var(--warn); }
+
+  .fin-body { flex: 1; display: grid; grid-template-rows: auto 1fr; min-height: 0; }
+  .fin-kpis { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 0.5px solid var(--line); }
+  .fin-kpis > div { padding: 12px 16px; border-right: 0.5px solid var(--line); }
+  .fin-kpis > div:last-child { border-right: 0; }
+  .fin-kpis .k { font-size: 11.5px; color: var(--text-3); }
+  .fin-kpis .v { font-size: 17px; font-weight: 600; margin-top: 2px; }
+  .fin-kpis .d { font-size: 11.5px; margin-top: 1px; color: var(--text-2); }
+  .chart-wrap { padding: 12px 16px 14px; display: grid; grid-template-rows: auto 1fr; gap: 6px; min-height: 0; }
+  .chart-title { display: flex; align-items: baseline; justify-content: space-between; }
+  .chart-title h2 { font-size: 12.5px; font-weight: 600; }
+  .chart-title span { font-size: 11.5px; color: var(--text-3); }
+  .chart { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div class="desktop">
+
+  <section class="window front loc-win" aria-label="Locations">
+    <div class="titlebar">
+      <div class="lights"><span></span><span></span><span></span></div>
+      <h1>Locations <span class="sub">Frankfurt</span></h1>
+      <span class="tb-spacer"></span>
+      <button class="btn primary"><i data-lucide="plus"></i>Rent space</button>
+    </div>
+    <div class="win-body">
+      <div class="loc-body">
+        <div class="map" id="city-map"></div>
+        <div class="sites">
+          <div class="site-list">
+
+          <article class="site">
+            <h2>Basement <span class="led"></span></h2>
+            <span class="pill">Home</span>
+            <div class="what">2 tower servers on a shelf</div>
+            <div class="facts">
+              <div class="stat"><div class="k">Shelf</div><div class="v num">2 / 4</div><div class="meter"><i style="width:50%"></i></div></div>
+              <div class="stat"><div class="k">Power</div><div class="v">No backup</div></div>
+              <div class="stat"><div class="k">Home line up</div><div class="v num">0.9 / 1 Mbit/s</div><div class="meter"><i class="warn" style="width:90%"></i></div></div>
+            </div>
+          </article>
+
+          <article class="site selected">
+            <h2>Interaction FRA1 <span class="pill bad"><span class="led bad"></span>1 failure</span></h2>
+            <span class="pill">Rented rack</span>
+            <div class="what">Rack A07 with 18 devices</div>
+            <div class="facts">
+              <div class="stat"><div class="k">Space</div><div class="v num">21 / 42 U</div><div class="meter"><i style="width:50%"></i></div></div>
+              <div class="stat"><div class="k">Power</div><div class="v"><span class="num">3.1 / 4.0</span> kW, 1 feed</div><div class="meter"><i style="width:78%"></i></div></div>
+              <div class="stat"><div class="k">Uplink</div><div class="v num">340 / 1,000 Mbit/s</div><div class="meter"><i style="width:34%"></i></div></div>
+            </div>
+          </article>
+
+          <article class="site">
+            <h2>OVHalo FRA <span class="led"></span></h2>
+            <span class="pill">Rented servers</span>
+            <div class="what">2 servers resold from OVHalo</div>
+            <div class="facts">
+              <div class="stat"><div class="k">RAM in use</div><div class="v num">14 / 16 GB</div><div class="meter"><i class="warn" style="width:88%"></i></div></div>
+              <div class="stat"><div class="k">Power</div><div class="v">2 feeds, generator</div></div>
+              <div class="stat"><div class="k">Rent</div><div class="v num">€118 / month</div></div>
+            </div>
+          </article>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="window fin-win" aria-label="Finance">
+    <div class="titlebar">
+      <div class="lights"><span></span><span></span><span></span></div>
+      <h1>Finance</h1>
+      <span class="tb-spacer"></span>
+      <div class="seg"><button aria-pressed="false">Month</button><button aria-pressed="true">Year</button><button aria-pressed="false">All</button></div>
+    </div>
+    <div class="fin-body">
+      <div class="fin-kpis">
+        <div><div class="k">MRR</div><div class="v num">€2,410</div><div class="d num">+€455 vs Aug</div></div>
+        <div><div class="k">Profit, August</div><div class="v num">€598</div><div class="d num">+€212 vs Jul</div></div>
+        <div><div class="k">Churn, August</div><div class="v num">2.1%</div><div class="d neg num">+0.4 pts</div></div>
+        <div><div class="k">Customers</div><div class="v num">214</div><div class="d num">+31 vs Aug</div></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title"><h2>Monthly recurring revenue</h2><span>Jan 2005 – Sep 2006</span></div>
+        <svg class="chart" id="mrr" viewBox="0 0 608 250" preserveAspectRatio="none" role="img" aria-label="Recurring revenue grew from €18 to €2,410 a month"></svg>
+      </div>
+    </div>
+  </section>
+
+  <div class="banners" aria-live="polite">
+    <div class="banner">
+      <div class="b-icon" style="--tile:oklch(0.5 0.06 250)"><i data-lucide="server-crash"></i></div>
+      <div><div class="b-app">Locations</div><div class="b-title">fra1-vps-04 is offline</div><div class="b-text">Drive 2 failed. 9 customers are affected.</div></div>
+      <div class="b-time">now</div>
+    </div>
+    <div class="banner">
+      <div class="b-icon" style="--tile:oklch(0.62 0.19 35)"><i data-lucide="life-buoy"></i></div>
+      <div><div class="b-app">Support</div><div class="b-title">Blumen Krause</div><div class="b-text">Our shop is down, customers can't order.</div></div>
+      <div class="b-time">2 min</div>
+    </div>
+    <div class="banner">
+      <div class="b-icon" style="--tile:oklch(0.6 0.14 160)"><i data-lucide="receipt"></i></div>
+      <div><div class="b-app">Billing</div><div class="b-title">3 reminders due</div><div class="b-text">€61.50 is 7 days overdue.</div></div>
+      <div class="b-time">1 h</div>
+    </div>
+  </div>
+
+</div>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="shell.js"></script>
+<script>
+  document.getElementById("city-map").innerHTML = cityMap({ selected: "fra1", H: 408 });
+
+  // MRR line, values in euros per month from Jan 2005.
+  const mrr = [18, 25, 45, 60, 70, 90, 120, 160, 200, 250, 300, 350, 400, 520, 680, 860, 1050, 1300, 1610, 1955, 2410];
+  const W = 608, H = 250, L = 46, B = 22, T = 8, max = 2500;
+  const x = (i) => L + (i / (mrr.length - 1)) * (W - L - 8), y = (v) => T + (1 - v / max) * (H - T - B);
+  let g = "";
+  for (const v of [0, 500, 1000, 1500, 2000, 2500]) g += `<line x1="${L}" x2="${W - 8}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1" vector-effect="non-scaling-stroke"/><text x="${L - 8}" y="${y(v) + 3.5}" text-anchor="end" font-family="JetBrains Mono" font-size="10" fill="var(--text-3)">${v ? "€" + v.toLocaleString("en") : "0"}</text>`;
+  for (const [i, t] of [[0, "Jan 05"], [6, "Jul 05"], [12, "Jan 06"], [18, "Jul 06"]]) g += `<text x="${x(i)}" y="${H - 5}" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="var(--text-3)">${t}</text>`;
+  const pts = mrr.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+  g += `<polygon points="${x(0)},${y(0)} ${pts} ${x(mrr.length - 1)},${y(0)}" fill="color-mix(in oklch, var(--accent) 12%, transparent)"/>`;
+  g += `<polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+  g += `<circle cx="${x(mrr.length - 1)}" cy="${y(2410)}" r="3.5" fill="var(--accent)"/>`;
+  g += `<line x1="${x(12)}" x2="${x(12)}" y1="${T}" y2="${H - B}" stroke="var(--text-3)" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/><text x="${x(12) + 6}" y="${T + 10}" font-size="10.5" fill="var(--text-2)" font-family="Inter">Level 2</text>`;
+  document.getElementById("mrr").innerHTML = g;
+
+  mountShell({ app: "Locations", running: ["Locations", "Finance", "Support"], badges: { Support: 7, Billing: 3 } });
+</script>
+</body>
+</html>

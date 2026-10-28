@@ -97,9 +97,19 @@ Infrastructure lives in locations, from your own basement up to your own datacen
 
 Each slot only takes its own kind of equipment, so a server can't go in the generator room. A location's size is a fixed number of slots, and a rack's size is a fixed number of U.
 
-**Location view.** The Locations app shows your locations as a grid of tiles. Opening one shows a top-down 2D render of its rooms. Each rack displays a miniature of the server fronts inside it, and the cable trays above the rows visibly fill as you add cabling. Clicking a rack opens its front view.
+**Location view.** The Locations app opens on a street map of the city with a pin per site. Next to the map, each site lists what you rent there: space used, power protection and uplink. Opening a site shows a top-down 2D render of its rooms, where the cable trays above the rows visibly fill as you add cabling. Device fronts are drawn only in the rack front view, which opens when you click a rack.
 
 **Energy.** Every location pays its city's electricity price for what its hardware draws. Rented space bills power per kW or passes on the local price. Your own datacenter can sign a custom contract with an energy provider.
+
+**Power protection.** The grid fails now and then, and how much of that reaches your customers depends on where their servers live.
+
+| Location | Default protection | Upgrade |
+| --- | --- | --- |
+| Basement or garage | None: every grid outage takes the servers down | A UPS rides through short outages until its battery runs out |
+| Rented rack | One feed backed by the datacenter's UPS and generator | A second, independent feed (A+B) for a monthly fee |
+| Own room or datacenter | Whatever you build in the power room | UPS, batteries, generators and two utility feeds |
+
+A second feed only helps servers that have two power supplies, one on each feed. Dual-PSU servers cost more, so the player decides per server whether the protection is worth it. Customers who care about uptime pay for it: HA products can require dual feeds, or servers spread over two locations.
 
 ## Racks, hardware and cabling
 
@@ -117,10 +127,23 @@ Racks hold servers, switches and routers, and you cable them port by port. Bandw
 | Core switch | 1–2U | Connects racks to each other |
 | Edge router | 1–2U | Connects to transit and peering |
 | Patch panel | 1U | Tidy cross-rack cabling; faster repairs |
+| Aggregation switch | 1U | SFP fiber ports that link racks and uplinks |
+
+Switches come in several sizes: 8, 24 and 48 copper ports, each with a few SFP cages for fiber.
+
+**Brands.** Servers and switches come from parody brands whose fronts look like the real ones: Dwell (hex-mesh bezel), Hewlett-Packet (silver front with a pull tab and a perforated grille), SuperMacro (black chassis with silver drive trays) and Sysko for switches. A player can tell a rack's contents apart at a glance.
 
 **Rack front view.** Clicking a rack shows its front: every device drawn at its real height, with status lights. Clicking a device opens it in the inspector on the right.
 
 **Ports and cables.** Clicking a switch or router lists its ports in the inspector. For each port you pick the other end: a device in the same rack, or another rack and device from a list. Copper covers 1G, short direct-attach cables 10–25G inside a rack, and fiber 10–400G between racks. Cables between racks run through the trays. Both ends must match in speed, and each port gets a role (server, uplink, or link to another switch).
+
+**Patch panels.** A patch panel sits at the top of a rack, and the player decides what each jack is for: a carrier's cross-connect, a link to another rack, or a colocation customer's line. Incoming cables land on the back of the panel, and short patch cables connect the front jacks to switch ports. Re-patching a jack is quicker than pulling a new cable through the trays.
+
+**Port groups.** Two to eight ports going to the same device can be bundled into a group (LACP). The group adds up their bandwidth and stays up when one cable or port fails. Both ends must be grouped, or the link falls back to a single port.
+
+**Port inspector.** Selecting a port shows the whole path as a diagram, from the switch port through any patch panel to the device on the other end, with the cable type and speed on each hop. Below it, a graph shows the port's traffic in and out over the last 24 hours.
+
+**Technician PC.** A laptop that you plug into a free switch port gives you debug tools: ping, traceroute, a cable test that finds broken pairs, and port status. Finding the fault before sending a technician shortens the repair, because the technician brings the right part.
 
 **Bandwidth.** Every port, switch and router has a capacity, and traffic can't exceed the slowest link on its path. One server on a 1G port can't serve 200 Gbps. Scaling up means faster ports, switches, uplinks and transit.
 
@@ -541,5 +564,6 @@ The MVP has a basement, one rented rack, web hosting and VPS, support and billin
 - [x] Parody names: puns on the real name ("TrustPylon") or fully invented names? puns on real names
 - [x] Which open-source license (MIT, GPL)? MIT
 - [x] Which events auto-pause the game? nothing
+- [ ] Do hardware brands differ in price and failure rate, or only in look?
 
 Ideally at the start they are enthised to either rent a server from a company to get resources to place on, we always have servers as "clusters" so they can be assigned to different products/workloads, so they can fully rent out a server from a existing bigger provider at the start.&#32;
