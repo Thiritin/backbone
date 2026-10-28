@@ -34,7 +34,9 @@
 .site.designed .site-pitch { padding: 12px 32px; margin: 0; background: #f2f2f2; font-style: normal; }
 .site.designed h2 { margin: 22px 32px 10px; border: 0; font-size: 18px; }
 .site.designed .site-products { margin: 0 32px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
-.site.designed .site-product { padding: 14px; border: 1px solid #dddddd; border-radius: 6px; }
+.site.designed .site-product { display: flex; flex-direction: column; align-items: flex-start; padding: 14px; border: 1px solid #dddddd; border-radius: 6px; }
+.site.designed .site-product .site-button { margin-top: auto; }
+.site.designed .site-plans { margin-bottom: 8px; }
 .site.designed h3 { color: var(--brand); font-size: 15px; }
 .site.designed .site-button { padding: 4px 16px; border: 0; border-radius: 4px; background: var(--brand); color: #ffffff; font: 600 13px Verdana, sans-serif; }
 .site.designed .site-empty { margin: 0 32px; }
