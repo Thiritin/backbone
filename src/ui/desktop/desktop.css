@@ -159,6 +159,8 @@ button { font: inherit; color: inherit; cursor: default; }
 .alert-actions .btn { justify-content: center; }
 .alert.welcome { width: 300px; padding: 20px 20px 16px; }
 .alert.welcome .intro-pear { width: 40px; height: 40px; }
+.alert.game-over { width: 300px; }
+.alert.game-over .alert-icon { color: var(--bad); }
 .btn.danger-fill { background: var(--bad); color: white; border-color: transparent; }
 .btn.danger-fill:hover { background: color-mix(in oklch, var(--bad) 88%, black); }
 

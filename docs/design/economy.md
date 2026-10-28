@@ -939,11 +939,13 @@ The loan limit is the higher of the level's minimum and 12× the average monthly
 
 **Missed repayments.** Each one adds 2 points to the loan's rate, costs a €100 fee and blocks new loans for 12 months. After three in a row the bank calls in the whole loan.
 
-**Bankruptcy.** When cash stays below zero for 30 days and no loan is available, the company is insolvent and the game ends. The GDD has no lose condition yet, so this one is a proposal.
+**Bankruptcy.** When cash stays below zero for 30 days and no loan is available that covers the deficit, the company is insolvent and the game ends.
 
 **SLA insurance.** The monthly premium is 2% of the recurring revenue from customers with an SLA, times an uptime factor: 1.0 at 99.95% or better over 90 days, 1.5 at 99.9% or better, and 2.5 below that. A missed SLA owes the customer 10% of their monthly fee per 0.1% of uptime below the promise, up to the full fee. The insurer pays those credits for three claims, then blocks the company for a year.
 
-**Tax.** Prices are without VAT, and VAT is not simulated. Corporate tax takes 30% of each year's profit in April of the following year, and losses carry forward to later years.
+**Tax.** Prices are without VAT, and VAT is not simulated. Corporate tax takes 30% of each year's profit in April of the following year, and losses carry forward to later years. Taxable profit is the year's ledger without loan principal; instalments count only their interest, and hardware is a cost in the year it is bought.
+
+**Hardware insurance.** The monthly premium is 1.5 × the expected yearly cost of spare parts for every working component (part price × its current yearly failure rate, with the manufacturer and overheating factors) / 12, at least €1. A claim pays the spare part's price and the remote hands bill for a component that failed while insured. The starting basement server costs about €1.40 a month to insure, and about €7 once its parts are past their lifetimes.
 
 ## Balancing
 

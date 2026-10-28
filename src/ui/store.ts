@@ -147,8 +147,9 @@ export const useStore = create<Store>((set, get) => ({
         get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params));
         if (e.key === "event.trainingDone") set({ explain: String(e.params.id) });
       }
+      if (game.gameOver !== null) break;
     }
-    set({ game });
+    set(game.gameOver !== null ? { game, speed: 0 } : { game });
   },
   act: (fn) => {
     const game = structuredClone(get().game);

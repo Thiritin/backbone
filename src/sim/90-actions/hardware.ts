@@ -4,6 +4,7 @@ import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { connectError, drivesOf, fits, freePositions, holdsData, freeSlots, hotSwappable, moveCost, resaleValue, travelCost } from "../60-infra/status";
+import { claimRepair } from "../46-finance/finance";
 import { endLease } from "../88-tick/tick";
 
 // error is an i18n key.
@@ -410,6 +411,7 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   const bill = hands ? Math.max(1, SWAP_HOURS) * hands.perHour : 0;
   if (s.cash < bill) return fail("error.noCash");
   if (hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: Math.max(1, SWAP_HOURS) }, -bill);
+  claimRepair(s, d.label ?? d.name, c, part.price, bill);
   s.devices = s.devices.filter((x) => x.id !== part.id);
   d.maintenance = { componentId, partId: part.id, doneAt: s.hour + (hands ? hands.responseHours : 0) + SWAP_HOURS };
   return { ok: true, id: part.id };

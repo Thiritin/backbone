@@ -38,7 +38,7 @@ export const APPS: AppDef[] = [
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length },
   { name: "Billing", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: "Sends invoices, reminders and dunning notices.", body: BillingApp,
     badge: (s) => s.invoices.filter(isUnpaid).length },
-  { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Shows your account statement with every booking and the running balance.", body: FinanceApp },
+  { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Shows your profit and loss, cash flow, tax, insurance and the account statement with every booking.", body: FinanceApp },
   { name: "Bank", icon: Landmark, tile: "oklch(0.45 0.04 255)", about: "Offers loans up to your credit limit and lets you repay them early.", body: BankApp },
   { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: "Hires people and assigns them to work queues." },
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: "Runs campaigns and manages reviews." },
