@@ -635,6 +635,8 @@ A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD t
 
 Backup rules: hourly, daily or weekly, kept 7, 14 or 30 days. A full copy plus 5% of the volume per extra day kept fills the backup pool. Backup jobs follow the backup usage curve and use the zone's switch bandwidth.
 
+**How the first build plays backups.** A cluster backs up to another cluster, in its own zone or another one, daily or weekly (Sundays), at 02:00, with one retention for all: the pool needs 1.3 × the used disk of every workload backed up to it. A job fails with a notification when the target's control plane is down or its nodes lack the free disk. A backup records the hour on each workload. When a server's array is lost, the game opens an incident report listing every workload on it with its customer, disk and last backup. Customers without a backup lose 60 happiness at once and ask for a refund. Restoring from a backup takes the used disk ÷ 450 GB per hour inside the zone or ÷ 45 GB per hour from another zone, rounded up to whole hours, and costs the happiness in the table, counted from the hour of the loss. Without a backup, a restore starts the workload on an empty disk. A refund pays back one month of the service's fees; declining one makes the customer leave. Restores from a backup, refunds and declines each give the customer the review chance from Marketing and reviews, with the 3-star rule after a refund.
+
 **Power outages.** Grid outages are random events per city. They are far more frequent than in reality, so the player meets them in the first year.
 
 | Event | Rate | Duration | What survives it |
@@ -717,7 +719,7 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 ten
 | Domains | Domain | Nothing | €15 a year | Resold |
 | SSL certificates | Certificate | Nothing | €50 a year until 2015, then free | Resold |
 
-**Capacity.** A node books up to its physical cores × 8 in vCPUs, its RAM × 1.5 and its usable RAID disk × 2. A G1 balanced server books 16 vCPUs, 12 GB of RAM and 1 TB of disk: 48 web spaces, or 24 VPS S, or 6 VPS L by RAM. Workloads count at what they booked; usage curves don't move the load yet.
+**Capacity.** A node books up to its physical cores × 8 in vCPUs, its RAM × 1.5 and its usable RAID disk × 2. A G1 balanced server books 16 vCPUs, 12 GB of RAM and 1 TB of disk: 48 web spaces, or 24 VPS S, or 6 VPS L by RAM. Booking counts what workloads booked; the load they put on the hardware follows the usage curves.
 
 **Moving a workload**
 
@@ -767,6 +769,32 @@ The link speed is the slowest link between the two nodes, shared by every migrat
 | Traffic | No limit | Monthly traffic × load | Saturation, see Traffic and bandwidth |
 
 A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, while a mixed cluster stays near 0.5, so mixing customer types roughly doubles safe overcommit. The cluster view shows booked capacity, this week's forecast peak and last week's actual peak.
+
+**How the first build plays.** Usage follows the curves with ±20% jitter per workload and hour, without surges yet. A node's use is the sum of its workloads plus its control plane at full load; a stopped, restoring or lost workload uses nothing. Instead of killing workloads, an overloaded node slows them: performance is cores ÷ busy vCPUs, 30% when RAM runs over and 50% when the disk pool runs over. Every hour each customer on a slowed node loses 1 − performance in happiness, and each of their services opens a "really slow" outage ticket with a chance of 10% × (1 − performance) unless one is already open. Overcommit ratios are the same for every cluster.
+
+## Platforms and licenses
+
+Each cluster runs one control panel for its web spaces and one cloud platform for everything else. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years.
+
+| Software | Kind | License | How-to tickets | Density | Live migration | Control plane |
+| --- | --- | --- | --- | --- | --- | --- |
+| cPanic | Panel | €0.40 per web space | ×0.8 | | | 0.25 vCPU, 0.25 GB, 5 GB |
+| Pleskit | Panel | €12 per node | ×0.9 | | | 0.25 vCPU, 0.25 GB, 5 GB |
+| DirectAdmen | Panel | €4 per node | ×1.2 | | | 0.1 vCPU, 0.1 GB, 2 GB |
+| FreePanel | Panel | Free | ×1.5 | | | 0.1 vCPU, 0.1 GB, 2 GB |
+| OpenStash | Cloud | Free | ×1.3 | 1.0 | Yes | 2 vCPU, 2 GB, 20 GB |
+| VMwhere | Cloud | €8 per physical core | ×0.7 | 1.15 | Yes | 1 vCPU, 2 GB, 10 GB |
+| Proxmocks | Cloud | Free | ×1.0 | 1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
+| HyperVee | Cloud | €20 per node | ×0.9 | 1.05 | No | 1 vCPU, 1 GB, 10 GB |
+
+- **Licenses** are billed on the 1st of each month per cluster, as ledger lines in the category "licenses".
+- **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the platform for the rest).
+- **Density** multiplies what a node can book, from memory sharing and lighter hypervisors.
+- **Control plane:** the panel's and the platform's control planes run on one node of the cluster, the first one added, and count against what it can book and what it uses. While that node is down, or while the cluster switches software, nothing can be sold, started, migrated or restored on the cluster. Draining moves the control plane to another node once the drained node is empty, and the player can move it to any working node with room.
+- **Switching** costs €10 per workload the old software serves. Those workloads are offline for 1 hour per 4 of them, at least 1 hour, and the control plane is down until the switch is done.
+- A new game's "Basement 1" runs FreePanel and Proxmocks, which cost nothing.
+
+**Migration in the first build.** Inside a zone, links count as 1 Gbit/s, which moves 450 GB an hour. Virtual machines move live on platforms with live migration; on HyperVee they are offline for (disk + RAM) ÷ 450 GB per hour, rounded up to whole hours. Web spaces, game servers and storage volumes move without a lost hour. Moves between zones need a link between the zones; until the network links between locations exist, they are refused. A workload with a lost disk can't migrate; it is restored instead.
 
 ## Staff: salaries, skill growth and quitting
 

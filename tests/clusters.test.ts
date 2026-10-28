@@ -111,9 +111,10 @@ describe("placement", () => {
   it("books RAM up to 1.5 × the node and refuses a service that does not fit, recording nothing", () => {
     const { s, cus } = twoNodes();
     expect(nodeCapacity(s.devices.find((d) => d.id === "dev3")!)).toEqual({ vcpu: 16, ramGb: 12, diskGb: 1000 });
-    // 12 GB of RAM on each node fits 6 VPS L of 2 GB, but their 40 GB of disk each also has to fit.
-    for (let i = 0; i < 12; i++) ok(provisionService(s, cus, "vps", { label: `big ${i}`, plan: "vps-l" }));
-    expect(nodeUsed(s, "dev3").ramGb).toBe(12);
+    // 12 GB of RAM on each node fits 6 VPS L of 2 GB, but their 40 GB of disk each also has to fit. The control plane on
+    // dev3 takes a slice, so dev3 holds 5.
+    for (let i = 0; i < 11; i++) ok(provisionService(s, cus, "vps", { label: `big ${i}`, plan: "vps-l" }));
+    expect(nodeUsed(s, "dev3").ramGb).toBe(10);
     const services = s.services.length, nextId = s.nextId;
     expect(err(provisionService(s, cus, "vps", { label: "one more", plan: "vps-l" }))).toBe("error.noCapacity");
     expect([s.services.length, s.nextId]).toEqual([services, nextId]);
@@ -158,16 +159,17 @@ describe("nodes", () => {
   it("keeps draining as room appears and reports the empty node", () => {
     const { s, cluster, second, cus } = twoNodes();
     ok(cordon(s, second));
-    for (let i = 0; i < 6; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, plan: "vps-l" }));
+    // dev3 holds 5 VPS L next to the control plane.
+    for (let i = 0; i < 5; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, plan: "vps-l" }));
     ok(uncordon(s, second));
     for (let i = 0; i < 4; i++) ok(provisionService(s, cus, "vps", { label: `w${i}`, plan: "vps-l" }));
     ok(drain(s, "dev3"));
-    expect(workloadsOn(s, "dev3")).toHaveLength(4);
+    expect(workloadsOn(s, "dev3")).toHaveLength(3);
     expect(s.clusters.find((c) => c.id === cluster)!.nodes[0].state).toBe("draining");
     // Two of the second node's customers leave, which frees room for two more.
     s.services = s.services.map((v) => (v.label === "w0" || v.label === "w1" ? { ...v, endedAt: s.hour } : v));
     run(s, 1);
-    expect(workloadsOn(s, "dev3")).toHaveLength(2);
+    expect(workloadsOn(s, "dev3")).toHaveLength(1);
     s.services = s.services.map((v) => (v.label === "w2" || v.label === "w3" ? { ...v, endedAt: s.hour } : v));
     const events = run(s, 1);
     expect(workloadsOn(s, "dev3")).toHaveLength(0);

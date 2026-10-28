@@ -349,7 +349,12 @@ Worth adding later: email hosting and GPU compute.
 - Servers in a cluster or rented out can't be unmounted or sold, and their racks can't move to another zone.
 - The game starts with the cluster "Basement 1" on the basement server and the three friends' web hosting on it.
 
-Still to build on top of this: control planes, usage curves and per-cluster overcommit settings, high-availability clusters and restart after a node fails, migration times, two DNS workloads on different nodes, replicas and keep-apart rules, backups and restores, and the uplinks of colocation customers.
+- Every cluster runs one control panel and one cloud platform from the four of each below, chosen as cards when it is created and switched later in the Products app. Their control planes share one node. Licenses, density, live migration and ticket rates are in economy.md, Platforms and licenses.
+- Load follows the usage curves; an overloaded node slows its customers and draws "really slow" tickets instead of killing workloads.
+- A cluster backs up daily or weekly to another cluster. A lost array opens an incident report, and every lost workload can be restored from its backup or on an empty disk. Customers without a backup ask for a refund, and declining it loses them.
+- Virtual machines start, stop and migrate between nodes in the Virtual machines app. Moves between zones wait for links between locations.
+
+Still to build on top of this: per-cluster overcommit settings, surges in the usage curves, high-availability clusters with three control planes and restart after a node fails, migration times shared between moves, two DNS workloads on different nodes, replicas and keep-apart rules, backup retention settings and hourly backups, distributed storage pools, quotas and self-service for cloud customers, and the uplinks of colocation customers.
 
 **Software choices.** Some products need software bought on the market. Each choice offers four balanced options. The cheap ones are tempting early, but switching later means a migration with downtime and tickets.
 

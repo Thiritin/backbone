@@ -4,6 +4,7 @@ import type { Customer } from "../30-customers/customers";
 import { grantExtension, isSuspended, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { howToFactor } from "../85-products/products";
 import { serviceOnline } from "./status";
 import {
   bump, cancelCustomer, createTicket, credit, GAMER_ABUSE_RATE, HOURS_PER_MONTH, isFinal, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
@@ -61,7 +62,7 @@ function spawnHourly(s: GameState): void {
     if (c.churnedAt !== null) continue;
     const { skill } = profileStats(c.profile);
     for (const kind of ["howTo", "billing", "abuse"] as const) {
-      const rate = kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill];
+      const rate = kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) : 1);
       if (chance(s.rng, rate / HOURS_PER_MONTH)) createTicket(s, c, kind);
     }
   }
