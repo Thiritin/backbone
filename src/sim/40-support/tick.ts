@@ -1,5 +1,6 @@
 import { chance } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
+import { counts, hoursOn } from "../00-core/workhours";
 import type { Customer } from "../30-customers/customers";
 import { grantExtension, isSuspended, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
@@ -11,7 +12,7 @@ import { phpAbuse } from "../60-infra/php";
 import { serviceOnline } from "./status";
 import {
   bump, cancelCustomer, createTicket, credit, GAMER_ABUSE_RATE, HOURS_PER_MONTH, isFinal, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
-  profileStats, rightTemplate, UPGRADE_CHANCE, WAITING_CLOSE_HOURS, type Ticket,
+  profileStats, replyDue, rightTemplate, UPGRADE_CHANCE, WAITING_CLOSE_HOURS, type Ticket,
 } from "./tickets";
 
 // A shady customer draws this many times the abuse reports.
@@ -41,7 +42,7 @@ function finishWork(s: GameState, customer: (id: string) => Customer): void {
       else {
         // A wrong answer brings a follow-up in the same thread with a fresh response time.
         bump(c, WRONG_ANSWER);
-        Object.assign(t, { status: "open", unread: true, dueAt: s.hour + profileStats(c.profile).promisedHours });
+        Object.assign(t, { status: "open", unread: true, dueAt: replyDue(c, s.hour) });
       }
     } else if (work.arg === "credit") {
       credit(s, c, 0.1);
@@ -75,15 +76,20 @@ function spawnHourly(s: GameState): void {
 }
 
 // A suspended customer knows why their services are off: suspension brings one billing ticket instead.
+// An outage hurts only in hours that count on the customer's clock, once it has outlasted their tolerance; they may write in at that moment.
 function outages(s: GameState, customer: (id: string) => Customer): void {
   const down = s.services.filter((v) => v.endedAt === null && !serviceOnline(s, v.id) && !isSuspended(s, v.customerId) && !takenDown(s, v.id));
+  const since: Record<string, number> = {};
   for (const v of down) {
-    const c = customer(v.customerId), p = profileStats(c.profile);
+    since[v.id] = s.downSince[v.id] ?? s.hour;
+    const c = customer(v.customerId), p = profileStats(c.profile), { hours, clock } = p.tolerance;
+    const elapsed = hoursOn(clock, since[v.id], s.hour);
+    if (!counts(clock, s.hour) || elapsed < hours) continue;
     bump(c, -p.outagePenalty);
-    if (s.servicesDown.includes(v.id) || !chance(s.rng, OUTAGE_WRITE_CHANCE[p.budget])) continue;
+    if (elapsed > hours || !chance(s.rng, OUTAGE_WRITE_CHANCE[p.budget])) continue;
     for (let i = 0; i < (p.budget === "high" ? 3 : 1); i++) createTicket(s, c, "outage", v.id);
   }
-  s.servicesDown = down.map((v) => v.id);
+  s.downSince = since;
 }
 
 // economy.md, Happiness and churn: a cancellation left open is processed at the next monthly billing date.
@@ -120,7 +126,10 @@ export function supportTick(s: GameState): SimEvent[] {
     if (t.notice) continue;
     if (t.status === "waiting" && s.hour - t.updatedAt >= WAITING_CLOSE_HOURS) resolve(s, t, c);
     else if (t.status === "escalated" && (!t.serviceId || serviceOnline(s, t.serviceId))) resolve(s, t, c);
-    else if (t.status === "open" && c.churnedAt === null && s.hour > t.dueAt) bump(c, -profileStats(c.profile).waitPenalty);
+    else if (t.status === "open" && c.churnedAt === null && s.hour > t.dueAt) {
+      const p = profileStats(c.profile);
+      if (counts(p.reply.clock, s.hour)) bump(c, -p.waitPenalty);
+    }
   }
   outages(s, customer);
   spawnHourly(s);

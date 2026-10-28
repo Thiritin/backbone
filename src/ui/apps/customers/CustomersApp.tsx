@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp, Cpu, FileText, LifeBuoy, Receipt, Search } from
 import { useMemo, useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { activeServices, type Customer } from "../../../sim/30-customers/customers";
-import { isFinal, serviceMonthly } from "../../../sim/40-support/tickets";
+import { isFinal, profileStats, serviceMonthly } from "../../../sim/40-support/tickets";
 import { subjectParams } from "../../../sim/40-support/notices";
 import { invoiceTotal, isUnpaid, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
@@ -10,7 +10,7 @@ import { t } from "../../../i18n/en";
 import { useFocus, useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
 import { APPS } from "../registry";
-import { initials, kindOf, monthYear, moodClass, PRODUCT, stamp, STATUS } from "../support/labels";
+import { initials, kindOf, monthYear, moodClass, noticed, patience, PRODUCT, stamp, STATUS } from "../support/labels";
 import "../support/support.css";
 import { referenceFor } from "../../../sim/30-market/market";
 import type { Profile, Service } from "../../../sim/30-customers/customers";
@@ -224,6 +224,8 @@ function Detail({ r }: { r: Row }) {
           <dt>Active services</dt><dd className="num">{r.services}</dd>
           <dt>Open tickets</dt><dd className="num">{r.tickets}</dd>
           <dt>Invoices</dt><dd className="num">{r.invoices}</dd>
+          <dt>Reply within</dt><dd>{patience(profileStats(c.profile).reply)}</dd>
+          <dt>Notices outages</dt><dd>{noticed(profileStats(c.profile).tolerance)}</dd>
         </dl>
       )}
 

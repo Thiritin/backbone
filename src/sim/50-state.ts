@@ -81,10 +81,10 @@ export interface GameState {
   // A missed repayment blocks new loans until this hour.
   loansBlockedUntil: number;
   billingRules: BillingRules;
-  // Support: tickets, the minute the player's queued replies finish, and services seen offline last hour.
+  // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
   tickets: Ticket[];
   playerBusyUntil: number;
-  servicesDown: string[];
+  downSince: Record<string, number>;
   // The basement's internet line (HOME_LINES id) and a switch to another line that goes live at hour at.
   homeLine: { id: string; next: { id: string; at: number } | null };
   docs: Doc[];
@@ -161,7 +161,7 @@ export const newGame = (seed: number): GameState => ({
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, lossReports: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
-  tickets: [], playerBusyUntil: 0, servicesDown: [],
+  tickets: [], playerBusyUntil: 0, downSince: {},
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)" },
   homeLine: { id: DEFAULT_HOME_LINE, next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,

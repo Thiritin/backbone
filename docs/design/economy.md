@@ -371,10 +371,10 @@ Every customer has a happiness value H from 0 to 100. Events move it up and down
 
 | Event | Change to H |
 | --- | --- |
-| Ticket still open past the promised response time | − wait penalty per hour (profile table) |
+| Ticket still open past the expected reply time | − wait penalty per hour that counts on the customer's clock (profile table) |
 | Ticket closed with the right answer | +5 |
 | Ticket closed with a wrong answer | −10, plus a follow-up ticket |
-| An hour of outage on one of their services | − outage penalty (profile table) |
+| An hour of outage on one of their services, once the outage has outlasted their tolerance | − outage penalty per hour that counts on the customer's clock (profile table) |
 | Credit issued | +3 per 10% of the monthly fee |
 | Price raised at renewal | −0.5 per 1% of increase |
 
@@ -394,19 +394,27 @@ A customer whose happiness falls below 15 leaves at the next monthly billing dat
 
 **Upgrades.** Each month a customer outgrows their plan with a 2% chance at low budget, 3% at medium and 4% at high budget, which creates an upgrade ticket.
 
+**Customer clocks.** Each profile keeps one of two clocks. On business hours (Monday to Friday, 9:00 to 17:00, the same hours staff work) only those hours count; one business day is 8 business hours. Around the clock, every hour counts. A ticket is due once the reply time has passed on the customer's clock, so a ticket written Friday at 16:00 by a customer who expects a reply within one business day is due Monday at 16:00. The wait penalty only accrues in hours that count, so business-hour customers do not mind a ticket left overnight or over the weekend.
+
+An outage goes unnoticed for the tolerance, counted on the same clock from the hour the service went down. After that each counting hour costs the outage penalty, and in the first such hour the customer may write in (30%, 60% or 90% by budget, three tickets at high budget). A private customer whose site drops on Friday evening tolerates two business days and asks on Wednesday morning; an online shop notices at once, at 3 a.m. on a Sunday too. Businesses that care around the clock are the reason to run AI bots or staff on nights.
+
 **Profile values.** Priority support shortens the promised response to 4 hours, or 1 hour for high-budget profiles.
 
-| Profile | Base churn per month | Outage penalty per hour | Wait penalty per hour | Promised response |
-| --- | --- | --- | --- | --- |
-| Private individual | 2.5% | 1 | 0.3 | 48 h |
-| Gamer | 4.0% | 4 | 0.3 | 48 h |
-| Hobby developer | 3.0% | 2 | 0.3 | 48 h |
-| Sole proprietor | 1.2% | 2 | 0.6 | 24 h |
-| Small business | 1.0% | 3 | 0.6 | 24 h |
-| Agency or startup | 1.5% | 4 | 0.6 | 24 h |
-| Doctor's or law office | 0.6% | 8 | 1.5 | 8 h |
-| Online shop | 0.8% | 10 | 1.5 | 8 h |
-| Enterprise | 0.4% | 15 | 1.5 | 8 h |
+| Profile | Base churn per month | Outage penalty per hour | Wait penalty per hour | Reply within | Outage tolerance |
+| --- | --- | --- | --- | --- | --- |
+| Private individual | 2.5% | 1 | 0.3 | 2 business days | 2 business days |
+| Gamer | 4.0% | 4 | 0.3 | 1 business day | 1 hour, around the clock |
+| Hobby developer | 3.0% | 2 | 0.3 | 2 business days | 2 business days |
+| Sole proprietor | 1.2% | 2 | 0.6 | 1 business day | 3 business hours |
+| Small business | 1.0% | 3 | 0.6 | 1 business day | 2 business hours |
+| Agency or startup | 1.5% | 4 | 0.6 | 1 business day | 2 business hours |
+| Doctor's or law office | 0.6% | 8 | 1.5 | 4 business hours | 1 business hour |
+| Online shop | 0.8% | 10 | 1.5 | 4 hours, around the clock | none |
+| Enterprise | 0.4% | 15 | 1.5 | 4 hours, around the clock | none |
+
+Private customers and hobbyists use their sites in the evening and forgive a weekend. Gamers play at night, so a game server that is down for more than an hour hurts at any time. Businesses notice an outage during their own office hours within a morning. Shops sell and enterprises run around the clock, so they expect fast replies at night and notice every minute offline.
+
+**Balance model.** The monthly model has no hour of day. It turns a business-hours window into calendar hours by dividing by the share of business hours in a week (40 of 168), so 1 business day counts as about 34 hours. An around-the-clock customer adds the average wait for the office to open (about 15 hours: four 16-hour nights and a 64-hour weekend), since the bot runs no night shift. The steady bot only hires a bookkeeper when the month's profit pays the salary.
 
 ## Tickets and work rates
 

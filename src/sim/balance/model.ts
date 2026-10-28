@@ -1,6 +1,7 @@
 // Monthly cohort model of docs/design/economy.md for the headless balance run.
 // ponytail: customers are cohorts per profile and product with one average happiness; per-customer sim comes with the real tick.
 import { binomial, createRng, rand, type Rng } from "../00-core/rng";
+import { WORK_SHARE, type Patience } from "../00-core/workhours";
 import {
   BASEMENT_SLOTS, BUDGET_SIZE, businessPowerPrice, CHOICE_TAU, CITIES, COMPETITORS, generationAt, GENERATIONS,
   KNOW_HOW, LEAD_CAP_SHARE, ORGANIC_BASE, LEVELS, MARKET_GROWTH, monthlySalary, NEVER_PAYS, ON_TIME, PAYMENT_MINUTES, PROFILES,
@@ -8,6 +9,13 @@ import {
   TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vpsPlanGb, vpsRatePerGb,
   WEB_BASE, type ProductId, type Profile,
 } from "../10-catalog/economy";
+
+// Average hours a ticket written at a random hour waits for the office to open: four 16-hour nights and a 64-hour weekend.
+const OFF_HOURS_WAIT = (4 * 16 ** 2 + 64 ** 2) / 2 / 168;
+
+// Calendar hours past a patience window; a business-hours window stretches over nights and weekends.
+const beyond =(e: Patience, calendarHours: number): number =>
+  Math.max(0, calendarHours - (e.clock === "business" ? e.hours / WORK_SHARE : e.hours));
 
 export interface Bot {
   name: string;
@@ -182,9 +190,9 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       const c = cohorts[i][k];
       if (c.n === 0 && newCustomers[i][k] === 0) return;
       const tpc = TICKETS_PER_CUSTOMER[p.skill];
-      c.H -= Math.min(40, tpc * p.waitPenalty * Math.max(0, waitHours - p.promisedHours));
+      c.H -= Math.min(40, tpc * p.waitPenalty * beyond(p.reply, waitHours + (p.reply.clock === "always" ? OFF_HOURS_WAIT : 0)));
       c.H += tpc * (5 * pRight - 10 * (1 - pRight));
-      if (pr === "vps") c.H -= hitShare * p.outagePenalty * REPAIR_HOURS;
+      if (pr === "vps") c.H -= hitShare * p.outagePenalty * beyond(p.tolerance, REPAIR_HOURS);
       const target = Math.min(95, Math.max(20, 70 + 0.5 * (U(p, pr, 0) - best(p, pr))));
       c.H += 0.2 * (target - c.H);
       c.H = Math.min(100, Math.max(0, c.H));
@@ -231,7 +239,9 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     if (bot.hires && hireUnlocked) {
       // Hire only when this month's capacity can't clear the load plus a third of the backlog.
       if (backlogT > capT / 30 && ticketLoad + backlogT / 3 > capT && cash > 3 * monthlySalary("support", 50, year)) support.push(hire(rng, month));
-      if (backlogP > capP / 30 && customers + backlogP / 3 > capP && cash > 3 * monthlySalary("bookkeeper", 50, year)) books.push(hire(rng, month));
+      // A bookkeeper only when this month's profit pays the salary.
+      const bookkeeper = monthlySalary("bookkeeper", 50, year);
+      if (backlogP > capP / 30 && customers + backlogP / 3 > capP && cash > 3 * bookkeeper && collectedShare - opex > bookkeeper) books.push(hire(rng, month));
     }
     for (const team of [support, books]) for (let w = team.length - 1; w >= 0; w--) if (rand(rng) < 0.005) team.splice(w, 1);
     for (let s = servers.length - 1; s >= 0; s--) if (month - servers[s].bought > 72) {

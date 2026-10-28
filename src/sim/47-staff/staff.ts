@@ -6,6 +6,7 @@ import { storeItem } from "../10-catalog/store";
 import { bump, createTicket, MINUTES, rightTemplate, TEMPLATES, type Ticket, type TicketKind } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { isWorkHour } from "../00-core/workhours";
 
 export type Role = "support" | "bookkeeper" | "accountant" | "marketing" | "technician";
 export type Task = TicketKind | "reminder" | "dunning" | "final" | "campaigns" | "reviews" | "fairs" | "hardware" | "servers" | "panels";
@@ -119,12 +120,8 @@ export function startTraining(s: GameState, e: Employee): void {
   e.training = { task, startedAt: s.hour, doneAt: s.hour + (trainer ? TRAINER_HOURS : COURSE_HOURS) };
 }
 
-// Staff work 8 hours a day, Monday to Friday, from 9 to 17.
-// ponytail: no holidays or sick days; add them when staffing has to cover absences.
-export function isWorkHour(hour: number): boolean {
-  const d = dateOf(hour), h = d.getUTCHours(), day = d.getUTCDay();
-  return day >= 1 && day <= 5 && h >= 9 && h < 17;
-}
+// Staff work business hours.
+export { isWorkHour };
 
 // economy.md, AI bots. A bot works around the clock at a fixed rate and never learns.
 export const BOTS: Record<string, { role: Role; tasks: Task[] }> = {

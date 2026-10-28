@@ -10,7 +10,7 @@ import { t } from "../../../i18n/en";
 import { useFocus, useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
 import { Incidents } from "./Incidents";
-import { initials, KINDS, kindOf, monthYear, moodClass, span, stamp, STATUS } from "./labels";
+import { due, initials, KINDS, kindOf, monthYear, moodClass, span, stamp, STATUS } from "./labels";
 import "./support.css";
 
 type Box = "open" | "overdue" | "waiting" | "escalated" | "done" | "incidents";
@@ -38,7 +38,8 @@ function Sla({ tk, hour }: { tk: Ticket; hour: number }) {
   if (tk.status !== "open") return <span className="sla num">{stamp(tk.updatedAt)}</span>;
   const left = tk.dueAt - hour;
   const cls = left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : "";
-  return <span className={`sla ${cls}`}><span className="num">{tk.notice ? span(left) : `${Math.abs(left)} h`}</span> {left < 0 ? "over" : "left"}</span>;
+  if (!tk.notice) return <span className={`sla ${cls} num`}>{due(tk.dueAt, hour)}</span>;
+  return <span className={`sla ${cls}`}><span className="num">{span(left)}</span> {left < 0 ? "over" : "left"}</span>;
 }
 
 export function SupportApp() {
@@ -139,7 +140,9 @@ function Thread({ tk }: { tk: Ticket }) {
           <span className="type"><K.icon />{K.label}</span>
           <span>Opened <span className="num">{stamp(tk.createdAt)}</span></span>
           {tk.status === "open"
-            ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer /><span><span className="num">{tk.notice ? span(left) : `${Math.abs(left)} h`}</span> {left < 0 ? "overdue" : "to respond"}</span></span>
+            ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer />{tk.notice
+                ? <span><span className="num">{span(left)}</span> {left < 0 ? "overdue" : "to respond"}</span>
+                : <span>Due <span className="num">{left < 0 ? "now" : due(tk.dueAt, game.hour)}</span></span>}</span>
             : <span className="pill">{STATUS[tk.status]}</span>}
         </div>
       </div>

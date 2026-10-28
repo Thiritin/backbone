@@ -1,5 +1,6 @@
 // Values from docs/design/economy.md; section names are noted per block.
 import type { Product } from "../30-customers/customers";
+import type { Patience } from "../00-core/workhours";
 
 export type Budget = "low" | "medium" | "high";
 export type Skill = "low" | "medium" | "high";
@@ -19,22 +20,27 @@ export interface Profile {
   churn: number;
   outagePenalty: number;
   waitPenalty: number;
-  promisedHours: number;
+  // How fast they expect a reply, and how long an outage goes unnoticed before it hurts and they write in.
+  reply: Patience;
+  tolerance: Patience;
   // Share of this profile's buyers who want a VPS rather than web hosting; an estimate, not in the doc.
   vpsShare: number;
 }
 
+const work = (hours: number): Patience => ({ hours, clock: "business" });
+const always = (hours: number): Patience => ({ hours, clock: "always" });
+
 // Market and leads (mix), Customer choice (weights), Happiness and churn (churn, penalties, response).
 export const PROFILES: Profile[] = [
-  { id: "private", name: "Private individual", budget: "low", skill: "low", mix: 0.25, wP: 0.2, wR: 0.2, wC: 0.6, lambda: 1.0, cap: 1.3, churn: 0.025, outagePenalty: 1, waitPenalty: 0.3, promisedHours: 48, vpsShare: 0 },
-  { id: "gamer", name: "Gamer", budget: "low", skill: "medium", mix: 0.15, wP: 0.5, wR: 0.3, wC: 0.2, lambda: 1.0, cap: 1.3, churn: 0.04, outagePenalty: 4, waitPenalty: 0.3, promisedHours: 48, vpsShare: 0.8 },
-  { id: "hobby", name: "Hobby developer", budget: "low", skill: "high", mix: 0.1, wP: 0.6, wR: 0.2, wC: 0.2, lambda: 1.2, cap: 1.3, churn: 0.03, outagePenalty: 2, waitPenalty: 0.3, promisedHours: 48, vpsShare: 0.9 },
-  { id: "sole", name: "Sole proprietor", budget: "medium", skill: "low", mix: 0.15, wP: 0.15, wR: 0.35, wC: 0.5, lambda: 0.6, cap: 1.6, churn: 0.012, outagePenalty: 2, waitPenalty: 0.6, promisedHours: 24, vpsShare: 0.1 },
-  { id: "small", name: "Small business", budget: "medium", skill: "medium", mix: 0.15, wP: 0.3, wR: 0.4, wC: 0.3, lambda: 0.6, cap: 1.6, churn: 0.01, outagePenalty: 3, waitPenalty: 0.6, promisedHours: 24, vpsShare: 0.4 },
-  { id: "agency", name: "Agency or startup", budget: "medium", skill: "high", mix: 0.08, wP: 0.5, wR: 0.35, wC: 0.15, lambda: 0.7, cap: 1.6, churn: 0.015, outagePenalty: 4, waitPenalty: 0.6, promisedHours: 24, vpsShare: 0.7 },
-  { id: "office", name: "Doctor's or law office", budget: "high", skill: "low", mix: 0.05, wP: 0.1, wR: 0.6, wC: 0.3, lambda: 0.3, cap: 2.5, churn: 0.006, outagePenalty: 8, waitPenalty: 1.5, promisedHours: 8, vpsShare: 0.1 },
-  { id: "shop", name: "Online shop", budget: "high", skill: "medium", mix: 0.05, wP: 0.3, wR: 0.55, wC: 0.15, lambda: 0.3, cap: 2.5, churn: 0.008, outagePenalty: 10, waitPenalty: 1.5, promisedHours: 8, vpsShare: 0.5 },
-  { id: "enterprise", name: "Enterprise", budget: "high", skill: "high", mix: 0.02, wP: 0.35, wR: 0.55, wC: 0.1, lambda: 0.25, cap: 2.5, churn: 0.004, outagePenalty: 15, waitPenalty: 1.5, promisedHours: 8, vpsShare: 0.8 },
+  { id: "private", name: "Private individual", budget: "low", skill: "low", mix: 0.25, wP: 0.2, wR: 0.2, wC: 0.6, lambda: 1.0, cap: 1.3, churn: 0.025, outagePenalty: 1, waitPenalty: 0.3, reply: work(16), tolerance: work(16), vpsShare: 0 },
+  { id: "gamer", name: "Gamer", budget: "low", skill: "medium", mix: 0.15, wP: 0.5, wR: 0.3, wC: 0.2, lambda: 1.0, cap: 1.3, churn: 0.04, outagePenalty: 4, waitPenalty: 0.3, reply: work(8), tolerance: always(1), vpsShare: 0.8 },
+  { id: "hobby", name: "Hobby developer", budget: "low", skill: "high", mix: 0.1, wP: 0.6, wR: 0.2, wC: 0.2, lambda: 1.2, cap: 1.3, churn: 0.03, outagePenalty: 2, waitPenalty: 0.3, reply: work(16), tolerance: work(16), vpsShare: 0.9 },
+  { id: "sole", name: "Sole proprietor", budget: "medium", skill: "low", mix: 0.15, wP: 0.15, wR: 0.35, wC: 0.5, lambda: 0.6, cap: 1.6, churn: 0.012, outagePenalty: 2, waitPenalty: 0.6, reply: work(8), tolerance: work(3), vpsShare: 0.1 },
+  { id: "small", name: "Small business", budget: "medium", skill: "medium", mix: 0.15, wP: 0.3, wR: 0.4, wC: 0.3, lambda: 0.6, cap: 1.6, churn: 0.01, outagePenalty: 3, waitPenalty: 0.6, reply: work(8), tolerance: work(2), vpsShare: 0.4 },
+  { id: "agency", name: "Agency or startup", budget: "medium", skill: "high", mix: 0.08, wP: 0.5, wR: 0.35, wC: 0.15, lambda: 0.7, cap: 1.6, churn: 0.015, outagePenalty: 4, waitPenalty: 0.6, reply: work(8), tolerance: work(2), vpsShare: 0.7 },
+  { id: "office", name: "Doctor's or law office", budget: "high", skill: "low", mix: 0.05, wP: 0.1, wR: 0.6, wC: 0.3, lambda: 0.3, cap: 2.5, churn: 0.006, outagePenalty: 8, waitPenalty: 1.5, reply: work(4), tolerance: work(1), vpsShare: 0.1 },
+  { id: "shop", name: "Online shop", budget: "high", skill: "medium", mix: 0.05, wP: 0.3, wR: 0.55, wC: 0.15, lambda: 0.3, cap: 2.5, churn: 0.008, outagePenalty: 10, waitPenalty: 1.5, reply: always(4), tolerance: always(0), vpsShare: 0.5 },
+  { id: "enterprise", name: "Enterprise", budget: "high", skill: "high", mix: 0.02, wP: 0.35, wR: 0.55, wC: 0.1, lambda: 0.25, cap: 2.5, churn: 0.004, outagePenalty: 15, waitPenalty: 1.5, reply: always(4), tolerance: always(0), vpsShare: 0.8 },
 ];
 
 export interface Competitor {
