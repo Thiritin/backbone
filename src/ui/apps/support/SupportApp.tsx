@@ -1,7 +1,7 @@
 import { AlarmClock, ArrowUpRight, CircleCheck, Hourglass, Inbox, Send, Timer, Wrench, X } from "lucide-react";
 import { useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
-import { ACTIONS, canEscalate, isFinal, monthlyValue, profileStats, TEMPLATES, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
+import { ACTIONS, canEscalate, isFinal, monthlyValue, TEMPLATES, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
 import type { GameState } from "../../../sim/50-state";
 import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
@@ -76,7 +76,7 @@ export function SupportApp() {
               <span className="who">{tk.unread && <i className="dot" aria-label="Unread" />}<span>{c.name}</span></span>
               <Sla tk={tk} hour={game.hour} />
               <span className="subj">{subjectOf(game, tk)}</span>
-              <span className="meta"><span className="type"><K.icon />{K.label}</span><span className="pill">{profileStats(c.profile).name}</span>{tk.work && <span className="pill accent">Queued</span>}</span>
+              <span className="meta"><span className="type"><K.icon />{K.label}</span>{tk.work && <span className="pill accent">Queued</span>}</span>
             </button>
           );
         })}
@@ -119,7 +119,7 @@ function Thread({ tk }: { tk: Ticket }) {
         <div>
           <div className="name">{c.name}</div>
           <div className="sub">
-            {profileStats(c.profile).name} · {svc ? svc.label : `${services.length} services`} · <span className="num">{euro(monthly)}</span> a month · since <span className="num">{monthYear(c.since)}</span>
+            {svc ? svc.label : `${services.length} services`} · <span className="num">{euro(monthly)}</span> a month · since <span className="num">{monthYear(c.since)}</span>
           </div>
         </div>
         <div className="happy">

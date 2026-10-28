@@ -2,7 +2,7 @@ import { FileText, LifeBuoy } from "lucide-react";
 import { useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { activeServices, type Customer } from "../../../sim/30-customers/customers";
-import { monthlyValue, profileStats, serviceMonthly } from "../../../sim/40-support/tickets";
+import { monthlyValue, serviceMonthly } from "../../../sim/40-support/tickets";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { initials, kindOf, monthYear, moodClass, PRODUCT, stamp, STATUS } from "../support/labels";
@@ -29,13 +29,12 @@ export function CustomersApp() {
         <div className="cus-scroll">
           <table className="table">
             <thead>
-              <tr><th>Name</th><th>Profile</th><th>Happiness</th><th className="r">Services</th><th className="r">Monthly</th><th className="r">Since</th></tr>
+              <tr><th>Name</th><th>Happiness</th><th className="r">Services</th><th className="r">Monthly</th><th className="r">Since</th></tr>
             </thead>
             <tbody>
               {list.map((c) => (
                 <tr key={c.id} className={c.id === sel ? "active" : ""} onClick={() => setSel(c.id)}>
                   <td><button className="cus-name" onClick={() => setSel(c.id)}>{c.name}</button></td>
-                  <td>{profileStats(c.profile).name}</td>
                   <td><Mood c={c} /></td>
                   <td className="r num">{activeServices(game.services, c.id).length}</td>
                   <td className="r num">{euro(monthlyValue(game.services, c.id))}</td>
@@ -71,7 +70,7 @@ function Detail({ c }: { c: Customer }) {
         <div className="logo">{initials(c.name)}</div>
         <div>
           <h2>{c.name}</h2>
-          <div className="cus-sub">{profileStats(c.profile).name}{c.churnedAt !== null && <> · left <span className="num">{monthYear(c.churnedAt)}</span></>}</div>
+          {c.churnedAt !== null && <div className="cus-sub">Left <span className="num">{monthYear(c.churnedAt)}</span></div>}
         </div>
       </div>
       <dl className="cus-facts">
