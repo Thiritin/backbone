@@ -1,6 +1,5 @@
 import { Ban, Check, CircleCheck, CircleX, Hourglass, Inbox, Send, X } from "lucide-react";
 import { useState } from "react";
-import { yearOf } from "../../../sim/00-core/time";
 import { euroCents } from "../../../sim/00-core/money";
 import { planOf, SLAS } from "../../../sim/10-catalog/products";
 import { missingFor, planName, requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
@@ -13,6 +12,8 @@ import { useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
 import { initials, noticed, patience, PRODUCT, stamp } from "../support/labels";
 import { PriceField } from "./PriceField";
+import { UpgradeCompose } from "../support/CustomOrder";
+import { requestSize } from "../../../sim/30-market/custom";
 import "../support/support.css";
 import "./sales.css";
 
@@ -42,7 +43,7 @@ export function Bars({ r }: { r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const zones = game.locations.filter((l) => l.city === r.city).map((l) => l.az);
   const cluster = game.clusters.find((c) => zones.includes(c.az) && c.nodes.length);
-  const size = planOf(r.product, r.plan).size(yearOf(game.hour));
+  const size = requestSize(game, r);
   if (!cluster || !size.vcpu && !size.ramGb && !size.diskGb) return null;
   const cap = { vcpu: 0, ramGb: 0, diskGb: 0 }, used = { ...cap };
   for (const n of cluster.nodes) {
@@ -89,7 +90,7 @@ export function Card({ r }: { r: SalesRequest }) {
   return (
     <div className={`sup-detail${missing.length && OPEN.includes(r.status) ? " greyed" : ""}`}>
       <div className="d-head">
-        <div className="top"><h2>{planName(r)}{r.kind === "expansion" && " expansion"}</h2><span className="id num">#{r.id.slice(3)}</span></div>
+        <div className="top"><h2>{planName(r)}{r.kind === "expansion" && (r.spec ? " upgrade" : " expansion")}</h2><span className="id num">#{r.id.slice(3)}</span></div>
         <div className="facts">
           <span className="type">{PRODUCT[r.product]}</span>
           <span>{r.city}</span>
@@ -126,7 +127,7 @@ export function Card({ r }: { r: SalesRequest }) {
         {r.status === "quoted" && <div className="event"><span>Awaiting reply</span></div>}
       </div>
 
-      {canQuote && (
+      {r.kind === "expansion" && r.spec ? <UpgradeCompose r={r} /> : canQuote && (
         <div className="compose">
           <PriceField value={price} reference={r.reference} onChange={setPrice} />
           <div className="actions-row">

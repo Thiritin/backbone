@@ -1,9 +1,12 @@
-import { Ban, CircleCheck, CircleDot, Files, ListChecks, Mail, OctagonAlert, Pause, Play, Receipt, Trash2, Workflow } from "lucide-react";
+import { Ban, CircleCheck, CircleDot, Files, Globe, ListChecks, RefreshCw, Mail, OctagonAlert, Pause, Play, Receipt, Trash2, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
 import { AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, dueStep, freeRiding, invoiceTotal, rulesAutomated, STEPS, type BillingRules, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import { sendReminder, setBillingRules, suspendServices, writeOff } from "../../../sim/90-actions/billing";
+import { renewDomain } from "../../../sim/90-actions/orders";
+import { DOMAIN_FEE, registryCost, registryOf } from "../../../sim/30-customers/registry";
+import { yearOf } from "../../../sim/00-core/time";
 import { t } from "../../../i18n/en";
 import { Confirm } from "../../desktop/Confirm";
 import { useFocus, useStore } from "../../store";
@@ -36,9 +39,10 @@ const sum = (list: Invoice[]) => list.reduce((s, i) => s + invoiceTotal(i), 0);
 
 export function BillingApp() {
   const game = useStore((s) => s.game);
-  const [filter, setFilter] = useState<InvoiceStatus | "all" | "automation">("all");
+  const [filter, setFilter] = useState<InvoiceStatus | "all" | "automation" | "domains">("all");
   const [selected, setSelected] = useState<string | null>(null);
   useFocus("Billing", (f) => {
+    if (f.kind === "domain") setFilter("domains");
     if (f.kind !== "invoice") return;
     setFilter("all");
     setSelected(f.id);
@@ -67,9 +71,14 @@ export function BillingApp() {
         <button className={`side-item fin-auto-item${filter === "automation" ? " active" : ""}`} aria-pressed={filter === "automation"} onClick={() => setFilter("automation")}>
           {auto ? <><Workflow />Automation</> : <><ListChecks />Rules</>}
         </button>
+        <div className="side-h">Customers</div>
+        <button className={`side-item${filter === "domains" ? " active" : ""}`} aria-pressed={filter === "domains"} onClick={() => setFilter("domains")}>
+          <Globe />Domains<span className="side-count">{game.domains.length}</span>
+        </button>
       </nav>
       {filter === "automation" && <Automation />}
-      {filter !== "automation" && <div className="fin-main">
+      {filter === "domains" && <Domains />}
+      {filter !== "automation" && filter !== "domains" && <div className="fin-main">
         <dl className="fin-totals">
           {totals.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{euroCents(v)}</dd></div>)}
         </dl>
@@ -99,7 +108,46 @@ export function BillingApp() {
           )}
         </div>
       </div>}
-      {filter !== "automation" && invoice && <Detail key={invoice.id} inv={invoice} customer={name(invoice.customerId)} hour={game.hour} />}
+      {filter !== "automation" && filter !== "domains" && invoice && <Detail key={invoice.id} inv={invoice} customer={name(invoice.customerId)} hour={game.hour} />}
+    </div>
+  );
+}
+
+// Every domain with its customer, registry and expiry, soonest first; renewing pays the registry and invoices the customer.
+function Domains() {
+  const game = useStore((s) => s.game);
+  const act = useStore((s) => s.act);
+  const year = yearOf(game.hour);
+  const list = [...game.domains].sort((a, b) => a.expiresAt - b.expiresAt);
+  const customer = (id: string) => game.customers.find((c) => c.id === id);
+  return (
+    <div className="fin-main">
+      <div className="fin-scroll">
+        {list.length === 0 ? <div className="fin-empty"><Globe />No domains</div> : (
+          <table className="table fin-table">
+            <thead>
+              <tr><th>Domain</th><th>Customer</th><th>Registry</th><th>Expires</th><th className="r">Cost a year</th><th className="r">Fee a year</th><th>Status</th><th /></tr>
+            </thead>
+            <tbody>
+              {list.map((d) => {
+                const c = customer(d.customerId), gone = !c || c.churnedAt !== null, left = d.expiresAt - game.hour;
+                return (
+                  <tr key={d.name}>
+                    <td>{d.name}</td>
+                    <td>{c ? <CustomerLink id={c.id} name={c.name} /> : ""}</td>
+                    <td>{registryOf(d.name).name}</td>
+                    <td className="num">{formatDay(d.expiresAt)}</td>
+                    <td className="r num">{euroCents(registryCost(d.name, year))}</td>
+                    <td className="r num">{euroCents(DOMAIN_FEE)}</td>
+                    <td>{gone ? <span className="pill">Customer left</span> : left <= 0 ? <span className="pill bad">Expired</span> : left <= 30 * 24 ? <span className="pill warn">Expires soon</span> : <span className="pill">Active</span>}</td>
+                    <td className="r">{!gone && <button className="btn" onClick={() => act((s) => renewDomain(s, d.name))}><RefreshCw />Renew</button>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

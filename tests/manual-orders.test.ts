@@ -60,6 +60,14 @@ describe("custom orders", () => {
     expect(s.sales.requests.find((x) => x.id === pkg.id)!.status).toBe("won");
   });
 
+  it("works the first order of a company without customers", () => {
+    const s = readyGame(11);
+    Object.assign(s, { customers: [], services: [], workloads: [] });
+    const { id, req } = order(s);
+    done(s, createAccount(s, id));
+    expect(s.customers.map((c) => c.id)).toEqual([req().customerId]);
+  });
+
   it("runs its steps only in order", () => {
     const s = readyGame(1);
     const { id } = order(s);

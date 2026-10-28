@@ -125,7 +125,8 @@ function monthly(s: GameState): void {
 }
 
 export function supportTick(s: GameState): SimEvent[] {
-  if (!s.customers.length) return [];
+  // Queued order work still runs before the first customer exists.
+  if (!s.customers.length && !s.tickets.some((t) => t.work)) return [];
   s.customers = s.customers.map((c) => ({ ...c }));
   s.tickets = s.tickets.map((t) => ({ ...t }));
   const byId = new Map(s.customers.map((c) => [c.id, c]));

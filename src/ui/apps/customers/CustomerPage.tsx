@@ -1,4 +1,4 @@
-import { ChevronLeft, Contact, Cpu, FileText, History, LifeBuoy, ListChecks, Receipt, Server } from "lucide-react";
+import { ChevronLeft, Contact, Cpu, FileText, Globe, History, LifeBuoy, ListChecks, Receipt, Server } from "lucide-react";
 import { useState } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import { planOf } from "../../../sim/10-catalog/products";
@@ -15,6 +15,9 @@ import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
 import { PriceField } from "../sales/PriceField";
 import { ActivityLog } from "./ActivityLog";
+import { registryOf } from "../../../sim/30-customers/registry";
+import { customReference } from "../../../sim/30-market/manual";
+import { specLine } from "../support/CustomOrder";
 import { initials, kindOf, monthYear, moodClass, noticed, patience, PRODUCT, STATUS } from "../support/labels";
 
 export type Status = "active" | "overdue" | "suspended" | "churned";
@@ -83,6 +86,7 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
   const vms = game.installed.includes("Virtual machines");
   const services = game.services.filter((v) => v.customerId === c.id).sort((a, b) => Number(a.endedAt !== null) - Number(b.endedAt !== null) || b.startedAt - a.startedAt);
   const invoices = game.invoices.filter((i) => i.customerId === c.id).reverse();
+  const domains = game.domains.filter((d) => d.customerId === c.id);
   const tickets = game.tickets.filter((tk) => tk.customerId === c.id).sort((a, b) => b.createdAt - a.createdAt);
   const subject = (tk: (typeof tickets)[number]) => t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(game, tk));
   const openInvoice = (id: string) => openApp("Billing", { kind: "invoice", id });
@@ -181,7 +185,7 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
                     {services.filter((v) => v.endedAt === null).map((v) => (
                       <tr key={v.id} onClick={() => setTab("services")}>
                         <td className="cus-subject"><span className="cus-strong">{v.label}</span></td>
-                        <td className="cus-dim">{planOf(v.product, v.plan).name}</td>
+                        <td className="cus-dim">{v.spec ? specLine(v.product, v.spec) : planOf(v.product, v.plan).name}</td>
                         <td className="r num">{price(v)}</td>
                         <td className="r">{serviceStatus(v, r)}</td>
                       </tr>
@@ -190,6 +194,23 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
                 </table>
                 {!r.services && <div className="fin-none">No services</div>}
               </section>
+              {domains.length > 0 && (
+                <section className="fin-card">
+                  <h3 className="fin-card-h"><Globe />Domains</h3>
+                  <table className="table cus-table">
+                    <tbody>
+                      {domains.map((d) => (
+                        <tr key={d.name} onClick={() => openApp("Billing", { kind: "domain", id: d.name })}>
+                          <td className="cus-subject"><span className="cus-strong">{d.name}</span></td>
+                          <td className="cus-dim">{registryOf(d.name).name}</td>
+                          <td className="r num">{formatDay(d.expiresAt)}</td>
+                          <td className="r">{game.hour >= d.expiresAt ? <span className="pill bad">Expired</span> : <span className="pill">Active</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              )}
               <section className="fin-card">
                 <h3 className="fin-card-h"><Receipt />Recent invoices</h3>
                 <table className="table cus-table">{invoiceHead}<tbody>{invoiceRows(invoices.slice(0, RECENT))}</tbody></table>
@@ -215,7 +236,7 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
                     <dl className="fin-rows">
                       <div><dt>Product</dt><dd>{PRODUCT[v.product]}</dd></div>
                       {v.domain && <div><dt>Domain</dt><dd>{v.domain}</dd></div>}
-                      <div><dt>Plan</dt><dd>{planOf(v.product, v.plan).name}</dd></div>
+                      {v.spec ? <div><dt>Resources</dt><dd className="num">{specLine(v.product, v.spec)}</dd></div> : <div><dt>Plan</dt><dd>{planOf(v.product, v.plan).name}</dd></div>}
                       <div><dt>Price</dt><dd className="num">{price(v)}</dd></div>
                       <div><dt>Billing</dt><dd>{v.period === "hour" ? "Monthly" : "Yearly"}</dd></div>
                       <div><dt>SLA</dt><dd>{SLA[v.sla]}</dd></div>
@@ -297,7 +318,7 @@ function ChangePrice({ v, profile }: { v: Service; profile: Profile }) {
   const save = () => { if (act((s) => changePrice(s, v.id, monthly)).ok) setOpen(false); };
   return (
     <div className="cus-price">
-      <PriceField value={monthly} reference={referenceFor(game, profile, v.product, v.plan ?? "", v.sla)} onChange={setMonthly} label="New monthly price" />
+      <PriceField value={monthly} reference={v.spec ? customReference(game, profile, v.product, v.spec, v.sla) : referenceFor(game, profile, v.product, v.plan ?? "", v.sla)} onChange={setMonthly} label="New monthly price" />
       <div className="fin-actions">
         <button className="btn ghost" onClick={() => setOpen(false)}>Cancel</button>
         <button className="btn primary" disabled={!(monthly > 0)} onClick={save}>Save price</button>

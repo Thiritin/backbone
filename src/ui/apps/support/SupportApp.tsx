@@ -13,6 +13,7 @@ import { t } from "../../../i18n/en";
 import { useFocus, useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
 import { Incidents } from "./Incidents";
+import { CustomCompose, InvoicePill, specLine } from "./CustomOrder";
 import { due, initials, KINDS, kindOf, monthYear, moodClass, PRODUCT, span, stamp, STATUS } from "./labels";
 import { Bars, Card, Deadline, LostSales, need, OPEN, SALES_BOXES, STATUS as SALES_STATUS, type SalesBox } from "../sales/SalesApp";
 import "./support.css";
@@ -194,7 +195,9 @@ function OrderThread({ tk, r }: { tk: Ticket; r: SalesRequest }) {
           <span className="type"><K.icon />{K.label}</span>
           <span>{PRODUCT[r.product]}</span>
           {r.domain && <span>{r.domain}</span>}
+          {r.spec && <span className="num">{specLine(r.product, r.spec)}</span>}
           <span>{r.city}</span>
+          {r.spec && <InvoicePill r={r} />}
           {tk.status === "open"
             ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer /><span><span className="num">{Math.max(0, left)} h</span> to respond</span></span>
             : <span className="pill">{STATUS[tk.status]}</span>}
@@ -229,7 +232,7 @@ function OrderThread({ tk, r }: { tk: Ticket; r: SalesRequest }) {
         {isFinal(tk) && <div className="event"><span>{t(`outcome.${tk.outcome ?? "closed"}`)} · <span className="num">{stamp(tk.updatedAt)}</span></span></div>}
       </div>
 
-      {!isFinal(tk) && (
+      {r.spec ? <CustomCompose tk={tk} r={r} /> : !isFinal(tk) && (
         <div className="compose">
           <div className="actions-row">
             <button className="btn ghost" disabled={locked} onClick={() => act((s) => resolveTicket(s, tk.id, "reject"))}><CircleX />Decline</button>
