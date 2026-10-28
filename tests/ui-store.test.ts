@@ -1,6 +1,6 @@
 import { START_CASH } from "../src/sim/10-catalog/economy";
 import { describe, expect, it } from "vitest";
-import { useStore } from "../src/ui/store";
+import { prefOf, useStore } from "../src/ui/store";
 import { newGame } from "../src/sim/50-state";
 import { metrics } from "../src/sim/metrics";
 
@@ -17,6 +17,12 @@ describe("notification settings", () => {
     s().notify("Finance", "a", "b");
     expect(s().history).toHaveLength(1);
     expect(s().banners).toHaveLength(1);
+  });
+
+  it("plays a sound for Support by default and nowhere else until switched on", () => {
+    expect(prefOf({}, "Support")).toEqual({ allow: true, sound: true });
+    expect(prefOf({}, "Billing")).toEqual({ allow: true, sound: false });
+    expect(prefOf({ Support: { sound: false } }, "Support").sound).toBe(false);
   });
 
   it("removes a notification from the center, then clears the rest", () => {

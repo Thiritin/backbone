@@ -1,3 +1,4 @@
+import { ding } from "./ding";
 import { useEffect } from "react";
 import { create } from "zustand";
 import { newGame, type GameState } from "../sim/50-state";
@@ -14,8 +15,8 @@ export interface Focus { kind: string; id: string; n: number }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; focus?: Focus }
 export interface Banner { id: number; app: string; title: string; text: string; hour: number }
 // Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
-export interface NotifyPref { allow: boolean }
-export const DEFAULT_PREF: NotifyPref = { allow: true };
+export interface NotifyPref { allow: boolean; sound: boolean }
+export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: app === "Support", ...prefs[app] });
 const PREFS_KEY = "backbone.prefs";
 export type Theme = "light" | "dark" | "auto";
 const THEME_KEY = "backbone.theme";
@@ -26,7 +27,7 @@ interface Store {
   windows: Win[];
   banners: Banner[];
   history: Banner[];
-  notifyPrefs: Record<string, NotifyPref>;
+  notifyPrefs: Record<string, Partial<NotifyPref>>;
   setNotifyPref: (app: string, patch: Partial<NotifyPref>) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
@@ -81,7 +82,7 @@ function loadGame(): { game: GameState; loaded: boolean } {
 
 const initial = loadGame();
 
-function loadPrefs(): Record<string, NotifyPref> {
+function loadPrefs(): Record<string, Partial<NotifyPref>> {
   try {
     return JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}").notify ?? {};
   } catch {
@@ -174,7 +175,7 @@ export const useStore = create<Store>((set, get) => ({
   place: (id, box) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, ...box } : w)) })),
 
   setNotifyPref: (app, patch) => {
-    const notifyPrefs = { ...get().notifyPrefs, [app]: { ...(get().notifyPrefs[app] ?? DEFAULT_PREF), ...patch } };
+    const notifyPrefs = { ...get().notifyPrefs, [app]: { ...prefOf(get().notifyPrefs, app), ...patch } };
     set({ notifyPrefs });
     try {
       localStorage.setItem(PREFS_KEY, JSON.stringify({ notify: notifyPrefs }));
@@ -183,8 +184,9 @@ export const useStore = create<Store>((set, get) => ({
     }
   },
   notify: (app, title, text) => {
-    const pref = get().notifyPrefs[app] ?? DEFAULT_PREF;
+    const pref = prefOf(get().notifyPrefs, app);
     if (!pref.allow) return;
+    if (pref.sound) ding();
     const b = { id: ++bannerId, app, title, text, hour: get().game.hour };
     set(({ banners, history, unseen }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
     setTimeout(() => get().dismiss(b.id), 6000);

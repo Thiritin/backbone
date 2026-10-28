@@ -2,7 +2,7 @@ import { useState, type CSSProperties } from "react";
 import { setCompany } from "../../sim/90-actions/company";
 import { APPS } from "./registry";
 import { CompanyFields } from "./company";
-import { DEFAULT_PREF, useStore, type Theme } from "../store";
+import { prefOf, useStore, type Theme } from "../store";
 
 const THEMES: [Theme, string][] = [["light", "Light"], ["dark", "Dark"], ["auto", "Automatic"]];
 
@@ -29,20 +29,25 @@ export function SettingsApp() {
       </div>
       <h2>Notifications</h2>
       <div className="settings-group" role="table" aria-label="Notifications">
-        <div className="settings-row settings-headrow" role="row">
+        <div className="settings-row settings-cols3 settings-headrow" role="row">
           <span role="columnheader">App</span>
           <span role="columnheader">Allow</span>
+          <span role="columnheader">Sound</span>
         </div>
         {APPS.filter((a) => !a.hidden && a.name !== "Settings").map((a) => {
-          const p = notifyPrefs[a.name] ?? DEFAULT_PREF;
+          const p = prefOf(notifyPrefs, a.name);
           return (
-            <div className="settings-row" role="row" key={a.name}>
+            <div className="settings-row settings-cols3" role="row" key={a.name}>
               <span className="settings-app" role="cell">
                 <span className="settings-ico" style={{ "--tile": a.tile } as CSSProperties}><a.icon /></span>{a.name}
               </span>
               <span role="cell">
                 <input type="checkbox" role="switch" className="switch" aria-label={`Allow ${a.name} notifications`}
                   checked={p.allow} onChange={(e) => setNotifyPref(a.name, { allow: e.target.checked })} />
+              </span>
+              <span role="cell">
+                <input type="checkbox" role="switch" className="switch" aria-label={`Play a sound for ${a.name} notifications`}
+                  checked={p.allow && p.sound} disabled={!p.allow} onChange={(e) => setNotifyPref(a.name, { sound: e.target.checked })} />
               </span>
             </div>
           );
