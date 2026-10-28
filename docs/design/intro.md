@@ -57,7 +57,7 @@ You will also argue with the bank about your loan. If you love accounting, this 
 
 ## Open source
 
-Backbone is open source. If you don't like something, download it from GitHub and send a pull request.
+Backbone is open source. If you don't like something, download it from [GitHub](https://github.com/Thiritin/backbone) and send a pull request.
 
 Fair warning: this game is made with a lot of AI. If you want to change something, feel free to send your pull request through your own AI agent.
 

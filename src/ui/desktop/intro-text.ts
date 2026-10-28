@@ -1,19 +1,19 @@
 import md from "../../../docs/design/intro.md?raw";
 
-export type Inline = { text: string; style?: "b" | "s" };
+export type Inline = { text: string; style?: "b" | "s"; href?: string };
 export type Block =
   | { kind: "p"; fine: boolean; text: Inline[] }
   | { kind: "apps" }
   | { kind: "table"; rows: [Inline[], Inline[]][] };
 export interface Page { title: string; blocks: Block[] }
 
-// Handles **bold**, ~~strike~~ and the \* escape; nothing else in the doc needs markup.
+// Handles **bold**, ~~strike~~, [links](url) and the \* escape; nothing else in the doc needs markup.
 export function inline(src: string): Inline[] {
   const out: Inline[] = [];
   let at = 0;
-  for (const m of src.matchAll(/\*\*(.+?)\*\*|~~(.+?)~~|\\\*/g)) {
+  for (const m of src.matchAll(/\*\*(.+?)\*\*|~~(.+?)~~|\[(.+?)\]\((.+?)\)|\\\*/g)) {
     if (m.index > at) out.push({ text: src.slice(at, m.index) });
-    out.push(m[1] ? { text: m[1], style: "b" } : m[2] ? { text: m[2], style: "s" } : { text: "*" });
+    out.push(m[1] ? { text: m[1], style: "b" } : m[2] ? { text: m[2], style: "s" } : m[3] ? { text: m[3], href: m[4] } : { text: "*" });
     at = m.index + m[0].length;
   }
   if (at < src.length) out.push({ text: src.slice(at) });

@@ -48,7 +48,7 @@ const ART: Record<string, ReactNode> = {
   "Open source": <><GitPullRequest className="intro-glyph" /><Bot className="intro-glyph" /></>,
 };
 
-const text = (parts: Inline[]) => parts.map((p, i) => (p.style === "b" ? <strong key={i}>{p.text}</strong> : p.style === "s" ? <s key={i}>{p.text}</s> : p.text));
+const text = (parts: Inline[]) => parts.map((p, i) => (p.href ? <a key={i} href={p.href} target="_blank" rel="noreferrer">{p.text}</a> : p.style === "b" ? <strong key={i}>{p.text}</strong> : p.style === "s" ? <s key={i}>{p.text}</s> : p.text));
 
 function BlockView({ b }: { b: Block }) {
   if (b.kind === "p") return <p className={b.fine ? "intro-fine" : undefined}>{text(b.text)}</p>;

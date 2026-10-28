@@ -12,5 +12,6 @@ describe("intro text", () => {
   it("parses bold, strike and the escaped asterisk", () => {
     expect(inline("a ~~x~~ **y** z.\\*")).toEqual([{ text: "a " }, { text: "x", style: "s" }, { text: " " }, { text: "y", style: "b" }, { text: " z." }, { text: "*" }]);
     expect(PAGES[1].blocks.some((b) => b.kind === "p" && b.fine)).toBe(true);
+    expect(inline("see [GitHub](https://x.y) now")).toEqual([{ text: "see " }, { text: "GitHub", href: "https://x.y" }, { text: " now" }]);
   });
 });
