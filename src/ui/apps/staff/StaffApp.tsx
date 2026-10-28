@@ -20,7 +20,7 @@ const ROLE: Record<Role, { one: string; many: string }> = {
   accountant: { one: "Accountant", many: "Accountants" },
 };
 const TASK: Record<Task, string> = {
-  howTo: "How-to", billing: "Billing", outage: "Outage", upgrade: "Upgrade", cancellation: "Cancellation", abuse: "Abuse", appeal: "Suspension appeal",
+  howTo: "How-to", billing: "Billing", outage: "Outage", upgrade: "Upgrade", cancellation: "Cancellation", abuse: "Abuse", appeal: "Suspension appeal", notice: "Notices", legal: "Legal requests", refund: "Refunds",
   reminder: "Payment reminders", dunning: "Dunning notices", final: "Final notices",
 };
 const ASSIGN: Record<Assignment, string> = { queue: "Work queue", trainer: "Trainer", forum: "Forums" };

@@ -33,7 +33,7 @@ describe("catalog", () => {
     expect(new Set(MODELS.map((m) => m.id)).size).toBe(MODELS.length);
     for (const m of MODELS) {
       expect(m.idleWatts).toBeLessThanOrEqual(m.watts);
-      expect(m.ports.length > 0).toBe(m.kind !== "part");
+      expect(m.ports.length > 0).toBe(m.kind !== "part" && m.kind !== "ups");
       expect(m.height).toBe(m.kind === "gateway" || m.kind === "part" ? 0 : m.kind === "server" ? m.height : 1);
     }
     expect(() => modelById("nope")).toThrow();

@@ -46,7 +46,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
       <div className="loc-insp-h">
         {model.kind !== "gateway" && <BrandLogo brand={device.brand} size={20} />}
         <LabelEdit device={device} />
-        {model.kind !== "patch" && <span className={`pill ${st.online ? "ok" : "bad"}`}>{st.online ? "Online" : "Offline"}</span>}
+        {model.kind !== "patch" && model.kind !== "ups" && <span className={`pill ${st.online ? "ok" : "bad"}`}>{st.online ? "Online" : "Offline"}</span>}
         <span className="grow" />
         {device.rackId && <button className="btn" onClick={() => { if (act((g) => unmountDevice(g, device.id)).ok) onSelect(null); }}><ArchiveRestore />Unmount</button>}
         {model.kind !== "gateway" && <button className="btn" disabled={!!device.lease} onClick={() => setSelling(true)}><CircleDollarSign />Sell</button>}

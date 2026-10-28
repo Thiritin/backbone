@@ -372,6 +372,19 @@ function Patch({ w, h, name, ports, model }: FrontProps) {
   );
 }
 
+// A UPS: the name, a battery gauge and a green mains light.
+function Ups({ w, h, name }: FrontProps) {
+  const fs = fsz(Math.min(h, 24)) * 0.9;
+  return (
+    <>
+      <Ears w={w} h={h} fill="oklch(0.24 0.005 255)" />
+      <Label x={10} y={h / 2 + fs * 0.35} text={name} size={fs} />
+      {[0, 1, 2, 3].map((i) => <rect key={i} x={w * 0.62 + i * 7} y={h * 0.32} width={5} height={h * 0.36} rx={1} fill="oklch(0.72 0.17 145)" />)}
+      <circle cx={w - 22} cy={h / 2} r={Math.min(3, h * 0.18)} fill="oklch(0.78 0.18 145)" />
+    </>
+  );
+}
+
 export function Front(p: FrontProps) {
   if (p.model.kind === "server") {
     const line = lineOf(p.model);
@@ -380,6 +393,7 @@ export function Front(p: FrontProps) {
   if (p.model.kind === "switch") return <Switch {...p} />;
   if (p.model.kind === "firewall") return <Switch {...p} ear={brandColor(p.brand)} />;
   if (p.model.kind === "gateway") return <Gateway {...p} />;
+  if (p.model.kind === "ups") return <Ups {...p} />;
   return <Patch {...p} />;
 }
 

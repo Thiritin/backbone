@@ -37,6 +37,7 @@ const MARKS: Record<string, Mark> = {
   fortinope: { word: "Fortinope", color: "oklch(0.56 0.21 27)", weight: 700, draw: (c) => <><path d="M8 1 14 3.3v4.2C14 11 11.5 13.6 8 15 4.5 13.6 2 11 2 7.5V3.3z" fill={c} /><path d="M5.2 8h5.6" stroke="white" strokeWidth="1.8" strokeLinecap="round" /></> },
   "pablo-alto": { word: "Pablo Alto", color: "oklch(0.68 0.17 55)", weight: 650, draw: (c) => <><path d="M8 1.5c3.8 0 6.5 2.6 6.5 5.7 0 2.2-1.7 2.6-3 2.3-1.4-.3-2 .6-1.6 1.6.5 1.4-.3 3.4-2.4 3.4-3.6 0-6-2.9-6-6.4S4.4 1.5 8 1.5z" fill={c} /><circle cx="5.5" cy="6" r="1.1" fill="white" /><circle cx="9" cy="4.6" r="1.1" fill="white" /></> },
   pandoot: { word: "Pandoot", color: "oklch(0.45 0.12 255)", weight: 650, draw: (c) => <><rect x="1" y="3" width="14" height="10" rx="1.5" fill={c} /><path d="M3.5 6.5h2M7 6.5h2M10.5 6.5h2M3.5 9.5h2M7 9.5h2M10.5 9.5h2" stroke="white" strokeWidth="1.6" /></> },
+  eatin: { word: "Eatin", color: "oklch(0.5 0.14 250)", weight: 700, draw: (c) => <><path d="M9.5 1.5 3.5 9h4l-1 5.5 6-7.5h-4z" fill={c} /></> },
   greenchz: { word: "green.chz", color: "oklch(0.6 0.16 140)", weight: 650, draw: (c) => <><path d="M2.5 13.5C2.5 6 7 2.5 13.5 2.5 13.5 9 10 13.5 2.5 13.5z" fill={c} /><path d="M2.5 13.5 9 7" stroke="white" strokeWidth="1.3" strokeLinecap="round" /></> },
 };
 

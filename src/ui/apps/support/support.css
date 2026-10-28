@@ -67,3 +67,7 @@
 .sup .actions-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sup .actions-row .grow { flex: 1; }
 .sup .actions-row .btn .num { margin-left: 2px; }
+.sup .verified { width: 14px; height: 14px; color: var(--accent); vertical-align: -2px; margin-left: 4px; }
+.sup .inc-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px 24px; padding: 16px 20px; align-content: start; overflow: auto; }
+.sup .inc-facts dt { color: var(--text-3); }
+.sup .inc-facts .inc-customers { display: flex; flex-wrap: wrap; gap: 4px 12px; }

@@ -1,7 +1,7 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
 import { GENERATIONS } from "./economy";
 
-export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "part";
+export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "part";
 export interface PortSpec { media: "rj45" | "sfp"; gbit: number }
 export interface ServerSpec {
   arch: "x86" | "arm";
@@ -66,6 +66,8 @@ export interface DeviceModel {
   layer?: 2 | 3;
   // Firewalls cap every link through them at this speed.
   throughputGbit?: number;
+  // A UPS carries its location through a grid outage for batteryWh ÷ load.
+  batteryWh?: number;
 }
 
 // Within a class, manufacturers differ in price and failure rate, never in specs.
@@ -81,6 +83,7 @@ export const MANUFACTURERS: Manufacturer[] = [
   { id: "fortinope", name: "Fortinope", kinds: ["firewall"], priceFactor: 0.9, failureFactor: 1.25 },
   { id: "pablo-alto", name: "Pablo Alto", kinds: ["firewall"], priceFactor: 1.1, failureFactor: 0.75 },
   { id: "pandoot", name: "Pandoot", kinds: ["patch"], priceFactor: 1, failureFactor: 1 },
+  { id: "eatin", name: "Eatin", kinds: ["ups"], priceFactor: 1, failureFactor: 1 },
   { id: "generic", name: "Generic", kinds: ["part"], priceFactor: 1, failureFactor: 1 },
 ];
 export const brandsFor = (kind: DeviceKind): string[] => MANUFACTURERS.filter((m) => m.kinds.includes(kind)).map((m) => m.name);
@@ -137,7 +140,7 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
   }),
 );
 
-type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit">>;
+type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "batteryWh">>;
 const other = (id: string, name: string, kind: DeviceKind, height: number, p: PortSpec[], watts: number, price: number, from = 2005, extra: Extra = {}): DeviceModel =>
   ({ id, name, kind, height, ports: p, watts, idleWatts: watts, psus: 1, price, from, until: null, ...extra });
 const L2 = { layer: 2 } as const, L3 = { layer: 3 } as const;
@@ -162,6 +165,8 @@ export const MODELS: DeviceModel[] = [
   other("patch-24f", "Patch panel 24, fiber", "patch", 1, ports(48, 400, "sfp"), 0, 250),
   other("patch-48", "Patch panel 48, copper", "patch", 1, ports(96, 1), 0, 140),
   other("patch-48f", "Patch panel 48, fiber", "patch", 1, ports(96, 400, "sfp"), 0, 450),
+  // economy.md, Power outages: the small UPS carries a 0.2 kW basement rack for about 3 hours.
+  other("ups-1500", "UPS 1500 VA", "ups", 1, [], 10, 180, 2005, { batteryWh: 600 }),
   // Price 0 keeps gateways out of the shop; they come with the basement and with every datacenter location.
   other("home-router", "Home router", "gateway", 0, ports(4, 1), 10, 0),
   other("handoff", "Datacenter handoff", "gateway", 0, ports(2, 1), 0, 0),

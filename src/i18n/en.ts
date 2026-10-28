@@ -1,4 +1,5 @@
 import { euro, euroCents } from "../sim/00-core/money";
+import { OPS } from "./en-ops";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -337,6 +338,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.noCapacity": () => "No cluster in this zone has room for it.",
   "error.noFreeServer": () => "No free server in this zone is big enough.",
   "error.noRackSpace": () => "No datacenter rack in this zone has the units and power free.",
+  ...OPS,
 };
 
 export const t = (key: string, params: Params = {}): string => en[key]?.(params) ?? key;

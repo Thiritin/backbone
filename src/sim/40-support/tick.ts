@@ -4,12 +4,16 @@ import type { Customer } from "../30-customers/customers";
 import { grantExtension, isSuspended, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { takenDown } from "../60-infra/ops";
+import { applyNoticeWork } from "./notices";
 import { serviceOnline } from "./status";
 import {
   bump, cancelCustomer, createTicket, credit, GAMER_ABUSE_RATE, HOURS_PER_MONTH, isFinal, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
   profileStats, rightTemplate, UPGRADE_CHANCE, WAITING_CLOSE_HOURS, type Ticket,
 } from "./tickets";
 
+// A shady customer draws this many times the abuse reports.
+export const SHADY_ABUSE = 10;
 const RIGHT_ANSWER = 5, WRONG_ANSWER = -10, HISTORY_MONTHS = 12;
 
 function resolve(s: GameState, t: Ticket, c: Customer, outcome: Ticket["outcome"] = null): void {
@@ -25,7 +29,8 @@ function finishWork(s: GameState, customer: (id: string) => Customer): void {
     if (!t.work) continue;
     const work = t.work, c = customer(t.customerId);
     t.work = null;
-    if (work.op === "escalate") Object.assign(t, { status: "escalated", updatedAt: s.hour });
+    if (t.kind === "notice" || t.kind === "legal" || t.kind === "refund") applyNoticeWork(s, t, c, work.arg);
+    else if (work.op === "escalate") Object.assign(t, { status: "escalated", updatedAt: s.hour });
     else if (work.op === "reply") {
       const right = work.arg === rightTemplate(s, t);
       t.replies = [...t.replies, { hour: s.hour, template: work.arg, right, ...(work.by && { by: work.by }) }];
@@ -61,7 +66,7 @@ function spawnHourly(s: GameState): void {
     if (c.churnedAt !== null) continue;
     const { skill } = profileStats(c.profile);
     for (const kind of ["howTo", "billing", "abuse"] as const) {
-      const rate = kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill];
+      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill]) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1);
       if (chance(s.rng, rate / HOURS_PER_MONTH)) createTicket(s, c, kind);
     }
   }
@@ -69,7 +74,7 @@ function spawnHourly(s: GameState): void {
 
 // A suspended customer knows why their services are off: suspension brings one billing ticket instead.
 function outages(s: GameState, customer: (id: string) => Customer): void {
-  const down = s.services.filter((v) => v.endedAt === null && !serviceOnline(s, v.id) && !isSuspended(s, v.customerId));
+  const down = s.services.filter((v) => v.endedAt === null && !serviceOnline(s, v.id) && !isSuspended(s, v.customerId) && !takenDown(s, v.id));
   for (const v of down) {
     const c = customer(v.customerId), p = profileStats(c.profile);
     bump(c, -p.outagePenalty);
@@ -109,6 +114,8 @@ export function supportTick(s: GameState): SimEvent[] {
   finishWork(s, customer);
   for (const t of s.tickets) {
     const c = customer(t.customerId);
+    // The customer does not wait on a notice or legal request about them.
+    if (t.notice) continue;
     if (t.status === "waiting" && s.hour - t.updatedAt >= WAITING_CLOSE_HOURS) resolve(s, t, c);
     else if (t.status === "escalated" && (!t.serviceId || serviceOnline(s, t.serviceId))) resolve(s, t, c);
     else if (t.status === "open" && c.churnedAt === null && s.hour > t.dueAt) bump(c, -profileStats(c.profile).waitPenalty);

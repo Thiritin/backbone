@@ -124,7 +124,7 @@ Infrastructure lives in locations: your basement first, then space in other comp
 
 | Location | Protection |
 | --- | --- |
-| Basement | None: every grid outage takes the servers down. A UPS rides through short outages until its battery runs out. |
+| Basement | None: every grid outage takes the servers down. A UPS from the shop (Eatin, 1U) rides through outages until its battery runs out. |
 | Datacenter | Whatever the site has: feeds, UPS and generator differ by datacenter |
 | Private suite or own datacenter | Whatever you build: UPS, batteries, generators and two utility feeds |
 
@@ -520,10 +520,23 @@ Support is the first job that overwhelms you. Every outage, question, install re
 | Abuse report | Spam or attacks from a customer's server | Warn, suspend |
 | Copyright notice | A rights holder reports a URL on a customer's domain | Forward to the customer, take the content down, reject |
 | Legal request | A government agency asks for data or a takedown | Comply, object, ignore at your peril |
+| Refund request | An outage or a data loss hit the customer | Refund one month, credit 10%, refuse |
 
 **Abuse and copyright notices.** Rights holders and complainers write in about URLs on your customers' domains. Studios such as Warner Bras. or Universal Pickchers send copyright notices, and a YouTuber demands you remove a site that called their video bad and links it. Some notices are real, some are fake, and some point to domains you don't even host. Each one names the URL, so you can check it against your customers before acting. Taking down content on a fake notice angers the customer; ignoring a real one invites the next, angrier letter.
 
+A notice comes from its sender, not the customer, and shows the sender's address and the URL. Real notices come from the sender's own domain, fake ones from a free mail address, and the YouTuber is always fake. The notice offers three actions:
+
+- **Forward to the customer** settles a real notice, and the customer removes the content. A shady customer leaves it up, so the next notice follows anyway. Forwarding a fake one mildly annoys the customer.
+- **Take content down** takes the named service offline for 48 hours and settles the notice. On a fake notice it angers the customer.
+- **Reject** is the right answer to a fake notice, and the only one for a domain no customer uses. Rejecting a real notice counts as ignoring it.
+
+Ignoring a notice (rejecting a real one, closing it, or leaving it open for 7 days) brings a second, angrier notice from the same sender 3 to 7 days later, and ignoring that one brings a legal request.
+
 **Legal requests.** Government agencies send requests through the inbox with a verified mark next to the sender, and each has a deadline. Answer in time and the matter closes. Miss the deadline and the agency seizes the physical server, with every disk in it. Customers on that server lose their data unless you have a backup on another system, and the server comes back after 3 months to 2 years. Agencies mostly come after malicious customers, so who you accept matters.
+
+A legal request shows a verified mark next to the agency's name and a countdown to its deadline, 5 to 14 days. Comply hands over what the agency asks for and costs the customer's goodwill; object keeps the customer happy, but a quarter of objections (half for shady customers) come back as a court order with a 3-day deadline. Closing a request does not answer it. When the deadline passes, the agency takes the server that runs the target customer's service: it leaves its rack, its cables and its cluster. Each workload on it restarts on another node of its cluster if one has room, from a backup if there is one and empty otherwise. Without a backup the customer's data is gone and they ask for a refund; with one they lose an outage's worth of goodwill. The server returns to storage at its location 3 months to 2 years later.
+
+**Incidents.** The Support sidebar lists every incident under Reports: grid outages, generator failures and seizures, each with its start, how long it lasted, how much of it reached the servers, the devices and the customers it hit. Customers hit by an outage of an hour or more may ask for a refund, and some write a review.
 
 **Shady customers.** Now and then a sales request sounds off: high volume, no questions asked, and payment in crypto. You can accept it. The crypto arrives as ordinary money in your bank account, the customer pays well and on time, and abuse reports and legal requests follow.
 

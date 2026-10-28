@@ -1,4 +1,4 @@
-import { AppWindow, Cable, HardDrive, Network, Server, Shield, ShoppingCart, Store } from "lucide-react";
+import { AppWindow, BatteryCharging, Cable, HardDrive, Network, Server, Shield, ShoppingCart, Store } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -18,10 +18,10 @@ const LINE_NAME: Record<string, string> = {
 };
 const CLASSES: [string, typeof Server][] = [
   ...[...new Set(Object.values(LINE_NAME))].map((c): [string, typeof Server] => [c, Server]),
-  ["Layer 2", Network], ["Layer 3", Network], ["Security", Shield], ["Patch panels", Cable], ["Parts", HardDrive],
+  ["Layer 2", Network], ["Layer 3", Network], ["Security", Shield], ["Patch panels", Cable], ["Power", BatteryCharging], ["Parts", HardDrive],
 ];
 const classOf = (m: DeviceModel) =>
-  m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "part" ? "Parts" : "Patch panels";
+  m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "part" ? "Parts" : m.kind === "ups" ? "Power" : "Patch panels";
 
 const SWAP = { raid: "In RAID", dual: "With two", yes: "Yes", no: "No" };
 
@@ -90,7 +90,7 @@ function Card({ model, brand, cls }: Item) {
     ["Height", height(model)],
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
     ...(s ? [["Cores", cores(s.cores)], ["RAM", ram(s.ramGb)], ["Storage", `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),
-    [model.kind === "patch" ? "Jacks" : model.kind === "server" ? "NICs" : "Ports", portsText(model)],
+    ...(model.batteryWh ? [["Battery", `${model.batteryWh} Wh`]] as [string, string][] : [[model.kind === "patch" ? "Jacks" : model.kind === "server" ? "NICs" : "Ports", portsText(model)]] as [string, string][]),
     ...(model.watts ? [["PSUs", `${model.psus}`], ["Power", `${model.watts} W`]] as [string, string][] : []),
   ];
   return (

@@ -12,7 +12,7 @@ export type ActionResult = { ok: true; id?: string } | { ok: false; error: strin
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const newId = (s: GameState, prefix: string) => `${prefix}${s.nextId++}`;
-const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", part: "part" } as const;
+const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", part: "part" } as const;
 const roleOf = (modelId: string) => ROLE[modelById(modelId).kind];
 const cents = (v: number) => Math.round(v * 100) / 100;
 
