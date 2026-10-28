@@ -7,6 +7,7 @@ import { financeTick } from "../46-finance/finance";
 import { staffTick } from "../47-staff/staff";
 import { marketingTick } from "../80-business/marketing";
 import { computeTick } from "../60-infra/cluster";
+import { networkTick } from "../60-infra/network";
 import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
 import { skillById } from "../10-catalog/research";
@@ -219,6 +220,7 @@ export function tick(state: GameState): SimEvent[] {
   }
   events.push(...computeTick(state));
   events.push(...billingTick(state));
+  events.push(...networkTick(state));
   events.push(...supportTick(state));
   events.push(...financeTick(state));
   events.push(...staffTick(state));

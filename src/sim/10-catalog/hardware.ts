@@ -53,7 +53,7 @@ export interface DeviceModel {
   id: string;
   name: string;
   kind: DeviceKind;
-  // Rack units; gateways are 0 and live on a carrier panel.
+  // Rack units; panel gateways are 0 and live on a carrier panel, edge routers mount in a rack.
   height: number;
   ports: PortSpec[];
   watts: number;
@@ -162,6 +162,11 @@ export const MODELS: DeviceModel[] = [
   other("patch-24f", "Patch panel 24, fiber", "patch", 1, ports(48, 400, "sfp"), 0, 250),
   other("patch-48", "Patch panel 48, copper", "patch", 1, ports(96, 1), 0, 140),
   other("patch-48f", "Patch panel 48, fiber", "patch", 1, ports(96, 400, "sfp"), 0, 450),
+  // Edge routers mount in a rack; every uplink link takes one of their ports.
+  other("edge-s", "Edge router S", "gateway", 1, ports(4, 1), 100, 3000, 2005),
+  other("edge-m", "Edge router M", "gateway", 1, [...ports(8, 10), ...ports(4, 1)], 200, 12000, 2008),
+  other("edge-l", "Edge router L", "gateway", 2, ports(32, 100), 600, 40000, 2014),
+  other("edge-xl", "Edge router XL", "gateway", 2, ports(36, 400), 900, 90000, 2021),
   // Price 0 keeps gateways out of the shop; they come with the basement and with every datacenter location.
   other("home-router", "Home router", "gateway", 0, ports(4, 1), 10, 0),
   other("handoff", "Datacenter handoff", "gateway", 0, ports(2, 1), 0, 0),

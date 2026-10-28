@@ -67,3 +67,15 @@ export function planOf(product: Product, planId: string | null): Plan {
 // What a customer expects to pay for a plan in a year, per month for hourly products and per year for yearly ones.
 export const marketPrice = (product: Product, planId: string | null, year: number, sla: Sla = "basic"): number =>
   Math.round(planOf(product, planId).price(year) * SLAS[sla].factor * 100) / 100;
+
+// economy.md, Traffic and bandwidth: an average customer's GB per month in 2005, growing 20% a year.
+export const TRAFFIC_GB: Record<Product, number> = {
+  webHosting: 2, domain: 0, ssl: 0, dns: 1, gameServer: 60, vps: 20, vpn: 300, dedicated: 150, storage: 100, cloud: 20, colocation: 500,
+};
+export const TRAFFIC_GROWTH = 1.2;
+// Each plan step doubles the traffic; the middle plan (the lower middle of an even count) is the average customer.
+export function trafficGb(product: Product, planId: string | null, year: number): number {
+  const plans = PRODUCTS[product].plans;
+  const step = Math.max(0, plans.findIndex((p) => p.id === planId)) - Math.floor((plans.length - 1) / 2);
+  return TRAFFIC_GB[product] * Math.pow(TRAFFIC_GROWTH, Math.max(0, year - 2005)) * Math.pow(2, step);
+}

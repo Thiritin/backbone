@@ -1,0 +1,49 @@
+.net-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px 0; }
+.net-head h2 { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
+.net-head .grow { flex: 1; }
+.net-now { color: var(--text-2); }
+.net-bad { color: var(--bad-text); }
+.net-top { padding-top: 16px; }
+
+.net-chart { margin: 12px 16px 0; padding: 10px 12px; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); }
+.net-chart svg { display: block; width: 100%; height: 110px; overflow: visible; }
+.net-legend { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-3); margin-bottom: 6px; }
+.net-legend .grow { flex: 1; }
+.net-key { width: 10px; height: 3px; border-radius: 2px; margin-left: 6px; }
+.net-key:first-child { margin-left: 0; }
+.net-key.carried { background: var(--accent); }
+.net-key.demand { background: var(--text-3); }
+.net-grid { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.net-area { fill: var(--accent-soft); }
+.net-carried { fill: none; stroke: var(--accent); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.net-demand { fill: none; stroke: var(--text-3); stroke-width: 1.25; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+
+.net-meter { height: 4px; margin: 0 14px 10px; border-radius: 2px; background: color-mix(in oklch, var(--text) 8%, transparent); overflow: hidden; }
+.net-meter > span { display: block; height: 100%; border-radius: 2px; }
+.net-meter.ok > span { background: var(--ok); }
+.net-meter.warn > span { background: var(--warn); }
+.net-meter.bad > span { background: var(--bad); }
+
+.net-links { list-style: none; margin: 0; padding: 4px 14px; }
+.net-links li { display: flex; align-items: center; gap: 8px; min-height: 26px; font-size: 12px; color: var(--text-2); }
+.net-links li .num:first-child { width: 36px; color: var(--text); font-weight: 600; }
+.net-links .grow, .net-zl .grow { flex: 1; }
+.net-zl { align-items: center; font-size: 12px; }
+.net-pill-bad { background: var(--bad); color: white; }
+
+.net-map { height: 360px; margin: 12px 16px 16px; border-radius: 10px; overflow: hidden; }
+
+.net-topo { margin: 12px 16px 16px; padding: 12px; overflow: auto; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); }
+.net-topo svg { display: block; }
+.net-col { font-size: 11px; font-weight: 600; fill: var(--text-3); }
+.net-node rect { fill: var(--win); stroke: var(--line-strong); stroke-width: 0.75; }
+.net-node-btn { cursor: pointer; }
+.net-node-btn:hover rect, .net-node-btn:focus-visible rect { stroke: var(--accent); }
+.net-node-btn:focus-visible { outline: none; }
+.net-node-l { font-size: 11.5px; font-weight: 600; fill: var(--text); }
+.net-node-s { font-size: 10.5px; fill: var(--text-3); }
+.net-edge path { fill: none; stroke-width: 1.75; }
+.net-edge text { font-size: 10px; fill: var(--text-3); paint-order: stroke; stroke: var(--field); stroke-width: 3px; stroke-linejoin: round; }
+.net-edge.ok path { stroke: var(--ok); }
+.net-edge.warn path { stroke: var(--warn); }
+.net-edge.bad path { stroke: var(--bad); }
