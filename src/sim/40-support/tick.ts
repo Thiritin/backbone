@@ -129,15 +129,17 @@ export function supportTick(s: GameState): SimEvent[] {
   s.customers = s.customers.map((c) => ({ ...c }));
   s.tickets = s.tickets.map((t) => ({ ...t }));
   const byId = new Map(s.customers.map((c) => [c.id, c]));
-  const customer = (id: string) => byId.get(id)!;
+  // An order step may open an account during the tick.
+  const customer = (id: string) => byId.get(id) ?? s.customers.find((c) => c.id === id)!;
   const before = new Set(s.tickets.map((t) => t.id));
 
   const events: SimEvent[] = [];
   finishWork(s, customer, events);
   for (const t of s.tickets) {
     const c = customer(t.customerId);
-    // The customer does not wait on a notice or legal request about them, and an order has no customer yet.
-    if (t.notice || t.kind === "order") continue;
+    // The customer does not wait on a notice or legal request about them, nor on an order before their account exists.
+    // An order waiting on payment stays open until paid.
+    if (t.notice || (t.kind === "order" && (!t.customerId || t.status !== "open"))) continue;
     if (t.status === "waiting" && s.hour - t.updatedAt >= WAITING_CLOSE_HOURS) resolve(s, t, c);
     else if (t.status === "escalated" && (!t.serviceId || serviceOnline(s, t.serviceId))) resolve(s, t, c);
     else if (t.status === "open" && c.churnedAt === null && s.hour > t.dueAt) {

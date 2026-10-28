@@ -3,6 +3,7 @@ import { OPS } from "./en-ops";
 import { SALES_EN } from "./sales";
 import { SECURITY_EN } from "./security";
 import { ORDERS_EN } from "./orders";
+import { MANUAL_EN } from "./manual";
 import { ACTIVITY_EN } from "./activity";
 import { REPLIES_EN } from "./replies";
 
@@ -465,6 +466,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownAttack": () => "This attack is over.",
   ...OPS,
   ...ORDERS_EN,
+  ...MANUAL_EN,
   ...REPLIES_EN,
   // Platforms, virtual machines and backups.
   "ticket.outage.slow.subject": (p) => `${p.service || "My service"} is really slow`,

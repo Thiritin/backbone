@@ -1,7 +1,7 @@
 // Requests over time: the morning mail of new leads, expansion requests from upgrade tickets, customer replies to quotes,
 // expiry into lost sales and the monthly happiness drift. Decisions are recorded in docs/design/economy.md, "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
-import { isMonthStart, yearOf } from "../00-core/time";
+import { isMonthStart } from "../00-core/time";
 import { CHOICE_TAU, NEVER_PAYS, ON_TIME } from "../10-catalog/economy";
 import { PRODUCTS } from "../10-catalog/products";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
@@ -16,8 +16,10 @@ import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { domainFor } from "../30-customers/domains";
-import { firstOrder, isStandard, orderLead, orderQueued } from "./orders";
+import { customFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { provisionService } from "../90-actions/clusters";
+import { grownSpec, requestSize } from "./custom";
+import { customReference, specParams } from "./manual";
 import type { ActionResult } from "../90-actions/hardware";
 import {
   acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, planName, referenceFor, REQUEST_HOURS,
@@ -102,7 +104,7 @@ function morningMail(s: GameState, events: SimEvent[]): void {
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // The website and order emails only sell lines some installed control plane supports.
       if (!lineOffered(s, need.product)) continue;
-      if (isStandard(f.profile, need.sla)) orderLead(s, f.profile, f.city, events, need);
+      if (isStandard(f.profile, need.sla)) orderLead(s, f.profile, f.city, events, need, customFor(s));
       else newLead(s, f.profile, f.city, events, need);
     }
   }
@@ -119,6 +121,18 @@ function expansions(s: GameState): void {
     const plans = PRODUCTS[v.product].plans, i = Math.max(0, plans.findIndex((p) => p.id === v.plan));
     const bigger = plans[i + 1], plan = (bigger ?? plans[i]).id;
     const loc = s.locations.find((l) => l.az === v.zone);
+    // A custom service asks what more of each resource would cost, and grows in place.
+    if (v.spec) {
+      const spec = grownSpec(s.seed, Number(t.id.slice(3)) || 0, v.product, v.spec), old = v.spec;
+      const r = addRequest(s, {
+        kind: "expansion", customerId: c.id, contact: c.name, company: null, profile: c.profile, city: loc?.city ?? s.locations[0].city,
+        product: v.product, plan: plans[i].id, sla: v.sla, reference: customReference(s, c.profile, v.product, spec, v.sla), discount: 0, budget: budgetOf(s.rng),
+        shady: !!c.shady, serviceId: v.id, ticketId: t.id, deadline: s.hour + EXPANSION_HOURS,
+      }, "sales.msg.upgrade");
+      editRequest(s, r.id, (x) => ({ spec, thread: x.thread.map((m, n) => (n ? m : { ...m, params: { ...m.params, product: v.product, ...specParams(old, "0"), ...specParams(spec, "1") } })) }));
+      s.tickets = s.tickets.map((x) => (x.id === t.id ? { ...x, topic: "more" } : x));
+      continue;
+    }
     addRequest(s, {
       kind: "expansion", customerId: c.id, contact: c.name, company: null, profile: c.profile, city: loc?.city ?? s.locations[0].city,
       product: v.product, plan, sla: v.sla, reference: referenceFor(s, c.profile, v.product, plan, v.sla), discount: 0, budget: budgetOf(s.rng),
@@ -134,9 +148,9 @@ const labelFor = (r: SalesRequest): string => {
 };
 
 // The cluster or zone in the request's city where the service fits; null when nothing has room.
-export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "plan">): { clusterId: string | null; zone: string | null } | null {
+export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "plan" | "spec">): { clusterId: string | null; zone: string | null } | null {
   const zones = s.locations.filter((l) => l.city === r.city).map((l) => l.az);
-  const spec = PRODUCTS[r.product], size = spec.plans.find((p) => p.id === r.plan)!.size(yearOf(s.hour));
+  const spec = PRODUCTS[r.product], size = requestSize(s, r);
   if (spec.runsOn === "cluster") {
     const c = s.clusters.find((x) => zones.includes(x.az) && supports(x, r.product) && pickNode(s, x, size));
     return c ? { clusterId: c.id, zone: c.az } : null;
@@ -148,7 +162,7 @@ export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product"
   return { clusterId: null, zone: zones[0] ?? null };
 }
 
-const habitFor = (r: Rng, p: Profile): PaymentHabit => {
+export const habitFor = (r: Rng, p: Profile): PaymentHabit => {
   const { budget } = profileStats(p), x = rand(r);
   return x < ON_TIME[budget] ? "prompt" : x < 1 - NEVER_PAYS[budget] ? "late" : "bad";
 };

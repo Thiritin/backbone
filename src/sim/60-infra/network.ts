@@ -61,7 +61,7 @@ export function loadAt(s: GameState, _v: Service): number {
 
 // A running service's Mbit/s this hour: GB per month spread over the month's seconds, times the load.
 export const serviceMbps = (s: GameState, v: Service): number =>
-  (trafficGb(v.product, v.plan, yearOf(s.hour)) * 8000) / (730 * 3600) * loadAt(s, v);
+  ((v.spec?.trafficGb ?? trafficGb(v.product, v.plan, yearOf(s.hour))) * 8000) / (730 * 3600) * loadAt(s, v);
 
 export const zoneOf = (s: GameState, v: Service): Location | undefined => (v.zone ? s.locations.find((l) => l.az === v.zone) : undefined);
 const running = (s: GameState, v: Service) => v.endedAt === null && !isSuspended(s, v.customerId) && workloadsOf(s, v.id).length > 0;

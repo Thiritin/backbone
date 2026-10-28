@@ -9,6 +9,7 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { isWorkHour } from "../00-core/workhours";
 import { orderError } from "../30-market/orders";
+import { orderMinutes, staffOrderStep } from "../30-market/manual";
 
 export type Role = "support" | "bookkeeper" | "accountant" | "marketing" | "technician";
 export type Task = TicketKind | "reminder" | "dunning" | "final" | "suspend" | "campaigns" | "reviews" | "fairs" | "hardware" | "servers" | "panels";
@@ -182,7 +183,7 @@ const rightChance = (e: Employee) => (e.bot ? BOT_RIGHT : 0.75 + 0.25 * (e.skill
 // A support agent queues a reply or action on the ticket the same way the player does; finishWork in the support tick applies it.
 function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "resolve"; arg: string } {
   if (t.kind === "cancellation") return { op: "resolve", arg: "retain" };
-  if (t.kind === "order") return { op: "resolve", arg: "accept" };
+  if (t.kind === "order") return { op: "resolve", arg: staffOrderStep(s, t, orderError(s, t)) ?? "accept" };
   const right = rightTemplate(s, t);
   if (!right) return { op: "resolve", arg: "unsuspend" };
   if (rand(r) < rightChance(e)) return { op: "reply", arg: right };
@@ -207,8 +208,9 @@ function answerTickets(s: GameState, agents: Employee[], r: Rng): BotTask[] {
   for (const e of agents) {
     for (const t of queue) {
       // An order that cannot be set up waits for the player.
-      if (taken.has(t.id) || !e.trained.includes(t.kind) || (t.kind === "order" && orderError(s, t))) continue;
-      const took = take(s, e, MINUTES[t.kind]);
+      const step = t.kind === "order" ? staffOrderStep(s, t, orderError(s, t)) : null;
+      if (taken.has(t.id) || !e.trained.includes(t.kind) || (t.kind === "order" && !step)) continue;
+      const took = take(s, e, step ? orderMinutes(s, t, step, MINUTES.order) : MINUTES[t.kind]);
       if (took === null) continue;
       const work = { ...choose(s, e, t, r), doneAt: Math.ceil(e.busyUntil), by: e.name };
       taken.set(t.id, work);

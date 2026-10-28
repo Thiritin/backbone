@@ -1,7 +1,7 @@
 import { chance, hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
-import { marketPrice } from "../10-catalog/products";
 import { OFFER } from "../30-market/market";
+import { serviceMarket } from "../30-market/custom";
 import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { activeServices, type Customer, type Service } from "./customers";
@@ -21,7 +21,7 @@ export const tolerance = (s: GameState, c: Customer): number => TOLERANCE[0] + (
 // The monthly price a customer finds fair (the market, or their usual offer if higher) and the most they pay.
 // They measure against the market of the year they signed when it was higher.
 export function limits(s: GameState, c: Customer, v: Service): { fair: number; max: number } {
-  const year = (h: number) => marketPrice(v.product, v.plan, yearOf(h), v.sla);
+  const year = (h: number) => serviceMarket(v, yearOf(h));
   const market = Math.max(year(s.hour), year(v.startedAt)), p = profileStats(c.profile);
   return { fair: market * Math.max(1, OFFER[p.budget]), max: market * p.cap * tolerance(s, c) };
 }

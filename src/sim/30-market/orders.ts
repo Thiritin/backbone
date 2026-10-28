@@ -1,6 +1,9 @@
 // GDD, Where requests come from: standard orders arrive as order emails in Support until the order form takes them in directly.
 // Numbers in economy.md, Orders by email.
-import { rand } from "../00-core/rng";
+import { hashRng, rand } from "../00-core/rng";
+import { yearOf } from "../00-core/time";
+import { CUSTOM_LATER, customizable, customSpec } from "./custom";
+import { applyStep, customReference, isStep, specParams } from "./manual";
 import { PRODUCTS } from "../10-catalog/products";
 import type { Profile } from "../30-customers/customers";
 import { profileStats, type Ticket } from "../40-support/tickets";
@@ -40,16 +43,24 @@ function place(s: GameState, r: SalesRequest): ActionResult & { reason?: string;
   return done;
 }
 
-export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile)): SalesRequest {
+// custom asks for its own resources (custom.ts) and is worked step by step; otherwise it orders a package.
+export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile), custom = false): SalesRequest {
   const who = senderFor(s.rng, profile), variant = Math.floor(rand(s.rng) * 2);
-  const reference = referenceFor(s, profile, need.product, need.plan, need.sla), discount = discountFor(s, profile);
+  custom &&= customizable(need.product);
   let r = addRequest(s, {
-    kind: "order", customerId: null, ...who, profile, city, ...need, reference, discount, budget: 1, shady: false, serviceId: null, ticketId: null,
+    kind: "order", customerId: null, ...who, profile, city, ...need, reference: 0, discount: discountFor(s, profile), budget: 1, shady: false, serviceId: null, ticketId: null,
     deadline: s.hour + REQUEST_HOURS,
-  }, `order.msg.${need.product}.${variant}`);
-  r = editRequest(s, r.id, () => ({ quote: Math.round(reference * (1 - discount) * 100) / 100 }));
+  }, custom ? `order.msg.custom.${need.product}.${variant}` : `order.msg.${need.product}.${variant}`);
+  const key = Number(r.id.slice(3)) || 0, spec = custom ? customSpec(s.seed, key, need.product, need.plan, yearOf(s.hour)) : undefined;
+  const reference = spec ? customReference(s, profile, need.product, spec, need.sla) : referenceFor(s, profile, need.product, need.plan, need.sla);
+  // One in three web customers already owns the domain they name.
+  const owned = !!spec && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
+  r = editRequest(s, r.id, (x) => ({
+    reference, quote: Math.round(reference * (1 - x.discount) * 100) / 100,
+    ...(spec && { spec, owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, ...specParams(spec), owned: owned ? 1 : 0 } })) }),
+  }));
   const params = { name: requestName(r), plan: planName(r) };
-  if (hasOrderForm(s) && !missingFor(s, r).length && targetFor(s, r) && place(s, r).ok) {
+  if (!spec && hasOrderForm(s) && !missingFor(s, r).length && targetFor(s, r) && place(s, r).ok) {
     events.push({ app: "Customers", key: "event.orderPlaced", params: { ...params, price: r.quote! } });
     return r;
   }
@@ -66,24 +77,29 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
 export function firstOrder(s: GameState, events: SimEvent[]): void {
   const day = Math.floor(s.hour / 24);
   if (day >= FIRST_ORDER_DAYS || !s.customers.some((c) => c.habit === "friend") || s.sales.requests.some((r) => r.kind === "order")) return;
-  if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events);
+  if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events, undefined, customFor(s));
 }
+
+// Orders ask for their own resources until the order form sells packages; a quarter still do after it.
+export const customFor = (s: GameState): boolean => !hasOrderForm(s) || rand(hashRng(s.seed, s.hour, s.nextId, 233)) < CUSTOM_LATER;
 
 // Why a request is declined, in the customer's terms: the product is not sold there, there is no room, or neither.
 export const declineReason = (s: GameState, r: SalesRequest): string =>
   missingFor(s, r).length ? "notOffered" : !targetFor(s, r) ? "noCapacity" : "busy";
 
 // Our email on a request's thread, worded by the seed.
-export function mailRequest(s: GameState, id: string, what: string, by?: string): void {
+export function mailRequest(s: GameState, id: string, what: string, by?: string, extra: Record<string, string | number> = {}): void {
   const r = s.sales.requests.find((x) => x.id === id)!;
-  const params = { ...companyParams(s), name: r.contact, plan: planName(r), city: r.city, domain: r.domain ?? "", price: r.quote ?? r.reference, hour: s.hour };
+  const params = { ...companyParams(s), name: r.contact, plan: planName(r), city: r.city, domain: r.domain ?? "", price: r.quote ?? r.reference, hour: s.hour, ...extra };
   say(s, r.id, "you", variant(s, what, Number(r.id.slice(3)) || 0, r.thread.length), params, by);
 }
 
 // Applies a queued accept or decline; the support tick calls this once the work time has passed.
 export function applyOrderWork(s: GameState, t: Ticket, action: string, by?: string): SimEvent | null {
+  if (isStep(action)) return applyStep(s, t, action, by);
   const r = orderOf(s, t);
-  if (!r || r.status !== "open") {
+  // A confirmed custom order waits on payment as "quoted" and can still be declined.
+  if (!r || (r.status !== "open" && !(r.spec && r.status === "quoted"))) {
     Object.assign(t, { status: "closed", updatedAt: s.hour });
     return null;
   }

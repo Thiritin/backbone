@@ -11,7 +11,7 @@ const fail = (error: string): ActionResult => ({ ok: false, error });
 
 type Found = { t: Ticket } | { error: ActionResult };
 
-function find(s: GameState, id: string): Found {
+export function find(s: GameState, id: string): Found {
   const t = s.tickets.find((x) => x.id === id);
   if (!t) return { error: fail("error.unknownTicket") };
   if (isFinal(t)) return { error: fail("error.ticketDone") };
@@ -20,12 +20,12 @@ function find(s: GameState, id: string): Found {
 }
 
 // The player works one task at a time, so each reply or action starts when the previous one ends.
-function queue(s: GameState, t: Ticket, op: Work["op"], arg: string): ActionResult {
+export function queue(s: GameState, t: Ticket, op: Work["op"], arg: string, minutes = MINUTES[t.kind]): ActionResult {
   const start = Math.max(s.playerBusyUntil, s.hour * 60);
-  s.playerBusyUntil = start + MINUTES[t.kind];
+  s.playerBusyUntil = start + minutes;
   t.work = { op, arg, doneAt: s.playerBusyUntil };
   t.unread = false;
-  logActivity(s, { customerId: t.customerId, serviceId: t.serviceId, by: null, key: `activity.${op}`, params: { kind: t.kind, arg }, minutes: MINUTES[t.kind] });
+  logActivity(s, { customerId: t.customerId, serviceId: t.serviceId, by: null, key: `activity.${op}`, params: { kind: t.kind, arg }, minutes });
   return { ok: true, id: t.id };
 }
 

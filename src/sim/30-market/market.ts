@@ -13,6 +13,7 @@ import { locationOf } from "../60-infra/status";
 import { awareness, leadsThisMonth, PROFILE_IDS, reviewMultiplier, reviewScore, trustBonus } from "../80-business/marketing";
 import { forumAwareness } from "../47-staff/staff";
 import { metrics } from "../metrics";
+import { CUSTOM_NAME, serviceMarket, type CustomSpec } from "./custom";
 
 export type RequestStatus = "open" | "quoted" | "countered" | "refused" | "won" | "lost" | "declined";
 // by names the employee who sent a "you" message; the player otherwise.
@@ -26,6 +27,9 @@ export interface SalesRequest {
   quote: number | null; counter: number | null; replyAt: number | null; attempts: number; thread: SalesMessage[];
   // Web hosting only: the domain the service will carry.
   domain?: string;
+  // A custom order (custom.ts): its resources, whether the customer owns the domain already, its first invoice and the
+  // route chosen for its setup ("auto", a cluster id or a node's device id).
+  spec?: CustomSpec; owned?: boolean; invoiceId?: string; route?: string;
 }
 // reason is an i18n key with its params.
 export interface LostSale { hour: number; name: string; product: Product; plan: string; reference: number; reason: string; params: Record<string, string | number> }
@@ -107,7 +111,7 @@ export function priceIndex(s: GameState): number {
   for (const v of s.services) {
     const c = s.customers.find((x) => x.id === v.customerId);
     if (v.endedAt !== null || v.period !== "hour" || !c || c.habit === "friend") continue;
-    const ref = marketPrice(v.product, v.plan, year, v.sla) * OFFER[profileStats(c.profile).budget];
+    const ref = serviceMarket(v, year) * OFFER[profileStats(c.profile).budget];
     if (ref > 0) ratios.push((v.price * 730) / ref);
   }
   return ratios.length ? ratios.reduce((a, b) => a + b, 0) / ratios.length : 1;
@@ -228,4 +232,4 @@ export function senderFor(r: Rng, profile: Profile, shady = false): { contact: s
 }
 
 export const requestName = (r: Pick<SalesRequest, "contact" | "company">): string => r.company ?? r.contact;
-export const planName = (r: Pick<SalesRequest, "product" | "plan">): string => planOf(r.product, r.plan).name;
+export const planName = (r: Pick<SalesRequest, "product" | "plan" | "spec">): string => (r.spec && CUSTOM_NAME[r.product]) || planOf(r.product, r.plan).name;

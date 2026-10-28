@@ -13,6 +13,7 @@ import {
 import { freeSlots, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
 import type { ActionResult } from "./hardware";
+import { sizeOf, type CustomSpec } from "../30-market/custom";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 export const CLUSTER_NAME_MAX = 40;
@@ -151,13 +152,14 @@ const workload = (s: GameState, serviceId: string, w: Partial<Workload>): Worklo
   stopped: false, busyUntil: 0, backupAt: null, ...w,
 });
 
-// Places a service on hardware by its product: a cluster workload (in clusterId, or the first cluster of its zone with room),
-// a whole free server for dedicated, rack units with power for colocation. A service without a zone takes the zone it lands in.
-export function placeService(s: GameState, serviceId: string, clusterId: string | null = null): ActionResult {
+// Places a service on hardware by its product: a cluster workload (in clusterId, or the first cluster of its zone with room;
+// on deviceId when given), a whole free server for dedicated, rack units with power for colocation. A service without a zone
+// takes the zone it lands in. A custom service books its own resources.
+export function placeService(s: GameState, serviceId: string, clusterId: string | null = null, deviceId: string | null = null): ActionResult {
   const v = s.services.find((x) => x.id === serviceId);
   if (!v || v.endedAt !== null) return fail("error.unknownService");
   if (workloadsOf(s, v.id).length) return fail("error.placed");
-  const spec = PRODUCTS[v.product], plan = planOf(v.product, v.plan), size = plan.size(yearOf(s.hour));
+  const spec = PRODUCTS[v.product], plan = planOf(v.product, v.plan), size = v.spec ? sizeOf(v.spec) : plan.size(yearOf(s.hour));
   const inZone = (az: string) => v.zone === null || v.zone === az;
   let w: Workload | null = null, az = "";
   if (spec.runsOn === "none") return { ok: true };
@@ -165,7 +167,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     // ponytail: no high-availability clusters yet, so HA products can't be placed.
     if (spec.ha) return fail("error.needsHaCluster");
     for (const c of s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)) && supports(x, v.product))) {
-      const node = controlPlaneUp(s, c) ? pickNode(s, c, size) : null;
+      const node = controlPlaneUp(s, c) ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, size) : null;
       if (node) { w = workload(s, v.id, { ...size, clusterId: c.id, deviceId: node }); az = c.az; break; }
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;
@@ -192,7 +194,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
   return { ok: true, id: w.id };
 }
 
-export interface Order { label: string; plan?: string | null; zone?: string | null; clusterId?: string | null; sla?: Sla; price?: number }
+export interface Order { label: string; plan?: string | null; zone?: string | null; clusterId?: string | null; sla?: Sla; price?: number; spec?: CustomSpec; deviceId?: string | null }
 
 // Signs a contract with the catalog's terms and places it; nothing is recorded when it can't be placed.
 // price is per hour for hourly products and per year for yearly ones; it defaults to the market reference.
@@ -203,7 +205,8 @@ export function provisionService(s: GameState, customerId: string, product: Prod
   const price = order.price ?? (spec.period === "hour" ? reference / 730 : reference);
   const nextId = s.nextId;
   const id = addService(s, customerId, product, order.label, price, spec.period, spec.commitMonths, order.zone ?? null, plan.id, sla);
-  const placed = placeService(s, id, order.clusterId ?? null);
+  if (order.spec) s.services = s.services.map((v) => (v.id === id ? { ...v, spec: order.spec } : v));
+  const placed = placeService(s, id, order.clusterId ?? null, order.deviceId ?? null);
   if (!placed.ok) {
     Object.assign(s, { services: s.services.filter((v) => v.id !== id), nextId });
     return placed;

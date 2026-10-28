@@ -183,8 +183,37 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `We are sorry: the setup of ${hosting(p)} in ${p.city} failed, so we have to cancel your order. You have not been charged.`,
     (p) => `Unfortunately, we could not set up ${hosting(p)} as ordered. The order is cancelled and nothing will be invoiced.`,
   ],
+  "order.account": [
+    (p) => `Thank you for your order of ${hosting(p)}. We have opened a customer account for you and will send the order confirmation with your invoice shortly.`,
+    (p) => `Welcome to ${p.company}! Your customer account is ready. The confirmation of ${hosting(p)} and the invoice follow in a moment.`,
+    () => "Thank you for choosing us. Your customer account has been created, and we are preparing your order confirmation now.",
+  ],
+  "order.invoice": [
+    (p) => `We confirm your order of ${hosting(p)} at ${euroCents(Number(p.price))} a month. Invoice ${p.invoice} over ${euroCents(Number(p.total))} is attached. We set everything up as soon as it is paid.`,
+    (p) => `Your order is confirmed: ${hosting(p)} in ${p.city} for ${euroCents(Number(p.price))} a month. Please pay invoice ${p.invoice} (${euroCents(Number(p.total))}), and we will get started.`,
+    (p) => `Thank you, the order stands. ${hosting(p)} costs ${euroCents(Number(p.price))} a month; the first invoice, ${p.invoice}, comes to ${euroCents(Number(p.total))}.`,
+  ],
+  "order.domain": [
+    (p) => `Good news: ${p.domain} is registered in your name. It will point to your web space once that is set up.`,
+    (p) => `We have registered ${p.domain} for you. It is yours for a year and renews with us.`,
+    (p) => `${p.domain} is now registered for you. The web space follows next.`,
+  ],
+  "order.transfer": [
+    (p) => `The transfer of ${p.domain} to us is complete. Nothing changes for you except who renews it.`,
+    (p) => `${p.domain} has moved to us. We will take care of the renewals from now on.`,
+    (p) => `We have taken over ${p.domain} from your previous provider. It will point to your new web space.`,
+  ],
+  "order.live": [
+    (p) => (p.domain
+      ? `${p.domain} is live on our servers in ${p.city} since ${day(p)}. Log in at panel.${p.host} with the user name ${String(p.domain).split(".")[0]}; the password follows in a separate email. Upload your site by FTP to ftp.${p.domain}.`
+      : `Your ${p.plan} in ${p.city} is running since ${day(p)}. Log in as root over SSH; the address and password follow in a separate email.`),
+    (p) => (p.domain
+      ? `Your web space for ${p.domain} is ready since ${day(p)}. The control panel is at panel.${p.host}, and your mailboxes are set up at mail.${p.host}.`
+      : `${p.plan} is up in ${p.city} since ${day(p)}. Your root login is on its way by separate email.`),
+    (p) => `Everything is set up: ${hosting(p)} runs in ${p.city} since ${day(p)}. Your access details follow in a separate email.`,
+  ],
 };
-const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed"];
+const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.account", "order.invoice", "order.domain", "order.transfer", "order.live"];
 const SENDER = ["forward", "takedown", "reject", "comply", "object"];
 
 // Outgoing emails; spread into en.

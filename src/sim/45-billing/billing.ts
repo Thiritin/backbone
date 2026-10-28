@@ -283,7 +283,7 @@ export function billingTick(s: GameState): SimEvent[] {
     const from = hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1)));
     for (const v of s.services) {
       if (v.period !== "hour") continue;
-      const hours = Math.min(v.endedAt ?? s.hour, s.hour) - Math.max(v.startedAt, from);
+      const hours = Math.min(v.endedAt ?? s.hour, s.hour) - Math.max(v.startedAt, from, v.prepaidUntil ?? 0);
       if (hours <= 0) continue;
       // Hours down are not billed; a missed SLA credits its share of what is billed.
       const billed = hours - Math.min(hours, s.downHours[v.id] ?? 0), sla = SLAS[v.sla];

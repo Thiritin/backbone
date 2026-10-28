@@ -20,6 +20,7 @@ import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
 import type { FairBooking } from "./80-business/fairs";
 import type { LossReport } from "./85-products/products";
+import type { Domain } from "./30-customers/registry";
 
 export const SAVE_VERSION = 2;
 
@@ -134,6 +135,8 @@ export interface GameState {
   lossReports: LossReport[];
   // PHP security advisories and the nodes patched, offline or compromised.
   security: Security;
+  // Domains registered or transferred for customers (30-customers/registry.ts).
+  domains: Domain[];
 }
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
@@ -179,6 +182,7 @@ export const newGame = (seed: number): GameState => ({
   ops: newOps(),
   security: newSecurity(),
   sales: newSales(),
+  domains: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

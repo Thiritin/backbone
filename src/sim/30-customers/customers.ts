@@ -1,4 +1,5 @@
 import type { Sla } from "../10-catalog/products";
+import type { CustomSpec } from "../30-market/custom";
 
 export type Profile = "private" | "gamer" | "hobbyDev" | "soleProp" | "smallBiz" | "agency" | "office" | "onlineShop" | "enterprise";
 export type Product = "webHosting" | "domain" | "ssl" | "dns" | "gameServer" | "vps" | "vpn" | "dedicated" | "storage" | "cloud" | "colocation";
@@ -15,5 +16,7 @@ export interface Service { id: string; customerId: string; product: Product; lab
   // Hourly price from before the first of a run of raises; unset once the price is back at or below it.
   before?: number;
   // Web hosting only: the customer's domain, fixed at sign-up (domains.ts).
-  domain?: string }
+  domain?: string;
+  // A custom order's resources in place of its plan's (custom.ts), and the hour up to which its first invoice paid it.
+  spec?: CustomSpec; prepaidUntil?: number }
 export const activeServices = (services: Service[], customerId: string): Service[] => services.filter((v) => v.customerId === customerId && v.endedAt === null);
