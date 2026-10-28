@@ -1,0 +1,253 @@
+import { describe, expect, it } from "vitest";
+import { marketPrice, PRODUCTS } from "../src/sim/10-catalog/products";
+import { serviceOnline } from "../src/sim/40-support/status";
+import { invoiceTotal } from "../src/sim/45-billing/billing";
+import { newGame, type GameState } from "../src/sim/50-state";
+import { nodeCapacity, nodeUsed, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
+import { freeSlots, rackPower } from "../src/sim/60-infra/status";
+import { tick, type SimEvent } from "../src/sim/88-tick/tick";
+import { addNode, cordon, createCluster, drain, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
+import { addCustomer, addService } from "../src/sim/90-actions/customers";
+import { addLocation, buyDevice, buyRack, connect, mountDevice, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
+import { FRIEND_HAPPINESS, startGame } from "../src/sim/90-actions/start";
+import { deserialize, serialize } from "../src/sim/91-save/save";
+import { mrr } from "../src/sim/metrics";
+
+type R = ReturnType<typeof setPower>;
+const ok = (r: R) => {
+  if (!r.ok) throw new Error(r.error);
+  return r.id!;
+};
+const err = (r: R) => (r.ok ? "ok" : r.error);
+const run = (s: GameState, hours: number) => {
+  const events: SimEvent[] = [];
+  for (let h = 0; h < hours; h++) events.push(...tick(s));
+  return events;
+};
+const FEB_1 = 744;
+
+// The basement with a second G1 server cabled to the switch and both servers in one cluster.
+function twoNodes() {
+  const s = { ...newGame(1), cash: 100_000 };
+  const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
+  ok(mountDevice(s, second, "rack2", 2));
+  ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
+  const cluster = ok(createCluster(s, "loc1", "Web 1"));
+  ok(addNode(s, cluster, "dev3"));
+  ok(addNode(s, cluster, second));
+  const cus = addCustomer(s, "Ada Lang", "hobbyDev");
+  return { s, cluster, second, cus };
+}
+
+describe("product catalog", () => {
+  it("prices plans at the market reference for the year", () => {
+    expect(marketPrice("webHosting", "web-m", 2005)).toBe(6);
+    expect(marketPrice("webHosting", "web-m", 2020)).toBe(6);
+    // economy.md: €16 per GB of RAM in 2005, so 512 MB is about €8.
+    expect(marketPrice("vps", "vps-s", 2005)).toBeCloseTo(8.25, 1);
+    expect(marketPrice("vps", "vps-s", 2026)).toBeLessThan(marketPrice("vps", "vps-s", 2005));
+    expect(marketPrice("vps", "vps-s", 2005, "premium")).toBeCloseTo(1.5 * marketPrice("vps", "vps-s", 2005), 1);
+    expect(marketPrice("ssl", null, 2010)).toBe(50);
+    expect(marketPrice("ssl", null, 2016)).toBe(0);
+  });
+  it("gives every product a place to run, terms and at least one plan", () => {
+    for (const spec of Object.values(PRODUCTS)) expect(spec.plans.length).toBeGreaterThan(0);
+    expect(PRODUCTS.dedicated.runsOn).toBe("server");
+    expect(PRODUCTS.colocation.runsOn).toBe("rack");
+    expect(PRODUCTS.domain).toMatchObject({ runsOn: "none", period: "year" });
+    expect(PRODUCTS.vps.plans[0].size(2005)).toEqual({ vcpu: 1, ramGb: 0.5, diskGb: 10 });
+    expect(PRODUCTS.vps.plans[0].size(2012).ramGb).toBeCloseTo(1);
+  });
+});
+
+describe("starting company", () => {
+  it("starts with three friends on web hosting in the basement cluster, online and paying €18 a month", () => {
+    const s = startGame(1);
+    expect(s.customers.map((c) => [c.name, c.happiness, c.habit])).toEqual([
+      ["Jonas Weber", FRIEND_HAPPINESS, "friend"], ["Mira Schulz", FRIEND_HAPPINESS, "friend"], ["Tobi Kraus", FRIEND_HAPPINESS, "friend"],
+    ]);
+    expect(s.clusters).toMatchObject([{ name: "Basement 1", az: "fra1", nodes: [{ deviceId: "dev3", state: "active" }] }]);
+    expect(s.services.map((v) => workloadsOf(s, v.id)[0].deviceId)).toEqual(["dev3", "dev3", "dev3"]);
+    expect(s.services.every((v) => serviceOnline(s, v.id))).toBe(true);
+    expect(mrr(s)).toBeCloseTo(18);
+    expect(s.cash).toBe(newGame(1).cash);
+  });
+  it("takes the friends offline and opens outage tickets when the switch loses power", () => {
+    const s = startGame(1);
+    run(s, 2);
+    ok(setPower(s, "dev4", false));
+    run(s, 3);
+    expect(s.services.some((v) => serviceOnline(s, v.id))).toBe(false);
+    const outages = s.tickets.filter((t) => t.kind === "outage");
+    expect(outages.length).toBeGreaterThan(0);
+    expect(outages.every((t) => s.services.some((v) => v.id === t.serviceId))).toBe(true);
+    ok(setPower(s, "dev4", true));
+    expect(s.services.every((v) => serviceOnline(s, v.id))).toBe(true);
+  });
+  it("invoices the friends in February for the hours they were up", () => {
+    const s = startGame(1);
+    run(s, 10);
+    ok(setPower(s, "dev3", false));
+    run(s, 4);
+    ok(setPower(s, "dev3", true));
+    run(s, FEB_1 - 14);
+    const inv = s.invoices.filter((i) => i.issuedAt === FEB_1);
+    expect(inv).toHaveLength(3);
+    expect(inv[0].lines).toMatchObject([{ key: "invoice.line.hours", params: { hours: FEB_1 - 4 } }]);
+    expect(invoiceTotal(inv[0])).toBeCloseTo(((FEB_1 - 4) * 6) / 730, 2);
+    expect(s.downHours).toEqual({});
+  });
+});
+
+describe("placement", () => {
+  it("packs onto one node by default and spreads across nodes when set", () => {
+    const { s, cluster, second, cus } = twoNodes();
+    for (let i = 0; i < 4; i++) ok(provisionService(s, cus, "vps", { label: `pack ${i}`, plan: "vps-s" }));
+    expect(workloadsOn(s, "dev3")).toHaveLength(4);
+    ok(setPlacement(s, cluster, "spread"));
+    for (let i = 0; i < 4; i++) ok(provisionService(s, cus, "vps", { label: `spread ${i}`, plan: "vps-s" }));
+    expect(workloadsOn(s, second)).toHaveLength(4);
+  });
+  it("books RAM up to 1.5 × the node and refuses a service that does not fit, recording nothing", () => {
+    const { s, cus } = twoNodes();
+    expect(nodeCapacity(s.devices.find((d) => d.id === "dev3")!)).toEqual({ vcpu: 16, ramGb: 12, diskGb: 1000 });
+    // 12 GB of RAM on each node fits 6 VPS L of 2 GB, but their 40 GB of disk each also has to fit.
+    for (let i = 0; i < 12; i++) ok(provisionService(s, cus, "vps", { label: `big ${i}`, plan: "vps-l" }));
+    expect(nodeUsed(s, "dev3").ramGb).toBe(12);
+    const services = s.services.length, nextId = s.nextId;
+    expect(err(provisionService(s, cus, "vps", { label: "one more", plan: "vps-l" }))).toBe("error.noCapacity");
+    expect([s.services.length, s.nextId]).toEqual([services, nextId]);
+  });
+  it("skips cordoned and broken nodes and takes the zone of the cluster it lands in", () => {
+    const { s, second, cus } = twoNodes();
+    ok(cordon(s, "dev3"));
+    const id = ok(provisionService(s, cus, "webHosting", { label: "ada.example" }));
+    expect(workloadsOf(s, id)[0].deviceId).toBe(second);
+    expect(s.services.find((v) => v.id === id)!.zone).toBe("fra1");
+    ok(setPower(s, second, false));
+    expect(err(provisionService(s, cus, "webHosting", { label: "two.example" }))).toBe("error.noCapacity");
+    ok(uncordon(s, "dev3"));
+    ok(provisionService(s, cus, "webHosting", { label: "two.example" }));
+    expect(err(provisionService(s, cus, "webHosting", { label: "far.example", zone: "ams1" }))).toBe("error.noCapacity");
+    expect(err(provisionService(s, cus, "cloud", { label: "cloud" }))).toBe("error.needsHaCluster");
+  });
+  it("places a plain contract once and leaves resold products unplaced", () => {
+    const { s, cus } = twoNodes();
+    const svc = addService(s, cus, "vps", "VPS", 0.01, "hour");
+    ok(placeService(s, svc));
+    expect(err(placeService(s, svc))).toBe("error.placed");
+    const domain = ok(provisionService(s, cus, "domain", { label: "ada.example" }));
+    expect(workloadsOf(s, domain)).toEqual([]);
+    expect(s.services.find((v) => v.id === domain)).toMatchObject({ period: "year", price: 15, commitMonths: 12 });
+  });
+});
+
+describe("nodes", () => {
+  it("drains a node onto the others and puts it into maintenance", () => {
+    const { s, second, cus } = twoNodes();
+    for (let i = 0; i < 3; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, plan: "vps-s" }));
+    expect(err(removeNode(s, "dev3"))).toBe("error.nodeNotEmpty");
+    expect(err(unmountDevice(s, "dev3"))).toBe("error.serverInUse");
+    expect(err(sellDevice(s, "dev3"))).toBe("error.serverInUse");
+    ok(drain(s, "dev3"));
+    expect(workloadsOn(s, second)).toHaveLength(3);
+    expect(s.clusters[0].nodes[0].state).toBe("maintenance");
+    ok(removeNode(s, "dev3"));
+    ok(unmountDevice(s, "dev3"));
+  });
+  it("keeps draining as room appears and reports the empty node", () => {
+    const { s, cluster, second, cus } = twoNodes();
+    ok(cordon(s, second));
+    for (let i = 0; i < 6; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, plan: "vps-l" }));
+    ok(uncordon(s, second));
+    for (let i = 0; i < 4; i++) ok(provisionService(s, cus, "vps", { label: `w${i}`, plan: "vps-l" }));
+    ok(drain(s, "dev3"));
+    expect(workloadsOn(s, "dev3")).toHaveLength(4);
+    expect(s.clusters.find((c) => c.id === cluster)!.nodes[0].state).toBe("draining");
+    // Two of the second node's customers leave, which frees room for two more.
+    s.services = s.services.map((v) => (v.label === "w0" || v.label === "w1" ? { ...v, endedAt: s.hour } : v));
+    run(s, 1);
+    expect(workloadsOn(s, "dev3")).toHaveLength(2);
+    s.services = s.services.map((v) => (v.label === "w2" || v.label === "w3" ? { ...v, endedAt: s.hour } : v));
+    const events = run(s, 1);
+    expect(workloadsOn(s, "dev3")).toHaveLength(0);
+    expect(events).toContainEqual({ app: "Locations", key: "event.drained", params: { device: "fra1-srv-01" } });
+  });
+  it("only adds servers mounted in the cluster's zone that nothing else uses", () => {
+    const { s, cluster, second } = twoNodes();
+    expect(err(addNode(s, cluster, second))).toBe("error.serverInUse");
+    expect(err(addNode(s, cluster, "dev4"))).toBe("error.notServer");
+    const stored = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
+    expect(err(addNode(s, cluster, stored))).toBe("error.notMounted");
+    expect(err(createCluster(s, "loc1", "Web 1"))).toBe("error.clusterNameTaken");
+    expect(err(createCluster(s, "loc1", " "))).toBe("error.clusterName");
+  });
+});
+
+describe("outages and billing", () => {
+  it("loses a workload's data with its node until it moves to a fresh one", () => {
+    const { s, second, cus } = twoNodes();
+    const id = ok(provisionService(s, cus, "vps", { label: "v", plan: "vps-s" }));
+    s.hour = 5;
+    s.devices = s.devices.map((d) => (d.id === "dev3" ? { ...d, dataLost: 5 } : d));
+    expect(serviceOnline(s, id)).toBe(false);
+    ok(drain(s, "dev3"));
+    expect(workloadsOf(s, id)[0].deviceId).toBe(second);
+    expect(serviceOnline(s, id)).toBe(true);
+  });
+  it("credits a business SLA missed by downtime and bills only the hours up", () => {
+    const { s, cus } = twoNodes();
+    const id = ok(provisionService(s, cus, "vps", { label: "shop", plan: "vps-s", sla: "business", price: 0.1 }));
+    run(s, 1);
+    ok(setPower(s, "dev4", false));
+    run(s, 5);
+    ok(setPower(s, "dev4", true));
+    run(s, FEB_1 - 6);
+    const inv = s.invoices.find((i) => i.customerId === cus)!;
+    expect(inv.lines).toEqual([
+      { serviceId: id, key: "invoice.line.hours", params: { label: "shop", hours: FEB_1 - 5 }, amount: (FEB_1 - 5) * 0.1 },
+      { serviceId: id, key: "invoice.line.slaCredit", params: { label: "shop" }, amount: -Math.round((FEB_1 - 5) * 0.1 * 0.1 * 100) / 100 },
+    ]);
+  });
+});
+
+describe("dedicated and colocation", () => {
+  it("rents a whole free server and keeps it out of clusters", () => {
+    const { s, cus } = twoNodes();
+    expect(err(provisionService(s, cus, "dedicated", { label: "ded" }))).toBe("error.noFreeServer");
+    const third = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
+    ok(mountDevice(s, third, "rack2", 3));
+    ok(connect(s, { device: third, port: 0 }, { device: "dev4", port: 2 }));
+    const id = ok(provisionService(s, cus, "dedicated", { label: "ded" }));
+    expect(workloadsOf(s, id)).toMatchObject([{ deviceId: third, clusterId: null }]);
+    expect(serviceOnline(s, id)).toBe(true);
+    expect(err(addNode(s, s.clusters[0].id, third))).toBe("error.serverInUse");
+  });
+  it("rents rack units with power in a datacenter rack, from the top", () => {
+    const { s, cus } = twoNodes();
+    expect(err(provisionService(s, cus, "colocation", { label: "colo", plan: "colo-q" }))).toBe("error.noRackSpace");
+    const loc = ok(addLocation(s, "hetzler-park", "positions", 1));
+    const rack = ok(buyRack(s, loc, "rack-42", 1));
+    const id = ok(provisionService(s, cus, "colocation", { label: "colo", plan: "colo-q" }));
+    expect(workloadsOf(s, id)).toMatchObject([{ rackId: rack, slot: 33, units: 10, watts: 1000 }]);
+    expect(freeSlots(s, rack, 1)).not.toContain(33);
+    expect(rackPower(s, rack).watts).toBe(1000);
+    s.hour = s.locations.find((l) => l.id === loc)!.readyAt;
+    expect(serviceOnline(s, id)).toBe(true);
+  });
+});
+
+describe("saves", () => {
+  it("keeps clusters and workloads, and loads an older save with its services unplaced and online", () => {
+    const s = startGame(3);
+    const back = deserialize(serialize(s));
+    expect([back.clusters, back.workloads]).toEqual([s.clusters, s.workloads]);
+    const old = JSON.parse(serialize(s));
+    for (const k of ["clusters", "workloads", "downHours"]) delete old[k];
+    for (const v of old.services) { delete v.plan; delete v.sla; }
+    const loaded = deserialize(JSON.stringify(old));
+    expect([loaded.clusters, loaded.workloads, loaded.downHours]).toEqual([[], [], {}]);
+    expect(loaded.services[0]).toMatchObject({ plan: null, sla: "basic" });
+    expect(loaded.services.every((v) => serviceOnline(loaded, v.id))).toBe(true);
+  });
+});

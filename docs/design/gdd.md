@@ -339,6 +339,18 @@ Draining stops with a message when the rest of the cluster has no room, and says
 
 Worth adding later: email hosting and GPU compute.
 
+**How the first build plays.** These decisions hold until the parts above them are built:
+
+- A cluster has a name, a zone and a placement policy, and takes every cluster product. Its name says what the player uses it for, such as "Webhosting 1"; there are no cluster kinds.
+- Every service with hardware runs as one workload. The scheduler books what the plan asks for against the node's cores × 8, RAM × 1.5 and usable disk × 2, and skips nodes that are cordoned, draining, in maintenance or not working.
+- A service is online when every workload's server reaches the internet, still holds the data written since the workload was placed, and the customer is not suspended. Domains, certificates and services from saves made before clusters have no workload and stay online.
+- Draining moves every workload that fits at once and the rest each hour as room appears; an empty node goes into maintenance. A workload moved off a node that lost its data starts on a fresh disk and comes back online.
+- Dedicated servers take a whole mounted server that no cluster or other customer uses. Colocation takes free units at the top of a datacenter rack and adds its watts to the rack, and it is online while the rack has power.
+- Servers in a cluster or rented out can't be unmounted or sold, and their racks can't move to another zone.
+- The game starts with the cluster "Basement 1" on the basement server and the three friends' web hosting on it.
+
+Still to build on top of this: control planes, usage curves and per-cluster overcommit settings, high-availability clusters and restart after a node fails, migration times, two DNS workloads on different nodes, replicas and keep-apart rules, backups and restores, and the uplinks of colocation customers.
+
 **Software choices.** Some products need software bought on the market. Each choice offers four balanced options. The cheap ones are tempting early, but switching later means a migration with downtime and tickets.
 
 | Control panel (web hosting) | Pricing model | Trade-off |

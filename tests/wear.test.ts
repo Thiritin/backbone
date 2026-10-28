@@ -7,7 +7,8 @@ import {
   addLocation, buyCircuit, buyDevice, buyRack, connect, mountDevice, replaceComponent, setCableColor, setFeed, setLabel, setPower,
   setRaid, setRebuildRate, unmountDevice,
 } from "../src/sim/90-actions/hardware";
-import { addCustomer, addService } from "../src/sim/90-actions/customers";
+import { addCustomer } from "../src/sim/90-actions/customers";
+import { addNode, createCluster, provisionService } from "../src/sim/90-actions/clusters";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const rich = (): GameState => ({ ...newGame(1), cash: 1_000_000 });
@@ -102,7 +103,12 @@ describe("RAID", () => {
     const s = rich();
     const id = server(s, "g1-storage");
     ok(setPower(s, id, false));
-    addService(s, addCustomer(s, "Ada", "private"), "webHosting", "ada.example", 5, "hour");
+    ok(setRaid(s, id, "5"));
+    expect(dev(s, id).dataLost).toBeNull();
+    ok(setPower(s, id, true));
+    ok(addNode(s, ok(createCluster(s, "loc1", "Storage 1")), id));
+    ok(provisionService(s, addCustomer(s, "Ada", "private"), "webHosting", { label: "ada.example" }));
+    ok(setPower(s, id, false));
     s.hour = 7;
     ok(setRaid(s, id, "none"));
     expect(dev(s, id).dataLost).toBe(7);

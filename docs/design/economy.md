@@ -37,7 +37,7 @@ A new game starts on 1 January 2005 with €1,000 in cash, a 24U rack in the bas
 | Home line | Deutsche Telekomm DSL 16000, 16 Mbit/s down and 1 Mbit/s up; paid privately, so it costs the company nothing |
 | Hardware | A 24U rack with one Dwell Balanced 1U G1 and a Sysko L2 switch 8, cabled to the home router; the server is the cluster "Basement 1" |
 | Reseller accounts | Domains from a registrar, at 40% of the retail price |
-| Customers | 3 friends (private individuals) on web hosting on your server; happiness 85, and they always pay |
+| Customers | 3 friends (Jonas Weber, Mira Schulz and Tobi Kraus, private individuals) on Web M hosting at €6 a month, placed on the server; happiness 85, and they always pay |
 
 
 ## Prices over time
@@ -293,6 +293,8 @@ P(j) = \frac{e^{U_j/\tau}}{\sum_k e^{U_k/\tau}}
 | Basic | 99.5% | 48 h | 1.0 | None |
 | Business | 99.9% | 8 h | 1.2 | 10% of the monthly bill |
 | Premium | 99.99% | 1 h | 1.5 | 25% of the monthly bill |
+
+Hours a service is down are left off its invoice line. When the hours up fall below the SLA's uptime, the invoice adds a credit line for its share of what was billed for that service. Hours down while the customer is suspended count as up.
 
 **Handling a request.** Answering a request by hand takes 8 minutes of the player's or a sales agent's time. A request waits 3 days, then the customer goes to a competitor. The shop answers instantly while the target cluster's busiest resource stays under the limit you set (80% by default).
 
@@ -699,6 +701,24 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 ten
 
 **Sizes.** A web space uses 0.1 vCPU, 0.25 GB of RAM and its plan's disk. A VM uses its plan's vCPUs, RAM and disk. A game server uses 2 vCPUs and 4 GB of RAM in 2005, doubling every 7 years like VPS plans.
 
+**Plans and market references.** The catalog in `src/sim/10-catalog/products.ts` holds these plans. "Base" is the year's base plan RAM, 1 GB in 2005 and doubling every 7 years; fixed-price plans keep their price and grow at the same pace. The market reference is the 2005 price; priced plans follow their base rate over the years, and an SLA multiplies it by its price factor.
+
+| Product | Plans | One unit uses | Market reference (2005) | Runs on |
+| --- | --- | --- | --- | --- |
+| Web hosting | S, M, L | 0.1 vCPU, 0.25 GB RAM, 1, 2 or 5 GB disk × growth | €3, €6, €12 a month | Cluster |
+| VPS | S, M, L, XL | 0.5, 1, 2 or 4 × base RAM; 1 vCPU per 2 GB (at least 1); 20 GB disk per GB of RAM | RAM × the VPS rate (€16.50 per GB) | Cluster |
+| Game server | S, L | 2 or 4 vCPUs, 4 or 8 GB RAM, 10 or 20 GB disk × growth | RAM × 1.6 × the VPS rate, the low end of €2.40 to €6.10 per GB | Cluster |
+| DNS hosting | DNS | 0.05 vCPU, 0.1 GB RAM, 1 GB disk | €2 a month | Cluster |
+| VPN | VPN | 1 vCPU, 0.5 GB RAM, 1 GB disk | €5 a month | Cluster |
+| Storage hosting | 100 GB, 500 GB, 1 TB | Disk only | €2.60 per TB in 2026 with m = 32, about €83 per TB in 2005 | Cluster |
+| Cloud servers | M | Like VPS M | 1.25 × VPS M | High-availability cluster |
+| Dedicated servers | S, L | A whole server with at least 8 or 32 GB × growth | €79, €299 a month | A free server |
+| Colocation | 1U, quarter, half, full rack | 1, 10, 21 or 42 units and 150 W, 1, 2 or 4 kW | €60, €420, €840, €1,600 a month | Datacenter rack |
+| Domains | Domain | Nothing | €15 a year | Resold |
+| SSL certificates | Certificate | Nothing | €50 a year until 2015, then free | Resold |
+
+**Capacity.** A node books up to its physical cores × 8 in vCPUs, its RAM × 1.5 and its usable RAID disk × 2. A G1 balanced server books 16 vCPUs, 12 GB of RAM and 1 TB of disk: 48 web spaces, or 24 VPS S, or 6 VPS L by RAM. Workloads count at what they booked; usage curves don't move the load yet.
+
 **Moving a workload**
 
 | Workload | Time | Downtime |
@@ -888,6 +908,8 @@ Net worth values the customer base at two years of recurring revenue, plus cash 
 ```math
 \text{net worth} = \text{cash} - \text{debt} + \text{hardware book value} + 24 \cdot \text{MRR}
 ```
+
+Hardware book value is the resale value of every owned device and rack: 100% to 80% over the first month, then down to 20% over the next 24 months. Leased devices count for the lessor, not for you. MRR is every running contract's monthly price: hourly prices × 730 and yearly prices ÷ 12. The start counts €1,000 cash, €2,910 of hardware and 24 × €18 of the friends' revenue, about €4,340.
 
 The GDD counts years in operation inside net worth. Here they are a separate minimum per level instead, which keeps the formula simple and stops a lucky first year from skipping ahead.
 

@@ -1,7 +1,8 @@
 import { ding } from "./ding";
 import { useEffect } from "react";
 import { create } from "zustand";
-import { newGame, type GameState } from "../sim/50-state";
+import type { GameState } from "../sim/50-state";
+import { startGame as newCompany } from "../sim/90-actions/start";
 import { tick } from "../sim/88-tick/tick";
 import { deserialize, serialize } from "../sim/91-save/save";
 import type { Speed } from "../sim/00-core/time";
@@ -77,7 +78,7 @@ function loadGame(): { game: GameState; loaded: boolean } {
   } catch {
     // An unreadable save starts a new company.
   }
-  return { game: newGame(Date.now() >>> 0), loaded: false };
+  return { game: newCompany(Date.now() >>> 0), loaded: false };
 }
 
 const initial = loadGame();
@@ -205,7 +206,7 @@ export const useStore = create<Store>((set, get) => ({
     }
   },
   startGame: () => {
-    set({ ...fresh(), game: newGame(Date.now() >>> 0), started: true, welcome: true });
+    set({ ...fresh(), game: newCompany(Date.now() >>> 0), started: true, welcome: true });
     get().save();
   },
   importSave: (raw) => {
@@ -224,7 +225,7 @@ export const useStore = create<Store>((set, get) => ({
     } catch {
       // Nothing stored to remove.
     }
-    set({ ...fresh(), game: newGame(Date.now() >>> 0), started: false });
+    set({ ...fresh(), game: newCompany(Date.now() >>> 0), started: false });
   },
 }));
 

@@ -252,6 +252,25 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownDoc": () => "This document no longer exists.",
   "error.emptyTitle": () => "A document needs a title.",
   "error.guideOnDesktop": () => "Getting started is already on the desktop.",
+  // Clusters and placement.
+  "event.drained.title": () => "Node drained",
+  "event.drained.text": (p) => `${p.device} is empty and ready for maintenance.`,
+  "invoice.line.slaCredit": (p) => `${p.label}, SLA credit`,
+  "error.clusterName": () => "A cluster needs a name of up to 40 characters.",
+  "error.clusterNameTaken": () => "Another cluster already has this name.",
+  "error.unknownCluster": () => "This cluster no longer exists.",
+  "error.otherZone": () => "This server is in another zone than the cluster.",
+  "error.serverInUse": () => "This server belongs to a cluster or a customer.",
+  "error.rackInUse": () => "Servers in this rack run customer services in this zone.",
+  "error.notNode": () => "This server is not in a cluster.",
+  "error.nodeNotEmpty": () => "Workloads still run on this server. Drain it first.",
+  "error.unknownService": () => "This service no longer exists.",
+  "error.unknownCustomer": () => "This customer no longer exists.",
+  "error.placed": () => "This service already runs on your hardware.",
+  "error.needsHaCluster": () => "This product needs a high-availability cluster.",
+  "error.noCapacity": () => "No cluster in this zone has room for it.",
+  "error.noFreeServer": () => "No free server in this zone is big enough.",
+  "error.noRackSpace": () => "No datacenter rack in this zone has the units and power free.",
 };
 
 export const t = (key: string, params: Params = {}): string => en[key]?.(params) ?? key;

@@ -3,6 +3,7 @@ import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
 import { supportTick } from "../40-support/tick";
+import { computeTick } from "../60-infra/cluster";
 import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
 import { KNOW_HOW, storeItem, subscriptionPrice } from "../10-catalog/store";
@@ -206,6 +207,7 @@ export function tick(state: GameState): SimEvent[] {
     if (bills.length) events.push({ app: "Finance", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
+  events.push(...computeTick(state));
   events.push(...billingTick(state));
   events.push(...supportTick(state));
   return events;
