@@ -15,6 +15,7 @@ import { Confirm } from "../../desktop/Confirm";
 import { useStore } from "../../store";
 import { ageYears, CABLE_NAME, cores, deviceLamps, devName, disk, height, isWorn, PART_NAME, portLamps, portName, portsText, ram, speed } from "../hw";
 import { dcOf, Facts } from "./ui";
+import { NodeCard } from "./Clusters";
 
 // Sells a device or a rack after showing its resale value against the price paid.
 export function SellConfirm({ game, name, price, boughtAt, cables = 0, onCancel, onSell }: { game: GameState; name: string; price: number; boughtAt: number; cables?: number; onCancel: () => void; onSell: () => void }) {
@@ -94,6 +95,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
         </div>
       )}
 
+      {model.kind === "server" && <NodeCard game={game} device={device} />}
       {model.kind !== "patch" && <PowerCard game={game} device={device} />}
       {model.kind === "server" && drivesOf(device).length > 0 && <RaidCard game={game} device={device} />}
       {device.components.length > 0 && <PartsCard game={game} device={device} />}

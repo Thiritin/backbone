@@ -1,0 +1,152 @@
+import { Boxes, Plus } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { modelById } from "../../../sim/10-catalog/hardware";
+import type { Device, GameState, Location } from "../../../sim/50-state";
+import { clusterOf, nodeCapacity, nodeUsed, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
+import { locationOf } from "../../../sim/60-infra/status";
+import { addNode, CLUSTER_NAME_MAX, cordon, createCluster, drain, removeNode, setPlacement, uncordon } from "../../../sim/90-actions/clusters";
+import { useStore } from "../../store";
+import { devName, disk, ram } from "../hw";
+import { Zone } from "./ui";
+
+const STATE: Record<NodeState, [string, string]> = { active: ["Active", "ok"], cordoned: ["Cordoned", "warn"], draining: ["Draining", "warn"], maintenance: ["Maintenance", ""] };
+const num = (n: number) => `${+n.toFixed(1)}`;
+
+function Meter({ used, cap, text }: { used: number; cap: number; text: string }) {
+  return (
+    <span className="loc-meter">
+      <span className="loc-meter-bar"><span style={{ width: `${cap ? Math.min(100, (used / cap) * 100) : 0}%` }} /></span>
+      <span className="num">{text}</span>
+    </span>
+  );
+}
+
+function usage(game: GameState, d: Device): [string, ReactNode][] {
+  const cap = nodeCapacity(d), used = nodeUsed(game, d.id);
+  return [
+    ["vCPU", <Meter used={used.vcpu} cap={cap.vcpu} text={`${num(used.vcpu)} of ${num(cap.vcpu)}`} />],
+    ["RAM", <Meter used={used.ramGb} cap={cap.ramGb} text={`${ram(+used.ramGb.toFixed(2))} of ${ram(cap.ramGb)}`} />],
+    ["Disk", <Meter used={used.diskGb} cap={cap.diskGb} text={`${disk(used.diskGb)} of ${disk(cap.diskGb)}`} />],
+  ];
+}
+
+// Servers mounted in the zone that no cluster or customer uses.
+const freeServers = (game: GameState, az: string) =>
+  game.devices.filter((d) => d.rackId && modelById(d.model).kind === "server" && locationOf(game, d)?.az === az && !serverTaken(game, d.id));
+
+// The clusters of a location's zone, with their nodes, and a form for a new one.
+export function Clusters({ game, loc }: { game: GameState; loc: Location }) {
+  const act = useStore((s) => s.act);
+  const [name, setName] = useState("");
+  const clusters = game.clusters.filter((c) => c.az === loc.az);
+  return (
+    <div className="loc-card">
+      <div className="loc-card-h"><h3><Boxes />Clusters</h3><Zone loc={loc} /><span className="grow" /><span className="num loc-muted">{clusters.length}</span></div>
+      {clusters.map((c) => <ClusterRows key={c.id} game={game} cluster={c} />)}
+      <form className="loc-row" onSubmit={(e) => { e.preventDefault(); if (act((g) => createCluster(g, loc.id, name)).ok) setName(""); }}>
+        <input className="field grow" aria-label="Cluster name" placeholder="Cluster name" maxLength={CLUSTER_NAME_MAX} value={name} onChange={(e) => setName(e.target.value)} />
+        <button className="btn" disabled={!name.trim()}><Plus />New cluster</button>
+      </form>
+    </div>
+  );
+}
+
+function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
+  const act = useStore((s) => s.act);
+  const free = freeServers(game, cluster.az);
+  const [pick, setPick] = useState("");
+  const chosen = free.some((d) => d.id === pick) ? pick : free[0]?.id ?? "";
+  return (
+    <>
+      <div className="loc-card-h loc-sub">
+        <h3>{cluster.name}</h3>
+        <span className="grow" />
+        <div className="seg" role="group" aria-label="Placement">
+          <button aria-pressed={cluster.placement === "pack"} onClick={() => act((g) => setPlacement(g, cluster.id, "pack"))}>Pack</button>
+          <button aria-pressed={cluster.placement === "spread"} onClick={() => act((g) => setPlacement(g, cluster.id, "spread"))}>Spread</button>
+        </div>
+      </div>
+      {cluster.nodes.map((n) => {
+        const d = game.devices.find((x) => x.id === n.deviceId)!, [label, tone] = STATE[n.state], used = nodeUsed(game, d.id), cap = nodeCapacity(d);
+        return (
+          <div key={n.deviceId} className="loc-row">
+            <span>{devName(d)}</span>
+            <span className={`pill ${tone}`}>{label}</span>
+            <span className="grow" />
+            <span className="num loc-muted">{workloadsOn(game, d.id).length} workloads</span>
+            <Meter used={used.ramGb} cap={cap.ramGb} text={`${ram(+used.ramGb.toFixed(2))} of ${ram(cap.ramGb)}`} />
+          </div>
+        );
+      })}
+      {free.length > 0 && (
+        <div className="loc-row">
+          <select className="field grow" aria-label="Server" value={chosen} onChange={(e) => setPick(e.target.value)}>
+            {free.map((d) => <option key={d.id} value={d.id}>{devName(d)}</option>)}
+          </select>
+          <button className="btn" onClick={() => act((g) => addNode(g, cluster.id, chosen))}><Plus />Add node</button>
+        </div>
+      )}
+    </>
+  );
+}
+
+// A server's role: its cluster and node state with the workloads on it, the customer renting it, or a cluster to join.
+export function NodeCard({ game, device }: { game: GameState; device: Device }) {
+  const act = useStore((s) => s.act);
+  const cluster = clusterOf(game, device.id), node = cluster?.nodes.find((n) => n.deviceId === device.id);
+  const loads = workloadsOn(game, device.id);
+  const az = locationOf(game, device)?.az;
+  const joinable = game.clusters.filter((c) => c.az === az);
+  const owner = (serviceId: string) => {
+    const v = game.services.find((x) => x.id === serviceId);
+    return { v, c: game.customers.find((x) => x.id === v?.customerId) };
+  };
+  if (!cluster && loads.length) {
+    const { v, c } = owner(loads[0].serviceId);
+    return (
+      <div className="loc-card">
+        <div className="loc-card-h"><h3><Boxes />Dedicated</h3><span className="grow" /><span>{c?.name}</span></div>
+        <div className="loc-row"><span>{v?.label}</span></div>
+      </div>
+    );
+  }
+  if (!cluster || !node) {
+    return (
+      <div className="loc-card">
+        <div className="loc-card-h"><h3><Boxes />Cluster</h3><span className="grow" /><span className="loc-muted">None</span></div>
+        {device.rackId && joinable.length > 0 && (
+          <div className="loc-row">
+            {joinable.map((c) => <button key={c.id} className="btn" onClick={() => act((g) => addNode(g, c.id, device.id))}><Plus />{c.name}</button>)}
+          </div>
+        )}
+      </div>
+    );
+  }
+  const [label, tone] = STATE[node.state];
+  return (
+    <div className="loc-card">
+      <div className="loc-card-h">
+        <h3><Boxes />{cluster.name}</h3>
+        <span className={`pill ${tone}`}>{label}</span>
+        <span className="grow" />
+        {node.state === "active"
+          ? <button className="btn" onClick={() => act((g) => cordon(g, device.id))}>Cordon</button>
+          : <button className="btn" onClick={() => act((g) => uncordon(g, device.id))}>Uncordon</button>}
+        {node.state !== "draining" && node.state !== "maintenance" && <button className="btn" onClick={() => act((g) => drain(g, device.id))}>Drain</button>}
+        {!loads.length && <button className="btn" onClick={() => act((g) => removeNode(g, device.id))}>Remove</button>}
+      </div>
+      {usage(game, device).map(([k, v]) => <div key={k} className="loc-row"><span className="loc-k">{k}</span>{v}</div>)}
+      {loads.map((w) => {
+        const { v, c } = owner(w.serviceId);
+        return (
+          <div key={w.id} className="loc-row">
+            <span>{c?.name}</span>
+            <span className="loc-muted">{v?.label}</span>
+            <span className="grow" />
+            <span className="num loc-muted">{num(w.vcpu)} vCPU · {ram(+w.ramGb.toFixed(2))} · {disk(w.diskGb)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
