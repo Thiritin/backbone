@@ -69,48 +69,61 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 
 ## Locations and space
 
-Infrastructure lives in locations, from your own basement up to your own datacenter. Each location is a set of rooms with predefined slots. There is no free-placement grid.
+Infrastructure lives in locations: your basement first, then space in other companies' datacenters, and in the end your own. You always own your racks and everything in them. A location gives you floor space, power, cooling and connectivity, and where you go decides a lot of what you can offer: which carriers and exchanges you reach, how well outages are covered, and which customers trust you.
 
-**Hosting tiers**
+**Space**
 
-| Tier | What you get | Cost | Limits |
+| Space | What you get | Size | Billed |
 | --- | --- | --- | --- |
-| Garage or basement | Shelf slots and a home internet line | Free; power goes on your home bill | Few slots, slow upload, no redundancy; business customers stay away |
-| Rented rack units | A few U in someone else's rack | Per U per month | Shared uplink; you ship hardware in |
-| Rented rack | A whole rack in a provider's datacenter | Per rack per month | Power budget per rack |
-| Cage | A fenced area with several rack slots | Per cage per month | Use the provider's transit or bring your own |
-| Own room | A room in someone else's building, with its own slots | Lease per month | Unlocks your own power and cooling slots |
-| Own datacenter | A building with several rooms | Purchase or long lease | Full control: power room, generators, carrier room |
+| Basement | Room for one 24U rack and a home internet line | 1 position | Free; power at the household price |
+| Rack positions | Floor positions in a provider's shared hall for your own racks | 1 to 4 positions | Per position per month, power per kWh |
+| Cage | A fenced, locked area in the hall | 4, 8 or 16 positions | Per cage; cheaper per position than single positions |
+| Private suite | A room of your own in the provider's building | 20 or 40 positions | Lease per month; you add your own UPS and feeds |
+| Own datacenter | A building you lease or build | 100 positions and up | Lease or purchase; power room, generators and carrier room are yours |
 
-**Rack sizes.** Rented racks come in common sizes: 12U, 24U, 42U and 47U. Small racks cost more per U but less in total; big racks cost less per U but more up front.
+**Racks are yours.** You buy racks (24U, 42U or 47U) and place each one in a free position. A rack can move with everything in it: the servers inside go offline, cables to other racks and to the carrier panel are unplugged, and the rack arrives a day later in the same city or three days later in another. That is how a company grows out of the basement: you rent a position in a datacenter and move the basement rack there.
 
-**Reselling.** Reselling sits next to the tiers and needs no hardware. You buy a product line wholesale from a parody of a big provider (an OVH stand-in) and sell it at your own price and markup. It only works for some product lines: web hosting, domains and SSL certificates. Margins are thin and the wholesaler's outages become yours. You can later move each line in-house, for example from domain reseller to registrar.
+**Datacenters.** Every city has several datacenters from different providers, and each one has its strengths and weaknesses. The Add location dialog compares them side by side:
 
-**Rooms and slots**
-
-| Room | Slot type | Holds | First available |
-| --- | --- | --- | --- |
-| Basement | Shelf | Tower and small servers, a consumer router and switch | Garage tier |
-| Server room | Rack | Servers, switches, routers, patch panels | Rented rack |
-| Power room | Power | UPS, batteries, generators | Own room |
-| Cooling | Cooling | Air handlers, later liquid cooling | Own datacenter |
-| Carrier room | Cross-connect | Hand-offs to carriers and internet exchanges | Own datacenter |
-
-Each slot only takes its own kind of equipment, so a server can't go in the generator room. A location's size is a fixed number of slots, and a rack's size is a fixed number of U.
-
-**Location view.** The Locations app opens on a street map of the city with a pin per site. Next to the map, each site lists what you rent there: space used, power protection and uplink. Opening a site shows a top-down 2D render of its rooms, where the cable trays above the rows visibly fill as you add cabling. Device fronts are drawn only in the rack front view, which opens when you click a rack.
-
-**Energy.** Every location pays its city's electricity price for what its hardware draws. Rented space bills power per kW or passes on the local price. Your own datacenter can sign a custom contract with an energy provider.
-
-**Power protection.** The grid fails now and then, and how much of that reaches your customers depends on where their servers live.
-
-| Location | Default protection | Upgrade |
+| Property | Varies between | What it changes |
 | --- | --- | --- |
-| Basement or garage | None: every grid outage takes the servers down | A UPS rides through short outages until its battery runs out |
-| Rented rack | One feed backed by the datacenter's UPS and generator | A second, independent feed (A+B) for a monthly fee |
-| Own room or datacenter | Whatever you build in the power room | UPS, batteries, generators and two utility feeds |
+| Provider | Big carrier-neutral chains, local operators, budget hosts | Price, reputation and the rest of this table |
+| Carriers on site | One to thirty | Which transit you can buy; a single-carrier site is cheap but locks you in |
+| Internet exchange | On site, reachable by cross-connect, or none | Whether exchange peering is possible here |
+| Private interconnects | Which big networks have a presence | Whether private peering is possible here |
+| Power feeds | Single, or A and B | Whether dual power supplies pay off |
+| UPS and generator | Neither, UPS only, or both | How many grid outages reach your servers |
+| Green power | Yes or no | Customers who want green hosting; a slightly higher power price |
+| Power price | Per kWh, by city and provider | Running cost |
+| Power density | 4 to 20 kW per position | How many servers a rack can actually run |
+| Cross-connects | Monthly fee per cable | The cost of every carrier, exchange and customer link |
+| Remote hands | Price per hour and response time | Repairs without your own technician on site |
+| Certification | Certified or not | Offices and enterprises require it |
+| Lead time and term | Days until ready, months of commitment | How fast you can expand and how long you are bound |
+
+**Provider logos.** Every datacenter provider has its own parody logo, drawn in code: an original mark and wordmark that hint at the real company through its name and colour without copying its logo. The basement shows a house icon.
+
+**Location view.** The Locations app opens on an overview: a map with a pin per location and a card for each with its space, power protection, uplinks and how full it is. A switcher at the top jumps between locations, and a plus button opens the Add location dialog. Inside a location you see its floor: the positions with your racks in them, the free positions, and the carrier panel where uplinks and cross-connects arrive. Clicking a rack opens its front view; device fronts are drawn only there.
+
+**Energy.** Every location bills the power your hardware draws at its own price per kWh. Your own datacenter can sign a custom contract with an energy provider.
+
+**Power protection.** The grid fails now and then, and how much of that reaches your customers depends on the location.
+
+| Location | Protection |
+| --- | --- |
+| Basement | None: every grid outage takes the servers down. A UPS rides through short outages until its battery runs out. |
+| Datacenter | Whatever the site has: feeds, UPS and generator differ by datacenter |
+| Private suite or own datacenter | Whatever you build: UPS, batteries, generators and two utility feeds |
 
 A second feed only helps servers that have two power supplies, one on each feed. Dual-PSU servers cost more, so the player decides per server whether the protection is worth it. Customers who care about uptime pay for it: HA products can require dual feeds, or servers spread over two locations.
+
+**Own datacenter rooms.** A private suite or own datacenter adds rooms beyond the server floor:
+
+| Room | Holds | First available |
+| --- | --- | --- |
+| Power room | UPS, batteries, generators | Private suite |
+| Cooling | Air handlers, later liquid cooling | Own datacenter |
+| Carrier room | Hand-offs to carriers and internet exchanges | Own datacenter |
 
 ## Racks, hardware and cabling
 
@@ -120,7 +133,6 @@ Racks hold servers, switches and routers, and you cable them port by port. Bandw
 
 | Device | Size | Role |
 | --- | --- | --- |
-| Tower server | Shelf | Basement starter |
 | Compute server | 1U | VPS, web and game servers |
 | Storage server | 2U | Storage hosting, backups |
 | GPU server | 4U | AI compute, late game |
@@ -168,7 +180,7 @@ Failover is the safe default. Load balance doubles a server's bandwidth, but if 
 
 | Spec | Range | What it changes |
 | --- | --- | --- |
-| Height | Tower, 1U, 2U, 4U | Rack space and rent |
+| Height | 1U, 2U, 4U | Rack space |
 | Architecture | x86; ARM from 2020 | ARM is cheaper per core and per watt, but a cluster runs one architecture |
 | CPU | 1 or 2 sockets × cores per socket | Cores available to workloads |
 | RAM | Fixed slots, filled at purchase or later | Memory available to workloads |
@@ -192,7 +204,7 @@ Servers join clusters, and products draw their resources from clusters. Everythi
 - **Consumer cluster:** no failover. Cheap, and fine for customers who shrug off a day of downtime.
 - **High-availability cluster:** keeps spare capacity in reserve and spreads servers over two switches or two locations. Costs more, and is sold to customers who can't tolerate outages.
 
-**Everything runs on clusters.** Every product runs as workloads on a cluster, so draining, replicas, keep-apart rules and failover work the same for all of them. Web hosting runs inside shared web server instances with the control panel, and DNS, game servers, load balancers, databases and Kubernetes run as instances too. Object storage runs on a storage cluster made of storage nodes. Two things stay outside: a dedicated server is a whole node taken out of the scheduler's pool and handed to one customer (OpenStack's bare-metal service, Ironic), and colocation is the customer's own hardware using your space, power and ports. The basement tower is a one-node cluster, which is why a second node and the HA unlock matter.
+**Everything runs on clusters.** Every product runs as workloads on a cluster, so draining, replicas, keep-apart rules and failover work the same for all of them. Web hosting runs inside shared web server instances with the control panel, and DNS, game servers, load balancers, databases and Kubernetes run as instances too. Object storage runs on a storage cluster made of storage nodes. Two things stay outside: a dedicated server is a whole node taken out of the scheduler's pool and handed to one customer (OpenStack's bare-metal service, Ironic), and colocation is the customer's own hardware using your space, power and ports. The basement server starts as a one-node cluster, which is why a second node and the HA unlock matter.
 
 **Workloads.** Every contract runs as one or more workloads, placed on the servers (nodes) of a cluster:
 
@@ -253,7 +265,7 @@ Draining stops with a message when the rest of the cluster has no room, and says
 
 | Product | Runs on | Needs | Notes |
 | --- | --- | --- | --- |
-| Web hosting | Cluster | Control panel license | Can be resold |
+| Web hosting | Cluster | Control panel license |  |
 | Domains |  | Reseller account, later your own registrar | Can be resold; needs DNS hosting |
 | DNS hosting | Cluster | Two DNS workloads on different nodes | Tiny load, but if both go down every customer domain stops resolving |
 | SSL certificates |  | Certificate reseller account | Can be resold; often bought with domains |
@@ -393,9 +405,9 @@ Your company climbs a ladder of levels set by its net worth. Business customers 
 
 | Level | Name | Typical setup | Who will buy |
 | --- | --- | --- | --- |
-| 1 | Basement Hoster | A few towers on a shelf | Friends, gamers, hobbyists |
-| 2 | Garage Hero | Rented rack units | Private individuals, sole proprietors |
-| 3 | Rack Renter | Several rented racks | Small businesses |
+| 1 | Basement Hoster | One rack in the basement | Friends, gamers, hobbyists |
+| 2 | Garage Hero | A rack position in a datacenter | Private individuals, sole proprietors |
+| 3 | Rack Renter | Several racks in datacenters | Small businesses |
 | 4 | Cage Fighter | A cage and a small team | Agencies, mid-size companies |
 | 5 | Room Service | Own rooms, HA clusters | Mid-size companies, first enterprises |
 | 6 | Datacenter Baron | Own datacenter | Enterprises, public sector |
@@ -511,7 +523,7 @@ Each location connects to the internet through what its city offers: transit car
 | Option | How it works | Cost | When |
 | --- | --- | --- | --- |
 | Home line | Consumer fiber in the basement, slow upload | Flat monthly fee | Start |
-| Provider bandwidth | Comes with rented rack units or racks | Per TB or per Mbps | Early |
+| Datacenter bandwidth | The datacenter's own transit, through its handoff | Per TB or per Mbps | Early |
 | IP transit | A port with a carrier present in the city | Billed at the 95th percentile, with a minimum commit | Mid game |
 | Exchange peering | A port at an internet exchange, then sessions with other networks | Port fee; the traffic itself is free | Mid game; needs your own network number (ASN) |
 | Private peering | A direct cable to one big network | Cross-connect fee; weeks of lead time | Late game |
@@ -559,15 +571,15 @@ Customers can also buy DDoS protection from you as an add-on.
 
 Unlocks cost know-how points plus a one-time launch cost in money. You earn know-how from every active contract each month, so progress comes from running the business, not just from a big bank balance. Some unlocks also need a minimum company level.
 
-**Starting kit:** a basement, reseller accounts for web hosting and domains, and game servers and VPS on your own hardware.
+**Starting kit:** a 24U rack in the basement with one compute server and a small switch, a reseller account for domains, and web hosting, game servers and VPS on your own hardware.
 
 | Branch | Unlock path, in order |
 | --- | --- |
 | Products | SSL certificates → email → dedicated servers → storage hosting → VPN → CDN → cloud servers → colocation |
-| Infrastructure | Rented rack units → rented rack → cage → own room → own datacenter; HA clusters; rack templates; auto-cable |
+| Infrastructure | Datacenter positions → second location → cage → private suite → own datacenter; HA clusters; rack templates; auto-cable |
 | Network | Transit contracts → internet exchange peering → own network number (ASN) → always-on DDoS protection |
 | Business | First hire → status page → market research → cross-selling boosts → review platforms → insurance → AI bots |
-| Independence | Domain registrar, own control panel and other in-house replacements for resold lines |
+| Independence | Domain registrar, own control panel and other in-house replacements for bought-in services |
 
 Hardware generations unlock by year, not through research (see Racks, hardware and cabling).
 
@@ -702,11 +714,11 @@ tests/                    one seeded suite per feature, save fixtures
 
 ## MVP and milestones
 
-The MVP has a basement, one rented rack, web hosting and VPS, support and billing done by hand, and the first hires. That's the smallest version where you can feel the automation loop. Each milestone ends in something playable.
+The MVP has the basement rack, one datacenter location, web hosting and VPS, support and billing done by hand, and the first hires. That's the smallest version where you can feel the automation loop. Each milestone ends in something playable.
 
 1. **Desktop shell.** Menu bar, dock, draggable windows, notifications, time controls, saving in the browser. Done when apps open and the clock runs.
-2. **Locations and racks.** Basement and one rented rack, the rack front view, buying servers and switches with their specs, cabling ports in the inspector, bonding a server's ports. Done when a cabled server shows as online.
-3. **Clusters and products.** One cluster, resold web hosting and your own VPS, workloads placed by the scheduler, cordoning and draining a node, the Sales app with request cards and resource bars. Done when an accepted request runs as a VM that survives a drain.
+2. **Locations and racks.** The basement rack, adding a datacenter location from the catalog, buying and moving racks, the rack front view, buying servers and switches with their specs, cabling ports in the inspector, bonding a server's ports. Done when a rack moved from the basement to a datacenter comes back online there.
+3. **Clusters and products.** One cluster, web hosting and VPS on your own hardware, workloads placed by the scheduler, cordoning and draining a node, the Sales app with request cards and resource bars. Done when an accepted request runs as a VM that survives a drain.
 4. **Customers and support.** Customer profiles, purchases, tickets with templates and actions, happiness and churn. Done when an outage floods the inbox.
 5. **Billing and finance.** Invoices, dunning buttons, collections, profit and loss, a bank loan. Done when an unpaid invoice can go all the way to collections.
 6. **First hires.** The job market, a support agent and a bookkeeper working through their queues. Done when a hire visibly empties a queue.

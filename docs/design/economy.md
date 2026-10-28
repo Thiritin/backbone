@@ -27,19 +27,18 @@ Level 6 lands before the cloud and GPU boom, so the late game still has new prod
 
 ## Starting state
 
-A new game starts on 1 January 2005 with €5,000 in cash, one tower server in the basement and three friends as customers.
+A new game starts on 1 January 2005 with €5,000 in cash, a 24U rack in the basement with one server and a switch, and three friends as customers.
 
 | Item | Starting value |
 | --- | --- |
 | Cash | €5,000, no debt |
 | Company | Level 1, 0 know-how, no reviews yet |
-| Basement | 4 shelf slots; power at the household price |
+| Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
 | Home line | DSL, 16 Mbit/s down and 1 Mbit/s up; paid privately, so it costs the company nothing |
-| Hardware | 1 tower server (2 cores, 4 GB RAM, 250 GB disk, 150 W), owned, in the cluster "Basement 1", plus one spare-parts kit |
-| Reseller accounts | Web hosting and domains from the wholesale provider, at 40% of the base rate |
-| Customers | 3 friends (private individuals) on resold web hosting; happiness 85, and they always pay |
+| Hardware | A 24U rack with one Compute 1U G1 and a Sysko SG8 switch, cabled to the home router; the server is the cluster "Basement 1" |
+| Reseller accounts | Domains from a registrar, at 40% of the retail price |
+| Customers | 3 friends (private individuals) on web hosting on your server; happiness 85, and they always pay |
 
-**Renting a server.** From day 1 the player can also rent a dedicated server from the wholesale provider for €59 per month (2005: 2 cores, 8 GB RAM, 100 Mbit/s, no setup fee). It joins a cluster like an owned server. This settles the GDD's open point: the basement and a rented server are both available at the start, and the hosting tiers table gains a "Rented server" row between basement and rented rack units.
 
 ## Prices over time
 
@@ -93,7 +92,6 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Storage 2U | 2U | 1 | 0.5× | 0.5× | 12 | 2 | 2 | 1.2× | 1.5× | Always |
 | GPU 4U | 4U | 2 | 1× | 2× | 8 | 2 | 2 | 6× | Set with GPU compute | From 2016 |
 | ARM 1U | 1U | 1 | 1.5× | 1× | 4 | 2 | 1 | 0.6× | 0.9× | From 2020 |
-| Tower | Shelf | 1 | 0.5× | 0.5× | 2 | 1 | 1 | 0.6× | €1,000 | Until 2010 |
 
 - **Drives.** Each bay takes one drive of the generation's disk type at that generation's size. An extra drive costs 4% of the generation's price and draws 8 W.
 - **RAM.** RAM can be added up to the model's maximum, which is twice the listed amount, at 25% of the generation's price per listed amount.
@@ -102,7 +100,6 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 - **Ports.** 1G ports are copper (RJ45); 10G and faster ports are SFP cages.
 - **Drives at purchase.** A server ships with one drive in its bays, so a Compute 1U has the generation's storage. The Storage 2U ships with six drives and has six bays free.
 - **Shop window.** A generation stays in the shop until the generation two steps newer arrives, so G1 is sold until the end of 2010 and G2 until the end of 2013. G6 and G7 stay in the shop.
-- **Tower.** The tower is the starting server and keeps the specs from the starting state (2 cores, 4 GB RAM, 250 GB disk, 150 W); it sits on a shelf and is sold for €1,000 until 2010.
 
 **Routers.** Routers keep their price over the years. A router's ports cap how many uplink links a location can have and how fast they run.
 
@@ -117,7 +114,7 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 
 | Device | Height | Ports | Sold from | Price | Full power |
 | --- | --- | --- | --- | --- | --- |
-| Sysko SG8 | Shelf | 8 × 1G | 2005 | €60 | 8 W |
+| Sysko SG8 | 1U | 8 × 1G | 2005 | €60 | 8 W |
 | Sysko 2924 | 1U | 24 × 1G and 2 × 1G SFP | 2005 | €900 | 40 W |
 | Sysko 2948 | 1U | 48 × 1G and 4 × 10G SFP | 2008 | €2,800 | 70 W |
 | Sysko 4948X | 1U | 48 × 10G SFP | 2011 | €8,000 | 200 W |
@@ -125,10 +122,10 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Sysko 9332C | 1U | 32 × 100G SFP | 2023 | €20,000 | 450 W |
 | Patch panel, copper | 1U | 24 jacks, 1G | 2005 | €80 | 0 W |
 | Patch panel, fiber | 1U | 24 jacks, SFP | 2005 | €250 | 0 W |
-| Home router | Shelf | 4 × 1G | Comes with the basement | Free | 10 W |
-| Provider handoff | 1U | 2 × 1G | Comes with a rented rack | Free | 0 W |
+| Home router | Carrier panel | 4 × 1G | Comes with the basement | Free | 10 W |
+| Datacenter handoff | Carrier panel | 2 × 1G | Comes with every datacenter location | Free | 0 W |
 
-A patch panel is passive. Each jack has a front and a back port, and a link through a jack runs at the slower of the two ports on either side of the panel. A rented rack has 42U and costs 42 × €60 = €2,520 per month; its power is included in the rent. Rent is paid at the start of each month together with the basement's power bill.
+A patch panel is passive. Each jack has a front and a back port, and a link through a jack runs at the slower of the two ports on either side of the panel. Gateways sit on the location's carrier panel, not in a rack, so they stay when a rack moves.
 
 ## Market and leads
 
@@ -219,7 +216,7 @@ P(j) = \frac{e^{U_j/\tau}}{\sum_k e^{U_k/\tau}}
 | Developer cloud | 85 | 70 | 40 | VPS, dedicated servers, storage, later cloud |
 | Premium host | 80 | 90 | 75 | Everything, managed |
 
-**Worked example.** A private individual compares web hosting plans. The player scores P 60, R 50, C 50 and charges 0.8× base, so U = 52 + 20 = 72. The budget giant and the developer cloud reach 85, the wholesale provider 82 and the premium host 49. The player wins 11% of these leads. At 0.6× base the player's U rises to 92 and the share to 39%, but the margin on resold hosting is gone.
+**Worked example.** A private individual weighs P, R and C at 0.2, 0.2 and 0.6. A new player scores P 60, R 50, C 50, so U = 52. The budget giant reaches 65, the developer cloud 55, the wholesale provider 57 and the premium host 79. The player wins about 6% of these leads, and convenience (a better control panel, more add-ons) is the fastest way up.
 
 ## Requests, SLAs and growth
 
@@ -375,6 +372,47 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 | Hand a debt to collections | Accountant | 30 min |
 | Month-end report | Accountant | 2 days per month |
 
+## Datacenters and space
+
+**Racks.** Racks keep their price over the years: 24U €350, 42U €800, 47U €1,000. The basement only fits a 24U rack.
+
+**Space.** Prices are 2026 values and keep their price over the years (m = 1). Power is billed per kWh drawn: the business price × the datacenter's power factor, which covers its cooling. A rack that draws more than its position's kW limit trips its breaker and goes offline.
+
+| Space | Price | Lead time | Minimum term | Needs |
+| --- | --- | --- | --- | --- |
+| Rack positions, 1 to 4 | The datacenter's position price each | 7 days | 1 month | Datacenter positions unlock |
+| Cage, 4 / 8 / 16 positions | 3.4× / 6.4× / 12× the position price | 30 days | 12 months | Cage unlock; datacenters with cages |
+| Private suite, 20 / 40 positions | 15× / 28× the position price | 90 days | 36 months | Private suite unlock |
+| Own datacenter | Set when it is designed | | | Own datacenter unlock |
+
+**Moving a rack.** €300 and 1 day within a city, €1,200 and 3 days to another city. The rack's servers are offline until it arrives.
+
+**Catalog.** Two to four datacenters per city. Exchanges new to this table: Franz-IX (Paris), BeCIX (Berlin), MIXup (Milan), VieX (Vienna), SwizzIX (Zurich).
+
+| Datacenter | City | Carriers | Exchange | Feeds | Backup | Green | kW per position | Position per month | Power factor | Cross-connect | Remote hands | Certified | Cages |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Equinox FR5 | Frankfurt | 30 | DE-KICKS on site | A+B | UPS, generator | Yes | 8 | €750 | 1.4 | €250 | €150/h, 1 h | Yes | Yes |
+| Interaction FRA | Frankfurt | 25 | DE-KICKS on site | A+B | UPS, generator | No | 6 | €600 | 1.3 | €200 | €120/h, 2 h | Yes | Yes |
+| mainqubes FRA | Frankfurt | 12 | DE-KICKS by cross-connect | A+B | UPS, generator | Yes | 6 | €450 | 1.3 | €150 | €100/h, 4 h | Yes | Yes |
+| Hetzler Park | Frankfurt | 1 | None | Single | UPS, generator | Yes | 4 | €180 | 1.1 | €80 | €60/h, 8 h | No | No |
+| Tellyhouse North | London | 30 | LYNX on site | A+B | UPS, generator | No | 6 | €800 | 1.5 | €300 | €160/h, 1 h | Yes | Yes |
+| Global Snitch LON | London | 20 | LYNX by cross-connect | A+B | UPS, generator | Yes | 8 | €700 | 1.4 | €250 | €140/h, 2 h | Yes | Yes |
+| Docklands Data | London | 3 | None | Single | UPS | No | 4 | €350 | 1.2 | €100 | €80/h, 8 h | No | No |
+| Equinox AM3 | Amsterdam | 25 | HAMS-IX on site | A+B | UPS, generator | Yes | 8 | €650 | 1.3 | €220 | €140/h, 1 h | Yes | Yes |
+| Iron Molehill AMS | Amsterdam | 10 | HAMS-IX by cross-connect | A+B | UPS, generator | Yes | 10 | €500 | 1.2 | €180 | €110/h, 4 h | Yes | Yes |
+| Tellyhouse Voltaire | Paris | 25 | Franz-IX on site | A+B | UPS, generator | No | 6 | €650 | 1.3 | €220 | €140/h, 2 h | Yes | Yes |
+| Data5 Marcoussis | Paris | 8 | Franz-IX by cross-connect | A+B | UPS, generator | Yes | 10 | €450 | 1.2 | €150 | €100/h, 4 h | Yes | Yes |
+| NTD Berlin 1 | Berlin | 12 | BeCIX on site | A+B | UPS, generator | Yes | 6 | €500 | 1.3 | €150 | €110/h, 2 h | Yes | Yes |
+| Spree Colo | Berlin | 3 | None | Single | UPS | Yes | 4 | €250 | 1.2 | €90 | €70/h, 8 h | No | No |
+| Data5 Milano | Milan | 10 | MIXup on site | A+B | UPS, generator | No | 6 | €500 | 1.3 | €160 | €110/h, 2 h | Yes | Yes |
+| Arubaba Hub | Milan | 4 | None | A+B | UPS, generator | Yes | 6 | €350 | 1.2 | €100 | €80/h, 4 h | Yes | No |
+| Interaction VIE | Vienna | 15 | VieX on site | A+B | UPS, generator | No | 6 | €500 | 1.3 | €160 | €120/h, 2 h | Yes | Yes |
+| Next Lair VIE | Vienna | 4 | VieX by cross-connect | Single | UPS, generator | No | 4 | €300 | 1.2 | €100 | €80/h, 4 h | No | No |
+| Equinox ZH4 | Zurich | 15 | SwizzIX on site | A+B | UPS, generator | Yes | 8 | €800 | 1.5 | €250 | €160/h, 1 h | Yes | Yes |
+| Green.chz Lupfig | Zurich | 6 | SwizzIX by cross-connect | A+B | UPS, generator | Yes | 6 | €550 | 1.3 | €180 | €120/h, 4 h | Yes | Yes |
+
+**Basement.** One position, a 24U rack at most, 3 kW at most (a household circuit), no backup, the household power price (business × 1.6) and the home line as its only uplink.
+
 ## Hardware, power and failures
 
 A G1 server costs about €26 a month in power in 2005; a G7 costs €89 in 2026 but carries 128 times the RAM. Old hardware also fails more often, so replacing it saves on power, space and outages at once.
@@ -428,8 +466,8 @@ A UPS runs for its battery capacity divided by the load:
 
 | Item | Price in 2005 | Notes |
 | --- | --- | --- |
-| Small UPS, 1,500 VA, 600 Wh | €180 | Carries the basement shelf (0.2 kW) for about 3 hours |
-| Second feed (A+B) on a rented rack | +60% of the rack's power fee | Only protects dual-PSU servers |
+| Small UPS, 1,500 VA, 600 Wh | €180 | Carries a small basement rack (0.2 kW) for about 3 hours |
+| Second feed (A+B) | Included where the datacenter has it | Only protects dual-PSU servers |
 | Dual power supply | +10% of the server's price | PSU failures make up about a quarter of a server's AFR; with two PSUs they no longer take the server down, so its AFR drops from 8% to 6% |
 
 Prices follow the same yearly multipliers as other hardware (see [Prices over time](#prices-over-time)).
@@ -591,7 +629,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 
 | Unlock | Branch | Know-how | Launch cost | Needs |
 | --- | --- | --- | --- | --- |
-| Rented rack units | Infrastructure | 50 | €500 | Level 1 |
+| Datacenter positions | Infrastructure | 50 | €500 | Level 1 |
 | SSL certificates | Products | 80 | €500 | Level 1 |
 | Own DNS hosting | Products | 60 | €500 | Level 1 |
 | First hire | Business | 100 | €1,000 | Level 1 |
@@ -599,7 +637,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Dedicated servers | Products | 300 | €3,000 | Level 2 |
 | Status page | Business | 300 | €1,000 | Level 2 |
 | Shop | Business | 600 | €4,000 | Level 2 |
-| Rented rack | Infrastructure | 400 | €2,000 | Level 2 |
+| Second location | Infrastructure | 400 | €2,000 | Level 2 |
 | Market research | Business | 800 | €5,000 | Level 2 |
 | Auto-cable | Infrastructure | 1,000 | €5,000 | Level 3 |
 | Private networks | Products | 1,200 | €3,000 | Level 3 |
@@ -621,7 +659,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | SLA insurance | Business | 10,000 | €10,000 | Level 4 |
 | Overlay networks | Network | 10,000 | €40,000 | Level 4 |
 | Always-on DDoS protection | Network | 12,000 | €100,000 | Level 4 |
-| Own room | Infrastructure | 20,000 | €250,000 | Level 5 |
+| Private suite | Infrastructure | 20,000 | €250,000 | Level 5 |
 | CDN | Products | 25,000 | €200,000 | Level 5 |
 | Domain registrar | Independence | 30,000 | €150,000 | Level 5 |
 | Cloud servers | Products | 80,000 | €500,000 | Level 5, from 2010 |
