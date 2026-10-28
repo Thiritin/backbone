@@ -130,7 +130,7 @@ describe("billing rules", () => {
     delete old.billingRules;
     delete old.invoices[0].suspendedAt;
     const loaded = deserialize(JSON.stringify(old));
-    expect(loaded.billingRules).toEqual({ autoRemind: false, autoSuspendDays: 0 });
+    expect(loaded.billingRules).toEqual({ autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 });
     expect(loaded.invoices[0].suspendedAt).toBe(s.hour);
   });
 });

@@ -1,7 +1,8 @@
 import { chance, rand, type Rng } from "../00-core/rng";
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
+import type { Budget } from "../10-catalog/economy";
 import type { PaymentHabit } from "../30-customers/customers";
-import { bump, cancelCustomer, createTicket } from "../40-support/tickets";
+import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { metrics } from "../metrics";
@@ -21,13 +22,15 @@ export interface Invoice {
   reminders: number[];
   // ponytail: suspension takes the services offline for support only; milestone 3 stops the workloads and their billed hours.
   suspended: boolean;
-  // Hour the latest suspension started; auto-suspend only acts on an invoice that was never suspended.
+  // Hour the latest suspension started; auto-suspend acts on an invoice that was never suspended or whose extension ran out.
   suspendedAt: number | null;
   // Rolled once at issue: 0 pays on time, n pays after the nth dunning step, 4 never pays.
   payStep: number;
   // Hour the money arrives, set once the step that moves the customer is sent.
   payAt: number | null;
   paidAt: number | null;
+  // Hour the payment extension granted on a suspension appeal runs out.
+  extendedUntil: number | null;
 }
 // rate is yearly; left counts the instalments still to pay.
 export interface Loan { id: string; amount: number; rate: number; months: number; left: number; payment: number; balance: number; takenAt: number; missed: number }
@@ -49,10 +52,18 @@ export const COLLECTIONS_SHARE = 0.3;
 export const COLLECTIONS_DAYS = 30;
 
 // economy.md, Suspension.
-export interface BillingRules { autoRemind: boolean; autoSuspendDays: 0 | 7 | 14 | 30 }
+export interface BillingRules { autoRemind: boolean; autoSuspendDays: 0 | 7 | 14 | 30; autoCollectDays: 0 | 42 | 60 | 90 }
 export const AUTO_SUSPEND_DAYS = [0, 7, 14, 30] as const;
-export const SUSPEND_HAPPINESS = 15;
+export const AUTO_COLLECT_DAYS = [0, 42, 60, 90] as const;
+// High-budget customers run their business on the services, so suspension hits harder and they pay faster.
+export const SUSPEND_HAPPINESS: Record<Budget, number> = { low: 15, medium: 15, high: 30 };
 export const SUSPENDED_PAY_ODDS: Record<PaymentHabit, number> = { prompt: 0.35, late: 0.35, bad: 0.2 };
+export const SUSPENDED_PAY_ODDS_HIGH = 0.6;
+export const APPEAL_CHANCE = 0.6;
+export const EXTENSION_DAYS = 7;
+export const EXTENSION_PAY_CHANCE = 0.85;
+export const UNSUSPEND_HAPPINESS = 15;
+export const KEEP_SUSPENDED_HAPPINESS = -15;
 export const SUSPEND_CHURN_DAYS = 14;
 export const SUSPEND_CHURN_CHANCE = 0.5;
 
@@ -109,15 +120,27 @@ function ownCustomer(s: GameState, id: string) {
 }
 
 // The first suspension of a customer costs happiness and brings a ticket; further invoices only add to it.
-// Returns whether the customer's services were running until now.
+// A high-budget customer may appeal instead, once per invoice. Returns whether the services were running until now.
 export function suspend(s: GameState, inv: Invoice): boolean {
   const first = !isSuspended(s, inv.customerId);
+  const appealed = inv.extendedUntil !== null;
   Object.assign(inv, { suspended: true, suspendedAt: s.hour });
   const c = ownCustomer(s, inv.customerId);
   if (!first || !c) return false;
-  bump(c, -SUSPEND_HAPPINESS);
-  createTicket(s, c, "billing").topic = "suspended";
+  const { budget } = profileStats(c.profile);
+  bump(c, -SUSPEND_HAPPINESS[budget]);
+  if (budget === "high" && !appealed && chance(s.rng, APPEAL_CHANCE)) createTicket(s, c, "appeal");
+  else createTicket(s, c, "billing").topic = "suspended";
   return true;
+}
+
+// A granted appeal: the customer's suspended invoices go back online with a payment extension.
+export function grantExtension(s: GameState, customerId: string): void {
+  s.invoices = s.invoices.map((inv) => {
+    if (inv.customerId !== customerId || !inv.suspended || !isUnpaid(inv)) return inv;
+    const payAt = inv.payAt ?? (chance(s.rng, EXTENSION_PAY_CHANCE) ? s.hour + payDelay(s.rng) : null);
+    return { ...inv, suspended: false, extendedUntil: s.hour + EXTENSION_DAYS * DAY, payAt };
+  });
 }
 
 // The debt goes to a collection agency and the customer leaves.
@@ -137,26 +160,48 @@ export function sendStep(s: GameState, inv: Invoice, i: number): void {
   else if (inv.payStep === i + 1) inv.payAt = s.hour + payDelay(s.rng);
 }
 
+// The dunning step the rules send now: notices with auto reminders, collections once its days have passed.
+function ruleStep(s: GameState, inv: Invoice): number | null {
+  const i = dueStep(inv, s.hour);
+  if (i === null) return null;
+  if (STEPS[i].key !== "collections") return s.billingRules.autoRemind ? i : null;
+  const days = s.billingRules.autoCollectDays;
+  return days && s.hour >= inv.dueAt + days * DAY ? i : null;
+}
+
+// Hour the suspend rule acts on an invoice: days after the due date, or again when an appeal's extension runs out.
+function ruleSuspendsAt(s: GameState, inv: Invoice): number | null {
+  const days = s.billingRules.autoSuspendDays;
+  if (!days || inv.status !== "overdue" || inv.suspended) return null;
+  if (inv.suspendedAt === null) return inv.dueAt + days * DAY;
+  return inv.extendedUntil !== null && inv.suspendedAt < inv.extendedUntil ? inv.extendedUntil : null;
+}
+
 // Billing rules and suspended customers, once per hour for each unpaid invoice the caller owns.
 function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
   const c = s.customers.find((x) => x.id === inv.customerId);
-  const i = s.billingRules.autoRemind ? dueStep(inv, s.hour) : null;
-  if (i !== null && STEPS[i].key !== "collections") sendStep(s, inv, i);
-  const days = s.billingRules.autoSuspendDays;
-  if (days && inv.status === "overdue" && inv.suspendedAt === null && c?.churnedAt === null && s.hour >= inv.dueAt + days * DAY) {
+  const i = ruleStep(s, inv);
+  if (i !== null) sendStep(s, inv, i);
+  if (inv.status === "writtenOff") {
+    if (c) events.push({ app: "Billing", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
+    return;
+  }
+  const at = ruleSuspendsAt(s, inv);
+  if (at !== null && c?.churnedAt === null && s.hour >= at) {
     if (suspend(s, inv)) events.push({ app: "Billing", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
   }
   if (!inv.suspended || inv.suspendedAt === null || inv.payAt !== null || !c) return;
   const since = s.hour - inv.suspendedAt;
   if (since <= 0 || since % DAY) return;
+  const high = profileStats(c.profile).budget === "high";
   if (c.habit === "bad" && since === SUSPEND_CHURN_DAYS * DAY && chance(s.rng, SUSPEND_CHURN_CHANCE)) {
     toCollections(s, inv);
     events.push({ app: "Billing", key: "event.suspendedLeft", params: { customer: c.name, invoice: inv.number } });
-  } else if (chance(s.rng, SUSPENDED_PAY_ODDS[c.habit])) inv.payAt = s.hour + 1;
+  } else if (chance(s.rng, high ? SUSPENDED_PAY_ODDS_HIGH : SUSPENDED_PAY_ODDS[c.habit])) inv.payAt = s.hour + 1;
 }
 
 const needsChase = (s: GameState, inv: Invoice): boolean =>
-  isUnpaid(inv) && (inv.suspended || (s.billingRules.autoRemind && dueStep(inv, s.hour) !== null) || (s.billingRules.autoSuspendDays > 0 && inv.status === "overdue" && inv.suspendedAt === null));
+  isUnpaid(inv) && (inv.suspended || ruleStep(s, inv) !== null || ruleSuspendsAt(s, inv) !== null);
 
 // Bank: economy.md, Bank, insurance and tax.
 const BASE_RATE: [number, number][] = [[2005, 4], [2009, 2.5], [2015, 1], [2021, 1], [2023, 4.5], [2026, 4]];
@@ -243,7 +288,7 @@ export function billingTick(s: GameState): SimEvent[] {
     const payStep = rollPayStep(s.rng, s.customers.find((c) => c.id === customerId)?.habit ?? "prompt");
     issued.push({
       id: `inv${s.nextId++}`, number: `${yearOf(s.hour)}-${String(invoices.length + issued.length + 1).padStart(4, "0")}`,
-      customerId, lines: ls, issuedAt: s.hour, dueAt: s.hour + DUE_DAYS * DAY, status: "open", reminders: [], suspended: false, suspendedAt: null,
+      customerId, lines: ls, issuedAt: s.hour, dueAt: s.hour + DUE_DAYS * DAY, status: "open", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null,
       payStep, payAt: payStep === 0 ? s.hour + DAY + Math.floor(rand(s.rng) * (DUE_DAYS - 1) * DAY) : null, paidAt: null,
     });
   }

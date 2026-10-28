@@ -43,6 +43,6 @@ export function deserialize(raw: string): GameState {
     company: { ...base.company, ...data.company },
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [] })),
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null })),
-    invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null) })),
+    invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   };
 }

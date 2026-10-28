@@ -1,7 +1,7 @@
 import { chance } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
 import type { Customer } from "../30-customers/customers";
-import { isSuspended } from "../45-billing/billing";
+import { grantExtension, isSuspended, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { serviceOnline } from "./status";
@@ -39,6 +39,13 @@ function finishWork(s: GameState, customer: (id: string) => Customer): void {
     } else if (work.arg === "credit") {
       credit(s, c, 0.1);
       resolve(s, t, c, "credit");
+    } else if (work.arg === "unsuspend") {
+      grantExtension(s, c.id);
+      bump(c, UNSUSPEND_HAPPINESS);
+      resolve(s, t, c, "unsuspended");
+    } else if (work.arg === "keep") {
+      bump(c, KEEP_SUSPENDED_HAPPINESS);
+      resolve(s, t, c, "kept");
     } else if (work.arg === "retain" && chance(s.rng, c.happiness >= 30 ? 0.3 : 0.1)) {
       credit(s, c, 1);
       resolve(s, t, c, "retained");

@@ -497,6 +497,7 @@ Support is the first job that overwhelms you. Every outage, question, install re
 | Outage report | A service the customer uses goes down | Status reply, credit, escalate |
 | How-to question | New customers; cheap control panels | Template answer |
 | Billing question | Invoices and payment reminders | Explain, resend invoice, grant an extension |
+| Suspension appeal | A high-budget customer's services are suspended | Unsuspend with a payment extension, keep suspended |
 | Expansion request | Customer nears the size they rent | Opens the request in Sales |
 | Cancellation | Unhappy or departing customer | Retention offer, process the cancellation |
 | Colocation install | Colocation customer ships hardware | Book an install with a technician |
@@ -539,7 +540,15 @@ Payment habits differ by segment. Private individuals forget most often, and ent
 
 **Insurance.** SLA insurance pays the credits you owe customers when you miss an SLA. It covers three claims; after the third, the insurer blocks you for a year. The premium rises with a poor uptime record.
 
-**Suspension.** You can suspend a customer's services over an unpaid invoice. A suspended customer usually pays within days, because their site or server is down, but they open a ticket and lose happiness, and some leave instead. Suspension can be automated with a billing rule: send reminders on schedule and suspend after 7, 14 or 30 days overdue, with services coming back as soon as the invoice is paid. Nobody chases an invoice unless you or a rule do it, so a customer who stops paying keeps using the service for free until someone notices. The Billing app shows how much is owed by customers who are still being served.
+**Suspension.** You can suspend a customer's services over an unpaid invoice. A suspended customer usually pays within days, because their site or server is down, but they open a ticket and lose happiness, and some leave instead. Nobody chases an invoice unless you or a rule do it, so a customer who stops paying keeps using the service for free until someone notices. The Billing app shows how much is owed by customers who are still being served.
+
+**Suspension by customer.** Suspension hits customers differently. Low- and medium-budget customers grumble and pay, or leave per their payment habit. High-budget customers (offices, online shops and enterprises) run their business on the services, so going offline costs them twice the happiness and they pay much faster. Often they first write a suspension appeal: they forgot to pay, the manager who signs invoices is on vacation, nobody has access to the payment details, or the money is already on its way. The appeal ticket offers two actions. Unsuspend brings the services back online at once with a 7-day payment extension; most pay within it, and if the extension runs out unpaid, the suspend rule takes the services offline again, this time without a second appeal. Keep suspended leaves them offline and costs more happiness. A reply that says the services return once the payment arrives settles the appeals of customers who are paying anyway.
+
+**Automation.** The Billing sidebar has an Automation entry that holds the billing rules, each set with a switch or a segmented control:
+
+- **Send reminders**: the reminder, dunning and final notices go out on schedule.
+- **Suspend services after**: Off, 7, 14 or 30 days overdue. Services come back as soon as the invoice is paid.
+- **Send to collections after**: Off, 42, 60 or 90 days overdue, once the final notice has gone out. Off by default, so collections stays a manual step until you turn it on.
 
 **Customers as a CRM.** The Customers app is the hub for everything about a customer: a searchable, filterable list, and for each customer an overview with lifetime spend, open balance, active services, invoices, tickets and their workloads. Every item links to the app that handles it (Billing, Support, the virtual machine manager).
 

@@ -6,8 +6,9 @@
 .fin-side button.side-item:hover { background: var(--hover); }
 .fin-side button.side-item.active { background: var(--accent); color: var(--accent-ink); }
 
-.fin-rule { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; padding: 2px 8px; white-space: nowrap; }
-.fin-rule select { width: 84px; }
+.fin-auto-item { margin-top: 12px; }
+.fin-auto .settings-line { min-height: 44px; }
+.fin-auto .settings-line + .settings-line { border-top: 0.5px solid var(--line); }
 .fin-table .link { color: inherit; }
 .fin-table .link:hover { color: var(--accent-text); }
 

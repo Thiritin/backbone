@@ -1,8 +1,8 @@
-import { Ban, CircleCheck, CircleDot, Files, Mail, OctagonAlert, Pause, Play, Receipt, Trash2 } from "lucide-react";
+import { Ban, CircleCheck, CircleDot, Files, Mail, OctagonAlert, Pause, Play, Receipt, Trash2, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { AUTO_SUSPEND_DAYS, dueStep, freeRiding, invoiceTotal, STEPS, type BillingRules, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
+import { AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, dueStep, freeRiding, invoiceTotal, STEPS, type BillingRules, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import { sendReminder, setBillingRules, suspendServices, writeOff } from "../../../sim/90-actions/billing";
 import { t } from "../../../i18n/en";
 import { Confirm } from "../../desktop/Confirm";
@@ -36,9 +36,8 @@ const sum = (list: Invoice[]) => list.reduce((s, i) => s + invoiceTotal(i), 0);
 
 export function BillingApp() {
   const game = useStore((s) => s.game);
-  const [filter, setFilter] = useState<InvoiceStatus | "all">("all");
+  const [filter, setFilter] = useState<InvoiceStatus | "all" | "automation">("all");
   const [selected, setSelected] = useState<string | null>(null);
-  const act = useStore((s) => s.act);
   useFocus("Billing", (f) => {
     if (f.kind !== "invoice") return;
     setFilter("all");
@@ -53,7 +52,6 @@ export function BillingApp() {
     ["Paid this month", sum(game.invoices.filter((i) => i.paidAt !== null && i.status === "paid" && sameMonth(i.paidAt, game.hour)))],
     ["Owed by active customers", freeRiding(game).owed],
   ];
-  const rules = (r: Partial<BillingRules>) => act((s) => setBillingRules(s, r));
 
   return (
     <div className="fin">
@@ -65,19 +63,12 @@ export function BillingApp() {
             <span className="side-count">{f.id === "all" ? game.invoices.length : game.invoices.filter((i) => i.status === f.id).length}</span>
           </button>
         ))}
-        <div className="side-h">Rules</div>
-        <label className="fin-rule">
-          Send reminders
-          <input type="checkbox" role="switch" className="switch" checked={game.billingRules.autoRemind} onChange={(e) => rules({ autoRemind: e.target.checked })} />
-        </label>
-        <label className="fin-rule">
-          Suspend after
-          <select className="field" value={game.billingRules.autoSuspendDays} onChange={(e) => rules({ autoSuspendDays: Number(e.target.value) as BillingRules["autoSuspendDays"] })}>
-            {AUTO_SUSPEND_DAYS.map((d) => <option key={d} value={d}>{d ? `${d} days` : "Off"}</option>)}
-          </select>
-        </label>
+        <button className={`side-item fin-auto-item${filter === "automation" ? " active" : ""}`} aria-pressed={filter === "automation"} onClick={() => setFilter("automation")}>
+          <Workflow />Automation
+        </button>
       </nav>
-      <div className="fin-main">
+      {filter === "automation" && <Automation />}
+      {filter !== "automation" && <div className="fin-main">
         <dl className="fin-totals">
           {totals.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{euroCents(v)}</dd></div>)}
         </dl>
@@ -106,8 +97,40 @@ export function BillingApp() {
             </table>
           )}
         </div>
+      </div>}
+      {filter !== "automation" && invoice && <Detail key={invoice.id} inv={invoice} customer={name(invoice.customerId)} hour={game.hour} />}
+    </div>
+  );
+}
+
+function DaysRule<D extends number>({ label, days, value, onChange }: { label: string; days: readonly D[]; value: D; onChange: (d: D) => void }) {
+  return (
+    <div className="settings-line">
+      <span>{label}</span>
+      <div className="seg" role="group" aria-label={label}>
+        {days.map((d) => <button key={d} aria-pressed={value === d} onClick={() => onChange(d)}>{d ? `${d} days` : "Off"}</button>)}
       </div>
-      {invoice && <Detail key={invoice.id} inv={invoice} customer={name(invoice.customerId)} hour={game.hour} />}
+    </div>
+  );
+}
+
+function Automation() {
+  const rules = useStore((s) => s.game.billingRules);
+  const act = useStore((s) => s.act);
+  const set = (r: Partial<BillingRules>) => act((s) => setBillingRules(s, r));
+  return (
+    <div className="fin-main">
+      <div className="settings fin-auto">
+        <h2>Automation</h2>
+        <div className="settings-group">
+          <div className="settings-line">
+            <span>Send reminders</span>
+            <input type="checkbox" role="switch" className="switch" aria-label="Send reminders" checked={rules.autoRemind} onChange={(e) => set({ autoRemind: e.target.checked })} />
+          </div>
+          <DaysRule label="Suspend services after" days={AUTO_SUSPEND_DAYS} value={rules.autoSuspendDays} onChange={(d) => set({ autoSuspendDays: d })} />
+          <DaysRule label="Send to collections after" days={AUTO_COLLECT_DAYS} value={rules.autoCollectDays} onChange={(d) => set({ autoCollectDays: d })} />
+        </div>
+      </div>
     </div>
   );
 }
