@@ -5,10 +5,10 @@ import {
   type AdTier, type Assignment, type Employee, type Role, type Task,
 } from "../47-staff/staff";
 import { OP_TASK, queueOp, techsAt, type OpKind, type TechRules } from "../47-staff/technicians";
-import { phpAt } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { clusterOf } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
+import { phpDue } from "./clusters";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -125,12 +125,11 @@ export function queueOperation(s: GameState, kind: OpKind, deviceId: string, com
   return { ok: true, id: queueOp(s, kind, deviceId, kind === "replace" ? componentId : null).id };
 }
 
-// One PHP upgrade per node still on an older version.
+// One PHP upgrade per node still on an older version or missing a released patch.
 export function queuePhpUpgrade(s: GameState, clusterId: string): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
-  const php = phpAt(yearOf(s.hour));
-  const nodes = c.nodes.filter((n) => n.php !== php && !s.techOps.some((o) => o.kind === "php" && o.deviceId === n.deviceId));
+  const nodes = c.nodes.filter((n) => phpDue(s, n) && !s.techOps.some((o) => o.kind === "php" && o.deviceId === n.deviceId));
   if (!nodes.length) return fail("error.phpCurrent");
   for (const n of nodes) {
     const r = queueOperation(s, "php", n.deviceId);

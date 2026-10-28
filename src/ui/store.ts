@@ -4,6 +4,7 @@ import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
 import { startGame as newCompany } from "../sim/90-actions/start";
 import { tick } from "../sim/88-tick/tick";
+import { ADVISORY_KEYS } from "../sim/60-infra/security";
 import { deserialize, serialize } from "../sim/91-save/save";
 import type { Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
@@ -19,6 +20,7 @@ export interface Banner { id: number; app: string; title: string; text: string; 
 export interface NotifyPref { allow: boolean; sound: boolean }
 const WIDE = { w: 1240, h: 680 };
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
+  Security: { w: 900, h: 420 },
   Locations: { w: 1120, h: 700 }, Shop: { w: 1180, h: 700 }, Billing: WIDE, Bank: WIDE, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
   Support: { w: 1160, h: 680 }, Research: { w: 1140, h: 600 }, Sales: { w: 1180, h: 700 }, Products: { w: 1120, h: 720 }, "Virtual machines": { w: 1180, h: 680 }, Staff: { w: 1120, h: 640 },
 };
@@ -41,6 +43,9 @@ interface Store {
   // The Welcome to Pear sheet a new game opens with.
   welcome: boolean;
   closeWelcome: () => void;
+  // The security advisory sheet a vulnerability stage opens; the stage pauses the game.
+  advisory: boolean;
+  setAdvisory: (open: boolean) => void;
   // The skill whose How it works sheet is open.
   explain: string | null;
   setExplain: (id: string | null) => void;
@@ -77,7 +82,7 @@ interface Store {
 export interface CartLine { model: string; brand: string; qty: number }
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, explain: null });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, explain: null, advisory: false });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -131,6 +136,8 @@ export const useStore = create<Store>((set, get) => ({
     set({ welcome: false });
     get().openApp("Getting started");
   },
+  advisory: false,
+  setAdvisory: (advisory) => set({ advisory }),
   explain: null,
   setExplain: (explain) => set({ explain }),
   started: initial.loaded,
@@ -149,14 +156,16 @@ export const useStore = create<Store>((set, get) => ({
 
   advance: (hours) => {
     const game = { ...get().game, rng: { ...get().game.rng } };
+    let advisory = false;
     for (let i = 0; i < hours; i++) {
       for (const e of tick(game)) {
         get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params));
         if (e.key === "event.trainingDone") set({ explain: String(e.params.id) });
+        if (ADVISORY_KEYS.includes(e.key)) advisory = true;
       }
-      if (game.gameOver !== null) break;
+      if (game.gameOver !== null || advisory) break;
     }
-    set(game.gameOver !== null ? { game, speed: 0 } : { game });
+    set(game.gameOver !== null ? { game, speed: 0 } : advisory ? { game, speed: 0, advisory } : { game });
   },
   act: (fn) => {
     const game = structuredClone(get().game);
