@@ -184,7 +184,7 @@ describe("price changes", () => {
     const before = c.happiness, old = v.price * 730;
     expect(changePrice(s, v.id, old * 1.2).ok).toBe(true);
     expect(s.services[0].price * 730).toBeCloseTo(old * 1.2);
-    expect(s.customers.find((x) => x.id === c.id)!.happiness).toBeCloseTo(before - 10);
+    expect(s.customers.find((x) => x.id === c.id)!.happiness).toBeCloseTo(before - 20);
     expect(changePrice(s, v.id, old * 3).ok).toBe(true);
     expect(s.tickets.some((t) => t.customerId === c.id && t.kind === "cancellation")).toBe(true);
     expect(changePrice(s, v.id, 0)).toEqual({ ok: false, error: "error.quotePrice" });
@@ -193,7 +193,7 @@ describe("price changes", () => {
   it("lets happiness drift back toward the market over the months", () => {
     const s = startGame(1);
     const v = s.services[0];
-    changePrice(s, v.id, v.price * 730 * 1.1);
+    changePrice(s, v.id, v.price * 730 * 1.04);
     const c = s.customers.find((x) => x.id === v.customerId)!;
     c.happiness = 40;
     const hit = c.happiness;

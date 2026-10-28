@@ -11,6 +11,7 @@ import { applyOrderWork } from "../30-market/orders";
 import { howToFactor } from "../85-products/products";
 import { phpAbuse } from "../60-infra/php";
 import { serviceOnline } from "./status";
+import { overpricing, retains, revertPrice } from "../30-customers/pricing";
 import {
   bump, cancelCustomer, createTicket, credit, GAMER_ABUSE_RATE, HOURS_PER_MONTH, isFinal, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
   profileStats, replyDue, rightTemplate, UPGRADE_CHANCE, WAITING_CLOSE_HOURS, type Ticket,
@@ -22,7 +23,7 @@ const RIGHT_ANSWER = 5, WRONG_ANSWER = -10, HISTORY_MONTHS = 12;
 
 function resolve(s: GameState, t: Ticket, c: Customer, outcome: Ticket["outcome"] = null): void {
   Object.assign(t, { status: "resolved", updatedAt: s.hour, outcome });
-  if (outcome !== "cancelled") bump(c, RIGHT_ANSWER);
+  if (outcome !== "cancelled" && outcome !== "offerRefused") bump(c, RIGHT_ANSWER);
 }
 
 // Player work queued by the support actions takes effect once its time has passed.
@@ -60,12 +61,15 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
     } else if (work.arg === "keep") {
       bump(c, KEEP_SUSPENDED_HAPPINESS);
       resolve(s, t, c, "kept");
-    } else if (work.arg === "retain" && chance(s.rng, c.happiness >= 30 ? 0.3 : 0.1)) {
+    } else if (work.arg === "revert") {
+      revertPrice(s, t.serviceId);
+      resolve(s, t, c, "reverted");
+    } else if (work.arg === "retain" && retains(s, c)) {
       credit(s, c, 1);
       resolve(s, t, c, "retained");
     } else {
       cancelCustomer(s, c);
-      resolve(s, t, c, "cancelled");
+      resolve(s, t, c, work.arg === "retain" ? "offerRefused" : "cancelled");
     }
   }
 }
@@ -102,6 +106,7 @@ function outages(s: GameState, customer: (id: string) => Customer): void {
 // ponytail: every customer rolls monthly churn; yearly contracts rolling 12x at renewal needs billing's renewal dates.
 function monthly(s: GameState): void {
   for (const c of s.customers) if (c.churnedAt === null) c.history = [...c.history, c.happiness].slice(-HISTORY_MONTHS);
+  overpricing(s);
   for (const t of s.tickets) {
     if (t.kind !== "cancellation" || isFinal(t) || t.createdAt >= s.hour) continue;
     const c = s.customers.find((x) => x.id === t.customerId)!;

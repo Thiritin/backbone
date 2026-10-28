@@ -11,5 +11,7 @@ export interface Customer { id: string; name: string; profile: Profile; since: n
 // price is per hour for period "hour" (invoiced monthly in arrears) and per year for period "year" (invoiced in advance).
 // plan is a PRODUCTS plan id, null for the product's first plan; its workloads point back at it by serviceId.
 export interface Service { id: string; customerId: string; product: Product; label: string; price: number; period: "hour" | "year"; commitMonths: number; startedAt: number; endedAt: number | null; zone: string | null;
-  plan: string | null; sla: Sla }
+  plan: string | null; sla: Sla;
+  // Hourly price from before the first of a run of raises; unset once the price is back at or below it.
+  before?: number }
 export const activeServices = (services: Service[], customerId: string): Service[] => services.filter((v) => v.customerId === customerId && v.endedAt === null);
