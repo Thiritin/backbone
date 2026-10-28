@@ -1,0 +1,60 @@
+/* Shared by the Billing and Bank apps. */
+.fin { flex: 1; min-width: 0; display: flex; }
+.fin .grow { flex: 1; }
+.fin-side { display: flex; flex-direction: column; gap: 1px; }
+.fin-side button.side-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; }
+.fin-side button.side-item:hover { background: var(--hover); }
+.fin-side button.side-item.active { background: var(--accent); color: var(--accent-ink); }
+
+.fin-main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--win); }
+.fin-scroll { flex: 1; min-height: 0; overflow: auto; }
+.fin-empty { height: 100%; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--text-3); }
+.fin-empty svg.lucide { width: 28px; height: 28px; }
+
+.fin-totals { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border-bottom: 0.5px solid var(--line); flex: none; }
+.fin-totals > div { padding: 12px 16px; }
+.fin-totals > div + div { border-left: 0.5px solid var(--line); }
+.fin-totals dt { font-size: 11.5px; font-weight: 550; color: var(--text-3); }
+.fin-totals dd { margin: 2px 0 0; font-size: 17px; font-weight: 650; }
+
+.fin-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0.5px solid var(--line); flex: none; }
+.fin-toolbar h2 { font-size: 13px; font-weight: 650; }
+
+.fin-table tbody tr { cursor: pointer; }
+.fin-table tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.table tr.sel td, .table tr.sel:hover td { background: var(--accent-soft); }
+.fin-pills { display: inline-flex; gap: 4px; }
+.fin-text { max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+
+.fin-detail { width: 300px; flex: none; overflow: auto; display: grid; gap: 14px; align-content: start; padding: 16px 16px 20px; border-left: 0.5px solid var(--line); background: var(--win-side); }
+.fin-detail-h { display: flex; align-items: center; gap: 10px; }
+.fin-detail-h h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; margin-right: auto; }
+.fin-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin: 0; }
+.fin-facts dt { font-size: 11.5px; font-weight: 550; color: var(--text-3); }
+.fin-facts dd { margin: 1px 0 0; font-weight: 550; }
+
+.fin-card { border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); min-width: 0; overflow: hidden; }
+.fin-card-h { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 12.5px; font-weight: 650; border-bottom: 0.5px solid var(--line); }
+.fin-card-h svg.lucide { width: 16px; height: 16px; color: var(--text-2); }
+.fin-card-b { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 12px 14px; }
+.fin-card-b > .btn { justify-self: start; }
+.fin-card .table th, .fin-card .table td { background: var(--field); }
+.fin-lines td { white-space: normal; }
+.fin-lines tr:last-child td { border-bottom: 0; }
+.fin-sum td { font-weight: 650; }
+.fin-none { padding: 12px 14px; color: var(--text-3); }
+
+.fin-rows { display: grid; gap: 6px; margin: 0; padding: 0; }
+.fin-card > .fin-rows { padding: 12px 14px; }
+.fin-rows > div { display: flex; justify-content: space-between; gap: 12px; }
+.fin-rows dt { color: var(--text-2); }
+.fin-rows dd { margin: 0; font-weight: 550; }
+
+.fin-loan { display: grid; gap: 8px; padding: 12px 14px; }
+.fin-loan + .fin-loan { border-top: 0.5px solid var(--line); }
+.fin-loan-h { display: flex; align-items: center; gap: 8px; font-weight: 650; }
+
+.fin-field { display: grid; gap: 4px; }
+.fin-field > span { font-size: 11.5px; font-weight: 550; color: var(--text-3); }
+.fin-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.fin-actions .btn svg.lucide, .fin-card-b .btn svg.lucide { width: 16px; height: 16px; }

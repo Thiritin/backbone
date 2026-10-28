@@ -81,7 +81,7 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
         <h1>{win.app}</h1>
       </div>
       <div className="win-body">
-        {win.app === "Settings" ? <SettingsApp /> : win.app === "Getting started" ? <GuideApp /> : win.app === "Locations" ? <LocationsApp /> : (
+        {win.app === "Settings" ? <SettingsApp /> : win.app === "Getting started" ? <GuideApp /> : win.app === "Locations" ? <LocationsApp /> : app.body ? <app.body /> : (
           <div className="app-empty">
             <span className="app-empty-tile" style={{ "--tile": app.tile } as CSSProperties}><app.icon /></span>
             <h2>{win.app}</h2>
