@@ -1,5 +1,7 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { BASEMENT_SLOTS, START_CASH } from "./10-catalog/economy";
+import type { Customer, Service } from "./30-customers/customers";
+import type { Ticket } from "./40-support/tickets";
 
 export const SAVE_VERSION = 1;
 
@@ -29,6 +31,12 @@ export interface GameState {
   ledger: LedgerEntry[];
   // Power drawn since the last monthly bill, in euros.
   powerDue: number;
+  customers: Customer[];
+  services: Service[];
+  // Support: tickets, the minute the player's queued replies finish, and services seen offline last hour.
+  tickets: Ticket[];
+  playerBusyUntil: number;
+  servicesDown: string[];
 }
 
 // Starting state: the tower on the basement shelf, cabled to the home router so it starts online.
@@ -42,4 +50,6 @@ export const newGame = (seed: number): GameState => ({
   ],
   cables: [{ id: "cab5", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper" }],
   ledger: [], powerDue: 0,
+  customers: [], services: [],
+  tickets: [], playerBusyUntil: 0, servicesDown: [],
 });

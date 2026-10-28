@@ -1,0 +1,99 @@
+import { rand } from "../00-core/rng";
+import { PROFILES, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
+import { activeServices, type Customer, type Profile, type Service } from "../30-customers/customers";
+import type { GameState } from "../50-state";
+import { serviceOnline } from "./status";
+
+export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse";
+// open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
+export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
+export type TicketAction = "credit" | "retain" | "cancel";
+export interface Reply { hour: number; template: string; right: boolean }
+// doneAt is in game minutes; the reply or action takes effect on the first tick at or after it.
+export interface Work { op: "reply" | "resolve" | "escalate"; arg: string; doneAt: number }
+export interface Ticket {
+  id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
+  createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
+  outcome: "credit" | "retained" | "cancelled" | null; work: Work | null;
+}
+
+export const HOURS_PER_MONTH = 730;
+// Hours a waiting ticket stays open before the customer's silence counts as solved.
+export const WAITING_CLOSE_HOURS = 48;
+
+// economy.md, Tickets and work rates.
+export const MINUTES: Record<TicketKind, number> = { outage: 10, howTo: 20, billing: 15, upgrade: 20, cancellation: 15, abuse: 30 };
+export const MONTHLY_RATES: Record<"howTo" | "billing" | "abuse", Record<Budget, number>> = {
+  howTo: { low: 0.18, medium: 0.06, high: 0.02 },
+  billing: { low: 0.04, medium: 0.04, high: 0.02 },
+  abuse: { low: 0.005, medium: 0.005, high: 0.02 },
+};
+export const GAMER_ABUSE_RATE = 0.02;
+export const UPGRADE_CHANCE: Record<Budget, number> = { low: 0.02, medium: 0.03, high: 0.04 };
+export const OUTAGE_WRITE_CHANCE: Record<Budget, number> = { low: 0.3, medium: 0.6, high: 0.9 };
+
+export const TOPICS: Record<TicketKind, string[]> = {
+  outage: ["down"], howTo: ["upload", "email", "dns", "panel"], billing: ["charge", "copy", "delay"],
+  upgrade: ["grow"], cancellation: ["leave"], abuse: ["spam", "attack"],
+};
+export const TEMPLATES: Record<TicketKind, string[]> = {
+  outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "panel", "askDetails"],
+  billing: ["explain", "resend", "extension", "askDetails"], upgrade: ["offer", "askDetails"], cancellation: [], abuse: ["warn", "askDetails"],
+};
+export const ACTIONS: Record<TicketKind, TicketAction[]> = { outage: ["credit"], howTo: [], billing: ["credit"], upgrade: [], cancellation: ["retain", "cancel"], abuse: [] };
+export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
+const RIGHT: Record<string, string> = { upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", grow: "offer", spam: "warn", attack: "warn" };
+
+export function rightTemplate(s: GameState, t: Ticket): string {
+  if (t.kind === "outage") return t.serviceId && !serviceOnline(s, t.serviceId) ? "ack" : "back";
+  return RIGHT[t.topic];
+}
+
+const CATALOG_ID: Record<Profile, string> = {
+  private: "private", gamer: "gamer", hobbyDev: "hobby", soleProp: "sole", smallBiz: "small",
+  agency: "agency", office: "office", onlineShop: "shop", enterprise: "enterprise",
+};
+export const profileStats = (p: Profile): ProfileStats => PROFILES.find((x) => x.id === CATALOG_ID[p])!;
+
+export const serviceMonthly = (v: Service): number => (v.period === "hour" ? v.price * HOURS_PER_MONTH : v.price / 12);
+export const monthlyValue = (services: Service[], customerId: string): number =>
+  activeServices(services, customerId).reduce((sum, v) => sum + serviceMonthly(v), 0);
+
+export const isFinal = (t: Ticket): boolean => t.status === "resolved" || t.status === "closed";
+export const hoursLeft = (t: Ticket, hour: number): number => t.dueAt - hour;
+
+export const bump = (c: Customer, delta: number): void => {
+  c.happiness = Math.max(0, Math.min(100, c.happiness + delta));
+};
+
+export function createTicket(s: GameState, c: Customer, kind: TicketKind, serviceId?: string | null): Ticket {
+  const services = activeServices(s.services, c.id);
+  const topics = TOPICS[kind];
+  const t: Ticket = {
+    id: `tkt${s.nextId++}`, customerId: c.id,
+    serviceId: serviceId !== undefined ? serviceId : services.length ? services[Math.floor(rand(s.rng) * services.length)].id : null,
+    kind, topic: topics[Math.floor(rand(s.rng) * topics.length)], status: "open",
+    createdAt: s.hour, dueAt: s.hour + profileStats(c.profile).promisedHours, updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null,
+  };
+  s.tickets = [...s.tickets, t];
+  return t;
+}
+
+const cents = (v: number) => Math.round(v * 100) / 100;
+
+// A credit of share × the monthly fee; economy.md gives +3 happiness per 10%.
+export function credit(s: GameState, c: Customer, share: number): void {
+  const amount = cents(share * monthlyValue(s.services, c.id));
+  bump(c, 30 * share);
+  if (amount <= 0) return;
+  s.cash = cents(s.cash - amount);
+  s.ledger = [...s.ledger, { hour: s.hour, category: "credit", key: "ledger.credit", params: { customer: c.name }, amount: -amount }];
+}
+
+// The customer leaves: every service ends and their other tickets close.
+export function cancelCustomer(s: GameState, c: Customer): void {
+  c.churnedAt = s.hour;
+  s.services = s.services.map((v) => (v.customerId === c.id && v.endedAt === null ? { ...v, endedAt: s.hour } : v));
+  // Callers hold copies of the tickets (the tick copies them, actions clone the state), so they change in place.
+  for (const t of s.tickets) if (t.customerId === c.id && !isFinal(t) && t.kind !== "cancellation") Object.assign(t, { status: "closed", updatedAt: s.hour, work: null });
+}
