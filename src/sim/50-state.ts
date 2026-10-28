@@ -7,6 +7,7 @@ import { t } from "../i18n/en";
 import type { Customer, Service } from "./30-customers/customers";
 import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
+import { newMarketing, type Marketing } from "./80-business/marketing";
 
 export const SAVE_VERSION = 2;
 
@@ -88,6 +89,7 @@ export interface GameState {
   // Checklist goals the player ticked by hand.
   checklist: string[];
   company: Company;
+  marketing: Marketing;
 }
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
@@ -125,6 +127,7 @@ export const newGame = (seed: number): GameState => ({
   tickets: [], playerBusyUntil: 0, servicesDown: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)" },
   homeLine: { id: DEFAULT_HOME_LINE, next: null },
+  marketing: newMarketing(),
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

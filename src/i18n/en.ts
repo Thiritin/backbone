@@ -6,6 +6,10 @@ type Params = Record<string, string | number>;
 const COMPONENT_LABELS: Record<string, string> = {
   hdd: "hard drive", ssd: "SSD", nvme: "NVMe drive", psu: "power supply", fan: "fan", ram: "RAM stick", board: "mainboard", cpu: "CPU", nic: "network card",
 };
+const CHANNELS: Record<string, string> = {
+  website: "Website", orderForm: "Order form", searchAds: "Goggle Ads", aiAds: "AI ads",
+  search: "Goggle Ads", ai: "AI ads", gaming: "Gaming communities", coldCall: "Cold calling", agency: "Agency outreach",
+};
 const units = (n: string | number) => `${n} ${Number(n) === 1 ? "unit" : "units"}`;
 
 export const en: Record<string, (p: Params) => string> = {
@@ -252,6 +256,31 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownDoc": () => "This document no longer exists.",
   "error.emptyTitle": () => "A document needs a title.",
   "error.guideOnDesktop": () => "Getting started is already on the desktop.",
+  "error.unknownChannel": () => "This channel does not exist.",
+  "error.channelOwned": () => "This channel is already set up.",
+  "error.needsWebsite": () => "Set up a website first.",
+  "error.channelLater": () => "This channel is not available yet.",
+  "error.channelMissing": () => "Set up this channel first.",
+  "error.campaignTargets": () => "Pick at least one audience this channel reaches.",
+  "error.campaignBudget": () => "Pick one of the offered budgets.",
+  "error.campaignDiscount": () => "This campaign cannot offer that discount.",
+  "error.noCampaign": () => "This campaign is not running.",
+  "error.unknownPlatform": () => "This review platform does not exist.",
+  "ledger.marketingSetup": (p) => `Marketing setup: ${CHANNELS[p.channel] ?? p.channel}`,
+  "ledger.marketingUpkeep": (p) => `Marketing upkeep: ${CHANNELS[p.channel] ?? p.channel}`,
+  "ledger.marketingCampaign": (p) => `Campaign: ${CHANNELS[p.channel] ?? p.channel}`,
+  "ledger.reviewPlatform": (p) => `Review platform: ${p.name}`,
+  "event.marketingBills": (p) => `Marketing billed ${euro(Number(p.total))} for this month.`,
+  "event.review": (p) => `${p.customer} left a ${p.stars}-star review.`,
+  "review.ticket.bad": () => "Took ages to get a useful answer. I expected more.",
+  "review.ticket.ok": () => "Support sorted it out in the end.",
+  "review.ticket.good": () => "Quick, friendly help. Problem solved on the first reply.",
+  "review.cancellation.bad": () => "I am moving to another host and would not come back.",
+  "review.cancellation.ok": () => "No complaints, I just do not need it any more.",
+  "review.cancellation.good": () => "Sad to leave. Great service the whole time.",
+  "review.invite.bad": () => "It works, most of the time.",
+  "review.invite.ok": () => "Solid hosting for a fair price.",
+  "review.invite.good": () => "Fast, reliable and always reachable. Recommended.",
 };
 
 export const t = (key: string, params: Params = {}): string => en[key]?.(params) ?? key;
