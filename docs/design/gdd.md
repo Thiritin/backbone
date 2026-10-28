@@ -365,7 +365,7 @@ Data loss hurts. Affected customers ask for a refund, and unhappy ones leave rev
 
 **Virtual machine manager.** A desktop app for running workloads, branded after the virtualization platform you chose: its name and logo in the menu bar and window change with the platform (Proxmocks, VMwhere, OpenStash, HyperVee). It has the usual inventory tree of zone, cluster, host and VM. VMs can be started, stopped, restarted and migrated live or cold to a host you pick, and restored from a backup point. Hosts can be cordoned, drained or put into maintenance. Storage shows each server's RAID health, rebuild progress and rebuild rate, and later the distributed pools. The incidents tab lists open incident reports. It uses the same window design as every other app.
 
-**Requests instead of price lists.** You don't publish plans or set prices. You decide what to build and offer, and customers come to you with requests. Each customer picks a host by its size, its scores and hidden factors, and the price comes with the request. Your job is choosing which requests to accept.
+**Requests instead of price lists.** You don't publish plans. You decide what to build and offer, and customers come to you with requests, by email at first and later through your website's order form. Each customer picks a host by its size, its scores and hidden factors. Your job is choosing which requests to accept and at what price.
 
 **Where requests come from.** At the start every request arrives as an email in the Sales app, and answering one takes a few minutes of your time like a ticket. There are few of them early on, and more as the company grows. Later the **shop** unlocks: customers order there themselves, and it accepts every request it can serve as long as the target cluster stays below a limit you set.
 
@@ -390,7 +390,11 @@ You accept or decline. A declined customer goes to a competitor. Requests you ca
 
 **Cloud servers.** Cloud customers rent virtual machines by the hour and start and stop them as they like. Each cloud customer has a quota (vCPUs, RAM, storage), and their usage moves up and down within it. Raising the quota takes a request with a reason, which you approve, cut down or decline. Quotas can add up to more than the cluster holds, because customers rarely use all of it at once; if they do, their new machines fail to start and they get unhappy.
 
-**Prices.** You don't set prices. Every service is priced automatically at the market rate for that year, adjusted for its SLA and the features it includes, and the request card shows it as a monthly amount. When the shop unlocks, each product line gets one setting (budget, market or premium) that changes which customers send requests and how much they pay.
+**Quoting a price.** Every request comes with a market reference: what this kind of customer expects to pay for this service in that year, adjusted for its SLA and features. When you answer, you quote your own monthly price, and the market reference stays next to the field so you can go slightly above or below it. The customer replies by email. Close to the reference, most accept. Well above it, they write that they don't have the budget and will look for another provider, and the deal is lost. A customer who says they can't make it is usually gone, though a lower counter-offer sometimes wins them back. Existing customers accept more for the same service, because switching is a hassle for them. When the shop unlocks, each product line also gets a list price for orders through the order form, again shown against the market reference.
+
+**Changing prices.** You can raise the price of a running service. Customers rarely leave over a moderate increase, but every increase costs happiness for a few months, so it works best as an occasional step. Raise it too far above the market and they cancel.
+
+**Agencies first.** Agencies host many small websites for their clients and grow with them. Winning an agency with a very good web hosting offer pays off later, when its clients need VPS and more. Marketing can target agencies directly, and a discount offered in a campaign is quoted back to you when the agency writes in.
 
 **Billing.** Services are billed for every hour they run and invoiced once a month for the month that just ended. Hours a service is down are not billed, so an outage costs you its revenue. Business and Premium SLAs pay credits on top. Usage such as traffic over the included amount, object storage and CDN traffic is billed per TB on the same invoice. Domains and SSL certificates are the exception: they are paid a year in advance and renewed each year, and a customer who doesn't renew is gone.
 
@@ -586,6 +590,8 @@ Marketing brings in new customers, and reviews decide how many of them trust you
 | Gaming communities | Gamers | Sponsor a streamer or a server list |
 | Trade fairs | Businesses, enterprises, carriers | Expensive; needs staff; only pays off at higher company levels; improves transit prices and peering acceptance |
 | Forum posts | Hobbyists, gamers, small businesses | Needs an employee assigned; cheap and slow |
+| Cold calling | Small shops, local businesses | Cheap to start but converts poorly; the cost per customer depends on who you call. Reaches businesses that never search for hosting |
+| Agency outreach | Web agencies | Targets agencies with a discounted offer; they bring their clients' later VPS needs |
 | Partner program | Agencies, small businesses | Commission per referred customer |
 
 **Reviews.** Customers leave reviews after tickets, outages and cancellations. By default you can only read them. A marketing manager can sign you up to a review platform:
@@ -826,6 +832,6 @@ The MVP has the basement rack, one datacenter location, web hosting and VPS, sup
 - [x] Which open-source license (MIT, GPL)? MIT
 - [x] Which events auto-pause the game? nothing
 - [ ] Do hardware brands differ in price and failure rate, or only in look?
-- [ ] Without price lists, should the player still have one lever on price, such as a premium or discount per product that changes which requests arrive?
+- [x] Without price lists, should the player still have one lever on price, such as a premium or discount per product that changes which requests arrive? Yes: you quote a price on every request against a market reference, set list prices for the order form, and can raise prices of running services (see Quoting a price).
 
 Ideally at the start they are enthised to either rent a server from a company to get resources to place on, we always have servers as "clusters" so they can be assigned to different products/workloads, so they can fully rent out a server from a existing bigger provider at the start.&#32;
