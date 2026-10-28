@@ -1,11 +1,12 @@
 import { CircleDollarSign, Truck } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { BASEMENT } from "../../../sim/20-world/datacenters";
 import type { GameState, Rack } from "../../../sim/50-state";
-import { freePositions, freeSlots, moveCost, rackPower, storageStacks } from "../../../sim/60-infra/status";
-import { mountDevice, moveRack, sellRack } from "../../../sim/90-actions/hardware";
+import { freePositions, moveCost, rackPower, storageStacks } from "../../../sim/60-infra/status";
+import { mountDevice, mountStack, moveRack, sellRack } from "../../../sim/90-actions/hardware";
+import { Stepper } from "../shop/Cart";
 import type { Side } from "../../art/backs";
 import { Isometric } from "../../art/Isometric";
 import { RackFront, type RackItem, type RackLink } from "../../art/RackFront";
@@ -37,6 +38,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   const [mount, setMount] = useState<{ lo: number; hi: number; top: number; left: number } | null>(null);
   const [moving, setMoving] = useState(false);
   const [selling, setSelling] = useState(false);
+  const [hot, setHot] = useState<string | null>(null);
   const main = useRef<HTMLDivElement>(null);
   const items = rackItems(game, rack.id), units = rackUnits(rack), power = rackPower(game, rack.id);
   const used = items.reduce((n, it) => n + it.model.height, 0);
@@ -63,19 +65,19 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
           {power.tripped && <span className="pill bad">Tripped</span>}
           {rack.arriveAt !== null && <span className="pill"><Truck />Arrives <span className="num">{day(rack.arriveAt)}</span></span>}
         </div>
-        <RackFront units={units} items={items} links={rackLinks(game, rack.id)} side={side} w={300} u={22} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onFree={openMount} />
+        <RackFront units={units} items={items} links={rackLinks(game, rack.id)} side={side} w={300} u={22} hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onFree={openMount} />
       </div>
       <div className="loc-insp">
-        {dev ? <Inspector key={dev.id} game={game} device={dev} side={side} onSelect={onDevice} /> : (
+        {dev ? <Inspector key={dev.id} game={game} device={dev} side={side} onSelect={onDevice} onHot={setHot} /> : (
           <>
             <div className="loc-insp-h">
               <h2>{rack.name}</h2>
               <span className="grow" />
-              <button className="btn" disabled={rack.arriveAt !== null} onClick={() => setMoving(true)}><Truck />Move</button>
-              {!items.length && <button className="btn" onClick={() => setSelling(true)}><CircleDollarSign />Sell</button>}
+              {!rack.provided && <button className="btn" disabled={rack.arriveAt !== null} onClick={() => setMoving(true)}><Truck />Move</button>}
+              {!items.length && !rack.provided && <button className="btn" onClick={() => setSelling(true)}><CircleDollarSign />Sell</button>}
             </div>
             <div className="loc-card">
-              <Facts rows={[["Location", loc.name], ["Position", <span className="num">{rack.position}</span>], ["Height", <span className="num">{units}U</span>], ["Paid", <span className="num">{euro(rack.price)}</span>]]} />
+              <Facts rows={[["Location", loc.name], ["Position", <span className="num">{rack.position}</span>], ["Height", <span className="num">{units}U</span>], ...(rack.provided ? [["Owner", "Provided"]] as [string, string][] : [["Paid", <span className="num">{euro(rack.price)}</span>]] as [string, ReactNode][])]} />
             </div>
           </>
         )}
@@ -87,33 +89,42 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   );
 }
 
-// Stored units that fit the clicked free range; the highest fitting slot keeps the rest of the range in one piece.
+// Stored units that fit the clicked free range; a stack fills the top of the range, each unit on top of the last.
 function MountPop({ game, rack, lo, hi, top, left, onClose, onMounted }: { game: GameState; rack: Rack; lo: number; hi: number; top: number; left: number; onClose: () => void; onMounted: (id: string) => void }) {
-  const act = useStore((s) => s.act);
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, onClose);
-  const rows = storageStacks(game).flatMap((st) => {
-    const m = modelById(st.model);
-    const slot = m.height ? freeSlots(game, rack.id, m.height).filter((s) => s >= lo && s + m.height - 1 <= hi).at(-1) : undefined;
-    return slot === undefined ? [] : [{ st, m, slot }];
-  });
+  const rows = storageStacks(game, rack.locationId).filter((st) => { const h = modelById(st.model).height; return h > 0 && h <= hi - lo + 1; });
   const where = lo === hi ? `U${lo}` : `U${lo}–U${hi}`;
   return (
     <div className="loc-shop" ref={ref} style={{ top, left }} role="dialog" aria-label={`Mount at ${where}`}>
       <div className="loc-shop-h"><h3>{where}</h3></div>
       <div className="loc-shop-list">
-        {rows.map(({ st, m, slot }) => (
-          <div className="loc-shop-row" key={`${st.model}|${st.brand}`}>
-            <Isometric model={m} brand={st.brand} w={64} />
-            <div className="loc-shop-main">
-              <div className="loc-shop-name">{m.kind === "server" ? `${st.brand} ` : ""}{m.name}<span className="pill num">{height(m)}</span></div>
-              <div className="loc-shop-specs num">{st.ids.length} in storage</div>
-            </div>
-            <button className="btn primary" onClick={() => { const id = st.ids[0]; if (act((s) => mountDevice(s, id, rack.id, slot)).ok) onMounted(id); }}>Mount</button>
-          </div>
-        ))}
+        {rows.map((st) => <MountRow key={`${st.model}|${st.brand}`} rack={rack} st={st} lo={lo} hi={hi} onMounted={onMounted} />)}
         {!rows.length && <div className="loc-shop-none">No stored unit fits</div>}
       </div>
+    </div>
+  );
+}
+
+function MountRow({ rack, st, lo, hi, onMounted }: { rack: Rack; st: ReturnType<typeof storageStacks>[number]; lo: number; hi: number; onMounted: (id: string) => void }) {
+  const act = useStore((s) => s.act);
+  const m = modelById(st.model), max = Math.min(st.ids.length, Math.floor((hi - lo + 1) / m.height));
+  const [count, setCount] = useState(1);
+  const n = Math.min(count, max), from = hi - n * m.height + 1;
+  const mount = () => {
+    const id = st.ids[0];
+    const r = act((s) => (n === 1 ? mountDevice(s, id, rack.id, from) : mountStack(s, st.model, st.brand, rack.id, n, from)));
+    if (r.ok) onMounted(id);
+  };
+  return (
+    <div className="loc-shop-row">
+      <Isometric model={m} brand={st.brand} w={64} />
+      <div className="loc-shop-main">
+        <div className="loc-shop-name">{m.kind === "server" ? `${st.brand} ` : ""}{m.name}<span className="pill num">{height(m)}</span></div>
+        <div className="loc-shop-specs num">{st.ids.length} in storage</div>
+      </div>
+      {max > 1 && <Stepper value={n} min={1} onChange={(v) => setCount(Math.min(v, max))} />}
+      <button className="btn primary" onClick={mount}>Mount</button>
     </div>
   );
 }

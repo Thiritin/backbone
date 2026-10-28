@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { GENERATIONS } from "../src/sim/10-catalog/economy";
-import { MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
+import { brandsFor, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, portPeers, storageStacks } from "../src/sim/60-infra/status";
 import {
@@ -15,8 +15,8 @@ const ok = (r: ReturnType<typeof buyDevice>) => {
 };
 const err = (r: ReturnType<typeof buyDevice>) => (r.ok ? "ok" : r.error);
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
-const mounted = (s: GameState, model: string, rack: string, slot: number, brand = "Dwell") => {
-  const id = ok(buyDevice(s, model, brand));
+const mounted = (s: GameState, model: string, rack: string, slot: number, brand = brandsFor(modelById(model).kind)[0]) => {
+  const id = ok(buyDevice(s, model, brand, 1, s.racks.find((r) => r.id === rack)!.locationId));
   ok(mountDevice(s, id, rack, slot));
   return id;
 };
@@ -46,10 +46,11 @@ describe("catalog", () => {
     expect(modelById("g1-compute-2psu")).toMatchObject({ price: 2750, psus: 2, watts: 263 });
     expect(modelById("g3-compute").ports[0]).toEqual({ media: "sfp", gbit: 10 });
     expect(modelById("g5-compute").ports[0].gbit).toBe(25);
-    expect(modelById("g7-highmem")).toMatchObject({ height: 2, price: 12100, ports: expect.arrayContaining([{ media: "sfp", gbit: 100 }]) });
+    expect(modelById("g7-memory")).toMatchObject({ height: 2, price: 9900, watts: 720, ports: expect.arrayContaining([{ media: "sfp", gbit: 100 }]) });
+    expect(modelById("g7-memory").server).toMatchObject({ cores: 128, ramGb: 4096 });
     expect(modelById("g6-arm").server!.arch).toBe("arm");
     expect(MODELS.filter((m) => m.id.endsWith("-arm")).map((m) => m.from)).toEqual([2020, 2023]);
-    expect(MODELS.some((m) => m.id === "g1-highmem")).toBe(false);
+    expect(MODELS.some((m) => m.id === "g1-highmem" || m.id === "g1-compute-1s" || m.id === "g4-gpu")).toBe(false);
     expect(GENERATIONS[6].cores).toBe(128);
     expect(modelById("sw-8")).toMatchObject({ height: 1, watts: 8, price: 60 });
     expect(modelById("handoff")).toMatchObject({ name: "Datacenter handoff", height: 0, watts: 0 });
@@ -78,8 +79,8 @@ describe("new game", () => {
   it("starts with a server and switch in the basement rack, online through the home router", () => {
     const s = newGame(3);
     expect(s.cash).toBe(5000);
-    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", name: "Basement", space: "basement", positions: 1, readyAt: 0 }]);
-    expect(s.racks).toEqual([{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0 }]);
+    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0 }]);
+    expect(s.racks).toEqual([{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false }]);
     expect(s.devices.map((d) => [d.model, d.brand, d.name, d.rackId, d.panel, d.price, d.boughtAt])).toEqual([
       ["g1-compute", "Dwell", "fra1-srv-01", "rack2", null, 2500, 0],
       ["sw-8", "Sysko", "fra1-sw-01", "rack2", null, 60, 0],
@@ -95,13 +96,14 @@ describe("new game", () => {
 describe("buyDevice and storage", () => {
   it("buys identical units into storage, pays for all of them and books one line", () => {
     const s = atYear(2005, 10_000);
-    const first = ok(buyDevice(s, "g1-compute", "SuperMacro", 3));
+    const first = ok(buyDevice(s, "g1-compute", "SuperMacro", 3, "loc1"));
     expect(first).toBe("dev8");
-    expect(s.cash).toBe(2500);
-    expect(s.ledger).toEqual([{ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: "Compute 1U G1", qty: 3 }, amount: -7500 }]);
-    expect(dev(s, first)).toMatchObject({ rackId: null, panel: null, brand: "SuperMacro", name: "srv-01", price: 2500, boughtAt: s.hour });
-    ok(buyDevice(s, "sw-8", "anything"));
-    expect(storageStacks(s)).toEqual([
+    // SuperMacro sells at 0.9 × the catalog price.
+    expect(s.cash).toBe(3250);
+    expect(s.ledger).toEqual([{ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: "Balanced 1U G1", qty: 3 }, amount: -6750 }]);
+    expect(dev(s, first)).toMatchObject({ rackId: null, panel: null, brand: "SuperMacro", name: "srv-01", price: 2250, boughtAt: s.hour });
+    ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
+    expect(storageStacks(s, "loc1")).toEqual([
       { model: "g1-compute", brand: "SuperMacro", ids: ["dev8", "dev9", "dev10"] },
       { model: "sw-8", brand: "Sysko", ids: ["dev11"] },
     ]);
@@ -109,28 +111,28 @@ describe("buyDevice and storage", () => {
   });
   it("rejects every invalid purchase", () => {
     const s = atYear(2005);
-    expect(err(buyDevice(s, "g2-compute", "Dwell"))).toBe("error.notInShop");
-    expect(err(buyDevice(s, "home-router", "Sysko"))).toBe("error.notInShop");
-    expect(err(buyDevice(s, "g1-compute", "Appel"))).toBe("error.unknownBrand");
-    expect(err(buyDevice(s, "g1-compute", "Dwell", 0))).toBe("error.badQuantity");
-    expect(err(buyDevice(s, "g1-compute", "Dwell", 1.5))).toBe("error.badQuantity");
+    expect(err(buyDevice(s, "g2-compute", "Dwell", 1, "loc1"))).toBe("error.notInShop");
+    expect(err(buyDevice(s, "home-router", "Sysko", 1, "loc1"))).toBe("error.notInShop");
+    expect(err(buyDevice(s, "g1-compute", "Appel", 1, "loc1"))).toBe("error.unknownBrand");
+    expect(err(buyDevice(s, "g1-compute", "Dwell", 0, "loc1"))).toBe("error.badQuantity");
+    expect(err(buyDevice(s, "g1-compute", "Dwell", 1.5, "loc1"))).toBe("error.badQuantity");
     s.cash = 4999;
-    expect(err(buyDevice(s, "g1-compute", "Dwell", 2))).toBe("error.noCash");
+    expect(err(buyDevice(s, "g1-compute", "Dwell", 2, "loc1"))).toBe("error.noCash");
   });
 });
 
 describe("mounting", () => {
   it("mounts a stored device and names it after the location", () => {
     const s = newGame(1);
-    const id = ok(buyDevice(s, "g1-storage", "Dwell"));
+    const id = ok(buyDevice(s, "g1-storage", "Dwell", 1, "loc1"));
     ok(mountDevice(s, id, "rack2", 2));
     expect(dev(s, id)).toMatchObject({ rackId: "rack2", slot: 2, name: "fra1-srv-02" });
-    expect(storageStacks(s)).toEqual([]);
+    expect(storageStacks(s, "loc1")).toEqual([]);
     expect(freeSlots(s, "rack2", 1)[0]).toBe(4);
   });
   it("rejects every invalid mount", () => {
     const s = atYear(2005);
-    const id = ok(buyDevice(s, "g1-storage", "Dwell"));
+    const id = ok(buyDevice(s, "g1-storage", "Dwell", 1, "loc1"));
     expect(err(mountDevice(s, "x", "rack2", 2))).toBe("error.unknownDevice");
     expect(err(mountDevice(s, "dev3", "rack2", 2))).toBe("error.alreadyMounted");
     expect(err(mountDevice(s, "dev5", "rack2", 2))).toBe("error.alreadyMounted");
@@ -142,7 +144,7 @@ describe("mounting", () => {
   });
   it("mounts a stack on consecutive slots, lowest first, or fails when it does not fit", () => {
     const s = atYear(2005);
-    ok(buyDevice(s, "g1-storage", "Dwell", 12));
+    ok(buyDevice(s, "g1-storage", "Dwell", 12, "loc1"));
     expect(err(mountStack(s, "g1-storage", "Dwell", "rack2", 12))).toBe("error.noRoom");
     expect(err(mountStack(s, "g1-storage", "Dwell", "rack2", 13))).toBe("error.notInStorage");
     expect(err(mountStack(s, "g1-storage", "SuperMacro", "rack2", 1))).toBe("error.notInStorage");
@@ -150,7 +152,7 @@ describe("mounting", () => {
     const first = ok(mountStack(s, "g1-storage", "Dwell", "rack2", 3));
     expect(first).toBe("dev8");
     expect(s.devices.filter((d) => d.model === "g1-storage" && d.rackId).map((d) => d.slot)).toEqual([2, 4, 6]);
-    expect(storageStacks(s)[0].ids).toHaveLength(9);
+    expect(storageStacks(s, "loc1")[0].ids).toHaveLength(9);
   });
   it("unmounts to storage, unplugs every cable and keeps name, bond and groups", () => {
     const s = newGame(1);
@@ -178,7 +180,7 @@ describe("sellDevice", () => {
     expect(s.cables.map((c) => c.id)).toEqual(["cab7"]);
     expect(s.cash).toBe(7500);
     expect(s.ledger.at(-1)).toEqual({ hour: 0, category: "sales", key: "ledger.sale", params: { device: "fra1-srv-01" }, amount: 2500 });
-    const stored = ok(buyDevice(s, "sw-24", "Sysko"));
+    const stored = ok(buyDevice(s, "sw-24", "Sysko", 1, "loc1"));
     ok(sellDevice(s, stored));
     expect(s.cash).toBe(7500);
     expect(err(sellDevice(s, "dev3"))).toBe("error.unknownDevice");
@@ -203,7 +205,7 @@ describe("connect", () => {
     const { racks: [a] } = colo(s);
     const srv = mounted(s, "g3-compute", a, 1);
     const sw = mounted(s, "sw-48", a, 41);
-    const stored = ok(buyDevice(s, "sw-48", "Sysko"));
+    const stored = ok(buyDevice(s, "sw-48", "Sysko", 1, "loc1"));
     ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 48 }));
     expect(err(connect(s, { device: "x", port: 0 }, { device: sw, port: 1 }))).toBe("error.unknownDevice");
     expect(err(connect(s, { device: srv, port: 9 }, { device: sw, port: 1 }))).toBe("error.unknownPort");
@@ -272,7 +274,7 @@ describe("setBond and setPortGroup", () => {
   });
   it("replaces overlapping groups, clears with one port or none, and validates", () => {
     const s = atYear(2005);
-    const sw = ok(buyDevice(s, "sw-24", "Sysko"));
+    const sw = ok(buyDevice(s, "sw-24", "Sysko", 1, "loc1"));
     const groups = () => dev(s, sw).groups;
     ok(setPortGroup(s, sw, [0, 1]));
     ok(setPortGroup(s, sw, [4, 5, 6]));

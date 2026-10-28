@@ -1,16 +1,18 @@
-import { ArchiveRestore, Cable, CircleDollarSign, EthernetPort, Network, Unplug } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { ArchiveRestore, Cable, CircleDollarSign, EthernetPort, FileSignature, Network, Unplug } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
-import { modelById, PATCH_JACKS, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Device, End, GameState } from "../../../sim/50-state";
-import { linkStatus, locationOf, portPeers, resaleValue } from "../../../sim/60-infra/status";
-import { connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice } from "../../../sim/90-actions/hardware";
+import { linkStatus, locationOf, portPeers, powered, resaleValue } from "../../../sim/60-infra/status";
+import { buyOutLease, connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
 import { DeviceSvg } from "../../art/fronts";
+import { BrandLogo, Logo } from "../../art/logos";
+
 import { Confirm } from "../../desktop/Confirm";
 import { useStore } from "../../store";
-import { CABLE_NAME, cores, disk, height, lampOf, portLamps, portName, portsText, ram } from "../hw";
-import { Facts } from "./ui";
+import { CABLE_NAME, cores, disk, height, lampOf, portLamps, portName, portsText, ram, speed } from "../hw";
+import { dcOf, Facts } from "./ui";
 
 // Sells a device or a rack after showing its resale value against the price paid.
 export function SellConfirm({ game, name, price, boughtAt, cables = 0, onCancel, onSell }: { game: GameState; name: string; price: number; boughtAt: number; cables?: number; onCancel: () => void; onSell: () => void }) {
@@ -19,7 +21,8 @@ export function SellConfirm({ game, name, price, boughtAt, cables = 0, onCancel,
   return <Confirm title={`Sell ${name}?`} text={`Resale value ${euro(value)}, paid ${euro(price)}.${plug}`} action={`Sell for ${euro(value)}`} onCancel={onCancel} onConfirm={onSell} />;
 }
 
-export function Inspector({ game, device, side = "front", onSelect }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void }) {
+// onHot reports the cable of the hovered or selected port, so the rack view can highlight it.
+export function Inspector({ game, device, side = "front", onSelect, onHot }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void }) {
   const act = useStore((s) => s.act);
   const [sel, setSel] = useState<number[]>([]);
   const [mode, setMode] = useState<"cable" | "group">("cable");
@@ -28,23 +31,31 @@ export function Inspector({ game, device, side = "front", onSelect }: { game: Ga
   const cables = game.cables.filter((c) => c.a.device === device.id || c.b.device === device.id);
   const s = model.server;
   const pick = (i: number) => setSel((cur) => (mode === "group" ? (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]) : cur.length === 1 && cur[0] === i ? [] : [i]));
+  const [hover, setHover] = useState<number | null>(null);
+  const focus = hover ?? (sel.length === 1 ? sel[0] : null);
+  const hot = focus === null ? null : game.cables.find((c) => [c.a, c.b].some((e) => e.device === device.id && e.port === focus))?.id ?? null;
+  useEffect(() => { onHot?.(hot); }, [hot, onHot]);
+  useEffect(() => () => onHot?.(null), [onHot]);
   const where = device.panel ? "Carrier panel" : model.height > 1 ? `U${device.slot}–U${device.slot + model.height - 1}` : `U${device.slot}`;
 
   return (
     <>
       <div className="loc-insp-h">
+        {model.kind !== "gateway" && <BrandLogo brand={device.brand} size={20} />}
         <h2>{device.name}</h2>
         {model.kind !== "patch" && <span className={`pill ${st.online ? "ok" : "bad"}`}>{st.online ? "Online" : "Offline"}</span>}
         <span className="grow" />
         {device.rackId && <button className="btn" onClick={() => { if (act((g) => unmountDevice(g, device.id)).ok) onSelect(null); }}><ArchiveRestore />Unmount</button>}
-        {model.kind !== "gateway" && <button className="btn" onClick={() => setSelling(true)}><CircleDollarSign />Sell</button>}
+        {model.kind !== "gateway" && <button className="btn" disabled={!!device.lease} onClick={() => setSelling(true)}><CircleDollarSign />Sell</button>}
       </div>
-      <div className="loc-model">{model.kind === "server" ? `${device.brand} ` : ""}{model.name} · <span className="num">{where}</span></div>
+      <div className="loc-model">{model.kind === "gateway" ? "" : `${device.brand} `}{model.name} · <span className="num">{where}</span></div>
 
       <div className="loc-face">
         <DeviceSvg model={model} brand={device.brand} name={device.name} state={lampOf(st)} ports={portLamps(model, peers)} groups={device.groups} w={440} u={40} back={side === "back"} />
-        <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} />
+        {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} />}
       </div>
+
+      {model.kind === "server" && <PortTable game={game} device={device} peers={peers} sel={sel} onPick={pick} onHover={setHover} onSelect={onSelect} />}
 
       {model.kind === "switch" && (
         <div className="seg loc-mode" role="group" aria-label="Port selection">
@@ -58,6 +69,8 @@ export function Inspector({ game, device, side = "front", onSelect }: { game: Ga
       ) : sel.length === 1 ? (
         <PortCard game={game} device={device} model={model} port={sel[0]} peer={peers[sel[0]]} onSelect={onSelect} />
       ) : null}
+
+      {device.lease && <LeaseCard game={game} leaseId={device.lease} />}
 
       {model.kind === "server" && (
         <div className="loc-card">
@@ -83,7 +96,7 @@ export function Inspector({ game, device, side = "front", onSelect }: { game: Ga
           ...(s ? [["CPU", `${s.sockets} × ${cores(s.cores / s.sockets)}`], ["RAM", `${ram(s.ramGb)} of ${ram(s.maxRamGb)}`], ["Disk", `${disk(s.diskGb)} ${s.disk}, ${s.bays} bays`]] as [string, string][] : []),
           ["Network", portsText(model)],
           ["Power", model.idleWatts === model.watts ? `${model.watts} W` : `${model.idleWatts}–${model.watts} W`],
-          ["Power supplies", `${model.psus}`],
+          ...(model.kind === "server" ? [] : [["Power supplies", `${model.psus}`]] as [string, string][]),
           ...(model.height ? [["Height", height(model)]] as [string, string][] : []),
           ...(device.price ? [["Paid", euro(device.price)]] as [string, string][] : []),
         ].map(([k, v]): [string, ReactNode] => [k, <span className="num">{v}</span>])} />
@@ -98,27 +111,89 @@ export function Inspector({ game, device, side = "front", onSelect }: { game: Ga
   );
 }
 
+function LeaseCard({ game, leaseId }: { game: GameState; leaseId: string }) {
+  const act = useStore((s) => s.act);
+  const lease = game.leases.find((l) => l.id === leaseId);
+  if (!lease) return null;
+  const left = lease.months - lease.paid;
+  return (
+    <div className="loc-card">
+      <div className="loc-card-h">
+        <h3><FileSignature />Lease</h3>
+        <span className="pill">Leased</span>
+        <span className="grow" />
+        <button className="btn" onClick={() => act((g) => buyOutLease(g, lease.id))}>Buy out for <span className="num">{euro(lease.monthly * left)}</span></button>
+      </div>
+      <Facts rows={[
+        ["Lessor", <Logo provider={lease.lessor} size={16} word />],
+        ["Monthly", <span className="num">{euro(lease.monthly)}</span>],
+        ["Payments left", <span className="num">{left} of {lease.months}</span>],
+        ["Devices", <span className="num">{lease.devices.length}</span>],
+      ]} />
+    </div>
+  );
+}
+
 // Ports are laid out like the front: pairs top and bottom in blocks of six columns, patch jacks front over back.
 function portBlocks(m: DeviceModel): { rows: number; ports: number[] }[] {
   const chunk = (ps: number[], n: number, rows: number) => Array.from({ length: Math.ceil(ps.length / n) }, (_, k) => ({ rows, ports: ps.slice(k * n, k * n + n) }));
-  if (m.kind === "patch") return chunk(Array.from({ length: PATCH_JACKS }, (_, i) => [i, i + PATCH_JACKS]).flat(), 12, 2);
+  if (m.kind === "patch") { const n = jacksOf(m); return chunk(Array.from({ length: n }, (_, i) => [i, i + n]).flat(), 12, 2); }
   return (["rj45", "sfp"] as const).flatMap((media) => {
     const ps = m.ports.flatMap((p, i) => (p.media === media ? [i] : []));
     return ps.length > 8 ? chunk(ps, 12, 2) : ps.length ? [{ rows: 1, ports: ps }] : [];
   });
 }
 
-function PortGrid({ model, peers, groups, sel, onPick }: { model: DeviceModel; peers: (End | null)[]; groups: number[][]; sel: number[]; onPick: (i: number) => void }) {
+// A server's NICs and power supplies, one row each, with the device at the other end of every cable.
+function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { game: GameState; device: Device; peers: (End | null)[]; sel: number[]; onPick: (i: number) => void; onHover: (i: number | null) => void; onSelect: (id: string) => void }) {
+  const model = modelById(device.model), on = powered(game, device.id), loc = locationOf(game, device);
+  const ab = !!loc && dcOf(loc)?.feeds === "ab";
+  return (
+    <div className="loc-card">
+      <table className="table loc-port-table">
+        <thead><tr><th>Port</th><th>Media</th><th className="r">Speed</th><th>Link</th><th>Bond</th><th>Peer</th></tr></thead>
+        <tbody>
+          {model.ports.map((p, i) => {
+            const peer = peers[i], other = peer && game.devices.find((d) => d.id === peer.device)!;
+            const link = !other ? "Unplugged" : on && powered(game, other.id) ? "Up" : "Down";
+            return (
+              <tr key={i} aria-selected={sel.includes(i)} onClick={() => onPick(i)} onMouseEnter={() => onHover(i)} onMouseLeave={() => onHover(null)}>
+                <td className="num">{portName(model, i)}</td>
+                <td>{p.media === "sfp" ? "SFP" : "RJ45"}</td>
+                <td className="r num">{speed(p.gbit)}</td>
+                <td><span className={`pill${link === "Up" ? " ok" : link === "Down" ? " bad" : ""}`}>{link}</span></td>
+                <td className="num">{model.ports.length > 1 ? "bond0" : ""}</td>
+                <td>
+                  {!other ? null : other.panel ? "Carrier panel" : other.rackId === device.rackId ? (
+                    <button className="loc-link num" onClick={(e) => { e.stopPropagation(); onSelect(other.id); }}>{other.name} {portName(modelById(other.model), peer!.port)}</button>
+                  ) : <span className="num">{other.name} {portName(modelById(other.model), peer!.port)}</span>}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div className="loc-row">
+        <span className="loc-k">Power supplies</span>
+        {Array.from({ length: model.psus }, (_, i) => (
+          <span key={i} className={`pill${on ? " ok" : " bad"}`}>PSU {i + 1} · Feed {ab && i === 1 ? "B" : "A"}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PortGrid({ model, peers, groups, sel, onPick, onHover }: { model: DeviceModel; peers: (End | null)[]; groups: number[][]; sel: number[]; onPick: (i: number) => void; onHover: (i: number | null) => void }) {
   const lamps = portLamps(model, peers);
   return (
-    <div className={`loc-ports${model.kind === "server" ? " wide" : ""}`} role="group" aria-label="Ports">
+    <div className="loc-ports" role="group" aria-label="Ports">
       {portBlocks(model).map((b, k) => (
         <div key={k} className="loc-port-block" style={{ gridTemplateRows: `repeat(${b.rows}, auto)` }}>
           {b.ports.map((i) => {
             const g = groups.findIndex((x) => x.includes(i));
             return (
-              <button key={i} className={`loc-port${g >= 0 ? " grouped" : ""}`} data-lamp={lamps[i]} aria-pressed={sel.includes(i)} aria-label={portName(model, i)} title={portName(model, i)} onClick={() => onPick(i)}>
-                {model.kind === "server" ? `eth${i}` : model.kind === "patch" ? (i % PATCH_JACKS) + 1 : i + 1}
+              <button key={i} className={`loc-port${g >= 0 ? " grouped" : ""}`} data-lamp={lamps[i]} aria-pressed={sel.includes(i)} aria-label={portName(model, i)} title={portName(model, i)} onClick={() => onPick(i)} onMouseEnter={() => onHover(i)} onMouseLeave={() => onHover(null)}>
+                {model.kind === "server" ? `eth${i}` : model.kind === "patch" ? (i % jacksOf(model)) + 1 : i + 1}
               </button>
             );
           })}

@@ -1,13 +1,18 @@
-import { modelById, PATCH_JACKS, type DeviceKind } from "../10-catalog/hardware";
-import { BASEMENT, datacenterById, MOVE, RACK_MODELS } from "../20-world/datacenters";
-import type { Device, End, GameState, Location } from "../50-state";
+import { jacksOf, modelById, type DeviceKind } from "../10-catalog/hardware";
+import { BASEMENT, datacenterById, MOVE, rackUnits, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
+import type { Device, End, GameState, Location, SpaceKind } from "../50-state";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
 
 const same = (x: End, y: End) => x.device === y.device && x.port === y.port;
 const kindOf = (s: GameState, id: string) => modelById(s.devices.find((d) => d.id === id)!.model).kind;
 const gbitOf = (s: GameState, e: End) => modelById(s.devices.find((d) => d.id === e.device)!.model).ports[e.port].gbit;
-const bridged = (port: number) => (port < PATCH_JACKS ? port + PATCH_JACKS : port - PATCH_JACKS);
+const modelOf = (s: GameState, id: string) => modelById(s.devices.find((d) => d.id === id)!.model);
+// The other side of a patch panel jack: front i is wired to back jacks + i.
+const bridged = (s: GameState, e: End) => {
+  const jacks = jacksOf(modelOf(s, e.device));
+  return e.port < jacks ? e.port + jacks : e.port - jacks;
+};
 
 export function peerOf(s: GameState, e: End): End | null {
   const c = s.cables.find((c) => same(c.a, e) || same(c.b, e));
@@ -24,24 +29,26 @@ export function portPeers(s: GameState, deviceId: string): (End | null)[] {
 function farEnd(s: GameState, from: End): { end: End; gbit: number } | null {
   const gbit = gbitOf(s, from);
   let peer = peerOf(s, from);
-  for (let hops = 0; peer && kindOf(s, peer.device) === "patch" && hops < 64; hops++) peer = peerOf(s, { device: peer.device, port: bridged(peer.port) });
+  for (let hops = 0; peer && kindOf(s, peer.device) === "patch" && hops < 64; hops++) peer = peerOf(s, { device: peer.device, port: bridged(s, peer) });
   if (!peer || kindOf(s, peer.device) === "patch") return null;
   return { end: peer, gbit: Math.min(gbit, gbitOf(s, peer)) };
 }
 
-// Servers never forward traffic; switches forward between all ports, patch panels between a jack's front and back.
-function reachesGateway(s: GameState, start: End, origin: string): boolean {
+// Servers never forward traffic; switches and firewalls forward between all ports, patch panels between a jack's front and back.
+// Firewalls slower than minGbit block the path.
+function reachesGateway(s: GameState, start: End, origin: string, minGbit: number): boolean {
   const seen = new Set([origin]);
   const queue = [start];
   while (queue.length) {
     const at = queue.shift()!;
-    const kind = kindOf(s, at.device);
+    const model = modelOf(s, at.device);
     if (!powered(s, at.device)) continue;
-    if (kind === "gateway") return true;
-    const key = kind === "patch" ? `${at.device}:${at.port}` : at.device;
-    if (kind === "server" || seen.has(key)) continue;
+    if (model.kind === "gateway") return true;
+    if (model.kind === "firewall" && model.throughputGbit! < minGbit) continue;
+    const key = model.kind === "patch" ? `${at.device}:${at.port}` : at.device;
+    if (model.kind === "server" || seen.has(key)) continue;
     seen.add(key);
-    const exits = kind === "patch" ? [bridged(at.port)] : modelById(s.devices.find((d) => d.id === at.device)!.model).ports.map((_, i) => i);
+    const exits = model.kind === "patch" ? [bridged(s, at)] : model.ports.map((_, i) => i);
     for (const port of exits) {
       const peer = peerOf(s, { device: at.device, port });
       if (peer) queue.push(peer);
@@ -50,15 +57,25 @@ function reachesGateway(s: GameState, start: End, origin: string): boolean {
   return false;
 }
 
+// The fastest firewall cap on any path to a gateway: Infinity without a firewall on the way, null without a path.
+function gatewayCap(s: GameState, start: End, origin: string): number | null {
+  const caps = [...new Set(s.devices.map((d) => modelById(d.model).throughputGbit).filter((t): t is number => t !== undefined))].sort((a, b) => b - a);
+  return [Infinity, ...caps].find((cap) => reachesGateway(s, start, origin, cap)) ?? null;
+}
+
 // A device is online when it has power and a cable path through powered switches and patch panels reaches a gateway.
 export function linkStatus(s: GameState, deviceId: string): LinkStatus {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d || !powered(s, d.id)) return { online: false, gbit: 0, warning: null };
   const ports = modelById(d.model).ports;
   if (modelById(d.model).kind === "gateway") return { online: true, gbit: Math.max(...ports.map((p) => p.gbit)), warning: null };
+  const own = modelById(d.model).throughputGbit ?? Infinity;
   const up = ports
     .map((_, port) => farEnd(s, { device: deviceId, port }))
-    .filter((f): f is NonNullable<typeof f> => f !== null && reachesGateway(s, f.end, deviceId));
+    .flatMap((f) => {
+      const cap = f && gatewayCap(s, f.end, deviceId);
+      return f && cap !== null ? [{ ...f, gbit: Math.min(f.gbit, cap, own) }] : [];
+    });
   if (!up.length) return { online: false, gbit: 0, warning: null };
   const fastest = Math.max(...up.map((f) => f.gbit));
   if (d.bond === "failover" || up.length === 1) return { online: true, gbit: fastest, warning: null };
@@ -77,7 +94,7 @@ export function freeSlots(s: GameState, rackId: string, height: number): number[
     return Array.from({ length: h }, (_, i) => d.slot + i);
   }));
   const free: number[] = [];
-  const units = RACK_MODELS.find((m) => m.id === rack.model)!.units;
+  const units = rackUnits(rack.model);
   for (let slot = 1; slot + height - 1 <= units; slot++) {
     if (Array.from({ length: height }, (_, i) => slot + i).every((u) => !used.has(u))) free.push(slot);
   }
@@ -105,7 +122,8 @@ export function rackPower(s: GameState, rackId: string): { watts: number; limitW
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
   if (!rack || !loc) return { watts: 0, limitWatts: 0, tripped: false };
   const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId).reduce((sum, d) => sum + modelById(d.model).watts, 0) : 0;
-  const limitWatts = 1000 * (loc.dc ? datacenterById(loc.dc).kwPerPosition : BASEMENT.kw);
+  const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
+  const limitWatts = Math.round((1000 * (loc.dc ? datacenterById(loc.dc).kwPerPosition : BASEMENT.kw)) / share);
   return { watts, limitWatts, tripped: watts > limitWatts };
 }
 
@@ -129,10 +147,10 @@ export function freePositions(s: GameState, locationId: string): number[] {
 
 const KIND_ORDER: DeviceKind[] = ["server", "switch", "patch", "gateway"];
 
-// Stored devices grouped by model and brand.
-export function storageStacks(s: GameState): { model: string; brand: string; ids: string[] }[] {
+// A zone's stored devices grouped by model and brand.
+export function storageStacks(s: GameState, locationId: string): { model: string; brand: string; ids: string[] }[] {
   const stacks = new Map<string, { model: string; brand: string; ids: string[] }>();
-  for (const d of s.devices.filter((x) => !x.rackId && !x.panel)) {
+  for (const d of s.devices.filter((x) => x.store === locationId)) {
     const key = `${d.model}|${d.brand}`;
     if (!stacks.has(key)) stacks.set(key, { model: d.model, brand: d.brand, ids: [] });
     stacks.get(key)!.ids.push(d.id);
@@ -143,7 +161,39 @@ export function storageStacks(s: GameState): { model: string; brand: string; ids
 
 // Price and travel hours of moving a rack: same city or another city.
 export function moveCost(s: GameState, rackId: string, toLocationId: string): { price: number; hours: number } {
-  const from = s.locations.find((l) => l.id === s.racks.find((r) => r.id === rackId)?.locationId);
-  const to = s.locations.find((l) => l.id === toLocationId);
+  return travelCost(s, s.racks.find((r) => r.id === rackId)?.locationId, toLocationId);
+}
+
+// Price and hours of shipping between two zones: within a region or to another region.
+export function travelCost(s: GameState, fromId: string | undefined, toId: string): { price: number; hours: number } {
+  const from = s.locations.find((l) => l.id === fromId), to = s.locations.find((l) => l.id === toId);
   return from && to && from.city === to.city ? MOVE.sameCity : MOVE.otherCity;
+}
+
+// Why a cable between a and b can't be plugged in, or null when it can.
+export function connectError(s: GameState, a: End, b: End): string | null {
+  const da = s.devices.find((x) => x.id === a.device);
+  const db = s.devices.find((x) => x.id === b.device);
+  if (!da || !db) return "error.unknownDevice";
+  const ma = modelById(da.model), mb = modelById(db.model);
+  const pa = ma.ports[a.port], pb = mb.ports[b.port];
+  if (!pa || !pb) return "error.unknownPort";
+  if (da.id === db.id) return "error.sameDevice";
+  if (peerOf(s, a) || peerOf(s, b)) return "error.portInUse";
+  const la = locationOf(s, da), lb = locationOf(s, db);
+  if (!la || !lb) return "error.notMounted";
+  if (s.racks.some((r) => (r.id === da.rackId || r.id === db.rackId) && r.arriveAt !== null)) return "error.rackMoving";
+  if (la.id !== lb.id) return "error.otherLocation";
+  if (pa.media !== pb.media) return "error.mediaMismatch";
+  // A patch panel is passive, so the speed check happens between the devices on either side of it.
+  if (ma.kind !== "patch" && mb.kind !== "patch" && pa.gbit !== pb.gbit) return "error.speedMismatch";
+  return null;
+}
+
+// Monthly rent of a location; a share's size comes from its provider rack.
+export function locationRent(s: GameState, loc: Location): number {
+  if (!loc.dc) return 0;
+  const shareRack = s.racks.find((r) => r.locationId === loc.id && r.provided);
+  const size = loc.space === "share" ? SHARE_RACKS.find((m) => m.id === shareRack?.model)?.size ?? 1 : loc.positions;
+  return spacePrice(datacenterById(loc.dc), loc.space as Exclude<SpaceKind, "basement">, size);
 }

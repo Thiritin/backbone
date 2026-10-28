@@ -1,21 +1,32 @@
 import { X } from "lucide-react";
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { BASEMENT, datacenterById, type Datacenter } from "../../../sim/20-world/datacenters";
+import { BASEMENT, datacenterById, SHARE_RACKS, type Datacenter } from "../../../sim/20-world/datacenters";
 import type { GameState, Location } from "../../../sim/50-state";
 import { rackPower } from "../../../sim/60-infra/status";
 
 export const dcOf = (l: Location): Datacenter | null => (l.dc ? datacenterById(l.dc) : null);
 export const providerOf = (l: Location) => dcOf(l)?.provider ?? null;
 const plural = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
+export const Zone = ({ loc }: { loc: Location }) => <span className="loc-az num">{loc.az}</span>;
+export const LocName = ({ loc }: { loc: Location }) => <span className="loc-name">{loc.name}<Zone loc={loc} /></span>;
 export const positionsLabel = (n: number) => plural(n, "position");
-export const SPACE_NAME = { basement: "Basement", positions: "Rack positions", cage: "Cage", suite: "Private suite" };
-export const spaceLabel = (l: Location) => (l.space === "basement" ? "Basement" : l.space === "positions" ? positionsLabel(l.positions) : `${SPACE_NAME[l.space]}, ${positionsLabel(l.positions)}`);
+export const SPACE_NAME = { basement: "Basement", share: "Rack share", positions: "Rack positions", cage: "Cage", suite: "Private suite" };
+// A share of size n is 1/n of a rack.
+export const shareLabel = (n: number) => (n === 1 ? "Full rack" : `1/${n} rack`);
+export const shareUnits = (n: number) => SHARE_RACKS.find((m) => m.size === n)?.units ?? 0;
+const shareOf = (g: GameState, l: Location) => SHARE_RACKS.find((m) => g.racks.some((r) => r.locationId === l.id && r.model === m.id));
+export function spaceLabel(l: Location, g?: GameState) {
+  if (l.space === "basement") return "Basement";
+  if (l.space === "share") { const m = g && shareOf(g, l); return m ? `${shareLabel(m.size)} · ${m.units}U` : SPACE_NAME.share; }
+  return l.space === "positions" ? positionsLabel(l.positions) : `${SPACE_NAME[l.space]}, ${positionsLabel(l.positions)}`;
+}
 
 export function locationPower(g: GameState, locId: string) {
   const loc = g.locations.find((l) => l.id === locId)!, dc = dcOf(loc);
   const racks = g.racks.filter((r) => r.locationId === locId).map((r) => rackPower(g, r.id));
-  return { watts: racks.reduce((n, p) => n + p.watts, 0), limit: 1000 * loc.positions * (dc ? dc.kwPerPosition : BASEMENT.kw), tripped: racks.some((p) => p.tripped) };
+  const limit = loc.space === "share" ? racks.reduce((n, p) => n + p.limitWatts, 0) : 1000 * loc.positions * (dc ? dc.kwPerPosition : BASEMENT.kw);
+  return { watts: racks.reduce((n, p) => n + p.watts, 0), limit, tripped: racks.some((p) => p.tripped) };
 }
 
 export const exchangeLabel = (dc: Datacenter | null) => (!dc?.exchange ? "None" : `${dc.exchange.name} ${dc.exchange.onSite ? "on site" : "by cross-connect"}`);

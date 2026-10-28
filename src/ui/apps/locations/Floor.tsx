@@ -2,7 +2,7 @@ import { Plus, Truck } from "lucide-react";
 import { useRef, useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { modelById } from "../../../sim/10-catalog/hardware";
-import { BASEMENT, RACK_MODELS } from "../../../sim/20-world/datacenters";
+import { BASEMENT, RACK_MODELS, rackUnits as simRackUnits } from "../../../sim/20-world/datacenters";
 import type { GameState, Location, Rack } from "../../../sim/50-state";
 import { rackPower } from "../../../sim/60-infra/status";
 import { buyRack } from "../../../sim/90-actions/hardware";
@@ -11,7 +11,7 @@ import { useStore } from "../../store";
 import { day, deviceLamps } from "../hw";
 import { PowerMeter, useDismiss } from "./ui";
 
-export const rackUnits = (r: Rack) => RACK_MODELS.find((m) => m.id === r.model)!.units;
+export const rackUnits = (r: Rack) => simRackUnits(r.model);
 
 export function Floor({ game, loc, onRack }: { game: GameState; loc: Location; onRack: (id: string) => void }) {
   const at = new Map(game.racks.filter((r) => r.locationId === loc.id).map((r) => [r.position, r]));
@@ -39,6 +39,7 @@ function RackTile({ game, rack, onOpen }: { game: GameState; rack: Rack; onOpen:
         })}
       </svg>
       <strong>{rack.name}</strong>
+      {rack.provided && <span className="pill">Provided</span>}
       <span className="num loc-tile-sub">{used} / {units} U</span>
       {rack.arriveAt !== null
         ? <span className="pill"><Truck />Arrives <span className="num">{day(rack.arriveAt)}</span></span>

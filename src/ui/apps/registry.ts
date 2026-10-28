@@ -1,5 +1,5 @@
 import {
-  BookOpen, ChartLine, ChartPie, Contact, Globe, Landmark, LifeBuoy, Lightbulb, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
+  BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, Landmark, LifeBuoy, Lightbulb, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,6 +27,7 @@ export const APPS: AppDef[] = [
   { name: "Market", icon: ChartPie, tile: "oklch(0.62 0.12 230)", about: "Shows demand, customer requirements and lost sales." },
   { name: "Unlocks", icon: Lightbulb, tile: "oklch(0.72 0.15 95)", about: "Spends know-how on new products, hardware and tools." },
   { name: "Getting started", icon: BookOpen, tile: "oklch(0.55 0.15 255)", about: "Explains the controls and how the game saves.", hidden: true },
+  { name: "Notes", icon: FileText, tile: "oklch(0.7 0.13 85)", about: "Edits the notes on your desktop.", hidden: true },
   { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: "Sets which apps may send notifications and how they appear." },
 ];
 

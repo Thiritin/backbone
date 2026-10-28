@@ -3,6 +3,7 @@ import { euro } from "../sim/00-core/money";
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 type Params = Record<string, string | number>;
+const units = (n: string | number) => `${n} ${Number(n) === 1 ? "unit" : "units"}`;
 
 export const en: Record<string, (p: Params) => string> = {
   "event.monthStart.title": (p) => `${MONTHS[Number(p.month)]} ${p.year}`,
@@ -19,7 +20,9 @@ export const en: Record<string, (p: Params) => string> = {
   "game.new.title": () => "New company",
   "game.new.text": () => "You start with €5,000 and a server in the basement.",
   "event.bills.title": () => "Monthly bills",
-  "event.bills.text": (p) => `You paid ${euro(Number(p.power))} for power and ${euro(Number(p.rent))} for rent.`,
+  "event.bills.text": (p) => Number(p.leasing) > 0
+    ? `You paid ${euro(Number(p.power))} for power, ${euro(Number(p.rent))} for rent and ${euro(Number(p.leasing))} for leasing.`
+    : `You paid ${euro(Number(p.power))} for power and ${euro(Number(p.rent))} for rent.`,
   "ledger.hardware": (p) => `${Number(p.qty) > 1 ? `${p.qty} × ` : ""}${p.model}${p.device ? ` for ${p.device}` : ""}`,
   "ledger.power": () => "Power",
   "ledger.rent": (p) => `Rent for ${p.rack}`,
@@ -41,9 +44,14 @@ export const en: Record<string, (p: Params) => string> = {
   "error.notServer": () => "Only servers have a bond mode.",
   "error.notSwitch": () => "Only switches have port groups.",
   "error.groupSize": () => "A port group holds 2 to 8 ports.",
+  "ledger.lease": (p) => `${p.lessor}, payment ${p.paid} of ${p.months}`,
+  "ledger.leaseBuyout": (p) => `${p.lessor}, buyout`,
   "ledger.sale": (p) => `Sold ${p.device}`,
   "ledger.move": (p) => `Moving ${p.rack} to ${p.location}`,
   "ledger.space": (p) => `Space at ${p.location}`,
+  "ledger.ship": (p) => `Shipping ${units(p.count)} to ${p.location}`,
+  "event.stockArrived.title": () => "Shipment arrived",
+  "event.stockArrived.text": (p) => `${units(p.count)} arrived in storage at ${p.location}.`,
   "event.rackArrived.title": () => "Rack arrived",
   "event.rackArrived.text": (p) => `${p.rack} is in place at ${p.location}.`,
   "error.unknownDatacenter": () => "This datacenter does not exist.",
@@ -61,8 +69,24 @@ export const en: Record<string, (p: Params) => string> = {
   "error.notInStorage": () => "Storage does not hold enough of these devices.",
   "error.alreadyMounted": () => "The device is already mounted.",
   "error.notMounted": () => "The device is in storage.",
+  "error.emptyCart": () => "The cart is empty.",
+  "error.offerExpired": () => "This lease offer is no longer available.",
+  "error.unknownLease": () => "This lease no longer exists.",
+  "error.leased": () => "Leased hardware can be sold once it is paid off.",
+  "error.providedRack": () => "This rack belongs to the datacenter.",
+  "error.notInZone": () => "These units are stored in another zone.",
+  "error.storageNotEmpty": () => "Ship or sell everything in this zone's storage first.",
+  "error.inTransit": () => "The units are being shipped.",
+  "error.emptyShipment": () => "Pick the units to ship.",
+  "error.mixedZones": () => "A shipment leaves from one zone.",
+  "error.sameZone": () => "The units are already in this zone.",
   "error.noRoom": () => "The rack has no free space for all units.",
   "warning.bondNotGrouped": () => "The switch ports for this bond are not grouped.",
+  "doc.guide": () => "Getting started",
+  "doc.untitled": () => "Untitled",
+  "error.unknownDoc": () => "This document no longer exists.",
+  "error.emptyTitle": () => "A document needs a title.",
+  "error.guideOnDesktop": () => "Getting started is already on the desktop.",
 };
 
 export const t = (key: string, params: Params = {}): string => en[key]?.(params) ?? key;

@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { CITIES } from "../src/sim/10-catalog/economy";
 import { BASEMENT, DATACENTERS, datacenterById, LEAD_DAYS, PROVIDERS, RACK_MODELS, SPACE_SIZES, spacePrice } from "../src/sim/20-world/datacenters";
 import { newGame, type GameState } from "../src/sim/50-state";
+import { freeSlots } from "../src/sim/60-infra/status";
 import { freePositions, linkStatus, moveCost, rackPower, resaleValue } from "../src/sim/60-infra/status";
 import { powerPerHour, tick, type SimEvent } from "../src/sim/88-tick/tick";
+import { deserialize } from "../src/sim/91-save/save";
 import {
-  addLocation, buyDevice, buyRack, closeLocation, connect, mountDevice, mountStack, moveRack, sellRack, unmountDevice,
+  addLocation, buyDevice, buyRack, closeLocation, connect, mountDevice, mountStack, moveRack, sellDevice, sellRack, unmountDevice,
 } from "../src/sim/90-actions/hardware";
 
 const rich = (cash = 1_000_000): GameState => ({ ...newGame(1), cash });
@@ -46,7 +48,7 @@ describe("datacenter catalog", () => {
     expect([1, 2, 3, 4].map((n) => spacePrice(fr5, "positions", n))).toEqual([750, 1500, 2250, 3000]);
     expect(SPACE_SIZES.cage.map((n) => spacePrice(fr5, "cage", n))).toEqual([2550, 4800, 9000]);
     expect(SPACE_SIZES.suite.map((n) => spacePrice(fr5, "suite", n))).toEqual([11250, 21000]);
-    expect(LEAD_DAYS).toEqual({ positions: 7, cage: 30, suite: 90 });
+    expect(LEAD_DAYS).toEqual({ share: 2, positions: 7, cage: 30, suite: 90 });
     expect(RACK_MODELS.map((m) => [m.id, m.units, m.price])).toEqual([["rack-24", 24, 350], ["rack-42", 42, 800], ["rack-47", 47, 1000]]);
     expect(BASEMENT).toEqual({ positions: 1, maxUnits: 24, kw: 3 });
   });
@@ -56,7 +58,7 @@ describe("addLocation and closeLocation", () => {
   it("rents space with a handoff on the carrier panel, ready after the lead time", () => {
     const s = rich();
     const id = ok(addLocation(s, "equinox-fr5", "cage", 8));
-    expect(loc(s, id)).toEqual({ id, dc: "equinox-fr5", city: "Frankfurt", name: "Equinox FR5", space: "cage", positions: 8, readyAt: 720 });
+    expect(loc(s, id)).toEqual({ id, dc: "equinox-fr5", city: "Frankfurt", az: "fra2", name: "Equinox FR5", space: "cage", positions: 8, readyAt: 720 });
     expect(s.devices.find((d) => d.panel === id)).toMatchObject({ model: "handoff", rackId: null, name: "fra2-gw-01" });
     expect(loc(s, ok(addLocation(s, "tellyhouse-north", "suite", 20))).readyAt).toBe(2160);
     expect(loc(s, ok(addLocation(s, "hetzler-park", "positions", 4))).readyAt).toBe(168);
@@ -91,12 +93,12 @@ describe("racks", () => {
     const s = rich(10_000);
     const id = ok(addLocation(s, "interaction-fra", "positions", 2));
     const r = ok(buyRack(s, id, "rack-42", 2));
-    expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0 });
+    expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0, provided: false });
     expect(s.cash).toBe(9200);
     expect(s.ledger.at(-1)).toMatchObject({ category: "hardware", key: "ledger.hardware", params: { model: "42U rack", device: "fra2-rack-01" }, amount: -800 });
     expect(freePositions(s, id)).toEqual([1]);
     // Devices in a location that is not ready have no power.
-    const srv = ok(buyDevice(s, "g1-compute", "Dwell"));
+    const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, id));
     ok(mountDevice(s, srv, r, 1));
     expect(rackPower(s, r)).toEqual({ watts: 250, limitWatts: 6000, tripped: false });
     ok(connect(s, { device: srv, port: 0 }, { device: handoffOf(s, id), port: 0 }));
@@ -158,7 +160,7 @@ describe("moveRack", () => {
     expect(linkStatus(s, "dev3").online).toBe(false);
     expect(rackPower(s, "rack2").watts).toBe(0);
     expect(err(connect(s, { device: "dev4", port: 7 }, { device: handoffOf(s, fr5), port: 0 }))).toBe("error.rackMoving");
-    expect(err(mountDevice(s, ok(buyDevice(s, "sw-8", "Sysko")), "rack2", 10))).toBe("error.rackMoving");
+    expect(err(mountDevice(s, ok(buyDevice(s, "sw-8", "Sysko", 1, fr5)), "rack2", 10))).toBe("error.rackMoving");
     const events = run(s, 24);
     expect(events).toContainEqual({ app: "Locations", key: "event.rackArrived", params: { rack: "fra1-rack-01", location: "Equinox FR5" } });
     expect(rack(s, "rack2").arriveAt).toBeNull();
@@ -196,7 +198,7 @@ describe("moveRack", () => {
 describe("breakers", () => {
   it("trips a rack that draws more than its position's limit and takes its devices offline", () => {
     const s = rich();
-    ok(buyDevice(s, "g1-compute", "Dwell", 11));
+    ok(buyDevice(s, "g1-compute", "Dwell", 11, "loc1"));
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 10));
     expect(rackPower(s, "rack2")).toEqual({ watts: 2758, limitWatts: 3000, tripped: false });
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 1));
@@ -212,7 +214,7 @@ describe("breakers", () => {
     const s = rich();
     const id = ok(addLocation(s, "hetzler-park", "positions", 1));
     const r = ok(buyRack(s, id, "rack-47", 1));
-    ok(buyDevice(s, "g1-compute", "Dwell", 17));
+    ok(buyDevice(s, "g1-compute", "Dwell", 17, id));
     ok(mountStack(s, "g1-compute", "Dwell", r, 16));
     expect(rackPower(s, r)).toEqual({ watts: 4000, limitWatts: 4000, tripped: false });
     ok(mountStack(s, "g1-compute", "Dwell", r, 1));
@@ -227,7 +229,7 @@ describe("monthly bills", () => {
     expect(powerPerHour(s)).toBeCloseTo(basement, 10);
     const id = ok(addLocation(s, "equinox-fr5", "positions", 1));
     const r = ok(buyRack(s, id, "rack-24", 1));
-    ok(mountDevice(s, ok(buyDevice(s, "g1-compute", "Dwell")), r, 1));
+    ok(mountDevice(s, ok(buyDevice(s, "g1-compute", "Dwell", 1, id)), r, 1));
     expect(powerPerHour(s)).toBeCloseTo(basement, 10);
     loc(s, id).readyAt = 0;
     expect(powerPerHour(s)).toBeCloseTo(basement + 0.25 * 0.09 * 1.4, 10);
@@ -242,6 +244,67 @@ describe("monthly bills", () => {
     expect(s.cash).toBe(5000 - 360 - power);
     expect(s.powerDue).toBe(0);
     expect(s.ledger.map((l) => [l.category, l.key, l.amount])).toEqual([["power", "ledger.power", -power], ["rent", "ledger.space", -360]]);
-    expect(events).toContainEqual({ app: "Finance", key: "event.bills", params: { power, rent: 360, total: 360 + power } });
+    expect(events).toContainEqual({ app: "Finance", key: "event.bills", params: { power, rent: 360, leasing: 0, total: 360 + power } });
+  });
+});
+
+describe("rack shares", () => {
+  it("prices a share per size and comes with a provider rack of the share's units and power", () => {
+    const fr5 = datacenterById("equinox-fr5");
+    expect(SPACE_SIZES.share.map((n) => spacePrice(fr5, "share", n))).toEqual([150, 263, 450, 825]);
+    const s = rich();
+    const rows = SPACE_SIZES.share.map((size) => {
+      const id = ok(addLocation(s, "equinox-fr5", "share", size));
+      const r = s.racks.find((x) => x.locationId === id)!;
+      return [loc(s, id).positions, loc(s, id).readyAt, r.provided, r.position, r.price, freeSlots(s, r.id, 1).length, rackPower(s, r.id).limitWatts];
+    });
+    expect(rows).toEqual([[1, 48, true, 1, 0, 5, 1000], [1, 48, true, 1, 0, 10, 2000], [1, 48, true, 1, 0, 21, 4000], [1, 48, true, 1, 0, 42, 8000]]);
+    for (const dc of DATACENTERS) expect(addLocation(rich(), dc.id, "share", 8).ok).toBe(true);
+  });
+  it("mounts hardware into the provider rack and trips at the share's limit", () => {
+    const s = rich();
+    const id = ok(addLocation(s, "hetzler-park", "share", 8));
+    loc(s, id).readyAt = 0;
+    const r = s.racks.find((x) => x.locationId === id)!.id;
+    expect(rackPower(s, r).limitWatts).toBe(500);
+    ok(buyDevice(s, "g1-compute", "Dwell", 3, id));
+    ok(mountStack(s, "g1-compute", "Dwell", r, 2));
+    const srv = s.devices.find((d) => d.rackId === r)!;
+    expect(srv.name).toBe("fra2-srv-01");
+    ok(connect(s, { device: srv.id, port: 0 }, { device: handoffOf(s, id), port: 0 }));
+    expect(rackPower(s, r)).toEqual({ watts: 500, limitWatts: 500, tripped: false });
+    expect(linkStatus(s, srv.id).online).toBe(true);
+    ok(mountStack(s, "g1-compute", "Dwell", r, 1));
+    expect(rackPower(s, r).tripped).toBe(true);
+    expect(linkStatus(s, srv.id).online).toBe(false);
+    expect(err(mountStack(s, "g1-compute", "Dwell", r, 1))).toBe("error.notInStorage");
+  });
+  it("rejects moving, selling and buying racks into a share, and closes once the provider rack is empty", () => {
+    const s = rich();
+    const id = ok(addLocation(s, "spree-colo", "share", 2));
+    const r = s.racks.find((x) => x.locationId === id)!.id;
+    const other = ok(addLocation(s, "spree-colo", "positions", 1));
+    expect(err(moveRack(s, r, other, 1))).toBe("error.providedRack");
+    expect(err(sellRack(s, r))).toBe("error.providedRack");
+    expect(err(buyRack(s, id, "rack-24", 1))).toBe("error.positionTaken");
+    expect(err(buyRack(s, id, "rack-24", 2))).toBe("error.positionTaken");
+    expect(err(moveRack(s, "rack2", id, 1))).toBe("error.positionTaken");
+    expect(err(addLocation(s, "spree-colo", "share", 3))).toBe("error.unknownSize");
+    const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, id));
+    ok(mountDevice(s, srv, r, 1));
+    expect(err(closeLocation(s, id))).toBe("error.locationNotEmpty");
+    ok(sellDevice(s, srv));
+    ok(closeLocation(s, id));
+    expect(s.racks.some((x) => x.id === r)).toBe(false);
+    expect(s.locations.some((l) => l.id === id)).toBe(false);
+  });
+  it("bills the share each month and fills provided on older racks", () => {
+    const s = newGame(1);
+    ok(addLocation(s, "hetzler-park", "share", 4));
+    run(s, 24 * 31);
+    expect(s.ledger.find((l) => l.key === "ledger.space")!.amount).toBe(-63);
+    const raw = JSON.parse(JSON.stringify(newGame(2)));
+    delete raw.racks[0].provided;
+    expect(deserialize(JSON.stringify(raw)).racks[0].provided).toBe(false);
   });
 });

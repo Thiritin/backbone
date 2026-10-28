@@ -6,13 +6,15 @@ import { Logo } from "../../art/logos";
 import { useStore } from "../../store";
 import { day } from "../hw";
 import { AddLocation } from "./AddLocation";
+import { Cabling } from "./Cabling";
 import { CarrierPanel, Floor } from "./Floor";
 import { Inspector } from "./Inspector";
 import "./locations.css";
 import { Overview } from "./Overview";
 import { RackView } from "./RackView";
 import { Storage } from "./Storage";
-import { backupLabel, dcOf, exchangeLabel, feedsLabel, locationPower, PowerMeter, providerOf, spaceLabel, useDismiss } from "./ui";
+import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, useDismiss, Zone } from "./ui";
+import { REGIONS } from "../../../sim/20-world/datacenters";
 
 // view: null is the overview, "storage" the storage list, otherwise a location id.
 export function LocationsApp() {
@@ -21,10 +23,17 @@ export function LocationsApp() {
   const [rackId, setRackId] = useState<string | null>(null);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [cabling, setCabling] = useState(false);
   const loc = game.locations.find((l) => l.id === view);
   const rack = loc && game.racks.find((r) => r.id === rackId && r.locationId === loc.id);
-  const go = (v: string | null, r: string | null = null) => { setView(v); setRackId(r); setDeviceId(null); };
-  const stored = storageStacks(game).reduce((n, s) => n + s.ids.length, 0);
+  const openLoc = useStore((s) => s.openLoc), setOpenLoc = useStore((s) => s.setOpenLoc);
+  // Storage shows the zone of the last location opened, the basement before that.
+  const zone = game.locations.find((l) => l.id === (loc?.id ?? openLoc)) ?? game.locations[0];
+  const go = (v: string | null, r: string | null = null) => {
+    setView(v); setRackId(r); setDeviceId(null); setCabling(false);
+    if (v && v !== "storage") setOpenLoc(v);
+  };
+  const stored = storageStacks(game, zone.id).reduce((n, s) => n + s.ids.length, 0);
 
   return (
     <div className="loc">
@@ -32,15 +41,23 @@ export function LocationsApp() {
         <button className="btn ghost" aria-pressed={view === null} onClick={() => go(null)}><MapIcon />Overview</button>
         <Switcher current={loc?.id ?? null} onPick={(id) => go(id)} />
         <button className="btn ghost icon" aria-label="Add location" onClick={() => setAdding(true)}><Plus /></button>
+        {loc && !rack && (
+          <div className="seg loc-views" role="group" aria-label="View">
+            <button aria-pressed={!cabling} onClick={() => setCabling(false)}>Floor</button>
+            <button aria-pressed={cabling} onClick={() => { setCabling(true); setDeviceId(null); }}>Cabling</button>
+          </div>
+        )}
         {rack && <><ChevronRight className="loc-crumb" /><span className="loc-crumb-name">{rack.name}</span></>}
         <span className="grow" />
         <button className="btn ghost" aria-pressed={view === "storage"} onClick={() => go("storage")}><Package />Storage<span className="num loc-muted">{stored}</span></button>
       </div>
       <div className="loc-body">
         {view === "storage" ? (
-          <div className="loc-scroll"><Storage game={game} /></div>
+          <div className="loc-scroll"><Storage game={game} loc={zone} /></div>
         ) : !loc ? (
           <Overview game={game} onOpen={(id) => go(id)} />
+        ) : cabling ? (
+          <Cabling key={loc.id} game={game} loc={loc} />
         ) : rack ? (
           <RackView key={rack.id} game={game} rack={rack} device={deviceId} onDevice={setDeviceId} onMoved={(id) => go(id ?? loc.id)} />
         ) : (
@@ -49,7 +66,7 @@ export function LocationsApp() {
               <LocationHead game={game} locId={loc.id} />
               <Floor game={game} loc={loc} onRack={(id) => go(loc.id, id)} />
               <CarrierPanel game={game} loc={loc} selected={deviceId} onDevice={setDeviceId} />
-              <Storage game={game} locationId={loc.id} />
+              <Storage game={game} loc={loc} />
             </div>
             {deviceId && game.devices.some((d) => d.id === deviceId && d.panel === loc.id) && (
               <div className="loc-insp"><Inspector key={deviceId} game={game} device={game.devices.find((d) => d.id === deviceId)!} onSelect={setDeviceId} /></div>
@@ -68,8 +85,8 @@ function LocationHead({ game, locId }: { game: GameState; locId: string }) {
     <div className="loc-head">
       <Logo provider={providerOf(loc)} size={28} />
       <div className="loc-head-name">
-        <h2>{loc.name}</h2>
-        <span className="loc-muted">{loc.city} · {spaceLabel(loc)}</span>
+        <h2>{loc.name}<Zone loc={loc} /></h2>
+        <span className="loc-muted">{loc.city} · {spaceLabel(loc, game)}</span>
       </div>
       <span className="grow" />
       {loc.readyAt > game.hour && <span className="pill">Ready <span className="num">{day(loc.readyAt)}</span></span>}
@@ -91,14 +108,19 @@ function Switcher({ current, onPick }: { current: string | null; onPick: (id: st
   return (
     <div className="loc-switch" ref={ref}>
       <button className="btn ghost" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
-        {loc ? <><Logo provider={providerOf(loc)} size={16} />{loc.name}</> : "Locations"}<ChevronDown className="loc-caret" />
+        {loc ? <><Logo provider={providerOf(loc)} size={16} /><LocName loc={loc} /></> : "Locations"}<ChevronDown className="loc-caret" />
       </button>
       {open && (
         <div className="loc-menu" role="menu">
-          {locations.map((l) => (
-            <button key={l.id} role="menuitemradio" aria-checked={l.id === current} onClick={() => { setOpen(false); onPick(l.id); }}>
-              <Logo provider={providerOf(l)} size={16} /><span>{l.name}</span><span className="loc-muted">{l.city}</span>
-            </button>
+          {REGIONS.filter((r) => locations.some((l) => l.city === r.city)).map((r) => (
+            <div key={r.id} role="group" aria-label={r.name}>
+              <div className="loc-menu-h">{r.name}</div>
+              {locations.filter((l) => l.city === r.city).map((l) => (
+                <button key={l.id} role="menuitemradio" aria-checked={l.id === current} onClick={() => { setOpen(false); onPick(l.id); }}>
+                  <Logo provider={providerOf(l)} size={16} /><LocName loc={l} />
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       )}

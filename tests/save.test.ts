@@ -26,7 +26,7 @@ describe("save", () => {
     const loc = addLocation(s, "equinox-am3", "cage", 4);
     if (!loc.ok) throw new Error(loc.error);
     moveRack(s, "rack2", loc.id!, 3);
-    buyDevice(s, "sw-24", "Sysko", 2);
+    buyDevice(s, "sw-24", "Sysko", 2, "loc1");
     for (let h = 0; h < 50; h++) tick(s);
     expect(deserialize(serialize(s))).toEqual(s);
   });

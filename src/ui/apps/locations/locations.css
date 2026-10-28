@@ -91,7 +91,9 @@ svg.logo-mark { flex: none; }
 .loc-sheet-h { display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 16px; border-bottom: 0.5px solid var(--line); }
 .loc-sheet-h h2 { font-size: 13px; font-weight: 650; }
 .loc-sheet-bar { padding: 10px 16px; border-bottom: 0.5px solid var(--line); overflow-x: auto; }
-.loc-sheet-foot { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 0.5px solid var(--line); min-height: 52px; }
+.loc-sheet-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 16px; border-top: 0.5px solid var(--line); min-height: 52px; }
+.loc-sheet-foot > * { white-space: nowrap; flex-shrink: 0; }
+.loc-sheet-foot > .btn.primary { margin-left: auto; }
 .loc-dcs { overflow: auto; min-height: 0; }
 .loc-dcs tr { cursor: pointer; }
 .loc-dcs tr.sel td { background: var(--accent-soft); }
@@ -129,7 +131,6 @@ svg.logo-mark { flex: none; }
   background: oklch(0.14 0.005 255); box-shadow: inset 0 0 0 0.5px var(--metal-3);
   color: oklch(0.62 0.01 255); font: 500 9.5px/20px var(--font-num);
 }
-.loc-ports.wide .loc-port { width: 44px; }
 .loc-port::before { content: ""; position: absolute; left: 3px; right: 3px; top: 2px; height: 2px; border-radius: 1px; background: var(--lamp); }
 .loc-port[data-lamp="ok"] { --lamp: oklch(0.78 0.2 145); color: oklch(0.88 0.01 255); }
 .loc-port[data-lamp="fiber"] { --lamp: oklch(0.8 0.12 195); color: oklch(0.88 0.01 255); }
@@ -188,3 +189,53 @@ button.loc-node:hover { background: var(--hover); }
 .loc-shop-none { padding: 14px; color: var(--text-3); }
 .loc-tile .loc-meter { gap: 6px; font-size: 11px; }
 .loc-tile .loc-meter-bar { width: 32px; }
+
+/* Cabling */
+.loc-views { margin-left: 8px; }
+.loc-cabling { position: relative; flex: 1; min-width: 0; display: flex; background: var(--win-side); }
+.loc-cab { flex: 1; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; user-select: none; }
+.loc-cab:active { cursor: grabbing; }
+.loc-cab-node { fill: var(--field); stroke: var(--line-strong); stroke-width: 0.5; }
+.loc-cab-name { font: 600 12px Inter, system-ui, sans-serif; fill: var(--text); }
+.loc-cab-sub, .loc-cab-speed { font: 500 9.5px "JetBrains Mono", monospace; fill: var(--text-3); }
+.loc-cab-col { font: 650 11px Inter, system-ui, sans-serif; fill: var(--text-3); }
+.loc-cab-port { cursor: crosshair; }
+.loc-cab-port rect.rj45, .loc-cab-port rect.sfp { fill: color-mix(in oklch, var(--text) 16%, var(--field)); stroke: color-mix(in oklch, var(--text) 40%, var(--field)); stroke-width: 0.7; }
+.loc-cab-port rect.sfp { fill: color-mix(in oklch, var(--text) 30%, var(--field)); }
+.loc-cab-port:hover rect.rj45, .loc-cab-port:hover rect.sfp, .loc-cab-port.src rect { stroke: var(--accent); stroke-width: 1.4; }
+.loc-cab-port.hot rect.rj45, .loc-cab-port.hot rect.sfp { stroke: var(--accent); stroke-width: 1.6; }
+.loc-cab-port.dim { opacity: 0.18; }
+.loc-cab-wires path { fill: none; stroke-width: 1.8; stroke-linecap: round; pointer-events: none; }
+.loc-cab-wires path.hot, .loc-cab-wires path.sel { stroke-width: 3; }
+.loc-cab-hits path { fill: none; stroke: transparent; stroke-width: 10; cursor: pointer; }
+.loc-cab-drag { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; pointer-events: none; }
+.loc-cab-bar { position: absolute; top: 10px; left: 50%; translate: -50% 0; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; border-radius: 10px; background: var(--win); box-shadow: var(--shadow-pop); white-space: nowrap; }
+.loc-cab-kind { font-size: 11.5px; font-weight: 550; color: var(--text-2); padding: 0 8px; border-bottom: 2px solid oklch(0.62 0.14 250); }
+.loc-cab-kind.fiber { border-color: oklch(0.72 0.12 195); }
+.loc-cab-kind.dac { border-color: oklch(0.6 0.02 255); }
+
+/* World map in Add location */
+.loc-sheet.wide { max-height: calc(100dvh - 80px); }
+.loc-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; color: var(--ok); }
+.loc-icon svg { width: 15px; height: 15px; stroke-width: 1.9; }
+.loc-icon .lucide-shield-check { color: var(--accent); }
+
+/* Zone chip next to a location name. */
+.loc-name { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.loc-az { display: inline-flex; align-items: center; height: 17px; padding: 0 5px; border-radius: 4px; background: var(--hover); color: var(--text-2); font-size: 11px; font-weight: 500; letter-spacing: 0.02em; }
+h2 .loc-az, h3 .loc-az { margin-left: 8px; vertical-align: middle; }
+.loc-card-h .loc-az { margin-left: 2px; }
+.loc-menu-h { padding: 6px 8px 2px; font-size: 11px; font-weight: 600; color: var(--text-3); }
+.loc-menu [role="group"] { display: grid; gap: 1px; }
+.loc-menu button[aria-checked="true"] .loc-az { background: color-mix(in oklch, var(--accent-ink) 20%, transparent); color: inherit; }
+
+.loc-sub { min-height: 36px; border-top: 0.5px solid var(--line); }
+.loc-transit + .loc-transit { border-top: 0.5px solid var(--line); }
+.loc-ship { gap: 10px; }
+.loc-ship select { min-width: 0; max-width: 220px; height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: var(--text); font: inherit; font-size: 13px; }
+
+/* Server port table. */
+.loc-port-table td { height: 32px; cursor: default; }
+.loc-port-table tr[aria-selected="true"] td { background: color-mix(in oklch, var(--accent) 14%, transparent); }
+.loc-port-table .loc-link { color: var(--accent); }
+.loc-port-table + .loc-row { flex-wrap: wrap; }
