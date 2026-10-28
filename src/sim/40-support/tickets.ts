@@ -4,18 +4,23 @@ import { activeServices, type Customer, type Profile, type Service } from "../30
 import type { GameState } from "../50-state";
 import { serviceOnline } from "./status";
 
-export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse" | "appeal";
+export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse" | "appeal" | "notice" | "legal" | "refund";
 // open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
 export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
-export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep";
+export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund";
 // by names the employee who answered; the player otherwise.
 export interface Reply { hour: number; template: string; right: boolean; by?: string }
 // doneAt is in game minutes; the reply or action takes effect on the first tick at or after it.
 export interface Work { op: "reply" | "resolve" | "escalate"; arg: string; doneAt: number; by?: string }
+// A notice or legal request comes from a sender, not the customer; customerId is "" when no customer uses the domain.
+// real is hidden from the player. followAt is the hour the next, angrier step arrives.
+export interface Notice { sender: string; from: string; url: string; video: string | null; real: boolean; round: number; followAt: number | null }
 export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
-  outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | null; work: Work | null;
+  outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | "forwarded" | "takenDown" | "rejected" | "ignored" | "complied" | "objected"
+    | "seized" | "refunded" | "refused" | null;
+  work: Work | null; notice?: Notice;
 }
 
 export const HOURS_PER_MONTH = 730;
@@ -23,7 +28,7 @@ export const HOURS_PER_MONTH = 730;
 export const WAITING_CLOSE_HOURS = 48;
 
 // economy.md, Tickets and work rates.
-export const MINUTES: Record<TicketKind, number> = { outage: 10, howTo: 20, billing: 15, upgrade: 20, cancellation: 15, abuse: 30, appeal: 15 };
+export const MINUTES: Record<TicketKind, number> = { outage: 10, howTo: 20, billing: 15, upgrade: 20, cancellation: 15, abuse: 30, appeal: 15, notice: 15, legal: 30, refund: 10 };
 export const MONTHLY_RATES: Record<"howTo" | "billing" | "abuse", Record<Budget, number>> = {
   howTo: { low: 0.18, medium: 0.06, high: 0.02 },
   billing: { low: 0.04, medium: 0.04, high: 0.02 },
@@ -36,14 +41,16 @@ export const OUTAGE_WRITE_CHANCE: Record<Budget, number> = { low: 0.3, medium: 0
 export const TOPICS: Record<TicketKind, string[]> = {
   outage: ["down"], howTo: ["upload", "email", "dns", "panel"], billing: ["charge", "copy", "delay"],
   upgrade: ["grow"], cancellation: ["leave"], abuse: ["spam", "attack"], appeal: ["forgot", "boss", "access", "onWay"],
+  notice: ["movie", "music", "youtuber", "phishing", "spam"], legal: ["data", "takedown"], refund: ["outage", "dataLoss"],
 };
 export const TEMPLATES: Record<TicketKind, string[]> = {
   outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "panel", "askDetails"],
   billing: ["explain", "resend", "extension", "askDetails"], upgrade: ["offer", "askDetails"], cancellation: [], abuse: ["warn", "askDetails"],
-  appeal: ["awaitPayment", "askDetails"],
+  appeal: ["awaitPayment", "askDetails"], notice: [], legal: [], refund: [],
 };
 export const ACTIONS: Record<TicketKind, TicketAction[]> = {
   outage: ["credit"], howTo: [], billing: ["credit"], upgrade: [], cancellation: ["retain", "cancel"], abuse: [], appeal: ["unsuspend", "keep"],
+  notice: ["forward", "takedown", "reject"], legal: ["comply", "object"], refund: ["refund", "credit", "reject"],
 };
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
@@ -74,13 +81,14 @@ export const bump = (c: Customer, delta: number): void => {
   c.happiness = Math.max(0, Math.min(100, c.happiness + delta));
 };
 
-export function createTicket(s: GameState, c: Customer, kind: TicketKind, serviceId?: string | null): Ticket {
+// With both serviceId and topic given, no random number is drawn.
+export function createTicket(s: GameState, c: Customer, kind: TicketKind, serviceId?: string | null, topic?: string): Ticket {
   const services = activeServices(s.services, c.id);
   const topics = TOPICS[kind];
   const t: Ticket = {
     id: `tkt${s.nextId++}`, customerId: c.id,
     serviceId: serviceId !== undefined ? serviceId : services.length ? services[Math.floor(rand(s.rng) * services.length)].id : null,
-    kind, topic: topics[Math.floor(rand(s.rng) * topics.length)], status: "open",
+    kind, topic: topic ?? topics[Math.floor(rand(s.rng) * topics.length)], status: "open",
     createdAt: s.hour, dueAt: s.hour + profileStats(c.profile).promisedHours, updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null,
   };
   s.tickets = [...s.tickets, t];

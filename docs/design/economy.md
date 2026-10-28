@@ -635,11 +635,12 @@ A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD t
 
 Backup rules: hourly, daily or weekly, kept 7, 14 or 30 days. A full copy plus 5% of the volume per extra day kept fills the backup pool. Backup jobs follow the backup usage curve and use the zone's switch bandwidth.
 
-**Power outages.** Grid outages are random events per city. They are far more frequent than in reality, so the player meets them in the first year.
+**Power outages.** Grid outages are random events per location. They are far more frequent than in reality, so the player meets them in the first year. The basement's household line fails twice as often as a datacenter's utility feed (decision).
 
 | Event | Rate | Duration | What survives it |
 | --- | --- | --- | --- |
-| City grid outage | 1.5 a year per city | Median 20 minutes, 10% last over 2 hours | Rooms with a UPS, while its battery lasts; datacenters with generators |
+| Grid outage, basement | 3 a year | Median 20 minutes, 10% last over 2 hours, at most 12 hours | Rooms with a UPS, while its battery lasts |
+| Grid outage, datacenter | 1.5 a year per location | As above | Datacenters with generators; a datacenter UPS alone bridges 15 minutes, plus any UPS of your own |
 | Datacenter feed failure | 0.3 a year per feed | Median 30 minutes | Servers with a second PSU on the other feed |
 | Generator fails to start | 2% of grid outages at a datacenter | Until the grid returns | Nothing on that feed |
 
@@ -656,6 +657,31 @@ A UPS runs for its battery capacity divided by the load:
 | Dual power supply | +10% of the server's price | PSU failures make up about a quarter of a server's AFR; with two PSUs they no longer take the server down, so its AFR drops from 8% to 6% |
 
 Prices follow the same yearly multipliers as other hardware (see [Prices over time](#prices-over-time)).
+
+An outage reaches the servers for the minutes the UPS and the site can't bridge, rounded up to whole hours of downtime. Customers hit by an hour or more ask for a refund with a 10% chance at low budget, 15% at medium and 30% at high budget (decision).
+
+## Notices and legal requests
+
+Rates per active customer per month (decisions):
+
+| Event | Normal customer | Shady customer |
+| --- | --- | --- |
+| Real copyright or abuse notice | 0.01 | 0.3 |
+| Fake notice about their domain | 0.01 | 0.01 |
+| Legal request | 0.002 | 0.06 |
+| Abuse report (existing ticket) | Profile rate | 10 × the profile rate |
+
+Notices about domains nobody hosts arrive 0.2 times a month for the company. A notice waits 7 days before it counts as ignored, and an ignored real notice brings the next step after 3 to 7 days.
+
+| Action | Happiness | Result |
+| --- | --- | --- |
+| Forward a real notice | 0 | Settled; a shady customer ignores it and the next step follows |
+| Forward a fake notice | −2 | Settled |
+| Take down on a real notice | −5 | Service offline for 48 hours |
+| Take down on a fake notice | −25 | Service offline for 48 hours |
+| Comply with a legal request | −15 | Closed |
+| Object to a legal request | 0 | Closed; 25% (shady 50%) return as a court order with a 3-day deadline |
+| Miss a legal deadline | −60 without a backup, −15 with one | The server is seized for 3 to 24 months |
 
 ## Traffic and bandwidth
 

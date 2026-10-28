@@ -1,4 +1,4 @@
-import { CircleHelp, DoorOpen, LockKeyholeOpen, Receipt, ShieldAlert, TrendingUp, ZapOff, type LucideIcon } from "lucide-react";
+import { CircleHelp, Copyright, DoorOpen, Landmark, LockKeyholeOpen, Receipt, ShieldAlert, TrendingUp, Undo2, ZapOff, type LucideIcon } from "lucide-react";
 import { dateOf } from "../../../sim/00-core/time";
 import type { Product } from "../../../sim/30-customers/customers";
 import type { TicketKind, TicketStatus } from "../../../sim/40-support/tickets";
@@ -11,6 +11,9 @@ export const KINDS: { id: TicketKind; label: string; icon: LucideIcon }[] = [
   { id: "cancellation", label: "Cancellation", icon: DoorOpen },
   { id: "abuse", label: "Abuse", icon: ShieldAlert },
   { id: "appeal", label: "Suspension appeal", icon: LockKeyholeOpen },
+  { id: "notice", label: "Notice", icon: Copyright },
+  { id: "legal", label: "Legal request", icon: Landmark },
+  { id: "refund", label: "Refund", icon: Undo2 },
 ];
 export const kindOf = (id: TicketKind) => KINDS.find((k) => k.id === id)!;
 
@@ -33,6 +36,12 @@ export function stamp(hour: number): string {
 export const monthYear = (hour: number): string => {
   const d = dateOf(hour);
   return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+};
+
+// "5 d 3 h" or "5 d" from 48 hours up, "30 h" below.
+export const span = (hours: number): string => {
+  const h = Math.abs(hours);
+  return h >= 48 ? `${Math.floor(h / 24)} d${h % 24 ? ` ${h % 24} h` : ""}` : `${h} h`;
 };
 
 export const initials = (name: string): string => name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();

@@ -2,6 +2,7 @@ import { binomial, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
+import { opsTick } from "../40-support/notices";
 import { supportTick } from "../40-support/tick";
 import { financeTick } from "../46-finance/finance";
 import { staffTick } from "../47-staff/staff";
@@ -218,6 +219,7 @@ export function tick(state: GameState): SimEvent[] {
     if (bills.length) events.push({ app: "Finance", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
+  events.push(...opsTick(state));
   events.push(...computeTick(state));
   events.push(...billingTick(state));
   events.push(...networkTick(state));

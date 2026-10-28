@@ -47,7 +47,7 @@ export const PLATFORMS: Record<PlatformId, { name: string; fee: number; invite: 
   trustPylon: { name: "TrustPylon", fee: 199, invite: 0.02, trust: 6 },
 };
 
-export type ReviewReason = "ticket" | "cancellation" | "invite";
+export type ReviewReason = "ticket" | "cancellation" | "invite" | "outage" | "dataLoss";
 export interface Review { hour: number; customerId: string; name: string; stars: number; reason: ReviewReason }
 export interface Campaign { channel: CampaignChannel; profiles: Profile[]; budget: number; discount: number }
 export interface Marketing {

@@ -49,6 +49,7 @@ export function deserialize(raw: string): GameState {
     billingRules: { ...base.billingRules, ...data.billingRules },
     company: { ...base.company, ...data.company },
     network: { ...base.network, ...data.network },
+    ops: { ...base.ops, ...data.ops },
     marketing: { ...base.marketing, ...data.marketing, awareness: { ...base.marketing.awareness, ...data.marketing?.awareness } },
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.

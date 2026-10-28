@@ -1,4 +1,5 @@
 import { euro, euroCents } from "../sim/00-core/money";
+import { OPS } from "./en-ops";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -393,6 +394,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.fiberRegion": () => "Dark fiber only runs within one region.",
   "error.unknownZoneLink": () => "This link no longer exists.",
   "error.unknownAttack": () => "This attack is over.",
+  ...OPS,
 };
 
 export const t = (key: string, params: Params = {}): string => en[key]?.(params) ?? key;

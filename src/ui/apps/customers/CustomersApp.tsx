@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { activeServices, type Customer } from "../../../sim/30-customers/customers";
 import { isFinal, serviceMonthly } from "../../../sim/40-support/tickets";
+import { subjectParams } from "../../../sim/40-support/notices";
 import { invoiceTotal, isUnpaid, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { t } from "../../../i18n/en";
@@ -264,7 +265,7 @@ function Detail({ r }: { r: Row }) {
             return (
               <button key={tk.id} className="cus-row" onClick={() => openApp("Support", { kind: "ticket", id: tk.id })}>
                 <K.icon className="cus-kind" aria-label={K.label} />
-                <span className="grow cus-strong">{t(`ticket.${tk.kind}.${tk.topic}.subject`, { service: game.services.find((v) => v.id === tk.serviceId)?.label ?? "" })}</span>
+                <span className="grow cus-strong">{t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(game, tk))}</span>
                 <span className="cus-right"><span className="pill">{STATUS[tk.status]}</span><span className="cus-dim num">{stamp(tk.createdAt)}</span></span>
               </button>
             );

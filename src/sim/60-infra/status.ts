@@ -203,7 +203,7 @@ export function working(s: GameState, deviceId: string): boolean {
 export function powered(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   const loc = d && locationOf(s, d);
-  if (!d || !loc || loc.readyAt > s.hour) return false;
+  if (!d || !loc || loc.readyAt > s.hour || (s.ops.dark[loc.id] ?? 0) > s.hour) return false;
   if (!d.rackId) return true;
   const rack = s.racks.find((r) => r.id === d.rackId)!;
   return rack.arriveAt === null && !rackPower(s, rack.id).tripped;
@@ -216,7 +216,7 @@ export function freePositions(s: GameState, locationId: string): number[] {
   return Array.from({ length: loc.positions }, (_, i) => i + 1).filter((p) => !taken.has(p));
 }
 
-const KIND_ORDER: DeviceKind[] = ["server", "switch", "firewall", "patch", "gateway", "part"];
+const KIND_ORDER: DeviceKind[] = ["server", "switch", "firewall", "patch", "ups", "gateway", "part"];
 
 // A zone's stored devices grouped by model and brand.
 export function storageStacks(s: GameState, locationId: string): { model: string; brand: string; ids: string[] }[] {

@@ -13,6 +13,7 @@ import type { FairBooking } from "./80-business/fairs";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
 import { newNetwork, type Network } from "./60-infra/network";
+import { newOps, type Ops } from "./60-infra/ops";
 
 export const SAVE_VERSION = 2;
 
@@ -113,6 +114,8 @@ export interface GameState {
   // Hours each service has been down since the last monthly invoice.
   downHours: Record<string, number>;
   network: Network;
+  // Incidents, seized servers, dark locations and taken-down services.
+  ops: Ops;
 }
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
@@ -155,6 +158,7 @@ export const newGame = (seed: number): GameState => ({
   staff: [], candidates: applications(seed, 0),
   marketing: newMarketing(), fairs: [],
   network: newNetwork(),
+  ops: newOps(),
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
