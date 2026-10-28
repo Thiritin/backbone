@@ -572,12 +572,15 @@ Staff are named people with a skill level, a work rate and a salary. Juniors cos
 
 Marketing brings in new customers, and reviews decide how many of them trust you. You can run basic campaigns yourself; review platforms need a marketing manager.
 
+**Your own channels.** Besides paid campaigns, the Marketing app manages the acquisition channels you own and grow step by step. You start with email only: customers find you through friends and write to your inbox, and every order is a conversation. Next you set up a basic website, which makes you findable and brings in a steady trickle of requests. The website then gets extended with an online order form, so customers can order standard products on their own and the order lands as a ready service instead of an email. With a website in place you can run Google ads (search ads below) that send visitors to it, and later AI ads, which target better and cost more. Each step is a one-off setup cost plus upkeep, and the website and order form are also where your prices and reviews show.
+
 **Campaigns.** In the Marketing app you pick a channel, the profiles to target and a monthly budget.
 
 | Channel | Reaches | Notes |
 | --- | --- | --- |
 | Word of mouth | Friends, gamers | Free and slow; the only channel in the basement |
-| Search ads | Anyone searching for hosting | Paid per click |
+| Search ads ("Goggle Ads") | Anyone searching for hosting | Paid per click; needs a website |
+| AI ads | Anyone, with better targeting | Unlocks late; costs more per click and converts better; needs a website |
 | Gaming communities | Gamers | Sponsor a streamer or a server list |
 | Trade fairs | Businesses, enterprises | Expensive; only pays off at higher company levels |
 | Partner program | Agencies, small businesses | Commission per referred customer |
