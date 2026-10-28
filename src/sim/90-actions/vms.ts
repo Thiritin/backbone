@@ -1,10 +1,10 @@
 import { softwareById } from "../10-catalog/platforms";
-import { bump, cancelCustomer, serviceMonthly } from "../40-support/tickets";
+import { bump } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { bookable, clusterOf, controlPlaneUp, lostDisk, noRoomError, nodeUsed, pickNode, supports, type Workload } from "../60-infra/cluster";
 import { working } from "../60-infra/status";
 import {
-  LAN_GB_PER_HOUR, LOSS_RESTORED, LOSS_RESTORED_MAX, lossReview, REFUND_HAPPINESS, restoreHours, zoneLinkGbit, type LossItem,
+  LAN_GB_PER_HOUR, LOSS_RESTORED, LOSS_RESTORED_MAX, lossReview, restoreHours, zoneLinkGbit, type LossItem,
 } from "../85-products/products";
 import type { ActionResult } from "./hardware";
 
@@ -97,42 +97,8 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
     const cus = s.customers.find((x) => x.id === item.customerId);
     if (cus && w.backupAt !== null) {
       bump(cus, Math.max(LOSS_RESTORED_MAX, LOSS_RESTORED - Math.max(0, lostAt - w.backupAt)));
-      lossReview(s, cus, false);
+      lossReview(s, cus);
     }
   }
-  return { ok: true };
-}
-
-function lossItem(s: GameState, reportId: string, serviceId: string) {
-  const r = s.lossReports.find((x) => x.id === reportId), item = r?.items.find((i) => i.serviceId === serviceId);
-  const cus = item && s.customers.find((c) => c.id === item.customerId && c.churnedAt === null);
-  return item && cus ? { item, cus } : null;
-}
-const setRefund = (s: GameState, reportId: string, serviceId: string, refund: LossItem["refund"]) => {
-  s.lossReports = s.lossReports.map((r) => (r.id !== reportId ? r : { ...r, items: r.items.map((i) => (i.serviceId === serviceId ? { ...i, refund } : i)) }));
-};
-
-// Pays back one month of the service's fees.
-export function refundLoss(s: GameState, reportId: string, serviceId: string): ActionResult {
-  const found = lossItem(s, reportId, serviceId);
-  if (!found) return fail("error.unknownReport");
-  if (found.item.refund === "granted" || found.item.refund === "declined") return fail("error.refundSettled");
-  const v = s.services.find((x) => x.id === serviceId)!, amount = Math.round(serviceMonthly(v) * 100) / 100;
-  s.cash = Math.round((s.cash - amount) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "credit", key: "ledger.refund", params: { customer: found.cus.name }, amount: -amount }];
-  bump(found.cus, REFUND_HAPPINESS);
-  setRefund(s, reportId, serviceId, "granted");
-  lossReview(s, found.cus, true);
-  return { ok: true };
-}
-
-// A customer whose refund request is declined leaves.
-export function declineRefund(s: GameState, reportId: string, serviceId: string): ActionResult {
-  const found = lossItem(s, reportId, serviceId);
-  if (!found) return fail("error.unknownReport");
-  if (found.item.refund !== "open") return fail("error.refundSettled");
-  setRefund(s, reportId, serviceId, "declined");
-  lossReview(s, found.cus, false);
-  cancelCustomer(s, found.cus);
   return { ok: true };
 }

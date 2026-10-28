@@ -6,7 +6,7 @@ import { PRODUCTS } from "../../../sim/10-catalog/products";
 import { PRODUCT } from "../support/labels";
 import type { GameState } from "../../../sim/50-state";
 import { controlPlaneUp, lostDisk, workloadOnline, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
-import { declineRefund, refundLoss, restoreWorkload } from "../../../sim/90-actions/vms";
+import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
 import { devName, disk } from "../hw";
@@ -116,16 +116,11 @@ export function IncidentReports({ game }: { game: GameState }) {
                       <td>
                         <span className="fin-pills">
                           <span className={`pill ${i.restored ? "ok" : "bad"}`}>{i.restored ? "Restored" : "Lost"}</span>
-                          {i.refund === "open" && <span className="pill warn">Refund asked</span>}
-                          {i.refund === "granted" && <span className="pill">Refunded</span>}
-                          {i.refund === "declined" && <span className="pill">Refund declined</span>}
                         </span>
                       </td>
                       <td className="r">
                         <span className="fin-pills">
                           {lost && <button className="btn" onClick={() => act((g) => restoreWorkload(g, i.workloadId))}>{i.backupAt === null ? "Start empty" : "Restore"}</button>}
-                          {(i.refund === "open" || i.refund === "none") && c?.churnedAt === null && <button className="btn" onClick={() => act((g) => refundLoss(g, r.id, i.serviceId))}>Refund</button>}
-                          {i.refund === "open" && c?.churnedAt === null && <button className="btn danger" onClick={() => act((g) => declineRefund(g, r.id, i.serviceId))}>Decline</button>}
                         </span>
                       </td>
                     </tr>

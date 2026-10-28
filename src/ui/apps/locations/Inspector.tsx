@@ -4,7 +4,7 @@ import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
 import { COMPONENTS, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Cable as CableT, Device, End, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
-import { deviceHealth, drivesOf, hotSwappable, isPlugged, linkStatus, locationOf, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
+import { deviceHealth, drivesOf, hotSwappable, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
 import { rebuildHours } from "../../../sim/88-tick/tick";
 import { buyOutLease, connect, disconnect, LABEL_MAX, replaceComponent, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
@@ -48,7 +48,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
       <div className="loc-insp-h">
         {model.kind !== "gateway" && <BrandLogo brand={device.brand} size={20} />}
         <LabelEdit device={device} />
-        {model.kind !== "patch" && model.kind !== "ups" && <span className={`pill ${st.online ? "ok" : "bad"}`}>{st.online ? "Online" : "Offline"}</span>}
+        {model.kind !== "patch" && model.kind !== "ups" && <span className={`pill ${st.online ? "ok" : "bad"}`}>{st.online ? "Online" : device.rackId && !pluggedIn(device) ? "Unplugged" : "Offline"}</span>}
         <span className="grow" />
         {device.rackId && <button className="btn" onClick={() => { if (act((g) => unmountDevice(g, device.id)).ok) onSelect(null); }}><ArchiveRestore />Unmount</button>}
         {model.kind !== "gateway" && <button className="btn" disabled={!!device.lease} onClick={() => setSelling(true)}><CircleDollarSign />Sell</button>}

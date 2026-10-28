@@ -30,7 +30,7 @@ export function VmApp() {
   const shown = game.workloads.filter((w) => w.clusterId && (!cluster || w.clusterId === cluster.id) && (!node || w.deviceId === node) && matches(filter, vmState(game, w)));
   const vm = game.workloads.find((w) => w.id === selected);
   const pickCluster = (id: string | null) => { setCluster(id); setNode(null); setIncidents(false); };
-  const lost = game.lossReports.filter((r) => r.items.some((i) => !i.restored || i.refund === "open")).length;
+  const lost = game.lossReports.filter((r) => r.items.some((i) => !i.restored)).length;
 
   return (
     <div className="fin">

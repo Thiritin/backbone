@@ -6,7 +6,7 @@ import { stamp } from "../support/labels";
 export function ActivityLog({ customerId, serviceId }: { customerId: string; serviceId?: string }) {
   const game = useStore((s) => s.game);
   const entries = activityFor(game, customerId, serviceId);
-  if (!entries.length) return <div className="cus-row cus-dim">No activity</div>;
+  if (!entries.length) return <div className="cus-activity cus-dim">No activity</div>;
   return (
     <ol className="cus-activity">
       {entries.map((a, i) => (

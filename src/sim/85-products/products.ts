@@ -17,11 +17,9 @@ import type { SimEvent } from "../88-tick/tick";
 export const LOSS_NO_BACKUP = -60;
 export const LOSS_RESTORED = -15;
 export const LOSS_RESTORED_MAX = -40;
-export const REFUND_HAPPINESS = 20;
 export const REVIEW_CHANCE = 0.1;
 export const UNHAPPY_REVIEW_CHANCE = 0.2;
 export const UNHAPPY = 40;
-export const REFUND_THREE_STARS = 0.6;
 // Backup jobs start at 02:00, weekly ones on Sundays; the pool holds a full copy plus the extra days kept.
 export const BACKUP_HOUR = 2;
 export const BACKUP_POOL = 1.3;
@@ -31,11 +29,8 @@ export const WAN_GB_PER_HOUR = 45;
 // Hourly chance per service on an overloaded node to write in, times the share of performance lost.
 export const SLOW_TICKET_CHANCE = 0.1;
 
-// One lost disk in an incident report. A customer without a backup asks for a refund (refund "open").
-export interface LossItem {
-  workloadId: string; serviceId: string; customerId: string; diskGb: number; backupAt: number | null;
-  refund: "open" | "granted" | "declined" | "none"; restored: boolean;
-}
+// One lost disk in an incident report.
+export interface LossItem { workloadId: string; serviceId: string; customerId: string; diskGb: number; backupAt: number | null; restored: boolean }
 // The incident report the game opens when a server's array is lost.
 export interface LossReport { id: string; hour: number; deviceId: string; items: LossItem[] }
 
@@ -86,10 +81,10 @@ export function restoreHours(s: GameState, w: Workload): number {
   return Math.max(1, Math.ceil((w.diskGb * diskFill(s, w, w.backupAt ?? s.hour)) / rate));
 }
 
-// economy.md, Reviews: 10% write one, 20% when unhappy; a refunded customer gives 3 stars 60% of the time.
-export function lossReview(s: GameState, c: Customer, refunded: boolean): void {
+// economy.md, Reviews: 10% write one, 20% when unhappy.
+export function lossReview(s: GameState, c: Customer): void {
   if (!chance(s.rng, c.happiness < UNHAPPY ? UNHAPPY_REVIEW_CHANCE : REVIEW_CHANCE)) return;
-  addReview(s, c.id, refunded && chance(s.rng, REFUND_THREE_STARS) ? 3 : starsFor(c.happiness, s.rng), "dataLoss");
+  addReview(s, c.id, starsFor(c.happiness, s.rng), "dataLoss");
 }
 
 const customerCopy = (s: GameState, id: string): Customer | undefined => {
@@ -117,9 +112,17 @@ function reportLosses(s: GameState, events: SimEvent[]) {
     if (!lost.length) continue;
     const items = lost.map((w): LossItem => {
       const v = s.services.find((x) => x.id === w.serviceId)!;
-      return { workloadId: w.id, serviceId: v.id, customerId: v.customerId, diskGb: w.diskGb, backupAt: w.backupAt, refund: w.backupAt === null ? "open" : "none", restored: false };
+      return { workloadId: w.id, serviceId: v.id, customerId: v.customerId, diskGb: w.diskGb, backupAt: w.backupAt, restored: false };
     });
-    for (const it of items) if (it.backupAt === null) bump(customerCopy(s, it.customerId)!, LOSS_NO_BACKUP);
+    // A customer without a backup takes the hit per lost disk and asks for a refund once, in Support.
+    const asked = new Set<string>();
+    for (const it of items) {
+      if (it.backupAt !== null) continue;
+      const c = customerCopy(s, it.customerId)!;
+      bump(c, LOSS_NO_BACKUP);
+      if (!asked.has(c.id)) createTicket(s, c, "refund", it.serviceId, "dataLoss");
+      asked.add(c.id);
+    }
     s.lossReports = [...s.lossReports, { id: `loss${s.nextId++}`, hour: d.dataLost, deviceId: d.id, items }];
     events.push({ app: "Locations", key: "event.dataLoss", params: { device: d.label ?? d.name, count: items.length } });
   }

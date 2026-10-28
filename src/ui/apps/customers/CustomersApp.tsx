@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp, LifeBuoy, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { euro, euroCents } from "../../../sim/00-core/money";
+import { euro, euroCents, euroPrice } from "../../../sim/00-core/money";
 import { activeServices } from "../../../sim/30-customers/customers";
 import { isFinal, serviceMonthly } from "../../../sim/40-support/tickets";
 import { invoiceTotal, isUnpaid } from "../../../sim/45-billing/billing";
@@ -125,7 +125,7 @@ export function CustomersApp() {
                   <td><StatusChip s={r.status} /></td>
                   <td><Mood c={r.c} /></td>
                   <td className="r num">{r.services}</td>
-                  <td className="r num">{euro(r.monthly)}</td>
+                  <td className="r num">{euroPrice(r.monthly)}</td>
                   <td className="r num">{euro(r.lifetime)}</td>
                   <td className="r num">{euroCents(r.balance)}</td>
                   <td className="r num">{monthYear(r.c.since)}</td>
