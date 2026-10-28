@@ -1,12 +1,14 @@
-import { BookOpen, Check, GraduationCap, Megaphone, MessagesSquare, Search, UserMinus, UserPlus, Users } from "lucide-react";
+import { BookOpen, Bot, Check, GraduationCap, Megaphone, MessagesSquare, Search, UserMinus, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import {
-  AD, COURSE_HOURS, COURSE_PRICE, fullyTrained, marketSalary, needsTraining, ROLES, staffPrice, TASKS, TRAINER_HOURS, trainerFor, visibleCandidates,
+  activeBots, AD, atFair, BOT_RIGHT, BOT_SPEED, COURSE_HOURS, COURSE_PRICE, fullyTrained, marketSalary, needsTraining, ROLES, staffPrice, TASKS, TRAINER_HOURS, trainerFor, visibleCandidates,
   type AdTier, type Assignment, type Candidate, type Employee, type Role, type Task,
 } from "../../../sim/47-staff/staff";
+import { storeItem, subscriptionPrice } from "../../../sim/10-catalog/store";
 import type { GameState } from "../../../sim/50-state";
+import { cancel } from "../../../sim/90-actions/store";
 import { answerRaise, assign, fire, hire, planTraining, postJobAd } from "../../../sim/90-actions/staff";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
@@ -18,16 +20,19 @@ const ROLE: Record<Role, { one: string; many: string }> = {
   support: { one: "Support agent", many: "Support agents" },
   bookkeeper: { one: "Bookkeeper", many: "Bookkeepers" },
   accountant: { one: "Accountant", many: "Accountants" },
+  marketing: { one: "Marketing manager", many: "Marketing managers" },
 };
 const TASK: Record<Task, string> = {
   howTo: "How-to", billing: "Billing", outage: "Outage", upgrade: "Upgrade", cancellation: "Cancellation", abuse: "Abuse", appeal: "Suspension appeal", notice: "Notices", legal: "Legal requests", refund: "Refunds",
   reminder: "Payment reminders", dunning: "Dunning notices", final: "Final notices",
+  campaigns: "Campaigns", reviews: "Review platforms", fairs: "Trade fairs",
 };
 const ASSIGN: Record<Assignment, string> = { queue: "Work queue", trainer: "Trainer", forum: "Forums" };
 const TIERS: AdTier[] = ["standard", "premium"];
 const days = (h: number) => `${Math.max(0, Math.ceil(h / 24))} ${Math.ceil(h / 24) === 1 ? "day" : "days"}`;
 
-function status(e: Employee): { label: string; cls: string } {
+function status(game: GameState, e: Employee): { label: string; cls: string } {
+  if (atFair(game, e)) return { label: "At a fair", cls: "accent" };
   if (e.training) return { label: "Training", cls: "accent" };
   if (e.assignment === "trainer") return { label: "Training others", cls: "accent" };
   if (e.assignment === "forum") return { label: "Forums", cls: "" };
@@ -61,7 +66,7 @@ export function StaffApp() {
       <aside className="sidebar st-side">
         <div className="side-h">Staff</div>
         <button className={`side-item${view === "team" ? " active" : ""}`} onClick={() => setView("team")}>
-          <Users />Team<span className="side-count">{game.staff.length}</span>
+          <Users />Team<span className="side-count">{game.staff.length + activeBots(game).length}</span>
         </button>
         <button className={`side-item${view === "market" ? " active" : ""}`} onClick={() => setView("market")}>
           <Search />Job market<span className="side-count">{market.length}</span>
@@ -73,7 +78,8 @@ export function StaffApp() {
 }
 
 function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | null; setSel: (id: string) => void; onMarket: () => void }) {
-  if (!game.staff.length) {
+  const bots = activeBots(game);
+  if (!game.staff.length && !bots.length) {
     return (
       <div className="st-empty">
         <p>Hire your first employee from the job market.</p>
@@ -81,14 +87,14 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
       </div>
     );
   }
-  const current = game.staff.find((e) => e.id === sel) ?? game.staff[0];
+  const current = [...game.staff, ...bots].find((e) => e.id === sel) ?? game.staff[0] ?? bots[0];
   const payroll = game.staff.reduce((sum, e) => sum + e.salary, 0);
   return (
     <>
       <div className="st-list" role="list">
         <div className="st-list-h"><h2>Team</h2><span className="st-payroll"><span className="num">{euro(payroll)}</span> a month</span></div>
         {game.staff.map((e) => {
-          const st = status(e);
+          const st = status(game, e);
           return (
             <button key={e.id} role="listitem" className={`st-row${e.id === current.id ? " active" : ""}`} onClick={() => setSel(e.id)}>
               <span className="logo">{initials(e.name)}</span>
@@ -104,9 +110,52 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
             </button>
           );
         })}
+        {bots.map((b) => (
+          <button key={b.id} role="listitem" className={`st-row${b.id === current.id ? " active" : ""}`} onClick={() => setSel(b.id)}>
+            <span className="logo"><Bot /></span>
+            <span className="who">
+              <span className="name">{b.name}</span>
+              <span className="sub">{b.trained.map((k) => TASK[k]).join(", ")} · <span className="num">{euro(botPrice(game, b))}</span></span>
+            </span>
+            <span className="side"><span className="pill accent">Bot</span></span>
+          </button>
+        ))}
       </div>
-      <Detail game={game} e={current} />
+      {current.bot ? <BotDetail game={game} b={current} /> : <Detail game={game} e={current} />}
     </>
+  );
+}
+
+const botPrice = (game: GameState, b: Employee) => subscriptionPrice(storeItem(b.id)!, yearOf(game.hour));
+
+function BotDetail({ game, b }: { game: GameState; b: Employee }) {
+  const act = useStore((s) => s.act);
+  return (
+    <section className="st-detail">
+      <header className="d-head">
+        <div className="top">
+          <span className="logo big"><Bot /></span>
+          <div>
+            <h2>{b.name}</h2>
+            <div className="sub">Pear One subscription</div>
+          </div>
+          <span className="grow" />
+          <button className="btn danger" onClick={() => act((s) => cancel(s, b.id))}><UserMinus />Cancel subscription</button>
+        </div>
+        <dl className="st-facts">
+          <div><dt>Subscription</dt><dd className="num">{euro(botPrice(game, b))}</dd></div>
+          <div><dt>Hours</dt><dd>Around the clock</dd></div>
+          <div><dt>Speed</dt><dd className="num">{BOT_SPEED}×</dd></div>
+          <div><dt>Right answers</dt><dd className="num">{Math.round(BOT_RIGHT * 100)}%</dd></div>
+        </dl>
+      </header>
+      <div className="st-body">
+        <h3>Handles</h3>
+        <div className="st-cards">
+          {b.trained.map((k) => <div key={k} className="st-card done"><span className="t">{TASK[k]}</span><span className="p"><Check />Built in</span></div>)}
+        </div>
+      </div>
+    </section>
   );
 }
 

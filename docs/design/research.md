@@ -99,3 +99,17 @@ Your company can now read the market: which products are in demand, what custome
 **Market** is now in the Pear Store. It shows demand for each product, the requirements customers bring with them and a report for every sale you lost.
 
 The lost-sale reports are the most honest feedback you will get. Customers who leave rarely bother to explain, but the report does it for them.
+
+## Automation
+
+### The bots are here
+
+Somebody once suggested replacing everyone with AI and hoping the bot fixes it. Your company now knows how to do the first half.
+
+A bot works day and night, never asks for a raise and never gets any better. It answers fast and is wrong often enough that someone has to clean up after it.
+
+### ChadGPT Support and Clipsy Reminders
+
+**ChadGPT Support** and **Clipsy Reminders** are now in the Pear Store. ChadGPT Support answers how-to and billing tickets, and Clipsy Reminders sends payment reminders. Each bot is its own monthly subscription and shows in the Staff app next to your team.
+
+Your staff take the queue first during office hours, and the bots take whatever is left. Watch the follow-up tickets: a bot apologises beautifully and understands very little.

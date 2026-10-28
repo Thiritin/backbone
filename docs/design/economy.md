@@ -576,6 +576,7 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | Market | Market | €15 | | Market research skill |
 | Dock badges | Upgrade: counts on dock apps | €5 | | Monitoring skill |
 | Widgets | Upgrade: one desktop widget each | €1 (calendar, open tickets, cash, customers), €2 (monthly revenue, level) | | Start |
+| AI bots | ChadGPT Support €300, Clipsy Reminders €100, per bot | | | Automation skill |
 | Storefront | The customer shop in Sales | €40 | 0.5% of shop revenue | Shop unlock |
 
 Installing pays the first month at once and is refused without the cash for it; later months are billed on the 1st as "Pear One" in the ledger. Cancelling stops billing and keeps the skill. Saves from before the Pear Store keep every widget, billed like a new purchase. The per-device, per-customer and per-employee extras and the surprise price adjustments are not in the game yet.
@@ -965,10 +966,22 @@ A raise request left unanswered for 30 days counts as refused. Salaries are bill
 | Support agent | How-to, billing, outage, upgrade, cancellation, abuse, suspension appeal |
 | Bookkeeper | Payment reminders |
 | Accountant | Dunning notices, final notices |
+| Marketing manager | Campaigns, review platforms, trade fairs |
 
 **Staff at work.** Staff work Monday to Friday from 9 to 17; holidays and sick days come later. A support agent picks the right reply with P(right) from the work rate and a wrong template otherwise, offers retention on cancellations, and unsuspends appeals that have no right reply. Collections stays with the player and the billing rules, and payments record themselves.
 
 **Forum posts.** An employee assigned to the forums brings 2 × (0.5 + s/100) leads a month and does no other work.
+
+**Marketing manager.** Review platforms with a fee need one on staff; without one, the platform falls back to the free listing at the month start before billing. The best manager trained on campaigns who works the queue and is not at a fair multiplies every campaign's leads by 1.05 + 0.1 × s/100. One trained on review platforms multiplies the invite rate by 1.5.
+
+**AI bots.** Each bot is one Pear One subscription and works every hour of the day, staff first during office hours and the bots after them.
+
+| Bot | Base per month (2005) | Handles |
+| --- | --- | --- |
+| "ChadGPT Support" | €300 | How-to and billing tickets |
+| "Clipsy Reminders" | €100 | Payment reminders |
+
+A bot works at 2 × the base rate (a skill-50 human works at 1 ×), picks the right reply with P = 0.6 and never gains skill. Each reminder a bot sends makes the customer open a billing ticket with a 5% chance. Each bot task causes an incident with a 0.2% chance: the customer loses 15 happiness and opens a billing ticket, and the Staff app reports one of five absurd lines. A bot that handles 500 tasks a month causes about one incident a month.
 
 ## Marketing and reviews
 
@@ -981,7 +994,7 @@ In 2005 a low-budget lead from search ads costs about €9, so a new private cus
 | Word of mouth | Every profile, as referrals | Free | Always on |
 | Search ads | Low budget / medium / high | €15 / €35 / €90 per lead | None |
 | Gaming communities | Gamers | €8 per lead | None |
-| Trade fair | High budget, agencies | €20,000 per fair, for 40 leads | Level 4 or higher |
+| Trade fair | Business profiles | See Trade fairs below | Company level 3 to 5 |
 | Partner program | Sole proprietors, small businesses | Commission of the first 2 months' revenue | Each agency customer brings 0.5 leads a month |
 
 Spending more in one channel and city gets dearer: the cost per lead is multiplied by 1 + monthly spend ÷ €5,000.
@@ -1020,6 +1033,18 @@ Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and Tr
 | AI ads | €1,500 | None | Website, from 2023 |
 
 A website brings 4 leads a month per location city, split by the profile mix.
+
+**Trade fairs.** Costs are 2026 euros, scaled back with m = 0.6 like campaigns. Each fair needs one attendee of any role, who is away for the fair's days.
+
+| Fair | Pun of | Date | Days | Level | Cost | Leads | Audiences | Network contacts |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| SeeBIT, Hanover | CeBIT | 6 March, until 2018 | 5 | 3 | €8,000 | 15 | Sole traders, small businesses, offices | 0.1 |
+| CloudFeast, Rust | CloudFest | 23 March | 3 | 4 | €20,000 | 40 | Agencies, online shops, enterprises | 0.2 |
+| RIPE-ish Meeting, Amsterdam | RIPE Meeting | 18 May | 5 | 3 | €3,000 | None | | 0.4 |
+| DE-SIX Summit, Frankfurt | DE-CIX Summit | 7 October | 1 | 4 | €5,000 | 5 | Enterprises | 0.5 |
+| Data Centre Whirled, Frankfurt | Data Centre World | 12 November | 2 | 5 | €35,000 | 60 | Enterprises, offices, online shops | 0.2 |
+
+The leads arrive over the 730 hours after the fair, split evenly over the location cities and the audiences, with a conversion of 1.5. A marketing manager trained on fairs brings back 1.5 × the leads. At the next month start each audience of the fair gains 0.03 awareness on top of g. The network contacts of every fair attended in the last 12 months add up, each fading linearly to 0 over that year, capped at 1; `tradeFairBonus(s)` exposes the sum for transit prices and peering acceptance.
 
 **Campaign channels.** Cost per lead in 2026, scaled back with m = 0.6 like search ads. Conversion multiplies the chance that a lead buys:
 
@@ -1074,8 +1099,9 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Marketing campaigns | 2 | 300 | 14 days | Marketing basics, Employee management | Marketing |
 | Market research | 3 | 800 | 21 days | Product management, Marketing campaigns | Market |
 | Virtualization | 3 | 400 | 14 days | Product management, Monitoring | Virtual machines |
+| Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders |
 
-The whole tree costs 2,200 know-how and 97 days of training.
+The whole tree costs 3,700 know-how and 118 days of training.
 
 **Unlocks.** Launch costs are fixed and do not follow the price multipliers.
 

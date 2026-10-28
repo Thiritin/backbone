@@ -8,9 +8,13 @@ import {
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../src/sim/90-actions/marketing";
+import { hire } from "../src/sim/90-actions/staff";
+import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const FEB_1 = 744;
+// Paid review platforms need a marketing manager on staff.
+const hireManager = (s: GameState) => hire(s, visibleCandidates(s).find((c) => c.role === "marketing")!.id);
 const until = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
 const months = (s: GameState, n: number) => { for (let i = 0; i < n; i++) { tick(s); while (!isMonthStart(s.hour)) tick(s); } };
 
@@ -62,6 +66,7 @@ describe("campaigns", () => {
     s.cash = 5000;
     setUpChannel(s, "website");
     setCampaign(s, "gaming", ["gamer"], 250);
+    hireManager(s);
     setReviewPlatform(s, "provenExpat");
     expect(monthlyMarketingCost(s)).toBe(15 + 250 + 49);
     const before = s.cash;
@@ -104,6 +109,7 @@ describe("reviews", () => {
     expect(reviewScore(s)).toBeCloseTo(4.25, 6);
     expect(reviewMultiplier(s)).toBeCloseTo(0.4 + 0.25 * 3.25, 6);
     expect(trustBonus(s)).toBe(0);
+    hireManager(s);
     setReviewPlatform(s, "trustPylon");
     expect(trustBonus(s)).toBe(6);
   });
@@ -133,6 +139,7 @@ describe("reviews", () => {
     const s = newGame(8);
     for (let i = 0; i < 400; i++) addCustomer(s, `Customer ${i}`, "private");
     for (const c of s.customers) c.happiness = 85;
+    hireManager(s);
     setReviewPlatform(s, "trustPylon");
     until(s, FEB_1);
     const invited = s.marketing.reviews.filter((r) => r.reason === "invite");

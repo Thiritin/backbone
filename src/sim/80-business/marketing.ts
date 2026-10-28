@@ -6,6 +6,8 @@ import type { Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
+import { fairBatches, fairGain } from "./fairs";
 
 export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
 
@@ -74,7 +76,7 @@ export const reach = (channel: CampaignChannel): Profile[] => PROFILE_IDS.filter
 export const awareness = (s: GameState, p: Profile): number => s.marketing.awareness[p];
 const marketCities = (s: GameState): string[] => [...new Set(s.locations.map((l) => l.city))];
 
-export interface LeadBatch { profile: Profile; city: string; source: CampaignChannel | "website"; count: number; conversion: number }
+export interface LeadBatch { profile: Profile; city: string; source: CampaignChannel | "website" | "fair"; count: number; conversion: number }
 
 // Expected leads this month from the website and running campaigns; organic leads and referrals belong to the market.
 export function leadsThisMonth(s: GameState): LeadBatch[] {
@@ -84,13 +86,15 @@ export function leadsThisMonth(s: GameState): LeadBatch[] {
       out.push({ profile, city, source: "website", count: WEBSITE_LEADS * profileStats(profile).mix, conversion: 1 });
     }
   }
+  const boost = campaignBoost(s);
   for (const c of s.marketing.campaigns) {
     const perCity = c.budget / cities.length, dearer = 1 + perCity / SATURATION;
     for (const city of cities) for (const profile of c.profiles) {
-      const count = perCity / c.profiles.length / (costPerLead(c.channel, profile, year) * dearer);
+      const count = (boost * perCity) / c.profiles.length / (costPerLead(c.channel, profile, year) * dearer);
       out.push({ profile, city, source: c.channel, count, conversion: CAMPAIGNS[c.channel].conversion });
     }
   }
+  out.push(...fairBatches(s, cities));
   return out;
 }
 
@@ -151,13 +155,13 @@ function rollReviews(s: GameState, events: SimEvent[]): void {
 
 function updateAwareness(s: GameState): void {
   const paid = Object.fromEntries(PROFILE_IDS.map((p) => [p, 0])) as Record<Profile, number>;
-  for (const b of leadsThisMonth(s)) if (b.source !== "website") paid[b.profile] += b.count;
+  for (const b of leadsThisMonth(s)) if (b.source !== "website" && b.source !== "fair") paid[b.profile] += b.count;
   const reviews = 0.006 * (reviewScore(s) - 3.5) + 0.001 * trustBonus(s);
   const site = owns(s, "website") ? 0.004 : 0;
   const next = { ...s.marketing.awareness };
   for (const p of PROFILE_IDS) {
     const happy = s.customers.filter((c) => c.profile === p && c.churnedAt === null && c.happiness >= 70).length;
-    const gain = 0.05 * (1 - Math.exp(-paid[p] / 100)) + site + reviews + Math.min(0.01, 0.0005 * happy);
+    const gain = 0.05 * (1 - Math.exp(-paid[p] / 100)) + site + reviews + Math.min(0.01, 0.0005 * happy) + fairGain(s, p);
     const a = next[p];
     next[p] = Math.min(1, Math.max(AWARENESS_FLOOR, a + (1 - a) * gain - AWARENESS_DECAY * a));
   }
@@ -179,7 +183,7 @@ function bill(s: GameState): number {
 }
 
 function invite(s: GameState, events: SimEvent[]): void {
-  const rate = s.marketing.platform ? PLATFORMS[s.marketing.platform].invite : 0;
+  const rate = (s.marketing.platform ? PLATFORMS[s.marketing.platform].invite : 0) * reviewBoost(s);
   if (!rate) return;
   s.customers.forEach((c, i) => {
     if (c.churnedAt !== null || c.happiness < 60) return;
@@ -194,6 +198,10 @@ export function marketingTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   rollReviews(s, events);
   if (!isMonthStart(s.hour)) return events;
+  if (s.marketing.platform && PLATFORMS[s.marketing.platform].fee > 0 && !hasMarketingManager(s)) {
+    events.push({ app: "Marketing", key: "event.platformDropped", params: { name: PLATFORMS[s.marketing.platform].name } });
+    s.marketing = { ...s.marketing, platform: "free" };
+  }
   const total = bill(s);
   if (total > 0) events.push({ app: "Marketing", key: "event.marketingBills", params: { total } });
   invite(s, events);

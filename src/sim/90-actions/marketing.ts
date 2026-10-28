@@ -2,6 +2,9 @@ import { yearOf } from "../00-core/time";
 import type { Profile } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { BUDGETS, CAMPAIGNS, DISCOUNTS, OWNED, owns, PLATFORMS, reach, type CampaignChannel, type OwnedChannel, type PlatformId } from "../80-business/marketing";
+import { hasMarketingManager } from "../47-staff/staff";
+import { fairCost, upcomingFairs } from "../80-business/fairs";
+import { metrics } from "../metrics";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -42,6 +45,25 @@ export function stopCampaign(s: GameState, channel: CampaignChannel): ActionResu
 // One review platform at a time; null leaves the current one.
 export function setReviewPlatform(s: GameState, platform: PlatformId | null): ActionResult {
   if (platform !== null && !PLATFORMS[platform]) return fail("error.unknownPlatform");
+  if (platform !== null && PLATFORMS[platform].fee > 0 && !hasMarketingManager(s)) return fail("error.needsMarketingManager");
   s.marketing = { ...s.marketing, platform };
+  return { ok: true };
+}
+
+// Books the next run of a fair and sends one employee, who is away for its days.
+export function bookFair(s: GameState, fairId: string, employeeId: string): ActionResult {
+  const next = upcomingFairs(s).find((d) => d.fair.id === fairId);
+  if (!next) return fail("error.unknownFair");
+  if (next.booking) return fail("error.fairBooked");
+  if (next.start <= s.hour) return fail("error.fairStarted");
+  if (metrics(s).level.level < next.fair.level) return fail("error.fairLevel");
+  const e = s.staff.find((x) => x.id === employeeId);
+  if (!e) return fail("error.unknownEmployee");
+  if (s.fairs.some((b) => b.employeeId === e.id && b.start < next.end && next.start < b.end)) return fail("error.attendeeBusy");
+  const cost = fairCost(next.fair, next.year);
+  if (s.cash < cost) return fail("error.noCash");
+  s.cash = Math.round((s.cash - cost) * 100) / 100;
+  s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key: "ledger.tradeFair", params: { name: next.fair.name }, amount: -cost }];
+  s.fairs = [...s.fairs, { fair: fairId, year: next.year, employeeId, start: next.start, end: next.end, attended: null, leads: 0 }];
   return { ok: true };
 }
