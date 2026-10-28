@@ -47,6 +47,7 @@ export function resolveTicket(s: GameState, id: string, action?: TicketAction): 
   if (action) {
     if (!ACTIONS[f.t.kind].includes(action)) return fail("error.unknownTicketAction");
     if ((action === "forward" || action === "takedown") && !f.t.customerId) return fail("error.notHosted");
+    if (action === "revert" && (f.t.topic !== "price" || s.services.find((v) => v.id === f.t.serviceId)?.before === undefined)) return fail("error.unknownTicketAction");
     return queue(s, f.t, "resolve", action);
   }
   if (f.t.status !== "waiting") return fail("error.ticketNotAnswered");

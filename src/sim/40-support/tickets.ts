@@ -7,7 +7,7 @@ import { serviceOnline } from "./status";
 export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse" | "appeal" | "notice" | "legal" | "refund";
 // open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
 export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
-export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund";
+export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund" | "revert";
 // by names the employee who answered; the player otherwise.
 export interface Reply { hour: number; template: string; right: boolean; by?: string }
 // doneAt is in game minutes; the reply or action takes effect on the first tick at or after it.
@@ -19,7 +19,7 @@ export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
   outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | "forwarded" | "takenDown" | "rejected" | "ignored" | "complied" | "objected"
-    | "seized" | "refunded" | "refused" | null;
+    | "seized" | "refunded" | "refused" | "offerRefused" | "reverted" | null;
   work: Work | null; notice?: Notice;
 }
 
@@ -45,17 +45,17 @@ export const TOPICS: Record<TicketKind, string[]> = {
 };
 export const TEMPLATES: Record<TicketKind, string[]> = {
   outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "panel", "askDetails"],
-  billing: ["explain", "resend", "extension", "askDetails"], upgrade: ["offer", "askDetails"], cancellation: [], abuse: ["warn", "askDetails"],
+  billing: ["explain", "resend", "extension", "newPrice", "askDetails"], upgrade: ["offer", "askDetails"], cancellation: [], abuse: ["warn", "askDetails"],
   appeal: ["awaitPayment", "askDetails"], notice: [], legal: [], refund: [],
 };
 export const ACTIONS: Record<TicketKind, TicketAction[]> = {
-  outage: ["credit"], howTo: [], billing: ["credit"], upgrade: [], cancellation: ["retain", "cancel"], abuse: [], appeal: ["unsuspend", "keep"],
+  outage: ["credit"], howTo: [], billing: ["credit", "revert"], upgrade: [], cancellation: ["retain", "cancel"], abuse: [], appeal: ["unsuspend", "keep"],
   notice: ["forward", "takedown", "reject"], legal: ["comply", "object"], refund: ["refund", "credit", "reject"],
 };
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
 const RIGHT: Record<string, string> = {
-  suspended: "resend", upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", grow: "offer",
+  suspended: "resend", upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", price: "newPrice", grow: "offer",
   spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment",
 };
 

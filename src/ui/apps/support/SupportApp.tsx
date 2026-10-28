@@ -23,7 +23,7 @@ const BOXES: { id: Exclude<Box, "incidents">; label: string; icon: typeof Inbox;
 ];
 const ACTION_LABEL: Record<TicketAction, string> = {
   credit: "Credit 10%", retain: "Retention offer", cancel: "Process cancellation", unsuspend: `Unsuspend with ${EXTENSION_DAYS}-day extension`, keep: "Keep suspended",
-  forward: "Forward to customer", takedown: `Take down for ${TAKEDOWN_HOURS} h`, reject: "Reject", comply: "Comply", object: "Object", refund: "Refund one month",
+  forward: "Forward to customer", takedown: `Take down for ${TAKEDOWN_HOURS} h`, reject: "Reject", comply: "Comply", object: "Object", refund: "Refund one month", revert: "Revert price",
 };
 const actionLabel = (tk: Ticket, a: TicketAction) => (tk.kind === "refund" && a === "reject" ? "Refuse" : ACTION_LABEL[a]);
 
@@ -214,7 +214,7 @@ function Thread({ tk }: { tk: Ticket }) {
             </>
           )}
           <div className="actions-row">
-            {ACTIONS[tk.kind].map((a) => (
+            {ACTIONS[tk.kind].filter((a) => a !== "revert" || tk.topic === "price").map((a) => (
               <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => act((s) => resolveTicket(s, tk.id, a))}>
                 {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}
               </button>

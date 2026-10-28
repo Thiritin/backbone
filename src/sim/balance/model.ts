@@ -8,6 +8,8 @@ import {
   TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vpsPlanGb, vpsRatePerGb,
   WEB_BASE, type ProductId, type Profile,
 } from "../10-catalog/economy";
+import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
+import { OFFER } from "../30-market/market";
 
 export interface Bot {
   name: string;
@@ -185,6 +187,9 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       c.H -= Math.min(40, tpc * p.waitPenalty * Math.max(0, waitHours - p.promisedHours));
       c.H += tpc * (5 * pRight - 10 * (1 - pRight));
       if (pr === "vps") c.H -= hitShare * p.outagePenalty * REPAIR_HOURS;
+      // Overpricing against a fair price and the cohort's average maximum (economy.md, Price tolerance).
+      const pct = (limit: number) => Math.max(0, 100 * (bot.priceFactor / limit - 1));
+      c.H -= OVER_DRIFT * pct(Math.max(1, OFFER[p.budget])) + PAST_MAX_DRIFT * pct(p.cap * (TOLERANCE[0] + TOLERANCE[1]) / 2);
       const target = Math.min(95, Math.max(20, 70 + 0.5 * (U(p, pr, 0) - best(p, pr))));
       c.H += 0.2 * (target - c.H);
       c.H = Math.min(100, Math.max(0, c.H));

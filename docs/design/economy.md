@@ -357,7 +357,7 @@ d is the agency discount from a campaign, e is 1.15 for an existing customer and
 
 **Shady requests.** From the fourth month, about one request every three months asks for the biggest VPS, no questions asked, paid in crypto. Its budget is 1.8, so it accepts nearly any price. A won shady customer carries a hidden `shady` flag for abuse and legal follow-ups.
 
-**Price changes.** Raising a running service's price costs 0.5 happiness per 1% (at most 30); lowering it gives 0.2 per 1% (at most 10). Above 1.3 × the market reference a raise opens a cancellation ticket with a chance of (ratio − 1.3) ÷ 0.4. Happiness drifts back each month (Happiness and churn, Drift), which makes the hit temporary.
+**Price changes.** Raising a running service's price costs happiness, lowering it wins some back, and an overpriced service keeps costing happiness every month. The numbers are in Happiness and churn, Price tolerance.
 
 **Market research.** A market study reveals one profile in the Market app for good; it is a one-time payment booked as marketing. Studies cost €800 for a low-budget profile, €2,000 for a medium one and €4,000 for a high one, €20,400 for all nine (decision). The Demand section counts a city's buyers of a product as the city's new customers × each profile's mix × that profile's product weight, your part as the expected requests from the lead flows above (leads × product weight × your choice share × conversion), and splits the remainder over the competitors by their softmax among themselves. Code: `src/sim/30-market/research.ts`.
 
@@ -376,7 +376,8 @@ Every customer has a happiness value H from 0 to 100. Events move it up and down
 | Ticket closed with a wrong answer | −10, plus a follow-up ticket |
 | An hour of outage on one of their services | − outage penalty (profile table) |
 | Credit issued | +3 per 10% of the monthly fee |
-| Price raised at renewal | −0.5 per 1% of increase |
+| Price raised | −1 per 1% of increase, more past the customer's maximum (Price tolerance) |
+| Price lowered | +0.2 per 1% of decrease, at most +10 |
 
 **Drift.** On each monthly tick H moves a fifth of the way toward a target set by your plan's value U against the best competitor's:
 
@@ -390,7 +391,33 @@ H \leftarrow H + 0.2\,(H^{*} - H), \quad H^{*} = \operatorname{clamp}\big(70 + 0
 P(\text{cancel}) = \text{base} + 0.5 \cdot \max\left(0,\ \frac{50 - H}{50}\right)
 ```
 
-A customer whose happiness falls below 15 leaves at the next monthly billing date, even on a yearly contract. Every cancellation arrives as a ticket first. A retention offer (one month free) keeps the customer 30% of the time when H is 30 or more, and 10% of the time below that.
+A customer whose happiness falls below 15 leaves at the next monthly billing date, even on a yearly contract. Every cancellation arrives as a ticket first.
+
+**Retention offers.** A retention offer gives one month free. Below H = 30 the customer refuses it. A customer who pays more than their maximum (Price tolerance) for any monthly service, after taking a twelfth off for the free month, also refuses. Otherwise they stay with a chance of (H − 30) %, so 40% at H = 70 and 60% at H = 90. A refused offer cancels the contract at once and the ticket shows "Offer refused, contract cancelled".
+
+**Price tolerance.** Every customer has a maximum monthly price per service, hidden from the player:
+
+```math
+\text{max} = \text{market} \times \text{cap} \times t, \qquad t \in [0.9,\ 1.2]
+```
+
+The cap is the highest competitor price factor a profile still considers in Customer choice (1.3 for low budgets, 1.6 for medium, 2.5 for high), and t is drawn once per customer from the game seed. The fair price is the market price, or the profile's usual offer from Sales and quotes when that is higher (1.3 × market for high budgets). Both use the higher of this year's market price and the market price in the year the customer signed, so falling hardware prices never turn an old contract into an overpriced one.
+
+| Rule | Value |
+| --- | --- |
+| Raise, any size | −1 H per 1% over the previous price |
+| Raise, part above the maximum | another −2 H per 1% the new price goes further past the maximum |
+| Raise past the maximum | a cancellation ticket with a chance of (price ÷ max − 1) ÷ 0.3, certain from 30% past |
+| Monthly, above the fair price | −0.1 H per 1% over the fair price |
+| Monthly, above the maximum | another −1 H per 1% over the maximum |
+| Complaint after a raise of 5% or more | a chance of 1/40 per 1% of the raise, plus 0.5 past the maximum |
+| Monthly complaint while a raised service is above the fair price | a chance of 0.5 × (price ÷ fair − 1), plus 0.3 past the maximum |
+
+The monthly cost uses the customer's worst-priced monthly service and is taken before the churn roll. A complaint is a billing ticket ("The new price is too high"). The right reply explains the new price. A 10% credit settles it as usual, and reverting puts the service back on its price from before the run of raises, with the happiness gain of a price cut. Only one price complaint per customer is open at a time.
+
+A 5% raise inside the maximum costs 5 happiness once and about 0.5 a month while the price stays above the fair one, which the drift toward 70 absorbs. Raising a €2 service to €10 costs all happiness at once, so the customer cancels and refuses any retention offer. Repeated small raises past the maximum lower H by 10 or more each month until the customer leaves within a few months.
+
+In the balance model, cohorts take the same monthly cost at the bot's price factor with t at its mean of 1.05. The standard bots price at 0.8 × market and are unaffected. A probe bot at 1.2 × market ends year 5 with 39 customers instead of 43 and year 10 with €6,817 MRR instead of €7,017; at 1.4 × market it ends year 10 with 42 customers instead of 61.
 
 **Upgrades.** Each month a customer outgrows their plan with a 2% chance at low budget, 3% at medium and 4% at high budget, which creates an upgrade ticket.
 
