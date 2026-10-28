@@ -1,5 +1,5 @@
 // Values come from docs/design/economy.md (Leasing).
-import { createRng, rand } from "../00-core/rng";
+import { hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import type { GameState } from "../50-state";
 
@@ -22,10 +22,7 @@ export const monthIndex = (hour: number): number => {
 
 // A fresh generator per seed, month, amount and lessor, so offers hold for the month and never touch s.rng.
 function draw(...xs: number[]) {
-  let h = 0x811c9dc5;
-  for (const x of xs) h = Math.imul(h ^ (x >>> 0), 0x01000193) ^ (h >>> 15);
-  const r = createRng(h);
-  rand(r);
+  const r = hashRng(...xs);
   return () => rand(r);
 }
 

@@ -215,6 +215,23 @@ Storage servers hold fast disks for block and object storage. Backup servers hol
 
 **Cabling manager.** Each location has a cabling view that lays every port of the location out on one plane, in columns from the carrier panel and its uplinks through routers and switches to servers and patch panels. You drag from one port to another to lay a cable, and the game picks copper, DAC or fiber from the port types and whether both ends are in the same rack. Ports that can't connect dim while you drag. Clicking a cable selects it so you can remove it. The rack view and the cabling view show the same cables.
 
+**Wear, failures and maintenance.** Every device is built from components that wear out: drives, power supplies, fans, RAM, the mainboard, the CPU and network cards in servers, and power supplies, fans and the board in switches and routers. Each component type has a life expectancy. Before it, failures are rare; after it, they become likely, and drives fail far more often than RAM or mainboards. A failed component shows as an amber or red light on the device front, and what happens depends on what broke:
+
+- **Drive:** in a RAID array the server keeps running degraded until the drive is replaced and rebuilt; without RAID the data on it is lost and the server goes down.
+- **Power supply:** with two, the server keeps running on the other; with one, it goes down.
+- **Fan:** the device runs hot and its other components fail twice as often until the fan is replaced.
+- **RAM, mainboard, CPU or network card:** the device goes down until the part is replaced.
+
+Spare parts are bought in the Shop and kept in the zone's storage. You replace a part from the device in the Locations view. Drives in a RAID array, fans and one of two power supplies can be swapped while the device runs; everything else needs the device powered off, so its workloads go offline unless you migrate them first. At a datacenter the provider's remote hands do the swap, at their hourly rate and response time. Replacing worn parts before they fail is your call, and it is cheaper than an outage.
+
+**RAID.** Each server's drives run in a RAID level you choose: none, RAID 1, RAID 5, RAID 6 or RAID 10. More redundancy means less usable space and more drive failures survived. A rebuild runs at the rebuild rate you set: a fast rebuild slows the server, a slow one leaves it exposed for longer. Distributed storage pools across servers, Ceph style, are a later unlock.
+
+**Power and labels.** Any device can be powered off and on from the Locations view; everything that depends on it goes down with it. Devices can be given a custom label, and cables a custom colour.
+
+**Power feeds.** A rented position comes with one power feed at the datacenter's kW limit. You can add a second feed (B) so that servers with two power supplies survive a feed failure, or a high-density feed that raises the kW limit. The basement can get one extra household circuit. A feed that draws more than its limit trips.
+
+**Monitoring.** Without monitoring, the only way to notice a failure is to see the lights in the Locations view, or to wait for customers to complain. Monitoring software is an early research unlock. It notifies you of every failure and warns about parts past their life expectancy. It also opens the Monitoring app, a dashboard of every location, rack, feed, link and server with live usage and a list of alerts. Like other software, it comes in a few products with different prices.
+
 **Keeping it fun at scale.** Cabling port by port is fun for the first few racks and tedious at 200. Three things fix that: rack templates, an auto-cable button that wires a server to the next free ports on its rack's switches, and technicians who do installs for you.
 
 ## Clusters and products
@@ -334,13 +351,13 @@ Worth adding later: email hosting and GPU compute.
 
 Game servers work the same way: each game has its own license terms (one-time, per server or per player slot) and its own demand.
 
-**Storage, backups and data loss.** Disks live in storage pools inside a cluster, Ceph style. Each pool has two settings: its redundancy (1, 2 or 3 copies, or erasure coding later) and its recovery rate. When a disk fails, the pool rebuilds the lost copies onto the other disks. A high recovery rate closes the risk window fast but slows every customer on the pool while it runs; a low one keeps performance up and leaves data exposed for longer. If more disks fail before the rebuild finishes than the pool has copies, the data on them is gone. Every affected workload is marked "Lost disk", and the game opens an incident report that lists the lost disks, the affected volumes, workloads and customers, and the age of each one's last backup, so nothing has to be hunted down across apps.
+**Storage, backups and data loss.** Workload disks live on their server's RAID array (see RAID), and later on distributed storage pools. If more drives fail before a rebuild finishes than the RAID level survives, or a drive fails without RAID, the data on them is gone. Every affected workload is marked "Lost disk", and the game opens an incident report that lists the lost disks, the affected volumes, workloads and customers, and the age of each one's last backup, so nothing has to be hunted down across apps.
 
 Backups are on-site: backup rules per cluster set how often (hourly, daily, weekly) and how long to keep them, and they write to backup servers in the same zone, mostly at night. A lost disk with a backup can be restored, from the incident report or from the virtual machine manager, and only the data since that backup is gone. Without a backup the customer's data is lost for good.
 
 Data loss hurts. Affected customers ask for a refund, and unhappy ones leave reviews. A refund calms them, but some still write a review: often a 3-star one, sometimes worse. Most customers never write a review at all.
 
-**Virtual machine manager.** A desktop app for running workloads, branded after the virtualization platform you chose: its name and logo in the menu bar and window change with the platform (Proxmocks, VMwhere, OpenStash, HyperVee). It has the usual inventory tree of zone, cluster, host and VM. VMs can be started, stopped, restarted and migrated live or cold to a host you pick, and restored from a backup point. Hosts can be cordoned, drained or put into maintenance. Storage pools show their health, redundancy, rebuild progress and the recovery-rate setting. The incidents tab lists open incident reports. It uses the same window design as every other app.
+**Virtual machine manager.** A desktop app for running workloads, branded after the virtualization platform you chose: its name and logo in the menu bar and window change with the platform (Proxmocks, VMwhere, OpenStash, HyperVee). It has the usual inventory tree of zone, cluster, host and VM. VMs can be started, stopped, restarted and migrated live or cold to a host you pick, and restored from a backup point. Hosts can be cordoned, drained or put into maintenance. Storage shows each server's RAID health, rebuild progress and rebuild rate, and later the distributed pools. The incidents tab lists open incident reports. It uses the same window design as every other app.
 
 **Requests instead of price lists.** You don't publish plans or set prices. You decide what to build and offer, and customers come to you with requests. Each customer picks a host by its size, its scores and hidden factors, and the price comes with the request. Your job is choosing which requests to accept.
 

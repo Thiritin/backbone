@@ -435,9 +435,9 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 | Medium (Hetzler Park, Iron Molehill, NTD, Next Lair, Arubaba Hub) | 120 | +60 every 4 years | 400 |
 | Small (mainqubes, Spree Colo, Docklands Data, Green.chz) | 40 | +20 every 5 years | 120 |
 
-- **Competitors.** Their share of a datacenter starts at 85% to 97% of capacity, drawn from the seed. Each month every competitor position cancels with a 1.5% chance, and competitors then take free positions at their own pace, so free space hovers between none and a few percent.
-- **Expansion.** Each expansion phase opens all its new positions at once, and competitors take about half of them within 3 months.
-- **What can be rented.** Cages need that many free positions, and suites need a free expansion phase's worth. Rack shares come from the provider's share racks: one position holds 8 eighths.
+- **Competitors.** Their share of a datacenter starts at 85% to 97% of capacity, drawn from the seed. Each month every competitor position cancels with a 1.5% chance. Waitlist holds are then granted from the freed space, and competitors fill the remaining free space down to a level drawn evenly between 0% and 4% of capacity. They never take space held for the waitlist.
+- **Expansion.** Each expansion phase opens all its new positions on 1 January. In January, February and March competitors take a sixth of the new positions each month, so about half within 3 months, and from April the usual monthly fill applies.
+- **What can be rented.** Cages and suites need that many free positions, which for a suite usually means right after an expansion. Rack shares come from the provider's share racks: one position holds 8 eighths.
 - **Waitlist.** When a datacenter has too little free space for what you want, you can join its waitlist. When enough space frees up, you get a notification, and the space is held for you for 7 days.
 - **Consequence.** You can't grow in one building forever, which pushes you to spread over several datacenters or build your own.
 
@@ -508,7 +508,7 @@ Here a is the age in years, and the chance of failing in any game hour is AFR ÷
 
 | Device | Base AFR | Effect of a failure |
 | --- | --- | --- |
-| Server (disks, power supplies and RAM together) | 8% | On a consumer cluster its workloads go down until repair. On an HA cluster they restart elsewhere within 5 minutes, if the cluster has spare capacity. |
+| Server | From its components (see Components) | Depends on the component; see Wear, failures and maintenance in the GDD |
 | Access or core switch | 2% | Everything wired only to it goes offline |
 | Edge router | 1.5% | Its uplinks go down; traffic spills to other exits if there are any |
 | UPS | 3% | The next grid outage takes the room down |
@@ -516,15 +516,58 @@ Here a is the age in years, and the chance of failing in any game hour is AFR ÷
 
 Without a spare kit in stock, a repair waits for a delivery first.
 
-**Disks and storage pools.** Each drive has its own AFR, using the same age curve: HDD 2%, SSD 1%, NVMe 0.8%, raised by the manufacturer's failure factor. A failed drive's data is rebuilt from the other copies in the pool:
+**Components.** Each component's chance of failing in a year depends on whether it is past its life expectancy, and is multiplied by the manufacturer's failure factor and by 2 while the device runs hot from a failed fan. The chance per game hour is the yearly rate ÷ 8,760.
 
-| Recovery rate | Rebuild speed per failed drive | Performance of workloads on the pool while rebuilding |
+| Component | Life expectancy | Yearly failure rate before | After | Part price | Swap while running |
+| --- | --- | --- | --- | --- | --- |
+| HDD | 5 years | 1.5% | 8% | €120 | In RAID |
+| SSD | 5 years | 0.8% | 4% | €150 | In RAID |
+| NVMe | 5 years | 0.6% | 3% | €200 | In RAID |
+| Power supply | 7 years | 1% | 6% | €150 | With two |
+| Fan | 6 years | 1% | 7% | €25 | Yes |
+| RAM stick | 12 years | 0.2% | 0.6% | €60 | No |
+| Mainboard | 12 years | 0.3% | 1% | €600 | No |
+| CPU | 15 years | 0.05% | 0.2% | €400 | No |
+| Network card | 10 years | 0.3% | 1% | €80 | No |
+
+A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. Part prices are 2026 values with m = 1.
+
+**RAID.**
+
+| Level | Drives | Usable | Survives |
+| --- | --- | --- | --- |
+| None | 1+ | All | Nothing; a failed drive loses its data |
+| RAID 1 | 2 | Half | 1 drive |
+| RAID 5 | 3+ | All but one | 1 drive |
+| RAID 6 | 4+ | All but two | 2 drives |
+| RAID 10 | 4+, even | Half | 1 drive per mirror pair |
+
+| Rebuild rate | Rebuild speed | Server performance while rebuilding |
 | --- | --- | --- |
 | Low | 50 MB/s | × 0.95 |
 | Medium | 150 MB/s | × 0.8 |
 | High | 400 MB/s | × 0.6 |
 
-The rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD that is 70% full takes about 15 hours at medium. Each volume keeps its copies on drives in different hosts. A volume loses its data when every drive holding one of its copies fails before the rebuild finishes.
+A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD that is 70% full takes about 5 hours at medium.
+
+**Maintenance.** A swap takes 15 minutes once someone is there. In the basement you are there at once. At a datacenter remote hands arrive after their response time and bill their hourly rate for at least one hour.
+
+**Power feeds.**
+
+| Feed | Effect | Price |
+| --- | --- | --- |
+| Feed A | Included with every position, at the datacenter's kW per position | In the rent |
+| Feed B | Second feed; servers with two power supplies survive a feed failure. The load must fit one feed for that to hold | 40% of the position price per month |
+| High-density feed | Doubles the position's kW limit | 60% of the position price per month |
+| Basement circuit | One extra household circuit, +3 kW | €400 once |
+
+**Monitoring.** Without monitoring, failures only show as lights on the device fronts. Monitoring is a research unlock at level 1.
+
+| Product | Parody of | Price | Trade-off |
+| --- | --- | --- | --- |
+| "Nagiost" | Nagios | Free | Alerts only after 15 minutes; dashboard refreshes hourly |
+| "Zabbicks" | Zabbix | Free | Alerts after 5 minutes; more admin work as it grows |
+| "DataDawg" | Datadog | €15 per monitored device per month (2026, m = 3) | Alerts within a minute and the best dashboard |
 
 **Data loss and backups.** A workload with a lost disk is down until it is restored or rebuilt empty. Restoring takes the volume's size ÷ the link speed from the backup server.
 

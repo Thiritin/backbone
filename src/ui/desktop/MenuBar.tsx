@@ -1,4 +1,4 @@
-import { Bell, Inbox, Moon, Network, Pause, Sun } from "lucide-react";
+import { Bell, Moon, Network, Pause, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { serialize } from "../../sim/91-save/save";
@@ -63,7 +63,6 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       <span className="mb-item num">{formatClock(game.hour)}</span>
       <span className="mb-sep" />
       <span className="mb-item mb-cash num">{euro(game.cash)}</span>
-      <button className="mb-item" aria-label="Open Support" onClick={() => openApp("Support")}><Inbox /></button>
       <button className="mb-item mb-badge" aria-label={unseen ? `Notifications, ${unseen} new` : "Notifications"} onClick={onBell}>
         <Bell />
         {unseen > 0 && <span key={unseen} className="count plop">{unseen > 99 ? "99+" : unseen}</span>}

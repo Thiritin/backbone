@@ -1,4 +1,5 @@
 // Values come from docs/design/economy.md (Datacenters and space).
+import { hashRng, rand } from "../00-core/rng";
 import type { RackModel, SpaceKind } from "../50-state";
 
 export interface Provider { id: string; name: string }
@@ -8,6 +9,7 @@ export interface Datacenter {
   feeds: "single" | "ab"; backup: "none" | "ups" | "ups+generator"; green: boolean;
   kwPerPosition: number; positionPrice: number; powerFactor: number; crossConnect: number;
   remoteHands: { perHour: number; responseHours: number }; certified: boolean; cages: boolean;
+  size: "large" | "medium" | "small";
 }
 
 export const PROVIDERS: Provider[] = [
@@ -53,9 +55,16 @@ const ROWS: Row[] = [
   ["greenchz-lupfig", "Green.chz Lupfig", "greenchz", "Zurich", 6, "SwizzIX", false, true, "ups+generator", true, 6, 550, 1.3, 180, 120, 4, true, true],
 ];
 
+const SIZE_OF: Record<string, Datacenter["size"]> = {
+  equinox: "large", interaction: "large", globalsnitch: "large", tellyhouse: "large", data5: "large",
+  hetzler: "medium", ironmolehill: "medium", ntd: "medium", nextlair: "medium", arubaba: "medium",
+  mainqubes: "small", spree: "small", docklands: "small", greenchz: "small",
+};
+
 export const DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, carriers, ex, onSite, ab, backup, green, kw, price, factor, cross, perHour, responseHours, certified, cages]) => ({
   id, name, provider, city, carriers, exchange: ex ? { name: ex, onSite } : null, feeds: ab ? "ab" : "single", backup, green,
   kwPerPosition: kw, positionPrice: price, powerFactor: factor, crossConnect: cross, remoteHands: { perHour, responseHours }, certified, cages,
+  size: SIZE_OF[provider],
 }));
 
 export const datacenterById = (id: string): Datacenter => {
@@ -81,6 +90,23 @@ export function nextAz(locations: { city: string; az?: string }[], city: string)
   const taken = locations.filter((l) => l.az?.startsWith(code)).map((l) => Number(l.az!.slice(code.length)) || 0);
   return `${code}${Math.max(0, ...taken) + 1}`;
 }
+
+// Floor capacity in positions: the opening size, then a phase every few years from 2005 up to the final size.
+export const SIZE_PLANS: Record<Datacenter["size"], { open: number; phase: number; everyYears: number; final: number }> = {
+  large: { open: 300, phase: 150, everyYears: 3, final: 1200 },
+  medium: { open: 120, phase: 60, everyYears: 4, final: 400 },
+  small: { open: 40, phase: 20, everyYears: 5, final: 120 },
+};
+export function capacityAt(dc: Datacenter, year: number): number {
+  const p = SIZE_PLANS[dc.size];
+  return Math.min(p.final, p.open + p.phase * Math.floor(Math.max(0, year - 2005) / p.everyYears));
+}
+export const COMPETITOR_START = { min: 0.85, max: 0.97 } as const;
+// Competitors' positions per datacenter, drawn from the seed without touching the game's rng.
+export const seedDcs = (seed: number, year: number): Record<string, { others: number }> => Object.fromEntries(DATACENTERS.map((dc, i) => {
+  const share = COMPETITOR_START.min + rand(hashRng(seed, i, 0xdc)) * (COMPETITOR_START.max - COMPETITOR_START.min);
+  return [dc.id, { others: Math.round(capacityAt(dc, year) * share) }];
+}));
 
 export const RACK_MODELS: { id: RackModel; units: number; price: number }[] = [
   { id: "rack-24", units: 24, price: 350 },

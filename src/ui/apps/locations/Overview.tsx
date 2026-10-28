@@ -5,7 +5,11 @@ import type { ReactNode } from "react";
 import { Logo } from "../../art/logos";
 import { cityNamed, WorldMap, type Marker } from "../../map/WorldMap";
 import { day } from "../hw";
-import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, PowerMeter, providerOf, spaceLabel, Zone } from "./ui";
+import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, PowerMeter, providerOf, spaceLabel, spaceSize, Zone } from "./ui";
+import { Hourglass } from "lucide-react";
+import { datacenterById } from "../../../sim/20-world/datacenters";
+import { addLocation, leaveWaitlist } from "../../../sim/90-actions/hardware";
+import { useStore } from "../../store";
 
 export function Overview({ game, onOpen }: { game: GameState; onOpen: (id: string) => void }) {
   return (
@@ -17,6 +21,32 @@ export function Overview({ game, onOpen }: { game: GameState; onOpen: (id: strin
       <div className="loc-cards">
         {game.locations.map((l) => <LocationCard key={l.id} game={game} loc={l} onOpen={() => onOpen(l.id)} />)}
       </div>
+      {game.waitlist.length > 0 && <Waitlist game={game} onOpen={onOpen} />}
+    </div>
+  );
+}
+
+function Waitlist({ game, onOpen }: { game: GameState; onOpen: (id: string) => void }) {
+  const act = useStore((s) => s.act);
+  return (
+    <div className="loc-card loc-wait">
+      <div className="loc-card-h"><h3><Hourglass />Waitlist</h3><span className="grow" /><span className="num loc-muted">{game.waitlist.length}</span></div>
+      {game.waitlist.map((w) => {
+        const dc = datacenterById(w.dc);
+        return (
+          <div key={w.id} className="loc-row">
+            <Logo provider={dc.provider} size={18} />
+            <strong>{dc.name}</strong>
+            <span>{spaceSize(w.space, w.size)}</span>
+            <span className="grow" />
+            {w.heldUntil !== null
+              ? <span className="loc-held">Held until <span className="num">{day(w.heldUntil)}</span></span>
+              : <span className="loc-muted">Waiting since <span className="num">{day(w.since)}</span></span>}
+            {w.heldUntil !== null && <button className="btn primary" onClick={() => { const r = act((s) => addLocation(s, w.dc, w.space, w.size)); if (r.ok && r.id) onOpen(r.id); }}>Rent</button>}
+            <button className="btn" onClick={() => act((s) => leaveWaitlist(s, w.id))}>Leave</button>
+          </div>
+        );
+      })}
     </div>
   );
 }

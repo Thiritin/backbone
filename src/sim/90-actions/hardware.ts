@@ -3,7 +3,7 @@ import { brandsFor, modelById, priceOf, shopModels, SWITCH_BRAND } from "../10-c
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { BASEMENT, DATACENTERS, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import type { BondMode, Device, End, GameState, RackModel } from "../50-state";
-import { connectError, freePositions, freeSlots, moveCost, resaleValue, travelCost } from "../60-infra/status";
+import { connectError, fits, freePositions, freeSlots, moveCost, resaleValue, travelCost } from "../60-infra/status";
 import { endLease } from "../88-tick/tick";
 
 // error is an i18n key.
@@ -37,7 +37,11 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "positi
   if (!dc) return fail("error.unknownDatacenter");
   if (!SPACE_SIZES[space]?.includes(size)) return fail("error.unknownSize");
   if (space === "cage" && !dc.cages) return fail("error.noCages");
+  // A waitlist hold for exactly this space reserves it; otherwise the space must be free now.
+  const hold = s.waitlist.find((w) => w.dc === dcId && w.space === space && w.size === size && w.heldUntil !== null);
+  if (!hold && !fits(s, dcId, space, size)) return fail("error.noSpace");
   if (s.cash < spacePrice(dc, space, size)) return fail("error.noCash");
+  if (hold) s.waitlist = s.waitlist.filter((w) => w.id !== hold.id);
   const positions = space === "share" ? 1 : size;
   const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space] };
   s.locations.push(loc);
@@ -49,6 +53,24 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "positi
     s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true });
   }
   return { ok: true, id: loc.id };
+}
+
+// Waits for space that is not free yet; tick holds it for 7 days once it is.
+export function joinWaitlist(s: GameState, dcId: string, space: "share" | "positions" | "cage" | "suite", size: number): ActionResult {
+  const dc = DATACENTERS.find((d) => d.id === dcId);
+  if (!dc) return fail("error.unknownDatacenter");
+  if (!SPACE_SIZES[space]?.includes(size)) return fail("error.unknownSize");
+  if (space === "cage" && !dc.cages) return fail("error.noCages");
+  if (fits(s, dcId, space, size)) return fail("error.spaceAvailable");
+  const entry = { id: newId(s, "wait"), dc: dcId, space, size, since: s.hour, heldUntil: null };
+  s.waitlist = [...s.waitlist, entry];
+  return { ok: true, id: entry.id };
+}
+
+export function leaveWaitlist(s: GameState, id: string): ActionResult {
+  if (!s.waitlist.some((w) => w.id === id)) return fail("error.unknownWaitlist");
+  s.waitlist = s.waitlist.filter((w) => w.id !== id);
+  return { ok: true };
 }
 
 export function closeLocation(s: GameState, locationId: string): ActionResult {

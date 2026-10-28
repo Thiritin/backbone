@@ -35,7 +35,7 @@ describe("datacenter catalog", () => {
     expect(datacenterById("equinox-fr5")).toEqual({
       id: "equinox-fr5", name: "Equinox FR5", provider: "equinox", city: "Frankfurt", carriers: 30, exchange: { name: "DE-KICKS", onSite: true },
       feeds: "ab", backup: "ups+generator", green: true, kwPerPosition: 8, positionPrice: 750, powerFactor: 1.4, crossConnect: 250,
-      remoteHands: { perHour: 150, responseHours: 1 }, certified: true, cages: true,
+      remoteHands: { perHour: 150, responseHours: 1 }, certified: true, cages: true, size: "large",
     });
     expect(datacenterById("hetzler-park")).toMatchObject({ carriers: 1, exchange: null, feeds: "single", kwPerPosition: 4, positionPrice: 180, powerFactor: 1.1, certified: false, cages: false });
     expect(datacenterById("docklands-data")).toMatchObject({ backup: "ups", green: false, remoteHands: { perHour: 80, responseHours: 8 } });

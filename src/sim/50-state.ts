@@ -1,5 +1,6 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
+import { seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 
 export const SAVE_VERSION = 2;
@@ -20,6 +21,8 @@ export interface Rack { id: string; model: RackModel; locationId: string; positi
 export interface Device { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
+// A waitlist entry gets heldUntil once its space is free; the space is then reserved until that hour.
+export interface WaitlistEntry { id: string; dc: string; space: "share" | "positions" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind }
 // A desktop document; x and y are its icon position on the desktop in pixels.
@@ -42,6 +45,9 @@ export interface GameState {
   // Power drawn since the last monthly bill, in euros.
   powerDue: number;
   docs: Doc[];
+  // Positions rented by competitors in each datacenter.
+  dcs: Record<string, { others: number }>;
+  waitlist: WaitlistEntry[];
 }
 
 const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>
@@ -61,7 +67,7 @@ export const newGame = (seed: number): GameState => ({
     { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper" },
     { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper" },
   ],
-  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()],
+  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

@@ -1,5 +1,6 @@
 import { RENAMED_MODELS } from "../10-catalog/hardware";
-import { nextAz } from "../20-world/datacenters";
+import { yearOf } from "../00-core/time";
+import { nextAz, seedDcs } from "../20-world/datacenters";
 import { newGame, SAVE_VERSION, type Device, type GameState } from "../50-state";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
@@ -22,5 +23,7 @@ export function deserialize(raw: string): GameState {
     ...d, model: RENAMED_MODELS[d.model] ?? d.model, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
   }));
   const racks = (data.racks ?? base.racks).map((r) => ({ ...r, provided: r.provided ?? false }));
-  return { ...base, ...data, locations, devices, racks, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION };
+  // Competitors fill datacenters the save has not seen yet as if the game had started this year.
+  const dcs = { ...seedDcs(data.seed, yearOf(data.hour ?? 0)), ...data.dcs };
+  return { ...base, ...data, dcs, locations, devices, racks, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION };
 }

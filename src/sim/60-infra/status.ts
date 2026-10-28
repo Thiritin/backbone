@@ -1,5 +1,6 @@
+import { yearOf } from "../00-core/time";
 import { jacksOf, modelById, type DeviceKind } from "../10-catalog/hardware";
-import { BASEMENT, datacenterById, MOVE, rackUnits, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, capacityAt, datacenterById, MOVE, rackUnits, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import type { Device, End, GameState, Location, SpaceKind } from "../50-state";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
@@ -190,10 +191,31 @@ export function connectError(s: GameState, a: End, b: End): string | null {
   return null;
 }
 
-// Monthly rent of a location; a share's size comes from its provider rack.
+// The size a location was rented at: n for a 1/n share, read from its provider rack; positions otherwise.
+function rentedSize(s: GameState, loc: Location): number {
+  if (loc.space !== "share") return loc.positions;
+  const shareRack = s.racks.find((r) => r.locationId === loc.id && r.provided);
+  return SHARE_RACKS.find((m) => m.id === shareRack?.model)?.size ?? 1;
+}
+
+// Monthly rent of a location.
 export function locationRent(s: GameState, loc: Location): number {
   if (!loc.dc) return 0;
-  const shareRack = s.racks.find((r) => r.locationId === loc.id && r.provided);
-  const size = loc.space === "share" ? SHARE_RACKS.find((m) => m.id === shareRack?.model)?.size ?? 1 : loc.positions;
-  return spacePrice(datacenterById(loc.dc), loc.space as Exclude<SpaceKind, "basement">, size);
+  return spacePrice(datacenterById(loc.dc), loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc));
 }
+
+// Floor space in eighths of a position, so a 1/8 share is 1 and a position is 8.
+export const eighthsOf = (space: Exclude<SpaceKind, "basement">, size: number): number => (space === "share" ? 8 / size : 8 * size);
+
+// Positions in a datacenter: competitors', the player's, those held for the waitlist, and what is free.
+export function dcAvailability(s: GameState, dcId: string): { capacity: number; others: number; mine: number; held: number; free: number; freeEighths: number } {
+  const capacity = capacityAt(datacenterById(dcId), yearOf(s.hour));
+  const others = s.dcs[dcId]?.others ?? 0;
+  const mineEighths = s.locations.filter((l) => l.dc === dcId).reduce((sum, l) => sum + eighthsOf(l.space as Exclude<SpaceKind, "basement">, rentedSize(s, l)), 0);
+  const heldEighths = s.waitlist.filter((w) => w.dc === dcId && w.heldUntil !== null).reduce((sum, w) => sum + eighthsOf(w.space, w.size), 0);
+  const freeEighths = Math.max(0, capacity * 8 - others * 8 - mineEighths - heldEighths);
+  return { capacity, others, mine: mineEighths / 8, held: heldEighths / 8, free: Math.floor(freeEighths / 8), freeEighths };
+}
+
+export const fits = (s: GameState, dcId: string, space: Exclude<SpaceKind, "basement">, size: number): boolean =>
+  dcAvailability(s, dcId).freeEighths >= eighthsOf(space, size);

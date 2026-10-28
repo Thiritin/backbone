@@ -14,6 +14,9 @@ export const positionsLabel = (n: number) => plural(n, "position");
 export const SPACE_NAME = { basement: "Basement", share: "Rack share", positions: "Rack positions", cage: "Cage", suite: "Private suite" };
 // A share of size n is 1/n of a rack.
 export const shareLabel = (n: number) => (n === 1 ? "Full rack" : `1/${n} rack`);
+// A rented space and its size, as offered: "1/4 rack", "2 positions", "Cage, 8 positions".
+export const spaceSize = (space: Exclude<Location["space"], "basement">, size: number) =>
+  space === "share" ? shareLabel(size) : space === "positions" ? positionsLabel(size) : `${SPACE_NAME[space]}, ${positionsLabel(size)}`;
 export const shareUnits = (n: number) => SHARE_RACKS.find((m) => m.size === n)?.units ?? 0;
 const shareOf = (g: GameState, l: Location) => SHARE_RACKS.find((m) => g.racks.some((r) => r.locationId === l.id && r.model === m.id));
 export function spaceLabel(l: Location, g?: GameState) {

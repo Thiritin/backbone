@@ -239,3 +239,16 @@ h2 .loc-az, h3 .loc-az { margin-left: 8px; vertical-align: middle; }
 .loc-port-table tr[aria-selected="true"] td { background: color-mix(in oklch, var(--accent) 14%, transparent); }
 .loc-port-table .loc-link { color: var(--accent); }
 .loc-port-table + .loc-row { flex-wrap: wrap; }
+
+/* Datacenter availability. */
+.loc-avail { display: grid; gap: 4px; min-width: 92px; }
+.loc-full { color: var(--warn-text); font-weight: 600; }
+.loc-avail-bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden; background: var(--hover); box-shadow: inset 0 0 0 0.5px var(--line-strong); }
+.loc-avail-bar .others { background: color-mix(in oklch, var(--text-3) 60%, transparent); }
+.loc-avail-bar .mine { background: var(--accent); }
+.loc-sheet-foot .seg .unfit { opacity: 0.45; text-decoration: line-through; }
+
+/* Waitlist under the location cards. */
+.loc-wait { margin-top: 12px; }
+.loc-wait .loc-row + .loc-row { border-top: 0.5px solid var(--line); }
+.loc-held { color: var(--accent-text); font-weight: 600; }
