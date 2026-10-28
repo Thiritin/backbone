@@ -688,6 +688,8 @@ Each location connects to the internet through what its city offers: transit car
 
 Customers can also buy DDoS protection from you as an add-on.
 
+**How the Network app works.** The sidebar lists every zone, then Peering and DDoS. A zone page shows its traffic over the last week against what got through, and switches between Uplinks, Topology and Map. Uplinks lists the zone's uplinks as cards, then the carriers on site and the exchange as order cards, then links to other zones. Peering holds your AS number, your exchange memberships, the request inbox and the networks you can ask. DDoS holds the protection contracts and every running attack with its blackhole switch. The basement only has its home line, and every other zone starts with its datacenter's bandwidth. Private peering, remote exchange ports, carrier outages and DDoS protection sold to customers are not built yet.
+
 ## Research and unlocks
 
 Unlocks cost know-how points plus a one-time launch cost in money. You earn know-how from every active contract each month, so progress comes from running the business, not just from a big bank balance. Some unlocks also need a minimum company level.

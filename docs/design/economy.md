@@ -697,6 +697,44 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 ten
 
 **DDoS attacks.** Each gamer customer draws 0.02 attacks a month and every other customer 0.002. A typical attack is 0.5 Gbit/s in 2005, growing 25% a year to about 54 Gbit/s in 2026, and lasts 1 to 6 hours. On-demand protection starts after a 10-minute detection delay; until then the attack hits the links.
 
+**Per plan.** The table is the average customer, on the middle plan of a product (the lower middle when the count is even). Each plan step up doubles the traffic and each step down halves it, so VPS S, M, L and XL send 10, 20, 40 and 80 GB a month in 2005. Domains and certificates send nothing, DNS hosting 1 GB, cloud servers like a VPS.
+
+**Daily wave.** Until workloads have their usage curves, every service follows one wave of 1 + 0.9 × cos(2π (hour − 21) ÷ 24): 1.9 × the average at 21:00 and 0.1 × at 09:00, which puts the 95th percentile near GB per month ÷ 164.
+
+**Exits and routing.** Each hour every zone routes its traffic: exchange ports first, each taking at most the share of traffic its peers want; then transit, shared by capacity; then the datacenter's own bandwidth or, in the basement, the home line's upload. What is left goes over links to other zones, into their spare capacity. Whatever still does not fit is dropped.
+
+| Exit | Capacity | Price |
+| --- | --- | --- |
+| Home line | The line's upload | Paid privately |
+| Datacenter bandwidth | 1 Gbit/s through the handoff | €4 per TB in 2026, m = 46 (about €180 per TB in 2005) |
+| IP transit | Its links | Year's price per Mbit/s × carrier factor; commit 20%, 50% or 100% of capacity for 0%, 10% or 20% off |
+| Exchange port | The port | Port fee; peering traffic is free |
+
+**Carriers.** A datacenter sells one carrier per four on site, from the top of this list, so a one-carrier building only has Cogentle.
+
+| Carrier | Price factor |
+| --- | --- |
+| Cogentle | 0.7 |
+| Drizzle Electric | 0.8 |
+| Tell-Ya Carrier | 1.0 |
+| Level Tree | 1.3 |
+| NTTea | 1.15 |
+| Zayno | 0.95 |
+
+**Routers.** Every transit or exchange link takes one free router port at least as fast as the link: a port of an edge router or of the panel gateway with no cable in it. The handoff's two 1G ports are the cheapest start. Edge routers mount in a rack and come from the Shop.
+
+**AS number and exchanges.** Registering an AS number costs €500 once. An exchange membership costs €1,000 to set up and €1,500 a year, billed as €125 a month. A zone can order ports only at its datacenter's exchange; ports in other cities of the same exchange come later.
+
+**Peering.** Crowdflare, Akamaybe and Drizzle Electric peer with every member through the route servers, which carry 12% of your traffic. Other networks need a session. Each day, each network on an exchange where you have a port asks with a chance of 3% (open), 1% (selective) or 0.1% (restrictive), the last two times your busiest hour of the last day ÷ the traffic they want, capped at 1. When you ask, open networks always accept, selective ones with 0.9 × that size factor and restrictive ones with 0.3 × its square, plus up to 0.1 from trade fair goodwill. A network that says no, or that you turn down, does not ask again for 90 days. Requests expire after 30 days.
+
+**Goodwill.** Trade fairs add goodwill from 0 to 1, which fades by 5% a month. It takes up to 10% off transit and adds to peering chances.
+
+**Links between zones.** A leased wavelength costs €400, €900, €2,500 or €6,000 a month for 1G, 10G, 100G or 400G in 2026 (m = 5) within a region, and 3 × that between regions. Dark fiber runs only within a region, carries 100G and costs €2,000 a month. Links take 30 days, uplink links 14.
+
+**DDoS protection.** Scrubba Dub On Demand costs €50 a month plus €250 per attack and lets a sixth of the attack's first hour through. Akamaybe Prolexit costs €800 a month and filters everything. A blackhole drops the attack and takes its target offline until it is lifted.
+
+**Saturation in practice.** A zone counts as saturated once more than 2% of its traffic is dropped. Services there stay online, and each hour costs their customers 25% of their outage penalty; when a zone first saturates, each affected customer writes an outage ticket with half their usual chance.
+
 ## Workloads and migration
 
 **Sizes.** A web space uses 0.1 vCPU, 0.25 GB of RAM and its plan's disk. A VM uses its plan's vCPUs, RAM and disk. A game server uses 2 vCPUs and 4 GB of RAM in 2005, doubling every 7 years like VPS plans.

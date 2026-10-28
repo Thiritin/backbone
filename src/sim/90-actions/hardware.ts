@@ -293,7 +293,7 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
 export function sellDevice(s: GameState, deviceId: string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
-  if (modelById(d.model).kind === "gateway") return fail("error.cannotSell");
+  if (modelById(d.model).kind === "gateway" && !modelById(d.model).price) return fail("error.cannotSell");
   if (d.lease) return fail("error.leased");
   if (d.transitTo) return fail("error.inTransit");
   if (serverTaken(s, d.id)) return fail("error.serverInUse");

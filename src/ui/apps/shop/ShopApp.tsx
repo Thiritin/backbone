@@ -1,4 +1,4 @@
-import { AppWindow, Cable, HardDrive, Network, Server, Shield, ShoppingCart, Store } from "lucide-react";
+import { AppWindow, Cable, HardDrive, Network, Router, Server, Shield, ShoppingCart, Store } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -18,10 +18,10 @@ const LINE_NAME: Record<string, string> = {
 };
 const CLASSES: [string, typeof Server][] = [
   ...[...new Set(Object.values(LINE_NAME))].map((c): [string, typeof Server] => [c, Server]),
-  ["Layer 2", Network], ["Layer 3", Network], ["Security", Shield], ["Patch panels", Cable], ["Parts", HardDrive],
+  ["Layer 2", Network], ["Layer 3", Network], ["Routers", Router], ["Security", Shield], ["Patch panels", Cable], ["Parts", HardDrive],
 ];
 const classOf = (m: DeviceModel) =>
-  m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "part" ? "Parts" : "Patch panels";
+  m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "gateway" ? "Routers" : m.kind === "part" ? "Parts" : "Patch panels";
 
 const SWAP = { raid: "In RAID", dual: "With two", yes: "Yes", no: "No" };
 

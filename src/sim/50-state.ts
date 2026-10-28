@@ -10,6 +10,7 @@ import type { Ticket } from "./40-support/tickets";
 import { applications, type Candidate, type Employee } from "./47-staff/staff";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
+import { newNetwork, type Network } from "./60-infra/network";
 
 export const SAVE_VERSION = 2;
 
@@ -101,6 +102,7 @@ export interface GameState {
   workloads: Workload[];
   // Hours each service has been down since the last monthly invoice.
   downHours: Record<string, number>;
+  network: Network;
 }
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
@@ -141,6 +143,7 @@ export const newGame = (seed: number): GameState => ({
   homeLine: { id: DEFAULT_HOME_LINE, next: null },
   staff: [], candidates: applications(seed, 0),
   marketing: newMarketing(),
+  network: newNetwork(),
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
