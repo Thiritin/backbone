@@ -4,8 +4,8 @@ import { appByName } from "../apps/registry";
 import { formatClock } from "../../sim/00-core/time";
 import { useStore, type Banner } from "../store";
 
-function Card({ b, time }: { b: Banner; time: string }) {
-  const { openApp, dismiss } = useStore();
+function Card({ b, time, dismiss }: { b: Banner; time: string; dismiss: (id: number) => void }) {
+  const openApp = useStore((s) => s.openApp);
   const app = appByName(b.app);
   const open = () => { openApp(b.app); dismiss(b.id); };
   return (
@@ -19,17 +19,17 @@ function Card({ b, time }: { b: Banner; time: string }) {
 }
 
 export function Banners() {
-  const banners = useStore((s) => s.banners);
-  return <div className="banners" aria-live="polite">{banners.map((b) => <Card key={b.id} b={b} time="now" />)}</div>;
+  const { banners, dismiss } = useStore();
+  return <div className="banners" aria-live="polite">{banners.map((b) => <Card key={b.id} b={b} time="now" dismiss={dismiss} />)}</div>;
 }
 
 export function NotificationCenter({ onClose }: { onClose: () => void }) {
-  const history = useStore((s) => s.history);
+  const { history, forget } = useStore();
   return (
     <aside className="notif-center" aria-label="Notifications" onPointerDown={(e) => e.stopPropagation()}>
-      <div className="notif-head"><h2>Notifications</h2><button className="btn ghost" onClick={onClose}>Close</button></div>
+      <div className="notif-head"><h2>Notifications</h2>{history.length > 0 && <button className="btn ghost" onClick={() => forget(null)}>Clear all</button>}<button className="btn ghost" onClick={onClose}>Close</button></div>
       {history.length === 0 ? <p className="notif-empty">You have no notifications.</p>
-        : history.map((b) => <Card key={b.id} b={b} time={formatClock(b.hour).slice(4, -8)} />)}
+        : history.map((b) => <Card key={b.id} b={b} time={formatClock(b.hour).slice(4, -8)} dismiss={forget} />)}
     </aside>
   );
 }

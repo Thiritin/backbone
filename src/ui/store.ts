@@ -46,6 +46,7 @@ interface Store {
   place: (id: string, box: Partial<Pick<Win, "x" | "y" | "w" | "h">>) => void;
   notify: (app: string, title: string, text: string) => void;
   dismiss: (id: number) => void;
+  forget: (id: number | null) => void;
   started: boolean;
   unseen: number;
   clearUnseen: () => void;
@@ -189,6 +190,8 @@ export const useStore = create<Store>((set, get) => ({
     setTimeout(() => get().dismiss(b.id), 6000);
   },
   dismiss: (id) => set(({ banners }) => ({ banners: banners.filter((b) => b.id !== id) })),
+  // null clears the whole history.
+  forget: (id) => set(({ banners, history }) => ({ banners: banners.filter((b) => id !== null && b.id !== id), history: id === null ? [] : history.filter((b) => b.id !== id) })),
 
   clearUnseen: () => set({ unseen: 0 }),
   save: () => {

@@ -19,6 +19,20 @@ describe("notification settings", () => {
     expect(s().banners).toHaveLength(1);
   });
 
+  it("removes a notification from the center, then clears the rest", () => {
+    const s = useStore.getState;
+    s().setNotifyPref("Finance", { allow: true });
+    s().notify("Finance", "one", "x");
+    s().notify("Finance", "two", "x");
+    const [two, one] = s().history;
+    s().forget(two.id);
+    expect(s().history.map((b) => b.title)).not.toContain("two");
+    expect(s().banners.some((b) => b.id === two.id)).toBe(false);
+    expect(s().history).toContainEqual(one);
+    s().forget(null);
+    expect(s().history).toEqual([]);
+  });
+
   it("opens Welcome to Pear on a new game and Getting started once it closes", () => {
     const s = useStore.getState;
     s().startGame();
