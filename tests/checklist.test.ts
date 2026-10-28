@@ -6,6 +6,8 @@ import { toggleCheck } from "../src/sim/90-actions/checklist";
 import { addLocation, buyDevice, connect } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { addNode, createCluster, setSoftware } from "../src/sim/90-actions/clusters";
+import { tick } from "../src/sim/88-tick/tick";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);
@@ -30,6 +32,21 @@ describe("checklist", () => {
     expect(done(s)).toEqual(["loan", "secondServer"]);
     ok(addLocation(s, "interaction-fra", "positions", 1));
     expect(done(s)).toEqual(["loan", "secondServer", "datacenter"]);
+  });
+
+  it("detects a datacenter cluster that sells", () => {
+    const s = { ...newGame(1), cash: 100_000 };
+    const loc = ok(addLocation(s, "hetzler-park", "share", 4));
+    const srv = ok(buyDevice(s, "g1-memory", "Dwell", 1, loc));
+    ok(mountDevice(s, srv, s.racks.find((r) => r.locationId === loc)!.id, 1));
+    ok(connect(s, { device: srv, port: 0 }, { device: s.devices.find((d) => d.panel === loc)!.id, port: 0 }));
+    const c = ok(createCluster(s, loc, "Rack 1"));
+    ok(addNode(s, c, srv));
+    for (let h = 0; h < 72; h++) tick(s);
+    expect(checkDone(s, "dcCluster")).toBe(false);
+    ok(setSoftware(s, c, "proxmocks"));
+    for (let h = 0; h < 6; h++) tick(s);
+    expect(checkDone(s, "dcCluster")).toBe(true);
   });
 
   it("ticks and unticks goals by hand", () => {

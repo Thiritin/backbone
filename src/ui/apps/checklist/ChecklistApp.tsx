@@ -21,6 +21,7 @@ const STAGES: { name: string; goals: Goal[] }[] = [
   { name: "Datacenter", goals: [
     { id: "datacenter", title: "Rent space in a datacenter", text: "Locations lists the datacenters where you can rent a rack share or rack positions." },
     { id: "dcServer", title: "Bring a server online in the datacenter", text: "Move a rack there or ship servers to it, then cable them to the carrier panel." },
+    { id: "dcCluster", title: "Sell from the datacenter", text: "Create a cluster in the datacenter in Locations, add the server to it and install a hypervisor in Products." },
     { id: "feedB", title: "Add a second power feed", text: "A second feed keeps a rack running when one power circuit fails." },
     { id: "drive", title: "Replace a failed drive", text: "Keep spare parts in storage so you can swap a broken drive quickly." },
     { id: "lease", title: "Lease hardware", text: "A lease spreads the cost of new servers over monthly payments." },

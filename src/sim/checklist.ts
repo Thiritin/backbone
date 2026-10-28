@@ -20,6 +20,7 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   reminder: (s) => s.invoices.some((i) => i.reminders.length > 0),
   datacenter: (s) => rented(s).length > 0,
   dcServer: (s) => onlineServers(s).some((d) => locationOf(s, d)?.dc != null),
+  dcCluster: (s) => s.clusters.some((c) => (c.platform || c.panel) && c.nodes.length > 0 && rented(s).some((l) => l.az === c.az)),
   feedB: (s) => s.racks.some((r) => r.feedB),
   drive: (s) => s.devices.some((d) => d.components.some((c) => isDrive(c) && c.installedAt > d.boughtAt)),
   lease: (s) => s.leases.length > 0 || s.ledger.some((e) => e.category === "leasing"),
