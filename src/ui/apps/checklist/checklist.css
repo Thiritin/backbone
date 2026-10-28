@@ -1,0 +1,16 @@
+.chk { flex: 1; overflow-y: auto; padding: 16px; display: grid; gap: 14px; align-content: start; background: var(--win-side); }
+.chk-head { display: flex; align-items: center; gap: 12px; }
+.chk-head h2 { flex: 1; font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.chk .cus-card h3 { justify-content: space-between; }
+.chk-progress { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: var(--text-2); }
+.chk-progress .bar { width: 72px; height: 6px; border-radius: 3px; background: color-mix(in oklch, var(--text) 9%, transparent); position: relative; overflow: hidden; }
+.chk-progress .bar i { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+.chk-row { align-items: flex-start; }
+.chk-row .grow { gap: 2px; }
+.chk-row.done .cus-strong { color: var(--text-2); }
+.chk-tick { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; border-radius: 50%; }
+.chk-tick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chk-box { flex: none; width: 18px; height: 18px; margin-top: 1px; border-radius: 50%; border: 1.5px solid var(--line-strong); display: grid; place-items: center; color: white; }
+.chk-tick:hover .chk-box { border-color: var(--accent); }
+.chk-box.done { background: var(--accent); border-color: var(--accent); }
+.chk-box svg.lucide { width: 12px; height: 12px; stroke-width: 3; }

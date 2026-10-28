@@ -77,6 +77,8 @@ export interface GameState {
   waitlist: WaitlistEntry[];
   // Research unlocks, such as "monitoring".
   unlocks: string[];
+  // Checklist goals the player ticked by hand.
+  checklist: string[];
 }
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
@@ -107,7 +109,7 @@ export const newGame = (seed: number): GameState => ({
     { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper", color: null },
     { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper", color: null },
   ],
-  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [],
+  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], checklist: [],
   customers: [], services: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0 },
