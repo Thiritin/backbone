@@ -37,7 +37,7 @@ A new game starts on 1 January 2005 with €1,000 in cash, a 24U rack in the bas
 | Home line | Deutsche Telekomm DSL 16000, 16 Mbit/s down and 1 Mbit/s up; paid privately, so it costs the company nothing |
 | Hardware | A 24U rack with one Dwell Balanced 1U G1 and a Sysko L2 switch 8, cabled to the home router; the server is the cluster "Basement 1" |
 | Reseller accounts | Domains from a registrar, at 40% of the retail price |
-| Customers | 3 friends (private individuals) on web hosting on your server; happiness 85, and they always pay |
+| Customers | 3 friends (Jonas Weber, Mira Schulz and Tobi Kraus, private individuals) on Web M hosting at €6 a month, placed on the server; happiness 85, and they always pay |
 
 
 ## Prices over time
@@ -293,6 +293,8 @@ P(j) = \frac{e^{U_j/\tau}}{\sum_k e^{U_k/\tau}}
 | Basic | 99.5% | 48 h | 1.0 | None |
 | Business | 99.9% | 8 h | 1.2 | 10% of the monthly bill |
 | Premium | 99.99% | 1 h | 1.5 | 25% of the monthly bill |
+
+Hours a service is down are left off its invoice line. When the hours up fall below the SLA's uptime, the invoice adds a credit line for its share of what was billed for that service. Hours down while the customer is suspended count as up.
 
 **Handling a request.** Answering a request by hand takes 8 minutes of the player's or a sales agent's time. A request waits 3 days, then the customer goes to a competitor. The shop answers instantly while the target cluster's busiest resource stays under the limit you set (80% by default).
 
@@ -699,6 +701,24 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 ten
 
 **Sizes.** A web space uses 0.1 vCPU, 0.25 GB of RAM and its plan's disk. A VM uses its plan's vCPUs, RAM and disk. A game server uses 2 vCPUs and 4 GB of RAM in 2005, doubling every 7 years like VPS plans.
 
+**Plans and market references.** The catalog in `src/sim/10-catalog/products.ts` holds these plans. "Base" is the year's base plan RAM, 1 GB in 2005 and doubling every 7 years; fixed-price plans keep their price and grow at the same pace. The market reference is the 2005 price; priced plans follow their base rate over the years, and an SLA multiplies it by its price factor.
+
+| Product | Plans | One unit uses | Market reference (2005) | Runs on |
+| --- | --- | --- | --- | --- |
+| Web hosting | S, M, L | 0.1 vCPU, 0.25 GB RAM, 1, 2 or 5 GB disk × growth | €3, €6, €12 a month | Cluster |
+| VPS | S, M, L, XL | 0.5, 1, 2 or 4 × base RAM; 1 vCPU per 2 GB (at least 1); 20 GB disk per GB of RAM | RAM × the VPS rate (€16.50 per GB) | Cluster |
+| Game server | S, L | 2 or 4 vCPUs, 4 or 8 GB RAM, 10 or 20 GB disk × growth | RAM × 1.6 × the VPS rate, the low end of €2.40 to €6.10 per GB | Cluster |
+| DNS hosting | DNS | 0.05 vCPU, 0.1 GB RAM, 1 GB disk | €2 a month | Cluster |
+| VPN | VPN | 1 vCPU, 0.5 GB RAM, 1 GB disk | €5 a month | Cluster |
+| Storage hosting | 100 GB, 500 GB, 1 TB | Disk only | €2.60 per TB in 2026 with m = 32, about €83 per TB in 2005 | Cluster |
+| Cloud servers | M | Like VPS M | 1.25 × VPS M | High-availability cluster |
+| Dedicated servers | S, L | A whole server with at least 8 or 32 GB × growth | €79, €299 a month | A free server |
+| Colocation | 1U, quarter, half, full rack | 1, 10, 21 or 42 units and 150 W, 1, 2 or 4 kW | €60, €420, €840, €1,600 a month | Datacenter rack |
+| Domains | Domain | Nothing | €15 a year | Resold |
+| SSL certificates | Certificate | Nothing | €50 a year until 2015, then free | Resold |
+
+**Capacity.** A node books up to its physical cores × 8 in vCPUs, its RAM × 1.5 and its usable RAID disk × 2. A G1 balanced server books 16 vCPUs, 12 GB of RAM and 1 TB of disk: 48 web spaces, or 24 VPS S, or 6 VPS L by RAM. Workloads count at what they booked; usage curves don't move the load yet.
+
 **Moving a workload**
 
 | Workload | Time | Downtime |
@@ -783,6 +803,22 @@ Role bases are 2026 gross salaries, scaled back with the salary multiplier from 
 | Paid below 85% of the market salary for their skill | +3% |
 | Raise refused in the last 6 months | +5% |
 
+A raise request left unanswered for 30 days counts as refused. Salaries are billed on the first of each month for the month before, prorated for the days employed, and a fired employee is paid for the days worked that month.
+
+**Job market.** Every month each role gets 2 open applications, and every candidate stays on the market for 30 days. Job ads add their candidates on top. Ads, courses and salaries are booked as salaries and follow the salary multiplier.
+
+**Training.** Each task type is a separate course. A course costs €250 (2026, about €150 in 2005) and takes 2 days. With a trainer of the same role the course is free and takes 1 day. Employees in training and trainers do no other work.
+
+| Role | Task types |
+| --- | --- |
+| Support agent | How-to, billing, outage, upgrade, cancellation, abuse, suspension appeal |
+| Bookkeeper | Payment reminders |
+| Accountant | Dunning notices, final notices |
+
+**Staff at work.** Staff work Monday to Friday from 9 to 17; holidays and sick days come later. A support agent picks the right reply with P(right) from the work rate and a wrong template otherwise, offers retention on cancellations, and unsuspends appeals that have no right reply. Collections stays with the player and the billing rules, and payments record themselves.
+
+**Forum posts.** An employee assigned to the forums brings 2 × (0.5 + s/100) leads a month and does no other work.
+
 ## Marketing and reviews
 
 In 2005 a low-budget lead from search ads costs about €9, so a new private customer costs €25 to €80 depending on your share. Reviews skew negative unless you invite happy customers, which is what review platforms are for.
@@ -819,6 +855,44 @@ Spending more in one channel and city gets dearer: the cost per lead is multipli
 | Free listing | 0 | 2 |
 | "ProvenExpat" | 1% | 4 |
 | "TrustPylon" | 2% | 6 |
+
+Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month.
+
+**Owned channels.** Each step is a one-off setup plus monthly upkeep, flat over the years:
+
+| Step | Setup | Upkeep per month | Needs |
+| --- | --- | --- | --- |
+| Email | Free | Free | Always on |
+| Website | €400 | €15 | None |
+| Order form | €900 | €10 | Website |
+| Goggle Ads | €50 | None | Website |
+| AI ads | €1,500 | None | Website, from 2023 |
+
+A website brings 4 leads a month per location city, split by the profile mix.
+
+**Campaign channels.** Cost per lead in 2026, scaled back with m = 0.6 like search ads. Conversion multiplies the chance that a lead buys:
+
+| Channel | Profiles | Cost per lead | Conversion |
+| --- | --- | --- | --- |
+| Goggle Ads | All | Search ads above | 1 |
+| AI ads | All | 1.5 × search ads | 1.3 |
+| Gaming communities | Gamers | €8 | 1 |
+| Cold calling | Sole proprietors, small businesses, offices | €8, €12, €20 | 0.35 |
+| Agency outreach | Agencies | €30 | 1, and the offered discount is quoted back |
+
+Budgets are €100, €250, €500, €1,000, €2,500 or €5,000 a month, split evenly over the location cities and then over the targeted profiles. The saturation rule above applies per city.
+
+**Awareness.** Each profile has an awareness between 0 and 1. It starts at 5% for private individuals and gamers and at 2% for everyone else, which is also the floor. At each month start it gains g on the gap to 1 and decays by 2%:
+
+```math
+a' = a + (1 - a) \cdot g - 0.02 \cdot a
+```
+
+```math
+g = 0.05 \cdot \left(1 - e^{-L/100}\right) + 0.004_{\text{website}} + 0.006 \cdot (\text{score} - 3.5) + 0.001 \cdot T + \min(0.01,\ 0.0005 \cdot n_{H \ge 70})
+```
+
+L is the profile's paid leads this month and n the number of its customers with happiness of 70 or more. A steady €1,000 a month on one profile settles near 65% after about two years and falls back slowly once it stops. Forum posts and fairs add to the gain directly.
 
 ## Know-how and unlock costs
 
@@ -902,6 +976,8 @@ Net worth values the customer base at two years of recurring revenue, plus cash 
 ```math
 \text{net worth} = \text{cash} - \text{debt} + \text{hardware book value} + 24 \cdot \text{MRR}
 ```
+
+Hardware book value is the resale value of every owned device and rack: 100% to 80% over the first month, then down to 20% over the next 24 months. Leased devices count for the lessor, not for you. MRR is every running contract's monthly price: hourly prices × 730 and yearly prices ÷ 12. The start counts €1,000 cash, €2,910 of hardware and 24 × €18 of the friends' revenue, about €4,340.
 
 The GDD counts years in operation inside net worth. Here they are a separate minimum per level instead, which keeps the formula simple and stops a lucky first year from skipping ahead.
 

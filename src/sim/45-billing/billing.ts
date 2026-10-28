@@ -1,6 +1,7 @@
 import { chance, rand, type Rng } from "../00-core/rng";
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import type { Budget } from "../10-catalog/economy";
+import { SLAS } from "../10-catalog/products";
 import type { PaymentHabit } from "../30-customers/customers";
 import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
@@ -57,7 +58,7 @@ export const AUTO_SUSPEND_DAYS = [0, 7, 14, 30] as const;
 export const AUTO_COLLECT_DAYS = [0, 42, 60, 90] as const;
 // High-budget customers run their business on the services, so suspension hits harder and they pay faster.
 export const SUSPEND_HAPPINESS: Record<Budget, number> = { low: 15, medium: 15, high: 30 };
-export const SUSPENDED_PAY_ODDS: Record<PaymentHabit, number> = { prompt: 0.35, late: 0.35, bad: 0.2 };
+export const SUSPENDED_PAY_ODDS: Record<PaymentHabit, number> = { prompt: 0.35, late: 0.35, bad: 0.2, friend: 1 };
 export const SUSPENDED_PAY_ODDS_HIGH = 0.6;
 export const APPEAL_CHANCE = 0.6;
 export const EXTENSION_DAYS = 7;
@@ -73,6 +74,7 @@ export const PAY_ODDS: Record<PaymentHabit, number[]> = {
   prompt: [0.9, 0.06, 0.02, 0.01, 0.01],
   late: [0.65, 0.3, 0.04, 0.01, 0],
   bad: [0.82, 0.1, 0.04, 0.02, 0.02],
+  friend: [1, 0, 0, 0, 0],
 };
 
 export function rollPayStep(r: Rng, habit: PaymentHabit): number {
@@ -270,8 +272,15 @@ export function billingTick(s: GameState): SimEvent[] {
     for (const v of s.services) {
       if (v.period !== "hour") continue;
       const hours = Math.min(v.endedAt ?? s.hour, s.hour) - Math.max(v.startedAt, from);
-      if (hours > 0) add(v.customerId, { serviceId: v.id, key: "invoice.line.hours", params: { label: v.label, hours }, amount: cents(hours * v.price) });
+      if (hours <= 0) continue;
+      // Hours down are not billed; a missed SLA credits its share of what is billed.
+      const billed = hours - Math.min(hours, s.downHours[v.id] ?? 0), sla = SLAS[v.sla];
+      if (billed > 0) add(v.customerId, { serviceId: v.id, key: "invoice.line.hours", params: { label: v.label, hours: billed }, amount: cents(billed * v.price) });
+      if (billed > 0 && sla.credit && billed / hours < sla.uptime) {
+        add(v.customerId, { serviceId: v.id, key: "invoice.line.slaCredit", params: { label: v.label }, amount: -cents(sla.credit * billed * v.price) });
+      }
     }
+    s.downHours = {};
   }
   let billed = s.yearlyBilledUntil;
   for (const v of s.services) {

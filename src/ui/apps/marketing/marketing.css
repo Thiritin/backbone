@@ -1,0 +1,39 @@
+.mkt-h { font-size: 12.5px; font-weight: 650; padding: 16px 16px 10px; }
+.mkt-flat.shop-grid { overflow: visible; padding-top: 0; }
+.mkt-none { padding: 0 16px 16px; }
+
+.mkt-list { display: grid; gap: 12px; padding: 16px; }
+.mkt-campaign.mkt-locked { background: none; }
+.mkt-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 0.5px solid var(--line); }
+.mkt-head strong { font-weight: 650; font-size: 12.5px; flex: 1; }
+.mkt-specs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mkt-row { display: flex; align-items: flex-start; gap: 12px; padding: 8px 14px; border-top: 0.5px solid var(--line); }
+.mkt-row .seg { flex-wrap: wrap; }
+.mkt-label { width: 72px; flex: none; line-height: 24px; font-size: 11.5px; font-weight: 550; color: var(--text-3); }
+.mkt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mkt-chip { height: 24px; padding: 0 10px; border-radius: 12px; border: 0.5px solid var(--line-strong); background: var(--field); color: var(--text-2); font: inherit; font-size: 12px; font-weight: 500; }
+.mkt-chip:hover { background: var(--hover); }
+.mkt-chip[aria-pressed="true"] { background: var(--accent-soft); border-color: transparent; color: var(--accent-text); }
+
+.mkt-aware { width: 100%; border-collapse: collapse; }
+.mkt-aware th { text-align: left; font-size: 11.5px; font-weight: 600; color: var(--text-3); padding: 10px 16px; border-bottom: 0.5px solid var(--line); }
+.mkt-aware td { padding: 8px 16px; border-bottom: 0.5px solid var(--line); }
+.mkt-aware .num, .mkt-aware .mkt-right { text-align: right; }
+.mkt-bar { display: flex; align-items: center; gap: 10px; }
+.mkt-bar .num { width: 36px; color: var(--text-2); }
+.mkt-track { flex: 1; max-width: 320px; height: 6px; border-radius: 3px; background: color-mix(in oklch, var(--text) 8%, transparent); overflow: hidden; }
+.mkt-track > span { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+
+.mkt-score { display: flex; align-items: center; gap: 10px; padding: 16px 16px 0; }
+.mkt-score > .num { color: var(--text-2); }
+.mkt-stars { display: inline-flex; gap: 1px; }
+.mkt-stars svg.lucide { width: 14px; height: 14px; color: var(--text-3); }
+.mkt-stars svg.lucide.on { color: var(--text); fill: currentColor; }
+.mkt-review-list { list-style: none; margin: 0 16px 16px; padding: 0; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); }
+.mkt-review-list li { padding: 10px 14px; }
+.mkt-review-list li + li { border-top: 0.5px solid var(--line); }
+.mkt-review-head { display: flex; align-items: center; gap: 8px; }
+.mkt-review-head strong { font-weight: 600; }
+.mkt-review-head .grow { flex: 1; }
+.mkt-review-head .num { color: var(--text-3); font-size: 11.5px; }
+.mkt-review-list p { margin: 4px 0 0; color: var(--text-2); }

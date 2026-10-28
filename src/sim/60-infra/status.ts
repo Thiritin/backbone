@@ -86,14 +86,14 @@ export function linkStatus(s: GameState, deviceId: string): LinkStatus {
   return grouped ? { online: true, gbit: up.reduce((sum, f) => sum + f.gbit, 0), warning: null } : { online: true, gbit: fastest, warning: "bondNotGrouped" };
 }
 
-// Every slot where a device of this height fits, lowest first.
+// Every slot where a device of this height fits, lowest first. Units rented out for colocation are taken.
 export function freeSlots(s: GameState, rackId: string, height: number): number[] {
   const rack = s.racks.find((r) => r.id === rackId);
   if (!rack) return [];
   const used = new Set(s.devices.filter((d) => d.rackId === rackId).flatMap((d) => {
     const h = modelById(d.model).height;
     return Array.from({ length: h }, (_, i) => d.slot + i);
-  }));
+  }).concat(s.workloads.filter((w) => w.rackId === rackId).flatMap((w) => Array.from({ length: w.units }, (_, i) => w.slot + i))));
   const free: number[] = [];
   const units = rackUnits(rack.model);
   for (let slot = 1; slot + height - 1 <= units; slot++) {
@@ -110,11 +110,7 @@ export function locationOf(s: GameState, d: Device): Location | undefined {
   return s.locations.find((l) => l.id === id);
 }
 
-// ponytail: zone-wide proxy until the scheduler places workloads on servers.
-export function holdsData(s: GameState, d: Device): boolean {
-  const az = locationOf(s, d)?.az;
-  return az !== undefined && s.services.some((v) => v.endedAt === null && (v.zone === null || v.zone === az));
-}
+export const holdsData = (s: GameState, d: Device): boolean => s.workloads.some((w) => w.deviceId === d.id);
 
 // 100% to 80% over the first month, then down to 20% over the next 24 months.
 export function resaleValue(s: GameState, price: number, boughtAt: number): number {
@@ -128,7 +124,8 @@ export function rackPower(s: GameState, rackId: string): { watts: number; limitW
   const rack = s.racks.find((r) => r.id === rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
   if (!rack || !loc) return { watts: 0, limitWatts: 0, tripped: false };
-  const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on).reduce((sum, d) => sum + modelById(d.model).watts, 0) : 0;
+  const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on).reduce((sum, d) => sum + modelById(d.model).watts, 0)
+    + s.workloads.reduce((sum, w) => sum + (w.rackId === rackId ? w.watts : 0), 0) : 0;
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.
   const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);

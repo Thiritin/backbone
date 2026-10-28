@@ -28,7 +28,7 @@ function finishWork(s: GameState, customer: (id: string) => Customer): void {
     if (work.op === "escalate") Object.assign(t, { status: "escalated", updatedAt: s.hour });
     else if (work.op === "reply") {
       const right = work.arg === rightTemplate(s, t);
-      t.replies = [...t.replies, { hour: s.hour, template: work.arg, right }];
+      t.replies = [...t.replies, { hour: s.hour, template: work.arg, right, ...(work.by && { by: work.by }) }];
       t.updatedAt = s.hour;
       if (right) t.status = "waiting";
       else {

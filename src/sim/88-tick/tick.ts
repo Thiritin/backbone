@@ -4,6 +4,9 @@ import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
 import { supportTick } from "../40-support/tick";
 import { financeTick } from "../46-finance/finance";
+import { staffTick } from "../47-staff/staff";
+import { marketingTick } from "../80-business/marketing";
+import { computeTick } from "../60-infra/cluster";
 import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
 import { skillById } from "../10-catalog/research";
@@ -214,8 +217,11 @@ export function tick(state: GameState): SimEvent[] {
     if (bills.length) events.push({ app: "Finance", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
+  events.push(...computeTick(state));
   events.push(...billingTick(state));
   events.push(...supportTick(state));
   events.push(...financeTick(state));
+  events.push(...staffTick(state));
+  events.push(...marketingTick(state));
   return events;
 }

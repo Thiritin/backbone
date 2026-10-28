@@ -339,6 +339,18 @@ Draining stops with a message when the rest of the cluster has no room, and says
 
 Worth adding later: email hosting and GPU compute.
 
+**How the first build plays.** These decisions hold until the parts above them are built:
+
+- A cluster has a name, a zone and a placement policy, and takes every cluster product. Its name says what the player uses it for, such as "Webhosting 1"; there are no cluster kinds.
+- Every service with hardware runs as one workload. The scheduler books what the plan asks for against the node's cores × 8, RAM × 1.5 and usable disk × 2, and skips nodes that are cordoned, draining, in maintenance or not working.
+- A service is online when every workload's server reaches the internet, still holds the data written since the workload was placed, and the customer is not suspended. Domains, certificates and services from saves made before clusters have no workload and stay online.
+- Draining moves every workload that fits at once and the rest each hour as room appears; an empty node goes into maintenance. A workload moved off a node that lost its data starts on a fresh disk and comes back online.
+- Dedicated servers take a whole mounted server that no cluster or other customer uses. Colocation takes free units at the top of a datacenter rack and adds its watts to the rack, and it is online while the rack has power.
+- Servers in a cluster or rented out can't be unmounted or sold, and their racks can't move to another zone.
+- The game starts with the cluster "Basement 1" on the basement server and the three friends' web hosting on it.
+
+Still to build on top of this: control planes, usage curves and per-cluster overcommit settings, high-availability clusters and restart after a node fails, migration times, two DNS workloads on different nodes, replicas and keep-apart rules, backups and restores, and the uplinks of colocation customers.
+
 **Software choices.** Some products need software bought on the market. Each choice offers four balanced options. The cheap ones are tempting early, but switching later means a migration with downtime and tickets.
 
 | Control panel (web hosting) | Pricing model | Trade-off |
@@ -575,7 +587,7 @@ Staff are named people with a skill level, a work rate and a salary. Juniors cos
 | Role | Takes over | Notes |
 | --- | --- | --- |
 | Support agent | Tickets |  |
-| Technician | Installs, repairs, cabling, colocation installs | Works at one location; until hired, you are the technician |
+| Technician | Repairs, worn-part swaps, software upgrades such as PHP versions, VM migrations, installs, cabling, colocation installs | Works at one location, one operation per hour; until hired, you are the technician |
 | Network engineer | Port setup, routing, transit and peering contracts |  |
 | Kubernetes engineer | Managed Kubernetes clusters | Needed to sell managed Kubernetes; each looks after a set number of customer clusters |
 | Sales agent | Answering requests in the Sales app |  |
@@ -585,7 +597,11 @@ Staff are named people with a skill level, a work rate and a salary. Juniors cos
 
 **Training.** A new employee knows nothing about your processes. Before they handle a ticket type or a task, they are trained on it, which takes time and money, and each skill is trained separately: an agent trained on billing questions still cannot handle abuse reports. Once an employee is fully trained, you can make them a trainer. A trainer does nothing but train others until nobody is left to train, then goes back to their normal work. Once you have staff, they handle the work across all of these areas, including abuse and legal requests.
 
+**Technicians.** A technician works through a queue of operations at their location, one operation per hour. An operation is one job on one server: replacing a failed or worn part, upgrading the PHP version of a web hosting server, shutting a server down or starting it, or migrating all the VMs off a server, which counts as a single operation however many VMs move. Web hosting servers run a PHP version that ages: old versions bring security warnings, abuse reports and unhappy customers, and each upgrade is an operation that briefly takes the server's sites down. The player queues operations from the server's inspector; without a technician, the player does them by hand and pays remote hands at datacenters. Technicians train on each kind of operation like support agents train on ticket types, and a skilled technician makes fewer mistakes, such as a migration that fails halfway.
+
 **Hiring.** The Staff app lists candidates on the job market with their name, role, skill and salary ask. Job ads cost money, and better ads bring more candidates.
+
+**Staff app.** The Team view lists each employee with role, skill, salary, assignment and a bar per task type that fills as training finishes. Selecting an employee opens their training plan, where you pick task types as cards, set the assignment (work queue, trainer or forums), answer a raise request or let them go. The Job market view shows candidates as cards grouped by role with a Hire button, and posts standard or premium job ads. The first roles in play are support agents, bookkeepers and accountants.
 
 **AI bots.** Bots unlock late through research. They work fast and cost a monthly subscription instead of a salary. They never gain skill, handle only routine task types, and sometimes make mistakes that create follow-up work, such as a wrong ticket answer that angers a customer.
 
@@ -620,6 +636,8 @@ Marketing brings in new customers, and reviews decide how many of them trust you
 | "TrustPylon" (Trustpilot) | High monthly fee | Strong marketing tools; the biggest boost |
 
 The review score feeds into your reputation and into the host requirements customers check.
+
+**How the Marketing app works.** The app has four sections. Channels lists the owned steps as cards: email is always on, the website comes first, and the order form, Goggle Ads and AI ads each need the website. AI ads become available in 2023. Campaigns shows one card per paid channel (Goggle Ads, AI ads, gaming communities, cold calling, agency outreach) with the audiences it reaches as toggles and a monthly budget as a segmented control; agency outreach also offers a discount of 10%, 20% or 30%. A campaign's budget is billed at each month start, and so are website and order form upkeep and the review platform fee. Campaigns spread their budget evenly over the cities where you have a location. Awareness shows how well each audience knows you. Reviews shows the score, the latest reviews and the platforms, of which you use one at a time. Trade fairs, forum posts and the partner program come with the Staff app, and so does the marketing manager that review platforms will require.
 
 ## Network and DDoS
 

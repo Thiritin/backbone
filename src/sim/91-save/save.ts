@@ -48,13 +48,16 @@ export function deserialize(raw: string): GameState {
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
     company: { ...base.company, ...data.company },
+    marketing: { ...base.marketing, ...data.marketing, awareness: { ...base.marketing.awareness, ...data.marketing?.awareness } },
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.
     installed: data.installed?.map((id) => (id === "Unlocks" ? "Research" : id)) ?? [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [] })),
-    services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null })),
+    services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, plan: v.plan ?? null, sla: v.sla ?? "basic" })),
+    // Saves from before clusters keep their services unplaced, which leaves them online.
+    clusters: data.clusters ?? [], workloads: data.workloads ?? [], downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   };
 }

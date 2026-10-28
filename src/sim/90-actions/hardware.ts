@@ -6,6 +6,7 @@ import { deviceDefaults, type BondMode, type Device, type End, type GameState, t
 import { connectError, drivesOf, fits, freePositions, holdsData, freeSlots, hotSwappable, moveCost, resaleValue, travelCost } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { endLease } from "../88-tick/tick";
+import { serverTaken } from "../60-infra/cluster";
 
 // error is an i18n key.
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string };
@@ -120,6 +121,9 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
   const error = placeError(s, toLocationId, rack.model, position);
   if (error) return fail(error);
   const to = s.locations.find((l) => l.id === toLocationId)!;
+  // A cluster and its customers' workloads stay in their zone.
+  const from = s.locations.find((l) => l.id === rack.locationId)!;
+  if (to.az !== from.az && (s.workloads.some((w) => w.rackId === rackId) || s.devices.some((d) => d.rackId === rackId && serverTaken(s, d.id)))) return fail("error.rackInUse");
   const move = moveCost(s, rackId, toLocationId);
   if (s.cash < move.price) return fail("error.noCash");
   const inside = new Set(s.devices.filter((d) => d.rackId === rackId).map((d) => d.id));
@@ -135,7 +139,7 @@ export function sellRack(s: GameState, rackId: string): ActionResult {
   const rack = s.racks.find((r) => r.id === rackId);
   if (!rack) return fail("error.unknownRack");
   if (rack.provided) return fail("error.providedRack");
-  if (s.devices.some((d) => d.rackId === rackId)) return fail("error.rackNotEmpty");
+  if (s.devices.some((d) => d.rackId === rackId) || s.workloads.some((w) => w.rackId === rackId)) return fail("error.rackNotEmpty");
   s.racks = s.racks.filter((r) => r.id !== rackId);
   book(s, "sales", "ledger.sale", { device: rack.name }, resaleValue(s, rack.price, rack.boughtAt));
   return { ok: true };
@@ -263,6 +267,7 @@ export function unmountDevice(s: GameState, deviceId: string): ActionResult {
   if (!d.rackId) return fail("error.notMounted");
   const rack = s.racks.find((r) => r.id === d.rackId)!;
   if (rack.arriveAt !== null) return fail("error.rackMoving");
+  if (serverTaken(s, d.id)) return fail("error.serverInUse");
   unplug(s, new Set([d.id]));
   Object.assign(d, { rackId: null, slot: 0, store: rack.locationId });
   return { ok: true };
@@ -292,6 +297,7 @@ export function sellDevice(s: GameState, deviceId: string): ActionResult {
   if (modelById(d.model).kind === "gateway") return fail("error.cannotSell");
   if (d.lease) return fail("error.leased");
   if (d.transitTo) return fail("error.inTransit");
+  if (serverTaken(s, d.id)) return fail("error.serverInUse");
   unplug(s, new Set([d.id]));
   s.devices = s.devices.filter((x) => x.id !== deviceId);
   book(s, "sales", "ledger.sale", { device: d.name }, resaleValue(s, d.price, d.boughtAt));
