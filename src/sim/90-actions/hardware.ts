@@ -471,9 +471,9 @@ export function orderHomeLine(s: GameState, lineId: string): ActionResult {
   if (s.homeLine.next?.id === lineId) return fail("error.lineOrdered");
   if (s.homeLine.id === lineId) {
     if (!s.homeLine.next) return fail("error.lineActive");
-    s.homeLine = { id: lineId, next: null };
+    s.homeLine = { ...s.homeLine, next: null };
     return { ok: true };
   }
-  s.homeLine = { id: s.homeLine.id, next: { id: lineId, at: s.hour + 24 * line.installDays } };
+  s.homeLine = { ...s.homeLine, next: { id: lineId, at: s.hour + 24 * line.installDays } };
   return { ok: true };
 }

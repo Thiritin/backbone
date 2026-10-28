@@ -91,8 +91,8 @@ export interface GameState {
   downSince: Record<string, number>;
   // Cluster nodes frozen because their RAM in use exceeds the installed RAM.
   frozen: string[];
-  // The basement's internet line (HOME_LINES id) and a switch to another line that goes live at hour at.
-  homeLine: { id: string; next: { id: string; at: number } | null };
+  // The basement's internet line (HOME_LINES id), a switch to another line that goes live at hour at, and whether this line ran full.
+  homeLine: { id: string; next: { id: string; at: number } | null; full?: boolean };
   docs: Doc[];
   // Positions rented by competitors in each datacenter.
   dcs: Record<string, { others: number }>;

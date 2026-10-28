@@ -10,7 +10,7 @@ import { trafficGb } from "../10-catalog/products";
 import { trafficShape } from "../10-catalog/usage";
 import { datacenterById, homeLineById, inUs } from "../20-world/datacenters";
 import type { Service } from "../30-customers/customers";
-import { bump, createTicket, OUTAGE_WRITE_CHANCE, profileStats } from "../40-support/tickets";
+import { bump, createTicket, OUTAGE_WRITE_CHANCE, profileStats, slowed } from "../40-support/tickets";
 import { isSuspended } from "../45-billing/billing";
 import type { GameState, LedgerEntry, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -217,6 +217,12 @@ export function peakMbps(s: GameState): number {
   return Math.max(0, ...totals);
 }
 
+// The basement's busiest hour of upload demand over the last 7 days, in Mbit/s.
+export function homePeak(s: GameState): number {
+  const loc = s.locations.find((l) => !l.dc);
+  return Math.max(0, ...(loc ? s.network.history[loc.id] ?? [] : []).map(([demand]) => demand));
+}
+
 // Chance a network says yes when you ask it.
 export function acceptChance(s: GameState, p: Peer): number {
   const size = p.minMbps ? Math.min(1, peakMbps(s) / p.minMbps) : 1, g = s.network.goodwill;
@@ -278,21 +284,30 @@ function attacks(s: GameState, events: SimEvent[]) {
 }
 
 // Customers behind a saturated zone lose a quarter of their outage penalty each hour; when the zone first saturates, some write in.
+// A full home line slows the basement's sites instead, by the share of traffic it drops, and says so once per line.
 function saturation(s: GameState, r: Routing, events: SimEvent[]) {
-  const now = s.locations.filter((l) => r.zones[l.id].demand > 0 && r.zones[l.id].dropped / r.zones[l.id].demand > SATURATION_FLOOR).map((l) => l.id);
+  const dropShare = (id: string) => r.zones[id].dropped / r.zones[id].demand;
+  const now = s.locations.filter((l) => r.zones[l.id].demand > 0 && dropShare(l.id) > SATURATION_FLOOR).map((l) => l.id);
   if (now.length) {
     s.customers = s.customers.map((c) => ({ ...c }));
     const byId = new Map(s.customers.map((c) => [c.id, c]));
     for (const v of s.services) {
       const loc = zoneOf(s, v), c = byId.get(v.customerId);
       if (!loc || !c || !now.includes(loc.id) || !running(s, v)) continue;
+      if (!loc.dc) { slowed(s, c, v.id, dropShare(loc.id)); continue; }
       const p = profileStats(c.profile);
       bump(c, -p.outagePenalty * SATURATION_PENALTY);
       const fresh = !s.network.saturated.includes(loc.id);
       if (fresh && rand(hashRng(s.seed, s.hour, 0x5a7, Number(v.id.replace(/\D/g, "")) || 0)) < OUTAGE_WRITE_CHANCE[p.budget] / 2) createTicket(s, c, "outage", v.id);
     }
     for (const id of now.filter((x) => !s.network.saturated.includes(x))) {
-      events.push({ app: "Network", key: "event.saturated", params: { location: s.locations.find((l) => l.id === id)!.name } });
+      const loc = s.locations.find((l) => l.id === id)!;
+      if (loc.dc) events.push({ app: "Network", key: "event.saturated", params: { location: loc.name } });
+      else if (!s.homeLine.full) {
+        s.homeLine = { ...s.homeLine, full: true };
+        const line = homeLineById(s.homeLine.id);
+        events.push({ app: "Locations", key: "event.lineFull", params: { line: `${line.isp} ${line.name}`, mbit: line.up } });
+      }
     }
   }
   s.network = { ...s.network, saturated: now };

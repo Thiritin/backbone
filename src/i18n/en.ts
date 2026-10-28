@@ -438,6 +438,8 @@ export const en: Record<string, (p: Params) => string> = {
   "event.ddos.text": (p) => `${p.service} in ${p.location} is under a ${p.gbit} Gbit/s attack.`,
   "event.saturated.title": () => "Links saturated",
   "event.saturated.text": (p) => `The uplinks of ${p.location} are full and customers notice.`,
+  "event.lineFull.title": () => "Home line full",
+  "event.lineFull.text": (p) => `The basement sites slow down while traffic tops the ${p.mbit} Mbit/s upload of ${p.line}.`,
   "event.networkBills.title": () => "Network bills paid",
   "event.networkBills.text": (p) => `Transit, ports and links cost ${euro(Number(p.total))} this month.`,
   "ledger.transit": (p) => `${p.carrier} transit in ${p.location}, ${p.mbps} Mbit/s`,

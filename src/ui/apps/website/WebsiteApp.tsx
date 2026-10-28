@@ -6,7 +6,9 @@ import { PRODUCTS } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import { companyDomain } from "../../../sim/30-customers/domains";
 import type { GameState } from "../../../sim/50-state";
-import { hasOrderForm, owns } from "../../../sim/80-business/marketing";
+import { euro } from "../../../sim/00-core/money";
+import { hasOrderForm, OWNED, owns } from "../../../sim/80-business/marketing";
+import { setUpChannel } from "../../../sim/90-actions/marketing";
 import { lineBlocker, listed, SITE_LINES } from "../../../sim/80-business/website";
 import { setLine } from "../../../sim/90-actions/website";
 import { useStore } from "../../store";
@@ -45,6 +47,20 @@ export function WebsiteApp() {
                   onChange={(e) => act((s) => setLine(s, p, e.target.checked))} />
               </label>
               {why && <p className="web-why">{t(why)}</p>}
+            </div>
+          );
+        })}
+        <div className="side-h">Site</div>
+        {(["website", "orderForm"] as const).map((c) => {
+          const def = OWNED[c], blocked = def.needs && !owns(game, def.needs);
+          return (
+            <div key={c} className="web-line">
+              <div className="web-line-row">
+                <span>{c === "website" ? "Web design" : "Order form"}</span>
+                {owns(game, c) ? <span className="pill ok">Active</span>
+                  : <button className="btn" disabled={!!blocked || game.cash < def.setup} onClick={() => act((s) => setUpChannel(s, c))}>Set up</button>}
+              </div>
+              {!owns(game, c) && <p className="web-why"><span className="num">{euro(def.setup)}</span>, then <span className="num">{euro(def.upkeep)}</span> a month{blocked ? ", after Web design" : ""}</p>}
             </div>
           );
         })}

@@ -1,4 +1,4 @@
-import { rand } from "../00-core/rng";
+import { chance, rand } from "../00-core/rng";
 import { addHoursOn } from "../00-core/workhours";
 import { PROFILES, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
 import { activeServices, type Customer, type Profile, type Service } from "../30-customers/customers";
@@ -92,6 +92,15 @@ export const bump = (c: Customer, delta: number): void => {
   bumpProbe.fn?.(c, next - c.happiness);
   c.happiness = next;
 };
+
+// economy.md, Usage: per hour a slowed service costs SLOW_PENALTY × the share of performance lost, and some write in.
+export const SLOW_PENALTY = 0.1;
+export const SLOW_TICKET_CHANCE = 0.1;
+export function slowed(s: GameState, c: Customer, serviceId: string, lost: number): void {
+  bump(c, -SLOW_PENALTY * lost);
+  if (s.tickets.some((t) => t.serviceId === serviceId && !isFinal(t)) || !chance(s.rng, SLOW_TICKET_CHANCE * lost)) return;
+  createTicket(s, c, "outage", serviceId).topic = "slow";
+}
 
 // With both serviceId and topic given, no random number is drawn.
 export function createTicket(s: GameState, c: Customer, kind: TicketKind, serviceId?: string | null, topic?: string): Ticket {

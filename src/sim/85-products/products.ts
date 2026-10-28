@@ -4,7 +4,7 @@ import { modelById } from "../10-catalog/hardware";
 import { softwareById, type Software } from "../10-catalog/platforms";
 import { BACKUP_HOUR } from "../10-catalog/usage";
 import type { Customer } from "../30-customers/customers";
-import { bump, createTicket, isFinal } from "../40-support/tickets";
+import { bump, createTicket, slowed } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { PHP_SLOW, phpTickets } from "../60-infra/php";
@@ -26,10 +26,7 @@ export const BACKUP_POOL = 1.3;
 // GB moved per hour over a 1 Gbit/s link inside a zone and over the internet to another zone.
 export const LAN_GB_PER_HOUR = 450;
 export const WAN_GB_PER_HOUR = 45;
-// Hourly chance per service on an overloaded node to write in, times the share of performance lost.
-export const SLOW_TICKET_CHANCE = 0.1;
-// economy.md, Usage: happiness lost per hour on a slowed node, times the share of performance lost.
-export const SLOW_PENALTY = 0.1;
+export { SLOW_PENALTY, SLOW_TICKET_CHANCE } from "../40-support/tickets";
 
 // One lost disk in an incident report.
 export interface LossItem { workloadId: string; serviceId: string; customerId: string; diskGb: number; backupAt: number | null; restored: boolean }
@@ -162,9 +159,7 @@ function overload(s: GameState) {
     const v = s.services.find((x) => x.id === w.serviceId);
     const cus = v && customerCopy(s, v.customerId);
     if (!v || !cus) continue;
-    bump(cus, -SLOW_PENALTY * (1 - perf));
-    if (s.tickets.some((t) => t.serviceId === v.id && !isFinal(t)) || !chance(s.rng, SLOW_TICKET_CHANCE * (1 - perf))) continue;
-    createTicket(s, cus, "outage", v.id).topic = "slow";
+    slowed(s, cus, v.id, 1 - perf);
   }
 }
 

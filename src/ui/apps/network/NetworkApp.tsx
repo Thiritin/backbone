@@ -9,7 +9,7 @@ import {
 import { datacenterById, homeLineById, inUs } from "../../../sim/20-world/datacenters";
 import type { GameState, Location } from "../../../sim/50-state";
 import {
-  acceptChance, activeExchanges, capacityMbps, coolingDown, crossConnects, monthlyNetworkCost, p95, route, transitBill, zoneLinkMonthly, type Uplink,
+  acceptChance, activeExchanges, capacityMbps, coolingDown, crossConnects, homePeak, monthlyNetworkCost, p95, route, transitBill, zoneLinkMonthly, type Uplink,
 } from "../../../sim/60-infra/network";
 import {
   acceptPeering, addUplinkLink, cancelUplink, cancelZoneLink, joinExchange, orderExchangePort, orderTransit, orderZoneLink, registerAsn, rejectPeering,
@@ -128,8 +128,9 @@ function Uplinks({ game, loc, routing }: { game: GameState; loc: Location; routi
           <dl className="shop-specs">
             <div><dt>Upload</dt><dd className="num">{mbps(line.up)}</dd></div>
             <div><dt>In use</dt><dd className="num">{mbps(used.home ?? 0)}</dd></div>
+            <div><dt>Peak, 7 days</dt><dd className="num">{mbps(homePeak(game))}</dd></div>
           </dl>
-          <Meter load={(used.home ?? 0) / line.up} />
+          <Meter load={homePeak(game) / line.up} />
         </div>
       </div>
     );

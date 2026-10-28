@@ -643,7 +643,7 @@ How the newer locations are priced:
 
 **Basement.** One position, a 24U rack at most, 3 kW at most (a household circuit), no backup, the household power price (business × 1.6) and the home line as its only uplink.
 
-**Home line.** The basement can switch to another line in the Locations app. The old line stays up until the new one is installed, and ordering the current line again cancels a pending switch. A paid line is billed as rent on the first of each month; the starting DSL line is paid privately. Lines stay on offer once they appear. The sim stores each line's speed; there is no traffic model yet, so upload does not limit the basement.
+**Home line.** The basement can switch to another line in the Locations app. The old line stays up until the new one is installed, and ordering the current line again cancels a pending switch. A paid line is billed as rent on the first of each month; the starting DSL line is paid privately. Lines stay on offer once they appear. The basement's traffic leaves through the line's upload (Traffic and bandwidth). When the evening peak is over it, the sites served from the basement slow down: each hour a basement service costs its customer the slow-node penalty, 0.1 × the share of traffic the line drops, and writes a slow-site ticket with 0.1 × that share (Usage curves and overcommit). The Locations app shows the line's peak upload over the last 7 days next to its speed, the Network app shows it on the home line's card, and the first hour a line runs full sends one notification per line.
 
 | Line | Provider | Down / up (Mbit/s) | Per month | From | Install days | Static IP |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -847,7 +847,7 @@ Notices about domains nobody hosts arrive 0.2 times a month for the company. A n
 
 ## Traffic and bandwidth
 
-Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 about a dozen VPS customers fill the basement's 1 Mbit/s upload on an evening, which is the first push out of the basement.
+Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 one full 8 GB basement server sends about 0.4 to 0.7 Mbit/s at its evening peak, so the second server fills the 1 Mbit/s upload of the starting DSL line, and SDSL 2048 carries about three servers' worth; that is the first push out of the basement.
 
 **Average traffic** per customer:
 
@@ -921,7 +921,7 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 abo
 
 **DDoS protection.** Scrubba Dub On Demand costs €50 a month plus €250 per attack and lets a sixth of the attack's first hour through. Akamaybe Prolexit costs €800 a month and filters everything. A blackhole drops the attack and takes its target offline until it is lifted.
 
-**Saturation in practice.** A zone counts as saturated once more than 2% of its traffic is dropped. Services there stay online, and each hour costs their customers 25% of their outage penalty; when a zone first saturates, each affected customer writes an outage ticket with half their usual chance.
+**Saturation in practice.** A zone counts as saturated once more than 2% of its traffic is dropped. Services there stay online, and each hour costs their customers 25% of their outage penalty; when a zone first saturates, each affected customer writes an outage ticket with half their usual chance. The basement is the exception: a full home line slows its sites instead (Home line).
 
 ## Workloads and migration
 
@@ -1268,6 +1268,8 @@ Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and Tr
 | Email | Free | Free | Always on |
 | Web design | €400 | €15 | None |
 | Order form | €900 | €10 | Web design |
+
+Web design and the order form are set up in the Website app's sidebar from the first day, or in the Marketing app's Channels once Marketing campaigns is learned. Before, they were only in the Marketing app, which waits for 450 know-how of research (Marketing basics, Employee management, Marketing campaigns), so a first-year company could not buy them before December.
 | Goggle Ads | €50 | None | Web design |
 | AI ads | €1,500 | None | Web design, from 2023 |
 
@@ -1331,16 +1333,18 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Skill | Tier | Know-how | Training | Needs | Makes available |
 | --- | --- | --- | --- | --- | --- |
 | Monitoring | 1 | 50 | 5 days | | Dock badges, failure notifications |
-| Marketing basics | 1 | 50 | 5 days | | Leads to Product management and Marketing campaigns |
+| Marketing basics | 1 | 50 | 5 days | | Leads to Marketing campaigns |
 | Employee management | 1 | 100 | 10 days | | Staff |
 | Network operations | 2 | 300 | 14 days | Monitoring | Network |
-| Product management | 2 | 200 | 14 days | Marketing basics | Products |
+| Product management | 1 | 100 | 7 days | | Products |
 | Marketing campaigns | 2 | 300 | 14 days | Marketing basics, Employee management | Marketing |
 | Market research | 3 | 800 | 21 days | Product management, Marketing campaigns | Market |
 | Virtualization | 3 | 400 | 14 days | Product management, Monitoring | Virtual machines |
 | Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders |
 
-The whole tree costs 3,700 know-how and 118 days of training.
+The whole tree costs 3,600 know-how and 111 days of training.
+
+Product management was tier 2 at 200 know-how and 14 days after Marketing basics. The happiness run showed a careful first-year company earns 15 to 40 know-how a month, so the 250 know-how path landed in September to November. As a tier 1 skill at 100 know-how and 7 days, the same company learns it between early May and early July (median early June).
 
 **Unlocks.** Launch costs are fixed and do not follow the price multipliers.
 
@@ -1458,7 +1462,30 @@ A Vitest suite runs both bots on fixed seeds and fails when either rule breaks. 
 - Automatic placement booked RAM up to 1.5× installed. Memory in use is booked RAM × (0.6 + 0.4 × load), so a basement server booked past about 8 GB froze most evenings: 86 to 270 service-hours down per customer per month. Automatic placement now stops at the installed RAM; overbooking stays a manual choice (Usage curves and overcommit).
 - A slowed node cost each customer 1 − performance per hour. Drift recovers only a fifth of the gap each month, so a steady monthly loss D settles happiness about 5 × D below the drift target; a node slowed to 72% for 54 evening hours a week cost about 65 a month and drove customers to churn. At 0.1 × (1 − performance) the same node costs about 6 a month and a node at 40% for 80 hours a week still costs about 20, enough to churn customers when the player keeps overloading.
 
-With both changes the careful bot on seeds 1 to 6 holds happiness near 90 through 2006 instead of 15 to 50. Its size is then set by capacity. One 8 GB basement server holds about €180 of monthly revenue (7 to 16 customers, since VPS and game server orders book 0.5 to 4 GB each), the second server costs €2,500 against €1,000 starting cash and €150 to €300 saved a month, and the 1 Mbit/s home upload saturates once more servers are added. The balance model reaches about 40 customers and €400 by the end of 2005 because it books no RAM for web hosting, sells no game servers and caps only VPS. Reaching the year 1 pacing target in the live game takes a bank loan for a second server and a faster home line.
+With both changes the careful bot on seeds 1 to 6 holds happiness near 90 through 2006 instead of 15 to 50. Its size was then set by capacity: one 8 GB basement server holds about €180 of monthly revenue (7 to 16 customers, since VPS and game server orders book 0.5 to 4 GB each), the second server costs €2,500 against €1,000 starting cash and €150 to €300 saved a month, and its December customers stayed at 12 to 20 with €130 to €230 of revenue.
+
+**Early capacity.** The happiness run now plays the loan path. When the cluster is 80% booked and cash is short of the server plus a €2,000 reserve, the bot takes the smallest preset loan that covers the gap over five years, buys a Dwell server, mounts and cables it and adds it to the cluster, up to the basement's four servers. It grows a panel VM only within its server's installed RAM and starts another panel VM otherwise. Once the basement's evening peak reaches 90% of the upload it orders the cheapest line with more upload (SDSL 2048 in 2005). It learns Product management, then Marketing basics, and sets up web design and the order form once no server is due and cash keeps the reserve. With these rules, seeds 1 to 6 reach the following by December 2005:
+
+| Seed | Customers | MRR | Happiness | Net worth | Level | Product management | Order form |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 68 | €631 | 83 | €14,776 | 1 | Early June | Early February |
+| 2 | 47 | €606 | 92 | €13,190 | 1 | Early July | Early April |
+| 3 | 60 | €577 | 91 | €13,436 | 1 | Early May | Late January |
+| 4 | 46 | €659 | 91 | €15,684 | 2 | Early June | Mid February |
+| 5 | 43 | €452 | 93 | €9,736 | 1 | Early June | Early February |
+| 6 | 47 | €682 | 92 | €15,923 | 2 | Early June | Mid March |
+
+The year 1 targets for customers and revenue hold (median 47 customers and €619), happiness stays near 90, and the median company ends 2005 within about €1,500 of level 2, which two of six seeds reach: the loan buys hardware that is worth only its resale value, so the debt costs net worth. The level 2 threshold stays at €15,000; the balance model reaches it in half its seeds by December.
+
+**The balance model and the live rules.** The cohort model in `src/sim/balance/model.ts` follows the live capacity rules:
+
+- Every product books RAM: a web space 0.25 GB, a VPS the year's plan RAM by budget, and a game server 4 GB of the year's plan at 1.6× the VPS rate per GB. Gamers ask for a game server 60% of the time. The cluster keeps 1 GB for its hypervisor and panel.
+- The starting server and every basement server are the year's Dwell server at its full price and RAM (8 GB for €2,500 in 2005). The model used to start with a half-RAM tower worth €1,000.
+- While in the basement, the home line's upload caps the evening peak at 2× each customer's mean traffic, and the bot switches to the cheapest faster line at 90%.
+- The bot borrows in the basement like the happiness run; out of the basement it borrows only while all instalments stay under 60% of its recurring revenue. It buys a server only when cash keeps €2,000 plus three instalments, and it moves to the datacenter once the basement's four servers are in place.
+- Net worth subtracts debt and values hardware at its resale value, as `metrics.ts` does.
+
+The basement VPS cap of 8 is gone, since RAM and upload now set the limit. Against the model before these changes, level 2 arrives at the same time (median 2006.6 against 2006.3, half the seeds in 2005), level 3 later (2011.3 against 2009.9), level 4 earlier (2014.1 against 2017.6), and neither bot goes bankrupt. Levels 3 to 6 still miss their pacing years, as before.
 
 **Open questions**
 

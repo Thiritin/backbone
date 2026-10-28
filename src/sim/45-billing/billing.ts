@@ -219,8 +219,8 @@ const needsChase = (s: GameState, inv: Invoice): boolean =>
 
 // Bank: economy.md, Bank, insurance and tax.
 const BASE_RATE: [number, number][] = [[2005, 4], [2009, 2.5], [2015, 1], [2021, 1], [2023, 4.5], [2026, 4]];
-const RISK_PREMIUM = [6, 4, 3, 2, 1, 0.5];
-const MIN_LIMIT = [10_000, 25_000, 100_000, 500_000, 3_000_000, 20_000_000];
+export const RISK_PREMIUM = [6, 4, 3, 2, 1, 0.5];
+export const MIN_LIMIT = [10_000, 25_000, 100_000, 500_000, 3_000_000, 20_000_000];
 export const LOAN_AMOUNTS = [2_500, 5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000, 1_000_000, 3_000_000, 10_000_000, 20_000_000];
 export const LOAN_YEARS = [1, 2, 3, 5, 10];
 export const MISSED_FEE = 100;
