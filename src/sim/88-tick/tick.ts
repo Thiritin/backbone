@@ -1,11 +1,11 @@
 import { binomial, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
-import { modelById } from "../10-catalog/hardware";
+import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
 import { capacityAt, DATACENTERS, datacenterById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
-import type { GameState, LedgerEntry } from "../50-state";
-import { dcAvailability, fits, locationOf, locationRent, powered } from "../60-infra/status";
+import type { Component, Device, GameState, LedgerEntry } from "../50-state";
+import { arrayLost, dcAvailability, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
 
 export interface SimEvent {
   app: string;
@@ -24,7 +24,7 @@ export function endLease(s: GameState, leaseId: string) {
 // Euros of power drawn in one hour: every powered device at the business price × the datacenter's power factor, or the household price in the basement.
 export function powerPerHour(s: GameState): number {
   const price = businessPowerPrice(yearOf(s.hour));
-  return s.devices.filter((d) => powered(s, d.id)).reduce((sum, d) => {
+  return s.devices.filter((d) => d.on && powered(s, d.id)).reduce((sum, d) => {
     const loc = locationOf(s, d)!;
     return sum + (modelById(d.model).watts / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
   }, 0);
@@ -69,6 +69,64 @@ function updateHolds(s: GameState, events: SimEvent[]) {
   }
 }
 
+export const REBUILD_MBPS = { low: 50, medium: 150, high: 400 } as const;
+// ponytail: drives count as 70% full until workloads fill them; rebuild time then follows real usage.
+export const DRIVE_USED_SHARE = 0.7;
+export const FEED_PRICE = { feedB: 0.4, highDensity: 0.6 } as const;
+
+export const rebuildHours = (d: Device): number => {
+  const v = modelById(d.model).server!;
+  return ((v.diskGb / v.drives) * 1000 * DRIVE_USED_SHARE) / REBUILD_MBPS[d.rebuildRate] / 3600;
+};
+
+// Each component of a running device fails at its yearly rate for its age, × the manufacturer's factor, × 2 while a fan is out.
+export function failureChance(s: GameState, d: Device, c: Component): number {
+  const spec = COMPONENTS[c.kind];
+  const yearly = s.hour - c.installedAt < spec.life * HOURS_PER_YEAR ? spec.before : spec.after;
+  const hot = d.components.some((x) => x.kind === "fan" && x.failedAt !== null) ? 2 : 1;
+  return (yearly * (manufacturerByName(d.brand)?.failureFactor ?? 1) * hot) / HOURS_PER_YEAR;
+}
+
+// Records failed components on a device: a drive failure the array can't survive loses its data and stops any rebuild.
+// The failure is always recorded; the notification needs the monitoring unlock.
+export function failComponents(s: GameState, d: Device, ids: string[], events: SimEvent[] = []): Device {
+  const broke = d.components.filter((c) => ids.includes(c.id) && c.failedAt === null);
+  if (!broke.length) return d;
+  const next: Device = { ...d, components: d.components.map((c) => (broke.includes(c) ? { ...c, failedAt: s.hour } : c)) };
+  if (broke.some(isDrive) && arrayLost(next)) Object.assign(next, { dataLost: next.dataLost ?? s.hour, rebuild: null });
+  if (s.unlocks.includes("monitoring")) {
+    for (const c of broke) events.push({ app: "Locations", key: "event.componentFailed", params: { device: d.label ?? d.name, component: c.kind } });
+  }
+  return next;
+}
+
+function wear(s: GameState, events: SimEvent[]) {
+  s.devices = s.devices.map((d) => {
+    if (!d.components.length || !d.on || !powered(s, d.id)) return d;
+    const broke = d.components.filter((c) => c.failedAt === null && rand(s.rng) < failureChance(s, d, c));
+    return broke.length ? failComponents(s, d, broke.map((c) => c.id), events) : d;
+  });
+}
+
+// Finished swaps put a new component in; a drive in an array that survived starts a rebuild. Finished rebuilds end.
+function service(s: GameState) {
+  s.devices = s.devices.map((d) => {
+    let next = d;
+    if (d.maintenance && d.maintenance.doneAt <= s.hour) {
+      const old = d.components.find((c) => c.id === d.maintenance!.componentId)!;
+      const id = `c${Math.max(...d.components.map((c) => Number(c.id.slice(1)) || 0)) + 1}`;
+      const isDrive = drivesOf(d).includes(old);
+      const rebuild = isDrive && d.raid !== "none" && !arrayLost(d) ? { componentId: id, doneAt: s.hour + rebuildHours(d) } : d.rebuild;
+      next = {
+        ...d, maintenance: null, rebuild,
+        components: d.components.map((c) => (c.id === old.id ? { id, kind: c.kind, installedAt: s.hour, failedAt: null } : c)),
+      };
+    }
+    if (next.rebuild && next.rebuild.doneAt <= s.hour) next = { ...next, rebuild: null };
+    return next;
+  });
+}
+
 export function tick(state: GameState): SimEvent[] {
   state.powerDue += powerPerHour(state);
   state.hour++;
@@ -93,9 +151,11 @@ export function tick(state: GameState): SimEvent[] {
       events.push({ app: "Locations", key: "event.stockArrived", params: { count, location: state.locations.find((l) => l.id === id)!.name } });
     }
   }
+  state.rng = { ...state.rng };
+  wear(state, events);
+  if (state.devices.some((d) => d.maintenance || d.rebuild)) service(state);
   const monthStart = isMonthStart(state.hour);
   if (monthStart) {
-    state.rng = { ...state.rng };
     competitorsCancel(state);
   }
   if (state.waitlist.length) updateHolds(state, events);
@@ -106,6 +166,13 @@ export function tick(state: GameState): SimEvent[] {
     const power = cents(state.powerDue);
     const bills: LedgerEntry[] = state.locations.filter((l) => l.dc)
       .map((l) => ({ hour: state.hour, category: "rent", key: "ledger.space", params: { location: l.name }, amount: -locationRent(state, l) }));
+    for (const r of state.racks) {
+      const loc = state.locations.find((l) => l.id === r.locationId)!;
+      if (!loc.dc) continue;
+      for (const feed of ["feedB", "highDensity"] as const) {
+        if (r[feed]) bills.push({ hour: state.hour, category: "rent", key: "ledger.feed", params: { rack: r.name, feed }, amount: -Math.round(FEED_PRICE[feed] * datacenterById(loc.dc).positionPrice) });
+      }
+    }
     const leases = state.leases.map((l) => ({ ...l, paid: l.paid + 1 }));
     for (const l of leases) bills.push({ hour: state.hour, category: "leasing", key: "ledger.lease", params: { lessor: lessorName(l.lessor), paid: l.paid, months: l.months }, amount: -l.monthly });
     state.leases = leases;

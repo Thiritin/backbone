@@ -1,7 +1,7 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
 import { GENERATIONS } from "./economy";
 
-export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch";
+export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "part";
 export interface PortSpec { media: "rj45" | "sfp"; gbit: number }
 export interface ServerSpec {
   arch: "x86" | "arm";
@@ -13,7 +13,42 @@ export interface ServerSpec {
   diskGb: number;
   disk: "HDD" | "SSD" | "NVMe";
   gpus: number;
+  // Drives fitted at purchase; every drive has diskGb / drives.
+  drives: number;
+  ramSticks: number;
 }
+// Values from economy.md (Components): life in years, yearly failure rates before and after it, part price, and when a swap
+// can happen with the device running: in a RAID array, with a second working power supply, always, or never.
+export type ComponentKind = "hdd" | "ssd" | "nvme" | "psu" | "fan" | "ram" | "board" | "cpu" | "nic";
+export const COMPONENT_KINDS: ComponentKind[] = ["hdd", "ssd", "nvme", "psu", "fan", "ram", "board", "cpu", "nic"];
+export const COMPONENTS: Record<ComponentKind, { life: number; before: number; after: number; price: number; hotSwap: "raid" | "dual" | "yes" | "no" }> = {
+  hdd: { life: 5, before: 0.015, after: 0.08, price: 120, hotSwap: "raid" },
+  ssd: { life: 5, before: 0.008, after: 0.04, price: 150, hotSwap: "raid" },
+  nvme: { life: 5, before: 0.006, after: 0.03, price: 200, hotSwap: "raid" },
+  psu: { life: 7, before: 0.01, after: 0.06, price: 150, hotSwap: "dual" },
+  fan: { life: 6, before: 0.01, after: 0.07, price: 25, hotSwap: "yes" },
+  ram: { life: 12, before: 0.002, after: 0.006, price: 60, hotSwap: "no" },
+  board: { life: 12, before: 0.003, after: 0.01, price: 600, hotSwap: "no" },
+  cpu: { life: 15, before: 0.0005, after: 0.002, price: 400, hotSwap: "no" },
+  nic: { life: 10, before: 0.003, after: 0.01, price: 80, hotSwap: "no" },
+};
+const COMPONENT_NAMES: Record<ComponentKind, string> = {
+  hdd: "HDD", ssd: "SSD", nvme: "NVMe drive", psu: "power supply", fan: "fan", ram: "RAM stick", board: "mainboard", cpu: "CPU", nic: "network card",
+};
+const DRIVE_KIND = { HDD: "hdd", SSD: "ssd", NVMe: "nvme" } as const;
+
+// The components a model is built from: drives, power supplies, fans, RAM, board, CPUs and a NIC for a server;
+// power supplies, 2 fans and a board for a switch or firewall; nothing for patch panels, gateways and parts.
+export function componentKinds(m: DeviceModel): ComponentKind[] {
+  const n = (k: ComponentKind, count: number) => Array<ComponentKind>(count).fill(k);
+  if (m.server) {
+    const v = m.server;
+    return [...n(DRIVE_KIND[v.disk], v.drives), ...n("psu", m.psus), ...n("fan", 4), ...n("ram", v.ramSticks), "board", ...n("cpu", v.sockets), "nic"];
+  }
+  if (m.kind === "switch" || m.kind === "firewall") return [...n("psu", m.psus), ...n("fan", 2), "board"];
+  return [];
+}
+
 export interface DeviceModel {
   id: string;
   name: string;
@@ -46,6 +81,7 @@ export const MANUFACTURERS: Manufacturer[] = [
   { id: "fortinope", name: "Fortinope", kinds: ["firewall"], priceFactor: 0.9, failureFactor: 1.25 },
   { id: "pablo-alto", name: "Pablo Alto", kinds: ["firewall"], priceFactor: 1.1, failureFactor: 0.75 },
   { id: "pandoot", name: "Pandoot", kinds: ["patch"], priceFactor: 1, failureFactor: 1 },
+  { id: "generic", name: "Generic", kinds: ["part"], priceFactor: 1, failureFactor: 1 },
 ];
 export const brandsFor = (kind: DeviceKind): string[] => MANUFACTURERS.filter((m) => m.kinds.includes(kind)).map((m) => m.name);
 export const SERVER_BRANDS = brandsFor("server");
@@ -59,6 +95,9 @@ const ports = (n: number, gbit: number, media: PortSpec["media"] = gbit === 1 ? 
 // Capacity of one large (backup) and one densest (archive) HDD per generation, in GB.
 export const LARGE_HDD_GB = [500, 1000, 3000, 6000, 10000, 16000, 22000];
 export const DENSE_HDD_GB = [750, 2000, 4000, 8000, 14000, 20000, 28000];
+
+// RAM stick size per generation, in GB.
+export const RAM_STICK_GB = [2, 4, 8, 16, 32, 32, 64];
 
 // Multipliers on the generation row. disk picks the drive: the generation's disk, or a large or dense HDD.
 const SERVER_LINES = [
@@ -92,6 +131,7 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
       server: {
         arch: v.arch, sockets: v.sockets, cores: Math.round(g.cores * v.cores), ramGb: g.ramGb * v.ram, maxRamGb: 2 * g.ramGb * v.ram,
         bays: v.bays, diskGb: driveGb * v.drives, disk: v.disk === "gen" ? g.disk : "HDD", gpus: v.gpus,
+        drives: v.drives, ramSticks: Math.max(1, Math.round((g.ramGb * v.ram) / RAM_STICK_GB[i])),
       },
     };
   }),
@@ -125,6 +165,7 @@ export const MODELS: DeviceModel[] = [
   // Price 0 keeps gateways out of the shop; they come with the basement and with every datacenter location.
   other("home-router", "Home router", "gateway", 0, ports(4, 1), 10, 0),
   other("handoff", "Datacenter handoff", "gateway", 0, ports(2, 1), 0, 0),
+  ...COMPONENT_KINDS.map((k) => other(`part-${k}`, `Spare ${COMPONENT_NAMES[k]}`, "part", 0, [], 0, COMPONENTS[k].price)),
 ];
 // Model ids from older saves.
 export const RENAMED_MODELS: Record<string, string> = Object.fromEntries(GENERATIONS.flatMap((_, i) => [

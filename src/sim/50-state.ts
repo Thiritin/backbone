@@ -1,5 +1,6 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
+import { componentKinds, modelById, type ComponentKind } from "./10-catalog/hardware";
 import { seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 
@@ -10,21 +11,30 @@ export type CableKind = "copper" | "dac" | "fiber";
 
 export type SpaceKind = "basement" | "share" | "positions" | "cage" | "suite";
 // Each location is an availability zone (az, like fra2) in the region of its city.
-export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number }
+export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean }
 // share-N racks belong to the provider of a rack share and hold N units.
 export type RackModel = "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-10" | "share-21" | "share-42";
 // arriveAt is the hour a moving rack arrives; null when it is in place. A moving rack already holds its target location and position.
-export interface Rack { id: string; model: RackModel; locationId: string; position: number; name: string; arriveAt: number | null; price: number; boughtAt: number; provided: boolean }
+export interface Rack { id: string; model: RackModel; locationId: string; position: number; name: string; arriveAt: number | null; price: number; boughtAt: number; provided: boolean; feedB: boolean; highDensity: boolean }
 // slot is the lowest unit the device occupies, counted from 1 at the bottom.
 // A gateway sits on its location's carrier panel: rackId null, panel = location id. A stored unit has store = its zone's location id;
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.
-export interface Device { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null }
+export interface Device { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
+  components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
+  rebuild: { componentId: string; doneAt: number } | null; maintenance: { componentId: string; partId: string; doneAt: number } | null;
+  // The hour the device's data was lost, if it ever was.
+  dataLost: number | null;
+}
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
 // A waitlist entry gets heldUntil once its space is free; the space is then reserved until that hour.
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "positions" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
-export interface Cable { id: string; a: End; b: End; kind: CableKind }
+export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
+// failedAt is the hour the component broke; null while it works.
+export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null }
+export type RaidLevel = "none" | "1" | "5" | "6" | "10";
+export type RebuildRate = "low" | "medium" | "high";
 // A desktop document; x and y are its icon position on the desktop in pixels.
 export interface Doc { id: string; kind: "guide" | "note"; title: string; body: string; x: number; y: number }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
@@ -48,26 +58,39 @@ export interface GameState {
   // Positions rented by competitors in each datacenter.
   dcs: Record<string, { others: number }>;
   waitlist: WaitlistEntry[];
+  // Research unlocks, such as "monitoring".
+  unlocks: string[];
+}
+
+// Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
+export function deviceDefaults(modelId: string, at: number) {
+  const kinds = componentKinds(modelById(modelId));
+  const drives = kinds.filter((k) => k === "hdd" || k === "ssd" || k === "nvme").length;
+  return {
+    components: kinds.map((kind, i): Component => ({ id: `c${i + 1}`, kind, installedAt: at, failedAt: null })),
+    on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
+    rebuild: null, maintenance: null, dataLost: null,
+  };
 }
 
 const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>
-  ({ id, model, brand, rackId, slot, panel, name, bond: "failover", groups: [], price, boughtAt: 0, lease: null, store: null, transitTo: null, arriveAt: null });
+  ({ id, model, brand, rackId, slot, panel, name, bond: "failover", groups: [], price, boughtAt: 0, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults(model, 0) });
 
 // Starting state: a 24U basement rack with a server and a switch, cabled to the home router so the server starts online.
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, cash: START_CASH, nextId: 8,
-  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0 }],
-  racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false }],
+  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
+  racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false }],
   devices: [
     device("dev3", "g1-compute", "Dwell", "rack2", 1, null, "fra1-srv-01", 2500),
     device("dev4", "sw-8", "Sysko", "rack2", 24, null, "fra1-sw-01", 60),
     device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0),
   ],
   cables: [
-    { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper" },
-    { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper" },
+    { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper", color: null },
+    { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper", color: null },
   ],
-  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [],
+  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

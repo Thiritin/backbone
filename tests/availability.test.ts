@@ -160,6 +160,15 @@ describe("saves", () => {
     const share = loaded.dcs[FR5].others / 600;
     expect(share).toBeGreaterThanOrEqual(0.84);
     expect(share).toBeLessThanOrEqual(0.98);
+    const in2018 = { ...newGame(4), hour: hourOf(new Date(Date.UTC(2018, 3, 1))) };
+    const v2 = JSON.parse(serialize(in2018));
+    delete v2.dcs;
+    for (const old of [v2, JSON.parse(serialize(in2018))]) {
+      const a = dcAvailability(deserialize(JSON.stringify(old)), FR5);
+      expect(a.capacity).toBe(900);
+      expect(a.others / 900).toBeGreaterThanOrEqual(0.84);
+      expect(a.others / 900).toBeLessThanOrEqual(0.98);
+    }
     const kept = withFree(5);
     expect(deserialize(serialize(kept)).dcs[FR5]).toEqual({ others: 295 });
   });

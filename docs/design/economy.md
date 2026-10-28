@@ -469,6 +469,26 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 
 **Basement.** One position, a 24U rack at most, 3 kW at most (a household circuit), no backup, the household power price (business × 1.6) and the home line as its only uplink.
 
+## Pear One subscriptions
+
+Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear announces an extra 15% to 30% "price adjustment" a month ahead. Paying yearly in advance costs 10 months instead of 12.
+
+| Module | App | Base per month | Plus | Needs |
+| --- | --- | --- | --- | --- |
+| Starter | Locations, Shop, Support, Customers, Billing (manual), Bank, Settings, Notes, Pear Store | Free | | Start |
+| Monitoring | Monitoring | €10 | €0.50 per monitored device | Monitoring research |
+| Virtual machines | Virtual machines | €20 | €2 per host | Virtualization research |
+| Network | Network | €25 | | Level 2 |
+| Billing automation | Billing rules, invoice runs | €30 | €0.10 per active customer | Level 2 |
+| Finance | Finance | €15 | | Level 2 |
+| Staff | Staff | €20 | €5 per employee | Level 2 |
+| Marketing | Marketing | €20 | | Level 2 |
+| Storefront | The customer shop in Sales | €40 | 0.5% of shop revenue | Shop unlock |
+
+The monitoring and virtualization products' own licences (see the software choices) come on top of the Pear module.
+
+**In-app purchases.** One-off extras inside an expansion, priced per use: an instant invoice run outside the monthly cycle (€2), an alert text message (€0.10 each), an extra dashboard slot (€3 per month), a priority remote-hands booking (€25).
+
 ## Leasing
 
 | Lessor | Parody of |
@@ -537,7 +557,7 @@ A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a boar
 | Level | Drives | Usable | Survives |
 | --- | --- | --- | --- |
 | None | 1+ | All | Nothing; a failed drive loses its data |
-| RAID 1 | 2 | Half | 1 drive |
+| RAID 1 | 2+ | Half | 1 drive |
 | RAID 5 | 3+ | All but one | 1 drive |
 | RAID 6 | 4+ | All but two | 2 drives |
 | RAID 10 | 4+, even | Half | 1 drive per mirror pair |
@@ -548,7 +568,7 @@ A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a boar
 | Medium | 150 MB/s | × 0.8 |
 | High | 400 MB/s | × 0.6 |
 
-A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD that is 70% full takes about 5 hours at medium.
+A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD that is 70% full takes about 5 hours at medium. Until workloads fill drives, every drive counts as 70% full. A server with two or more drives starts in RAID 1, one with a single drive in none, and changing the level needs the server off and wipes its data.
 
 **Maintenance.** A swap takes 15 minutes once someone is there. In the basement you are there at once. At a datacenter remote hands arrive after their response time and bill their hourly rate for at least one hour.
 

@@ -1,9 +1,9 @@
 import { yearOf } from "../00-core/time";
 import { brandsFor, modelById, priceOf, shopModels, SWITCH_BRAND } from "../10-catalog/hardware";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
-import { BASEMENT, DATACENTERS, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
-import type { BondMode, Device, End, GameState, RackModel } from "../50-state";
-import { connectError, fits, freePositions, freeSlots, moveCost, resaleValue, travelCost } from "../60-infra/status";
+import { BASEMENT, DATACENTERS, datacenterById, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
+import { deviceDefaults, type BondMode, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
+import { connectError, drivesOf, fits, freePositions, freeSlots, hotSwappable, moveCost, resaleValue, travelCost } from "../60-infra/status";
 import { endLease } from "../88-tick/tick";
 
 // error is an i18n key.
@@ -11,7 +11,7 @@ export type ActionResult = { ok: true; id?: string } | { ok: false; error: strin
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const newId = (s: GameState, prefix: string) => `${prefix}${s.nextId++}`;
-const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp" } as const;
+const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", part: "part" } as const;
 const roleOf = (modelId: string) => ROLE[modelById(modelId).kind];
 const cents = (v: number) => Math.round(v * 100) / 100;
 
@@ -43,14 +43,14 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "positi
   if (s.cash < spacePrice(dc, space, size)) return fail("error.noCash");
   if (hold) s.waitlist = s.waitlist.filter((w) => w.id !== hold.id);
   const positions = space === "share" ? 1 : size;
-  const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space] };
+  const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };
   s.locations.push(loc);
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
-  s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "failover", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null });
+  s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "failover", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
   if (shareRack) {
     const rackName = nextName(`${prefix(s, loc.id)}-rack`, s.racks.map((r) => r.name));
-    s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true });
+    s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true, feedB: false, highDensity: false });
   }
   return { ok: true, id: loc.id };
 }
@@ -104,7 +104,7 @@ export function buyRack(s: GameState, locationId: string, model: RackModel, posi
   if (error) return fail(error);
   if (s.cash < spec.price) return fail("error.noCash");
   const name = nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
-  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false };
+  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false };
   s.racks.push(rack);
   book(s, "hardware", "ledger.hardware", { model: `${spec.units}U rack`, device: name }, -spec.price);
   return { ok: true, id: rack.id };
@@ -124,6 +124,8 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
   const inside = new Set(s.devices.filter((d) => d.rackId === rackId).map((d) => d.id));
   unplug(s, inside, (id) => inside.has(id));
   Object.assign(rack, { locationId: toLocationId, position, arriveAt: s.hour + move.hours });
+  // Feeds belong to rented positions, so the basement has none.
+  if (!to.dc) Object.assign(rack, { feedB: false, highDensity: false });
   book(s, "moving", "ledger.move", { rack: rack.name, location: to.name }, -move.price);
   return { ok: true, id: rack.id };
 }
@@ -155,7 +157,7 @@ function stock(s: GameState, { model: modelId, brand, qty }: CartLine, lease: st
   return Array.from({ length: qty }, () => {
     const name = nextName(roleOf(modelId), s.devices.map((d) => d.name));
     const id = newId(s, "dev");
-    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "failover", groups: [], price, boughtAt: s.hour, lease, store, transitTo: null, arriveAt: null });
+    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "failover", groups: [], price, boughtAt: s.hour, lease, store, transitTo: null, arriveAt: null, ...deviceDefaults(modelId, s.hour) });
     return id;
   });
 }
@@ -208,6 +210,7 @@ export function buyOutLease(s: GameState, leaseId: string): ActionResult {
 function mountError(s: GameState, d: Device, rackId: string, slot: number): string | null {
   if (d.transitTo) return "error.inTransit";
   if (!d.store) return "error.alreadyMounted";
+  if (modelById(d.model).kind === "part") return "error.notMountable";
   const rack = s.racks.find((r) => r.id === rackId);
   if (!rack) return "error.unknownRack";
   if (rack.arriveAt !== null) return "error.rackMoving";
@@ -239,6 +242,7 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   const rack = s.racks.find((r) => r.id === rackId);
   if (!rack) return fail("error.unknownRack");
   if (rack.arriveAt !== null) return fail("error.rackMoving");
+  if (modelById(modelId).kind === "part") return fail("error.notMountable");
   const same = (d: Device) => d.model === modelId && d.brand === brand;
   const stored = s.devices.filter((d) => same(d) && d.store === rack.locationId);
   if (!Number.isInteger(count) || count < 1 || stored.length < count) {
@@ -299,7 +303,7 @@ export function connect(s: GameState, a: End, b: End): ActionResult {
   const da = s.devices.find((x) => x.id === a.device)!, db = s.devices.find((x) => x.id === b.device)!;
   const kind = modelById(da.model).ports[a.port].media === "rj45" ? "copper" : da.rackId === db.rackId ? "dac" : "fiber";
   const id = newId(s, "cab");
-  s.cables.push({ id, a: { ...a }, b: { ...b }, kind });
+  s.cables.push({ id, a: { ...a }, b: { ...b }, kind, color: null });
   return { ok: true, id };
 }
 
@@ -329,5 +333,109 @@ export function setPortGroup(s: GameState, switchId: string, ports: number[]): A
   if (unique.length > 8) return fail("error.groupSize");
   d.groups = unique.length ? d.groups.filter((g) => !g.some((p) => unique.includes(p))) : [];
   if (unique.length >= 2) d.groups.push(unique);
+  return { ok: true };
+}
+
+export function setPower(s: GameState, deviceId: string, on: boolean): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (!d.rackId && !d.panel) return fail("error.notMounted");
+  d.on = on;
+  return { ok: true };
+}
+
+export const LABEL_MAX = 40;
+// An empty label clears it.
+export function setLabel(s: GameState, deviceId: string, label: string | null): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  const text = label?.trim() || null;
+  if (text && text.length > LABEL_MAX) return fail("error.labelTooLong");
+  d.label = text;
+  return { ok: true };
+}
+
+export function setCableColor(s: GameState, cableId: string, color: string | null): ActionResult {
+  const c = s.cables.find((x) => x.id === cableId);
+  if (!c) return fail("error.unknownCable");
+  if (color !== null && !/^#[0-9a-f]{6}$/i.test(color)) return fail("error.badColor");
+  s.cables = s.cables.map((x) => (x.id === cableId ? { ...x, color } : x));
+  return { ok: true };
+}
+
+// Drives each level needs: RAID 1 two or more, RAID 5 three, RAID 6 four, RAID 10 an even four or more.
+const raidFits = (level: RaidLevel, n: number) =>
+  ({ none: n >= 1, "1": n >= 2, "5": n >= 3, "6": n >= 4, "10": n >= 4 && n % 2 === 0 })[level];
+
+// Rebuilding the array wipes it, so the server must be off and its data counts as lost.
+export function setRaid(s: GameState, deviceId: string, level: RaidLevel): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (modelById(d.model).kind !== "server") return fail("error.notServer");
+  if (!(level in { none: 1, "1": 1, "5": 1, "6": 1, "10": 1 }) || !raidFits(level, drivesOf(d).length)) return fail("error.raidLevel");
+  if (d.on && (d.rackId || d.panel)) return fail("error.powerOffFirst");
+  if (d.raid === level) return { ok: true };
+  Object.assign(d, { raid: level, rebuild: null, dataLost: s.hour });
+  return { ok: true };
+}
+
+export function setRebuildRate(s: GameState, deviceId: string, rate: RebuildRate): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (modelById(d.model).kind !== "server") return fail("error.notServer");
+  if (!["low", "medium", "high"].includes(rate)) return fail("error.unknownRate");
+  d.rebuildRate = rate;
+  return { ok: true };
+}
+
+export const SWAP_HOURS = 0.25;
+
+// Swaps a failed or worn component for a spare from the zone's storage: 15 minutes in the basement, or the remote hands'
+// response time plus 15 minutes at a datacenter, billed for at least one hour.
+export function replaceComponent(s: GameState, deviceId: string, componentId: string): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  const c = d.components.find((x) => x.id === componentId);
+  if (!c) return fail("error.unknownComponent");
+  const rack = s.racks.find((r) => r.id === d.rackId);
+  if (!rack) return fail("error.notMounted");
+  if (rack.arriveAt !== null) return fail("error.rackMoving");
+  if (d.maintenance) return fail("error.busy");
+  const parts = s.devices.filter((x) => x.model === `part-${c.kind}` && x.store === rack.locationId);
+  const part = parts.find((x) => !x.lease) ?? parts[0];
+  if (!part) return fail("error.noPart");
+  if (d.on && !hotSwappable(d, c)) return fail("error.powerOffFirst");
+  const loc = s.locations.find((l) => l.id === rack.locationId)!;
+  const hands = loc.dc ? datacenterById(loc.dc).remoteHands : null;
+  const bill = hands ? Math.max(1, SWAP_HOURS) * hands.perHour : 0;
+  if (s.cash < bill) return fail("error.noCash");
+  if (hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: Math.max(1, SWAP_HOURS) }, -bill);
+  s.devices = s.devices.filter((x) => x.id !== part.id);
+  d.maintenance = { componentId, partId: part.id, doneAt: s.hour + (hands ? hands.responseHours : 0) + SWAP_HOURS };
+  return { ok: true, id: part.id };
+}
+
+// A second feed or a high-density feed for a rack in a rented position.
+export function setFeed(s: GameState, rackId: string, feed: "b" | "highDensity", on: boolean): ActionResult {
+  const rack = s.racks.find((r) => r.id === rackId);
+  if (!rack) return fail("error.unknownRack");
+  if (rack.provided) return fail("error.providedRack");
+  if (!s.locations.find((l) => l.id === rack.locationId)!.dc) return fail("error.noFeeds");
+  if (feed === "b") rack.feedB = on;
+  else if (feed === "highDensity") rack.highDensity = on;
+  else return fail("error.unknownFeed");
+  return { ok: true };
+}
+
+export const CIRCUIT_PRICE = 400;
+
+export function buyCircuit(s: GameState, locationId: string): ActionResult {
+  const loc = s.locations.find((l) => l.id === locationId);
+  if (!loc) return fail("error.unknownLocation");
+  if (loc.space !== "basement") return fail("error.notBasement");
+  if (loc.extraCircuit) return fail("error.alreadyBought");
+  if (s.cash < CIRCUIT_PRICE) return fail("error.noCash");
+  loc.extraCircuit = true;
+  book(s, "hardware", "ledger.circuit", {}, -CIRCUIT_PRICE);
   return { ok: true };
 }

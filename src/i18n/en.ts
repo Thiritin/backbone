@@ -3,6 +3,9 @@ import { euro } from "../sim/00-core/money";
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 type Params = Record<string, string | number>;
+const COMPONENT_LABELS: Record<string, string> = {
+  hdd: "hard drive", ssd: "SSD", nvme: "NVMe drive", psu: "power supply", fan: "fan", ram: "RAM stick", board: "mainboard", cpu: "CPU", nic: "network card",
+};
 const units = (n: string | number) => `${n} ${Number(n) === 1 ? "unit" : "units"}`;
 
 export const en: Record<string, (p: Params) => string> = {
@@ -56,6 +59,11 @@ export const en: Record<string, (p: Params) => string> = {
   "event.spaceHeld.text": (p) => `${p.datacenter} holds your space for ${p.days} days.`,
   "event.holdExpired.title": () => "Hold expired",
   "event.holdExpired.text": (p) => `${p.datacenter} released the space it held for you.`,
+  "ledger.remoteHands": (p) => `Remote hands for ${p.device}, ${p.hours} h`,
+  "ledger.feed": (p) => `${p.feed === "feedB" ? "Feed B" : "High-density feed"} for ${p.rack}`,
+  "ledger.circuit": () => "Extra household circuit",
+  "event.componentFailed.title": () => "Component failed",
+  "event.componentFailed.text": (p) => `A ${COMPONENT_LABELS[String(p.component)] ?? p.component} failed in ${p.device}.`,
   "event.rackArrived.title": () => "Rack arrived",
   "event.rackArrived.text": (p) => `${p.rack} is in place at ${p.location}.`,
   "error.unknownDatacenter": () => "This datacenter does not exist.",
@@ -87,6 +95,19 @@ export const en: Record<string, (p: Params) => string> = {
   "error.noSpace": () => "This datacenter has no free space of this size.",
   "error.spaceAvailable": () => "This space is free to rent now.",
   "error.unknownWaitlist": () => "This waitlist entry no longer exists.",
+  "error.notMountable": () => "Spare parts go into devices, not racks.",
+  "error.labelTooLong": () => "A label holds up to 40 characters.",
+  "error.badColor": () => "Pick a colour from the palette.",
+  "error.raidLevel": () => "This server has too few drives for that RAID level.",
+  "error.unknownRate": () => "This rebuild rate does not exist.",
+  "error.unknownComponent": () => "This component no longer exists.",
+  "error.busy": () => "A swap is already under way on this device.",
+  "error.noPart": () => "This zone's storage has no matching spare part.",
+  "error.powerOffFirst": () => "Power the device off first.",
+  "error.noFeeds": () => "The basement has no extra feeds.",
+  "error.unknownFeed": () => "This feed does not exist.",
+  "error.notBasement": () => "Only the basement can get an extra circuit.",
+  "error.alreadyBought": () => "The basement already has its extra circuit.",
   "error.noRoom": () => "The rack has no free space for all units.",
   "warning.bondNotGrouped": () => "The switch ports for this bond are not grouped.",
   "doc.guide": () => "Getting started",
