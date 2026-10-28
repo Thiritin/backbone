@@ -7,6 +7,11 @@
         "rule": "overused-font",
         "value": "inter",
         "createdAt": "2026-10-28T03:34:12.693Z"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.3, 1.6, 0.5, 1)",
+        "createdAt": "2026-10-28T04:29:26.576Z"
       }
     ]
   }
