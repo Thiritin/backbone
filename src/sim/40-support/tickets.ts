@@ -4,17 +4,17 @@ import { activeServices, type Customer, type Profile, type Service } from "../30
 import type { GameState } from "../50-state";
 import { serviceOnline } from "./status";
 
-export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse";
+export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse" | "appeal";
 // open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
 export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
-export type TicketAction = "credit" | "retain" | "cancel";
+export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep";
 export interface Reply { hour: number; template: string; right: boolean }
 // doneAt is in game minutes; the reply or action takes effect on the first tick at or after it.
 export interface Work { op: "reply" | "resolve" | "escalate"; arg: string; doneAt: number }
 export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
-  outcome: "credit" | "retained" | "cancelled" | null; work: Work | null;
+  outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | null; work: Work | null;
 }
 
 export const HOURS_PER_MONTH = 730;
@@ -22,7 +22,7 @@ export const HOURS_PER_MONTH = 730;
 export const WAITING_CLOSE_HOURS = 48;
 
 // economy.md, Tickets and work rates.
-export const MINUTES: Record<TicketKind, number> = { outage: 10, howTo: 20, billing: 15, upgrade: 20, cancellation: 15, abuse: 30 };
+export const MINUTES: Record<TicketKind, number> = { outage: 10, howTo: 20, billing: 15, upgrade: 20, cancellation: 15, abuse: 30, appeal: 15 };
 export const MONTHLY_RATES: Record<"howTo" | "billing" | "abuse", Record<Budget, number>> = {
   howTo: { low: 0.18, medium: 0.06, high: 0.02 },
   billing: { low: 0.04, medium: 0.04, high: 0.02 },
@@ -34,15 +34,22 @@ export const OUTAGE_WRITE_CHANCE: Record<Budget, number> = { low: 0.3, medium: 0
 
 export const TOPICS: Record<TicketKind, string[]> = {
   outage: ["down"], howTo: ["upload", "email", "dns", "panel"], billing: ["charge", "copy", "delay"],
-  upgrade: ["grow"], cancellation: ["leave"], abuse: ["spam", "attack"],
+  upgrade: ["grow"], cancellation: ["leave"], abuse: ["spam", "attack"], appeal: ["forgot", "boss", "access", "onWay"],
 };
 export const TEMPLATES: Record<TicketKind, string[]> = {
   outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "panel", "askDetails"],
   billing: ["explain", "resend", "extension", "askDetails"], upgrade: ["offer", "askDetails"], cancellation: [], abuse: ["warn", "askDetails"],
+  appeal: ["awaitPayment", "askDetails"],
 };
-export const ACTIONS: Record<TicketKind, TicketAction[]> = { outage: ["credit"], howTo: [], billing: ["credit"], upgrade: [], cancellation: ["retain", "cancel"], abuse: [] };
+export const ACTIONS: Record<TicketKind, TicketAction[]> = {
+  outage: ["credit"], howTo: [], billing: ["credit"], upgrade: [], cancellation: ["retain", "cancel"], abuse: [], appeal: ["unsuspend", "keep"],
+};
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
-const RIGHT: Record<string, string> = { suspended: "resend", upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", grow: "offer", spam: "warn", attack: "warn" };
+// A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
+const RIGHT: Record<string, string> = {
+  suspended: "resend", upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", grow: "offer",
+  spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment",
+};
 
 export function rightTemplate(s: GameState, t: Ticket): string {
   if (t.kind === "outage") return t.serviceId && !serviceOnline(s, t.serviceId) ? "ack" : "back";

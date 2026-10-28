@@ -358,6 +358,7 @@ A low-skill customer creates about 0.3 tickets a month, so one average support a
 | Abuse report | 0.005 | 0.005 | 0.02 | 30 min |
 | Upgrade request | From upgrades ([Happiness and churn](#happiness-and-churn)) | | | 20 min |
 | Cancellation | One per cancellation | | | 15 min |
+| Suspension appeal | From suspensions ([Billing and payment habits](#billing-and-payment-habits)) | | | 15 min |
 | Outage report | Per outage (below) | | | 10 min |
 | Colocation install | One per hardware delivery | | | 2 h (technician) |
 
@@ -402,7 +403,19 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 
 **Fees and collections.** The first dunning notice adds a €5 fee and the final notice €10. A debt handed to collections returns 30% of its value 30 days later, and the customer is gone.
 
-**Suspension.** Suspending a customer costs 15 happiness and opens a billing ticket. While suspended, the customer pays with a 35% chance each day, or 20% with a bad payment habit. A bad payer still suspended after 14 days leaves with a 50% chance, and the debt goes to collections. The billing rules send the reminder, dunning and final notices on schedule and can suspend after 7, 14 or 30 days overdue; handing a debt to collections stays a manual step.
+**Suspension.** Suspending a customer costs 15 happiness and opens a billing ticket. While suspended, the customer pays with a 35% chance each day, or 20% with a bad payment habit. A bad payer still suspended after 14 days leaves with a 50% chance, and the debt goes to collections.
+
+**Suspension of high-budget customers.** Offices, online shops and enterprises lose 30 happiness instead of 15 and pay with a 60% chance each day. With a 60% chance their suspension opens a suspension appeal instead of the billing ticket, at most once per invoice.
+
+| Appeal action | Effect |
+| --- | --- |
+| Unsuspend | Services back online, 7-day payment extension, +15 happiness. The customer pays 1 to 5 days later with an 85% chance; otherwise the suspend rule suspends again when the extension ends. |
+| Keep suspended | Services stay offline, −15 happiness. |
+| Reply "Await the payment" | Right answer when the customer forgot to pay or the payment is on its way; wrong for the other two topics. |
+
+Resolving the ticket adds the usual +5 happiness on top. Handling an appeal takes 15 minutes.
+
+**Billing rules.** The Automation entry in the Billing app sends the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
 
 **Back-office tasks.** Staff handle these at the work rate from [Tickets and work rates](#tickets-and-work-rates). A skill-50 bookkeeper records about 4,000 payments a month.
 

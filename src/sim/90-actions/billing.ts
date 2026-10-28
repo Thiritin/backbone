@@ -1,5 +1,5 @@
 import {
-  annuity, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, suspend, type BillingRules,
+  annuity, AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, suspend, type BillingRules,
 } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -28,6 +28,7 @@ export function suspendServices(s: GameState, invoiceId: string, suspended = tru
 
 export function setBillingRules(s: GameState, rules: Partial<BillingRules>): ActionResult {
   if (rules.autoSuspendDays !== undefined && !AUTO_SUSPEND_DAYS.includes(rules.autoSuspendDays)) return fail("error.billingRule");
+  if (rules.autoCollectDays !== undefined && !AUTO_COLLECT_DAYS.includes(rules.autoCollectDays)) return fail("error.billingRule");
   s.billingRules = { ...s.billingRules, ...rules };
   return { ok: true };
 }

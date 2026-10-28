@@ -121,7 +121,7 @@ export const newGame = (seed: number): GameState => ({
   ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], knowHow: 0, installed: [...STARTER_APPS], checklist: [],
   customers: [], services: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
-  billingRules: { autoRemind: false, autoSuspendDays: 0 },
+  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
   tickets: [], playerBusyUntil: 0, servicesDown: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)" },
   homeLine: { id: DEFAULT_HOME_LINE, next: null },

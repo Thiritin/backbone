@@ -46,6 +46,6 @@ export function deserialize(raw: string): GameState {
     installed: data.installed ?? [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [] })),
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null })),
-    invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null) })),
+    invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   };
 }

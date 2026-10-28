@@ -2,6 +2,7 @@ import { AlarmClock, ArrowUpRight, CircleCheck, Hourglass, Inbox, Send, Timer, W
 import { useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { ACTIONS, canEscalate, isFinal, monthlyValue, TEMPLATES, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
+import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
@@ -18,7 +19,9 @@ const BOXES: { id: Box; label: string; icon: typeof Inbox; match: (t: Ticket, ho
   { id: "escalated", label: "Escalated", icon: Wrench, match: (t) => t.status === "escalated" },
   { id: "done", label: "Closed", icon: CircleCheck, match: isFinal },
 ];
-const ACTION_LABEL: Record<TicketAction, string> = { credit: "Credit 10%", retain: "Retention offer", cancel: "Process cancellation" };
+const ACTION_LABEL: Record<TicketAction, string> = {
+  credit: "Credit 10%", retain: "Retention offer", cancel: "Process cancellation", unsuspend: `Unsuspend with ${EXTENSION_DAYS}-day extension`, keep: "Keep suspended",
+};
 
 const subjectOf = (s: GameState, tk: Ticket) => t(`ticket.${tk.kind}.${tk.topic}.subject`, { service: s.services.find((v) => v.id === tk.serviceId)?.label ?? "" });
 
