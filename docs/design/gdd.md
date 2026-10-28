@@ -47,6 +47,10 @@ The whole game is a macOS-style desktop. Every system is an app in the dock that
 
 The menu bar holds the time controls, date and cash. The game saves itself in the browser. The logo menu on the far left exports the save to a file, imports one, and deletes all progress after a confirmation. A first visit, or one after deleting, opens a start screen with a New game button, and a new game puts a Getting started guide on the desktop as an icon. The red badge counts open tickets.
 
+**Pear One and the Pear Store.** The desktop is Pear One, an all-in-one hosting platform from Pear, a fruit company with a familiar look. A new game starts with a handful of apps in the dock. Every other app sits in the Pear Store, the app store for Pear One, with what it takes to install it (research or company level). Installing an app adds it to the dock, and apps unlock further features as you go. Because of EU competition rules, some software comes in several competing products to choose from, such as the virtualization platform and monitoring. The introduction text lives in docs/design/intro.md.
+
+**Subscriptions.** Pear One is a funnel. The base is free, since you already paid for the hardware, and every app beyond the starter set is a feature expansion from the Pear Store with a monthly subscription, billed through the Bank like rent. Some expansions also sell in-app purchases: one-off extras such as an instant invoice run, alert text messages or extra dashboard slots. Prices scale with your size (per device, per customer or per employee), and Pear raises them every year, sometimes sharply, with a cheerful email about "new value". Cancelling a module removes the app from the dock and switches its features off, but keeps its data, so you can come back. An unpaid subscription locks the app until you pay. Modules are a real cost to weigh against the work they save, and a steady drain that grows with the company.
+
 | App | What it does |
 | --- | --- |
 | Locations | Grid of your locations; opens room views and rack front views |
@@ -493,6 +497,14 @@ Support is the first job that overwhelms you. Every outage, question, install re
 | Cancellation | Unhappy or departing customer | Retention offer, process the cancellation |
 | Colocation install | Colocation customer ships hardware | Book an install with a technician |
 | Abuse report | Spam or attacks from a customer's server | Warn, suspend |
+| Copyright notice | A rights holder reports a URL on a customer's domain | Forward to the customer, take the content down, reject |
+| Legal request | A government agency asks for data or a takedown | Comply, object, ignore at your peril |
+
+**Abuse and copyright notices.** Rights holders and complainers write in about URLs on your customers' domains. Studios such as Warner Bras. or Universal Pickchers send copyright notices, and a YouTuber demands you remove a site that called their video bad and links it. Some notices are real, some are fake, and some point to domains you don't even host. Each one names the URL, so you can check it against your customers before acting. Taking down content on a fake notice angers the customer; ignoring a real one invites the next, angrier letter.
+
+**Legal requests.** Government agencies send requests through the inbox with a verified mark next to the sender, and each has a deadline. Answer in time and the matter closes. Miss the deadline and the agency seizes the physical server, with every disk in it. Customers on that server lose their data unless you have a backup on another system, and the server comes back after 3 months to 2 years. Agencies mostly come after malicious customers, so who you accept matters.
+
+**Shady customers.** Now and then a sales request sounds off: high volume, no questions asked, and payment in crypto. You can accept it. The crypto arrives as ordinary money in your bank account, the customer pays well and on time, and abuse reports and legal requests follow.
 
 **The cascade.** Customer happiness drops while tickets wait, and unhappy customers cancel or don't renew. Cancellations are tickets too, so a bad week snowballs into a flood. An outage creates tickets from every affected customer, weighted by segment: a flower shop writes once, an online shop three times.
 
@@ -543,6 +555,8 @@ Staff are named people with a skill level, a work rate and a salary. Juniors cos
 | Bookkeeper | Recording payments, payment reminders |  |
 | Accountant | Dunning, collections, month-end reports |  |
 | Marketing manager | Campaigns, review platforms, market research |  |
+
+**Training.** A new employee knows nothing about your processes. Before they handle a ticket type or a task, they are trained on it, which takes time and money, and each skill is trained separately: an agent trained on billing questions still cannot handle abuse reports. Once an employee is fully trained, you can make them a trainer. A trainer does nothing but train others until nobody is left to train, then goes back to their normal work. Once you have staff, they handle the work across all of these areas, including abuse and legal requests.
 
 **Hiring.** The Staff app lists candidates on the job market with their name, role, skill and salary ask. Job ads cost money, and better ads bring more candidates.
 
@@ -781,9 +795,9 @@ The MVP has the basement rack, one datacenter location, web hosting and VPS, sup
 1. **Desktop shell.** Menu bar, dock, draggable windows, notifications, time controls, saving in the browser. Done when apps open and the clock runs.
 2. **Locations and racks.** The basement rack, adding a datacenter location from the catalog, buying and moving racks, the rack front view, buying servers and switches with their specs, cabling ports in the inspector, bonding a server's ports. Done when a rack moved from the basement to a datacenter comes back online there.
 3. **Clusters and products.** One cluster, web hosting and VPS on your own hardware, colocation in rack sections with uplinks to wire, workloads placed by the scheduler, cordoning and draining a node, the virtual machine manager with storage pools, control planes, the server view with workloads and utilization, the Sales app with request cards and resource bars. Done when an accepted request runs as a VM that survives a drain.
-4. **Customers and support.** Customer profiles, purchases, tickets with templates and actions, happiness and churn, disk failures with data loss, backups and restores, incident reports, refunds and reviews. Done when an outage floods the inbox.
+4. **Customers and support.** Customer profiles, purchases, tickets with templates and actions, happiness and churn, disk failures with data loss, backups and restores, incident reports, refunds and reviews, abuse and copyright notices, legal requests with server seizure, shady crypto customers. Done when an outage floods the inbox.
 5. **Billing and finance.** Invoices, dunning buttons, collections, profit and loss, a bank loan. Done when an unpaid invoice can go all the way to collections.
-6. **First hires.** The job market, a support agent and a bookkeeper working through their queues. Done when a hire visibly empties a queue.
+6. **First hires.** The job market, a support agent and a bookkeeper working through their queues, training per skill, trainers. Done when a hire visibly empties a queue.
 
 **After the MVP:** more location tiers, the Network app with several carriers, exchange memberships and multi-link uplinks, private networks for customers, automatic rebalancing and evacuation, more products, marketing and reviews, the research tree, company levels, competitors, DDoS, AI bots.
 
