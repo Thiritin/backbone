@@ -1023,6 +1023,37 @@ A cluster runs its oldest node's version. With b the number of newer versions ou
 
 A request that needs a supported version asks for the oldest one still supported and is lost when it would land on the old cluster. Through 2005 to 2009 the catalogue moves slowly, so a cluster set up in 2005 is unsupported from 2010; from 2015 a new version comes every year, and a cluster left alone for three years starts losing sales.
 
+## Security advisories
+
+Four scripted PHP vulnerabilities, modelled on real ones. Each fires on its date for a player with web sites on a cluster node running an affected version; a player without one never sees it.
+
+| Date | Vulnerability | Affected versions |
+| --- | --- | --- |
+| 12 Mar 2007 | Zend engine memory corruption (Month of PHP Bugs) | 4.4, 5.1, 5.2 |
+| 3 May 2012 | PHP-CGI query string options (CVE-2012-1823) | 5.1, 5.2, 5.3 |
+| 22 Oct 2019 | PHP-FPM buffer underflow (CVE-2019-11043) | 7.1, 7.2, 7.3 |
+| 7 Jun 2024 | PHP-CGI argument injection (CVE-2024-4577) | 8.1, 8.2, 8.3 |
+
+| Stage | Hours after the announcement | Hourly chance an exposed node is compromised |
+| --- | --- | --- |
+| PHP announces it, patch date stated | 0 | 0 |
+| Proof of concept on Twister | 24 | 1% |
+| Agency warning (mass scanning) | 48 | 4% |
+| Patch released | 60 | 4% for nodes still unpatched |
+
+An exposed node runs an affected version without the patch, hosts web sites and has them online. A compromise:
+
+| Effect | Value |
+| --- | --- |
+| Happiness of each customer with a site on the node (data leak) | −30 |
+| Abuse report per such customer | 1 (spam) |
+| Review | 1 star, written by 10% (20% below happiness 40) |
+| Sites on the node | Down until cleaned up |
+| Clean-up with a backup | 4 hours |
+| Clean-up without a backup (rebuild) | 12 hours and −15 happiness |
+
+Offline sites count as outages at the profile's hourly outage penalty (1 to 4). Taking a node offline at the warning and patching on release costs about 12 hours of outage, 12 to 48 happiness. Leaving it online from the proof of concept to the patch risks a compromise with 1 − 0.99²⁴ · 0.96¹² ≈ 52%, worth about −38 happiness with a backup and −69 without for a customer at penalty 2, plus reviews and support work. Going offline at the proof of concept costs 36 outage hours and rarely pays. Patching is the PHP upgrade: it installs the current version with the fix and slows the node's sites for an hour.
+
 ## Marketing and reviews
 
 In 2005 a low-budget lead from search ads costs about €9, so a new private customer costs €25 to €80 depending on your share. Reviews skew negative unless you invite happy customers, which is what review platforms are for.

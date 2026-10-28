@@ -143,6 +143,8 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   if (w.stopped || w.busyUntil > s.hour) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching && c.switching.kind === servedBy(s, w)) return false;
+  // Web sites taken offline for maintenance or compromised.
+  if (c && w.deviceId && (s.security.offline.includes(w.deviceId) || s.security.hacked.includes(w.deviceId)) && servedBy(s, w) === "panel") return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);
     return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online;

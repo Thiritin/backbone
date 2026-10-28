@@ -5,9 +5,10 @@ import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { DEFAULT_PANEL, DEFAULT_PLATFORM, phpAt, softwareById, SWITCH_FEE, SWITCH_PER_HOUR } from "../10-catalog/platforms";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
+import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
   clusterOf, controlPlaneUp, fitsControlPlane, moveOff, pickNode, servedBy, serverTaken, setNodeState, workloadsOf, workloadsOn,
-  type BackupEvery, type Cluster, type Placement, type Workload,
+  type BackupEvery, type Cluster, type ClusterNode, type Placement, type Workload,
 } from "../60-infra/cluster";
 import { freeSlots, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
@@ -86,13 +87,17 @@ export function addNode(s: GameState, clusterId: string, deviceId: string): Acti
   return { ok: true };
 }
 
-// One node to the current PHP version; its sites run slower for the next hour.
+// A node is due an upgrade on an older PHP, or on the current one while a released patch is missing.
+export const phpDue = (s: GameState, n: ClusterNode): boolean => n.php !== phpAt(yearOf(s.hour)) || (patchOut(s) && vulnerable(s, n));
+
+// One node to the current PHP version with any released security patch; its sites run slower for the next hour.
 export function upgradeNodePhp(s: GameState, deviceId: string): ActionResult {
   const c = clusterOf(s, deviceId);
   if (!c) return fail("error.notNode");
-  const php = phpAt(yearOf(s.hour));
-  if (c.nodes.find((n) => n.deviceId === deviceId)!.php === php) return fail("error.phpCurrent");
+  const php = phpAt(yearOf(s.hour)), node = c.nodes.find((n) => n.deviceId === deviceId)!;
+  if (!phpDue(s, node)) return fail(vulnerable(s, node) ? "error.patchPending" : "error.phpCurrent");
   update(s, c.id, (x) => ({ ...x, nodes: x.nodes.map((n) => (n.deviceId === deviceId ? { ...n, php, phpUntil: s.hour + PHP_UPGRADE_HOURS } : n)) }));
+  markPatched(s, deviceId);
   return { ok: true };
 }
 
@@ -100,7 +105,7 @@ export function upgradeNodePhp(s: GameState, deviceId: string): ActionResult {
 export function upgradePhp(s: GameState, clusterId: string): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
-  const old = c.nodes.filter((n) => n.php !== phpAt(yearOf(s.hour)));
+  const old = c.nodes.filter((n) => phpDue(s, n));
   if (!old.length) return fail("error.phpCurrent");
   for (const n of old) upgradeNodePhp(s, n.deviceId);
   return { ok: true };

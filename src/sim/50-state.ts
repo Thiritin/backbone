@@ -14,6 +14,7 @@ import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
 import { newNetwork, type Network } from "./60-infra/network";
 import { newOps, type Ops } from "./60-infra/ops";
+import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
 import type { FairBooking } from "./80-business/fairs";
 import type { LossReport } from "./85-products/products";
@@ -126,6 +127,8 @@ export interface GameState {
   ops: Ops;
   // Incident reports of lost disks.
   lossReports: LossReport[];
+  // PHP security advisories and the nodes patched, offline or compromised.
+  security: Security;
 }
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
@@ -169,6 +172,7 @@ export const newGame = (seed: number): GameState => ({
   marketing: newMarketing(), fairs: [],
   network: newNetwork(),
   ops: newOps(),
+  security: newSecurity(),
   sales: newSales(),
 });
 
