@@ -58,6 +58,8 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
   const cityClick = useRef(onCityClick);
   cityClick.current = onCityClick;
   const dragged = useRef(false);
+  const pins = markers.map((m) => `${m.id}:${m.label}:${m.lon}:${m.lat}`).join("|");
+  useEffect(() => declutter(svg.current!), [pins]);
 
   useEffect(() => {
     const el = wrap.current!, s = svg.current!, t = tip.current!;
@@ -83,9 +85,10 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
       if (done) Object.assign(cur, goal);
       apply();
       raf = done ? 0 : requestAnimationFrame(step);
+      if (done) declutter(s);
     };
     const animate = () => { if (!raf) raf = requestAnimationFrame(step); };
-    const jump = () => { clamp(cur); Object.assign(goal, cur); apply(); };
+    const jump = () => { clamp(cur); Object.assign(goal, cur); apply(); declutter(s); };
     // Zoom by factor f keeping the map point under the screen fraction (px, py) in place.
     const zoom = (f: number, px: number, py: number, v: View = goal) => {
       const a = ch / cw, wx = cur.x + px * cur.w, wy = cur.y + py * cur.w * a;
@@ -197,6 +200,15 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
       {children}
     </div>
   );
+}
+
+// Hides city names that a pin or its label covers; the names keep their size, so they are measured while hidden.
+function declutter(s: SVGSVGElement) {
+  const pins = [...s.querySelectorAll(".wm-pin")].map((p) => p.getBoundingClientRect());
+  const cities = [...s.querySelectorAll<SVGGElement>(".wm-city")].map((c) => [c, c.querySelector("text")!.getBoundingClientRect()] as const);
+  for (const [c, r] of cities) {
+    c.classList.toggle("wm-covered", r.width > 0 && pins.some((p) => r.left < p.right && r.right > p.left && r.top < p.bottom && r.bottom > p.top));
+  }
 }
 
 function Pin({ m, y, onClick }: { m: Marker; y: number; onClick: () => void }) {

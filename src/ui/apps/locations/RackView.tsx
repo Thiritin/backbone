@@ -15,11 +15,11 @@ import { RackFront, type RackItem, type RackLink, type RackRemote } from "../../
 import { useStore } from "../../store";
 import { day, deviceLamps, devName, height, portLamps, portLights } from "../hw";
 import { rackUnits } from "./Floor";
-import { Inspector, SellConfirm } from "./Inspector";
-import { dcOf, Facts, PowerMeter, Sheet, UsageBars, useDismiss } from "./ui";
+import { Inspector, SellConfirm, togglePlug, useOfflineGuard } from "./Inspector";
+import { dcOf, Facts, positionsLabel, PowerMeter, Sheet, UsageBars, useDismiss } from "./ui";
 import { usageOf } from "../../../sim/60-infra/usage";
 
-function rackItems(g: GameState, rackId: string): RackItem[] {
+export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
     const model = modelById(d.model);
     return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, plugs: d.components.filter((c) => c.kind === "psu").map(isPlugged), ...deviceLamps(g, d.id, model) };
@@ -65,6 +65,11 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   const used = items.reduce((n, it) => n + it.model.height, 0);
   const dev = game.devices.find((d) => d.id === device && d.rackId === rack.id);
   const loc = game.locations.find((l) => l.id === rack.locationId)!;
+  const { guarded, dialog } = useOfflineGuard(game);
+  const plug = (id: string, k: number) => {
+    const d = game.devices.find((x) => x.id === id), psu = d?.components.filter((c) => c.kind === "psu")[k];
+    if (d && psu) togglePlug(guarded, d, psu.id);
+  };
   const openMount = (lo: number, hi: number, el: Element) => {
     const m = main.current!.getBoundingClientRect(), r = el.getBoundingClientRect();
     setMount({ lo, hi, top: Math.max(8, Math.min(r.top - m.top, m.height - 300)), left: Math.min(r.right - m.left + 10, m.width - 420) });
@@ -82,7 +87,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
         </div>
         <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420} u={22}
           hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onFree={openMount}
-          onConnect={(a, b) => act((g) => connect(g, a, b))} />
+          onConnect={(a, b) => act((g) => connect(g, a, b))} onPlug={plug} />
       </div>
       <div className="loc-insp">
         {dev ? <Inspector key={dev.id} game={game} device={dev} side={side} onSelect={onDevice} onHot={setHot} /> : (
@@ -111,6 +116,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
       </div>
       {mount && <MountPop game={game} rack={rack} {...mount} onClose={() => setMount(null)} onMounted={(id) => { setMount(null); onDevice(id); }} />}
       {moving && <MoveRack game={game} rack={rack} onClose={() => setMoving(false)} onMoved={(id) => { setMoving(false); onMoved(id); }} />}
+      {dialog}
       {selling && <SellConfirm game={game} name={rack.name} price={rack.price} boughtAt={rack.boughtAt} onCancel={() => setSelling(false)} onSell={() => { setSelling(false); if (act((s) => sellRack(s, rack.id)).ok) onMoved(null); }} />}
     </div>
   );
@@ -171,16 +177,21 @@ function MoveRack({ game, rack, onClose, onMoved }: { game: GameState; rack: Rac
   return (
     <Sheet title={`Move ${rack.name}`} onClose={onClose}>
       <div className="loc-form">
-        <label><span className="loc-k">Location</span>
-          <select className="field" value={to} onChange={(e) => setTo(e.target.value)} disabled={!targets.length}>
-            {targets.length ? targets.map(({ l }) => <option key={l.id} value={l.id}>{l.name}, {l.city}</option>) : <option>No free position</option>}
-          </select>
-        </label>
-        <label><span className="loc-k">Position</span>
-          <select className="field num" value={position ?? ""} onChange={(e) => setPos(Number(e.target.value))} disabled={!target}>
-            {target?.free.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
-        </label>
+        <div className="picks" role="group" aria-label="Location">
+          {targets.map(({ l, free }) => (
+            <button key={l.id} className="pick" aria-pressed={l.id === to} onClick={() => setTo(l.id)}>
+              <strong>{l.name}</strong><span className="sub">{l.city} · <span className="num">{l.az}</span> · {positionsLabel(free.length)} free</span>
+            </button>
+          ))}
+        </div>
+        {!targets.length && <div className="loc-muted">No free position</div>}
+        {target && (
+          <div className="loc-move-pos"><span className="loc-k">Position</span>
+            <div className="seg wrap" role="group" aria-label="Position">
+              {target.free.map((p) => <button key={p} className="num" aria-pressed={p === position} onClick={() => setPos(p)}>{p}</button>)}
+            </div>
+          </div>
+        )}
         {cost && <Facts rows={[["Cost", <span className="num">{euro(cost.price)}</span>], ["Travel time", <span className="num">{cost.hours / 24} {cost.hours === 24 ? "day" : "days"}</span>], ["Arrives", <span className="num">{day(game.hour + cost.hours)}</span>]]} />}
       </div>
       <div className="loc-sheet-foot">

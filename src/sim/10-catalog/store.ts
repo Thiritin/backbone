@@ -4,7 +4,7 @@ import { START_YEAR } from "../00-core/time";
 // Values from docs/design/economy.md, section "Pear One subscriptions". The skill each item needs is in research.ts.
 
 // Apps every new game has in the dock, free of charge. Getting started and Notes are desktop documents and never sit in the dock.
-export const STARTER_APPS = ["Locations", "Shop", "Sales", "Website", "Customers", "Support", "Billing", "Finance", "Bank", "Research", "Checklist", "Settings"];
+export const STARTER_APPS = ["Locations", "Shop", "Website", "Customers", "Support", "Billing", "Finance", "Bank", "Research", "Checklist", "Settings"];
 
 // id is the app name for apps; monthly is the 2005 price.
 export interface StoreItem { id: string; kind: "app" | "upgrade" | "bot"; name: string; monthly: number }

@@ -257,23 +257,27 @@ function ConnectRow({ game, device, model, port }: { game: GameState; device: De
     const free = m.ports.flatMap((p, i) => (!peers[i] && p.media === here.media && (p.gbit === here.gbit || m.kind === "patch" || model.kind === "patch") ? [i] : []));
     return free.length ? [{ d, m, free }] : [];
   });
-  const [picked, setTarget] = useState("");
+  const [picked, setPicked] = useState<{ device: string; port: number | null }>({ device: "", port: null });
   if (!targets.length) return <div className="loc-row loc-muted">No compatible ports</div>;
-  const target = targets.some(({ d, free }) => free.some((i) => `${d.id}:${i}` === picked)) ? picked : `${targets[0].d.id}:${targets[0].free[0]}`;
-  const go = () => {
-    const [d, p] = target.split(":");
-    act((g) => connect(g, { device: device.id, port }, { device: d, port: Number(p) }));
-  };
+  const t = targets.find(({ d }) => d.id === picked.device) ?? targets[0];
+  const to = picked.port !== null && t.free.includes(picked.port) ? picked.port : t.free[0];
+  const go = () => act((g) => connect(g, { device: device.id, port }, { device: t.d.id, port: to }));
   return (
-    <div className="loc-row">
-      <select className="field grow" aria-label="Connect to" value={target} onChange={(e) => setTarget(e.target.value)}>
-        {targets.map(({ d, m, free }) => (
-          <optgroup key={d.id} label={d.panel ? `Carrier panel, ${d.name}` : devName(d)}>
-            {free.map((i) => <option key={i} value={`${d.id}:${i}`}>{devName(d)} {portName(m, i)}</option>)}
-          </optgroup>
+    <div className="loc-connect">
+      <div className="picks" role="group" aria-label="Connect to">
+        {targets.map(({ d, free }) => (
+          <button key={d.id} className="pick" aria-pressed={d.id === t.d.id} onClick={() => setPicked({ device: d.id, port: null })}>
+            <strong>{d.panel ? "Carrier panel" : devName(d)}</strong><span className="sub num">{free.length} free</span>
+          </button>
         ))}
-      </select>
-      <button className="btn primary" onClick={go}><Cable />Connect</button>
+      </div>
+      <div className="loc-row">
+        <div className="seg wrap" role="group" aria-label="Port">
+          {t.free.map((i) => <button key={i} className="num" aria-pressed={i === to} onClick={() => setPicked({ device: t.d.id, port: i })}>{portName(t.m, i).replace(/^Port /, "")}</button>)}
+        </div>
+        <span className="grow" />
+        <button className="btn primary" onClick={go}><Cable />Connect</button>
+      </div>
     </div>
   );
 }
@@ -328,14 +332,10 @@ const HEALTH = {
 } as const;
 const clock = (hour: number) => dateOf(hour).toISOString().slice(11, 16);
 
-function PowerCard({ game, device }: { game: GameState; device: Device }) {
+// Runs a change at once, or asks first when it takes devices that are online now offline.
+export function useOfflineGuard(game: GameState) {
   const act = useStore((s) => s.act);
   const [down, setDown] = useState<{ names: string[]; title: string; action: string; run: () => void } | null>(null);
-  const [label, tone] = HEALTH[deviceHealth(game, device.id).state];
-  const loc = locationOf(game, device), rack = game.racks.find((r) => r.id === device.rackId);
-  const ab = !!loc && dcOf(loc)?.feeds === "ab";
-  const psus = device.rackId ? device.components.filter((c) => c.kind === "psu") : [];
-  // Asks first when the change takes devices that are online now offline.
   const guarded = (change: (g: GameState) => unknown, title: string, action: string) => {
     const after = structuredClone(game);
     change(after);
@@ -344,6 +344,29 @@ function PowerCard({ game, device }: { game: GameState; device: Device }) {
     else act(change as never);
   };
   const names = down?.names ?? [];
+  const dialog = down && (
+    <Confirm title={down.title}
+      text={`${names.length > 3 ? `${names.slice(0, 3).join(", ")} and ${names.length - 3} more` : names.join(", ")} ${names.length === 1 ? "goes" : "go"} offline.`}
+      action={down.action} onCancel={() => setDown(null)} onConfirm={() => { setDown(null); down.run(); }} />
+  );
+  return { guarded, dialog };
+}
+
+// Plugs a power supply in, or pulls its plug after the offline check.
+export function togglePlug(guarded: ReturnType<typeof useOfflineGuard>["guarded"], device: Device, psu: string) {
+  const c = device.components.find((x) => x.id === psu);
+  if (!c) return;
+  if (isPlugged(c)) guarded((g) => setPlugged(g, device.id, psu, false), `Unplug ${devName(device)}?`, "Unplug");
+  else useStore.getState().act((g) => setPlugged(g, device.id, psu, true));
+}
+
+function PowerCard({ game, device }: { game: GameState; device: Device }) {
+  const act = useStore((s) => s.act);
+  const { guarded, dialog } = useOfflineGuard(game);
+  const [label, tone] = HEALTH[deviceHealth(game, device.id).state];
+  const loc = locationOf(game, device), rack = game.racks.find((r) => r.id === device.rackId);
+  const ab = !!loc && dcOf(loc)?.feeds === "ab";
+  const psus = device.rackId ? device.components.filter((c) => c.kind === "psu") : [];
   return (
     <div className="loc-card">
       <div className="loc-card-h">
@@ -367,19 +390,15 @@ function PowerCard({ game, device }: { game: GameState; device: Device }) {
                 <td>{isPlugged(c) ? <span className="pill ok">Plugged in</span> : <span className="pill">Unplugged</span>}</td>
                 <td className="r">
                   {isPlugged(c)
-                    ? <button className="btn" onClick={() => guarded((g) => setPlugged(g, device.id, c.id, false), `Unplug ${devName(device)}?`, "Unplug")}><Unplug />Disconnect</button>
-                    : <button className="btn primary" onClick={() => act((g) => setPlugged(g, device.id, c.id, true))}><PlugZap />Connect</button>}
+                    ? <button className="btn" onClick={() => togglePlug(guarded, device, c.id)}><Unplug />Disconnect</button>
+                    : <button className="btn primary" onClick={() => togglePlug(guarded, device, c.id)}><PlugZap />Connect</button>}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-      {down && (
-        <Confirm title={down.title}
-          text={`${names.length > 3 ? `${names.slice(0, 3).join(", ")} and ${names.length - 3} more` : names.join(", ")} ${names.length === 1 ? "goes" : "go"} offline.`}
-          action={down.action} onCancel={() => setDown(null)} onConfirm={() => { setDown(null); down.run(); }} />
-      )}
+      {dialog}
     </div>
   );
 }
@@ -449,9 +468,11 @@ function RaidCard({ game, device }: { game: GameState; device: Device }) {
         {device.dataLost !== null && <span className="pill bad">Data lost</span>}
         <span className="grow" />
         {device.on && <span className="loc-muted">Power off first</span>}
-        <select className="field" aria-label="RAID level" value={device.raid} disabled={device.on} onChange={(e) => act((g) => setRaid(g, device.id, e.target.value as RaidLevel))}>
-          {LEVELS.map(([v, l]) => <option key={v} value={v} disabled={!FITS[v](drives)}>{l}</option>)}
-        </select>
+      </div>
+      <div className="loc-row">
+        <div className="seg wrap" role="group" aria-label="RAID level">
+          {LEVELS.map(([v, l]) => <button key={v} aria-pressed={device.raid === v} disabled={device.on || !FITS[v](drives)} onClick={() => act((g) => setRaid(g, device.id, v))}>{l}</button>)}
+        </div>
       </div>
       <Facts rows={[
         ["Usable", <span className="num">{disk(raidUsable(device))}</span>],

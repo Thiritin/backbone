@@ -466,6 +466,17 @@ Gamers create abuse reports at 0.02, like high-skill customers. Each payment rem
 
 **Outage tickets.** When an outage hits a customer, they write in with a 30% chance at low budget, 60% at medium and 90% at high budget. High-budget customers write 3 tickets, everyone else 1. A public status page halves the chance.
 
+**Unanswered tickets.** A ticket still open this many hours after it was due is closed by the customer, with outcome Ignored. The wait penalty has been charged for every counting hour until then.
+
+| Ticket type | Closed after, past due |
+| --- | --- |
+| Outage report | 72 h |
+| How-to question | 5 days |
+| Upgrade request, suspension appeal | 7 days |
+| Billing question, abuse report, refund request | 14 days |
+
+A ticket someone is working on stays open. Cancellations are processed at the next billing date instead.
+
 **Control panels** change the how-to rate: cPanic ×0.8, Pleskit ×0.9, DirectAdmen ×1.2, FreePanel ×1.5.
 
 **Work rate.** A worker with skill s (0 to 100) finishes tasks of handling time t minutes at this rate and gets each one right with the given chance:

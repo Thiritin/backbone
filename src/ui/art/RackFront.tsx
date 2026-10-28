@@ -27,6 +27,8 @@ interface Props {
   onFree: (lo: number, hi: number, el: Element) => void;
   // A cable dragged from one port to another on the back.
   onConnect?: (a: End, b: End) => void;
+  // A click on a power supply's inlet; psu is its index among the device's power supplies.
+  onPlug?: (device: string, psu: number) => void;
 }
 
 const MONO = "JetBrains Mono, monospace", DIM = "oklch(0.62 0.01 255)";
@@ -58,7 +60,7 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onFree, onConnect }: Props) {
+export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onFree, onConnect, onPlug }: Props) {
   const back = side === "back";
   const pad = 30, fs = Math.max(7, u * 0.4), at = new Map<number, RackItem>();
   for (const it of items) for (let k = 0; k < it.model.height; k++) at.set(it.slot + k, it);
@@ -204,6 +206,16 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
       const end = { device: it.id, port: i };
       hits.push(<rect key={endKey(end)} className="rack-port" data-end={endKey(end)} x={pad + s.x - 1} y={top + py + s.y - 1} width={s.w + 2} height={s.h + 2} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} />);
     }
+  }
+
+  if (onPlug) for (const { it, y: py, h } of placed.values()) {
+    psuInlets(it.model, side, w, h).forEach((p, k) => {
+      const bw = 30 * p.mm, bh = 22 * p.mm, label = `${it.plugs?.[k] ? "Unplug" : "Plug in"} power supply ${k + 1}`;
+      hits.push(
+        <rect key={`${it.id}i${k}`} className="rack-port rack-inlet" role="button" tabIndex={0} aria-label={label} x={pad + p.x - bw / 2 - 1} y={top + py + p.y - bh / 2 - 1} width={bw + 2} height={bh + 2} rx="1"
+          onClick={() => onPlug(it.id, k)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPlug(it.id, k); } }}><title>{label}</title></rect>,
+      );
+    });
   }
 
   return (

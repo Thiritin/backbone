@@ -26,6 +26,7 @@
 }
 .wm-city.wm-t1 text { font-weight: 600; }
 .wm-city:hover text { fill: var(--text); }
+.wm-city.wm-covered text { visibility: hidden; }
 .wm[data-z="1"] .wm-t2 text, .wm[data-z="1"] .wm-t3 text, .wm[data-z="2"] .wm-t3 text { display: none; }
 .wm[data-z="1"] .wm-t3 circle { display: none; }
 
