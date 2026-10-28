@@ -4,7 +4,7 @@ import { euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { isAvailable, skillFor } from "../../../sim/10-catalog/research";
 import { storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
-import { cancel, install } from "../../../sim/90-actions/store";
+import { cancel, install, storeBlocker } from "../../../sim/90-actions/store";
 import { PearMark } from "../../desktop/Intro";
 import { appByName } from "../registry";
 import { useStore } from "../../store";
@@ -57,6 +57,7 @@ function Action({ item, big }: { item: StoreItem; big?: boolean }) {
   const cls = `ps-get${big ? " big" : ""}`;
   const skill = skillFor(item.id);
   if (skill && !isAvailable(item.id, game.unlocks)) return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Research", { kind: "skill", id: skill.id }); }}>Needs {skill.name}</button>;
+  if (!game.installed.includes(item.id) && storeBlocker(game, item.id) === "error.needsHypervisor") return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Products", { kind: "cluster", id: "new" }); }}>Needs hypervisor</button>;
   if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act((s) => install(s, item.id)); }}>Get</button>;
   if (item.kind !== "app") return <span className="ps-owned"><Check />Installed</span>;
   return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id); }}>Open</button>;
@@ -73,7 +74,7 @@ function featuredId(installed: string[], learned: string[]): string {
 export function Software() {
   const game = useStore((s) => s.game);
   const [open, setOpen] = useState<string | null>(null);
-  const price = (item: StoreItem) => `${euroCents(subscriptionPrice(item, yearOf(game.hour)))} / month`;
+  const price = (item: StoreItem) => (item.monthly ? `${euroCents(subscriptionPrice(item, yearOf(game.hour)))} / month` : "Free");
   const detail = open && storeItem(open);
   if (detail) return <Detail item={detail} price={price(detail)} back={() => setOpen(null)} />;
 
@@ -124,7 +125,7 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
   const facts: [string, string][] = [
     ["Subscription", price],
     ["Skill", skillFor(item.id)?.name ?? "None"],
-    ["Status", has ? "Installed" : isAvailable(item.id, game.unlocks) ? "Available" : "Not learned"],
+    ["Status", has ? "Installed" : !isAvailable(item.id, game.unlocks) ? "Not learned" : storeBlocker(game, item.id) ? "Needs hypervisor" : "Available"],
   ];
   return (
     <div className="ps">

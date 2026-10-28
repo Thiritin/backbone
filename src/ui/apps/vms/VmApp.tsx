@@ -2,14 +2,15 @@ import { Boxes, MonitorCog, Play, RotateCcw, Square, TriangleAlert } from "lucid
 import { useState } from "react";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import type { GameState } from "../../../sim/50-state";
-import type { Workload } from "../../../sim/60-infra/cluster";
+import { hostOfVm, type Workload } from "../../../sim/60-infra/cluster";
 import { workloadLoad } from "../../../sim/60-infra/usage";
 import { migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
 import { useFocus, useStore } from "../../store";
 import "../billing/billing.css";
 import { CustomerLink } from "../customers/CustomersApp";
 import { day, devName, disk, ram } from "../hw";
-import { Mark, IncidentReports, Sparkline, VM_STATE, vmState, type VmState } from "../products/parts";
+import { ResizeCard } from "../products/PanelHosts";
+import { Mark, IncidentReports, Sparkline, VM_STATE, vmLabel, vmState, type VmState } from "../products/parts";
 import { PRODUCT } from "../support/labels";
 
 type StateFilter = "all" | "running" | "stopped" | "lost";
@@ -26,8 +27,10 @@ export function VmApp() {
   const [selected, setSelected] = useState<string | null>(null);
   useFocus("Virtual machines", (f) => { if (f.kind === "workload") { setCluster(null); setNode(null); setFilter("all"); setIncidents(false); setSelected(f.id); } });
   const cluster = game.clusters.find((c) => c.id === clusterId);
+  const clouds = game.clusters.filter((c) => c.kind === "cloud");
+  const vms = game.workloads.filter((w) => clouds.some((c) => c.id === w.clusterId));
   const brand = cluster?.platform ? softwareById(cluster.platform) : null;
-  const shown = game.workloads.filter((w) => w.clusterId && (!cluster || w.clusterId === cluster.id) && (!node || w.deviceId === node) && matches(filter, vmState(game, w)));
+  const shown = vms.filter((w) => (!cluster || w.clusterId === cluster.id) && (!node || w.deviceId === node) && matches(filter, vmState(game, w)));
   const vm = game.workloads.find((w) => w.id === selected);
   const pickCluster = (id: string | null) => { setCluster(id); setNode(null); setIncidents(false); };
   const lost = game.lossReports.filter((r) => r.items.some((i) => !i.restored)).length;
@@ -40,9 +43,9 @@ export function VmApp() {
           <div><b>{brand ? brand.console : "Virtual machines"}</b><span>{cluster ? cluster.name : "All clusters"}</span></div>
         </div>
         <button className={`side-item${!cluster && !incidents ? " active" : ""}`} aria-pressed={!cluster && !incidents} onClick={() => pickCluster(null)}>
-          <Boxes />All clusters<span className="side-count">{game.workloads.filter((w) => w.clusterId).length}</span>
+          <Boxes />All clusters<span className="side-count">{vms.length}</span>
         </button>
-        {game.clusters.map((c) => (
+        {clouds.map((c) => (
           <button key={c.id} className={`side-item${c.id === clusterId && !incidents ? " active" : ""}`} aria-pressed={c.id === clusterId && !incidents} onClick={() => pickCluster(c.id)}>
             <Mark id={c.platform} size={16} />{c.name}<span className="side-count">{game.workloads.filter((w) => w.clusterId === c.id).length}</span>
           </button>
@@ -75,13 +78,13 @@ export function VmApp() {
                 <thead><tr><th>Name</th><th>Customer</th><th>Product</th><th>Host</th><th className="r">Size</th><th>State</th></tr></thead>
                 <tbody>
                   {shown.map((w) => {
-                    const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId);
+                    const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId), own = vmLabel(game, w);
                     const d = game.devices.find((x) => x.id === w.deviceId), [label, tone] = VM_STATE[vmState(game, w)];
                     return (
                       <tr key={w.id} className={w.id === selected ? "sel" : ""} onClick={() => setSelected(w.id)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setSelected(w.id)}>
-                        <td>{v?.label}</td>
-                        <td>{c && <CustomerLink id={c.id} name={c.name} />}</td>
-                        <td>{v && PRODUCT[v.product]}</td>
+                        <td>{v ? v.label : own.name}</td>
+                        <td>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</td>
+                        <td>{v ? PRODUCT[v.product] : own.service}</td>
                         <td>{d && devName(d)}</td>
                         <td className="r num">{num(w.vcpu)} vCPU · {ram(+w.ramGb.toFixed(2))}</td>
                         <td><span className={`pill ${tone}`}>{label}</span></td>
@@ -103,18 +106,18 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
   const act = useStore((s) => s.act);
   const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId);
   const cluster = game.clusters.find((x) => x.id === w.clusterId)!;
-  const host = game.devices.find((x) => x.id === w.deviceId);
+  const host = game.devices.find((x) => x.id === w.deviceId), panel = hostOfVm(game, w.id);
   const st = vmState(game, w), [label, tone] = VM_STATE[st];
   const from = game.hour - (game.hour % 24);
   const load = Array.from({ length: 24 }, (_, i) => workloadLoad(game, { ...w, stopped: false, busyUntil: 0 }, from + i));
   const targets = migrationTargets(game, w.id).map((t) => ({ c: game.clusters.find((x) => x.id === t.clusterId)!, d: game.devices.find((d) => d.id === t.to)! }));
-  const live = !!cluster.platform && softwareById(cluster.platform).live;
+  const live = !!cluster.platform && softwareById(cluster.platform).live && cluster.ha.live;
   return (
     <aside className="fin-detail vm-detail">
-      <div className="fin-detail-h"><h2>{v?.label}</h2><span className={`pill ${tone}`}>{label}</span></div>
+      <div className="fin-detail-h"><h2>{v ? v.label : panel?.name}</h2><span className={`pill ${tone}`}>{label}</span></div>
       <dl className="fin-facts">
-        <div><dt>Customer</dt><dd>{c && <CustomerLink id={c.id} name={c.name} />}</dd></div>
-        <div><dt>Product</dt><dd>{v && PRODUCT[v.product]}</dd></div>
+        <div><dt>Customer</dt><dd>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</dd></div>
+        <div><dt>Product</dt><dd>{v ? PRODUCT[v.product] : "Panel VM"}</dd></div>
         <div><dt>Host</dt><dd>{host ? devName(host) : "None"}</dd></div>
         <div><dt>Cluster</dt><dd>{cluster.name}</dd></div>
         <div><dt>vCPU</dt><dd className="num">{num(w.vcpu)}</dd></div>
@@ -142,6 +145,7 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
           </div>
         </section>
       )}
+      {panel && <ResizeCard key={panel.id} game={game} host={panel} />}
     </aside>
   );
 }

@@ -8,7 +8,7 @@ import { PHP_EOL } from "../../../sim/60-infra/php";
 import { queuePhpUpgrade } from "../../../sim/90-actions/staff";
 import { slotTime, TechButton } from "./TechButton";
 import type { Device, GameState, Location } from "../../../sim/50-state";
-import { bookable, clusterOf, nodeUsed, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
+import { bookable, clusterOf, nodeUsed, vmById, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { nodeUsage } from "../../../sim/60-infra/usage";
 import { addNode, CLUSTER_NAME_MAX, cordon, createCluster, drain, removeNode, phpDue, setPlacement, setRamGuard, uncordon, upgradePhp } from "../../../sim/90-actions/clusters";
@@ -82,11 +82,14 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
     <>
       <div className="loc-card-h loc-sub">
         <h3>{cluster.name}</h3>
+        <span className="pill">{cluster.kind === "cloud" ? "Hypervisor" : "Panel host"}</span>
         <span className="grow" />
-        <div className="seg" role="group" aria-label="Placement">
-          <button aria-pressed={cluster.placement === "pack"} onClick={() => act((g) => setPlacement(g, cluster.id, "pack"))}>Pack</button>
-          <button aria-pressed={cluster.placement === "spread"} onClick={() => act((g) => setPlacement(g, cluster.id, "spread"))}>Spread</button>
-        </div>
+        {cluster.kind === "cloud" && (
+          <div className="seg" role="group" aria-label="Placement">
+            <button aria-pressed={cluster.placement === "pack"} onClick={() => act((g) => setPlacement(g, cluster.id, "pack"))}>Pack</button>
+            <button aria-pressed={cluster.placement === "spread"} onClick={() => act((g) => setPlacement(g, cluster.id, "spread"))}>Spread</button>
+          </div>
+        )}
       </div>
       {game.unlocks.includes("memoryReservation") && (
         <div className="loc-row">
@@ -110,12 +113,27 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
           </div>
         );
       })}
-      {free.length > 0 && (
+      {cluster.vm && <PanelVmRow game={game} cluster={cluster} />}
+      {cluster.kind === "cloud" && free.length > 0 && (
         <div className="loc-row">
           {free.map((d) => <button key={d.id} className="btn" onClick={() => act((g) => addNode(g, cluster.id, d.id))}><Plus />{devName(d)}</button>)}
         </div>
       )}
     </>
+  );
+}
+
+// A panel host that runs as a VM: the hypervisor cluster and node under it, and its booking.
+function PanelVmRow({ game, cluster }: { game: GameState; cluster: Cluster }) {
+  const vm = vmById(game, cluster.vm)!, d = game.devices.find((x) => x.id === vm.deviceId);
+  const on = game.clusters.find((c) => c.id === vm.clusterId);
+  return (
+    <div className="loc-row">
+      <span>Panel VM</span>
+      <span className="loc-muted">{on?.name}{d ? ` · ${devName(d)}` : ""}</span>
+      <span className="grow" />
+      <span className="num loc-muted">{num(vm.vcpu)} vCPU · {ram(vm.ramGb)} · {disk(vm.diskGb)}</span>
+    </div>
   );
 }
 
@@ -149,7 +167,7 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
   const cluster = clusterOf(game, device.id), node = cluster?.nodes.find((n) => n.deviceId === device.id);
   const loads = workloadsOn(game, device.id);
   const az = locationOf(game, device)?.az;
-  const joinable = game.clusters.filter((c) => c.az === az);
+  const joinable = game.clusters.filter((c) => c.az === az && c.kind === "cloud");
   const owner = (serviceId: string) => {
     const v = game.services.find((x) => x.id === serviceId);
     return { v, c: game.customers.find((x) => x.id === v?.customerId) };
@@ -158,7 +176,7 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
     const { v, c } = owner(loads[0].serviceId);
     return (
       <div className="loc-card">
-        <div className="loc-card-h"><h3><Boxes />Dedicated</h3><span className="grow" /><span>{c?.name}</span></div>
+        <div className="loc-card-h"><h3><Boxes />{v?.product === "colocation" ? "Colocation" : "Dedicated"}</h3><span className="grow" /><span>{c?.name}</span></div>
         <div className="loc-row"><span>{v?.label}</span></div>
       </div>
     );
@@ -166,10 +184,11 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
   if (!cluster || !node) {
     return (
       <div className="loc-card">
-        <div className="loc-card-h"><h3><Boxes />Cluster</h3><span className="grow" /><span className="loc-muted">None</span></div>
-        {device.rackId && joinable.length > 0 && (
+        <div className="loc-card-h"><h3><Boxes />Control plane</h3><span className="grow" /><span className="loc-muted">None</span></div>
+        {device.rackId && (
           <div className="loc-row">
             {joinable.map((c) => <button key={c.id} className="btn" onClick={() => act((g) => addNode(g, c.id, device.id))}><Plus />{c.name}</button>)}
+            <button className="btn" onClick={() => openApp("Products", { kind: "cluster", id: "newHost" })}><Plus />Panel host</button>
           </div>
         )}
       </div>
@@ -180,6 +199,7 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
     <div className="loc-card">
       <div className="loc-card-h">
         <h3><Boxes />{cluster.name}</h3>
+        <span className="pill">{cluster.kind === "cloud" ? "Hypervisor node" : "Panel host"}</span>
         <span className={`pill ${tone}`}>{label}</span>
         {game.frozen.includes(device.id) && <span className="pill bad">Frozen</span>}
         <span className="grow" />
@@ -188,10 +208,10 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
           : <button className="btn" onClick={() => act((g) => uncordon(g, device.id))}>Uncordon</button>}
         {node.state !== "draining" && node.state !== "maintenance" && <button className="btn" onClick={() => act((g) => drain(g, device.id))}>Drain</button>}
         {node.state !== "draining" && node.state !== "maintenance" && <TechButton game={game} deviceId={device.id} kind="drain" />}
-        {!loads.length && <button className="btn" onClick={() => act((g) => removeNode(g, device.id))}>Remove</button>}
+        {!loads.length && cluster.kind === "cloud" && <button className="btn" onClick={() => act((g) => removeNode(g, device.id))}>Remove</button>}
       </div>
       <NodeMeters game={game} d={device} />
-      <PhpRow game={game} cluster={cluster} device={device} />
+      {cluster.kind === "panel" && <PhpRow game={game} cluster={cluster} device={device} />}
       {cluster.controlPlane === device.id && (
         <div className="loc-row">
           <span className="loc-k">Control plane</span>

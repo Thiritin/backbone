@@ -9,12 +9,12 @@ import { Isometric } from "../../art/Isometric";
 import { Logo } from "../../art/logos";
 import { useStore } from "../../store";
 
-export function Stepper({ value, onChange, min = 0 }: { value: number; onChange: (n: number) => void; min?: number }) {
+export function Stepper({ value, onChange, min = 0, step = 1, label = "Quantity" }: { value: number; onChange: (n: number) => void; min?: number; step?: number; label?: string }) {
   return (
-    <div className="shop-qty" role="group" aria-label="Quantity">
-      <button className="btn icon" aria-label="Fewer" disabled={value <= min} onClick={() => onChange(value - 1)}><Minus /></button>
+    <div className="shop-qty" role="group" aria-label={label}>
+      <button className="btn icon" aria-label="Fewer" disabled={value - step < min} onClick={() => onChange(value - step)}><Minus /></button>
       <span className="num">{value}</span>
-      <button className="btn icon" aria-label="More" onClick={() => onChange(value + 1)}><Plus /></button>
+      <button className="btn icon" aria-label="More" onClick={() => onChange(value + step)}><Plus /></button>
     </div>
   );
 }

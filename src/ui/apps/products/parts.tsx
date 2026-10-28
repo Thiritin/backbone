@@ -5,7 +5,7 @@ import { SERVES, softwareById, softwareOf, type Software, type SoftwareKind } fr
 import { PRODUCTS } from "../../../sim/10-catalog/products";
 import { PRODUCT } from "../support/labels";
 import type { GameState } from "../../../sim/50-state";
-import { controlPlaneUp, lostDisk, workloadOnline, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
+import { controlPlaneUp, hostOfVm, lostDisk, workloadOnline, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
@@ -33,7 +33,7 @@ const UNIT: Record<Software["pricing"], string> = { free: "", account: "per web 
 export const licenseText = (sw: Software) => (sw.pricing === "free" ? "Free" : `${euroCents(sw.fee)} ${UNIT[sw.pricing]}`);
 const cp = (sw: Software) => `${+sw.controlPlane.vcpu.toFixed(2)} vCPU · ${+sw.controlPlane.ramGb.toFixed(2)} GB`;
 
-export const KIND_NAME: Record<SoftwareKind, string> = { panel: "Hosting panel", cloud: "Virtualization platform" };
+export const KIND_NAME: Record<SoftwareKind, string> = { panel: "Hosting panel", cloud: "Hypervisor" };
 export const servesText = (kind: SoftwareKind) => SERVES[kind].filter((p) => !PRODUCTS[p].ha).map((p) => PRODUCT[p]).join(", ");
 
 // The competing software of one kind as cards; the chosen one is pressed.
@@ -141,6 +141,14 @@ export function ControlPlanePill({ game, cluster }: { game: GameState; cluster: 
     : !cluster.panel && !cluster.platform ? ["bad", "No control plane"]
     : controlPlaneUp(game, cluster) ? ["ok", "Control plane up"] : ["bad", "Control plane down"];
   return <span className={`pill ${tone}`}>{label}</span>;
+}
+
+// Who a VM belongs to and what it runs: a customer's service, or one of the player's panel hosts.
+export function vmLabel(game: GameState, w: Workload): { name: string; service: string } {
+  const host = hostOfVm(game, w.id);
+  if (host) return { name: host.name, service: "Panel VM" };
+  const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId);
+  return { name: c?.name ?? "", service: v?.domain ?? v?.label ?? "" };
 }
 
 export const softwareName =(id: string | null) => (id ? softwareById(id).name : "None");

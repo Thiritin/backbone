@@ -6,7 +6,7 @@ import { workloadsOn, type Workload } from "../../../sim/60-infra/cluster";
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
-import { VM_STATE, vmState } from "../products/parts";
+import { VM_STATE, vmLabel, vmState } from "../products/parts";
 
 type Sort = "vcpu" | "ramGb" | "diskGb";
 const SORTS: [Sort, string][] = [["vcpu", "CPU"], ["ramGb", "RAM"], ["diskGb", "Disk"]];
@@ -60,20 +60,20 @@ function WorkloadRow({ game, w, u }: { game: GameState; w: Workload; u: Resource
     document.addEventListener("keydown", esc);
     return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", esc); };
   }, [menu]);
-  const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId);
+  const { name, service } = vmLabel(game, w);
   const st = vmState(game, w), [label, tone] = VM_STATE[st];
   const hot = st === "running" && pegged(game, w);
   const run = (fn: Parameters<typeof act>[0]) => { setMenu(false); act(fn); };
   return (
     <div className="wl-row">
       <div className="wl-line">
-        <span className="wl-name">{c?.name}</span>
-        <span className="loc-muted wl-service">{v?.domain ?? v?.label}</span>
+        <span className="wl-name">{name}</span>
+        <span className="loc-muted wl-service">{service}</span>
         <span className="grow" />
         {hot && <span className="pill warn">Pegged</span>}
         {st !== "running" && <span className={`pill ${tone}`}>{label}</span>}
         <div className="wl-more" ref={ref}>
-          <button className="btn ghost icon" aria-label={`Actions for ${v?.domain ?? v?.label}`} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><Ellipsis /></button>
+          <button className="btn ghost icon" aria-label={`Actions for ${service}`} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><Ellipsis /></button>
           {menu && (
             <div className="wl-menu" role="menu">
               <button role="menuitem" onClick={() => { setMenu(false); setMoving(!moving); }}><MoveRight />Migrate to another host</button>
