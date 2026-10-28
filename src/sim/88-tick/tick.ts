@@ -10,6 +10,7 @@ import { marketingTick } from "../80-business/marketing";
 import { salesTick } from "../30-market/sales";
 import { computeTick } from "../60-infra/cluster";
 import { networkTick } from "../60-infra/network";
+import { productsTick } from "../85-products/products";
 import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
 import { skillById } from "../10-catalog/research";
@@ -104,7 +105,7 @@ export function failComponents(s: GameState, d: Device, ids: string[], events: S
   const broke = d.components.filter((c) => ids.includes(c.id) && c.failedAt === null);
   if (!broke.length) return d;
   const next: Device = { ...d, components: d.components.map((c) => (broke.includes(c) ? { ...c, failedAt: s.hour } : c)) };
-  if (broke.some(isDrive) && arrayLost(next)) Object.assign(next, { dataLost: next.dataLost ?? s.hour, rebuild: null });
+  if (broke.some(isDrive) && arrayLost(next)) Object.assign(next, { dataLost: s.hour, rebuild: null });
   if (s.unlocks.includes("monitoring")) {
     for (const c of broke) events.push({ app: "Locations", key: "event.componentFailed", params: { device: d.label ?? d.name, component: c.kind } });
   }
@@ -222,6 +223,7 @@ export function tick(state: GameState): SimEvent[] {
   }
   events.push(...opsTick(state));
   events.push(...computeTick(state));
+  events.push(...productsTick(state));
   events.push(...billingTick(state));
   events.push(...networkTick(state));
   events.push(...supportTick(state));

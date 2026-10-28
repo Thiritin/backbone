@@ -1,0 +1,39 @@
+/* Shared by the Products and Virtual machines apps, on top of billing.css. */
+.prd-pad { display: grid; gap: 14px; align-content: start; padding: 16px; }
+.prd-h { display: flex; align-items: baseline; gap: 10px; font-size: 13px; font-weight: 650; margin: 4px 0 -6px; }
+.prd-title { display: flex; align-items: center; gap: 12px; }
+.prd-title h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.prd-title .grow { flex: 1; }
+.prd-over { color: var(--bad-text); font-weight: 650; }
+
+.prd-mark { display: inline-grid; place-content: center; flex: none; border-radius: 22%; color: white; }
+.prd-pad .fin-card-b > .seg { justify-self: start; }
+.side-item .prd-mark { margin-right: 2px; }
+.side-item .prd-mark svg.lucide { width: 10px; height: 10px; }
+
+.prd-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.prd-card { display: grid; gap: 10px; align-content: start; padding: 12px 14px; border-radius: 10px; border: 0.5px solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.prd-card:hover { border-color: var(--accent); }
+.prd-card[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.prd-card-h { display: flex; align-items: center; gap: 8px; }
+.prd-card-h .t { font-weight: 650; }
+.prd-card dl { display: grid; gap: 4px; margin: 0; font-size: 12px; }
+.prd-card dl > div { display: flex; justify-content: space-between; gap: 8px; }
+.prd-card dt { color: var(--text-2); }
+.prd-card dd { margin: 0; font-weight: 550; }
+
+.prd-spark { display: block; overflow: visible; }
+.prd-spark polyline { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.prd-spark .base { stroke: var(--line-strong); stroke-width: 1; }
+.prd-spark .hit { fill: transparent; }
+.prd-spark .hit:hover { fill: color-mix(in oklch, var(--accent) 12%, transparent); }
+
+.vm-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 14px; }
+.vm-brand b { display: block; font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+.vm-brand span { font-size: 11.5px; color: var(--text-3); }
+.vm-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0.5px solid var(--line); flex: none; }
+.vm-detail .seg { flex-wrap: wrap; }
+.prd-mark svg.lucide, .sidebar .prd-mark svg.lucide { color: white; }
+.prd-pad .fin-pills, .vm-detail .fin-pills { flex-wrap: wrap; }
+.prd-card dt { white-space: nowrap; }
+.prd-card dd { text-align: right; }

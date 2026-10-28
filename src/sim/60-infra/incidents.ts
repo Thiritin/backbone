@@ -27,9 +27,8 @@ export const SEIZE_MONTHS = [3, 24] as const;
 export const DATA_LOSS = -60, RESTORED = -15;
 const HOURS_PER_MONTH = 730;
 
-// Products with backups replace has once a workload can keep a copy on another system.
-export const backupHook = { has: (_s: GameState, _workloadId: string): boolean => false };
-export const hasBackupElsewhere = (s: GameState, workloadId: string): boolean => backupHook.has(s, workloadId);
+// Cluster backups always land on another cluster.
+export const hasBackupElsewhere = (s: GameState, workloadId: string): boolean => (s.workloads.find((w) => w.id === workloadId)?.backupAt ?? null) !== null;
 
 // economy.md, Reviews: 10% of affected customers write one, 20% below happiness 40.
 export function maybeReview(s: GameState, c: Customer, reason: ReviewReason, r: Rng, events: SimEvent[], stars = starsFor(c.happiness, r)): void {

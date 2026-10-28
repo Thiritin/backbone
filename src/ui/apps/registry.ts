@@ -1,5 +1,5 @@
 import {
-  BookOpen, ChartLine, Handshake, ChartPie, Contact, FileText, Globe, Landmark, GraduationCap, LifeBuoy, ListChecks, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
+  BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, Handshake, Landmark, LifeBuoy, ListChecks, Megaphone, MonitorCog, Package, Receipt, Server, Settings, ShoppingCart, Users,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -16,6 +16,8 @@ import { CustomersApp } from "./customers/CustomersApp";
 import { SupportApp } from "./support/SupportApp";
 import { ResearchApp } from "./research/ResearchApp";
 import { StaffApp } from "./staff/StaffApp";
+import { ProductsApp } from "./products/ProductsApp";
+import { VmApp } from "./vms/VmApp";
 import { isFinal } from "../../sim/40-support/tickets";
 import { isUnpaid } from "../../sim/45-billing/billing";
 import { deviceHealth } from "../../sim/60-infra/status";
@@ -38,7 +40,9 @@ export const APPS: AppDef[] = [
   { name: "Shop", icon: ShoppingCart, tile: "oklch(0.6 0.15 40)", about: "Sells servers, switches and patch panels into your storage." },
   { name: "Network", icon: Globe, tile: "oklch(0.58 0.12 210)", about: "Manages transit, peering and DDoS protection.", body: NetworkApp,
     badge: (s) => s.network.requests.length + s.network.attacks.length },
-  { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters." },
+  { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters.", body: ProductsApp,
+    badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored || i.refund === "open")).length },
+  { name: "Virtual machines", icon: MonitorCog, tile: "oklch(0.5 0.12 200)", about: "Starts, stops, migrates and restores the workloads on your clusters.", body: VmApp },
   { name: "Sales", icon: Handshake, tile: "oklch(0.6 0.15 145)", about: "Collects requests from customers so you can quote a price or decline.", body: SalesApp,
     badge: (s) => s.sales.requests.filter((r) => (r.status === "open" || r.status === "countered") && !missingFor(s, r).length).length },
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: "Lists your customers with their contracts and happiness.", body: CustomersApp },

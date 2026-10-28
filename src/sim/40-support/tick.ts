@@ -6,6 +6,7 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { takenDown } from "../60-infra/ops";
 import { applyNoticeWork } from "./notices";
+import { howToFactor } from "../85-products/products";
 import { serviceOnline } from "./status";
 import {
   bump, cancelCustomer, createTicket, credit, GAMER_ABUSE_RATE, HOURS_PER_MONTH, isFinal, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
@@ -66,7 +67,7 @@ function spawnHourly(s: GameState): void {
     if (c.churnedAt !== null) continue;
     const { skill } = profileStats(c.profile);
     for (const kind of ["howTo", "billing", "abuse"] as const) {
-      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill]) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1);
+      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1);
       if (chance(s.rng, rate / HOURS_PER_MONTH)) createTicket(s, c, kind);
     }
   }

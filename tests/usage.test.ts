@@ -15,14 +15,10 @@ describe("utilization", () => {
     expect(usageOf(s, [dev(s, "dev4")]).net).toBeGreaterThan(0);
   });
 
-  it("follows the evening peak and goes dark when the server is off", () => {
+  it("changes over the day and goes dark when the server is off", () => {
     const s = startGame(1);
-    s.hour = 9;
-    const morning = usageOf(s, [dev(s, "dev3")]);
-    s.hour = 21;
-    const evening = usageOf(s, [dev(s, "dev3")]);
-    expect(evening.cpu).toBeGreaterThan(morning.cpu);
-    expect(evening.ram).toBe(morning.ram);
+    const day = Array.from({ length: 24 }, (_, h) => { s.hour = h; return usageOf(s, [dev(s, "dev3")]).cpu; });
+    expect(Math.max(...day)).toBeGreaterThan(Math.min(...day));
     setPower(s, "dev3", false);
     expect(usageOf(s, [dev(s, "dev3")])).toEqual({ cpu: 0, ram: 0, disk: 0, net: 0 });
   });

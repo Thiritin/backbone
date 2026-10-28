@@ -4,6 +4,7 @@ import { capacityAt, DATACENTERS, nextAz, seedDcs } from "../20-world/datacenter
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { deviceDefaults, newGame, SAVE_VERSION, type Device, type GameState } from "../50-state";
+import { clusterDefaults, workloadDefaults } from "../60-infra/cluster";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
 export const serialize = (state: GameState): string => JSON.stringify(state);
@@ -61,7 +62,7 @@ export function deserialize(raw: string): GameState {
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, plan: v.plan ?? null, sla: v.sla ?? "basic" })),
     // Saves from before clusters keep their services unplaced, which leaves them online.
     sales: { ...base.sales, ...data.sales },
-    clusters: data.clusters ?? [], workloads: data.workloads ?? [], downHours: data.downHours ?? {},
+    clusters: (data.clusters ?? []).map(clusterDefaults), workloads: (data.workloads ?? []).map(workloadDefaults), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   };
 }

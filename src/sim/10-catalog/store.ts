@@ -17,6 +17,7 @@ export const WIDGETS: [string, string, number][] = [
 export const STORE: StoreItem[] = [
   { id: "Network", kind: "app", name: "Network", monthly: 25 },
   { id: "Products", kind: "app", name: "Products", monthly: 15 },
+  { id: "Virtual machines", kind: "app", name: "Virtual machines", monthly: 20 },
   { id: "Staff", kind: "app", name: "Staff", monthly: 20 },
   { id: "Marketing", kind: "app", name: "Marketing", monthly: 20 },
   { id: "Market", kind: "app", name: "Market", monthly: 15 },

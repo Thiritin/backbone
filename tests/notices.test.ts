@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createRng, hashRng } from "../src/sim/00-core/rng";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { applyNoticeWork, domainOf, opsTick, spawnLegal, spawnNotice, TAKEDOWN_HOURS } from "../src/sim/40-support/notices";
 import { monthlyValue, type Ticket } from "../src/sim/40-support/tickets";
 import type { GameState } from "../src/sim/50-state";
 import { workloadsOf } from "../src/sim/60-infra/cluster";
-import { backupHook, DATA_LOSS, gridOutage, RESTORED, seize } from "../src/sim/60-infra/incidents";
+import { DATA_LOSS, gridOutage, RESTORED, seize } from "../src/sim/60-infra/incidents";
 import { linkStatus, powered } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { addNode } from "../src/sim/90-actions/clusters";
@@ -36,10 +36,6 @@ function twoNodes(seed = 1) {
   ok(addNode(s, s.clusters[0].id, second));
   return { s, second };
 }
-
-afterEach(() => {
-  backupHook.has = () => false;
-});
 
 describe("copyright and abuse notices", () => {
   it("names a URL on the customer's domain", () => {
@@ -166,7 +162,7 @@ describe("legal requests", () => {
 
   it("restores from a backup on another system with a smaller hit and an outage ticket", () => {
     const { s } = twoNodes();
-    backupHook.has = () => true;
+    s.workloads = s.workloads.map((w) => ({ ...w, backupAt: s.hour }));
     const before = friend(s).happiness;
     seize(s, "dev3", "Europoll", hashRng(1), []);
     expect(friend(s).happiness).toBe(before + RESTORED);

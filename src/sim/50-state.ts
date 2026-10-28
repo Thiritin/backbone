@@ -14,6 +14,7 @@ import type { Cluster, Workload } from "./60-infra/cluster";
 import { newNetwork, type Network } from "./60-infra/network";
 import { newOps, type Ops } from "./60-infra/ops";
 import { newSales, type Sales } from "./30-market/market";
+import type { LossReport } from "./85-products/products";
 
 export const SAVE_VERSION = 2;
 
@@ -117,6 +118,8 @@ export interface GameState {
   network: Network;
   // Incidents, seized servers, dark locations and taken-down services.
   ops: Ops;
+  // Incident reports of lost disks.
+  lossReports: LossReport[];
 }
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
@@ -149,7 +152,7 @@ export const newGame = (seed: number): GameState => ({
     { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper", color: null },
   ],
   ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], checklist: [],
-  customers: [], services: [], clusters: [], workloads: [], downHours: {},
+  customers: [], services: [], clusters: [], workloads: [], downHours: {}, lossReports: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
   tickets: [], playerBusyUntil: 0, servicesDown: [],

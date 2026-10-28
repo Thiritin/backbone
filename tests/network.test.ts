@@ -24,7 +24,7 @@ const err = (r: R) => (r.ok ? "ok" : r.error);
 function service(s: GameState, az: string, product: "vps" | "gameServer" | "colocation" = "vps", profile: Profile = "hobbyDev", plan: string | null = null) {
   const c = addCustomer(s, `C${s.nextId}`, profile);
   const id = addService(s, c, product, `${product} ${s.nextId}`, 10, "hour", 0, az, plan);
-  s.workloads.push({ id: `w${s.nextId++}`, serviceId: id, clusterId: null, deviceId: null, rackId: null, slot: 0, units: 0, watts: 0, placedAt: s.hour, vcpu: 1, ramGb: 1, diskGb: 10 });
+  s.workloads.push({ id: `w${s.nextId++}`, serviceId: id, clusterId: null, deviceId: null, rackId: null, slot: 0, units: 0, watts: 0, placedAt: s.hour, vcpu: 1, ramGb: 1, diskGb: 10, stopped: false, busyUntil: 0, backupAt: null });
   return id;
 }
 

@@ -2,31 +2,40 @@ import { Boxes, Plus } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
-import { clusterOf, nodeCapacity, nodeUsed, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
+import { bookable, clusterOf, controlPlaneUp, nodeUsed, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
+import { nodeUsage } from "../../../sim/60-infra/usage";
 import { addNode, CLUSTER_NAME_MAX, cordon, createCluster, drain, removeNode, setPlacement, uncordon } from "../../../sim/90-actions/clusters";
+import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
-import { devName, disk, ram } from "../hw";
+import { cores, devName, disk, ram } from "../hw";
+import { softwareName, VM_STATE, vmState } from "../products/parts";
 import { Zone } from "./ui";
 
-const STATE: Record<NodeState, [string, string]> = { active: ["Active", "ok"], cordoned: ["Cordoned", "warn"], draining: ["Draining", "warn"], maintenance: ["Maintenance", ""] };
+export const NODE_STATE: Record<NodeState, [string, string]> = { active: ["Active", "ok"], cordoned: ["Cordoned", "warn"], draining: ["Draining", "warn"], maintenance: ["Maintenance", ""] };
+const STATE = NODE_STATE;
 const num = (n: number) => `${+n.toFixed(1)}`;
 
-function Meter({ used, cap, text }: { used: number; cap: number; text: string }) {
+export function Meter({ used, cap, text }: { used: number; cap: number; text: string }) {
   return (
-    <span className="loc-meter">
+    <span className={`loc-meter${used > cap ? " tripped" : ""}`}>
       <span className="loc-meter-bar"><span style={{ width: `${cap ? Math.min(100, (used / cap) * 100) : 0}%` }} /></span>
       <span className="num">{text}</span>
     </span>
   );
 }
 
+// Booked against what the node can book, then live use against the hardware.
 function usage(game: GameState, d: Device): [string, ReactNode][] {
-  const cap = nodeCapacity(d), used = nodeUsed(game, d.id);
+  const cap = bookable(game, d), used = nodeUsed(game, d.id), live = nodeUsage(game, d.id), { used: u, physical: p } = live;
   return [
-    ["vCPU", <Meter used={used.vcpu} cap={cap.vcpu} text={`${num(used.vcpu)} of ${num(cap.vcpu)}`} />],
-    ["RAM", <Meter used={used.ramGb} cap={cap.ramGb} text={`${ram(+used.ramGb.toFixed(2))} of ${ram(cap.ramGb)}`} />],
-    ["Disk", <Meter used={used.diskGb} cap={cap.diskGb} text={`${disk(used.diskGb)} of ${disk(cap.diskGb)}`} />],
+    ["vCPU booked", <Meter used={used.vcpu} cap={cap.vcpu} text={`${num(used.vcpu)} of ${num(cap.vcpu)}`} />],
+    ["RAM booked", <Meter used={used.ramGb} cap={cap.ramGb} text={`${ram(+used.ramGb.toFixed(2))} of ${ram(+cap.ramGb.toFixed(2))}`} />],
+    ["Disk booked", <Meter used={used.diskGb} cap={cap.diskGb} text={`${disk(used.diskGb)} of ${disk(Math.round(cap.diskGb))}`} />],
+    ["CPU in use", <Meter used={u.vcpu} cap={p.vcpu} text={`${num(u.vcpu)} of ${cores(p.vcpu)}`} />],
+    ["RAM in use", <Meter used={u.ramGb} cap={p.ramGb} text={`${ram(+u.ramGb.toFixed(1))} of ${ram(p.ramGb)}`} />],
+    ["Disk in use", <Meter used={u.diskGb} cap={p.diskGb} text={`${disk(Math.round(u.diskGb))} of ${disk(p.diskGb)}`} />],
+    ...(live.perf < 1 ? [["Performance", <span className="pill warn">{Math.round(live.perf * 100)}%</span>] as [string, ReactNode]] : []),
   ];
 }
 
@@ -54,8 +63,6 @@ export function Clusters({ game, loc }: { game: GameState; loc: Location }) {
 function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
   const act = useStore((s) => s.act);
   const free = freeServers(game, cluster.az);
-  const [pick, setPick] = useState("");
-  const chosen = free.some((d) => d.id === pick) ? pick : free[0]?.id ?? "";
   return (
     <>
       <div className="loc-card-h loc-sub">
@@ -67,23 +74,20 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
         </div>
       </div>
       {cluster.nodes.map((n) => {
-        const d = game.devices.find((x) => x.id === n.deviceId)!, [label, tone] = STATE[n.state], used = nodeUsed(game, d.id), cap = nodeCapacity(d);
+        const d = game.devices.find((x) => x.id === n.deviceId)!, [label, tone] = STATE[n.state], used = nodeUsed(game, d.id), cap = bookable(game, d);
         return (
           <div key={n.deviceId} className="loc-row">
             <span>{devName(d)}</span>
             <span className={`pill ${tone}`}>{label}</span>
             <span className="grow" />
             <span className="num loc-muted">{workloadsOn(game, d.id).length} workloads</span>
-            <Meter used={used.ramGb} cap={cap.ramGb} text={`${ram(+used.ramGb.toFixed(2))} of ${ram(cap.ramGb)}`} />
+            <Meter used={used.ramGb} cap={cap.ramGb} text={`${ram(+used.ramGb.toFixed(2))} of ${ram(+cap.ramGb.toFixed(2))}`} />
           </div>
         );
       })}
       {free.length > 0 && (
         <div className="loc-row">
-          <select className="field grow" aria-label="Server" value={chosen} onChange={(e) => setPick(e.target.value)}>
-            {free.map((d) => <option key={d.id} value={d.id}>{devName(d)}</option>)}
-          </select>
-          <button className="btn" onClick={() => act((g) => addNode(g, cluster.id, chosen))}><Plus />Add node</button>
+          {free.map((d) => <button key={d.id} className="btn" onClick={() => act((g) => addNode(g, cluster.id, d.id))}><Plus />{devName(d)}</button>)}
         </div>
       )}
     </>
@@ -136,14 +140,24 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
         {!loads.length && <button className="btn" onClick={() => act((g) => removeNode(g, device.id))}>Remove</button>}
       </div>
       {usage(game, device).map(([k, v]) => <div key={k} className="loc-row"><span className="loc-k">{k}</span>{v}</div>)}
+      {cluster.controlPlane === device.id && (
+        <div className="loc-row">
+          <span className="loc-k">Control plane</span>
+          <span>{softwareName(cluster.panel)}, {softwareName(cluster.platform)}</span>
+          <span className="grow" />
+          <span className={`pill ${controlPlaneUp(game, cluster) ? "ok" : "bad"}`}>{controlPlaneUp(game, cluster) ? "Up" : "Down"}</span>
+        </div>
+      )}
       {loads.map((w) => {
-        const { v, c } = owner(w.serviceId);
+        const { v, c } = owner(w.serviceId), st = vmState(game, w), [label, tone] = VM_STATE[st];
         return (
           <div key={w.id} className="loc-row">
             <span>{c?.name}</span>
             <span className="loc-muted">{v?.label}</span>
             <span className="grow" />
             <span className="num loc-muted">{num(w.vcpu)} vCPU · {ram(+w.ramGb.toFixed(2))} · {disk(w.diskGb)}</span>
+            {st !== "running" && <span className={`pill ${tone}`}>{label}</span>}
+            {st === "lost" && <button className="btn" onClick={() => act((g) => restoreWorkload(g, w.id))}>{w.backupAt === null ? "Start empty" : "Restore"}</button>}
           </div>
         );
       })}
