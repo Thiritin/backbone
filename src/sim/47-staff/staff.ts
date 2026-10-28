@@ -7,14 +7,15 @@ import { bump, createTicket, MINUTES, rightTemplate, TEMPLATES, type Ticket, typ
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 
-export type Role = "support" | "bookkeeper" | "accountant" | "marketing";
-export type Task = TicketKind | "reminder" | "dunning" | "final" | "campaigns" | "reviews" | "fairs";
+export type Role = "support" | "bookkeeper" | "accountant" | "marketing" | "technician";
+export type Task = TicketKind | "reminder" | "dunning" | "final" | "campaigns" | "reviews" | "fairs" | "hardware" | "servers" | "panels";
 // queue: works the role's tasks. trainer: trains colleagues of the same role. forum: posts in hosting and gaming forums.
 export type Assignment = "queue" | "trainer" | "forum";
 
-// talent is the hidden cap skill never passes; busyUntil is in game minutes like the player's queue.
+// talent is the hidden cap skill never passes; busyUntil is in game minutes like the player's queue. location is the
+// location id a technician works at, null for every other role.
 export interface Employee {
-  id: string; name: string; role: Role; skill: number; talent: number; salary: number; hiredAt: number; assignment: Assignment;
+  id: string; name: string; role: Role; skill: number; talent: number; salary: number; hiredAt: number; assignment: Assignment; location: string | null;
   trained: Task[]; plan: Task[]; training: { task: Task; startedAt: number; doneAt: number } | null; busyUntil: number;
   raise: { ask: number; at: number } | null; nextRaiseAt: number; refusedAt: number | null;
   // Set on the stand-ins activeBots builds for store bots; never saved.
@@ -22,12 +23,14 @@ export interface Employee {
 }
 export interface Candidate { id: string; name: string; role: Role; skill: number; talent: number; salary: number; arriveAt: number; leaveAt: number }
 
-export const ROLES: Role[] = ["support", "bookkeeper", "accountant", "marketing"];
+export const ROLES: Role[] = ["support", "bookkeeper", "accountant", "marketing", "technician"];
 export const TASKS: Record<Role, Task[]> = {
   support: ["howTo", "billing", "outage", "upgrade", "cancellation", "abuse", "appeal"],
   bookkeeper: ["reminder"],
   accountant: ["dunning", "final"],
   marketing: ["campaigns", "reviews", "fairs"],
+  // Hardware: part swaps and power. Servers: draining nodes. Panels: PHP upgrades.
+  technician: ["hardware", "servers", "panels"],
 };
 // economy.md, Back-office tasks: minutes per dunning step, in STEPS order.
 const STEP_TASK: Task[] = ["reminder", "dunning", "final"];
@@ -137,7 +140,7 @@ export const BOT_INCIDENT_HAPPINESS = -15;
 export const BOT_INCIDENTS = 5;
 
 export const activeBots = (s: GameState): Employee[] => Object.entries(BOTS).filter(([id]) => s.installed.includes(id)).map(([id, b]) => ({
-  id, name: storeItem(id)!.name, role: b.role, skill: 0, talent: 0, salary: 0, hiredAt: 0, assignment: "queue",
+  id, name: storeItem(id)!.name, role: b.role, skill: 0, talent: 0, salary: 0, hiredAt: 0, assignment: "queue", location: null,
   trained: b.tasks, plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 0, refusedAt: null, bot: true,
 }));
 

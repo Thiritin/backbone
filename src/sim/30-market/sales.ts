@@ -8,6 +8,7 @@ import { activeServices, type PaymentHabit, type Product, type Profile } from ".
 import { isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { pickNode, serverTaken, workloadsOf } from "../60-infra/cluster";
+import { phpNeeded } from "../60-infra/php";
 import { locationOf } from "../60-infra/status";
 import { modelById } from "../10-catalog/hardware";
 import { addAwareness, discountFor } from "../80-business/marketing";
@@ -183,6 +184,13 @@ const closeTicket = (s: GameState, r: SalesRequest) => {
 function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   const name = requestName(r), plan = planName(r), price = r.quote!;
   const accepts = (r.counter !== null && price <= r.counter) || rand(s.rng) < acceptChance(s, r, price);
+  const php = accepts && r.product === "webHosting" ? phpNeeded(s, r.id, targetFor(s, r)?.clusterId ?? null) : null;
+  if (php) {
+    say(s, r.id, "customer", "sales.reply.oldPhp", { name: r.contact, version: php });
+    loseRequest(s, r, "lost", "lost.oldPhp", { version: php });
+    events.push({ app: "Sales", key: "event.salesPhp", params: { name, plan, version: php } });
+    return;
+  }
   if (accepts) {
     say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
     const done = fulfil(s, r);

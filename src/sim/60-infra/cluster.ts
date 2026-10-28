@@ -1,5 +1,6 @@
 import { modelById } from "../10-catalog/hardware";
-import { DEFAULT_PANEL, DEFAULT_PLATFORM, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { yearOf } from "../00-core/time";
+import { DEFAULT_PANEL, DEFAULT_PLATFORM, oldestPhp, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, type Resources } from "../10-catalog/products";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, GameState } from "../50-state";
@@ -8,7 +9,8 @@ import { linkStatus, raidUsable, rackPower, working } from "./status";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
-export interface ClusterNode { deviceId: string; state: NodeState }
+// php is the node's PHP version; after an upgrade its sites run slower up to and including the hour phpUntil.
+export interface ClusterNode { deviceId: string; state: NodeState; php: string; phpUntil: number }
 export type Placement = "pack" | "spread";
 export type BackupEvery = "off" | "daily" | "weekly";
 // A cluster lives in one availability zone; its nodes are servers mounted in that zone. panel and platform are SOFTWARE ids;
@@ -28,9 +30,10 @@ export interface Workload extends Resources {
   stopped: boolean; busyUntil: number; backupAt: number | null;
 }
 
-// Defaults for saves from before platforms and backups.
-export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">): Cluster => ({
+// Defaults for saves from before platforms, backups and PHP versions; their nodes run the save year's PHP.
+export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, hour = 0): Cluster => ({
   panel: DEFAULT_PANEL, platform: DEFAULT_PLATFORM, switching: null, backup: { targetId: null, every: "off" }, ...c,
+  nodes: c.nodes.map((n) => ({ ...n, php: n.php ?? phpAt(yearOf(hour)), phpUntil: n.phpUntil ?? -1 })),
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
 export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
@@ -76,6 +79,9 @@ export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): bo
 export function controlPlaneUp(s: GameState, c: Cluster): boolean {
   return !c.switching && !!c.controlPlane && c.nodes.some((n) => n.deviceId === c.controlPlane) && working(s, c.controlPlane);
 }
+
+// A cluster's sites run on its oldest node's PHP; an empty cluster would install the current one.
+export const clusterPhp = (c: Cluster, hour: number): string => oldestPhp(c.nodes.map((n) => n.php)) ?? phpAt(yearOf(hour));
 
 // The panel serves web spaces, the platform everything else on the cluster.
 export const servedBy = (s: GameState, w: Workload): SoftwareKind =>

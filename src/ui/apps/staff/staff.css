@@ -69,3 +69,8 @@
 .st-cand .shop-name { padding: 0; }
 .st-coming { color: var(--text-2); font-size: 12px; padding-right: 6px; }
 .st .shop-bar .btn .num { margin-left: 2px; }
+
+.st-ops { border-radius: 10px; border: 0.5px solid var(--line-strong); background: var(--win-side); }
+.st-op { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 12px; }
+.st-op + .st-op { border-top: 0.5px solid var(--line); }
+.st-none { color: var(--text-2); }

@@ -1,0 +1,47 @@
+import { Wrench } from "lucide-react";
+import { dateOf, yearOf } from "../../../sim/00-core/time";
+import { phpAt } from "../../../sim/10-catalog/platforms";
+import { nextSlot, OP_TASK, type OpKind, type TechOp } from "../../../sim/47-staff/technicians";
+import type { GameState } from "../../../sim/50-state";
+import { locationOf } from "../../../sim/60-infra/status";
+import { cancelOperation, queueOperation } from "../../../sim/90-actions/staff";
+import { useStore } from "../../store";
+import { PART_NAME } from "../hw";
+
+const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+// The time alone today, with the weekday on a later day.
+export function slotTime(now: number, hour: number): string {
+  const d = dateOf(hour), time = d.toISOString().slice(11, 16);
+  return dateOf(now).toISOString().slice(0, 10) === d.toISOString().slice(0, 10) ? time : `${WEEKDAY[d.getUTCDay()]} ${time}`;
+}
+
+export function opLabel(game: GameState, o: TechOp): string {
+  const d = game.devices.find((x) => x.id === o.deviceId);
+  if (o.kind === "replace") {
+    const c = d?.components.find((x) => x.id === o.componentId);
+    return `Replace ${c ? PART_NAME[c.kind].toLowerCase() : "part"}`;
+  }
+  return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}` }[o.kind];
+}
+
+// Queues the operation for the technician who gets to it first, or shows it queued with a Cancel.
+export function TechButton({ game, deviceId, kind, componentId = null }: { game: GameState; deviceId: string; kind: OpKind; componentId?: string | null }) {
+  const act = useStore((s) => s.act);
+  const queued = game.techOps.find((o) => o.deviceId === deviceId && o.kind === kind && o.componentId === componentId);
+  if (queued) {
+    return (
+      <>
+        <span className="pill accent">Queued</span>
+        <button className="btn" onClick={() => act((g) => cancelOperation(g, queued.id))}>Cancel</button>
+      </>
+    );
+  }
+  const d = game.devices.find((x) => x.id === deviceId), loc = d && locationOf(game, d);
+  const slot = loc && nextSlot(game, loc.id, OP_TASK[kind]);
+  if (!slot) return null;
+  return (
+    <button className="btn" onClick={() => act((g) => queueOperation(g, kind, deviceId, componentId))}>
+      <Wrench />{slot.name.split(" ")[0]}, <span className="num">{slotTime(game.hour, slot.hour)}</span>
+    </button>
+  );
+}

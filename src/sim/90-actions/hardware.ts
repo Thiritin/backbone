@@ -399,8 +399,8 @@ export function setRebuildRate(s: GameState, deviceId: string, rate: RebuildRate
 export const SWAP_HOURS = 0.25;
 
 // Swaps a failed or worn component for a spare from the zone's storage: 15 minutes in the basement, or the remote hands'
-// response time plus 15 minutes at a datacenter, billed for at least one hour.
-export function replaceComponent(s: GameState, deviceId: string, componentId: string): ActionResult {
+// response time plus 15 minutes at a datacenter, billed for at least one hour. A technician on site swaps it in 15 minutes.
+export function replaceComponent(s: GameState, deviceId: string, componentId: string, technician = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   const c = d.components.find((x) => x.id === componentId);
@@ -414,7 +414,7 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (!part) return fail("error.noPart");
   if (d.on && !hotSwappable(d, c)) return fail("error.powerOffFirst");
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
-  const hands = loc.dc ? datacenterById(loc.dc).remoteHands : null;
+  const hands = loc.dc && !technician ? datacenterById(loc.dc).remoteHands : null;
   const bill = hands ? Math.max(1, SWAP_HOURS) * hands.perHour : 0;
   if (s.cash < bill) return fail("error.noCash");
   if (hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: Math.max(1, SWAP_HOURS) }, -bill);

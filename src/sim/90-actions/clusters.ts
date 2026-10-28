@@ -3,7 +3,8 @@ import { modelById } from "../10-catalog/hardware";
 import { marketPrice, planOf, PRODUCTS, type Sla } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
-import { DEFAULT_PANEL, DEFAULT_PLATFORM, softwareById, SWITCH_FEE, SWITCH_PER_HOUR } from "../10-catalog/platforms";
+import { DEFAULT_PANEL, DEFAULT_PLATFORM, phpAt, softwareById, SWITCH_FEE, SWITCH_PER_HOUR } from "../10-catalog/platforms";
+import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import {
   clusterOf, controlPlaneUp, fitsControlPlane, moveOff, pickNode, servedBy, serverTaken, setNodeState, workloadsOf, workloadsOn,
   type BackupEvery, type Cluster, type Placement, type Workload,
@@ -81,7 +82,27 @@ export function addNode(s: GameState, clusterId: string, deviceId: string): Acti
   if (locationOf(s, d)?.az !== c.az) return fail("error.otherZone");
   if (serverTaken(s, d.id)) return fail("error.serverInUse");
   // The first node hosts the control plane.
-  update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, { deviceId, state: "active" }], controlPlane: x.controlPlane ?? deviceId }));
+  update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, { deviceId, state: "active", php: phpAt(yearOf(s.hour)), phpUntil: -1 }], controlPlane: x.controlPlane ?? deviceId }));
+  return { ok: true };
+}
+
+// One node to the current PHP version; its sites run slower for the next hour.
+export function upgradeNodePhp(s: GameState, deviceId: string): ActionResult {
+  const c = clusterOf(s, deviceId);
+  if (!c) return fail("error.notNode");
+  const php = phpAt(yearOf(s.hour));
+  if (c.nodes.find((n) => n.deviceId === deviceId)!.php === php) return fail("error.phpCurrent");
+  update(s, c.id, (x) => ({ ...x, nodes: x.nodes.map((n) => (n.deviceId === deviceId ? { ...n, php, phpUntil: s.hour + PHP_UPGRADE_HOURS } : n)) }));
+  return { ok: true };
+}
+
+// Every node of the cluster at once, as the player does it by hand.
+export function upgradePhp(s: GameState, clusterId: string): ActionResult {
+  const c = s.clusters.find((x) => x.id === clusterId);
+  if (!c) return fail("error.unknownCluster");
+  const old = c.nodes.filter((n) => n.php !== phpAt(yearOf(s.hour)));
+  if (!old.length) return fail("error.phpCurrent");
+  for (const n of old) upgradeNodePhp(s, n.deviceId);
   return { ok: true };
 }
 

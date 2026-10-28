@@ -11,6 +11,7 @@ import type { GameState } from "../../../sim/50-state";
 import { cancel } from "../../../sim/90-actions/store";
 import { answerRaise, assign, fire, hire, planTraining, postJobAd } from "../../../sim/90-actions/staff";
 import { useStore } from "../../store";
+import { TechPanel } from "./TechPanel";
 import { formatDay } from "../billing/BillingApp";
 import { initials } from "../support/labels";
 import "../shop/shop.css";
@@ -21,11 +22,13 @@ const ROLE: Record<Role, { one: string; many: string }> = {
   bookkeeper: { one: "Bookkeeper", many: "Bookkeepers" },
   accountant: { one: "Accountant", many: "Accountants" },
   marketing: { one: "Marketing manager", many: "Marketing managers" },
+  technician: { one: "Technician", many: "Technicians" },
 };
 const TASK: Record<Task, string> = {
   howTo: "How-to", billing: "Billing", outage: "Outage", upgrade: "Upgrade", cancellation: "Cancellation", abuse: "Abuse", appeal: "Suspension appeal", notice: "Notices", legal: "Legal requests", refund: "Refunds",
   reminder: "Payment reminders", dunning: "Dunning notices", final: "Final notices",
   campaigns: "Campaigns", reviews: "Review platforms", fairs: "Trade fairs",
+  hardware: "Parts and power", servers: "Draining servers", panels: "PHP upgrades",
 };
 const ASSIGN: Record<Assignment, string> = { queue: "Work queue", trainer: "Trainer", forum: "Forums" };
 const TIERS: AdTier[] = ["standard", "premium"];
@@ -206,6 +209,7 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
             </button>
           ))}
         </div>
+        {e.role === "technician" && <TechPanel game={game} e={e} />}
         <div className="st-train-h">
           <h3>Training</h3>
           <span className="grow" />

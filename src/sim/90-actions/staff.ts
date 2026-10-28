@@ -4,7 +4,11 @@ import {
   AD, adCandidates, COURSE_PRICE, fullyTrained, needsTraining, salaryUpToNow, staffPrice, startTraining, TASKS, trainerFor, visibleCandidates,
   type AdTier, type Assignment, type Employee, type Role, type Task,
 } from "../47-staff/staff";
+import { OP_TASK, queueOp, techsAt, type OpKind, type TechRules } from "../47-staff/technicians";
+import { phpAt } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
+import { clusterOf } from "../60-infra/cluster";
+import { locationOf } from "../60-infra/status";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -37,6 +41,7 @@ export function hire(s: GameState, candidateId: string): ActionResult {
   if (!c) return fail("error.unknownCandidate");
   const e: Employee = {
     id: `emp${s.nextId++}`, name: c.name, role: c.role, skill: c.skill, talent: c.talent, salary: c.salary, hiredAt: s.hour, assignment: "queue",
+    location: c.role === "technician" ? s.locations[0]?.id ?? null : null,
     trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: s.hour + YEAR, refusedAt: null,
   };
   s.candidates = s.candidates.filter((x) => x.id !== c.id);
@@ -85,5 +90,52 @@ export function answerRaise(s: GameState, id: string, accept: boolean): ActionRe
   if (accept) e.salary = e.raise.ask;
   else e.refusedAt = s.hour;
   e.raise = null;
+  return { ok: true };
+}
+
+export function setTechLocation(s: GameState, id: string, locationId: string): ActionResult {
+  const e = employee(s, id);
+  if (!e) return fail("error.unknownEmployee");
+  if (e.role !== "technician") return fail("error.notTechnician");
+  if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
+  e.location = locationId;
+  return { ok: true };
+}
+
+// Queues an operation for the technicians at the device's location.
+export function queueOperation(s: GameState, kind: OpKind, deviceId: string, componentId: string | null = null): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  const loc = locationOf(s, d);
+  if (!loc) return fail("error.notMounted");
+  if (!techsAt(s, loc.id, OP_TASK[kind]).length) return fail("error.noTechnician");
+  if (kind === "replace" && !d.components.some((c) => c.id === componentId)) return fail("error.unknownComponent");
+  if ((kind === "drain" || kind === "php") && !clusterOf(s, deviceId)) return fail("error.notNode");
+  if (s.techOps.some((o) => o.kind === kind && o.deviceId === deviceId && o.componentId === (kind === "replace" ? componentId : null))) return fail("error.alreadyQueued");
+  return { ok: true, id: queueOp(s, kind, deviceId, kind === "replace" ? componentId : null).id };
+}
+
+// One PHP upgrade per node still on an older version.
+export function queuePhpUpgrade(s: GameState, clusterId: string): ActionResult {
+  const c = s.clusters.find((x) => x.id === clusterId);
+  if (!c) return fail("error.unknownCluster");
+  const php = phpAt(yearOf(s.hour));
+  const nodes = c.nodes.filter((n) => n.php !== php && !s.techOps.some((o) => o.kind === "php" && o.deviceId === n.deviceId));
+  if (!nodes.length) return fail("error.phpCurrent");
+  for (const n of nodes) {
+    const r = queueOperation(s, "php", n.deviceId);
+    if (!r.ok) return r;
+  }
+  return { ok: true };
+}
+
+export function cancelOperation(s: GameState, id: string): ActionResult {
+  if (!s.techOps.some((o) => o.id === id)) return fail("error.unknownOperation");
+  s.techOps = s.techOps.filter((o) => o.id !== id);
+  return { ok: true };
+}
+
+export function setTechRules(s: GameState, rules: Partial<TechRules>): ActionResult {
+  s.techRules = { ...s.techRules, ...rules };
   return { ok: true };
 }

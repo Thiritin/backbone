@@ -17,6 +17,7 @@ import { ageYears, CABLE_NAME, cores, deviceLamps, devName, disk, height, isWorn
 import { dcOf, Facts, UsageBars } from "./ui";
 import { usageOf } from "../../../sim/60-infra/usage";
 import { NodeCard } from "./Clusters";
+import { TechButton } from "./TechButton";
 
 // Sells a device or a rack after showing its resale value against the price paid.
 export function SellConfirm({ game, name, price, boughtAt, cables = 0, onCancel, onSell }: { game: GameState; name: string; price: number; boughtAt: number; cables?: number; onCancel: () => void; onSell: () => void }) {
@@ -359,6 +360,7 @@ function PowerCard({ game, device }: { game: GameState; device: Device }) {
         <h3><Power />Power</h3>
         <span className={`pill ${tone}`}>{label}</span>
         <span className="grow" />
+        <TechButton game={game} deviceId={device.id} kind={device.on ? "off" : "on"} />
         <button className={`btn power-btn${device.on ? " on" : ""}`} disabled={!device.rackId && !device.panel} onClick={() => toggle(!device.on)}>
           <Power />{device.on ? "Shut down" : "Power on"}
         </button>
@@ -407,8 +409,11 @@ function PartsCard({ game, device }: { game: GameState; device: Device }) {
                 </td>
                 <td>{status}</td>
                 <td className="r">
-                  {swap || held ? null : block !== null ? <span className="loc-muted">{block}</span>
-                    : <button className="btn" onClick={() => act((g) => replaceComponent(g, device.id, c.id))}>Replace</button>}
+                  <span className="loc-acts">
+                    {swap || held ? null : block !== null ? <span className="loc-muted">{block}</span>
+                      : <button className="btn" onClick={() => act((g) => replaceComponent(g, device.id, c.id))}>Replace</button>}
+                    {!swap && !held && spare(c.kind) && <TechButton game={game} deviceId={device.id} kind="replace" componentId={c.id} />}
+                  </span>
                 </td>
               </tr>
             );
