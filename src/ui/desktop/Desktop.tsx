@@ -10,29 +10,24 @@ import { MenuBar } from "./MenuBar";
 import { StartScreen } from "./StartScreen";
 import { wallpaperSvg } from "./wallpaper";
 import { Widgets } from "./Widgets";
+import { Welcome } from "./Welcome";
 
-const THEME_KEY = "backbone.theme";
 const AUTOSAVE_MS = 15_000;
 let greeted = false;
 
-function initialTheme(): string {
-  try {
-    const saved = localStorage.getItem(THEME_KEY);
-    if (saved) return saved;
-  } catch {
-    // Storage blocked; fall back to the system setting.
-  }
-  return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
+const dark = matchMedia("(prefers-color-scheme: dark)");
 
 export function Desktop() {
-  const started = useStore((s) => s.started);
-  const [theme, setTheme] = useState(initialTheme);
+  const { started, theme: pref, setTheme } = useStore();
+  const [system, setSystem] = useState(dark.matches ? "dark" : "light");
+  const theme = pref === "auto" ? system : pref;
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem(THEME_KEY, theme); } catch { /* not persisted */ }
-  }, [theme]);
+    const follow = () => setSystem(dark.matches ? "dark" : "light");
+    dark.addEventListener("change", follow);
+    return () => dark.removeEventListener("change", follow);
+  }, []);
+  useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
 
   return (
     <div className="desktop">
@@ -43,7 +38,7 @@ export function Desktop() {
 }
 
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
-  const { windows, speed, setSpeed, advance, save, notify, clearUnseen } = useStore();
+  const { windows, speed, setSpeed, advance, save, notify, clearUnseen, welcome } = useStore();
   const [center, setCenter] = useState(false);
   const carry = useRef(0);
 
@@ -77,7 +72,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   // Space pauses; 1 to 4 pick 1×, 2×, 4× and 8×.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).closest("input, textarea, select, [role=alertdialog]")) return;
+      if ((e.target as HTMLElement).closest("input, textarea, select, [role=alertdialog], [role=dialog]")) return;
       if (e.code === "Space") { e.preventDefault(); setSpeed(speed ? 0 : 1); }
       const n = Number(e.key);
       if (n >= 1 && n <= 4) setSpeed(SPEEDS[n]);
@@ -97,6 +92,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
       {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
       <Dock />
+      {welcome && <Welcome />}
     </>
   );
 }

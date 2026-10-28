@@ -31,7 +31,7 @@ function Rack() {
 }
 
 // An original pear silhouette: rounded body, upright stem and one detached leaf.
-function PearMark() {
+export function PearMark() {
   return (
     <svg className="intro-pear" viewBox="0 0 64 64" width="72" height="72">
       <path d="M32 16c-5.5 0-7.5 4.5-7.5 10 0 4.5-3 7.5-6 11-3.5 4-4.5 8.5-3.5 13 1.8 7 8.5 10 17 10s15.2-3 17-10c1-4.5 0-9-3.5-13-3-3.5-6-6.5-6-11 0-5.5-2-10-7.5-10z" fill="currentColor" />
