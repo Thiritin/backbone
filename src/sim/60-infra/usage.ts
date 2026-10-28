@@ -1,8 +1,8 @@
 import { hashRng, rand } from "../00-core/rng";
-import { modelById } from "../10-catalog/hardware";
+import { jacksOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
 import { curveFor, curveLoad } from "../10-catalog/usage";
-import type { Device, GameState } from "../50-state";
+import type { Device, End, GameState } from "../50-state";
 import { clusterOf, controlPlaneUse, lostDisk, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
 import { PHP_SLOW } from "./php";
@@ -102,4 +102,54 @@ export function usageOf(s: GameState, devices: Device[]): Usage {
   else for (const d of devices) if (modelById(d.model).kind === "switch" || modelById(d.model).kind === "firewall") switchSums(s, d, sums);
   const { used, physical } = sums;
   return { cpu: share(used.vcpu, physical.vcpu), ram: share(used.ramGb, physical.ramGb), disk: share(used.diskGb, physical.diskGb), net: share(sums.mbps, sums.gbit * 1000) };
+}
+
+// Every port's live link: its speed, the Mbit/s it carries and its share of the speed, or null without a link.
+// Each server's traffic takes the shortest cable path to a carrier panel; patch panels pass it through.
+// ponytail: a bonded server sends everything over the first link found; split it across the bond if the lights need it.
+export interface PortLink { gbit: number; mbps: number; load: number }
+export function portLinks(s: GameState): Map<string, (PortLink | null)[]> {
+  const models = new Map(s.devices.map((d) => [d.id, modelById(d.model)]));
+  const up = new Set(s.devices.filter((d) => working(s, d.id)).map((d) => d.id));
+  const key = (e: End) => `${e.device}:${e.port}`, peers = new Map<string, End>();
+  for (const c of s.cables) { peers.set(key(c.a), c.b); peers.set(key(c.b), c.a); }
+  const kind = (id: string) => models.get(id)!.kind;
+  const far = (e: End): End | null => {
+    let p = peers.get(key(e));
+    for (let hops = 0; p && kind(p.device) === "patch" && hops < 64; hops++) {
+      const jacks = jacksOf(models.get(p.device)!);
+      p = peers.get(key({ device: p.device, port: p.port < jacks ? p.port + jacks : p.port - jacks }));
+    }
+    return p && kind(p.device) !== "patch" ? p : null;
+  };
+  const out = new Map(s.devices.map((d) => {
+    const m = models.get(d.id)!;
+    return [d.id, m.ports.map((spec, port) => {
+      const f = m.kind !== "patch" && up.has(d.id) ? far({ device: d.id, port }) : null;
+      return f && up.has(f.device) ? { gbit: Math.min(spec.gbit, models.get(f.device)!.ports[f.port].gbit), mbps: 0, load: 0 } : null;
+    })];
+  }));
+  // Breadth first from the carrier panels: toward[id] is the port that leads a device back, and the end it meets there.
+  const queue = s.devices.filter((d) => kind(d.id) === "gateway" && up.has(d.id)).map((d) => d.id);
+  const seen = new Set(queue), toward = new Map<string, { port: number; next: End }>();
+  while (queue.length) {
+    const id = queue.shift()!;
+    out.get(id)!.forEach((l, port) => {
+      const f = l && far({ device: id, port });
+      if (!f || seen.has(f.device)) return;
+      seen.add(f.device);
+      toward.set(f.device, { port: f.port, next: { device: id, port } });
+      if (kind(f.device) !== "server") queue.push(f.device);
+    });
+  }
+  for (const d of s.devices) {
+    if (!models.get(d.id)!.server || !up.has(d.id)) continue;
+    const mbps = serverMbps(s, d);
+    for (let id = d.id, t = toward.get(id); t; id = t.next.device, t = toward.get(id)) {
+      out.get(id)![t.port]!.mbps += mbps;
+      out.get(t.next.device)![t.next.port]!.mbps += mbps;
+    }
+  }
+  for (const ls of out.values()) for (const l of ls) if (l) l.load = Math.min(1, l.mbps / (l.gbit * 1000));
+  return out;
 }

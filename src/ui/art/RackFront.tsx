@@ -2,14 +2,14 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as R
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import type { End } from "../../sim/50-state";
 import { Back, portSpots, psuInlets, type Side } from "./backs";
-import { Defs, Front, LED, type Lamp, type Parts, type PortLamp } from "./fronts";
+import { CABLE, Defs, Front, ledProps, portNo, type Lamp, type Parts, type PortLamp, type PortLight } from "./fronts";
 
 // plugs holds whether each power supply is plugged in.
-export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; blink?: boolean; parts?: Parts; ports: PortLamp[]; groups: number[][]; plugs?: boolean[] }
+export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; blink?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[] }
 // One cable end in this rack and the end it leads to, in this rack or on a remote box.
 export interface RackLink { id: string; end: End; peer: End; color: string }
 // A device outside the rack that the rack is or can be cabled to, drawn as a small box above it.
-export interface RackRemote { id: string; label: string; title: string; ports: PortLamp[] }
+export interface RackRemote { id: string; label: string; title: string; model: DeviceModel; ports: PortLamp[]; lights?: PortLight[] }
 
 interface Props {
   units: number;
@@ -30,7 +30,7 @@ interface Props {
 }
 
 const MONO = "JetBrains Mono, monospace", DIM = "oklch(0.62 0.01 255)";
-const LANE = 5, ROW = 5, STEP = 11, PER_ROW = 24, BOX_H = 28, BOX_GAP = 8;
+const LANE = 5, ROW = 5, STEP = 11, VSTEP = 16, PER_ROW = 24, BOX_H = 32, BOX_GAP = 8;
 
 const press = (fn: (el: Element) => void) => ({
   role: "button",
@@ -128,10 +128,10 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     let bx = 4, by = 2, rowH = 0;
     for (const r of remotes) {
       const per = Math.min(PER_ROW, r.ports.length), rows = Math.ceil(r.ports.length / PER_ROW);
-      const bw = Math.max(per * STEP + 10, r.label.length * 6 + 16), bh = BOX_H + (rows - 1) * STEP;
+      const bw = Math.max(per * STEP + 10, r.label.length * 6 + 16), bh = BOX_H + (rows - 1) * VSTEP;
       if (bx + bw > W - 4 && bx > 4) { bx = 4; by += rowH + BOX_GAP; rowH = 0; }
       boxes.push({ r, x: bx, y: by, bw, bh });
-      r.ports.forEach((_, i) => remotePort.set(endKey({ device: r.id, port: i }), { x: bx + 5 + (i % PER_ROW) * STEP + 5, y: by + 15 + Math.floor(i / PER_ROW) * STEP + 5 }));
+      r.ports.forEach((_, i) => remotePort.set(endKey({ device: r.id, port: i }), { x: bx + 5 + (i % PER_ROW) * STEP + 5, y: by + 20 + Math.floor(i / PER_ROW) * VSTEP }));
       bx += bw + BOX_GAP;
       rowH = Math.max(rowH, bh);
     }
@@ -219,7 +219,9 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
             return (
               <g key={i}>
                 <rect x={p.x - 4} y={p.y - 4} width="8" height="8" rx="0.8" fill="oklch(0.12 0.004 255)" stroke="var(--metal-3)" strokeWidth="0.5" />
-                {st !== "off" && <rect x={p.x - 2.5} y={p.y - 3} width="5" height="1.4" fill={LED[st]} />}
+                {st !== "off" && <rect x={p.x - 2.5} y={p.y - 1.4} width="5" height="4" rx="0.6" fill={st === "fiber" ? CABLE.fiber : CABLE.copper} />}
+                {r.lights?.[i] && <rect x={p.x - 3.2} y={p.y - 3.2} width="2.4" height="1.4" {...ledProps(r.lights[i], r.id, i)} />}
+                <text x={p.x} y={p.y + 8.4} textAnchor="middle" fontFamily={MONO} fontSize="4.6" fill={DIM} aria-hidden="true">{portNo(r.model, i)}</text>
                 <rect className="rack-port" data-end={endKey(end)} x={p.x - 5} y={p.y - 5} width="10" height="10" rx="1" onPointerDown={grab(end, p.x, p.y)} />
               </g>
             );

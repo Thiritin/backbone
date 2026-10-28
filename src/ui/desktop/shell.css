@@ -291,3 +291,7 @@ svg.lucide { width: 16px; height: 16px; stroke-width: 1.75; flex: none; }
 .led-blink { animation: led-blink 1.6s steps(1, end) infinite; }
 @keyframes led-blink { 50% { opacity: 0.15; } }
 @media (prefers-reduced-motion: reduce) { .led-blink { animation: none; } }
+/* A port's traffic flicker; each light sets its own duration and delay inline. */
+.port-act { animation: port-act 1s step-end infinite; }
+@keyframes port-act { 0% { opacity: 1; } 16% { opacity: 0.2; } 28% { opacity: 1; } 57% { opacity: 0.2; } 64% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .port-act { animation: none; } }

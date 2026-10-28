@@ -13,7 +13,7 @@ import { Isometric } from "../../art/Isometric";
 import { cableColor } from "../../art/fronts";
 import { RackFront, type RackItem, type RackLink, type RackRemote } from "../../art/RackFront";
 import { useStore } from "../../store";
-import { day, deviceLamps, devName, height, portLamps } from "../hw";
+import { day, deviceLamps, devName, height, portLamps, portLights } from "../hw";
 import { rackUnits } from "./Floor";
 import { Inspector, SellConfirm } from "./Inspector";
 import { dcOf, Facts, PowerMeter, Sheet, UsageBars, useDismiss } from "./ui";
@@ -46,7 +46,9 @@ function rackRemotes(g: GameState, rack: Rack): RackRemote[] {
       id: d.id,
       label: d.label ?? (same.length > 1 ? `${KIND_LABEL[m.kind]} ${same.indexOf(d) + 1}` : KIND_LABEL[m.kind]),
       title: other ? `${devName(d)}, ${other.name}` : devName(d),
+      model: m,
       ports: portLamps(m, portPeers(g, d.id)),
+      lights: portLights(g, d.id, m),
     };
   });
 }

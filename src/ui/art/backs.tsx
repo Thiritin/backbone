@@ -3,7 +3,19 @@
 // server NICs are, and their power supplies and fans look to the rack front.
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import { BrandMark } from "./logos";
-import { AssetTag, fsz, gatewayLayout, Jacks, LED, partLed, patchLayout, switchLayout, SwitchPorts, switchX0, type FrontProps, type PartLamp } from "./fronts";
+import { AssetTag, fsz, gatewayLayout, Jacks, LED, ledProps, numBand, numSize, partLed, patchLayout, portNo, switchLayout, SwitchPorts, switchX0, tw, type FrontProps, type PartLamp } from "./fronts";
+
+const MONO = "JetBrains Mono, monospace", NUM = "oklch(0.74 0.01 255)";
+
+// Port numbers as printed on the bezel: above each port, or below it for a switch's or patch panel's bottom row.
+function PortNums({ model, spots, h, below }: { model: DeviceModel; spots: Map<number, Spot>; h: number; below: (i: number, s: Spot) => boolean }) {
+  const fs = numSize(h);
+  return (
+    <g fontFamily={MONO} fontSize={fs} fill={NUM} textAnchor="middle" aria-hidden="true">
+      {[...spots].map(([i, s]) => <text key={i} x={s.x + s.w / 2} y={below(i, s) ? s.y + s.h + fs * 0.75 + 0.4 : s.y - 0.6}>{portNo(model, i)}</text>)}
+    </g>
+  );
+}
 
 export type Side = "front" | "back";
 export interface Spot { x: number; y: number; w: number; h: number }
@@ -13,7 +25,7 @@ const mmOf = (model: DeviceModel, h: number) => h / Math.max(1, model.height) / 
 
 // Server NICs sit in the lowest unit on the left; PSUs stand at the right edge.
 function nicLayout(model: DeviceModel, w: number, h: number): Map<number, Spot> {
-  const u = h / model.height, ph = Math.min(u - 6, 10), y = h - u + (u - ph) / 2;
+  const u = h / model.height, ph = Math.min(u - 2 * numBand(u), 10), y = h - u + (u - ph) / 2;
   let x = w * 0.3;
   return new Map(model.ports.map((p, i) => {
     const pw = p.media === "sfp" ? 12 : 9, at = { x, y, w: pw, h: ph };
@@ -119,20 +131,46 @@ export function SwitchRear(p: FrontProps) {
       <rect x={x1} y="3" width={fw} height={h - 6} rx="1" fill="url(#bb-perf)" opacity="0.35" />
       {fans.length > 0 && <Fans x={x1} w={fw} h={h} lamps={fans} on={state !== "off"} />}
       <circle cx={x1 + fw + 10} cy={h / 2} r={Math.min(2.4, h * 0.12)} fill="oklch(0.62 0.03 85)" stroke="oklch(0.35 0.01 85)" strokeWidth="0.5" aria-label="Ground" />
+      <LedPanel {...p} x={x1 + fw + 20} x2={w - 22 - (name ? tw(name, fsz(Math.min(h, 24)) * 0.9) + 4 : 0)} />
       <AssetTag x={w - 14} y={h / 2} text={name} h={h} anchor="end" />
     </>
   );
 }
 
+// The port lights repeated on the power-supply side, numbered as on the port face: odd above, even below, in blocks of six.
+function LedPanel({ model, name, h, lights = [], state, x, x2 }: FrontProps & { x: number; x2: number }) {
+  const cols = Math.ceil(model.ports.length / 2), gap = 1.6, cw = Math.min(10, (x2 - x - Math.floor((cols - 1) / 6) * gap - 4) / cols);
+  if (cw < 4) return null;
+  const fs = Math.min(numSize(h), cw / 1.3), lw = Math.min(3.2, cw * 0.5), lh = Math.min(2, h * 0.09);
+  const width = cols * cw + Math.floor((cols - 1) / 6) * gap + 4;
+  return (
+    <g aria-label="Port lights">
+      <rect x={x} y="2" width={width} height={h - 4} rx="1" fill="oklch(0.14 0.004 255)" />
+      <g fontFamily={MONO} fontSize={fs} fill={NUM} textAnchor="middle" aria-hidden="true">
+        {model.ports.map((_, i) => {
+          const col = Math.floor(i / 2), cx = x + 2 + col * cw + Math.floor(col / 6) * gap + cw / 2, top = i % 2 === 0;
+          return (
+            <g key={i}>
+              <rect x={cx - lw / 2} y={top ? h / 2 - lh - 0.8 : h / 2 + 0.8} width={lw} height={lh} rx="0.4" {...(state === "off" ? { fill: LED.off } : ledProps(lights[i], name, i))} />
+              <text x={cx} y={top ? h / 2 - lh - 1.6 : h / 2 + lh + 1.6 + fs * 0.75}>{i + 1}</text>
+            </g>
+          );
+        })}
+      </g>
+    </g>
+  );
+}
+
 // The port face of a switch or firewall: asset tag, console port, ports, status lights and the maker mark.
 function PortFace(p: FrontProps) {
-  const { model, w, h, name, ports, state, blink, brand } = p, x0 = switchX0(model, name, h), s = Math.min(10, h * 0.42);
+  const { model, w, h, name, ports, state, blink, brand } = p, x0 = switchX0(model, name, h), s = Math.min(10, h * 0.42), at = portFace(model, name, w, h);
   return (
     <>
       <rect x="0" y="0.5" width={w} height={h - 1} rx="1.5" fill="oklch(0.24 0.006 255)" stroke="var(--metal-line)" />
       <AssetTag x={6} y={h / 2} text={name} h={h} />
       <rect x={x0} y={h / 2 - s * 0.45} width={s * 0.9} height={s * 0.8} rx="0.6" fill="oklch(0.5 0.09 230)" aria-label="Console port" />
-      <SwitchPorts at={portFace(model, name, w, h)} ports={ports} groups={p.groups} />
+      <SwitchPorts at={at} ports={ports} lights={p.lights} name={name} groups={p.groups} />
+      <PortNums model={model} spots={at} h={h} below={(i) => !at.get(i)!.top} />
       <circle cx={w - 24} cy={h / 2 - 3} r="1.3" fill={LED[state]} className={blink ? "led-blink" : undefined} />
       <circle cx={w - 24} cy={h / 2 + 3} r="1.3" fill={state === "off" ? LED.off : LED.ok} />
       {h >= 14 && <BrandMark brand={brand} x={w - 16} y={h / 2 - 4} size={8} />}
@@ -154,17 +192,15 @@ export function Back(p: FrontProps) {
         {model.kind === "patch" && <Jacks w={w} h={h} name={name} ports={ports} n={model.ports.length} rows={2} />}
         {model.kind !== "gateway" && model.kind !== "patch" && <rect x={gx} y="3" width={grille} height={h - 6} rx="1" fill="url(#bb-perf)" opacity="0.35" />}
         {p.parts && p.parts.fans.length > 0 && <Fans x={gx} w={grille} h={model.kind === "server" && model.height > 1 ? h - h / model.height : h} lamps={p.parts.fans} on={state !== "off"} />}
-        {[...spots].map(([i, s]) => {
-          const st = ports[i] ?? "off";
-          return (
-            <g key={i}>
-              <rect x={s.x} y={s.y} width={s.w} height={s.h} rx="0.6" fill="oklch(0.12 0.004 255)" stroke="var(--metal-3)" strokeWidth="0.5" />
-              {st !== "off" && <rect x={s.x + 1.5} y={s.y + 1} width={s.w - 3} height="1.4" fill={LED[st === "fiber" ? "fiber" : st]} />}
-            </g>
-          );
-        })}
+        {[...spots].map(([i, s]) => (
+          <g key={i}>
+            <rect x={s.x} y={s.y} width={s.w} height={s.h} rx="0.6" fill="oklch(0.12 0.004 255)" stroke="var(--metal-3)" strokeWidth="0.5" />
+            {p.lights?.[i] && <rect x={s.x + s.w * 0.62} y={s.y + 1} width={s.w * 0.26} height="1.4" {...ledProps(p.lights[i], name, i)} />}
+          </g>
+        ))}
         {model.kind === "gateway" && <rect x={w - 20} y={h / 2 - 3} width="8" height="6" rx="1" fill="oklch(0.1 0.004 255)" />}
       </g>
+      <PortNums model={model} spots={portSpots(model, name, "back", w, h)} h={model.kind === "server" ? h / model.height : h} below={(i) => model.kind === "patch" && i >= model.ports.length / 2} />
       {model.kind !== "gateway" && model.kind !== "patch" && <Psus model={model} w={w} h={h} on={state !== "off"} lamps={p.parts?.psus} />}
       <AssetTag x={w - 8} y={Math.min(h / 2, fs + 2)} text={name} h={h} anchor="end" />
     </>

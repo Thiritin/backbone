@@ -1,6 +1,6 @@
 // Code-drawn device fronts, ported from docs/design/mockups/shell.js. Sizes are px; u is one rack unit.
 import type { ReactNode } from "react";
-import type { DeviceModel } from "../../sim/10-catalog/hardware";
+import { jacksOf, type DeviceModel } from "../../sim/10-catalog/hardware";
 import { Back, SwitchRear } from "./backs";
 import { BrandMark } from "./logos";
 
@@ -8,6 +8,8 @@ export type Lamp = "ok" | "warn" | "bad" | "off";
 export type PortLamp = "off" | "ok" | "warn" | "bad" | "fiber";
 export type PartLamp = Lamp | "rebuild";
 export interface Parts { drives: PartLamp[]; psus: PartLamp[]; fans: PartLamp[] }
+// A port's link light: amber for a link slower than the port, load the share of the link in use. null is no link.
+export type PortLight = { lamp: "ok" | "warn"; load: number } | null;
 
 export const LED = { ok: "oklch(0.78 0.2 145)", warn: "oklch(0.83 0.17 80)", bad: "oklch(0.66 0.23 27)", off: "oklch(0.4 0.01 255)", act: "oklch(0.8 0.14 225)", fiber: "oklch(0.8 0.12 195)" };
 export const CABLE = { copper: "oklch(0.62 0.14 250)", dac: "oklch(0.7 0.02 255)", fiber: LED.fiber, uplink: "oklch(0.82 0.15 90)" };
@@ -25,6 +27,20 @@ const MONO = "JetBrains Mono, monospace";
 // Asset tag text: small, like a printed label on a bezel, not the headline of the device.
 export const fsz = (h: number) => Math.max(4.6, Math.min(6, h * 0.26));
 export const tw = (t: string, fs: number) => t.length * fs * 0.62;
+// Port numbers print in a band above and below the ports.
+export const numSize = (h: number) => Math.min(6, Math.max(3.8, Math.min(h, 32) * 0.19));
+export const numBand = (h: number) => numSize(h) * 0.85 + 1.3;
+export const portNo = (m: DeviceModel, i: number) => (m.kind === "server" ? i : m.kind === "patch" ? (i % jacksOf(m)) + 1 : i + 1);
+
+// Activity flickers faster the busier the link; each port starts at its own point so neighbours never flicker in step.
+const phaseOf = (name: string, i: number) => ([...name].reduce((n, c) => (n * 31 + c.charCodeAt(0)) % 997, 7) / 997 + i * 0.618) % 1;
+export function ledProps(light: PortLight | undefined, name: string, i: number) {
+  if (!light) return { fill: LED.off };
+  if (light.load <= 0) return { fill: LED[light.lamp] };
+  // Logarithmic from a millionth of the link to all of it: a hobby site flickers slowly, a full link five times a second.
+  const d = 1.5 - 1.3 * Math.min(1, Math.max(0, (Math.log10(light.load) + 6) / 6));
+  return { fill: LED[light.lamp], className: "port-act", style: { animationDuration: `${d.toFixed(2)}s`, animationDelay: `${(-phaseOf(name, i) * d).toFixed(2)}s` } };
+}
 const hex = (cx: number, cy: number, r: number) => `M${cx} ${cy - r}l${0.866 * r} ${0.5 * r}v${r}l${-0.866 * r} ${0.5 * r}l${-0.866 * r} ${-0.5 * r}v${-r}z`;
 
 // Bezel textures; every device <svg> carries its own copy so it renders standalone.
@@ -107,6 +123,7 @@ export interface FrontProps {
   name: string;
   state: Lamp;
   ports: PortLamp[];
+  lights?: PortLight[];
   groups?: number[][];
   parts?: Parts;
   blink?: boolean;
@@ -197,7 +214,7 @@ function Gpu(p: FrontProps) {
 export function switchLayout(model: DeviceModel, w: number, h: number, x0: number) {
   const runs = (["rj45", "sfp"] as const).map((media) => model.ports.flatMap((p, i) => (p.media === media ? [i] : []))).filter((r) => r.length);
   const colsOf = (r: number[]) => (r.length > 8 ? Math.ceil(r.length / 2) : r.length);
-  const pw = (w - x0 - 32) / Math.max(28, runs.reduce((n, r) => n + colsOf(r), 0) + 4), ph = (h - 6) / 2;
+  const band = numBand(h), pw = (w - x0 - 32) / Math.max(28, runs.reduce((n, r) => n + colsOf(r), 0) + 4), ph = (h - 2 * band) / 2;
   // A single row of jacks is true to size: an RJ45 jack is about 14 of a unit's 44.45 mm.
   const one = Math.min(h - 7, Math.max(6, h * 0.34));
   const at = new Map<number, { x: number; y: number; w: number; h: number; sfp: boolean; top: boolean }>();
@@ -206,7 +223,7 @@ export function switchLayout(model: DeviceModel, w: number, h: number, x0: numbe
     const paired = r.length > 8, sfp = model.ports[r[0]].media === "sfp";
     r.forEach((p, k) => {
       const col = paired ? Math.floor(k / 2) : k, px = x + col * pw + Math.floor(col / 6) * 2;
-      at.set(p, paired ? { x: px, y: 3 + (k % 2) * ph, w: pw - 1.6, h: ph - 1, sfp, top: k % 2 === 0 } : { x: px, y: (h - one) / 2, w: pw * 0.85, h: one, sfp, top: true });
+      at.set(p, paired ? { x: px, y: band + (k % 2) * ph, w: pw - 1.6, h: ph - 1, sfp, top: k % 2 === 0 } : { x: px, y: (h - one) / 2, w: pw * 0.85, h: one, sfp, top: true });
     });
     x += colsOf(r) * pw + Math.floor((colsOf(r) - 1) / 6) * 2 + 10;
   }
@@ -219,17 +236,19 @@ export function switchX0(model: DeviceModel, name: string, h: number) {
   return (name ? 18 + tw(name, fs) : 16) + (model.layer === 3 ? 17 : 0);
 }
 
-// Rear switch ports with their link LEDs and the dashed outline of each port group.
-export function SwitchPorts({ at, ports, groups = [] }: { at: ReturnType<typeof switchLayout>; ports: PortLamp[]; groups?: number[][] }) {
+// Rear switch ports with their link lights and the dashed outline of each port group.
+export function SwitchPorts({ at, ports, lights = [], name, groups = [] }: { at: ReturnType<typeof switchLayout>; ports: PortLamp[]; lights?: PortLight[]; name: string; groups?: number[][] }) {
   const cells: ReactNode[] = [];
   for (const [i, p] of at) {
     const st = ports[i] ?? "off";
+    const led = lights[i] && <rect x={p.x + p.w * 0.1} y={p.top ? p.y + p.h * 0.06 : p.y + p.h * 0.88 - Math.max(1.4, p.h * 0.14)} width={p.w * 0.24} height={Math.max(1.4, p.h * 0.14)} {...ledProps(lights[i], name, i)} />;
     if (p.sfp) {
       cells.push(
         <g key={i}>
           <rect x={p.x} y={p.y} width={p.w} height={p.h} rx="0.6" fill="oklch(0.14 0.005 255)" stroke="var(--metal-3)" strokeWidth="0.5" />
-          {st !== "off" && <rect x={p.x + p.w * 0.22} y={p.y + p.h * 0.25} width={p.w * 0.22} height={p.h * 0.5} fill={CABLE.fiber} />}
-          {st !== "off" && <rect x={p.x + p.w * 0.56} y={p.y + p.h * 0.25} width={p.w * 0.22} height={p.h * 0.5} fill={CABLE.fiber} />}
+          {st !== "off" && <rect x={p.x + p.w * 0.22} y={p.y + p.h * 0.3} width={p.w * 0.22} height={p.h * 0.4} fill={CABLE.fiber} />}
+          {st !== "off" && <rect x={p.x + p.w * 0.56} y={p.y + p.h * 0.3} width={p.w * 0.22} height={p.h * 0.4} fill={CABLE.fiber} />}
+          {led}
         </g>,
       );
       continue;
@@ -237,7 +256,7 @@ export function SwitchPorts({ at, ports, groups = [] }: { at: ReturnType<typeof 
     cells.push(
       <g key={i}>
         <rect x={p.x} y={p.y} width={p.w} height={p.h} rx="0.6" fill={st === "off" ? "var(--metal-line)" : "oklch(0.14 0.005 255)"} />
-        {st !== "off" && <rect x={p.x + p.w * 0.12} y={p.top ? p.y + p.h * 0.06 : p.y + p.h * 0.82 - 1.4} width={p.w * 0.26} height={Math.max(1.4, p.h * 0.12)} fill={LED[st]} />}
+        {led}
       </g>,
     );
   }
@@ -253,17 +272,17 @@ export function SwitchPorts({ at, ports, groups = [] }: { at: ReturnType<typeof 
 
 export function gatewayLayout(model: DeviceModel, name: string, w: number, h: number) {
   const fs = fsz(Math.min(h, 24)), x0 = Math.max(w * 0.42, 18 + tw(name, fs)), step = Math.min(11, (w - x0 - 34) / Math.max(1, model.ports.length));
-  return new Map(model.ports.map((_, i) => [i, { x: x0 + i * step, y: 3.5, w: step - 2, h: h - 7 }]));
+  return new Map(model.ports.map((_, i) => [i, { x: x0 + i * step, y: numBand(h), w: step - 2, h: h - numBand(h) - 3.5 }]));
 }
 
 function Gateway(p: FrontProps) {
-  const { w, h, name, model, ports, state, blink } = p;
+  const { w, h, name, model, lights = [], state, blink } = p;
   const fs = fsz(Math.min(h, 24));
   return (
     <>
       <Ears w={w} h={h} />
       <Label x={12} y={h / 2 + fs * 0.35} text={name} size={fs} />
-      {[...gatewayLayout(model, name, w, h)].map(([i, p]) => <circle key={i} cx={p.x + p.w / 2} cy={h / 2} r="1.3" fill={LED[ports[i] ?? "off"]} />)}
+      {[...gatewayLayout(model, name, w, h)].map(([i, p]) => <circle key={i} cx={p.x + p.w / 2} cy={h / 2} r="1.3" {...ledProps(lights[i], name, i)} />)}
       <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
     </>
   );
@@ -272,10 +291,11 @@ function Gateway(p: FrontProps) {
 // Keystone jacks; a plugged jack shows its cable boot in the cable's colour.
 // Jacks fill the rows in order; the rear of a panel puts jacks 1 to n on the top row and n + 1 to 2n below.
 export function patchLayout(name: string, w: number, h: number, n: number, rows = n > 24 ? 2 : 1) {
-  const per = n / rows, fs = fsz(Math.min(h, 24)) * 0.9, x0 = name ? 18 + tw(name, fs) : 16, pw = (w - x0 - 14) / per, ph = (h - 6) / rows;
+  const per = n / rows, fs = fsz(Math.min(h, 24)) * 0.9, x0 = name ? 18 + tw(name, fs) : 16, pw = (w - x0 - 14) / per;
+  const top = numBand(h), ph = (h - top - (rows > 1 ? top : 3)) / rows;
   return Array.from({ length: n }, (_, k) => {
     const c = k % per;
-    return { x: x0 + c * pw + Math.floor(c / 6) * 0.8, y: 3 + Math.floor(k / per) * ph, w: pw - 1.4, h: ph - (rows > 1 ? 0.8 : 0) };
+    return { x: x0 + c * pw + Math.floor(c / 6) * 0.8, y: top + Math.floor(k / per) * ph, w: pw - 1.4, h: ph - (rows > 1 ? 0.8 : 0) };
   });
 }
 

@@ -3,7 +3,8 @@ import { dateOf } from "../../sim/00-core/time";
 import { COMPONENTS, jacksOf, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
 import type { Component, Device, End, GameState } from "../../sim/50-state";
 import { deviceHealth, HOURS_PER_YEAR, isPlugged, linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
-import type { Lamp, PartLamp, Parts, PortLamp } from "../art/fronts";
+import { portLinks, type PortLink } from "../../sim/60-infra/usage";
+import type { Lamp, PartLamp, Parts, PortLamp, PortLight } from "../art/fronts";
 
 export const speed = (g: number) => (g >= 1 ? `${g}G` : `${g * 1000}M`);
 export const ram = (gb: number) => (gb >= 1024 ? `${+(gb / 1024).toFixed(1)} TB` : `${gb} GB`);
@@ -54,5 +55,13 @@ function partLamps(g: GameState, d: Device): Parts {
 export function deviceLamps(g: GameState, id: string, m: DeviceModel) {
   const d = g.devices.find((x) => x.id === id)!, h = deviceHealth(g, id).state, link = lampOf(linkStatus(g, id));
   const state: Lamp = h === "off" || h === "nopower" ? "off" : WORSE[Math.max(WORSE.indexOf(HEALTH_LAMP[h]), WORSE.indexOf(link))];
-  return { state, blink: h === "rebuilding" || h === "booting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), parts: partLamps(g, d) };
+  return { state, blink: h === "rebuilding" || h === "booting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), lights: portLights(g, id, m), parts: partLamps(g, d) };
+}
+
+// Every change to the game replaces the state object, so the links are worked out once per state for all devices.
+const LINKS = new WeakMap<GameState, Map<string, (PortLink | null)[]>>();
+export function portLights(g: GameState, id: string, m: DeviceModel): PortLight[] {
+  let links = LINKS.get(g);
+  if (!links) LINKS.set(g, (links = portLinks(g)));
+  return (links.get(id) ?? []).map((l, i) => l && { lamp: l.gbit < m.ports[i].gbit ? "warn" : "ok", load: l.load });
 }
