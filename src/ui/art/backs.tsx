@@ -36,6 +36,13 @@ const rearLayout = (model: DeviceModel, name: string, w: number, h: number): Map
 export const portSpots = (model: DeviceModel, name: string, side: Side, w: number, h: number): Map<number, Spot> =>
   side === "back" ? mirror(rearLayout(model, name, w, h), w) : new Map();
 
+// The centre of each power supply's inlet as seen from the back, so power cords can be drawn to it.
+export function psuInlets(model: DeviceModel, w: number, h: number): { x: number; y: number }[] {
+  if (model.kind === "gateway" || model.kind === "patch") return [];
+  const u = h / model.height, ph = u - 4, pw = Math.min(30, ph * 2.2);
+  return Array.from({ length: model.psus }, (_, k) => ({ x: w - (w - 6 - (k + 1) * (pw + 3) + pw - 5.5), y: h - u + 2 + ph / 2 }));
+}
+
 function Psus({ model, w, h, on, lamps }: { model: DeviceModel; w: number; h: number; on: boolean; lamps?: PartLamp[] }) {
   const u = h / model.height, ph = u - 4, pw = Math.min(30, ph * 2.2);
   return (
