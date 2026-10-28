@@ -192,6 +192,8 @@ Servers join clusters, and products draw their resources from clusters. Everythi
 - **Consumer cluster:** no failover. Cheap, and fine for customers who shrug off a day of downtime.
 - **High-availability cluster:** keeps spare capacity in reserve and spreads servers over two switches or two locations. Costs more, and is sold to customers who can't tolerate outages.
 
+**Everything runs on clusters.** Every product runs as workloads on a cluster, so draining, replicas, keep-apart rules and failover work the same for all of them. Web hosting runs inside shared web server instances with the control panel, and DNS, game servers, load balancers, databases and Kubernetes run as instances too. Object storage runs on a storage cluster made of storage nodes. Two things stay outside: a dedicated server is a whole node taken out of the scheduler's pool and handed to one customer (OpenStack's bare-metal service, Ironic), and colocation is the customer's own hardware using your space, power and ports. The basement tower is a one-node cluster, which is why a second node and the HA unlock matter.
+
 **Workloads.** Every contract runs as one or more workloads, placed on the servers (nodes) of a cluster:
 
 | Workload | Uses | Moves to another node by |
