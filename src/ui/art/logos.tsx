@@ -39,6 +39,11 @@ const MARKS: Record<string, Mark> = {
   pandoot: { word: "Pandoot", color: "oklch(0.45 0.12 255)", weight: 650, draw: (c) => <><rect x="1" y="3" width="14" height="10" rx="1.5" fill={c} /><path d="M3.5 6.5h2M7 6.5h2M10.5 6.5h2M3.5 9.5h2M7 9.5h2M10.5 9.5h2" stroke="white" strokeWidth="1.6" /></> },
   eatin: { word: "Eatin", color: "oklch(0.5 0.14 250)", weight: 700, draw: (c) => <><path d="M9.5 1.5 3.5 9h4l-1 5.5 6-7.5h-4z" fill={c} /></> },
   greenchz: { word: "green.chz", color: "oklch(0.6 0.16 140)", weight: 650, draw: (c) => <><path d="M2.5 13.5C2.5 6 7 2.5 13.5 2.5 13.5 9 10 13.5 2.5 13.5z" fill={c} /><path d="M2.5 13.5 9 7" stroke="white" strokeWidth="1.3" strokeLinecap="round" /></> },
+  skyblink: { word: "SkyBlink", color: "oklch(0.6 0.15 235)", weight: 700, draw: (c) => <><path d="M2 11.5a4 4 0 0 1 3.6-4A4.8 4.8 0 0 1 14 9.3a2.6 2.6 0 0 1-.6 5.2H4.5A2.5 2.5 0 0 1 2 11.5z" fill={c} /><path d="M6.5 11.3h3" stroke="white" strokeWidth="1.4" strokeLinecap="round" /></> },
+  borisnet: { word: "boris network", color: "oklch(0.5 0.16 255)", weight: 650, draw: (c) => <><circle cx="8" cy="8" r="6.5" fill={c} /><path d="M5.5 4.5v7h3a2 2 0 0 0 0-4h-3m3 0a1.7 1.7 0 0 0 0-3h-3" fill="none" stroke="white" strokeWidth="1.4" strokeLinejoin="round" /></> },
+  digitalreality: { word: "Digital Reality", color: "oklch(0.55 0.17 255)", weight: 650, draw: (c) => <><path d="M2 2h6a6 6 0 0 1 0 12H2z" fill={c} /><path d="M5 5v6" stroke="white" strokeWidth="1.6" strokeLinecap="round" /></> },
+  corespite: { word: "CoreSpite", color: "oklch(0.55 0.14 160)", weight: 700, draw: (c) => <><circle cx="8" cy="8" r="6.5" fill="none" stroke={c} strokeWidth="2" /><circle cx="8" cy="8" r="2.6" fill={c} /></> },
+  telex: { word: "TELEX", color: "oklch(0.45 0.05 260)", weight: 800, caps: true, draw: (c) => <><rect x="1.5" y="3" width="13" height="10" rx="1.5" fill={c} /><path d="M4 6.5h8M4 9.5h5" stroke="white" strokeWidth="1.4" strokeLinecap="round" /></> },
 };
 
 const brandId = (brand: string) => brand.toLowerCase().replace(/ /g, "-");

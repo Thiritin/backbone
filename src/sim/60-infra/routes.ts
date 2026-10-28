@@ -27,7 +27,7 @@ export function routeOptions(s: GameState, product: Product, city: string, size:
     }
     const nodes = c.nodes.filter((n) => n.state === "active" && working(s, n.deviceId)).map((n): RouteNode => {
       const d = s.devices.find((x) => x.id === n.deviceId)!;
-      return { id: d.id, name: d.label ?? d.name, free: free(s, d.id), fits: up && !!pickNode(s, only(c, d.id), size) };
+      return { id: d.id, name: d.label ?? d.name, free: free(s, d.id), fits: up && !!pickNode(s, only(c, d.id), size, null, true) };
     });
     const sum = Object.fromEntries(KEYS.map((k) => [k, nodes.reduce((a, n) => a + Math.max(0, n.free[k]), 0)])) as unknown as Resources;
     return { id: c.id, name: c.name, az: c.az, free: sum, fits: nodes.some((n) => n.fits), nodes };
@@ -52,5 +52,5 @@ export function routeError(s: GameState, product: Product, city: string, size: R
   if (!s.locations.some((l) => l.city === city && l.az === c.az)) return "error.routeElsewhere";
   if (!supports(c, product)) return noRoomError(s, product, c.id);
   if (!controlPlaneUp(s, c)) return "error.controlPlaneDown";
-  return pickNode(s, target.deviceId ? only(c, target.deviceId) : c, size) ? null : "error.noCapacity";
+  return pickNode(s, target.deviceId ? only(c, target.deviceId) : c, size, null, !!target.deviceId) ? null : "error.noCapacity";
 }

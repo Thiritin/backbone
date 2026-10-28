@@ -8,7 +8,7 @@ import {
 } from "../10-catalog/network";
 import { trafficGb } from "../10-catalog/products";
 import { trafficShape } from "../10-catalog/usage";
-import { datacenterById, homeLineById } from "../20-world/datacenters";
+import { datacenterById, homeLineById, inUs } from "../20-world/datacenters";
 import type { Service } from "../30-customers/customers";
 import { bump, createTicket, OUTAGE_WRITE_CHANCE, profileStats } from "../40-support/tickets";
 import { isSuspended } from "../45-billing/billing";
@@ -182,7 +182,7 @@ export const crossConnects = (s: GameState, u: Uplink): number => {
 
 export function zoneLinkMonthly(s: GameState, zl: ZoneLink): number {
   const a = s.locations.find((l) => l.id === zl.a), b = s.locations.find((l) => l.id === zl.b);
-  return zoneLinkPrice(zl.kind, zl.gbit, a?.city === b?.city, yearOf(s.hour));
+  return zoneLinkPrice(zl.kind, zl.gbit, a?.city === b?.city, yearOf(s.hour), !!a && !!b && inUs(a.city) !== inUs(b.city));
 }
 
 // Every bill of the coming month start, as ledger lines.

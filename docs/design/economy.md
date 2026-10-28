@@ -177,8 +177,12 @@ Each city produces a stream of new customers looking for a host. Only a small sh
 | City size | Cities | New customers per month (2005) |
 | --- | --- | --- |
 | Large | Frankfurt, London, Paris | 1,500 |
-| Medium | Amsterdam, Berlin, Milan | 1,000 |
+| Medium | Amsterdam, Berlin, Milan, Munich | 1,000 |
 | Small | Vienna, Zurich | 600 |
+| Regional | Düsseldorf 800, Nuremberg 400, Kerkrade 150, Falkenstein 100 | as listed |
+| North America | New York 2,000, Los Angeles 1,500, Chicago 1,200, Dallas 1,000, Ashburn 600 | as listed |
+
+Düsseldorf stands for the Rhine-Ruhr area and Kerkrade for the Dutch-German border region around Aachen; Falkenstein and Ashburn are datacenter towns with few local customers.
 
 Customers belong to their city's country and prefer datacenters there (see the location score under [Customer choice](#customer-choice)).
 
@@ -310,7 +314,7 @@ How the market above turns into order emails and sales requests in the Support a
 
 **Custom orders.** Before the order form (and for a quarter of email orders after it) an order names its own resources (`custom.ts`, `manual.ts`). The plan its profile would pick is scaled by one of 0.5, 0.75, 1, 1.25, 1.5 or 2: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. The monthly market price of a spec: web space along Web S, M and L by disk in that year's GB (€1.50 at none, €3 at 1, €6 at 2, €12 at 5, extended beyond) plus €0.30 per mailbox past two; a VPS the year's rate per GB of RAM (1.6 × for game servers), plus half a GB's rate per vCPU past one per 2 GB and 1/40 of it per GB of disk past 20 per GB of RAM. The SLA factor and the profile's offer factor apply as for plans. Step times: account 5, confirmation and invoice 10, domain 5, setup 15 minutes. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
 
-**Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8. The customer pays €15 a year for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
+**Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8, .com €6 to €9 (VeriSigh raised its price over the years). The customer pays €15 a year for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
 
 **Organic leads in the game.** Organic leads scale with the market and with awareness instead of a flat 20: 0.4 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × the review multiplier. With the starting awareness (5% for private individuals and gamers, 2% for the rest) Frankfurt gives about 20 leads a month in 2005, and every point of awareness a campaign buys raises organic leads too. Referrals (0.005 a month per customer with happiness 70 or more) and forum posts (2 × (0.5 + s/100) a month per employee, split over hobby developers, gamers and small businesses) come from the home city. Each forum lead also adds 0.5% of the gap to the awareness of those three profiles every month.
 
@@ -572,9 +576,9 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 
 | Datacenter size | Positions at opening | Expansion | Final size |
 | --- | --- | --- | --- |
-| Large (Equinox, Interaction, Global Snitch, Tellyhouse, Data5) | 300 | +150 every 3 years | 1,200 |
-| Medium (Hetzler Park, Iron Molehill, NTD, Next Lair, Arubaba Hub) | 120 | +60 every 4 years | 400 |
-| Small (mainqubes, Spree Colo, Docklands Data, Green.chz) | 40 | +20 every 5 years | 120 |
+| Large (Equinox, Interaction, Global Snitch, Tellyhouse, Data5, Digital Reality) | 300 | +150 every 3 years | 1,200 |
+| Medium (Hetzler, Iron Molehill, NTD, Next Lair, Arubaba Hub, Boris Network, CoreSpite, Telex) | 120 | +60 every 4 years | 400 |
+| Small (mainqubes, Spree Colo, Docklands Data, Green.chz, SkyBlink) | 40 | +20 every 5 years | 120 |
 
 - **Competitors.** Their share of a datacenter starts at 85% to 97% of capacity, drawn from the seed. Each month every competitor position cancels with a 1.5% chance. Waitlist holds are then granted from the freed space, and competitors fill the remaining free space down to a level drawn evenly between 0% and 4% of capacity. They never take space held for the waitlist.
 - **Expansion.** Each expansion phase opens all its new positions on 1 January. In January, February and March competitors take a sixth of the new positions each month, so about half within 3 months, and from April the usual monthly fill applies.
@@ -582,9 +586,18 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 - **Waitlist.** When a datacenter has too little free space for what you want, you can join its waitlist. When enough space frees up, you get a notification, and the space is held for you for 7 days.
 - **Consequence.** You can't grow in one building forever, which pushes you to spread over several datacenters or build your own.
 
-**Moving a rack.** €300 and 1 day within a city, €1,200 and 3 days to another city. The rack's servers are offline until it arrives. A rack share comes with the provider's rack, so its power limit is the share × the datacenter's kW per position, and it can't be moved or sold. You mount hardware into it directly.
+**Moving a rack.** €300 and 1 day within a city, €1,200 and 3 days to another city, €4,000 and 10 days across the Atlantic (air freight and customs). The rack's servers are offline until it arrives. A rack share comes with the provider's rack, so its power limit is the share × the datacenter's kW per position, and it can't be moved or sold. You mount hardware into it directly.
 
-**Catalog.** Two to four datacenters per city. Exchanges new to this table: Franz-IX (Paris), BeCIX (Berlin), MIXup (Milan), VieX (Vienna), SwizzIX (Zurich).
+**Catalog.** Two to four datacenters per city; the datacenter towns Kerkrade and Falkenstein have one each. Exchanges new to this table: Franz-IX (Paris), BeCIX (Berlin), MIXup (Milan), VieX (Vienna), SwizzIX (Zurich), ECKS-IX (Düsseldorf), N-ICKS (Nuremberg), IN-EXCESS (Munich), Equinox IX (Ashburn), NYIKES (New York), CHI-KICKS (Chicago), Y'ALL-IX (Dallas), Any3 (Los Angeles).
+
+How the newer locations are priced:
+
+- **Düsseldorf** is Germany's second hub after Frankfurt, with fewer carriers and lower land and power costs, so its positions cost about 13% less than the Frankfurt equivalent (Equinox DU1 €650 against FR5 €750).
+- **Kerkrade (SkyBlink Eygelshoven)** is the small independent by the German border that hosters pick for cheap space with many carriers: €300 a position, 20 carriers, €60 cross-connects and fast remote hands, but no exchange on site and no cages.
+- **Nuremberg and Falkenstein** are the budget hoster parks. Hetzler's own halls are the cheapest space in the game (€170 and €160) with one carrier, the provider's own network; Boris Network NBG is the carrier-neutral alternative with N-ICKS on site.
+- **Munich** prices sit between Frankfurt and Berlin.
+- **North America** prices are 2026 US retail converted at about €0.90 to the dollar. Space costs about the same as in Germany, but power is much cheaper, so the power factors are lower (1.05 to 1.2, against 1.3 to 1.5 in Europe). New York and Los Angeles carry a metro premium. Ashburn has the most carriers in the game (60 at Equinox DC2), and Dallas is the cheapest American market.
+- Datacenters have no opening years yet; every one is open from 2005, which matches the real buildings closely enough for the American and German hubs.
 
 | Datacenter | City | Carriers | Exchange | Feeds | Backup | Green | kW per position | Position per month | Power factor | Cross-connect | Remote hands | Certified | Cages |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -607,6 +620,26 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 | Next Lair VIE | Vienna | 4 | VieX by cross-connect | Single | UPS, generator | No | 4 | €300 | 1.2 | €100 | €80/h, 4 h | No | No |
 | Equinox ZH4 | Zurich | 15 | SwizzIX on site | A+B | UPS, generator | Yes | 8 | €800 | 1.5 | €250 | €160/h, 1 h | Yes | Yes |
 | Green.chz Lupfig | Zurich | 6 | SwizzIX by cross-connect | A+B | UPS, generator | Yes | 6 | €550 | 1.3 | €180 | €120/h, 4 h | Yes | Yes |
+| Equinox DU1 | Düsseldorf | 18 | ECKS-IX on site | A+B | UPS, generator | Yes | 8 | €650 | 1.35 | €220 | €140/h, 1 h | Yes | Yes |
+| Interaction DUS | Düsseldorf | 14 | ECKS-IX by cross-connect | A+B | UPS, generator | No | 6 | €520 | 1.3 | €180 | €110/h, 2 h | Yes | Yes |
+| NTD Düsseldorf 1 | Düsseldorf | 10 | ECKS-IX by cross-connect | A+B | UPS, generator | Yes | 6 | €430 | 1.25 | €140 | €100/h, 2 h | Yes | Yes |
+| SkyBlink Eygelshoven | Kerkrade | 20 | None | A+B | UPS, generator | Yes | 6 | €300 | 1.15 | €60 | €60/h, 2 h | Yes | No |
+| Hetzler NBG | Nuremberg | 1 | None | Single | UPS, generator | Yes | 4 | €170 | 1.1 | €80 | €60/h, 8 h | No | No |
+| Boris Network NBG | Nuremberg | 10 | N-ICKS on site | A+B | UPS, generator | Yes | 6 | €420 | 1.25 | €150 | €100/h, 2 h | Yes | Yes |
+| Hetzler FSN | Falkenstein | 1 | None | Single | UPS, generator | Yes | 4 | €160 | 1.1 | €80 | €60/h, 8 h | No | No |
+| Equinox MU1 | Munich | 15 | IN-EXCESS on site | A+B | UPS, generator | Yes | 8 | €700 | 1.4 | €230 | €150/h, 1 h | Yes | Yes |
+| Interaction MUC | Munich | 10 | IN-EXCESS by cross-connect | A+B | UPS, generator | No | 6 | €550 | 1.3 | €180 | €120/h, 2 h | Yes | Yes |
+| Equinox DC2 | Ashburn | 60 | Equinox IX on site | A+B | UPS, generator | No | 8 | €650 | 1.15 | €200 | €130/h, 1 h | Yes | Yes |
+| Digital Reality ACC | Ashburn | 25 | Equinox IX by cross-connect | A+B | UPS, generator | No | 10 | €480 | 1.1 | €150 | €100/h, 2 h | Yes | Yes |
+| CoreSpite VA1 | Ashburn | 15 | Equinox IX by cross-connect | A+B | UPS, generator | No | 8 | €420 | 1.1 | €120 | €90/h, 4 h | Yes | Yes |
+| Equinox NY4 | New York | 45 | NYIKES on site | A+B | UPS, generator | No | 8 | €800 | 1.4 | €250 | €160/h, 1 h | Yes | Yes |
+| Telex 60 Hudson | New York | 35 | NYIKES by cross-connect | A+B | UPS, generator | No | 5 | €700 | 1.45 | €220 | €150/h, 2 h | Yes | Yes |
+| Digital Reality 350 Cermak | Chicago | 40 | CHI-KICKS on site | A+B | UPS, generator | No | 8 | €550 | 1.2 | €180 | €120/h, 2 h | Yes | Yes |
+| CoreSpite CH1 | Chicago | 15 | CHI-KICKS by cross-connect | A+B | UPS, generator | No | 8 | €450 | 1.15 | €140 | €100/h, 4 h | Yes | Yes |
+| Equinox DA1 | Dallas | 30 | Y'ALL-IX on site | A+B | UPS, generator | No | 8 | €500 | 1.1 | €170 | €120/h, 2 h | Yes | Yes |
+| Digital Reality DFW | Dallas | 12 | Y'ALL-IX by cross-connect | A+B | UPS, generator | No | 10 | €400 | 1.05 | €130 | €90/h, 4 h | Yes | Yes |
+| CoreSpite One Wilshire | Los Angeles | 60 | Any3 on site | A+B | UPS, generator | No | 6 | €750 | 1.45 | €230 | €150/h, 1 h | Yes | Yes |
+| Equinox LA1 | Los Angeles | 30 | Any3 by cross-connect | A+B | UPS, generator | No | 8 | €650 | 1.4 | €210 | €140/h, 2 h | Yes | Yes |
 
 **Basement.** One position, a 24U rack at most, 3 kW at most (a household circuit), no backup, the household power price (business × 1.6) and the home line as its only uplink.
 
@@ -884,7 +917,7 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 abo
 
 **Goodwill.** Trade fairs add goodwill from 0 to 1, which fades by 5% a month. It takes up to 10% off transit and adds to peering chances.
 
-**Links between zones.** A leased wavelength costs €400, €900, €2,500 or €6,000 a month for 1G, 10G, 100G or 400G in 2026 (m = 5) within a region, and 3 × that between regions. Dark fiber runs only within a region, carries 100G and costs €2,000 a month. Links take 30 days, uplink links 14.
+**Links between zones.** A leased wavelength costs €400, €900, €2,500 or €6,000 a month for 1G, 10G, 100G or 400G in 2026 (m = 5) within a region, and 3 × that between regions, or 10 × across the Atlantic. Dark fiber runs only within a region, carries 100G and costs €2,000 a month. Links take 30 days, uplink links 14.
 
 **DDoS protection.** Scrubba Dub On Demand costs €50 a month plus €250 per attack and lets a sixth of the attack's first hour through. Akamaybe Prolexit costs €800 a month and filters everything. A blackhole drops the attack and takes its target offline until it is lifted.
 
@@ -955,15 +988,15 @@ The link speed is the slowest link between the two nodes, shared by every migrat
 | Resource | Max ratio | In use | When the node runs over |
 | --- | --- | --- | --- |
 | CPU | 8:1 | Booked vCPUs × load | Performance of everyone on the node × cores ÷ busy vCPUs |
-| RAM | 1.5:1, or 1:1 with Memory reservation | Booked RAM × (0.6 + 0.4 × load), since memory stays mostly resident | Above 100% the node freezes: every workload on it is down until RAM in use fits again |
+| RAM | 1:1 for automatic placement; 1.5:1 on a node the player picks, or 1:1 there too with Memory reservation | Booked RAM × (0.6 + 0.4 × load), since memory stays mostly resident | Above 100% the node freezes: every workload on it is down until RAM in use fits again |
 | Disk | 2:1 | Grows from 30% of booked at signup at the customer's growth rate, up to 100% | The pool stops writes at 100%: an outage for every workload on it |
 | Traffic | No limit | Monthly traffic × traffic shape (below) | Saturation, see Traffic and bandwidth |
 
 A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, while a mixed cluster stays near 0.5, so mixing customer types roughly doubles safe overcommit. The cluster view shows booked capacity, this week's forecast peak and last week's actual peak.
 
-**How the first build plays.** Usage follows the curves with ±20% jitter per workload and hour, without surges yet. A node's use is the sum of its workloads plus its control plane at full load; a stopped, restoring or lost workload uses nothing. Instead of killing workloads, an overloaded node slows them: performance is cores ÷ busy vCPUs, and 50% when the disk pool runs over. A node whose RAM in use exceeds its installed RAM freezes instead of slowing: every workload on it is down, an outage for each customer on it, until the player stops or moves enough workloads or the hourly load drops. The freeze is checked every hour and again right after a stop, start or move. Every hour each customer on a slowed node loses 1 − performance in happiness, and each of their services opens a "really slow" outage ticket with a chance of 10% × (1 − performance) unless one is already open. Overcommit ratios are the same for every cluster.
+**How the first build plays.** Usage follows the curves with ±20% jitter per workload and hour, without surges yet. A node's use is the sum of its workloads plus its control plane at full load; a stopped, restoring or lost workload uses nothing. Instead of killing workloads, an overloaded node slows them: performance is cores ÷ busy vCPUs, and 50% when the disk pool runs over. A node whose RAM in use exceeds its installed RAM freezes instead of slowing: every workload on it is down, an outage for each customer on it, until the player stops or moves enough workloads or the hourly load drops. The freeze is checked every hour and again right after a stop, start or move. Every hour each customer on a slowed node loses 0.1 × (1 − performance) in happiness, and each of their services opens a "really slow" outage ticket with a chance of 10% × (1 − performance) unless one is already open. Overcommit ratios are the same for every cluster.
 
-**Memory reservation.** A tier 2 training after Monitoring, 100 know-how and 5 days. It adds a Memory reservation switch to every cluster, off by default. With it on, a node books RAM only up to its installed RAM less its control plane, so placements and moves that would pass it are refused and the node cannot freeze.
+**Memory reservation.** A tier 2 training after Monitoring, 100 know-how and 5 days. It adds a Memory reservation switch to every cluster, off by default. Automatic placement (the scheduler, draining, in-place growth of a service) always books RAM only up to a node's installed RAM less its control plane, so a player who never chooses to overbook never sees a freeze. Booking up to 1.5:1 is a manual choice: placing a service on a node the player picks, or moving a workload there. With Memory reservation on, those manual placements and moves stop at the installed RAM as well, and the node cannot freeze.
 
 **Pegged workloads.** A workload is pegged when its CPU ran at 95% or more of its booked vCPUs in more than 12 of the last 24 hours. The node's workload list marks it.
 
@@ -1119,7 +1152,7 @@ A panel VM is one of the player's own VMs on a hypervisor cluster with a panel i
 
 | Value | Amount |
 | --- | --- |
-| Suggested size in the setup and the Products app | 2 vCPU, 4 GB RAM, 100 GB disk, about 15 Web M spaces |
+| Suggested size in the setup and the Products app | 2 vCPU, 2 GB RAM, 50 GB disk, about 7 Web M spaces; the basement server keeps room for a Game S next to it |
 | Smallest size | 1 vCPU, 1 GB RAM, 10 GB disk, and at least the panel's control plane |
 | Resize | Any size that still holds the web spaces' bookings plus the panel and fits on the VM's server |
 | Use | What its web spaces use plus the panel's control plane |
@@ -1417,6 +1450,15 @@ The numbers above are first guesses. A headless run of the simulation proves or 
 - **Solo bot:** plays the same way but never hires. It must survive but level up clearly later, which shows that hiring is how you scale and still optional.
 
 A Vitest suite runs both bots on fixed seeds and fails when either rule breaks. The `balance` skill from the GDD reads the run's output and suggests which value to tune.
+
+**The happiness run.** `npx tsx scripts/happiness.ts [seeds] [months]` plays the real tick and actions like a careful player: every order step at the market price, the setup once paid, the right template on every ticket, the careful action on notices and legal requests, sales quoted at the market price, domains renewed, orders declined when the cluster cannot fit them, and another server bought by the steady bot's 80% rule. Per month it prints customers with a live service, MRR, average happiness, the happiness change by source, the hours services spent down by cause and the wait penalties by ticket kind.
+
+**Happiness decay in the early game (2005).** The happiness run found two causes that sank a well-played company to near zero happiness by spring, with churn in waves:
+
+- Automatic placement booked RAM up to 1.5× installed. Memory in use is booked RAM × (0.6 + 0.4 × load), so a basement server booked past about 8 GB froze most evenings: 86 to 270 service-hours down per customer per month. Automatic placement now stops at the installed RAM; overbooking stays a manual choice (Usage curves and overcommit).
+- A slowed node cost each customer 1 − performance per hour. Drift recovers only a fifth of the gap each month, so a steady monthly loss D settles happiness about 5 × D below the drift target; a node slowed to 72% for 54 evening hours a week cost about 65 a month and drove customers to churn. At 0.1 × (1 − performance) the same node costs about 6 a month and a node at 40% for 80 hours a week still costs about 20, enough to churn customers when the player keeps overloading.
+
+With both changes the careful bot on seeds 1 to 6 holds happiness near 90 through 2006 instead of 15 to 50. Its size is then set by capacity. One 8 GB basement server holds about €180 of monthly revenue (7 to 16 customers, since VPS and game server orders book 0.5 to 4 GB each), the second server costs €2,500 against €1,000 starting cash and €150 to €300 saved a month, and the 1 Mbit/s home upload saturates once more servers are added. The balance model reaches about 40 customers and €400 by the end of 2005 because it books no RAM for web hosting, sells no game servers and caps only VPS. Reaching the year 1 pacing target in the live game takes a bank loan for a second server and a faster home line.
 
 **Open questions**
 

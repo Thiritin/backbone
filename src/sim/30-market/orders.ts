@@ -5,6 +5,7 @@ import { yearOf } from "../00-core/time";
 import { CUSTOM_LATER, customizable, customSpec } from "./custom";
 import { applyStep, customReference, isStep, specParams } from "./manual";
 import { PRODUCTS } from "../10-catalog/products";
+import { inUs } from "../20-world/datacenters";
 import type { Profile } from "../30-customers/customers";
 import { profileStats, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
@@ -45,7 +46,7 @@ function place(s: GameState, r: SalesRequest): ActionResult & { reason?: string;
 
 // custom asks for its own resources (custom.ts) and is worked step by step; otherwise it orders a package.
 export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile), custom = false): SalesRequest {
-  const who = senderFor(s.rng, profile), variant = Math.floor(rand(s.rng) * 2);
+  const who = senderFor(s.rng, profile, false, inUs(city)), variant = Math.floor(rand(s.rng) * 2);
   custom &&= customizable(need.product);
   let r = addRequest(s, {
     kind: "order", customerId: null, ...who, profile, city, ...need, reference: 0, discount: discountFor(s, profile), budget: 1, shady: false, serviceId: null, ticketId: null,

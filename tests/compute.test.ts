@@ -102,8 +102,8 @@ describe("compute", () => {
   it("limits web hosting on a panel server to the server", () => {
     const s = startGame(1), cus = addCustomer(s, "Ada Lang", "hobbyDev");
     panelServer(s, "dev3");
-    // 12 GB bookable less FreePanel's 0.1 GB: 47 web spaces of 0.25 GB.
-    expect(fill(s, cus)).toBe(47);
+    // Automatic placement books up to the installed 8 GB less FreePanel's 0.1 GB: 31 web spaces of 0.25 GB.
+    expect(fill(s, cus)).toBe(31);
   });
 
   it("takes web hosting down with its bare-metal panel server, while a panel VM moves with its VM", () => {

@@ -20,7 +20,7 @@ import { sizeOf, type CustomSpec } from "../30-market/custom";
 const fail = (error: string): ActionResult => ({ ok: false, error });
 export const CLUSTER_NAME_MAX = 40;
 // economy.md, Panel VMs: the size the setup and the Products app suggest, and the smallest the player can book.
-export const PANEL_VM_SIZE: Resources = { vcpu: 2, ramGb: 4, diskGb: 100 };
+export const PANEL_VM_SIZE: Resources = { vcpu: 2, ramGb: 2, diskGb: 50 };
 export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
 const blank = (s: GameState, id: string, name: string, az: string, kind: SoftwareKind): Cluster => ({
@@ -274,7 +274,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
   if (spec.runsOn === "none") return { ok: true };
   if (spec.runsOn === "cluster") {
     for (const c of s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)) && supports(x, v.product))) {
-      const node = controlPlaneUp(s, c) ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, size) : null;
+      const node = controlPlaneUp(s, c) ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, size, null, !!deviceId) : null;
       if (node) { w = workload(s, v.id, { ...size, clusterId: c.id, deviceId: c.vm ? null : node }); az = c.az; break; }
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;

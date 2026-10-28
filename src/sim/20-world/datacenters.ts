@@ -27,6 +27,11 @@ export const PROVIDERS: Provider[] = [
   { id: "arubaba", name: "Arubaba" },
   { id: "nextlair", name: "Next Lair" },
   { id: "greenchz", name: "Green.chz" },
+  { id: "skyblink", name: "SkyBlink" },
+  { id: "borisnet", name: "Boris Network" },
+  { id: "digitalreality", name: "Digital Reality" },
+  { id: "corespite", name: "CoreSpite" },
+  { id: "telex", name: "Telex" },
 ];
 
 type Row = [id: string, name: string, provider: string, city: string, carriers: number, exchange: string | null, onSite: boolean,
@@ -53,12 +58,33 @@ const ROWS: Row[] = [
   ["nextlair-vie", "Next Lair VIE", "nextlair", "Vienna", 4, "VieX", false, false, "ups+generator", false, 4, 300, 1.2, 100, 80, 4, false, false],
   ["equinox-zh4", "Equinox ZH4", "equinox", "Zurich", 15, "SwizzIX", true, true, "ups+generator", true, 8, 800, 1.5, 250, 160, 1, true, true],
   ["greenchz-lupfig", "Green.chz Lupfig", "greenchz", "Zurich", 6, "SwizzIX", false, true, "ups+generator", true, 6, 550, 1.3, 180, 120, 4, true, true],
+  ["equinox-du1", "Equinox DU1", "equinox", "Düsseldorf", 18, "ECKS-IX", true, true, "ups+generator", true, 8, 650, 1.35, 220, 140, 1, true, true],
+  ["interaction-dus", "Interaction DUS", "interaction", "Düsseldorf", 14, "ECKS-IX", false, true, "ups+generator", false, 6, 520, 1.3, 180, 110, 2, true, true],
+  ["ntd-dus1", "NTD Düsseldorf 1", "ntd", "Düsseldorf", 10, "ECKS-IX", false, true, "ups+generator", true, 6, 430, 1.25, 140, 100, 2, true, true],
+  ["skyblink-eygelshoven", "SkyBlink Eygelshoven", "skyblink", "Kerkrade", 20, null, false, true, "ups+generator", true, 6, 300, 1.15, 60, 60, 2, true, false],
+  ["hetzler-nbg", "Hetzler NBG", "hetzler", "Nuremberg", 1, null, false, false, "ups+generator", true, 4, 170, 1.1, 80, 60, 8, false, false],
+  ["boris-nbg", "Boris Network NBG", "borisnet", "Nuremberg", 10, "N-ICKS", true, true, "ups+generator", true, 6, 420, 1.25, 150, 100, 2, true, true],
+  ["hetzler-fsn", "Hetzler FSN", "hetzler", "Falkenstein", 1, null, false, false, "ups+generator", true, 4, 160, 1.1, 80, 60, 8, false, false],
+  ["equinox-mu1", "Equinox MU1", "equinox", "Munich", 15, "IN-EXCESS", true, true, "ups+generator", true, 8, 700, 1.4, 230, 150, 1, true, true],
+  ["interaction-muc", "Interaction MUC", "interaction", "Munich", 10, "IN-EXCESS", false, true, "ups+generator", false, 6, 550, 1.3, 180, 120, 2, true, true],
+  ["equinox-dc2", "Equinox DC2", "equinox", "Ashburn", 60, "Equinox IX", true, true, "ups+generator", false, 8, 650, 1.15, 200, 130, 1, true, true],
+  ["digitalreality-ash", "Digital Reality ACC", "digitalreality", "Ashburn", 25, "Equinox IX", false, true, "ups+generator", false, 10, 480, 1.1, 150, 100, 2, true, true],
+  ["corespite-va1", "CoreSpite VA1", "corespite", "Ashburn", 15, "Equinox IX", false, true, "ups+generator", false, 8, 420, 1.1, 120, 90, 4, true, true],
+  ["equinox-ny4", "Equinox NY4", "equinox", "New York", 45, "NYIKES", true, true, "ups+generator", false, 8, 800, 1.4, 250, 160, 1, true, true],
+  ["telex-60hudson", "Telex 60 Hudson", "telex", "New York", 35, "NYIKES", false, true, "ups+generator", false, 5, 700, 1.45, 220, 150, 2, true, true],
+  ["digitalreality-cermak", "Digital Reality 350 Cermak", "digitalreality", "Chicago", 40, "CHI-KICKS", true, true, "ups+generator", false, 8, 550, 1.2, 180, 120, 2, true, true],
+  ["corespite-ch1", "CoreSpite CH1", "corespite", "Chicago", 15, "CHI-KICKS", false, true, "ups+generator", false, 8, 450, 1.15, 140, 100, 4, true, true],
+  ["equinox-da1", "Equinox DA1", "equinox", "Dallas", 30, "Y'ALL-IX", true, true, "ups+generator", false, 8, 500, 1.1, 170, 120, 2, true, true],
+  ["digitalreality-dfw", "Digital Reality DFW", "digitalreality", "Dallas", 12, "Y'ALL-IX", false, true, "ups+generator", false, 10, 400, 1.05, 130, 90, 4, true, true],
+  ["corespite-la1", "CoreSpite One Wilshire", "corespite", "Los Angeles", 60, "Any3", true, true, "ups+generator", false, 6, 750, 1.45, 230, 150, 1, true, true],
+  ["equinox-la1", "Equinox LA1", "equinox", "Los Angeles", 30, "Any3", false, true, "ups+generator", false, 8, 650, 1.4, 210, 140, 2, true, true],
 ];
 
 const SIZE_OF: Record<string, Datacenter["size"]> = {
   equinox: "large", interaction: "large", globalsnitch: "large", tellyhouse: "large", data5: "large",
   hetzler: "medium", ironmolehill: "medium", ntd: "medium", nextlair: "medium", arubaba: "medium",
   mainqubes: "small", spree: "small", docklands: "small", greenchz: "small",
+  digitalreality: "large", borisnet: "medium", corespite: "medium", telex: "medium", skyblink: "small",
 };
 
 export const DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, carriers, ex, onSite, ab, backup, green, kw, price, factor, cross, perHour, responseHours, certified, cages]) => ({
@@ -73,7 +99,8 @@ export const datacenterById = (id: string): Datacenter => {
   return dc;
 };
 
-export const REGIONS: { id: string; name: string; city: string }[] = [
+// us marks the North American regions; links and moves across the Atlantic cost more.
+export const REGIONS: { id: string; name: string; city: string; us?: true }[] = [
   { id: "fra", name: "Frankfurt", city: "Frankfurt" },
   { id: "ams", name: "Amsterdam", city: "Amsterdam" },
   { id: "lon", name: "London", city: "London" },
@@ -82,8 +109,19 @@ export const REGIONS: { id: string; name: string; city: string }[] = [
   { id: "mil", name: "Milan", city: "Milan" },
   { id: "vie", name: "Vienna", city: "Vienna" },
   { id: "zrh", name: "Zurich", city: "Zurich" },
+  { id: "dus", name: "Düsseldorf", city: "Düsseldorf" },
+  { id: "ker", name: "Kerkrade", city: "Kerkrade" },
+  { id: "nue", name: "Nuremberg", city: "Nuremberg" },
+  { id: "fsn", name: "Falkenstein", city: "Falkenstein" },
+  { id: "muc", name: "Munich", city: "Munich" },
+  { id: "ash", name: "Ashburn", city: "Ashburn", us: true },
+  { id: "nyc", name: "New York", city: "New York", us: true },
+  { id: "chi", name: "Chicago", city: "Chicago", us: true },
+  { id: "dfw", name: "Dallas", city: "Dallas", us: true },
+  { id: "lax", name: "Los Angeles", city: "Los Angeles", us: true },
 ];
 export const regionOf = (loc: { city: string }) => REGIONS.find((r) => r.city === loc.city)!;
+export const inUs = (city: string): boolean => REGIONS.some((r) => r.city === city && r.us);
 // The region code plus the next free number in that region: fra1, fra2, ams1.
 export function nextAz(locations: { city: string; az?: string }[], city: string): string {
   const code = regionOf({ city }).id;
@@ -152,4 +190,4 @@ export function spacePrice(dc: Datacenter, space: RentedSpace, positions: number
   return Math.round(dc.positionPrice * (MULTIPLIERS[space][positions] ?? positions));
 }
 
-export const MOVE = { sameCity: { price: 300, hours: 24 }, otherCity: { price: 1200, hours: 72 } } as const;
+export const MOVE = { sameCity: { price: 300, hours: 24 }, otherCity: { price: 1200, hours: 72 }, overseas: { price: 4000, hours: 240 } } as const;

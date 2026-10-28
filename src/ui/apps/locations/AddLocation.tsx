@@ -1,17 +1,19 @@
 import { Leaf, ShieldCheck } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
-import { DATACENTERS, LEAD_DAYS, SPACE_SIZES, spacePrice, type Datacenter } from "../../../sim/20-world/datacenters";
+import { DATACENTERS, inUs, LEAD_DAYS, SPACE_SIZES, spacePrice, type Datacenter } from "../../../sim/20-world/datacenters";
 import type { GameState, SpaceKind } from "../../../sim/50-state";
 import { dcAvailability, fits } from "../../../sim/60-infra/status";
 import { addLocation, joinWaitlist } from "../../../sim/90-actions/hardware";
 import { Logo } from "../../art/logos";
-import { cityNamed, WorldMap, type Marker } from "../../map/WorldMap";
+import { cityNamed, WorldMap, type Bounds, type Marker } from "../../map/WorldMap";
 import { useStore } from "../../store";
 import { positionsLabel, shareLabel, shareUnits, Sheet, spaceSize } from "./ui";
 
 type Rented = Exclude<SpaceKind, "basement">;
 const CITIES = [...new Set(DATACENTERS.map((d) => d.city))];
+type Area = "eu" | "us";
+const AREAS: [Area, string, Bounds][] = [["eu", "Europe", { west: -1, south: 45, east: 17, north: 53 }], ["us", "North America", { west: -122, south: 28, east: -72, north: 46 }]];
 const KINDS: [Rented, string][] = [["share", "Rack share"], ["positions", "Positions"], ["cage", "Cage"], ["suite", "Suite"]];
 
 // A badge for a property; `off` marks the weaker side of the comparison.
@@ -21,12 +23,14 @@ const Icon = ({ label, children }: { label: string; children: ReactNode }) => <s
 export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded: (id: string) => void }) {
   const act = useStore((s) => s.act), game = useStore((s) => s.game), notify = useStore((s) => s.notify);
   const [hideFull, setHideFull] = useState(false);
+  const [area, setArea] = useState<Area>("eu");
   const [city, setCity] = useState<string | null>(null);
   const [hot, setHot] = useState<string | null>(null);
   const [dcId, setDc] = useState<string | null>(null);
   const [kind, setKind] = useState<Rented>("share");
   const [size, setSize] = useState(1);
-  const rows = DATACENTERS.filter((d) => (!city || d.city === city) && (!hideFull || dcAvailability(game, d.id).freeEighths > 0));
+  const cities = CITIES.filter((c) => inUs(c) === (area === "us"));
+  const rows = DATACENTERS.filter((d) => (city ? d.city === city : cities.includes(d.city)) && (!hideFull || dcAvailability(game, d.id).freeEighths > 0));
   const dc = DATACENTERS.find((d) => d.id === dcId && rows.includes(d)) ?? null;
   const k: Rented = kind === "cage" && dc && !dc.cages ? "positions" : kind;
   const n = SPACE_SIZES[k].includes(size) ? size : SPACE_SIZES[k][0];
@@ -45,14 +49,19 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
   return (
     <Sheet title="Add location" onClose={onClose} wide>
       <div className="loc-sheet-bar">
-        <div className="seg" role="group" aria-label="City">
-          <button aria-pressed={!city} onClick={() => setCity(null)}>All</button>
-          {CITIES.map((c) => <button key={c} aria-pressed={city === c} onClick={() => setCity(c)}>{c}</button>)}
+        <div className="seg" role="group" aria-label="Area">
+          {AREAS.map(([id, label]) => <button key={id} aria-pressed={area === id} onClick={() => { setArea(id); setCity(null); }}>{label}</button>)}
         </div>
         <span className="grow" />
         <button className="btn ghost" aria-pressed={hideFull} onClick={() => setHideFull(!hideFull)}>Hide full</button>
+        <div className="loc-cities">
+          <div className="seg" role="group" aria-label="City">
+            <button aria-pressed={!city} onClick={() => setCity(null)}>All</button>
+            {cities.map((c) => <button key={c} aria-pressed={city === c} onClick={() => setCity(c)}>{c}</button>)}
+          </div>
+        </div>
       </div>
-      <WorldMap className="wm-add" initial={{ west: -1, south: 45, east: 17, north: 53 }} markers={markers(city, hot)} onMarkerClick={(c) => setCity(c === city ? null : c)} onCityClick={(c) => setCity(CITIES.includes(c.name) && c.name !== city ? c.name : null)}>
+      <WorldMap key={area} className="wm-add" initial={AREAS.find((a) => a[0] === area)![2]} markers={markers(city, hot)} onMarkerClick={(c) => setCity(c === city ? null : c)} onCityClick={(c) => setCity(CITIES.includes(c.name) && c.name !== city ? c.name : null)}>
         {city && (
           <div className="wm-panel" role="group" aria-label={city}>
             <h3>{city}</h3>

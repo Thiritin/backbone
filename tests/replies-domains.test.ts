@@ -19,7 +19,7 @@ import { readyGame } from "./fixtures";
 const web = { product: "webHosting" as const, plan: "web-s", sla: "basic" as const };
 const PROFILES: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
 const CITIES = Object.keys(CITY_TLD);
-const DOMAIN = /^[a-z0-9]+(-[a-z0-9]+)*\.(de|at|ch|co\.uk|fr|nl|it)$/;
+const DOMAIN = /^[a-z0-9]+(-[a-z0-9]+)*\.(de|at|ch|co\.uk|fr|nl|it|com)$/;
 
 function leads(seed: number) {
   const s = readyGame(seed);

@@ -27,7 +27,7 @@ function failover(s: GameState, c: Cluster, events: SimEvent[]) {
   if (c.controlPlane && dead.has(c.controlPlane)) moveControlPlaneOff(s, c.id, c.controlPlane);
   let moved = 0, stuck = 0;
   for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !lostDisk(s, x))) {
-    const to = pickNode(s, cluster(s, c.id), w, w.deviceId, "spread");
+    const to = pickNode(s, cluster(s, c.id), w, w.deviceId, false, "spread");
     if (!to) {
       if (!w.stuck) stuck++;
       patch(s, w.id, { stuck: true });
@@ -57,7 +57,7 @@ function balance(s: GameState, c: Cluster) {
     const vms = s.workloads.filter((w) => w.clusterId === c.id && w.deviceId === n.deviceId && !w.stopped && w.busyUntil <= s.hour && !lostDisk(s, w))
       .sort((a, b) => a.ramGb - b.ramGb);
     for (const w of vms) {
-      const to = pickNode(s, cluster(s, c.id), w, n.deviceId, "spread");
+      const to = pickNode(s, cluster(s, c.id), w, n.deviceId, false, "spread");
       if (!to || runsHot(s, to)) continue;
       patch(s, w.id, { deviceId: to, placedAt: s.hour });
       break;

@@ -6,7 +6,7 @@ import {
   carrierById, carriersAt, COMMITS, dcPerTb, EXCHANGE_FEES, exchangeAt, exchangeById, exchangePortPrice, FIBER_GBIT, PEERS, PROTECTIONS, speedsIn,
   transitPerMbps, zoneLinkPrice, ASN_FEE, type Peer, type Protection, type ZoneLinkKind,
 } from "../../../sim/10-catalog/network";
-import { datacenterById, homeLineById } from "../../../sim/20-world/datacenters";
+import { datacenterById, homeLineById, inUs } from "../../../sim/20-world/datacenters";
 import type { GameState, Location } from "../../../sim/50-state";
 import {
   acceptChance, activeExchanges, capacityMbps, coolingDown, crossConnects, monthlyNetworkCost, p95, route, transitBill, zoneLinkMonthly, type Uplink,
@@ -260,7 +260,7 @@ function ZoneLinks({ game, loc }: { game: GameState; loc: Location }) {
 
 function ZoneLinkCard({ game, loc, other }: { game: GameState; loc: Location; other: Location }) {
   const act = useStore((s) => s.act);
-  const year = yearOf(game.hour), same = loc.city === other.city;
+  const year = yearOf(game.hour), same = loc.city === other.city, overseas = inUs(loc.city) !== inUs(other.city);
   const [choice, setChoice] = useState<{ kind: ZoneLinkKind; gbit: number }>({ kind: "wave", gbit: 1 });
   const links = game.network.zoneLinks.filter((z) => (z.a === loc.id && z.b === other.id) || (z.b === loc.id && z.a === other.id));
   const options: { kind: ZoneLinkKind; gbit: number; label: string }[] = [
@@ -269,7 +269,7 @@ function ZoneLinkCard({ game, loc, other }: { game: GameState; loc: Location; ot
   ];
   return (
     <div className="shop-card">
-      <div className="shop-name"><strong>{other.az} {other.name}</strong><span>{same ? "Same region" : "Other region"}</span></div>
+      <div className="shop-name"><strong>{other.az} {other.name}</strong><span>{same ? "Same region" : overseas ? "Overseas" : "Other region"}</span></div>
       {links.map((zl) => (
         <div key={zl.id} className="mkt-row net-zl">
           <span className="num">{zl.kind === "fiber" ? "Dark fiber" : `${zl.gbit}G`}</span>
@@ -282,7 +282,7 @@ function ZoneLinkCard({ game, loc, other }: { game: GameState; loc: Location; ot
         <div className="seg" role="group" aria-label="Link">{options.map((o) => (
           <button key={o.label} className="num" aria-pressed={choice.kind === o.kind && choice.gbit === o.gbit} onClick={() => setChoice(o)}>{o.label}</button>
         ))}</div></div>
-      <div className="shop-buy"><span className="num">{euro(zoneLinkPrice(choice.kind, choice.gbit, same, year))} / month</span><span className="grow" />
+      <div className="shop-buy"><span className="num">{euro(zoneLinkPrice(choice.kind, choice.gbit, same, year, overseas))} / month</span><span className="grow" />
         <button className="btn primary" onClick={() => act((s) => orderZoneLink(s, loc.id, other.id, choice.kind, choice.gbit))}>Order</button></div>
     </div>
   );

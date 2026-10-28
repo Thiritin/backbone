@@ -1,6 +1,6 @@
 import { yearOf } from "../00-core/time";
 import { COMPONENTS, jacksOf, modelById, type DeviceKind } from "../10-catalog/hardware";
-import { BASEMENT, capacityAt, datacenterById, MOVE, rackUnits, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, capacityAt, datacenterById, inUs, MOVE, rackUnits, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import type { Component, Device, End, GameState, Location, SpaceKind } from "../50-state";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
@@ -240,10 +240,11 @@ export function moveCost(s: GameState, rackId: string, toLocationId: string): { 
   return travelCost(s, s.racks.find((r) => r.id === rackId)?.locationId, toLocationId);
 }
 
-// Price and hours of shipping between two zones: within a region or to another region.
+// Price and hours of shipping between two zones: within a region, to another region, or across the Atlantic.
 export function travelCost(s: GameState, fromId: string | undefined, toId: string): { price: number; hours: number } {
   const from = s.locations.find((l) => l.id === fromId), to = s.locations.find((l) => l.id === toId);
-  return from && to && from.city === to.city ? MOVE.sameCity : MOVE.otherCity;
+  if (from && to && from.city === to.city) return MOVE.sameCity;
+  return from && to && inUs(from.city) !== inUs(to.city) ? MOVE.overseas : MOVE.otherCity;
 }
 
 // Why a cable between a and b can't be plugged in, or null when it can.
