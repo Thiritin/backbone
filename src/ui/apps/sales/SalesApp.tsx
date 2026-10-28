@@ -5,12 +5,13 @@ import { euroCents } from "../../../sim/00-core/money";
 import { planOf, SLAS } from "../../../sim/10-catalog/products";
 import { missingFor, planName, requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
 import { nodeCapacity, nodeUsed } from "../../../sim/60-infra/cluster";
+import { profileStats } from "../../../sim/40-support/tickets";
 import type { GameState } from "../../../sim/50-state";
 import { decline, quote } from "../../../sim/90-actions/sales";
 import { t } from "../../../i18n/en";
 import { useFocus, useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
-import { initials, PRODUCT, stamp } from "../support/labels";
+import { initials, noticed, patience, PRODUCT, stamp } from "../support/labels";
 import { PriceField } from "./PriceField";
 import "../support/support.css";
 import "./sales.css";
@@ -136,6 +137,7 @@ function Card({ r }: { r: SalesRequest }) {
   const sla = SLAS[r.sla];
   const canQuote = OPEN.includes(r.status) && !missing.length;
   const customer = r.customerId ? game.customers.find((c) => c.id === r.customerId) : undefined;
+  const expects = profileStats(r.profile);
 
   return (
     <div className={`sup-detail${missing.length && OPEN.includes(r.status) ? " greyed" : ""}`}>
@@ -145,6 +147,8 @@ function Card({ r }: { r: SalesRequest }) {
           <span className="type">{PRODUCT[r.product]}</span>
           <span>{r.city}</span>
           <span>{SLA_LABEL[r.sla]} SLA · <span className="num">{(sla.uptime * 100).toFixed(sla.uptime >= 0.999 ? 2 : 1)}%</span> · <span className="num">{sla.responseHours}</span> h response</span>
+          <span>Reply within {patience(expects.reply)}</span>
+          <span>Notices outages {noticed(expects.tolerance).toLowerCase()}</span>
           <span className="pill">{STATUS[r.status]}</span>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { rand } from "../00-core/rng";
+import { addHoursOn } from "../00-core/workhours";
 import { PROFILES, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
 import { activeServices, type Customer, type Profile, type Service } from "../30-customers/customers";
 import type { GameState } from "../50-state";
@@ -77,6 +78,12 @@ export const monthlyValue = (services: Service[], customerId: string): number =>
 export const isFinal = (t: Ticket): boolean => t.status === "resolved" || t.status === "closed";
 export const hoursLeft = (t: Ticket, hour: number): number => t.dueAt - hour;
 
+// The hour a reply is due, counted on the customer's clock.
+export const replyDue = (c: Customer, hour: number): number => {
+  const { hours, clock } = profileStats(c.profile).reply;
+  return addHoursOn(clock, hour, hours);
+};
+
 export const bump = (c: Customer, delta: number): void => {
   c.happiness = Math.max(0, Math.min(100, c.happiness + delta));
 };
@@ -89,7 +96,7 @@ export function createTicket(s: GameState, c: Customer, kind: TicketKind, servic
     id: `tkt${s.nextId++}`, customerId: c.id,
     serviceId: serviceId !== undefined ? serviceId : services.length ? services[Math.floor(rand(s.rng) * services.length)].id : null,
     kind, topic: topic ?? topics[Math.floor(rand(s.rng) * topics.length)], status: "open",
-    createdAt: s.hour, dueAt: s.hour + profileStats(c.profile).promisedHours, updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null,
+    createdAt: s.hour, dueAt: replyDue(c, s.hour), updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null,
   };
   s.tickets = [...s.tickets, t];
   return t;

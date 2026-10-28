@@ -73,7 +73,7 @@ describe("save", () => {
     expect(s.billingRules).toEqual(newGame(4).billingRules);
     const v2 = deserialize(JSON.stringify({ version: 2, seed: 4, hour: 10 }));
     const fresh = newGame(4);
-    for (const k of ["customers", "services", "tickets", "playerBusyUntil", "servicesDown", "invoices", "yearlyBilledUntil", "loans", "loansBlockedUntil", "billingRules", "docs", "dcs", "waitlist"] as const) {
+    for (const k of ["customers", "services", "tickets", "playerBusyUntil", "downSince", "invoices", "yearlyBilledUntil", "loans", "loansBlockedUntil", "billingRules", "docs", "dcs", "waitlist"] as const) {
       expect(v2[k]).toEqual(fresh[k]);
     }
   });

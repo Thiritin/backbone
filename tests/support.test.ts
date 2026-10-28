@@ -71,9 +71,9 @@ describe("happiness and churn", () => {
   it("drops by the wait penalty for each hour a ticket is overdue", () => {
     const { s, cus, svc, c } = one(2, "private");
     ticketOf(s, "howTo", "upload", cus, svc);
-    runTo(s, 58);
+    runTo(s, 114);
     expect(s.tickets).toHaveLength(1);
-    expect(c().happiness).toBeCloseTo(70 - 0.3 * 10, 6);
+    expect(c().happiness).toBeCloseTo(70 - 0.3 * 8, 6);
   });
 
   it("files a cancellation for a very unhappy customer and processes it at the next billing date", () => {
@@ -150,7 +150,7 @@ describe("support actions", () => {
     readTicket(s, t.id);
     replyTicket(s, t.id, "ftp");
     tick(s);
-    expect(get(s, t.id)).toMatchObject({ status: "open", unread: true, dueAt: 1 + 48 });
+    expect(get(s, t.id)).toMatchObject({ status: "open", unread: true, dueAt: 89 });
     expect(get(s, t.id).replies[0].right).toBe(false);
     expect(c().happiness).toBe(60);
   });
@@ -204,7 +204,7 @@ describe("support actions", () => {
     down.clear();
     tick(s);
     expect(get(s, t.id).status).toBe("resolved");
-    expect(c().happiness).toBe(70 - 2 * 1 + 5);
+    expect(c().happiness).toBe(70 + 5);
   });
 
   it("closes an unanswered ticket with -10 and a cancellation by processing it", () => {
@@ -247,7 +247,7 @@ describe("outages", () => {
     expect(outages.length % 3).toBe(0);
     expect(outages.length / 3).toBeGreaterThan(14);
     expect(s.customers[0].happiness).toBe(70 - 2 * 10);
-    expect(s.servicesDown).toHaveLength(20);
+    expect(Object.keys(s.downSince)).toHaveLength(20);
   });
 
   it("expects an acknowledgement while the service is down", () => {
@@ -264,9 +264,9 @@ describe("outages", () => {
 describe("support saves", () => {
   it("loads a save from before customers and tickets", () => {
     const old = JSON.parse(serialize(newGame(6)));
-    for (const k of ["customers", "services", "tickets", "playerBusyUntil", "servicesDown"]) delete old[k];
+    for (const k of ["customers", "services", "tickets", "playerBusyUntil", "downSince"]) delete old[k];
     const s = deserialize(JSON.stringify(old));
-    expect(s).toMatchObject({ customers: [], services: [], tickets: [], playerBusyUntil: 0, servicesDown: [] });
+    expect(s).toMatchObject({ customers: [], services: [], tickets: [], playerBusyUntil: 0, downSince: {} });
     runTo(s, 5);
   });
 

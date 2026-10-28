@@ -31,6 +31,6 @@ for (let m = 0; m < months; m++) {
   const active = s.customers.filter((c) => c.churnedAt === null).length;
   const live = s.customers.filter((c) => c.churnedAt === null);
   const avgH = Math.round(live.reduce((n, c) => n + c.happiness, 0) / Math.max(1, live.length));
-  const down = s.servicesDown.length, unpaid = s.invoices.filter((i) => i.status !== "paid").length;
+  const down = Object.keys(s.downSince).length, unpaid = s.invoices.filter((i) => i.status !== "paid").length;
   console.log(`m${m} H ${avgH} down ${down} unpaid ${unpaid} requests ${reqs.length} greyed ${greyed} won ${won} customers ${active} cash ${Math.round(s.cash)} lost ${JSON.stringify(reasons)}`);
 }

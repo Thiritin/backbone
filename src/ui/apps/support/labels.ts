@@ -1,5 +1,6 @@
 import { CircleHelp, Copyright, DoorOpen, Landmark, LockKeyholeOpen, Receipt, ShieldAlert, TrendingUp, Undo2, ZapOff, type LucideIcon } from "lucide-react";
 import { dateOf } from "../../../sim/00-core/time";
+import { BUSINESS_DAY, type Patience } from "../../../sim/00-core/workhours";
 import type { Product } from "../../../sim/30-customers/customers";
 import type { TicketKind, TicketStatus } from "../../../sim/40-support/tickets";
 
@@ -44,6 +45,26 @@ export const span = (hours: number): string => {
   return h >= 48 ? `${Math.floor(h / 24)} d${h % 24 ? ` ${h % 24} h` : ""}` : `${h} h`;
 };
 
-export const initials = (name: string): string => name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// "15:00" today, "Mon 13:00" on a later day, "Now" once past due.
+export function due(at: number, hour: number): string {
+  if (hour > at) return "Now";
+  const d = dateOf(at), time = `${pad(d.getUTCHours())}:00`;
+  return Math.floor(at / 24) === Math.floor(hour / 24) ? time : `${WEEKDAYS[d.getUTCDay()]} ${time}`;
+}
+
+const plural = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"}`;
+
+// "1 business day", "4 business hours", "4 hours, around the clock".
+export function patience({ hours, clock }: Patience): string {
+  if (!hours) return "Immediately";
+  if (clock === "always") return `${plural(hours, "hour")}, around the clock`;
+  return hours % BUSINESS_DAY ? plural(hours, "business hour") : plural(hours / BUSINESS_DAY, "business day");
+}
+
+export const noticed = (e: Patience): string => (e.hours ? `After ${patience(e)}` : "Immediately");
+
+export const initials =(name: string): string => name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
 export const moodClass = (h: number): string => (h >= 60 ? "ok" : h >= 30 ? "warn" : "bad");

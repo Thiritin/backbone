@@ -73,10 +73,12 @@ describe("starting company", () => {
     expect(s.cash).toBe(newGame(1).cash);
   });
   it("takes the friends offline and opens outage tickets when the switch loses power", () => {
-    const s = startGame(1);
+    // A seed where a friend writes in once the outage is noticed.
+    const s = startGame(5);
     run(s, 2);
     ok(setPower(s, "dev4", false));
-    run(s, 3);
+    // Friends tolerate an outage for two business days: from Saturday until Wednesday 09:00.
+    run(s, 104);
     expect(s.services.some((v) => serviceOnline(s, v.id))).toBe(false);
     const outages = s.tickets.filter((t) => t.kind === "outage");
     expect(outages.length).toBeGreaterThan(0);
