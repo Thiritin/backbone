@@ -9,6 +9,7 @@ import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import { applications, type Candidate, type Employee } from "./47-staff/staff";
 import { newMarketing, type Marketing } from "./80-business/marketing";
+import type { Cluster, Workload } from "./60-infra/cluster";
 
 export const SAVE_VERSION = 2;
 
@@ -96,6 +97,10 @@ export interface GameState {
   staff: Employee[];
   candidates: Candidate[];
   marketing: Marketing;
+  clusters: Cluster[];
+  workloads: Workload[];
+  // Hours each service has been down since the last monthly invoice.
+  downHours: Record<string, number>;
 }
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
@@ -112,7 +117,8 @@ export function deviceDefaults(modelId: string, at: number) {
 const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>
   ({ id, model, brand, rackId, slot, panel, name, bond: "failover", groups: [], price, boughtAt: 0, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults(model, 0) });
 
-// Starting state: a 24U basement rack with a server and a switch, cabled to the home router so the server starts online.
+// Starting infrastructure: a 24U basement rack with a server and a switch, cabled to the home router so the server starts online.
+// startGame in 90-actions/start.ts adds the starting customers.
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, cash: START_CASH, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
@@ -127,7 +133,7 @@ export const newGame = (seed: number): GameState => ({
     { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper", color: null },
   ],
   ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], checklist: [],
-  customers: [], services: [],
+  customers: [], services: [], clusters: [], workloads: [], downHours: {},
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
   tickets: [], playerBusyUntil: 0, servicesDown: [],

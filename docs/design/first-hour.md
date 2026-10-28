@@ -39,7 +39,7 @@ The game opens paused on Saturday 1 January 2005 at 08:00, with the basement on 
 5. Repair the tower
 6. Add capacity outside the basement
 
-The three friends (Jonas, Mira and Tobi) are already customers on resold web hosting at €6 a month.
+The three friends (Jonas, Mira and Tobi) are already customers on web hosting at €6 a month, running on the basement server.
 
 ## Beat sheet
 

@@ -7,6 +7,7 @@ import { useStore } from "../../store";
 import { day } from "../hw";
 import { AddLocation } from "./AddLocation";
 import { Cabling } from "./Cabling";
+import { Clusters } from "./Clusters";
 import { CarrierPanel, Floor } from "./Floor";
 import { HomeLinePanel } from "./HomeLine";
 import { Inspector } from "./Inspector";
@@ -69,6 +70,7 @@ export function LocationsApp() {
               <CarrierPanel game={game} loc={loc} selected={deviceId} onDevice={setDeviceId} />
               {loc.space === "basement" && <HomeLinePanel game={game} />}
               <Storage game={game} loc={loc} />
+              <Clusters game={game} loc={loc} />
             </div>
             {deviceId && game.devices.some((d) => d.id === deviceId && d.panel === loc.id) && (
               <div className="loc-insp"><Inspector key={deviceId} game={game} device={game.devices.find((d) => d.id === deviceId)!} onSelect={setDeviceId} /></div>

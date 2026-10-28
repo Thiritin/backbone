@@ -55,7 +55,9 @@ export function deserialize(raw: string): GameState {
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [] })),
-    services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null })),
+    services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, plan: v.plan ?? null, sla: v.sla ?? "basic" })),
+    // Saves from before clusters keep their services unplaced, which leaves them online.
+    clusters: data.clusters ?? [], workloads: data.workloads ?? [], downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   };
 }
