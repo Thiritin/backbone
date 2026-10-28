@@ -152,16 +152,19 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     wires.push(<Wire key={l.id} color={l.color} hot={isHot(l.id)} d={route([[a.x, a.y + top], [a.x, a.y + top + da], [lx, a.y + top + da], [lx, gy], [p.x, gy], [p.x, p.y]])} />);
   });
 
+  // An IEC C13 plug, true to size (about 30 by 22 mm over the 24 by 16 mm inlet), with a 7 mm cord.
   const cords: ReactNode[] = [];
-  if (back) for (const { it, y: py, h } of placed.values()) {
-    psuInlets(it.model, w, h).forEach((p, k) => {
+  for (const { it, y: py, h } of placed.values()) {
+    psuInlets(it.model, side, w, h).forEach((p, k) => {
       if (!it.plugs?.[k]) return;
-      const x = pad + p.x, cy = top + py + p.y;
+      const x = pad + p.x, cy = top + py + p.y, bw = 30 * p.mm, bh = 22 * p.mm, cw = Math.max(2.4, 7 * p.mm);
       cords.push(
         <g key={`${it.id}p${k}`} aria-label={`${it.name} power cord ${k + 1}`}>
-          <path d={`M${x} ${cy}H${pad - 4}`} stroke="oklch(0.42 0.006 255)" strokeWidth="4.4" strokeLinecap="round" />
-          <path d={`M${x} ${cy}H${pad - 4}`} stroke="oklch(0.1 0.004 255)" strokeWidth="3" strokeLinecap="round" />
-          <rect x={x - 3.5} y={cy - 3.5} width="7" height="7" rx="1.2" fill="oklch(0.14 0.004 255)" stroke="oklch(0.42 0.006 255)" strokeWidth="0.6" />
+          <path d={`M${x - bw / 2} ${cy}H${pad - 4}`} stroke="oklch(0.4 0.006 255)" strokeWidth={cw + 1.2} />
+          <path d={`M${x - bw / 2} ${cy}H${pad - 4}`} stroke="oklch(0.1 0.004 255)" strokeWidth={cw} />
+          <rect x={x - bw / 2 - 4 * p.mm} y={cy - cw * 0.8} width={6 * p.mm} height={cw * 1.6} rx="1" fill="oklch(0.12 0.004 255)" />
+          <rect x={x - bw / 2} y={cy - bh / 2} width={bw} height={bh} rx={2.5 * p.mm} fill="oklch(0.13 0.004 255)" stroke="oklch(0.42 0.006 255)" strokeWidth="0.6" />
+          {[0.3, 0.5, 0.7].map((f) => <line key={f} x1={x - bw / 2 + bw * f} y1={cy - bh * 0.32} x2={x - bw / 2 + bw * f} y2={cy + bh * 0.32} stroke="oklch(0.22 0.004 255)" strokeWidth="0.7" />)}
         </g>,
       );
     });
