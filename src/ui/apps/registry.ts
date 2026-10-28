@@ -1,10 +1,11 @@
 import {
-  BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, Landmark, LifeBuoy, Lightbulb, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
+  BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, Landmark, LifeBuoy, Lightbulb, ListChecks, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { BankApp } from "./bank/BankApp";
 import { BillingApp } from "./billing/BillingApp";
+import { ChecklistApp } from "./checklist/ChecklistApp";
 import { FinanceApp } from "./finance/FinanceApp";
 import type { GameState } from "../../sim/50-state";
 import { CustomersApp } from "./customers/CustomersApp";
@@ -39,6 +40,7 @@ export const APPS: AppDef[] = [
   { name: "Unlocks", icon: Lightbulb, tile: "oklch(0.72 0.15 95)", about: "Spends know-how on new products, hardware and tools." },
   { name: "Getting started", icon: BookOpen, tile: "oklch(0.55 0.15 255)", about: "Explains the controls and how the game saves.", hidden: true },
   { name: "Notes", icon: FileText, tile: "oklch(0.7 0.13 85)", about: "Edits the notes on your desktop.", hidden: true },
+  { name: "Checklist", icon: ListChecks, tile: "oklch(0.58 0.14 150)", about: "Lists the goals from your first server to your own datacenter and marks the ones you reach.", body: ChecklistApp },
   { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: "Sets which apps may send notifications and how they appear." },
 ];
 
