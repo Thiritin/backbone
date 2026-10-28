@@ -596,7 +596,7 @@ Payment habits differ by segment. Private individuals forget most often, and ent
 - **Suspend services after**: Off, 7, 14 or 30 days overdue. Services come back as soon as the invoice is paid.
 - **Send to collections after**: Off, 42, 60 or 90 days overdue, once the final notice has gone out. Off by default, so collections stays a manual step until you turn it on.
 
-**Customers as a CRM.** The Customers app is the hub for everything about a customer: a searchable, filterable list, and for each customer an overview with lifetime spend, open balance, active services, invoices, tickets and their workloads. Every item links to the app that handles it (Billing, Support, the virtual machine manager).
+**Customers as a CRM.** The Customers app is the hub for everything about a customer: a searchable, filterable list, and for each customer a full-page dashboard in the spirit of a hosting control panel's client summary. The list gives way to the dashboard, and a back control returns to it. The header carries the name, status, monthly value, open balance, customer since and happiness; tabs below it hold the Summary (contact, figures, services at a glance, recent invoices and tickets), Services (one card per service with plan, price, billing, SLA, term and location, and the price change), Invoices, Tickets and Activity. The contact email is drawn on the customer's own domain when one of their services is a domain, otherwise on one named after them. Every item links to the app that handles it (Billing, Support, the virtual machine manager).
 
 ## Staff and AI bots
 
