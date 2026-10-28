@@ -12,8 +12,6 @@ export const STUDY_COST: Record<Budget, number> = { low: 800, medium: 2000, high
 export const studyCost = (p: Profile): number => STUDY_COST[profileStats(p).budget];
 export const studied = (s: GameState, p: Profile): boolean => s.marketing.studies.includes(p);
 
-// The hidden budget range of a request as a ratio to its reference (sales.ts, budgetOf).
-export const BUDGET_RANGE: [number, number] = [0.97, 1.24];
 
 export const DEMANDED: Product[] = [...new Set(PROFILE_IDS.flatMap((p) => NEEDS[p].map(([x]) => x)))];
 const weight = (p: Profile, product: Product): number => NEEDS[p].find(([x]) => x === product)?.[1] ?? 0;
