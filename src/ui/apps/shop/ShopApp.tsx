@@ -1,9 +1,10 @@
-import { Cable, HardDrive, Network, Server, Shield, ShoppingCart, Store } from "lucide-react";
+import { AppWindow, Cable, HardDrive, Network, Server, Shield, ShoppingCart, Store } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { brandsFor, COMPONENTS, MANUFACTURERS, priceOf, shopModels, type ComponentKind, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import { Cart, Stepper } from "./Cart";
+import { Software } from "./Software";
 import { lineOf } from "../../art/fronts";
 import { Isometric } from "../../art/Isometric";
 import { BrandLogo } from "../../art/logos";
@@ -34,6 +35,8 @@ export function ShopApp() {
   const hour = useStore((s) => s.game.hour);
   const [maker, setMaker] = useState<string | null>(null);
   const [cls, setCls] = useState<string | null>(null);
+  const [software, setSoftware] = useState(false);
+  const pick = (m: string | null, c: string | null) => { setMaker(m); setCls(c); setSoftware(false); };
   const all = items(yearOf(hour));
   const shown = all.filter((it) => (!maker || it.brand === maker) && (!cls || it.cls === cls));
   const count = (f: (it: Item) => boolean) => all.filter(f).length;
@@ -44,15 +47,16 @@ export function ShopApp() {
     <div className="shop">
       <aside className="sidebar shop-side">
         <div className="side-h">Manufacturer</div>
-        <button className={`side-item${!maker ? " active" : ""}`} aria-pressed={!maker} onClick={() => setMaker(null)}><Store />All<span className="side-count">{count((it) => !cls || it.cls === cls)}</span></button>
+        <button className={`side-item${!maker && !software ? " active" : ""}`} aria-pressed={!maker && !software} onClick={() => pick(null, cls)}><Store />All<span className="side-count">{count((it) => !cls || it.cls === cls)}</span></button>
+        <button className={`side-item${software ? " active" : ""}`} aria-pressed={software} onClick={() => { pick(null, null); setSoftware(true); }}><AppWindow />Software</button>
         {MANUFACTURERS.map(({ name }) => (
-          <button key={name} className={`side-item${maker === name ? " active" : ""}`} aria-pressed={maker === name} onClick={() => setMaker(name)}>
+          <button key={name} className={`side-item${maker === name ? " active" : ""}`} aria-pressed={maker === name} onClick={() => pick(name, cls)}>
             <BrandLogo brand={name} size={16} />{name}<span className="side-count">{count((it) => it.brand === name && (!cls || it.cls === cls))}</span>
           </button>
         ))}
         <div className="side-h">Class</div>
         {CLASSES.filter(([c]) => all.some((it) => it.cls === c)).map(([c, Icon]) => (
-          <button key={c} className={`side-item${cls === c ? " active" : ""}`} aria-pressed={cls === c} onClick={() => setCls(cls === c ? null : c)}>
+          <button key={c} className={`side-item${cls === c ? " active" : ""}`} aria-pressed={cls === c} onClick={() => pick(maker, cls === c ? null : c)}>
             <Icon />{c}<span className="side-count">{count((it) => it.cls === c && (!maker || it.brand === maker))}</span>
           </button>
         ))}
@@ -63,10 +67,12 @@ export function ShopApp() {
           <button className="btn ghost" aria-pressed={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingCart />Cart<span className="num shop-count">{inCart}</span></button>
         </div>
         <div className="shop-body">
-          <div className="shop-grid">
-            {shown.map((it) => <Card key={`${it.model.id}|${it.brand}`} {...it} />)}
-            {!shown.length && <div className="shop-none">No models</div>}
-          </div>
+          {software ? <Software /> : (
+            <div className="shop-grid">
+              {shown.map((it) => <Card key={`${it.model.id}|${it.brand}`} {...it} />)}
+              {!shown.length && <div className="shop-none">No models</div>}
+            </div>
+          )}
           {cartOpen && <Cart />}
         </div>
       </div>

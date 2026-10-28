@@ -1,6 +1,7 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
 import { componentKinds, modelById, type ComponentKind } from "./10-catalog/hardware";
+import { STARTER_APPS } from "./10-catalog/store";
 import { DEFAULT_HOME_LINE, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Service } from "./30-customers/customers";
@@ -78,8 +79,12 @@ export interface GameState {
   // Positions rented by competitors in each datacenter.
   dcs: Record<string, { others: number }>;
   waitlist: WaitlistEntry[];
-  // Research unlocks, such as "monitoring".
+  // Research unlocks, such as "monitoring" or a Pear Store item id.
   unlocks: string[];
+  // Know-how points to spend on research.
+  knowHow: number;
+  // Apps in the dock and bought Pear Store upgrades; every Pear Store item here is billed monthly.
+  installed: string[];
   // Checklist goals the player ticked by hand.
   checklist: string[];
   company: Company;
@@ -113,7 +118,7 @@ export const newGame = (seed: number): GameState => ({
     { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper", color: null },
     { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper", color: null },
   ],
-  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], checklist: [],
+  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], knowHow: 0, installed: [...STARTER_APPS], checklist: [],
   customers: [], services: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0 },

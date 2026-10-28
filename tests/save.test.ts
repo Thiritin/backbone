@@ -1,4 +1,5 @@
 import { START_CASH } from "../src/sim/10-catalog/economy";
+import { WIDGETS } from "../src/sim/10-catalog/store";
 import { describe, expect, it } from "vitest";
 import { newGame } from "../src/sim/50-state";
 import { linkStatus } from "../src/sim/60-infra/status";
@@ -54,7 +55,7 @@ describe("save", () => {
     };
     const s = deserialize(JSON.stringify(v1));
     const fresh = newGame(4);
-    expect(s).toEqual({ ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5 });
+    expect(s).toEqual({ ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...fresh.installed, ...WIDGETS.map(([id]) => id)] });
     expect(linkStatus(s, "dev3").online).toBe(true);
     tick(s);
   });

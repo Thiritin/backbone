@@ -5,6 +5,7 @@ import { billingTick } from "../45-billing/billing";
 import { supportTick } from "../40-support/tick";
 import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
+import { KNOW_HOW, storeItem, subscriptionPrice } from "../10-catalog/store";
 import { capacityAt, DATACENTERS, datacenterById, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry } from "../50-state";
 import { arrayLost, dcAvailability, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
@@ -129,6 +130,10 @@ function service(s: GameState) {
   });
 }
 
+// Every contract running at the month start earns its product's know-how.
+export const knowHowPerMonth = (s: GameState): number =>
+  s.services.filter((v) => v.endedAt === null).reduce((sum, v) => sum + KNOW_HOW[v.product], 0);
+
 export function tick(state: GameState): SimEvent[] {
   state.powerDue += powerPerHour(state);
   state.hour++;
@@ -187,13 +192,19 @@ export function tick(state: GameState): SimEvent[] {
     for (const l of leases) bills.push({ hour: state.hour, category: "leasing", key: "ledger.lease", params: { lessor: lessorName(l.lessor), paid: l.paid, months: l.months }, amount: -l.monthly });
     state.leases = leases;
     for (const l of leases.filter((x) => x.paid >= x.months)) endLease(state, l.id);
+    for (const id of state.installed) {
+      const item = storeItem(id);
+      if (item) bills.push({ hour: state.hour, category: "subscriptions", key: "ledger.subscription", params: { name: item.name }, amount: -subscriptionPrice(item, yearOf(state.hour)) });
+    }
     if (power > 0) bills.unshift({ hour: state.hour, category: "power", key: "ledger.power", params: {}, amount: -power });
     const rent = bills.filter((b) => b.category === "rent").reduce((sum, b) => sum - b.amount, 0);
     const leasing = bills.filter((b) => b.category === "leasing").reduce((sum, b) => sum - b.amount, 0);
-    state.cash = cents(state.cash - power - rent - leasing);
+    const subscriptions = cents(bills.filter((b) => b.category === "subscriptions").reduce((sum, b) => sum - b.amount, 0));
+    state.cash = cents(state.cash - power - rent - leasing - subscriptions);
     state.powerDue = 0;
     state.ledger = [...state.ledger, ...bills];
-    if (bills.length) events.push({ app: "Finance", key: "event.bills", params: { power, rent, leasing: cents(leasing), total: cents(power + rent + leasing) } });
+    if (bills.length) events.push({ app: "Finance", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
+    state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
   events.push(...billingTick(state));
   events.push(...supportTick(state));

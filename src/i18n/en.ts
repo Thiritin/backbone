@@ -21,9 +21,19 @@ export const en: Record<string, (p: Params) => string> = {
   "save.importFailed.text": () => "The file is not a Backbone save.",
   "action.failed.title": () => "That didn't work",
   "event.bills.title": () => "Monthly bills",
-  "event.bills.text": (p) => Number(p.leasing) > 0
-    ? `You paid ${euro(Number(p.power))} for power, ${euro(Number(p.rent))} for rent and ${euro(Number(p.leasing))} for leasing.`
-    : `You paid ${euro(Number(p.power))} for power and ${euro(Number(p.rent))} for rent.`,
+  "event.bills.text": (p) => {
+    const parts = [`${euro(Number(p.power))} for power`, `${euro(Number(p.rent))} for rent`];
+    if (Number(p.leasing) > 0) parts.push(`${euro(Number(p.leasing))} for leasing`);
+    if (Number(p.subscriptions) > 0) parts.push(`${euro(Number(p.subscriptions))} for Pear One`);
+    return `You paid ${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}.`;
+  },
+  "ledger.subscription": (p) => `Pear One subscription: ${p.name}`,
+  "error.unknownStoreItem": () => "The Pear Store does not sell this.",
+  "error.researched": () => "This is already researched.",
+  "error.noKnowHow": () => "You do not have enough know-how.",
+  "error.needsResearch": () => "Research this first.",
+  "error.installed": () => "This is already installed.",
+  "error.notInstalled": () => "This is not installed.",
   "ledger.hardware": (p) => `${Number(p.qty) > 1 ? `${p.qty} × ` : ""}${p.model}${p.device ? ` for ${p.device}` : ""}`,
   "ledger.power": () => "Power",
   "ledger.rent": (p) => `Rent for ${p.rack}`,

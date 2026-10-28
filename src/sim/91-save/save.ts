@@ -1,6 +1,7 @@
 import { RENAMED_MODELS } from "../10-catalog/hardware";
 import { yearOf } from "../00-core/time";
 import { capacityAt, DATACENTERS, nextAz, seedDcs } from "../20-world/datacenters";
+import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { deviceDefaults, newGame, SAVE_VERSION, type Device, type GameState } from "../50-state";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
@@ -41,6 +42,8 @@ export function deserialize(raw: string): GameState {
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
     company: { ...base.company, ...data.company },
+    // Saves from before the Pear Store keep every widget they showed.
+    installed: data.installed ?? [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [] })),
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null })),
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null) })),

@@ -491,15 +491,20 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 
 | Module | App | Base per month | Plus | Needs |
 | --- | --- | --- | --- | --- |
-| Starter | Locations, Shop, Support, Customers, Billing (manual), Bank, Settings, Notes, Pear Store | Free | | Start |
+| Starter | Locations, Shop, Customers, Support, Billing (manual), Finance (account statement), Bank, Unlocks, Checklist, Settings, Pear Store | Free | | Start |
 | Monitoring | Monitoring | €10 | €0.50 per monitored device | Monitoring research |
 | Virtual machines | Virtual machines | €20 | €2 per host | Virtualization research |
-| Network | Network | €25 | | Level 2 |
+| Network | Network | €25 | | 300 know-how |
+| Products | Products | €15 | | 200 know-how |
 | Billing automation | Billing rules, invoice runs | €30 | €0.10 per active customer | Level 2 |
-| Finance | Finance | €15 | | Level 2 |
-| Staff | Staff | €20 | €5 per employee | Level 2 |
-| Marketing | Marketing | €20 | | Level 2 |
+| Staff | Staff | €20 | €5 per employee | 100 know-how |
+| Marketing | Marketing | €20 | | 300 know-how |
+| Market | Market | €15 | | 800 know-how |
+| Dock badges | Upgrade: counts on dock apps | €5 | | 50 know-how |
+| Widgets | Upgrade: one desktop widget each | €1 (calendar, open tickets, cash, customers), €2 (monthly revenue, level) | | Start |
 | Storefront | The customer shop in Sales | €40 | 0.5% of shop revenue | Shop unlock |
+
+Installing pays the first month at once and is refused without the cash for it; later months are billed on the 1st as "Pear One" in the ledger. Cancelling stops billing and keeps research. Saves from before the Pear Store keep every widget, billed like a new purchase. The per-device, per-customer and per-employee extras and the surprise price adjustments are not in the game yet.
 
 The monitoring and virtualization products' own licences (see the software choices) come on top of the Pear module.
 
@@ -810,7 +815,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 
 | Product | Know-how |
 | --- | --- |
-| Domain, SSL certificate | 0.2 |
+| Domain, SSL certificate, DNS | 0.2 |
 | Web hosting, VPN | 1 |
 | Game server | 1.5 |
 | VPS | 2 |

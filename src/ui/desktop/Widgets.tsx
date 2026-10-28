@@ -22,30 +22,32 @@ export function Widgets() {
   const game = useStore((s) => s.game);
   const m = metrics(game);
   const d = dateOf(game.hour);
+  const has = (id: string) => game.installed.includes(id);
+  if (!game.installed.some((id) => id.startsWith("widget"))) return null;
   return (
     <div className="widgets" aria-label="Widgets">
-      <div className="widget w-cal">
+      {has("widgetCalendar") && <div className="widget w-cal">
         <span className="w-weekday">{fmt(d, { weekday: "long" })}</span>
         <span className="w-big num">{d.getUTCDate()}<span className="w-month">{fmt(d, { month: "short" }).slice(0, 3)}</span></span>
         <span className="w-sub num">{d.getUTCFullYear()}</span>
-      </div>
-      <Widget app="Support" icon={<LifeBuoy />} label="Open tickets">
+      </div>}
+      {has("widgetTickets") && <Widget app="Support" icon={<LifeBuoy />} label="Open tickets">
         <span className="w-big num">{m.openTickets}</span>
-      </Widget>
-      <Widget app="Finance" icon={<Wallet />} label="Cash">
+      </Widget>}
+      {has("widgetCash") && <Widget app="Finance" icon={<Wallet />} label="Cash">
         <span className="w-big num">{euro(m.cash)}</span>
-      </Widget>
-      <Widget app="Finance" icon={<ChartLine />} label="Monthly revenue">
+      </Widget>}
+      {has("widgetRevenue") && <Widget app="Finance" icon={<ChartLine />} label="Monthly revenue">
         <span className="w-big num">{euro(m.mrr)}</span>
-      </Widget>
-      <Widget app="Customers" icon={<Users />} label="Customers">
+      </Widget>}
+      {has("widgetCustomers") && <Widget app="Customers" icon={<Users />} label="Customers">
         <span className="w-big num">{m.customers}</span>
-      </Widget>
-      <Widget app="Finance" icon={<Trophy />} label={`Level ${m.level.level}`}>
+      </Widget>}
+      {has("widgetLevel") && <Widget app="Finance" icon={<Trophy />} label={`Level ${m.level.level}`}>
         <span className="w-name">{m.level.name}</span>
         <span className="w-bar"><span style={{ width: `${m.progress * 100}%` }} /></span>
         {m.next && <span className="w-sub num">{euro(m.netWorth)} of {euro(m.next.netWorth)}</span>}
-      </Widget>
+      </Widget>}
     </div>
   );
 }
