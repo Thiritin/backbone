@@ -1,6 +1,7 @@
 import { RENAMED_MODELS } from "../10-catalog/hardware";
 import { yearOf } from "../00-core/time";
 import { capacityAt, DATACENTERS, nextAz, seedDcs } from "../20-world/datacenters";
+import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { deviceDefaults, newGame, SAVE_VERSION, type Device, type GameState } from "../50-state";
 
@@ -8,6 +9,11 @@ import { deviceDefaults, newGame, SAVE_VERSION, type Device, type GameState } fr
 export const serialize = (state: GameState): string => JSON.stringify(state);
 
 const REPAIR_FLOOR = 0.8;
+
+const learned = (id: string): string[] => {
+  const skill = skillById(id) ?? skillFor(id);
+  return skill ? [...skill.needs.flatMap(learned), skill.id] : [id];
+};
 const INFRA = ["nextId", "locations", "racks", "devices", "cables"] as const;
 
 // Old saves keep loading: every field missing from a save takes its new-game default.
@@ -43,7 +49,10 @@ export function deserialize(raw: string): GameState {
     billingRules: { ...base.billingRules, ...data.billingRules },
     company: { ...base.company, ...data.company },
     // Saves from before the Pear Store keep every widget they showed.
-    installed: data.installed ?? [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
+    // The Research app was called Unlocks.
+    installed: data.installed?.map((id) => (id === "Unlocks" ? "Research" : id)) ?? [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
+    // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
+    unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [] })),
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null })),
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),

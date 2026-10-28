@@ -94,8 +94,3 @@
 .ps-includes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .ps-includes li { display: flex; align-items: center; gap: 8px; }
 .ps-includes svg.lucide { width: 15px; height: 15px; color: var(--accent-text); }
-.unl { flex: 1; min-width: 0; overflow: auto; }
-.unl-head { display: flex; align-items: baseline; gap: 10px; padding: 16px 16px 12px; }
-.unl-head span { color: var(--text-2); }
-.unl-head strong { font-size: 22px; font-weight: 600; }
-.unl-name { display: inline-flex; align-items: center; gap: 8px; }

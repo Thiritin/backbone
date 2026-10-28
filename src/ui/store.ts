@@ -34,6 +34,9 @@ interface Store {
   // The Welcome to Pear sheet a new game opens with.
   welcome: boolean;
   closeWelcome: () => void;
+  // The skill whose How it works sheet is open.
+  explain: string | null;
+  setExplain: (id: string | null) => void;
   advance: (hours: number) => void;
   act: (fn: (s: GameState) => ActionResult) => ActionResult;
   setSpeed: (s: Speed) => void;
@@ -67,7 +70,7 @@ interface Store {
 export interface CartLine { model: string; brand: string; qty: number }
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, explain: null });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -121,6 +124,8 @@ export const useStore = create<Store>((set, get) => ({
     set({ welcome: false });
     get().openApp("Getting started");
   },
+  explain: null,
+  setExplain: (explain) => set({ explain }),
   started: initial.loaded,
   unseen: 0,
   cart: [],
@@ -138,7 +143,10 @@ export const useStore = create<Store>((set, get) => ({
   advance: (hours) => {
     const game = { ...get().game, rng: { ...get().game.rng } };
     for (let i = 0; i < hours; i++) {
-      for (const e of tick(game)) get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params));
+      for (const e of tick(game)) {
+        get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params));
+        if (e.key === "event.trainingDone") set({ explain: String(e.params.id) });
+      }
     }
     set({ game });
   },
@@ -156,7 +164,7 @@ export const useStore = create<Store>((set, get) => ({
     const open = ws.find((w) => w.app === app);
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
-    const n = ws.length % 8, size = app === "Locations" ? { w: 1120, h: 700 } : app === "Shop" ? { w: 1180, h: 700 } : app === "Billing" || app === "Bank" || app === "Customers" ? { w: 1240, h: 680 } : app === "Support" ? { w: 1160, h: 680 } : { w: 760, h: 480 };
+    const n = ws.length % 8, size = app === "Locations" ? { w: 1120, h: 700 } : app === "Shop" ? { w: 1180, h: 700 } : app === "Billing" || app === "Bank" || app === "Customers" ? { w: 1240, h: 680 } : app === "Support" ? { w: 1160, h: 680 } : app === "Research" ? { w: 1140, h: 600 } : { w: 760, h: 480 };
     set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x: 96 + n * 32, y: 64 + n * 28, ...size, z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   openDoc: (doc) => {

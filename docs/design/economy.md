@@ -504,20 +504,20 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 
 | Module | App | Base per month | Plus | Needs |
 | --- | --- | --- | --- | --- |
-| Starter | Locations, Shop, Customers, Support, Billing (manual), Finance (account statement), Bank, Unlocks, Checklist, Settings, Pear Store | Free | | Start |
-| Monitoring | Monitoring | €10 | €0.50 per monitored device | Monitoring research |
+| Starter | Locations, Shop, Customers, Support, Billing (manual), Finance (account statement), Bank, Research, Checklist, Settings, Pear Store | Free | | Start |
+| Monitoring | Monitoring | €10 | €0.50 per monitored device | Monitoring skill |
 | Virtual machines | Virtual machines | €20 | €2 per host | Virtualization research |
-| Network | Network | €25 | | 300 know-how |
-| Products | Products | €15 | | 200 know-how |
+| Network | Network | €25 | | Network operations skill |
+| Products | Products | €15 | | Product management skill |
 | Billing automation | Billing rules, invoice runs | €30 | €0.10 per active customer | Level 2 |
-| Staff | Staff | €20 | €5 per employee | 100 know-how |
-| Marketing | Marketing | €20 | | 300 know-how |
-| Market | Market | €15 | | 800 know-how |
-| Dock badges | Upgrade: counts on dock apps | €5 | | 50 know-how |
+| Staff | Staff | €20 | €5 per employee | Employee management skill |
+| Marketing | Marketing | €20 | | Marketing campaigns skill |
+| Market | Market | €15 | | Market research skill |
+| Dock badges | Upgrade: counts on dock apps | €5 | | Monitoring skill |
 | Widgets | Upgrade: one desktop widget each | €1 (calendar, open tickets, cash, customers), €2 (monthly revenue, level) | | Start |
 | Storefront | The customer shop in Sales | €40 | 0.5% of shop revenue | Shop unlock |
 
-Installing pays the first month at once and is refused without the cash for it; later months are billed on the 1st as "Pear One" in the ledger. Cancelling stops billing and keeps research. Saves from before the Pear Store keep every widget, billed like a new purchase. The per-device, per-customer and per-employee extras and the surprise price adjustments are not in the game yet.
+Installing pays the first month at once and is refused without the cash for it; later months are billed on the 1st as "Pear One" in the ledger. Cancelling stops billing and keeps the skill. Saves from before the Pear Store keep every widget, billed like a new purchase. The per-device, per-customer and per-employee extras and the surprise price adjustments are not in the game yet.
 
 The monitoring and virtualization products' own licences (see the software choices) come on top of the Pear module.
 
@@ -615,7 +615,7 @@ A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD t
 | High-density feed | Doubles the position's kW limit | 60% of the position price per month |
 | Basement circuit | One extra household circuit, +3 kW | €400 once |
 
-**Monitoring.** Without monitoring, failures only show as lights on the device fronts. Monitoring is a research unlock at level 1.
+**Monitoring.** Without monitoring, failures only show as lights on the device fronts. Monitoring is a tier 1 skill in Research.
 
 | Product | Parody of | Price | Trade-off |
 | --- | --- | --- | --- |
@@ -836,6 +836,20 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Cloud servers, managed Kubernetes | 4 |
 | Dedicated server, CDN | 5 |
 | Colocation | 6 |
+
+**Skills.** Trainings in the Research app make Pear Store items available. Know-how is paid when a training starts, one training runs at a time, and the skill is learned after its duration.
+
+| Skill | Tier | Know-how | Training | Needs | Makes available |
+| --- | --- | --- | --- | --- | --- |
+| Monitoring | 1 | 50 | 5 days | | Dock badges, failure notifications |
+| Marketing basics | 1 | 50 | 5 days | | Leads to Product management and Marketing campaigns |
+| Employee management | 1 | 100 | 10 days | | Staff |
+| Network operations | 2 | 300 | 14 days | Monitoring | Network |
+| Product management | 2 | 200 | 14 days | Marketing basics | Products |
+| Marketing campaigns | 2 | 300 | 14 days | Marketing basics, Employee management | Marketing |
+| Market research | 3 | 800 | 21 days | Product management, Marketing campaigns | Market |
+
+The whole tree costs 1,800 know-how and 83 days of training.
 
 **Unlocks.** Launch costs are fixed and do not follow the price multipliers.
 

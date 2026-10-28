@@ -6,7 +6,7 @@ import { MODELS, modelById, PATCH_BRAND, SERVER_BRANDS, SWITCH_BRAND, type Devic
 import { APPS } from "../apps/registry";
 import { DeviceSvg, type Lamp, type PortLamp } from "../art/fronts";
 import { Logo } from "../art/logos";
-import { PAGES, type Block, type Inline } from "./intro-text";
+import { PAGES, type Block, type Inline, type Page } from "./intro-text";
 import "./intro.css";
 
 const PATCH = MODELS.find((m) => m.kind === "patch")!;
@@ -69,7 +69,8 @@ function BlockView({ b }: { b: Block }) {
 
 const FOCUSABLE = "button:not(:disabled), [href], [tabindex]:not([tabindex='-1'])";
 
-export function Intro({ onClose }: { onClose: () => void }) {
+// Shows the introduction by default; art tops the first page when ART has no picture for it.
+export function Intro({ onClose, pages = PAGES, art }: { onClose: () => void; pages?: Page[]; art?: ReactNode }) {
   const [n, setN] = useState(0);
   const [dir, setDir] = useState("fwd");
   const sheet = useRef<HTMLDivElement>(null);
@@ -79,8 +80,9 @@ export function Intro({ onClose }: { onClose: () => void }) {
     const a = document.activeElement as HTMLElement | null;
     return a?.closest(".mb-menu")?.querySelector<HTMLElement>(".mb-item") ?? a;
   });
-  const last = PAGES.length - 1;
-  const page = PAGES[n];
+  const last = pages.length - 1;
+  const page = pages[n];
+  const pic = ART[page.title] ?? (n === 0 ? art : null);
 
   useEffect(() => {
     next.current?.focus();
@@ -118,16 +120,16 @@ export function Intro({ onClose }: { onClose: () => void }) {
 
   return createPortal(
     <div className="intro-backdrop" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.target === e.currentTarget && e.preventDefault()} onKeyDown={key}>
-      <div ref={sheet} className="intro" tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="intro-title">
+      <div ref={sheet} className={pages === PAGES ? "intro" : "intro compact"} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="intro-title">
         <div key={n} className={`intro-page ${dir}`}>
-          {ART[page.title] && <div className="intro-art" aria-hidden="true">{ART[page.title]}</div>}
+          {pic && <div className="intro-art" aria-hidden="true">{pic}</div>}
           <h2 id="intro-title">{page.title}</h2>
           <div className="intro-body">{page.blocks.map((b, i) => <BlockView key={i} b={b} />)}</div>
         </div>
         <footer className="intro-foot">
           <button className="btn ghost" onClick={onClose}>Close</button>
           <div className="intro-dots">
-            {PAGES.map((p, i) => (
+            {pages.map((p, i) => (
               <button key={i} aria-label={p.title} aria-current={i === n ? "step" : undefined} onClick={() => go(i)} />
             ))}
           </div>

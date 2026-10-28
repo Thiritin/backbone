@@ -4,6 +4,7 @@
   background: var(--win); color: var(--text); box-shadow: var(--shadow-win);
   animation: alert-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+.intro.compact { height: min(480px, calc(100vh - 80px)); }
 .intro:focus { outline: none; }
 .intro-page { min-height: 0; display: grid; grid-template-rows: auto auto 1fr; padding: 28px 40px 0; animation: intro-fwd 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .intro-page.back { animation-name: intro-back; }

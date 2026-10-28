@@ -8,7 +8,7 @@ import { Software } from "./Software";
 import { lineOf } from "../../art/fronts";
 import { Isometric } from "../../art/Isometric";
 import { BrandLogo } from "../../art/logos";
-import { useStore } from "../../store";
+import { useFocus, useStore } from "../../store";
 import { cores, disk, height, portsText, ram, speed } from "../hw";
 import "./shop.css";
 
@@ -37,6 +37,7 @@ export function ShopApp() {
   const [cls, setCls] = useState<string | null>(null);
   const [software, setSoftware] = useState(false);
   const pick = (m: string | null, c: string | null) => { setMaker(m); setCls(c); setSoftware(false); };
+  useFocus("Shop", (f) => { if (f.kind === "software") { pick(null, null); setSoftware(true); } });
   const all = items(yearOf(hour));
   const shown = all.filter((it) => (!maker || it.brand === maker) && (!cls || it.cls === cls));
   const count = (f: (it: Item) => boolean) => all.filter(f).length;

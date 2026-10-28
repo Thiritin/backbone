@@ -4,7 +4,7 @@ import { STARTER_APPS, storeItem, subscriptionPrice, WIDGETS } from "../src/sim/
 import { newGame, type GameState } from "../src/sim/50-state";
 import { knowHowPerMonth, tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { cancel, install, research } from "../src/sim/90-actions/store";
+import { cancel, install } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
@@ -38,15 +38,10 @@ describe("pear store", () => {
     expect(s.knowHow).toBeCloseTo(6.4);
   });
 
-  it("researches with know-how, installs into the dock and bills monthly", () => {
+  it("installs into the dock once the skill is learned and bills monthly", () => {
     const s = newGame(4);
     expect(install(s, "Network")).toEqual({ ok: false, error: "error.needsResearch" });
-    expect(research(s, "Network")).toEqual({ ok: false, error: "error.noKnowHow" });
-    s.knowHow = 350;
-    expect(research(s, "Network")).toEqual({ ok: true });
-    expect(s.knowHow).toBe(50);
-    expect(s.unlocks).toContain("Network");
-    expect(research(s, "Network")).toEqual({ ok: false, error: "error.researched" });
+    s.unlocks = ["monitoring", "network"];
 
     const cash = s.cash;
     expect(install(s, "Network")).toEqual({ ok: true });
@@ -60,7 +55,7 @@ describe("pear store", () => {
 
     expect(cancel(s, "Network")).toEqual({ ok: true });
     expect(s.installed).not.toContain("Network");
-    expect(s.unlocks).toContain("Network");
+    expect(s.unlocks).toContain("network");
     runTo(s, at(2005, 3));
     expect(s.ledger.filter((e) => e.key === "ledger.subscription")).toHaveLength(2);
     expect(cancel(s, "Locations")).toEqual({ ok: false, error: "error.notInstalled" });
@@ -73,15 +68,13 @@ describe("pear store", () => {
     expect(install(s, "widgetCash")).toEqual({ ok: true });
     expect(s.installed).toContain("widgetCash");
     expect(s.cash).toBe(cash - 1);
-    expect(research(s, "widgetCash")).toEqual({ ok: false, error: "error.researched" });
     expect(cancel(s, "widgetCash")).toEqual({ ok: true });
     expect(s.installed).not.toContain("widgetCash");
   });
 
   it("blocks an install the cash cannot pay", () => {
     const s = newGame(5);
-    s.knowHow = 50;
-    research(s, "dockBadges");
+    s.unlocks = ["monitoring"];
     s.cash = 4;
     expect(install(s, "dockBadges")).toEqual({ ok: false, error: "error.noCash" });
     expect(s.installed).not.toContain("dockBadges");

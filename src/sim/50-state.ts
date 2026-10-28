@@ -79,8 +79,10 @@ export interface GameState {
   // Positions rented by competitors in each datacenter.
   dcs: Record<string, { others: number }>;
   waitlist: WaitlistEntry[];
-  // Research unlocks, such as "monitoring" or a Pear Store item id.
+  // Learned research skills (SKILLS ids).
   unlocks: string[];
+  // The skill in training and the hour it is learned.
+  training: { id: string; doneAt: number } | null;
   // Know-how points to spend on research.
   knowHow: number;
   // Apps in the dock and bought Pear Store upgrades; every Pear Store item here is billed monthly.
@@ -118,7 +120,7 @@ export const newGame = (seed: number): GameState => ({
     { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper", color: null },
     { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper", color: null },
   ],
-  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], knowHow: 0, installed: [...STARTER_APPS], checklist: [],
+  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], checklist: [],
   customers: [], services: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },

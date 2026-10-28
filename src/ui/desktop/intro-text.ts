@@ -1,4 +1,5 @@
 import md from "../../../docs/design/intro.md?raw";
+import researchMd from "../../../docs/design/research.md?raw";
 
 export type Inline = { text: string; style?: "b" | "s"; href?: string };
 export type Block =
@@ -40,3 +41,9 @@ export function parseIntro(src: string): Page[] {
 }
 
 export const PAGES = parseIntro(md);
+
+// research.md: each ## section is a skill by name, and each ### inside it a page.
+export const SKILL_PAGES: Record<string, Page[]> = Object.fromEntries(researchMd.split(/^## /m).slice(1).map((sec) => {
+  const [name, ...rest] = sec.split("\n");
+  return [name.trim(), parseIntro(rest.join("\n").replace(/^### /gm, "## "))];
+}));

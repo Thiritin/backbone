@@ -54,7 +54,7 @@ The hour ends in mid-April with 8 VPS customers, the three friends, about €70 
 | 0:12 | 12 Jan | Likely: a second customer, often a hobby developer | Nothing | Sales arrive on their own |
 | 0:15 | 15 Jan | The friends pay; cash rises by €18 | Switches to 2× | Invoices pay themselves |
 | 0:21 | 26 Jan | Taught: the gamer has not paid, and a reminder button appears in Billing | Sends the reminder; they pay two days later | Dunning by hand |
-| 0:24 | 1 Feb | Monthly tick: about 5 know-how and a January report in Finance. Unlocks shows rented rack units at 50 know-how | Opens Finance and Unlocks | Monthly rhythm, research |
+| 0:24 | 1 Feb | Monthly tick: about 5 know-how and a January report in Finance. Research shows rented rack units at 50 know-how | Opens Finance and Research | Monthly rhythm, research |
 | 0:33 | 18 Feb | Taught: the tower's power supply fails. Every VPS goes down and outage tickets arrive | Clicks Repair, which uses the spare kit; answers the tickets with a status reply or a credit | Failures, no redundancy, spares |
 | 0:35 | 22 Feb | No spare kit is left in stock | Buys a new kit for €50 | Spares cost money |
 | 0:45 | 15 Mar | The home line passes 60% at peak, and the performance score starts to fall | Opens Network and sees the evening peak | Bandwidth, headroom |

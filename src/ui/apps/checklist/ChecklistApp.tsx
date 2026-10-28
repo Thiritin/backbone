@@ -42,7 +42,7 @@ const STAGES: { name: string; goals: Goal[] }[] = [
     { id: "ddos", title: "Turn on DDoS protection", text: "Protection keeps an attack from taking your customers offline." },
   ] },
   { name: "Growth", goals: [
-    { id: "research", title: "Research your first unlock", text: "Unlocks spend know-how on new products, hardware and tools." },
+    { id: "research", title: "Complete your first training", text: "Research trains your company in new skills with the know-how it earns." },
     { id: "marketing", title: "Run a marketing campaign", text: "Campaigns bring in new customers when demand is low." },
     { id: "secondCity", title: "Open a site in a second city", text: "A second city spreads your servers over more than one region." },
     { id: "cage", title: "Rent a cage", text: "A cage is a locked area in the hall with room for several of your racks." },

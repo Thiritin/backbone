@@ -2,7 +2,8 @@ import { BellDot, CalendarDays, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy,
 import { useState, type CSSProperties } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { needsResearch, storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
+import { isAvailable, skillFor } from "../../../sim/10-catalog/research";
+import { storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
 import { cancel, install } from "../../../sim/90-actions/store";
 import { PearMark } from "../../desktop/Intro";
 import { appByName } from "../registry";
@@ -49,7 +50,8 @@ export function Tile({ item, size }: { item: StoreItem; size: number }) {
 function Action({ item, big }: { item: StoreItem; big?: boolean }) {
   const { game, act, openApp } = useStore();
   const cls = `ps-get${big ? " big" : ""}`;
-  if (needsResearch(item, game.unlocks)) return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Unlocks"); }}>Research</button>;
+  const skill = skillFor(item.id);
+  if (skill && !isAvailable(item.id, game.unlocks)) return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Research", { kind: "skill", id: skill.id }); }}>Needs {skill.name}</button>;
   if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act((s) => install(s, item.id)); }}>Get</button>;
   if (item.kind === "upgrade") return <span className="ps-owned"><Check />Installed</span>;
   return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id); }}>Open</button>;
@@ -108,8 +110,8 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
   const has = game.installed.includes(item.id);
   const facts: [string, string][] = [
     ["Subscription", price],
-    ["Research", item.knowHow ? `${item.knowHow} know-how` : "None"],
-    ["Status", has ? "Installed" : needsResearch(item, game.unlocks) ? "Not researched" : "Available"],
+    ["Skill", skillFor(item.id)?.name ?? "None"],
+    ["Status", has ? "Installed" : isAvailable(item.id, game.unlocks) ? "Available" : "Not learned"],
   ];
   return (
     <div className="ps">
@@ -126,7 +128,7 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
         </div>
       </header>
       <dl className="ps-facts">
-        {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={k === "Status" ? undefined : "num"}>{v}</dd></div>)}
+        {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={k === "Subscription" ? "num" : undefined}>{v}</dd></div>)}
       </dl>
       <section className="ps-shelf">
         <h3>Includes</h3>

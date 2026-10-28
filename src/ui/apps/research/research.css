@@ -1,0 +1,52 @@
+.rs { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 300px; grid-template-rows: auto 1fr; }
+.rs-head { grid-column: 1 / -1; display: flex; gap: 28px; padding: 12px 16px; border-bottom: 0.5px solid var(--line); background: var(--win-side); }
+.rs-head div { display: flex; align-items: baseline; gap: 8px; }
+.rs-head span { font-size: 12px; color: var(--text-2); }
+.rs-head strong { font-size: 17px; font-weight: 600; }
+.rs-head strong.rs-head-name { font-size: 13px; }
+
+.rs-tree { min-width: 0; min-height: 0; overflow: auto; display: grid; place-items: center; background: var(--win); }
+.rs-canvas { position: relative; flex: none; }
+.rs-tier { position: absolute; font-size: 11px; font-weight: 650; color: var(--text-3); }
+.rs-links { position: absolute; inset: 0; pointer-events: none; }
+.rs-links path { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
+.rs-links path.on { stroke: var(--accent); }
+
+.rs-node {
+  position: absolute; display: grid; align-content: center; gap: 5px; padding: 0 12px; text-align: left; cursor: pointer;
+  border-radius: 10px; border: 0.5px solid var(--line-strong); background: var(--field); color: var(--text); font: inherit;
+}
+.rs-node:hover { background: var(--hover); }
+.rs-node[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rs-node-name { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 650; }
+.rs-node-sub { padding-left: 28px; font-size: 11.5px; color: var(--text-2); }
+.rs-node .rs-bar { margin-left: 28px; }
+.rs-mark { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--line-strong); color: var(--text-3); }
+.rs-mark svg.lucide { width: 11px; height: 11px; stroke-width: 2.5; }
+
+.rs-node.learned { background: var(--accent-soft); border-color: transparent; }
+.rs-node.learned:hover { background: color-mix(in oklch, var(--accent-soft) 80%, var(--accent)); }
+.rs-node.learned .rs-mark { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.rs-node.learned .rs-node-sub { color: var(--accent-text); }
+.rs-node.training { border: 1.5px solid var(--accent); }
+.rs-node.training .rs-mark { border-color: var(--accent); color: var(--accent-text); }
+.rs-node.open .rs-mark { border-color: var(--accent); color: var(--accent-text); }
+.rs-node.locked { background: var(--win-side); border-style: dashed; color: var(--text-2); }
+.rs-node.locked .rs-node-sub { color: var(--text-3); }
+
+.rs-bar { display: block; height: 5px; border-radius: 3px; background: color-mix(in oklch, var(--text) 9%, transparent); position: relative; overflow: hidden; }
+.rs-bar i { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+
+.rs-panel { min-height: 0; overflow: auto; display: grid; align-content: start; gap: 14px; padding: 18px 16px; border-left: 0.5px solid var(--line); background: var(--win-side); }
+.rs-panel h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.rs-panel p { font-size: 13px; line-height: 1.45; color: var(--text-2); }
+.rs-panel h3 { font-size: 11px; font-weight: 650; color: var(--text-3); margin-bottom: 8px; }
+.rs-facts { display: grid; gap: 8px; }
+.rs-facts div { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.rs-facts dt { font-size: 11.5px; font-weight: 550; color: var(--text-3); }
+.rs-facts dd { text-align: right; }
+.rs-opens { list-style: none; padding: 0; display: grid; gap: 8px; }
+.rs-opens li { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.rs-progress { display: grid; gap: 6px; font-size: 12px; color: var(--text-2); }
+.rs-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.rs-actions .btn.primary { flex: 1; justify-content: center; }

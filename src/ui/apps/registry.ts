@@ -1,5 +1,5 @@
 import {
-  BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, Landmark, LifeBuoy, Lightbulb, ListChecks, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
+  BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, Landmark, GraduationCap, LifeBuoy, ListChecks, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -10,7 +10,7 @@ import { FinanceApp } from "./finance/FinanceApp";
 import type { GameState } from "../../sim/50-state";
 import { CustomersApp } from "./customers/CustomersApp";
 import { SupportApp } from "./support/SupportApp";
-import { UnlocksApp } from "./UnlocksApp";
+import { ResearchApp } from "./research/ResearchApp";
 import { isFinal } from "../../sim/40-support/tickets";
 import { isUnpaid } from "../../sim/45-billing/billing";
 import { deviceHealth } from "../../sim/60-infra/status";
@@ -43,7 +43,7 @@ export const APPS: AppDef[] = [
   { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: "Hires people and assigns them to work queues." },
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: "Runs campaigns and manages reviews." },
   { name: "Market", icon: ChartPie, tile: "oklch(0.62 0.12 230)", about: "Shows demand, customer requirements and lost sales." },
-  { name: "Unlocks", icon: Lightbulb, tile: "oklch(0.72 0.15 95)", about: "Spends know-how on new products, hardware and tools.", body: UnlocksApp },
+  { name: "Research", icon: GraduationCap, tile: "oklch(0.72 0.15 95)", about: "Trains your company in new skills with the know-how it earns.", body: ResearchApp },
   { name: "Getting started", icon: BookOpen, tile: "oklch(0.55 0.15 255)", about: "Explains the controls and how the game saves.", hidden: true },
   { name: "Notes", icon: FileText, tile: "oklch(0.7 0.13 85)", about: "Edits the notes on your desktop.", hidden: true },
   { name: "Checklist", icon: ListChecks, tile: "oklch(0.58 0.14 150)", about: "Lists the goals from your first server to your own datacenter and marks the ones you reach.", body: ChecklistApp },

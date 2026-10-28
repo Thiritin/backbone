@@ -6,6 +6,7 @@ import { AppWindow } from "./AppWindow";
 import { Banners, NotificationCenter } from "./Banners";
 import { DesktopIcons } from "./DesktopIcons";
 import { Dock } from "./Dock";
+import { SkillSheet } from "../apps/research/SkillSheet";
 import { MenuBar } from "./MenuBar";
 import { StartScreen } from "./StartScreen";
 import { wallpaperSvg } from "./wallpaper";
@@ -38,7 +39,7 @@ export function Desktop() {
 }
 
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
-  const { windows, speed, setSpeed, advance, save, notify, clearUnseen, welcome } = useStore();
+  const { windows, speed, setSpeed, advance, save, notify, clearUnseen, welcome, explain, setExplain } = useStore();
   const [center, setCenter] = useState(false);
   const carry = useRef(0);
 
@@ -93,6 +94,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
       <Dock />
       {welcome && <Welcome />}
+      {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
     </>
   );
 }

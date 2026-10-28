@@ -1,31 +1,28 @@
 import type { Product } from "../30-customers/customers";
 import { START_YEAR } from "../00-core/time";
 
-// Values from docs/design/economy.md, sections "Pear One subscriptions" and "Know-how and unlock costs".
+// Values from docs/design/economy.md, section "Pear One subscriptions". The skill each item needs is in research.ts.
 
 // Apps every new game has in the dock, free of charge. Getting started and Notes are desktop documents and never sit in the dock.
-export const STARTER_APPS = ["Locations", "Shop", "Customers", "Support", "Billing", "Finance", "Bank", "Unlocks", "Checklist", "Settings"];
+export const STARTER_APPS = ["Locations", "Shop", "Customers", "Support", "Billing", "Finance", "Bank", "Research", "Checklist", "Settings"];
 
 // id is the app name for apps; monthly is the 2005 price.
-export interface StoreItem { id: string; kind: "app" | "upgrade"; name: string; knowHow: number; monthly: number }
+export interface StoreItem { id: string; kind: "app" | "upgrade"; name: string; monthly: number }
 
-// Desktop widgets need no research.
 export const WIDGETS: [string, string, number][] = [
   ["widgetCalendar", "Calendar widget", 1], ["widgetTickets", "Open tickets widget", 1], ["widgetCash", "Cash widget", 1],
   ["widgetRevenue", "Monthly revenue widget", 2], ["widgetCustomers", "Customers widget", 1], ["widgetLevel", "Level widget", 2],
 ];
 
 export const STORE: StoreItem[] = [
-  { id: "Network", kind: "app", name: "Network", knowHow: 300, monthly: 25 },
-  { id: "Products", kind: "app", name: "Products", knowHow: 200, monthly: 15 },
-  { id: "Staff", kind: "app", name: "Staff", knowHow: 100, monthly: 20 },
-  { id: "Marketing", kind: "app", name: "Marketing", knowHow: 300, monthly: 20 },
-  { id: "Market", kind: "app", name: "Market", knowHow: 800, monthly: 15 },
-  { id: "dockBadges", kind: "upgrade", name: "Dock badges", knowHow: 50, monthly: 5 },
-  ...WIDGETS.map(([id, name, monthly]): StoreItem => ({ id, kind: "upgrade", name, knowHow: 0, monthly })),
+  { id: "Network", kind: "app", name: "Network", monthly: 25 },
+  { id: "Products", kind: "app", name: "Products", monthly: 15 },
+  { id: "Staff", kind: "app", name: "Staff", monthly: 20 },
+  { id: "Marketing", kind: "app", name: "Marketing", monthly: 20 },
+  { id: "Market", kind: "app", name: "Market", monthly: 15 },
+  { id: "dockBadges", kind: "upgrade", name: "Dock badges", monthly: 5 },
+  ...WIDGETS.map(([id, name, monthly]): StoreItem => ({ id, kind: "upgrade", name, monthly })),
 ];
-
-export const needsResearch = (item: StoreItem, unlocks: string[]): boolean => item.knowHow > 0 && !unlocks.includes(item.id);
 
 export const storeItem = (id: string): StoreItem | undefined => STORE.find((i) => i.id === id);
 

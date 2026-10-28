@@ -5,6 +5,7 @@ import { billingTick } from "../45-billing/billing";
 import { supportTick } from "../40-support/tick";
 import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
+import { skillById } from "../10-catalog/research";
 import { KNOW_HOW, storeItem, subscriptionPrice } from "../10-catalog/store";
 import { capacityAt, DATACENTERS, datacenterById, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry } from "../50-state";
@@ -163,6 +164,12 @@ export function tick(state: GameState): SimEvent[] {
     state.homeLine = { id: next.id, next: null };
     const line = homeLineById(next.id);
     events.push({ app: "Locations", key: "event.lineReady", params: { line: line.name, isp: line.isp } });
+  }
+  if (state.training && state.training.doneAt <= state.hour) {
+    const skill = skillById(state.training.id)!;
+    state.unlocks = [...state.unlocks, skill.id];
+    state.training = null;
+    events.push({ app: "Research", key: "event.trainingDone", params: { id: skill.id, skill: skill.name } });
   }
   state.rng = { ...state.rng };
   wear(state, events);
