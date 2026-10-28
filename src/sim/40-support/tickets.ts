@@ -8,9 +8,10 @@ export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellat
 // open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
 export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
 export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep";
-export interface Reply { hour: number; template: string; right: boolean }
+// by names the employee who answered; the player otherwise.
+export interface Reply { hour: number; template: string; right: boolean; by?: string }
 // doneAt is in game minutes; the reply or action takes effect on the first tick at or after it.
-export interface Work { op: "reply" | "resolve" | "escalate"; arg: string; doneAt: number }
+export interface Work { op: "reply" | "resolve" | "escalate"; arg: string; doneAt: number; by?: string }
 export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
