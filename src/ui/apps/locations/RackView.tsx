@@ -3,23 +3,25 @@ import { useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { BASEMENT } from "../../../sim/20-world/datacenters";
-import type { GameState, Rack } from "../../../sim/50-state";
+import type { GameState, Location, Rack } from "../../../sim/50-state";
 import { freePositions, moveCost, rackPower, storageStacks } from "../../../sim/60-infra/status";
-import { mountDevice, mountStack, moveRack, sellRack } from "../../../sim/90-actions/hardware";
+import { FEED_PRICE } from "../../../sim/88-tick/tick";
+import { buyCircuit, CIRCUIT_PRICE, mountDevice, mountStack, moveRack, sellRack, setFeed } from "../../../sim/90-actions/hardware";
 import { Stepper } from "../shop/Cart";
 import type { Side } from "../../art/backs";
 import { Isometric } from "../../art/Isometric";
+import { cableColor } from "../../art/fronts";
 import { RackFront, type RackItem, type RackLink } from "../../art/RackFront";
 import { useStore } from "../../store";
-import { day, deviceLamps, height, portName } from "../hw";
+import { day, deviceLamps, devName, height, portName } from "../hw";
 import { rackUnits } from "./Floor";
 import { Inspector, SellConfirm } from "./Inspector";
-import { Facts, PowerMeter, Sheet, useDismiss } from "./ui";
+import { dcOf, Facts, PowerMeter, Sheet, useDismiss } from "./ui";
 
 function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
     const model = modelById(d.model);
-    return { id: d.id, slot: d.slot, model, brand: d.brand, name: d.name, groups: d.groups, ...deviceLamps(g, d.id, model) };
+    return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, ...deviceLamps(g, d.id, model) };
   });
 }
 
@@ -28,7 +30,7 @@ function rackLinks(g: GameState, rackId: string): RackLink[] {
   return g.cables.flatMap((c) => [[c.a, c.b], [c.b, c.a]].flatMap(([end, other]) => {
     if (dev.get(end.device)?.rackId !== rackId) return [];
     const o = dev.get(other.device)!, port = portName(modelById(o.model), other.port);
-    return [{ id: c.id, end, peer: o.rackId === rackId ? other : null, kind: c.kind, label: o.panel ? `Carrier panel, ${port}` : `${o.name} ${port}` }];
+    return [{ id: c.id, end, peer: o.rackId === rackId ? other : null, color: cableColor(c), label: o.panel ? `Carrier panel, ${port}` : `${devName(o)} ${port}` }];
   }));
 }
 
@@ -65,6 +67,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
           {power.tripped && <span className="pill bad">Tripped</span>}
           {rack.arriveAt !== null && <span className="pill"><Truck />Arrives <span className="num">{day(rack.arriveAt)}</span></span>}
         </div>
+        <RackPower rack={rack} loc={loc} />
         <RackFront units={units} items={items} links={rackLinks(game, rack.id)} side={side} w={300} u={22} hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onFree={openMount} />
       </div>
       <div className="loc-insp">
@@ -163,4 +166,26 @@ function MoveRack({ game, rack, onClose, onMoved }: { game: GameState; rack: Rac
       </div>
     </Sheet>
   );
+}
+
+// Extra feeds for a rented position, or the one extra household circuit in the basement.
+function RackPower({ rack, loc }: { rack: Rack; loc: Location }) {
+  const act = useStore((s) => s.act);
+  const dc = dcOf(loc);
+  if (loc.space === "basement") {
+    return (
+      <div className="loc-rack-facts">
+        {loc.extraCircuit ? <span className="pill ok">Extra circuit</span>
+          : <button className="btn" onClick={() => act((g) => buyCircuit(g, loc.id))}>Extra circuit <span className="num">{euro(CIRCUIT_PRICE)}</span></button>}
+      </div>
+    );
+  }
+  if (!dc || rack.provided) return null;
+  const feed = (key: "feedB" | "highDensity", label: string) => (
+    <label className="loc-feed">
+      <input type="checkbox" role="switch" className="switch" checked={rack[key]} onChange={(e) => act((g) => setFeed(g, rack.id, key === "feedB" ? "b" : "highDensity", e.target.checked))} />
+      {label} <span className="num">{euro(Math.round(FEED_PRICE[key] * dc.positionPrice))}/mo</span>
+    </label>
+  );
+  return <div className="loc-rack-facts">{feed("feedB", "Feed B")}{feed("highDensity", "High density")}</div>;
 }

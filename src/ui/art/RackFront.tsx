@@ -1,12 +1,12 @@
 import type { KeyboardEvent, ReactNode } from "react";
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
-import type { CableKind, End } from "../../sim/50-state";
+import type { End } from "../../sim/50-state";
 import { Back, portSpots, type Side } from "./backs";
-import { CABLE, Defs, Front, type Lamp, type PortLamp } from "./fronts";
+import { Defs, Front, type Lamp, type Parts, type PortLamp } from "./fronts";
 
-export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; ports: PortLamp[]; groups: number[][] }
+export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; blink?: boolean; parts?: Parts; ports: PortLamp[]; groups: number[][] }
 // One cable end in this rack; peer is set when the other end is in this rack too, label names it otherwise.
-export interface RackLink { id: string; end: End; peer: End | null; kind: CableKind; label: string }
+export interface RackLink { id: string; end: End; peer: End | null; color: string; label: string }
 
 interface Props {
   units: number;
@@ -103,7 +103,7 @@ export function RackFront({ units, items, links = [], side = "front", w, u, sele
     if (drawn.has(l.id)) continue;
     drawn.add(l.id);
     const sag = 10 + Math.abs(a.x - b.x) * 0.08 + Math.abs(a.y - b.y) * 0.25;
-    curves.push(<Wire key={l.id} kind={l.kind} hot={hot === null ? undefined : hot === l.id} d={`M${a.x} ${a.y}C${a.x} ${a.y + sag} ${b.x} ${b.y + sag} ${b.x} ${b.y}`} />);
+    curves.push(<Wire key={l.id} color={l.color} hot={hot === null ? undefined : hot === l.id} d={`M${a.x} ${a.y}C${a.x} ${a.y + sag} ${b.x} ${b.y + sag} ${b.x} ${b.y}`} />);
   }
   // Top ports take the inner lanes and the lowest label rows, so no two cables cross.
   loose.sort((p, q) => p.y - q.y);
@@ -113,7 +113,7 @@ export function RackFront({ units, items, links = [], side = "front", w, u, sele
     const lx = lane0 + i * 4, ry = head - 4 - i * ROW, py2 = py + head + 4;
     return (
       <g key={`x${l.id}${l.end.device}`}>
-        <Wire kind={l.kind} hot={hot === null ? undefined : hot === l.id} d={`M${x} ${py2}C${x} ${py2 + 12} ${lx} ${py2 + 8} ${lx} ${py2 - 4}L${lx} ${ry + 4}Q${lx} ${ry} ${lx - 4} ${ry}L${pad} ${ry}`} />
+        <Wire color={l.color} hot={hot === null ? undefined : hot === l.id} d={`M${x} ${py2}C${x} ${py2 + 12} ${lx} ${py2 + 8} ${lx} ${py2 - 4}L${lx} ${ry + 4}Q${lx} ${ry} ${lx - 4} ${ry}L${pad} ${ry}`} />
         <text x={pad + 2} y={ry - 3} fontFamily={MONO} fontSize="8" fill="var(--text-2)">{l.label}</text>
       </g>
     );
@@ -134,11 +134,11 @@ export function RackFront({ units, items, links = [], side = "front", w, u, sele
 }
 
 // hot is undefined when nothing is highlighted; otherwise the hot cable thickens and the rest fade.
-function Wire({ d, kind, hot }: { d: string; kind: CableKind; hot?: boolean }) {
+function Wire({ d, color, hot }: { d: string; color: string; hot?: boolean }) {
   return (
     <g opacity={hot === false ? 0.3 : 1}>
       <path d={d} fill="none" stroke="oklch(0.12 0.004 255)" strokeWidth={hot ? 5 : 3.2} strokeLinecap="round" strokeLinejoin="round" />
-      <path d={d} fill="none" stroke={CABLE[kind]} strokeWidth={hot ? 3 : 1.7} strokeLinecap="round" strokeLinejoin="round" />
+      <path d={d} fill="none" stroke={color} strokeWidth={hot ? 3 : 1.7} strokeLinecap="round" strokeLinejoin="round" />
     </g>
   );
 }

@@ -1,9 +1,9 @@
 // Hardware labels shared by the Locations and Shop apps.
 import { dateOf } from "../../sim/00-core/time";
-import { jacksOf, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
-import type { End, GameState } from "../../sim/50-state";
-import { linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
-import type { Lamp, PortLamp } from "../art/fronts";
+import { COMPONENTS, jacksOf, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
+import type { Component, Device, End, GameState } from "../../sim/50-state";
+import { deviceHealth, HOURS_PER_YEAR, linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
+import type { Lamp, PartLamp, Parts, PortLamp } from "../art/fronts";
 
 export const speed = (g: number) => (g >= 1 ? `${g}G` : `${g * 1000}M`);
 export const ram = (gb: number) => (gb >= 1024 ? `${+(gb / 1024).toFixed(1)} TB` : `${gb} GB`);
@@ -34,6 +34,25 @@ export function portName(m: DeviceModel, i: number): string {
 
 export const portLamps = (m: DeviceModel, peers: (End | null)[]): PortLamp[] => peers.map((p, i) => (p ? (m.ports[i].media === "sfp" ? "fiber" : "ok") : "off"));
 
+export const devName = (d: Device) => d.label ?? d.name;
+export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: "Power supply", fan: "Fan", ram: "RAM stick", board: "Mainboard", cpu: "CPU", nic: "Network card" };
+export const ageYears = (g: GameState, c: Component) => (g.hour - c.installedAt) / HOURS_PER_YEAR;
+export const isWorn = (g: GameState, c: Component) => ageYears(g, c) >= COMPONENTS[c.kind].life;
+
+const DRIVE: ReadonlySet<ComponentKind> = new Set(["hdd", "ssd", "nvme"]);
+const WORSE: Lamp[] = ["ok", "warn", "bad"];
+const HEALTH_LAMP = { ok: "ok", degraded: "warn", hot: "warn", rebuilding: "warn", maintenance: "warn", down: "bad", off: "off" } as const;
+
+// Per-component lights: failed red, past its life amber, the drive being rebuilt blinking amber; all dark while the device is off.
+function partLamps(g: GameState, d: Device): Parts {
+  const lamp = (c: Component): PartLamp => (!d.on ? "off" : c.failedAt !== null ? "bad" : d.rebuild?.componentId === c.id ? "rebuild" : isWorn(g, c) ? "warn" : "ok");
+  const of = (pick: (k: ComponentKind) => boolean) => d.components.filter((c) => pick(c.kind)).map(lamp);
+  return { drives: of((k) => DRIVE.has(k)), psus: of((k) => k === "psu"), fans: of((k) => k === "fan") };
+}
+
+// The status light is the worse of link and health; a rebuild blinks it.
 export function deviceLamps(g: GameState, id: string, m: DeviceModel) {
-  return { state: lampOf(linkStatus(g, id)), ports: portLamps(m, portPeers(g, id)) };
+  const d = g.devices.find((x) => x.id === id)!, h = deviceHealth(g, id).state, link = lampOf(linkStatus(g, id));
+  const state: Lamp = h === "off" ? "off" : WORSE[Math.max(WORSE.indexOf(HEALTH_LAMP[h]), WORSE.indexOf(link))];
+  return { state, blink: h === "rebuilding", ports: d.on ? portLamps(m, portPeers(g, id)) : portLamps(m, []), parts: partLamps(g, d) };
 }

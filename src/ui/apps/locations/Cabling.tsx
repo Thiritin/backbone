@@ -4,9 +4,9 @@ import { jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/ha
 import type { Device, End, GameState, Location } from "../../../sim/50-state";
 import { connectError, portPeers } from "../../../sim/60-infra/status";
 import { connect, disconnect } from "../../../sim/90-actions/hardware";
-import { CABLE, LED } from "../../art/fronts";
+import { cableColor, LED } from "../../art/fronts";
 import { useStore } from "../../store";
-import { CABLE_NAME, portName, speed } from "../hw";
+import { CABLE_NAME, devName, portName, speed } from "../hw";
 
 const NODE_W = 260, GAP_X = 120, GAP_Y = 14, PITCH = 16, PER_ROW = 12, LABEL_W = 34, HEAD = 34, TOP = 40;
 const key = (e: End) => `${e.device}:${e.port}`;
@@ -73,7 +73,7 @@ export function Cabling({ game, loc }: { game: GameState; loc: Location }) {
   const cables = game.cables.filter((c) => spots.has(key(c.a)) && spots.has(key(c.b)));
   const peer = new Map(cables.flatMap((c) => [[key(c.a), c.id], [key(c.b), c.id]]));
   const chosen = cables.find((c) => c.id === sel);
-  const name = (e: End) => { const d = game.devices.find((x) => x.id === e.device)!; return `${d.name} ${portName(modelById(d.model), e.port)}`; };
+  const name = (e: End) => { const d = game.devices.find((x) => x.id === e.device)!; return `${devName(d)} ${portName(modelById(d.model), e.port)}`; };
 
   useEffect(() => { plane.current?.setAttribute("transform", `translate(${pan.current.x} ${pan.current.y})`); });
 
@@ -143,7 +143,7 @@ export function Cabling({ game, loc }: { game: GameState; loc: Location }) {
           </g>
           {/* Cables run under the nodes, so they show between columns and never cover a jack. */}
           <g className="loc-cab-wires">
-            {cables.map((c) => <path key={c.id} data-cable={c.id} className={c.id === sel ? "sel" : ""} stroke={CABLE[c.kind]} d={curve(spots.get(key(c.a))!, spots.get(key(c.b))!)} />)}
+            {cables.map((c) => <path key={c.id} data-cable={c.id} className={c.id === sel ? "sel" : ""} stroke={cableColor(c)} d={curve(spots.get(key(c.a))!, spots.get(key(c.b))!)} />)}
           </g>
           {cols.map((c) => <text key={c.title + c.x} x={c.x} y={TOP - 12} className="loc-cab-col">{c.title}</text>)}
           {nodes.map((n) => <NodeBox key={n.d.id} n={n} peers={portPeers(game, n.d.id)} cableOf={peer} />)}
@@ -175,7 +175,7 @@ function NodeBox({ n, peers, cableOf }: { n: Node; peers: (End | null)[]; cableO
   return (
     <g>
       <rect x={n.x} y={n.y} width={NODE_W} height={n.h} rx="8" className="loc-cab-node" />
-      <text x={n.x + 10} y={n.y + 15} className="loc-cab-name">{n.d.name}</text>
+      <text x={n.x + 10} y={n.y + 15} className="loc-cab-name">{devName(n.d)}</text>
       <text x={n.x + 10} y={n.y + 27} className="loc-cab-sub">{n.sub}</text>
       {rows}
     </g>

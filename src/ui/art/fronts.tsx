@@ -6,9 +6,17 @@ import { BrandMark, brandColor } from "./logos";
 
 export type Lamp = "ok" | "warn" | "bad" | "off";
 export type PortLamp = "off" | "ok" | "warn" | "bad" | "fiber";
+export type PartLamp = Lamp | "rebuild";
+export interface Parts { drives: PartLamp[]; psus: PartLamp[]; fans: PartLamp[] }
 
 export const LED = { ok: "oklch(0.78 0.2 145)", warn: "oklch(0.83 0.17 80)", bad: "oklch(0.66 0.23 27)", off: "oklch(0.4 0.01 255)", act: "oklch(0.8 0.14 225)", fiber: "oklch(0.8 0.12 195)" };
 export const CABLE = { copper: "oklch(0.62 0.14 250)", dac: "oklch(0.7 0.02 255)", fiber: LED.fiber, uplink: "oklch(0.82 0.15 90)" };
+// Custom cable colours; a cable without one takes its kind's colour.
+export const SWATCHES: [string, string][] = [
+  ["Red", "#d9453b"], ["Orange", "#e8862d"], ["Yellow", "#e9c53a"], ["Green", "#3fa45b"],
+  ["Blue", "#3b7fd9"], ["Purple", "#8a5cd1"], ["Black", "#2a2d33"], ["White", "#eef0f2"],
+];
+export const cableColor = (c: { kind: keyof typeof CABLE; color: string | null }) => c.color ?? CABLE[c.kind];
 export const GROUP = "oklch(0.74 0.14 300)";
 const LABEL = "oklch(0.78 0.01 255)";
 const MONO = "JetBrains Mono, monospace";
@@ -49,10 +57,18 @@ function Label({ x, y, text, size = 6.5, anchor = "start", fill = LABEL }: { x: 
   return <text x={x} y={y} textAnchor={anchor} fontFamily={MONO} fontSize={size} fill={fill} letterSpacing="0.04em">{text}</text>;
 }
 
-function StatusLeds({ x, y, state }: { x: number; y: number; state: Lamp }) {
+// A part's light: idle is the brand's colour for a healthy part; a rebuild blinks amber.
+export const partLed = (lamp: PartLamp | undefined, idle: string) =>
+  lamp === "rebuild" ? { fill: LED.warn, className: "led-blink" } : { fill: !lamp || lamp === "ok" ? idle : LED[lamp] };
+// Bay i holds drive i; a bay past the fitted drives is empty and dark.
+const strokeOf = ({ fill, className }: { fill: string; className?: string }) => ({ stroke: fill, className });
+const bayLed = (p: FrontProps, i: number, idle: string) =>
+  p.state === "off" || (p.parts && i >= p.parts.drives.length) ? { fill: LED.off } : partLed(p.parts?.drives[i], idle);
+
+function StatusLeds({ x, y, state, blink }: { x: number; y: number; state: Lamp; blink?: boolean }) {
   return (
     <>
-      <circle cx={x} cy={y} r="1.8" fill={LED[state]} />
+      <circle cx={x} cy={y} r="1.8" fill={LED[state]} className={blink ? "led-blink" : undefined} />
       <circle cx={x + 7} cy={y} r="1.8" fill={state === "off" ? LED.off : LED.ok} />
     </>
   );
@@ -81,28 +97,38 @@ export interface FrontProps {
   state: Lamp;
   ports: PortLamp[];
   groups?: number[][];
+  parts?: Parts;
+  blink?: boolean;
   w: number;
   h: number;
 }
 
 // Rack server fronts follow the three big brands; names are parodies.
-function Dwell({ w, h, state, name }: FrontProps) {
-  const fs = fsz(Math.min(h, 24));
+function Dwell(p: FrontProps) {
+  const { w, h, state, name, blink, model } = p;
+  const fs = fsz(Math.min(h, 24)), x0 = 18 + (name ? tw(name, fs) + 10 : 0), bays = Math.min(8, model.server?.bays ?? 4), bw = Math.min(w * 0.035, (w / 2 - 14 - x0) / bays - 1);
   return (
     <>
       <Ears w={w} h={h} fill="oklch(0.22 0.006 255)" />
       <rect x="11" y="1.5" width={w - 22} height={h - 3} rx="1.5" fill="url(#bb-hex)" />
       {name && <rect x="14" y="2.5" width={tw(name, fs) + 10} height={h - 5} rx="1" fill="oklch(0.14 0.004 255)" />}
+      {bw > 2 && Array.from({ length: bays }, (_, i) => (
+        <g key={i}>
+          <rect x={x0 + i * (bw + 1)} y="2.5" width={bw} height={h - 5} rx="0.6" fill="oklch(0.16 0.004 255)" />
+          <rect x={x0 + i * (bw + 1) + bw / 2 - 0.8} y={h - 6} width="1.6" height="1.6" {...bayLed(p, i, LED.ok)} />
+        </g>
+      ))}
       <Label x={19} y={h / 2 + fs * 0.35} text={name} size={fs} />
       <rect x={w / 2 - 9} y={h / 2 - Math.min(h, 24) * 0.16} width="18" height={Math.min(h, 24) * 0.32} rx="1" fill="oklch(0.7 0.01 255)" />
       <rect x={w - 48} y="2.5" width="38" height={h - 5} rx="1" fill="oklch(0.14 0.004 255)" />
       <Mark brand="Dwell" x={w - 31} h={h} />
-      <StatusLeds x={w - 22} y={h / 2} state={state} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
     </>
   );
 }
 
-function HewlettPacket({ w, h, state, name, model }: FrontProps) {
+function HewlettPacket(p: FrontProps) {
+  const { w, h, state, name, model, blink } = p;
   const fs = fsz(Math.min(h, 24)), tab = name ? tw(name, fs) + 10 : 20, bx = 14 + tab;
   const bays = Math.min(8, model.server?.bays ?? 4), rows = h > 30 ? 2 : 1, perRow = Math.ceil(bays / rows), bw = w * 0.075, bh = (h - 4 - (rows - 1) * 1.5) / rows;
   const trays: ReactNode[] = [];
@@ -111,7 +137,7 @@ function HewlettPacket({ w, h, state, name, model }: FrontProps) {
     trays.push(
       <g key={i}>
         <rect x={x} y={y} width={bw} height={bh} rx="0.8" fill="oklch(0.3 0.006 255)" />
-        <circle cx={x + 3.2} cy={y + bh / 2} r="1.3" fill="none" stroke={state === "off" ? LED.off : LED.ok} strokeWidth="0.8" />
+        <circle cx={x + 3.2} cy={y + bh / 2} r="1.3" fill="none" strokeWidth="0.8" {...strokeOf(bayLed(p, i, LED.ok))} />
       </g>,
     );
   }
@@ -124,12 +150,13 @@ function HewlettPacket({ w, h, state, name, model }: FrontProps) {
       {trays}
       <rect x={px} y="2" width={Math.max(0, w - 48 - px)} height={h - 4} rx="0.8" fill="url(#bb-perf)" />
       <Mark brand="Hewlett-Packet" x={w - 31} h={h} />
-      <StatusLeds x={w - 22} y={h / 2} state={state} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
     </>
   );
 }
 
-function SuperMacro({ w, h, state, name, model }: FrontProps) {
+function SuperMacro(p: FrontProps) {
+  const { w, h, state, name, model, blink } = p;
   const bays = Math.min(12, model.server?.bays ?? 4), rows = h > 30 ? Math.min(3, Math.ceil(bays / 4)) : 1, perRow = Math.ceil(bays / rows);
   const bw = w * 0.09, bh = (h - 4 - (rows - 1) * 1.5) / rows;
   const trays: ReactNode[] = [];
@@ -139,7 +166,7 @@ function SuperMacro({ w, h, state, name, model }: FrontProps) {
       <g key={i}>
         <rect x={x} y={y} width={bw} height={bh} rx="0.6" fill="oklch(0.6 0.006 255)" />
         <rect x={x + 2} y={y + bh / 2 - 0.8} width={bw - 8} height="1.6" fill="oklch(0.2 0.004 255)" />
-        <circle cx={x + bw - 3} cy={y + bh / 2} r="1.1" fill={state === "off" ? LED.off : LED.act} />
+        <circle cx={x + bw - 3} cy={y + bh / 2} r="1.1" {...bayLed(p, i, LED.act)} />
       </g>,
     );
   }
@@ -150,12 +177,13 @@ function SuperMacro({ w, h, state, name, model }: FrontProps) {
       {trays}
       <Label x={w - 48} y={h / 2 + fs * 0.35} text={name} size={fs} anchor="end" />
       <Mark brand="SuperMacro" x={w - 31} h={h} />
-      <StatusLeds x={w - 22} y={h / 2} state={state} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
     </>
   );
 }
 
-function Lenovoid({ w, h, state, name, model }: FrontProps) {
+function Lenovoid(p: FrontProps) {
+  const { w, h, state, name, model, blink } = p;
   const fs = fsz(Math.min(h, 24)), bays = Math.min(10, model.server?.bays ?? 4), x0 = 18 + (name ? tw(name, fs) + 6 : 0);
   const bw = Math.min(w * 0.05, (w - 52 - x0) / bays - 1.2);
   return (
@@ -166,11 +194,11 @@ function Lenovoid({ w, h, state, name, model }: FrontProps) {
       {Array.from({ length: bays }, (_, i) => (
         <g key={i}>
           <rect x={x0 + i * (bw + 1.2)} y="2.5" width={bw} height={h - 5} rx="0.6" fill="oklch(0.25 0.004 255)" />
-          <rect x={x0 + i * (bw + 1.2) + bw / 2 - 0.7} y="4" width="1.4" height="1.4" fill={state === "off" ? LED.off : LED.ok} />
+          <rect x={x0 + i * (bw + 1.2) + bw / 2 - 0.7} y="4" width="1.4" height="1.4" {...bayLed(p, i, LED.ok)} />
         </g>
       ))}
       <Mark brand="Lenovoid" x={w - 31} h={h} />
-      <StatusLeds x={w - 22} y={h / 2} state={state} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
     </>
   );
 }
@@ -180,7 +208,8 @@ const EAR: Record<string, string> = { Dwell: "oklch(0.22 0.006 255)", "Hewlett-P
 const serverFront = (p: FrontProps) => (SERVER_FRONTS[p.brand] ?? SuperMacro)(p);
 
 // Backup and archive chassis: a wall of drive caddies, 3 rows for backup and 5 for archive.
-function Caddies({ w, h, state, name, model, brand }: FrontProps) {
+function Caddies(p: FrontProps) {
+  const { w, h, state, name, model, brand, blink } = p;
   const n = model.server?.bays ?? 36, rows = n > 40 ? 5 : 3, per = Math.ceil(n / rows), fs = fsz(Math.min(h, 24)) * 0.8, top = fs + 5;
   const x1 = w - 36 - markSize(h), cw = (x1 - 12) / per, ch = (h - top - 3) / rows, dark = brand !== "Hewlett-Packet";
   return (
@@ -192,12 +221,12 @@ function Caddies({ w, h, state, name, model, brand }: FrontProps) {
         return (
           <g key={i}>
             <rect x={x} y={y} width={cw - 1} height={ch - 1} rx="0.5" fill="oklch(0.28 0.005 255)" />
-            <circle cx={x + cw / 2 - 0.5} cy={y + ch - 2.5} r="0.8" fill={state === "off" ? LED.off : LED.act} />
+            <circle cx={x + cw / 2 - 0.5} cy={y + ch - 2.5} r="0.8" {...bayLed(p, i, LED.act)} />
           </g>
         );
       })}
       <Mark brand={brand} x={w - 31} h={h} />
-      <StatusLeds x={w - 22} y={h / 2} state={state} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
     </>
   );
 }
@@ -238,7 +267,7 @@ export function switchX0(model: DeviceModel, name: string, h: number) {
   return (name ? 18 + tw(name, fs) : 16) + (model.layer === 3 ? 17 : 0);
 }
 
-function Switch({ w, h, name, model, ports, brand, groups = [], ear }: FrontProps & { ear?: string }) {
+function Switch({ w, h, name, model, ports, brand, groups = [], ear, state, blink }: FrontProps & { ear?: string }) {
   const fs = fsz(Math.min(h, 24)) * 0.9, x0 = switchX0(model, name, h), at = switchLayout(model, w, h, x0);
   const cells: ReactNode[] = [];
   for (const [i, p] of at) {
@@ -279,6 +308,7 @@ function Switch({ w, h, name, model, ports, brand, groups = [], ear }: FrontProp
       )}
       {cells}
       {outlines}
+      <circle cx={w - 14 - markSize(h)} cy={h / 2} r="1.6" fill={LED[state]} className={blink ? "led-blink" : undefined} />
       <Mark brand={brand} x={w - 10} h={h} plate={!!ear} />
     </>
   );
@@ -289,7 +319,8 @@ export function gatewayLayout(model: DeviceModel, name: string, w: number, h: nu
   return new Map(model.ports.map((_, i) => [i, { x: x0 + i * step, y: 3.5, w: step - 2, h: h - 7 }]));
 }
 
-function Gateway({ w, h, name, model, ports, state }: FrontProps) {
+function Gateway(p: FrontProps) {
+  const { w, h, name, model, ports, state, blink } = p;
   const fs = fsz(Math.min(h, 24));
   return (
     <>
@@ -299,7 +330,7 @@ function Gateway({ w, h, name, model, ports, state }: FrontProps) {
         <rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} rx="0.6" fill="oklch(0.14 0.005 255)"
           stroke={ports[i] && ports[i] !== "off" ? LED[ports[i]] : "var(--metal-line)"} strokeWidth="0.6" />
       ))}
-      <StatusLeds x={w - 22} y={h / 2} state={state} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
     </>
   );
 }

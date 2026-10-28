@@ -8,7 +8,7 @@ import { rackPower } from "../../../sim/60-infra/status";
 import { buyRack } from "../../../sim/90-actions/hardware";
 import { DeviceSvg, LED } from "../../art/fronts";
 import { useStore } from "../../store";
-import { day, deviceLamps } from "../hw";
+import { day, deviceLamps, devName } from "../hw";
 import { PowerMeter, useDismiss } from "./ui";
 
 export const rackUnits = (r: Rack) => simRackUnits(r.model);
@@ -88,7 +88,7 @@ export function CarrierPanel({ game, loc, selected, onDevice }: { game: GameStat
           const m = modelById(d.model);
           return (
             <button key={d.id} className="loc-panel-dev" aria-pressed={d.id === selected} onClick={() => onDevice(d.id)}>
-              <DeviceSvg model={m} brand={d.brand} name={d.name} {...deviceLamps(game, d.id, m)} w={420} u={26} />
+              <DeviceSvg model={m} brand={d.brand} name={devName(d)} {...deviceLamps(game, d.id, m)} w={420} u={26} />
             </button>
           );
         })}

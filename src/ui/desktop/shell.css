@@ -288,3 +288,6 @@ svg.lucide { width: 16px; height: 16px; stroke-width: 1.75; flex: none; }
 /* Device fronts */
 
 .device-svg { display: block; }
+.led-blink { animation: led-blink 1.6s steps(1, end) infinite; }
+@keyframes led-blink { 50% { opacity: 0.15; } }
+@media (prefers-reduced-motion: reduce) { .led-blink { animation: none; } }

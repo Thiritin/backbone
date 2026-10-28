@@ -1,8 +1,8 @@
-import { Cable, Network, Server, Shield, ShoppingCart, Store } from "lucide-react";
+import { Cable, HardDrive, Network, Server, Shield, ShoppingCart, Store } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { brandsFor, MANUFACTURERS, priceOf, shopModels, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { brandsFor, COMPONENTS, MANUFACTURERS, priceOf, shopModels, type ComponentKind, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import { Cart, Stepper } from "./Cart";
 import { lineOf } from "../../art/fronts";
 import { Isometric } from "../../art/Isometric";
@@ -17,10 +17,12 @@ const LINE_NAME: Record<string, string> = {
 };
 const CLASSES: [string, typeof Server][] = [
   ...[...new Set(Object.values(LINE_NAME))].map((c): [string, typeof Server] => [c, Server]),
-  ["Layer 2", Network], ["Layer 3", Network], ["Security", Shield], ["Patch panels", Cable],
+  ["Layer 2", Network], ["Layer 3", Network], ["Security", Shield], ["Patch panels", Cable], ["Parts", HardDrive],
 ];
 const classOf = (m: DeviceModel) =>
-  m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : "Patch panels";
+  m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "part" ? "Parts" : "Patch panels";
+
+const SWAP = { raid: "In RAID", dual: "With two", yes: "Yes", no: "No" };
 
 interface Item { model: DeviceModel; brand: string; cls: string }
 
@@ -76,7 +78,8 @@ function Card({ model, brand, cls }: Item) {
   const addToCart = useStore((s) => s.addToCart);
   const [qty, setQty] = useState(1);
   const s = model.server;
-  const rows: [string, string][] = [
+  const part = model.kind === "part" ? COMPONENTS[model.id.replace(/^part-/, "") as ComponentKind] : null;
+  const rows: [string, string][] = part ? [["Life", `${part.life} years`], ["Swap while running", SWAP[part.hotSwap]]] : [
     ["Height", height(model)],
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
     ...(s ? [["Cores", cores(s.cores)], ["RAM", ram(s.ramGb)], ["Storage", `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),

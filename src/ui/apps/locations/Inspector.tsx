@@ -1,17 +1,19 @@
-import { ArchiveRestore, Cable, CircleDollarSign, EthernetPort, FileSignature, Network, Unplug } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { ArchiveRestore, Cable, CircleDollarSign, Cpu, Database, EthernetPort, FileSignature, Network, Power, Unplug } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
-import { jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
-import type { Device, End, GameState } from "../../../sim/50-state";
-import { linkStatus, locationOf, portPeers, powered, resaleValue } from "../../../sim/60-infra/status";
-import { buyOutLease, connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice } from "../../../sim/90-actions/hardware";
+import { dateOf } from "../../../sim/00-core/time";
+import { COMPONENTS, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import type { Cable as CableT, Device, End, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
+import { deviceHealth, drivesOf, hotSwappable, linkStatus, locationOf, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
+import { rebuildHours } from "../../../sim/88-tick/tick";
+import { buyOutLease, connect, disconnect, LABEL_MAX, replaceComponent, sellDevice, setBond, setCableColor, setLabel, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
-import { DeviceSvg } from "../../art/fronts";
+import { cableColor, DeviceSvg, SWATCHES } from "../../art/fronts";
 import { BrandLogo, Logo } from "../../art/logos";
 
 import { Confirm } from "../../desktop/Confirm";
 import { useStore } from "../../store";
-import { CABLE_NAME, cores, disk, height, lampOf, portLamps, portName, portsText, ram, speed } from "../hw";
+import { ageYears, CABLE_NAME, cores, deviceLamps, devName, disk, height, isWorn, PART_NAME, portLamps, portName, portsText, ram, speed } from "../hw";
 import { dcOf, Facts } from "./ui";
 
 // Sells a device or a rack after showing its resale value against the price paid.
@@ -27,7 +29,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
   const [sel, setSel] = useState<number[]>([]);
   const [mode, setMode] = useState<"cable" | "group">("cable");
   const [selling, setSelling] = useState(false);
-  const model = modelById(device.model), st = linkStatus(game, device.id), peers = portPeers(game, device.id);
+  const model = modelById(device.model), st = linkStatus(game, device.id), peers = portPeers(game, device.id), name = devName(device);
   const cables = game.cables.filter((c) => c.a.device === device.id || c.b.device === device.id);
   const s = model.server;
   const pick = (i: number) => setSel((cur) => (mode === "group" ? (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]) : cur.length === 1 && cur[0] === i ? [] : [i]));
@@ -42,7 +44,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
     <>
       <div className="loc-insp-h">
         {model.kind !== "gateway" && <BrandLogo brand={device.brand} size={20} />}
-        <h2>{device.name}</h2>
+        <LabelEdit device={device} />
         {model.kind !== "patch" && <span className={`pill ${st.online ? "ok" : "bad"}`}>{st.online ? "Online" : "Offline"}</span>}
         <span className="grow" />
         {device.rackId && <button className="btn" onClick={() => { if (act((g) => unmountDevice(g, device.id)).ok) onSelect(null); }}><ArchiveRestore />Unmount</button>}
@@ -51,7 +53,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
       <div className="loc-model">{model.kind === "gateway" ? "" : `${device.brand} `}{model.name} · <span className="num">{where}</span></div>
 
       <div className="loc-face">
-        <DeviceSvg model={model} brand={device.brand} name={device.name} state={lampOf(st)} ports={portLamps(model, peers)} groups={device.groups} w={440} u={40} back={side === "back"} />
+        <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={440} u={40} back={side === "back"} />
         {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} />}
       </div>
 
@@ -72,6 +74,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
 
       {device.lease && <LeaseCard game={game} leaseId={device.lease} />}
 
+
       {model.kind === "server" && (
         <div className="loc-card">
           <div className="loc-card-h">
@@ -91,6 +94,10 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
         </div>
       )}
 
+      {model.kind !== "patch" && <PowerCard game={game} device={device} />}
+      {model.kind === "server" && drivesOf(device).length > 0 && <RaidCard game={game} device={device} />}
+      {device.components.length > 0 && <PartsCard game={game} device={device} />}
+
       <div className="loc-card">
         <Facts rows={[
           ...(s ? [["CPU", `${s.sockets} × ${cores(s.cores / s.sockets)}`], ["RAM", `${ram(s.ramGb)} of ${ram(s.maxRamGb)}`], ["Disk", `${disk(s.diskGb)} ${s.disk}, ${s.bays} bays`]] as [string, string][] : []),
@@ -103,7 +110,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
       </div>
 
       {selling && (
-        <SellConfirm game={game} name={device.name} price={device.price} boughtAt={device.boughtAt} cables={cables.length}
+        <SellConfirm game={game} name={name} price={device.price} boughtAt={device.boughtAt} cables={cables.length}
           onCancel={() => setSelling(false)}
           onSell={() => { setSelling(false); if (act((g) => sellDevice(g, device.id)).ok) onSelect(null); }} />
       )}
@@ -146,8 +153,9 @@ function portBlocks(m: DeviceModel): { rows: number; ports: number[] }[] {
 
 // A server's NICs and power supplies, one row each, with the device at the other end of every cable.
 function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { game: GameState; device: Device; peers: (End | null)[]; sel: number[]; onPick: (i: number) => void; onHover: (i: number | null) => void; onSelect: (id: string) => void }) {
-  const model = modelById(device.model), on = powered(game, device.id), loc = locationOf(game, device);
-  const ab = !!loc && dcOf(loc)?.feeds === "ab";
+  const model = modelById(device.model), on = working(game, device.id), loc = locationOf(game, device);
+  const psus = device.components.filter((c) => c.kind === "psu");
+  const ab = !!loc && dcOf(loc)?.feeds === "ab", rackOf = game.racks.find((r) => r.id === device.rackId);
   return (
     <div className="loc-card">
       <table className="table loc-port-table">
@@ -155,7 +163,7 @@ function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { ga
         <tbody>
           {model.ports.map((p, i) => {
             const peer = peers[i], other = peer && game.devices.find((d) => d.id === peer.device)!;
-            const link = !other ? "Unplugged" : on && powered(game, other.id) ? "Up" : "Down";
+            const link = !other ? "Unplugged" : on && working(game, other.id) ? "Up" : "Down";
             return (
               <tr key={i} aria-selected={sel.includes(i)} onClick={() => onPick(i)} onMouseEnter={() => onHover(i)} onMouseLeave={() => onHover(null)}>
                 <td className="num">{portName(model, i)}</td>
@@ -165,8 +173,8 @@ function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { ga
                 <td className="num">{model.ports.length > 1 ? "bond0" : ""}</td>
                 <td>
                   {!other ? null : other.panel ? "Carrier panel" : other.rackId === device.rackId ? (
-                    <button className="loc-link num" onClick={(e) => { e.stopPropagation(); onSelect(other.id); }}>{other.name} {portName(modelById(other.model), peer!.port)}</button>
-                  ) : <span className="num">{other.name} {portName(modelById(other.model), peer!.port)}</span>}
+                    <button className="loc-link num" onClick={(e) => { e.stopPropagation(); onSelect(other.id); }}>{devName(other)} {portName(modelById(other.model), peer!.port)}</button>
+                  ) : <span className="num">{devName(other)} {portName(modelById(other.model), peer!.port)}</span>}
                 </td>
               </tr>
             );
@@ -176,7 +184,7 @@ function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { ga
       <div className="loc-row">
         <span className="loc-k">Power supplies</span>
         {Array.from({ length: model.psus }, (_, i) => (
-          <span key={i} className={`pill${on ? " ok" : " bad"}`}>PSU {i + 1} · Feed {ab && i === 1 ? "B" : "A"}</span>
+          <span key={i} className={`pill${on && psus[i]?.failedAt == null ? " ok" : " bad"}`}>PSU {i + 1} · Feed {(ab || rackOf?.feedB) && i === 1 ? "B" : "A"}</span>
         ))}
       </div>
     </div>
@@ -220,10 +228,11 @@ function PortCard({ game, device, model, port, peer, onSelect }: { game: GameSta
           <button className="btn danger" onClick={() => act((g) => disconnect(g, cable.id))}><Unplug />Disconnect</button>
         </div>
         <div className="loc-path">
-          <div className="loc-node here"><span className="k">{device.name}</span><strong>{portName(model, port)}</strong></div>
-          <div className={`loc-wire ${cable.kind}`}><span><span className="num">{Math.min(here.gbit, om.ports[peer.port].gbit)} Gbit/s</span> {CABLE_NAME[cable.kind]}</span></div>
-          <button className="loc-node" onClick={() => onSelect(other.id)}><span className="k">{other.panel ? "Carrier panel" : other.name}</span><strong>{other.panel ? `${other.name} ${portName(om, peer.port)}` : portName(om, peer.port)}</strong></button>
+          <div className="loc-node here"><span className="k">{devName(device)}</span><strong>{portName(model, port)}</strong></div>
+          <div className={`loc-wire ${cable.kind}`} style={cable.color ? { background: cable.color } : undefined}><span><span className="num">{Math.min(here.gbit, om.ports[peer.port].gbit)} Gbit/s</span> {CABLE_NAME[cable.kind]}</span></div>
+          <button className="loc-node" onClick={() => onSelect(other.id)}><span className="k">{other.panel ? "Carrier panel" : devName(other)}</span><strong>{other.panel ? `${other.name} ${portName(om, peer.port)}` : portName(om, peer.port)}</strong></button>
         </div>
+        <ColorRow cable={cable} />
       </div>
     );
   }
@@ -257,8 +266,8 @@ function ConnectRow({ game, device, model, port }: { game: GameState; device: De
     <div className="loc-row">
       <select className="field grow" aria-label="Connect to" value={target} onChange={(e) => setTarget(e.target.value)}>
         {targets.map(({ d, m, free }) => (
-          <optgroup key={d.id} label={d.panel ? `Carrier panel, ${d.name}` : d.name}>
-            {free.map((i) => <option key={i} value={`${d.id}:${i}`}>{d.name} {portName(m, i)}</option>)}
+          <optgroup key={d.id} label={d.panel ? `Carrier panel, ${d.name}` : devName(d)}>
+            {free.map((i) => <option key={i} value={`${d.id}:${i}`}>{devName(d)} {portName(m, i)}</option>)}
           </optgroup>
         ))}
       </select>
@@ -286,6 +295,172 @@ function GroupCard({ device, sel, onDone }: { device: Device; sel: number[]; onD
           <span className="loc-chips">{g.map((p) => <span key={p} className="loc-chip num">{p + 1}</span>)}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+// The name doubles as the label field: click to rename, Enter or leaving the field saves, Escape cancels, empty clears.
+function LabelEdit({ device }: { device: Device }) {
+  const act = useStore((s) => s.act);
+  const [text, setText] = useState<string | null>(null);
+  const cancel = useRef(false);
+  if (text === null) {
+    return (
+      <h2 className="loc-label">
+        <button onClick={() => { cancel.current = false; setText(device.label ?? ""); }} aria-label={`Label ${devName(device)}`}>{devName(device)}</button>
+        {device.label && <span className="loc-muted">{device.name}</span>}
+      </h2>
+    );
+  }
+  const done = () => { if (!cancel.current) act((g) => setLabel(g, device.id, text)); setText(null); };
+  return (
+    <input className="field loc-label-in" autoFocus aria-label="Label" value={text} placeholder={device.name} maxLength={LABEL_MAX}
+      onChange={(e) => setText(e.target.value)} onBlur={done}
+      onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { cancel.current = true; e.currentTarget.blur(); } }} />
+  );
+}
+
+const HEALTH = {
+  ok: ["Running", "ok"], degraded: ["Degraded", "warn"], hot: ["Running hot", "warn"], rebuilding: ["Rebuilding", "warn"],
+  maintenance: ["Maintenance", "warn"], down: ["Down", "bad"], off: ["Off", ""],
+} as const;
+const clock = (hour: number) => dateOf(hour).toISOString().slice(11, 16);
+
+// Devices that are online now and would go offline with this one switched off.
+function dependents(g: GameState, id: string): Device[] {
+  const after = structuredClone(g);
+  setPower(after, id, false);
+  return g.devices.filter((d) => d.id !== id && linkStatus(g, d.id).online && !linkStatus(after, d.id).online);
+}
+
+function PowerCard({ game, device }: { game: GameState; device: Device }) {
+  const act = useStore((s) => s.act);
+  const [down, setDown] = useState<Device[] | null>(null);
+  const [label, tone] = HEALTH[deviceHealth(game, device.id).state];
+  const off = () => act((g) => setPower(g, device.id, false));
+  const toggle = (on: boolean) => {
+    if (on) return act((g) => setPower(g, device.id, true));
+    const ds = dependents(game, device.id);
+    if (ds.length) setDown(ds); else off();
+  };
+  const names = down?.map(devName) ?? [];
+  return (
+    <div className="loc-card">
+      <div className="loc-card-h">
+        <h3><Power />Power</h3>
+        <span className={`pill ${tone}`}>{label}</span>
+        <span className="grow" />
+        <input type="checkbox" role="switch" className="switch" aria-label="Power" checked={device.on} disabled={!device.rackId && !device.panel} onChange={(e) => toggle(e.target.checked)} />
+      </div>
+      {down && (
+        <Confirm title={`Power off ${devName(device)}?`}
+          text={`${names.length > 3 ? `${names.slice(0, 3).join(", ")} and ${names.length - 3} more` : names.join(", ")} ${names.length === 1 ? "goes" : "go"} offline.`}
+          action="Power off" onCancel={() => setDown(null)} onConfirm={() => { setDown(null); off(); }} />
+      )}
+    </div>
+  );
+}
+
+// Each component with its age against its life, its state and a Replace that names what blocks it.
+function PartsCard({ game, device }: { game: GameState; device: Device }) {
+  const act = useStore((s) => s.act);
+  const loc = locationOf(game, device);
+  const n: Record<string, number> = {}, total: Record<string, number> = {};
+  for (const c of device.components) total[c.kind] = (total[c.kind] ?? 0) + 1;
+  const spare = (kind: string) => game.devices.some((d) => d.model === `part-${kind}` && d.store === loc?.id);
+  return (
+    <div className="loc-card">
+      <div className="loc-card-h"><h3><Cpu />Components</h3></div>
+      <table className="table loc-parts">
+        <thead><tr><th>Part</th><th>Age</th><th>Status</th><th /></tr></thead>
+        <tbody>
+          {device.components.map((c) => {
+            n[c.kind] = (n[c.kind] ?? 0) + 1;
+            const life = COMPONENTS[c.kind].life, age = ageYears(game, c), worn = isWorn(game, c);
+            const swap = device.maintenance?.componentId === c.id, rebuild = device.rebuild?.componentId === c.id;
+            const status = swap ? <span className="pill">Swap at <span className="num">{clock(device.maintenance!.doneAt)}</span></span>
+              : c.failedAt !== null ? <span className="pill bad">Failed</span>
+              : rebuild ? <span className="pill warn">Rebuilding</span>
+              : worn ? <span className="pill warn">Worn</span> : <span className="pill ok">OK</span>;
+            const block = swap ? null : !device.rackId ? "Not mounted" : device.maintenance ? "Swap under way"
+              : !spare(c.kind) ? `No part in ${loc?.az ?? ""}` : device.on && !hotSwappable(device, c) ? "Power off first" : null;
+            return (
+              <tr key={c.id}>
+                <td>{PART_NAME[c.kind]}{total[c.kind] > 1 && <span className="num"> {n[c.kind]}</span>}</td>
+                <td>
+                  <span className={`loc-meter${worn ? " worn" : ""}`}>
+                    <span className="loc-meter-bar"><span style={{ width: `${Math.min(1, age / life) * 100}%` }} /></span>
+                    <span className="num">{age.toFixed(1)} / {life} y</span>
+                  </span>
+                </td>
+                <td>{status}</td>
+                <td className="r">
+                  {swap ? null : block ? <span className="loc-muted">{block}</span>
+                    : <button className="btn" onClick={() => act((g) => replaceComponent(g, device.id, c.id))}>Replace</button>}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const LEVELS: [RaidLevel, string][] = [["none", "None"], ["1", "RAID 1"], ["5", "RAID 5"], ["6", "RAID 6"], ["10", "RAID 10"]];
+const FITS: Record<RaidLevel, (n: number) => boolean> = { none: (n) => n >= 1, "1": (n) => n >= 2, "5": (n) => n >= 3, "6": (n) => n >= 4, "10": (n) => n >= 4 && n % 2 === 0 };
+const RATES: [RebuildRate, string][] = [["low", "Low"], ["medium", "Medium"], ["high", "High"]];
+
+function RaidCard({ game, device }: { game: GameState; device: Device }) {
+  const act = useStore((s) => s.act);
+  const drives = drivesOf(device).length, tol = raidTolerance(device), rb = device.rebuild;
+  const done = rb ? Math.max(0, Math.min(1, 1 - (rb.doneAt - game.hour) / rebuildHours(device))) : 0;
+  return (
+    <div className="loc-card">
+      <div className="loc-card-h">
+        <h3><Database />RAID</h3>
+        {device.dataLost !== null && <span className="pill bad">Data lost</span>}
+        <span className="grow" />
+        {device.on && <span className="loc-muted">Power off first</span>}
+        <select className="field" aria-label="RAID level" value={device.raid} disabled={device.on} onChange={(e) => act((g) => setRaid(g, device.id, e.target.value as RaidLevel))}>
+          {LEVELS.map(([v, l]) => <option key={v} value={v} disabled={!FITS[v](drives)}>{l}</option>)}
+        </select>
+      </div>
+      <Facts rows={[
+        ["Usable", <span className="num">{disk(raidUsable(device))}</span>],
+        ["Survives", device.raid === "10" ? <span><span className="num">1</span> drive per mirror pair</span> : tol ? <span><span className="num">{tol}</span> {tol === 1 ? "drive" : "drives"}</span> : "None"],
+        ...(rb ? [["Rebuild", (
+          <span className="loc-meter">
+            <span className="loc-meter-bar"><span style={{ width: `${done * 100}%` }} /></span>
+            <span className="num">{Math.floor(done * 100)}%</span>
+            <span>done at <span className="num">{clock(rb.doneAt)}</span></span>
+          </span>
+        )]] as [string, ReactNode][] : []),
+      ]} />
+      <div className="loc-row">
+        <span className="loc-k">Rebuild rate</span>
+        <div className="seg" role="group" aria-label="Rebuild rate">
+          {RATES.map(([v, l]) => <button key={v} aria-pressed={device.rebuildRate === v} onClick={() => act((g) => setRebuildRate(g, device.id, v))}>{l}</button>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ColorRow({ cable }: { cable: CableT }) {
+  const act = useStore((s) => s.act);
+  const set = (color: string | null) => act((g) => setCableColor(g, cable.id, color));
+  return (
+    <div className="loc-row">
+      <span className="loc-k">Colour</span>
+      <div className="loc-swatches" role="radiogroup" aria-label="Cable colour">
+        {SWATCHES.map(([name, hex]) => (
+          <button key={hex} role="radio" aria-checked={cable.color === hex} aria-label={name} title={name} className="loc-swatch" style={{ background: hex }} onClick={() => set(hex)} />
+        ))}
+        <button role="radio" aria-checked={cable.color === null} className="loc-swatch-default" onClick={() => set(null)}>
+          <span className="loc-swatch" style={{ background: cableColor({ ...cable, color: null }) }} />Kind default
+        </button>
+      </div>
     </div>
   );
 }

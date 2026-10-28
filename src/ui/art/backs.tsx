@@ -1,6 +1,6 @@
 // Rear panels and the place of every port on either side, so cables can be drawn to them.
 import { jacksOf, type DeviceModel } from "../../sim/10-catalog/hardware";
-import { fsz, gatewayLayout, Jacks, LED, patchLayout, switchLayout, switchX0, type FrontProps } from "./fronts";
+import { fsz, gatewayLayout, Jacks, LED, partLed, patchLayout, switchLayout, switchX0, type FrontProps, type PartLamp } from "./fronts";
 
 export type Side = "front" | "back";
 export interface Spot { x: number; y: number; w: number; h: number }
@@ -31,7 +31,7 @@ export function portSpots(model: DeviceModel, name: string, side: Side, w: numbe
   return new Map();
 }
 
-function Psus({ model, w, h, on }: { model: DeviceModel; w: number; h: number; on: boolean }) {
+function Psus({ model, w, h, on, lamps }: { model: DeviceModel; w: number; h: number; on: boolean; lamps?: PartLamp[] }) {
   const u = h / model.height, ph = u - 4, pw = Math.min(30, ph * 2.2);
   return (
     <>
@@ -42,7 +42,28 @@ function Psus({ model, w, h, on }: { model: DeviceModel; w: number; h: number; o
             <rect x={x} y={y} width={pw} height={ph} rx="1" fill="oklch(0.2 0.005 255)" stroke="var(--metal-line)" strokeWidth="0.6" />
             <circle cx={x + ph / 2 + 1} cy={y + ph / 2} r={ph * 0.36} fill="url(#bb-hex)" />
             <rect x={x + pw - 8} y={y + ph / 2 - 2.5} width="5" height="5" rx="0.8" fill="oklch(0.1 0.004 255)" />
-            <circle cx={x + pw - 10.5} cy={y + 2.5} r="1" fill={on ? LED.ok : LED.off} />
+            <circle cx={x + pw - 10.5} cy={y + 2.5} r="1" {...(on ? partLed(lamps?.[k], LED.ok) : { fill: LED.off })} />
+          </g>
+        );
+      })}
+    </>
+  );
+}
+
+// Fans sit in the grille between the NICs and the power supplies, each with its own light.
+function Fans({ x, w, h, lamps, on }: { x: number; w: number; h: number; lamps: PartLamp[]; on: boolean }) {
+  const r = Math.min(h / 2 - 3, w / lamps.length / 2 - 2);
+  if (r < 3) return null;
+  const step = w / lamps.length;
+  return (
+    <>
+      {lamps.map((l, k) => {
+        const cx = x + step * (k + 0.5);
+        return (
+          <g key={k} aria-label={`Fan ${k + 1}`}>
+            <circle cx={cx} cy={h / 2} r={r} fill="oklch(0.16 0.004 255)" stroke="var(--metal-line)" strokeWidth="0.6" />
+            <circle cx={cx} cy={h / 2} r={r * 0.3} fill="oklch(0.3 0.005 255)" />
+            <circle cx={cx + r * 0.8} cy={h / 2 - r * 0.8} r="1" {...(on ? partLed(l, LED.ok) : { fill: LED.off })} />
           </g>
         );
       })}
@@ -52,13 +73,14 @@ function Psus({ model, w, h, on }: { model: DeviceModel; w: number; h: number; o
 
 export function Back(p: FrontProps) {
   const { model, w, h, name, ports, state } = p, fs = fsz(Math.min(h, 24)) * 0.9;
-  const spots = model.kind === "server" ? nicLayout(model, w, h) : new Map<number, Spot>();
+  const spots = model.kind === "server" ? nicLayout(model, w, h) : new Map<number, Spot>(), grille = Math.max(0, w * 0.5 - 12 - model.psus * 34);
   return (
     <>
       <rect x="0" y="0.5" width={w} height={h - 1} rx="1.5" fill="oklch(0.24 0.006 255)" stroke="var(--metal-line)" />
       <g transform={`matrix(-1 0 0 1 ${w} 0)`}>
         {model.kind === "patch" && <Jacks w={w} h={h} name={name} ports={ports} offset={jacksOf(model)} n={jacksOf(model)} />}
-        {model.kind !== "gateway" && model.kind !== "patch" && <rect x={w * 0.5} y="3" width={Math.max(0, w * 0.5 - 12 - model.psus * 34)} height={h - 6} rx="1" fill="url(#bb-perf)" opacity="0.35" />}
+        {model.kind !== "gateway" && model.kind !== "patch" && <rect x={w * 0.5} y="3" width={grille} height={h - 6} rx="1" fill="url(#bb-perf)" opacity="0.35" />}
+        {p.parts && p.parts.fans.length > 0 && <Fans x={w * 0.5} w={grille} h={model.kind === "server" && model.height > 1 ? h - h / model.height : h} lamps={p.parts.fans} on={state !== "off"} />}
         {[...spots].map(([i, s]) => {
           const st = ports[i] ?? "off";
           return (
@@ -70,7 +92,7 @@ export function Back(p: FrontProps) {
         })}
         {model.kind === "gateway"
           ? <rect x={w - 20} y={h / 2 - 3} width="8" height="6" rx="1" fill="oklch(0.1 0.004 255)" />
-          : model.kind !== "patch" && <Psus model={model} w={w} h={h} on={state !== "off"} />}
+          : model.kind !== "patch" && <Psus model={model} w={w} h={h} on={state !== "off"} lamps={p.parts?.psus} />}
       </g>
       {name && <text x={w - 8} y={h / 2 + fs * 0.35} textAnchor="end" fontFamily={MONO} fontSize={fs} fill="oklch(0.7 0.01 255)">{name}</text>}
     </>
