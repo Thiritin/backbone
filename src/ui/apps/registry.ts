@@ -1,5 +1,5 @@
 import {
-  BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, Handshake, Landmark, LifeBuoy, ListChecks, Megaphone, MonitorCog, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, Users,
+  BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, Landmark, LifeBuoy, ListChecks, Megaphone, MonitorCog, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, Users,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -10,7 +10,6 @@ import { FinanceApp } from "./finance/FinanceApp";
 import { MarketingApp } from "./marketing/MarketingApp";
 import { MarketApp } from "./market/MarketApp";
 import { NetworkApp } from "./network/NetworkApp";
-import { SalesApp } from "./sales/SalesApp";
 import { SecurityApp } from "./SecurityApp";
 import { missingFor } from "../../sim/30-market/market";
 import type { GameState } from "../../sim/50-state";
@@ -45,11 +44,10 @@ export const APPS: AppDef[] = [
   { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters.", body: ProductsApp,
     badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored || i.refund === "open")).length },
   { name: "Virtual machines", icon: MonitorCog, tile: "oklch(0.5 0.12 200)", about: "Starts, stops, migrates and restores the workloads on your clusters.", body: VmApp },
-  { name: "Sales", icon: Handshake, tile: "oklch(0.6 0.15 145)", about: "Collects requests from customers so you can quote a price or decline.", body: SalesApp,
-    badge: (s) => s.sales.requests.filter((r) => (r.status === "open" || r.status === "countered") && !missingFor(s, r).length).length },
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: "Lists your customers with their contracts and happiness.", body: CustomersApp },
-  { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets so you can answer them with templates and actions.", body: SupportApp,
-    badge: (s) => s.tickets.filter((t) => !isFinal(t)).length },
+  { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets, orders and sales requests so you can answer, accept, quote or decline them.", body: SupportApp,
+    badge: (s) => s.tickets.filter((t) => !isFinal(t)).length
+      + s.sales.requests.filter((r) => r.kind !== "order" && (r.status === "open" || r.status === "countered") && !missingFor(s, r).length).length },
   { name: "Billing", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: "Sends invoices, reminders and dunning notices.", body: BillingApp,
     badge: (s) => s.invoices.filter(isUnpaid).length },
   { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Shows your profit and loss, cash flow, tax, insurance and the account statement with every booking.", body: FinanceApp },

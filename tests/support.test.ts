@@ -63,7 +63,8 @@ describe("ticket generation", () => {
   it("creates nothing without customers", () => {
     const s = newGame(1);
     runTo(s, FEB_1);
-    expect(s.tickets).toEqual([]);
+    // Order emails come from leads, not customers.
+    expect(s.tickets.filter((t) => t.kind !== "order")).toEqual([]);
   });
 });
 

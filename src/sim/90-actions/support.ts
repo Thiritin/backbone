@@ -2,6 +2,7 @@ import type { GameState } from "../50-state";
 import { ACTIONS, bump, cancelCustomer, canEscalate, isFinal, MINUTES, TEMPLATES, type Ticket, type TicketAction, type Work } from "../40-support/tickets";
 import { hashRng } from "../00-core/rng";
 import { ignoreNotice } from "../40-support/notices";
+import { declineOrder, orderError } from "../30-market/orders";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -47,6 +48,8 @@ export function resolveTicket(s: GameState, id: string, action?: TicketAction): 
   if (action) {
     if (!ACTIONS[f.t.kind].includes(action)) return fail("error.unknownTicketAction");
     if ((action === "forward" || action === "takedown") && !f.t.customerId) return fail("error.notHosted");
+    const order = action === "accept" ? orderError(s, f.t) : null;
+    if (order) return fail(order);
     return queue(s, f.t, "resolve", action);
   }
   if (f.t.status !== "waiting") return fail("error.ticketNotAnswered");
@@ -71,6 +74,10 @@ export function closeTicket(s: GameState, id: string): ActionResult {
   if (f.t.notice) {
     if (f.t.kind === "notice") ignoreNotice(s, f.t, hashRng(s.seed, s.hour, Number(f.t.id.slice(3)) || 0, 94));
     else Object.assign(f.t, { status: "closed", outcome: "ignored", updatedAt: s.hour, unread: false });
+    return { ok: true, id };
+  }
+  if (f.t.kind === "order") {
+    declineOrder(s, f.t);
     return { ok: true, id };
   }
   const c = s.customers.find((x) => x.id === f.t.customerId)!;

@@ -384,7 +384,7 @@ Data loss hurts. Affected customers ask for a refund, and unhappy ones leave rev
 
 **Requests instead of price lists.** You don't publish plans. You decide what to build and offer, and customers come to you with requests, by email at first and later through your website's order form. Each customer picks a host by its size, its scores and hidden factors. Your job is choosing which requests to accept and at what price.
 
-**Where requests come from.** At the start every request arrives as an email in the Sales app, and answering one takes a few minutes of your time like a ticket. There are few of them early on, and more as the company grows. Later the **shop** unlocks: customers order there themselves, and it accepts every request it can serve as long as the target cluster stays below a limit you set.
+**Where requests come from.** Every request arrives as an email in the Support app, and answering one takes a few minutes of your time like a ticket. There are few of them early on, and more as the company grows. A lead who wants a standard product (a basic SLA and no big budget) writes an **order email** naming the product and plan; you accept it, which creates the customer and sets up the service at the market price, or decline it, and an order left unanswered past its due time goes to a competitor. Everyone else, and every expansion, writes a **sales request** that you answer with a quote. Once you own the website's **order form** in Marketing, standard orders skip the inbox and land as running services; an order the form cannot place, for lack of a location, product or room, still arrives as an email. Later the **shop** unlocks: customers order there themselves, and it accepts every request it can serve as long as the target cluster stays below a limit you set.
 
 | Request | From | Example |
 | --- | --- | --- |
@@ -513,7 +513,7 @@ Market research reveals these requirements (see Customers and market).
 
 ## Support
 
-Support is the first job that overwhelms you. Every outage, question, install request and cancellation arrives as a ticket in the Support app.
+Support is the first job that overwhelms you. Every outage, question, install request and cancellation arrives as a ticket in the Support app, next to order emails and sales requests. The inbox opens on All, every open email sorted by due time; the inbox, sales and type filters narrow it.
 
 **Answering a ticket.** Each ticket offers a few pre-written replies and predefined actions, such as restart the service, issue a credit, escalate to a technician, or process the cancellation. The right choice closes it; a wrong one brings a follow-up. Each customer expects an answer within a set time, which depends on their segment and plan (priority support shortens it).
 
@@ -523,7 +523,7 @@ Support is the first job that overwhelms you. Every outage, question, install re
 | How-to question | New customers; cheap control panels | Template answer |
 | Billing question | Invoices and payment reminders | Explain, resend invoice, grant an extension |
 | Suspension appeal | A high-budget customer's services are suspended | Unsuspend with a payment extension, keep suspended |
-| Expansion request | Customer nears the size they rent | Opens the request in Sales |
+| Expansion request | Customer nears the size they rent | Opens the sales request |
 | Cancellation | Unhappy or departing customer | Retention offer, process the cancellation |
 | Colocation install | Colocation customer ships hardware | Book an install with a technician |
 | Abuse report | Spam or attacks from a customer's server | Warn, suspend |
@@ -614,7 +614,7 @@ Staff are named people with a skill level, a work rate and a salary. Juniors cos
 | Technician | Repairs, worn-part swaps, software upgrades such as PHP versions, VM migrations, installs, cabling, colocation installs | Works at one location, one operation per hour; until hired, you are the technician |
 | Network engineer | Port setup, routing, transit and peering contracts |  |
 | Kubernetes engineer | Managed Kubernetes clusters | Needed to sell managed Kubernetes; each looks after a set number of customer clusters |
-| Sales agent | Answering requests in the Sales app |  |
+| Sales agent | Answering sales requests in the Support app |  |
 | Bookkeeper | Recording payments, payment reminders |  |
 | Accountant | Dunning, collections, month-end reports |  |
 | Marketing manager | Campaigns, review platforms, market research |  |

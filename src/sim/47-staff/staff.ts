@@ -7,6 +7,7 @@ import { bump, createTicket, MINUTES, rightTemplate, TEMPLATES, type Ticket, typ
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { isWorkHour } from "../00-core/workhours";
+import { orderError } from "../30-market/orders";
 
 export type Role = "support" | "bookkeeper" | "accountant" | "marketing" | "technician";
 export type Task = TicketKind | "reminder" | "dunning" | "final" | "campaigns" | "reviews" | "fairs" | "hardware" | "servers" | "panels";
@@ -26,7 +27,7 @@ export interface Candidate { id: string; name: string; role: Role; skill: number
 
 export const ROLES: Role[] = ["support", "bookkeeper", "accountant", "marketing", "technician"];
 export const TASKS: Record<Role, Task[]> = {
-  support: ["howTo", "billing", "outage", "upgrade", "cancellation", "abuse", "appeal"],
+  support: ["howTo", "billing", "outage", "upgrade", "cancellation", "abuse", "appeal", "order"],
   bookkeeper: ["reminder"],
   accountant: ["dunning", "final"],
   marketing: ["campaigns", "reviews", "fairs"],
@@ -162,6 +163,7 @@ const rightChance = (e: Employee) => (e.bot ? BOT_RIGHT : 0.75 + 0.25 * (e.skill
 // A support agent queues a reply or action on the ticket the same way the player does; finishWork in the support tick applies it.
 function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "resolve"; arg: string } {
   if (t.kind === "cancellation") return { op: "resolve", arg: "retain" };
+  if (t.kind === "order") return { op: "resolve", arg: "accept" };
   const right = rightTemplate(s, t);
   if (!right) return { op: "resolve", arg: "unsuspend" };
   if (rand(r) < rightChance(e)) return { op: "reply", arg: right };
@@ -179,7 +181,8 @@ function answerTickets(s: GameState, agents: Employee[], r: Rng): BotTask[] {
     let at = Math.max(e.busyUntil, s.hour * 60);
     for (const t of queue) {
       if (at >= end) break;
-      if (taken.has(t.id) || !e.trained.includes(t.kind)) continue;
+      // An order that cannot be set up waits for the player.
+      if (taken.has(t.id) || !e.trained.includes(t.kind) || (t.kind === "order" && orderError(s, t))) continue;
       at += MINUTES[t.kind] / speed(e);
       taken.set(t.id, { ...choose(s, e, t, r), doneAt: Math.ceil(at), by: e.name });
       if (e.bot) byBot.push({ bot: e, customerId: t.customerId, reminder: false });

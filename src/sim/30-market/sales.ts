@@ -15,6 +15,7 @@ import { addAwareness, discountFor } from "../80-business/marketing";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
+import { firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { provisionService } from "../90-actions/clusters";
 import type { ActionResult } from "../90-actions/hardware";
 import {
@@ -72,7 +73,7 @@ export function newLead(s: GameState, profile: Profile, city: string, events: Si
     kind: "new", customerId: null, ...who, profile, city, ...need, reference: referenceFor(s, profile, need.product, need.plan, need.sla),
     discount: discountFor(s, profile), budget: budgetOf(s.rng), shady: false, serviceId: null, ticketId: null, deadline: s.hour + REQUEST_HOURS,
   }, `sales.msg.${need.product}.${variant}`);
-  if (!missingFor(s, req).length) events.push({ app: "Sales", key: "event.salesRequest", params: { name: requestName(req), plan: planName(req) } });
+  if (!missingFor(s, req).length) events.push({ app: "Support", key: "event.salesRequest", params: { name: requestName(req), plan: planName(req) } });
   return req;
 }
 
@@ -84,7 +85,7 @@ export function shadyLead(s: GameState, city: string, events: SimEvent[]): Sales
     reference: referenceFor(s, "hobbyDev", "vps", plan, "basic"), discount: 0, budget: 1.8, shady: true, serviceId: null, ticketId: null,
     deadline: s.hour + REQUEST_HOURS,
   }, "sales.msg.shady");
-  if (!missingFor(s, req).length) events.push({ app: "Sales", key: "event.salesRequest", params: { name: requestName(req), plan: planName(req) } });
+  if (!missingFor(s, req).length) events.push({ app: "Support", key: "event.salesRequest", params: { name: requestName(req), plan: planName(req) } });
   return req;
 }
 
@@ -95,9 +96,12 @@ function morningMail(s: GameState, events: SimEvent[]): void {
     for (let i = 0; i < n; i++) {
       const need = needFor(s.rng, f.profile), k = `${f.profile}/${need.product}/${f.city}`;
       if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city));
-      if (rand(s.rng) < Math.min(1, cache.get(k)! * f.conversion)) newLead(s, f.profile, f.city, events, need);
+      if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
+      if (isStandard(f.profile, need.sla)) orderLead(s, f.profile, f.city, events, need);
+      else newLead(s, f.profile, f.city, events, need);
     }
   }
+  firstOrder(s, events);
   if (s.hour > 2160 && rand(s.rng) < SHADY_PER_MONTH / DAYS_PER_MONTH) shadyLead(s, s.locations[0]?.city ?? "Frankfurt", events);
 }
 
@@ -167,7 +171,7 @@ export function fulfil(s: GameState, r: SalesRequest): ActionResult {
     ? provisionService(s, customerId, r.product, { label, plan: r.plan, sla: r.sla, price: r.quote! / 730, clusterId: target.clusterId, zone: target.zone })
     : { ok: false, error: PRODUCTS[r.product].runsOn === "server" ? "error.noFreeServer" : "error.noCapacity" };
   if (!placed.ok) Object.assign(s, before);
-  else if (r.kind === "new") editRequest(s, r.id, () => ({ customerId }));
+  else if (r.kind !== "expansion") editRequest(s, r.id, () => ({ customerId }));
   return placed;
 }
 
@@ -188,7 +192,7 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   if (php) {
     say(s, r.id, "customer", "sales.reply.oldPhp", { name: r.contact, version: php });
     loseRequest(s, r, "lost", "lost.oldPhp", { version: php });
-    events.push({ app: "Sales", key: "event.salesPhp", params: { name, plan, version: php } });
+    events.push({ app: "Support", key: "event.salesPhp", params: { name, plan, version: php } });
     return;
   }
   if (accepts) {
@@ -197,11 +201,11 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
     if (done.ok) {
       editRequest(s, r.id, () => ({ status: "won", replyAt: null, serviceId: done.id ?? r.serviceId }));
       closeTicket(s, r);
-      events.push({ app: "Sales", key: "event.salesWon", params: { name, plan, price } });
+      events.push({ app: "Support", key: "event.salesWon", params: { name, plan, price } });
     } else {
       say(s, r.id, "customer", "sales.reply.gone", { name: r.contact });
       loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
-      events.push({ app: "Sales", key: "event.salesFailed", params: { name, plan, city: r.city } });
+      events.push({ app: "Support", key: "event.salesFailed", params: { name, plan, city: r.city } });
     }
     return;
   }
@@ -210,19 +214,19 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
     const counter = Math.min(price - 0.01, Math.round(r.reference * mid * 0.97 * 100) / 100);
     editRequest(s, r.id, () => ({ status: "countered", counter, replyAt: null, deadline: s.hour + RETRY_HOURS }));
     say(s, r.id, "customer", "sales.reply.counter", { name: r.contact, price: counter });
-    events.push({ app: "Sales", key: "event.salesCounter", params: { name, price: counter } });
+    events.push({ app: "Support", key: "event.salesCounter", params: { name, price: counter } });
     return;
   }
   const key = ratio > mid + NO_BUDGET_GAP ? "sales.reply.noBudget" : "sales.reply.refused";
   say(s, r.id, "customer", key, { name: r.contact });
-  events.push({ app: "Sales", key: "event.salesRefused", params: { name } });
+  events.push({ app: "Support", key: "event.salesRefused", params: { name } });
   if (r.attempts < 2) editRequest(s, r.id, () => ({ status: "refused", replyAt: null, deadline: s.hour + RETRY_HOURS }));
   else loseRequest(s, r, "lost", "lost.price");
 }
 
 function expire(s: GameState): void {
   for (const r of s.sales.requests) {
-    if (!["open", "countered", "refused"].includes(r.status) || s.hour < r.deadline) continue;
+    if (!["open", "countered", "refused"].includes(r.status) || s.hour < r.deadline || orderQueued(s, r)) continue;
     const missing = missingFor(s, r)[0];
     if (r.status !== "open") loseRequest(s, r, "lost", "lost.price");
     else if (missing) loseRequest(s, r, "lost", missing.key, missing.params);
