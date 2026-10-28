@@ -985,6 +985,44 @@ A raise request left unanswered for 30 days counts as refused. Salaries are bill
 
 A bot works at 2 × the base rate (a skill-50 human works at 1 ×), picks the right reply with P = 0.6 and never gains skill. Each reminder a bot sends makes the customer open a billing ticket with a 5% chance. Each bot task causes an incident with a 0.2% chance: the customer loses 15 happiness and opens a billing ticket, and the Staff app reports one of five absurd lines. A bot that handles 500 tasks a month causes about one incident a month.
 
+**Technicians.** A technician costs the technician role base above (€47,000 in 2026) and does one operation per office hour, so at most 40 a week, at their location. Skill sets the salary and does not change the work rate, because every operation fills its hour. Against remote hands at €120 an hour, a technician at a datacenter pays off from about 25 swaps a month; in the basement the gain is only the time the player saves.
+
+| Operation | Training | Operations |
+| --- | --- | --- |
+| Replace a part that swaps while running | Parts and power | 1 |
+| Replace a part that needs the device off | Parts and power | 3 (shut down, swap, start) |
+| Shut down or start a device | Parts and power | 1 |
+| Drain a cluster node, however many VMs it holds | Draining servers | 1 |
+| Upgrade one node to the current PHP | PHP upgrades | 1 per node |
+
+A technician's swap takes 15 minutes, the same as the player's in the basement, and bills no remote hands. The repair rule for failed parts queues at most one swap per spare of that kind in the zone's storage.
+
+## PHP versions
+
+Each version becomes available on 1 January after its release, rounded so the start of the game has 4.4:
+
+| Version | From | Version | From | Version | From |
+| --- | --- | --- | --- | --- | --- |
+| 4.4 | 2005 | 5.6 | 2015 | 7.4 | 2020 |
+| 5.1 | 2006 | 7.0 | 2016 | 8.0 | 2021 |
+| 5.2 | 2007 | 7.1 | 2017 | 8.1 | 2022 |
+| 5.3 | 2010 | 7.2 | 2018 | 8.2 | 2023 |
+| 5.4 | 2013 | 7.3 | 2019 | 8.3 | 2024 |
+| 5.5 | 2014 | | | 8.4 | 2025 |
+| | | | | 8.5 | 2026 |
+
+A cluster runs its oldest node's version. With b the number of newer versions out:
+
+| Effect | Value |
+| --- | --- |
+| How-to ticket rate of web spaces on the cluster | × (1 + 0.05 · min(b, 6)), at most +30% |
+| Unsupported | b ≥ 3 |
+| Abuse report rate of a customer with a web space on an unsupported cluster | × 1.5 |
+| Web hosting requests in Sales that need a supported version | min(1, 0.25 · (b − 2)): 25% at 3 behind, all at 6 |
+| Performance of a node's sites in the hour after its upgrade | 70% |
+
+A request that needs a supported version asks for the oldest one still supported and is lost when it would land on the old cluster. Through 2005 to 2009 the catalogue moves slowly, so a cluster set up in 2005 is unsupported from 2010; from 2015 a new version comes every year, and a cluster left alone for three years starts losing sales.
+
 ## Marketing and reviews
 
 In 2005 a low-budget lead from search ads costs about €9, so a new private customer costs €25 to €80 depending on your share. Reviews skew negative unless you invite happy customers, which is what review platforms are for.

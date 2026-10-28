@@ -5,6 +5,7 @@ import { curveFor, curveLoad } from "../10-catalog/usage";
 import type { Device, GameState } from "../50-state";
 import { clusterOf, controlPlaneUse, lostDisk, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
+import { PHP_SLOW } from "./php";
 import { portPeers, raidUsable, working } from "./status";
 
 const YEARS_2 = 2 * 8760;
@@ -27,7 +28,7 @@ export function workloadLoad(s: GameState, w: Workload, hour: number): number {
 }
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
-// cores ÷ busy vCPUs, RAM over 100% swaps to 30%, a disk pool over 100% stalls writes to 50%.
+// cores ÷ busy vCPUs, RAM over 100% swaps to 30%, a disk pool over 100% stalls writes to 50%, a PHP upgrade slows it to 70%.
 export interface NodeUsage { used: Resources; physical: Resources; perf: number }
 
 export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour): NodeUsage {
@@ -50,7 +51,8 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
   const ram = used.ramGb > physical.ramGb ? 0.3 : 1;
   const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
-  return { used, physical, perf: Math.min(cpu, ram, disk) };
+  const php = c && hour <= (c.nodes.find((n) => n.deviceId === deviceId)?.phpUntil ?? -1) ? PHP_SLOW : 1;
+  return { used, physical, perf: Math.min(cpu, ram, disk, php) };
 }
 
 // The highest CPU, RAM and disk use of a node over the given hours.

@@ -1,11 +1,17 @@
-import { Boxes, Plus } from "lucide-react";
+import { Boxes, Plus, Wrench } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { yearOf } from "../../../sim/00-core/time";
 import { modelById } from "../../../sim/10-catalog/hardware";
+import { phpAt, phpBehind } from "../../../sim/10-catalog/platforms";
+import { nextSlot } from "../../../sim/47-staff/technicians";
+import { PHP_EOL } from "../../../sim/60-infra/php";
+import { queuePhpUpgrade } from "../../../sim/90-actions/staff";
+import { slotTime, TechButton } from "./TechButton";
 import type { Device, GameState, Location } from "../../../sim/50-state";
 import { bookable, clusterOf, controlPlaneUp, nodeUsed, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { nodeUsage } from "../../../sim/60-infra/usage";
-import { addNode, CLUSTER_NAME_MAX, cordon, createCluster, drain, removeNode, setPlacement, uncordon } from "../../../sim/90-actions/clusters";
+import { addNode, CLUSTER_NAME_MAX, cordon, createCluster, drain, removeNode, setPlacement, uncordon, upgradePhp } from "../../../sim/90-actions/clusters";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { cores, devName, disk, ram } from "../hw";
@@ -95,6 +101,31 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
 }
 
 // A server's role: its cluster and node state with the workloads on it, the customer renting it, or a cluster to join.
+// The node's PHP version, with an upgrade of every node by hand or through the technicians' queue.
+function PhpRow({ game, cluster, device }: { game: GameState; cluster: Cluster; device: Device }) {
+  const act = useStore((s) => s.act);
+  const node = cluster.nodes.find((n) => n.deviceId === device.id)!;
+  const year = yearOf(game.hour), latest = phpAt(year), behind = phpBehind(node.php, year);
+  const queued = game.techOps.filter((o) => o.kind === "php" && cluster.nodes.some((n) => n.deviceId === o.deviceId)).length;
+  const old = cluster.nodes.some((n) => n.php !== latest);
+  const loc = locationOf(game, device), slot = old && !queued && loc ? nextSlot(game, loc.id, "panels") : null;
+  return (
+    <div className="loc-row">
+      <span className="loc-k">PHP</span>
+      <span className="num">{node.php}</span>
+      {behind >= PHP_EOL ? <span className="pill bad">Unsupported</span> : behind > 0 && <span className="pill warn">Outdated</span>}
+      <span className="grow" />
+      {queued > 0 && <span className="pill accent">Queued <span className="num">{queued}</span></span>}
+      {old && <button className="btn" onClick={() => act((g) => upgradePhp(g, cluster.id))}>Upgrade to {latest}</button>}
+      {slot && (
+        <button className="btn" onClick={() => act((g) => queuePhpUpgrade(g, cluster.id))}>
+          <Wrench />{slot.name.split(" ")[0]}, <span className="num">{slotTime(game.hour, slot.hour)}</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function NodeCard({ game, device }: { game: GameState; device: Device }) {
   const act = useStore((s) => s.act);
   const cluster = clusterOf(game, device.id), node = cluster?.nodes.find((n) => n.deviceId === device.id);
@@ -137,9 +168,11 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
           ? <button className="btn" onClick={() => act((g) => cordon(g, device.id))}>Cordon</button>
           : <button className="btn" onClick={() => act((g) => uncordon(g, device.id))}>Uncordon</button>}
         {node.state !== "draining" && node.state !== "maintenance" && <button className="btn" onClick={() => act((g) => drain(g, device.id))}>Drain</button>}
+        {node.state !== "draining" && node.state !== "maintenance" && <TechButton game={game} deviceId={device.id} kind="drain" />}
         {!loads.length && <button className="btn" onClick={() => act((g) => removeNode(g, device.id))}>Remove</button>}
       </div>
       {usage(game, device).map(([k, v]) => <div key={k} className="loc-row"><span className="loc-k">{k}</span>{v}</div>)}
+      <PhpRow game={game} cluster={cluster} device={device} />
       {cluster.controlPlane === device.id && (
         <div className="loc-row">
           <span className="loc-k">Control plane</span>

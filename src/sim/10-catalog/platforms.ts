@@ -44,3 +44,18 @@ export const SWITCH_PER_HOUR = 4;
 
 export const softwareById = (id: string): Software => SOFTWARE.find((x) => x.id === id) ?? SOFTWARE.find((x) => x.id === DEFAULT_PLATFORM)!;
 export const softwareOf = (kind: SoftwareKind): Software[] => SOFTWARE.filter((x) => x.kind === kind);
+
+// economy.md, PHP versions: each from 1 January after its release, when web hosts start to install it.
+export const PHP: { version: string; year: number }[] = [
+  { version: "4.4", year: 2005 }, { version: "5.1", year: 2006 }, { version: "5.2", year: 2007 }, { version: "5.3", year: 2010 },
+  { version: "5.4", year: 2013 }, { version: "5.5", year: 2014 }, { version: "5.6", year: 2015 }, { version: "7.0", year: 2016 },
+  { version: "7.1", year: 2017 }, { version: "7.2", year: 2018 }, { version: "7.3", year: 2019 }, { version: "7.4", year: 2020 },
+  { version: "8.0", year: 2021 }, { version: "8.1", year: 2022 }, { version: "8.2", year: 2023 }, { version: "8.3", year: 2024 },
+  { version: "8.4", year: 2025 }, { version: "8.5", year: 2026 },
+];
+export const phpAt = (year: number): string => [...PHP].reverse().find((p) => p.year <= year)?.version ?? PHP[0].version;
+const phpIndex = (version: string) => Math.max(0, PHP.findIndex((p) => p.version === version));
+// How many newer versions are out by that year.
+export const phpBehind = (version: string, year: number): number => Math.max(0, phpIndex(phpAt(year)) - phpIndex(version));
+export const oldestPhp = (versions: string[]): string | undefined =>
+  versions.reduce<string | undefined>((a, v) => (a === undefined || phpIndex(v) < phpIndex(a) ? v : a), undefined);

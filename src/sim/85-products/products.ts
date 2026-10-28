@@ -6,6 +6,7 @@ import type { Customer } from "../30-customers/customers";
 import { bump, createTicket, isFinal } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { controlPlaneUp, lostDisk, servedBy, type Cluster, type Workload } from "../60-infra/cluster";
+import { phpTickets } from "../60-infra/php";
 import { raidUsable } from "../60-infra/status";
 import { diskFill, nodeUsage } from "../60-infra/usage";
 import { addReview, starsFor } from "../80-business/marketing";
@@ -53,12 +54,13 @@ export function licenseCost(s: GameState, c: Cluster): { panel: number; platform
   return { panel: cost(c.panel), platform: cost(c.platform) };
 }
 
-// The how-to ticket rate factor of a customer: the average over their cluster workloads of the software serving each.
+// The how-to ticket rate factor of a customer: the average over their cluster workloads of the software serving each,
+// with web spaces on an old PHP a little higher.
 export function howToFactor(s: GameState, customerId: string): number {
   const services = new Set(s.services.filter((v) => v.customerId === customerId && v.endedAt === null).map((v) => v.id));
   const factors = s.workloads.filter((w) => w.clusterId && services.has(w.serviceId)).map((w) => {
     const c = s.clusters.find((x) => x.id === w.clusterId)!;
-    return softwareById(servedBy(s, w) === "panel" ? c.panel : c.platform).tickets;
+    return servedBy(s, w) === "panel" ? softwareById(c.panel).tickets * phpTickets(s, c) : softwareById(c.platform).tickets;
   });
   return factors.length ? factors.reduce((a, b) => a + b, 0) / factors.length : 1;
 }
