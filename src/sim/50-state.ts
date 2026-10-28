@@ -89,6 +89,8 @@ export interface GameState {
   tickets: Ticket[];
   playerBusyUntil: number;
   downSince: Record<string, number>;
+  // Cluster nodes frozen because their RAM in use exceeds the installed RAM.
+  frozen: string[];
   // The basement's internet line (HOME_LINES id) and a switch to another line that goes live at hour at.
   homeLine: { id: string; next: { id: string; at: number } | null };
   docs: Doc[];
@@ -172,7 +174,7 @@ export const newGame = (seed: number): GameState => ({
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, lossReports: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
-  tickets: [], playerBusyUntil: 0, downSince: {},
+  tickets: [], playerBusyUntil: 0, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)" },
   homeLine: { id: DEFAULT_HOME_LINE, next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,

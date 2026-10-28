@@ -6,6 +6,7 @@ import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { deviceDefaults, newGame, SAVE_VERSION, type Device, type GameState } from "../50-state";
 import { clusterDefaults, workloadDefaults } from "../60-infra/cluster";
 import { fillDomains } from "../30-customers/domains";
+import { fillLines } from "../80-business/website";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
 export const serialize = (state: GameState): string => JSON.stringify(state);
@@ -46,7 +47,7 @@ export function deserialize(raw: string): GameState {
     const kept = data.dcs?.[dc.id];
     return [dc.id, kept && kept.others >= REPAIR_FLOOR * capacityAt(dc, year - 1) ? kept : seeded[dc.id]];
   }));
-  return fillDomains({
+  return fillLines(fillDomains({
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
     company: { ...base.company, ...data.company },
@@ -56,8 +57,8 @@ export function deserialize(raw: string): GameState {
     marketing: { ...base.marketing, ...data.marketing, awareness: { ...base.marketing.awareness, ...data.marketing?.awareness } },
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.
-    // Saves from before the Sales app get it in the dock.
-    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id)), "Sales"])] : [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
+    // The Sales app moved into Support, so its id is dropped; saves from before the Website app get it in the dock.
+    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id)).filter((id) => id !== "Sales"), "Website"])] : [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [] })),
@@ -68,5 +69,5 @@ export function deserialize(raw: string): GameState {
     techRules: { ...base.techRules, ...data.techRules },
     clusters: (data.clusters ?? []).map((c) => clusterDefaults(c, data.hour ?? 0)), workloads: (data.workloads ?? []).map(workloadDefaults), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
-  });
+  }), data.marketing?.lines);
 }

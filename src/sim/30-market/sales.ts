@@ -12,6 +12,7 @@ import { phpNeeded } from "../60-infra/php";
 import { locationOf } from "../60-infra/status";
 import { modelById } from "../10-catalog/hardware";
 import { addAwareness, discountFor } from "../80-business/marketing";
+import { listed } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
@@ -102,14 +103,14 @@ function morningMail(s: GameState, events: SimEvent[]): void {
       const need = needFor(s.rng, f.profile), k = `${f.profile}/${need.product}/${f.city}`;
       if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
-      // The website and order emails only sell lines some installed control plane supports.
-      if (!lineOffered(s, need.product)) continue;
+      // Leads only write about lines on the website, which needs a control plane that sells them.
+      if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
       if (isStandard(f.profile, need.sla)) orderLead(s, f.profile, f.city, events, need, customFor(s));
       else newLead(s, f.profile, f.city, events, need);
     }
   }
-  firstOrder(s, events);
-  if (s.hour > 2160 && lineOffered(s, "vps") && rand(s.rng) < SHADY_PER_MONTH / DAYS_PER_MONTH) shadyLead(s, s.locations[0]?.city ?? "Frankfurt", events);
+  if (listed(s, "webHosting")) firstOrder(s, events);
+  if (s.hour > 2160 && lineOffered(s, "vps") && listed(s, "vps") && rand(s.rng) < SHADY_PER_MONTH / DAYS_PER_MONTH) shadyLead(s, s.locations[0]?.city ?? "Frankfurt", events);
 }
 
 // An open upgrade ticket asks for the next bigger plan of its service, or one more of the biggest.

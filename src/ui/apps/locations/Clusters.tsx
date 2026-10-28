@@ -1,5 +1,5 @@
 import { Boxes, Plus, Wrench } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { yearOf } from "../../../sim/00-core/time";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { phpAt, phpBehind } from "../../../sim/10-catalog/platforms";
@@ -11,12 +11,13 @@ import type { Device, GameState, Location } from "../../../sim/50-state";
 import { bookable, clusterOf, nodeUsed, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { nodeUsage } from "../../../sim/60-infra/usage";
-import { addNode, CLUSTER_NAME_MAX, cordon, createCluster, drain, removeNode, phpDue, setPlacement, uncordon, upgradePhp } from "../../../sim/90-actions/clusters";
+import { addNode, CLUSTER_NAME_MAX, cordon, createCluster, drain, removeNode, phpDue, setPlacement, setRamGuard, uncordon, upgradePhp } from "../../../sim/90-actions/clusters";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { cores, devName, disk, ram } from "../hw";
 import { ControlPlanePill, softwareName, VM_STATE, vmState } from "../products/parts";
 import { Zone } from "./ui";
+import { NodeWorkloads } from "./Workloads";
 
 export const NODE_STATE: Record<NodeState, [string, string]> = { active: ["Active", "ok"], cordoned: ["Cordoned", "warn"], draining: ["Draining", "warn"], maintenance: ["Maintenance", ""] };
 const STATE = NODE_STATE;
@@ -31,18 +32,26 @@ export function Meter({ used, cap, text }: { used: number; cap: number; text: st
   );
 }
 
-// Booked against what the node can book, then live use against the hardware.
-function usage(game: GameState, d: Device): [string, ReactNode][] {
+// Booked against what the node can book, next to live use against the hardware, row by row.
+function NodeMeters({ game, d }: { game: GameState; d: Device }) {
   const cap = bookable(game, d), used = nodeUsed(game, d.id), live = nodeUsage(game, d.id), { used: u, physical: p } = live;
-  return [
-    ["vCPU booked", <Meter used={used.vcpu} cap={cap.vcpu} text={`${num(used.vcpu)} of ${num(cap.vcpu)}`} />],
-    ["RAM booked", <Meter used={used.ramGb} cap={cap.ramGb} text={`${ram(+used.ramGb.toFixed(2))} of ${ram(+cap.ramGb.toFixed(2))}`} />],
-    ["Disk booked", <Meter used={used.diskGb} cap={cap.diskGb} text={`${disk(used.diskGb)} of ${disk(Math.round(cap.diskGb))}`} />],
-    ["CPU in use", <Meter used={u.vcpu} cap={p.vcpu} text={`${num(u.vcpu)} of ${cores(p.vcpu)}`} />],
-    ["RAM in use", <Meter used={u.ramGb} cap={p.ramGb} text={`${ram(+u.ramGb.toFixed(1))} of ${ram(p.ramGb)}`} />],
-    ["Disk in use", <Meter used={u.diskGb} cap={p.diskGb} text={`${disk(Math.round(u.diskGb))} of ${disk(p.diskGb)}`} />],
-    ...(live.perf < 1 ? [["Performance", <span className="pill warn">{Math.round(live.perf * 100)}%</span>] as [string, ReactNode]] : []),
+  const rows: [string, ReactNode, ReactNode][] = [
+    ["CPU", <Meter used={used.vcpu} cap={cap.vcpu} text={`${num(used.vcpu)}/${num(cap.vcpu)} vCPU`} />, <Meter used={u.vcpu} cap={p.vcpu} text={`${num(u.vcpu)}/${cores(p.vcpu)}`} />],
+    ["RAM", <Meter used={used.ramGb} cap={cap.ramGb} text={`${num(used.ramGb)}/${ram(+cap.ramGb.toFixed(1))}`} />, <Meter used={u.ramGb} cap={p.ramGb} text={`${num(u.ramGb)}/${ram(p.ramGb)}`} />],
+    ["Disk", <Meter used={used.diskGb} cap={cap.diskGb} text={`${Math.round(used.diskGb)}/${disk(Math.round(cap.diskGb))}`} />, <Meter used={u.diskGb} cap={p.diskGb} text={`${Math.round(u.diskGb)}/${disk(p.diskGb)}`} />],
   ];
+  return (
+    <>
+      <div className="node-meters">
+        <span /><span className="loc-k">Booked</span><span className="loc-k">In use</span>
+        {rows.map(([k, a, b]) => <Fragment key={k}><span className="loc-k">{k}</span>{a}{b}</Fragment>)}
+      </div>
+      {game.frozen.includes(d.id) && (
+        <div className="loc-row"><span className="loc-k">Frozen</span><span className="pill bad">RAM in use {num(u.ramGb)} of {ram(p.ramGb)}</span></div>
+      )}
+      {live.perf < 1 && <div className="loc-row"><span className="loc-k">Performance</span><span className="pill warn">{Math.round(live.perf * 100)}%</span></div>}
+    </>
+  );
 }
 
 // Servers mounted in the zone that no cluster or customer uses.
@@ -79,12 +88,22 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
           <button aria-pressed={cluster.placement === "spread"} onClick={() => act((g) => setPlacement(g, cluster.id, "spread"))}>Spread</button>
         </div>
       </div>
+      {game.unlocks.includes("memoryReservation") && (
+        <div className="loc-row">
+          <span className="loc-k">RAM</span>
+          <div className="seg" role="group" aria-label="Memory reservation">
+            <button aria-pressed={!cluster.ramGuard} onClick={() => act((g) => setRamGuard(g, cluster.id, false))}>Overbook</button>
+            <button aria-pressed={!!cluster.ramGuard} onClick={() => act((g) => setRamGuard(g, cluster.id, true))}>Reserve</button>
+          </div>
+        </div>
+      )}
       {cluster.nodes.map((n) => {
         const d = game.devices.find((x) => x.id === n.deviceId)!, [label, tone] = STATE[n.state], used = nodeUsed(game, d.id), cap = bookable(game, d);
         return (
           <div key={n.deviceId} className="loc-row">
             <span>{devName(d)}</span>
             <span className={`pill ${tone}`}>{label}</span>
+            {game.frozen.includes(d.id) && <span className="pill bad">Frozen</span>}
             <span className="grow" />
             <span className="num loc-muted">{workloadsOn(game, d.id).length} workloads</span>
             <Meter used={used.ramGb} cap={cap.ramGb} text={`${ram(+used.ramGb.toFixed(2))} of ${ram(+cap.ramGb.toFixed(2))}`} />
@@ -163,6 +182,7 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
       <div className="loc-card-h">
         <h3><Boxes />{cluster.name}</h3>
         <span className={`pill ${tone}`}>{label}</span>
+        {game.frozen.includes(device.id) && <span className="pill bad">Frozen</span>}
         <span className="grow" />
         {node.state === "active"
           ? <button className="btn" onClick={() => act((g) => cordon(g, device.id))}>Cordon</button>
@@ -171,7 +191,7 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
         {node.state !== "draining" && node.state !== "maintenance" && <TechButton game={game} deviceId={device.id} kind="drain" />}
         {!loads.length && <button className="btn" onClick={() => act((g) => removeNode(g, device.id))}>Remove</button>}
       </div>
-      {usage(game, device).map(([k, v]) => <div key={k} className="loc-row"><span className="loc-k">{k}</span>{v}</div>)}
+      <NodeMeters game={game} d={device} />
       <PhpRow game={game} cluster={cluster} device={device} />
       {cluster.controlPlane === device.id && (
         <div className="loc-row">
@@ -182,19 +202,16 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
           <button className="btn" onClick={() => openApp("Products", { kind: "cluster", id: cluster.id })}>{cluster.panel || cluster.platform ? "Change" : "Install"}</button>
         </div>
       )}
-      {loads.map((w) => {
-        const { v, c } = owner(w.serviceId), st = vmState(game, w), [label, tone] = VM_STATE[st];
-        return (
-          <div key={w.id} className="loc-row">
-            <span>{c?.name}</span>
-            <span className="loc-muted">{v?.label}</span>
-            <span className="grow" />
-            <span className="num loc-muted">{num(w.vcpu)} vCPU · {ram(+w.ramGb.toFixed(2))} · {disk(w.diskGb)}</span>
-            {st !== "running" && <span className={`pill ${tone}`}>{label}</span>}
-            {st === "lost" && <button className="btn" onClick={() => act((g) => restoreWorkload(g, w.id))}>{w.backupAt === null ? "Start empty" : "Restore"}</button>}
-          </div>
-        );
-      })}
+      {loads.filter((w) => vmState(game, w) === "lost").map((w) => (
+        <div key={w.id} className="loc-row">
+          <span>{owner(w.serviceId).c?.name}</span>
+          <span className="loc-muted">{owner(w.serviceId).v?.label}</span>
+          <span className="grow" />
+          <span className="pill bad">{VM_STATE.lost[0]}</span>
+          <button className="btn" onClick={() => act((g) => restoreWorkload(g, w.id))}>{w.backupAt === null ? "Start empty" : "Restore"}</button>
+        </div>
+      ))}
+      <NodeWorkloads game={game} deviceId={device.id} />
     </div>
   );
 }

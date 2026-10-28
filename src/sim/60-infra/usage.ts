@@ -1,34 +1,69 @@
-import { hashRng, rand } from "../00-core/rng";
+import { chance, hashRng, rand } from "../00-core/rng";
+import { dateOf } from "../00-core/time";
 import { jacksOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
-import { curveFor, curveLoad } from "../10-catalog/usage";
+import { BACKUP_CHANGED, BACKUP_HOUR, curveFor, curveLoad, growthRate, idNum, JOB_CPU, nightJob, weekMedian } from "../10-catalog/usage";
+import type { Service } from "../30-customers/customers";
+import { bump, createTicket, isFinal } from "../40-support/tickets";
+import { isSuspended } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
-import { clusterOf, controlPlaneUse, lostDisk, workloadsOf, workloadsOn, type Workload } from "./cluster";
+import type { SimEvent } from "../88-tick/tick";
+import { clusterOf, controlPlaneUp, controlPlaneUse, lostDisk, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
 import { PHP_SLOW } from "./php";
 import { portPeers, raidUsable, working } from "./status";
 
-const YEARS_2 = 2 * 8760;
-// economy.md: memory stays mostly resident, disks fill from 30% of booked at signup to 70% after two years.
+// economy.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
 const RAM_BASE = 0.6;
+const yearsSince = (since: number, hour: number) => Math.max(0, hour - since) / 8760;
 export function diskFill(s: GameState, w: Workload, hour: number): number {
-  const since = s.services.find((v) => v.id === w.serviceId)?.startedAt ?? w.placedAt;
-  return 0.3 + 0.4 * Math.min(1, Math.max(0, hour - since) / YEARS_2);
+  const v = s.services.find((x) => x.id === w.serviceId);
+  return Math.min(1, 0.3 + growthRate(s.seed, v?.customerId ?? w.serviceId, "disk") * yearsSince(v?.startedAt ?? w.placedAt, hour));
 }
 
-const idNum = (id: string) => [...id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 0x01000193), 0x811c9dc5);
+// How much more CPU a customer needs than in their first month, from their growth rate.
+const demand = (s: GameState, v: Service, hour: number) => 1 + growthRate(s.seed, v.customerId, "cpu") * yearsSince(v.startedAt, hour);
 
-// A workload's load at an hour: its customer's curve with ±20% jitter drawn from the seed. Stopped, restoring and lost workloads idle.
+// A workload's load at an hour: its customer's curve times their grown demand with ±20% jitter drawn from the seed, plus their
+// night job. Stopped, restoring and lost workloads idle.
 export function workloadLoad(s: GameState, w: Workload, hour: number): number {
   if (w.stopped || w.busyUntil > hour || lostDisk(s, w)) return 0;
   const v = s.services.find((x) => x.id === w.serviceId), c = v && s.customers.find((x) => x.id === v.customerId);
   if (!v || !c) return 0;
   const jitter = 1 + 0.4 * (rand(hashRng(s.seed, idNum(w.id), hour)) - 0.5);
-  return Math.min(1, curveLoad(curveFor(v.product, c.profile), hour) * jitter);
+  return Math.min(1, curveLoad(curveFor(v.product, c.profile), hour) * demand(s, v, hour) * jitter + JOB_CPU * nightJob(s.seed, c.id, hour));
+}
+
+// The player's cluster backups this hour: each source node sends its workloads' changed data to the target's control plane.
+// ponytail: a backup to another zone lights the LAN ports only; bill it on the uplinks if cross-zone backups get common.
+export interface BackupFlow { from: string; to: string; mbps: number }
+export function backupFlows(s: GameState, hour: number = s.hour): BackupFlow[] {
+  const d = dateOf(hour);
+  if (d.getUTCHours() !== BACKUP_HOUR) return [];
+  const flows = new Map<string, BackupFlow>();
+  for (const c of s.clusters) {
+    const t = s.clusters.find((x) => x.id === c.backup.targetId), to = t?.controlPlane;
+    if (c.backup.every === "off" || !t || !to || !controlPlaneUp(s, t) || (c.backup.every === "weekly" && d.getUTCDay() !== 0)) continue;
+    for (const w of s.workloads) {
+      if (w.clusterId !== c.id || !w.deviceId || w.deviceId === to || w.stopped || lostDisk(s, w)) continue;
+      const f = flows.get(`${w.deviceId}>${to}`) ?? { from: w.deviceId, to, mbps: 0 };
+      f.mbps += (w.diskGb * diskFill(s, w, hour) * BACKUP_CHANGED * 8000) / 3600;
+      flows.set(`${w.deviceId}>${to}`, f);
+    }
+  }
+  return [...flows.values()];
+}
+const flowMbps = (s: GameState, id: string) => backupFlows(s).reduce((n, f) => n + (f.from === id || f.to === id ? f.mbps : 0), 0);
+
+// What a workload uses of its booking at an hour.
+export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): Resources {
+  const load = workloadLoad(s, w, hour), lost = lostDisk(s, w);
+  return { vcpu: w.vcpu * load, ramGb: w.stopped || lost ? 0 : w.ramGb * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * diskFill(s, w, hour) };
 }
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
-// cores ÷ busy vCPUs, RAM over 100% swaps to 30%, a disk pool over 100% stalls writes to 50%, a PHP upgrade slows it to 70%.
+// cores ÷ busy vCPUs, a disk pool over 100% stalls writes to 50%, a PHP upgrade slows it to 70%. RAM over 100% freezes the
+// node instead (freezeTick).
 export interface NodeUsage { used: Resources; physical: Resources; perf: number }
 
 export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour): NodeUsage {
@@ -42,18 +77,36 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   }
   for (const w of s.workloads) {
     if (w.deviceId !== deviceId || !w.clusterId) continue;
-    const load = workloadLoad(s, w, hour), idle = w.stopped || lostDisk(s, w);
-    used.vcpu += w.vcpu * load;
-    used.ramGb += idle ? 0 : w.ramGb * (RAM_BASE + (1 - RAM_BASE) * load);
-    used.diskGb += lostDisk(s, w) ? 0 : w.diskGb * diskFill(s, w, hour);
+    const u = workloadUse(s, w, hour);
+    used.vcpu += u.vcpu; used.ramGb += u.ramGb; used.diskGb += u.diskGb;
   }
   const physical = { vcpu: v.cores, ramGb: v.ramGb, diskGb: raidUsable(d) };
   const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
-  const ram = used.ramGb > physical.ramGb ? 0.3 : 1;
   const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
   const php = c && hour <= (c.nodes.find((n) => n.deviceId === deviceId)?.phpUntil ?? -1) ? PHP_SLOW : 1;
-  return { used, physical, perf: Math.min(cpu, ram, disk, php) };
+  return { used, physical, perf: Math.min(cpu, disk, php) };
 }
+
+// A working cluster node whose RAM in use exceeds its installed RAM freezes: every workload on it is down until it fits again.
+export const ramOver = (u: NodeUsage) => u.used.ramGb > u.physical.ramGb + 1e-9;
+
+// Hourly and after a stop or a move: recomputes the frozen nodes and reports each freeze and thaw.
+export function freezeTick(s: GameState): SimEvent[] {
+  const name = (id: string) => { const d = s.devices.find((x) => x.id === id)!; return d.label ?? d.name; };
+  const frozen = s.clusters.flatMap((c) => c.nodes.map((n) => n.deviceId)).filter((id) => working(s, id) && ramOver(nodeUsage(s, id)));
+  const events: SimEvent[] = [
+    ...frozen.filter((id) => !s.frozen.includes(id)).map((id) => ({ app: "Locations", key: "event.nodeFrozen", params: { device: name(id) } })),
+    ...s.frozen.filter((id) => !frozen.includes(id) && s.devices.some((d) => d.id === id)).map((id) => ({ app: "Locations", key: "event.nodeThawed", params: { device: name(id) } })),
+  ];
+  s.frozen = frozen;
+  return events;
+}
+
+// economy.md, Workloads: a workload is pegged when its CPU ran at 95% or more of its booking for over half of the last 24 hours.
+export const PEGGED_LOAD = 0.95;
+export const peggedHours = (s: GameState, w: Workload, hour: number = s.hour): number =>
+  Array.from({ length: Math.min(24, hour + 1) }, (_, i) => workloadLoad(s, w, hour - i)).filter((l) => l >= PEGGED_LOAD).length;
+export const pegged = (s: GameState, w: Workload, hour: number = s.hour) => peggedHours(s, w, hour) > 12;
 
 // The highest CPU, RAM and disk use of a node over the given hours.
 export function peakUsage(s: GameState, deviceId: string, from: number, hours: number): Resources {
@@ -79,7 +132,7 @@ function serverSums(s: GameState, d: Device, out: Sums) {
   out.gbit += linkedGbit(s, d);
   if (!working(s, d.id)) return;
   for (const k of ["vcpu", "ramGb", "diskGb"] as const) out.used[k] += u.used[k];
-  out.mbps += serverMbps(s, d);
+  out.mbps += serverMbps(s, d) + flowMbps(s, d.id);
 }
 
 // A switch carries the traffic of the servers plugged straight into it.
@@ -88,7 +141,7 @@ function switchSums(s: GameState, d: Device, out: Sums) {
   if (!working(s, d.id)) return;
   for (const p of portPeers(s, d.id)) {
     const peer = p && s.devices.find((x) => x.id === p.device);
-    if (peer && modelById(peer.model).server && working(s, peer.id)) out.mbps += serverMbps(s, peer);
+    if (peer && modelById(peer.model).server && working(s, peer.id)) out.mbps += serverMbps(s, peer) + flowMbps(s, peer.id);
   }
 }
 
@@ -142,14 +195,54 @@ export function portLinks(s: GameState): Map<string, (PortLink | null)[]> {
       if (kind(f.device) !== "server") queue.push(f.device);
     });
   }
-  for (const d of s.devices) {
-    if (!models.get(d.id)!.server || !up.has(d.id)) continue;
-    const mbps = serverMbps(s, d);
-    for (let id = d.id, t = toward.get(id); t; id = t.next.device, t = toward.get(id)) {
+  // Adds Mbit/s on every hop from a device toward the carrier panels, stopping at the device named by stop.
+  const climb = (from: string, mbps: number, stop?: string) => {
+    for (let id = from, t = toward.get(id); t && id !== stop; id = t.next.device, t = toward.get(id)) {
       out.get(id)![t.port]!.mbps += mbps;
       out.get(t.next.device)![t.next.port]!.mbps += mbps;
     }
+  };
+  const path = (from: string) => {
+    const ids = [from];
+    for (let t = toward.get(from); t; t = toward.get(t.next.device)) ids.push(t.next.device);
+    return ids;
+  };
+  for (const d of s.devices) if (models.get(d.id)!.server && up.has(d.id)) climb(d.id, serverMbps(s, d));
+  // A backup goes up from both ends to the first device their paths share.
+  for (const f of backupFlows(s)) {
+    if (!up.has(f.from) || !up.has(f.to)) continue;
+    const there = new Set(path(f.to)), meet = path(f.from).find((id) => there.has(id));
+    climb(f.from, f.mbps, meet);
+    climb(f.to, f.mbps, meet);
   }
   for (const ls of out.values()) for (const l of ls) if (l) l.load = Math.min(1, l.mbps / (l.gbit * 1000));
   return out;
+}
+
+// economy.md, "Usage curves and overcommit": when customers outgrow their plan.
+export const ASK_FILL = 0.9;
+export const PEGGED = 0.9;
+export const ASK_CHANCE = 1 / 7;
+export const FULL_TICKET_CHANCE = 0.25;
+export const FULL_PENALTY = 2;
+
+// Each day at noon: a customer near the booked disk, or with CPU near 100% most of the week, asks for a bigger plan; a full
+// disk breaks their site, costs happiness every day and makes them write in.
+export function usageTick(s: GameState): SimEvent[] {
+  if (s.hour % 24 !== 12) return [];
+  let copied = false;
+  for (const v of s.services) {
+    const w = v.endedAt === null && !isSuspended(s, v.customerId) ? s.workloads.find((x) => x.serviceId === v.id && x.clusterId && !x.stopped) : undefined;
+    const profile = w && s.customers.find((x) => x.id === v.customerId && x.churnedAt === null)?.profile;
+    if (!w || !profile) continue;
+    const fill = diskFill(s, w, s.hour), pegged = weekMedian(curveFor(v.product, profile)) * demand(s, v, s.hour) >= PEGGED;
+    if (fill < ASK_FILL && !pegged) continue;
+    if (!copied) { s.customers = s.customers.map((c) => ({ ...c })); copied = true; }
+    const c = s.customers.find((x) => x.id === v.customerId)!;
+    if (fill >= 1) bump(c, -FULL_PENALTY);
+    if (s.tickets.some((t) => t.serviceId === v.id && !isFinal(t))) continue;
+    const topic = fill >= 1 ? (chance(s.rng, FULL_TICKET_CHANCE) ? "full" : null) : chance(s.rng, ASK_CHANCE) ? (fill >= ASK_FILL ? "disk" : "cpu") : null;
+    if (topic) createTicket(s, c, "upgrade", v.id, topic);
+  }
+  return [];
 }

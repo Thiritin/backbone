@@ -160,7 +160,7 @@ function stock(s: GameState, { model: modelId, brand, qty }: CartLine, lease: st
   const model = modelById(modelId);
   const price = priceOf(model, brand);
   return Array.from({ length: qty }, () => {
-    const name = nextName(roleOf(modelId), s.devices.map((d) => d.name));
+    const name = nextName(`${prefix(s, store)}-${roleOf(modelId)}`, s.devices.map((d) => d.name));
     const id = newId(s, "dev");
     s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "failover", groups: [], price, boughtAt: s.hour, lease, store, transitTo: null, arriveAt: null, ...deviceDefaults(modelId, s.hour) });
     return id;

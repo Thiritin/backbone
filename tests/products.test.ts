@@ -129,6 +129,8 @@ describe("usage curves and overcommit", () => {
     const gamer = addCustomer(s, "Kai Frag", "gamer");
     ok(provisionService(s, gamer, "gameServer", { label: "Frag 1", clusterId: cluster }));
     ok(provisionService(s, gamer, "gameServer", { label: "Frag 2", clusterId: cluster }));
+    // Small RAM bookings keep the node within its memory, so only the CPU contends.
+    s.workloads = s.workloads.map((w) => (w.vcpu === 2 ? { ...w, ramGb: 1 } : w));
     expect(nodeUsage(s, "dev3", TUE_10).perf).toBe(1);
     const sat = nodeUsage(s, "dev3", SAT_20);
     expect(sat.used.vcpu).toBeGreaterThan(sat.physical.vcpu);

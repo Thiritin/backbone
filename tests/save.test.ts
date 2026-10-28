@@ -55,7 +55,11 @@ describe("save", () => {
     };
     const s = deserialize(JSON.stringify(v1));
     const fresh = newGame(4);
-    expect(s).toEqual({ ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...fresh.installed, ...WIDGETS.map(([id]) => id)] });
+    // Lines off clusters need no control plane, so an old save lists them.
+    expect(s).toEqual({
+      ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...fresh.installed, ...WIDGETS.map(([id]) => id)],
+      marketing: { ...fresh.marketing, lines: ["dedicated", "colocation"] },
+    });
     expect(linkStatus(s, "dev3").online).toBe(true);
     tick(s);
   });

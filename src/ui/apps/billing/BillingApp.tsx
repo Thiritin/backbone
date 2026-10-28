@@ -167,7 +167,7 @@ function DaysRule<D extends number>({ label, days, value, onChange }: { label: s
 function Automation() {
   const game = useStore((s) => s.game);
   const rules = game.billingRules;
-  const act = useStore((s) => s.act);
+  const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const set = (r: Partial<BillingRules>) => act((s) => setBillingRules(s, r));
   const auto = rulesAutomated(game);
   const clerks = game.staff.filter((e) => e.role === "bookkeeper" || e.role === "accountant").map((e) => e.name);
@@ -177,7 +177,14 @@ function Automation() {
         <h2>{auto ? "Automation" : "Rules"}</h2>
         {!auto && (
           <div className="settings-group">
-            <div className="settings-line"><span>Carried out by</span><span className="fin-auto-by">{clerks.length ? clerks.join(", ") : "Nobody"}</span></div>
+            <div className="settings-line">
+              <span>Carried out by</span>
+              {clerks.length ? <span className="fin-auto-by">{clerks.join(", ")}</span> : (
+                <span className="fin-auto-by">Bookkeepers or accountants · {game.installed.includes("Staff")
+                  ? <button className="link" onClick={() => openApp("Staff", { kind: "market", id: "bookkeeper" })}>Hire in Staff</button>
+                  : <button className="link" onClick={() => openApp("Shop", { kind: "software", id: "Staff" })}>Get Staff</button>}</span>
+              )}
+            </div>
           </div>
         )}
         <div className="settings-group">

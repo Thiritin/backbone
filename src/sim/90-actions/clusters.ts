@@ -147,6 +147,14 @@ export function setPlacement(s: GameState, clusterId: string, placement: Placeme
   return { ok: true };
 }
 
+// Memory reservation: refuses placements and moves that would book more RAM than a node has installed.
+export function setRamGuard(s: GameState, clusterId: string, on: boolean): ActionResult {
+  if (!s.clusters.some((c) => c.id === clusterId)) return fail("error.unknownCluster");
+  if (!s.unlocks.includes("memoryReservation")) return fail("error.missingSkill");
+  update(s, clusterId, (c) => ({ ...c, ramGuard: on }));
+  return { ok: true };
+}
+
 const workload = (s: GameState, serviceId: string, w: Partial<Workload>): Workload => ({
   id: `wl${s.nextId++}`, serviceId, clusterId: null, deviceId: null, rackId: null, slot: 0, units: 0, watts: 0, vcpu: 0, ramGb: 0, diskGb: 0, placedAt: s.hour,
   stopped: false, busyUntil: 0, backupAt: null, ...w,

@@ -9,6 +9,7 @@ const rented = (s: GameState) => s.locations.filter((l) => l.dc !== null);
 
 // Checklist goals the game detects from state. Goals without an entry are ticked by hand.
 export const CHECKS: Record<string, (s: GameState) => boolean> = {
+  website: (s) => s.marketing.lines.length > 0,
   loan: (s) => booked(s, "ledger.loanTaken"),
   secondServer: (s) => onlineServers(s).length >= 2,
   firstCustomer: (s) => s.customers.some((c) => c.habit !== "friend"),
