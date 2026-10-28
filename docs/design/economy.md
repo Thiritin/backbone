@@ -783,6 +783,22 @@ Role bases are 2026 gross salaries, scaled back with the salary multiplier from 
 | Paid below 85% of the market salary for their skill | +3% |
 | Raise refused in the last 6 months | +5% |
 
+A raise request left unanswered for 30 days counts as refused. Salaries are billed on the first of each month for the month before, prorated for the days employed, and a fired employee is paid for the days worked that month.
+
+**Job market.** Every month each role gets 2 open applications, and every candidate stays on the market for 30 days. Job ads add their candidates on top. Ads, courses and salaries are booked as salaries and follow the salary multiplier.
+
+**Training.** Each task type is a separate course. A course costs €250 (2026, about €150 in 2005) and takes 2 days. With a trainer of the same role the course is free and takes 1 day. Employees in training and trainers do no other work.
+
+| Role | Task types |
+| --- | --- |
+| Support agent | How-to, billing, outage, upgrade, cancellation, abuse, suspension appeal |
+| Bookkeeper | Payment reminders |
+| Accountant | Dunning notices, final notices |
+
+**Staff at work.** Staff work Monday to Friday from 9 to 17; holidays and sick days come later. A support agent picks the right reply with P(right) from the work rate and a wrong template otherwise, offers retention on cancellations, and unsuspends appeals that have no right reply. Collections stays with the player and the billing rules, and payments record themselves.
+
+**Forum posts.** An employee assigned to the forums brings 2 × (0.5 + s/100) leads a month and does no other work.
+
 ## Marketing and reviews
 
 In 2005 a low-budget lead from search ads costs about €9, so a new private customer costs €25 to €80 depending on your share. Reviews skew negative unless you invite happy customers, which is what review platforms are for.

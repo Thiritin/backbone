@@ -3,6 +3,7 @@ import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
 import { supportTick } from "../40-support/tick";
+import { staffTick } from "../47-staff/staff";
 import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
 import { KNOW_HOW, storeItem, subscriptionPrice } from "../10-catalog/store";
@@ -208,5 +209,6 @@ export function tick(state: GameState): SimEvent[] {
   }
   events.push(...billingTick(state));
   events.push(...supportTick(state));
+  events.push(...staffTick(state));
   return events;
 }
