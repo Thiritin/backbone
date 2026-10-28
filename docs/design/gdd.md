@@ -141,6 +141,15 @@ Switches come in several sizes: 8, 24 and 48 copper ports, each with a few SFP c
 
 **Port groups.** Two to eight ports going to the same device can be bundled into a group (LACP). The group adds up their bandwidth and stays up when one cable or port fails. Both ends must be grouped, or the link falls back to a single port.
 
+**Server network cards.** A server's network ports are bonded in one of two modes, set in the inspector:
+
+| Mode | How it works | Bandwidth | Switch side |
+| --- | --- | --- | --- |
+| Failover | One port carries the traffic and the other takes over when it fails | One port | Nothing to set up; works across two switches |
+| Load balance | All ports carry traffic (LACP) | All ports added up | Needs a port group; across two switches the pair must be stacked (an unlock) |
+
+Failover is the safe default. Load balance doubles a server's bandwidth, but if the switch ports aren't grouped it falls back to one port and the inspector shows a warning.
+
 **Port inspector.** Selecting a port shows the whole path as a diagram, from the switch port through any patch panel to the device on the other end, with the cable type and speed on each hop. Below it, a graph shows the port's traffic in and out over the last 24 hours.
 
 **Technician PC.** A laptop that you plug into a free switch port gives you debug tools: ping, traceroute, a cable test that finds broken pairs, and port status. Finding the fault before sending a technician shortens the repair, because the technician brings the right part.
@@ -151,10 +160,23 @@ Switches come in several sizes: 8, 24 and 48 copper ports, each with a few SFP c
 
 **Upgrades**
 
-- A server swaps in place for another of the same height, for example a faster 1U. Bigger machines, such as a 4U GPU server, need free space.
+- A server swaps in place for another of the same height, for example a faster 1U. Bigger machines, such as a 4U GPU server, need free space. Drain the server first, or its workloads go offline during the swap.
 - A switch or router swaps in place only if the new one has at least as many ports as are in use, so you can't downgrade below the used port count. Cables stay on their ports.
 
-**Hardware generations.** A new server generation arrives every few years from the 2005 start. Servers differ mainly in resources (cores, RAM, storage) and power draw, not in exotic features. Each generation packs more resources per U and per watt, so replacing old servers cuts the energy bill as well as freeing space.
+**Server models.** Every server is described by the same handful of specs, so comparing two is quick:
+
+| Spec | Range | What it changes |
+| --- | --- | --- |
+| Height | Tower, 1U, 2U, 4U | Rack space and rent |
+| Architecture | x86; ARM from 2020 | ARM is cheaper per core and per watt, but a cluster runs one architecture |
+| CPU | 1 or 2 sockets × cores per socket | Cores available to workloads |
+| RAM | Fixed slots, filled at purchase or later | Memory available to workloads |
+| Storage | Drive bays × disk type (HDD, SSD, NVMe) | Disk space and speed |
+| Network | Ports × speed (1G up to 100G by year) | Bandwidth, and whether failover is possible |
+| Power | Draw at idle and at full load | The power bill and the fuse limit per rack |
+| Power supplies | 1 or 2 | Two connect to an A and a B feed and survive a failed supply |
+
+The shop sells a few models per generation: a 1U compute server, a 2U high-memory server, a 2U storage server, a 4U GPU server from 2016 and a 1U ARM server from 2020. RAM and disks can be added later in free slots and bays. A new generation arrives every three years, and each one packs more resources per U and per watt, so replacing old servers cuts the energy bill as well as freeing space.
 
 **Copy and paste.** A finished rack can be saved as a template and pasted into an empty rack slot. The game orders the hardware, and technicians install and cable it. A typical large location ends up with one core routing rack and many server racks, each with its own pair of switches.
 
@@ -168,6 +190,33 @@ Servers join clusters, and products draw their resources from clusters. Everythi
 
 - **Consumer cluster:** no failover. Cheap, and fine for customers who shrug off a day of downtime.
 - **High-availability cluster:** keeps spare capacity in reserve and spreads servers over two switches or two locations. Costs more, and is sold to customers who can't tolerate outages.
+
+**Workloads.** Every contract runs as one or more workloads, placed on the servers (nodes) of a cluster:
+
+| Workload | Uses | Moves to another node by |
+| --- | --- | --- |
+| Virtual machine | vCPUs, RAM, disk | Live migration; customers don't notice |
+| Web space | A slice of a web server's CPU, RAM and disk | Copying its files; a few seconds offline |
+| Game server | Mostly CPU and traffic | Restarting on the new node; players are kicked |
+| Storage volume | Disk | Copying its data; slow, and uses bandwidth |
+| Dedicated server | A whole node | It can't move; the customer rents that machine |
+
+**Placement.** The cluster's scheduler picks a node for every new workload, the way OpenStack does. Each cluster has a policy: *pack* fills one node before the next, so fewer servers draw full power, and *spread* keeps every node equally loaded, so a failed node hits fewer customers. A customer's redundant pair never lands on the same node. CPU can be overcommitted per cluster (up to 8 vCPUs per core); RAM can't. A workload has to fit on one node, so a cluster can have enough free RAM in total and still refuse a big VM. The Rebalance button moves small workloads around to make room.
+
+**Node states.** Each node in a cluster has one of four states:
+
+| State | Meaning |
+| --- | --- |
+| Active | Takes new workloads |
+| Cordoned | Keeps its workloads but takes no new ones |
+| Draining | The scheduler moves every workload to other nodes |
+| Maintenance | Empty; safe to upgrade, re-cable, swap or remove |
+
+Draining stops with a message when the rest of the cluster has no room, and says how much is missing. Uncordoning returns the node to Active. Migrations share the links between nodes, so the scheduler moves a few at a time.
+
+**When a node fails.** In a high-availability cluster its workloads restart on other nodes within minutes. In a consumer cluster they stay down until the node is repaired. Disks and power supplies often warn before they die, which gives a careful player time to drain the node first.
+
+**Automation.** Unlocks turn these chores into rules: drain a node automatically when it reports a hardware warning, rebalance every night, and restart workloads elsewhere when a node fails.
 
 **Product catalog**
 
@@ -368,6 +417,14 @@ Each location connects to the internet through what its city offers: transit car
 | Private peering | A direct cable to one big network | Cross-connect fee; weeks of lead time | Late game |
 | Links between locations | Leased wavelengths or dark fiber | Monthly fee | Several locations |
 
+**Uplinks.** A location can have as many uplinks as its routers have ports. Each uplink is a contract with one carrier or exchange and has one or more links. Every link uses one router port, and its speed is limited by that port and by what the carrier sells that year, from 1G in 2005 to 400G in the 2020s. A small router has a few 1G ports, and bigger ones have 10G, 100G and 400G ports, so faster or more links mean a better router. Two links on two routers keep the uplink up when one router fails, and a second carrier keeps you online when the first has an outage.
+
+**Joining an exchange.** You apply for membership at the exchange, which needs your own network number (ASN) and costs a setup fee plus a yearly fee. Then you order ports: one, two or more, each at a speed your routers support. The exchange delivers each port as a cross-connect to your patch panel after a lead time. Connecting to the exchange's route servers gives you sessions with every network that peers openly, and other networks need their own session. Exchanges such as DE-KICKS also offer ports in other cities, so one membership can cover several locations.
+
+**Uplinks in the Network app.** A location's page lists its uplinks as cards, one per carrier or exchange, with the type, every link with its speed and router port, the 95th percentile against the commit, and the monthly cost.
+
+**Private networks.** Customers with several workloads, such as agencies, shops and enterprises, ask for a private network between them. A private network is a VLAN on your switches: workloads in it reach each other only if every node they run on has a switch port that carries the VLAN. A port to a node can carry all customer networks with one toggle, which is the easy setting. Enterprise customers require a private network, and other customers buy one as an add-on. One switch domain holds up to 4,094 VLANs; overlay networks (an unlock) lift that limit and stretch a private network across racks and locations.
+
 **Routing,** simplified from Series of Tubes ([repo](https://github.com/fjaeckel/seriesoftubes), MIT license). Traffic leaves through the cheapest exit available: private peering first, then exchange peering, then transit. Equal exits share the load, and anything over a link's capacity spills to the next option. Transit is billed on the 95th percentile of the last 30 days, never less than 20% of the port. Networks peer openly, only above a traffic threshold, only for a fee, or (the big carriers) not with small players at all.
 
 **Parody names.** Series of Tubes has ~200 network names and is MIT-licensed, so we can reuse them with credit. We add our own for hosting brands, such as the OVH stand-in.
@@ -546,13 +603,13 @@ tests/                    one seeded suite per feature, save fixtures
 The MVP has a basement, one rented rack, web hosting and VPS, support and billing done by hand, and the first hires. That's the smallest version where you can feel the automation loop. Each milestone ends in something playable.
 
 1. **Desktop shell.** Menu bar, dock, draggable windows, notifications, time controls, saving in the browser. Done when apps open and the clock runs.
-2. **Locations and racks.** Basement and one rented rack, the rack front view, buying servers and switches, cabling ports in the inspector. Done when a cabled server shows as online.
-3. **Clusters and products.** One cluster, resold web hosting and your own VPS, the plans editor with market rates. Done when a customer can buy a plan.
+2. **Locations and racks.** Basement and one rented rack, the rack front view, buying servers and switches with their specs, cabling ports in the inspector, bonding a server's ports. Done when a cabled server shows as online.
+3. **Clusters and products.** One cluster, resold web hosting and your own VPS, workloads placed by the scheduler, cordoning and draining a node, the plans editor with market rates. Done when a customer can buy a plan and its VM survives a drain.
 4. **Customers and support.** Customer profiles, purchases, tickets with templates and actions, happiness and churn. Done when an outage floods the inbox.
 5. **Billing and finance.** Invoices, dunning buttons, collections, profit and loss, a bank loan. Done when an unpaid invoice can go all the way to collections.
 6. **First hires.** The job market, a support agent and a bookkeeper working through their queues. Done when a hire visibly empties a queue.
 
-**After the MVP:** more location tiers, the Network app with transit and peering, more products, marketing and reviews, the research tree, company levels, competitors, DDoS, AI bots.
+**After the MVP:** more location tiers, the Network app with several carriers, exchange memberships and multi-link uplinks, private networks for customers, automatic rebalancing and evacuation, more products, marketing and reviews, the research tree, company levels, competitors, DDoS, AI bots.
 
 ## Open questions
 

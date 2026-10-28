@@ -83,7 +83,31 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | G6 | 2020 | 64 | 512 GB | 8 TB NVMe | 400 W | €5,000 |
 | G7 | 2023 | 128 | 1 TB | 15 TB NVMe | 450 W | €5,500 |
 
-Other devices derive from this table. A tower server has half the resources of its generation for 60% of the power and costs €1,000; it is sold until 2010. A 2U storage server has 12 drives of the generation's disk type. GPU servers arrive in 2016.
+**Server models.** Each model scales its generation's row. A model with two power supplies costs 10% more than the same model with one.
+
+| Model | Height | Sockets | Cores | RAM | Drive bays | Network ports | Power supplies | Full power | Price | Sold |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Compute 1U | 1U | 2 | 1× | 1× | 4 | 2 | 1, or 2 | 1× | 1× | Always |
+| Compute 1U, one socket | 1U | 1 | 0.5× | 0.5× | 4 | 2 | 1 | 0.6× | 0.65× | Always |
+| High-memory 2U | 2U | 2 | 1× | 4× | 8 | 4 | 2 | 1.4× | 2.2× | From 2008 |
+| Storage 2U | 2U | 1 | 0.5× | 0.5× | 12 | 2 | 2 | 1.2× | 1.5× | Always |
+| GPU 4U | 4U | 2 | 1× | 2× | 8 | 2 | 2 | 6× | Set with GPU compute | From 2016 |
+| ARM 1U | 1U | 1 | 1.5× | 1× | 4 | 2 | 1 | 0.6× | 0.9× | From 2020 |
+| Tower | Shelf | 1 | 0.5× | 0.5× | 2 | 1 | 1 | 0.6× | €1,000 | Until 2010 |
+
+- **Drives.** Each bay takes one drive of the generation's disk type at that generation's size. An extra drive costs 4% of the generation's price and draws 8 W.
+- **RAM.** RAM can be added up to the model's maximum, which is twice the listed amount, at 25% of the generation's price per listed amount.
+- **Power draw.** A server draws 40% of its full power when idle, rising in a straight line with CPU load.
+- **Port speed.** Server ports run at 1G until 2011, then 10G, 25G from 2017 and 100G from 2023.
+
+**Routers.** Routers keep their price over the years. A router's ports cap how many uplink links a location can have and how fast they run.
+
+| Router | Height | Ports | Sold from | Price | Full power |
+| --- | --- | --- | --- | --- | --- |
+| Edge S | 1U | 4 × 1G | 2005 | €3,000 | 100 W |
+| Edge M | 1U | 8 × 10G and 4 × 1G | 2008 | €12,000 | 200 W |
+| Edge L | 2U | 32 × 100G | 2014 | €40,000 | 600 W |
+| Edge XL | 2U | 36 × 400G | 2021 | €90,000 | 900 W |
 
 ## Market and leads
 
@@ -368,9 +392,49 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 ten
 
 **Transit billing.** Each hourly tick records one sample per port. The bill uses the 95th percentile of the last 30 days (the top 5% of hours are dropped) and never charges less than 20% of the port.
 
+**Uplinks.** Carriers and exchanges sell ports at 1G from 2005, 10G from 2008, 100G from 2014 and 400G from 2021.
+
+| Item | 2026 price | 2005 multiplier m | Notes |
+| --- | --- | --- | --- |
+| Exchange membership | €1,000 setup, then €1,500 a year | 1 | One membership per exchange |
+| Exchange port, 1G | €250 a month | 5 | |
+| Exchange port, 10G | €650 a month | 5 | |
+| Exchange port, 100G | €2,500 a month | 5 | |
+| Exchange port, 400G | €6,000 a month | 5 | |
+| Remote exchange port | +30% | | A port in another city of the same exchange |
+| Cross-connect | €150 a month | 1 | Every link from a carrier or exchange to your patch panel |
+
+- **Lead time.** A new exchange port or transit link takes 14 days, and a private peering cross-connect 30 days.
+- **Transit contracts.** A contract can have several links. Its bill uses the 95th percentile of all its links added together and never charges less than 20% of their total capacity.
+- **Carrier outages.** Each carrier has one outage a year on average, lasting 2 to 8 hours. Traffic moves to your other uplinks if you have any.
+
 **Saturation.** Traffic above a link's capacity is dropped. Customers behind a saturated link get a headroom score of 0, and each hour of saturation costs them 25% of their outage penalty.
 
 **DDoS attacks.** Each gamer customer draws 0.02 attacks a month and every other customer 0.002. A typical attack is 0.5 Gbit/s in 2005, growing 25% a year to about 54 Gbit/s in 2026, and lasts 1 to 6 hours. On-demand protection starts after a 10-minute detection delay; until then the attack hits the links.
+
+## Workloads and migration
+
+**Sizes.** A web space uses 0.1 vCPU, 0.25 GB of RAM and its plan's disk. A VM uses its plan's vCPUs, RAM and disk. A game server uses 2 vCPUs and 4 GB of RAM in 2005, doubling every 7 years like VPS plans.
+
+**CPU contention.** A vCPU is busy 25% of the time on average. When a node's busy vCPUs exceed its cores, the performance score of every customer on that node is multiplied by cores ÷ busy vCPUs. With the average load, a 4:1 overcommit is the break-even point.
+
+**Moving a workload**
+
+| Workload | Time | Downtime |
+| --- | --- | --- |
+| Virtual machine (live) | RAM × 1.5 ÷ link speed | Under 1 second |
+| VM with local disk | Above, plus disk ÷ link speed | Under 1 second |
+| Web space | Disk ÷ link speed | 5 seconds |
+| Game server | 1 minute | 1 minute |
+| Storage volume | Disk ÷ link speed | None; reads come from the old node until it finishes |
+
+The link speed is the slowest link between the two nodes, shared by every migration running at the same time. Draining runs 2 migrations at once per node by default.
+
+**Restart after a node fails.** In a high-availability cluster, workloads restart on other nodes after 5 minutes of detection plus 2 minutes of boot. Customers count that time as an outage.
+
+**Hardware warnings.** 60% of disk and power supply failures announce themselves 1 to 7 days early. A node drained before its failure causes no outage.
+
+**Private networks.** A private network costs the customer €5 a month as an add-on (m = 1) and costs you nothing to run.
 
 ## Staff: salaries, skill growth and quitting
 
@@ -472,17 +536,22 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Rented rack | Infrastructure | 400 | €2,000 | Level 2 |
 | Market research | Business | 800 | €5,000 | Level 2 |
 | Auto-cable | Infrastructure | 1,000 | €5,000 | Level 3 |
+| Private networks | Products | 1,200 | €3,000 | Level 3 |
 | Transit contracts | Network | 1,500 | €10,000 | Level 3 |
+| Stacked switches | Infrastructure | 1,500 | €5,000 | Level 3 |
 | Rack templates | Infrastructure | 2,000 | €10,000 | Level 3 |
+| Auto-drain on hardware warnings | Infrastructure | 2,000 | €8,000 | Level 3 |
+| Nightly rebalance | Infrastructure | 2,500 | €8,000 | Level 3 |
 | Cross-selling boost (each) | Business | 2,500 | €10,000 | Level 3 |
 | HA clusters | Infrastructure | 3,000 | €25,000 | Level 3 |
 | Review platforms | Business | 3,000 | €5,000 | Level 3 |
 | Cage | Infrastructure | 4,000 | €50,000 | Level 4 |
-| Exchange peering | Network | 5,000 | €25,000 | Level 4 |
+| Exchange peering | Network | 5,000 | €25,000 | Level 4 and an own ASN |
 | Storage hosting | Products | 6,000 | €40,000 | Level 4 |
 | Own network number (ASN) | Network | 8,000 | €20,000 | Level 4 |
 | VPN | Products | 8,000 | €30,000 | Level 4 |
 | SLA insurance | Business | 10,000 | €10,000 | Level 4 |
+| Overlay networks | Network | 10,000 | €40,000 | Level 4 |
 | Always-on DDoS protection | Network | 12,000 | €100,000 | Level 4 |
 | Own room | Infrastructure | 20,000 | €250,000 | Level 5 |
 | CDN | Products | 25,000 | €200,000 | Level 5 |
