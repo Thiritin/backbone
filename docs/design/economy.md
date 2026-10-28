@@ -27,11 +27,11 @@ Level 6 lands before the cloud and GPU boom, so the late game still has new prod
 
 ## Starting state
 
-A new game starts on 1 January 2005 with €5,000 in cash, a 24U rack in the basement with one server and a switch, and three friends as customers.
+A new game starts on 1 January 2005 with €1,000 in cash, a 24U rack in the basement with one server and a switch, and three friends as customers.
 
 | Item | Starting value |
 | --- | --- |
-| Cash | €5,000, no debt |
+| Cash | €1,000, no debt; the bank lends up to the level 1 minimum of €10,000 from day one |
 | Company | Level 1, 0 know-how, no reviews yet |
 | Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
 | Home line | DSL, 16 Mbit/s down and 1 Mbit/s up; paid privately, so it costs the company nothing |

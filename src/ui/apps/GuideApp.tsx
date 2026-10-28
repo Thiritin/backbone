@@ -2,7 +2,7 @@ export function GuideApp() {
   return (
     <article className="guide">
       <h2>Getting started</h2>
-      <p>It is January 2005. You run a small hosting company from a basement with €5,000, and your goal is to grow it into your own datacenter by automating your own jobs.</p>
+      <p>It is January 2005. You run a small hosting company from a basement with €1,000 of savings, so your first stop is the Bank app for a loan. Your goal is to grow it into your own datacenter by automating your own jobs.</p>
       <h3>Time</h3>
       <p>The clock starts paused. Press <kbd>Space</kbd> to start or pause it, and <kbd>1</kbd> to <kbd>4</kbd> to switch between 1×, 2×, 4× and 8× speed. The buttons in the menu bar do the same.</p>
       <h3>Apps and windows</h3>

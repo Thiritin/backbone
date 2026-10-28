@@ -55,11 +55,5 @@
 .fin-rows dt { color: var(--text-2); }
 .fin-rows dd { margin: 0; font-weight: 550; }
 
-.fin-loan { display: grid; gap: 8px; padding: 12px 14px; }
-.fin-loan + .fin-loan { border-top: 0.5px solid var(--line); }
-.fin-loan-h { display: flex; align-items: center; gap: 8px; font-weight: 650; }
-
-.fin-field { display: grid; gap: 4px; }
-.fin-field > span { font-size: 11.5px; font-weight: 550; color: var(--text-3); }
 .fin-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .fin-actions .btn svg.lucide, .fin-card-b .btn svg.lucide { width: 16px; height: 16px; }

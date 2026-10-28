@@ -6,7 +6,7 @@ Source text for the in-game introduction, opened from "First time here?" on the 
 
 Congratulations. You have just founded yet another hosting company, in a market that already has far too many of them.
 
-It is January 2005. You have €5,000, one server in your basement, a home internet line and an inbox. Your goal is to keep your customers happy, grow from that basement into datacenters across Europe and, one day, into a datacenter of your own, while handling the dull side of running a business.
+It is January 2005. You have €1,000 of savings, one server in your basement, a home internet line and an inbox. That will not get you far, so your first stop is the bank for a loan. Your goal is to keep your customers happy, grow from that basement into datacenters across Europe and, one day, into a datacenter of your own, while handling the dull side of running a business.
 
 Your customers will not pay their invoices on time. Your software is pretty dumb. Nobody said running a business would be fun.
 
@@ -28,13 +28,15 @@ Thanks to the EU and its rules on fair competition, Pear has to offer competing 
 
 ## Automate, then regret it
 
-As you grow, you automate your work, which mostly replaces old headaches with new ones. You can hire people, or spend your whole salary on AI tokens and hope the bot fixes it.
+As you grow, you automate your work, which mostly replaces old headaches with new ones. You can hire people, then replace all of them with AI and hope the bot fixes it.
 
 The bot deleted a customer's disk. Well, that is not your problem. Except it is.
 
-You will also argue with the bank about your loan. If you love accounting, this is the game for you.
+If you love accounting, this is the game for you.
 
-## Words you will meet
+## Glossary
+
+Backbone is made for technical people who know the hosting industry and how it works. If that is not you, you may not have the best time, but you are welcome to try. The game uses plenty of specific terms, and here is a quick overview of the most important ones.
 
 | Word | Meaning |
 | --- | --- |

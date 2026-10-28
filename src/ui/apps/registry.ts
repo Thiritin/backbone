@@ -5,6 +5,7 @@ import {
 import type { ComponentType } from "react";
 import { BankApp } from "./bank/BankApp";
 import { BillingApp } from "./billing/BillingApp";
+import { FinanceApp } from "./finance/FinanceApp";
 import type { GameState } from "../../sim/50-state";
 import { CustomersApp } from "./customers/CustomersApp";
 import { SupportApp } from "./support/SupportApp";
@@ -30,8 +31,8 @@ export const APPS: AppDef[] = [
   { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets so you can answer them with templates and actions.", body: SupportApp,
     badge: (s) => s.tickets.filter((t) => t.status === "open").length },
   { name: "Billing", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: "Sends invoices, reminders and dunning notices.", body: BillingApp },
-  { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Reports profit and loss, cash flow, recurring revenue and churn." },
-  { name: "Bank", icon: Landmark, tile: "oklch(0.45 0.04 255)", about: "Arranges loans and tracks their repayments.", body: BankApp },
+  { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Shows your account statement with every booking and the running balance.", body: FinanceApp },
+  { name: "Bank", icon: Landmark, tile: "oklch(0.45 0.04 255)", about: "Offers loans up to your credit limit and lets you repay them early.", body: BankApp },
   { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: "Hires people and assigns them to work queues." },
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: "Runs campaigns and manages reviews." },
   { name: "Market", icon: ChartPie, tile: "oklch(0.62 0.12 230)", about: "Shows demand, customer requirements and lost sales." },

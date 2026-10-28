@@ -1,3 +1,4 @@
+import { START_CASH } from "../src/sim/10-catalog/economy";
 import { describe, expect, it } from "vitest";
 import { useStore } from "../src/ui/store";
 import { newGame } from "../src/sim/50-state";
@@ -21,11 +22,19 @@ describe("notification settings", () => {
 });
 
 describe("metrics", () => {
-  it("starts on level 1 a third of the way to level 2", () => {
+  it("starts on level 1 with its starting cash counted toward level 2", () => {
     const m = metrics(newGame(1));
     expect(m.level.level).toBe(1);
     expect(m.next?.level).toBe(2);
-    expect(m.progress).toBeCloseTo(5000 / 15000);
+    expect(m.progress).toBeCloseTo(START_CASH / 15000);
+  });
+  it("stays on level 1 when spent loan money pushes net worth below zero", () => {
+    const s = newGame(1);
+    s.loans.push({ id: "l", amount: 10_000, rate: 0.1, months: 12, left: 12, payment: 0, balance: 10_000, takenAt: 0, missed: 0 });
+    const m = metrics(s);
+    expect(m.netWorth).toBeLessThan(0);
+    expect(m.level.level).toBe(1);
+    expect(m.progress).toBe(0);
   });
 });
 

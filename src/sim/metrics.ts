@@ -11,7 +11,7 @@ export function metrics(s: GameState) {
   const debt = s.loans.reduce((sum, l) => sum + l.balance, 0);
   const netWorth = s.cash - debt + hardware + 24 * mrr;
   const years = s.hour / HOURS_PER_YEAR;
-  const level = LEVELS.filter((l) => netWorth >= l.netWorth && years >= l.years).at(-1)!;
+  const level = LEVELS.filter((l) => netWorth >= l.netWorth && years >= l.years).at(-1) ?? LEVELS[0];
   const next = LEVELS.find((l) => l.level === level.level + 1);
-  return { cash: s.cash, mrr, customers, openTickets, netWorth, level, next, progress: next ? Math.min(1, netWorth / next.netWorth) : 1 };
+  return { cash: s.cash, mrr, customers, openTickets, netWorth, level, next, progress: next ? Math.min(1, Math.max(0, netWorth / next.netWorth)) : 1 };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CITIES } from "../src/sim/10-catalog/economy";
+import { CITIES, START_CASH } from "../src/sim/10-catalog/economy";
 import { BASEMENT, DATACENTERS, datacenterById, LEAD_DAYS, PROVIDERS, RACK_MODELS, SPACE_SIZES, spacePrice } from "../src/sim/20-world/datacenters";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { freeSlots } from "../src/sim/60-infra/status";
@@ -241,7 +241,7 @@ describe("monthly bills", () => {
     // Server 250 W, switch 8 W and home router 10 W for 744 h at 9 ct × 1.6.
     const power = Math.round(0.268 * 744 * 0.09 * 1.6 * 100) / 100;
     expect(power).toBe(28.71);
-    expect(s.cash).toBe(5000 - 360 - power);
+    expect(s.cash).toBe(START_CASH - 360 - power);
     expect(s.powerDue).toBe(0);
     expect(s.ledger.map((l) => [l.category, l.key, l.amount])).toEqual([["power", "ledger.power", -power], ["rent", "ledger.space", -360]]);
     expect(events).toContainEqual({ app: "Finance", key: "event.bills", params: { power, rent: 360, leasing: 0, total: 360 + power } });

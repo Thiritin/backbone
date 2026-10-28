@@ -1,3 +1,4 @@
+import { START_CASH } from "../src/sim/10-catalog/economy";
 import { describe, expect, it } from "vitest";
 import { newGame } from "../src/sim/50-state";
 import { linkStatus } from "../src/sim/60-infra/status";
@@ -34,7 +35,7 @@ describe("save", () => {
   it("gives a milestone 1 save without infrastructure the starting basement", () => {
     const repaired = deserialize(JSON.stringify({ seed: 4, hour: 50 }));
     expect(repaired.hour).toBe(50);
-    expect(repaired.cash).toBe(5000);
+    expect(repaired.cash).toBe(START_CASH);
     expect(repaired.rng.s).toBe(4);
     expect(repaired.version).toBe(2);
     expect(linkStatus(repaired, "dev3").online).toBe(true);

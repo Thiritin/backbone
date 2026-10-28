@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { GENERATIONS } from "../src/sim/10-catalog/economy";
+import { GENERATIONS, START_CASH } from "../src/sim/10-catalog/economy";
 import { brandsFor, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, portPeers, storageStacks } from "../src/sim/60-infra/status";
@@ -78,7 +78,7 @@ describe("catalog", () => {
 describe("new game", () => {
   it("starts with a server and switch in the basement rack, online through the home router", () => {
     const s = newGame(3);
-    expect(s.cash).toBe(5000);
+    expect(s.cash).toBe(START_CASH);
     expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }]);
     expect(s.racks).toEqual([{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false }]);
     expect(s.devices.map((d) => [d.model, d.brand, d.name, d.rackId, d.panel, d.price, d.boughtAt])).toEqual([
@@ -123,7 +123,7 @@ describe("buyDevice and storage", () => {
 
 describe("mounting", () => {
   it("mounts a stored device and names it after the location", () => {
-    const s = newGame(1);
+    const s = atYear(2005, 5000);
     const id = ok(buyDevice(s, "g1-storage", "Dwell", 1, "loc1"));
     ok(mountDevice(s, id, "rack2", 2));
     expect(dev(s, id)).toMatchObject({ rackId: "rack2", slot: 2, name: "fra1-srv-02" });
@@ -174,7 +174,7 @@ describe("mounting", () => {
 
 describe("sellDevice", () => {
   it("sells a mounted device after unplugging it, and a stored one", () => {
-    const s = newGame(1);
+    const s = atYear(2005, 5000);
     ok(sellDevice(s, "dev3"));
     expect(s.devices.map((d) => d.id)).toEqual(["dev4", "dev5"]);
     expect(s.cables.map((c) => c.id)).toEqual(["cab7"]);

@@ -64,8 +64,8 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 | Customers | Customer list, contracts, happiness |
 | Support | Ticket inbox with reply templates and actions |
 | Billing | Invoices, payment reminders, dunning, collections |
-| Finance | Profit and loss, cash flow, recurring revenue, churn |
-| Bank | Account ledger, loans and repayments |
+| Finance | Account statement, later profit and loss, cash flow, recurring revenue, churn |
+| Bank | Loan offers, active loans and repayments |
 | Staff | Job market, hiring, salaries, task assignment |
 | Marketing | Campaigns, reviews, review platforms |
 | Market | Market research: demand, customer requirements, lost-sale reports |
@@ -516,6 +516,8 @@ Support is the first job that overwhelms you. Every outage, question, install re
 
 Every contract is invoiced monthly for the hours it ran, domains and certificates yearly, and some customers don't pay. Chasing them is a manual job until bookkeepers and accountants take it over.
 
+**Starting money.** A new game starts with €1,000 of savings, which buys almost nothing, so the first step is a loan from the bank. A level-1 company can borrow up to €10,000 from day one.
+
 **Invoices and dunning.** Invoices go out automatically on the first of each month. Some customers pay late and a few never pay. When a dunning step is due, a button appears in the Billing app, and clicking it sends the notice (starting values, to tune):
 
 1. **Payment reminder**, 7 days after the due date. Friendly, no fee.
@@ -527,11 +529,11 @@ Payment habits differ by segment. Private individuals forget most often, and ent
 
 **Bookkeepers and accountants.** Bookkeepers record payments and send reminders. Accountants handle the later dunning steps, collections and month-end reports. Each works at their own rate, so a growing customer base needs a growing team.
 
-**Finance app.** Profit and loss, cash flow, monthly recurring revenue, churn, revenue by product and segment, and costs by category, each as charts.
+**Finance app.** The account statement, and later profit and loss, cash flow, monthly recurring revenue, churn, revenue by product and segment, and costs by category, each as charts.
 
-**Account ledger.** The Bank app lists every booking on the company account: date, counterparty, description, category and amount, with the running balance. Filters narrow it by category (customer payments, hardware, rent, power, transit, salaries, loans, tax) and by month.
+**Account statement.** The Finance app lists every booking on the company account: date, counterparty, description, category and amount, with the running balance. Filters narrow it by category (customer payments, hardware, rent, power, transit, salaries, loans, tax) and by month.
 
-**Bank app.** Take out loans with a set amount, term and interest rate. The rate and the maximum amount depend on your company level and repayment history, and missed repayments add penalties.
+**Bank app.** The Bank app holds only loans. Your active loans appear as cards with the remaining balance, monthly instalment, instalments left and a Repay button. Below them, offers appear as a grid of cards in the style of the shop: you pick a term (1, 2, 3, 5 or 10 years), and each card shows a preset amount up to your limit, plus one for the whole remaining limit, with its interest rate, monthly instalment, total interest and a Take loan button. The rate and the limit depend on your company level and repayment history, and missed repayments add penalties.
 
 **Insurance.** SLA insurance pays the credits you owe customers when you miss an SLA. It covers three claims; after the third, the insurer blocks you for a year. The premium rises with a poor uptime record.
 

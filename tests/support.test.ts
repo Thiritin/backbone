@@ -1,3 +1,4 @@
+import { START_CASH } from "../src/sim/10-catalog/economy";
 import { describe, expect, it, vi } from "vitest";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { createTicket, monthlyValue, type Ticket, type TicketKind } from "../src/sim/40-support/tickets";
@@ -161,7 +162,7 @@ describe("support actions", () => {
     expect(resolveTicket(s, t.id, "credit").ok).toBe(true);
     tick(s);
     expect(get(s, t.id)).toMatchObject({ status: "resolved", outcome: "credit" });
-    expect(s.cash).toBeCloseTo(5000 - fee * 0.1, 2);
+    expect(s.cash).toBeCloseTo(START_CASH - fee * 0.1, 2);
     expect(s.ledger.at(-1)).toMatchObject({ category: "credit", key: "ledger.credit" });
     expect(c().happiness).toBe(78);
   });

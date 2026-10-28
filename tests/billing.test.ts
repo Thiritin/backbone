@@ -1,7 +1,8 @@
+import { START_CASH } from "../src/sim/10-catalog/economy";
 import { describe, expect, it } from "vitest";
 import { createRng } from "../src/sim/00-core/rng";
 import { hourOf } from "../src/sim/00-core/time";
-import { annuity, baseRate, billingTick, invoiceTotal, isSuspended, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
+import { annuity, baseRate, billingTick, invoiceTotal, isSuspended, loanAvailable, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { metrics } from "../src/sim/metrics";
 import { tick } from "../src/sim/88-tick/tick";
@@ -170,12 +171,30 @@ describe("bank", () => {
     expect(s.ledger.at(-1)!.key).toBe("ledger.loanCalled");
   });
 
+  it("lends the level 1 minimum on day one", () => {
+    const s = newGame(10);
+    expect(s.hour).toBe(0);
+    expect(loanAvailable(s)).toBe(10_000);
+    expect(takeLoan(s, 10_000, 5).ok).toBe(true);
+    expect(s.cash).toBe(START_CASH + 10_000);
+    expect(loanAvailable(s)).toBe(0);
+  });
+
+  it("lends the whole remaining limit when it is not a preset", () => {
+    const s = newGame(13);
+    s.loans.push({ id: "old", amount: 3_000, rate: 0.1, months: 12, left: 12, payment: 0, balance: 2_999.5, takenAt: 0, missed: 0 });
+    expect(loanAvailable(s)).toBe(7_000.5);
+    expect(takeLoan(s, 7_001, 1)).toEqual({ ok: false, error: "error.loanLimit" });
+    expect(takeLoan(s, 6_000, 1)).toEqual({ ok: false, error: "error.loanLimit" });
+    expect(takeLoan(s, 7_000, 1).ok).toBe(true);
+  });
+
   it("repays a loan early", () => {
     const s = newGame(9);
     const { id } = takeLoan(s, 5_000, 3) as { ok: true; id: string };
     expect(repayLoan(s, id).ok).toBe(true);
     expect(s.loans).toHaveLength(0);
-    expect(s.cash).toBe(5000);
+    expect(s.cash).toBe(START_CASH);
   });
 });
 

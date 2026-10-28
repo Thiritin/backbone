@@ -170,7 +170,6 @@ export const useStore = create<Store>((set, get) => ({
   startGame: () => {
     set({ ...fresh(), game: newGame(Date.now() >>> 0), started: true });
     get().save();
-    get().notify("Settings", t("game.new.title"), t("game.new.text"));
     get().openApp("Getting started");
   },
   importSave: (raw) => {

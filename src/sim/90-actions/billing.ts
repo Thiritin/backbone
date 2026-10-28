@@ -42,7 +42,9 @@ export function writeOff(s: GameState, invoiceId: string): ActionResult {
 export function takeLoan(s: GameState, amount: number, years: number): ActionResult {
   if (s.hour < s.loansBlockedUntil) return fail("error.loanBlocked");
   if (!LOAN_YEARS.includes(years)) return fail("error.loanTerm");
-  if (!LOAN_AMOUNTS.includes(amount) || amount > loanAvailable(s)) return fail("error.loanLimit");
+  const available = loanAvailable(s);
+  // A preset amount, or the whole remaining limit in euros.
+  if (!(LOAN_AMOUNTS.includes(amount) || (amount > 0 && amount === Math.floor(available))) || amount > available) return fail("error.loanLimit");
   const rate = loanRate(s), months = years * 12;
   const id = `loan${s.nextId++}`;
   s.loans.push({ id, amount, rate, months, left: months, payment: annuity(amount, rate, months), balance: amount, takenAt: s.hour, missed: 0 });
