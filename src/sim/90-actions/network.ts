@@ -28,16 +28,19 @@ function zone(s: GameState, locationId: string): Location | string {
   return loc;
 }
 
-// The first free router port at least gbit fast in the zone: no cable in it and no uplink on it.
+// The slowest free router port at least gbit fast in the zone: no cable in it and no uplink on it.
 export function freeRouterPort(s: GameState, locationId: string, gbit: number): { device: string; port: number } | null {
   const taken = new Set(s.network.uplinks.flatMap((u) => u.links.map((l) => `${l.device}:${l.port}`)));
+  let best: { device: string; port: number } | null = null, bestGbit = Infinity;
   for (const d of s.devices) {
     const m = modelById(d.model);
     if (m.kind !== "gateway" || locationOf(s, d)?.id !== locationId) continue;
-    const port = m.ports.findIndex((p, i) => p.gbit >= gbit && !taken.has(`${d.id}:${i}`) && !peerOf(s, { device: d.id, port: i }));
-    if (port >= 0) return { device: d.id, port };
+    for (let i = 0; i < m.ports.length; i++) {
+      const g = m.ports[i].gbit;
+      if (g >= gbit && g < bestGbit && !taken.has(`${d.id}:${i}`) && !peerOf(s, { device: d.id, port: i })) { best = { device: d.id, port: i }; bestGbit = g; }
+    }
   }
-  return null;
+  return best;
 }
 
 function addLink(s: GameState, u: Uplink, gbit: number): ActionResult {

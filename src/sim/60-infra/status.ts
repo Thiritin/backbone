@@ -27,7 +27,7 @@ export function portPeers(s: GameState, deviceId: string): (End | null)[] {
 }
 
 // The first non-patch port behind a port's cable, and the slowest speed on the way.
-function farEnd(s: GameState, from: End): { end: End; gbit: number } | null {
+export function farEnd(s: GameState, from: End): { end: End; gbit: number } | null {
   const gbit = gbitOf(s, from);
   let peer = peerOf(s, from);
   for (let hops = 0; peer && kindOf(s, peer.device) === "patch" && hops < 64; hops++) peer = peerOf(s, { device: peer.device, port: bridged(s, peer) });

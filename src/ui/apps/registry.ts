@@ -8,6 +8,7 @@ import { BillingApp } from "./billing/BillingApp";
 import { ChecklistApp } from "./checklist/ChecklistApp";
 import { FinanceApp } from "./finance/FinanceApp";
 import { MarketingApp } from "./marketing/MarketingApp";
+import { NetworkApp } from "./network/NetworkApp";
 import type { GameState } from "../../sim/50-state";
 import { CustomersApp } from "./customers/CustomersApp";
 import { SupportApp } from "./support/SupportApp";
@@ -33,7 +34,8 @@ export const APPS: AppDef[] = [
   { name: "Locations", icon: Server, tile: "oklch(0.5 0.06 250)", about: "Shows your sites on a map, the racks inside them and every device front.",
     badge: (s) => s.devices.reduce((n, d) => n + deviceHealth(s, d.id).failed.length, 0) },
   { name: "Shop", icon: ShoppingCart, tile: "oklch(0.6 0.15 40)", about: "Sells servers, switches and patch panels into your storage." },
-  { name: "Network", icon: Globe, tile: "oklch(0.58 0.12 210)", about: "Manages transit, peering and DDoS protection." },
+  { name: "Network", icon: Globe, tile: "oklch(0.58 0.12 210)", about: "Manages transit, peering and DDoS protection.", body: NetworkApp,
+    badge: (s) => s.network.requests.length + s.network.attacks.length },
   { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters." },
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: "Lists your customers with their contracts and happiness.", body: CustomersApp },
   { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets so you can answer them with templates and actions.", body: SupportApp,
