@@ -5,7 +5,7 @@ import { useStore } from "../store";
 import { bounce, rememberSlot } from "./motion";
 
 export function Dock() {
-  const { windows, openApp, game } = useStore();
+  const { windows, openApp, openDoc, game } = useStore();
   const minimized = windows.filter((w) => w.minimized);
 
   return (
@@ -37,7 +37,7 @@ export function Dock() {
       {minimized.map((w) => {
         const app = appByName(w.app);
         return (
-          <button key={w.id} className="dock-app" aria-label={`Restore ${w.app}`} onClick={() => { rememberSlot(w.id); openApp(w.app); }}>
+          <button key={w.id} className="dock-app" aria-label={`Restore ${w.app}`} onClick={() => { rememberSlot(w.id); if (w.doc) openDoc(w.doc); else openApp(w.app); }}>
             <span className="tip">{w.app}</span>
             <span className="dock-mini" data-min={w.id}>
               <span className="mini-win" />

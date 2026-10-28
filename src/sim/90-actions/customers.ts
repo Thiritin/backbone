@@ -7,8 +7,8 @@ export function addCustomer(s: GameState, name: string, profile: Profile, habit:
   return id;
 }
 
-export function addService(s: GameState, customerId: string, product: Product, label: string, price: number, period: "hour" | "year", commitMonths = 0): string {
+export function addService(s: GameState, customerId: string, product: Product, label: string, price: number, period: "hour" | "year", commitMonths = 0, zone: string | null = null): string {
   const id = `svc${s.nextId++}`;
-  s.services.push({ id, customerId, product, label, price, period, commitMonths, startedAt: s.hour, endedAt: null });
+  s.services.push({ id, customerId, product, label, price, period, commitMonths, startedAt: s.hour, endedAt: null, zone });
   return id;
 }

@@ -1,0 +1,51 @@
+.shop { flex: 1; min-width: 0; display: flex; }
+.shop-side { display: flex; flex-direction: column; gap: 1px; }
+.shop-side button.side-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; }
+.shop-side button.side-item:hover { background: var(--hover); }
+.shop-side button.side-item.active { background: var(--accent); color: var(--accent-ink); }
+.shop-grid { flex: 1; min-width: 0; overflow: auto; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; align-content: start; }
+.shop-card { display: flex; flex-direction: column; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); min-width: 0; }
+.shop-pic { height: 128px; display: grid; place-items: center; background: var(--win-side); border-radius: 10px 10px 0 0; border-bottom: 0.5px solid var(--line); }
+.shop-name { display: grid; gap: 1px; padding: 10px 14px 0; }
+.shop-name strong { font-weight: 650; font-size: 12.5px; }
+.shop-name span { color: var(--text-2); font-size: 12px; }
+.shop-specs { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding: 10px 14px 12px; margin: 0; align-content: start; }
+.shop-specs dt { font-size: 11px; font-weight: 550; color: var(--text-3); }
+.shop-specs dd { margin: 0; font-size: 12px; }
+.shop-buy { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; border-top: 0.5px solid var(--line); }
+.shop .grow { flex: 1; }
+.shop-qty { display: inline-flex; align-items: center; gap: 2px; }
+.shop-qty .btn { width: 24px; height: 24px; }
+.shop-qty .btn svg.lucide { width: 14px; height: 14px; }
+.shop-qty .num { min-width: 22px; text-align: center; }
+.shop-none { color: var(--text-3); padding: 8px; }
+.shop-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.shop-bar { height: 44px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 10px; border-bottom: 0.5px solid var(--line); background: var(--win-bar); }
+.shop-bar .btn[aria-pressed="true"] { background: color-mix(in oklch, var(--text) 8%, transparent); color: var(--text); }
+.shop-count { margin-left: 2px; color: var(--text-3); }
+.shop-body { flex: 1; min-height: 0; display: flex; }
+.shop-muted { color: var(--text-3); }
+.shop-cart { width: 380px; flex: none; display: flex; flex-direction: column; border-left: 0.5px solid var(--line); background: var(--win); overflow: auto; }
+.shop-cart-h { display: flex; align-items: center; padding: 12px 16px 8px; }
+.shop-cart-h h3 { font-size: 12.5px; font-weight: 650; }
+.shop-line { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 16px; border-top: 0.5px solid var(--line); }
+.shop-line-name { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.shop-line-name strong { font-weight: 600; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shop-line-name span { font-size: 11.5px; color: var(--text-2); }
+.shop-line-total { min-width: 62px; text-align: right; }
+.shop-cart-total { display: flex; align-items: center; padding: 10px 16px; border-top: 0.5px solid var(--line-strong); font-weight: 600; }
+.shop-pay { display: grid; gap: 6px; padding: 4px 12px 12px; }
+.shop-offer { display: grid; gap: 4px; padding: 8px 10px; border-radius: 8px; border: 0.5px solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.shop-offer:first-child { display: flex; align-items: center; }
+.shop-offer:hover { background: var(--hover); }
+.shop-offer[aria-checked="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.shop-offer-top { display: flex; align-items: center; gap: 6px; }
+.shop-offer-terms { display: flex; gap: 12px; font-size: 11.5px; color: var(--text-2); }
+.shop-markup { font-weight: 600; min-width: 40px; text-align: right; }
+.shop-cart-foot { display: flex; justify-content: flex-end; padding: 0 12px 14px; margin-top: auto; }
+
+.shop-dest { display: flex; align-items: center; gap: 10px; padding: 10px 14px 0; font-size: 12px; color: var(--text-2); }
+.shop-dest select { flex: 1; min-width: 0; height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: var(--text); font: inherit; font-size: 13px; }
+
+.shop-maker { display: inline-flex; align-items: center; gap: 6px; }
+.shop-maker .pill { margin-left: 2px; }

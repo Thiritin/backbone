@@ -1,6 +1,8 @@
 // Code-drawn device fronts, ported from docs/design/mockups/shell.js. Sizes are px; u is one rack unit.
 import type { ReactNode } from "react";
-import { PATCH_JACKS, type DeviceModel } from "../../sim/10-catalog/hardware";
+import { jacksOf, type DeviceModel } from "../../sim/10-catalog/hardware";
+import { Back } from "./backs";
+import { BrandMark, brandColor } from "./logos";
 
 export type Lamp = "ok" | "warn" | "bad" | "off";
 export type PortLamp = "off" | "ok" | "warn" | "bad" | "fiber";
@@ -13,7 +15,7 @@ const MONO = "JetBrains Mono, monospace";
 
 // Label size grows with the unit height; tw estimates a mono label's width.
 export const fsz = (h: number) => Math.max(6.5, Math.min(10.5, h * 0.42));
-const tw = (t: string, fs: number) => t.length * fs * 0.62;
+export const tw = (t: string, fs: number) => t.length * fs * 0.62;
 const hex = (cx: number, cy: number, r: number) => `M${cx} ${cy - r}l${0.866 * r} ${0.5 * r}v${r}l${-0.866 * r} ${0.5 * r}l${-0.866 * r} ${-0.5 * r}v${-r}z`;
 
 // Bezel textures; every device <svg> carries its own copy so it renders standalone.
@@ -56,6 +58,22 @@ function StatusLeds({ x, y, state }: { x: number; y: number; state: Lamp }) {
   );
 }
 
+// Server line from the model id, e.g. "g3-backup" is "backup".
+export const lineOf = (m: DeviceModel) => (m.kind === "server" ? m.id.replace(/^g\d+-/, "") : null);
+
+const markSize = (h: number) => Math.min(12, Math.min(h, 24) - 8);
+// Maker mark with its right edge at x; plate puts a dark backing behind it for coloured bezels.
+function Mark({ brand, x, h, plate }: { brand: string; x: number; h: number; plate?: boolean }) {
+  const s = markSize(h);
+  if (s < 6) return null;
+  return (
+    <>
+      {plate && <rect x={x - s - 2} y={h / 2 - s / 2 - 2} width={s + 4} height={s + 4} rx="1.5" fill="oklch(0.14 0.004 255)" />}
+      <BrandMark brand={brand} x={x - s} y={h / 2 - s / 2} size={s} />
+    </>
+  );
+}
+
 export interface FrontProps {
   model: DeviceModel;
   brand: string;
@@ -77,7 +95,8 @@ function Dwell({ w, h, state, name }: FrontProps) {
       {name && <rect x="14" y="2.5" width={tw(name, fs) + 10} height={h - 5} rx="1" fill="oklch(0.14 0.004 255)" />}
       <Label x={19} y={h / 2 + fs * 0.35} text={name} size={fs} />
       <rect x={w / 2 - 9} y={h / 2 - Math.min(h, 24) * 0.16} width="18" height={Math.min(h, 24) * 0.32} rx="1" fill="oklch(0.7 0.01 255)" />
-      <rect x={w - 28} y="2.5" width="18" height={h - 5} rx="1" fill="oklch(0.14 0.004 255)" />
+      <rect x={w - 48} y="2.5" width="38" height={h - 5} rx="1" fill="oklch(0.14 0.004 255)" />
+      <Mark brand="Dwell" x={w - 31} h={h} />
       <StatusLeds x={w - 22} y={h / 2} state={state} />
     </>
   );
@@ -103,7 +122,8 @@ function HewlettPacket({ w, h, state, name, model }: FrontProps) {
       <rect x="10" y={h / 2 - Math.min(h, 24) * 0.36} width={tab} height={Math.min(h, 24) * 0.72} rx="1" fill="oklch(0.9 0.004 255)" />
       <Label x={15} y={h / 2 + fs * 0.35} text={name} size={fs} fill="oklch(0.3 0.01 255)" />
       {trays}
-      <rect x={px} y="2" width={Math.max(0, w - 30 - px)} height={h - 4} rx="0.8" fill="url(#bb-perf)" />
+      <rect x={px} y="2" width={Math.max(0, w - 48 - px)} height={h - 4} rx="0.8" fill="url(#bb-perf)" />
+      <Mark brand="Hewlett-Packet" x={w - 31} h={h} />
       <StatusLeds x={w - 22} y={h / 2} state={state} />
     </>
   );
@@ -128,13 +148,71 @@ function SuperMacro({ w, h, state, name, model }: FrontProps) {
     <>
       <Ears w={w} h={h} fill="oklch(0.15 0.004 255)" />
       {trays}
-      <Label x={w - 30} y={h / 2 + fs * 0.35} text={name} size={fs} anchor="end" />
+      <Label x={w - 48} y={h / 2 + fs * 0.35} text={name} size={fs} anchor="end" />
+      <Mark brand="SuperMacro" x={w - 31} h={h} />
       <StatusLeds x={w - 22} y={h / 2} state={state} />
     </>
   );
 }
 
-const SERVER_FRONTS: Record<string, (p: FrontProps) => ReactNode> = { Dwell, "Hewlett-Packet": HewlettPacket, SuperMacro };
+function Lenovoid({ w, h, state, name, model }: FrontProps) {
+  const fs = fsz(Math.min(h, 24)), bays = Math.min(10, model.server?.bays ?? 4), x0 = 18 + (name ? tw(name, fs) + 6 : 0);
+  const bw = Math.min(w * 0.05, (w - 52 - x0) / bays - 1.2);
+  return (
+    <>
+      <Ears w={w} h={h} fill="oklch(0.13 0.003 255)" />
+      <rect x="9" y="1.5" width="2.5" height={h - 3} fill={brandColor("Lenovoid")} />
+      <Label x={15} y={h / 2 + fs * 0.35} text={name} size={fs} />
+      {Array.from({ length: bays }, (_, i) => (
+        <g key={i}>
+          <rect x={x0 + i * (bw + 1.2)} y="2.5" width={bw} height={h - 5} rx="0.6" fill="oklch(0.25 0.004 255)" />
+          <rect x={x0 + i * (bw + 1.2) + bw / 2 - 0.7} y="4" width="1.4" height="1.4" fill={state === "off" ? LED.off : LED.ok} />
+        </g>
+      ))}
+      <Mark brand="Lenovoid" x={w - 31} h={h} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} />
+    </>
+  );
+}
+
+const SERVER_FRONTS: Record<string, (p: FrontProps) => ReactNode> = { Dwell, "Hewlett-Packet": HewlettPacket, SuperMacro, Lenovoid };
+const EAR: Record<string, string> = { Dwell: "oklch(0.22 0.006 255)", "Hewlett-Packet": "oklch(0.7 0.005 255)", SuperMacro: "oklch(0.15 0.004 255)", Lenovoid: "oklch(0.13 0.003 255)" };
+const serverFront = (p: FrontProps) => (SERVER_FRONTS[p.brand] ?? SuperMacro)(p);
+
+// Backup and archive chassis: a wall of drive caddies, 3 rows for backup and 5 for archive.
+function Caddies({ w, h, state, name, model, brand }: FrontProps) {
+  const n = model.server?.bays ?? 36, rows = n > 40 ? 5 : 3, per = Math.ceil(n / rows), fs = fsz(Math.min(h, 24)) * 0.8, top = fs + 5;
+  const x1 = w - 36 - markSize(h), cw = (x1 - 12) / per, ch = (h - top - 3) / rows, dark = brand !== "Hewlett-Packet";
+  return (
+    <>
+      <Ears w={w} h={h} fill={EAR[brand] ?? EAR.SuperMacro} />
+      <Label x={12} y={fs + 1.5} text={name} size={fs} fill={dark ? LABEL : "oklch(0.3 0.01 255)"} />
+      {Array.from({ length: n }, (_, i) => {
+        const x = 12 + (i % per) * cw, y = top + Math.floor(i / per) * ch;
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width={cw - 1} height={ch - 1} rx="0.5" fill="oklch(0.28 0.005 255)" />
+            <circle cx={x + cw / 2 - 0.5} cy={y + ch - 2.5} r="0.8" fill={state === "off" ? LED.off : LED.act} />
+          </g>
+        );
+      })}
+      <Mark brand={brand} x={w - 31} h={h} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} />
+    </>
+  );
+}
+
+// GPU chassis: the brand's 1U face on top over a full-width intake grille.
+function Gpu(p: FrontProps) {
+  const top = p.h / 4;
+  return (
+    <>
+      <Ears w={p.w} h={p.h} fill={EAR[p.brand] ?? EAR.SuperMacro} />
+      <rect x="11" y={top + 1} width={p.w - 22} height={p.h - top - 3} rx="1.5" fill="url(#bb-hex)" />
+      {serverFront({ ...p, h: top })}
+    </>
+  );
+}
 
 // Ports sit in pairs (top and bottom) in blocks of six columns; a short run of SFP cages follows in one row.
 export function switchLayout(model: DeviceModel, w: number, h: number, x0: number) {
@@ -154,8 +232,14 @@ export function switchLayout(model: DeviceModel, w: number, h: number, x0: numbe
   return at;
 }
 
-function Switch({ w, h, name, model, ports, groups = [] }: FrontProps) {
-  const fs = fsz(Math.min(h, 24)) * 0.9, x0 = name ? 18 + tw(name, fs) : 16, at = switchLayout(model, w, h, x0);
+// Where switch ports start: after the name and, on layer 3 models, the L3 badge.
+export function switchX0(model: DeviceModel, name: string, h: number) {
+  const fs = fsz(Math.min(h, 24)) * 0.9;
+  return (name ? 18 + tw(name, fs) : 16) + (model.layer === 3 ? 17 : 0);
+}
+
+function Switch({ w, h, name, model, ports, brand, groups = [], ear }: FrontProps & { ear?: string }) {
+  const fs = fsz(Math.min(h, 24)) * 0.9, x0 = switchX0(model, name, h), at = switchLayout(model, w, h, x0);
   const cells: ReactNode[] = [];
   for (const [i, p] of at) {
     const st = ports[i] ?? "off";
@@ -185,22 +269,34 @@ function Switch({ w, h, name, model, ports, groups = [] }: FrontProps) {
   });
   return (
     <>
-      <Ears w={w} h={h} />
-      <Label x={10} y={h / 2 + fs * 0.35} text={name} size={fs} />
+      <Ears w={w} h={h} fill={ear} />
+      <Label x={10} y={h / 2 + fs * 0.35} text={name} size={fs} fill={ear ? "oklch(0.97 0 0)" : LABEL} />
+      {model.layer === 3 && (
+        <>
+          <rect x={x0 - 16} y={h / 2 - 4.5} width="13" height="9" rx="1.5" fill="oklch(0.9 0.005 255)" stroke="oklch(0.3 0.01 255)" strokeWidth="0.6" />
+          <text x={x0 - 9.5} y={h / 2 + 2.3} textAnchor="middle" fontFamily={MONO} fontSize="6.5" fontWeight="700" fill="oklch(0.2 0.01 255)">L3</text>
+        </>
+      )}
       {cells}
       {outlines}
+      <Mark brand={brand} x={w - 10} h={h} plate={!!ear} />
     </>
   );
 }
 
-function Gateway({ w, h, name, model, ports, state }: FrontProps) {
+export function gatewayLayout(model: DeviceModel, name: string, w: number, h: number) {
   const fs = fsz(Math.min(h, 24)), x0 = Math.max(w * 0.42, 18 + tw(name, fs)), step = Math.min(11, (w - x0 - 34) / Math.max(1, model.ports.length));
+  return new Map(model.ports.map((_, i) => [i, { x: x0 + i * step, y: 3.5, w: step - 2, h: h - 7 }]));
+}
+
+function Gateway({ w, h, name, model, ports, state }: FrontProps) {
+  const fs = fsz(Math.min(h, 24));
   return (
     <>
       <Ears w={w} h={h} />
       <Label x={12} y={h / 2 + fs * 0.35} text={name} size={fs} />
-      {model.ports.map((_, i) => (
-        <rect key={i} x={x0 + i * step} y="3.5" width={step - 2} height={h - 7} rx="0.6" fill="oklch(0.14 0.005 255)"
+      {[...gatewayLayout(model, name, w, h)].map(([i, p]) => (
+        <rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} rx="0.6" fill="oklch(0.14 0.005 255)"
           stroke={ports[i] && ports[i] !== "off" ? LED[ports[i]] : "var(--metal-line)"} strokeWidth="0.6" />
       ))}
       <StatusLeds x={w - 22} y={h / 2} state={state} />
@@ -209,18 +305,24 @@ function Gateway({ w, h, name, model, ports, state }: FrontProps) {
 }
 
 // Keystone jacks; a plugged jack shows its cable boot in the cable's colour.
-function Patch({ w, h, name, model, ports }: FrontProps) {
-  const n = Math.min(PATCH_JACKS, model.ports.length), fs = fsz(Math.min(h, 24)) * 0.9, x0 = name ? 18 + tw(name, fs) : 16, pw = (w - x0 - 14) / n;
+// Jack k of a side sits at the same place on the front (port k) and the back (port n + k); 48 jacks take two rows.
+export function patchLayout(name: string, w: number, h: number, n: number) {
+  const rows = n > 24 ? 2 : 1, per = n / rows, fs = fsz(Math.min(h, 24)) * 0.9, x0 = name ? 18 + tw(name, fs) : 16, pw = (w - x0 - 14) / per, ph = (h - 6) / rows;
+  return Array.from({ length: n }, (_, k) => {
+    const c = k % per;
+    return { x: x0 + c * pw + Math.floor(c / 6) * 0.8, y: 3 + Math.floor(k / per) * ph, w: pw - 1.4, h: ph - (rows > 1 ? 0.8 : 0) };
+  });
+}
+
+export function Jacks({ w, h, name, ports, offset, n }: { w: number; h: number; name: string; ports: PortLamp[]; offset: number; n: number }) {
   return (
     <>
-      <Ears w={w} h={h} fill="oklch(0.2 0.005 255)" />
-      <Label x={10} y={h / 2 + fs * 0.35} text={name} size={fs} />
-      {model.ports.slice(0, n).map((_, i) => {
-        const x = x0 + i * pw + Math.floor(i / 6) * 0.8, st = ports[i] ?? "off";
+      {patchLayout(name, w, h, n).map((p, k) => {
+        const st = ports[offset + k] ?? "off";
         return (
-          <g key={i}>
-            <rect x={x} y="3" width={pw - 1.4} height={h - 6} rx="0.6" fill="oklch(0.12 0.004 255)" />
-            {st !== "off" && <rect x={x + pw * 0.15} y={h * 0.3} width={pw - 1.4 - pw * 0.3} height={h * 0.4} rx="0.6" fill={st === "fiber" ? CABLE.fiber : CABLE.copper} />}
+          <g key={k}>
+            <rect x={p.x} y={p.y} width={p.w} height={p.h} rx="0.6" fill="oklch(0.12 0.004 255)" />
+            {st !== "off" && <rect x={p.x + p.w * 0.15} y={p.y + p.h * 0.25} width={p.w * 0.7} height={p.h * 0.5} rx="0.6" fill={st === "fiber" ? CABLE.fiber : CABLE.copper} />}
           </g>
         );
       })}
@@ -228,62 +330,35 @@ function Patch({ w, h, name, model, ports }: FrontProps) {
   );
 }
 
-// Shelf devices: a tower standing on the shelf, or a small consumer box lying on it.
-function Tower({ w, h, state, name, brand }: FrontProps) {
-  const body = brand === "Hewlett-Packet" ? "oklch(0.7 0.005 255)" : brand === "SuperMacro" ? "oklch(0.15 0.004 255)" : "oklch(0.22 0.006 255)";
-  const ink = brand === "Hewlett-Packet" ? "oklch(0.3 0.01 255)" : LABEL;
-  const face = brand === "Hewlett-Packet" ? "url(#bb-perf)" : brand === "Dwell" ? "url(#bb-hex)" : "oklch(0.12 0.004 255)";
+function Patch({ w, h, name, ports, model }: FrontProps) {
+  const fs = fsz(Math.min(h, 24)) * 0.9;
   return (
     <>
-      <rect x="0.5" y="0.5" width={w - 1} height={h - 1} rx="3" fill={body} stroke="var(--metal-line)" />
-      <rect x="6" y="8" width={w - 12} height="9" rx="1" fill="oklch(0.12 0.004 255)" />
-      {brand === "SuperMacro" && [0, 1].map((k) => <rect key={k} x="8" y={22 + k * 8} width={w - 16} height="6" rx="0.6" fill="oklch(0.6 0.006 255)" />)}
-      <rect x="6" y={brand === "SuperMacro" ? 40 : 22} width={w - 12} height={h * 0.45} rx="1.5" fill={face} />
-      <StatusLeds x={w / 2 - 3.5} y={12.5} state={state} />
-      <Label x={w / 2} y={h - 7} text={name} size={6.5} anchor="middle" fill={ink} />
+      <Ears w={w} h={h} fill="oklch(0.2 0.005 255)" />
+      <Label x={10} y={h / 2 + fs * 0.35} text={name} size={fs} />
+      <Jacks w={w} h={h} name={name} ports={ports} offset={0} n={jacksOf(model)} />
     </>
   );
 }
 
-function ConsumerBox({ w, h, state, model, ports }: FrontProps) {
-  const n = model.ports.length, step = Math.min(9, (w - 28) / Math.max(1, n));
-  return (
-    <>
-      <rect x="0.5" y="0.5" width={w - 1} height={h - 1} rx="3" fill="oklch(0.9 0.004 255)" stroke="var(--metal-line)" />
-      {model.ports.map((_, i) => (
-        <g key={i}>
-          <rect x={6 + i * step} y={h / 2 - 3.5} width={step - 2} height="7" rx="0.6" fill="oklch(0.2 0.005 255)" />
-          {ports[i] && ports[i] !== "off" && <rect x={6 + i * step + 0.8} y={h / 2 - 3.5} width={(step - 2) * 0.4} height="1.4" fill={LED[ports[i]]} />}
-        </g>
-      ))}
-      <circle cx={w - 14} cy={h / 2} r="1.8" fill={LED[state]} />
-      <circle cx={w - 7} cy={h / 2} r="1.8" fill={state === "off" ? LED.off : LED.ok} />
-    </>
-  );
-}
-
-// Shelf bay size and the height each shelf device stands in it.
-export const BAY = { w: 84, h: 128 };
-export const shelfHeight = (m: DeviceModel) => (m.kind === "server" ? 112 : 24);
-
-// The front of one device as SVG content, drawn at w by h.
 export function Front(p: FrontProps) {
-  if (p.model.shelf) return p.model.kind === "server" ? <Tower {...p} /> : <ConsumerBox {...p} />;
-  if (p.model.kind === "server") return (SERVER_FRONTS[p.brand] ?? SuperMacro)(p);
+  if (p.model.kind === "server") {
+    const line = lineOf(p.model);
+    return line === "backup" || line === "archive" ? <Caddies {...p} /> : line === "gpu" ? <Gpu {...p} /> : serverFront(p);
+  }
   if (p.model.kind === "switch") return <Switch {...p} />;
+  if (p.model.kind === "firewall") return <Switch {...p} ear={brandColor(p.brand)} />;
   if (p.model.kind === "gateway") return <Gateway {...p} />;
   return <Patch {...p} />;
 }
 
-// One device front as a standalone <svg>, sized by width.
-export function DeviceSvg({ w, u, ...p }: Omit<FrontProps, "h" | "w"> & { w: number; u: number }) {
-  // Shelf devices keep their shelf proportions and are drawn at twice the size.
-  const h = p.model.shelf ? shelfHeight(p.model) : p.model.height * u;
-  const fw = p.model.shelf ? (p.model.kind === "server" ? BAY.w - 20 : BAY.w - 10) : w, k = p.model.shelf ? 2 : 1;
+// One device front as a standalone <svg>; panel gateways (height 0) are drawn as one unit.
+export function DeviceSvg({ w, u, back, ...p }: Omit<FrontProps, "h" | "w"> & { w: number; u: number; back?: boolean }) {
+  const h = Math.max(1, p.model.height) * u;
   return (
-    <svg className="device-svg" width={fw * k} height={h * k} viewBox={`0 0 ${fw} ${h}`} role="img" aria-label={p.name || p.model.name}>
+    <svg className="device-svg" width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={p.name || p.model.name}>
       <Defs />
-      <Front {...p} w={fw} h={h} />
+      {back ? <Back {...p} w={w} h={h} /> : <Front {...p} w={w} h={h} />}
     </svg>
   );
 }

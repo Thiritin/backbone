@@ -35,7 +35,7 @@ A new game starts on 1 January 2005 with €5,000 in cash, a 24U rack in the bas
 | Company | Level 1, 0 know-how, no reviews yet |
 | Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
 | Home line | DSL, 16 Mbit/s down and 1 Mbit/s up; paid privately, so it costs the company nothing |
-| Hardware | A 24U rack with one Compute 1U G1 and a Sysko SG8 switch, cabled to the home router; the server is the cluster "Basement 1" |
+| Hardware | A 24U rack with one Dwell Balanced 1U G1 and a Sysko L2 switch 8, cabled to the home router; the server is the cluster "Basement 1" |
 | Reseller accounts | Domains from a registrar, at 40% of the retail price |
 | Customers | 3 friends (private individuals) on web hosting on your server; happiness 85, and they always pay |
 
@@ -82,24 +82,46 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | G6 | 2020 | 64 | 512 GB | 8 TB NVMe | 400 W | €5,000 |
 | G7 | 2023 | 128 | 1 TB | 15 TB NVMe | 450 W | €5,500 |
 
-**Server models.** Each model scales its generation's row. A model with two power supplies costs 10% more than the same model with one.
+**Server lines.** Every generation has one pre-built model per line, and each line scales its generation's row. Specs are fixed at purchase: nothing is added or swapped per unit. The balanced 1U with two power supplies costs 10% more than the one with one and draws 5% more power.
 
-| Model | Height | Sockets | Cores | RAM | Drive bays | Network ports | Power supplies | Full power | Price | Sold |
+| Line | Height | Sockets | Cores | RAM | Drives | Network ports | Power supplies | Full power | Price | Sold |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Compute 1U | 1U | 2 | 1× | 1× | 4 | 2 | 1, or 2 | 1× | 1× | Always |
-| Compute 1U, one socket | 1U | 1 | 0.5× | 0.5× | 4 | 2 | 1 | 0.6× | 0.65× | Always |
-| High-memory 2U | 2U | 2 | 1× | 4× | 8 | 4 | 2 | 1.4× | 2.2× | From 2008 |
-| Storage 2U | 2U | 1 | 0.5× | 0.5× | 12 | 2 | 2 | 1.2× | 1.5× | Always |
-| GPU 4U | 4U | 2 | 1× | 2× | 8 | 2 | 2 | 6× | Set with GPU compute | From 2016 |
-| ARM 1U | 1U | 1 | 1.5× | 1× | 4 | 2 | 1 | 0.6× | 0.9× | From 2020 |
+| Balanced 1U | 1U | 2 | 1× | 1× | 1 of the generation's disk in 4 bays | 2 | 1, or 2 | 1×, or 1.05× | 1×, or 1.1× | Always |
+| Compute-dense 1U | 1U | 2 | 2× | 1× | 1 of the generation's disk in 4 bays | 2 | 1 | 1.5× | 1.6× | Always |
+| Memory-optimized 2U | 2U | 2 | 1× | 4× | 1 of the generation's disk in 4 bays | 4 | 2 | 1.6× | 1.8× | Always |
+| Storage 2U | 2U | 2 | 1× | 1× | 12 of the generation's disk | 2 | 2 | 1.7× | 2× | Always |
+| Backup storage 4U | 4U | 1 | 0.5× | 0.5× | 36 large HDDs | 2 | 2 | 2× | 2.4× | Always |
+| Archive storage 4U | 4U | 1 | 0.25× | 0.25× | 60 densest HDDs | 2 | 2 | 2.2× | 3.2× | Always |
+| GPU 4U | 4U | 2 | 1× | 2× | 1 of the generation's disk in 4 bays, 4 GPUs | 2 | 2 | 5× | 6× | From 2016 |
+| ARM 1U | 1U | 1 | 1.5× | 1× | 1 of the generation's disk in 4 bays | 2 | 1 | 0.6× | 0.9× | From 2020 |
 
-- **Drives.** Each bay takes one drive of the generation's disk type at that generation's size. An extra drive costs 4% of the generation's price and draws 8 W.
-- **RAM.** RAM can be added up to the model's maximum, which is twice the listed amount, at 25% of the generation's price per listed amount.
+Backup and archive servers use HDDs whatever the generation's disk type. Archive storage is the cheapest per TB, then backup, then the storage 2U.
+
+| Generation | G1 | G2 | G3 | G4 | G5 | G6 | G7 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Large HDD (backup) | 500 GB | 1 TB | 3 TB | 6 TB | 10 TB | 16 TB | 22 TB |
+| Densest HDD (archive) | 750 GB | 2 TB | 4 TB | 8 TB | 14 TB | 20 TB | 28 TB |
+
 - **Power draw.** A server draws 40% of its full power when idle, rising in a straight line with CPU load.
 - **Port speed.** Server ports run at 1G until 2011, then 10G, 25G from 2017 and 100G from 2023.
 - **Ports.** 1G ports are copper (RJ45); 10G and faster ports are SFP cages.
-- **Drives at purchase.** A server ships with one drive in its bays, so a Compute 1U has the generation's storage. The Storage 2U ships with six drives and has six bays free.
 - **Shop window.** A generation stays in the shop until the generation two steps newer arrives, so G1 is sold until the end of 2010 and G2 until the end of 2013. G6 and G7 stay in the shop.
+
+**Manufacturers.** Within a class, manufacturers differ in price and failure rate, never in specs. A unit costs the model's price × the price factor, and its failure rate is the base AFR × the failure factor.
+
+| Class | Manufacturer | Price factor | Failure factor |
+| --- | --- | --- | --- |
+| Servers | Dwell | 1.00 | 1.00 |
+| Servers | Hewlett-Packet | 1.08 | 0.80 |
+| Servers | SuperMacro | 0.90 | 1.30 |
+| Servers | Lenovoid | 0.95 | 1.10 |
+| Switches | Sysko | 1.00 | 1.00 |
+| Switches | Junipurr | 1.10 | 0.70 |
+| Switches | Aristotle | 0.93 | 1.20 |
+| Security appliances | Sysko | 1.00 | 1.00 |
+| Security appliances | Fortinope | 0.90 | 1.25 |
+| Security appliances | Pablo Alto | 1.10 | 0.75 |
+| Patch panels | Pandoot | 1.00 | 1.00 |
 
 **Routers.** Routers keep their price over the years. A router's ports cap how many uplink links a location can have and how fast they run.
 
@@ -110,18 +132,37 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Edge L | 2U | 32 × 100G | 2014 | €40,000 | 600 W |
 | Edge XL | 2U | 36 × 400G | 2021 | €90,000 | 900 W |
 
-**Switches and gateways.** Switches come from Sysko and keep their price over the years. Every switch stays in the shop once it arrives, so an older 1G switch can always link a rack to the provider handoff. Switches and gateways draw their full power at all times. Their prices are estimates.
+**Switches.** All switches are managed and keep their price over the years. Every switch stays in the shop once it arrives, so an older 1G switch can always link a rack to the provider handoff. Layer 3 can route between networks and act as a gateway in later milestones, so it costs and draws more than the layer 2 model with the same ports. Switches, firewalls and gateways draw their full power at all times. Their prices are estimates.
+
+| Switch | Layer | Height | Ports | Sold from | Price | Full power |
+| --- | --- | --- | --- | --- | --- | --- |
+| L2 switch 8 (the starting switch) | 2 | 1U | 8 × 1G | 2005 | €60 | 8 W |
+| L2 switch 24 | 2 | 1U | 24 × 1G and 2 × 1G SFP | 2005 | €900 | 40 W |
+| L2 switch 48 | 2 | 1U | 48 × 1G and 4 × 10G SFP | 2008 | €2,800 | 70 W |
+| L2 switch 48 SFP | 2 | 1U | 48 × 10G SFP | 2011 | €8,000 | 200 W |
+| L3 switch 48 | 3 | 1U | 48 × 1G and 4 × 10G SFP | 2008 | €5,500 | 110 W |
+| L3 switch 48 SFP, 40G | 3 | 1U | 48 × 10G and 6 × 40G SFP | 2014 | €14,000 | 280 W |
+| L3 switch 48 SFP, 100G | 3 | 1U | 48 × 25G and 8 × 100G SFP | 2017 | €18,000 | 400 W |
+| L3 spine 32 × 100G | 3 | 1U | 32 × 100G SFP | 2017 | €20,000 | 450 W |
+| L3 spine 32 × 400G | 3 | 1U | 32 × 400G SFP | 2022 | €45,000 | 900 W |
+
+**Security appliances.** 1U firewalls sit inline between the gateway and the switches. A firewall forwards like a switch, and every link through it runs at most at its throughput.
+
+| Firewall | Throughput | Height | Ports | Sold from | Price | Full power |
+| --- | --- | --- | --- | --- | --- | --- |
+| Firewall 1G | 1 Gbit/s | 1U | 4 × 1G | 2005 | €1,500 | 40 W |
+| Firewall 10G | 10 Gbit/s | 1U | 8 × 1G and 4 × 10G SFP | 2011 | €6,000 | 120 W |
+| Firewall 40G | 40 Gbit/s | 1U | 8 × 10G and 4 × 40G SFP | 2017 | €18,000 | 250 W |
+| Firewall 100G | 100 Gbit/s | 1U | 8 × 25G and 4 × 100G SFP | 2022 | €40,000 | 450 W |
+
+**Patch panels and gateways.**
 
 | Device | Height | Ports | Sold from | Price | Full power |
 | --- | --- | --- | --- | --- | --- |
-| Sysko SG8 | 1U | 8 × 1G | 2005 | €60 | 8 W |
-| Sysko 2924 | 1U | 24 × 1G and 2 × 1G SFP | 2005 | €900 | 40 W |
-| Sysko 2948 | 1U | 48 × 1G and 4 × 10G SFP | 2008 | €2,800 | 70 W |
-| Sysko 4948X | 1U | 48 × 10G SFP | 2011 | €8,000 | 200 W |
-| Sysko 9348Y | 1U | 48 × 25G, 4 × 10G and 4 × 100G SFP | 2017 | €12,000 | 350 W |
-| Sysko 9332C | 1U | 32 × 100G SFP | 2023 | €20,000 | 450 W |
-| Patch panel, copper | 1U | 24 jacks, 1G | 2005 | €80 | 0 W |
-| Patch panel, fiber | 1U | 24 jacks, SFP | 2005 | €250 | 0 W |
+| Patch panel 24, copper | 1U | 24 jacks, 1G | 2005 | €80 | 0 W |
+| Patch panel 24, fiber | 1U | 24 jacks, SFP | 2005 | €250 | 0 W |
+| Patch panel 48, copper | 1U | 48 jacks, 1G | 2005 | €140 | 0 W |
+| Patch panel 48, fiber | 1U | 48 jacks, SFP | 2005 | €450 | 0 W |
 | Home router | Carrier panel | 4 × 1G | Comes with the basement | Free | 10 W |
 | Datacenter handoff | Carrier panel | 2 × 1G | Comes with every datacenter location | Free | 0 W |
 
@@ -382,12 +423,27 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 
 | Space | Price | Lead time | Minimum term | Needs |
 | --- | --- | --- | --- | --- |
+| Rack share, 1/8 (5U) / 1/4 (10U) / 1/2 (21U) / full (42U) | 0.2× / 0.35× / 0.6× / 1.1× the position price | 2 days | 1 month | Datacenter positions unlock |
 | Rack positions, 1 to 4 | The datacenter's position price each | 7 days | 1 month | Datacenter positions unlock |
 | Cage, 4 / 8 / 16 positions | 3.4× / 6.4× / 12× the position price | 30 days | 12 months | Cage unlock; datacenters with cages |
 | Private suite, 20 / 40 positions | 15× / 28× the position price | 90 days | 36 months | Private suite unlock |
 | Own datacenter | Set when it is designed | | | Own datacenter unlock |
 
-**Moving a rack.** €300 and 1 day within a city, €1,200 and 3 days to another city. The rack's servers are offline until it arrives.
+**Availability.** Datacenters are not endless. Each one has a floor capacity in positions that grows in expansion phases over the years up to a final size, and most of it is rented by competitors you never see. You can only rent what is free right now.
+
+| Datacenter size | Positions at opening | Expansion | Final size |
+| --- | --- | --- | --- |
+| Large (Equinox, Interaction, Global Snitch, Tellyhouse, Data5) | 300 | +150 every 3 years | 1,200 |
+| Medium (Hetzler Park, Iron Molehill, NTD, Next Lair, Arubaba Hub) | 120 | +60 every 4 years | 400 |
+| Small (mainqubes, Spree Colo, Docklands Data, Green.chz) | 40 | +20 every 5 years | 120 |
+
+- **Competitors.** Their share of a datacenter starts at 85% to 97% of capacity, drawn from the seed. Each month every competitor position cancels with a 1.5% chance. Waitlist holds are then granted from the freed space, and competitors fill the remaining free space down to a level drawn evenly between 0% and 4% of capacity. They never take space held for the waitlist.
+- **Expansion.** Each expansion phase opens all its new positions on 1 January. In January, February and March competitors take a sixth of the new positions each month, so about half within 3 months, and from April the usual monthly fill applies.
+- **What can be rented.** Cages and suites need that many free positions, which for a suite usually means right after an expansion. Rack shares come from the provider's share racks: one position holds 8 eighths.
+- **Waitlist.** When a datacenter has too little free space for what you want, you can join its waitlist. When enough space frees up, you get a notification, and the space is held for you for 7 days.
+- **Consequence.** You can't grow in one building forever, which pushes you to spread over several datacenters or build your own.
+
+**Moving a rack.** €300 and 1 day within a city, €1,200 and 3 days to another city. The rack's servers are offline until it arrives. A rack share comes with the provider's rack, so its power limit is the share × the datacenter's kW per position, and it can't be moved or sold. You mount hardware into it directly.
 
 **Catalog.** Two to four datacenters per city. Exchanges new to this table: Franz-IX (Paris), BeCIX (Berlin), MIXup (Milan), VieX (Vienna), SwizzIX (Zurich).
 
@@ -415,6 +471,16 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 
 **Basement.** One position, a 24U rack at most, 3 kW at most (a household circuit), no backup, the household power price (business × 1.6) and the home line as its only uplink.
 
+## Leasing
+
+| Lessor | Parody of |
+| --- | --- |
+| Grenkel Leasing | Grenke |
+| Deutsche Leasling | Deutsche Leasing |
+| BNP Parasol Leasing | BNP Paribas Leasing |
+
+Each lessor offers one term (12, 24 or 36 months) per cart. The total paid over the term is the cash price × a factor drawn between 1.06 (a good offer) and 1.40 (a bad one), split into equal monthly payments that start at the next month start. Offers are drawn from the game seed, the month and the cart total, so they hold for the rest of the month. Buying out early costs the remaining payments.
+
 ## Hardware, power and failures
 
 A G1 server costs about €26 a month in power in 2005; a G7 costs €89 in 2026 but carries 128 times the RAM. Old hardware also fails more often, so replacing it saves on power, space and outages at once.
@@ -428,11 +494,11 @@ A G1 server costs about €26 a month in power in 2005; a G7 costs €89 in 2026
 | Location | PUE | Billing |
 | --- | --- | --- |
 | Basement | 1.0 | Household price |
-| Rented U, rack or cage | Included | A power budget is included in the rent; each kW above it costs the GDD's extra-power price |
+| Rack positions, cage or suite | The datacenter's power factor | City business price × power factor; a rack above its position's kW limit trips |
 | Own room | 1.6 | City business price |
 | Own datacenter | 1.4, or 1.2 with liquid cooling | City business price, or a custom contract: 3 years fixed at 10% below the current price |
 
-**Buying and selling.** Hardware arrives 3 days after ordering in 2005, falling to 1 day by 2015. Book value falls in a straight line to zero over 5 years. Used hardware sells for 50% of book value, but never less than 5% of its price. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
+**Buying and selling.** Hardware arrives 3 days after ordering in 2005, falling to 1 day by 2015. Bought hardware goes to storage, and mounting it into a rack is instant and free. Resale value falls in a straight line from 100% to 80% of the price over the first month, then in a straight line to 20% over the next 24 months, and stays at 20%. Racks sell the same way. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
 
 **Failures.** Each device has a base annual failure rate (AFR), raised in its first 3 months and again after 3 years of age:
 
@@ -444,13 +510,76 @@ Here a is the age in years, and the chance of failing in any game hour is AFR ÷
 
 | Device | Base AFR | Effect of a failure |
 | --- | --- | --- |
-| Server (disks, power supplies and RAM together) | 8% | On a consumer cluster its workloads go down until repair. On an HA cluster they restart elsewhere within 5 minutes, if the cluster has spare capacity. |
+| Server | From its components (see Components) | Depends on the component; see Wear, failures and maintenance in the GDD |
 | Access or core switch | 2% | Everything wired only to it goes offline |
 | Edge router | 1.5% | Its uplinks go down; traffic spills to other exits if there are any |
 | UPS | 3% | The next grid outage takes the room down |
 | Cooling unit | 5% | The room overheats; servers start failing at 4× their rate after 2 hours |
 
 Without a spare kit in stock, a repair waits for a delivery first.
+
+**Components.** Each component's chance of failing in a year depends on whether it is past its life expectancy, and is multiplied by the manufacturer's failure factor and by 2 while the device runs hot from a failed fan. The chance per game hour is the yearly rate ÷ 8,760.
+
+| Component | Life expectancy | Yearly failure rate before | After | Part price | Swap while running |
+| --- | --- | --- | --- | --- | --- |
+| HDD | 5 years | 1.5% | 8% | €120 | In RAID |
+| SSD | 5 years | 0.8% | 4% | €150 | In RAID |
+| NVMe | 5 years | 0.6% | 3% | €200 | In RAID |
+| Power supply | 7 years | 1% | 6% | €150 | With two |
+| Fan | 6 years | 1% | 7% | €25 | Yes |
+| RAM stick | 12 years | 0.2% | 0.6% | €60 | No |
+| Mainboard | 12 years | 0.3% | 1% | €600 | No |
+| CPU | 15 years | 0.05% | 0.2% | €400 | No |
+| Network card | 10 years | 0.3% | 1% | €80 | No |
+
+A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. Part prices are 2026 values with m = 1.
+
+**RAID.**
+
+| Level | Drives | Usable | Survives |
+| --- | --- | --- | --- |
+| None | 1+ | All | Nothing; a failed drive loses its data |
+| RAID 1 | 2 | Half | 1 drive |
+| RAID 5 | 3+ | All but one | 1 drive |
+| RAID 6 | 4+ | All but two | 2 drives |
+| RAID 10 | 4+, even | Half | 1 drive per mirror pair |
+
+| Rebuild rate | Rebuild speed | Server performance while rebuilding |
+| --- | --- | --- |
+| Low | 50 MB/s | × 0.95 |
+| Medium | 150 MB/s | × 0.8 |
+| High | 400 MB/s | × 0.6 |
+
+A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD that is 70% full takes about 5 hours at medium.
+
+**Maintenance.** A swap takes 15 minutes once someone is there. In the basement you are there at once. At a datacenter remote hands arrive after their response time and bill their hourly rate for at least one hour.
+
+**Power feeds.**
+
+| Feed | Effect | Price |
+| --- | --- | --- |
+| Feed A | Included with every position, at the datacenter's kW per position | In the rent |
+| Feed B | Second feed; servers with two power supplies survive a feed failure. The load must fit one feed for that to hold | 40% of the position price per month |
+| High-density feed | Doubles the position's kW limit | 60% of the position price per month |
+| Basement circuit | One extra household circuit, +3 kW | €400 once |
+
+**Monitoring.** Without monitoring, failures only show as lights on the device fronts. Monitoring is a research unlock at level 1.
+
+| Product | Parody of | Price | Trade-off |
+| --- | --- | --- | --- |
+| "Nagiost" | Nagios | Free | Alerts only after 15 minutes; dashboard refreshes hourly |
+| "Zabbicks" | Zabbix | Free | Alerts after 5 minutes; more admin work as it grows |
+| "DataDawg" | Datadog | €15 per monitored device per month (2026, m = 3) | Alerts within a minute and the best dashboard |
+
+**Data loss and backups.** A workload with a lost disk is down until it is restored or rebuilt empty. Restoring takes the volume's size ÷ the link speed from the backup server.
+
+| Situation | Happiness | Ticket |
+| --- | --- | --- |
+| Restored from a backup | −15, and −1 more per hour of backup age, at most −40 | Outage ticket |
+| No backup | −60 | Refund request; the customer churns if it is refused |
+| Refund granted (one month's fees) | +20 | Closes the refund request |
+
+Backup rules: hourly, daily or weekly, kept 7, 14 or 30 days. A full copy plus 5% of the volume per extra day kept fills the backup pool. Backup jobs follow the backup usage curve and use the zone's switch bandwidth.
 
 **Power outages.** Grid outages are random events per city. They are far more frequent than in reality, so the player meets them in the first year.
 
@@ -490,7 +619,7 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 ten
 | VPN | 300 | 14,000 |
 | Colocation | 500 | 23,000 |
 
-**Daily curve.** Traffic peaks between 20:00 and 22:00 at 2× the average and bottoms out at 04:00 at 0.4×. The 95th percentile in Mbit/s is about GB per month ÷ 164.
+**Daily curve.** Traffic follows each customer type's usage curve (see Usage curves and overcommit), scaled so a week averages to the monthly figure. The 95th percentile in Mbit/s is about GB per month ÷ 164.
 
 **Transit billing.** Each hourly tick records one sample per port. The bill uses the 95th percentile of the last 30 days (the top 5% of hours are dropped) and never charges less than 20% of the port.
 
@@ -518,8 +647,6 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 ten
 
 **Sizes.** A web space uses 0.1 vCPU, 0.25 GB of RAM and its plan's disk. A VM uses its plan's vCPUs, RAM and disk. A game server uses 2 vCPUs and 4 GB of RAM in 2005, doubling every 7 years like VPS plans.
 
-**CPU contention.** A vCPU is busy 25% of the time on average. When a node's busy vCPUs exceed its cores, the performance score of every customer on that node is multiplied by cores ÷ busy vCPUs. With the average load, a 4:1 overcommit is the break-even point.
-
 **Moving a workload**
 
 | Workload | Time | Downtime |
@@ -529,14 +656,45 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 ten
 | Web space | Disk ÷ link speed | 5 seconds |
 | Game server | 1 minute | 1 minute |
 | Storage volume | Disk ÷ link speed | None; reads come from the old node until it finishes |
+| Between zones (cold) | (Disk + RAM) ÷ free bandwidth of the link between the zones | The whole transfer; needs a link between the zones |
+| Between zones (live) | As above, then a final sync of RAM × 0.1 ÷ free bandwidth | Under 5 seconds; needs a link of 10G or more |
 
-The link speed is the slowest link between the two nodes, shared by every migration running at the same time. Draining runs 2 migrations at once per node by default.
+The link speed is the slowest link between the two nodes, shared by every migration running at the same time. Between zones, the free bandwidth is the link's capacity minus the customer traffic it already carries at that hour, so a 1G link at its evening peak migrates slowly, and a 100 GB VM over a free 1G link takes about 15 minutes. Draining runs 2 migrations at once per node by default.
 
 **Restart after a node fails.** In a high-availability cluster, workloads restart on other nodes after 5 minutes of detection plus 2 minutes of boot. Customers count that time as an outage.
 
 **Hardware warnings.** 60% of disk and power supply failures announce themselves 1 to 7 days early. A node drained before its failure causes no outage.
 
 **Private networks.** A private network costs the customer €5 a month as an add-on (m = 1) and costs you nothing to run.
+
+## Usage curves and overcommit
+
+**Usage curves.** Each workload's load is a share of what it booked, from 0 to 1, read from its type's curve below. Values between keyframes are straight lines, and each workload adds ±20% hourly jitter drawn from the seed. Fridays from 18:00 count as weekend for game servers and VPNs.
+
+| Curve | Used by | Weekdays (hour → load) | Weekends (hour → load) | Week average |
+| --- | --- | --- | --- | --- |
+| Game server | Gamers | 0 → 0.15, 16 → 0.15, 20 → 0.45, 23 → 0.3 | 0 → 0.6, 3 → 0.2, 8 → 0.2, 12 → 0.9, 18 → 1.0, 23 → 0.9 | about 0.35 |
+| Online shop | Online shops | 0 → 0.1, 6 → 0.15, 9 → 0.55, 13 → 0.7, 17 → 0.6, 20 → 0.75, 22 → 0.3, 23 → 0.12 | 0 → 0.1, 10 → 0.5, 15 → 0.6, 20 → 0.8, 22 → 0.3 | about 0.4 |
+| Blog and personal site | Private individuals, hobby developers | 0 → 0.15, 7 → 0.3, 12 → 0.45, 19 → 0.6, 22 → 0.5, 23 → 0.2 | 0 → 0.2, 10 → 0.4, 19 → 0.55, 23 → 0.2 | about 0.35 |
+| News and magazine | Agencies' media clients | 0 → 0.1, 5 → 0.3, 7 → 0.9, 9 → 0.7, 12 → 0.6, 18 → 0.5, 22 → 0.3 | 0 → 0.1, 9 → 0.7, 12 → 0.5, 22 → 0.25 | about 0.45 |
+| Business site | Sole proprietors, small businesses, offices | 0 → 0.05, 7 → 0.2, 9 → 0.6, 12 → 0.5, 17 → 0.5, 19 → 0.15 | 0.1 all day | about 0.25 |
+| Backup and archive | Backup and archive storage | 0 → 0.4, 1 → 1.0, 5 → 1.0, 7 → 0.05 | Same as weekdays | about 0.25 |
+| VPN | VPN customers | 0 → 0.2, 8 → 0.3, 19 → 0.7, 23 → 0.4 | 0 → 0.4, 14 → 0.7, 22 → 0.7 | about 0.45 |
+| Developer VPS | Hobby developers, agencies | 0 → 0.1, 10 → 0.3, 18 → 0.3, 21 → 0.2 | 0.15 all day | about 0.2 |
+| Enterprise | Enterprises, dedicated servers | 0 → 0.3, 8 → 0.6, 18 → 0.6, 22 → 0.35 | 0.3 all day | about 0.45 |
+
+**Surges.** Black Friday (the last Friday of November) and the two weeks before Christmas multiply online shops by 2× and 1.3×. A game's launch weekend multiplies its servers by 1.5×. Each news site has a 1% chance per day of breaking news, which multiplies it by 3× for 2 to 6 hours.
+
+**What runs over.** Overcommit ratios are set per cluster.
+
+| Resource | Max ratio | In use | When the node runs over |
+| --- | --- | --- | --- |
+| CPU | 8:1 | Booked vCPUs × load | Performance of everyone on the node × cores ÷ busy vCPUs |
+| RAM | 1.5:1 | Booked RAM × (0.6 + 0.4 × load), since memory stays mostly resident | Above 100% the node swaps and performance drops to 30%; above 110% it kills the biggest workload, which is an outage and a ticket |
+| Disk | 2:1 | Grows from 30% of booked at signup to 70% after two years | The pool stops writes at 100%: an outage for every workload on it |
+| Traffic | No limit | Monthly traffic × load | Saturation, see Traffic and bandwidth |
+
+A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, while a mixed cluster stays near 0.5, so mixing customer types roughly doubles safe overcommit. The cluster view shows booked capacity, this week's forecast peak and last week's actual peak.
 
 ## Staff: salaries, skill growth and quitting
 
@@ -589,7 +747,7 @@ In 2005 a low-budget lead from search ads costs about €9, so a new private cus
 
 Spending more in one channel and city gets dearer: the cost per lead is multiplied by 1 + monthly spend ÷ €5,000.
 
-**Reviews.** A customer writes a review with a 5% chance after a closed ticket, 10% after an outage that hit them and 30% after cancelling. The stars follow happiness, rounded after up to half a star of random noise and kept between 1 and 5:
+**Reviews.** After a closed ticket, an outage that hit them, a data loss or a cancellation, a customer writes a review with a 10% chance, or 20% when their happiness is below 40. The stars follow happiness, rounded after up to half a star of random noise and kept between 1 and 5. A customer refunded after a data loss who still writes a review gives 3 stars 60% of the time and otherwise follows the formula:
 
 ```math
 \text{stars} = \operatorname{round}\left(1 + 4 \cdot \frac{H}{100} \pm 0.5\right)

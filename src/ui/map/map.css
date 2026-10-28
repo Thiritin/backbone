@@ -1,0 +1,63 @@
+.wm {
+  --wm-sea: var(--map-bg);
+  --wm-land: color-mix(in oklch, var(--map-bg), var(--map-label) 16%);
+  --wm-coast: color-mix(in oklch, var(--map-bg), var(--map-label) 34%);
+  --wm-grat: color-mix(in oklch, var(--map-bg), var(--map-label) 9%);
+  --wm-cable: color-mix(in oklch, var(--accent) 32%, var(--map-bg));
+  position: relative; overflow: hidden; background: var(--wm-sea);
+  border-radius: 10px; border: 0.5px solid var(--line-strong);
+}
+.wm > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; user-select: none; cursor: grab; }
+.wm > svg.drag { cursor: grabbing; }
+.wm-s { transform: scale(var(--k, 1)); }
+
+.wm-grat { fill: none; stroke: var(--wm-grat); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.wm-land { fill: var(--wm-land); stroke: var(--wm-coast); stroke-width: 0.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.wm-cable path { fill: none; vector-effect: non-scaling-stroke; }
+.wm-cable-line { stroke: var(--wm-cable); stroke-width: 0.8; }
+.wm-cable-hit { stroke: transparent; stroke-width: 9; pointer-events: stroke; }
+.wm-cable:hover .wm-cable-line { stroke: var(--accent); stroke-width: 2; }
+
+.wm-city { cursor: pointer; }
+.wm-city circle { fill: var(--map-label); }
+.wm-city text, .wm-plabel {
+  font: 500 11px Inter, sans-serif; fill: var(--map-label);
+  stroke: var(--wm-sea); stroke-width: 3px; stroke-linejoin: round; paint-order: stroke;
+}
+.wm-city.wm-t1 text { font-weight: 600; }
+.wm-city:hover text { fill: var(--text); }
+.wm[data-z="1"] .wm-t2 text, .wm[data-z="1"] .wm-t3 text, .wm[data-z="2"] .wm-t3 text { display: none; }
+.wm[data-z="1"] .wm-t3 circle { display: none; }
+
+.wm-stem { stroke: var(--accent); stroke-width: 1.5px; }
+.wm-pin { cursor: pointer; outline: none; color: var(--text); }
+.wm-pin > circle:first-of-type { fill: var(--win); stroke: var(--accent); stroke-width: 1.5px; }
+.wm-pin:hover > circle:first-of-type, .wm-pin:focus-visible > circle:first-of-type { stroke-width: 2.5px; }
+.wm-pin.sel > circle:first-of-type { fill: var(--accent); stroke: var(--win); }
+.wm-pin.sel { color: var(--accent-ink); }
+.wm-plabel { font-weight: 600; fill: var(--text); }
+.wm-badge circle { fill: var(--accent); stroke: var(--win); stroke-width: 1.5px; }
+.wm-badge text { font: 650 8.5px "JetBrains Mono", monospace; text-anchor: middle; fill: var(--accent-ink); }
+.wm-pin.sel .wm-badge circle { fill: var(--win); stroke: var(--accent); }
+.wm-pin.sel .wm-badge text { fill: var(--accent); }
+.wm-alert { fill: var(--bad); stroke: var(--win); stroke-width: 1.5px; }
+
+.wm-tip {
+  position: absolute; left: 0; top: 0; pointer-events: none; white-space: nowrap;
+  padding: 3px 7px; border-radius: 6px; font-size: 11.5px; font-weight: 500;
+  background: var(--win); color: var(--text); box-shadow: var(--shadow-pop);
+}
+.wm-tip[hidden] { display: none; }
+
+.wm-overview { height: 320px; }
+.wm-add { height: 240px; flex: none; margin: 12px 16px 0; }
+
+.wm-panel {
+  position: absolute; top: 10px; right: 10px; width: 240px; max-height: calc(100% - 20px); overflow: auto;
+  padding: 5px; border-radius: 10px; background: var(--win); box-shadow: var(--shadow-pop); display: grid; gap: 1px;
+}
+.wm-panel h3 { font-size: 12px; font-weight: 650; padding: 4px 8px 6px; }
+.wm-panel button { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border: 0; border-radius: 6px; background: none; font: inherit; color: inherit; text-align: left; }
+.wm-panel button:hover { background: var(--hover); }
+.wm-panel button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.wm-add .wm-city text { display: none; }

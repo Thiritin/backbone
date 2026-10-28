@@ -1,8 +1,10 @@
-import { Bell, Inbox, Moon, Network, Pause, Sun } from "lucide-react";
+import { Bell, Moon, Network, Pause, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { serialize } from "../../sim/91-save/save";
 import { Confirm } from "./Confirm";
+import { newNote } from "./DesktopIcons";
+import { restoreGuide } from "../../sim/90-actions/docs";
 import { dateOf, formatClock, SPEEDS, type Speed } from "../../sim/00-core/time";
 import { euro } from "../../sim/00-core/money";
 import { useStore } from "../store";
@@ -10,7 +12,9 @@ import { useStore } from "../store";
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
 export function MenuBar({ theme, onTheme, onBell }: Props) {
-  const { game, speed, setSpeed, windows, openApp, unseen, importSave, deleteProgress } = useStore();
+  const { game, speed, setSpeed, windows, openApp, openDoc, act, unseen, importSave, deleteProgress } = useStore();
+  const guideGone = !game.docs.some((d) => d.kind === "guide");
+  const docTitle = (id: string) => game.docs.find((d) => d.id === id)?.title ?? "";
   const [menu, setMenu] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const file = useRef<HTMLInputElement>(null);
@@ -36,7 +40,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       <button className={`mb-item ${cls}`} aria-label={label} aria-expanded={menu === label} onClick={() => setMenu(menu === label ? null : label)}>{face}</button>
       {menu === label && items.length > 0 && (
         <div className="mb-drop" role="menu">
-          {items.map(([l, fn]) => <button key={l} role="menuitem" onClick={() => { fn(); setMenu(null); }}>{l}</button>)}
+          {items.map(([l, fn], i) => <button key={i} role="menuitem" onClick={() => { fn(); setMenu(null); }}>{l}</button>)}
         </div>
       )}
     </div>
@@ -44,9 +48,9 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      {item("Backbone", [["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <Network />, "mb-logo")}
+      {item("Backbone", [["New note", () => newNote()], ...(guideGone ? [["Restore Getting started", () => act(restoreGuide)] as [string, () => void]] : []), ["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <Network />, "mb-logo")}
       <span className="mb-item mb-app">{front?.app ?? "Backbone"}</span>
-      {item("Window", windows.map((w) => [w.app, () => openApp(w.app)] as [string, () => void]))}
+      {item("Window", windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : [w.app, () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
       <div className="speed" role="group" aria-label="Game speed">
         {SPEEDS.map((s: Speed) => (
@@ -56,10 +60,9 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
         ))}
       </div>
       <span className="mb-sep" />
-      <button className="mb-item num" onClick={onBell}>{formatClock(game.hour)}</button>
+      <span className="mb-item num">{formatClock(game.hour)}</span>
       <span className="mb-sep" />
       <span className="mb-item mb-cash num">{euro(game.cash)}</span>
-      <button className="mb-item" aria-label="Open Support" onClick={() => openApp("Support")}><Inbox /></button>
       <button className="mb-item mb-badge" aria-label={unseen ? `Notifications, ${unseen} new` : "Notifications"} onClick={onBell}>
         <Bell />
         {unseen > 0 && <span key={unseen} className="count plop">{unseen > 99 ? "99+" : unseen}</span>}

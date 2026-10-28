@@ -11,7 +11,7 @@ export const SAVE_KEY = "backbone.save";
 
 // What another app asked a window to show; n changes on every request so repeating one still applies.
 export interface Focus { kind: string; id: string; n: number }
-export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; focus?: Focus }
+export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; focus?: Focus }
 export interface Banner { id: number; app: string; title: string; text: string; hour: number }
 export interface NotifyPref { allow: boolean; banners: boolean }
 export const DEFAULT_PREF: NotifyPref = { allow: true, banners: true };
@@ -29,6 +29,8 @@ interface Store {
   act: (fn: (s: GameState) => ActionResult) => ActionResult;
   setSpeed: (s: Speed) => void;
   openApp: (app: string, focus?: Omit<Focus, "n">) => void;
+  // Opens a desktop document: the guide in Getting started, a note in its own Notes window.
+  openDoc: (id: string) => void;
   focus: (id: string) => void;
   close: (id: string) => void;
   minimize: (id: string) => void;
@@ -43,10 +45,19 @@ interface Store {
   startGame: () => void;
   importSave: (raw: string) => void;
   deleteProgress: () => void;
+  cart: CartLine[];
+  addToCart: (line: CartLine) => void;
+  setCartQty: (model: string, brand: string, qty: number) => void;
+  clearCart: () => void;
+  // The location open in Locations; the Shop delivers there by default.
+  openLoc: string | null;
+  setOpenLoc: (id: string | null) => void;
 }
 
+export interface CartLine { model: string; brand: string; qty: number }
+
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0 });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -78,6 +89,17 @@ export const useStore = create<Store>((set, get) => ({
   notifyPrefs: loadPrefs(),
   started: initial.loaded,
   unseen: 0,
+  cart: [],
+
+  // The cart lives only in memory; a line at qty 0 leaves the cart.
+  addToCart: (l) => {
+    const cart = get().cart, at = cart.find((c) => c.model === l.model && c.brand === l.brand);
+    set({ cart: at ? cart.map((c) => (c === at ? { ...c, qty: c.qty + l.qty } : c)) : [...cart, l] });
+  },
+  setCartQty: (model, brand, qty) => set({ cart: get().cart.flatMap((c) => (c.model === model && c.brand === brand ? (qty > 0 ? [{ ...c, qty }] : []) : [c])) }),
+  clearCart: () => set({ cart: [] }),
+  openLoc: null,
+  setOpenLoc: (openLoc) => set({ openLoc }),
 
   advance: (hours) => {
     const game = { ...get().game, rng: { ...get().game.rng } };
@@ -100,8 +122,17 @@ export const useStore = create<Store>((set, get) => ({
     const open = ws.find((w) => w.app === app);
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
-    const n = ws.length % 8, size = app === "Locations" ? { w: 1120, h: 700 } : app === "Billing" || app === "Bank" || app === "Customers" ? { w: 1240, h: 680 } : app === "Support" ? { w: 1160, h: 680 } : { w: 760, h: 480 };
+    const n = ws.length % 8, size = app === "Locations" ? { w: 1120, h: 700 } : app === "Shop" ? { w: 1180, h: 700 } : app === "Billing" || app === "Bank" || app === "Customers" ? { w: 1240, h: 680 } : app === "Support" ? { w: 1160, h: 680 } : { w: 760, h: 480 };
     set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x: 96 + n * 32, y: 64 + n * 28, ...size, z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
+  },
+  openDoc: (doc) => {
+    const ws = get().windows, d = get().game.docs.find((x) => x.id === doc);
+    if (!d) return;
+    if (d.kind === "guide") return get().openApp("Getting started");
+    const open = ws.find((w) => w.doc === doc);
+    if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
+    const n = ws.length % 8;
+    set({ windows: [...ws, { id: `${doc}-${Date.now()}`, app: "Notes", doc, x: 160 + n * 32, y: 84 + n * 28, w: 560, h: 420, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },
   focus: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, z: topZ(windows) + 1 } : w)) })),
   close: (id) => set(({ windows }) => ({ windows: windows.filter((w) => w.id !== id) })),

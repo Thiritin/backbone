@@ -2,7 +2,9 @@ import { useLayoutEffect, useRef } from "react";
 import type { CSSProperties, PointerEvent as RPointerEvent } from "react";
 import { appByName } from "../apps/registry";
 import { GuideApp } from "../apps/GuideApp";
+import { NoteApp, NoteTitle } from "../apps/NoteApp";
 import { LocationsApp } from "../apps/locations/LocationsApp";
+import { ShopApp } from "../apps/shop/ShopApp";
 import { SettingsApp } from "../apps/SettingsApp";
 import { useStore, type Win } from "../store";
 import { animateClose, animateOpen, flip, genie } from "./motion";
@@ -78,10 +80,10 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
           <button aria-label="Minimize" onClick={() => minimize(win.id)}>{Glyph.min}</button>
           <button aria-label="Zoom" onClick={() => toggleZoom(win.id)}>{win.zoomed ? Glyph.exit : Glyph.enter}</button>
         </div>
-        <h1>{win.app}</h1>
+        <h1>{win.doc ? <NoteTitle id={win.doc} /> : win.app}</h1>
       </div>
       <div className="win-body">
-        {win.app === "Settings" ? <SettingsApp /> : win.app === "Getting started" ? <GuideApp /> : win.app === "Locations" ? <LocationsApp /> : app.body ? <app.body /> : (
+        {win.doc ? <NoteApp id={win.doc} /> : win.app === "Settings" ? <SettingsApp /> : win.app === "Getting started" ? <GuideApp /> : win.app === "Locations" ? <LocationsApp /> : win.app === "Shop" ? <ShopApp /> : app.body ? <app.body /> : (
           <div className="app-empty">
             <span className="app-empty-tile" style={{ "--tile": app.tile } as CSSProperties}><app.icon /></span>
             <h2>{win.app}</h2>

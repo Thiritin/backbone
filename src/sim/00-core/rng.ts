@@ -28,3 +28,12 @@ export function binomial(r: Rng, n: number, p: number): number {
   const z = Math.sqrt(-2 * Math.log(1 - rand(r))) * Math.cos(2 * Math.PI * rand(r));
   return Math.max(0, Math.min(n, Math.round(mean + sd * z)));
 }
+
+// A generator hashed from integers, for draws that must not consume the game's rng.
+export function hashRng(...xs: number[]): Rng {
+  let h = 0x811c9dc5;
+  for (const x of xs) h = Math.imul(h ^ (x >>> 0), 0x01000193) ^ (h >>> 15);
+  const r = createRng(h);
+  rand(r);
+  return r;
+}

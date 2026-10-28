@@ -1,33 +1,147 @@
-import { BookOpen } from "lucide-react";
+import { BookOpen, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
+import type { PointerEvent as RPointerEvent } from "react";
+import { createPortal } from "react-dom";
+import type { Doc } from "../../sim/50-state";
+import { addNote, editNote, moveDoc, removeDoc } from "../../sim/90-actions/docs";
 import { useStore } from "../store";
+import { Confirm } from "./Confirm";
 
-const ICONS = [{ app: "Getting started", icon: BookOpen }];
+const ICON_W = 92, ICON_H = 90, MENUBAR = 30, DOCK = 80, MENU_W = 190;
+const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), Math.max(lo, hi));
+
+export function newNote(at?: { x: number; y: number }) {
+  const { act, openDoc } = useStore.getState();
+  const r = act((s) => addNote(s, at));
+  if (r.ok && r.id) openDoc(r.id);
+}
+
+interface Menu { x: number; y: number; doc: Doc | null }
 
 export function DesktopIcons() {
-  const openApp = useStore((s) => s.openApp);
+  const docs = useStore((s) => s.game.docs);
+  const act = useStore((s) => s.act), openDoc = useStore((s) => s.openDoc);
   const [selected, setSelected] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [trash, setTrash] = useState<Doc | null>(null);
+  const [menu, setMenu] = useState<Menu | null>(null);
+  const [drag, setDrag] = useState<{ id: string; x: number; y: number } | null>(null);
 
   useEffect(() => {
-    const clear = () => setSelected(null);
+    const clear = () => { setSelected(null); setMenu(null); };
+    const context = (e: MouseEvent) => {
+      if (!(e.target as Element).closest(".wallpaper-host")) return;
+      e.preventDefault();
+      setMenu({ x: e.clientX, y: e.clientY, doc: null });
+    };
     window.addEventListener("pointerdown", clear);
-    return () => window.removeEventListener("pointerdown", clear);
+    window.addEventListener("contextmenu", context);
+    return () => { window.removeEventListener("pointerdown", clear); window.removeEventListener("contextmenu", context); };
   }, []);
+
+  useEffect(() => {
+    const doc = docs.find((d) => d.id === selected);
+    if (!doc || renaming || trash) return;
+    const key = (e: KeyboardEvent) => {
+      if ((e.target as Element).closest("input, textarea, select, [role=alertdialog]")) return;
+      if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); setTrash(doc); }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [docs, selected, renaming, trash]);
+
+  const grab = (e: RPointerEvent, d: Doc) => {
+    e.stopPropagation();
+    setSelected(d.id);
+    setMenu(null);
+    if (e.button !== 0) return;
+    const x0 = e.clientX, y0 = e.clientY;
+    let pos: { x: number; y: number } | null = null;
+    const move = (ev: PointerEvent) => {
+      const dx = ev.clientX - x0, dy = ev.clientY - y0;
+      if (!pos && Math.hypot(dx, dy) < 4) return;
+      pos = { x: clamp(d.x + dx, 0, innerWidth - ICON_W), y: clamp(d.y + dy, MENUBAR, innerHeight - DOCK - ICON_H) };
+      setDrag({ id: d.id, ...pos });
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      if (pos) act((s) => moveDoc(s, d.id, pos!.x, pos!.y));
+      setDrag(null);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+
+  const rename = (d: Doc, value: string) => {
+    setRenaming(null);
+    if (value.trim() && value.trim() !== d.title) act((s) => editNote(s, d.id, { title: value }));
+  };
+
+  const remove = (d: Doc) => {
+    setTrash(null);
+    const { windows, close } = useStore.getState();
+    if (!act((s) => removeDoc(s, d.id)).ok) return;
+    for (const w of windows) if (w.doc === d.id || (d.kind === "guide" && w.app === "Getting started")) close(w.id);
+  };
+
+  const items: [string, () => void][] = !menu ? [] : menu.doc
+    ? [["Open", () => openDoc(menu.doc!.id)], ["Rename", () => setRenaming(menu.doc!.id)], ["Move to Trash", () => setTrash(menu.doc)]]
+    : [["New note", () => newNote({ x: menu.x - ICON_W / 2, y: menu.y - 32 })]];
 
   return (
     <div className="desktop-icons">
-      {ICONS.map(({ app, icon: Icon }) => (
-        <button
-          key={app}
-          className={`desktop-icon${selected === app ? " selected" : ""}`}
-          onPointerDown={(e) => { e.stopPropagation(); setSelected(app); }}
-          onDoubleClick={() => openApp(app)}
-          onKeyDown={(e) => e.key === "Enter" && openApp(app)}
-        >
-          <span className="di-page"><Icon /></span>
-          <span className="di-label">{app}</span>
-        </button>
-      ))}
+      {docs.map((d) => {
+        const Icon = d.kind === "guide" ? BookOpen : FileText;
+        const at = drag?.id === d.id ? drag : d;
+        return (
+          <div
+            key={d.id}
+            role="button"
+            tabIndex={0}
+            className={`desktop-icon${selected === d.id ? " selected" : ""}`}
+            style={{ left: at.x, top: at.y }}
+            onPointerDown={(e) => grab(e, d)}
+            onDoubleClick={() => openDoc(d.id)}
+            onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && openDoc(d.id)}
+            onContextMenu={(e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, doc: d }); }}
+          >
+            <span className={`di-page di-${d.kind}`}><Icon /></span>
+            {renaming === d.id ? (
+              <input
+                className="di-rename"
+                aria-label="Title"
+                defaultValue={d.title}
+                maxLength={80}
+                autoFocus
+                onFocus={(e) => e.currentTarget.select()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onDoubleClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") e.currentTarget.value = d.title;
+                  if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+                }}
+                onBlur={(e) => rename(d, e.currentTarget.value)}
+              />
+            ) : <span className="di-label">{d.title}</span>}
+          </div>
+        );
+      })}
+      {menu && createPortal(
+        <div className="mb-drop ctx-menu" role="menu" style={{ left: clamp(menu.x, 0, innerWidth - MENU_W), top: menu.y }} onPointerDown={(e) => e.stopPropagation()}>
+          {items.map(([l, fn]) => <button key={l} role="menuitem" onClick={() => { setMenu(null); fn(); }}>{l}</button>)}
+        </div>,
+        document.querySelector(".desktop")!,
+      )}
+      {trash && (
+        <Confirm
+          title={`Move “${trash.title}” to the Trash?`}
+          text={trash.kind === "guide" ? "The guide is removed from the desktop." : "The note and its text are deleted."}
+          action="Move to Trash"
+          onCancel={() => setTrash(null)}
+          onConfirm={() => remove(trash)}
+        />
+      )}
     </div>
   );
 }

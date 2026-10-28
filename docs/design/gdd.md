@@ -50,9 +50,11 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 | App | What it does |
 | --- | --- |
 | Locations | Grid of your locations; opens room views and rack front views |
+| Shop | Servers, switches and patch panels by manufacturer, bought into storage |
 | Network | Europe map, uplinks, topology view, DDoS protection |
 | Products | Product lines, software licenses, clusters |
 | Sales | Requests from new and existing customers, quota requests, later the shop |
+| Virtual machines | VMs, hosts, storage pools, backups and incidents, branded after your virtualization platform |
 | Customers | Customer list, contracts, happiness |
 | Support | Ticket inbox with reply templates and actions |
 | Billing | Invoices, payment reminders, dunning, collections |
@@ -71,11 +73,16 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 
 Infrastructure lives in locations: your basement first, then space in other companies' datacenters, and in the end your own. You always own your racks and everything in them. A location gives you floor space, power, cooling and connectivity, and where you go decides a lot of what you can offer: which carriers and exchanges you reach, how well outages are covered, and which customers trust you.
 
+**Regions and availability zones.** The game follows OpenStack: each location is an availability zone (AZ), and its city is the region. Frankfurt is region "fra"; the basement is its first zone fra1, and a rack share at Equinox FR5 becomes fra2. Everything with a place belongs to exactly one zone: racks, storage, clusters and every workload a customer books. A customer books a VM, a web space or a rack section in one specific zone, and gets redundancy by booking in two zones of the same region. Zones in one region are linked cheaply and with low latency; regions are far apart.
+
+**Limited space.** Datacenter space is scarce. Every datacenter has a fixed floor that grows only in occasional expansion phases, and competitors rent most of it. You can rent only what is free at the moment. Space frees up when competitors cancel, at random, or when the building expands, and a waitlist tells you when what you need is available. Sooner or later every building is full, so growth means spreading across datacenters or building your own.
+
 **Space**
 
 | Space | What you get | Size | Billed |
 | --- | --- | --- | --- |
 | Basement | Room for one 24U rack and a home internet line | 1 position | Free; power at the household price |
+| Rack share | Part of a rack the provider owns and installs, with its own lockable section and power share | 1/8, 1/4, 1/2 or a full rack | Per share per month, power per kWh |
 | Rack positions | Floor positions in a provider's shared hall for your own racks | 1 to 4 positions | Per position per month, power per kWh |
 | Cage | A fenced, locked area in the hall | 4, 8 or 16 positions | Per cage; cheaper per position than single positions |
 | Private suite | A room of your own in the provider's building | 20 or 40 positions | Lease per month; you add your own UPS and feeds |
@@ -189,9 +196,41 @@ Failover is the safe default. Load balance doubles a server's bandwidth, but if 
 | Power | Draw at idle and at full load | The power bill and the fuse limit per rack |
 | Power supplies | 1 or 2 | Two connect to an A and a B feed and survive a failed supply |
 
-The shop sells a few models per generation: a 1U compute server, a 2U high-memory server, a 2U storage server, a 4U GPU server from 2016 and a 1U ARM server from 2020. RAM and disks can be added later in free slots and bays. A new generation arrives every three years, and each one packs more resources per U and per watt, so replacing old servers cuts the energy bill as well as freeing space.
+The Shop app sells pre-built hardware from several manufacturers, each with its own parody logo. Within a class the manufacturers differ a little in price and failure rate, never in specs.
+
+| Class | Lines | Notes |
+| --- | --- | --- |
+| Servers | Balanced 1U, compute-dense 1U, memory-optimized 2U, storage 2U, backup storage 4U, archive storage 4U, GPU 4U from 2016, ARM 1U from 2020 | One model per line and generation, so capacity can be matched to what customers need |
+| Switches | Layer 2 or layer 3, with copper or SFP ports | All managed; layer 3 can route between networks and act as a gateway in later milestones |
+| Security appliances | 1U firewalls with a throughput rating | Sit inline between the gateway and the switches; needed for firewall and DDoS features later |
+| Patch panels | 24 or 48 ports, copper or fiber | Passive |
+
+Storage servers hold fast disks for block and object storage. Backup servers hold many large HDDs for backups. Archive servers hold the densest, slowest drives and are the cheapest per TB, which makes archival backups a storage class customers can buy. Every model is pre-built with fixed CPU, RAM, disks, NICs and power supplies, so the choice is which model, architecture and size to buy. Bigger and denser models draw more power. Each model shows as a small isometric picture, so the sizes are easy to compare.
+
+**Cart and leasing.** You add models to a cart and see the total before you check out. At checkout you pay in cash or lease the whole cart. A lease spreads the cost over 12, 24 or 36 monthly payments, and three leasing companies each make an offer. Offers vary at random from good to bad and change every month, so it pays to compare them. Leased hardware works like bought hardware, but it can't be sold until it is paid off. Buying it out early costs the remaining payments, and after the last payment it is yours.
+
+**Storage.** Each availability zone has its own storage room. At checkout you choose the zone the Shop delivers to. Units are mounted from the rack view of that zone, and unmounting puts them back into the same zone's storage and drops their cables. The storage list itself has no mount action. Sending stored units to another zone is a shipment that costs and takes as long as a rack move. Identical units in storage form a stack, and a stack can be mounted in one step, each unit directly on top of the last. Hardware sells from storage or from a rack at its resale value: 80% of the price after the first month, falling evenly to 20% over the next two years. A new generation arrives every three years, and each one packs more resources per U and per watt, so replacing old servers cuts the energy bill as well as freeing space.
 
 **Copy and paste.** A finished rack can be saved as a template and pasted into an empty rack slot. The game orders the hardware, and technicians install and cable it. A typical large location ends up with one core routing rack and many server racks, each with its own pair of switches.
+
+**Cabling manager.** Each location has a cabling view that lays every port of the location out on one plane, in columns from the carrier panel and its uplinks through routers and switches to servers and patch panels. You drag from one port to another to lay a cable, and the game picks copper, DAC or fiber from the port types and whether both ends are in the same rack. Ports that can't connect dim while you drag. Clicking a cable selects it so you can remove it. The rack view and the cabling view show the same cables.
+
+**Wear, failures and maintenance.** Every device is built from components that wear out: drives, power supplies, fans, RAM, the mainboard, the CPU and network cards in servers, and power supplies, fans and the board in switches and routers. Each component type has a life expectancy. Before it, failures are rare; after it, they become likely, and drives fail far more often than RAM or mainboards. A failed component shows as an amber or red light on the device front, and what happens depends on what broke:
+
+- **Drive:** in a RAID array the server keeps running degraded until the drive is replaced and rebuilt; without RAID the data on it is lost and the server goes down.
+- **Power supply:** with two, the server keeps running on the other; with one, it goes down.
+- **Fan:** the device runs hot and its other components fail twice as often until the fan is replaced.
+- **RAM, mainboard, CPU or network card:** the device goes down until the part is replaced.
+
+Spare parts are bought in the Shop and kept in the zone's storage. You replace a part from the device in the Locations view. Drives in a RAID array, fans and one of two power supplies can be swapped while the device runs; everything else needs the device powered off, so its workloads go offline unless you migrate them first. At a datacenter the provider's remote hands do the swap, at their hourly rate and response time. Replacing worn parts before they fail is your call, and it is cheaper than an outage.
+
+**RAID.** Each server's drives run in a RAID level you choose: none, RAID 1, RAID 5, RAID 6 or RAID 10. More redundancy means less usable space and more drive failures survived. A rebuild runs at the rebuild rate you set: a fast rebuild slows the server, a slow one leaves it exposed for longer. Distributed storage pools across servers, Ceph style, are a later unlock.
+
+**Power and labels.** Any device can be powered off and on from the Locations view; everything that depends on it goes down with it. Devices can be given a custom label, and cables a custom colour.
+
+**Power feeds.** A rented position comes with one power feed at the datacenter's kW limit. You can add a second feed (B) so that servers with two power supplies survive a feed failure, or a high-density feed that raises the kW limit. The basement can get one extra household circuit. A feed that draws more than its limit trips.
+
+**Monitoring.** Without monitoring, the only way to notice a failure is to see the lights in the Locations view, or to wait for customers to complain. Monitoring software is an early research unlock. It notifies you of every failure and warns about parts past their life expectancy. It also opens the Monitoring app, a dashboard of every location, rack, feed, link and server with live usage and a list of alerts. Like other software, it comes in a few products with different prices.
 
 **Keeping it fun at scale.** Cabling port by port is fun for the first few racks and tedious at 200. Three things fix that: rack templates, an auto-cable button that wires a server to the next free ports on its rack's switches, and technicians who do installs for you.
 
@@ -219,7 +258,7 @@ Servers join clusters, and products draw their resources from clusters. Everythi
 **Placement.** The cluster's scheduler picks a node for every new workload, the way OpenStack does. Each cluster has a policy: *pack* fills one node before the next, so fewer servers draw full power, and *spread* keeps every node equally loaded, so a failed node hits fewer customers. Each cluster also sets two rules in its settings, in the spirit of Ceph's default placement rules:
 
 - **Replicas:** how many copies of each workload's disk the cluster keeps (1 to 3). More replicas survive more failed nodes and cost that much more storage.
-- **Spread across:** host, rack or location. A customer's workloads and the replicas of one disk go to different hosts, racks or locations wherever the cluster has room, and fall back to the next smaller level when it doesn't. The node view flags workloads placed against the rule. CPU can be overcommitted per cluster (up to 8 vCPUs per core); RAM can't. A workload has to fit on one node, so a cluster can have enough free RAM in total and still refuse a big VM. The Rebalance button moves small workloads around to make room.
+- **Spread across:** host or rack. A cluster lives in one availability zone, so a customer's workloads and the replicas of one disk go to different hosts or racks within it wherever the cluster has room, and fall back to hosts when it doesn't. Spreading across zones is the customer's choice: they book in two zones. The node view flags workloads placed against the rule. CPU, RAM and disk can be overcommitted per cluster (see Usage and overcommit). A workload has to fit on one node, so a cluster can have enough free RAM in total and still refuse a big VM. The Rebalance button moves small workloads around to make room.
 
 **Node states.** Each node in a cluster has one of four states:
 
@@ -239,10 +278,11 @@ Draining stops with a message when the rest of the cluster has no room, and says
 | Cluster | Compute region or cell | A pool of nodes with one scheduler |
 | Node | Compute host (Nova) | A server that runs instances |
 | Instance size | Flavor | vCPUs, RAM and disk; requests name a size |
-| Rack or location group | Availability zone | Customers can ask for a zone; spread rules use them |
+| Location (datacenter) | Availability zone | Every booking names one; a cluster lives in one |
+| City | Region | Holds one or more zones |
 | Hardware class | Host aggregate | Nodes tagged NVMe, ARM or high-memory; sizes can require a class |
 | Placement policy | Scheduler filters and weighers | Filters drop nodes that can't fit; *pack* or *spread* weighs the rest |
-| Overcommit | CPU and RAM allocation ratios | CPU up to 8:1, RAM 1:1 |
+| Overcommit | CPU, RAM and disk allocation ratios | CPU up to 8:1, RAM up to 1.5:1, disk (thin provisioning) up to 2:1 |
 | Keep apart | Server group (anti-affinity or soft anti-affinity) | A customer's instances land on different nodes, strictly or when possible |
 | Disk replicas and spread | Ceph-backed volumes with CRUSH failure domains | 1 to 3 copies spread across hosts, racks or locations |
 | Volume | Block storage (Cinder) | Disks that outlive an instance and move with it |
@@ -256,6 +296,12 @@ Draining stops with a message when the rest of the cluster has no room, and says
 | DNS hosting | Designate | Two DNS workloads per cluster |
 | Managed databases | Trove | Database instances you patch and back up |
 | Managed Kubernetes | Magnum | Needs a Kubernetes engineer |
+
+**Control planes.** Every cluster needs management services running on some of its own nodes: the platform's controllers and API, the scheduler, the storage monitors, and for managed Kubernetes the customer clusters' control planes. They take a fixed slice of CPU and RAM on the nodes that host them. A consumer cluster runs one copy; a high-availability cluster runs three on different nodes and keeps working while two of them are up. If the control plane goes down, running workloads keep running, but nothing can be started, moved, restored or sold on that cluster until it is back.
+
+**Server view.** Selecting a server in a location shows everything about it in one place. Its ports work like a switch's: each port with its speed, link state, bond group and the device and port at the other end. Below that come live utilization of CPU, RAM, disk and network against the hardware and the overcommit limits, the workloads running on it with their customers, and the control-plane roles it hosts.
+
+**Usage and overcommit.** Customers rarely use everything they booked at once, so a cluster can sell more than it physically has. Every workload follows a usage curve for its customer type over the hours of the week: game servers sleep through the working week and run hot on weekend afternoons and evenings, online shops are busy from morning to 22:00, news sites peak at breakfast, and backups run at night. The load on a node is the sum of its workloads' curves. As long as that sum stays below the hardware, overcommitting is free money. When the peaks line up, it isn't: CPU contention slows every customer on the node, RAM pressure swaps and then kills workloads, and a full thin-provisioned disk pool stops writes. Mixing customer types on a cluster flattens the peak, and a cluster of nothing but game servers melts every Saturday night. The cluster view shows booked capacity next to the forecast peak for the coming week, and sale seasons, game launches and breaking news push the curves higher for a while.
 
 **When a node fails.** In a high-availability cluster its workloads restart on other nodes within minutes. In a consumer cluster they stay down until the node is repaired. Disks and power supplies often warn before they die, which gives a careful player time to drain the node first.
 
@@ -280,8 +326,10 @@ Draining stops with a message when the rest of the cluster has no room, and says
 | Load balancers | Cluster |  | Sold with cloud servers; small load, many connections |
 | Managed Kubernetes | Cluster | A Kubernetes engineer on staff | Each engineer looks after a limited number of customer clusters |
 | CDN | Clusters in several cities | Presence in 3+ locations |  |
-| Colocation | Your own rack space | Own room or datacenter | Customers bring hardware; every install is a ticket |
+| Colocation | Your racks in a datacenter | Datacenter space | Customers rent a rack share or a full rack; you wire their uplinks |
 | Add-ons |  | Unlocked per product | Backups, extra IPs, priority support, DDoS protection |
+
+**Colocation.** Customers rent space in your racks: 1/8, 1/4 or 1/2 of a rack or a full rack, the same sizes the datacenters rent to you. A request names the size, the power it needs and its uplinks, such as 2 × 1G or 2 × 10G. You assign a rack with enough free units and power, and the game marks that section as the customer's and puts a patch panel at its top. The customer's hardware is a closed block that draws its power. Your job is to cable the panel's requested ports to your switches. The service is online once every requested uplink reaches the internet at its speed, and it counts against the rack's power limit like your own servers.
 
 Worth adding later: email hosting and GPU compute.
 
@@ -302,6 +350,14 @@ Worth adding later: email hosting and GPU compute.
 | "HyperVee" (Hyper-V) | Per server, with an OS license | Business customers like it; Linux customers don't |
 
 Game servers work the same way: each game has its own license terms (one-time, per server or per player slot) and its own demand.
+
+**Storage, backups and data loss.** Workload disks live on their server's RAID array (see RAID), and later on distributed storage pools. If more drives fail before a rebuild finishes than the RAID level survives, or a drive fails without RAID, the data on them is gone. Every affected workload is marked "Lost disk", and the game opens an incident report that lists the lost disks, the affected volumes, workloads and customers, and the age of each one's last backup, so nothing has to be hunted down across apps.
+
+Backups are on-site: backup rules per cluster set how often (hourly, daily, weekly) and how long to keep them, and they write to backup servers in the same zone, mostly at night. A lost disk with a backup can be restored, from the incident report or from the virtual machine manager, and only the data since that backup is gone. Without a backup the customer's data is lost for good.
+
+Data loss hurts. Affected customers ask for a refund, and unhappy ones leave reviews. A refund calms them, but some still write a review: often a 3-star one, sometimes worse. Most customers never write a review at all.
+
+**Virtual machine manager.** A desktop app for running workloads, branded after the virtualization platform you chose: its name and logo in the menu bar and window change with the platform (Proxmocks, VMwhere, OpenStash, HyperVee). It has the usual inventory tree of zone, cluster, host and VM. VMs can be started, stopped, restarted and migrated live or cold to a host you pick, and restored from a backup point. Hosts can be cordoned, drained or put into maintenance. Storage shows each server's RAID health, rebuild progress and rebuild rate, and later the distributed pools. The incidents tab lists open incident reports. It uses the same window design as every other app.
 
 **Requests instead of price lists.** You don't publish plans or set prices. You decide what to build and offer, and customers come to you with requests. Each customer picks a host by its size, its scores and hidden factors, and the price comes with the request. Your job is choosing which requests to accept.
 
@@ -520,7 +576,7 @@ The review score feeds into your reputation and into the host requirements custo
 
 Each location connects to the internet through what its city offers: transit carriers, internet exchanges and, later, private peering. Bandwidth costs money, and your customers' traffic has to fit through your links.
 
-**The map.** The Network app opens on Western Europe's big cities, such as Frankfurt, Amsterdam, London, Paris, Berlin, Vienna, Zurich and Milan. The rest of the world stays zoomed out and only matters as distant transit destinations. Each city has its own carriers and prices, internet exchanges, datacenter operators, power price and demand.
+**The map.** The Network app opens on Western Europe's big cities, such as Frankfurt, Amsterdam, London, Paris, Berlin, Vienna, Zurich and Milan. The rest of the world stays zoomed out and only matters as distant transit destinations. The map itself covers the whole world, with coastlines, cities and the submarine cables from Series of Tubes (MIT). Only the European cities hold datacenters for now, and the cables are drawn without gameplay, so both can grow later. The Locations overview and the Add location dialog use the same map. Each city has its own carriers and prices, internet exchanges, datacenter operators, power price and demand.
 
 **Ways to connect**
 
@@ -542,6 +598,8 @@ Each location connects to the internet through what its city offers: transit car
 **Uplinks in the Network app.** A location's page lists its uplinks as cards, one per carrier or exchange, with the type, every link with its speed and router port, the 95th percentile against the commit, and the monthly cost.
 
 **Private networks.** Customers with several workloads, such as agencies, shops and enterprises, ask for a private network between them. A private network is a VLAN on your switches: workloads in it reach each other only if every node they run on has a switch port that carries the VLAN. A port to a node can carry all customer networks with one toggle, which is the easy setting. Enterprise customers require a private network, and other customers buy one as an add-on. One switch domain holds up to 4,094 VLANs; overlay networks (an unlock) lift that limit and stretch a private network across racks and locations.
+
+**Every zone has its own network.** Carriers, transit, exchange ports, private peering and the gateway belong to one availability zone, just like racks and storage. A new zone starts with only what its datacenter offers. The one thing that ties zones together is a link you book between them, leased capacity or dark fiber. Over that link a zone can send traffic out through another zone's better transit and peering, so one well-connected site can carry a weaker one, at the cost of the link and the latency. The same link carries migrations between zones, and how long they take depends on the bandwidth left over. Without a link, zones share nothing.
 
 **Routing,** simplified from Series of Tubes ([repo](https://github.com/fjaeckel/seriesoftubes), MIT license). Traffic leaves through the cheapest exit available: private peering first, then exchange peering, then transit. Equal exits share the load, and anything over a link's capacity spills to the next option. Transit is billed on the 95th percentile of the last 30 days, never less than 20% of the port. Networks peer openly, only above a traffic threshold, only for a fee, or (the big carriers) not with small players at all.
 
@@ -580,7 +638,7 @@ Unlocks cost know-how points plus a one-time launch cost in money. You earn know
 | Branch | Unlock path, in order |
 | --- | --- |
 | Products | SSL certificates → email → dedicated servers → storage hosting → VPN → CDN → cloud servers → colocation |
-| Infrastructure | Datacenter positions → second location → cage → private suite → own datacenter; HA clusters; rack templates; auto-cable |
+| Infrastructure | Rack share → datacenter positions → second location → cage → private suite → own datacenter; HA clusters; rack templates; auto-cable |
 | Network | Transit contracts → internet exchange peering → own network number (ASN) → always-on DDoS protection |
 | Business | First hire → status page → market research → cross-selling boosts → review platforms → insurance → AI bots |
 | Independence | Domain registrar, own control panel and other in-house replacements for bought-in services |
@@ -722,8 +780,8 @@ The MVP has the basement rack, one datacenter location, web hosting and VPS, sup
 
 1. **Desktop shell.** Menu bar, dock, draggable windows, notifications, time controls, saving in the browser. Done when apps open and the clock runs.
 2. **Locations and racks.** The basement rack, adding a datacenter location from the catalog, buying and moving racks, the rack front view, buying servers and switches with their specs, cabling ports in the inspector, bonding a server's ports. Done when a rack moved from the basement to a datacenter comes back online there.
-3. **Clusters and products.** One cluster, web hosting and VPS on your own hardware, workloads placed by the scheduler, cordoning and draining a node, the Sales app with request cards and resource bars. Done when an accepted request runs as a VM that survives a drain.
-4. **Customers and support.** Customer profiles, purchases, tickets with templates and actions, happiness and churn. Done when an outage floods the inbox.
+3. **Clusters and products.** One cluster, web hosting and VPS on your own hardware, colocation in rack sections with uplinks to wire, workloads placed by the scheduler, cordoning and draining a node, the virtual machine manager with storage pools, control planes, the server view with workloads and utilization, the Sales app with request cards and resource bars. Done when an accepted request runs as a VM that survives a drain.
+4. **Customers and support.** Customer profiles, purchases, tickets with templates and actions, happiness and churn, disk failures with data loss, backups and restores, incident reports, refunds and reviews. Done when an outage floods the inbox.
 5. **Billing and finance.** Invoices, dunning buttons, collections, profit and loss, a bank loan. Done when an unpaid invoice can go all the way to collections.
 6. **First hires.** The job market, a support agent and a bookkeeper working through their queues. Done when a hire visibly empties a queue.
 

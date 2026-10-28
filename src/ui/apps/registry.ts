@@ -1,5 +1,5 @@
 import {
-  BookOpen, ChartLine, ChartPie, Contact, Globe, Landmark, LifeBuoy, Lightbulb, Megaphone, Package, Receipt, Server, Settings, Users,
+  BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, Landmark, LifeBuoy, Lightbulb, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -20,9 +20,10 @@ export interface AppDef {
   badge?: (s: GameState) => number;
 }
 
-// Dock order; dividers fall after the 4th and 8th app.
+// Dock order; a divider follows every 4th app.
 export const APPS: AppDef[] = [
   { name: "Locations", icon: Server, tile: "oklch(0.5 0.06 250)", about: "Shows your sites on a map, the racks inside them and every device front." },
+  { name: "Shop", icon: ShoppingCart, tile: "oklch(0.6 0.15 40)", about: "Sells servers, switches and patch panels into your storage." },
   { name: "Network", icon: Globe, tile: "oklch(0.58 0.12 210)", about: "Manages transit, peering and DDoS protection on a map of Europe." },
   { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters." },
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: "Lists your customers with their contracts and happiness.", body: CustomersApp },
@@ -36,6 +37,7 @@ export const APPS: AppDef[] = [
   { name: "Market", icon: ChartPie, tile: "oklch(0.62 0.12 230)", about: "Shows demand, customer requirements and lost sales." },
   { name: "Unlocks", icon: Lightbulb, tile: "oklch(0.72 0.15 95)", about: "Spends know-how on new products, hardware and tools." },
   { name: "Getting started", icon: BookOpen, tile: "oklch(0.55 0.15 255)", about: "Explains the controls and how the game saves.", hidden: true },
+  { name: "Notes", icon: FileText, tile: "oklch(0.7 0.13 85)", about: "Edits the notes on your desktop.", hidden: true },
   { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: "Sets which apps may send notifications and how they appear." },
 ];
 
