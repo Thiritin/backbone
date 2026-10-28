@@ -8,7 +8,8 @@ import { BOOT_HOURS, deviceHealth, freeSlots, rackPower } from "../src/sim/60-in
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addNode, cordon, createCluster, drain, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { addLocation, buyDevice, buyRack, connect, mountDevice, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
+import { addLocation, buyDevice, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
+import { mountDevice } from "./plugged";
 import { FRIEND_HAPPINESS, startGame } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { mrr } from "../src/sim/metrics";

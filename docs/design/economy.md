@@ -614,6 +614,8 @@ A G1 server costs about €26 a month in power in 2005; a G7 costs €89 in 2026
 | Own room | 1.6 | City business price |
 | Own datacenter | 1.4, or 1.2 with liquid cooling | City business price, or a custom contract: 3 years fixed at 10% below the current price |
 
+Only devices that are switched on and have a plugged-in, working power supply count as W. Plugging and unplugging a supply is free; a device that gets power from its first supply boots for 1 hour.
+
 **Buying and selling.** Hardware arrives 3 days after ordering in 2005, falling to 1 day by 2015. Bought hardware goes to storage, and mounting it into a rack is instant and free. Resale value falls in a straight line from 100% to 80% of the price over the first month, then in a straight line to 20% over the next 24 months, and stays at 20%. Racks sell the same way. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
 
 **Failures.** Each device has a base annual failure rate (AFR), raised in its first 3 months and again after 3 years of age:

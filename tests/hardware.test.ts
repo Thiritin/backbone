@@ -5,8 +5,9 @@ import { brandsFor, MODELS, modelById, shopModels } from "../src/sim/10-catalog/
 import { newGame, type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, portPeers, storageStacks } from "../src/sim/60-infra/status";
 import {
-  addLocation, buyDevice, buyRack, connect, disconnect, mountDevice, mountStack, sellDevice, setBond, setPortGroup, unmountDevice,
+  addLocation, buyDevice, buyRack, connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice,
 } from "../src/sim/90-actions/hardware";
+import { mountDevice, mountStack } from "./plugged";
 
 const atYear = (year: number, cash = 1_000_000): GameState => ({ ...newGame(1), hour: hourOf(new Date(Date.UTC(year, 0, 1))), cash });
 const ok = (r: ReturnType<typeof buyDevice>) => {

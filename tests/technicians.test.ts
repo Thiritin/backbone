@@ -11,7 +11,8 @@ import { failComponents, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { howToFactor } from "../src/sim/85-products/products";
 import { addNode, createCluster, provisionService, upgradePhp } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { addLocation, buyDevice, buyRack, connect, mountDevice, setPower } from "../src/sim/90-actions/hardware";
+import { addLocation, buyDevice, buyRack, connect, setPower } from "../src/sim/90-actions/hardware";
+import { mountDevice } from "./plugged";
 import { cancelOperation, hire, queueOperation, queuePhpUpgrade, setTechLocation, setTechRules } from "../src/sim/90-actions/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 

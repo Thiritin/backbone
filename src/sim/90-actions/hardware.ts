@@ -3,7 +3,7 @@ import { brandsFor, modelById, priceOf, shopModels, SWITCH_BRAND } from "../10-c
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, hotSwappable, moveCost, resaleValue, travelCost } from "../60-infra/status";
+import { BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, hotSwappable, moveCost, pluggedIn, resaleValue, travelCost } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { endLease } from "../88-tick/tick";
 import { serverTaken } from "../60-infra/cluster";
@@ -231,6 +231,7 @@ function mount(s: GameState, d: Device, rackId: string, slot: number) {
   const base = prefix(s, s.racks.find((r) => r.id === rackId)!.locationId);
   if (!d.name.startsWith(`${base}-`)) d.name = nextName(`${base}-${roleOf(d.model)}`, s.devices.map((x) => x.name));
   Object.assign(d, { rackId, slot, store: null });
+  for (const c of d.components) if (c.kind === "psu") c.plugged = false;
 }
 
 export function mountDevice(s: GameState, deviceId: string, rackId: string, slot: number): ActionResult {
@@ -349,6 +350,19 @@ export function setPower(s: GameState, deviceId: string, on: boolean): ActionRes
   if (!d.rackId && !d.panel) return fail("error.notMounted");
   if (on && !d.on) d.bootUntil = s.hour + BOOT_HOURS;
   d.on = on;
+  return { ok: true };
+}
+
+// Plugs a power supply into the rack's power strip or pulls it. A switched-on device that gets its first live supply boots.
+export function setPlugged(s: GameState, deviceId: string, componentId: string, plugged: boolean): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  const c = d.components.find((x) => x.id === componentId && x.kind === "psu");
+  if (!c) return fail("error.unknownComponent");
+  if (!d.rackId) return fail("error.notMounted");
+  const before = pluggedIn(d);
+  c.plugged = plugged;
+  if (d.on && !before && pluggedIn(d)) d.bootUntil = s.hour + BOOT_HOURS;
   return { ok: true };
 }
 

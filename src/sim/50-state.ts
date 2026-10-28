@@ -47,8 +47,8 @@ export interface Lease { id: string; lessor: string; monthly: number; months: nu
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "positions" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
-// failedAt is the hour the component broke; null while it works.
-export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null }
+// failedAt is the hour the component broke; null while it works. A power supply is plugged in unless plugged is false.
+export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; plugged?: boolean }
 export type RaidLevel = "none" | "1" | "5" | "6" | "10";
 export type RebuildRate = "low" | "medium" | "high";
 // A desktop document; x and y are its icon position on the desktop in pixels.
