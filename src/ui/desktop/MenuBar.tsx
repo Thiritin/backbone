@@ -50,7 +50,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      {item("Backbone", [["Introduction…", () => setIntro(true)], ["New note", () => newNote()], ...(guideGone ? [["Restore Getting started", () => act(restoreGuide)] as [string, () => void]] : []), ["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <Network />, "mb-logo")}
+      {item("Backbone", [["Introduction…", () => setIntro(true)], ["Backbone on GitHub", () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], ["New note", () => newNote()], ...(guideGone ? [["Restore Getting started", () => act(restoreGuide)] as [string, () => void]] : []), ["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <Network />, "mb-logo")}
       <span className="mb-item mb-app">{front?.app ?? "Backbone"}</span>
       {item("Window", windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : [w.app, () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
