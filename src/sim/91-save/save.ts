@@ -48,6 +48,7 @@ export function deserialize(raw: string): GameState {
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
     company: { ...base.company, ...data.company },
+    marketing: { ...base.marketing, ...data.marketing, awareness: { ...base.marketing.awareness, ...data.marketing?.awareness } },
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.
     installed: data.installed?.map((id) => (id === "Unlocks" ? "Research" : id)) ?? [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],

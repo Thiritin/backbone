@@ -4,6 +4,7 @@ import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
 import { supportTick } from "../40-support/tick";
 import { staffTick } from "../47-staff/staff";
+import { marketingTick } from "../80-business/marketing";
 import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
 import { skillById } from "../10-catalog/research";
@@ -217,5 +218,6 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...billingTick(state));
   events.push(...supportTick(state));
   events.push(...staffTick(state));
+  events.push(...marketingTick(state));
   return events;
 }

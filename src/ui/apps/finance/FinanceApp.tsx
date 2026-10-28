@@ -8,7 +8,7 @@ import { formatDay } from "../billing/BillingApp";
 import "../billing/billing.css";
 
 const CATEGORY: Record<string, string> = {
-  payments: "Customer payments", hardware: "Hardware", rent: "Rent", power: "Power", transit: "Transit", salaries: "Salaries", loans: "Loans", tax: "Tax", subscriptions: "Pear One",
+  payments: "Customer payments", hardware: "Hardware", rent: "Rent", power: "Power", transit: "Transit", salaries: "Salaries", loans: "Loans", tax: "Tax", subscriptions: "Pear One", marketing: "Marketing",
 };
 const monthKey = (hour: number) => dateOf(hour).toISOString().slice(0, 7);
 const monthLabel = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });

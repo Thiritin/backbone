@@ -16,6 +16,12 @@ export interface Win { id: string; app: string; x: number; y: number; w: number;
 export interface Banner { id: number; app: string; title: string; text: string; hour: number }
 // Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
 export interface NotifyPref { allow: boolean; sound: boolean }
+const WIDE = { w: 1240, h: 680 };
+const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
+  Locations: { w: 1120, h: 700 }, Shop: { w: 1180, h: 700 }, Billing: WIDE, Bank: WIDE, Customers: WIDE, Marketing: WIDE,
+  Support: { w: 1160, h: 680 }, Research: { w: 1140, h: 600 },
+};
+
 export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: app === "Support", ...prefs[app] });
 const PREFS_KEY = "backbone.prefs";
 export type Theme = "light" | "dark" | "auto";
@@ -164,7 +170,7 @@ export const useStore = create<Store>((set, get) => ({
     const open = ws.find((w) => w.app === app);
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
-    const n = ws.length % 8, size = app === "Locations" ? { w: 1120, h: 700 } : app === "Shop" ? { w: 1180, h: 700 } : app === "Billing" || app === "Bank" || app === "Customers" ? { w: 1240, h: 680 } : app === "Support" ? { w: 1160, h: 680 } : app === "Research" ? { w: 1140, h: 600 } : { w: 760, h: 480 };
+    const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
     set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x: 96 + n * 32, y: 64 + n * 28, ...size, z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   openDoc: (doc) => {

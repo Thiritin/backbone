@@ -836,6 +836,44 @@ Spending more in one channel and city gets dearer: the cost per lead is multipli
 | "ProvenExpat" | 1% | 4 |
 | "TrustPylon" | 2% | 6 |
 
+Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month.
+
+**Owned channels.** Each step is a one-off setup plus monthly upkeep, flat over the years:
+
+| Step | Setup | Upkeep per month | Needs |
+| --- | --- | --- | --- |
+| Email | Free | Free | Always on |
+| Website | €400 | €15 | None |
+| Order form | €900 | €10 | Website |
+| Goggle Ads | €50 | None | Website |
+| AI ads | €1,500 | None | Website, from 2023 |
+
+A website brings 4 leads a month per location city, split by the profile mix.
+
+**Campaign channels.** Cost per lead in 2026, scaled back with m = 0.6 like search ads. Conversion multiplies the chance that a lead buys:
+
+| Channel | Profiles | Cost per lead | Conversion |
+| --- | --- | --- | --- |
+| Goggle Ads | All | Search ads above | 1 |
+| AI ads | All | 1.5 × search ads | 1.3 |
+| Gaming communities | Gamers | €8 | 1 |
+| Cold calling | Sole proprietors, small businesses, offices | €8, €12, €20 | 0.35 |
+| Agency outreach | Agencies | €30 | 1, and the offered discount is quoted back |
+
+Budgets are €100, €250, €500, €1,000, €2,500 or €5,000 a month, split evenly over the location cities and then over the targeted profiles. The saturation rule above applies per city.
+
+**Awareness.** Each profile has an awareness between 0 and 1. It starts at 5% for private individuals and gamers and at 2% for everyone else, which is also the floor. At each month start it gains g on the gap to 1 and decays by 2%:
+
+```math
+a' = a + (1 - a) \cdot g - 0.02 \cdot a
+```
+
+```math
+g = 0.05 \cdot \left(1 - e^{-L/100}\right) + 0.004_{\text{website}} + 0.006 \cdot (\text{score} - 3.5) + 0.001 \cdot T + \min(0.01,\ 0.0005 \cdot n_{H \ge 70})
+```
+
+L is the profile's paid leads this month and n the number of its customers with happiness of 70 or more. A steady €1,000 a month on one profile settles near 65% after about two years and falls back slowly once it stops. Forum posts and fairs add to the gain directly.
+
 ## Know-how and unlock costs
 
 A first-year company earns about 300 know-how; a company with 10,000 customers earns about 25,000 a month. Unlock costs rise from 50 to 150,000 to match, so each tier of the tree opens at roughly the pacing target's year.
