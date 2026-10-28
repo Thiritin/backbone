@@ -18,6 +18,7 @@ export const SKILLS: Skill[] = [
   { id: "network", name: "Network operations", about: "Your team learns to buy transit, peer with other networks and survive the occasional flood of traffic.", tier: 2, knowHow: 300, days: 14, needs: ["monitoring"], opens: ["Network"] },
   { id: "products", name: "Product management", about: "You learn to bundle your services into product lines with plans, licences and clusters.", tier: 2, knowHow: 200, days: 14, needs: ["marketingBasics"], opens: ["Products"] },
   { id: "marketing", name: "Marketing campaigns", about: "Your staff learns to run campaigns and to keep an eye on what customers write about you.", tier: 2, knowHow: 300, days: 14, needs: ["marketingBasics", "people"], opens: ["Marketing"] },
+  { id: "virtualization", name: "Virtualization", about: "Your team learns to run virtual machines on a platform, move them between servers and bring them back from a backup.", tier: 3, knowHow: 400, days: 14, needs: ["products", "monitoring"], opens: ["Virtual machines"] },
   { id: "market", name: "Market research", about: "You learn to read demand by product and to find out why a sale got away.", tier: 3, knowHow: 800, days: 21, needs: ["products", "marketing"], opens: ["Market"] },
 ];
 

@@ -508,7 +508,7 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | --- | --- | --- | --- | --- |
 | Starter | Locations, Shop, Customers, Support, Billing (manual), Finance (account statement), Bank, Research, Checklist, Settings, Pear Store | Free | | Start |
 | Monitoring | Monitoring | €10 | €0.50 per monitored device | Monitoring skill |
-| Virtual machines | Virtual machines | €20 | €2 per host | Virtualization research |
+| Virtual machines | Virtual machines | €20 | €2 per host | Virtualization skill |
 | Network | Network | €25 | | Network operations skill |
 | Products | Products | €15 | | Product management skill |
 | Billing automation | Billing rules, invoice runs | €30 | €0.10 per active customer | Level 2 |
@@ -950,8 +950,9 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Product management | 2 | 200 | 14 days | Marketing basics | Products |
 | Marketing campaigns | 2 | 300 | 14 days | Marketing basics, Employee management | Marketing |
 | Market research | 3 | 800 | 21 days | Product management, Marketing campaigns | Market |
+| Virtualization | 3 | 400 | 14 days | Product management, Monitoring | Virtual machines |
 
-The whole tree costs 1,800 know-how and 83 days of training.
+The whole tree costs 2,200 know-how and 97 days of training.
 
 **Unlocks.** Launch costs are fixed and do not follow the price multipliers.
 

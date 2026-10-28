@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { softwareById } from "../src/sim/10-catalog/platforms";
+import { isAvailable, skillFor } from "../src/sim/10-catalog/research";
+import { storeItem } from "../src/sim/10-catalog/store";
 import { curveLoad } from "../src/sim/10-catalog/usage";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { newGame, type GameState } from "../src/sim/50-state";
@@ -185,6 +187,15 @@ describe("backups and lost disks", () => {
     // Without a backup the workload starts again on an empty disk.
     ok(restoreWorkload(s, workloadsOf(s, a)[0].id));
     expect(serviceOnline(s, a)).toBe(true);
+  });
+});
+
+describe("Virtual machines app", () => {
+  it("is a Pear Store app opened by the Virtualization skill after Product management and Monitoring", () => {
+    expect(storeItem("Virtual machines")).toMatchObject({ kind: "app", monthly: 20 });
+    expect(skillFor("Virtual machines")).toMatchObject({ id: "virtualization", tier: 3, needs: ["products", "monitoring"] });
+    expect(isAvailable("Virtual machines", ["products", "monitoring"])).toBe(false);
+    expect(isAvailable("Virtual machines", ["virtualization"])).toBe(true);
   });
 });
 

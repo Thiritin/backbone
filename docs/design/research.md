@@ -60,9 +60,21 @@ Your company now knows how to sell plans instead of improvising a price for ever
 
 ### The Products app
 
-**Products** is now in the Pear Store. Use it to create product lines, define their plans and decide which cluster carries each one.
+**Products** is now in the Pear Store. It shows which products you sell in which zone, and every cluster with its servers, how full they are and how busy they get at peak times.
 
-Customers compare plans more happily than they compare custom quotes, and you will spend less time doing arithmetic in emails.
+Each cluster runs a control panel for web hosting and a platform for everything else. The free ones cost nothing and bring more tickets, the paid ones send a license bill every month, and switching later takes your customers offline for a while. Products is also where you set up nightly backups to another cluster.
+
+## Virtualization
+
+### Machines that move
+
+Your team now knows how to treat a server as a place where virtual machines happen to live. They can be stopped, started and moved to another server, and on a good platform the customer never notices the move.
+
+### The Virtual machines app
+
+**Virtual machines** is now in the Pear Store. It lists every workload on your clusters with its host, its load over the day and its last backup, and it takes the look of the platform the cluster runs.
+
+When a server loses its disks, the app's incident report shows who was on it and how old their last backup is. Restoring brings them back; customers without a backup will want their money back instead.
 
 ## Marketing campaigns
 
