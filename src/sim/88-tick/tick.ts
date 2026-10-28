@@ -4,6 +4,7 @@ import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
 import { opsTick } from "../40-support/notices";
 import { supportTick } from "../40-support/tick";
+import { abandonTickets } from "../40-support/abandon";
 import { financeTick } from "../46-finance/finance";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
@@ -233,6 +234,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...networkTick(state));
   events.push(...securityTick(state));
   events.push(...supportTick(state));
+  abandonTickets(state);
   events.push(...financeTick(state));
   events.push(...staffTick(state));
   events.push(...techTick(state));

@@ -62,6 +62,14 @@ function Action({ item, big }: { item: StoreItem; big?: boolean }) {
   return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id); }}>Open</button>;
 }
 
+// The app unlocked most recently that is not installed yet; then any item on the shelves.
+function featuredId(installed: string[], learned: string[]): string {
+  const open = SHELVES.flatMap(([, ids]) => ids).filter((id) => !installed.includes(id));
+  const rank = (id: string) => { const k = skillFor(id); return k ? learned.indexOf(k.id) : -0.5; };
+  const ready = open.filter((id) => storeItem(id)?.kind === "app" && isAvailable(id, learned)).sort((a, b) => rank(b) - rank(a));
+  return ready[0] ?? open[0] ?? "Network";
+}
+
 export function Software() {
   const game = useStore((s) => s.game);
   const [open, setOpen] = useState<string | null>(null);
@@ -69,7 +77,7 @@ export function Software() {
   const detail = open && storeItem(open);
   if (detail) return <Detail item={detail} price={price(detail)} back={() => setOpen(null)} />;
 
-  const featured = storeItem(SHELVES.flatMap(([, ids]) => ids).find((id) => !game.installed.includes(id)) ?? "Network")!;
+  const featured = storeItem(featuredId(game.installed, game.unlocks))!;
   return (
     <div className="ps">
       <section className="ps-hero">

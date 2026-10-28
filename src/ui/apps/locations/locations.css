@@ -331,6 +331,7 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 
 /* Ports on the rack back and on remote boxes take a dragged cable. */
 .rack-port { fill: transparent; cursor: crosshair; }
+.rack-inlet { cursor: pointer; }
 .rack-port:hover { fill: color-mix(in oklch, var(--accent) 30%, transparent); stroke: var(--accent); stroke-width: 1; }
 .rack-svg.dragging, .rack-svg.dragging * { cursor: crosshair; }
 .rack-drag { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; pointer-events: none; }
@@ -338,3 +339,12 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .loc-cab-port:hover .loc-cab-row, .loc-cab-port.hot .loc-cab-row, .loc-cab-port.src .loc-cab-row { fill: color-mix(in oklch, var(--accent) 10%, transparent); }
 .loc-cab-label { font: 500 10.5px "JetBrains Mono", monospace; fill: var(--text-2); pointer-events: none; }
 .loc-cab-plugs { pointer-events: none; }
+
+.loc-connect > .picks { padding: 10px 14px 0; }
+.loc-connect .loc-row { align-items: flex-start; }
+.loc-mount .picks { padding: 14px 16px 0; }
+.loc-mount-rack { display: flex; justify-content: center; padding: 14px 16px; overflow: auto; max-height: min(560px, calc(100dvh - 300px)); }
+.loc-ship { flex-wrap: wrap; }
+.loc-move-pos { display: grid; grid-template-columns: 90px 1fr; align-items: center; }
+.loc-site .loc-card-h { flex-wrap: wrap; row-gap: 4px; }
+.loc-site .loc-card-h h3 { white-space: nowrap; }

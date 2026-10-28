@@ -65,10 +65,10 @@ describe("research", () => {
     const raw = JSON.parse(serialize(newGame(14)));
     delete raw.training;
     raw.unlocks = ["Market", "monitoring"];
-    raw.installed = ["Locations", "Unlocks"];
+    raw.installed = ["Locations", "Unlocks", "Sales"];
     const old = deserialize(JSON.stringify(raw));
     expect(old.training).toBeNull();
-    expect(old.installed).toEqual(["Locations", "Research", "Sales"]);
+    expect(old.installed).toEqual(["Locations", "Research"]);
     expect([...old.unlocks].sort()).toEqual(["market", "marketing", "marketingBasics", "monitoring", "people", "products"]);
     expect(skillFor("Market")!.id).toBe("market");
   });

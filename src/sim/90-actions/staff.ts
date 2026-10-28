@@ -36,13 +36,14 @@ export function postJobAd(s: GameState, role: Role, tier: AdTier): ActionResult 
   return { ok: true };
 }
 
-export function hire(s: GameState, candidateId: string): ActionResult {
+export function hire(s: GameState, candidateId: string, hours: WorkHours = FULL_DAY): ActionResult {
   const c = visibleCandidates(s).find((x) => x.id === candidateId);
   if (!c) return fail("error.unknownCandidate");
+  if (!WORK_HOURS.includes(hours)) return fail("error.workHours");
   const e: Employee = {
     id: `emp${s.nextId++}`, name: c.name, role: c.role, skill: c.skill, talent: c.talent, salary: c.salary, hiredAt: s.hour, assignment: "queue",
     location: c.role === "technician" ? s.locations[0]?.id ?? null : null,
-    trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: s.hour + YEAR, refusedAt: null, hours: FULL_DAY, hoursFrom: s.hour,
+    trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: s.hour + YEAR, refusedAt: null, hours, hoursFrom: s.hour,
   };
   s.candidates = s.candidates.filter((x) => x.id !== c.id);
   s.staff = [...s.staff, e];
