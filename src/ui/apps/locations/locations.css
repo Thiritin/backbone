@@ -288,7 +288,8 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 
 .usage { display: grid; gap: 6px; }
 .loc-card > .usage { padding: 12px 14px 14px; }
-.usage.wide { grid-template-columns: repeat(auto-fill, minmax(250px, max-content)); column-gap: 24px; }
+.usage.wide { display: flex; flex-wrap: wrap; column-gap: 20px; }
+.usage.wide .usage-row { grid-template-columns: auto max-content 30px; gap: 8px; }
 .usage-row { display: grid; grid-template-columns: 64px max-content 40px; justify-content: start; align-items: center; gap: 10px; }
 .usage-row .num { font-size: 12px; color: var(--text-2); text-align: right; }
 .led-bar { justify-self: start; display: inline-flex; gap: 2px; padding: 3px; border-radius: 4px; background: oklch(0.17 0.005 255); }
