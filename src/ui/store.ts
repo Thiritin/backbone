@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { create } from "zustand";
 import { newGame, type GameState } from "../sim/50-state";
 import { tick } from "../sim/88-tick/tick";
@@ -8,7 +9,9 @@ import type { ActionResult } from "../sim/90-actions/hardware";
 
 export const SAVE_KEY = "backbone.save";
 
-export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean }
+// What another app asked a window to show; n changes on every request so repeating one still applies.
+export interface Focus { kind: string; id: string; n: number }
+export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; focus?: Focus }
 export interface Banner { id: number; app: string; title: string; text: string; hour: number }
 export interface NotifyPref { allow: boolean; banners: boolean }
 export const DEFAULT_PREF: NotifyPref = { allow: true, banners: true };
@@ -25,7 +28,7 @@ interface Store {
   advance: (hours: number) => void;
   act: (fn: (s: GameState) => ActionResult) => ActionResult;
   setSpeed: (s: Speed) => void;
-  openApp: (app: string) => void;
+  openApp: (app: string, focus?: Omit<Focus, "n">) => void;
   focus: (id: string) => void;
   close: (id: string) => void;
   minimize: (id: string) => void;
@@ -42,7 +45,7 @@ interface Store {
   deleteProgress: () => void;
 }
 
-let bannerId = 0;
+let bannerId = 0, focusId = 0;
 const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0 });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
@@ -92,12 +95,13 @@ export const useStore = create<Store>((set, get) => ({
   },
   setSpeed: (speed) => set({ speed }),
 
-  openApp: (app) => {
+  openApp: (app, target) => {
     const ws = get().windows;
     const open = ws.find((w) => w.app === app);
-    if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
-    const n = ws.length % 8, size = app === "Locations" ? { w: 1120, h: 700 } : app === "Billing" || app === "Bank" ? { w: 1240, h: 680 } : app === "Support" || app === "Customers" ? { w: 1160, h: 680 } : { w: 760, h: 480 };
-    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x: 96 + n * 32, y: 64 + n * 28, ...size, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
+    const focus = target ? { ...target, n: ++focusId } : open?.focus;
+    if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
+    const n = ws.length % 8, size = app === "Locations" ? { w: 1120, h: 700 } : app === "Billing" || app === "Bank" || app === "Customers" ? { w: 1240, h: 680 } : app === "Support" ? { w: 1160, h: 680 } : { w: 760, h: 480 };
+    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x: 96 + n * 32, y: 64 + n * 28, ...size, z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   focus: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, z: topZ(windows) + 1 } : w)) })),
   close: (id) => set(({ windows }) => ({ windows: windows.filter((w) => w.id !== id) })),
@@ -159,3 +163,9 @@ export const useStore = create<Store>((set, get) => ({
 }));
 
 export const loadedFromSave = initial.loaded;
+
+// Runs apply with the focus another app opened this app's window on, on mount and on every new request.
+export function useFocus(app: string, apply: (f: Focus) => void): void {
+  const focus = useStore((s) => s.windows.find((w) => w.app === app)?.focus);
+  useEffect(() => { if (focus) apply(focus); }, [focus?.n]);
+}

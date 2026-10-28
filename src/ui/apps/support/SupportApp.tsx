@@ -5,7 +5,8 @@ import { ACTIONS, canEscalate, isFinal, monthlyValue, TEMPLATES, type Ticket, ty
 import type { GameState } from "../../../sim/50-state";
 import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
-import { useStore } from "../../store";
+import { useFocus, useStore } from "../../store";
+import { CustomerLink } from "../customers/CustomersApp";
 import { initials, KINDS, kindOf, monthYear, moodClass, stamp, STATUS } from "./labels";
 import "./support.css";
 
@@ -45,6 +46,13 @@ export function SupportApp() {
     setSel(tk.id);
     if (tk.unread) act((s) => readTicket(s, tk.id));
   };
+  useFocus("Support", (f) => {
+    const tk = game.tickets.find((x) => x.id === f.id);
+    if (f.kind !== "ticket" || !tk) return;
+    setBox(BOXES.find((b) => b.match(tk, game.hour))!.id);
+    setKind(null);
+    open(tk);
+  });
 
   return (
     <div className="sup">
@@ -117,7 +125,7 @@ function Thread({ tk }: { tk: Ticket }) {
       <div className="cust">
         <div className="logo">{initials(c.name)}</div>
         <div>
-          <div className="name">{c.name}</div>
+          <div className="name"><CustomerLink id={c.id} name={c.name} /></div>
           <div className="sub">
             {svc ? svc.label : `${services.length} services`} · <span className="num">{euro(monthly)}</span> a month · since <span className="num">{monthYear(c.since)}</span>
           </div>

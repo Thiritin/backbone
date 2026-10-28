@@ -3,7 +3,7 @@ import type { Customer, Product, Profile, PaymentHabit } from "../30-customers/c
 
 export function addCustomer(s: GameState, name: string, profile: Profile, habit: PaymentHabit = "prompt"): string {
   const id = `cus${s.nextId++}`;
-  s.customers.push({ id, name, profile, since: s.hour, happiness: 70, habit, churnedAt: null } satisfies Customer);
+  s.customers.push({ id, name, profile, since: s.hour, happiness: 70, habit, churnedAt: null, history: [] } satisfies Customer);
   return id;
 }
 

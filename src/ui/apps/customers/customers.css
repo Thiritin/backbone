@@ -1,6 +1,11 @@
-.cus { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 380px; }
+.cus { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 400px; }
 .cus-main { display: flex; flex-direction: column; min-height: 0; min-width: 0; border-right: 0.5px solid var(--line); }
-.cus-bar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 0.5px solid var(--line); }
+.cus-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 0.5px solid var(--line); }
+.cus-bar .search input { width: 160px; }
+.cus-toggle[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
+.cus-sort { border: 0; background: none; padding: 0; font: inherit; color: inherit; display: inline-flex; align-items: center; gap: 2px; cursor: pointer; }
+.cus-sort svg.lucide { width: 12px; height: 12px; }
+.cus .table td { white-space: nowrap; }
 .cus-scroll { flex: 1; overflow: auto; }
 .cus .table tbody tr { cursor: pointer; }
 .cus .table tr.active td { background: var(--accent-soft); }
@@ -15,6 +20,13 @@
 .cus-detail { overflow: hidden auto; padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; background: var(--win-side); }
 .cus-detail.sup-none { place-items: center; align-content: center; }
 .cus-head { display: flex; align-items: center; gap: 12px; }
+.cus-head .grow { flex: 1; min-width: 0; }
+.cus-tabs { justify-self: start; }
+.cus-happy { display: flex; align-items: center; gap: 12px; }
+.cus-trend polyline { fill: none; stroke: var(--text-2); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+button.cus-row { width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+button.cus-row:hover { background: var(--hover); }
+button.cus-row:last-child { border-radius: 0 0 10px 10px; }
 .cus-head h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
 .cus-sub, .cus-dim { color: var(--text-2); font-size: 12px; }
 .cus-facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; }

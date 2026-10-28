@@ -11,6 +11,7 @@ export function deserialize(raw: string): GameState {
   return {
     ...base, ...data, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
+    customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [] })),
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null) })),
   };
 }

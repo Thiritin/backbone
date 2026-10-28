@@ -10,7 +10,7 @@ import {
   profileStats, rightTemplate, UPGRADE_CHANCE, WAITING_CLOSE_HOURS, type Ticket,
 } from "./tickets";
 
-const RIGHT_ANSWER = 5, WRONG_ANSWER = -10;
+const RIGHT_ANSWER = 5, WRONG_ANSWER = -10, HISTORY_MONTHS = 12;
 
 function resolve(s: GameState, t: Ticket, c: Customer, outcome: Ticket["outcome"] = null): void {
   Object.assign(t, { status: "resolved", updatedAt: s.hour, outcome });
@@ -75,6 +75,7 @@ function outages(s: GameState, customer: (id: string) => Customer): void {
 // economy.md, Happiness and churn: a cancellation left open is processed at the next monthly billing date.
 // ponytail: every customer rolls monthly churn; yearly contracts rolling 12x at renewal needs billing's renewal dates.
 function monthly(s: GameState): void {
+  for (const c of s.customers) if (c.churnedAt === null) c.history = [...c.history, c.happiness].slice(-HISTORY_MONTHS);
   for (const t of s.tickets) {
     if (t.kind !== "cancellation" || isFinal(t) || t.createdAt >= s.hour) continue;
     const c = s.customers.find((x) => x.id === t.customerId)!;

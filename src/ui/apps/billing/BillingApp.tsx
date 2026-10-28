@@ -2,11 +2,12 @@ import { Ban, CircleCheck, CircleDot, Files, Mail, OctagonAlert, Pause, Play, Re
 import { useState, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { dueStep, invoiceTotal, STEPS, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
-import { sendReminder, suspendServices, writeOff } from "../../../sim/90-actions/billing";
+import { AUTO_SUSPEND_DAYS, dueStep, freeRiding, invoiceTotal, STEPS, type BillingRules, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
+import { sendReminder, setBillingRules, suspendServices, writeOff } from "../../../sim/90-actions/billing";
 import { t } from "../../../i18n/en";
 import { Confirm } from "../../desktop/Confirm";
-import { useStore } from "../../store";
+import { useFocus, useStore } from "../../store";
+import { CustomerLink } from "../customers/CustomersApp";
 import "./billing.css";
 
 export const formatDay = (hour: number) =>
@@ -37,6 +38,12 @@ export function BillingApp() {
   const game = useStore((s) => s.game);
   const [filter, setFilter] = useState<InvoiceStatus | "all">("all");
   const [selected, setSelected] = useState<string | null>(null);
+  const act = useStore((s) => s.act);
+  useFocus("Billing", (f) => {
+    if (f.kind !== "invoice") return;
+    setFilter("all");
+    setSelected(f.id);
+  });
   const name = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
   const shown = game.invoices.filter((i) => filter === "all" || i.status === filter).reverse();
   const invoice = game.invoices.find((i) => i.id === selected);
@@ -44,7 +51,9 @@ export function BillingApp() {
     ["Open", sum(game.invoices.filter((i) => i.status === "open"))],
     ["Overdue", sum(game.invoices.filter((i) => i.status === "overdue"))],
     ["Paid this month", sum(game.invoices.filter((i) => i.paidAt !== null && i.status === "paid" && sameMonth(i.paidAt, game.hour)))],
+    ["Owed by active customers", freeRiding(game).owed],
   ];
+  const rules = (r: Partial<BillingRules>) => act((s) => setBillingRules(s, r));
 
   return (
     <div className="fin">
@@ -56,6 +65,17 @@ export function BillingApp() {
             <span className="side-count">{f.id === "all" ? game.invoices.length : game.invoices.filter((i) => i.status === f.id).length}</span>
           </button>
         ))}
+        <div className="side-h">Rules</div>
+        <label className="fin-rule">
+          Send reminders
+          <input type="checkbox" role="switch" className="switch" checked={game.billingRules.autoRemind} onChange={(e) => rules({ autoRemind: e.target.checked })} />
+        </label>
+        <label className="fin-rule">
+          Suspend after
+          <select className="field" value={game.billingRules.autoSuspendDays} onChange={(e) => rules({ autoSuspendDays: Number(e.target.value) as BillingRules["autoSuspendDays"] })}>
+            {AUTO_SUSPEND_DAYS.map((d) => <option key={d} value={d}>{d ? `${d} days` : "Off"}</option>)}
+          </select>
+        </label>
       </nav>
       <div className="fin-main">
         <dl className="fin-totals">
@@ -74,7 +94,7 @@ export function BillingApp() {
                   <tr key={i.id} className={i.id === selected ? "sel" : ""} onClick={() => setSelected(i.id)} tabIndex={0}
                     onKeyDown={(e) => e.key === "Enter" && setSelected(i.id)}>
                     <td className="num">{i.number}</td>
-                    <td>{name(i.customerId)}</td>
+                    <td><CustomerLink id={i.customerId} name={name(i.customerId)} /></td>
                     <td className="r num">{euroCents(invoiceTotal(i))}</td>
                     <td className="num">{formatDay(i.issuedAt)}</td>
                     <td className="num">{formatDay(i.dueAt)}</td>
@@ -87,7 +107,7 @@ export function BillingApp() {
           )}
         </div>
       </div>
-      {invoice && <Detail inv={invoice} customer={name(invoice.customerId)} hour={game.hour} />}
+      {invoice && <Detail key={invoice.id} inv={invoice} customer={name(invoice.customerId)} hour={game.hour} />}
     </div>
   );
 }
@@ -107,11 +127,12 @@ function Detail({ inv, customer, hour }: { inv: Invoice; customer: string; hour:
   const [confirm, setConfirm] = useState(false);
   const step = dueStep(inv, hour);
   const unpaid = inv.status === "open" || inv.status === "overdue";
-  const facts: [string, string][] = [
-    ["Customer", customer],
+  const facts: [string, ReactNode][] = [
+    ["Customer", <CustomerLink id={inv.customerId} name={customer} />],
     ["Issued", formatDay(inv.issuedAt)],
     ["Due", formatDay(inv.dueAt)],
     ...(inv.paidAt !== null ? [["Paid", formatDay(inv.paidAt)] as [string, string]] : []),
+    ...(inv.suspended && inv.suspendedAt !== null ? [["Suspended", formatDay(inv.suspendedAt)] as [string, string]] : []),
   ];
 
   return (

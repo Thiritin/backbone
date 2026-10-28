@@ -46,3 +46,17 @@ describe("save handling", () => {
     expect(s().windows).toHaveLength(0);
   });
 });
+
+describe("cross-app focus", () => {
+  it("opens an app on an item and renews the request when it repeats", () => {
+    const s = useStore.getState;
+    s().openApp("Billing", { kind: "invoice", id: "inv1" });
+    const first = s().windows.find((w) => w.app === "Billing")!.focus!;
+    expect(first).toMatchObject({ kind: "invoice", id: "inv1" });
+    s().openApp("Billing");
+    expect(s().windows.find((w) => w.app === "Billing")!.focus).toBe(first);
+    s().openApp("Billing", { kind: "invoice", id: "inv1" });
+    expect(s().windows.filter((w) => w.app === "Billing")).toHaveLength(1);
+    expect(s().windows.find((w) => w.app === "Billing")!.focus!.n).toBeGreaterThan(first.n);
+  });
+});

@@ -109,13 +109,15 @@ function ownCustomer(s: GameState, id: string) {
 }
 
 // The first suspension of a customer costs happiness and brings a ticket; further invoices only add to it.
-export function suspend(s: GameState, inv: Invoice): void {
+// Returns whether the customer's services were running until now.
+export function suspend(s: GameState, inv: Invoice): boolean {
   const first = !isSuspended(s, inv.customerId);
   Object.assign(inv, { suspended: true, suspendedAt: s.hour });
   const c = ownCustomer(s, inv.customerId);
-  if (!first || !c) return;
+  if (!first || !c) return false;
   bump(c, -SUSPEND_HAPPINESS);
   createTicket(s, c, "billing").topic = "suspended";
+  return true;
 }
 
 // The debt goes to a collection agency and the customer leaves.
@@ -142,8 +144,7 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
   if (i !== null && STEPS[i].key !== "collections") sendStep(s, inv, i);
   const days = s.billingRules.autoSuspendDays;
   if (days && inv.status === "overdue" && inv.suspendedAt === null && c?.churnedAt === null && s.hour >= inv.dueAt + days * DAY) {
-    suspend(s, inv);
-    events.push({ app: "Billing", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
+    if (suspend(s, inv)) events.push({ app: "Billing", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
   }
   if (!inv.suspended || inv.suspendedAt === null || inv.payAt !== null || !c) return;
   const since = s.hour - inv.suspendedAt;
