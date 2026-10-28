@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { BASEMENT, datacenterById, SHARE_RACKS, type Datacenter } from "../../../sim/20-world/datacenters";
 import type { GameState, Location } from "../../../sim/50-state";
 import { rackPower } from "../../../sim/60-infra/status";
+import type { Usage } from "../../../sim/60-infra/usage";
 
 export const dcOf = (l: Location): Datacenter | null => (l.dc ? datacenterById(l.dc) : null);
 export const providerOf = (l: Location) => dcOf(l)?.provider ?? null;
@@ -69,6 +70,31 @@ export function Facts({ rows }: { rows: [string, ReactNode][] }) {
 }
 
 // Power against its limit; a tripped breaker turns the bar red.
+// Twenty LEDs: the last 2 red, the 4 before them orange; lit up to the share in use.
+export function LedBar({ value }: { value: number }) {
+  const lit = Math.ceil(value * 20 - 1e-9);
+  return (
+    <span className="led-bar" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value * 100)}>
+      {Array.from({ length: 20 }, (_, i) => <span key={i} className={`${i >= 18 ? "r" : i >= 14 ? "o" : "g"}${i < lit ? " on" : ""}`} />)}
+    </span>
+  );
+}
+
+const USAGE_ROWS: [string, keyof Usage][] = [["CPU", "cpu"], ["Memory", "ram"], ["Storage", "disk"], ["Network", "net"]];
+export function UsageBars({ usage, only, wide }: { usage: Usage; only?: (keyof Usage)[]; wide?: boolean }) {
+  return (
+    <div className={`usage${wide ? " wide" : ""}`}>
+      {USAGE_ROWS.filter(([, k]) => !only || only.includes(k)).map(([label, k]) => (
+        <div className="usage-row" key={k}>
+          <span className="loc-k">{label}</span>
+          <LedBar value={usage[k]} />
+          <span className="num">{Math.ceil(usage[k] * 100 - 1e-9)}%</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function PowerMeter({ watts, limit, tripped }: { watts: number; limit: number; tripped?: boolean }) {
   const f = limit ? Math.min(1, watts / limit) : 0;
   return (

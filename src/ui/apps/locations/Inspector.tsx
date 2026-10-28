@@ -1,4 +1,4 @@
-import { ArchiveRestore, Cable, CircleDollarSign, Cpu, Database, EthernetPort, FileSignature, Network, Power, Unplug } from "lucide-react";
+import { ArchiveRestore, Cable, CircleDollarSign, Cpu, Database, EthernetPort, FileSignature, Gauge, Network, Power, Unplug } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
@@ -14,7 +14,8 @@ import { BrandLogo, Logo } from "../../art/logos";
 import { Confirm } from "../../desktop/Confirm";
 import { useStore } from "../../store";
 import { ageYears, CABLE_NAME, cores, deviceLamps, devName, disk, height, isWorn, PART_NAME, portLamps, portName, portsText, ram, speed } from "../hw";
-import { dcOf, Facts } from "./ui";
+import { dcOf, Facts, UsageBars } from "./ui";
+import { usageOf } from "../../../sim/60-infra/usage";
 import { NodeCard } from "./Clusters";
 
 // Sells a device or a rack after showing its resale value against the price paid.
@@ -95,6 +96,12 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
         </div>
       )}
 
+      {(model.kind === "server" || model.kind === "switch" || model.kind === "firewall") && (
+        <div className="loc-card">
+          <div className="loc-card-h"><h3><Gauge />Utilization</h3></div>
+          <UsageBars usage={usageOf(game, [device])} only={model.kind === "server" ? undefined : ["net"]} />
+        </div>
+      )}
       {model.kind === "server" && <NodeCard game={game} device={device} />}
       {model.kind !== "patch" && <PowerCard game={game} device={device} />}
       {model.kind === "server" && drivesOf(device).length > 0 && <RaidCard game={game} device={device} />}

@@ -1,7 +1,8 @@
 import { ChevronDown, ChevronRight, Map as MapIcon, Package, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import type { GameState } from "../../../sim/50-state";
-import { storageStacks } from "../../../sim/60-infra/status";
+import { locationOf, storageStacks } from "../../../sim/60-infra/status";
+import { usageOf } from "../../../sim/60-infra/usage";
 import { Logo } from "../../art/logos";
 import { useStore } from "../../store";
 import { day } from "../hw";
@@ -15,7 +16,7 @@ import "./locations.css";
 import { Overview } from "./Overview";
 import { RackView } from "./RackView";
 import { Storage } from "./Storage";
-import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, useDismiss, Zone } from "./ui";
+import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, UsageBars, useDismiss, Zone } from "./ui";
 import { REGIONS } from "../../../sim/20-world/datacenters";
 
 // view: null is the overview, "storage" the storage list, otherwise a location id.
@@ -86,6 +87,7 @@ export function LocationsApp() {
 function LocationHead({ game, locId }: { game: GameState; locId: string }) {
   const loc = game.locations.find((l) => l.id === locId)!, dc = dcOf(loc), power = locationPower(game, loc.id);
   return (
+    <>
     <div className="loc-head">
       <Logo provider={providerOf(loc)} size={28} />
       <div className="loc-head-name">
@@ -100,6 +102,8 @@ function LocationHead({ game, locId }: { game: GameState; locId: string }) {
       {dc && <span className="pill">{exchangeLabel(dc)}</span>}
       <PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} />
     </div>
+    <UsageBars wide usage={usageOf(game, game.devices.filter((d) => d.rackId && locationOf(game, d)?.id === loc.id))} />
+    </>
   );
 }
 

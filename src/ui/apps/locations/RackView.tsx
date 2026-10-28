@@ -16,7 +16,8 @@ import { useStore } from "../../store";
 import { day, deviceLamps, devName, height, portName } from "../hw";
 import { rackUnits } from "./Floor";
 import { Inspector, SellConfirm } from "./Inspector";
-import { dcOf, Facts, PowerMeter, Sheet, useDismiss } from "./ui";
+import { dcOf, Facts, PowerMeter, Sheet, UsageBars, useDismiss } from "./ui";
+import { usageOf } from "../../../sim/60-infra/usage";
 
 function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
@@ -68,6 +69,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
           {rack.arriveAt !== null && <span className="pill"><Truck />Arrives <span className="num">{day(rack.arriveAt)}</span></span>}
         </div>
         <RackPower rack={rack} loc={loc} />
+        <UsageBars usage={usageOf(game, game.devices.filter((d) => d.rackId === rack.id))} />
         <RackFront units={units} items={items} links={rackLinks(game, rack.id)} side={side} w={300} u={22} hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onFree={openMount} />
       </div>
       <div className="loc-insp">
