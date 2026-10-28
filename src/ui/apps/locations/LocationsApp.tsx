@@ -8,6 +8,7 @@ import { day } from "../hw";
 import { AddLocation } from "./AddLocation";
 import { Cabling } from "./Cabling";
 import { CarrierPanel, Floor } from "./Floor";
+import { HomeLinePanel } from "./HomeLine";
 import { Inspector } from "./Inspector";
 import "./locations.css";
 import { Overview } from "./Overview";
@@ -66,6 +67,7 @@ export function LocationsApp() {
               <LocationHead game={game} locId={loc.id} />
               <Floor game={game} loc={loc} onRack={(id) => go(loc.id, id)} />
               <CarrierPanel game={game} loc={loc} selected={deviceId} onDevice={setDeviceId} />
+              {loc.space === "basement" && <HomeLinePanel game={game} />}
               <Storage game={game} loc={loc} />
             </div>
             {deviceId && game.devices.some((d) => d.id === deviceId && d.panel === loc.id) && (

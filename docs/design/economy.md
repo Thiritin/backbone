@@ -34,7 +34,7 @@ A new game starts on 1 January 2005 with €5,000 in cash, a 24U rack in the bas
 | Cash | €5,000, no debt |
 | Company | Level 1, 0 know-how, no reviews yet |
 | Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
-| Home line | DSL, 16 Mbit/s down and 1 Mbit/s up; paid privately, so it costs the company nothing |
+| Home line | Deutsche Telekomm DSL 16000, 16 Mbit/s down and 1 Mbit/s up; paid privately, so it costs the company nothing |
 | Hardware | A 24U rack with one Dwell Balanced 1U G1 and a Sysko L2 switch 8, cabled to the home router; the server is the cluster "Basement 1" |
 | Reseller accounts | Domains from a registrar, at 40% of the retail price |
 | Customers | 3 friends (private individuals) on web hosting on your server; happiness 85, and they always pay |
@@ -470,6 +470,20 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 | Green.chz Lupfig | Zurich | 6 | SwizzIX by cross-connect | A+B | UPS, generator | Yes | 6 | €550 | 1.3 | €180 | €120/h, 4 h | Yes | Yes |
 
 **Basement.** One position, a 24U rack at most, 3 kW at most (a household circuit), no backup, the household power price (business × 1.6) and the home line as its only uplink.
+
+**Home line.** The basement can switch to another line in the Locations app. The old line stays up until the new one is installed, and ordering the current line again cancels a pending switch. A paid line is billed as rent on the first of each month; the starting DSL line is paid privately. Lines stay on offer once they appear. The sim stores each line's speed; there is no traffic model yet, so upload does not limit the basement.
+
+| Line | Provider | Down / up (Mbit/s) | Per month | From | Install days | Static IP |
+| --- | --- | --- | --- | --- | --- | --- |
+| DSL 16000 | Deutsche Telekomm | 16 / 1 | Paid privately | 2005 | 7 | No |
+| SDSL 2048 | 1&2 | 2 / 2 | €129 | 2005 | 14 | Yes |
+| VDSL 50 | Deutsche Telekomm | 50 / 10 | €45 | 2007 | 14 | No |
+| Cable 100 | Vodafoam | 100 / 6 | €40 | 2010 | 10 | No |
+| VDSL 100 | Deutsche Telekomm | 100 / 40 | €50 | 2014 | 14 | No |
+| Cable 400 | Vodafoam | 400 / 25 | €60 | 2016 | 10 | No |
+| Business Fiber 1000 | 1&2 | 1000 / 1000 | €350 | 2018 | 30 | Yes |
+| Fiber 1000 | Deutsche Glasfasel | 1000 / 500 | €90 | 2019 | 30 | No |
+| Cable 1000 | Vodafoam | 1000 / 50 | €80 | 2019 | 10 | No |
 
 ## Pear One subscriptions
 

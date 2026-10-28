@@ -1,7 +1,7 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
 import { componentKinds, modelById, type ComponentKind } from "./10-catalog/hardware";
-import { seedDcs } from "./20-world/datacenters";
+import { DEFAULT_HOME_LINE, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Service } from "./30-customers/customers";
 import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
@@ -71,6 +71,8 @@ export interface GameState {
   tickets: Ticket[];
   playerBusyUntil: number;
   servicesDown: string[];
+  // The basement's internet line (HOME_LINES id) and a switch to another line that goes live at hour at.
+  homeLine: { id: string; next: { id: string; at: number } | null };
   docs: Doc[];
   // Positions rented by competitors in each datacenter.
   dcs: Record<string, { others: number }>;
@@ -112,6 +114,7 @@ export const newGame = (seed: number): GameState => ({
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0 },
   tickets: [], playerBusyUntil: 0, servicesDown: [],
+  homeLine: { id: DEFAULT_HOME_LINE, next: null },
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
