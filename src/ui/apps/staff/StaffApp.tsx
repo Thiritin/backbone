@@ -175,6 +175,7 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
   const canTrain = fullyTrained(e) && game.staff.some((x) => x.id !== e.id && x.role === e.role && needsTraining(x));
   const open = TASKS[e.role].filter((k) => !e.trained.includes(k) && e.training?.task !== k);
   const [leaving, setLeaving] = useState(false);
+  const owed = salaryUpToNow(game, e);
   const toggle = (k: Task) => act((s) => planTraining(s, e.id, e.plan.includes(k) ? e.plan.filter((x) => x !== k) : [...e.plan, k]));
   return (
     <section className="st-detail">
@@ -197,7 +198,7 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
       </header>
       {leaving && (
         <Confirm title={`Let ${e.name} go?`} action="Let go" onCancel={() => setLeaving(false)} onConfirm={() => { setLeaving(false); act((s) => fire(s, e.id)); }}
-          text={`This saves ${euro(monthlyPay(e))} a month. ${e.name.split(" ")[0]} leaves today and is paid ${euro(salaryUpToNow(game, e))} for the days worked this month.`} />
+          text={`This saves ${euro(monthlyPay(e))} a month. ${e.name.split(" ")[0]} leaves today${owed > 0 ? ` and is paid ${euro(owed)} for the days worked this month` : ""}.`} />
       )}
       <div className="st-body">
         {e.raise && (
