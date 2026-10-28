@@ -10,7 +10,8 @@ import { addNode, cordon, createCluster, drain, placeService, provisionService, 
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
-import { FRIEND_HAPPINESS, startGame } from "../src/sim/90-actions/start";
+import { FRIEND_HAPPINESS } from "../src/sim/90-actions/start";
+import { installed, readyGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { mrr } from "../src/sim/metrics";
 
@@ -33,7 +34,7 @@ function twoNodes() {
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
-  const cluster = ok(createCluster(s, "loc1", "Web 1"));
+  const cluster = installed(s, ok(createCluster(s, "loc1", "Web 1")));
   ok(addNode(s, cluster, "dev3"));
   ok(addNode(s, cluster, second));
   const cus = addCustomer(s, "Ada Lang", "hobbyDev");
@@ -63,7 +64,7 @@ describe("product catalog", () => {
 
 describe("starting company", () => {
   it("starts with three friends on web hosting in the basement cluster, online and paying €18 a month", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     expect(s.customers.map((c) => [c.name, c.happiness, c.habit])).toEqual([
       ["Jonas Weber", FRIEND_HAPPINESS, "friend"], ["Mira Schulz", FRIEND_HAPPINESS, "friend"], ["Tobi Kraus", FRIEND_HAPPINESS, "friend"],
     ]);
@@ -75,7 +76,7 @@ describe("starting company", () => {
   });
   it("takes the friends offline and opens outage tickets when the switch loses power", () => {
     // A seed where a friend writes in once the outage is noticed.
-    const s = startGame(5);
+    const s = readyGame(5);
     run(s, 2);
     ok(setPower(s, "dev4", false));
     // Friends tolerate an outage for two business days: from Saturday until Wednesday 09:00.
@@ -92,7 +93,7 @@ describe("starting company", () => {
     expect(s.services.every((v) => serviceOnline(s, v.id))).toBe(true);
   });
   it("invoices the friends in February for the hours they were up", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     run(s, 10);
     ok(setPower(s, "dev3", false));
     run(s, 4);
@@ -248,7 +249,7 @@ describe("dedicated and colocation", () => {
 
 describe("saves", () => {
   it("keeps clusters and workloads, and loads an older save with its services unplaced and online", () => {
-    const s = startGame(3);
+    const s = readyGame(3);
     const back = deserialize(serialize(s));
     expect([back.clusters, back.workloads]).toEqual([s.clusters, s.workloads]);
     const old = JSON.parse(serialize(s));

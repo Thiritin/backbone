@@ -7,7 +7,7 @@ import { PRODUCTS } from "../10-catalog/products";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
 import { isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
-import { pickNode, serverTaken, workloadsOf } from "../60-infra/cluster";
+import { lineOffered, noRoomError, pickNode, serverTaken, supports, workloadsOf } from "../60-infra/cluster";
 import { phpNeeded } from "../60-infra/php";
 import { locationOf } from "../60-infra/status";
 import { modelById } from "../10-catalog/hardware";
@@ -97,12 +97,14 @@ function morningMail(s: GameState, events: SimEvent[]): void {
       const need = needFor(s.rng, f.profile), k = `${f.profile}/${need.product}/${f.city}`;
       if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
+      // The website and order emails only sell lines some installed control plane supports.
+      if (!lineOffered(s, need.product)) continue;
       if (isStandard(f.profile, need.sla)) orderLead(s, f.profile, f.city, events, need);
       else newLead(s, f.profile, f.city, events, need);
     }
   }
   firstOrder(s, events);
-  if (s.hour > 2160 && rand(s.rng) < SHADY_PER_MONTH / DAYS_PER_MONTH) shadyLead(s, s.locations[0]?.city ?? "Frankfurt", events);
+  if (s.hour > 2160 && lineOffered(s, "vps") && rand(s.rng) < SHADY_PER_MONTH / DAYS_PER_MONTH) shadyLead(s, s.locations[0]?.city ?? "Frankfurt", events);
 }
 
 // An open upgrade ticket asks for the next bigger plan of its service, or one more of the biggest.
@@ -133,7 +135,7 @@ export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product"
   const zones = s.locations.filter((l) => l.city === r.city).map((l) => l.az);
   const spec = PRODUCTS[r.product], size = spec.plans.find((p) => p.id === r.plan)!.size(yearOf(s.hour));
   if (spec.runsOn === "cluster") {
-    const c = s.clusters.find((x) => zones.includes(x.az) && pickNode(s, x, size));
+    const c = s.clusters.find((x) => zones.includes(x.az) && supports(x, r.product) && pickNode(s, x, size));
     return c ? { clusterId: c.id, zone: c.az } : null;
   }
   if (spec.runsOn === "server") {
@@ -169,7 +171,7 @@ export function fulfil(s: GameState, r: SalesRequest): ActionResult {
   const target = targetFor(s, r);
   const placed: ActionResult = target
     ? provisionService(s, customerId, r.product, { label, plan: r.plan, sla: r.sla, price: r.quote! / 730, clusterId: target.clusterId, zone: target.zone })
-    : { ok: false, error: PRODUCTS[r.product].runsOn === "server" ? "error.noFreeServer" : "error.noCapacity" };
+    : { ok: false, error: noRoomError(s, r.product) };
   if (!placed.ok) Object.assign(s, before);
   else if (r.kind !== "expansion") editRequest(s, r.id, () => ({ customerId }));
   return placed;

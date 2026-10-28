@@ -7,6 +7,7 @@ import { bump, createTicket, isFinal } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { controlPlaneUp, lostDisk, servedBy, type Cluster, type Workload } from "../60-infra/cluster";
 import { phpTickets } from "../60-infra/php";
+import { welcomeFriends } from "../90-actions/start";
 import { raidUsable } from "../60-infra/status";
 import { diskFill, nodeUsage } from "../60-infra/usage";
 import { addReview, starsFor } from "../80-business/marketing";
@@ -50,17 +51,18 @@ function units(s: GameState, c: Cluster, sw: Software): number {
 }
 // The monthly license bill of a cluster's panel and platform.
 export function licenseCost(s: GameState, c: Cluster): { panel: number; platform: number } {
-  const cost = (id: string) => { const sw = softwareById(id); return Math.round(sw.fee * units(s, c, sw) * 100) / 100; };
+  const cost = (id: string | null) => { if (!id) return 0; const sw = softwareById(id); return Math.round(sw.fee * units(s, c, sw) * 100) / 100; };
   return { panel: cost(c.panel), platform: cost(c.platform) };
 }
 
+const tickets = (id: string | null) => (id ? softwareById(id).tickets : 1);
 // The how-to ticket rate factor of a customer: the average over their cluster workloads of the software serving each,
 // with web spaces on an old PHP a little higher.
 export function howToFactor(s: GameState, customerId: string): number {
   const services = new Set(s.services.filter((v) => v.customerId === customerId && v.endedAt === null).map((v) => v.id));
   const factors = s.workloads.filter((w) => w.clusterId && services.has(w.serviceId)).map((w) => {
     const c = s.clusters.find((x) => x.id === w.clusterId)!;
-    return servedBy(s, w) === "panel" ? softwareById(c.panel).tickets * phpTickets(s, c) : softwareById(c.platform).tickets;
+    return servedBy(s, w) === "panel" ? tickets(c.panel) * phpTickets(s, c) : tickets(c.platform);
   });
   return factors.length ? factors.reduce((a, b) => a + b, 0) / factors.length : 1;
 }
@@ -101,9 +103,10 @@ const customerCopy = (s: GameState, id: string): Customer | undefined => {
 function finishSwitches(s: GameState, events: SimEvent[]) {
   for (const c of s.clusters) {
     if (!c.switching || c.switching.doneAt > s.hour) continue;
-    const { kind, to } = c.switching;
+    const { kind, to } = c.switching, fresh = !(kind === "panel" ? c.panel : c.platform);
     s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, ...(kind === "panel" ? { panel: to } : { platform: to }) } : x));
-    events.push({ app: "Products", key: "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
+    events.push({ app: "Products", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
+    if (kind === "panel" && welcomeFriends(s, c.id)) events.push({ app: "Customers", key: "event.friendsJoined", params: { cluster: c.name } });
   }
 }
 
@@ -160,7 +163,7 @@ function billLicenses(s: GameState) {
     const cost = licenseCost(s, c);
     return ([["panel", c.panel], ["platform", c.platform]] as const)
       .filter(([k]) => cost[k] > 0)
-      .map(([k, id]) => ({ hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: c.name, name: softwareById(id).name }, amount: -cost[k] }));
+      .map(([k, id]) => ({ hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: c.name, name: softwareById(id!).name }, amount: -cost[k] }));
   });
   if (!lines.length) return;
   s.cash = Math.round((s.cash + lines.reduce((n, l) => n + l.amount, 0)) * 100) / 100;

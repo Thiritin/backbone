@@ -1,9 +1,11 @@
 import { AppWindow, Boxes, Feather, Gauge, Layers, PanelsTopLeft, Server, SquareTerminal, TriangleAlert, type LucideIcon } from "lucide-react";
 import { euroCents } from "../../../sim/00-core/money";
 import { formatClock } from "../../../sim/00-core/time";
-import { softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
+import { SERVES, softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
+import { PRODUCTS } from "../../../sim/10-catalog/products";
+import { PRODUCT } from "../support/labels";
 import type { GameState } from "../../../sim/50-state";
-import { lostDisk, workloadOnline, type Workload } from "../../../sim/60-infra/cluster";
+import { controlPlaneUp, lostDisk, workloadOnline, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
 import { declineRefund, refundLoss, restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
@@ -21,7 +23,8 @@ export const BRAND: Record<string, { icon: LucideIcon; color: string }> = {
   hypervee: { icon: AppWindow, color: "oklch(0.56 0.15 240)" },
 };
 
-export function Mark({ id, size = 28 }: { id: string; size?: number }) {
+export function Mark({ id, size = 28 }: { id: string | null; size?: number }) {
+  if (!id) return <span className="prd-mark" style={{ width: size, height: size, background: "var(--text-3)" }}><Server size={Math.round(size * 0.62)} /></span>;
   const { icon: Icon, color } = BRAND[id] ?? BRAND.proxmocks;
   return <span className="prd-mark" style={{ background: color, width: size, height: size }}><Icon size={Math.round(size * 0.62)} /></span>;
 }
@@ -30,19 +33,25 @@ const UNIT: Record<Software["pricing"], string> = { free: "", account: "per web 
 export const licenseText = (sw: Software) => (sw.pricing === "free" ? "Free" : `${euroCents(sw.fee)} ${UNIT[sw.pricing]}`);
 const cp = (sw: Software) => `${+sw.controlPlane.vcpu.toFixed(2)} vCPU · ${+sw.controlPlane.ramGb.toFixed(2)} GB`;
 
+export const KIND_NAME: Record<SoftwareKind, string> = { panel: "Hosting panel", cloud: "Virtualization platform" };
+export const servesText = (kind: SoftwareKind) => SERVES[kind].filter((p) => !PRODUCTS[p].ha).map((p) => PRODUCT[p]).join(", ");
+
 // The competing software of one kind as cards; the chosen one is pressed.
-export function SoftwareCards({ kind, value, onPick }: { kind: SoftwareKind; value: string; onPick: (id: string) => void }) {
+export function SoftwareCards({ kind, value, onPick, compact }: { kind: SoftwareKind; value: string | null; onPick: (id: string) => void; compact?: boolean }) {
   return (
-    <div className="prd-cards" role="group" aria-label={kind === "panel" ? "Control panel" : "Platform"}>
+    <div className="prd-cards" role="group" aria-label={KIND_NAME[kind]}>
       {softwareOf(kind).map((sw) => (
         <button key={sw.id} className="prd-card" aria-pressed={sw.id === value} onClick={() => onPick(sw.id)}>
           <span className="prd-card-h"><Mark id={sw.id} size={24} /><span className="t">{sw.name}</span></span>
           <dl>
             <div><dt>License</dt><dd className="num">{licenseText(sw)}</dd></div>
+            <div><dt>Install</dt><dd className="num">{sw.installHours} h</dd></div>
+            {compact ? null : <>
             <div><dt>Tickets</dt><dd className="num">×{sw.tickets}</dd></div>
             {kind === "cloud" && <div><dt>Density</dt><dd className="num">×{sw.density}</dd></div>}
             {kind === "cloud" && <div><dt>Live migration</dt><dd>{sw.live ? "Yes" : "No"}</dd></div>}
             <div><dt>Control plane</dt><dd className="num">{cp(sw)}</dd></div>
+            </>}
           </dl>
         </button>
       ))}
@@ -131,4 +140,11 @@ export function IncidentReports({ game }: { game: GameState }) {
   );
 }
 
-export const softwareName = (id: string) => softwareById(id).name;
+export function ControlPlanePill({ game, cluster }: { game: GameState; cluster: Cluster }) {
+  const [tone, label] = cluster.switching ? ["accent", `Installing, ${cluster.switching.doneAt - game.hour} h left`]
+    : !cluster.panel && !cluster.platform ? ["bad", "No control plane"]
+    : controlPlaneUp(game, cluster) ? ["ok", "Control plane up"] : ["bad", "Control plane down"];
+  return <span className={`pill ${tone}`}>{label}</span>;
+}
+
+export const softwareName =(id: string | null) => (id ? softwareById(id).name : "None");

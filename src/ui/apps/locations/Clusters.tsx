@@ -8,14 +8,14 @@ import { PHP_EOL } from "../../../sim/60-infra/php";
 import { queuePhpUpgrade } from "../../../sim/90-actions/staff";
 import { slotTime, TechButton } from "./TechButton";
 import type { Device, GameState, Location } from "../../../sim/50-state";
-import { bookable, clusterOf, controlPlaneUp, nodeUsed, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
+import { bookable, clusterOf, nodeUsed, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { nodeUsage } from "../../../sim/60-infra/usage";
 import { addNode, CLUSTER_NAME_MAX, cordon, createCluster, drain, removeNode, phpDue, setPlacement, uncordon, upgradePhp } from "../../../sim/90-actions/clusters";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { cores, devName, disk, ram } from "../hw";
-import { softwareName, VM_STATE, vmState } from "../products/parts";
+import { ControlPlanePill, softwareName, VM_STATE, vmState } from "../products/parts";
 import { Zone } from "./ui";
 
 export const NODE_STATE: Record<NodeState, [string, string]> = { active: ["Active", "ok"], cordoned: ["Cordoned", "warn"], draining: ["Draining", "warn"], maintenance: ["Maintenance", ""] };
@@ -127,7 +127,7 @@ function PhpRow({ game, cluster, device }: { game: GameState; cluster: Cluster; 
 }
 
 export function NodeCard({ game, device }: { game: GameState; device: Device }) {
-  const act = useStore((s) => s.act);
+  const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const cluster = clusterOf(game, device.id), node = cluster?.nodes.find((n) => n.deviceId === device.id);
   const loads = workloadsOn(game, device.id);
   const az = locationOf(game, device)?.az;
@@ -176,9 +176,10 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
       {cluster.controlPlane === device.id && (
         <div className="loc-row">
           <span className="loc-k">Control plane</span>
-          <span>{softwareName(cluster.panel)}, {softwareName(cluster.platform)}</span>
+          <span>{[cluster.panel, cluster.platform].filter((x) => x).map(softwareName).join(", ") || "None"}</span>
           <span className="grow" />
-          <span className={`pill ${controlPlaneUp(game, cluster) ? "ok" : "bad"}`}>{controlPlaneUp(game, cluster) ? "Up" : "Down"}</span>
+          <ControlPlanePill game={game} cluster={cluster} />
+          <button className="btn" onClick={() => openApp("Products", { kind: "cluster", id: cluster.id })}>{cluster.panel || cluster.platform ? "Change" : "Install"}</button>
         </div>
       )}
       {loads.map((w) => {

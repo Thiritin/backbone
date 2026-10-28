@@ -2,7 +2,7 @@ import { START_CASH } from "../src/sim/10-catalog/economy";
 import { describe, expect, it } from "vitest";
 import { prefOf, useStore } from "../src/ui/store";
 import { newGame } from "../src/sim/50-state";
-import { startGame } from "../src/sim/90-actions/start";
+import { readyGame } from "./fixtures";
 import { metrics } from "../src/sim/metrics";
 
 describe("notification settings", () => {
@@ -53,7 +53,7 @@ describe("notification settings", () => {
 
 describe("metrics", () => {
   it("starts on level 1 with cash, hardware and two years of the friends' revenue counted toward level 2", () => {
-    const m = metrics(startGame(1));
+    const m = metrics(readyGame(1));
     expect(m.mrr).toBeCloseTo(18);
     // Server, switch and rack at their purchase price in the first hour.
     expect(m.netWorth).toBeCloseTo(START_CASH + 2500 + 60 + 350 + 24 * 18);

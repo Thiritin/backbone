@@ -8,7 +8,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { hire } from "../src/sim/90-actions/staff";
-import { startGame } from "../src/sim/90-actions/start";
+import { readyGame } from "./fixtures";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
@@ -26,7 +26,7 @@ function order(s: GameState, city = "Frankfurt") {
 describe("orders by email", () => {
   it("brings the first order email within two weeks and no direct customers", () => {
     for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
-      const s = startGame(seed);
+      const s = readyGame(seed);
       runTo(s, FIRST_ORDER_DAYS * 24);
       const orders = s.tickets.filter((t) => t.kind === "order");
       expect(orders.length).toBeGreaterThan(0);
@@ -42,7 +42,7 @@ describe("orders by email", () => {
   });
 
   it("creates the customer and the service when accepted, after the ticket minutes", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const { r, t, req, tk } = order(s);
     expect(t).toMatchObject({ kind: "order", topic: "webHosting", customerId: "", status: "open", dueAt: r.deadline });
     expect(r.quote).toBe(r.reference);
@@ -58,7 +58,7 @@ describe("orders by email", () => {
   });
 
   it("refuses to accept without capacity or an offer in the city", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const { r, t } = order(s);
     const friend = s.customers[0].id, cluster = s.clusters[0].id;
     for (let i = 0; i < 500 && targetFor(s, r); i++) provisionService(s, friend, "webHosting", { label: `fill${i}`, plan: "web-l", clusterId: cluster });
@@ -67,7 +67,7 @@ describe("orders by email", () => {
   });
 
   it("loses the lead when declined or closed", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const a = order(s), b = order(s);
     resolveTicket(s, a.t.id, "reject");
     run(s, 1);
@@ -80,7 +80,7 @@ describe("orders by email", () => {
   });
 
   it("goes to a competitor when left past its due time", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const { r, req, tk } = order(s);
     runTo(s, r.deadline + 1);
     expect(req().status).toBe("lost");
@@ -89,7 +89,7 @@ describe("orders by email", () => {
   });
 
   it("is accepted by a support employee trained on orders", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     runTo(s, MONDAY_9);
     const c = visibleCandidates(s).find((x) => x.role === "support")!;
     const id = hire(s, c.id);
@@ -103,7 +103,7 @@ describe("orders by email", () => {
   });
 
   it("orders directly once the order form is set up", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     s.cash = 1e6;
     expect(setUpChannel(s, "website").ok).toBe(true);
     expect(setUpChannel(s, "orderForm").ok).toBe(true);
@@ -118,12 +118,12 @@ describe("orders by email", () => {
   });
 
   it("keeps an open order through a save", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const { t } = order(s);
     const back = deserialize(serialize(s));
     expect(orderOf(back, back.tickets.find((x) => x.id === t.id)!)?.status).toBe("open");
     run(back, 1);
-    const old = JSON.parse(serialize(startGame(2)));
+    const old = JSON.parse(serialize(readyGame(2)));
     expect(() => run(deserialize(JSON.stringify(old)), 24)).not.toThrow();
   });
 });

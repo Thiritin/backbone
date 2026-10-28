@@ -27,7 +27,7 @@ Level 6 lands before the cloud and GPU boom, so the late game still has new prod
 
 ## Starting state
 
-A new game starts on 1 January 2005 with €1,000 in cash, a 24U rack in the basement with one server and a switch, and three friends as customers.
+A new game starts on 1 January 2005 with €1,000 in cash, a 24U rack in the basement with one server and a switch, and three friends waiting for web hosting.
 
 | Item | Starting value |
 | --- | --- |
@@ -35,9 +35,9 @@ A new game starts on 1 January 2005 with €1,000 in cash, a 24U rack in the bas
 | Company | Level 1, 0 know-how, no reviews yet |
 | Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
 | Home line | Deutsche Telekomm DSL 16000, 16 Mbit/s down and 1 Mbit/s up; paid privately, so it costs the company nothing |
-| Hardware | A 24U rack with one Dwell Balanced 1U G1 and a Sysko L2 switch 8, cabled to the home router; the server is the cluster "Basement 1" |
+| Hardware | A 24U rack with one Dwell Balanced 1U G1 and a Sysko L2 switch 8, cabled to the home router; the server is the cluster "Basement 1", with no control plane installed |
 | Reseller accounts | Domains from a registrar, at 40% of the retail price |
-| Customers | 3 friends (Jonas Weber, Mira Schulz and Tobi Kraus, private individuals) on Web M hosting at €6 a month, placed on the server; happiness 85, and they always pay |
+| Customers | None until the first hosting panel finishes installing. Then 3 friends (Jonas Weber, Mira Schulz and Tobi Kraus, private individuals) sign up for Web M hosting at €6 a month on that cluster; happiness 85, and they always pay |
 
 
 ## Prices over time
@@ -950,25 +950,27 @@ A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, w
 
 ## Platforms and licenses
 
-Each cluster runs one control panel for its web spaces and one cloud platform for everything else. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years.
+A cluster runs nothing until the player installs a hosting panel, a virtualization platform, or both. The panel sells web hosting; the platform sells VPS, game servers, DNS, VPN and storage. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years.
 
-| Software | Kind | License | How-to tickets | Density | Live migration | Control plane |
-| --- | --- | --- | --- | --- | --- | --- |
-| cPanic | Panel | €0.40 per web space | ×0.8 | | | 0.25 vCPU, 0.25 GB, 5 GB |
-| Pleskit | Panel | €12 per node | ×0.9 | | | 0.25 vCPU, 0.25 GB, 5 GB |
-| DirectAdmen | Panel | €4 per node | ×1.2 | | | 0.1 vCPU, 0.1 GB, 2 GB |
-| FreePanel | Panel | Free | ×1.5 | | | 0.1 vCPU, 0.1 GB, 2 GB |
-| OpenStash | Cloud | Free | ×1.3 | 1.0 | Yes | 2 vCPU, 2 GB, 20 GB |
-| VMwhere | Cloud | €8 per physical core | ×0.7 | 1.15 | Yes | 1 vCPU, 2 GB, 10 GB |
-| Proxmocks | Cloud | Free | ×1.0 | 1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
-| HyperVee | Cloud | €20 per node | ×0.9 | 1.05 | No | 1 vCPU, 1 GB, 10 GB |
+| Software | Kind | License | Install | How-to tickets | Density | Live migration | Control plane |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cPanic | Panel | €0.40 per web space | 3 h | ×0.8 | | | 0.25 vCPU, 0.25 GB, 5 GB |
+| Pleskit | Panel | €12 per node | 3 h | ×0.9 | | | 0.25 vCPU, 0.25 GB, 5 GB |
+| DirectAdmen | Panel | €4 per node | 2 h | ×1.2 | | | 0.1 vCPU, 0.1 GB, 2 GB |
+| FreePanel | Panel | Free | 2 h | ×1.5 | | | 0.1 vCPU, 0.1 GB, 2 GB |
+| OpenStash | Cloud | Free | 8 h | ×1.3 | 1.0 | Yes | 2 vCPU, 2 GB, 20 GB |
+| VMwhere | Cloud | €8 per physical core | 5 h | ×0.7 | 1.15 | Yes | 1 vCPU, 2 GB, 10 GB |
+| Proxmocks | Cloud | Free | 3 h | ×1.0 | 1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
+| HyperVee | Cloud | €20 per node | 4 h | ×0.9 | 1.05 | No | 1 vCPU, 1 GB, 10 GB |
 
 - **Licenses** are billed on the 1st of each month per cluster, as ledger lines in the category "licenses".
 - **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the platform for the rest).
 - **Density** multiplies what a node can book, from memory sharing and lighter hypervisors.
 - **Control plane:** the panel's and the platform's control planes run on one node of the cluster, the first one added, and count against what it can book and what it uses. While that node is down, or while the cluster switches software, nothing can be sold, started, migrated or restored on the cluster. Draining moves the control plane to another node once the drained node is empty, and the player can move it to any working node with room.
-- **Switching** costs €10 per workload the old software serves. Those workloads are offline for 1 hour per 4 of them, at least 1 hour, and the control plane is down until the switch is done.
-- A new game's "Basement 1" runs FreePanel and Proxmocks, which cost nothing.
+- **Installing** needs a node in the cluster and room for the control plane on it. The control plane is busy for the install hours in the table, and nothing can be placed on the cluster until it is done. An install costs nothing up front; the license is billed from the next 1st of the month.
+- **Switching** to other software of the same kind takes the new software's install hours and needs the cluster empty of the workloads the old software serves. Workloads of the other kind stay online.
+- **Selling:** the website, order emails and leads only carry product lines that an installed control plane on a cluster with nodes sells. Placement refuses with "No cluster runs a hosting panel" or "No cluster runs a virtualization platform" when no cluster in scope has the right software, and with the capacity error when it has but no node has room.
+- A new game's "Basement 1" runs nothing. Old saves keep the panel and platform they had, and saves from before platforms load with FreePanel and Proxmocks installed.
 
 **Migration in the first build.** Inside a zone, links count as 1 Gbit/s, which moves 450 GB an hour. Virtual machines move live on platforms with live migration; on HyperVee they are offline for (disk + RAM) ÷ 450 GB per hour, rounded up to whole hours. Web spaces, game servers and storage volumes move without a lost hour. Moves between zones need a link between the zones; until the network links between locations exist, they are refused. A workload with a lost disk can't migrate; it is restored instead.
 

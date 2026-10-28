@@ -26,7 +26,7 @@ export function VmApp() {
   const [filter, setFilter] = useState<StateFilter>("all");
   const [selected, setSelected] = useState<string | null>(null);
   const cluster = game.clusters.find((c) => c.id === clusterId);
-  const brand = cluster ? softwareById(cluster.platform) : null;
+  const brand = cluster?.platform ? softwareById(cluster.platform) : null;
   const shown = game.workloads.filter((w) => w.clusterId && (!cluster || w.clusterId === cluster.id) && (!node || w.deviceId === node) && matches(filter, vmState(game, w)));
   const vm = game.workloads.find((w) => w.id === selected);
   const pickCluster = (id: string | null) => { setCluster(id); setNode(null); setIncidents(false); };
@@ -110,7 +110,7 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
   // Nodes of the same zone's clusters with room for it.
   const targets = game.clusters.filter((x) => x.az === cluster.az).flatMap((x) => x.nodes.filter((n) => n.state === "active").map((n) => ({ c: x, d: game.devices.find((d) => d.id === n.deviceId)! })))
     .filter(({ d }) => d && d.id !== w.deviceId && working(game, d.id) && (["vcpu", "ramGb", "diskGb"] as const).every((k) => nodeUsed(game, d.id)[k] + w[k] <= bookable(game, d)[k] + 1e-9));
-  const live = softwareById(cluster.platform).live;
+  const live = !!cluster.platform && softwareById(cluster.platform).live;
   return (
     <aside className="fin-detail vm-detail">
       <div className="fin-detail-h"><h2>{v?.label}</h2><span className={`pill ${tone}`}>{label}</span></div>
