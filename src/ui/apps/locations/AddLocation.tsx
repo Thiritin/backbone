@@ -52,12 +52,14 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
         <div className="seg" role="group" aria-label="Area">
           {AREAS.map(([id, label]) => <button key={id} aria-pressed={area === id} onClick={() => { setArea(id); setCity(null); }}>{label}</button>)}
         </div>
-        <div className="seg" role="group" aria-label="City">
-          <button aria-pressed={!city} onClick={() => setCity(null)}>All</button>
-          {cities.map((c) => <button key={c} aria-pressed={city === c} onClick={() => setCity(c)}>{c}</button>)}
-        </div>
         <span className="grow" />
         <button className="btn ghost" aria-pressed={hideFull} onClick={() => setHideFull(!hideFull)}>Hide full</button>
+        <div className="loc-cities">
+          <div className="seg" role="group" aria-label="City">
+            <button aria-pressed={!city} onClick={() => setCity(null)}>All</button>
+            {cities.map((c) => <button key={c} aria-pressed={city === c} onClick={() => setCity(c)}>{c}</button>)}
+          </div>
+        </div>
       </div>
       <WorldMap key={area} className="wm-add" initial={AREAS.find((a) => a[0] === area)![2]} markers={markers(city, hot)} onMarkerClick={(c) => setCity(c === city ? null : c)} onCityClick={(c) => setCity(CITIES.includes(c.name) && c.name !== city ? c.name : null)}>
         {city && (

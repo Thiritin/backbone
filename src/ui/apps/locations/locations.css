@@ -90,7 +90,9 @@ svg.logo-mark { flex: none; }
 .loc-sheet.wide { width: min(1080px, calc(100% - 32px)); }
 .loc-sheet-h { display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 16px; border-bottom: 0.5px solid var(--line); }
 .loc-sheet-h h2 { font-size: 13px; font-weight: 650; }
-.loc-sheet-bar { padding: 10px 16px; border-bottom: 0.5px solid var(--line); overflow-x: auto; }
+.loc-sheet-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: none; padding: 10px 16px; border-bottom: 0.5px solid var(--line); overflow-x: auto; }
+.loc-sheet-bar .grow { flex: 1; }
+.loc-cities { flex-basis: 100%; }
 .loc-sheet-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 16px; border-top: 0.5px solid var(--line); min-height: 52px; }
 .loc-sheet-foot > * { white-space: nowrap; flex-shrink: 0; }
 .loc-sheet-foot > .btn.primary { margin-left: auto; }
