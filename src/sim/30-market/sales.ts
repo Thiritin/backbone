@@ -6,7 +6,7 @@ import { CHOICE_TAU, NEVER_PAYS, ON_TIME } from "../10-catalog/economy";
 import { PRODUCTS } from "../10-catalog/products";
 import { inUs } from "../20-world/datacenters";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
-import { isFinal, profileStats } from "../40-support/tickets";
+import { bump, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { lineOffered, noRoomError, pickNode, serverTaken, supports, workloadsOf } from "../60-infra/cluster";
 import { phpNeeded } from "../60-infra/php";
@@ -266,7 +266,9 @@ function drift(s: GameState): void {
       // Without a competitor for the product, the best rival counts as one τ behind you.
       memo.set(k, Math.min(95, Math.max(20, 70 + 0.5 * (v.you - Math.max(v.you - CHOICE_TAU, ...v.others)))));
     }
-    return { ...c, happiness: c.happiness + 0.2 * (memo.get(k)! - c.happiness) };
+    const n = { ...c };
+    bump(n, 0.2 * (memo.get(k)! - c.happiness));
+    return n;
   });
 }
 

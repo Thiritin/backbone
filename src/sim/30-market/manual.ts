@@ -193,7 +193,7 @@ export function resize(s: GameState, v: Service, spec: CustomSpec, route: string
   const size = sizeOf(spec), w = workloadsOf(s, v.id)[0];
   const d = w?.deviceId && w.clusterId ? s.devices.find((x) => x.id === w.deviceId) : undefined;
   if (route === "auto" && d) {
-    const cap = bookable(s, d), used = nodeUsed(s, d.id);
+    const cap = bookable(s, d, true), used = nodeUsed(s, d.id);
     if ((["vcpu", "ramGb", "diskGb"] as const).every((k) => used[k] - w[k] + size[k] <= cap[k] + 1e-9)) {
       s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, ...size } : x));
       s.services = s.services.map((x) => (x.id === v.id ? { ...x, spec } : x));

@@ -84,8 +84,13 @@ export const replyDue = (c: Customer, hour: number): number => {
   return addHoursOn(clock, hour, hours);
 };
 
+// scripts/happiness.ts sets this to attribute every change to its caller.
+export const bumpProbe: { fn: ((c: Customer, delta: number) => void) | null } = { fn: null };
+
 export const bump = (c: Customer, delta: number): void => {
-  c.happiness = Math.max(0, Math.min(100, c.happiness + delta));
+  const next = Math.max(0, Math.min(100, c.happiness + delta));
+  bumpProbe.fn?.(c, next - c.happiness);
+  c.happiness = next;
 };
 
 // With both serviceId and topic given, no random number is drawn.

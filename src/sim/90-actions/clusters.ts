@@ -175,7 +175,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     // ponytail: no high-availability clusters yet, so HA products can't be placed.
     if (spec.ha) return fail("error.needsHaCluster");
     for (const c of s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)) && supports(x, v.product))) {
-      const node = controlPlaneUp(s, c) ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, size) : null;
+      const node = controlPlaneUp(s, c) ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, size, null, !!deviceId) : null;
       if (node) { w = workload(s, v.id, { ...size, clusterId: c.id, deviceId: node }); az = c.az; break; }
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;

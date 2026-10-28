@@ -28,6 +28,8 @@ export const LAN_GB_PER_HOUR = 450;
 export const WAN_GB_PER_HOUR = 45;
 // Hourly chance per service on an overloaded node to write in, times the share of performance lost.
 export const SLOW_TICKET_CHANCE = 0.1;
+// economy.md, Usage: happiness lost per hour on a slowed node, times the share of performance lost.
+export const SLOW_PENALTY = 0.1;
 
 // One lost disk in an incident report.
 export interface LossItem { workloadId: string; serviceId: string; customerId: string; diskGb: number; backupAt: number | null; restored: boolean }
@@ -153,7 +155,7 @@ function overload(s: GameState) {
         const v = s.services.find((x) => x.id === w.serviceId);
         const cus = v && customerCopy(s, v.customerId);
         if (!v || !cus) continue;
-        bump(cus, -(1 - perf));
+        bump(cus, -SLOW_PENALTY * (1 - perf));
         if (s.tickets.some((t) => t.serviceId === v.id && !isFinal(t)) || !chance(s.rng, SLOW_TICKET_CHANCE * (1 - perf))) continue;
         createTicket(s, cus, "outage", v.id).topic = "slow";
       }

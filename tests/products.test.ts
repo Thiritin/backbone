@@ -7,7 +7,7 @@ import { serviceOnline } from "../src/sim/40-support/status";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { bookable, controlPlaneUp, lostDisk, workloadsOf } from "../src/sim/60-infra/cluster";
 import { nodeUsage } from "../src/sim/60-infra/usage";
-import { howToFactor, licenseCost } from "../src/sim/85-products/products";
+import { howToFactor, licenseCost, SLOW_PENALTY } from "../src/sim/85-products/products";
 import { tick } from "../src/sim/88-tick/tick";
 import { addNode, createCluster, moveControlPlane, provisionService, setBackup, setSoftware } from "../src/sim/90-actions/clusters";
 import { installed } from "./fixtures";
@@ -127,17 +127,21 @@ describe("usage curves and overcommit", () => {
   it("slows a node of game servers on Saturday night and opens slow tickets, but not on a Tuesday", () => {
     const { s, cluster } = setup();
     const gamer = addCustomer(s, "Kai Frag", "gamer");
-    ok(provisionService(s, gamer, "gameServer", { label: "Frag 1", clusterId: cluster }));
-    ok(provisionService(s, gamer, "gameServer", { label: "Frag 2", clusterId: cluster }));
+    ok(provisionService(s, gamer, "gameServer", { label: "Frag 1", clusterId: cluster, deviceId: "dev3" }));
+    ok(provisionService(s, gamer, "gameServer", { label: "Frag 2", clusterId: cluster, deviceId: "dev3" }));
     // Small RAM bookings keep the node within its memory, so only the CPU contends.
     s.workloads = s.workloads.map((w) => (w.vcpu === 2 ? { ...w, ramGb: 1 } : w));
     expect(nodeUsage(s, "dev3", TUE_10).perf).toBe(1);
     const sat = nodeUsage(s, "dev3", SAT_20);
     expect(sat.used.vcpu).toBeGreaterThan(sat.physical.vcpu);
     expect(sat.perf).toBeLessThan(0.6);
-    const happy = s.customers.find((c) => c.id === gamer)!.happiness;
-    run(s, 23);
-    expect(s.customers.find((c) => c.id === gamer)!.happiness).toBeLessThan(happy);
+    const happiness = () => s.customers.find((c) => c.id === gamer)!.happiness;
+    run(s, SAT_20);
+    // An hour on the slowed node costs each customer on the node SLOW_PENALTY × the performance lost, once per workload.
+    const before = happiness();
+    run(s, 1);
+    expect(before - happiness()).toBeCloseTo(2 * SLOW_PENALTY * (1 - nodeUsage(s, "dev3").perf), 6);
+    run(s, 2);
     run(s, 168);
     expect(s.tickets.filter((t) => t.topic === "slow").length).toBeGreaterThan(0);
   });
