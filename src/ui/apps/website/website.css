@@ -1,0 +1,41 @@
+.web { flex: 1; min-width: 0; display: flex; }
+.web-side { width: 250px; }
+.web-line { padding: 4px 8px; }
+.web-line-row { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }
+.web-why { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+.web-browser { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.web-bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--win-bar); border-bottom: 0.5px solid var(--line); color: var(--text-3); }
+.web-bar svg.lucide { width: 15px; height: 15px; flex: none; }
+.web-url { flex: 1; min-width: 0; height: 26px; line-height: 26px; padding: 0 10px; border-radius: 6px; background: var(--field); color: var(--text); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.web-view { flex: 1; overflow: auto; background: #ffffff; }
+
+/* The website is the company's own page and keeps its colours in both themes, like any page in a browser. */
+.site { max-width: 760px; margin: 0 auto; padding: 24px 28px; color: #000000; font: 15px/1.4 "Times New Roman", Times, serif; }
+.site h1 { font-size: 30px; font-weight: 700; }
+.site h2 { font-size: 20px; font-weight: 700; margin: 22px 0 8px; border-bottom: 2px solid #808080; }
+.site h3 { font-size: 17px; font-weight: 700; color: #000080; }
+.site-head { display: flex; align-items: center; gap: 12px; }
+.site-logo { width: 44px; height: 44px; border-radius: 0; }
+.site-pitch { margin-top: 10px; font-style: italic; }
+.site-products { display: grid; gap: 14px; }
+.site-product p { margin-top: 3px; }
+.site-plans { font-size: 13px; color: #404040; }
+.site-link { color: #0000ee; text-decoration: underline; }
+.site-button { display: inline-block; margin-top: 6px; padding: 2px 14px; font: 13px Arial, sans-serif; color: #000000; background: #d4d0c8; border: 2px outset #ffffff; }
+.site-empty { color: #404040; }
+.site-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; padding-top: 8px; border-top: 1px solid #808080; font-size: 13px; }
+
+/* After the web design upgrade. */
+.site.designed { max-width: none; padding: 0 0 24px; font: 14px/1.5 Verdana, Geneva, sans-serif; color: #222222; }
+.site.designed .site-head { padding: 22px 32px; background: var(--brand); color: #ffffff; }
+.site.designed .site-logo { background: #ffffff; color: var(--brand); border-radius: 8px; }
+.site.designed h1 { font-size: 26px; }
+.site.designed .site-pitch { padding: 12px 32px; margin: 0; background: #f2f2f2; font-style: normal; }
+.site.designed h2 { margin: 22px 32px 10px; border: 0; font-size: 18px; }
+.site.designed .site-products { margin: 0 32px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.site.designed .site-product { padding: 14px; border: 1px solid #dddddd; border-radius: 6px; }
+.site.designed h3 { color: var(--brand); font-size: 15px; }
+.site.designed .site-button { padding: 4px 16px; border: 0; border-radius: 4px; background: var(--brand); color: #ffffff; font: 600 13px Verdana, sans-serif; }
+.site.designed .site-empty { margin: 0 32px; }
+.site.designed .site-foot { margin: 28px 32px 0; }

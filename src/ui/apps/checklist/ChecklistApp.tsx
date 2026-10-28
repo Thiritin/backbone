@@ -9,6 +9,7 @@ interface Goal { id: string; title: string; text: string }
 
 const STAGES: { name: string; goals: Goal[] }[] = [
   { name: "Basement", goals: [
+    { id: "website", title: "Put a product on your website", text: "Switch on a product in Website once a control plane that sells it is installed, so customers can request it." },
     { id: "loan", title: "Take a loan from the Bank", text: "A loan pays for hardware before your first customers pay you." },
     { id: "secondServer", title: "Bring a second server online", text: "Buy a server in the Shop, mount it in your rack and cable it to the switch." },
     { id: "firstCustomer", title: "Win your first customer", text: "Customers rent space on your servers and pay you every month." },

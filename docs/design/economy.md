@@ -1168,12 +1168,12 @@ Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and Tr
 | Step | Setup | Upkeep per month | Needs |
 | --- | --- | --- | --- |
 | Email | Free | Free | Always on |
-| Website | €400 | €15 | None |
-| Order form | €900 | €10 | Website |
-| Goggle Ads | €50 | None | Website |
-| AI ads | €1,500 | None | Website, from 2023 |
+| Web design | €400 | €15 | None |
+| Order form | €900 | €10 | Web design |
+| Goggle Ads | €50 | None | Web design |
+| AI ads | €1,500 | None | Web design, from 2023 |
 
-A website brings 4 leads a month per location city, split by the profile mix.
+The basic website every company starts with is free and brings no leads of its own. The web design brings 4 leads a month per location city, split by the profile mix. Every lead only writes when its product is listed on the website.
 
 **Trade fairs.** Costs are 2026 euros, scaled back with m = 0.6 like campaigns. Each fair needs one attendee of any role, who is away for the fair's days.
 

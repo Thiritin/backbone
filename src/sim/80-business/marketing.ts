@@ -2,7 +2,7 @@
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { isMonthStart, yearOf } from "../00-core/time";
 import { priceAt, SEARCH_AD_COST } from "../10-catalog/economy";
-import type { Profile } from "../30-customers/customers";
+import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -60,6 +60,8 @@ export interface Marketing {
   platform: PlatformId | null;
   // Profiles revealed by a market study.
   studies: Profile[];
+  // Product lines listed on the company website.
+  lines: Product[];
 }
 
 const AWARENESS_FLOOR = 0.02;
@@ -67,7 +69,7 @@ const AWARENESS_DECAY = 0.02;
 const REVIEW_HOURS = 2 * 8760;
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [],
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [],
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 
