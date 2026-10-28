@@ -134,7 +134,7 @@ describe("lost sales", () => {
     const r = webRequest(s, { city: "London" });
     expect(missingFor(s, r)).toEqual([{ key: "sales.need.location", params: { city: "London" }, ok: false }]);
     expect(quote(s, r.id, 3)).toEqual({ ok: false, error: "error.requestMissing" });
-    expect(missingFor(s, webRequest(s, { sla: "business" }))[0].key).toBe("sales.need.datacenter");
+    expect(missingFor(s, webRequest(s, { sla: "business" }))).toEqual([]);
     run(s, 73);
     expect(s.sales.lost.find((l) => l.name === "Albers Florist")).toMatchObject({ reason: "sales.need.location", params: { city: "London" } });
   });

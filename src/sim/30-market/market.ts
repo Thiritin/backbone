@@ -184,12 +184,8 @@ export interface Requirement { key: string; params: Record<string, string | numb
 
 // Every requirement of a request with whether you meet it; the keys read as "Needs a location in London".
 export function requirementsFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "sla" | "profile" | "kind">): Requirement[] {
-  const locs = s.locations.filter((l) => l.city === r.city), city = { city: r.city };
-  const out: Requirement[] = [{ key: "sales.need.location", params: city, ok: locs.length > 0 }];
-  if (!locs.length) return out;
-  out.push({ key: PRODUCTS[r.product].runsOn === "server" ? "sales.need.server" : "sales.need.cluster", params: city, ok: offers(s, r.product, r.city) });
-  if (r.kind === "expansion") return out;
-  if (r.sla !== "basic") out.push({ key: "sales.need.datacenter", params: city, ok: locs.some((l) => l.dc) });
+  const out: Requirement[] = [{ key: "sales.need.location", params: { city: r.city }, ok: s.locations.some((l) => l.city === r.city) }];
+  if (!out[0].ok || r.kind === "expansion") return out;
   if (r.sla === "premium") out.push({ key: "sales.need.age", params: { months: 12 }, ok: s.hour >= 8760 });
   if (profileStats(r.profile).budget === "high") out.push({ key: "sales.need.reviews", params: { stars: 3 }, ok: reviewScore(s) >= 3 });
   return out;
