@@ -304,7 +304,9 @@ Hours a service is down are left off its invoice line. When the hours up fall be
 
 ## Sales and quotes
 
-How the market above turns into requests in the Sales app. Code: `src/sim/30-market`.
+How the market above turns into order emails and sales requests in the Support app. Code: `src/sim/30-market`.
+
+**Orders by email.** A lead asking for a basic SLA from a profile with a low or medium budget is a standard order (`orders.ts`). Its price is the request's market reference less any campaign discount, and it has the same 72 hours as a sales request. Accepting it or declining it takes 10 minutes of player or support time. Without the order form it arrives as an order ticket; with the order form it is placed directly when the city has the product and room. A new game always gets its first order email within 14 days: each morning before then without an order, a friend's recommendation brings one from a private individual with chance 1 / (14 − day). Seeds 1 to 8 already brought one between day 1 and day 22 from organic leads alone, so the recommendation only fills the gap.
 
 **Organic leads in the game.** Organic leads scale with the market and with awareness instead of a flat 20: 0.4 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × the review multiplier. With the starting awareness (5% for private individuals and gamers, 2% for the rest) Frankfurt gives about 20 leads a month in 2005, and every point of awareness a campaign buys raises organic leads too. Referrals (0.005 a month per customer with happiness 70 or more) and forum posts (2 × (0.5 + s/100) a month per employee, split over hobby developers, gamers and small businesses) come from the home city. Each forum lead also adds 0.5% of the gap to the awareness of those three profiles every month.
 

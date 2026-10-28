@@ -19,7 +19,7 @@ export interface SalesMessage { hour: number; from: "customer" | "you"; key: str
 // One sales request. profile, budget and shady stay hidden from the player. reference is the monthly market price;
 // budget is the price ratio to it at which the customer accepts half the time. serviceId is the service an expansion replaces.
 export interface SalesRequest {
-  id: string; kind: "new" | "expansion"; customerId: string | null; contact: string; company: string | null; profile: Profile;
+  id: string; kind: "new" | "expansion" | "order"; customerId: string | null; contact: string; company: string | null; profile: Profile;
   city: string; product: Product; plan: string; sla: Sla; reference: number; discount: number; budget: number; shady: boolean;
   serviceId: string | null; ticketId: string | null; createdAt: number; deadline: number; status: RequestStatus;
   quote: number | null; counter: number | null; replyAt: number | null; attempts: number; thread: SalesMessage[];

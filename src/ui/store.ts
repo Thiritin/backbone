@@ -20,7 +20,7 @@ export interface NotifyPref { allow: boolean; sound: boolean }
 const WIDE = { w: 1240, h: 680 };
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
   Locations: { w: 1120, h: 700 }, Shop: { w: 1180, h: 700 }, Billing: WIDE, Bank: WIDE, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
-  Support: { w: 1160, h: 680 }, Research: { w: 1140, h: 600 }, Sales: { w: 1180, h: 700 }, Products: { w: 1120, h: 720 }, "Virtual machines": { w: 1180, h: 680 }, Staff: { w: 1120, h: 640 },
+  Support: { w: 1240, h: 720 }, Research: { w: 1140, h: 600 }, Products: { w: 1120, h: 720 }, "Virtual machines": { w: 1180, h: 680 }, Staff: { w: 1120, h: 640 },
 };
 
 export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: app === "Support", ...prefs[app] });

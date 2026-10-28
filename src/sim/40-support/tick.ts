@@ -6,6 +6,7 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { takenDown } from "../60-infra/ops";
 import { applyNoticeWork } from "./notices";
+import { applyOrderWork } from "../30-market/orders";
 import { howToFactor } from "../85-products/products";
 import { phpAbuse } from "../60-infra/php";
 import { serviceOnline } from "./status";
@@ -24,13 +25,18 @@ function resolve(s: GameState, t: Ticket, c: Customer, outcome: Ticket["outcome"
 }
 
 // Player work queued by the support actions takes effect once its time has passed.
-function finishWork(s: GameState, customer: (id: string) => Customer): void {
+function finishWork(s: GameState, customer: (id: string) => Customer, events: SimEvent[]): void {
   const due = s.tickets.filter((t) => t.work && t.work.doneAt <= s.hour * 60).sort((a, b) => a.work!.doneAt - b.work!.doneAt);
   for (const t of due) {
     // An earlier retention loss in this batch may have closed the customer's other tickets.
     if (!t.work) continue;
     const work = t.work, c = customer(t.customerId);
     t.work = null;
+    if (t.kind === "order") {
+      const e = applyOrderWork(s, t, work.arg);
+      if (e) events.push(e);
+      continue;
+    }
     if (t.kind === "notice" || t.kind === "legal" || t.kind === "refund") applyNoticeWork(s, t, c, work.arg);
     else if (work.op === "escalate") Object.assign(t, { status: "escalated", updatedAt: s.hour });
     else if (work.op === "reply") {
@@ -113,11 +119,12 @@ export function supportTick(s: GameState): SimEvent[] {
   const customer = (id: string) => byId.get(id)!;
   const before = new Set(s.tickets.map((t) => t.id));
 
-  finishWork(s, customer);
+  const events: SimEvent[] = [];
+  finishWork(s, customer, events);
   for (const t of s.tickets) {
     const c = customer(t.customerId);
-    // The customer does not wait on a notice or legal request about them.
-    if (t.notice) continue;
+    // The customer does not wait on a notice or legal request about them, and an order has no customer yet.
+    if (t.notice || t.kind === "order") continue;
     if (t.status === "waiting" && s.hour - t.updatedAt >= WAITING_CLOSE_HOURS) resolve(s, t, c);
     else if (t.status === "escalated" && (!t.serviceId || serviceOnline(s, t.serviceId))) resolve(s, t, c);
     else if (t.status === "open" && c.churnedAt === null && s.hour > t.dueAt) bump(c, -profileStats(c.profile).waitPenalty);
@@ -127,8 +134,8 @@ export function supportTick(s: GameState): SimEvent[] {
   if (isMonthStart(s.hour)) monthly(s);
 
   const fresh = s.tickets.filter((t) => !before.has(t.id));
-  if (fresh.length > 1) return [{ app: "Support", key: "event.tickets", params: { count: fresh.length } }];
-  if (!fresh.length) return [];
+  if (fresh.length > 1) return [...events, { app: "Support", key: "event.tickets", params: { count: fresh.length } }];
+  if (!fresh.length) return events;
   const t = fresh[0], service = s.services.find((v) => v.id === t.serviceId);
-  return [{ app: "Support", key: "event.ticket", params: { name: customer(t.customerId).name, subject: `ticket.${t.kind}.${t.topic}.subject`, service: service?.label ?? "" } }];
+  return [...events, { app: "Support", key: "event.ticket", params: { name: customer(t.customerId).name, subject: `ticket.${t.kind}.${t.topic}.subject`, service: service?.label ?? "" } }];
 }

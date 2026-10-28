@@ -1,4 +1,4 @@
-import { CircleHelp, Copyright, DoorOpen, Landmark, LockKeyholeOpen, Receipt, ShieldAlert, TrendingUp, Undo2, ZapOff, type LucideIcon } from "lucide-react";
+import { CircleHelp, Copyright, DoorOpen, Landmark, LockKeyholeOpen, Receipt, ShieldAlert, ShoppingCart, TrendingUp, Undo2, ZapOff, type LucideIcon } from "lucide-react";
 import { dateOf } from "../../../sim/00-core/time";
 import type { Product } from "../../../sim/30-customers/customers";
 import type { TicketKind, TicketStatus } from "../../../sim/40-support/tickets";
@@ -14,6 +14,7 @@ export const KINDS: { id: TicketKind; label: string; icon: LucideIcon }[] = [
   { id: "notice", label: "Notice", icon: Copyright },
   { id: "legal", label: "Legal request", icon: Landmark },
   { id: "refund", label: "Refund", icon: Undo2 },
+  { id: "order", label: "Order", icon: ShoppingCart },
 ];
 export const kindOf = (id: TicketKind) => KINDS.find((k) => k.id === id)!;
 

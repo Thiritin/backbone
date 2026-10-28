@@ -1,4 +1,4 @@
-import { Ban, Check, CircleCheck, CircleX, Hourglass, Inbox, Send, TrendingDown, X } from "lucide-react";
+import { Ban, Check, CircleCheck, CircleX, Hourglass, Inbox, Send, X } from "lucide-react";
 import { useState } from "react";
 import { yearOf } from "../../../sim/00-core/time";
 import { euroCents } from "../../../sim/00-core/money";
@@ -8,89 +8,36 @@ import { nodeCapacity, nodeUsed } from "../../../sim/60-infra/cluster";
 import type { GameState } from "../../../sim/50-state";
 import { decline, quote } from "../../../sim/90-actions/sales";
 import { t } from "../../../i18n/en";
-import { useFocus, useStore } from "../../store";
+import { useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
 import { initials, PRODUCT, stamp } from "../support/labels";
 import { PriceField } from "./PriceField";
 import "../support/support.css";
 import "./sales.css";
 
-type Box = "open" | "waiting" | "unserved" | "won" | "lost";
-const OPEN = ["open", "countered", "refused"];
-const BOXES: { id: Box; label: string; icon: typeof Inbox; match: (s: GameState, r: SalesRequest) => boolean }[] = [
+export type SalesBox = "open" | "waiting" | "unserved" | "won";
+export const OPEN = ["open", "countered", "refused"];
+export const SALES_BOXES: { id: SalesBox; label: string; icon: typeof Inbox; match: (s: GameState, r: SalesRequest) => boolean }[] = [
   { id: "open", label: "Requests", icon: Inbox, match: (s, r) => OPEN.includes(r.status) && !missingFor(s, r).length },
   { id: "waiting", label: "Awaiting reply", icon: Hourglass, match: (_, r) => r.status === "quoted" },
   { id: "unserved", label: "Cannot serve", icon: Ban, match: (s, r) => r.status === "open" && missingFor(s, r).length > 0 },
   { id: "won", label: "Won", icon: CircleCheck, match: (_, r) => r.status === "won" },
 ];
-const STATUS: Record<SalesRequest["status"], string> = {
+export const STATUS: Record<SalesRequest["status"], string> = {
   open: "New", quoted: "Quoted", countered: "Counter-offer", refused: "Refused", won: "Won", lost: "Lost", declined: "Declined",
 };
-const SLA_LABEL = { basic: "Basic", business: "Business", premium: "Premium" } as const;
+export const SLA_LABEL = { basic: "Basic", business: "Business", premium: "Premium" } as const;
 
-const need = (r: SalesRequest) => `${planName(r)} · ${r.city}${r.sla === "basic" ? "" : ` · ${SLA_LABEL[r.sla]} SLA`}`;
+export const need = (r: SalesRequest) => `${planName(r)} · ${r.city}${r.sla === "basic" ? "" : ` · ${SLA_LABEL[r.sla]} SLA`}`;
 
-export function SalesApp() {
-  const game = useStore((s) => s.game);
-  const [box, setBox] = useState<Box>("open");
-  const [sel, setSel] = useState<string | null>(null);
-  const requests = game.sales.requests;
-  useFocus("Sales", (f) => {
-    const r = requests.find((x) => x.id === f.id);
-    if (f.kind !== "request" || !r) return;
-    setBox(BOXES.find((b) => b.match(game, r))?.id ?? "open");
-    setSel(r.id);
-  });
-  const list = box === "lost" ? [] : requests.filter((r) => BOXES.find((b) => b.id === box)!.match(game, r))
-    .sort((a, b) => (box === "won" ? b.createdAt - a.createdAt : a.deadline - b.deadline));
-  const current = requests.find((r) => r.id === sel) ?? null;
-
-  return (
-    <div className={`sup sales${box === "lost" ? " sales-wide" : ""}`}>
-      <aside className="sidebar sup-side">
-        <div className="side-h">Sales</div>
-        {BOXES.map((b) => (
-          <button key={b.id} className={`side-item${box === b.id ? " active" : ""}`} onClick={() => setBox(b.id)}>
-            <b.icon />{b.label}<span className="side-count">{requests.filter((r) => b.match(game, r)).length}</span>
-          </button>
-        ))}
-        <button className={`side-item${box === "lost" ? " active" : ""}`} onClick={() => setBox("lost")}>
-          <TrendingDown />Lost sales<span className="side-count">{game.sales.lost.length}</span>
-        </button>
-      </aside>
-
-      {box === "lost" ? <LostSales /> : (
-        <>
-          <div className="sup-list" role="list">
-            <div className="sup-list-h"><h2>{BOXES.find((b) => b.id === box)!.label}</h2></div>
-            {list.map((r) => (
-              <button key={r.id} role="listitem" className={`tk${r.id === sel ? " active" : ""}${box === "unserved" ? " greyed" : ""}`} onClick={() => setSel(r.id)}>
-                <span className="who"><span>{requestName(r)}</span></span>
-                <Deadline r={r} hour={game.hour} />
-                <span className="subj">{need(r)}</span>
-                <span className="meta">
-                  <span className="type">{PRODUCT[r.product]}{r.kind === "expansion" && " · Expansion"}</span>
-                  {r.status !== "open" && <span className={`pill ${r.status === "countered" ? "accent" : r.status === "won" ? "ok" : ""}`}>{STATUS[r.status]}</span>}
-                </span>
-              </button>
-            ))}
-            {!list.length && <div className="sup-none">No requests</div>}
-          </div>
-          {current ? <Card key={current.id} r={current} /> : <div className="sup-detail sup-none">No request selected</div>}
-        </>
-      )}
-    </div>
-  );
-}
-
-function Deadline({ r, hour }: { r: SalesRequest; hour: number }) {
+export function Deadline({ r, hour }: { r: SalesRequest; hour: number }) {
   if (!OPEN.includes(r.status)) return <span className="sla num">{stamp(r.createdAt)}</span>;
   const left = r.deadline - hour;
   return <span className={`sla ${left <= 12 ? "warn" : ""}`}><span className="num">{Math.max(0, left)}</span> h left</span>;
 }
 
 // The target cluster's booked share before and after this request, per resource.
-function Bars({ r }: { r: SalesRequest }) {
+export function Bars({ r }: { r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const zones = game.locations.filter((l) => l.city === r.city).map((l) => l.az);
   const cluster = game.clusters.find((c) => zones.includes(c.az) && c.nodes.length);
@@ -128,7 +75,7 @@ function Bars({ r }: { r: SalesRequest }) {
   );
 }
 
-function Card({ r }: { r: SalesRequest }) {
+export function Card({ r }: { r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const [price, setPrice] = useState(r.counter ?? r.quote ?? r.reference);
@@ -190,7 +137,7 @@ function Card({ r }: { r: SalesRequest }) {
   );
 }
 
-function LostSales() {
+export function LostSales() {
   const game = useStore((s) => s.game);
   const lost = [...game.sales.lost].reverse();
   return (

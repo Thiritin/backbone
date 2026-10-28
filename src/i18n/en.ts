@@ -1,6 +1,7 @@
 import { euro, euroCents } from "../sim/00-core/money";
 import { OPS } from "./en-ops";
 import { SALES_EN } from "./sales";
+import { ORDERS_EN } from "./orders";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -443,6 +444,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownZoneLink": () => "This link no longer exists.",
   "error.unknownAttack": () => "This attack is over.",
   ...OPS,
+  ...ORDERS_EN,
   // Platforms, virtual machines and backups.
   "ticket.outage.slow.subject": (p) => `${p.service || "My service"} is really slow`,
   "ticket.outage.slow.text": (p) => `${p.service || "My service"} takes ages to answer tonight. Is something wrong on your side?`,
