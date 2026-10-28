@@ -3,6 +3,7 @@ import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
 import { modelById } from "../10-catalog/hardware";
 import type { GameState, LedgerEntry } from "../50-state";
+import { supportTick } from "../40-support/tick";
 
 export interface SimEvent {
   app: string;
@@ -41,5 +42,6 @@ export function tick(state: GameState): SimEvent[] {
     if (bills.length) events.push({ app: "Finance", key: "event.bills", params: { power, rent, total: cents(power + rent) } });
   }
   events.push(...billingTick(state));
+  events.push(...supportTick(state));
   return events;
 }

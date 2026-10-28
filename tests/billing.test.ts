@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createRng } from "../src/sim/00-core/rng";
 import { hourOf } from "../src/sim/00-core/time";
-import { annuity, baseRate, invoiceTotal, isSuspended, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
+import { annuity, baseRate, billingTick, invoiceTotal, isSuspended, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { metrics } from "../src/sim/metrics";
 import { tick } from "../src/sim/88-tick/tick";
@@ -49,13 +49,15 @@ describe("invoices", () => {
     const s = newGame(2);
     runTo(s, 100);
     addService(s, addCustomer(s, "Dee", "soleProp"), "ssl", "dee.example SSL", 30, "year");
-    tick(s);
+    // Billing only, so support churn can't end the service during the year.
+    const step = () => { s.hour++; billingTick(s); };
+    step();
     expect(s.invoices).toHaveLength(1);
     expect(s.invoices[0].issuedAt).toBe(101);
     expect(invoiceTotal(s.invoices[0])).toBe(30);
-    runTo(s, 100 + YEAR_HOURS - 1);
+    while (s.hour < 100 + YEAR_HOURS - 1) step();
     expect(s.invoices).toHaveLength(1);
-    tick(s);
+    step();
     expect(s.invoices).toHaveLength(2);
   });
 });
