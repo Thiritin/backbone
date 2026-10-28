@@ -4,6 +4,7 @@ import { rand, type Rng } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
 import { CHOICE_TAU, NEVER_PAYS, ON_TIME } from "../10-catalog/economy";
 import { PRODUCTS } from "../10-catalog/products";
+import { inUs } from "../20-world/datacenters";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
 import { isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
@@ -73,7 +74,7 @@ export const BUDGET_RANGE: [number, number] = [1.08 * 0.9, 1.08 * 1.15];
 const budgetOf = (r: Rng): number => BUDGET_RANGE[0] + (BUDGET_RANGE[1] - BUDGET_RANGE[0]) * rand(r);
 
 export function newLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile)): SalesRequest {
-  const who = senderFor(s.rng, profile);
+  const who = senderFor(s.rng, profile, false, inUs(city));
   const variant = Math.floor(rand(s.rng) * 2);
   const req = addRequest(s, {
     kind: "new", customerId: null, ...who, profile, city, ...need, reference: referenceFor(s, profile, need.product, need.plan, need.sla),

@@ -24,7 +24,7 @@ const run = (s: GameState, hours: number) => {
 
 describe("availability zones", () => {
   it("names each location after its region and the next number there", () => {
-    expect(REGIONS.map((r) => r.id)).toEqual(["fra", "ams", "lon", "par", "ber", "mil", "vie", "zrh"]);
+    expect(REGIONS.map((r) => r.id)).toEqual(["fra", "ams", "lon", "par", "ber", "mil", "vie", "zrh", "dus", "ker", "nue", "fsn", "muc", "ash", "nyc", "chi", "dfw", "lax"]);
     const s = rich();
     expect(az(s, "loc1")).toBe("fra1");
     const fr5 = ok(addLocation(s, "equinox-fr5", "share", 8));

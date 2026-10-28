@@ -7,6 +7,10 @@ type Lang = "de" | "en" | "fr" | "nl" | "it";
 export const CITY_TLD: Record<string, { tld: string; lang: Lang }> = {
   Frankfurt: { tld: "de", lang: "de" }, Berlin: { tld: "de", lang: "de" }, Vienna: { tld: "at", lang: "de" }, Zurich: { tld: "ch", lang: "de" },
   London: { tld: "co.uk", lang: "en" }, Paris: { tld: "fr", lang: "fr" }, Amsterdam: { tld: "nl", lang: "nl" }, Milan: { tld: "it", lang: "it" },
+  Düsseldorf: { tld: "de", lang: "de" }, Nuremberg: { tld: "de", lang: "de" }, Falkenstein: { tld: "de", lang: "de" }, Munich: { tld: "de", lang: "de" },
+  Kerkrade: { tld: "nl", lang: "nl" },
+  Ashburn: { tld: "com", lang: "en" }, "New York": { tld: "com", lang: "en" }, Chicago: { tld: "com", lang: "en" }, Dallas: { tld: "com", lang: "en" },
+  "Los Angeles": { tld: "com", lang: "en" },
 };
 const countryOf = (city: string) => CITY_TLD[city] ?? CITY_TLD.Frankfurt;
 
@@ -32,6 +36,8 @@ const TRADE: Record<string, Record<Lang, string[]>> = {
   "Notary": { de: ["notar", "notariat"], en: ["notary", "notaries"], fr: ["notaire"], nl: ["notaris"], it: ["notaio"] },
   "Veterinary Clinic": { de: ["tierarzt", "tierklinik"], en: ["vets", "vet"], fr: ["vétérinaire", "clinique-véto"], nl: ["dierenarts", "dierenkliniek"], it: ["veterinario", "clinica-veterinaria"] },
 };
+// American trade words where they differ from British ones.
+const US_TRADE: Record<string, string[]> = { "Law Office": ["law", "attorneys", "legal"], "Physiotherapy": ["physicaltherapy", "pt"], "Tailoring": ["tailor", "alterations"] };
 const AGENCY: Record<Lang, string> = { de: "agentur", en: "agency", fr: "agence", nl: "bureau", it: "agenzia" };
 const CORP: Record<Lang, string[]> = { de: ["industries", "ag", "gruppe"], en: ["industries", "group"], fr: ["industries", "groupe"], nl: ["industries", "groep"], it: ["industries", "gruppo"] };
 const HANDLE_PRE = ["dark", "frost", "pixel", "shadow", "turbo", "neon", "captain", "xx", "lord", "sir"];
@@ -46,12 +52,12 @@ const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.leng
 const shuffle = <T>(r: Rng, xs: T[]): T[] => xs.map((x) => [rand(r), x] as const).sort((a, b) => a[0] - b[0]).map(([, x]) => x);
 
 // Candidate names without the TLD, best first.
-function candidates(name: string, profile: Profile, lang: Lang, r: Rng): string[] {
+function candidates(name: string, profile: Profile, lang: Lang, r: Rng, us = false): string[] {
   const trade = Object.keys(TRADE).find((k) => name.includes(k));
-  const words = name.replace(trade ?? "", " ").replace(/\b(Industries AG)\b/, " ").trim().split(/\s+/).map(ascii).filter(Boolean);
+  const words = name.replace(trade ?? "", " ").replace(/\bIndustries (AG|Inc)\b/, " ").trim().split(/\s+/).map(ascii).filter(Boolean);
   const first = words[0] ?? "web", last = words.at(-1) ?? first;
   if (trade) {
-    const local = shuffle(r, TRADE[trade][lang].map(ascii));
+    const local = shuffle(r, ((us && US_TRADE[trade]) || TRADE[trade][lang]).map(ascii));
     // A small business puts the family name first: weber-logistik, not logistik-weber.
     return profile === "smallBiz" ? local.flatMap((w) => [`${last}-${w}`, `${last}${w}`]) : local.flatMap((w) => [`${w}-${last}`, `${w}${last}`]);
   }
@@ -72,7 +78,7 @@ const taken = (s: GameState): Set<string> =>
 // A free domain for a customer; key makes it stable for a seed. The first free candidate wins, then numbered ones.
 export function domainFor(s: GameState, name: string, profile: Profile, city: string, key: number): string {
   const { tld, lang } = countryOf(city), used = taken(s);
-  const names = candidates(name, profile, lang, hashRng(s.seed, key, 73)).filter(Boolean);
+  const names = candidates(name, profile, lang, hashRng(s.seed, key, 73), tld === "com").filter(Boolean);
   const free = names.find((n) => !used.has(`${n}.${tld}`));
   if (free) return `${free}.${tld}`;
   for (let i = 2; ; i++) if (!used.has(`${names[0]}-${i}.${tld}`)) return `${names[0]}-${i}.${tld}`;

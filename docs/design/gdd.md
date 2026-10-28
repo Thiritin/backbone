@@ -17,7 +17,7 @@ The game is about running a whole hosting company, not just its hardware: infras
 
 - Free, open-source (MIT) browser game, made for fun. It's hosted as a static website: no server, no accounts, no multiplayer, no Steam.
 - Saves stay in the player's browser.
-- Set in Europe. The map opens on Western Europe's big cities, and other regions only appear as distant transit destinations. The game starts around 2005, and technology advances over the years.
+- Set in Europe and North America. The map opens on Western Europe's big cities; the American hubs are a later expansion across the Atlantic, and the rest of the world only appears as distant transit destinations. The game starts around 2005, and technology advances over the years.
 - Prices are in euros and roughly match the real European market.
 - Time controls: pause, 1×, 2×, 4×, 8×. Nothing pauses automatically. A player can run the whole company alone if they want; hiring is how you scale, not a requirement.
 
@@ -499,7 +499,7 @@ Low-budget customers offer the least and ask for the lowest SLA.
 
 **Domains.** Every web hosting customer comes with a domain, made once when the order or request arrives and kept on the service for good. The service is listed under that domain everywhere: order emails and requests, ticket subjects and texts, notices, the customer page (whose contact address uses it) and the product and machine lists. The rules:
 
-- The country of the customer's city sets the top-level domain: Frankfurt and Berlin .de, Vienna .at, Zurich .ch, London .co.uk, Paris .fr, Amsterdam .nl, Milan .it. Its language sets the words.
+- The country of the customer's city sets the top-level domain: Frankfurt, Berlin, Düsseldorf, Munich, Nuremberg and Falkenstein .de, Vienna .at, Zurich .ch, London .co.uk, Paris .fr, Amsterdam and Kerkrade .nl, Milan .it, and the American cities .com. Its language sets the words. Customers in American cities also have American names and companies (Inc instead of AG).
 - A private customer uses their name (katrin-maurer.de, motto.fr), a hobby developer their name with a developer touch (frankcodes.fr, haas-dev.it), and a gamer a handle (frostottoplays.co.uk).
 - A sole proprietor or office puts the trade before the surname (baeckerei-weber.de, zahnarzt-lorenz.ch, solicitors-pohl.co.uk); a small business puts the surname first (roth-logistica.it). An agency uses its brand (pixelwerk.fr), a shop its shop name, an enterprise its name with a group word (kaiser-group.co.uk).
 - Names are lowercase ASCII, umlauts written out (ä is ae, ß is ss) and accents dropped. A domain is unique in the game: the next wording is tried, then a number is appended.
@@ -727,7 +727,7 @@ The review score feeds into your reputation and into the host requirements custo
 
 Each location connects to the internet through what its city offers: transit carriers, internet exchanges and, later, private peering. Bandwidth costs money, and your customers' traffic has to fit through your links.
 
-**The map.** The Network app opens on Western Europe's big cities, such as Frankfurt, Amsterdam, London, Paris, Berlin, Vienna, Zurich and Milan. The rest of the world stays zoomed out and only matters as distant transit destinations. The map itself covers the whole world, with coastlines, cities and the submarine cables from Series of Tubes (MIT). Only the European cities hold datacenters for now, and the cables are drawn without gameplay, so both can grow later. The Locations overview and the Add location dialog use the same map. Each city has its own carriers and prices, internet exchanges, datacenter operators, power price and demand.
+**The map.** The Network app opens on Western Europe's big cities, such as Frankfurt, Amsterdam, London, Paris, Berlin, Vienna, Zurich and Milan. The rest of the world stays zoomed out and only matters as distant transit destinations. The map itself covers the whole world, with coastlines, cities and the submarine cables from Series of Tubes (MIT). Datacenters stand in Europe (the big cities plus Düsseldorf, Munich, the budget hoster parks in Nuremberg and Falkenstein, and SkyBlink in Kerkrade on the Dutch-German border) and in North America (Ashburn, New York, Chicago, Dallas and Los Angeles). The cables are drawn without gameplay. The Add location dialog switches between Europe and North America; a wave or a rack move across the Atlantic costs much more than one within a continent. The Locations overview and the Add location dialog use the same map. Each city has its own carriers and prices, internet exchanges, datacenter operators, power price and demand.
 
 **Ways to connect**
 

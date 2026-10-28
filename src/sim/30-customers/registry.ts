@@ -18,6 +18,7 @@ export const REGISTRIES: Record<string, { name: string; cost: [number, number] }
   fr: { name: "AFNIQUE", cost: [20, 9] },
   nl: { name: "SIDNey", cost: [10, 6] },
   it: { name: "Registrato.it", cost: [15, 8] },
+  com: { name: "VeriSigh", cost: [6, 9] },
 };
 // What the customer pays: a yearly fee for a new or renewed domain, a one-off fee for a transfer (its first year included).
 export const DOMAIN_FEE = 15;

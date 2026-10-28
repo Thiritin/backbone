@@ -219,14 +219,25 @@ const AGENCY = ["Pixelwerk", "Bytegarten", "Klickfabrik", "Studio Kobalt", "Nord
 const SHOPS = ["socken", "kaffeebohne", "brettspiel", "hundekeks", "gartenzwerg", "retrokonsole"];
 const OFFICES = ["Dental Practice", "Law Office", "Physiotherapy", "Notary", "Veterinary Clinic"];
 const SHADY = ["Bulletproof Solutions Ltd", "Totally Legit Media", "Offshore Synergies", "Anonymous Traffic GmbH"];
+const HOME = { FIRST, LAST, FIRMS, AGENCY, SHOPS, shop: "de", corp: "AG" };
+// Senders in American cities; same list lengths, so a seed draws the same sequence.
+const US = {
+  FIRST: ["Amy", "Brian", "Carly", "Dwayne", "Emily", "Frank", "Grace", "Hank", "Isabel", "Jake", "Kayla", "Logan", "Madison", "Nate", "Olivia", "Parker", "Riley", "Scott", "Tyler", "Wyatt"],
+  LAST: ["Anderson", "Baker", "Carter", "Davis", "Evans", "Foster", "Garcia", "Harris", "Johnson", "Kelly", "Lopez", "Miller", "Nelson", "Owens", "Parker", "Reed", "Smith", "Taylor", "Walker", "Young"],
+  FIRMS: ["Logistics", "Consulting", "Print & Copy", "Tax Services", "Electric", "Realty"],
+  AGENCY: ["Pixel Barn", "Byte Garden", "Click Factory", "Studio Cobalt", "Northern Light Digital", "Web Forge"],
+  SHOPS: ["socks", "coffeebean", "boardgame", "dogtreats", "gardengnome", "retroconsole"],
+  shop: "com", corp: "Inc",
+};
 
-export function senderFor(r: Rng, profile: Profile, shady = false): { contact: string; company: string | null } {
+export function senderFor(r: Rng, profile: Profile, shady = false, us = false): { contact: string; company: string | null } {
+  const { FIRST, LAST, FIRMS, AGENCY, SHOPS, shop, corp } = us ? US : HOME;
   const last = pick(r, LAST), contact = `${pick(r, FIRST)} ${last}`;
   if (shady) return { contact: `Mr. ${pick(r, ["Smith", "Jones", "Brown"])}`, company: pick(r, SHADY) };
   const company: Record<Profile, string | null> = {
     private: null, gamer: null, hobbyDev: null,
     soleProp: `${last} ${pick(r, TRADES)}`, smallBiz: `${last} ${pick(r, FIRMS)}`, agency: pick(r, AGENCY),
-    office: `${pick(r, OFFICES)} ${last}`, onlineShop: `${pick(r, SHOPS)}-shop.de`, enterprise: `${last} Industries AG`,
+    office: `${pick(r, OFFICES)} ${last}`, onlineShop: `${pick(r, SHOPS)}-shop.${shop}`, enterprise: `${last} Industries ${corp}`,
   };
   return { contact, company: company[profile] };
 }

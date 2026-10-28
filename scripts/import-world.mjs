@@ -25,7 +25,7 @@ const coords = json(literal(src("40-city-coords.js"), "CITY_LL"));
 const names = {};
 for (const m of src("50-cities.js").matchAll(/\{id:'(\w+)',name:'([^']+)'.*?P:(\d+)/g)) names[m[1]] = { name: m[2].replace(/\\'/g, "'"), p: +m[3] };
 // Cities the game needs that Series of Tubes does not list: name -> [lon, lat].
-const EXTRA = {};
+const EXTRA = { Kerkrade: [6.07, 50.87], Nuremberg: [11.08, 49.45], Falkenstein: [12.37, 50.48] };
 const tier = (p) => (p >= 900 ? 1 : p >= 200 ? 2 : 3);
 const cities = Object.entries(coords).filter(([code]) => names[code]).map(([code, [lon, lat]]) => ({ code, name: names[code].name, lon: r2(lon), lat: r2(lat), tier: tier(names[code].p) }));
 for (const [name, [lon, lat]] of Object.entries(EXTRA)) cities.push({ code: name.toLowerCase().slice(0, 3), name, lon, lat, tier: 2 });

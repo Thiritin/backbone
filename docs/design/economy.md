@@ -177,8 +177,12 @@ Each city produces a stream of new customers looking for a host. Only a small sh
 | City size | Cities | New customers per month (2005) |
 | --- | --- | --- |
 | Large | Frankfurt, London, Paris | 1,500 |
-| Medium | Amsterdam, Berlin, Milan | 1,000 |
+| Medium | Amsterdam, Berlin, Milan, Munich | 1,000 |
 | Small | Vienna, Zurich | 600 |
+| Regional | Düsseldorf 800, Nuremberg 400, Kerkrade 150, Falkenstein 100 | as listed |
+| North America | New York 2,000, Los Angeles 1,500, Chicago 1,200, Dallas 1,000, Ashburn 600 | as listed |
+
+Düsseldorf stands for the Rhine-Ruhr area and Kerkrade for the Dutch-German border region around Aachen; Falkenstein and Ashburn are datacenter towns with few local customers.
 
 Customers belong to their city's country and prefer datacenters there (see the location score under [Customer choice](#customer-choice)).
 
@@ -310,7 +314,7 @@ How the market above turns into order emails and sales requests in the Support a
 
 **Custom orders.** Before the order form (and for a quarter of email orders after it) an order names its own resources (`custom.ts`, `manual.ts`). The plan its profile would pick is scaled by one of 0.5, 0.75, 1, 1.25, 1.5 or 2: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. The monthly market price of a spec: web space along Web S, M and L by disk in that year's GB (€1.50 at none, €3 at 1, €6 at 2, €12 at 5, extended beyond) plus €0.30 per mailbox past two; a VPS the year's rate per GB of RAM (1.6 × for game servers), plus half a GB's rate per vCPU past one per 2 GB and 1/40 of it per GB of disk past 20 per GB of RAM. The SLA factor and the profile's offer factor apply as for plans. Step times: account 5, confirmation and invoice 10, domain 5, setup 15 minutes. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
 
-**Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8. The customer pays €15 a year for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
+**Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8, .com €6 to €9 (VeriSigh raised its price over the years). The customer pays €15 a year for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
 
 **Organic leads in the game.** Organic leads scale with the market and with awareness instead of a flat 20: 0.4 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × the review multiplier. With the starting awareness (5% for private individuals and gamers, 2% for the rest) Frankfurt gives about 20 leads a month in 2005, and every point of awareness a campaign buys raises organic leads too. Referrals (0.005 a month per customer with happiness 70 or more) and forum posts (2 × (0.5 + s/100) a month per employee, split over hobby developers, gamers and small businesses) come from the home city. Each forum lead also adds 0.5% of the gap to the awareness of those three profiles every month.
 
@@ -572,9 +576,9 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 
 | Datacenter size | Positions at opening | Expansion | Final size |
 | --- | --- | --- | --- |
-| Large (Equinox, Interaction, Global Snitch, Tellyhouse, Data5) | 300 | +150 every 3 years | 1,200 |
-| Medium (Hetzler Park, Iron Molehill, NTD, Next Lair, Arubaba Hub) | 120 | +60 every 4 years | 400 |
-| Small (mainqubes, Spree Colo, Docklands Data, Green.chz) | 40 | +20 every 5 years | 120 |
+| Large (Equinox, Interaction, Global Snitch, Tellyhouse, Data5, Digital Reality) | 300 | +150 every 3 years | 1,200 |
+| Medium (Hetzler, Iron Molehill, NTD, Next Lair, Arubaba Hub, Boris Network, CoreSpite, Telex) | 120 | +60 every 4 years | 400 |
+| Small (mainqubes, Spree Colo, Docklands Data, Green.chz, SkyBlink) | 40 | +20 every 5 years | 120 |
 
 - **Competitors.** Their share of a datacenter starts at 85% to 97% of capacity, drawn from the seed. Each month every competitor position cancels with a 1.5% chance. Waitlist holds are then granted from the freed space, and competitors fill the remaining free space down to a level drawn evenly between 0% and 4% of capacity. They never take space held for the waitlist.
 - **Expansion.** Each expansion phase opens all its new positions on 1 January. In January, February and March competitors take a sixth of the new positions each month, so about half within 3 months, and from April the usual monthly fill applies.
@@ -582,9 +586,18 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 - **Waitlist.** When a datacenter has too little free space for what you want, you can join its waitlist. When enough space frees up, you get a notification, and the space is held for you for 7 days.
 - **Consequence.** You can't grow in one building forever, which pushes you to spread over several datacenters or build your own.
 
-**Moving a rack.** €300 and 1 day within a city, €1,200 and 3 days to another city. The rack's servers are offline until it arrives. A rack share comes with the provider's rack, so its power limit is the share × the datacenter's kW per position, and it can't be moved or sold. You mount hardware into it directly.
+**Moving a rack.** €300 and 1 day within a city, €1,200 and 3 days to another city, €4,000 and 10 days across the Atlantic (air freight and customs). The rack's servers are offline until it arrives. A rack share comes with the provider's rack, so its power limit is the share × the datacenter's kW per position, and it can't be moved or sold. You mount hardware into it directly.
 
-**Catalog.** Two to four datacenters per city. Exchanges new to this table: Franz-IX (Paris), BeCIX (Berlin), MIXup (Milan), VieX (Vienna), SwizzIX (Zurich).
+**Catalog.** Two to four datacenters per city; the datacenter towns Kerkrade and Falkenstein have one each. Exchanges new to this table: Franz-IX (Paris), BeCIX (Berlin), MIXup (Milan), VieX (Vienna), SwizzIX (Zurich), ECKS-IX (Düsseldorf), N-ICKS (Nuremberg), IN-EXCESS (Munich), Equinox IX (Ashburn), NYIKES (New York), CHI-KICKS (Chicago), Y'ALL-IX (Dallas), Any3 (Los Angeles).
+
+How the newer locations are priced:
+
+- **Düsseldorf** is Germany's second hub after Frankfurt, with fewer carriers and lower land and power costs, so its positions cost about 13% less than the Frankfurt equivalent (Equinox DU1 €650 against FR5 €750).
+- **Kerkrade (SkyBlink Eygelshoven)** is the small independent by the German border that hosters pick for cheap space with many carriers: €300 a position, 20 carriers, €60 cross-connects and fast remote hands, but no exchange on site and no cages.
+- **Nuremberg and Falkenstein** are the budget hoster parks. Hetzler's own halls are the cheapest space in the game (€170 and €160) with one carrier, the provider's own network; Boris Network NBG is the carrier-neutral alternative with N-ICKS on site.
+- **Munich** prices sit between Frankfurt and Berlin.
+- **North America** prices are 2026 US retail converted at about €0.90 to the dollar. Space costs about the same as in Germany, but power is much cheaper, so the power factors are lower (1.05 to 1.2, against 1.3 to 1.5 in Europe). New York and Los Angeles carry a metro premium. Ashburn has the most carriers in the game (60 at Equinox DC2), and Dallas is the cheapest American market.
+- Datacenters have no opening years yet; every one is open from 2005, which matches the real buildings closely enough for the American and German hubs.
 
 | Datacenter | City | Carriers | Exchange | Feeds | Backup | Green | kW per position | Position per month | Power factor | Cross-connect | Remote hands | Certified | Cages |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -607,6 +620,26 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 | Next Lair VIE | Vienna | 4 | VieX by cross-connect | Single | UPS, generator | No | 4 | €300 | 1.2 | €100 | €80/h, 4 h | No | No |
 | Equinox ZH4 | Zurich | 15 | SwizzIX on site | A+B | UPS, generator | Yes | 8 | €800 | 1.5 | €250 | €160/h, 1 h | Yes | Yes |
 | Green.chz Lupfig | Zurich | 6 | SwizzIX by cross-connect | A+B | UPS, generator | Yes | 6 | €550 | 1.3 | €180 | €120/h, 4 h | Yes | Yes |
+| Equinox DU1 | Düsseldorf | 18 | ECKS-IX on site | A+B | UPS, generator | Yes | 8 | €650 | 1.35 | €220 | €140/h, 1 h | Yes | Yes |
+| Interaction DUS | Düsseldorf | 14 | ECKS-IX by cross-connect | A+B | UPS, generator | No | 6 | €520 | 1.3 | €180 | €110/h, 2 h | Yes | Yes |
+| NTD Düsseldorf 1 | Düsseldorf | 10 | ECKS-IX by cross-connect | A+B | UPS, generator | Yes | 6 | €430 | 1.25 | €140 | €100/h, 2 h | Yes | Yes |
+| SkyBlink Eygelshoven | Kerkrade | 20 | None | A+B | UPS, generator | Yes | 6 | €300 | 1.15 | €60 | €60/h, 2 h | Yes | No |
+| Hetzler NBG | Nuremberg | 1 | None | Single | UPS, generator | Yes | 4 | €170 | 1.1 | €80 | €60/h, 8 h | No | No |
+| Boris Network NBG | Nuremberg | 10 | N-ICKS on site | A+B | UPS, generator | Yes | 6 | €420 | 1.25 | €150 | €100/h, 2 h | Yes | Yes |
+| Hetzler FSN | Falkenstein | 1 | None | Single | UPS, generator | Yes | 4 | €160 | 1.1 | €80 | €60/h, 8 h | No | No |
+| Equinox MU1 | Munich | 15 | IN-EXCESS on site | A+B | UPS, generator | Yes | 8 | €700 | 1.4 | €230 | €150/h, 1 h | Yes | Yes |
+| Interaction MUC | Munich | 10 | IN-EXCESS by cross-connect | A+B | UPS, generator | No | 6 | €550 | 1.3 | €180 | €120/h, 2 h | Yes | Yes |
+| Equinox DC2 | Ashburn | 60 | Equinox IX on site | A+B | UPS, generator | No | 8 | €650 | 1.15 | €200 | €130/h, 1 h | Yes | Yes |
+| Digital Reality ACC | Ashburn | 25 | Equinox IX by cross-connect | A+B | UPS, generator | No | 10 | €480 | 1.1 | €150 | €100/h, 2 h | Yes | Yes |
+| CoreSpite VA1 | Ashburn | 15 | Equinox IX by cross-connect | A+B | UPS, generator | No | 8 | €420 | 1.1 | €120 | €90/h, 4 h | Yes | Yes |
+| Equinox NY4 | New York | 45 | NYIKES on site | A+B | UPS, generator | No | 8 | €800 | 1.4 | €250 | €160/h, 1 h | Yes | Yes |
+| Telex 60 Hudson | New York | 35 | NYIKES by cross-connect | A+B | UPS, generator | No | 5 | €700 | 1.45 | €220 | €150/h, 2 h | Yes | Yes |
+| Digital Reality 350 Cermak | Chicago | 40 | CHI-KICKS on site | A+B | UPS, generator | No | 8 | €550 | 1.2 | €180 | €120/h, 2 h | Yes | Yes |
+| CoreSpite CH1 | Chicago | 15 | CHI-KICKS by cross-connect | A+B | UPS, generator | No | 8 | €450 | 1.15 | €140 | €100/h, 4 h | Yes | Yes |
+| Equinox DA1 | Dallas | 30 | Y'ALL-IX on site | A+B | UPS, generator | No | 8 | €500 | 1.1 | €170 | €120/h, 2 h | Yes | Yes |
+| Digital Reality DFW | Dallas | 12 | Y'ALL-IX by cross-connect | A+B | UPS, generator | No | 10 | €400 | 1.05 | €130 | €90/h, 4 h | Yes | Yes |
+| CoreSpite One Wilshire | Los Angeles | 60 | Any3 on site | A+B | UPS, generator | No | 6 | €750 | 1.45 | €230 | €150/h, 1 h | Yes | Yes |
+| Equinox LA1 | Los Angeles | 30 | Any3 by cross-connect | A+B | UPS, generator | No | 8 | €650 | 1.4 | €210 | €140/h, 2 h | Yes | Yes |
 
 **Basement.** One position, a 24U rack at most, 3 kW at most (a household circuit), no backup, the household power price (business × 1.6) and the home line as its only uplink.
 
@@ -884,7 +917,7 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 abo
 
 **Goodwill.** Trade fairs add goodwill from 0 to 1, which fades by 5% a month. It takes up to 10% off transit and adds to peering chances.
 
-**Links between zones.** A leased wavelength costs €400, €900, €2,500 or €6,000 a month for 1G, 10G, 100G or 400G in 2026 (m = 5) within a region, and 3 × that between regions. Dark fiber runs only within a region, carries 100G and costs €2,000 a month. Links take 30 days, uplink links 14.
+**Links between zones.** A leased wavelength costs €400, €900, €2,500 or €6,000 a month for 1G, 10G, 100G or 400G in 2026 (m = 5) within a region, and 3 × that between regions, or 10 × across the Atlantic. Dark fiber runs only within a region, carries 100G and costs €2,000 a month. Links take 30 days, uplink links 14.
 
 **DDoS protection.** Scrubba Dub On Demand costs €50 a month plus €250 per attack and lets a sixth of the attack's first hour through. Akamaybe Prolexit costs €800 a month and filters everything. A blackhole drops the attack and takes its target offline until it is lifted.
 

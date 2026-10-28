@@ -26,6 +26,14 @@ export const EXCHANGES: Exchange[] = [
   { id: "mixup", name: "MIXup", city: "Milan" },
   { id: "viex", name: "VieX", city: "Vienna" },
   { id: "swizzix", name: "SwizzIX", city: "Zurich" },
+  { id: "ecksix", name: "ECKS-IX", city: "Düsseldorf" },
+  { id: "nicks", name: "N-ICKS", city: "Nuremberg" },
+  { id: "inexcess", name: "IN-EXCESS", city: "Munich" },
+  { id: "equinoxix", name: "Equinox IX", city: "Ashburn" },
+  { id: "nyikes", name: "NYIKES", city: "New York" },
+  { id: "chikicks", name: "CHI-KICKS", city: "Chicago" },
+  { id: "yallix", name: "Y'ALL-IX", city: "Dallas" },
+  { id: "any3", name: "Any3", city: "Los Angeles" },
 ];
 export const exchangeById = (id: string) => EXCHANGES.find((x) => x.id === id);
 export const exchangeAt = (dc: Datacenter): Exchange | undefined => EXCHANGES.find((x) => x.name === dc.exchange?.name);
@@ -56,9 +64,10 @@ export const ASN_FEE = 500;
 // Links between zones: leased wavelengths by speed, or dark fiber within a region, which carries 100G.
 export type ZoneLinkKind = "wave" | "fiber";
 const WAVE_2026: Record<number, number> = { 1: 400, 10: 900, 100: 2500, 400: 6000 };
-export function zoneLinkPrice(kind: ZoneLinkKind, gbit: number, sameRegion: boolean, year: number): number {
+// A transatlantic wave costs ten times a metro one.
+export function zoneLinkPrice(kind: ZoneLinkKind, gbit: number, sameRegion: boolean, year: number, overseas = false): number {
   if (kind === "fiber") return 2000;
-  return Math.round(priceAt(WAVE_2026[gbit], 5, year) * (sameRegion ? 1 : 3));
+  return Math.round(priceAt(WAVE_2026[gbit], 5, year) * (sameRegion ? 1 : overseas ? 10 : 3));
 }
 export const FIBER_GBIT = 100;
 

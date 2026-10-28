@@ -78,6 +78,16 @@ export const CITIES = [
   { name: "Milan", market: 1000 },
   { name: "Vienna", market: 600 },
   { name: "Zurich", market: 600 },
+  { name: "Düsseldorf", market: 800 },
+  { name: "Kerkrade", market: 150 },
+  { name: "Nuremberg", market: 400 },
+  { name: "Falkenstein", market: 100 },
+  { name: "Munich", market: 1000 },
+  { name: "Ashburn", market: 600 },
+  { name: "New York", market: 2000 },
+  { name: "Chicago", market: 1200 },
+  { name: "Dallas", market: 1000 },
+  { name: "Los Angeles", market: 1500 },
 ];
 export const MARKET_GROWTH = 0.08;
 export const LEAD_CAP_SHARE = 0.25;
