@@ -6,6 +6,7 @@ import type { GameState } from "../50-state";
 import { missingFor, OFFER } from "../30-market/market";
 import { editRequest, loseRequest, say } from "../30-market/sales";
 import type { ActionResult } from "./hardware";
+import { logActivity } from "../47-staff/activity";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 // The customer answers 4 to 24 hours after a quote, 2 hours after you meet their counter-offer.
@@ -50,6 +51,7 @@ export function changePrice(s: GameState, serviceId: string, monthly: number): A
   s.customers = s.customers.map((x) => (x.id === c.id ? { ...x } : x));
   const cust = s.customers.find((x) => x.id === c.id)!;
   bump(cust, pct > 0 ? -Math.min(30, RAISE_PENALTY * pct) : Math.min(10, -CUT_BONUS * pct));
+  logActivity(s, { customerId: c.id, serviceId: v.id, by: null, key: "activity.price", params: { price }, minutes: 0 });
   const ref = marketPrice(v.product, v.plan, yearOf(s.hour), v.sla) * OFFER[profileStats(c.profile).budget];
   const over = price / ref;
   const leaving = pct > 0 && over > CANCEL_FROM && chance(s.rng, Math.min(1, (over - CANCEL_FROM) / CANCEL_SPAN));

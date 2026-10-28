@@ -3,6 +3,7 @@ import { ACTIONS, bump, cancelCustomer, canEscalate, isFinal, MINUTES, TEMPLATES
 import { hashRng } from "../00-core/rng";
 import { ignoreNotice } from "../40-support/notices";
 import type { ActionResult } from "./hardware";
+import { logActivity } from "../47-staff/activity";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -22,6 +23,7 @@ function queue(s: GameState, t: Ticket, op: Work["op"], arg: string): ActionResu
   s.playerBusyUntil = start + MINUTES[t.kind];
   t.work = { op, arg, doneAt: s.playerBusyUntil };
   t.unread = false;
+  logActivity(s, { customerId: t.customerId, serviceId: t.serviceId, by: null, key: `activity.${op}`, params: { kind: t.kind, arg }, minutes: MINUTES[t.kind] });
   return { ok: true, id: t.id };
 }
 

@@ -480,16 +480,27 @@ Resolving the ticket adds the usual +5 happiness on top. Handling an appeal take
 
 **Billing rules.** The Automation entry in the Billing app sends the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
 
-**Back-office tasks.** Staff handle these at the work rate from [Tickets and work rates](#tickets-and-work-rates). A skill-50 bookkeeper records about 4,000 payments a month.
+**Time per action.** Every employee action takes time from their workday, so one employee can't carry the whole company. Staff divide these times by their speed (0.5 plus skill/100, so skill 50 takes the times as listed); bots work at twice the speed. The code keeps them in `ACTION_MINUTES` (src/sim/47-staff/activity.ts), and ticket times in `MINUTES` (the ticket table above).
 
-| Task | Who | Handling time |
+| Action | Who | Time |
 | --- | --- | --- |
-| Record a payment | Bookkeeper | 2 min |
-| Send a payment reminder | Bookkeeper | 3 min |
-| Send a dunning notice | Accountant | 10 min |
-| Send a final notice | Accountant | 15 min |
-| Hand a debt to collections | Accountant | 30 min |
-| Month-end report | Accountant | 2 days per month |
+| Answer or resolve a ticket | Support agent | Ticket handling time above |
+| Check an invoice, before every billing action | Bookkeeper or accountant | 6 min |
+| Send a payment reminder | Bookkeeper | 15 min |
+| Send a dunning notice | Accountant | 30 min |
+| Send a final notice | Accountant | 30 min |
+| Hand a debt to collections | Accountant (final notices) | 30 min |
+| Suspend a customer's services | Accountant | 60 min |
+| Resume a customer's services | Player | 15 min |
+| Run campaigns, for the full boost | Marketing manager | 180 min a workday |
+| Look after review platforms, for the full boost | Marketing manager | 60 min a workday, after campaigns |
+| Hardware, server or PHP operation | Technician | 60 min |
+
+A billing action is the check plus the action, so a reminder takes 21 minutes and a suspension 66. Staff take one action per invoice per hour, the next dunning step before a suspension, oldest due date first. A marketing manager with fewer hours than a task needs gives that share of its boost: a 2-hour manager gives two thirds of the campaign boost and nothing for reviews. Forum posting scales with hours the same way.
+
+The balance model still books 2 staff minutes per customer and month for payments. With the times above a late-paying customer mix needs about 6; raising the model's figure to 6 without changing how its strategy hires bookkeepers bankrupts 17 of 20 steady runs, so it stays at 2 until the strategy hires for billing work.
+
+**Working hours.** The player sets each employee's day to 2, 4, 6 or 8 hours (8 at hiring). The day starts at 9, Monday to Friday, so a 2-hour employee works 9 to 11. Pay is pro rata: 8 hours is the full salary, 2 hours a quarter. An action starts only if it ends within the employee's hours; whatever is left waits for the next workday. Changing the hours pays out the salary owed so far at the old hours, and the new hours count from then.
 
 ## Datacenters and space
 

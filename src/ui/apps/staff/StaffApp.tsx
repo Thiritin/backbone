@@ -3,13 +3,13 @@ import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import {
-  activeBots, AD, atFair, BOT_RIGHT, BOT_SPEED, COURSE_HOURS, COURSE_PRICE, fullyTrained, marketSalary, needsTraining, ROLES, staffPrice, TASKS, TRAINER_HOURS, trainerFor, visibleCandidates,
+  activeBots, AD, atFair, BOT_RIGHT, BOT_SPEED, COURSE_HOURS, COURSE_PRICE, fullyTrained, marketSalary, monthlyPay, needsTraining, ROLES, staffPrice, TASKS, TRAINER_HOURS, trainerFor, visibleCandidates, WORK_HOURS,
   type AdTier, type Assignment, type Candidate, type Employee, type Role, type Task,
 } from "../../../sim/47-staff/staff";
 import { storeItem, subscriptionPrice } from "../../../sim/10-catalog/store";
 import type { GameState } from "../../../sim/50-state";
 import { cancel } from "../../../sim/90-actions/store";
-import { answerRaise, assign, fire, hire, planTraining, postJobAd } from "../../../sim/90-actions/staff";
+import { answerRaise, assign, fire, hire, planTraining, postJobAd, setHours } from "../../../sim/90-actions/staff";
 import { useStore } from "../../store";
 import { TechPanel } from "./TechPanel";
 import { formatDay } from "../billing/BillingApp";
@@ -26,7 +26,7 @@ const ROLE: Record<Role, { one: string; many: string }> = {
 };
 const TASK: Record<Task, string> = {
   howTo: "How-to", billing: "Billing", outage: "Outage", upgrade: "Upgrade", cancellation: "Cancellation", abuse: "Abuse", appeal: "Suspension appeal", notice: "Notices", legal: "Legal requests", refund: "Refunds",
-  reminder: "Payment reminders", dunning: "Dunning notices", final: "Final notices",
+  reminder: "Payment reminders", dunning: "Dunning notices", final: "Final notices", suspend: "Suspensions",
   campaigns: "Campaigns", reviews: "Review platforms", fairs: "Trade fairs",
   hardware: "Parts and power", servers: "Draining servers", panels: "PHP upgrades",
 };
@@ -91,7 +91,7 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
     );
   }
   const current = [...game.staff, ...bots].find((e) => e.id === sel) ?? game.staff[0] ?? bots[0];
-  const payroll = game.staff.reduce((sum, e) => sum + e.salary, 0);
+  const payroll = game.staff.reduce((sum, e) => sum + monthlyPay(e), 0);
   return (
     <>
       <div className="st-list" role="list">
@@ -103,7 +103,7 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
               <span className="logo">{initials(e.name)}</span>
               <span className="who">
                 <span className="name">{e.name}</span>
-                <span className="sub">{ROLE[e.role].one} · <span className="num">{euro(e.salary)}</span></span>
+                <span className="sub">{ROLE[e.role].one} · {e.hours} h · <span className="num">{euro(monthlyPay(e))}</span></span>
               </span>
               <span className="side">
                 <span className="num st-skill">{Math.round(e.skill)}</span>
@@ -183,8 +183,8 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
         </div>
         <dl className="st-facts">
           <div><dt>Skill</dt><dd><span className="num">{Math.round(e.skill)}</span><SkillBar value={e.skill} /></dd></div>
-          <div><dt>Salary</dt><dd className="num">{euro(e.salary)}</dd></div>
-          <div><dt>Market salary</dt><dd className="num">{euro(marketSalary(e, game.hour))}</dd></div>
+          <div><dt>Salary</dt><dd className="num">{euro(monthlyPay(e))}</dd></div>
+          <div><dt>Market salary</dt><dd className="num">{euro(monthlyPay({ salary: marketSalary(e, game.hour), hours: e.hours }))}</dd></div>
           <div><dt>Next raise talk</dt><dd className="num">{formatDay(e.nextRaiseAt)}</dd></div>
         </dl>
       </header>
@@ -193,7 +193,7 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
           <div className="st-raise">
             <div>
               <strong>{e.name.split(" ")[0]} asks for a raise</strong>
-              <span><span className="num">{euro(e.salary)}</span> to <span className="num">{euro(e.raise.ask)}</span> a month</span>
+              <span><span className="num">{euro(monthlyPay(e))}</span> to <span className="num">{euro(monthlyPay({ salary: e.raise.ask, hours: e.hours }))}</span> a month</span>
             </div>
             <span className="grow" />
             <button className="btn" onClick={() => act((s) => answerRaise(s, e.id, false))}>Refuse</button>
@@ -208,6 +208,10 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
               {a === "queue" ? <BookOpen /> : a === "trainer" ? <GraduationCap /> : <MessagesSquare />}{ASSIGN[a]}
             </button>
           ))}
+        </div>
+        <h3>Hours a day</h3>
+        <div className="seg" role="group" aria-label="Hours a day">
+          {WORK_HOURS.map((h) => <button key={h} aria-pressed={e.hours === h} onClick={() => act((s) => setHours(s, e.id, h))}>{h} h</button>)}
         </div>
         {e.role === "technician" && <TechPanel game={game} e={e} />}
         <div className="st-train-h">

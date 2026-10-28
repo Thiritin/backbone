@@ -1,40 +1,45 @@
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import { monthlySalary, priceAt } from "../10-catalog/economy";
-import { cents, dueStep, sendStep } from "../45-billing/billing";
+import { cents, dueStep, ruleStep, ruleSuspendsAt, rulesAutomated, sendStep, STEPS, suspend, type Invoice } from "../45-billing/billing";
+import { ACTION_MINUTES, logActivity } from "./activity";
 import { storeItem } from "../10-catalog/store";
 import { bump, createTicket, MINUTES, rightTemplate, TEMPLATES, type Ticket, type TicketKind } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 
 export type Role = "support" | "bookkeeper" | "accountant" | "marketing" | "technician";
-export type Task = TicketKind | "reminder" | "dunning" | "final" | "campaigns" | "reviews" | "fairs" | "hardware" | "servers" | "panels";
+export type Task = TicketKind | "reminder" | "dunning" | "final" | "suspend" | "campaigns" | "reviews" | "fairs" | "hardware" | "servers" | "panels";
 // queue: works the role's tasks. trainer: trains colleagues of the same role. forum: posts in hosting and gaming forums.
 export type Assignment = "queue" | "trainer" | "forum";
 
 // talent is the hidden cap skill never passes; busyUntil is in game minutes like the player's queue. location is the
-// location id a technician works at, null for every other role.
+// location id a technician works at, null for every other role. salary is the full-time salary; hours is the workday
+// the player sets and hoursFrom the hour it was last changed, since when salary is owed at those hours.
 export interface Employee {
   id: string; name: string; role: Role; skill: number; talent: number; salary: number; hiredAt: number; assignment: Assignment; location: string | null;
   trained: Task[]; plan: Task[]; training: { task: Task; startedAt: number; doneAt: number } | null; busyUntil: number;
-  raise: { ask: number; at: number } | null; nextRaiseAt: number; refusedAt: number | null;
+  raise: { ask: number; at: number } | null; nextRaiseAt: number; refusedAt: number | null; hours: WorkHours; hoursFrom: number;
   // Set on the stand-ins activeBots builds for store bots; never saved.
   bot?: true;
 }
 export interface Candidate { id: string; name: string; role: Role; skill: number; talent: number; salary: number; arriveAt: number; leaveAt: number }
 
+export const WORK_HOURS = [2, 4, 6, 8] as const;
+export type WorkHours = (typeof WORK_HOURS)[number];
+export const FULL_DAY = 8;
+
 export const ROLES: Role[] = ["support", "bookkeeper", "accountant", "marketing", "technician"];
 export const TASKS: Record<Role, Task[]> = {
   support: ["howTo", "billing", "outage", "upgrade", "cancellation", "abuse", "appeal"],
   bookkeeper: ["reminder"],
-  accountant: ["dunning", "final"],
+  accountant: ["dunning", "final", "suspend"],
   marketing: ["campaigns", "reviews", "fairs"],
   // Hardware: part swaps and power. Servers: draining nodes. Panels: PHP upgrades.
   technician: ["hardware", "servers", "panels"],
 };
-// economy.md, Back-office tasks: minutes per dunning step, in STEPS order.
-const STEP_TASK: Task[] = ["reminder", "dunning", "final"];
-const STEP_MINUTES = [3, 10, 15];
+// The task each dunning step needs, in STEPS order; whoever sends final notices also hands debts to collections.
+const STEP_TASK: Task[] = ["reminder", "dunning", "final", "final"];
 
 const DAY = 24, YEAR = 8760;
 export const MARKET_PER_ROLE = 2;
@@ -97,10 +102,13 @@ const monthStart = (hour: number, offset = 0): number => {
   return hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + offset, 1)));
 };
 
-// Salary owed since the later of the hire and the start of the period, as a share of that month.
+// Monthly pay at the employee's hours: 8 hours a day is the full salary.
+export const monthlyPay = (e: Pick<Employee, "salary" | "hours">): number => (e.salary * e.hours) / FULL_DAY;
+
+// Salary owed since the latest of the hire, the last change of hours and the start of the period, as a share of that month.
 export function salaryOwed(e: Employee, from: number, to: number): number {
-  const hours = to - Math.max(e.hiredAt, from);
-  return hours > 0 ? cents((e.salary * hours) / (monthStart(from, 1) - from)) : 0;
+  const hours = to - Math.max(e.hiredAt, e.hoursFrom, from);
+  return hours > 0 ? cents((monthlyPay(e) * hours) / (monthStart(from, 1) - from)) : 0;
 }
 
 export const salaryUpToNow = (s: GameState, e: Employee): number => salaryOwed(e, monthStart(s.hour), s.hour);
@@ -141,8 +149,12 @@ export const BOT_INCIDENTS = 5;
 
 export const activeBots = (s: GameState): Employee[] => Object.entries(BOTS).filter(([id]) => s.installed.includes(id)).map(([id, b]) => ({
   id, name: storeItem(id)!.name, role: b.role, skill: 0, talent: 0, salary: 0, hiredAt: 0, assignment: "queue", location: null,
-  trained: b.tasks, plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 0, refusedAt: null, bot: true,
+  trained: b.tasks, plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 0, refusedAt: null, hours: FULL_DAY, hoursFrom: 0, bot: true,
 }));
+
+// An employee works their hours from 9 in office hours; a bot works around the clock.
+export const onShift = (e: Employee, hour: number): boolean => !!e.bot || (isWorkHour(hour) && dateOf(hour).getUTCHours() < 9 + e.hours);
+const shiftEnd = (e: Employee, hour: number): number => (e.bot ? Infinity : (hour - dateOf(hour).getUTCHours() + 9 + e.hours) * 60);
 
 // An employee at a trade fair does no other work for the fair's days.
 export const atFair = (s: GameState, e: Employee): boolean => s.fairs.some((b) => b.employeeId === e.id && b.start <= s.hour && s.hour < b.end);
@@ -151,13 +163,20 @@ export const hasMarketingManager = (s: GameState): boolean => s.staff.some((e) =
 // The best working marketing manager trained on the task, or none.
 const manager = (s: GameState, task: Task): Employee | undefined =>
   s.staff.filter((e) => e.role === "marketing" && working(e) && !atFair(s, e) && e.trained.includes(task)).sort((a, b) => b.skill - a.skill)[0];
+// Share of a task's full effect the manager's workday covers; campaigns take their minutes before reviews.
+// ponytail: each task's best manager is counted alone, as if nobody else shared the work.
+function dayShare(e: Employee | undefined, task: "campaigns" | "reviews"): number {
+  if (!e) return 0;
+  const before = task === "reviews" && e.trained.includes("campaigns") ? ACTION_MINUTES.campaigns : 0;
+  return Math.min(1, Math.max(0, e.hours * 60 - before) / ACTION_MINUTES[task]);
+}
 // Campaigns bring 5% to 15% more leads with a manager trained on them, by skill.
 export const campaignBoost = (s: GameState): number => {
   const e = manager(s, "campaigns");
-  return e ? 1.05 + 0.1 * (e.skill / 100) : 1;
+  return e ? 1 + (0.05 + 0.1 * (e.skill / 100)) * dayShare(e, "campaigns") : 1;
 };
 export const REVIEW_INVITE_BOOST = 1.5;
-export const reviewBoost = (s: GameState): number => (manager(s, "reviews") ? REVIEW_INVITE_BOOST : 1);
+export const reviewBoost = (s: GameState): number => 1 + (REVIEW_INVITE_BOOST - 1) * dayShare(manager(s, "reviews"), "reviews");
 
 const speed = (e: Employee) => (e.bot ? BOT_SPEED : 0.5 + e.skill / 100);
 const rightChance = (e: Employee) => (e.bot ? BOT_RIGHT : 0.75 + 0.25 * (e.skill / 100));
@@ -173,50 +192,73 @@ function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "
 
 interface BotTask { bot: Employee; customerId: string; reminder: boolean }
 
+// Books work of the given minutes if it starts within this hour and ends by the end of the workday; returns the minutes
+// it took at the employee's speed, or null when it waits. Work that does not fit today waits for the next workday.
+function take(s: GameState, e: Employee, minutes: number): number | null {
+  const at = Math.max(e.busyUntil, s.hour * 60), took = minutes / speed(e);
+  if (at >= (s.hour + 1) * 60 || at + took > shiftEnd(e, s.hour)) return null;
+  e.busyUntil = at + took;
+  return took;
+}
+
 function answerTickets(s: GameState, agents: Employee[], r: Rng): BotTask[] {
-  const end = (s.hour + 1) * 60;
   const churned = new Set(s.customers.filter((c) => c.churnedAt !== null).map((c) => c.id));
   const queue = s.tickets.filter((t) => t.status === "open" && !t.work && !churned.has(t.customerId)).sort((a, b) => a.dueAt - b.dueAt);
   const taken = new Map<string, Ticket["work"]>(), byBot: BotTask[] = [];
   for (const e of agents) {
-    let at = Math.max(e.busyUntil, s.hour * 60);
     for (const t of queue) {
-      if (at >= end) break;
       if (taken.has(t.id) || !e.trained.includes(t.kind)) continue;
-      at += MINUTES[t.kind] / speed(e);
-      taken.set(t.id, { ...choose(s, e, t, r), doneAt: Math.ceil(at), by: e.name });
+      const took = take(s, e, MINUTES[t.kind]);
+      if (took === null) continue;
+      const work = { ...choose(s, e, t, r), doneAt: Math.ceil(e.busyUntil), by: e.name };
+      taken.set(t.id, work);
+      logActivity(s, { customerId: t.customerId, serviceId: t.serviceId, by: e.name, key: `activity.${work.op}`, params: { kind: t.kind, arg: work.arg }, minutes: took });
       if (e.bot) byBot.push({ bot: e, customerId: t.customerId, reminder: false });
     }
-    e.busyUntil = at;
   }
   if (taken.size) s.tickets = s.tickets.map((t) => (taken.has(t.id) ? { ...t, work: taken.get(t.id)!, unread: false } : t));
   return byBot;
 }
 
-// Bookkeepers send payment reminders, accountants the dunning and final notices; collections stays with the player and the rules.
-function chaseInvoices(s: GameState, clerks: Employee[]): BotTask[] {
-  const end = (s.hour + 1) * 60;
-  const due = s.invoices.map((inv) => ({ inv, step: dueStep(inv, s.hour) })).filter((x): x is { inv: typeof x.inv; step: number } => x.step !== null && x.step < STEP_TASK.length)
-    .sort((a, b) => a.inv.dueAt - b.inv.dueAt);
-  const sent = new Map<string, number>(), byBot: BotTask[] = [];
+type BillingWork = { inv: Invoice; step: number } | { inv: Invoice; step: "suspend" };
+
+// What the billing rules ask for now, in due-date order: the next dunning step before a suspension.
+function ruleWork(s: GameState): BillingWork[] {
+  const live = new Set(s.customers.filter((c) => c.churnedAt === null).map((c) => c.id));
+  return [...s.invoices].sort((a, b) => a.dueAt - b.dueAt).flatMap((inv): BillingWork[] => {
+    const step = ruleStep(s, inv), at = ruleSuspendsAt(s, inv);
+    return [...(step !== null ? [{ inv, step }] : []), ...(at !== null && s.hour >= at && live.has(inv.customerId) ? [{ inv, step: "suspend" as const }] : [])];
+  });
+}
+
+// Bots work their own tasks on everything due, whatever the rules say.
+const botWork = (s: GameState): BillingWork[] => [...s.invoices].sort((a, b) => a.dueAt - b.dueAt)
+  .flatMap((inv) => { const step = dueStep(inv, s.hour); return step !== null ? [{ inv, step }] : []; });
+
+// Bookkeepers and accountants carry out the billing rules until the Automation research runs them; each action starts
+// with checking the invoice. One action per invoice and hour.
+function chaseInvoices(s: GameState, clerks: Employee[], events: SimEvent[]): BotTask[] {
+  const staffWork = rulesAutomated(s) ? [] : ruleWork(s), forBots = clerks.some((e) => e.bot) ? botWork(s) : [];
+  const done = new Set<string>(), byBot: BotTask[] = [];
   for (const e of clerks) {
-    let at = Math.max(e.busyUntil, s.hour * 60);
-    for (const { inv, step } of due) {
-      if (at >= end) break;
-      if (sent.has(inv.id) || !e.trained.includes(STEP_TASK[step])) continue;
-      at += STEP_MINUTES[step] / speed(e);
-      sent.set(inv.id, step);
+    for (const { inv, step } of e.bot ? forBots : staffWork) {
+      const task = step === "suspend" ? "suspend" : STEP_TASK[step], key = step === "suspend" ? "suspend" : STEPS[step].key;
+      if (done.has(inv.id) || !e.trained.includes(task)) continue;
+      const took = take(s, e, ACTION_MINUTES.checkInvoice + ACTION_MINUTES[key]);
+      if (took === null) continue;
+      done.add(inv.id);
+      const copy = { ...inv }, c = s.customers.find((x) => x.id === inv.customerId);
+      s.invoices = s.invoices.map((x) => (x.id === inv.id ? copy : x));
+      if (step !== "suspend") sendStep(s, copy, step);
+      else if (suspend(s, copy) && c) events.push({ app: "Billing", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
+      if (copy.status === "writtenOff" && c) events.push({ app: "Billing", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
+      const share = took / (ACTION_MINUTES.checkInvoice + ACTION_MINUTES[key]);
+      const log = (k: string, minutes: number) => logActivity(s, { customerId: inv.customerId, serviceId: null, by: e.name, key: `activity.${k}`, params: { invoice: inv.number }, minutes: minutes * share });
+      log("checkInvoice", ACTION_MINUTES.checkInvoice);
+      log(key, ACTION_MINUTES[key]);
       if (e.bot) byBot.push({ bot: e, customerId: inv.customerId, reminder: true });
     }
-    e.busyUntil = at;
   }
-  if (!sent.size) return byBot;
-  s.invoices = s.invoices.map((inv) => {
-    if (!sent.has(inv.id)) return inv;
-    const copy = { ...inv };
-    sendStep(s, copy, sent.get(inv.id)!);
-    return copy;
-  });
   return byBot;
 }
 
@@ -272,7 +314,7 @@ function monthly(s: GameState, events: SimEvent[], r: Rng): void {
 
 // Leads per month from staff posting in forums; the effect grows with skill. Read by the marketing and market code.
 export const forumAwareness = (s: GameState): number =>
-  s.staff.filter((e) => e.assignment === "forum").reduce((sum, e) => sum + FORUM_LEADS * speed(e), 0);
+  s.staff.filter((e) => e.assignment === "forum").reduce((sum, e) => sum + (FORUM_LEADS * speed(e) * e.hours) / FULL_DAY, 0);
 
 export function staffTick(s: GameState): SimEvent[] {
   const bots = activeBots(s);
@@ -294,7 +336,7 @@ export function staffTick(s: GameState): SimEvent[] {
     if (s.hour >= e.nextRaiseAt) {
       e.raise = { ask: raiseAsk(e, s.hour), at: s.hour };
       e.nextRaiseAt += YEAR;
-      events.push({ app: "Staff", key: "event.raise", params: { name: e.name, salary: e.raise.ask } });
+      events.push({ app: "Staff", key: "event.raise", params: { name: e.name, salary: monthlyPay({ salary: e.raise.ask, hours: e.hours }) } });
     }
   }
   // A trainer with nobody left to train goes back to normal work.
@@ -303,10 +345,10 @@ export function staffTick(s: GameState): SimEvent[] {
     e.assignment = "queue";
     events.push({ app: "Staff", key: "event.trainerDone", params: { name: e.name } });
   }
-  // Staff take the queue first in office hours; bots take what is left, day and night.
-  const active = [...(isWorkHour(s.hour) ? s.staff.filter((e) => working(e) && !atFair(s, e)) : []), ...bots];
+  // Staff take the queue first in their work hours; bots take what is left, day and night.
+  const active = [...s.staff.filter((e) => working(e) && !atFair(s, e) && onShift(e, s.hour)), ...bots];
   const support = active.filter((e) => e.role === "support"), clerks = active.filter((e) => e.role === "bookkeeper" || e.role === "accountant");
-  const done = [...(support.length ? answerTickets(s, support, r) : []), ...(clerks.length ? chaseInvoices(s, clerks) : [])];
+  const done = [...(support.length ? answerTickets(s, support, r) : []), ...(clerks.length ? chaseInvoices(s, clerks, events) : [])];
   botTrouble(s, events, r, done);
   if (isMonthStart(s.hour)) monthly(s, events, r);
   return events;

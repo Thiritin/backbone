@@ -161,7 +161,7 @@ describe("work", () => {
     expect(forumAwareness(s)).toBeCloseTo(3);
   });
 
-  it("sends payment reminders and dunning notices by role", () => {
+  it("sends payment reminders and dunning notices by role when the rules ask for them", () => {
     const s = newGame(12);
     const c = addCustomer(s, "Late Payer", "private");
     const inv = (n: number, dueAt: number): Invoice => ({
@@ -169,6 +169,7 @@ describe("work", () => {
       status: "overdue", reminders: [], suspended: false, suspendedAt: null, payStep: 4, payAt: null, paidAt: null, extendedUntil: null,
     });
     s.invoices = [inv(1, -8 * 24), { ...inv(2, -15 * 24), reminders: [-24] }];
+    s.billingRules.autoRemind = true;
     const book = hireOne(s, "bookkeeper"), acc = hireOne(s, "accountant");
     train(s, book);
     runTo(s, MONDAY_9 + 1);

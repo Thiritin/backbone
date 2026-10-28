@@ -9,6 +9,7 @@
 .fin-auto-item { margin-top: 12px; }
 .fin-auto .settings-line { min-height: 44px; }
 .fin-auto .settings-line + .settings-line { border-top: 0.5px solid var(--line); }
+.fin-auto-by { color: var(--text-2); text-align: right; }
 .fin-table .link { color: inherit; }
 .fin-table .link:hover { color: var(--accent-text); }
 

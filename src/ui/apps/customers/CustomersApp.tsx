@@ -1,5 +1,5 @@
-import { ChevronDown, ChevronUp, Cpu, FileText, LifeBuoy, Receipt, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ChevronDown, ChevronUp, Cpu, FileText, History, LifeBuoy, Receipt, Search } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { activeServices, type Customer } from "../../../sim/30-customers/customers";
 import { isFinal, serviceMonthly } from "../../../sim/40-support/tickets";
@@ -16,6 +16,7 @@ import { referenceFor } from "../../../sim/30-market/market";
 import type { Profile, Service } from "../../../sim/30-customers/customers";
 import { changePrice } from "../../../sim/90-actions/sales";
 import { PriceField } from "../sales/PriceField";
+import { ActivityLog } from "./ActivityLog";
 import "./customers.css";
 
 type Status = "active" | "overdue" | "suspended" | "churned";
@@ -185,6 +186,7 @@ function Detail({ r }: { r: Row }) {
   const game = useStore((s) => s.game);
   const openApp = useStore((s) => s.openApp);
   const [tab, setTab] = useState<Tab>("overview");
+  const [log, setLog] = useState<string | null>(null);
   const { c } = r;
   const vms = APPS.some((a) => a.name === "Virtual machines" && a.body);
   const tabs: [Tab, string][] = [["overview", "Overview"], ["services", "Services"], ["invoices", "Invoices"], ["tickets", "Tickets"], ...(vms ? [["workloads", "Workloads"] as [Tab, string]] : [])];
@@ -230,8 +232,8 @@ function Detail({ r }: { r: Row }) {
       {tab === "services" && (
         <section className="cus-card">
           <h3><FileText />Services</h3>
-          {services.map((v) => (
-            <div key={v.id} className={`cus-row${v.endedAt !== null ? " ended" : ""}`}>
+          {services.map((v) => (<Fragment key={v.id}>
+            <div className={`cus-row${v.endedAt !== null ? " ended" : ""}`}>
               <span className="grow"><span className="cus-strong">{v.label}</span><span className="cus-dim">{PRODUCT[v.product]} · {v.period === "hour" ? "Hourly" : "Yearly"}</span></span>
               <span className="cus-right">
                 <span className="num">{v.period === "hour" ? `${euro(serviceMonthly(v))} a month` : `${euroCents(v.price)} a year`}</span>
@@ -239,8 +241,10 @@ function Detail({ r }: { r: Row }) {
               </span>
               <span className={`pill ${v.endedAt === null && r.status === "suspended" ? "bad" : ""}`}>{v.endedAt !== null ? "Ended" : r.status === "suspended" ? "Suspended" : "Active"}</span>
               {v.endedAt === null && v.period === "hour" && <ChangePrice v={v} profile={c.profile} />}
+              <button className="btn icon" aria-label="Activity" title="Activity" aria-pressed={log === v.id} onClick={() => setLog(log === v.id ? null : v.id)}><History /></button>
             </div>
-          ))}
+            {log === v.id && <ActivityLog customerId={c.id} serviceId={v.id} />}
+          </Fragment>))}
           {!services.length && <div className="cus-row cus-dim">No services</div>}
         </section>
       )}

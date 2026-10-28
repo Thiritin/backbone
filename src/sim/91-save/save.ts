@@ -62,7 +62,7 @@ export function deserialize(raw: string): GameState {
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, plan: v.plan ?? null, sla: v.sla ?? "basic" })),
     // Saves from before clusters keep their services unplaced, which leaves them online.
     sales: { ...base.sales, ...data.sales },
-    staff: (data.staff ?? []).map((e) => ({ ...e, location: e.location ?? null })),
+    staff: (data.staff ?? []).map((e) => ({ ...e, location: e.location ?? null, hours: e.hours ?? 8, hoursFrom: e.hoursFrom ?? 0 })),
     techRules: { ...base.techRules, ...data.techRules },
     clusters: (data.clusters ?? []).map((c) => clusterDefaults(c, data.hour ?? 0)), workloads: (data.workloads ?? []).map(workloadDefaults), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),

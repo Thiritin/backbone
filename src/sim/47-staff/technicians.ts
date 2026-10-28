@@ -7,7 +7,7 @@ import { HOURS_PER_YEAR, hotSwappable, locationOf } from "../60-infra/status";
 import type { SimEvent } from "../88-tick/tick";
 import { drain, upgradeNodePhp } from "../90-actions/clusters";
 import { replaceComponent, setPower, type ActionResult } from "../90-actions/hardware";
-import { atFair, isWorkHour, working, type Employee, type Task } from "./staff";
+import { atFair, isWorkHour, onShift, working, type Employee, type Task } from "./staff";
 
 export type OpKind = "replace" | "off" | "on" | "drain" | "php";
 // One operation on one device; componentId is set for a replace, auto when a rule queued it.
@@ -90,7 +90,7 @@ export function techTick(s: GameState): SimEvent[] {
   autoQueue(s);
   if (!isWorkHour(s.hour) || !s.techOps.length) return events;
   const taken = new Set<string>();
-  for (const e of s.staff.filter((x) => x.role === "technician" && working(x) && !atFair(s, x))) {
+  for (const e of s.staff.filter((x) => x.role === "technician" && working(x) && !atFair(s, x) && onShift(x, s.hour))) {
     const o = s.techOps.find((x) => e.trained.includes(OP_TASK[x.kind]) && opLocation(s, x) === e.location && ready(s, x, taken));
     if (!o) continue;
     taken.add(o.deviceId);

@@ -7,6 +7,7 @@ import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { metrics } from "../metrics";
+import { logActivity } from "../47-staff/activity";
 
 export type InvoiceStatus = "open" | "overdue" | "paid" | "writtenOff";
 // key and params are an i18n line text; serviceId is null for fees.
@@ -162,8 +163,11 @@ export function sendStep(s: GameState, inv: Invoice, i: number): void {
   else if (inv.payStep === i + 1) inv.payAt = s.hour + payDelay(s.rng);
 }
 
+// Before the Automation research, staff carry out the billing rules in their work hours; after it the rules run by themselves.
+export const rulesAutomated = (s: GameState): boolean => s.unlocks.includes("automation");
+
 // The dunning step the rules send now: notices with auto reminders, collections once its days have passed.
-function ruleStep(s: GameState, inv: Invoice): number | null {
+export function ruleStep(s: GameState, inv: Invoice): number | null {
   const i = dueStep(inv, s.hour);
   if (i === null) return null;
   if (STEPS[i].key !== "collections") return s.billingRules.autoRemind ? i : null;
@@ -172,25 +176,33 @@ function ruleStep(s: GameState, inv: Invoice): number | null {
 }
 
 // Hour the suspend rule acts on an invoice: days after the due date, or again when an appeal's extension runs out.
-function ruleSuspendsAt(s: GameState, inv: Invoice): number | null {
+export function ruleSuspendsAt(s: GameState, inv: Invoice): number | null {
   const days = s.billingRules.autoSuspendDays;
   if (!days || inv.status !== "overdue" || inv.suspended) return null;
   if (inv.suspendedAt === null) return inv.dueAt + days * DAY;
   return inv.extendedUntil !== null && inv.suspendedAt < inv.extendedUntil ? inv.extendedUntil : null;
 }
 
-// Billing rules and suspended customers, once per hour for each unpaid invoice the caller owns.
+const automated = (s: GameState, inv: Invoice, key: string) =>
+  logActivity(s, { customerId: inv.customerId, serviceId: null, by: "Automation", key: `activity.${key}`, params: { invoice: inv.number }, minutes: 0 });
+
+// Automated billing rules and suspended customers, once per hour for each unpaid invoice the caller owns.
 function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
   const c = s.customers.find((x) => x.id === inv.customerId);
-  const i = ruleStep(s, inv);
-  if (i !== null) sendStep(s, inv, i);
+  const auto = rulesAutomated(s);
+  const i = auto ? ruleStep(s, inv) : null;
+  if (i !== null) {
+    sendStep(s, inv, i);
+    automated(s, inv, STEPS[i].key);
+  }
   if (inv.status === "writtenOff") {
     if (c) events.push({ app: "Billing", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
     return;
   }
-  const at = ruleSuspendsAt(s, inv);
+  const at = auto ? ruleSuspendsAt(s, inv) : null;
   if (at !== null && c?.churnedAt === null && s.hour >= at) {
     if (suspend(s, inv)) events.push({ app: "Billing", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
+    automated(s, inv, "suspend");
   }
   if (!inv.suspended || inv.suspendedAt === null || inv.payAt !== null || !c) return;
   const since = s.hour - inv.suspendedAt;
@@ -203,7 +215,7 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
 }
 
 const needsChase = (s: GameState, inv: Invoice): boolean =>
-  isUnpaid(inv) && (inv.suspended || ruleStep(s, inv) !== null || ruleSuspendsAt(s, inv) !== null);
+  isUnpaid(inv) && (inv.suspended || (rulesAutomated(s) && (ruleStep(s, inv) !== null || ruleSuspendsAt(s, inv) !== null)));
 
 // Bank: economy.md, Bank, insurance and tax.
 const BASE_RATE: [number, number][] = [[2005, 4], [2009, 2.5], [2015, 1], [2021, 1], [2023, 4.5], [2026, 4]];

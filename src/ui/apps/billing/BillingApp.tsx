@@ -1,8 +1,8 @@
-import { Ban, CircleCheck, CircleDot, Files, Mail, OctagonAlert, Pause, Play, Receipt, Trash2, Workflow } from "lucide-react";
+import { Ban, CircleCheck, CircleDot, Files, ListChecks, Mail, OctagonAlert, Pause, Play, Receipt, Trash2, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, dueStep, freeRiding, invoiceTotal, STEPS, type BillingRules, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
+import { AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, dueStep, freeRiding, invoiceTotal, rulesAutomated, STEPS, type BillingRules, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import { sendReminder, setBillingRules, suspendServices, writeOff } from "../../../sim/90-actions/billing";
 import { t } from "../../../i18n/en";
 import { Confirm } from "../../desktop/Confirm";
@@ -44,6 +44,7 @@ export function BillingApp() {
     setSelected(f.id);
   });
   const name = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
+  const auto = rulesAutomated(game);
   const shown = game.invoices.filter((i) => filter === "all" || i.status === filter).reverse();
   const invoice = game.invoices.find((i) => i.id === selected);
   const totals: [string, number][] = [
@@ -64,7 +65,7 @@ export function BillingApp() {
           </button>
         ))}
         <button className={`side-item fin-auto-item${filter === "automation" ? " active" : ""}`} aria-pressed={filter === "automation"} onClick={() => setFilter("automation")}>
-          <Workflow />Automation
+          {auto ? <><Workflow />Automation</> : <><ListChecks />Rules</>}
         </button>
       </nav>
       {filter === "automation" && <Automation />}
@@ -114,14 +115,23 @@ function DaysRule<D extends number>({ label, days, value, onChange }: { label: s
   );
 }
 
+// Before the Automation research, bookkeepers and accountants carry the rules out in their work hours.
 function Automation() {
-  const rules = useStore((s) => s.game.billingRules);
+  const game = useStore((s) => s.game);
+  const rules = game.billingRules;
   const act = useStore((s) => s.act);
   const set = (r: Partial<BillingRules>) => act((s) => setBillingRules(s, r));
+  const auto = rulesAutomated(game);
+  const clerks = game.staff.filter((e) => e.role === "bookkeeper" || e.role === "accountant").map((e) => e.name);
   return (
     <div className="fin-main">
       <div className="settings fin-auto">
-        <h2>Automation</h2>
+        <h2>{auto ? "Automation" : "Rules"}</h2>
+        {!auto && (
+          <div className="settings-group">
+            <div className="settings-line"><span>Carried out by</span><span className="fin-auto-by">{clerks.length ? clerks.join(", ") : "Nobody"}</span></div>
+          </div>
+        )}
         <div className="settings-group">
           <div className="settings-line">
             <span>Send reminders</span>
