@@ -60,16 +60,16 @@ export function Cart() {
         {!cart.length && <div className="shop-none">Empty</div>}
       </div>
       {cart.length > 0 && <>
-        <label className="shop-dest">
+        <div className="shop-dest" role="group" aria-label="Deliver to">
           <span>Deliver to</span>
-          <select value={dest.id} onChange={(e) => setTo(e.target.value)}>
-            {REGIONS.filter((r) => game.locations.some((l) => l.city === r.city)).map((r) => (
-              <optgroup key={r.id} label={r.name}>
-                {game.locations.filter((l) => l.city === r.city).map((l) => <option key={l.id} value={l.id}>{l.name} · {l.az}</option>)}
-              </optgroup>
+          <div className="picks">
+            {REGIONS.flatMap((r) => game.locations.filter((l) => l.city === r.city)).map((l) => (
+              <button key={l.id} className="pick" aria-pressed={l.id === dest.id} onClick={() => setTo(l.id)}>
+                <strong>{l.name}</strong><span className="sub num">{l.az}</span>
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
         <div className="shop-cart-total"><span>Total</span><span className="grow" /><strong className="num">{euro(total)}</strong></div>
         <div className="shop-pay" role="radiogroup" aria-label="Payment">
           <button role="radio" aria-checked={!offer} className="shop-offer" onClick={() => setPay("cash")}>

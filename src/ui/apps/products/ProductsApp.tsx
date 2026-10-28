@@ -83,7 +83,7 @@ function ProductLines({ game }: { game: GameState }) {
                   <td>{PRODUCT[p]}</td>
                   <td>
                     {kind ? KIND_NAME[kind] : PRODUCTS[p].runsOn === "server" ? "Whole server" : "Rack space"}
-                    {kind && !PRODUCTS[p].ha && !lineOffered(game, p) && <> <span className="pill bad">Not installed</span></>}
+                    {kind && !lineOffered(game, p) && <> <span className="pill bad">Not installed</span></>}
                   </td>
                   {zones.map((z) => {
                     const n = mine.filter((v) => v.zone === z).length;

@@ -2,6 +2,7 @@ import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import { TAX_RATE } from "../10-catalog/economy";
 import { COMPONENTS } from "../10-catalog/hardware";
 import { cents, loanAvailable } from "../45-billing/billing";
+import { monthlyPay } from "../47-staff/staff";
 import type { Component, GameState, LedgerEntry } from "../50-state";
 import { HOURS_PER_YEAR } from "../60-infra/status";
 import { failureChance, type SimEvent } from "../88-tick/tick";
@@ -29,6 +30,19 @@ export function profitOf(e: LedgerEntry): number {
 
 export const profitBetween = (s: GameState, from: number, to: number): number =>
   cents(s.ledger.filter((e) => e.hour >= from && e.hour < to).reduce((sum, e) => sum + profitOf(e), 0));
+
+// Average monthly loss of the last three full months, with today's payroll in place of their salaries, plus extra.
+export function monthlyBurn(s: GameState, extra = 0): number {
+  const start = monthStartOf(s.hour), from = monthStartOf(monthStartOf(monthStartOf(start - 1) - 1) - 1);
+  const paid = -s.ledger.filter((l) => l.category === "salaries" && l.hour >= from && l.hour < start).reduce((n, l) => n + l.amount, 0);
+  return (-profitBetween(s, from, start) - paid) / 3 + s.staff.reduce((n, e) => n + monthlyPay(e), 0) + extra;
+}
+
+// Months the cash lasts at that burn; Infinity when the company makes money.
+export function runwayMonths(s: GameState, extra = 0): number {
+  const burn = monthlyBurn(s, extra);
+  return s.cash <= 0 ? 0 : burn > 0 ? s.cash / burn : Infinity;
+}
 
 // Tax on a year's profit after the losses carried from earlier years, and the loss carried on.
 export function taxFor(s: GameState, year: number): { profit: number; tax: number; carry: number } {

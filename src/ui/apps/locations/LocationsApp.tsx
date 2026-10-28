@@ -56,7 +56,7 @@ export function LocationsApp() {
       </div>
       <div className="loc-body">
         {view === "storage" ? (
-          <div className="loc-scroll"><Storage game={game} loc={zone} /></div>
+          <div className="loc-scroll"><Storage game={game} loc={zone} onMounted={(r, d) => { go(zone.id, r); setDeviceId(d); }} /></div>
         ) : !loc ? (
           <Overview game={game} onOpen={(id) => go(id)} />
         ) : cabling ? (
@@ -71,7 +71,7 @@ export function LocationsApp() {
               <Floor game={game} loc={loc} onRack={(id) => go(loc.id, id)} />
               <CarrierPanel game={game} loc={loc} selected={deviceId} onDevice={setDeviceId} />
               {loc.space === "basement" && <HomeLinePanel game={game} />}
-              <Storage game={game} loc={loc} />
+              <Storage game={game} loc={loc} onMounted={(r, d) => { go(loc.id, r); setDeviceId(d); }} />
               <Clusters game={game} loc={loc} />
             </div>
             {deviceId && game.devices.some((d) => d.id === deviceId && d.panel === loc.id) && (
