@@ -1,7 +1,7 @@
 import { yearOf } from "../00-core/time";
 import { brandsFor, modelById, priceOf, shopModels, SWITCH_BRAND } from "../10-catalog/hardware";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
-import { BASEMENT, DATACENTERS, datacenterById, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { connectError, drivesOf, fits, freePositions, holdsData, freeSlots, hotSwappable, moveCost, resaleValue, travelCost } from "../60-infra/status";
 import { endLease } from "../88-tick/tick";
@@ -437,5 +437,20 @@ export function buyCircuit(s: GameState, locationId: string): ActionResult {
   if (s.cash < CIRCUIT_PRICE) return fail("error.noCash");
   loc.extraCircuit = true;
   book(s, "hardware", "ledger.circuit", {}, -CIRCUIT_PRICE);
+  return { ok: true };
+}
+
+// Orders another internet line for the basement; it goes live after its install days. Ordering the current line cancels a pending switch.
+export function orderHomeLine(s: GameState, lineId: string): ActionResult {
+  const line = HOME_LINES.find((l) => l.id === lineId);
+  if (!line) return fail("error.unknownLine");
+  if (line.from > yearOf(s.hour)) return fail("error.lineNotYet");
+  if (s.homeLine.next?.id === lineId) return fail("error.lineOrdered");
+  if (s.homeLine.id === lineId) {
+    if (!s.homeLine.next) return fail("error.lineActive");
+    s.homeLine = { id: lineId, next: null };
+    return { ok: true };
+  }
+  s.homeLine = { id: s.homeLine.id, next: { id: lineId, at: s.hour + 24 * line.installDays } };
   return { ok: true };
 }

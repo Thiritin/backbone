@@ -270,3 +270,16 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .loc-swatch-default .loc-swatch { width: 14px; height: 14px; }
 .loc-swatch-default[aria-checked="true"] { border-color: var(--accent); color: var(--text); }
 .loc-feed { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+
+/* Internet line offers in the basement, laid out like the Shop's cards. */
+.loc-lines { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; padding: 12px; }
+.loc-line { display: flex; flex-direction: column; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); min-width: 0; }
+.loc-line.current { border-color: var(--accent); box-shadow: 0 0 0 0.5px var(--accent); }
+.loc-line-name { display: grid; gap: 2px; padding: 10px 14px 0; }
+.loc-line-name strong { font-weight: 650; font-size: 12.5px; }
+.loc-line-name span { display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 12px; }
+.loc-line-specs { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding: 10px 14px 12px; margin: 0; align-content: start; }
+.loc-line-specs dt { font-size: 11px; font-weight: 550; color: var(--text-3); }
+.loc-line-specs dd { margin: 0; font-size: 12px; }
+.loc-line-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-height: 44px; padding: 6px 10px 6px 14px; border-top: 0.5px solid var(--line); }
+.loc-line-foot strong { font-size: 12.5px; font-weight: 650; white-space: nowrap; }

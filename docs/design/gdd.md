@@ -602,7 +602,7 @@ Each location connects to the internet through what its city offers: transit car
 
 | Option | How it works | Cost | When |
 | --- | --- | --- | --- |
-| Home line | Consumer fiber in the basement, slow upload | Flat monthly fee | Start |
+| Home line | A consumer line in the basement, from DSL in 2005 to fiber later; upload stays slow until business fiber | Free on the starting DSL line, then a flat monthly fee per line | Start |
 | Datacenter bandwidth | The datacenter's own transit, through its handoff | Per TB or per Mbps | Early |
 | IP transit | A port with a carrier present in the city | Billed at the 95th percentile, with a minimum commit | Mid game |
 | Exchange peering | A port at an internet exchange, then sessions with other networks | Port fee; the traffic itself is free | Mid game; needs your own network number (ASN) |

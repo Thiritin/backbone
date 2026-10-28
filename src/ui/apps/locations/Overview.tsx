@@ -7,7 +7,7 @@ import { cityNamed, WorldMap, type Marker } from "../../map/WorldMap";
 import { day } from "../hw";
 import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, PowerMeter, providerOf, spaceLabel, spaceSize, Zone } from "./ui";
 import { Hourglass } from "lucide-react";
-import { datacenterById } from "../../../sim/20-world/datacenters";
+import { datacenterById, homeLineById } from "../../../sim/20-world/datacenters";
 import { addLocation, leaveWaitlist } from "../../../sim/90-actions/hardware";
 import { useStore } from "../../store";
 
@@ -67,7 +67,7 @@ function LocationCard({ game, loc, onOpen }: { game: GameState; loc: Location; o
         ["Rent", loc.dc ? <span className="num">{euro(locationRent(game, loc))} / month</span> : "None"],
         ["Power protection", dc ? `${feedsLabel(dc)}, ${backupLabel(dc)}` : "None"],
         ["Green power", dc?.green ? "Yes" : "No"],
-        ["Carriers", dc ? <span className="num">{dc.carriers}</span> : "Home line"],
+        ["Carriers", dc ? <span className="num">{dc.carriers}</span> : `${homeLineById(game.homeLine.id).isp} ${homeLineById(game.homeLine.id).name}`],
         ["Exchange", exchangeLabel(dc)],
       ]} />
       <div className="loc-row"><span className="loc-k">Power</span><PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} /></div>

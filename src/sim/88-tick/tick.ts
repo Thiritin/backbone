@@ -5,7 +5,7 @@ import { billingTick } from "../45-billing/billing";
 import { supportTick } from "../40-support/tick";
 import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
-import { capacityAt, DATACENTERS, datacenterById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
+import { capacityAt, DATACENTERS, datacenterById, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry } from "../50-state";
 import { arrayLost, dcAvailability, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
 
@@ -153,6 +153,12 @@ export function tick(state: GameState): SimEvent[] {
       events.push({ app: "Locations", key: "event.stockArrived", params: { count, location: state.locations.find((l) => l.id === id)!.name } });
     }
   }
+  const next = state.homeLine.next;
+  if (next && next.at <= state.hour) {
+    state.homeLine = { id: next.id, next: null };
+    const line = homeLineById(next.id);
+    events.push({ app: "Locations", key: "event.lineReady", params: { line: line.name, isp: line.isp } });
+  }
   state.rng = { ...state.rng };
   wear(state, events);
   if (state.devices.some((d) => d.maintenance || d.rebuild)) service(state);
@@ -175,6 +181,8 @@ export function tick(state: GameState): SimEvent[] {
         if (r[feed]) bills.push({ hour: state.hour, category: "rent", key: "ledger.feed", params: { rack: r.name, feed }, amount: -Math.round(FEED_PRICE[feed] * datacenterById(loc.dc).positionPrice) });
       }
     }
+    const line = homeLineById(state.homeLine.id);
+    if (line.monthly > 0) bills.push({ hour: state.hour, category: "rent", key: "ledger.homeLine", params: { line: line.name, isp: line.isp }, amount: -line.monthly });
     const leases = state.leases.map((l) => ({ ...l, paid: l.paid + 1 }));
     for (const l of leases) bills.push({ hour: state.hour, category: "leasing", key: "ledger.lease", params: { lessor: lessorName(l.lessor), paid: l.paid, months: l.months }, amount: -l.monthly });
     state.leases = leases;
