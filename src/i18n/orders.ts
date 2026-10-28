@@ -10,7 +10,7 @@ export const ORDERS_EN: Record<string, (p: Params) => string> = {
   "order.msg.vps.1": (p) => `Please set up a ${p.plan} for me. Debian would be nice, and monthly billing.`,
   "order.msg.gameServer.0": (p) => `We would like to order a ${p.plan} for our clan. It has to be up by Friday night.`,
   "order.msg.gameServer.1": (p) => `Please set up a ${p.plan} in ${p.city}. Low ping matters more to us than anything.`,
-  "ticket.order.webHosting.subject": () => "Order: web hosting",
+  "ticket.order.webHosting.subject": (p) => (p.domain ? `Order: hosting for ${p.domain}` : "Order: web hosting"),
   "ticket.order.vps.subject": () => "Order: VPS",
   "ticket.order.gameServer.subject": () => "Order: game server",
   "outcome.accepted": () => "Order accepted",

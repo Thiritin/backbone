@@ -6,6 +6,7 @@ import { ascii, CITY_TLD, companyDomain, domainFor } from "../src/sim/30-custome
 import { orderLead } from "../src/sim/30-market/orders";
 import { newLead } from "../src/sim/30-market/sales";
 import { REPLY_VARIANTS } from "../src/sim/40-support/replies";
+import { subjectParams } from "../src/sim/40-support/notices";
 import { ACTIONS, createTicket, TEMPLATES, type Ticket, type TicketAction, type TicketKind } from "../src/sim/40-support/tickets";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
@@ -68,6 +69,8 @@ describe("domains", () => {
     const v = s.services.find((x) => x.id === s.sales.requests.find((x) => x.id === r.id)!.serviceId)!;
     expect(v).toMatchObject({ domain: r.domain, label: r.domain });
     expect(rendered(r.thread[0].key, r.thread[0].params)).toContain(r.domain);
+    const tk = s.tickets.find((x) => x.id === r.ticketId)!;
+    expect(tr("ticket.order.webHosting.subject", subjectParams(s, tk))).toBe(`Order: hosting for ${r.domain}`);
   });
 
   it("are filled in for old saves on load", () => {

@@ -193,7 +193,7 @@ function spawn(s: GameState, r: Rng): Ticket[] {
 }
 
 export const subjectParams = (s: GameState, t: Ticket): Record<string, string | number> => ({
-  service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? "", url: t.notice?.url ?? "", video: t.notice?.video ?? "",
+  service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", video: t.notice?.video ?? "",
   round: t.notice?.round ?? 1, sender: t.notice ? senderById(t.notice.sender).name : "",
 });
 
