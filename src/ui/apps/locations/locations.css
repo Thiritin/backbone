@@ -319,3 +319,5 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .loc-mount-rack { display: flex; justify-content: center; padding: 14px 16px; overflow: auto; max-height: min(560px, calc(100dvh - 300px)); }
 .loc-ship { flex-wrap: wrap; }
 .loc-move-pos { display: grid; grid-template-columns: 90px 1fr; align-items: center; }
+.loc-site .loc-card-h { flex-wrap: wrap; row-gap: 4px; }
+.loc-site .loc-card-h h3 { white-space: nowrap; }
