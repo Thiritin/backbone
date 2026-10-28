@@ -1,4 +1,4 @@
-import { euro } from "../sim/00-core/money";
+import { euro, euroCents } from "../sim/00-core/money";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -45,6 +45,35 @@ export const en: Record<string, (p: Params) => string> = {
   "error.notSwitch": () => "Only switches have port groups.",
   "error.groupSize": () => "A port group holds 2 to 8 ports.",
   "warning.bondNotGrouped": () => "The switch ports for this bond are not grouped.",
+  // Billing and bank.
+  "event.invoices.title": () => "Invoices sent",
+  "event.invoices.text": (p) => `You sent ${p.count} ${Number(p.count) === 1 ? "invoice" : "invoices"} for ${euroCents(Number(p.total))}.`,
+  "event.loanMissed.title": () => "Repayment missed",
+  "event.loanMissed.text": (p) => `The instalment on the ${euro(Number(p.amount))} loan was not paid, and the bank charged a ${euro(Number(p.fee))} fee.`,
+  "event.loanCalled.title": () => "Loan called in",
+  "event.loanCalled.text": (p) => `The bank called in the ${euro(Number(p.amount))} loan.`,
+  "invoice.line.hours": (p) => `${p.label}, ${p.hours} h`,
+  "invoice.line.year": (p) => `${p.label}, 1 year`,
+  "invoice.line.dunningFee": () => "Dunning fee",
+  "invoice.line.finalFee": () => "Final notice fee",
+  "invoice.step.reminder": () => "Payment reminder",
+  "invoice.step.dunning": () => "Dunning notice",
+  "invoice.step.final": () => "Final notice",
+  "invoice.step.collections": () => "Collections",
+  "ledger.payment": (p) => `Invoice ${p.invoice} from ${p.customer}`,
+  "ledger.collections": (p) => `Collections on invoice ${p.invoice} from ${p.customer}`,
+  "ledger.loanTaken": (p) => `Loan of ${euro(Number(p.amount))}`,
+  "ledger.loanRepayment": (p) => `Instalment on the ${euro(Number(p.amount))} loan, ${euroCents(Number(p.interest))} interest`,
+  "ledger.loanPayoff": (p) => `Early repayment of the ${euro(Number(p.amount))} loan`,
+  "ledger.loanFee": (p) => `Missed instalment fee on the ${euro(Number(p.amount))} loan`,
+  "ledger.loanCalled": (p) => `The ${euro(Number(p.amount))} loan was called in`,
+  "error.invoiceSettled": () => "This invoice is already settled.",
+  "error.stepNotDue": () => "No dunning step is due yet.",
+  "error.notOverdue": () => "This invoice is not overdue.",
+  "error.loanBlocked": () => "The bank grants no new loans right now.",
+  "error.loanLimit": () => "This amount is above your loan limit.",
+  "error.loanTerm": () => "The bank does not offer this term.",
+  "error.unknownLoan": () => "This loan no longer exists.",
 };
 
 export const t = (key: string, params: Params = {}): string => en[key]?.(params) ?? key;
