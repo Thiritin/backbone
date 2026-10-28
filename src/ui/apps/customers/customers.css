@@ -22,6 +22,8 @@
 .cus-head { display: flex; align-items: center; gap: 12px; }
 .cus-head .grow { flex: 1; min-width: 0; }
 .cus-tabs { justify-self: start; }
+.cus-tabs .tab-count { margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 9px; font-size: 11px; line-height: 16px; display: inline-block; text-align: center; background: var(--hover); color: var(--text-2); }
+.cus-tabs [aria-selected="true"] .tab-count { background: var(--accent-soft); color: var(--accent-text); }
 .cus-happy { display: flex; align-items: center; gap: 12px; }
 .cus-trend polyline { fill: none; stroke: var(--text-2); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
 button.cus-row { width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }

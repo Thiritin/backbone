@@ -186,6 +186,11 @@ function Detail({ r }: { r: Row }) {
   const services = game.services.filter((v) => v.customerId === c.id).sort((a, b) => Number(a.endedAt !== null) - Number(b.endedAt !== null) || b.startedAt - a.startedAt);
   const invoices = game.invoices.filter((i) => i.customerId === c.id).reverse();
   const tickets = game.tickets.filter((tk) => tk.customerId === c.id).sort((a, b) => b.createdAt - a.createdAt);
+  const counts: Partial<Record<Tab, number>> = {
+    services: services.filter((v) => v.endedAt === null).length,
+    invoices: invoices.filter(isUnpaid).length,
+    tickets: tickets.filter((tk) => !isFinal(tk)).length,
+  };
 
   return (
     <div className="cus-detail">
@@ -198,7 +203,11 @@ function Detail({ r }: { r: Row }) {
         <StatusChip s={r.status} />
       </div>
       <div className="seg cus-tabs" role="tablist" aria-label="Customer">
-        {tabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}
+        {tabs.map(([id, label]) => (
+          <button key={id} role="tab" aria-selected={tab === id} aria-pressed={tab === id} onClick={() => setTab(id)}>
+            {label}{counts[id] ? <span className="tab-count num">{counts[id]}</span> : null}
+          </button>
+        ))}
       </div>
 
       {tab === "overview" && (
