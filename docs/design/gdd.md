@@ -613,6 +613,8 @@ Marketing brings in new customers, and reviews decide how many of them trust you
 
 The review score feeds into your reputation and into the host requirements customers check.
 
+**How the Marketing app works.** The app has four sections. Channels lists the owned steps as cards: email is always on, the website comes first, and the order form, Goggle Ads and AI ads each need the website. AI ads become available in 2023. Campaigns shows one card per paid channel (Goggle Ads, AI ads, gaming communities, cold calling, agency outreach) with the audiences it reaches as toggles and a monthly budget as a segmented control; agency outreach also offers a discount of 10%, 20% or 30%. A campaign's budget is billed at each month start, and so are website and order form upkeep and the review platform fee. Campaigns spread their budget evenly over the cities where you have a location. Awareness shows how well each audience knows you. Reviews shows the score, the latest reviews and the platforms, of which you use one at a time. Trade fairs, forum posts and the partner program come with the Staff app, and so does the marketing manager that review platforms will require.
+
 ## Network and DDoS
 
 Each location connects to the internet through what its city offers: transit carriers, internet exchanges and, later, private peering. Bandwidth costs money, and your customers' traffic has to fit through your links.

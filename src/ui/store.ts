@@ -156,7 +156,7 @@ export const useStore = create<Store>((set, get) => ({
     const open = ws.find((w) => w.app === app);
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
-    const n = ws.length % 8, size = app === "Locations" ? { w: 1120, h: 700 } : app === "Shop" ? { w: 1180, h: 700 } : app === "Billing" || app === "Bank" || app === "Customers" ? { w: 1240, h: 680 } : app === "Support" ? { w: 1160, h: 680 } : { w: 760, h: 480 };
+    const n = ws.length % 8, size = app === "Locations" ? { w: 1120, h: 700 } : app === "Shop" ? { w: 1180, h: 700 } : app === "Billing" || app === "Bank" || app === "Customers" || app === "Marketing" ? { w: 1240, h: 680 } : app === "Support" ? { w: 1160, h: 680 } : { w: 760, h: 480 };
     set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x: 96 + n * 32, y: 64 + n * 28, ...size, z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   openDoc: (doc) => {

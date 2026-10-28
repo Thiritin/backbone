@@ -157,7 +157,7 @@ function updateAwareness(s: GameState): void {
   const next = { ...s.marketing.awareness };
   for (const p of PROFILE_IDS) {
     const happy = s.customers.filter((c) => c.profile === p && c.churnedAt === null && c.happiness >= 70).length;
-    const gain = 0.08 * (1 - Math.exp(-paid[p] / 100)) + site + reviews + Math.min(0.01, 0.0005 * happy);
+    const gain = 0.05 * (1 - Math.exp(-paid[p] / 100)) + site + reviews + Math.min(0.01, 0.0005 * happy);
     const a = next[p];
     next[p] = Math.min(1, Math.max(AWARENESS_FLOOR, a + (1 - a) * gain - AWARENESS_DECAY * a));
   }
