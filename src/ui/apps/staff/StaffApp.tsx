@@ -1,16 +1,20 @@
 import { BookOpen, Bot, Check, GraduationCap, Megaphone, MessagesSquare, Search, UserMinus, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
+import { runwayMonths } from "../../../sim/46-finance/finance";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import {
-  activeBots, AD, atFair, BOT_RIGHT, BOT_SPEED, COURSE_HOURS, COURSE_PRICE, fullyTrained, marketSalary, monthlyPay, needsTraining, ROLES, staffPrice, TASKS, TRAINER_HOURS, trainerFor, visibleCandidates, WORK_HOURS,
-  type AdTier, type Assignment, type Candidate, type Employee, type Role, type Task,
+  activeBots, AD, atFair, BOT_RIGHT, BOT_SPEED, COURSE_HOURS, COURSE_PRICE, fullyTrained, marketSalary, monthlyPay, needsTraining, ROLES, salaryUpToNow, staffPrice, TASKS, TRAINER_HOURS, trainerFor, visibleCandidates, WORK_HOURS,
+  type AdTier, type Assignment, type Candidate, type Employee, type Role, type Task, type WorkHours,
 } from "../../../sim/47-staff/staff";
 import { storeItem, subscriptionPrice } from "../../../sim/10-catalog/store";
 import type { GameState } from "../../../sim/50-state";
 import { cancel } from "../../../sim/90-actions/store";
 import { answerRaise, assign, fire, hire, planTraining, postJobAd, setHours } from "../../../sim/90-actions/staff";
-import { useStore } from "../../store";
+import { Confirm } from "../../desktop/Confirm";
+import { useFocus, useStore } from "../../store";
+import { runwayLabel } from "../finance/FinanceApp";
+import { Facts, Sheet } from "../locations/ui";
 import { TechPanel } from "./TechPanel";
 import { formatDay } from "../billing/BillingApp";
 import { initials } from "../support/labels";
@@ -63,7 +67,9 @@ export function StaffApp() {
   const game = useStore((s) => s.game);
   const [view, setView] = useState<"team" | "market">("team");
   const [sel, setSel] = useState<string | null>(null);
+  const [role, setRole] = useState<Role>("support");
   const market = visibleCandidates(game);
+  useFocus("Staff", (f) => { if (f.kind === "market" && ROLES.includes(f.id as Role)) { setRole(f.id as Role); setView("market"); } });
   return (
     <div className="st">
       <aside className="sidebar st-side">
@@ -75,7 +81,7 @@ export function StaffApp() {
           <Search />Job market<span className="side-count">{market.length}</span>
         </button>
       </aside>
-      {view === "team" ? <Team game={game} sel={sel} setSel={setSel} onMarket={() => setView("market")} /> : <Market game={game} onHired={(id) => { setSel(id); setView("team"); }} />}
+      {view === "team" ? <Team game={game} sel={sel} setSel={setSel} onMarket={() => setView("market")} /> : <Market game={game} role={role} setRole={setRole} onHired={(id) => { setSel(id); setView("team"); }} />}
     </div>
   );
 }
@@ -168,6 +174,7 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
   const fee = staffPrice(COURSE_PRICE, yearOf(game.hour));
   const canTrain = fullyTrained(e) && game.staff.some((x) => x.id !== e.id && x.role === e.role && needsTraining(x));
   const open = TASKS[e.role].filter((k) => !e.trained.includes(k) && e.training?.task !== k);
+  const [leaving, setLeaving] = useState(false);
   const toggle = (k: Task) => act((s) => planTraining(s, e.id, e.plan.includes(k) ? e.plan.filter((x) => x !== k) : [...e.plan, k]));
   return (
     <section className="st-detail">
@@ -179,7 +186,7 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
             <div className="sub">{ROLE[e.role].one} since {formatDay(e.hiredAt)}</div>
           </div>
           <span className="grow" />
-          <button className="btn danger" onClick={() => act((s) => fire(s, e.id))}><UserMinus />Let go</button>
+          <button className="btn danger" onClick={() => setLeaving(true)}><UserMinus />Let go</button>
         </div>
         <dl className="st-facts">
           <div><dt>Skill</dt><dd><span className="num">{Math.round(e.skill)}</span><SkillBar value={e.skill} /></dd></div>
@@ -188,6 +195,10 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
           <div><dt>Next raise talk</dt><dd className="num">{formatDay(e.nextRaiseAt)}</dd></div>
         </dl>
       </header>
+      {leaving && (
+        <Confirm title={`Let ${e.name} go?`} action="Let go" onCancel={() => setLeaving(false)} onConfirm={() => { setLeaving(false); act((s) => fire(s, e.id)); }}
+          text={`This saves ${euro(monthlyPay(e))} a month. ${e.name.split(" ")[0]} leaves today and is paid ${euro(salaryUpToNow(game, e))} for the days worked this month.`} />
+      )}
       <div className="st-body">
         {e.raise && (
           <div className="st-raise">
@@ -238,9 +249,9 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
   );
 }
 
-function Market({ game, onHired }: { game: GameState; onHired: (id: string) => void }) {
+function Market({ game, role, setRole, onHired }: { game: GameState; role: Role; setRole: (r: Role) => void; onHired: (id: string) => void }) {
   const act = useStore((s) => s.act);
-  const [role, setRole] = useState<Role>("support");
+  const [hiring, setHiring] = useState<Candidate | null>(null);
   const list = visibleCandidates(game).filter((c) => c.role === role).sort((a, b) => b.skill - a.skill);
   const coming = game.candidates.filter((c) => c.role === role && c.arriveAt > game.hour).length;
   const year = yearOf(game.hour);
@@ -259,13 +270,39 @@ function Market({ game, onHired }: { game: GameState; onHired: (id: string) => v
         ))}
       </div>
       <div className="shop-grid">
-        {list.map((c) => <CandidateCard key={c.id} c={c} onHire={() => {
-          const r = act((s) => hire(s, c.id));
-          if (r.ok && r.id) onHired(r.id);
-        }} />)}
+        {list.map((c) => <CandidateCard key={c.id} c={c} onHire={() => setHiring(c)} />)}
         {!list.length && <div className="shop-none">No {ROLE[role].many.toLowerCase()} are looking for work right now.</div>}
       </div>
+      {hiring && <HireSheet game={game} c={hiring} onClose={() => setHiring(null)} onHire={(hours) => {
+        setHiring(null);
+        const r = act((s) => hire(s, hiring.id, hours));
+        if (r.ok && r.id) onHired(r.id);
+      }} />}
     </div>
+  );
+}
+
+// The first hire defaults to two hours a day, the cheapest way to start.
+function HireSheet({ game, c, onClose, onHire }: { game: GameState; c: Candidate; onClose: () => void; onHire: (hours: WorkHours) => void }) {
+  const [hours, setHours] = useState<WorkHours>(game.staff.length ? 8 : 2);
+  const pay = monthlyPay({ salary: c.salary, hours });
+  return (
+    <Sheet title={`Hire ${c.name}`} onClose={onClose}>
+      <div className="loc-form">
+        <div className="seg" role="group" aria-label="Hours a day">
+          {WORK_HOURS.map((h) => <button key={h} aria-pressed={hours === h} onClick={() => setHours(h)}>{h} h a day</button>)}
+        </div>
+        <Facts rows={[
+          ["Monthly cost", <span className="num">{euro(pay)}</span>],
+          ["Runway now", <span className="num">{runwayLabel(runwayMonths(game))}</span>],
+          ["Runway after", <span className="num">{runwayLabel(runwayMonths(game, pay))}</span>],
+        ]} />
+      </div>
+      <div className="loc-sheet-foot">
+        <button className="btn" onClick={onClose}>Cancel</button>
+        <button className="btn primary" onClick={() => onHire(hours)}><UserPlus />Hire for {euro(pay)} a month</button>
+      </div>
+    </Sheet>
   );
 }
 
@@ -279,9 +316,9 @@ function CandidateCard({ c, onHire }: { c: Candidate; onHire: () => void }) {
       </div>
       <dl className="shop-specs">
         <div><dt>Skill</dt><dd><span className="num">{c.skill}</span><SkillBar value={c.skill} /></dd></div>
-        <div><dt>Salary ask</dt><dd className="num">{euro(c.salary)}</dd></div>
+        <div><dt>8 h a day</dt><dd className="num">{euro(c.salary)}</dd></div>
+        <div><dt>2 h a day</dt><dd className="num">{euro(monthlyPay({ salary: c.salary, hours: 2 }))}</dd></div>
         <div><dt>Available until</dt><dd className="num">{formatDay(c.leaveAt)}</dd></div>
-        <div><dt>Applied</dt><dd className="num">{formatDay(c.arriveAt)}</dd></div>
       </dl>
       <div className="shop-buy">
         <span className="grow" />

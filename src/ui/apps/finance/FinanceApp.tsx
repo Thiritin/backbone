@@ -2,7 +2,7 @@ import { CalendarDays, ChartColumn, Landmark, Layers, LayoutGrid, ShieldCheck, T
 import { useEffect, useRef, useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { hardwarePremium, monthStartOf, nextTax, profitBetween, profitOf } from "../../../sim/46-finance/finance";
+import { hardwarePremium, monthStartOf, nextTax, profitBetween, profitOf, runwayMonths } from "../../../sim/46-finance/finance";
 import { buyInsurance, cancelInsurance } from "../../../sim/90-actions/finance";
 import type { GameState } from "../../../sim/50-state";
 import { metrics } from "../../../sim/metrics";
@@ -127,16 +127,13 @@ export function FinanceApp() {
   );
 }
 
+export const runwayLabel = (months: number) => (Number.isFinite(months) ? `${months.toFixed(1)} months` : "∞");
+
 function Overview({ game }: { game: GameState }) {
   const start = monthStartOf(game.hour);
   const prev = monthStartOf(start - 1);
   const lastMonth = profitBetween(game, prev, start);
-  // Average monthly result of the last three full months.
-  const from = monthStartOf(monthStartOf(prev - 1) - 1);
-  // Today's payroll replaces the salaries of those months, so a new hire shortens the runway right away.
-  const paid = -game.ledger.filter((l) => l.category === "salaries" && l.hour >= from && l.hour < start).reduce((n, l) => n + l.amount, 0);
-  const burn = (-profitBetween(game, from, start) - paid) / 3 + game.staff.reduce((n, e) => n + e.salary, 0);
-  const runway = game.cash <= 0 ? "0 months" : burn > 0 ? `${(game.cash / burn).toFixed(1)} months` : "∞";
+  const runway = runwayLabel(runwayMonths(game));
   return (
     <div className="fin-scroll">
       <dl className="fin-totals fin-cards">
