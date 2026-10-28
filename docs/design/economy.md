@@ -202,7 +202,32 @@ P(j) = \frac{e^{U_j/\tau}}{\sum_k e^{U_k/\tau}}
 
 ## Requests, SLAs and growth
 
-**Offer.** A request pays the market base rate for its resources × the profile's offer × the SLA factor. Fixed-price products such as web hosting use their fixed price instead of the base rate.
+**Price.** A request pays the market base rate for its resources × the profile's offer × the SLA factor × the feature factor. Fixed-price products such as web hosting use their fixed price instead of the base rate. The hourly rate is the monthly price ÷ 730.
+
+**Features.** Each wanted feature you offer adds 5 to the customer's value U (at most 15) and its price share below. A required feature you don't offer turns the request away.
+
+| Feature | Price share |
+| --- | --- |
+| High availability | +30% |
+| Replicas | +15% per replica beyond the first |
+| Spread across racks | +5% |
+| Spread across locations | +15% |
+| Backups | +20% |
+| DDoS protection | +10% on-demand, +25% always-on |
+| Private network | €5 a month (m = 1) |
+| Two carriers | +5% |
+
+**Shop price setting.** Budget multiplies prices by 0.85 and premium by 1.2. Budget adds 10 to U for low-budget profiles and premium adds 10 for high-budget profiles; each costs the other end 10.
+
+**Commitment and billing.**
+
+| Product | Minimum term | Billed |
+| --- | --- | --- |
+| Cloud servers, load balancers | None | Hourly, monthly in arrears |
+| Web hosting, VPS, game servers, managed databases, Kubernetes, DNS hosting | 1 month | Hourly, monthly in arrears |
+| Dedicated servers, colocation | 12 months | Hourly, monthly in arrears; colocation power by the kWh |
+| Object storage, CDN, traffic overage | None | Per TB, monthly in arrears |
+| Domains, SSL certificates | 12 months | Yearly in advance |
 
 | SLA | Uptime per month | First response | Price factor | Credit when missed |
 | --- | --- | --- | --- | --- |

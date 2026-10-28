@@ -282,7 +282,37 @@ You accept or decline. A declined customer goes to a competitor. Requests you ca
 
 **Cloud servers.** Cloud customers rent virtual machines by the hour and start and stop them as they like. Each cloud customer has a quota (vCPUs, RAM, storage), and their usage moves up and down within it. Raising the quota takes a request with a reason, which you approve, cut down or decline. Quotas can add up to more than the cluster holds, because customers rarely use all of it at once; if they do, their new machines fail to start and they get unhappy.
 
-**Contracts.** All contracts recur, monthly or yearly.
+**Prices.** You don't set prices. Every service is priced automatically at the market rate for that year, adjusted for its SLA and the features it includes, and the request card shows it as a monthly amount. When the shop unlocks, each product line gets one setting (budget, market or premium) that changes which customers send requests and how much they pay.
+
+**Billing.** Services are billed for every hour they run and invoiced once a month for the month that just ended. Hours a service is down are not billed, so an outage costs you its revenue. Business and Premium SLAs pay credits on top. Usage such as traffic over the included amount, object storage and CDN traffic is billed per TB on the same invoice. Domains and SSL certificates are the exception: they are paid a year in advance and renewed each year, and a customer who doesn't renew is gone.
+
+**Commitment.** Each contract has a minimum term: none for cloud servers, one month for hosting and VPS, twelve months for dedicated servers and colocation. Customers only leave when their term runs out, unless a missed SLA lets them leave early.
+
+**Features.** Each product line has features you switch on in its settings once the unlocks and the infrastructure allow them. Customers require some features and want others: a request whose required features are missing arrives greyed out, and every wanted feature you offer makes customers likelier to pick you and adds to the price.
+
+| Feature | Needs |
+| --- | --- |
+| High availability | An HA cluster |
+| Replicas | 2 or 3 replicas in the cluster settings |
+| Spread across racks | Nodes in at least two racks |
+| Spread across locations | The cluster stretched over two locations |
+| Backups | A backup cluster or storage servers |
+| DDoS protection | On-demand or always-on protection on the location |
+| Private network | The private networks unlock |
+| Two carriers | Uplinks from two carriers at the location |
+
+| Customer | Requires | Wants |
+| --- | --- | --- |
+| Private individual |  | Backups |
+| Gamer, small game server |  | DDoS protection |
+| Gamer, game server of 8 GB or more | DDoS protection | A location in their country |
+| Hobby developer |  | Private network |
+| Sole proprietor |  | Backups |
+| Small business | Backups | High availability |
+| Agency or startup |  | Private network, replicas |
+| Doctor's or law office | Backups, high availability | A location in their country |
+| Online shop | High availability, backups | DDoS protection, replicas |
+| Enterprise | High availability, replicas, spread across racks, private network | Two carriers, spread across locations, DDoS protection |
 
 ## Customers and market
 
@@ -368,9 +398,9 @@ Support is the first job that overwhelms you. Every outage, question, install re
 
 ## Billing, finance and insurance
 
-Every contract is billed monthly or yearly, and some customers don't pay. Chasing them is a manual job until bookkeepers and accountants take it over.
+Every contract is invoiced monthly for the hours it ran, domains and certificates yearly, and some customers don't pay. Chasing them is a manual job until bookkeepers and accountants take it over.
 
-**Invoices and dunning.** Invoices go out automatically on each billing date. Some customers pay late and a few never pay. When a dunning step is due, a button appears in the Billing app, and clicking it sends the notice (starting values, to tune):
+**Invoices and dunning.** Invoices go out automatically on the first of each month. Some customers pay late and a few never pay. When a dunning step is due, a button appears in the Billing app, and clicking it sends the notice (starting values, to tune):
 
 1. **Payment reminder**, 7 days after the due date. Friendly, no fee.
 2. **First dunning notice (Mahnung)**, after 14 days, with a fee.

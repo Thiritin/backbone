@@ -4,6 +4,7 @@ import { tick } from "../sim/88-tick/tick";
 import { deserialize, serialize } from "../sim/91-save/save";
 import type { Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
+import type { ActionResult } from "../sim/90-actions/hardware";
 
 export const SAVE_KEY = "backbone.save";
 
@@ -22,6 +23,7 @@ interface Store {
   notifyPrefs: Record<string, NotifyPref>;
   setNotifyPref: (app: string, patch: Partial<NotifyPref>) => void;
   advance: (hours: number) => void;
+  act: (fn: (s: GameState) => ActionResult) => ActionResult;
   setSpeed: (s: Speed) => void;
   openApp: (app: string) => void;
   focus: (id: string) => void;
@@ -80,6 +82,13 @@ export const useStore = create<Store>((set, get) => ({
       for (const e of tick(game)) get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params));
     }
     set({ game });
+  },
+  act: (fn) => {
+    const game = structuredClone(get().game);
+    const r = fn(game);
+    if (r.ok) set({ game });
+    else get().notify("Settings", t("action.failed.title"), t(r.error));
+    return r;
   },
   setSpeed: (speed) => set({ speed }),
 
