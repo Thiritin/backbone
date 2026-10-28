@@ -1,4 +1,4 @@
-import { Eye, Megaphone, Star, Waypoints } from "lucide-react";
+import { Eye, Megaphone, Presentation, Star, Waypoints } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -7,7 +7,10 @@ import {
   BUDGETS, CAMPAIGNS, costPerLead, DISCOUNTS, leadsThisMonth, monthlyMarketingCost, OWNED, owns, PLATFORMS, PROFILE_IDS, reach, reviewScore,
   type CampaignChannel, type OwnedChannel, type PlatformId, type Review,
 } from "../../../sim/80-business/marketing";
-import { setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../../../sim/90-actions/marketing";
+import { bookFair, setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../../../sim/90-actions/marketing";
+import { hasMarketingManager } from "../../../sim/47-staff/staff";
+import { fairCost, tradeFairBonus, upcomingFairs, type FairDate } from "../../../sim/80-business/fairs";
+import { metrics } from "../../../sim/metrics";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
@@ -15,7 +18,7 @@ import "../shop/shop.css";
 import "../billing/billing.css";
 import "./marketing.css";
 
-type Section = "channels" | "campaigns" | "awareness" | "reviews";
+type Section = "channels" | "campaigns" | "awareness" | "reviews" | "fairs";
 
 export const AUDIENCE: Record<Profile, string> = {
   private: "Private users", gamer: "Gamers", hobbyDev: "Developers", soleProp: "Sole traders", smallBiz: "Small businesses",
@@ -47,6 +50,7 @@ export function MarketingApp() {
     ["campaigns", "Campaigns", <Megaphone />, game.marketing.campaigns.length || null],
     ["awareness", "Awareness", <Eye />, null],
     ["reviews", "Reviews", <Star />, game.marketing.reviews.length || null],
+    ["fairs", "Trade fairs", <Presentation />, upcomingFairs(game).filter((d) => d.booking).length || null],
   ];
 
   return (
@@ -70,6 +74,7 @@ export function MarketingApp() {
           {section === "campaigns" && <Campaigns />}
           {section === "awareness" && <Awareness />}
           {section === "reviews" && <Reviews />}
+          {section === "fairs" && <Fairs />}
         </div>
       </div>
     </div>
@@ -218,6 +223,7 @@ function Reviews() {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const recent = [...game.marketing.reviews].reverse().slice(0, 30);
+  const manager = hasMarketingManager(game);
   return (
     <div className="mkt-reviews">
       <div className="mkt-score">
@@ -241,6 +247,7 @@ function Reviews() {
                 <span className="grow" />
                 {active
                   ? <button className="btn" onClick={() => act((s) => setReviewPlatform(s, null))}>Cancel</button>
+                  : p.fee > 0 && !manager ? <span className="pill">Needs a marketing manager</span>
                   : <button className="btn primary" onClick={() => act((s) => setReviewPlatform(s, id))}>Sign up</button>}
               </div>
             </div>
@@ -260,5 +267,55 @@ function ReviewRow({ r }: { r: Review }) {
       <div className="mkt-review-head"><Stars n={r.stars} /><strong>{r.name}</strong><span className="grow" /><span className="num">{formatDay(r.hour)}</span></div>
       <p>{t(`review.${r.reason}.${band(r.stars)}`)}</p>
     </li>
+  );
+}
+
+function Fairs() {
+  const game = useStore((s) => s.game);
+  return (
+    <div className="mkt-reviews">
+      <div className="mkt-score"><span>Network contacts</span><span className="num">{pct(tradeFairBonus(game))}</span></div>
+      <div className="shop-grid mkt-flat">
+        {upcomingFairs(game).map((d) => <FairCard key={d.fair.id} d={d} />)}
+      </div>
+    </div>
+  );
+}
+
+function FairCard({ d }: { d: FairDate }) {
+  const game = useStore((s) => s.game);
+  const act = useStore((s) => s.act);
+  const [who, setWho] = useState<string | null>(null);
+  const { fair, booking } = d;
+  const cost = fairCost(fair, d.year);
+  const level = metrics(game).level.level;
+  const free = game.staff.filter((e) => !game.fairs.some((b) => b.employeeId === e.id && b.start < d.end && d.start < b.end));
+  const open = !booking && d.start > game.hour && level >= fair.level;
+  let state: ReactNode;
+  if (booking) state = <span className="pill accent">Booked · {game.staff.find((e) => e.id === booking.employeeId)?.name ?? "Nobody"}</span>;
+  else if (d.start <= game.hour) state = <span className="pill">Under way</span>;
+  else if (level < fair.level) state = <span className="pill">Needs level <span className="num">{fair.level}</span></span>;
+  else if (!game.staff.length) state = <span className="pill">Needs an employee</span>;
+  else state = <button className="btn primary" disabled={!who || game.cash < cost} onClick={() => who && act((s) => bookFair(s, fair.id, who))}>Book</button>;
+  return (
+    <div className="shop-card">
+      <div className="shop-name"><strong>{fair.name}</strong><span>{fair.city} · {formatDay(d.start)}{fair.days > 1 && <> to {formatDay(d.end - 24)}</>}</span></div>
+      <dl className="shop-specs">
+        <div><dt>Cost</dt><dd className="num">{euro(cost)}</dd></div>
+        <div><dt>Company level</dt><dd className="num">{fair.level}</dd></div>
+        <div><dt>Leads</dt><dd className="num">{fair.leads || "None"}</dd></div>
+        <div><dt>Audience</dt><dd>{fair.profiles.length ? fair.profiles.map((p) => AUDIENCE[p]).join(", ") : "Networks"}</dd></div>
+        <div><dt>Network contacts</dt><dd className="num">+{pct(fair.bonus)}</dd></div>
+      </dl>
+      {open && free.length > 0 && (
+        <div className="mkt-row">
+          <span className="mkt-label">Attendee</span>
+          <div className="mkt-chips">
+            {free.map((e) => <button key={e.id} className="mkt-chip" aria-pressed={who === e.id} onClick={() => setWho(e.id)}>{e.name}</button>)}
+          </div>
+        </div>
+      )}
+      <div className="shop-buy"><span className="grow" />{state}</div>
+    </div>
   );
 }

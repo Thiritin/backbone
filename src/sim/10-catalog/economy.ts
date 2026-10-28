@@ -131,7 +131,7 @@ export const STAFF_HOURS_PER_MONTH = (8 * 210) / 12;
 export const tasksPerHour = (minutes: number, skill: number): number => (60 / minutes) * (0.5 + skill / 100);
 
 // Staff, Salary: role base 2026 gross per year, salary multiplier m = 0.6.
-export const ROLE_BASE = { support: 42000, bookkeeper: 38300, accountant: 50000 } as const;
+export const ROLE_BASE = { support: 42000, bookkeeper: 38300, accountant: 50000, marketing: 45300 } as const;
 export const monthlySalary = (role: keyof typeof ROLE_BASE, skill: number, year: number): number =>
   (priceAt(ROLE_BASE[role], 0.6, year) * 1.29 * (0.85 + 0.6 * (skill / 100))) / 12;
 

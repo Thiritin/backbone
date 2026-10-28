@@ -1,4 +1,4 @@
-import { BellDot, CalendarDays, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
+import { BellDot, Bot, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -17,6 +17,8 @@ const UPGRADES: Record<string, { icon: LucideIcon; tile: string; about: string }
   widgetRevenue: { icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Shows your monthly revenue on your desktop." },
   widgetCustomers: { icon: Users, tile: "oklch(0.52 0.17 268)", about: "Shows your customer count on your desktop." },
   widgetLevel: { icon: Trophy, tile: "oklch(0.72 0.15 95)", about: "Shows your company level and the way to the next one on your desktop." },
+  chadGpt: { icon: Bot, tile: "oklch(0.55 0.16 300)", about: "Answers how-to and billing tickets day and night, with confidence." },
+  clipsy: { icon: Paperclip, tile: "oklch(0.6 0.14 220)", about: "Sends payment reminders day and night, with enthusiasm." },
 };
 
 const INCLUDES: Record<string, string[]> = {
@@ -32,11 +34,14 @@ const INCLUDES: Record<string, string[]> = {
   widgetRevenue: ["Monthly recurring revenue", "Opens Finance"],
   widgetCustomers: ["Customer count", "Opens Customers"],
   widgetLevel: ["Company level", "Progress to the next level", "Opens Finance"],
+  chadGpt: ["How-to tickets", "Billing tickets", "Works around the clock"],
+  clipsy: ["Payment reminders", "Works around the clock"],
 };
 
 const SHELVES: [string, string[]][] = [
   ["Essentials", ["Network", "Products"]],
   ["Growth", ["Staff", "Marketing", "Market"]],
+  ["Bots", ["chadGpt", "clipsy"]],
   ["Upgrades", ["dockBadges", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],
 ];
 
@@ -53,7 +58,7 @@ function Action({ item, big }: { item: StoreItem; big?: boolean }) {
   const skill = skillFor(item.id);
   if (skill && !isAvailable(item.id, game.unlocks)) return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Research", { kind: "skill", id: skill.id }); }}>Needs {skill.name}</button>;
   if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act((s) => install(s, item.id)); }}>Get</button>;
-  if (item.kind === "upgrade") return <span className="ps-owned"><Check />Installed</span>;
+  if (item.kind !== "app") return <span className="ps-owned"><Check />Installed</span>;
   return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id); }}>Open</button>;
 }
 

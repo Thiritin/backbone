@@ -7,7 +7,7 @@ import { START_YEAR } from "../00-core/time";
 export const STARTER_APPS = ["Locations", "Shop", "Customers", "Support", "Billing", "Finance", "Bank", "Research", "Checklist", "Settings"];
 
 // id is the app name for apps; monthly is the 2005 price.
-export interface StoreItem { id: string; kind: "app" | "upgrade"; name: string; monthly: number }
+export interface StoreItem { id: string; kind: "app" | "upgrade" | "bot"; name: string; monthly: number }
 
 export const WIDGETS: [string, string, number][] = [
   ["widgetCalendar", "Calendar widget", 1], ["widgetTickets", "Open tickets widget", 1], ["widgetCash", "Cash widget", 1],
@@ -22,6 +22,9 @@ export const STORE: StoreItem[] = [
   { id: "Market", kind: "app", name: "Market", monthly: 15 },
   { id: "dockBadges", kind: "upgrade", name: "Dock badges", monthly: 5 },
   ...WIDGETS.map(([id, name, monthly]): StoreItem => ({ id, kind: "upgrade", name, monthly })),
+  // One subscription is one bot; what each bot does is in 47-staff/staff.ts.
+  { id: "chadGpt", kind: "bot", name: "ChadGPT Support", monthly: 300 },
+  { id: "clipsy", kind: "bot", name: "Clipsy Reminders", monthly: 100 },
 ];
 
 export const storeItem = (id: string): StoreItem | undefined => STORE.find((i) => i.id === id);

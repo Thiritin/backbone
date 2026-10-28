@@ -2,12 +2,13 @@ import { hashRng, rand, type Rng } from "../00-core/rng";
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import { monthlySalary, priceAt } from "../10-catalog/economy";
 import { cents, dueStep, sendStep } from "../45-billing/billing";
-import { MINUTES, rightTemplate, TEMPLATES, type Ticket, type TicketKind } from "../40-support/tickets";
+import { storeItem } from "../10-catalog/store";
+import { bump, createTicket, MINUTES, rightTemplate, TEMPLATES, type Ticket, type TicketKind } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 
-export type Role = "support" | "bookkeeper" | "accountant";
-export type Task = TicketKind | "reminder" | "dunning" | "final";
+export type Role = "support" | "bookkeeper" | "accountant" | "marketing";
+export type Task = TicketKind | "reminder" | "dunning" | "final" | "campaigns" | "reviews" | "fairs";
 // queue: works the role's tasks. trainer: trains colleagues of the same role. forum: posts in hosting and gaming forums.
 export type Assignment = "queue" | "trainer" | "forum";
 
@@ -16,14 +17,17 @@ export interface Employee {
   id: string; name: string; role: Role; skill: number; talent: number; salary: number; hiredAt: number; assignment: Assignment;
   trained: Task[]; plan: Task[]; training: { task: Task; startedAt: number; doneAt: number } | null; busyUntil: number;
   raise: { ask: number; at: number } | null; nextRaiseAt: number; refusedAt: number | null;
+  // Set on the stand-ins activeBots builds for store bots; never saved.
+  bot?: true;
 }
 export interface Candidate { id: string; name: string; role: Role; skill: number; talent: number; salary: number; arriveAt: number; leaveAt: number }
 
-export const ROLES: Role[] = ["support", "bookkeeper", "accountant"];
+export const ROLES: Role[] = ["support", "bookkeeper", "accountant", "marketing"];
 export const TASKS: Record<Role, Task[]> = {
   support: ["howTo", "billing", "outage", "upgrade", "cancellation", "abuse", "appeal"],
   bookkeeper: ["reminder"],
   accountant: ["dunning", "final"],
+  marketing: ["campaigns", "reviews", "fairs"],
 };
 // economy.md, Back-office tasks: minutes per dunning step, in STEPS order.
 const STEP_TASK: Task[] = ["reminder", "dunning", "final"];
@@ -119,8 +123,41 @@ export function isWorkHour(hour: number): boolean {
   return day >= 1 && day <= 5 && h >= 9 && h < 17;
 }
 
-const speed = (e: Employee) => 0.5 + e.skill / 100;
-const rightChance = (e: Employee) => 0.75 + 0.25 * (e.skill / 100);
+// economy.md, AI bots. A bot works around the clock at a fixed rate and never learns.
+export const BOTS: Record<string, { role: Role; tasks: Task[] }> = {
+  chadGpt: { role: "support", tasks: ["howTo", "billing"] },
+  clipsy: { role: "bookkeeper", tasks: ["reminder"] },
+};
+export const BOT_SPEED = 2;
+export const BOT_RIGHT = 0.6;
+// Chance per reminder that the customer writes in about it, and per task of something memorable.
+export const BOT_SLIP = 0.05;
+export const BOT_INCIDENT = 0.002;
+export const BOT_INCIDENT_HAPPINESS = -15;
+export const BOT_INCIDENTS = 5;
+
+export const activeBots = (s: GameState): Employee[] => Object.entries(BOTS).filter(([id]) => s.installed.includes(id)).map(([id, b]) => ({
+  id, name: storeItem(id)!.name, role: b.role, skill: 0, talent: 0, salary: 0, hiredAt: 0, assignment: "queue",
+  trained: b.tasks, plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 0, refusedAt: null, bot: true,
+}));
+
+// An employee at a trade fair does no other work for the fair's days.
+export const atFair = (s: GameState, e: Employee): boolean => s.fairs.some((b) => b.employeeId === e.id && b.start <= s.hour && s.hour < b.end);
+
+export const hasMarketingManager = (s: GameState): boolean => s.staff.some((e) => e.role === "marketing");
+// The best working marketing manager trained on the task, or none.
+const manager = (s: GameState, task: Task): Employee | undefined =>
+  s.staff.filter((e) => e.role === "marketing" && working(e) && !atFair(s, e) && e.trained.includes(task)).sort((a, b) => b.skill - a.skill)[0];
+// Campaigns bring 5% to 15% more leads with a manager trained on them, by skill.
+export const campaignBoost = (s: GameState): number => {
+  const e = manager(s, "campaigns");
+  return e ? 1.05 + 0.1 * (e.skill / 100) : 1;
+};
+export const REVIEW_INVITE_BOOST = 1.5;
+export const reviewBoost = (s: GameState): number => (manager(s, "reviews") ? REVIEW_INVITE_BOOST : 1);
+
+const speed = (e: Employee) => (e.bot ? BOT_SPEED : 0.5 + e.skill / 100);
+const rightChance = (e: Employee) => (e.bot ? BOT_RIGHT : 0.75 + 0.25 * (e.skill / 100));
 
 // A support agent queues a reply or action on the ticket the same way the player does; finishWork in the support tick applies it.
 function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "resolve"; arg: string } {
@@ -131,11 +168,13 @@ function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "
   return { op: "reply", arg: pick(r, TEMPLATES[t.kind].filter((x) => x !== right)) };
 }
 
-function answerTickets(s: GameState, agents: Employee[], r: Rng): void {
+interface BotTask { bot: Employee; customerId: string; reminder: boolean }
+
+function answerTickets(s: GameState, agents: Employee[], r: Rng): BotTask[] {
   const end = (s.hour + 1) * 60;
   const churned = new Set(s.customers.filter((c) => c.churnedAt !== null).map((c) => c.id));
   const queue = s.tickets.filter((t) => t.status === "open" && !t.work && !churned.has(t.customerId)).sort((a, b) => a.dueAt - b.dueAt);
-  const taken = new Map<string, Ticket["work"]>();
+  const taken = new Map<string, Ticket["work"]>(), byBot: BotTask[] = [];
   for (const e of agents) {
     let at = Math.max(e.busyUntil, s.hour * 60);
     for (const t of queue) {
@@ -143,18 +182,20 @@ function answerTickets(s: GameState, agents: Employee[], r: Rng): void {
       if (taken.has(t.id) || !e.trained.includes(t.kind)) continue;
       at += MINUTES[t.kind] / speed(e);
       taken.set(t.id, { ...choose(s, e, t, r), doneAt: Math.ceil(at), by: e.name });
+      if (e.bot) byBot.push({ bot: e, customerId: t.customerId, reminder: false });
     }
     e.busyUntil = at;
   }
   if (taken.size) s.tickets = s.tickets.map((t) => (taken.has(t.id) ? { ...t, work: taken.get(t.id)!, unread: false } : t));
+  return byBot;
 }
 
 // Bookkeepers send payment reminders, accountants the dunning and final notices; collections stays with the player and the rules.
-function chaseInvoices(s: GameState, clerks: Employee[]): void {
+function chaseInvoices(s: GameState, clerks: Employee[]): BotTask[] {
   const end = (s.hour + 1) * 60;
   const due = s.invoices.map((inv) => ({ inv, step: dueStep(inv, s.hour) })).filter((x): x is { inv: typeof x.inv; step: number } => x.step !== null && x.step < STEP_TASK.length)
     .sort((a, b) => a.inv.dueAt - b.inv.dueAt);
-  const sent = new Map<string, number>();
+  const sent = new Map<string, number>(), byBot: BotTask[] = [];
   for (const e of clerks) {
     let at = Math.max(e.busyUntil, s.hour * 60);
     for (const { inv, step } of due) {
@@ -162,16 +203,33 @@ function chaseInvoices(s: GameState, clerks: Employee[]): void {
       if (sent.has(inv.id) || !e.trained.includes(STEP_TASK[step])) continue;
       at += STEP_MINUTES[step] / speed(e);
       sent.set(inv.id, step);
+      if (e.bot) byBot.push({ bot: e, customerId: inv.customerId, reminder: true });
     }
     e.busyUntil = at;
   }
-  if (!sent.size) return;
+  if (!sent.size) return byBot;
   s.invoices = s.invoices.map((inv) => {
     if (!sent.has(inv.id)) return inv;
     const copy = { ...inv };
     sendStep(s, copy, sent.get(inv.id)!);
     return copy;
   });
+  return byBot;
+}
+
+// A bot reminder sometimes confuses the customer into a billing ticket; once in a long while a bot does something memorable.
+function botTrouble(s: GameState, events: SimEvent[], r: Rng, done: BotTask[]): void {
+  for (const { bot, customerId, reminder } of done) {
+    const i = s.customers.findIndex((c) => c.id === customerId);
+    if (i < 0 || s.customers[i].churnedAt !== null) continue;
+    if (rand(r) < BOT_INCIDENT) {
+      const c = { ...s.customers[i] };
+      s.customers = s.customers.map((x, k) => (k === i ? c : x));
+      bump(c, BOT_INCIDENT_HAPPINESS);
+      createTicket(s, c, "billing");
+      events.push({ app: "Staff", key: `event.botIncident${1 + Math.floor(rand(r) * BOT_INCIDENTS)}`, params: { bot: bot.name, customer: c.name } });
+    } else if (reminder && rand(r) < BOT_SLIP) createTicket(s, s.customers[i], "billing");
+  }
 }
 
 // Skill grows 12 points a year in the first two years, 6 in years 3 to 5 and 2 after that, up to the talent cap.
@@ -214,7 +272,8 @@ export const forumAwareness = (s: GameState): number =>
   s.staff.filter((e) => e.assignment === "forum").reduce((sum, e) => sum + FORUM_LEADS * speed(e), 0);
 
 export function staffTick(s: GameState): SimEvent[] {
-  if (!s.staff.length) {
+  const bots = activeBots(s);
+  if (!s.staff.length && !bots.length) {
     if (isMonthStart(s.hour)) refreshMarket(s);
     return [];
   }
@@ -241,11 +300,11 @@ export function staffTick(s: GameState): SimEvent[] {
     e.assignment = "queue";
     events.push({ app: "Staff", key: "event.trainerDone", params: { name: e.name } });
   }
-  if (isWorkHour(s.hour)) {
-    const active = s.staff.filter(working);
-    answerTickets(s, active.filter((e) => e.role === "support"), r);
-    chaseInvoices(s, active.filter((e) => e.role !== "support"));
-  }
+  // Staff take the queue first in office hours; bots take what is left, day and night.
+  const active = [...(isWorkHour(s.hour) ? s.staff.filter((e) => working(e) && !atFair(s, e)) : []), ...bots];
+  const support = active.filter((e) => e.role === "support"), clerks = active.filter((e) => e.role === "bookkeeper" || e.role === "accountant");
+  const done = [...(support.length ? answerTickets(s, support, r) : []), ...(clerks.length ? chaseInvoices(s, clerks) : [])];
+  botTrouble(s, events, r, done);
   if (isMonthStart(s.hour)) monthly(s, events, r);
   return events;
 }

@@ -19,6 +19,7 @@ export const SKILLS: Skill[] = [
   { id: "products", name: "Product management", about: "You learn to bundle your services into product lines with plans, licences and clusters.", tier: 2, knowHow: 200, days: 14, needs: ["marketingBasics"], opens: ["Products"] },
   { id: "marketing", name: "Marketing campaigns", about: "Your staff learns to run campaigns and to keep an eye on what customers write about you.", tier: 2, knowHow: 300, days: 14, needs: ["marketingBasics", "people"], opens: ["Marketing"] },
   { id: "market", name: "Market research", about: "You learn to read demand by product and to find out why a sale got away.", tier: 3, knowHow: 800, days: 21, needs: ["products", "marketing"], opens: ["Market"] },
+  { id: "automation", name: "Automation", about: "Your company learns to hand routine tickets and reminders to bots that never sleep and never quite understand.", tier: 3, knowHow: 1500, days: 21, needs: ["people", "monitoring"], opens: ["chadGpt", "clipsy"] },
 ];
 
 export const skillById = (id: string): Skill | undefined => SKILLS.find((k) => k.id === id);
