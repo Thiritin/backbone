@@ -133,7 +133,9 @@ function Overview({ game }: { game: GameState }) {
   const lastMonth = profitBetween(game, prev, start);
   // Average monthly result of the last three full months.
   const from = monthStartOf(monthStartOf(prev - 1) - 1);
-  const burn = -profitBetween(game, from, start) / 3;
+  // Today's payroll replaces the salaries of those months, so a new hire shortens the runway right away.
+  const paid = -game.ledger.filter((l) => l.category === "salaries" && l.hour >= from && l.hour < start).reduce((n, l) => n + l.amount, 0);
+  const burn = (-profitBetween(game, from, start) - paid) / 3 + game.staff.reduce((n, e) => n + e.salary, 0);
   const runway = game.cash <= 0 ? "0 months" : burn > 0 ? `${(game.cash / burn).toFixed(1)} months` : "∞";
   return (
     <div className="fin-scroll">
