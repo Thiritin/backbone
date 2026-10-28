@@ -1,4 +1,4 @@
-import { AlarmClock, ArrowUpRight, BadgeCheck, CircleCheck, Hourglass, Inbox, Send, Timer, TriangleAlert, Wrench, X } from "lucide-react";
+import { AlarmClock, ArrowUpRight, BadgeCheck, CircleCheck, Handshake, Hourglass, Inbox, Send, Timer, TriangleAlert, Wrench, X } from "lucide-react";
 import { useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { ACTIONS, canEscalate, isFinal, monthlyValue, TEMPLATES, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
@@ -128,6 +128,8 @@ function Thread({ tk }: { tk: Ticket }) {
   const left = tk.dueAt - game.hour;
   const services = game.services.filter((v) => v.customerId === tk.customerId && v.endedAt === null);
   const locked = !!tk.work || isFinal(tk);
+  const openApp = useStore((s) => s.openApp);
+  const request = tk.kind === "upgrade" ? game.sales.requests.find((r) => r.ticketId === tk.id) : undefined;
 
   return (
     <div className="sup-detail">
@@ -217,6 +219,7 @@ function Thread({ tk }: { tk: Ticket }) {
                 {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}
               </button>
             ))}
+            {request && <button className="btn" onClick={() => openApp("Sales", { kind: "request", id: request.id })}><Handshake />Open in Sales</button>}
             {canEscalate(tk.kind) && tk.status === "open" && (
               <button className="btn" disabled={locked} onClick={() => act((s) => escalateTicket(s, tk.id))}><ArrowUpRight />Escalate</button>
             )}

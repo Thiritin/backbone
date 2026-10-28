@@ -11,7 +11,7 @@ const rented = (s: GameState) => s.locations.filter((l) => l.dc !== null);
 export const CHECKS: Record<string, (s: GameState) => boolean> = {
   loan: (s) => booked(s, "ledger.loanTaken"),
   secondServer: (s) => onlineServers(s).length >= 2,
-  firstCustomer: (s) => s.customers.length > 0,
+  firstCustomer: (s) => s.customers.some((c) => c.habit !== "friend"),
   ticket: (s) => s.tickets.some((t) => t.replies.length > 0),
   payment: (s) => s.invoices.some((i) => i.status === "paid"),
   reminder: (s) => s.invoices.some((i) => i.reminders.length > 0),

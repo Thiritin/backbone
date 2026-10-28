@@ -12,6 +12,10 @@ import { formatDay } from "../billing/BillingApp";
 import { APPS } from "../registry";
 import { initials, kindOf, monthYear, moodClass, PRODUCT, stamp, STATUS } from "../support/labels";
 import "../support/support.css";
+import { referenceFor } from "../../../sim/30-market/market";
+import type { Profile, Service } from "../../../sim/30-customers/customers";
+import { changePrice } from "../../../sim/90-actions/sales";
+import { PriceField } from "../sales/PriceField";
 import "./customers.css";
 
 type Status = "active" | "overdue" | "suspended" | "churned";
@@ -234,6 +238,7 @@ function Detail({ r }: { r: Row }) {
                 <span className="cus-dim">{v.endedAt === null ? <>since <span className="num">{formatDay(v.startedAt)}</span></> : <>ended <span className="num">{formatDay(v.endedAt)}</span></>}</span>
               </span>
               <span className={`pill ${v.endedAt === null && r.status === "suspended" ? "bad" : ""}`}>{v.endedAt !== null ? "Ended" : r.status === "suspended" ? "Suspended" : "Active"}</span>
+              {v.endedAt === null && v.period === "hour" && <ChangePrice v={v} profile={c.profile} />}
             </div>
           ))}
           {!services.length && <div className="cus-row cus-dim">No services</div>}
@@ -280,6 +285,24 @@ function Detail({ r }: { r: Row }) {
           <div className="cus-row cus-dim"><span className="grow">No workloads</span><button className="btn" onClick={() => openApp("Virtual machines")}>Open Virtual machines</button></div>
         </section>
       )}
+    </div>
+  );
+}
+
+function ChangePrice({ v, profile }: { v: Service; profile: Profile }) {
+  const game = useStore((s) => s.game);
+  const act = useStore((s) => s.act);
+  const [open, setOpen] = useState(false);
+  const [price, setPrice] = useState(Math.round(serviceMonthly(v) * 100) / 100);
+  if (!open) return <button className="btn" onClick={() => setOpen(true)}>Change price</button>;
+  const save = () => { if (act((s) => changePrice(s, v.id, price)).ok) setOpen(false); };
+  return (
+    <div className="cus-price">
+      <PriceField value={price} reference={referenceFor(game, profile, v.product, v.plan ?? "", v.sla)} onChange={setPrice} label="New monthly price" />
+      <div className="cus-price-actions">
+        <button className="btn ghost" onClick={() => setOpen(false)}>Cancel</button>
+        <button className="btn primary" disabled={!(price > 0)} onClick={save}>Save price</button>
+      </div>
     </div>
   );
 }

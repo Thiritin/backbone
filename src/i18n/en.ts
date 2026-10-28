@@ -1,5 +1,6 @@
 import { euro, euroCents } from "../sim/00-core/money";
 import { OPS } from "./en-ops";
+import { SALES_EN } from "./sales";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -14,6 +15,7 @@ const CHANNELS: Record<string, string> = {
 const units = (n: string | number) => `${n} ${Number(n) === 1 ? "unit" : "units"}`;
 
 export const en: Record<string, (p: Params) => string> = {
+  ...SALES_EN,
   "event.monthStart.title": (p) => `${MONTHS[Number(p.month)]} ${p.year}`,
   "event.monthStart.text": () => "A new month has started.",
   "save.loaded.title": () => "Game loaded",

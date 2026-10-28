@@ -46,3 +46,6 @@ button.cus-row:last-child { border-radius: 0 0 10px 10px; }
 .cus-strong { font-weight: 550; }
 .cus-right { display: grid; justify-items: end; gap: 1px; text-align: right; white-space: nowrap; }
 .cus-kind { width: 14px; height: 14px; color: var(--text-3); flex: none; }
+.cus-price { flex-basis: 100%; display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 8px; }
+.cus-price-actions { display: flex; gap: 8px; }
+.cus-row:has(.cus-price) { flex-wrap: wrap; }

@@ -1,5 +1,5 @@
 import {
-  BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, Landmark, GraduationCap, LifeBuoy, ListChecks, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
+  BookOpen, ChartLine, Handshake, ChartPie, Contact, FileText, Globe, Landmark, GraduationCap, LifeBuoy, ListChecks, Megaphone, Package, Receipt, Server, Settings, ShoppingCart, Users,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -9,6 +9,8 @@ import { ChecklistApp } from "./checklist/ChecklistApp";
 import { FinanceApp } from "./finance/FinanceApp";
 import { MarketingApp } from "./marketing/MarketingApp";
 import { NetworkApp } from "./network/NetworkApp";
+import { SalesApp } from "./sales/SalesApp";
+import { missingFor } from "../../sim/30-market/market";
 import type { GameState } from "../../sim/50-state";
 import { CustomersApp } from "./customers/CustomersApp";
 import { SupportApp } from "./support/SupportApp";
@@ -37,6 +39,8 @@ export const APPS: AppDef[] = [
   { name: "Network", icon: Globe, tile: "oklch(0.58 0.12 210)", about: "Manages transit, peering and DDoS protection.", body: NetworkApp,
     badge: (s) => s.network.requests.length + s.network.attacks.length },
   { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters." },
+  { name: "Sales", icon: Handshake, tile: "oklch(0.6 0.15 145)", about: "Collects requests from customers so you can quote a price or decline.", body: SalesApp,
+    badge: (s) => s.sales.requests.filter((r) => (r.status === "open" || r.status === "countered") && !missingFor(s, r).length).length },
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: "Lists your customers with their contracts and happiness.", body: CustomersApp },
   { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets so you can answer them with templates and actions.", body: SupportApp,
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length },
@@ -45,8 +49,6 @@ export const APPS: AppDef[] = [
   { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Shows your profit and loss, cash flow, tax, insurance and the account statement with every booking.", body: FinanceApp },
   { name: "Bank", icon: Landmark, tile: "oklch(0.45 0.04 255)", about: "Offers loans up to your credit limit and lets you repay them early.", body: BankApp },
   { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: "Hires people and assigns them to work queues.", body: StaffApp },
-  { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: "Runs campaigns and manages reviews." },
-  { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: "Hires people and assigns them to work queues." },
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: "Runs campaigns and manages reviews.", body: MarketingApp },
   { name: "Market", icon: ChartPie, tile: "oklch(0.62 0.12 230)", about: "Shows demand, customer requirements and lost sales." },
   { name: "Research", icon: GraduationCap, tile: "oklch(0.72 0.15 95)", about: "Trains your company in new skills with the know-how it earns.", body: ResearchApp },

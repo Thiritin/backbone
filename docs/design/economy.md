@@ -302,6 +302,65 @@ Hours a service is down are left off its invoice line. When the hours up fall be
 
 **Cloud quotas.** A cloud customer's usage averages 40% of its quota and peaks at 80% during its busiest hours. It pays per hour used, at the base rate × 1.25 ÷ 730. When its peak passes 80% of the quota, it asks for a 50% to 100% higher quota with a reason drawn from its profile.
 
+## Sales and quotes
+
+How the market above turns into requests in the Sales app. Code: `src/sim/30-market`.
+
+**Organic leads in the game.** Organic leads scale with the market and with awareness instead of a flat 20: 0.4 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × the review multiplier. With the starting awareness (5% for private individuals and gamers, 2% for the rest) Frankfurt gives about 20 leads a month in 2005, and every point of awareness a campaign buys raises organic leads too. Referrals (0.005 a month per customer with happiness 70 or more) and forum posts (2 × (0.5 + s/100) a month per employee, split over hobby developers, gamers and small businesses) come from the home city. Each forum lead also adds 0.5% of the gap to the awareness of those three profiles every month.
+
+**Website and campaigns.** Their leads come from the Marketing app's lead batches. 10% of them arrive from cities without a location of yours, spread evenly; those requests arrive greyed out with "Needs a location in London", so you can see the demand you are missing.
+
+**Daily mail.** Leads arrive every morning at 8:00, Poisson-distributed around the monthly rate ÷ 30.4. Each lead draws its need first, then picks you with its share of the choice below, times its channel's conversion.
+
+**Choice with prices.** The softmax of Customer choice decides who wins a lead, over you and the competitors that sell the product to that profile. Each host's value also carries a price term of 0.25 × λ × 100 × (1 − price factor). Your price factor is the average ratio of your running services' prices to the market reference (friends excluded, 1 without services), so undercutting wins a bigger share only gradually, as your cheaper contracts pile up. Your scores: P = 0.5 generation + 30 + 0.2 location (100 with a location in the city, 40 without); R = 0.5 uptime (60 in the first month, then from this month's down hours with a floor of 0.05% downtime) + 0.3 support (from the first replies of the last 90 days, 75% of the promised time without tickets) + 8; C = 30 + 0.3 × the share of the profile's usual products you sell.
+
+| Competitor | Stands in for | P | R | C | Price | Sells | Targets |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Ionose | IONOS, the budget giant | 55 | 60 | 70 | 0.8 | Web hosting, domains, SSL, DNS, VPS | Everyone |
+| OVHeat | OVH, the wholesale provider | 70 | 65 | 50 | 0.75 | Everything | Everyone |
+| Hetzna | Hetzner, the developer cloud | 85 | 70 | 40 | 0.7 | VPS, dedicated, storage, cloud, colocation | Everyone |
+| Rackspice | Rackspace, the premium host | 80 | 90 | 75 | 1.3 | Everything | Everyone |
+| Nitradoh | A game server host | 75 | 60 | 60 | 0.9 | Game servers | Gamers |
+| WP Engyne | A managed WordPress host | 70 | 80 | 85 | 1.4 | Web hosting | Sole proprietors, small businesses, offices, agencies |
+
+The balance model keeps the four archetypes in every segment and leaves the specialists out.
+
+**What a lead asks for.** Plans follow the budget: the smallest plan for low budgets, the second for medium and the largest for high. Four in ten leads settle for one SLA level less than their profile asks.
+
+| Profile | Products asked for |
+| --- | --- |
+| Private individual | Web hosting |
+| Gamer | Game server 60%, VPS 20%, web hosting 20% |
+| Hobby developer | VPS 90%, web hosting 10% |
+| Sole proprietor | Web hosting 90%, VPS 10% |
+| Small business | Web hosting 60%, VPS 40% |
+| Agency or startup | Web hosting 30%, VPS 70% |
+| Doctor's or law office | Web hosting 90%, VPS 10% |
+| Online shop | Web hosting 50%, VPS 50% |
+| Enterprise | VPS 50%, dedicated 50% |
+
+**Requirements.** A request needs a location in its city and a cluster with nodes there (a free mounted server for dedicated). A Business or Premium SLA needs a datacenter location in the city, Premium also a company at least 12 months old, and high-budget profiles a review score of 3 stars. A request that misses one arrives greyed out and becomes a lost sale with that reason when it expires.
+
+**Reference and budget.** The market reference is the plan's market price × the SLA factor × the profile's offer (0.9, 1.0 or 1.3 by budget). Each request has a hidden budget b, uniform between 0.97 and 1.24, and the customer accepts a quote q with this probability:
+
+```math
+P(\text{accept}) = \frac{1}{1 + e^{(q / \text{ref} - m) / 0.06}}, \quad m = b \cdot (1 - d) \cdot e_{\text{existing}} \cdot (1 + 0.05\,(\text{stars} - 3.5)) \cdot (1 + 0.1\,a)
+```
+
+d is the agency discount from a campaign, e is 1.15 for an existing customer and a the profile's awareness. At the reference most accept (about 85%), 20% above it about one in six. A second quote after a refusal or counter-offer has 0.35 × that chance.
+
+**Replies.** The customer answers 4 to 24 hours after a quote. When they decline and the quote is within 0.12 of m, half of them counter at 0.97 × m × the reference; meeting the counter wins for certain. Further above they write that they have no budget. After a refusal or counter you have 48 hours for one more quote. Unanswered requests expire after 72 hours, expansion requests after 7 days.
+
+**Winning.** An accepted quote signs the customer (payment habit drawn from Billing and payment habits) and provisions the service in the request's city at the quoted price. Without room the deal is lost as "No capacity in Frankfurt" and the customer goes elsewhere.
+
+**Expansion.** Every upgrade ticket (2% to 4% of customers a month, see Happiness and churn) opens an expansion request for the next bigger plan of its service, or one more of the biggest. Winning it replaces the service and closes the ticket.
+
+**Shady requests.** From the fourth month, about one request every three months asks for the biggest VPS, no questions asked, paid in crypto. Its budget is 1.8, so it accepts nearly any price. A won shady customer carries a hidden `shady` flag for abuse and legal follow-ups.
+
+**Price changes.** Raising a running service's price costs 0.5 happiness per 1% (at most 30); lowering it gives 0.2 per 1% (at most 10). Above 1.3 × the market reference a raise opens a cancellation ticket with a chance of (ratio − 1.3) ÷ 0.4. Happiness drifts back each month (Happiness and churn, Drift), which makes the hit temporary.
+
+**Measured flow.** `npx tsx scripts/sales-flow.ts [seed] [months]` runs the real tick with a bot that quotes 3% under the reference, answers tickets, sets up a website in month 3 and runs €250 of search ads from month 6. Seed 1 gets 6 to 9 requests a month in the basement, 16 to 26 with the website and ads, and fills the basement server at about 26 customers, after which most deals are lost for capacity until you buy hardware.
+
 ## Happiness and churn
 
 Every customer has a happiness value H from 0 to 100. Events move it up and down, it slowly drifts toward how good your plan is compared with the best competitor, and it sets the chance of cancelling at each renewal. New customers start at 70; the three starting friends start at 85.

@@ -1,0 +1,35 @@
+.sales.sales-wide { grid-template-columns: 210px minmax(0, 1fr); }
+.sales .tk.greyed .who, .sales .tk.greyed .subj { color: var(--text-3); }
+.sales .sup-detail.greyed .d-head h2, .sales .sup-detail.greyed .cust { opacity: 0.6; }
+
+.sales-reqs { list-style: none; margin: 0; padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 6px 16px; border-bottom: 0.5px solid var(--line); }
+.sales-reqs li { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-2); }
+.sales-reqs li svg.lucide { width: 14px; height: 14px; }
+.sales-reqs li.ok svg.lucide { color: var(--ok); }
+.sales-reqs li.bad { color: var(--bad-text); font-weight: 550; }
+
+.sales-bars { padding: 10px 20px 12px; border-bottom: 0.5px solid var(--line); display: grid; gap: 6px; }
+.sales-bars h3 { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.sales-bars .res { display: grid; grid-template-columns: 56px minmax(0, 1fr) 72px 44px; gap: 10px; align-items: center; font-size: 12px; }
+.sales-bars .res-k { color: var(--text-3); }
+.sales-bars .res-bar { position: relative; height: 8px; border-radius: 4px; background: color-mix(in oklch, var(--text) 9%, transparent); overflow: hidden; }
+.sales-bars .res-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+.sales-bars .res-bar i.before { background: color-mix(in oklch, var(--text) 35%, transparent); }
+.sales-bars .res-bar i.after.ok { background: var(--ok); }
+.sales-bars .res-bar i.after.warn { background: var(--warn); }
+.sales-bars .res-bar i.after.bad { background: var(--bad); }
+.sales-bars .res-v { color: var(--text-2); text-align: right; }
+.sales-bars .res-p { text-align: right; }
+.sales-bars .res-p.over { color: var(--bad-text); font-weight: 600; }
+
+.price-field { display: grid; gap: 6px; }
+.price-label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.price-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.stepper { display: inline-flex; align-items: center; gap: 4px; }
+.price-input { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; border-radius: 7px; border: 0.5px solid var(--line-strong); background: var(--field); }
+.price-input:focus-within { border-color: var(--accent); }
+.price-input input { width: 84px; border: 0; background: transparent; color: var(--text); font: inherit; font-variant-numeric: tabular-nums; outline: none; }
+.price-ref { color: var(--text-2); font-size: 12.5px; }
+.sales-total { color: var(--text-2); font-size: 12.5px; }
+
+.sales-lost { overflow: auto; padding: 8px 12px; }

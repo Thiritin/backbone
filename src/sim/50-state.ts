@@ -9,11 +9,11 @@ import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
 import { applications, type Candidate, type Employee } from "./47-staff/staff";
-import type { FairBooking } from "./80-business/fairs";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
 import { newNetwork, type Network } from "./60-infra/network";
 import { newOps, type Ops } from "./60-infra/ops";
+import { newSales, type Sales } from "./30-market/market";
 
 export const SAVE_VERSION = 2;
 
@@ -108,9 +108,10 @@ export interface GameState {
   staff: Employee[];
   candidates: Candidate[];
   marketing: Marketing;
-  fairs: FairBooking[];
   clusters: Cluster[];
   workloads: Workload[];
+  // Sales requests and lost sales (30-market).
+  sales: Sales;
   // Hours each service has been down since the last monthly invoice.
   downHours: Record<string, number>;
   network: Network;
@@ -156,9 +157,10 @@ export const newGame = (seed: number): GameState => ({
   homeLine: { id: DEFAULT_HOME_LINE, next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
   staff: [], candidates: applications(seed, 0),
-  marketing: newMarketing(), fairs: [],
+  marketing: newMarketing(),
   network: newNetwork(),
   ops: newOps(),
+  sales: newSales(),
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

@@ -90,11 +90,13 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
 
     const U = (p: Profile, pr: ProductId, locPenalty: number) =>
       p.wP * (P[pr] - locPenalty) + p.wR * R[pr] + p.wC * C - p.lambda * 100 * (bot.priceFactor - 1);
-    const best = (p: Profile) => Math.max(...COMPETITORS.filter((c) => c.priceFactor <= p.cap)
+    // ponytail: the cohort model keeps the four archetypes in every segment; specialists and product lines live in the real market (30-market).
+    const rivals = (p: Profile, _pr: ProductId) => COMPETITORS.filter((c) => c.priceFactor <= p.cap && !c.targets);
+    const best = (p: Profile, pr: ProductId) => Math.max(...rivals(p, pr)
       .map((c) => p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (c.priceFactor - 1)));
     const share = (p: Profile, pr: ProductId) => {
       const you = Math.exp(U(p, pr, 0) / CHOICE_TAU);
-      const others = COMPETITORS.filter((c) => c.priceFactor <= p.cap)
+      const others = rivals(p, pr)
         .reduce((a, c) => a + Math.exp((p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (c.priceFactor - 1)) / CHOICE_TAU), 0);
       return you / (you + others);
     };
@@ -183,7 +185,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       c.H -= Math.min(40, tpc * p.waitPenalty * Math.max(0, waitHours - p.promisedHours));
       c.H += tpc * (5 * pRight - 10 * (1 - pRight));
       if (pr === "vps") c.H -= hitShare * p.outagePenalty * REPAIR_HOURS;
-      const target = Math.min(95, Math.max(20, 70 + 0.5 * (U(p, pr, 0) - best(p))));
+      const target = Math.min(95, Math.max(20, 70 + 0.5 * (U(p, pr, 0) - best(p, pr))));
       c.H += 0.2 * (target - c.H);
       c.H = Math.min(100, Math.max(0, c.H));
       const pCancel = Math.min(1, p.churn + 0.5 * Math.max(0, (50 - c.H) / 50));
