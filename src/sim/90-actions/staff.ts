@@ -1,8 +1,8 @@
 import { yearOf } from "../00-core/time";
 import { cents } from "../45-billing/billing";
 import {
-  AD, adCandidates, COURSE_PRICE, fullyTrained, needsTraining, salaryUpToNow, staffPrice, startTraining, TASKS, trainerFor, visibleCandidates,
-  type AdTier, type Assignment, type Employee, type Role, type Task,
+  AD, adCandidates, COURSE_PRICE, FULL_DAY, fullyTrained, needsTraining, salaryUpToNow, staffPrice, startTraining, TASKS, trainerFor, visibleCandidates, WORK_HOURS,
+  type AdTier, type Assignment, type Employee, type Role, type Task, type WorkHours,
 } from "../47-staff/staff";
 import { OP_TASK, queueOp, techsAt, type OpKind, type TechRules } from "../47-staff/technicians";
 import type { GameState } from "../50-state";
@@ -42,7 +42,7 @@ export function hire(s: GameState, candidateId: string): ActionResult {
   const e: Employee = {
     id: `emp${s.nextId++}`, name: c.name, role: c.role, skill: c.skill, talent: c.talent, salary: c.salary, hiredAt: s.hour, assignment: "queue",
     location: c.role === "technician" ? s.locations[0]?.id ?? null : null,
-    trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: s.hour + YEAR, refusedAt: null,
+    trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: s.hour + YEAR, refusedAt: null, hours: FULL_DAY, hoursFrom: s.hour,
   };
   s.candidates = s.candidates.filter((x) => x.id !== c.id);
   s.staff = [...s.staff, e];
@@ -56,6 +56,18 @@ export function fire(s: GameState, id: string): ActionResult {
   const owed = salaryUpToNow(s, e);
   if (owed > 0) pay(s, "ledger.salary", { name: e.name, role: e.role }, owed);
   s.staff = s.staff.filter((x) => x.id !== id);
+  return { ok: true };
+}
+
+// New hours count from now: the salary owed at the old hours is paid out first, as when someone leaves.
+export function setHours(s: GameState, id: string, hours: WorkHours): ActionResult {
+  if (!WORK_HOURS.includes(hours)) return fail("error.workHours");
+  const e = employee(s, id);
+  if (!e) return fail("error.unknownEmployee");
+  if (e.hours === hours) return { ok: true };
+  const owed = salaryUpToNow(s, e);
+  if (owed > 0) pay(s, "ledger.salary", { name: e.name, role: e.role }, owed);
+  Object.assign(e, { hours, hoursFrom: s.hour });
   return { ok: true };
 }
 

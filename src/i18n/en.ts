@@ -3,6 +3,7 @@ import { OPS } from "./en-ops";
 import { SALES_EN } from "./sales";
 import { SECURITY_EN } from "./security";
 import { ORDERS_EN } from "./orders";
+import { ACTIVITY_EN } from "./activity";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -19,6 +20,7 @@ const units = (n: string | number) => `${n} ${Number(n) === 1 ? "unit" : "units"
 export const en: Record<string, (p: Params) => string> = {
   ...SALES_EN,
   ...SECURITY_EN,
+  ...ACTIVITY_EN,
   "event.monthStart.title": (p) => `${MONTHS[Number(p.month)]} ${p.year}`,
   "event.monthStart.text": () => "A new month has started.",
   "save.loaded.title": () => "Game loaded",
@@ -175,6 +177,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.stepNotDue": () => "No dunning step is due yet.",
   "error.notOverdue": () => "This invoice is not overdue.",
   "error.billingRule": () => "This billing rule is not available.",
+  "error.workHours": () => "Choose 2, 4, 6 or 8 hours a day.",
   "error.loanBlocked": () => "The bank grants no new loans right now.",
   "error.loanLimit": () => "This amount is above your loan limit.",
   "error.loanTerm": () => "The bank does not offer this term.",
@@ -295,6 +298,7 @@ export const en: Record<string, (p: Params) => string> = {
   "task.reminder": () => "payment reminders",
   "task.dunning": () => "dunning notices",
   "task.final": () => "final notices",
+  "task.suspend": () => "suspensions",
   "task.campaigns": () => "campaigns",
   "task.reviews": () => "review platforms",
   "task.fairs": () => "trade fairs",

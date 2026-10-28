@@ -8,7 +8,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { drain, upgradeNodePhp } from "../90-actions/clusters";
 import { replaceComponent, setPower, type ActionResult } from "../90-actions/hardware";
 import { callOut, onCallAt, onCallPayroll, respond, restUntil } from "./oncall";
-import { atFair, isWorkHour, working, type Employee, type Task } from "./staff";
+import { atFair, isWorkHour, onShift, working, type Employee, type Task } from "./staff";
 
 export type OpKind = "replace" | "off" | "on" | "drain" | "php";
 // One operation on one device; componentId is set for a replace, auto when a rule queued it.
@@ -117,7 +117,7 @@ export function techTick(s: GameState): SimEvent[] {
       if (e && (respond(s, e, events) || work(s, e, events, taken, true))) callOut(s, e);
     }
   } else {
-    for (const e of s.staff.filter((x) => x.role === "technician" && working(x) && !atFair(s, x) && restUntil(s, x) <= s.hour)) work(s, e, events, taken, false);
+    for (const e of s.staff.filter((x) => x.role === "technician" && working(x) && !atFair(s, x) && onShift(x, s.hour) && restUntil(s, x) <= s.hour)) work(s, e, events, taken, false);
   }
   return events;
 }

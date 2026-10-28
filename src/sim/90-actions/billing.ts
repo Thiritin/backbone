@@ -1,11 +1,14 @@
 import {
-  annuity, AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, suspend, type BillingRules,
+  annuity, AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
 } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const unpaidInvoice = (s: GameState, id: string) => s.invoices.find((i) => i.id === id && isUnpaid(i));
+const log = (s: GameState, inv: Invoice, key: keyof typeof ACTION_MINUTES | "writeOff") =>
+  logActivity(s, { customerId: inv.customerId, serviceId: null, by: null, key: `activity.${key}`, params: { invoice: inv.number }, minutes: key === "writeOff" ? 0 : ACTION_MINUTES[key] });
 
 // Sends whichever dunning step is due; the last one hands the debt to collections and the customer leaves.
 export function sendReminder(s: GameState, invoiceId: string): ActionResult {
@@ -14,6 +17,7 @@ export function sendReminder(s: GameState, invoiceId: string): ActionResult {
   const i = dueStep(inv, s.hour);
   if (i === null) return fail("error.stepNotDue");
   sendStep(s, inv, i);
+  log(s, inv, STEPS[i].key);
   return { ok: true };
 }
 
@@ -21,8 +25,10 @@ export function suspendServices(s: GameState, invoiceId: string, suspended = tru
   const inv = unpaidInvoice(s, invoiceId);
   if (!inv) return fail("error.invoiceSettled");
   if (inv.status !== "overdue") return fail("error.notOverdue");
-  if (suspended && !inv.suspended) suspend(s, inv);
-  else inv.suspended = suspended;
+  if (suspended === inv.suspended) return { ok: true };
+  if (suspended) suspend(s, inv);
+  else inv.suspended = false;
+  log(s, inv, suspended ? "suspend" : "unsuspend");
   return { ok: true };
 }
 
@@ -37,6 +43,7 @@ export function writeOff(s: GameState, invoiceId: string): ActionResult {
   const inv = unpaidInvoice(s, invoiceId);
   if (!inv) return fail("error.invoiceSettled");
   Object.assign(inv, { status: "writtenOff", suspended: false, payAt: null });
+  log(s, inv, "writeOff");
   return { ok: true };
 }
 

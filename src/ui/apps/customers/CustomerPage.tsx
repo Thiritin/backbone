@@ -1,4 +1,4 @@
-import { ChevronLeft, Contact, Cpu, FileText, History, LifeBuoy, Receipt, Server } from "lucide-react";
+import { ChevronLeft, Contact, Cpu, FileText, History, LifeBuoy, ListChecks, Receipt, Server } from "lucide-react";
 import { useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { planOf } from "../../../sim/10-catalog/products";
@@ -15,6 +15,7 @@ import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
 import { APPS } from "../registry";
 import { PriceField } from "../sales/PriceField";
+import { ActivityLog } from "./ActivityLog";
 import { initials, kindOf, monthYear, moodClass, noticed, patience, PRODUCT, STATUS } from "../support/labels";
 
 export type Status = "active" | "overdue" | "suspended" | "churned";
@@ -225,6 +226,7 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
                     </dl>
                     {v.endedAt === null && v.period === "hour" && <ChangePrice v={v} profile={c.profile} />}
                   </div>
+                  <ActivityLog customerId={c.id} serviceId={v.id} />
                 </section>
               ))}
             </div>
@@ -246,10 +248,15 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
           </section>
         )}
 
-        {/* The staff-time lane's ActivityLog replaces this history. */}
         {tab === "activity" && (
           <section className="fin-card">
-            <h3 className="fin-card-h"><History />Activity</h3>
+            <h3 className="fin-card-h"><ListChecks />Work log</h3>
+            <ActivityLog customerId={c.id} />
+          </section>
+        )}
+        {tab === "activity" && (
+          <section className="fin-card">
+            <h3 className="fin-card-h"><History />History</h3>
             <Timeline invoices={invoices} tickets={tickets} subject={subject} />
           </section>
         )}

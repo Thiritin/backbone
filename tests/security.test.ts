@@ -8,7 +8,8 @@ import {
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addNode, createCluster, provisionService, upgradeNodePhp } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { buyDevice, connect, mountDevice, setPower } from "../src/sim/90-actions/hardware";
+import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
+import { mountDevice } from "./plugged";
 import { cleanUp, setSitesOffline } from "../src/sim/90-actions/security";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { useStore } from "../src/ui/store";
