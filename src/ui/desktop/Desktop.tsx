@@ -7,6 +7,7 @@ import { Banners, NotificationCenter } from "./Banners";
 import { Dock } from "./Dock";
 import { MenuBar } from "./MenuBar";
 import { wallpaperSvg } from "./wallpaper";
+import { Widgets } from "./Widgets";
 
 const THEME_KEY = "backbone.theme";
 const AUTOSAVE_MS = 15_000;
@@ -36,7 +37,7 @@ export function Desktop() {
   useEffect(() => {
     if (!loadedFromSave || greeted) return;
     greeted = true;
-    notify("Finance", t("save.loaded.title"), t("save.loaded.text"));
+    notify("Settings", t("save.loaded.title"), t("save.loaded.text"));
   }, [notify]);
 
   // Clock: whole game hours from real time × speed; leftovers carry into the next frame.
@@ -73,14 +74,14 @@ export function Desktop() {
     return () => window.removeEventListener("keydown", key);
   }, [speed, setSpeed]);
 
-  const visible = windows.filter((w) => !w.minimized);
-  const frontZ = Math.max(0, ...visible.map((w) => w.z));
+  const frontZ = Math.max(0, ...windows.filter((w) => !w.minimized).map((w) => w.z));
 
   return (
     <div className="desktop">
       <div className="wallpaper-host" dangerouslySetInnerHTML={{ __html: wallpaperSvg() }} />
       <MenuBar theme={theme} onTheme={() => setTheme(theme === "dark" ? "light" : "dark")} onBell={() => setCenter(!center)} />
-      <div className="windows">{visible.map((w) => <AppWindow key={w.id} win={w} front={w.z === frontZ} />)}</div>
+      <Widgets />
+      <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
       {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
       <Dock />
     </div>

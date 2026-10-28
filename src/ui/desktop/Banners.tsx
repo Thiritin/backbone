@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import type { CSSProperties } from "react";
 import { appByName } from "../apps/registry";
 import { formatClock } from "../../sim/00-core/time";
@@ -6,12 +7,14 @@ import { useStore, type Banner } from "../store";
 function Card({ b, time }: { b: Banner; time: string }) {
   const { openApp, dismiss } = useStore();
   const app = appByName(b.app);
+  const open = () => { openApp(b.app); dismiss(b.id); };
   return (
-    <button className="banner" onClick={() => { openApp(b.app); dismiss(b.id); }}>
+    <div className="banner" role="button" tabIndex={0} onClick={open} onKeyDown={(e) => e.key === "Enter" && open()}>
       <span className="b-icon" style={{ "--tile": app.tile } as CSSProperties}><app.icon /></span>
       <span><span className="b-app">{b.app}</span><span className="b-title">{b.title}</span><span className="b-text">{b.text}</span></span>
       <span className="b-time">{time}</span>
-    </button>
+      <button className="b-close" aria-label="Dismiss" onClick={(e) => { e.stopPropagation(); dismiss(b.id); }}><X /></button>
+    </div>
   );
 }
 

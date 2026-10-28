@@ -44,7 +44,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
         ))}
       </div>
       <span className="mb-sep" />
-      <span className="mb-item num">{formatClock(game.hour)}</span>
+      <button className="mb-item num" onClick={onBell}>{formatClock(game.hour)}</button>
       <span className="mb-sep" />
       <span className="mb-item mb-cash num">{euro(game.cash)}</span>
       <button className="mb-item" aria-label="Open Support" onClick={() => openApp("Support")}><Inbox /></button>

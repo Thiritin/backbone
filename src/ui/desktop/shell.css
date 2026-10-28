@@ -194,7 +194,7 @@ svg.lucide { width: 16px; height: 16px; stroke-width: 1.75; flex: none; }
 }
 .window.front { z-index: 20; box-shadow: var(--shadow-win); }
 .window:not(.front) .titlebar { opacity: 0.86; }
-.window:not(.front) .lights > * { background: var(--line-strong); border-color: transparent; }
+.window:not(.front) .lights:not(:hover) > * { background: var(--line-strong); border-color: transparent; }
 
 .titlebar {
   height: 44px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 12px 0 16px;

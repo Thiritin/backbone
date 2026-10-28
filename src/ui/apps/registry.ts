@@ -1,5 +1,5 @@
 import {
-  ChartLine, ChartPie, Contact, Globe, Landmark, LifeBuoy, Lightbulb, Megaphone, Package, Receipt, Server, Users,
+  ChartLine, ChartPie, Contact, Globe, Landmark, LifeBuoy, Lightbulb, Megaphone, Package, Receipt, Server, Settings, Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -24,6 +24,7 @@ export const APPS: AppDef[] = [
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: "Runs campaigns and manages reviews." },
   { name: "Market", icon: ChartPie, tile: "oklch(0.62 0.12 230)", about: "Shows demand, customer requirements and lost sales." },
   { name: "Unlocks", icon: Lightbulb, tile: "oklch(0.72 0.15 95)", about: "Spends know-how on new products, hardware and tools." },
+  { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: "Sets which apps may send notifications and how they appear." },
 ];
 
 export const appByName = (name: string): AppDef => APPS.find((a) => a.name === name) ?? APPS[0];

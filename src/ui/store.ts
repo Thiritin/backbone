@@ -9,6 +9,9 @@ export const SAVE_KEY = "backbone.save";
 
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean }
 export interface Banner { id: number; app: string; title: string; text: string; hour: number }
+export interface NotifyPref { allow: boolean; banners: boolean }
+export const DEFAULT_PREF: NotifyPref = { allow: true, banners: true };
+const PREFS_KEY = "backbone.prefs";
 
 interface Store {
   game: GameState;
@@ -16,6 +19,8 @@ interface Store {
   windows: Win[];
   banners: Banner[];
   history: Banner[];
+  notifyPrefs: Record<string, NotifyPref>;
+  setNotifyPref: (app: string, patch: Partial<NotifyPref>) => void;
   advance: (hours: number) => void;
   setSpeed: (s: Speed) => void;
   openApp: (app: string) => void;
@@ -45,12 +50,21 @@ function loadGame(): { game: GameState; loaded: boolean } {
 
 const initial = loadGame();
 
+function loadPrefs(): Record<string, NotifyPref> {
+  try {
+    return JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}").notify ?? {};
+  } catch {
+    return {};
+  }
+}
+
 export const useStore = create<Store>((set, get) => ({
   game: initial.game,
   speed: 0,
   windows: [],
   banners: [],
   history: [],
+  notifyPrefs: loadPrefs(),
 
   advance: (hours) => {
     const game = { ...get().game, rng: { ...get().game.rng } };
@@ -74,25 +88,36 @@ export const useStore = create<Store>((set, get) => ({
   toggleZoom: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, zoomed: !w.zoomed } : w)) })),
   place: (id, box) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, ...box } : w)) })),
 
+  setNotifyPref: (app, patch) => {
+    const notifyPrefs = { ...get().notifyPrefs, [app]: { ...(get().notifyPrefs[app] ?? DEFAULT_PREF), ...patch } };
+    set({ notifyPrefs });
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({ notify: notifyPrefs }));
+    } catch {
+      // Kept for this session only.
+    }
+  },
   notify: (app, title, text) => {
+    const pref = get().notifyPrefs[app] ?? DEFAULT_PREF;
+    if (!pref.allow) return;
     const b = { id: ++bannerId, app, title, text, hour: get().game.hour };
-    set(({ banners, history }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50) }));
-    setTimeout(() => get().dismiss(b.id), 6000);
+    set(({ banners, history }) => ({ banners: pref.banners ? [...banners, b].slice(-4) : banners, history: [b, ...history].slice(0, 50) }));
+    if (pref.banners) setTimeout(() => get().dismiss(b.id), 6000);
   },
   dismiss: (id) => set(({ banners }) => ({ banners: banners.filter((b) => b.id !== id) })),
 
   save: (quiet = false) => {
     try {
       localStorage.setItem(SAVE_KEY, serialize(get().game));
-      if (!quiet) get().notify("Finance", t("save.done.title"), t("save.done.text"));
+      if (!quiet) get().notify("Settings", t("save.done.title"), t("save.done.text"));
     } catch {
-      get().notify("Finance", t("save.failed.title"), t("save.failed.text"));
+      get().notify("Settings", t("save.failed.title"), t("save.failed.text"));
     }
   },
   newCompany: () => {
     set({ game: newGame(Date.now() >>> 0), speed: 0, windows: [] });
     get().save(true);
-    get().notify("Finance", t("game.new.title"), t("game.new.text"));
+    get().notify("Settings", t("game.new.title"), t("game.new.text"));
   },
 }));
 
