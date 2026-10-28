@@ -579,7 +579,7 @@ Staff are named people with a skill level, a work rate and a salary. Juniors cos
 | Role | Takes over | Notes |
 | --- | --- | --- |
 | Support agent | Tickets |  |
-| Technician | Installs, repairs, cabling, colocation installs | Works at one location; until hired, you are the technician |
+| Technician | Repairs, worn-part swaps, software upgrades such as PHP versions, VM migrations, installs, cabling, colocation installs | Works at one location, one operation per hour; until hired, you are the technician |
 | Network engineer | Port setup, routing, transit and peering contracts |  |
 | Kubernetes engineer | Managed Kubernetes clusters | Needed to sell managed Kubernetes; each looks after a set number of customer clusters |
 | Sales agent | Answering requests in the Sales app |  |
@@ -588,6 +588,8 @@ Staff are named people with a skill level, a work rate and a salary. Juniors cos
 | Marketing manager | Campaigns, review platforms, market research |  |
 
 **Training.** A new employee knows nothing about your processes. Before they handle a ticket type or a task, they are trained on it, which takes time and money, and each skill is trained separately: an agent trained on billing questions still cannot handle abuse reports. Once an employee is fully trained, you can make them a trainer. A trainer does nothing but train others until nobody is left to train, then goes back to their normal work. Once you have staff, they handle the work across all of these areas, including abuse and legal requests.
+
+**Technicians.** A technician works through a queue of operations at their location, one operation per hour. An operation is one job on one server: replacing a failed or worn part, upgrading the PHP version of a web hosting server, shutting a server down or starting it, or migrating all the VMs off a server, which counts as a single operation however many VMs move. Web hosting servers run a PHP version that ages: old versions bring security warnings, abuse reports and unhappy customers, and each upgrade is an operation that briefly takes the server's sites down. The player queues operations from the server's inspector; without a technician, the player does them by hand and pays remote hands at datacenters. Technicians train on each kind of operation like support agents train on ticket types, and a skilled technician makes fewer mistakes, such as a migration that fails halfway.
 
 **Hiring.** The Staff app lists candidates on the job market with their name, role, skill and salary ask. Job ads cost money, and better ads bring more candidates.
 
