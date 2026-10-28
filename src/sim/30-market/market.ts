@@ -15,7 +15,8 @@ import { forumAwareness } from "../47-staff/staff";
 import { metrics } from "../metrics";
 
 export type RequestStatus = "open" | "quoted" | "countered" | "refused" | "won" | "lost" | "declined";
-export interface SalesMessage { hour: number; from: "customer" | "you"; key: string; params: Record<string, string | number> }
+// by names the employee who sent a "you" message; the player otherwise.
+export interface SalesMessage { hour: number; from: "customer" | "you"; key: string; params: Record<string, string | number>; by?: string }
 // One sales request. profile, budget and shady stay hidden from the player. reference is the monthly market price;
 // budget is the price ratio to it at which the customer accepts half the time. serviceId is the service an expansion replaces.
 export interface SalesRequest {
@@ -23,6 +24,8 @@ export interface SalesRequest {
   city: string; product: Product; plan: string; sla: Sla; reference: number; discount: number; budget: number; shady: boolean;
   serviceId: string | null; ticketId: string | null; createdAt: number; deadline: number; status: RequestStatus;
   quote: number | null; counter: number | null; replyAt: number | null; attempts: number; thread: SalesMessage[];
+  // Web hosting only: the domain the service will carry.
+  domain?: string;
 }
 // reason is an i18n key with its params.
 export interface LostSale { hour: number; name: string; product: Product; plan: string; reference: number; reason: string; params: Record<string, string | number> }

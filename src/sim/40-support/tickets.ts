@@ -9,8 +9,8 @@ export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellat
 // open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
 export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
 export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund" | "accept" | "revert";
-// by names the employee who answered; the player otherwise.
-export interface Reply { hour: number; template: string; right: boolean; by?: string }
+// by names the employee who answered; the player otherwise. key and params give the email as sent (replies.ts); older replies show the template.
+export interface Reply { hour: number; template: string; right: boolean; by?: string; key?: string; params?: Record<string, string | number> }
 // doneAt is in game minutes; the reply or action takes effect on the first tick at or after it.
 export interface Work { op: "reply" | "resolve" | "escalate"; arg: string; doneAt: number; by?: string }
 // A notice or legal request comes from a sender, not the customer; customerId is "" when no customer uses the domain.

@@ -5,6 +5,7 @@ import { ignoreNotice } from "../40-support/notices";
 import { declineOrder, orderError } from "../30-market/orders";
 import type { ActionResult } from "./hardware";
 import { logActivity } from "../47-staff/activity";
+import { sendAction } from "../40-support/replies";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -85,6 +86,7 @@ export function closeTicket(s: GameState, id: string): ActionResult {
   }
   const c = s.customers.find((x) => x.id === f.t.customerId)!;
   if (f.t.kind === "cancellation") {
+    sendAction(s, f.t, c, "cancel");
     cancelCustomer(s, c);
     f.t.outcome = "cancelled";
   } else if (f.t.status === "open") bump(c, -10);

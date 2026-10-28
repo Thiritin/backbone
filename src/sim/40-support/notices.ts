@@ -49,8 +49,8 @@ const slug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[^a-
 export function domainOf(s: GameState, c: Customer): { domain: string; serviceId: string } | null {
   const services = activeServices(s.services, c.id);
   if (!services.length) return null;
-  const v = services.find((x) => x.label.includes(".") && !x.label.includes(" ")) ?? services[0];
-  return { domain: v.label.includes(".") && !v.label.includes(" ") ? v.label : `${slug(c.name)}.de`, serviceId: v.id };
+  const v = services.find((x) => x.domain) ?? services.find((x) => x.label.includes(".") && !x.label.includes(" ")) ?? services[0];
+  return { domain: v.domain ?? (v.label.includes(".") && !v.label.includes(" ") ? v.label : `${slug(c.name)}.de`), serviceId: v.id };
 }
 
 function addTicket(s: GameState, kind: "notice" | "legal", topic: string, c: Customer | null, serviceId: string | null, notice: Notice, dueHours: number): Ticket {
@@ -193,7 +193,7 @@ function spawn(s: GameState, r: Rng): Ticket[] {
 }
 
 export const subjectParams = (s: GameState, t: Ticket): Record<string, string | number> => ({
-  service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", url: t.notice?.url ?? "", video: t.notice?.video ?? "",
+  service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? "", url: t.notice?.url ?? "", video: t.notice?.video ?? "",
   round: t.notice?.round ?? 1, sender: t.notice ? senderById(t.notice.sender).name : "",
 });
 

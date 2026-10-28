@@ -12,8 +12,8 @@ const STUDY_NAME: Record<string, string> = {
 
 // Sales requests, customer replies and lost-sale reasons; spread into en.
 export const SALES_EN: Record<string, (p: Params) => string> = {
-  "sales.msg.webHosting.0": (p) => `Hello, I am looking for a home for my website. Would ${p.plan} work for us, and what would it cost a month?${sla(p)}`,
-  "sales.msg.webHosting.1": (p) => `A friend recommended you. We need ${p.plan} for our site, hosted in ${p.city} if possible.${sla(p)} What is your price?`,
+  "sales.msg.webHosting.0": (p) => `Hello, I am looking for a home for ${p.domain || "my website"}. Would ${p.plan} work for us, and what would it cost a month?${sla(p)}`,
+  "sales.msg.webHosting.1": (p) => `A friend recommended you. We need ${p.plan} for ${p.domain || "our site"}, hosted in ${p.city} if possible.${sla(p)} What is your price?`,
   "sales.msg.vps.0": (p) => `We need a ${p.plan} with root access in ${p.city}.${sla(p)} Please send me your monthly price.`,
   "sales.msg.vps.1": (p) => `Our app has outgrown shared hosting. Can you offer a ${p.plan}?${sla(p)} Monthly billing would suit us best.`,
   "sales.msg.gameServer.0": (p) => `Our clan needs a ${p.plan} that does not lag on Friday nights. How much a month?`,

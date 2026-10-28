@@ -15,6 +15,7 @@ import { addAwareness, discountFor } from "../80-business/marketing";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
+import { domainFor } from "../30-customers/domains";
 import { firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { provisionService } from "../90-actions/clusters";
 import type { ActionResult } from "../90-actions/hardware";
@@ -50,13 +51,14 @@ export function editRequest(s: GameState, id: string, fn: (r: SalesRequest) => P
   return out!;
 }
 
-export function say(s: GameState, id: string, from: SalesMessage["from"], key: string, params: SalesMessage["params"] = {}): void {
-  editRequest(s, id, (r) => ({ thread: [...r.thread, msg(s, from, key, params)] }));
+export function say(s: GameState, id: string, from: SalesMessage["from"], key: string, params: SalesMessage["params"] = {}, by?: string): void {
+  editRequest(s, id, (r) => ({ thread: [...r.thread, { ...msg(s, from, key, params), ...(by && { by }) }] }));
 }
 
 export function addRequest(s: GameState, r: Omit<SalesRequest, "id" | "createdAt" | "status" | "quote" | "counter" | "replyAt" | "attempts" | "thread">, key: string): SalesRequest {
   const req: SalesRequest = { ...r, id: `req${s.nextId++}`, createdAt: s.hour, status: "open", quote: null, counter: null, replyAt: null, attempts: 0, thread: [] };
-  const params = { plan: planName(req), city: req.city, sla: req.sla, name: req.contact };
+  if (req.product === "webHosting") req.domain = s.services.find((v) => v.id === req.serviceId)?.domain ?? domainFor(s, requestName(req), req.profile, req.city, Number(req.id.slice(3)));
+  const params = { plan: planName(req), city: req.city, sla: req.sla, name: req.contact, domain: req.domain ?? "" };
   req.thread = [msg(s, "customer", key, params)];
   if (req.discount > 0) req.thread.push(msg(s, "customer", "sales.msg.discount", { discount: Math.round(req.discount * 100) }));
   s.sales = { ...s.sales, requests: [...s.sales.requests, req] };
@@ -128,7 +130,7 @@ function expansions(s: GameState): void {
 const slug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "").slice(0, 20) || "kunde";
 const labelFor = (r: SalesRequest): string => {
   const base = slug(r.company ?? r.contact);
-  return r.product === "webHosting" ? (r.company?.includes(".") ? r.company : `${base}.de`) : `${base}-${r.product === "gameServer" ? "game" : r.product}`;
+  return r.product === "webHosting" ? r.domain ?? `${base}.de` : `${base}-${r.product === "gameServer" ? "game" : r.product}`;
 };
 
 // The cluster or zone in the request's city where the service fits; null when nothing has room.

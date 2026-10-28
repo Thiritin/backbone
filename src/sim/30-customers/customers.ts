@@ -13,5 +13,7 @@ export interface Customer { id: string; name: string; profile: Profile; since: n
 export interface Service { id: string; customerId: string; product: Product; label: string; price: number; period: "hour" | "year"; commitMonths: number; startedAt: number; endedAt: number | null; zone: string | null;
   plan: string | null; sla: Sla;
   // Hourly price from before the first of a run of raises; unset once the price is back at or below it.
-  before?: number }
+  before?: number;
+  // Web hosting only: the customer's domain, fixed at sign-up (domains.ts).
+  domain?: string }
 export const activeServices = (services: Service[], customerId: string): Service[] => services.filter((v) => v.customerId === customerId && v.endedAt === null);

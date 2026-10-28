@@ -6,6 +6,7 @@ import { senderById, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-suppo
 import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
 import { missingFor, planName, requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
 import { orderOf } from "../../../sim/30-market/orders";
+import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
 import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
@@ -192,6 +193,7 @@ function OrderThread({ tk, r }: { tk: Ticket; r: SalesRequest }) {
         <div className="facts">
           <span className="type"><K.icon />{K.label}</span>
           <span>{PRODUCT[r.product]}</span>
+          {r.domain && <span>{r.domain}</span>}
           <span>{r.city}</span>
           {tk.status === "open"
             ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer /><span><span className="num">{Math.max(0, left)} h</span> to respond</span></span>
@@ -219,7 +221,7 @@ function OrderThread({ tk, r }: { tk: Ticket; r: SalesRequest }) {
       <div className="thread">
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
-            <div className="from">{m.from === "you" ? "You" : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
+            <div className="from">{m.from === "you" ? m.by ?? "You" : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
             <p>{t(m.key, m.params)}</p>
           </div>
         ))}
@@ -309,7 +311,7 @@ function Thread({ tk }: { tk: Ticket }) {
           <div key={i} className="thread-pair">
             <div className="msg you">
               <div className="from">{r.by ?? "You"} · <span className="num">{stamp(r.hour)}</span></div>
-              <p>{t(`template.${r.template}.text`)}</p>
+              <p>{r.key ? t(r.key, r.params) : t(`template.${r.template}.text`, companyParams(game))}</p>
             </div>
             {!r.right && (
               <div className="msg">
@@ -335,7 +337,7 @@ function Thread({ tk }: { tk: Ticket }) {
                   <label key={id} className="tpl">
                     <input type="radio" name={`tpl-${tk.id}`} checked={tpl === id} disabled={locked} onChange={() => setTpl(id)} />
                     <span className="t">{t(`template.${id}.title`)}</span>
-                    <span className="p">{t(`template.${id}.text`)}</span>
+                    <span className="p">{t(`template.${id}.text`, { ...companyParams(game), ...p })}</span>
                   </label>
                 ))}
               </div>

@@ -29,7 +29,7 @@ export const STATUS: Record<SalesRequest["status"], string> = {
 };
 export const SLA_LABEL = { basic: "Basic", business: "Business", premium: "Premium" } as const;
 
-export const need = (r: SalesRequest) => `${planName(r)} · ${r.city}${r.sla === "basic" ? "" : ` · ${SLA_LABEL[r.sla]} SLA`}`;
+export const need = (r: SalesRequest) => `${r.domain ? `${r.domain} · ` : ""}${planName(r)} · ${r.city}${r.sla === "basic" ? "" : ` · ${SLA_LABEL[r.sla]} SLA`}`;
 
 export function Deadline({ r, hour }: { r: SalesRequest; hour: number }) {
   if (!OPEN.includes(r.status)) return <span className="sla num">{stamp(r.createdAt)}</span>;
@@ -119,7 +119,7 @@ export function Card({ r }: { r: SalesRequest }) {
       <div className="thread">
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
-            <div className="from">{m.from === "you" ? "You" : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
+            <div className="from">{m.from === "you" ? m.by ?? "You" : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
             <p>{t(m.key, m.params)}</p>
           </div>
         ))}

@@ -10,7 +10,8 @@ import { discountFor, hasOrderForm } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "../90-actions/hardware";
 import { missingFor, needFor, planName, referenceFor, REQUEST_HOURS, requestName, senderFor, type SalesRequest } from "./market";
-import { addRequest, editRequest, fulfil, loseRequest, targetFor } from "./sales";
+import { addRequest, editRequest, fulfil, loseRequest, say, targetFor } from "./sales";
+import { companyParams, variant } from "../40-support/replies";
 
 // Without an order, the first one comes from a friend's recommendation within this many days.
 export const FIRST_ORDER_DAYS = 14;
@@ -68,8 +69,19 @@ export function firstOrder(s: GameState, events: SimEvent[]): void {
   if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events);
 }
 
+// Why a request is declined, in the customer's terms: the product is not sold there, there is no room, or neither.
+export const declineReason = (s: GameState, r: SalesRequest): string =>
+  missingFor(s, r).length ? "notOffered" : !targetFor(s, r) ? "noCapacity" : "busy";
+
+// Our email on a request's thread, worded by the seed.
+export function mailRequest(s: GameState, id: string, what: string, by?: string): void {
+  const r = s.sales.requests.find((x) => x.id === id)!;
+  const params = { ...companyParams(s), name: r.contact, plan: planName(r), city: r.city, domain: r.domain ?? "", price: r.quote ?? r.reference, hour: s.hour };
+  say(s, r.id, "you", variant(s, what, Number(r.id.slice(3)) || 0, r.thread.length), params, by);
+}
+
 // Applies a queued accept or decline; the support tick calls this once the work time has passed.
-export function applyOrderWork(s: GameState, t: Ticket, action: string): SimEvent | null {
+export function applyOrderWork(s: GameState, t: Ticket, action: string, by?: string): SimEvent | null {
   const r = orderOf(s, t);
   if (!r || r.status !== "open") {
     Object.assign(t, { status: "closed", updatedAt: s.hour });
@@ -77,11 +89,13 @@ export function applyOrderWork(s: GameState, t: Ticket, action: string): SimEven
   }
   // The ticket is settled first, so loseRequest finds it final and leaves it alone.
   if (action !== "accept") {
+    mailRequest(s, r.id, `decline.${declineReason(s, r)}`, by);
     Object.assign(t, { status: "closed", outcome: "declined", updatedAt: s.hour });
     loseRequest(s, r, "declined", "lost.declined");
     return null;
   }
   const done = place(s, r);
+  mailRequest(s, r.id, done.ok ? "accept" : "failed", by);
   if (!done.ok) {
     Object.assign(t, { status: "closed", outcome: "failed", updatedAt: s.hour });
     loseRequest(s, r, "lost", done.reason!, done.params);

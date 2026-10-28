@@ -4,6 +4,7 @@ import { SALES_EN } from "./sales";
 import { SECURITY_EN } from "./security";
 import { ORDERS_EN } from "./orders";
 import { ACTIVITY_EN } from "./activity";
+import { REPLIES_EN } from "./replies";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -215,9 +216,9 @@ export const en: Record<string, (p: Params) => string> = {
   "ticket.howTo.upload.subject": () => "How do I upload my website?",
   "ticket.howTo.upload.text": (p) => `I built my pages at home. How do I get them onto ${p.service || "the server"}?`,
   "ticket.howTo.email.subject": () => "Setting up email in Outlook",
-  "ticket.howTo.email.text": () => "Outlook keeps asking for a server name. Which one do I enter for my mailbox?",
+  "ticket.howTo.email.text": (p) => `Outlook keeps asking for a server name. Which one do I enter for my mailbox${p.domain ? ` at ${p.domain}` : ""}?`,
   "ticket.howTo.dns.subject": () => "Pointing my domain to the site",
-  "ticket.howTo.dns.text": () => "I bought my domain somewhere else. What do I change so it shows my site?",
+  "ticket.howTo.dns.text": (p) => `I bought ${p.domain || "my domain"} somewhere else. What do I change so it shows my site and not a parking page full of casino ads?`,
   "ticket.howTo.panel.subject": () => "Can't log in to the control panel",
   "ticket.howTo.panel.text": () => "I lost the login for the control panel. How do I get back in?",
   "ticket.billing.suspended.subject": () => "My service is down",
@@ -254,13 +255,13 @@ export const en: Record<string, (p: Params) => string> = {
   "template.askDetails.title": () => "Ask for details",
   "template.askDetails.text": () => "Could you tell us more about what you see?",
   "template.ftp.title": () => "FTP upload guide",
-  "template.ftp.text": () => "Connect with an FTP client using your login and copy the files into the htdocs folder.",
+  "template.ftp.text": (p) => `Connect to ftp.${p.host} with an FTP client using your login and copy the files into the htdocs folder.`,
   "template.mail.title": () => "Mail client settings",
-  "template.mail.text": () => "Use mail.backbone.example for incoming and outgoing mail with your full address as user name.",
+  "template.mail.text": (p) => `Use mail.${p.host} for incoming and outgoing mail with your full address as user name.`,
   "template.dns.title": () => "Change the name servers",
-  "template.dns.text": () => "Set ns1 and ns2 of our network as name servers at your registrar. It takes up to a day.",
+  "template.dns.text": (p) => `Set ns1.${p.host} and ns2.${p.host} as name servers at your registrar. It takes up to a day.`,
   "template.panel.title": () => "Reset the panel login",
-  "template.panel.text": () => "We have sent a new password for the control panel to your contact address.",
+  "template.panel.text": (p) => `We have sent a new password for the control panel at panel.${p.host} to your contact address.`,
   "template.explain.title": () => "Explain the invoice",
   "template.explain.text": () => "The second payment covers last month's usage, which we invoice in arrears.",
   "template.resend.title": () => "Resend the invoice",
@@ -464,6 +465,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownAttack": () => "This attack is over.",
   ...OPS,
   ...ORDERS_EN,
+  ...REPLIES_EN,
   // Platforms, virtual machines and backups.
   "ticket.outage.slow.subject": (p) => `${p.service || "My service"} is really slow`,
   "ticket.outage.slow.text": (p) => `${p.service || "My service"} takes ages to answer tonight. Is something wrong on your side?`,

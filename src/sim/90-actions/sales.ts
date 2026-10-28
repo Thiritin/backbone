@@ -3,6 +3,7 @@ import { reprice } from "../30-customers/pricing";
 import type { GameState } from "../50-state";
 import { missingFor } from "../30-market/market";
 import { editRequest, loseRequest, say } from "../30-market/sales";
+import { declineReason, mailRequest } from "../30-market/orders";
 import type { ActionResult } from "./hardware";
 import { logActivity } from "../47-staff/activity";
 
@@ -28,7 +29,7 @@ export function quote(s: GameState, requestId: string, monthly: number): ActionR
 export function decline(s: GameState, requestId: string): ActionResult {
   const r = s.sales.requests.find((x) => x.id === requestId);
   if (!r || !["open", "countered", "refused"].includes(r.status)) return fail("error.unknownRequest");
-  say(s, r.id, "you", "sales.you.decline");
+  mailRequest(s, r.id, `decline.${declineReason(s, r)}`);
   loseRequest(s, s.sales.requests.find((x) => x.id === requestId)!, "declined", "lost.declined");
   return { ok: true };
 }

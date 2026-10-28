@@ -11,6 +11,7 @@ import { applyOrderWork } from "../30-market/orders";
 import { howToFactor } from "../85-products/products";
 import { phpAbuse } from "../60-infra/php";
 import { serviceOnline } from "./status";
+import { outgoing, sendAction } from "./replies";
 import { overpricing, retains, revertPrice } from "../30-customers/pricing";
 import {
   bump, cancelCustomer, createTicket, credit, GAMER_ABUSE_RATE, HOURS_PER_MONTH, isFinal, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
@@ -35,15 +36,16 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
     const work = t.work, c = customer(t.customerId);
     t.work = null;
     if (t.kind === "order") {
-      const e = applyOrderWork(s, t, work.arg);
+      const e = applyOrderWork(s, t, work.arg, work.by);
       if (e) events.push(e);
       continue;
     }
+    if (work.op === "resolve") sendAction(s, t, c, t.kind === "refund" && work.arg === "reject" ? "refuse" : work.arg, work.by);
     if (t.kind === "notice" || t.kind === "legal" || t.kind === "refund") applyNoticeWork(s, t, c, work.arg);
     else if (work.op === "escalate") Object.assign(t, { status: "escalated", updatedAt: s.hour });
     else if (work.op === "reply") {
       const right = work.arg === rightTemplate(s, t);
-      t.replies = [...t.replies, { hour: s.hour, template: work.arg, right, ...(work.by && { by: work.by }) }];
+      t.replies = [...t.replies, { hour: s.hour, template: work.arg, right, ...outgoing(s, t, c, `tpl.${work.arg}`), ...(work.by && { by: work.by }) }];
       t.updatedAt = s.hour;
       if (right) t.status = "waiting";
       else {

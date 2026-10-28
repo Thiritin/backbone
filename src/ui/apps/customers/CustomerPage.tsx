@@ -57,7 +57,7 @@ function Trend({ c }: { c: Customer }) {
 
 // Contact address on the customer's own domain, or one named after them.
 function email(c: Customer, services: Service[]): string {
-  const domain = services.find((v) => v.label.includes(".") && !v.label.includes(" "))?.label
+  const domain = services.find((v) => v.domain)?.domain ?? services.find((v) => v.label.includes(".") && !v.label.includes(" "))?.label
     ?? `${c.name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "")}.de`;
   const local = PERSON.includes(c.profile) ? c.name.split(" ")[0].toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "") : "info";
   return `${local || "info"}@${domain}`;
@@ -214,6 +214,7 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
                   <div className="fin-card-b">
                     <dl className="fin-rows">
                       <div><dt>Product</dt><dd>{PRODUCT[v.product]}</dd></div>
+                      {v.domain && <div><dt>Domain</dt><dd>{v.domain}</dd></div>}
                       <div><dt>Plan</dt><dd>{planOf(v.product, v.plan).name}</dd></div>
                       <div><dt>Price</dt><dd className="num">{price(v)}</dd></div>
                       <div><dt>Billing</dt><dd>{v.period === "hour" ? "Monthly" : "Yearly"}</dd></div>

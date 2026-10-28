@@ -493,6 +493,16 @@ Low-budget customers offer the least and ask for the lowest SLA.
 
 **Undercutting and awareness.** You can price just below a competitor's offer to win more of its segment, but customers don't switch overnight. How many people know your company limits how many consider you at all, and that awareness grows slowly through marketing, reviews and word of mouth. A price cut brings a gradual trickle of customers over months, not an instant wave, and a well-known competitor keeps most of its customers even when you are cheaper.
 
+**Domains.** Every web hosting customer comes with a domain, made once when the order or request arrives and kept on the service for good. The service is listed under that domain everywhere: order emails and requests, ticket subjects and texts, notices, the customer page (whose contact address uses it) and the product and machine lists. The rules:
+
+- The country of the customer's city sets the top-level domain: Frankfurt and Berlin .de, Vienna .at, Zurich .ch, London .co.uk, Paris .fr, Amsterdam .nl, Milan .it. Its language sets the words.
+- A private customer uses their name (katrin-maurer.de, motto.fr), a hobby developer their name with a developer touch (frankcodes.fr, haas-dev.it), and a gamer a handle (frostottoplays.co.uk).
+- A sole proprietor or office puts the trade before the surname (baeckerei-weber.de, zahnarzt-lorenz.ch, solicitors-pohl.co.uk); a small business puts the surname first (roth-logistica.it). An agency uses its brand (pixelwerk.fr), a shop its shop name, an enterprise its name with a group word (kaiser-group.co.uk).
+- Names are lowercase ASCII, umlauts written out (ä is ae, ß is ss) and accents dropped. A domain is unique in the game: the next wording is tried, then a number is appended.
+- The seed picks the wording, so a seed always gives the same domains. Saves from before domains get them on load, and the service takes the domain as its name.
+
+The company's own domain comes from its name and the country of its first location (basement-hosting.de); replies use it for the mail server, the name servers, the control panel and the signature.
+
 ## Company level and reputation
 
 Your company climbs a ladder of levels set by its net worth. Business customers only consider a host at a level they trust, so no enterprise moves its systems to a company running out of a garage.
@@ -561,6 +571,8 @@ A legal request shows a verified mark next to the agency's name and a countdown 
 **The cascade.** Customer happiness drops while tickets wait, and unhappy customers cancel or don't renew. Cancellations are tickets too, so a bad week snowballs into a flood. An outage creates tickets from every affected customer, weighted by segment: a flower shop writes once, an online shop three times.
 
 **Automating support.** Support agents work through the queue at their own speed. Later, an AI support bot handles simple ticket types such as how-to and billing questions, and passes the rest to humans. A public status page (an unlock) cuts outage tickets.
+
+**Replies.** Everything you or an employee do on a ticket or order goes out as an email in the thread, written in the company's voice for that situation: a template answer, a credit or refund with its amount, a retention offer, a cancellation confirmation, an unsuspension with its payment deadline, a forwarded or rejected notice, an answer to an authority, an accepted order with what was set up, where and when, and a declined order or request with its reason in the customer's terms (the product is not offered in that city, the city is full, or no reason beyond not taking it on). Each email has three wordings, picked by the seed, so the inbox does not repeat itself. Customers may write with dry humour; the company's replies stay professional.
 
 ## Billing, finance and insurance
 

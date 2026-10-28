@@ -4,8 +4,8 @@ type Params = Record<string, string | number>;
 
 // Order emails, their outcomes and events; spread into en.
 export const ORDERS_EN: Record<string, (p: Params) => string> = {
-  "order.msg.webHosting.0": (p) => `Hello, I would like to order ${p.plan} for my website. Please set it up in ${p.city}.`,
-  "order.msg.webHosting.1": (p) => `A friend recommended you. I would like to order ${p.plan}, with a mailbox if that is no trouble.`,
+  "order.msg.webHosting.0": (p) => `Hello, I would like to order ${p.plan} for ${p.domain || "my website"}. Please set it up in ${p.city}.`,
+  "order.msg.webHosting.1": (p) => `A friend recommended you. I would like to order ${p.plan} for ${p.domain || "my site"}, with a mailbox if that is no trouble.`,
   "order.msg.vps.0": (p) => `I would like to order a ${p.plan} in ${p.city}. Root access, please. I know what I am doing.`,
   "order.msg.vps.1": (p) => `Please set up a ${p.plan} for me. Debian would be nice, and monthly billing.`,
   "order.msg.gameServer.0": (p) => `We would like to order a ${p.plan} for our clan. It has to be up by Friday night.`,
