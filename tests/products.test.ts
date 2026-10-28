@@ -12,9 +12,11 @@ import { tick } from "../src/sim/88-tick/tick";
 import { addNode, createCluster, moveControlPlane, provisionService, setBackup, setSoftware } from "../src/sim/90-actions/clusters";
 import { installed } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
+import { resolveTicket } from "../src/sim/90-actions/support";
+import { monthlyValue } from "../src/sim/40-support/tickets";
 import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
-import { declineRefund, migrateWorkload, refundLoss, restoreWorkload, startWorkload, stopWorkload } from "../src/sim/90-actions/vms";
+import { migrateWorkload, restoreWorkload, startWorkload, stopWorkload } from "../src/sim/90-actions/vms";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 type R = ReturnType<typeof setPower>;
@@ -157,7 +159,7 @@ describe("backups and lost disks", () => {
     const before = s.customers.find((c) => c.id === cus)!.happiness;
     expect(lostDisk(s, workloadsOf(s, vps)[0])).toBe(true);
     expect(serviceOnline(s, vps)).toBe(false);
-    expect(s.lossReports).toMatchObject([{ deviceId: "dev3", hour: 10, items: [{ serviceId: vps, customerId: cus, backupAt: 2, refund: "none", restored: false }] }]);
+    expect(s.lossReports).toMatchObject([{ deviceId: "dev3", hour: 10, items: [{ serviceId: vps, customerId: cus, backupAt: 2, restored: false }] }]);
     expect(err(migrateWorkload(s, w.id, second))).toBe("error.lostDisk");
     ok(restoreWorkload(s, w.id));
     expect(s.lossReports[0].items[0].restored).toBe(true);
@@ -168,24 +170,23 @@ describe("backups and lost disks", () => {
     expect(serviceOnline(s, vps)).toBe(true);
     expect(err(restoreWorkload(s, w.id))).toBe("error.notLost");
   });
-  it("asks for a refund without a backup: granting pays a month back, declining loses the customer", () => {
+  it("asks for a refund once per customer in Support without a backup, and pays it back once", () => {
     const { s, cluster, cus } = setup();
     const other = addCustomer(s, "Bo Byte", "private");
     const a = ok(provisionService(s, cus, "vps", { label: "Box", clusterId: cluster }));
-    const b = ok(provisionService(s, other, "vps", { label: "Site", clusterId: cluster }));
+    ok(provisionService(s, cus, "vps", { label: "Box 2", clusterId: cluster }));
+    ok(provisionService(s, other, "vps", { label: "Site", clusterId: cluster }));
     lose(s, "dev3");
-    const report = s.lossReports[0];
-    expect(report.items.map((i) => [i.serviceId, i.refund])).toEqual([[a, "open"], [b, "open"]]);
-    // 70 less 60 for the lost data, less the hour's outage.
-    const hit = s.customers.find((c) => c.id === cus)!.happiness;
-    expect(hit).toBeLessThanOrEqual(10);
-    const cash = s.cash, monthly = Math.round(s.services.find((v) => v.id === a)!.price * 730 * 100) / 100;
-    ok(refundLoss(s, report.id, a));
-    expect(s.cash).toBeCloseTo(cash - monthly, 2);
-    expect(s.customers.find((c) => c.id === cus)!.happiness).toBe(hit + 20);
-    expect(err(refundLoss(s, report.id, a))).toBe("error.refundSettled");
-    ok(declineRefund(s, report.id, b));
-    expect(s.customers.find((c) => c.id === other)!.churnedAt).toBe(s.hour);
+    expect(s.lossReports[0].items).toHaveLength(3);
+    const asks = s.tickets.filter((t) => t.kind === "refund" && t.topic === "dataLoss");
+    expect(asks.map((t) => t.customerId)).toEqual([cus, other]);
+    // 70 less 60 per lost disk.
+    expect(s.customers.find((c) => c.id === cus)!.happiness).toBe(0);
+    const monthly = monthlyValue(s.services, cus);
+    ok(resolveTicket(s, asks[0].id, "refund"));
+    expect(resolveTicket(s, asks[0].id, "refund").ok).toBe(false);
+    run(s, 2);
+    expect(s.ledger.filter((l) => l.key === "ledger.refund").map((l) => l.amount)).toEqual([-monthly]);
     // Without a backup the workload starts again on an empty disk.
     ok(restoreWorkload(s, workloadsOf(s, a)[0].id));
     expect(serviceOnline(s, a)).toBe(true);

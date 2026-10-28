@@ -502,8 +502,6 @@ export const en: Record<string, (p: Params) => string> = {
   "error.noZoneLink": () => "No link connects these zones.",
   "error.notLost": () => "Its disk is fine.",
   "error.backupUnavailable": () => "The backup cluster is unreachable.",
-  "error.unknownReport": () => "This incident report no longer exists.",
-  "error.refundSettled": () => "This refund is already settled.",
 };
 
 export const t = (key: string, params: Params = {}): string => en[key]?.(params) ?? key;
