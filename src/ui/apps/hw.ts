@@ -55,7 +55,8 @@ function partLamps(g: GameState, d: Device): Parts {
 export function deviceLamps(g: GameState, id: string, m: DeviceModel) {
   const d = g.devices.find((x) => x.id === id)!, h = deviceHealth(g, id).state, link = lampOf(linkStatus(g, id));
   const state: Lamp = h === "off" || h === "nopower" ? "off" : WORSE[Math.max(WORSE.indexOf(HEALTH_LAMP[h]), WORSE.indexOf(link))];
-  return { state, blink: h === "rebuilding" || h === "booting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), lights: portLights(g, id, m), parts: partLamps(g, d) };
+  const frozen = g.frozen.includes(id);
+  return { state: frozen ? "bad" as Lamp : state, blink: frozen || h === "rebuilding" || h === "booting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), lights: portLights(g, id, m), parts: partLamps(g, d) };
 }
 
 // Every change to the game replaces the state object, so the links are worked out once per state for all devices.

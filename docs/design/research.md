@@ -40,6 +40,20 @@ Marketing basics is the foundation for two further trainings. **Product manageme
 
 Both are now available in Research.
 
+## Memory reservation
+
+### Memory is not elastic
+
+A server can promise more processor time than it has, because not every customer computes at once. Memory is different: when the workloads on a server need more RAM than it has, the server freezes, and every customer on it is down until something moves off.
+
+Your team now knows how to keep that promise honest.
+
+### Turning it on
+
+Each cluster in Locations has a **Memory reservation** switch. With it on, the cluster refuses to place or move a workload onto a server whose booked RAM would exceed the RAM installed in it.
+
+You sell fewer plans per server, and none of them freeze it.
+
 ## Network operations
 
 ### Beyond the home line

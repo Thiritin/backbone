@@ -230,6 +230,33 @@ h2 .loc-az, h3 .loc-az { margin-left: 8px; vertical-align: middle; }
 .loc-menu button[aria-checked="true"] .loc-az { background: color-mix(in oklch, var(--accent-ink) 20%, transparent); color: inherit; }
 
 .loc-sub { min-height: 36px; border-top: 0.5px solid var(--line); }
+
+/* Node card: booked and in-use meters side by side, then the workloads on the node. */
+.node-meters { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 8px 12px; padding: 10px 14px; border-top: 0.5px solid var(--line); }
+.node-meters .loc-k { min-width: 0; }
+.node-meters .loc-meter-bar { width: 44px; flex: none; }
+.node-meters + .loc-row, .loc-card > .node-meters:first-child { border-top: 0.5px solid var(--line); }
+.wl-row { padding: 8px 14px 10px; border-top: 0.5px solid var(--line); display: grid; gap: 6px; }
+.wl-line { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 28px; }
+.wl-name { font-weight: 600; white-space: nowrap; }
+.wl-service { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wl-gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.wl-gauge { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-2); white-space: nowrap; min-width: 0; }
+.wl-gauge svg.lucide { width: 13px; height: 13px; flex: none; color: var(--text-3); }
+.wl-gauge-bar { width: 32px; height: 4px; flex: none; border-radius: 2px; background: color-mix(in oklch, var(--text) 10%, transparent); overflow: hidden; }
+.wl-gauge-bar > span { display: block; height: 100%; background: var(--accent); }
+.wl-gauge.hot .wl-gauge-bar > span { background: var(--warn); }
+.wl-gauge.hot .num, .wl-gauge.hot svg.lucide { color: var(--warn-text); }
+.wl-more { position: relative; }
+.wl-more .btn svg.lucide { width: 16px; height: 16px; }
+.wl-menu { position: absolute; top: 30px; right: 0; z-index: 20; min-width: 220px; padding: 5px; border-radius: 10px; background: var(--win); box-shadow: var(--shadow-pop); display: grid; gap: 1px; }
+.wl-menu button { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px; border: 0; border-radius: 6px; background: none; font: inherit; color: inherit; text-align: left; white-space: nowrap; }
+.wl-menu button:hover { background: var(--hover); }
+.wl-menu svg.lucide { width: 14px; height: 14px; color: var(--text-2); }
+.wl-targets { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; padding-top: 4px; }
+.wl-target { display: grid; justify-items: start; gap: 4px; padding: 8px 10px; border: 0.5px solid var(--line-strong); border-radius: 8px; background: var(--win); font: inherit; color: inherit; text-align: left; }
+.wl-target:hover { border-color: var(--accent); }
+.wl-target .num { font-size: 11.5px; white-space: nowrap; }
 .loc-transit + .loc-transit { border-top: 0.5px solid var(--line); }
 .loc-ship { gap: 10px; }
 .loc-ship select { min-width: 0; max-width: 220px; height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: var(--text); font: inherit; font-size: 13px; }
@@ -304,6 +331,7 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 
 /* Ports on the rack back and on remote boxes take a dragged cable. */
 .rack-port { fill: transparent; cursor: crosshair; }
+.rack-inlet { cursor: pointer; }
 .rack-port:hover { fill: color-mix(in oklch, var(--accent) 30%, transparent); stroke: var(--accent); stroke-width: 1; }
 .rack-svg.dragging, .rack-svg.dragging * { cursor: crosshair; }
 .rack-drag { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; pointer-events: none; }
@@ -311,3 +339,12 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .loc-cab-port:hover .loc-cab-row, .loc-cab-port.hot .loc-cab-row, .loc-cab-port.src .loc-cab-row { fill: color-mix(in oklch, var(--accent) 10%, transparent); }
 .loc-cab-label { font: 500 10.5px "JetBrains Mono", monospace; fill: var(--text-2); pointer-events: none; }
 .loc-cab-plugs { pointer-events: none; }
+
+.loc-connect > .picks { padding: 10px 14px 0; }
+.loc-connect .loc-row { align-items: flex-start; }
+.loc-mount .picks { padding: 14px 16px 0; }
+.loc-mount-rack { display: flex; justify-content: center; padding: 14px 16px; overflow: auto; max-height: min(560px, calc(100dvh - 300px)); }
+.loc-ship { flex-wrap: wrap; }
+.loc-move-pos { display: grid; grid-template-columns: 90px 1fr; align-items: center; }
+.loc-site .loc-card-h { flex-wrap: wrap; row-gap: 4px; }
+.loc-site .loc-card-h h3 { white-space: nowrap; }

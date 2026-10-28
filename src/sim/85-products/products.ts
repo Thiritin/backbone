@@ -148,7 +148,7 @@ function overload(s: GameState) {
   for (const c of s.clusters) {
     for (const n of c.nodes) {
       const { perf } = nodeUsage(s, n.deviceId);
-      if (perf >= 1) continue;
+      if (perf >= 1 || s.frozen.includes(n.deviceId)) continue;
       for (const w of s.workloads.filter((x) => x.deviceId === n.deviceId && x.clusterId === c.id && !x.stopped)) {
         const v = s.services.find((x) => x.id === w.serviceId);
         const cus = v && customerCopy(s, v.customerId);

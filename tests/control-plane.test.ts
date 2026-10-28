@@ -8,6 +8,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { provisionService, setSoftware } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { startGame } from "../src/sim/90-actions/start";
+import { setLine } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const ok = (r: { ok: boolean; error?: string }) => { expect(r.error).toBeUndefined(); return r; };
@@ -49,6 +50,7 @@ describe("control planes", () => {
     install(s, "proxmocks");
     expect(s.customers).toHaveLength(0);
     expect([lineOffered(s, "vps"), lineOffered(s, "gameServer"), lineOffered(s, "webHosting")]).toEqual([true, true, false]);
+    for (const p of ["vps", "gameServer"] as const) setLine(s, p, true);
     run(s, 30 * 24);
     expect(s.sales.requests.length).toBeGreaterThan(0);
     expect(s.sales.requests.every((r) => r.product !== "webHosting")).toBe(true);

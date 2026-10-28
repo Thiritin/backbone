@@ -466,6 +466,17 @@ Gamers create abuse reports at 0.02, like high-skill customers. Each payment rem
 
 **Outage tickets.** When an outage hits a customer, they write in with a 30% chance at low budget, 60% at medium and 90% at high budget. High-budget customers write 3 tickets, everyone else 1. A public status page halves the chance.
 
+**Unanswered tickets.** A ticket still open this many hours after it was due is closed by the customer, with outcome Ignored. The wait penalty has been charged for every counting hour until then.
+
+| Ticket type | Closed after, past due |
+| --- | --- |
+| Outage report | 72 h |
+| How-to question | 5 days |
+| Upgrade request, suspension appeal | 7 days |
+| Billing question, abuse report, refund request | 14 days |
+
+A ticket someone is working on stays open. Cancellations are processed at the next billing date instead.
+
 **Control panels** change the how-to rate: cPanic ×0.8, Pleskit ×0.9, DirectAdmen ×1.2, FreePanel ×1.5.
 
 **Work rate.** A worker with skill s (0 to 100) finishes tasks of handling time t minutes at this rate and gets each one right with the given chance:
@@ -940,13 +951,17 @@ The link speed is the slowest link between the two nodes, shared by every migrat
 | Resource | Max ratio | In use | When the node runs over |
 | --- | --- | --- | --- |
 | CPU | 8:1 | Booked vCPUs × load | Performance of everyone on the node × cores ÷ busy vCPUs |
-| RAM | 1.5:1 | Booked RAM × (0.6 + 0.4 × load), since memory stays mostly resident | Above 100% the node swaps and performance drops to 30%; above 110% it kills the biggest workload, which is an outage and a ticket |
+| RAM | 1.5:1, or 1:1 with Memory reservation | Booked RAM × (0.6 + 0.4 × load), since memory stays mostly resident | Above 100% the node freezes: every workload on it is down until RAM in use fits again |
 | Disk | 2:1 | Grows from 30% of booked at signup at the customer's growth rate, up to 100% | The pool stops writes at 100%: an outage for every workload on it |
 | Traffic | No limit | Monthly traffic × traffic shape (below) | Saturation, see Traffic and bandwidth |
 
 A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, while a mixed cluster stays near 0.5, so mixing customer types roughly doubles safe overcommit. The cluster view shows booked capacity, this week's forecast peak and last week's actual peak.
 
-**How the first build plays.** Usage follows the curves with ±20% jitter per workload and hour, without surges yet. A node's use is the sum of its workloads plus its control plane at full load; a stopped, restoring or lost workload uses nothing. Instead of killing workloads, an overloaded node slows them: performance is cores ÷ busy vCPUs, 30% when RAM runs over and 50% when the disk pool runs over. Every hour each customer on a slowed node loses 1 − performance in happiness, and each of their services opens a "really slow" outage ticket with a chance of 10% × (1 − performance) unless one is already open. Overcommit ratios are the same for every cluster.
+**How the first build plays.** Usage follows the curves with ±20% jitter per workload and hour, without surges yet. A node's use is the sum of its workloads plus its control plane at full load; a stopped, restoring or lost workload uses nothing. Instead of killing workloads, an overloaded node slows them: performance is cores ÷ busy vCPUs, and 50% when the disk pool runs over. A node whose RAM in use exceeds its installed RAM freezes instead of slowing: every workload on it is down, an outage for each customer on it, until the player stops or moves enough workloads or the hourly load drops. The freeze is checked every hour and again right after a stop, start or move. Every hour each customer on a slowed node loses 1 − performance in happiness, and each of their services opens a "really slow" outage ticket with a chance of 10% × (1 − performance) unless one is already open. Overcommit ratios are the same for every cluster.
+
+**Memory reservation.** A tier 2 training after Monitoring, 100 know-how and 5 days. It adds a Memory reservation switch to every cluster, off by default. With it on, a node books RAM only up to its installed RAM less its control plane, so placements and moves that would pass it are refused and the node cannot freeze.
+
+**Pegged workloads.** A workload is pegged when its CPU ran at 95% or more of its booked vCPUs in more than 12 of the last 24 hours. The node's workload list marks it.
 
 **Traffic shape.** A service's Mbit/s each hour is its monthly average × (floor + (1 − floor) × activity + 2 × night job) ÷ the week's average of that sum, where activity is the curve with the service's own ±20% jitter. A month's traffic therefore stays at the table in Traffic and bandwidth.
 
@@ -1195,12 +1210,12 @@ Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and Tr
 | Step | Setup | Upkeep per month | Needs |
 | --- | --- | --- | --- |
 | Email | Free | Free | Always on |
-| Website | €400 | €15 | None |
-| Order form | €900 | €10 | Website |
-| Goggle Ads | €50 | None | Website |
-| AI ads | €1,500 | None | Website, from 2023 |
+| Web design | €400 | €15 | None |
+| Order form | €900 | €10 | Web design |
+| Goggle Ads | €50 | None | Web design |
+| AI ads | €1,500 | None | Web design, from 2023 |
 
-A website brings 4 leads a month per location city, split by the profile mix.
+The basic website every company starts with is free and brings no leads of its own. The web design brings 4 leads a month per location city, split by the profile mix. Every lead only writes when its product is listed on the website.
 
 **Trade fairs.** Costs are 2026 euros, scaled back with m = 0.6 like campaigns. Each fair needs one attendee of any role, who is away for the fair's days.
 

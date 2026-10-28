@@ -103,7 +103,7 @@ describe("buyDevice and storage", () => {
     // SuperMacro sells at 0.9 × the catalog price.
     expect(s.cash).toBe(3250);
     expect(s.ledger).toEqual([{ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: "Balanced 1U G1", qty: 3 }, amount: -6750 }]);
-    expect(dev(s, first)).toMatchObject({ rackId: null, panel: null, brand: "SuperMacro", name: "srv-01", price: 2250, boughtAt: s.hour });
+    expect(dev(s, first)).toMatchObject({ rackId: null, panel: null, brand: "SuperMacro", name: "fra1-srv-02", price: 2250, boughtAt: s.hour });
     ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     expect(storageStacks(s, "loc1")).toEqual([
       { model: "g1-compute", brand: "SuperMacro", ids: ["dev8", "dev9", "dev10"] },

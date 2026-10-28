@@ -27,7 +27,7 @@ export const AUDIENCE: Record<Profile, string> = {
 
 const OWNED_INFO: { id: OwnedChannel | "email"; name: string; text: string }[] = [
   { id: "email", name: "Email", text: "Customers find you through friends and order by writing to your inbox." },
-  { id: "website", name: "Website", text: "Makes you findable and brings in a steady trickle of requests." },
+  { id: "website", name: "Web design", text: "Redesigns your website so search engines find it, which brings in a steady trickle of requests." },
   { id: "orderForm", name: "Order form", text: "Lets customers order standard products on their own." },
   { id: "searchAds", name: "Goggle Ads", text: "Sends people searching for hosting to your website." },
   { id: "aiAds", name: "AI ads", text: "Targets better than search ads and converts more visitors." },
@@ -36,7 +36,7 @@ const OWNED_INFO: { id: OwnedChannel | "email"; name: string; text: string }[] =
 const CAMPAIGN_INFO: Record<CampaignChannel, string> = {
   search: "Goggle Ads", ai: "AI ads", gaming: "Gaming communities", coldCall: "Cold calling", agency: "Agency outreach",
 };
-const CHANNEL_NAME: Record<OwnedChannel, string> = { website: "Website", orderForm: "Order form", searchAds: "Goggle Ads", aiAds: "AI ads" };
+const CHANNEL_NAME: Record<OwnedChannel, string> = { website: "Web design", orderForm: "Order form", searchAds: "Goggle Ads", aiAds: "AI ads" };
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 const leads = (n: number) => (n < 10 ? n.toFixed(1) : String(Math.round(n)));

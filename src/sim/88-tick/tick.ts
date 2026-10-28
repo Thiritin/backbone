@@ -4,6 +4,7 @@ import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
 import { opsTick } from "../40-support/notices";
 import { supportTick } from "../40-support/tick";
+import { abandonTickets } from "../40-support/abandon";
 import { financeTick } from "../46-finance/finance";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
@@ -11,6 +12,7 @@ import { fairsTick } from "../80-business/fairs";
 import { marketingTick } from "../80-business/marketing";
 import { salesTick } from "../30-market/sales";
 import { computeTick } from "../60-infra/cluster";
+import { freezeTick } from "../60-infra/usage";
 import { networkTick } from "../60-infra/network";
 import { securityTick } from "../60-infra/security";
 import { usageTick } from "../60-infra/usage";
@@ -226,6 +228,7 @@ export function tick(state: GameState): SimEvent[] {
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
   events.push(...opsTick(state));
+  events.push(...freezeTick(state));
   events.push(...computeTick(state));
   events.push(...productsTick(state));
   events.push(...usageTick(state));
@@ -233,6 +236,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...networkTick(state));
   events.push(...securityTick(state));
   events.push(...supportTick(state));
+  abandonTickets(state);
   events.push(...financeTick(state));
   events.push(...staffTick(state));
   events.push(...techTick(state));

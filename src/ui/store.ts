@@ -20,7 +20,7 @@ export interface Banner { id: number; app: string; title: string; text: string; 
 export interface NotifyPref { allow: boolean; sound: boolean }
 const WIDE = { w: 1240, h: 680 };
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
-  Security: { w: 900, h: 420 },
+  Security: { w: 900, h: 420 }, Website: { w: 1100, h: 700 },
   Locations: { w: 1280, h: 760 }, Shop: { w: 1180, h: 700 }, Billing: WIDE, Bank: WIDE, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
   Support: { w: 1240, h: 720 }, Research: { w: 1140, h: 600 }, Products: { w: 1120, h: 720 }, "Virtual machines": { w: 1180, h: 680 }, Staff: { w: 1240, h: 640 },
 };
