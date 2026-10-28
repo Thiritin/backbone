@@ -1,13 +1,18 @@
 import type { KeyboardEvent, ReactNode } from "react";
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
-import { BAY, Defs, Front, shelfHeight, type Lamp, type PortLamp } from "./fronts";
+import type { CableKind, End } from "../../sim/50-state";
+import { Back, portSpots, type Side } from "./backs";
+import { CABLE, Defs, Front, type Lamp, type PortLamp } from "./fronts";
 
 export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; ports: PortLamp[]; groups: number[][] }
+// One cable end in this rack; peer is set when the other end is in this rack too, label names it otherwise.
+export interface RackLink { id: string; end: End; peer: End | null; kind: CableKind; label: string }
 
 interface Props {
   units: number;
-  shelf: boolean;
   items: RackItem[];
+  links?: RackLink[];
+  side?: Side;
   w: number;
   u: number;
   selected?: string | null;
@@ -16,7 +21,7 @@ interface Props {
   onFree: (lo: number, hi: number, el: Element) => void;
 }
 
-const MONO = "JetBrains Mono, monospace", DIM = "oklch(0.62 0.01 255)";
+const MONO = "JetBrains Mono, monospace", DIM = "oklch(0.62 0.01 255)", ROW = 12;
 
 const press = (fn: (el: Element) => void) => ({
   role: "button",
@@ -28,13 +33,13 @@ const press = (fn: (el: Element) => void) => ({
 });
 
 // A rack is drawn top unit first; runs of 3 or more free units collapse into one band.
-export function RackFront(p: Props) {
-  if (p.shelf) return <ShelfFront {...p} />;
-  const { units, items, w, u, selected, onDevice, onFree } = p;
+// Cables between two visible ports hang as curves; the rest run up a lane on the right and out of the top.
+export function RackFront({ units, items, links = [], side = "front", w, u, selected, onDevice, onFree }: Props) {
   const pad = 30, fs = Math.max(7, u * 0.4), at = new Map<number, RackItem>();
   for (const it of items) for (let k = 0; k < it.model.height; k++) at.set(it.slot + k, it);
+  const placed = new Map<string, { it: RackItem; y: number; h: number }>();
   const out: ReactNode[] = [];
-  let y = 4;
+  let y = 0;
   for (let n = units; n >= 1;) {
     if (!at.has(n)) {
       let m = n;
@@ -69,9 +74,10 @@ export function RackFront(p: Props) {
       out.push(<text key={`n${n - k}`} x={pad - 8} y={y + k * u + u / 2 + fs * 0.35} textAnchor="end" fontFamily={MONO} fontSize={fs} fill={DIM}>{n - k}</text>);
     }
     if (top === n) {
+      placed.set(it.id, { it, y, h });
       out.push(
         <g key={it.id} className="rack-dev" transform={`translate(${pad} ${y})`} aria-label={it.name} aria-pressed={it.id === selected} {...press(() => onDevice(it.id))}>
-          <Front {...it} w={w} h={h} />
+          {side === "front" ? <Front {...it} w={w} h={h} /> : <Back {...it} w={w} h={h} />}
         </g>,
       );
       if (it.id === selected) out.push(<rect key="sel" x={pad - 2} y={y - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke="var(--accent)" strokeWidth="2" pointerEvents="none" />);
@@ -79,50 +85,57 @@ export function RackFront(p: Props) {
     y += h;
     n = it.slot - 1;
   }
-  const H = y + 4, W = w + pad * 2;
+
+  const spot = (e: End) => {
+    const p = placed.get(e.device);
+    const s = p && portSpots(p.it.model, p.it.name, side, w, p.h).get(e.port);
+    return s && { x: pad + s.x + s.w / 2, y: p.y + s.y + s.h / 2 };
+  };
+  const curves: ReactNode[] = [], drawn = new Set<string>();
+  const loose: { l: RackLink; x: number; y: number }[] = [];
+  for (const l of links) {
+    const a = spot(l.end);
+    if (!a) continue;
+    const b = l.peer && spot(l.peer);
+    if (!b) { loose.push({ l, ...a }); continue; }
+    if (drawn.has(l.id)) continue;
+    drawn.add(l.id);
+    const sag = 10 + Math.abs(a.x - b.x) * 0.08 + Math.abs(a.y - b.y) * 0.25;
+    curves.push(<Wire key={l.id} kind={l.kind} d={`M${a.x} ${a.y}C${a.x} ${a.y + sag} ${b.x} ${b.y + sag} ${b.x} ${b.y}`} />);
+  }
+  // Top ports take the inner lanes and the lowest label rows, so no two cables cross.
+  loose.sort((p, q) => p.y - q.y);
+  const head = loose.length ? loose.length * ROW + 6 : 0, lane0 = pad + w + 9, right = Math.max(pad, 14 + loose.length * 4);
+  const W = pad + w + right, H = head + y + 8;
+  const exits = loose.map(({ l, x, y: py }, i) => {
+    const lx = lane0 + i * 4, ry = head - 4 - i * ROW, py2 = py + head + 4;
+    return (
+      <g key={`x${l.id}${l.end.device}`}>
+        <Wire kind={l.kind} d={`M${x} ${py2}C${x} ${py2 + 12} ${lx} ${py2 + 8} ${lx} ${py2 - 4}L${lx} ${ry + 4}Q${lx} ${ry} ${lx - 4} ${ry}L${pad} ${ry}`} />
+        <text x={pad + 2} y={ry - 3} fontFamily={MONO} fontSize="8" fill="var(--text-2)">{l.label}</text>
+      </g>
+    );
+  });
   return (
-    <svg className="device-svg" width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="group" aria-label="Rack front">
+    <svg className="device-svg" width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="group" aria-label={side === "front" ? "Rack front" : "Rack back"}>
       <Defs />
-      <rect width={W} height={H} rx="4" fill="var(--rack)" />
-      <rect x={pad - 6} y="2" width="5" height={H - 4} rx="1" fill="var(--metal-2)" />
-      <rect x={pad + w + 1} y="2" width="5" height={H - 4} rx="1" fill="var(--metal-2)" />
-      {out}
+      <rect y={head} width={W} height={H - head} rx="4" fill="var(--rack)" />
+      <g transform={`translate(0 ${head + 4})`}>
+        <rect x={pad - 6} y="-2" width="5" height={y + 4} rx="1" fill="var(--metal-2)" />
+        <rect x={pad + w + 1} y="-2" width="5" height={y + 4} rx="1" fill="var(--metal-2)" />
+        {out}
+        <g pointerEvents="none">{curves}</g>
+      </g>
+      <g pointerEvents="none">{exits}</g>
     </svg>
   );
 }
 
-// A basement shelf: slots side by side on one board, slot 1 on the left.
-function ShelfFront({ units, items, selected, onDevice, onFree }: Props) {
-  const pad = 10, W = pad * 2 + units * BAY.w, H = BAY.h + 22, board = BAY.h + 4;
-  const bySlot = new Map(items.map((it) => [it.slot, it]));
-  const bays: ReactNode[] = [];
-  for (let k = 1; k <= units; k++) {
-    const x = pad + (k - 1) * BAY.w, it = bySlot.get(k);
-    if (!it) {
-      bays.push(
-        <g key={k} className="rack-free" aria-label={`Slot ${k} free`} {...press((el) => onFree(k, k, el))}>
-          <rect x={x + 6} y={8} width={BAY.w - 12} height={BAY.h - 6} rx="3" fill="oklch(0.2 0.006 255 / 0.01)" stroke="oklch(0.3 0.006 255)" strokeDasharray="3 3" />
-          <text x={x + BAY.w / 2} y={BAY.h / 2 + 6} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={DIM}>Slot {k}</text>
-        </g>,
-      );
-      continue;
-    }
-    const sh = shelfHeight(it.model), dw = it.model.kind === "server" ? BAY.w - 20 : BAY.w - 10, dx = x + (BAY.w - dw) / 2, dy = board - sh;
-    bays.push(
-      <g key={k} className="rack-dev" transform={`translate(${dx} ${dy})`} aria-label={it.name} aria-pressed={it.id === selected} {...press(() => onDevice(it.id))}>
-        <Front {...it} w={dw} h={sh} />
-      </g>,
-    );
-    if (it.model.kind !== "server") bays.push(<text key={`l${k}`} x={x + BAY.w / 2} y={dy - 6} textAnchor="middle" fontFamily={MONO} fontSize="7" fill={DIM}>{it.name}</text>);
-    if (it.id === selected) bays.push(<rect key="sel" x={dx - 2.5} y={dy - 2.5} width={dw + 5} height={sh + 5} rx="4" fill="none" stroke="var(--accent)" strokeWidth="2" pointerEvents="none" />);
-  }
+function Wire({ d, kind }: { d: string; kind: CableKind }) {
   return (
-    <svg className="device-svg" width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="group" aria-label="Shelf">
-      <Defs />
-      <rect width={W} height={H} rx="4" fill="var(--rack)" />
-      <rect x="4" y={board} width={W - 8} height="6" rx="1" fill="var(--metal-3)" />
-      <rect x="4" y={board + 6} width={W - 8} height="2" fill="var(--metal-line)" />
-      {bays}
-    </svg>
+    <>
+      <path d={d} fill="none" stroke="oklch(0.12 0.004 255)" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={d} fill="none" stroke={CABLE[kind]} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </>
   );
 }

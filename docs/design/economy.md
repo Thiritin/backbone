@@ -82,7 +82,7 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | G6 | 2020 | 64 | 512 GB | 8 TB NVMe | 400 W | €5,000 |
 | G7 | 2023 | 128 | 1 TB | 15 TB NVMe | 450 W | €5,500 |
 
-**Server models.** Each model scales its generation's row. A model with two power supplies costs 10% more than the same model with one.
+**Server models.** Each model scales its generation's row. A model with two power supplies costs 10% more than the same model with one and draws 5% more power.
 
 | Model | Height | Sockets | Cores | RAM | Drive bays | Network ports | Power supplies | Full power | Price | Sold |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -426,11 +426,11 @@ A G1 server costs about €26 a month in power in 2005; a G7 costs €89 in 2026
 | Location | PUE | Billing |
 | --- | --- | --- |
 | Basement | 1.0 | Household price |
-| Rented U, rack or cage | Included | A power budget is included in the rent; each kW above it costs the GDD's extra-power price |
+| Rack positions, cage or suite | The datacenter's power factor | City business price × power factor; a rack above its position's kW limit trips |
 | Own room | 1.6 | City business price |
 | Own datacenter | 1.4, or 1.2 with liquid cooling | City business price, or a custom contract: 3 years fixed at 10% below the current price |
 
-**Buying and selling.** Hardware arrives 3 days after ordering in 2005, falling to 1 day by 2015. Book value falls in a straight line to zero over 5 years. Used hardware sells for 50% of book value, but never less than 5% of its price. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
+**Buying and selling.** Hardware arrives 3 days after ordering in 2005, falling to 1 day by 2015. Bought hardware goes to storage, and mounting it into a rack is instant and free. Resale value falls in a straight line from 100% to 80% of the price over the first month, then in a straight line to 20% over the next 24 months, and stays at 20%. Racks sell the same way. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
 
 **Failures.** Each device has a base annual failure rate (AFR), raised in its first 3 months and again after 3 years of age:
 

@@ -50,6 +50,7 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 | App | What it does |
 | --- | --- |
 | Locations | Grid of your locations; opens room views and rack front views |
+| Shop | Servers, switches and patch panels by manufacturer, bought into storage |
 | Network | Europe map, uplinks, topology view, DDoS protection |
 | Products | Product lines, software licenses, clusters |
 | Sales | Requests from new and existing customers, quota requests, later the shop |
@@ -189,9 +190,13 @@ Failover is the safe default. Load balance doubles a server's bandwidth, but if 
 | Power | Draw at idle and at full load | The power bill and the fuse limit per rack |
 | Power supplies | 1 or 2 | Two connect to an A and a B feed and survive a failed supply |
 
-The shop sells a few models per generation: a 1U compute server, a 2U high-memory server, a 2U storage server, a 4U GPU server from 2016 and a 1U ARM server from 2020. RAM and disks can be added later in free slots and bays. A new generation arrives every three years, and each one packs more resources per U and per watt, so replacing old servers cuts the energy bill as well as freeing space.
+The Shop app sells a few models per generation from each manufacturer: a 1U compute server, a 2U high-memory server, a 2U storage server, a 4U GPU server from 2016 and a 1U ARM server from 2020. Every model is pre-built with fixed CPU, RAM, disks, NICs and power supplies, so the choice is which model, architecture and size to buy. Bigger and denser models draw more power. Each model shows as a small isometric picture, so the sizes are easy to compare.
+
+**Storage.** Bought hardware goes into the company's storage, one stockroom shared by all locations. From there you mount units into racks and unmount them back, which drops their cables. Identical units in storage form a stack, and a stack can be mounted in one step, each unit directly on top of the last. Hardware sells from storage or from a rack at its resale value: 80% of the price after the first month, falling evenly to 20% over the next two years. A new generation arrives every three years, and each one packs more resources per U and per watt, so replacing old servers cuts the energy bill as well as freeing space.
 
 **Copy and paste.** A finished rack can be saved as a template and pasted into an empty rack slot. The game orders the hardware, and technicians install and cable it. A typical large location ends up with one core routing rack and many server racks, each with its own pair of switches.
+
+**Cabling manager.** Each location has a cabling view that lays every port of the location out on one plane, in columns from the carrier panel and its uplinks through routers and switches to servers and patch panels. You drag from one port to another to lay a cable, and the game picks copper, DAC or fiber from the port types and whether both ends are in the same rack. Ports that can't connect dim while you drag. Clicking a cable selects it so you can remove it. The rack view and the cabling view show the same cables.
 
 **Keeping it fun at scale.** Cabling port by port is fun for the first few racks and tedious at 200. Three things fix that: rack templates, an auto-cable button that wires a server to the next free ports on its rack's switches, and technicians who do installs for you.
 
