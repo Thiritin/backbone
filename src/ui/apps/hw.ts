@@ -28,7 +28,7 @@ export function portsText(m: DeviceModel): string {
 
 export function portName(m: DeviceModel, i: number): string {
   if (m.kind === "server") return `eth${i}`;
-  if (m.kind === "patch") return i < jacksOf(m) ? `Front ${i + 1}` : `Back ${i - jacksOf(m) + 1}`;
+  if (m.kind === "patch") return i < jacksOf(m) ? `Top ${i + 1}` : `Bottom ${i - jacksOf(m) + 1}`;
   return `${m.ports[i].media === "sfp" && m.ports.some((p) => p.media === "rj45") ? "SFP" : "Port"} ${i + 1}`;
 }
 

@@ -1,6 +1,6 @@
 // Code-drawn device fronts, ported from docs/design/mockups/shell.js. Sizes are px; u is one rack unit.
 import type { ReactNode } from "react";
-import { jacksOf, type DeviceModel } from "../../sim/10-catalog/hardware";
+import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import { Back } from "./backs";
 import { BrandMark, brandColor } from "./logos";
 
@@ -267,8 +267,8 @@ export function switchX0(model: DeviceModel, name: string, h: number) {
   return (name ? 18 + tw(name, fs) : 16) + (model.layer === 3 ? 17 : 0);
 }
 
-function Switch({ w, h, name, model, ports, brand, groups = [], ear, state, blink }: FrontProps & { ear?: string }) {
-  const fs = fsz(Math.min(h, 24)) * 0.9, x0 = switchX0(model, name, h), at = switchLayout(model, w, h, x0);
+// Rear switch ports with their link LEDs and the dashed outline of each port group.
+export function SwitchPorts({ at, ports, groups = [] }: { at: ReturnType<typeof switchLayout>; ports: PortLamp[]; groups?: number[][] }) {
   const cells: ReactNode[] = [];
   for (const [i, p] of at) {
     const st = ports[i] ?? "off";
@@ -296,6 +296,15 @@ function Switch({ w, h, name, model, ports, brand, groups = [], ear, state, blin
     const x2 = Math.max(...ps.map((p) => p.x + p.w)), y2 = Math.max(...ps.map((p) => p.y + p.h));
     return <rect key={`g${k}`} x={x1 - 1.2} y={y1 - 1.2} width={x2 - x1 + 2.4} height={y2 - y1 + 2.4} rx="2" fill="none" stroke={GROUP} strokeWidth="1.2" strokeDasharray="3 2" />;
   });
+  return <>{cells}{outlines}</>;
+}
+
+// Ports are on the back; the front carries one activity LED per port.
+function Switch({ w, h, name, model, ports, brand, ear, state, blink }: FrontProps & { ear?: string }) {
+  const fs = fsz(Math.min(h, 24)) * 0.9, x0 = switchX0(model, name, h);
+  const leds = [...switchLayout(model, Math.max(x0 + 80, w * 0.62), h, x0)].map(([i, p]) => (
+    <circle key={i} cx={p.x + p.w / 2} cy={p.y + p.h / 2} r={Math.max(0.6, Math.min(1.4, p.w * 0.3))} fill={LED[ports[i] ?? "off"]} />
+  ));
   return (
     <>
       <Ears w={w} h={h} fill={ear} />
@@ -306,8 +315,7 @@ function Switch({ w, h, name, model, ports, brand, groups = [], ear, state, blin
           <text x={x0 - 9.5} y={h / 2 + 2.3} textAnchor="middle" fontFamily={MONO} fontSize="6.5" fontWeight="700" fill="oklch(0.2 0.01 255)">L3</text>
         </>
       )}
-      {cells}
-      {outlines}
+      {leds}
       <circle cx={w - 14 - markSize(h)} cy={h / 2} r="1.6" fill={LED[state]} className={blink ? "led-blink" : undefined} />
       <Mark brand={brand} x={w - 10} h={h} plate={!!ear} />
     </>
@@ -326,30 +334,27 @@ function Gateway(p: FrontProps) {
     <>
       <Ears w={w} h={h} />
       <Label x={12} y={h / 2 + fs * 0.35} text={name} size={fs} />
-      {[...gatewayLayout(model, name, w, h)].map(([i, p]) => (
-        <rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} rx="0.6" fill="oklch(0.14 0.005 255)"
-          stroke={ports[i] && ports[i] !== "off" ? LED[ports[i]] : "var(--metal-line)"} strokeWidth="0.6" />
-      ))}
+      {[...gatewayLayout(model, name, w, h)].map(([i, p]) => <circle key={i} cx={p.x + p.w / 2} cy={h / 2} r="1.3" fill={LED[ports[i] ?? "off"]} />)}
       <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
     </>
   );
 }
 
 // Keystone jacks; a plugged jack shows its cable boot in the cable's colour.
-// Jack k of a side sits at the same place on the front (port k) and the back (port n + k); 48 jacks take two rows.
-export function patchLayout(name: string, w: number, h: number, n: number) {
-  const rows = n > 24 ? 2 : 1, per = n / rows, fs = fsz(Math.min(h, 24)) * 0.9, x0 = name ? 18 + tw(name, fs) : 16, pw = (w - x0 - 14) / per, ph = (h - 6) / rows;
+// Jacks fill the rows in order; the rear of a panel puts jacks 1 to n on the top row and n + 1 to 2n below.
+export function patchLayout(name: string, w: number, h: number, n: number, rows = n > 24 ? 2 : 1) {
+  const per = n / rows, fs = fsz(Math.min(h, 24)) * 0.9, x0 = name ? 18 + tw(name, fs) : 16, pw = (w - x0 - 14) / per, ph = (h - 6) / rows;
   return Array.from({ length: n }, (_, k) => {
     const c = k % per;
     return { x: x0 + c * pw + Math.floor(c / 6) * 0.8, y: 3 + Math.floor(k / per) * ph, w: pw - 1.4, h: ph - (rows > 1 ? 0.8 : 0) };
   });
 }
 
-export function Jacks({ w, h, name, ports, offset, n }: { w: number; h: number; name: string; ports: PortLamp[]; offset: number; n: number }) {
+export function Jacks({ w, h, name, ports, n, rows }: { w: number; h: number; name: string; ports: PortLamp[]; n: number; rows?: number }) {
   return (
     <>
-      {patchLayout(name, w, h, n).map((p, k) => {
-        const st = ports[offset + k] ?? "off";
+      {patchLayout(name, w, h, n, rows).map((p, k) => {
+        const st = ports[k] ?? "off";
         return (
           <g key={k}>
             <rect x={p.x} y={p.y} width={p.w} height={p.h} rx="0.6" fill="oklch(0.12 0.004 255)" />
@@ -361,13 +366,12 @@ export function Jacks({ w, h, name, ports, offset, n }: { w: number; h: number; 
   );
 }
 
-function Patch({ w, h, name, ports, model }: FrontProps) {
+function Patch({ w, h, name }: FrontProps) {
   const fs = fsz(Math.min(h, 24)) * 0.9;
   return (
     <>
       <Ears w={w} h={h} fill="oklch(0.2 0.005 255)" />
       <Label x={10} y={h / 2 + fs * 0.35} text={name} size={fs} />
-      <Jacks w={w} h={h} name={name} ports={ports} offset={0} n={jacksOf(model)} />
     </>
   );
 }

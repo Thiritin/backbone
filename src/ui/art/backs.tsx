@@ -1,6 +1,6 @@
 // Rear panels and the place of every port on either side, so cables can be drawn to them.
-import { jacksOf, type DeviceModel } from "../../sim/10-catalog/hardware";
-import { fsz, gatewayLayout, Jacks, LED, partLed, patchLayout, switchLayout, switchX0, type FrontProps, type PartLamp } from "./fronts";
+import type { DeviceModel } from "../../sim/10-catalog/hardware";
+import { fsz, gatewayLayout, Jacks, LED, partLed, patchLayout, switchLayout, SwitchPorts, tw, type FrontProps, type PartLamp } from "./fronts";
 
 export type Side = "front" | "back";
 export interface Spot { x: number; y: number; w: number; h: number }
@@ -18,18 +18,23 @@ function nicLayout(model: DeviceModel, w: number, h: number): Map<number, Spot> 
   }));
 }
 
-// The rear is the front seen from behind, so rear parts are laid out in front coordinates and mirrored.
-const mirror = (spots: Map<number, Spot>, w: number) => new Map([...spots].map(([i, s]) => [i, { ...s, x: w - s.x - s.w }]));
-const rearLayout = (model: DeviceModel, name: string, w: number, h: number): Map<number, Spot> =>
-  model.kind === "server" ? nicLayout(model, w, h) : model.kind === "patch" ? new Map(patchLayout(name, w, h, jacksOf(model)).map((p, k) => [jacksOf(model) + k, p])) : new Map();
+// Switch ports run from the name to a fan grille beside the PSUs.
+const fanX = (model: DeviceModel, w: number) => w - 40 - model.psus * 33;
+const switchRear = (model: DeviceModel, name: string, w: number, h: number) =>
+  switchLayout(model, fanX(model, w) + 30, h, name ? 18 + tw(name, fsz(Math.min(h, 24)) * 0.9) : 12);
 
-export function portSpots(model: DeviceModel, name: string, side: Side, w: number, h: number): Map<number, Spot> {
-  if (side === "back") return mirror(rearLayout(model, name, w, h), w);
-  if (model.kind === "switch" || model.kind === "firewall") return switchLayout(model, w, h, switchX0(model, name, h));
+// The rear is the front seen from behind, so rear parts are laid out in front coordinates and mirrored.
+const mirror = <T extends Spot>(spots: Map<number, T>, w: number) => new Map([...spots].map(([i, s]) => [i, { ...s, x: w - s.x - s.w }]));
+const rearLayout = (model: DeviceModel, name: string, w: number, h: number): Map<number, Spot> => {
+  if (model.kind === "server") return nicLayout(model, w, h);
+  if (model.kind === "switch" || model.kind === "firewall") return switchRear(model, name, w, h);
   if (model.kind === "gateway") return gatewayLayout(model, name, w, h);
-  if (model.kind === "patch") return new Map(patchLayout(name, w, h, jacksOf(model)).map((p, k) => [k, p]));
-  return new Map();
-}
+  return new Map(patchLayout(name, w, h, model.ports.length, 2).map((p, k) => [k, p]));
+};
+
+// Every port is on the back.
+export const portSpots = (model: DeviceModel, name: string, side: Side, w: number, h: number): Map<number, Spot> =>
+  side === "back" ? mirror(rearLayout(model, name, w, h), w) : new Map();
 
 function Psus({ model, w, h, on, lamps }: { model: DeviceModel; w: number; h: number; on: boolean; lamps?: PartLamp[] }) {
   const u = h / model.height, ph = u - 4, pw = Math.min(30, ph * 2.2);
@@ -73,14 +78,17 @@ function Fans({ x, w, h, lamps, on }: { x: number; w: number; h: number; lamps: 
 
 export function Back(p: FrontProps) {
   const { model, w, h, name, ports, state } = p, fs = fsz(Math.min(h, 24)) * 0.9;
-  const spots = model.kind === "server" ? nicLayout(model, w, h) : new Map<number, Spot>(), grille = Math.max(0, w * 0.5 - 12 - model.psus * 34);
+  const sw = model.kind === "switch" || model.kind === "firewall";
+  const spots = model.kind === "server" || model.kind === "gateway" ? rearLayout(model, name, w, h) : new Map<number, Spot>();
+  const gx = sw ? fanX(model, w) : w * 0.5, grille = sw ? 28 : Math.max(0, w * 0.5 - 12 - model.psus * 34);
   return (
     <>
       <rect x="0" y="0.5" width={w} height={h - 1} rx="1.5" fill="oklch(0.24 0.006 255)" stroke="var(--metal-line)" />
       <g transform={`matrix(-1 0 0 1 ${w} 0)`}>
-        {model.kind === "patch" && <Jacks w={w} h={h} name={name} ports={ports} offset={jacksOf(model)} n={jacksOf(model)} />}
-        {model.kind !== "gateway" && model.kind !== "patch" && <rect x={w * 0.5} y="3" width={grille} height={h - 6} rx="1" fill="url(#bb-perf)" opacity="0.35" />}
-        {p.parts && p.parts.fans.length > 0 && <Fans x={w * 0.5} w={grille} h={model.kind === "server" && model.height > 1 ? h - h / model.height : h} lamps={p.parts.fans} on={state !== "off"} />}
+        {model.kind === "patch" && <Jacks w={w} h={h} name={name} ports={ports} n={model.ports.length} rows={2} />}
+        {sw && <SwitchPorts at={switchRear(model, name, w, h)} ports={ports} groups={p.groups} />}
+        {model.kind !== "gateway" && model.kind !== "patch" && <rect x={gx} y="3" width={grille} height={h - 6} rx="1" fill="url(#bb-perf)" opacity="0.35" />}
+        {p.parts && p.parts.fans.length > 0 && <Fans x={gx} w={grille} h={model.kind === "server" && model.height > 1 ? h - h / model.height : h} lamps={p.parts.fans} on={state !== "off"} />}
         {[...spots].map(([i, s]) => {
           const st = ports[i] ?? "off";
           return (

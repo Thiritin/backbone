@@ -14,9 +14,9 @@ const key = (e: End) => `${e.device}:${e.port}`;
 interface Run { label: string; ports: number[] }
 interface Node { d: Device; m: DeviceModel; x: number; y: number; h: number; sub: string; runs: { run: Run; rows: number }[] }
 
-// Runs of ports with the same media and speed; patch panels split into front and back jacks.
+// Runs of ports with the same media and speed; patch panels split into top and bottom rows.
 function runs(m: DeviceModel): Run[] {
-  if (m.kind === "patch") { const n = jacksOf(m); return [{ label: "Front", ports: Array.from({ length: n }, (_, i) => i) }, { label: "Back", ports: Array.from({ length: n }, (_, i) => n + i) }]; }
+  if (m.kind === "patch") { const n = jacksOf(m); return [{ label: "Top row", ports: Array.from({ length: n }, (_, i) => i) }, { label: "Bottom row", ports: Array.from({ length: n }, (_, i) => n + i) }]; }
   const out: Run[] = [];
   m.ports.forEach((p, i) => {
     const label = `${p.media === "sfp" ? "SFP " : ""}${speed(p.gbit)}`, last = out.at(-1);
