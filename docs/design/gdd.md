@@ -579,6 +579,8 @@ Staff are named people with a skill level, a work rate and a salary. Juniors cos
 
 **Hiring.** The Staff app lists candidates on the job market with their name, role, skill and salary ask. Job ads cost money, and better ads bring more candidates.
 
+**Staff app.** The Team view lists each employee with role, skill, salary, assignment and a bar per task type that fills as training finishes. Selecting an employee opens their training plan, where you pick task types as cards, set the assignment (work queue, trainer or forums), answer a raise request or let them go. The Job market view shows candidates as cards grouped by role with a Hire button, and posts standard or premium job ads. The first roles in play are support agents, bookkeepers and accountants.
+
 **AI bots.** Bots unlock late through research. They work fast and cost a monthly subscription instead of a salary. They never gain skill, handle only routine task types, and sometimes make mistakes that create follow-up work, such as a wrong ticket answer that angers a customer.
 
 ## Marketing and reviews

@@ -10,6 +10,7 @@ import { FinanceApp } from "./finance/FinanceApp";
 import type { GameState } from "../../sim/50-state";
 import { CustomersApp } from "./customers/CustomersApp";
 import { SupportApp } from "./support/SupportApp";
+import { StaffApp } from "./staff/StaffApp";
 import { UnlocksApp } from "./UnlocksApp";
 import { isFinal } from "../../sim/40-support/tickets";
 import { isUnpaid } from "../../sim/45-billing/billing";
@@ -40,7 +41,7 @@ export const APPS: AppDef[] = [
     badge: (s) => s.invoices.filter(isUnpaid).length },
   { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Shows your account statement with every booking and the running balance.", body: FinanceApp },
   { name: "Bank", icon: Landmark, tile: "oklch(0.45 0.04 255)", about: "Offers loans up to your credit limit and lets you repay them early.", body: BankApp },
-  { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: "Hires people and assigns them to work queues." },
+  { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: "Hires people and assigns them to work queues.", body: StaffApp },
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: "Runs campaigns and manages reviews." },
   { name: "Market", icon: ChartPie, tile: "oklch(0.62 0.12 230)", about: "Shows demand, customer requirements and lost sales." },
   { name: "Unlocks", icon: Lightbulb, tile: "oklch(0.72 0.15 95)", about: "Spends know-how on new products, hardware and tools.", body: UnlocksApp },

@@ -129,7 +129,7 @@ describe("work", () => {
     runTo(s, 48 + 18);
     const howTo = s.tickets.filter((t) => t.kind === "howTo" && t.replies.length);
     expect(howTo.length).toBeGreaterThanOrEqual(35);
-    expect(howTo.every((t) => t.replies.every((r) => r.right))).toBe(true);
+    expect(howTo.every((t) => t.replies.every((r) => r.right && r.by === emp(s, id).name))).toBe(true);
     expect(s.tickets.find((t) => t.kind === "abuse" && t.createdAt === 0)!.replies).toEqual([]);
   });
 

@@ -147,7 +147,7 @@ function Thread({ tk }: { tk: Ticket }) {
         {tk.replies.map((r, i) => (
           <div key={i} className="thread-pair">
             <div className="msg you">
-              <div className="from">You · <span className="num">{stamp(r.hour)}</span></div>
+              <div className="from">{r.by ?? "You"} · <span className="num">{stamp(r.hour)}</span></div>
               <p>{t(`template.${r.template}.text`)}</p>
             </div>
             {!r.right && (

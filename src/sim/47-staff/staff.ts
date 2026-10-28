@@ -142,7 +142,7 @@ function answerTickets(s: GameState, agents: Employee[], r: Rng): void {
       if (at >= end) break;
       if (taken.has(t.id) || !e.trained.includes(t.kind)) continue;
       at += MINUTES[t.kind] / speed(e);
-      taken.set(t.id, { ...choose(s, e, t, r), doneAt: Math.ceil(at) });
+      taken.set(t.id, { ...choose(s, e, t, r), doneAt: Math.ceil(at), by: e.name });
     }
     e.busyUntil = at;
   }
