@@ -60,7 +60,7 @@ describe("orders by email", () => {
   it("refuses to accept without capacity or an offer in the city", () => {
     const s = readyGame(1);
     const { r, t } = order(s);
-    const friend = s.customers[0].id, cluster = s.clusters[0].id;
+    const friend = s.customers[0].id, cluster = s.clusters.find((c) => c.kind === "panel")!.id;
     for (let i = 0; i < 500 && targetFor(s, r); i++) provisionService(s, friend, "webHosting", { label: `fill${i}`, plan: "web-l", clusterId: cluster });
     expect(resolveTicket(s, t.id, "accept")).toEqual({ ok: false, error: "error.noCapacity" });
     expect(resolveTicket(s, order(s, "London").t.id, "accept")).toEqual({ ok: false, error: "error.orderNotOffered" });

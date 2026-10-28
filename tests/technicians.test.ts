@@ -6,11 +6,10 @@ import { nextSlot } from "../src/sim/47-staff/technicians";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { workloadsOn } from "../src/sim/60-infra/cluster";
 import { phpNeeded, phpRefusal, phpTickets } from "../src/sim/60-infra/php";
-import { nodeUsage } from "../src/sim/60-infra/usage";
 import { failComponents, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { howToFactor } from "../src/sim/85-products/products";
 import { addNode, createCluster, provisionService, upgradePhp } from "../src/sim/90-actions/clusters";
-import { installed } from "./fixtures";
+import { installed, panelServer } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice, buyRack, connect, setPower } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
@@ -49,6 +48,13 @@ function twoNodes(s: GameState) {
   ok(addNode(s, cluster, "dev3"));
   ok(addNode(s, cluster, second));
   return { cluster, second };
+}
+// The basement and a second server as two bare-metal panel hosts.
+function panels(s: GameState) {
+  const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
+  ok(mountDevice(s, second, "rack2", 2));
+  ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
+  return { a: panelServer(s, "dev3"), b: panelServer(s, second), second };
 }
 
 describe("technicians", () => {
@@ -188,56 +194,57 @@ describe("PHP versions", () => {
 
   it("age on a cluster, raise how-to tickets and block some web hosting sales", () => {
     const s = { ...newGame(1), cash: 100_000 };
-    const { cluster } = twoNodes(s);
+    const { a } = panels(s);
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
-    ok(provisionService(s, cus, "webHosting", { label: "ada.de", plan: "web-s" }));
+    ok(provisionService(s, cus, "webHosting", { label: "ada.de", plan: "web-s", clusterId: a }));
     const fresh = howToFactor(s, cus);
-    expect(s.clusters[0].nodes.map((n) => n.php)).toEqual(["4.4", "4.4"]);
+    expect(s.clusters.map((c) => c.php)).toEqual(["4.4", "4.4"]);
     s.hour = hourOf(new Date(Date.UTC(2010, 0, 4, 8)));
     expect(phpTickets(s, s.clusters[0])).toBeCloseTo(1.15);
     expect(howToFactor(s, cus)).toBeCloseTo(fresh * 1.15);
-    const blocked = Array.from({ length: 200 }, (_, i) => phpNeeded(s, `sr${i}`, cluster)).filter(Boolean);
+    const blocked = Array.from({ length: 200 }, (_, i) => phpNeeded(s, `sr${i}`, a)).filter(Boolean);
     expect(blocked.length).toBeGreaterThan(20);
     expect(blocked.length).toBeLessThan(80);
     expect(blocked[0]).toBe("5.1");
   });
 
-  it("upgrade one node per technician operation with a short slowdown", () => {
+  it("upgrade one panel host per technician operation with a short slowdown", () => {
     const s = { ...newGame(1), cash: 100_000 };
-    const { cluster, second } = twoNodes(s);
+    const { a, b, second } = panels(s);
     technician(s);
     s.hour = hourOf(new Date(Date.UTC(2010, 0, 4, 8)));
-    ok(queuePhpUpgrade(s, cluster));
+    ok(queuePhpUpgrade(s, a));
+    ok(queuePhpUpgrade(s, b));
     expect(s.techOps.map((o) => o.deviceId)).toEqual(["dev3", second]);
-    expect(err(queuePhpUpgrade(s, cluster))).toBe("error.phpCurrent");
+    expect(err(queuePhpUpgrade(s, a))).toBe("error.alreadyQueued");
     run(s, 1);
-    expect(s.clusters[0].nodes.map((n) => n.php)).toEqual(["5.3", "4.4"]);
-    expect(nodeUsage(s, "dev3").perf).toBe(0.7);
+    expect(s.clusters.map((c) => c.php)).toEqual(["5.3", "4.4"]);
+    expect(s.clusters[0].phpUntil).toBeGreaterThanOrEqual(s.hour);
     const events = run(s, 1);
-    expect(s.clusters[0].nodes.map((n) => n.php)).toEqual(["5.3", "5.3"]);
+    expect(s.clusters.map((c) => c.php)).toEqual(["5.3", "5.3"]);
     expect(events.some((e) => e.key === "event.phpUpgraded")).toBe(true);
     run(s, 1);
-    expect(nodeUsage(s, "dev3").perf).toBe(1);
-    expect(err(upgradePhp(s, cluster))).toBe("error.phpCurrent");
+    expect(s.clusters[0].phpUntil).toBeLessThan(s.hour);
+    expect(err(upgradePhp(s, a))).toBe("error.phpCurrent");
   });
 });
 
 describe("old saves", () => {
   it("load without technicians, queues or PHP versions", () => {
     const s = { ...newGame(1), cash: 100_000 };
-    twoNodes(s);
+    panels(s);
     technician(s);
     s.hour = hourOf(new Date(Date.UTC(2012, 5, 1)));
     const data = JSON.parse(serialize(s));
     delete data.techOps;
     delete data.techRules;
     for (const e of data.staff) delete e.location;
-    for (const c of data.clusters) for (const n of c.nodes) { delete n.php; delete n.phpUntil; }
+    for (const c of data.clusters) { delete c.php; delete c.phpUntil; }
     const back = deserialize(JSON.stringify(data));
     expect(back.techOps).toEqual([]);
     expect(back.techRules).toEqual({ failed: true, worn: false, blackhole: true });
     expect(back.staff[0].location).toBeNull();
-    expect(back.clusters[0].nodes.map((n) => n.php)).toEqual(["5.3", "5.3"]);
+    expect(back.clusters.map((c) => c.php)).toEqual(["5.3", "5.3"]);
     run(back, 24);
   });
 });

@@ -6,7 +6,6 @@ import { workloadsOn, type Workload } from "../../../sim/60-infra/cluster";
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
-import { devName } from "../hw";
 import { VM_STATE, vmState } from "../products/parts";
 
 type Sort = "vcpu" | "ramGb" | "diskGb";
@@ -104,11 +103,11 @@ function Targets({ game, w, onDone }: { game: GameState; w: Workload; onDone: ()
   return (
     <div className="wl-targets">
       {targets.map((t) => {
-        const d = game.devices.find((x) => x.id === t.deviceId)!, other = t.clusterId !== w.clusterId ? game.clusters.find((x) => x.id === t.clusterId)?.name : null;
+        const other = t.clusterId !== w.clusterId ? game.clusters.find((x) => x.id === t.clusterId)?.name : null;
         return (
-          <button key={t.deviceId} className="wl-target" onClick={() => { if (act((g) => migrateWorkload(g, w.id, t.deviceId)).ok) onDone(); }}>
-            <b>{devName(d)}</b>
-            {other && <span className="loc-muted">{other}</span>}
+          <button key={t.to} className="wl-target" onClick={() => { if (act((g) => migrateWorkload(g, w.id, t.to)).ok) onDone(); }}>
+            <b>{t.name}</b>
+            {other && other !== t.name && <span className="loc-muted">{other}</span>}
             <span className="num loc-muted">{num(t.free.vcpu)} vCPU · {num(t.free.ramGb)} GB · {num(t.free.diskGb)} GB free</span>
             <span className={`pill ${t.down ? "warn" : "ok"}`}>{t.down ? `Offline ${t.down} h` : "Live"}</span>
           </button>

@@ -20,12 +20,13 @@ describe("company website", () => {
     expect(checkDone(s, "website")).toBe(false);
     expect(setLine(s, "webHosting", true)).toEqual({ ok: false, error: "error.needsPanel" });
     expect(setLine(s, "vps", true)).toEqual({ ok: false, error: "error.needsPlatform" });
-    expect(setLine(s, "cloud", true)).toEqual({ ok: false, error: "error.needsHaCluster" });
+    expect(setLine(s, "cloud", true)).toEqual({ ok: false, error: "error.needsPlatform" });
     expect(setLine(s, "domain", true)).toEqual({ ok: false, error: "error.unknownSiteLine" });
     expect(s.marketing.lines).toEqual([]);
 
     const ready = readyGame(1);
     ready.marketing = { ...ready.marketing, lines: [] };
+    expect(setLine(ready, "cloud", true)).toEqual({ ok: false, error: "error.needsHaCluster" });
     expect(setLine(ready, "webHosting", true).ok).toBe(true);
     expect(setLine(ready, "webHosting", true).ok).toBe(true);
     expect(ready.marketing.lines).toEqual(["webHosting"]);

@@ -2,7 +2,9 @@ import { softwareById } from "../10-catalog/platforms";
 import type { Resources } from "../10-catalog/products";
 import { bump } from "../40-support/tickets";
 import type { GameState } from "../50-state";
-import { bookable, clusterOf, controlPlaneUp, lostDisk, noRoomError, nodeUsed, pickNode, supports, type Workload } from "../60-infra/cluster";
+import {
+  bookable, clusterOf, controlPlaneUp, hostOfVm, isOwnVm, KEYS, lostDisk, noRoomError, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
+} from "../60-infra/cluster";
 import { working } from "../60-infra/status";
 import { freezeTick } from "../60-infra/usage";
 import {
@@ -11,7 +13,6 @@ import {
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
-const VMS = new Set(["vps", "cloud"]);
 // Below 10 Gbit/s a move between zones is cold: the workload is offline for the whole transfer.
 const LIVE_ZONE_GBIT = 10;
 
@@ -46,51 +47,67 @@ export function startWorkload(s: GameState, id: string): ActionResult {
 }
 
 // Hours a workload is offline while it moves over a link. economy.md, Workloads and migration: virtual machines move live
-// when the platform supports it (between zones only over 10 Gbit/s or more); other workloads are back within a minute.
+// when their cluster has live migration on and the hypervisor can do it (between zones only over 10 Gbit/s or more, never
+// off a failed node); web spaces are back within a minute inside a zone.
 export function migrationDowntime(s: GameState, w: Workload, gbit: number, otherZone: boolean): number {
-  const product = s.services.find((v) => v.id === w.serviceId)?.product ?? "vps";
-  const live = softwareById(s.clusters.find((c) => c.id === w.clusterId)?.platform ?? "").live && (!otherZone || gbit >= LIVE_ZONE_GBIT);
-  if (live || (!otherZone && !VMS.has(product))) return 0;
+  const c = s.clusters.find((x) => x.id === w.clusterId);
+  const vm = isOwnVm(w) || c?.kind === "cloud";
+  const live = !!c?.platform && softwareById(c.platform).live && c.ha.live && !!w.deviceId && working(s, w.deviceId) && (!otherZone || gbit >= LIVE_ZONE_GBIT);
+  if (live || (!otherZone && !vm)) return 0;
   return Math.max(1, Math.ceil((w.diskGb + w.ramGb) / (gbit * LAN_GB_PER_HOUR)));
 }
 
-// The nodes a workload can move to: active, working nodes of clusters that serve its product and a link reaches, with room
-// for its booking. free is what each node has left to book; down the hours the move takes it offline.
-export interface MigrationTarget { deviceId: string; clusterId: string; free: Resources; down: number }
+// Where a workload can move: active, working nodes of hypervisor clusters for a VM, other panel hosts for a web space, of
+// clusters that sell its product and a link reaches, with room for its booking. to is a node's device id or a panel VM
+// host's id; free is what it has left to book; down the hours the move takes it offline.
+export interface MigrationTarget { to: string; name: string; clusterId: string; free: Resources; down: number }
 export function migrationTargets(s: GameState, id: string): MigrationTarget[] {
   const found = clusterWorkload(s, id);
   if (!found) return [];
   const { w, c } = found, product = s.services.find((v) => v.id === w.serviceId)?.product;
-  return s.clusters.filter((to) => (!product || supports(to, product)) && zoneLinkGbit(s, c.az, to.az) > 0).flatMap((to) => to.nodes.flatMap((n) => {
-    const d = s.devices.find((x) => x.id === n.deviceId);
-    if (!d || n.state !== "active" || d.id === w.deviceId || !working(s, d.id)) return [];
-    const cap = bookable(s, d), used = nodeUsed(s, d.id);
-    const free = { vcpu: cap.vcpu - used.vcpu, ramGb: cap.ramGb - used.ramGb, diskGb: cap.diskGb - used.diskGb };
-    if (KEYS.some((k) => w[k] > free[k] + 1e-9)) return [];
-    return [{ deviceId: d.id, clusterId: to.id, free, down: migrationDowntime(s, w, zoneLinkGbit(s, c.az, to.az), c.az !== to.az) }];
-  }));
+  const takes = (to: Cluster) => (product ? supports(to, product) : to.kind === "cloud" && !!to.platform);
+  return s.clusters.filter((to) => takes(to) && zoneLinkGbit(s, c.az, to.az) > 0).flatMap((to): MigrationTarget[] => {
+    const down = migrationDowntime(s, w, zoneLinkGbit(s, c.az, to.az), c.az !== to.az);
+    if (to.vm) {
+      const room = vmRoom(s, to), free = minus(room.cap, room.used);
+      return to.id !== c.id && pickNode(s, to, w) ? [{ to: to.id, name: to.name, clusterId: to.id, free, down }] : [];
+    }
+    return to.nodes.flatMap((n) => {
+      const d = s.devices.find((x) => x.id === n.deviceId);
+      if (!d || n.state !== "active" || d.id === w.deviceId || !working(s, d.id)) return [];
+      const free = minus(bookable(s, d), nodeUsed(s, d.id));
+      if (KEYS.some((k) => w[k] > free[k] + 1e-9)) return [];
+      return [{ to: d.id, name: d.label ?? d.name, clusterId: to.id, free, down }];
+    });
+  });
 }
-const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
+const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcpu, ramGb: a.ramGb - b.ramGb, diskGb: a.diskGb - b.diskGb });
 
-// Moves a workload to a node of its cluster, or of a cluster in another zone that a link reaches.
-export function migrateWorkload(s: GameState, id: string, toDeviceId: string): ActionResult {
+// Moves a workload to a node of its cluster, to another cluster in a zone a link reaches, or a web space into a panel VM
+// host (to is then the host's id).
+export function migrateWorkload(s: GameState, id: string, toId: string): ActionResult {
   const found = clusterWorkload(s, id);
   if (!found) return fail("error.unknownWorkload");
-  const { w, c } = found, to = clusterOf(s, toDeviceId), d = s.devices.find((x) => x.id === toDeviceId);
-  if (!to || !d) return fail("error.notNode");
-  if (w.deviceId === toDeviceId) return fail("error.sameHost");
+  const { w, c } = found, vmHost = s.clusters.find((x) => x.id === toId && x.vm), to = vmHost ?? clusterOf(s, toId);
+  const d = s.devices.find((x) => x.id === toId);
+  if (!to || (!vmHost && !d)) return fail("error.notNode");
+  if (w.deviceId === toId || w.clusterId === vmHost?.id) return fail("error.sameHost");
   if (lostDisk(s, w)) return fail("error.lostDisk");
   if (w.busyUntil > s.hour) return fail("error.workloadBusy");
   if (!controlPlaneUp(s, c) || !controlPlaneUp(s, to)) return fail("error.controlPlaneDown");
   const product = s.services.find((v) => v.id === w.serviceId)?.product;
-  if (product && !supports(to, product)) return fail(noRoomError(s, product, to.id));
-  if (to.nodes.find((n) => n.deviceId === toDeviceId)?.state !== "active" || !working(s, toDeviceId)) return fail("error.nodeDown");
-  const cap = bookable(s, d), used = nodeUsed(s, toDeviceId);
-  if ((["vcpu", "ramGb", "diskGb"] as const).some((k) => used[k] + w[k] > cap[k] + 1e-9)) return fail("error.nodeFull");
+  if (product ? !supports(to, product) : to.kind !== "cloud") return fail(product ? noRoomError(s, product, to.id) : "error.needsPlatform");
+  if (vmHost) {
+    if (!pickNode(s, vmHost, w)) return fail("error.nodeFull");
+  } else {
+    if (to.nodes.find((n) => n.deviceId === toId)?.state !== "active" || !working(s, toId)) return fail("error.nodeDown");
+    const cap = bookable(s, d!), used = nodeUsed(s, toId);
+    if (KEYS.some((k) => used[k] + w[k] > cap[k] + 1e-9)) return fail("error.nodeFull");
+  }
   const gbit = zoneLinkGbit(s, c.az, to.az);
   if (!gbit) return fail("error.noZoneLink");
   const down = migrationDowntime(s, w, gbit, c.az !== to.az);
-  patch(s, id, { deviceId: toDeviceId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + down });
+  patch(s, id, { deviceId: vmHost ? null : toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + down, stuck: undefined });
   if (c.az !== to.az) s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
   freezeTick(s);
   return { ok: true };
@@ -100,9 +117,10 @@ const openItem = (s: GameState, workloadId: string): LossItem | undefined =>
   s.lossReports.flatMap((r) => r.items).filter((i) => i.workloadId === workloadId && !i.restored).at(-1);
 
 // Brings a lost workload back on a working node: from its last backup, which takes the volume's size ÷ the link speed,
-// or on an empty disk without one.
+// or on an empty disk without one. A web space in a panel VM comes back with the VM, and so do the others in it.
 export function restoreWorkload(s: GameState, id: string): ActionResult {
-  const found = clusterWorkload(s, id);
+  const lost = s.workloads.find((x) => x.id === id), vm = lost && vmOf(s, lost);
+  const found = clusterWorkload(s, vm?.id ?? id);
   if (!found) return fail("error.unknownWorkload");
   const { w, c } = found;
   if (!lostDisk(s, w)) return fail("error.notLost");
@@ -113,9 +131,11 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
   if (!node) return fail("error.noCapacity");
   const hours = w.backupAt !== null ? restoreHours(s, w) : 0;
   const lostAt = s.devices.find((d) => d.id === w.deviceId)?.dataLost ?? s.hour;
-  patch(s, id, { deviceId: node, placedAt: s.hour, busyUntil: s.hour + hours, stopped: false });
-  const item = openItem(s, id);
-  if (item) {
+  patch(s, w.id, { deviceId: node, placedAt: s.hour, busyUntil: s.hour + hours, stopped: false, stuck: undefined });
+  const host = isOwnVm(w) ? hostOfVm(s, w.id) : undefined;
+  const back = [w.id, ...(host ? s.workloads.filter((x) => x.clusterId === host.id).map((x) => x.id) : [])];
+  for (const item of back.map((x) => openItem(s, x))) {
+    if (!item) continue;
     s.lossReports = s.lossReports.map((r) => ({ ...r, items: r.items.map((i) => (i === item ? { ...i, restored: true } : i)) }));
     const cus = s.customers.find((x) => x.id === item.customerId);
     if (cus && w.backupAt !== null) {

@@ -120,18 +120,17 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
 }
 
 // A server's role: its cluster and node state with the workloads on it, the customer renting it, or a cluster to join.
-// The node's PHP version, with an upgrade of every node by hand or through the technicians' queue.
+// A panel host's PHP version, with an upgrade by hand or through the technicians' queue.
 function PhpRow({ game, cluster, device }: { game: GameState; cluster: Cluster; device: Device }) {
   const act = useStore((s) => s.act);
-  const node = cluster.nodes.find((n) => n.deviceId === device.id)!;
-  const year = yearOf(game.hour), latest = phpAt(year), behind = phpBehind(node.php, year);
-  const queued = game.techOps.filter((o) => o.kind === "php" && cluster.nodes.some((n) => n.deviceId === o.deviceId)).length;
-  const old = cluster.nodes.some((n) => phpDue(game, n)), patch = cluster.nodes.every((n) => n.php === latest);
+  const year = yearOf(game.hour), latest = phpAt(year), behind = phpBehind(cluster.php, year);
+  const queued = game.techOps.filter((o) => o.kind === "php" && o.deviceId === device.id).length;
+  const old = phpDue(game, cluster), patch = cluster.php === latest;
   const loc = locationOf(game, device), slot = old && !queued && loc ? nextSlot(game, loc.id, "panels") : null;
   return (
     <div className="loc-row">
       <span className="loc-k">PHP</span>
-      <span className="num">{node.php}</span>
+      <span className="num">{cluster.php}</span>
       {behind >= PHP_EOL ? <span className="pill bad">Unsupported</span> : behind > 0 && <span className="pill warn">Outdated</span>}
       <span className="grow" />
       {queued > 0 && <span className="pill accent">Queued <span className="num">{queued}</span></span>}

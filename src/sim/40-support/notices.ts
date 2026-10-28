@@ -2,6 +2,7 @@
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { activeServices, type Customer } from "../30-customers/customers";
 import type { GameState } from "../50-state";
+import { serverOf, type Workload } from "../60-infra/cluster";
 import { gridTick, maybeReview, returnSeized, seize } from "../60-infra/incidents";
 import type { SimEvent } from "../88-tick/tick";
 import { bump, cancelCustomer, credit, HOURS_PER_MONTH, monthlyValue, type Notice, type Ticket } from "./tickets";
@@ -152,8 +153,9 @@ function deadlines(s: GameState, r: Rng, events: SimEvent[]): void {
     if (t.kind === "notice" && t.status === "open") ignoreNotice(s, t, r);
     else if (t.kind === "legal" && (t.outcome === null || t.outcome === "ignored")) {
       Object.assign(t, { status: "closed", outcome: "seized", updatedAt: s.hour, work: null });
-      const deviceId = s.workloads.find((w) => w.serviceId === t.serviceId && w.deviceId && s.devices.some((d) => d.id === w.deviceId))?.deviceId
-        ?? s.workloads.find((w) => w.deviceId && s.devices.some((d) => d.id === w.deviceId) && s.services.find((v) => v.id === w.serviceId)?.customerId === t.customerId)?.deviceId;
+      const at = (w: Workload) => { const id = serverOf(s, w); return id && s.devices.some((d) => d.id === id) ? id : null; };
+      const deviceId = s.workloads.filter((w) => w.serviceId === t.serviceId).map(at).find((id) => id)
+        ?? s.workloads.filter((w) => s.services.find((v) => v.id === w.serviceId)?.customerId === t.customerId).map(at).find((id) => id);
       if (deviceId) seize(s, deviceId, senderById(t.notice.sender).name, r, events);
     }
   }

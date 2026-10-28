@@ -110,7 +110,7 @@ describe("RAID", () => {
     ok(setPower(s, id, true));
     s.hour += BOOT_HOURS;
     ok(addNode(s, installed(s, ok(createCluster(s, "loc1", "Storage 1"))), id));
-    ok(provisionService(s, addCustomer(s, "Ada", "private"), "webHosting", { label: "ada.example" }));
+    ok(provisionService(s, addCustomer(s, "Ada", "private"), "vps", { label: "ada.example", plan: "vps-s" }));
     ok(setPower(s, id, false));
     s.hour = 7;
     ok(setRaid(s, id, "none"));

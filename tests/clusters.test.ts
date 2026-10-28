@@ -3,7 +3,7 @@ import { marketPrice, PRODUCTS } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { invoiceTotal } from "../src/sim/45-billing/billing";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { nodeCapacity, nodeUsed, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
+import { nodeCapacity, nodeUsed, vmOf, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
 import { BOOT_HOURS, deviceHealth, freeSlots, rackPower } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addNode, cordon, createCluster, drain, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
@@ -68,8 +68,10 @@ describe("starting company", () => {
     expect(s.customers.map((c) => [c.name, c.happiness, c.habit])).toEqual([
       ["Jonas Weber", FRIEND_HAPPINESS, "friend"], ["Mira Schulz", FRIEND_HAPPINESS, "friend"], ["Tobi Kraus", FRIEND_HAPPINESS, "friend"],
     ]);
-    expect(s.clusters).toMatchObject([{ name: "Basement 1", az: "fra1", nodes: [{ deviceId: "dev3", state: "active" }] }]);
-    expect(s.services.map((v) => workloadsOf(s, v.id)[0].deviceId)).toEqual(["dev3", "dev3", "dev3"]);
+    expect(s.clusters).toMatchObject([
+      { name: "Basement 1", kind: "cloud", az: "fra1", nodes: [{ deviceId: "dev3", state: "active" }] }, { name: "Web 1", kind: "panel", nodes: [] },
+    ]);
+    expect(s.services.map((v) => vmOf(s, workloadsOf(s, v.id)[0])?.deviceId)).toEqual(["dev3", "dev3", "dev3"]);
     expect(s.services.every((v) => serviceOnline(s, v.id))).toBe(true);
     expect(mrr(s)).toBeCloseTo(18);
     expect(s.cash).toBe(newGame(1).cash);
@@ -130,14 +132,14 @@ describe("placement", () => {
   it("skips cordoned and broken nodes and takes the zone of the cluster it lands in", () => {
     const { s, second, cus } = twoNodes();
     ok(cordon(s, "dev3"));
-    const id = ok(provisionService(s, cus, "webHosting", { label: "ada.example" }));
+    const id = ok(provisionService(s, cus, "vps", { label: "ada.example", plan: "vps-s" }));
     expect(workloadsOf(s, id)[0].deviceId).toBe(second);
     expect(s.services.find((v) => v.id === id)!.zone).toBe("fra1");
     ok(setPower(s, second, false));
-    expect(err(provisionService(s, cus, "webHosting", { label: "two.example" }))).toBe("error.noCapacity");
+    expect(err(provisionService(s, cus, "vps", { label: "two.example", plan: "vps-s" }))).toBe("error.noCapacity");
     ok(uncordon(s, "dev3"));
-    ok(provisionService(s, cus, "webHosting", { label: "two.example" }));
-    expect(err(provisionService(s, cus, "webHosting", { label: "far.example", zone: "ams1" }))).toBe("error.noCapacity");
+    ok(provisionService(s, cus, "vps", { label: "two.example", plan: "vps-s" }));
+    expect(err(provisionService(s, cus, "vps", { label: "far.example", plan: "vps-s", zone: "ams1" }))).toBe("error.noCapacity");
     expect(err(provisionService(s, cus, "cloud", { label: "cloud" }))).toBe("error.needsHaCluster");
   });
   it("places a plain contract once and leaves resold products unplaced", () => {

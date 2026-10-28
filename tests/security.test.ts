@@ -6,8 +6,8 @@ import {
   ADVISORY_KEYS, POC_RISK, REBUILD_HOURS, STAGE_HOURS, VULNS, WARNING_RISK, advisoryNodes, securityTick,
 } from "../src/sim/60-infra/security";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addNode, createCluster, provisionService, upgradeNodePhp } from "../src/sim/90-actions/clusters";
-import { installed } from "./fixtures";
+import { provisionService, upgradeNodePhp } from "../src/sim/90-actions/clusters";
+import { panelServer } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
@@ -28,23 +28,21 @@ const run = (s: GameState, hours: number) => {
   return events;
 };
 
-// The basement's two servers in one cluster with a web space on each, running PHP 4.4, one hour before the 2007 advisory.
+// The basement's two servers as two bare-metal panel hosts with a web space on each, running PHP 4.4, one hour before the
+// 2007 advisory.
 function hosting(web = true) {
   const s = { ...newGame(1), cash: 100_000 };
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
-  const cluster = installed(s, ok(createCluster(s, "loc1", "Web 1")));
-  ok(addNode(s, cluster, "dev3"));
-  ok(addNode(s, cluster, second));
-  s.clusters = s.clusters.map((c) => ({ ...c, placement: "spread" }));
+  const a = panelServer(s, "dev3"), b = panelServer(s, second);
   const cus = addCustomer(s, "Ada Lang", "hobbyDev");
   if (web) {
-    ok(provisionService(s, cus, "webHosting", { label: "ada.de", plan: "web-s" }));
-    ok(provisionService(s, cus, "webHosting", { label: "lang.de", plan: "web-s" }));
+    ok(provisionService(s, cus, "webHosting", { label: "ada.de", plan: "web-s", clusterId: a }));
+    ok(provisionService(s, cus, "webHosting", { label: "lang.de", plan: "web-s", clusterId: b }));
   }
   s.hour = MOPB.at - 1;
-  return { s, second, cus };
+  return { s, second, cus, a, b };
 }
 const webIds = (s: GameState) => s.services.filter((v) => v.product === "webHosting").map((v) => v.id);
 
@@ -55,7 +53,7 @@ describe("security advisories", () => {
     expect(none.security).toMatchObject({ vuln: null, seen: ["mopb"] });
 
     const newer = hosting().s;
-    newer.clusters = newer.clusters.map((c) => ({ ...c, nodes: c.nodes.map((n) => ({ ...n, php: "8.5" })) }));
+    newer.clusters = newer.clusters.map((c) => ({ ...c, php: "8.5" }));
     expect(run(newer, 2).some((e) => ADVISORY_KEYS.includes(e.key))).toBe(false);
 
     const { s } = hosting();
@@ -68,8 +66,8 @@ describe("security advisories", () => {
 
   it("advance through their stages on schedule and pause the game at each", () => {
     const { s } = hosting();
-    s.clusters = s.clusters.map((c) => ({ ...c, nodes: c.nodes.map((n) => ({ ...n, php: "8.5" })) }));
-    s.clusters[0].nodes[0].php = "5.2";
+    s.clusters = s.clusters.map((c) => ({ ...c, php: "8.5" }));
+    s.clusters[0].php = "5.2";
     const start = s.hour;
     const at: Record<string, number> = {};
     for (let h = 0; h < 80; h++) for (const e of tick(s)) if (ADVISORY_KEYS.includes(e.key)) at[e.key] = s.hour - 1 - start;
@@ -82,15 +80,15 @@ describe("security advisories", () => {
   });
 
   it("spare nodes whose sites are offline, and the sites come back online", () => {
-    const { s, second } = hosting();
-    ok(setSitesOffline(s, "dev3", true));
-    ok(setSitesOffline(s, second, true));
-    expect(err(setSitesOffline(s, second, true))).toBe("error.sitesOffline");
+    const { s, a, b } = hosting();
+    ok(setSitesOffline(s, a, true));
+    ok(setSitesOffline(s, b, true));
+    expect(err(setSitesOffline(s, b, true))).toBe("error.sitesOffline");
     expect(webIds(s).every((id) => !serviceOnline(s, id))).toBe(true);
     run(s, 24 * 5);
     expect(s.security.hacked).toEqual([]);
-    ok(setSitesOffline(s, "dev3", false));
-    ok(setSitesOffline(s, second, false));
+    ok(setSitesOffline(s, a, false));
+    ok(setSitesOffline(s, b, false));
     expect(webIds(s).every((id) => serviceOnline(s, id))).toBe(true);
   });
 
@@ -123,7 +121,7 @@ describe("security advisories", () => {
     expect(node).toBeDefined();
     expect(s.customers.find((c) => c.id === cus)!.happiness).toBeLessThan(before);
     expect(s.tickets.some((t) => t.kind === "abuse" && t.topic === "spam")).toBe(true);
-    const site = s.workloads.find((w) => w.deviceId === node)!.serviceId;
+    const site = s.workloads.find((w) => w.clusterId === node)!.serviceId;
     expect(serviceOnline(s, site)).toBe(false);
     ok(cleanUp(s, node));
     expect(err(cleanUp(s, node))).toBe("error.notHacked");
@@ -134,17 +132,17 @@ describe("security advisories", () => {
   });
 
   it("are patched only once the patch is out", () => {
-    const { s, second } = hosting();
+    const { s, second, a, b } = hosting();
     run(s, 2);
     ok(upgradeNodePhp(s, "dev3"));
-    expect(s.clusters[0].nodes[0].php).toBe("5.2");
+    expect(s.clusters[0].php).toBe("5.2");
     expect(err(upgradeNodePhp(s, "dev3"))).toBe("error.patchPending");
     expect(advisoryNodes(s)).toHaveLength(2);
     run(s, STAGE_HOURS[3]);
     expect(s.security.stage).toBe(3);
     ok(upgradeNodePhp(s, "dev3"));
     ok(upgradeNodePhp(s, second));
-    expect(s.security.patched).toEqual(["dev3", second]);
+    expect(s.security.patched).toEqual([a, b]);
     expect(err(upgradeNodePhp(s, "dev3"))).toBe("error.phpCurrent");
     const rng = { ...s.rng };
     securityTick(s);

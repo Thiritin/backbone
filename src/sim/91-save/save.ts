@@ -4,7 +4,8 @@ import { capacityAt, DATACENTERS, nextAz, seedDcs } from "../20-world/datacenter
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { deviceDefaults, newGame, SAVE_VERSION, type Device, type GameState } from "../50-state";
-import { clusterDefaults, workloadDefaults } from "../60-infra/cluster";
+import { workloadDefaults } from "../60-infra/cluster";
+import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
 import { fillLines } from "../80-business/website";
 
@@ -47,7 +48,7 @@ export function deserialize(raw: string): GameState {
     const kept = data.dcs?.[dc.id];
     return [dc.id, kept && kept.others >= REPAIR_FLOOR * capacityAt(dc, year - 1) ? kept : seeded[dc.id]];
   }));
-  return fillLines(fillDomains({
+  return fillLines(upgradeCompute(fillDomains({
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
     company: { ...base.company, ...data.company },
@@ -67,7 +68,8 @@ export function deserialize(raw: string): GameState {
     sales: { ...base.sales, ...data.sales },
     staff: (data.staff ?? []).map((e) => ({ ...e, location: e.location ?? null, hours: e.hours ?? 8, hoursFrom: e.hoursFrom ?? 0 })),
     techRules: { ...base.techRules, ...data.techRules },
-    clusters: (data.clusters ?? []).map((c) => clusterDefaults(c, data.hour ?? 0)), workloads: (data.workloads ?? []).map(workloadDefaults), downHours: data.downHours ?? {},
+    // upgradeCompute fills the cluster defaults.
+    clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map(workloadDefaults), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
-  }), data.marketing?.lines);
+  })), data.marketing?.lines);
 }

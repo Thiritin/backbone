@@ -1,14 +1,16 @@
 import { yearOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
-import { marketPrice, planOf, PRODUCTS, type Sla } from "../10-catalog/products";
+import { marketPrice, planOf, PRODUCTS, type Resources, type Sla } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
-import { phpAt, softwareById } from "../10-catalog/platforms";
+import { phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { HA_SKILL } from "../10-catalog/research";
+import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
-  clusterOf, controlPlaneUp, fitsControlPlane, moveOff, noRoomError, pickNode, servedBy, serverTaken, setNodeState, supports, workloadsOf, workloadsOn,
-  type BackupEvery, type Cluster, type ClusterNode, type Placement, type Workload,
+  anchorOf, bookable, clusterOf, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, KEYS, moveOff, noRoomError, nodeUsed, pickNode, serverTaken,
+  setNodeState, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
 import { freeSlots, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
@@ -17,34 +19,118 @@ import { sizeOf, type CustomSpec } from "../30-market/custom";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 export const CLUSTER_NAME_MAX = 40;
+// economy.md, Panel VMs: the size the setup and the Products app suggest, and the smallest the player can book.
+export const PANEL_VM_SIZE: Resources = { vcpu: 2, ramGb: 4, diskGb: 100 };
+export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
-// A new cluster runs nothing until a control plane is installed on it with setSoftware.
+const blank = (s: GameState, id: string, name: string, az: string, kind: SoftwareKind): Cluster => ({
+  id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null,
+  backup: { targetId: null, every: "off" }, php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF },
+});
+const validName = (s: GameState, name: string): string | null => {
+  const n = name.trim();
+  if (!n || n.length > CLUSTER_NAME_MAX) return "error.clusterName";
+  return s.clusters.some((c) => c.name === n) ? "error.clusterNameTaken" : null;
+};
+// The next free name of the pattern, numbered from 1.
+const freeName = (s: GameState, base: string): string => {
+  for (let i = 1; ; i++) if (!s.clusters.some((c) => c.name === `${base} ${i}`)) return `${base} ${i}`;
+};
+
+// A new hypervisor cluster runs nothing until a hypervisor is installed on it with setSoftware.
 export function createCluster(s: GameState, locationId: string, name: string): ActionResult {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return fail("error.unknownLocation");
-  const n = name.trim();
-  if (!n || n.length > CLUSTER_NAME_MAX) return fail("error.clusterName");
-  if (s.clusters.some((c) => c.name === n)) return fail("error.clusterNameTaken");
+  const bad = validName(s, name);
+  if (bad) return fail(bad);
   const id = `clu${s.nextId++}`;
-  s.clusters = [...s.clusters, {
-    id, name: n, az: loc.az, placement: "pack", nodes: [], panel: null, platform: null, controlPlane: null, switching: null, backup: { targetId: null, every: "off" },
-  }];
+  s.clusters = [...s.clusters, blank(s, id, name.trim(), loc.az, "cloud")];
   return { ok: true, id };
 }
 
-// Installs a panel or platform on the cluster's control-plane node, or replaces the installed one once nothing it serves
-// runs on the cluster. The control plane is busy for the software's install hours; its license is billed monthly.
+// Installs a hosting panel straight on a free mounted server: a bare-metal panel host for web hosting only.
+export function installPanel(s: GameState, deviceId: string, panelId: string): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId), sw = softwareById(panelId);
+  if (!d) return fail("error.unknownDevice");
+  if (sw.id !== panelId || sw.kind !== "panel") return fail("error.unknownSoftware");
+  if (!modelById(d.model).server) return fail("error.notServer");
+  if (!d.rackId) return fail("error.notMounted");
+  if (serverTaken(s, d.id)) return fail("error.serverInUse");
+  const loc = locationOf(s, d)!, id = `clu${s.nextId++}`, label = d.label ?? d.name;
+  const name = s.clusters.some((c) => c.name === label) ? freeName(s, label) : label;
+  const host: Cluster = { ...blank(s, id, name, loc.az, "panel"), nodes: [{ deviceId, state: "active" }], controlPlane: deviceId };
+  if (!fitsControlPlane(s, { ...host, panel: panelId }, deviceId)) return fail(working(s, deviceId) ? "error.nodeFull" : "error.nodeDown");
+  s.clusters = [...s.clusters, { ...host, switching: { kind: "panel", to: panelId, doneAt: s.hour + sw.installHours } }];
+  return { ok: true, id };
+}
+
+// Creates one of the player's own VMs on a hypervisor cluster and installs a panel in it: a panel host whose web hosting
+// capacity is the VM's booking. A cluster still installing its hypervisor takes the VM; the panel follows the hypervisor.
+export function createPanelVm(s: GameState, clusterId: string, panelId: string, size: Resources = PANEL_VM_SIZE): ActionResult {
+  const c = s.clusters.find((x) => x.id === clusterId), sw = softwareById(panelId);
+  if (!c) return fail("error.unknownCluster");
+  if (c.kind !== "cloud" || (!c.platform && c.switching?.kind !== "cloud")) return fail("error.needsPlatform");
+  if (sw.id !== panelId || sw.kind !== "panel") return fail("error.unknownSoftware");
+  if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
+  const bad = sizeError(size, sw.controlPlane);
+  if (bad) return fail(bad);
+  const node = pickNode(s, c, size);
+  if (!node) return fail("error.noCapacity");
+  const vm = workload(s, "", { ...size, clusterId: c.id, deviceId: node }), id = `clu${s.nextId++}`;
+  const after = Math.max(s.hour, c.switching?.doneAt ?? s.hour);
+  s.workloads = [...s.workloads, vm];
+  s.clusters = [...s.clusters, { ...blank(s, id, freeName(s, "Web"), c.az, "panel"), vm: vm.id, switching: { kind: "panel", to: panelId, doneAt: after + sw.installHours } }];
+  return { ok: true, id };
+}
+
+const sizeError = (r: Resources, panel: Resources): string | null =>
+  KEYS.some((k) => !Number.isFinite(r[k]) || r[k] < Math.max(PANEL_VM_MIN[k], panel[k])) ? "error.vmSize" : null;
+
+// Books a panel VM bigger or smaller: it must still hold its web spaces and fit on its node.
+export function resizePanelVm(s: GameState, hostId: string, size: Resources): ActionResult {
+  const c = s.clusters.find((x) => x.id === hostId), vm = c && vmById(s, c.vm);
+  if (!c || !vm) return fail("error.notPanelVm");
+  const panel = controlPlaneUse({ panel: c.panel ?? c.switching?.to ?? null, platform: null });
+  const bad = sizeError(size, panel);
+  if (bad) return fail(bad);
+  const inside = vmRoom(s, c).used;
+  if (KEYS.some((k) => inside[k] + panel[k] > size[k] + 1e-9)) return fail("error.vmTooSmall");
+  const d = vm.deviceId ? s.devices.find((x) => x.id === vm.deviceId) : undefined;
+  if (d) {
+    const cap = bookable(s, d), used = nodeUsed(s, d.id);
+    if (KEYS.some((k) => used[k] - vm[k] + size[k] > cap[k] + 1e-9)) return fail("error.nodeFull");
+  }
+  s.workloads = s.workloads.map((w) => (w.id === vm.id ? { ...w, ...size } : w));
+  freezeTick(s);
+  return { ok: true };
+}
+
+// Removes an empty panel host: its server is free again, its VM is deleted.
+export function removePanelHost(s: GameState, hostId: string): ActionResult {
+  const c = s.clusters.find((x) => x.id === hostId);
+  if (!c || c.kind !== "panel") return fail("error.notPanelHost");
+  if (s.workloads.some((w) => w.clusterId === c.id)) return fail("error.nodeNotEmpty");
+  s.clusters = s.clusters.filter((x) => x.id !== c.id).map((x) => (x.backup.targetId === c.id ? { ...x, backup: { targetId: null, every: "off" } } : x));
+  if (c.vm) s.workloads = s.workloads.filter((w) => w.id !== c.vm);
+  const drop = (ids: string[]) => ids.filter((id) => id !== c.id);
+  s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };
+  return { ok: true };
+}
+
+// Installs the cluster's control plane, a hypervisor on a hypervisor cluster or a panel on a panel host, or replaces it
+// once nothing runs on the cluster. The control plane is busy for the software's install hours; its license is billed monthly.
 export function setSoftware(s: GameState, clusterId: string, id: string): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
   const sw = softwareById(id);
   if (sw.id !== id) return fail("error.unknownSoftware");
+  if (sw.kind !== c.kind) return fail("error.wrongKind");
   if (c.switching) return fail("error.switching");
   const slot = sw.kind === "panel" ? "panel" : "platform";
   if (c[slot] === id) return fail("error.sameSoftware");
-  if (!c.controlPlane) return fail("error.noNodes");
-  if (c[slot] && s.workloads.some((w) => w.clusterId === c.id && servedBy(s, w) === sw.kind)) return fail("error.softwareInUse");
-  if (!fitsControlPlane(s, { ...c, [slot]: id }, c.controlPlane)) return fail(working(s, c.controlPlane) ? "error.nodeFull" : "error.nodeDown");
+  if (!c.controlPlane && !c.vm) return fail("error.noNodes");
+  if (c[slot] && s.workloads.some((w) => w.clusterId === c.id)) return fail("error.softwareInUse");
+  if (c.controlPlane && !fitsControlPlane(s, { ...c, [slot]: id }, c.controlPlane)) return fail(working(s, c.controlPlane) ? "error.nodeFull" : "error.nodeDown");
   update(s, c.id, (x) => ({ ...x, switching: { kind: sw.kind, to: id, doneAt: s.hour + sw.installHours } }));
   return { ok: true };
 }
@@ -74,48 +160,49 @@ const update = (s: GameState, id: string, fn: (c: Cluster) => Cluster) => {
   s.clusters = s.clusters.map((c) => (c.id === id ? fn(c) : c));
 };
 
+// Adds a free mounted server of the zone to a hypervisor cluster; a panel host keeps its one server.
 export function addNode(s: GameState, clusterId: string, deviceId: string): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
+  if (c.kind !== "cloud") return fail("error.panelHostOneServer");
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!modelById(d.model).server) return fail("error.notServer");
   if (!d.rackId) return fail("error.notMounted");
   if (locationOf(s, d)?.az !== c.az) return fail("error.otherZone");
   if (serverTaken(s, d.id)) return fail("error.serverInUse");
-  // The first node hosts the control plane.
-  update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, { deviceId, state: "active", php: phpAt(yearOf(s.hour)), phpUntil: -1 }], controlPlane: x.controlPlane ?? deviceId }));
+  // The first node runs the control plane.
+  update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, { deviceId, state: "active" }], controlPlane: x.controlPlane ?? deviceId }));
   return { ok: true };
 }
 
-// A node is due an upgrade on an older PHP, or on the current one while a released patch is missing.
-export const phpDue = (s: GameState, n: ClusterNode): boolean => n.php !== phpAt(yearOf(s.hour)) || (patchOut(s) && vulnerable(s, n));
+// A panel host is due an upgrade on an older PHP, or on the current one while a released patch is missing.
+export const phpDue = (s: GameState, c: Cluster): boolean => c.kind === "panel" && (c.php !== phpAt(yearOf(s.hour)) || (patchOut(s) && vulnerable(s, c)));
 
-// One node to the current PHP version with any released security patch; its sites run slower for the next hour.
-export function upgradeNodePhp(s: GameState, deviceId: string): ActionResult {
-  const c = clusterOf(s, deviceId);
-  if (!c) return fail("error.notNode");
-  const php = phpAt(yearOf(s.hour)), node = c.nodes.find((n) => n.deviceId === deviceId)!;
-  if (!phpDue(s, node)) return fail(vulnerable(s, node) ? "error.patchPending" : "error.phpCurrent");
-  update(s, c.id, (x) => ({ ...x, nodes: x.nodes.map((n) => (n.deviceId === deviceId ? { ...n, php, phpUntil: s.hour + PHP_UPGRADE_HOURS } : n)) }));
-  markPatched(s, deviceId);
-  return { ok: true };
-}
-
-// Every node of the cluster at once, as the player does it by hand.
-export function upgradePhp(s: GameState, clusterId: string): ActionResult {
-  const c = s.clusters.find((x) => x.id === clusterId);
+// One panel host to the current PHP version with any released security patch; its sites run slower for the next hour.
+export function upgradePhp(s: GameState, hostId: string): ActionResult {
+  const c = s.clusters.find((x) => x.id === hostId);
   if (!c) return fail("error.unknownCluster");
-  const old = c.nodes.filter((n) => phpDue(s, n));
-  if (!old.length) return fail("error.phpCurrent");
-  for (const n of old) upgradeNodePhp(s, n.deviceId);
+  if (c.kind !== "panel") return fail("error.notPanelHost");
+  if (!phpDue(s, c)) return fail(vulnerable(s, c) ? "error.patchPending" : "error.phpCurrent");
+  update(s, c.id, (x) => ({ ...x, php: phpAt(yearOf(s.hour)), phpUntil: s.hour + PHP_UPGRADE_HOURS }));
+  markPatched(s, c.id);
   return { ok: true };
 }
 
-// A node leaves its cluster once nothing runs on it; its control plane moves to the next node.
+// Every panel host due an upgrade that runs on the server, as a technician does it on site.
+export function upgradeNodePhp(s: GameState, deviceId: string): ActionResult {
+  const mine = s.clusters.filter((c) => c.kind === "panel" && anchorOf(s, c) === deviceId), due = mine.filter((c) => phpDue(s, c));
+  if (!due.length) return mine.length ? upgradePhp(s, mine[0].id) : fail("error.notPanelHost");
+  for (const c of due) upgradePhp(s, c.id);
+  return { ok: true };
+}
+
+// A node leaves its hypervisor cluster once nothing runs on it; its control plane moves to the next node.
 export function removeNode(s: GameState, deviceId: string): ActionResult {
   const c = clusterOf(s, deviceId);
   if (!c) return fail("error.notNode");
+  if (c.kind === "panel") return fail("error.panelHostOneServer");
   if (workloadsOn(s, deviceId).length) return fail("error.nodeNotEmpty");
   update(s, c.id, (x) => {
     const nodes = x.nodes.filter((n) => n.deviceId !== deviceId);
@@ -155,13 +242,27 @@ export function setRamGuard(s: GameState, clusterId: string, on: boolean): Actio
   return { ok: true };
 }
 
-const workload = (s: GameState, serviceId: string, w: Partial<Workload>): Workload => ({
+// High availability on a hypervisor cluster, once researched. Auto-balancing moves VMs live, so it needs live migration,
+// and live migration needs a hypervisor that can do it.
+export function setHa(s: GameState, clusterId: string, feature: keyof Ha, on: boolean): ActionResult {
+  const c = s.clusters.find((x) => x.id === clusterId);
+  if (!c) return fail("error.unknownCluster");
+  if (c.kind !== "cloud") return fail("error.needsPlatform");
+  if (!s.unlocks.includes(HA_SKILL)) return fail("error.missingSkill");
+  if (on && feature === "live" && c.platform && !softwareById(c.platform).live) return fail("error.noLiveMigration");
+  if (on && feature === "balance" && !c.ha.live) return fail("error.needsLiveMigration");
+  const ha = { ...c.ha, [feature]: on, ...(feature === "live" && !on ? { balance: false } : {}) };
+  update(s, c.id, (x) => ({ ...x, ha }));
+  return { ok: true };
+}
+
+export const workload = (s: GameState, serviceId: string, w: Partial<Workload>): Workload => ({
   id: `wl${s.nextId++}`, serviceId, clusterId: null, deviceId: null, rackId: null, slot: 0, units: 0, watts: 0, vcpu: 0, ramGb: 0, diskGb: 0, placedAt: s.hour,
   stopped: false, busyUntil: 0, backupAt: null, ...w,
 });
 
-// Places a service on hardware by its product: a cluster workload (in clusterId, or the first cluster of its zone with room;
-// on deviceId when given), a whole free server for dedicated, rack units with power for colocation. A service without a zone
+// Places a service on hardware by its product: a cluster workload (in clusterId, or the first cluster of its zone that sells
+// it with room; on deviceId when given; inside the VM of a panel VM host), a whole free server for dedicated, rack units with power for colocation. A service without a zone
 // takes the zone it lands in. A custom service books its own resources.
 export function placeService(s: GameState, serviceId: string, clusterId: string | null = null, deviceId: string | null = null): ActionResult {
   const v = s.services.find((x) => x.id === serviceId);
@@ -172,11 +273,9 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
   let w: Workload | null = null, az = "";
   if (spec.runsOn === "none") return { ok: true };
   if (spec.runsOn === "cluster") {
-    // ponytail: no high-availability clusters yet, so HA products can't be placed.
-    if (spec.ha) return fail("error.needsHaCluster");
     for (const c of s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)) && supports(x, v.product))) {
       const node = controlPlaneUp(s, c) ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, size) : null;
-      if (node) { w = workload(s, v.id, { ...size, clusterId: c.id, deviceId: node }); az = c.az; break; }
+      if (node) { w = workload(s, v.id, { ...size, clusterId: c.id, deviceId: c.vm ? null : node }); az = c.az; break; }
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;
     if (!w) return fail(target && supports(target, v.product) && !controlPlaneUp(s, target) ? "error.controlPlaneDown" : noRoomError(s, v.product, clusterId));

@@ -40,22 +40,22 @@ describe("pear store", () => {
 
   it("installs into the dock once the skill is learned and bills monthly", () => {
     const s = newGame(4);
-    expect(install(s, "Network")).toEqual({ ok: false, error: "error.needsResearch" });
-    s.unlocks = ["monitoring", "network"];
+    expect(install(s, "Staff")).toEqual({ ok: false, error: "error.needsResearch" });
+    s.unlocks = ["people"];
 
     const cash = s.cash;
-    expect(install(s, "Network")).toEqual({ ok: true });
-    expect(s.installed).toContain("Network");
-    expect(s.cash).toBe(cash - 25);
-    expect(s.ledger.at(-1)).toMatchObject({ category: "subscriptions", key: "ledger.subscription", amount: -25 });
-    expect(install(s, "Network")).toEqual({ ok: false, error: "error.installed" });
+    expect(install(s, "Staff")).toEqual({ ok: true });
+    expect(s.installed).toContain("Staff");
+    expect(s.cash).toBe(cash - 20);
+    expect(s.ledger.at(-1)).toMatchObject({ category: "subscriptions", key: "ledger.subscription", amount: -20 });
+    expect(install(s, "Staff")).toEqual({ ok: false, error: "error.installed" });
 
     runTo(s, at(2005, 2));
     expect(s.ledger.filter((e) => e.key === "ledger.subscription")).toHaveLength(2);
 
-    expect(cancel(s, "Network")).toEqual({ ok: true });
-    expect(s.installed).not.toContain("Network");
-    expect(s.unlocks).toContain("network");
+    expect(cancel(s, "Staff")).toEqual({ ok: true });
+    expect(s.installed).not.toContain("Staff");
+    expect(s.unlocks).toContain("people");
     runTo(s, at(2005, 3));
     expect(s.ledger.filter((e) => e.key === "ledger.subscription")).toHaveLength(2);
     expect(cancel(s, "Locations")).toEqual({ ok: false, error: "error.notInstalled" });
@@ -81,8 +81,8 @@ describe("pear store", () => {
   });
 
   it("raises prices 8% every year", () => {
-    const net = storeItem("Network")!;
-    expect(subscriptionPrice(net, 2005)).toBe(25);
-    expect(subscriptionPrice(net, 2007)).toBe(29.16);
+    const net = storeItem("Products")!;
+    expect(subscriptionPrice(net, 2005)).toBe(15);
+    expect(subscriptionPrice(net, 2007)).toBe(17.5);
   });
 });

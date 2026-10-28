@@ -2,7 +2,7 @@ import { COMPONENTS } from "../10-catalog/hardware";
 import { phpAt } from "../10-catalog/platforms";
 import { yearOf } from "../00-core/time";
 import type { Device, GameState } from "../50-state";
-import { clusterOf } from "../60-infra/cluster";
+import { anchorOf } from "../60-infra/cluster";
 import { HOURS_PER_YEAR, hotSwappable, locationOf } from "../60-infra/status";
 import type { SimEvent } from "../88-tick/tick";
 import { drain, upgradeNodePhp } from "../90-actions/clusters";
@@ -143,8 +143,10 @@ function work(s: GameState, e: Employee, events: SimEvent[], taken: Set<string>,
     if (r.error !== "error.unknownComponent") events.push({ app: "Staff", key: "event.techFailed", params: { name: e.name, device, error: r.error } });
   } else if (o.kind === "replace") events.push({ app: "Staff", key: "event.techReplaced", params: { name: e.name, device, component: part } });
   else if (o.kind === "php") {
-    const c = clusterOf(s, d.id)!, php = phpAt(yearOf(s.hour));
-    if (c.nodes.every((n) => n.php === php)) events.push({ app: "Staff", key: "event.phpUpgraded", params: { cluster: c.name, version: php } });
+    const php = phpAt(yearOf(s.hour));
+    for (const c of s.clusters.filter((x) => x.kind === "panel" && anchorOf(s, x) === d.id && x.php === php && x.phpUntil >= s.hour)) {
+      events.push({ app: "Staff", key: "event.phpUpgraded", params: { cluster: c.name, version: php } });
+    }
   }
   return true;
 }

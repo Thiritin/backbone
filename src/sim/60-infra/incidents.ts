@@ -7,7 +7,7 @@ import { bump, createTicket, profileStats } from "../40-support/tickets";
 import type { GameState, Location } from "../50-state";
 import { addReview, starsFor, type ReviewReason } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
-import { pickNode, type Workload } from "./cluster";
+import { hostOfVm, isOwnVm, pickNode, vmOf, type Workload } from "./cluster";
 import type { Incident } from "./ops";
 import { HOURS_PER_YEAR, locationOf } from "./status";
 
@@ -38,6 +38,8 @@ export function maybeReview(s: GameState, c: Customer, reason: ReviewReason, r: 
 }
 
 const atLocation = (s: GameState, w: Workload, locId: string): boolean => {
+  const vm = vmOf(s, w);
+  if (vm) return atLocation(s, vm, locId);
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);
     return !!d && locationOf(s, d)?.id === locId;
@@ -110,15 +112,17 @@ export function seize(s: GameState, deviceId: string, agency: string, r: Rng, ev
   if (!d || !loc) return null;
   const [lo, hi] = SEIZE_MONTHS;
   const returnAt = s.hour + Math.round((lo + rand(r) * (hi - lo)) * HOURS_PER_MONTH);
-  const workloads = s.workloads.filter((w) => w.deviceId === d.id);
+  // A panel VM on the server takes its web spaces with it.
+  const own = s.workloads.filter((w) => w.deviceId === d.id);
+  const workloads = own.flatMap((w) => (isOwnVm(w) ? s.workloads.filter((x) => x.clusterId === hostOfVm(s, w.id)?.id) : [w]));
   const hit = customersOf(s, workloads);
   s.devices = s.devices.filter((x) => x.id !== d.id);
   s.cables = s.cables.filter((c) => c.a.device !== d.id && c.b.device !== d.id);
   s.clusters = s.clusters.map((c) => (c.nodes.some((n) => n.deviceId === d.id) ? { ...c, nodes: c.nodes.filter((n) => n.deviceId !== d.id) } : c));
   s.ops = { ...s.ops, seized: [...s.ops.seized, { device: { ...d, rackId: null, slot: 0, panel: null, store: null }, locationId: loc.id, at: s.hour, returnAt, agency }] };
   const lost = new Set<string>();
-  for (const w of workloads) {
-    if (!hasBackupElsewhere(s, w.id)) lost.add(w.serviceId);
+  for (const w of workloads) if (!hasBackupElsewhere(s, (vmOf(s, w) ?? w).id)) lost.add(w.serviceId);
+  for (const w of own) {
     const cluster = w.clusterId ? s.clusters.find((c) => c.id === w.clusterId) : undefined;
     const to = cluster && pickNode(s, cluster, w);
     if (to) s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, deviceId: to, placedAt: s.hour } : x));

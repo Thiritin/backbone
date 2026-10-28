@@ -15,14 +15,17 @@ export const SKILLS: Skill[] = [
   { id: "monitoring", name: "Monitoring", about: "Your team learns to watch the hardware and the queues, so failures and waiting work announce themselves.", tier: 1, knowHow: 50, days: 5, needs: [], opens: ["dockBadges"] },
   { id: "marketingBasics", name: "Marketing basics", about: "You learn who your customers are and what makes them pick one host over another.", tier: 1, knowHow: 50, days: 5, needs: [], opens: [] },
   { id: "people", name: "Employee management", about: "You learn to hire, pay and organise people without losing track of who does what.", tier: 1, knowHow: 100, days: 10, needs: [], opens: ["Staff"] },
-  { id: "network", name: "Network operations", about: "Your team learns to buy transit, peer with other networks and survive the occasional flood of traffic.", tier: 2, knowHow: 300, days: 14, needs: ["monitoring"], opens: ["Network"] },
+  { id: "network", name: "Network operations", about: "Your team learns to buy transit, peer with other networks and survive the occasional flood of traffic.", tier: 2, knowHow: 300, days: 14, needs: ["monitoring"], opens: [] },
   { id: "memoryReservation", name: "Memory reservation", about: "Your team learns to keep each server's booked memory within the memory it has, so a busy hour cannot freeze it.", tier: 2, knowHow: 100, days: 5, needs: ["monitoring"], opens: [] },
   { id: "products", name: "Product management", about: "You learn to bundle your services into product lines with plans, licences and clusters.", tier: 2, knowHow: 200, days: 14, needs: ["marketingBasics"], opens: ["Products"] },
   { id: "marketing", name: "Marketing campaigns", about: "Your staff learns to run campaigns and to keep an eye on what customers write about you.", tier: 2, knowHow: 300, days: 14, needs: ["marketingBasics", "people"], opens: ["Marketing"] },
-  { id: "virtualization", name: "Virtualization", about: "Your team learns to run virtual machines on a platform, move them between servers and bring them back from a backup.", tier: 3, knowHow: 400, days: 14, needs: ["products", "monitoring"], opens: ["Virtual machines"] },
+  { id: "virtualization", name: "High availability", about: "Your team learns to move virtual machines between servers while they run, spread them when a server runs hot and restart them elsewhere when one fails.", tier: 3, knowHow: 400, days: 14, needs: ["products", "monitoring"], opens: [] },
   { id: "market", name: "Market research", about: "You learn to read demand by product and to find out why a sale got away.", tier: 3, knowHow: 800, days: 21, needs: ["products", "marketing"], opens: ["Market"] },
   { id: "automation", name: "Automation", about: "Your company learns to hand routine tickets and reminders to bots that never sleep and never quite understand.", tier: 3, knowHow: 1500, days: 21, needs: ["people", "monitoring"], opens: ["chadGpt", "clipsy"] },
 ];
+
+// The skill that unlocks live migration, auto-balancing and failover per hypervisor cluster; its id predates the rename.
+export const HA_SKILL = "virtualization";
 
 export const skillById = (id: string): Skill | undefined => SKILLS.find((k) => k.id === id);
 

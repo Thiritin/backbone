@@ -14,6 +14,7 @@ import { salesTick } from "../30-market/sales";
 import { ordersTick } from "../30-market/manual";
 import { domainsTick } from "../30-customers/registry";
 import { computeTick } from "../60-infra/cluster";
+import { haTick } from "../60-infra/ha";
 import { freezeTick } from "../60-infra/usage";
 import { networkTick } from "../60-infra/network";
 import { securityTick } from "../60-infra/security";
@@ -217,7 +218,7 @@ export function tick(state: GameState): SimEvent[] {
     for (const l of leases.filter((x) => x.paid >= x.months)) endLease(state, l.id);
     for (const id of state.installed) {
       const item = storeItem(id);
-      if (item) bills.push({ hour: state.hour, category: "subscriptions", key: "ledger.subscription", params: { name: item.name }, amount: -subscriptionPrice(item, yearOf(state.hour)) });
+      if (item && item.monthly > 0) bills.push({ hour: state.hour, category: "subscriptions", key: "ledger.subscription", params: { name: item.name }, amount: -subscriptionPrice(item, yearOf(state.hour)) });
     }
     if (power > 0) bills.unshift({ hour: state.hour, category: "power", key: "ledger.power", params: {}, amount: -power });
     const rent = bills.filter((b) => b.category === "rent").reduce((sum, b) => sum - b.amount, 0);
@@ -231,6 +232,7 @@ export function tick(state: GameState): SimEvent[] {
   }
   events.push(...opsTick(state));
   events.push(...freezeTick(state));
+  events.push(...haTick(state));
   events.push(...computeTick(state));
   events.push(...productsTick(state));
   events.push(...usageTick(state));

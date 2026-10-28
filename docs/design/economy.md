@@ -35,7 +35,7 @@ A new game starts on 1 January 2005 with €1,000 in cash, a 24U rack in the bas
 | Company | Level 1, 0 know-how, no reviews yet |
 | Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
 | Home line | Deutsche Telekomm DSL 16000, 16 Mbit/s down and 1 Mbit/s up; paid privately, so it costs the company nothing |
-| Hardware | A 24U rack with one Dwell Balanced 1U G1 and a Sysko L2 switch 8, cabled to the home router; the server is the cluster "Basement 1", with no control plane installed |
+| Hardware | A 24U rack with one Dwell Balanced 1U G1 and a Sysko L2 switch 8, cabled to the home router; the server runs no control plane until the first-time setup installs a panel or a hypervisor on it |
 | Reseller accounts | Domains from a registrar, at 40% of the retail price |
 | Customers | None until the first hosting panel finishes installing. Then 3 friends (Jonas Weber, Mira Schulz and Tobi Kraus, private individuals) sign up for Web M hosting at €6 a month on that cluster; happiness 85, and they always pay |
 
@@ -632,8 +632,8 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | --- | --- | --- | --- | --- |
 | Starter | Locations, Shop, Customers, Support, Billing (manual), Finance (account statement), Bank, Research, Checklist, Settings, Pear Store | Free | | Start |
 | Monitoring | Monitoring | €10 | €0.50 per monitored device | Monitoring skill |
-| Virtual machines | Virtual machines | €20 | €2 per host | Virtualization skill |
-| Network | Network | €25 | | Network operations skill |
+| Virtual machines | Virtual machines | Free | | A hypervisor installed |
+| Network | Network | Free | | None; buying transit and peering needs Network operations |
 | Products | Products | €15 | | Product management skill |
 | Billing automation | Billing rules, invoice runs | €30 | €0.10 per active customer | Level 2 |
 | Staff | Staff | €20 | €5 per employee | Employee management skill |
@@ -996,24 +996,24 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 
 ## Platforms and licenses
 
-A cluster runs nothing until the player installs a hosting panel, a virtualization platform, or both. The panel sells web hosting; the platform sells VPS, game servers, DNS, VPN and storage. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years.
+Every server runs at most one control plane. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers, DNS, VPN, storage and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years.
 
 | Software | Kind | License | Install | How-to tickets | Density | Live migration | Control plane |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | cPanic | Panel | €0.40 per web space | 3 h | ×0.8 | | | 0.25 vCPU, 0.25 GB, 5 GB |
-| Pleskit | Panel | €12 per node | 3 h | ×0.9 | | | 0.25 vCPU, 0.25 GB, 5 GB |
-| DirectAdmen | Panel | €4 per node | 2 h | ×1.2 | | | 0.1 vCPU, 0.1 GB, 2 GB |
+| Pleskit | Panel | €12 per panel host | 3 h | ×0.9 | | | 0.25 vCPU, 0.25 GB, 5 GB |
+| DirectAdmen | Panel | €4 per panel host | 2 h | ×1.2 | | | 0.1 vCPU, 0.1 GB, 2 GB |
 | FreePanel | Panel | Free | 2 h | ×1.5 | | | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenStash | Cloud | Free | 8 h | ×1.3 | 1.0 | Yes | 2 vCPU, 2 GB, 20 GB |
 | VMwhere | Cloud | €8 per physical core | 5 h | ×0.7 | 1.15 | Yes | 1 vCPU, 2 GB, 10 GB |
 | Proxmocks | Cloud | Free | 3 h | ×1.0 | 1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
 | HyperVee | Cloud | €20 per node | 4 h | ×0.9 | 1.05 | No | 1 vCPU, 1 GB, 10 GB |
 
-- **Licenses** are billed on the 1st of each month per cluster, as ledger lines in the category "licenses".
-- **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the platform for the rest).
+- **Licenses** are billed on the 1st of each month per hypervisor cluster and per panel host, as ledger lines in the category "licenses".
+- **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the hypervisor for the rest).
 - **Density** multiplies what a node can book, from memory sharing and lighter hypervisors.
-- **Control plane:** the panel's and the platform's control planes run on one node of the cluster, the first one added, and count against what it can book and what it uses. While that node is down, or while the cluster switches software, nothing can be sold, started, migrated or restored on the cluster. Draining moves the control plane to another node once the drained node is empty, and the player can move it to any working node with room.
-- **Installing** needs a node in the cluster and room for the control plane on it. The control plane is busy for the install hours in the table, and nothing can be placed on the cluster until it is done. An install costs nothing up front; the license is billed from the next 1st of the month.
+- **Control plane:** a hypervisor's control plane runs on one node of the cluster, the first one added, and counts against what it can book and what it uses. A bare-metal panel host runs its panel on its server; a panel VM runs its panel inside the VM, so the panel counts against the VM's booking. While that node is down, or while the cluster switches software, nothing can be sold, started, migrated or restored on the cluster. Draining moves the control plane to another node once the drained node is empty, and the player can move it to any working node with room.
+- **Installing** needs a node in the cluster, or a free mounted server for a panel host, and room for the control plane on it. A panel VM can be created while its cluster's hypervisor is still installing; its panel starts installing once the hypervisor is done. The control plane is busy for the install hours in the table, and nothing can be placed on the cluster until it is done. An install costs nothing up front; the license is billed from the next 1st of the month.
 - **Switching** to other software of the same kind takes the new software's install hours and needs the cluster empty of the workloads the old software serves. Workloads of the other kind stay online.
 - **Selling:** the website, order emails and leads only carry product lines that an installed control plane on a cluster with nodes sells. Placement refuses with "No cluster runs a hosting panel" or "No cluster runs a virtualization platform" when no cluster in scope has the right software, and with the capacity error when it has but no node has room.
 - A new game's "Basement 1" runs nothing. Old saves keep the panel and platform they had, and saves from before platforms load with FreePanel and Proxmocks installed.
@@ -1112,6 +1112,25 @@ A week on call earns 5 × 2 + 2 × 4 = 18 hourly wages. A call-out at 02:00 on a
 The game simplifies the agreement in four ways. TVöD counts the allowance on the day an on-call period starts; the game starts each day's period at 17:00, when the office closes, so every calendar day counts once. The game has no public holidays, which TVöD pays at 4 ×. Each call-out hour includes travel and is already a full hour, so rounding up never adds anything. Consecutive call-out hours count as one call-out.
 
 Rest: ArbZG §5 requires 11 hours of uninterrupted rest, and a call-out restarts it. A technician does no office-hour work until 11 hours after the end of their last call-out hour, so a call-out at 02:00 starts the day at 14:00. Call-outs during the rest still happen, as an emergency does in the real rule.
+
+## Panel VMs and high availability
+
+A panel VM is one of the player's own VMs on a hypervisor cluster with a panel installed. Its booking is the web hosting capacity of its panel host, less the panel's control plane. Values live in `src/sim/90-actions/clusters.ts` and `src/sim/60-infra/ha.ts`.
+
+| Value | Amount |
+| --- | --- |
+| Suggested size in the setup and the Products app | 2 vCPU, 4 GB RAM, 100 GB disk, about 15 Web M spaces |
+| Smallest size | 1 vCPU, 1 GB RAM, 10 GB disk, and at least the panel's control plane |
+| Resize | Any size that still holds the web spaces' bookings plus the panel and fits on the VM's server |
+| Use | What its web spaces use plus the panel's control plane |
+| Failover downtime | 5 minutes per VM restarted on another node, added to each affected service's down hours |
+| Hot node | 90% of installed RAM in use, more busy vCPUs than physical cores, or booked beyond what it can book |
+| Auto-balancing | One VM per hot node an hour, the smallest running one, to the idlest node that is not hot |
+
+- **High availability** is the tier 3 research of 400 know-how and 14 days after Product management and Monitoring. Each hypervisor cluster then has three switches, all off by default: live migration, auto-balancing (needs live migration) and automatic failover.
+- **Live migration** needs the switch on and a hypervisor that supports it; otherwise a VM migration is cold and takes the VM offline for (disk + RAM) ÷ (link Gbit/s × 450 GB per hour), at least one hour. Moving web spaces between panel hosts in a zone stays instant.
+- **Cloud servers** need a hypervisor cluster with failover on.
+- **The Virtual machines and Network apps** cost nothing in the Pear Store. Virtual machines installs once a hypervisor is installed or installing; Network is available from the start, and buying transit and peering in it needs Network operations.
 
 ## PHP versions
 

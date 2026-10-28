@@ -4,23 +4,27 @@ import type { Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { working } from "./status";
-import { bookable, clusterOf, controlPlaneUp, noRoomError, nodeUsed, pickNode, supports, type Cluster } from "./cluster";
+import { bookable, clusterOf, controlPlaneUp, hasHosts, KEYS, noRoomError, nodeUsed, pickNode, supports, vmRoom, type Cluster } from "./cluster";
 
 export interface RouteNode { id: string; name: string; free: Resources; fits: boolean }
 export interface RouteCluster { id: string; name: string; az: string; free: Resources; fits: boolean; nodes: RouteNode[] }
 
-const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
 const free = (s: GameState, deviceId: string): Resources => {
   const d = s.devices.find((x) => x.id === deviceId)!, cap = bookable(s, d), used = nodeUsed(s, deviceId);
   return { vcpu: cap.vcpu - used.vcpu, ramGb: cap.ramGb - used.ramGb, diskGb: cap.diskGb - used.diskGb };
 };
 const only = (c: Cluster, deviceId: string): Cluster => ({ ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) });
 
-// Clusters in the city that sell the product, with what their active, working nodes can still book.
+// Panel hosts or hypervisor clusters in the city that sell the product, with what their active, working nodes can still
+// book. A panel VM host lists no nodes; its room is the VM's.
 export function routeOptions(s: GameState, product: Product, city: string, size: Resources): RouteCluster[] {
   const zones = s.locations.filter((l) => l.city === city).map((l) => l.az);
-  return s.clusters.filter((c) => zones.includes(c.az) && supports(c, product) && c.nodes.length).map((c) => {
+  return s.clusters.filter((c) => zones.includes(c.az) && supports(c, product) && hasHosts(c)).map((c) => {
     const up = controlPlaneUp(s, c);
+    if (c.vm) {
+      const room = vmRoom(s, c), free = Object.fromEntries(KEYS.map((k) => [k, Math.max(0, room.cap[k] - room.used[k])])) as unknown as Resources;
+      return { id: c.id, name: c.name, az: c.az, free, fits: up && !!pickNode(s, c, size), nodes: [] };
+    }
     const nodes = c.nodes.filter((n) => n.state === "active" && working(s, n.deviceId)).map((n): RouteNode => {
       const d = s.devices.find((x) => x.id === n.deviceId)!;
       return { id: d.id, name: d.label ?? d.name, free: free(s, d.id), fits: up && !!pickNode(s, only(c, d.id), size) };

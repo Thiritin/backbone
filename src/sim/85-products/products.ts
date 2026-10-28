@@ -6,8 +6,8 @@ import { BACKUP_HOUR } from "../10-catalog/usage";
 import type { Customer } from "../30-customers/customers";
 import { bump, createTicket, isFinal } from "../40-support/tickets";
 import type { GameState } from "../50-state";
-import { controlPlaneUp, lostDisk, servedBy, type Cluster, type Workload } from "../60-infra/cluster";
-import { phpTickets } from "../60-infra/php";
+import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
+import { PHP_SLOW, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
 import { raidUsable } from "../60-infra/status";
 import { diskFill, nodeUsage } from "../60-infra/usage";
@@ -40,7 +40,7 @@ export const zoneLinkGbit = (_s: GameState, a: string, b: string): number => (a 
 
 function units(s: GameState, c: Cluster, sw: Software): number {
   if (sw.pricing === "account") return s.workloads.filter((w) => w.clusterId === c.id && servedBy(s, w) === "panel").length;
-  if (sw.pricing === "server") return c.nodes.length;
+  if (sw.pricing === "server") return c.kind === "panel" ? 1 : c.nodes.length;
   if (sw.pricing === "core") return c.nodes.reduce((n, x) => n + (modelById(s.devices.find((d) => d.id === x.deviceId)?.model ?? "").server?.cores ?? 0), 0);
   return 0;
 }
@@ -108,11 +108,13 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
 function reportLosses(s: GameState, events: SimEvent[]) {
   for (const d of s.devices) {
     if (d.dataLost === null || s.lossReports.some((r) => r.deviceId === d.id && r.hour === d.dataLost)) continue;
-    const lost = s.workloads.filter((w) => w.deviceId === d.id && lostDisk(s, w));
+    // A lost panel VM loses every web space in it, with the VM's backup.
+    const lost = s.workloads.filter((w) => w.deviceId === d.id && lostDisk(s, w))
+      .flatMap((w) => (isOwnVm(w) ? s.workloads.filter((x) => x.clusterId === hostOfVm(s, w.id)?.id) : [w]));
     if (!lost.length) continue;
     const items = lost.map((w): LossItem => {
       const v = s.services.find((x) => x.id === w.serviceId)!;
-      return { workloadId: w.id, serviceId: v.id, customerId: v.customerId, diskGb: w.diskGb, backupAt: w.backupAt, restored: false };
+      return { workloadId: w.id, serviceId: v.id, customerId: v.customerId, diskGb: w.diskGb, backupAt: (vmOf(s, w) ?? w).backupAt, restored: false };
     });
     // A customer without a backup takes the hit per lost disk and asks for a refund once, in Support.
     const asked = new Set<string>();
@@ -143,21 +145,24 @@ function runBackups(s: GameState, events: SimEvent[]) {
   }
 }
 
-// Overloaded nodes slow every customer on them: happiness drops with the performance lost and some write in.
+// Overloaded nodes slow every customer on them, web spaces in a panel VM included, and a PHP upgrade slows its panel
+// host's sites: happiness drops with the performance lost and some write in.
 function overload(s: GameState) {
-  for (const c of s.clusters) {
-    for (const n of c.nodes) {
-      const { perf } = nodeUsage(s, n.deviceId);
-      if (perf >= 1 || s.frozen.includes(n.deviceId)) continue;
-      for (const w of s.workloads.filter((x) => x.deviceId === n.deviceId && x.clusterId === c.id && !x.stopped)) {
-        const v = s.services.find((x) => x.id === w.serviceId);
-        const cus = v && customerCopy(s, v.customerId);
-        if (!v || !cus) continue;
-        bump(cus, -(1 - perf));
-        if (s.tickets.some((t) => t.serviceId === v.id && !isFinal(t)) || !chance(s.rng, SLOW_TICKET_CHANCE * (1 - perf))) continue;
-        createTicket(s, cus, "outage", v.id).topic = "slow";
-      }
-    }
+  const perfs = new Map<string, number>();
+  const perfOf = (id: string) => perfs.get(id) ?? perfs.set(id, nodeUsage(s, id).perf).get(id)!;
+  for (const w of s.workloads) {
+    if (!w.clusterId || w.stopped || isOwnVm(w)) continue;
+    const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
+    if (!at || s.frozen.includes(at) || vm?.stopped) continue;
+    const c = s.clusters.find((x) => x.id === w.clusterId);
+    const perf = Math.min(perfOf(at), c?.kind === "panel" && s.hour <= c.phpUntil ? PHP_SLOW : 1);
+    if (perf >= 1) continue;
+    const v = s.services.find((x) => x.id === w.serviceId);
+    const cus = v && customerCopy(s, v.customerId);
+    if (!v || !cus) continue;
+    bump(cus, -(1 - perf));
+    if (s.tickets.some((t) => t.serviceId === v.id && !isFinal(t)) || !chance(s.rng, SLOW_TICKET_CHANCE * (1 - perf))) continue;
+    createTicket(s, cus, "outage", v.id).topic = "slow";
   }
 }
 

@@ -19,16 +19,23 @@ export function research(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
+// Why an item cannot be installed yet, or null: its skill is missing, or the Virtual machines app has no hypervisor to manage.
+export function storeBlocker(s: GameState, id: string): string | null {
+  if (!isAvailable(id, s.unlocks)) return "error.needsResearch";
+  return id === "Virtual machines" && !s.clusters.some((c) => c.kind === "cloud" && (c.platform || c.switching)) ? "error.needsHypervisor" : null;
+}
+
 // Installing pays the first month right away; the tick bills every later month start.
 export function install(s: GameState, id: string): ActionResult {
   const item = storeItem(id);
   if (!item) return fail("error.unknownStoreItem");
-  if (!isAvailable(id, s.unlocks)) return fail("error.needsResearch");
+  const blocked = storeBlocker(s, id);
+  if (blocked) return fail(blocked);
   if (s.installed.includes(id)) return fail("error.installed");
   const price = subscriptionPrice(item, yearOf(s.hour));
   if (s.cash < price) return fail("error.noCash");
   s.cash = Math.round((s.cash - price) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "subscriptions", key: "ledger.subscription", params: { name: item.name }, amount: -price }];
+  if (price > 0) s.ledger = [...s.ledger, { hour: s.hour, category: "subscriptions", key: "ledger.subscription", params: { name: item.name }, amount: -price }];
   s.installed = [...s.installed, id];
   return { ok: true };
 }

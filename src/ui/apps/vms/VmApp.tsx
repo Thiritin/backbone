@@ -107,7 +107,7 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
   const st = vmState(game, w), [label, tone] = VM_STATE[st];
   const from = game.hour - (game.hour % 24);
   const load = Array.from({ length: 24 }, (_, i) => workloadLoad(game, { ...w, stopped: false, busyUntil: 0 }, from + i));
-  const targets = migrationTargets(game, w.id).map((t) => ({ c: game.clusters.find((x) => x.id === t.clusterId)!, d: game.devices.find((d) => d.id === t.deviceId)! }));
+  const targets = migrationTargets(game, w.id).map((t) => ({ c: game.clusters.find((x) => x.id === t.clusterId)!, d: game.devices.find((d) => d.id === t.to)! }));
   const live = !!cluster.platform && softwareById(cluster.platform).live;
   return (
     <aside className="fin-detail vm-detail">

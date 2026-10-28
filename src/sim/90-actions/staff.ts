@@ -6,7 +6,7 @@ import {
 } from "../47-staff/staff";
 import { OP_TASK, queueOp, techsAt, type OpKind, type TechRules } from "../47-staff/technicians";
 import type { GameState } from "../50-state";
-import { clusterOf } from "../60-infra/cluster";
+import { anchorOf, clusterOf } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
 import { phpDue } from "./clusters";
 import type { ActionResult } from "./hardware";
@@ -133,22 +133,20 @@ export function queueOperation(s: GameState, kind: OpKind, deviceId: string, com
   if (!loc) return fail("error.notMounted");
   if (!techsAt(s, loc.id, OP_TASK[kind]).length) return fail("error.noTechnician");
   if (kind === "replace" && !d.components.some((c) => c.id === componentId)) return fail("error.unknownComponent");
-  if ((kind === "drain" || kind === "php") && !clusterOf(s, deviceId)) return fail("error.notNode");
+  if (kind === "drain" && !clusterOf(s, deviceId)) return fail("error.notNode");
+  if (kind === "php" && !s.clusters.some((c) => c.kind === "panel" && anchorOf(s, c) === deviceId)) return fail("error.notPanelHost");
   if (s.techOps.some((o) => o.kind === kind && o.deviceId === deviceId && o.componentId === (kind === "replace" ? componentId : null))) return fail("error.alreadyQueued");
   return { ok: true, id: queueOp(s, kind, deviceId, kind === "replace" ? componentId : null).id };
 }
 
-// One PHP upgrade per node still on an older version or missing a released patch.
-export function queuePhpUpgrade(s: GameState, clusterId: string): ActionResult {
-  const c = s.clusters.find((x) => x.id === clusterId);
+// A PHP upgrade of a panel host still on an older version or missing a released patch, done at the server it runs on.
+export function queuePhpUpgrade(s: GameState, hostId: string): ActionResult {
+  const c = s.clusters.find((x) => x.id === hostId);
   if (!c) return fail("error.unknownCluster");
-  const nodes = c.nodes.filter((n) => phpDue(s, n) && !s.techOps.some((o) => o.kind === "php" && o.deviceId === n.deviceId));
-  if (!nodes.length) return fail("error.phpCurrent");
-  for (const n of nodes) {
-    const r = queueOperation(s, "php", n.deviceId);
-    if (!r.ok) return r;
-  }
-  return { ok: true };
+  const at = anchorOf(s, c);
+  if (!phpDue(s, c) || !at) return fail("error.phpCurrent");
+  if (s.techOps.some((o) => o.kind === "php" && o.deviceId === at)) return fail("error.alreadyQueued");
+  return queueOperation(s, "php", at);
 }
 
 export function cancelOperation(s: GameState, id: string): ActionResult {

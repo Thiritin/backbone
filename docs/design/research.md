@@ -60,9 +60,9 @@ You sell fewer plans per server, and none of them freeze it.
 
 Your team now knows how real networks are run: buying transit from carriers, peering with other networks and keeping traffic flowing when someone decides to flood it.
 
-### The Network app
+### Transit and peering
 
-**Network** is now in the Pear Store. It holds your transit and peering contracts, the DDoS protection for each location and a topology view of how everything connects.
+The **Network** app already shows your lines and ports. With this training it can also buy transit from carriers, set up peering with other networks and switch on DDoS protection for each location.
 
 A network with two upstreams survives one carrier having a bad day. A network with one upstream finds out how much its customers like you.
 
@@ -76,19 +76,19 @@ Your company now knows how to sell plans instead of improvising a price for ever
 
 **Products** is now in the Pear Store. It shows which products you sell in which zone, and every cluster with its servers, how full they are and how busy they get at peak times.
 
-Each cluster runs a control panel for web hosting and a platform for everything else. The free ones cost nothing and bring more tickets, the paid ones send a license bill every month, and switching later takes your customers offline for a while. Products is also where you set up nightly backups to another cluster.
+Web hosting runs on panel hosts and virtual machines run on hypervisor clusters. The free panels and hypervisors cost nothing and bring more tickets, the paid ones send a license bill every month, and switching later needs the host empty. Products is also where you set up nightly backups to another cluster.
 
-## Virtualization
+## High availability
 
 ### Machines that move
 
-Your team now knows how to treat a server as a place where virtual machines happen to live. They can be stopped, started and moved to another server, and on a good platform the customer never notices the move.
+Your team now knows how to treat a hypervisor cluster as one big machine. Each cluster gets three switches: live migration moves running virtual machines between servers without the customer noticing, auto-balancing moves them off a server that runs hot, and automatic failover restarts them on the other servers within about five minutes when one fails.
 
-### The Virtual machines app
+### Room to fail into
 
-**Virtual machines** is now in the Pear Store. It lists every workload on your clusters with its host, its load over the day and its last backup, and it takes the look of the platform the cluster runs.
+Failover only helps when the other servers have room. A cluster packed to the brim restarts what fits and leaves the rest down until the broken server is back, and you hear about every machine it could not place.
 
-When a server loses its disks, the app's incident report shows who was on it and how old their last backup is. Restoring brings them back; customers without a backup will want their money back instead.
+Auto-balancing needs live migration, and live migration needs a hypervisor that can do it. HyperVee cannot.
 
 ## Marketing campaigns
 

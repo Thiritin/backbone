@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { softwareById } from "../src/sim/10-catalog/platforms";
-import { isAvailable, skillFor } from "../src/sim/10-catalog/research";
+import { skillFor } from "../src/sim/10-catalog/research";
+import { install } from "../src/sim/90-actions/store";
 import { storeItem } from "../src/sim/10-catalog/store";
 import { curveLoad } from "../src/sim/10-catalog/usage";
 import { serviceOnline } from "../src/sim/40-support/status";
@@ -9,8 +10,8 @@ import { bookable, controlPlaneUp, lostDisk, workloadsOf } from "../src/sim/60-i
 import { nodeUsage } from "../src/sim/60-infra/usage";
 import { howToFactor, licenseCost } from "../src/sim/85-products/products";
 import { tick } from "../src/sim/88-tick/tick";
-import { addNode, createCluster, moveControlPlane, provisionService, setBackup, setSoftware } from "../src/sim/90-actions/clusters";
-import { installed } from "./fixtures";
+import { addNode, createCluster, moveControlPlane, provisionService, setBackup, setHa, setSoftware } from "../src/sim/90-actions/clusters";
+import { installed, panelVm } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { monthlyValue } from "../src/sim/40-support/tickets";
@@ -42,7 +43,7 @@ function server(s: GameState, slot: number, port: number) {
 function setup(platform = "proxmocks") {
   const s = { ...newGame(1), cash: 100_000 };
   const second = server(s, 2, 1), third = server(s, 3, 2);
-  const cluster = installed(s, ok(createCluster(s, "loc1", "Cloud 1")), "freepanel", platform);
+  const cluster = installed(s, ok(createCluster(s, "loc1", "Cloud 1")), platform);
   ok(addNode(s, cluster, "dev3"));
   ok(addNode(s, cluster, second));
   const backup = installed(s, ok(createCluster(s, "loc1", "Backup 1")));
@@ -71,22 +72,25 @@ describe("platforms and licenses", () => {
   });
   it("switches software only once nothing it serves runs on the cluster, busy for the new software's install hours", () => {
     const { s, cluster, cus } = setup();
-    const web = ok(provisionService(s, cus, "webHosting", { label: "Blog", clusterId: cluster }));
+    const host = panelVm(s, cluster), spare = panelVm(s, cluster);
+    const web = ok(provisionService(s, cus, "webHosting", { label: "Blog", clusterId: host }));
     const cash = s.cash;
-    expect(err(setSoftware(s, cluster, "cpanic"))).toBe("error.softwareInUse");
-    ok(setSoftware(s, cluster, "hypervee"));
+    expect(err(setSoftware(s, host, "cpanic"))).toBe("error.softwareInUse");
+    expect(err(setSoftware(s, cluster, "hypervee"))).toBe("error.softwareInUse");
+    expect(err(setSoftware(s, spare, "hypervee"))).toBe("error.wrongKind");
+    ok(setSoftware(s, spare, "cpanic"));
     expect(s.cash).toBe(cash);
     expect(serviceOnline(s, web)).toBe(true);
-    expect(controlPlaneUp(s, clusterById(s, cluster))).toBe(false);
-    expect(err(setSoftware(s, cluster, "vmwhere"))).toBe("error.switching");
-    const events = Array.from({ length: softwareById("hypervee").installHours }, () => tick(s)).flat();
-    expect(events).toContainEqual({ app: "Products", key: "event.switched", params: { cluster: "Cloud 1", name: "HyperVee" } });
-    expect(clusterById(s, cluster).platform).toBe("hypervee");
-    expect(err(setSoftware(s, cluster, "hypervee"))).toBe("error.sameSoftware");
+    expect(controlPlaneUp(s, clusterById(s, spare))).toBe(false);
+    expect(err(setSoftware(s, spare, "pleskit"))).toBe("error.switching");
+    const events = Array.from({ length: softwareById("cpanic").installHours }, () => tick(s)).flat();
+    expect(events).toContainEqual({ app: "Products", key: "event.switched", params: { cluster: "Web 2", name: "cPanic" } });
+    expect(clusterById(s, spare).panel).toBe("cpanic");
+    expect(err(setSoftware(s, spare, "cpanic"))).toBe("error.sameSoftware");
   });
   it("scales the how-to ticket rate with the panel serving the customer", () => {
     const { s, cluster, cus } = setup();
-    ok(provisionService(s, cus, "webHosting", { label: "Blog", clusterId: cluster }));
+    ok(provisionService(s, cus, "webHosting", { label: "Blog", clusterId: panelVm(s, cluster) }));
     expect(howToFactor(s, cus)).toBe(1.5);
     expect(howToFactor(s, "nobody")).toBe(1);
   });
@@ -97,7 +101,7 @@ describe("control planes", () => {
     const { s, cluster, second, cus } = setup();
     const c = clusterById(s, cluster);
     expect(c.controlPlane).toBe("dev3");
-    expect(bookable(s, s.devices.find((d) => d.id === "dev3")!).ramGb).toBeCloseTo(12 - 0.35);
+    expect(bookable(s, s.devices.find((d) => d.id === "dev3")!).ramGb).toBeCloseTo(12 - 0.25);
     ok(setPower(s, "dev3", false));
     expect(err(provisionService(s, cus, "vps", { label: "Box", clusterId: cluster }))).toBe("error.controlPlaneDown");
     ok(moveControlPlane(s, cluster, second));
@@ -107,11 +111,12 @@ describe("control planes", () => {
     const { s, cluster, cus } = setup();
     ok(provisionService(s, cus, "vps", { label: "Box", clusterId: cluster }));
     const old = JSON.parse(serialize(s));
-    for (const c of old.clusters) for (const k of ["panel", "platform", "controlPlane", "switching", "backup"]) delete c[k];
+    for (const c of old.clusters) for (const k of ["kind", "vm", "php", "phpUntil", "ha", "panel", "platform", "controlPlane", "switching", "backup"]) delete c[k];
     for (const w of old.workloads) for (const k of ["stopped", "busyUntil", "backupAt"]) delete w[k];
     delete old.lossReports;
     const loaded = deserialize(JSON.stringify(old));
-    expect(loaded.clusters[0]).toMatchObject({ panel: "freepanel", platform: "proxmocks", controlPlane: "dev3", switching: null, backup: { targetId: null, every: "off" } });
+    expect(loaded.clusters[0]).toMatchObject({ kind: "cloud", panel: null, platform: "proxmocks", controlPlane: "dev3", switching: null, backup: { targetId: null, every: "off" } });
+    expect(loaded.clusters.find((c) => c.name === "Cloud 1 web")).toMatchObject({ kind: "panel", panel: "freepanel" });
     expect(loaded.workloads[0]).toMatchObject({ stopped: false, busyUntil: 0, backupAt: null });
     expect(loaded.lossReports).toEqual([]);
   });
@@ -196,11 +201,15 @@ describe("backups and lost disks", () => {
 });
 
 describe("Virtual machines app", () => {
-  it("is a Pear Store app opened by the Virtualization skill after Product management and Monitoring", () => {
-    expect(storeItem("Virtual machines")).toMatchObject({ kind: "app", monthly: 20 });
-    expect(skillFor("Virtual machines")).toMatchObject({ id: "virtualization", tier: 3, needs: ["products", "monitoring"] });
-    expect(isAvailable("Virtual machines", ["products", "monitoring"])).toBe(false);
-    expect(isAvailable("Virtual machines", ["virtualization"])).toBe(true);
+  it("is a free Pear Store app once a hypervisor is installed", () => {
+    expect(storeItem("Virtual machines")).toMatchObject({ kind: "app", monthly: 0 });
+    expect(skillFor("Virtual machines")).toBeUndefined();
+    const s = newGame(1);
+    expect(err(install(s, "Virtual machines"))).toBe("error.needsHypervisor");
+    const { s: ready } = setup();
+    const cash = ready.cash;
+    ok(install(ready, "Virtual machines"));
+    expect(ready.cash).toBe(cash);
   });
 });
 
@@ -218,6 +227,8 @@ describe("virtual machine actions", () => {
   it("migrates live on a platform that supports it and cold with downtime on one that does not", () => {
     for (const [platform, down] of [["proxmocks", 0], ["hypervee", 1]] as const) {
       const { s, cluster, second, cus } = setup(platform);
+      s.unlocks = [...s.unlocks, "virtualization"];
+      setHa(s, cluster, "live", true);
       const vps = ok(provisionService(s, cus, "vps", { label: "Box", clusterId: cluster }));
       const w = workloadsOf(s, vps)[0];
       expect(err(migrateWorkload(s, w.id, w.deviceId!))).toBe("error.sameHost");

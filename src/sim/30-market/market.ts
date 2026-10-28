@@ -8,7 +8,7 @@ import { marketPrice, planOf, PRODUCTS, type Sla } from "../10-catalog/products"
 import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
-import { serverTaken, supports } from "../60-infra/cluster";
+import { hasHosts, serverTaken, supports } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
 import { awareness, leadsThisMonth, PROFILE_IDS, reviewMultiplier, reviewScore, trustBonus } from "../80-business/marketing";
 import { forumAwareness } from "../47-staff/staff";
@@ -77,7 +77,7 @@ const zonesIn = (s: GameState, city: string): string[] => s.locations.filter((l)
 // dedicated servers a free mounted server.
 export function offers(s: GameState, product: Product, city: string): boolean {
   const zones = zonesIn(s, city), runsOn = PRODUCTS[product].runsOn;
-  if (runsOn === "cluster") return !PRODUCTS[product].ha && s.clusters.some((c) => zones.includes(c.az) && c.nodes.length > 0 && supports(c, product));
+  if (runsOn === "cluster") return s.clusters.some((c) => zones.includes(c.az) && hasHosts(c) && supports(c, product));
   if (runsOn === "server") return s.devices.some((d) => d.rackId && modelById(d.model).server && zones.includes(locationOf(s, d)?.az ?? "") && !serverTaken(s, d.id));
   return runsOn === "none" || s.locations.some((l) => l.city === city && l.dc);
 }

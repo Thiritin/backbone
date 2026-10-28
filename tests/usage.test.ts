@@ -43,7 +43,7 @@ const shape = (s: GameState, id: string) => { const v = s.services.find((x) => x
 function customerWith(s: GameState, profile: Profile, product: Product, want: (id: string) => boolean = () => true) {
   let cus = addCustomer(s, `C${s.nextId}`, profile);
   while (!want(cus)) cus = addCustomer(s, `C${s.nextId}`, profile);
-  const v = ok(provisionService(s, cus, product, { label: `${product} ${s.nextId}`, clusterId: s.clusters[0].id }));
+  const v = ok(provisionService(s, cus, product, { label: `${product} ${s.nextId}`, plan: null }));
   return { cus, v };
 }
 const at = (day: number, h: number) => day * 24 + h;
@@ -65,7 +65,7 @@ describe("traffic follows activity", () => {
   });
 
   it("keeps game servers busier at night than websites", () => {
-    const s = readyGame(4);
+    const s = readyGame(1);
     const game = customerWith(s, "gamer", "gameServer"), web = customerWith(s, "private", "webHosting");
     const base = (x: { v: string; cus: string }) => {
       const v = s.services.find((y) => y.id === x.v)!, c = s.customers.find((y) => y.id === x.cus)!;

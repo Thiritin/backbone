@@ -4,7 +4,7 @@ import { formatClock, hourOf } from "../00-core/time";
 import { bump, createTicket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { clusterOf, servedBy, type ClusterNode, type Workload } from "./cluster";
+import { sitesDown, type Cluster, type Workload } from "./cluster";
 import { maybeReview } from "./incidents";
 
 export interface Vuln { id: string; at: number; versions: string[] }
@@ -21,41 +21,40 @@ export const vulnById = (id: string | null): Vuln | undefined => VULNS.find((v) 
 export const STAGES = ["announced", "poc", "warning", "patch"] as const;
 export const STAGE_HOURS = [0, 24, 48, 60];
 export const ADVISORY_KEYS = STAGES.map((x) => `event.vuln.${x}`);
-// Hourly chance an exposed node is compromised once the proof of concept is out, and once the agency warned (mass scanning).
+// Hourly chance an exposed panel host is compromised once the proof of concept is out, and once the agency warned (mass scanning).
 export const POC_RISK = 0.01;
 export const WARNING_RISK = 0.04;
-// Happiness each customer on a compromised node loses to the data leak, and again without a backup to restore.
+// Happiness each customer on a compromised panel host loses to the data leak, and again without a backup to restore.
 export const LEAK = -30;
 export const REBUILT = -15;
 export const RESTORE_HOURS = 4;
 export const REBUILD_HOURS = 12;
 
-// vuln is the advisory under way and stage the last one shown. patched, offline and hacked hold node device ids:
+// vuln is the advisory under way and stage the last one shown. patched, offline and hacked hold panel host ids:
 // patched against vuln, web sites taken offline by the player, and compromised until cleaned up.
 export interface Security { vuln: string | null; stage: number; seen: string[]; patched: string[]; offline: string[]; hacked: string[] }
 export const newSecurity = (): Security => ({ vuln: null, stage: 0, seen: [], patched: [], offline: [], hacked: [] });
 
-export const webOn = (s: GameState, deviceId: string): Workload[] =>
-  s.workloads.filter((w) => w.deviceId === deviceId && w.clusterId && servedBy(s, w) === "panel");
-export const sitesDown = (s: GameState, deviceId: string): boolean => s.security.offline.includes(deviceId) || s.security.hacked.includes(deviceId);
+export { sitesDown };
+export const webOn = (s: GameState, hostId: string): Workload[] => s.workloads.filter((w) => w.clusterId === hostId && w.serviceId);
+const hosts = (s: GameState): Cluster[] => s.clusters.filter((c) => c.kind === "panel" && c.panel);
 export const patchOut = (s: GameState): boolean => !!s.security.vuln && s.security.stage >= STAGES.indexOf("patch");
-export const vulnerable = (s: GameState, n: ClusterNode): boolean =>
-  !!vulnById(s.security.vuln)?.versions.includes(n.php) && !s.security.patched.includes(n.deviceId);
-// Nodes the Security app lists: on an affected version, or patched, offline or compromised.
-export const advisoryNodes = (s: GameState): ClusterNode[] =>
-  s.clusters.flatMap((c) => c.nodes).filter((n) =>
-    vulnerable(s, n) || s.security.patched.includes(n.deviceId) || sitesDown(s, n.deviceId));
-const exposed = (s: GameState, n: ClusterNode): boolean => vulnerable(s, n) && !sitesDown(s, n.deviceId) && webOn(s, n.deviceId).length > 0;
+export const vulnerable = (s: GameState, c: Cluster): boolean =>
+  c.kind === "panel" && !!vulnById(s.security.vuln)?.versions.includes(c.php) && !s.security.patched.includes(c.id);
+// Panel hosts the Security app lists: on an affected version, or patched, offline or compromised.
+export const advisoryNodes = (s: GameState): Cluster[] =>
+  hosts(s).filter((c) => vulnerable(s, c) || s.security.patched.includes(c.id) || sitesDown(s, c.id));
+const exposed = (s: GameState, c: Cluster): boolean => vulnerable(s, c) && !sitesDown(s, c.id) && webOn(s, c.id).length > 0;
 
 const params = (s: GameState, v: Vuln) => ({
   name: v.id, versions: v.versions.join(", "), date: formatClock(v.at + STAGE_HOURS[3]),
-  nodes: s.clusters.flatMap((c) => c.nodes).filter((n) => vulnerable(s, n) && webOn(s, n.deviceId).length).length,
+  nodes: hosts(s).filter((c) => vulnerable(s, c) && webOn(s, c.id).length).length,
 });
 
-// The web sites on the node are defaced and send spam; every customer there gets a data leak notice.
-function compromise(s: GameState, deviceId: string, events: SimEvent[]): void {
-  s.security = { ...s.security, hacked: [...s.security.hacked, deviceId] };
-  const services = new Set(webOn(s, deviceId).map((w) => w.serviceId));
+// The web sites on the panel host are defaced and send spam; every customer there gets a data leak notice.
+function compromise(s: GameState, host: Cluster, events: SimEvent[]): void {
+  s.security = { ...s.security, hacked: [...s.security.hacked, host.id] };
+  const services = new Set(webOn(s, host.id).map((w) => w.serviceId));
   s.customers = s.customers.map((c) => ({ ...c }));
   let hit = 0;
   for (const c of s.customers) {
@@ -66,19 +65,18 @@ function compromise(s: GameState, deviceId: string, events: SimEvent[]): void {
     createTicket(s, c, "abuse", svc.id, "spam");
     maybeReview(s, c, "dataLoss", s.rng, events, 1);
   }
-  const d = s.devices.find((x) => x.id === deviceId);
-  events.push({ app: "Security", key: "event.vuln.hacked", params: { device: d?.label ?? d?.name ?? deviceId, customers: hit } });
+  events.push({ app: "Security", key: "event.vuln.hacked", params: { device: host.name, customers: hit } });
 }
 
-// Hourly: a vulnerability fires on its date for players running affected web nodes, its stages follow on schedule and
-// exposed nodes risk a compromise from the proof of concept on.
+// Hourly: a vulnerability fires on its date for players running affected panel hosts, its stages follow on schedule and
+// exposed hosts risk a compromise from the proof of concept on.
 export function securityTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   for (const v of VULNS) {
     if (v.at > s.hour || s.security.seen.includes(v.id)) continue;
     s.security = { ...s.security, seen: [...s.security.seen, v.id] };
     const live = s.hour < v.at + STAGE_HOURS[3];
-    const hit = live && s.clusters.some((c) => c.nodes.some((n) => v.versions.includes(n.php) && webOn(s, n.deviceId).length));
+    const hit = live && hosts(s).some((c) => v.versions.includes(c.php) && webOn(s, c.id).length);
     if (!hit) continue;
     s.security = { ...s.security, vuln: v.id, stage: 0, patched: [] };
     events.push({ app: "Security", key: ADVISORY_KEYS[0], params: params(s, v) });
@@ -92,12 +90,12 @@ export function securityTick(s: GameState): SimEvent[] {
   }
   if (s.security.stage < 1) return events;
   const risk = s.security.stage >= 2 ? WARNING_RISK : POC_RISK;
-  for (const n of s.clusters.flatMap((c) => c.nodes)) if (exposed(s, n) && chance(s.rng, risk)) compromise(s, n.deviceId, events);
+  for (const c of hosts(s)) if (exposed(s, c) && chance(s.rng, risk)) compromise(s, c, events);
   return events;
 }
 
-// Marks the node patched when it now runs an affected version and the patch is out.
-export function markPatched(s: GameState, deviceId: string): void {
-  const n = clusterOf(s, deviceId)?.nodes.find((x) => x.deviceId === deviceId);
-  if (n && patchOut(s) && vulnerable(s, n)) s.security = { ...s.security, patched: [...s.security.patched, deviceId] };
+// Marks the panel host patched when it now runs an affected version and the patch is out.
+export function markPatched(s: GameState, hostId: string): void {
+  const c = s.clusters.find((x) => x.id === hostId);
+  if (c && patchOut(s) && vulnerable(s, c)) s.security = { ...s.security, patched: [...s.security.patched, hostId] };
 }

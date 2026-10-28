@@ -1,6 +1,6 @@
 import { modelById } from "../10-catalog/hardware";
 import { yearOf } from "../00-core/time";
-import { kindServing, oldestPhp, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { kindServing, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
@@ -10,39 +10,48 @@ import { linkStatus, raidUsable, rackPower, working } from "./status";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
-// php is the node's PHP version; after an upgrade its sites run slower up to and including the hour phpUntil.
-export interface ClusterNode { deviceId: string; state: NodeState; php: string; phpUntil: number }
+export interface ClusterNode { deviceId: string; state: NodeState }
 export type Placement = "pack" | "spread";
 export type BackupEvery = "off" | "daily" | "weekly";
-// A cluster lives in one availability zone; its nodes are servers mounted in that zone. panel and platform are the installed
-// SOFTWARE ids, null until installed; controlPlane is the node that hosts their management services. While switching (an
-// install or a change), the control plane is busy until doneAt. Backups copy every workload to the target cluster.
-// ramGuard (Memory reservation) keeps booked RAM within each node's installed RAM.
+// High availability, per hypervisor cluster once researched: live migration, auto-balancing and automatic failover.
+export interface Ha { live: boolean; balance: boolean; failover: boolean }
+export const HA_OFF: Ha = { live: false, balance: false, failover: false };
+// Every server runs at most one control plane. A cluster is either a hypervisor cluster (kind "cloud": one or more servers
+// with the same hypervisor, hosting virtual machines) or a panel host (kind "panel": web hosting on one bare-metal server in
+// nodes, or inside the player's own virtual machine vm on a hypervisor cluster, with nodes empty). panel and platform hold
+// the installed software of the kind, null until installed; controlPlane is the node that runs it, null for a panel VM.
+// While switching (an install or a change), the control plane is busy until doneAt. Backups copy every workload to the
+// target cluster. ramGuard (Memory reservation) keeps booked RAM within each node's installed RAM. php and phpUntil are a
+// panel host's PHP version; after an upgrade its sites run slower up to and including the hour phpUntil.
 export interface Cluster {
-  id: string; name: string; az: string; placement: Placement; nodes: ClusterNode[];
-  panel: string | null; platform: string | null; controlPlane: string | null;
+  id: string; name: string; az: string; kind: SoftwareKind; placement: Placement; nodes: ClusterNode[];
+  panel: string | null; platform: string | null; vm: string | null; controlPlane: string | null;
   switching: { kind: SoftwareKind; to: string; doneAt: number } | null;
   backup: { targetId: string | null; every: BackupEvery };
   ramGuard?: boolean;
+  php: string; phpUntil: number; ha: Ha;
 }
-// One workload runs one service: on a cluster node (clusterId and deviceId), on a whole server (deviceId only), or in rack
-// units for colocation (rackId, slot, units, watts). Resources are booked at placement; placedAt is the hour it last moved.
-// A stopped workload keeps its booking; busyUntil is the hour a restore or cold migration finishes; backupAt the last backup.
+// One workload runs one service: on a hypervisor node or bare-metal panel server (clusterId and deviceId), inside a panel
+// VM (clusterId of the panel host, no deviceId), on a whole server (deviceId only), or in rack units for colocation (rackId,
+// slot, units, watts). The player's own panel VMs have no service. Resources are booked at placement; placedAt is the hour
+// it last moved. A stopped workload keeps its booking; busyUntil is the hour a restore or cold migration finishes; backupAt
+// the last backup; stuck marks a VM that failover found no room for.
 export interface Workload extends Resources {
   id: string; serviceId: string; clusterId: string | null; deviceId: string | null; rackId: string | null; slot: number; units: number; watts: number; placedAt: number;
-  stopped: boolean; busyUntil: number; backupAt: number | null;
+  stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
 }
 
-// Defaults for saves from before platforms, backups and PHP versions; they ran FreePanel and Proxmocks and their nodes the save year's PHP.
+// Old saves are converted by upgradeCompute; this fills the fields every cluster has.
 export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, hour = 0): Cluster => ({
-  panel: "freepanel", platform: "proxmocks", switching: null, backup: { targetId: null, every: "off" }, ...c,
-  nodes: c.nodes.map((n) => ({ ...n, php: n.php ?? phpAt(yearOf(hour)), phpUntil: n.phpUntil ?? -1 })),
+  panel: null, platform: null, vm: null, switching: null, backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1, ...c,
+  ha: { ...HA_OFF, ...c.ha },
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
 export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
 
 const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
-const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
+export const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
+const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcpu, ramGb: a.ramGb - b.ramGb, diskGb: a.diskGb - b.diskGb });
 
 // What a node can book: physical cores, RAM and usable RAID disk times the overcommit ratios.
 export function nodeCapacity(d: Device): Resources {
@@ -50,20 +59,21 @@ export function nodeCapacity(d: Device): Resources {
   return v ? { vcpu: v.cores * OVERCOMMIT.cpu, ramGb: v.ramGb * OVERCOMMIT.ram, diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
 }
 
+// What the workloads on a server book; web spaces inside a panel VM count in the VM's booking.
 export function nodeUsed(s: GameState, deviceId: string): Resources {
   const used = { ...ZERO };
   for (const w of s.workloads) if (w.deviceId === deviceId && w.clusterId) for (const k of KEYS) used[k] += w[k];
   return used;
 }
 
-// What the management services of a cluster's panel and platform take on their node.
+// What the management services of a cluster's software take.
 export function controlPlaneUse(c: Pick<Cluster, "panel" | "platform">): Resources {
-  const a = c.panel ? softwareById(c.panel).controlPlane : ZERO, b = c.platform ? softwareById(c.platform).controlPlane : ZERO;
-  return { vcpu: a.vcpu + b.vcpu, ramGb: a.ramGb + b.ramGb, diskGb: a.diskGb + b.diskGb };
+  const id = c.panel ?? c.platform;
+  return id ? softwareById(id).controlPlane : ZERO;
 }
 const density = (c: Cluster) => (c.platform ? softwareById(c.platform).density : 1);
 
-// What a node can book for workloads: its capacity times the platform's density, less the control plane it hosts. With
+// What a node can book for workloads: its capacity times the hypervisor's density, less the control plane it runs. With
 // Memory reservation on, RAM stops at the installed RAM.
 export function bookable(s: GameState, d: Device): Resources {
   const cap = nodeCapacity(d), c = clusterOf(s, d.id);
@@ -71,6 +81,26 @@ export function bookable(s: GameState, d: Device): Resources {
   const k = density(c), cp = c.controlPlane === d.id ? controlPlaneUse(c) : ZERO;
   const ram = c.ramGuard ? Math.min(cap.ramGb * k, modelById(d.model).server?.ramGb ?? 0) : cap.ramGb * k;
   return { vcpu: cap.vcpu * k - cp.vcpu, ramGb: ram - cp.ramGb, diskGb: cap.diskGb * k - cp.diskGb };
+}
+
+// The player's own VM a panel host runs in, or the VM a web space inside it runs in.
+export const vmById = (s: GameState, id: string | null): Workload | undefined => (id ? s.workloads.find((w) => w.id === id) : undefined);
+export function vmOf(s: GameState, w: Workload): Workload | undefined {
+  if (!w.clusterId || w.deviceId) return undefined;
+  return vmById(s, s.clusters.find((c) => c.id === w.clusterId)?.vm ?? null);
+}
+// The server a workload runs on, through its panel VM for a web space in one.
+export const serverOf = (s: GameState, w: Workload): string | null => w.deviceId ?? vmOf(s, w)?.deviceId ?? null;
+export const hostOfVm =(s: GameState, vmId: string): Cluster | undefined => s.clusters.find((c) => c.vm === vmId);
+export const isOwnVm = (w: Workload): boolean => !w.serviceId;
+// The server a panel host runs on: its bare-metal node or its VM's node.
+export const anchorOf = (s: GameState, c: Cluster): string | null => c.nodes[0]?.deviceId ?? vmById(s, c.vm)?.deviceId ?? null;
+
+// A panel VM's room: its booking less the panel, and what its web spaces book.
+export function vmRoom(s: GameState, c: Cluster): { cap: Resources; used: Resources } {
+  const vm = vmById(s, c.vm), used = { ...ZERO };
+  for (const w of s.workloads) if (w.clusterId === c.id) for (const k of KEYS) used[k] += w[k];
+  return { cap: vm ? minus(vm, controlPlaneUse(c)) : ZERO, used };
 }
 
 // Whether a working node of the cluster has room for its control plane next to its workloads.
@@ -81,42 +111,49 @@ export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): bo
   return fits(used, { vcpu: cap.vcpu * k, ramGb: cap.ramGb * k, diskGb: cap.diskGb * k }, cp);
 }
 
-// Whether the cluster runs software that sells the product line.
+// Whether the cluster sells the product line: web hosting on a panel host, virtual machines on a hypervisor cluster, and
+// products that need high availability only with automatic failover on.
 export function supports(c: Cluster, p: Product): boolean {
   const kind = kindServing(p);
-  return kind === "panel" ? !!c.panel : kind === "cloud" ? !!c.platform : false;
+  if (!kind || c.kind !== kind || !(kind === "panel" ? c.panel : c.platform)) return false;
+  return !PRODUCTS[p].ha || c.ha.failover;
 }
+export const hasHosts = (c: Cluster): boolean => c.nodes.length > 0 || !!c.vm;
 // Whether some installed control plane anywhere sells the product line; lines off clusters don't need one.
 export const lineOffered = (s: GameState, p: Product): boolean =>
-  PRODUCTS[p].runsOn !== "cluster" || (!PRODUCTS[p].ha && s.clusters.some((c) => supports(c, p) && c.nodes.length > 0));
-// Why a product found no place: no software that sells it, or no room.
+  PRODUCTS[p].runsOn !== "cluster" || s.clusters.some((c) => supports(c, p) && hasHosts(c));
+// Why a product found no place: no software that sells it, no failover for a product that needs it, or no room.
 export function noRoomError(s: GameState, p: Product, clusterId: string | null = null): string {
   if (PRODUCTS[p].runsOn === "server") return "error.noFreeServer";
-  if (!s.clusters.some((c) => (clusterId ? c.id === clusterId : true) && supports(c, p))) return kindServing(p) === "panel" ? "error.needsPanel" : "error.needsPlatform";
+  const kind = kindServing(p), mine = s.clusters.filter((c) => (clusterId ? c.id === clusterId : true) && c.kind === kind && (c.panel || c.platform));
+  if (!mine.length) return kind === "panel" ? "error.needsPanel" : "error.needsPlatform";
+  if (!mine.some((c) => supports(c, p))) return "error.needsHaCluster";
   return "error.noCapacity";
 }
 
 // Nothing can be started, moved, restored or sold on a cluster while its control plane is down or nothing is installed.
+// A panel VM's control plane is up while the VM runs.
 export function controlPlaneUp(s: GameState, c: Cluster): boolean {
-  return !c.switching && (!!c.panel || !!c.platform) && !!c.controlPlane && c.nodes.some((n) => n.deviceId === c.controlPlane) && working(s, c.controlPlane);
+  if (c.switching || !(c.panel || c.platform)) return false;
+  if (c.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm); }
+  return !!c.controlPlane && c.nodes.some((n) => n.deviceId === c.controlPlane) && working(s, c.controlPlane);
 }
 
-// A cluster's sites run on its oldest node's PHP; an empty cluster would install the current one.
-export const clusterPhp = (c: Cluster, hour: number): string => oldestPhp(c.nodes.map((n) => n.php)) ?? phpAt(yearOf(hour));
+// The kind of software that serves a workload: the panel of a panel host, otherwise the hypervisor.
+export const servedBy = (s: GameState, w: Workload): SoftwareKind => s.clusters.find((c) => c.id === w.clusterId)?.kind ?? "cloud";
 
-// The panel serves web spaces, the platform everything else on the cluster.
-export const servedBy = (s: GameState, w: Workload): SoftwareKind =>
-  s.services.find((v) => v.id === w.serviceId)?.product === "webHosting" ? "panel" : "cloud";
-
-// A workload lost its disk when its server's data was lost after the workload was placed there.
+// A workload lost its disk when its server's data was lost after the workload was placed there; a web space in a panel VM
+// loses it with the VM.
 export function lostDisk(s: GameState, w: Workload): boolean {
+  const vm = vmOf(s, w);
+  if (vm) return lostDisk(s, vm);
   const d = w.deviceId ? s.devices.find((x) => x.id === w.deviceId) : undefined;
   return !!d && d.dataLost !== null && d.dataLost >= w.placedAt;
 }
 
 // The busiest resource's share of capacity.
-const load = (used: Resources, cap: Resources) => Math.max(...KEYS.map((k) => (cap[k] ? used[k] / cap[k] : 1)));
-const fits = (used: Resources, cap: Resources, r: Resources) => KEYS.every((k) => used[k] + r[k] <= cap[k] + 1e-9);
+export const load = (used: Resources, cap: Resources) => Math.max(...KEYS.map((k) => (cap[k] ? used[k] / cap[k] : 1)));
+export const fits = (used: Resources, cap: Resources, r: Resources) => KEYS.every((k) => used[k] + r[k] <= cap[k] + 1e-9);
 
 export const clusterOf = (s: GameState, deviceId: string): Cluster | undefined => s.clusters.find((c) => c.nodes.some((n) => n.deviceId === deviceId));
 export const workloadsOf = (s: GameState, serviceId: string): Workload[] => s.workloads.filter((w) => w.serviceId === serviceId);
@@ -125,7 +162,12 @@ export const workloadsOn = (s: GameState, deviceId: string): Workload[] => s.wor
 export const serverTaken = (s: GameState, deviceId: string): boolean => !!clusterOf(s, deviceId) || s.workloads.some((w) => w.deviceId === deviceId);
 
 // The scheduler: active, working nodes with room; pack picks the busiest of them, spread the idlest. Ties keep node order.
-export function pickNode(s: GameState, cluster: Cluster, r: Resources, skip: string | null = null): string | null {
+// A panel VM is its one node: it returns the VM's id while the VM runs and has room.
+export function pickNode(s: GameState, cluster: Cluster, r: Resources, skip: string | null = null, placement: Placement = cluster.placement): string | null {
+  if (cluster.vm) {
+    const vm = vmById(s, cluster.vm), room = vmRoom(s, cluster);
+    return vm && !vm.stopped && vm.deviceId && working(s, vm.deviceId) && fits(room.used, room.cap, r) ? vm.id : null;
+  }
   let best: { id: string; load: number } | null = null;
   for (const n of cluster.nodes) {
     const d = s.devices.find((x) => x.id === n.deviceId);
@@ -133,7 +175,7 @@ export function pickNode(s: GameState, cluster: Cluster, r: Resources, skip: str
     const cap = bookable(s, d), used = nodeUsed(s, d.id);
     if (!fits(used, cap, r)) continue;
     const l = load(used, cap);
-    if (!best || (cluster.placement === "pack" ? l > best.load : l < best.load)) best = { id: d.id, load: l };
+    if (!best || (placement === "pack" ? l > best.load : l < best.load)) best = { id: d.id, load: l };
   }
   return best?.id ?? null;
 }
@@ -148,25 +190,36 @@ export function moveOff(s: GameState, cluster: Cluster, deviceId: string): numbe
     else s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, deviceId: to, placedAt: s.hour } : x));
   }
   if (!left) setNodeState(s, deviceId, "maintenance");
-  const to = !left && cluster.controlPlane === deviceId && cluster.nodes.find((n) => n.deviceId !== deviceId && n.state === "active" && fitsControlPlane(s, cluster, n.deviceId));
-  if (to) s.clusters = s.clusters.map((c) => (c.id === cluster.id ? { ...c, controlPlane: to.deviceId } : c));
+  if (!left) moveControlPlaneOff(s, cluster.id, deviceId);
   return left;
+}
+
+// Hands the control plane to another active node with room when its node is going away.
+export function moveControlPlaneOff(s: GameState, clusterId: string, deviceId: string): boolean {
+  const c = s.clusters.find((x) => x.id === clusterId);
+  if (!c || c.controlPlane !== deviceId) return false;
+  const to = c.nodes.find((n) => n.deviceId !== deviceId && n.state === "active" && fitsControlPlane(s, c, n.deviceId));
+  if (to) s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, controlPlane: to.deviceId } : x));
+  return !!to;
 }
 
 export function setNodeState(s: GameState, deviceId: string, state: NodeState) {
   s.clusters = s.clusters.map((c) => (c.nodes.some((n) => n.deviceId === deviceId) ? { ...c, nodes: c.nodes.map((n) => (n.deviceId === deviceId ? { ...n, state } : n)) } : c));
 }
 
+// The web sites of a panel host the player took offline or that were compromised.
+export const sitesDown = (s: GameState, hostId: string): boolean => s.security.offline.includes(hostId) || s.security.hacked.includes(hostId);
+
 // A workload on a server is up while the server reaches the internet and still holds the data written since it was placed.
-// Colocation is up while its rack has power.
+// A web space in a panel VM is up while the VM is. Colocation is up while its rack has power.
 // ponytail: colocation ignores the customer's uplinks until colocation cabling lands.
 export function workloadOnline(s: GameState, w: Workload): boolean {
   if (w.stopped || w.busyUntil > s.hour) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
-  if (c?.switching && c.switching.kind === servedBy(s, w)) return false;
+  if (c?.switching) return false;
+  if (c?.kind === "panel" && sitesDown(s, c.id)) return false;
+  if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm); }
   if (c && w.deviceId && s.frozen.includes(w.deviceId)) return false;
-  // Web sites taken offline for maintenance or compromised.
-  if (c && w.deviceId && (s.security.offline.includes(w.deviceId) || s.security.hacked.includes(w.deviceId)) && servedBy(s, w) === "panel") return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);
     return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online;
@@ -179,11 +232,13 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
 // A service without workloads (resold domains, certificates, contracts from before placement) is always up.
 export const workloadsUp = (s: GameState, serviceId: string): boolean => workloadsOf(s, serviceId).every((w) => workloadOnline(s, w));
 
-// Hourly: frees the workloads of ended services, keeps draining nodes moving and counts each live service's hours down this month.
+// Hourly: frees the workloads of ended services and of gone panel hosts, keeps draining nodes moving and counts each live
+// service's hours down this month.
 export function computeTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   const live = new Set(s.services.filter((v) => v.endedAt === null).map((v) => v.id));
-  if (s.workloads.some((w) => !live.has(w.serviceId))) s.workloads = s.workloads.filter((w) => live.has(w.serviceId));
+  const keep = (w: Workload) => (isOwnVm(w) ? !!hostOfVm(s, w.id) : live.has(w.serviceId));
+  if (s.workloads.some((w) => !keep(w))) s.workloads = s.workloads.filter(keep);
   for (const c of s.clusters) {
     for (const n of c.nodes) {
       if (n.state !== "draining" || moveOff(s, s.clusters.find((x) => x.id === c.id)!, n.deviceId)) continue;
@@ -191,7 +246,8 @@ export function computeTick(s: GameState): SimEvent[] {
       events.push({ app: "Locations", key: "event.drained", params: { device: d.label ?? d.name } });
     }
   }
-  const down = [...new Set(s.workloads.map((w) => w.serviceId))].filter((id) => !workloadsUp(s, id) && !isSuspended(s, s.services.find((v) => v.id === id)!.customerId));
+  const ids = [...new Set(s.workloads.filter((w) => !isOwnVm(w)).map((w) => w.serviceId))];
+  const down = ids.filter((id) => !workloadsUp(s, id) && !isSuspended(s, s.services.find((v) => v.id === id)!.customerId));
   if (down.length) s.downHours = { ...s.downHours, ...Object.fromEntries(down.map((id) => [id, (s.downHours[id] ?? 0) + 1])) };
   return events;
 }

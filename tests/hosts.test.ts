@@ -5,7 +5,7 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { bookable, nodeUsed } from "../src/sim/60-infra/cluster";
 import { nodeUsage, pegged, peggedHours } from "../src/sim/60-infra/usage";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addNode, createCluster, provisionService, setRamGuard } from "../src/sim/90-actions/clusters";
+import { addNode, createCluster, provisionService, setHa, setRamGuard } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
 import { migrateWorkload, migrationTargets, stopWorkload } from "../src/sim/90-actions/vms";
@@ -74,11 +74,13 @@ describe("RAM over-provisioning", () => {
   });
 
   it("thaws after a migration from the workload menu onto another node", () => {
-    const { s, second } = setup();
+    const { s, cluster, second } = setup();
+    s.unlocks = [...s.unlocks, "virtualization"];
+    ok(setHa(s, cluster, "live", true));
     freeze(s);
     const w = s.workloads.find((x) => x.deviceId === "dev3")!;
     const targets = migrationTargets(s, w.id);
-    expect(targets.map((t) => t.deviceId)).toEqual([second]);
+    expect(targets.map((t) => t.to)).toEqual([second]);
     expect(targets[0].free.ramGb).toBeCloseTo(bookable(s, s.devices.find((d) => d.id === second)!).ramGb);
     expect(targets[0].down).toBe(0);
     ok(migrateWorkload(s, w.id, second));
@@ -98,12 +100,13 @@ describe("Memory reservation", () => {
 
   it("refuses placements and moves that would book RAM beyond the installed RAM, only while on", () => {
     const { s, cluster, second, gamer } = setup();
-    s.unlocks = [...s.unlocks, "memoryReservation"];
+    s.unlocks = [...s.unlocks, "memoryReservation", "virtualization"];
+    ok(setHa(s, cluster, "live", true));
     const dev3 = s.devices.find((d) => d.id === "dev3")!;
     expect(bookable(s, dev3).ramGb).toBeGreaterThan(8);
     ok(setRamGuard(s, cluster, true));
-    // 8 GB installed less the control plane's 0.35 GB.
-    expect(bookable(s, dev3).ramGb).toBeCloseTo(8 - 0.35);
+    // 8 GB installed less the hypervisor's 0.25 GB.
+    expect(bookable(s, dev3).ramGb).toBeCloseTo(8 - 0.25);
     const moved = s.workloads.find((w) => w.deviceId === "dev3")!;
     ok(migrateWorkload(s, moved.id, second));
     // 4 GB booked plus another 4 GB would pass the installed 8 GB less the control plane.

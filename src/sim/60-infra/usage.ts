@@ -8,9 +8,8 @@ import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { clusterOf, controlPlaneUp, controlPlaneUse, lostDisk, workloadsOf, workloadsOn, type Workload } from "./cluster";
+import { clusterOf, controlPlaneUp, controlPlaneUse, hostOfVm, isOwnVm, lostDisk, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
-import { PHP_SLOW } from "./php";
 import { portPeers, raidUsable, working } from "./status";
 
 // economy.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
@@ -55,15 +54,21 @@ export function backupFlows(s: GameState, hour: number = s.hour): BackupFlow[] {
 }
 const flowMbps = (s: GameState, id: string) => backupFlows(s).reduce((n, f) => n + (f.from === id || f.to === id ? f.mbps : 0), 0);
 
-// What a workload uses of its booking at an hour.
+// What a workload uses of its booking at an hour; a panel VM uses what its panel and web spaces use.
 export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): Resources {
+  if (isOwnVm(w)) {
+    const host = hostOfVm(s, w.id), u: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
+    if (!host || w.stopped || lostDisk(s, w)) return u;
+    const parts = [controlPlaneUse(host), ...s.workloads.filter((x) => x.clusterId === host.id).map((x) => workloadUse(s, x, hour))];
+    for (const p of parts) { u.vcpu += p.vcpu; u.ramGb += p.ramGb; u.diskGb += p.diskGb; }
+    return u;
+  }
   const load = workloadLoad(s, w, hour), lost = lostDisk(s, w);
   return { vcpu: w.vcpu * load, ramGb: w.stopped || lost ? 0 : w.ramGb * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * diskFill(s, w, hour) };
 }
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
-// cores ÷ busy vCPUs, a disk pool over 100% stalls writes to 50%, a PHP upgrade slows it to 70%. RAM over 100% freezes the
-// node instead (freezeTick).
+// cores ÷ busy vCPUs, a disk pool over 100% stalls writes to 50%. RAM over 100% freezes the node instead (freezeTick).
 export interface NodeUsage { used: Resources; physical: Resources; perf: number }
 
 export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour): NodeUsage {
@@ -83,8 +88,7 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   const physical = { vcpu: v.cores, ramGb: v.ramGb, diskGb: raidUsable(d) };
   const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
   const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
-  const php = c && hour <= (c.nodes.find((n) => n.deviceId === deviceId)?.phpUntil ?? -1) ? PHP_SLOW : 1;
-  return { used, physical, perf: Math.min(cpu, disk, php) };
+  return { used, physical, perf: Math.min(cpu, disk) };
 }
 
 // A working cluster node whose RAM in use exceeds its installed RAM freezes: every workload on it is down until it fits again.
@@ -123,8 +127,13 @@ export interface Usage { cpu: number; ram: number; disk: number; net: number }
 interface Sums { used: Resources; physical: Resources; gbit: number; mbps: number }
 
 const linkedGbit = (s: GameState, d: Device) => portPeers(s, d.id).reduce((n, p, i) => n + (p ? modelById(d.model).ports[i].gbit : 0), 0);
-const serverMbps = (s: GameState, d: Device) =>
-  workloadsOn(s, d.id).reduce((n, w) => { const v = s.services.find((x) => x.id === w.serviceId); return n + (v ? serviceMbps(s, v) / workloadsOf(s, v.id).length : 0); }, 0);
+// A workload's share of its service's traffic; a panel VM carries its web spaces'.
+const workloadMbps = (s: GameState, w: Workload): number => {
+  if (isOwnVm(w)) { const host = hostOfVm(s, w.id); return host ? s.workloads.filter((x) => x.clusterId === host.id).reduce((n, x) => n + workloadMbps(s, x), 0) : 0; }
+  const v = s.services.find((x) => x.id === w.serviceId);
+  return v ? serviceMbps(s, v) / workloadsOf(s, v.id).length : 0;
+};
+const serverMbps = (s: GameState, d: Device) => workloadsOn(s, d.id).reduce((n, w) => n + workloadMbps(s, w), 0);
 
 function serverSums(s: GameState, d: Device, out: Sums) {
   const u = nodeUsage(s, d.id);
