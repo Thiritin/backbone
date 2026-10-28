@@ -1,14 +1,19 @@
 import { Bell, Inbox, Moon, Network, Pause, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
-import { formatClock, SPEEDS, type Speed } from "../../sim/00-core/time";
+import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { serialize } from "../../sim/91-save/save";
+import { Confirm } from "./Confirm";
+import { dateOf, formatClock, SPEEDS, type Speed } from "../../sim/00-core/time";
 import { euro } from "../../sim/00-core/money";
 import { useStore } from "../store";
 
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
 export function MenuBar({ theme, onTheme, onBell }: Props) {
-  const { game, speed, setSpeed, windows, save, newCompany, openApp } = useStore();
+  const { game, speed, setSpeed, windows, openApp, unseen, importSave, deleteProgress } = useStore();
   const [menu, setMenu] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState(false);
+  const file = useRef<HTMLInputElement>(null);
   const front = [...windows].filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];
 
   useEffect(() => {
@@ -18,9 +23,17 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
     return () => window.removeEventListener("pointerdown", close);
   }, [menu]);
 
-  const item = (label: string, items: [string, () => void][]) => (
+  const exportSave = () => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([serialize(game)], { type: "application/json" }));
+    a.download = `backbone-${dateOf(game.hour).toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const item = (label: string, items: [string, () => void][], face: ReactNode = label, cls = "") => (
     <div className="mb-menu" onPointerDown={(e) => e.stopPropagation()}>
-      <button className="mb-item" aria-expanded={menu === label} onClick={() => setMenu(menu === label ? null : label)}>{label}</button>
+      <button className={`mb-item ${cls}`} aria-label={label} aria-expanded={menu === label} onClick={() => setMenu(menu === label ? null : label)}>{face}</button>
       {menu === label && items.length > 0 && (
         <div className="mb-drop" role="menu">
           {items.map(([l, fn]) => <button key={l} role="menuitem" onClick={() => { fn(); setMenu(null); }}>{l}</button>)}
@@ -31,9 +44,8 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      <span className="mb-item mb-logo" title="Backbone"><Network /></span>
+      {item("Backbone", [["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <Network />, "mb-logo")}
       <span className="mb-item mb-app">{front?.app ?? "Backbone"}</span>
-      {item("File", [["New company", newCompany], ["Save", () => save()]])}
       {item("Window", windows.map((w) => [w.app, () => openApp(w.app)] as [string, () => void]))}
       <span className="mb-spacer" />
       <div className="speed" role="group" aria-label="Game speed">
@@ -48,8 +60,25 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       <span className="mb-sep" />
       <span className="mb-item mb-cash num">{euro(game.cash)}</span>
       <button className="mb-item" aria-label="Open Support" onClick={() => openApp("Support")}><Inbox /></button>
-      <button className="mb-item" aria-label="Notifications" onClick={onBell}><Bell /></button>
+      <button className="mb-item mb-badge" aria-label={unseen ? `Notifications, ${unseen} new` : "Notifications"} onClick={onBell}>
+        <Bell />
+        {unseen > 0 && <span key={unseen} className="count plop">{unseen > 99 ? "99+" : unseen}</span>}
+      </button>
       <button className="mb-item" aria-label="Toggle dark mode" onClick={onTheme}>{theme === "dark" ? <Sun /> : <Moon />}</button>
+      <input ref={file} type="file" accept="application/json,.json" hidden onChange={async (e) => {
+        const f = e.target.files?.[0];
+        e.target.value = "";
+        if (f) importSave(await f.text());
+      }} />
+      {confirm && (
+        <Confirm
+          title="Delete all progress?"
+          text="Your company and its save are removed from this browser. Export a save first to keep a copy."
+          action="Delete"
+          onCancel={() => setConfirm(false)}
+          onConfirm={() => { setConfirm(false); deleteProgress(); }}
+        />
+      )}
     </header>
   );
 }

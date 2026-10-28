@@ -10,7 +10,7 @@ export function Dock() {
 
   return (
     <nav className="dock" aria-label="Apps">
-      {APPS.map((a, i) => {
+      {APPS.filter((a) => !a.hidden).map((a, i) => {
         const win = windows.find((w) => w.app === a.name);
         return (
           <Fragment key={a.name}>

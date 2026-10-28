@@ -31,11 +31,17 @@ interface Store {
   place: (id: string, box: Partial<Pick<Win, "x" | "y" | "w" | "h">>) => void;
   notify: (app: string, title: string, text: string) => void;
   dismiss: (id: number) => void;
-  save: (quiet?: boolean) => void;
-  newCompany: () => void;
+  started: boolean;
+  unseen: number;
+  clearUnseen: () => void;
+  save: () => void;
+  startGame: () => void;
+  importSave: (raw: string) => void;
+  deleteProgress: () => void;
 }
 
 let bannerId = 0;
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0 });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -65,6 +71,8 @@ export const useStore = create<Store>((set, get) => ({
   banners: [],
   history: [],
   notifyPrefs: loadPrefs(),
+  started: initial.loaded,
+  unseen: 0,
 
   advance: (hours) => {
     const game = { ...get().game, rng: { ...get().game.rng } };
@@ -101,23 +109,43 @@ export const useStore = create<Store>((set, get) => ({
     const pref = get().notifyPrefs[app] ?? DEFAULT_PREF;
     if (!pref.allow) return;
     const b = { id: ++bannerId, app, title, text, hour: get().game.hour };
-    set(({ banners, history }) => ({ banners: pref.banners ? [...banners, b].slice(-4) : banners, history: [b, ...history].slice(0, 50) }));
+    set(({ banners, history, unseen }) => ({ banners: pref.banners ? [...banners, b].slice(-4) : banners, history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
     if (pref.banners) setTimeout(() => get().dismiss(b.id), 6000);
   },
   dismiss: (id) => set(({ banners }) => ({ banners: banners.filter((b) => b.id !== id) })),
 
-  save: (quiet = false) => {
+  clearUnseen: () => set({ unseen: 0 }),
+  save: () => {
+    if (!get().started) return;
     try {
       localStorage.setItem(SAVE_KEY, serialize(get().game));
-      if (!quiet) get().notify("Settings", t("save.done.title"), t("save.done.text"));
     } catch {
       get().notify("Settings", t("save.failed.title"), t("save.failed.text"));
     }
   },
-  newCompany: () => {
-    set({ game: newGame(Date.now() >>> 0), speed: 0, windows: [] });
-    get().save(true);
+  startGame: () => {
+    set({ ...fresh(), game: newGame(Date.now() >>> 0), started: true });
+    get().save();
     get().notify("Settings", t("game.new.title"), t("game.new.text"));
+    get().openApp("Getting started");
+  },
+  importSave: (raw) => {
+    try {
+      set({ ...fresh(), game: deserialize(raw), started: true });
+    } catch {
+      get().notify("Settings", t("save.importFailed.title"), t("save.importFailed.text"));
+      return;
+    }
+    get().save();
+    get().notify("Settings", t("save.imported.title"), t("save.imported.text"));
+  },
+  deleteProgress: () => {
+    try {
+      localStorage.removeItem(SAVE_KEY);
+    } catch {
+      // Nothing stored to remove.
+    }
+    set({ ...fresh(), game: newGame(Date.now() >>> 0), started: false });
   },
 }));
 

@@ -4,8 +4,10 @@ import { t } from "../../i18n/en";
 import { loadedFromSave, useStore } from "../store";
 import { AppWindow } from "./AppWindow";
 import { Banners, NotificationCenter } from "./Banners";
+import { DesktopIcons } from "./DesktopIcons";
 import { Dock } from "./Dock";
 import { MenuBar } from "./MenuBar";
+import { StartScreen } from "./StartScreen";
 import { wallpaperSvg } from "./wallpaper";
 import { Widgets } from "./Widgets";
 
@@ -24,15 +26,26 @@ function initialTheme(): string {
 }
 
 export function Desktop() {
-  const { windows, speed, setSpeed, advance, save, notify } = useStore();
+  const started = useStore((s) => s.started);
   const [theme, setTheme] = useState(initialTheme);
-  const [center, setCenter] = useState(false);
-  const carry = useRef(0);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try { localStorage.setItem(THEME_KEY, theme); } catch { /* not persisted */ }
   }, [theme]);
+
+  return (
+    <div className="desktop">
+      <div className="wallpaper-host" dangerouslySetInnerHTML={{ __html: wallpaperSvg() }} />
+      {started ? <Shell theme={theme} onTheme={() => setTheme(theme === "dark" ? "light" : "dark")} /> : <StartScreen />}
+    </div>
+  );
+}
+
+function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
+  const { windows, speed, setSpeed, advance, save, notify, clearUnseen } = useStore();
+  const [center, setCenter] = useState(false);
+  const carry = useRef(0);
 
   useEffect(() => {
     if (!loadedFromSave || greeted) return;
@@ -56,16 +69,15 @@ export function Desktop() {
   }, [speed, advance]);
 
   useEffect(() => {
-    const id = setInterval(() => save(true), AUTOSAVE_MS);
-    const flush = () => save(true);
-    window.addEventListener("pagehide", flush);
-    return () => { clearInterval(id); window.removeEventListener("pagehide", flush); };
+    const id = setInterval(save, AUTOSAVE_MS);
+    window.addEventListener("pagehide", save);
+    return () => { clearInterval(id); window.removeEventListener("pagehide", save); };
   }, [save]);
 
   // Space pauses; 1 to 4 pick 1×, 2×, 4× and 8×.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).closest("input, textarea, select")) return;
+      if ((e.target as HTMLElement).closest("input, textarea, select, [role=alertdialog]")) return;
       if (e.code === "Space") { e.preventDefault(); setSpeed(speed ? 0 : 1); }
       const n = Number(e.key);
       if (n >= 1 && n <= 4) setSpeed(SPEEDS[n]);
@@ -75,15 +87,16 @@ export function Desktop() {
   }, [speed, setSpeed]);
 
   const frontZ = Math.max(0, ...windows.filter((w) => !w.minimized).map((w) => w.z));
+  const toggleCenter = () => { if (!center) clearUnseen(); setCenter(!center); };
 
   return (
-    <div className="desktop">
-      <div className="wallpaper-host" dangerouslySetInnerHTML={{ __html: wallpaperSvg() }} />
-      <MenuBar theme={theme} onTheme={() => setTheme(theme === "dark" ? "light" : "dark")} onBell={() => setCenter(!center)} />
+    <>
+      <MenuBar theme={theme} onTheme={onTheme} onBell={toggleCenter} />
+      <DesktopIcons />
       <Widgets />
       <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
       {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
       <Dock />
-    </div>
+    </>
   );
 }

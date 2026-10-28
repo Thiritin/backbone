@@ -45,18 +45,19 @@ The whole game is a macOS-style desktop. Every system is an app in the dock that
 
 &#91;embedded content: desktop mock-up · menu bar, two windows, notifications, dock\]
 
-The menu bar holds the time controls, date and cash. The red badge counts open tickets.
+The menu bar holds the time controls, date and cash. The game saves itself in the browser. The logo menu on the far left exports the save to a file, imports one, and deletes all progress after a confirmation. A first visit, or one after deleting, opens a start screen with a New game button, and a new game puts a Getting started guide on the desktop as an icon. The red badge counts open tickets.
 
 | App | What it does |
 | --- | --- |
 | Locations | Grid of your locations; opens room views and rack front views |
-| Network | Europe map, transit and peering contracts, DDoS protection |
-| Products | Product lines, plans editor, software licenses, clusters |
+| Network | Europe map, uplinks, topology view, DDoS protection |
+| Products | Product lines, software licenses, clusters |
+| Sales | Requests from new and existing customers, quota requests, later the shop |
 | Customers | Customer list, contracts, happiness |
 | Support | Ticket inbox with reply templates and actions |
 | Billing | Invoices, payment reminders, dunning, collections |
 | Finance | Profit and loss, cash flow, recurring revenue, churn |
-| Bank | Loans and repayments |
+| Bank | Account ledger, loans and repayments |
 | Staff | Job market, hiring, salaries, task assignment |
 | Marketing | Campaigns, reviews, review platforms |
 | Market | Market research: demand, customer requirements, lost-sale reports |
@@ -201,7 +202,10 @@ Servers join clusters, and products draw their resources from clusters. Everythi
 | Storage volume | Disk | Copying its data; slow, and uses bandwidth |
 | Dedicated server | A whole node | It can't move; the customer rents that machine |
 
-**Placement.** The cluster's scheduler picks a node for every new workload, the way OpenStack does. Each cluster has a policy: *pack* fills one node before the next, so fewer servers draw full power, and *spread* keeps every node equally loaded, so a failed node hits fewer customers. A customer's redundant pair never lands on the same node. CPU can be overcommitted per cluster (up to 8 vCPUs per core); RAM can't. A workload has to fit on one node, so a cluster can have enough free RAM in total and still refuse a big VM. The Rebalance button moves small workloads around to make room.
+**Placement.** The cluster's scheduler picks a node for every new workload, the way OpenStack does. Each cluster has a policy: *pack* fills one node before the next, so fewer servers draw full power, and *spread* keeps every node equally loaded, so a failed node hits fewer customers. Each cluster also sets two rules in its settings, in the spirit of Ceph's default placement rules:
+
+- **Replicas:** how many copies of each workload's disk the cluster keeps (1 to 3). More replicas survive more failed nodes and cost that much more storage.
+- **Spread across:** host, rack or location. A customer's workloads and the replicas of one disk go to different hosts, racks or locations wherever the cluster has room, and fall back to the next smaller level when it doesn't. The node view flags workloads placed against the rule. CPU can be overcommitted per cluster (up to 8 vCPUs per core); RAM can't. A workload has to fit on one node, so a cluster can have enough free RAM in total and still refuse a big VM. The Rebalance button moves small workloads around to make room.
 
 **Node states.** Each node in a cluster has one of four states:
 
@@ -223,19 +227,24 @@ Draining stops with a message when the rest of the cluster has no room, and says
 | Product | Runs on | Needs | Notes |
 | --- | --- | --- | --- |
 | Web hosting | Cluster | Control panel license | Can be resold |
-| Domains |  | Reseller account, later your own registrar | Can be resold |
+| Domains |  | Reseller account, later your own registrar | Can be resold; needs DNS hosting |
+| DNS hosting | Cluster | Two DNS workloads on different nodes | Tiny load, but if both go down every customer domain stops resolving |
 | SSL certificates |  | Certificate reseller account | Can be resold; often bought with domains |
 | Game servers | Cluster | A license per game | Gamers attract DDoS attacks |
-| VPS | Cluster | Virtualization platform |  |
+| VPS | Cluster | Virtualization platform | Fixed size, monthly |
+| Cloud servers | HA cluster | Cloud platform license | Hourly, within a quota; late game |
 | VPN | Cluster |  | Uses a lot of bandwidth |
 | Dedicated servers | Whole machines | Spare servers in racks | Individuals rent small machines, companies big ones |
 | Storage hosting | Storage servers |  | Backups and file hosting; uses a lot of bandwidth |
+| Object storage | Storage servers |  | Billed per TB stored and per TB downloaded |
+| Managed databases | Cluster | Database license or open source | You run backups and updates; database tickets |
+| Load balancers | Cluster |  | Sold with cloud servers; small load, many connections |
+| Managed Kubernetes | Cluster | A Kubernetes engineer on staff | Each engineer looks after a limited number of customer clusters |
 | CDN | Clusters in several cities | Presence in 3+ locations |  |
-| Cloud hosting | HA cluster | Cloud platform license | Late game |
 | Colocation | Your own rack space | Own room or datacenter | Customers bring hardware; every install is a ticket |
 | Add-ons |  | Unlocked per product | Backups, extra IPs, priority support, DDoS protection |
 
-Worth adding later: email hosting, managed databases and GPU compute.
+Worth adding later: email hosting and GPU compute.
 
 **Software choices.** Some products need software bought on the market. Each choice offers four balanced options. The cheap ones are tempting early, but switching later means a migration with downtime and tickets.
 
@@ -248,13 +257,36 @@ Worth adding later: email hosting, managed databases and GPU compute.
 
 Game servers work the same way: each game has its own license terms (one-time, per server or per player slot) and its own demand.
 
-**Plans editor.** For each product you edit a table of plans: name, resources (CPU, RAM, storage, traffic), price and contract length. The game shows the market's base rate next to each value, such as the average price per GB of RAM or per TB of traffic. Customers pick the plan that fits their needs within their budget, from you or from a competitor.
+**Requests instead of price lists.** You don't publish plans or set prices. You decide what to build and offer, and customers come to you with requests. Each customer picks a host by its size, its scores and hidden factors, and the price comes with the request. Your job is choosing which requests to accept.
+
+**Where requests come from.** At the start every request arrives as an email in the Sales app, and answering one takes a few minutes of your time like a ticket. There are few of them early on, and more as the company grows. Later the **shop** unlocks: customers order there themselves, and it accepts every request it can serve as long as the target cluster stays below a limit you set.
+
+| Request | From | Example |
+| --- | --- | --- |
+| New customer | A lead that chose you | "A VPS with 4 vCPUs and 8 GB for our shop backend" |
+| Expansion | An existing customer that grew | "Our news site needs twice the RAM" |
+| Quota increase | A cloud customer | "Raise our quota to 64 vCPUs for the Black Friday sale" |
+
+**The request card.** Every request shows:
+
+- the customer's name and type, for example "Bloomfield Florist, sole proprietor";
+- what they want, with resources, location and contract length;
+- the SLA they ask for (uptime and response time);
+- the monthly revenue, or the expected revenue for hourly cloud usage;
+- their requirements with a check or a cross each;
+- a bar per resource of the target cluster (CPU, RAM, storage, bandwidth) showing usage before and after. A bar is green below 70%, orange from 70% and red from 90%.
+
+You accept or decline. A declined customer goes to a competitor. Requests you can't serve still arrive, greyed out with what's missing ("needs a location in London", "needs two carriers"), so you can see what demand you are leaving on the table. The Market app adds them up.
+
+**Growth.** Every customer has a growth path with a ceiling. A blog stays about the same size forever, a news site grows to a few times its start, and a startup can grow fifty-fold or shut down. When a customer nears the size they rent, an expansion request follows.
+
+**Cloud servers.** Cloud customers rent virtual machines by the hour and start and stop them as they like. Each cloud customer has a quota (vCPUs, RAM, storage), and their usage moves up and down within it. Raising the quota takes a request with a reason, which you approve, cut down or decline. Quotas can add up to more than the cluster holds, because customers rarely use all of it at once; if they do, their new machines fail to start and they get unhappy.
 
 **Contracts.** All contracts recur, monthly or yearly.
 
 ## Customers and market
 
-Customers come from nine profiles on a 3×3 grid of budget and technical skill. Each profile weighs three scores on every plan against its price. This borrows King of Retail's model, where every product has quality, fashion and luxury scores and customers sit on a wealth × fashion grid ([customer wiki](https://king-of-retail.fandom.com/wiki/Customers)).
+Customers come from nine profiles on a 3×3 grid of budget and technical skill. Each profile weighs three scores on every host, and its budget sets how much it offers to pay. This borrows King of Retail's model, where every product has quality, fashion and luxury scores and customers sit on a wealth × fashion grid ([customer wiki](https://king-of-retail.fandom.com/wiki/Customers)).
 
 **The three scores**
 
@@ -264,7 +296,7 @@ Customers come from nine profiles on a 3×3 grid of budget and technical skill. 
 | Reliability | HA clusters, uptime record, SLA, support response time | High budget |
 | Convenience | Control panel, add-ons, one provider for everything | Low technical skill |
 
-Price matters most to low-budget customers.
+Low-budget customers offer the least and ask for the lowest SLA.
 
 **The nine profiles**
 
@@ -274,7 +306,7 @@ Price matters most to low-budget customers.
 | Medium budget | Sole proprietor: a flower shop's website | Small business: site, email, domains | Agency or startup: VPS, many sites |
 | High budget | Doctor's or law office: managed, must not fail | Online shop: HA hosting, SSL, backups | Enterprise: dedicated, cloud, colocation |
 
-**Hidden profiles.** Behind each profile the game keeps: products wanted and how likely they are bought together, budget, plan size, outage tolerance, ticket habits, and requirements on the host (see Company level and reputation).
+**Hidden profiles.** Behind each profile the game keeps: products wanted and how likely they are bought together, budget, request size, outage tolerance, ticket habits, and requirements on the host (see Company level and reputation).
 
 | Profile | Usually buys together |
 | --- | --- |
@@ -287,7 +319,7 @@ Price matters most to low-budget customers.
 
 **Market research.** Requirements start hidden. The Market Research app reveals, per profile, budget ranges, which scores they weigh, and what they demand from a host. It also shows demand by product and city, and reports on lost sales, for example "chose another host: no domains on offer".
 
-**Competitors.** A few big, established hosts with parody names dominate the market. They are a fixed backdrop and don't react to you, but the market is crowded and hard-fought. A customer first drops hosts that miss its requirements, then compares the remaining plans on price and the three scores.
+**Competitors.** A few big, established hosts with parody names dominate the market. They are a fixed backdrop and don't react to you, but the market is crowded and hard-fought. A customer first drops hosts that miss its requirements, then compares the remaining hosts on the three scores.
 
 ## Company level and reputation
 
@@ -325,7 +357,7 @@ Support is the first job that overwhelms you. Every outage, question, install re
 | Outage report | A service the customer uses goes down | Status reply, credit, escalate |
 | How-to question | New customers; cheap control panels | Template answer |
 | Billing question | Invoices and payment reminders | Explain, resend invoice, grant an extension |
-| Upgrade request | Customer outgrows their plan | Move to a bigger plan |
+| Expansion request | Customer nears the size they rent | Opens the request in Sales |
 | Cancellation | Unhappy or departing customer | Retention offer, process the cancellation |
 | Colocation install | Colocation customer ships hardware | Book an install with a technician |
 | Abuse report | Spam or attacks from a customer's server | Warn, suspend |
@@ -351,6 +383,8 @@ Payment habits differ by segment. Private individuals forget most often, and ent
 
 **Finance app.** Profit and loss, cash flow, monthly recurring revenue, churn, revenue by product and segment, and costs by category, each as charts.
 
+**Account ledger.** The Bank app lists every booking on the company account: date, counterparty, description, category and amount, with the running balance. Filters narrow it by category (customer payments, hardware, rent, power, transit, salaries, loans, tax) and by month.
+
 **Bank app.** Take out loans with a set amount, term and interest rate. The rate and the maximum amount depend on your company level and repayment history, and missed repayments add penalties.
 
 **Insurance.** SLA insurance pays the credits you owe customers when you miss an SLA. It covers three claims; after the third, the insurer blocks you for a year. The premium rises with a poor uptime record.
@@ -368,6 +402,8 @@ Staff are named people with a skill level, a work rate and a salary. Juniors cos
 | Support agent | Tickets |  |
 | Technician | Installs, repairs, cabling, colocation installs | Works at one location; until hired, you are the technician |
 | Network engineer | Port setup, routing, transit and peering contracts |  |
+| Kubernetes engineer | Managed Kubernetes clusters | Needed to sell managed Kubernetes; each looks after a set number of customer clusters |
+| Sales agent | Answering requests in the Sales app |  |
 | Bookkeeper | Recording payments, payment reminders |  |
 | Accountant | Dunning, collections, month-end reports |  |
 | Marketing manager | Campaigns, review platforms, market research |  |
@@ -421,6 +457,8 @@ Each location connects to the internet through what its city offers: transit car
 
 **Joining an exchange.** You apply for membership at the exchange, which needs your own network number (ASN) and costs a setup fee plus a yearly fee. Then you order ports: one, two or more, each at a speed your routers support. The exchange delivers each port as a cross-connect to your patch panel after a lead time. Connecting to the exchange's route servers gives you sessions with every network that peers openly, and other networks need their own session. Exchanges such as DE-KICKS also offer ports in other cities, so one membership can cover several locations.
 
+**Topology view.** A second view of the same data draws the network as a tree from left to right: carriers and exchanges, uplinks, routers, switches and the servers on each switch. Every line shows its speed and is coloured by load with the same thresholds as the request bars. Clicking anything opens it in the inspector, and switches with many servers collapse into a count until you expand them.
+
 **Uplinks in the Network app.** A location's page lists its uplinks as cards, one per carrier or exchange, with the type, every link with its speed and router port, the 95th percentile against the commit, and the monthly cost.
 
 **Private networks.** Customers with several workloads, such as agencies, shops and enterprises, ask for a private network between them. A private network is a VLAN on your switches: workloads in it reach each other only if every node they run on has a switch port that carries the VLAN. A port to a node can carry all customer networks with one toggle, which is the easy setting. Enterprise customers require a private network, and other customers buy one as an add-on. One switch domain holds up to 4,094 VLANs; overlay networks (an unlock) lift that limit and stretch a private network across racks and locations.
@@ -461,7 +499,7 @@ Unlocks cost know-how points plus a one-time launch cost in money. You earn know
 
 | Branch | Unlock path, in order |
 | --- | --- |
-| Products | SSL certificates → email → dedicated servers → storage hosting → VPN → CDN → cloud hosting → colocation |
+| Products | SSL certificates → email → dedicated servers → storage hosting → VPN → CDN → cloud servers → colocation |
 | Infrastructure | Rented rack units → rented rack → cage → own room → own datacenter; HA clusters; rack templates; auto-cable |
 | Network | Transit contracts → internet exchange peering → own network number (ASN) → always-on DDoS protection |
 | Business | First hire → status page → market research → cross-selling boosts → review platforms → insurance → AI bots |
@@ -604,7 +642,7 @@ The MVP has a basement, one rented rack, web hosting and VPS, support and billin
 
 1. **Desktop shell.** Menu bar, dock, draggable windows, notifications, time controls, saving in the browser. Done when apps open and the clock runs.
 2. **Locations and racks.** Basement and one rented rack, the rack front view, buying servers and switches with their specs, cabling ports in the inspector, bonding a server's ports. Done when a cabled server shows as online.
-3. **Clusters and products.** One cluster, resold web hosting and your own VPS, workloads placed by the scheduler, cordoning and draining a node, the plans editor with market rates. Done when a customer can buy a plan and its VM survives a drain.
+3. **Clusters and products.** One cluster, resold web hosting and your own VPS, workloads placed by the scheduler, cordoning and draining a node, the Sales app with request cards and resource bars. Done when an accepted request runs as a VM that survives a drain.
 4. **Customers and support.** Customer profiles, purchases, tickets with templates and actions, happiness and churn. Done when an outage floods the inbox.
 5. **Billing and finance.** Invoices, dunning buttons, collections, profit and loss, a bank loan. Done when an unpaid invoice can go all the way to collections.
 6. **First hires.** The job market, a support agent and a bookkeeper working through their queues. Done when a hire visibly empties a queue.
@@ -622,5 +660,6 @@ The MVP has a basement, one rented rack, web hosting and VPS, support and billin
 - [x] Which open-source license (MIT, GPL)? MIT
 - [x] Which events auto-pause the game? nothing
 - [ ] Do hardware brands differ in price and failure rate, or only in look?
+- [ ] Without price lists, should the player still have one lever on price, such as a premium or discount per product that changes which requests arrive?
 
 Ideally at the start they are enthised to either rent a server from a company to get resources to place on, we always have servers as "clusters" so they can be assigned to different products/workloads, so they can fully rent out a server from a existing bigger provider at the start.&#32;

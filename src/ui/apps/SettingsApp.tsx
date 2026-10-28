@@ -13,7 +13,7 @@ export function SettingsApp() {
           <span role="columnheader">Allow</span>
           <span role="columnheader">Banners</span>
         </div>
-        {APPS.filter((a) => a.name !== "Settings").map((a) => {
+        {APPS.filter((a) => !a.hidden && a.name !== "Settings").map((a) => {
           const p = notifyPrefs[a.name] ?? DEFAULT_PREF;
           return (
             <div className="settings-row" role="row" key={a.name}>

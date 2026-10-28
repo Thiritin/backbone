@@ -28,3 +28,21 @@ describe("metrics", () => {
     expect(m.progress).toBeCloseTo(5000 / 15000);
   });
 });
+
+describe("save handling", () => {
+  it("imports a save, rejects junk, and deletes progress back to the start screen", async () => {
+    const { serialize } = await import("../src/sim/91-save/save");
+    const s = useStore.getState;
+    s().importSave(serialize(newGame(7)));
+    expect(s().started).toBe(true);
+    expect(s().game.seed).toBe(7);
+
+    s().importSave("not a save");
+    expect(s().game.seed).toBe(7);
+    expect(s().history[0].title).toBe("Import failed");
+
+    s().deleteProgress();
+    expect(s().started).toBe(false);
+    expect(s().windows).toHaveLength(0);
+  });
+});

@@ -67,9 +67,9 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 
 **Electricity.** Business prices follow these keyframes, with straight lines between them. The basement pays the household price, which is the business price × 1.6.
 
-| Year | 2005 | 2010 | 2014 | 2020 | 2022 | 2023 | 2026 |
+| Year | | 2010 | 2014 | 2020 | 2022 | 2023 | 2026 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Business price (ct/kWh) | 9 | 12 | 15 | 18 | 35 | 25 | 17 |
+| Business price (ct/kWh) | | 12 | 15 | 18 | 35 | 25 | 17 |
 
 **Server generations.** A new 1U compute server generation arrives every three years. Each one costs a bit more but packs far more resources per watt, which is what makes replacing old servers pay off.
 
@@ -143,11 +143,11 @@ Customers belong to their city's country and prefer datacenters there (see the l
 
 The review multiplier is 0.4 + 0.25 × (stars − 1), so 1 star gives 0.4, 3 stars 0.9 and 5 stars 1.4.
 
-Each lead first checks the profile's requirements on the host. A lead that fails them is logged as a lost sale with its reason, for example "company too young". A lead that passes compares your plan with the competitors' (next section).
+Each lead first checks the profile's requirements on the host. A lead that fails them is logged as a lost sale with its reason, for example "company too young". A lead that passes compares you with the competitors (next section) and, if it picks you, sends a request.
 
 ## Customer choice
 
-Each lead scores every plan that fits its budget and picks one at random, weighted so that better value wins most of the time. A fresh company at 80% of the market price wins about 11% of private leads.
+Each lead scores every host that meets its requirements and picks one at random, weighted so that better scores win most of the time. Every host gets the same offer, so price plays no part in the choice.
 
 **Scores.** Each plan gets three scores from 0 to 100.
 
@@ -163,42 +163,58 @@ Uptime turns the 90-day downtime fraction d into a score, so 99.99% gives 100, 9
 \text{uptime} = \operatorname{clamp}\left(100 - 40 \cdot \log_{10}\frac{d}{0.0001},\ 0,\ 100\right)
 ```
 
-**Value of a plan.** Each profile weighs the scores, subtracts a price penalty against the market base rate, and adds the review platform's trust bonus T (see [Marketing and reviews](#marketing-and-reviews)):
+**Value of a host.** Each profile weighs the scores and adds the review platform's trust bonus T (see [Marketing and reviews](#marketing-and-reviews)):
 
 ```math
-U = w_P P + w_R R + w_C C - \lambda \cdot 100 \cdot \left(\frac{\text{price}}{\text{base}} - 1\right) + T
+U = w_P P + w_R R + w_C C + T
 ```
 
-**Choice.** Plans priced above the profile's budget cap are dropped. Each remaining plan j wins with this probability, where τ = 12 sets how much luck is involved:
+**Choice.** Each host j wins with this probability, where τ = 12 sets how much luck is involved:
 
 ```math
 P(j) = \frac{e^{U_j/\tau}}{\sum_k e^{U_k/\tau}}
 ```
 
-**Profile weights.** The budget cap is a multiple of the market base rate.
+**Profile weights.** The offer is a multiple of the market base rate, and the growth ceiling is the largest size a customer reaches, as a multiple of its first request.
 
-| Profile | w_P | w_R | w_C | Price weight λ | Budget cap |
-| --- | --- | --- | --- | --- | --- |
-| Private individual | 0.20 | 0.20 | 0.60 | 1.0 | 1.3× |
-| Gamer | 0.50 | 0.30 | 0.20 | 1.0 | 1.3× |
-| Hobby developer | 0.60 | 0.20 | 0.20 | 1.2 | 1.3× |
-| Sole proprietor | 0.15 | 0.35 | 0.50 | 0.6 | 1.6× |
-| Small business | 0.30 | 0.40 | 0.30 | 0.6 | 1.6× |
-| Agency or startup | 0.50 | 0.35 | 0.15 | 0.7 | 1.6× |
-| Doctor's or law office | 0.10 | 0.60 | 0.30 | 0.3 | 2.5× |
-| Online shop | 0.30 | 0.55 | 0.15 | 0.3 | 2.5× |
-| Enterprise | 0.35 | 0.55 | 0.10 | 0.25 | 2.5× |
+| Profile | w_P | w_R | w_C | Offer | SLA asked | Growth ceiling |
+| --- | --- | --- | --- | --- | --- | --- |
+| Private individual | 0.20 | 0.20 | 0.60 | 0.9× | Basic | 1.5× |
+| Gamer | 0.50 | 0.30 | 0.20 | 0.9× | Basic | 2× |
+| Hobby developer | 0.60 | 0.20 | 0.20 | 0.9× | Basic | 3× |
+| Sole proprietor | 0.15 | 0.35 | 0.50 | 1.0× | Basic | 1.5× |
+| Small business | 0.30 | 0.40 | 0.30 | 1.0× | Business | 3× |
+| Agency or startup | 0.50 | 0.35 | 0.15 | 1.0× | Business | 10×; startups up to 50× |
+| Doctor's or law office | 0.10 | 0.60 | 0.30 | 1.3× | Business | 1.5× |
+| Online shop | 0.30 | 0.55 | 0.15 | 1.3× | Premium | 5× |
+| Enterprise | 0.35 | 0.55 | 0.10 | 1.3× | Premium | 4× |
 
-**Competitors.** Four fixed archetypes sell in every city. Their scores never change, and their prices follow the base rate.
+**Competitors.** Four fixed archetypes sell in every city. Their scores never change.
 
-| Competitor | Price vs base | P | R | C | Sells |
-| --- | --- | --- | --- | --- | --- |
-| Budget giant | 0.80 | 55 | 60 | 70 | Web hosting, domains, email, VPS |
-| Wholesale provider (the OVH stand-in) | 0.75 | 70 | 65 | 50 | Everything; also the source of your resold lines |
-| Developer cloud | 0.70 | 85 | 70 | 40 | VPS, dedicated servers, storage, later cloud |
-| Premium host | 1.30 | 80 | 90 | 75 | Everything, managed |
+| Competitor | P | R | C | Sells |
+| --- | --- | --- | --- | --- |
+| Budget giant | 55 | 60 | 70 | Web hosting, domains, email, VPS |
+| Wholesale provider (the OVH stand-in) | 70 | 65 | 50 | Everything; also the source of your resold lines |
+| Developer cloud | 85 | 70 | 40 | VPS, dedicated servers, storage, later cloud |
+| Premium host | 80 | 90 | 75 | Everything, managed |
 
 **Worked example.** A private individual compares web hosting plans. The player scores P 60, R 50, C 50 and charges 0.8× base, so U = 52 + 20 = 72. The budget giant and the developer cloud reach 85, the wholesale provider 82 and the premium host 49. The player wins 11% of these leads. At 0.6× base the player's U rises to 92 and the share to 39%, but the margin on resold hosting is gone.
+
+## Requests, SLAs and growth
+
+**Offer.** A request pays the market base rate for its resources × the profile's offer × the SLA factor. Fixed-price products such as web hosting use their fixed price instead of the base rate.
+
+| SLA | Uptime per month | First response | Price factor | Credit when missed |
+| --- | --- | --- | --- | --- |
+| Basic | 99.5% | 48 h | 1.0 | None |
+| Business | 99.9% | 8 h | 1.2 | 10% of the monthly bill |
+| Premium | 99.99% | 1 h | 1.5 | 25% of the monthly bill |
+
+**Handling a request.** Answering a request by hand takes 8 minutes of the player's or a sales agent's time. A request waits 3 days, then the customer goes to a competitor. The shop answers instantly while the target cluster's busiest resource stays under the limit you set (80% by default).
+
+**Growth.** A customer grows a set share each year until it reaches its ceiling: 10% a year for low budgets, 25% for medium and 40% for high. A startup (a third of agencies) grows 150% a year and has a 20% chance each year of shutting down. When usage passes 85% of what the customer rents, it sends an expansion request for double its size, capped at its ceiling.
+
+**Cloud quotas.** A cloud customer's usage averages 40% of its quota and peaks at 80% during its busiest hours. It pays per hour used, at the base rate × 1.25 ÷ 730. When its peak passes 80% of the quota, it asks for a 50% to 100% higher quota with a reason drawn from its profile.
 
 ## Happiness and churn
 
@@ -453,6 +469,8 @@ Role bases are 2026 gross salaries, scaled back with the salary multiplier from 
 | Support agent | €42,000 |
 | Technician | €47,000 |
 | Network engineer | €60,000 |
+| Kubernetes engineer | €72,000 |
+| Sales agent | €40,000 |
 | Bookkeeper | €38,300 |
 | Accountant | €50,000 |
 | Marketing manager | €45,300 |
@@ -519,7 +537,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Game server | 1.5 |
 | VPS | 2 |
 | Storage hosting | 3 |
-| Cloud hosting | 4 |
+| Cloud servers, managed Kubernetes | 4 |
 | Dedicated server, CDN | 5 |
 | Colocation | 6 |
 
@@ -529,10 +547,12 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | --- | --- | --- | --- | --- |
 | Rented rack units | Infrastructure | 50 | €500 | Level 1 |
 | SSL certificates | Products | 80 | €500 | Level 1 |
+| Own DNS hosting | Products | 60 | €500 | Level 1 |
 | First hire | Business | 100 | €1,000 | Level 1 |
 | Email hosting | Products | 150 | €2,000 | Level 2 |
 | Dedicated servers | Products | 300 | €3,000 | Level 2 |
 | Status page | Business | 300 | €1,000 | Level 2 |
+| Shop | Business | 600 | €4,000 | Level 2 |
 | Rented rack | Infrastructure | 400 | €2,000 | Level 2 |
 | Market research | Business | 800 | €5,000 | Level 2 |
 | Auto-cable | Infrastructure | 1,000 | €5,000 | Level 3 |
@@ -548,6 +568,8 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Cage | Infrastructure | 4,000 | €50,000 | Level 4 |
 | Exchange peering | Network | 5,000 | €25,000 | Level 4 and an own ASN |
 | Storage hosting | Products | 6,000 | €40,000 | Level 4 |
+| Object storage | Products | 7,000 | €40,000 | Storage hosting |
+| Managed databases | Products | 9,000 | €40,000 | Level 4 |
 | Own network number (ASN) | Network | 8,000 | €20,000 | Level 4 |
 | VPN | Products | 8,000 | €30,000 | Level 4 |
 | SLA insurance | Business | 10,000 | €10,000 | Level 4 |
@@ -556,7 +578,9 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Own room | Infrastructure | 20,000 | €250,000 | Level 5 |
 | CDN | Products | 25,000 | €200,000 | Level 5 |
 | Domain registrar | Independence | 30,000 | €150,000 | Level 5 |
-| Cloud hosting | Products | 80,000 | €500,000 | Level 5, from 2010 |
+| Cloud servers | Products | 80,000 | €500,000 | Level 5, from 2010 |
+| Load balancers | Products | 20,000 | €60,000 | Cloud servers |
+| Managed Kubernetes | Products | 40,000 | €150,000 | Cloud servers, from 2016, and a Kubernetes engineer |
 | Own datacenter | Infrastructure | 80,000 | €2,000,000 | Level 6 |
 | Colocation | Products | 100,000 | €100,000 | Level 5 and an own room |
 | AI bots | Business | 150,000 | €1,000,000 | Level 5, from 2023 |
@@ -588,7 +612,7 @@ A level-1 company borrows at about 10% interest and a level-6 company at about 4
 
 **Loan interest** is the year's base rate plus a risk premium for the company level. Base rates follow these keyframes, with straight lines between them:
 
-| Year | 2005 | 2009 | 2015 | 2021 | 2023 | 2026 |
+| Year | | 2009 | 2015 | 2021 | 2023 | 2026 |
 | --- | --- | --- | --- | --- | --- | --- |
 | Base rate | 4.0% | 2.5% | 1.0% | 1.0% | 4.5% | 4.0% |
 
