@@ -957,7 +957,7 @@ A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, w
 | VPN, dedicated server | 0.2 | Tunnels and company servers keep syncing and polling overnight. |
 | Everything else | 0 | Websites follow their visitors, so nights are as low as the curve. |
 
-**Night jobs.** Every customer runs their own backup or batch job once a night for one hour, starting on a half hour from 00:00 to 05:30 drawn from the seed; one customer in six draws a new start every night, since cron jobs that depend on other jobs drift. During the job the workload's load rises by 0.5 and it ships two hours' worth of average traffic, because an offsite backup uploads a day's changes at once.
+**Night jobs.** Every customer runs their own backup or batch job once a night for one hour, starting on a half hour from 00:00 to 05:30 drawn from the seed; one customer in six draws a new start every night, since cron jobs that depend on other jobs drift. During the job the workload's load rises by 0.3 and it ships two hours' worth of average traffic, because an offsite backup uploads a day's changes at once; 0.3 keeps a small node with several jobs in the same slot below its evening peak.
 
 **The player's backups.** A cluster's backup runs at 02:00 (Sundays only when weekly) and sends 10% of each workload's used disk from its node to the target's control plane within the hour, since a daily backup only copies what changed. The traffic lights the ports on the shortest cable path between the two servers and their LED net bars, and does not reach the uplinks.
 

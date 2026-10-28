@@ -43,7 +43,7 @@ export function curveLoad(id: CurveId, hour: number): number {
 // Share of a service's traffic that flows whatever its load; game servers send ticks to every connected player all night.
 export const TRAFFIC_FLOOR: Partial<Record<Product, number>> = { gameServer: 0.5, vpn: 0.2, dedicated: 0.2, colocation: 0.3 };
 // A customer's own night job (backups, batch runs) adds this much load for an hour and ships this many hours of average traffic.
-export const JOB_CPU = 0.5;
+export const JOB_CPU = 0.3;
 export const JOB_TRAFFIC = 2;
 // Share of customers whose job starts at a new time every night.
 export const JOB_RANDOM = 1 / 6;
