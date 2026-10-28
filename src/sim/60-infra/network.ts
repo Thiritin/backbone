@@ -1,12 +1,13 @@
 // Traffic, exits, routing, billing, peering and DDoS per zone. Values come from docs/design/economy.md (Traffic and bandwidth).
 import { hashRng, rand } from "../00-core/rng";
-import { dateOf, isMonthStart, yearOf } from "../00-core/time";
+import { isMonthStart, yearOf } from "../00-core/time";
 import {
   carrierById, COMMITS, DC_BANDWIDTH, dcPerTb, DDOS, DECLINE_COOLDOWN_HOURS, EXCHANGE_FEES, exchangeById, exchangePortPrice, PEERS, PROTECTIONS,
   REQUEST_DAILY, REQUEST_DAYS, SATURATION_FLOOR, SATURATION_PENALTY, TB_PER_MBPS_HOUR, transitPerMbps, zoneLinkPrice,
   type Peer, type Protection, type ZoneLinkKind,
 } from "../10-catalog/network";
 import { trafficGb } from "../10-catalog/products";
+import { trafficShape } from "../10-catalog/usage";
 import { datacenterById, homeLineById } from "../20-world/datacenters";
 import type { Service } from "../30-customers/customers";
 import { bump, createTicket, OUTAGE_WRITE_CHANCE, profileStats } from "../40-support/tickets";
@@ -54,14 +55,11 @@ const HISTORY_HOURS = 168, SAMPLE_HOURS = 720, GOODWILL_DECAY = 0.05;
 const round2 = (v: number) => Math.round(v * 100) / 100;
 const cents = round2;
 
-// ponytail: a day/night wave that peaks at 21:00 and averages 1; swap for the usage curves once workloads have them.
-export function loadAt(s: GameState, _v: Service): number {
-  return 1 + 0.9 * Math.cos((2 * Math.PI * (dateOf(s.hour).getUTCHours() - 21)) / 24);
+// A running service's Mbit/s this hour: GB per month spread over the month's seconds, shaped by its activity and night job.
+export function serviceMbps(s: GameState, v: Service): number {
+  const c = s.customers.find((x) => x.id === v.customerId);
+  return (trafficGb(v.product, v.plan, yearOf(s.hour)) * 8000) / (730 * 3600) * (c ? trafficShape(s.seed, v, c.profile, s.hour) : 1);
 }
-
-// A running service's Mbit/s this hour: GB per month spread over the month's seconds, times the load.
-export const serviceMbps = (s: GameState, v: Service): number =>
-  (trafficGb(v.product, v.plan, yearOf(s.hour)) * 8000) / (730 * 3600) * loadAt(s, v);
 
 export const zoneOf = (s: GameState, v: Service): Location | undefined => (v.zone ? s.locations.find((l) => l.az === v.zone) : undefined);
 const running = (s: GameState, v: Service) => v.endedAt === null && !isSuspended(s, v.customerId) && workloadsOf(s, v.id).length > 0;

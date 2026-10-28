@@ -56,7 +56,7 @@ export const ACTIONS: Record<TicketKind, TicketAction[]> = {
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
 const RIGHT: Record<string, string> = {
-  suspended: "resend", upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", price: "newPrice", grow: "offer",
+  suspended: "resend", upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer",
   spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment",
 };
 

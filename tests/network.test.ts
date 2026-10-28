@@ -42,7 +42,7 @@ function datacenter(seed = 1) {
 const ready = (s: GameState) => { s.hour += 24 * 15; };
 
 describe("traffic", () => {
-  it("follows the plan and the year, averaging the economy table over a day", () => {
+  it("follows the plan and the year, averaging the economy table over a week", () => {
     expect(trafficGb("vps", "vps-m", 2005)).toBe(20);
     expect(trafficGb("vps", "vps-s", 2005)).toBe(10);
     expect(trafficGb("gameServer", "game-s", 2005)).toBe(60);
@@ -51,14 +51,14 @@ describe("traffic", () => {
     const id = service(s, "fra1", "vps", "hobbyDev", "vps-m");
     const v = s.services.find((x) => x.id === id)!;
     let sum = 0;
-    for (let h = 0; h < 24; h++) { s.hour = h; sum += serviceMbps(s, v); }
-    expect(sum / 24).toBeCloseTo((20 * 8000) / (730 * 3600), 6);
+    for (let h = 0; h < 168; h++) { s.hour = h; sum += serviceMbps(s, v); }
+    expect(sum / 168 / ((20 * 8000) / (730 * 3600))).toBeCloseTo(1, 1);
   });
 
-  it("ten VPS fill the basement's 1 Mbit/s upload in the evening and degrade without going offline", () => {
+  it("a dozen VPS fill the basement's 1 Mbit/s upload in the evening and degrade without going offline", () => {
     const s = newGame(2);
-    const ids = Array.from({ length: 10 }, () => service(s, "fra1", "vps", "hobbyDev", "vps-m"));
-    s.hour = 21;
+    const ids = Array.from({ length: 12 }, () => service(s, "fra1", "vps", "onlineShop", "vps-m"));
+    s.hour = 20;
     const r = route(s);
     const z = r.zones.loc1;
     expect(z.demand).toBeGreaterThan(1);
@@ -68,7 +68,7 @@ describe("traffic", () => {
     networkTick(s);
     expect(s.network.saturated).toEqual(["loc1"]);
     expect(s.customers.every((c, i) => c.happiness < before[i])).toBe(true);
-    expect(ids.length).toBe(10);
+    expect(ids.length).toBe(12);
   });
 });
 
@@ -80,9 +80,9 @@ describe("routing", () => {
     ok(orderExchangePort(s, loc, 1));
     ok(orderTransit(s, loc, "cogentle", 1, 0.2));
     ready(s);
-    // 300 colocation customers at 21:00 send far more than 1 Gbit/s.
-    for (let i = 0; i < 300; i++) service(s, "fra2", "colocation", "smallBiz", "colo-f");
-    s.hour = s.hour - (s.hour % 24) + 21;
+    // 500 shops' colocation at 20:00 send far more than 1 Gbit/s.
+    for (let i = 0; i < 500; i++) service(s, "fra2", "colocation", "onlineShop", "colo-f");
+    s.hour = s.hour - (s.hour % 24) + 20;
     const r = route(s), z = r.zones[loc];
     const [ex, tr] = s.network.uplinks;
     const share = PEERS.filter((p) => p.policy === "routeServer").reduce((n, p) => n + p.share, 0);
@@ -110,8 +110,8 @@ describe("routing", () => {
     s.locations = s.locations.map((l) => ({ ...l, readyAt: 0 }));
     ok(orderZoneLink(s, loc, second, "fiber", 0));
     s.hour += 24 * 31;
-    for (let i = 0; i < 120; i++) service(s, "fra2", "colocation", "smallBiz", "colo-f");
-    s.hour = s.hour - (s.hour % 24) + 21;
+    for (let i = 0; i < 250; i++) service(s, "fra2", "colocation", "onlineShop", "colo-f");
+    s.hour = s.hour - (s.hour % 24) + 20;
     const r = route(s), z = r.zones[loc], other = r.zones[second];
     const link = s.network.zoneLinks[0];
     expect(z.demand).toBeGreaterThan(1000);

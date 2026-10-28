@@ -799,7 +799,7 @@ Notices about domains nobody hosts arrive 0.2 times a month for the company. A n
 
 ## Traffic and bandwidth
 
-Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 ten VPS customers fill the basement's 1 Mbit/s upload, which is the first push out of the basement.
+Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 about a dozen VPS customers fill the basement's 1 Mbit/s upload on an evening, which is the first push out of the basement.
 
 **Average traffic** per customer:
 
@@ -813,7 +813,7 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 ten
 | VPN | 300 | 14,000 |
 | Colocation | 500 | 23,000 |
 
-**Daily curve.** Traffic follows each customer type's usage curve (see Usage curves and overcommit), scaled so a week averages to the monthly figure. The 95th percentile in Mbit/s is about GB per month ÷ 164.
+**Daily curve.** Traffic follows each customer type's usage curve with its jitter, on top of a product's floor, plus the customer's night job (see Usage curves and overcommit), scaled so a week averages to the monthly figure. The 95th percentile in Mbit/s is about GB per month ÷ 164.
 
 **Transit billing.** Each hourly tick records one sample per port. The bill uses the 95th percentile of the last 30 days (the top 5% of hours are dropped) and never charges less than 20% of the port.
 
@@ -941,12 +941,39 @@ The link speed is the slowest link between the two nodes, shared by every migrat
 | --- | --- | --- | --- |
 | CPU | 8:1 | Booked vCPUs × load | Performance of everyone on the node × cores ÷ busy vCPUs |
 | RAM | 1.5:1 | Booked RAM × (0.6 + 0.4 × load), since memory stays mostly resident | Above 100% the node swaps and performance drops to 30%; above 110% it kills the biggest workload, which is an outage and a ticket |
-| Disk | 2:1 | Grows from 30% of booked at signup to 70% after two years | The pool stops writes at 100%: an outage for every workload on it |
-| Traffic | No limit | Monthly traffic × load | Saturation, see Traffic and bandwidth |
+| Disk | 2:1 | Grows from 30% of booked at signup at the customer's growth rate, up to 100% | The pool stops writes at 100%: an outage for every workload on it |
+| Traffic | No limit | Monthly traffic × traffic shape (below) | Saturation, see Traffic and bandwidth |
 
 A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, while a mixed cluster stays near 0.5, so mixing customer types roughly doubles safe overcommit. The cluster view shows booked capacity, this week's forecast peak and last week's actual peak.
 
 **How the first build plays.** Usage follows the curves with ±20% jitter per workload and hour, without surges yet. A node's use is the sum of its workloads plus its control plane at full load; a stopped, restoring or lost workload uses nothing. Instead of killing workloads, an overloaded node slows them: performance is cores ÷ busy vCPUs, 30% when RAM runs over and 50% when the disk pool runs over. Every hour each customer on a slowed node loses 1 − performance in happiness, and each of their services opens a "really slow" outage ticket with a chance of 10% × (1 − performance) unless one is already open. Overcommit ratios are the same for every cluster.
+
+**Traffic shape.** A service's Mbit/s each hour is its monthly average × (floor + (1 − floor) × activity + 2 × night job) ÷ the week's average of that sum, where activity is the curve with the service's own ±20% jitter. A month's traffic therefore stays at the table in Traffic and bandwidth.
+
+| Product | Floor | Reasoning |
+| --- | --- | --- |
+| Game server | 0.5 | A game server sends ticks to every connected player all night, so its traffic never drops below half its average. |
+| Colocation | 0.3 | A rented rack carries mixed customers of its own and never goes quiet. |
+| VPN, dedicated server | 0.2 | Tunnels and company servers keep syncing and polling overnight. |
+| Everything else | 0 | Websites follow their visitors, so nights are as low as the curve. |
+
+**Night jobs.** Every customer runs their own backup or batch job once a night for one hour, starting on a half hour from 00:00 to 05:30 drawn from the seed; one customer in six draws a new start every night, since cron jobs that depend on other jobs drift. During the job the workload's load rises by 0.5 and it ships two hours' worth of average traffic, because an offsite backup uploads a day's changes at once.
+
+**The player's backups.** A cluster's backup runs at 02:00 (Sundays only when weekly) and sends 10% of each workload's used disk from its node to the target's control plane within the hour, since a daily backup only copies what changed. The traffic lights the ports on the shortest cable path between the two servers and their LED net bars, and does not reach the uplinks.
+
+**Growth.** Each customer draws a disk growth rate and, separately, a CPU growth rate from the seed, because a big database and a busy shop are different customers.
+
+| Share of customers | Disk use per year (share of booked) | CPU demand per year (share of the first year's) |
+| --- | --- | --- |
+| 30% | +2% | +2% |
+| 50% | +15% | +15% |
+| 20% | +50% | +50% |
+
+Disk use starts at 30% of booked and stops at 100%; the average customer reaches about 66% after two years, as before. CPU load is the curve × (1 + rate × years) with jitter, capped at 100%. An upgrade is a new service, so both start over.
+
+**Outgrowing a plan.** Once a day at noon, a customer whose disk is at 90% or more, or whose CPU demand × the curve's weekly median reaches 0.9 (near 100% for more than half the week), writes an upgrade ticket with a chance of 1 in 7, so about a week after crossing the line; sales turns it into an expansion request. A full disk breaks the site: the customer loses 2 happiness a day and writes an "our site shows errors" upgrade ticket with a chance of 25% a day while none is open. A fast-growing disk crosses 90% after about 14 months and fills after 17. A fast-growing shop's CPU pegs after about 17 months, a news or enterprise site's after two years, while game servers and office sites, quiet for most of the week, take ten.
+
+**Before and after.** Measured over 30 days with a mixed set of customers (web hosting, VPS, game servers, VPN, storage, dedicated): early game in 2005 with 13 services moves 0.59 TB before and after, with a 95th percentile of 3.4 Mbit/s before and 3.8 after (night jobs add short peaks to a small base); mid game in 2012 with 200 services moves 17.9 TB before and 17.8 after, with a 95th percentile of 103 Mbit/s before and 88 after, so transit bills drop about 15% (€311 to €264 a month at Cogentle's price), because the floors and staggered peaks flatten the sum.
 
 ## Platforms and licenses
 

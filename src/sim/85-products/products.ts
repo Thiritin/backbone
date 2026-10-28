@@ -2,6 +2,7 @@ import { chance } from "../00-core/rng";
 import { dateOf, isMonthStart } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import { softwareById, type Software } from "../10-catalog/platforms";
+import { BACKUP_HOUR } from "../10-catalog/usage";
 import type { Customer } from "../30-customers/customers";
 import { bump, createTicket, isFinal } from "../40-support/tickets";
 import type { GameState } from "../50-state";
@@ -20,8 +21,7 @@ export const LOSS_RESTORED_MAX = -40;
 export const REVIEW_CHANCE = 0.1;
 export const UNHAPPY_REVIEW_CHANCE = 0.2;
 export const UNHAPPY = 40;
-// Backup jobs start at 02:00, weekly ones on Sundays; the pool holds a full copy plus the extra days kept.
-export const BACKUP_HOUR = 2;
+// Backup jobs start at BACKUP_HOUR, weekly ones on Sundays; the pool holds a full copy plus the extra days kept.
 export const BACKUP_POOL = 1.3;
 // GB moved per hour over a 1 Gbit/s link inside a zone and over the internet to another zone.
 export const LAN_GB_PER_HOUR = 450;

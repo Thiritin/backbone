@@ -13,6 +13,7 @@ import { salesTick } from "../30-market/sales";
 import { computeTick } from "../60-infra/cluster";
 import { networkTick } from "../60-infra/network";
 import { securityTick } from "../60-infra/security";
+import { usageTick } from "../60-infra/usage";
 import { productsTick } from "../85-products/products";
 import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
@@ -227,6 +228,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...opsTick(state));
   events.push(...computeTick(state));
   events.push(...productsTick(state));
+  events.push(...usageTick(state));
   events.push(...billingTick(state));
   events.push(...networkTick(state));
   events.push(...securityTick(state));
