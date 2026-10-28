@@ -22,8 +22,18 @@ describe("balance run (docs/design/economy.md, Balancing)", () => {
     expect(medianYear(solo, 4)).toBeGreaterThan(medianYear(steady, 4));
   });
 
-  // Known gap: leads are too scarce after level 2. Flip to `it` once the economy is tuned.
-  it.fails("brings the steady bot to each level within a year of the pacing target", () => {
-    for (const level of [2, 3, 4, 5, 6]) expect(medianYear(steady, level)).toBeLessThanOrEqual(PACING_YEAR[level] + 1);
+  it("brings the steady bot to levels 2 to 5 within a year of the pacing target", () => {
+    for (const level of [2, 3, 4, 5]) expect(medianYear(steady, level)).toBeLessThanOrEqual(PACING_YEAR[level] + 1);
+  });
+
+  it("keeps year 1 near its targets", () => {
+    const dec2005 = median(steady.map((r) => r.rows[0].customers));
+    expect(dec2005).toBeGreaterThan(25);
+    expect(dec2005).toBeLessThan(60);
+  });
+
+  // Known gap: past level 5 leads run out (economy.md, Balancing). Flip to `it` once lead flow is tuned.
+  it.fails("brings the steady bot to level 6 within a year of the pacing target", () => {
+    expect(medianYear(steady, 6)).toBeLessThanOrEqual(PACING_YEAR[6] + 1);
   });
 });

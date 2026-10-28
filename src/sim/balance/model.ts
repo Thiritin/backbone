@@ -3,16 +3,20 @@
 import { binomial, createRng, rand, type Rng } from "../00-core/rng";
 import { WORK_SHARE, type Patience } from "../00-core/workhours";
 import {
-  BASEMENT_SLOTS, BUDGET_SIZE, businessPowerPrice, CHOICE_TAU, CITIES, COMPETITORS, generationAt, GENERATIONS,
+  BASEMENT_SLOTS, BUDGET_SIZE, businessPowerPrice, CHOICE_TAU, CITIES, COMPETITORS, generationAt,
   KNOW_HOW, LEAD_CAP_SHARE, ORGANIC_BASE, LEVELS, MARKET_GROWTH, monthlySalary, NEVER_PAYS, ON_TIME, PAYMENT_MINUTES, PROFILES,
-  RACK_U_PER_MONTH, REPAIR_HOURS, RESOLD_COST_SHARE, SEARCH_AD_COST, SERVER_AFR, STAFF_HOURS_PER_MONTH, START_CASH,
+  REPAIR_HOURS, SEARCH_AD_COST, SERVER_AFR, STAFF_HOURS_PER_MONTH, START_CASH,
   TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vpsPlanGb, vpsRatePerGb,
   WEB_BASE, type ProductId, type Profile,
 } from "../10-catalog/economy";
-import { HOME_LINES } from "../20-world/datacenters";
+import { DATACENTERS, HOME_LINES, MOVE, spacePrice } from "../20-world/datacenters";
+import { dcPerTb } from "../10-catalog/network";
 import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
 import { OFFER } from "../30-market/market";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
+import { LEASE_FACTOR, LEASE_TERMS } from "../10-catalog/leasing";
+import { modelById, type DeviceModel } from "../10-catalog/hardware";
+import { OVERCOMMIT } from "../10-catalog/products";
 
 // Average hours a ticket written at a random hour waits for the office to open: four 16-hour nights and a 64-hour weekend.
 const OFF_HOURS_WAIT = (4 * 16 ** 2 + 64 ** 2) / 2 / 168;
@@ -33,8 +37,9 @@ export const STEADY: Bot = { name: "steady", priceFactor: 0.8, hires: true, adSh
 export const SOLO: Bot = { ...STEADY, name: "solo", hires: false };
 
 interface Cohort { n: number; H: number }
-interface Server { gen: number; ramGb: number; bought: number; price: number; basement: boolean }
+interface Server { gen: number; ramGb: number; cores: number; watts: number; bought: number; price: number; basement: boolean; leasedUntil?: number }
 interface Loan { balance: number; payment: number; rate: number }
+interface Lease { payment: number; until: number }
 type Product = ProductId | "game";
 interface Worker { skill: number; hired: number; cap: number }
 
@@ -52,15 +57,37 @@ const CONTROL_RAM = 1;
 const BASEMENT_WATTS = 150, PEAK_FACTOR = 2;
 const KNOW: Record<Product, number> = { ...KNOW_HOW, game: 1.5 };
 const TRAFFIC: Record<Product, number> = { web: 2, vps: 20, game: 60 };
+// Out of the basement the bot rents the cheapest rack share in its home city that holds its servers' rated draw,
+// or whole positions past a full rack, and pays power per kWh and the datacenter's bandwidth per TB (Datacenters and space).
+const HOME_DC = DATACENTERS.filter((d) => d.city === CITIES[0].name).sort((a, b) => a.positionPrice - b.positionPrice)[0];
+const DRAW_SHARE = 0.6;
+// The model has none of year 1's setup work (trainings, website, order form) and would fill the basement by April;
+// the happiness run's careful player fills it in the last quarter, so the bot moves out no earlier than October.
+const MOVE_MONTH = 9;
+function rackRent(watts: number): number {
+  const kw = watts / 1000;
+  const share = [8, 4, 2, 1].find((n) => kw <= HOME_DC.kwPerPosition / n);
+  return share ? spacePrice(HOME_DC, "share", share) : Math.ceil(kw / HOME_DC.kwPerPosition) * HOME_DC.positionPrice;
+}
 
 const priceOf = (p: Profile, product: Product, year: number): number =>
   product === "web" ? WEB_BASE * BUDGET_SIZE[p.budget]
     : product === "game" ? GAME_RATE * vpsRatePerGb(year) * GAME_RAM * vpsPlanGb(year) * BUDGET_SIZE[p.budget]
     : vpsRatePerGb(year) * vpsPlanGb(year) * BUDGET_SIZE[p.budget];
+// Booked vCPUs, as the live plans size them: 0.1 for a web space, one per 2 GB of a VPS (at least one), 2 per 4 GB game server.
+const cpuOf = (p: Profile, product: Product, year: number): number =>
+  product === "web" ? 0.1 : product === "game" ? GAME_RAM / 2 * vpsPlanGb(year) * BUDGET_SIZE[p.budget] : Math.max(1, Math.round(vpsPlanGb(year) * BUDGET_SIZE[p.budget] / 2));
+// The live shop's Dwell server of a generation and line (10-catalog/hardware.ts): balanced 1U or memory-optimized 2U.
+const shopServer = (gen: number, line: "compute" | "memory"): DeviceModel => modelById(`g${gen + 1}-${line}`);
+const serverOf = (gen: number, line: "compute" | "memory", month: number, basement: boolean): Server => {
+  const m = shopServer(gen, line);
+  return { gen, ramGb: m.server!.ramGb, cores: m.server!.cores, watts: m.watts, bought: month, price: m.price, basement };
+};
 const ramOf = (p: Profile, product: Product, year: number): number =>
   product === "web" ? WEB_RAM : (product === "game" ? GAME_RAM : 1) * vpsPlanGb(year) * BUDGET_SIZE[p.budget];
 // Mbit/s a customer sends at the evening peak; traffic grows 20% a year like the live TRAFFIC_GROWTH.
-const peakMbit = (product: Product, year: number): number => (TRAFFIC[product] * Math.pow(1.2, year - 2005) * 8000) / (730 * 3600) * PEAK_FACTOR;
+const monthlyGb = (product: Product, year: number): number => TRAFFIC[product] * Math.pow(1.2, year - 2005);
+const peakMbit = (product: Product, year: number): number => (monthlyGb(product, year) * 8000) / (730 * 3600) * PEAK_FACTOR;
 const wants = (p: Profile, product: Product): number => {
   const game = p.id === "gamer" ? GAME_SHARE : 0;
   return product === "web" ? 1 - p.vpsShare : product === "game" ? game : p.vpsShare - game;
@@ -91,13 +118,15 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
   const rng = createRng(seed);
   const cohorts: Cohort[][] = PROFILES.map(() => PRODUCTS.map(() => ({ n: 0, H: 70 })));
   cohorts[0][0] = { n: 3, H: 85 };
-  const servers: Server[] = [{ gen: 0, ramGb: GENERATIONS[0].ramGb, bought: 0, price: GENERATIONS[0].price, basement: true }];
+  const servers: Server[] = [serverOf(0, "compute", 0, true)];
   const loans: Loan[] = [];
+  const leases: Lease[] = [];
+  const profits: number[] = [];
   let line = HOME_LINES[0];
   const support: Worker[] = [];
   const books: Worker[] = [];
   let cash = START_CASH, minCash = cash, level = 1, knowHow = 0, cities = 1, rackUnlocked = false, hireUnlocked = false;
-  let backlogT = 0, backlogP = 0, waitHours = 4, downFrac = 0, lastMrr = 0, yearProfit = 0, negMonths = 0, bankrupt = false;
+  let backlogT = 0, backlogP = 0, waitHours = 4, downFrac = 0, lastMrr = 0, lastPerGb = 0, lastRunning = 0, yearProfit = 0, negMonths = 0, bankrupt = false;
   let reviewSum = 0, reviewN = 0;
   const rows: YearRow[] = [];
   const levelYear: Record<number, number> = {};
@@ -149,6 +178,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
         const paid = spend / cpl;
         adSpent += spend;
         const leads = Math.min(organic + referrals + paid, LEAD_CAP_SHARE * market * p.mix);
+        book_("organic", organic); book_("referrals", referrals); book_("paid", paid); book_("leads", leads);
         PRODUCTS.forEach((pr, k) => { newCustomers[i][k] += binomial(rng, Math.round(leads * wants(p, pr)), share(p, pr)); });
       });
     }
@@ -159,25 +189,52 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const debt = () => loans.reduce((a, l) => a + l.balance, 0);
     const ramNeeded = (extra: number[][]) => PROFILES.reduce((a, p, i) => a + PRODUCTS.reduce((b, pr, k) => b + (cohorts[i][k].n + extra[i][k]) * ramOf(p, pr, year), 0), 0);
     const ramHave = () => servers.reduce((a, s) => a + s.ramGb, 0) - CONTROL_RAM;
+    const cpuNeeded = (extra: number[][]) => PROFILES.reduce((a, p, i) => a + PRODUCTS.reduce((b, pr, k) => b + (cohorts[i][k].n + extra[i][k]) * cpuOf(p, pr, year), 0), 0);
+    const cpuHave = () => servers.reduce((a, s) => a + s.cores * OVERCOMMIT.cpu, 0);
     const peakNeeded = (extra: number[][]) => PROFILES.reduce((a, _, i) => a + PRODUCTS.reduce((b, pr, k) => b + (cohorts[i][k].n + extra[i][k]) * peakMbit(pr, year), 0), 0);
-    if (!rackUnlocked && servers.length >= BASEMENT_SLOTS && knowHow >= 50 && cash > 1500) { rackUnlocked = true; cash -= 500; }
+    if (!rackUnlocked && month >= MOVE_MONTH && servers.length >= BASEMENT_SLOTS && knowHow >= 50 && cash > 1500 + MOVE.sameCity.price) {
+      // The move: the basement servers ride along to the rack share and the home line is cancelled.
+      rackUnlocked = true;
+      cash -= 500 + MOVE.sameCity.price;
+      for (const s of servers) s.basement = false;
+    }
     // Steady capacity rule: buy whenever the cluster would be over 80% full and cash keeps €2,000 plus three instalments,
-    // on the smallest preset loan over five years when cash is short.
-    while (ramNeeded(newCustomers) > 0.8 * ramHave()) {
+    // on the smallest preset loan over five years when cash is short. Out of the basement it leases the server when the
+    // bank says no, taking the lowest monthly of the three lessors' offers.
+    const owed = () => loans.reduce((a, l) => a + l.payment, 0) + leases.reduce((a, l) => a + l.payment, 0);
+    // The live loan limit: the level's minimum or 12x the average monthly profit of the last six months, less debt.
+    const limit = () => Math.max(MIN_LIMIT[level0], (12 * profits.reduce((a, b) => a + b, 0)) / 6) - debt();
+    while (ramNeeded(newCustomers) > 0.8 * ramHave() || cpuNeeded(newCustomers) > 0.8 * cpuHave()) {
       const basement = !rackUnlocked;
       if (basement && servers.length >= BASEMENT_SLOTS) break;
-      const g = GENERATIONS[gen], reserve = 2000 + 3 * loans.reduce((a, l) => a + l.payment, 0);
+      // In the datacenter the bot buys the line with the lowest price per GB it can fill, given the vCPUs its customers book per GB.
+      const cpuPerGb = cpuNeeded(newCustomers) / Math.max(1, ramNeeded(newCustomers));
+      const usable = (m: DeviceModel) => Math.min(m.server!.ramGb, (m.server!.cores * OVERCOMMIT.cpu) / Math.max(cpuPerGb, 1e-6));
+      const line = basement ? "compute" : (["compute", "memory"] as const).reduce((a, b) => shopServer(gen, b).price / usable(shopServer(gen, b)) < shopServer(gen, a).price / usable(shopServer(gen, a)) ? b : a);
+      const g = serverOf(gen, line, month, basement), reserve = 2000 + 3 * owed();
       const short = g.price + reserve - cash, amount = LOAN_AMOUNTS.find((a) => a >= short);
       const rate = baseRate(year) + RISK_PREMIUM[level0] / 100, payment = amount ? annuity(amount, rate, 60) : 0;
       // Out of the basement the bot borrows only while all instalments stay under 60% of its recurring revenue.
-      const affordable = basement || loans.reduce((a, l) => a + l.payment, 0) + payment <= 0.6 * lastMrr;
-      if (short > 0 && amount && amount <= MIN_LIMIT[level0] - debt() && affordable) {
+      const affordable = (more: number) => basement || owed() + more <= 0.6 * lastMrr;
+      if (short > 0 && amount && amount <= limit() && affordable(payment)) {
         loans.push({ balance: amount, payment, rate });
         cash += amount;
         book_("loans", amount);
       }
-      if (cash < g.price + reserve) break;
-      servers.push({ gen, ramGb: g.ramGb, bought: month, price: g.price, basement });
+      if (cash < g.price + reserve) {
+        if (basement) break;
+        const offer = [0, 1, 2].map(() => {
+          const factor = LEASE_FACTOR.min + rand(rng) * (LEASE_FACTOR.max - LEASE_FACTOR.min), months = LEASE_TERMS[Math.floor(rand(rng) * LEASE_TERMS.length)];
+          return { payment: (g.price * factor) / months, months };
+        }).sort((a, b) => a.payment - b.payment)[0];
+        // Only an offer the new server pays for from its first month: 80% booked at last month's revenue per GB, less its running costs.
+        if (offer.payment > 0.8 * usable(shopServer(gen, line)) * lastPerGb - lastRunning || cash < reserve) break;
+        leases.push({ payment: offer.payment, until: month + offer.months });
+        servers.push({ ...g, leasedUntil: month + offer.months });
+        book_("leased", g.price);
+        continue;
+      }
+      servers.push(g);
       cash -= g.price;
       book_("servers", g.price);
     }
@@ -186,15 +243,20 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       const better = HOME_LINES.filter((l) => l.from <= year && l.up > line.up).sort((a, b) => a.monthly - b.monthly)[0];
       if (better) line = better;
     }
+    const wonNow = newCustomers.flat().reduce((a, b) => a + b, 0);
+    book_("won", wonNow);
     // Sales that don't fit the RAM, or the upload while in the basement, are lost.
     let ramFree = ramHave() - ramNeeded(PROFILES.map(() => PRODUCTS.map(() => 0)));
+    let cpuFree = cpuHave() - cpuNeeded(PROFILES.map(() => PRODUCTS.map(() => 0)));
     let upFree = rackUnlocked ? Infinity : line.up - peakNeeded(PROFILES.map(() => PRODUCTS.map(() => 0)));
     PROFILES.forEach((p, i) => PRODUCTS.forEach((pr, k) => {
-      const fit = Math.max(0, Math.min(newCustomers[i][k], Math.floor(ramFree / ramOf(p, pr, year)), Math.floor(upFree / peakMbit(pr, year))));
+      const fit = Math.max(0, Math.min(newCustomers[i][k], Math.floor(ramFree / ramOf(p, pr, year)), Math.floor(cpuFree / cpuOf(p, pr, year)), Math.floor(upFree / peakMbit(pr, year))));
       newCustomers[i][k] = fit;
       ramFree -= fit * ramOf(p, pr, year);
+      cpuFree -= fit * cpuOf(p, pr, year);
       upFree -= fit * peakMbit(pr, year);
     }));
+    book_("fit", newCustomers.flat().reduce((a, b) => a + b, 0));
     const vpsTotal = PROFILES.reduce((a, _, i) => a + cohorts[i][1].n + cohorts[i][2].n, 0);
 
     // Work queues (Tickets and work rates; Billing back-office tasks).
@@ -251,21 +313,25 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       c.H = c.n - gone + add > 0 ? ((c.n - gone) * c.H + add * 70) / (c.n - gone + add) : 70;
       c.n = c.n - gone + add;
     }));
+    book_("cancels", cancels);
     reviewSum = reviewSum * (23 / 24) + reviewsStars;
     reviewN = reviewN * (23 / 24) + reviewsCount;
 
     // Money.
-    let mrr = 0, resold = 0, collectedShare = 0, stuck = 0;
+    let mrr = 0, collectedShare = 0, stuck = 0;
     PROFILES.forEach((p, i) => PRODUCTS.forEach((pr, k) => {
       const v = cohorts[i][k].n * priceOf(p, pr, year) * bot.priceFactor;
       mrr += v;
-      if (pr === "web") resold += cohorts[i][k].n * WEB_BASE * BUDGET_SIZE[p.budget] * RESOLD_COST_SHARE;
       collectedShare += v * (ON_TIME[p.budget] + (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * processed);
       stuck += v * (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * (1 - processed);
     }));
     const inBasement = servers.filter((s) => s.basement);
-    const power = inBasement.length * (BASEMENT_WATTS / 1000) * 730 * businessPowerPrice(yf) * 1.6;
-    const space = (servers.length - inBasement.length) * RACK_U_PER_MONTH;
+    const inDc = servers.filter((s) => !s.basement);
+    const rated = inDc.reduce((a, s) => a + s.watts, 0);
+    const power = inBasement.length * (BASEMENT_WATTS / 1000) * 730 * businessPowerPrice(yf) * 1.6
+      + (DRAW_SHARE * rated / 1000) * 730 * businessPowerPrice(yf) * HOME_DC.powerFactor;
+    const space = inDc.length ? rackRent(rated) : 0;
+    const bandwidth = rackUnlocked ? PROFILES.reduce((a, _, i) => a + PRODUCTS.reduce((b, pr, k) => b + cohorts[i][k].n * monthlyGb(pr, year), 0), 0) / 1000 * dcPerTb(year) : 0;
     // Loan instalments: interest is a cost, principal only moves cash.
     let instalments = 0, interest = 0;
     for (const l of loans) {
@@ -277,16 +343,22 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     for (let l = loans.length - 1; l >= 0; l--) if (loans[l].balance < 0.01) loans.splice(l, 1);
     const salaries = support.reduce((a, w) => a + monthlySalary("support", w.skill, year), 0)
       + books.reduce((a, w) => a + monthlySalary("bookkeeper", w.skill, year), 0);
-    const depreciation = servers.reduce((a, s) => a + (month - s.bought < 60 ? s.price / 60 : 0), 0);
-    const opex = resold + power + space + salaries + adSpent + (rackUnlocked ? 0 : line.monthly);
+    const leasing = leases.reduce((a, l) => a + l.payment, 0);
+    for (let l = leases.length - 1; l >= 0; l--) if (leases[l].until <= month + 1) leases.splice(l, 1);
+    const depreciation = servers.reduce((a, s) => a + (!s.leasedUntil && month - s.bought < 60 ? s.price / 60 : 0), 0);
+    const opex = leasing + power + space + bandwidth + salaries + adSpent + (rackUnlocked ? 0 : line.monthly);
     cash += collectedShare - opex - instalments;
+    profits.push(collectedShare - opex - interest - servers.filter((x) => x.bought === month && !x.leasedUntil).reduce((a, x) => a + x.price, 0));
+    if (profits.length > 6) profits.shift();
     book_("instalments", instalments);
-    book_("collected", collectedShare); book_("resold", resold); book_("space", space); book_("power", power);
+    book_("collected", collectedShare); book_("leasing", leasing); book_("space", space); book_("bandwidth", bandwidth); book_("power", power);
     book_("salaries", salaries); book_("ads", adSpent);
     yearProfit += collectedShare - opex - depreciation - interest;
     if (month % 12 === 3 && yearProfit > 0) { cash -= TAX_RATE * yearProfit; book_("tax", TAX_RATE * yearProfit); }
     if (month % 12 === 3) yearProfit = 0;
     lastMrr = mrr;
+    lastPerGb = mrr / Math.max(1, ramNeeded(PROFILES.map(() => PRODUCTS.map(() => 0))));
+    lastRunning = (power + space + bandwidth) / Math.max(1, servers.length);
 
     // Staff decisions: hire when the queue is more than a day old.
     knowHow += PROFILES.reduce((a, _, i) => a + PRODUCTS.reduce((b, pr, k) => b + cohorts[i][k].n * KNOW[pr], 0), 0);
@@ -306,7 +378,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     // Levels (Net worth and level thresholds) and expansion to more cities.
     // Hardware counts at its resale value, as metrics.ts values it (60-infra/status.ts, resaleValue).
     const resale = (age: number) => (age <= 1 ? 1 - 0.2 * age : Math.max(0.2, 0.8 - (0.6 * (age - 1)) / 24));
-    const book = servers.reduce((a, s) => a + s.price * resale(month + 1 - s.bought), 0);
+    const book = servers.reduce((a, s) => a + ((s.leasedUntil ?? 0) > month + 1 ? 0 : s.price * resale(month + 1 - s.bought)), 0);
     const netWorth = cash - debt() + book + 24 * mrr;
     const next = LEVELS[level];
     if (next && netWorth >= next.netWorth && month / 12 >= next.years) {
@@ -321,6 +393,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     if (negMonths >= 2) bankrupt = true;
 
     if (month % 12 === 11) {
+      Object.assign(flow, { cash, debt: debt(), netWorth, nServers: servers.length, ramUsed: ramNeeded(PROFILES.map(() => PRODUCTS.map(() => 0))), ramHave: ramHave() });
       rows.push({ year, level, customers: Math.round(customers), mrr: Math.round(mrr), minCash: Math.round(minCash), staff: support.length + books.length, flow });
       minCash = cash;
       flow = {};

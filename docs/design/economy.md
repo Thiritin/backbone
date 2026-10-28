@@ -1485,7 +1485,57 @@ The year 1 targets for customers and revenue hold (median 47 customers and €61
 - The bot borrows in the basement like the happiness run; out of the basement it borrows only while all instalments stay under 60% of its recurring revenue. It buys a server only when cash keeps €2,000 plus three instalments, and it moves to the datacenter once the basement's four servers are in place.
 - Net worth subtracts debt and values hardware at its resale value, as `metrics.ts` does.
 
-The basement VPS cap of 8 is gone, since RAM and upload now set the limit. Against the model before these changes, level 2 arrives at the same time (median 2006.6 against 2006.3, half the seeds in 2005), level 3 later (2011.3 against 2009.9), level 4 earlier (2014.1 against 2017.6), and neither bot goes bankrupt. Levels 3 to 6 still miss their pacing years, as before.
+The basement VPS cap of 8 is gone, since RAM and upload now set the limit. Against the model before these changes, level 2 arrives at the same time (median 2006.6 against 2006.3, half the seeds in 2005), level 3 later (2011.3 against 2009.9), level 4 earlier (2014.1 against 2017.6), and neither bot goes bankrupt. Levels 3 to 6 still missed their pacing years; the next paragraphs find why and bring the median steady run to level 2 in 2006.0, level 3 in 2006.8, level 4 in 2008.9 and level 5 in 2013.5.
+
+
+**The stall after the basement.** With the rules above the steady bot sat between 87 and 262 customers from 2006 to 2010. Instrumenting the model per year (median of 20 seeds, year-end cash) showed why:
+
+| Year | Customers | MRR | Net worth | Cash | Debt | Binding constraint |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2005 | 45 | €810 | €18,063 | €3,444 | €15,777 | Basement RAM and upload |
+| 2006 | 87 | €1,499 | €31,857 | €4,110 | €23,505 | Capacity: 156 sales won, 43 fit |
+| 2007 | 108 | €1,662 | €31,968 | €4,383 | €22,731 | Capacity: 172 won, 44 fit |
+| 2008 | 147 | €2,170 | €44,735 | €5,330 | €22,079 | Capacity: 178 won, 73 fit |
+| 2009 | 201 | €2,922 | €67,233 | €5,963 | €22,285 | Capacity: 198 won, 103 fit |
+| 2010 | 262 | €3,889 | €95,970 | €7,271 | €23,575 | Capacity: 228 won, 120 fit |
+| 2011 | 423 | €8,767 | €218,456 | €9,823 | €44,385 | Level 3 loan limit |
+| 2013 | 1,327 | €29,603 | €757,290 | €19,296 | €96,747 | Level 3 loan limit |
+| 2015 | 3,632 | €79,752 | €2,212,533 | €154,090 | €99,708 | Leads |
+
+Leads were never the problem before 2014: about 500 a year reached the company and a third of them bought, but most sales did not fit the cluster. The bot could not add servers because each datacenter server lost money and the level 2 loan limit of €25,000 was used up. Four rules in the model were wrong against the live game:
+
+- **Datacenter costs.** The model charged a flat €60 per U a month. The live game rents rack shares (the cheapest home-city share, Hetzler Park in Frankfurt, costs €36 to €198 a month for 1/8 to a full rack, about €6 to €13 per server) and bills power per kWh and the datacenter's bandwidth per TB. The model now rents the cheapest home-city share whose kW limit holds the servers' rated draw, pays power at 60% of that draw times the datacenter's power factor, and pays bandwidth for every customer's traffic. Running a 2005 server in the datacenter now costs about €38 a month instead of €60, with bandwidth the largest part.
+- **Web hosting resale.** The model charged 40% of every web space's price as a resold line. Web hosting runs in panel VMs on the company's own servers; only domains are resold. The charge is gone.
+- **Server lines.** The model bought only the balanced 1U. The Shop sells the memory-optimized 2U from 2005: four times the RAM for 1.8 times the price and 1.6 times the power. Out of the basement the bot now picks the line with the lowest price per GB it can fill, counting the vCPUs its customers book (0.1 per web space, one per 2 GB of VPS, two per 4 GB game server, at most 8 per core). RAM, not CPU, sets the limit in 2005, so it buys memory-optimized servers.
+- **Leasing and the loan limit.** The model had no leasing, and its loan limit ignored the live rule's 12 × average monthly profit. The bot now takes the cheapest of three lease offers (factor 1.06 to 1.40, 12 to 36 months) when the bank says no, but only when the payment is below what the server earns at 80% booked at last month's revenue per GB, less its running costs. Leases sit outside the 60% instalment rule because each one pays for itself. Leased hardware is not in net worth until it is paid off, as in `metrics.ts`.
+
+Two bot rules were changed to match a careful player. The bot moves out of the basement no earlier than October of year 1: the model has none of year 1's setup work (trainings, website, order form) and otherwise filled the basement by April, while the happiness run fills it in the last quarter. At the move the basement servers ride along to the rack share for €300 and the home line is cancelled.
+
+No price, threshold or loan limit moved. With these changes (median of 20 seeds):
+
+| Year | Customers | MRR | Net worth | Cash | Debt |
+| --- | --- | --- | --- | --- | --- |
+| 2005 | 36 | €617 | €14,381 | €2,761 | €8,483 |
+| 2006 | 192 | €5,326 | €128,376 | €9,214 | €31,797 |
+| 2007 | 670 | €18,226 | €441,465 | €23,417 | €96,060 |
+| 2008 | 1,246 | €30,735 | €777,238 | €33,621 | €88,336 |
+| 2010 | 4,082 | €97,768 | €2,733,935 | €188,879 | €116,413 |
+| 2013 | 8,189 | €175,431 | €6,015,412 | €1,457,996 | €14,794 |
+| 2019 | 14,833 | €289,245 | €13,454,433 | €6,187,137 | €0 |
+
+From 2006 every sale fits the cluster, so leads set the pace. Median years reached, before and after:
+
+| Level | Target | Steady before | Steady after | Solo before | Solo after |
+| --- | --- | --- | --- | --- | --- |
+| 2 | 2005 | 2006.6 | 2006.0 | 2005.5 | 2005.8 |
+| 3 | 2007 | 2011.3 | 2006.8 | 2011.4 | 2006.6 |
+| 4 | 2010 | 2014.1 | 2008.9 | 2016.0 | 2009.7 |
+| 5 | 2013 | never | 2013.5 | never | never |
+| 6 | 2018 | never | never | never | never |
+
+Neither bot goes bankrupt. Level 3 arrives with fewer customers than the pacing table (about 190 instead of 400) at the same revenue, because VPS and game servers pay more per customer than the table assumed. Level 4 arrives a year early: once leases pay for themselves, capacity grows as fast as sales. If level 4 should land closer to 2010, the lease offers are the place to tune. The solo bot reaches level 3 a little before the steady bot because it pays no hiring unlock or salaries in 2006; it falls behind from level 4 when support runs out.
+
+**Level 6.** The steady bot stays at level 5 with about 15,000 customers in 2019 against 40,000 targeted. The cause is lead flow, not money: it brings in about 14,600 leads a year against a cap of 68,000, wins about 4,800 of them and loses about 3,700 a year to churn (25% a year), which settles near 19,000 customers, while €6 million of cash sits idle. Organic leads stop growing once the bot stops opening cities (6 at level 5, of 18), paid leads get dearer with spend (cost per lead × (1 + city spend ÷ €5,000)), and referrals add only about 500 a year. Fixing it means retuning the lead economy or the bot's city expansion and is left for a lead-flow pass.
 
 **Open questions**
 

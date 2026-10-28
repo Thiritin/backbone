@@ -126,7 +126,6 @@ export const generationAt = (year: number): number => {
   return g;
 };
 
-export const RACK_U_PER_MONTH = 60;
 export const BASEMENT_SLOTS = 4;
 
 // Electricity keyframes in ct/kWh (business); the basement pays 1.6×.

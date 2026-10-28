@@ -13,7 +13,7 @@ export const lessorName = (id: string): string => LESSORS.find((l) => l.id === i
 export interface LeaseOffer { id: string; lessor: string; months: 12 | 24 | 36; monthly: number; total: number }
 
 export const LEASE_FACTOR = { min: 1.06, max: 1.4 } as const;
-const TERMS = [12, 24, 36] as const;
+export const LEASE_TERMS = [12, 24, 36] as const;
 
 export const monthIndex = (hour: number): number => {
   const d = dateOf(hour);
@@ -31,7 +31,7 @@ export function leaseOffers(s: GameState, amount: number): LeaseOffer[] {
   return LESSORS.map((l, i) => {
     const next = draw(s.seed, month, amountCents, i);
     const factor = LEASE_FACTOR.min + next() * (LEASE_FACTOR.max - LEASE_FACTOR.min);
-    const months = TERMS[Math.floor(next() * TERMS.length)];
+    const months = LEASE_TERMS[Math.floor(next() * LEASE_TERMS.length)];
     const monthly = Math.round((amount * factor * 100) / months) / 100;
     return { id: `${l.id}-${month}-${amountCents}`, lessor: l.id, months, monthly, total: Math.round(monthly * months * 100) / 100 };
   });
