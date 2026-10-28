@@ -361,6 +361,8 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 
 **Fees and collections.** The first dunning notice adds a €5 fee and the final notice €10. A debt handed to collections returns 30% of its value 30 days later, and the customer is gone.
 
+**Suspension.** Suspending a customer costs 15 happiness and opens a billing ticket. While suspended, the customer pays with a 35% chance each day, or 20% with a bad payment habit. A bad payer still suspended after 14 days leaves with a 50% chance, and the debt goes to collections. The billing rules send the reminder, dunning and final notices on schedule and can suspend after 7, 14 or 30 days overdue; handing a debt to collections stays a manual step.
+
 **Back-office tasks.** Staff handle these at the work rate from [Tickets and work rates](#tickets-and-work-rates). A skill-50 bookkeeper records about 4,000 payments a month.
 
 | Task | Who | Handling time |

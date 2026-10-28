@@ -8,5 +8,9 @@ export function deserialize(raw: string): GameState {
   const data = JSON.parse(raw) as Partial<GameState>;
   if (typeof data.seed !== "number") throw new Error("save has no seed");
   const base = newGame(data.seed);
-  return { ...base, ...data, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION };
+  return {
+    ...base, ...data, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
+    billingRules: { ...base.billingRules, ...data.billingRules },
+    invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null) })),
+  };
 }

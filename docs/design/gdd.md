@@ -465,6 +465,10 @@ Payment habits differ by segment. Private individuals forget most often, and ent
 
 **Insurance.** SLA insurance pays the credits you owe customers when you miss an SLA. It covers three claims; after the third, the insurer blocks you for a year. The premium rises with a poor uptime record.
 
+**Suspension.** You can suspend a customer's services over an unpaid invoice. A suspended customer usually pays within days, because their site or server is down, but they open a ticket and lose happiness, and some leave instead. Suspension can be automated with a billing rule: send reminders on schedule and suspend after 7, 14 or 30 days overdue, with services coming back as soon as the invoice is paid. Nobody chases an invoice unless you or a rule do it, so a customer who stops paying keeps using the service for free until someone notices. The Billing app shows how much is owed by customers who are still being served.
+
+**Customers as a CRM.** The Customers app is the hub for everything about a customer: a searchable, filterable list, and for each customer an overview with lifetime spend, open balance, active services, invoices, tickets and their workloads. Every item links to the app that handles it (Billing, Support, the virtual machine manager).
+
 ## Staff and AI bots
 
 Staff are named people with a skill level, a work rate and a salary. Juniors cost little and grow into experts; seniors are good from day one but cost far more, as on the real job market.

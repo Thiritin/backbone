@@ -99,11 +99,11 @@ describe("dunning", () => {
     expect(sendReminder(s, inv().id).ok).toBe(true);
     expect(invoiceTotal(inv())).toBe(17);
     expect(inv().payAt).toBeNull();
-    expect(suspendServices(s, inv().id).ok).toBe(true);
-    expect(isSuspended(s, inv().customerId)).toBe(true);
     runTo(s, due + 28 * 24);
     expect(sendReminder(s, inv().id).ok).toBe(true);
     expect(inv().reminders).toHaveLength(3);
+    expect(suspendServices(s, inv().id).ok).toBe(true);
+    expect(isSuspended(s, inv().customerId)).toBe(true);
     expect(invoiceTotal(inv())).toBe(27);
     const cash = s.cash;
     runTo(s, inv().payAt!);

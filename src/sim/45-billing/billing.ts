@@ -1,6 +1,7 @@
-import { rand, type Rng } from "../00-core/rng";
+import { chance, rand, type Rng } from "../00-core/rng";
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import type { PaymentHabit } from "../30-customers/customers";
+import { bump, cancelCustomer, createTicket } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { metrics } from "../metrics";
@@ -18,8 +19,10 @@ export interface Invoice {
   status: InvoiceStatus;
   // Hour each dunning step was sent, in STEPS order.
   reminders: number[];
-  // ponytail: suspension is only a flag; milestone 3 stops the customer's workloads and their billed hours.
+  // ponytail: suspension takes the services offline for support only; milestone 3 stops the workloads and their billed hours.
   suspended: boolean;
+  // Hour the latest suspension started; auto-suspend only acts on an invoice that was never suspended.
+  suspendedAt: number | null;
   // Rolled once at issue: 0 pays on time, n pays after the nth dunning step, 4 never pays.
   payStep: number;
   // Hour the money arrives, set once the step that moves the customer is sent.
@@ -44,6 +47,14 @@ export const STEPS = [
 ] as const;
 export const COLLECTIONS_SHARE = 0.3;
 export const COLLECTIONS_DAYS = 30;
+
+// economy.md, Suspension.
+export interface BillingRules { autoRemind: boolean; autoSuspendDays: 0 | 7 | 14 | 30 }
+export const AUTO_SUSPEND_DAYS = [0, 7, 14, 30] as const;
+export const SUSPEND_HAPPINESS = 15;
+export const SUSPENDED_PAY_ODDS: Record<PaymentHabit, number> = { prompt: 0.35, late: 0.35, bad: 0.2 };
+export const SUSPEND_CHURN_DAYS = 14;
+export const SUSPEND_CHURN_CHANCE = 0.5;
 
 // Odds of paying on time, after the reminder, the dunning notice, the final notice, or never.
 // The doc's budget rows map onto habits: prompt is medium, late is high, bad is low.
@@ -80,6 +91,71 @@ export const isSuspended = (s: GameState, customerId: string): boolean =>
   s.invoices.some((i) => i.customerId === customerId && i.suspended && isUnpaid(i));
 
 const customerName = (s: GameState, id: string) => s.customers.find((c) => c.id === id)?.name ?? id;
+
+// Overdue invoices of customers who are still served: who they are and what they owe.
+export function freeRiding(s: GameState): { customers: string[]; owed: number } {
+  const held = new Set(s.invoices.filter((i) => i.suspended && isUnpaid(i)).map((i) => i.customerId));
+  const active = new Set(s.customers.filter((c) => c.churnedAt === null && !held.has(c.id)).map((c) => c.id));
+  const owed = new Map<string, number>();
+  for (const i of s.invoices) if (i.status === "overdue" && active.has(i.customerId)) owed.set(i.customerId, (owed.get(i.customerId) ?? 0) + invoiceTotal(i));
+  return { customers: [...owed.keys()], owed: cents([...owed.values()].reduce((a, b) => a + b, 0)) };
+}
+
+// Callers pass records they own (a copied invoice in the tick, a cloned state in actions); the customer and
+// tickets are copied here so the tick never edits the previous state.
+function ownCustomer(s: GameState, id: string) {
+  s.customers = s.customers.map((c) => (c.id === id ? { ...c } : c));
+  return s.customers.find((c) => c.id === id);
+}
+
+// The first suspension of a customer costs happiness and brings a ticket; further invoices only add to it.
+export function suspend(s: GameState, inv: Invoice): void {
+  const first = !isSuspended(s, inv.customerId);
+  Object.assign(inv, { suspended: true, suspendedAt: s.hour });
+  const c = ownCustomer(s, inv.customerId);
+  if (!first || !c) return;
+  bump(c, -SUSPEND_HAPPINESS);
+  createTicket(s, c, "billing").topic = "suspended";
+}
+
+// The debt goes to a collection agency and the customer leaves.
+function toCollections(s: GameState, inv: Invoice): void {
+  Object.assign(inv, { status: "writtenOff", suspended: false, payAt: s.hour + COLLECTIONS_DAYS * DAY });
+  const c = ownCustomer(s, inv.customerId);
+  s.tickets = s.tickets.map((t) => ({ ...t }));
+  if (c) cancelCustomer(s, c);
+}
+
+// Sends dunning step i of an invoice the caller owns.
+export function sendStep(s: GameState, inv: Invoice, i: number): void {
+  const step = STEPS[i];
+  inv.reminders = [...inv.reminders, s.hour];
+  if (step.fee) inv.lines = [...inv.lines, { serviceId: null, key: `invoice.line.${step.key}Fee`, params: {}, amount: step.fee }];
+  if (step.key === "collections") toCollections(s, inv);
+  else if (inv.payStep === i + 1) inv.payAt = s.hour + payDelay(s.rng);
+}
+
+// Billing rules and suspended customers, once per hour for each unpaid invoice the caller owns.
+function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
+  const c = s.customers.find((x) => x.id === inv.customerId);
+  const i = s.billingRules.autoRemind ? dueStep(inv, s.hour) : null;
+  if (i !== null && STEPS[i].key !== "collections") sendStep(s, inv, i);
+  const days = s.billingRules.autoSuspendDays;
+  if (days && inv.status === "overdue" && inv.suspendedAt === null && c?.churnedAt === null && s.hour >= inv.dueAt + days * DAY) {
+    suspend(s, inv);
+    events.push({ app: "Billing", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
+  }
+  if (!inv.suspended || inv.suspendedAt === null || inv.payAt !== null || !c) return;
+  const since = s.hour - inv.suspendedAt;
+  if (since <= 0 || since % DAY) return;
+  if (c.habit === "bad" && since === SUSPEND_CHURN_DAYS * DAY && chance(s.rng, SUSPEND_CHURN_CHANCE)) {
+    toCollections(s, inv);
+    events.push({ app: "Billing", key: "event.suspendedLeft", params: { customer: c.name, invoice: inv.number } });
+  } else if (chance(s.rng, SUSPENDED_PAY_ODDS[c.habit])) inv.payAt = s.hour + 1;
+}
+
+const needsChase = (s: GameState, inv: Invoice): boolean =>
+  isUnpaid(inv) && (inv.suspended || (s.billingRules.autoRemind && dueStep(inv, s.hour) !== null) || (s.billingRules.autoSuspendDays > 0 && inv.status === "overdue" && inv.suspendedAt === null));
 
 // Bank: economy.md, Bank, insurance and tax.
 const BASE_RATE: [number, number][] = [[2005, 4], [2009, 2.5], [2015, 1], [2021, 1], [2023, 4.5], [2026, 4]];
@@ -129,13 +205,14 @@ export function billingTick(s: GameState): SimEvent[] {
       const collected = inv.status === "writtenOff";
       const params = { invoice: inv.number, customer: customerName(s, inv.customerId) };
       book("payments", collected ? "ledger.collections" : "ledger.payment", params, cents(invoiceTotal(inv) * (collected ? COLLECTIONS_SHARE : 1)));
-      return { ...inv, payAt: null, status: collected ? inv.status : "paid", paidAt: s.hour } satisfies Invoice;
+      return { ...inv, payAt: null, status: collected ? inv.status : "paid", suspended: false, paidAt: s.hour } satisfies Invoice;
     }
-    if (inv.status === "open" && s.hour >= inv.dueAt) {
-      changed = true;
-      return { ...inv, status: "overdue" } satisfies Invoice;
-    }
-    return inv;
+    const due = inv.status === "open" && s.hour >= inv.dueAt;
+    if (!due && !needsChase(s, inv)) return inv;
+    changed = true;
+    const copy: Invoice = { ...inv, status: due ? "overdue" : inv.status };
+    chase(s, copy, events);
+    return copy;
   });
 
   const lines = new Map<string, InvoiceLine[]>();
@@ -165,7 +242,7 @@ export function billingTick(s: GameState): SimEvent[] {
     const payStep = rollPayStep(s.rng, s.customers.find((c) => c.id === customerId)?.habit ?? "prompt");
     issued.push({
       id: `inv${s.nextId++}`, number: `${yearOf(s.hour)}-${String(invoices.length + issued.length + 1).padStart(4, "0")}`,
-      customerId, lines: ls, issuedAt: s.hour, dueAt: s.hour + DUE_DAYS * DAY, status: "open", reminders: [], suspended: false,
+      customerId, lines: ls, issuedAt: s.hour, dueAt: s.hour + DUE_DAYS * DAY, status: "open", reminders: [], suspended: false, suspendedAt: null,
       payStep, payAt: payStep === 0 ? s.hour + DAY + Math.floor(rand(s.rng) * (DUE_DAYS - 1) * DAY) : null, paidAt: null,
     });
   }

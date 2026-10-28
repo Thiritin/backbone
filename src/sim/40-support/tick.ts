@@ -1,6 +1,7 @@
 import { chance } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
 import type { Customer } from "../30-customers/customers";
+import { isSuspended } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { serviceOnline } from "./status";
@@ -59,8 +60,9 @@ function spawnHourly(s: GameState): void {
   }
 }
 
+// A suspended customer knows why their services are off: suspension brings one billing ticket instead.
 function outages(s: GameState, customer: (id: string) => Customer): void {
-  const down = s.services.filter((v) => v.endedAt === null && !serviceOnline(s, v.id));
+  const down = s.services.filter((v) => v.endedAt === null && !serviceOnline(s, v.id) && !isSuspended(s, v.customerId));
   for (const v of down) {
     const c = customer(v.customerId), p = profileStats(c.profile);
     bump(c, -p.outagePenalty);

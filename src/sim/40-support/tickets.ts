@@ -42,7 +42,7 @@ export const TEMPLATES: Record<TicketKind, string[]> = {
 };
 export const ACTIONS: Record<TicketKind, TicketAction[]> = { outage: ["credit"], howTo: [], billing: ["credit"], upgrade: [], cancellation: ["retain", "cancel"], abuse: [] };
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
-const RIGHT: Record<string, string> = { upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", grow: "offer", spam: "warn", attack: "warn" };
+const RIGHT: Record<string, string> = { suspended: "resend", upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", grow: "offer", spam: "warn", attack: "warn" };
 
 export function rightTemplate(s: GameState, t: Ticket): string {
   if (t.kind === "outage") return t.serviceId && !serviceOnline(s, t.serviceId) ? "ack" : "back";

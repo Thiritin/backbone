@@ -1,5 +1,5 @@
 import {
-  annuity, cents, COLLECTIONS_DAYS, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, payDelay, STEPS,
+  annuity, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, suspend, type BillingRules,
 } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -13,17 +13,7 @@ export function sendReminder(s: GameState, invoiceId: string): ActionResult {
   if (!inv) return fail("error.invoiceSettled");
   const i = dueStep(inv, s.hour);
   if (i === null) return fail("error.stepNotDue");
-  const step = STEPS[i];
-  inv.reminders = [...inv.reminders, s.hour];
-  if (step.fee) inv.lines = [...inv.lines, { serviceId: null, key: `invoice.line.${step.key}Fee`, params: {}, amount: step.fee }];
-  if (step.key === "collections") {
-    Object.assign(inv, { status: "writtenOff", suspended: false, payAt: s.hour + COLLECTIONS_DAYS * 24 });
-    const c = s.customers.find((x) => x.id === inv.customerId);
-    if (c) c.churnedAt = s.hour;
-    for (const v of s.services) if (v.customerId === inv.customerId && v.endedAt === null) v.endedAt = s.hour;
-  } else if (inv.payStep === i + 1) {
-    inv.payAt = s.hour + payDelay(s.rng);
-  }
+  sendStep(s, inv, i);
   return { ok: true };
 }
 
@@ -31,7 +21,14 @@ export function suspendServices(s: GameState, invoiceId: string, suspended = tru
   const inv = unpaidInvoice(s, invoiceId);
   if (!inv) return fail("error.invoiceSettled");
   if (inv.status !== "overdue") return fail("error.notOverdue");
-  inv.suspended = suspended;
+  if (suspended && !inv.suspended) suspend(s, inv);
+  else inv.suspended = suspended;
+  return { ok: true };
+}
+
+export function setBillingRules(s: GameState, rules: Partial<BillingRules>): ActionResult {
+  if (rules.autoSuspendDays !== undefined && !AUTO_SUSPEND_DAYS.includes(rules.autoSuspendDays)) return fail("error.billingRule");
+  s.billingRules = { ...s.billingRules, ...rules };
   return { ok: true };
 }
 

@@ -1,7 +1,7 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { BASEMENT_SLOTS, START_CASH } from "./10-catalog/economy";
 import type { Customer, Service } from "./30-customers/customers";
-import type { Invoice, Loan } from "./45-billing/billing";
+import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 
 export const SAVE_VERSION = 1;
@@ -41,6 +41,7 @@ export interface GameState {
   loans: Loan[];
   // A missed repayment blocks new loans until this hour.
   loansBlockedUntil: number;
+  billingRules: BillingRules;
   // Support: tickets, the minute the player's queued replies finish, and services seen offline last hour.
   tickets: Ticket[];
   playerBusyUntil: number;
@@ -60,5 +61,6 @@ export const newGame = (seed: number): GameState => ({
   ledger: [], powerDue: 0,
   customers: [], services: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
+  billingRules: { autoRemind: false, autoSuspendDays: 0 },
   tickets: [], playerBusyUntil: 0, servicesDown: [],
 });
