@@ -28,6 +28,12 @@ export function workloadLoad(s: GameState, w: Workload, hour: number): number {
   return Math.min(1, curveLoad(curveFor(v.product, c.profile), hour) * jitter);
 }
 
+// What a workload uses of its booking at an hour.
+export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): Resources {
+  const load = workloadLoad(s, w, hour), lost = lostDisk(s, w);
+  return { vcpu: w.vcpu * load, ramGb: w.stopped || lost ? 0 : w.ramGb * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * diskFill(s, w, hour) };
+}
+
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
 // cores ÷ busy vCPUs, a disk pool over 100% stalls writes to 50%, a PHP upgrade slows it to 70%. RAM over 100% freezes the
 // node instead (freezeTick).
@@ -44,10 +50,8 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   }
   for (const w of s.workloads) {
     if (w.deviceId !== deviceId || !w.clusterId) continue;
-    const load = workloadLoad(s, w, hour), idle = w.stopped || lostDisk(s, w);
-    used.vcpu += w.vcpu * load;
-    used.ramGb += idle ? 0 : w.ramGb * (RAM_BASE + (1 - RAM_BASE) * load);
-    used.diskGb += lostDisk(s, w) ? 0 : w.diskGb * diskFill(s, w, hour);
+    const u = workloadUse(s, w, hour);
+    used.vcpu += u.vcpu; used.ramGb += u.ramGb; used.diskGb += u.diskGb;
   }
   const physical = { vcpu: v.cores, ramGb: v.ramGb, diskGb: raidUsable(d) };
   const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
