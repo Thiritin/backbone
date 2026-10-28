@@ -33,8 +33,8 @@ describe("catalog", () => {
     expect(new Set(MODELS.map((m) => m.id)).size).toBe(MODELS.length);
     for (const m of MODELS) {
       expect(m.idleWatts).toBeLessThanOrEqual(m.watts);
-      expect(m.ports.length).toBeGreaterThan(0);
-      expect(m.height).toBe(m.kind === "gateway" ? 0 : m.kind === "server" ? m.height : 1);
+      expect(m.ports.length > 0).toBe(m.kind !== "part");
+      expect(m.height).toBe(m.kind === "gateway" || m.kind === "part" ? 0 : m.kind === "server" ? m.height : 1);
     }
     expect(() => modelById("nope")).toThrow();
     expect(MODELS.some((m) => m.id === "tower")).toBe(false);
@@ -79,8 +79,8 @@ describe("new game", () => {
   it("starts with a server and switch in the basement rack, online through the home router", () => {
     const s = newGame(3);
     expect(s.cash).toBe(5000);
-    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0 }]);
-    expect(s.racks).toEqual([{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false }]);
+    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }]);
+    expect(s.racks).toEqual([{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false }]);
     expect(s.devices.map((d) => [d.model, d.brand, d.name, d.rackId, d.panel, d.price, d.boughtAt])).toEqual([
       ["g1-compute", "Dwell", "fra1-srv-01", "rack2", null, 2500, 0],
       ["sw-8", "Sysko", "fra1-sw-01", "rack2", null, 60, 0],

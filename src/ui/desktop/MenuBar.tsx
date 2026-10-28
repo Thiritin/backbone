@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { serialize } from "../../sim/91-save/save";
 import { Confirm } from "./Confirm";
+import { Intro } from "./Intro";
 import { newNote } from "./DesktopIcons";
 import { restoreGuide } from "../../sim/90-actions/docs";
 import { dateOf, formatClock, SPEEDS, type Speed } from "../../sim/00-core/time";
@@ -17,6 +18,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
   const docTitle = (id: string) => game.docs.find((d) => d.id === id)?.title ?? "";
   const [menu, setMenu] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
+  const [intro, setIntro] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   const front = [...windows].filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];
 
@@ -48,7 +50,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      {item("Backbone", [["New note", () => newNote()], ...(guideGone ? [["Restore Getting started", () => act(restoreGuide)] as [string, () => void]] : []), ["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <Network />, "mb-logo")}
+      {item("Backbone", [["Introduction…", () => setIntro(true)], ["New note", () => newNote()], ...(guideGone ? [["Restore Getting started", () => act(restoreGuide)] as [string, () => void]] : []), ["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <Network />, "mb-logo")}
       <span className="mb-item mb-app">{front?.app ?? "Backbone"}</span>
       {item("Window", windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : [w.app, () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
@@ -73,6 +75,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
         e.target.value = "";
         if (f) importSave(await f.text());
       }} />
+      {intro && <Intro onClose={() => setIntro(false)} />}
       {confirm && (
         <Confirm
           title="Delete all progress?"
