@@ -367,10 +367,11 @@ function PartsCard({ game, device }: { game: GameState; device: Device }) {
   const loc = locationOf(game, device);
   const n: Record<string, number> = {}, total: Record<string, number> = {};
   for (const c of device.components) total[c.kind] = (total[c.kind] ?? 0) + 1;
+  const held = !device.rackId ? "Not mounted" : device.maintenance ? "Swap under way" : null;
   const spare = (kind: string) => game.devices.some((d) => d.model === `part-${kind}` && d.store === loc?.id);
   return (
     <div className="loc-card">
-      <div className="loc-card-h"><h3><Cpu />Components</h3></div>
+      <div className="loc-card-h"><h3><Cpu />Components</h3>{held && <span className="loc-muted">{held}</span>}</div>
       <table className="table loc-parts">
         <thead><tr><th>Part</th><th>Age</th><th>Status</th><th /></tr></thead>
         <tbody>
@@ -382,8 +383,8 @@ function PartsCard({ game, device }: { game: GameState; device: Device }) {
               : c.failedAt !== null ? <span className="pill bad">Failed</span>
               : rebuild ? <span className="pill warn">Rebuilding</span>
               : worn ? <span className="pill warn">Worn</span> : <span className="pill ok">OK</span>;
-            const block = swap ? null : !device.rackId ? "Not mounted" : device.maintenance ? "Swap under way"
-              : !spare(c.kind) ? `No part in ${loc?.az ?? ""}` : device.on && !hotSwappable(device, c) ? "Power off first" : null;
+            const block = swap || held ? null : !spare(c.kind) ? (c.failedAt !== null || worn ? `No part in ${loc?.az ?? ""}` : "")
+              : device.on && !hotSwappable(device, c) ? "Power off first" : null;
             return (
               <tr key={c.id}>
                 <td>{PART_NAME[c.kind]}{total[c.kind] > 1 && <span className="num"> {n[c.kind]}</span>}</td>
@@ -395,7 +396,7 @@ function PartsCard({ game, device }: { game: GameState; device: Device }) {
                 </td>
                 <td>{status}</td>
                 <td className="r">
-                  {swap ? null : block ? <span className="loc-muted">{block}</span>
+                  {swap || held ? null : block !== null ? <span className="loc-muted">{block}</span>
                     : <button className="btn" onClick={() => act((g) => replaceComponent(g, device.id, c.id))}>Replace</button>}
                 </td>
               </tr>

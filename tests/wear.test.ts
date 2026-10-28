@@ -7,6 +7,7 @@ import {
   addLocation, buyCircuit, buyDevice, buyRack, connect, mountDevice, replaceComponent, setCableColor, setFeed, setLabel, setPower,
   setRaid, setRebuildRate, unmountDevice,
 } from "../src/sim/90-actions/hardware";
+import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const rich = (): GameState => ({ ...newGame(1), cash: 1_000_000 });
@@ -95,7 +96,16 @@ describe("RAID", () => {
     const drives = dev(s, id).components.filter((c) => c.kind === "hdd");
     expect(arrayLost({ ...dev(s, id), components: dev(s, id).components.map((c) => (c === drives[0] || c === drives[2] ? { ...c, failedAt: 0 } : c)) })).toBe(false);
     expect(arrayLost({ ...dev(s, id), components: dev(s, id).components.map((c) => (c === drives[0] || c === drives[1] ? { ...c, failedAt: 0 } : c)) })).toBe(true);
-    expect(dev(s, id).dataLost).toBe(0);
+    expect(dev(s, id).dataLost).toBeNull();
+  });
+  it("loses data on a level change only when the server holds data", () => {
+    const s = rich();
+    const id = server(s, "g1-storage");
+    ok(setPower(s, id, false));
+    addService(s, addCustomer(s, "Ada", "private"), "webHosting", "ada.example", 5, "hour");
+    s.hour = 7;
+    ok(setRaid(s, id, "none"));
+    expect(dev(s, id).dataLost).toBe(7);
   });
   it("only changes the level of a server that is off and has enough drives", () => {
     const s = rich();

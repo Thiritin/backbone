@@ -3,7 +3,7 @@ import { brandsFor, modelById, priceOf, shopModels, SWITCH_BRAND } from "../10-c
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { BASEMENT, DATACENTERS, datacenterById, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { connectError, drivesOf, fits, freePositions, freeSlots, hotSwappable, moveCost, resaleValue, travelCost } from "../60-infra/status";
+import { connectError, drivesOf, fits, freePositions, holdsData, freeSlots, hotSwappable, moveCost, resaleValue, travelCost } from "../60-infra/status";
 import { endLease } from "../88-tick/tick";
 
 // error is an i18n key.
@@ -375,7 +375,7 @@ export function setRaid(s: GameState, deviceId: string, level: RaidLevel): Actio
   if (!(level in { none: 1, "1": 1, "5": 1, "6": 1, "10": 1 }) || !raidFits(level, drivesOf(d).length)) return fail("error.raidLevel");
   if (d.on && (d.rackId || d.panel)) return fail("error.powerOffFirst");
   if (d.raid === level) return { ok: true };
-  Object.assign(d, { raid: level, rebuild: null, dataLost: s.hour });
+  Object.assign(d, { raid: level, rebuild: null, dataLost: holdsData(s, d) ? s.hour : d.dataLost });
   return { ok: true };
 }
 

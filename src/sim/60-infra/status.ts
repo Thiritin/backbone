@@ -110,6 +110,12 @@ export function locationOf(s: GameState, d: Device): Location | undefined {
   return s.locations.find((l) => l.id === id);
 }
 
+// ponytail: zone-wide proxy until the scheduler places workloads on servers.
+export function holdsData(s: GameState, d: Device): boolean {
+  const az = locationOf(s, d)?.az;
+  return az !== undefined && s.services.some((v) => v.endedAt === null && (v.zone === null || v.zone === az));
+}
+
 // 100% to 80% over the first month, then down to 20% over the next 24 months.
 export function resaleValue(s: GameState, price: number, boughtAt: number): number {
   const months = Math.max(0, s.hour - boughtAt) / MONTH;
