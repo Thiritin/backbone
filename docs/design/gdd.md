@@ -209,14 +209,39 @@ Servers join clusters, and products draw their resources from clusters. Everythi
 
 **Node states.** Each node in a cluster has one of four states:
 
-| State | Meaning |
-| --- | --- |
-| Active | Takes new workloads |
-| Cordoned | Keeps its workloads but takes no new ones |
-| Draining | The scheduler moves every workload to other nodes |
-| Maintenance | Empty; safe to upgrade, re-cable, swap or remove |
+| State | Meaning | OpenStack |
+| --- | --- | --- |
+| Active | Takes new workloads | Compute service enabled |
+| Cordoned | Keeps its workloads but takes no new ones | Compute service disabled |
+| Draining | The scheduler moves every workload to other nodes | Live-migrating every instance off the host |
+| Maintenance | Empty; safe to upgrade, re-cable, swap or remove | Disabled and empty |
 
 Draining stops with a message when the rest of the cluster has no room, and says how much is missing. Uncordoning returns the node to Active. Migrations share the links between nodes, so the scheduler moves a few at a time.
+
+**OpenStack as the model.** Virtual machines and cloud servers follow OpenStack, so players who know it recognise everything and players who don't learn something real. The game uses plain names on screen and keeps the OpenStack concept behind each one:
+
+| In the game | OpenStack concept | How it plays |
+| --- | --- | --- |
+| Cluster | Compute region or cell | A pool of nodes with one scheduler |
+| Node | Compute host (Nova) | A server that runs instances |
+| Instance size | Flavor | vCPUs, RAM and disk; requests name a size |
+| Rack or location group | Availability zone | Customers can ask for a zone; spread rules use them |
+| Hardware class | Host aggregate | Nodes tagged NVMe, ARM or high-memory; sizes can require a class |
+| Placement policy | Scheduler filters and weighers | Filters drop nodes that can't fit; *pack* or *spread* weighs the rest |
+| Overcommit | CPU and RAM allocation ratios | CPU up to 8:1, RAM 1:1 |
+| Keep apart | Server group (anti-affinity or soft anti-affinity) | A customer's instances land on different nodes, strictly or when possible |
+| Disk replicas and spread | Ceph-backed volumes with CRUSH failure domains | 1 to 3 copies spread across hosts, racks or locations |
+| Volume | Block storage (Cinder) | Disks that outlive an instance and move with it |
+| Image | Image service (Glance) | The operating systems you offer; each one is a convenience point |
+| Private network | Project network (Neutron, VLAN or VXLAN) | Overlay networks are the VXLAN unlock |
+| Public IP | Floating IP | Each one uses an address from your pool |
+| Customer account | Project (Keystone) with quotas | Cloud quotas and quota requests |
+| Restart after a failure | Evacuation, instance HA (Masakari) | Part of HA clusters |
+| Load balancer | Octavia | Runs as instances on the cluster |
+| Object storage | Swift or Ceph RGW | Runs on storage nodes |
+| DNS hosting | Designate | Two DNS workloads per cluster |
+| Managed databases | Trove | Database instances you patch and back up |
+| Managed Kubernetes | Magnum | Needs a Kubernetes engineer |
 
 **When a node fails.** In a high-availability cluster its workloads restart on other nodes within minutes. In a consumer cluster they stay down until the node is repaired. Disks and power supplies often warn before they die, which gives a careful player time to drain the node first.
 
@@ -254,6 +279,13 @@ Worth adding later: email hosting and GPU compute.
 | "Pleskit" (Plesk) | Per server, by number of domains | Good value at mid size |
 | "DirectAdmen" (DirectAdmin) | Per server, flat tiers | Cheap; fewer features, more tickets |
 | "FreePanel" (open-source panels) | Free | No license fee; more admin work and tickets |
+
+| Cloud platform (cloud servers) | Pricing model | Trade-off |
+| --- | --- | --- |
+| "OpenStash" (OpenStack) | Free | Every feature above; needs the most admin work until you have staff for it |
+| "VMwhere" (VMware) | Per CPU core, yearly | Polished and few tickets; the license bill grows with every node |
+| "Proxmocks" (Proxmox) | Free, optional support per socket | Easy to run; no quotas or self-service until the shop unlock |
+| "HyperVee" (Hyper-V) | Per server, with an OS license | Business customers like it; Linux customers don't |
 
 Game servers work the same way: each game has its own license terms (one-time, per server or per player slot) and its own demand.
 
