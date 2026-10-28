@@ -2,11 +2,10 @@ import { Boxes, MonitorCog, Play, RotateCcw, Square, TriangleAlert } from "lucid
 import { useState } from "react";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import type { GameState } from "../../../sim/50-state";
-import { bookable, nodeUsed, type Workload } from "../../../sim/60-infra/cluster";
-import { working } from "../../../sim/60-infra/status";
+import type { Workload } from "../../../sim/60-infra/cluster";
 import { workloadLoad } from "../../../sim/60-infra/usage";
-import { migrateWorkload, restoreWorkload, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
-import { useStore } from "../../store";
+import { migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
+import { useFocus, useStore } from "../../store";
 import "../billing/billing.css";
 import { CustomerLink } from "../customers/CustomersApp";
 import { day, devName, disk, ram } from "../hw";
@@ -25,6 +24,7 @@ export function VmApp() {
   const [node, setNode] = useState<string | null>(null);
   const [filter, setFilter] = useState<StateFilter>("all");
   const [selected, setSelected] = useState<string | null>(null);
+  useFocus("Virtual machines", (f) => { if (f.kind === "workload") { setCluster(null); setNode(null); setFilter("all"); setIncidents(false); setSelected(f.id); } });
   const cluster = game.clusters.find((c) => c.id === clusterId);
   const brand = cluster?.platform ? softwareById(cluster.platform) : null;
   const shown = game.workloads.filter((w) => w.clusterId && (!cluster || w.clusterId === cluster.id) && (!node || w.deviceId === node) && matches(filter, vmState(game, w)));
@@ -107,9 +107,7 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
   const st = vmState(game, w), [label, tone] = VM_STATE[st];
   const from = game.hour - (game.hour % 24);
   const load = Array.from({ length: 24 }, (_, i) => workloadLoad(game, { ...w, stopped: false, busyUntil: 0 }, from + i));
-  // Nodes of the same zone's clusters with room for it.
-  const targets = game.clusters.filter((x) => x.az === cluster.az).flatMap((x) => x.nodes.filter((n) => n.state === "active").map((n) => ({ c: x, d: game.devices.find((d) => d.id === n.deviceId)! })))
-    .filter(({ d }) => d && d.id !== w.deviceId && working(game, d.id) && (["vcpu", "ramGb", "diskGb"] as const).every((k) => nodeUsed(game, d.id)[k] + w[k] <= bookable(game, d)[k] + 1e-9));
+  const targets = migrationTargets(game, w.id).map((t) => ({ c: game.clusters.find((x) => x.id === t.clusterId)!, d: game.devices.find((d) => d.id === t.deviceId)! }));
   const live = !!cluster.platform && softwareById(cluster.platform).live;
   return (
     <aside className="fin-detail vm-detail">
@@ -132,9 +130,9 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
       <div className="fin-actions">
         {st === "lost" && <button className="btn primary" onClick={() => act((g) => restoreWorkload(g, w.id))}><RotateCcw />{w.backupAt === null ? "Start empty" : "Restore"}</button>}
         {st === "stopped" && <button className="btn" onClick={() => act((g) => startWorkload(g, w.id))}><Play />Start</button>}
-        {(st === "running" || st === "down") && <button className="btn" onClick={() => act((g) => stopWorkload(g, w.id))}><Square />Stop</button>}
+        {(st === "running" || st === "down" || st === "frozen") && <button className="btn" onClick={() => act((g) => stopWorkload(g, w.id))}><Square />Stop</button>}
       </div>
-      {(st === "running" || st === "down" || st === "stopped") && targets.length > 0 && (
+      {(st === "running" || st === "down" || st === "frozen" || st === "stopped") && targets.length > 0 && (
         <section className="fin-card">
           <div className="fin-card-h">{live ? "Live migration" : "Cold migration"}</div>
           <div className="fin-card-b">

@@ -17,11 +17,13 @@ export type BackupEvery = "off" | "daily" | "weekly";
 // A cluster lives in one availability zone; its nodes are servers mounted in that zone. panel and platform are the installed
 // SOFTWARE ids, null until installed; controlPlane is the node that hosts their management services. While switching (an
 // install or a change), the control plane is busy until doneAt. Backups copy every workload to the target cluster.
+// ramGuard (Memory reservation) keeps booked RAM within each node's installed RAM.
 export interface Cluster {
   id: string; name: string; az: string; placement: Placement; nodes: ClusterNode[];
   panel: string | null; platform: string | null; controlPlane: string | null;
   switching: { kind: SoftwareKind; to: string; doneAt: number } | null;
   backup: { targetId: string | null; every: BackupEvery };
+  ramGuard?: boolean;
 }
 // One workload runs one service: on a cluster node (clusterId and deviceId), on a whole server (deviceId only), or in rack
 // units for colocation (rackId, slot, units, watts). Resources are booked at placement; placedAt is the hour it last moved.
@@ -61,12 +63,14 @@ export function controlPlaneUse(c: Pick<Cluster, "panel" | "platform">): Resourc
 }
 const density = (c: Cluster) => (c.platform ? softwareById(c.platform).density : 1);
 
-// What a node can book for workloads: its capacity times the platform's density, less the control plane it hosts.
+// What a node can book for workloads: its capacity times the platform's density, less the control plane it hosts. With
+// Memory reservation on, RAM stops at the installed RAM.
 export function bookable(s: GameState, d: Device): Resources {
   const cap = nodeCapacity(d), c = clusterOf(s, d.id);
   if (!c) return cap;
   const k = density(c), cp = c.controlPlane === d.id ? controlPlaneUse(c) : ZERO;
-  return { vcpu: cap.vcpu * k - cp.vcpu, ramGb: cap.ramGb * k - cp.ramGb, diskGb: cap.diskGb * k - cp.diskGb };
+  const ram = c.ramGuard ? Math.min(cap.ramGb * k, modelById(d.model).server?.ramGb ?? 0) : cap.ramGb * k;
+  return { vcpu: cap.vcpu * k - cp.vcpu, ramGb: ram - cp.ramGb, diskGb: cap.diskGb * k - cp.diskGb };
 }
 
 // Whether a working node of the cluster has room for its control plane next to its workloads.
@@ -160,6 +164,7 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   if (w.stopped || w.busyUntil > s.hour) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching && c.switching.kind === servedBy(s, w)) return false;
+  if (c && w.deviceId && s.frozen.includes(w.deviceId)) return false;
   // Web sites taken offline for maintenance or compromised.
   if (c && w.deviceId && (s.security.offline.includes(w.deviceId) || s.security.hacked.includes(w.deviceId)) && servedBy(s, w) === "panel") return false;
   if (w.deviceId) {

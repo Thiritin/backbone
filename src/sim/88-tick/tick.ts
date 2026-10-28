@@ -12,6 +12,7 @@ import { fairsTick } from "../80-business/fairs";
 import { marketingTick } from "../80-business/marketing";
 import { salesTick } from "../30-market/sales";
 import { computeTick } from "../60-infra/cluster";
+import { freezeTick } from "../60-infra/usage";
 import { networkTick } from "../60-infra/network";
 import { securityTick } from "../60-infra/security";
 import { productsTick } from "../85-products/products";
@@ -226,6 +227,7 @@ export function tick(state: GameState): SimEvent[] {
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
   events.push(...opsTick(state));
+  events.push(...freezeTick(state));
   events.push(...computeTick(state));
   events.push(...productsTick(state));
   events.push(...billingTick(state));

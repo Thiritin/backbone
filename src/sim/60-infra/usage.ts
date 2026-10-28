@@ -3,6 +3,7 @@ import { jacksOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
 import { curveFor, curveLoad } from "../10-catalog/usage";
 import type { Device, End, GameState } from "../50-state";
+import type { SimEvent } from "../88-tick/tick";
 import { clusterOf, controlPlaneUse, lostDisk, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
 import { PHP_SLOW } from "./php";
@@ -27,8 +28,15 @@ export function workloadLoad(s: GameState, w: Workload, hour: number): number {
   return Math.min(1, curveLoad(curveFor(v.product, c.profile), hour) * jitter);
 }
 
+// What a workload uses of its booking at an hour.
+export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): Resources {
+  const load = workloadLoad(s, w, hour), lost = lostDisk(s, w);
+  return { vcpu: w.vcpu * load, ramGb: w.stopped || lost ? 0 : w.ramGb * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * diskFill(s, w, hour) };
+}
+
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
-// cores ÷ busy vCPUs, RAM over 100% swaps to 30%, a disk pool over 100% stalls writes to 50%, a PHP upgrade slows it to 70%.
+// cores ÷ busy vCPUs, a disk pool over 100% stalls writes to 50%, a PHP upgrade slows it to 70%. RAM over 100% freezes the
+// node instead (freezeTick).
 export interface NodeUsage { used: Resources; physical: Resources; perf: number }
 
 export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour): NodeUsage {
@@ -42,18 +50,36 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   }
   for (const w of s.workloads) {
     if (w.deviceId !== deviceId || !w.clusterId) continue;
-    const load = workloadLoad(s, w, hour), idle = w.stopped || lostDisk(s, w);
-    used.vcpu += w.vcpu * load;
-    used.ramGb += idle ? 0 : w.ramGb * (RAM_BASE + (1 - RAM_BASE) * load);
-    used.diskGb += lostDisk(s, w) ? 0 : w.diskGb * diskFill(s, w, hour);
+    const u = workloadUse(s, w, hour);
+    used.vcpu += u.vcpu; used.ramGb += u.ramGb; used.diskGb += u.diskGb;
   }
   const physical = { vcpu: v.cores, ramGb: v.ramGb, diskGb: raidUsable(d) };
   const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
-  const ram = used.ramGb > physical.ramGb ? 0.3 : 1;
   const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
   const php = c && hour <= (c.nodes.find((n) => n.deviceId === deviceId)?.phpUntil ?? -1) ? PHP_SLOW : 1;
-  return { used, physical, perf: Math.min(cpu, ram, disk, php) };
+  return { used, physical, perf: Math.min(cpu, disk, php) };
 }
+
+// A working cluster node whose RAM in use exceeds its installed RAM freezes: every workload on it is down until it fits again.
+export const ramOver = (u: NodeUsage) => u.used.ramGb > u.physical.ramGb + 1e-9;
+
+// Hourly and after a stop or a move: recomputes the frozen nodes and reports each freeze and thaw.
+export function freezeTick(s: GameState): SimEvent[] {
+  const name = (id: string) => { const d = s.devices.find((x) => x.id === id)!; return d.label ?? d.name; };
+  const frozen = s.clusters.flatMap((c) => c.nodes.map((n) => n.deviceId)).filter((id) => working(s, id) && ramOver(nodeUsage(s, id)));
+  const events: SimEvent[] = [
+    ...frozen.filter((id) => !s.frozen.includes(id)).map((id) => ({ app: "Locations", key: "event.nodeFrozen", params: { device: name(id) } })),
+    ...s.frozen.filter((id) => !frozen.includes(id) && s.devices.some((d) => d.id === id)).map((id) => ({ app: "Locations", key: "event.nodeThawed", params: { device: name(id) } })),
+  ];
+  s.frozen = frozen;
+  return events;
+}
+
+// economy.md, Workloads: a workload is pegged when its CPU ran at 95% or more of its booking for over half of the last 24 hours.
+export const PEGGED_LOAD = 0.95;
+export const peggedHours = (s: GameState, w: Workload, hour: number = s.hour): number =>
+  Array.from({ length: Math.min(24, hour + 1) }, (_, i) => workloadLoad(s, w, hour - i)).filter((l) => l >= PEGGED_LOAD).length;
+export const pegged = (s: GameState, w: Workload, hour: number = s.hour) => peggedHours(s, w, hour) > 12;
 
 // The highest CPU, RAM and disk use of a node over the given hours.
 export function peakUsage(s: GameState, deviceId: string, from: number, hours: number): Resources {
