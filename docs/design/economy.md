@@ -99,6 +99,10 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 - **RAM.** RAM can be added up to the model's maximum, which is twice the listed amount, at 25% of the generation's price per listed amount.
 - **Power draw.** A server draws 40% of its full power when idle, rising in a straight line with CPU load.
 - **Port speed.** Server ports run at 1G until 2011, then 10G, 25G from 2017 and 100G from 2023.
+- **Ports.** 1G ports are copper (RJ45); 10G and faster ports are SFP cages.
+- **Drives at purchase.** A server ships with one drive in its bays, so a Compute 1U has the generation's storage. The Storage 2U ships with six drives and has six bays free.
+- **Shop window.** A generation stays in the shop until the generation two steps newer arrives, so G1 is sold until the end of 2010 and G2 until the end of 2013. G6 and G7 stay in the shop.
+- **Tower.** The tower is the starting server and keeps the specs from the starting state (2 cores, 4 GB RAM, 250 GB disk, 150 W); it sits on a shelf and is sold for €1,000 until 2010.
 
 **Routers.** Routers keep their price over the years. A router's ports cap how many uplink links a location can have and how fast they run.
 
@@ -108,6 +112,23 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Edge M | 1U | 8 × 10G and 4 × 1G | 2008 | €12,000 | 200 W |
 | Edge L | 2U | 32 × 100G | 2014 | €40,000 | 600 W |
 | Edge XL | 2U | 36 × 400G | 2021 | €90,000 | 900 W |
+
+**Switches and gateways.** Switches come from Sysko and keep their price over the years. Every switch stays in the shop once it arrives, so an older 1G switch can always link a rack to the provider handoff. Switches and gateways draw their full power at all times. Their prices are estimates.
+
+| Device | Height | Ports | Sold from | Price | Full power |
+| --- | --- | --- | --- | --- | --- |
+| Sysko SG8 | Shelf | 8 × 1G | 2005 | €60 | 8 W |
+| Sysko 2924 | 1U | 24 × 1G and 2 × 1G SFP | 2005 | €900 | 40 W |
+| Sysko 2948 | 1U | 48 × 1G and 4 × 10G SFP | 2008 | €2,800 | 70 W |
+| Sysko 4948X | 1U | 48 × 10G SFP | 2011 | €8,000 | 200 W |
+| Sysko 9348Y | 1U | 48 × 25G, 4 × 10G and 4 × 100G SFP | 2017 | €12,000 | 350 W |
+| Sysko 9332C | 1U | 32 × 100G SFP | 2023 | €20,000 | 450 W |
+| Patch panel, copper | 1U | 24 jacks, 1G | 2005 | €80 | 0 W |
+| Patch panel, fiber | 1U | 24 jacks, SFP | 2005 | €250 | 0 W |
+| Home router | Shelf | 4 × 1G | Comes with the basement | Free | 10 W |
+| Provider handoff | 1U | 2 × 1G | Comes with a rented rack | Free | 0 W |
+
+A patch panel is passive. Each jack has a front and a back port, and a link through a jack runs at the slower of the two ports on either side of the panel. A rented rack has 42U and costs 42 × €60 = €2,520 per month; its power is included in the rent. Rent is paid at the start of each month together with the basement's power bill.
 
 ## Market and leads
 

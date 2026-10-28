@@ -85,14 +85,14 @@ export const vpsRatePerGb = (year: number): number => priceAt(1.5, 11, year);
 export const vpsPlanGb = (year: number): number => Math.pow(2, (year - 2005) / 7);
 
 // Hardware, Server generations.
-export const GENERATIONS = [
-  { year: 2005, ramGb: 8, watts: 250, price: 2500 },
-  { year: 2008, ramGb: 24, watts: 300, price: 3000 },
-  { year: 2011, ramGb: 64, watts: 300, price: 3500 },
-  { year: 2014, ramGb: 128, watts: 300, price: 4000 },
-  { year: 2017, ramGb: 256, watts: 350, price: 4500 },
-  { year: 2020, ramGb: 512, watts: 400, price: 5000 },
-  { year: 2023, ramGb: 1024, watts: 450, price: 5500 },
+export const GENERATIONS: { year: number; cores: number; ramGb: number; diskGb: number; disk: "HDD" | "SSD" | "NVMe"; watts: number; price: number }[] = [
+  { year: 2005, cores: 2, ramGb: 8, diskGb: 500, disk: "HDD", watts: 250, price: 2500 },
+  { year: 2008, cores: 8, ramGb: 24, diskGb: 1000, disk: "HDD", watts: 300, price: 3000 },
+  { year: 2011, cores: 12, ramGb: 64, diskGb: 2000, disk: "HDD", watts: 300, price: 3500 },
+  { year: 2014, cores: 24, ramGb: 128, diskGb: 2000, disk: "SSD", watts: 300, price: 4000 },
+  { year: 2017, cores: 40, ramGb: 256, diskGb: 4000, disk: "SSD", watts: 350, price: 4500 },
+  { year: 2020, cores: 64, ramGb: 512, diskGb: 8000, disk: "NVMe", watts: 400, price: 5000 },
+  { year: 2023, cores: 128, ramGb: 1024, diskGb: 15000, disk: "NVMe", watts: 450, price: 5500 },
 ];
 export const generationAt = (year: number): number => {
   let g = 0;

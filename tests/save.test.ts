@@ -8,7 +8,8 @@ describe("tick", () => {
     const s = newGame(1);
     const events = [];
     for (let h = 0; h < 24 * 31; h++) events.push(...tick(s));
-    expect(events).toEqual([{ app: "Finance", key: "event.monthStart", params: { month: 1, year: 2005 } }]);
+    expect(events.map((e) => e.key)).toEqual(["event.monthStart", "event.bills"]);
+    expect(events[0]).toEqual({ app: "Finance", key: "event.monthStart", params: { month: 1, year: 2005 } });
   });
 });
 

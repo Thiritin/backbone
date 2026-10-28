@@ -1,0 +1,99 @@
+.loc { flex: 1; min-width: 0; display: flex; }
+
+.loc-side { display: flex; flex-direction: column; gap: 1px; }
+.loc-side button.side-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; }
+.loc-side button.side-item:hover { background: var(--hover); }
+.loc-side button.side-item.active { background: var(--accent); color: var(--accent-ink); }
+.loc-side .side-item .side-count { margin-left: auto; }
+.loc-side .side-item.loc-sub { padding-left: 30px; }
+.loc-rent { display: grid; gap: 6px; padding: 2px 8px; }
+.loc-rent .btn { justify-content: center; }
+.loc-rent-price { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-2); }
+
+.loc-main { position: relative; flex: 1; min-width: 0; display: grid; grid-template-columns: auto 1fr; min-height: 0; }
+
+.loc-rack { padding: 14px 16px; border-right: 0.5px solid var(--line); overflow: auto; display: grid; gap: 10px; align-content: start; background: var(--win-side); }
+.loc-rack-h { display: flex; align-items: center; gap: 6px; }
+.loc-rack-h h2 { font-size: 13px; font-weight: 650; margin-right: auto; }
+.rack-free, .rack-dev { cursor: pointer; outline: none; }
+.rack-free:hover rect, .rack-free:focus-visible rect { stroke: var(--accent); }
+.rack-free:hover text, .rack-free:focus-visible text { fill: oklch(0.8 0.01 255); }
+.rack-dev:hover { filter: brightness(1.12); }
+.rack-dev:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.loc-insp { overflow: auto; display: grid; gap: 14px; align-content: start; padding: 16px 16px 20px; min-width: 0; }
+.loc-insp-h { display: flex; align-items: center; gap: 10px; }
+.loc-insp-h h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.loc-model { color: var(--text-2); margin-top: -8px; }
+.loc .grow { flex: 1; }
+
+.loc-face { padding: 12px; border-radius: 10px; background: var(--rack); display: grid; gap: 12px; justify-items: center; }
+.loc-face > svg { max-width: 100%; height: auto; }
+
+.loc-ports { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.loc-port-block { display: grid; grid-auto-flow: column; gap: 3px; }
+.loc-port {
+  --lamp: transparent;
+  position: relative; width: 26px; height: 20px; padding: 0; border: 0; border-radius: 3px;
+  background: oklch(0.14 0.005 255); box-shadow: inset 0 0 0 0.5px var(--metal-3);
+  color: oklch(0.62 0.01 255); font: 500 9.5px/20px var(--font-num);
+}
+.loc-ports.wide .loc-port { width: 44px; }
+.loc-port::before { content: ""; position: absolute; left: 3px; right: 3px; top: 2px; height: 2px; border-radius: 1px; background: var(--lamp); }
+.loc-port[data-lamp="ok"] { --lamp: oklch(0.78 0.2 145); color: oklch(0.88 0.01 255); }
+.loc-port[data-lamp="fiber"] { --lamp: oklch(0.8 0.12 195); color: oklch(0.88 0.01 255); }
+.loc-port[data-lamp="warn"] { --lamp: oklch(0.83 0.17 80); color: oklch(0.88 0.01 255); }
+.loc-port[data-lamp="bad"] { --lamp: oklch(0.66 0.23 27); color: oklch(0.88 0.01 255); }
+.loc-port:hover { background: oklch(0.22 0.006 255); }
+.loc-port.grouped { outline: 1.2px dashed oklch(0.74 0.14 300); outline-offset: 1px; }
+.loc-port[aria-pressed="true"] { box-shadow: 0 0 0 1.6px var(--accent); background: oklch(0.24 0.04 262); }
+.loc-port:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.loc-mode { justify-self: start; margin-top: -4px; }
+
+.loc-card { border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); min-width: 0; }
+.loc-card-h { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; min-height: 44px; border-bottom: 0.5px solid var(--line); }
+.loc-card-h:last-child { border-bottom: 0; }
+.loc-card-h h3 { font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+.loc-card-h h3 svg.lucide { width: 16px; height: 16px; color: var(--text-2); }
+.loc-row { display: flex; align-items: center; gap: 8px; padding: 10px 14px; }
+.loc-row + .loc-row { border-top: 0.5px solid var(--line); }
+.loc-row select.grow { min-width: 0; }
+.loc-k { font-size: 11.5px; font-weight: 550; color: var(--text-3); min-width: 64px; }
+.loc-muted { color: var(--text-3); }
+.loc-chips { display: inline-flex; flex-wrap: wrap; gap: 3px; }
+.loc-chip { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: color-mix(in oklch, var(--text) 8%, transparent); }
+
+.loc-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px 16px; padding: 12px 14px; margin: 0; }
+.loc-facts dt { font-size: 11.5px; font-weight: 550; color: var(--text-3); }
+.loc-facts dd { margin: 1px 0 0; font-weight: 550; }
+
+/* Port path: device boxes joined by the cable, drawn in the cable's colour. */
+.loc-path { display: flex; align-items: center; padding: 20px 14px 14px; }
+.loc-node { display: grid; gap: 1px; padding: 7px 11px; border-radius: 8px; border: 0.5px solid var(--line-strong); background: var(--win); min-width: 0; text-align: left; font: inherit; color: inherit; }
+button.loc-node:hover { background: var(--hover); }
+.loc-node .k { font-size: 11.5px; color: var(--text-3); white-space: nowrap; }
+.loc-node strong { font-weight: 600; white-space: nowrap; }
+.loc-node.here { border-color: var(--accent); }
+.loc-wire { flex: 1; min-width: 70px; position: relative; height: 3px; border-radius: 2px; background: oklch(0.62 0.14 250); }
+.loc-wire.fiber { background: oklch(0.72 0.12 195); }
+.loc-wire.dac { background: oklch(0.6 0.02 255); }
+.loc-wire > span { position: absolute; left: 50%; bottom: 7px; translate: -50% 0; white-space: nowrap; font-size: 11.5px; color: var(--text-2); }
+
+/* Shop popover */
+.loc-shop {
+  position: absolute; z-index: 5; width: 490px; max-height: min(392px, calc(100% - 16px)); display: flex; flex-direction: column;
+  border-radius: 10px; background: var(--win); box-shadow: var(--shadow-pop);
+}
+.loc-shop-h { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; border-bottom: 0.5px solid var(--line); }
+.loc-shop-h h3 { font-size: 12.5px; font-weight: 650; font-family: var(--font-num); }
+.loc-shop-list { overflow: auto; }
+.loc-shop-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; }
+.loc-shop-row + .loc-shop-row { border-top: 0.5px solid var(--line); }
+.loc-shop-main { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.loc-shop-name { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.loc-shop-name .pill { height: 18px; padding: 0 6px; }
+.loc-shop-specs { font-size: 11.5px; color: var(--text-2); }
+.loc-shop-row select.field { width: 128px; }
+.loc-shop-price { min-width: 52px; text-align: right; font-weight: 550; }
+.loc-shop-none { padding: 14px; color: var(--text-3); }

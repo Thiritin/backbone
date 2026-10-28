@@ -96,8 +96,8 @@ export const useStore = create<Store>((set, get) => ({
     const ws = get().windows;
     const open = ws.find((w) => w.app === app);
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
-    const n = ws.length % 8;
-    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x: 96 + n * 32, y: 64 + n * 28, w: 760, h: 480, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
+    const n = ws.length % 8, size = app === "Locations" ? { w: 1120, h: 700 } : { w: 760, h: 480 };
+    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x: 96 + n * 32, y: 64 + n * 28, ...size, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },
   focus: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, z: topZ(windows) + 1 } : w)) })),
   close: (id) => set(({ windows }) => ({ windows: windows.filter((w) => w.id !== id) })),

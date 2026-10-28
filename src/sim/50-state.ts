@@ -1,5 +1,5 @@
 import { createRng, type Rng } from "./00-core/rng";
-import { START_CASH } from "./10-catalog/economy";
+import { BASEMENT_SLOTS, START_CASH } from "./10-catalog/economy";
 
 export const SAVE_VERSION = 1;
 
@@ -31,7 +31,15 @@ export interface GameState {
   powerDue: number;
 }
 
+// Starting state: the tower on the basement shelf, cabled to the home router so it starts online.
 export const newGame = (seed: number): GameState => ({
-  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, cash: START_CASH,
-  nextId: 1, locations: [], racks: [], devices: [], cables: [], ledger: [], powerDue: 0,
+  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, cash: START_CASH, nextId: 6,
+  locations: [{ id: "loc1", kind: "basement", city: "Frankfurt", name: "Basement" }],
+  racks: [{ id: "rack2", locationId: "loc1", name: "fra1-shelf", units: BASEMENT_SLOTS, shelf: true, rentPerMonth: 0 }],
+  devices: [
+    { id: "dev3", model: "tower", brand: "Dwell", rackId: "rack2", slot: 1, name: "fra1-srv-01", bond: "failover", groups: [] },
+    { id: "dev4", model: "home-router", brand: "Sysko", rackId: "rack2", slot: BASEMENT_SLOTS, name: "fra1-gw-01", bond: "failover", groups: [] },
+  ],
+  cables: [{ id: "cab5", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper" }],
+  ledger: [], powerDue: 0,
 });

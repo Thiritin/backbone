@@ -23,6 +23,6 @@ Design: `docs/design/gdd.md` (game), `docs/design/economy.md` (numbers), `DESIGN
 - Player actions go through `src/sim/90-actions`; the UI calls them via the store's `act`, tests call them directly.
 - Old saves must keep loading: every new state field gets a default in `newGame`, and `deserialize` fills it.
 - Every sim change comes with a seeded test.
-- Player-facing text goes through i18n keys; action errors are i18n keys.
+- Text the simulation produces (events, notifications, ledger lines, action errors) goes through i18n keys. UI labels stay inline in components for now; the game is English only.
 - No em dashes in code, comments, docs or UI copy.
 - UI copy: labels and values only, no filler hints; captions are full sentences with a verb.
