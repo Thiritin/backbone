@@ -233,7 +233,7 @@ describe("old saves", () => {
     for (const c of data.clusters) for (const n of c.nodes) { delete n.php; delete n.phpUntil; }
     const back = deserialize(JSON.stringify(data));
     expect(back.techOps).toEqual([]);
-    expect(back.techRules).toEqual({ failed: true, worn: false });
+    expect(back.techRules).toEqual({ failed: true, worn: false, blackhole: true });
     expect(back.staff[0].location).toBeNull();
     expect(back.clusters[0].nodes.map((n) => n.php)).toEqual(["5.3", "5.3"]);
     run(back, 24);

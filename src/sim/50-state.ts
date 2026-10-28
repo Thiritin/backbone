@@ -9,6 +9,7 @@ import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
 import { applications, type Candidate, type Employee } from "./47-staff/staff";
+import type { OnCall } from "./47-staff/oncall";
 import type { TechOp, TechRules } from "./47-staff/technicians";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
@@ -113,6 +114,7 @@ export interface GameState {
   // Operations queued for technicians, oldest first, and the repairs they queue by themselves.
   techOps: TechOp[];
   techRules: TechRules;
+  onCall: OnCall;
   marketing: Marketing;
   fairs: FairBooking[];
   clusters: Cluster[];
@@ -165,7 +167,7 @@ export const newGame = (seed: number): GameState => ({
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)" },
   homeLine: { id: DEFAULT_HOME_LINE, next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
-  staff: [], candidates: applications(seed, 0), techOps: [], techRules: { failed: true, worn: false },
+  staff: [], candidates: applications(seed, 0), techOps: [], techRules: { failed: true, worn: false, blackhole: true }, onCall: { roster: [], lastCall: {}, month: {} },
   marketing: newMarketing(), fairs: [],
   network: newNetwork(),
   ops: newOps(),

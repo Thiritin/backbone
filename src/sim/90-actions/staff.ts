@@ -102,6 +102,16 @@ export function setTechLocation(s: GameState, id: string, locationId: string): A
   return { ok: true };
 }
 
+// Adds a technician trained on part swaps to the on-call rotation at their location, or takes them out.
+export function setOnCall(s: GameState, id: string, on: boolean): ActionResult {
+  const e = employee(s, id);
+  if (!e) return fail("error.unknownEmployee");
+  if (e.role !== "technician" || !e.trained.includes("hardware")) return fail("error.notOnCallTrained");
+  const roster = s.onCall.roster.filter((x) => x !== id);
+  s.onCall = { ...s.onCall, roster: on ? [...roster, id] : roster };
+  return { ok: true };
+}
+
 // Queues an operation for the technicians at the device's location.
 export function queueOperation(s: GameState, kind: OpKind, deviceId: string, componentId: string | null = null): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
