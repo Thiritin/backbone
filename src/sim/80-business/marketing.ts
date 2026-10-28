@@ -58,6 +58,8 @@ export interface Marketing {
   awareness: Record<Profile, number>;
   reviews: Review[];
   platform: PlatformId | null;
+  // Profiles revealed by a market study.
+  studies: Profile[];
 }
 
 const AWARENESS_FLOOR = 0.02;
@@ -65,7 +67,7 @@ const AWARENESS_DECAY = 0.02;
 const REVIEW_HOURS = 2 * 8760;
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null,
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [],
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 

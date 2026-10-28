@@ -55,7 +55,7 @@ export const NEEDS: Record<Profile, [Product, number][]> = {
   onlineShop: [["webHosting", 0.5], ["vps", 0.5]],
   enterprise: [["vps", 0.5], ["dedicated", 0.5]],
 };
-const SLA_ASKED: Record<Profile, Sla> = {
+export const SLA_ASKED: Record<Profile, Sla> = {
   private: "basic", gamer: "basic", hobbyDev: "basic", soleProp: "basic", smallBiz: "business", agency: "business",
   office: "business", onlineShop: "premium", enterprise: "premium",
 };

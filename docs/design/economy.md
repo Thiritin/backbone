@@ -359,6 +359,8 @@ d is the agency discount from a campaign, e is 1.15 for an existing customer and
 
 **Price changes.** Raising a running service's price costs 0.5 happiness per 1% (at most 30); lowering it gives 0.2 per 1% (at most 10). Above 1.3 × the market reference a raise opens a cancellation ticket with a chance of (ratio − 1.3) ÷ 0.4. Happiness drifts back each month (Happiness and churn, Drift), which makes the hit temporary.
 
+**Market research.** A market study reveals one profile in the Market app for good; it is a one-time payment booked as marketing. Studies cost €800 for a low-budget profile, €2,000 for a medium one and €4,000 for a high one, €20,400 for all nine (decision). The Demand section counts a city's buyers of a product as the city's new customers × each profile's mix × that profile's product weight, your part as the expected requests from the lead flows above (leads × product weight × your choice share × conversion), and splits the remainder over the competitors by their softmax among themselves. Code: `src/sim/30-market/research.ts`.
+
 **Measured flow.** `npx tsx scripts/sales-flow.ts [seed] [months]` runs the real tick with a bot that quotes 3% under the reference, answers tickets, sets up a website in month 3 and runs €250 of search ads from month 6. Seed 1 gets 6 to 9 requests a month in the basement, 16 to 26 with the website and ads, and fills the basement server at about 26 customers, after which most deals are lost for capacity until you buy hardware.
 
 ## Happiness and churn

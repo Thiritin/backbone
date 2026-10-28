@@ -5,6 +5,11 @@ const SLA: Record<string, string> = { basic: "Basic", business: "Business", prem
 const sla = (p: Params) => (p.sla === "basic" ? "" : ` We need the ${SLA[p.sla] ?? p.sla} SLA.`);
 const price = (p: Params) => euroCents(Number(p.price));
 
+const STUDY_NAME: Record<string, string> = {
+  private: "Private individuals", gamer: "Gamers", hobbyDev: "Hobby developers", soleProp: "Sole proprietors", smallBiz: "Small businesses",
+  agency: "Agencies and startups", office: "Doctor's and law offices", onlineShop: "Online shops", enterprise: "Enterprises",
+};
+
 // Sales requests, customer replies and lost-sale reasons; spread into en.
 export const SALES_EN: Record<string, (p: Params) => string> = {
   "sales.msg.webHosting.0": (p) => `Hello, I am looking for a home for my website. Would ${p.plan} work for us, and what would it cost a month?${sla(p)}`,
@@ -55,4 +60,7 @@ export const SALES_EN: Record<string, (p: Params) => string> = {
   "error.quotePrice": () => "Enter a monthly price above zero.",
   "error.requestMissing": () => "You cannot serve this request yet.",
   "error.yearlyPrice": () => "Yearly products keep their price until renewal.",
+  "error.unknownProfile": () => "There is no such customer group.",
+  "error.studyDone": () => "You already have this study.",
+  "ledger.marketStudy": (p) => `Market study by Gartnah: ${STUDY_NAME[p.profile] ?? p.profile}`,
 };

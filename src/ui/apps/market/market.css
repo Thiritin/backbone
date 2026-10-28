@@ -1,0 +1,17 @@
+.mk-bar-top { padding: 14px 16px 2px; }
+.mk-bar-top .seg { flex-wrap: wrap; }
+.mk-bars { display: grid; gap: 6px; padding: 10px 14px 12px; border-top: 0.5px solid var(--line); }
+.mk-bar .mk-label { width: 84px; flex: none; font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-bar .num { width: 36px; text-align: right; }
+.mk-muted .mkt-track > span { background: color-mix(in oklch, var(--text) 32%, transparent); }
+.mk-tag { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 11px; background: color-mix(in oklch, var(--text) 6%, transparent); color: var(--text-2); font-size: 12px; }
+.mk-tag .num { color: var(--text-3); }
+.mk-needs { margin: 0; padding: 0 0 0 16px; display: grid; gap: 2px; font-size: 12px; line-height: 20px; color: var(--text-2); }
+.mk-hidden .mkt-head strong { color: var(--text-2); }
+.mk-lock { width: 14px; height: 14px; color: var(--text-3); }
+.mk-card .shop-specs { flex: none; }
+.mk-card .mk-bars:last-child, .mk-card .mkt-row:last-child { flex: 1; }
+.mk-card .mk-bars { align-content: start; }
+.mk-hidden .shop-specs { flex: 1; }
+.mk-top { align-items: start; }
+.mk-wide { grid-column: 1 / -1; }
