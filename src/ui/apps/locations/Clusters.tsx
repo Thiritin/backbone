@@ -11,7 +11,7 @@ import type { Device, GameState, Location } from "../../../sim/50-state";
 import { bookable, clusterOf, controlPlaneUp, nodeUsed, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { nodeUsage } from "../../../sim/60-infra/usage";
-import { addNode, CLUSTER_NAME_MAX, cordon, createCluster, drain, removeNode, setPlacement, uncordon, upgradePhp } from "../../../sim/90-actions/clusters";
+import { addNode, CLUSTER_NAME_MAX, cordon, createCluster, drain, removeNode, phpDue, setPlacement, uncordon, upgradePhp } from "../../../sim/90-actions/clusters";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { cores, devName, disk, ram } from "../hw";
@@ -107,7 +107,7 @@ function PhpRow({ game, cluster, device }: { game: GameState; cluster: Cluster; 
   const node = cluster.nodes.find((n) => n.deviceId === device.id)!;
   const year = yearOf(game.hour), latest = phpAt(year), behind = phpBehind(node.php, year);
   const queued = game.techOps.filter((o) => o.kind === "php" && cluster.nodes.some((n) => n.deviceId === o.deviceId)).length;
-  const old = cluster.nodes.some((n) => n.php !== latest);
+  const old = cluster.nodes.some((n) => phpDue(game, n)), patch = cluster.nodes.every((n) => n.php === latest);
   const loc = locationOf(game, device), slot = old && !queued && loc ? nextSlot(game, loc.id, "panels") : null;
   return (
     <div className="loc-row">
@@ -116,7 +116,7 @@ function PhpRow({ game, cluster, device }: { game: GameState; cluster: Cluster; 
       {behind >= PHP_EOL ? <span className="pill bad">Unsupported</span> : behind > 0 && <span className="pill warn">Outdated</span>}
       <span className="grow" />
       {queued > 0 && <span className="pill accent">Queued <span className="num">{queued}</span></span>}
-      {old && <button className="btn" onClick={() => act((g) => upgradePhp(g, cluster.id))}>Upgrade to {latest}</button>}
+      {old && <button className="btn" onClick={() => act((g) => upgradePhp(g, cluster.id))}>{patch ? "Patch" : `Upgrade to ${latest}`}</button>}
       {slot && (
         <button className="btn" onClick={() => act((g) => queuePhpUpgrade(g, cluster.id))}>
           <Wrench />{slot.name.split(" ")[0]}, <span className="num">{slotTime(game.hour, slot.hour)}</span>

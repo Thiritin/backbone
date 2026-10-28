@@ -12,6 +12,7 @@ import { MenuBar } from "./MenuBar";
 import { StartScreen } from "./StartScreen";
 import { wallpaperSvg } from "./wallpaper";
 import { Widgets } from "./Widgets";
+import { SecurityAlert } from "./SecurityAlert";
 import { Welcome } from "./Welcome";
 
 const AUTOSAVE_MS = 15_000;
@@ -40,7 +41,7 @@ export function Desktop() {
 }
 
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
-  const { windows, speed, setSpeed, advance, save, notify, clearUnseen, welcome, explain, setExplain } = useStore();
+  const { windows, speed, setSpeed, advance, save, notify, clearUnseen, welcome, explain, setExplain, advisory } = useStore();
   const gameOver = useStore((s) => s.game.gameOver);
   const [center, setCenter] = useState(false);
   const carry = useRef(0);
@@ -96,6 +97,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
       <Dock />
       {welcome && <Welcome />}
+      {advisory && <SecurityAlert />}
       {gameOver !== null && <GameOver hour={gameOver} />}
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
     </>

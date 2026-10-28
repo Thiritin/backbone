@@ -160,6 +160,13 @@ button { font: inherit; color: inherit; cursor: default; }
 .alert.welcome { width: 300px; padding: 20px 20px 16px; }
 .alert.welcome .intro-pear { width: 40px; height: 40px; }
 .alert.game-over { width: 300px; }
+.alert.advisory { width: 340px; }
+.alert.advisory p { text-align: left; }
+.advisory-source { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-3); }
+.advisory-facts { width: 100%; margin: 0; font-size: 11.5px; }
+.advisory-facts div { display: flex; justify-content: space-between; padding: 5px 0; border-top: 0.5px solid var(--line); }
+.advisory-facts dt { color: var(--text-2); }
+.advisory-facts dd { margin: 0; }
 .alert.game-over .alert-icon { color: var(--bad); }
 .btn.danger-fill { background: var(--bad); color: white; border-color: transparent; }
 .btn.danger-fill:hover { background: color-mix(in oklch, var(--bad) 88%, black); }
