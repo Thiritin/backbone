@@ -574,6 +574,8 @@ Marketing brings in new customers, and reviews decide how many of them trust you
 
 **Your own channels.** Besides paid campaigns, the Marketing app manages the acquisition channels you own and grow step by step. You start with email only: customers find you through friends and write to your inbox, and every order is a conversation. Next you set up a basic website, which makes you findable and brings in a steady trickle of requests. The website then gets extended with an online order form, so customers can order standard products on their own and the order lands as a ready service instead of an email. With a website in place you can run Google ads (search ads below) that send visitors to it, and later AI ads, which target better and cost more. Each step is a one-off setup cost plus upkeep, and the website and order form are also where your prices and reviews show.
 
+**Staff in the community.** Once you have employees, you can assign one to post in hosting and gaming forums. Helpful posts bring in customers slowly and cheaply, and the effect grows with the employee's skill. Bigger companies can send staff to trade fairs and industry meetups. Fairs bring business customers, and the people you meet there get you better transit prices and make networks more willing to peer with you.
+
 **Campaigns.** In the Marketing app you pick a channel, the profiles to target and a monthly budget.
 
 | Channel | Reaches | Notes |
@@ -582,7 +584,8 @@ Marketing brings in new customers, and reviews decide how many of them trust you
 | Search ads ("Goggle Ads") | Anyone searching for hosting | Paid per click; needs a website |
 | AI ads | Anyone, with better targeting | Unlocks late; costs more per click and converts better; needs a website |
 | Gaming communities | Gamers | Sponsor a streamer or a server list |
-| Trade fairs | Businesses, enterprises | Expensive; only pays off at higher company levels |
+| Trade fairs | Businesses, enterprises, carriers | Expensive; needs staff; only pays off at higher company levels; improves transit prices and peering acceptance |
+| Forum posts | Hobbyists, gamers, small businesses | Needs an employee assigned; cheap and slow |
 | Partner program | Agencies, small businesses | Commission per referred customer |
 
 **Reviews.** Customers leave reviews after tickets, outages and cancellations. By default you can only read them. A marketing manager can sign you up to a review platform:
