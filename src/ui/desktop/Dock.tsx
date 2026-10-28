@@ -5,19 +5,20 @@ import { useStore } from "../store";
 import { bounce, rememberSlot } from "./motion";
 
 export function Dock() {
-  const { windows, openApp } = useStore();
+  const { windows, openApp, game } = useStore();
   const minimized = windows.filter((w) => w.minimized);
 
   return (
     <nav className="dock" aria-label="Apps">
       {APPS.filter((a) => !a.hidden).map((a, i) => {
         const win = windows.find((w) => w.app === a.name);
+        const badge = a.badge?.(game) ?? 0;
         return (
           <Fragment key={a.name}>
             {i > 0 && i % 4 === 0 && <span className="dock-divider" />}
             <button
               className={`dock-app${win ? " running" : ""}`}
-              aria-label={a.name}
+              aria-label={badge ? `${a.name}, ${badge} open` : a.name}
               onClick={(e) => {
                 if (!win) bounce(e.currentTarget.querySelector(".dock-tile")!);
                 if (win?.minimized) rememberSlot(win.id);
@@ -27,6 +28,7 @@ export function Dock() {
               <span className="tip">{a.name}</span>
               <span className="dock-tile" style={{ "--tile": a.tile } as CSSProperties}><a.icon /></span>
               <span className="dot" />
+              {badge > 0 && <span className="count">{badge > 99 ? "99+" : badge}</span>}
             </button>
           </Fragment>
         );
