@@ -3,7 +3,8 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { CHECKS, checkDone } from "../src/sim/checklist";
 import { takeLoan } from "../src/sim/90-actions/billing";
 import { toggleCheck } from "../src/sim/90-actions/checklist";
-import { addLocation, buyDevice, connect, mountDevice } from "../src/sim/90-actions/hardware";
+import { addLocation, buyDevice, connect } from "../src/sim/90-actions/hardware";
+import { mountDevice } from "./plugged";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {

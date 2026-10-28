@@ -7,8 +7,9 @@ import { freePositions, linkStatus, moveCost, rackPower, resaleValue } from "../
 import { powerPerHour, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { deserialize } from "../src/sim/91-save/save";
 import {
-  addLocation, buyDevice, buyRack, closeLocation, connect, mountDevice, mountStack, moveRack, sellDevice, sellRack, unmountDevice,
+  addLocation, buyDevice, buyRack, closeLocation, connect, moveRack, sellDevice, sellRack, unmountDevice,
 } from "../src/sim/90-actions/hardware";
+import { mountDevice, mountStack } from "./plugged";
 
 const rich = (cash = 1_000_000): GameState => ({ ...newGame(1), cash });
 const ok = (r: ReturnType<typeof addLocation>) => {

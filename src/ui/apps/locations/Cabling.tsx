@@ -1,6 +1,6 @@
 import { Unplug } from "lucide-react";
-import { useEffect, useRef, useState, type PointerEvent as RPointerEvent, type ReactNode } from "react";
-import { jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from "react";
+import { modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Device, End, GameState, Location } from "../../../sim/50-state";
 import { connectError, portPeers } from "../../../sim/60-infra/status";
 import { connect, disconnect } from "../../../sim/90-actions/hardware";
@@ -8,58 +8,59 @@ import { cableColor, LED } from "../../art/fronts";
 import { useStore } from "../../store";
 import { CABLE_NAME, devName, portName, speed } from "../hw";
 
-const NODE_W = 260, GAP_X = 120, GAP_Y = 14, PITCH = 16, PER_ROW = 12, LABEL_W = 34, HEAD = 34, TOP = 40;
+const NODE_W = 190, GAP_X = 150, GAP_Y = 16, PITCH = 17, HEAD = 36, TOP = 40;
 const key = (e: End) => `${e.device}:${e.port}`;
 
-interface Run { label: string; ports: number[] }
-interface Node { d: Device; m: DeviceModel; x: number; y: number; h: number; sub: string; runs: { run: Run; rows: number }[] }
+interface Node { d: Device; m: DeviceModel; x: number; y: number; h: number; sub: string }
+type Spot = { x: number; y: number; left: number; right: number };
 
-// Runs of ports with the same media and speed; patch panels split into top and bottom rows.
-function runs(m: DeviceModel): Run[] {
-  if (m.kind === "patch") { const n = jacksOf(m); return [{ label: "Top row", ports: Array.from({ length: n }, (_, i) => i) }, { label: "Bottom row", ports: Array.from({ length: n }, (_, i) => n + i) }]; }
-  const out: Run[] = [];
-  m.ports.forEach((p, i) => {
-    const label = `${p.media === "sfp" ? "SFP " : ""}${speed(p.gbit)}`, last = out.at(-1);
-    if (last?.label === label) last.ports.push(i); else out.push({ label, ports: [i] });
-  });
-  return out;
-}
-
-// Columns left to right: carrier panel, switches and firewalls, patch panels, then the servers of each rack.
+// Three columns, so every cable runs between neighbouring columns or loops beside its own: the carrier panel,
+// the network (switches, firewalls and patch panels), and the servers grouped by rack.
+// Every device lists its ports top to bottom, one row each.
 function layout(g: GameState, loc: Location) {
   const racks = g.racks.filter((r) => r.locationId === loc.id).sort((a, b) => a.position - b.position);
   const rackOf = new Map(racks.map((r) => [r.id, r]));
   const devs = g.devices.filter((d) => d.panel === loc.id || (d.rackId && rackOf.has(d.rackId)));
   const kind = (d: Device) => modelById(d.model).kind;
-  const cols: { title: string; ds: Device[] }[] = [
-    { title: "Carrier panel", ds: devs.filter((d) => d.panel) },
-    { title: "Network", ds: devs.filter((d) => !d.panel && ["switch", "firewall", "gateway"].includes(kind(d))) },
-    { title: "Patch panels", ds: devs.filter((d) => kind(d) === "patch") },
-    ...racks.map((r) => ({ title: r.name, ds: devs.filter((d) => d.rackId === r.id && kind(d) === "server") })),
-  ].filter((c) => c.ds.length);
-  const nodes: Node[] = [], spots = new Map<string, { x: number; y: number }>();
+  const net = (d: Device) => !d.panel && kind(d) !== "server";
+  const cols: { title: string; groups: { head?: string; ds: Device[] }[] }[] = [
+    { title: "Carrier panel", groups: [{ ds: devs.filter((d) => d.panel) }] },
+    { title: "Network", groups: [{ ds: devs.filter(net).sort((a, b) => Number(kind(a) === "patch") - Number(kind(b) === "patch") || b.slot - a.slot) }] },
+    { title: "Servers", groups: racks.map((r) => ({ head: r.name, ds: devs.filter((d) => d.rackId === r.id && kind(d) === "server").sort((a, b) => b.slot - a.slot) })) },
+  ].map((c) => ({ ...c, groups: c.groups.filter((gr) => gr.ds.length) })).filter((c) => c.groups.length);
+  const nodes: Node[] = [], spots = new Map<string, Spot>(), heads: { text: string; x: number; y: number }[] = [];
   cols.forEach((c, ci) => {
-    let y = TOP;
     const x = 20 + ci * (NODE_W + GAP_X);
-    for (const d of [...c.ds].sort((a, b) => b.slot - a.slot)) {
-      const m = modelById(d.model), rs = runs(m).map((run) => ({ run, rows: Math.ceil(run.ports.length / PER_ROW) }));
-      const rack = d.rackId ? rackOf.get(d.rackId) : undefined;
-      let py = y + HEAD;
-      for (const { run } of rs) {
-        run.ports.forEach((p, k) => spots.set(key({ device: d.id, port: p }), { x: x + LABEL_W + (k % PER_ROW) * PITCH + 6, y: py + Math.floor(k / PER_ROW) * PITCH + 6 }));
-        py += Math.ceil(run.ports.length / PER_ROW) * PITCH + 4;
+    heads.push({ text: c.title, x, y: TOP - 12 });
+    let y = TOP;
+    for (const gr of c.groups) {
+      if (gr.head && c.groups.length > 1) { heads.push({ text: gr.head, x, y: y + 10 }); y += 18; }
+      for (const d of gr.ds) {
+        const m = modelById(d.model), rack = d.rackId ? rackOf.get(d.rackId) : undefined;
+        m.ports.forEach((_, p) => spots.set(key({ device: d.id, port: p }), { x, y: y + HEAD + p * PITCH + PITCH / 2, left: x, right: x + NODE_W }));
+        const h = HEAD + m.ports.length * PITCH + 6;
+        nodes.push({ d, m, x, y, h, sub: rack ? `${rack.name} · U${d.slot}` : "Carrier panel" });
+        y += h + GAP_Y;
       }
-      const h = py - y + 6;
-      nodes.push({ d, m, x, y, h, sub: rack ? `${rack.name} · U${d.slot}` : "Carrier panel", runs: rs });
-      y += h + GAP_Y;
     }
   });
-  return { cols: cols.map((c, i) => ({ title: c.title, x: 20 + i * (NODE_W + GAP_X) })), nodes, spots };
+  return { heads, nodes, spots };
 }
 
+// A cable leaves each port row on the side facing the other end; both ends in one column loop out to the right.
+const ends = (a: Spot, b: Spot): [{ x: number; y: number }, { x: number; y: number }, number] => {
+  if (a.left === b.left) return [{ x: a.right, y: a.y }, { x: b.right, y: b.y }, 1];
+  return a.left < b.left ? [{ x: a.right, y: a.y }, { x: b.left, y: b.y }, 0] : [{ x: a.left, y: a.y }, { x: b.right, y: b.y }, 0];
+};
+const skips = (a: Spot, b: Spot) => Math.abs(a.left - b.left) > NODE_W + GAP_X;
+const wire = (a: Spot, b: Spot) => {
+  const [p, q, loop] = ends(a, b);
+  if (loop) { const bx = p.x + 30 + Math.abs(p.y - q.y) * 0.08; return `M${p.x} ${p.y}C${bx} ${p.y} ${bx} ${q.y} ${q.x} ${q.y}`; }
+  const dx = Math.max(40, Math.abs(q.x - p.x) / 2) * Math.sign(q.x - p.x);
+  return `M${p.x} ${p.y}C${p.x + dx} ${p.y} ${q.x - dx} ${q.y} ${q.x} ${q.y}`;
+};
 const curve = (a: { x: number; y: number }, b: { x: number; y: number }) => {
-  if (Math.abs(a.x - b.x) < NODE_W) { const bx = Math.max(a.x, b.x) + 60; return `M${a.x} ${a.y}C${bx} ${a.y} ${bx} ${b.y} ${b.x} ${b.y}`; }
-  const dx = Math.max(50, Math.abs(b.x - a.x) / 2) * Math.sign(b.x - a.x);
+  const dx = Math.max(40, Math.abs(b.x - a.x) / 2) * Math.sign(b.x - a.x || 1);
   return `M${a.x} ${a.y}C${a.x + dx} ${a.y} ${b.x - dx} ${b.y} ${b.x} ${b.y}`;
 };
 
@@ -69,10 +70,17 @@ export function Cabling({ game, loc }: { game: GameState; loc: Location }) {
   const svg = useRef<SVGSVGElement>(null), plane = useRef<SVGGElement>(null), line = useRef<SVGPathElement>(null);
   const pan = useRef({ x: 0, y: 0 });
   const drag = useRef<{ mode: "pan" | "cable"; x: number; y: number; from?: End } | null>(null);
-  const { cols, nodes, spots } = layout(game, loc);
+  const { heads, nodes, spots } = layout(game, loc);
   const cables = game.cables.filter((c) => spots.has(key(c.a)) && spots.has(key(c.b)));
   const peer = new Map(cables.flatMap((c) => [[key(c.a), c.id], [key(c.b), c.id]]));
   const chosen = cables.find((c) => c.id === sel);
+  const wires = (over: boolean) => (
+    <g className="loc-cab-wires">
+      {cables.filter((c) => skips(spots.get(key(c.a))!, spots.get(key(c.b))!) === over).map((c) => (
+        <path key={c.id} data-cable={c.id} className={c.id === sel ? "sel" : ""} stroke={cableColor(c)} d={wire(spots.get(key(c.a))!, spots.get(key(c.b))!)} />
+      ))}
+    </g>
+  );
   const name = (e: End) => { const d = game.devices.find((x) => x.id === e.device)!; return `${devName(d)} ${portName(modelById(d.model), e.port)}`; };
 
   useEffect(() => { plane.current?.setAttribute("transform", `translate(${pan.current.x} ${pan.current.y})`); });
@@ -107,7 +115,7 @@ export function Cabling({ game, loc }: { game: GameState; loc: Location }) {
       return;
     }
     const a = spots.get(key(d.from!))!, b = point(e);
-    line.current!.setAttribute("d", curve(a, b));
+    line.current!.setAttribute("d", curve({ x: b.x < a.left ? a.left : a.right, y: a.y }, b));
   };
   const up = (e: RPointerEvent<SVGSVGElement>) => {
     const d = drag.current;
@@ -139,14 +147,20 @@ export function Cabling({ game, loc }: { game: GameState; loc: Location }) {
         onPointerOver={(e) => hover(e, true)} onPointerOut={(e) => hover(e, false)} onWheel={(e) => { pan.current = { x: pan.current.x - e.deltaX, y: pan.current.y - e.deltaY }; plane.current!.setAttribute("transform", `translate(${pan.current.x} ${pan.current.y})`); }}>
         <g ref={plane}>
           <g className="loc-cab-hits">
-            {cables.map((c) => <path key={c.id} data-c={c.id} d={curve(spots.get(key(c.a))!, spots.get(key(c.b))!)} />)}
+            {cables.map((c) => <path key={c.id} data-c={c.id} d={wire(spots.get(key(c.a))!, spots.get(key(c.b))!)} />)}
           </g>
-          {/* Cables run under the nodes, so they show between columns and never cover a jack. */}
-          <g className="loc-cab-wires">
-            {cables.map((c) => <path key={c.id} data-cable={c.id} className={c.id === sel ? "sel" : ""} stroke={cableColor(c)} d={curve(spots.get(key(c.a))!, spots.get(key(c.b))!)} />)}
-          </g>
-          {cols.map((c) => <text key={c.title + c.x} x={c.x} y={TOP - 12} className="loc-cab-col">{c.title}</text>)}
+          {/* Cables end at the edge of their port rows. Those between neighbouring columns run under the nodes;
+              those that skip a column pass over it, so they never seem to end at the column they cross. */}
+          {wires(false)}
+          {heads.map((h) => <text key={`${h.text}${h.x}${h.y}`} x={h.x} y={h.y} className="loc-cab-col">{h.text}</text>)}
           {nodes.map((n) => <NodeBox key={n.d.id} n={n} peers={portPeers(game, n.d.id)} cableOf={peer} />)}
+          {wires(true)}
+          <g className="loc-cab-plugs">
+            {cables.flatMap((c) => {
+              const [p, q] = ends(spots.get(key(c.a))!, spots.get(key(c.b))!);
+              return [p, q].map((e, i) => <circle key={`${c.id}${i}`} cx={e.x} cy={e.y} r="3" fill={cableColor(c)} />);
+            })}
+          </g>
           <path ref={line} className="loc-cab-drag" />
         </g>
       </svg>
@@ -155,29 +169,24 @@ export function Cabling({ game, loc }: { game: GameState; loc: Location }) {
 }
 
 function NodeBox({ n, peers, cableOf }: { n: Node; peers: (End | null)[]; cableOf: Map<string, string> }) {
-  let py = n.y + HEAD;
-  const rows: ReactNode[] = [];
-  for (const { run, rows: r } of n.runs) {
-    rows.push(<text key={`l${py}`} x={n.x + 8} y={py + 8} className="loc-cab-speed">{run.label}</text>);
-    run.ports.forEach((p, k) => {
-      const x = n.x + LABEL_W + (k % PER_ROW) * PITCH, y = py + Math.floor(k / PER_ROW) * PITCH, sfp = n.m.ports[p].media === "sfp";
-      const k2 = `${n.d.id}:${p}`, lamp = peers[p] ? (sfp ? LED.fiber : LED.ok) : null;
-      rows.push(
-        <g key={p} data-p={k2} data-on={cableOf.get(k2)} className="loc-cab-port">
-          <title>{portName(n.m, p)}</title>
-          <rect x={x} y={y + (sfp ? 1.5 : 0)} width={sfp ? 13 : 12} height={sfp ? 9 : 12} rx={sfp ? 1 : 2} className={sfp ? "sfp" : "rj45"} />
-          {lamp && <rect x={x + 2.5} y={y + (sfp ? 3 : 2)} width={sfp ? 8 : 7} height="2" rx="0.5" fill={lamp} pointerEvents="none" />}
-        </g>,
-      );
-    });
-    py += r * PITCH + 4;
-  }
   return (
     <g>
       <rect x={n.x} y={n.y} width={NODE_W} height={n.h} rx="8" className="loc-cab-node" />
       <text x={n.x + 10} y={n.y + 15} className="loc-cab-name">{devName(n.d)}</text>
       <text x={n.x + 10} y={n.y + 27} className="loc-cab-sub">{n.sub}</text>
-      {rows}
+      {n.m.ports.map((port, p) => {
+        const y = n.y + HEAD + p * PITCH, sfp = port.media === "sfp", k2 = `${n.d.id}:${p}`;
+        const lamp = peers[p] ? (sfp ? LED.fiber : LED.ok) : null, jx = n.x + NODE_W - 24;
+        return (
+          <g key={p} data-p={k2} data-on={cableOf.get(k2)} className="loc-cab-port">
+            <rect x={n.x + 2} y={y} width={NODE_W - 4} height={PITCH} rx="3" className="loc-cab-row" />
+            <text x={n.x + 10} y={y + PITCH / 2 + 3.5} className="loc-cab-label">{portName(n.m, p)}</text>
+            <text x={jx - 8} y={y + PITCH / 2 + 3.5} textAnchor="end" className="loc-cab-speed">{sfp ? "SFP " : ""}{speed(port.gbit)}</text>
+            <rect x={jx} y={y + (sfp ? 3.5 : 2.5)} width={sfp ? 13 : 12} height={sfp ? 9 : 11} rx={sfp ? 1 : 2} className={sfp ? "sfp" : "rj45"} />
+            {lamp && <rect x={jx + 2.5} y={y + (sfp ? 5 : 4)} width={sfp ? 8 : 7} height="2" rx="0.5" fill={lamp} pointerEvents="none" />}
+          </g>
+        );
+      })}
     </g>
   );
 }

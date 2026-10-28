@@ -4,7 +4,8 @@ import { GENERATIONS } from "../src/sim/10-catalog/economy";
 import { brandsFor, MANUFACTURERS, MODELS, modelById, priceOf, shopModels, type DeviceModel } from "../src/sim/10-catalog/hardware";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { linkStatus } from "../src/sim/60-infra/status";
-import { addLocation, buyDevice, buyRack, connect, disconnect, mountDevice } from "../src/sim/90-actions/hardware";
+import { addLocation, buyDevice, buyRack, connect, disconnect } from "../src/sim/90-actions/hardware";
+import { mountDevice } from "./plugged";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const ok = (r: ReturnType<typeof buyDevice>) => {

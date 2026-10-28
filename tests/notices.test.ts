@@ -9,7 +9,8 @@ import { DATA_LOSS, gridOutage, RESTORED, seize } from "../src/sim/60-infra/inci
 import { linkStatus, powered } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { addNode } from "../src/sim/90-actions/clusters";
-import { buyDevice, connect, mountDevice } from "../src/sim/90-actions/hardware";
+import { buyDevice, connect } from "../src/sim/90-actions/hardware";
+import { mountDevice } from "./plugged";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { startGame } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";

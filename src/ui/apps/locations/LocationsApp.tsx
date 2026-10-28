@@ -14,7 +14,7 @@ import { HomeLinePanel } from "./HomeLine";
 import { Inspector } from "./Inspector";
 import "./locations.css";
 import { Overview } from "./Overview";
-import { RackView } from "./RackView";
+import { RackView, Upgrades } from "./RackView";
 import { Storage } from "./Storage";
 import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, UsageBars, useDismiss, Zone } from "./ui";
 import { REGIONS } from "../../../sim/20-world/datacenters";
@@ -67,6 +67,7 @@ export function LocationsApp() {
           <div className="loc-split">
             <div className="loc-scroll">
               <LocationHead game={game} locId={loc.id} />
+              <Upgrades loc={loc} />
               <Floor game={game} loc={loc} onRack={(id) => go(loc.id, id)} />
               <CarrierPanel game={game} loc={loc} selected={deviceId} onDevice={setDeviceId} />
               {loc.space === "basement" && <HomeLinePanel game={game} />}

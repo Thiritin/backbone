@@ -1,12 +1,12 @@
-import { ArchiveRestore, Cable, CircleDollarSign, Cpu, Database, EthernetPort, FileSignature, Gauge, Network, Power, Unplug } from "lucide-react";
+import { ArchiveRestore, Cable, CircleDollarSign, Cpu, Database, EthernetPort, FileSignature, Gauge, Network, PlugZap, Power, Unplug } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
 import { COMPONENTS, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Cable as CableT, Device, End, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
-import { deviceHealth, drivesOf, hotSwappable, linkStatus, locationOf, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
+import { deviceHealth, drivesOf, hotSwappable, isPlugged, linkStatus, locationOf, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
 import { rebuildHours } from "../../../sim/88-tick/tick";
-import { buyOutLease, connect, disconnect, LABEL_MAX, replaceComponent, sellDevice, setBond, setCableColor, setLabel, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
+import { buyOutLease, connect, disconnect, LABEL_MAX, replaceComponent, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
 import { cableColor, DeviceSvg, SWATCHES } from "../../art/fronts";
 import { BrandLogo, Logo } from "../../art/logos";
@@ -163,9 +163,7 @@ function portBlocks(m: DeviceModel): { rows: number; ports: number[] }[] {
 
 // A server's NICs and power supplies, one row each, with the device at the other end of every cable.
 function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { game: GameState; device: Device; peers: (End | null)[]; sel: number[]; onPick: (i: number) => void; onHover: (i: number | null) => void; onSelect: (id: string) => void }) {
-  const model = modelById(device.model), on = working(game, device.id), loc = locationOf(game, device);
-  const psus = device.components.filter((c) => c.kind === "psu");
-  const ab = !!loc && dcOf(loc)?.feeds === "ab", rackOf = game.racks.find((r) => r.id === device.rackId);
+  const model = modelById(device.model), on = working(game, device.id);
   return (
     <div className="loc-card">
       <table className="table loc-port-table">
@@ -191,12 +189,6 @@ function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { ga
           })}
         </tbody>
       </table>
-      <div className="loc-row">
-        <span className="loc-k">Power supplies</span>
-        {Array.from({ length: model.psus }, (_, i) => (
-          <span key={i} className={`pill${on && psus[i]?.failedAt == null ? " ok" : " bad"}`}>PSU {i + 1} · Feed {(ab || rackOf?.feedB) && i === 1 ? "B" : "A"}</span>
-        ))}
-      </div>
     </div>
   );
 }
@@ -332,28 +324,26 @@ function LabelEdit({ device }: { device: Device }) {
 
 const HEALTH = {
   ok: ["Running", "ok"], booting: ["Booting", "warn"], degraded: ["Degraded", "warn"], hot: ["Running hot", "warn"], rebuilding: ["Rebuilding", "warn"],
-  maintenance: ["Maintenance", "warn"], down: ["Down", "bad"], off: ["Off", ""],
+  maintenance: ["Maintenance", "warn"], down: ["Down", "bad"], nopower: ["No power", "bad"], off: ["Off", ""],
 } as const;
 const clock = (hour: number) => dateOf(hour).toISOString().slice(11, 16);
 
-// Devices that are online now and would go offline with this one switched off.
-function dependents(g: GameState, id: string): Device[] {
-  const after = structuredClone(g);
-  setPower(after, id, false);
-  return g.devices.filter((d) => d.id !== id && linkStatus(g, d.id).online && !linkStatus(after, d.id).online);
-}
-
 function PowerCard({ game, device }: { game: GameState; device: Device }) {
   const act = useStore((s) => s.act);
-  const [down, setDown] = useState<Device[] | null>(null);
+  const [down, setDown] = useState<{ names: string[]; title: string; action: string; run: () => void } | null>(null);
   const [label, tone] = HEALTH[deviceHealth(game, device.id).state];
-  const off = () => act((g) => setPower(g, device.id, false));
-  const toggle = (on: boolean) => {
-    if (on) return act((g) => setPower(g, device.id, true));
-    const ds = dependents(game, device.id);
-    if (ds.length) setDown(ds); else off();
+  const loc = locationOf(game, device), rack = game.racks.find((r) => r.id === device.rackId);
+  const ab = !!loc && dcOf(loc)?.feeds === "ab";
+  const psus = device.rackId ? device.components.filter((c) => c.kind === "psu") : [];
+  // Asks first when the change takes devices that are online now offline.
+  const guarded = (change: (g: GameState) => unknown, title: string, action: string) => {
+    const after = structuredClone(game);
+    change(after);
+    const names = game.devices.filter((d) => linkStatus(game, d.id).online && !linkStatus(after, d.id).online).map(devName);
+    if (names.length) setDown({ names, title, action, run: () => act(change as never) });
+    else act(change as never);
   };
-  const names = down?.map(devName) ?? [];
+  const names = down?.names ?? [];
   return (
     <div className="loc-card">
       <div className="loc-card-h">
@@ -361,14 +351,34 @@ function PowerCard({ game, device }: { game: GameState; device: Device }) {
         <span className={`pill ${tone}`}>{label}</span>
         <span className="grow" />
         <TechButton game={game} deviceId={device.id} kind={device.on ? "off" : "on"} />
-        <button className={`btn power-btn${device.on ? " on" : ""}`} disabled={!device.rackId && !device.panel} onClick={() => toggle(!device.on)}>
+        <button className={`btn power-btn${device.on ? " on" : ""}`} disabled={!device.rackId && !device.panel}
+          onClick={() => (device.on ? guarded((g) => setPower(g, device.id, false), `Power off ${devName(device)}?`, "Power off") : act((g) => setPower(g, device.id, true)))}>
           <Power />{device.on ? "Shut down" : "Power on"}
         </button>
       </div>
+      {psus.length > 0 && (
+        <table className="table loc-parts">
+          <thead><tr><th>Supply</th><th>Feed</th><th>Plug</th><th /></tr></thead>
+          <tbody>
+            {psus.map((c, i) => (
+              <tr key={c.id}>
+                <td>Power supply{psus.length > 1 && <span className="num"> {i + 1}</span>}</td>
+                <td>{(ab || rack?.feedB) && i === 1 ? "B" : "A"}</td>
+                <td>{isPlugged(c) ? <span className="pill ok">Plugged in</span> : <span className="pill">Unplugged</span>}</td>
+                <td className="r">
+                  {isPlugged(c)
+                    ? <button className="btn" onClick={() => guarded((g) => setPlugged(g, device.id, c.id, false), `Unplug ${devName(device)}?`, "Unplug")}><Unplug />Disconnect</button>
+                    : <button className="btn primary" onClick={() => act((g) => setPlugged(g, device.id, c.id, true))}><PlugZap />Connect</button>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       {down && (
-        <Confirm title={`Power off ${devName(device)}?`}
+        <Confirm title={down.title}
           text={`${names.length > 3 ? `${names.slice(0, 3).join(", ")} and ${names.length - 3} more` : names.join(", ")} ${names.length === 1 ? "goes" : "go"} offline.`}
-          action="Power off" onCancel={() => setDown(null)} onConfirm={() => { setDown(null); off(); }} />
+          action={down.action} onCancel={() => setDown(null)} onConfirm={() => { setDown(null); down.run(); }} />
       )}
     </div>
   );

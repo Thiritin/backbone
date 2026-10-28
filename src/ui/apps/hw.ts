@@ -2,7 +2,7 @@
 import { dateOf } from "../../sim/00-core/time";
 import { COMPONENTS, jacksOf, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
 import type { Component, Device, End, GameState } from "../../sim/50-state";
-import { deviceHealth, HOURS_PER_YEAR, linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
+import { deviceHealth, HOURS_PER_YEAR, isPlugged, linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
 import type { Lamp, PartLamp, Parts, PortLamp } from "../art/fronts";
 
 export const speed = (g: number) => (g >= 1 ? `${g}G` : `${g * 1000}M`);
@@ -41,11 +41,11 @@ export const isWorn = (g: GameState, c: Component) => ageYears(g, c) >= COMPONEN
 
 const DRIVE: ReadonlySet<ComponentKind> = new Set(["hdd", "ssd", "nvme"]);
 const WORSE: Lamp[] = ["ok", "warn", "bad"];
-const HEALTH_LAMP = { ok: "ok", degraded: "warn", hot: "warn", rebuilding: "warn", booting: "warn", maintenance: "warn", down: "bad", off: "off" } as const;
+const HEALTH_LAMP = { ok: "ok", degraded: "warn", hot: "warn", rebuilding: "warn", booting: "warn", maintenance: "warn", down: "bad", nopower: "off", off: "off" } as const;
 
 // Per-component lights: failed red, past its life amber, the drive being rebuilt blinking amber; all dark while the device is off.
 function partLamps(g: GameState, d: Device): Parts {
-  const lamp = (c: Component): PartLamp => (!d.on ? "off" : c.failedAt !== null ? "bad" : d.rebuild?.componentId === c.id ? "rebuild" : isWorn(g, c) ? "warn" : "ok");
+  const lamp = (c: Component): PartLamp => (!d.on || !isPlugged(c) ? "off" : c.failedAt !== null ? "bad" : d.rebuild?.componentId === c.id ? "rebuild" : isWorn(g, c) ? "warn" : "ok");
   const of = (pick: (k: ComponentKind) => boolean) => d.components.filter((c) => pick(c.kind)).map(lamp);
   return { drives: of((k) => DRIVE.has(k)), psus: of((k) => k === "psu"), fans: of((k) => k === "fan") };
 }
@@ -53,6 +53,6 @@ function partLamps(g: GameState, d: Device): Parts {
 // The status light is the worse of link and health; a rebuild blinks it.
 export function deviceLamps(g: GameState, id: string, m: DeviceModel) {
   const d = g.devices.find((x) => x.id === id)!, h = deviceHealth(g, id).state, link = lampOf(linkStatus(g, id));
-  const state: Lamp = h === "off" ? "off" : WORSE[Math.max(WORSE.indexOf(HEALTH_LAMP[h]), WORSE.indexOf(link))];
-  return { state, blink: h === "rebuilding" || h === "booting", ports: d.on ? portLamps(m, portPeers(g, id)) : portLamps(m, []), parts: partLamps(g, d) };
+  const state: Lamp = h === "off" || h === "nopower" ? "off" : WORSE[Math.max(WORSE.indexOf(HEALTH_LAMP[h]), WORSE.indexOf(link))];
+  return { state, blink: h === "rebuilding" || h === "booting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), parts: partLamps(g, d) };
 }

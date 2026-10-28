@@ -11,7 +11,8 @@ import { howToFactor, licenseCost } from "../src/sim/85-products/products";
 import { tick } from "../src/sim/88-tick/tick";
 import { addNode, createCluster, moveControlPlane, provisionService, setBackup, setSoftware } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { buyDevice, connect, mountDevice, setPower } from "../src/sim/90-actions/hardware";
+import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
+import { mountDevice } from "./plugged";
 import { declineRefund, migrateWorkload, refundLoss, restoreWorkload, startWorkload, stopWorkload } from "../src/sim/90-actions/vms";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 

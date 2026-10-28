@@ -119,12 +119,17 @@ export function resaleValue(s: GameState, price: number, boughtAt: number): numb
   return Math.round(price * share * 100) / 100;
 }
 
+const psusOf = (d: Device) => d.components.filter((c) => c.kind === "psu");
+export const isPlugged = (c: Component) => c.plugged !== false;
+// A device gets power through a plugged-in supply that has not failed; one without supplies needs none.
+export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length || p.some((c) => isPlugged(c) && c.failedAt === null); };
+
 // ponytail: full rated power for every device; load-based draw comes with workloads.
 export function rackPower(s: GameState, rackId: string): { watts: number; limitWatts: number; tripped: boolean } {
   const rack = s.racks.find((r) => r.id === rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
   if (!rack || !loc) return { watts: 0, limitWatts: 0, tripped: false };
-  const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on).reduce((sum, d) => sum + modelById(d.model).watts, 0)
+  const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on && pluggedIn(d)).reduce((sum, d) => sum + modelById(d.model).watts, 0)
     + s.workloads.reduce((sum, w) => sum + (w.rackId === rackId ? w.watts : 0), 0) : 0;
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.
@@ -179,12 +184,12 @@ function failedDown(d: Device): boolean {
 }
 
 export function deviceHealth(s: GameState, deviceId: string): {
-  state: "ok" | "booting" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "off"; failed: Component[]; worn: Component[];
+  state: "ok" | "booting" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "nopower" | "off"; failed: Component[]; worn: Component[];
 } {
   const d = s.devices.find((x) => x.id === deviceId)!;
   const failed = d.components.filter((c) => c.failedAt !== null);
   const worn = d.components.filter((c) => c.failedAt === null && s.hour - c.installedAt >= COMPONENTS[c.kind].life * HOURS_PER_YEAR);
-  const state = !d.on ? "off" : booting(s, d) ? "booting" : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.rebuild ? "rebuilding"
+  const state = !d.on ? "off" : d.rackId && !pluggedIn(d) && !failedDown(d) ? "nopower" : booting(s, d) ? "booting" : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.rebuild ? "rebuilding"
     : failed.some((c) => c.kind === "fan") ? "hot" : failed.length ? "degraded" : "ok";
   return { state, failed, worn };
 }
@@ -206,7 +211,7 @@ export function powered(s: GameState, deviceId: string): boolean {
   if (!d || !loc || loc.readyAt > s.hour || (s.ops.dark[loc.id] ?? 0) > s.hour) return false;
   if (!d.rackId) return true;
   const rack = s.racks.find((r) => r.id === d.rackId)!;
-  return rack.arriveAt === null && !rackPower(s, rack.id).tripped;
+  return rack.arriveAt === null && pluggedIn(d) && !rackPower(s, rack.id).tripped;
 }
 
 export function freePositions(s: GameState, locationId: string): number[] {
