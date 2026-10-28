@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
+import { COMPONENTS } from "../src/sim/10-catalog/hardware";
+import { HOURS_PER_YEAR } from "../src/sim/60-infra/status";
 import { hardwarePremium, INSOLVENT_DAYS, nextTax, profitBetween, yearStart } from "../src/sim/46-finance/finance";
 import { newGame, type GameState, type LedgerEntry } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
@@ -87,6 +89,21 @@ describe("hardware insurance", () => {
     ok(replaceComponent(s, "dev3", fans[1].id));
     expect(s.ledger.some((e) => e.key === "ledger.insuranceClaim")).toBe(false);
     expect(cancelInsurance(s)).toEqual({ ok: false, error: "error.notInsured" });
+  });
+});
+
+describe("insurance and wear", () => {
+  it("does not pay for a part that failed after its life expectancy", () => {
+    const s = newGame(16);
+    s.cash = 5_000;
+    ok(buyDevice(s, "part-fan", "Generic", 1, "loc1"));
+    ok(buyInsurance(s));
+    runFor(s, 1);
+    const fan = s.devices.find((d) => d.id === "dev3")!.components.find((c) => c.kind === "fan")!;
+    fan.installedAt = s.hour - (COMPONENTS.fan.life + 1) * HOURS_PER_YEAR;
+    fan.failedAt = s.hour;
+    ok(replaceComponent(s, "dev3", fan.id));
+    expect(s.ledger.some((e) => e.key === "ledger.insuranceClaim")).toBe(false);
   });
 });
 

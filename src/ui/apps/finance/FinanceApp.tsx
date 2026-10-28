@@ -354,7 +354,7 @@ function TaxInsurance({ game }: { game: GameState }) {
         <div className="shop-card">
           <div className="shop-name">
             <strong>Hardware insurance</strong>
-            <span>The policy pays the spare part and the remote hands when a component fails.</span>
+            <span>The policy pays the spare part and the remote hands when a component fails before the end of its life expectancy.</span>
           </div>
           <dl className="shop-specs">
             <div><dt>Monthly premium</dt><dd className="num">{euroCents(premium)}</dd></div>

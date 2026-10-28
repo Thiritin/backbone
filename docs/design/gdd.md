@@ -556,7 +556,7 @@ Payment habits differ by segment. Private individuals forget most often, and ent
 
 **Insurance.** SLA insurance pays the credits you owe customers when you miss an SLA. It covers three claims; after the third, the insurer blocks you for a year. The premium rises with a poor uptime record.
 
-**Hardware insurance.** Until SLAs exist, hardware insurance is the one policy on sale, from the start of the game. It pays the spare part and the remote hands for every component that fails while the policy runs, and its monthly premium is the expected cost of replacement parts for the installed hardware with a 50% markup, so it rises as the hardware ages. Buying it pays the first month's premium; cancelling ends it at once without a refund.
+**Hardware insurance.** Until SLAs exist, hardware insurance is the one policy on sale, from the start of the game. It pays the spare part and the remote hands for a component that fails while the policy runs, but only within the component's life expectancy: normal wear and tear is not covered. Its monthly premium is the expected cost of replacement parts for the covered hardware with a 50% markup. Buying it pays the first month's premium; cancelling ends it at once without a refund.
 
 **Tax.** Corporate tax takes 30% of the previous calendar year's profit on 1 April, and a loss carries forward against later profits. Profit is read from the ledger: loan principal is left out, interest and missed-payment fees count as costs, and hardware counts as a cost in the year it is bought.
 

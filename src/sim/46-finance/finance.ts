@@ -43,9 +43,12 @@ export function nextTax(s: GameState): { year: number; dueAt: number; profit: nu
   return { year, dueAt: hourOf(new Date(Date.UTC(year + 1, TAX_MONTH, 1))), ...taxFor(s, year) };
 }
 
-// A month's hardware premium: the expected cost of spare parts for every working component at its current failure rate, with the insurer's markup.
+// Normal wear and tear is not covered: only failures within the component's life expectancy.
+const withinLife = (c: Component, at: number) => at - c.installedAt < COMPONENTS[c.kind].life * HOURS_PER_YEAR;
+
+// A month's hardware premium: the expected cost of spare parts for every covered component at its current failure rate, with the insurer's markup.
 export function hardwarePremium(s: GameState): number {
-  const yearly = s.devices.reduce((sum, d) => sum + d.components.filter((c) => c.failedAt === null)
+  const yearly = s.devices.reduce((sum, d) => sum + d.components.filter((c) => c.failedAt === null && withinLife(c, s.hour))
     .reduce((a, c) => a + failureChance(s, d, c) * HOURS_PER_YEAR * COMPONENTS[c.kind].price, 0), 0);
   return Math.max(MIN_PREMIUM, cents((yearly * PREMIUM_MARKUP) / 12));
 }
@@ -55,10 +58,10 @@ const book = (s: GameState, category: string, key: string, params: LedgerEntry["
   s.ledger = [...s.ledger, { hour: s.hour, category, key, params, amount }];
 };
 
-// The hardware policy pays the spare part and the remote hands for a component that failed while insured.
+// The hardware policy pays the spare part and the remote hands for a component that failed while insured and within its life expectancy.
 export function claimRepair(s: GameState, device: string, c: Component, part: number, hands: number): void {
   const policy = s.insurance.find((p) => p.id === "hardware");
-  if (!policy || c.failedAt === null || c.failedAt < policy.since) return;
+  if (!policy || c.failedAt === null || c.failedAt < policy.since || !withinLife(c, c.failedAt)) return;
   book(s, "insurance", "ledger.insuranceClaim", { device, component: c.kind }, cents(part + hands));
 }
 

@@ -1021,7 +1021,7 @@ The loan limit is the higher of the level's minimum and 12× the average monthly
 
 **Tax.** Prices are without VAT, and VAT is not simulated. Corporate tax takes 30% of each year's profit in April of the following year, and losses carry forward to later years. Taxable profit is the year's ledger without loan principal; instalments count only their interest, and hardware is a cost in the year it is bought.
 
-**Hardware insurance.** The monthly premium is 1.5 × the expected yearly cost of spare parts for every working component (part price × its current yearly failure rate, with the manufacturer and overheating factors) / 12, at least €1. A claim pays the spare part's price and the remote hands bill for a component that failed while insured. The starting basement server costs about €1.40 a month to insure, and about €7 once its parts are past their lifetimes.
+**Hardware insurance.** The monthly premium is 1.5 × the expected yearly cost of spare parts for every working component still within its life expectancy (part price × its current yearly failure rate, with the manufacturer and overheating factors) / 12, at least €1. A claim pays the spare part's price and the remote hands bill for a component that failed while insured and before the end of its life expectancy; wear-out failures after that are not covered, so parts past their lifetimes add nothing to the premium. The starting basement server costs about €1.40 a month to insure.
 
 ## Balancing
 
