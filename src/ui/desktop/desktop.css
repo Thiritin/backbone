@@ -72,6 +72,7 @@ button { font: inherit; color: inherit; cursor: default; }
 .w-cal .w-weekday { font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent-text); }
 .w-cal .w-big { font-size: 44px; margin-top: 4px; }
 .w-cal .w-sub { margin-top: auto; }
+.w-cal .w-month { margin-left: 6px; font-size: 18px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-2); }
 
 .settings { flex: 1; overflow-y: auto; padding: 20px 24px; }
 .settings h2 { font-size: 17px; font-weight: 650; margin-bottom: 12px; }

@@ -26,8 +26,8 @@ export function Widgets() {
     <div className="widgets" aria-label="Widgets">
       <div className="widget w-cal">
         <span className="w-weekday">{fmt(d, { weekday: "long" })}</span>
-        <span className="w-big num">{d.getUTCDate()}</span>
-        <span className="w-sub">{fmt(d, { month: "long", year: "numeric" })}</span>
+        <span className="w-big num">{d.getUTCDate()}<span className="w-month">{fmt(d, { month: "short" }).slice(0, 3)}</span></span>
+        <span className="w-sub num">{d.getUTCFullYear()}</span>
       </div>
       <Widget app="Support" icon={<LifeBuoy />} label="Open tickets">
         <span className="w-big num">{m.openTickets}</span>
