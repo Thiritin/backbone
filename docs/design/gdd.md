@@ -457,7 +457,9 @@ Low-budget customers offer the least and ask for the lowest SLA.
 
 **Market research.** Requirements start hidden. The Market Research app reveals, per profile, budget ranges, which scores they weigh, and what they demand from a host. It also shows demand by product and city, and reports on lost sales, for example "chose another host: no domains on offer".
 
-**Competitors.** A few big, established hosts with parody names dominate the market. They are a fixed backdrop and don't react to you, but the market is crowded and hard-fought. A customer first drops hosts that miss its requirements, then compares the remaining hosts on the three scores.
+**Competitors.** A few big, established hosts with parody names dominate the market, such as a Hetzner stand-in, an IONOS stand-in and an OVH stand-in, alongside specialists: game server hosts, VPS-only budget hosts and managed WordPress hosts. Each has its own product line with prices, and each targets different segments, so a cheap VPS host competes for hobbyists and a game server host for gamers. They run passively in the background: the game doesn't simulate their customers one by one, only their offers and their share of each segment. They are a fixed backdrop and don't react to you, but the market is crowded and hard-fought. A customer first drops hosts that miss its requirements, then compares the remaining hosts on the three scores.
+
+**Undercutting and awareness.** You can price just below a competitor's offer to win more of its segment, but customers don't switch overnight. How many people know your company limits how many consider you at all, and that awareness grows slowly through marketing, reviews and word of mouth. A price cut brings a gradual trickle of customers over months, not an instant wave, and a well-known competitor keeps most of its customers even when you are cheaper.
 
 ## Company level and reputation
 
