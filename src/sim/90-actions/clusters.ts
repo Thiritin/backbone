@@ -3,11 +3,11 @@ import { modelById } from "../10-catalog/hardware";
 import { marketPrice, planOf, PRODUCTS, type Sla } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
-import { DEFAULT_PANEL, DEFAULT_PLATFORM, phpAt, softwareById, SWITCH_FEE, SWITCH_PER_HOUR } from "../10-catalog/platforms";
+import { phpAt, softwareById } from "../10-catalog/platforms";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
-  clusterOf, controlPlaneUp, fitsControlPlane, moveOff, pickNode, servedBy, serverTaken, setNodeState, workloadsOf, workloadsOn,
+  clusterOf, controlPlaneUp, fitsControlPlane, moveOff, noRoomError, pickNode, servedBy, serverTaken, setNodeState, supports, workloadsOf, workloadsOn,
   type BackupEvery, type Cluster, type ClusterNode, type Placement, type Workload,
 } from "../60-infra/cluster";
 import { freeSlots, locationOf, rackPower, working } from "../60-infra/status";
@@ -17,34 +17,34 @@ import type { ActionResult } from "./hardware";
 const fail = (error: string): ActionResult => ({ ok: false, error });
 export const CLUSTER_NAME_MAX = 40;
 
-export function createCluster(s: GameState, locationId: string, name: string, panel = DEFAULT_PANEL, platform = DEFAULT_PLATFORM): ActionResult {
+// A new cluster runs nothing until a control plane is installed on it with setSoftware.
+export function createCluster(s: GameState, locationId: string, name: string): ActionResult {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return fail("error.unknownLocation");
   const n = name.trim();
   if (!n || n.length > CLUSTER_NAME_MAX) return fail("error.clusterName");
   if (s.clusters.some((c) => c.name === n)) return fail("error.clusterNameTaken");
-  if (softwareById(panel).id !== panel || softwareById(panel).kind !== "panel" || softwareById(platform).id !== platform || softwareById(platform).kind !== "cloud") return fail("error.unknownSoftware");
   const id = `clu${s.nextId++}`;
   s.clusters = [...s.clusters, {
-    id, name: n, az: loc.az, placement: "pack", nodes: [], panel, platform, controlPlane: null, switching: null, backup: { targetId: null, every: "off" },
+    id, name: n, az: loc.az, placement: "pack", nodes: [], panel: null, platform: null, controlPlane: null, switching: null, backup: { targetId: null, every: "off" },
   }];
   return { ok: true, id };
 }
 
-// Moves to other software: every workload it serves goes offline for an hour per 4 of them, at a fee per workload.
+// Installs a panel or platform on the cluster's control-plane node, or replaces the installed one once nothing it serves
+// runs on the cluster. The control plane is busy for the software's install hours; its license is billed monthly.
 export function setSoftware(s: GameState, clusterId: string, id: string): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
   const sw = softwareById(id);
   if (sw.id !== id) return fail("error.unknownSoftware");
   if (c.switching) return fail("error.switching");
-  if ((sw.kind === "panel" ? c.panel : c.platform) === id) return fail("error.sameSoftware");
-  const moved = s.workloads.filter((w) => w.clusterId === c.id && servedBy(s, w) === sw.kind).length;
-  const fee = SWITCH_FEE * moved;
-  if (fee > s.cash) return fail("error.noCash");
-  s.cash = Math.round((s.cash - fee) * 100) / 100;
-  if (fee > 0) s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.switch", params: { cluster: c.name, name: sw.name }, amount: -fee }];
-  update(s, c.id, (x) => ({ ...x, switching: { kind: sw.kind, to: id, doneAt: s.hour + Math.max(1, Math.ceil(moved / SWITCH_PER_HOUR)) } }));
+  const slot = sw.kind === "panel" ? "panel" : "platform";
+  if (c[slot] === id) return fail("error.sameSoftware");
+  if (!c.controlPlane) return fail("error.noNodes");
+  if (c[slot] && s.workloads.some((w) => w.clusterId === c.id && servedBy(s, w) === sw.kind)) return fail("error.softwareInUse");
+  if (!fitsControlPlane(s, { ...c, [slot]: id }, c.controlPlane)) return fail(working(s, c.controlPlane) ? "error.nodeFull" : "error.nodeDown");
+  update(s, c.id, (x) => ({ ...x, switching: { kind: sw.kind, to: id, doneAt: s.hour + sw.installHours } }));
   return { ok: true };
 }
 
@@ -164,12 +164,12 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
   if (spec.runsOn === "cluster") {
     // ponytail: no high-availability clusters yet, so HA products can't be placed.
     if (spec.ha) return fail("error.needsHaCluster");
-    for (const c of s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)))) {
+    for (const c of s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)) && supports(x, v.product))) {
       const node = controlPlaneUp(s, c) ? pickNode(s, c, size) : null;
       if (node) { w = workload(s, v.id, { ...size, clusterId: c.id, deviceId: node }); az = c.az; break; }
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;
-    if (!w) return fail(target && !controlPlaneUp(s, target) ? "error.controlPlaneDown" : "error.noCapacity");
+    if (!w) return fail(target && supports(target, v.product) && !controlPlaneUp(s, target) ? "error.controlPlaneDown" : noRoomError(s, v.product, clusterId));
   } else if (spec.runsOn === "server") {
     const d = s.devices.find((x) => x.rackId && (modelById(x.model).server?.ramGb ?? 0) >= size.ramGb && inZone(locationOf(s, x)?.az ?? "") && !serverTaken(s, x.id));
     if (!d) return fail("error.noFreeServer");

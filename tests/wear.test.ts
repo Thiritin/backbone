@@ -9,6 +9,7 @@ import {
 } from "../src/sim/90-actions/hardware";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addNode, createCluster, provisionService } from "../src/sim/90-actions/clusters";
+import { installed } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const rich = (): GameState => ({ ...newGame(1), cash: 1_000_000 });
@@ -107,7 +108,7 @@ describe("RAID", () => {
     expect(dev(s, id).dataLost).toBeNull();
     ok(setPower(s, id, true));
     s.hour += BOOT_HOURS;
-    ok(addNode(s, ok(createCluster(s, "loc1", "Storage 1")), id));
+    ok(addNode(s, installed(s, ok(createCluster(s, "loc1", "Storage 1"))), id));
     ok(provisionService(s, addCustomer(s, "Ada", "private"), "webHosting", { label: "ada.example" }));
     ok(setPower(s, id, false));
     s.hour = 7;

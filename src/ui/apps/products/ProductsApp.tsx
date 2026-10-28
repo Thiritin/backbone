@@ -1,23 +1,23 @@
 import { Boxes, LayoutGrid, Plus, TriangleAlert } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { modelById } from "../../../sim/10-catalog/hardware";
-import { DEFAULT_PANEL, DEFAULT_PLATFORM, softwareById, SWITCH_FEE, SWITCH_PER_HOUR, type SoftwareKind } from "../../../sim/10-catalog/platforms";
+import { kindServing, softwareById, type SoftwareKind } from "../../../sim/10-catalog/platforms";
 import { PRODUCTS } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import type { GameState } from "../../../sim/50-state";
-import { bookable, controlPlaneUp, controlPlaneUse, fitsControlPlane, nodeUsed, servedBy, serverTaken, workloadsOn, type BackupEvery, type Cluster } from "../../../sim/60-infra/cluster";
+import { bookable, controlPlaneUp, lineOffered, supports, controlPlaneUse, fitsControlPlane, nodeUsed, serverTaken, workloadsOn, type BackupEvery, type Cluster } from "../../../sim/60-infra/cluster";
 import { locationOf, raidUsable } from "../../../sim/60-infra/status";
 import { nodeUsage, peakUsage } from "../../../sim/60-infra/usage";
 import { backupPool, licenseCost } from "../../../sim/85-products/products";
 import { addNode, CLUSTER_NAME_MAX, createCluster, moveControlPlane, setBackup, setPlacement, setSoftware } from "../../../sim/90-actions/clusters";
 import { Confirm } from "../../desktop/Confirm";
-import { useStore } from "../../store";
+import { useFocus, useStore } from "../../store";
 import "../billing/billing.css";
 import { devName, disk, ram } from "../hw";
 import { Meter, NODE_STATE } from "../locations/Clusters";
 import { PRODUCT } from "../support/labels";
-import { IncidentReports, Mark, SoftwareCards } from "./parts";
+import { ControlPlanePill, IncidentReports, KIND_NAME, licenseText, Mark, servesText, SoftwareCards } from "./parts";
 
 type View = "lines" | "new" | "incidents" | string;
 const num = (n: number) => `${+n.toFixed(1)}`;
@@ -25,6 +25,7 @@ const num = (n: number) => `${+n.toFixed(1)}`;
 export function ProductsApp() {
   const game = useStore((s) => s.game);
   const [view, setView] = useState<View>("lines");
+  useFocus("Products", (f) => { if (f.kind === "cluster") setView(f.id); });
   const cluster = game.clusters.find((c) => c.id === view);
   const open = game.lossReports.filter((r) => r.items.some((i) => !i.restored || i.refund === "open")).length;
   const item = (id: View, label: string, icon: ReactNode, count?: number) => (
@@ -38,7 +39,7 @@ export function ProductsApp() {
         {item("lines", "Product lines", <LayoutGrid />)}
         {item("incidents", "Incidents", <TriangleAlert />, open)}
         <div className="side-h">Clusters</div>
-        {game.clusters.map((c) => item(c.id, c.name, <Mark id={c.platform} size={16} />, c.nodes.length))}
+        {game.clusters.map((c) => item(c.id, c.name, <Mark id={c.platform ?? c.panel} size={16} />, c.nodes.length))}
         {item("new", "New cluster", <Plus />)}
       </nav>
       <div className="fin-main">
@@ -58,7 +59,7 @@ const LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "stor
 // Whether a zone can take new orders of a product.
 function offered(game: GameState, p: Product, az: string): boolean {
   const spec = PRODUCTS[p];
-  if (spec.runsOn === "cluster") return !spec.ha && game.clusters.some((c) => c.az === az && c.nodes.length > 0 && controlPlaneUp(game, c));
+  if (spec.runsOn === "cluster") return !spec.ha && game.clusters.some((c) => c.az === az && c.nodes.length > 0 && supports(c, p) && controlPlaneUp(game, c));
   if (spec.runsOn === "server") return game.devices.some((d) => d.rackId && modelById(d.model).server && locationOf(game, d)?.az === az && !serverTaken(game, d.id));
   return game.locations.some((l) => l.az === az && l.dc);
 }
@@ -71,14 +72,19 @@ function ProductLines({ game }: { game: GameState }) {
       <section className="fin-card">
         <div className="fin-card-h"><LayoutGrid />Product lines</div>
         <table className="table">
-          <thead><tr><th>Product</th>{zones.map((z) => <th key={z} className="r">{z}</th>)}<th className="r">Monthly</th></tr></thead>
+          <thead><tr><th>Product</th><th>Runs on</th>{zones.map((z) => <th key={z} className="r">{z}</th>)}<th className="r">Monthly</th></tr></thead>
           <tbody>
             {LINES.map((p) => {
               const mine = live.filter((v) => v.product === p);
               const monthly = mine.reduce((n, v) => n + (v.period === "hour" ? v.price * 730 : v.price / 12), 0);
+              const kind = kindServing(p);
               return (
                 <tr key={p}>
                   <td>{PRODUCT[p]}</td>
+                  <td>
+                    {kind ? KIND_NAME[kind] : PRODUCTS[p].runsOn === "server" ? "Whole server" : "Rack space"}
+                    {kind && !PRODUCTS[p].ha && !lineOffered(game, p) && <> <span className="pill bad">Not installed</span></>}
+                  </td>
                   {zones.map((z) => {
                     const n = mine.filter((v) => v.zone === z).length;
                     return <td key={z} className="r num">{n > 0 ? n : offered(game, p, z) ? <span className="pill ok">Offered</span> : <span className="loc-muted">None</span>}</td>;
@@ -98,10 +104,8 @@ function NewCluster({ game, onDone }: { game: GameState; onDone: (id: string) =>
   const act = useStore((s) => s.act);
   const [loc, setLoc] = useState(game.locations[0]?.id ?? "");
   const [name, setName] = useState("");
-  const [panel, setPanel] = useState(DEFAULT_PANEL);
-  const [platform, setPlatform] = useState(DEFAULT_PLATFORM);
   const create = () => {
-    const r = act((g) => createCluster(g, loc, name, panel, platform));
+    const r = act((g) => createCluster(g, loc, name));
     if (r.ok && r.id) onDone(r.id);
   };
   return (
@@ -115,10 +119,6 @@ function NewCluster({ game, onDone }: { game: GameState; onDone: (id: string) =>
           <input className="field" aria-label="Cluster name" placeholder="Cluster name" maxLength={CLUSTER_NAME_MAX} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
       </section>
-      <h3 className="prd-h">Control panel</h3>
-      <SoftwareCards kind="panel" value={panel} onPick={setPanel} />
-      <h3 className="prd-h">Platform</h3>
-      <SoftwareCards kind="cloud" value={platform} onPick={setPlatform} />
       <div><button className="btn primary" disabled={!name.trim() || !loc} onClick={create}><Plus />Create cluster</button></div>
     </div>
   );
@@ -146,27 +146,33 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
     return { label: k === "vcpu" ? "CPU" : k === "ramGb" ? "RAM" : "Disk", b, p, fmt, now: sum(now, (x) => x.used[k]), peak: sum(peak, (x) => x[k]) };
   });
   const lic = licenseCost(game, cluster);
-  const up = controlPlaneUp(game, cluster);
   const host = game.devices.find((d) => d.id === cluster.controlPlane);
   const others = game.clusters.filter((c) => c.id !== cluster.id);
   const pool = cluster.backup.targetId ? backupPool(game, cluster.backup.targetId) : null;
   const free = game.devices.filter((d) => d.rackId && modelById(d.model).kind === "server" && locationOf(game, d)?.az === cluster.az && !serverTaken(game, d.id));
   const target = pending ? softwareById(pending) : null;
-  const moved = target ? game.workloads.filter((w) => w.clusterId === cluster.id && servedBy(game, w) === target.kind).length : 0;
+  const fresh = target ? !(target.kind === "panel" ? cluster.panel : cluster.platform) : false;
   const pick = (kind: SoftwareKind) => (id: string) => { if (id !== (kind === "panel" ? cluster.panel : cluster.platform)) setPending(id); };
 
   return (
     <div className="prd-pad">
       <div className="prd-title">
-        <Mark id={cluster.platform} size={36} />
+        <Mark id={cluster.platform ?? cluster.panel} size={36} />
         <div><h2>{cluster.name}</h2><span className="loc-muted">{cluster.az}</span></div>
         <span className="grow" />
-        <span className={`pill ${cluster.switching ? "accent" : up ? "ok" : "bad"}`}>{cluster.switching ? "Switching" : up ? "Control plane up" : "Control plane down"}</span>
+        <ControlPlanePill game={game} cluster={cluster} />
         <div className="seg" role="group" aria-label="Placement">
           <button aria-pressed={cluster.placement === "pack"} onClick={() => act((g) => setPlacement(g, cluster.id, "pack"))}>Pack</button>
           <button aria-pressed={cluster.placement === "spread"} onClick={() => act((g) => setPlacement(g, cluster.id, "spread"))}>Spread</button>
         </div>
       </div>
+
+      {(["panel", "cloud"] as const).map((kind) => (
+        <Fragment key={kind}>
+          <h3 className="prd-h">{KIND_NAME[kind]}<span className="loc-muted">{servesText(kind)}</span><span className="loc-muted num">{euroCents(kind === "panel" ? lic.panel : lic.platform)} per month</span></h3>
+          <SoftwareCards kind={kind} value={cluster.switching?.kind === kind ? cluster.switching.to : kind === "panel" ? cluster.panel : cluster.platform} onPick={pick(kind)} />
+        </Fragment>
+      ))}
 
       <section className="fin-card">
         <div className="fin-card-h"><Boxes />Capacity</div>
@@ -257,16 +263,11 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
         </div>
       </section>
 
-      <h3 className="prd-h">Control panel<span className="loc-muted num">{euroCents(lic.panel)} per month</span></h3>
-      <SoftwareCards kind="panel" value={cluster.switching?.kind === "panel" ? cluster.switching.to : cluster.panel} onPick={pick("panel")} />
-      <h3 className="prd-h">Platform<span className="loc-muted num">{euroCents(lic.platform)} per month</span></h3>
-      <SoftwareCards kind="cloud" value={cluster.switching?.kind === "cloud" ? cluster.switching.to : cluster.platform} onPick={pick("cloud")} />
-
       {target && (
         <Confirm
-          title={`Switch to ${target.name}?`}
-          text={`${moved} ${moved === 1 ? "workload goes" : "workloads go"} offline for ${Math.max(1, Math.ceil(moved / SWITCH_PER_HOUR))} h, and the switch costs ${euroCents(SWITCH_FEE * moved)}.`}
-          action="Switch"
+          title={`${fresh ? "Install" : "Switch to"} ${target.name}?`}
+          text={`The control plane of ${cluster.name} is busy for ${target.installHours} h. The license is ${licenseText(target).toLowerCase()}${target.pricing === "free" ? "" : " per month"}.`}
+          action={fresh ? "Install" : "Switch"}
           onCancel={() => setPending(null)}
           onConfirm={() => { act((g) => setSoftware(g, cluster.id, target.id)); setPending(null); }}
         />

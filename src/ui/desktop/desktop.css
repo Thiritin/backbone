@@ -159,6 +159,12 @@ button { font: inherit; color: inherit; cursor: default; }
 .alert-actions .btn { justify-content: center; }
 .alert.welcome { width: 300px; padding: 20px 20px 16px; }
 .alert.welcome .intro-pear { width: 40px; height: 40px; }
+.alert.welcome.setup { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; justify-items: stretch; padding: 20px; }
+.alert.welcome.setup h2, .alert.welcome.setup > p { text-align: center; }
+.setup-kind { display: grid; gap: 8px; text-align: left; }
+.setup-kind .prd-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.setup-kind h3 { display: flex; align-items: baseline; gap: 10px; margin: 6px 0 0; font-size: 12px; font-weight: 650; }
+.setup-kind h3 span { font-weight: 450; color: var(--text-2); }
 .alert.game-over { width: 300px; }
 .alert.advisory { width: 340px; }
 .alert.advisory p { text-align: left; }

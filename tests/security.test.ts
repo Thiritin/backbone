@@ -7,6 +7,7 @@ import {
 } from "../src/sim/60-infra/security";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addNode, createCluster, provisionService, upgradeNodePhp } from "../src/sim/90-actions/clusters";
+import { installed } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { buyDevice, connect, mountDevice, setPower } from "../src/sim/90-actions/hardware";
 import { cleanUp, setSitesOffline } from "../src/sim/90-actions/security";
@@ -32,7 +33,7 @@ function hosting(web = true) {
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
-  const cluster = ok(createCluster(s, "loc1", "Web 1"));
+  const cluster = installed(s, ok(createCluster(s, "loc1", "Web 1")));
   ok(addNode(s, cluster, "dev3"));
   ok(addNode(s, cluster, second));
   s.clusters = s.clusters.map((c) => ({ ...c, placement: "spread" }));

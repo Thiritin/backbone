@@ -11,7 +11,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { addNode } from "../src/sim/90-actions/clusters";
 import { buyDevice, connect, mountDevice } from "../src/sim/90-actions/hardware";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
-import { startGame } from "../src/sim/90-actions/start";
+import { readyGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 type R = { ok: boolean; id?: string; error?: string };
@@ -29,7 +29,7 @@ const apply = (s: GameState, t: Ticket, action: string) => applyNoticeWork(s, t,
 
 // Two basement nodes in the starting cluster, so a seized server's workloads have somewhere to go.
 function twoNodes(seed = 1) {
-  const s = { ...startGame(seed), cash: 100_000 };
+  const s = { ...readyGame(seed), cash: 100_000 };
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
@@ -39,7 +39,7 @@ function twoNodes(seed = 1) {
 
 describe("copyright and abuse notices", () => {
   it("names a URL on the customer's domain", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const t = spawnNotice(s, friend(s), true, createRng(3), "movie");
     expect(t.notice!.url).toMatch(/^https:\/\/jonasweber\.de\//);
     expect(t.customerId).toBe(friend(s).id);
@@ -47,7 +47,7 @@ describe("copyright and abuse notices", () => {
   });
 
   it("writes a fake notice from a free mail address and a real one from the sender's domain", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const real = spawnNotice(s, friend(s), true, createRng(3), "music");
     const fake = spawnNotice(s, friend(s), false, createRng(3), "music");
     expect(real.notice!.from).toMatch(/^legal@/);
@@ -56,7 +56,7 @@ describe("copyright and abuse notices", () => {
   });
 
   it("taking down content on a fake notice angers the customer and takes the service offline briefly", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const t = spawnNotice(s, friend(s), false, createRng(3), "movie");
     const before = friend(s).happiness;
     apply(s, t, "takedown");
@@ -68,14 +68,14 @@ describe("copyright and abuse notices", () => {
   });
 
   it("rejecting a fake notice closes it for good", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const t = spawnNotice(s, friend(s), false, createRng(3), "movie");
     apply(s, t, "reject");
     expect(t.notice!.followAt).toBeNull();
   });
 
   it("ignoring a real notice brings an angrier second notice, then a legal request", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const t = spawnNotice(s, friend(s), true, createRng(3), "movie");
     ok(closeTicket(s, t.id));
     const first = ticket(s, t.id);
@@ -98,7 +98,7 @@ describe("copyright and abuse notices", () => {
   });
 
   it("forwarding a notice about a domain nobody hosts fails", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const t = spawnNotice(s, null, true, createRng(3), "spam");
     expect(t.customerId).toBe("");
     expect(resolveTicket(s, t.id, "forward")).toEqual({ ok: false, error: "error.notHosted" });
@@ -106,7 +106,7 @@ describe("copyright and abuse notices", () => {
   });
 
   it("a shady customer leaves forwarded content up", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     friend(s).shady = true;
     const t = spawnNotice(s, friend(s), true, createRng(3), "phishing");
     apply(s, t, "forward");
@@ -116,7 +116,7 @@ describe("copyright and abuse notices", () => {
 
 describe("legal requests", () => {
   it("closes when answered before the deadline", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const t = spawnLegal(s, friend(s), createRng(5))!;
     expect(t.dueAt - t.createdAt).toBeGreaterThanOrEqual(5 * 24);
     ok(resolveTicket(s, t.id, "comply"));
@@ -126,7 +126,7 @@ describe("legal requests", () => {
   });
 
   it("seizes the server when the deadline passes, and returns it to storage 3 to 24 months later", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const t = spawnLegal(s, friend(s), createRng(5))!;
     s.hour = t.dueAt;
     opsTick(s);
@@ -171,7 +171,7 @@ describe("legal requests", () => {
   });
 
   it("an objection to a shady customer's request can bring a court order with a short deadline", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     friend(s).shady = true;
     let court: Ticket | undefined;
     for (let seed = 1; seed < 40 && !court; seed++) {
@@ -189,7 +189,7 @@ describe("legal requests", () => {
 describe("shady customers", () => {
   it("draw far more notices and legal requests", () => {
     const count = (shady: boolean) => {
-      const s = startGame(7);
+      const s = readyGame(7);
       for (const c of s.customers) c.shady = shady;
       for (let h = 0; h < 730 * 6; h++) {
         s.hour++;
@@ -205,7 +205,7 @@ describe("shady customers", () => {
 
 describe("grid outages", () => {
   it("takes the basement dark without a UPS and records the incident", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const inc = gridOutage(s, s.locations[0], 150, createRng(1), []);
     expect(inc.dark).toBe(150);
     expect(inc.customers).toHaveLength(3);
@@ -216,7 +216,7 @@ describe("grid outages", () => {
   });
 
   it("a basement UPS carries a short outage", () => {
-    const s = { ...startGame(1), cash: 10_000 };
+    const s = { ...readyGame(1), cash: 10_000 };
     const ups = ok(buyDevice(s, "ups-1500", "Eatin", 1, "loc1"));
     ok(mountDevice(s, ups, "rack2", 4));
     const inc = gridOutage(s, s.locations[0], 60, createRng(1), []);
@@ -225,7 +225,7 @@ describe("grid outages", () => {
   });
 
   it("happens a few times a year in the basement and shows up as incidents", () => {
-    const s = startGame(2);
+    const s = readyGame(2);
     run(s, 8760);
     const grid = s.ops.incidents.filter((i) => i.cause === "grid");
     expect(grid.length).toBeGreaterThan(0);
@@ -250,7 +250,7 @@ describe("refunds", () => {
 
 describe("saves", () => {
   it("an old save without incidents loads with an empty log", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const raw = JSON.parse(serialize(s));
     delete raw.ops;
     expect(deserialize(JSON.stringify(raw)).ops).toEqual({ incidents: [], seized: [], dark: {}, takedowns: {} });

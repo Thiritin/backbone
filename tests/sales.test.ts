@@ -9,7 +9,7 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { assign, hire } from "../src/sim/90-actions/staff";
 import { changePrice, decline, quote } from "../src/sim/90-actions/sales";
-import { startGame } from "../src/sim/90-actions/start";
+import { readyGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { checkDone } from "../src/sim/checklist";
 
@@ -26,7 +26,7 @@ const replied = (s: GameState, id: string) => { while (req(s, id).status === "qu
 
 describe("lead generation", () => {
   it("brings a few requests a month from the basement and more with a website", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     run(s, 730);
     const first = s.sales.requests.length;
     expect(first).toBeGreaterThanOrEqual(2);
@@ -39,7 +39,7 @@ describe("lead generation", () => {
   });
 
   it("raises forum profiles' awareness from staff posting", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     s.cash = 1e6;
     expect(hire(s, s.candidates[0].id).ok).toBe(true);
     expect(assign(s, s.staff[0].id, "forum").ok).toBe(true);
@@ -57,7 +57,7 @@ describe("customer choice", () => {
   });
 
   it("wins more leads with trust and fewer with high prices", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const base = share(s, "private", "webHosting", "Frankfurt");
     expect(base).toBeGreaterThan(0.05);
     expect(base).toBeLessThan(0.6);
@@ -74,7 +74,7 @@ describe("customer choice", () => {
 
 describe("quotes", () => {
   it("accepts near the reference and refuses far above it, existing customers pay more", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const r = webRequest(s);
     expect(acceptChance(s, r, 3)).toBeGreaterThan(0.8);
     expect(acceptChance(s, r, 3.6)).toBeLessThan(0.2);
@@ -84,7 +84,7 @@ describe("quotes", () => {
   });
 
   it("provisions the service when the customer accepts", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const r = webRequest(s);
     expect(quote(s, r.id, 2.5).ok).toBe(true);
     expect(req(s, r.id).thread.at(-1)).toMatchObject({ from: "you", key: "sales.you.quote" });
@@ -101,7 +101,7 @@ describe("quotes", () => {
 
   it("counters or refuses a quote above budget; meeting the counter wins", () => {
     for (const seed of [1, 2, 3, 4, 5, 6]) {
-      const s = startGame(seed);
+      const s = readyGame(seed);
       const r = webRequest(s, { budget: 1 });
       quote(s, r.id, 3.25);
       const back = replied(s, r.id);
@@ -116,7 +116,7 @@ describe("quotes", () => {
   });
 
   it("says there is no budget well above the reference", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const r = webRequest(s);
     quote(s, r.id, 9);
     const back = replied(s, r.id);
@@ -130,7 +130,7 @@ describe("quotes", () => {
 
 describe("lost sales", () => {
   it("greys out requests you cannot serve and records why they got away", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const r = webRequest(s, { city: "London" });
     expect(missingFor(s, r)).toEqual([{ key: "sales.need.location", params: { city: "London" }, ok: false }]);
     expect(quote(s, r.id, 3)).toEqual({ ok: false, error: "error.requestMissing" });
@@ -140,7 +140,7 @@ describe("lost sales", () => {
   });
 
   it("loses an accepted deal without capacity", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const friend = s.customers[0].id;
     while (provisionService(s, friend, "vps", { label: "filler", plan: "vps-s" }).ok);
     const r = webRequest(s, { product: "vps", plan: "vps-s", reference: 8 });
@@ -153,7 +153,7 @@ describe("lost sales", () => {
   });
 
   it("records a declined request", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const r = webRequest(s);
     expect(decline(s, r.id).ok).toBe(true);
     expect(req(s, r.id).status).toBe("declined");
@@ -163,7 +163,7 @@ describe("lost sales", () => {
 
 describe("expansion", () => {
   it("turns an upgrade ticket into a request for the next plan and replaces the service", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const c = s.customers[0], old = s.services.find((v) => v.customerId === c.id)!;
     const t = createTicket(s, c, "upgrade", old.id);
     tick(s);
@@ -179,7 +179,7 @@ describe("expansion", () => {
 
 describe("price changes", () => {
   it("costs happiness for a raise and makes a far-above-market customer cancel", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const v = s.services[0], c = s.customers.find((x) => x.id === v.customerId)!;
     const before = c.happiness, old = v.price * 730;
     expect(changePrice(s, v.id, old * 1.2).ok).toBe(true);
@@ -191,7 +191,7 @@ describe("price changes", () => {
   });
 
   it("lets happiness drift back toward the market over the months", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const v = s.services[0];
     changePrice(s, v.id, v.price * 730 * 1.1);
     const c = s.customers.find((x) => x.id === v.customerId)!;
@@ -205,7 +205,7 @@ describe("price changes", () => {
 
 describe("shady requests", () => {
   it("pays well and flags the customer", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     const r = shadyLead(s, "Frankfurt", []);
     expect(r.thread[0].key).toBe("sales.msg.shady");
     expect(acceptChance(s, r, r.reference * 1.6)).toBeGreaterThan(0.8);
@@ -219,7 +219,7 @@ describe("shady requests", () => {
 
 describe("saves", () => {
   it("keeps requests and fills them for old saves", () => {
-    const s = startGame(1);
+    const s = readyGame(1);
     newLead(s, "private", "Frankfurt", []);
     expect(deserialize(serialize(s)).sales).toEqual(s.sales);
     const old = JSON.parse(serialize(s));

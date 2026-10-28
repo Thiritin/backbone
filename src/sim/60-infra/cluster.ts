@@ -1,7 +1,8 @@
 import { modelById } from "../10-catalog/hardware";
 import { yearOf } from "../00-core/time";
-import { DEFAULT_PANEL, DEFAULT_PLATFORM, oldestPhp, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
-import { OVERCOMMIT, type Resources } from "../10-catalog/products";
+import { kindServing, oldestPhp, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
+import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -13,12 +14,12 @@ export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
 export interface ClusterNode { deviceId: string; state: NodeState; php: string; phpUntil: number }
 export type Placement = "pack" | "spread";
 export type BackupEvery = "off" | "daily" | "weekly";
-// A cluster lives in one availability zone; its nodes are servers mounted in that zone. panel and platform are SOFTWARE ids;
-// controlPlane is the node that hosts their management services. While switching, the control plane is down and the
-// workloads the old software served are offline until doneAt. Backups copy every workload to the target cluster.
+// A cluster lives in one availability zone; its nodes are servers mounted in that zone. panel and platform are the installed
+// SOFTWARE ids, null until installed; controlPlane is the node that hosts their management services. While switching (an
+// install or a change), the control plane is busy until doneAt. Backups copy every workload to the target cluster.
 export interface Cluster {
   id: string; name: string; az: string; placement: Placement; nodes: ClusterNode[];
-  panel: string; platform: string; controlPlane: string | null;
+  panel: string | null; platform: string | null; controlPlane: string | null;
   switching: { kind: SoftwareKind; to: string; doneAt: number } | null;
   backup: { targetId: string | null; every: BackupEvery };
 }
@@ -30,9 +31,9 @@ export interface Workload extends Resources {
   stopped: boolean; busyUntil: number; backupAt: number | null;
 }
 
-// Defaults for saves from before platforms, backups and PHP versions; their nodes run the save year's PHP.
+// Defaults for saves from before platforms, backups and PHP versions; they ran FreePanel and Proxmocks and their nodes the save year's PHP.
 export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, hour = 0): Cluster => ({
-  panel: DEFAULT_PANEL, platform: DEFAULT_PLATFORM, switching: null, backup: { targetId: null, every: "off" }, ...c,
+  panel: "freepanel", platform: "proxmocks", switching: null, backup: { targetId: null, every: "off" }, ...c,
   nodes: c.nodes.map((n) => ({ ...n, php: n.php ?? phpAt(yearOf(hour)), phpUntil: n.phpUntil ?? -1 })),
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
@@ -54,30 +55,46 @@ export function nodeUsed(s: GameState, deviceId: string): Resources {
 }
 
 // What the management services of a cluster's panel and platform take on their node.
-export function controlPlaneUse(c: Cluster): Resources {
-  const a = softwareById(c.panel).controlPlane, b = softwareById(c.platform).controlPlane;
+export function controlPlaneUse(c: Pick<Cluster, "panel" | "platform">): Resources {
+  const a = c.panel ? softwareById(c.panel).controlPlane : ZERO, b = c.platform ? softwareById(c.platform).controlPlane : ZERO;
   return { vcpu: a.vcpu + b.vcpu, ramGb: a.ramGb + b.ramGb, diskGb: a.diskGb + b.diskGb };
 }
+const density = (c: Cluster) => (c.platform ? softwareById(c.platform).density : 1);
 
 // What a node can book for workloads: its capacity times the platform's density, less the control plane it hosts.
 export function bookable(s: GameState, d: Device): Resources {
   const cap = nodeCapacity(d), c = clusterOf(s, d.id);
   if (!c) return cap;
-  const density = softwareById(c.platform).density, cp = c.controlPlane === d.id ? controlPlaneUse(c) : ZERO;
-  return { vcpu: cap.vcpu * density - cp.vcpu, ramGb: cap.ramGb * density - cp.ramGb, diskGb: cap.diskGb * density - cp.diskGb };
+  const k = density(c), cp = c.controlPlane === d.id ? controlPlaneUse(c) : ZERO;
+  return { vcpu: cap.vcpu * k - cp.vcpu, ramGb: cap.ramGb * k - cp.ramGb, diskGb: cap.diskGb * k - cp.diskGb };
 }
 
 // Whether a working node of the cluster has room for its control plane next to its workloads.
 export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d || !working(s, deviceId)) return false;
-  const cap = nodeCapacity(d), used = nodeUsed(s, deviceId), cp = controlPlaneUse(c), density = softwareById(c.platform).density;
-  return fits(used, { vcpu: cap.vcpu * density, ramGb: cap.ramGb * density, diskGb: cap.diskGb * density }, cp);
+  const cap = nodeCapacity(d), used = nodeUsed(s, deviceId), cp = controlPlaneUse(c), k = density(c);
+  return fits(used, { vcpu: cap.vcpu * k, ramGb: cap.ramGb * k, diskGb: cap.diskGb * k }, cp);
 }
 
-// Nothing can be started, moved, restored or sold on a cluster while its control plane is down.
+// Whether the cluster runs software that sells the product line.
+export function supports(c: Cluster, p: Product): boolean {
+  const kind = kindServing(p);
+  return kind === "panel" ? !!c.panel : kind === "cloud" ? !!c.platform : false;
+}
+// Whether some installed control plane anywhere sells the product line; lines off clusters don't need one.
+export const lineOffered = (s: GameState, p: Product): boolean =>
+  PRODUCTS[p].runsOn !== "cluster" || (!PRODUCTS[p].ha && s.clusters.some((c) => supports(c, p) && c.nodes.length > 0));
+// Why a product found no place: no software that sells it, or no room.
+export function noRoomError(s: GameState, p: Product, clusterId: string | null = null): string {
+  if (PRODUCTS[p].runsOn === "server") return "error.noFreeServer";
+  if (!s.clusters.some((c) => (clusterId ? c.id === clusterId : true) && supports(c, p))) return kindServing(p) === "panel" ? "error.needsPanel" : "error.needsPlatform";
+  return "error.noCapacity";
+}
+
+// Nothing can be started, moved, restored or sold on a cluster while its control plane is down or nothing is installed.
 export function controlPlaneUp(s: GameState, c: Cluster): boolean {
-  return !c.switching && !!c.controlPlane && c.nodes.some((n) => n.deviceId === c.controlPlane) && working(s, c.controlPlane);
+  return !c.switching && (!!c.panel || !!c.platform) && !!c.controlPlane && c.nodes.some((n) => n.deviceId === c.controlPlane) && working(s, c.controlPlane);
 }
 
 // A cluster's sites run on its oldest node's PHP; an empty cluster would install the current one.

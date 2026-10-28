@@ -1,7 +1,7 @@
 import { softwareById } from "../10-catalog/platforms";
 import { bump, cancelCustomer, serviceMonthly } from "../40-support/tickets";
 import type { GameState } from "../50-state";
-import { bookable, clusterOf, controlPlaneUp, lostDisk, nodeUsed, pickNode, type Workload } from "../60-infra/cluster";
+import { bookable, clusterOf, controlPlaneUp, lostDisk, noRoomError, nodeUsed, pickNode, supports, type Workload } from "../60-infra/cluster";
 import { working } from "../60-infra/status";
 import {
   LAN_GB_PER_HOUR, LOSS_RESTORED, LOSS_RESTORED_MAX, lossReview, REFUND_HAPPINESS, restoreHours, zoneLinkGbit, type LossItem,
@@ -60,6 +60,8 @@ export function migrateWorkload(s: GameState, id: string, toDeviceId: string): A
   if (lostDisk(s, w)) return fail("error.lostDisk");
   if (w.busyUntil > s.hour) return fail("error.workloadBusy");
   if (!controlPlaneUp(s, c) || !controlPlaneUp(s, to)) return fail("error.controlPlaneDown");
+  const product = s.services.find((v) => v.id === w.serviceId)?.product;
+  if (product && !supports(to, product)) return fail(noRoomError(s, product, to.id));
   if (to.nodes.find((n) => n.deviceId === toDeviceId)?.state !== "active" || !working(s, toDeviceId)) return fail("error.nodeDown");
   const cap = bookable(s, d), used = nodeUsed(s, toDeviceId);
   if ((["vcpu", "ramGb", "diskGb"] as const).some((k) => used[k] + w[k] > cap[k] + 1e-9)) return fail("error.nodeFull");
