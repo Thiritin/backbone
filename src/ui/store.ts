@@ -13,9 +13,12 @@ export const SAVE_KEY = "backbone.save";
 export interface Focus { kind: string; id: string; n: number }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; focus?: Focus }
 export interface Banner { id: number; app: string; title: string; text: string; hour: number }
-export interface NotifyPref { allow: boolean; banners: boolean }
-export const DEFAULT_PREF: NotifyPref = { allow: true, banners: true };
+// Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
+export interface NotifyPref { allow: boolean }
+export const DEFAULT_PREF: NotifyPref = { allow: true };
 const PREFS_KEY = "backbone.prefs";
+export type Theme = "light" | "dark" | "auto";
+const THEME_KEY = "backbone.theme";
 
 interface Store {
   game: GameState;
@@ -25,6 +28,11 @@ interface Store {
   history: Banner[];
   notifyPrefs: Record<string, NotifyPref>;
   setNotifyPref: (app: string, patch: Partial<NotifyPref>) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  // The Welcome to Pear sheet a new game opens with.
+  welcome: boolean;
+  closeWelcome: () => void;
   advance: (hours: number) => void;
   act: (fn: (s: GameState) => ActionResult) => ActionResult;
   setSpeed: (s: Speed) => void;
@@ -57,7 +65,7 @@ interface Store {
 export interface CartLine { model: string; brand: string; qty: number }
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -80,6 +88,16 @@ function loadPrefs(): Record<string, NotifyPref> {
   }
 }
 
+function loadTheme(): Theme {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "light" || saved === "dark") return saved;
+  } catch {
+    // Storage blocked; follow the system setting.
+  }
+  return "auto";
+}
+
 export const useStore = create<Store>((set, get) => ({
   game: initial.game,
   speed: 0,
@@ -87,6 +105,20 @@ export const useStore = create<Store>((set, get) => ({
   banners: [],
   history: [],
   notifyPrefs: loadPrefs(),
+  theme: loadTheme(),
+  setTheme: (theme) => {
+    set({ theme });
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // Kept for this session only.
+    }
+  },
+  welcome: false,
+  closeWelcome: () => {
+    set({ welcome: false });
+    get().openApp("Getting started");
+  },
   started: initial.loaded,
   unseen: 0,
   cart: [],
@@ -153,8 +185,8 @@ export const useStore = create<Store>((set, get) => ({
     const pref = get().notifyPrefs[app] ?? DEFAULT_PREF;
     if (!pref.allow) return;
     const b = { id: ++bannerId, app, title, text, hour: get().game.hour };
-    set(({ banners, history, unseen }) => ({ banners: pref.banners ? [...banners, b].slice(-4) : banners, history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
-    if (pref.banners) setTimeout(() => get().dismiss(b.id), 6000);
+    set(({ banners, history, unseen }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
+    setTimeout(() => get().dismiss(b.id), 6000);
   },
   dismiss: (id) => set(({ banners }) => ({ banners: banners.filter((b) => b.id !== id) })),
 
@@ -168,10 +200,8 @@ export const useStore = create<Store>((set, get) => ({
     }
   },
   startGame: () => {
-    set({ ...fresh(), game: newGame(Date.now() >>> 0), started: true });
+    set({ ...fresh(), game: newGame(Date.now() >>> 0), started: true, welcome: true });
     get().save();
-    get().notify("Settings", t("game.new.title"), t("game.new.text"));
-    get().openApp("Getting started");
   },
   importSave: (raw) => {
     try {

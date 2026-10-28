@@ -40,6 +40,7 @@ export type RaidLevel = "none" | "1" | "5" | "6" | "10";
 export type RebuildRate = "low" | "medium" | "high";
 // A desktop document; x and y are its icon position on the desktop in pixels.
 export interface Doc { id: string; kind: "guide" | "note"; title: string; body: string; x: number; y: number }
+export interface Company { name: string; logo: string; color: string }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
 
 export interface GameState {
@@ -77,6 +78,7 @@ export interface GameState {
   waitlist: WaitlistEntry[];
   // Research unlocks, such as "monitoring".
   unlocks: string[];
+  company: Company;
 }
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
@@ -112,6 +114,7 @@ export const newGame = (seed: number): GameState => ({
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0 },
   tickets: [], playerBusyUntil: 0, servicesDown: [],
+  company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)" },
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

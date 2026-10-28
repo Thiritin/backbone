@@ -4,19 +4,28 @@ import { newGame } from "../src/sim/50-state";
 import { metrics } from "../src/sim/metrics";
 
 describe("notification settings", () => {
-  it("drops muted apps and keeps banner-less ones in the history only", () => {
+  it("drops muted apps and shows allowed ones as banners and in the history", () => {
     const s = useStore.getState;
     s().setNotifyPref("Finance", { allow: false });
     s().notify("Finance", "a", "b");
     expect(s().history).toHaveLength(0);
-
-    s().setNotifyPref("Finance", { allow: true, banners: false });
-    s().notify("Finance", "a", "b");
-    expect(s().history).toHaveLength(1);
     expect(s().banners).toHaveLength(0);
 
-    s().notify("Support", "a", "b");
+    // A pref stored before banners merged into allow still shows banners.
+    s().setNotifyPref("Finance", { allow: true, banners: false } as never);
+    s().notify("Finance", "a", "b");
+    expect(s().history).toHaveLength(1);
     expect(s().banners).toHaveLength(1);
+  });
+
+  it("opens Welcome to Pear on a new game and Getting started once it closes", () => {
+    const s = useStore.getState;
+    s().startGame();
+    expect(s().welcome).toBe(true);
+    expect(s().windows).toHaveLength(0);
+    s().closeWelcome();
+    expect(s().welcome).toBe(false);
+    expect(s().windows.map((w) => w.app)).toEqual(["Getting started"]);
   });
 });
 

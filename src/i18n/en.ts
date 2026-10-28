@@ -20,8 +20,6 @@ export const en: Record<string, (p: Params) => string> = {
   "save.importFailed.title": () => "Import failed",
   "save.importFailed.text": () => "The file is not a Backbone save.",
   "action.failed.title": () => "That didn't work",
-  "game.new.title": () => "New company",
-  "game.new.text": () => "You start with €5,000 and a server in the basement.",
   "event.bills.title": () => "Monthly bills",
   "event.bills.text": (p) => Number(p.leasing) > 0
     ? `You paid ${euro(Number(p.power))} for power, ${euro(Number(p.rent))} for rent and ${euro(Number(p.leasing))} for leasing.`
@@ -38,6 +36,9 @@ export const en: Record<string, (p: Params) => string> = {
   "error.outOfBounds": () => "The device does not fit at this height.",
   "error.slotTaken": () => "Another device is in the way.",
   "error.noCash": () => "You do not have enough cash.",
+  "error.companyName": () => "Enter a company name of 1 to 32 characters.",
+  "error.companyLogo": () => "This logo is not available.",
+  "error.companyColor": () => "This colour is not available.",
   "error.cannotSell": () => "This device belongs to the location.",
   "error.sameDevice": () => "Both ends are on the same device.",
   "error.portInUse": () => "A cable is already plugged into this port.",
