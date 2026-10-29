@@ -35,9 +35,10 @@ function ChannelOffer({ id, label }: { id: OwnedChannel; label: string }) {
   return (
     <div className="web-line">
       <div className="web-line-row">
-        <span>{label} <span className="num">{euro(def.setup)}</span> + <span className="num">{euro(def.upkeep)}</span> / month</span>
+        <span>{label}</span>
         <button className="btn primary" disabled={blocked} onClick={() => act((s) => setUpChannel(s, id))}>Set up</button>
       </div>
+      <p className="web-why"><span className="num">{euro(def.setup)}</span> + <span className="num">{euro(def.upkeep)}</span> a month</p>
     </div>
   );
 }
