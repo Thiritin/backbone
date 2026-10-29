@@ -1,5 +1,6 @@
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
+import { RECONNECT_HOUR, STATIC_LINE_ADDRESSES } from "../../../sim/10-catalog/addresses";
 import { HOME_LINES, homeLineById, type HomeLine as Line } from "../../../sim/20-world/datacenters";
 import type { GameState } from "../../../sim/50-state";
 import { homePeak } from "../../../sim/60-infra/network";
@@ -25,11 +26,12 @@ export function HomeLinePanel({ game }: { game: GameState }) {
       <dl className="loc-line-specs">
         <div><dt>Download</dt><dd className="num">{speed(l.down)}</dd></div>
         <div><dt>Upload</dt><dd className="num">{speed(l.up)}</dd></div>
-        <div><dt>Static IP</dt><dd>{l.staticIp ? "Yes" : "No"}</dd></div>
+        <div><dt>Addresses</dt><dd className="num">{l.staticIp ? `${STATIC_LINE_ADDRESSES} static` : "1 dynamic"}</dd></div>
+        <div><dt>Reconnect</dt><dd className="num">{l.staticIp ? "None" : `Daily ${String(RECONNECT_HOUR).padStart(2, "0")}:00`}</dd></div>
         <div><dt>Installation</dt><dd className="num">{l.installDays} days</dd></div>
       </dl>
       <div className="loc-line-foot">
-        <strong className="num">{l.monthly ? `${euro(l.monthly)} / month` : "Paid privately"}</strong>
+        <strong className="num">{euro(l.monthly)} / month</strong>
         <span className="grow" />
         {l.id === id ? <span className="pill ok">Active</span>
           : l.id === next?.id ? <>
@@ -45,8 +47,9 @@ export function HomeLinePanel({ game }: { game: GameState }) {
       <div className="loc-card-h">
         <h3>Internet line</h3>
         <span className="grow" />
-        <span className="loc-muted">{current.isp} {current.name}, <span className="num">{speed(current.down)}</span> down, <span className="num">{speed(current.up)}</span> up</span>
-        <span className={`pill${peak > current.up ? " bad" : peak > 0.8 * current.up ? " warn" : ""}`}>Peak upload <span className="num">{peak.toFixed(peak >= 10 ? 0 : 1)} Mbit/s</span></span>
+        {current.id ? <span className="loc-muted">{current.isp} {current.name}, <span className="num">{speed(current.down)}</span> down, <span className="num">{speed(current.up)}</span> up</span>
+          : <span className="pill bad">No line</span>}
+        {current.id && <span className={`pill${peak > current.up ? " bad" : peak > 0.8 * current.up ? " warn" : ""}`}>Peak upload <span className="num">{peak.toFixed(peak >= 10 ? 0 : 1)} Mbit/s</span></span>}
       </div>
       <div className="loc-lines">{offers.map(card)}</div>
     </div>

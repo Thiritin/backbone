@@ -17,7 +17,7 @@ import { missingFor, needFor, referenceFor, REQUEST_HOURS, requestName, senderFo
 import { addRequest, editRequest, fulfil, loseRequest, nextSpec, say, targetFor } from "./sales";
 import { companyParams, variant } from "../40-support/replies";
 
-// Without an order, the first one comes from a friend's recommendation within this many days.
+// Without an order, the first one comes from a friend's recommendation within this many days of the friends joining.
 export const FIRST_ORDER_DAYS = 14;
 
 // A basic SLA from a profile without a big budget: a standard product off the shelf. Everything else is a sales request.
@@ -48,7 +48,7 @@ function place(s: GameState, r: SalesRequest): ActionResult & { reason?: string;
 // the spec at the player's rates and places it at once.
 export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile), email = emailFor(s)): SalesRequest {
   const who = senderFor(s.rng, profile, false, inUs(city)), variant = Math.floor(rand(s.rng) * 2);
-  const key = s.nextId, spec = nextSpec(s, need), reference = referenceFor(s, profile, need.product, spec, need.sla), discount = discountFor(s, profile);
+  const key = s.nextId, spec = nextSpec(s, need, profile), reference = referenceFor(s, profile, need.product, spec, need.sla), discount = discountFor(s, profile);
   // One in three web customers already owns the domain they name.
   const owned = email && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
   const price = email ? reference : offerPrice(s, need.product, spec, need.sla);
@@ -96,8 +96,8 @@ function formInvoice(s: GameState, id: string): void {
 }
 
 export function firstOrder(s: GameState, events: SimEvent[]): void {
-  const day = Math.floor(s.hour / 24);
-  if (day >= FIRST_ORDER_DAYS || !s.customers.some((c) => c.habit === "friend") || s.sales.requests.some((r) => r.kind === "order")) return;
+  const friend = s.customers.find((c) => c.habit === "friend"), day = friend ? Math.floor((s.hour - friend.since) / 24) : 0;
+  if (!friend || day >= FIRST_ORDER_DAYS || s.sales.requests.some((r) => r.kind === "order")) return;
   if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events);
 }
 

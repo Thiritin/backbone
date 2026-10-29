@@ -58,6 +58,7 @@ describe("traffic", () => {
 
   it("a dozen VPS fill the basement's 1 Mbit/s upload in the evening and degrade without going offline", () => {
     const s = newGame(2);
+    s.homeLine = { id: "dsl-16", next: null };
     const ids = Array.from({ length: 12 }, () => service(s, "fra1", "vps", "onlineShop", 1));
     s.hour = 20;
     const r = route(s);
@@ -272,7 +273,7 @@ describe("DDoS", () => {
 
   it("hits gamers far more often than other customers, deterministically by seed", () => {
     const count = (profile: Profile) => {
-      const s = newGame(11);
+      const s = { ...newGame(11), homeLine: { id: "dsl-16", next: null } };
       for (let i = 0; i < 50; i++) service(s, "fra1", "vps", profile);
       let n = 0;
       for (let h = 1; h <= 24 * 365; h++) { s.hour = h; n += networkTick(s).filter((e) => e.key === "event.ddos").length; }

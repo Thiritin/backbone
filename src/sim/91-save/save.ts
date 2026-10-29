@@ -1,6 +1,7 @@
 import { RENAMED_MODELS } from "../10-catalog/hardware";
 import { yearOf } from "../00-core/time";
-import { capacityAt, DATACENTERS, nextAz, seedDcs } from "../20-world/datacenters";
+import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, nextAz, seedDcs } from "../20-world/datacenters";
+import { fillAddresses } from "../60-infra/addresses";
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { deviceDefaults, newGame, SAVE_VERSION, type Device, type GameState } from "../50-state";
@@ -49,13 +50,18 @@ export function deserialize(raw: string): GameState {
     const kept = data.dcs?.[dc.id];
     return [dc.id, kept && kept.others >= REPAIR_FLOOR * capacityAt(dc, year - 1) ? kept : seeded[dc.id]];
   }));
-  return fillLines(upgradeCompute(fillDomains(fillSpecs({
+  // Saves from before addresses get theirs.
+  const fill = data.ips ? (x: GameState) => x : fillAddresses;
+  return fill(fillLines(upgradeCompute(fillDomains(fillSpecs({
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
     company: { ...base.company, ...data.company },
     network: { ...base.network, ...data.network },
     ops: { ...base.ops, ...data.ops },
     security: { ...base.security, ...data.security },
+    // Saves from before paid lines had the free DSL line from the start.
+    homeLine: data.homeLine ?? { id: DEFAULT_HOME_LINE, next: null },
+    ips: { ...base.ips, ...data.ips },
     marketing: { ...base.marketing, ...data.marketing, awareness: { ...base.marketing.awareness, ...data.marketing?.awareness } },
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.
@@ -72,5 +78,5 @@ export function deserialize(raw: string): GameState {
     // upgradeCompute fills the cluster defaults.
     clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map(workloadDefaults), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
-  }))), data.marketing?.lines);
+  }))), data.marketing?.lines));
 }

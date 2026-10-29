@@ -1,4 +1,4 @@
-import { Handshake, House, Server, ShieldAlert } from "lucide-react";
+import { Handshake, House, Landmark, Server, ShieldAlert } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -18,6 +18,7 @@ import {
 import { cityNamed, WorldMap, type Marker } from "../../map/WorldMap";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
+import { AddressList, Ripe } from "./Addresses";
 import { Topology } from "./Topology";
 import "../shop/shop.css";
 import "../billing/billing.css";
@@ -29,7 +30,7 @@ const pct = (v: number) => `${Math.round(v * 100)}%`;
 const partnerName = (u: Uplink) => carrierById(u.partner)?.name ?? exchangeById(u.partner)?.name ?? u.partner;
 export const loadClass = (load: number) => (load >= 0.9 ? "bad" : load >= 0.6 ? "warn" : "ok");
 
-type Page = { kind: "zone"; id: string } | { kind: "peering" } | { kind: "ddos" };
+type Page = { kind: "zone"; id: string } | { kind: "peering" } | { kind: "ddos" } | { kind: "ripe" };
 
 export function NetworkApp() {
   const game = useStore((s) => s.game);
@@ -53,10 +54,11 @@ export function NetworkApp() {
         <div className="side-h">Network</div>
         {item("peering", page.kind === "peering", <Handshake />, "Peering", game.network.requests.length, () => setPage({ kind: "peering" }))}
         {item("ddos", page.kind === "ddos", <ShieldAlert />, "DDoS", game.network.attacks.length, () => setPage({ kind: "ddos" }))}
+        {item("ripe", page.kind === "ripe", <Landmark />, "RIPE", null, () => setPage({ kind: "ripe" }))}
       </nav>
       <div className="fin-main">
         <dl className="fin-totals">
-          <div><dt>Network per month</dt><dd className="num">{euro(monthlyNetworkCost(game))}</dd></div>
+          <div><dt>Network per month</dt><dd className="num">{euro(monthlyNetworkCost(game) || 0)}</dd></div>
           <div><dt>Traffic now</dt><dd className="num">{mbps(now)}</dd></div>
           <div><dt>Dropped now</dt><dd className={`num${dropped > 0 ? " net-bad" : ""}`}>{mbps(dropped)}</dd></div>
           <div><dt>AS number</dt><dd className="num">{game.network.asn ? `AS${game.network.asn}` : "None"}</dd></div>
@@ -65,13 +67,14 @@ export function NetworkApp() {
           {zone && <ZonePage key={zone.id} game={game} loc={zone} routing={routing} />}
           {page.kind === "peering" && <Peering game={game} />}
           {page.kind === "ddos" && <Ddos game={game} />}
+          {page.kind === "ripe" && <Ripe game={game} />}
         </div>
       </div>
     </div>
   );
 }
 
-type View = "uplinks" | "topology" | "map";
+type View = "uplinks" | "addresses" | "topology" | "map";
 
 function ZonePage({ game, loc, routing }: { game: GameState; loc: Location; routing: ReturnType<typeof route> }) {
   const [view, setView] = useState<View>("uplinks");
@@ -83,11 +86,12 @@ function ZonePage({ game, loc, routing }: { game: GameState; loc: Location; rout
         <span className="num net-now">{mbps(z?.carried ?? 0)} of {mbps(z?.demand ?? 0)}</span>
         <span className="grow" />
         <div className="seg" role="group" aria-label="View">
-          {(["uplinks", "topology", "map"] as View[]).map((v) => <button key={v} aria-pressed={view === v} onClick={() => setView(v)}>{v[0].toUpperCase() + v.slice(1)}</button>)}
+          {(["uplinks", "addresses", "topology", "map"] as View[]).map((v) => <button key={v} aria-pressed={view === v} onClick={() => setView(v)}>{v[0].toUpperCase() + v.slice(1)}</button>)}
         </div>
       </div>
       <TrafficChart points={game.network.history[loc.id] ?? []} />
       {view === "uplinks" && <Uplinks game={game} loc={loc} routing={routing} />}
+      {view === "addresses" && <AddressList game={game} loc={loc} />}
       {view === "topology" && <Topology game={game} loc={loc} routing={routing} />}
       {view === "map" && <NetworkMap game={game} />}
     </>

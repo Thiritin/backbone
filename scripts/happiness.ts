@@ -40,6 +40,8 @@ import { debt, LOAN_AMOUNTS, loanAvailable } from "../src/sim/45-billing/billing
 import { takeLoan } from "../src/sim/90-actions/billing";
 import { HOME_LINES, homeLineById } from "../src/sim/20-world/datacenters";
 import { homePeak } from "../src/sim/60-infra/network";
+import { freeV4 } from "../src/sim/60-infra/addresses";
+import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { yearOf } from "../src/sim/00-core/time";
 import { metrics } from "../src/sim/metrics";
 
@@ -64,6 +66,8 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   // The first server: the Shop's Dwell 1U from the savings, in the basement rack cabled to the home router, then Proxmocks
   // with a FreePanel VM. The friends move in once the panel VM is ready and every line it sells goes on the website.
   const s: GameState = startGame(seed);
+  // The business DSL line: static addresses for the VPS and game servers the basement sells.
+  orderHomeLine(s, "dsl-16-biz");
   const first = (buyDevice(s, "g1-compute", "Dwell", 1, "loc1") as { id: string }).id;
   mountDevice(s, first, "rack2", 1);
   connect(s, { device: first, port: 0 }, { device: "dev5", port: 0 });
@@ -127,7 +131,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   const upgradeLine = () => {
     const up = homeLineById(s.homeLine.id).up;
     if (s.homeLine.next || homePeak(s) < 0.9 * up) return;
-    const better = HOME_LINES.filter((l) => l.from <= yearOf(s.hour) && l.up > up).sort((a, b) => a.monthly - b.monthly)[0];
+    const better = HOME_LINES.filter((l) => l.staticIp && l.from <= yearOf(s.hour) && l.up > up).sort((a, b) => a.monthly - b.monthly)[0];
     if (better) orderHomeLine(s, better.id);
   };
   const room = (r: SalesRequest) => {
@@ -143,6 +147,8 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
       joinReady();
       if (!s.marketing.lines.length && s.customers.some((c) => c.habit === "friend")) s.marketing.lines = fillLines(s, undefined).marketing.lines;
       if (buy && s.hour % 24 === 9) { grow(); upgradeLine(); }
+      // One spare line address keeps basement VPS and game server sales open.
+      if (s.hour % 24 === 9 && freeV4(s, "loc1") < 1) buyAddresses(s, "loc1", 4, 1);
       if (s.hour % 24 === 9) learn();
       if (s.hour % 24 === 9) for (const d of s.domains) if (d.expiresAt - s.hour < 7 * 24 && s.customers.some((c) => c.id === d.customerId && c.churnedAt === null)) renewDomain(s, d.name);
       for (const v of s.services) {

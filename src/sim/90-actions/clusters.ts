@@ -14,6 +14,7 @@ import {
 } from "../60-infra/cluster";
 import { freeSlots, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
+import { assignService } from "../60-infra/addresses";
 import type { ActionResult } from "./hardware";
 import { sizeOf } from "../30-market/spec";
 
@@ -339,6 +340,11 @@ export function provisionService(s: GameState, customerId: string, product: Prod
   const nextId = s.nextId;
   const id = addService(s, customerId, product, order.label, price, spec.period, spec.commitMonths, order.zone ?? null, want, sla);
   const placed = placeService(s, id, order.clusterId ?? null, order.deviceId ?? null);
+  const noAddress = placed.ok ? assignService(s, id) : null;
+  if (noAddress) {
+    Object.assign(s, { services: s.services.filter((v) => v.id !== id), workloads: s.workloads.filter((w) => w.serviceId !== id), nextId });
+    return fail(noAddress);
+  }
   if (!placed.ok) {
     Object.assign(s, { services: s.services.filter((v) => v.id !== id), nextId });
     return placed;

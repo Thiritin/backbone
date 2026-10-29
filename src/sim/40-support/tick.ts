@@ -1,6 +1,7 @@
 import { chance } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
-import { counts, hoursOn } from "../00-core/workhours";
+import { counts } from "../00-core/workhours";
+import { noticed, segmentOf } from "../10-catalog/attention";
 import type { Customer } from "../30-customers/customers";
 import { grantExtension, isSuspended, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
@@ -88,17 +89,18 @@ function spawnHourly(s: GameState): void {
 }
 
 // A suspended customer knows why their services are off: suspension brings one billing ticket instead.
-// An outage hurts only in hours that count on the customer's clock, once it has outlasted their tolerance; they may write in at that moment.
+// An outage hurts only once the customer noticed it (10-catalog/attention.ts), in hours that count on their clock; they may
+// write in in the hour they notice.
 function outages(s: GameState, customer: (id: string) => Customer): void {
   const down = s.services.filter((v) => v.endedAt === null && !serviceOnline(s, v.id) && !isSuspended(s, v.customerId) && !takenDown(s, v.id));
   const since: Record<string, number> = {};
   for (const v of down) {
     since[v.id] = s.downSince[v.id] ?? s.hour;
-    const c = customer(v.customerId), p = profileStats(c.profile), { hours, clock } = p.tolerance;
-    const elapsed = hoursOn(clock, since[v.id], s.hour);
-    if (!counts(clock, s.hour) || elapsed < hours) continue;
+    const c = customer(v.customerId), p = profileStats(c.profile), { clock } = p.tolerance;
+    const n = noticed(s.seed, c.id, v.id, segmentOf(c.profile, v.product), since[v.id], s.hour);
+    if (!n.seen || (!n.fresh && !counts(clock, s.hour))) continue;
     bump(c, -p.outagePenalty);
-    if (elapsed > hours || !chance(s.rng, OUTAGE_WRITE_CHANCE[p.budget])) continue;
+    if (!n.fresh || !chance(s.rng, OUTAGE_WRITE_CHANCE[p.budget])) continue;
     for (let i = 0; i < (p.budget === "high" ? 3 : 1); i++) createTicket(s, c, "outage", v.id);
   }
   s.downSince = since;

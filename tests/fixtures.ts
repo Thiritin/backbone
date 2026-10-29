@@ -15,10 +15,12 @@ const must = (r: { ok: boolean; id?: string; error?: string }): string => {
 
 export const BASEMENT_SERVER = "dev3";
 
-// The basement server and switch new games used to start with, cabled to the home router and paid from the savings; suites
-// that are not about the first server start from it.
+// The basement server and switch new games used to start with, cabled to the home router and paid from the savings, on the
+// business DSL line with an own /24 announced there; suites that are not about the first server or addresses start from it.
 export function withServer(s: GameState): GameState {
   s.cash -= 2500;
+  s.homeLine = { id: "dsl-16-biz", next: null };
+  s.ips = { ...s.ips, blocks: [{ id: "blk-test", prefix: "185.1.0.0/24", size: 256, locationId: "loc1", boughtAt: 0 }] };
   s.devices.unshift(device("dev3", "g1-compute", "Dwell", "rack2", 1, null, "fra1-srv-01", 2500), device("dev4", "sw-8", "Sysko", "rack2", 24, null, "fra1-sw-01", 60));
   s.cables.push(
     { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper", color: null },

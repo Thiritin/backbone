@@ -12,11 +12,12 @@ import { buyStudy } from "../../../sim/90-actions/market";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { AUDIENCE } from "../marketing/MarketingApp";
-import { noticed, patience, PRODUCT } from "../support/labels";
+import { patience, PRODUCT } from "../support/labels";
 import "../shop/shop.css";
 import "../billing/billing.css";
 import "../marketing/marketing.css";
 import "./market.css";
+import { noticesOutages } from "../customers/notice";
 
 type Section = "demand" | "profiles" | "lost" | "competitors";
 
@@ -140,7 +141,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
         <div><dt>Plan</dt><dd>{PLAN_SIZE[st.budget]}</dd></div>
         <div><dt>SLA</dt><dd>{SLA_LABEL[sla]}{sla !== "basic" && ` or ${SLA_LABEL[LOWER[sla]]}`}</dd></div>
         <div><dt>Reply within</dt><dd>{patience(st.reply)}</dd></div>
-        <div><dt>Notices outages</dt><dd>{noticed(st.tolerance)}</dd></div>
+        <div><dt>Notices outages</dt><dd>{noticesOutages(profile)}</dd></div>
         <div><dt>Price sensitivity</dt><dd>{st.lambda >= 1 ? "High" : st.lambda >= 0.6 ? "Medium" : "Low"}</dd></div>
       </dl>
       <div className="mk-bars">

@@ -1,5 +1,6 @@
 import { euro, euroCents } from "../sim/00-core/money";
 import { OPS } from "./en-ops";
+import { ADDRESSES_EN } from "./addresses";
 import { SALES_EN } from "./sales";
 import { SECURITY_EN } from "./security";
 import { ORDERS_EN } from "./orders";
@@ -21,6 +22,7 @@ const units = (n: string | number) => `${n} ${Number(n) === 1 ? "unit" : "units"
 
 export const en: Record<string, (p: Params) => string> = {
   ...SALES_EN,
+  ...ADDRESSES_EN,
   ...SECURITY_EN,
   ...ACTIVITY_EN,
   "event.monthStart.title": (p) => `${MONTHS[Number(p.month)]} ${p.year}`,

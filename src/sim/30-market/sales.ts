@@ -21,6 +21,8 @@ import { addCustomer } from "../90-actions/customers";
 import { domainFor } from "../30-customers/domains";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { provisionService } from "../90-actions/clusters";
+import { addressesFit } from "../60-infra/addresses";
+import { withAddressNeeds } from "../10-catalog/addresses";
 import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
 import { specParams } from "./manual";
 import type { ActionResult } from "../90-actions/hardware";
@@ -76,12 +78,14 @@ export function addRequest(s: GameState, r: Omit<SalesRequest, "id" | "createdAt
 export const BUDGET_RANGE: [number, number] = [1.08 * 0.9, 1.08 * 1.15];
 const budgetOf = (r: Rng): number => BUDGET_RANGE[0] + (BUDGET_RANGE[1] - BUDGET_RANGE[0]) * rand(r);
 
-// The spec of the request about to be added: drawn with its id as the key, so it is stable for a seed.
-export const nextSpec = (s: GameState, need: Need) => specFor(s.seed, s.nextId, need.product, need.size, yearOf(s.hour));
+// The spec of the request about to be added, with the addresses its customer needs: drawn with its id as the key, so it is
+// stable for a seed.
+export const nextSpec = (s: GameState, need: Need, profile: Profile) =>
+  withAddressNeeds(s.seed, s.nextId, profile, need.product, specFor(s.seed, s.nextId, need.product, need.size, yearOf(s.hour)), yearOf(s.hour));
 
 export function newLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile)): SalesRequest {
   const who = senderFor(s.rng, profile, false, inUs(city));
-  const variant = Math.floor(rand(s.rng) * 2), spec = nextSpec(s, need);
+  const variant = Math.floor(rand(s.rng) * 2), spec = nextSpec(s, need, profile);
   const req = addRequest(s, {
     kind: "new", customerId: null, ...who, profile, city, product: need.product, spec, sla: need.sla, reference: referenceFor(s, profile, need.product, spec, need.sla),
     discount: discountFor(s, profile), budget: budgetOf(s.rng), shady: false, serviceId: null, ticketId: null, deadline: s.hour + REQUEST_HOURS,
@@ -150,7 +154,8 @@ const labelFor = (r: SalesRequest): string => {
 
 // The cluster or zone in the request's city where the service fits; null when nothing has room.
 export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "spec">): { clusterId: string | null; zone: string | null } | null {
-  const zones = s.locations.filter((l) => l.city === r.city).map((l) => l.az);
+  // Only zones with the addresses the service needs.
+  const zones = s.locations.filter((l) => l.city === r.city && addressesFit(s, l, r.product, r.spec)).map((l) => l.az);
   const spec = PRODUCTS[r.product], size = sizeOf(r.spec);
   if (spec.runsOn === "cluster") {
     const c = s.clusters.find((x) => zones.includes(x.az) && supports(x, r.product) && pickNode(s, x, size));

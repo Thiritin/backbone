@@ -143,6 +143,8 @@ describe("dunning", () => {
 describe("bank", () => {
   it("amortizes a loan in equal monthly instalments", () => {
     const s = withServer(newGame(7));
+    // Without a line bill, the loan and the savings cover every instalment.
+    s.homeLine = { id: "", next: null };
     const netWorth = metrics(s).netWorth;
     expect(takeLoan(s, 25_000, 1)).toEqual({ ok: false, error: "error.loanLimit" });
     expect(takeLoan(s, 10_000, 1).ok).toBe(true);

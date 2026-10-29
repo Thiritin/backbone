@@ -6,7 +6,8 @@ import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { orderHomeLine } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
-const atYear = (year: number): GameState => ({ ...newGame(1), hour: hourOf(new Date(Date.UTC(year, 0, 15))) });
+// A company on the DSL line in a year.
+const atYear = (year: number): GameState => ({ ...newGame(1), hour: hourOf(new Date(Date.UTC(year, 0, 15))), homeLine: { id: "dsl-16", next: null } });
 const err = (r: ReturnType<typeof orderHomeLine>) => (r.ok ? "ok" : r.error);
 const run = (s: GameState, hours: number) => {
   const events: SimEvent[] = [];
@@ -15,10 +16,21 @@ const run = (s: GameState, hours: number) => {
 };
 
 describe("home line", () => {
-  it("starts on the free DSL 16000", () => {
+  it("starts without a line, and every line costs money", () => {
     const s = newGame(1);
-    expect(s.homeLine).toEqual({ id: "dsl-16", next: null });
-    expect(homeLineById(s.homeLine.id)).toMatchObject({ down: 16, up: 1, monthly: 0 });
+    expect(s.homeLine).toEqual({ id: "", next: null });
+    expect(homeLineById(s.homeLine.id)).toMatchObject({ name: "No line", up: 0 });
+    expect(homeLineById("dsl-16")).toMatchObject({ down: 16, up: 1, monthly: 45 });
+    for (const l of HOME_LINES) expect(l.monthly).toBeGreaterThan(0);
+  });
+
+  it("orders the first line and bills it from the next month", () => {
+    const s = newGame(1);
+    expect(err(orderHomeLine(s, "dsl-16"))).toBe("ok");
+    run(s, 24 * 7);
+    expect(s.homeLine.id).toBe("dsl-16");
+    run(s, 24 * 30);
+    expect(s.ledger.filter((l) => l.key === "ledger.homeLine")).toEqual([expect.objectContaining({ amount: -45 })]);
   });
 
   it("rejects unknown, future, current and already ordered lines", () => {
@@ -51,9 +63,15 @@ describe("home line", () => {
     expect(err(orderHomeLine(s, "dsl-16"))).toBe("ok");
     expect(s.homeLine).toEqual({ id: "dsl-16", next: null });
   });
+  it("cancels the first order before any line is live", () => {
+    const s = newGame(1);
+    orderHomeLine(s, "dsl-16");
+    expect(err(orderHomeLine(s, ""))).toBe("ok");
+    expect(s.homeLine).toEqual({ id: "", next: null });
+  });
 
-  it("never bills the free line", () => {
-    const s = atYear(2005);
+  it("bills nothing before the first line", () => {
+    const s = newGame(1);
     run(s, 24 * 40);
     expect(s.ledger.some((l) => l.key === "ledger.homeLine")).toBe(false);
   });

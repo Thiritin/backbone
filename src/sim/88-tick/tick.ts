@@ -1,3 +1,4 @@
+import { addressBills, addressTick } from "../60-infra/addresses";
 import { binomial, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
@@ -211,6 +212,7 @@ export function tick(state: GameState): SimEvent[] {
       }
     }
     const line = homeLineById(state.homeLine.id);
+    bills.push(...addressBills(state));
     if (line.monthly > 0) bills.push({ hour: state.hour, category: "rent", key: "ledger.homeLine", params: { line: line.name, isp: line.isp }, amount: -line.monthly });
     const leases = state.leases.map((l) => ({ ...l, paid: l.paid + 1 }));
     for (const l of leases) bills.push({ hour: state.hour, category: "leasing", key: "ledger.lease", params: { lessor: lessorName(l.lessor), paid: l.paid, months: l.months }, amount: -l.monthly });
@@ -230,6 +232,7 @@ export function tick(state: GameState): SimEvent[] {
     if (bills.length) events.push({ app: "Finance", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
+  events.push(...addressTick(state));
   events.push(...opsTick(state));
   events.push(...freezeTick(state));
   events.push(...haTick(state));

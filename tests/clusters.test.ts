@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { yearOf } from "../src/sim/00-core/time";
 import { marketPrice, PRODUCTS, SIZES, sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
@@ -83,8 +84,8 @@ describe("starting company", () => {
     const s = readyGame(5);
     run(s, 2);
     ok(setPower(s, "dev4", false));
-    // Friends tolerate an outage for two business days: from Saturday until Wednesday 09:00.
-    run(s, 104);
+    // Private customers notice slowly (economy.md, Noticing outages): by two weeks one has written in.
+    run(s, 336);
     expect(s.services.some((v) => serviceOnline(s, v.id))).toBe(false);
     const outages = s.tickets.filter((t) => t.kind === "outage");
     expect(outages.length).toBeGreaterThan(0);
@@ -248,7 +249,10 @@ describe("dedicated and colocation", () => {
     expect(err(provisionService(s, cus, "colocation", { label: "colo", spec: sizeSpec("colocation", 1, yearOf(s.hour)) }))).toBe("error.noRackSpace");
     const loc = ok(addLocation(s, "hetzler-park", "positions", 1));
     const rack = ok(buyRack(s, loc, "rack-42", 1));
+    expect(err(provisionService(s, cus, "colocation", { label: "colo", spec: sizeSpec("colocation", 1, yearOf(s.hour)) }))).toBe("error.noFreeAddress");
+    ok(buyAddresses(s, loc, 4, 1));
     const id = ok(provisionService(s, cus, "colocation", { label: "colo", spec: sizeSpec("colocation", 1, yearOf(s.hour)) }));
+    expect(s.ips.addresses.filter((a) => a.holder === id)).toHaveLength(1);
     expect(workloadsOf(s, id)).toMatchObject([{ rackId: rack, slot: 33, units: 10, watts: 1000 }]);
     expect(freeSlots(s, rack, 1)).not.toContain(33);
     expect(rackPower(s, rack).watts).toBe(1000);

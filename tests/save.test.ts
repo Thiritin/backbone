@@ -56,10 +56,11 @@ describe("save", () => {
     };
     const s = deserialize(JSON.stringify(v1));
     const fresh = newGame(4);
-    // Lines off clusters need no control plane, so an old save lists them.
+    // An old save keeps the DSL line it started with, gets the line's address and lists no line it cannot deliver.
     expect(s).toEqual({
       ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...fresh.installed, ...WIDGETS.map(([id]) => id)],
-      marketing: { ...fresh.marketing, lines: ["dedicated", "colocation"] },
+      marketing: { ...fresh.marketing, lines: [] }, homeLine: { id: "dsl-16", next: null }, nextId: fresh.nextId + 1,
+      ips: { ...fresh.ips, addresses: [expect.objectContaining({ v: 4, source: "line", holder: "gw:dsl-16", listed: true })] },
     });
     expect(s.devices.map((d) => d.model)).toEqual(["home-router"]);
     tick(s);

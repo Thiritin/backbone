@@ -6,7 +6,7 @@ import { linkStatus } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { createPanelVm, installPanel } from "../src/sim/90-actions/clusters";
 import { installSoftware } from "../src/sim/90-actions/software";
-import { buyDevice, connect, mountDevice, setPlugged } from "../src/sim/90-actions/hardware";
+import { buyDevice, connect, mountDevice, orderHomeLine, setPlugged } from "../src/sim/90-actions/hardware";
 import { startGame } from "../src/sim/90-actions/start";
 import { checkDone } from "../src/sim/checklist";
 
@@ -17,7 +17,8 @@ const ok = (r: { ok: boolean; id?: string; error?: string }) => {
 const friends = (s: GameState) => s.customers.filter((c) => c.habit === "friend");
 const run = (s: GameState, hours: number) => { for (let h = 0; h < hours; h++) tick(s); };
 
-// The first server from the Shop to the home router: bought from the savings, mounted, plugged in and cabled.
+// The first server from the Shop to the home router: bought from the savings, mounted, plugged in and cabled, online once
+// the DSL line is in.
 function firstServer(s: GameState): string {
   const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   expect(s.cash).toBe(START_CASH - 2500);
@@ -26,6 +27,9 @@ function firstServer(s: GameState): string {
   for (const c of s.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(setPlugged(s, srv, c.id, true));
   ok(connect(s, { device: srv, port: 0 }, { device: "dev5", port: 0 }));
   run(s, 1);
+  expect(linkStatus(s, srv).online).toBe(false);
+  ok(orderHomeLine(s, "dsl-16"));
+  run(s, 24 * 7);
   expect(linkStatus(s, srv).online).toBe(true);
   return srv;
 }

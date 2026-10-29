@@ -18,6 +18,7 @@ import { ResizeCard, SizeFields } from "../products/PanelHosts";
 import { SoftwareGrid } from "../software/Software";
 import { Mark, IncidentReports, Sparkline, VM_STATE, vmLabel, vmState, type VmState } from "../products/parts";
 import { PRODUCT } from "../support/labels";
+import { AddressRows } from "../network/Addresses";
 
 type StateFilter = "all" | "running" | "stopped" | "lost";
 const FILTERS: [StateFilter, string][] = [["all", "All"], ["running", "Running"], ["stopped", "Stopped"], ["lost", "Lost disk"]];
@@ -158,6 +159,7 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
         <div><dt>Product</dt><dd>{v ? PRODUCT[v.product] : own.service}</dd></div>
         <div><dt>Host</dt><dd>{host ? devName(host) : "None"}</dd></div>
         <div><dt>Cluster</dt><dd>{cluster.name}</dd></div>
+        <AddressRows game={game} id={w.id} />
         <div><dt>vCPU</dt><dd className="num">{num(w.vcpu)}</dd></div>
         <div><dt>RAM</dt><dd className="num">{ram(+w.ramGb.toFixed(2))}</dd></div>
         <div><dt>Disk</dt><dd className="num">{disk(w.diskGb)}</dd></div>
