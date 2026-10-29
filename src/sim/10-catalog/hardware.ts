@@ -190,6 +190,8 @@ export const modelById = (id: string): DeviceModel => {
   if (!m) throw new Error(`unknown model ${id}`);
   return m;
 };
+// The same server with its second power supply bay filled, for models sold in both builds.
+export const dualPsuModel = (id: string): DeviceModel | undefined => MODELS.find((x) => x.id === `${id}-2psu`);
 export const manufacturerByName = (name: string): Manufacturer | undefined => MANUFACTURERS.find((m) => m.name === name);
 // What a unit of this model costs from this manufacturer.
 export const priceOf = (model: DeviceModel, brand: string): number => Math.round(model.price * (manufacturerByName(brand)?.priceFactor ?? 1));
