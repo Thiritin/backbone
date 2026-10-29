@@ -1,6 +1,7 @@
 import { euro, euroCents } from "../sim/00-core/money";
 import { OPS } from "./en-ops";
 import { ADDRESSES_EN } from "./addresses";
+import { IPMI_EN } from "./ipmi";
 import { SALES_EN } from "./sales";
 import { SECURITY_EN } from "./security";
 import { NEWS_EN } from "./news";
@@ -30,6 +31,7 @@ const units = (n: string | number) => `${n} ${Number(n) === 1 ? "unit" : "units"
 export const en: Record<string, (p: Params) => string> = {
   ...SALES_EN,
   ...ADDRESSES_EN,
+  ...IPMI_EN,
   ...SECURITY_EN,
   ...VULNS_EN,
   ...BREACH_EN,

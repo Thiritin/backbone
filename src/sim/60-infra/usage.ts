@@ -69,6 +69,8 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
 // cores ÷ busy vCPUs, a disk pool over 100% stalls writes to 50%. RAM over 100% freezes the node instead (freezeTick).
+// economy.md, RAID: the share of its performance a node keeps while its array rebuilds, by rebuild rate.
+export const REBUILD_PERF = { low: 0.95, medium: 0.8, high: 0.6 } as const;
 export interface NodeUsage { used: Resources; physical: Resources; perf: number }
 
 export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour): NodeUsage {
@@ -88,7 +90,7 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   const physical = { vcpu: installedCores(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) };
   const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
   const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
-  return { used, physical, perf: Math.min(cpu, disk) };
+  return { used, physical, perf: Math.min(cpu, disk) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) };
 }
 
 // A working cluster node whose RAM in use exceeds its installed RAM freezes: every workload on it is down until it fits again.

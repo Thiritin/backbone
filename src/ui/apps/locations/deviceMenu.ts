@@ -9,12 +9,14 @@ import { addSecondPsu, buyOutLease } from "../../../sim/90-actions/hardware";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
 import { techItem } from "./TechButton";
+import { powerOptions, type PowerOp } from "./power";
 
 // What the menu hands back to its view: steps that need a sheet, a field or the offline check.
 export interface DeviceUi {
   open?: () => void;
   lid?: () => void;
   power: (on: boolean) => void;
+  op: (op: PowerOp) => void;
   plug: (psuId: string) => void;
   setup: () => void;
   rename: () => void;
@@ -26,6 +28,17 @@ export const secondPsuPrice = (d: Device): number | null => {
   const to = dualPsuModel(d.model);
   return to ? priceOf(to, d.brand) - priceOf(modelById(d.model), d.brand) : null;
 };
+
+// A mounted server's power entries: through its management controller when it answers, on site otherwise, then what a technician can do.
+function serverPower(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
+  const { via, options } = powerOptions(game, d);
+  return [
+    ...options.map((o) => ({ label: via && o.op !== "pull" ? `${o.label} via ${via}` : o.label, disabled: o.disabled, run: () => ui.op(o.op) })),
+    techItem(game, d.id, d.on ? "off" : "on"),
+    d.hung && techItem(game, d.id, "reset"),
+    d.bmcHung && !d.hands && techItem(game, d.id, "bmcreset"),
+  ];
+}
 
 // A rack device's actions, in the order of a Pear context menu: open, power, role, upgrades, then removal.
 export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
@@ -41,8 +54,10 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
   return [
     ui.open && { label: "Show details", run: ui.open },
     null,
-    m.kind !== "patch" && { label: d.on ? "Power off" : "Power on", disabled: !d.rackId && !d.panel, run: () => ui.power(!d.on) },
-    m.kind !== "patch" && !!(d.rackId || d.panel) && techItem(game, d.id, d.on ? "off" : "on"),
+    ...(server && d.rackId ? serverPower(game, d, ui) : [
+      m.kind !== "patch" && { label: d.on ? "Power off" : "Power on", disabled: !d.rackId && !d.panel, run: () => ui.power(!d.on) },
+      m.kind !== "patch" && !!(d.rackId || d.panel) && techItem(game, d.id, d.on ? "off" : "on"),
+    ]),
     server && !d.on && !!(d.rackId || d.store) && ui.lid && { label: "Open chassis", run: ui.lid },
     ...psus.map((c, i) => ({ label: `${isPlugged(c) ? "Unplug" : "Plug in"} ${psus.length > 1 ? `power supply ${i + 1}` : "power supply"}`, run: () => ui.plug(c.id) })),
     null,

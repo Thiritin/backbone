@@ -278,6 +278,15 @@ export const RENAMED_MODELS: Record<string, string> = Object.fromEntries(GENERAT
   [`g${i + 1}-compute-1s`, `g${i + 1}-compute`],
   [`g${i + 1}-highmem`, `g${i + 1}-memory`],
 ]));
+// Whether a server model carries a baseboard management controller: Dwell and Hewlett-Packet from the 2008 generation,
+// SuperMacro and Lenovoid from 2011, the ARM line always. The 2005 generation and models outside the generation line never do.
+const BMC_FROM: Record<string, number> = { Dwell: 2, "Hewlett-Packet": 2, SuperMacro: 3, Lenovoid: 3 };
+// What each brand calls its management controller.
+export const BMC_NAME: Record<string, string> = { Dwell: "iDRAQ", "Hewlett-Packet": "iLOL", SuperMacro: "IPMI", Lenovoid: "XClarify" };
+export function hasBmc(modelId: string, brand: string): boolean {
+  const m = /^g(\d+)-(.+)$/.exec(modelId);
+  return !!m && (m[2] === "arm" || Number(m[1]) >= (BMC_FROM[brand] ?? 3));
+}
 export const jacksOf = (m: DeviceModel): number => m.ports.length / 2;
 // Jacks on a 24-port panel; use jacksOf for the 48-port panels.
 export const PATCH_JACKS = 24;

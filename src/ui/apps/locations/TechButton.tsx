@@ -1,4 +1,5 @@
 import { Wrench } from "lucide-react";
+import { BMC_NAME } from "../../../sim/10-catalog/hardware";
 import { dateOf, yearOf } from "../../../sim/00-core/time";
 import { phpAt, softwareById } from "../../../sim/10-catalog/platforms";
 import { nextSlot, taskFor, urgent, type OpKind, type TechOp } from "../../../sim/47-staff/technicians";
@@ -34,7 +35,7 @@ export function opLabel(game: GameState, o: TechOp): string {
     const c = game.clusters.find((x) => x.id === o.componentId);
     return `Update ${softwareById(c?.panel ?? c?.platform ?? "").name}`;
   }
-  return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}`, domains: "Move domains" }[o.kind];
+  return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}`, domains: "Move domains", reset: "Reset", bmcreset: `Reset ${BMC_NAME[d?.brand ?? ""] ?? "IPMI"}`, recover: "Recover" }[o.kind];
 }
 
 // Queues the operation for the technician who gets to it first, or shows it queued with a Cancel.

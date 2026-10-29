@@ -143,7 +143,10 @@ export function queueOperation(s: GameState, kind: OpKind, deviceId: string, com
   if (kind === "part" && partId && !s.devices.some((x) => x.id === partId && x.store === loc.id)) return fail("error.noPart");
   if (kind === "drain" && !clusterOf(s, deviceId)) return fail("error.notNode");
   if (kind === "php" && !s.clusters.some((c) => c.kind === "panel" && anchorOf(s, c) === deviceId)) return fail("error.notPanelHost");
-  const comp = kind === "replace" || kind === "part" ? componentId : null, spare = kind === "part" ? partId : null;
+  if (kind === "recover" && !s.workloads.some((w) => w.id === componentId && w.deviceId === deviceId && w.corrupted)) return fail("error.notCorrupted");
+  if (kind === "reset" && !d.hung) return fail("error.notHung");
+  if (kind === "bmcreset" && !d.bmcHung) return fail("error.bmcFine");
+  const comp = kind === "replace" || kind === "part" || kind === "recover" ? componentId : null, spare = kind === "part" ? partId : null;
   if (s.techOps.some((o) => o.kind === kind && o.deviceId === deviceId && o.componentId === comp && (o.partId ?? null) === spare)) return fail("error.alreadyQueued");
   return { ok: true, id: queueOp(s, kind, deviceId, comp, false, undefined, spare).id };
 }

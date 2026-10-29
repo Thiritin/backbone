@@ -46,6 +46,9 @@ export interface Workload extends Resources {
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
   hostname?: string;
   migrating?: { clusterId: string; doneAt: number };
+  // A pulled plug corrupted the data: it counts as lost until recovered (recoverDoneAt is the hour a recovery finishes) or
+  // restored; noticed is set once the alert went out, recoverFailed once a recovery did not bring the data back.
+  corrupted?: boolean; noticed?: boolean; recoverDoneAt?: number; recoverFailed?: boolean;
 }
 
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.
@@ -185,6 +188,7 @@ export const servedBy = (s: GameState, w: Workload): SoftwareKind => s.clusters.
 export function lostDisk(s: GameState, w: Workload): boolean {
   const vm = vmOf(s, w);
   if (vm) return lostDisk(s, vm);
+  if (w.corrupted) return true;
   const d = w.deviceId ? s.devices.find((x) => x.id === w.deviceId) : undefined;
   return !!d && d.dataLost !== null && d.dataLost >= w.placedAt;
 }

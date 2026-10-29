@@ -2,7 +2,7 @@
 // and mail reputation. Numbers in economy.md, Addresses and internet.
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, yearOf } from "../00-core/time";
-import { modelById } from "../10-catalog/hardware";
+import { hasBmc, modelById } from "../10-catalog/hardware";
 import type { Spec } from "../10-catalog/products";
 import { homeLineById } from "../20-world/datacenters";
 import { ABUSE_HIT, BOUNCE_CHANCE, IPV6_FROM, IPV6_MONTHLY, LINE_EXTRA_V4, LIR_FEES, NOTICES_RECONNECT, OWN_ADDRESS, providerV4, RECONNECT_HOUR, REP, SPAM, STATIC_LINE_ADDRESSES } from "../10-catalog/addresses";
@@ -79,6 +79,14 @@ export function privateIp(s: GameState, id: string): string | null {
   const vm = !s.devices.some((d) => d.id === id), n = Number(id.replace(/\D/g, "")) || 0, host = 10 + (n % 240);
   if (!loc.dc) return `192.168.${vm ? 2 : 1}.${host}`;
   return `10.${s.locations.indexOf(loc) + 1}.${vm ? 1 : 0}.${host}`;
+}
+
+// A server's management address when it has a BMC: 192.168.3.x in the basement, 10.n.2.x elsewhere, the host octet as in privateIp.
+export function ipmiIp(s: GameState, id: string): string | null {
+  const d = s.devices.find((x) => x.id === id), loc = d && machineLocation(s, id);
+  if (!d || !loc || !hasBmc(d.model, d.brand)) return null;
+  const host = 10 + ((Number(id.replace(/\D/g, "")) || 0) % 240);
+  return loc.dc ? `10.${s.locations.indexOf(loc) + 1}.2.${host}` : `192.168.3.${host}`;
 }
 
 // Who holds addresses for a machine: a customer's VM holds them through its service.

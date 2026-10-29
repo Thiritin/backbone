@@ -4,7 +4,7 @@ import { yearOf } from "../../../sim/00-core/time";
 import { freeBlock, LINE_EXTRA_V4, LIR_FEES, providerV4, transferPrice } from "../../../sim/10-catalog/addresses";
 import type { GameState, Location } from "../../../sim/50-state";
 import {
-  addressesOf, dynamicLine, freeV4, lineActive, machineLocation, privateIp, publicV4, publicV6, v6Offered, type Address, type AddressSource,
+  addressesOf, dynamicLine, freeV4, ipmiIp, lineActive, machineLocation, privateIp, publicV4, publicV6, v6Offered, type Address, type AddressSource,
 } from "../../../sim/60-infra/addresses";
 import { addAddress, announceBlock, assignAddress, buyAddresses, buyBlock, joinLir, releaseAddress, requestDelist } from "../../../sim/90-actions/addresses";
 import { useStore } from "../../store";
@@ -39,8 +39,8 @@ function RepCell({ a }: { a: Address }) {
 
 // A server's or VM's addresses, as rows of its facts list.
 export function AddressRows({ game, id }: { game: GameState; id: string }) {
-  const act = useStore((s) => s.act);
-  const loc = machineLocation(game, id);
+  const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
+  const loc = machineLocation(game, id), mgmt = ipmiIp(game, id);
   if (!loc) return null;
   const v4 = publicV4(game, id), v6 = publicV6(game, id);
   const own = addressesOf(game, id).filter((a) => a.v === 4);
@@ -48,6 +48,12 @@ export function AddressRows({ game, id }: { game: GameState; id: string }) {
   const fixed = !!loc.dc && game.devices.some((d) => d.id === id);
   return <>
     <div><dt>Private IP</dt><dd className="num">{privateIp(game, id) ?? "None"}</dd></div>
+    {mgmt && (
+      <div>
+        <dt>Management</dt>
+        <dd><button className="loc-link num" onClick={() => openApp("Browser", { kind: "url", id: `http://${mgmt}/` })}>{mgmt}</button></dd>
+      </div>
+    )}
     <div>
       <dt>Public IPv4</dt>
       <dd>

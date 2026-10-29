@@ -18,6 +18,7 @@ import { domainsTick } from "../30-customers/registry";
 import { registrarTick } from "../30-customers/registrar";
 import { mailTick } from "../80-business/mail";
 import { computeTick } from "../60-infra/cluster";
+import { powerTick, pushLog } from "../60-infra/power";
 import { haTick } from "../60-infra/ha";
 import { migrationTick } from "../60-infra/migration";
 import { freezeTick } from "../60-infra/usage";
@@ -123,6 +124,7 @@ export function failComponents(s: GameState, d: Device, ids: string[], events: S
   const broke = d.components.filter((c) => ids.includes(c.id) && c.failedAt === null);
   if (!broke.length) return d;
   const next: Device = { ...d, components: d.components.map((c) => (broke.includes(c) ? { ...c, failedAt: s.hour } : c)) };
+  for (const c of broke) pushLog(next, s.hour, `ipmi.log.failed.${c.kind}`);
   if (broke.some(isDrive) && arrayLost(next)) Object.assign(next, { dataLost: s.hour, rebuild: null });
   if (s.unlocks.includes("monitoring")) {
     for (const c of broke) events.push({ app: "Locations", key: "event.componentFailed", params: { device: d.label ?? d.name, component: c.kind } });
@@ -204,6 +206,7 @@ export function tick(state: GameState): SimEvent[] {
   state.rng = { ...state.rng };
   wear(state, events);
   if (state.devices.some((d) => d.maintenance || d.rebuild)) service(state);
+  events.push(...powerTick(state));
   const monthStart = isMonthStart(state.hour);
   if (monthStart) {
     competitorsCancel(state);
