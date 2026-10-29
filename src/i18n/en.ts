@@ -19,6 +19,7 @@ import { COMMUNITY_EN } from "./community";
 import { MANUAL_EN } from "./manual";
 import { ACTIVITY_EN } from "./activity";
 import { REPLIES_EN } from "./replies";
+import { BURNIN_EN } from "./burnin";
 import { USED_EN } from "./used";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -49,6 +50,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...DOMAINS_EN,
   ...NEWS_EN,
   ...USED_EN,
+  ...BURNIN_EN,
   "event.monthStart.title": (p) => `${MONTHS[Number(p.month)]} ${p.year}`,
   "event.monthStart.text": () => "A new month has started.",
   "save.loaded.title": () => "Game loaded",
@@ -362,12 +364,11 @@ export const en: Record<string, (p: Params) => string> = {
   "doc.guide": () => "Getting started",
   "doc.untitled": () => "Untitled",
   "guide.step.company": () => "Name your company",
-  "guide.step.networkApp": () => "Install the Network app",
   "guide.step.buyServer": () => "Buy a server",
   "guide.step.mountServer": () => "Mount and power it",
   "guide.step.internet": () => "Add internet",
   "guide.step.setup": () => "Install software",
-  "guide.step.domain": () => "Register your domain",
+  "guide.step.domain": () => "Buy your domain",
   "guide.step.website": () => "Build your website",
   "guide.step.email": () => "Set up company email",
   "guide.step.firstCustomer": () => "Win your first customer",

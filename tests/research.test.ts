@@ -25,6 +25,9 @@ describe("research", () => {
     for (const k of SKILLS) {
       expect(SKILL_PAGES[k.name]?.length).toBeGreaterThanOrEqual(2);
       expect(SKILL_PAGES[k.name].length).toBeLessThanOrEqual(4);
+      const first = SKILL_PAGES[k.name][0];
+      expect(first.title).toBe("Now available");
+      expect(first.blocks[0]).toMatchObject({ kind: "checks" });
     }
   });
 
@@ -68,7 +71,7 @@ describe("research", () => {
     raw.installed = ["Locations", "Unlocks", "Sales"];
     const old = deserialize(JSON.stringify(raw));
     expect(old.training).toBeNull();
-    expect(old.installed).toEqual(["Locations", "Research", "Website", "Browser"]);
+    expect(old.installed).toEqual(["Locations", "Research", "Website", "Browser", "Marketing"]);
     expect([...old.unlocks].sort()).toEqual(["market", "marketing", "marketingBasics", "monitoring", "people", "products"]);
     expect(skillFor("Market")!.id).toBe("market");
   });

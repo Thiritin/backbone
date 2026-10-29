@@ -1,5 +1,5 @@
-import { yearOf } from "../00-core/time";
-import { boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
+import { nowHours, yearOf } from "../00-core/time";
+import { wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
 import { cpuModel, type Vendor } from "../10-catalog/cpus";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
@@ -229,12 +229,15 @@ export const isPlugged = (c: Component) => c.plugged !== false;
 export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length || p.some((c) => isPlugged(c) && c.failedAt === null); };
 
 // The servers that run at least one workload; the rest draw their idle power. Working GPU cards add their watts either way.
-export const busyDevices = (s: GameState): Set<string | null> => new Set(s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId));
+// A server under burn-in draws full power and takes no customers.
+export const burning = (s: GameState, d: Device): boolean => !!d.burnin && d.burnin.until > s.hour;
+export const busyDevices = (s: GameState): Set<string | null> =>
+  new Set([...s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId), ...s.devices.filter((d) => burning(s, d)).map((d) => d.id)]);
 // A server's CPUs draw their own watts in place of its preset's (cpuWattsShift); idle they draw the model's idle share of it.
-export const deviceWatts = (d: Device): number => { const m = modelById(d.model); return m.watts + cpuWattsShift(m, d.components) + cardWatts(d.components); };
+export const deviceWatts = (d: Device): number => { const m = modelById(d.model), k = wattsFactorOf(m, d.brand); return (m.watts + cpuWattsShift(m, d.components)) * k + cardWatts(d.components); };
 export const drawWatts = (d: Device, busy: Set<string | null>): number => {
-  const m = modelById(d.model), cpus = cpuWattsShift(m, d.components);
-  return (busy.has(d.id) ? m.watts + cpus : m.idleWatts + (cpus && (cpus * m.idleWatts) / m.watts)) + cardWatts(d.components);
+  const m = modelById(d.model), cpus = cpuWattsShift(m, d.components), k = wattsFactorOf(m, d.brand);
+  return (busy.has(d.id) ? m.watts + cpus : m.idleWatts + (cpus && (cpus * m.idleWatts) / m.watts)) * k + cardWatts(d.components);
 };
 
 const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);
@@ -320,18 +323,20 @@ function failedDown(d: Device): boolean {
 }
 
 export function deviceHealth(s: GameState, deviceId: string): {
-  state: "ok" | "booting" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "hung" | "stuck" | "locked" | "nopower" | "off"; failed: Component[]; worn: Component[];
+  state: "ok" | "booting" | "setup" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "hung" | "stuck" | "locked" | "nopower" | "off"; failed: Component[]; worn: Component[];
 } {
   const d = s.devices.find((x) => x.id === deviceId)!;
   const failed = d.components.filter((c) => c.failedAt !== null);
   const worn = d.components.filter((c) => c.failedAt === null && s.hour - c.installedAt >= COMPONENTS[c.kind].life * HOURS_PER_YEAR);
-  const state = !d.on ? "off" : d.rackId && !pluggedIn(d) && !failedDown(d) ? "nopower" : booting(s, d) ? "booting" : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.hung ? "hung" : d.stuck ? "stuck" : d.locked ? "locked" : d.rebuild ? "rebuilding"
+  const state = !d.on ? "off" : d.rackId && !pluggedIn(d) && !failedDown(d) ? "nopower" : booting(s, d) ? (d.setup ? "setup" : "booting") : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.hung ? "hung" : d.stuck ? "stuck" : d.locked ? "locked" : d.rebuild ? "rebuilding"
     : failed.some((c) => c.kind === "fan") ? "hot" : failed.length ? "degraded" : "ok";
   return { state, failed, worn };
 }
 export const HOURS_PER_YEAR = 8760;
-export const BOOT_HOURS = 1;
-export const booting = (s: GameState, d: Device) => d.on && (d.bootUntil ?? 0) > s.hour;
+export const BOOT_MINUTES = 3;
+export const BOOT_HOURS = BOOT_MINUTES / 60;
+// A server in its BIOS setup never finishes booting.
+export const booting = (s: GameState, d: Device) => d.on && (d.setup || (d.bootUntil ?? 0) > nowHours(s));
 
 // A device works when it has power, is switched on, and no failure or power-off swap has taken it down.
 export function working(s: GameState, deviceId: string): boolean {

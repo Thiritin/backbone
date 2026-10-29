@@ -139,7 +139,6 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     const id = addCustomer(s, requestName(r), r.profile, habitFor(hashRng(s.seed, Number(r.id.slice(3)) || 0, 227), r.profile));
     editRequest(s, r.id, () => ({ customerId: id }));
     setTicket(s, t.id, { customerId: id, updatedAt: s.hour });
-    mailRequest(s, r.id, "order.account", by);
     log(id);
     return null;
   }
@@ -157,7 +156,6 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     setTicket(s, t.id, { status: "waiting", updatedAt: s.hour });
   } else if (step === "domain") {
     register(s, r.domain!, customerId, !!r.owned);
-    mailRequest(s, r.id, r.owned ? "order.transfer" : "order.domain", by);
   } else {
     const to = r.route ?? hostFor(s, r) ?? "";
     const target = to === "auto" ? null : routeTarget(s, to), auto = to === "auto" ? targetFor(s, r) : null;
@@ -169,7 +167,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     s.services = s.services.map((v) => (v.id === done.id ? { ...v, prepaidUntil: s.hour + MONTH } : v));
     editRequest(s, r.id, () => ({ serviceId: done.id! }));
     setTicket(s, t.id, { serviceId: done.id!, updatedAt: s.hour });
-    mailRequest(s, r.id, "order.live", by);
+    mailRequest(s, r.id, "order.live", by, { owned: r.owned ? 1 : 0 });
   }
   settle(s, orderOf(s, t)!);
   return null;

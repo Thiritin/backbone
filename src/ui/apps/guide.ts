@@ -19,8 +19,6 @@ export function stepOf(s: GameState, id: StepId): Step {
   switch (id) {
     case "company":
       return { title: t("guide.step.company"), text: "Choose the name, logo and colour of your company.", app: "Settings" };
-    case "networkApp":
-      return { title: t("guide.step.networkApp"), text: "Install the Network app from the Pear Store, where you order and manage your domains.", app: "Shop", focus: { kind: "software", id: "" } };
     case "buyServer":
       return { title: t("guide.step.buyServer"), text: "Buy your first server in the Shop.", app: "Shop" };
     case "mountServer":
@@ -33,8 +31,8 @@ export function stepOf(s: GameState, id: StepId): Step {
       const partner = s.registrar && registrarById(s.registrar.id)?.name;
       return {
         title: t("guide.step.domain"),
-        text: partner ? `Register your company domain with ${partner} in Network under Domains.` : "Sign a registrar contract and register your company domain in Network under Domains.",
-        app: "Network", focus: { kind: "page", id: "domains" },
+        text: partner ? `Buy your company domain with ${partner} in Marketing under Domain.` : "Choose a registrar and buy your company domain in Marketing under Domain.",
+        app: "Marketing", focus: { kind: "page", id: "domain" },
       };
     }
     case "website":

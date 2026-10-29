@@ -204,6 +204,28 @@ describe("email orders", () => {
     expect(n).toBeGreaterThan(0);
   }, 60_000);
 
+  it("lose half of the business email orders on free mail and none of the private ones", () => {
+    const s = readyGame(6);
+    s.company = { ...s.company, mail: { kind: "free" } };
+    expect(mailShare(s, "private")).toBe(1);
+    expect(mailShare(s, "gamer")).toBe(1);
+    expect(mailShare(s, "smallBiz")).toBe(0.5);
+    expect(mailShare(s, "enterprise")).toBe(0.5);
+    bookMail(s, "hostedExchange");
+    expect(mailShare(s, "smallBiz")).toBe(1);
+    const orders = (free: boolean) => {
+      let n = 0;
+      for (const seed of [1, 2, 3]) {
+        const g = readyGame(seed);
+        if (free) g.company = { ...g.company, mail: { kind: "free" } };
+        run(g, 24 * 60);
+        n += g.sales.requests.filter((r) => r.kind === "order" && r.profile !== "private" && r.profile !== "gamer" && r.profile !== "hobbyDev").length;
+      }
+      return n;
+    };
+    expect(orders(true)).toBeLessThan(orders(false));
+  }, 120_000);
+
   it("can be switched on with free mail", () => {
     const s = readyGame(6);
     s.marketing.owned = ["website", "orderForm"];

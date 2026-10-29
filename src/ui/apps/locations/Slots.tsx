@@ -65,7 +65,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                 const status = swap ? <span className="pill">Swap at <span className="num">{clock(device.maintenance!.doneAt)}</span></span>
                   : c.failedAt !== null ? <span className="pill bad">Failed</span>
                   : rebuild ? <span className="pill warn">Rebuilding</span>
-                  : worn ? <span className="pill warn">Worn</span> : <span className="pill ok">OK</span>;
+                  : worn ? <span className="pill warn">Worn</span> : c.wear ? <span className="pill">Untested</span> : <span className="pill ok">OK</span>;
                 const busy = swap || held !== null || !device.rackId;
                 const hot = hotSwappable(device, c);
                 const block = busy ? null : !spareFor(c) ? (c.failedAt !== null || worn ? `No part in ${zone?.az ?? ""}` : "")
@@ -78,8 +78,8 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                     <td className="num">{partSlot(c.kind, i + 1)}</td>
                     <td>
                       <span className={`loc-meter${worn ? " worn" : ""}`}>
-                        <span className="loc-meter-bar"><span style={{ width: `${Math.min(1, age / life) * 100}%` }} /></span>
-                        <span className="num">{age.toFixed(1)} / {life} y</span>
+                        <span className="loc-meter-bar"><span style={{ width: `${age === null ? (worn ? 80 : 0) : Math.min(1, age / life) * 100}%` }} /></span>
+                        <span className="num">{age === null ? "Unknown" : `${age.toFixed(1)} / ${life} y`}</span>
                       </span>
                     </td>
                     <td>{status}</td>

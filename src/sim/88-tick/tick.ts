@@ -4,7 +4,7 @@ import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
 import { opsTick } from "../40-support/notices";
-import { supportTick } from "../40-support/tick";
+import { supportTick, workTick } from "../40-support/tick";
 import { abandonTickets } from "../40-support/abandon";
 import { financeTick } from "../46-finance/finance";
 import { staffTick } from "../47-staff/staff";
@@ -32,6 +32,8 @@ import { usageTick } from "../60-infra/usage";
 import { productsTick } from "../85-products/products";
 import { COMPONENTS, manufacturerByName, modelById, specOf } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
+import { BURNIN_BONUS_HOURS, BURNIN_FACTOR } from "../10-catalog/burnin";
+import { burninTick } from "../60-infra/burnin";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
 import { KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
@@ -114,13 +116,14 @@ export const rebuildHours = (d: Device): number => {
 };
 
 // Each component of a running device fails at its yearly rate for its age, × the manufacturer's factor, × 2 while a fan is out,
-// × 1.2 once the device is out of support.
+// × 1.2 once the device is out of support, × 0.9 for a year after a passed full burn-in.
 export function failureChance(s: GameState, d: Device, c: Component): number {
   const spec = COMPONENTS[c.kind];
   const yearly = modelById(d.model).failYearly ?? (s.hour - c.installedAt < spec.life * HOURS_PER_YEAR ? spec.before : spec.after);
   const hot = d.components.some((x) => x.kind === "fan" && x.failedAt !== null) ? 2 : 1;
   const old = unsupported(d.model, s.hour) ? FAILURE_FACTOR : 1;
-  return (yearly * (manufacturerByName(d.brand)?.failureFactor ?? 1) * hot * old) / HOURS_PER_YEAR;
+  const burned = d.burnedInAt !== null && s.hour - d.burnedInAt < BURNIN_BONUS_HOURS ? BURNIN_FACTOR : 1;
+  return (yearly * (manufacturerByName(d.brand)?.failureFactor ?? 1) * hot * old * burned) / HOURS_PER_YEAR;
 }
 
 // Records failed components on a device: a drive failure the array can't survive loses its data and stops any rebuild.
@@ -131,6 +134,12 @@ export function failComponents(s: GameState, d: Device, ids: string[], events: S
   const next: Device = { ...d, components: d.components.map((c) => (broke.includes(c) ? { ...c, failedAt: s.hour } : c)) };
   for (const c of broke) pushLog(next, s.hour, `ipmi.log.failed.${c.kind}`);
   if (broke.some(isDrive) && arrayLost(next)) Object.assign(next, { dataLost: s.hour, rebuild: null });
+  if (d.refund && s.hour < d.refund.until) {
+    s.cash = Math.round((s.cash + d.refund.amount) * 100) / 100;
+    s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key: "ledger.usedRefund", params: { device: d.label ?? d.name }, amount: d.refund.amount }];
+    events.push({ app: "Locations", key: "event.usedRefund", params: { device: d.label ?? d.name, amount: d.refund.amount } });
+    next.refund = null;
+  }
   if (s.unlocks.includes("monitoring")) {
     for (const c of broke) events.push({ app: "Locations", key: "event.componentFailed", params: { device: d.label ?? d.name, component: c.kind } });
   }
@@ -183,6 +192,7 @@ export const knowHowPerMonth = (s: GameState): number =>
 export function tick(state: GameState): SimEvent[] {
   state.powerDue += powerPerHour(state);
   state.hour++;
+  state.minute = 0;
   const events: SimEvent[] = [];
   // The store shallow-copies the state before ticking, so arrays and their items are replaced rather than changed.
   if (state.racks.some((r) => r.arriveAt !== null && r.arriveAt <= state.hour)) {
@@ -224,6 +234,7 @@ export function tick(state: GameState): SimEvent[] {
   }
   state.rng = { ...state.rng };
   wear(state, events);
+  burninTick(state, events);
   if (state.devices.some((d) => d.maintenance || d.rebuild)) service(state);
   events.push(...powerTick(state));
   const monthStart = isMonthStart(state.hour);
@@ -300,4 +311,11 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...usedTick(state));
   scoreTick(state);
   return events;
+}
+
+// One game minute: queued hand work lands at its minute, and the sixtieth minute is the hourly tick.
+export function tickMinute(state: GameState): SimEvent[] {
+  if (state.minute >= 59) return tick(state);
+  state.minute++;
+  return workTick(state);
 }

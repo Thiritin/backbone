@@ -70,12 +70,18 @@ export interface Device { id: string; model: string; brand: string; rackId: stri
   // the player out, an ATX power adapter fitted for a console-only KVM, the own way in of a console server or OOB switch,
   // and the firmware release of network and management gear.
   stuck: boolean; locked: boolean; atx?: true; uplink?: "dsl" | "modem"; fw?: { version: number; updatedAt: number };
+  // The server sits in its BIOS setup (90-actions/console.ts): the boot waits until the player leaves it.
+  setup: boolean;
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
   part?: PartSpec;
   // nodeNNN, set on servers.
   hostname?: string;
   // Bought on the used market: no insurance covers it.
   used?: true;
+  // A burn-in test running until the hour; full is the long one. burnedInAt is the hour a full burn-in passed.
+  burnin: { until: number; full: boolean } | null; burnedInAt: number | null;
+  // Buyer protection from a board or eBuy purchase: the first failure before the hour refunds this much.
+  refund?: { until: number; amount: number } | null;
 }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
@@ -86,7 +92,8 @@ export interface Cable { id: string; a: End; b: End; kind: CableKind; color: str
 // failedAt is the hour the component broke; null while it works. A power supply is plugged in unless plugged is false.
 // size is GB for RAM sticks and drives, cores for CPUs; ff is the form factor of a drive. CPUs and boards carry their vendor,
 // CPUs their generation (1 for G1).
-export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; plugged?: boolean; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number }
+// wear is what a used part's owner knows of it: hidden until a burn-in, or worn after a quick one; unset once known.
+export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; wear?: "hidden" | "worn"; plugged?: boolean; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number }
 export type RaidLevel = "none" | "1" | "5" | "6" | "10";
 export type RebuildRate = "low" | "medium" | "high";
 // since is the hour of the first change; a data loss after it wipes the changes. A path maps to a file's text, true for a
@@ -104,6 +111,7 @@ export interface GameState {
   seed: number;
   rng: Rng;
   hour: number;
+  minute: number;
   cash: number;
   nextId: number;
   locations: Location[];
@@ -223,7 +231,7 @@ export interface GameState {
   score: Score;
 }
 
-export interface LogEntry { hour: number; name: string; args: unknown[] }
+export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
 export interface Score { netWorth: number | null; level3: number | null; happySum: number; happyHours: number }
 
 // Fields every new device starts with: fresh components installed at hour `at` (the model's parts unless partList says otherwise), powered on, RAID 1 with two or more drives.
@@ -233,9 +241,9 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
   return {
     components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
-    rebuild: null, maintenance: null, dataLost: null,
+    rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null,
     hung: false, bmcHung: false, log: [] as { hour: number; key: string }[],
-    stuck: false, locked: false, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
+    stuck: false, locked: false, setup: false, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
   };
 }
 
@@ -261,7 +269,7 @@ export const device = (id: string, model: string, brand: string, rackId: string 
 
 // Starting infrastructure: an empty 24U basement rack and the home router. The player buys, mounts and cables the first server.
 export const newGame = (seed: number): GameState => ({
-  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, cash: START_CASH, nextId: 8,
+  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: START_CASH, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null }],
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],

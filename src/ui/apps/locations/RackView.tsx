@@ -22,6 +22,8 @@ import { More } from "../More";
 import { dcOf, Facts, positionsLabel, PowerMeter, Sheet, useDismiss } from "./ui";
 import { BookedMeters } from "./Clusters";
 import { clusterOf } from "../../../sim/60-infra/cluster";
+import { present } from "../../../sim/60-infra/handwork";
+import { useSessionState } from "../../session";
 
 export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
@@ -141,6 +143,9 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   const loc = game.locations.find((l) => l.id === rack.locationId)!;
   const { guarded, dialog } = useOfflineGuard(game);
   const [rename, setRename] = useState<string | null>(null);
+  // The one monitor, on the server whose console end was clicked; it works where the player stands.
+  const [monitor, setMonitor] = useSessionState<string | null>("loc.monitor", null);
+  const here = present(game, rack.locationId);
   const clearRename = useCallback(() => setRename(null), []);
   const menus = useDeviceMenu(game, onDevice, (id) => { onDevice(id); setRename(id); });
   const deviceMenu = (id: string, e: ReactMouseEvent) => {
@@ -176,12 +181,12 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
         </div>
         <div className="loc-rack-scroll" ref={rackRef} style={{ width: rackWidth }}>
           <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420 * zoom} u={22 * zoom}
-            hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onDeviceMenu={deviceMenu} onFree={openMount}
-            onConnect={(a, b) => act(connect, a, b)} onPlug={plug} onMove={(id, slot) => act(moveInRack, id, slot)} />
+            hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); if (id !== monitor) setMonitor(null); }} onDeviceMenu={deviceMenu} onFree={openMount}
+            onConnect={(a, b) => act(connect, a, b)} onPlug={plug} onConsole={here ? (id) => { onDevice(id); setMonitor(id); } : undefined} onMove={(id, slot) => act(moveInRack, id, slot)} />
         </div>
       </div>
       <div className="loc-insp">
-        {dev ? <Inspector key={dev.id} game={game} device={dev} side={side} onSelect={onDevice} onHot={setHot} rename={rename === dev.id} onRenaming={clearRename} /> : (
+        {dev ? <Inspector key={dev.id} game={game} device={dev} side={side} onSelect={onDevice} onHot={setHot} rename={rename === dev.id} onRenaming={clearRename} monitor={monitor === dev.id && here} onUnplug={() => setMonitor(null)} /> : (
           <>
             <div className="loc-insp-h" onContextMenu={menuOn(rackMenu)}>
               <h2>{rack.name}</h2>

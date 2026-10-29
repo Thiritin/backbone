@@ -1,11 +1,15 @@
 // GDD, Domains: domains registered or transferred for customers, renewed yearly at the registry of their TLD.
 // Numbers in economy.md, Domains.
+import { nowMinutes } from "../00-core/time";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import type { Service } from "./customers";
 
 // transfer marks a domain the customer owned before; lapsed is set once it expired without a renewal. The company's own domain has no customer.
-export interface Domain { name: string; customerId: string | null; registeredAt: number; expiresAt: number; transfer: boolean; lapsed: boolean }
+// readyAt is the game minute the registry answers; saves from before it have none and count as ready.
+export interface Domain { name: string; customerId: string | null; registeredAt: number; expiresAt: number; transfer: boolean; lapsed: boolean; readyAt?: number }
+export const REGISTER_MINUTES = 2;
+export const registering = (s: GameState, d: Domain): boolean => (d.readyAt ?? 0) > nowMinutes(s);
 
 export const YEAR = 8760, DAY = 24;
 // What the registry charges per year, in 2005 and from 2026 on; linear in between.
@@ -35,7 +39,7 @@ export const domainOf = (s: GameState, name: string): Domain | undefined => s.do
 
 // Records the domain for a year; the registrar bills its registry cost monthly (30-customers/registrar.ts).
 export function register(s: GameState, name: string, customerId: string | null, transfer: boolean): void {
-  const d: Domain = { name, customerId, registeredAt: s.hour, expiresAt: s.hour + YEAR, transfer, lapsed: false };
+  const d: Domain = { name, customerId, registeredAt: s.hour, expiresAt: s.hour + YEAR, transfer, lapsed: false, readyAt: nowMinutes(s) + REGISTER_MINUTES };
   s.domains = [...s.domains.filter((x) => x.name !== name), d];
 }
 

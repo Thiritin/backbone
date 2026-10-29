@@ -1,5 +1,6 @@
 import type { Company, GameState, LogEntry } from "../50-state";
-import { tick } from "../88-tick/tick";
+import { nowMinutes } from "../00-core/time";
+import { tickMinute } from "../88-tick/tick";
 import { runAction } from "../90-actions/index";
 import { startChallenge, startGame } from "../90-actions/start";
 import { SCORE_END, scores, type Scores } from "../80-business/scores";
@@ -23,16 +24,17 @@ export const runFile = (s: GameState, version: string): RunFile => ({
 export const runFileName = (s: GameState): string =>
   `${s.company.name.normalize("NFKD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "company"}-${s.seed}.run.json`;
 
-// Starts the game from the run's seed and challenge, applies each action at its hour with the ticks in between, and plays
+// Starts the game from the run's seed and challenge, applies each action at its minute with the ticks in between, and plays
 // on to until, the end of 2007 by default. Throws when the run cannot have come from this game.
 export function replay(run: RunFile, each?: (s: GameState) => void, until = SCORE_END): GameState {
   const s = run.challenge ? startChallenge(run.challenge) : startGame(run.seed);
   if (s.seed !== run.seed) throw new Error(`seed ${run.seed} is not the seed of ${run.challenge}`);
   if (s.locations[0].city !== run.city) throw new Error(`city ${run.city} is not ${s.locations[0].city}`);
-  const step = () => { tick(s); each?.(s); };
+  const step = () => { tickMinute(s); if (s.minute === 0) each?.(s); };
   run.actions.forEach((e, i) => {
-    if (e.hour < s.hour) throw new Error(`action ${i + 1} (${e.name}) is out of order`);
-    while (s.hour < e.hour) step();
+    const at = e.hour * 60 + (e.minute ?? 0);
+    if (at < nowMinutes(s)) throw new Error(`action ${i + 1} (${e.name}) is out of order`);
+    while (nowMinutes(s) < at) step();
     const r = runAction(s, e.name, e.args);
     if (!r.ok) throw new Error(`action ${i + 1} (${e.name}) failed with ${r.error}`);
   });

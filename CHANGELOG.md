@@ -5,6 +5,28 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-29
 
 - Rack positions at Hetzler and the smaller budget datacenters can take a flat-rate power contract of 2 × 10 A or 2 × 16 A for a fixed monthly price, which sets the rack's breaker limit.
+- Marketing basics now opens the Reviews and Community sections in Marketing, and new reviews only send you a notification once you can read them there.
+- Event organisers only ask you for sponsoring once you have learned Marketing basics.
+- A VM or game server stuck on a switched-off server whose cluster's control plane is down can be recovered to a server of another cluster in the same location by remote hands, by you or by a friend.
+- Restoring a defaced customer site now needs a backup of it, and without one you can only tell the customer to rebuild it from their own copy, which costs happiness.
+- The sheet that opens after a training starts with a Now available page that checks off everything the skill unlocks and what you can do with it.
+- The Used tab has listings from the first day: servers and network gear sold since before 2005 turn up on eBuy, WebHostingTalc and Telegrump right away, one to three years old.
+- Every server has a screen now: a Console tile on managed servers and the controller's page open it in its own window, a KVM opens it from its page, and clicking the blue console end on the back of a server in the rack plugs in a monitor on the spot.
+- The RAID level moves from the server page into the BIOS setup on that screen, entered with Del during the boot splash or at the firmware prompt, and a server left in the setup stays down until you leave it.
+- Your Email or Support icon in the dock now shows how many tickets and requests are waiting from the start, and the Dock badges upgrade adds counts to the other apps.
+- The Backbone menu has Report an issue, which opens a new GitHub issue with your game build filled in.
+- The Marketing app opens on Channels once you learn Marketing campaigns, its Domain page has proper margins, and the skill sheet lists the six sections the skill adds.
+- The Backbone menu links to the new Discord server, where you can chat, share screenshots, request features and report bugs.
+- The browser tab shows the new Backbone logo.
+- A customer whose services all kept their SLA uptime through a month gains a little happiness at the billing date, so steady service slowly builds loyalty.
+- Replies, order steps and other hand work now land at the minute they are done instead of at the next full hour, a server boots in three minutes and a new domain shows as registering for two.
+- A custom order now sends the customer three emails, the quote, the confirmation and the notice that everything is live, instead of one per step.
+- A support desk without reply templates still offers the reply that settles the ticket, so a lost panel login or a price complaint can be answered.
+- While you use free Notmail, only half of the businesses that would order by email write to you; private users, gamers and developers do not mind.
+- You buy your company domain in the Marketing app under Domain, which is now installed for free from the start; the rest of the app opens with the Marketing campaigns skill.
+- Server manufacturers differ in more than price: SuperMacro releases models four months early and sells them a year longer at 5% more power, Hewlett-Packet releases three months late, stops selling a year earlier and draws 5% less, and Lenovoid releases six months late.
+- The Shop has a Sort menu with Price low to high, Price high to low, Newest and Lowest power, and each card shows its release month.
+- A racked server outside a cluster can be burned in, quick for 6 hours or full for 48: it shows which used parts are worn, a full test also fails weak parts and a passed one lowers the failure rate for a year, and used parts bought on the board or eBuy refund half the price when one fails within 14 days.
 - A new company starts with a free Notmail address that takes order emails without a domain, and moving to mail under your own domain is an optional upgrade.
 - The Email app has a Settings button that opens the email settings.
 - Getting started now begins with your first server, and the domain and email steps come later.
