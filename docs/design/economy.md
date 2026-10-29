@@ -1754,10 +1754,10 @@ Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and Tr
 | Email | Free | Free | Always on |
 | Web design | €400 | €15 | None |
 | Order form | €900 | €10 | Web design |
-
-Web design and the order form are set up in the Website app's sidebar from the first day, or in the Marketing app's Channels once Marketing campaigns is learned. Before, they were only in the Marketing app, which waits for 450 know-how of research (Marketing basics, Employee management, Marketing campaigns), so a first-year company could not buy them before December.
 | Goggle Ads | €50 | None | Web design |
 | AI ads | €1,500 | None | Web design, from 2023 |
+
+Web design and the order form are set up from the first day on the Admin page of the Browser, or in the Marketing app's Channels once Marketing campaigns is learned. The Marketing app waits for 450 know-how of research (Marketing basics, Employee management, Marketing campaigns), so a first-year company could not otherwise buy them before December.
 
 The basic website every company starts with is free and brings no leads of its own. The web design brings 4 leads a month per location city, split by the profile mix. Every lead only writes when its product is listed on the website.
 

@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { en } from "../src/i18n/en";
-import { PROFILES } from "../src/sim/10-catalog/economy";
+import { PROFILE_IDS } from "../src/sim/80-business/marketing";
 
 const files = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? files(join(dir, d.name)) : d.name.endsWith(".ts") ? [join(dir, d.name)] : []));
@@ -15,6 +15,6 @@ describe("event keys", () => {
   });
 
   it("every customer profile has a usage line for its first email", () => {
-    expect(PROFILES.filter((p) => !en[`request.use.${p.id}`]).map((p) => p.id)).toEqual([]);
+    expect(PROFILE_IDS.filter((p) => !en[`request.use.${p}`])).toEqual([]);
   });
 });
