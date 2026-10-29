@@ -8,7 +8,7 @@ import { PRODUCTS, sizeSpec, SIZES } from "../10-catalog/products";
 import { yearOf } from "../00-core/time";
 import { inUs } from "../20-world/datacenters";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
-import { bump, isFinal, profileStats } from "../40-support/tickets";
+import { bump, expandable, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { gameFirst, lineOffered, noRoomError, pickNode, serverTaken, supports, workloadsOf } from "../60-infra/cluster";
 import { phpNeeded } from "../60-infra/php";
@@ -141,7 +141,7 @@ function expansions(s: GameState): void {
   for (const t of s.tickets) {
     if (t.kind !== "upgrade" || isFinal(t) || s.sales.requests.some((r) => r.ticketId === t.id)) continue;
     const c = s.customers.find((x) => x.id === t.customerId), v = s.services.find((x) => x.id === t.serviceId);
-    if (!c || c.churnedAt !== null || !v || v.endedAt !== null || PRODUCTS[v.product].runsOn === "none" || PRODUCTS[v.product].period !== "hour") continue;
+    if (!c || c.churnedAt !== null || !v || v.endedAt !== null || !expandable(v)) continue;
     const loc = s.locations.find((l) => l.az === v.zone);
     const spec = grownSpec(s.seed, Number(t.id.slice(3)) || 0, v.product, v.spec), old = v.spec;
     const r = addRequest(s, {

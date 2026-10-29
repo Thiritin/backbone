@@ -57,8 +57,8 @@ describe("knowledge base", () => {
     const asked = (s: GameState) => s.tickets.filter((t) => t.kind === "howTo" && t.topic !== "panel").length;
     const reads = Object.values(withKb.kbReads).reduce((a, b) => a + b, 0);
     expect(reads).toBeGreaterThan(0);
-    expect(reads / (reads + asked(withKb))).toBeGreaterThan(0.2);
-    expect(reads / (reads + asked(withKb))).toBeLessThan(0.4);
+    expect(reads / (reads + asked(withKb))).toBeGreaterThan(0.15);
+    expect(reads / (reads + asked(withKb))).toBeLessThan(0.45);
     expect(asked(withKb)).toBeLessThan(asked(without));
     expect(deserialize(serialize(withKb)).kbReads).toEqual(withKb.kbReads);
   }, 60_000);

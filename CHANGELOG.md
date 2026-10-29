@@ -4,6 +4,10 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- An upgrade request now opens in Support with its quote, the same way an order email does, and customers only ask to upgrade services that can grow; the reply that offered more resources without a price is gone.
+- Sponsoring requests only ask for products you sell on your website, and four new events can write in: a school coding club, an animal shelter, a game jam and an open data hackday.
+- Customers now ask how-to questions that fit what they run and how long they have been with you: newcomers ask about uploads, Outlook and name servers, server customers about SSH, and long-standing customers about PHP versions, a second domain or mail on a new phone.
+- The Documentation skill unlocks the Knowledge base app in the Pear Store, which answers three in ten basic setup questions before they reach your inbox and shows how often each article was read.
 - Customers send most of their how-to questions in their first months while they set up, and long-standing customers only write in now and then.
 - The dock shows a count of open tickets, unpaid invoices and failed parts from the start, and the Dock badges upgrade is gone from the Pear Store.
 - New reviews only send you a notification once Marketing campaigns unlocks the Reviews section where you can read them.

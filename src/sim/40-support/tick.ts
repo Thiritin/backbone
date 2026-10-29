@@ -1,8 +1,8 @@
-import { chance } from "../00-core/rng";
+import { chance, rand } from "../00-core/rng";
 import { isMonthStart, nowMinutes } from "../00-core/time";
 import { counts } from "../00-core/workhours";
 import { noticed, segmentOf } from "../10-catalog/attention";
-import type { Customer } from "../30-customers/customers";
+import { activeServices, type Customer } from "../30-customers/customers";
 import { serviceFqdn } from "../30-customers/hostnames";
 import { grantExtension, isSuspended, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
@@ -20,8 +20,8 @@ import { serviceOnline } from "./status";
 import { outgoing, sendAction } from "./replies";
 import { overpricing, retains, revertPrice } from "../30-customers/pricing";
 import {
-  bump, cancelCustomer, createTicket, credit, GAMER_ABUSE_RATE, HOURS_PER_MONTH, HOW_TO, isFinal, KB_DEFLECT, KNOWLEDGE_BASE, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
-  pickHowTo, profileStats, replyDue, rightTemplate, tenureFactor, UPGRADE_CHANCE, WAITING_CLOSE_HOURS, type Ticket,
+  bump, cancelCustomer, createTicket, credit, expandable, GAMER_ABUSE_RATE, HOURS_PER_MONTH, HOW_TO, isFinal, KB_DEFLECT, KNOWLEDGE_BASE, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
+  pickHowTo, profileStats, replyDue, rightTemplate, tenureFactor, TOPICS, UPGRADE_CHANCE, WAITING_CLOSE_HOURS, type Ticket,
 } from "./tickets";
 
 // A shady customer draws this many times the abuse reports.
@@ -147,7 +147,10 @@ function monthly(s: GameState): void {
     const p = profileStats(c.profile);
     const cancels = c.happiness < 15 || chance(s.rng, p.churn + 0.5 * Math.max(0, (50 - c.happiness) / 50));
     if (cancels && !s.tickets.some((t) => t.customerId === c.id && t.kind === "cancellation" && !isFinal(t))) createTicket(s, c, "cancellation", null);
-    else if (chance(s.rng, UPGRADE_CHANCE[p.budget])) createTicket(s, c, "upgrade");
+    else if (chance(s.rng, UPGRADE_CHANCE[p.budget])) {
+      const grow = activeServices(s.services, c.id).filter(expandable);
+      if (grow.length) createTicket(s, c, "upgrade", grow[Math.floor(rand(s.rng) * grow.length)].id, TOPICS.upgrade[0]);
+    }
   }
 }
 

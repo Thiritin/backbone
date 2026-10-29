@@ -54,7 +54,7 @@ export const APPS: AppDef[] = [
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: "Lists your customers with their contracts and happiness.", body: CustomersApp },
   { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets, orders and sales requests so you can answer, accept, quote or decline them.", body: SupportApp,
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length
-      + s.sales.requests.filter((r) => r.kind !== "order" && (r.status === "open" || r.status === "countered") && !missingFor(s, r).length).length },
+      + s.sales.requests.filter((r) => r.kind === "new" && (r.status === "open" || r.status === "countered") && !missingFor(s, r).length).length },
   { name: "Billing", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: "Sends invoices, reminders and dunning notices.", body: BillingApp,
     badge: (s) => s.invoices.filter(isUnpaid).length },
   { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Shows your profit and loss, cash flow, tax, insurance and the account statement with every booking.", body: FinanceApp },

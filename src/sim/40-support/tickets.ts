@@ -1,6 +1,7 @@
 import { chance, rand } from "../00-core/rng";
 import { addHoursOn } from "../00-core/workhours";
 import { CLEAN_MINUTES } from "../10-catalog/apps";
+import { PRODUCTS } from "../10-catalog/products";
 import { PROFILES, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
 import { activeServices, type Customer, type Product, type Profile, type Service } from "../30-customers/customers";
 import type { GameState } from "../50-state";
@@ -89,7 +90,7 @@ export const TOPICS: Record<TicketKind, string[]> = {
 };
 export const TEMPLATES: Record<TicketKind, string[]> = {
   outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "ssl", "ssh", "panel", "addon", "php", "askDetails"],
-  billing: ["explain", "resend", "extension", "newPrice", "askDetails"], upgrade: ["offer", "askDetails"], cancellation: [], abuse: ["warn", "askDetails"],
+  billing: ["explain", "resend", "extension", "newPrice", "askDetails"], upgrade: [], cancellation: [], abuse: ["warn", "askDetails"],
   appeal: ["awaitPayment", "askDetails"], notice: [], legal: [], refund: [], order: [], extortion: [], migration: [], maintenance: [], sponsor: [],
 };
 export const ACTIONS: Record<TicketKind, TicketAction[]> = {
@@ -102,6 +103,8 @@ export const ACTION_MINUTES: Partial<Record<TicketAction, number>> = { clean: CL
 export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])];
 // Tickets with their own actions have no reply templates.
 export const templatesOf = (t: Pick<Ticket, "kind" | "topic">): string[] => (`${t.kind}.${t.topic}` in TOPIC_ACTIONS ? [] : TEMPLATES[t.kind]);
+// A service that can grow in place: it runs on hardware and bills by the hour. Upgrade requests are only about these.
+export const expandable = (v: Service): boolean => PRODUCTS[v.product].runsOn !== "none" && PRODUCTS[v.product].period === "hour";
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
 export const SHORT_REPLIES = 3;
 // A desk without the templates feature lists only a few replies; the one that settles the ticket stays in.

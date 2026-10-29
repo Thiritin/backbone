@@ -184,6 +184,20 @@ Your company can now read the market: which products are in demand, what custome
 
 The lost-sale reports are the most honest feedback you will get. Customers who leave rarely bother to explain, but the report does it for them.
 
+## Documentation
+
+### Now available
+
+- **Knowledge base** is in the Pear Store and answers basic setup questions before they reach your inbox.
+
+### Answers before questions
+
+Your team now writes down the answers it gives every week: how to upload a site, which server Outlook wants, where the name servers go. New customers ask these the most, and long-standing customers ask about other things.
+
+### The Knowledge base app
+
+**Knowledge base** is now in the Pear Store. Once it is installed, three in ten of the basic setup questions never reach your inbox, because the customer finds the article first. The app shows how often each article was read.
+
 ## Automation
 
 ### Now available
