@@ -22,6 +22,10 @@ export function opLabel(game: GameState, o: TechOp): string {
     const c = d?.components.find((x) => x.id === o.componentId);
     return `Replace ${c ? PART_NAME[c.kind].toLowerCase() : "part"}`;
   }
+  if (o.kind === "migrate") {
+    const w = game.workloads.find((x) => x.id === o.target?.workloadId), to = game.clusters.find((c) => c.id === o.target?.clusterId);
+    return `Migrate ${game.services.find((v) => v.id === w?.serviceId)?.label ?? "web space"} to ${to?.name ?? "panel host"}`;
+  }
   return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}` }[o.kind];
 }
 

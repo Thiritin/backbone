@@ -10,7 +10,7 @@ import { addCustomer } from "../src/sim/90-actions/customers";
 import { buyDevice, connect } from "../src/sim/90-actions/hardware";
 import { installSoftware, softwareOn, uninstallSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { hypervisor, readyGame, withServer } from "./fixtures";
+import { hypervisor, readyGame, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = { ok: boolean; id?: string; error?: string };
@@ -22,6 +22,7 @@ const VM = { vcpu: 2, ramGb: 4, diskGb: 50 };
 // The basement server and a second one cabled to the switch, both with nothing installed.
 function twoServers() {
   const s = { ...withServer(newGame(1)), cash: 100_000 };
+  skipTo(s, 2010);
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));

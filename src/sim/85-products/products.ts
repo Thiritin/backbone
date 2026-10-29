@@ -6,7 +6,7 @@ import type { Customer } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
-import { PHP_SLOW, phpTickets } from "../60-infra/php";
+import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
 import { installedCores, raidUsable } from "../60-infra/status";
 import { diskFill, nodeUsage } from "../60-infra/usage";
@@ -151,8 +151,8 @@ function runBackups(s: GameState, events: SimEvent[]) {
   }
 }
 
-// Overloaded nodes slow every customer on them, web spaces in a panel VM included, and a PHP upgrade slows its panel
-// host's sites: happiness drops with the performance lost and some write in.
+// Overloaded nodes slow every customer on them, web spaces in a panel VM included, and a PHP upgrade or a compromise slows
+// its panel host's sites: happiness drops with the performance lost and some write in.
 function overload(s: GameState) {
   const perfs = new Map<string, number>();
   const perfOf = (id: string) => perfs.get(id) ?? perfs.set(id, nodeUsage(s, id).perf).get(id)!;
@@ -161,7 +161,7 @@ function overload(s: GameState) {
     const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
     if (!at || s.frozen.includes(at) || vm?.stopped) continue;
     const c = s.clusters.find((x) => x.id === w.clusterId);
-    const perf = Math.min(perfOf(at), c?.kind === "panel" && s.hour <= c.phpUntil ? PHP_SLOW : 1);
+    const perf = Math.min(perfOf(at), hostPerf(s, c));
     if (perf >= 1) continue;
     const v = s.services.find((x) => x.id === w.serviceId);
     const cus = v && customerCopy(s, v.customerId);

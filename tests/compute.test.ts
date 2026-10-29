@@ -17,7 +17,7 @@ import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
 import { migrateWorkload } from "../src/sim/90-actions/vms";
 import { startGame } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { basement, hypervisor, join, panelServer, panelVm, readyGame, withServer } from "./fixtures";
+import { basement, hypervisor, join, panelServer, panelVm, readyGame, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
@@ -50,6 +50,7 @@ describe("compute", () => {
 
   it("runs one control plane per server: a panel server takes no hypervisor and a hypervisor node no panel", () => {
     const s = withServer(startGame(1));
+    skipTo(s, 2010);
     const host = ok(installPanel(s, "dev3", "freepanel"));
     expect(err(installSoftware(s, "dev3", "proxmocks"))).toBe("error.onePanel");
     expect(err(installSoftware(s, "dev3", "cpanic"))).toBe("error.onePanel");
@@ -74,6 +75,7 @@ describe("compute", () => {
 
   it("sets the basement up as a hypervisor with a panel VM: the panel follows the hypervisor, then the friends move in", () => {
     const s = withServer(startGame(1));
+    skipTo(s, 2010);
     const cluster = ok(installSoftware(s, "dev3", "proxmocks"));
     const host = ok(createPanelVm(s, cluster, "freepanel"));
     const hours = softwareById("proxmocks").installHours + softwareById("freepanel").installHours;

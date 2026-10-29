@@ -8,7 +8,7 @@ import { companyDomain } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { serviceOnline } from "../40-support/status";
 import { bookable, fits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
-import { PHP_SLOW } from "../60-infra/php";
+import { hostPerf } from "../60-infra/php";
 import { nodeUsage } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
 import { hasOrderForm, owns } from "./marketing";
@@ -51,8 +51,8 @@ function siteWorkload(c: Cluster): Workload {
 
 // Whether the workload's host runs it slowly: an overloaded node or a PHP upgrade on its panel host.
 export function slowHost(s: GameState, w: Workload, c: Cluster | undefined): boolean {
-  const at = serverOf(s, w), php = c?.kind === "panel" && s.hour <= c.phpUntil ? PHP_SLOW : 1;
-  return Math.min(at ? nodeUsage(s, at).perf : 1, php) < 1;
+  const at = serverOf(s, w);
+  return Math.min(at ? nodeUsage(s, at).perf : 1, hostPerf(s, c)) < 1;
 }
 
 // Whether a panel host has room for the site next to its web spaces, and whether its RAM is over 90% booked with the site.

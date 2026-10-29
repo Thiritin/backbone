@@ -7,16 +7,18 @@ import { HOURS_PER_YEAR, hotSwappable, locationOf } from "../60-infra/status";
 import type { SimEvent } from "../88-tick/tick";
 import { drain, upgradeNodePhp } from "../90-actions/clusters";
 import { replaceComponent, setPower, type ActionResult } from "../90-actions/hardware";
+import { migrateWebspace } from "../90-actions/vms";
 import { callOut, onCallAt, onCallPayroll, respond, restUntil } from "./oncall";
 import { atFair, isWorkHour, onShift, working, type Employee, type Task } from "./staff";
 
-export type OpKind = "replace" | "off" | "on" | "drain" | "php";
-// One operation on one device; componentId is set for a replace, auto when a rule queued it.
-export interface TechOp { id: string; kind: OpKind; deviceId: string; componentId: string | null; queuedAt: number; auto: boolean }
+export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "migrate";
+// One operation on one device; componentId is set for a replace, auto when a rule queued it. A migrate runs at the device
+// the web space sits on and carries the web space and the panel host it moves to.
+export interface TechOp { id: string; kind: OpKind; deviceId: string; componentId: string | null; queuedAt: number; auto: boolean; target?: { workloadId: string; clusterId: string } }
 // failed: replace failed parts when a spare is in storage. worn: replace parts past their life that swap while running.
 // blackhole: the on-call technician blackholes an attack that saturates their location's links.
 export interface TechRules { failed: boolean; worn: boolean; blackhole: boolean }
-export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels" };
+export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", migrate: "panels" };
 
 export const opLocation = (s: GameState, o: TechOp): string | null => {
   const d = s.devices.find((x) => x.id === o.deviceId);
@@ -56,8 +58,8 @@ export function nextSlot(s: GameState, locationId: string, task: Task, isUrgent 
   return null;
 }
 
-export function queueOp(s: GameState, kind: OpKind, deviceId: string, componentId: string | null = null, auto = false): TechOp {
-  const op: TechOp = { id: `op${s.nextId++}`, kind, deviceId, componentId, queuedAt: s.hour, auto };
+export function queueOp(s: GameState, kind: OpKind, deviceId: string, componentId: string | null = null, auto = false, target?: TechOp["target"]): TechOp {
+  const op: TechOp = { id: `op${s.nextId++}`, kind, deviceId, componentId, queuedAt: s.hour, auto, ...(target && { target }) };
   s.techOps = [...s.techOps, op];
   return op;
 }
@@ -99,6 +101,7 @@ function perform(s: GameState, o: TechOp): ActionResult | "off" {
   }
   if (o.kind === "off" || o.kind === "on") return setPower(s, d.id, o.kind === "on");
   if (o.kind === "drain") return drain(s, d.id);
+  if (o.kind === "migrate") return o.target ? migrateWebspace(s, o.target.workloadId, o.target.clusterId) : { ok: false, error: "error.unknownWorkload" };
   return upgradeNodePhp(s, d.id);
 }
 

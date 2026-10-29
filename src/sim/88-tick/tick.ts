@@ -16,6 +16,7 @@ import { ordersTick } from "../30-market/manual";
 import { domainsTick } from "../30-customers/registry";
 import { computeTick } from "../60-infra/cluster";
 import { haTick } from "../60-infra/ha";
+import { migrationTick } from "../60-infra/migration";
 import { freezeTick } from "../60-infra/usage";
 import { networkTick } from "../60-infra/network";
 import { securityTick } from "../60-infra/security";
@@ -236,6 +237,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...freezeTick(state));
   events.push(...haTick(state));
   events.push(...computeTick(state));
+  events.push(...migrationTick(state));
   events.push(...productsTick(state));
   events.push(...usageTick(state));
   events.push(...billingTick(state));

@@ -3,7 +3,7 @@ import { modelById } from "../10-catalog/hardware";
 import { marketPrice, PRODUCTS, sizeSpec, type Resources, type Sla, type Spec } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
-import { phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
+import { clustersIn, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
 import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
@@ -179,19 +179,20 @@ const update = (s: GameState, id: string, fn: (c: Cluster) => Cluster) => {
   s.clusters = s.clusters.map((c) => (c.id === id ? fn(c) : c));
 };
 
-// Joins an empty server of the zone that runs the cluster's hypervisor to the cluster; the server's own cluster goes
-// away. A panel host keeps its one server.
+// Joins an empty server of the zone that runs the cluster's software to the cluster; the server's own cluster goes away.
+// A panel host takes a second server from the year its panel clusters, and keeps one before.
 export function addNode(s: GameState, clusterId: string, deviceId: string): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
-  if (c.kind !== "cloud") return fail("error.panelHostOneServer");
+  const panel = c.kind === "panel", id = c.panel ?? c.platform;
+  if (panel && (c.vm || !id || !clustersIn(softwareById(id), yearOf(s.hour)))) return fail("error.panelHostOneServer");
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   const own = clusterOf(s, d.id);
   if (own?.id === c.id) return fail("error.alreadyNode");
-  if (!own || own.kind !== "cloud" || !own.platform || own.switching) return fail("error.noHypervisor");
+  if (!own || own.kind !== c.kind || !(own.panel ?? own.platform) || own.switching) return fail(panel ? "error.noPanel" : "error.noHypervisor");
   if (locationOf(s, d)?.az !== c.az) return fail("error.otherZone");
-  if (own.platform !== c.platform) return fail("error.otherHypervisor");
+  if ((own.panel ?? own.platform) !== id) return fail(panel ? "error.otherPanel" : "error.otherHypervisor");
   if (workloadsOn(s, d.id).length) return fail("error.nodeNotEmpty");
   leave(s, own.id, d.id);
   update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, { deviceId, state: "active" }], controlPlane: x.controlPlane ?? deviceId }));
@@ -227,11 +228,11 @@ export function upgradeNodePhp(s: GameState, deviceId: string): ActionResult {
   return { ok: true };
 }
 
-// A node leaves its hypervisor cluster once nothing runs on it, uninstalling its hypervisor.
+// A node leaves its cluster once nothing runs on it, uninstalling its software; a panel host keeps at least one.
 export function removeNode(s: GameState, deviceId: string): ActionResult {
   const c = clusterOf(s, deviceId);
   if (!c) return fail("error.notNode");
-  if (c.kind === "panel") return fail("error.panelHostOneServer");
+  if (c.kind === "panel" && c.nodes.length < 2) return fail("error.panelHostOneServer");
   if (workloadsOn(s, deviceId).length) return fail("error.nodeNotEmpty");
   leave(s, c.id, deviceId);
   return { ok: true };

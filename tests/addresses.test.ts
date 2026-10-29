@@ -1,19 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { freeBlock, providerV4, retailV4, withAddressNeeds } from "../src/sim/10-catalog/addresses";
+import { freeBlock, providerV4, REP, retailV4, withAddressNeeds } from "../src/sim/10-catalog/addresses";
 import { noticed, type Segment } from "../src/sim/10-catalog/attention";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { requirementsFor } from "../src/sim/30-market/market";
 import { specText } from "../src/sim/30-market/spec";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { addressBills, addressesOf, addressTick, addSpam, privateIp, publicV4, sharedAddress } from "../src/sim/60-infra/addresses";
+import { addressBills, addressesOf, addressTick, addSpam, mailAddress, privateIp, publicV4, sharedAddress } from "../src/sim/60-infra/addresses";
 import { lineOffered } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
 import { addAddress, announceBlock, assignAddress, buyAddresses, joinLir, releaseAddress, requestDelist } from "../src/sim/90-actions/addresses";
 import { createVm, provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice, buyRack, connect } from "../src/sim/90-actions/hardware";
+import { cleanUp } from "../src/sim/90-actions/security";
 import { setLine } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { basement, BASEMENT_SERVER, hypervisor, panelServer, withServer } from "./fixtures";
@@ -194,6 +195,27 @@ describe("mail reputation", () => {
     const low = a().rep;
     run(s, 24 * 3);
     expect(a().rep).toBe(low + 3);
+    ok(requestDelist(s, a().id));
+    run(s, 24);
+    expect(a().listed).toBe(false);
+  });
+
+  it("drops for a compromised panel host through addSpam a day, and recovers after the clean-up", () => {
+    const s = withServer(newGame(1));
+    const host = panelServer(s, BASEMENT_SERVER);
+    addressTick(s);
+    const a = () => mailAddress(s, host)!;
+    const start = a().rep;
+    expect(a().v).toBe(4);
+    s.security = { ...s.security, hacked: [host] };
+    run(s, 24);
+    // 12 thousand spam mails at 5 points per thousand.
+    expect(a().rep).toBe(Math.max(0, start - 12 * REP.perThousand));
+    expect(a().listed).toBe(true);
+    const low = a().rep;
+    ok(cleanUp(s, host));
+    run(s, 24 * 2);
+    expect(a().rep).toBe(low + 2 * REP.recover);
     ok(requestDelist(s, a().id));
     run(s, 24);
     expect(a().listed).toBe(false);

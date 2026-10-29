@@ -12,7 +12,7 @@ import { howToFactor, licenseCost, SLOW_PENALTY } from "../src/sim/85-products/p
 import { tick } from "../src/sim/88-tick/tick";
 import { moveControlPlane, provisionService, setBackup, setHa } from "../src/sim/90-actions/clusters";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
-import { hypervisor, panelVm, withServer } from "./fixtures";
+import { hypervisor, panelVm, skipTo, withServer } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { monthlyValue } from "../src/sim/40-support/tickets";
@@ -73,6 +73,7 @@ describe("platforms and licenses", () => {
     const host = panelVm(s, cluster), spare = panelVm(s, cluster), box = clusterById(s, spare).vm!;
     const web = ok(provisionService(s, cus, "webHosting", { label: "Blog", clusterId: host }));
     const cash = s.cash;
+    skipTo(s, 2010);
     expect(err(uninstallSoftware(s, clusterById(s, host).vm!))).toBe("error.softwareInUse");
     expect(err(uninstallSoftware(s, s.workloads.find((w) => w.id === box)!.deviceId!))).toBe("error.softwareInUse");
     ok(uninstallSoftware(s, box));

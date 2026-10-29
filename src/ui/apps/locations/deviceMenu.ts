@@ -2,7 +2,8 @@ import { euro } from "../../../sim/00-core/money";
 import { dualPsuModel, modelById, priceOf } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
-import { isPlugged, locationOf } from "../../../sim/60-infra/status";
+import { isPlugged } from "../../../sim/60-infra/status";
+import { joinableClusters } from "../../../sim/90-actions/software";
 import { addNode, cordon, drain, removeNode, uncordon } from "../../../sim/90-actions/clusters";
 import { addSecondPsu, buyOutLease } from "../../../sim/90-actions/hardware";
 import type { MenuEntry } from "../../desktop/menu";
@@ -32,9 +33,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
   const psus = d.rackId ? d.components.filter((c) => c.kind === "psu") : [];
   const cluster = server ? clusterOf(game, d.id) : undefined, node = cluster?.nodes.find((n) => n.deviceId === d.id);
   const loads = server ? workloadsOn(game, d.id) : [];
-  const az = locationOf(game, d)?.az;
-  const joinable = cluster?.kind === "cloud" && cluster.platform && !cluster.switching && !loads.length
-    ? game.clusters.filter((c) => c.id !== cluster.id && c.az === az && c.kind === "cloud" && c.platform === cluster.platform) : [];
+  const joinable = server ? joinableClusters(game, d.id) : [];
   const lease = d.lease ? game.leases.find((l) => l.id === d.lease) : undefined;
   const psuPrice = d.rackId ? secondPsuPrice(d) : null;
   const busy = node && (node.state === "draining" || node.state === "maintenance");
@@ -51,7 +50,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
     node && !busy && { label: "Drain", run: () => act((g) => drain(g, d.id)) },
     node && !busy && techItem(game, d.id, "drain"),
     cluster && { label: `Open ${cluster.name}`, run: () => openApp("Products", { kind: "cluster", id: cluster.id }) },
-    node && cluster?.kind === "cloud" && cluster.nodes.length > 1 && !loads.length && { label: "Remove from cluster", run: () => act((g) => removeNode(g, d.id)) },
+    node && cluster && cluster.nodes.length > 1 && !loads.length && { label: "Remove from cluster", run: () => act((g) => removeNode(g, d.id)) },
     null,
     psuPrice !== null && { label: `Add second power supply, ${euro(psuPrice)}`, run: () => act((g) => addSecondPsu(g, d.id)) },
     lease && { label: `Buy out lease, ${euro(lease.monthly * (lease.months - lease.paid))}`, run: () => act((g) => buyOutLease(g, lease.id)) },

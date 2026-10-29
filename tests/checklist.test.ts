@@ -3,6 +3,7 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { CHECKS, checkDone } from "../src/sim/checklist";
 import { takeLoan } from "../src/sim/90-actions/billing";
 import { toggleCheck } from "../src/sim/90-actions/checklist";
+import { skipTo } from "./fixtures";
 import { addLocation, buyDevice, connect } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -49,6 +50,7 @@ describe("checklist", () => {
     ok(connect(s, { device: srv, port: 0 }, { device: s.devices.find((d) => d.panel === loc)!.id, port: 0 }));
     for (let h = 0; h < 72; h++) tick(s);
     expect(checkDone(s, "dcCluster")).toBe(false);
+    skipTo(s, 2010);
     ok(installSoftware(s, srv, "proxmocks"));
     for (let h = 0; h < 6; h++) tick(s);
     expect(checkDone(s, "dcCluster")).toBe(true);

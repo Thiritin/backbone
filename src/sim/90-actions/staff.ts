@@ -9,6 +9,7 @@ import type { GameState } from "../50-state";
 import { anchorOf, clusterOf } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
 import { phpDue } from "./clusters";
+import { webspaceBlock } from "./vms";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -147,6 +148,21 @@ export function queuePhpUpgrade(s: GameState, hostId: string): ActionResult {
   if (!phpDue(s, c) || !at) return fail("error.phpCurrent");
   if (s.techOps.some((o) => o.kind === "php" && o.deviceId === at)) return fail("error.alreadyQueued");
   return queueOperation(s, "php", at);
+}
+
+// Hands the move of a web space to a panel host to the technicians at the server it runs on.
+export function queueMigration(s: GameState, workloadId: string, toClusterId: string): ActionResult {
+  const w = s.workloads.find((x) => x.id === workloadId), c = w && s.clusters.find((x) => x.id === w.clusterId), to = s.clusters.find((x) => x.id === toClusterId);
+  if (!w || !c) return fail("error.unknownWorkload");
+  if (c.kind !== "panel" || !w.serviceId) return fail("error.notWebspace");
+  if (!to) return fail("error.unknownCluster");
+  const at = anchorOf(s, c), d = s.devices.find((x) => x.id === at), loc = d && locationOf(s, d);
+  if (!d || !loc) return fail("error.notMounted");
+  if (!techsAt(s, loc.id, OP_TASK.migrate).length) return fail("error.noTechnician");
+  const bad = webspaceBlock(s, w, c, to);
+  if (bad) return fail(bad);
+  if (s.techOps.some((o) => o.kind === "migrate" && o.target?.workloadId === w.id)) return fail("error.alreadyQueued");
+  return { ok: true, id: queueOp(s, "migrate", d.id, null, false, { workloadId: w.id, clusterId: to.id }).id };
 }
 
 export function cancelOperation(s: GameState, id: string): ActionResult {

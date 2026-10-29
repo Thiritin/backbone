@@ -155,15 +155,19 @@ export function assignService(s: GameState, serviceId: string): string | null {
   return null;
 }
 
-// Adds spam mails to the address a machine sends from; the web hosting lane's compromised sites send through this.
+// Adds spam mails to the address a machine sends from. Compromised panel hosts (reputation) and shady customers' services send through this.
 export function addSpam(s: GameState, machineId: string, thousands: number): void {
   const own = addressesOf(s, machineId).find((a) => a.v === 4) ?? (machineLocation(s, machineId)?.dc ? undefined : sharedAddress(s));
   if (own) patch(s, own.id, { spam: own.spam + thousands });
 }
+// The machine a panel host's mail leaves from: its VM or its first server.
+const mailMachine = (s: GameState, clusterId: string): string | undefined => {
+  const c = s.clusters.find((x) => x.id === clusterId);
+  return c?.vm ?? c?.nodes[0]?.deviceId;
+};
 // The address a panel host's mail leaves from: its server's, or its panel VM's.
 export const mailAddress = (s: GameState, clusterId: string): Address | undefined => {
-  const c = s.clusters.find((x) => x.id === clusterId);
-  const machine = c?.vm ?? c?.nodes[0]?.deviceId;
+  const machine = mailMachine(s, clusterId);
   if (!machine) return undefined;
   return addressesOf(s, machine).find((a) => a.v === 4) ?? (machineLocation(s, machine)?.dc ? undefined : sharedAddress(s));
 };
@@ -269,7 +273,7 @@ function abuseHits(s: GameState): void {
 function reputation(s: GameState, events: SimEvent[]): void {
   abuseHits(s);
   const hacked = s.security.hacked, shady = new Set(s.customers.filter((c) => c.shady && c.churnedAt === null).map((c) => c.id));
-  for (const id of hacked) { const a = mailAddress(s, id); if (a) patch(s, a.id, { spam: a.spam + SPAM.hacked }); }
+  for (const id of hacked) { const machine = mailMachine(s, id); if (machine) addSpam(s, machine, SPAM.hacked); }
   for (const v of s.services.filter((x) => x.endedAt === null && shady.has(x.customerId))) addSpam(s, v.id, SPAM.shady);
   s.ips = {
     ...s.ips, addresses: s.ips.addresses.map((a) => {

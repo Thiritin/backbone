@@ -1,6 +1,8 @@
-import { SOFTWARE, softwareById } from "../10-catalog/platforms";
+import { yearOf } from "../00-core/time";
+import { clustersIn, SOFTWARE, softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { clusterOf, hostOfVm, workloadsOn, type Cluster } from "../60-infra/cluster";
+import { locationOf } from "../60-infra/status";
 import { dropCluster, installHypervisor, installPanel, installPanelInVm, removeNode } from "./clusters";
 import type { ActionResult } from "./hardware";
 
@@ -16,17 +18,29 @@ export function softwareOn(s: GameState, machineId: string): Installed[] {
   return c && id ? [{ id, doneAt: c.switching?.doneAt ?? null, cluster: c }] : [];
 }
 
-// Empty servers of the zone in other clusters on the same installed hypervisor, which addNode joins to this one.
+const joinsAt = (s: GameState, c: Cluster): boolean => c.kind === "cloud" || (!c.vm && clustersIn(softwareById(c.panel ?? ""), yearOf(s.hour)));
+
+// Empty servers of the zone in other clusters on the same installed software, which addNode joins to this one. A panel
+// host takes them from the year its panel clusters.
 export function joinableServers(s: GameState, clusterId: string): string[] {
-  const c = s.clusters.find((x) => x.id === clusterId);
-  if (!c || c.kind !== "cloud" || !c.platform) return [];
-  return s.clusters.filter((x) => x.id !== c.id && x.kind === "cloud" && x.az === c.az && x.platform === c.platform && !x.switching)
-    .flatMap((x) => x.nodes.map((n) => n.deviceId)).filter((id) => !workloadsOn(s, id).length);
+  const c = s.clusters.find((x) => x.id === clusterId), id = c && (c.panel ?? c.platform);
+  if (!c || !id || !joinsAt(s, c)) return [];
+  return s.clusters.filter((x) => x.id !== c.id && x.kind === c.kind && x.az === c.az && (x.panel ?? x.platform) === id && !x.switching)
+    .flatMap((x) => x.nodes.map((n) => n.deviceId)).filter((d) => !workloadsOn(s, d).length);
+}
+
+// The clusters an installed, empty server can join: the zone's other clusters on the same software.
+export function joinableClusters(s: GameState, deviceId: string): Cluster[] {
+  const own = clusterOf(s, deviceId), d = s.devices.find((x) => x.id === deviceId), id = own && (own.panel ?? own.platform);
+  if (!own || !d || !id || own.switching || workloadsOn(s, deviceId).length) return [];
+  const az = locationOf(s, d)?.az;
+  return s.clusters.filter((c) => c.id !== own.id && c.kind === own.kind && c.az === az && (c.panel ?? c.platform) === id && joinsAt(s, c));
 }
 
 // Why the software cannot go on the machine next to what it runs, or null.
 export function installBlock(s: GameState, machineId: string, softwareId: string): string | null {
   const sw = softwareById(softwareId), vm = !isServer(s, machineId), have = softwareOn(s, machineId)[0];
+  if (yearOf(s.hour) < sw.from) return "error.softwareNotYet";
   if (vm && sw.kind === "cloud") return "error.nestedHypervisor";
   if (!have) return null;
   if (softwareById(have.id).kind === "panel") return "error.onePanel";
@@ -47,9 +61,10 @@ export function installSoftware(s: GameState, machineId: string, softwareId: str
 export function uninstallSoftware(s: GameState, machineId: string): ActionResult {
   const c = clusterOn(s, machineId);
   if (!c) return { ok: false, error: "error.noSoftware" };
-  const busy = c.kind === "cloud" ? workloadsOn(s, machineId).length > 0 : s.workloads.some((w) => w.clusterId === c.id);
+  const node = c.kind === "cloud" || (c.nodes.length > 1 && isServer(s, machineId));
+  const busy = node ? workloadsOn(s, machineId).length > 0 : s.workloads.some((w) => w.clusterId === c.id);
   if (busy) return { ok: false, error: "error.softwareInUse" };
-  if (c.kind === "cloud") return removeNode(s, machineId);
+  if (node) return removeNode(s, machineId);
   dropCluster(s, c.id);
   return { ok: true };
 }

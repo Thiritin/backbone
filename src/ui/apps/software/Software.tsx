@@ -3,23 +3,16 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import type { GameState } from "../../../sim/50-state";
-import { workloadsOn } from "../../../sim/60-infra/cluster";
-import { locationOf } from "../../../sim/60-infra/status";
 import { addNode } from "../../../sim/90-actions/clusters";
-import { installBlock, installSoftware, softwareOn, uninstallSoftware, type Installed } from "../../../sim/90-actions/software";
+import { installBlock, installSoftware, joinableClusters, softwareOn, uninstallSoftware, type Installed } from "../../../sim/90-actions/software";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { devName } from "../hw";
 import { KIND_NAME, Mark, SoftwareCards, vmLabel } from "../products/parts";
 import "./software.css";
 
-// The clusters a server's hypervisor can join: the zone's other clusters on the same hypervisor, while nothing runs on it.
-function joinable(game: GameState, machineId: string, x: Installed) {
-  const d = game.devices.find((v) => v.id === machineId);
-  if (!d || x.doneAt !== null || x.cluster.kind !== "cloud" || workloadsOn(game, d.id).length) return [];
-  const az = locationOf(game, d)?.az;
-  return game.clusters.filter((c) => c.id !== x.cluster.id && c.kind === "cloud" && c.az === az && c.platform === x.id);
-}
+// The clusters a server's software can join: the zone's other clusters on the same software, while nothing runs on it.
+const joinable = (game: GameState, machineId: string, x: Installed) => (x.doneAt === null ? joinableClusters(game, machineId) : []);
 
 // The software installed on a server or one of the player's VMs as tiles, then a tile that adds more.
 export function SoftwareGrid({ game, machineId }: { game: GameState; machineId: string }) {
