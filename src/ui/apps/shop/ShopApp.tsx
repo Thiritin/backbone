@@ -2,9 +2,9 @@ import { AppWindow, BatteryCharging, Cable, HardDrive, History, MonitorCog, Netw
 import { useState } from "react";
 import { useSessionState } from "../../session";
 import { euro } from "../../../sim/00-core/money";
-import { yearOf } from "../../../sim/00-core/time";
+import { monthIndexOf, yearOf } from "../../../sim/00-core/time";
 import { cardOf, cardWatts } from "../../../sim/10-catalog/gpu";
-import { brandFrom, brandUntil, wattsFactorOf, brandsOf, COMPONENTS, cpuWattsShift, fits, MANUFACTURERS, modelById, partOffers, shopModels, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { brandOnSale, brandFrom, brandUntil, wattsFactorOf, brandsOf, COMPONENTS, cpuWattsShift, fits, MANUFACTURERS, modelById, partOffers, shopModels, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
 import { VENDOR_NAME, type Vendor } from "../../../sim/10-catalog/cpus";
 import { partPrice } from "../../../sim/10-catalog/parts";
 import { lineParts, unitPrice, type CartLine } from "../../../sim/90-actions/hardware";
@@ -40,8 +40,8 @@ const SWAP = { raid: "In RAID", dual: "With two", yes: "Yes", no: "No" };
 interface Item { model: DeviceModel; brand: string; cls: string; part?: PartSpec }
 
 // Every model comes from each manufacturer that builds its kind; parts are sold sized.
-const items = (year: number): Item[] => [
-  ...shopModels(year).filter((m) => m.kind !== "part").flatMap((model) => brandsOf(model).map((brand) => ({ model, brand, cls: classOf(model) }))),
+const items = (year: number, month: number): Item[] => [
+  ...shopModels(year).filter((m) => m.kind !== "part").flatMap((model) => brandsOf(model).filter((brand) => brandOnSale(model, brand, month)).map((brand) => ({ model, brand, cls: classOf(model) }))),
   ...partOffers(year).map((part) => ({ model: modelById(`part-${part.kind}`), brand: "Generic", cls: "Parts", part })),
 ];
 const itemKey = (it: Item) => `${it.model.id}|${it.brand}|${it.part?.size ?? ""}|${it.part?.ff ?? ""}|${it.part?.vendor ?? ""}|${it.part?.gen ?? ""}`;
@@ -54,7 +54,7 @@ export function ShopApp() {
   const [used, setUsed] = useSessionState("shop.used", false);
   const pick = (m: string | null, c: string | null) => { setMaker(m); setCls(c); setSoftware(false); setUsed(false); };
   useFocus("Shop", (f) => { if (f.kind === "software") { pick(null, null); setSoftware(true); } });
-  const all = items(yearOf(hour));
+  const all = items(yearOf(hour), monthIndexOf(hour));
   const [filter, setFilter, clearFilter] = useFilter();
   const [sort, setSort] = useSessionState<Sort>("shop.sort", "default");
   const scoped = all.filter((it) => (!maker || it.brand === maker) && (!cls || it.cls === cls));
