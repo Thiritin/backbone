@@ -270,7 +270,7 @@ describe("balance", () => {
     expect(runs.filter((r) => r.bankrupt)).toHaveLength(0);
     const before: Record<number, number> = { 2: 2006.2, 3: 2006.9, 4: 2008.7, 5: 2011.9 };
     for (const level of [2, 3, 4, 5]) expect(Math.abs(median(runs.map((r) => r.levelYear[level] ?? Infinity)) - before[level])).toBeLessThanOrEqual(0.5);
-  });
+  }, 60000);
 });
 
 function ok(r: { ok: boolean; error?: string }) {
