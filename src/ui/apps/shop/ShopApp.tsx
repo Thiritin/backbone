@@ -9,6 +9,8 @@ import { partPrice } from "../../../sim/10-catalog/parts";
 import { lineParts, unitPrice, type CartLine } from "../../../sim/90-actions/hardware";
 import { Cart, Stepper } from "./Cart";
 import { Software } from "./Software";
+import { ShopFilter, useFilter } from "./FilterBar";
+import { matchesFilter } from "./filter";
 import { lineOf } from "../../art/fronts";
 import { Isometric } from "../../art/Isometric";
 import { BrandLogo } from "../../art/logos";
@@ -47,7 +49,10 @@ export function ShopApp() {
   const pick = (m: string | null, c: string | null) => { setMaker(m); setCls(c); setSoftware(false); };
   useFocus("Shop", (f) => { if (f.kind === "software") { pick(null, null); setSoftware(true); } });
   const all = items(yearOf(hour));
-  const shown = all.filter((it) => (!maker || it.brand === maker) && (!cls || it.cls === cls));
+  const [filter, setFilter, clearFilter] = useFilter();
+  const serverCls = !!cls && Object.values(LINE_NAME).includes(cls);
+  const scoped = all.filter((it) => (!maker || it.brand === maker) && (!cls || it.cls === cls));
+  const shown = serverCls ? scoped.filter((it) => matchesFilter(it.model, filter)) : scoped;
   const count = (f: (it: Item) => boolean) => all.filter(f).length;
   const [cartOpen, setCartOpen] = useState(false);
   const inCart = useStore((st) => st.cart.reduce((n, l) => n + l.qty, 0));
@@ -75,6 +80,7 @@ export function ShopApp() {
           <span className="grow" />
           <button className="btn ghost" aria-pressed={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingCart />Cart<span className="num shop-count">{inCart}</span></button>
         </div>
+        {serverCls && !software && <ShopFilter models={scoped.map((it) => it.model)} filter={filter} set={setFilter} clear={clearFilter} />}
         <div className="shop-body">
           {software ? <Software /> : (
             <div className="shop-grid">
