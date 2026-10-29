@@ -112,6 +112,8 @@ export interface GameState {
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
   tickets: Ticket[];
   playerBusyUntil: number;
+  // Favours asked of friends for datacenter hand work in a calendar year.
+  friendFavours: { year: number; used: number };
   downSince: Record<string, number>;
   // Cluster nodes frozen because their RAM in use exceeds the installed RAM.
   frozen: string[];
@@ -230,7 +232,7 @@ export const newGame = (seed: number): GameState => ({
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
   heldCustomers: [],
-  tickets: [], playerBusyUntil: 0, downSince: {}, frozen: [],
+  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "none" }, tagline: "" },
   homeLine: { id: "", next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
