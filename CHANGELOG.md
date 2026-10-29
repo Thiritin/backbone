@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The Marketing app opens on Channels once you learn Marketing campaigns, its Domain page has proper margins, and the skill sheet lists the six sections the skill adds.
 - The Backbone menu links to the new Discord server, where you can chat, share screenshots, request features and report bugs.
 - The browser tab shows the new Backbone logo.
 - A customer whose services all kept their SLA uptime through a month gains a little happiness at the billing date, so steady service slowly builds loyalty.
