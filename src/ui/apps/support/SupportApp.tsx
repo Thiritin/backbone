@@ -318,6 +318,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
   const sender = tk.notice && senderById(tk.notice.sender);
   const K = kindOf(tk.kind);
   const monthly = c ? monthlyValue(game.services, c.id) : 0;
+  const stray = tk.kind === "notice" && !tk.customerId;
   const left = tk.dueAt - game.hour;
   const services = game.services.filter((v) => v.customerId === tk.customerId && v.endedAt === null);
   const locked = !!tk.work || isFinal(tk);
@@ -431,13 +432,13 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
             </>
           )}
           <div className="actions-row">
-            {actionsOf(tk).filter((a) => a !== "revert" || tk.topic === "price").map((a) => (
+            {actionsOf(tk).filter((a) => (a !== "revert" || tk.topic === "price") && (!stray || a === "reject")).map((a) => (
               <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => act((s) => resolveTicket(s, tk.id, a))}>
                 {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}{a === "pay" && <span className="num">({euroCents(Number(p.ransom))})</span>}{a === "offerOnce" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updateOnce"))})</span>}{a === "offerManaged" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updates"))} a month)</span>}
               </button>
             ))}
             <span className="grow" />
-            <button className="btn ghost" disabled={locked} onClick={() => act((s) => closeTicket(s, tk.id))}><X />{tk.notice ? "Ignore" : "Close"}</button>
+            {!stray && <button className="btn ghost" disabled={locked} onClick={() => act((s) => closeTicket(s, tk.id))}><X />{tk.notice ? "Ignore" : "Close"}</button>}
             {tk.status === "waiting" && tk.kind !== "migration" && <button className="btn primary" disabled={locked} onClick={() => act((s) => resolveTicket(s, tk.id))}><CircleCheck />Resolve</button>}
             {tk.status === "open" && templatesOf(tk).length > 0 && (
               <button className="btn primary" disabled={locked || !tpl} onClick={() => act((s) => replyTicket(s, tk.id, tpl!))}><Send />Send reply</button>

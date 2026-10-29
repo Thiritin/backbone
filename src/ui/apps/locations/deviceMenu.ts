@@ -60,7 +60,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
       m.kind !== "patch" && d.on && !!pduOf(game, d) && { label: "Power cycle", run: () => ui.op("cycle") },
       m.kind !== "patch" && !!(d.rackId || d.panel) && techItem(game, d.id, d.on ? "off" : "on"),
     ]),
-    server && !d.on && !!(d.rackId || d.store) && ui.lid && { label: "Open chassis", run: ui.lid },
+    server && !!(d.rackId || d.store) && ui.lid && { label: "Change parts", disabled: d.on, run: ui.lid },
     ...psus.map((c, i) => ({ label: `${isPlugged(c) ? "Unplug" : "Plug in"} ${psus.length > 1 ? `power supply ${i + 1}` : "power supply"}`, run: () => ui.plug(c.id) })),
     null,
     server && !!d.rackId && { label: "Add Software…", run: ui.setup },

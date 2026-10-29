@@ -83,6 +83,8 @@ const POWER = {
 } as const;
 
 // onHot reports the cable of the hovered or selected port, so the rack view can highlight it. rename opens the name field.
+type InspTab = "actions" | "software" | "lease" | "psu" | "raid" | "parts";
+
 export function Inspector({ game, device, side = "front", onSelect, onHot, rename = false, onRenaming }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void; rename?: boolean; onRenaming?: () => void }) {
   const act = useStore((s) => s.act);
   const [sel, setSel] = useState<number[]>([]);
@@ -99,7 +101,16 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
   useEffect(() => { onHot?.(hot); }, [hot, onHot]);
   useEffect(() => () => onHot?.(null), [onHot]);
   const where = device.panel ? "Carrier panel" : model.height > 1 ? `U${device.slot}–U${device.slot + model.height - 1}` : `U${device.slot}`;
-  const powered = model.kind !== "patch";
+  const powered = model.kind !== "patch", server = model.kind === "server";
+  const togglePower = () => (isServerInRack(device) ? menus.op(device, device.on ? "shutdown" : "on") : menus.power(device, !device.on));
+  const [picked, setTab] = useState<InspTab>("actions");
+  const tabs = server ? ([
+    ["actions", "Actions"], !!device.rackId && ["software", "Software"], !!device.lease && ["lease", "Lease"],
+    ["psu", "Power supplies"], drivesOf(device).length > 0 && ["raid", "RAID"], ["parts", "Components"],
+  ].filter(Boolean) as [InspTab, string][]) : [];
+  const tab = tabs.some(([id]) => id === picked) ? picked : "actions";
+  // Devices other than servers keep every section on one page.
+  const show = (t: InspTab) => !server || tab === t;
 
   return (
     <div className="insp">
@@ -107,13 +118,17 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         {model.kind !== "gateway" && <BrandLogo brand={device.brand} size={20} />}
         <LabelEdit device={device} editing={editing} onEditing={setEditing} />
         <span className="grow" />
-        {model.kind === "server" && !device.on && !!(device.rackId || device.store) && <button className="btn" onClick={() => menus.lid(device)}><PackageOpen />Open chassis</button>}
+        {server && !!(device.rackId || device.store) && (
+          <span title={device.on ? "Power down the server first" : undefined}>
+            <button className="btn" disabled={device.on} onClick={() => menus.lid(device)}><PackageOpen />Change parts</button>
+          </span>
+        )}
         {powered && !isServerInRack(device) && device.on && !!pduOf(game, device) && (
           <button className="btn ghost icon" aria-label="Power cycle" title="Power cycle" onClick={() => menus.op(device, "cycle")}><RotateCw /></button>
         )}
         {powered && (
           <button className={`btn ghost icon insp-power${device.on ? " on" : ""}`} aria-label={device.on ? "Shut down" : "Power on"} title={device.on ? "Shut down" : "Power on"}
-            disabled={!device.rackId && !device.panel} onClick={() => (isServerInRack(device) ? menus.op(device, device.on ? "shutdown" : "on") : menus.power(device, !device.on))}>
+            disabled={!device.rackId && !device.panel} onClick={togglePower}>
             <Power />
           </button>
         )}
@@ -125,18 +140,26 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       </div>
 
       <div className={`loc-face${model.kind === "server" ? " wide" : ""}`} onContextMenu={menuOn(menu)}>
-        <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={440} u={40} back={side === "back"} />
+        <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={440} u={40} back={side === "back"}
+          onPower={server && (device.rackId || device.panel) ? togglePower : undefined} />
         {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} />}
       </div>
 
+      {tabs.length > 0 && (
+        <div className="tabs" role="tablist" aria-label="Server">
+          {tabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>{label}</button>)}
+        </div>
+      )}
+
+      {show("actions") && <>
       {powered && <Status game={game} device={device} />}
-      {(model.kind === "server" || model.kind === "switch" || model.kind === "firewall") && (
-        <UsageBars usage={usageOf(game, [device])} only={model.kind === "server" ? undefined : ["net"]} wide />
+      {(server || model.kind === "switch" || model.kind === "firewall") && (
+        <UsageBars usage={usageOf(game, [device])} only={server ? undefined : ["net"]} wide />
       )}
 
       {isServerInRack(device) && <PowerCard game={game} device={device} onOp={(op) => menus.op(device, op)} />}
-      {model.kind === "server" && <PortTable game={game} device={device} peers={peers} sel={sel} onPick={pick} onHover={setHover} onSelect={onSelect} />}
-      {model.kind === "server" && model.ports.length > 1 && (
+      {server && <PortTable game={game} device={device} peers={peers} sel={sel} onPick={pick} onHover={setHover} onSelect={onSelect} />}
+      {server && model.ports.length > 1 && (
         <div className="loc-row insp-bond">
           <span className="loc-k">Bond</span>
           <div className="seg" role="group" aria-label="Bond mode">
@@ -158,20 +181,21 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       ) : sel.length === 1 ? (
         <PortCard game={game} device={device} model={model} port={sel[0]} peer={peers[sel[0]]} onSelect={onSelect} />
       ) : null}
+      {server && <NodeCard game={game} device={device} />}
+      </>}
 
-      {model.kind === "server" && device.rackId && (
+      {show("software") && server && device.rackId && (
         <div className="loc-card">
           <div className="loc-card-h"><h3>Software</h3></div>
           <SoftwareGrid game={game} machineId={device.id} />
         </div>
       )}
-      {model.kind === "server" && <NodeCard game={game} device={device} />}
-      {device.lease && <LeaseCard game={game} leaseId={device.lease} />}
-      {powered && <PowerSupplies game={game} device={device} onPlug={(psu) => menus.plug(device, psu)} />}
-      {model.kind === "server" && drivesOf(device).length > 0 && <RaidCard game={game} device={device} />}
-      {device.components.length > 0 && <PartsCard game={game} device={device} />}
+      {show("lease") && device.lease && <LeaseCard game={game} leaseId={device.lease} />}
+      {show("psu") && powered && <PowerSupplies game={game} device={device} onPlug={(psu) => menus.plug(device, psu)} />}
+      {show("raid") && server && drivesOf(device).length > 0 && <RaidCard game={game} device={device} />}
+      {show("parts") && device.components.length > 0 && <PartsCard game={game} device={device} />}
 
-      <div className="loc-card">
+      {show("parts") && <div className="loc-card">
         <div className="loc-card-h"><h3>Specifications</h3></div>
         <Facts rows={[
           ...(model.server ? [["CPU", `${model.server.sockets} × ${cores(model.server.cores / model.server.sockets)}`], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${bayCount(model.server)} bays`]] as [string, string][] : []),
@@ -181,7 +205,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
           ...(device.price ? [["Paid", euro(device.price)]] as [string, string][] : []),
           ...(supportEnd(model) !== null ? [["End of support", `${supportEnd(model)}`]] as [string, string][] : []),
         ].map(([k, v]): [string, ReactNode] => [k, <span className="num">{v}</span>])} />
-      </div>
+      </div>}
       {menus.dialog}
     </div>
   );
