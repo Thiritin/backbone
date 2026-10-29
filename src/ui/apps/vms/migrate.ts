@@ -28,8 +28,8 @@ export function migrateEntries(game: GameState, w: Workload): MenuEntry[] {
   const loc = d && locationOf(game, d), tech = !!loc && techsAt(game, loc.id, OP_TASK.migrate).length > 0;
   const label = (t: (typeof targets)[number]) => `${t.panel} on ${t.name}, ${hoursText(t.hours)}`;
   return [
-    { label: "Migrate to", items: targets.map((t) => ({ label: label(t), run: () => act((g) => migrateWebspace(g, w.id, t.clusterId)) })) },
-    tech && { label: "Migrate by technician to", items: targets.map((t) => ({ label: label(t), run: () => act((g) => queueMigration(g, w.id, t.clusterId)) })) },
+    { label: "Migrate to", items: targets.map((t) => ({ label: label(t), run: () => act(migrateWebspace, w.id, t.clusterId) })) },
+    tech && { label: "Migrate by technician to", items: targets.map((t) => ({ label: label(t), run: () => act(queueMigration, w.id, t.clusterId) })) },
   ];
 }
 
@@ -43,7 +43,7 @@ export function offerEntries(game: GameState, w: Workload): MenuEntry[] {
   const act = useStore.getState().act, serviceId = w.serviceId, targets = moveTargets(game, w.id);
   if (!targets.length) return [];
   if (game.tickets.some((t) => t.kind === "migration" && t.serviceId === serviceId && t.status === "waiting")) return [{ label: "Migration offered", disabled: true }];
-  return [{ label: "Offer migration", items: targets.map((t) => ({ label: targetLabel(game, t, w.clusterId), run: () => act((g) => offerMigration(g, serviceId, t.to)) })) }];
+  return [{ label: "Offer migration", items: targets.map((t) => ({ label: targetLabel(game, t, w.clusterId), run: () => act(offerMigration, serviceId, t.to) })) }];
 }
 
 // "Announce migration": offers every service on a host (a node's device id or a panel host's cluster id) the same move.
@@ -53,5 +53,5 @@ export function announceEntries(game: GameState, hostId: string): MenuEntry[] {
   const targets = new Map<string, MoveTarget>();
   for (const w of loads) for (const t of moveTargets(game, w.id)) targets.set(t.to, t);
   if (!targets.size) return [];
-  return [{ label: "Announce migration", items: [...targets.values()].map((t) => ({ label: targetLabel(game, t, null), run: () => act((g) => announceMigration(g, hostId, t.to)) })) }];
+  return [{ label: "Announce migration", items: [...targets.values()].map((t) => ({ label: targetLabel(game, t, null), run: () => act(announceMigration, hostId, t.to) })) }];
 }

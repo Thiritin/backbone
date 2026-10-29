@@ -66,6 +66,7 @@ export function deserialize(raw: string): GameState {
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
     company: { ...base.company, ...data.company },
+    score: { ...base.score, ...data.score },
     network: { ...base.network, ...data.network },
     ops: { ...base.ops, ...data.ops },
     security: { ...base.security, ...data.security },

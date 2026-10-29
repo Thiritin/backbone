@@ -39,10 +39,10 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
   const add = () => {
     if (!dc) return;
     if (!open(n)) {
-      if (act((s) => joinWaitlist(s, dc.id, k, n)).ok) { notify("Locations", "Joined waitlist", `${dc.name}, ${spaceSize(k, n)}`); onClose(); }
+      if (act(joinWaitlist, dc.id, k, n).ok) { notify("Locations", "Joined waitlist", `${dc.name}, ${spaceSize(k, n)}`); onClose(); }
       return;
     }
-    const r = act((s) => addLocation(s, dc.id, k, n));
+    const r = act(addLocation, dc.id, k, n);
     if (r.ok && r.id) onAdded(r.id);
   };
 

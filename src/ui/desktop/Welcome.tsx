@@ -9,7 +9,7 @@ import { PearMark } from "./Intro";
 export function Welcome() {
   const { game, act, closeWelcome } = useStore();
   const [draft, setDraft] = useState(game.company);
-  const done = () => { if (act((s) => setCompany(s, draft)).ok) closeWelcome(); };
+  const done = () => { if (act(setCompany, draft).ok) closeWelcome(); };
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => e.key === "Escape" && closeWelcome();

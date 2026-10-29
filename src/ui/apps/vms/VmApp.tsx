@@ -37,15 +37,15 @@ export function workloadActions(game: GameState, w: Workload): MenuEntry[] {
   const targets = !web && (on || st === "stopped") ? migrationTargets(game, w.id) : [];
   const where = (id: string) => game.clusters.find((c) => c.id === id)?.name;
   return [
-    st === "lost" && { label: w.backupAt === null ? "Start empty" : "Restore", run: () => act((g) => restoreWorkload(g, w.id)) },
-    st === "stopped" && { label: "Start", run: () => act((g) => startWorkload(g, w.id)) },
-    on && { label: "Stop", run: () => act((g) => stopWorkload(g, w.id)) },
+    st === "lost" && { label: w.backupAt === null ? "Start empty" : "Restore", run: () => act(restoreWorkload, w.id) },
+    st === "stopped" && { label: "Start", run: () => act(startWorkload, w.id) },
+    on && { label: "Stop", run: () => act(stopWorkload, w.id) },
     ...(web && (on || st === "stopped" || st === "migrating") ? migrateEntries(game, w) : []),
     targets.length > 0 && {
       label: "Migrate to",
       items: targets.map((t) => ({
         label: t.to !== t.clusterId && t.clusterId !== w.clusterId ? `${t.name} · ${where(t.clusterId)}` : t.name,
-        run: () => act((g) => migrateWorkload(g, w.id, t.to)),
+        run: () => act(migrateWorkload, w.id, t.to),
       })),
     },
     ...offerEntries(game, w),
@@ -57,7 +57,7 @@ function vmMenu(game: GameState, w: Workload): MenuEntry[] {
   return [
     ...workloadActions(game, w), null,
     v && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: v.customerId }) },
-    !v && !hostOfVm(game, w.id) && { label: "Delete", run: () => act((g) => deleteVm(g, w.id)) },
+    !v && !hostOfVm(game, w.id) && { label: "Delete", run: () => act(deleteVm, w.id) },
   ];
 }
 
@@ -184,15 +184,15 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
       <section className="fin-card">
         <div className="fin-card-h">Power</div>
         <div className="fin-card-b act-tiles">
-          <ActionTile icon={Power} label="Power on" disabled={st !== "stopped"} onClick={() => act((g) => startWorkload(g, w.id))} />
-          <ActionTile icon={PowerOff} label="Shut down" disabled={!(st === "running" || st === "down" || st === "frozen")} onClick={() => act((g) => stopWorkload(g, w.id))} />
+          <ActionTile icon={Power} label="Power on" disabled={st !== "stopped"} onClick={() => act(startWorkload, w.id)} />
+          <ActionTile icon={PowerOff} label="Shut down" disabled={!(st === "running" || st === "down" || st === "frozen")} onClick={() => act(stopWorkload, w.id)} />
         </div>
       </section>
       <section className="fin-card">
         <div className="fin-card-h">Load today</div>
         <div className="fin-card-b"><Sparkline values={load} from={from} w={250} /></div>
       </section>
-      {st === "lost" && <div className="fin-actions"><button className="btn primary" onClick={() => act((g) => restoreWorkload(g, w.id))}><RotateCcw />{w.backupAt === null ? "Start empty" : "Restore"}</button></div>}
+      {st === "lost" && <div className="fin-actions"><button className="btn primary" onClick={() => act(restoreWorkload, w.id)}><RotateCcw />{w.backupAt === null ? "Start empty" : "Restore"}</button></div>}
       {!v && (
         <section className="fin-card">
           <div className="fin-card-h">Software</div>
@@ -210,7 +210,7 @@ function NewVm({ game, clusterId, onDone }: { game: GameState; clusterId: string
   const act = useStore((s) => s.act);
   const clouds = game.clusters.filter((c) => c.kind === "cloud");
   const [on, setOn] = useState(clusterId), [size, setSize] = useState<Resources>(PANEL_VM_SIZE);
-  const create = () => { if (!on) return; const r = act((g) => createVm(g, on, size)); if (r.ok) onDone(r.id!); };
+  const create = () => { if (!on) return; const r = act(createVm, on, size); if (r.ok) onDone(r.id!); };
   return (
     <aside className="fin-detail vm-detail">
       <div className="fin-detail-h"><h2>New VM</h2></div>

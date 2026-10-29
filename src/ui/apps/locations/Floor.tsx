@@ -69,7 +69,7 @@ function FreeTile({ loc, position, onBought }: { loc: Location; position: number
               <strong className="num">{m.units}U</strong>
               <span className="grow" />
               <span className="num">{euro(m.price)}</span>
-              <button className="btn primary" onClick={() => { const r = act((s) => buyRack(s, loc.id, m.id, position)); if (r.ok) { setOpen(false); if (r.id) onBought(r.id); } }}>Buy</button>
+              <button className="btn primary" onClick={() => { const r = act(buyRack, loc.id, m.id, position); if (r.ok) { setOpen(false); if (r.id) onBought(r.id); } }}>Buy</button>
             </div>
           ))}
         </div>

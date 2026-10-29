@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- Weekly challenge seeds start from the title screen, a run can be exported and replayed, and a leaderboard shows verified runs.
 - Workloads move between locations over a zone link or, from the basement, over the internet, and you can offer customers a migration they accept with a maintenance window.
 - The traffic chart in the Network app has space above the cards below it.
 - Free apps from the Pear Store install even while your cash is below zero.

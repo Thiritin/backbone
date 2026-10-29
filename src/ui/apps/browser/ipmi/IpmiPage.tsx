@@ -47,10 +47,10 @@ function PowerTab({ game, d }: { game: GameState; d: Device }) {
         <div><dt>Power</dt><dd className={`bmc-state ${d.on ? "on" : "off"}`}>{state}</dd></div>
       </dl>
       <div className="bmc-actions">
-        <button className="cx-btn primary" disabled={d.on} onClick={() => act((g) => setPower(g, d.id, true))}>Power on</button>
-        <button className="cx-btn" disabled={!d.on} onClick={() => act((g) => shutdown(g, d.id))}>Graceful shutdown</button>
-        <button className="cx-btn" disabled={!d.on} onClick={() => act((g) => reset(g, d.id))}>Reset</button>
-        <button className="cx-btn" disabled={!d.on} onClick={() => act((g) => powerCycle(g, d.id))}>Power cycle</button>
+        <button className="cx-btn primary" disabled={d.on} onClick={() => act(setPower, d.id, true)}>Power on</button>
+        <button className="cx-btn" disabled={!d.on} onClick={() => act(shutdown, d.id)}>Graceful shutdown</button>
+        <button className="cx-btn" disabled={!d.on} onClick={() => act(reset, d.id)}>Reset</button>
+        <button className="cx-btn" disabled={!d.on} onClick={() => act(powerCycle, d.id)}>Power cycle</button>
       </div>
     </>
   );

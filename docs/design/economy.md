@@ -42,6 +42,18 @@ A new game opens paused on 1 January 2005 at 00:00 with €3,500 in cash, an emp
 | Customers | None until the first hosting panel runs on a server the internet reaches. Then 3 friends (Jonas Weber, Mira Schulz and Tobi Kraus, private individuals) sign up for the 2 GB web hosting size at €6 a month on that cluster; happiness 85, and they always pay |
 
 
+### Weekly challenges
+
+A challenge starts from the normal starting state with one twist, chosen by ISO week number modulo 3. The figures are picked to bite without breaking the start: SDSL 2048 at €129 a month is the line a small hoster with a static address ordered in 2005, Hetzler Park is the cheapest Frankfurt datacenter at €180 a month for a position, and €2,000 does not cover the usual first server, so the player buys a smaller one or borrows.
+
+| Week modulo 3 | Twist |
+| --- | --- |
+| 0 | Home line SDSL 2048 already in from hour 0 |
+| 1 | Every datacenter except Hetzler Park starts at its 2005 capacity; competitors cancel and refill as usual afterwards |
+| 2 | Starting cash €2,000 |
+
+Scores count until 1 January 2008, 00:00: net worth then (rounded to the euro), the first day level 3 holds (checked once a day), and the mean of each hour's average happiness of active customers (rounded to a tenth). A replay passes when net worth is within €1, the level 3 day matches and happiness is within 0.1.
+
 ## Prices over time
 
 Every price in the GDD's Prices section is a 2026 value. Earlier years scale it by a 2005 multiplier, spread evenly over the 21 years between them:

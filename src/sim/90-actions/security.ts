@@ -2,6 +2,8 @@ import { bump } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { REBUILD_HOURS, REBUILT, RESTORE_HOURS, webOn } from "../60-infra/security";
 import type { ActionResult } from "./hardware";
+// Player actions on hacked sites and app advisories, kept with the app model.
+export { cleanSite, notifyCustomers } from "../60-infra/apps";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 

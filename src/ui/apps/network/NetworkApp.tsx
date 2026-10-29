@@ -199,10 +199,10 @@ function UplinkCard({ game, u, carried }: { game: GameState; u: Uplink; carried:
       <Meter load={cap ? carried / cap : 0} />
       <div className="shop-buy">
         <div className="seg" role="group" aria-label="Add link">
-          {speedsIn(year).map((g) => <button key={g} className="num" onClick={() => act((s) => addUplinkLink(s, u.id, g))}>+{g}G</button>)}
+          {speedsIn(year).map((g) => <button key={g} className="num" onClick={() => act(addUplinkLink, u.id, g)}>+{g}G</button>)}
         </div>
         <span className="grow" />
-        <button className="btn" onClick={() => act((s) => cancelUplink(s, u.id))}>Cancel</button>
+        <button className="btn" onClick={() => act(cancelUplink, u.id)}>Cancel</button>
       </div>
     </div>
   );
@@ -224,7 +224,7 @@ function TransitOrder({ game, loc, carrier }: { game: GameState; loc: Location; 
       <div className="mkt-row"><span className="mkt-label">Commit</span>
         <div className="seg" role="group" aria-label="Commit">{COMMITS.map((x) => <button key={x.share} className="num" aria-pressed={commit === x.share} onClick={() => setCommit(x.share)}>{pct(x.share)}</button>)}</div></div>
       <div className="shop-buy"><span className="num">From {euro(gbit * 1000 * commit * price)} / month</span><span className="grow" />
-        <button className="btn primary" onClick={() => act((s) => orderTransit(s, loc.id, carrier, gbit, commit))}>Order</button></div>
+        <button className="btn primary" onClick={() => act(orderTransit, loc.id, carrier, gbit, commit)}>Order</button></div>
     </div>
   );
 }
@@ -238,8 +238,8 @@ function ExchangeOrder({ game, loc }: { game: GameState; loc: Location }) {
   const member = game.network.memberships.includes(x.id);
   let action: ReactNode;
   if (!game.network.asn) action = <span className="pill">Needs an AS number</span>;
-  else if (!member) action = <button className="btn primary" disabled={game.cash < EXCHANGE_FEES.setup} onClick={() => act((s) => joinExchange(s, x.id))}>Join for {euro(EXCHANGE_FEES.setup)}</button>;
-  else action = <button className="btn primary" onClick={() => act((s) => orderExchangePort(s, loc.id, gbit))}>Order port</button>;
+  else if (!member) action = <button className="btn primary" disabled={game.cash < EXCHANGE_FEES.setup} onClick={() => act(joinExchange, x.id)}>Join for {euro(EXCHANGE_FEES.setup)}</button>;
+  else action = <button className="btn primary" onClick={() => act(orderExchangePort, loc.id, gbit)}>Order port</button>;
   return (
     <>
       <h3 className="mkt-h">Exchange</h3>
@@ -287,7 +287,7 @@ function ZoneLinkCard({ game, loc, other }: { game: GameState; loc: Location; ot
           <span className="num">{zl.kind === "fiber" ? "Dark fiber" : `${zl.gbit}G`}</span>
           <span className="num">{zl.readyAt > game.hour ? `From ${formatDay(zl.readyAt)}` : mbps(zl.carried)}</span>
           <span className="num">{euro(zoneLinkMonthly(game, zl))} / month</span>
-          <span className="grow" /><button className="btn" onClick={() => act((s) => cancelZoneLink(s, zl.id))}>Cancel</button>
+          <span className="grow" /><button className="btn" onClick={() => act(cancelZoneLink, zl.id)}>Cancel</button>
         </div>
       ))}
       <div className="mkt-row"><span className="mkt-label">Link</span>
@@ -295,7 +295,7 @@ function ZoneLinkCard({ game, loc, other }: { game: GameState; loc: Location; ot
           <button key={o.label} className="num" aria-pressed={choice.kind === o.kind && choice.gbit === o.gbit} onClick={() => setChoice(o)}>{o.label}</button>
         ))}</div></div>
       <div className="shop-buy"><span className="num">{euro(zoneLinkPrice(choice.kind, choice.gbit, same, year, overseas))} / month</span><span className="grow" />
-        <button className="btn primary" onClick={() => act((s) => orderZoneLink(s, loc.id, other.id, choice.kind, choice.gbit))}>Order</button></div>
+        <button className="btn primary" onClick={() => act(orderZoneLink, loc.id, other.id, choice.kind, choice.gbit)}>Order</button></div>
     </div>
   );
 }
@@ -349,8 +349,8 @@ function Peering({ game }: { game: GameState }) {
                 <div className="mkt-head"><strong>{p.name}</strong><span className="pill">{exchangeById(r.exchange)!.name}</span></div>
                 <PeerFacts p={p} />
                 <div className="shop-buy"><span className="num">{formatDay(r.at)}</span><span className="grow" />
-                  <button className="btn" onClick={() => act((s) => rejectPeering(s, r.id))}>Reject</button>
-                  <button className="btn primary" onClick={() => act((s) => acceptPeering(s, r.id))}>Accept</button></div>
+                  <button className="btn" onClick={() => act(rejectPeering, r.id)}>Reject</button>
+                  <button className="btn primary" onClick={() => act(acceptPeering, r.id)}>Accept</button></div>
               </div>
             );
           })}
@@ -365,7 +365,7 @@ function Peering({ game }: { game: GameState }) {
             let state: ReactNode;
             if (session) state = <span className="pill ok">Peering</span>;
             else if (coolingDown(game, p.id)) state = <span className="pill">Declined</span>;
-            else state = <button className="btn primary" onClick={() => act((s) => requestPeering(s, p.id, at))}>Ask</button>;
+            else state = <button className="btn primary" onClick={() => act(requestPeering, p.id, at)}>Ask</button>;
             return (
               <div key={p.id} className="shop-card">
                 <div className="mkt-head"><strong>{p.name}</strong><span className="pill">{exchangeById(at)!.name}</span></div>
@@ -403,7 +403,7 @@ function Ddos({ game }: { game: GameState }) {
                 <div><dt>Per attack</dt><dd className="num">{euro(def?.perIncident ?? 0)}</dd></div>
               </dl>
               <div className="shop-buy"><span className="grow" />
-                {n.protection === p ? <span className="pill ok">Active</span> : <button className="btn" onClick={() => act((s) => setProtection(s, p))}>Switch</button>}</div>
+                {n.protection === p ? <span className="pill ok">Active</span> : <button className="btn" onClick={() => act(setProtection, p)}>Switch</button>}</div>
             </div>
           );
         })}
@@ -423,7 +423,7 @@ function Ddos({ game }: { game: GameState }) {
                   <div><dt>Ends</dt><dd className="num">{formatDay(a.endsAt)}</dd></div>
                 </dl>
                 <div className="shop-buy"><span className="grow" />
-                  <button className={`btn${a.blackholed ? "" : " primary"}`} onClick={() => act((s) => setBlackhole(s, a.id, !a.blackholed))}>{a.blackholed ? "Lift blackhole" : "Blackhole"}</button></div>
+                  <button className={`btn${a.blackholed ? "" : " primary"}`} onClick={() => act(setBlackhole, a.id, !a.blackholed)}>{a.blackholed ? "Lift blackhole" : "Blackhole"}</button></div>
               </div>
             );
           })}

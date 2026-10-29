@@ -15,7 +15,7 @@ export function NoteApp({ id }: { id: string }) {
     const text = pending.current;
     pending.current = null;
     const { game, act } = useStore.getState();
-    if (text !== null && game.docs.some((d) => d.id === id)) act((s) => editNote(s, id, { body: text }));
+    if (text !== null && game.docs.some((d) => d.id === id)) act(editNote, id, { body: text });
   };
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export function NoteTitle({ id }: { id: string }) {
       onDoubleClick={(e) => e.stopPropagation()}
       onChange={(e) => {
         setDraft(e.target.value);
-        if (e.target.value.trim()) act((s) => editNote(s, id, { title: e.target.value }));
+        if (e.target.value.trim()) act(editNote, id, { title: e.target.value });
       }}
       onBlur={() => setDraft(null)}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur(); }}

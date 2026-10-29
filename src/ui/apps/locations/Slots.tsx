@@ -85,9 +85,9 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                     <td className="r">
                       <span className="loc-acts">
                         {busy ? null : block !== null ? <span className="loc-muted">{block}</span>
-                          : <button className="btn" onClick={() => act((gm) => replaceComponent(gm, device.id, c.id))}>Replace</button>}
+                          : <button className="btn" onClick={() => act(replaceComponent, device.id, c.id)}>Replace</button>}
                         {!busy && spareFor(c) && <TechButton game={game} deviceId={device.id} kind="replace" componentId={c.id} />}
-                        {removable && (device.rackId && device.on && !hot ? null : <button className="btn" onClick={() => act((gm) => removePart(gm, device.id, c.id))}>Remove</button>)}
+                        {removable && (device.rackId && device.on && !hot ? null : <button className="btn" onClick={() => act(removePart, device.id, c.id)}>Remove</button>)}
                         {removable && !!device.rackId && <TechButton game={game} deviceId={device.id} kind="part" componentId={c.id} />}
                       </span>
                     </td>
@@ -114,7 +114,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                         const spec = spareSpec(d), n = fitting.filter((x) => samePart(spareSpec(x), spec)).length;
                         return (
                           <Fragment key={d.id}>
-                            <button className="btn" disabled={cold(d)} onClick={() => { act((gm) => installPart(gm, device.id, d.id)); setAdding(null); }}>
+                            <button className="btn" disabled={cold(d)} onClick={() => { act(installPart, device.id, d.id); setAdding(null); }}>
                               {partLabel(spec)}{n > 1 && <span className="num"> × {n}</span>}<span className="num loc-muted"> {euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour)))}</span>
                             </button>
                             {!!device.rackId && <TechButton game={game} deviceId={device.id} kind="part" partId={d.id} />}

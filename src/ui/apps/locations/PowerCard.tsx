@@ -38,9 +38,9 @@ export function PowerCard({ game, device, onOp }: { game: GameState; device: Dev
                 <td className="loc-muted">{w.recoverDoneAt !== undefined ? "Recovering" : w.recoverFailed ? "Needs restore" : "Corrupted"}</td>
                 <td className="insp-power-acts">
                   {w.recoverFailed
-                    ? <button className="btn" onClick={() => act((g) => restoreWorkload(g, w.id))}>Restore</button>
+                    ? <button className="btn" onClick={() => act(restoreWorkload, w.id)}>Restore</button>
                     : w.recoverDoneAt === undefined && <>
-                      <button className="btn" onClick={() => act((g) => recover(g, w.id))}>Recover</button>
+                      <button className="btn" onClick={() => act(recover, w.id)}>Recover</button>
                       <TechButton game={game} deviceId={device.id} kind="recover" componentId={w.id} />
                     </>}
                 </td>

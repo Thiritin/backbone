@@ -33,10 +33,10 @@ function ListingCard({ game, l, to }: { game: GameState; l: Listing; to: string 
   const [max, setMax] = useState(Math.ceil((bid * 1.1) / 10) * 10);
   const name = `${l.qty > 1 ? `${l.qty} × ` : ""}${m.name}`;
   const buy = () => {
-    if (act((s) => buyListing(s, l.id, to)).ok) notify("Shop", `${name} bought`, `Arrives ${day(game.hour + shipHours(l, city))}`);
+    if (act(buyListing, l.id, to).ok) notify("Shop", `${name} bought`, `Arrives ${day(game.hour + shipHours(l, city))}`);
   };
   const place = () => {
-    if (act((s) => bidListing(s, l.id, max, to)).ok) notify("Shop", `Bid on ${name}`, `Maximum ${euro(max)}`);
+    if (act(bidListing, l.id, max, to).ok) notify("Shop", `Bid on ${name}`, `Maximum ${euro(max)}`);
   };
   const rows: [string, string][] = [
     ["Age", years(l.age)],
@@ -87,7 +87,7 @@ function Mine({ l }: { l: Listing }) {
         <span className="num shop-muted">{l.channel === "ebuy" ? `Starts at ${euro(l.price)}` : `Ask ${euro(l.price)}`} · Until {day(l.expiresAt)}</span>
       </div>
       <span className="grow" />
-      <button className="btn" onClick={() => act((s) => cancelListing(s, l.id))}><X />Take down</button>
+      <button className="btn" onClick={() => act(cancelListing, l.id)}><X />Take down</button>
     </div>
   );
 }
@@ -135,7 +135,7 @@ export function ListForSale({ game, id, onDone }: { game: GameState; id: string;
   const [channel, setChannel] = useState<"board" | "ebuy">("board");
   const [ask, setAsk] = useState(Math.round(value * SELL_ASK));
   const list = () => {
-    if (!act((s) => listForSale(s, id, channel, channel === "board" ? ask : undefined)).ok) return;
+    if (!act(listForSale, id, channel, channel === "board" ? ask : undefined).ok) return;
     notify("Shop", `${d.name} listed`, channelName(channel));
     onDone();
   };

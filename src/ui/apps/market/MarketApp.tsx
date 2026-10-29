@@ -123,7 +123,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
         </dl>
         <div className="shop-buy">
           <span className="grow" />
-          <button className="btn primary" disabled={game.cash < cost} onClick={() => act((s) => buyStudy(s, profile))}>Buy study</button>
+          <button className="btn primary" disabled={game.cash < cost} onClick={() => act(buyStudy, profile)}>Buy study</button>
         </div>
       </div>
     );

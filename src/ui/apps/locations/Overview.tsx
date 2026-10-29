@@ -41,8 +41,8 @@ export function Waitlist({ game, onOpen }: { game: GameState; onOpen: (id: strin
             {w.heldUntil !== null
               ? <span className="loc-held">Held until <span className="num">{day(w.heldUntil)}</span></span>
               : <span className="loc-muted">Waiting since <span className="num">{day(w.since)}</span></span>}
-            {w.heldUntil !== null && <button className="btn primary" onClick={() => { const r = act((s) => addLocation(s, w.dc, w.space, w.size)); if (r.ok && r.id) onOpen(r.id); }}>Rent</button>}
-            <button className="btn" onClick={() => act((s) => leaveWaitlist(s, w.id))}>Leave</button>
+            {w.heldUntil !== null && <button className="btn primary" onClick={() => { const r = act(addLocation, w.dc, w.space, w.size); if (r.ok && r.id) onOpen(r.id); }}>Rent</button>}
+            <button className="btn" onClick={() => act(leaveWaitlist, w.id)}>Leave</button>
           </div>
         );
       })}

@@ -36,7 +36,7 @@ export function Cart() {
   const offer = offers.find((o) => o.id === pay);
   const best = Math.min(...offers.map((o) => o.total));
   const checkout = () => {
-    const r = act((s) => buyCart(s, cart, offer ? { kind: "lease", offerId: offer.id } : { kind: "cash" }, dest.id));
+    const r = act(buyCart, cart, offer ? { kind: "lease", offerId: offer.id } : { kind: "cash" }, dest.id);
     if (!r.ok) return;
     clearCart();
     setPay("cash");

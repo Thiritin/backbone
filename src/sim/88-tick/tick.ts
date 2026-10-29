@@ -35,6 +35,7 @@ import { skillById } from "../10-catalog/research";
 import { KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
 import { capacityAt, DATACENTERS, datacenterById, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry } from "../50-state";
+import { scoreTick } from "../80-business/scores";
 import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
 
 export interface SimEvent {
@@ -274,5 +275,6 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...newsTick(state));
   events.push(...salesTick(state));
   events.push(...usedTick(state));
+  scoreTick(state);
   return events;
 }

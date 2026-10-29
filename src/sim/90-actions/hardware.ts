@@ -428,6 +428,14 @@ export function shutdown(s: GameState, deviceId: string): ActionResult {
   return { ok: true };
 }
 
+export const powerOn = (s: GameState, deviceId: string): ActionResult => setPower(s, deviceId, true);
+
+// A reboot from the operating system: a clean shutdown, then the server boots again.
+export function restart(s: GameState, deviceId: string): ActionResult {
+  const r = shutdown(s, deviceId);
+  return r.ok ? setPower(s, deviceId, true) : r;
+}
+
 // Reboots (reset) or cycles the power (powerCycle) through the management controller, or with a technician at the machine.
 function reboot(s: GameState, deviceId: string, key: "ipmi.log.reset" | "ipmi.log.cycle", technician: boolean): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);

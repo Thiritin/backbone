@@ -28,7 +28,7 @@ function RateRow({ product, unit, mine, market }: { product: Product; unit: Unit
   useEffect(() => setText(mine === undefined ? "" : String(mine)), [mine]);
   const commit = () => {
     const v = text.trim() === "" ? null : Number(text.replace(",", "."));
-    if (v === null ? mine !== undefined : v !== mine) act((s) => setRate(s, product, unit, v));
+    if (v === null ? mine !== undefined : v !== mine) act(setRate, product, unit, v);
   };
   const side = mine !== undefined && market > 0 ? marketSide(mine, market) : null;
   return (
@@ -59,7 +59,7 @@ export function Rates({ game }: { game: GameState }) {
               <div className="fin-card-h">
                 {PRODUCT[p]}
                 <span className="grow" />
-                <button className="btn" disabled={!Object.keys(mine).length} onClick={() => act((s) => resetRates(s, p))}>Market rates</button>
+                <button className="btn" disabled={!Object.keys(mine).length} onClick={() => act(resetRates, p)}>Market rates</button>
               </div>
               <div className="fin-card-b">
                 {UNITS[p].map((u) => <RateRow key={u} product={p} unit={u} mine={mine[u]} market={market[u] ?? 0} />)}

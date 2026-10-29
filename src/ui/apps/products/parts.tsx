@@ -145,7 +145,7 @@ export function IncidentReports({ game }: { game: GameState }) {
                       </td>
                       <td className="r">
                         <span className="fin-pills">
-                          {lost && <button className="btn" onClick={() => act((g) => restoreWorkload(g, i.workloadId))}>{i.backupAt === null ? "Start empty" : "Restore"}</button>}
+                          {lost && <button className="btn" onClick={() => act(restoreWorkload, i.workloadId)}>{i.backupAt === null ? "Start empty" : "Restore"}</button>}
                         </span>
                       </td>
                     </tr>

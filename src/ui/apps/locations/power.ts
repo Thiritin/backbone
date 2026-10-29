@@ -3,7 +3,7 @@ import { BMC_NAME, hasBmc, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState } from "../../../sim/50-state";
 import { pduOf } from "../../../sim/60-infra/pdu";
 import { working } from "../../../sim/60-infra/status";
-import { powerCycle, pullPower, reset, resetBmc, setPower, shutdown, type ActionResult } from "../../../sim/90-actions/hardware";
+import { powerCycle, powerOn, pullPower, reset, resetBmc, shutdown, type ActionResult } from "../../../sim/90-actions/hardware";
 
 export type PowerOp = "on" | "shutdown" | "reset" | "cycle" | "pull" | "bmc";
 export const POWER_LABEL: Record<PowerOp, string> = { on: "Power on", shutdown: "Shut down", reset: "Reset", cycle: "Power cycle", pull: "Pull power", bmc: "Reset controller" };
@@ -11,7 +11,7 @@ export const POWER_ICON: Record<PowerOp, LucideIcon> = { on: Power, shutdown: Po
 export interface PowerOption { op: PowerOp; label: string; disabled?: boolean }
 
 export const POWER_ACTION: Record<PowerOp, (g: GameState, id: string) => ActionResult> = {
-  on: (g, id) => setPower(g, id, true), shutdown, reset, cycle: powerCycle, pull: pullPower, bmc: resetBmc,
+  on: powerOn, shutdown, reset, cycle: powerCycle, pull: pullPower, bmc: resetBmc,
 };
 
 // The power actions of a mounted server: through its management controller when it has one that answers, on site otherwise.

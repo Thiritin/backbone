@@ -2,11 +2,13 @@ import { monthNet, pickSound, playSound, soundFor, type Sound } from "./sounds";
 import { useEffect } from "react";
 import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
-import { startGame as newCompany } from "../sim/90-actions/start";
+import { startChallenge as newChallenge, startGame as newCompany } from "../sim/90-actions/start";
+import { weeklyChallenge } from "../sim/10-catalog/challenges";
 import { tick } from "../sim/88-tick/tick";
 import { isAlert } from "../sim/alerts";
 import { typeOf } from "./notify-types";
 import { deserialize, serialize } from "../sim/91-save/save";
+import { actionName, runAction } from "../sim/90-actions/index";
 import { SPEEDS, type Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
 import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
@@ -61,7 +63,8 @@ interface Store {
   explain: string | null;
   setExplain: (id: string | null) => void;
   advance: (hours: number) => void;
-  act: (fn: (s: GameState) => ActionResult) => ActionResult;
+  // Runs a 90-actions function on a copy of the game with these arguments; a success is kept and logged for replays.
+  act: <A extends unknown[]>(fn: (s: GameState, ...args: A) => ActionResult, ...args: A) => ActionResult;
   setSpeed: (s: Speed) => void;
   openApp: (app: string, focus?: Omit<Focus, "n">) => void;
   // Opens a desktop document: the guide in Getting started, a note in its own Notes window.
@@ -80,6 +83,8 @@ interface Store {
   clearUnseen: () => void;
   save: () => void;
   startGame: () => void;
+  // Starts this week's challenge: its seed and twist.
+  startChallenge: () => void;
   importSave: (raw: string) => void;
   deleteProgress: () => void;
   cart: CartLine[];
@@ -212,9 +217,11 @@ export const useStore = create<Store>((set, get) => ({
     else if (alert) set(({ speed, alert: open, resume }) => ({ game, alert: open ?? alert, speed: 0, resume: open ? resume : speed }));
     else set({ game });
   },
-  act: (fn) => {
+  act: (fn, ...args) => {
     const game = structuredClone(get().game);
-    const r = fn(game);
+    const name = actionName(fn);
+    if (!name) console.error(`${fn.name || "An action"} is not in ACTIONS, so replays miss it.`);
+    const r = name ? runAction(game, name, args) : fn(game, ...args);
     if (r.ok) set({ game });
     else get().notify("Settings", t("action.failed.title"), t(r.error));
     return r;
@@ -295,6 +302,10 @@ export const useStore = create<Store>((set, get) => ({
   },
   startGame: () => {
     set({ ...fresh(), game: newCompany(Date.now() >>> 0), started: true, welcome: true });
+    get().save();
+  },
+  startChallenge: () => {
+    set({ ...fresh(), game: newChallenge(weeklyChallenge(new Date()).id), started: true, welcome: true });
     get().save();
   },
   importSave: (raw) => {

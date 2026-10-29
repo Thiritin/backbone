@@ -88,10 +88,10 @@ export function Card({ r }: { r: SalesRequest }) {
         <div className="compose">
           <PriceField value={price} reference={r.reference} onChange={setPrice} />
           <div className="actions-row">
-            <button className="btn ghost" onClick={() => act((s) => decline(s, r.id))}><CircleX />Decline</button>
+            <button className="btn ghost" onClick={() => act(decline, r.id)}><CircleX />Decline</button>
             <span className="grow" />
             <span className="sales-total">Revenue <span className="num">{euroCents(price)}</span> a month</span>
-            <button className="btn primary" disabled={!(price > 0)} onClick={() => act((s) => quote(s, r.id, price))}><Send />Send quote</button>
+            <button className="btn primary" disabled={!(price > 0)} onClick={() => act(quote, r.id, price)}><Send />Send quote</button>
           </div>
         </div>
       )}

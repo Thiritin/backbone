@@ -39,7 +39,7 @@ function Resize({ game, host, done }: { game: GameState; host: Cluster; done: ()
   return (
     <div className="cx-inline">
       {field("vcpu", "vCPU")}{field("ramGb", "RAM, GB")}{field("diskGb", "Disk, GB")}
-      <button className="cx-btn primary" onClick={() => act((g) => resizePanelVm(g, host.id, size)).ok && done()}>Resize</button>
+      <button className="cx-btn primary" onClick={() => act(resizePanelVm, host.id, size).ok && done()}>Resize</button>
       <button className="cx-btn" onClick={done}>Cancel</button>
     </div>
   );
@@ -50,9 +50,9 @@ function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c: Cluste
   const act = useStore((s) => s.act), hand = c.kind === "panel", [pick, setPick] = useState<string | null>(null);
   const clusterName = (id: string) => game.clusters.find((x) => x.id === id)?.name ?? "";
   const targets = hand
-    ? webspaceTargets(game, w.id).map((t) => ({ key: t.clusterId, label: `${t.panel} on ${t.name}`, hours: t.hours, run: () => act((g) => migrateWebspace(g, w.id, t.clusterId)) }))
+    ? webspaceTargets(game, w.id).map((t) => ({ key: t.clusterId, label: `${t.panel} on ${t.name}`, hours: t.hours, run: () => act(migrateWebspace, w.id, t.clusterId) }))
     : migrationTargets(game, w.id).map((t) => ({
-      key: t.to, hours: t.down, run: () => act((g) => migrateWorkload(g, w.id, t.to)),
+      key: t.to, hours: t.down, run: () => act(migrateWorkload, w.id, t.to),
       label: t.clusterId === c.id ? t.name : `${t.name} · ${clusterName(t.clusterId)}`,
     }));
   const chosen = targets.find((t) => t.key === pick);
@@ -73,9 +73,9 @@ function Create({ game, c }: { game: GameState; c: Cluster }) {
   const act = useStore((s) => s.act), year = yearOf(game.hour);
   return (
     <div className="cx-tools">
-      <button className="cx-btn primary" onClick={() => act((g) => createVm(g, c.id, PANEL_VM_SIZE))}>New VM</button>
+      <button className="cx-btn primary" onClick={() => act(createVm, c.id, PANEL_VM_SIZE)}>New VM</button>
       {SOFTWARE.filter((x) => x.kind === "panel" && x.from <= year).map((x) => (
-        <button key={x.id} className="cx-btn" onClick={() => act((g) => createPanelVm(g, c.id, x.id))}>{x.console} VM</button>
+        <button key={x.id} className="cx-btn" onClick={() => act(createPanelVm, c.id, x.id)}>{x.console} VM</button>
       ))}
     </div>
   );
@@ -120,12 +120,12 @@ export function Objects({ game, c, f, node }: Props & { node: string | null }) {
                   <span className="cx-use num">{web ? `${num(u.diskGb)} of ${disk(w.diskGb)}` : `${num(u.vcpu)} of ${w.vcpu} vCPU, ${num(u.ramGb)} of ${ram(w.ramGb)}`}</span>
                 </td>
                 <td><div className="cx-acts">
-                  {f.start && st === "stopped" && <button className="cx-btn" onClick={() => act((g) => startWorkload(g, w.id))}>Start</button>}
-                  {f.stop && on && <button className="cx-btn" onClick={() => act((g) => stopWorkload(g, w.id))}>Stop</button>}
-                  {st === "lost" && f.backups && <button className="cx-btn" onClick={() => act((g) => restoreWorkload(g, w.id))}>{w.backupAt === null ? "Start empty" : "Restore"}</button>}
+                  {f.start && st === "stopped" && <button className="cx-btn" onClick={() => act(startWorkload, w.id)}>Start</button>}
+                  {f.stop && on && <button className="cx-btn" onClick={() => act(stopWorkload, w.id)}>Stop</button>}
+                  {st === "lost" && f.backups && <button className="cx-btn" onClick={() => act(restoreWorkload, w.id)}>{w.backupAt === null ? "Start empty" : "Restore"}</button>}
                   {f.migrate && movable && <button className="cx-btn" onClick={() => setOpen({ id: w.id, kind: "migrate" })}>Migrate</button>}
                   {f.resize && host && c.kind === "cloud" && <button className="cx-btn" onClick={() => setOpen({ id: w.id, kind: "resize" })}>Resize</button>}
-                  {f.delete && c.kind === "cloud" && isOwnVm(w) && !host && <button className="cx-btn" onClick={() => act((g) => deleteVm(g, w.id))}>Delete</button>}
+                  {f.delete && c.kind === "cloud" && isOwnVm(w) && !host && <button className="cx-btn" onClick={() => act(deleteVm, w.id)}>Delete</button>}
                 </div></td>
               </FragmentRow>
             );
@@ -171,7 +171,7 @@ export function Software({ game, c, f }: Props) {
   const act = useStore((s) => s.act), [sizing, setSizing] = useState(false), [removing, setRemoving] = useState(false);
   const family = familyOf(c)!, year = yearOf(game.hour), vulns = openVulns(game, c.id).length, due = updateDue(game, c);
   const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "";
-  const remove = () => act((g) => (c.kind === "panel" ? removePanelHost(g, c.id) : uninstallSoftware(g, machine)));
+  const remove = () => (c.kind === "panel" ? act(removePanelHost, c.id) : act(uninstallSoftware, machine));
   return (
     <>
       <table className="cx-table cx-facts">
@@ -183,9 +183,9 @@ export function Software({ game, c, f }: Props) {
         </tbody>
       </table>
       <div className="cx-tools">
-        {f.update && due && <button className="cx-btn primary" onClick={() => act((g) => updateSoftware(g, c.id))}>{`Update to ${year}`}</button>}
+        {f.update && due && <button className="cx-btn primary" onClick={() => act(updateSoftware, c.id)}>{`Update to ${year}`}</button>}
         {f.update && !due && <span className="cx-note">Up to date</span>}
-        {f.sitesOffline && c.kind === "panel" && <button className="cx-btn" onClick={() => act((g) => setSitesOffline(g, c.id, !off))}>{off ? "Bring sites online" : "Take sites offline"}</button>}
+        {f.sitesOffline && c.kind === "panel" && <button className="cx-btn" onClick={() => act(setSitesOffline, c.id, !off)}>{off ? "Bring sites online" : "Take sites offline"}</button>}
         {f.resize && c.kind === "panel" && c.vm && <button className="cx-btn" onClick={() => setSizing(!sizing)}>Resize</button>}
         {f.delete && !removing && <button className="cx-btn" onClick={() => setRemoving(true)}>Remove host</button>}
         {removing && <button className="cx-btn danger" onClick={remove}>Confirm remove</button>}

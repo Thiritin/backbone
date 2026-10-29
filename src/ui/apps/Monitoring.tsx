@@ -23,9 +23,9 @@ function Row({ game, m }: { game: GameState; m: MonitorRow }) {
   const c = m.cluster, at = anchorOf(game, c), d = game.devices.find((x) => x.id === at);
   const due = updateDue(game, c), hacked = game.security.hacked.includes(c.id);
   const menu = (): MenuEntry[] => [
-    { label: "Update", disabled: !due, run: () => act((g) => updateSoftware(g, c.id)) },
+    { label: "Update", disabled: !due, run: () => act(updateSoftware, c.id) },
     due && at ? techItem(game, at, "update", c.id) : undefined,
-    hacked && { label: "Clean up", run: () => act((g) => cleanUp(g, c.id)) },
+    hacked && { label: "Clean up", run: () => act(cleanUp, c.id) },
   ];
   return (
     <tr onContextMenu={menuOn(menu)}>
@@ -37,8 +37,8 @@ function Row({ game, m }: { game: GameState; m: MonitorRow }) {
       <td><span className={`pill ${hacked ? "bad" : "ok"}`}>{hacked ? "Compromised" : "Online"}</span></td>
       <td className="r">
         <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
-          {hacked && <button className="btn" onClick={() => act((g) => cleanUp(g, c.id))}>Clean up</button>}
-          {due && <button className="btn" onClick={() => act((g) => updateSoftware(g, c.id))}>Update</button>}
+          {hacked && <button className="btn" onClick={() => act(cleanUp, c.id)}>Clean up</button>}
+          {due && <button className="btn" onClick={() => act(updateSoftware, c.id)}>Update</button>}
           {due && at && <TechButton game={game} deviceId={at} kind="update" componentId={c.id} />}
           <More label={c.name} entries={menu} />
         </span>
@@ -49,7 +49,7 @@ function Row({ game, m }: { game: GameState; m: MonitorRow }) {
 
 function AppRowView({ r }: { r: AppRow }) {
   const act = useStore((s) => s.act), minutes = Math.ceil(r.unnotified / NOTIFY_BATCH) * NOTIFY_MINUTES;
-  const notify = () => r.vuln && act((g) => notifyCustomers(g, r.app, r.vuln!.id));
+  const notify = () => r.vuln && act(notifyCustomers, r.app, r.vuln!.id);
   const menu = (): MenuEntry[] => [{ label: "Notify customers", disabled: !r.unnotified, run: notify }];
   return (
     <tr onContextMenu={menuOn(menu)}>
@@ -75,12 +75,12 @@ function DefacedRow({ game, id }: { game: GameState; id: string }) {
   const act = useStore((s) => s.act), v = game.services.find((x) => x.id === id), c = v && game.customers.find((x) => x.id === v.customerId);
   if (!v || !c) return null;
   return (
-    <tr onContextMenu={menuOn(() => [{ label: "Clean up", run: () => act((g) => cleanSite(g, id)) }])}>
+    <tr onContextMenu={menuOn(() => [{ label: "Clean up", run: () => act(cleanSite, id) }])}>
       <td>{v.label}</td>
       <td>{c.name}</td>
       <td>{APP_NAME[v.spec.app!]}</td>
       <td><span className="pill bad">Defaced</span></td>
-      <td className="r"><button className="btn" onClick={() => act((g) => cleanSite(g, id))}>Clean up</button></td>
+      <td className="r"><button className="btn" onClick={() => act(cleanSite, id)}>Clean up</button></td>
     </tr>
   );
 }

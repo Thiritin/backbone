@@ -125,7 +125,7 @@ export function Cabling({ game, loc }: { game: GameState; loc: Location }) {
     line.current!.setAttribute("d", "");
     ports().forEach((el) => el.classList.remove("dim", "src"));
     const t = portAt(e);
-    if (t && t.dataset.p !== key(d.from!)) act((s) => connect(s, d.from!, endOf(t)));
+    if (t && t.dataset.p !== key(d.from!)) act(connect, d.from!, endOf(t));
   };
   const hover = (e: RPointerEvent<SVGSVGElement>, on: boolean) => {
     const t = (e.target as Element).closest<SVGElement>("[data-p]");
@@ -141,7 +141,7 @@ export function Cabling({ game, loc }: { game: GameState; loc: Location }) {
           <span className="num">{name(chosen.a)}</span>
           <span className={`loc-cab-kind ${chosen.kind}`}>{CABLE_NAME[chosen.kind]}</span>
           <span className="num">{name(chosen.b)}</span>
-          <button className="btn danger" onClick={() => { act((s) => disconnect(s, chosen.id)); setSel(null); }}><Unplug />Disconnect</button>
+          <button className="btn danger" onClick={() => { act(disconnect, chosen.id); setSel(null); }}><Unplug />Disconnect</button>
         </div>
       )}
       <svg ref={svg} className="loc-cab" role="application" aria-label="Cabling" onPointerDown={down} onPointerMove={move} onPointerUp={up}

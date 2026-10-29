@@ -3,6 +3,7 @@ import { useRef, useState, type CSSProperties } from "react";
 import { setCompany } from "../../sim/90-actions/company";
 import { APPS, appFor } from "./registry";
 import { CompanyFields } from "./company";
+import { LeaderboardSettings } from "./LeaderboardSettings";
 import { NOTIFY_TYPES } from "../notify-types";
 import { prefOf, useFocus, useStore, type Theme } from "../store";
 import { playSound } from "../sounds";
@@ -31,14 +32,14 @@ export function SettingsApp() {
   });
   const commitName = () => {
     if (name.trim() === game.company.name) setName(game.company.name);
-    else setName(act((s) => setCompany(s, { name })).ok ? name.trim() : game.company.name);
+    else setName(act(setCompany, { name }).ok ? name.trim() : game.company.name);
   };
   return (
     <div className="settings" ref={root}>
       <h2>Company</h2>
       <div className="settings-group settings-company">
         <CompanyFields company={{ ...game.company, name }} onCommit={commitName}
-          onChange={(p) => (p.name !== undefined ? setName(p.name) : act((s) => setCompany(s, p)))} />
+          onChange={(p) => (p.name !== undefined ? setName(p.name) : act(setCompany, p))} />
       </div>
       <h2>Appearance</h2>
       <div className="settings-group settings-line">
@@ -102,6 +103,7 @@ export function SettingsApp() {
           );
         })}
       </div>
+      <LeaderboardSettings />
     </div>
   );
 }

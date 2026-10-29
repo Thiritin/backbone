@@ -103,9 +103,9 @@ export function workloadMenu(game: GameState, w: Workload): MenuEntry[] {
   const targets = web ? [] : migrationTargets(game, w.id);
   const customer = game.services.find((v) => v.id === w.serviceId)?.customerId;
   return [
-    ...(web ? migrateEntries(game, w) : [{ label: "Migrate to", disabled: !targets.length, items: targets.map((t) => ({ label: `${t.name}${t.down ? `, offline ${t.down} h` : ""}`, run: () => act((g) => migrateWorkload(g, w.id, t.to)) })) }]),
+    ...(web ? migrateEntries(game, w) : [{ label: "Migrate to", disabled: !targets.length, items: targets.map((t) => ({ label: `${t.name}${t.down ? `, offline ${t.down} h` : ""}`, run: () => act(migrateWorkload, w.id, t.to) })) }]),
     ...offerEntries(game, w),
-    w.stopped ? { label: "Start", run: () => act((g) => startWorkload(g, w.id)) } : { label: "Stop", run: () => act((g) => stopWorkload(g, w.id)) },
+    w.stopped ? { label: "Start", run: () => act(startWorkload, w.id) } : { label: "Stop", run: () => act(stopWorkload, w.id) },
     null,
     { label: "Open in Virtual machines", run: () => openApp("Virtual machines", { kind: "workload", id: w.id }) },
     !!customer && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: customer }) },

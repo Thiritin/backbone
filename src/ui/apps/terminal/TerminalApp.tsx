@@ -36,7 +36,7 @@ export function TerminalApp() {
     const result = runCommand(store.game, session, line, history.length);
     const next: Line[] = result.clear ? [] : [...lines, { prompt: promptOf(session), text: line }, ...result.output.map((text) => ({ text }))];
     if (result.action) {
-      const r = store.act(result.action);
+      const r = store.act(...result.action);
       if (!r.ok) next.push({ text: t(r.error) });
     }
     setLines(next.slice(-MAX_LINES));

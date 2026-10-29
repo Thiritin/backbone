@@ -78,7 +78,7 @@ function Action({ item, big }: { item: StoreItem; big?: boolean }) {
   if (skill && !isAvailable(item.id, game.unlocks)) return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Research", { kind: "skill", id: skill.id }); }}>Needs {skill.name}</button>;
   if (!game.installed.includes(item.id) && storeBlocker(game, item.id) === "error.needsHypervisor") return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Products", { kind: "cluster", id: "new" }); }}>Needs hypervisor</button>;
   if (item.kind === "desk" && !game.installed.includes(item.id) && !deskReady(game, item.id)) return <button className={cls} disabled>From {deskById(item.id)!.from}</button>;
-  if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act((s) => install(s, item.id)); }}>Get</button>;
+  if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act(install, item.id); }}>Get</button>;
   if (item.kind !== "app") return <span className="ps-owned"><Check />Installed</span>;
   return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id === "Nagiosaurus" ? "Security" : item.id); }}>Open</button>;
 }
@@ -166,7 +166,7 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
       <dl className="ps-facts">
         {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={k === "Subscription" ? "num" : undefined}>{v}</dd></div>)}
         {cancelling && <Confirm title={`Cancel ${item.name}?`} action="Cancel subscription" onCancel={() => setCancelling(false)}
-          onConfirm={() => { setCancelling(false); act((s) => cancel(s, item.id)); }} text={`The subscription for ${item.name} ends today.`} />}
+          onConfirm={() => { setCancelling(false); act(cancel, item.id); }} text={`The subscription for ${item.name} ends today.`} />}
       </dl>
       <section className="ps-shelf">
         <h3>Includes</h3>

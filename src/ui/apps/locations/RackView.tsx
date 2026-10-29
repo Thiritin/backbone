@@ -174,7 +174,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
         <div className="loc-rack-scroll" ref={rackRef} style={{ width: rackWidth }}>
           <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420 * zoom} u={22 * zoom}
             hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onDeviceMenu={deviceMenu} onFree={openMount}
-            onConnect={(a, b) => act((g) => connect(g, a, b))} onPlug={plug} />
+            onConnect={(a, b) => act(connect, a, b)} onPlug={plug} />
         </div>
       </div>
       <div className="loc-insp">
@@ -205,7 +205,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
       {moving && <MoveRack game={game} rack={rack} onClose={() => setMoving(false)} onMoved={(id) => { setMoving(false); onMoved(id); }} />}
       {dialog}
       {menus.dialog}
-      {selling && <SellConfirm game={game} name={rack.name} price={rack.price} boughtAt={rack.boughtAt} onCancel={() => setSelling(false)} onSell={() => { setSelling(false); if (act((s) => sellRack(s, rack.id)).ok) onMoved(null); }} />}
+      {selling && <SellConfirm game={game} name={rack.name} price={rack.price} boughtAt={rack.boughtAt} onCancel={() => setSelling(false)} onSell={() => { setSelling(false); if (act(sellRack, rack.id).ok) onMoved(null); }} />}
     </div>
   );
 }
@@ -234,7 +234,7 @@ function MountRow({ game, rack, st, unit, onMounted }: { game: GameState; rack: 
   const n = Math.min(count, max), from = mountFrom(game, rack.id, m.height, n, unit) ?? unit;
   const mount = () => {
     const id = st.ids[0];
-    const r = act((s) => (n === 1 ? mountDevice(s, id, rack.id, from) : mountStack(s, st.model, st.brand, rack.id, n, from)));
+    const r = (n === 1 ? act(mountDevice, id, rack.id, from) : act(mountStack, st.model, st.brand, rack.id, n, from));
     if (r.ok) onMounted(id);
   };
   return (
@@ -261,7 +261,7 @@ function MoveRack({ game, rack, onClose, onMoved }: { game: GameState; rack: Rac
   const [pos, setPos] = useState(0);
   const position = target?.free.includes(pos) ? pos : target?.free[0];
   const cost = target && moveCost(game, rack.id, target.l.id);
-  const go = () => { if (target && position && act((s) => moveRack(s, rack.id, target.l.id, position)).ok) onMoved(target.l.id); };
+  const go = () => { if (target && position && act(moveRack, rack.id, target.l.id, position).ok) onMoved(target.l.id); };
   return (
     <Sheet title={`Move ${rack.name}`} onClose={onClose}>
       <div className="loc-form">
@@ -296,12 +296,12 @@ export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
   const act = useStore((s) => s.act);
   const dc = dcOf(loc);
   const rows: { name: string; effect: string; price: string; on: boolean; buy: () => void; drop?: () => void }[] = [];
-  if (loc.space === "basement") rows.push({ name: "Extra circuit", effect: `+${EXTRA_CIRCUIT_KW} kW`, price: euro(CIRCUIT_PRICE), on: loc.extraCircuit, buy: () => act((g) => buyCircuit(g, loc.id)) });
+  if (loc.space === "basement") rows.push({ name: "Extra circuit", effect: `+${EXTRA_CIRCUIT_KW} kW`, price: euro(CIRCUIT_PRICE), on: loc.extraCircuit, buy: () => act(buyCircuit, loc.id) });
   if (dc && rack && !rack.provided) {
     const feed = (key: "feedB" | "highDensity", name: string, effect: string) => rows.push({
       name, effect, price: `${euro(Math.round(FEED_PRICE[key] * dc.positionPrice))}/mo`, on: rack[key],
-      buy: () => act((g) => setFeed(g, rack.id, key === "feedB" ? "b" : "highDensity", true)),
-      drop: () => act((g) => setFeed(g, rack.id, key === "feedB" ? "b" : "highDensity", false)),
+      buy: () => act(setFeed, rack.id, key === "feedB" ? "b" : "highDensity", true),
+      drop: () => act(setFeed, rack.id, key === "feedB" ? "b" : "highDensity", false),
     });
     feed("feedB", "Feed B", "Second power feed");
     feed("highDensity", "High density", "2 × kW limit");

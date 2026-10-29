@@ -91,7 +91,7 @@ function Panel({ k, g }: { k: Skill; g: GameState }) {
         {state === "learned" ? <>
           <button className="btn" onClick={() => setExplain(k.id)}><BookOpen />How it works</button>
           {k.opens.length > 0 && <button className="btn" onClick={() => openApp("Shop", { kind: "software", id: "" })}><Store />Pear Store</button>}
-        </> : state !== "training" && <button className="btn primary" disabled={!canStart} onClick={() => act((s) => research(s, k.id))}>Start training</button>}
+        </> : state !== "training" && <button className="btn primary" disabled={!canStart} onClick={() => act(research, k.id)}>Start training</button>}
       </div>
     </aside>
   );

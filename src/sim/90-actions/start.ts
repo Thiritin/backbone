@@ -5,6 +5,8 @@ import { addCustomer } from "./customers";
 import { yearOf } from "../00-core/time";
 import { WEB_BASE } from "../10-catalog/economy";
 import { sizeSpec } from "../10-catalog/products";
+import { challengeById } from "../10-catalog/challenges";
+import { capacityAt, DATACENTERS } from "../20-world/datacenters";
 
 // economy.md, Starting state: an empty basement rack. The player buys the first server and sets it up as a panel server or
 // a hypervisor with a panel VM. Three friends wait for web hosting at €6 a month and move their sites over once the first
@@ -13,6 +15,19 @@ export const FRIENDS: [string, string][] = [["Jonas Weber", "jonasweber.de"], ["
 export const FRIEND_HAPPINESS = 85;
 
 export const startGame = (seed: number): GameState => newGame(seed);
+
+// A weekly challenge: its seed plus its twist (10-catalog/challenges.ts). A datacenter twist fills every other datacenter.
+export function startChallenge(id: string): GameState {
+  const c = challengeById(id);
+  if (!c) throw new Error(`unknown challenge ${id}`);
+  const s = newGame(c.seed);
+  s.challenge = c.id;
+  const t = c.twist;
+  if (t.kind === "cash") s.cash = t.cash;
+  if (t.kind === "line") s.homeLine = { id: t.line, next: null };
+  if (t.kind === "dc") s.dcs = Object.fromEntries(DATACENTERS.map((dc) => [dc.id, dc.id === t.dc ? s.dcs[dc.id] : { others: capacityAt(dc, 2005) }]));
+  return s;
+}
 
 // The friends sign up on the panel host once, when it is the first ready; false when they already have.
 export function welcomeFriends(s: GameState, hostId: string): boolean {

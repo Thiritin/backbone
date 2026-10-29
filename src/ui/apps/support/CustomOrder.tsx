@@ -120,23 +120,23 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
     <div className="compose custom-steps">
       <ol className="steps">
         {row("account", "Customer account", done.account ? "Created" : "None",
-          <button className="btn primary" disabled={locked} onClick={() => act((s) => createAccount(s, tk.id))}><UserPlus />Create customer account</button>)}
+          <button className="btn primary" disabled={locked} onClick={() => act(createAccount, tk.id)}><UserPlus />Create customer account</button>)}
         {row("invoice", "Order confirmation", done.invoice ? `${euroCents(r.quote ?? 0)} a month` : "Not sent",
           <div className="step-row">
             <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} />
             <PriceField value={setup} reference={fee} onChange={setSetup} disabled={locked} label="Setup fee" />
-            <button className="btn primary" disabled={locked || !(price > 0) || !(setup >= 0)} onClick={() => act((s) => confirmOrder(s, tk.id, price, setup))}><Send />Confirm order and send invoice</button>
+            <button className="btn primary" disabled={locked || !(price > 0) || !(setup >= 0)} onClick={() => act(confirmOrder, tk.id, price, setup)}><Send />Confirm order and send invoice</button>
           </div>)}
         {web && row("domain", r.owned ? "Domain transfer" : "Domain", done.domain ? "Registered" : `${r.domain} · ${registryOf(r.domain!).name} · ${euroCents(cost)} a year`,
-          <button className="btn primary" disabled={locked} onClick={() => act((s) => registerOrderDomain(s, tk.id))}><Globe />{r.owned ? "Transfer domain" : "Register domain"}</button>)}
+          <button className="btn primary" disabled={locked} onClick={() => act(registerOrderDomain, tk.id)}><Globe />{r.owned ? "Transfer domain" : "Register domain"}</button>)}
         {row("provision", "Setup", done.provision ? "Live" : "Not set up",
           <div className="step-col">
             <RouteCards product={r.product} city={r.city} size={sizeOf(r.spec!)} value={route} onChange={setRoute} disabled={locked} />
-            <button className="btn primary" disabled={locked} onClick={() => act((s) => provisionOrder(s, tk.id, route))}><Rocket />{PROVISION[r.product]}</button>
+            <button className="btn primary" disabled={locked} onClick={() => act(provisionOrder, tk.id, route)}><Rocket />{PROVISION[r.product]}</button>
           </div>)}
       </ol>
       <div className="actions-row">
-        <button className="btn ghost" disabled={locked} onClick={() => act((s) => closeTicket(s, tk.id))}><CircleX />Decline</button>
+        <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><CircleX />Decline</button>
       </div>
     </div>
   );
@@ -169,9 +169,9 @@ export function UpgradeCompose({ r }: { r: SalesRequest }) {
           <span className="sales-total">Difference <span className="num">{price >= current ? "+" : ""}{euroCents(price - current)}</span> a month</span>
           <RouteCards product={r.product} city={r.city} size={sizeOf(r.spec)} value={route} onChange={setRoute} serviceId={r.serviceId ?? undefined} />
           <div className="actions-row">
-            <button className="btn ghost" onClick={() => act((s) => decline(s, r.id))}><CircleX />Decline</button>
+            <button className="btn ghost" onClick={() => act(decline, r.id)}><CircleX />Decline</button>
             <span className="grow" />
-            <button className="btn primary" disabled={!(price > 0)} onClick={() => act((s) => acceptUpgrade(s, r.id, price, route))}><Check />Accept</button>
+            <button className="btn primary" disabled={!(price > 0)} onClick={() => act(acceptUpgrade, r.id, price, route)}><Check />Accept</button>
           </div>
         </div>
       )}

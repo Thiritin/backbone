@@ -68,6 +68,7 @@ button { font: inherit; color: inherit; cursor: default; }
 .w-sub { margin-top: 3px; font-size: 12px; color: var(--text-2); white-space: nowrap; }
 .w-bar + .w-sub { font-size: 11px; }
 .w-name { margin-top: auto; font-size: 15px; font-weight: 650; }
+.w-ghost { margin-top: auto; font-size: 13px; line-height: 1.35; font-weight: 550; }
 .w-bar { margin-top: 8px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .w-bar > span { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
 .w-cal .w-weekday { font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent-text); }
@@ -98,6 +99,10 @@ button { font: inherit; color: inherit; cursor: default; }
 .settings-divide { border-top: 0.5px solid var(--line); }
 .settings-volume { width: 180px; accent-color: var(--accent); }
 .settings-volume:disabled { opacity: 0.45; }
+.lb-head { padding: 16px 0 8px; font-weight: 600; }
+.settings-row.lb-row { grid-template-columns: 1fr 96px 104px 104px 84px; justify-items: end; gap: 8px; }
+.lb-company { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lb-company > .num { width: 18px; color: var(--text-2); }
 
 .co-fields { width: 100%; display: grid; gap: 6px; text-align: left; }
 .co-label { font-size: 12px; font-weight: 550; color: var(--text-2); margin-top: 6px; }
@@ -208,6 +213,11 @@ button { font: inherit; color: inherit; cursor: default; }
 .start h1 { color: white; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
 .start-actions { display: flex; gap: 10px; margin-top: 8px; }
 .start-actions .btn { height: 34px; padding: 0 18px; font-size: 14px; }
+.start-challenge { display: grid; justify-items: center; gap: 6px; font-size: 13px; color: oklch(1 0 0 / 0.75); }
+.start-challenge ol { list-style: none; display: grid; gap: 3px; min-width: 240px; padding: 8px 12px; border-radius: 10px; background: oklch(0 0 0 / 0.4); backdrop-filter: blur(8px); }
+.start-challenge li { display: flex; align-items: center; gap: 8px; color: white; }
+.start-challenge li .num { margin-left: auto; color: oklch(1 0 0 / 0.75); }
+.start-swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 
 .desktop-icons { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 .desktop-icon { position: absolute; width: 92px; display: grid; justify-items: center; align-content: start; gap: 4px; color: white; pointer-events: auto; user-select: none; touch-action: none; }
