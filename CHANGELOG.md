@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- A power outage that takes servers dark now cuts them off uncleanly, and they boot again once the power is back.
+- Datacenter power feeds can fail on their own: servers with two power supplies on a dual-fed rack ride through it with a notification, the rest go dark.
 - Reloading from the update notice no longer shows the same changes again in the update sheet afterwards.
 - The speed buttons show one to four arrows for 1×, 2×, 4× and 16×, and a new skip button runs the clock at 64× until something happens.
 - The Email app no longer installs a mail server with one click; its self-hosted view shows the mail server options and an Open button to Locations, where you install one from a server's Add Software tile.

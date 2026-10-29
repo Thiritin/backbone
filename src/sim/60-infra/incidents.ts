@@ -5,12 +5,13 @@ import { modelById } from "../10-catalog/hardware";
 import { datacenterById } from "../20-world/datacenters";
 import type { Customer } from "../30-customers/customers";
 import { bump, createTicket, profileStats } from "../40-support/tickets";
-import type { GameState, Location } from "../50-state";
+import type { Device, GameState, Location, Rack } from "../50-state";
 import { addReview, starsFor, type ReviewReason } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
 import { hostOfVm, isOwnVm, pickNode, vmOf, type Workload } from "./cluster";
 import type { Incident } from "./ops";
-import { deviceWatts, HOURS_PER_YEAR, locationOf } from "./status";
+import { losePower } from "./power";
+import { BOOT_HOURS, deviceWatts, HOURS_PER_YEAR, isPlugged, locationOf, psusOf } from "./status";
 
 export const GRID = {
   // Outages a year: the household line in the basement fails more often than a datacenter's utility feed.
@@ -20,6 +21,8 @@ export const GRID = {
   generatorFails: 0.02,
   // A datacenter's own UPS bridges this long, also on sites without a generator.
   siteUpsMinutes: 15,
+  // A datacenter feed fails on its own, behind the site's UPS and generator.
+  feedPerYear: 0.3, feedMedianMinutes: 30,
 };
 export const REFUND_CHANCE = { low: 0.1, medium: 0.15, high: 0.3 } as const;
 // An outage this long or longer brings refund requests.
@@ -48,6 +51,11 @@ const atLocation = (s: GameState, w: Workload, locId: string): boolean => {
   return s.racks.some((r) => r.id === w.rackId && r.locationId === locId);
 };
 
+const onDevices = (s: GameState, w: Workload, ids: Set<string>): boolean => {
+  const vm = vmOf(s, w);
+  return vm ? onDevices(s, vm, ids) : !!w.deviceId && ids.has(w.deviceId);
+};
+
 function customersOf(s: GameState, workloads: Workload[]): Customer[] {
   const ids = new Set(workloads.map((w) => s.services.find((v) => v.id === w.serviceId)?.customerId));
   return s.customers.filter((c) => ids.has(c.id) && c.churnedAt === null);
@@ -59,12 +67,34 @@ function record(s: GameState, inc: Omit<Incident, "id">): Incident {
   return full;
 }
 
-// Minutes the location's own UPS units carry its current load.
-export function upsMinutes(s: GameState, locId: string): number {
-  const here = s.devices.filter((d) => d.rackId && d.on && locationOf(s, d)?.id === locId);
-  const wh = here.reduce((n, d) => n + (modelById(d.model).batteryWh ?? 0), 0);
-  const watts = here.reduce((n, d) => n + deviceWatts(d), 0);
+// Minutes the UPS units among these devices carry their load.
+const upsOf = (devices: Device[]): number => {
+  const on = devices.filter((d) => d.rackId && d.on);
+  const wh = on.reduce((n, d) => n + (modelById(d.model).batteryWh ?? 0), 0);
+  const watts = on.reduce((n, d) => n + deviceWatts(d), 0);
   return wh && watts ? (wh / watts) * 60 : 0;
+};
+
+// Minutes the location's own UPS units carry its current load.
+export const upsMinutes = (s: GameState, locId: string): number => upsOf(s.devices.filter((d) => locationOf(s, d)?.id === locId));
+
+// Running servers lose power uncleanly and boot once it is back.
+function cutPower(s: GameState, devices: Device[], dark: number): void {
+  for (const d of devices.filter((x) => x.on)) {
+    losePower(s, d);
+    d.bootUntil = s.hour + dark / 60 + BOOT_HOURS;
+  }
+}
+
+function outageFallout(s: GameState, workloads: Workload[], dark: number, r: Rng, events: SimEvent[]): void {
+  const services = new Set(workloads.map((w) => w.serviceId));
+  for (const c of customersOf(s, workloads)) {
+    const svc = s.services.find((v) => v.customerId === c.id && services.has(v.id))!;
+    // A customer who never noticed the dark minutes asks for nothing.
+    if (rand(r) >= noticeChance(s.seed, c.id, segmentOf(c.profile, svc.product), s.hour, dark)) continue;
+    if (dark >= REFUND_MIN_DARK && rand(r) < REFUND_CHANCE[profileStats(c.profile).budget]) createTicket(s, c, "refund", svc.id, "outage");
+    maybeReview(s, c, "outage", r, events);
+  }
 }
 
 const normal = (r: Rng) => Math.sqrt(-2 * Math.log(1 - rand(r))) * Math.cos(2 * Math.PI * rand(r));
@@ -77,21 +107,37 @@ export function gridOutage(s: GameState, loc: Location, minutes: number, r: Rng,
   const dark = site === "ups+generator" && !generatorFails ? 0 : Math.max(0, Math.round(minutes - bridged));
   const workloads = dark ? s.workloads.filter((w) => atLocation(s, w, loc.id)) : [];
   const hit = customersOf(s, workloads);
-  const devices = dark ? s.devices.filter((d) => d.rackId && locationOf(s, d)?.id === loc.id).map((d) => d.label ?? d.name) : [];
+  const here = dark ? s.devices.filter((d) => d.rackId && locationOf(s, d)?.id === loc.id) : [];
+  const devices = here.map((d) => d.label ?? d.name);
+  // The cut reads the servers as they ran, so it comes before the location goes dark.
+  cutPower(s, here, dark);
   if (dark) s.ops = { ...s.ops, dark: { ...s.ops.dark, [loc.id]: s.hour + dark / 60 } };
   const inc = record(s, {
     hour: s.hour, cause: generatorFails && dark ? "generator" : "grid", locationId: loc.id, minutes, dark, devices,
     customers: hit.map((c) => c.id), agency: null, returnAt: null,
   });
   events.push({ app: "Support", key: dark ? "event.gridDark" : "event.gridCarried", params: { location: loc.name, minutes: dark || minutes } });
-  for (const c of hit) {
-    const services = new Set(workloads.map((w) => w.serviceId));
-    const svc = s.services.find((v) => v.customerId === c.id && services.has(v.id))!;
-    // A customer who never noticed the dark minutes asks for nothing.
-    if (rand(r) >= noticeChance(s.seed, c.id, segmentOf(c.profile, svc.product), s.hour, dark)) continue;
-    if (dark >= REFUND_MIN_DARK && rand(r) < REFUND_CHANCE[profileStats(c.profile).budget]) createTicket(s, c, "refund", svc.id, "outage");
-    maybeReview(s, c, "outage", r, events);
-  }
+  outageFallout(s, workloads, dark, r, events);
+  return inc;
+}
+
+// One feed of a rack fails. Servers with a live supply on each feed of a dual-fed rack stay up, single-supply servers
+// hang on feed A, and the rack's own UPS carries what it can.
+export function feedFailure(s: GameState, rack: Rack, feed: "A" | "B", minutes: number, r: Rng, events: SimEvent[]): Incident {
+  const loc = s.locations.find((l) => l.id === rack.locationId)!;
+  const inRack = s.devices.filter((d) => d.rackId === rack.id);
+  const dual = (d: Device) => rack.feedB && psusOf(d).filter((c) => isPlugged(c) && c.failedAt === null).length >= 2;
+  const dark = Math.max(0, Math.round(minutes - upsOf(inRack)));
+  const here = dark && feed === "A" ? inRack.filter((d) => d.on && !dual(d) && !modelById(d.model).batteryWh) : [];
+  const ids = new Set(here.map((d) => d.id));
+  const workloads = s.workloads.filter((w) => onDevices(s, w, ids));
+  cutPower(s, here, dark);
+  const inc = record(s, {
+    hour: s.hour, cause: "feed", locationId: loc.id, minutes, dark: here.length ? dark : 0, devices: here.map((d) => d.label ?? d.name),
+    customers: customersOf(s, workloads).map((c) => c.id), agency: null, returnAt: null,
+  });
+  events.push({ app: "Support", key: here.length ? "event.feedDark" : "event.feedCarried", params: { rack: rack.name, feed, minutes: here.length ? dark : minutes } });
+  outageFallout(s, workloads, dark, r, events);
   return inc;
 }
 
@@ -104,6 +150,15 @@ export function gridTick(s: GameState): SimEvent[] {
     const minutes = Math.max(5, Math.min(GRID.maxMinutes, Math.round(GRID.medianMinutes * Math.exp(GRID.sigma * normal(r)))));
     gridOutage(s, loc, minutes, r, events);
   });
+  for (const rack of s.racks) {
+    const loc = s.locations.find((l) => l.id === rack.locationId);
+    if (!loc?.dc || rack.arriveAt !== null || loc.readyAt > s.hour) continue;
+    for (const feed of rack.feedB ? (["A", "B"] as const) : (["A"] as const)) {
+      const r = hashRng(s.seed, s.hour, Number(rack.id.replace(/\D/g, "")), feed === "A" ? 92 : 93);
+      if (rand(r) >= GRID.feedPerYear / HOURS_PER_YEAR) continue;
+      feedFailure(s, rack, feed, Math.max(5, Math.min(GRID.maxMinutes, Math.round(GRID.feedMedianMinutes * Math.exp(GRID.sigma * normal(r))))), r, events);
+    }
+  }
   return events;
 }
 

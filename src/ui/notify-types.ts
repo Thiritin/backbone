@@ -14,7 +14,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Migration offers", "moveAccepted", "moveDeclined", "moveDone", "moveMissed"),
     type("Orders and sales", "order", "orderAccepted", "orderFailed", "orderPaid", "sales*"),
     type("Notices and legal", "seized", "breach"),
-    type("Power", "gridDark", "gridCarried"),
+    type("Power", "gridDark", "gridCarried", "feedDark", "feedCarried"),
   ],
   Network: [
     type("Uplinks and peering", "uplinkReady", "peeringRequest"),

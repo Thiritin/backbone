@@ -6,7 +6,7 @@ import { CustomerLink } from "../customers/CustomersApp";
 import { day } from "../hw";
 import { stamp } from "./labels";
 
-const CAUSE: Record<IncidentCause, string> = { grid: "Grid outage", generator: "Generator failure", seizure: "Server seized" };
+const CAUSE: Record<IncidentCause, string> = { grid: "Grid outage", generator: "Generator failure", feed: "Feed failure", seizure: "Server seized" };
 
 const impact = (i: Incident) => (i.cause === "seizure" ? `Until ${day(i.returnAt!)}` : i.dark ? `${duration(i.dark)} dark` : "No downtime");
 

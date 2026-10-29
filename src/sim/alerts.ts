@@ -13,6 +13,7 @@ export const ALERT_KEYS: Record<string, string> = {
   "event.seized": "Support",
   "event.ddos": "Network",
   "event.gridDark": "Locations",
+  "event.feedDark": "Locations",
   "event.vulnCritical": "Security",
   "event.breach": "Support",
 };

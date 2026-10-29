@@ -1,6 +1,6 @@
 import type { Device, GameState } from "../50-state";
 
-export type IncidentCause = "grid" | "generator" | "seizure";
+export type IncidentCause = "grid" | "generator" | "feed" | "seizure";
 // minutes is how long the grid was out and dark how many of them reached the servers; a seizure lasts until returnAt.
 // customers holds customer ids.
 export interface Incident {
