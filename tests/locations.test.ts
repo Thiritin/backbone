@@ -95,7 +95,7 @@ describe("racks", () => {
     const s = rich(10_000);
     const id = ok(addLocation(s, "interaction-fra", "positions", 2));
     const r = ok(buyRack(s, id, "rack-42", 2));
-    expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0, provided: false, feedB: false, highDensity: false });
+    expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null });
     expect(s.cash).toBe(9200);
     expect(s.ledger.at(-1)).toMatchObject({ category: "hardware", key: "ledger.hardware", params: { model: "42U rack", device: "fra2-rack-01" }, amount: -800 });
     expect(freePositions(s, id)).toEqual([1]);

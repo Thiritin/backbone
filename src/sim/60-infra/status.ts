@@ -2,7 +2,7 @@ import { yearOf } from "../00-core/time";
 import { COMPONENTS, jacksOf, modelById, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
-import { BASEMENT, capacityAt, datacenterById, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
 import type { Component, Device, End, GameState, Location, SpaceKind } from "../50-state";
 
@@ -236,7 +236,7 @@ export function rackPower(s: GameState, rackId: string): { watts: number; limitW
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.
   const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : circuitKw(loc);
-  const limitWatts = Math.round((1000 * kw) / share);
+  const limitWatts = Math.round((1000 * kw) / share) + Math.round(1000 * rack.extraKw);
   return { watts, limitWatts, tripped: watts > limitWatts };
 }
 
@@ -389,7 +389,9 @@ function rentedSize(s: GameState, loc: Location): number {
 // Monthly rent of a location.
 export function locationRent(s: GameState, loc: Location): number {
   if (!loc.dc) return 0;
-  return spacePrice(datacenterById(loc.dc), loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc));
+  const dc = datacenterById(loc.dc);
+  const extra = s.racks.filter((r) => r.locationId === loc.id).reduce((sum, r) => sum + (r.extraKw / EXTRA_STEP_KW) * extraStepPrice(dc), 0);
+  return spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc)) + extra;
 }
 
 // Floor space in eighths of a position, so a 1/8 share is 1 and a position is 8.

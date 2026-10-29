@@ -714,6 +714,8 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 | mainqubes FRA, Frankfurt (€450) | €90 | €158 | €270 | €495 |
 | Equinox FR5, Frankfurt (€750) | €150 | €263 | €450 | €825 |
 
+**Extra power on a share.** A provided share cannot take feed B or a high-density feed. It can book extra power in steps of 0.25 kW, up to the share's base limit again (the datacenter's kW per position divided by the share size, so a limit of at most twice the base). A step costs 15% of the position price times the datacenter's power factor per month, so a full extra kW costs about 60% of a position. It is billed with the share's rent under the same ledger line, and a booking or a reduction takes effect after 3 days. A rack over its limit still trips. Anchor: colocation power sold per amp at roughly €30 to 60 per 0.5 A step in 2010s Frankfurt. At Hetzler Park (€180, factor 1.1) a step costs €30 a month; at mainqubes FRA (€450, factor 1.3) it costs €88.
+
 **Availability.** Datacenters are not endless. Each one has a floor capacity in positions that grows in expansion phases over the years up to a final size, and most of it is rented by competitors you never see. You can only rent what is free right now.
 
 | Datacenter size | Positions at opening | Expansion | Final size |

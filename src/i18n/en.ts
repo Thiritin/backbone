@@ -171,6 +171,8 @@ export const en: Record<string, (p: Params) => string> = {
   "error.noPart": () => "This zone's storage has no matching spare part.",
   "error.powerOffFirst": () => "Power the device off first.",
   "error.noFeeds": () => "The basement has no extra feeds.",
+  "error.ownRack": () => "This rack is not a provided share.",
+  "error.extraPowerRange": () => "This amount of extra power is not available.",
   "error.unknownFeed": () => "This feed does not exist.",
   "error.notBasement": () => "Only the basement can get an extra circuit.",
   "error.alreadyBought": () => "The basement already has its extra circuit.",

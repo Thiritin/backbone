@@ -119,6 +119,8 @@ Infrastructure lives in locations: your basement first, then space in other comp
 | Private suite | A room of your own in the provider's building | 20 or 40 positions | Lease per month; you add your own UPS and feeds |
 | Own datacenter | A building you lease or build | 100 positions and up | Lease or purchase; power room, generators and carrier room are yours |
 
+**Extra power on a share.** A rack share is the provider's rack and has no feeds to add. Its Upgrades card offers extra power instead, in steps of 0.25 kW up to the share's base limit again, so at most twice the limit. A step is billed monthly with the share's rent and takes effect three days after booking. A rack over its limit still trips, and racks in your own positions keep the feed B and high-density feed upgrades.
+
 **Racks are yours.** You buy racks (24U, 42U or 47U) and place each one in a free position. A rack can move with everything in it: the servers inside go offline, cables to other racks and to the carrier panel are unplugged, and the rack arrives a day later in the same city or three days later in another. That is how a company grows out of the basement: you rent a position in a datacenter and move the basement rack there.
 
 **Datacenters.** Every city has several datacenters from different providers, and each one has its strengths and weaknesses. The Add location dialog compares them side by side:

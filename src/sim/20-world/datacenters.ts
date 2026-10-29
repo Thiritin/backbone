@@ -195,4 +195,11 @@ export function spacePrice(dc: Datacenter, space: RentedSpace, positions: number
   return Math.round(dc.positionPrice * (MULTIPLIERS[space][positions] ?? positions));
 }
 
+// Extra power on a provided share: steps of 0.25 kW up to the share's base limit again, billed monthly with the rent.
+export const EXTRA_STEP_KW = 0.25;
+export const EXTRA_POWER_LEAD_DAYS = 3;
+export const shareBaseKw = (dc: Datacenter, size: number): number => dc.kwPerPosition / size;
+export const maxExtraKw = (dc: Datacenter, size: number): number => Math.floor(shareBaseKw(dc, size) / EXTRA_STEP_KW) * EXTRA_STEP_KW;
+export const extraStepPrice = (dc: Datacenter): number => Math.round(dc.positionPrice * dc.powerFactor * 0.15);
+
 export const MOVE = { sameCity: { price: 300, hours: 24 }, otherCity: { price: 1200, hours: 72 }, overseas: { price: 4000, hours: 240 } } as const;
