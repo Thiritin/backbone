@@ -318,20 +318,6 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   return { ok: true, id: stored[0].id };
 }
 
-// Slides a powered-off device to another free position in its rack; its cables and power cords stay attached.
-export function moveInRack(s: GameState, deviceId: string, slot: number): ActionResult {
-  const d = s.devices.find((x) => x.id === deviceId);
-  if (!d) return fail("error.unknownDevice");
-  if (!d.rackId) return fail("error.notMounted");
-  const spot = spotOf(s, d.rackId)!, h = modelById(d.model).height;
-  if (spot.moving) return fail("error.rackMoving");
-  if (d.on) return fail("error.powerOffFirst");
-  if (!Number.isInteger(slot) || slot < 1 || slot + h - 1 > spot.units) return fail("error.outOfBounds");
-  if (!freeSlots({ ...s, devices: s.devices.filter((x) => x.id !== d.id) }, d.rackId, h).includes(slot)) return fail("error.slotTaken");
-  d.slot = slot;
-  return { ok: true };
-}
-
 export function unmountDevice(s: GameState, deviceId: string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");

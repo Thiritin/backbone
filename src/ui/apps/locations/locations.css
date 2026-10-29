@@ -388,5 +388,3 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .lid-offers .btn .num { margin-left: 8px; color: var(--text-2); }
 .lid-detail { min-height: 108px; }
 
-.rack-dev.movable { cursor: grab; }
-.rack-dev.movable:active { cursor: grabbing; }

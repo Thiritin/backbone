@@ -104,7 +104,7 @@ function Clock({ hour, running }: { hour: number; running: boolean }) {
   useEffect(() => {
     let raf = 0;
     const frame = () => {
-      setMinute(Math.floor(clockCarry.current * 12) * 5);
+      setMinute(Math.floor(clockCarry.current * 60));
       if (running) raf = requestAnimationFrame(frame);
     };
     frame();

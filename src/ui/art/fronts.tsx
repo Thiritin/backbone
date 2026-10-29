@@ -1,7 +1,7 @@
 // Code-drawn device fronts, ported from docs/design/mockups/shell.js. Sizes are px; u is one rack unit.
 import type { ReactNode } from "react";
 import { bayCount, jacksOf, type DeviceModel } from "../../sim/10-catalog/hardware";
-import { Back, Cord, psuInlets, SwitchRear } from "./backs";
+import { Back, SwitchRear } from "./backs";
 import { BrandMark } from "./logos";
 
 export type Lamp = "ok" | "warn" | "bad" | "off";
@@ -373,21 +373,12 @@ export function Front(p: FrontProps) {
 }
 
 // One device front as a standalone <svg>; panel gateways (height 0) are drawn as one unit.
-// plugs and onInlet draw the cord in each plugged inlet and let a click on an inlet plug it in or pull it.
-export function DeviceSvg({ w, u, back, plugs, onInlet, ...p }: Omit<FrontProps, "h" | "w"> & { w: number; u: number; back?: boolean; plugs?: boolean[]; onInlet?: (psu: number) => void }) {
-  const h = Math.max(1, p.model.height) * u, inlets = psuInlets(p.model, back ? "back" : "front", w, h);
+export function DeviceSvg({ w, u, back, ...p }: Omit<FrontProps, "h" | "w"> & { w: number; u: number; back?: boolean }) {
+  const h = Math.max(1, p.model.height) * u;
   return (
     <svg className="device-svg" width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={p.name || p.model.name}>
       <Defs />
       {back ? <Back {...p} w={w} h={h} /> : <Front {...p} w={w} h={h} />}
-      {inlets.map((c, k) => plugs?.[k] && <Cord key={`c${k}`} x={c.x} y={c.y} mm={c.mm} x0={c.x - 30 * c.mm} />)}
-      {onInlet && inlets.map((c, k) => {
-        const label = `${plugs?.[k] ? "Unplug" : "Plug in"} power supply ${k + 1}`;
-        return (
-          <rect key={`i${k}`} className="rack-port rack-inlet" role="button" tabIndex={0} aria-label={label} x={c.x - 15 * c.mm - 1} y={c.y - 11 * c.mm - 1} width={30 * c.mm + 2} height={22 * c.mm + 2} rx="1"
-            onClick={() => onInlet(k)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onInlet(k); } }}><title>{label}</title></rect>
-        );
-      })}
     </svg>
   );
 }

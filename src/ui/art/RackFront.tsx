@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import type { End } from "../../sim/50-state";
-import { Back, Cord, portSpots, psuInlets, type Side } from "./backs";
+import { Back, portSpots, psuInlets, type Side } from "./backs";
 import { CABLE, Defs, Front, ledProps, portNo, type Lamp, type Parts, type PortLamp, type PortLight } from "./fronts";
 
 // plugs holds whether each power supply is plugged in.
@@ -30,8 +30,6 @@ interface Props {
   onConnect?: (a: End, b: End) => void;
   // A click on a power supply's inlet; psu is its index among the device's power supplies.
   onPlug?: (device: string, psu: number) => void;
-  // A powered-off device dragged on the front to a new bottom unit.
-  onMove?: (device: string, slot: number) => void;
 }
 
 const MONO = "JetBrains Mono, monospace", DIM = "oklch(0.62 0.01 255)";
@@ -63,23 +61,10 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onMove }: Props) {
+export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug }: Props) {
   const back = side === "back";
-  const [slide, setSlide] = useState<{ id: string; from: number; y0: number; to: number; px: number } | null>(null);
-  const slid = useRef(false);
   const pad = 30, fs = Math.max(7, u * 0.4), at = new Map<number, RackItem>();
   for (const it of items) for (let k = 0; k < it.model.height; k++) at.set(it.slot + k, it);
-  const slides = (it: RackItem) => !!onMove && !back && it.state === "off" && it.model.height > 0;
-  const fitsAt = (it: RackItem, slot: number) =>
-    slot >= 1 && slot + it.model.height - 1 <= units && Array.from({ length: it.model.height }, (_, k) => at.get(slot + k)).every((x) => !x || x.id === it.id);
-  // Dragging snaps to whole units; a drop on a free run moves the device there.
-  const grabDevice = (it: RackItem) => ({
-    onPointerDown: (e: ReactPointerEvent<SVGGElement>) => {
-      if (e.button) return;
-      e.preventDefault();
-      setSlide({ id: it.id, from: it.slot, y0: e.clientY, to: it.slot, px: u * (e.currentTarget.ownerSVGElement?.getScreenCTM()?.d ?? 1) });
-    },
-  });
   const placed = new Map<string, { it: RackItem; y: number; h: number }>();
   const out: ReactNode[] = [];
   let y = 0;
@@ -103,14 +88,11 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     }
     if (top === n) {
       placed.set(it.id, { it, y, h });
-      const moving = slide?.id === it.id ? slide : null, dy = moving ? (moving.from - moving.to) * u : 0;
       out.push(
-        <g key={it.id} className={`rack-dev${slides(it) ? " movable" : ""}`} transform={`translate(${pad} ${y + dy})`} aria-label={it.name} aria-pressed={it.id === selected}
-          {...press(() => { if (!slid.current) onDevice(it.id); })} {...(slides(it) ? grabDevice(it) : {})} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
+        <g key={it.id} className="rack-dev" transform={`translate(${pad} ${y})`} aria-label={it.name} aria-pressed={it.id === selected} {...press(() => onDevice(it.id))} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
           {back ? <Back {...it} w={w} h={h} /> : <Front {...it} w={w} h={h} />}
         </g>,
       );
-      if (moving && moving.to !== moving.from) out.push(<rect key="slide" x={pad - 2} y={y + dy - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke={fitsAt(it, moving.to) ? "var(--ok)" : "var(--bad)"} strokeWidth="2" pointerEvents="none" />);
       if (it.id === selected) out.push(<rect key="sel" x={pad - 2} y={y - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke="var(--accent)" strokeWidth="2" pointerEvents="none" />);
     }
     y += h;
@@ -183,10 +165,21 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     wires.push(<Wire key={l.id} color={l.color} hot={isHot(l.id)} d={route([[a.x, a.y + top], [a.x, a.y + top + da], [lx, a.y + top + da], [lx, gy], [p.x, gy], [p.x, p.y]])} />);
   });
 
+  // An IEC C13 plug, true to size (about 30 by 22 mm over the 24 by 16 mm inlet), with a 7 mm cord.
   const cords: ReactNode[] = [];
   for (const { it, y: py, h } of placed.values()) {
     psuInlets(it.model, side, w, h).forEach((p, k) => {
-      if (it.plugs?.[k]) cords.push(<g key={`${it.id}p${k}`} aria-label={`${it.name} power cord ${k + 1}`}><Cord x={pad + p.x} y={top + py + p.y} mm={p.mm} x0={pad - 4} /></g>);
+      if (!it.plugs?.[k]) return;
+      const x = pad + p.x, cy = top + py + p.y, bw = 30 * p.mm, bh = 22 * p.mm, cw = Math.max(2.4, 7 * p.mm);
+      cords.push(
+        <g key={`${it.id}p${k}`} aria-label={`${it.name} power cord ${k + 1}`}>
+          <path d={`M${x - bw / 2} ${cy}H${pad - 4}`} stroke="oklch(0.4 0.006 255)" strokeWidth={cw + 1.2} />
+          <path d={`M${x - bw / 2} ${cy}H${pad - 4}`} stroke="oklch(0.1 0.004 255)" strokeWidth={cw} />
+          <rect x={x - bw / 2 - 4 * p.mm} y={cy - cw * 0.8} width={6 * p.mm} height={cw * 1.6} rx="1" fill="oklch(0.12 0.004 255)" />
+          <rect x={x - bw / 2} y={cy - bh / 2} width={bw} height={bh} rx={2.5 * p.mm} fill="oklch(0.13 0.004 255)" stroke="oklch(0.42 0.006 255)" strokeWidth="0.6" />
+          {[0.3, 0.5, 0.7].map((f) => <line key={f} x1={x - bw / 2 + bw * f} y1={cy - bh * 0.32} x2={x - bw / 2 + bw * f} y2={cy + bh * 0.32} stroke="oklch(0.22 0.004 255)" strokeWidth="0.7" />)}
+        </g>,
+      );
     });
   }
 
@@ -211,24 +204,6 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     window.addEventListener("pointerup", up, { once: true });
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
   }, [drag !== null]); // eslint-disable-line react-hooks/exhaustive-deps
-  const slideLive = useRef({ slide, onMove, fitsAt, items });
-  slideLive.current = { slide, onMove, fitsAt, items };
-  useEffect(() => {
-    if (!slide) return;
-    const move = (e: PointerEvent) => setSlide((d) => d && { ...d, to: d.from - Math.round((e.clientY - d.y0) / d.px) });
-    const up = () => {
-      const { slide: d, onMove: done, fitsAt: fits, items: all } = slideLive.current, it = all.find((x) => x.id === d?.id);
-      setSlide(null);
-      if (!d || !it || d.to === d.from) return;
-      // The click that follows this pointerup is the drop, not a selection.
-      slid.current = true;
-      setTimeout(() => { slid.current = false; });
-      if (fits(it, d.to)) done?.(it.id, d.to);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up, { once: true });
-    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
-  }, [slide !== null]); // eslint-disable-line react-hooks/exhaustive-deps
   const grab = (end: End, x: number, cy: number) => (e: ReactPointerEvent) => {
     if (!onConnect || e.button !== 0) return;
     e.preventDefault();

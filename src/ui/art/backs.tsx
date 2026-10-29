@@ -67,20 +67,6 @@ export const psuSide = (model: DeviceModel): Side => (reversed(model) ? "front" 
 export const psuInlets = (model: DeviceModel, side: Side, w: number, h: number) =>
   side === psuSide(model) ? psuBoxes(model, w, h).map((b) => ({ x: b.inlet.x + b.inlet.w / 2, y: b.inlet.y + b.inlet.h / 2, mm: mmOf(model, h) })) : [];
 
-// An IEC C13 plug, true to size (about 30 by 22 mm over the 24 by 16 mm inlet), with a 7 mm cord leaving left to x0.
-export function Cord({ x, y, mm, x0 }: { x: number; y: number; mm: number; x0: number }) {
-  const bw = 30 * mm, bh = 22 * mm, cw = Math.max(2.4, 7 * mm), d = `M${x - bw / 2} ${y}H${x0}`;
-  return (
-    <>
-      <path d={d} stroke="oklch(0.4 0.006 255)" strokeWidth={cw + 1.2} />
-      <path d={d} stroke="oklch(0.1 0.004 255)" strokeWidth={cw} />
-      <rect x={x - bw / 2 - 4 * mm} y={y - cw * 0.8} width={6 * mm} height={cw * 1.6} rx="1" fill="oklch(0.12 0.004 255)" />
-      <rect x={x - bw / 2} y={y - bh / 2} width={bw} height={bh} rx={2.5 * mm} fill="oklch(0.13 0.004 255)" stroke="oklch(0.42 0.006 255)" strokeWidth="0.6" />
-      {[0.3, 0.5, 0.7].map((f) => <line key={f} x1={x - bw / 2 + bw * f} y1={y - bh * 0.32} x2={x - bw / 2 + bw * f} y2={y + bh * 0.32} stroke="oklch(0.22 0.004 255)" strokeWidth="0.7" />)}
-    </>
-  );
-}
-
 // An IEC C14 inlet: a keystone-shaped socket with three flat pins.
 function C14({ x, y, w, h }: Spot) {
   const c = w * 0.18;

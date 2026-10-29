@@ -4,14 +4,15 @@ This doc turns the systems in the [game design document](gdd.md) into formulas a
 
 ## Clock and pacing
 
-At 1×, one game hour lasts 2.5 seconds, so a game day takes 1 minute and a game year about 6 hours. The simulation ticks every game hour. Billing, salaries, know-how and the market run on the monthly tick.
+At 1×, the game clock runs 20 times faster than real time: one game minute lasts 3 seconds, one game hour 3 minutes, and a game day 72 minutes. The clock shows every game minute, but the simulation ticks every game hour. Billing, salaries, know-how and the market run on the monthly tick.
 
-| Speed | Game day | Game month | Game year |
-| --- | --- | --- | --- |
-| 1× | 1 min | 30 min | 6 h |
-| 2× | 30 s | 15 min | 3 h |
-| 4× | 15 s | 7.5 min | 1.5 h |
-| 8× | 7.5 s | 3.75 min | 45 min |
+| Speed | Game hour | Game day | Game month | Game year |
+| --- | --- | --- | --- | --- |
+| 1× | 3 min | 72 min | 36 h | 438 h |
+| 2× | 90 s | 36 min | 18 h | 219 h |
+| 4× | 45 s | 18 min | 9 h | 110 h |
+| 8× | 22.5 s | 9 min | 4.5 h | 55 h |
+| 16× | 11.25 s | 4.5 min | 2.25 h | 27 h |
 
 **Pacing targets.** A player who plays reasonably well should hit each level around these years. The headless balance run checks them (see [Balancing](#balancing)).
 
