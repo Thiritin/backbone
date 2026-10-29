@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The traffic chart in the Network app has space above the cards below it.
 - The shop lists only the manufacturers that have hardware on sale in the current year.
 - Servers and virtual machines show their power actions as square tiles, and a custom order shows the CPU, RAM and storage load of the cluster or server you pick to set it up on.
 - Each location shows what its cluster servers have booked next to what they use right now.
