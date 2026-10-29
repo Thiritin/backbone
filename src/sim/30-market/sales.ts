@@ -116,8 +116,8 @@ function morningMail(s: GameState, events: SimEvent[]): void {
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads only write about lines on the website, which needs a control plane that sells them.
       if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
-      // The order form is part of the website: a down, slow or dated site loses its orders.
-      if (form && site < 1 && rand(s.rng) >= site) continue;
+      // The order form is part of the website: a down, slow or dated site loses its orders. Website leads already carry the factor in their count.
+      if (form && f.source !== "website" && site < 1 && rand(s.rng) >= site) continue;
       if (!isStandard(f.profile, need.sla)) {
         newLead(s, f.profile, f.city, events, need);
         continue;
