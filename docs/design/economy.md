@@ -11,8 +11,10 @@ At 1×, the game clock runs 30 times faster than real time: one game minute last
 | 1× | 2 min | 48 min | 24 h | 292 h |
 | 2× | 60 s | 24 min | 12 h | 146 h |
 | 4× | 30 s | 12 min | 6 h | 73 h |
-| 8× | 15 s | 6 min | 3 h | 36.5 h |
 | 16× | 7.5 s | 3 min | 1.5 h | 18 h |
+| Skip (64×) | 1.9 s | 45 s | 22.5 min | 4.6 h |
+
+Skip runs at 64× until the simulation produces any event, then drops back to 1×.
 
 **Pacing targets.** A player who plays reasonably well should hit each level around these years. The headless balance run checks them (see [Balancing](#balancing)).
 

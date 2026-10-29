@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The speed buttons show one to four arrows for 1×, 2×, 4× and 16×, and a new skip button runs the clock at 64× until something happens.
 - The Email app no longer installs a mail server with one click; its self-hosted view shows the mail server options and an Open button to Locations, where you install one from a server's Add Software tile.
 - The menu bar shows where you are with the local weather, and you can drive to any of your datacenters for a fare while the clock skips ahead and the computer stays locked.
 - Hand work at the datacenter you stand in starts at once; anywhere else a popover shows the remote hands price to accept or decline, next to sending a friend or a technician.

@@ -5,7 +5,9 @@ const HOUR = 3_600_000;
 
 // Real milliseconds per game hour at 1× (docs/design/economy.md, Clock and pacing).
 export const MS_PER_HOUR = 120_000;
-export const SPEEDS = [0, 1, 2, 4, 8, 16] as const;
+export const SPEEDS = [0, 1, 2, 4, 16, 64] as const;
+// Skip runs at this speed until the next event, then drops to 1×.
+export const SKIP = 64;
 export type Speed = (typeof SPEEDS)[number];
 
 export const dateOf = (hour: number): Date => new Date(START + hour * HOUR);

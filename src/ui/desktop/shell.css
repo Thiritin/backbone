@@ -156,6 +156,9 @@ svg.lucide { width: 16px; height: 16px; stroke-width: 1.75; flex: none; }
 .speed button:hover { opacity: 1; background: color-mix(in oklch, var(--menubar-text) 10%, transparent); }
 .speed button[aria-pressed="true"] { opacity: 1; background: var(--accent); color: var(--accent-ink); }
 .speed svg.lucide { width: 13px; height: 13px; }
+.speed .arrows { display: flex; }
+.speed .arrows svg.lucide { width: 9px; height: 9px; margin: 0 -1.5px; fill: currentColor; }
+.speed svg.skip path, .speed svg.skip polygon { fill: currentColor; }
 
 .mb-cash { font-weight: 600; }
 .mb-badge { position: relative; }

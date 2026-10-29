@@ -11,7 +11,7 @@ import { isAlert } from "../sim/alerts";
 import { typeOf } from "./notify-types";
 import { deserialize, serialize } from "../sim/91-save/save";
 import { actionName, runAction } from "../sim/90-actions/index";
-import { SPEEDS, type Speed } from "../sim/00-core/time";
+import { SKIP, SPEEDS, type Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
 import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
 import { readSession, writeSession } from "./session";
@@ -212,18 +212,20 @@ export const useStore = create<Store>((set, get) => ({
   setOpenLoc: (openLoc) => set({ openLoc }),
 
   advance: (hours) => {
-    const game = { ...get().game, rng: { ...get().game.rng } };
-    let alert: Banner | null = null;
+    const game = { ...get().game, rng: { ...get().game.rng } }, skip = get().speed === SKIP;
+    let alert: Banner | null = null, happened = false;
     for (let i = 0; i < hours; i++) {
       for (const e of tick(game)) {
+        happened = true;
         get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params), e.key);
         if (e.key === "event.trainingDone") set({ explain: String(e.params.id) });
         if (isAlert(e.key) && !alert) alert = { id: ++bannerId, app: e.app, title: t(`${e.key}.title`, e.params), text: t(`${e.key}.text`, e.params), hour: game.hour, key: e.key, target: e.params.deviceId === undefined ? undefined : String(e.params.deviceId) };
       }
-      if (game.gameOver !== null || alert) break;
+      if (game.gameOver !== null || alert || (skip && happened)) break;
     }
     if (game.gameOver !== null) set({ game, speed: 0 });
-    else if (alert) set(({ speed, alert: open, resume }) => ({ game, alert: open ?? alert, speed: 0, resume: open ? resume : speed }));
+    else if (alert) set(({ speed, alert: open, resume }) => ({ game, alert: open ?? alert, speed: 0, resume: open ? resume : speed === SKIP ? 1 : speed }));
+    else if (skip && happened) set({ game, speed: 1 });
     else set({ game });
   },
   act: (fn, ...args) => {

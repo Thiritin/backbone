@@ -85,7 +85,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
     return () => { clearInterval(id); window.removeEventListener("pagehide", save); };
   }, [save]);
 
-  // Space pauses; 1 to 5 pick 1×, 2×, 4×, 8× and 16×.
+  // Space pauses; 1 to 4 pick 1×, 2×, 4× and 16×, and 5 skips ahead.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (useStore.getState().game.player.until > useStore.getState().game.hour) return;

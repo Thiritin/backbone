@@ -1,4 +1,4 @@
-import { Bell, Cloud, CloudRain, CloudSnow, CloudSun, Moon, Pause, Sun } from "lucide-react";
+import { Bell, Cloud, CloudRain, CloudSnow, CloudSun, Moon, Pause, Play, SkipForward, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { serialize } from "../../sim/91-save/save";
@@ -6,7 +6,7 @@ import { Confirm } from "./Confirm";
 import { Intro } from "./Intro";
 import { newNote } from "./DesktopIcons";
 import { restoreGuide } from "../../sim/90-actions/docs";
-import { dateOf, formatClock, SPEEDS, type Speed } from "../../sim/00-core/time";
+import { dateOf, formatClock, SKIP, SPEEDS, type Speed } from "../../sim/00-core/time";
 import { euro } from "../../sim/00-core/money";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../sim/90-actions/travel";
@@ -74,11 +74,14 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       }), <span className="mb-place"><Weather city={here.city} hour={game.hour} />{here.name}</span>)}
       <span className="mb-sep" />
       <div className="speed" role="group" aria-label="Game speed">
-        {SPEEDS.map((s: Speed) => (
-          <button key={s} aria-pressed={speed === s} aria-label={s ? `${s}× speed` : "Pause"} onClick={() => setSpeed(s)}>
-            {s ? `${s}×` : <Pause />}
-          </button>
-        ))}
+        {SPEEDS.map((s: Speed, i) => {
+          const label = s === SKIP ? "Skip to next event" : s ? `${s}× speed` : "Pause";
+          return (
+            <button key={s} aria-pressed={speed === s} aria-label={label} title={label} onClick={() => setSpeed(s)}>
+              {s === SKIP ? <SkipForward className="skip" /> : s ? <span className="arrows">{Array.from({ length: i }, (_, k) => <Play key={k} />)}</span> : <Pause />}
+            </button>
+          );
+        })}
       </div>
       <span className="mb-sep" />
       <Clock hour={game.hour} running={speed > 0} />
