@@ -2,11 +2,11 @@ import { Gauge, Plug, Truck, Zap, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { modelById, type DeviceKind } from "../../../sim/10-catalog/hardware";
-import { BASEMENT } from "../../../sim/20-world/datacenters";
+import { BASEMENT, EXTRA_STEP_KW, extraStepPrice, maxExtraKw, SHARE_RACKS } from "../../../sim/20-world/datacenters";
 import type { Device, GameState, Location, Rack } from "../../../sim/50-state";
 import { EXTRA_CIRCUIT_KW, freePositions, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
 import { FEED_PRICE } from "../../../sim/88-tick/tick";
-import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveRack, sellRack, setFeed } from "../../../sim/90-actions/hardware";
+import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveRack, sellRack, setExtraPower, setFeed } from "../../../sim/90-actions/hardware";
 import { Stepper } from "../shop/Cart";
 import type { Side } from "../../art/backs";
 import { Isometric } from "../../art/Isometric";
@@ -299,7 +299,7 @@ function MoveRack({ game, rack, onClose, onMoved }: { game: GameState; rack: Rac
 export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
   const act = useStore((s) => s.act);
   const dc = dcOf(loc);
-  const rows: { name: string; effect: string; price: string; on: boolean; buy: () => void; drop?: () => void }[] = [];
+  const rows: { name: string; effect: string; price: string; on: boolean; buy: () => void; drop?: () => void; control?: ReactNode }[] = [];
   if (loc.space === "basement") rows.push({ name: "Extra circuit", effect: `+${EXTRA_CIRCUIT_KW} kW`, price: euro(CIRCUIT_PRICE), on: loc.extraCircuit, buy: () => act(buyCircuit, loc.id) });
   if (dc && rack && !rack.provided) {
     const feed = (key: "feedB" | "highDensity", name: string, effect: string) => rows.push({
@@ -309,6 +309,14 @@ export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
     });
     feed("feedB", "Feed B", "Second power feed");
     feed("highDensity", "High density", "2 × kW limit");
+  }
+  if (dc && rack?.provided) {
+    const target = rack.extraKwAt?.kw ?? rack.extraKw, size = SHARE_RACKS.find((m) => m.id === rack.model)!.size;
+    rows.push({
+      name: "Extra power", effect: `+${rack.extraKw} kW${rack.extraKwAt ? `, +${rack.extraKwAt.kw} kW on ${day(rack.extraKwAt.at)}` : ""}`,
+      price: `${euro((target / EXTRA_STEP_KW) * extraStepPrice(dc))}/mo`, on: false, buy: () => {},
+      control: <Stepper label="Extra power" value={target} step={EXTRA_STEP_KW} max={maxExtraKw(dc, size)} onChange={(kw) => act(setExtraPower, rack.id, kw)} />,
+    });
   }
   if (!rows.length) return null;
   return (
@@ -323,8 +331,8 @@ export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
               <td className="num">{r.effect}</td>
               <td className="r num">{r.price}</td>
               <td className="r">
-                {r.on ? (r.drop ? <button className="btn" onClick={r.drop}>Cancel</button> : <span className="pill ok">Installed</span>)
-                  : <button className="btn primary" onClick={r.buy}>{r.drop ? "Add" : "Buy"}</button>}
+                {r.control ?? (r.on ? (r.drop ? <button className="btn" onClick={r.drop}>Cancel</button> : <span className="pill ok">Installed</span>)
+                  : <button className="btn primary" onClick={r.buy}>{r.drop ? "Add" : "Buy"}</button>)}
               </td>
             </tr>
           ))}

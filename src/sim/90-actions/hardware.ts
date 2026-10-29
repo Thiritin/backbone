@@ -3,7 +3,7 @@ import { bareParts, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, compo
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
-import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, moveCost, pluggedIn, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
@@ -57,7 +57,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "positi
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
   if (shareRack) {
     const rackName = nextName(`${prefix(s, loc.id)}-rack`, s.racks.map((r) => r.name));
-    s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true, feedB: false, highDensity: false });
+    s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null });
   }
   return { ok: true, id: loc.id };
 }
@@ -111,7 +111,7 @@ export function buyRack(s: GameState, locationId: string, model: RackModel, posi
   if (error) return fail(error);
   if (s.cash < spec.price) return fail("error.noCash");
   const name = nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
-  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false };
+  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null };
   s.racks.push(rack);
   book(s, "hardware", "ledger.hardware", { model: `${spec.units}U rack`, device: name }, -spec.price);
   return { ok: true, id: rack.id };
@@ -590,6 +590,18 @@ export function setFeed(s: GameState, rackId: string, feed: "b" | "highDensity",
   if (feed === "b") rack.feedB = on;
   else if (feed === "highDensity") rack.highDensity = on;
   else return fail("error.unknownFeed");
+  return { ok: true };
+}
+
+// Books extra power (kW above the share's base limit) on a provided share; it takes effect after the lead time and is billed monthly with the rent.
+export function setExtraPower(s: GameState, rackId: string, kw: number): ActionResult {
+  const rack = s.racks.find((r) => r.id === rackId);
+  if (!rack) return fail("error.unknownRack");
+  if (!rack.provided) return fail("error.ownRack");
+  const dc = datacenterById(s.locations.find((l) => l.id === rack.locationId)!.dc!);
+  const size = SHARE_RACKS.find((m) => m.id === rack.model)!.size;
+  if (!Number.isInteger(kw / EXTRA_STEP_KW) || kw < 0 || kw > maxExtraKw(dc, size)) return fail("error.extraPowerRange");
+  rack.extraKwAt = kw === rack.extraKw ? null : { kw, at: s.hour + 24 * EXTRA_POWER_LEAD_DAYS };
   return { ok: true };
 }
 

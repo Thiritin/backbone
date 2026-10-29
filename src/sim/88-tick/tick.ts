@@ -182,6 +182,9 @@ export function tick(state: GameState): SimEvent[] {
       return { ...r, arriveAt: null };
     });
   }
+  if (state.racks.some((r) => r.extraKwAt && r.extraKwAt.at <= state.hour)) {
+    state.racks = state.racks.map((r) => (r.extraKwAt && r.extraKwAt.at <= state.hour ? { ...r, extraKw: r.extraKwAt.kw, extraKwAt: null } : r));
+  }
   if (state.devices.some((d) => d.arriveAt !== null && d.arriveAt <= state.hour)) {
     const arrived = new Map<string, number>();
     state.devices = state.devices.map((d) => {
