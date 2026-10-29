@@ -70,7 +70,8 @@ export function deserialize(raw: string): GameState {
     installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id)).filter((id) => id !== "Sales"), "Website"])] : [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
-    customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [] })),
+    customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [], credit: c.credit ?? 0 })),
+    tickets: (data.tickets ?? []).map((t) => ({ ...t, assignee: t.assignee ?? null })),
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, sla: v.sla ?? "basic" })),
     // Saves from before clusters keep their services unplaced, which leaves them online.
     sales: { ...base.sales, ...data.sales },

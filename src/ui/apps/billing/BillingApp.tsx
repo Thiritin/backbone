@@ -1,5 +1,6 @@
 import { Ban, CircleCheck, CircleDot, Files, Globe, ListChecks, Mail, OctagonAlert, Receipt, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { useSessionState } from "../../session";
 import { euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
 import { AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, dueStep, freeRiding, invoiceTotal, rulesAutomated, STEPS, type BillingRules, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
@@ -42,8 +43,8 @@ const sum = (list: Invoice[]) => list.reduce((s, i) => s + invoiceTotal(i), 0);
 
 export function BillingApp() {
   const game = useStore((s) => s.game);
-  const [filter, setFilter] = useState<InvoiceStatus | "all" | "automation" | "domains">("all");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [filter, setFilter] = useSessionState<InvoiceStatus | "all" | "automation" | "domains">("billing.tab", "all");
+  const [selected, setSelected] = useSessionState<string | null>("billing.sel", null);
   const [writing, setWriting] = useState<Invoice | null>(null);
   useFocus("Billing", (f) => {
     if (f.kind === "domain") setFilter("domains");

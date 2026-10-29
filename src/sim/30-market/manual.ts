@@ -14,7 +14,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { placeService, provisionService } from "../90-actions/clusters";
 import type { ActionResult } from "../90-actions/hardware";
-import { sizeOf } from "./spec";
+import { setupFee, sizeOf } from "./spec";
 import { missingFor, requestName, type SalesRequest } from "./market";
 import { mailRequest, orderOf } from "./orders";
 import { editRequest, habitFor, loseRequest } from "./sales";
@@ -118,7 +118,11 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
   }
   const customerId = r.customerId!;
   if (step === "invoice") {
-    const lines: InvoiceLine[] = [{ serviceId: null, key: "invoice.line.firstMonth", params: { label: r.domain ?? requestName(r) }, amount: r.quote! }];
+    const label = r.domain ?? requestName(r), setup = r.setup ?? setupFee(s, r.product);
+    const lines: InvoiceLine[] = [
+      ...(setup > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: setup }] : []),
+      { serviceId: null, key: "invoice.line.firstMonth", params: { label }, amount: r.quote! },
+    ];
     if (needsDomain(r)) lines.push({ serviceId: null, key: r.owned ? "invoice.line.domainTransfer" : "invoice.line.domain", params: { domain: r.domain! }, amount: r.owned ? TRANSFER_FEE : DOMAIN_FEE });
     const inv = issueInvoice(s, customerId, lines, ORDER_PAY_DAYS - 1);
     editRequest(s, r.id, () => ({ invoiceId: inv.id, status: "quoted", replyAt: null }));

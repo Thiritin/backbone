@@ -29,15 +29,16 @@ export const createAccount = (s: GameState, ticketId: string): ActionResult => s
 export const registerOrderDomain = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "domain");
 export const provisionOrder = (s: GameState, ticketId: string, route = "auto"): ActionResult => step(s, ticketId, "provision", route);
 
-// Sets the monthly price and queues the confirmation with its invoice.
-export function confirmOrder(s: GameState, ticketId: string, monthly: number): ActionResult {
+// Sets the monthly price and the setup fee (the line's rate where omitted) and queues the confirmation with its invoice.
+export function confirmOrder(s: GameState, ticketId: string, monthly: number, setup?: number): ActionResult {
   const r = s.tickets.find((x) => x.id === ticketId) && orderOf(s, s.tickets.find((x) => x.id === ticketId)!);
   if (!r) return fail("error.unknownRequest");
   if (!validPrice(monthly, r.reference)) return fail("error.quotePrice");
-  const before = r.quote;
-  editRequest(s, r.id, () => ({ quote: Math.round(monthly * 100) / 100 }));
+  if (setup !== undefined && !validPrice(setup + 1, r.reference)) return fail("error.quotePrice");
+  const before = { quote: r.quote, setup: r.setup };
+  editRequest(s, r.id, () => ({ quote: Math.round(monthly * 100) / 100, setup: setup === undefined ? undefined : Math.round(setup * 100) / 100 }));
   const done = step(s, ticketId, "invoice");
-  if (!done.ok) editRequest(s, r.id, () => ({ quote: before }));
+  if (!done.ok) editRequest(s, r.id, () => before);
   return done;
 }
 

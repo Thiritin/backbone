@@ -1,11 +1,13 @@
 import { BellDot, Bot, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useState, type CSSProperties } from "react";
+import { useSessionState } from "../../session";
 import { euroCents } from "../../../sim/00-core/money";
 import { pricePerMTokens } from "../../../sim/47-staff/chad";
 import { yearOf } from "../../../sim/00-core/time";
 import { isAvailable, skillFor } from "../../../sim/10-catalog/research";
 import { storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
 import { cancel, install, storeBlocker } from "../../../sim/90-actions/store";
+import { Confirm } from "../../desktop/Confirm";
 import { PearMark } from "../../desktop/Intro";
 import { appByName } from "../registry";
 import { useStore } from "../../store";
@@ -74,7 +76,7 @@ function featuredId(installed: string[], learned: string[]): string {
 
 export function Software() {
   const game = useStore((s) => s.game);
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useSessionState<string | null>("software.sel", null);
   const price = (item: StoreItem) => (item.monthly ? `${euroCents(subscriptionPrice(item, yearOf(game.hour)))} / month${item.id === "chadGpt" ? ` + ${euroCents(pricePerMTokens(yearOf(game.hour)))} / 1M tokens` : ""}` : "Free");
   const detail = open && storeItem(open);
   if (detail) return <Detail item={detail} price={price(detail)} back={() => setOpen(null)} />;
@@ -123,6 +125,7 @@ export function Software() {
 function Detail({ item, price, back }: { item: StoreItem; price: string; back: () => void }) {
   const { game, act } = useStore();
   const has = game.installed.includes(item.id);
+  const [cancelling, setCancelling] = useState(false);
   const facts: [string, string][] = [
     ["Subscription", price],
     ["Skill", skillFor(item.id)?.name ?? "None"],
@@ -138,12 +141,14 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
           <p>{artOf(item).about}</p>
           <div className="ps-detail-actions">
             <Action item={item} big />
-            {has && <button className="btn" onClick={() => act((s) => cancel(s, item.id))}>Cancel subscription</button>}
+            {has && <button className="btn" onClick={() => setCancelling(true)}>Cancel subscription</button>}
           </div>
         </div>
       </header>
       <dl className="ps-facts">
         {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={k === "Subscription" ? "num" : undefined}>{v}</dd></div>)}
+        {cancelling && <Confirm title={`Cancel ${item.name}?`} action="Cancel subscription" onCancel={() => setCancelling(false)}
+          onConfirm={() => { setCancelling(false); act((s) => cancel(s, item.id)); }} text={`The subscription for ${item.name} ends today.`} />}
       </dl>
       <section className="ps-shelf">
         <h3>Includes</h3>

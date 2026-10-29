@@ -1,5 +1,6 @@
 import { AppWindow, BatteryCharging, Cable, HardDrive, Network, Router, Server, Shield, ShoppingCart, Store } from "lucide-react";
 import { useState } from "react";
+import { useSessionState } from "../../session";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { brandsFor, COMPONENTS, MANUFACTURERS, priceOf, shopModels, type ComponentKind, type DeviceModel } from "../../../sim/10-catalog/hardware";
@@ -33,9 +34,9 @@ const items = (year: number): Item[] =>
 
 export function ShopApp() {
   const hour = useStore((s) => s.game.hour);
-  const [maker, setMaker] = useState<string | null>(null);
-  const [cls, setCls] = useState<string | null>(null);
-  const [software, setSoftware] = useState(false);
+  const [maker, setMaker] = useSessionState<string | null>("shop.maker", null);
+  const [cls, setCls] = useSessionState<string | null>("shop.cls", null);
+  const [software, setSoftware] = useSessionState("shop.software", false);
   const pick = (m: string | null, c: string | null) => { setMaker(m); setCls(c); setSoftware(false); };
   useFocus("Shop", (f) => { if (f.kind === "software") { pick(null, null); setSoftware(true); } });
   const all = items(yearOf(hour));

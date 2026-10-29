@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight, Map as MapIcon, Package, Plus } from "lucide-react";
 import { useRef, useState } from "react";
+import { useSessionState } from "../../session";
 import type { GameState } from "../../../sim/50-state";
 import { locationOf, storageStacks } from "../../../sim/60-infra/status";
 import { usageOf } from "../../../sim/60-infra/usage";
@@ -22,9 +23,9 @@ import { REGIONS } from "../../../sim/20-world/datacenters";
 // view: null is the overview, "storage" the storage list, otherwise a location id.
 export function LocationsApp() {
   const game = useStore((s) => s.game);
-  const [view, setView] = useState<string | null>(null);
-  const [rackId, setRackId] = useState<string | null>(null);
-  const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [view, setView] = useSessionState<string | null>("locations.sel", null);
+  const [rackId, setRackId] = useSessionState<string | null>("locations.rack", null);
+  const [deviceId, setDeviceId] = useSessionState<string | null>("locations.device", null);
   const [adding, setAdding] = useState(false);
   const [cabling, setCabling] = useState(false);
   const loc = game.locations.find((l) => l.id === view);

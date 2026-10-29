@@ -76,7 +76,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   }
   const t: Ticket = {
     id: `tkt${s.nextId++}`, customerId: "", serviceId: null, kind: "order", topic: need.product, status: "open",
-    createdAt: s.hour, dueAt: r.deadline, updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null,
+    createdAt: s.hour, dueAt: r.deadline, updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null, assignee: null,
   };
   s.tickets = [...s.tickets, t];
   r = editRequest(s, r.id, () => ({ ticketId: t.id }));

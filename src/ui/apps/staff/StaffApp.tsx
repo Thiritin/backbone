@@ -1,5 +1,6 @@
 import { BookOpen, Bot, Check, GraduationCap, Megaphone, MessagesSquare, Search, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
+import { useSessionState } from "../../session";
 import { runwayMonths } from "../../../sim/46-finance/finance";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -68,8 +69,8 @@ function TaskBars({ e, hour }: { e: Employee; hour: number }) {
 
 export function StaffApp() {
   const game = useStore((s) => s.game);
-  const [view, setView] = useState<"team" | "market">("team");
-  const [sel, setSel] = useState<string | null>(null);
+  const [view, setView] = useSessionState<"team" | "market">("staff.tab", "team");
+  const [sel, setSel] = useSessionState<string | null>("staff.sel", null);
   const [role, setRole] = useState<Role>("support");
   const market = visibleCandidates(game);
   useFocus("Staff", (f) => { if (f.kind === "market" && ROLES.includes(f.id as Role)) { setRole(f.id as Role); setView("market"); } });
@@ -92,7 +93,7 @@ export function StaffApp() {
 // Hours, assignment, training, raise and leaving for an employee; a bot only cancels.
 function staffMenu(game: GameState, e: Employee, onLeave: (e: Employee) => void): MenuEntry[] {
   const act = useStore.getState().act;
-  if (e.bot) return [{ label: "Cancel subscription", run: () => act((s) => cancel(s, e.id)) }];
+  if (e.bot) return [{ label: "Cancel subscription", run: () => onLeave(e) }];
   const open = TASKS[e.role].filter((k) => !e.trained.includes(k) && e.training?.task !== k && !e.plan.includes(k));
   const tech = e.role === "technician", onCall = game.onCall.roster.includes(e.id);
   return [
@@ -184,6 +185,10 @@ function ChadUsageFacts({ game }: { game: GameState }) {
 function LetGo({ game, e, onClose }: { game: GameState; e: Employee; onClose: () => void }) {
   const act = useStore((s) => s.act);
   const owed = salaryUpToNow(game, e);
+  if (e.bot) return (
+    <Confirm title={`Cancel ${e.name}?`} action="Cancel subscription" onCancel={onClose} onConfirm={() => { onClose(); act((s) => cancel(s, e.id)); }}
+      text={`The subscription for ${e.name} ends today.`} />
+  );
   return (
     <Confirm title={`Let ${e.name} go?`} action="Let go" onCancel={onClose} onConfirm={() => { onClose(); act((s) => fire(s, e.id)); }}
       text={`This saves ${euro(monthlyPay(e))} a month. ${e.name.split(" ")[0]} leaves today${owed > 0 ? ` and is paid ${euro(owed)} for the days worked this month` : ""}.`} />
