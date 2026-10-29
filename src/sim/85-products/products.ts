@@ -104,6 +104,14 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
   }
 }
 
+// The friends wait for the first panel host the internet reaches, which may go online after its install. They only come to
+// a company without customers.
+function friendsArrive(s: GameState, events: SimEvent[]) {
+  if (s.customers.length) return;
+  const c = s.clusters.find((x) => x.kind === "panel" && x.panel && !x.switching);
+  if (c && welcomeFriends(s, c.id)) events.push({ app: "Customers", key: "event.friendsJoined", params: { cluster: c.name } });
+}
+
 function reportLosses(s: GameState, events: SimEvent[]) {
   for (const d of s.devices) {
     if (d.dataLost === null || s.lossReports.some((r) => r.deviceId === d.id && r.hour === d.dataLost)) continue;
@@ -179,6 +187,7 @@ function billLicenses(s: GameState) {
 export function productsTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   finishSwitches(s, events);
+  friendsArrive(s, events);
   reportLosses(s, events);
   runBackups(s, events);
   overload(s);

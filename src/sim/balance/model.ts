@@ -9,7 +9,9 @@ import {
   TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vpsPlanGb,
   type ProductId, type Profile,
 } from "../10-catalog/economy";
-import { DATACENTERS, HOME_LINES, MOVE, spacePrice } from "../20-world/datacenters";
+import { DATACENTERS, HOME_LINES, homeLineById, MOVE, spacePrice } from "../20-world/datacenters";
+import { LINE_EXTRA_V4, providerV4, STATIC_LINE_ADDRESSES } from "../10-catalog/addresses";
+import { noticedHours } from "../10-catalog/attention";
 import { dcPerTb } from "../10-catalog/network";
 import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
 import { OFFER, ORGANIC_CONSIDER, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
@@ -28,6 +30,8 @@ import type { Product as LiveProduct } from "../30-customers/customers";
 
 // Average hours a ticket written at a random hour waits for the office to open: four 16-hour nights and a 64-hour weekend.
 const OFF_HOURS_WAIT = (4 * 16 ** 2 + 64 ** 2) / 2 / 168;
+
+const BUSINESS_IDS = ["small", "agency", "office", "shop", "enterprise"];
 
 // Calendar hours past a patience window; a business-hours window stretches over nights and weekends.
 const beyond =(e: Patience, calendarHours: number): number =>
@@ -147,7 +151,8 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
   const loans: Loan[] = [];
   const leases: Lease[] = [];
   const profits: number[] = [];
-  let line = HOME_LINES[0];
+  // A dynamic line sells only web hosting, so the bot starts on the business DSL line (economy.md, Addresses and internet).
+  let line = homeLineById("dsl-16-biz");
   const support: Worker[] = [];
   const books: Worker[] = [];
   let cash = START_CASH - servers[0].price, minCash = cash, level = 1, knowHow = 0, cities = 1, rackUnlocked = false, hireUnlocked = false;
@@ -280,7 +285,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     }
     // The cheapest line with more upload once the basement's evening peak reaches 90% of its line.
     if (!rackUnlocked && peakNeeded(newCustomers) > 0.9 * line.up) {
-      const better = HOME_LINES.filter((l) => l.from <= year && l.up > line.up).sort((a, b) => a.monthly - b.monthly)[0];
+      const better = HOME_LINES.filter((l) => l.staticIp && l.from <= year && l.up > line.up).sort((a, b) => a.monthly - b.monthly)[0];
       if (better) line = better;
     }
     const wonNow = newCustomers.flat().reduce((a, b) => a + b, 0);
@@ -341,7 +346,8 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       const tpc = TICKETS_PER_CUSTOMER[p.skill];
       c.H -= Math.min(40, tpc * p.waitPenalty * beyond(p.reply, waitHours + (p.reply.clock === "always" ? OFF_HOURS_WAIT : 0)));
       c.H += tpc * (5 * pRight - 10 * (1 - pRight));
-      if (pr !== "web") c.H -= hitShare * p.outagePenalty * beyond(p.tolerance, REPAIR_HOURS);
+      // Only the hours after the customer noticed the repair count (economy.md, Noticing outages).
+      if (pr !== "web") c.H -= hitShare * p.outagePenalty * noticedHours(pr === "game" ? "game" : BUSINESS_IDS.includes(p.id) ? "business" : "private", REPAIR_HOURS);
       // Overpricing against a fair price and the cohort's average maximum (economy.md, Price tolerance).
       const pct = (limit: number) => Math.max(0, 100 * (bot.priceFactor / limit - 1));
       c.H -= OVER_DRIFT * pct(Math.max(1, OFFER[p.budget])) + PAST_MAX_DRIFT * pct(p.cap * (TOLERANCE[0] + TOLERANCE[1]) / 2);
@@ -397,7 +403,14 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const depreciation = servers.reduce((a, s) => a + (!s.leasedUntil && month - s.bought < 60 ? s.price / 60 : 0), 0);
     const marketing = website ? OWNED.website.upkeep + OWNED.orderForm.upkeep : 0;
     const chadPrice = chad ? subscriptionPrice(CHAD, year) + botTickets * mix((k) => costPerTicket(k, year)) : 0;
-    const opex = chadPrice + leasing + power + space + cityRents + bandwidth + salaries + adSpent + marketing + (rackUnlocked ? 0 : line.monthly);
+    // Every VPS and game server holds an address: extra business line addresses in the basement, provider addresses (one
+    // per server too) in a datacenter.
+    const ownAddresses = PROFILES.reduce((a, _, i) => a + cohorts[i][1].n + cohorts[i][2].n, 0);
+    const addresses = rackUnlocked
+      ? (ownAddresses + servers.length) * providerV4(year, ownAddresses + servers.length)
+      : Math.max(0, ownAddresses - (STATIC_LINE_ADDRESSES - 1)) * LINE_EXTRA_V4;
+    book_("addresses", addresses);
+    const opex = chadPrice + leasing + power + space + cityRents + bandwidth + salaries + adSpent + marketing + addresses + (rackUnlocked ? 0 : line.monthly);
     cash += collectedShare - opex - instalments;
     profits.push(collectedShare - opex - interest - servers.filter((x) => x.bought === month && !x.leasedUntil).reduce((a, x) => a + x.price, 0));
     if (profits.length > 6) profits.shift();

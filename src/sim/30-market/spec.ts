@@ -79,5 +79,6 @@ export function specText(product: Product, spec: Spec): string {
               : product === "dns" ? [`${spec.zones ?? 0} ${spec.zones === 1 ? "zone" : "zones"}`]
                 : product === "vpn" ? [`${spec.users ?? 0} ${spec.users === 1 ? "user" : "users"}`]
               : [];
-  return [LINE_NAME[product], ...parts].join(", ");
+  const addresses = [...(spec.ipv4 ? [`${spec.ipv4} dedicated IPv4`] : []), ...(spec.ipv6 ? ["IPv6"] : [])];
+  return [LINE_NAME[product], ...parts, ...addresses].join(", ");
 }

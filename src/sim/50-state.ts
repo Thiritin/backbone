@@ -2,7 +2,7 @@ import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
 import { componentKinds, modelById, type ComponentKind } from "./10-catalog/hardware";
 import { STARTER_APPS } from "./10-catalog/store";
-import { DEFAULT_HOME_LINE, seedDcs } from "./20-world/datacenters";
+import { seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
 import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
@@ -23,6 +23,7 @@ import type { LossReport } from "./85-products/products";
 import type { Rates } from "./10-catalog/products";
 import type { Domain } from "./30-customers/registry";
 import { newChadUsage, type ChadUsage } from "./47-staff/chad";
+import { newIps, type Ips } from "./60-infra/addresses";
 
 export const SAVE_VERSION = 2;
 
@@ -93,7 +94,7 @@ export interface GameState {
   downSince: Record<string, number>;
   // Cluster nodes frozen because their RAM in use exceeds the installed RAM.
   frozen: string[];
-  // The basement's internet line (HOME_LINES id), a switch to another line that goes live at hour at, and whether this line ran full.
+  // The basement's internet line (HOME_LINES id, "" before the first one), a switch to another line that goes live at hour at, and whether this line ran full.
   homeLine: { id: string; next: { id: string; at: number } | null; full?: boolean };
   docs: Doc[];
   // Positions rented by competitors in each datacenter.
@@ -145,6 +146,8 @@ export interface GameState {
   domains: Domain[];
   // ChadGPT replies this month, billed at the next month start.
   chadUsage: ChadUsage;
+  // Public addresses, the LIR membership and its blocks (60-infra/addresses.ts).
+  ips: Ips;
 }
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
@@ -174,7 +177,7 @@ export const newGame = (seed: number): GameState => ({
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
   tickets: [], playerBusyUntil: 0, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)" },
-  homeLine: { id: DEFAULT_HOME_LINE, next: null },
+  homeLine: { id: "", next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
   staff: [], candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true }, onCall: { roster: [], lastCall: {}, month: {} },
   marketing: newMarketing(), fairs: [],
@@ -185,6 +188,7 @@ export const newGame = (seed: number): GameState => ({
   rates: {},
   domains: [],
   chadUsage: newChadUsage(),
+  ips: newIps(),
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

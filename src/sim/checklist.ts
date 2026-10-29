@@ -2,6 +2,7 @@ import { modelById } from "./10-catalog/hardware";
 import { DEFAULT_HOME_LINE } from "./20-world/datacenters";
 import type { GameState } from "./50-state";
 import { isDrive, linkStatus, locationOf } from "./60-infra/status";
+import { lineActive } from "./60-infra/addresses";
 
 const onlineServers = (s: GameState) =>
   s.devices.filter((d) => modelById(d.model).kind === "server" && linkStatus(s, d.id).online);
@@ -10,12 +11,15 @@ const rented = (s: GameState) => s.locations.filter((l) => l.dc !== null);
 
 // Checklist goals the game detects from state. Goals without an entry are ticked by hand.
 export const CHECKS: Record<string, (s: GameState) => boolean> = {
+  buyServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server"),
+  mountServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server" && d.rackId && d.on),
+  internet: (s) => lineActive(s),
   website: (s) => s.marketing.lines.length > 0,
   loan: (s) => booked(s, "ledger.loanTaken"),
   firstServer: (s) => onlineServers(s).length >= 1,
   setup: (s) => s.clusters.some((c) => c.platform || c.panel),
   secondServer: (s) => onlineServers(s).length >= 2,
-  homeLine: (s) => s.homeLine.id !== DEFAULT_HOME_LINE,
+  homeLine: (s) => lineActive(s) && s.homeLine.id !== DEFAULT_HOME_LINE,
   firstCustomer: (s) => s.customers.some((c) => c.habit !== "friend"),
   ticket: (s) => s.tickets.some((t) => t.replies.length > 0),
   payment: (s) => s.invoices.some((i) => i.status === "paid"),
@@ -36,3 +40,6 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
 
 export const tracked = (id: string): boolean => id in CHECKS;
 export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) || s.checklist.includes(id);
+
+// The Getting started tutorial: each step is a checklist goal, done in this order.
+export const TUTORIAL = ["buyServer", "mountServer", "internet", "setup", "website", "firstCustomer"] as const;

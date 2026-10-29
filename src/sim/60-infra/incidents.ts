@@ -1,4 +1,5 @@
 // economy.md, Power outages and Legal requests: grid outages per location, server seizures and the incident log.
+import { noticeChance, segmentOf } from "../10-catalog/attention";
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { modelById } from "../10-catalog/hardware";
 import { datacenterById } from "../20-world/datacenters";
@@ -86,6 +87,8 @@ export function gridOutage(s: GameState, loc: Location, minutes: number, r: Rng,
   for (const c of hit) {
     const services = new Set(workloads.map((w) => w.serviceId));
     const svc = s.services.find((v) => v.customerId === c.id && services.has(v.id))!;
+    // A customer who never noticed the dark minutes asks for nothing.
+    if (rand(r) >= noticeChance(s.seed, c.id, segmentOf(c.profile, svc.product), s.hour, dark)) continue;
     if (dark >= REFUND_MIN_DARK && rand(r) < REFUND_CHANCE[profileStats(c.profile).budget]) createTicket(s, c, "refund", svc.id, "outage");
     maybeReview(s, c, "outage", r, events);
   }

@@ -11,6 +11,7 @@ import { trafficShape } from "../10-catalog/usage";
 import { datacenterById, homeLineById, inUs } from "../20-world/datacenters";
 import type { Service } from "../30-customers/customers";
 import { bump, createTicket, OUTAGE_WRITE_CHANCE, profileStats, slowed } from "../40-support/tickets";
+import { attention, segmentOf } from "../10-catalog/attention";
 import { isSuspended } from "../45-billing/billing";
 import type { GameState, LedgerEntry, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -296,10 +297,11 @@ function saturation(s: GameState, r: Routing, events: SimEvent[]) {
       const loc = zoneOf(s, v), c = byId.get(v.customerId);
       if (!loc || !c || !now.includes(loc.id) || !running(s, v)) continue;
       if (!loc.dc) { slowed(s, c, v.id, dropShare(loc.id)); continue; }
-      const p = profileStats(c.profile);
-      bump(c, -p.outagePenalty * SATURATION_PENALTY);
+      // Only the customers looking at the hour feel it (10-catalog/attention.ts).
+      const p = profileStats(c.profile), seen = attention(segmentOf(c.profile, v.product), s.hour);
+      bump(c, -p.outagePenalty * SATURATION_PENALTY * seen);
       const fresh = !s.network.saturated.includes(loc.id);
-      if (fresh && rand(hashRng(s.seed, s.hour, 0x5a7, Number(v.id.replace(/\D/g, "")) || 0)) < OUTAGE_WRITE_CHANCE[p.budget] / 2) createTicket(s, c, "outage", v.id);
+      if (fresh && rand(hashRng(s.seed, s.hour, 0x5a7, Number(v.id.replace(/\D/g, "")) || 0)) < (seen * OUTAGE_WRITE_CHANCE[p.budget]) / 2) createTicket(s, c, "outage", v.id);
     }
     for (const id of now.filter((x) => !s.network.saturated.includes(x))) {
       const loc = s.locations.find((l) => l.id === id)!;

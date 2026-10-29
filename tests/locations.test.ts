@@ -237,17 +237,18 @@ describe("monthly bills", () => {
     loc(s, id).readyAt = 0;
     expect(powerPerHour(s)).toBeCloseTo(basement + 0.25 * 0.09 * 1.4, 10);
   });
-  it("pays power and the rent of every datacenter location on the first of the month", () => {
+  it("pays power, the home line and the rent of every datacenter location on the first of the month", () => {
     const s = withServer(newGame(1));
     ok(addLocation(s, "hetzler-park", "positions", 2));
     const events = run(s, 24 * 31);
     // Server 250 W, switch 8 W and home router 10 W for 744 h at 9 ct × 1.6.
     const power = Math.round(0.268 * 744 * 0.09 * 1.6 * 100) / 100;
     expect(power).toBe(28.71);
-    expect(s.cash).toBe(START_CASH - 2500 - 360 - power);
+    // The business DSL line costs €59.
+    expect(s.cash).toBe(START_CASH - 2500 - 360 - 59 - power);
     expect(s.powerDue).toBe(0);
-    expect(s.ledger.map((l) => [l.category, l.key, l.amount])).toEqual([["power", "ledger.power", -power], ["rent", "ledger.space", -360]]);
-    expect(events).toContainEqual({ app: "Finance", key: "event.bills", params: { power, rent: 360, leasing: 0, subscriptions: 0, total: 360 + power } });
+    expect(s.ledger.map((l) => [l.category, l.key, l.amount])).toEqual([["power", "ledger.power", -power], ["rent", "ledger.space", -360], ["rent", "ledger.homeLine", -59]]);
+    expect(events).toContainEqual({ app: "Finance", key: "event.bills", params: { power, rent: 419, leasing: 0, subscriptions: 0, total: 419 + power } });
   });
 });
 

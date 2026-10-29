@@ -37,6 +37,12 @@ export function farEnd(s: GameState, from: End): { end: End; gbit: number } | nu
 
 // Servers never forward traffic; switches and firewalls forward between all ports, patch panels between a jack's front and back.
 // Firewalls slower than minGbit block the path.
+// A basement gateway carries traffic only while a home line is live.
+const lineUp = (s: GameState, gatewayId: string): boolean => {
+  const loc = s.locations.find((l) => l.id === s.devices.find((d) => d.id === gatewayId)?.panel);
+  return !loc || !!loc.dc || !!s.homeLine.id;
+};
+
 function reachesGateway(s: GameState, start: End, origin: string, minGbit: number): boolean {
   const seen = new Set([origin]);
   const queue = [start];
@@ -44,7 +50,7 @@ function reachesGateway(s: GameState, start: End, origin: string, minGbit: numbe
     const at = queue.shift()!;
     const model = modelOf(s, at.device);
     if (!working(s, at.device)) continue;
-    if (model.kind === "gateway") return true;
+    if (model.kind === "gateway") return lineUp(s, at.device);
     if (model.kind === "firewall" && model.throughputGbit! < minGbit) continue;
     const key = model.kind === "patch" ? `${at.device}:${at.port}` : at.device;
     if (model.kind === "server" || seen.has(key)) continue;
@@ -69,7 +75,7 @@ export function linkStatus(s: GameState, deviceId: string): LinkStatus {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d || !working(s, d.id)) return { online: false, gbit: 0, warning: null };
   const ports = modelById(d.model).ports;
-  if (modelById(d.model).kind === "gateway") return { online: true, gbit: Math.max(...ports.map((p) => p.gbit)), warning: null };
+  if (modelById(d.model).kind === "gateway") return { online: lineUp(s, d.id), gbit: Math.max(...ports.map((p) => p.gbit)), warning: null };
   const own = modelById(d.model).throughputGbit ?? Infinity;
   const up = ports
     .map((_, port) => farEnd(s, { device: deviceId, port }))

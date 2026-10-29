@@ -13,6 +13,7 @@ import { locationOf } from "../60-infra/status";
 import { awareness, leadsThisMonth, PROFILE_IDS, reviewMultiplier, reviewScore, trustBonus } from "../80-business/marketing";
 import { forumAwareness } from "../47-staff/staff";
 import { metrics } from "../metrics";
+import { addressesFit, addressNeed } from "../60-infra/addresses";
 import { serviceMarket } from "./spec";
 
 export type RequestStatus = "open" | "quoted" | "countered" | "refused" | "won" | "lost" | "declined";
@@ -192,9 +193,16 @@ export const referenceFor = (s: GameState, profile: Profile, product: Product, s
 export interface Requirement { key: string; params: Record<string, string | number>; ok: boolean }
 
 // Every requirement of a request with whether you meet it; the keys read as "Needs a location in London".
-export function requirementsFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "sla" | "profile" | "kind">): Requirement[] {
+export function requirementsFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "sla" | "profile" | "kind"> & { spec?: Spec }): Requirement[] {
   const out: Requirement[] = [{ key: "sales.need.location", params: { city: r.city }, ok: s.locations.some((l) => l.city === r.city) }];
   if (!out[0].ok || r.kind === "expansion") return out;
+  // A service needing its own address needs one free (60-infra/addresses.ts).
+  const here = s.locations.filter((l) => l.city === r.city);
+  const need = r.spec && addressNeed(r.product, r.spec, here.find((l) => l.dc) ?? here[0]);
+  if (r.spec && need && (need.v4 > 0 || need.v6)) {
+    const fits = here.some((l) => addressesFit(s, l, r.product, r.spec!));
+    out.push({ key: need.v6 && !need.v4 ? "sales.need.ipv6" : "sales.need.ipv4", params: { city: r.city }, ok: fits });
+  }
   if (r.sla === "premium") out.push({ key: "sales.need.age", params: { months: 12 }, ok: s.hour >= 8760 });
   if (profileStats(r.profile).budget === "high") out.push({ key: "sales.need.reviews", params: { stars: 3 }, ok: reviewScore(s) >= 3 });
   return out;

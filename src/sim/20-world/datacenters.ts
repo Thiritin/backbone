@@ -167,9 +167,12 @@ export const HOUSEHOLD_FACTOR = 1.6;
 // Internet lines the basement can get, in Mbit/s and euros a month (docs/design/economy.md, Home line).
 export interface HomeLine { id: string; isp: string; name: string; down: number; up: number; monthly: number; from: number; installDays: number; staticIp: boolean }
 export const HOME_LINES: HomeLine[] = [
-  { id: "dsl-16", isp: "Deutsche Telekomm", name: "DSL 16000", down: 16, up: 1, monthly: 0, from: 2005, installDays: 7, staticIp: false },
+  { id: "dsl-16", isp: "Deutsche Telekomm", name: "DSL 16000", down: 16, up: 1, monthly: 45, from: 2005, installDays: 7, staticIp: false },
+  { id: "dsl-16-biz", isp: "Deutsche Telekomm", name: "DSL 16000 Business", down: 16, up: 1, monthly: 59, from: 2005, installDays: 14, staticIp: true },
   { id: "sdsl-2", isp: "1&2", name: "SDSL 2048", down: 2, up: 2, monthly: 129, from: 2005, installDays: 14, staticIp: true },
   { id: "vdsl-50", isp: "Deutsche Telekomm", name: "VDSL 50", down: 50, up: 10, monthly: 45, from: 2007, installDays: 14, staticIp: false },
+  { id: "vdsl-50-biz", isp: "Deutsche Telekomm", name: "VDSL 50 Business", down: 50, up: 10, monthly: 99, from: 2008, installDays: 14, staticIp: true },
+  { id: "vdsl-100-biz", isp: "Deutsche Telekomm", name: "VDSL 100 Business", down: 100, up: 40, monthly: 129, from: 2014, installDays: 14, staticIp: true },
   { id: "cable-100", isp: "Vodafoam", name: "Cable 100", down: 100, up: 6, monthly: 40, from: 2010, installDays: 10, staticIp: false },
   { id: "vdsl-100", isp: "Deutsche Telekomm", name: "VDSL 100", down: 100, up: 40, monthly: 50, from: 2014, installDays: 14, staticIp: false },
   { id: "cable-400", isp: "Vodafoam", name: "Cable 400", down: 400, up: 25, monthly: 60, from: 2016, installDays: 10, staticIp: false },
@@ -178,7 +181,9 @@ export const HOME_LINES: HomeLine[] = [
   { id: "cable-1000", isp: "Vodafoam", name: "Cable 1000", down: 1000, up: 50, monthly: 80, from: 2019, installDays: 10, staticIp: false },
 ];
 export const DEFAULT_HOME_LINE = "dsl-16";
-export const homeLineById = (id: string): HomeLine => HOME_LINES.find((l) => l.id === id)!;
+// The basement before its first line goes live.
+export const NO_LINE: HomeLine = { id: "", isp: "", name: "No line", down: 0, up: 0, monthly: 0, from: 2005, installDays: 0, staticIp: false };
+export const homeLineById = (id: string): HomeLine => HOME_LINES.find((l) => l.id === id) ?? NO_LINE;
 
 type RentedSpace = Exclude<SpaceKind, "basement">;
 export const SPACE_SIZES: Record<RentedSpace, number[]> = { share: [8, 4, 2, 1], positions: [1, 2, 3, 4], cage: [4, 8, 16], suite: [20, 40] };

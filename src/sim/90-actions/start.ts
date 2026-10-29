@@ -1,5 +1,6 @@
 import { newGame, type GameState } from "../50-state";
 import { provisionService } from "./clusters";
+import { clusterReachable } from "../60-infra/cluster";
 import { addCustomer } from "./customers";
 import { yearOf } from "../00-core/time";
 import { WEB_BASE } from "../10-catalog/economy";
@@ -15,7 +16,8 @@ export const startGame = (seed: number): GameState => newGame(seed);
 
 // The friends sign up on the panel host once, when it is the first ready; false when they already have.
 export function welcomeFriends(s: GameState, hostId: string): boolean {
-  if (s.customers.some((c) => c.habit === "friend")) return false;
+  const host = s.clusters.find((c) => c.id === hostId);
+  if (s.customers.some((c) => c.habit === "friend") || !host?.panel || !clusterReachable(s, host)) return false;
   const before = { customers: [...s.customers], services: [...s.services], workloads: [...s.workloads], nextId: s.nextId };
   for (const [name, label] of FRIENDS) {
     const id = addCustomer(s, name, "private", "friend");

@@ -3,6 +3,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import { addHoursOn, hoursOn, isWorkHour } from "../src/sim/00-core/workhours";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { createTicket } from "../src/sim/40-support/tickets";
+import { noticed } from "../src/sim/10-catalog/attention";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
@@ -47,21 +48,25 @@ describe("business hours", () => {
 });
 
 describe("customer clocks", () => {
-  it("lets a private customer's weekend outage do no damage before Wednesday", () => {
-    const { s, svc, c } = customerAt(at(FRI, 18), "private");
+  it("does no damage before a private customer notices the outage", () => {
+    const { s, cus, svc, c } = customerAt(at(FRI, 18), "private");
+    // The first tick is the outage's first hour.
+    const since = s.hour + 1;
+    let seenAt = since;
+    while (!noticed(s.seed, cus, svc, "private", since, seenAt).seen) seenAt++;
     down.add(svc);
-    runTo(s, at(TUE, 23));
+    runTo(s, seenAt - 1);
     expect(c().happiness).toBe(70);
     expect(s.tickets.filter((t) => t.kind === "outage")).toHaveLength(0);
-    runTo(s, at(WED, 12));
+    runTo(s, seenAt);
     down.clear();
-    expect(c().happiness).toBe(70 - 4);
+    expect(c().happiness).toBe(69);
   });
 
-  it("hurts an online shop from the first hour of an outage", () => {
-    const { s, svc, c } = customerAt(at(FRI, 18), "onlineShop");
+  it("hurts an online shop from the first hour of an outage in business hours", () => {
+    const { s, svc, c } = customerAt(at(TUE, 10), "onlineShop");
     down.add(svc);
-    runTo(s, at(FRI, 21));
+    runTo(s, at(TUE, 13));
     down.clear();
     expect(c().happiness).toBe(70 - 3 * 10);
   });

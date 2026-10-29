@@ -1,4 +1,5 @@
 import { START_CASH } from "../src/sim/10-catalog/economy";
+import { hourOf } from "../src/sim/00-core/time";
 import { describe, expect, it, vi } from "vitest";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { createTicket, monthlyValue, type Ticket, type TicketKind } from "../src/sim/40-support/tickets";
@@ -238,6 +239,8 @@ describe("support actions", () => {
 describe("outages", () => {
   it("lowers happiness per hour down and lets high-budget customers write three times", () => {
     const s = newGame(8);
+    // Tuesday 10:00, when shops look at their sites.
+    s.hour = hourOf(new Date(Date.UTC(2005, 0, 11, 10)));
     const ids = crowd(s, "onlineShop", 20);
     const svcs = ids.map((id) => addService(s, id, "vps", "Shop VPS", 0.05, "hour"));
     svcs.forEach((v) => down.add(v));
@@ -247,7 +250,7 @@ describe("outages", () => {
     const outages = s.tickets.filter((t) => t.kind === "outage");
     expect(outages.length % 3).toBe(0);
     expect(outages.length / 3).toBeGreaterThan(14);
-    expect(s.customers[0].happiness).toBe(70 - 2 * 10);
+    expect(s.customers.filter((c) => c.happiness === 70 - 2 * 10).length).toBeGreaterThan(14);
     expect(Object.keys(s.downSince)).toHaveLength(20);
   });
 

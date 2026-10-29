@@ -6,7 +6,8 @@ import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { linkStatus, raidUsable, rackPower, working } from "./status";
+import { linkStatus, locationOf, raidUsable, rackPower, working } from "./status";
+import { hasPublicAddress, sellsFrom } from "./addresses";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
@@ -122,15 +123,27 @@ export function supports(c: Cluster, p: Product): boolean {
   return !PRODUCTS[p].ha || c.ha.failover;
 }
 export const hasHosts = (c: Cluster): boolean => c.nodes.length > 0 || !!c.vm;
-// Whether some installed control plane anywhere sells the product line; lines off clusters don't need one.
-export const lineOffered = (s: GameState, p: Product): boolean =>
-  PRODUCTS[p].runsOn !== "cluster" || s.clusters.some((c) => supports(c, p) && hasHosts(c));
+// Whether the internet reaches a cluster: its panel VM or one of its servers has a public address.
+export const clusterReachable = (s: GameState, c: Cluster): boolean =>
+  c.vm ? hasPublicAddress(s, c.vm) : c.nodes.some((n) => linkStatus(s, n.deviceId).online && hasPublicAddress(s, n.deviceId));
+// Whether the player can deliver the product line anywhere: a reachable cluster with software that sells it, a spare
+// reachable server for dedicated servers, a rented location for colocation (gdd.md, Addresses and internet, The start).
+export function lineOffered(s: GameState, p: Product): boolean {
+  const runsOn = PRODUCTS[p].runsOn;
+  const sells = (az: string | undefined) => { const l = s.locations.find((x) => x.az === az); return !!l && sellsFrom(s, l, p); };
+  if (runsOn === "cluster") return s.clusters.some((c) => supports(c, p) && hasHosts(c) && clusterReachable(s, c) && sells(c.az));
+  if (runsOn === "server") return s.devices.some((d) => d.rackId && modelById(d.model).server && !serverTaken(s, d.id) && linkStatus(s, d.id).online && hasPublicAddress(s, d.id) && sells(locationOf(s, d)?.az));
+  return runsOn === "none" || s.locations.some((l) => l.dc);
+}
 // Why a product found no place: no software that sells it, no failover for a product that needs it, or no room.
 export function noRoomError(s: GameState, p: Product, clusterId: string | null = null): string {
   if (PRODUCTS[p].runsOn === "server") return "error.noFreeServer";
+  if (PRODUCTS[p].runsOn === "rack") return "error.needsDatacenter";
   const kind = kindServing(p), mine = s.clusters.filter((c) => (clusterId ? c.id === clusterId : true) && c.kind === kind && (c.panel || c.platform));
   if (!mine.length) return kind === "panel" ? "error.needsPanel" : "error.needsPlatform";
   if (!mine.some((c) => supports(c, p))) return "error.needsHaCluster";
+  if (!mine.some((c) => clusterReachable(s, c))) return "error.needsInternet";
+  if (!mine.some((c) => s.locations.some((l) => l.az === c.az && sellsFrom(s, l, p)))) return "error.needsStaticLine";
   return "error.noCapacity";
 }
 

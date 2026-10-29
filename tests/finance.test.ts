@@ -35,6 +35,8 @@ describe("corporate tax", () => {
 
   it("carries a loss forward and offsets it against the next year's profit", () => {
     const s = withServer(newGame(12));
+    // Without a line, only power touches the profit.
+    s.homeLine = { id: "", next: null };
     s.ledger = [entry(at(2005, 6, 1), "hardware", -3_000), entry(at(2006, 6, 1), "payments", 5_000)];
     const loss = tickInto(s, at(2006, 4, 1));
     expect(loss).toContainEqual({ app: "Finance", key: "event.taxLoss", params: { year: 2005, carry: 3_000 } });
