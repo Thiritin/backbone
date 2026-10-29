@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { MS_PER_HOUR, SPEEDS } from "../../sim/00-core/time";
+import { formatClock, MS_PER_HOUR, SPEEDS } from "../../sim/00-core/time";
+import { playerAt } from "../../sim/60-infra/handwork";
 import { t } from "../../i18n/en";
 import { clockCarry, loadedFromSave, useStore } from "../store";
 import { AppWindow } from "./AppWindow";
@@ -87,6 +88,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   // Space pauses; 1 to 5 pick 1×, 2×, 4×, 8× and 16×.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      if (useStore.getState().game.player.until > useStore.getState().game.hour) return;
       if ((e.target as HTMLElement).closest("input, textarea, select, [role=alertdialog], [role=dialog], [role=menu]")) return;
       if (e.code === "Space") { e.preventDefault(); setSpeed(speed ? 0 : 1); }
       const n = Number(e.key);
@@ -115,6 +117,31 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
       <ContextMenuHost />
       <Searchlight />
+      <AwayLock />
     </>
+  );
+}
+
+// Hours pass quickly while the player drives or works on site, and the computer takes no input until they are done.
+const AWAY_MS_PER_HOUR = 150;
+
+function AwayLock() {
+  const game = useStore((s) => s.game), advance = useStore((s) => s.advance);
+  const away = game.player.until > game.hour && game.gameOver === null;
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!away) return;
+    (document.activeElement as HTMLElement | null)?.blur();
+    ref.current?.focus();
+    const id = setInterval(() => advance(1), AWAY_MS_PER_HOUR);
+    return () => clearInterval(id);
+  }, [away, advance]);
+  if (!away) return null;
+  const { until, doing } = game.player, place = playerAt(game).name;
+  return (
+    <div ref={ref} className="away-lock" role="alertdialog" aria-label={doing === "travel" ? `Driving to ${place}` : `Working at ${place}`} tabIndex={-1}>
+      <strong>{doing === "travel" ? `Driving to ${place}` : `Working at ${place}`}</strong>
+      <span className="num">Until {formatClock(Math.floor(until), Math.round((until % 1) * 60))}</span>
+    </div>
   );
 }

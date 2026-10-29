@@ -1,4 +1,4 @@
-import { Bell, Moon, Pause, Sun } from "lucide-react";
+import { Bell, Cloud, CloudRain, CloudSnow, CloudSun, Moon, Pause, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { serialize } from "../../sim/91-save/save";
@@ -8,6 +8,8 @@ import { newNote } from "./DesktopIcons";
 import { restoreGuide } from "../../sim/90-actions/docs";
 import { dateOf, formatClock, SPEEDS, type Speed } from "../../sim/00-core/time";
 import { euro } from "../../sim/00-core/money";
+import { playerAt } from "../../sim/60-infra/handwork";
+import { drive, travelTo } from "../../sim/90-actions/travel";
 import { clockCarry, useStore, type Win } from "../store";
 import { CompanyMark } from "../apps/company";
 import { appFor } from "../apps/registry";
@@ -23,6 +25,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
   const [confirm, setConfirm] = useState(false);
   const [intro, setIntro] = useState(false);
   const file = useRef<HTMLInputElement>(null);
+  const here = playerAt(game);
   const front = [...windows].filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];
 
   useEffect(() => {
@@ -65,6 +68,11 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       {front ? item(appFor(game, front.app).name, appMenu(front), appFor(game, front.app).name, "mb-app") : <span className="mb-item mb-app">Backbone</span>}
       {item("Window", windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : [appFor(game, w.app).name, () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
+      {item("Location", game.locations.flatMap((l) => {
+        const d = l.id !== here.id && drive(game, l.id);
+        return d ? [[`${l.name}, ${d.hours} h, ${euro(d.fee)}`, () => act(travelTo, l.id)] as [string, () => void]] : [];
+      }), <span className="mb-place"><Weather city={here.city} hour={game.hour} />{here.name}</span>)}
+      <span className="mb-sep" />
       <div className="speed" role="group" aria-label="Game speed">
         {SPEEDS.map((s: Speed) => (
           <button key={s} aria-pressed={speed === s} aria-label={s ? `${s}× speed` : "Pause"} onClick={() => setSpeed(s)}>
@@ -112,4 +120,14 @@ function Clock({ hour, running }: { hour: number; running: boolean }) {
     return () => cancelAnimationFrame(raf);
   }, [hour, running]);
   return <span className="mb-item num">{formatClock(hour, minute)}</span>;
+}
+
+// Today's weather in a city: a pick per city and day, with snow only in winter.
+function Weather({ city, hour }: { city: string; hour: number }) {
+  const day = Math.floor(hour / 24), month = dateOf(hour).getUTCMonth();
+  let h = day;
+  for (const c of city) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const icons = month < 2 || month === 11 ? [Sun, Cloud, CloudSnow, CloudSnow, Cloud] : [Sun, Sun, CloudSun, Cloud, CloudRain];
+  const Icon = icons[h % icons.length];
+  return <Icon />;
 }

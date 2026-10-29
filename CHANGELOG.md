@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The menu bar shows where you are with the local weather, and you can drive to any of your datacenters for a fare while the clock skips ahead and the computer stays locked.
+- Hand work at the datacenter you stand in starts at once; anywhere else a popover shows the remote hands price to accept or decline, next to sending a friend or a technician.
 - Getting started has a step to install the Network app from the Pear Store, with an Install button in the guide, right before you order your domain.
 - The Terminal is now a small shell: list, create, read, move and remove files and folders on your desk and on every server you log into, and chain commands with && and ;.
 - Running apt update and apt upgrade on a server installs its outstanding software and PHP updates, after asking you to confirm the downtime.

@@ -122,6 +122,8 @@ export interface GameState {
   playerBusyUntil: number;
   // Favours asked of friends for datacenter hand work in a calendar year.
   friendFavours: { year: number; used: number };
+  // Where the player is, and until which hour the drive there or the hand work on site keeps the computer locked.
+  player: { at: string; until: number; doing: "travel" | "work" };
   downSince: Record<string, number>;
   // Cluster nodes frozen because their RAM in use exceeds the installed RAM.
   frozen: string[];
@@ -255,7 +257,7 @@ export const newGame = (seed: number): GameState => ({
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false,
   heldCustomers: [],
-  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, downSince: {}, frozen: [],
+  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "none" }, tagline: "" },
   homeLine: { id: "", next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,

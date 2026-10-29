@@ -6,7 +6,7 @@ import type { GameState, Location } from "../50-state";
 
 export type How = "hands" | "self" | "friend" | "tech";
 
-// Travel hours and fee from the home city: same city, same country, another European country. Overseas is not offered.
+// Travel hours and fee of a drive: within a city, within a country, to another European country. Overseas is not offered.
 export const TRAVEL = { city: { hours: 1, fee: 20 }, country: { hours: 4, fee: 90 }, europe: { hours: 9, fee: 250 } } as const;
 export const BOOKED_HOURS = 24;
 export const FRIEND_FEE = 35;
@@ -17,17 +17,26 @@ export const MISHAP_CHANCE = 0.1;
 export interface HandOption { wait: number; fee: number }
 export interface HandWork {
   hands: HandOption & { perHour: number };
-  self: (HandOption & { travel: number }) | null;
+  // The player is on site and does the work at once.
+  here: boolean;
   friend: (HandOption & { travel: number; left: number }) | null;
 }
 
-// The home city is the first location; null when the datacenter is on another continent.
-function trip(s: GameState, loc: Location): { hours: number; fee: number } | null {
-  const home = s.locations[0], a = COUNTRY[home.city], b = COUNTRY[loc.city];
-  if (home.city === loc.city) return TRAVEL.city;
+// The drive between two cities: same city, same country, another European country; null across the Atlantic.
+export function trip(from: string, to: string): { hours: number; fee: number } | null {
+  const a = COUNTRY[from], b = COUNTRY[to];
+  if (from === to) return TRAVEL.city;
   if (a === b) return TRAVEL.country;
   return a === "US" || b === "US" ? null : TRAVEL.europe;
 }
+
+// The location the player is at; home when that location is gone.
+export const playerAt = (s: GameState): Location => s.locations.find((l) => l.id === s.player.at) ?? s.locations[0];
+// Whether the player stands in the location, not still on the way there.
+export const present = (s: GameState, locationId: string): boolean =>
+  playerAt(s).id === locationId && !(s.player.doing === "travel" && s.player.until > s.hour);
+// Claims the player's time for hand work on site.
+const workOnSite = (s: GameState, hours: number) => { s.player = { at: s.player.at, until: Math.max(s.player.until, s.hour) + hours, doing: "work" }; };
 
 export const favoursLeft = (s: GameState): number =>
   FAVOURS_PER_YEAR - (s.friendFavours.year === yearOf(s.hour) ? s.friendFavours.used : 0);
@@ -36,12 +45,11 @@ export const favoursLeft = (s: GameState): number =>
 export function handWork(s: GameState, locationId: string): HandWork | null {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc?.dc) return null;
-  const dc = datacenterById(loc.dc), t = trip(s, loc), book = dc.visitBooking ? BOOKED_HOURS : 0;
-  // The player drives once the replies in the queue are answered.
-  const queue = Math.max(0, s.playerBusyUntil / 60 - s.hour);
+  // The friend lives in the home city.
+  const dc = datacenterById(loc.dc), t = trip(s.locations[0].city, loc.city), book = dc.visitBooking ? BOOKED_HOURS : 0;
   return {
     hands: { wait: dc.remoteHands.responseHours, fee: dc.remoteHands.perHour, perHour: dc.remoteHands.perHour },
-    self: t && { wait: queue + book + t.hours, fee: t.fee, travel: t.hours },
+    here: present(s, loc.id),
     friend: t && { wait: book + t.hours, fee: FRIEND_FEE, travel: t.hours, left: favoursLeft(s) },
   };
 }
@@ -63,18 +71,14 @@ export function handJob(s: GameState, device: string, loc: Location | undefined,
     const bill = billHours * w.hands.perHour, wait = w.hands.wait + work;
     return { cost: bill, bill, wait, commit: () => { book("ledger.remoteHands", bill, { device, hours: billHours }); return wait; } };
   }
-  const o = h === "self" ? w.self : w.friend;
-  if (!o) return { error: "error.tooFar" };
-  if (w.friend && h === "friend" && w.friend.left < 1) return { error: "error.noFavours" };
-  const wait = o.wait + work;
   if (h === "self") {
-    return { cost: o.fee, bill: 0, wait, commit: () => {
-      book("ledger.travel", o.fee, { device });
-      // A single busy-until mark: the player is occupied from now, so a booked visit blocks the queue while it waits.
-      s.playerBusyUntil = (s.hour + wait + w.self!.travel) * 60;
-      return wait;
-    } };
+    if (!w.here) return { error: "error.notThere" };
+    return { cost: 0, bill: 0, wait: work, commit: () => { workOnSite(s, work); return work; } };
   }
+  const o = w.friend;
+  if (!o) return { error: "error.tooFar" };
+  if (o.left < 1) return { error: "error.noFavours" };
+  const wait = o.wait + work;
   return { cost: o.fee, bill: 0, wait, commit: () => {
     const year = yearOf(s.hour);
     s.friendFavours = { year, used: (s.friendFavours.year === year ? s.friendFavours.used : 0) + 1 };

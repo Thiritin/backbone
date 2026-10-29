@@ -289,3 +289,24 @@ button { font: inherit; color: inherit; cursor: default; }
 .ctx-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 .ctx-more { width: 13px; height: 13px; margin-left: 16px; opacity: 0.7; }
 .ctx-sep { height: 0.5px; margin: 5px 10px; background: var(--line-strong); }
+
+/* Remote hands popover at the click that started the hand work. */
+.hand-pop {
+  position: fixed; z-index: 1100; width: 280px; padding: 12px; display: grid; gap: 8px;
+  border-radius: 10px; background: var(--banner); color: var(--text); box-shadow: var(--shadow-pop);
+  backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); font-size: 12.5px;
+}
+.hand-pop p { margin: 0; color: var(--text-2); }
+.hand-pop-alt { border: 0; background: none; padding: 0; text-align: left; color: var(--accent); font: inherit; cursor: pointer; }
+.hand-pop-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
+
+/* Where the player is: today's weather and the city, a menu of drives. */
+.mb-place { display: inline-flex; align-items: center; gap: 5px; }
+
+/* The computer stays dark while the player drives or works on site. */
+.away-lock {
+  position: fixed; inset: 0; z-index: 2000; display: grid; place-content: center; gap: 6px; text-align: center;
+  background: color-mix(in oklch, black 72%, transparent); color: white; backdrop-filter: blur(6px); cursor: wait;
+}
+.away-lock strong { font-size: 18px; font-weight: 650; }
+.away-lock span { font-size: 13px; opacity: 0.75; }
