@@ -180,6 +180,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.extraPowerRange": () => "This amount of extra power is not available.",
   "error.unknownFeed": () => "This feed does not exist.",
   "error.notBasement": () => "Only the basement can get an extra circuit.",
+  "error.unplugFirst": () => "Unplug the device's power cords first.",
   "error.alreadyBought": () => "The basement already has its extra circuit.",
   "error.noSecondPsu": () => "This device has no free power supply bay.",
   "error.noSlot": () => "The chassis has no free slot for this part.",

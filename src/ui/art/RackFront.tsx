@@ -69,7 +69,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
   const slid = useRef(false);
   const pad = 30, fs = Math.max(7, u * 0.4), at = new Map<number, RackItem>();
   for (const it of items) for (let k = 0; k < it.model.height; k++) at.set(it.slot + k, it);
-  const slides = (it: RackItem) => !!onMove && !back && it.state === "off" && it.model.height > 0;
+  const slides = (it: RackItem) => !!onMove && !back && !it.plugs?.some(Boolean) && it.model.height > 0;
   const fitsAt = (it: RackItem, slot: number) =>
     slot >= 1 && slot + it.model.height - 1 <= units && Array.from({ length: it.model.height }, (_, k) => at.get(slot + k)).every((x) => !x || x.id === it.id);
   // Dragging snaps to whole units; a drop on a free run moves the device there.

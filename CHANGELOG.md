@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- You can drag a device to another position in its rack once its power cords are unplugged, and a plugged-in device stays put.
 - A new game opens the Getting started guide right away instead of a welcome popup, and it now starts with naming your company, ordering your domain and booking email, each done right inside the guide.
 - The website step in Getting started asks you to build your website and list a product, with a Build button in the guide.
 - Weekly challenge seeds start from the title screen, a run can be exported and replayed, and a leaderboard shows verified runs.
