@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The Backbone menu links to the new Discord server, where you can chat, share screenshots, request features and report bugs.
+- The browser tab shows the new Backbone logo.
 - A customer whose services all kept their SLA uptime through a month gains a little happiness at the billing date, so steady service slowly builds loyalty.
 - Replies, order steps and other hand work now land at the minute they are done instead of at the next full hour, a server boots in three minutes and a new domain shows as registering for two.
 - A custom order now sends the customer three emails, the quote, the confirmation and the notice that everything is live, instead of one per step.
