@@ -10,9 +10,10 @@ export const RAMS = [0, 16, 64, 256, 1024];
 export const formOf = (m: DeviceModel) => `${m.height}U`;
 export const isSet = (f: Filter) => f.form !== null || f.cores > 0 || f.ram > 0 || f.disk !== null;
 
-// Servers only; every other model passes.
+// Form factor applies to every device; cores, RAM and disk drop anything that is not a server.
 export const matchesFilter = (m: DeviceModel, f: Filter): boolean => {
   const s = m.server;
-  if (!s) return true;
-  return (!f.form || formOf(m) === f.form) && s.cores >= f.cores && s.ramGb >= f.ram && (!f.disk || s.disk === f.disk);
+  if (f.form && formOf(m) !== f.form) return false;
+  if (!s) return !f.cores && !f.ram && !f.disk;
+  return s.cores >= f.cores && s.ramGb >= f.ram && (!f.disk || s.disk === f.disk);
 };

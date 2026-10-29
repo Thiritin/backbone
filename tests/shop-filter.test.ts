@@ -22,6 +22,12 @@ describe("shop filter", () => {
       expect(n).toEqual([...n].sort((a, b) => b - a));
     }
   });
+  it("spec filters drop non-servers, form factor keeps matching heights", () => {
+    const rest = shopModels(2014).filter((m) => !m.server && m.kind !== "part");
+    expect(rest.some((m) => matchesFilter(m, NO_FILTER))).toBe(true);
+    expect(rest.some((m) => matchesFilter(m, { ...NO_FILTER, cores: 4 }))).toBe(false);
+    expect(rest.filter((m) => matchesFilter(m, { ...NO_FILTER, form: "1U" })).every((m) => m.height === 1)).toBe(true);
+  });
   it("sells no towers", () => {
     expect(left(2005, {}).every((m) => m.height > 0)).toBe(true);
   });
