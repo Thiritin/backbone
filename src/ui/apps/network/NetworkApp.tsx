@@ -18,7 +18,7 @@ import {
   requestPeering, setBlackhole, setProtection,
 } from "../../../sim/90-actions/network";
 import { cityNamed, WorldMap, type Marker } from "../../map/WorldMap";
-import { useStore } from "../../store";
+import { useFocus, useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
 import { AddressList, Ripe } from "./Addresses";
 import { Domains } from "./Domains";
@@ -38,6 +38,7 @@ type Page = { kind: "zone"; id: string } | { kind: "peering" } | { kind: "ddos" 
 export function NetworkApp() {
   const game = useStore((s) => s.game);
   const [page, setPage] = useState<Page>({ kind: "zone", id: game.locations[0].id });
+  useFocus("Network", (f) => { if (f.kind === "page" && f.id === "domains") setPage({ kind: "domains" }); });
   const routing = useMemo(() => route(game), [game]);
   const now = Object.values(routing.zones).reduce((n, z) => n + z.carried, 0);
   const dropped = Object.values(routing.zones).reduce((n, z) => n + z.dropped, 0);

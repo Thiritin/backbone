@@ -43,7 +43,7 @@ export function HomeLinePanel({ game }: { game: GameState }) {
     </div>
   );
   return (
-    <div className="loc-card">
+    <div className="loc-card" id="home-line">
       <div className="loc-card-h">
         <h3>Internet line</h3>
         <span className="grow" />

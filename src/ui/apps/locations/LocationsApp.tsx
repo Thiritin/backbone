@@ -41,6 +41,12 @@ export function LocationsApp() {
   };
   // Another app asked for a location, or for a device in its rack or on its floor.
   useFocus("Locations", (f) => {
+    if (f.kind === "line") {
+      const home = game.locations.find((l) => l.space === "basement");
+      if (home) go(home.id);
+      requestAnimationFrame(() => document.getElementById("home-line")?.scrollIntoView({ block: "start" }));
+      return;
+    }
     if (f.kind !== "device" && f.kind !== "location") return;
     const d = f.kind === "device" ? game.devices.find((x) => x.id === f.id) : undefined;
     const l = d ? locationOf(game, d) : game.locations.find((x) => x.id === f.id);

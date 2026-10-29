@@ -10,6 +10,9 @@ import { mountDevice } from "./plugged";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { tick } from "../src/sim/88-tick/tick";
+import { signRegistrar } from "../src/sim/90-actions/registrar";
+import { stepOf } from "../src/ui/apps/guide";
+import { TUTORIAL } from "../src/sim/checklist";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);
@@ -80,5 +83,23 @@ describe("checklist", () => {
     expect(s.installed).not.toContain("Checklist");
     expect(s.installed).toContain("Support");
     expect(newGame(1).installed).not.toContain("Checklist");
+  });
+
+  it("names the place of every tutorial step and the partner once a contract exists", () => {
+    const s = newGame(1);
+    for (const id of TUTORIAL) expect(stepOf(s, id).text).toMatch(/\.$/);
+    expect(stepOf(s, "domain").text).toBe("Sign a registrar contract and register your company domain in Network under Domains.");
+    expect(stepOf(s, "domain")).toMatchObject({ app: "Network", focus: { kind: "page", id: "domains" } });
+    expect(stepOf(s, "internet")).toMatchObject({ app: "Locations", focus: { kind: "line" } });
+    expect(stepOf(s, "email")).toMatchObject({ app: "Settings", focus: { kind: "section", id: "Email" } });
+    ok(signRegistrar(s, "goDuddy"));
+    expect(stepOf(s, "domain").text).toBe("Register your company domain with GoDuddy Reseller in Network under Domains.");
+  });
+
+  it("points the server steps at the basement and the first server", () => {
+    const s = { ...newGame(1), cash: 100_000 };
+    const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
+    expect(stepOf(s, "mountServer").focus).toEqual({ kind: "location", id: "loc1" });
+    expect(stepOf(s, "setup").focus).toEqual({ kind: "device", id: srv });
   });
 });

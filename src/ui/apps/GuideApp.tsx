@@ -1,22 +1,13 @@
 import { Check } from "lucide-react";
 import { checkDone, TUTORIAL } from "../../sim/checklist";
+import { stepOf } from "./guide";
 import { useStore } from "../store";
 import "./customers/customers.css";
 import "./checklist/checklist.css";
 
-const STEPS: Record<(typeof TUTORIAL)[number], [string, string]> = {
-  buyServer: ["Buy a server", "Buy a server in the Shop."],
-  mountServer: ["Mount and power it", "Open the basement in Locations, mount the server in the rack and plug in its power."],
-  internet: ["Add internet", "Order a home line in Locations and cable the server to the home router. The line connects after its installation days."],
-  setup: ["Install software", "Use Add Software on the server to install a panel, or a hypervisor with a panel VM."],
-  domain: ["Register your domain", "Sign a registrar contract and register your domain in Network, Domains."],
-  website: ["Switch on a product", "Switch on web hosting in Website so customers can request it."],
-  email: ["Set up company email", "Set up company email in Settings, Email."],
-  firstCustomer: ["Win your first customer", "Your friends move their websites to the panel, and paying customers follow."],
-};
-
 export function GuideApp() {
   const game = useStore((s) => s.game);
+  const openApp = useStore((s) => s.openApp);
   return (
     <article className="guide">
       <h2>Getting started</h2>
@@ -26,13 +17,15 @@ export function GuideApp() {
       <ol className="guide-steps">
         {TUTORIAL.map((id) => {
           const done = checkDone(game, id);
+          const step = stepOf(game, id);
           return (
             <li key={id} className={`chk-row${done ? " done" : ""}`}>
               <span className={`chk-box${done ? " done" : ""}`}>{done && <Check />}</span>
               <div className="grow">
-                <span className="cus-strong">{STEPS[id][0]}</span>
-                <span className="cus-dim">{STEPS[id][1]}</span>
+                <span className="cus-strong">{step.title}</span>
+                <span className="cus-dim">{step.text}</span>
               </div>
+              {!done && <button className="btn" onClick={() => openApp(step.app, step.focus)}>Open</button>}
             </li>
           );
         })}
