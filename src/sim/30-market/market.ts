@@ -15,7 +15,7 @@ import { forumAwareness } from "../47-staff/staff";
 import { metrics } from "../metrics";
 import { serviceMarket } from "./spec";
 
-export type RequestStatus = "open" | "quoted" | "countered" | "refused" | "won" | "lost" | "declined";
+export type RequestStatus = "open" | "quoted" | "countered" | "refused" | "accepted" | "won" | "lost" | "declined";
 // by names the employee who sent a "you" message; the player otherwise.
 export interface SalesMessage { hour: number; from: "customer" | "you"; key: string; params: Record<string, string | number>; by?: string }
 // One sales request. profile, budget and shady stay hidden from the player. reference is the monthly market price;

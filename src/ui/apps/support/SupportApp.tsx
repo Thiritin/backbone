@@ -74,7 +74,7 @@ interface Item { id: string; due: number; tk?: Ticket; r?: SalesRequest }
 
 // Order emails show as tickets; their request carries the order.
 const inSales = (r: SalesRequest) => r.kind !== "order";
-const liveRequest = (r: SalesRequest) => OPEN.includes(r.status) || r.status === "quoted";
+const liveRequest = (r: SalesRequest) => OPEN.includes(r.status) || r.status === "quoted" || r.status === "accepted";
 
 function itemsIn(game: GameState, box: Box): Item[] {
   const tickets = (f: (tk: Ticket) => boolean): Item[] => game.tickets.filter(f).map((tk) => ({ id: tk.id, due: tk.dueAt, tk }));

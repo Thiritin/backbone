@@ -58,6 +58,8 @@ export const SALES_EN: Record<string, (p: Params) => string> = {
   "event.salesRequest.text": (p) => `${p.name} asks for ${p.spec}.`,
   "event.salesWon.title": () => "Deal won",
   "event.salesWon.text": (p) => `${p.name} signed at ${price(p)} a month for ${p.spec}.`,
+  "event.salesNoRoom.title": () => "No room for an order",
+  "event.salesNoRoom.text": (p) => `${p.name} accepted ${p.spec}, but no server in ${p.city} has room. The customer waits ${p.hours} hours for their login details.`,
   "event.salesFailed.title": () => "Setup failed",
   "event.salesFailed.text": (p) => `The order of ${p.name} found no room in ${p.city}, and the customer went elsewhere. It was for ${p.spec}.`,
   "event.salesCounter.title": () => "Counter-offer",

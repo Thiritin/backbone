@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { isMonthStart, yearOf } from "../src/sim/00-core/time";
 import { acceptChance, cityMarket, leadFlows, missingFor, priceIndex, rivals, share, type SalesRequest } from "../src/sim/30-market/market";
-import { addRequest, newLead, shadyLead } from "../src/sim/30-market/sales";
+import { addRequest, newLead, SETUP_WAIT_HOURS, shadyLead } from "../src/sim/30-market/sales";
 import { createTicket, profileStats } from "../src/sim/40-support/tickets";
 import { leadCapShare } from "../src/sim/10-catalog/economy";
 import type { GameState } from "../src/sim/50-state";
@@ -153,17 +153,37 @@ describe("lost sales", () => {
     expect(s.sales.lost.find((l) => l.name === "Albers Florist")).toMatchObject({ reason: "sales.need.location", params: { city: "London" } });
   });
 
-  it("loses an accepted deal without capacity", () => {
+  it("waits for room after accepting, then loses the deal", () => {
     const s = readyGame(1);
     const friend = s.customers[0].id;
     while (provisionService(s, friend, "vps", { label: "filler", spec: sizeSpec("vps", 0, yearOf(s.hour)) }).ok);
     const r = webRequest(s, { product: "vps", spec: sizeSpec("vps", 0, yearOf(s.hour)), reference: 8 });
     quote(s, r.id, 5);
-    const back = replied(s, r.id);
+    const waiting = replied(s, r.id);
+    expect(waiting.status).toBe("accepted");
+    expect(waiting.thread.at(-1)!.key).toBe("sales.reply.accept");
+    run(s, SETUP_WAIT_HOURS - 1);
+    expect(req(s, r.id).status).toBe("accepted");
+    run(s, 2);
+    const back = req(s, r.id);
     expect(back.status).toBe("lost");
     expect(back.thread.at(-1)!.key).toBe("sales.reply.gone");
     expect(s.sales.lost.at(-1)).toMatchObject({ reason: "lost.noCapacity", params: { city: "Frankfurt" } });
     expect(s.customers.some((c) => c.name === "Albers Florist")).toBe(false);
+  });
+
+  it("sets up an accepted deal once room frees up", () => {
+    const s = readyGame(1);
+    const friend = s.customers[0].id;
+    while (provisionService(s, friend, "vps", { label: "filler", spec: sizeSpec("vps", 0, yearOf(s.hour)) }).ok);
+    const r = webRequest(s, { product: "vps", spec: sizeSpec("vps", 0, yearOf(s.hour)), reference: 8 });
+    quote(s, r.id, 5);
+    expect(replied(s, r.id).status).toBe("accepted");
+    const filler = s.services.find((v) => v.label === "filler")!.id;
+    s.services = s.services.filter((v) => v.id !== filler);
+    s.workloads = s.workloads.filter((w) => w.serviceId !== filler);
+    run(s, 1);
+    expect(req(s, r.id).status).toBe("won");
   });
 
   it("records a declined request", () => {
@@ -230,7 +250,7 @@ describe("shady requests", () => {
     quote(s, r.id, r.reference * 1.5);
     const done = replied(s, r.id);
     if (done.status === "won") expect(s.customers.find((c) => c.id === done.customerId)!.shady).toBe(true);
-    else expect(s.sales.lost.at(-1)!.reason).toBe("lost.noCapacity");
+    else expect(done.status).toBe("accepted");
   });
 });
 

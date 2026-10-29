@@ -22,11 +22,11 @@ export const OPEN = ["open", "countered", "refused"];
 export const SALES_BOXES: { id: SalesBox; label: string; icon: typeof Inbox; match: (s: GameState, r: SalesRequest) => boolean }[] = [
   { id: "open", label: "Requests", icon: Inbox, match: (s, r) => OPEN.includes(r.status) && !missingFor(s, r).length },
   { id: "waiting", label: "Awaiting reply", icon: Hourglass, match: (_, r) => r.status === "quoted" },
-  { id: "unserved", label: "Cannot serve", icon: Ban, match: (s, r) => r.status === "open" && missingFor(s, r).length > 0 },
+  { id: "unserved", label: "Cannot serve", icon: Ban, match: (s, r) => r.status === "accepted" || (r.status === "open" && missingFor(s, r).length > 0) },
   { id: "won", label: "Won", icon: CircleCheck, match: (_, r) => r.status === "won" },
 ];
 export const STATUS: Record<SalesRequest["status"], string> = {
-  open: "New", quoted: "Quoted", countered: "Counter-offer", refused: "Refused", won: "Won", lost: "Lost", declined: "Declined",
+  open: "New", quoted: "Quoted", countered: "Counter-offer", refused: "Refused", accepted: "Waiting for setup", won: "Won", lost: "Lost", declined: "Declined",
 };
 export const SLA_LABEL = { basic: "Basic", business: "Business", premium: "Premium" } as const;
 

@@ -35,6 +35,8 @@ const MAIL_HOUR = 8;
 const SHADY_PER_MONTH = 0.3;
 const EXPANSION_HOURS = 7 * 24;
 const RETRY_HOURS = 48;
+// economy.md, Sales requests: how long a customer who accepted waits for a server with room before going elsewhere.
+export const SETUP_WAIT_HOURS = 48;
 const KEEP_HOURS = 60 * 24;
 const LOST_KEPT = 300;
 // A refusal this far above the ratio accepted half the time reads as "no budget"; closer ones may counter.
@@ -215,16 +217,9 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   }
   if (accepts) {
     say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
-    const done = fulfil(s, r);
-    if (done.ok) {
-      editRequest(s, r.id, () => ({ status: "won", replyAt: null, serviceId: done.id ?? r.serviceId }));
-      closeTicket(s, r);
-      events.push({ app: "Support", key: "event.salesWon", params: { name, spec, price } });
-    } else {
-      say(s, r.id, "customer", "sales.reply.gone", { name: r.contact });
-      loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
-      events.push({ app: "Support", key: "event.salesFailed", params: { name, spec, city: r.city } });
-    }
+    if (setUp(s, r, events)) return;
+    editRequest(s, r.id, () => ({ status: "accepted", replyAt: null, deadline: s.hour + SETUP_WAIT_HOURS }));
+    events.push({ app: "Support", key: "event.salesNoRoom", params: { name, spec, city: r.city, hours: SETUP_WAIT_HOURS } });
     return;
   }
   const mid = acceptMid(s, r), ratio = price / r.reference;
@@ -240,6 +235,25 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   events.push({ app: "Support", key: "event.salesRefused", params: { name } });
   if (r.attempts < 2) editRequest(s, r.id, () => ({ status: "refused", replyAt: null, deadline: s.hour + RETRY_HOURS }));
   else loseRequest(s, r, "lost", "lost.price");
+}
+
+function setUp(s: GameState, r: SalesRequest, events: SimEvent[]): boolean {
+  const done = fulfil(s, r);
+  if (!done.ok) return false;
+  editRequest(s, r.id, () => ({ status: "won", replyAt: null, serviceId: done.id ?? r.serviceId }));
+  closeTicket(s, r);
+  events.push({ app: "Support", key: "event.salesWon", params: { name: requestName(r), spec: specText(r.product, r.spec), price: r.quote! } });
+  return true;
+}
+
+// Accepted orders wait for room: each hour the setup is tried again until the customer gives up.
+function awaitSetup(s: GameState, events: SimEvent[]): void {
+  for (const r of s.sales.requests) {
+    if (r.status !== "accepted" || setUp(s, r, events) || s.hour < r.deadline) continue;
+    say(s, r.id, "customer", "sales.reply.gone", { name: r.contact });
+    loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
+    events.push({ app: "Support", key: "event.salesFailed", params: { name: requestName(r), spec: specText(r.product, r.spec), city: r.city } });
+  }
 }
 
 function expire(s: GameState): void {
@@ -284,6 +298,7 @@ export function salesTick(s: GameState): SimEvent[] {
   if (s.hour % 24 === MAIL_HOUR) morningMail(s, events);
   expansions(s);
   for (const r of s.sales.requests) if (r.status === "quoted" && r.replyAt !== null && r.replyAt <= s.hour) reply(s, r, events);
+  awaitSetup(s, events);
   expire(s);
   return events;
 }
