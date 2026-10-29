@@ -1,19 +1,10 @@
-.loc { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.loc-bar { height: 44px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 10px; border-bottom: 0.5px solid var(--line); background: var(--win-bar); }
-.loc-bar .btn[aria-pressed="true"] { background: color-mix(in oklch, var(--text) 8%, transparent); color: var(--text); }
-.loc-bar .btn svg.lucide { width: 16px; height: 16px; }
-.loc-bar .btn .num { margin-left: 2px; }
+.loc { flex: 1; min-width: 0; display: flex; }
+.loc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--win); }
+.loc-top { flex: none; display: grid; gap: 10px; padding: 14px 16px 4px; }
+.loc-side-rack { padding-left: 24px; font-size: 12.5px; }
+.loc-tabs { align-items: center; }
 .loc-crumb { width: 14px; height: 14px; color: var(--text-3); }
-.loc-crumb-name { font-weight: 600; padding: 0 4px; }
-.loc-caret { width: 14px !important; height: 14px !important; color: var(--text-3); }
-.loc-switch { position: relative; }
-.loc-switch > .btn { font-weight: 600; color: var(--text); }
-.loc-menu { position: absolute; top: 32px; left: 0; z-index: 20; min-width: 240px; padding: 5px; border-radius: 10px; background: var(--win); box-shadow: var(--shadow-pop); display: grid; gap: 1px; }
-.loc-menu button { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px; border: 0; border-radius: 6px; background: none; font: inherit; color: inherit; text-align: left; }
-.loc-menu button .loc-muted { margin-left: auto; padding-left: 16px; }
-.loc-menu button:hover { background: var(--hover); }
-.loc-menu button[aria-checked="true"] { background: var(--accent); color: var(--accent-ink); }
-.loc-menu button[aria-checked="true"] .loc-muted { color: inherit; opacity: 0.75; }
+.loc-crumb-name { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
 .loc-body { flex: 1; min-height: 0; display: flex; }
 .loc-scroll { flex: 1; min-width: 0; overflow: auto; padding: 16px; display: grid; gap: 14px; align-content: start; }
 .loc-split { position: relative; flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; min-height: 0; }
@@ -198,7 +189,6 @@ button.loc-node:hover { background: var(--hover); }
 .loc-tile .loc-meter-bar { width: 32px; }
 
 /* Cabling */
-.loc-views { margin-left: 8px; }
 .loc-cabling { position: relative; flex: 1; min-width: 0; display: flex; background: var(--win-side); }
 .loc-cab { flex: 1; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; user-select: none; }
 .loc-cab:active { cursor: grabbing; }
@@ -232,9 +222,7 @@ button.loc-node:hover { background: var(--hover); }
 .loc-az { display: inline-flex; align-items: center; height: 17px; padding: 0 5px; border-radius: 4px; background: var(--hover); color: var(--text-2); font-size: 11px; font-weight: 500; letter-spacing: 0.02em; }
 h2 .loc-az, h3 .loc-az { margin-left: 8px; vertical-align: middle; }
 .loc-card-h .loc-az { margin-left: 2px; }
-.loc-menu-h { padding: 6px 8px 2px; font-size: 11px; font-weight: 600; color: var(--text-3); }
-.loc-menu [role="group"] { display: grid; gap: 1px; }
-.loc-menu button[aria-checked="true"] .loc-az { background: color-mix(in oklch, var(--accent-ink) 20%, transparent); color: inherit; }
+.side-item.active .loc-az { background: color-mix(in oklch, var(--accent-ink) 20%, transparent); color: inherit; }
 
 .loc-sub { min-height: 36px; border-top: 0.5px solid var(--line); }
 

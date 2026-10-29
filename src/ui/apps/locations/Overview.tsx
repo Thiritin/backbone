@@ -21,12 +21,11 @@ export function Overview({ game, onOpen }: { game: GameState; onOpen: (id: strin
       <div className="loc-cards">
         {game.locations.map((l) => <LocationCard key={l.id} game={game} loc={l} onOpen={() => onOpen(l.id)} />)}
       </div>
-      {game.waitlist.length > 0 && <Waitlist game={game} onOpen={onOpen} />}
     </div>
   );
 }
 
-function Waitlist({ game, onOpen }: { game: GameState; onOpen: (id: string) => void }) {
+export function Waitlist({ game, onOpen }: { game: GameState; onOpen: (id: string) => void }) {
   const act = useStore((s) => s.act);
   return (
     <div className="loc-card loc-wait">

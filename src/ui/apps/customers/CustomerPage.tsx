@@ -170,7 +170,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
         <div><dt>Customer since</dt><dd className="num">{monthYear(c.since)}</dd></div>
         <div><dt>Happiness</dt><dd><Mood c={c} /></dd></div>
       </dl>
-      <div className="cus-tabs" role="tablist" aria-label="Customer">
+      <div className="tabs" role="tablist" aria-label="Customer">
         {tabs.map(([id, label, count]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>
             {label}{count ? <span className="tab-count num">{count}</span> : null}

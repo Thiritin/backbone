@@ -1,5 +1,5 @@
-import { ChevronDown, ChevronRight, Map as MapIcon, Package, Plus } from "lucide-react";
-import { useRef, useState } from "react";
+import { ChevronRight, Hourglass, Map as MapIcon, Plus } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { useSessionState } from "../../session";
 import type { GameState } from "../../../sim/50-state";
 import { locationOf, storageStacks } from "../../../sim/60-infra/status";
@@ -14,35 +14,36 @@ import { CarrierPanel, Floor } from "./Floor";
 import { HomeLinePanel } from "./HomeLine";
 import { Inspector } from "./Inspector";
 import "./locations.css";
-import { Overview } from "./Overview";
+import { Overview, Waitlist } from "./Overview";
 import { RackView, Upgrades } from "./RackView";
 import { Storage } from "./Storage";
-import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, UsageBars, useDismiss, Zone } from "./ui";
+import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, UsageBars, Zone } from "./ui";
 import { REGIONS } from "../../../sim/20-world/datacenters";
 
-// view: null is the overview, "storage" the storage list, otherwise a location id.
+type Tab = "floor" | "cabling" | "storage" | "clusters" | "line";
+
+// view: null is the overview, "waitlist" the waitlist, otherwise a location id.
 export function LocationsApp() {
   const game = useStore((s) => s.game);
   const [view, setView] = useSessionState<string | null>("locations.sel", null);
   const [rackId, setRackId] = useSessionState<string | null>("locations.rack", null);
   const [deviceId, setDeviceId] = useSessionState<string | null>("locations.device", null);
+  const [picked, setTab] = useSessionState<Tab>("locations.tab", "floor");
   const [adding, setAdding] = useState(false);
-  const [cabling, setCabling] = useState(false);
   const loc = game.locations.find((l) => l.id === view);
   const rack = loc && game.racks.find((r) => r.id === rackId && r.locationId === loc.id);
-  const openLoc = useStore((s) => s.openLoc), setOpenLoc = useStore((s) => s.setOpenLoc);
-  // Storage shows the zone of the last location opened, the basement before that.
-  const zone = game.locations.find((l) => l.id === (loc?.id ?? openLoc)) ?? game.locations[0];
+  const tab: Tab = picked === "line" && loc?.space !== "basement" ? "floor" : picked;
+  const setOpenLoc = useStore((s) => s.setOpenLoc);
   const go = (v: string | null, r: string | null = null) => {
-    setView(v); setRackId(r); setDeviceId(null); setCabling(false);
-    if (v && v !== "storage") setOpenLoc(v);
+    setView(v); setRackId(r); setDeviceId(null);
+    if (r) setTab("floor");
+    if (v && v !== "waitlist") setOpenLoc(v);
   };
   // Another app asked for a location, or for a device in its rack or on its floor.
   useFocus("Locations", (f) => {
     if (f.kind === "line") {
       const home = game.locations.find((l) => l.space === "basement");
-      if (home) go(home.id);
-      requestAnimationFrame(() => document.getElementById("home-line")?.scrollIntoView({ block: "start" }));
+      if (home) { go(home.id); setTab("line"); }
       return;
     }
     if (f.kind !== "device" && f.kind !== "location") return;
@@ -50,50 +51,66 @@ export function LocationsApp() {
     const l = d ? locationOf(game, d) : game.locations.find((x) => x.id === f.id);
     if (!l) return;
     go(l.id, d?.rackId ?? null);
-    if (d) setDeviceId(d.id);
+    if (d) { setTab("floor"); setDeviceId(d.id); }
   });
-  const stored = storageStacks(game, zone.id).reduce((n, s) => n + s.ids.length, 0);
+  const item = (key: string, active: boolean, label: ReactNode, onClick: () => void, count?: number) => (
+    <button key={key} className={`side-item${active ? " active" : ""}`} aria-pressed={active} onClick={onClick}>
+      {label}{count ? <span className="side-count">{count}</span> : null}
+    </button>
+  );
 
   return (
     <div className="loc">
-      <div className="loc-bar">
-        <button className="btn ghost" aria-pressed={view === null} onClick={() => go(null)}><MapIcon />Overview</button>
-        <Switcher current={loc?.id ?? null} onPick={(id) => go(id)} />
-        <button className="btn ghost icon" aria-label="Add location" onClick={() => setAdding(true)}><Plus /></button>
-        {loc && !rack && (
-          <div className="seg loc-views" role="group" aria-label="View">
-            <button aria-pressed={!cabling} onClick={() => setCabling(false)}>Floor</button>
-            <button aria-pressed={cabling} onClick={() => { setCabling(true); setDeviceId(null); }}>Cabling</button>
+      <nav className="sidebar fin-side" aria-label="Locations">
+        {item("overview", view === null, <><MapIcon />Overview</>, () => go(null))}
+        {game.waitlist.length > 0 && item("waitlist", view === "waitlist", <><Hourglass />Waitlist</>, () => go("waitlist"), game.waitlist.length)}
+        {REGIONS.filter((r) => game.locations.some((l) => l.city === r.city)).map((r) => (
+          <div key={r.id} className="fin-side" role="group" aria-label={r.name}>
+            <div className="side-h">{r.name}</div>
+            {game.locations.filter((l) => l.city === r.city).flatMap((l) => [
+              item(l.id, l.id === loc?.id && !rack, <><Logo provider={providerOf(l)} size={16} /><LocName loc={l} /></>, () => go(l.id)),
+              ...(l.id === loc?.id ? game.racks.filter((k) => k.locationId === l.id).map((k) =>
+                item(k.id, k.id === rack?.id, <span className="loc-side-rack">{k.name}</span>, () => go(l.id, k.id))) : []),
+            ])}
           </div>
-        )}
-        {rack && <><ChevronRight className="loc-crumb" /><span className="loc-crumb-name">{rack.name}</span></>}
+        ))}
         <span className="grow" />
-        <button className="btn ghost" aria-pressed={view === "storage"} onClick={() => go("storage")}><Package />Storage<span className="num loc-muted">{stored}</span></button>
-      </div>
-      <div className="loc-body">
-        {view === "storage" ? (
-          <div className="loc-scroll"><Storage game={game} loc={zone} onMounted={(r, d) => { go(zone.id, r); setDeviceId(d); }} /></div>
+        {item("add", false, <><Plus />Add location</>, () => setAdding(true))}
+      </nav>
+      <div className="loc-main">
+        {view === "waitlist" ? (
+          <div className="loc-scroll"><Waitlist game={game} onOpen={(id) => go(id)} /></div>
         ) : !loc ? (
           <Overview game={game} onOpen={(id) => go(id)} />
-        ) : cabling ? (
-          <Cabling key={loc.id} game={game} loc={loc} />
-        ) : rack ? (
-          <RackView key={rack.id} game={game} rack={rack} device={deviceId} onDevice={setDeviceId} onMoved={(id) => go(id ?? loc.id)} />
         ) : (
-          <div className="loc-split">
-            <div className="loc-scroll">
-              <LocationHead game={game} locId={loc.id} />
-              <Upgrades loc={loc} />
-              <Floor game={game} loc={loc} onRack={(id) => go(loc.id, id)} />
-              <CarrierPanel game={game} loc={loc} selected={deviceId} onDevice={setDeviceId} />
-              {loc.space === "basement" && <HomeLinePanel game={game} />}
-              <Storage game={game} loc={loc} onMounted={(r, d) => { go(loc.id, r); setDeviceId(d); }} />
-              <Clusters game={game} loc={loc} />
+          <>
+            <LocationHead game={game} locId={loc.id} />
+            <LocationTabs game={game} locId={loc.id} tab={tab} rack={rack?.name} onTab={(t) => { setTab(t); setRackId(null); setDeviceId(null); }} />
+            <div className="loc-body" role="tabpanel">
+              {tab === "cabling" ? (
+                <Cabling key={loc.id} game={game} loc={loc} />
+              ) : tab === "storage" ? (
+                <div className="loc-scroll"><Storage game={game} loc={loc} onMounted={(r, d) => { go(loc.id, r); setDeviceId(d); }} /></div>
+              ) : tab === "clusters" ? (
+                <div className="loc-scroll"><Clusters game={game} loc={loc} /></div>
+              ) : tab === "line" ? (
+                <div className="loc-scroll"><HomeLinePanel game={game} /></div>
+              ) : rack ? (
+                <RackView key={rack.id} game={game} rack={rack} device={deviceId} onDevice={setDeviceId} onMoved={(id) => go(id ?? loc.id)} />
+              ) : (
+                <div className="loc-split">
+                  <div className="loc-scroll">
+                    <Upgrades loc={loc} />
+                    <Floor game={game} loc={loc} onRack={(id) => go(loc.id, id)} />
+                    <CarrierPanel game={game} loc={loc} selected={deviceId} onDevice={setDeviceId} />
+                  </div>
+                  {deviceId && game.devices.some((d) => d.id === deviceId && d.panel === loc.id) && (
+                    <div className="loc-insp"><Inspector key={deviceId} game={game} device={game.devices.find((d) => d.id === deviceId)!} onSelect={setDeviceId} /></div>
+                  )}
+                </div>
+              )}
             </div>
-            {deviceId && game.devices.some((d) => d.id === deviceId && d.panel === loc.id) && (
-              <div className="loc-insp"><Inspector key={deviceId} game={game} device={game.devices.find((d) => d.id === deviceId)!} onSelect={setDeviceId} /></div>
-            )}
-          </div>
+          </>
         )}
       </div>
       {adding && <AddLocation onClose={() => setAdding(false)} onAdded={(id) => { setAdding(false); go(id); }} />}
@@ -101,10 +118,31 @@ export function LocationsApp() {
   );
 }
 
+function LocationTabs({ game, locId, tab, rack, onTab }: { game: GameState; locId: string; tab: Tab; rack?: string; onTab: (t: Tab) => void }) {
+  const loc = game.locations.find((l) => l.id === locId)!;
+  const stored = storageStacks(game, loc.id).reduce((n, s) => n + s.ids.length, 0);
+  const tabs: [Tab, string, number?][] = [
+    ["floor", "Floor"], ["cabling", "Cabling"], ["storage", "Storage", stored],
+    ["clusters", "Clusters", game.clusters.filter((c) => c.az === loc.az).length],
+    ...(loc.space === "basement" ? [["line", "Internet line"] as [Tab, string]] : []),
+  ];
+  return (
+    <div className="tabs loc-tabs" role="tablist" aria-label="Location">
+      {tabs.map(([id, label, count]) => (
+        <button key={id} role="tab" aria-selected={tab === id} onClick={() => onTab(id)}>
+          {label}{count ? <span className="tab-count num">{count}</span> : null}
+        </button>
+      ))}
+      {rack && <span className="loc-crumb-name"><ChevronRight className="loc-crumb" />{rack}</span>}
+    </div>
+  );
+}
+
+
 function LocationHead({ game, locId }: { game: GameState; locId: string }) {
   const loc = game.locations.find((l) => l.id === locId)!, dc = dcOf(loc), power = locationPower(game, loc.id);
   return (
-    <>
+    <header className="loc-top">
     <div className="loc-head">
       <Logo provider={providerOf(loc)} size={28} />
       <div className="loc-head-name">
@@ -120,35 +158,7 @@ function LocationHead({ game, locId }: { game: GameState; locId: string }) {
       <PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} />
     </div>
     <UsageBars wide usage={usageOf(game, game.devices.filter((d) => d.rackId && locationOf(game, d)?.id === loc.id))} />
-    </>
+    </header>
   );
 }
 
-function Switcher({ current, onPick }: { current: string | null; onPick: (id: string) => void }) {
-  const locations = useStore((s) => s.game.locations);
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useDismiss(ref, () => setOpen(false));
-  const loc = locations.find((l) => l.id === current);
-  return (
-    <div className="loc-switch" ref={ref}>
-      <button className="btn ghost" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
-        {loc ? <><Logo provider={providerOf(loc)} size={16} /><LocName loc={loc} /></> : "Locations"}<ChevronDown className="loc-caret" />
-      </button>
-      {open && (
-        <div className="loc-menu" role="menu">
-          {REGIONS.filter((r) => locations.some((l) => l.city === r.city)).map((r) => (
-            <div key={r.id} role="group" aria-label={r.name}>
-              <div className="loc-menu-h">{r.name}</div>
-              {locations.filter((l) => l.city === r.city).map((l) => (
-                <button key={l.id} role="menuitemradio" aria-checked={l.id === current} onClick={() => { setOpen(false); onPick(l.id); }}>
-                  <Logo provider={providerOf(l)} size={16} /><LocName loc={l} />
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
