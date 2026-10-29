@@ -1,5 +1,5 @@
 // Used hardware market (economy.md, Hardware, power and failures, Used hardware): channels, price bands and the yearly events.
-import { hourOf } from "../00-core/time";
+import { hourOf, START_YEAR } from "../00-core/time";
 import type { Device, GameState } from "../50-state";
 import type { Vendor } from "./cpus";
 
@@ -19,6 +19,9 @@ export const DEFECT_CHANCE = 0.3;
 // New listings per channel and month, and the youngest generation on offer, in years since its launch.
 export const PER_MONTH: [number, number] = [2, 6];
 export const MIN_YEARS_ON_SALE = 2;
+// Gear on sale at game start counts as launched this many years earlier, standing in for the servers sold before 2005.
+export const PRE_GAME_YEARS = 3;
+export const usedSince = (m: { from: number }): number => (m.from <= START_YEAR ? m.from - PRE_GAME_YEARS : m.from);
 // Share of the current preset price: fixed asks fall from the first number to the second as a unit ages (MAX_AGE years).
 export const ASK: Record<"board" | "chat", [number, number]> = { board: [0.6, 0.45], chat: [0.45, 0.3] };
 export const MAX_AGE = 6;

@@ -1,19 +1,18 @@
 import { Fragment } from "react";
 import type { CSSProperties } from "react";
-import { APPS, appFor } from "../apps/registry";
+import { APPS, appFor, dockBadge } from "../apps/registry";
 import { useStore } from "../store";
 import { bounce, rememberSlot } from "./motion";
 
 export function Dock() {
   const { windows, openApp, openDoc, game } = useStore();
   const minimized = windows.filter((w) => w.minimized);
-  const badges = game.installed.includes("dockBadges");
 
   return (
     <nav className="dock" aria-label="Apps">
       {APPS.filter((a) => !a.hidden && game.installed.includes(a.name)).map((a, i) => {
         const win = windows.find((w) => w.app === a.name);
-        const badge = (badges && a.badge?.(game)) || 0;
+        const badge = dockBadge(game, a);
         const shown = appFor(game, a.name);
         return (
           <Fragment key={a.name}>
