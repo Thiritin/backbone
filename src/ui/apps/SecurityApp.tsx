@@ -56,6 +56,28 @@ function NodeRow({ game, n }: { game: GameState; n: Cluster }) {
   );
 }
 
+// Hacked clusters the panel host table does not list (hypervisors, game panels, mail), each with its clean-up.
+function Compromised({ game, skip }: { game: GameState; skip: Cluster[] }) {
+  const act = useStore((s) => s.act);
+  const hosts = game.clusters.filter((c) => game.security.hacked.includes(c.id) && !skip.includes(c));
+  if (!hosts.length) return null;
+  return (
+    <table className="table">
+      <thead><tr><th>Compromised host</th><th>Server</th><th /></tr></thead>
+      <tbody>{hosts.map((c) => {
+        const d = game.devices.find((x) => x.id === anchorOf(game, c));
+        return (
+          <tr key={c.id} onContextMenu={menuOn(() => [{ label: "Clean up", run: () => act(cleanUp, c.id) }])}>
+            <td>{c.name}</td>
+            <td>{d && devName(d)}</td>
+            <td className="r"><button className="btn" onClick={() => act(cleanUp, c.id)}>Clean up</button></td>
+          </tr>
+        );
+      })}</tbody>
+    </table>
+  );
+}
+
 const outcomeOf = (b: Breach): string =>
   b.decision === null ? "Open" : !b.sold ? "Data kept" : b.fine === null ? "Sold, fine pending" : b.fine === 0 ? "Sold, no fine" : `Sold, fined ${euro(b.fine)}`;
 
@@ -169,6 +191,7 @@ export function SecurityApp() {
           </div>
         )}
         {view === "advisories" && <div className="fin-scroll">
+          <Compromised game={game} skip={nodes} />
           <SoftwareCard game={game} cardRef={card} />
           <ManagementCard game={game} />
           {nodes.length === 0 ? !game.breaches.length && <div className="fin-empty"><ShieldCheck />No affected panel hosts</div> : (

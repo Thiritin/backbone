@@ -569,7 +569,28 @@ P(\text{cancel}) = \text{base} + 0.5 \cdot \max\left(0,\ \frac{50 - H}{50}\right
 
 A customer whose happiness falls below 15 leaves at the next monthly billing date, even on a yearly contract. Every cancellation arrives as a ticket first.
 
-**Retention offers.** A retention offer gives one month free. Below H = 30 the customer refuses it. A customer who pays more than their maximum (Price tolerance) for any monthly service, after taking a twelfth off for the free month, also refuses. Otherwise they stay with a chance of (H − 30) %, so 40% at H = 70 and 60% at H = 90. A refused offer cancels the contract at once and the ticket shows "Offer refused, contract cancelled".
+**Retention offers.** A cancellation ticket offers eight options, each with its own chance of keeping the customer. Every chance starts at (H − 10) %, so 50% at H = 60, and is then adjusted by the cancellation reason and the customer's profile, then clamped to 5% to 95%. There is no happiness floor: a customer at H = 5 stays about a third of the time for a strong offer, because the player pays for it.
+
+| Option | Cost | Price reason | Outage or slowness reason | Private customer | Business |
+| --- | --- | --- | --- | --- | --- |
+| 50% off the next month | 0.5 × monthly bill, credited at once | +30% | −20% | +10% | |
+| One month free | 1 × monthly bill, credited at once | +30% | −20% | +10% | |
+| 20% off for 3, 6 or 12 months | 0.2 × months × the hourly services' monthly bill | +30% | −20% | +10% | |
+| Free upgrade | The market price of the extra resources for a month, never charged | | | | |
+| Apology and fix promise | None | | +30% | | |
+| Move to a better server | None; a hand task and the downtime of the move | −10% | +30% | | +10% |
+
+The reason is the ticket's topic. A cancellation that comes from a price raise carries Price. A cancellation from the monthly churn roll carries Outage when a service of the customer is down or an outage ticket of theirs was written in the last month, Slowness when the last such ticket was about slowness, Price when an hourly service costs more than the customer finds fair (Price tolerance), and no reason otherwise. Private customers are all profiles outside the business segment (small business, agency, office, online shop, enterprise).
+
+The player sees each option as a card with its cost and the word for its chance: Unlikely below 40%, Even from 40% to below 60%, Likely from 60%. An option the customer cannot take is left out: every option when a service stays above the customer's maximum price after the option (a free month counts as a twelfth off the monthly price, half a month as a twenty-fourth, the discounts as a fifth); the upgrade when the service has no room on its server for one size up (1.5 times every resource; the node must hold the extra RAM and disk, a web space needs the disk in its panel VM); the fix promise unless the reason is outage or slowness; the move unless a host in a datacenter location, other than the current cluster, can take the service.
+
+A credit raises happiness by 30 per share of the monthly bill (+15 for half a month, +30 for a month). Every other option that keeps the customer adds 10, and a kept customer's ticket also earns the +5 for a resolved ticket. The customer rolls the chance once the player's 15 minutes of work are done. A failed roll cancels the contract at once and the ticket shows "Offer refused, contract cancelled".
+
+A discount changes the price of every hourly service of the customer through an agreed price change, which costs no happiness. The price returns at the Nth month start after the offer. A price the player set during the discount stays; only an untouched discounted price returns to its old value. A free upgrade raises the service's spec and its workload's booking and leaves the price unchanged. A move sends the customer a migration offer they have already accepted: the move runs in the customer's window like any accepted migration and gives the basement bonus when it leaves the basement.
+
+The apology waits three days. The ticket stays open as waiting, the monthly run does not process it, and the player cannot act on it. After 72 hours the customer checks: if any service behind the ticket is down or slow, the contract is cancelled and the ticket shows "Fault still present, contract cancelled". Otherwise the customer stays with the chance computed at that time.
+
+Staff on a cancellation offer the cheapest option whose chance is at least 40%, the cost being the one in the table (an upgrade costs its notional market price, so an apology or a move wins a tie). When none is at least even, they process the cancellation.
 
 **Price tolerance.** Every customer has a maximum monthly price per service, hidden from the player:
 
@@ -652,6 +673,8 @@ Gamers create abuse reports at 0.02, like high-skill customers. Each payment rem
 | Billing question, abuse report, refund request | 14 days |
 
 A ticket someone is working on stays open. Cancellations are processed at the next billing date instead.
+
+**Tenure** changes the how-to rate: customers ask most while they set up, ×2.5 at signup and ×0.85 per month after, down to ×0.15 for settled customers, so a low-skill customer who stays for years writes about once every three years.
 
 **Control panels** change the how-to rate: cPanic ×0.8, Pleskit ×0.9, DirectAdmen ×1.2, FreePanel ×1.5.
 
@@ -898,7 +921,6 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | Staff | Staff | €20 | €5 per employee | Employee management skill |
 | Marketing | Marketing | €20 | | Marketing campaigns skill |
 | Market | Market | €15 | | Market research skill |
-| Dock badges | Upgrade: counts on dock apps other than Support | €5 | | Monitoring skill |
 | Searchlight | Upgrade: global search on Ctrl+K and Cmd+K | €2 | | Start |
 | Widgets | Upgrade: one desktop widget each | €1 (calendar, open tickets, cash, customers), €2 (monthly revenue, level) | | Start |
 | AI bots | ChadGPT Support €50, Clipsy Reminders €100, per bot | ChadGPT: every reply in tokens, see [ChadGPT usage](#chadgpt-usage) | | Automation skill |
@@ -1351,7 +1373,7 @@ Game servers and colocation move the most data per euro and carry the largest sh
 | Web space, between servers of a clustered panel host | Immediate | None |
 | Game server | 1 minute | 1 minute |
 | Storage volume | Disk ÷ link speed | None; reads come from the old node until it finishes |
-| Between zones (cold) | (Disk + RAM) ÷ free bandwidth of the link between the zones | The whole transfer; needs a link between the zones |
+| Between zones (cold) | (Disk + RAM) ÷ free bandwidth of the link between the zones, or over the internet at the slower side's uplink, at most 45 GB an hour | The whole transfer; a zone link wins when there is one |
 | Between zones (live) | As above, then a final sync of RAM × 0.1 ÷ free bandwidth | Under 5 seconds; needs a link of 10G or more |
 | Recovery off a server that is off, by hand | The hand work's wait + 1 hour + (disk + RAM) ÷ link speed | The whole time |
 
@@ -1372,6 +1394,10 @@ A VM or game server on a server that is off or failed, whose cluster's control p
 The tool applies when the target panel's `migration.same` (source is the same panel) or `migration.other` (any other panel) year has come (Platforms and licenses). A technician trained on panels can run the task (OpKind "migrate") at the server the web space sits on, one operation per office hour; the hours then run as for the player. A web space is migrating until the first tick at or after its hours are over, then it is placed on a node of the target with room, and the 10 minutes count as down time. If the target has lost its room by then, the move is dropped. Web spaces on the servers of a clustered panel host are rebalanced by the scheduler without a task. The link speed below applies to virtual machines, game servers and storage volumes.
 
 The link speed is the slowest link between the two nodes, shared by every migration running at the same time. Between zones, the free bandwidth is the link's capacity minus the customer traffic it already carries at that hour, so a 1G link at its evening peak migrates slowly, and a 100 GB VM over a free 1G link takes about 15 minutes. Draining runs 2 migrations at once per node by default.
+
+**Moving a server.** "Move to" on a mounted server ships it with its workloads into the first rack with free room at another location. It costs what moving a rack costs (€300 in the same city, €1,200 to another city, €4,000 overseas), the cables are patched to the same kind of device in the new rack. The server is driven over (1 hour in the same city, 4 in the same country, 9 to another European country, as the drives in Hardware, power and failures) and couriered overseas (240 hours). The install is 2 to 4 hours of hand work at the far end (remote hands, a technician, doing it yourself or sending a friend), which starts once both the server and the hands are there, so the server is offline for the longer of the trip and the hand work wait, plus the install. A cluster that runs on more servers than this one cannot move, and the zone of the server's clusters and services changes with it. The customers on the server get a maintenance window that starts at once and lasts the whole downtime (Happiness and churn, planned maintenance), which makes its notice late and halves the penalties; a window planned at least 24 hours ahead that covers the whole move is used instead and nothing new is announced.
+
+**Renumbering.** A service that changes location gives its IPv4 addresses back and takes the same number from the target's free addresses (the ones rented there plus the room in announced blocks); rented addresses go back to their provider and stop being billed. The move is refused with "No free address in this location." when the target has fewer. This applies to cold migrations, accepted migration offers and server moves alike. A customer with a renumbered IPv4 loses 5 happiness (they update their DNS), 2 when they were told beforehand: through an accepted migration offer or a window planned a day ahead. An address of the company's own block is not renumbered when the company announces a block at both locations; it stays with the service and the customer notices nothing.
 
 **Restart after a node fails.** In a high-availability cluster, workloads restart on other nodes after 5 minutes of detection plus 2 minutes of boot. Customers count that time as an outage.
 
@@ -1493,7 +1519,7 @@ Anchors: cPanel could copy accounts between servers with WHM's "Copy an account"
 - **Game server panels** (kind "game") run containers for game servers on a server or in one of the player's own VMs, one panel per machine like a web panel. A game panel sells game servers and nothing else, at the how-to factor of its software. Hypervisor clusters keep selling game servers as plain virtual machines, so a game server order goes to a game panel with room first and to a hypervisor cluster otherwise. Game panels ship one release a year like every software and have 1.5 vulnerabilities per release; a compromised game panel takes its game servers down until the player cleans it up (Security advisories, Generated vulnerabilities). A license per game is not modelled yet; the panels bill only their own fee, per server.
 - A new game starts with no software installed. Old saves keep the panel and platform they had, and saves from before platforms load with FreePanel and Proxmocks installed.
 
-**Migration in the first build.** Inside a zone, links count as 1 Gbit/s, which moves 450 GB an hour. Virtual machines move live on platforms with live migration; on HyperVee they are offline for (disk + RAM) ÷ 450 GB per hour, rounded up to whole hours. Web spaces move between panel hosts as the hand task above; game servers and storage volumes move without a lost hour. Moves between zones need a ready zone link (Network, zone links): it moves 450 GB an hour for every Gbit/s of its speed, and parallel links add up. A VM moves live over 10 Gbit/s or more and is otherwise offline for the transfer; a web space's hand task takes the copy time on top. The basement has no zone link, so a move from the basement to a rented location goes over the internet at the home line's upload speed, at most 45 GB an hour (`WAN_GB_PER_HOUR`), always cold: a 40 GB VPS on a 10 Mbit/s line (4.5 GB an hour) is offline for 9 hours. Without a home line the move is refused. A workload with a lost disk can't migrate; it is restored instead.
+**Migration in the first build.** Inside a zone, links count as 1 Gbit/s, which moves 450 GB an hour. Virtual machines move live on platforms with live migration; on HyperVee they are offline for (disk + RAM) ÷ 450 GB per hour, rounded up to whole hours. Web spaces move between panel hosts as the hand task above; game servers and storage volumes move without a lost hour. Moves between zones need a ready zone link (Network, zone links): it moves 450 GB an hour for every Gbit/s of its speed, and parallel links add up. A VM moves live over 10 Gbit/s or more and is otherwise offline for the transfer; a web space's hand task takes the copy time on top. Without a zone link, a move into a rented location goes over the internet at the slower side's uplink (the home line's upload speed in the basement, the location's transit and datacenter bandwidth elsewhere), at most 45 GB an hour (`WAN_GB_PER_HOUR`), always cold, so two rented locations always reach each other this way: a 40 GB VPS on a 10 Mbit/s line (4.5 GB an hour) is offline for 9 hours. Without a home line the move is refused. A workload with a lost disk can't migrate; it is restored instead.
 
 **Migration offers.** The player can ask a customer to agree to a move (gdd.md, Support, Migration offers). The customer answers when their reply time is up: below happiness 40 they decline, otherwise they accept and name a window from the segment of Noticing outages. Players want the first 02:00 to 06:00 after the answer, businesses the next weekday from 18:00 to 22:00 (never the day of the answer), private customers any time, so their move runs at once. The accepted move runs at the first hour of the window as the move above, with its downtime. A customer whose service moves from the basement into a datacenter gains 5 happiness. A move that has not run within 48 hours of the window's start costs 10 happiness and reopens the ticket. The numbers are `DECLINE_BELOW`, `BASEMENT_BONUS`, `MISSED_PENALTY` and `MISSED_AFTER_HOURS` in `src/sim/90-actions/moves.ts`, the windows `MOVE_WINDOW` in `src/sim/10-catalog/attention.ts`.
 
@@ -1960,7 +1986,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 
 | Skill | Tier | Know-how | Training | Needs | Makes available |
 | --- | --- | --- | --- | --- | --- |
-| Monitoring | 1 | 50 | 5 days | | Dock badges, Nagiosaurus, failure notifications |
+| Monitoring | 1 | 50 | 5 days | | Nagiosaurus, failure notifications |
 | Marketing basics | 1 | 50 | 5 days | | Leads to Marketing campaigns |
 | Employee management | 1 | 100 | 10 days | | Staff |
 | Network operations | 2 | 300 | 14 days | Monitoring | Network |

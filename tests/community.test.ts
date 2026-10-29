@@ -357,6 +357,6 @@ describe("old saves", () => {
     const loaded = deserialize(serialize(s));
     expect(loaded.sponsorships).toEqual(s.sponsorships);
     expect(loaded.customers.find((c) => c.sponsor)).toBeTruthy();
-    expect(EVENTS.length).toBe(7);
+    expect(EVENTS.length).toBe(11);
   });
 });

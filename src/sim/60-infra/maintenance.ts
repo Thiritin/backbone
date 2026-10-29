@@ -80,6 +80,11 @@ export function coverage(s: GameState, v: Service): { factor: number; end: numbe
   return best;
 }
 
+// Whether a window planned at least a day ahead already covers the service from this hour on for the given hours.
+export const plannedFor = (s: GameState, v: Service, hours: number): boolean =>
+  s.maintenance.some((m) => m.from <= s.hour && m.from + m.hours >= s.hour + hours && m.from - m.notifiedAt >= NOTICE_HOURS
+    && m.customerIds.includes(v.customerId) && workloadsOf(s, v.id).some((w) => hits(s, w, m.target)));
+
 export const maintParams = (m: { from: number; hours: number }): Record<string, number> => {
   const d = dateOf(m.from);
   return { weekday: d.getUTCDay(), date: d.getUTCDate(), month: d.getUTCMonth(), from: d.getUTCHours(), to: dateOf(m.from + m.hours).getUTCHours(), hours: m.hours };

@@ -23,4 +23,8 @@ export const MOVES_EN: Record<string, (p: Params) => string> = {
   "event.moveMissed.text": (p) => `The move of ${p.service} of ${p.name} did not run.`,
   "error.moveOffered": () => "This service has a move offer waiting for an answer.",
   "error.moveTarget": () => "This service cannot move there.",
+  "ledger.moveServer": (p) => `Moving ${p.device} to ${p.location}`,
+  "error.moveServerOnly": () => "Only a server moves with its workloads.",
+  "error.locationNotReady": () => "The location is not ready yet.",
+  "error.clusterSpans": () => "The cluster runs on more servers than this one.",
 };

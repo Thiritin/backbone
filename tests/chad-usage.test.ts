@@ -58,7 +58,7 @@ describe("ChadGPT usage", () => {
 
   it("bills last month's usage as one ledger line at the month start", () => {
     const s = withChad(13, 40);
-    runTo(s, 700);
+    runTo(s, 743);
     const { cost } = s.chadUsage, cash = s.cash;
     runTo(s, 745);
     const line = s.ledger.find((l) => l.key === "ledger.chadUsage")!;

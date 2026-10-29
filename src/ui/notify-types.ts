@@ -7,8 +7,7 @@ const is = (...names: string[]) => (key: string) =>
 const type = (label: string, ...names: string[]): NotifyType => ({ id: label.toLowerCase().replace(/[^a-z]+/g, "-"), label, match: is(...names) });
 
 const GROUPS: Record<string, NotifyType[]> = {
-  Finance: [type("Bills and tax", "bills", "monthStart", "tax", "taxLoss"), type("Cash and loans", "cashNegative", "bankrupt")],
-  Bank: [type("Loans", "loanMissed", "loanCalled")],
+  Finance: [type("Bills and tax", "bills", "monthStart", "tax", "taxLoss"), type("Cash and loans", "cashNegative", "bankrupt", "loanMissed", "loanCalled")],
   Support: [
     type("Tickets", "ticket", "tickets", "stepFailed", "offerDeclined"),
     type("Migration offers", "moveAccepted", "moveDeclined", "moveDone", "moveMissed"),

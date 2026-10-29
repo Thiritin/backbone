@@ -46,8 +46,8 @@ function sizedSpec(seed: number, key: number, product: Product, size: number, ye
 }
 
 // The next bigger spec an upgrade asks for: every resource it has times the factor.
-export function grownSpec(seed: number, key: number, product: Product, spec: Spec): Spec {
-  const f = UPGRADE_FACTORS[Math.floor(rand(hashRng(seed, key, 223)) * UPGRADE_FACTORS.length)];
+export function grownSpec(seed: number, key: number, product: Product, spec: Spec, factor?: number): Spec {
+  const f = factor ?? UPGRADE_FACTORS[Math.floor(rand(hashRng(seed, key, 223)) * UPGRADE_FACTORS.length)];
   const by = (x: number | undefined, round: (x: number) => number) => (x ? round(x * f) : x);
   if (product === "webHosting") return { ...spec, diskGb: half(spec.diskGb * f), trafficGb: Math.round(spec.trafficGb * f), mailboxes: Math.ceil(spec.mailboxes * f) };
   if (product === "dns" || product === "vpn") return { ...spec, trafficGb: Math.round(spec.trafficGb * f), zones: by(spec.zones, Math.ceil), users: by(spec.users, Math.ceil) };

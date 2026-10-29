@@ -7,7 +7,8 @@ import { buyInsurance, cancelInsurance } from "../../../sim/90-actions/finance";
 import type { GameState } from "../../../sim/50-state";
 import { metrics } from "../../../sim/metrics";
 import { t } from "../../../i18n/en";
-import { useStore } from "../../store";
+import { useStore, useFocus } from "../../store";
+import { BankApp } from "../bank/BankApp";
 import { formatDay } from "../billing/BillingApp";
 import "../billing/billing.css";
 import "../shop/shop.css";
@@ -27,12 +28,13 @@ const compact = (v: number) => {
   return a >= 1000 ? `${sign}${Number((a / 1000).toFixed(a >= 10_000 ? 0 : 1))}k €` : `${sign}${Math.round(a)} €`;
 };
 
-type View = "overview" | "pnl" | "cash" | "tax" | "statement";
+type View = "overview" | "pnl" | "cash" | "tax" | "loans" | "statement";
 const VIEWS: { id: View; label: string; icon: typeof Layers }[] = [
   { id: "overview", label: "Overview", icon: LayoutGrid },
   { id: "pnl", label: "Profit and loss", icon: Table },
   { id: "cash", label: "Cash flow", icon: ChartColumn },
   { id: "tax", label: "Tax and insurance", icon: ShieldCheck },
+  { id: "loans", label: "Loans", icon: Landmark },
 ];
 
 interface MonthFlow { key: string; inflow: number; outflow: number; end: number }
@@ -59,6 +61,7 @@ export function FinanceApp() {
   const game = useStore((s) => s.game);
   const [view, setView] = useState<View>("overview");
   const [month, setMonth] = useState<string | null>(null);
+  useFocus("Finance", (f) => { if (f.kind === "tab" && f.id === "loans") setView("loans"); });
   // Balance after each entry, counted back from current cash.
   let balance = game.cash;
   const rows = game.ledger.map((e, i) => ({ e, i })).reverse().map(({ e, i }) => {
@@ -98,6 +101,7 @@ export function FinanceApp() {
         </div>
         {view === "overview" && <Overview game={game} />}
         {view === "pnl" && <ProfitLoss game={game} />}
+        {view === "loans" && <BankApp />}
         {view === "cash" && <CashFlowView game={game} />}
         {view === "tax" && <TaxInsurance game={game} />}
         {view === "statement" && (

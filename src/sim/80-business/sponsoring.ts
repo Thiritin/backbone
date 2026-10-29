@@ -12,6 +12,8 @@ import {
 import { addAwareness, addReview } from "./marketing";
 import { boardTick } from "./sponsorboard";
 import { acceptSponsorship } from "../90-actions/community";
+import { listed } from "./website";
+import { lineOffered } from "../60-infra/cluster";
 
 const DAY = 24;
 const cents = (v: number) => Math.round(v * 100) / 100;
@@ -19,14 +21,15 @@ const closeTicket = (s: GameState, id: string, outcome: Ticket["outcome"]) => {
   s.tickets = s.tickets.map((t) => (t.id === id && !isFinal(t) ? { ...t, status: "closed", outcome, updatedAt: s.hour, unread: false, work: null } : t));
 };
 
-// After Marketing basics, a request about every 4 to 8 weeks, drawn from the events open at the company's level.
+// After Marketing basics, a request about every 4 to 8 weeks, drawn from the events open at the company's level that want a line the company sells.
 function request(s: GameState, events: SimEvent[]): void {
   if (!s.unlocks.includes("marketingBasics")) return;
   const mine = s.sponsorships.filter((x) => !x.board);
   const last = mine.reduce((m, x) => Math.max(m, x.offeredAt), 0), r = hashRng(s.seed, mine.length, 21);
   const [lo, hi] = REQUEST_DAYS;
   if (s.hour < last + (lo + Math.floor(rand(r) * (hi - lo + 1))) * DAY) return;
-  const level = metrics(s).level.level, pool = EVENTS.filter((e) => e.level <= level);
+  const level = metrics(s).level.level, pool = EVENTS.filter((e) => e.level <= level && lineOffered(s, e.product) && listed(s, e.product));
+  if (!pool.length) return;
   const ev = pool[Math.floor(rand(r) * pool.length)];
   const ticket: Ticket = {
     id: `tkt${s.nextId++}`, customerId: "", serviceId: null, kind: "sponsor", topic: ev.id, status: "open",

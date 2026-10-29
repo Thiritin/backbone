@@ -2,6 +2,7 @@ import { yearOf } from "../00-core/time";
 import { importsFrom, softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { renumber, renumberError } from "./addresses";
 import { pickNode, type Cluster, type Workload } from "./cluster";
 import { LAN_GB_PER_HOUR, moveGbit } from "../85-products/products";
 import { freezeTick } from "./usage";
@@ -35,7 +36,8 @@ export function migrationTick(s: GameState): SimEvent[] {
   for (const w of s.workloads.filter((x) => x.migrating && x.migrating.doneAt <= s.hour)) {
     const to = s.clusters.find((c) => c.id === w.migrating!.clusterId), at = to && pickNode(s, to, w);
     const v = s.services.find((x) => x.id === w.serviceId);
-    if (!to || !at || !v) {
+    const locs = [w.clusterId, to?.id].map((id) => s.locations.find((l) => l.az === s.clusters.find((c) => c.id === id)?.az));
+    if (!to || !at || !v || (locs[0] && locs[1] && renumberError(s, [v.id], locs[0], locs[1]))) {
       patch(s, w.id, { migrating: undefined });
       if (v) events.push({ app: "Products", key: "event.migrationFailed", params: { service: v.label, cluster: to?.name ?? "" } });
       continue;
@@ -43,7 +45,10 @@ export function migrationTick(s: GameState): SimEvent[] {
     const from = s.clusters.find((c) => c.id === w.clusterId);
     patch(s, w.id, { deviceId: to.vm ? null : at, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + CUTOVER_MINUTES / 60, migrating: undefined, stuck: undefined });
     s.downHours = { ...s.downHours, [v.id]: (s.downHours[v.id] ?? 0) + CUTOVER_MINUTES / 60 };
-    if (from && from.az !== to.az) s.services = s.services.map((x) => (x.id === v.id ? { ...x, zone: to.az } : x));
+    if (from && from.az !== to.az) {
+      s.services = s.services.map((x) => (x.id === v.id ? { ...x, zone: to.az } : x));
+      if (locs[0] && locs[1]) renumber(s, [v.id], locs[0], locs[1], () => !!w.migrating!.announced);
+    }
     freezeTick(s);
     events.push({ app: "Products", key: "event.migrated", params: { service: v.label, cluster: to.name } });
   }

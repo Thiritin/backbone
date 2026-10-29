@@ -3,10 +3,11 @@ import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { softwareById, type Software } from "../10-catalog/platforms";
 import { BACKUP_HOUR } from "../10-catalog/usage";
 import { homeLineById } from "../20-world/datacenters";
-import type { Customer } from "../30-customers/customers";
+import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
-import type { Device, GameState } from "../50-state";
+import type { Device, GameState, Location } from "../50-state";
 import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
+import { exitsOf } from "../60-infra/network";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
 import { installedCores, perCoreOf, raidUsable } from "../60-infra/status";
@@ -40,12 +41,14 @@ export const zoneLinkGbit = (s: GameState, a: string, b: string): number => {
   return s.network.zoneLinks.filter((z) => z.readyAt <= s.hour && ends.includes(z.a) && ends.includes(z.b)).reduce((n, z) => n + z.gbit, 0);
 };
 
-// The speed a workload moves between two zones at: the zone links, or out of the basement over the internet at the home
-// line's upload speed, at most WAN_GB_PER_HOUR. Never 10 Gbit/s, so such a move is always cold.
+// The speed a workload moves between two zones at: the zone links, or else over the internet into a datacenter at the slower
+// side's uplink, at most WAN_GB_PER_HOUR. Never 10 Gbit/s, so such a move is always cold. Nothing moves back into the basement.
 export function moveGbit(s: GameState, a: string, b: string): number {
   const linked = zoneLinkGbit(s, a, b);
-  if (linked || !s.locations.some((l) => l.az === a && !l.dc) || !s.locations.some((l) => l.az === b && l.dc)) return linked;
-  return Math.min(homeLineById(s.homeLine.id).up / 1000, WAN_GB_PER_HOUR / LAN_GB_PER_HOUR);
+  const from = s.locations.find((l) => l.az === a), to = s.locations.find((l) => l.az === b);
+  if (linked || !from || !to?.dc) return linked;
+  const mbps = (l: Location) => (l.dc ? exitsOf(s, l).reduce((n, e) => n + e.cap, 0) : homeLineById(s.homeLine.id).up);
+  return Math.min(Math.min(mbps(from), mbps(to)) / 1000, WAN_GB_PER_HOUR / LAN_GB_PER_HOUR);
 }
 
 function units(s: GameState, c: Cluster, sw: Software): number {
@@ -168,6 +171,16 @@ function runBackups(s: GameState, events: SimEvent[]) {
   }
 }
 
+// The speed a customer workload runs at, 1 when nothing slows it: the slowest of its node, its panel host and, for a game
+// server, one core.
+export function workloadPerf(s: GameState, w: Workload, product: Product | undefined, nodePerf: (deviceId: string) => number = (id) => nodeUsage(s, id).perf): number {
+  if (!w.clusterId || w.stopped || isOwnVm(w)) return 1;
+  const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
+  if (!at || s.frozen.includes(at) || vm?.stopped) return 1;
+  const c = s.clusters.find((x) => x.id === w.clusterId), node = product === "gameServer" ? s.devices.find((d) => d.id === at) : undefined;
+  return Math.min(nodePerf(at), hostPerf(s, c), node ? perCoreOf(node) : 1);
+}
+
 // Overloaded nodes slow every customer on them, web spaces in a panel VM included, and a PHP upgrade or a compromise slows
 // its panel host's sites: happiness drops with the performance lost and some write in.
 function overload(s: GameState) {
@@ -175,13 +188,7 @@ function overload(s: GameState) {
   const perfOf = (id: string) => perfs.get(id) ?? perfs.set(id, nodeUsage(s, id).perf).get(id)!;
   const services = new Map(s.services.map((v) => [v.id, v]));
   for (const w of s.workloads) {
-    if (!w.clusterId || w.stopped || isOwnVm(w)) continue;
-    const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
-    if (!at || s.frozen.includes(at) || vm?.stopped) continue;
-    const c = s.clusters.find((x) => x.id === w.clusterId), v = services.get(w.serviceId);
-    // Game servers run at the speed of one core.
-    const node = v?.product === "gameServer" ? s.devices.find((d) => d.id === at) : undefined;
-    const perf = Math.min(perfOf(at), hostPerf(s, c), node ? perCoreOf(node) : 1);
+    const v = services.get(w.serviceId), perf = workloadPerf(s, w, v?.product, perfOf);
     if (perf >= 1) continue;
     const cus = v && customerCopy(s, v.customerId);
     if (!v || !cus) continue;
