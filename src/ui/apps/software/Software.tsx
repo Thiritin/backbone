@@ -39,7 +39,7 @@ export function SoftwareGrid({ game, machineId }: { game: GameState; machineId: 
           <button key={x.id} className="sw-tile" onClick={open} onContextMenu={menuOn(entries)}>
             <Mark id={x.id} size={32} />
             <span className="t">{softwareById(x.id).name}</span>
-            <span className="s num">{x.doneAt === null ? x.cluster.name : `Installing, ${x.doneAt - game.hour} h`}</span>
+            {x.doneAt === null ? <span className="s">{x.cluster.name}</span> : <><span className="s">Installing</span><span className="s num">{x.doneAt - game.hour} h left</span></>}
           </button>
         );
       })}
@@ -67,7 +67,7 @@ export function SoftwarePicker({ machineId }: { machineId: string }) {
   const blocked = (id: string) => installBlock(game, machineId, id) !== null;
   return createPortal(
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
-      <div className="alert welcome setup" role="dialog" aria-modal="true" aria-labelledby="sw-title">
+      <div className="alert welcome setup sw-picker" role="dialog" aria-modal="true" aria-labelledby="sw-title">
         <h2 id="sw-title">Add Software to {name}</h2>
         {(["cloud", "panel"] as const).map((kind) => (
           <section key={kind} className="setup-kind">

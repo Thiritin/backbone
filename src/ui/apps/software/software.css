@@ -1,4 +1,5 @@
-.sw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.sw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
+.vm-detail .sw-grid { grid-template-columns: repeat(2, 1fr); }
 .sw-tile {
   display: grid; justify-items: center; align-content: start; gap: 6px; min-height: 104px; padding: 12px 8px;
   border-radius: 10px; border: 0.5px solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: center; cursor: pointer;
@@ -9,5 +10,8 @@
 .sw-add { border: 1.5px dashed var(--line-strong); background: transparent; color: var(--text-2); }
 .sw-add:hover { border-color: var(--accent); color: var(--accent); }
 .sw-plus { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: var(--hover); }
+.alert.welcome.setup.sw-picker { width: min(1100px, calc(100vw - 32px)); max-width: none; }
+.sw-picker .setup-kind .prd-cards { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.sw-picker .prd-card dd { white-space: nowrap; }
 .prd-card[aria-disabled="true"] { opacity: 0.45; }
 .prd-card[aria-disabled="true"]:hover { border-color: var(--line-strong); }
