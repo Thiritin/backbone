@@ -15,7 +15,7 @@ In the first real hour the player makes a sale, handles a ticket, an invoice and
 | First real decision: how to grow past the basement | By minute 50 |
 | Level 2 | End of game year 1 (about 3 to 4 hours of play) |
 
-There is no tutorial overlay. Everything the player learns arrives as a ticket, a notification or an item on a short checklist.
+There is no tutorial overlay. Everything the player learns arrives as a ticket, a notification or a step in the Getting started document on the desktop.
 
 ## Minute 0
 
@@ -28,9 +28,9 @@ The game opens paused on Saturday 1 January 2005 at 08:00, with the basement on 
 - **Menu bar:** paused, the date, €5,000 cash, and the support badge at 0.
 - **Dock:** all twelve apps. Market shows a lock until market research is unlocked, and Network shows only the home line.
 - **Locations window, open on the basement:** a shelf with four slots. Slot 1 holds the tower with a green light, a spare-parts kit sits beside it, and the home router shows 1 Mbit/s up.
-- **Notification center:** the "Getting started" checklist.
+- **Desktop:** the "Getting started" document with its steps.
 
-**Getting started checklist.** Each item ticks itself when done, and the list disappears after the last one.
+**Getting started.** Each step names where to do it and opens that place; a step ticks itself when done.
 
 1. Start the clock
 2. Answer Jonas's ticket
