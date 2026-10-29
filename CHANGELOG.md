@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- Move servers on a rack takes several servers to a datacenter in one go: drive them yourself for the fare and rack them on arrival with no shipping or remote hands bill, or have a friend take them from home.
 - Customers move between any two datacenters over the internet, and Move to on a server ships it with its customers to another location, with new addresses for the services and a maintenance window announced to the customers.
 - The Shop now switches between New and Used at the top, lists only real manufacturers including the CPU and GPU makers, and groups server lines and switches under expandable classes with Software as its own class.
 - A customer who wants to cancel can be offered 50% off the next month, a free month, 20% off for 3, 6 or 12 months, a free upgrade, a move to a better server or an apology with a fix promise, each shown as a card with its cost and how likely it is to work, and customers at any happiness can be kept by a strong enough offer.

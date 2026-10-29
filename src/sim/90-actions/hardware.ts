@@ -12,7 +12,8 @@ import { claimRepair } from "../46-finance/finance";
 import { atFront, BMC_RESET_HOURS, bootUp, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
-import { handJob, trip as drive, type HandJob, type How } from "../60-infra/handwork";
+import { handJob, present, trip as drive, type HandJob, type How } from "../60-infra/handwork";
+import { drive as driveTo } from "./travel";
 import { endLease, rebuildHours } from "../88-tick/tick";
 import { cardsFree, serverTaken, vmById } from "../60-infra/cluster";
 import { renumber, renumberError } from "../60-infra/addresses";
@@ -380,63 +381,94 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
 // Hours of racking, power and cabling at the far end of a server move: two to four.
 export const MOVE_INSTALL_HOURS = { min: 2, max: 4 };
 
-// Ships a loaded server with its workloads into the first rack with room at another location. It is driven over when a drive
-// reaches the target (couriered overseas) and installed by hand work at the far end, which starts once both the server and the
-// hands are there; it is offline until the install is done; the affected customers get a maintenance window unless one planned a day
-// ahead already covers the move, and their services are renumbered from the target's pool. A cluster must sit on this server alone.
-export function moveServer(s: GameState, deviceId: string, locationId: string, how: How | boolean = false): ActionResult {
-  const d = s.devices.find((x) => x.id === deviceId);
-  if (!d) return fail("error.unknownDevice");
-  if (modelById(d.model).kind !== "server") return fail("error.moveServerOnly");
-  if (!d.rackId) return fail("error.notMounted");
-  const from = locationOf(s, d)!, to = s.locations.find((l) => l.id === locationId);
+// Ships loaded servers with their workloads into the first racks with room at another location. They are driven over when a drive
+// reaches the target (couriered overseas) and installed by hand work at the far end, which starts once both the servers and the
+// hands are there; they are offline until the install is done; the affected customers get a maintenance window unless one planned a
+// day ahead already covers the move, and their services are renumbered from the target's pool. A cluster moves whole or not at all.
+// "self" has the player drive the load for the fare and install it on arrival; a friend takes a load from home without shipping.
+export function moveServer(s: GameState, deviceIds: string | string[], locationId: string, how: How | boolean = false): ActionResult {
+  const list = [...new Set([deviceIds].flat())], found = list.map((id) => s.devices.find((x) => x.id === id));
+  if (!list.length) return fail("error.emptyShipment");
+  if (found.some((d) => !d)) return fail("error.unknownDevice");
+  const servers = found as Device[];
+  if (servers.some((d) => modelById(d.model).kind !== "server")) return fail("error.moveServerOnly");
+  if (servers.some((d) => !d.rackId)) return fail("error.notMounted");
+  const from = locationOf(s, servers[0])!, to = s.locations.find((l) => l.id === locationId);
+  if (servers.some((d) => locationOf(s, d)!.id !== from.id)) return fail("error.mixedZones");
   if (!to) return fail("error.unknownLocation");
   if (to.id === from.id) return fail("error.sameZone");
   if (to.readyAt > s.hour) return fail("error.locationNotReady");
-  if (d.maintenance) return fail("error.busy");
-  if (spotOf(s, d.rackId)!.moving) return fail("error.rackMoving");
-  const own = s.clusters.filter((c) => c.nodes.some((n) => n.deviceId === d.id));
-  if (own.some((c) => c.nodes.length > 1)) return fail("error.clusterSpans");
-  // The clusters that move with the server: its own and the panel hosts inside its VMs.
+  if (servers.some((d) => d.maintenance)) return fail("error.busy");
+  if (servers.some((d) => d.burnin)) return fail("error.burninRunning");
+  if (servers.some((d) => spotOf(s, d.rackId!)!.moving)) return fail("error.rackMoving");
+  const own = s.clusters.filter((c) => c.nodes.some((n) => list.includes(n.deviceId)));
+  if (own.some((c) => c.nodes.some((n) => !list.includes(n.deviceId)))) return fail("error.clusterSpans");
+  // The clusters that move with the servers: their own and the panel hosts inside their VMs.
   const hosted = new Set(own.map((c) => c.id));
   for (let grew = true; grew; ) {
     grew = false;
     for (const c of s.clusters) if (!hosted.has(c.id) && c.vm && hosted.has(vmById(s, c.vm)?.clusterId ?? "")) { hosted.add(c.id); grew = true; }
   }
-  const hosts = s.workloads.filter((w) => w.deviceId === d.id || (w.clusterId && hosted.has(w.clusterId)));
+  const hosts = s.workloads.filter((w) => list.includes(w.deviceId ?? "") || (w.clusterId && hosted.has(w.clusterId)));
   if (hosts.some((w) => w.busyUntil > s.hour || w.migrating)) return fail("error.workloadBusy");
   const ids = [...new Set(hosts.map((w) => w.serviceId))].filter((id) => s.services.some((v) => v.id === id && v.endedAt === null));
-  const spot = s.racks.filter((r) => r.locationId === to.id && r.arriveAt === null)
+  const spotFor = (d: Device) => s.racks.filter((r) => r.locationId === to.id && r.arriveAt === null)
     .map((rack) => ({ rack, slot: freeSlots(s, rack.id, modelById(d.model).height)[0] })).find((x) => x.slot !== undefined);
-  if (!spot) return fail("error.noRoom");
+  if (!spotFor(servers[0])) return fail("error.noRoom");
   const noAddress = renumberError(s, ids, from, to);
   if (noAddress) return fail(noAddress);
-  const trip = travelCost(s, from.id, to.id);
-  const work = MOVE_INSTALL_HOURS.min + Math.floor(rand(s.rng) * (MOVE_INSTALL_HOURS.max - MOVE_INSTALL_HOURS.min + 1));
-  const job = handJob(s, d.label ?? d.name, to, how, work);
-  if ("error" in job) return fail(job.error);
-  if (s.cash < trip.price + job.cost) return fail("error.noCash");
-  const transit = drive(from.city, to.city)?.hours ?? trip.hours;
+  const work = servers.reduce((sum) => sum + MOVE_INSTALL_HOURS.min + Math.floor(rand(s.rng) * (MOVE_INSTALL_HOURS.max - MOVE_INSTALL_HOURS.min + 1)), 0);
+  const name = servers.map((d) => d.label ?? d.name).join(", ");
+  let job: HandJob, price = 0, transit = 0;
+  if (how === "self") {
+    if (!present(s, from.id)) return fail("error.notThere");
+    if (s.player.until > s.hour) return fail("error.away");
+    const fare = driveTo(s, to.id);
+    if (!fare) return fail("error.tooFar");
+    job = { cost: fare.fee, bill: 0, wait: fare.hours + work, commit: () => {
+      book(s, "maintenance", "ledger.drive", { place: to.name }, -fare.fee);
+      s.player = { at: to.id, until: s.hour + fare.hours + work, doing: "travel" };
+      return fare.hours + work;
+    } };
+  } else {
+    const hands = handJob(s, name, to, how, work);
+    if ("error" in hands) return fail(hands.error);
+    job = hands;
+    // A friend loads the servers at home; any other load is shipped.
+    if (how !== "friend" || from.dc) {
+      const ship = travelCost(s, from.id, to.id);
+      price = ship.price;
+      transit = drive(from.city, to.city)?.hours ?? ship.hours;
+    }
+  }
+  if (s.cash < price + job.cost) return fail("error.noCash");
   const hours = Math.max(transit + work, job.commit());
   const told = new Set(ids.filter((id) => plannedFor(s, s.services.find((v) => v.id === id)!, hours)));
-  if (ids.some((id) => !told.has(id))) announceNow(s, { kind: "device", id: d.id }, hours);
-  const cables = s.cables.filter((c) => c.a.device === d.id || c.b.device === d.id);
-  unplug(s, new Set([d.id]));
-  mount(s, d, spot.rack.id, spot.slot);
-  for (const c of d.components) if (c.kind === "psu") c.plugged = true;
-  Object.assign(d, { bootUntil: s.hour + hours, maintenance: { componentId: "", partId: "", doneAt: s.hour + hours } });
-  // The hands patch each cable to the same kind of device in the new rack, in the rack of the server first.
+  if (ids.some((id) => !told.has(id))) for (const d of servers) announceNow(s, { kind: "device", id: d.id }, hours);
+  const cables = s.cables.filter((c) => list.includes(c.a.device) || list.includes(c.b.device));
+  unplug(s, new Set(list));
+  for (const d of servers) {
+    // ponytail: room for the later servers is checked while mounting; a failure midway relies on act's clone.
+    const spot = spotFor(d);
+    if (!spot) return fail("error.noRoom");
+    mount(s, d, spot.rack.id, spot.slot);
+    for (const c of d.components) if (c.kind === "psu") c.plugged = true;
+    Object.assign(d, { bootUntil: s.hour + hours, maintenance: { componentId: "", partId: "", doneAt: s.hour + hours } });
+  }
+  // Cables between moving servers go along; the hands patch the rest to the same kind of device at the target, in the server's rack first.
   for (const c of cables) {
-    const [mine, far] = c.a.device === d.id ? [c.a, c.b] : [c.b, c.a], kind = modelById(s.devices.find((x) => x.id === far.device)!.model).kind;
+    if (list.includes(c.a.device) && list.includes(c.b.device)) { connect(s, c.a, c.b); continue; }
+    const [mine, far] = list.includes(c.a.device) ? [c.a, c.b] : [c.b, c.a], kind = modelById(s.devices.find((x) => x.id === far.device)!.model).kind;
+    const rack = s.devices.find((x) => x.id === mine.device)!.rackId;
     const pool = s.devices.filter((x) => x.rackId && locationOf(s, x)?.id === to.id && modelById(x.model).kind === kind)
-      .sort((x, y) => Number(y.rackId === spot.rack.id) - Number(x.rackId === spot.rack.id));
+      .sort((x, y) => Number(y.rackId === rack) - Number(x.rackId === rack));
     pool.some((x) => modelById(x.model).ports.some((_, port) => connect(s, mine, { device: x.id, port }).ok));
   }
   s.clusters = s.clusters.map((c) => (hosted.has(c.id) ? { ...c, az: to.az } : c));
   s.services = s.services.map((v) => (ids.includes(v.id) ? { ...v, zone: to.az } : v));
   renumber(s, ids, from, to, (id) => told.has(id));
-  book(s, "moving", "ledger.moveServer", { device: d.label ?? d.name, location: to.name }, -trip.price);
-  return { ok: true, id: d.id };
+  if (price > 0) book(s, "moving", "ledger.moveServer", { device: name, location: to.name }, -price);
+  return { ok: true, id: servers[0].id };
 }
 
 export function sellDevice(s: GameState, deviceId: string): ActionResult {
