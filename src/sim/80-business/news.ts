@@ -4,6 +4,7 @@ import { IPV6_FROM } from "../10-catalog/addresses";
 import { GENERATIONS } from "../10-catalog/economy";
 import { MODELS } from "../10-catalog/hardware";
 import { supportEnd } from "../10-catalog/lifecycle";
+import { GPU_CARDS } from "../10-catalog/gpu";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { LINE_NAME } from "../30-market/spec";
 import type { GameState } from "../50-state";
@@ -24,6 +25,10 @@ export const NEWS: NewsDef[] = [
   ...MAIL_PROVIDERS.filter((x) => x.from > START_YEAR).map((x) => ({ id: `mail.${x.id}`, key: "event.news.mail", at: at(x.from), params: { name: x.name, price: x.price(x.from) } })),
   // A model other than a server leaves the shop on the first of January after its last year on sale (servers have generation news).
   ...MODELS.filter((m) => !m.server && m.until !== null).map((m) => ({ id: `endOfSale.${m.id}`, key: "event.news.endOfSale", at: at(m.until! + 1), params: { name: m.name, supportEnd: supportEnd(m)! } })),
+  ...GPU_CARDS.filter((c) => c.year > START_YEAR).map((c) => ({ id: `gpu.${c.year}`, key: "event.news.gpu", at: at(c.year), params: { name: c.name, watts: c.watts, price: c.price } })),
+  // The two jumps in GPU demand (gpu.ts, gpuDemand).
+  { id: "gpuDemand.2017", key: "event.news.gpuDemand", at: at(2017), params: { year: 2017 } },
+  { id: "gpuDemand.2023", key: "event.news.gpuDemand", at: at(2023), params: { year: 2023 } },
   { id: "ipv6.dc", key: "event.news.ipv6Dc", at: at(IPV6_FROM.dc), params: {} },
   { id: "ipv6.home", key: "event.news.ipv6Home", at: at(IPV6_FROM.home), params: {} },
   { id: "ripe.last8", key: "event.news.ripeLast", at: at(2012, 8), params: {} },

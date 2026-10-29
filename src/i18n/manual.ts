@@ -7,6 +7,7 @@ const gb = (x: string | number) => `${x} GB`;
 const mailboxes = (n: string | number) => `${n} mailbox${Number(n) === 1 ? "" : "es"}`;
 const web = (p: Params) => `${gb(p.disk)} of space, ${gb(p.traffic)} of traffic a month and ${mailboxes(p.mail)}`;
 const box = (p: Params) => `${p.cpu} vCPU${Number(p.cpu) === 1 ? "" : "s"}, ${gb(p.ram)} of RAM and ${gb(p.disk)} of disk`;
+const cards = (p: Params) => `${p.gpu} GPU${Number(p.gpu) === 1 ? "" : "s"}`;
 const domain = (p: Params) => (Number(p.owned) ? `I already own ${p.domain} and would like to move it to you.` : `Please register ${p.domain} for me as well.`);
 const more = (p: Params) => (p.product === "webHosting"
   ? `${gb(p.disk0)} to ${gb(p.disk1)} of space, ${gb(p.traffic0)} to ${gb(p.traffic1)} of traffic and ${p.mail0} to ${mailboxes(p.mail1)}`
@@ -23,6 +24,8 @@ export const MANUAL_EN: Record<string, (p: Params) => string> = {
   "order.msg.vps.1": (p) => `Please set up a virtual server for me: ${box(p)}. Debian would be nice, and monthly billing.`,
   "order.msg.gameServer.0": (p) => `We need a game server for our clan with ${box(p)}. It has to be up by Friday night.`,
   "order.msg.gameServer.1": (p) => `Please set up a game server in ${p.city}: ${box(p)}. Low ping matters more to us than anything.`,
+  "order.msg.gpu.0": (p) => `I would like a GPU server in ${p.city} with ${cards(p)}, ${box(p)}. I need it to train my models.`,
+  "order.msg.gpu.1": (p) => `Please set up a virtual server with ${cards(p)} for me: ${box(p)}. CUDA drivers would be nice, and monthly billing.`,
   "sales.msg.upgrade": (p) => `We keep hitting our limits. We need ${more(p)}. What would upgrading cost us?`,
   "sales.you.upgrade": (p) => `We can do the upgrade for ${euroCents(Number(p.price))} a month in total.`,
   "sales.you.upgradeDone": (p) => `The upgrade is live. Your service runs with the new resources at ${euroCents(Number(p.price))} a month from now on.`,

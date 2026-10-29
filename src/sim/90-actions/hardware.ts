@@ -8,7 +8,7 @@ import { deviceDefaults, type BondMode, type Component, type Device, type End, t
 import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, moveCost, pluggedIn, deviceValue, resaleValue, travelCost } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { endLease, rebuildHours } from "../88-tick/tick";
-import { serverTaken } from "../60-infra/cluster";
+import { cardsFree, serverTaken } from "../60-infra/cluster";
 import { nodeName } from "../30-customers/hostnames";
 
 // error is an i18n key.
@@ -606,6 +606,7 @@ export function removePart(s: GameState, deviceId: string, componentId: string, 
   const c = d.components.find((x) => x.id === componentId);
   if (!c) return fail("error.unknownComponent");
   if (c.kind === "board" || c.kind === "nic") return fail("error.notRemovable");
+  if (c.kind === "gpu" && c.failedAt === null && cardsFree(s, d) < 1) return fail("error.cardInUse");
   const zone = d.rackId ? locationOf(s, d)?.id : d.store;
   if (!zone) return fail("error.inTransit");
   if (isDriveKind(c.kind) && d.raid !== "none" && !raidFits(d.raid, drivesOf(d).length - 1)) return fail("error.raidLevel");

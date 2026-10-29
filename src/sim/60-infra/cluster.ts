@@ -1,5 +1,6 @@
 import { modelById } from "../10-catalog/hardware";
 import { START_YEAR, yearOf } from "../00-core/time";
+import { GPU_SKILL } from "../10-catalog/research";
 import { balloons, IN_VM, kindsServing, kindServing, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
@@ -70,6 +71,11 @@ export function nodeCapacity(d: Device, sw: Software | null = null, year = 0): R
 }
 const softwareOf = (c: Pick<Cluster, "panel" | "platform">): Software | null => { const id = c.panel ?? c.platform; return id ? softwareById(id) : null; };
 
+// The working GPU cards of a server, and the ones no GPU VM has taken yet.
+export const cardsOn = (d: Device): number => d.components.filter((c) => c.kind === "gpu" && c.failedAt === null).length;
+export const cardsFree = (s: GameState, d: Device): number =>
+  cardsOn(d) - s.workloads.reduce((n, w) => n + (w.deviceId === d.id && w.clusterId ? w.gpus ?? 0 : 0), 0);
+
 // What the workloads on a server book; web spaces inside a panel VM count in the VM's booking.
 export function nodeUsed(s: GameState, deviceId: string): Resources {
   const used = { ...ZERO };
@@ -139,12 +145,17 @@ export const clusterReachable = (s: GameState, c: Cluster): boolean =>
 export function lineOffered(s: GameState, p: Product): boolean {
   const runsOn = PRODUCTS[p].runsOn;
   const sells = (az: string | undefined) => { const l = s.locations.find((x) => x.az === az); return !!l && sellsFrom(s, l, p); };
-  if (runsOn === "cluster") return s.clusters.some((c) => supports(c, p) && hasHosts(c) && clusterReachable(s, c) && sells(c.az));
+  if (runsOn === "cluster") return s.clusters.some((c) => supports(c, p) && hasHosts(c) && clusterReachable(s, c) && sells(c.az) && (p !== "gpu" || gpuReady(s, c)));
   if (runsOn === "server") return s.devices.some((d) => d.rackId && modelById(d.model).server && !serverTaken(s, d.id) && linkStatus(s, d.id).online && hasPublicAddress(s, d.id) && sells(locationOf(s, d)?.az));
   return runsOn === "none" || s.locations.some((l) => l.dc);
 }
+// Whether a node of the cluster has a card no GPU VM has taken.
+export const hasFreeCard = (s: GameState, c: Cluster): boolean => c.nodes.some((n) => { const d = s.devices.find((x) => x.id === n.deviceId); return !!d && cardsFree(s, d) > 0; });
+// Whether the cluster can rent out GPUs: the team has the skill and a node has a free card.
+export const gpuReady = (s: GameState, c: Cluster): boolean => s.unlocks.includes(GPU_SKILL) && hasFreeCard(s, c);
 // Why a product found no place: no software that sells it, no failover for a product that needs it, or no room.
 export function noRoomError(s: GameState, p: Product, clusterId: string | null = null): string {
+  if (p === "gpu" && !s.unlocks.includes(GPU_SKILL)) return "error.needsResearch";
   if (PRODUCTS[p].runsOn === "server") return "error.noFreeServer";
   if (PRODUCTS[p].runsOn === "rack") return "error.needsDatacenter";
   const kind = kindServing(p), mine = s.clusters.filter((c) => (clusterId ? c.id === clusterId : true) && kindsServing(p).includes(c.kind) && (c.panel || c.platform));
@@ -152,7 +163,7 @@ export function noRoomError(s: GameState, p: Product, clusterId: string | null =
   if (!mine.some((c) => supports(c, p))) return "error.needsHaCluster";
   if (!mine.some((c) => clusterReachable(s, c))) return "error.needsInternet";
   if (!mine.some((c) => s.locations.some((l) => l.az === c.az && sellsFrom(s, l, p)))) return "error.needsStaticLine";
-  return "error.noCapacity";
+  return p === "gpu" && !mine.some((c) => hasFreeCard(s, c)) ? "error.noCard" : "error.noCapacity";
 }
 
 // Nothing can be started, moved, restored or sold on a cluster while its control plane is down or nothing is installed.
@@ -202,6 +213,7 @@ export function pickNode(
   for (const n of cluster.nodes) {
     const d = s.devices.find((x) => x.id === n.deviceId);
     if (!d || n.state !== "active" || n.deviceId === skip || !working(s, d.id)) continue;
+    if ((r.gpus ?? 0) > cardsFree(s, d)) continue;
     const cap = bookable(s, d, !overbook), used = nodeUsed(s, d.id);
     if (!fits(used, cap, r)) continue;
     const l = load(used, cap);

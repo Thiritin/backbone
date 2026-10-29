@@ -13,7 +13,7 @@ import { nodeUsage } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
 import { hasOrderForm, owns } from "./marketing";
 
-export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation"];
+export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu"];
 
 export const listed = (s: GameState, p: Product): boolean => s.marketing.lines.includes(p);
 

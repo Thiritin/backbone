@@ -53,7 +53,7 @@ describe("catalog", () => {
     expect(modelById("g7-memory").server).toMatchObject({ cores: 128, ramGb: 4096 });
     expect(modelById("g6-arm").server!.arch).toBe("arm");
     expect(MODELS.filter((m) => m.id.endsWith("-arm")).map((m) => m.from)).toEqual([2020, 2023]);
-    expect(MODELS.some((m) => m.id === "g1-highmem" || m.id === "g1-compute-1s" || m.id === "g4-gpu")).toBe(false);
+    expect(MODELS.some((m) => m.id === "g1-highmem" || m.id === "g1-compute-1s" || m.id === "g2-gpu")).toBe(false);
     expect(GENERATIONS[6].cores).toBe(128);
     expect(modelById("sw-8")).toMatchObject({ height: 1, watts: 8, price: 60 });
     expect(modelById("handoff")).toMatchObject({ name: "Datacenter handoff", height: 0, watts: 0 });

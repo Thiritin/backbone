@@ -133,6 +133,16 @@ const PARTS: Record<ComponentKind, ReactNode> = {
       <Slab x={22} y={68} W={8} D={50} T={18} top={METAL} side={METAL_SIDE} front={METAL} />
     </>
   ),
+  gpu: (
+    <>
+      <Slab x={24} y={80} W={118} D={54} T={16} top="oklch(0.28 0.03 255)" side={DARK_SIDE} front={DARK}
+        face={<rect x="8" y="5" width="46" height="4" rx="1" fill={GOLD} />}>
+        <circle cx="30" cy="27" r="17" fill={DARK_SIDE} /><circle cx="30" cy="27" r="11" fill="oklch(0.2 0.02 255)" />
+        <circle cx="86" cy="27" r="17" fill={DARK_SIDE} /><circle cx="86" cy="27" r="11" fill="oklch(0.2 0.02 255)" />
+      </Slab>
+      <Slab x={20} y={64} W={6} D={54} T={18} top={METAL} side={METAL_SIDE} front={METAL} />
+    </>
+  ),
 };
 
 // Spare parts are drawn loose rather than as rack fronts.

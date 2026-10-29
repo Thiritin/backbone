@@ -5,7 +5,8 @@ import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { PROFILE_IDS } from "../80-business/marketing";
-import { cityMarket, leadFlows, NEEDS, rivals, share, values } from "./market";
+import { yearOf } from "../00-core/time";
+import { cityMarket, leadFlows, NEEDS, needsOf, rivals, share, values } from "./market";
 
 // A study by Gartnah reveals one profile; priced by its budget.
 export const STUDY_COST: Record<Budget, number> = { low: 800, medium: 2000, high: 4000 };
@@ -14,7 +15,7 @@ export const studied = (s: GameState, p: Profile): boolean => s.marketing.studie
 
 
 export const DEMANDED: Product[] = [...new Set(PROFILE_IDS.flatMap((p) => NEEDS[p].map(([x]) => x)))];
-const weight = (p: Profile, product: Product): number => NEEDS[p].find(([x]) => x === product)?.[1] ?? 0;
+const weight = (p: Profile, product: Product, year: number): number => needsOf(p, year).find(([x]) => x === product)?.[1] ?? 0;
 
 export interface Demand { product: Product; buyers: number; you: number; rivals: { name: string; buyers: number }[] }
 
@@ -25,7 +26,7 @@ export function demand(s: GameState, city: string): Demand[] {
     let buyers = 0, you = 0;
     const others = new Map<string, number>();
     for (const p of PROFILE_IDS) {
-      const w = weight(p, product);
+      const w = weight(p, product, yearOf(s.hour));
       if (!w) continue;
       const total = market * profileStats(p).mix * w;
       const sh = share(s, p, product, city);
@@ -36,7 +37,7 @@ export function demand(s: GameState, city: string): Demand[] {
       you += mine;
     }
     return { product, buyers, you, rivals: [...others].map(([name, n]) => ({ name, buyers: n })).sort((a, b) => b.buyers - a.buyers) };
-  });
+  }).filter((d) => d.buyers > 0);
 }
 
 export interface LostGroup { reason: string; params: Record<string, string | number>; count: number; reference: number }

@@ -1,6 +1,7 @@
 // Part prices by year (economy.md, Prices over time, Part prices by year). Enterprise parts are priced in: RDIMM about 1.6 x
 // consumer RAM, enterprise SSD about 1.5 x, enterprise HDD about 1.6 x.
 import { erodedPrice } from "./lifecycle";
+import { cardOf, gpuPrice } from "./gpu";
 import { bareParts, componentParts, manufacturerByName, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "./hardware";
 
 type Keyframes = [year: number, price: number][];
@@ -26,7 +27,7 @@ const NIC: Keyframes = [[2005, 80], [2015, 40]];
 const FAN = 25;
 
 // First year a kind is sold.
-const SOLD_FROM: Partial<Record<ComponentKind, number>> = { ssd: 2009, nvme: 2014 };
+const SOLD_FROM: Partial<Record<ComponentKind, number>> = { ssd: 2009, nvme: 2014, gpu: 2007 };
 export const partSold = (kind: ComponentKind, year: number): boolean => year >= (SOLD_FROM[kind] ?? 0);
 
 // A part of unknown size counts as one unit (1 GB, 1 GB of HDD, 1 core). The price is a whole euro.
@@ -43,6 +44,8 @@ function rawPrice(kind: ComponentKind, n: number, year: number): number {
     case "fan": return FAN;
     // 10G ports were fitted at 4 x until 2017, then 2 x.
     case "nic": return lerp(NIC, year) * (year >= 2017 ? 2 : year >= 2011 ? 4 : 1);
+    // A GPU card's size is its launch year; the price rule is in gpu.ts.
+    case "gpu": return gpuPrice(cardOf(n), year);
   }
 }
 export const partsPrice = (parts: PartSpec[], year: number): number => parts.reduce((n, p) => n + partPrice(p.kind, p.size, p.ff, year), 0);

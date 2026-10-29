@@ -4,7 +4,7 @@ import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, nextAz, seedDcs } from "../
 import { fillAddresses } from "../60-infra/addresses";
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
-import { deviceDefaults, fillSizes, newGame, SAVE_VERSION, type Device, type GameState } from "../50-state";
+import { deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState } from "../50-state";
 import { workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
@@ -39,8 +39,9 @@ export function deserialize(raw: string): GameState {
   const devices = (data.devices ?? base.devices).map((d) => {
     const model = RENAMED_MODELS[d.model] ?? d.model;
     const defaults = deviceDefaults(model, d.boughtAt ?? 0);
+    const sized = fillSizes(model, d.components ?? defaults.components);
     return {
-      ...defaults, ...d, model, components: fillSizes(model, d.components ?? defaults.components), lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
+      ...defaults, ...d, model, components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
     };
   });
   const racks = (data.racks ?? base.racks).map((r) => ({ ...r, provided: r.provided ?? false, feedB: r.feedB ?? false, highDensity: r.highDensity ?? false }));

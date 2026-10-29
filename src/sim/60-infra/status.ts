@@ -1,5 +1,6 @@
 import { yearOf } from "../00-core/time";
 import { COMPONENTS, jacksOf, modelById, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
+import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, inUs, MOVE, rackUnits, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import type { Component, Device, End, GameState, Location, SpaceKind } from "../50-state";
@@ -148,9 +149,10 @@ export const isPlugged = (c: Component) => c.plugged !== false;
 // A device gets power through a plugged-in supply that has not failed; one without supplies needs none.
 export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length || p.some((c) => isPlugged(c) && c.failedAt === null); };
 
-// The servers that run at least one workload; the rest draw their idle power.
+// The servers that run at least one workload; the rest draw their idle power. Working GPU cards add their watts either way.
 export const busyDevices = (s: GameState): Set<string | null> => new Set(s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId));
-export const drawWatts = (d: Device, busy: Set<string | null>): number => { const m = modelById(d.model); return busy.has(d.id) ? m.watts : m.idleWatts; };
+export const deviceWatts = (d: Device): number => modelById(d.model).watts + cardWatts(d.components);
+export const drawWatts = (d: Device, busy: Set<string | null>): number => { const m = modelById(d.model); return (busy.has(d.id) ? m.watts : m.idleWatts) + cardWatts(d.components); };
 
 // ponytail: a device draws its rated power, or its idle power when it runs no workload; no finer load-based draw.
 export function rackPower(s: GameState, rackId: string): { watts: number; limitWatts: number; tripped: boolean } {

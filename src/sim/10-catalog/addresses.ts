@@ -23,7 +23,7 @@ export const SPAM = { hacked: 12, shady: 2 };
 export const LIR_FEES = { signup: 2000, yearly: 1400 };
 // Lines whose services need an address of their own. Only web hosting sits behind a shared address, so a dynamic line sells
 // nothing else; DNS and storage share their host's address but need it static.
-export const OWN_ADDRESS: Product[] = ["vps", "gameServer", "cloud", "vpn", "colocation", "dedicated"];
+export const OWN_ADDRESS: Product[] = ["vps", "gameServer", "cloud", "vpn", "colocation", "dedicated", "gpu"];
 // Reputation points an address loses for each abuse report about content on it.
 export const ABUSE_HIT: Record<string, number> = { "abuse.spam": 10, "abuse.attack": 5, "notice.phishing": 15, "notice.spam": 10, "notice.movie": 3, "notice.music": 3, "notice.youtuber": 3 };
 
@@ -59,7 +59,7 @@ export const freeBlock = (hour: number): { size: number; prefix: number } | null
 const DEDICATED_WEB: Partial<Record<Profile, number>> = { smallBiz: 0.15, agency: 0.15, office: 0.2, onlineShop: 0.6, enterprise: 0.3 };
 const sniFactor = (year: number) => (year <= 2010 ? 1 : Math.max(0, 1 - (year - 2010) / 6));
 export const ipv6Share = (year: number): number => Math.min(0.4, Math.max(0, 0.03 * (year - 2011)));
-const V6_LINES: Product[] = ["webHosting", "vps", "gameServer", "cloud", "dedicated", "colocation"];
+const V6_LINES: Product[] = ["webHosting", "vps", "gameServer", "cloud", "dedicated", "colocation", "gpu"];
 export function withAddressNeeds(seed: number, key: number, profile: Profile, product: Product, spec: Spec, year: number): Spec {
   const r = hashRng(seed, key, 241);
   const v4 = product === "gameServer" || (product === "webHosting" && rand(r) < (DEDICATED_WEB[profile] ?? 0) * sniFactor(year));

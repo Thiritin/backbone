@@ -56,7 +56,7 @@ export const SOFTWARE: Software[] = [
 ];
 
 // The product lines each kind of software lets a cluster sell; the rest runs on whole servers, in racks or nowhere.
-export const SERVES: Record<SoftwareKind, Product[]> = { panel: ["webHosting"], cloud: ["vps", "gameServer", "dns", "vpn", "storage", "cloud"], game: ["gameServer"], mail: [] };
+export const SERVES: Record<SoftwareKind, Product[]> = { panel: ["webHosting"], cloud: ["vps", "gameServer", "dns", "vpn", "storage", "cloud", "gpu"], game: ["gameServer"], mail: [] };
 // Game servers also run on plain virtual machines, so a line can have more than one kind; kindServing is the general one.
 export const kindsServing = (p: Product): SoftwareKind[] => (Object.keys(SERVES) as SoftwareKind[]).filter((k) => SERVES[k].includes(p));
 export const kindServing = (p: Product): SoftwareKind | null => (SERVES.panel.includes(p) ? "panel" : SERVES.cloud.includes(p) ? "cloud" : null);

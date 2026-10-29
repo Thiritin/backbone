@@ -22,6 +22,7 @@ export const BLURB: Record<Product, string> = {
   cloud: "Runs your servers on a cluster that moves them when a host fails.",
   dedicated: "Rents you a whole physical server by the month.",
   colocation: "Houses your own servers in our racks with power and network.",
+  gpu: "Rents you virtual servers with graphics cards for training and rendering.",
   domain: "", ssl: "",
 };
 

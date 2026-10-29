@@ -1,6 +1,7 @@
 // GDD, Where requests come from: standard orders arrive as order emails in Support until the order form takes them in directly.
 // Numbers in economy.md, Orders by email.
 import { hashRng, rand } from "../00-core/rng";
+import { yearOf } from "../00-core/time";
 import { LINE_NAME, offerPrice, setupFee, specText } from "./spec";
 import { applyStep, isStep, issueInvoice, ORDER_PAY_DAYS } from "./manual";
 import { PRODUCTS } from "../10-catalog/products";
@@ -47,7 +48,7 @@ function place(s: GameState, r: SalesRequest): ActionResult & { reason?: string;
 
 // email: the customer writes an order email, worked step by step at a price set by hand; otherwise the order form takes
 // the spec at the player's rates and places it at once.
-export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile), email = emailFor(s)): SalesRequest {
+export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour)), email = emailFor(s)): SalesRequest {
   const who = senderFor(s.rng, profile, false, inUs(city)), variant = Math.floor(rand(s.rng) * 2);
   const key = s.nextId, spec = nextSpec(s, need, profile), reference = referenceFor(s, profile, need.product, spec, need.sla), discount = discountFor(s, profile);
   // One in three web customers already owns the domain they name.
