@@ -12,6 +12,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Customers send most of their how-to questions in their first months while they set up, and long-standing customers only write in now and then.
 - The dock shows a count of open tickets, unpaid invoices and failed parts from the start, and the Dock badges upgrade is gone from the Pear Store.
 - New reviews only send you a notification once Marketing campaigns unlocks the Reviews section where you can read them.
+- The Security app lists every compromised host, including virtual machine clusters, game panels and the mail host, with a Clean up button that works without Monitoring.
+- The Security app now sits in the dock from the start, so you can clean up a compromised host without waiting for an alert.
+- Loans moved from the Bank app into a new Loans page in Finance, and loan alerts open it directly.
 - Marketing basics now opens the Reviews and Community sections in Marketing, and new reviews only send you a notification once you can read them there.
 - Event organisers only ask you for sponsoring once you have learned Marketing basics.
 - A VM or game server stuck on a switched-off server whose cluster's control plane is down can be recovered to a server of another cluster in the same location by remote hands, by you or by a friend.
