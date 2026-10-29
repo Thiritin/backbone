@@ -27,8 +27,18 @@ function body(game: GameState, key: string): { rows: Row[]; source?: string } {
   if (key === "event.loanMissed" || key === "event.loanCalled") {
     return { rows: [["Open loans", euroCents(game.loans.reduce((n, l) => n + l.balance, 0))]] };
   }
+  if (key === "event.breach") {
+    const b = openBreach(game);
+    return { rows: b ? [["Host", game.clusters.find((c) => c.id === b.hostId)?.name ?? ""], ["Demand", euroCents(b.ransom)]] : [] };
+  }
   return { rows: [] };
 }
+
+// The ransom still waiting for a decision, newest first.
+const openBreach = (game: GameState) => game.breaches.filter((b) => b.decision === null).at(-1);
+
+const focus = (game: GameState, key: string) =>
+  key === "event.vulnCritical" ? { kind: "tab", id: "monitoring" } : key === "event.breach" && openBreach(game) ? { kind: "ticket", id: openBreach(game)!.ticketId } : undefined;
 
 // The sheet an alert event opens with the game paused.
 export function AlertSheet({ alert }: { alert: Banner }) {
@@ -59,7 +69,7 @@ export function AlertSheet({ alert }: { alert: Banner }) {
         )}
         <div className="alert-actions">
           <button className="btn" onClick={() => closeAlert(true)}>Continue</button>
-          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, key === "event.vulnCritical" ? { kind: "tab", id: "monitoring" } : undefined); }}>Open {app}</button>
+          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, focus(game, key)); }}>Open {app}</button>
         </div>
       </div>
     </div>,

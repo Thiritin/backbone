@@ -4,6 +4,7 @@ import { activeServices, type Customer } from "../30-customers/customers";
 import { serviceFqdn } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
 import { serverOf, type Workload } from "../60-infra/cluster";
+import { breachOf, decideBreach } from "../60-infra/breach";
 import { gridTick, maybeReview, returnSeized, seize } from "../60-infra/incidents";
 import type { SimEvent } from "../88-tick/tick";
 import { bump, cancelCustomer, credit, HOURS_PER_MONTH, monthlyValue, type Notice, type Ticket } from "./tickets";
@@ -20,6 +21,7 @@ export const SENDERS: Sender[] = [
   { id: "bsi", name: "Bundesamt für Sicherheit in der Informationstechnick", domain: "bsi-technick.bund.de", topics: ["data", "takedown"], agency: true },
   { id: "europoll", name: "Europoll", domain: "europoll.europa.eu", topics: ["data", "takedown"], agency: true },
   { id: "fbi", name: "Federal Bureau of Inspection", domain: "fbinspection.gov", topics: ["data", "takedown"], agency: true },
+  { id: "lockbitt", name: "Lockbitt Crew", domain: "lockbitt.onion", topics: ["extortion"], agency: false },
 ];
 export const senderById = (id: string): Sender => SENDERS.find((x) => x.id === id)!;
 
@@ -151,6 +153,7 @@ const answeredInTime = (t: Ticket) => !!t.work && t.work.doneAt <= t.dueAt * 60;
 function deadlines(s: GameState, r: Rng, events: SimEvent[]): void {
   for (const t of s.tickets) {
     if (!t.notice || s.hour < t.dueAt || answeredInTime(t)) continue;
+    if (t.kind === "extortion") { if (t.status === "open") decideBreach(s, t, "refuse", events); continue; }
     if (t.kind === "notice" && t.status === "open") ignoreNotice(s, t, r);
     else if (t.kind === "legal" && (t.outcome === null || t.outcome === "ignored")) {
       Object.assign(t, { status: "closed", outcome: "seized", updatedAt: s.hour, work: null });
@@ -195,9 +198,15 @@ function spawn(s: GameState, r: Rng): Ticket[] {
   return fresh;
 }
 
+const breachParams = (s: GameState, t: Ticket) => {
+  const b = breachOf(s, t.id);
+  return { host: s.clusters.find((c) => c.id === b?.hostId)?.name ?? "", ransom: b?.ransom ?? 0 };
+};
+
 export const subjectParams = (s: GameState, t: Ticket): Record<string, string | number> => ({
   service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", video: t.notice?.video ?? "",
   round: t.notice?.round ?? 1, sender: t.notice ? senderById(t.notice.sender).name : "",
+  ...(t.kind === "extortion" && breachParams(s, t)),
 });
 
 // Hourly, before the infrastructure and support ticks: grid outages, returned servers, notices, deadlines and seizures.

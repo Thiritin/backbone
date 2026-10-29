@@ -13,6 +13,7 @@ export const ALERT_KEYS: Record<string, string> = {
   "event.ddos": "Network",
   "event.gridDark": "Locations",
   "event.vulnCritical": "Security",
+  "event.breach": "Support",
 };
 
 export const isAlert = (key: string): boolean => Object.hasOwn(ALERT_KEYS, key);

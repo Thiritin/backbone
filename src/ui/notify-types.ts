@@ -12,7 +12,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   Support: [
     type("Tickets", "ticket", "tickets", "stepFailed", "offerDeclined"),
     type("Orders and sales", "order", "orderFailed", "orderPaid", "sales*"),
-    type("Notices and legal", "seized"),
+    type("Notices and legal", "seized", "breach"),
     type("Power", "gridDark", "gridCarried"),
   ],
   Network: [
@@ -27,7 +27,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Deliveries and moves", "rackArrived", "stockArrived", "drained", "spaceHeld", "holdExpired", "seizedBack"),
     type("Internet line", "lineReady", "lineFull"),
   ],
-  Security: [type("Advisories", "vuln.announced", "vuln.poc", "vuln.warning", "vuln.patch"), type("Compromises", "vuln.hacked", "siteHacked", "siteLeft"), type("Open vulnerabilities", "vulnOpen", "vulnCritical")],
+  Security: [type("Advisories", "vuln.announced", "vuln.poc", "vuln.warning", "vuln.patch"), type("Compromises", "vuln.hacked", "siteHacked", "siteLeft", "breachPress", "breachFine"), type("Open vulnerabilities", "vulnOpen", "vulnCritical")],
   Marketing: [type("Reviews", "review"), type("Campaigns and bills", "fairDone", "fairMissed", "marketingBills", "platformDropped")],
   Website: [type("Site", "siteDown")],
   Staff: [
