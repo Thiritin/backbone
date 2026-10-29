@@ -69,7 +69,7 @@ export type RebuildRate = "low" | "medium" | "high";
 // A desktop document; x and y are its icon position on the desktop in pixels.
 export interface Doc { id: string; kind: "guide" | "note"; title: string; body: string; x: number; y: number }
 // domain is the company's own domain once registered; mail is its email service.
-export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail }
+export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
 
 export interface GameState {
@@ -205,7 +205,7 @@ export const newGame = (seed: number): GameState => ({
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
   heldCustomers: [],
   tickets: [], playerBusyUntil: 0, downSince: {}, frozen: [],
-  company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "none" } },
+  company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "none" }, tagline: "" },
   homeLine: { id: "", next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
   staff: [], candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true }, onCall: { roster: [], lastCall: {}, month: {} },

@@ -78,6 +78,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.slotTaken": () => "Another device is in the way.",
   "error.noCash": () => "You do not have enough cash.",
   "error.companyName": () => "Enter a company name of 1 to 32 characters.",
+  "error.companyTagline": () => "Enter a tagline of up to 60 characters.",
   "error.companyLogo": () => "This logo is not available.",
   "error.companyColor": () => "This colour is not available.",
   "error.cannotSell": () => "This device belongs to the location.",
