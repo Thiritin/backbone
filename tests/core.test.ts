@@ -32,6 +32,7 @@ describe("time", () => {
   it("round-trips hours and dates", () => {
     const h = hourOf(new Date(Date.UTC(2006, 8, 14, 14)));
     expect(formatClock(h)).toBe("Thu 14 Sep 2006 · 14:00");
+    expect(formatClock(h, 5)).toBe("Thu 14 Sep 2006 · 14:05");
     expect(dateOf(h).getUTCHours()).toBe(14);
   });
 });

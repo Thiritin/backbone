@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MS_PER_HOUR, SPEEDS } from "../../sim/00-core/time";
 import { t } from "../../i18n/en";
-import { loadedFromSave, useStore } from "../store";
+import { clockCarry, loadedFromSave, useStore } from "../store";
 import { AppWindow } from "./AppWindow";
 import { Banners, NotificationCenter } from "./Banners";
 import { DesktopIcons } from "./DesktopIcons";
@@ -55,7 +55,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
 
   useEffect(() => watchUpdates((changes) => setUpdate(changes), () => dismissed.current), []);
   const [center, setCenter] = useState(false);
-  const carry = useRef(0);
+  const carry = clockCarry;
 
   useEffect(() => {
     if (!loadedFromSave || greeted) return;

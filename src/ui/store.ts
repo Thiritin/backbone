@@ -151,6 +151,9 @@ function loadTheme(): Theme {
   return "auto";
 }
 
+// Fraction of the current game hour that has run; outside the store so the clock can read it every frame without re-renders.
+export const clockCarry = { current: 0 };
+
 export const useStore = create<Store>((set, get) => ({
   game: initial.game,
   speed: restoredSpeed,

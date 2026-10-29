@@ -8,7 +8,7 @@ import { newNote } from "./DesktopIcons";
 import { restoreGuide } from "../../sim/90-actions/docs";
 import { dateOf, formatClock, SPEEDS, type Speed } from "../../sim/00-core/time";
 import { euro } from "../../sim/00-core/money";
-import { useStore, type Win } from "../store";
+import { clockCarry, useStore, type Win } from "../store";
 import { CompanyMark } from "../apps/company";
 import { appFor } from "../apps/registry";
 
@@ -72,7 +72,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
         ))}
       </div>
       <span className="mb-sep" />
-      <span className="mb-item num">{formatClock(game.hour)}</span>
+      <Clock hour={game.hour} running={speed > 0} />
       <span className="mb-sep" />
       <span className="mb-item mb-cash num">{euro(game.cash)}</span>
       <button className="mb-item mb-badge" aria-label={unseen ? `Notifications, ${unseen} new` : "Notifications"} onClick={onBell}>
@@ -97,4 +97,18 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       )}
     </header>
   );
+}
+
+function Clock({ hour, running }: { hour: number; running: boolean }) {
+  const [minute, setMinute] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const frame = () => {
+      setMinute(Math.floor(clockCarry.current * 12) * 5);
+      if (running) raf = requestAnimationFrame(frame);
+    };
+    frame();
+    return () => cancelAnimationFrame(raf);
+  }, [hour, running]);
+  return <span className="mb-item num">{formatClock(hour, minute)}</span>;
 }

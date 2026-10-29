@@ -17,10 +17,10 @@ export const yearOf = (hour: number): number => dateOf(hour).getUTCFullYear();
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export function formatClock(hour: number): string {
+export function formatClock(hour: number, minute = 0): string {
   const d = dateOf(hour);
   const hh = String(d.getUTCHours()).padStart(2, "0");
-  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()} · ${hh}:00`;
+  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()} · ${hh}:${String(minute).padStart(2, "0")}`;
 }
 
 export const isMonthStart = (hour: number): boolean => {
