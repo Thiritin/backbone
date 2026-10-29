@@ -4,7 +4,7 @@ import { monthlySalary, priceAt } from "../10-catalog/economy";
 import { cents, dueStep, ruleStep, ruleSuspendsAt, rulesAutomated, sendStep, STEPS, suspend, type Invoice } from "../45-billing/billing";
 import { ACTION_MINUTES, logActivity } from "./activity";
 import { storeItem } from "../10-catalog/store";
-import { bump, createTicket, MINUTES, rightTemplate, TEMPLATES, type Ticket, type TicketKind } from "../40-support/tickets";
+import { bump, createTicket, MINUTES, rightTemplate, TEMPLATES, TOPIC_ACTIONS, type Ticket, type TicketKind } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { isWorkHour } from "../00-core/workhours";
@@ -185,6 +185,8 @@ const rightChance = (e: Employee, kind: TicketKind) => (e.bot ? BOT_RIGHT[kind a
 function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "resolve"; arg: string } {
   if (t.kind === "cancellation") return { op: "resolve", arg: "retain" };
   if (t.kind === "order") return { op: "resolve", arg: staffOrderStep(s, t, orderError(s, t)) ?? "accept" };
+  const topic = TOPIC_ACTIONS[`${t.kind}.${t.topic}`];
+  if (topic) return { op: "resolve", arg: topic.includes("free") ? "free" : topic[0] };
   const right = rightTemplate(s, t);
   if (!right) return { op: "resolve", arg: "unsuspend" };
   if (rand(r) < rightChance(e, t.kind)) return { op: "reply", arg: right };

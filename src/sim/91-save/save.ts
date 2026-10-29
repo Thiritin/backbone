@@ -62,6 +62,7 @@ export function deserialize(raw: string): GameState {
     network: { ...base.network, ...data.network },
     ops: { ...base.ops, ...data.ops },
     security: { ...base.security, ...data.security },
+    sites: { ...base.sites, ...data.sites },
     // Saves from before paid lines had the free DSL line from the start.
     homeLine: data.homeLine ?? { id: DEFAULT_HOME_LINE, next: null },
     ips: { ...base.ips, ...data.ips },

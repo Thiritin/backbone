@@ -10,7 +10,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   Finance: [type("Bills and tax", "bills", "monthStart", "tax", "taxLoss"), type("Cash and loans", "cashNegative", "bankrupt")],
   Bank: [type("Loans", "loanMissed", "loanCalled")],
   Support: [
-    type("Tickets", "ticket", "tickets", "stepFailed"),
+    type("Tickets", "ticket", "tickets", "stepFailed", "offerDeclined"),
     type("Orders and sales", "order", "orderFailed", "orderPaid", "sales*"),
     type("Notices and legal", "seized"),
     type("Power", "gridDark", "gridCarried"),
@@ -27,7 +27,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Deliveries and moves", "rackArrived", "stockArrived", "drained", "spaceHeld", "holdExpired", "seizedBack"),
     type("Internet line", "lineReady", "lineFull"),
   ],
-  Security: [type("Advisories", "vuln.announced", "vuln.poc", "vuln.warning", "vuln.patch"), type("Compromises", "vuln.hacked"), type("Open vulnerabilities", "vulnOpen", "vulnCritical")],
+  Security: [type("Advisories", "vuln.announced", "vuln.poc", "vuln.warning", "vuln.patch"), type("Compromises", "vuln.hacked", "siteHacked", "siteLeft"), type("Open vulnerabilities", "vulnOpen", "vulnCritical")],
   Marketing: [type("Reviews", "review"), type("Campaigns and bills", "fairDone", "fairMissed", "marketingBills", "platformDropped")],
   Website: [type("Site", "siteDown")],
   Staff: [

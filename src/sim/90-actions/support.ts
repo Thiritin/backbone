@@ -1,5 +1,5 @@
 import type { GameState } from "../50-state";
-import { ACTIONS, bump, cancelCustomer, canEscalate, isFinal, MINUTES, TEMPLATES, type Ticket, type TicketAction, type Work } from "../40-support/tickets";
+import { ACTION_MINUTES, actionsOf, bump, cancelCustomer, canEscalate, isFinal, MINUTES, templatesOf, type Ticket, type TicketAction, type Work } from "../40-support/tickets";
 import { hashRng } from "../00-core/rng";
 import { ignoreNotice } from "../40-support/notices";
 import { declineOrder, orderError } from "../30-market/orders";
@@ -50,7 +50,7 @@ export function replyTicket(s: GameState, id: string, template: string): ActionR
   const f = find(s, id);
   if ("error" in f) return f.error;
   if (f.t.status !== "open") return fail("error.ticketNotOpen");
-  if (!TEMPLATES[f.t.kind].includes(template)) return fail("error.unknownTemplate");
+  if (!templatesOf(f.t).includes(template)) return fail("error.unknownTemplate");
   return queue(s, f.t, "reply", template);
 }
 
@@ -59,12 +59,12 @@ export function resolveTicket(s: GameState, id: string, action?: TicketAction): 
   const f = find(s, id);
   if ("error" in f) return f.error;
   if (action) {
-    if (!ACTIONS[f.t.kind].includes(action)) return fail("error.unknownTicketAction");
+    if (!actionsOf(f.t).includes(action)) return fail("error.unknownTicketAction");
     if ((action === "forward" || action === "takedown") && !f.t.customerId) return fail("error.notHosted");
     const order = action === "accept" ? orderError(s, f.t) : null;
     if (order) return fail(order);
     if (action === "revert" && (f.t.topic !== "price" || s.services.find((v) => v.id === f.t.serviceId)?.before === undefined)) return fail("error.unknownTicketAction");
-    return queue(s, f.t, "resolve", action);
+    return queue(s, f.t, "resolve", action, ACTION_MINUTES[action]);
   }
   if (f.t.status !== "waiting") return fail("error.ticketNotAnswered");
   Object.assign(f.t, { status: "resolved", updatedAt: s.hour });

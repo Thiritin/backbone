@@ -35,9 +35,14 @@ function complain(s: GameState, c: Customer, v: Service, p: number): void {
 }
 
 // A new monthly price for a running hourly service; before keeps the price from before the first of a run of raises.
-// Changes the customer in place: actions work on a cloned state and the support tick on copies.
-export function reprice(s: GameState, v: Service, price: number): void {
+// Changes the customer in place: actions work on a cloned state and the support tick on copies. A price the customer agreed to
+// (an add-on they bought) changes the price alone.
+export function reprice(s: GameState, v: Service, price: number, agreed = false): void {
   const cust = s.customers.find((x) => x.id === v.customerId)!;
+  if (agreed) {
+    s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730 } : x));
+    return;
+  }
   const old = v.price * 730, pct = (100 * (price - old)) / old, { max } = limits(s, cust, v);
   const before = price > old ? v.before ?? v.price : v.before !== undefined && price / 730 > v.before ? v.before : undefined;
   s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730, before } : x));

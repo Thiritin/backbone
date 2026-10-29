@@ -48,9 +48,9 @@ describe("specs on requests and services", () => {
     const s = withForm(1);
     const placed = Array.from({ length: 4 }, () => formOrder(s));
     expect(new Set(placed.map(({ r }) => JSON.stringify(r.spec))).size).toBeGreaterThan(2);
-    for (const { r, v } of placed) expect(v.spec).toEqual(r.spec);
+    for (const { r, v } of placed) expect(v.spec).toMatchObject(r.spec);
     const back = deserialize(serialize(s));
-    expect(back.services.find((v) => v.id === placed[0].v.id)!.spec).toEqual(placed[0].r.spec);
+    expect(back.services.find((v) => v.id === placed[0].v.id)!.spec).toMatchObject(placed[0].r.spec);
   });
 
   it("are priced at the order form by the line's rates less the discount", () => {
@@ -128,7 +128,7 @@ describe("saves from before specs", () => {
     const all = [...back.services, ...back.sales.requests, ...back.sales.lost];
     expect(back.sales.lost.length).toBeGreaterThan(0);
     expect(all.every((x) => !("plan" in x) && !("packaged" in x))).toBe(true);
-    for (const v of back.services) expect(v.spec).toEqual(sizeSpec(v.product, v.product === "webHosting" ? 2 : v.product === "vps" ? 1 : 0, yearOf(v.startedAt)));
+    for (const v of back.services) expect(v.spec).toMatchObject(sizeSpec(v.product, v.product === "webHosting" ? 2 : v.product === "vps" ? 1 : 0, yearOf(v.startedAt)));
     for (const r of back.sales.requests) expect(r.spec).toEqual(sizeSpec(r.product, r.product === "webHosting" ? 2 : 1, yearOf(r.createdAt)));
     for (const l of back.sales.lost) expect(l.spec).toEqual(sizeSpec(l.product, l.product === "webHosting" ? 2 : 1, yearOf(l.hour)));
   });

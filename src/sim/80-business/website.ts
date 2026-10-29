@@ -110,7 +110,7 @@ export function customerSite(s: GameState, serviceId: string): { title: string; 
   if (!v || !cus || v.product !== "webHosting") return null;
   const ws = workloadsOf(s, serviceId);
   const hacked = ws.some((w) => w.clusterId && s.security.hacked.includes(w.clusterId));
-  const status: CustomerSiteStatus = hacked ? "defaced"
+  const status: CustomerSiteStatus = hacked || s.sites.defaced.includes(serviceId) ? "defaced"
     : v.endedAt !== null || !serviceOnline(s, serviceId) ? "down"
     : ws.some((w) => slowHost(s, w, s.clusters.find((c) => c.id === w.clusterId))) ? "slow" : "up";
   return { title: cus.name, blurb: `site.blurb.${cus.profile}`, status };

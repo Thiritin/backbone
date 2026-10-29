@@ -2,6 +2,7 @@
 // year's release has a few vulnerabilities, drawn from the game's seed so they are the same whenever they are looked up.
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { hourOf, yearOf } from "../00-core/time";
+import { CMS } from "../10-catalog/apps";
 import { SOFTWARE, softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { Cluster } from "./cluster";
@@ -13,7 +14,7 @@ export interface Vulnerability { id: string; family: string; year: number; sever
 // A vulnerability an instance is open to, with the whole days it has been exposed.
 export interface OpenVuln extends Vulnerability { days: number }
 
-// Mean vulnerabilities per family and year, by what the software is. CMS families come with Lane 2b.2.
+// Mean vulnerabilities per family and year, by what the software is.
 export const VULN_RATE: Record<string, number> = { panel: 2, cloud: 1, mail: 1, game: 1.5, cms: 3 };
 export const SEVERITY_SHARE: Record<Severity, number> = { low: 0.5, high: 0.35, critical: 0.15 };
 // The most days between disclosure and the patch.
@@ -37,7 +38,7 @@ const cache = new Map<string, Vulnerability[]>();
 export function vulnsFor(familyId: string, year: number, seed: number): Vulnerability[] {
   const key = `${seed}:${familyId}:${year}`, kept = cache.get(key);
   if (kept) return kept;
-  const rate = VULN_RATE[SOFTWARE.find((x) => x.id === familyId)?.kind ?? familyId] ?? 0;
+  const rate = VULN_RATE[SOFTWARE.find((x) => x.id === familyId)?.kind ?? ((CMS as string[]).includes(familyId) ? "cms" : familyId)] ?? 0;
   const r = hashRng(seed, hashOf(familyId), year, 55);
   const days = (Date.UTC(year + 1, 0, 1) - Date.UTC(year, 0, 1)) / 86_400_000, start = hourOf(new Date(Date.UTC(year, 0, 1)));
   const found: Vulnerability[] = [];

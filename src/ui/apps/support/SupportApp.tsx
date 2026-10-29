@@ -1,7 +1,8 @@
 import { AlarmClock, BadgeCheck, Check, CircleCheck, CircleX, Handshake, Hourglass, Inbox, Layers, Mails, Send, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
 import { useState } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
-import { ACTIONS, canEscalate, isFinal, monthlyValue, TEMPLATES, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
+import { updatePrice } from "../../../sim/10-catalog/apps";
+import { actionsOf, canEscalate, isFinal, monthlyValue, templatesOf, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
 import { senderById, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-support/notices";
 import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
 import { missingFor, requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
@@ -33,7 +34,7 @@ const BOXES: { id: TicketBox; label: string; icon: typeof Inbox; match: (t: Tick
 const ACTION_LABEL: Record<TicketAction, string> = {
   credit: "Credit 10%", retain: "Retention offer", cancel: "Process cancellation", unsuspend: `Unsuspend with ${EXTENSION_DAYS}-day extension`, keep: "Keep suspended",
   forward: "Forward to customer", takedown: `Take down for ${TAKEDOWN_HOURS} h`, reject: "Reject", comply: "Comply", object: "Object", refund: "Refund one month", revert: "Revert price",
-  accept: "Accept order",
+  accept: "Accept order", offerOnce: "Offer one-off update", offerManaged: "Offer managed updates", free: "Update for free", clean: "Clean up site",
 };
 const actionLabel = (tk: Ticket, a: TicketAction) => (tk.kind === "refund" && a === "reject" ? "Refuse" : ACTION_LABEL[a]);
 
@@ -365,11 +366,11 @@ function Thread({ tk }: { tk: Ticket }) {
 
       {!isFinal(tk) && (
         <div className="compose">
-          {tk.status === "open" && TEMPLATES[tk.kind].length > 0 && (
+          {tk.status === "open" && templatesOf(tk).length > 0 && (
             <>
               <h3>Reply</h3>
               <div className="templates" role="radiogroup" aria-label="Reply template">
-                {TEMPLATES[tk.kind].map((id) => (
+                {templatesOf(tk).map((id) => (
                   <label key={id} className="tpl">
                     <input type="radio" name={`tpl-${tk.id}`} checked={tpl === id} disabled={locked} onChange={() => setTpl(id)} />
                     <span className="t">{t(`template.${id}.title`)}</span>
@@ -380,15 +381,15 @@ function Thread({ tk }: { tk: Ticket }) {
             </>
           )}
           <div className="actions-row">
-            {ACTIONS[tk.kind].filter((a) => a !== "revert" || tk.topic === "price").map((a) => (
+            {actionsOf(tk).filter((a) => a !== "revert" || tk.topic === "price").map((a) => (
               <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => act((s) => resolveTicket(s, tk.id, a))}>
-                {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}
+                {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}{a === "offerOnce" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updateOnce"))})</span>}{a === "offerManaged" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updates"))} a month)</span>}
               </button>
             ))}
             <span className="grow" />
             <button className="btn ghost" disabled={locked} onClick={() => act((s) => closeTicket(s, tk.id))}><X />{tk.notice ? "Ignore" : "Close"}</button>
             {tk.status === "waiting" && <button className="btn primary" disabled={locked} onClick={() => act((s) => resolveTicket(s, tk.id))}><CircleCheck />Resolve</button>}
-            {tk.status === "open" && TEMPLATES[tk.kind].length > 0 && (
+            {tk.status === "open" && templatesOf(tk).length > 0 && (
               <button className="btn primary" disabled={locked || !tpl} onClick={() => act((s) => replyTicket(s, tk.id, tpl!))}><Send />Send reply</button>
             )}
           </div>

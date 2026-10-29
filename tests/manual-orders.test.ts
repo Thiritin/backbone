@@ -105,7 +105,7 @@ describe("custom orders", () => {
     expect(s.cash).toBeCloseTo(cash, 2);
     done(s, provisionOrder(s, id));
     const v = s.services.find((x) => x.id === req().serviceId)!;
-    expect(v.spec).toEqual(req().spec);
+    expect(v.spec).toMatchObject(req().spec!);
     expect(v.price * 730).toBeCloseTo(12, 6);
     const w = s.workloads.find((x) => x.serviceId === v.id)!;
     expect([w.vcpu, w.ramGb, w.diskGb]).toEqual([req().spec!.vcpu, req().spec!.ramGb, req().spec!.diskGb]);

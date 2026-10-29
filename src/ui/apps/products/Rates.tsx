@@ -15,7 +15,7 @@ import { PRODUCT } from "../support/labels";
 const LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "domain", "ssl"];
 const UNIT: Record<Unit | "setup", string> = {
   base: "Base fee", vcpu: "Per vCPU", ramGb: "Per GB RAM", diskGb: "Per GB disk", mailbox: "Per mailbox", zone: "Per zone", user: "Per user",
-  unit: "Per rack unit", kw: "Per kW", traffic: "Per 100 GB traffic", ip: "Per dedicated IPv4", setup: "Setup fee",
+  unit: "Per rack unit", kw: "Per kW", traffic: "Per 100 GB traffic", ip: "Per dedicated IPv4", updates: "Managed updates", updateOnce: "One-off update", setup: "Setup fee",
 };
 // Rates below ten cents need a tenth of a cent, below one cent a hundredth.
 const digits = (x: number) => (x <= 0 || x >= 0.1 ? 2 : x >= 0.01 ? 3 : 4);

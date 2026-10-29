@@ -1105,6 +1105,8 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 one
 
 Each line with traffic also charges it per 100 GB a month (Traffic, below). The table gives the rates before traffic takes its share.
 
+**Update service.** Web hosting has two more units, both with multiplier 1 (flat over the years, and not scaled by the traffic share). `updateOnce` is the one-off price of updating a site, €49, and is not part of a service's monthly price. `updates` is the monthly price of managed updates, €5 per site, charged on a service with `spec.managedUpdates`. Anchors: managed WordPress hosting costs a premium of USD 5 to 15 a month at Bluehost and GoDaddy, and one-off maintenance plans start at USD 49. A sold one-off books a sales ledger line at the player's rate; managed updates add the player's rate to the service's price.
+
 **DNS zones and VPN users.** A DNS order names its zones and a VPN order its users, drawn like other resources: the size its profile's budget picks (2, 5 or 15 zones; 1, 3 or 10 users) times one of the six customer factors, at least one. The middle sizes keep the former €2 and €5 a month. Anchors from 2005: managed DNS sold in bulk plans for a few euros a year per zone, and a single domain's DNS for up to €1.50 a month, so €0.30 per zone plus a €0.50 base sits at the cheap end; a hosted remote-access VPN ran €1 to €3 per user a month. A VPN gateway books a vCPU per three users (at least half of one, in quarters), so its capacity scales with the users; DNS stays at its tiny fixed size. An upgrade grows the zones or users by its factor.
 
 **Traffic.** Every line with traffic (all but domains and SSL) charges a rate per 100 GB of the spec's monthly traffic. In 2005 hosts bundled traffic and overage cost little, so the market rate is set from a share of the line's middle size: traffic is that share of the middle size's market price, and the line's other rates give up the same share, so the middle size keeps its price, a bigger traffic user pays a little more and a smaller one a little less (`TRAFFIC_SHARE`). As specs' traffic grows 20% a year while prices fall, the rate per 100 GB falls with them.
@@ -1530,6 +1532,48 @@ An update installs this year's release at once and sets `updatedAt` to now. The 
 | Hypervisor | 2 hours per node, for the virtual machines on it, none when the hypervisor moves virtual machines live and the cluster has a second node |
 
 A technician at the server does the update in its office hour: panel and mail updates need panel training, hypervisor updates need server training. Nagiosaurus costs €15 a month in 2005 and rises 8% a year like the other Pear Store apps.
+
+### Customer applications
+
+Every web hosting service runs an app (`spec.app`): WordPass (WordPress), Joomlah (Joomla), Drupel (Drupal) or static HTML. It is drawn from the shares of the year the service starts, linear between the keyframes and flat from 2020; the share that is neither static nor WordPass splits Joomlah 3 : Drupel 1. Anchor: W3Techs measured WordPress on 13% of all websites in 2011 and 43% in 2022.
+
+| Year | Static | WordPass | Joomlah | Drupel |
+| --- | --- | --- | --- | --- |
+| 2005 | 60% | 20% | 15% | 5% |
+| 2010 | 35% | 40% | 18.75% | 6.25% |
+| 2015 | 20% | 60% | 15% | 5% |
+| 2020 and later | 15% | 70% | 11.25% | 3.75% |
+
+Each service records `appVersion` (the release year it runs) and `appUpdatedAt` (the hour it was installed or last updated). The three apps have 3 vulnerabilities a year each, drawn like the company's software (`vulnsFor` with the app as the family, Generated vulnerabilities above), and a site is open to the patched ones the same way an instance is. A save from before customer apps draws the app from the service's start year and gets the release of two years before the save, or of its start year when that is later.
+
+**Updating by themselves.** After a vulnerability for the app is patched, a customer updates by themselves with a chance by the skill of their profile, on a random day within 7 days of the patch. Updating installs this year's release, which closes every open vulnerability. Anchor: Sucuri found 61% of the hacked WordPress sites it cleaned in 2016 and 39% in 2017 outdated; WordPress 3.7 (2013) added automatic minor updates, so WordPass patches from 2013 use the second column.
+
+| Skill | Before 2013 and other apps | WordPass from 2013 |
+| --- | --- | --- |
+| High | 80% | 95% |
+| Medium | 40% | 70% |
+| Low | 10% | 40% |
+
+**Defacement.** A running site that is open rolls once a day with the daily chance of its worst open vulnerability (Generated vulnerabilities above, including the factors for 30 and 90 days exposed). A hit affects only that service:
+
+| Effect | Value |
+| --- | --- |
+| Site | Shows as defaced; it stays online |
+| Spam | 2,000 mails a day through `addSpam` on the host's address while defaced |
+| Ticket | A how-to ticket from the customer, topic hacked |
+| Clean-up by the player | `cleanSite`, 30 minutes of the player's time, from Monitoring or the ticket; resolves the ticket for +5 happiness |
+| Clean-up by the customer | Medium and high skill: 50% clean it up themselves 1 to 3 days after the hit; low skill never |
+| Third hack within 365 days | The customer cancels all services |
+
+**Notifying.** Notify customers, per app and vulnerability from Monitoring, writes to every site open to it that has not been written to yet: 30 minutes of the player's time per 10 customers. Of the customers who would not update by themselves, 50% answer with a how-to ticket, topic update. Each customer who asks has a fixed wish, drawn by their profile's budget:
+
+| Budget | One-off update | Managed updates | Refuses |
+| --- | --- | --- | --- |
+| Low | 80% | 0% | 20% |
+| Medium | 70% | 20% | 10% |
+| High | 55% | 35% | 10% |
+
+The ticket offers three actions, each 20 minutes of the player's time. The one-off offer succeeds with a customer who wants it, books the `updateOnce` price as a sales ledger line and updates the site. The managed offer succeeds with a customer who wants it, sets `spec.managedUpdates`, adds the `updates` price to the service's monthly price (the customer agreed to it, so it costs no happiness) and updates the site. An offer to a customer who wants something else is declined and the ticket stays open. Doing it free updates the site and gives +5 happiness. A support agent who works such a ticket updates the site for free. A site with managed updates is updated on the day of every patch.
 
 ## Marketing and reviews
 
