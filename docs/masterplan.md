@@ -100,6 +100,8 @@ Owner additions (translated from German): consoles are reached by the server's s
 
 Owner bug report: every customer service gets a numbered hostname, for example vps12312312.companydomain for a VPS (and matching prefixes for other lines: web, game, dedi, and so on), shown on the service, the customer page and the Virtual machines app. Customers reference that hostname in tickets instead of their own name, for example "vps12312312.backbone.example takes ages to answer tonight". Old saves: services get a number on load. Seeded test that tickets name the service hostname.
 
+Easter egg: in the browser, opening a Downloads page (the browser's own downloads and any vendor site's Downloads link) lands on a video page on a punned video site ("YouTub" or similar) playing a Rickroll, titled "Never Gonna Give You Uptime" with a punned artist name. No lyrics on the page; a play button may open the real video in a new tab.
+
 ### Lane 4: Server components, part prices over time, GPUs
 
 Owner's words: "add custom components to servers aka servers have slots and cpu and disk slots (2,5 3,5 or nvme) and we can fill em, ram and ssd is very very expensive and prices of it change through the years cheaper at the start more expensive up to the ai years where ram is very expensive like it is right now. Also GPU Computing." And: "buying servers allows them to either do it just the chassis and do it entirely custom OR just add stuff to existing configurations when adding to cart."
