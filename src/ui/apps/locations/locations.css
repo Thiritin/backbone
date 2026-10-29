@@ -124,6 +124,7 @@ svg.logo-mark { flex: none; }
 
 .loc-face { padding: 12px; border-radius: 10px; background: var(--rack); display: grid; gap: 12px; justify-items: center; }
 .loc-face > svg { max-width: 100%; height: auto; }
+.loc-face.wide > svg { width: 100%; }
 
 .loc-ports { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .loc-port-block { display: grid; grid-auto-flow: column; gap: 3px; }

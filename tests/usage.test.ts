@@ -4,10 +4,10 @@ import type { Product, Profile } from "../src/sim/30-customers/customers";
 import type { GameState } from "../src/sim/50-state";
 import { serviceMbps } from "../src/sim/60-infra/network";
 import { ASK_FILL, backupFlows, diskFill, FULL_PENALTY, portLinks, usageOf, usageTick, workloadLoad } from "../src/sim/60-infra/usage";
-import { addNode, createCluster, provisionService, setBackup } from "../src/sim/90-actions/clusters";
+import { provisionService, setBackup } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
-import { installed, readyGame } from "./fixtures";
+import { hypervisor, readyGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = ReturnType<typeof setPower>;
@@ -113,8 +113,7 @@ describe("night jobs", () => {
     const third = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     ok(mountDevice(s, third, "rack2", 3));
     ok(connect(s, { device: third, port: 0 }, { device: "dev4", port: 2 }));
-    const backup = installed(s, ok(createCluster(s, "loc1", "Backup 1")));
-    ok(addNode(s, backup, third));
+    const backup = hypervisor(s, [third], "Backup 1");
     ok(setBackup(s, s.clusters[0].id, backup, "daily"));
     s.hour = at(TUE, 2);
     const flows = backupFlows(s);

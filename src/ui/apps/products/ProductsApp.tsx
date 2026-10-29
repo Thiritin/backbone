@@ -11,8 +11,8 @@ import { bookable, controlPlaneUp, hasHosts, lineOffered, supports, controlPlane
 import { locationOf, raidUsable } from "../../../sim/60-infra/status";
 import { nodeUsage, peakUsage } from "../../../sim/60-infra/usage";
 import { backupPool, licenseCost } from "../../../sim/85-products/products";
-import { addNode, CLUSTER_NAME_MAX, createCluster, moveControlPlane, setBackup, setHa, setPlacement, setSoftware } from "../../../sim/90-actions/clusters";
-import { Confirm } from "../../desktop/Confirm";
+import { addNode, moveControlPlane, setBackup, setHa, setPlacement } from "../../../sim/90-actions/clusters";
+import { joinableServers } from "../../../sim/90-actions/software";
 import { useFocus, useStore } from "../../store";
 import "../billing/billing.css";
 import { devName, disk, ram } from "../hw";
@@ -21,7 +21,7 @@ import { PRODUCT } from "../support/labels";
 import { NewPanelHost, PanelHostDetail } from "./PanelHosts";
 import { Rates } from "./Rates";
 import "../sales/sales.css";
-import { ControlPlanePill, IncidentReports, KIND_NAME, licenseText, Mark, servesText, SoftwareCards } from "./parts";
+import { ControlPlanePill, IncidentReports, KIND_NAME, Mark, servesText, softwareName } from "./parts";
 
 type View = "lines" | "pricing" | "new" | "newHost" | "incidents" | string;
 const num = (n: number) => `${+n.toFixed(1)}`;
@@ -45,7 +45,6 @@ export function ProductsApp() {
         {item("incidents", "Incidents", <TriangleAlert />, open)}
         <div className="side-h">Hypervisor clusters</div>
         {game.clusters.filter((c) => c.kind === "cloud").map((c) => item(c.id, c.name, <Mark id={c.platform} size={16} />, c.nodes.length))}
-        {item("new", "New cluster", <Plus />)}
         <div className="side-h">Panel hosts</div>
         {game.clusters.filter((c) => c.kind === "panel").map((c) => item(c.id, c.name, <Mark id={c.panel ?? c.switching?.to ?? null} size={16} />))}
         {item("newHost", "New panel host", <Plus />)}
@@ -55,7 +54,6 @@ export function ProductsApp() {
           {view === "lines" && <ProductLines game={game} />}
           {view === "pricing" && <Rates game={game} />}
           {view === "incidents" && <IncidentReports game={game} />}
-          {view === "new" && <NewCluster game={game} onDone={setView} />}
           {view === "newHost" && <NewPanelHost game={game} onDone={setView} />}
           {cluster?.kind === "cloud" && <ClusterDetail game={game} cluster={cluster} />}
           {cluster?.kind === "panel" && <PanelHostDetail game={game} host={cluster} />}
@@ -111,30 +109,6 @@ function ProductLines({ game }: { game: GameState }) {
   );
 }
 
-function NewCluster({ game, onDone }: { game: GameState; onDone: (id: string) => void }) {
-  const act = useStore((s) => s.act);
-  const [loc, setLoc] = useState(game.locations[0]?.id ?? "");
-  const [name, setName] = useState("");
-  const create = () => {
-    const r = act((g) => createCluster(g, loc, name));
-    if (r.ok && r.id) onDone(r.id);
-  };
-  return (
-    <div className="prd-pad">
-      <section className="fin-card">
-        <div className="fin-card-h"><Plus />New cluster</div>
-        <div className="fin-card-b">
-          <div className="seg" role="group" aria-label="Location">
-            {game.locations.map((l) => <button key={l.id} aria-pressed={l.id === loc} onClick={() => setLoc(l.id)}>{l.name} · {l.az}</button>)}
-          </div>
-          <input className="field" aria-label="Cluster name" placeholder="Cluster name" maxLength={CLUSTER_NAME_MAX} value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-      </section>
-      <div><button className="btn primary" disabled={!name.trim() || !loc} onClick={create}><Plus />Create cluster</button></div>
-    </div>
-  );
-}
-
 const HA_ROWS: [keyof Ha, string][] = [["live", "Live migration"], ["balance", "Auto-balancing"], ["failover", "Failover"]];
 
 // Live migration, auto-balancing and failover, each switched per cluster once researched.
@@ -168,7 +142,6 @@ const sum = <T,>(xs: T[], f: (x: T) => number) => xs.reduce((n, x) => n + f(x), 
 
 function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster }) {
   const act = useStore((s) => s.act);
-  const [pending, setPending] = useState<string | null>(null);
   const devices = cluster.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
   const day = Math.floor(game.hour / 24);
   // ponytail: recomputes the week's forecast once a game day; cache per node if clusters grow past a few hundred workloads.
@@ -189,10 +162,7 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
   const host = game.devices.find((d) => d.id === cluster.controlPlane);
   const others = game.clusters.filter((c) => c.id !== cluster.id);
   const pool = cluster.backup.targetId ? backupPool(game, cluster.backup.targetId) : null;
-  const free = game.devices.filter((d) => d.rackId && modelById(d.model).kind === "server" && locationOf(game, d)?.az === cluster.az && !serverTaken(game, d.id));
-  const target = pending ? softwareById(pending) : null;
-  const fresh = target ? !cluster.platform : false;
-  const pick = (id: string) => { if (id !== cluster.platform) setPending(id); };
+  const free = joinableServers(game, cluster.id).map((id) => game.devices.find((d) => d.id === id)!);
 
   return (
     <div className="prd-pad">
@@ -207,8 +177,7 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
         </div>
       </div>
 
-      <h3 className="prd-h">{KIND_NAME.cloud}<span className="loc-muted">{servesText("cloud")}</span><span className="loc-muted num">{euroCents(lic.platform)} per month</span></h3>
-      <SoftwareCards kind="cloud" value={cluster.switching ? cluster.switching.to : cluster.platform} onPick={pick} />
+      <h3 className="prd-h">{softwareName(cluster.switching?.to ?? cluster.platform)}<span className="loc-muted">{servesText("cloud")}</span><span className="loc-muted num">{euroCents(lic.platform)} per month</span></h3>
 
       <HaCard game={game} cluster={cluster} />
 
@@ -301,15 +270,6 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
         </div>
       </section>
 
-      {target && (
-        <Confirm
-          title={`${fresh ? "Install" : "Switch to"} ${target.name}?`}
-          text={`The control plane of ${cluster.name} is busy for ${target.installHours} h. The license is ${licenseText(target).toLowerCase()}${target.pricing === "free" ? "" : " per month"}.`}
-          action={fresh ? "Install" : "Switch"}
-          onCancel={() => setPending(null)}
-          onConfirm={() => { act((g) => setSoftware(g, cluster.id, target.id)); setPending(null); }}
-        />
-      )}
     </div>
   );
 }

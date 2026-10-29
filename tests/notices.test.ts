@@ -8,11 +8,11 @@ import { serverOf, vmOf, workloadsOf } from "../src/sim/60-infra/cluster";
 import { DATA_LOSS, gridOutage, RESTORED, seize } from "../src/sim/60-infra/incidents";
 import { linkStatus, powered } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
-import { addNode } from "../src/sim/90-actions/clusters";
+
 import { buyDevice, connect } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
-import { readyGame } from "./fixtures";
+import { join, readyGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 type R = { ok: boolean; id?: string; error?: string };
@@ -34,7 +34,7 @@ function twoNodes(seed = 1) {
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
-  ok(addNode(s, s.clusters[0].id, second));
+  join(s, s.clusters[0].id, second);
   return { s, second };
 }
 

@@ -32,6 +32,7 @@
 .vm-brand b { display: block; font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
 .vm-brand span { font-size: 11.5px; color: var(--text-3); }
 .vm-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0.5px solid var(--line); flex: none; }
+.vm-detail { grid-auto-rows: max-content; }
 .vm-detail .seg { flex-wrap: wrap; }
 .prd-mark svg.lucide, .sidebar .prd-mark svg.lucide { color: white; }
 .prd-pad .fin-pills, .vm-detail .fin-pills { flex-wrap: wrap; }

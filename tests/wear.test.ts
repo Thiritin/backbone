@@ -11,8 +11,8 @@ import {
 } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { addNode, createCluster, provisionService } from "../src/sim/90-actions/clusters";
-import { installed, withServer } from "./fixtures";
+import { provisionService } from "../src/sim/90-actions/clusters";
+import { hypervisor, withServer } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const rich = (): GameState => ({ ...withServer(newGame(1)), cash: 1_000_000 });
@@ -111,7 +111,7 @@ describe("RAID", () => {
     expect(dev(s, id).dataLost).toBeNull();
     ok(setPower(s, id, true));
     s.hour += BOOT_HOURS;
-    ok(addNode(s, installed(s, ok(createCluster(s, "loc1", "Storage 1"))), id));
+    hypervisor(s, [id], "Storage 1");
     ok(provisionService(s, addCustomer(s, "Ada", "private"), "vps", { label: "ada.example", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     ok(setPower(s, id, false));
     s.hour = 7;

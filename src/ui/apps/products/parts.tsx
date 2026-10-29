@@ -37,15 +37,17 @@ export const KIND_NAME: Record<SoftwareKind, string> = { panel: "Hosting panel",
 export const servesText = (kind: SoftwareKind) => SERVES[kind].filter((p) => !PRODUCTS[p].ha).map((p) => PRODUCT[p]).join(", ");
 
 // The competing software of one kind as cards; the chosen one is pressed.
-export function SoftwareCards({ kind, value, onPick, compact }: { kind: SoftwareKind; value: string | null; onPick: (id: string) => void; compact?: boolean }) {
+export function SoftwareCards({ kind, value, onPick, compact, blocked }: { kind: SoftwareKind; value: string | null; onPick: (id: string) => void; compact?: boolean; blocked?: (id: string) => boolean }) {
   return (
     <div className="prd-cards" role="group" aria-label={KIND_NAME[kind]}>
       {softwareOf(kind).map((sw) => (
-        <button key={sw.id} className="prd-card" aria-pressed={sw.id === value} onClick={() => onPick(sw.id)}>
+        <button key={sw.id} className="prd-card" aria-pressed={sw.id === value} aria-disabled={blocked?.(sw.id) || undefined} onClick={() => onPick(sw.id)}>
           <span className="prd-card-h"><Mark id={sw.id} size={24} /><span className="t">{sw.name}</span></span>
           <dl>
             <div><dt>License</dt><dd className="num">{licenseText(sw)}</dd></div>
             <div><dt>Install</dt><dd className="num">{sw.installHours} h</dd></div>
+            <div><dt>CPU overcommit</dt><dd className="num">Up to {sw.overcommit.cpu}×</dd></div>
+            <div><dt>RAM overcommit</dt><dd className="num">{sw.overcommit.ram > 1 ? `Up to ${sw.overcommit.ram}×` : "None"}</dd></div>
             {compact ? null : <>
             <div><dt>Tickets</dt><dd className="num">×{sw.tickets}</dd></div>
             {kind === "cloud" && <div><dt>Density</dt><dd className="num">×{sw.density}</dd></div>}
@@ -147,6 +149,7 @@ export function ControlPlanePill({ game, cluster }: { game: GameState; cluster: 
 export function vmLabel(game: GameState, w: Workload): { name: string; service: string } {
   const host = hostOfVm(game, w.id);
   if (host) return { name: host.name, service: "Panel VM" };
+  if (!w.serviceId) return { name: `vm-${w.id.replace(/\D/g, "")}`, service: "VM" };
   const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId);
   return { name: c?.name ?? "", service: v?.domain ?? v?.label ?? "" };
 }

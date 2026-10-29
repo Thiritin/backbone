@@ -4,7 +4,8 @@ import { modelById } from "../src/sim/10-catalog/hardware";
 import type { GameState } from "../src/sim/50-state";
 import { linkStatus } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
-import { addNode, createCluster, createPanelVm, installPanel, setSoftware } from "../src/sim/90-actions/clusters";
+import { createPanelVm, installPanel } from "../src/sim/90-actions/clusters";
+import { installSoftware } from "../src/sim/90-actions/software";
 import { buyDevice, connect, mountDevice, setPlugged } from "../src/sim/90-actions/hardware";
 import { startGame } from "../src/sim/90-actions/start";
 import { checkDone } from "../src/sim/checklist";
@@ -55,9 +56,7 @@ describe("first server", () => {
   it("moves the friends onto the panel VM of a hypervisor", () => {
     const s = startGame(3);
     const srv = firstServer(s);
-    const c = ok(createCluster(s, "loc1", "Basement 1"));
-    ok(addNode(s, c, srv));
-    ok(setSoftware(s, c, "proxmocks"));
+    const c = ok(installSoftware(s, srv, "proxmocks"));
     ok(createPanelVm(s, c, "freepanel"));
     run(s, 24 * 7);
     expect(friends(s)).toHaveLength(3);

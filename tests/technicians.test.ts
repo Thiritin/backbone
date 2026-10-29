@@ -9,8 +9,8 @@ import { workloadsOn } from "../src/sim/60-infra/cluster";
 import { phpNeeded, phpRefusal, phpTickets } from "../src/sim/60-infra/php";
 import { failComponents, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { howToFactor } from "../src/sim/85-products/products";
-import { addNode, createCluster, provisionService, upgradePhp } from "../src/sim/90-actions/clusters";
-import { installed, panelServer, withServer } from "./fixtures";
+import { provisionService, upgradePhp } from "../src/sim/90-actions/clusters";
+import { hypervisor, panelServer, withServer } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice, buyRack, connect, setPower } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
@@ -45,9 +45,7 @@ function twoNodes(s: GameState) {
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
-  const cluster = installed(s, ok(createCluster(s, "loc1", "Web 1")));
-  ok(addNode(s, cluster, "dev3"));
-  ok(addNode(s, cluster, second));
+  const cluster = hypervisor(s, ["dev3", second], "Web 1");
   return { cluster, second };
 }
 // The basement and a second server as two bare-metal panel hosts.

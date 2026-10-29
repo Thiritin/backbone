@@ -7,12 +7,13 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { nodeCapacity, nodeUsed, vmOf, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
 import { BOOT_HOURS, deviceHealth, freeSlots, rackPower } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addNode, cordon, createCluster, drain, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
+import { addNode, cordon, drain, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
 import { FRIEND_HAPPINESS } from "../src/sim/90-actions/start";
-import { installed, readyGame, withServer } from "./fixtures";
+import { hypervisor, readyGame, withServer } from "./fixtures";
+import { installSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { mrr } from "../src/sim/metrics";
 
@@ -35,9 +36,7 @@ function twoNodes() {
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
-  const cluster = installed(s, ok(createCluster(s, "loc1", "Web 1")));
-  ok(addNode(s, cluster, "dev3"));
-  ok(addNode(s, cluster, second));
+  const cluster = hypervisor(s, ["dev3", second], "Web 1");
   const cus = addCustomer(s, "Ada Lang", "hobbyDev");
   return { s, cluster, second, cus };
 }
@@ -194,14 +193,14 @@ describe("nodes", () => {
     expect(workloadsOn(s, "dev3")).toHaveLength(0);
     expect(events).toContainEqual({ app: "Locations", key: "event.drained", params: { device: "fra1-srv-01" } });
   });
-  it("only adds servers mounted in the cluster's zone that nothing else uses", () => {
+  it("only joins servers of the cluster's zone that run its hypervisor", () => {
     const { s, cluster, second } = twoNodes();
-    expect(err(addNode(s, cluster, second))).toBe("error.serverInUse");
-    expect(err(addNode(s, cluster, "dev4"))).toBe("error.notServer");
+    expect(err(addNode(s, cluster, second))).toBe("error.alreadyNode");
+    expect(err(addNode(s, cluster, "dev4"))).toBe("error.noHypervisor");
     const stored = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
-    expect(err(addNode(s, cluster, stored))).toBe("error.notMounted");
-    expect(err(createCluster(s, "loc1", "Web 1"))).toBe("error.clusterNameTaken");
-    expect(err(createCluster(s, "loc1", " "))).toBe("error.clusterName");
+    expect(err(addNode(s, cluster, stored))).toBe("error.noHypervisor");
+    expect(err(installSoftware(s, stored, "proxmocks"))).toBe("error.notMounted");
+    expect(err(installSoftware(s, "dev4", "proxmocks"))).toBe("error.notServer");
   });
 });
 
@@ -242,7 +241,7 @@ describe("dedicated and colocation", () => {
     const id = ok(provisionService(s, cus, "dedicated", { label: "ded" }));
     expect(workloadsOf(s, id)).toMatchObject([{ deviceId: third, clusterId: null }]);
     expect(serviceOnline(s, id)).toBe(true);
-    expect(err(addNode(s, s.clusters[0].id, third))).toBe("error.serverInUse");
+    expect(err(installSoftware(s, third, "proxmocks"))).toBe("error.serverInUse");
   });
   it("rents rack units with power in a datacenter rack, from the top", () => {
     const { s, cus } = twoNodes();

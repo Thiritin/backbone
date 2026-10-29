@@ -1,17 +1,17 @@
 import { Boxes, Plus, Wrench } from "lucide-react";
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { yearOf } from "../../../sim/00-core/time";
-import { modelById } from "../../../sim/10-catalog/hardware";
 import { phpAt, phpBehind } from "../../../sim/10-catalog/platforms";
 import { nextSlot } from "../../../sim/47-staff/technicians";
 import { PHP_EOL } from "../../../sim/60-infra/php";
 import { queuePhpUpgrade } from "../../../sim/90-actions/staff";
 import { slotTime } from "./TechButton";
 import type { Device, GameState, Location } from "../../../sim/50-state";
-import { bookable, clusterOf, nodeUsed, vmById, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
+import { bookable, clusterOf, nodeUsed, vmById, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { nodeUsage } from "../../../sim/60-infra/usage";
-import { addNode, CLUSTER_NAME_MAX, createCluster, phpDue, setPlacement, setRamGuard, upgradePhp } from "../../../sim/90-actions/clusters";
+import { joinableServers } from "../../../sim/90-actions/software";
+import { addNode, phpDue, setPlacement, setRamGuard, upgradePhp } from "../../../sim/90-actions/clusters";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { cores, devName, disk, ram } from "../hw";
@@ -54,30 +54,20 @@ function NodeMeters({ game, d }: { game: GameState; d: Device }) {
   );
 }
 
-// Servers mounted in the zone that no cluster or customer uses.
-const freeServers = (game: GameState, az: string) =>
-  game.devices.filter((d) => d.rackId && modelById(d.model).kind === "server" && locationOf(game, d)?.az === az && !serverTaken(game, d.id));
-
-// The clusters of a location's zone, with their nodes, and a form for a new one.
+// The clusters of a location's zone, with their nodes.
 export function Clusters({ game, loc }: { game: GameState; loc: Location }) {
-  const act = useStore((s) => s.act);
-  const [name, setName] = useState("");
   const clusters = game.clusters.filter((c) => c.az === loc.az);
   return (
     <div className="loc-card">
       <div className="loc-card-h"><h3><Boxes />Clusters</h3><Zone loc={loc} /><span className="grow" /><span className="num loc-muted">{clusters.length}</span></div>
       {clusters.map((c) => <ClusterRows key={c.id} game={game} cluster={c} />)}
-      <form className="loc-row" onSubmit={(e) => { e.preventDefault(); if (act((g) => createCluster(g, loc.id, name)).ok) setName(""); }}>
-        <input className="field grow" aria-label="Cluster name" placeholder="Cluster name" maxLength={CLUSTER_NAME_MAX} value={name} onChange={(e) => setName(e.target.value)} />
-        <button className="btn" disabled={!name.trim()}><Plus />New cluster</button>
-      </form>
     </div>
   );
 }
 
 function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
   const act = useStore((s) => s.act);
-  const free = freeServers(game, cluster.az);
+  const free = joinableServers(game, cluster.id).map((id) => game.devices.find((d) => d.id === id)!);
   return (
     <>
       <div className="loc-card-h loc-sub">

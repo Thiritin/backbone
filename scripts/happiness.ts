@@ -23,7 +23,8 @@ import { modelById } from "../src/sim/10-catalog/hardware";
 import { bookable, controlPlaneUse, nodeUsed } from "../src/sim/60-infra/cluster";
 import { sizeOf } from "../src/sim/30-market/spec";
 import type { SalesRequest } from "../src/sim/30-market/market";
-import { addNode, createCluster, createPanelVm, resizePanelVm, setSoftware } from "../src/sim/90-actions/clusters";
+import { addNode, createPanelVm, resizePanelVm } from "../src/sim/90-actions/clusters";
+import { installSoftware } from "../src/sim/90-actions/software";
 import { sitesDown, vmById, vmOf, vmRoom } from "../src/sim/60-infra/cluster";
 import { buyDevice, connect, orderHomeLine } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "../tests/plugged";
@@ -66,9 +67,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   const first = (buyDevice(s, "g1-compute", "Dwell", 1, "loc1") as { id: string }).id;
   mountDevice(s, first, "rack2", 1);
   connect(s, { device: first, port: 0 }, { device: "dev5", port: 0 });
-  const hv = (createCluster(s, "loc1", "Basement 1") as { id: string }).id;
-  addNode(s, hv, first);
-  setSoftware(s, hv, "proxmocks");
+  const hv = (installSoftware(s, first, "proxmocks") as { id: string }).id;
   createPanelVm(s, hv, "freepanel");
   let bySource: Record<string, number> = {}, waitByKind: Record<string, number> = {}, stepErrors: Record<string, number> = {}, downHours: Record<string, number> = {};
   bumpProbe.fn = (_c, d) => {
@@ -90,6 +89,11 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
       if (!(fits && resizePanelVm(s, h.id, { vcpu: vm.vcpu + 1, ramGb: vm.ramGb + 2, diskGb: vm.diskGb + 50 }).ok) && h === s.clusters.filter((x) => x.vm).at(-1)) createPanelVm(s, s.clusters[0].id, h.panel!);
     }
   };
+  // Servers whose Proxmocks finished installing join the first cluster in the hour it finishes.
+  const joinReady = () => {
+    const c = s.clusters[0];
+    for (const x of s.clusters.filter((x) => x !== c && x.platform === c.platform && !x.switching && x.nodes.length === 1)) addNode(s, c.id, x.nodes[0].deviceId);
+  };
   const grow = () => {
     growWeb();
     const c = s.clusters[0];
@@ -106,7 +110,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     const id = bought.id!;
     for (let slot = 2; slot < 24 && !s.devices.find((d) => d.id === id)!.rackId; slot++) mountDevice(s, id, "rack2", slot);
     for (let port = 1; port < 4 && !connect(s, { device: id, port: 0 }, { device: "dev5", port }).ok; port++);
-    if (addNode(s, c.id, id).ok) servers++;
+    if (installSoftware(s, id, "proxmocks").ok) servers++;
   };
   let servers = 0;
   const reached: Record<string, number> = {};
@@ -136,6 +140,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     const churnedBefore = s.customers.filter((c) => c.churnedAt !== null && s.services.some((v) => v.customerId === c.id)).length, before = s.customers.length, lostBefore = s.sales.lost.length;
     for (let h = 0; h < MONTH; h++) {
       tick(s);
+      joinReady();
       if (!s.marketing.lines.length && s.customers.some((c) => c.habit === "friend")) s.marketing.lines = fillLines(s, undefined).marketing.lines;
       if (buy && s.hour % 24 === 9) { grow(); upgradeLine(); }
       if (s.hour % 24 === 9) learn();

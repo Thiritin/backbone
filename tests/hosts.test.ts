@@ -5,11 +5,11 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { bookable, nodeUsed } from "../src/sim/60-infra/cluster";
 import { nodeUsage, pegged, peggedHours } from "../src/sim/60-infra/usage";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addNode, createCluster, provisionService, setHa, setRamGuard } from "../src/sim/90-actions/clusters";
+import { provisionService, setHa, setRamGuard } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
 import { migrateWorkload, migrationTargets, stopWorkload } from "../src/sim/90-actions/vms";
-import { installed, withServer } from "./fixtures";
+import { hypervisor, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = ReturnType<typeof setPower>;
@@ -24,9 +24,7 @@ function setup() {
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
-  const cluster = installed(s, ok(createCluster(s, "loc1", "Cloud 1")));
-  ok(addNode(s, cluster, "dev3"));
-  ok(addNode(s, cluster, second));
+  const cluster = hypervisor(s, ["dev3", second], "Cloud 1");
   const gamer = addCustomer(s, "Kai Frag", "gamer");
   ok(provisionService(s, gamer, "gameServer", { label: "Frag 1", clusterId: cluster, deviceId: "dev3" }));
   ok(provisionService(s, gamer, "gameServer", { label: "Frag 2", clusterId: cluster, deviceId: "dev3" }));
