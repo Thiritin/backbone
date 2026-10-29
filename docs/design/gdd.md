@@ -998,8 +998,8 @@ The MVP has the basement rack, one datacenter location, web hosting and VPS, sup
 - [x] Do competitors expand and react to you, or are they a static backdrop? they are a static backdrop, there should be like some other bigger providers, and its a really hard and fought overm arket
 - [x] Parody names: puns on the real name ("TrustPylon") or fully invented names? puns on real names
 - [x] Which open-source license (MIT, GPL)? MIT
-- [x] Which events auto-pause the game? nothing
-- [ ] Do hardware brands differ in price and failure rate, or only in look?
+- [x] Which events auto-pause the game? Alerts: the owner asked (October 2026) for notifications that pause and pop up like the bankruptcy warning. The list is in docs/masterplan.md, Lane 2.0, and moves into "The desktop" when it is built.
+- [x] Do hardware brands differ in price and failure rate, or only in look? Both: each manufacturer has a price factor and a failure factor (economy.md, Manufacturers).
 - [x] Without price lists, should the player still have one lever on price, such as a premium or discount per product that changes which requests arrive? Yes: you quote a price on every request against a market reference, set rates per resource for the order form, and can raise prices of running services (see Quoting a price).
 
 Ideally at the start they are enthised to either rent a server from a company to get resources to place on, we always have servers as "clusters" so they can be assigned to different products/workloads, so they can fully rent out a server from a existing bigger provider at the start.&#32;
