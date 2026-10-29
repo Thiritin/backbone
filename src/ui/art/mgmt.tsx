@@ -20,7 +20,7 @@ export function oobSpots(model: DeviceModel, name: string, w: number, h: number)
   const at = (kind: OobPort, s: Spot) => out.set(OOB_PORT + kinds.indexOf(kind), s);
   if (!kinds.length) return out;
   if (model.kind === "server") {
-    const u = h / model.height, ph = Math.min(u - 2 * numBand(u), 10);
+    const u = h / Math.max(1, model.height), ph = Math.min(u - 2 * numBand(u), 10);
     at("console", { x: w * 0.7 + 6, y: h - u + (u - ph) / 2, w: 15, h: ph });
   } else if (model.kind === "switch") {
     const x0 = switchX0(model, name, h), s = Math.min(10, h * 0.42);

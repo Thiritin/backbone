@@ -32,7 +32,7 @@ describe("hardware lifecycle", () => {
     for (const m of MODELS) {
       if (m.kind === "part" || m.price === 0 || m.kind === "kvm" || m.kind === "console" || m.kind === "oob") expect([m.until, m.supportYears], m.id).toEqual([null, 0]);
       else if (m.kind === "patch") expect(m.until, m.id).toBeNull();
-      else if (m.server) {
+      else if (m.server || m.nodes) {
         const i = GENERATIONS.findIndex((g) => g.year === m.from);
         expect([m.until, m.supportYears], m.id).toEqual([GENERATIONS[i + 2] ? GENERATIONS[i + 2].year - 1 : null, 5]);
       } else if (NEWEST.includes(m.id)) expect(m.until, m.id).toBeNull();

@@ -110,6 +110,9 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Archive storage 4U | 4U | 1 | 0.25× | 0.25× | 60 densest HDDs | 2 | 2 | 2.2× | 3.2× | Always |
 | GPU 4U | 4U | 2 | 1× | 2× | 1 of the generation's disk in 4 bays, 4 GPU cards | 2 | 2 | 2× plus the cards | 3× plus the cards | From 2011 |
 | ARM 1U | 1U | 1 | 1.5× | 1× | 1 of the generation's disk in 4 bays | 2 | 1 | 0.6× | 0.9× | From 2020 |
+| Twin 2U, per node | 2U for four nodes | 2 | 1× | 1× | 1 of the generation's disk in 3 bays (6 from 2014) | 2 | 2 shared by the chassis | 0.8× | 0.6× | From 2008 |
+
+**Twin 2U.** One purchase is a 2U chassis with two shared power supplies and the fan wall, and four nodes with their own CPUs, RAM, drives and network card. Each node costs 0.6 times and draws 0.8 times a balanced 1U of its generation, so four servers take 2U at 2.4 times the price of one 1U. SuperMacro and Dwell sell it at their price factors; the chassis carries the price and sells with its nodes. A G2 Twin from SuperMacro costs €6,004 in 2010 (€1,501 a node), and from 2010 the used market lists Twin lots at the usual discount, €450 to €900 a node. Rented as the smaller dedicated server at about €79 a month, a used node pays for itself in 6 to 11 months and a new one in about 19; the same node as a VPS host earns more a month and brings more tickets, so dedicated stays the lower-touch path at a lower margin. Dedicated prices stay as they are. A node at full load draws 240 W, about €23 a month metered at Hetzler in 2010. Anchors: Supermicro's Twin (2007) and 2U Twin (2008) with four dual-socket nodes, Dell PowerEdge C6100 (2010), four nodes sharing two 1100 W supplies.
 
 Backup and archive servers use HDDs whatever the generation's disk type. Archive storage is the cheapest per TB, then backup, then the storage 2U.
 
@@ -773,6 +776,15 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 | Equinox FR5, Frankfurt (€750) | €150 | €263 | €450 | €825 |
 
 **Extra power on a share.** A provided share cannot take feed B or a high-density feed. It can book extra power in steps of 0.25 kW, up to the share's base limit again (the datacenter's kW per position divided by the share size, so a limit of at most twice the base). A step costs 15% of the position price times the datacenter's power factor per month, so a full extra kW costs about 60% of a position. It is billed with the share's rent under the same ledger line, and a booking or a reduction takes effect after 3 days. A rack over its limit still trips. Anchor: colocation power sold per amp at roughly €30 to 60 per 0.5 A step in 2010s Frankfurt. At Hetzler Park (€180, factor 1.1) a step costs €30 a month; at mainqubes FRA (€450, factor 1.3) it costs €88.
+
+**Flat-rate power.** A rack position at a datacenter that offers it can take a contract of 2 × 10 A (4.4 kW) or 2 × 16 A (7 kW) instead of metered power. The monthly price is the metered cost of drawing 60% of the contract: kW × 0.6 × 730 hours × the business power price × the datacenter's power factor, at each month's power price. It pays when the rack averages above 60% of its limit and costs more below, and because the price scales with the limit the late game stays even. The contract's kW replaces the position's limit, including a high-density feed, and is billed as its own line with the rent. At Hetzler (factor 1.1) 2 × 10 A costs €191 a month in 2005, €254 in 2010 and €382 in 2020; 2 × 16 A costs €304, €405 and €607. Anchor: German colocation racks sold per amp with a fixed monthly price, 2 × 10 A or 2 × 16 A at 230 V per rack in the 2000s and 2010s.
+
+| Datacenter | Power |
+| --- | --- |
+| Hetzler Park, Hetzler FSN | Metered or flat |
+| Hetzler NBG | Flat only |
+| Docklands Data, Spree Colo, Next Lair VIE, SkyBlink Eygelshoven, Arubaba Hub, CoreSpite VA1, CoreSpite CH1 | Metered or flat |
+| Every other datacenter | Metered only |
 
 **Availability.** Datacenters are not endless. Each one has a floor capacity in positions that grows in expansion phases over the years up to a final size, and most of it is rented by competitors you never see. You can only rent what is free right now.
 
@@ -1917,17 +1929,29 @@ A redesign costs the web design setup (€400, ledger line "Website redesign") a
 
 The leads arrive over the 730 hours after the fair, split evenly over the location cities and the audiences, with a conversion of 1.5. A marketing manager trained on fairs brings back 1.5 × the leads. At the next month start each audience of the fair gains 0.03 awareness on top of g. The network contacts of every fair attended in the last 12 months add up, each fading linearly to 0 over that year, capped at 1; `tradeFairBonus(s)` exposes the sum for transit prices and peering acceptance.
 
-**Community events.** A request arrives 28 to 56 days after the previous one (the first after the start of the game), drawn evenly from the events at or below the company's level; it lapses after 14 days. The services are free, hourly products at the size index of the product's line (SIZES) and end after the duration. A service counts as down by its hours in `downHours`, kept per service while the event runs; the most down hours of any one service decide the outcome.
-| Event | Pun of | Kind | Level | Services | Duration | Audience | Reward |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| LAN-tastic | LAN party | Public | 1 | 2 game servers (smaller size) | 3 days | Gamers, private users | Awareness +0.02 for both |
-| Chaos Computing Club | Chaos Computer Club meetup | Tech | 1 | 1 VPS (1 GB) | 90 days | Developers | Know-how 10 |
-| Hack-a-Sorus | Hackathon | Tech | 1 | 2 VPS (1 GB) | 7 days | Developers | Know-how 25 |
-| Debonair Linux mirror | Distribution mirror | Tech | 1 | 1 storage volume (500 GB) | 365 days | Developers | Know-how 15 |
-| Frag-Fest | Gaming tournament | Public | 1 | 4 game servers (smaller size) | 3 days | Gamers | Awareness +0.03 |
-| Linux User Group | User group website | Public | 1 | 1 web space (2 GB) | 365 days | Small businesses, private users | Awareness +0.01 for both |
-| DevOops Conference | Conference streaming | Tech | 3 | 8 VPS (2 GB) | 7 days | Agencies, enterprises | Know-how 40 |
+**Community events.** A request arrives 28 to 56 days after the previous one (the first after the start of the game), drawn evenly from the events at or below the company's level; it lapses after 14 days. A request answered with 50% off on Sponsor-Bored is decided 24 hours later: the community takes it at a 0.5 chance (seeded by the sponsorship) and the services then run at half the list price for a normal customer, who churns when the event ends; otherwise, or when the services find no room, the request closes. Such a request does not lapse while it waits. People is the audience shown on the board's requests list. The services are free, hourly products at the size index of the product's line (SIZES) and end after the duration. A service counts as down by its hours in `downHours`, kept per service while the event runs; the most down hours of any one service decide the outcome.
+| Event | Pun of | Kind | Level | Services | Duration | Audience | People | Reward |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| LAN-tastic | LAN party | Public | 1 | 2 game servers (smaller size) | 3 days | Gamers, private users | 150 | Awareness +0.02 for both |
+| Chaos Computing Club | Chaos Computer Club meetup | Tech | 1 | 1 VPS (1 GB) | 90 days | Developers | 60 | Know-how 10 |
+| Hack-a-Sorus | Hackathon | Tech | 1 | 2 VPS (1 GB) | 7 days | Developers | 80 | Know-how 25 |
+| Debonair Linux mirror | Distribution mirror | Tech | 1 | 1 storage volume (500 GB) | 365 days | Developers | 2,000 | Know-how 15 |
+| Frag-Fest | Gaming tournament | Public | 1 | 4 game servers (smaller size) | 3 days | Gamers | 300 | Awareness +0.03 |
+| Linux User Group | User group website | Public | 1 | 1 web space (2 GB) | 365 days | Small businesses, private users | 120 | Awareness +0.01 for both |
+| DevOops Conference | Conference streaming | Tech | 3 | 8 VPS (2 GB) | 7 days | Agencies, enterprises | 1,200 | Know-how 40 |
 Awareness gains use the same share-of-the-gap rule as forum posts and fairs, each applied once when the event ends. A tech event adds a recommendation with a 20% chance: a technician applicant whose skill is a drawn applicant's plus 20 (at most 95, talent above it) stays in the market for 30 days. A public event adds a 5-star review with a 50% chance (written under the event's name) and a batch of 3 to 6 leads with conversion 1, split over the location cities and the audience, counted in the month after the event like fair leads. More than 2 hours down on any one service replaces all of this with two 1-star reviews and 0.9 times the awareness of every audience profile. The balance bot ignores every request, so balance runs are unchanged.
+
+**Sponsor board.** An offer draws its slots plus 2 applications, each at a uniform 2 to 10 days after posting (hourly resolution, seeded by the offer). An application is drawn evenly from five applicants. Anchors are the audiences of a gaming clan, a LAN party in a gymnasium, a fan forum, a course project and a distribution mirror.
+
+| Applicant | Audience | People | Advertises |
+| --- | --- | --- | --- |
+| Clan | Gamers | 80 to 400 | Banner on the site |
+| Small LAN party | Gamers | 30 to 120 | Mention on stage |
+| Fan site | Private users | 300 to 3,000 | Banner on the site |
+| Student project | Developers | 20 to 150 | Forum signature |
+| Open source mirror | Developers | 200 to 2,000 | Forum signature |
+
+The service is one unit of the offer's size and runs for the term (730 hours a month). Free offers book EUR 0 for a hidden organiser; half-price offers charge 50% of the list price to a normal customer, who churns when the term ends. A sponsorship that runs a full month adds +0.005 awareness to its audience profile through the usual share-of-the-gap rule, at every 730th hour of the term, and the board adds at most 0.03 in total over all sponsorships. While it runs and the banner is up it also adds a lead batch of `min(4, max(1, round(audience / 250)))` leads of that profile a month, split over the location cities. At the first month, 15% of applicants drop the banner: that month's awareness still counts, then awareness and leads stop. 10% of applicants are shady customers (notice rates in Notices and legal requests). Downtime is judged as in a community event: more than 2 hours down at the end of the term gives two 1-star reviews and 10% less awareness in the audience. Applications lapse after 14 days. The cap of three open offers keeps the inbox readable.
 
 **Campaign channels.** Cost per lead in 2026, scaled back with m = 0.6 like search ads. Conversion multiplies the chance that a lead buys:
 

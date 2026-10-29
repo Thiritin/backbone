@@ -186,7 +186,8 @@ function followUps(s: GameState, r: Rng): Ticket[] {
 
 function spawn(s: GameState, r: Rng): Ticket[] {
   const fresh: Ticket[] = [];
-  const live = s.customers.filter((c) => c.churnedAt === null);
+  // A board sponsor who misuses the server is hidden but still draws notices.
+  const live = s.customers.filter((c) => c.churnedAt === null || (c.sponsor && c.shady && !!domainOf(s, c)));
   for (const c of live) {
     const real = (c.shady ? NOTICE_RATES.shadyReal : NOTICE_RATES.real) / HOURS_PER_MONTH;
     const legal = (c.shady ? NOTICE_RATES.shadyLegal : NOTICE_RATES.legal) / HOURS_PER_MONTH;
@@ -210,7 +211,7 @@ export const subjectParams = (s: GameState, t: Ticket): Record<string, string | 
   target: t.move?.name ?? "", round: t.notice?.round ?? 1, sender: t.notice ? senderById(t.notice.sender).name : "",
   ...(t.kind === "extortion" && breachParams(s, t)),
   ...(t.maint && maintParams(t.maint)),
-  ...(t.kind === "sponsor" && sponsorParams(t)),
+  ...(t.kind === "sponsor" && sponsorParams(s, t)),
 });
 
 // Hourly, before the infrastructure and support ticks: grid outages, returned servers, notices, deadlines and seizures.

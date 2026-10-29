@@ -12,7 +12,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Tickets", "ticket", "tickets", "stepFailed", "offerDeclined"),
     type("Migration offers", "moveAccepted", "moveDeclined", "moveDone", "moveMissed"),
     type("Orders and sales", "order", "orderAccepted", "orderFailed", "orderPaid", "sales*"),
-    type("Sponsoring requests", "sponsorRequest"),
+    type("Sponsoring requests", "sponsorRequest", "boardApplication"),
     type("Notices and legal", "seized", "breach"),
     type("Power", "gridDark", "gridCarried", "feedDark", "feedCarried"),
   ],
@@ -31,7 +31,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Burn-in and refunds", "burninQuick", "burninFull", "burninAborted", "usedRefund"),
   ],
   Security: [type("Advisories", "vuln.announced", "vuln.poc", "vuln.warning", "vuln.patch"), type("Compromises", "vuln.hacked", "oobHacked", "siteHacked", "siteLeft", "breachPress", "breachFine"), type("Open vulnerabilities", "vulnOpen", "vulnCritical")],
-  Marketing: [type("Reviews", "review"), type("Campaigns and bills", "fairDone", "fairMissed", "marketingBills", "platformDropped"), type("Community events", "sponsorDone", "sponsorFailed")],
+  Marketing: [type("Reviews", "review"), type("Campaigns and bills", "fairDone", "fairMissed", "marketingBills", "platformDropped"), type("Community events", "sponsorDone", "sponsorFailed", "halfAccepted", "halfDeclined"), type("Sponsor board", "boardDropped", "boardDone")],
   Website: [type("Site", "siteDown")],
   Staff: [
     type("Hiring and leaving", "quit", "raise", "salaries"),

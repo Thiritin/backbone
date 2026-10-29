@@ -115,7 +115,7 @@ describe("console resolution", () => {
   it("bookmarks every console the company runs", () => {
     const { s } = lab(), marks = consoleBookmarks(s);
     expect(marks.length).toBe(s.clusters.length);
-    expect(defaultBookmarks(s).slice(2)).toEqual(marks);
+    expect(defaultBookmarks(s).slice(3)).toEqual(marks);
     for (const m of marks) expect(resolve(s, m.url).page.kind).toBe("console");
   });
 });
