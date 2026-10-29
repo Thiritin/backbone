@@ -1,5 +1,6 @@
 import { BookOpen, Bot, Check, GraduationCap, Megaphone, MessagesSquare, Search, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
+import { useSessionState } from "../../session";
 import { runwayMonths } from "../../../sim/46-finance/finance";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -68,8 +69,8 @@ function TaskBars({ e, hour }: { e: Employee; hour: number }) {
 
 export function StaffApp() {
   const game = useStore((s) => s.game);
-  const [view, setView] = useState<"team" | "market">("team");
-  const [sel, setSel] = useState<string | null>(null);
+  const [view, setView] = useSessionState<"team" | "market">("staff.tab", "team");
+  const [sel, setSel] = useSessionState<string | null>("staff.sel", null);
   const [role, setRole] = useState<Role>("support");
   const market = visibleCandidates(game);
   useFocus("Staff", (f) => { if (f.kind === "market" && ROLES.includes(f.id as Role)) { setRole(f.id as Role); setView("market"); } });

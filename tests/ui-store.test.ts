@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { prefOf, useStore, type Win } from "../src/ui/store";
 import { readSession } from "../src/ui/session";
 import { newGame } from "../src/sim/50-state";
+import { serialize } from "../src/sim/91-save/save";
 import { readyGame } from "./fixtures";
 import { metrics } from "../src/sim/metrics";
 
@@ -115,6 +116,34 @@ describe("reload", () => {
       expect(ws.find((w) => w.app === "Support")!.focus).toBeUndefined();
     } finally {
       vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe("reload clock", () => {
+  // Re-creates the store module the way a page reload does, over the given storages.
+  async function reload(local: Map<string, string>, session: Map<string, string>) {
+    const mem = (m: Map<string, string>) => ({ getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => m.set(k, v), removeItem: (k: string) => m.delete(k) });
+    vi.stubGlobal("localStorage", mem(local));
+    vi.stubGlobal("sessionStorage", mem(session));
+    vi.resetModules();
+    return (await import("../src/ui/store")).useStore;
+  }
+
+  it("keeps the speed of a loaded game across a reload and starts a new game paused", async () => {
+    const local = new Map<string, string>(), session = new Map<string, string>();
+    try {
+      const first = await reload(local, session);
+      first.getState().setSpeed(2);
+      expect(session.get("backbone.ui.speed")).toBe("2");
+      expect((await reload(local, session)).getState().speed).toBe(0);
+      local.set("backbone.save", serialize(readyGame(1)));
+      expect((await reload(local, session)).getState().speed).toBe(2);
+      session.set("backbone.ui.speed", "3");
+      expect((await reload(local, session)).getState().speed).toBe(0);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.resetModules();
     }
   });
 });

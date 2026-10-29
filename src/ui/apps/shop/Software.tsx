@@ -1,5 +1,6 @@
 import { BellDot, Bot, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useState, type CSSProperties } from "react";
+import { useSessionState } from "../../session";
 import { euroCents } from "../../../sim/00-core/money";
 import { pricePerMTokens } from "../../../sim/47-staff/chad";
 import { yearOf } from "../../../sim/00-core/time";
@@ -75,7 +76,7 @@ function featuredId(installed: string[], learned: string[]): string {
 
 export function Software() {
   const game = useStore((s) => s.game);
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useSessionState<string | null>("software.sel", null);
   const price = (item: StoreItem) => (item.monthly ? `${euroCents(subscriptionPrice(item, yearOf(game.hour)))} / month${item.id === "chadGpt" ? ` + ${euroCents(pricePerMTokens(yearOf(game.hour)))} / 1M tokens` : ""}` : "Free");
   const detail = open && storeItem(open);
   if (detail) return <Detail item={detail} price={price(detail)} back={() => setOpen(null)} />;

@@ -1,5 +1,6 @@
 import { Boxes, MonitorCog, Plus, RotateCcw, TriangleAlert } from "lucide-react";
 import { useState } from "react";
+import { useSessionState } from "../../session";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../sim/10-catalog/products";
 import type { GameState } from "../../../sim/50-state";
@@ -57,11 +58,11 @@ function vmMenu(game: GameState, w: Workload): MenuEntry[] {
 
 export function VmApp() {
   const game = useStore((s) => s.game);
-  const [clusterId, setCluster] = useState<string | null>(null);
-  const [incidents, setIncidents] = useState(false);
-  const [node, setNode] = useState<string | null>(null);
-  const [filter, setFilter] = useState<StateFilter>("all");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [clusterId, setCluster] = useSessionState<string | null>("vms.cluster", null);
+  const [incidents, setIncidents] = useSessionState("vms.incidents", false);
+  const [node, setNode] = useSessionState<string | null>("vms.node", null);
+  const [filter, setFilter] = useSessionState<StateFilter>("vms.tab", "all");
+  const [selected, setSelected] = useSessionState<string | null>("vms.sel", null);
   const [creating, setCreating] = useState(false);
   useFocus("Virtual machines", (f) => { if (f.kind === "workload") { setCluster(null); setNode(null); setFilter("all"); setIncidents(false); setSelected(f.id); } });
   const cluster = game.clusters.find((c) => c.id === clusterId);

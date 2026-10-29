@@ -75,7 +75,7 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 
 **Notifications.** Banners for new tickets, overdue invoices, hardware failures, attacks and staff requests. Each one opens the right app at the right place, and a notification center keeps the history. Alerts also pause the game (see below).
 
-**Reloading the tab.** A reload of the page reopens the saved game with the same windows where they were, and Support keeps its box, type filter and open email. The clock starts paused, as it does on every load. A closed tab starts from the desktop with no windows open.
+**Reloading the tab.** A reload of the page reopens the saved game with the same windows where they were, and Support, Virtual machines, Billing, Staff, Locations (with its cabling view) and the Pear Store keep their selections, tabs and filters. The clock keeps the speed it had; a new game starts paused. A closed tab starts from the desktop with no windows open.
 
 **Sounds.** Short synthesized cues mark the events worth hearing: a chime arpeggio when a month closes (with a cash-register rattle and an extra top note when the month made money), a coin ping for paid orders and won deals, the ticket ding for everything else in Support, a soft falling two-tone for failures, outages, attacks and missed payments, a rising triad when an employee finishes training, and a bloom when the company learns a skill. Windows tick quietly as they open and close. A burst of events plays only its most important sound, each sound plays at most once every one and a half seconds, and nothing plays while the game is paused or the tab is hidden.
 

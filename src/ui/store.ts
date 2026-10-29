@@ -6,7 +6,7 @@ import { startGame as newCompany } from "../sim/90-actions/start";
 import { tick } from "../sim/88-tick/tick";
 import { isAlert } from "../sim/alerts";
 import { deserialize, serialize } from "../sim/91-save/save";
-import type { Speed } from "../sim/00-core/time";
+import { SPEEDS, type Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
 import type { ActionResult } from "../sim/90-actions/hardware";
 import { readSession, writeSession } from "./session";
@@ -106,8 +106,10 @@ function loadGame(): { game: GameState; loaded: boolean } {
 }
 
 const initial = loadGame();
-// A reload (the dev server's after a code change, or the player's) reopens the windows of the saved game.
+// A reload (the dev server's after a code change, or the player's) reopens the windows of the saved game and keeps its clock running.
 const restored = initial.loaded ? readSession<Win[]>("windows", []) : [];
+const savedSpeed = readSession<Speed>("speed", 0);
+const restoredSpeed: Speed = initial.loaded && SPEEDS.includes(savedSpeed) ? savedSpeed : 0;
 
 function loadPrefs(): { notify: Record<string, Partial<NotifyPref>>; sound: SoundPref } {
   try {
@@ -146,7 +148,7 @@ function loadTheme(): Theme {
 
 export const useStore = create<Store>((set, get) => ({
   game: initial.game,
-  speed: 0,
+  speed: restoredSpeed,
   windows: restored,
   banners: [],
   history: [],
@@ -306,7 +308,10 @@ export const useStore = create<Store>((set, get) => ({
   },
 }));
 // Without the focus another app asked for, so a reload keeps what the window shows now.
-useStore.subscribe((s, prev) => { if (s.windows !== prev.windows) writeSession("windows", s.windows.map(({ focus: _, ...w }) => w)); });
+useStore.subscribe((s, prev) => {
+  if (s.windows !== prev.windows) writeSession("windows", s.windows.map(({ focus: _, ...w }) => w));
+  if (s.speed !== prev.speed) writeSession("speed", s.speed);
+});
 
 export const loadedFromSave = initial.loaded;
 

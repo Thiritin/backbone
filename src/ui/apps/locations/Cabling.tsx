@@ -1,5 +1,6 @@
 import { Unplug } from "lucide-react";
-import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from "react";
+import { useEffect, useRef, type PointerEvent as RPointerEvent } from "react";
+import { useSessionState } from "../../session";
 import { modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Device, End, GameState, Location } from "../../../sim/50-state";
 import { connectError, portPeers } from "../../../sim/60-infra/status";
@@ -66,7 +67,7 @@ const curve = (a: { x: number; y: number }, b: { x: number; y: number }) => {
 
 export function Cabling({ game, loc }: { game: GameState; loc: Location }) {
   const act = useStore((s) => s.act);
-  const [sel, setSel] = useState<string | null>(null);
+  const [sel, setSel] = useSessionState<string | null>("cabling.sel", null);
   const svg = useRef<SVGSVGElement>(null), plane = useRef<SVGGElement>(null), line = useRef<SVGPathElement>(null);
   const pan = useRef({ x: 0, y: 0 });
   const drag = useRef<{ mode: "pan" | "cable"; x: number; y: number; from?: End } | null>(null);
