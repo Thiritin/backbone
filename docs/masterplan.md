@@ -15,7 +15,7 @@ This is the work plan for the next stretch of Backbone. It lists what is built a
 - The owner plays on the Vite dev server (port 5173) from this checkout, so merging code here reloads their page; windows and the Support selection survive reloads (src/ui/session.ts).
 - One lane at a time on its own branch or worktree, merged into main only when everything above is green.
 
-Balance today (main f31b2f2): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 752 tests pass.
+Balance today (main after Merge Lane 6.5): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 865 tests pass.
 
 ## Built
 
@@ -35,6 +35,9 @@ Balance today (main f31b2f2): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5
 - Lane 2.0, alerts that pause (ed5d404): `ALERT_KEYS` in src/sim/alerts.ts, `alert` in the store, src/ui/desktop/AlertSheet.tsx with Open and Continue; gdd.md "The desktop", Alerts.
 - Lane 2.1, company site hosting and design ages (8c57a61): rented Strateaux or an own panel host, `siteStatus`, lead and order factors, design generations with Redesign and the age penalty, `customerSite`, Website app styles per generation; the site factor is applied once per website lead flow (84d5851).
 - Lane 4.1, chassis slots and capacity from parts (9c20670): `dimmSlots`, bays by form factor, `pcie`, `psuBays`, sized components, capacity from installed non-failed parts; gdd.md "Chassis and parts", economy.md "Chassis slots".
+- Lane 2b.4, breaches and ransom (f54c3d8): a critical hit on an instance exposed over 30 days becomes a breach 25% of the time, the extortion ticket with Pay and Refuse and a 72 hour default, 90/10 on paying, sale effects, BDSG and GDPR fines, the Breaches card, a "fees" ledger category.
+- Lane 3.4, IPMI and power (029bc78): `hasBmc` by brand and generation, management addresses, iDRAQ, iLOL, SuperMacro IPMI and XClarify pages in the browser, `shutdown`, `reset`, `powerCycle` and the pull with a corruption roll, OS and controller hangs, `recover`, the RAID rebuild performance factor, device event logs.
+- Lane 6.5 (Merge Lane 6.5): deliveries take 3 days in 2005 falling to 1 by 2015 (the first server arrives at once), the Tower server line for G1 and G2 on a 4-place basement shelf with no controller.
 - Lane 3.3, consoles (0b4fa1f): login pages and consoles per software family at each host's FQDN, `consoleFeatures` matrix in src/sim/80-business/consoles.ts, actions routed to the existing 90-actions functions.
 - Lane 2b.2, customer applications (85d817b): WordPass, Joomlah, Drupel and static sites with versions, self-updates by skill, hacks that deface and spam, Notify from Monitoring, update tickets with one-off, managed and free, Pricing units updateOnce and updates.
 - Lane 4.5, GPU computing (9a153c8): nVidea Tezla cards in src/sim/10-catalog/gpu.ts with watts and prices, the GPU line from 2011, the gpu product per card a month, `gpuDemand` by year, the gpuCompute skill, card news.
@@ -56,7 +59,7 @@ Balance today (main f31b2f2): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5
 
 ## In flight
 
-In worktrees: Lane 3.4, Lane 2b.4, Lane 6 item 6.5.
+In worktrees: Lane 3.5, Lane 5.2.
 
 ## What Lane 1 left behind (read before Lanes 2 and 3)
 
@@ -80,11 +83,11 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 2b.1 | Software versions, generated vulnerabilities, monitoring, updates | Built (587f3ab) |
 | 2b.2 | Customer applications, notify and the update service | Built (85d817b) |
 | 2b.3 | Game server panels | Built (f31b2f2) |
-| 2b.4 | Breaches, ransom and fines | 2.0, 2b.1 |
+| 2b.4 | Breaches, ransom and fines | Built (f54c3d8) |
 | 3.1 | Hostnames everywhere | Built (47c94f9) |
 | 3.2 | Browser app, company site Admin, customer sites, easter egg | Built (3a85863) |
 | 3.3 | Server consoles by hostname with a feature matrix | Built (0b4fa1f) |
-| 3.4 | IPMI, power actions, hangs and pulled plugs | 3.1, 3.2 |
+| 3.4 | IPMI, power actions, hangs and pulled plugs | Built (029bc78) |
 | 3.5 | Terminal: ssh, ping, traceroute, recover | 3.4 |
 | 3b | Searchlight | Built (e90b7a7) |
 | 4.1 | Chassis slots and capacity from parts | Built (9c20670) |
