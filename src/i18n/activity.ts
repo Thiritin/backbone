@@ -7,7 +7,9 @@ const KIND: Record<string, string> = {
   appeal: "an appeal", notice: "a notice", legal: "a legal", refund: "a refund", order: "an order",
 };
 const RESOLVED: Record<string, string> = {
-  credit: "Credited 10% of the monthly bill", retain: "Made a retention offer", cancel: "Processed the cancellation",
+  credit: "Credited 10% of the monthly bill", "retain.half": "Offered 50% off the next month", "retain.free": "Offered a free month",
+  "retain.d3": "Offered 20% off for 3 months", "retain.d6": "Offered 20% off for 6 months", "retain.d12": "Offered 20% off for 12 months",
+  "retain.upgrade": "Offered a free upgrade", "retain.fix": "Promised a fix", "retain.move": "Offered a move to a better server", cancel: "Processed the cancellation",
   unsuspend: "Unsuspended the services with a payment extension", keep: "Kept the services suspended", forward: "Forwarded the abuse report",
   takedown: "Took the content down", reject: "Rejected the request", comply: "Complied with the request", object: "Objected to the request",
   refund: "Refunded the payment", accept: "Accepted the order", quote: "Sent the quote", account: "Created the customer account",

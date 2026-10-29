@@ -569,7 +569,28 @@ P(\text{cancel}) = \text{base} + 0.5 \cdot \max\left(0,\ \frac{50 - H}{50}\right
 
 A customer whose happiness falls below 15 leaves at the next monthly billing date, even on a yearly contract. Every cancellation arrives as a ticket first.
 
-**Retention offers.** A retention offer gives one month free. Below H = 30 the customer refuses it. A customer who pays more than their maximum (Price tolerance) for any monthly service, after taking a twelfth off for the free month, also refuses. Otherwise they stay with a chance of (H − 30) %, so 40% at H = 70 and 60% at H = 90. A refused offer cancels the contract at once and the ticket shows "Offer refused, contract cancelled".
+**Retention offers.** A cancellation ticket offers eight options, each with its own chance of keeping the customer. Every chance starts at (H − 10) %, so 50% at H = 60, and is then adjusted by the cancellation reason and the customer's profile, then clamped to 5% to 95%. There is no happiness floor: a customer at H = 5 stays about a third of the time for a strong offer, because the player pays for it.
+
+| Option | Cost | Price reason | Outage or slowness reason | Private customer | Business |
+| --- | --- | --- | --- | --- | --- |
+| 50% off the next month | 0.5 × monthly bill, credited at once | +30% | −20% | +10% | |
+| One month free | 1 × monthly bill, credited at once | +30% | −20% | +10% | |
+| 20% off for 3, 6 or 12 months | 0.2 × months × the hourly services' monthly bill | +30% | −20% | +10% | |
+| Free upgrade | The market price of the extra resources for a month, never charged | | | | |
+| Apology and fix promise | None | | +30% | | |
+| Move to a better server | None; a hand task and the downtime of the move | −10% | +30% | | +10% |
+
+The reason is the ticket's topic. A cancellation that comes from a price raise carries Price. A cancellation from the monthly churn roll carries Outage when a service of the customer is down or an outage ticket of theirs was written in the last month, Slowness when the last such ticket was about slowness, Price when an hourly service costs more than the customer finds fair (Price tolerance), and no reason otherwise. Private customers are all profiles outside the business segment (small business, agency, office, online shop, enterprise).
+
+The player sees each option as a card with its cost and the word for its chance: Unlikely below 40%, Even from 40% to below 60%, Likely from 60%. An option the customer cannot take is left out: every option when a service stays above the customer's maximum price after the option (a free month counts as a twelfth off the monthly price, half a month as a twenty-fourth, the discounts as a fifth); the upgrade when the service has no room on its server for one size up (1.5 times every resource; the node must hold the extra RAM and disk, a web space needs the disk in its panel VM); the fix promise unless the reason is outage or slowness; the move unless a host in a datacenter location, other than the current cluster, can take the service.
+
+A credit raises happiness by 30 per share of the monthly bill (+15 for half a month, +30 for a month). Every other option that keeps the customer adds 10, and a kept customer's ticket also earns the +5 for a resolved ticket. The customer rolls the chance once the player's 15 minutes of work are done. A failed roll cancels the contract at once and the ticket shows "Offer refused, contract cancelled".
+
+A discount changes the price of every hourly service of the customer through an agreed price change, which costs no happiness. The price returns at the Nth month start after the offer. A price the player set during the discount stays; only an untouched discounted price returns to its old value. A free upgrade raises the service's spec and its workload's booking and leaves the price unchanged. A move sends the customer a migration offer they have already accepted: the move runs in the customer's window like any accepted migration and gives the basement bonus when it leaves the basement.
+
+The apology waits three days. The ticket stays open as waiting, the monthly run does not process it, and the player cannot act on it. After 72 hours the customer checks: if any service behind the ticket is down or slow, the contract is cancelled and the ticket shows "Fault still present, contract cancelled". Otherwise the customer stays with the chance computed at that time.
+
+Staff on a cancellation offer the cheapest option whose chance is at least 40%, the cost being the one in the table (an upgrade costs its notional market price, so an apology or a move wins a tie). When none is at least even, they process the cancellation.
 
 **Price tolerance.** Every customer has a maximum monthly price per service, hidden from the player:
 
@@ -652,6 +673,8 @@ Gamers create abuse reports at 0.02, like high-skill customers. Each payment rem
 | Billing question, abuse report, refund request | 14 days |
 
 A ticket someone is working on stays open. Cancellations are processed at the next billing date instead.
+
+**Tenure** changes the how-to rate: customers ask most while they set up, ×2.5 at signup and ×0.85 per month after, down to ×0.15 for settled customers, so a low-skill customer who stays for years writes about once every three years.
 
 **Control panels** change the how-to rate: cPanic ×0.8, Pleskit ×0.9, DirectAdmen ×1.2, FreePanel ×1.5.
 
@@ -898,7 +921,6 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | Staff | Staff | €20 | €5 per employee | Employee management skill |
 | Marketing | Marketing | €20 | | Marketing campaigns skill |
 | Market | Market | €15 | | Market research skill |
-| Dock badges | Upgrade: counts on dock apps other than Support | €5 | | Monitoring skill |
 | Searchlight | Upgrade: global search on Ctrl+K and Cmd+K | €2 | | Start |
 | Widgets | Upgrade: one desktop widget each | €1 (calendar, open tickets, cash, customers), €2 (monthly revenue, level) | | Start |
 | AI bots | ChadGPT Support €50, Clipsy Reminders €100, per bot | ChadGPT: every reply in tokens, see [ChadGPT usage](#chadgpt-usage) | | Automation skill |
@@ -1952,7 +1974,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 
 | Skill | Tier | Know-how | Training | Needs | Makes available |
 | --- | --- | --- | --- | --- | --- |
-| Monitoring | 1 | 50 | 5 days | | Dock badges, Nagiosaurus, failure notifications |
+| Monitoring | 1 | 50 | 5 days | | Nagiosaurus, failure notifications |
 | Marketing basics | 1 | 50 | 5 days | | Leads to Marketing campaigns |
 | Employee management | 1 | 100 | 10 days | | Staff |
 | Network operations | 2 | 300 | 14 days | Monitoring | Network |

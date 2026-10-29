@@ -34,7 +34,7 @@ export const PRIVATE: Keys = [[0, 0.05], [2, 0.01], [7, 0.3], [12, 0.5], [18, 1]
 export const SENSITIVITY: Record<Segment, number> = { game: 3, business: 2, private: 0.015 };
 // Private customers each notice at their own pace: a log-normal factor with this spread.
 export const PRIVATE_SPREAD = 0.8;
-const BUSINESS_PROFILES: Profile[] = ["smallBiz", "agency", "office", "onlineShop", "enterprise"];
+export const BUSINESS_PROFILES: Profile[] = ["smallBiz", "agency", "office", "onlineShop", "enterprise"];
 
 export const segmentOf = (profile: Profile, product: Product): Segment =>
   product === "gameServer" ? "game" : BUSINESS_PROFILES.includes(profile) ? "business" : "private";

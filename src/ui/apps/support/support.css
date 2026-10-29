@@ -66,6 +66,16 @@
 .sup .tpl .p { color: var(--text-2); font-size: 12px; }
 .sup .tpl:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
 .sup .tpl:has(input:disabled) { opacity: 0.6; cursor: default; }
+.sup .offers { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.sup .offer { display: grid; align-content: start; gap: 4px; padding: 10px 12px; border-radius: 9px; border: 0.5px solid var(--line-strong); background: var(--field); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.sup .offer:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.sup .offer:disabled { opacity: 0.6; cursor: default; }
+.sup .offer .t { font-weight: 600; }
+.sup .offer .v { color: var(--text-2); font-size: 12px; }
+.sup .offer .odds { font-size: 12px; font-weight: 600; }
+.sup .offer .odds.unlikely { color: var(--bad-text); }
+.sup .offer .odds.even { color: var(--warn-text); }
+.sup .offer .odds.likely { color: color-mix(in oklch, var(--ok) 70%, var(--text)); }
 .sup .actions-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sup .actions-row .grow { flex: 1; }
 .sup .actions-row .btn .num { margin-left: 2px; }

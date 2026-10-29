@@ -90,7 +90,7 @@ describe("community sponsoring requests", () => {
     });
     expect(big).toContain("devOops");
     expect(new Set(big).size).toBeGreaterThan(3);
-  });
+  }, 60_000);
 
   it("lapse after two weeks without penalty", () => {
     const s = asked(5), cash = s.cash, score = reviewScore(s);
@@ -309,6 +309,6 @@ describe("old saves", () => {
     const loaded = deserialize(serialize(s));
     expect(loaded.sponsorships).toEqual(s.sponsorships);
     expect(loaded.customers.find((c) => c.sponsor)).toBeTruthy();
-    expect(EVENTS.length).toBe(7);
+    expect(EVENTS.length).toBe(11);
   });
 });

@@ -20,6 +20,10 @@ export const EVENTS: CommunityEvent[] = [
   { id: "mirror", name: "Debonair Linux mirror", kind: "tech", level: 1, product: "storage", size: 1, count: 1, hours: 365 * DAY, audience: ["hobbyDev"], knowHow: 15, awareness: 0 },
   { id: "fragFest", name: "Frag-Fest", kind: "public", level: 1, product: "gameServer", size: 0, count: 4, hours: 3 * DAY, audience: ["gamer"], knowHow: 0, awareness: 0.03 },
   { id: "userGroup", name: "Linux User Group", kind: "public", level: 1, product: "webHosting", size: 1, count: 1, hours: 365 * DAY, audience: ["smallBiz", "private"], knowHow: 0, awareness: 0.01 },
+  { id: "codeClub", name: "School Coding Club", kind: "public", level: 1, product: "webHosting", size: 0, count: 3, hours: 365 * DAY, audience: ["private"], knowHow: 0, awareness: 0.01 },
+  { id: "shelter", name: "Paws and Claws Shelter", kind: "public", level: 1, product: "webHosting", size: 0, count: 1, hours: 365 * DAY, audience: ["private", "smallBiz"], knowHow: 0, awareness: 0.01 },
+  { id: "pixelJam", name: "Pixel Jam", kind: "public", level: 2, product: "gameServer", size: 1, count: 2, hours: 3 * DAY, audience: ["gamer", "hobbyDev"], knowHow: 0, awareness: 0.02 },
+  { id: "openData", name: "Open Data Hackday", kind: "tech", level: 2, product: "storage", size: 0, count: 1, hours: 7 * DAY, audience: ["hobbyDev", "agency"], knowHow: 20, awareness: 0 },
   { id: "devOops", name: "DevOops Conference", kind: "tech", level: 3, product: "vps", size: 2, count: 8, hours: 7 * DAY, audience: ["agency", "enterprise"], knowHow: 40, awareness: 0 },
 ];
 export const eventById = (id: string): CommunityEvent | undefined => EVENTS.find((e) => e.id === id);

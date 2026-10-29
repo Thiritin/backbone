@@ -1,4 +1,4 @@
-import { BellDot, Bot, Search, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
+import { Bot, Search, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { useSessionState } from "../../session";
 import { euroCents } from "../../../sim/00-core/money";
@@ -15,7 +15,6 @@ import { DESK } from "../support/desk";
 import { useStore } from "../../store";
 
 const UPGRADES: Record<string, { icon: LucideIcon; tile: string; about: string }> = {
-  dockBadges: { icon: BellDot, tile: "oklch(0.6 0.2 25)", about: "Shows a count on the other dock apps of what waits for you." },
   searchlight: { icon: Search, tile: "oklch(0.55 0.16 255)", about: "Finds apps, customers, machines, tickets and sites from one field." },
   widgetCalendar: { icon: CalendarDays, tile: "oklch(0.6 0.2 25)", about: "Shows today's date on your desktop." },
   widgetTickets: { icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Shows your open tickets on your desktop." },
@@ -43,8 +42,8 @@ const INCLUDES: Record<string, string[]> = {
   Staff: ["Job market", "Hiring and salaries", "Task assignment"],
   Marketing: ["Campaigns", "Reviews", "Review platforms"],
   Nagiosaurus: ["Versions of installed software", "Open vulnerabilities by severity", "Days exposed"],
+  "Knowledge base": ["Articles for basic setup questions", "Fewer how-to tickets", "Reads per article"],
   Market: ["Demand by product", "Customer requirements", "Lost-sale reports"],
-  dockBadges: ["Unpaid invoices in Billing", "Failed parts in Locations", "Requests and attacks in Network"],
   searchlight: ["Opens with Ctrl+K or Cmd+K", "Apps, customers and machines", "Tickets, sites and settings"],
   widgetCalendar: ["Weekday, date and year"],
   widgetTickets: ["Open ticket count", "Opens Support"],
@@ -57,11 +56,11 @@ const INCLUDES: Record<string, string[]> = {
 };
 
 const SHELVES: [string, string[]][] = [
-  ["Essentials", ["Network", "Products", "Nagiosaurus"]],
+  ["Essentials", ["Network", "Products", "Nagiosaurus", "Knowledge base"]],
   ["Growth", ["Staff", "Marketing", "Market"]],
   ["Bots", ["chadGpt", "clipsy"]],
   ["Support desks", ["ostickit", "zendusk", "freshdusk", "freescoot"]],
-  ["Upgrades", ["dockBadges", "searchlight", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],
+  ["Upgrades", ["searchlight", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],
 ];
 
 export const artOf = (item: StoreItem) => (item.kind === "app" ? appByName(item.id) : item.kind === "desk" ? { icon: DESK[item.id].icon, tile: DESK[item.id].tile, about: DESK_ABOUT[item.id] } : UPGRADES[item.id]);
