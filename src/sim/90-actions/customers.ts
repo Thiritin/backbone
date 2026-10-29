@@ -2,6 +2,7 @@ import type { GameState } from "../50-state";
 import type { Customer, Product, Profile, PaymentHabit } from "../30-customers/customers";
 import { sizeSpec, type Sla, type Spec } from "../10-catalog/products";
 import { yearOf } from "../00-core/time";
+import { drawApp } from "../10-catalog/apps";
 import { webDomain } from "../30-customers/domains";
 import { serviceHostname } from "../30-customers/hostnames";
 import { isSuspended, SUSPEND_HAPPINESS } from "../45-billing/billing";
@@ -18,6 +19,8 @@ export function addCustomer(s: GameState, name: string, profile: Profile, habit:
 export function addService(s: GameState, customerId: string, product: Product, label: string, price: number, period: "hour" | "year", commitMonths = 0, zone: string | null = null,
   spec: Spec = sizeSpec(product, 0, yearOf(s.hour)), sla: Sla = "basic"): string {
   const id = `svc${s.nextId++}`;
+  // A web hosting service runs an app drawn from the year's shares.
+  if (product === "webHosting" && !spec.app) spec = { ...spec, app: drawApp(s.seed, Number(id.slice(3)), yearOf(s.hour)), appVersion: yearOf(s.hour), appUpdatedAt: s.hour };
   const domain = product === "webHosting" ? webDomain(s, customerId, label, zone, id) : undefined;
   const hostname = serviceHostname(s, product);
   s.services.push({ id, customerId, product, label: domain ?? label, price, period, commitMonths, startedAt: s.hour, endedAt: null, zone, spec, sla, ...(domain && { domain }), ...(hostname && { hostname }) });

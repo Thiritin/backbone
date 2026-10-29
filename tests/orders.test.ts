@@ -118,7 +118,7 @@ describe("orders by email", () => {
     expect(done.status).toBe("won");
     expect(s.tickets.length).toBe(tickets);
     expect(s.services.some((v) => v.customerId === done.customerId && v.id === done.serviceId)).toBe(true);
-    expect(s.services.find((v) => v.id === done.serviceId)!.spec).toEqual(r.spec);
+    expect(s.services.find((v) => v.id === done.serviceId)!.spec).toMatchObject(r.spec);
     // Without room the order still arrives as an email.
     expect(orderLead(s, "private", "London", [], web, false).ticketId).not.toBeNull();
   });

@@ -12,6 +12,7 @@ import { applyNoticeWork } from "./notices";
 import { applyOrderWork } from "../30-market/orders";
 import { howToFactor } from "../85-products/products";
 import { phpAbuse } from "../60-infra/php";
+import { APP_ACTIONS, applyAppWork } from "../60-infra/apps";
 import { serviceOnline } from "./status";
 import { outgoing, sendAction } from "./replies";
 import { overpricing, retains, revertPrice } from "../30-customers/pricing";
@@ -54,6 +55,14 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
         // A wrong answer brings a follow-up in the same thread with a fresh response time.
         bump(c, WRONG_ANSWER);
         Object.assign(t, { status: "open", unread: true, dueAt: replyDue(c, s.hour) });
+      }
+    } else if (APP_ACTIONS.includes(work.arg as never)) {
+      const outcome = applyAppWork(s, t, c, work.arg);
+      if (outcome) resolve(s, t, c, outcome);
+      else {
+        // The customer turns the offer down; the thread stays open for another one.
+        Object.assign(t, { status: "open", unread: true, dueAt: replyDue(c, s.hour) });
+        events.push({ app: "Support", key: "event.offerDeclined", params: { name: c.name } });
       }
     } else if (work.arg === "credit") {
       credit(s, c, 0.1);

@@ -90,7 +90,7 @@ describe("domains", () => {
 
 describe("replies", () => {
   it("has every wording of every email", () => {
-    const p = { name: "Anna", company: "Basement Hosting", host: "basement-hosting.de", service: "x.de", domain: "x.de", credit: 1, refund: 10, days: 7, hours: 48, url: "https://x.de/", sender: "S", line: "Web hosting", city: "Paris", price: 5, hour: 100, invoice: "2005-0001", total: 20 };
+    const p = { name: "Anna", company: "Basement Hosting", host: "basement-hosting.de", service: "x.de", domain: "x.de", credit: 1, once: 49, managed: 5, refund: 10, days: 7, hours: 48, url: "https://x.de/", sender: "S", line: "Web hosting", city: "Paris", price: 5, hour: 100, invoice: "2005-0001", total: 20 };
     for (const k of REPLY_KINDS) for (let i = 0; i < REPLY_VARIANTS; i++) rendered(`reply.${k}.${i}`, p);
   });
 

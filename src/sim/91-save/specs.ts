@@ -1,6 +1,7 @@
-import { yearOf } from "../00-core/time";
+import { hourOf, yearOf } from "../00-core/time";
+import { drawApp } from "../10-catalog/apps";
 import { marketRates, SLAS, sizeSpec, type Sla, type Spec } from "../10-catalog/products";
-import type { Product } from "../30-customers/customers";
+import type { Product, Service } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 
 // The package ids older saves stored, smallest first like SIZES.
@@ -26,12 +27,20 @@ function counted<T extends Old>(old: T, at: number, monthly: number, sla: Sla | 
   return { ...x, spec: { ...x.spec, [key]: Math.max(1, Math.round(n)) } };
 }
 
+// Saves from before customer apps: web hosting services draw the app by their start year. They run the release of two years
+// ago or of their start when that is later, so an old save has something to update without being hacked at once.
+function withApp(v: Service, seed: number, hour: number): Service {
+  if (v.product !== "webHosting" || v.spec.app) return v;
+  const version = Math.max(yearOf(v.startedAt), yearOf(hour) - 2);
+  return { ...v, spec: { ...v.spec, app: drawApp(seed, Number(v.id.replace(/\D/g, "")) || 0, yearOf(v.startedAt)), appVersion: version, appUpdatedAt: Math.max(v.startedAt, hourOf(new Date(Date.UTC(version, 0, 1)))) } };
+}
+
 // Saves from before per-resource pricing: services, requests and lost sales get specs, and the packages list is dropped.
 export function fillSpecs(s: GameState): GameState {
   const { packages: _, ...marketing } = s.marketing as GameState["marketing"] & { packages?: unknown };
   return {
     ...s, marketing, rates: s.rates ?? {},
-    services: s.services.map((v) => counted(v, v.startedAt, v.price * 730, v.sla, s.hour)),
+    services: s.services.map((v) => withApp(counted(v, v.startedAt, v.price * 730, v.sla, s.hour), s.seed, s.hour)),
     sales: {
       requests: s.sales.requests.map((r) => counted(r, r.createdAt, r.reference, r.sla, s.hour)),
       lost: s.sales.lost.map((l) => counted(l, l.hour, l.reference, "basic", s.hour)),

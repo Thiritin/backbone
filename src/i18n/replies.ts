@@ -58,6 +58,26 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `A new panel password is on its way to your inbox. The login page is panel.${p.host}.`,
     (p) => `We have reset your control panel login and emailed you the new password. Please log in at panel.${p.host} and change it.`,
   ],
+  offerOnce: [
+    (p) => `We can bring ${site(p)} up to date for you. It is a one-off job for ${euroCents(Number(p.once))}, and you do not have to do anything.`,
+    (p) => `The software behind ${site(p)} is missing security updates. We will install them for a one-off fee of ${euroCents(Number(p.once))}.`,
+    (p) => `We are happy to take care of the update for ${site(p)}. The one-off price is ${euroCents(Number(p.once))}.`,
+  ],
+  offerManaged: [
+    (p) => `We can keep ${site(p)} up to date for you from now on. Managed updates cost ${euroCents(Number(p.managed))} a month, and we install every security release within a day.`,
+    (p) => `With managed updates at ${euroCents(Number(p.managed))} a month, we update the software behind ${site(p)} as soon as a fix comes out, so you never have to think about it.`,
+    (p) => `We offer to look after the updates for ${site(p)} for ${euroCents(Number(p.managed))} a month. Every security release is installed within a day.`,
+  ],
+  free: [
+    (p) => `We updated the software behind ${site(p)} for you at no charge. Everything runs on the latest release again.`,
+    (p) => `Your update for ${site(p)} is done, and there is nothing to pay. The site runs on the latest release.`,
+    (p) => `We took care of the update for ${site(p)} for you. It is free this time, and the site is up to date.`,
+  ],
+  clean: [
+    (p) => `We cleaned ${site(p)} and restored your homepage. Please change your passwords and keep the software up to date.`,
+    (p) => `${site(p)} is clean again and shows your own homepage. Updating the software and changing your passwords will keep it that way.`,
+    (p) => `Your site ${site(p)} is back to normal. We removed the intruder's files; please update the software and choose new passwords.`,
+  ],
   "tpl.explain": [
     () => "The second payment covers last month's usage, which we invoice in arrears. You have not been charged twice.",
     () => "There are two invoices because usage is billed at the end of each month for the month before. Both are correct, and nothing was charged twice.",

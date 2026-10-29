@@ -1,5 +1,6 @@
 import { chance, rand } from "../00-core/rng";
 import { addHoursOn } from "../00-core/workhours";
+import { CLEAN_MINUTES } from "../10-catalog/apps";
 import { PROFILES, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
 import { activeServices, type Customer, type Profile, type Service } from "../30-customers/customers";
 import type { GameState } from "../50-state";
@@ -8,7 +9,8 @@ import { serviceOnline } from "./status";
 export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse" | "appeal" | "notice" | "legal" | "refund" | "order";
 // open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
 export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
-export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund" | "accept" | "revert";
+export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund" | "accept" | "revert"
+  | "offerOnce" | "offerManaged" | "free" | "clean";
 // by names the employee who answered; the player otherwise. key and params give the email as sent (replies.ts); older replies show the template.
 export interface Reply { hour: number; template: string; right: boolean; by?: string; key?: string; params?: Record<string, string | number> }
 // doneAt is in game minutes; the reply or action takes effect on the first tick at or after it.
@@ -20,7 +22,7 @@ export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
   outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | "forwarded" | "takenDown" | "rejected" | "ignored" | "withdrawn" | "complied" | "objected"
-    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "reverted" | null;
+    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "reverted" | "cleaned" | "updated" | "updateSold" | "managedSold" | null;
   work: Work | null; notice?: Notice;
   // The support agent (an employee id) who takes the ticket before anyone else.
   assignee: string | null;
@@ -55,6 +57,12 @@ export const ACTIONS: Record<TicketKind, TicketAction[]> = {
   outage: ["credit"], howTo: [], billing: ["credit", "revert"], upgrade: [], cancellation: ["retain", "cancel"], abuse: [], appeal: ["unsuspend", "keep"],
   notice: ["forward", "takedown", "reject"], legal: ["comply", "object"], refund: ["refund", "credit", "reject"], order: ["accept", "reject"],
 };
+// Actions only tickets of one topic offer: the customer asks for help with an outdated site, or a defaced site waits for clean-up.
+export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": ["clean"] };
+export const ACTION_MINUTES: Partial<Record<TicketAction, number>> = { clean: CLEAN_MINUTES };
+export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])];
+// Tickets with their own actions have no reply templates.
+export const templatesOf = (t: Pick<Ticket, "kind" | "topic">): string[] => (`${t.kind}.${t.topic}` in TOPIC_ACTIONS ? [] : TEMPLATES[t.kind]);
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
 const RIGHT: Record<string, string> = {

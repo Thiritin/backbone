@@ -16,6 +16,7 @@ import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
 import { newNetwork, type Network } from "./60-infra/network";
 import { newOps, type Ops } from "./60-infra/ops";
+import { newSites, type Sites } from "./60-infra/apps";
 import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
 import type { FairBooking } from "./80-business/fairs";
@@ -153,6 +154,8 @@ export interface GameState {
   lossReports: LossReport[];
   // PHP security advisories and the nodes patched, offline or compromised.
   security: Security;
+  // Customer sites defaced, their hacks and the customers written to (60-infra/apps.ts).
+  sites: Sites;
   // Domains registered or transferred for customers (30-customers/registry.ts).
   domains: Domain[];
   // The registrar partner under contract (30-customers/registrar.ts); null before the first contract.
@@ -213,6 +216,7 @@ export const newGame = (seed: number): GameState => ({
   network: newNetwork(),
   ops: newOps(),
   security: newSecurity(),
+  sites: newSites(),
   sales: newSales(),
   rates: {},
   domains: [],

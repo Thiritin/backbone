@@ -15,7 +15,7 @@ const BY_KEY: Record<string, Sound> = {
   ...Object.fromEntries([
     "event.componentFailed", "event.dataLoss", "event.ddos", "event.saturated", "event.failoverStuck", "event.backupFailed",
     "event.nodeFrozen", "event.cashNegative", "event.bankrupt", "event.loanMissed", "event.loanCalled", "event.techFailed",
-    "event.orderFailed", "event.stepFailed", "event.salesFailed", "event.seized", "event.quit", "event.vuln.hacked", ...ADVISORY_KEYS,
+    "event.orderFailed", "event.stepFailed", "event.salesFailed", "event.seized", "event.quit", "event.vuln.hacked", "event.siteHacked", "event.siteLeft", ...ADVISORY_KEYS,
   ].map((k) => [k, "warn"])),
 };
 

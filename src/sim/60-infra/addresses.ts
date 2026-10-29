@@ -275,6 +275,11 @@ function reputation(s: GameState, events: SimEvent[]): void {
   const hacked = s.security.hacked, shady = new Set(s.customers.filter((c) => c.shady && c.churnedAt === null).map((c) => c.id));
   for (const id of hacked) { const machine = mailMachine(s, id); if (machine) addSpam(s, machine, SPAM.hacked); }
   for (const v of s.services.filter((x) => x.endedAt === null && shady.has(x.customerId))) addSpam(s, v.id, SPAM.shady);
+  // A defaced customer site sends from its host's address.
+  for (const id of s.sites.defaced) {
+    const host = s.workloads.find((w) => w.serviceId === id)?.clusterId, machine = host ? mailMachine(s, host) : undefined;
+    if (machine) addSpam(s, machine, SPAM.shady);
+  }
   s.ips = {
     ...s.ips, addresses: s.ips.addresses.map((a) => {
       if (a.v === 6) return a;
