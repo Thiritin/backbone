@@ -8,6 +8,7 @@ import { ipmiIp, oobIp, privateIp } from "../60-infra/addresses";
 import { oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
+import { BOARD_HOST } from "./sponsorboard";
 import { consoleBookmarks, consoleCluster, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
 
@@ -24,10 +25,12 @@ export type Page =
   | { kind: "ipmi"; deviceId: string }
   | { kind: "kvm"; deviceId: string }
   | { kind: "video" }
+  | { kind: "sponsorboard" }
   | { kind: "notfound" };
 
 export interface Resolved { url: string; host: string; path: string; page: Page; load: Load }
 
+export const BOARD_TITLE = "Sponsor-Bored";
 export const VIDEO_URL = "youtub.example/watch?v=uptime";
 export const VIDEO_TITLE = "Never Gonna Give You Uptime";
 export const VIDEO_ARTIST = "Rick Astley-Packet";
@@ -37,6 +40,7 @@ export const VIDEO_REAL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 export const VENDORS = MANUFACTURERS.filter((m) => m.id !== "generic");
 export const vendorHost = (id: string): string => `${id}.example`;
 
+export const BOARD_URL = `${BOARD_HOST}/`;
 export const adminUrl = (s: GameState): string => `www.${companyDomain(s)}/admin`;
 export const companyUrl = (s: GameState): string => `www.${companyDomain(s)}/`;
 
@@ -44,6 +48,7 @@ export const companyUrl = (s: GameState): string => `www.${companyDomain(s)}/`;
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
   { title: s.company.name, url: companyUrl(s) },
   { title: "Admin", url: adminUrl(s) },
+  { title: BOARD_TITLE, url: BOARD_URL },
   ...consoleBookmarks(s),
 ];
 
@@ -107,6 +112,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   }
   const vendor = VENDORS.find((m) => host === vendorHost(m.id) || host === `www.${vendorHost(m.id)}`);
   if (vendor) return out({ kind: "vendor", maker: vendor.id });
+  if (host === BOARD_HOST || host === `www.${BOARD_HOST}`) return out({ kind: "sponsorboard" });
   if (host === "youtub.example" || host === "www.youtub.example") {
     return /[?&]v=uptime(&|$)/.test(path) ? out({ kind: "video" }) : out({ kind: "notfound" });
   }

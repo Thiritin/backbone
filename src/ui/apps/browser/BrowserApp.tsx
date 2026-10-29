@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Download, Plus, RotateCw, Star, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { adminUrl, companyUrl, defaultBookmarks, resolve, split, VIDEO_TITLE, VIDEO_URL, type Resolved } from "../../../sim/80-business/browser";
+import { adminUrl, BOARD_TITLE, companyUrl, defaultBookmarks, resolve, split, VIDEO_TITLE, VIDEO_URL, type Resolved } from "../../../sim/80-business/browser";
 import { customerSite } from "../../../sim/80-business/website";
 import { familyOf } from "../../../sim/60-infra/vulns";
 import { consoleTitle } from "../../../sim/80-business/consoles";
@@ -15,6 +15,7 @@ import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
 import { AdminPage } from "./sites/AdminPage";
 import { CompanySite } from "./sites/CompanySite";
+import { SponsorBoard } from "./sites/SponsorBoard";
 import { CannotReach, CustomerSite, HostPage, NotFound, VendorSite, VideoPage } from "./sites/Pages";
 import "./browser.css";
 
@@ -46,6 +47,7 @@ function titleOf(game: GameState, r: Resolved): string {
       return d ? kvmTitle(d) : r.host;
     }
     case "video": return VIDEO_TITLE;
+    case "sponsorboard": return BOARD_TITLE;
     default: return "Not found";
   }
 }
@@ -68,12 +70,13 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
   else if (p.kind === "vendor") body = <VendorSite maker={p.maker} go={go} />;
   else if (p.kind === "video") body = <VideoPage />;
+  else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "console") body = <ConsolePage game={game} hostname={p.hostname} host={r.host} cluster={game.clusters.find((x) => x.id === p.clusterId)} defaced={p.defaced} />;
   else if (p.kind === "ipmi") body = <IpmiPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "kvm") body = <KvmPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}

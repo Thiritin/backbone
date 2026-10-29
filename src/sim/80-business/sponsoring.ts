@@ -6,18 +6,17 @@ import { candidate, CANDIDATE_DAYS, marketSalary } from "../47-staff/staff";
 import { isFinal, type Ticket } from "../40-support/tickets";
 import { metrics } from "../metrics";
 import {
-  EVENTS, eventById, FAIL_AWARENESS, FAIL_REVIEWS, LEADS, MAX_DOWN_HOURS, OFFER_HOURS, RECOMMEND_CHANCE, RECOMMEND_SKILL, REQUEST_DAYS, REVIEW_CHANCE,
+  EVENTS, eventOf, FAIL_AWARENESS, FAIL_REVIEWS, HALF_ACCEPT, HALF_HOURS, LEADS, MAX_DOWN_HOURS, OFFER_HOURS, RECOMMEND_CHANCE, RECOMMEND_SKILL, patchSponsorship as patch, REQUEST_DAYS, REVIEW_CHANCE,
   type CommunityEvent, type SponsorReward, type Sponsorship,
 } from "./community";
 import { addAwareness, addReview } from "./marketing";
+import { boardTick } from "./sponsorboard";
+import { acceptSponsorship } from "../90-actions/community";
 import { listed } from "./website";
 import { lineOffered } from "../60-infra/cluster";
 
 const DAY = 24;
 const cents = (v: number) => Math.round(v * 100) / 100;
-const patch = (s: GameState, id: string, f: (x: Sponsorship) => Partial<Sponsorship>) => {
-  s.sponsorships = s.sponsorships.map((x) => (x.id === id ? { ...x, ...f(x) } : x));
-};
 const closeTicket = (s: GameState, id: string, outcome: Ticket["outcome"]) => {
   s.tickets = s.tickets.map((t) => (t.id === id && !isFinal(t) ? { ...t, status: "closed", outcome, updatedAt: s.hour, unread: false, work: null } : t));
 };
@@ -25,7 +24,8 @@ const closeTicket = (s: GameState, id: string, outcome: Ticket["outcome"]) => {
 // After Marketing basics, a request about every 4 to 8 weeks, drawn from the events open at the company's level that want a line the company sells.
 function request(s: GameState, events: SimEvent[]): void {
   if (!s.unlocks.includes("marketingBasics")) return;
-  const last = s.sponsorships.reduce((m, x) => Math.max(m, x.offeredAt), 0), r = hashRng(s.seed, s.sponsorships.length, 21);
+  const mine = s.sponsorships.filter((x) => !x.board);
+  const last = mine.reduce((m, x) => Math.max(m, x.offeredAt), 0), r = hashRng(s.seed, mine.length, 21);
   const [lo, hi] = REQUEST_DAYS;
   if (s.hour < last + (lo + Math.floor(rand(r) * (hi - lo + 1))) * DAY) return;
   const level = metrics(s).level.level, pool = EVENTS.filter((e) => e.level <= level && lineOffered(s, e.product) && listed(s, e.product));
@@ -51,6 +51,11 @@ function settle(s: GameState, sp: Sponsorship, ev: CommunityEvent, events: SimEv
     s.marketing.awareness = { ...s.marketing.awareness, ...Object.fromEntries(ev.audience.map((p) => [p, s.marketing.awareness[p] * FAIL_AWARENESS])) };
     patch(s, sp.id, () => ({ reward: null }));
     events.push({ app: "Marketing", key: "event.sponsorFailed", params: { event: ev.name, hours: Math.ceil(worst) } });
+    return;
+  }
+  if (sp.board) {
+    patch(s, sp.id, () => ({ reward: { knowHow: 0, awareness: 0, stars: null, recommendation: false, leads: 0 } }));
+    events.push({ app: "Marketing", key: "event.boardDone", params: { event: ev.name } });
     return;
   }
   const r = hashRng(s.seed, Number(sp.id.slice(3)), 22);
@@ -89,24 +94,42 @@ function running(s: GameState, events: SimEvent[]): void {
     const alive = s.services.some((v) => sp.serviceIds.includes(v.id) && v.endedAt === null);
     if (s.hour < sp.endsAt && alive) continue;
     s.services = s.services.map((v) => (sp.serviceIds.includes(v.id) && v.endedAt === null ? { ...v, endedAt: s.hour } : v));
+    // A half-price customer leaves with the term.
+    s.customers = s.customers.map((c) => (c.id === sp.customerId && c.churnedAt === null ? { ...c, churnedAt: s.hour } : c));
     s.tickets = s.tickets.map((t) => (t.customerId === sp.customerId && !isFinal(t) ? { ...t, status: "closed", updatedAt: s.hour, unread: false, work: null } : t));
     patch(s, sp.id, () => ({ status: "done", endedAt: s.hour }));
-    settle(s, { ...sp, down }, eventById(sp.event)!, events);
+    settle(s, { ...sp, down }, eventOf(sp), events);
   }
 }
 
 // An unanswered request lapses after two weeks without penalty.
 function lapse(s: GameState): void {
-  for (const sp of s.sponsorships.filter((x) => x.status === "offered" && s.hour - x.offeredAt >= OFFER_HOURS)) {
+  for (const sp of s.sponsorships.filter((x) => x.status === "offered" && x.halfAt === undefined && s.hour - x.offeredAt >= OFFER_HOURS)) {
     closeTicket(s, sp.ticketId, "ignored");
     patch(s, sp.id, () => ({ status: "declined" }));
+  }
+}
+
+// A day after a 50% off answer the community takes it or goes with another sponsor; no room counts as going elsewhere.
+function decide(s: GameState, events: SimEvent[]): void {
+  for (const sp of s.sponsorships.filter((x) => x.status === "offered" && x.halfAt !== undefined && s.hour >= x.halfAt + HALF_HOURS)) {
+    const name = eventOf(sp).name;
+    if (rand(hashRng(s.seed, Number(sp.id.slice(3)), 25)) < HALF_ACCEPT && acceptSponsorship(s, sp.ticketId).ok) {
+      events.push({ app: "Marketing", key: "event.halfAccepted", params: { event: name } });
+      continue;
+    }
+    closeTicket(s, sp.ticketId, "ignored");
+    patch(s, sp.id, () => ({ status: "declined" }));
+    events.push({ app: "Marketing", key: "event.halfDeclined", params: { event: name } });
   }
 }
 
 // Hourly, before billing: requests, downtime counting, rewards.
 export function communityTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
+  decide(s, events);
   lapse(s);
+  boardTick(s, events);
   running(s, events);
   request(s, events);
   return events;

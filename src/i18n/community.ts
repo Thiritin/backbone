@@ -6,9 +6,13 @@ const ITEM: Record<string, [string, string]> = {
 const what = (p: Params) => {
   const [one, many] = ITEM[String(p.product)];
   const size = p.product === "storage" || p.product === "webHosting" ? `${p.diskGb} GB of disk` : `${p.vcpu} vCPU and ${p.ramGb} GB of RAM`;
-  return `${p.count} ${Number(p.count) === 1 ? one : many} with ${size} each`;
+  return `${p.count} ${Number(p.count) === 1 ? one : many} with ${size}${Number(p.count) === 1 ? "" : " each"}`;
 };
 const span = (p: Params) => ({ 3: "the weekend", 7: "a week", 90: "three months", 365: "a year" })[Number(p.days) as 3] ?? `${p.days} days`;
+const PEOPLE: Record<string, string> = { gamer: "gamers", private: "private users", hobbyDev: "developers" };
+const term = (p: Params) => (Number(p.months) === 1 ? "a month" : `${p.months} months`);
+const ask = (p: Params) => `${what(p)} for ${term(p)}, ${Number(p.free) ? "free of charge" : "at half the usual price"}`;
+const reach = (p: Params) => `${p.audience} ${PEOPLE[String(p.profile)]}`;
 const plural = (n: unknown, one: string, many: string) => (Number(n) === 1 ? one : many);
 
 // Sponsoring requests: the emails, the events and the outcomes (gdd.md, Marketing and reviews).
@@ -53,6 +57,30 @@ export const COMMUNITY_EN: Record<string, (p: Params) => string> = {
     ].filter(Boolean);
     return `The servers for ${p.event} stayed up. You gained ${gains.length ? gains.join(", ") : "a thank you"}.`;
   },
+  "ticket.sponsor.board.clan.subject": (p) => `${p.event} applies`,
+  "ticket.sponsor.board.clan.text": (p) => `${p.event} here. Our clan has ${reach(p)} who have never agreed on anything except lag. We saw your offer on Sponsor-Bored and would like ${ask(p)}. Your banner goes on the front page of our site.`,
+  "ticket.sponsor.board.lanParty.subject": (p) => `${p.event} applies`,
+  "ticket.sponsor.board.lanParty.text": (p) => `We run ${p.event} in a rented gymnasium for ${reach(p)} and a dangerous amount of cables. We would like ${ask(p)}. We will mention you on stage between the pizza deliveries.`,
+  "ticket.sponsor.board.fanSite.subject": (p) => `${p.event} applies`,
+  "ticket.sponsor.board.fanSite.text": (p) => `${p.event} is read by ${reach(p)} every month, mostly at night. We would like ${ask(p)}. Your banner sits at the top of every page, right above the arguments.`,
+  "ticket.sponsor.board.student.subject": (p) => `${p.event} applies`,
+  "ticket.sponsor.board.student.text": (p) => `We are a student project with ${reach(p)} in the course, and our professor says the demo must run somewhere real. We would like ${ask(p)}. Your name goes into every forum signature of the team.`,
+  "ticket.sponsor.board.mirror.subject": (p) => `${p.event} applies`,
+  "ticket.sponsor.board.mirror.text": (p) => `We mirror open source software for ${reach(p)} who would rather compile it themselves. We would like ${ask(p)}. Every maintainer signs their forum posts with a thank you to you.`,
+  "event.boardApplication.title": () => "Sponsor application",
+  "event.boardApplication.text": (p) => `${p.event} applied for a sponsorship.`,
+  "event.halfAccepted.title": (p) => `${p.event} took your offer`,
+  "event.halfAccepted.text": (p) => `${p.event} accepted your 50% off offer, and the services are running.`,
+  "event.halfDeclined.title": (p) => `${p.event} chose another sponsor`,
+  "event.halfDeclined.text": (p) => `${p.event} turned down your 50% off offer.`,
+  "event.boardDropped.title": (p) => `${p.event} dropped your banner`,
+  "event.boardDropped.text": (p) => `${p.event} took your banner down, so the sponsorship no longer adds awareness or leads.`,
+  "event.boardDone.title": (p) => `${p.event} is over`,
+  "event.boardDone.text": (p) => `The sponsorship of ${p.event} has ended.`,
+  "error.badOffer": () => "This offer cannot be posted.",
+  "error.offersOpen": () => "Three offers are already open.",
+  "error.unknownOffer": () => "This offer is no longer open.",
+  "error.offerFull": () => "All slots of this offer are taken.",
   "event.sponsorFailed.title": (p) => `${p.event} went wrong`,
   "event.sponsorFailed.text": (p) => `The servers for ${p.event} were down for ${p.hours} ${plural(p.hours, "hour", "hours")}. Two bad reviews were posted and your awareness dropped.`,
 };

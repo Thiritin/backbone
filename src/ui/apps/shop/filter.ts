@@ -8,11 +8,11 @@ const LINE_NAME: Record<string, string> = {
   storage: "Storage", backup: "Backup", archive: "Archive", gpu: "GPU", arm: "ARM",
 };
 export const classOf = (m: DeviceModel) =>
-  m.kind === "part" ? "Parts" : m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "gateway" ? "Routers" : m.kind === "ups" || m.kind === "pdu" ? "Power" : m.kind === "kvm" || m.kind === "console" || m.kind === "oob" ? "Remote access" : "Patch panels";
+  m.kind === "part" ? "Parts" : m.kind === "chassis" ? "Multi-node" : m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "gateway" ? "Routers" : m.kind === "ups" || m.kind === "pdu" ? "Power" : m.kind === "kvm" || m.kind === "console" || m.kind === "oob" ? "Remote access" : "Patch panels";
 
 // Sidebar classes in order, each with the classes it groups.
 export const CLASS_TREE: [string, string[]][] = [
-  ["Servers", [...new Set(Object.values(LINE_NAME))]], ["Switches", ["Layer 2", "Layer 3"]],
+  ["Servers", [...new Set(Object.values(LINE_NAME)), "Multi-node"]], ["Switches", ["Layer 2", "Layer 3"]],
   ["Routers", []], ["Security", []], ["Patch panels", []], ["Remote access", []], ["Power", []], ["Parts", []],
 ];
 export const inClass = (sel: string | null, cls: string) => !sel || sel === cls || !!CLASS_TREE.find(([p]) => p === sel)?.[1].includes(cls);

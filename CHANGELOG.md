@@ -5,6 +5,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-29
 
 - Move servers on a rack takes several servers to a datacenter in one go: drive them yourself for the fare and rack them on arrival with no shipping or remote hands bill, or have a friend take them from home.
+- When you are at the datacenter, the server's power and plug buttons now work at once instead of calling remote hands, and from afar you can send a friend to press them.
+- The Browser has a new site, Sponsor-Bored, bookmarked from the start, where you post an offer for a free or half-price server, and clans, LAN parties, fan sites, student projects and mirrors apply by email; a running sponsorship adds awareness and leads every month, but some of the applicants misuse the server or drop your banner.
+- An open offer on Sponsor-Bored can be withdrawn, which closes its waiting applications and keeps running sponsorships going.
+- Sponsor-Bored lists the sponsoring requests of community events with their audience, needs and deadline, and you can answer one with a free offer or with 50% off, which the community takes or turns down a day later.
+- Rack positions at Hetzler and the smaller budget datacenters can take a flat-rate power contract of 2 × 10 A or 2 × 16 A for a fixed monthly price, which sets the rack's breaker limit.
+- From 2008 SuperMacro and Dwell sell the Twin 2U, a chassis with four server nodes that share two power supplies and a fan wall, so a failure of the shared parts takes all four nodes down, and used Twin lots show up on the used market.
 - Customers move between any two datacenters over the internet, and Move to on a server ships it with its customers to another location, with new addresses for the services and a maintenance window announced to the customers.
 - The Shop now switches between New and Used at the top, lists only real manufacturers including the CPU and GPU makers, and groups server lines and switches under expandable classes with Software as its own class.
 - A customer who wants to cancel can be offered 50% off the next month, a free month, 20% off for 3, 6 or 12 months, a free upgrade, a move to a better server or an apology with a fix promise, each shown as a card with its cost and how likely it is to work, and customers at any happiness can be kept by a strong enough offer.

@@ -3,7 +3,7 @@ import { wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort
 import { cpuModel, type Vendor } from "../10-catalog/cpus";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
-import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
 import type { Component, Device, End, GameState, Location, SpaceKind } from "../50-state";
 
@@ -248,12 +248,13 @@ export function rackPower(s: GameState, rackId: string): { watts: number; limitW
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
   if (!rack || !loc) return { watts: 0, limitWatts: 0, tripped: false };
   const busy = busyDevices(s);
-  const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on && pluggedIn(d)).reduce((sum, d) => sum + drawWatts(d, busy), 0)
+  const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on && pluggedIn(d) && !chassisOut(s, d)).reduce((sum, d) => sum + drawWatts(d, busy), 0)
     + s.workloads.reduce((sum, w) => sum + (w.rackId === rackId ? w.watts : 0), 0) : 0;
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.
   const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : circuitKw(loc);
-  const limitWatts = Math.round((1000 * kw) / share) + Math.round(1000 * rack.extraKw);
+  // A flat-rate contract's kW replaces the position's limit.
+  const limitWatts = rack.flatKw ? Math.round(1000 * rack.flatKw) : Math.round((1000 * kw) / share) + Math.round(1000 * rack.extraKw);
   return { watts, limitWatts, tripped: watts > limitWatts };
 }
 
@@ -312,6 +313,15 @@ export function hotKind(d: Device, kind: Component["kind"], except?: string): bo
   return rule === "yes";
 }
 
+// A node of a multi-node chassis is out when the chassis is off, has no working power supply or a fan of its shared wall failed.
+export function chassisOut(s: GameState, d: Device): boolean {
+  if (!d.chassisId) return false;
+  const c = s.devices.find((x) => x.id === d.chassisId);
+  return !c || !c.on || !pluggedIn(c) || c.components.some((x) => x.kind === "fan" && x.failedAt !== null);
+}
+// The nodes in a chassis, in bay order.
+export const nodesOf = (s: GameState, chassisId: string): Device[] => s.devices.filter((d) => d.chassisId === chassisId);
+
 // A failure takes the device down: no working power supply, a failed RAM stick, board, CPU or network card, or a lost array.
 function failedDown(d: Device): boolean {
   const failed = d.components.filter((c) => c.failedAt !== null);
@@ -327,7 +337,7 @@ export function deviceHealth(s: GameState, deviceId: string): {
   const d = s.devices.find((x) => x.id === deviceId)!;
   const failed = d.components.filter((c) => c.failedAt !== null);
   const worn = d.components.filter((c) => c.failedAt === null && s.hour - c.installedAt >= COMPONENTS[c.kind].life * HOURS_PER_YEAR);
-  const state = !d.on ? "off" : d.rackId && !pluggedIn(d) && !failedDown(d) ? "nopower" : booting(s, d) ? (d.setup ? "setup" : "booting") : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.hung ? "hung" : d.stuck ? "stuck" : d.locked ? "locked" : d.rebuild ? "rebuilding"
+  const state = !d.on ? "off" : chassisOut(s, d) ? "down" : d.rackId && !pluggedIn(d) && !failedDown(d) ? "nopower" : booting(s, d) ? (d.setup ? "setup" : "booting") : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.hung ? "hung" : d.stuck ? "stuck" : d.locked ? "locked" : d.rebuild ? "rebuilding"
     : failed.some((c) => c.kind === "fan") ? "hot" : failed.length ? "degraded" : "ok";
   return { state, failed, worn };
 }
@@ -349,6 +359,7 @@ export function powered(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   const loc = d && locationOf(s, d);
   if (!d || !loc || loc.readyAt > s.hour || (s.ops.dark[loc.id] ?? 0) > s.hour) return false;
+  if (d.chassisId) return !chassisOut(s, d) && powered(s, d.chassisId);
   if (!d.rackId) return true;
   const rack = s.racks.find((r) => r.id === d.rackId)!;
   return rack.arriveAt === null && pluggedIn(d) && !rackPower(s, rack.id).tripped;
@@ -361,12 +372,12 @@ export function freePositions(s: GameState, locationId: string): number[] {
   return Array.from({ length: loc.positions }, (_, i) => i + 1).filter((p) => !taken.has(p));
 }
 
-const KIND_ORDER: DeviceKind[] = ["server", "switch", "firewall", "patch", "ups", "pdu", "kvm", "console", "oob", "gateway", "part"];
+const KIND_ORDER: DeviceKind[] = ["server", "chassis", "switch", "firewall", "patch", "ups", "pdu", "kvm", "console", "oob", "gateway", "part"];
 
 // A zone's stored devices grouped by model and brand.
 export function storageStacks(s: GameState, locationId: string): { model: string; brand: string; ids: string[] }[] {
   const stacks = new Map<string, { model: string; brand: string; ids: string[] }>();
-  for (const d of s.devices.filter((x) => x.store === locationId)) {
+  for (const d of s.devices.filter((x) => x.store === locationId && !x.chassisId)) {
     const key = `${d.model}|${d.brand}`;
     if (!stacks.has(key)) stacks.set(key, { model: d.model, brand: d.brand, ids: [] });
     stacks.get(key)!.ids.push(d.id);
@@ -421,6 +432,12 @@ export function locationRent(s: GameState, loc: Location): number {
   const dc = datacenterById(loc.dc);
   const extra = s.racks.filter((r) => r.locationId === loc.id).reduce((sum, r) => sum + (r.extraKw / EXTRA_STEP_KW) * extraStepPrice(dc), 0);
   return spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc)) + extra;
+}
+
+// How a rack in this location can bill power: flat-rate contracts are offered on rack positions only.
+export function flatOffer(s: GameState, locationId: string): Datacenter["power"] {
+  const loc = s.locations.find((l) => l.id === locationId);
+  return loc?.dc && loc.space === "positions" ? datacenterById(loc.dc).power : "metered";
 }
 
 // Floor space in eighths of a position, so a 1/8 share is 1 and a position is 8.

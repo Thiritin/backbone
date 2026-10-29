@@ -65,7 +65,7 @@ describe("router catalog", () => {
 
   it("keeps every kind on sale in every year from 2005 to 2035 and the newest model of each line on sale", () => {
     const kinds = [...new Set(MODELS.filter((m) => m.price > 0 && m.kind !== "part").map((m) => m.kind))] as DeviceKind[];
-    for (const kind of kinds) for (let year = 2005; year <= 2035; year++) expect(shopModels(year).some((m) => m.kind === kind), `${kind} ${year}`).toBe(true);
+    for (const kind of kinds) for (let year = kind === "chassis" ? 2008 : 2005; year <= 2035; year++) expect(shopModels(year).some((m) => m.kind === kind), `${kind} ${year}`).toBe(true);
     for (const id of ["fb-5690", "isr-8300", "ccr2216", "mx304", "edge-xxl", "sw-32e", "fw-400g", "ups-10k", "pdu-24"]) expect(shopModels(2035).map((m) => m.id)).toContain(id);
     expect(modelById("edge-xxl")).toMatchObject({ from: 2027, price: 150000, throughputGbit: 1600 });
     expect(modelById("sw-32e")).toMatchObject({ from: 2027, price: 60000 });

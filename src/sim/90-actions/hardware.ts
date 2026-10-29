@@ -5,9 +5,9 @@ import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
-import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
+import { arrayLost, connectError, drivesOf, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { atFront, BMC_RESET_HOURS, bootUp, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
@@ -26,7 +26,7 @@ export type ActionResult = { ok: true; id?: string } | { ok: false; error: strin
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const newId = (s: GameState, prefix: string) => `${prefix}${s.nextId++}`;
-const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", pdu: "pdu", part: "part", kvm: "kvm", console: "con", oob: "oob" } as const;
+const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", pdu: "pdu", part: "part", kvm: "kvm", console: "con", oob: "oob", chassis: "twin" } as const;
 const roleOf = (modelId: string) => ROLE[modelById(modelId).kind];
 const cents = (v: number) => Math.round(v * 100) / 100;
 
@@ -45,6 +45,9 @@ const book = (s: GameState, category: string, key: string, params: Record<string
 const unplug = (s: GameState, deviceIds: Set<string>, keep = (_: string) => false) => {
   s.cables = s.cables.filter((c) => !((deviceIds.has(c.a.device) && !keep(c.b.device)) || (deviceIds.has(c.b.device) && !keep(c.a.device))));
 };
+
+// A rack at a site that only bills flat starts on the smaller contract.
+const flatDefault = (s: GameState, locationId: string): number => (flatOffer(s, locationId) === "flat" ? FLAT_CONTRACTS[0].kw : 0);
 
 // For a share, size is n for 1/n of a rack; the location then has one position, taken by the provider's rack.
 export function addLocation(s: GameState, dcId: string, space: "share" | "positions" | "cage" | "suite", size: number): ActionResult {
@@ -65,7 +68,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "positi
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
   if (shareRack) {
     const rackName = nextName(`${prefix(s, loc.id)}-rack`, s.racks.map((r) => r.name));
-    s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null });
+    s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null });
   }
   return { ok: true, id: loc.id };
 }
@@ -119,7 +122,7 @@ export function buyRack(s: GameState, locationId: string, model: RackModel, posi
   if (error) return fail(error);
   if (s.cash < spec.price) return fail("error.noCash");
   const name = nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
-  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null };
+  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null };
   s.racks.push(rack);
   book(s, "hardware", "ledger.hardware", { model: `${spec.units}U rack`, device: name }, -spec.price);
   return { ok: true, id: rack.id };
@@ -144,6 +147,8 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
   Object.assign(rack, { locationId: toLocationId, position, arriveAt: s.hour + move.hours });
   // Feeds belong to rented positions, so the basement has none.
   if (!to.dc) Object.assign(rack, { feedB: false, highDensity: false });
+  // The power contract belongs to the position too; the new one starts on its site's default.
+  if (to.id !== from.id) Object.assign(rack, { flatKw: flatDefault(s, to.id), flatKwAt: null });
   book(s, "moving", "ledger.move", { rack: rack.name, location: to.name }, -move.price);
   return { ok: true, id: rack.id };
 }
@@ -217,9 +222,17 @@ export function stock(s: GameState, line: CartLine, lease: string | null, store:
   return Array.from({ length: qty }, () => {
     const name = nextName(`${prefix(s, store)}-${roleOf(modelId)}`, s.devices.map((d) => d.name));
     const id = newId(s, "dev");
-    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "none", groups: [], price, boughtAt: s.hour, lease, ...(wait ? { store: null, transitTo: store, arriveAt: s.hour + wait } : { store, transitTo: null, arriveAt: null }),
+    const at = wait ? { store: null, transitTo: store, arriveAt: s.hour + wait } : { store, transitTo: null, arriveAt: null };
+    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "none", groups: [], price, boughtAt: s.hour, lease, ...at,
       ...deviceDefaults(modelId, s.hour, lineParts(line)), ...(line.part ? { part: line.part } : {}),
       ...(modelById(modelId).kind === "server" ? { hostname: nodeName(s) } : {}) });
+    // The chassis carries the price; its nodes come with it.
+    const nodes = modelById(modelId).nodes;
+    for (let k = 0; nodes && k < nodes.count; k++) {
+      const node = nextName(`${prefix(s, store)}-srv`, s.devices.map((d) => d.name));
+      s.devices.push({ id: newId(s, "dev"), model: nodes.model, brand, rackId: null, slot: 0, panel: null, name: node, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease, ...at,
+        ...deviceDefaults(nodes.model, s.hour), chassisId: id, hostname: nodeName(s) });
+    }
     return id;
   });
 }
@@ -280,7 +293,14 @@ export function buyOutLease(s: GameState, leaseId: string): ActionResult {
   return { ok: true };
 }
 
+// A chassis's nodes stand, travel and wait where the chassis does.
+function carry(s: GameState, chassis: Device) {
+  for (const n of nodesOf(s, chassis.id)) Object.assign(n, { rackId: chassis.rackId, slot: chassis.slot, store: chassis.store, transitTo: chassis.transitTo, arriveAt: chassis.arriveAt });
+}
+const withNodes = (s: GameState, d: Device): Device[] => [d, ...nodesOf(s, d.id)];
+
 function mountError(s: GameState, d: Device, rackId: string, slot: number): string | null {
+  if (d.chassisId) return "error.inChassis";
   if (d.transitTo) return "error.inTransit";
   if (!d.store) return "error.alreadyMounted";
   if (modelById(d.model).kind === "part") return "error.notMountable";
@@ -302,6 +322,8 @@ function mount(s: GameState, d: Device, rackId: string, slot: number) {
   if (!d.name.startsWith(`${base}-`)) d.name = nextName(`${base}-${roleOf(d.model)}`, s.devices.map((x) => x.name));
   Object.assign(d, { rackId, slot, store: null });
   for (const c of d.components) if (c.kind === "psu") c.plugged = false;
+  carry(s, d);
+  for (const n of nodesOf(s, d.id)) if (!n.name.startsWith(`${base}-`)) n.name = nextName(`${base}-${roleOf(n.model)}`, s.devices.map((x) => x.name));
 }
 
 export function mountDevice(s: GameState, deviceId: string, rackId: string, slot: number): ActionResult {
@@ -319,6 +341,7 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   if (!rack) return fail("error.unknownRack");
   if (rack.moving) return fail("error.rackMoving");
   if (modelById(modelId).kind === "part") return fail("error.notMountable");
+  if (modelById(modelId).chassis) return fail("error.inChassis");
   if (isOfficeRouter(modelById(modelId))) return fail("error.panelRouter");
   if (modelById(modelId).kind === "pdu" && (count > 1 || hasPdu(s, rackId))) return fail("error.pduInstalled");
   const same = (d: Device) => d.model === modelId && d.brand === brand;
@@ -338,6 +361,7 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
 export function moveInRack(s: GameState, deviceId: string, slot: number): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
+  if (d.chassisId) return fail("error.inChassis");
   if (!d.rackId) return fail("error.notMounted");
   const spot = spotOf(s, d.rackId)!, h = modelById(d.model).height;
   if (spot.moving) return fail("error.rackMoving");
@@ -345,18 +369,21 @@ export function moveInRack(s: GameState, deviceId: string, slot: number): Action
   if (!Number.isInteger(slot) || slot < 1 || slot + h - 1 > spot.units) return fail("error.outOfBounds");
   if (!freeSlots({ ...s, devices: s.devices.filter((x) => x.id !== d.id) }, d.rackId, h).includes(slot)) return fail("error.slotTaken");
   d.slot = slot;
+  carry(s, d);
   return { ok: true };
 }
 
 export function unmountDevice(s: GameState, deviceId: string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
+  if (d.chassisId) return fail("error.inChassis");
   if (!d.rackId) return fail("error.notMounted");
   const rack = spotOf(s, d.rackId)!;
   if (rack.moving) return fail("error.rackMoving");
-  if (serverTaken(s, d.id)) return fail("error.serverInUse");
-  unplug(s, new Set([d.id]));
+  if (withNodes(s, d).some((x) => serverTaken(s, x.id))) return fail("error.serverInUse");
+  unplug(s, new Set(withNodes(s, d).map((x) => x.id)));
   Object.assign(d, { rackId: null, slot: 0, store: rack.locationId });
+  carry(s, d);
   return { ok: true };
 }
 
@@ -365,6 +392,7 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   const units = [...new Set(deviceIds)].map((id) => s.devices.find((d) => d.id === id));
   if (!units.length) return fail("error.emptyShipment");
   if (units.some((d) => !d)) return fail("error.unknownDevice");
+  if (units.some((d) => d!.chassisId)) return fail("error.inChassis");
   if (units.some((d) => !d!.store)) return fail("error.notInStorage");
   const from = units[0]!.store!;
   if (units.some((d) => d!.store !== from)) return fail("error.mixedZones");
@@ -373,7 +401,7 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   if (to.id === from) return fail("error.sameZone");
   const trip = travelCost(s, from, to.id);
   if (s.cash < trip.price) return fail("error.noCash");
-  for (const d of units) Object.assign(d!, { store: null, transitTo: to.id, arriveAt: s.hour + trip.hours });
+  for (const d of units) { Object.assign(d!, { store: null, transitTo: to.id, arriveAt: s.hour + trip.hours }); carry(s, d!); }
   book(s, "moving", "ledger.ship", { count: units.length, location: to.name }, -trip.price);
   return { ok: true, id: units[0]!.id };
 }
@@ -476,11 +504,13 @@ export function sellDevice(s: GameState, deviceId: string): ActionResult {
   if (!d) return fail("error.unknownDevice");
   if (modelById(d.model).kind === "gateway" && !modelById(d.model).price) return fail("error.cannotSell");
   if (d.lease) return fail("error.leased");
+  if (d.chassisId) return fail("error.inChassis");
   if (d.transitTo) return fail("error.inTransit");
-  if (serverTaken(s, d.id)) return fail("error.serverInUse");
-  unplug(s, new Set([d.id]));
-  s.devices = s.devices.filter((x) => x.id !== deviceId);
-  s.files = Object.fromEntries(Object.entries(s.files).filter(([id]) => id !== deviceId));
+  const gone = new Set(withNodes(s, d).map((x) => x.id));
+  if ([...gone].some((id) => serverTaken(s, id))) return fail("error.serverInUse");
+  unplug(s, gone);
+  s.devices = s.devices.filter((x) => !gone.has(x.id));
+  s.files = Object.fromEntries(Object.entries(s.files).filter(([id]) => !gone.has(id)));
   book(s, "sales", "ledger.sale", { device: d.name }, deviceValue(s, d));
   return { ok: true };
 }
@@ -610,15 +640,9 @@ function hardRestart(s: GameState, deviceId: string, key: "ipmi.log.reset" | "ip
 export const reset = (s: GameState, deviceId: string, technician = false): ActionResult => hardRestart(s, deviceId, "ipmi.log.reset", technician);
 export const powerCycle = (s: GameState, deviceId: string, technician = false): ActionResult => hardRestart(s, deviceId, "ipmi.log.cycle", technician);
 
-// The remote hands of a datacenter, unless a technician is at the machine; null where the player works for free.
-function handsAt(s: GameState, d: Device, technician: boolean): { wait: number; perHour: number } | null {
-  const loc = locationOf(s, d), hands = loc?.dc && !technician ? datacenterById(loc.dc).remoteHands : null;
-  return hands ? { wait: hands.responseHours, perHour: hands.perHour } : null;
-}
-
-// Works the server's front panel or its power cords on site: at once in the basement, after the remote hands' response
-// time (billed for an hour) in a datacenter.
-export function atServer(s: GameState, deviceId: string, op: FrontOp, technician = false): ActionResult {
+// Works the server's front panel or its power cords through the hand work sheet: at once in the basement or with the
+// player on site, after the remote hands' response time (billed for an hour) or the friend's trip in a datacenter.
+export function atServer(s: GameState, deviceId: string, op: FrontOp, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId) return fail("error.notMounted");
@@ -628,11 +652,13 @@ export function atServer(s: GameState, deviceId: string, op: FrontOp, technician
   if (op === "power" && d.on && !working(s, deviceId)) return fail("error.unresponsive");
   if (op === "pull" && !cords.some(isPlugged)) return fail("error.unplugged");
   if (op === "plug" && cords.every(isPlugged)) return fail("error.plugged");
-  const hands = handsAt(s, d, technician);
-  if (!hands) { atFront(s, d, op); return { ok: true }; }
-  if (s.cash < hands.perHour) return fail("error.noCash");
-  book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: 1 }, -hands.perHour);
-  d.hands = { kind: op, doneAt: s.hour + hands.wait };
+  const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, 0);
+  if ("error" in job) return fail(job.error);
+  if (s.cash < job.cost) return fail("error.noCash");
+  // d.hands only finishes in the hourly power tick, so work without a wait applies now.
+  const wait = job.commit();
+  if (wait > 0) d.hands = { kind: op, doneAt: s.hour + wait };
+  else atFront(s, d, op);
   return { ok: true };
 }
 
@@ -788,6 +814,17 @@ export function setExtraPower(s: GameState, rackId: string, kw: number): ActionR
   const size = SHARE_RACKS.find((m) => m.id === rack.model)!.size;
   if (!Number.isInteger(kw / EXTRA_STEP_KW) || kw < 0 || kw > maxExtraKw(dc, size)) return fail("error.extraPowerRange");
   rack.extraKwAt = kw === rack.extraKw ? null : { kw, at: s.hour + 24 * EXTRA_POWER_LEAD_DAYS };
+  return { ok: true };
+}
+
+// A rack position's power contract: 0 for metered or one of the flat-rate contracts' kW, taking effect after the lead time.
+export function setFlatPower(s: GameState, rackId: string, kw: number): ActionResult {
+  const rack = s.racks.find((r) => r.id === rackId);
+  if (!rack) return fail("error.unknownRack");
+  const offer = flatOffer(s, rack.locationId);
+  if (offer === "metered") return fail("error.noFlatPower");
+  if (kw === 0 ? offer === "flat" : !FLAT_CONTRACTS.some((c) => c.kw === kw)) return fail("error.flatPowerRange");
+  rack.flatKwAt = kw === rack.flatKw ? null : { kw, at: s.hour + 24 * EXTRA_POWER_LEAD_DAYS };
   return { ok: true };
 }
 

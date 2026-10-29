@@ -4,7 +4,8 @@ import type { Device, GameState } from "../../../sim/50-state";
 import { kvmPower } from "../../../sim/60-infra/oob";
 import { pduOf } from "../../../sim/60-infra/pdu";
 import type { FrontOp } from "../../../sim/60-infra/power";
-import { isPlugged, psusOf, working } from "../../../sim/60-infra/status";
+import { isPlugged, locationOf, psusOf, working } from "../../../sim/60-infra/status";
+import { present } from "../../../sim/60-infra/handwork";
 import { powerCycle, powerOff, powerOn, reboot, reset, resetBmc, shutdown, type ActionResult } from "../../../sim/90-actions/hardware";
 import { continueBoot } from "../../../sim/90-actions/remote";
 
@@ -40,6 +41,13 @@ export const FRONT_BUSY: Record<FrontOp | "bmcreset" | "continue" | "recover", s
   continue: "Continuing boot", recover: "Recovering",
 };
 export interface FrontOption { op: FrontOp; label: string; disabled?: boolean }
+
+// The server sits in a datacenter the player is not at, so someone else has to press its buttons.
+export function handsAway(game: GameState, d: Device): boolean {
+  const loc = locationOf(game, d);
+  return !!loc?.dc && !present(game, loc.id);
+}
+export const handsLabel = (game: GameState, d: Device): string => handsAway(game, d) ? "Remote hands" : "At the server";
 
 // What a hand at the server can do: its front buttons and its power cords.
 export function frontOptions(game: GameState, d: Device): FrontOption[] {
