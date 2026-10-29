@@ -1,4 +1,4 @@
-import { AlarmClock, ArrowUpRight, BadgeCheck, Check, CircleCheck, CircleX, Handshake, Hourglass, Inbox, Layers, Mails, Send, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
+import { AlarmClock, BadgeCheck, Check, CircleCheck, CircleX, Handshake, Hourglass, Inbox, Layers, Mails, Send, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
 import { useState } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import { ACTIONS, canEscalate, isFinal, monthlyValue, TEMPLATES, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
@@ -10,7 +10,9 @@ import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
 import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
+import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useFocus, useStore } from "../../store";
+import { More } from "../More";
 import { CustomerLink } from "../customers/CustomersApp";
 import { Incidents } from "./Incidents";
 import { CustomCompose, InvoicePill, specLine } from "./CustomOrder";
@@ -32,6 +34,22 @@ const ACTION_LABEL: Record<TicketAction, string> = {
   accept: "Accept order",
 };
 const actionLabel = (tk: Ticket, a: TicketAction) => (tk.kind === "refund" && a === "reject" ? "Refuse" : ACTION_LABEL[a]);
+
+// Read, escalate and close for a ticket, and the customer or request behind it.
+function ticketMenu(game: GameState, tk: Ticket): MenuEntry[] {
+  const { act, openApp } = useStore.getState();
+  const locked = !!tk.work || isFinal(tk);
+  const request = tk.kind === "upgrade" ? game.sales.requests.find((r) => r.ticketId === tk.id) : undefined;
+  const customer = game.customers.find((c) => c.id === tk.customerId);
+  return [
+    tk.unread && { label: "Mark as read", run: () => act((s) => readTicket(s, tk.id)) },
+    canEscalate(tk.kind) && tk.status === "open" && { label: "Escalate", disabled: locked, run: () => act((s) => escalateTicket(s, tk.id)) },
+    !isFinal(tk) && { label: tk.kind === "order" ? "Decline" : tk.notice ? "Ignore" : "Close", disabled: locked, run: () => act((s) => closeTicket(s, tk.id)) },
+    null,
+    customer && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: customer.id }) },
+    request && { label: "Open request", run: () => openApp("Support", { kind: "request", id: request.id }) },
+  ];
+}
 
 const subjectOf = (s: GameState, tk: Ticket) => t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(s, tk));
 
@@ -154,7 +172,7 @@ function TicketRow({ tk, active, onOpen }: { tk: Ticket; active: boolean; onOpen
   const order = tk.kind === "order" ? orderOf(game, tk) : undefined;
   const K = kindOf(tk.kind);
   return (
-    <button role="listitem" className={`tk${active ? " active" : ""}${tk.unread ? " unread" : ""}`} onClick={() => onOpen(tk)}>
+    <button role="listitem" className={`tk${active ? " active" : ""}${tk.unread ? " unread" : ""}`} onClick={() => onOpen(tk)} onContextMenu={menuOn(() => ticketMenu(game, tk))}>
       <span className="who">{tk.unread && <i className="dot" aria-label="Unread" />}{tk.notice ? <Sender id={tk.notice.sender} /> : <span>{order ? requestName(order) : c?.name}</span>}</span>
       <Sla tk={tk} hour={game.hour} />
       <span className="subj">{order ? need(order) : subjectOf(game, tk)}</span>
@@ -190,7 +208,7 @@ function OrderThread({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   return (
     <div className={`sup-detail${missing.length && !isFinal(tk) ? " greyed" : ""}`}>
       <div className="d-head">
-        <div className="top"><h2>{planName(r)}</h2><span className="id num">#{tk.id.slice(3)}</span></div>
+        <div className="top"><h2>{planName(r)}</h2><span className="id num">#{tk.id.slice(3)}</span><More label={planName(r)} entries={() => ticketMenu(game, tk)} /></div>
         <div className="facts">
           <span className="type"><K.icon />{K.label}</span>
           <span>{PRODUCT[r.product]}</span>
@@ -259,13 +277,11 @@ function Thread({ tk }: { tk: Ticket }) {
   const left = tk.dueAt - game.hour;
   const services = game.services.filter((v) => v.customerId === tk.customerId && v.endedAt === null);
   const locked = !!tk.work || isFinal(tk);
-  const openApp = useStore((s) => s.openApp);
-  const request = tk.kind === "upgrade" ? game.sales.requests.find((r) => r.ticketId === tk.id) : undefined;
 
   return (
     <div className="sup-detail">
       <div className="d-head">
-        <div className="top"><h2>{t(`ticket.${tk.kind}.${tk.topic}.subject`, p)}</h2><span className="id num">#{tk.id.slice(3)}</span></div>
+        <div className="top"><h2>{t(`ticket.${tk.kind}.${tk.topic}.subject`, p)}</h2><span className="id num">#{tk.id.slice(3)}</span><More label={`ticket ${tk.id.slice(3)}`} entries={() => ticketMenu(game, tk)} /></div>
         <div className="facts">
           <span className="type"><K.icon />{K.label}</span>
           <span>Opened <span className="num">{stamp(tk.createdAt)}</span></span>
@@ -352,10 +368,6 @@ function Thread({ tk }: { tk: Ticket }) {
                 {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}
               </button>
             ))}
-            {request && <button className="btn" onClick={() => openApp("Support", { kind: "request", id: request.id })}><Handshake />Open request</button>}
-            {canEscalate(tk.kind) && tk.status === "open" && (
-              <button className="btn" disabled={locked} onClick={() => act((s) => escalateTicket(s, tk.id))}><ArrowUpRight />Escalate</button>
-            )}
             <span className="grow" />
             <button className="btn ghost" disabled={locked} onClick={() => act((s) => closeTicket(s, tk.id))}><X />{tk.notice ? "Ignore" : "Close"}</button>
             {tk.status === "waiting" && <button className="btn primary" disabled={locked} onClick={() => act((s) => resolveTicket(s, tk.id))}><CircleCheck />Resolve</button>}

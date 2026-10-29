@@ -5,11 +5,12 @@ import { activeServices } from "../../../sim/30-customers/customers";
 import { isFinal, serviceMonthly } from "../../../sim/40-support/tickets";
 import { invoiceTotal, isUnpaid } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
+import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useFocus, useStore } from "../../store";
 import { monthYear, moodClass } from "../support/labels";
 import "../support/support.css";
 import "../billing/billing.css";
-import { CustomerPage, Mood, StatusChip, type Row, type Status } from "./CustomerPage";
+import { CustomerPage, Mood, StatusChip, type Row, type Status, type Tab } from "./CustomerPage";
 import "./customers.css";
 
 const FILTERS: { id: Status | "current"; label: string }[] = [
@@ -69,6 +70,15 @@ export function CustomersApp() {
   const [withTickets, setWithTickets] = useState(false);
   const [sort, setSort] = useState<{ key: Key; dir: number }>({ key: "name", dir: 1 });
   const [sel, setSel] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("summary");
+  const show = (id: string, t: Tab = "summary") => { setTab(t); setSel(id); };
+  const menu = (id: string) => (): MenuEntry[] => [
+    { label: "Open", run: () => show(id) },
+    null,
+    { label: "Show services", run: () => show(id, "services") },
+    { label: "Show invoices", run: () => show(id, "invoices") },
+    { label: "Show tickets", run: () => show(id, "tickets") },
+  ];
   const all = useMemo(() => rows(game), [game]);
   useFocus("Customers", (f) => {
     const r = all.find((x) => x.c.id === f.id);
@@ -77,7 +87,7 @@ export function CustomersApp() {
     setBand("any");
     setWithTickets(false);
     setFilter(r.status === "churned" ? "churned" : "current");
-    setSel(f.id);
+    show(f.id);
   });
 
   const q = query.trim().toLowerCase();
@@ -91,7 +101,7 @@ export function CustomersApp() {
   const current = all.find((r) => r.c.id === sel);
   const sortBy = (key: Key) => setSort(sort.key === key ? { key, dir: -sort.dir } : { key, dir: 1 });
 
-  if (current) return <div className="cus"><CustomerPage key={current.c.id} r={current} onBack={() => setSel(null)} /></div>;
+  if (current) return <div className="cus"><CustomerPage key={current.c.id} r={current} tab={tab} onBack={() => setSel(null)} /></div>;
   return (
     <div className="cus">
       <div className="cus-main">
@@ -120,8 +130,8 @@ export function CustomersApp() {
             </thead>
             <tbody>
               {list.map((r) => (
-                <tr key={r.c.id} onClick={() => setSel(r.c.id)}>
-                  <td><button className="cus-name" onClick={() => setSel(r.c.id)}>{r.c.name}</button></td>
+                <tr key={r.c.id} onClick={() => show(r.c.id)} onContextMenu={menuOn(menu(r.c.id))}>
+                  <td><button className="cus-name" onClick={() => show(r.c.id)}>{r.c.name}</button></td>
                   <td><StatusChip s={r.status} /></td>
                   <td><Mood c={r.c} /></td>
                   <td className="r num">{r.services}</td>

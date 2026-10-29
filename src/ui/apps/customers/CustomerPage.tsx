@@ -9,7 +9,11 @@ import { isFinal, profileStats, serviceMonthly } from "../../../sim/40-support/t
 import { invoiceTotal, isUnpaid, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { zoneOf } from "../../../sim/60-infra/network";
+import { renewDomain } from "../../../sim/90-actions/orders";
 import { changePrice } from "../../../sim/90-actions/sales";
+import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { More } from "../More";
+import { workloadActions } from "../vms/VmApp";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
@@ -76,12 +80,14 @@ const InvoicePill = ({ i }: { i: Invoice }) => (
   </span>
 );
 
-type Tab = "summary" | "services" | "invoices" | "tickets" | "activity";
+export type Tab = "summary" | "services" | "invoices" | "tickets" | "activity";
 
-export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
+export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; onBack: () => void; tab?: Tab }) {
   const game = useStore((s) => s.game);
+  const act = useStore((s) => s.act);
   const openApp = useStore((s) => s.openApp);
-  const [tab, setTab] = useState<Tab>("summary");
+  const [tab, setTab] = useState<Tab>(first);
+  const [pricing, setPricing] = useState<string | null>(null);
   const { c } = r;
   const vms = game.installed.includes("Virtual machines");
   const services = game.services.filter((v) => v.customerId === c.id).sort((a, b) => Number(a.endedAt !== null) - Number(b.endedAt !== null) || b.startedAt - a.startedAt);
@@ -91,6 +97,22 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
   const subject = (tk: (typeof tickets)[number]) => t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(game, tk));
   const openInvoice = (id: string) => openApp("Billing", { kind: "invoice", id });
   const openTicket = (id: string) => openApp("Support", { kind: "ticket", id });
+  const serviceMenu = (v: Service) => (): MenuEntry[] => {
+    const w = v.endedAt === null ? game.workloads.find((x) => x.serviceId === v.id) : undefined;
+    const kind = w && game.clusters.find((x) => x.id === w.clusterId)?.kind;
+    return [
+      v.endedAt === null && v.period === "hour" && { label: "Change price", run: () => { setTab("services"); setPricing(v.id); } },
+      null,
+      ...(w ? workloadActions(game, w) : []),
+      null,
+      w && kind === "cloud" && vms && { label: "Open in Virtual machines", run: () => openApp("Virtual machines", { kind: "workload", id: w.id }) },
+      w && kind === "panel" && { label: "Open panel host", run: () => openApp("Products", { kind: "cluster", id: w.clusterId! }) },
+    ];
+  };
+  const domainMenu = (name: string) => (): MenuEntry[] => [
+    c.churnedAt === null && { label: "Renew", run: () => act((s) => renewDomain(s, name)) },
+    { label: "Open in Billing", run: () => openApp("Billing", { kind: "domain", id: name }) },
+  ];
   const tabs: [Tab, string, number?][] = [
     ["summary", "Summary"],
     ["services", "Services", services.filter((v) => v.endedAt === null).length],
@@ -183,7 +205,7 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
                 <table className="table cus-table">
                   <tbody>
                     {services.filter((v) => v.endedAt === null).map((v) => (
-                      <tr key={v.id} onClick={() => setTab("services")}>
+                      <tr key={v.id} onClick={() => setTab("services")} onContextMenu={menuOn(serviceMenu(v))}>
                         <td className="cus-subject"><span className="cus-strong">{v.label}</span></td>
                         <td className="cus-dim">{v.spec ? specLine(v.product, v.spec) : planOf(v.product, v.plan).name}</td>
                         <td className="r num">{price(v)}</td>
@@ -200,7 +222,7 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
                   <table className="table cus-table">
                     <tbody>
                       {domains.map((d) => (
-                        <tr key={d.name} onClick={() => openApp("Billing", { kind: "domain", id: d.name })}>
+                        <tr key={d.name} onClick={() => openApp("Billing", { kind: "domain", id: d.name })} onContextMenu={menuOn(domainMenu(d.name))}>
                           <td className="cus-subject"><span className="cus-strong">{d.name}</span></td>
                           <td className="cus-dim">{registryOf(d.name).name}</td>
                           <td className="r num">{formatDay(d.expiresAt)}</td>
@@ -230,8 +252,8 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
             {vms && <div className="fin-actions"><button className="btn" onClick={() => openApp("Virtual machines")}><Cpu />Open Virtual machines</button></div>}
             <div className="cus-services">
               {services.map((v) => (
-                <section key={v.id} className={`fin-card${v.endedAt !== null ? " cus-ended" : ""}`}>
-                  <h3 className="fin-card-h"><span className="cus-title">{v.label}</span>{serviceStatus(v, r)}</h3>
+                <section key={v.id} className={`fin-card${v.endedAt !== null ? " cus-ended" : ""}`} onContextMenu={menuOn(serviceMenu(v))}>
+                  <h3 className="fin-card-h"><span className="cus-title">{v.label}</span>{serviceStatus(v, r)}<More label={v.label} entries={serviceMenu(v)} /></h3>
                   <div className="fin-card-b">
                     <dl className="fin-rows">
                       <div><dt>Product</dt><dd>{PRODUCT[v.product]}</dd></div>
@@ -245,7 +267,7 @@ export function CustomerPage({ r, onBack }: { r: Row; onBack: () => void }) {
                       <div><dt>Started</dt><dd className="num">{formatDay(v.startedAt)}</dd></div>
                       {v.endedAt !== null && <div><dt>Ended</dt><dd className="num">{formatDay(v.endedAt)}</dd></div>}
                     </dl>
-                    {v.endedAt === null && v.period === "hour" && <ChangePrice v={v} profile={c.profile} />}
+                    {pricing === v.id && v.endedAt === null && <ChangePrice v={v} profile={c.profile} onClose={() => setPricing(null)} />}
                   </div>
                   <ActivityLog customerId={c.id} serviceId={v.id} />
                 </section>
@@ -309,18 +331,16 @@ function Timeline({ invoices, tickets, subject }: { invoices: Invoice[]; tickets
   );
 }
 
-function ChangePrice({ v, profile }: { v: Service; profile: Profile }) {
+function ChangePrice({ v, profile, onClose }: { v: Service; profile: Profile; onClose: () => void }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
-  const [open, setOpen] = useState(false);
   const [monthly, setMonthly] = useState(Math.round(serviceMonthly(v) * 100) / 100);
-  if (!open) return <div className="fin-actions"><button className="btn" onClick={() => setOpen(true)}>Change price</button></div>;
-  const save = () => { if (act((s) => changePrice(s, v.id, monthly)).ok) setOpen(false); };
+  const save = () => { if (act((s) => changePrice(s, v.id, monthly)).ok) onClose(); };
   return (
     <div className="cus-price">
       <PriceField value={monthly} reference={v.spec ? customReference(game, profile, v.product, v.spec, v.sla) : referenceFor(game, profile, v.product, v.plan ?? "", v.sla)} onChange={setMonthly} label="New monthly price" />
       <div className="fin-actions">
-        <button className="btn ghost" onClick={() => setOpen(false)}>Cancel</button>
+        <button className="btn ghost" onClick={onClose}>Cancel</button>
         <button className="btn primary" disabled={!(monthly > 0)} onClick={save}>Save price</button>
       </div>
     </div>
