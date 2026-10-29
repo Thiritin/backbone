@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- While you use free Notmail, only half of the businesses that would order by email write to you; private users, gamers and developers do not mind.
+- You buy your company domain in the Marketing app under Domain, which is now installed for free from the start; the rest of the app opens with the Marketing campaigns skill.
 - A new company starts with a free Notmail address that takes order emails without a domain, and moving to mail under your own domain is an optional upgrade.
 - The Email app has a Settings button that opens the email settings.
 - Getting started now begins with your first server, and the domain and email steps come later.

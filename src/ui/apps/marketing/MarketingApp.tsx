@@ -1,8 +1,14 @@
-import { Eye, HeartHandshake, Megaphone, Presentation, Star, Waypoints } from "lucide-react";
+import { Eye, Globe, HeartHandshake, Megaphone, Presentation, Star, Waypoints } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { euro } from "../../../sim/00-core/money";
+import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import type { Profile } from "../../../sim/30-customers/customers";
+import { REGISTRARS, registrarById } from "../../../sim/10-catalog/registrars";
+import { derivedDomain } from "../../../sim/30-customers/domains";
+import { wholesale } from "../../../sim/30-customers/registrar";
+import { registryOf } from "../../../sim/30-customers/registry";
+import { orderCompanyDomain } from "../../../sim/90-actions/registrar";
+import { isAvailable } from "../../../sim/10-catalog/research";
 import {
   BUDGETS, CAMPAIGNS, costPerLead, DISCOUNTS, leadsThisMonth, monthlyMarketingCost, OWNED, owns, PLATFORMS, PROFILE_IDS, reach, reviewScore,
   type CampaignChannel, type OwnedChannel, type PlatformId, type Review,
@@ -14,13 +20,13 @@ import { eventById, FAIL_AWARENESS, FAIL_REVIEWS, type Sponsorship } from "../..
 import { metrics } from "../../../sim/metrics";
 import { PRODUCT } from "../support/labels";
 import { t } from "../../../i18n/en";
-import { useStore } from "../../store";
+import { useFocus, useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
 import "../shop/shop.css";
 import "../billing/billing.css";
 import "./marketing.css";
 
-type Section = "channels" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
+type Section = "domain" | "channels" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
 
 export const AUDIENCE: Record<Profile, string> = {
   private: "Private users", gamer: "Gamers", hobbyDev: "Developers", soleProp: "Sole traders", smallBiz: "Small businesses",
@@ -45,9 +51,14 @@ const leads = (n: number) => (n < 10 ? n.toFixed(1) : String(Math.round(n)));
 
 export function MarketingApp() {
   const game = useStore((s) => s.game);
-  const [section, setSection] = useState<Section>("channels");
+  // Until the Marketing campaigns skill, the app only buys the company domain.
+  const full = isAvailable("Marketing", game.unlocks);
+  const [picked, setSection] = useState<Section>(full ? "channels" : "domain");
+  const section = full ? picked : "domain";
+  useFocus("Marketing", (f) => { if (f.kind === "page" && f.id === "domain") setSection("domain"); });
   const total = leadsThisMonth(game).reduce((n, b) => n + b.count, 0);
   const items: [Section, string, ReactNode, number | null][] = [
+    ["domain", "Domain", <Globe />, null],
     ["channels", "Channels", <Waypoints />, null],
     ["campaigns", "Campaigns", <Megaphone />, game.marketing.campaigns.length || null],
     ["awareness", "Awareness", <Eye />, null],
@@ -60,7 +71,7 @@ export function MarketingApp() {
     <div className="fin">
       <nav className="sidebar fin-side" aria-label="Sections">
         <div className="side-h">Marketing</div>
-        {items.map(([id, label, icon, count]) => (
+        {items.filter(([id]) => full || id === "domain").map(([id, label, icon, count]) => (
           <button key={id} className={`side-item${section === id ? " active" : ""}`} aria-pressed={section === id} onClick={() => setSection(id)}>
             {icon}{label}{count !== null && <span className="side-count">{count}</span>}
           </button>
@@ -73,6 +84,7 @@ export function MarketingApp() {
           <div><dt>Review score</dt><dd className="num">{reviewScore(game).toFixed(1)}</dd></div>
         </dl>
         <div className="fin-scroll">
+          {section === "domain" && <CompanyDomain />}
           {section === "channels" && <Channels />}
           {section === "campaigns" && <Campaigns />}
           {section === "awareness" && <Awareness />}
@@ -80,6 +92,41 @@ export function MarketingApp() {
           {section === "fairs" && <Fairs />}
           {section === "community" && <Community />}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// The company domain: bought here, with a registrar contract signed on the way when there is none yet.
+function CompanyDomain() {
+  const game = useStore((s) => s.game);
+  const act = useStore((s) => s.act);
+  const year = yearOf(game.hour), open = REGISTRARS.filter((r) => year >= r.from);
+  const [registrar, setRegistrar] = useState<string>(open[0]?.id ?? "");
+  const [name, setName] = useState("");
+  const domain = game.company.domain, partner = game.registrar && registrarById(game.registrar.id);
+  if (domain) return (
+    <dl className="fin-facts">
+      <div><dt>Domain</dt><dd className="num">{domain}</dd></div>
+      <div><dt>Registry</dt><dd>{registryOf(domain).name}</dd></div>
+      <div><dt>Registrar</dt><dd>{partner?.name}</dd></div>
+      <div><dt>Per year</dt><dd className="num">{euroCents(wholesale(game, domain))}</dd></div>
+    </dl>
+  );
+  const suggestion = derivedDomain(game);
+  return (
+    <div className="shop-card">
+      <div className="shop-name"><strong>Company domain</strong><span>Your website and your email run under this name.</span></div>
+      <dl className="shop-specs">
+        <div><dt>Registrar</dt><dd>{partner ? partner.name : (
+          <select className="field" aria-label="Registrar" value={registrar} onChange={(e) => setRegistrar(e.target.value)}>
+            {open.map((r) => <option key={r.id} value={r.id}>{r.name}{r.signup ? `, ${euro(r.signup)} signup` : ""}</option>)}
+          </select>
+        )}</dd></div>
+      </dl>
+      <div className="shop-buy">
+        <input className="field grow" aria-label="Domain name" placeholder={suggestion} spellCheck={false} value={name} onChange={(e) => setName(e.target.value)} />
+        <button className="btn primary" onClick={() => act(orderCompanyDomain, registrar, name || suggestion)}>Buy</button>
       </div>
     </div>
   );

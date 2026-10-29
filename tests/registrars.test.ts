@@ -8,7 +8,7 @@ import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { queueTransfer, registerCompanyDomain, signRegistrar, transferDomains } from "../src/sim/90-actions/registrar";
+import { orderCompanyDomain, queueTransfer, registerCompanyDomain, signRegistrar, transferDomains } from "../src/sim/90-actions/registrar";
 import { hire, setTechLocation } from "../src/sim/90-actions/staff";
 import { install } from "../src/sim/90-actions/store";
 import { setLine } from "../src/sim/90-actions/website";
@@ -219,15 +219,34 @@ describe("company domain", () => {
 });
 
 describe("tutorial", () => {
-  it("runs company, buyServer, mountServer, internet, setup, networkApp, domain, website, email, firstCustomer", () => {
-    expect(TUTORIAL).toEqual(["company", "buyServer", "mountServer", "internet", "setup", "networkApp", "domain", "website", "email", "firstCustomer"]);
+  it("runs company, buyServer, mountServer, internet, setup, domain, website, email, firstCustomer", () => {
+    expect(TUTORIAL).toEqual(["company", "buyServer", "mountServer", "internet", "setup", "domain", "website", "email", "firstCustomer"]);
   });
 
-  it("checks the Network step once the app is installed", () => {
+  it("starts with the Marketing app installed for free", () => {
     const s = newGame(1);
-    expect(CHECKS.networkApp(s)).toBe(false);
-    expect(install(s, "Network").ok).toBe(true);
-    expect(CHECKS.networkApp(s)).toBe(true);
+    expect(s.installed).toContain("Marketing");
+    const raw = JSON.parse(serialize(s));
+    raw.installed = raw.installed.filter((id: string) => id !== "Marketing");
+    expect(deserialize(JSON.stringify(raw)).installed).toContain("Marketing");
+  });
+
+  it("buys the company domain with a new contract in one step", () => {
+    const s = newGame(1);
+    expect(orderCompanyDomain(s, "nameCheep", "no").ok).toBe(false);
+    expect(s.registrar).toBeNull();
+    expect(orderCompanyDomain(s, "nameCheep", " Basement-Hosting.de ").ok).toBe(true);
+    expect(s.registrar?.id).toBe("nameCheep");
+    expect(s.company.domain).toBe("basement-hosting.de");
+    expect(CHECKS.domain(s)).toBe(true);
+    expect(orderCompanyDomain(s, "nameCheep", "other.de").ok).toBe(false);
+  });
+
+  it("keeps the signed registrar when buying the domain", () => {
+    const s = newGame(1);
+    signRegistrar(s, "goDuddy");
+    expect(orderCompanyDomain(s, "nameCheep", "basement-hosting.de").ok).toBe(true);
+    expect(s.registrar?.id).toBe("goDuddy");
   });
 
   it("ticks the company step on a saved company change", () => {

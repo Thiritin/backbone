@@ -124,8 +124,8 @@ function newLeads(s: GameState, events: SimEvent[]): void {
         newLead(s, f.profile, f.city, events, need);
         continue;
       }
-      // Email orders reach a company with working mail; none arrive without it and half while delivery is impaired.
-      if (!form && mailShare(s) < 1 && rand(s.rng) >= mailShare(s)) continue;
+      // Email orders thin out while delivery is impaired, and businesses shy away from a freemail address.
+      if (!form && mailShare(s, f.profile) < 1 && rand(s.rng) >= mailShare(s, f.profile)) continue;
       orderLead(s, f.profile, f.city, events, need, !form);
     }
   }
