@@ -105,7 +105,7 @@ interface Store {
 export type { CartLine };
 // Two lines are the same item when model, brand, build and part match.
 export const sameLine = (a: CartLine, b: CartLine): boolean =>
-  a.model === b.model && a.brand === b.brand && !!a.bare === !!b.bare && JSON.stringify([a.extras ?? [], a.part ?? null]) === JSON.stringify([b.extras ?? [], b.part ?? null]);
+  a.model === b.model && a.brand === b.brand && a.vendor === b.vendor && !!a.bare === !!b.bare && JSON.stringify([a.extras ?? [], a.part ?? null]) === JSON.stringify([b.extras ?? [], b.part ?? null]);
 
 let bannerId = 0, focusId = 0;
 const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, news: null, setup: null, explain: null, alert: null });

@@ -5,7 +5,7 @@ import { bayTakes, COMPONENTS, fits, modelById, samePart, type ComponentKind } f
 import { partPrice } from "../../../sim/10-catalog/parts";
 import type { Component, Device } from "../../../sim/50-state";
 import { locationOf } from "../../../sim/60-infra/status";
-import { installPart, removePart, replaceComponent } from "../../../sim/90-actions/hardware";
+import { installPart, removePart, replaceComponent, replaceSpares } from "../../../sim/90-actions/hardware";
 import { chassisSlots, GROUP_KINDS, GROUP_NAME, TopDown, type Group, type Slot } from "../../art/TopDown";
 import { reduced } from "../../desktop/motion";
 import { useStore } from "../../store";
@@ -67,7 +67,8 @@ function SlotCard({ device, slot, wear, spares, az }: { device: Device; slot: Sl
   const busy = !!device.maintenance;
   if (c) {
     const w = wear(c);
-    const spare = spares([c.kind]).some((d) => d.part === undefined || (d.part.size ?? 0) >= (c.size ?? 0));
+    const zone = device.rackId ? locationOf(game, device)?.id : device.store;
+    const set = zone ? replaceSpares(game, device, c, zone).length : 0, spare = set > 0;
     const removable = c.kind !== "board" && c.kind !== "nic";
     return (
       <div className="loc-card lid-card">
@@ -75,13 +76,13 @@ function SlotCard({ device, slot, wear, spares, az }: { device: Device; slot: Sl
           <h3>{partLabel(c)}</h3>
           {busy ? <span className="pill">Work under way</span> : <span className={`pill ${w}`}>{w === "bad" ? "Failed" : w === "warn" ? "Worn" : "OK"}</span>}
           <span className="grow" />
-          {!busy && <button className="btn" disabled={!spare} onClick={() => hand.start(game, { title: `Replace ${partLabel(c)}`, deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id } })}>Replace</button>}
+          {!busy && <button className="btn" disabled={!spare} onClick={() => hand.start(game, { title: set > 1 ? `Replace ${set} CPUs` : `Replace ${partLabel(c)}`, deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id } })}>Replace</button>}
           {!busy && removable && <button className="btn" onClick={() => hand.start(game, { title: `Remove ${partLabel(c)}`, deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id } })}>Remove</button>}
         </div>
         <Facts rows={[
           ["Slot", <span className="num">{slotName(slot)}</span>],
           ["Age", <span className="num">{ageYears(game, c).toFixed(1)} / {COMPONENTS[c.kind].life} y</span>],
-          ["Price", <span className="num">{euro(partPrice(c.kind, c.size, c.ff, yearOf(game.hour)))}</span>],
+          ["Price", <span className="num">{euro(partPrice(c.kind, c.size, c.ff, yearOf(game.hour), c))}</span>],
         ]} />
         {hand.dialog}
       </div>
@@ -98,7 +99,7 @@ function SlotCard({ device, slot, wear, spares, az }: { device: Device; slot: Sl
           const spec = spareSpec(d), n = fitting.filter((x) => samePart(spareSpec(x), spec)).length;
           return (
             <button key={d.id} className="btn" onClick={() => hand.start(game, { title: `Install ${partLabel(spec)}`, deviceId: device.id, action: installPart, args: [device.id, d.id, undefined], tech: { kind: "part", partId: d.id } })}>
-              {partLabel(spec)}<span className="num">{euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour)))}</span>{n > 1 && <span className="num">× {n}</span>}
+              {partLabel(spec)}<span className="num">{euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour), spec))}</span>{n > 1 && <span className="num">× {n}</span>}
             </button>
           );
         }) : <span className="loc-muted">No fitting part in {az}</span>}
