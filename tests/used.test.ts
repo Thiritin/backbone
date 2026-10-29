@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOf, yearOf } from "../src/sim/00-core/time";
-import { componentParts, modelById } from "../src/sim/10-catalog/hardware";
+import { brandFrom, componentParts, modelById } from "../src/sim/10-catalog/hardware";
+import { challengeFor } from "../src/sim/10-catalog/challenges";
 import { presetPrice } from "../src/sim/10-catalog/parts";
 import { CLEARANCE_SIZE, EBUY_FEE, LOT_SIZE, onMarket, REP_EARLY, REP_LEAD, shipHours, USED_EVENTS, type Listing } from "../src/sim/10-catalog/used";
 import type { GameState } from "../src/sim/50-state";
@@ -10,6 +11,7 @@ import { monthListings, usedTick } from "../src/sim/80-business/used";
 import { newsTick } from "../src/sim/80-business/news";
 import { tick } from "../src/sim/88-tick/tick";
 import { bidListing, buyListing, cancelListing, listForSale } from "../src/sim/90-actions/used";
+import { startChallenge, startGame } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { buyDevice, readyGame } from "./fixtures";
 
@@ -47,7 +49,28 @@ describe("used listings", () => {
     expect(monthListings(game(2))).not.toEqual(listings);
     usedTick(a);
     expect(a.used.length).toBe(listings.length);
-    expect(monthListings({ ...game(), hour: hourOf(new Date(Date.UTC(2006, 5, 1))) })).toEqual([]);
+  });
+
+  it("has listings on the market from the first hour of a new game", () => {
+    const FEB_2005 = hourOf(new Date(Date.UTC(2005, 1, 1)));
+    for (const seed of [1, 2, 3, 4]) {
+      const s = startGame(seed);
+      for (const c of ["ebuy", "board", "chat"]) {
+        const n = s.used.filter((l) => l.channel === c).length;
+        expect(n).toBeGreaterThanOrEqual(2);
+        expect(n).toBeLessThanOrEqual(6);
+      }
+      for (const l of s.used) {
+        const m = modelById(l.model);
+        expect(onMarket(s, l)).toBe(true);
+        expect(l.expiresAt).toBeLessThan(FEB_2005 + 31 * 24);
+        expect(m.from).toBe(2005);
+        expect(l.age).toBeGreaterThanOrEqual(1);
+        expect(l.age).toBeLessThanOrEqual(3);
+        expect(brandFrom(m, l.brand)).toBeLessThanOrEqual(2005 * 12);
+      }
+    }
+    expect(startChallenge(challengeFor(2005, 1).id).used.length).toBeGreaterThan(0);
   });
 
   it("prices fixed asks and auctions within their bands of the preset price", () => {
@@ -152,7 +175,7 @@ describe("used listings", () => {
     const l = idOf(listForSale(s, id, "board"));
     expect(cancelListing(s, l).ok).toBe(true);
     expect(s.devices.find((d) => d.id === id)!.store).toBe("loc1");
-    expect(s.used).toEqual([]);
+    expect(s.used.some((x) => x.id === l)).toBe(false);
   });
 
   it("shows board listings a day early from 5 reputation and brings a lead each month from 15", () => {
