@@ -1,6 +1,8 @@
 import { ChevronRight } from "lucide-react";
 import { useRef, useState, type CSSProperties } from "react";
+import { canAutomate } from "../../sim/30-market/manual";
 import { setCompany } from "../../sim/90-actions/company";
+import { setAutoOrders } from "../../sim/90-actions/orders";
 import { APPS, appFor } from "./registry";
 import { CompanyFields } from "./company";
 import { EmailSettings } from "./EmailSettings";
@@ -42,6 +44,15 @@ export function SettingsApp() {
           onChange={(p) => (p.name !== undefined ? setName(p.name) : act((s) => setCompany(s, p)))} />
       </div>
       <EmailSettings />
+      {canAutomate(game) && <>
+        <h2>Orders</h2>
+        <div className="settings-group">
+          <div className="settings-line">
+            <span>Place orders automatically</span>
+            <input type="checkbox" role="switch" className="switch" aria-label="Place orders automatically" checked={game.autoOrders} onChange={(e) => act((s) => setAutoOrders(s, e.target.checked))} />
+          </div>
+        </div>
+      </>}
       <h2>Appearance</h2>
       <div className="settings-group settings-line">
         <span>Theme</span>

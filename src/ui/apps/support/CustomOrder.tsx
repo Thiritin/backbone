@@ -7,11 +7,11 @@ import type { Product } from "../../../sim/30-customers/customers";
 import { registryCost, registryOf } from "../../../sim/30-customers/registry";
 import { wholesale } from "../../../sim/30-customers/registrar";
 import { setupFee, sizeOf } from "../../../sim/30-market/spec";
-import { invoiceOf, stepsDone } from "../../../sim/30-market/manual";
+import { canAutomate, invoiceOf, stepsDone } from "../../../sim/30-market/manual";
 import type { SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
 import { routeOptions } from "../../../sim/60-infra/routes";
-import { acceptUpgrade, confirmOrder, createAccount, provisionOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
+import { acceptUpgrade, confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
 import { decline } from "../../../sim/90-actions/sales";
 import { closeTicket } from "../../../sim/90-actions/support";
 import { useStore } from "../../store";
@@ -47,6 +47,42 @@ export function RouteCards({ product, city, size, value, onChange, disabled }: {
   );
 }
 
+// The hosts of the city that can run the product, each with what is booked on it against what it holds. Automatic joins
+// them once the provisioning skill is learned.
+function HostCards({ r, value, onChange, disabled }: { r: SalesRequest; value: string | null; onChange: (v: string) => void; disabled?: boolean }) {
+  const game = useStore((s) => s.game);
+  const hosts = routeOptions(game, r.product, r.city, sizeOf(r.spec!));
+  const used = (h: (typeof hosts)[number], k: "ramGb" | "diskGb") => `${n(h.used[k])} of ${n(h.cap[k])} GB`;
+  const card = (id: string, title: string, fits: boolean, rows: [string, string][]) => (
+    <div key={id} className={`host${value === id ? " sel" : ""}${fits ? "" : " full"}`}>
+      <span className="host-t">{title}{!fits && <span className="pill">Full</span>}</span>
+      {rows.map(([k, v]) => <span key={k} className="host-r"><span>{k}</span><span className="num">{v}</span></span>)}
+      <button className="btn" aria-pressed={value === id} disabled={disabled || !fits} onClick={() => onChange(id)}>{value === id ? "Selected" : "Select"}</button>
+    </div>
+  );
+  return (
+    <div className="hosts" role="group" aria-label="Hosts">
+      {canAutomate(game) && card("auto", "Automatic", hosts.some((h) => h.fits), [["Hosts", String(hosts.length)]])}
+      {hosts.map((h) => card(h.id, `${h.name} · ${h.az}`, h.fits, [["RAM booked", used(h, "ramGb")], ["Disk booked", used(h, "diskGb")]]))}
+    </div>
+  );
+}
+
+// The price and setup fee of the quote; it starts over with the counter-offer after each answer.
+function QuoteFields({ tk, r, locked }: { tk: Ticket; r: SalesRequest; locked: boolean }) {
+  const game = useStore((s) => s.game);
+  const act = useStore((s) => s.act);
+  const fee = setupFee(game, r.product);
+  const [price, setPrice] = useState(r.counter ?? r.quote ?? r.reference), [setup, setSetup] = useState(r.setup ?? fee);
+  return (
+    <div className="step-row">
+      <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} />
+      <PriceField value={setup} reference={fee} onChange={setSetup} disabled={locked} label="Setup fee" />
+      <button className="btn primary" disabled={locked || !(price > 0) || !(setup >= 0)} onClick={() => act((s) => quoteOrder(s, tk.id, price, setup))}><Send />Send quote</button>
+    </div>
+  );
+}
+
 const PROVISION: Partial<Record<Product, string>> = { webHosting: "Provision web hosting", vps: "Provision VPS", gameServer: "Provision game server" };
 const INVOICE: Record<string, { label: string; pill: string }> = {
   open: { label: "Open", pill: "accent" }, overdue: { label: "Overdue", pill: "warn" }, paid: { label: "Paid", pill: "ok" }, writtenOff: { label: "Written off", pill: "" },
@@ -60,18 +96,18 @@ export function InvoicePill({ r }: { r: SalesRequest }) {
   return <span className={`pill ${st.pill}`}>Invoice <span className="num">{inv.number}</span> · {st.label}</span>;
 }
 
-// The steps of a custom order, each with its button once the step before it is done.
+// The steps of a custom order, each with its button once the step before it is done. Order form orders start accepted.
 export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
-  const [price, setPrice] = useState(r.quote ?? r.reference);
-  const fee = setupFee(game, r.product), [setup, setSetup] = useState(r.setup ?? fee);
-  const [route, setRoute] = useState(r.route ?? "auto");
+  const [route, setRoute] = useState<string | null>(r.route ?? null);
   if (isFinal(tk)) return null;
   const done = stepsDone(game, r), locked = !!tk.work;
   const web = r.product === "webHosting" && !!r.domain;
-  const current = !done.account ? "account" : !done.invoice ? "invoice" : !done.domain ? "domain" : !done.provision ? "provision" : null;
+  const current = !done.quote ? "quote" : !done.account ? "account" : !done.invoice ? "invoice" : !done.domain ? "domain" : !done.provision ? "provision" : null;
   const cost = web ? (game.registrar ? wholesale(game, r.domain!) : registryCost(r.domain!, yearOf(game.hour))) : 0;
+  const waiting = r.replyAt !== null;
+  const quoteValue = done.quote ? `${euroCents(r.quote ?? 0)} a month` : waiting ? "Sent" : r.status === "countered" ? `Counter ${euroCents(r.counter ?? 0)} a month` : r.status === "refused" ? "Refused" : "Not sent";
   const row = (id: string, label: string, value: string, body?: React.ReactNode) => (
     <li key={id} className={`step${done[id as keyof typeof done] ? " done" : id === current ? " now" : ""}`}>
       <span className="step-i">{done[id as keyof typeof done] ? <Check aria-label="Done" /> : null}</span>
@@ -83,20 +119,17 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   return (
     <div className="compose custom-steps">
       <ol className="steps">
+        {!r.form && row("quote", "Quote", quoteValue, !waiting && <QuoteFields key={r.attempts} tk={tk} r={r} locked={locked} />)}
         {row("account", "Customer account", done.account ? "Created" : "None",
           <button className="btn primary" disabled={locked} onClick={() => act((s) => createAccount(s, tk.id))}><UserPlus />Create customer account</button>)}
         {row("invoice", "Order confirmation", done.invoice ? `${euroCents(r.quote ?? 0)} a month` : "Not sent",
-          <div className="step-row">
-            <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} />
-            <PriceField value={setup} reference={fee} onChange={setSetup} disabled={locked} label="Setup fee" />
-            <button className="btn primary" disabled={locked || !(price > 0) || !(setup >= 0)} onClick={() => act((s) => confirmOrder(s, tk.id, price, setup))}><Send />Confirm order and send invoice</button>
-          </div>)}
+          <button className="btn primary" disabled={locked} onClick={() => act((s) => confirmOrder(s, tk.id))}><Send />Confirm order and send invoice</button>)}
         {web && row("domain", r.owned ? "Domain transfer" : "Domain", done.domain ? "Registered" : `${r.domain} · ${registryOf(r.domain!).name} · ${euroCents(cost)} a year`,
           <button className="btn primary" disabled={locked} onClick={() => act((s) => registerOrderDomain(s, tk.id))}><Globe />{r.owned ? "Transfer domain" : "Register domain"}</button>)}
         {row("provision", "Setup", done.provision ? "Live" : "Not set up",
           <div className="step-col">
-            <RouteCards product={r.product} city={r.city} size={sizeOf(r.spec!)} value={route} onChange={setRoute} disabled={locked} />
-            <button className="btn primary" disabled={locked} onClick={() => act((s) => provisionOrder(s, tk.id, route))}><Rocket />{PROVISION[r.product]}</button>
+            <HostCards r={r} value={route} onChange={setRoute} disabled={locked} />
+            <button className="btn primary" disabled={locked || !route} onClick={() => act((s) => provisionOrder(s, tk.id, route!))}><Rocket />{PROVISION[r.product]}</button>
           </div>)}
       </ol>
       <div className="actions-row">

@@ -106,6 +106,8 @@ export interface GameState {
   // A missed repayment blocks new loans until this hour.
   loansBlockedUntil: number;
   billingRules: BillingRules;
+  // Whether accepted orders run from account to setup by themselves (needs the provisioning skill).
+  autoOrders: boolean;
   // Customers whose services the player holds offline.
   heldCustomers: string[];
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
@@ -224,7 +226,7 @@ export const newGame = (seed: number): GameState => ({
   ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], checklist: [],
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, lossReports: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
-  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
+  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false,
   heldCustomers: [],
   tickets: [], playerBusyUntil: 0, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "none" }, tagline: "" },

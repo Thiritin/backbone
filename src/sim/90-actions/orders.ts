@@ -2,7 +2,7 @@
 import { rand } from "../00-core/rng";
 import { DOMAIN_FEE, domainOf, extend } from "../30-customers/registry";
 import { acceptChance, acceptMid, type SalesRequest } from "../30-market/market";
-import { issueInvoice, resize, stepError, stepMinutes, type OrderStep } from "../30-market/manual";
+import { canAutomate, issueInvoice, resize, stepError, stepMinutes, type OrderStep } from "../30-market/manual";
 import { orderOf } from "../30-market/orders";
 import { editRequest, loseRequest, say } from "../30-market/sales";
 import type { GameState } from "../50-state";
@@ -27,19 +27,30 @@ function step(s: GameState, ticketId: string, which: OrderStep, route?: string):
 
 export const createAccount = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "account");
 export const registerOrderDomain = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "domain");
-export const provisionOrder = (s: GameState, ticketId: string, route = "auto"): ActionResult => step(s, ticketId, "provision", route);
+// Sets the order up on a cluster or panel host of the city; "auto" lets the game pick and needs the provisioning skill.
+export const provisionOrder = (s: GameState, ticketId: string, clusterId: string): ActionResult => step(s, ticketId, "provision", clusterId);
 
-// Sets the monthly price and the setup fee (the line's rate where omitted) and queues the confirmation with its invoice.
-export function confirmOrder(s: GameState, ticketId: string, monthly: number, setup?: number): ActionResult {
-  const r = s.tickets.find((x) => x.id === ticketId) && orderOf(s, s.tickets.find((x) => x.id === ticketId)!);
+// Sends the customer a monthly price and a setup fee (the line's rate where omitted); they answer within their reply time.
+export function quoteOrder(s: GameState, ticketId: string, monthly: number, setup?: number): ActionResult {
+  const t = s.tickets.find((x) => x.id === ticketId), r = t && orderOf(s, t);
   if (!r) return fail("error.unknownRequest");
   if (!validPrice(monthly, r.reference)) return fail("error.quotePrice");
   if (setup !== undefined && !validPrice(setup + 1, r.reference)) return fail("error.quotePrice");
   const before = { quote: r.quote, setup: r.setup };
   editRequest(s, r.id, () => ({ quote: Math.round(monthly * 100) / 100, setup: setup === undefined ? undefined : Math.round(setup * 100) / 100 }));
-  const done = step(s, ticketId, "invoice");
+  const done = step(s, ticketId, "quote");
   if (!done.ok) editRequest(s, r.id, () => before);
   return done;
+}
+
+// Confirms the accepted quote and sends the invoice.
+export const confirmOrder = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "invoice");
+
+// Switches the automatic run of accepted orders; it needs the provisioning skill.
+export function setAutoOrders(s: GameState, on: boolean): ActionResult {
+  if (on && !canAutomate(s)) return fail("error.needsAutomation");
+  s.autoOrders = on;
+  return { ok: true };
 }
 
 // Another year of a customer's domain: the customer is invoiced the yearly fee and the registrar bills the registry monthly.

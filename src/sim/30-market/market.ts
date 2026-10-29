@@ -32,6 +32,8 @@ export interface SalesRequest {
   // An email order: whether the customer owns the domain already, its first invoice and the route chosen for its setup
   // ("auto", a cluster id or a node's device id).
   owned?: boolean; invoiceId?: string; route?: string;
+  // Placed through the order form: the website's prices are the quote and ordering is the acceptance.
+  form?: boolean;
   // The one-time fee the manual quote's invoice carries; the line's rate where unset.
   setup?: number;
 }

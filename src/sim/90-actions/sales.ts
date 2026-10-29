@@ -1,16 +1,12 @@
-import { rand } from "../00-core/rng";
 import { reprice } from "../30-customers/pricing";
 import type { GameState } from "../50-state";
 import { missingFor } from "../30-market/market";
-import { editRequest, loseRequest, say } from "../30-market/sales";
+import { answerAt, editRequest, loseRequest, say } from "../30-market/sales";
 import { declineReason, mailRequest } from "../30-market/orders";
 import type { ActionResult } from "./hardware";
 import { logActivity } from "../47-staff/activity";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
-// The customer answers 4 to 24 hours after a quote, 2 hours after you meet their counter-offer.
-const REPLY_MIN = 4, REPLY_SPREAD = 20, COUNTER_REPLY = 2;
-
 // Sends a monthly price for a request; the customer replies later.
 export function quote(s: GameState, requestId: string, monthly: number): ActionResult {
   const r = s.sales.requests.find((x) => x.id === requestId);
@@ -18,10 +14,7 @@ export function quote(s: GameState, requestId: string, monthly: number): ActionR
   if (!Number.isFinite(monthly) || monthly <= 0 || monthly > 100 * r.reference) return fail("error.quotePrice");
   if (missingFor(s, r).length) return fail("error.requestMissing");
   const price = Math.round(monthly * 100) / 100;
-  const met = r.counter !== null && price <= r.counter;
-  editRequest(s, r.id, (x) => ({
-    status: "quoted", quote: price, attempts: x.attempts + 1, replyAt: s.hour + (met ? COUNTER_REPLY : REPLY_MIN + Math.floor(rand(s.rng) * REPLY_SPREAD)),
-  }));
+  editRequest(s, r.id, (x) => ({ status: "quoted", quote: price, attempts: x.attempts + 1, replyAt: answerAt(s, x, price) }));
   say(s, r.id, "you", "sales.you.quote", { price });
   return { ok: true, id: r.id };
 }

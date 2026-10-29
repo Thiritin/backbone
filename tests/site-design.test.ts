@@ -15,7 +15,7 @@ import { startGame } from "../src/sim/90-actions/start";
 import { redesign, setSiteHost } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { en } from "../src/i18n/en";
-import { panelServer, readyGame, withCompany, withServer } from "./fixtures";
+import { automate, panelServer, readyGame, withCompany, withServer } from "./fixtures";
 
 const inYear = (s: GameState, y: number) => { s.hour = hourOf(new Date(Date.UTC(y, 5, 15))); };
 const hostOf = (s: GameState) => s.clusters.find((c) => c.kind === "panel")!.id;
@@ -134,7 +134,7 @@ describe("company site hosting", () => {
 
   it("loses the orders of the order form while the site is down", () => {
     const orders = (down: boolean) => {
-      const s = withSite(7);
+      const s = automate(withSite(7));
       ok(setUpChannel(s, "orderForm"));
       if (down) ok(setPower(s, "dev3", false));
       else ok(setSiteHost(s, { kind: "rented" }));

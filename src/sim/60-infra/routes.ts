@@ -7,7 +7,8 @@ import { working } from "./status";
 import { bookable, clusterOf, controlPlaneUp, hasHosts, KEYS, noRoomError, nodeUsed, pickNode, supports, vmRoom, type Cluster } from "./cluster";
 
 export interface RouteNode { id: string; name: string; free: Resources; fits: boolean }
-export interface RouteCluster { id: string; name: string; az: string; free: Resources; fits: boolean; nodes: RouteNode[] }
+// cap is what the host holds for bookings and used what is booked on it; both are in the host's own terms.
+export interface RouteCluster { id: string; name: string; az: string; free: Resources; cap: Resources; used: Resources; fits: boolean; nodes: RouteNode[] }
 
 const free = (s: GameState, deviceId: string): Resources => {
   const d = s.devices.find((x) => x.id === deviceId)!, cap = bookable(s, d), used = nodeUsed(s, deviceId);
@@ -23,14 +24,15 @@ export function routeOptions(s: GameState, product: Product, city: string, size:
     const up = controlPlaneUp(s, c);
     if (c.vm) {
       const room = vmRoom(s, c), free = Object.fromEntries(KEYS.map((k) => [k, Math.max(0, room.cap[k] - room.used[k])])) as unknown as Resources;
-      return { id: c.id, name: c.name, az: c.az, free, fits: up && !!pickNode(s, c, size), nodes: [] };
+      return { id: c.id, name: c.name, az: c.az, free, cap: room.cap, used: room.used, fits: up && !!pickNode(s, c, size), nodes: [] };
     }
     const nodes = c.nodes.filter((n) => n.state === "active" && working(s, n.deviceId)).map((n): RouteNode => {
       const d = s.devices.find((x) => x.id === n.deviceId)!;
       return { id: d.id, name: d.label ?? d.name, free: free(s, d.id), fits: up && !!pickNode(s, only(c, d.id), size) };
     });
     const sum = Object.fromEntries(KEYS.map((k) => [k, nodes.reduce((a, n) => a + Math.max(0, n.free[k]), 0)])) as unknown as Resources;
-    return { id: c.id, name: c.name, az: c.az, free: sum, fits: nodes.some((n) => n.fits), nodes };
+    const sumOf = (f: (id: string) => Resources) => Object.fromEntries(KEYS.map((k) => [k, nodes.reduce((a, n) => a + f(n.id)[k], 0)])) as unknown as Resources;
+    return { id: c.id, name: c.name, az: c.az, free: sum, cap: sumOf((id) => bookable(s, s.devices.find((x) => x.id === id)!)), used: sumOf((id) => nodeUsed(s, id)), fits: nodes.some((n) => n.fits), nodes };
   });
 }
 

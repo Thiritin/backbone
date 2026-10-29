@@ -1,5 +1,6 @@
-// GDD, Custom orders: an order email is worked step by step, each step a reply in its thread. Create the customer account,
-// confirm the order with its invoice, register or transfer the domain, then set up the service. Numbers in economy.md, Custom orders.
+// GDD, Custom orders: an order email is worked step by step, each step a reply in its thread. Quote a price and wait for the
+// customer to accept, then create the customer account, confirm the order with its invoice, register or transfer the domain
+// and set up the service. Numbers in economy.md, Custom orders.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Service } from "../30-customers/customers";
@@ -9,23 +10,24 @@ import { DUE_DAYS, rollPayStep, type Invoice, type InvoiceLine } from "../45-bil
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
 import type { GameState } from "../50-state";
 import { bookable, nodeUsed, workloadsOf } from "../60-infra/cluster";
-import { routeError, routeTarget } from "../60-infra/routes";
+import { routeError, routeOptions, routeTarget } from "../60-infra/routes";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { placeService, provisionService } from "../90-actions/clusters";
 import type { ActionResult } from "../90-actions/hardware";
 import { setupFee, sizeOf } from "./spec";
-import { missingFor, requestName, type SalesRequest } from "./market";
+import { missingFor, requestName, REQUEST_HOURS, type SalesRequest } from "./market";
 import { mailRequest, orderOf } from "./orders";
-import { editRequest, habitFor, loseRequest } from "./sales";
+import { answerAt, editRequest, habitFor, loseRequest, targetFor } from "./sales";
 import { mailDelay } from "../80-business/mail";
 import type { Spec } from "../10-catalog/products";
+import { AUTOMATION_SKILL } from "../10-catalog/research";
 
-export type OrderStep = "account" | "invoice" | "domain" | "provision";
-export const ORDER_STEPS: OrderStep[] = ["account", "invoice", "domain", "provision"];
+export type OrderStep = "quote" | "account" | "invoice" | "domain" | "provision";
+export const ORDER_STEPS: OrderStep[] = ["quote", "account", "invoice", "domain", "provision"];
 export const isStep = (x: string): x is OrderStep => (ORDER_STEPS as string[]).includes(x);
 const STEP_MINUTES: Record<OrderStep, number> = {
-  account: ACTION_MINUTES.orderAccount, invoice: ACTION_MINUTES.orderInvoice, domain: ACTION_MINUTES.orderDomain, provision: ACTION_MINUTES.orderProvision,
+  quote: ACTION_MINUTES.orderQuote, account: ACTION_MINUTES.orderAccount, invoice: ACTION_MINUTES.orderInvoice, domain: ACTION_MINUTES.orderDomain, provision: ACTION_MINUTES.orderProvision,
 };
 export const stepMinutes = (step: OrderStep): number => STEP_MINUTES[step];
 // A customer who pays an order on time does so within this many days, eager to get started.
@@ -42,18 +44,32 @@ export const invoiceOf = (s: GameState, r: SalesRequest): Invoice | undefined =>
 const needsDomain = (r: SalesRequest) => r.product === "webHosting" && !!r.domain;
 const domainDone = (s: GameState, r: SalesRequest) => !needsDomain(r) || domainOf(s, r.domain!)?.customerId === r.customerId;
 
+// The sender of the steps automation runs.
+export const AUTOMATION = "Automation";
+export const canAutomate = (s: GameState): boolean => s.unlocks.includes(AUTOMATION_SKILL);
+// The quote counts as accepted once the customer said yes or the order came through the form; an order past its account
+// from an older save counts too.
+export const quoteAccepted = (r: SalesRequest): boolean => r.status === "accepted" || !!r.customerId || !!r.invoiceId || !!r.serviceId;
+// The first host in the order's city with disk room: the pick of staff and of a setup nobody chose a host for.
+export const hostFor = (s: GameState, r: SalesRequest): string | null =>
+  routeOptions(s, r.product, r.city, sizeOf(r.spec)).find((c) => c.fits)?.id ?? null;
+
 // Which steps the order has behind it.
 export function stepsDone(s: GameState, r: SalesRequest): Record<OrderStep, boolean> {
-  return { account: !!r.customerId, invoice: !!r.invoiceId, domain: !!r.customerId && domainDone(s, r), provision: !!r.serviceId };
+  return { quote: quoteAccepted(r), account: !!r.customerId, invoice: !!r.invoiceId, domain: !!r.customerId && domainDone(s, r), provision: !!r.serviceId };
 }
 
-// Why a step of a custom order cannot run now, or null. Steps run in order; the domain only for web hosting.
-export function stepError(s: GameState, t: Ticket, step: OrderStep, route = "auto"): string | null {
+// Why a step of a custom order cannot run now, or null. Steps run in order; the domain only for web hosting. The setup
+// runs on the route given, else the one chosen before, else the first host with room; "auto" needs the provisioning skill.
+const LIVE = ["open", "quoted", "countered", "refused", "accepted"];
+export function stepError(s: GameState, t: Ticket, step: OrderStep, route?: string): string | null {
   const r = orderOf(s, t);
-  if (!r || isFinal(t) || !["open", "quoted"].includes(r.status)) return "error.unknownRequest";
+  if (!r || isFinal(t) || !LIVE.includes(r.status)) return "error.unknownRequest";
   if (missingFor(s, r).length) return "error.orderNotOffered";
   const done = stepsDone(s, r);
   if (done[step]) return "error.stepDone";
+  if (step === "quote") return r.replyAt !== null ? "error.quoteSent" : null;
+  if (!done.quote) return "error.needsQuote";
   if (step === "account") return null;
   if (!done.account) return "error.needsAccount";
   if (step === "invoice") return r.quote && r.quote > 0 ? null : "error.quotePrice";
@@ -63,17 +79,15 @@ export function stepError(s: GameState, t: Ticket, step: OrderStep, route = "aut
     return domainOf(s, r.domain!) ? "error.domainTaken" : null;
   }
   if (!done.domain) return "error.needsDomain";
-  return routeError(s, r.product, r.city, sizeOf(r.spec), route) ?? (routeTarget(s, route) || autoFits(s, r) ? null : "error.noCapacity");
+  const to = route ?? r.route ?? hostFor(s, r);
+  if (to === "auto") return !canAutomate(s) ? "error.needsAutomation" : targetFor(s, r) ? null : "error.noCapacity";
+  return to ? routeError(s, r.product, r.city, sizeOf(r.spec), to) : "error.noCapacity";
 }
 
-const autoFits = (s: GameState, r: SalesRequest) => {
-  const zones = s.locations.filter((l) => l.city === r.city).map((l) => l.az);
-  return s.clusters.some((c) => zones.includes(c.az) && !routeError(s, r.product, r.city, sizeOf(r.spec), c.id));
-};
-
-// The step staff work next: everything in order, the setup only once the invoice is paid.
+// The step staff work next: everything in order, the setup only once the invoice is paid. The quote waits for the customer's answer.
 export function nextStep(s: GameState, r: SalesRequest): OrderStep | null {
   const done = stepsDone(s, r), step = ORDER_STEPS.find((x) => !done[x]) ?? null;
+  if (step === "quote") return r.replyAt === null ? step : null;
   return step === "provision" && invoiceOf(s, r)?.status !== "paid" ? null : step;
 }
 
@@ -82,7 +96,8 @@ export function staffOrderStep(s: GameState, t: Ticket, legacyError: string | nu
   const r = orderOf(s, t);
   if (!r) return legacyError ? null : "accept";
   const step = nextStep(s, r);
-  return step && !stepError(s, t, step) ? step : null;
+  // The quote stays the player's.
+  return step && step !== "quote" && !stepError(s, t, step) ? step : null;
 }
 export const orderMinutes = (s: GameState, t: Ticket, arg: string, legacy: number): number => (isStep(arg) && orderOf(s, t) ? stepMinutes(arg) : legacy);
 
@@ -105,10 +120,18 @@ const setTicket = (s: GameState, id: string, fields: Partial<Ticket>) => {
 // Applies a queued step; the support tick calls this once its work time has passed. Returns an event when it failed.
 export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string): SimEvent | null {
   const r = orderOf(s, t)!;
-  const error = r && stepError(s, t, step, r.route ?? "auto");
+  const error = r && stepError(s, t, step, r.route);
   if (!r || error) return r ? { app: "Support", key: "event.stepFailed", params: { name: requestName(r), error: error! } } : null;
   // Queuing logs the work; only the account step had no customer to log it on yet.
-  const log = (customerId: string) => logActivity(s, { customerId, serviceId: t.serviceId, by: by ?? null, key: "activity.resolve", params: { kind: "order", arg: step }, minutes: stepMinutes(step) });
+  const log = (customerId: string) => logActivity(s, { customerId, serviceId: t.serviceId, by: by ?? null, key: "activity.resolve", params: { kind: "order", arg: step }, minutes: by === AUTOMATION ? 0 : stepMinutes(step) });
+  if (step === "quote") {
+    const at = answerAt(s, r, r.quote!);
+    // The request outlasts the customer's answer.
+    editRequest(s, r.id, (x) => ({ status: "quoted", attempts: x.attempts + 1, replyAt: at, deadline: Math.max(x.deadline, at + 1) }));
+    mailRequest(s, r.id, "order.quote", by, { price: r.quote!, setup: r.setup ?? setupFee(s, r.product) });
+    setTicket(s, t.id, { status: "waiting", updatedAt: s.hour });
+    return null;
+  }
   if (step === "account") {
     const id = addCustomer(s, requestName(r), r.profile, habitFor(hashRng(s.seed, Number(r.id.slice(3)) || 0, 227), r.profile));
     editRequest(s, r.id, () => ({ customerId: id }));
@@ -133,9 +156,11 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     register(s, r.domain!, customerId, !!r.owned);
     mailRequest(s, r.id, r.owned ? "order.transfer" : "order.domain", by);
   } else {
-    const target = routeTarget(s, r.route ?? "auto");
+    const to = r.route ?? hostFor(s, r) ?? "";
+    const target = to === "auto" ? null : routeTarget(s, to), auto = to === "auto" ? targetFor(s, r) : null;
     const done = provisionService(s, customerId, r.product, {
-      label: r.domain ?? requestName(r), sla: r.sla, price: r.quote! / MONTH, spec: r.spec, clusterId: target?.clusterId ?? null, deviceId: target?.deviceId ?? null,
+      label: r.domain ?? requestName(r), sla: r.sla, price: r.quote! / MONTH, spec: r.spec,
+      clusterId: target?.clusterId ?? auto?.clusterId ?? null, deviceId: target?.deviceId ?? null, zone: auto?.zone ?? null,
     });
     if (!done.ok) return { app: "Support", key: "event.stepFailed", params: { name: requestName(r), error: done.error ?? "error.noCapacity" } };
     s.services = s.services.map((v) => (v.id === done.id ? { ...v, prepaidUntil: s.hour + MONTH } : v));
@@ -162,13 +187,31 @@ function settle(s: GameState, r: SalesRequest): SimEvent | null {
   return { app: "Support", key: "event.orderPaid", params: { name: requestName(r) } };
 }
 
+// The customer took the quote: the steps open and, with automation on, the whole chain runs at once. A step that fails
+// leaves the order at that step for the player.
+export function acceptQuote(s: GameState, r: SalesRequest, events: SimEvent[]): void {
+  const due = s.hour + REQUEST_HOURS;
+  editRequest(s, r.id, () => ({ status: "accepted", replyAt: null, deadline: due }));
+  if (!r.ticketId) return;
+  setTicket(s, r.ticketId, { status: "open", unread: true, dueAt: due, updatedAt: s.hour });
+  events.push({ app: "Support", key: "event.orderAccepted", params: { name: requestName(r) } });
+  if (!s.autoOrders || !canAutomate(s)) return;
+  editRequest(s, r.id, () => ({ route: "auto" }));
+  for (const step of ORDER_STEPS.slice(1)) {
+    const t = s.tickets.find((x) => x.id === r.ticketId)!;
+    if (stepsDone(s, orderOf(s, t)!)[step]) continue;
+    const failed = applyStep(s, t, step, AUTOMATION);
+    if (failed) return void events.push(failed);
+  }
+}
+
 // Hourly: paid orders move on; an order that lapsed, was declined or never paid closes its account and its open invoice.
 export function ordersTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   for (const { id } of s.sales.requests) {
     let r = s.sales.requests.find((x) => x.id === id)!;
     if (r.kind !== "order") continue;
-    if (r.status === "quoted") {
+    if (r.status === "quoted" && r.invoiceId) {
       const t = s.tickets.find((x) => x.id === r.ticketId);
       if (!t || !isFinal(t)) {
         const e = settle(s, r);
