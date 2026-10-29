@@ -1,6 +1,6 @@
 import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import { yearOf } from "../../sim/00-core/time";
+import { formatClock } from "../../sim/00-core/time";
 import { APP_NAME, NOTIFY_BATCH, NOTIFY_MINUTES } from "../../sim/10-catalog/apps";
 import { softwareById } from "../../sim/10-catalog/platforms";
 import type { GameState } from "../../sim/50-state";
@@ -47,14 +47,14 @@ function Row({ game, m }: { game: GameState; m: MonitorRow }) {
   );
 }
 
-function AppRowView({ game, r }: { game: GameState; r: AppRow }) {
+function AppRowView({ r }: { r: AppRow }) {
   const act = useStore((s) => s.act), minutes = Math.ceil(r.unnotified / NOTIFY_BATCH) * NOTIFY_MINUTES;
   const notify = () => r.vuln && act((g) => notifyCustomers(g, r.app, r.vuln!.id));
   const menu = (): MenuEntry[] => [{ label: "Notify customers", disabled: !r.unnotified, run: notify }];
   return (
     <tr onContextMenu={menuOn(menu)}>
       <td>{APP_NAME[r.app]}</td>
-      <td className="num">{r.vuln?.year ?? yearOf(game.hour)}</td>
+      <td className="num">{r.vuln ? formatClock(r.vuln.patchedAt).split(" · ")[0] : ""}</td>
       <td>{r.vuln ? <span className={`pill ${TONE[r.vuln.severity]}`}>{NAME[r.vuln.severity]}</span> : <span className="pill ok">None</span>}</td>
       <td className="r num">{r.vuln ? `${r.days} d` : ""}</td>
       <td className="r num">{r.sites}</td>
@@ -93,8 +93,8 @@ function CustomerSites({ game }: { game: GameState }) {
     <>
       {rows.length > 0 && (
         <table className="table">
-          <thead><tr><th>Customer software</th><th>Release</th><th>Worst</th><th className="r">Exposed</th><th className="r">Sites</th><th className="r">Not notified</th><th /></tr></thead>
-          <tbody>{rows.map((r) => <AppRowView key={`${r.app}-${r.vuln?.id ?? ""}`} game={game} r={r} />)}</tbody>
+          <thead><tr><th>Customer software</th><th>Patched</th><th>Worst</th><th className="r">Exposed</th><th className="r">Sites</th><th className="r">Not notified</th><th /></tr></thead>
+          <tbody>{rows.map((r) => <AppRowView key={`${r.app}-${r.vuln?.id ?? ""}`} r={r} />)}</tbody>
         </table>
       )}
       {defaced.length > 0 && (
@@ -126,7 +126,7 @@ export function MonitoringTab({ game }: { game: GameState }) {
           <thead><tr><th>Software</th><th>Version</th><th>Worst</th><th className="r">Exposed</th><th>Host</th><th>State</th><th /></tr></thead>
           <tbody>{rows.map((m) => <Row key={m.cluster.id} game={game} m={m} />)}</tbody>
         </table>
-      ) : <div className="fin-empty"><ShieldCheck />No installed software</div>)}
+      ) : !show.sites && <div className="fin-empty"><ShieldCheck />No installed software</div>)}
       {show.sites && <CustomerSites game={game} />}
     </>
   );

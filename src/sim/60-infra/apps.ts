@@ -155,7 +155,7 @@ export function notifyCustomers(s: GameState, family: App, vulnId: string): Acti
   s.sites = { ...s.sites, notified: [...s.sites.notified, ...sites.map((v) => notifiedPair(v, vuln))] };
   for (const v of sites) {
     const c = s.customers.find((x) => x.id === v.customerId);
-    if (c && c.churnedAt === null && selfUpdateAt(s, v, vuln) === null && asksForHelp(v, vuln)) createTicket(s, c, "howTo", v.id, "update");
+    if (c && c.churnedAt === null && selfUpdateAt(s, v, vuln) === null && asksForHelp(v, vuln) && !s.tickets.some((t) => t.serviceId === v.id && t.topic === "update" && !isFinal(t))) createTicket(s, c, "howTo", v.id, "update");
   }
   return { ok: true, id: vuln.id };
 }

@@ -155,7 +155,7 @@ describe("notifying customers", () => {
   });
 
   it("makes half of those who would not update themselves ask for help, and offers split 70, 20 and 10 by budget", () => {
-    const s = newGame(3), v = critical(3), ids = open(s, v, "smallBiz", 1500);
+    const s = newGame(3), v = critical(3), ids = open(s, v, "smallBiz", 1000);
     ok(notifyCustomers(s, "joomlah", v.id));
     const stay = ids.filter((id) => selfUpdateAt(s, service(s, id), v) === null);
     const asking = s.tickets.filter((t) => t.kind === "howTo" && t.topic === "update");
