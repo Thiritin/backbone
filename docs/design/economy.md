@@ -4,15 +4,15 @@ This doc turns the systems in the [game design document](gdd.md) into formulas a
 
 ## Clock and pacing
 
-At 1×, the game clock runs 20 times faster than real time: one game minute lasts 3 seconds, one game hour 3 minutes, and a game day 72 minutes. The clock shows every game minute, but the simulation ticks every game hour. Billing, salaries, know-how and the market run on the monthly tick.
+At 1×, the game clock runs 30 times faster than real time: one game minute lasts 2 seconds, one game hour 2 minutes, and a game day 48 minutes. The clock shows every game minute, but the simulation ticks every game hour. Billing, salaries, know-how and the market run on the monthly tick.
 
 | Speed | Game hour | Game day | Game month | Game year |
 | --- | --- | --- | --- | --- |
-| 1× | 3 min | 72 min | 36 h | 438 h |
-| 2× | 90 s | 36 min | 18 h | 219 h |
-| 4× | 45 s | 18 min | 9 h | 110 h |
-| 8× | 22.5 s | 9 min | 4.5 h | 55 h |
-| 16× | 11.25 s | 4.5 min | 2.25 h | 27 h |
+| 1× | 2 min | 48 min | 24 h | 292 h |
+| 2× | 60 s | 24 min | 12 h | 146 h |
+| 4× | 30 s | 12 min | 6 h | 73 h |
+| 8× | 15 s | 6 min | 3 h | 36.5 h |
+| 16× | 7.5 s | 3 min | 1.5 h | 18 h |
 
 **Pacing targets.** A player who plays reasonably well should hit each level around these years. The headless balance run checks them (see [Balancing](#balancing)).
 
@@ -454,7 +454,7 @@ One mail server per company, on a server or in a VM. Its address is the host's p
 
 **Website and campaigns.** Their leads come from the Marketing app's lead batches. 10% of them arrive from cities without a location of yours, spread evenly; those requests arrive greyed out with "Needs a location in London", so you can see the demand you are missing.
 
-**Daily mail.** Leads arrive every morning at 8:00, Poisson-distributed around the monthly rate ÷ 30.4. Each lead draws its need first, then picks you with its share of the choice below, times its channel's conversion.
+**Lead arrivals.** Leads arrive every hour, Poisson-distributed around the monthly rate ÷ 30.4 ÷ 24, times the hour's arrival weight: the profile's attention curve from Noticing outages, scaled so a week averages 1. Small businesses, agencies, offices, online shops and enterprises write during office hours on workdays, and everyone else writes mostly in the evening. The friend's first order and the shady request still come with the 8:00 mail. Each lead draws its need first, then picks you with its share of the choice below, times its channel's conversion.
 
 **Choice with prices.** The softmax of Customer choice decides who wins a lead, over you and the competitors that sell the product to that profile. Each host's value also carries a price term of 0.25 × λ × 100 × (1 − price factor). Your price factor is the average ratio of your running services' prices to the market reference (friends excluded, 1 without services), so undercutting wins a bigger share only gradually, as your cheaper contracts pile up. Your scores: P = 0.5 generation + 30 + 0.2 location (100 with a location in the city, 40 without); R = 0.5 uptime (60 in the first month, then from this month's down hours with a floor of 0.05% downtime) + 0.3 support (from the first replies of the last 90 days, 75% of the promised time without tickets) + 8; C = 30 + 0.3 × the share of the profile's usual products you sell.
 

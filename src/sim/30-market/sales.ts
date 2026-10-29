@@ -1,7 +1,8 @@
-// Requests over time: the morning mail of new leads, expansion requests from upgrade tickets, customer replies to quotes,
+// Requests over time: new leads through the day, expansion requests from upgrade tickets, customer replies to quotes,
 // expiry into lost sales and the monthly happiness drift. Decisions are recorded in docs/design/economy.md, "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
+import { arrivalWeight } from "../10-catalog/attention";
 import { CHOICE_TAU, NEVER_PAYS, ON_TIME } from "../10-catalog/economy";
 import { PRODUCTS, sizeSpec, SIZES } from "../10-catalog/products";
 import { yearOf } from "../00-core/time";
@@ -106,10 +107,10 @@ export function shadyLead(s: GameState, city: string, events: SimEvent[]): Sales
   return req;
 }
 
-function morningMail(s: GameState, events: SimEvent[]): void {
+function newLeads(s: GameState, events: SimEvent[]): void {
   const cache = new Map<string, number>(), site = siteFactor(s);
   for (const f of leadFlows(s)) {
-    const n = poisson(s.rng, f.leads / DAYS_PER_MONTH);
+    const n = poisson(s.rng, (f.leads / DAYS_PER_MONTH / 24) * arrivalWeight(f.profile, s.hour));
     for (let i = 0; i < n; i++) {
       // An order the form takes weighs the setup fee too.
       const need = needFor(s.rng, f.profile, yearOf(s.hour)), form = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${form}`;
@@ -128,6 +129,9 @@ function morningMail(s: GameState, events: SimEvent[]): void {
       orderLead(s, f.profile, f.city, events, need, !form);
     }
   }
+}
+
+function morningMail(s: GameState, events: SimEvent[]): void {
   if (listed(s, "webHosting")) firstOrder(s, events);
   if (s.hour > 2160 && lineOffered(s, "vps") && listed(s, "vps") && rand(s.rng) < SHADY_PER_MONTH / DAYS_PER_MONTH) shadyLead(s, s.locations[0]?.city ?? "Frankfurt", events);
 }
@@ -306,6 +310,7 @@ function monthly(s: GameState): void {
 export function salesTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   if (isMonthStart(s.hour)) monthly(s);
+  newLeads(s, events);
   if (s.hour % 24 === MAIL_HOUR) morningMail(s, events);
   expansions(s);
   for (const r of s.sales.requests) if (r.status === "quoted" && r.replyAt !== null && r.replyAt <= s.hour) reply(s, r, events);
