@@ -1,20 +1,21 @@
 import { Minus, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
-import { modelById, priceOf } from "../../../sim/10-catalog/hardware";
+import { modelById, type FormFactor } from "../../../sim/10-catalog/hardware";
 import { leaseOffers } from "../../../sim/10-catalog/leasing";
 import { REGIONS } from "../../../sim/20-world/datacenters";
-import { buyCart } from "../../../sim/90-actions/hardware";
+import { buyCart, unitPrice } from "../../../sim/90-actions/hardware";
 import { Isometric } from "../../art/Isometric";
 import { Logo } from "../../art/logos";
 import { useStore } from "../../store";
+import { partLabel } from "../hw";
 
-export function Stepper({ value, onChange, min = 0, step = 1, label = "Quantity" }: { value: number; onChange: (n: number) => void; min?: number; step?: number; label?: string }) {
+export function Stepper({ value, onChange, min = 0, max, step = 1, label = "Quantity" }: { value: number; onChange: (n: number) => void; min?: number; max?: number; step?: number; label?: string }) {
   return (
     <div className="shop-qty" role="group" aria-label={label}>
       <button className="btn icon" aria-label="Fewer" disabled={value - step < min} onClick={() => onChange(value - step)}><Minus /></button>
       <span className="num">{value}</span>
-      <button className="btn icon" aria-label="More" onClick={() => onChange(value + step)}><Plus /></button>
+      <button className="btn icon" aria-label="More" disabled={max !== undefined && value + step > max} onClick={() => onChange(value + step)}><Plus /></button>
     </div>
   );
 }
@@ -29,7 +30,7 @@ export function Cart() {
   const openLoc = useStore((s) => s.openLoc);
   const [to, setTo] = useState<string | null>(null);
   const dest = game.locations.find((l) => l.id === (to ?? openLoc)) ?? game.locations[0];
-  const total = cart.reduce((n, l) => n + priceOf(modelById(l.model), l.brand) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
+  const total = cart.reduce((n, l) => n + unitPrice(l) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
   const offers = total ? leaseOffers(game, total) : [];
   const offer = offers.find((o) => o.id === pay);
   const best = Math.min(...offers.map((o) => o.total));
@@ -46,14 +47,18 @@ export function Cart() {
       <div className="shop-cart-h"><h3>Cart</h3><span className="grow" /><span className="num shop-muted">{units}</span></div>
       <div className="shop-cart-list">
         {cart.map((l) => {
-          const m = modelById(l.model);
+          const m = modelById(l.model), name = l.part ? partLabel(l.part) : m.name;
+          const parts = [...(l.bare ? ["Bare chassis"] : []), ...(l.extras ?? []).map((e) => `${e.qty} × ${partLabel({ ...e, ff: e.ff as FormFactor | undefined })}`)];
           return (
-            <div key={`${l.model}|${l.brand}`} className="shop-line">
+            <div key={`${l.model}|${l.brand}|${l.bare}|${JSON.stringify([l.extras, l.part])}`} className="shop-line">
               <Isometric model={m} brand={l.brand} w={56} />
-              <div className="shop-line-name"><strong>{m.name}</strong><span>{l.brand}</span></div>
-              <Stepper value={l.qty} min={1} onChange={(n) => setCartQty(l.model, l.brand, n)} />
-              <span className="num shop-line-total">{euro(priceOf(m, l.brand) * l.qty)}</span>
-              <button className="btn ghost icon" aria-label={`Remove ${m.name}`} onClick={() => setCartQty(l.model, l.brand, 0)}><X /></button>
+              <div className="shop-line-name">
+                <strong>{name}</strong><span>{l.brand}</span>
+              </div>
+              <Stepper value={l.qty} min={1} onChange={(n) => setCartQty(l, n)} />
+              <span className="num shop-line-total">{euro(unitPrice(l) * l.qty)}</span>
+              <button className="btn ghost icon" aria-label={`Remove ${name}`} onClick={() => setCartQty(l, 0)}><X /></button>
+              {parts.length > 0 && <div className="shop-line-parts num">{parts.join(", ")}</div>}
             </div>
           );
         })}

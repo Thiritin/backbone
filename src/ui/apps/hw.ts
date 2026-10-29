@@ -12,7 +12,7 @@ export const disk = (gb: number) => (gb >= 1000 ? `${+(gb / 1000).toFixed(1)} TB
 export const cores = (n: number) => `${n} ${n === 1 ? "core" : "cores"}`;
 const FF_LABEL = { "3.5": '3.5"', "2.5": '2.5"', nvme: "NVMe" } as const;
 // Size of a sized part ("16 GB", "4 TB, 3.5\"", "32 cores"), or a dash for parts without one.
-export const partSize = (c: Component): string =>
+export const partSize = (c: Pick<Component, "kind" | "size" | "ff">): string =>
   c.size === undefined ? "-" : c.kind === "ram" ? ram(c.size) : c.kind === "cpu" ? cores(c.size) : `${disk(c.size)}${c.ff ? `, ${FF_LABEL[c.ff]}` : ""}`;
 const SLOT_NAME: Partial<Record<ComponentKind, string>> = { hdd: "Bay", ssd: "Bay", nvme: "Bay", ram: "DIMM", cpu: "Socket", psu: "PSU bay", fan: "Fan" };
 // Slot a part sits in: the nth of its kind, or its fixed place on the board.
@@ -44,6 +44,8 @@ export const portLamps = (m: DeviceModel, peers: (End | null)[]): PortLamp[] => 
 
 export const devName = (d: Device) => d.label ?? d.name;
 export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: "Power supply", fan: "Fan", ram: "RAM stick", board: "Mainboard", cpu: "CPU", nic: "Network card" };
+// A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"".
+export const partLabel = (p: Pick<Component, "kind" | "size" | "ff">): string => `${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}`;
 export const ageYears = (g: GameState, c: Component) => (g.hour - c.installedAt) / HOURS_PER_YEAR;
 export const isWorn = (g: GameState, c: Component) => ageYears(g, c) >= COMPONENTS[c.kind].life;
 

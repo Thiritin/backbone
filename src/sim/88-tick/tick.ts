@@ -135,14 +135,18 @@ function service(s: GameState) {
   s.devices = s.devices.map((d) => {
     let next = d;
     if (d.maintenance && d.maintenance.doneAt <= s.hour) {
-      const old = d.components.find((c) => c.id === d.maintenance!.componentId)!;
-      const id = `c${Math.max(...d.components.map((c) => Number(c.id.slice(1)) || 0)) + 1}`;
-      const isDrive = drivesOf(d).includes(old);
-      const rebuild = isDrive && d.raid !== "none" && !arrayLost(d) ? { componentId: id, doneAt: s.hour + rebuildHours(d) } : d.rebuild;
-      next = {
-        ...d, maintenance: null, rebuild,
-        components: d.components.map((c) => (c.id === old.id ? { id, kind: c.kind, installedAt: s.hour, failedAt: null, size: c.size, ff: c.ff } : c)),
-      };
+      const old = d.components.find((c) => c.id === d.maintenance!.componentId);
+      // Installing or removing a part changed the device when it started; the work only keeps it busy.
+      if (!old) next = { ...d, maintenance: null };
+      else {
+        const id = `c${Math.max(...d.components.map((c) => Number(c.id.slice(1)) || 0)) + 1}`;
+        const isDrive = drivesOf(d).includes(old), spec = d.maintenance.spec;
+        const rebuild = isDrive && d.raid !== "none" && !arrayLost(d) ? { componentId: id, doneAt: s.hour + rebuildHours(d) } : d.rebuild;
+        next = {
+          ...d, maintenance: null, rebuild,
+          components: d.components.map((c) => (c.id === old.id ? { id, kind: c.kind, installedAt: s.hour, failedAt: null, size: spec?.size ?? c.size, ff: spec?.ff ?? c.ff } : c)),
+        };
+      }
     }
     if (next.rebuild && next.rebuild.doneAt <= s.hour) next = { ...next, rebuild: null };
     return next;

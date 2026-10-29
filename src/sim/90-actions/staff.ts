@@ -127,17 +127,19 @@ export function setOnCall(s: GameState, id: string, on: boolean): ActionResult {
 }
 
 // Queues an operation for the technicians at the device's location.
-export function queueOperation(s: GameState, kind: OpKind, deviceId: string, componentId: string | null = null): ActionResult {
+export function queueOperation(s: GameState, kind: OpKind, deviceId: string, componentId: string | null = null, partId: string | null = null): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   const loc = locationOf(s, d);
   if (!loc) return fail("error.notMounted");
   if (!techsAt(s, loc.id, OP_TASK[kind]).length) return fail("error.noTechnician");
-  if (kind === "replace" && !d.components.some((c) => c.id === componentId)) return fail("error.unknownComponent");
+  if ((kind === "replace" || (kind === "part" && !partId)) && !d.components.some((c) => c.id === componentId)) return fail("error.unknownComponent");
+  if (kind === "part" && partId && !s.devices.some((x) => x.id === partId && x.store === loc.id)) return fail("error.noPart");
   if (kind === "drain" && !clusterOf(s, deviceId)) return fail("error.notNode");
   if (kind === "php" && !s.clusters.some((c) => c.kind === "panel" && anchorOf(s, c) === deviceId)) return fail("error.notPanelHost");
-  if (s.techOps.some((o) => o.kind === kind && o.deviceId === deviceId && o.componentId === (kind === "replace" ? componentId : null))) return fail("error.alreadyQueued");
-  return { ok: true, id: queueOp(s, kind, deviceId, kind === "replace" ? componentId : null).id };
+  const comp = kind === "replace" || kind === "part" ? componentId : null, spare = kind === "part" ? partId : null;
+  if (s.techOps.some((o) => o.kind === kind && o.deviceId === deviceId && o.componentId === comp && (o.partId ?? null) === spare)) return fail("error.alreadyQueued");
+  return { ok: true, id: queueOp(s, kind, deviceId, comp, false, undefined, spare).id };
 }
 
 // A PHP upgrade of a panel host still on an older version or missing a released patch, done at the server it runs on.

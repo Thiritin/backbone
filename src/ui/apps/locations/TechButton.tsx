@@ -26,13 +26,17 @@ export function opLabel(game: GameState, o: TechOp): string {
     const w = game.workloads.find((x) => x.id === o.target?.workloadId), to = game.clusters.find((c) => c.id === o.target?.clusterId);
     return `Migrate ${game.services.find((v) => v.id === w?.serviceId)?.label ?? "web space"} to ${to?.name ?? "panel host"}`;
   }
+  if (o.kind === "part") {
+    const c = d?.components.find((x) => x.id === o.componentId), kind = c?.kind ?? game.devices.find((x) => x.id === o.partId)?.model.slice(5);
+    return `${o.partId ? "Install" : "Remove"} ${kind ? PART_NAME[kind as keyof typeof PART_NAME].toLowerCase() : "part"}`;
+  }
   return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}` }[o.kind];
 }
 
 // Queues the operation for the technician who gets to it first, or shows it queued with a Cancel.
-export function TechButton({ game, deviceId, kind, componentId = null }: { game: GameState; deviceId: string; kind: OpKind; componentId?: string | null }) {
+export function TechButton({ game, deviceId, kind, componentId = null, partId = null }: { game: GameState; deviceId: string; kind: OpKind; componentId?: string | null; partId?: string | null }) {
   const act = useStore((s) => s.act);
-  const queued = game.techOps.find((o) => o.deviceId === deviceId && o.kind === kind && o.componentId === componentId);
+  const queued = game.techOps.find((o) => o.deviceId === deviceId && o.kind === kind && o.componentId === componentId && (o.partId ?? null) === partId);
   if (queued) {
     return (
       <>
@@ -45,20 +49,20 @@ export function TechButton({ game, deviceId, kind, componentId = null }: { game:
   const slot = loc && nextSlot(game, loc.id, OP_TASK[kind], urgent(game, { kind, deviceId, componentId }));
   if (!slot) return null;
   return (
-    <button className="btn" onClick={() => act((g) => queueOperation(g, kind, deviceId, componentId))}>
+    <button className="btn" onClick={() => act((g) => queueOperation(g, kind, deviceId, componentId, partId))}>
       <Wrench />{slot.name.split(" ")[0]}{slot.onCall && " (on call)"}, <span className="num">{slotTime(game.hour, slot.hour)}</span>
     </button>
   );
 }
 
 // The same choice as TechButton, as a menu item: queue it for the first free technician, or cancel the queued one.
-export function techItem(game: GameState, deviceId: string, kind: OpKind, componentId: string | null = null): MenuItem | undefined {
+export function techItem(game: GameState, deviceId: string, kind: OpKind, componentId: string | null = null, partId: string | null = null): MenuItem | undefined {
   const act = useStore.getState().act;
-  const queued = game.techOps.find((o) => o.deviceId === deviceId && o.kind === kind && o.componentId === componentId);
+  const queued = game.techOps.find((o) => o.deviceId === deviceId && o.kind === kind && o.componentId === componentId && (o.partId ?? null) === partId);
   if (queued) return { label: `Cancel queued ${opLabel(game, queued).toLowerCase()}`, run: () => act((g) => cancelOperation(g, queued.id)) };
   const d = game.devices.find((x) => x.id === deviceId), loc = d && locationOf(game, d);
   const slot = loc && nextSlot(game, loc.id, OP_TASK[kind], urgent(game, { kind, deviceId, componentId }));
   if (!slot) return undefined;
-  const what = opLabel(game, { kind, deviceId, componentId } as TechOp);
-  return { label: `${what} by ${slot.name.split(" ")[0]}${slot.onCall ? " (on call)" : ""}, ${slotTime(game.hour, slot.hour)}`, run: () => act((g) => queueOperation(g, kind, deviceId, componentId)) };
+  const what = opLabel(game, { kind, deviceId, componentId, partId } as TechOp);
+  return { label: `${what} by ${slot.name.split(" ")[0]}${slot.onCall ? " (on call)" : ""}, ${slotTime(game.hour, slot.hour)}`, run: () => act((g) => queueOperation(g, kind, deviceId, componentId, partId)) };
 }
