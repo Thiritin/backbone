@@ -2,6 +2,7 @@ import { yearOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import { marketPrice, PRODUCTS, sizeSpec, type Resources, type Sla, type Spec } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
+import { vmName } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
 import { clustersIn, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
@@ -286,8 +287,14 @@ export function setHa(s: GameState, clusterId: string, feature: keyof Ha, on: bo
 
 export const workload = (s: GameState, serviceId: string, w: Partial<Workload>): Workload => ({
   id: `wl${s.nextId++}`, serviceId, clusterId: null, deviceId: null, rackId: null, slot: 0, units: 0, watts: 0, vcpu: 0, ramGb: 0, diskGb: 0, placedAt: s.hour,
-  stopped: false, busyUntil: 0, backupAt: null, ...w,
+  stopped: false, busyUntil: 0, backupAt: null, ...hostnameOf(s, serviceId), ...w,
 });
+
+// A customer workload carries its service's hostname, the player's own VM gets the next vmNNN.
+const hostnameOf = (s: GameState, serviceId: string): { hostname?: string } => {
+  const hostname = serviceId ? s.services.find((v) => v.id === serviceId)?.hostname : vmName(s);
+  return hostname ? { hostname } : {};
+};
 
 // Places a service on hardware by its product: a cluster workload (in clusterId, or the first cluster of its zone that sells
 // it with room; on deviceId when given; inside the VM of a panel VM host), a whole free server for dedicated, rack units with power for colocation. A service without a zone

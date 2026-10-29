@@ -26,6 +26,7 @@ import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 import { newIps, type Ips } from "./60-infra/addresses";
 import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
+import { firstHostNo } from "./30-customers/hostnames";
 
 export const SAVE_VERSION = 2;
 
@@ -51,6 +52,8 @@ export interface Device { id: string; model: string; brand: string; rackId: stri
   bootUntil?: number;
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
   part?: PartSpec;
+  // nodeNNN, set on servers.
+  hostname?: string;
 }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
@@ -158,6 +161,10 @@ export interface GameState {
   chadUsage: ChadUsage;
   // Public addresses, the LIR membership and its blocks (60-infra/addresses.ts).
   ips: Ips;
+  // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
+  nextNode: number;
+  nextVm: number;
+  nextHostNo: number;
 }
 
 // Fields every new device starts with: fresh components installed at hour `at` (the model's parts unless partList says otherwise), powered on, RAID 1 with two or more drives.
@@ -210,6 +217,7 @@ export const newGame = (seed: number): GameState => ({
   registrar: null,
   chadUsage: newChadUsage(),
   ips: newIps(),
+  nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

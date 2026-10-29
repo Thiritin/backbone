@@ -1,6 +1,7 @@
 // GDD, Support: abuse and copyright notices, legal requests, refunds after outages; numbers in economy.md, Notices and legal requests.
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { activeServices, type Customer } from "../30-customers/customers";
+import { serviceFqdn } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
 import { serverOf, type Workload } from "../60-infra/cluster";
 import { gridTick, maybeReview, returnSeized, seize } from "../60-infra/incidents";
@@ -195,7 +196,7 @@ function spawn(s: GameState, r: Rng): Ticket[] {
 }
 
 export const subjectParams = (s: GameState, t: Ticket): Record<string, string | number> => ({
-  service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", video: t.notice?.video ?? "",
+  service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", video: t.notice?.video ?? "",
   round: t.notice?.round ?? 1, sender: t.notice ? senderById(t.notice.sender).name : "",
 });
 

@@ -7,6 +7,7 @@ import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, hol
 import { claimRepair } from "../46-finance/finance";
 import { endLease, rebuildHours } from "../88-tick/tick";
 import { serverTaken } from "../60-infra/cluster";
+import { nodeName } from "../30-customers/hostnames";
 
 // error is an i18n key.
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string };
@@ -195,7 +196,8 @@ function stock(s: GameState, line: CartLine, lease: string | null, store: string
     const name = nextName(`${prefix(s, store)}-${roleOf(modelId)}`, s.devices.map((d) => d.name));
     const id = newId(s, "dev");
     s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "failover", groups: [], price, boughtAt: s.hour, lease, store, transitTo: null, arriveAt: null,
-      ...deviceDefaults(modelId, s.hour, custom ? lineParts(line) : undefined), ...(line.part ? { part: line.part } : {}) });
+      ...deviceDefaults(modelId, s.hour, custom ? lineParts(line) : undefined), ...(line.part ? { part: line.part } : {}),
+      ...(modelById(modelId).kind === "server" ? { hostname: nodeName(s) } : {}) });
     return id;
   });
 }

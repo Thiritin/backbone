@@ -112,3 +112,6 @@ export const derivedDomain = (s: GameState): string => `${ascii(s.company.name) 
 
 // The company's own domain, for mail servers, panel addresses and signatures; the suggested name until one is registered.
 export const companyDomain = (s: GameState): string => s.company.domain ?? derivedDomain(s);
+
+// The full name of a machine or service: its hostname under the company domain.
+export const fqdn = (s: GameState, hostname: string): string => `${hostname}.${companyDomain(s)}`;

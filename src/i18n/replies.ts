@@ -14,7 +14,7 @@ const SIGN: Mail[] = [
 const to = (greet: Mail) => (i: number, body: Mail): Mail => (p) => `${greet(p)}\n\n${body(p)}\n\n${SIGN[i](p)}`;
 const customer = to(hi), sender = to(() => "Dear Sir or Madam,"), lead = to((p) => `Dear ${p.name},`);
 const site = (p: Params) => p.domain || p.service || "your website";
-const svc = (p: Params) => p.service || "your service";
+const svc = (p: Params) => p.hostname || p.service || "your service";
 const day = (p: Params) => {
   const d = dateOf(Number(p.hour));
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} at ${String(d.getUTCHours()).padStart(2, "0")}:00`;
