@@ -20,7 +20,8 @@ import { PriceField } from "../sales/PriceField";
 import { ActivityLog } from "./ActivityLog";
 import { registryOf } from "../../../sim/30-customers/registry";
 import { specText } from "../../../sim/30-market/spec";
-import { initials, kindOf, monthYear, moodClass, noticed, patience, PRODUCT, statusOf } from "../support/labels";
+import { initials, kindOf, monthYear, moodClass, patience, PRODUCT, statusOf } from "../support/labels";
+import { noticesOutages } from "./notice";
 
 export type Status = "active" | "overdue" | "suspended" | "churned";
 export interface Row { c: Customer; status: Status; services: number; monthly: number; lifetime: number; balance: number; invoices: number; tickets: number; labels: string }
@@ -193,7 +194,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                   <div><dt>Open tickets</dt><dd className="num">{r.tickets}</dd></div>
                   <div><dt>Invoices</dt><dd className="num">{r.invoices}</dd></div>
                   <div><dt>Reply within</dt><dd>{patience(profileStats(c.profile).reply)}</dd></div>
-                  <div><dt>Notices outages</dt><dd>{noticed(profileStats(c.profile).tolerance)}</dd></div>
+                  <div><dt>Notices outages</dt><dd>{noticesOutages(c.profile)}</dd></div>
                 </dl>
               </section>
             </div>

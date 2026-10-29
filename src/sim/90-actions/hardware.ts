@@ -482,15 +482,16 @@ export function addSecondPsu(s: GameState, deviceId: string): ActionResult {
 
 // Orders another internet line for the basement; it goes live after its install days. Ordering the current line cancels a pending switch.
 export function orderHomeLine(s: GameState, lineId: string): ActionResult {
-  const line = HOME_LINES.find((l) => l.id === lineId);
-  if (!line) return fail("error.unknownLine");
-  if (line.from > yearOf(s.hour)) return fail("error.lineNotYet");
-  if (s.homeLine.next?.id === lineId) return fail("error.lineOrdered");
+  // Ordering the current line, or none before the first one, cancels a pending order.
   if (s.homeLine.id === lineId) {
     if (!s.homeLine.next) return fail("error.lineActive");
     s.homeLine = { ...s.homeLine, next: null };
     return { ok: true };
   }
+  const line = HOME_LINES.find((l) => l.id === lineId);
+  if (!line) return fail("error.unknownLine");
+  if (line.from > yearOf(s.hour)) return fail("error.lineNotYet");
+  if (s.homeLine.next?.id === lineId) return fail("error.lineOrdered");
   s.homeLine = { ...s.homeLine, next: { id: lineId, at: s.hour + 24 * line.installDays } };
   return { ok: true };
 }

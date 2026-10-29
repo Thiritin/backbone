@@ -10,7 +10,7 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { addressBills, addressesOf, addressTick, addSpam, privateIp, publicV4, sharedAddress } from "../src/sim/60-infra/addresses";
 import { lineOffered } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
-import { announceBlock, assignAddress, buyAddresses, joinLir, releaseAddress, requestDelist } from "../src/sim/90-actions/addresses";
+import { addAddress, announceBlock, assignAddress, buyAddresses, joinLir, releaseAddress, requestDelist } from "../src/sim/90-actions/addresses";
 import { createVm, provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice, buyRack, connect } from "../src/sim/90-actions/hardware";
@@ -79,6 +79,12 @@ describe("addresses", () => {
     expect(err(releaseAddress(s, free.id))).toBe("error.addressInUse");
     ok(assignAddress(s, free.id, null));
     ok(releaseAddress(s, free.id));
+    // Adding one buys it when the location has none free, and takes a free one first.
+    const before = s.ips.addresses.length;
+    ok(addAddress(s, vm, 4));
+    expect(s.ips.addresses).toHaveLength(before + 1);
+    expect(publicV4(s, vm)?.shared).toBe(false);
+    expect(err(addAddress(s, "nope", 4))).toBe("error.unknownMachine");
   });
 
   it("blocks a VPS sale in a datacenter without a free address", () => {
@@ -125,6 +131,7 @@ describe("addresses", () => {
     const { loc } = datacenter(s);
     ok(joinLir(s));
     expect(s.ips.lir?.asn).toBeGreaterThan(0);
+    expect(s.network.asn).toBe(s.ips.lir?.asn);
     const block = s.ips.blocks[0];
     expect(block).toMatchObject({ size: 2048, locationId: null });
     ok(announceBlock(s, block.id, loc));

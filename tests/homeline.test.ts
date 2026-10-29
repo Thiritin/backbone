@@ -63,6 +63,12 @@ describe("home line", () => {
     expect(err(orderHomeLine(s, "dsl-16"))).toBe("ok");
     expect(s.homeLine).toEqual({ id: "dsl-16", next: null });
   });
+  it("cancels the first order before any line is live", () => {
+    const s = newGame(1);
+    orderHomeLine(s, "dsl-16");
+    expect(err(orderHomeLine(s, ""))).toBe("ok");
+    expect(s.homeLine).toEqual({ id: "", next: null });
+  });
 
   it("bills nothing before the first line", () => {
     const s = newGame(1);

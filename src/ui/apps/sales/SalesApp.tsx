@@ -10,12 +10,13 @@ import { decline, quote } from "../../../sim/90-actions/sales";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
-import { initials, noticed, patience, PRODUCT, stamp } from "../support/labels";
+import { initials, patience, PRODUCT, stamp } from "../support/labels";
 import { PriceField } from "./PriceField";
 import { UpgradeCompose } from "../support/CustomOrder";
 import { sizeOf, specText } from "../../../sim/30-market/spec";
 import "../support/support.css";
 import "./sales.css";
+import { noticesOutages } from "../customers/notice";
 
 export type SalesBox = "open" | "waiting" | "unserved" | "won";
 export const OPEN = ["open", "countered", "refused"];
@@ -96,7 +97,7 @@ export function Card({ r }: { r: SalesRequest }) {
           <span>{r.city}</span>
           <span>{SLA_LABEL[r.sla]} SLA · <span className="num">{(sla.uptime * 100).toFixed(sla.uptime >= 0.999 ? 2 : 1)}%</span> · <span className="num">{sla.responseHours}</span> h response</span>
           <span>Reply within {patience(expects.reply)}</span>
-          <span>Notices outages {noticed(expects.tolerance).toLowerCase()}</span>
+          <span>Notices outages {noticesOutages(r.profile, r.product).toLowerCase()}</span>
           <span className="pill">{STATUS[r.status]}</span>
         </div>
       </div>

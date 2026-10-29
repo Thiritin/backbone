@@ -24,6 +24,7 @@ import { softwareOn } from "../../../sim/90-actions/software";
 import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
 import { TechButton } from "./TechButton";
+import { AddressRows } from "../network/Addresses";
 
 // Sells a device or a rack after showing its resale value against the price paid.
 export function SellConfirm({ game, name, price, boughtAt, cables = 0, onCancel, onSell }: { game: GameState; name: string; price: number; boughtAt: number; cables?: number; onCancel: () => void; onSell: () => void }) {
@@ -195,6 +196,7 @@ function Status({ game, device }: { game: GameState; device: Device }) {
         </div>
       )}
       {model.kind === "server" && <div><dt>Role</dt><dd>{role}</dd></div>}
+      {model.kind === "server" && device.rackId && <AddressRows game={game} id={device.id} />}
     </dl>
   );
 }

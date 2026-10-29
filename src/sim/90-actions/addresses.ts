@@ -1,7 +1,8 @@
+import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { DELIST_HOURS, freeBlock, LIR_FEES, transferPrice } from "../10-catalog/addresses";
 import type { GameState } from "../50-state";
-import { buyLineExtra, buyProvider, dynamicLine, holderOf, lineActive, machineLocation, v6Offered } from "../60-infra/addresses";
+import { buyLineExtra, buyProvider, dynamicLine, holderOf, lineActive, machineLocation, takeAddress, v6Offered } from "../60-infra/addresses";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -19,6 +20,16 @@ export function buyAddresses(s: GameState, locationId: string, v: 4 | 6, count: 
   if (!Number.isInteger(count) || count < 1 || count > 64) return fail("error.addressCount");
   for (let i = 0; i < count; i++) if (loc.dc) buyProvider(s, loc, v); else buyLineExtra(s, loc);
   return { ok: true };
+}
+
+// Gives a server or VM one more address: a free one of its location, a new one from an announced block, or a bought one.
+export function addAddress(s: GameState, machineId: string, v: 4 | 6): ActionResult {
+  const loc = machineLocation(s, machineId);
+  if (!loc) return fail("error.unknownMachine");
+  const holder = holderOf(s, machineId);
+  if (takeAddress(s, loc, v, holder)) return { ok: true };
+  const r = buyAddresses(s, loc.id, v, 1);
+  return r.ok ? assignAddress(s, s.ips.addresses[s.ips.addresses.length - 1].id, machineId) : r;
 }
 
 // Gives a free provider address back; it is no longer billed from the next month.
@@ -65,7 +76,10 @@ export function joinLir(s: GameState): ActionResult {
   if (!s.locations.some((l) => l.dc)) return fail("error.lirNeedsDatacenter");
   if (s.cash < LIR_FEES.signup) return fail("error.noCash");
   book(s, "ledger.lirSignup", {}, LIR_FEES.signup);
-  s.ips = { ...s.ips, lir: { since: s.hour, asn: 200000 + (s.seed % 9000) * 7 } };
+  // A LIR assigns itself an AS number unless the company already registered one.
+  const asn = s.network.asn ?? 20000 + Math.floor(rand(hashRng(s.seed, 0xa5)) * 40000);
+  s.network = { ...s.network, asn };
+  s.ips = { ...s.ips, lir: { since: s.hour, asn } };
   const free = freeBlock(s.hour)!;
   addBlock(s, free.size, free.prefix);
   return { ok: true };

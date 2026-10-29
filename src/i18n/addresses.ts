@@ -18,6 +18,7 @@ export const ADDRESSES_EN: Record<string, (p: Params) => string> = {
   "error.noIpv6": () => "This location has no IPv6 yet.",
   "error.addressCount": () => "Pick between 1 and 64 addresses.",
   "error.unknownAddress": () => "This address no longer exists.",
+  "error.unknownMachine": () => "This server or VM no longer exists.",
   "error.addressNotRented": () => "Only rented addresses can be returned.",
   "error.addressInUse": () => "The address is in use.",
   "error.addressElsewhere": () => "The address belongs to another location.",
