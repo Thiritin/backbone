@@ -1,13 +1,13 @@
 import { BookOpen, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { PointerEvent as RPointerEvent } from "react";
-import { createPortal } from "react-dom";
 import type { Doc } from "../../sim/50-state";
 import { addNote, editNote, moveDoc, removeDoc } from "../../sim/90-actions/docs";
 import { useStore } from "../store";
 import { Confirm } from "./Confirm";
+import { menuOn, openMenu } from "./ContextMenu";
 
-const ICON_W = 92, ICON_H = 90, MENUBAR = 30, DOCK = 80, MENU_W = 190;
+const ICON_W = 92, ICON_H = 90, MENUBAR = 30, DOCK = 80;
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), Math.max(lo, hi));
 
 export function newNote(at?: { x: number; y: number }) {
@@ -16,7 +16,6 @@ export function newNote(at?: { x: number; y: number }) {
   if (r.ok && r.id) openDoc(r.id);
 }
 
-interface Menu { x: number; y: number; doc: Doc | null }
 
 export function DesktopIcons() {
   const docs = useStore((s) => s.game.docs);
@@ -24,15 +23,14 @@ export function DesktopIcons() {
   const [selected, setSelected] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [trash, setTrash] = useState<Doc | null>(null);
-  const [menu, setMenu] = useState<Menu | null>(null);
   const [drag, setDrag] = useState<{ id: string; x: number; y: number } | null>(null);
 
   useEffect(() => {
-    const clear = () => { setSelected(null); setMenu(null); };
+    const clear = () => setSelected(null);
     const context = (e: MouseEvent) => {
       if (!(e.target as Element).closest(".wallpaper-host")) return;
       e.preventDefault();
-      setMenu({ x: e.clientX, y: e.clientY, doc: null });
+      openMenu(e.clientX, e.clientY, [{ label: "New note", run: () => newNote({ x: e.clientX - ICON_W / 2, y: e.clientY - 32 }) }]);
     };
     window.addEventListener("pointerdown", clear);
     window.addEventListener("contextmenu", context);
@@ -53,7 +51,6 @@ export function DesktopIcons() {
   const grab = (e: RPointerEvent, d: Doc) => {
     e.stopPropagation();
     setSelected(d.id);
-    setMenu(null);
     if (e.button !== 0) return;
     const x0 = e.clientX, y0 = e.clientY;
     let pos: { x: number; y: number } | null = null;
@@ -85,9 +82,6 @@ export function DesktopIcons() {
     for (const w of windows) if (w.doc === d.id || (d.kind === "guide" && w.app === "Getting started")) close(w.id);
   };
 
-  const items: [string, () => void][] = !menu ? [] : menu.doc
-    ? [["Open", () => openDoc(menu.doc!.id)], ["Rename", () => setRenaming(menu.doc!.id)], ["Move to Trash", () => setTrash(menu.doc)]]
-    : [["New note", () => newNote({ x: menu.x - ICON_W / 2, y: menu.y - 32 })]];
 
   return (
     <div className="desktop-icons">
@@ -104,7 +98,7 @@ export function DesktopIcons() {
             onPointerDown={(e) => grab(e, d)}
             onDoubleClick={() => openDoc(d.id)}
             onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && openDoc(d.id)}
-            onContextMenu={(e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, doc: d }); }}
+            onContextMenu={menuOn(() => [{ label: "Open", run: () => openDoc(d.id) }, { label: "Rename", run: () => setRenaming(d.id) }, null, { label: "Move to Trash", run: () => setTrash(d) }])}
           >
             <span className={`di-page di-${d.kind}`}><Icon /></span>
             {renaming === d.id ? (
@@ -127,12 +121,6 @@ export function DesktopIcons() {
           </div>
         );
       })}
-      {menu && createPortal(
-        <div className="mb-drop ctx-menu" role="menu" style={{ left: clamp(menu.x, 0, innerWidth - MENU_W), top: menu.y }} onPointerDown={(e) => e.stopPropagation()}>
-          {items.map(([l, fn]) => <button key={l} role="menuitem" onClick={() => { setMenu(null); fn(); }}>{l}</button>)}
-        </div>,
-        document.querySelector(".desktop")!,
-      )}
       {trash && (
         <Confirm
           title={`Move “${trash.title}” to the Trash?`}
