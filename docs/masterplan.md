@@ -15,7 +15,7 @@ This is the work plan for the next stretch of Backbone. It lists what is built a
 - The owner plays on the Vite dev server (port 5173) from this checkout, so merging code here reloads their page; windows and the Support selection survive reloads (src/ui/session.ts).
 - One lane at a time on its own branch or worktree, merged into main only when everything above is green.
 
-Balance today (main 9cd5d88): steady medians L2 2006.0, L3 2006.8, L4 2008.6, L5 2011.9, L6 2017.9; solo L5 2012.8; 0 of 20 bankrupt in both. 550 tests pass.
+Balance today (main 84d5851): steady medians L2 2006.2, L3 2006.9, L4 2008.7, L5 2012.0, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 589 tests pass.
 
 ## Built
 
@@ -32,10 +32,14 @@ Balance today (main 9cd5d88): steady medians L2 2006.0, L3 2006.8, L4 2008.6, L5
 - Euro sign after amounts with a space (422229e); zoomable rack view with ctrl+wheel, pinch and buttons.
 - Bigger default Support and Locations windows (6203d96); notification titles for marketing bills and reviews (c8d1fef); abandoned tickets read "Never mind" (8504606); cart delivery picker padding (22d5ff4); windows and Support selection survive reloads (66804b4); control plane listed under Workloads with neutral gauges (3ba75ac).
 - Accepted orders with no room wait 48 hours for setup instead of failing at once (184cd4e); outage tolerance shows only through a line in the customer's first email (d4f9abf).
+- Lane 2.0, alerts that pause (ed5d404): `ALERT_KEYS` in src/sim/alerts.ts, `alert` in the store, src/ui/desktop/AlertSheet.tsx with Open and Continue; gdd.md "The desktop", Alerts.
+- Lane 2.1, company site hosting and design ages (8c57a61): rented Strateaux or an own panel host, `siteStatus`, lead and order factors, design generations with Redesign and the age penalty, `customerSite`, Website app styles per generation; the site factor is applied once per website lead flow (84d5851).
+- Lane 4.1, chassis slots and capacity from parts (9c20670): `dimmSlots`, bays by form factor, `pcie`, `psuBays`, sized components, capacity from installed non-failed parts; gdd.md "Chassis and parts", economy.md "Chassis slots".
+- Lane 6.2 and 6.7 (62c30a9): setup fees booked as their own Finance category, the Products app shows the internet line, Network per month includes address costs, the RIPE buttons checked in the browser.
 
 ## In flight
 
-Nothing.
+Wave 2 in worktrees: Lane 2.1b, Lane 2.2, Lane 4.2, Lane 6 items 6.1, 6.4 and 6.6.
 
 ## What Lane 1 left behind (read before Lanes 2 and 3)
 
@@ -51,8 +55,8 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 
 | Lane | Title | Needs |
 | --- | --- | --- |
-| 2.0 | Alerts that pause the game | Built code only |
-| 2.1 | Company site hosting, customer sites, design ages | Built code only |
+| 2.0 | Alerts that pause the game | Built (ed5d404) |
+| 2.1 | Company site hosting, customer sites, design ages | Built (8c57a61) |
 | 2.1b | Domains, registrar partners and company email | 2.1 (website channel needs the domain) |
 | 2.2 | Panel traits, migration as a hand task, compromised sites and mail | 2.1 (site status), Lane 1 `addSpam` |
 | 2b.1 | Software versions, generated vulnerabilities, monitoring, updates | 2.0 (alerts), 2.2 (panel traits in the catalog) |
@@ -65,7 +69,7 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 3.4 | IPMI, power actions, hangs and pulled plugs | 3.1, 3.2 |
 | 3.5 | Terminal: ssh, ping, traceroute, recover | 3.4 |
 | 3b | Searchlight | 3.2 (searches sites and consoles) |
-| 4.1 | Chassis slots and capacity from parts | Built code only (parallel to Lane 3 is fine, hardware.ts is otherwise untouched until Lane 5) |
+| 4.1 | Chassis slots and capacity from parts | Built (9c20670) |
 | 4.2 | Shop: bare chassis, presets with extras, parts, upgrades in the rack | 4.1 |
 | 4.3 | Top-down lid-off view | 4.1, 4.2 |
 | 4.4 | Part prices over time | 4.1, 4.2 |
