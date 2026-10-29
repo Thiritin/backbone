@@ -4,3 +4,4 @@ dist/
 .playwright-mcp/
 .impeccable/review/
 .claude/worktrees/
+.env.local
