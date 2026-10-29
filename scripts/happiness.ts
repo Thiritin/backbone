@@ -70,7 +70,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   const first = (buyDevice(s, "g1-compute", "Dwell", 1, "loc1") as { id: string }).id;
   mountDevice(s, first, "rack2", 1);
   connect(s, { device: first, port: 0 }, { device: "dev5", port: 0 });
-  const hv = (installSoftware(s, first, "proxmocks") as { id: string }).id;
+  const hv = (installSoftware(s, first, "openveezee") as { id: string }).id;
   createPanelVm(s, hv, "freepanel");
   let bySource: Record<string, number> = {}, waitByKind: Record<string, number> = {}, stepErrors: Record<string, number> = {}, downHours: Record<string, number> = {};
   bumpProbe.fn = (_c, d) => {
@@ -113,7 +113,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     const id = bought.id!;
     for (let slot = 2; slot < 24 && !s.devices.find((d) => d.id === id)!.rackId; slot++) mountDevice(s, id, "rack2", slot);
     for (let port = 1; port < 4 && !connect(s, { device: id, port: 0 }, { device: "dev5", port }).ok; port++);
-    if (installSoftware(s, id, "proxmocks").ok) servers++;
+    if (installSoftware(s, id, "openveezee").ok) servers++;
   };
   let servers = 0;
   const reached: Record<string, number> = {};

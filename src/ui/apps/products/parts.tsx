@@ -1,4 +1,4 @@
-import { AppWindow, Boxes, Feather, Gauge, Layers, PanelsTopLeft, Server, SquareTerminal, TriangleAlert, type LucideIcon } from "lucide-react";
+import { AppWindow, Boxes, Container, Feather, Gauge, Layers, PanelsTopLeft, Server, SquareTerminal, TriangleAlert, type LucideIcon } from "lucide-react";
 import { euroCents } from "../../../sim/00-core/money";
 import { formatClock, START_YEAR } from "../../../sim/00-core/time";
 import { SERVES, softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
@@ -17,6 +17,7 @@ export const BRAND: Record<string, { icon: LucideIcon; color: string }> = {
   pleskit: { icon: PanelsTopLeft, color: "oklch(0.56 0.15 250)" },
   directadmen: { icon: SquareTerminal, color: "oklch(0.5 0.05 260)" },
   freepanel: { icon: Feather, color: "oklch(0.6 0.13 150)" },
+  openveezee: { icon: Container, color: "oklch(0.6 0.12 200)" },
   openstash: { icon: Layers, color: "oklch(0.58 0.19 25)" },
   vmwhere: { icon: Boxes, color: "oklch(0.5 0.04 250)" },
   proxmocks: { icon: Server, color: "oklch(0.66 0.16 55)" },

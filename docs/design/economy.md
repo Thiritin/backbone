@@ -1167,6 +1167,7 @@ Every server runs at most one control plane. A hypervisor ("Cloud" below) runs o
 | Pleskit | Panel | €12 per panel host | 3 h | ×0.9 | | | 8× | 1.5× | 0.25 vCPU, 0.25 GB, 5 GB |
 | DirectAdmen | Panel | €4 per panel host | 2 h | ×1.2 | | | 8× | 1.5× | 0.1 vCPU, 0.1 GB, 2 GB |
 | FreePanel | Panel | Free | 2 h | ×1.5 | | | 8× | 1.5× | 0.1 vCPU, 0.1 GB, 2 GB |
+| OpenVeeZee | Cloud | Free | 3 h | ×1.4 | 1.1 | No | 8× | 1.5× | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenStash | Cloud | Free | 8 h | ×1.3 | 1.0 | Yes | 4× | 1.0× | 2 vCPU, 2 GB, 20 GB |
 | VMwhere | Cloud | €8 per physical core | 5 h | ×0.7 | 1.15 | Yes | 10× | 1.25× | 1 vCPU, 2 GB, 10 GB |
 | Proxmocks | Cloud | Free | 3 h | ×1.0 | 1.0 | Yes | 8× | 1.5× | 0.25 vCPU, 0.25 GB, 5 GB |
@@ -1178,6 +1179,7 @@ Every server runs at most one control plane. A hypervisor ("Cloud" below) runs o
 | Pleskit | 2005 | 2005 | 2015 | Never |
 | DirectAdmen | 2005 | 2010 | Never | Never |
 | FreePanel | 2005 | Never | Never | 2009 |
+| OpenVeeZee | 2005 | 2005 | Never | Never |
 | OpenStash | 2010 | 2010 | Never | 2010 |
 | VMwhere | 2005 | 2005 | Never | 2005 |
 | Proxmocks | 2008 | 2008 | Never | 2008 |
