@@ -49,7 +49,7 @@ const vm = (share: number): Size => (y) => { const ramGb = share * grow(y); retu
 // Game servers start at 2 vCPUs and 4 GB, doubling like VMs.
 const game = (share: number): Size => (y) => ({ vcpu: 2 * share * grow(y), ramGb: 4 * share * grow(y), diskGb: Math.round(10 * share * grow(y)) });
 // A GPU VM books whole cards, 4 vCPUs, 8 GB of RAM and 50 GB of disk per card; RAM and disk grow like VMs.
-const cards = (n: number): Size => (y) => ({ vcpu: 4 * n, ramGb: 8 * n * grow(y), diskGb: Math.round(50 * n * grow(y)), gpus: n });
+const cards = (n: number): Size => (y) => ({ vcpu: 4 * n, ramGb: Math.round(32 * n * grow(y)) / 4, diskGb: Math.round(50 * n * grow(y)), gpus: n });
 const volume = (gb: number): Size => () => ({ ...NONE, diskGb: gb });
 const dedicated = (ramGb: number): Size => (y) => ({ ...NONE, ramGb: ramGb * grow(y) });
 const colo = (units: number, watts: number): Size => () => ({ ...NONE, units, watts });

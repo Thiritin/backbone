@@ -11,6 +11,8 @@ export const ADDRESSES_EN: Record<string, (p: Params) => string> = {
   "error.needsStaticLine": () => "Needs a business line with static addresses.",
   "sales.need.ipv4": (p) => `Needs a free IPv4 address in ${p.city}`,
   "sales.need.ipv6": (p) => `Needs IPv6 in ${p.city}`,
+  "sales.req.ipv4": (p) => `Free IPv4 address in ${p.city}`,
+  "sales.req.ipv6": (p) => `IPv6 in ${p.city}`,
   "ticket.howTo.bounce.subject": () => "My emails come back",
   "ticket.howTo.bounce.text": (p) => `Every email I send${p.domain ? ` from ${p.domain}` : ""} comes back with a message about a blocklist. My customers think I am ignoring them.`,
   "error.noFreeAddress": () => "No free address in this location.",

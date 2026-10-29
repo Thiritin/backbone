@@ -133,7 +133,7 @@ function Card({ model, brand, cls, part }: Item) {
   const cards = built.filter((p) => p.kind === "gpu");
   const sum = (kind: string) => built.filter((p) => p.kind === kind).reduce((n, p) => n + (p.size ?? 0), 0);
   const drives = built.filter((p) => ["hdd", "ssd", "nvme"].includes(p.kind));
-  const rows: [string, string][] = spec ? [...(part!.size !== undefined ? [["Size", partSize(part!)]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
+  const rows: [string, string][] = spec ? [...(part!.size !== undefined && part!.kind !== "gpu" ? [["Size", partSize(part!)]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
     ["Height", height(model)],
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
     ...(s ? [["Cores", cores(custom ? sum("cpu") : s.cores)], ["RAM", ram(custom ? sum("ram") : s.ramGb)],
