@@ -9,6 +9,7 @@ import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, hol
 import { claimRepair } from "../46-finance/finance";
 import { BMC_RESET_HOURS, hardReboot, pullPlug, pushLog } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
+import { handJob, type HandJob, type How } from "../60-infra/handwork";
 import { endLease, rebuildHours } from "../88-tick/tick";
 import { cardsFree, serverTaken } from "../60-infra/cluster";
 import { nodeName } from "../30-customers/hostnames";
@@ -410,11 +411,8 @@ export function setPower(s: GameState, deviceId: string, on: boolean): ActionRes
   return { ok: true };
 }
 
-// Hand work at a device: a datacenter answers after the remote hands' response time and bills at least one hour, the basement is at hand.
-function handsAt(s: GameState, d: Device, technician: boolean): { wait: number; perHour: number } | null {
-  const loc = locationOf(s, d), hands = loc?.dc && !technician ? datacenterById(loc.dc).remoteHands : null;
-  return hands ? { wait: hands.responseHours, perHour: hands.perHour } : null;
-}
+// A technician is on site at once, so the datacenter's hand work options do not apply.
+const onSite = (how: How | boolean) => how === true || how === "tech";
 
 // Stops the operating system cleanly: the workloads stop, no data is at risk, and the server is off. Needs a responsive OS.
 export function shutdown(s: GameState, deviceId: string): ActionResult {
@@ -452,31 +450,32 @@ function reboot(s: GameState, deviceId: string, key: "ipmi.log.reset" | "ipmi.lo
 export const reset = (s: GameState, deviceId: string, technician = false): ActionResult => reboot(s, deviceId, "ipmi.log.reset", technician);
 export const powerCycle = (s: GameState, deviceId: string, technician = false): ActionResult => reboot(s, deviceId, "ipmi.log.cycle", technician);
 
-// Pulls the plug on site: instant in the basement, after the remote hands' response time (billed for an hour) in a datacenter.
-export function pullPower(s: GameState, deviceId: string, technician = false): ActionResult {
+// Pulls the plug on site: instant in the basement, after the hand work's wait (remote hands billed for an hour) in a datacenter.
+export function pullPower(s: GameState, deviceId: string, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId && !d.panel) return fail("error.notMounted");
   if (!d.on) return fail("error.alreadyOff");
   if (d.hands) return fail("error.handsBusy");
-  const hands = pduOf(s, d) ? null : handsAt(s, d, technician);
-  if (!hands) return setPower(s, deviceId, false);
-  if (s.cash < hands.perHour) return fail("error.noCash");
-  book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: 1 }, -hands.perHour);
-  d.hands = { kind: "pull", doneAt: s.hour + hands.wait };
+  const loc = locationOf(s, d);
+  if (pduOf(s, d) || !loc?.dc || onSite(how)) return setPower(s, deviceId, false);
+  const job = handJob(s, d.label ?? d.name, loc, how, 0);
+  if ("error" in job) return fail(job.error);
+  if (s.cash < job.cost) return fail("error.noCash");
+  d.hands = { kind: "pull", doneAt: s.hour + job.commit() };
   return { ok: true };
 }
 
-// Resets a hung management controller on site: 15 minutes at the machine, plus the remote hands' response time and an hour's fee in a datacenter.
-export function resetBmc(s: GameState, deviceId: string, technician = false): ActionResult {
+// Resets a hung management controller on site: 15 minutes at the machine, plus the hand work's wait and, for remote hands, an hour's fee in a datacenter.
+export function resetBmc(s: GameState, deviceId: string, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.bmcHung) return fail("error.bmcFine");
   if (d.hands) return fail("error.handsBusy");
-  const hands = handsAt(s, d, technician);
-  if (hands && s.cash < hands.perHour) return fail("error.noCash");
-  if (hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: 1 }, -hands.perHour);
-  d.hands = { kind: "bmcreset", doneAt: s.hour + (hands?.wait ?? 0) + BMC_RESET_HOURS * workFactor(d.model, s.hour) };
+  const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, BMC_RESET_HOURS * workFactor(d.model, s.hour), 1);
+  if ("error" in job) return fail(job.error);
+  if (s.cash < job.cost) return fail("error.noCash");
+  d.hands = { kind: "bmcreset", doneAt: s.hour + job.commit() };
   return { ok: true };
 }
 
@@ -545,7 +544,8 @@ const greyMarket = (s: GameState, d: Device, part: Device): number =>
 
 // Swaps a failed or worn component for a spare from the zone's storage: 15 minutes in the basement, or the remote hands'
 // response time plus 15 minutes at a datacenter, billed for at least one hour. A technician on site swaps it in 15 minutes.
-export function replaceComponent(s: GameState, deviceId: string, componentId: string, technician = false): ActionResult {
+// The player or a friend can do it instead, after the drive.
+export function replaceComponent(s: GameState, deviceId: string, componentId: string, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   const c = d.components.find((x) => x.id === componentId);
@@ -561,15 +561,15 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (!part) return fail("error.noPart");
   if (d.on && !hotSwappable(d, c)) return fail("error.powerOffFirst");
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
-  const hands = loc.dc && !technician ? datacenterById(loc.dc).remoteHands : null;
   const swap = SWAP_HOURS * workFactor(d.model, s.hour), grey = greyMarket(s, d, part);
-  const bill = hands ? Math.max(1, swap) * hands.perHour : 0;
-  if (s.cash < bill + grey) return fail("error.noCash");
-  if (hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: Math.max(1, swap) }, -bill);
+  const job = handJob(s, d.label ?? d.name, loc, how, swap);
+  if ("error" in job) return fail(job.error);
+  if (s.cash < job.cost + grey) return fail("error.noCash");
+  const wait = job.commit();
   if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: c.kind }, -grey);
-  if (!d.used) claimRepair(s, d.label ?? d.name, c, part.price, bill);
+  if (!d.used) claimRepair(s, d.label ?? d.name, c, part.price, job.bill);
   s.devices = s.devices.filter((x) => x.id !== part.id);
-  d.maintenance = { componentId, partId: part.id, doneAt: s.hour + (hands ? hands.responseHours : 0) + swap, ...(part.part ? { spec: part.part } : {}) };
+  d.maintenance = { componentId, partId: part.id, doneAt: s.hour + wait, ...(part.part ? { spec: part.part } : {}) };
   return { ok: true, id: part.id };
 }
 
@@ -641,25 +641,22 @@ export const INSTALL_HOURS = 0.5;
 
 const sameSlots = (a: ComponentKind, b: ComponentKind) => a === b || (isDriveKind(a) && isDriveKind(b));
 
-interface Work { bill: number; billHours: number; wait: number; hands: boolean }
 // Checks hands-on work on a device. One in storage is worked on at once. One in a rack must be off unless the part swaps hot; it takes
-// the remote hands' response time at a datacenter, billed for at least an hour, plus 30 minutes for a part that needs the server off.
-function handsOn(s: GameState, d: Device, hot: boolean, technician: boolean): { error: string } | Work {
+// the hand work's wait at a datacenter (remote hands bill at least an hour), plus 30 minutes for a part that needs the server off.
+function handsOn(s: GameState, d: Device, hot: boolean, how: How | boolean): { error: string } | HandJob {
   if (d.maintenance) return { error: "error.busy" };
-  if (!d.rackId) return d.store ? { bill: 0, billHours: 0, wait: 0, hands: false } : { error: "error.inTransit" };
+  if (!d.rackId) return d.store ? { cost: 0, bill: 0, wait: 0, commit: () => 0 } : { error: "error.inTransit" };
   const rack = spotOf(s, d.rackId)!;
   if (rack.moving) return { error: "error.rackMoving" };
   if (d.on && !hot) return { error: "error.powerOffFirst" };
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
-  const hands = loc.dc && !technician ? datacenterById(loc.dc).remoteHands : null;
-  const hours = (hot ? 0 : INSTALL_HOURS) * workFactor(d.model, s.hour), billHours = Math.max(1, hours);
-  const bill = hands ? billHours * hands.perHour : 0;
-  if (s.cash < bill) return { error: "error.noCash" };
-  return { bill, billHours, wait: (hands ? hands.responseHours : 0) + hours, hands: !!hands };
+  const job = handJob(s, d.label ?? d.name, loc, how, (hot ? 0 : INSTALL_HOURS) * workFactor(d.model, s.hour));
+  if ("error" in job) return job;
+  return s.cash < job.cost ? { error: "error.noCash" } : job;
 }
-function startWork(s: GameState, d: Device, partId: string, w: Work) {
-  if (w.hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: w.billHours }, -w.bill);
-  if (w.wait > 0) d.maintenance = { componentId: "", partId, doneAt: s.hour + w.wait };
+function startWork(s: GameState, d: Device, partId: string, job: HandJob) {
+  const wait = job.commit();
+  if (wait > 0) d.maintenance = { componentId: "", partId, doneAt: s.hour + wait };
 }
 const asSpec = (c: { kind: ComponentKind; size?: number; ff?: FormFactor }): PartSpec => ({ kind: c.kind, ...(c.size !== undefined ? { size: c.size } : {}), ...(c.ff ? { ff: c.ff } : {}) });
 // A second power supply makes a build with a dual-supply sibling its sibling, and dropping to one supply makes it the single build again.
@@ -672,7 +669,7 @@ function syncPsuBuild(d: Device) {
 
 // Puts a spare from the device's zone into a free slot. Drives in a RAID array, power supplies and fans go in with the device running;
 // RAM, CPUs and the rest need it off. slot is the index of a free slot of that kind, and the next free one when left out.
-export function installPart(s: GameState, deviceId: string, partId: string, slot?: number, technician = false): ActionResult {
+export function installPart(s: GameState, deviceId: string, partId: string, slot?: number, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   const zone = d.rackId ? locationOf(s, d)?.id : d.store;
@@ -684,10 +681,10 @@ export function installPart(s: GameState, deviceId: string, partId: string, slot
   if (slot !== undefined && slot < used) return fail("error.partSlotTaken");
   const error = chassisFits(model, [...d.components.map(asSpec), spec]);
   if (error) return fail(error);
-  const w = handsOn(s, d, hotKind(d, kind), technician);
+  const w = handsOn(s, d, hotKind(d, kind), how);
   if ("error" in w) return fail(w.error);
   const grey = greyMarket(s, d, part);
-  if (s.cash < w.bill + grey) return fail("error.noCash");
+  if (s.cash < w.cost + grey) return fail("error.noCash");
   startWork(s, d, partId, w);
   if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: kind }, -grey);
   s.devices = s.devices.filter((x) => x.id !== partId);
@@ -701,7 +698,7 @@ export function installPart(s: GameState, deviceId: string, partId: string, slot
 
 // Takes a part out of its slot. A working part goes back to the zone's storage; a failed or worn one is scrapped.
 // A drive can only leave an array that still fits its RAID level.
-export function removePart(s: GameState, deviceId: string, componentId: string, technician = false): ActionResult {
+export function removePart(s: GameState, deviceId: string, componentId: string, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   const c = d.components.find((x) => x.id === componentId);
@@ -711,7 +708,7 @@ export function removePart(s: GameState, deviceId: string, componentId: string, 
   const zone = d.rackId ? locationOf(s, d)?.id : d.store;
   if (!zone) return fail("error.inTransit");
   if (isDriveKind(c.kind) && d.raid !== "none" && !raidFits(d.raid, drivesOf(d).length - 1)) return fail("error.raidLevel");
-  const w = handsOn(s, d, hotSwappable(d, c), technician);
+  const w = handsOn(s, d, hotSwappable(d, c), how);
   if ("error" in w) return fail(w.error);
   startWork(s, d, "", w);
   d.components = d.components.filter((x) => x.id !== componentId);

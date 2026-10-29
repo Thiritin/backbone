@@ -10,6 +10,8 @@ export interface Datacenter {
   kwPerPosition: number; positionPrice: number; powerFactor: number; crossConnect: number;
   remoteHands: { perHour: number; responseHours: number }; certified: boolean; cages: boolean;
   size: "large" | "medium" | "small";
+  // Premium rooms of a city (the highest position price, with a rival in town) only let a visitor in on a booked slot.
+  visitBooking: boolean;
 }
 
 export const PROVIDERS: Provider[] = [
@@ -87,10 +89,13 @@ const SIZE_OF: Record<string, Datacenter["size"]> = {
   digitalreality: "large", borisnet: "medium", corespite: "medium", telex: "medium", skyblink: "small",
 };
 
+const topPrice = (city: string) => Math.max(...ROWS.filter((r) => r[3] === city).map((r) => r[11]));
+const rivals = (city: string) => ROWS.filter((r) => r[3] === city).length > 1;
+
 export const DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, carriers, ex, onSite, ab, backup, green, kw, price, factor, cross, perHour, responseHours, certified, cages]) => ({
   id, name, provider, city, carriers, exchange: ex ? { name: ex, onSite } : null, feeds: ab ? "ab" : "single", backup, green,
   kwPerPosition: kw, positionPrice: price, powerFactor: factor, crossConnect: cross, remoteHands: { perHour, responseHours }, certified, cages,
-  size: SIZE_OF[provider],
+  size: SIZE_OF[provider], visitBooking: rivals(city) && price === topPrice(city),
 }));
 
 export const datacenterById = (id: string): Datacenter => {
@@ -120,7 +125,12 @@ export const REGIONS: { id: string; name: string; city: string; us?: true }[] = 
   { id: "dfw", name: "Dallas", city: "Dallas", us: true },
   { id: "lax", name: "Los Angeles", city: "Los Angeles", us: true },
 ];
-export const regionOf = (loc: { city: string }) => REGIONS.find((r) => r.city === loc.city)!;
+export const COUNTRY: Record<string, string> = {
+  Frankfurt: "DE", Berlin: "DE", "Düsseldorf": "DE", Nuremberg: "DE", Falkenstein: "DE", Munich: "DE", Amsterdam: "NL", Kerkrade: "NL",
+  London: "GB", Paris: "FR", Milan: "IT", Vienna: "AT", Zurich: "CH",
+  Ashburn: "US", "New York": "US", Chicago: "US", Dallas: "US", "Los Angeles": "US",
+};
+export const regionOf =(loc: { city: string }) => REGIONS.find((r) => r.city === loc.city)!;
 export const inUs = (city: string): boolean => REGIONS.some((r) => r.city === city && r.us);
 // The region code plus the next free number in that region: fra1, fra2, ams1.
 export function nextAz(locations: { city: string; az?: string }[], city: string): string {

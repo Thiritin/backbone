@@ -16,7 +16,7 @@ This is the work plan for the next stretch of Backbone. It lists what is built a
 - The owner plays on the Vite dev server (port 5173) from this checkout, so merging code here reloads their page; windows and the Support selection survive reloads (src/ui/session.ts).
 - One lane at a time on its own branch or worktree, merged into main only when everything above is green.
 
-Balance today (main after Lane 6.10): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 921 tests pass.
+Balance today (integration branch after Lane 8): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 1003 tests pass.
 
 ## Built
 
@@ -39,6 +39,11 @@ Balance today (main after Lane 6.10): steady medians L2 2006.3, L3 2007.1, L4 20
 - Lane 2b.4, breaches and ransom (f54c3d8): a critical hit on an instance exposed over 30 days becomes a breach 25% of the time, the extortion ticket with Pay and Refuse and a 72 hour default, 90/10 on paying, sale effects, BDSG and GDPR fines, the Breaches card, a "fees" ledger category.
 - Lane 3.4, IPMI and power (029bc78): `hasBmc` by brand and generation, management addresses, iDRAQ, iLOL, SuperMacro IPMI and XClarify pages in the browser, `shutdown`, `reset`, `powerCycle` and the pull with a corruption roll, OS and controller hangs, `recover`, the RAID rebuild performance factor, device event logs.
 - Lane 6.5 (Merge Lane 6.5): deliveries take 3 days in 2005 falling to 1 by 2015 (the first server arrives at once), the Tower server line for G1 and G2 on a 4-place basement shelf with no controller.
+- Lane 8, order flow (Merge Lane 8): email requests start with a Quote step the customer accepts, haggles or declines; then account, invoice, domain and a hand-picked host; the Provisioning automation skill (150 know-how) adds Automatic and a Settings switch; form orders skip the quote and wait for the steps.
+- Lane 9, leaderboard (Merge Lane 9, issue 10): every action is logged by name in `s.log`, a run exports as seed plus actions, scripts/replay.ts verifies, weekly challenge seeds from the title screen, a GitHub Action replays submitted runs into public/leaderboard.json, shown in Settings and on the start screen.
+- Lane 10, used hardware market (792ff32, issue 11): eBuy auctions, WebHostingTalc asks and Telegrump deals with hidden wear and scams, selling own gear, board reputation, yearly lots.
+- Issues 2, 3, 4, 5, 6, 7, 8, 12 (Lane 6.11 to 6.15): web design from the Admin page, request texts, docs matching the code, urgent software in the Security app, the Shop filter, zone link and WAN moves, migration offers.
+- Issues 13 to 16 (Lane 6.16 to 6.19): the Pear OS update sheet with What's new, planned maintenance windows, do-it-yourself hand work and a friend, extra power on rack shares.
 - Update offer (bdf3537): the build writes version.json with the commit id, the page polls it every five minutes and on focus and offers Reload or Later in a sheet (src/ui/update.ts, src/ui/desktop/UpdateSheet.tsx).
 - Lane 7, Getting started, Email and support desks (7348114): the Checklist app removed, Getting started steps name the place and open it, Support shows as Email with the mail provider's mark and style and an inbox without filters, OsTickit, Zendusk, Freshdusk and FreeScoot as per-seat Pear Store desks with `DESK_FEATURES`, their marks and styles and a Reports tab.
 - Lane 6.10, overprovisioning always allowed (Merge of the owner's bug report): vCPU and RAM booking never block a placement, resize or migration; disk is the only hard limit; `overcommit` and `density` removed from the catalog; bars run past 100% in the warning colour; the scheduler prefers nodes whose RAM fits and freezes stay the consequence.
@@ -65,7 +70,7 @@ Balance today (main after Lane 6.10): steady medians L2 2006.3, L3 2007.1, L4 20
 
 ## In flight
 
-In a worktree: Lane 8 (order flow: quote first, hand-picked setup, automation unlock).
+Nothing. The hand playtest (6.9) is the open item.
 
 ## What Lane 1 left behind (read before Lanes 2 and 3)
 
@@ -105,10 +110,10 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 5.2 | Routers, UPS sizes, switched PDUs | Built |
 | 6 | Small briefs | any time, one each |
 | 7 | Getting started, the Email app and support desks | Built (7348114) |
-| 8 | Order flow: quote first, hand-picked setup, automation unlock | 7 (the Email app), 6.10 |
-| 9 | Leaderboard with seeded challenges (issue 10) | 2.0 |
-| 10 | Used hardware market (issue 11) | 4.4, 5.1 |
-| 6.11 to 6.15 | GitHub issues 2, 3, 4, 5, 6, 7, 8, 12 | see each |
+| 8 | Order flow: quote first, hand-picked setup, automation unlock | Built |
+| 9 | Leaderboard with seeded challenges (issue 10) | Built |
+| 10 | Used hardware market (issue 11) | Built (792ff32) |
+| 6.11 to 6.19 | GitHub issues 2 to 8 and 12 to 16 | Built |
 
 
 ### Lane 1: IP addresses, paid internet, a real start (built, kept for reference)

@@ -11,6 +11,7 @@ import { reduced } from "../../desktop/motion";
 import { useStore } from "../../store";
 import { ageYears, devName, isWorn, partLabel, partSlot } from "../hw";
 import { specOf, spareSpec } from "./Slots";
+import { useHandWork } from "./HandSheet";
 import { Facts, Sheet } from "./ui";
 
 export const LID_MS = 600;
@@ -20,7 +21,7 @@ const slotName = (s: Slot) => (s.group === "pcie" ? `PCIe ${s.index + 1}` : s.gr
 // The lid-off view of a powered-off server: the lid slides off, every slot opens its part, and Close puts the lid back.
 // The lid is UI state of this sheet; the sheet closes itself when the server is powered on or gone.
 export function LidSheet({ deviceId, onClose }: { deviceId: string; onClose: () => void }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const game = useStore((s) => s.game);
   const device = game.devices.find((d) => d.id === deviceId);
   const [open, setOpen] = useState(false);
   const [sel, setSel] = useState<string | null>(null);
@@ -53,18 +54,16 @@ export function LidSheet({ deviceId, onClose }: { deviceId: string; onClose: () 
             <span key={g}><span className="loc-k">{GROUP_NAME[g]}</span><span className="num">{slots.filter((s) => s.group === g && s.part).length} of {slots.filter((s) => s.group === g).length}</span></span>
           ))}
         </div>
-        <div className="lid-detail">{open && slot && <SlotCard device={device} slot={slot} wear={wear} spares={spares} az={zone?.az ?? ""} act={act} />}</div>
+        <div className="lid-detail">{open && slot && <SlotCard device={device} slot={slot} wear={wear} spares={spares} az={zone?.az ?? ""} />}</div>
       </div>
       <div className="loc-sheet-foot"><span className="grow" /><button className="btn primary" onClick={close}>Close</button></div>
     </Sheet>
   );
 }
 
-type Act = ReturnType<typeof useStore.getState>["act"];
-
 // A filled slot shows its part with Replace and Remove; an empty slot offers the spare parts in storage that fit.
-function SlotCard({ device, slot, wear, spares, az, act }: { device: Device; slot: Slot; wear: (c: Component) => "ok" | "warn" | "bad"; spares: (kinds: ComponentKind[]) => Device[]; az: string; act: Act }) {
-  const game = useStore((s) => s.game), model = modelById(device.model), c = slot.part;
+function SlotCard({ device, slot, wear, spares, az }: { device: Device; slot: Slot; wear: (c: Component) => "ok" | "warn" | "bad"; spares: (kinds: ComponentKind[]) => Device[]; az: string }) {
+  const game = useStore((s) => s.game), hand = useHandWork(), model = modelById(device.model), c = slot.part;
   const busy = !!device.maintenance;
   if (c) {
     const w = wear(c);
@@ -76,14 +75,15 @@ function SlotCard({ device, slot, wear, spares, az, act }: { device: Device; slo
           <h3>{partLabel(c)}</h3>
           {busy ? <span className="pill">Work under way</span> : <span className={`pill ${w}`}>{w === "bad" ? "Failed" : w === "warn" ? "Worn" : "OK"}</span>}
           <span className="grow" />
-          {!busy && <button className="btn" disabled={!spare} onClick={() => act(replaceComponent, device.id, c.id)}>Replace</button>}
-          {!busy && removable && <button className="btn" onClick={() => act(removePart, device.id, c.id)}>Remove</button>}
+          {!busy && <button className="btn" disabled={!spare} onClick={() => hand.start(game, { title: `Replace ${partLabel(c)}`, deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id } })}>Replace</button>}
+          {!busy && removable && <button className="btn" onClick={() => hand.start(game, { title: `Remove ${partLabel(c)}`, deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id } })}>Remove</button>}
         </div>
         <Facts rows={[
           ["Slot", <span className="num">{slotName(slot)}</span>],
           ["Age", <span className="num">{ageYears(game, c).toFixed(1)} / {COMPONENTS[c.kind].life} y</span>],
           ["Price", <span className="num">{euro(partPrice(c.kind, c.size, c.ff, yearOf(game.hour)))}</span>],
         ]} />
+        {hand.dialog}
       </div>
     );
   }
@@ -97,12 +97,13 @@ function SlotCard({ device, slot, wear, spares, az, act }: { device: Device; slo
         {busy ? <span className="loc-muted">Work under way</span> : offers.length ? offers.map((d) => {
           const spec = spareSpec(d), n = fitting.filter((x) => samePart(spareSpec(x), spec)).length;
           return (
-            <button key={d.id} className="btn" onClick={() => act(installPart, device.id, d.id)}>
+            <button key={d.id} className="btn" onClick={() => hand.start(game, { title: `Install ${partLabel(spec)}`, deviceId: device.id, action: installPart, args: [device.id, d.id, undefined], tech: { kind: "part", partId: d.id } })}>
               {partLabel(spec)}<span className="num">{euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour)))}</span>{n > 1 && <span className="num">× {n}</span>}
             </button>
           );
         }) : <span className="loc-muted">No fitting part in {az}</span>}
       </div>
+      {hand.dialog}
     </div>
   );
 }

@@ -7,8 +7,8 @@ import { partPrice } from "../../../sim/10-catalog/parts";
 import type { Component, Device, GameState } from "../../../sim/50-state";
 import { hotKind, hotSwappable, locationOf } from "../../../sim/60-infra/status";
 import { installPart, removePart, replaceComponent } from "../../../sim/90-actions/hardware";
-import { useStore } from "../../store";
 import { ageYears, isWorn, PART_NAME, partLabel, partSize, partSlot } from "../hw";
+import { useHandWork } from "./HandSheet";
 import { TechButton } from "./TechButton";
 
 interface Group { name: string; kinds: ComponentKind[]; slots: number }
@@ -37,7 +37,7 @@ export const spareSpec = (d: Device): PartSpec => ({ ...d.part, kind: d.model.sl
 // Each slot group of a chassis with the part in every filled slot, its age against its life and its state, and the empty slots,
 // where Add offers the spare parts in the zone's storage that fit.
 export function PartsCard({ game, device }: { game: GameState; device: Device }) {
-  const act = useStore((s) => s.act);
+  const hand = useHandWork();
   const [adding, setAdding] = useState<string | null>(null);
   const model = modelById(device.model);
   const zone = device.rackId ? locationOf(game, device) : game.locations.find((l) => l.id === device.store);
@@ -85,9 +85,9 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                     <td className="r">
                       <span className="loc-acts">
                         {busy ? null : block !== null ? <span className="loc-muted">{block}</span>
-                          : <button className="btn" onClick={() => act(replaceComponent, device.id, c.id)}>Replace</button>}
+                          : <button className="btn" onClick={() => hand.start(game, { title: `Replace ${PART_NAME[c.kind].toLowerCase()}`, deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id } })}>Replace</button>}
                         {!busy && spareFor(c) && <TechButton game={game} deviceId={device.id} kind="replace" componentId={c.id} />}
-                        {removable && (device.rackId && device.on && !hot ? null : <button className="btn" onClick={() => act(removePart, device.id, c.id)}>Remove</button>)}
+                        {removable && (device.rackId && device.on && !hot ? null : <button className="btn" onClick={() => hand.start(game, { title: `Remove ${PART_NAME[c.kind].toLowerCase()}`, deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id } })}>Remove</button>)}
                         {removable && !!device.rackId && <TechButton game={game} deviceId={device.id} kind="part" componentId={c.id} />}
                       </span>
                     </td>
@@ -114,7 +114,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                         const spec = spareSpec(d), n = fitting.filter((x) => samePart(spareSpec(x), spec)).length;
                         return (
                           <Fragment key={d.id}>
-                            <button className="btn" disabled={cold(d)} onClick={() => { act(installPart, device.id, d.id); setAdding(null); }}>
+                            <button className="btn" disabled={cold(d)} onClick={() => { hand.start(game, { title: `Install ${partLabel(spec)}`, deviceId: device.id, action: installPart, args: [device.id, d.id, undefined], tech: { kind: "part", partId: d.id } }); setAdding(null); }}>
                               {partLabel(spec)}{n > 1 && <span className="num"> × {n}</span>}<span className="num loc-muted"> {euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour)))}</span>
                             </button>
                             {!!device.rackId && <TechButton game={game} deviceId={device.id} kind="part" partId={d.id} />}
@@ -130,6 +130,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
           );
         })}
       </table>
+      {hand.dialog}
     </div>
   );
 }
