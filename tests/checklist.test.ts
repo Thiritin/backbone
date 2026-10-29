@@ -91,7 +91,7 @@ describe("checklist", () => {
     expect(stepOf(s, "domain").text).toBe("Sign a registrar contract and register your company domain in Network under Domains.");
     expect(stepOf(s, "domain")).toMatchObject({ app: "Network", focus: { kind: "page", id: "domains" } });
     expect(stepOf(s, "internet")).toMatchObject({ app: "Locations", focus: { kind: "line" } });
-    expect(stepOf(s, "email")).toMatchObject({ app: "Settings", focus: { kind: "section", id: "Email" } });
+    expect(stepOf(s, "email")).toMatchObject({ app: "Support", focus: { kind: "mailSetup", id: "" } });
     ok(signRegistrar(s, "goDuddy"));
     expect(stepOf(s, "domain").text).toBe("Register your company domain with GoDuddy Reseller in Network under Domains.");
   });

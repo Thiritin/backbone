@@ -35,7 +35,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "website":
       return { title: "List a product", text: "List your first product on your website from the Admin page in the Browser.", app: "Browser", focus: { kind: "url", id: adminUrl(s) } };
     case "email":
-      return { title: "Set up company email", text: "Set up company email in Settings under Email.", app: "Settings", focus: { kind: "section", id: "Email" } };
+      return { title: "Set up company email", text: "Choose an email provider in the Email app.", app: "Support", focus: { kind: "mailSetup", id: "" } };
     case "firstCustomer":
       return { title: "Win your first customer", text: `Answer your first customer in ${mailApp}.`, app: "Support" };
   }

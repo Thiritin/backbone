@@ -38,7 +38,7 @@ The steps run in this order, with the 2005 prices from the game.
 | Install software | Locations, the server's Add Software tile | FreePanel and the OpenVeeZee hypervisor are free. Pleskit is €12 a server, DirectAdmen €4 a server and cPanic €0.40 an account | 2 hours for FreePanel; 3 hours for OpenVeeZee, which then hosts a FreePanel VM |
 | Register your domain | Network, Domains | NameCheep has no signup fee and no monthly fee; a .de domain costs €18 a year, booked as €1.50 a month | Instant |
 | List a product | Browser, Admin page | Web design €400 once and €15 a month, plus €9.90 a month for the site Strateaux hosts | Instant |
-| Set up company email | Settings, Email | Hosted Exchange by Ionose, €10 a month for the one seat | Instant |
+| Set up company email | Email app | Hosted Exchange by Ionose, €10 a month for the one seat | Instant |
 | Win your first customer | Support | Nothing | Days |
 
 The server and the web design leave €600 of the €3,500. The fixed bills that follow are €95.40 a month with the business line (€59 line, €15 web design, €9.90 site, €10 email, €1.50 domain) or €81.40 with the DSL 16000 line, plus electricity at the household price.
