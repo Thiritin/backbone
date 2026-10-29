@@ -15,13 +15,14 @@ const firstServer = (g: GameState): string | null => g.clusters.length ? null
   : g.devices.find((d) => modelById(d.model).kind === "server" && !serverTaken(g, d.id) && linkStatus(g, d.id).online)?.id ?? null;
 
 export function useFirstServerSetup() {
-  const id = useStore((s) => firstServer(s.game)), setSetup = useStore((s) => s.setSetup);
+  const id = useStore((s) => firstServer(s.game)), seed = useStore((s) => s.game.seed), setSetup = useStore((s) => s.setSetup);
   const offered = useRef(new Set<string>());
   useEffect(() => {
-    if (!id || offered.current.has(id)) return;
-    offered.current.add(id);
+    // Device ids repeat across games, so the seed tells a new game's first server apart.
+    if (!id || offered.current.has(`${seed}:${id}`)) return;
+    offered.current.add(`${seed}:${id}`);
     setSetup(id);
-  }, [id, setSetup]);
+  }, [id, seed, setSetup]);
 }
 
 // The first-time setup of a free server: a panel server, or a hypervisor followed by its first panel VM. A hypervisor
