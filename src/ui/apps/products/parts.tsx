@@ -68,7 +68,8 @@ export function SoftwareCards({ kind, value, onPick, compact, blocked }: { kind:
             <div><dt>Install</dt><dd className="num">{sw.installHours} h</dd></div>
             {kind === "mail" ? <div><dt>Needs</dt><dd className="num">{cp(sw)} · {sw.controlPlane.diskGb} GB</dd></div> : <>
             <div><dt>CPU overcommit</dt><dd className="num">Up to {sw.overcommit.cpu}×</dd></div>
-            <div><dt>RAM overcommit</dt><dd className="num">{sw.overcommit.ram > 1 ? `Up to ${sw.overcommit.ram}×` : "None"}</dd></div></>}
+            <div><dt>RAM overcommit</dt><dd className="num">{sw.overcommit.ram > 1 ? `Up to ${sw.overcommit.ram}×` : "None"}</dd></div>
+            {kind === "cloud" && <div><dt>Ballooning</dt><dd className="num">{sw.balloon === null ? "No" : sw.balloon <= sw.from ? "Yes" : `From ${sw.balloon}`}</dd></div>}</>}
             {compact || kind === "mail" ? null : <>
             <div><dt>Tickets</dt><dd className="num">×{sw.tickets}</dd></div>
             {(kind === "cloud" || kind === "game") && <div><dt>Density</dt><dd className="num">×{sw.density}</dd></div>}

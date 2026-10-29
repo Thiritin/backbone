@@ -6,12 +6,12 @@ import { modelById } from "../../../sim/10-catalog/hardware";
 import { phpAt, phpBehind } from "../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../sim/10-catalog/products";
 import type { GameState } from "../../../sim/50-state";
-import { anchorOf, bookable, controlPlaneUse, nodeUsed, serverTaken, vmById, vmRoom, type Cluster } from "../../../sim/60-infra/cluster";
+import { anchorOf, bookable, controlPlaneUse, nodeUsed, serverTaken, vmById, vmRoom, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
 import { PHP_EOL } from "../../../sim/60-infra/php";
 import { locationOf } from "../../../sim/60-infra/status";
 import { licenseCost } from "../../../sim/85-products/products";
 import {
-  addNode, createPanelVm, installPanel, PANEL_VM_MIN, PANEL_VM_SIZE, phpDue, removePanelHost, resizePanelVm, upgradePhp,
+  addNode, createPanelVm, installPanel, PANEL_VM_MIN, PANEL_VM_SIZE, phpDue, removePanelHost, resizePanelVm, resizeVm, upgradePhp,
 } from "../../../sim/90-actions/clusters";
 import { cleanUp, setSitesOffline } from "../../../sim/90-actions/security";
 import { Confirm } from "../../desktop/Confirm";
@@ -198,25 +198,25 @@ export function sitesMenu(game: GameState, host: Cluster): MenuEntry[] {
   return [{ label: off ? "Bring sites online" : "Take sites offline", run: () => act((g) => setSitesOffline(g, host.id, !off)) }];
 }
 
-// The panel VM's booking, resized within what its web spaces need and its server has room for.
-export function ResizeCard({ game, host }: { game: GameState; host: Cluster }) {
+// A VM's booking, resized within what its web spaces need and its server has room for; a VM without a panel host has no web spaces.
+export function ResizeCard({ game, host, own }: { game: GameState; host?: Cluster; own?: Workload }) {
   const act = useStore((s) => s.act);
-  const vm = vmById(game, host.vm)!;
+  const vm = own ?? vmById(game, host!.vm)!;
   const [size, setSize] = useState<Resources>({ vcpu: vm.vcpu, ramGb: vm.ramGb, diskGb: vm.diskGb });
   const same = size.vcpu === vm.vcpu && size.ramGb === vm.ramGb && size.diskGb === vm.diskGb;
   const d = vm.deviceId ? game.devices.find((x) => x.id === vm.deviceId) : undefined;
   const room = d ? bookable(game, d) : null, used = d ? nodeUsed(game, d.id) : null;
-  const inside = vmRoom(game, host).used;
+  const inside = host ? vmRoom(game, host).used : null;
   return (
     <section className="fin-card">
       <div className="fin-card-h"><Boxes />Virtual machine size</div>
       <div className="fin-card-b">
         <SizeFields value={size} onChange={setSize} />
         <dl className="fin-rows">
-          <div><dt>Web spaces book</dt><dd className="num">{num(inside.vcpu)} vCPU · {ram(+inside.ramGb.toFixed(2))} · {disk(Math.round(inside.diskGb))}</dd></div>
+          {inside && <div><dt>Web spaces book</dt><dd className="num">{num(inside.vcpu)} vCPU · {ram(+inside.ramGb.toFixed(2))} · {disk(Math.round(inside.diskGb))}</dd></div>}
           {room && used && <div><dt>Free on {devName(d!)}</dt><dd className="num">{num(room.vcpu - used.vcpu)} vCPU · {ram(+(room.ramGb - used.ramGb).toFixed(2))} · {disk(Math.round(room.diskGb - used.diskGb))}</dd></div>}
         </dl>
-        <div><button className="btn primary" disabled={same} onClick={() => act((g) => resizePanelVm(g, host.id, size))}>Resize</button></div>
+        <div><button className="btn primary" disabled={same} onClick={() => act((g) => (host ? resizePanelVm(g, host.id, size) : resizeVm(g, vm.id, size)))}>Resize</button></div>
       </div>
     </section>
   );

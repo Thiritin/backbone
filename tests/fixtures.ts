@@ -1,7 +1,8 @@
 import { hourOf } from "../src/sim/00-core/time";
+import { modelById } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
 import { device, type GameState } from "../src/sim/50-state";
-import { addNode, createPanelVm, installHypervisor, installPanel } from "../src/sim/90-actions/clusters";
+import { addNode, createPanelVm, installHypervisor, installPanel, workload } from "../src/sim/90-actions/clusters";
 import { startGame, welcomeFriends } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 import { derivedDomain } from "../src/sim/30-customers/domains";
@@ -21,6 +22,12 @@ const must = (r: { ok: boolean; id?: string; error?: string }): string => {
 export const skipTo = (s: GameState, year: number): void => { s.hour += hourOf(new Date(Date.UTC(year, 0, 1))); };
 
 export const BASEMENT_SERVER = "dev3";
+
+// A running workload on every server without one, so it draws its rated power instead of the idle power.
+export const runServers = (s: GameState): void => {
+  const busy = new Set(s.workloads.map((w) => w.deviceId));
+  for (const d of s.devices) if (modelById(d.model).server && !busy.has(d.id)) s.workloads = [...s.workloads, workload(s, "", { deviceId: d.id })];
+};
 
 // The basement server and switch new games used to start with, cabled to the home router and paid from the savings, on the
 // business DSL line with an own /24 announced there; suites that are not about the first server or addresses start from it.

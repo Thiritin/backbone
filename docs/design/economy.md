@@ -104,7 +104,7 @@ Backup and archive servers use HDDs whatever the generation's disk type. Archive
 | Large HDD (backup) | 500 GB | 1 TB | 3 TB | 6 TB | 10 TB | 16 TB | 22 TB |
 | Densest HDD (archive) | 750 GB | 2 TB | 4 TB | 8 TB | 14 TB | 20 TB | 28 TB |
 
-- **Power draw.** A server draws 40% of its full power when idle, rising in a straight line with CPU load.
+- **Power draw.** A server draws 40% of its full power when idle, rising in a straight line with CPU load. The game applies the two ends: a server with no running workload draws the idle 40%, one with a running workload draws its full power, in the power bill and in the rack's fuse limit.
 - **Port speed.** Server ports run at 1G until 2011, then 10G, 25G from 2017 and 100G from 2023.
 - **Ports.** 1G ports are copper (RJ45); 10G and faster ports are SFP cages.
 - **Shop window.** A generation stays in the shop until the generation two steps newer arrives, so G1 is sold until the end of 2010 and G2 until the end of 2013. G6 and G7 stay in the shop.
@@ -1240,7 +1240,7 @@ Every server runs at most one control plane. A hypervisor ("Cloud" below) runs o
 | Pleskit | Panel | €12 per panel host | 3 h | ×0.9 | | | 8× | 1.5× | 0.25 vCPU, 0.25 GB, 5 GB |
 | DirectAdmen | Panel | €4 per panel host | 2 h | ×1.2 | | | 8× | 1.5× | 0.1 vCPU, 0.1 GB, 2 GB |
 | FreePanel | Panel | Free | 2 h | ×1.5 | | | 8× | 1.5× | 0.1 vCPU, 0.1 GB, 2 GB |
-| OpenVeeZee | Cloud | Free | 3 h | ×1.4 | 1.1 | No | 8× | 1.5× | 0.1 vCPU, 0.1 GB, 2 GB |
+| OpenVeeZee | Cloud | Free | 3 h | ×1.4 | 1.1 | No | 8× | 1.0× | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenStash | Cloud | Free | 8 h | ×1.3 | 1.0 | Yes | 4× | 1.0× | 2 vCPU, 2 GB, 20 GB |
 | VMwhere | Cloud | €8 per physical core | 5 h | ×0.7 | 1.15 | Yes | 10× | 1.25× | 1 vCPU, 2 GB, 10 GB |
 | Proxmocks | Cloud | Free | 3 h | ×1.0 | 1.0 | Yes | 8× | 1.5× | 0.25 vCPU, 0.25 GB, 5 GB |
@@ -1271,7 +1271,7 @@ Anchors: cPanel could copy accounts between servers with WHM's "Copy an account"
 - **Licenses** are billed on the 1st of each month per hypervisor cluster and per panel host, as ledger lines in the category "licenses".
 - **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the hypervisor for the rest).
 - **Density** multiplies what a node can book, from memory sharing and lighter hypervisors.
-- **Overcommit** caps what a node books per physical core and per installed GB of RAM under that software. Proxmocks shares memory pages and balloons guests, so it books RAM up to 1.5 times the installed RAM; OpenStash never books RAM past the installed RAM and caps CPU at 4 vCPU per core; VMwhere and HyperVee sit in between. Disk books up to twice the usable RAID disk everywhere. Memory reservation and automatic placement stop RAM at the installed RAM, which only tightens the cap.
+- **Overcommit** caps what a node books per physical core and per installed GB of RAM under that software. Proxmocks shares memory pages and balloons guests, so it books RAM up to 1.5 times the installed RAM; OpenStash never books RAM past the installed RAM and caps CPU at 4 vCPU per core; VMwhere and HyperVee sit in between. Ballooning decides whether a hypervisor books RAM past the installed RAM at all: Proxmocks and VMwhere balloon, HyperVee from 2012, OpenStash and OpenVeeZee never, so their RAM overcommit is 1.0 and a HyperVee cluster books at most the installed RAM before 2012. A resize of one of the player's own VMs that only grows its RAM is live on a hypervisor that balloons; any other resize, or RAM growth without ballooning, restarts the VM for 10 minutes. Disk books up to twice the usable RAID disk everywhere. Memory reservation and automatic placement stop RAM at the installed RAM, which only tightens the cap.
 - **Software in a VM** gets 95% of the VM's vCPU and RAM (`IN_VM` in 10-catalog/platforms.ts): a panel VM's web hosting room is 0.95 times its booked vCPU and RAM, less the panel, with its full disk. The same panel on bare metal gets the whole server.
 - **Control plane:** a hypervisor's control plane runs on one node of the cluster, the first one added, and counts against what it can book and what it uses. A bare-metal panel host runs its panel on its server; a panel VM runs its panel inside the VM, so the panel counts against the VM's booking. While that node is down, or while the cluster switches software, nothing can be sold, started, migrated or restored on the cluster. Draining moves the control plane to another node once the drained node is empty, and the player can move it to any working node with room.
 - **Installing** goes on a machine: a free mounted server, or one of the player's own VMs for a panel, with room for the control plane on it. A hypervisor on a server makes it a one-server hypervisor cluster named after its location; servers with the same installed hypervisor join a cluster once nothing runs on them. A panel VM can be created while its cluster's hypervisor is still installing; its panel starts installing once the hypervisor is done. The control plane is busy for the install hours in the table, and nothing can be placed on the cluster until it is done. An install costs nothing up front; the license is billed from the next 1st of the month.

@@ -210,11 +210,11 @@ describe("power supplies, fans and power", () => {
   });
   it("takes everything behind a switch down when the switch is powered off", () => {
     const s = rich();
-    expect(rackPower(s, "rack2").watts).toBe(258);
+    expect(rackPower(s, "rack2").watts).toBe(108);
     ok(setPower(s, "dev4", false));
     expect(deviceHealth(s, "dev4").state).toBe("off");
     expect([linkStatus(s, "dev4").online, linkStatus(s, "dev3").online]).toEqual([false, false]);
-    expect(rackPower(s, "rack2").watts).toBe(250);
+    expect(rackPower(s, "rack2").watts).toBe(100);
     ok(setPower(s, "dev4", true));
     s.hour += BOOT_HOURS;
     expect(linkStatus(s, "dev3").online).toBe(true);

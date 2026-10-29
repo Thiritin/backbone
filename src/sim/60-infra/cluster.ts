@@ -1,6 +1,6 @@
 import { modelById } from "../10-catalog/hardware";
 import { START_YEAR, yearOf } from "../00-core/time";
-import { IN_VM, kindsServing, kindServing, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
+import { balloons, IN_VM, kindsServing, kindServing, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
@@ -61,9 +61,11 @@ const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
 export const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
 const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcpu, ramGb: a.ramGb - b.ramGb, diskGb: a.diskGb - b.diskGb });
 
-// What a node can book: physical cores, RAM and usable RAID disk times the overcommit ratios its software allows.
-export function nodeCapacity(d: Device, sw: Software | null = null): Resources {
-  const v = modelById(d.model).server, r = sw?.overcommit ?? OVERCOMMIT;
+// What a node can book: physical cores, RAM and usable RAID disk times the overcommit ratios its software allows. A
+// hypervisor that does not balloon (yet, in that year) books RAM no further than installed.
+export function nodeCapacity(d: Device, sw: Software | null = null, year = 0): Resources {
+  const v = modelById(d.model).server, o = sw?.overcommit ?? OVERCOMMIT;
+  const r = sw?.kind === "cloud" && !balloons(sw, year) ? { ...o, ram: Math.min(o.ram, 1) } : o;
   return v ? { vcpu: installedCores(d) * r.cpu, ramGb: installedRamGb(d) * r.ram, diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
 }
 const softwareOf = (c: Pick<Cluster, "panel" | "platform">): Software | null => { const id = c.panel ?? c.platform; return id ? softwareById(id) : null; };
@@ -85,7 +87,7 @@ const density = (c: Cluster) => softwareOf(c)?.density ?? 1;
 // What a node can book for workloads: its capacity times the hypervisor's density, less the control plane it runs. With
 // Memory reservation on, or for automatic placement (guard), RAM stops at the installed RAM.
 export function bookable(s: GameState, d: Device, guard = false): Resources {
-  const c = clusterOf(s, d.id), cap = nodeCapacity(d, c ? softwareOf(c) : null);
+  const c = clusterOf(s, d.id), cap = nodeCapacity(d, c ? softwareOf(c) : null, yearOf(s.hour));
   if (!c) return cap;
   const k = density(c), cp = c.controlPlane === d.id ? controlPlaneUse(c) : ZERO;
   const ram = c.ramGuard || guard ? Math.min(cap.ramGb * k, installedRamGb(d)) : cap.ramGb * k;
@@ -118,7 +120,7 @@ export function vmRoom(s: GameState, c: Cluster): { cap: Resources; used: Resour
 export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d || !working(s, deviceId)) return false;
-  const cap = nodeCapacity(d, softwareOf(c)), used = nodeUsed(s, deviceId), cp = controlPlaneUse(c), k = density(c);
+  const cap = nodeCapacity(d, softwareOf(c), yearOf(s.hour)), used = nodeUsed(s, deviceId), cp = controlPlaneUse(c), k = density(c);
   return fits(used, { vcpu: cap.vcpu * k, ramGb: cap.ramGb * k, diskGb: cap.diskGb * k }, cp);
 }
 

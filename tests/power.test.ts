@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { BOOT_HOURS, deviceHealth, linkStatus, powered, rackPower, working } from "../src/sim/60-infra/status";
-import { failComponents, tick } from "../src/sim/88-tick/tick";
 import { buyDevice, connect, mountDevice, mountStack, setPlugged, unmountDevice } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { withServer } from "./fixtures";
+import { failComponents, powerPerHour, tick } from "../src/sim/88-tick/tick";
+import { runServers, withServer } from "./fixtures";
 
 const rich = (): GameState => ({ ...withServer(newGame(7)), cash: 1_000_000 });
 const ok = (r: ReturnType<typeof setPlugged>) => {
@@ -110,5 +110,18 @@ describe("power plugs", () => {
     const loaded = deserialize(JSON.stringify(raw));
     expect(working(loaded, "dev3")).toBe(true);
     expect(linkStatus(loaded, "dev3").online).toBe(true);
+  });
+});
+
+describe("idle draw", () => {
+  it("draws idle watts for a server with no running workload and rated watts once one runs", () => {
+    const s = rich();
+    expect(rackPower(s, "rack2").watts).toBe(100 + 8);
+    const idle = powerPerHour(s);
+    runServers(s);
+    expect(rackPower(s, "rack2").watts).toBe(250 + 8);
+    expect(powerPerHour(s)).toBeGreaterThan(idle);
+    s.workloads = s.workloads.map((w) => ({ ...w, stopped: true }));
+    expect(rackPower(s, "rack2").watts).toBe(100 + 8);
   });
 });

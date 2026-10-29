@@ -4,7 +4,7 @@ import { binomial, createRng, rand, type Rng } from "../00-core/rng";
 import { WORK_SHARE, type Patience } from "../00-core/workhours";
 import {
   BASEMENT_SLOTS, BUDGET_SIZE, businessPowerPrice, CHOICE_TAU, CITIES, COMPETITORS, generationAt,
-  KNOW_HOW, leadCapShare, LEVELS, MARKET_GROWTH, monthlySalary, NEVER_PAYS, ON_TIME, PAYMENT_MINUTES, PROFILES,
+  leadCapShare, LEVELS, MARKET_GROWTH, monthlySalary, NEVER_PAYS, ON_TIME, PAYMENT_MINUTES, PROFILES,
   REPAIR_HOURS, SEARCH_AD_COST, SERVER_AFR, STAFF_HOURS_PER_MONTH, START_CASH,
   TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vpsPlanGb,
   type ProductId, type Profile,
@@ -22,7 +22,7 @@ import { LEASE_FACTOR, LEASE_TERMS } from "../10-catalog/leasing";
 import { modelById, type DeviceModel } from "../10-catalog/hardware";
 import { presetPrice } from "../10-catalog/parts";
 import { skillById } from "../10-catalog/research";
-import { STORE, subscriptionPrice } from "../10-catalog/store";
+import { KNOW_HOW, STORE, subscriptionPrice } from "../10-catalog/store";
 import { MONTHLY_RATES } from "../40-support/tickets";
 import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
@@ -71,7 +71,7 @@ const GAME_SHARE = 0.6;
 const CONTROL_RAM = 1;
 // A basement server's average draw and the evening peak over a service's mean traffic (Traffic and bandwidth).
 const BASEMENT_WATTS = 150, PEAK_FACTOR = 2;
-const KNOW: Record<Product, number> = { ...KNOW_HOW, game: 1.5 };
+const KNOW: Record<Product, number> = { web: KNOW_HOW.webHosting, vps: KNOW_HOW.vps, game: KNOW_HOW.gameServer };
 const TRAFFIC: Record<Product, number> = { web: 2, vps: 20, game: 60 };
 // Out of the basement the bot rents the cheapest rack share in its home city that holds its servers' rated draw,
 // or whole positions past a full rack, and pays power per kWh and the datacenter's bandwidth per TB (Datacenters and space).
