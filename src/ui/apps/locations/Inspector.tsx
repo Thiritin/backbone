@@ -20,6 +20,8 @@ import { softwareName } from "../products/parts";
 import { dcOf, Facts, UsageBars } from "./ui";
 import { usageOf } from "../../../sim/60-infra/usage";
 import { NodeCard } from "./Clusters";
+import { softwareOn } from "../../../sim/90-actions/software";
+import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
 import { TechButton } from "./TechButton";
 
@@ -136,6 +138,12 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         <PortCard game={game} device={device} model={model} port={sel[0]} peer={peers[sel[0]]} onSelect={onSelect} />
       ) : null}
 
+      {model.kind === "server" && device.rackId && (
+        <div className="loc-card">
+          <div className="loc-card-h"><h3>Software</h3></div>
+          <SoftwareGrid game={game} machineId={device.id} />
+        </div>
+      )}
       {model.kind === "server" && <NodeCard game={game} device={device} />}
       {device.lease && <LeaseCard game={game} leaseId={device.lease} />}
       {powered && <PowerSupplies game={game} device={device} onPlug={(psu) => menus.plug(device, psu)} />}
@@ -159,7 +167,6 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
 
 // Power, link, control plane and role as plain values under the device.
 function Status({ game, device }: { game: GameState; device: Device }) {
-  const setSetup = useStore((s) => s.setSetup);
   const model = modelById(device.model), st = linkStatus(game, device.id);
   const [power, tone] = !device.rackId && !device.panel ? ["Not mounted", ""] : device.on && device.rackId && !pluggedIn(device) ? ["Unplugged", "bad"] : POWER[deviceHealth(game, device.id).state];
   const cluster = model.kind === "server" ? clusterOf(game, device.id) : undefined;
@@ -168,7 +175,7 @@ function Status({ game, device }: { game: GameState; device: Device }) {
   const customer = service && game.customers.find((c) => c.id === service.customerId);
   const role = cluster ? `${cluster.kind === "cloud" ? "Hypervisor node" : "Panel host"} in ${cluster.name}`
     : service ? `${service.product === "colocation" ? "Colocation" : "Dedicated"} for ${customer?.name ?? "a customer"}` : "Free";
-  const plane = cluster ? [cluster.panel, cluster.platform].filter((x) => x).map(softwareName).join(", ") || "None" : "None";
+  const plane = softwareOn(game, device.id).map((x) => softwareName(x.id)).join(", ") || "None";
   return (
     <dl className="insp-status">
       <div><dt>Power</dt><dd><span className={`insp-dot ${tone}`} />{power}</dd></div>
@@ -184,10 +191,7 @@ function Status({ game, device }: { game: GameState; device: Device }) {
       {model.kind === "server" && (
         <div>
           <dt>Control plane</dt>
-          <dd>
-            {plane}
-            {!cluster && !loads.length && device.rackId && <button className="btn insp-setup" onClick={() => setSetup(device.id)}>Set up</button>}
-          </dd>
+          <dd>{plane}</dd>
         </div>
       )}
       {model.kind === "server" && <div><dt>Role</dt><dd>{role}</dd></div>}

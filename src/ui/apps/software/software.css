@@ -1,0 +1,13 @@
+.sw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.sw-tile {
+  display: grid; justify-items: center; align-content: start; gap: 6px; min-height: 104px; padding: 12px 8px;
+  border-radius: 10px; border: 0.5px solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: center; cursor: pointer;
+}
+.sw-tile:hover { border-color: var(--accent); }
+.sw-tile .t { font-weight: 600; font-size: 12.5px; }
+.sw-tile .s { font-size: 11.5px; color: var(--text-2); }
+.sw-add { border: 1.5px dashed var(--line-strong); background: transparent; color: var(--text-2); }
+.sw-add:hover { border-color: var(--accent); color: var(--accent); }
+.sw-plus { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: var(--hover); }
+.prd-card[aria-disabled="true"] { opacity: 0.45; }
+.prd-card[aria-disabled="true"]:hover { border-color: var(--line-strong); }

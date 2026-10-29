@@ -1,6 +1,6 @@
 import type { Resources } from "../src/sim/10-catalog/products";
 import { device, type GameState } from "../src/sim/50-state";
-import { addNode, createCluster, createPanelVm, installPanel } from "../src/sim/90-actions/clusters";
+import { addNode, createPanelVm, installHypervisor, installPanel } from "../src/sim/90-actions/clusters";
 import { startGame, welcomeFriends } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 
@@ -27,8 +27,17 @@ export function withServer(s: GameState): GameState {
   return s;
 }
 
-// A hypervisor cluster with its hypervisor already installed, as an old save loads it; returns the cluster id.
-export const installed = (s: GameState, clusterId: string, platform = "proxmocks"): string => done(s, clusterId, { platform });
+// The servers with the hypervisor already installed, joined into one cluster under the name; returns the cluster id.
+export function hypervisor(s: GameState, deviceIds: string[], name?: string, platform = "proxmocks"): string {
+  const [id] = deviceIds.map((d) => done(s, must(installHypervisor(s, d, platform)), { platform }));
+  for (const d of deviceIds.slice(1)) must({ ...addNode(s, id, d), id });
+  return name ? done(s, id, { name }) : id;
+}
+// Installs the cluster's hypervisor on the server, already done, and joins it to the cluster.
+export function join(s: GameState, clusterId: string, deviceId: string) {
+  hypervisor(s, [deviceId], undefined, s.clusters.find((c) => c.id === clusterId)!.platform!);
+  must({ ...addNode(s, clusterId, deviceId), id: clusterId });
+}
 
 // A panel VM on a hypervisor cluster with its panel already installed; returns the panel host id.
 export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", size?: Resources): string =>
@@ -38,11 +47,7 @@ export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", si
 export const panelServer = (s: GameState, deviceId: string, panel = "freepanel"): string => done(s, must(installPanel(s, deviceId, panel)), { panel });
 
 // The basement server as the hypervisor cluster "Basement 1" with Proxmocks installed; returns the cluster id.
-export function basement(s: GameState): string {
-  const id = installed(s, must(createCluster(s, "loc1", "Basement 1")));
-  must({ ...addNode(s, id, BASEMENT_SERVER), id });
-  return id;
-}
+export const basement = (s: GameState): string => hypervisor(s, [BASEMENT_SERVER], "Basement 1");
 
 // A new company after the setup: Proxmocks on the starting basement server with a FreePanel VM, the friends moved in and every
 // line they sell on the website.

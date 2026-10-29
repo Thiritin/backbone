@@ -11,7 +11,8 @@ type OldCluster = Omit<Partial<Cluster>, "nodes"> & { nodes: OldNode[] };
 
 export function upgradeCompute(s: GameState): GameState {
   const old = s.clusters as unknown as OldCluster[];
-  if (old.every((c) => c.kind)) return { ...s, clusters: old.map((c) => clusterDefaults(c as Cluster, s.hour)) };
+  // Software lives on its machines, so a cluster with nothing installed or installing frees its servers.
+  if (old.every((c) => c.kind)) return { ...s, clusters: old.filter((c) => c.panel || c.platform || c.switching).map((c) => clusterDefaults(c as Cluster, s.hour)) };
   const now = phpAt(yearOf(s.hour));
   const clusters: Cluster[] = [], vms: Workload[] = [], hostOf = new Map<string, string>();
   let workloads = s.workloads, nextId = s.nextId;

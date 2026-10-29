@@ -1,6 +1,6 @@
 import { modelById } from "../10-catalog/hardware";
 import { yearOf } from "../00-core/time";
-import { kindServing, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { IN_VM, kindServing, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
@@ -53,11 +53,12 @@ const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
 export const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
 const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcpu, ramGb: a.ramGb - b.ramGb, diskGb: a.diskGb - b.diskGb });
 
-// What a node can book: physical cores, RAM and usable RAID disk times the overcommit ratios.
-export function nodeCapacity(d: Device): Resources {
-  const v = modelById(d.model).server;
-  return v ? { vcpu: v.cores * OVERCOMMIT.cpu, ramGb: v.ramGb * OVERCOMMIT.ram, diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
+// What a node can book: physical cores, RAM and usable RAID disk times the overcommit ratios its software allows.
+export function nodeCapacity(d: Device, sw: Software | null = null): Resources {
+  const v = modelById(d.model).server, r = sw?.overcommit ?? OVERCOMMIT;
+  return v ? { vcpu: v.cores * r.cpu, ramGb: v.ramGb * r.ram, diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
 }
+const softwareOf = (c: Pick<Cluster, "panel" | "platform">): Software | null => { const id = c.panel ?? c.platform; return id ? softwareById(id) : null; };
 
 // What the workloads on a server book; web spaces inside a panel VM count in the VM's booking.
 export function nodeUsed(s: GameState, deviceId: string): Resources {
@@ -76,7 +77,7 @@ const density = (c: Cluster) => (c.platform ? softwareById(c.platform).density :
 // What a node can book for workloads: its capacity times the hypervisor's density, less the control plane it runs. With
 // Memory reservation on, or for automatic placement (guard), RAM stops at the installed RAM.
 export function bookable(s: GameState, d: Device, guard = false): Resources {
-  const cap = nodeCapacity(d), c = clusterOf(s, d.id);
+  const c = clusterOf(s, d.id), cap = nodeCapacity(d, c ? softwareOf(c) : null);
   if (!c) return cap;
   const k = density(c), cp = c.controlPlane === d.id ? controlPlaneUse(c) : ZERO;
   const ram = c.ramGuard || guard ? Math.min(cap.ramGb * k, modelById(d.model).server?.ramGb ?? 0) : cap.ramGb * k;
@@ -96,18 +97,20 @@ export const isOwnVm = (w: Workload): boolean => !w.serviceId;
 // The server a panel host runs on: its bare-metal node or its VM's node.
 export const anchorOf = (s: GameState, c: Cluster): string | null => c.nodes[0]?.deviceId ?? vmById(s, c.vm)?.deviceId ?? null;
 
+// What software in a VM of that size can book: CPU and RAM at IN_VM of bare metal, less the panel.
+export const vmCap = (r: Resources, panel: Resources): Resources => minus({ vcpu: r.vcpu * IN_VM, ramGb: r.ramGb * IN_VM, diskGb: r.diskGb }, panel);
 // A panel VM's room: its booking less the panel, and what its web spaces book.
 export function vmRoom(s: GameState, c: Cluster): { cap: Resources; used: Resources } {
   const vm = vmById(s, c.vm), used = { ...ZERO };
   for (const w of s.workloads) if (w.clusterId === c.id) for (const k of KEYS) used[k] += w[k];
-  return { cap: vm ? minus(vm, controlPlaneUse(c)) : ZERO, used };
+  return { cap: vm ? vmCap(vm, controlPlaneUse(c)) : ZERO, used };
 }
 
 // Whether a working node of the cluster has room for its control plane next to its workloads.
 export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d || !working(s, deviceId)) return false;
-  const cap = nodeCapacity(d), used = nodeUsed(s, deviceId), cp = controlPlaneUse(c), k = density(c);
+  const cap = nodeCapacity(d, softwareOf(c)), used = nodeUsed(s, deviceId), cp = controlPlaneUse(c), k = density(c);
   return fits(used, { vcpu: cap.vcpu * k, ramGb: cap.ramGb * k, diskGb: cap.diskGb * k }, cp);
 }
 
@@ -235,12 +238,12 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
 // A service without workloads (resold domains, certificates, contracts from before placement) is always up.
 export const workloadsUp = (s: GameState, serviceId: string): boolean => workloadsOf(s, serviceId).every((w) => workloadOnline(s, w));
 
-// Hourly: frees the workloads of ended services and of gone panel hosts, keeps draining nodes moving and counts each live
+// Hourly: frees the workloads of ended services and the player's VMs on gone clusters, keeps draining nodes moving and counts each live
 // service's hours down this month.
 export function computeTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   const live = new Set(s.services.filter((v) => v.endedAt === null).map((v) => v.id));
-  const keep = (w: Workload) => (isOwnVm(w) ? !!hostOfVm(s, w.id) : live.has(w.serviceId));
+  const keep = (w: Workload) => (isOwnVm(w) ? s.clusters.some((c) => c.id === w.clusterId) : live.has(w.serviceId));
   if (s.workloads.some((w) => !keep(w))) s.workloads = s.workloads.filter(keep);
   for (const c of s.clusters) {
     for (const n of c.nodes) {

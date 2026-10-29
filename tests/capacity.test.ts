@@ -5,12 +5,12 @@ import { bookable } from "../src/sim/60-infra/cluster";
 import { homePeak, networkTick, zoneDemand } from "../src/sim/60-infra/network";
 import { tick } from "../src/sim/88-tick/tick";
 import { takeLoan } from "../src/sim/90-actions/billing";
-import { addNode } from "../src/sim/90-actions/clusters";
+
 import { buyDevice, connect, orderHomeLine } from "../src/sim/90-actions/hardware";
 import { research } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { checkDone } from "../src/sim/checklist";
-import { readyGame } from "./fixtures";
+import { join, readyGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
@@ -70,7 +70,7 @@ describe("early capacity (docs/design/economy.md, Home line)", () => {
     ok(mountDevice(s, id, "rack2", 2));
     ok(connect(s, { device: id, port: 0 }, { device: "dev4", port: 1 }));
     expect(checkDone(s, "secondServer")).toBe(true);
-    ok(addNode(s, s.clusters[0].id, id));
+    join(s, s.clusters[0].id, id);
     // The new node adds its full 8 GB; the control plane already sits on the first.
     expect(clusterRam(s)).toBeCloseTo(ram + 8, 6);
   });

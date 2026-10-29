@@ -9,14 +9,15 @@ import { controlPlaneUp, lineOffered, vmById, vmOf, workloadsOf } from "../src/s
 import { FAILOVER_MINUTES } from "../src/sim/60-infra/ha";
 import { tick } from "../src/sim/88-tick/tick";
 import {
-  addNode, createCluster, createPanelVm, installPanel, provisionService, removePanelHost, resizePanelVm, setHa, setSoftware,
+  addNode, createPanelVm, installPanel, provisionService, removePanelHost, resizePanelVm, setHa,
 } from "../src/sim/90-actions/clusters";
+import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
 import { migrateWorkload } from "../src/sim/90-actions/vms";
 import { startGame } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { basement, installed, panelServer, panelVm, readyGame, withServer } from "./fixtures";
+import { basement, hypervisor, join, panelServer, panelVm, readyGame, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
@@ -33,7 +34,7 @@ function twoNodes(): { s: GameState; cluster: string; second: string } {
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
   const cluster = basement(s);
-  ok(addNode(s, cluster, second));
+  join(s, cluster, second);
   return { s, cluster, second };
 }
 
@@ -50,15 +51,14 @@ describe("compute", () => {
   it("runs one control plane per server: a panel server takes no hypervisor and a hypervisor node no panel", () => {
     const s = withServer(startGame(1));
     const host = ok(installPanel(s, "dev3", "freepanel"));
-    const cluster = ok(createCluster(s, "loc1", "Cloud 1"));
-    expect(err(addNode(s, cluster, "dev3"))).toBe("error.serverInUse");
+    expect(err(installSoftware(s, "dev3", "proxmocks"))).toBe("error.onePanel");
+    expect(err(installSoftware(s, "dev3", "cpanic"))).toBe("error.onePanel");
     expect(err(installPanel(s, "dev3", "cpanic"))).toBe("error.serverInUse");
-    expect(err(setSoftware(s, host, "proxmocks"))).toBe("error.wrongKind");
     expect(err(addNode(s, host, "dev3"))).toBe("error.panelHostOneServer");
     // Changing the panel needs the server empty of web spaces.
     run(s, softwareById("freepanel").installHours);
     expect(s.customers.filter((c) => c.habit === "friend")).toHaveLength(3);
-    expect(err(setSoftware(s, host, "cpanic"))).toBe("error.softwareInUse");
+    expect(err(uninstallSoftware(s, "dev3"))).toBe("error.softwareInUse");
   });
 
   it("sets the basement up as a panel server: installs for the panel's hours, then the friends move in and only web hosting sells", () => {
@@ -74,9 +74,7 @@ describe("compute", () => {
 
   it("sets the basement up as a hypervisor with a panel VM: the panel follows the hypervisor, then the friends move in", () => {
     const s = withServer(startGame(1));
-    const cluster = ok(createCluster(s, "loc1", "Basement 1"));
-    ok(addNode(s, cluster, "dev3"));
-    ok(setSoftware(s, cluster, "proxmocks"));
+    const cluster = ok(installSoftware(s, "dev3", "proxmocks"));
     const host = ok(createPanelVm(s, cluster, "freepanel"));
     const hours = softwareById("proxmocks").installHours + softwareById("freepanel").installHours;
     run(s, hours - 1);
@@ -89,14 +87,14 @@ describe("compute", () => {
 
   it("limits web hosting to the panel VM's booking, grows it with a resize and refuses one below its web spaces", () => {
     const s = withServer(startGame(1)), cus = addCustomer(s, "Ada Lang", "hobbyDev");
-    const host = panelVm(s, basement(s), "freepanel", { vcpu: 2, ramGb: 1.1, diskGb: 100 });
-    // 1.1 GB less FreePanel's 0.1 GB holds four web spaces of 0.25 GB.
+    const host = panelVm(s, basement(s), "freepanel", { vcpu: 2, ramGb: 1.2, diskGb: 100 });
+    // 95 percent of 1.2 GB less FreePanel's 0.1 GB holds four web spaces of 0.25 GB.
     expect(fill(s, cus)).toBe(4);
     expect(err(web(s, cus, 9))).toBe("error.noCapacity");
     expect(err(resizePanelVm(s, host, { vcpu: 2, ramGb: 1, diskGb: 100 }))).toBe("error.vmTooSmall");
-    ok(resizePanelVm(s, host, { vcpu: 2, ramGb: 2.1, diskGb: 100 }));
+    ok(resizePanelVm(s, host, { vcpu: 2, ramGb: 2.3, diskGb: 100 }));
     expect(fill(s, cus)).toBe(4);
-    expect(vmById(s, s.clusters.find((c) => c.id === host)!.vm)!.ramGb).toBe(2.1);
+    expect(vmById(s, s.clusters.find((c) => c.id === host)!.vm)!.ramGb).toBe(2.3);
     expect(err(resizePanelVm(s, host, { vcpu: 2, ramGb: 50, diskGb: 100 }))).toBe("error.nodeFull");
     expect(err(removePanelHost(s, host))).toBe("error.nodeNotEmpty");
   });
@@ -167,7 +165,7 @@ describe("compute", () => {
     ok(provisionService(s, cus, "cloud", { label: "Cloud" }));
     expect(lineOffered(s, "cloud")).toBe(true);
     const hyper = { ...withServer(newGame(2)) };
-    const c2 = installed(hyper, ok(createCluster(hyper, "loc1", "Hyper 1")), "hypervee");
+    const c2 = hypervisor(hyper, ["dev3"], "Hyper 1", "hypervee");
     hyper.unlocks = ["virtualization"];
     expect(err(setHa(hyper, c2, "live", true))).toBe("error.noLiveMigration");
   });

@@ -1,9 +1,11 @@
-import { Boxes, MonitorCog, RotateCcw, TriangleAlert } from "lucide-react";
+import { Boxes, MonitorCog, Plus, RotateCcw, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { softwareById } from "../../../sim/10-catalog/platforms";
+import type { Resources } from "../../../sim/10-catalog/products";
 import type { GameState } from "../../../sim/50-state";
 import { hostOfVm, type Workload } from "../../../sim/60-infra/cluster";
 import { workloadLoad } from "../../../sim/60-infra/usage";
+import { createVm, deleteVm, PANEL_VM_SIZE } from "../../../sim/90-actions/clusters";
 import { migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
 import type { MenuEntry } from "../../desktop/ContextMenu";
 import { menuOn } from "../../desktop/ContextMenu";
@@ -12,7 +14,8 @@ import { More } from "../More";
 import "../billing/billing.css";
 import { CustomerLink } from "../customers/CustomersApp";
 import { day, devName, disk, ram } from "../hw";
-import { ResizeCard } from "../products/PanelHosts";
+import { ResizeCard, SizeFields } from "../products/PanelHosts";
+import { SoftwareGrid } from "../software/Software";
 import { Mark, IncidentReports, Sparkline, VM_STATE, vmLabel, vmState, type VmState } from "../products/parts";
 import { PRODUCT } from "../support/labels";
 
@@ -43,8 +46,12 @@ export function workloadActions(game: GameState, w: Workload): MenuEntry[] {
 }
 
 function vmMenu(game: GameState, w: Workload): MenuEntry[] {
-  const v = game.services.find((x) => x.id === w.serviceId), openApp = useStore.getState().openApp;
-  return [...workloadActions(game, w), null, v && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: v.customerId }) }];
+  const v = game.services.find((x) => x.id === w.serviceId), { act, openApp } = useStore.getState();
+  return [
+    ...workloadActions(game, w), null,
+    v && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: v.customerId }) },
+    !v && !hostOfVm(game, w.id) && { label: "Delete", run: () => act((g) => deleteVm(g, w.id)) },
+  ];
 }
 
 export function VmApp() {
@@ -54,6 +61,7 @@ export function VmApp() {
   const [node, setNode] = useState<string | null>(null);
   const [filter, setFilter] = useState<StateFilter>("all");
   const [selected, setSelected] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   useFocus("Virtual machines", (f) => { if (f.kind === "workload") { setCluster(null); setNode(null); setFilter("all"); setIncidents(false); setSelected(f.id); } });
   const cluster = game.clusters.find((c) => c.id === clusterId);
   const clouds = game.clusters.filter((c) => c.kind === "cloud");
@@ -100,6 +108,7 @@ export function VmApp() {
                 })}
               </div>
             )}
+            {clouds.length > 0 && <button className="btn" onClick={() => { setCreating(true); setSelected(null); }}><Plus />New VM</button>}
           </div>
           <div className="fin-scroll">
             {shown.length === 0 ? <div className="fin-empty"><MonitorCog />No virtual machines</div> : (
@@ -110,7 +119,7 @@ export function VmApp() {
                     const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId), own = vmLabel(game, w);
                     const d = game.devices.find((x) => x.id === w.deviceId), [label, tone] = VM_STATE[vmState(game, w)];
                     return (
-                      <tr key={w.id} className={w.id === selected ? "sel" : ""} onClick={() => setSelected(w.id)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setSelected(w.id)}
+                      <tr key={w.id} className={w.id === selected ? "sel" : ""} onClick={() => { setSelected(w.id); setCreating(false); }} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setSelected(w.id)}
                         onContextMenu={menuOn(() => vmMenu(game, w))}>
                         <td>{v ? v.label : own.name}</td>
                         <td>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</td>
@@ -127,7 +136,8 @@ export function VmApp() {
           </div>
         </div>
       )}
-      {!incidents && vm && <VmDetail game={game} w={vm} />}
+      {!incidents && creating && <NewVm game={game} clusterId={clusterId ?? clouds[0]?.id} onDone={(id) => { setCreating(false); setSelected(id); }} />}
+      {!incidents && !creating && vm && <VmDetail game={game} w={vm} />}
     </div>
   );
 }
@@ -137,15 +147,15 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
   const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId);
   const cluster = game.clusters.find((x) => x.id === w.clusterId)!;
   const host = game.devices.find((x) => x.id === w.deviceId), panel = hostOfVm(game, w.id);
-  const st = vmState(game, w), [label, tone] = VM_STATE[st];
+  const st = vmState(game, w), [label, tone] = VM_STATE[st], own = vmLabel(game, w);
   const from = game.hour - (game.hour % 24);
   const load = Array.from({ length: 24 }, (_, i) => workloadLoad(game, { ...w, stopped: false, busyUntil: 0 }, from + i));
   return (
     <aside className="fin-detail vm-detail">
-      <div className="fin-detail-h"><h2>{v ? v.label : panel?.name}</h2><span className={`pill ${tone}`}>{label}</span><More label={v ? v.label : panel?.name ?? "VM"} entries={() => vmMenu(game, w)} /></div>
+      <div className="fin-detail-h"><h2>{v ? v.label : own.name}</h2><span className={`pill ${tone}`}>{label}</span><More label={v ? v.label : own.name} entries={() => vmMenu(game, w)} /></div>
       <dl className="fin-facts">
         <div><dt>Customer</dt><dd>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</dd></div>
-        <div><dt>Product</dt><dd>{v ? PRODUCT[v.product] : "Panel VM"}</dd></div>
+        <div><dt>Product</dt><dd>{v ? PRODUCT[v.product] : own.service}</dd></div>
         <div><dt>Host</dt><dd>{host ? devName(host) : "None"}</dd></div>
         <div><dt>Cluster</dt><dd>{cluster.name}</dd></div>
         <div><dt>vCPU</dt><dd className="num">{num(w.vcpu)}</dd></div>
@@ -159,7 +169,33 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
         <div className="fin-card-b"><Sparkline values={load} from={from} w={250} /></div>
       </section>
       {st === "lost" && <div className="fin-actions"><button className="btn primary" onClick={() => act((g) => restoreWorkload(g, w.id))}><RotateCcw />{w.backupAt === null ? "Start empty" : "Restore"}</button></div>}
+      {!v && (
+        <section className="fin-card">
+          <div className="fin-card-h">Software</div>
+          <div className="fin-card-b"><SoftwareGrid game={game} machineId={w.id} /></div>
+        </section>
+      )}
       {panel && <ResizeCard key={panel.id} game={game} host={panel} />}
+    </aside>
+  );
+}
+
+// Books one of the player's own VMs on a hypervisor cluster.
+function NewVm({ game, clusterId, onDone }: { game: GameState; clusterId: string | undefined; onDone: (id: string) => void }) {
+  const act = useStore((s) => s.act);
+  const clouds = game.clusters.filter((c) => c.kind === "cloud");
+  const [on, setOn] = useState(clusterId), [size, setSize] = useState<Resources>(PANEL_VM_SIZE);
+  const create = () => { if (!on) return; const r = act((g) => createVm(g, on, size)); if (r.ok) onDone(r.id!); };
+  return (
+    <aside className="fin-detail vm-detail">
+      <div className="fin-detail-h"><h2>New VM</h2></div>
+      {clouds.length > 1 && (
+        <div className="seg" role="group" aria-label="Cluster">
+          {clouds.map((c) => <button key={c.id} aria-pressed={on === c.id} onClick={() => setOn(c.id)}>{c.name}</button>)}
+        </div>
+      )}
+      <SizeFields value={size} onChange={setSize} />
+      <div className="fin-actions"><button className="btn primary" disabled={!on} onClick={create}>Create</button></div>
     </aside>
   );
 }

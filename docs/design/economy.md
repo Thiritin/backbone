@@ -1056,25 +1056,27 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 
 Every server runs at most one control plane. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers, DNS, VPN, storage and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years.
 
-| Software | Kind | License | Install | How-to tickets | Density | Live migration | Control plane |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| cPanic | Panel | €0.40 per web space | 3 h | ×0.8 | | | 0.25 vCPU, 0.25 GB, 5 GB |
-| Pleskit | Panel | €12 per panel host | 3 h | ×0.9 | | | 0.25 vCPU, 0.25 GB, 5 GB |
-| DirectAdmen | Panel | €4 per panel host | 2 h | ×1.2 | | | 0.1 vCPU, 0.1 GB, 2 GB |
-| FreePanel | Panel | Free | 2 h | ×1.5 | | | 0.1 vCPU, 0.1 GB, 2 GB |
-| OpenStash | Cloud | Free | 8 h | ×1.3 | 1.0 | Yes | 2 vCPU, 2 GB, 20 GB |
-| VMwhere | Cloud | €8 per physical core | 5 h | ×0.7 | 1.15 | Yes | 1 vCPU, 2 GB, 10 GB |
-| Proxmocks | Cloud | Free | 3 h | ×1.0 | 1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
-| HyperVee | Cloud | €20 per node | 4 h | ×0.9 | 1.05 | No | 1 vCPU, 1 GB, 10 GB |
+| Software | Kind | License | Install | How-to tickets | Density | Live migration | CPU overcommit | RAM overcommit | Control plane |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| cPanic | Panel | €0.40 per web space | 3 h | ×0.8 | | | 8× | 1.5× | 0.25 vCPU, 0.25 GB, 5 GB |
+| Pleskit | Panel | €12 per panel host | 3 h | ×0.9 | | | 8× | 1.5× | 0.25 vCPU, 0.25 GB, 5 GB |
+| DirectAdmen | Panel | €4 per panel host | 2 h | ×1.2 | | | 8× | 1.5× | 0.1 vCPU, 0.1 GB, 2 GB |
+| FreePanel | Panel | Free | 2 h | ×1.5 | | | 8× | 1.5× | 0.1 vCPU, 0.1 GB, 2 GB |
+| OpenStash | Cloud | Free | 8 h | ×1.3 | 1.0 | Yes | 4× | 1.0× | 2 vCPU, 2 GB, 20 GB |
+| VMwhere | Cloud | €8 per physical core | 5 h | ×0.7 | 1.15 | Yes | 10× | 1.25× | 1 vCPU, 2 GB, 10 GB |
+| Proxmocks | Cloud | Free | 3 h | ×1.0 | 1.0 | Yes | 8× | 1.5× | 0.25 vCPU, 0.25 GB, 5 GB |
+| HyperVee | Cloud | €20 per node | 4 h | ×0.9 | 1.05 | No | 6× | 1.2× | 1 vCPU, 1 GB, 10 GB |
 
 - **Licenses** are billed on the 1st of each month per hypervisor cluster and per panel host, as ledger lines in the category "licenses".
 - **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the hypervisor for the rest).
 - **Density** multiplies what a node can book, from memory sharing and lighter hypervisors.
+- **Overcommit** caps what a node books per physical core and per installed GB of RAM under that software. Proxmocks shares memory pages and balloons guests, so it books RAM up to 1.5 times the installed RAM; OpenStash never books RAM past the installed RAM and caps CPU at 4 vCPU per core; VMwhere and HyperVee sit in between. Disk books up to twice the usable RAID disk everywhere. Memory reservation and automatic placement stop RAM at the installed RAM, which only tightens the cap.
+- **Software in a VM** gets 95% of the VM's vCPU and RAM (`IN_VM` in 10-catalog/platforms.ts): a panel VM's web hosting room is 0.95 times its booked vCPU and RAM, less the panel, with its full disk. The same panel on bare metal gets the whole server.
 - **Control plane:** a hypervisor's control plane runs on one node of the cluster, the first one added, and counts against what it can book and what it uses. A bare-metal panel host runs its panel on its server; a panel VM runs its panel inside the VM, so the panel counts against the VM's booking. While that node is down, or while the cluster switches software, nothing can be sold, started, migrated or restored on the cluster. Draining moves the control plane to another node once the drained node is empty, and the player can move it to any working node with room.
-- **Installing** needs a node in the cluster, or a free mounted server for a panel host, and room for the control plane on it. A panel VM can be created while its cluster's hypervisor is still installing; its panel starts installing once the hypervisor is done. The control plane is busy for the install hours in the table, and nothing can be placed on the cluster until it is done. An install costs nothing up front; the license is billed from the next 1st of the month.
-- **Switching** to other software of the same kind takes the new software's install hours and needs the cluster empty of the workloads the old software serves. Workloads of the other kind stay online.
+- **Installing** goes on a machine: a free mounted server, or one of the player's own VMs for a panel, with room for the control plane on it. A hypervisor on a server makes it a one-server hypervisor cluster named after its location; servers with the same installed hypervisor join a cluster once nothing runs on them. A panel VM can be created while its cluster's hypervisor is still installing; its panel starts installing once the hypervisor is done. The control plane is busy for the install hours in the table, and nothing can be placed on the cluster until it is done. An install costs nothing up front; the license is billed from the next 1st of the month.
+- **Switching** software is an uninstall and an install. Uninstalling needs the machine empty of what the software serves; a VM stays, empty, and the player deletes it separately.
 - **Selling:** the website, order emails and leads only carry product lines that an installed control plane on a cluster with nodes sells. Placement refuses with "No cluster runs a hosting panel" or "No cluster runs a virtualization platform" when no cluster in scope has the right software, and with the capacity error when it has but no node has room.
-- A new game's "Basement 1" runs nothing. Old saves keep the panel and platform they had, and saves from before platforms load with FreePanel and Proxmocks installed.
+- A new game starts with no software installed. Old saves keep the panel and platform they had, and saves from before platforms load with FreePanel and Proxmocks installed.
 
 **Migration in the first build.** Inside a zone, links count as 1 Gbit/s, which moves 450 GB an hour. Virtual machines move live on platforms with live migration; on HyperVee they are offline for (disk + RAM) ÷ 450 GB per hour, rounded up to whole hours. Web spaces, game servers and storage volumes move without a lost hour. Moves between zones need a link between the zones; until the network links between locations exist, they are refused. A workload with a lost disk can't migrate; it is restored instead.
 

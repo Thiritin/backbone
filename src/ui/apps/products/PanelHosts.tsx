@@ -3,7 +3,7 @@ import { useState } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { modelById } from "../../../sim/10-catalog/hardware";
-import { phpAt, phpBehind, softwareById } from "../../../sim/10-catalog/platforms";
+import { phpAt, phpBehind } from "../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../sim/10-catalog/products";
 import type { GameState } from "../../../sim/50-state";
 import { anchorOf, bookable, controlPlaneUse, nodeUsed, serverTaken, vmById, vmRoom, type Cluster } from "../../../sim/60-infra/cluster";
@@ -11,7 +11,7 @@ import { PHP_EOL } from "../../../sim/60-infra/php";
 import { locationOf } from "../../../sim/60-infra/status";
 import { licenseCost } from "../../../sim/85-products/products";
 import {
-  createPanelVm, installPanel, PANEL_VM_MIN, PANEL_VM_SIZE, phpDue, removePanelHost, resizePanelVm, setSoftware, upgradePhp,
+  createPanelVm, installPanel, PANEL_VM_MIN, PANEL_VM_SIZE, phpDue, removePanelHost, resizePanelVm, upgradePhp,
 } from "../../../sim/90-actions/clusters";
 import { cleanUp, setSitesOffline } from "../../../sim/90-actions/security";
 import { Confirm } from "../../desktop/Confirm";
@@ -21,7 +21,7 @@ import { useStore } from "../../store";
 import { devName, disk, ram } from "../hw";
 import { Meter } from "../locations/Clusters";
 import { Stepper } from "../shop/Cart";
-import { ControlPlanePill, licenseText, Mark, SoftwareCards } from "./parts";
+import { ControlPlanePill, Mark, SoftwareCards, softwareName } from "./parts";
 
 const num = (n: number) => `${+n.toFixed(2)}`;
 
@@ -83,7 +83,6 @@ export function NewPanelHost({ game, onDone }: { game: GameState; onDone: (id: s
 // A panel host: its panel, where it runs, its web hosting capacity, PHP and licence.
 export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster }) {
   const act = useStore((s) => s.act);
-  const [pending, setPending] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
   const vm = vmById(game, host.vm), at = anchorOf(game, host), d = game.devices.find((x) => x.id === at);
   const onCluster = vm && game.clusters.find((c) => c.id === vm.clusterId);
@@ -95,8 +94,6 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
     : d ? (() => { const b = bookable(game, d); return { vcpu: b.vcpu + panel.vcpu, ramGb: b.ramGb + panel.ramGb, diskGb: b.diskGb + panel.diskGb }; })() : { vcpu: 0, ramGb: 0, diskGb: 0 };
   const lic = licenseCost(game, host).panel;
   const year = yearOf(game.hour), behind = phpBehind(host.php, year);
-  const target = pending ? softwareById(pending) : null;
-  const fresh = !host.panel;
   const menu = (): MenuEntry[] => [
     phpDue(game, host) && { label: host.php === phpAt(year) ? "Patch PHP" : `Upgrade to PHP ${phpAt(year)}`, run: () => act((g) => upgradePhp(g, host.id)) },
     ...sitesMenu(game, host),
@@ -113,8 +110,7 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
         <More label={host.name} entries={menu} />
       </div>
 
-      <h3 className="prd-h">Hosting panel<span className="loc-muted num">{euroCents(lic)} per month</span></h3>
-      <SoftwareCards kind="panel" value={host.switching?.to ?? host.panel} onPick={(id) => { if (id !== host.panel) setPending(id); }} />
+      <h3 className="prd-h">{softwareName(host.switching?.to ?? host.panel)}<span className="loc-muted num">{euroCents(lic)} per month</span></h3>
 
       <section className="fin-card">
         <div className="fin-card-h">{vm ? <Boxes /> : <Server />}Runs on</div>
@@ -139,15 +135,6 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
 
       {vm && <ResizeCard game={game} host={host} />}
 
-      {target && (
-        <Confirm
-          title={`${fresh ? "Install" : "Switch to"} ${target.name}?`}
-          text={`The panel of ${host.name} is busy for ${target.installHours} h. The license is ${licenseText(target).toLowerCase()}${target.pricing === "free" ? "" : " per month"}.`}
-          action={fresh ? "Install" : "Switch"}
-          onCancel={() => setPending(null)}
-          onConfirm={() => { act((g) => setSoftware(g, host.id, target.id)); setPending(null); }}
-        />
-      )}
       {removing && (
         <Confirm
           title={`Remove ${host.name}?`}

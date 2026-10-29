@@ -10,8 +10,9 @@ import { bookable, controlPlaneUp, lostDisk, workloadsOf } from "../src/sim/60-i
 import { nodeUsage } from "../src/sim/60-infra/usage";
 import { howToFactor, licenseCost, SLOW_PENALTY } from "../src/sim/85-products/products";
 import { tick } from "../src/sim/88-tick/tick";
-import { addNode, createCluster, moveControlPlane, provisionService, setBackup, setHa, setSoftware } from "../src/sim/90-actions/clusters";
-import { installed, panelVm, withServer } from "./fixtures";
+import { moveControlPlane, provisionService, setBackup, setHa } from "../src/sim/90-actions/clusters";
+import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
+import { hypervisor, panelVm, withServer } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { monthlyValue } from "../src/sim/40-support/tickets";
@@ -43,11 +44,8 @@ function server(s: GameState, slot: number, port: number) {
 function setup(platform = "proxmocks") {
   const s = { ...withServer(newGame(1)), cash: 100_000 };
   const second = server(s, 2, 1), third = server(s, 3, 2);
-  const cluster = installed(s, ok(createCluster(s, "loc1", "Cloud 1")), platform);
-  ok(addNode(s, cluster, "dev3"));
-  ok(addNode(s, cluster, second));
-  const backup = installed(s, ok(createCluster(s, "loc1", "Backup 1")));
-  ok(addNode(s, backup, third));
+  const cluster = hypervisor(s, ["dev3", second], "Cloud 1", platform);
+  const backup = hypervisor(s, [third], "Backup 1");
   const cus = addCustomer(s, "Ada Lang", "hobbyDev");
   return { s, cluster, second, third, backup, cus };
 }
@@ -67,26 +65,26 @@ describe("platforms and licenses", () => {
   it("gives a denser platform more bookable capacity", () => {
     const a = setup("vmwhere"), b = setup("proxmocks");
     const dev = (x: typeof a) => x.s.devices.find((d) => d.id === x.second)!;
-    expect(bookable(a.s, dev(a)).ramGb).toBeCloseTo(12 * softwareById("vmwhere").density);
+    expect(bookable(a.s, dev(a)).ramGb).toBeCloseTo(8 * softwareById("vmwhere").overcommit.ram * softwareById("vmwhere").density);
     expect(bookable(b.s, dev(b)).ramGb).toBe(12);
   });
-  it("switches software only once nothing it serves runs on the cluster, busy for the new software's install hours", () => {
+  it("swaps a panel only once nothing it serves runs on it, busy for the new panel's install hours", () => {
     const { s, cluster, cus } = setup();
-    const host = panelVm(s, cluster), spare = panelVm(s, cluster);
+    const host = panelVm(s, cluster), spare = panelVm(s, cluster), box = clusterById(s, spare).vm!;
     const web = ok(provisionService(s, cus, "webHosting", { label: "Blog", clusterId: host }));
     const cash = s.cash;
-    expect(err(setSoftware(s, host, "cpanic"))).toBe("error.softwareInUse");
-    expect(err(setSoftware(s, cluster, "hypervee"))).toBe("error.softwareInUse");
-    expect(err(setSoftware(s, spare, "hypervee"))).toBe("error.wrongKind");
-    ok(setSoftware(s, spare, "cpanic"));
+    expect(err(uninstallSoftware(s, clusterById(s, host).vm!))).toBe("error.softwareInUse");
+    expect(err(uninstallSoftware(s, s.workloads.find((w) => w.id === box)!.deviceId!))).toBe("error.softwareInUse");
+    ok(uninstallSoftware(s, box));
+    expect(err(installSoftware(s, box, "hypervee"))).toBe("error.nestedHypervisor");
+    const swapped = ok(installSoftware(s, box, "cpanic"));
     expect(s.cash).toBe(cash);
     expect(serviceOnline(s, web)).toBe(true);
-    expect(controlPlaneUp(s, clusterById(s, spare))).toBe(false);
-    expect(err(setSoftware(s, spare, "pleskit"))).toBe("error.switching");
+    expect(controlPlaneUp(s, clusterById(s, swapped))).toBe(false);
+    expect(err(installSoftware(s, box, "pleskit"))).toBe("error.onePanel");
     const events = Array.from({ length: softwareById("cpanic").installHours }, () => tick(s)).flat();
-    expect(events).toContainEqual({ app: "Products", key: "event.switched", params: { cluster: "Web 2", name: "cPanic" } });
-    expect(clusterById(s, spare).panel).toBe("cpanic");
-    expect(err(setSoftware(s, spare, "cpanic"))).toBe("error.sameSoftware");
+    expect(events).toContainEqual({ app: "Products", key: "event.installed", params: { cluster: "Web 2", name: "cPanic" } });
+    expect(clusterById(s, swapped).panel).toBe("cpanic");
   });
   it("scales the how-to ticket rate with the panel serving the customer", () => {
     const { s, cluster, cus } = setup();
@@ -249,8 +247,7 @@ describe("virtual machine actions", () => {
     s.racks = [...s.racks, { ...s.racks[0], id: "rack9", locationId: "loc9", name: "fra9-rack-01" }];
     const far = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc9"));
     ok(mountDevice(s, far, "rack9", 1));
-    const remote = installed(s, ok(createCluster(s, "loc9", "Far 1")));
-    ok(addNode(s, remote, far));
+    hypervisor(s, [far], "Far 1");
     expect(err(migrateWorkload(s, workloadsOf(s, vps)[0].id, far))).toBe("error.noZoneLink");
   });
 });

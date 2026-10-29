@@ -14,7 +14,7 @@ describe("device menu", () => {
   it("lists a free mounted server's actions, the second power supply with its price, and removal last", () => {
     const g = withServer(newGame(7));
     expect(labels(g, "dev3", { open: () => {} })).toEqual([
-      "Show details", "-", "Power off", "Unplug power supply", "-", "Set up control plane…", "-",
+      "Show details", "-", "Power off", "Unplug power supply", "-", "Add Software…", "-",
       "Add second power supply, €250", "Rename…", "-", "Unmount", "Sell…",
     ]);
   });
