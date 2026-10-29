@@ -3,7 +3,7 @@ import { dualPsuModel, modelById, priceOf } from "../../../sim/10-catalog/hardwa
 import type { Device, GameState } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { pduOf } from "../../../sim/60-infra/pdu";
-import { isPlugged, locationOf } from "../../../sim/60-infra/status";
+import { freeSlots, isPlugged, locationOf, travelCost } from "../../../sim/60-infra/status";
 import { joinableClusters } from "../../../sim/90-actions/software";
 import { addNode, cordon, drain, removeNode, uncordon } from "../../../sim/90-actions/clusters";
 import { addSecondPsu, buyOutLease } from "../../../sim/90-actions/hardware";
@@ -23,6 +23,7 @@ export interface DeviceUi {
   plug: (psuId: string) => void;
   setup: () => void;
   maintain?: () => void;
+  move?: (locationId: string) => void;
   rename: () => void;
   unmount: () => void;
   sell: () => void;
@@ -54,6 +55,14 @@ function serverPower(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
   ];
 }
 
+// The other locations that have a rack with room for the server, each with what the shipping costs.
+function moveEntries(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
+  const here = locationOf(game, d)?.id, height = modelById(d.model).height;
+  const targets = game.locations.filter((l) => l.id !== here && l.readyAt <= game.hour
+    && game.racks.some((r) => r.locationId === l.id && r.arriveAt === null && freeSlots(game, r.id, height).length));
+  return targets.length ? [{ label: "Move to", items: targets.map((l) => ({ label: `${l.name}, ${euro(travelCost(game, here, l.id).price)}`, run: () => ui.move?.(l.id) })) }] : [];
+}
+
 // A rack device's actions, in the order of a Pear context menu: open, power, role, upgrades, then removal.
 export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
   const { act, openApp } = useStore.getState();
@@ -77,6 +86,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
     null,
     server && !!d.rackId && { label: "Add Software…", run: ui.setup },
     server && !!d.rackId && ui.maintain && { label: "Plan maintenance…", run: ui.maintain },
+    ...(server && d.rackId && ui.move ? moveEntries(game, d, ui) : []),
     joinable.length > 0 && { label: "Join cluster", items: joinable.map((c) => ({ label: c.name, run: () => act(addNode, c.id, d.id) })) },
     node && (node.state === "active" ? { label: "Cordon", run: () => act(cordon, d.id) } : node.state === "cordoned" && { label: "Uncordon", run: () => act(uncordon, d.id) }),
     node && !busy && { label: "Drain", run: () => act(drain, d.id) },

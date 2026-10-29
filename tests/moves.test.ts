@@ -9,7 +9,12 @@ import { workloadsOf } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { addLocation, buyRack, connect } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, connect, moveServer, MOVE_INSTALL_HOURS } from "../src/sim/90-actions/hardware";
+import { planMaintenance } from "../src/sim/90-actions/maintenance";
+import { locationOf, working } from "../src/sim/60-infra/status";
+import { workloadsUp } from "../src/sim/60-infra/cluster";
+import { MOVE } from "../src/sim/20-world/datacenters";
+import { handWork } from "../src/sim/60-infra/handwork";
 import { addressesOf, RENUMBER_ANNOUNCED_PENALTY, RENUMBER_PENALTY } from "../src/sim/60-infra/addresses";
 import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { announceMigration, BASEMENT_BONUS, DECLINE_BELOW, MISSED_AFTER_HOURS, MISSED_PENALTY, moveTargets, movesTick, offerMigration } from "../src/sim/90-actions/moves";
@@ -308,6 +313,92 @@ describe("moves between datacenters", () => {
     ok(migrateWorkload(s, w.id, db));
     expect(ipsOf(s, id).map((x) => [x.ip, x.locationId])).toEqual([[old.ip, b]]);
     expect(who(s)(cus).happiness).toBe(50);
+  });
+});
+
+describe("moving a loaded server", () => {
+  // The server at a is cabled to a switch in its rack; b has a switch of its own.
+  function loaded(prep: (s: GameState, a: string, b: string) => void = (s, a) => { ok(buyAddresses(s, a, 4, 1)); }) {
+    const w = twoDcs(), { s, a, b, da, ca } = w;
+    prep(s, a, b);
+    const rackOf = (loc: string) => s.racks.find((r) => r.locationId === loc)!.id;
+    const [swA, swB] = [a, b].map((loc) => { const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc)); ok(mountDevice(s, id, rackOf(loc), 20)); return id; });
+    ok(connect(s, { device: da, port: 0 }, { device: swA, port: 0 }));
+    const cus = customer(s), id = w.vmAt(ca, cus);
+    who(s)(cus).happiness = 50;
+    return { ...w, swB, cus, id };
+  }
+  const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
+
+  it("takes the trip and the install offline, renumbers and plans a window", () => {
+    const { s, b, da, ca, az, swB, cus, id } = loaded();
+    ok(buyAddresses(s, b, 4, 1));
+    const old = ipsOf(s, id)[0], cash = s.cash, hour = s.hour, wait = handWork(s, b)!.hands.wait;
+    expect(working(s, da)).toBe(true);
+    ok(moveServer(s, da, b));
+    const d = dev(s, da), down = d.bootUntil! - hour;
+    expect(down).toBeGreaterThanOrEqual(MOVE.sameCity.hours + wait + MOVE_INSTALL_HOURS.min);
+    expect(down).toBeLessThanOrEqual(MOVE.sameCity.hours + wait + MOVE_INSTALL_HOURS.max);
+    expect(s.cash).toBeLessThan(cash - MOVE.sameCity.price);
+    expect(locationOf(s, d)!.id).toBe(b);
+    expect(s.cables.some((c) => [c.a, c.b].some((e) => e.device === da) && [c.a, c.b].some((e) => e.device === swB))).toBe(true);
+    expect(s.clusters.find((c) => c.id === ca)!.az).toBe(az(b));
+    expect(s.services.find((v) => v.id === id)!.zone).toBe(az(b));
+    expect([working(s, da), workloadsUp(s, id)]).toEqual([false, false]);
+    expect(ipsOf(s, id).map((x) => [x.locationId, x.ip !== old.ip])).toEqual([[b, true]]);
+    expect(who(s)(cus).happiness).toBe(50 - RENUMBER_PENALTY);
+    expect(s.maintenance).toMatchObject([{ target: { kind: "device", id: da }, from: hour, hours: down }]);
+    s.hour = d.bootUntil!;
+    expect(dev(s, da).bootUntil).toBe(s.hour);
+  });
+
+  it("costs less happiness and plans nothing new when a window a day ahead covers the move", () => {
+    const { s, b, da, cus, id } = loaded();
+    ok(buyAddresses(s, b, 4, 1));
+    const win = ok(planMaintenance(s, { kind: "device", id: da }, s.hour + 30, 60));
+    s.hour += 30;
+    ok(moveServer(s, da, b));
+    expect(s.maintenance.map((m) => m.id)).toEqual([win]);
+    expect(who(s)(cus).happiness).toBe(50 - RENUMBER_ANNOUNCED_PENALTY);
+    expect(ipsOf(s, id)[0].locationId).toBe(b);
+  });
+
+  it("is refused without free addresses at the target and changes nothing", () => {
+    const { s, a, b, da, ca, id } = loaded();
+    const cash = s.cash, rack = dev(s, da).rackId;
+    expect(err(moveServer(s, da, b))).toBe("error.noFreeAddress");
+    expect([s.cash, dev(s, da).rackId, dev(s, da).bootUntil ?? 0, s.maintenance.length]).toEqual([cash, rack, 0, 0]);
+    expect(ipsOf(s, id)[0].locationId).toBe(a);
+    expect(s.clusters.find((c) => c.id === ca)!.az).toBe(s.locations.find((l) => l.id === a)!.az);
+  });
+
+  it("renumbers nothing when an own block is announced at both ends", () => {
+    const { s, b, da, cus, id } = loaded((s, a, b) => {
+      s.ips = { ...s.ips, lir: { since: 0, asn: 1 }, blocks: [a, b].map((loc, i) => ({ id: `blk${i}`, prefix: `185.${i + 1}.0.0/24`, size: 256, locationId: loc, boughtAt: 0 })) };
+    });
+    const old = ipsOf(s, id)[0];
+    expect(old.source).toBe("lir");
+    ok(moveServer(s, da, b));
+    expect(ipsOf(s, id).map((x) => [x.ip, x.locationId])).toEqual([[old.ip, b]]);
+    expect(who(s)(cus).happiness).toBe(50);
+  });
+
+  it("refuses the same location, a cluster on several servers, a target without a rack and a server in storage", () => {
+    const { s, a, b, da, ca } = loaded();
+    ok(buyAddresses(s, b, 4, 1));
+    expect(err(moveServer(s, da, a))).toBe("error.sameZone");
+    const third = ok(buyDevice(s, "g1-compute", "Dwell", 1, a));
+    ok(mountDevice(s, third, dev(s, da).rackId!, 30));
+    s.clusters = s.clusters.map((c) => (c.id === ca ? { ...c, nodes: [...c.nodes, { deviceId: third, state: "active" as const }] } : c));
+    expect(err(moveServer(s, da, b))).toBe("error.clusterSpans");
+    s.clusters = s.clusters.map((c) => (c.id === ca ? { ...c, nodes: c.nodes.slice(0, 1) } : c));
+    const rack = s.racks.find((r) => r.locationId === b)!;
+    rack.arriveAt = s.hour + 5;
+    expect(err(moveServer(s, da, b))).toBe("error.noRoom");
+    rack.arriveAt = null;
+    expect(err(moveServer(s, third, b))).toBeUndefined();
+    const stored = ok(buyDevice(s, "g1-compute", "Dwell", 1, a));
+    expect(err(moveServer(s, stored, b))).toBe("error.notMounted");
   });
 });
 

@@ -1,3 +1,4 @@
+import { rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { bareParts, boardVendor, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import type { Vendor } from "../10-catalog/cpus";
@@ -13,7 +14,10 @@ import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
 import { handJob, type HandJob, type How } from "../60-infra/handwork";
 import { endLease, rebuildHours } from "../88-tick/tick";
-import { cardsFree, serverTaken } from "../60-infra/cluster";
+import { cardsFree, serverTaken, vmById } from "../60-infra/cluster";
+import { renumber, renumberError } from "../60-infra/addresses";
+import { plannedFor } from "../60-infra/maintenance";
+import { announceNow } from "./maintenance";
 import { nodeName } from "../30-customers/hostnames";
 
 // error is an i18n key.
@@ -370,6 +374,66 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   for (const d of units) Object.assign(d!, { store: null, transitTo: to.id, arriveAt: s.hour + trip.hours });
   book(s, "moving", "ledger.ship", { count: units.length, location: to.name }, -trip.price);
   return { ok: true, id: units[0]!.id };
+}
+
+// Hours of racking, power and cabling at the far end of a server move: two to four.
+export const MOVE_INSTALL_HOURS = { min: 2, max: 4 };
+
+// Ships a loaded server with its workloads into the first rack with room at another location. It is offline for the trip plus
+// the install, which is hand work at the far end; the affected customers get a maintenance window unless one planned a day
+// ahead already covers the move, and their services are renumbered from the target's pool. A cluster must sit on this server alone.
+export function moveServer(s: GameState, deviceId: string, locationId: string, how: How | boolean = false): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (modelById(d.model).kind !== "server") return fail("error.moveServerOnly");
+  if (!d.rackId) return fail("error.notMounted");
+  const from = locationOf(s, d)!, to = s.locations.find((l) => l.id === locationId);
+  if (!to) return fail("error.unknownLocation");
+  if (to.id === from.id) return fail("error.sameZone");
+  if (to.readyAt > s.hour) return fail("error.locationNotReady");
+  if (d.maintenance) return fail("error.busy");
+  if (spotOf(s, d.rackId)!.moving) return fail("error.rackMoving");
+  const own = s.clusters.filter((c) => c.nodes.some((n) => n.deviceId === d.id));
+  if (own.some((c) => c.nodes.length > 1)) return fail("error.clusterSpans");
+  // The clusters that move with the server: its own and the panel hosts inside its VMs.
+  const hosted = new Set(own.map((c) => c.id));
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const c of s.clusters) if (!hosted.has(c.id) && c.vm && hosted.has(vmById(s, c.vm)?.clusterId ?? "")) { hosted.add(c.id); grew = true; }
+  }
+  const hosts = s.workloads.filter((w) => w.deviceId === d.id || (w.clusterId && hosted.has(w.clusterId)));
+  if (hosts.some((w) => w.busyUntil > s.hour || w.migrating)) return fail("error.workloadBusy");
+  const ids = [...new Set(hosts.map((w) => w.serviceId))].filter((id) => s.services.some((v) => v.id === id && v.endedAt === null));
+  const spot = s.racks.filter((r) => r.locationId === to.id && r.arriveAt === null)
+    .map((rack) => ({ rack, slot: freeSlots(s, rack.id, modelById(d.model).height)[0] })).find((x) => x.slot !== undefined);
+  if (!spot) return fail("error.noRoom");
+  const noAddress = renumberError(s, ids, from, to);
+  if (noAddress) return fail(noAddress);
+  const trip = travelCost(s, from.id, to.id);
+  const work = MOVE_INSTALL_HOURS.min + Math.floor(rand(s.rng) * (MOVE_INSTALL_HOURS.max - MOVE_INSTALL_HOURS.min + 1));
+  const job = handJob(s, d.label ?? d.name, to, how, work);
+  if ("error" in job) return fail(job.error);
+  if (s.cash < trip.price + job.cost) return fail("error.noCash");
+  const hours = trip.hours + job.commit();
+  const told = new Set(ids.filter((id) => plannedFor(s, s.services.find((v) => v.id === id)!, hours)));
+  if (ids.some((id) => !told.has(id))) announceNow(s, { kind: "device", id: d.id }, hours);
+  const cables = s.cables.filter((c) => c.a.device === d.id || c.b.device === d.id);
+  unplug(s, new Set([d.id]));
+  mount(s, d, spot.rack.id, spot.slot);
+  for (const c of d.components) if (c.kind === "psu") c.plugged = true;
+  Object.assign(d, { bootUntil: s.hour + hours, maintenance: { componentId: "", partId: "", doneAt: s.hour + hours } });
+  // The hands patch each cable to the same kind of device in the new rack, in the rack of the server first.
+  for (const c of cables) {
+    const [mine, far] = c.a.device === d.id ? [c.a, c.b] : [c.b, c.a], kind = modelById(s.devices.find((x) => x.id === far.device)!.model).kind;
+    const pool = s.devices.filter((x) => x.rackId && locationOf(s, x)?.id === to.id && modelById(x.model).kind === kind)
+      .sort((x, y) => Number(y.rackId === spot.rack.id) - Number(x.rackId === spot.rack.id));
+    pool.some((x) => modelById(x.model).ports.some((_, port) => connect(s, mine, { device: x.id, port }).ok));
+  }
+  s.clusters = s.clusters.map((c) => (hosted.has(c.id) ? { ...c, az: to.az } : c));
+  s.services = s.services.map((v) => (ids.includes(v.id) ? { ...v, zone: to.az } : v));
+  renumber(s, ids, from, to, (id) => told.has(id));
+  book(s, "moving", "ledger.moveServer", { device: d.label ?? d.name, location: to.name }, -trip.price);
+  return { ok: true, id: d.id };
 }
 
 export function sellDevice(s: GameState, deviceId: string): ActionResult {
