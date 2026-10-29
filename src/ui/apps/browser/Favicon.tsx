@@ -3,6 +3,9 @@ import type { Resolved } from "../../../sim/80-business/browser";
 import type { GameState } from "../../../sim/50-state";
 import { customerSite } from "../../../sim/80-business/website";
 import { Logo } from "../../art/logos";
+import { familyOf } from "../../../sim/60-infra/vulns";
+import { consoleLook } from "../../../sim/80-business/consoles";
+import { BRAND } from "../products/parts";
 
 const GREY = "oklch(0.62 0.01 255)";
 
@@ -36,6 +39,11 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
     }
     case "vendor": return <Logo provider={p.maker} size={16} />;
     case "host": return <Tile fill="oklch(0.38 0.01 255)"><rect x="3.5" y="3.5" width="9" height="3" rx="0.8" fill="white" /><rect x="3.5" y="8.5" width="9" height="3" rx="0.8" fill="white" opacity="0.7" /></Tile>;
+    case "console": {
+      const c = game.clusters.find((x) => x.id === p.clusterId), family = c && familyOf(c), look = family ? consoleLook(family) : "game";
+      const fill = look === "game" ? "oklch(0.5 0.14 150)" : BRAND[family ?? "proxmocks"]?.color ?? GREY;
+      return <Tile fill={p.defaced ? "oklch(0.25 0.01 255)" : fill}><path d="M4.5 5h7M4.5 8h7M4.5 11h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" /></Tile>;
+    }
     case "video": return <Tile fill="oklch(0.58 0.22 27)"><path d="M6.4 5.2v5.6L11 8z" fill="white" /></Tile>;
     default: return <Tile fill={GREY}><path d="M6 6.4a2 2 0 1 1 2.6 1.9c-.5.2-.6.5-.6 1M8 11.4v.2" fill="none" stroke="white" strokeWidth="1.4" strokeLinecap="round" /></Tile>;
   }

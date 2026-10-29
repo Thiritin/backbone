@@ -418,6 +418,22 @@ Software exists from a year: a panel or hypervisor cannot be installed before it
 
 Game servers work the same way: each game has its own license terms (one-time, per server or per player slot) and its own demand.
 
+**Consoles.** Every panel host, hypervisor node, panel VM, mail host and game panel answers in the Browser at its hostname under the company domain (`node001.<company domain>`, `vm002.<company domain>`) with a login page styled after the product it imitates, without real logos: cPanic has a blue header and an orange button, Pleskit a dark sidebar, DirectAdmen grey with green, FreePanel plain forms, OpenStash Horizont a red sidebar, VMwhere vSphear a blue tree, Proxmocks VE an orange and grey tree, HyperVee Manager a Windows-style list, OpenVeeZee a plain web panel, Postfixit and Mailpig a plain mail admin, and the game panels a dark look. Login is one click. The console lists the software's objects (web spaces, virtual machines, game servers, the mailbox count) with status and usage and offers only the actions its software has; each calls the same action as the desktop apps, which keep working. A console on a host that is down cannot be reached; a console on a hacked host shows a defaced page and nothing else. Every console the company runs is a default bookmark. `consoleFeatures(softwareId, year)` returns the matrix:
+
+| Feature | cPanic | Pleskit | DirectAdmen | FreePanel | Horizont | vSphear | Proxmocks VE | HyperVee | Game panels |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| List objects, status, usage | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Create and delete | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Stop and start | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Migrate to another host | by hand from 2012 | by hand from 2015 | no | no | yes (live) | yes (live) | yes (live) | cold only | no |
+| Resize | yes | yes | yes | no | yes | yes | yes | yes | no |
+| Backups and restore | yes | yes | yes | no | no | yes | yes | no | Pterodaktyl only |
+| Update the software | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Take sites offline, clean up | yes | yes | yes | yes | no | no | no | no | yes |
+| Cluster view (nodes) | no | no | no | from 2009 | yes | yes | yes | from 2012 | no |
+
+A panel migrates from the year its tool imports a web space from another panel (the `migration.other` year of the software); hypervisors migrate live or cold by the software's `live` trait. OpenVeeZee follows HyperVee without the cluster view. The mail servers list their mailbox count, update and nothing else. The console shows the hours a migration takes before the player confirms it. FreePanel has no restore on purpose; the player restores from the Virtual machines app. A hacked host shows only the defaced page, so cleaning it up stays in the Products app.
+
 **Storage, backups and data loss.** Workload disks live on their server's RAID array (see RAID), and later on distributed storage pools. If more drives fail before a rebuild finishes than the RAID level survives, or a drive fails without RAID, the data on them is gone. Every affected workload is marked "Lost disk", and the game opens an incident report that lists the lost disks, the affected volumes, workloads and customers, and the age of each one's last backup, so nothing has to be hunted down across apps.
 
 Backups are on-site: backup rules per cluster set how often (hourly, daily, weekly) and how long to keep them, and they write to backup servers in the same zone, mostly at night. A lost disk with a backup can be restored, from the incident report or from the virtual machine manager, and only the data since that backup is gone. Without a backup the customer's data is lost for good.

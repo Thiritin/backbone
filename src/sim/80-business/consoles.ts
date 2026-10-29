@@ -27,6 +27,13 @@ const LOOK: Record<string, ConsoleLook> = {
   proxmocks: "proxmocks", hypervee: "hypervee", openveezee: "openveezee", postfixit: "mail", mailpig: "mail",
 };
 
+const GAME_NAMES: Record<string, string> = { tcadmen: "TCAdmen", multikraft: "MultiKraft", pterodaktyl: "Pterodaktyl" };
+// The product name on a console: the catalog's console name, or the game panel's own.
+export function consoleTitle(softwareId: string): string {
+  const sw = softwareById(softwareId);
+  return sw.id === softwareId ? sw.console : GAME_NAMES[softwareId] ?? softwareId;
+}
+
 export function consoleLook(softwareId: string): ConsoleLook {
   if (GAME_PANELS.includes(softwareId)) return "game";
   const sw = softwareById(softwareId);
@@ -75,6 +82,6 @@ export function consoleBookmarks(s: GameState): { title: string; url: string }[]
   if (!s.company.domain) return [];
   return s.clusters.flatMap((c) => {
     const family = familyOf(c), host = family && consoleHost(s, c);
-    return family && host ? [{ title: `${softwareById(family).console} ${c.name}`, url: fqdn(s, host) }] : [];
+    return family && host ? [{ title: `${consoleTitle(family)} ${c.name}`, url: fqdn(s, host) }] : [];
   });
 }

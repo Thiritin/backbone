@@ -2,12 +2,15 @@ import { ArrowLeft, ArrowRight, Download, Plus, RotateCw, Star, X } from "lucide
 import { useEffect, useState } from "react";
 import { adminUrl, companyUrl, defaultBookmarks, resolve, split, VIDEO_TITLE, VIDEO_URL, type Resolved } from "../../../sim/80-business/browser";
 import { customerSite } from "../../../sim/80-business/website";
+import { familyOf } from "../../../sim/60-infra/vulns";
+import { consoleTitle } from "../../../sim/80-business/consoles";
 import type { GameState } from "../../../sim/50-state";
 import { MANUFACTURERS } from "../../../sim/10-catalog/hardware";
 import { reduced } from "../../desktop/motion";
 import { useSessionState } from "../../session";
 import { useFocus, useStore } from "../../store";
 import { Favicon } from "./Favicon";
+import { ConsolePage } from "./consoles/ConsolePage";
 import { AdminPage } from "./sites/AdminPage";
 import { CompanySite } from "./sites/CompanySite";
 import { CannotReach, CustomerSite, HostPage, NotFound, VendorSite, VideoPage } from "./sites/Pages";
@@ -28,6 +31,10 @@ function titleOf(game: GameState, r: Resolved): string {
     case "customer": return customerSite(game, p.serviceId)?.title ?? r.host;
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
     case "host": return r.host;
+    case "console": {
+      const c = game.clusters.find((x) => x.id === p.clusterId), family = c && familyOf(c);
+      return family ? `${consoleTitle(family)} ${c.name}` : r.host;
+    }
     case "video": return VIDEO_TITLE;
     default: return "Not found";
   }
@@ -51,6 +58,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
   else if (p.kind === "vendor") body = <VendorSite maker={p.maker} go={go} />;
   else if (p.kind === "video") body = <VideoPage />;
+  else if (p.kind === "console") body = <ConsolePage game={game} hostname={p.hostname} host={r.host} cluster={game.clusters.find((x) => x.id === p.clusterId)} defaced={p.defaced} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
   const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor"].includes(p.kind);
