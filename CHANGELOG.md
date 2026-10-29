@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- Clicking a power inlet on the back of a server plugs its cord in or pulls it, and a powered-off device can be dragged on the rack front to a free spot.
 - The first time you open the Terminal it installs zsh after a couple of typos, and afterwards Tab completes commands and server names.
 - The clock counts every game minute, a game hour lasts three real minutes at 1×, and a new 16× speed fast-forwards the clock.
 - An open rack fills the whole Locations window, and a selected server splits into Actions, Software, Lease, Power supplies, RAID and Components tabs.

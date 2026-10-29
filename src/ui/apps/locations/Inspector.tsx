@@ -102,6 +102,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
   useEffect(() => () => onHot?.(null), [onHot]);
   const where = device.panel ? "Carrier panel" : model.height > 1 ? `U${device.slot}–U${device.slot + model.height - 1}` : `U${device.slot}`;
   const powered = model.kind !== "patch", server = model.kind === "server";
+  const psus = device.components.filter((c) => c.kind === "psu");
   const togglePower = () => (isServerInRack(device) ? menus.op(device, device.on ? "shutdown" : "on") : menus.power(device, !device.on));
   const [picked, setTab] = useState<InspTab>("actions");
   const tabs = server ? ([
@@ -141,7 +142,8 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
 
       <div className={`loc-face${model.kind === "server" ? " wide" : ""}`} onContextMenu={menuOn(menu)}>
         <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={440} u={40} back={side === "back"}
-          onPower={server && (device.rackId || device.panel) ? togglePower : undefined} />
+          onPower={server && (device.rackId || device.panel) ? togglePower : undefined}
+          plugs={psus.map(isPlugged)} onInlet={device.rackId || device.panel ? (k) => menus.plug(device, psus[k].id) : undefined} />
         {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} />}
       </div>
 
