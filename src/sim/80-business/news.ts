@@ -7,6 +7,7 @@ import { LINE_NAME } from "../30-market/spec";
 import type { GameState } from "../50-state";
 import { lineOffered } from "../60-infra/cluster";
 import type { SimEvent } from "../88-tick/tick";
+import { MAIL_PROVIDERS } from "./mail";
 import { listed, SITE_LINES } from "./website";
 
 type Params = Record<string, string | number>;
@@ -18,6 +19,7 @@ const at = (year: number, month = 0): number => hourOf(new Date(Date.UTC(year, m
 export const NEWS: NewsDef[] = [
   ...SOFTWARE.filter((x) => x.from > START_YEAR).map((x) => ({ id: `software.${x.id}`, key: "event.news.software", at: at(x.from), params: { name: x.name, kind: x.kind } })),
   ...GENERATIONS.flatMap((g, i) => (g.year > START_YEAR ? [{ id: `generation.${i + 1}`, key: "event.news.generation", at: at(g.year), params: { gen: i + 1, cores: g.cores, ramGb: g.ramGb, disk: g.disk } }] : [])),
+  ...MAIL_PROVIDERS.filter((x) => x.from > START_YEAR).map((x) => ({ id: `mail.${x.id}`, key: "event.news.mail", at: at(x.from), params: { name: x.name, price: x.price(x.from) } })),
   { id: "ipv6.dc", key: "event.news.ipv6Dc", at: at(IPV6_FROM.dc), params: {} },
   { id: "ipv6.home", key: "event.news.ipv6Home", at: at(IPV6_FROM.home), params: {} },
   { id: "ripe.last8", key: "event.news.ripeLast", at: at(2012, 8), params: {} },
