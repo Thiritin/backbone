@@ -35,6 +35,10 @@ Balance today (main f31b2f2): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5
 - Lane 2.0, alerts that pause (ed5d404): `ALERT_KEYS` in src/sim/alerts.ts, `alert` in the store, src/ui/desktop/AlertSheet.tsx with Open and Continue; gdd.md "The desktop", Alerts.
 - Lane 2.1, company site hosting and design ages (8c57a61): rented Strateaux or an own panel host, `siteStatus`, lead and order factors, design generations with Redesign and the age penalty, `customerSite`, Website app styles per generation; the site factor is applied once per website lead flow (84d5851).
 - Lane 4.1, chassis slots and capacity from parts (9c20670): `dimmSlots`, bays by form factor, `pcie`, `psuBays`, sized components, capacity from installed non-failed parts; gdd.md "Chassis and parts", economy.md "Chassis slots".
+- Lane 3.3, consoles (0b4fa1f): login pages and consoles per software family at each host's FQDN, `consoleFeatures` matrix in src/sim/80-business/consoles.ts, actions routed to the existing 90-actions functions.
+- Lane 2b.2, customer applications (85d817b): WordPass, Joomlah, Drupel and static sites with versions, self-updates by skill, hacks that deface and spam, Notify from Monitoring, update tickets with one-off, managed and free, Pricing units updateOnce and updates.
+- Lane 4.5, GPU computing (9a153c8): nVidea Tezla cards in src/sim/10-catalog/gpu.ts with watts and prices, the GPU line from 2011, the gpu product per card a month, `gpuDemand` by year, the gpuCompute skill, card news.
+- Lane 6.3 and 6.8 (Merge before 9a153c8): `balloon` year per hypervisor with a 1.0 RAM cap without it, `resizeVm` for custom VMs, idle watts for servers without workloads, dead `convenience` and the duplicate KNOW_HOW removed, docs aligned.
 - Lane 3.2, browser (3a85863): the Browser app with tabs, address bar, favicons and bookmarks, `resolve` in src/sim/80-business/browser.ts, the company site with its Admin page (name, tagline, lines, contact, hosting, redesign), customer sites, vendor sites per pun brand, the Downloads easter egg; the Website app opens the browser.
 - Lane 3b, Searchlight (e90b7a7): a Pear Store upgrade; Ctrl+K and Cmd+K open a grouped, keyboard-driven search over apps, customers, services, machines, tickets, sites, consoles, locations and settings with `rank` in src/ui/search/rank.ts.
 - Lane 2b.3, game server panels (f31b2f2): TCAdmen, MultiKraft and Pterodaktyl as software kind "game", game servers prefer a game panel cluster, versions and vulnerabilities for the family.
@@ -52,7 +56,7 @@ Balance today (main f31b2f2): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5
 
 ## In flight
 
-In worktrees: Lane 4.5, Lane 2b.2, Lane 3.3, Lane 6 items 6.3 and 6.8.
+In worktrees: Lane 3.4, Lane 2b.4, Lane 6 item 6.5.
 
 ## What Lane 1 left behind (read before Lanes 2 and 3)
 
@@ -74,12 +78,12 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 2.1b | Domains, registrar partners and company email | Built (05297ba) |
 | 2.2 | Panel traits, migration as a hand task, compromised sites and mail | Built |
 | 2b.1 | Software versions, generated vulnerabilities, monitoring, updates | Built (587f3ab) |
-| 2b.2 | Customer applications, notify and the update service | 2b.1 |
+| 2b.2 | Customer applications, notify and the update service | Built (85d817b) |
 | 2b.3 | Game server panels | Built (f31b2f2) |
 | 2b.4 | Breaches, ransom and fines | 2.0, 2b.1 |
 | 3.1 | Hostnames everywhere | Built (47c94f9) |
 | 3.2 | Browser app, company site Admin, customer sites, easter egg | Built (3a85863) |
-| 3.3 | Server consoles by hostname with a feature matrix | 3.2, 2.2 |
+| 3.3 | Server consoles by hostname with a feature matrix | Built (0b4fa1f) |
 | 3.4 | IPMI, power actions, hangs and pulled plugs | 3.1, 3.2 |
 | 3.5 | Terminal: ssh, ping, traceroute, recover | 3.4 |
 | 3b | Searchlight | Built (e90b7a7) |
@@ -87,7 +91,7 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 4.2 | Shop: bare chassis, presets with extras, parts, upgrades in the rack | Built |
 | 4.3 | Top-down lid-off view | Built |
 | 4.4 | Part prices over time | Built (2798fbf) |
-| 4.5 | GPU computing | 4.1, 4.4 |
+| 4.5 | GPU computing | Built (9a153c8) |
 | 5.1 | Hardware lifecycle: end of sale and end of support | Built (523e06c) |
 | 5.2 | Routers, UPS sizes, switched PDUs | 5.1, 3.4 (PDU power cycle) |
 | 6 | Small briefs | any time, one each |
