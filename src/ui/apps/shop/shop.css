@@ -2,6 +2,7 @@
 .shop-side { display: flex; flex-direction: column; gap: 1px; }
 .shop-side button.side-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; }
 .shop-side button.side-item:hover { background: var(--hover); }
+.shop-side button.shop-side-sub { padding-left: 24px; font-size: 12.5px; }
 .shop-side button.side-item.active { background: var(--accent); color: var(--accent-ink); }
 .shop-grid { flex: 1; min-width: 0; overflow: auto; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; align-content: start; }
 .shop-card { display: flex; flex-direction: column; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); min-width: 0; }
