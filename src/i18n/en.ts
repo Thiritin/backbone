@@ -145,6 +145,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.storageNotEmpty": () => "Ship or sell everything in this zone's storage first.",
   "error.inTransit": () => "The units are being shipped.",
   "error.towerNoRack": () => "A tower server does not fit into a rack.",
+  "error.noShelf": () => "This location has no shelf.",
   "error.shelfTowerOnly": () => "Only tower servers go on the shelf.",
   "error.emptyShipment": () => "Pick the units to ship.",
   "error.mixedZones": () => "A shipment leaves from one zone.",

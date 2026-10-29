@@ -208,7 +208,11 @@ function stock(s: GameState, line: CartLine, lease: string | null, store: string
 
 const lineTotal = (s: GameState, line: CartLine) => unitPrice(line, yearOf(s.hour)) * line.qty;
 // Orders wait for delivery, except while the company owns no server: the first purchases arrive at once.
-const deliveryWait = (s: GameState): number => (s.devices.some((d) => modelById(d.model).kind === "server") ? deliveryHours(yearOf(s.hour)) : 0);
+export const deliveryWait = (s: GameState): number => (s.devices.some((d) => modelById(d.model).kind === "server") ? deliveryHours(yearOf(s.hour)) : 0);
+
+// A tower is only delivered where a shelf can hold it.
+const noShelf = (s: GameState, locationId: string, lines: CartLine[]): boolean =>
+  lines.some((l) => modelById(l.model).shelf) && !s.locations.find((l) => l.id === locationId)!.shelf;
 
 function buyLine(s: GameState, line: CartLine, locationId: string, wait: number): string {
   const ids = stock(s, line, null, locationId, wait);
@@ -222,6 +226,7 @@ export function buyDevice(s: GameState, modelId: string, brand: string, qty: num
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   const error = lineError(s, line);
   if (error) return fail(error);
+  if (noShelf(s, locationId, [line])) return fail("error.noShelf");
   if (s.cash < lineTotal(s, line)) return fail("error.noCash");
   return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s)) };
 }
@@ -232,6 +237,7 @@ export function buyCart(s: GameState, lines: CartLine[], payment: { kind: "cash"
   if (!lines.length) return fail("error.emptyCart");
   const error = lines.map((l) => lineError(s, l)).find((e) => e);
   if (error) return fail(error);
+  if (noShelf(s, locationId, lines)) return fail("error.noShelf");
   const total = lines.reduce((sum, l) => sum + lineTotal(s, l), 0);
   if (payment.kind === "cash") {
     if (s.cash < total) return fail("error.noCash");

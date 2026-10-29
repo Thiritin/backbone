@@ -93,7 +93,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
   const hot = focus === null ? null : game.cables.find((c) => [c.a, c.b].some((e) => e.device === device.id && e.port === focus))?.id ?? null;
   useEffect(() => { onHot?.(hot); }, [hot, onHot]);
   useEffect(() => () => onHot?.(null), [onHot]);
-  const where = device.panel ? "Carrier panel" : model.height > 1 ? `U${device.slot}–U${device.slot + model.height - 1}` : `U${device.slot}`;
+  const where = device.panel ? "Carrier panel" : model.shelf ? `Shelf ${device.slot}` : model.height > 1 ? `U${device.slot}–U${device.slot + model.height - 1}` : `U${device.slot}`;
   const powered = model.kind !== "patch";
 
   return (
@@ -116,8 +116,8 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         {model.kind === "gateway" ? "" : `${device.brand} `}{model.name} · <span className="num">{where}</span>
       </div>
 
-      <div className={`loc-face${model.kind === "server" ? " wide" : ""}`} onContextMenu={menuOn(menu)}>
-        <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={440} u={40} back={side === "back"} />
+      <div className={`loc-face${model.kind === "server" && !model.shelf ? " wide" : ""}`} onContextMenu={menuOn(menu)}>
+        <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={model.shelf ? 90 : 440} u={model.shelf ? 130 : 40} back={side === "back" && !model.shelf} />
         {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} />}
       </div>
 
@@ -168,7 +168,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
           ...(model.server ? [["CPU", `${model.server.sockets} × ${cores(model.server.cores / model.server.sockets)}`], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${bayCount(model.server)} bays`]] as [string, string][] : []),
           ["Network", portsText(model)],
           ["Power", model.idleWatts === model.watts + cardWatts(device.components) ? `${model.watts} W` : `${model.idleWatts}–${model.watts + cardWatts(device.components)} W`],
-          ...(model.height ? [["Height", height(model)]] as [string, string][] : []),
+          ...(model.height || model.shelf ? [["Height", height(model)]] as [string, string][] : []),
           ...(device.price ? [["Paid", euro(device.price)]] as [string, string][] : []),
           ...(supportEnd(model) !== null ? [["End of support", `${supportEnd(model)}`]] as [string, string][] : []),
         ].map(([k, v]): [string, ReactNode] => [k, <span className="num">{v}</span>])} />

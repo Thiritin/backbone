@@ -18,7 +18,7 @@ import "./shop.css";
 
 const LINE_NAME: Record<string, string> = {
   compute: "Balanced", "compute-2psu": "Balanced", dense: "Compute dense", memory: "Memory optimized",
-  storage: "Storage", backup: "Backup", archive: "Archive", gpu: "GPU", arm: "ARM",
+  storage: "Storage", backup: "Backup", archive: "Archive", gpu: "GPU", arm: "ARM", tower: "Tower",
 };
 const CLASSES: [string, typeof Server][] = [
   ...[...new Set(Object.values(LINE_NAME))].map((c): [string, typeof Server] => [c, Server]),

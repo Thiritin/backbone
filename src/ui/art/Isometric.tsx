@@ -6,9 +6,10 @@ import { Defs, Front } from "./fronts";
 interface Props { model: DeviceModel; brand: string; w?: number; count?: number }
 
 // A 19-inch front is about 11 units wide per unit of height.
-export function Isometric({ model, brand, w = 150, count = 1 }: Props) {
-  if (model.kind === "part") return <PartIso kind={model.id.replace(/^part-/, "") as ComponentKind} name={model.name} w={w} count={count} />;
-  const units = Math.max(1, model.height), u = Math.max(8, w / 10.9), h = units * u, dx = w * 0.16, dy = dx * 0.5;
+export function Isometric({ model, brand, w: width = 150, count = 1 }: Props) {
+  if (model.kind === "part") return <PartIso kind={model.id.replace(/^part-/, "") as ComponentKind} name={model.name} w={width} count={count} />;
+  // A tower is a narrow, tall case.
+  const w = model.shelf ? width * 0.42 : width, units = Math.max(1, model.height), u = Math.max(8, w / 10.9), h = model.shelf ? width * 0.62 : units * u, dx = w * 0.16, dy = dx * 0.5;
   const copies = Math.min(3, Math.max(1, count)), step = 7, extra = (copies - 1) * step;
   const W = w + dx + extra + 2, H = h + dy + extra + 2 + (count > 1 ? 14 : 0);
   const box = (k: number) => {

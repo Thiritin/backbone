@@ -3,7 +3,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import { modelById } from "../src/sim/10-catalog/hardware";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, locationOf, powered, rackPower, shelfId } from "../src/sim/60-infra/status";
-import { connect, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
+import { addLocation, connect, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { buyDevice, runServers, withServer } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
@@ -72,6 +72,13 @@ describe("shelf", () => {
     runServers(s);
     expect(rackPower(s, "rack2").tripped).toBe(true);
     expect(powered(s, id)).toBe(false);
+  });
+
+  it("delivers towers only to a location with a shelf", () => {
+    const s = game();
+    const loc = ok(addLocation(s, "interaction-fra", "positions", 1));
+    expect(err(buyDevice(s, "g1-tower", "Dwell", 1, loc))).toBe("error.noShelf");
+    expect(err(buyDevice(s, "g1-tower", "Dwell", 1, "loc1"))).toBe("ok");
   });
 
   it("loads an old save with an empty four-place shelf in the basement", () => {
