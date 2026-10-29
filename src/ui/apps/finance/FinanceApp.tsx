@@ -24,7 +24,7 @@ const monthLabel = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDate
 const monthShort = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
 const compact = (v: number) => {
   const a = Math.abs(v), sign = v < 0 ? "-" : "";
-  return a >= 1000 ? `${sign}€${Number((a / 1000).toFixed(a >= 10_000 ? 0 : 1))}k` : `${sign}€${Math.round(a)}`;
+  return a >= 1000 ? `${sign}${Number((a / 1000).toFixed(a >= 10_000 ? 0 : 1))}k €` : `${sign}${Math.round(a)} €`;
 };
 
 type View = "overview" | "pnl" | "cash" | "tax" | "statement";

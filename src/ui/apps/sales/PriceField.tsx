@@ -26,9 +26,9 @@ export function PriceField({ value, reference, onChange, disabled, label = "Mont
         <div className="stepper">
           <button type="button" className="btn icon" aria-label="Lower price" disabled={disabled} onClick={() => set(value - step)}><Minus /></button>
           <span className="price-input">
-            <span aria-hidden>€</span>
             <input id={id} type="number" min={0} step={0.01} value={Number.isFinite(value) ? value : ""} disabled={disabled}
               onChange={(e) => set(Number(e.target.value))} />
+            <span aria-hidden>€</span>
           </span>
           <button type="button" className="btn icon" aria-label="Raise price" disabled={disabled} onClick={() => set(value + step)}><Plus /></button>
         </div>

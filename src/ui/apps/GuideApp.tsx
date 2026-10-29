@@ -2,7 +2,7 @@ export function GuideApp() {
   return (
     <article className="guide">
       <h2>Getting started</h2>
-      <p>It is January 2005. You run a small hosting company from a basement with an empty rack and €3,500 of savings. Your goal is to grow it into your own datacenter by automating your own jobs.</p>
+      <p>It is January 2005. You run a small hosting company from a basement with an empty rack and 3,500 € of savings. Your goal is to grow it into your own datacenter by automating your own jobs.</p>
       <h3>Your first server</h3>
       <p>Your friends Jonas, Mira and Tobi are waiting for web hosting. Buy a server in the Shop, then open the basement in Locations to mount it in the rack, plug in its power and cable it to the home router. Once it is online, use Add Software on the server to install a panel, or a hypervisor and then a panel VM, and your friends move their websites over. When it fills up, the Bank app lends you the money for the next one. The Checklist tracks each step.</p>
       <h3>Time</h3>

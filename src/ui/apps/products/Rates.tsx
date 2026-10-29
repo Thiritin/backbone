@@ -19,7 +19,7 @@ const UNIT: Record<Unit | "setup", string> = {
 };
 // Rates below ten cents need a tenth of a cent, below one cent a hundredth.
 const digits = (x: number) => (x <= 0 || x >= 0.1 ? 2 : x >= 0.01 ? 3 : 4);
-const rate = (x: number) => (digits(x) > 2 ? `€${x.toFixed(digits(x))}` : euroCents(x));
+const rate = (x: number) => (digits(x) > 2 ? `${x.toFixed(digits(x))} €` : euroCents(x));
 
 // One rate: the player's euros per unit, the market's beside it.
 function RateRow({ product, unit, mine, market }: { product: Product; unit: Unit | "setup"; mine: number | undefined; market: number }) {
@@ -35,9 +35,9 @@ function RateRow({ product, unit, mine, market }: { product: Product; unit: Unit
     <div className="rate-row">
       <label htmlFor={`rate-${product}-${unit}`}>{UNIT[unit]}</label>
       <span className="price-input">
-        <span aria-hidden>€</span>
         <input id={`rate-${product}-${unit}`} type="number" min={0} step={0.0001} placeholder={market.toFixed(digits(market))} value={text}
           onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === "Enter" && commit()} />
+        <span aria-hidden>€</span>
       </span>
       <span className="rate-ref">Market <span className="num">{rate(market)}</span></span>
       {side ? <span className={`pill ${side.cls}`}>{side.label}</span> : <span />}
