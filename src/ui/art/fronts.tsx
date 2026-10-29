@@ -1,6 +1,6 @@
 // Code-drawn device fronts, ported from docs/design/mockups/shell.js. Sizes are px; u is one rack unit.
 import type { ReactNode } from "react";
-import { jacksOf, type DeviceModel } from "../../sim/10-catalog/hardware";
+import { bayCount, jacksOf, type DeviceModel } from "../../sim/10-catalog/hardware";
 import { Back, SwitchRear } from "./backs";
 import { BrandMark } from "./logos";
 
@@ -144,7 +144,7 @@ const EAR: Record<string, string> = Object.fromEntries(Object.entries(STYLE).map
 
 function ServerFace(p: FrontProps) {
   const { w, h, state, name, model, brand, blink } = p, st = STYLE[brand] ?? STYLE.SuperMacro;
-  const rows = Math.max(1, Math.min(2, model.height)), n = Math.max(2, Math.min(12, model.server?.bays ?? 4)), per = Math.ceil(n / rows);
+  const rows = Math.max(1, Math.min(2, model.height)), n = Math.max(2, Math.min(12, model.server ? bayCount(model.server) : 4)), per = Math.ceil(n / rows);
   const panel = Math.max(44, h * 1.8), x0 = 14, x1 = w * 0.62, bw = Math.min((x1 - x0) / per, h / rows * 3.2), bh = (h - 4) / rows;
   const cx = w - 12 - panel;
   return (
@@ -177,7 +177,7 @@ const serverFront = (p: FrontProps) => <ServerFace {...p} />;
 // Backup and archive chassis: a wall of drive caddies, 3 rows for backup and 5 for archive.
 function Caddies(p: FrontProps) {
   const { w, h, state, name, model, brand, blink } = p;
-  const n = model.server?.bays ?? 36, rows = n > 40 ? 5 : 3, per = Math.ceil(n / rows), fs = fsz(Math.min(h, 24)) * 0.8, top = fs + 5;
+  const n = model.server ? bayCount(model.server) : 36, rows = n > 40 ? 5 : 3, per = Math.ceil(n / rows), fs = fsz(Math.min(h, 24)) * 0.8, top = fs + 5;
   const x1 = w - 36 - markSize(h), cw = (x1 - 12) / per, ch = (h - top - 3) / rows, dark = brand !== "Hewlett-Packet";
   return (
     <>

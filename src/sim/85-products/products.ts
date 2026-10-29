@@ -1,6 +1,5 @@
 import { chance } from "../00-core/rng";
 import { dateOf, isMonthStart } from "../00-core/time";
-import { modelById } from "../10-catalog/hardware";
 import { softwareById, type Software } from "../10-catalog/platforms";
 import { BACKUP_HOUR } from "../10-catalog/usage";
 import type { Customer } from "../30-customers/customers";
@@ -9,7 +8,7 @@ import type { GameState } from "../50-state";
 import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { PHP_SLOW, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
-import { raidUsable } from "../60-infra/status";
+import { installedCores, raidUsable } from "../60-infra/status";
 import { diskFill, nodeUsage } from "../60-infra/usage";
 import { addReview, starsFor } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
@@ -40,7 +39,7 @@ export const zoneLinkGbit = (_s: GameState, a: string, b: string): number => (a 
 function units(s: GameState, c: Cluster, sw: Software): number {
   if (sw.pricing === "account") return s.workloads.filter((w) => w.clusterId === c.id && servedBy(s, w) === "panel").length;
   if (sw.pricing === "server") return c.kind === "panel" ? 1 : c.nodes.length;
-  if (sw.pricing === "core") return c.nodes.reduce((n, x) => n + (modelById(s.devices.find((d) => d.id === x.deviceId)?.model ?? "").server?.cores ?? 0), 0);
+  if (sw.pricing === "core") return c.nodes.reduce((n, x) => n + installedCores(s.devices.find((d) => d.id === x.deviceId)!), 0);
   return 0;
 }
 // The monthly license bill of a cluster's panel and platform.

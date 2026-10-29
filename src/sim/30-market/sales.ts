@@ -11,8 +11,7 @@ import { bump, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { lineOffered, noRoomError, pickNode, serverTaken, supports, workloadsOf } from "../60-infra/cluster";
 import { phpNeeded } from "../60-infra/php";
-import { locationOf } from "../60-infra/status";
-import { modelById } from "../10-catalog/hardware";
+import { installedRamGb, locationOf } from "../60-infra/status";
 import { addAwareness, discountFor } from "../80-business/marketing";
 import { listed } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
@@ -162,7 +161,7 @@ export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product"
     return c ? { clusterId: c.id, zone: c.az } : null;
   }
   if (spec.runsOn === "server") {
-    const d = s.devices.find((x) => x.rackId && (modelById(x.model).server?.ramGb ?? 0) >= size.ramGb && zones.includes(locationOf(s, x)?.az ?? "") && !serverTaken(s, x.id));
+    const d = s.devices.find((x) => x.rackId && installedRamGb(x) >= size.ramGb && zones.includes(locationOf(s, x)?.az ?? "") && !serverTaken(s, x.id));
     return d ? { clusterId: null, zone: locationOf(s, d)!.az } : null;
   }
   return { clusterId: null, zone: zones[0] ?? null };

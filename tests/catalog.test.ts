@@ -26,9 +26,9 @@ describe("server lines", () => {
   it("scales specs from the generation row", () => {
     expect(line(1, "dense")).toMatchObject({ height: 1, watts: 375, price: 4000, server: { cores: 4, ramGb: 8, diskGb: 500 } });
     expect(line(1, "memory")).toMatchObject({ height: 2, watts: 400, price: 4500, server: { cores: 2, ramGb: 32 } });
-    expect(line(4, "storage")!.server).toMatchObject({ bays: 12, diskGb: 24000, disk: "SSD" });
-    expect(line(1, "backup")!.server).toMatchObject({ bays: 36, diskGb: 18000, disk: "HDD", cores: 1, ramGb: 4 });
-    expect(line(7, "archive")!.server).toMatchObject({ bays: 60, diskGb: 1_680_000, disk: "HDD", cores: 32, ramGb: 256 });
+    expect(line(4, "storage")!.server).toMatchObject({ bays: [{ ff: "3.5", count: 12 }], diskGb: 24000, disk: "SSD" });
+    expect(line(1, "backup")!.server).toMatchObject({ bays: [{ ff: "3.5", count: 36 }], diskGb: 18000, disk: "HDD", cores: 1, ramGb: 4 });
+    expect(line(7, "archive")!.server).toMatchObject({ bays: [{ ff: "3.5", count: 60 }], diskGb: 1_680_000, disk: "HDD", cores: 32, ramGb: 256 });
     expect(line(5, "gpu")).toMatchObject({ height: 4, server: { gpus: 4 } });
     expect(line(6, "arm")).toMatchObject({ height: 1, price: 4500, server: { arch: "arm" } });
   });
