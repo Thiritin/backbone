@@ -148,12 +148,17 @@ export const isPlugged = (c: Component) => c.plugged !== false;
 // A device gets power through a plugged-in supply that has not failed; one without supplies needs none.
 export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length || p.some((c) => isPlugged(c) && c.failedAt === null); };
 
-// ponytail: full rated power for every device; load-based draw comes with workloads.
+// The servers that run at least one workload; the rest draw their idle power.
+export const busyDevices = (s: GameState): Set<string | null> => new Set(s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId));
+export const drawWatts = (d: Device, busy: Set<string | null>): number => { const m = modelById(d.model); return busy.has(d.id) ? m.watts : m.idleWatts; };
+
+// ponytail: a device draws its rated power, or its idle power when it runs no workload; no finer load-based draw.
 export function rackPower(s: GameState, rackId: string): { watts: number; limitWatts: number; tripped: boolean } {
   const rack = s.racks.find((r) => r.id === rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
   if (!rack || !loc) return { watts: 0, limitWatts: 0, tripped: false };
-  const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on && pluggedIn(d)).reduce((sum, d) => sum + modelById(d.model).watts, 0)
+  const busy = busyDevices(s);
+  const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on && pluggedIn(d)).reduce((sum, d) => sum + drawWatts(d, busy), 0)
     + s.workloads.reduce((sum, w) => sum + (w.rackId === rackId ? w.watts : 0), 0) : 0;
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.

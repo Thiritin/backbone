@@ -10,7 +10,7 @@ import {
   addLocation, buyDevice, buyRack, closeLocation, connect, moveRack, sellDevice, sellRack, unmountDevice,
 } from "../src/sim/90-actions/hardware";
 import { mountDevice, mountStack } from "./plugged";
-import { withServer } from "./fixtures";
+import { runServers, withServer } from "./fixtures";
 
 const rich = (cash = 1_000_000): GameState => ({ ...withServer(newGame(1)), cash });
 const ok = (r: ReturnType<typeof addLocation>) => {
@@ -103,7 +103,7 @@ describe("racks", () => {
     // Devices in a location that is not ready have no power.
     const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, id));
     ok(mountDevice(s, srv, r, 1));
-    expect(rackPower(s, r)).toEqual({ watts: 250, limitWatts: 6000, tripped: false });
+    expect(rackPower(s, r)).toEqual({ watts: 100, limitWatts: 6000, tripped: false });
     ok(connect(s, { device: srv, port: 0 }, { device: handoffOf(s, id), port: 0 }));
     expect(linkStatus(s, srv).online).toBe(false);
     s.hour = 168;
@@ -170,7 +170,7 @@ describe("moveRack", () => {
     expect(linkStatus(s, "dev3").online).toBe(false);
     ok(connect(s, { device: "dev4", port: 7 }, { device: handoffOf(s, fr5), port: 0 }));
     expect(linkStatus(s, "dev3")).toEqual({ online: true, gbit: 1, warning: null });
-    expect(rackPower(s, "rack2")).toEqual({ watts: 258, limitWatts: 8000, tripped: false });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 108, limitWatts: 8000, tripped: false });
   });
   it("takes three days and €1,200 to another city", () => {
     const s = rich(10_000);
@@ -203,13 +203,16 @@ describe("breakers", () => {
     const s = rich();
     ok(buyDevice(s, "g1-compute", "Dwell", 11, "loc1"));
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 10));
+    runServers(s);
     expect(rackPower(s, "rack2")).toEqual({ watts: 2758, limitWatts: 3000, tripped: false });
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 1));
+    runServers(s);
     expect(rackPower(s, "rack2")).toEqual({ watts: 3008, limitWatts: 3000, tripped: true });
     expect(linkStatus(s, "dev3").online).toBe(false);
     expect(linkStatus(s, "dev5").online).toBe(true);
     // Only the home router still draws power.
     expect(powerPerHour(s)).toBeCloseTo(0.01 * 0.09 * 1.6, 10);
+    s.workloads = [];
     ok(unmountDevice(s, "dev8"));
     expect(linkStatus(s, "dev3").online).toBe(true);
   });
@@ -219,8 +222,10 @@ describe("breakers", () => {
     const r = ok(buyRack(s, id, "rack-47", 1));
     ok(buyDevice(s, "g1-compute", "Dwell", 17, id));
     ok(mountStack(s, "g1-compute", "Dwell", r, 16));
+    runServers(s);
     expect(rackPower(s, r)).toEqual({ watts: 4000, limitWatts: 4000, tripped: false });
     ok(mountStack(s, "g1-compute", "Dwell", r, 1));
+    runServers(s);
     expect(rackPower(s, r).tripped).toBe(true);
   });
 });
@@ -228,22 +233,22 @@ describe("breakers", () => {
 describe("monthly bills", () => {
   it("bills basement power at the household price and datacenter power at its power factor", () => {
     const s = rich();
-    const basement = 0.268 * 0.09 * 1.6;
+    const basement = 0.118 * 0.09 * 1.6;
     expect(powerPerHour(s)).toBeCloseTo(basement, 10);
     const id = ok(addLocation(s, "equinox-fr5", "positions", 1));
     const r = ok(buyRack(s, id, "rack-24", 1));
     ok(mountDevice(s, ok(buyDevice(s, "g1-compute", "Dwell", 1, id)), r, 1));
     expect(powerPerHour(s)).toBeCloseTo(basement, 10);
     loc(s, id).readyAt = 0;
-    expect(powerPerHour(s)).toBeCloseTo(basement + 0.25 * 0.09 * 1.4, 10);
+    expect(powerPerHour(s)).toBeCloseTo(basement + 0.1 * 0.09 * 1.4, 10);
   });
   it("pays power, the home line and the rent of every datacenter location on the first of the month", () => {
     const s = withServer(newGame(1));
     ok(addLocation(s, "hetzler-park", "positions", 2));
     const events = run(s, 24 * 31);
-    // Server 250 W, switch 8 W and home router 10 W for 744 h at 9 ct × 1.6.
-    const power = Math.round(0.268 * 744 * 0.09 * 1.6 * 100) / 100;
-    expect(power).toBe(28.71);
+    // Idle server 100 W, switch 8 W and home router 10 W for 744 h at 9 ct × 1.6.
+    const power = Math.round(0.118 * 744 * 0.09 * 1.6 * 100) / 100;
+    expect(power).toBe(12.64);
     // The business DSL line costs €59.
     expect(s.cash).toBe(START_CASH - 2500 - 360 - 59 - power);
     expect(s.powerDue).toBe(0);
@@ -276,9 +281,11 @@ describe("rack shares", () => {
     const srv = s.devices.find((d) => d.rackId === r)!;
     expect(srv.name).toBe("fra2-srv-01");
     ok(connect(s, { device: srv.id, port: 0 }, { device: handoffOf(s, id), port: 0 }));
+    runServers(s);
     expect(rackPower(s, r)).toEqual({ watts: 500, limitWatts: 500, tripped: false });
     expect(linkStatus(s, srv.id).online).toBe(true);
     ok(mountStack(s, "g1-compute", "Dwell", r, 1));
+    runServers(s);
     expect(rackPower(s, r).tripped).toBe(true);
     expect(linkStatus(s, srv.id).online).toBe(false);
     expect(err(mountStack(s, "g1-compute", "Dwell", r, 1))).toBe("error.notInStorage");
