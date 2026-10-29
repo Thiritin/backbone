@@ -1,5 +1,5 @@
 import { yearOf } from "../00-core/time";
-import { sizeSpec, type Spec } from "../10-catalog/products";
+import { marketRates, SLAS, sizeSpec, type Sla, type Spec } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 
@@ -17,15 +17,24 @@ function filled<T extends Old>(x: T, hour: number): Omit<T, "plan" | "packaged">
   return { ...rest, spec: x.spec ?? sizeSpec(x.product, Math.max(0, PLAN_IDS[x.product]?.indexOf(plan ?? "") ?? 0), yearOf(hour)) };
 }
 
+// Saves from before DNS zones and VPN users: the count that a monthly price buys at this year's market rates.
+function counted<T extends Old>(old: T, at: number, monthly: number, sla: Sla | undefined, hour: number) {
+  const x = filled(old, at), key = x.product === "dns" ? "zones" : x.product === "vpn" ? "users" : null;
+  if (!key || old.spec?.[key] !== undefined) return x;
+  const m = marketRates(x.product, yearOf(hour)), each = m[key === "zones" ? "zone" : "user"]!;
+  const n = (monthly / SLAS[sla ?? "basic"].factor - (m.base ?? 0) - ((m.traffic ?? 0) * x.spec.trafficGb) / 100) / each;
+  return { ...x, spec: { ...x.spec, [key]: Math.max(1, Math.round(n)) } };
+}
+
 // Saves from before per-resource pricing: services, requests and lost sales get specs, and the packages list is dropped.
 export function fillSpecs(s: GameState): GameState {
   const { packages: _, ...marketing } = s.marketing as GameState["marketing"] & { packages?: unknown };
   return {
     ...s, marketing, rates: s.rates ?? {},
-    services: s.services.map((v) => filled(v, v.startedAt)),
+    services: s.services.map((v) => counted(v, v.startedAt, v.price * 730, v.sla, s.hour)),
     sales: {
-      requests: s.sales.requests.map((r) => filled(r, r.createdAt)),
-      lost: s.sales.lost.map((l) => filled(l, l.hour)),
+      requests: s.sales.requests.map((r) => counted(r, r.createdAt, r.reference, r.sla, s.hour)),
+      lost: s.sales.lost.map((l) => counted(l, l.hour, l.reference, "basic", s.hour)),
     },
   };
 }

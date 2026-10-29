@@ -2,23 +2,27 @@ import { Tags } from "lucide-react";
 import { useEffect, useState } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { marketRates, PRODUCTS, sizeSpec, specPrice, UNITS, type Unit } from "../../../sim/10-catalog/products";
+import { marketRates, marketSetup, PRODUCTS, sizeSpec, specPrice, UNITS, type Unit } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import { offerPrice } from "../../../sim/30-market/spec";
 import type { GameState } from "../../../sim/50-state";
+import { SITE_LINES } from "../../../sim/80-business/website";
 import { resetRates, setRate } from "../../../sim/90-actions/rates";
 import { useStore } from "../../store";
 import { marketSide } from "../sales/PriceField";
 import { PRODUCT } from "../support/labels";
 
 const LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "domain", "ssl"];
-const UNIT: Record<Unit, string> = { base: "Base fee", vcpu: "Per vCPU", ramGb: "Per GB RAM", diskGb: "Per GB disk", mailbox: "Per mailbox", unit: "Per rack unit", kw: "Per kW" };
-// Rates below ten cents need a tenth of a cent.
-const fine = (x: number) => x > 0 && x < 0.1;
-const rate = (x: number) => (fine(x) ? `€${x.toFixed(3)}` : euroCents(x));
+const UNIT: Record<Unit | "setup", string> = {
+  base: "Base fee", vcpu: "Per vCPU", ramGb: "Per GB RAM", diskGb: "Per GB disk", mailbox: "Per mailbox", zone: "Per zone", user: "Per user",
+  unit: "Per rack unit", kw: "Per kW", traffic: "Per 100 GB traffic", setup: "Setup fee",
+};
+// Rates below ten cents need a tenth of a cent, below one cent a hundredth.
+const digits = (x: number) => (x <= 0 || x >= 0.1 ? 2 : x >= 0.01 ? 3 : 4);
+const rate = (x: number) => (digits(x) > 2 ? `€${x.toFixed(digits(x))}` : euroCents(x));
 
 // One rate: the player's euros per unit, the market's beside it.
-function RateRow({ product, unit, mine, market }: { product: Product; unit: Unit; mine: number | undefined; market: number }) {
+function RateRow({ product, unit, mine, market }: { product: Product; unit: Unit | "setup"; mine: number | undefined; market: number }) {
   const act = useStore((s) => s.act);
   const [text, setText] = useState(mine === undefined ? "" : String(mine));
   useEffect(() => setText(mine === undefined ? "" : String(mine)), [mine]);
@@ -32,7 +36,7 @@ function RateRow({ product, unit, mine, market }: { product: Product; unit: Unit
       <label htmlFor={`rate-${product}-${unit}`}>{UNIT[unit]}</label>
       <span className="price-input">
         <span aria-hidden>€</span>
-        <input id={`rate-${product}-${unit}`} type="number" min={0} step={0.001} placeholder={market.toFixed(fine(market) ? 3 : 2)} value={text}
+        <input id={`rate-${product}-${unit}`} type="number" min={0} step={0.0001} placeholder={market.toFixed(digits(market))} value={text}
           onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === "Enter" && commit()} />
       </span>
       <span className="rate-ref">Market <span className="num">{rate(market)}</span></span>
@@ -59,6 +63,7 @@ export function Rates({ game }: { game: GameState }) {
               </div>
               <div className="fin-card-b">
                 {UNITS[p].map((u) => <RateRow key={u} product={p} unit={u} mine={mine[u]} market={market[u] ?? 0} />)}
+                {SITE_LINES.includes(p) && <RateRow product={p} unit="setup" mine={mine.setup} market={marketSetup(p, year)} />}
                 <dl className="rate-from">
                   <div><dt>From</dt><dd className="num">{euroCents(offerPrice(game, p, smallest))} {per}</dd></div>
                   <div><dt>Market from</dt><dd className="num">{euroCents(specPrice(p, smallest, year))} {per}</dd></div>

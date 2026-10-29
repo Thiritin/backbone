@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
 import { yearOf } from "../src/sim/00-core/time";
-import { sizeSpec, specPrice } from "../src/sim/10-catalog/products";
+import { marketRates, sizeSpec, specPrice } from "../src/sim/10-catalog/products";
 import { orderLead } from "../src/sim/30-market/orders";
 import { sizeOf, specText } from "../src/sim/30-market/spec";
 import type { GameState } from "../src/sim/50-state";
@@ -59,7 +59,8 @@ describe("specs on requests and services", () => {
     expect(setRate(s, "webHosting", "base", 1).ok).toBe(true);
     const { r, v } = formOrder(s);
     const list = specPrice("webHosting", r.spec, yearOf(s.hour), "basic", s.rates.webHosting);
-    expect(list).toBeCloseTo(1 + 4 * r.spec.diskGb + 0.3 * r.spec.mailboxes, 2);
+    const m = marketRates("webHosting", yearOf(s.hour));
+    expect(list).toBeCloseTo(1 + 4 * r.spec.diskGb + m.mailbox! * r.spec.mailboxes + (m.traffic! * r.spec.trafficGb) / 100, 2);
     expect(v.price * 730).toBeCloseTo(Math.round(list * (1 - r.discount) * 100) / 100, 6);
     expect(siteContent(s).lines.find((l) => l.product === "webHosting")!.from).toBe(specPrice("webHosting", sizeSpec("webHosting", 0, yearOf(s.hour)), yearOf(s.hour), "basic", s.rates.webHosting));
   });

@@ -125,18 +125,18 @@ export const rivals = (profile: Profile, product: Product) => {
   return COMPETITORS.filter((c) => c.priceFactor <= p.cap && c.sells.includes(product) && (!c.targets || c.targets.includes(p.id)));
 };
 
-// Your value U and the best competitor's for a profile, product and city.
-export function values(s: GameState, profile: Profile, product: Product, city: string): { you: number; others: number[] } {
+// Your value U and the best competitor's for a profile, product and city; dearer adds to your price level.
+export function values(s: GameState, profile: Profile, product: Product, city: string, dearer = 0): { you: number; others: number[] } {
   const p = profileStats(profile), sc = playerScores(s, profile, city);
   return {
-    you: value(p, sc.P, sc.R, sc.C, trustBonus(s), priceIndex(s)),
+    you: value(p, sc.P, sc.R, sc.C, trustBonus(s), priceIndex(s) + dearer),
     others: rivals(profile, product).map((c) => value(p, c.P, c.R, c.C, 0, c.priceFactor)),
   };
 }
 
 // The softmax share of leads that pick you over the competitors that sell the product.
-export function share(s: GameState, profile: Profile, product: Product, city: string): number {
-  const { you, others } = values(s, profile, product, city);
+export function share(s: GameState, profile: Profile, product: Product, city: string, dearer = 0): number {
+  const { you, others } = values(s, profile, product, city, dearer);
   const e = Math.exp(you / CHOICE_TAU);
   return e / (e + others.reduce((n, u) => n + Math.exp(u / CHOICE_TAU), 0));
 }

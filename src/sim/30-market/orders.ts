@@ -1,13 +1,14 @@
 // GDD, Where requests come from: standard orders arrive as order emails in Support until the order form takes them in directly.
 // Numbers in economy.md, Orders by email.
 import { hashRng, rand } from "../00-core/rng";
-import { LINE_NAME, offerPrice, specText } from "./spec";
-import { applyStep, isStep } from "./manual";
+import { LINE_NAME, offerPrice, setupFee, specText } from "./spec";
+import { applyStep, isStep, issueInvoice, ORDER_PAY_DAYS } from "./manual";
 import { PRODUCTS } from "../10-catalog/products";
 import { inUs } from "../20-world/datacenters";
 import type { Profile } from "../30-customers/customers";
 import { profileStats, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
+import type { InvoiceLine } from "../45-billing/billing";
 import { phpNeeded } from "../60-infra/php";
 import { discountFor, hasOrderForm } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
@@ -63,6 +64,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   if (!email) {
     const done = !missingFor(s, r).length && targetFor(s, r) ? place(s, r) : null;
     if (done?.ok) {
+      formInvoice(s, r.id);
       events.push({ app: "Customers", key: "event.orderPlaced", params: { ...params, price: r.quote! } });
       return r;
     }
@@ -80,6 +82,17 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   r = editRequest(s, r.id, () => ({ ticketId: t.id }));
   if (!missingFor(s, r).length) events.push({ app: "Support", key: "event.order", params });
   return r;
+}
+
+// The order form bills at once: the line's setup fee and the first month, which the monthly run then skips.
+function formInvoice(s: GameState, id: string): void {
+  const r = s.sales.requests.find((x) => x.id === id)!, label = s.services.find((v) => v.id === r.serviceId)?.label ?? requestName(r), fee = setupFee(s, r.product);
+  const lines: InvoiceLine[] = [
+    ...(fee > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: fee }] : []),
+    { serviceId: null, key: "invoice.line.firstMonth", params: { label }, amount: r.quote! },
+  ];
+  issueInvoice(s, r.customerId!, lines, ORDER_PAY_DAYS - 1);
+  s.services = s.services.map((v) => (v.id === r.serviceId ? { ...v, prepaidUntil: s.hour + 730 } : v));
 }
 
 export function firstOrder(s: GameState, events: SimEvent[]): void {

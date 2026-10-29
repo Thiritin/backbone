@@ -19,9 +19,9 @@ import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { domainFor } from "../30-customers/domains";
-import { firstOrder, isStandard, orderLead, orderQueued } from "./orders";
+import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { provisionService } from "../90-actions/clusters";
-import { grownSpec, sizeOf, specFor, specText } from "./spec";
+import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
 import { specParams } from "./manual";
 import type { ActionResult } from "../90-actions/hardware";
 import {
@@ -105,8 +105,9 @@ function morningMail(s: GameState, events: SimEvent[]): void {
   for (const f of leadFlows(s)) {
     const n = poisson(s.rng, f.leads / DAYS_PER_MONTH);
     for (let i = 0; i < n; i++) {
-      const need = needFor(s.rng, f.profile), k = `${f.profile}/${need.product}/${f.city}`;
-      if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city));
+      // An order the form takes weighs the setup fee too.
+      const need = needFor(s.rng, f.profile), form = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${form}`;
+      if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, form ? setupPremium(s, need.product) : 0));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads only write about lines on the website, which needs a control plane that sells them.
       if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
@@ -114,7 +115,7 @@ function morningMail(s: GameState, events: SimEvent[]): void {
         newLead(s, f.profile, f.city, events, need);
         continue;
       }
-      orderLead(s, f.profile, f.city, events, need);
+      orderLead(s, f.profile, f.city, events, need, !form);
     }
   }
   if (listed(s, "webHosting")) firstOrder(s, events);

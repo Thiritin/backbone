@@ -22,7 +22,8 @@ import { STORE, subscriptionPrice } from "../10-catalog/store";
 import { MONTHLY_RATES } from "../40-support/tickets";
 import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
-import { marketPrice, OVERCOMMIT, type Spec } from "../10-catalog/products";
+import { marketPrice, marketSetup, OVERCOMMIT, type Spec } from "../10-catalog/products";
+import { EMAIL_SHARE } from "../30-market/orders";
 import type { Product as LiveProduct } from "../30-customers/customers";
 
 // Average hours a ticket written at a random hour waits for the office to open: four 16-hour nights and a 64-hour weekend.
@@ -88,13 +89,14 @@ function rackRent(watts: number): number {
 
 // A customer's spec, sized like the live SIZES (10-catalog/products.ts) and scaled by the budget: a web space of 2 GB of
 // the year's disk and two mailboxes per size step in 0.25 GB of a panel VM, a VPS of the year's base RAM (one vCPU per
-// 2 GB, at least one, and 20 GB of disk per GB), a game server of 2 vCPUs, 4 GB and 10 GB of the year's base.
+// 2 GB, at least one, and 20 GB of disk per GB), a game server of 2 vCPUs, 4 GB and 10 GB of the year's base; traffic
+// scales with the budget like the rest.
 const LIVE: Record<Product, LiveProduct> = { web: "webHosting", vps: "vps", game: "gameServer" };
 function specOf(p: Profile, product: Product, year: number): Spec {
-  const k = BUDGET_SIZE[p.budget], g = vpsPlanGb(year);
-  if (product === "web") return { vcpu: 0.1, ramGb: 0.25, diskGb: 2 * g * k, trafficGb: 0, mailboxes: 2 * k };
-  if (product === "game") return { vcpu: 2 * g * k, ramGb: 4 * g * k, diskGb: 10 * g * k, trafficGb: 0, mailboxes: 0 };
-  return { vcpu: Math.max(1, Math.round((g * k) / 2)), ramGb: g * k, diskGb: 20 * g * k, trafficGb: 0, mailboxes: 0 };
+  const k = BUDGET_SIZE[p.budget], g = vpsPlanGb(year), trafficGb = monthlyGb(product, year) * k;
+  if (product === "web") return { vcpu: 0.1, ramGb: 0.25, diskGb: 2 * g * k, trafficGb, mailboxes: 2 * k };
+  if (product === "game") return { vcpu: 2 * g * k, ramGb: 4 * g * k, diskGb: 10 * g * k, trafficGb, mailboxes: 0 };
+  return { vcpu: Math.max(1, Math.round((g * k) / 2)), ramGb: g * k, diskGb: 20 * g * k, trafficGb, mailboxes: 0 };
 }
 // The monthly price of that spec at the live market rates per resource.
 const priceOf = (p: Profile, product: Product, year: number): number => marketPrice(LIVE[product], specOf(p, product, year), year);
@@ -369,6 +371,8 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       mrr += v;
       collectedShare += v * (ON_TIME[p.budget] + (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * processed);
       stuck += v * (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * (1 - processed);
+      // The order form bills its standard orders the market's setup fee once; big budgets and email orders pay none.
+      if (website && p.budget !== "high") collectedShare += newCustomers[i][k] * (1 - EMAIL_SHARE) * marketSetup(LIVE[pr], year) * ON_TIME[p.budget];
     }));
     const inBasement = servers.filter((s) => s.basement);
     const inDc = servers.filter((s) => !s.basement);

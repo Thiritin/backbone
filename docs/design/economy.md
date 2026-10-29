@@ -319,7 +319,7 @@ How the market above turns into order emails and sales requests in the Support a
 
 **Email orders off.** Switching email orders off (`website.ts`, needs the order form) sends every order lead through the order form, and an order the form cannot place is a lost sale instead of an order email. Sales requests (business SLA or high budget), upgrades and the shady request are not affected. Email off therefore saves the 30 to 35 minutes of step work of a quarter of the order leads and costs only the orders the form cannot place.
 
-**Custom orders.** Every order names its own resources, by email or through the form (`spec.ts`, `manual.ts`). It starts from the size its profile's budget picks (What a lead asks for). Web hosting, VPS and game server orders scale that size by one of 0.5, 0.75, 1, 1, 1.25 or 1.5, which average to 1: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, with 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. Other lines take the size as it is. A spec's monthly market price comes from Per-resource pricing, and the SLA factor and the profile's offer factor apply on top. Step times: account 5, confirmation and invoice 10, domain 5, setup 15 minutes. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
+**Custom orders.** Every order names its own resources, by email or through the form (`spec.ts`, `manual.ts`). It starts from the size its profile's budget picks (What a lead asks for). Web hosting, VPS and game server orders scale that size by one of 0.5, 0.75, 1, 1, 1.25 or 1.5, which average to 1: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, with 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. DNS and VPN orders scale their zones or users and their traffic the same way (DNS zones and VPN users). Other lines take the size as it is. A spec's monthly market price comes from Per-resource pricing, and the SLA factor and the profile's offer factor apply on top. Step times: account 5, confirmation and invoice 10, domain 5, setup 15 minutes. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
 
 **Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8, .com €6 to €9 (VeriSigh raised its price over the years). The customer pays €15 a year for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
 
@@ -941,8 +941,8 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 one
 | Web hosting | 3 | 0.1 vCPU, 0.25 GB RAM, 1, 2 or 5 GB disk × growth, two mailboxes | €3.75, €6, €12.75 a month | Cluster |
 | VPS | 4 | 0.5, 1, 2 or 4 × base RAM; 1 vCPU per 2 GB (at least 1); 20 GB disk per GB of RAM | 0.65, 1.1, 2 or 4 × the VPS rate (€16.50 per GB); from 2012 the smallest is 1.1 × | Cluster |
 | Game server | 2 | 2 or 4 vCPUs, 4 or 8 GB RAM, 10 or 20 GB disk × growth | 6.4 or 12.8 × the VPS rate | Cluster |
-| DNS hosting | 1 | 0.05 vCPU, 0.1 GB RAM, 1 GB disk | €2 a month | Cluster |
-| VPN | 1 | 1 vCPU, 0.5 GB RAM, 1 GB disk | €5 a month | Cluster |
+| DNS hosting | 2, 5 or 15 zones | 0.05 vCPU, 0.1 GB RAM, 1 GB disk | €1.10, €2, €4.98 a month | Cluster |
+| VPN | 1, 3 or 10 users | A vCPU per three users (at least 0.5, in quarters), 0.5 GB RAM, 1 GB disk | €2.03, €5, €15.22 a month | Cluster |
 | Storage hosting | 100 GB, 500 GB, 1 TB | Disk only | About €8, €42, €83 a month | Cluster |
 | Cloud servers | 1 | Like the 1 × base RAM VPS | 1.25 × that VPS | High-availability cluster |
 | Dedicated servers | 2 | A whole server with at least 8 or 32 GB × growth | €79, €299 a month | A free server |
@@ -959,14 +959,38 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 one
 | Game server | €0 | 0.4r per vCPU, 1.35r per GB of RAM, 0.02r per GB of disk |
 | Cloud server | €0 | 1.25 × the VPS rates |
 | Storage hosting | €0 | €2.60 per TB in 2026 with m = 32, charged per GB |
-| DNS hosting | €2 | |
-| VPN | €5 | |
+| DNS hosting | €0.50 | €0.30 per zone |
+| VPN | €0.50 | €1.50 per user |
 | Domain | €15 a year | |
 | SSL certificate | €50 a year until 2015, then €0 | |
 | Dedicated server | €6 | €220 ÷ 24 ÷ g per GB of the smallest server RAM it accepts |
 | Colocation | €15 | €30 per rack unit, €100 per kW |
 
-**The player's rates.** The Products app's Pricing view holds one rate per unit for each line (`rates.ts`). An empty rate charges the market rate, and Market rates resets the whole line. Rates apply to new sales: the order form charges a spec at the player's rates × the SLA factor × (1 − campaign discount) and places it at once. Overpricing costs leads through the price factor in Choice with prices and customers through Price tolerance and churn. Services already sold keep the price they were sold at, and raising one goes through Price changes with its tolerance, complaint and retention rules. Email orders are priced by hand, prefilled at the market reference less any campaign discount. Saves from before per-resource pricing give every service, request and lost sale with a plan that plan's size as its spec in the year it started, and start with every rate empty.
+Each line with traffic also charges it per 100 GB a month (Traffic, below). The table gives the rates before traffic takes its share.
+
+**DNS zones and VPN users.** A DNS order names its zones and a VPN order its users, drawn like other resources: the size its profile's budget picks (2, 5 or 15 zones; 1, 3 or 10 users) times one of the six customer factors, at least one. The middle sizes keep the former €2 and €5 a month. Anchors from 2005: managed DNS sold in bulk plans for a few euros a year per zone, and a single domain's DNS for up to €1.50 a month, so €0.30 per zone plus a €0.50 base sits at the cheap end; a hosted remote-access VPN ran €1 to €3 per user a month. A VPN gateway books a vCPU per three users (at least half of one, in quarters), so its capacity scales with the users; DNS stays at its tiny fixed size. An upgrade grows the zones or users by its factor.
+
+**Traffic.** Every line with traffic (all but domains and SSL) charges a rate per 100 GB of the spec's monthly traffic. In 2005 hosts bundled traffic and overage cost little, so the market rate is set from a share of the line's middle size: traffic is that share of the middle size's market price, and the line's other rates give up the same share, so the middle size keeps its price, a bigger traffic user pays a little more and a smaller one a little less (`TRAFFIC_SHARE`). As specs' traffic grows 20% a year while prices fall, the rate per 100 GB falls with them.
+
+| Line | Share | Per 100 GB in 2005 | 2015 | 2025 |
+| --- | --- | --- | --- | --- |
+| Web hosting | 2% | €6.00 | €0.92 | €0.15 |
+| DNS hosting | 2% | €4.00 | €0.65 | €0.10 |
+| VPS | 3% | €2.72 | €0.34 | €0.05 |
+| Cloud server | 3% | €3.40 | €0.42 | €0.06 |
+| Storage hosting | 3% | €1.25 | €0.04 | €0.001 |
+| Dedicated server | 4% | €2.12 | €0.34 | €0.06 |
+| VPN | 5% | €0.08 | €0.01 | €0.002 |
+| Colocation | 5% | €4.15 | €0.67 | €0.11 |
+| Game server | 6% | €10.60 | €1.47 | €0.20 |
+
+Game servers and colocation move the most data per euro and carry the largest share. A VPN moves 300 GB a month on a €5 bill, so its rate per GB is the lowest.
+
+**Setup fees.** An order through the order form pays a one-time setup fee on top of its first month (`marketSetup` in `products.ts`, `setupFee` in `spec.ts`). The market's fee in 2005, falling to a third by 2026 (m = 3), rounded to whole euros: web hosting €10, VPS €15, game server €15, DNS €5, VPN €10, storage €10, cloud server €0, dedicated server €75, colocation €150. The player sets a line's fee in Pricing next to its rates; empty charges the market's. Customers weigh a fee above the market's as if spread over 36 months of the line's middle size (`SETUP_MONTHS`): the difference ÷ (36 × that monthly price) adds to the price index for leads that would order through the form, so a dearer fee brings a few fewer form orders and a cheaper one a few more. Twice the market's web hosting fee costs about 7% of the form's share. Email orders and sales requests charge no setup fee.
+
+**Form invoices.** The order form invoices an order the moment it is placed: the setup fee (left out when it is zero) and the full first month at the order's price. The service is prepaid for 730 hours, so the monthly run bills only the hours after that and the first month is never billed twice; this is the same rule an email order's invoice step uses. The invoice is due in 14 days, and an on-time payer pays it within 1 to 3 days. Its payment books under payments in Finance like every invoice.
+
+**The player's rates.** The Products app's Pricing view holds one rate per unit for each line (`rates.ts`). An empty rate charges the market rate, and Market rates resets the whole line. Rates apply to new sales: the order form charges a spec at the player's rates × the SLA factor × (1 − campaign discount) and places it at once. Overpricing costs leads through the price factor in Choice with prices and customers through Price tolerance and churn. Services already sold keep the price they were sold at, and raising one goes through Price changes with its tolerance, complaint and retention rules. Email orders are priced by hand, prefilled at the market reference less any campaign discount. Saves from before per-resource pricing give every service, request and lost sale with a plan that plan's size as its spec in the year it started, and start with every rate empty. Saves from before DNS zones and VPN users give each DNS or VPN service the count its monthly price buys at the loading year's market rates (less the base fee and traffic, at least one); requests and lost sales use their market reference. Their setup fees start at the market's.
 
 **Capacity.** A node books up to its physical cores × 8 in vCPUs, its RAM × 1.5 and its usable RAID disk × 2. A G1 balanced server books 16 vCPUs, 12 GB of RAM and 1 TB of disk: 48 web spaces, or 24 of the 0.5 GB VPS, or 6 of the 2 GB VPS by RAM. Booking counts what workloads booked; the load they put on the hardware follows the usage curves.
 
@@ -1650,6 +1674,18 @@ Neither bot goes bankrupt. The steady bot pays €500 a month for ChadGPT in 200
 | 6 | 2018 | 2017.9 | 2018.2 |
 
 The solo bot reaches level 5 in 2012.9 instead of 2012.8. Neither bot goes bankrupt.
+
+**Traffic and setup fees.** The model's specs now carry traffic (the live TRAFFIC_GB, growing 20% a year, × the budget size) priced at the market rate per 100 GB, and while the order form is up every new customer without a high budget pays the market's setup fee once on three in four orders (one in four still writes an email, `EMAIL_SHARE`), collected at the on-time share. The model sells no DNS or VPN, so per-unit DNS and VPN leave it alone. Medians before and after:
+
+| Level | Target | Steady before | Steady after |
+| --- | --- | --- | --- |
+| 2 | 2005 | 2006.0 | 2006.0 |
+| 3 | 2007 | 2006.8 | 2006.8 |
+| 4 | 2010 | 2008.7 | 2008.6 |
+| 5 | 2013 | 2011.9 | 2011.9 |
+| 6 | 2018 | 2018.2 | 2017.9 |
+
+The solo bot reaches level 5 in 2012.8 instead of 2012.9. Neither bot goes bankrupt.
 
 **Open questions**
 

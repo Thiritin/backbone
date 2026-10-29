@@ -29,6 +29,7 @@ export const MANUAL_EN: Record<string, (p: Params) => string> = {
   "ticket.upgrade.more.subject": (p) => `${p.service || "My service"} is getting too small`,
   "ticket.upgrade.more.text": () => "We keep running out of room. What would upgrading cost us?",
   "invoice.line.firstMonth": (p) => `${p.label}, first month`,
+  "invoice.line.setupFee": (p) => `${p.label}, setup fee`,
   "invoice.line.domain": (p) => `Domain ${p.domain}, first year`,
   "invoice.line.domainTransfer": (p) => `Transfer of ${p.domain}`,
   "invoice.line.domainRenewal": (p) => `Domain ${p.domain}, one more year`,
