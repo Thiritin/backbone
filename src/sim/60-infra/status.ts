@@ -2,7 +2,8 @@ import { yearOf } from "../00-core/time";
 import { COMPONENTS, jacksOf, modelById, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
-import { BASEMENT, capacityAt, datacenterById, inUs, MOVE, rackUnits, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, capacityAt, datacenterById, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
+import { CITY_TLD } from "../30-customers/domains";
 import type { Component, Device, End, GameState, Location, SpaceKind } from "../50-state";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
@@ -92,6 +93,68 @@ export function linkStatus(s: GameState, deviceId: string): LinkStatus {
   const grouped = modelById(sw.model).kind === "switch" && up.every((f) => f.end.device === sw.id)
     && sw.groups.some((g) => up.every((f) => g.includes(f.end.port)));
   return grouped ? { online: true, gbit: up.reduce((sum, f) => sum + f.gbit, 0), warning: null } : { online: true, gbit: fastest, warning: "bondNotGrouped" };
+}
+
+// One step of a route. device is set for your own hardware; location for a line or uplink, whose load slows it.
+export type HopKind = "switch" | "firewall" | "gateway" | "host" | "line" | "uplink" | "domestic" | "european" | "overseas";
+export interface Hop { kind: HopKind; name: string; device?: string; location?: string }
+
+const hostName = (d: Device) => d.hostname ?? d.label ?? d.name;
+const hopOf = (s: GameState, id: string): Hop => {
+  const d = s.devices.find((x) => x.id === id)!, kind = modelById(d.model).kind;
+  return { kind: d.model === "handoff" ? "uplink" : kind === "server" ? "host" : (kind as HopKind), name: hostName(d), device: d.id };
+};
+
+// The devices on a shortest cabled path from one device to the first that meets goal (patch panels skipped). A server only ends a path.
+// With live set, every device on the way must work, except the exempt one.
+function cabled(s: GameState, from: string, goal: (id: string) => boolean, live: boolean, exempt = ""): string[] | null {
+  const parent = new Map<string, string>();
+  const queue = [from];
+  for (let at = queue.shift(); at !== undefined; at = queue.shift()) {
+    const ok = !live || at === exempt || working(s, at);
+    if (goal(at) && ok) {
+      const ids = [at];
+      while (parent.has(ids[0])) ids.unshift(parent.get(ids[0])!);
+      return ids;
+    }
+    if (!ok || (at !== from && kindOf(s, at) === "server")) continue;
+    for (let port = 0; port < modelOf(s, at).ports.length; port++) {
+      const next = farEnd(s, { device: at, port })?.end.device;
+      if (next && next !== from && !parent.has(next)) { parent.set(next, at); queue.push(next); }
+    }
+  }
+  return null;
+}
+
+// Whether a hop of a route is cut: a stopped device, or a basement without an internet line.
+export const hopDown = (s: GameState, h: Hop): boolean => (h.device ? !working(s, h.device) : h.kind === "line" && !s.homeLine.id);
+
+// The hops from a device out to its location's edge: the gateway, then the carrier line (basement) or the datacenter's uplink.
+function toEdge(s: GameState, id: string, loc: Location, live: boolean, exempt?: string): Hop[] | null {
+  const ids = cabled(s, id, (x) => kindOf(s, x) === "gateway", live, exempt);
+  if (!ids) return null;
+  const hops = ids.map((x) => hopOf(s, x));
+  if (!loc.dc) return [...hops, { kind: "line", name: homeLineById(s.homeLine.id).isp || "line", location: loc.id }];
+  const uplink: Hop = { kind: "uplink", name: datacenterById(loc.dc).name, location: loc.id };
+  if (hops[hops.length - 1].kind === "uplink") hops[hops.length - 1] = { ...hops[hops.length - 1], ...uplink };
+  else hops.push(uplink);
+  return hops;
+}
+
+// The cabled route from one device to another, through the home line or a datacenter's uplink and the distance between cities when they
+// sit in different locations. Null when no route works; with live off the route ignores stopped devices, to show where a trace ends.
+export function pathTo(s: GameState, fromId: string, toId: string, live = true): Hop[] | null {
+  const a = s.devices.find((d) => d.id === fromId), b = s.devices.find((d) => d.id === toId);
+  const la = a && locationOf(s, a), lb = b && locationOf(s, b);
+  if (!la || !lb) return null;
+  let hops: Hop[] | null;
+  if (la.id === lb.id) hops = cabled(s, fromId, (x) => x === toId, live, toId)?.map((x) => hopOf(s, x)) ?? null;
+  else {
+    const out = toEdge(s, fromId, la, live), back = toEdge(s, toId, lb, live, toId);
+    const scope: HopKind | null = la.city === lb.city ? null : inUs(la.city) !== inUs(lb.city) ? "overseas" : CITY_TLD[la.city]?.tld === CITY_TLD[lb.city]?.tld ? "domestic" : "european";
+    hops = out && back ? [...out, ...(scope ? [{ kind: scope, name: `core1.${regionOf(lb).id}` }] : []), ...back.reverse()] : null;
+  }
+  return hops && live && hops.slice(0, -1).some((h) => hopDown(s, h)) ? null : hops;
 }
 
 // Every slot where a device of this height fits, lowest first. Units rented out for colocation are taken.
