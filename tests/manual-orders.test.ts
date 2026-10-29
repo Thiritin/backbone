@@ -54,7 +54,7 @@ const payNow = (s: GameState, invoiceId: string) => {
 
 describe("custom orders", () => {
   it("asks for its own resources, different for each order, and the order form accepts the website price", () => {
-    const s = readyGame(3);
+    const s = readyGame(5);
     const specs = Array.from({ length: 6 }, () => order(s).r);
     for (const r of specs) {
       expect(specText(r.product, r.spec)).toMatch(/^Web hosting, /);
@@ -221,7 +221,7 @@ describe("domains", () => {
   });
 
   it("warns before expiry, takes the site down when it lapses and comes back on renewal", () => {
-    const { s, req } = live(12);
+    const { s, req } = live(16);
     const name = req().domain!, v = req().serviceId!, d = domainOf(s, name)!;
     expect(serviceOnline(s, v)).toBe(true);
     s.hour = d.expiresAt - 30 * 24 - (d.expiresAt % 24) - 1;

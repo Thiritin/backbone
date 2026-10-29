@@ -1,13 +1,13 @@
 // The used hardware market (gdd.md, Racks, hardware and cabling, Used hardware): listings each month by seed, auctions
 // that close, chat deals that never arrive, buyers for the player's own listings, the yearly lot and clearance, the board lead.
 import { hashRng, rand, type Rng } from "../00-core/rng";
-import { isMonthStart, yearOf } from "../00-core/time";
+import { isMonthStart, monthIndexOf, yearOf } from "../00-core/time";
 import { CITIES } from "../10-catalog/economy";
-import { brandsOf, COMPONENTS, componentParts, isDriveKind, MODELS, modelById, vendorsOf, type DeviceModel } from "../10-catalog/hardware";
+import { brandFrom, brandsOf, COMPONENTS, componentParts, isDriveKind, MODELS, modelById, vendorsOf, type DeviceModel } from "../10-catalog/hardware";
 import { presetPrice } from "../10-catalog/parts";
 import {
   ASK, AUCTION_START, channelName, CLEARANCE_SIZE, DEFECT_CHANCE, DEFECTS, EARLY_HOURS, EBUY_FEE, leading, LOCAL_CHANCE, LOT_SHARE, LOT_SIZE, MAX_AGE,
-  MIN_YEARS_ON_SALE, PER_MONTH, REP_LEAD, RIVAL, SCAM_CHANCE, SHIP_DAYS, USED_EVENTS, WEAR, type Channel, type Defect, type Listing,
+  MIN_YEARS_ON_SALE, PER_MONTH, REP_LEAD, RIVAL, SCAM_CHANCE, SHIP_DAYS, USED_EVENTS, usedSince, WEAR, type Channel, type Defect, type Listing,
 } from "../10-catalog/used";
 import type { GameState } from "../50-state";
 import { editRequest, newLead } from "../30-market/sales";
@@ -24,7 +24,7 @@ const cents = (v: number) => Math.round(v * 100) / 100;
 
 // Models a hoster could be getting rid of: sold for at least two years by now.
 export const usedModels = (year: number): DeviceModel[] =>
-  MODELS.filter((m) => m.price > 0 && m.kind !== "part" && m.kind !== "patch" && m.from <= year - MIN_YEARS_ON_SALE);
+  MODELS.filter((m) => m.price > 0 && m.kind !== "part" && m.kind !== "patch" && usedSince(m) <= year - MIN_YEARS_ON_SALE);
 
 const sellerCity = (s: GameState, r: Rng): string =>
   rand(r) < LOCAL_CHANCE ? pick(r, s.locations).city : pick(r, CITIES).name;
@@ -45,10 +45,12 @@ function wearFor(r: Rng, m: DeviceModel, age: number, defect: Defect | null): nu
 interface Draft { channel: Channel; model?: DeviceModel; postedAt: number; expiresAt?: number; qty?: number; share?: number; city?: string }
 
 function listing(s: GameState, r: Rng, d: Draft): Listing {
-  const year = yearOf(s.hour), m = d.model ?? pick(r, usedModels(year)), brand = pick(r, brandsOf(m));
+  const year = yearOf(s.hour), m = d.model ?? pick(r, usedModels(year));
+  // A brand that releases the model later never has one to sell yet; end of sale does not stop used units.
+  const brand = pick(r, brandsOf(m).filter((b) => brandFrom(m, b) <= monthIndexOf(s.hour)));
   // The CPU maker comes from its own draw so the listing's other draws stay as they were.
   const makers = vendorsOf(m), vendor = makers.length ? pick(hashRng(s.seed, s.nextId, 1019), makers) : undefined;
-  const age = Math.round(between(r, [1, Math.max(1, year - m.from)]) * 10) / 10;
+  const age = Math.round(between(r, [1, Math.max(1, year - usedSince(m))]) * 10) / 10;
   const defect = d.qty ? null : defectFor(r, m), base = presetPrice(m, year, brand, vendor) * (d.qty ?? 1);
   const older = Math.min(1, (age - 1) / (MAX_AGE - 1));
   const share = d.share ?? (d.channel === "ebuy" ? AUCTION_START : ASK[d.channel][0] + (ASK[d.channel][1] - ASK[d.channel][0]) * older);

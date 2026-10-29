@@ -1072,11 +1072,11 @@ Stuck boots, hangs and lockouts are rolled per device and hour and do not draw f
 - **Out of support.** Hands-on work on the device (swapping, installing or removing a part) takes twice as long, a spare part for it costs 1.5 times its price (the extra half is booked as a grey market premium when the part goes in), and every component fails 1.2 times as often because the firmware no longer gets fixes. Work that takes no time on a running device stays instant.
 - **News.** Each non-server model ends with a Heize online item on 1 January of the year after its last year on sale.
 
-**Used hardware.** Listings come from the current preset price of the model (Part prices by year for servers, eroded list prices for the rest) with the seller's brand factor.
+**Used hardware.** Listings come from the current preset price of the model (Part prices by year for servers, eroded list prices for the rest) with the seller's brand factor. A listing's brand has already released the model.
 
 | Rule | Value |
 | --- | --- |
-| New listings per channel and month | 2 to 6, posted over the month at random hours; a model qualifies once its launch is at least 2 years back |
+| New listings per channel and month | 2 to 6, posted over the month at random hours, the first month with the new game; a model qualifies once its launch is at least 2 years back, and a model from 2005 counts as launched in 2002, so 2005 listings are 1 to 3 years old at the usual price bands |
 | Age of a unit | 1 year up to the years since the model's launch |
 | WebHostingTalc ask | 60% of the preset price at 1 year falling in a straight line to 45% at 6 years and older |
 | Telegrump ask | 45% falling to 30% the same way; 15% of the deals are scams that take the money and ship nothing |
