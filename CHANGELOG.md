@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- A support desk without reply templates still offers the reply that settles the ticket, so a lost panel login or a price complaint can be answered.
 - While you use free Notmail, only half of the businesses that would order by email write to you; private users, gamers and developers do not mind.
 - You buy your company domain in the Marketing app under Domain, which is now installed for free from the start; the rest of the app opens with the Marketing campaigns skill.
 - A new company starts with a free Notmail address that takes order emails without a domain, and moving to mail under your own domain is an optional upgrade.
