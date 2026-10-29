@@ -7,6 +7,7 @@ import { isOwnVm, workloadOnline, workloadsOf, type Workload } from "../60-infra
 import { privateIp } from "../60-infra/addresses";
 import { linkStatus, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
+import { consoleBookmarks, consoleCluster, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
@@ -18,6 +19,7 @@ export type Page =
   | { kind: "customer"; serviceId: string }
   | { kind: "vendor"; maker: string }
   | { kind: "host"; hostname: string }
+  | { kind: "console"; hostname: string; clusterId: string; defaced: boolean }
   | { kind: "video" }
   | { kind: "notfound" };
 
@@ -35,10 +37,11 @@ export const vendorHost = (id: string): string => `${id}.example`;
 export const adminUrl = (s: GameState): string => `www.${companyDomain(s)}/admin`;
 export const companyUrl = (s: GameState): string => `www.${companyDomain(s)}/`;
 
-// Bookmarks every game has; consoles join them in later lanes.
+// Bookmarks every game has, and a console for each management software the company runs.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
   { title: s.company.name, url: companyUrl(s) },
   { title: "Admin", url: adminUrl(s) },
+  ...consoleBookmarks(s),
 ];
 
 // Splits what the player typed into a lowercase host and a path with its query; the scheme and a trailing dot fall away.
@@ -79,6 +82,12 @@ function machineOf(s: GameState, key: string, byIp: boolean): { hostname: string
   return null;
 }
 
+// A machine with management software answers with its console, a defaced one when the host is hacked.
+function machinePage(s: GameState, m: { hostname: string; load: Load }): Pick<Resolved, "page" | "load"> {
+  const c = consoleCluster(s, m.hostname);
+  return { page: c ? { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c) } : { kind: "host", hostname: m.hostname }, load: m.load };
+}
+
 export function resolve(s: GameState, raw: string): Resolved {
   const { host, path } = split(raw), url = `${host}${path}`;
   const out = (page: Page, load: Load = "fast"): Resolved => ({ url, host, path, page, load });
@@ -100,11 +109,11 @@ export function resolve(s: GameState, raw: string): Resolved {
   }
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
     const m = machineOf(s, host, true);
-    return m ? out({ kind: "host", hostname: m.hostname }, m.load) : out({ kind: "notfound" });
+    return m ? { url, host, path, ...machinePage(s, m) } : out({ kind: "notfound" });
   }
   if (s.company.domain && host.endsWith(`.${domain}`)) {
     const m = machineOf(s, host.slice(0, -domain.length - 1), false);
-    if (m) return out({ kind: "host", hostname: m.hostname }, m.load);
+    if (m) return { url, host, path, ...machinePage(s, m) };
   }
   return out({ kind: "notfound" });
 }
