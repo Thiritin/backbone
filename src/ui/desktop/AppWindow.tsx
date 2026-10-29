@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import type { CSSProperties, PointerEvent as RPointerEvent } from "react";
-import { appByName } from "../apps/registry";
+import { appFor } from "../apps/registry";
 import { GuideApp } from "../apps/GuideApp";
 import { NoteApp, NoteTitle } from "../apps/NoteApp";
 import { LocationsApp } from "../apps/locations/LocationsApp";
@@ -45,7 +45,8 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
   const ref = useRef<HTMLElement>(null);
   const last = useRef<DOMRect | null>(null);
   const was = useRef({ minimized: win.minimized, zoomed: win.zoomed });
-  const app = appByName(win.app);
+  const game = useStore((s) => s.game);
+  const app = appFor(game, win.app);
 
   useLayoutEffect(() => { animateOpen(ref.current!); }, []);
 
@@ -66,7 +67,7 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
     : { left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.z };
 
   return (
-    <section ref={ref} className={`window${front ? " front" : ""}`} style={box} aria-label={win.app} inert={win.minimized} onPointerDown={() => focus(win.id)}>
+    <section ref={ref} className={`window${front ? " front" : ""}`} style={box} aria-label={app.name} inert={win.minimized} onPointerDown={() => focus(win.id)}>
       <div
         className="titlebar"
         onDoubleClick={() => toggleZoom(win.id)}
@@ -80,13 +81,13 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
           <button aria-label="Minimize" onClick={() => minimize(win.id)}>{Glyph.min}</button>
           <button aria-label="Zoom" onClick={() => toggleZoom(win.id)}>{win.zoomed ? Glyph.exit : Glyph.enter}</button>
         </div>
-        <h1>{win.doc ? <NoteTitle id={win.doc} /> : win.app}</h1>
+        <h1>{win.doc ? <NoteTitle id={win.doc} /> : app.name}</h1>
       </div>
       <div className="win-body">
         {win.doc ? <NoteApp id={win.doc} /> : win.app === "Settings" ? <SettingsApp /> : win.app === "Getting started" ? <GuideApp /> : win.app === "Locations" ? <LocationsApp /> : win.app === "Shop" ? <ShopApp /> : app.body ? <app.body /> : (
           <div className="app-empty">
             <span className="app-empty-tile" style={{ "--tile": app.tile } as CSSProperties}><app.icon /></span>
-            <h2>{win.app}</h2>
+            <h2>{app.name}</h2>
             <p>{app.about}</p>
           </div>
         )}

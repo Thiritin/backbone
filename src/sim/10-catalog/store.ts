@@ -1,13 +1,15 @@
 import type { Product } from "../30-customers/customers";
-import { START_YEAR } from "../00-core/time";
+import { START_YEAR, yearOf } from "../00-core/time";
+import type { GameState, LedgerEntry } from "../50-state";
+import { DESKS, seats } from "./desks";
 
 // Values from docs/design/economy.md, section "Pear One subscriptions". The skill each item needs is in research.ts.
 
 // Apps every new game has in the dock, free of charge. Getting started and Notes are desktop documents and never sit in the dock.
 export const STARTER_APPS = ["Locations", "Shop", "Website", "Browser", "Terminal", "Customers", "Support", "Billing", "Finance", "Bank", "Research", "Settings"];
 
-// id is the app name for apps; monthly is the 2005 price.
-export interface StoreItem { id: string; kind: "app" | "upgrade" | "bot"; name: string; monthly: number }
+// id is the app name for apps; monthly is the 2005 price, charged once per seat when perSeat is set.
+export interface StoreItem { id: string; kind: "app" | "upgrade" | "bot" | "desk"; name: string; monthly: number; perSeat?: boolean }
 
 export const WIDGETS: [string, string, number][] = [
   ["widgetCalendar", "Calendar widget", 1], ["widgetTickets", "Open tickets widget", 1], ["widgetCash", "Cash widget", 1],
@@ -29,6 +31,7 @@ export const STORE: StoreItem[] = [
   // One subscription is one bot; what each bot does is in 47-staff/staff.ts.
   { id: "chadGpt", kind: "bot", name: "ChadGPT Support", monthly: 50 },
   { id: "clipsy", kind: "bot", name: "Clipsy Reminders", monthly: 100 },
+  ...DESKS.map((d): StoreItem => ({ id: d.id, kind: "desk", name: d.name, monthly: d.monthly, perSeat: true })),
 ];
 
 export const storeItem = (id: string): StoreItem | undefined => STORE.find((i) => i.id === id);
@@ -37,6 +40,14 @@ export const PRICE_RISE = 0.08;
 // ponytail: base price only; the per-device or per-customer extras and Pear's surprise price adjustments come with the modules that need them.
 export const subscriptionPrice = (item: StoreItem, year: number): number =>
   Math.round(item.monthly * (1 + PRICE_RISE) ** Math.max(0, year - START_YEAR) * 100) / 100;
+
+// What the item costs this month: per-seat items count the owner and every support employee.
+export const monthlyCharge = (s: GameState, item: StoreItem): number =>
+  Math.round(subscriptionPrice(item, yearOf(s.hour)) * (item.perSeat ? seats(s) : 1) * 100) / 100;
+
+export const subscriptionEntry = (s: GameState, item: StoreItem): LedgerEntry => item.perSeat
+  ? { hour: s.hour, category: "subscriptions", key: "ledger.subscriptionSeats", params: { name: item.name, seats: seats(s) }, amount: -monthlyCharge(s, item) }
+  : { hour: s.hour, category: "subscriptions", key: "ledger.subscription", params: { name: item.name }, amount: -monthlyCharge(s, item) };
 
 // Know-how each active contract earns per month; DNS counts like a domain.
 export const KNOW_HOW: Record<Product, number> = {

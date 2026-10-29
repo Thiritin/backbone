@@ -5,7 +5,7 @@ import type { GameState } from "../../sim/50-state";
 import { isOwnVm } from "../../sim/60-infra/cluster";
 import { privateIp, publicV4 } from "../../sim/60-infra/addresses";
 import { adminUrl, companyUrl, resolve } from "../../sim/80-business/browser";
-import { APPS } from "../apps/registry";
+import { APPS, appFor } from "../apps/registry";
 import { vmLabel } from "../apps/products/parts";
 import { rank, type Rankable } from "./rank";
 
@@ -29,7 +29,11 @@ function collect(s: GameState): Hit[] {
   const hits: Hit[] = [];
   const add = (h: Omit<Hit, "id"> & { id?: string }) => hits.push({ ...h, id: h.id ?? h.title });
 
-  for (const a of APPS) if (!a.hidden && has(a.name)) add({ group: "Apps", title: a.name, keys: [a.name], app: a.name });
+  for (const a of APPS) {
+    if (a.hidden || !has(a.name)) continue;
+    const shown = appFor(s, a.name).name;
+    add({ group: "Apps", title: shown, keys: [...new Set([a.name, shown])], app: a.name });
+  }
 
   const customers = new Map(s.customers.map((c) => [c.id, c]));
   for (const c of s.customers) add({ group: "Customers", id: c.id, title: c.name, keys: [c.name], recent: c.since, app: "Customers", target: { kind: "customer", id: c.id } });

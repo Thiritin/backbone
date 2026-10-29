@@ -1,6 +1,5 @@
 import {
   Activity, AppWindow, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, Landmark, LifeBuoy, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
-  type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { BankApp } from "./bank/BankApp";
@@ -16,6 +15,8 @@ import { missingFor } from "../../sim/30-market/market";
 import type { GameState } from "../../sim/50-state";
 import { CustomersApp } from "./customers/CustomersApp";
 import { SupportApp } from "./support/SupportApp";
+import { supportApp } from "./support/desk";
+import type { MarkProps } from "../art/mailmarks";
 import { ResearchApp } from "./research/ResearchApp";
 import { StaffApp } from "./staff/StaffApp";
 import { TerminalApp } from "./terminal/TerminalApp";
@@ -28,7 +29,7 @@ import { deviceHealth } from "../../sim/60-infra/status";
 
 export interface AppDef {
   name: string;
-  icon: LucideIcon;
+  icon: ComponentType<MarkProps>;
   tile: string;
   about: string;
   hidden?: boolean;
@@ -71,3 +72,6 @@ export const APPS: AppDef[] = [
 ];
 
 export const appByName = (name: string): AppDef => APPS.find((a) => a.name === name) ?? APPS[0];
+
+// The app as the player sees it: Support is Email, or the installed desk, with its own name, mark and tile.
+export const appFor = (s: GameState, name: string): AppDef => (name === "Support" ? { ...appByName(name), ...supportApp(s) } : appByName(name));

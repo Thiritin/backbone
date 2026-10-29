@@ -61,6 +61,7 @@ export const en: Record<string, (p: Params) => string> = {
     return `You paid ${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}.`;
   },
   "ledger.subscription": (p) => `Pear One subscription: ${p.name}`,
+  "ledger.subscriptionSeats": (p) => `Pear One subscription: ${p.name}, ${p.seats} ${Number(p.seats) === 1 ? "seat" : "seats"}`,
   "ledger.chadUsage": (p) => `ChadGPT usage: ${Number(p.attempts).toLocaleString("en-GB")} replies, ${(Number(p.tokens) / 1e6).toFixed(1)}M tokens`,
   "error.unknownStoreItem": () => "The Pear Store does not sell this.",
   "error.unknownSkill": () => "There is no such training.",
@@ -70,6 +71,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.missingSkill": () => "Learn the skills this training builds on first.",
   "error.noKnowHow": () => "You do not have enough know-how.",
   "error.needsResearch": () => "Learn the skill for this in Research first.",
+  "error.deskNotYet": () => "This desk is not on sale yet.",
   "error.installed": () => "This is already installed.",
   "error.notInstalled": () => "This is not installed.",
   "ledger.hardware": (p) => `${Number(p.qty) > 1 ? `${p.qty} × ` : ""}${p.model}${p.device ? ` for ${p.device}` : ""}`,

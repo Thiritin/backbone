@@ -5,11 +5,13 @@ import { euroCents } from "../../../sim/00-core/money";
 import { pricePerMTokens } from "../../../sim/47-staff/chad";
 import { yearOf } from "../../../sim/00-core/time";
 import { isAvailable, skillFor } from "../../../sim/10-catalog/research";
+import { deskById, deskReady, seats, type DeskFeature } from "../../../sim/10-catalog/desks";
 import { storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
 import { cancel, install, storeBlocker } from "../../../sim/90-actions/store";
 import { Confirm } from "../../desktop/Confirm";
 import { PearMark } from "../../desktop/Intro";
 import { appByName } from "../registry";
+import { DESK } from "../support/desk";
 import { useStore } from "../../store";
 
 const UPGRADES: Record<string, { icon: LucideIcon; tile: string; about: string }> = {
@@ -23,6 +25,16 @@ const UPGRADES: Record<string, { icon: LucideIcon; tile: string; about: string }
   widgetLevel: { icon: Trophy, tile: "oklch(0.72 0.15 95)", about: "Shows your company level and the way to the next one on your desktop." },
   chadGpt: { icon: Bot, tile: "oklch(0.55 0.16 300)", about: "Answers how-to and billing tickets day and night, with confidence." },
   clipsy: { icon: Paperclip, tile: "oklch(0.6 0.14 220)", about: "Sends payment reminders day and night, with enthusiasm." },
+};
+
+const FEATURE: Record<DeskFeature, string> = {
+  filters: "Filter by kind", search: "Search", assign: "Assign to agents", templates: "Reply templates", slaTimers: "Response timers", customerSidebar: "Customer sidebar", reports: "Reports",
+};
+const DESK_ABOUT: Record<string, string> = {
+  ostickit: "Groups tickets by kind in plain grey tables, free and open source since 2005.",
+  zendusk: "Adds search, assignment, reply templates, response timers, a customer sidebar and reports.",
+  freshdusk: "Adds search, assignment, reply templates and response timers on teal cards.",
+  freescoot: "Adds search and assignment to a free, light list.",
 };
 
 const INCLUDES: Record<string, string[]> = {
@@ -48,10 +60,11 @@ const SHELVES: [string, string[]][] = [
   ["Essentials", ["Network", "Products", "Nagiosaurus"]],
   ["Growth", ["Staff", "Marketing", "Market"]],
   ["Bots", ["chadGpt", "clipsy"]],
+  ["Support desks", ["ostickit", "zendusk", "freshdusk", "freescoot"]],
   ["Upgrades", ["dockBadges", "searchlight", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],
 ];
 
-export const artOf = (item: StoreItem) => (item.kind === "app" ? appByName(item.id) : UPGRADES[item.id]);
+export const artOf = (item: StoreItem) => (item.kind === "app" ? appByName(item.id) : item.kind === "desk" ? { icon: DESK[item.id].icon, tile: DESK[item.id].tile, about: DESK_ABOUT[item.id] } : UPGRADES[item.id]);
 
 export function Tile({ item, size }: { item: StoreItem; size: number }) {
   const art = artOf(item);
@@ -64,6 +77,7 @@ function Action({ item, big }: { item: StoreItem; big?: boolean }) {
   const skill = skillFor(item.id);
   if (skill && !isAvailable(item.id, game.unlocks)) return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Research", { kind: "skill", id: skill.id }); }}>Needs {skill.name}</button>;
   if (!game.installed.includes(item.id) && storeBlocker(game, item.id) === "error.needsHypervisor") return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Products", { kind: "cluster", id: "new" }); }}>Needs hypervisor</button>;
+  if (item.kind === "desk" && !game.installed.includes(item.id) && !deskReady(game, item.id)) return <button className={cls} disabled>From {deskById(item.id)!.from}</button>;
   if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act((s) => install(s, item.id)); }}>Get</button>;
   if (item.kind !== "app") return <span className="ps-owned"><Check />Installed</span>;
   return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id === "Nagiosaurus" ? "Security" : item.id); }}>Open</button>;
@@ -80,7 +94,7 @@ function featuredId(installed: string[], learned: string[]): string {
 export function Software() {
   const game = useStore((s) => s.game);
   const [open, setOpen] = useSessionState<string | null>("software.sel", null);
-  const price = (item: StoreItem) => (item.monthly ? `${euroCents(subscriptionPrice(item, yearOf(game.hour)))} / month${item.id === "chadGpt" ? ` + ${euroCents(pricePerMTokens(yearOf(game.hour)))} / 1M tokens` : ""}` : "Free");
+  const price = (item: StoreItem) => (item.monthly ? `${euroCents(subscriptionPrice(item, yearOf(game.hour)))} / month${item.perSeat ? " per seat" : ""}${item.id === "chadGpt" ? ` + ${euroCents(pricePerMTokens(yearOf(game.hour)))} / 1M tokens` : ""}` : "Free");
   const detail = open && storeItem(open);
   if (detail) return <Detail item={detail} price={price(detail)} back={() => setOpen(null)} />;
 
@@ -131,8 +145,9 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
   const [cancelling, setCancelling] = useState(false);
   const facts: [string, string][] = [
     ["Subscription", price],
+    ...(item.perSeat ? [["Seats", String(seats(game))] as [string, string]] : []),
     ["Skill", skillFor(item.id)?.name ?? "None"],
-    ["Status", has ? "Installed" : !isAvailable(item.id, game.unlocks) ? "Not learned" : storeBlocker(game, item.id) ? "Needs hypervisor" : "Available"],
+    ["Status", has ? "Installed" : item.kind === "desk" && !deskReady(game, item.id) ? "Not on sale yet" : !isAvailable(item.id, game.unlocks) ? "Not learned" : storeBlocker(game, item.id) ? "Needs hypervisor" : "Available"],
   ];
   return (
     <div className="ps">
@@ -155,7 +170,7 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
       </dl>
       <section className="ps-shelf">
         <h3>Includes</h3>
-        <ul className="ps-includes">{INCLUDES[item.id].map((f) => <li key={f}><Check />{f}</li>)}</ul>
+        <ul className="ps-includes">{(item.kind === "desk" ? deskById(item.id)!.features.map((f) => FEATURE[f]) : INCLUDES[item.id]).map((f) => <li key={f}><Check />{f}</li>)}</ul>
       </section>
     </div>
   );

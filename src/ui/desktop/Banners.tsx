@@ -1,19 +1,19 @@
 import { Settings, X } from "lucide-react";
 import type { CSSProperties } from "react";
-import { appByName } from "../apps/registry";
+import { appFor } from "../apps/registry";
 import { formatClock } from "../../sim/00-core/time";
 import { useStore, type Banner } from "../store";
 
 function Card({ b, time, dismiss, gear }: { b: Banner; time: string; dismiss: (id: number) => void; gear?: () => void }) {
   const openApp = useStore((s) => s.openApp);
-  const app = appByName(b.app);
+  const app = appFor(useStore((s) => s.game), b.app);
   const open = () => { openApp(b.app); dismiss(b.id); };
   return (
     <div className="banner" role="button" tabIndex={0} onClick={open} onKeyDown={(e) => e.key === "Enter" && open()}>
       <span className="b-icon" style={{ "--tile": app.tile } as CSSProperties}><app.icon /></span>
-      <span><span className="b-app">{b.app}</span><span className="b-title">{b.title}</span><span className="b-text">{b.text}</span></span>
+      <span><span className="b-app">{app.name}</span><span className="b-title">{b.title}</span><span className="b-text">{b.text}</span></span>
       <span className="b-time">{time}</span>
-      {gear && <button className="b-close b-set" aria-label={`${b.app} notification settings`} onClick={(e) => { e.stopPropagation(); gear(); }}><Settings /></button>}
+      {gear && <button className="b-close b-set" aria-label={`${app.name} notification settings`} onClick={(e) => { e.stopPropagation(); gear(); }}><Settings /></button>}
       <button className="b-close" aria-label="Dismiss" onClick={(e) => { e.stopPropagation(); dismiss(b.id); }}><X /></button>
     </div>
   );

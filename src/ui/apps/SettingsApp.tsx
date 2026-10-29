@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { useRef, useState, type CSSProperties } from "react";
 import { setCompany } from "../../sim/90-actions/company";
-import { APPS } from "./registry";
+import { APPS, appFor } from "./registry";
 import { CompanyFields } from "./company";
 import { EmailSettings } from "./EmailSettings";
 import { NOTIFY_TYPES } from "../notify-types";
@@ -69,22 +69,23 @@ export function SettingsApp() {
           <span role="columnheader">Sound</span>
         </div>
         {APPS.filter((a) => a.name !== "Settings" && (!a.hidden || NOTIFY_TYPES[a.name])).map((a) => {
+          const shown = appFor(game, a.name);
           const p = prefOf(notifyPrefs, a.name), types = (NOTIFY_TYPES[a.name] ?? []).filter((g) => g.id !== "other"), expanded = open === a.name && types.length > 0;
           return (
             <div className="settings-block" role="rowgroup" data-app={a.name} key={a.name}>
               <div className="settings-row settings-cols3" role="row">
                 <span className="settings-app" role="cell">
                   {types.length > 0
-                    ? <button className="settings-expand" aria-expanded={expanded} aria-label={`${a.name} notification types`} onClick={() => setOpen(expanded ? null : a.name)}><ChevronRight /></button>
+                    ? <button className="settings-expand" aria-expanded={expanded} aria-label={`${shown.name} notification types`} onClick={() => setOpen(expanded ? null : a.name)}><ChevronRight /></button>
                     : <span className="settings-expand" />}
-                  <span className="settings-ico" style={{ "--tile": a.tile } as CSSProperties}><a.icon /></span>{a.name}
+                  <span className="settings-ico" style={{ "--tile": shown.tile } as CSSProperties}><shown.icon /></span>{shown.name}
                 </span>
                 <span role="cell">
-                  <input type="checkbox" role="switch" className="switch" aria-label={`Allow ${a.name} notifications`}
+                  <input type="checkbox" role="switch" className="switch" aria-label={`Allow ${shown.name} notifications`}
                     checked={p.allow} onChange={(e) => setNotifyPref(a.name, { allow: e.target.checked })} />
                 </span>
                 <span role="cell">
-                  <input type="checkbox" role="switch" className="switch" aria-label={`Play a sound for ${a.name} notifications`}
+                  <input type="checkbox" role="switch" className="switch" aria-label={`Play a sound for ${shown.name} notifications`}
                     checked={p.allow && p.sound} disabled={!p.allow} onChange={(e) => setNotifyPref(a.name, { sound: e.target.checked })} />
                 </span>
               </div>

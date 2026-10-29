@@ -10,6 +10,7 @@ import { dateOf, formatClock, SPEEDS, type Speed } from "../../sim/00-core/time"
 import { euro } from "../../sim/00-core/money";
 import { useStore } from "../store";
 import { CompanyMark } from "../apps/company";
+import { appFor } from "../apps/registry";
 
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
@@ -52,8 +53,8 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
   return (
     <header className="menubar" role="menubar">
       {item("Backbone", [["Introduction…", () => setIntro(true)], ["Backbone on GitHub", () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], ["New note", () => newNote()], ...(guideGone ? [["Restore Getting started", () => act(restoreGuide)] as [string, () => void]] : []), ["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
-      <span className="mb-item mb-app">{front?.app ?? "Backbone"}</span>
-      {item("Window", windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : [w.app, () => openApp(w.app)]) as [string, () => void]))}
+      <span className="mb-item mb-app">{front ? appFor(game, front.app).name : "Backbone"}</span>
+      {item("Window", windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : [appFor(game, w.app).name, () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
       <div className="speed" role="group" aria-label="Game speed">
         {SPEEDS.map((s: Speed) => (

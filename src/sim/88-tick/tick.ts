@@ -31,7 +31,7 @@ import { COMPONENTS, manufacturerByName } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
-import { KNOW_HOW, storeItem, subscriptionPrice } from "../10-catalog/store";
+import { KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
 import { capacityAt, DATACENTERS, datacenterById, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry } from "../50-state";
 import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
@@ -235,7 +235,7 @@ export function tick(state: GameState): SimEvent[] {
     for (const l of leases.filter((x) => x.paid >= x.months)) endLease(state, l.id);
     for (const id of state.installed) {
       const item = storeItem(id);
-      if (item && item.monthly > 0) bills.push({ hour: state.hour, category: "subscriptions", key: "ledger.subscription", params: { name: item.name }, amount: -subscriptionPrice(item, yearOf(state.hour)) });
+      if (item && item.monthly > 0) bills.push(subscriptionEntry(state, item));
     }
     if (power > 0) bills.unshift({ hour: state.hour, category: "power", key: "ledger.power", params: {}, amount: -power });
     const rent = bills.filter((b) => b.category === "rent").reduce((sum, b) => sum - b.amount, 0);
