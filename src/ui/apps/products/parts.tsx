@@ -71,6 +71,7 @@ export function SoftwareCards({ kind, value, onPick, compact, blocked }: { kind:
             {compact || kind === "mail" ? null : <>
             <div><dt>Tickets</dt><dd className="num">×{sw.tickets}</dd></div>
             {kind === "cloud" && <div><dt>Live migration</dt><dd>{sw.live ? "Yes" : "No"}</dd></div>}
+            {kind === "cloud" && <div><dt>Split cores</dt><dd>{sw.split ? "Yes" : "No"}</dd></div>}
             <div><dt>Control plane</dt><dd className="num">{cp(sw)}</dd></div>
             </>}
           </dl>

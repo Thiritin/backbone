@@ -8,7 +8,7 @@ import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { clusterOf, controlPlaneUp, controlPlaneUse, hostOfVm, isOwnVm, lostDisk, workloadsOf, workloadsOn, type Workload } from "./cluster";
+import { booked, clusterOf, controlPlaneUp, controlPlaneUse, hostOfVm, isOwnVm, lostDisk, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
 import { installedCores, installedRamGb, portPeers, raidUsable, working } from "./status";
 
@@ -64,7 +64,7 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
     return u;
   }
   const load = workloadLoad(s, w, hour), lost = lostDisk(s, w);
-  return { vcpu: w.vcpu * load, ramGb: w.stopped || lost ? 0 : w.ramGb * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * diskFill(s, w, hour) };
+  return { vcpu: booked(s, w).vcpu * load, ramGb: w.stopped || lost ? 0 : w.ramGb * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * diskFill(s, w, hour) };
 }
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by

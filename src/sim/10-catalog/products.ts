@@ -47,6 +47,8 @@ const NONE: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
 const grow = (year: number) => vpsPlanGb(year);
 // A web space uses 0.1 vCPU, 0.25 GB of RAM and its disk, which grows like VPS RAM.
 const web = (gb: number): Size => (y) => ({ vcpu: 0.1, ramGb: 0.25, diskGb: Math.round(gb * grow(y)) });
+// vCPUs as hosts sell them: tenths of a core below one (at least 0.2), whole cores from one.
+export const cores = (x: number): number => (x < 1 ? Math.max(0.2, Math.round(x * 10) / 10) : Math.round(x));
 // A VM of a share of the year's base RAM: one vCPU per 2 GB (at least one) and 20 GB of disk per GB of RAM.
 const vm = (share: number): Size => (y) => { const ramGb = share * grow(y); return { vcpu: Math.max(1, Math.round(ramGb / 2)), ramGb, diskGb: Math.round(20 * ramGb) }; };
 // Game servers start at 2 vCPUs and 4 GB, doubling like VMs.

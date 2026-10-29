@@ -1362,6 +1362,8 @@ Every server runs at most one control plane. A hypervisor ("Cloud" below) runs o
 | MultiKraft | Game | €20 per server | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Pterodaktyl | Game | Free | 3 h | ×1.2 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 
+**Split cores.** OpenVeeZee and Proxmocks give a guest a fraction of a core through containers and CPU limits, so a VM books exactly the vCPUs it sold. OpenStash, VMwhere and HyperVee give a VM whole vCPUs: a VM books its vCPUs rounded up and uses that much CPU at load. Web spaces, DNS zones and VPN gateways share a guest per node and keep their fraction everywhere. A customer who scales a VPS below one core asks for tenths of a core (at least 0.2), so 0.75 of one core becomes 0.8.
+
 | Software | From | Imports from same | Imports from other | Clusters from |
 | --- | --- | --- | --- | --- |
 | cPanic | 2005 | 2005 | 2012 | Never |

@@ -2,7 +2,7 @@
 // starts from. Numbers in economy.md, Custom orders and Per-resource pricing.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
-import { marketPrice, marketSetup, SIZES, sizeSpec, specPrice, type Resources, type Sla, type Spec } from "../10-catalog/products";
+import { cores, marketPrice, marketSetup, SIZES, sizeSpec, specPrice, type Resources, type Sla, type Spec } from "../10-catalog/products";
 import type { Product, Service } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 
@@ -34,7 +34,7 @@ export function specFor(seed: number, key: number, product: Product, size: numbe
   if (product === "dns") return { ...base, trafficGb, zones: Math.max(1, Math.round(base.zones! * f)) };
   if (product === "vpn") return { ...base, trafficGb, users: Math.max(1, Math.round(base.users! * f)) };
   const ramGb = quarter(base.ramGb * f);
-  const vcpu = Math.max(1, Math.round(base.vcpu * f)) + (rand(r) < 0.3 ? 1 : 0);
+  const vcpu = cores(base.vcpu * f) + (rand(r) < 0.3 ? 1 : 0);
   return { vcpu, ramGb, diskGb: Math.max(5, Math.round((base.diskGb * f * (0.75 + 0.5 * rand(r))) / 5) * 5), trafficGb, mailboxes: 0 };
 }
 
@@ -45,7 +45,7 @@ export function grownSpec(seed: number, key: number, product: Product, spec: Spe
   if (product === "webHosting") return { ...spec, diskGb: half(spec.diskGb * f), trafficGb: Math.round(spec.trafficGb * f), mailboxes: Math.ceil(spec.mailboxes * f) };
   if (product === "dns" || product === "vpn") return { ...spec, trafficGb: Math.round(spec.trafficGb * f), zones: by(spec.zones, Math.ceil), users: by(spec.users, Math.ceil) };
   return {
-    ...spec, vcpu: by(spec.vcpu, Math.ceil)!, ramGb: by(spec.ramGb, quarter)!, diskGb: by(spec.diskGb, Math.round)!, trafficGb: Math.round(spec.trafficGb * f),
+    ...spec, vcpu: by(spec.vcpu, cores)!, ramGb: by(spec.ramGb, quarter)!, diskGb: by(spec.diskGb, Math.round)!, trafficGb: Math.round(spec.trafficGb * f),
     units: by(spec.units, Math.ceil), watts: by(spec.watts, Math.round),
   };
 }

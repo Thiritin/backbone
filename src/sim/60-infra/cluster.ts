@@ -79,8 +79,17 @@ export const cardsFree = (s: GameState, d: Device): number =>
 // What the workloads on a server book; web spaces inside a panel VM count in the VM's booking.
 export function nodeUsed(s: GameState, deviceId: string): Resources {
   const used = { ...ZERO };
-  for (const w of s.workloads) if (w.deviceId === deviceId && w.clusterId) for (const k of KEYS) used[k] += w[k];
+  for (const w of s.workloads) if (w.deviceId === deviceId && w.clusterId) { const b = booked(s, w); for (const k of KEYS) used[k] += b[k]; }
   return used;
+}
+// Lines that share a guest per node rather than run one each, so they keep their fraction of a core everywhere.
+const SHARED: Product[] = ["webHosting", "dns", "vpn"];
+// What a workload books: on software that does not split cores a VM takes whole vCPUs.
+export function booked(s: GameState, w: Workload): Resources {
+  const c = s.clusters.find((x) => x.id === w.clusterId), id = c?.panel ?? c?.platform;
+  if (!id || softwareById(id).split || Number.isInteger(w.vcpu)) return w;
+  const product = s.services.find((v) => v.id === w.serviceId)?.product;
+  return product && SHARED.includes(product) ? w : { ...w, vcpu: Math.ceil(w.vcpu) };
 }
 
 // What the management services of a cluster's software take.
