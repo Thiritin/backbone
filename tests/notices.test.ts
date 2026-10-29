@@ -15,6 +15,7 @@ import { mountDevice } from "./plugged";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { join, readyGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { en } from "../src/i18n/en";
 
 type R = { ok: boolean; id?: string; error?: string };
 const ok = (r: R) => {
@@ -105,6 +106,10 @@ describe("copyright and abuse notices", () => {
     expect(t.customerId).toBe("");
     expect(resolveTicket(s, t.id, "forward")).toEqual({ ok: false, error: "error.notHosted" });
     expect(resolveTicket(s, t.id, "reject").ok).toBe(true);
+    for (let i = 0; i < 48 && ticket(s, t.id).work; i++) tick(s);
+    const mail = ticket(s, t.id).replies.at(-1)!;
+    expect(mail.key).toMatch(/^reply\.notOurs\.\d$/);
+    expect(en[mail.key!](mail.params!)).toContain("whois");
   });
 
   it("a shady customer leaves forwarded content up", () => {

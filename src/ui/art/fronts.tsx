@@ -127,6 +127,7 @@ export interface FrontProps {
   groups?: number[][];
   parts?: Parts;
   blink?: boolean;
+  onPower?: () => void;
   w: number;
   h: number;
 }
@@ -166,6 +167,10 @@ function ServerFace(p: FrontProps) {
       <rect x={cx} y="2" width={panel} height={h - 4} rx="1" fill="oklch(0.14 0.004 255)" />
       <AssetTag x={cx + 3} y={Math.min(h / 2, 7)} text={name} h={h} />
       <circle cx={cx + panel - 8} cy={h - 6} r={Math.min(3, h * 0.14)} fill="oklch(0.2 0.004 255)" stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.9" aria-label="Power button" />
+      {p.onPower && (
+        <circle className="svg-hit" cx={cx + panel - 8} cy={h - 6} r={Math.min(8, h * 0.3)} fill="transparent" role="button" tabIndex={0} aria-label={state === "off" ? "Power on" : "Shut down"}
+          onClick={p.onPower} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); p.onPower!(); } }}><title>{state === "off" ? "Power on" : "Shut down"}</title></circle>
+      )}
       <StatusLeds x={cx + panel - 26} y={h - 6} state={state} blink={blink} />
       {h >= 18 && <BrandMark brand={brand} x={cx + 4} y={h - 11} size={8} />}
     </>

@@ -1,4 +1,4 @@
-import { ChevronRight, Hourglass, Map as MapIcon, Plus } from "lucide-react";
+import { Hourglass, Map as MapIcon, Plus } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useSessionState } from "../../session";
 import type { GameState } from "../../../sim/50-state";
@@ -84,8 +84,8 @@ export function LocationsApp() {
           <Overview game={game} onOpen={(id) => go(id)} />
         ) : (
           <>
-            <LocationHead game={game} locId={loc.id} />
-            <LocationTabs game={game} locId={loc.id} tab={tab} rack={rack?.name} onTab={(t) => { setTab(t); setRackId(null); setDeviceId(null); }} />
+            {!rack && <LocationHead game={game} locId={loc.id} />}
+            {!rack && <LocationTabs game={game} locId={loc.id} tab={tab} onTab={(t) => { setTab(t); setRackId(null); setDeviceId(null); }} />}
             <div className="loc-body" role="tabpanel">
               {tab === "cabling" ? (
                 <Cabling key={loc.id} game={game} loc={loc} />
@@ -118,7 +118,7 @@ export function LocationsApp() {
   );
 }
 
-function LocationTabs({ game, locId, tab, rack, onTab }: { game: GameState; locId: string; tab: Tab; rack?: string; onTab: (t: Tab) => void }) {
+function LocationTabs({ game, locId, tab, onTab }: { game: GameState; locId: string; tab: Tab; onTab: (t: Tab) => void }) {
   const loc = game.locations.find((l) => l.id === locId)!;
   const stored = storageStacks(game, loc.id).reduce((n, s) => n + s.ids.length, 0);
   const tabs: [Tab, string, number?][] = [
@@ -133,7 +133,6 @@ function LocationTabs({ game, locId, tab, rack, onTab }: { game: GameState; locI
           {label}{count ? <span className="tab-count num">{count}</span> : null}
         </button>
       ))}
-      {rack && <span className="loc-crumb-name"><ChevronRight className="loc-crumb" />{rack}</span>}
     </div>
   );
 }

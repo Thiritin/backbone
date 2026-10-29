@@ -3,8 +3,6 @@
 .loc-top { flex: none; display: grid; gap: 10px; padding: 14px 16px 4px; }
 .loc-side-rack { padding-left: 24px; font-size: 12.5px; }
 .loc-tabs { align-items: center; }
-.loc-crumb { width: 14px; height: 14px; color: var(--text-3); }
-.loc-crumb-name { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
 .loc-body { flex: 1; min-height: 0; display: flex; }
 .loc-scroll { flex: 1; min-width: 0; overflow: auto; padding: 16px; display: grid; gap: 14px; align-content: start; }
 .loc-split { position: relative; flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; min-height: 0; }
@@ -341,6 +339,7 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 /* Device inspector: the device, a status strip and flat sections divided by hairlines instead of stacked cards. */
 .insp { display: grid; gap: 14px; align-content: start; min-width: 0; }
 .insp > .loc-model { margin-top: -10px; }
+.insp > .tabs { padding: 0; }
 .insp > .loc-card { border: 0; border-radius: 0; background: none; border-top: 0.5px solid var(--line); }
 .insp > .loc-card > .loc-card-h { padding: 12px 0 4px; min-height: 0; border-bottom: 0; }
 .insp > .loc-card > .loc-row, .insp > .loc-card > .node-meters, .insp > .loc-card > .loc-facts, .insp > .loc-card .wl-row, .insp > .loc-card > .loc-sub { padding-left: 0; padding-right: 0; }

@@ -49,7 +49,7 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
       if (e) events.push(e);
       continue;
     }
-    if (work.op === "resolve") sendAction(s, t, c, t.kind === "refund" && work.arg === "reject" ? "refuse" : work.arg, work.by);
+    if (work.op === "resolve") sendAction(s, t, c, work.arg !== "reject" ? work.arg : t.kind === "refund" ? "refuse" : t.kind === "notice" && !t.customerId ? "notOurs" : "reject", work.by);
     if (t.kind === "notice" || t.kind === "legal" || t.kind === "refund") applyNoticeWork(s, t, c, work.arg);
     else if (work.op === "escalate") Object.assign(t, { status: "escalated", updatedAt: s.hour });
     else if (work.op === "reply") {

@@ -309,6 +309,8 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 /* Device fronts */
 
 .device-svg { display: block; }
+.device-svg .svg-hit { cursor: pointer; outline: none; }
+.device-svg .svg-hit:focus-visible { stroke: var(--accent); stroke-width: 1.5; }
 .led-blink { animation: led-blink 1.6s steps(1, end) infinite; }
 @keyframes led-blink { 50% { opacity: 0.15; } }
 @media (prefers-reduced-motion: reduce) { .led-blink { animation: none; } }

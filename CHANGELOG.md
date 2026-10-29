@@ -7,6 +7,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Weekly challenge seeds start from the title screen, a run can be exported and replayed, and a leaderboard shows verified runs.
 - Loading a save shows a Pear OS update sheet with what changed since you last played, with an Open button for each app it names, and the logo menu has a What's new item that lists the whole changelog.
 - You can book extra power on a rented rack share in steps of 0.25 kW up to twice its base limit, billed monthly with the rent and active after three days.
+- An open rack fills the whole Locations window, and a selected server splits into Actions, Software, Lease, Power supplies, RAID and Components tabs.
+- The power button on the server drawing turns the server on and off, and the Change parts button stays visible but greyed out until the server is powered down.
+- A notice about a site that is not on your network offers only Reject, and the reply tells the sender it is not yours and how to find the right host with whois.
 - Workloads move between locations over a zone link or, from the basement, over the internet, and you can offer customers a migration they accept with a maintenance window.
 - The traffic chart in the Network app has space above the cards below it.
 - Free apps from the Pear Store install even while your cash is below zero.

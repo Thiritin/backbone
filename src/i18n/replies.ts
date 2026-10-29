@@ -13,6 +13,7 @@ const SIGN: Mail[] = [
 ];
 const to = (greet: Mail) => (i: number, body: Mail): Mail => (p) => `${greet(p)}\n\n${body(p)}\n\n${SIGN[i](p)}`;
 const customer = to(hi), sender = to(() => "Dear Sir or Madam,"), lead = to((p) => `Dear ${p.name},`);
+const siteOf = (p: Params) => new URL(String(p.url)).hostname;
 const site = (p: Params) => p.domain || p.service || "your website";
 const svc = (p: Params) => p.hostname || p.service || "your service";
 const day = (p: Params) => {
@@ -163,6 +164,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `We have disabled access to ${p.url} for ${p.hours} hours and informed our customer.`,
     (p) => `The material at ${p.url} is offline as of now. Our customer has ${p.hours} hours to respond to your notice.`,
   ],
+  notOurs: [
+    (p) => `Thank you for your notice about ${p.url}. This site is not on our network, so we cannot act on it. Run "whois ${siteOf(p)}" to find its registrar, then run whois on the IP address the domain resolves to: the result names the hosting provider and its abuse contact.`,
+    (p) => `We have checked ${p.url}, and it is not hosted on our network. A whois lookup of ${siteOf(p)} shows the registrar, and a whois lookup of the site's IP address shows the network that hosts it, usually with an abuse address to write to.`,
+    (p) => `The site at ${p.url} is not one of ours. To find the right contact, look up ${siteOf(p)} with whois for the registrar, and look up its IP address with whois for the hosting provider's abuse desk.`,
+  ],
   reject: [
     (p) => `We have reviewed your notice about ${p.url}. It does not meet the formal requirements, so we will not take action.`,
     (p) => `Thank you for your message regarding ${p.url}. After review, we see no grounds to remove the content.`,
@@ -234,7 +240,7 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
   ],
 };
 const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.account", "order.invoice", "order.domain", "order.transfer", "order.live"];
-const SENDER = ["forward", "takedown", "reject", "comply", "object"];
+const SENDER = ["forward", "takedown", "notOurs", "reject", "comply", "object"];
 
 // Outgoing emails; spread into en.
 export const REPLIES_EN: Record<string, Mail> = Object.fromEntries(Object.entries(MAILS).flatMap(([what, bodies]) =>
