@@ -213,7 +213,7 @@ export function resaleValue(s: GameState, price: number, boughtAt: number): numb
 export const deviceValue = (s: GameState, d: Device): number =>
   resaleValue(s, d.part ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour)) : d.price, d.boughtAt);
 
-const psusOf = (d: Device) => d.components.filter((c) => c.kind === "psu");
+export const psusOf = (d: Device) => d.components.filter((c) => c.kind === "psu");
 export const isPlugged = (c: Component) => c.plugged !== false;
 // A device gets power through a plugged-in supply that has not failed; one without supplies needs none.
 export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length || p.some((c) => isPlugged(c) && c.failedAt === null); };

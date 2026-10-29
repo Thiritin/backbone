@@ -10,7 +10,7 @@ import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, drivesOf, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
 import { rebuildHours } from "../../../sim/88-tick/tick";
-import { addSecondPsu, buyOutLease, connect, disconnect, LABEL_MAX, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
+import { addSecondPsu, atServer, buyOutLease, connect, disconnect, LABEL_MAX, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
 import { cableColor, DeviceSvg, SWATCHES } from "../../art/fronts";
 import { BrandLogo, Logo } from "../../art/logos";
@@ -27,7 +27,8 @@ import { softwareOn } from "../../../sim/90-actions/software";
 import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
 import { PowerCard } from "./PowerCard";
-import { isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
+import { frontOptions, isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
+import type { FrontOp } from "../../../sim/60-infra/power";
 import { LidSheet } from "./LidSheet";
 import { PartsCard } from "./Slots";
 import { AddressRows } from "../network/Addresses";
@@ -50,6 +51,11 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     lid: () => setLid(d.id),
     power: (on) => { if (on && lid) return; if (on) act((g) => setPower(g, d.id, true)); else guarded((g) => setPower(g, d.id, false), `Power off ${devName(d)}?`, "Power off"); },
     op: (op: PowerOp) => { if (op === "on") { if (!lid) act((g) => POWER_ACTION.on(g, d.id)); } else { const label = powerOptions(game, d).options.find((o) => o.op === op)?.label ?? POWER_LABEL[op]; guarded((g) => POWER_ACTION[op](g, d.id), `${label} ${devName(d)}?`, label); } },
+    front: (op) => {
+      if (op === "power" && !d.on && lid) return;
+      const label = frontOptions(game, d).find((o) => o.op === op)?.label ?? "";
+      guarded((g) => atServer(g, d.id, op), `${label} on ${devName(d)}?`, label);
+    },
     plug: (psu) => togglePlug(guarded, d, psu),
     setup: () => setSetup(d.id),
     rename: () => onRename(d.id),
@@ -61,6 +67,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     entries: (d: Device, open = false) => deviceMenu(game, d, ui(d, open)),
     power: (d: Device, on: boolean) => ui(d, false).power(on),
     op: (d: Device, op: PowerOp) => ui(d, false).op(op),
+    front: (d: Device, op: FrontOp) => ui(d, false).front(op),
     plug: (d: Device, psu: string) => togglePlug(guarded, d, psu),
     lid: (d: Device) => ui(d, false).lid?.(),
     dialog: (
@@ -159,7 +166,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         <UsageBars usage={usageOf(game, [device])} only={server ? undefined : ["net"]} wide />
       )}
 
-      {isServerInRack(device) && <PowerCard game={game} device={device} onOp={(op) => menus.op(device, op)} />}
+      {isServerInRack(device) && <PowerCard game={game} device={device} onOp={(op) => menus.op(device, op)} onFront={(op) => menus.front(device, op)} />}
       {server && <PortTable game={game} device={device} peers={peers} sel={sel} onPick={pick} onHover={setHover} onSelect={onSelect} />}
       {server && model.ports.length > 1 && (
         <div className="loc-row insp-bond">

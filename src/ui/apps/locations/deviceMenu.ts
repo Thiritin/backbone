@@ -3,14 +3,15 @@ import { dualPsuModel, modelById, priceOf } from "../../../sim/10-catalog/hardwa
 import type { Device, GameState } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { pduOf } from "../../../sim/60-infra/pdu";
-import { isPlugged } from "../../../sim/60-infra/status";
+import { isPlugged, locationOf } from "../../../sim/60-infra/status";
 import { joinableClusters } from "../../../sim/90-actions/software";
 import { addNode, cordon, drain, removeNode, uncordon } from "../../../sim/90-actions/clusters";
 import { addSecondPsu, buyOutLease } from "../../../sim/90-actions/hardware";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
 import { techItem } from "./TechButton";
-import { powerOptions, type PowerOp } from "./power";
+import { frontOptions, powerOptions, type PowerOp } from "./power";
+import type { FrontOp } from "../../../sim/60-infra/power";
 
 // What the menu hands back to its view: steps that need a sheet, a field or the offline check.
 export interface DeviceUi {
@@ -18,6 +19,7 @@ export interface DeviceUi {
   lid?: () => void;
   power: (on: boolean) => void;
   op: (op: PowerOp) => void;
+  front: (op: FrontOp) => void;
   plug: (psuId: string) => void;
   setup: () => void;
   rename: () => void;
@@ -30,11 +32,21 @@ export const secondPsuPrice = (d: Device): number | null => {
   return to ? priceOf(to, d.brand) - priceOf(modelById(d.model), d.brand) : null;
 };
 
-// A mounted server's power entries: through its management controller when it answers, on site otherwise, then what a technician can do.
+const psuEntries = (d: Device, ui: DeviceUi): MenuEntry[] => {
+  const psus = d.rackId ? d.components.filter((c) => c.kind === "psu") : [];
+  return psus.map((c, i) => ({ label: `${isPlugged(c) ? "Unplug" : "Plug in"} ${psus.length > 1 ? `power supply ${i + 1}` : "power supply"}`, run: () => ui.plug(c.id) }));
+};
+
+// A mounted server's power entries: from afar, then at the machine (remote hands in a datacenter), then what a technician can do.
 function serverPower(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
   const { via, options } = powerOptions(game, d);
+  const psus = d.components.filter((c) => c.kind === "psu").length;
   return [
-    ...options.map((o) => ({ label: via && o.op !== "pull" ? `${o.label} via ${via}` : o.label, disabled: o.disabled, run: () => ui.op(o.op) })),
+    ...options.map((o) => ({ label: via && o.op !== "bmc" ? `${o.label} via ${via}` : o.label, disabled: o.disabled, run: () => ui.op(o.op) })),
+    { label: locationOf(game, d)?.dc ? "Remote hands" : "At the server", items: [
+      ...frontOptions(game, d).map((o) => ({ label: o.label, disabled: o.disabled, run: () => ui.front(o.op) })),
+      ...(psus > 1 ? [null, ...psuEntries(d, ui)] : []),
+    ] },
     techItem(game, d.id, d.on ? "off" : "on"),
     d.hung && techItem(game, d.id, "reset"),
     d.bmcHung && !d.hands && techItem(game, d.id, "bmcreset"),
@@ -45,7 +57,6 @@ function serverPower(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
 export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
   const { act, openApp } = useStore.getState();
   const m = modelById(d.model), server = m.kind === "server";
-  const psus = d.rackId ? d.components.filter((c) => c.kind === "psu") : [];
   const cluster = server ? clusterOf(game, d.id) : undefined, node = cluster?.nodes.find((n) => n.deviceId === d.id);
   const loads = server ? workloadsOn(game, d.id) : [];
   const joinable = server ? joinableClusters(game, d.id) : [];
@@ -61,7 +72,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
       m.kind !== "patch" && !!(d.rackId || d.panel) && techItem(game, d.id, d.on ? "off" : "on"),
     ]),
     server && !!(d.rackId || d.store) && ui.lid && { label: "Change parts", disabled: d.on, run: ui.lid },
-    ...psus.map((c, i) => ({ label: `${isPlugged(c) ? "Unplug" : "Plug in"} ${psus.length > 1 ? `power supply ${i + 1}` : "power supply"}`, run: () => ui.plug(c.id) })),
+    ...(server ? [] : psuEntries(d, ui)),
     null,
     server && !!d.rackId && { label: "Add Software…", run: ui.setup },
     joinable.length > 0 && { label: "Join cluster", items: joinable.map((c) => ({ label: c.name, run: () => act((g) => addNode(g, c.id, d.id)) })) },
