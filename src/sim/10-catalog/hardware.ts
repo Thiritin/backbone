@@ -1,6 +1,7 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
 import { GENERATIONS, generationAt } from "./economy";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
+import { cpuWatts, defaultVendor, genOfYear, socketCores, VENDOR_ARCH, VENDORS, vendorsAt, type Vendor } from "./cpus";
 
 export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part";
 export interface PortSpec { media: "rj45" | "sfp"; gbit: number }
@@ -52,21 +53,25 @@ export const bayTakes = (bay: FormFactor, drive: FormFactor): boolean => (drive 
 // The form factor of the drives a server ships with.
 const presetFf = (v: ServerSpec): FormFactor => (v.disk === "NVMe" ? "nvme" : v.bays[0].ff === "3.5" ? "3.5" : "2.5");
 
-// A part of a model as it ships: size in GB for RAM sticks and drives, in cores for CPUs.
-export interface PartSpec { kind: ComponentKind; size?: number; ff?: FormFactor }
+// A part of a model as it ships: size in GB for RAM sticks and drives, in cores for CPUs. CPUs and boards carry their vendor,
+// CPUs their generation (1 for G1); a spare without them fits any board.
+export interface PartSpec { kind: ComponentKind; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number }
+export const specOf = (c: PartSpec): PartSpec => ({
+  kind: c.kind, ...(c.size !== undefined ? { size: c.size } : {}), ...(c.ff ? { ff: c.ff } : {}), ...(c.vendor ? { vendor: c.vendor } : {}), ...(c.gen ? { gen: c.gen } : {}),
+});
 
-// The parts a model is built from: drives, power supplies, fans, RAM, board, CPUs and a NIC for a server;
-// power supplies, 2 fans and a board for a switch or firewall; nothing for patch panels, gateways and parts.
-export function componentParts(m: DeviceModel): PartSpec[] {
+// The parts a model is built from: drives, power supplies, fans, RAM, board, CPUs and a NIC for a server, with the board
+// and CPUs of vendor (Indel, or Ampear for ARM, when left out); power supplies, 2 fans and a board for a switch or firewall;
+// nothing for patch panels, gateways and parts.
+export function componentParts(m: DeviceModel, vendor?: Vendor): PartSpec[] {
   const n = (k: ComponentKind, count: number, size?: (i: number) => number, ff?: FormFactor): PartSpec[] =>
     Array.from({ length: count }, (_, i) => ({ kind: k, ...(size ? { size: size(i) } : {}), ...(ff ? { ff } : {}) }));
   if (m.server) {
-    const v = m.server;
-    // The first (cores mod sockets) CPUs carry the odd core.
-    const cpu = (i: number) => Math.floor(v.cores / v.sockets) + (i < v.cores % v.sockets ? 1 : 0);
+    const v = m.server, maker = vendor ?? defaultVendor(v.arch), gen = genOf(m);
+    const cpu = (): PartSpec => ({ kind: "cpu", size: socketCores(v.cores / v.sockets, maker, gen), vendor: maker, gen });
     return [
       ...n(DRIVE_KIND[v.disk], v.drives, () => v.diskGb / v.drives, presetFf(v)), ...n("psu", m.psus), ...n("fan", 4),
-      ...n("ram", v.ramSticks, () => v.ramGb / v.ramSticks), ...n("board", 1), ...n("cpu", v.sockets, cpu), ...n("nic", 1),
+      ...n("ram", v.ramSticks, () => v.ramGb / v.ramSticks), { kind: "board", vendor: maker }, ...Array.from({ length: v.sockets }, cpu), ...n("nic", 1),
       // A GPU line ships with the newest card of its generation; a part names its card by launch year.
       ...n("gpu", v.gpus, () => cardAt(m.from)?.year ?? 0),
     ];
@@ -84,9 +89,9 @@ export const FAN_SLOTS = 4;
 const driveFf = (m: DeviceModel, p: PartSpec): FormFactor => p.ff ?? (m.server ? presetFf(m.server) : "2.5");
 
 // A bare chassis keeps its board, fans, NIC and one power supply; CPUs, RAM and drives are bought separately.
-export const bareParts = (m: DeviceModel): PartSpec[] => {
+export const bareParts = (m: DeviceModel, vendor?: Vendor): PartSpec[] => {
   let psu = 0;
-  return componentParts(m).filter((p) => !["cpu", "ram", "hdd", "ssd", "nvme", "gpu"].includes(p.kind) && (p.kind !== "psu" || psu++ < 1));
+  return componentParts(m, vendor).filter((p) => !["cpu", "ram", "hdd", "ssd", "nvme", "gpu"].includes(p.kind) && (p.kind !== "psu" || psu++ < 1));
 };
 
 // Cards a chassis takes: the GPU 4U line four, a 2U up to the 2014 generation one single-width card (later PSUs cannot feed it), a 1U none.
@@ -115,6 +120,8 @@ export function fits(m: DeviceModel, parts: PartSpec[]): string | null {
   const cards = parts.filter((p) => p.kind === "gpu");
   if (cards.length > gpuSlots(m) || (m.height < 4 && cards.some((p) => cardOf(p.size).wide))) return "error.noSlot";
   if (v && parts.filter((p) => p.kind === "ram").reduce((n, p) => n + (p.size ?? 0), 0) > v.maxRamGb) return "error.tooMuchRam";
+  const cpus = v ? cpuError(m, v.arch, parts) : null;
+  if (cpus) return cpus;
   const drives = parts.filter((p) => isDriveKind(p.kind)).map((p) => driveFf(m, p));
   if (!drives.length) return null;
   const bays = v?.bays ?? [], cap = (ff: FormFactor) => bays.filter((b) => b.ff === ff).reduce((n, b) => n + b.count, 0);
@@ -123,6 +130,42 @@ export function fits(m: DeviceModel, parts: PartSpec[]): string | null {
   // NVMe drives take NVMe bays; 2.5" drives take the rest of the 2.5" and NVMe bays.
   if (n("3.5") > cap("3.5") || n("nvme") > cap("nvme") || n("2.5") > cap("2.5") + cap("nvme") - n("nvme")) return "error.noSlot";
   return null;
+}
+
+// A board and CPUs of the chassis's architecture, CPUs of the board's vendor and the chassis's generation, every socket alike.
+function cpuError(m: DeviceModel, arch: "x86" | "arm", parts: PartSpec[]): string | null {
+  const board = parts.find((p) => p.kind === "board")?.vendor, cpus = parts.filter((p) => p.kind === "cpu");
+  if ([board, ...cpus.map((c) => c.vendor)].some((x) => x && (VENDOR_ARCH[x] !== arch || (board && x !== board)))) return "error.wrongVendor";
+  if (cpus.some((c) => c.gen !== undefined && c.gen !== genOf(m))) return "error.wrongGeneration";
+  const alike = (a: PartSpec, b: PartSpec) => a.size === b.size && (!a.vendor || !b.vendor || a.vendor === b.vendor);
+  return cpus.every((c) => alike(c, cpus[0])) ? null : "error.mixedCpus";
+}
+
+// The generation of a server model, 1 for G1; 0 for other models.
+export const genOf = (m: DeviceModel): number => (m.server ? genOfYear(m.from) : 0);
+// The CPU makers a server model is sold with.
+export const vendorsOf = (m: DeviceModel): Vendor[] => (m.server ? vendorsAt(m.server.arch, genOf(m)) : []);
+// The vendor of a device's board, or of its preset's.
+export const boardVendor = (m: DeviceModel, parts: PartSpec[]): Vendor =>
+  parts.find((p) => p.kind === "board")?.vendor ?? defaultVendor(m.server?.arch ?? "x86");
+// What the CPUs among these parts draw.
+export const cpuWattsOf = (m: DeviceModel, parts: PartSpec[]): number =>
+  parts.reduce((n, p) => n + (p.kind === "cpu" ? cpuWatts(p.vendor ?? boardVendor(m, parts), p.gen ?? genOf(m), p.size ?? 0) : 0), 0);
+// Saves from before CPU vendors: the board and CPUs take the preset's vendor and the chassis's generation, and every socket
+// the largest CPU so no server runs a mixed pair.
+export function fillCpus<T extends PartSpec>(m: DeviceModel, parts: T[]): T[] {
+  if (!m.server) return parts;
+  const vendor = boardVendor(m, parts), top = Math.max(0, ...parts.map((p) => (p.kind === "cpu" ? p.size ?? 0 : 0)));
+  return parts.map((p) => (p.kind === "board" ? { ...p, vendor: p.vendor ?? vendor }
+    : p.kind === "cpu" ? { ...p, ...(top ? { size: top } : {}), vendor: p.vendor ?? vendor, gen: p.gen ?? genOf(m) } : p));
+}
+const presetCpuWatts = new Map<string, number>();
+// How far these parts' CPUs draw above the preset's, below it when negative: a server's watts less its preset's CPUs are the
+// rest of the chassis.
+export function cpuWattsShift(m: DeviceModel, parts: PartSpec[]): number {
+  if (!m.server) return 0;
+  if (!presetCpuWatts.has(m.id)) presetCpuWatts.set(m.id, cpuWattsOf(m, componentParts(m)));
+  return cpuWattsOf(m, parts) - presetCpuWatts.get(m.id)!;
 }
 
 export interface DeviceModel {
@@ -351,14 +394,15 @@ export const shopModels = (year: number): DeviceModel[] => MODELS.filter((m) => 
 
 // NVMe drive size per generation in GB; NVMe-capable bays come with G4, so the drives do too.
 const NVME_GB = [0, 0, 0, 1000, 2000, 8000, 15000];
-export const samePart = (a: PartSpec, b: PartSpec): boolean => a.kind === b.kind && a.size === b.size && a.ff === b.ff;
-// The sized parts the Parts tab sells: whatever the presets in the shop are built from, which is the current generation's sizes
-// and the one before, plus NVMe drives.
+export const samePart = (a: PartSpec, b: PartSpec): boolean => a.kind === b.kind && a.size === b.size && a.ff === b.ff && a.vendor === b.vendor && a.gen === b.gen;
+// The sized parts the Parts tab sells: whatever the presets in the shop are built from with each of their CPU makers, which is
+// the current generation's sizes and the one before, plus NVMe drives.
 export function partOffers(year: number): PartSpec[] {
   const out: PartSpec[] = [], add = (p: PartSpec) => { if (!out.some((o) => samePart(o, p))) out.push(p); };
-  for (const m of shopModels(year)) if (m.server) componentParts(m).forEach(add);
+  for (const m of shopModels(year)) for (const v of vendorsOf(m)) componentParts(m, v).forEach(add);
   const g = generationAt(year);
   for (const i of [g - 1, g]) if (NVME_GB[i]) add({ kind: "nvme", size: NVME_GB[i], ff: "nvme" });
   for (const c of gpuOffers(year)) add({ kind: "gpu", size: c.year });
-  return out.sort((a, b) => COMPONENT_KINDS.indexOf(a.kind) - COMPONENT_KINDS.indexOf(b.kind) || (a.size ?? 0) - (b.size ?? 0));
+  const maker = (p: PartSpec) => (p.vendor ? VENDORS.indexOf(p.vendor) : -1);
+  return out.sort((a, b) => COMPONENT_KINDS.indexOf(a.kind) - COMPONENT_KINDS.indexOf(b.kind) || maker(a) - maker(b) || (a.size ?? 0) - (b.size ?? 0));
 }

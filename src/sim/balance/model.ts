@@ -19,7 +19,8 @@ import { BUDGETS, OWNED, PLATFORMS, SATURATION, WEBSITE_LEADS } from "../80-busi
 import { generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
 import { LEASE_FACTOR, LEASE_TERMS } from "../10-catalog/leasing";
-import { modelById, type DeviceModel } from "../10-catalog/hardware";
+import { genOf, modelById, type DeviceModel } from "../10-catalog/hardware";
+import { cpuModel } from "../10-catalog/cpus";
 import { presetPrice } from "../10-catalog/parts";
 import { skillById } from "../10-catalog/research";
 import { KNOW_HOW, STORE, subscriptionPrice } from "../10-catalog/store";
@@ -115,11 +116,13 @@ const priceOf = (p: Profile, product: Product, year: number): number => marketPr
 const cpuOf = (p: Profile, product: Product, year: number): number => specOf(p, product, year).vcpu;
 // The live shop's Dwell server of a generation and line (10-catalog/hardware.ts): balanced 1U or memory-optimized 2U.
 const shopServer = (gen: number, line: "compute" | "memory"): DeviceModel => modelById(`g${gen + 1}-${line}`);
+// The bot buys Indel presets; their cores count at Indel's speed per core.
+const vcpuOf = (m: DeviceModel): number => m.server!.cores * (cpuModel("indel", genOf(m))?.perCore ?? 1);
 // What the shop charges for it in a year: its chassis plus its parts at that year's part prices.
 const shopPrice = (gen: number, line: "compute" | "memory", year: number): number => presetPrice(shopServer(gen, line), year);
 const serverOf = (gen: number, line: "compute" | "memory", month: number, basement: boolean): Server => {
   const m = shopServer(gen, line);
-  return { gen, ramGb: m.server!.ramGb, cores: m.server!.cores, watts: m.watts, bought: month, price: shopPrice(gen, line, 2005 + Math.floor(month / 12)), basement };
+  return { gen, ramGb: m.server!.ramGb, cores: vcpuOf(m), watts: m.watts, bought: month, price: shopPrice(gen, line, 2005 + Math.floor(month / 12)), basement };
 };
 const ramOf = (p: Profile, product: Product, year: number): number => specOf(p, product, year).ramGb;
 // Mbit/s a customer sends at the evening peak; traffic grows 20% a year like the live TRAFFIC_GROWTH.
@@ -265,7 +268,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       if (basement && servers.length >= BASEMENT_SLOTS) break;
       // In the datacenter the bot buys the line with the lowest price per GB it can fill, given the vCPUs its customers book per GB.
       const cpuPerGb = cpuNeeded(newCustomers) / Math.max(1, ramNeeded(newCustomers));
-      const usable = (m: DeviceModel) => Math.min(m.server!.ramGb, (m.server!.cores * CPU_PER_CORE) / Math.max(cpuPerGb, 1e-6));
+      const usable = (m: DeviceModel) => Math.min(m.server!.ramGb, (vcpuOf(m) * CPU_PER_CORE) / Math.max(cpuPerGb, 1e-6));
       const line = basement ? "compute" : (["compute", "memory"] as const).reduce((a, b) => shopPrice(gen, b, year) / usable(shopServer(gen, b)) < shopPrice(gen, a, year) / usable(shopServer(gen, a)) ? b : a);
       const g = serverOf(gen, line, month, basement), reserve = 2000 + 3 * owed();
       const short = g.price + reserve - cash, amount = LOAN_AMOUNTS.find((a) => a >= short);

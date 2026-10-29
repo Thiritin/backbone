@@ -5,7 +5,8 @@ import { UPDATE_PRICE, type App } from "./apps";
 import { gpuRent } from "./gpu";
 
 // What one unit of a product takes from a node: booked vCPUs, GB of RAM and GB of disk, and whole GPU cards.
-export interface Resources { vcpu: number; ramGb: number; diskGb: number; gpus?: number }
+// arch "x86" marks a booking that ARM nodes cannot take.
+export interface Resources { vcpu: number; ramGb: number; diskGb: number; gpus?: number; arch?: "x86" }
 // What a customer orders and a service books: its resources, traffic per month, mailboxes (web hosting), zones (DNS),
 // users (VPN) and, for colocation, rack units and watts. A dedicated server's RAM is the smallest server it accepts.
 // ipv4 counts the dedicated IPv4 addresses ordered and ipv6 asks for an IPv6 address (60-infra/addresses.ts).

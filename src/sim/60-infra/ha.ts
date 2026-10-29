@@ -1,7 +1,7 @@
 // High availability per hypervisor cluster (gdd.md, Compute): automatic failover and auto-balancing. Clustered panel hosts fail over too.
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { hostOfVm, isOwnVm, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
+import { hostOfVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
 import { working } from "./status";
 import { nodeUsage } from "./usage";
 
@@ -48,7 +48,8 @@ export function runsHot(s: GameState, deviceId: string): boolean {
   return u.used.ramGb > HOT_RAM * u.physical.ramGb || u.used.vcpu > u.physical.vcpu;
 }
 
-// Moves the smallest running VM off each hot node to the idlest node that is not hot itself, live, one per node an hour.
+// Moves the smallest running VM off each hot node to the idlest node that is not hot itself, live, one per node an hour; a
+// node of another CPU vendor takes it only in compatibility mode.
 // ponytail: smallest-first is a plain heuristic; weigh by what the VM uses once balancing needs to be smarter.
 function balance(s: GameState, c: Cluster) {
   for (const n of c.nodes) {
@@ -57,7 +58,7 @@ function balance(s: GameState, c: Cluster) {
       .sort((a, b) => a.ramGb - b.ramGb);
     for (const w of vms) {
       const to = pickNode(s, cluster(s, c.id), w, n.deviceId, "spread");
-      if (!to || runsHot(s, to)) continue;
+      if (!to || runsHot(s, to) || !liveBetween(s, s.devices.find((d) => d.id === n.deviceId)!, s.devices.find((d) => d.id === to)!)) continue;
       patch(s, w.id, { deviceId: to, placedAt: s.hour });
       break;
     }
