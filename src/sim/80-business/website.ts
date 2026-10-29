@@ -29,7 +29,7 @@ export const fillLines = (s: GameState, saved: Product[] | undefined): GameState
 // order form takes orders, and the order address while orders still come by email.
 export const siteContent = (s: GameState): { lines: { product: Product; from: number | null }[]; email: string | null } => ({
   lines: SITE_LINES.filter((p) => listed(s, p)).map((p) => ({ product: p, from: hasOrderForm(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null })),
-  email: s.marketing.emailOrders ? `sales@${companyDomain(s)}` : null,
+  email: s.marketing.emailOrders && s.company.mail.kind !== "none" ? `sales@${companyDomain(s)}` : null,
 });
 
 // The company site is rented from Strateaux at a flat price (economy.md, "Market and leads") or runs on an own panel host.

@@ -8,6 +8,7 @@ import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { metrics } from "../metrics";
 import { logActivity } from "../47-staff/activity";
+import { mailDelay } from "../80-business/mail";
 
 export type InvoiceStatus = "open" | "overdue" | "paid" | "writtenOff";
 // key and params are an i18n line text; serviceId is null for fees.
@@ -160,7 +161,7 @@ export function sendStep(s: GameState, inv: Invoice, i: number): void {
   inv.reminders = [...inv.reminders, s.hour];
   if (step.fee) inv.lines = [...inv.lines, { serviceId: null, key: `invoice.line.${step.key}Fee`, params: {}, amount: step.fee }];
   if (step.key === "collections") toCollections(s, inv);
-  else if (inv.payStep === i + 1) inv.payAt = s.hour + payDelay(s.rng);
+  else if (inv.payStep === i + 1) inv.payAt = s.hour + payDelay(s.rng) + mailDelay(s);
 }
 
 // Before the Automation research, staff carry out the billing rules in their work hours; after it the rules run by themselves.
@@ -321,7 +322,7 @@ export function billingTick(s: GameState): SimEvent[] {
     issued.push({
       id: `inv${s.nextId++}`, number: `${yearOf(s.hour)}-${String(invoices.length + issued.length + 1).padStart(4, "0")}`,
       customerId, lines: ls, issuedAt: s.hour, dueAt: s.hour + DUE_DAYS * DAY, status: "open", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null,
-      payStep, payAt: payStep === 0 ? s.hour + DAY + Math.floor(rand(s.rng) * (DUE_DAYS - 1) * DAY) : null, paidAt: null,
+      payStep, payAt: payStep === 0 ? s.hour + DAY + Math.floor(rand(s.rng) * (DUE_DAYS - 1) * DAY) + mailDelay(s) : null, paidAt: null,
     });
   }
   if (changed || issued.length) s.invoices = [...invoices, ...issued];

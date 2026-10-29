@@ -61,6 +61,9 @@ describe("save", () => {
       ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...fresh.installed, ...WIDGETS.map(([id]) => id)],
       marketing: { ...fresh.marketing, lines: [] }, homeLine: { id: "dsl-16", next: null }, nextId: fresh.nextId + 1,
       ips: { ...fresh.ips, addresses: [expect.objectContaining({ v: 4, source: "line", holder: "gw:dsl-16", listed: true })] },
+      // The company domain and the NameCheep contract come with the load.
+      registrar: { id: "nameCheep", since: 5000, tier: 0, billed: true, transfer: null }, company: { ...fresh.company, domain: "basement-hosting.de" },
+      domains: [expect.objectContaining({ name: "basement-hosting.de", customerId: null })],
     });
     expect(s.devices.map((d) => d.model)).toEqual(["home-router"]);
     tick(s);

@@ -24,8 +24,9 @@ describe("balance run (docs/design/economy.md, Balancing)", () => {
   });
 
   it("brings the steady bot to levels 2 to 5 within a year of the pacing target", () => {
-    // Paid internet, the business line and its addresses put level 2 up to a quarter later (economy.md, Addresses and internet).
-    for (const level of [2, 3, 4, 5]) expect(medianYear(steady, level)).toBeLessThanOrEqual(PACING_YEAR[level] + 1 + (level === 2 ? 0.25 : 0));
+    // Paid internet, the business line and its addresses put level 2 up to a quarter later (economy.md, Addresses and internet);
+    // the registrar and company email take another quarter at most (economy.md, Sales and quotes, Company email).
+    for (const level of [2, 3, 4, 5]) expect(medianYear(steady, level)).toBeLessThanOrEqual(PACING_YEAR[level] + 1 + (level === 2 ? 0.5 : 0));
   });
 
   it("keeps year 1 near its targets", () => {

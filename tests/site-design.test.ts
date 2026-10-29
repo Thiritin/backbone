@@ -15,7 +15,7 @@ import { startGame } from "../src/sim/90-actions/start";
 import { redesign, setSiteHost } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { en } from "../src/i18n/en";
-import { panelServer, readyGame, withServer } from "./fixtures";
+import { panelServer, readyGame, withCompany, withServer } from "./fixtures";
 
 const inYear = (s: GameState, y: number) => { s.hour = hourOf(new Date(Date.UTC(y, 5, 15))); };
 const hostOf = (s: GameState) => s.clusters.find((c) => c.kind === "panel")!.id;
@@ -88,7 +88,7 @@ describe("company site hosting", () => {
   });
 
   it("goes down on a bare-metal panel host that is taken offline", () => {
-    const s = withServer(startGame(1));
+    const s = withCompany(withServer(startGame(1)));
     s.cash = 100000;
     const host = panelServer(s, "dev3");
     ok(setUpChannel(s, "website"));

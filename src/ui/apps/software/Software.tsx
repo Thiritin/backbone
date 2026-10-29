@@ -62,7 +62,7 @@ export function SoftwarePicker({ machineId }: { machineId: string }) {
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
       <div className="alert welcome setup sw-picker" role="dialog" aria-modal="true" aria-labelledby="sw-title">
         <h2 id="sw-title">Add Software to {name}</h2>
-        {(["cloud", "panel"] as const).map((kind) => (
+        {(["cloud", "panel", "mail"] as const).map((kind) => (
           <section key={kind} className="setup-kind">
             <h3>{KIND_NAME[kind]}</h3>
             <SoftwareCards kind={kind} value={null} onPick={pick} blocked={blocked} compact />

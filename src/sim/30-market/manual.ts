@@ -3,7 +3,7 @@
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Service } from "../30-customers/customers";
-import { DOMAIN_FEE, domainOf, register, registryCost, TRANSFER_FEE } from "../30-customers/registry";
+import { DOMAIN_FEE, domainOf, register, TRANSFER_FEE } from "../30-customers/registry";
 import { cancelCustomer, isFinal, replyDue, type Ticket } from "../40-support/tickets";
 import { DUE_DAYS, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
@@ -18,6 +18,7 @@ import { setupFee, sizeOf } from "./spec";
 import { missingFor, requestName, type SalesRequest } from "./market";
 import { mailRequest, orderOf } from "./orders";
 import { editRequest, habitFor, loseRequest } from "./sales";
+import { mailDelay } from "../80-business/mail";
 import type { Spec } from "../10-catalog/products";
 
 export type OrderStep = "account" | "invoice" | "domain" | "provision";
@@ -59,7 +60,7 @@ export function stepError(s: GameState, t: Ticket, step: OrderStep, route = "aut
   if (!done.invoice) return "error.needsInvoice";
   if (step === "domain") {
     if (!needsDomain(r)) return "error.unknownTicketAction";
-    return domainOf(s, r.domain!) ? "error.domainTaken" : s.cash < registryCost(r.domain!, yearOf(s.hour)) ? "error.noCash" : null;
+    return domainOf(s, r.domain!) ? "error.domainTaken" : null;
   }
   if (!done.domain) return "error.needsDomain";
   return routeError(s, r.product, r.city, sizeOf(r.spec), route) ?? (routeTarget(s, route) || autoFits(s, r) ? null : "error.noCapacity");
@@ -91,7 +92,7 @@ export function issueInvoice(s: GameState, customerId: string, lines: InvoiceLin
   const inv: Invoice = {
     id: `inv${s.nextId++}`, number: `${yearOf(s.hour)}-${String(s.invoices.length + 1).padStart(4, "0")}`, customerId, lines,
     issuedAt: s.hour, dueAt: s.hour + DUE_DAYS * DAY, status: "open", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null,
-    payStep, payAt: payStep === 0 ? s.hour + DAY + Math.floor(rand(s.rng) * payDays * DAY) : null, paidAt: null,
+    payStep, payAt: payStep === 0 ? s.hour + DAY + Math.floor(rand(s.rng) * payDays * DAY) + mailDelay(s) : null, paidAt: null,
   };
   s.invoices = [...s.invoices, inv];
   return inv;

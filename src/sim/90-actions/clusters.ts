@@ -44,7 +44,7 @@ const freeServer = (s: GameState, d: GameState["devices"][number] | undefined): 
 function installOnServer(s: GameState, deviceId: string, sw: Software, name: (label: string, loc: string) => string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId), bad = freeServer(s, d);
   if (bad) return fail(bad);
-  const loc = locationOf(s, d!)!, id = `clu${s.nextId++}`, slot = sw.kind === "panel" ? "panel" : "platform";
+  const loc = locationOf(s, d!)!, id = `clu${s.nextId++}`, slot = sw.kind === "cloud" ? "platform" : "panel";
   const c: Cluster = { ...blank(s, id, name(d!.label ?? d!.name, loc.name), loc.az, sw.kind), nodes: [{ deviceId, state: "active" }], controlPlane: deviceId };
   if (!fitsControlPlane(s, { ...c, [slot]: sw.id }, deviceId)) return fail(working(s, deviceId) ? "error.nodeFull" : "error.nodeDown");
   s.clusters = [...s.clusters, { ...c, switching: { kind: sw.kind, to: sw.id, doneAt: s.hour + sw.installHours } }];
@@ -54,7 +54,7 @@ function installOnServer(s: GameState, deviceId: string, sw: Software, name: (la
 // Installs a hosting panel straight on a free mounted server: a bare-metal panel host for web hosting only.
 export function installPanel(s: GameState, deviceId: string, panelId: string): ActionResult {
   const sw = softwareById(panelId);
-  if (sw.id !== panelId || sw.kind !== "panel") return fail("error.unknownSoftware");
+  if (sw.id !== panelId || sw.kind === "cloud") return fail("error.unknownSoftware");
   return installOnServer(s, deviceId, sw, (label) => (s.clusters.some((c) => c.name === label) ? freeName(s, label) : label));
 }
 
@@ -94,21 +94,21 @@ export function deleteVm(s: GameState, vmId: string): ActionResult {
 export function installPanelInVm(s: GameState, vmId: string, panelId: string): ActionResult {
   const vm = vmById(s, vmId), sw = softwareById(panelId);
   if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
-  if (sw.id !== panelId || sw.kind !== "panel") return fail("error.unknownSoftware");
+  if (sw.id !== panelId || sw.kind === "cloud") return fail("error.unknownSoftware");
   if (hostOfVm(s, vm.id)) return fail("error.onePanel");
   const c = s.clusters.find((x) => x.id === vm.clusterId);
   if (!c) return fail("error.unknownCluster");
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
   if (sizeError(vm, sw.controlPlane)) return fail("error.vmSize");
   const id = `clu${s.nextId++}`, after = Math.max(s.hour, c.switching?.doneAt ?? s.hour);
-  s.clusters = [...s.clusters, { ...blank(s, id, freeName(s, "Web"), c.az, "panel"), vm: vm.id, switching: { kind: "panel", to: panelId, doneAt: after + sw.installHours } }];
+  s.clusters = [...s.clusters, { ...blank(s, id, freeName(s, sw.kind === "mail" ? "Mail" : "Web"), c.az, sw.kind), vm: vm.id, switching: { kind: sw.kind, to: panelId, doneAt: after + sw.installHours } }];
   return { ok: true, id };
 }
 
 // A new VM with a panel in it, as the guided setup and the Products app book it; returns the panel host id.
 export function createPanelVm(s: GameState, clusterId: string, panelId: string, size: Resources = PANEL_VM_SIZE): ActionResult {
   const sw = softwareById(panelId);
-  if (sw.id !== panelId || sw.kind !== "panel") return fail("error.unknownSoftware");
+  if (sw.id !== panelId || sw.kind === "cloud") return fail("error.unknownSoftware");
   const bad = sizeError(size, sw.controlPlane);
   if (bad) return fail(bad);
   const vm = createVm(s, clusterId, size);
@@ -141,6 +141,7 @@ export function resizePanelVm(s: GameState, hostId: string, size: Resources): Ac
 export function dropCluster(s: GameState, id: string) {
   s.clusters = s.clusters.filter((x) => x.id !== id).map((x) => (x.backup.targetId === id ? { ...x, backup: { targetId: null, every: "off" } } : x));
   const drop = (ids: string[]) => ids.filter((x) => x !== id);
+  if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "none" } };
   s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };
 }
 

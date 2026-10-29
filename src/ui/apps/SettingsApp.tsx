@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from "react";
 import { setCompany } from "../../sim/90-actions/company";
 import { APPS } from "./registry";
 import { CompanyFields } from "./company";
+import { EmailSettings } from "./EmailSettings";
 import { prefOf, useStore, type Theme } from "../store";
 import { playSound } from "../sounds";
 
@@ -21,6 +22,7 @@ export function SettingsApp() {
         <CompanyFields company={{ ...game.company, name }} onCommit={commitName}
           onChange={(p) => (p.name !== undefined ? setName(p.name) : act((s) => setCompany(s, p)))} />
       </div>
+      <EmailSettings />
       <h2>Appearance</h2>
       <div className="settings-group settings-line">
         <span>Theme</span>

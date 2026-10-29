@@ -1,4 +1,4 @@
-import { AppWindow, Boxes, Container, Feather, Gauge, Layers, PanelsTopLeft, Server, SquareTerminal, TriangleAlert, type LucideIcon } from "lucide-react";
+import { AppWindow, Boxes, Container, Feather, Gauge, Layers, Mail, PanelsTopLeft, PiggyBank, Server, SquareTerminal, TriangleAlert, type LucideIcon } from "lucide-react";
 import { euroCents } from "../../../sim/00-core/money";
 import { formatClock, START_YEAR } from "../../../sim/00-core/time";
 import { SERVES, softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
@@ -22,6 +22,8 @@ export const BRAND: Record<string, { icon: LucideIcon; color: string }> = {
   vmwhere: { icon: Boxes, color: "oklch(0.5 0.04 250)" },
   proxmocks: { icon: Server, color: "oklch(0.66 0.16 55)" },
   hypervee: { icon: AppWindow, color: "oklch(0.56 0.15 240)" },
+  postfixit: { icon: Mail, color: "oklch(0.55 0.13 20)" },
+  mailpig: { icon: PiggyBank, color: "oklch(0.68 0.13 355)" },
 };
 
 export function Mark({ id, size = 28 }: { id: string | null; size?: number }) {
@@ -34,7 +36,7 @@ const UNIT: Record<Software["pricing"], string> = { free: "", account: "per web 
 export const licenseText = (sw: Software) => (sw.pricing === "free" ? "Free" : `${euroCents(sw.fee)} ${UNIT[sw.pricing]}`);
 const cp = (sw: Software) => `${+sw.controlPlane.vcpu.toFixed(2)} vCPU · ${+sw.controlPlane.ramGb.toFixed(2)} GB`;
 
-export const KIND_NAME: Record<SoftwareKind, string> = { panel: "Hosting panel", cloud: "Hypervisor" };
+export const KIND_NAME: Record<SoftwareKind, string> = { panel: "Hosting panel", cloud: "Hypervisor", mail: "Mail server" };
 export const servesText = (kind: SoftwareKind) => SERVES[kind].filter((p) => !PRODUCTS[p].ha).map((p) => PRODUCT[p]).join(", ");
 
 // What the software can do, as labels: its first year, how it imports web spaces, whether it clusters or moves live.
@@ -61,9 +63,10 @@ export function SoftwareCards({ kind, value, onPick, compact, blocked }: { kind:
           <dl>
             <div><dt>License</dt><dd className="num">{licenseText(sw)}</dd></div>
             <div><dt>Install</dt><dd className="num">{sw.installHours} h</dd></div>
+            {kind === "mail" ? <div><dt>Needs</dt><dd className="num">{cp(sw)} · {sw.controlPlane.diskGb} GB</dd></div> : <>
             <div><dt>CPU overcommit</dt><dd className="num">Up to {sw.overcommit.cpu}×</dd></div>
-            <div><dt>RAM overcommit</dt><dd className="num">{sw.overcommit.ram > 1 ? `Up to ${sw.overcommit.ram}×` : "None"}</dd></div>
-            {compact ? null : <>
+            <div><dt>RAM overcommit</dt><dd className="num">{sw.overcommit.ram > 1 ? `Up to ${sw.overcommit.ram}×` : "None"}</dd></div></>}
+            {compact || kind === "mail" ? null : <>
             <div><dt>Tickets</dt><dd className="num">×{sw.tickets}</dd></div>
             {kind === "cloud" && <div><dt>Density</dt><dd className="num">×{sw.density}</dd></div>}
             {kind === "cloud" && <div><dt>Live migration</dt><dd>{sw.live ? "Yes" : "No"}</dd></div>}

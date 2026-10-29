@@ -2,7 +2,7 @@ import type { Product } from "../30-customers/customers";
 import type { Resources } from "./products";
 
 // Values from docs/design/economy.md, section "Platforms and licenses". EU competition rules make Pear offer four of each.
-export type SoftwareKind = "panel" | "cloud";
+export type SoftwareKind = "panel" | "cloud" | "mail";
 // free, or a monthly fee per web space (account), per node (server) or per physical core of the nodes (core).
 export type Pricing = "free" | "account" | "server" | "core";
 export interface Software {
@@ -46,10 +46,13 @@ export const SOFTWARE: Software[] = [
   { id: "vmwhere", kind: "cloud", name: "VMwhere", console: "VMwhere vSphear", pricing: "core", fee: 8, tickets: 0.7, density: 1.15, live: true, convenience: 60, overcommit: { cpu: 10, ram: 1.25 }, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 10 }, installHours: 5, from: 2005, migration: { same: 2005, other: null }, cluster: 2005 },
   { id: "proxmocks", kind: "cloud", name: "Proxmocks", console: "Proxmocks VE", pricing: "free", fee: 0, tickets: 1, density: 1, live: true, convenience: 60, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2008, migration: { same: 2008, other: null }, cluster: 2008 },
   { id: "hypervee", kind: "cloud", name: "HyperVee", console: "HyperVee Manager", pricing: "server", fee: 20, tickets: 0.9, density: 1.05, live: false, convenience: 60, overcommit: { cpu: 6, ram: 1.2 }, controlPlane: { vcpu: 1, ramGb: 1, diskGb: 10 }, installHours: 4, from: 2008, migration: { same: 2008, other: null }, cluster: 2012 },
+  // Mail servers: the company's own mail on a server or VM; the control plane is what the server takes (economy.md, Company email).
+  { id: "postfixit", kind: "mail", name: "Postfixit", console: "Postfixit", pricing: "free", fee: 0, tickets: 1.4, density: 1, live: false, convenience: 0, overcommit: { cpu: 1, ram: 1 }, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 20 }, installHours: 4, from: 2005 , migration: { same: null, other: null }, cluster: null },
+  { id: "mailpig", kind: "mail", name: "Mailpig", console: "Mailpig", pricing: "free", fee: 0, tickets: 1, density: 1, live: false, convenience: 0, overcommit: { cpu: 1, ram: 1 }, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 20 }, installHours: 2, from: 2015 , migration: { same: null, other: null }, cluster: null },
 ];
 
 // The product lines each kind of software lets a cluster sell; the rest runs on whole servers, in racks or nowhere.
-export const SERVES: Record<SoftwareKind, Product[]> = { panel: ["webHosting"], cloud: ["vps", "gameServer", "dns", "vpn", "storage", "cloud"] };
+export const SERVES: Record<SoftwareKind, Product[]> = { panel: ["webHosting"], cloud: ["vps", "gameServer", "dns", "vpn", "storage", "cloud"], mail: [] };
 export const kindServing = (p: Product): SoftwareKind | null => (SERVES.panel.includes(p) ? "panel" : SERVES.cloud.includes(p) ? "cloud" : null);
 
 // economy.md, Platforms and licenses: software in a virtual machine gets this share of the VM's CPU and RAM.

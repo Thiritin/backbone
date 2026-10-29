@@ -72,7 +72,7 @@ function candidates(name: string, profile: Profile, lang: Lang, r: Rng, us = fal
   }
 }
 
-const taken = (s: GameState): Set<string> =>
+export const taken = (s: GameState): Set<string> =>
   new Set([...s.services.map((v) => v.domain ?? v.label), ...s.sales.requests.flatMap((x) => (x.domain ? [x.domain] : []))]);
 
 // A free domain for a customer; key makes it stable for a seed. The first free candidate wins, then numbered ones.
@@ -107,5 +107,8 @@ export function fillDomains(s: GameState): GameState {
   return s;
 }
 
-// The company's own domain, for mail servers, panel addresses and signatures: its name with the TLD of its first city.
-export const companyDomain = (s: GameState): string => `${ascii(s.company.name) || "hosting"}.${countryOf(s.locations[0]?.city ?? "Frankfurt").tld}`;
+// The domain the company's name suggests: its name with the TLD of its first city.
+export const derivedDomain = (s: GameState): string => `${ascii(s.company.name) || "hosting"}.${countryOf(s.locations[0]?.city ?? "Frankfurt").tld}`;
+
+// The company's own domain, for mail servers, panel addresses and signatures; the suggested name until one is registered.
+export const companyDomain = (s: GameState): string => s.company.domain ?? derivedDomain(s);

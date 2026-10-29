@@ -30,7 +30,7 @@ export function opLabel(game: GameState, o: TechOp): string {
     const c = d?.components.find((x) => x.id === o.componentId), kind = c?.kind ?? game.devices.find((x) => x.id === o.partId)?.model.slice(5);
     return `${o.partId ? "Install" : "Remove"} ${kind ? PART_NAME[kind as keyof typeof PART_NAME].toLowerCase() : "part"}`;
   }
-  return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}` }[o.kind];
+  return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}`, domains: "Move domains" }[o.kind];
 }
 
 // Queues the operation for the technician who gets to it first, or shows it queued with a Cancel.

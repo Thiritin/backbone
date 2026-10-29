@@ -42,11 +42,11 @@ export function confirmOrder(s: GameState, ticketId: string, monthly: number, se
   return done;
 }
 
-// Another year of a customer's domain: the registry is paid now and the customer invoiced the yearly fee.
+// Another year of a customer's domain: the customer is invoiced the yearly fee and the registrar bills the registry monthly.
 export function renewDomain(s: GameState, name: string): ActionResult {
   const d = domainOf(s, name);
-  if (!d || !s.customers.some((c) => c.id === d.customerId && c.churnedAt === null)) return fail("error.unknownDomain");
-  if (!extend(s, name)) return fail("error.noCash");
+  if (!d?.customerId || !s.customers.some((c) => c.id === d.customerId && c.churnedAt === null)) return fail("error.unknownDomain");
+  extend(s, name);
   issueInvoice(s, d.customerId, [{ serviceId: null, key: "invoice.line.domainRenewal", params: { domain: name }, amount: DOMAIN_FEE }]);
   logActivity(s, { customerId: d.customerId, serviceId: null, by: null, key: "activity.renewDomain", params: { domain: name }, minutes: 0 });
   return { ok: true };

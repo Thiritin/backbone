@@ -5,6 +5,7 @@ import { yearOf } from "../../../sim/00-core/time";
 import type { Resources } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import { registryCost, registryOf } from "../../../sim/30-customers/registry";
+import { wholesale } from "../../../sim/30-customers/registrar";
 import { setupFee, sizeOf } from "../../../sim/30-market/spec";
 import { invoiceOf, stepsDone } from "../../../sim/30-market/manual";
 import type { SalesRequest } from "../../../sim/30-market/market";
@@ -70,7 +71,7 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const done = stepsDone(game, r), locked = !!tk.work;
   const web = r.product === "webHosting" && !!r.domain;
   const current = !done.account ? "account" : !done.invoice ? "invoice" : !done.domain ? "domain" : !done.provision ? "provision" : null;
-  const cost = web ? registryCost(r.domain!, yearOf(game.hour)) : 0;
+  const cost = web ? (game.registrar ? wholesale(game, r.domain!) : registryCost(r.domain!, yearOf(game.hour))) : 0;
   const row = (id: string, label: string, value: string, body?: React.ReactNode) => (
     <li key={id} className={`step${done[id as keyof typeof done] ? " done" : id === current ? " now" : ""}`}>
       <span className="step-i">{done[id as keyof typeof done] ? <Check aria-label="Done" /> : null}</span>

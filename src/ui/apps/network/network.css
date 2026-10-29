@@ -53,3 +53,6 @@
 .net-buy { display: flex; align-items: center; gap: 10px; font-size: 12px; }
 .net-buy .grow { flex: 1; }
 .net-addr { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; }
+.net-partners { padding: 0; }
+.net-company .shop-buy { border-top: 0; }
+.net-addrs .net-contract { grid-template-columns: repeat(5, 1fr); }

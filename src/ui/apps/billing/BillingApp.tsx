@@ -79,7 +79,7 @@ export function BillingApp() {
         </button>
         <div className="side-h">Customers</div>
         <button className={`side-item${filter === "domains" ? " active" : ""}`} aria-pressed={filter === "domains"} onClick={() => setFilter("domains")}>
-          <Globe />Domains<span className="side-count">{game.domains.length}</span>
+          <Globe />Domains<span className="side-count">{game.domains.filter((d) => d.customerId).length}</span>
         </button>
       </nav>
       {filter === "automation" && <Automation />}
@@ -156,8 +156,8 @@ function WriteOff({ inv, customer, onClose }: { inv: Invoice; customer: string; 
 function Domains() {
   const game = useStore((s) => s.game);
   const year = yearOf(game.hour);
-  const list = [...game.domains].sort((a, b) => a.expiresAt - b.expiresAt);
-  const customer = (id: string) => game.customers.find((c) => c.id === id);
+  const list = game.domains.filter((d) => d.customerId).sort((a, b) => a.expiresAt - b.expiresAt);
+  const customer = (id: string | null) => game.customers.find((c) => c.id === id);
   return (
     <div className="fin-main">
       <div className="fin-scroll">

@@ -2,6 +2,7 @@ import { COMPONENTS, modelById, type ComponentKind } from "../10-catalog/hardwar
 import { phpAt } from "../10-catalog/platforms";
 import { yearOf } from "../00-core/time";
 import type { Device, GameState } from "../50-state";
+import { beginTransfer, TRANSFER_MINUTES } from "../30-customers/registrar";
 import { anchorOf } from "../60-infra/cluster";
 import { HOURS_PER_YEAR, hotKind, hotSwappable, locationOf } from "../60-infra/status";
 import type { SimEvent } from "../88-tick/tick";
@@ -11,7 +12,7 @@ import { migrateWebspace } from "../90-actions/vms";
 import { callOut, onCallAt, onCallPayroll, respond, restUntil } from "./oncall";
 import { atFair, isWorkHour, onShift, working, type Employee, type Task } from "./staff";
 
-export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "migrate" | "part";
+export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "migrate" | "part" | "domains";
 // One operation on one device; componentId is set for a replace and for taking a part out, partId for putting a spare in,
 // auto when a rule queued it. A migrate runs at the device the web space sits on and carries the web space and the panel
 // host it moves to.
@@ -19,9 +20,11 @@ export interface TechOp { id: string; kind: OpKind; deviceId: string; componentI
 // failed: replace failed parts when a spare is in storage. worn: replace parts past their life that swap while running.
 // blackhole: the on-call technician blackholes an attack that saturates their location's links.
 export interface TechRules { failed: boolean; worn: boolean; blackhole: boolean }
-export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", migrate: "panels", part: "hardware" };
+export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", migrate: "panels", part: "hardware", domains: "panels" };
 
+// A domains operation belongs to the company, not to a device: it is worked at the first location.
 export const opLocation = (s: GameState, o: TechOp): string | null => {
+  if (o.kind === "domains") return s.locations[0]?.id ?? null;
   const d = s.devices.find((x) => x.id === o.deviceId);
   return (d && locationOf(s, d)?.id) ?? null;
 };
@@ -86,6 +89,7 @@ function autoQueue(s: GameState): void {
 
 // An operation waits while an earlier one on the same device is queued, a swap is under way, or no spare is in storage.
 function ready(s: GameState, o: TechOp, taken: Set<string>): boolean {
+  if (o.kind === "domains") return true;
   const d = s.devices.find((x) => x.id === o.deviceId)!;
   if (d.maintenance || taken.has(d.id) || s.techOps.findIndex((x) => x.deviceId === d.id) !== s.techOps.indexOf(o)) return false;
   if (o.kind !== "replace") return true;
@@ -122,7 +126,7 @@ export function techTick(s: GameState): SimEvent[] {
   onCallPayroll(s);
   if (!s.staff.some((e) => e.role === "technician")) return [];
   const events: SimEvent[] = [];
-  s.techOps = s.techOps.filter((o) => s.devices.some((d) => d.id === o.deviceId));
+  s.techOps = s.techOps.filter((o) => (o.kind === "domains" ? !!s.registrar?.transfer && s.registrar.transfer.doneAt === null : s.devices.some((d) => d.id === o.deviceId)));
   autoQueue(s);
   const taken = new Set<string>();
   if (!isWorkHour(s.hour)) {
@@ -140,6 +144,11 @@ export function techTick(s: GameState): SimEvent[] {
 function work(s: GameState, e: Employee, events: SimEvent[], taken: Set<string>, onlyUrgent: boolean): boolean {
   const o = s.techOps.find((x) => e.trained.includes(OP_TASK[x.kind]) && opLocation(s, x) === e.location && (!onlyUrgent || urgent(s, x)) && ready(s, x, taken));
   if (!o) return false;
+  if (o.kind === "domains") {
+    s.techOps = s.techOps.filter((x) => x !== o);
+    beginTransfer(s, s.hour + Math.ceil(((s.registrar?.transfer?.domains ?? 0) * TRANSFER_MINUTES) / 60));
+    return true;
+  }
   taken.add(o.deviceId);
   // Actions change devices and the ledger in place; the tick works on copies.
   s.devices = s.devices.map((d) => (d.id === o.deviceId ? { ...d } : d));
