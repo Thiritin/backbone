@@ -243,7 +243,7 @@ function OrderThread({ tk, r }: { tk: Ticket; r: SalesRequest }) {
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
             <div className="from">{m.from === "you" ? m.by ?? "You" : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
-            <p>{t(m.key, m.params)}</p>
+            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}</p>
           </div>
         ))}
         {tk.work && <div className="event"><span>Queued until <span className="num">{stamp(tk.work.doneAt / 60)}</span></span></div>}

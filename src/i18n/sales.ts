@@ -14,6 +14,16 @@ const STUDY_NAME: Record<string, string> = {
 
 // Sales requests, customer replies and lost-sale reasons; spread into en.
 export const SALES_EN: Record<string, (p: Params) => string> = {
+  // One line per profile in a new customer's first email; it hints at how soon they notice an outage.
+  "request.use.private": () => "It is only a small personal site, so nothing is ever urgent.",
+  "request.use.gamer": () => "We play most evenings and all weekend, so it has to be up then.",
+  "request.use.hobby": () => "It is a side project I tinker with when I find the time.",
+  "request.use.sole": () => "Customers find me through the site, and I look at it every few days.",
+  "request.use.small": () => "Our team works with it every day during office hours.",
+  "request.use.agency": () => "Our clients are on it all day, so we spot problems quickly.",
+  "request.use.office": () => "Clients book their appointments through it every morning.",
+  "request.use.shop": () => "Orders come in around the clock, so every minute offline costs us money.",
+  "request.use.enterprise": () => "Our staff rely on it around the clock.",
   "sales.msg.webHosting.0": (p) => `Hello, I am looking for a home for ${p.domain || "my website"}: about ${web(p)}. What would it cost a month?${sla(p)}`,
   "sales.msg.webHosting.1": (p) => `A friend recommended you. We need ${web(p)} for ${p.domain || "our site"}, hosted in ${p.city} if possible.${sla(p)} What is your price?`,
   "sales.msg.vps.0": (p) => `We need a VPS with ${box(p)} and root access in ${p.city}.${sla(p)} Please send me your monthly price.`,

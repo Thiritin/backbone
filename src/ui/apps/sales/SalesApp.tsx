@@ -10,7 +10,7 @@ import { decline, quote } from "../../../sim/90-actions/sales";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
-import { initials, noticed, patience, PRODUCT, stamp } from "../support/labels";
+import { initials, patience, PRODUCT, stamp } from "../support/labels";
 import { PriceField } from "./PriceField";
 import { UpgradeCompose } from "../support/CustomOrder";
 import { sizeOf, specText } from "../../../sim/30-market/spec";
@@ -96,7 +96,6 @@ export function Card({ r }: { r: SalesRequest }) {
           <span>{r.city}</span>
           <span>{SLA_LABEL[r.sla]} SLA · <span className="num">{(sla.uptime * 100).toFixed(sla.uptime >= 0.999 ? 2 : 1)}%</span> · <span className="num">{sla.responseHours}</span> h response</span>
           <span>Reply within {patience(expects.reply)}</span>
-          <span>Notices outages {noticed(expects.tolerance).toLowerCase()}</span>
           <span className="pill">{STATUS[r.status]}</span>
         </div>
       </div>
@@ -121,7 +120,7 @@ export function Card({ r }: { r: SalesRequest }) {
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
             <div className="from">{m.from === "you" ? m.by ?? "You" : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
-            <p>{t(m.key, m.params)}</p>
+            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}</p>
           </div>
         ))}
         {r.status === "quoted" && <div className="event"><span>Awaiting reply</span></div>}
