@@ -1840,7 +1840,7 @@ The leads arrive over the 730 hours after the fair, split evenly over the locati
 | Chaos Computing Club | Chaos Computer Club meetup | Tech | 1 | 1 VPS (1 GB) | 90 days | Developers | Know-how 10 |
 | Hack-a-Sorus | Hackathon | Tech | 1 | 2 VPS (1 GB) | 7 days | Developers | Know-how 25 |
 | Debonair Linux mirror | Distribution mirror | Tech | 1 | 1 storage volume (500 GB) | 365 days | Developers | Know-how 15 |
-| Frag-Fest | Gaming tournament | Public | 1 | 4 game servers (larger size) | 3 days | Gamers | Awareness +0.03 |
+| Frag-Fest | Gaming tournament | Public | 1 | 4 game servers (smaller size) | 3 days | Gamers | Awareness +0.03 |
 | Linux User Group | User group website | Public | 1 | 1 web space (2 GB) | 365 days | Small businesses, private users | Awareness +0.01 for both |
 | DevOops Conference | Conference streaming | Tech | 3 | 8 VPS (2 GB) | 7 days | Agencies, enterprises | Know-how 40 |
 Awareness gains use the same share-of-the-gap rule as forum posts and fairs, each applied once when the event ends. A tech event adds a recommendation with a 20% chance: a technician applicant whose skill is a drawn applicant's plus 20 (at most 95, talent above it) stays in the market for 30 days. A public event adds a 5-star review with a 50% chance (written under the event's name) and a batch of 3 to 6 leads with conversion 1, split over the location cities and the audience, counted in the month after the event like fair leads. More than 2 hours down on any one service replaces all of this with two 1-star reviews and 0.9 times the awareness of every audience profile. The balance bot ignores every request, so balance runs are unchanged.

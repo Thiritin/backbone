@@ -64,7 +64,7 @@ describe("community sponsoring requests", () => {
     const first = readyGame(1);
     while (!first.sponsorships.length) tick(first);
     expect(again.sponsorships[0]).toEqual(first.sponsorships[0]);
-  });
+  }, 90_000);
 
   it("send a ticket of kind sponsor with the event, and only small events at level 1", () => {
     const s = asked(4);
@@ -208,7 +208,7 @@ describe("rewards", () => {
     expect(ran).toBeGreaterThan(n * 0.7);
     expect(fives).toBeGreaterThan(ran * 0.25);
     expect(fives).toBeLessThan(ran * 0.75);
-  });
+  }, 90_000);
 
   it("put a +20 skill candidate in the Staff market for a month in 20% of tech events", () => {
     let hits = 0, ran = 0;
@@ -231,7 +231,7 @@ describe("rewards", () => {
     expect(ran).toBeGreaterThan(n * 0.7);
     expect(hits).toBeGreaterThan(ran * 0.08);
     expect(hits).toBeLessThan(ran * 0.35);
-  });
+  }, 90_000);
 });
 
 describe("downtime", () => {

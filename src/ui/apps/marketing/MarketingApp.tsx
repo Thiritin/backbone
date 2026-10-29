@@ -329,6 +329,7 @@ function Community() {
   const list = game.sponsorships.filter((x) => x.status === "running" || x.status === "done").reverse();
   return (
     <div className="mkt-reviews">
+      <div className="mkt-score"><span>Sponsorships</span><span className="num">{list.length}</span></div>
       {list.length
         ? <div className="shop-grid mkt-flat">{list.map((x) => <SponsorCard key={x.id} sp={x} />)}</div>
         : <div className="shop-none mkt-none">No sponsorships yet.</div>}

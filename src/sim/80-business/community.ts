@@ -18,7 +18,7 @@ export const EVENTS: CommunityEvent[] = [
   { id: "chaosClub", name: "Chaos Computing Club", kind: "tech", level: 1, product: "vps", size: 1, count: 1, hours: 90 * DAY, audience: ["hobbyDev"], knowHow: 10, awareness: 0 },
   { id: "hackASorus", name: "Hack-a-Sorus", kind: "tech", level: 1, product: "vps", size: 1, count: 2, hours: 7 * DAY, audience: ["hobbyDev"], knowHow: 25, awareness: 0 },
   { id: "mirror", name: "Debonair Linux mirror", kind: "tech", level: 1, product: "storage", size: 1, count: 1, hours: 365 * DAY, audience: ["hobbyDev"], knowHow: 15, awareness: 0 },
-  { id: "fragFest", name: "Frag-Fest", kind: "public", level: 1, product: "gameServer", size: 1, count: 4, hours: 3 * DAY, audience: ["gamer"], knowHow: 0, awareness: 0.03 },
+  { id: "fragFest", name: "Frag-Fest", kind: "public", level: 1, product: "gameServer", size: 0, count: 4, hours: 3 * DAY, audience: ["gamer"], knowHow: 0, awareness: 0.03 },
   { id: "userGroup", name: "Linux User Group", kind: "public", level: 1, product: "webHosting", size: 1, count: 1, hours: 365 * DAY, audience: ["smallBiz", "private"], knowHow: 0, awareness: 0.01 },
   { id: "devOops", name: "DevOops Conference", kind: "tech", level: 3, product: "vps", size: 2, count: 8, hours: 7 * DAY, audience: ["agency", "enterprise"], knowHow: 40, awareness: 0 },
 ];
