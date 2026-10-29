@@ -14,7 +14,7 @@ import { planMaintenance } from "../src/sim/90-actions/maintenance";
 import { locationOf, working } from "../src/sim/60-infra/status";
 import { workloadsUp } from "../src/sim/60-infra/cluster";
 import { MOVE } from "../src/sim/20-world/datacenters";
-import { handWork } from "../src/sim/60-infra/handwork";
+import { handWork, TRAVEL } from "../src/sim/60-infra/handwork";
 import { addressesOf, RENUMBER_ANNOUNCED_PENALTY, RENUMBER_PENALTY } from "../src/sim/60-infra/addresses";
 import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { announceMigration, BASEMENT_BONUS, DECLINE_BELOW, MISSED_AFTER_HOURS, MISSED_PENALTY, moveTargets, movesTick, offerMigration } from "../src/sim/90-actions/moves";
@@ -337,8 +337,9 @@ describe("moving a loaded server", () => {
     expect(working(s, da)).toBe(true);
     ok(moveServer(s, da, b));
     const d = dev(s, da), down = d.bootUntil! - hour;
-    expect(down).toBeGreaterThanOrEqual(MOVE.sameCity.hours + wait + MOVE_INSTALL_HOURS.min);
-    expect(down).toBeLessThanOrEqual(MOVE.sameCity.hours + wait + MOVE_INSTALL_HOURS.max);
+    // The drive across town overlaps the hands' wait; the install follows.
+    expect(down).toBeGreaterThanOrEqual(Math.max(TRAVEL.city.hours, wait) + MOVE_INSTALL_HOURS.min);
+    expect(down).toBeLessThanOrEqual(Math.max(TRAVEL.city.hours, wait) + MOVE_INSTALL_HOURS.max);
     expect(s.cash).toBeLessThan(cash - MOVE.sameCity.price);
     expect(locationOf(s, d)!.id).toBe(b);
     expect(s.cables.some((c) => [c.a, c.b].some((e) => e.device === da) && [c.a, c.b].some((e) => e.device === swB))).toBe(true);

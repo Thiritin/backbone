@@ -12,7 +12,7 @@ import { claimRepair } from "../46-finance/finance";
 import { atFront, BMC_RESET_HOURS, bootUp, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
-import { handJob, type HandJob, type How } from "../60-infra/handwork";
+import { handJob, trip as drive, type HandJob, type How } from "../60-infra/handwork";
 import { endLease, rebuildHours } from "../88-tick/tick";
 import { cardsFree, serverTaken, vmById } from "../60-infra/cluster";
 import { renumber, renumberError } from "../60-infra/addresses";
@@ -380,8 +380,9 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
 // Hours of racking, power and cabling at the far end of a server move: two to four.
 export const MOVE_INSTALL_HOURS = { min: 2, max: 4 };
 
-// Ships a loaded server with its workloads into the first rack with room at another location. It is offline for the trip plus
-// the install, which is hand work at the far end; the affected customers get a maintenance window unless one planned a day
+// Ships a loaded server with its workloads into the first rack with room at another location. It is driven over when a drive
+// reaches the target (couriered overseas) and installed by hand work at the far end, which starts once both the server and the
+// hands are there; it is offline until the install is done; the affected customers get a maintenance window unless one planned a day
 // ahead already covers the move, and their services are renumbered from the target's pool. A cluster must sit on this server alone.
 export function moveServer(s: GameState, deviceId: string, locationId: string, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
@@ -415,7 +416,8 @@ export function moveServer(s: GameState, deviceId: string, locationId: string, h
   const job = handJob(s, d.label ?? d.name, to, how, work);
   if ("error" in job) return fail(job.error);
   if (s.cash < trip.price + job.cost) return fail("error.noCash");
-  const hours = trip.hours + job.commit();
+  const transit = drive(from.city, to.city)?.hours ?? trip.hours;
+  const hours = Math.max(transit + work, job.commit());
   const told = new Set(ids.filter((id) => plannedFor(s, s.services.find((v) => v.id === id)!, hours)));
   if (ids.some((id) => !told.has(id))) announceNow(s, { kind: "device", id: d.id }, hours);
   const cables = s.cables.filter((c) => c.a.device === d.id || c.b.device === d.id);
