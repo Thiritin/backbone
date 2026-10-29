@@ -4,14 +4,14 @@ import { useSessionState } from "../../session";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { cardOf, cardWatts } from "../../../sim/10-catalog/gpu";
-import { brandsOf, COMPONENTS, cpuWattsShift, fits, MANUFACTURERS, modelById, partOffers, shopModels, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { brandFrom, brandUntil, wattsFactorOf, brandsOf, COMPONENTS, cpuWattsShift, fits, MANUFACTURERS, modelById, partOffers, shopModels, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
 import { VENDOR_NAME, type Vendor } from "../../../sim/10-catalog/cpus";
 import { partPrice } from "../../../sim/10-catalog/parts";
 import { lineParts, unitPrice, type CartLine } from "../../../sim/90-actions/hardware";
 import { Cart, Stepper } from "./Cart";
 import { Software } from "./Software";
 import { ShopFilter, useFilter } from "./FilterBar";
-import { matchesFilter } from "./filter";
+import { matchesFilter, sortItems, type Sort } from "./filter";
 import { Used } from "./Used";
 import { lineOf } from "../../art/fronts";
 import { Isometric } from "../../art/Isometric";
@@ -30,6 +30,9 @@ const CLASSES: [string, typeof Server][] = [
 ];
 const classOf = (m: DeviceModel) =>
   m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "gateway" ? "Routers" : m.kind === "ups" || m.kind === "pdu" ? "Power" : m.kind === "kvm" || m.kind === "console" || m.kind === "oob" ? "Remote access" : "Patch panels";
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const releaseLabel = (month: number) => `${MONTHS[month % 12]} ${Math.floor(month / 12)}`;
 
 const SWAP = { raid: "In RAID", dual: "With two", yes: "Yes", no: "No" };
 
@@ -53,8 +56,9 @@ export function ShopApp() {
   useFocus("Shop", (f) => { if (f.kind === "software") { pick(null, null); setSoftware(true); } });
   const all = items(yearOf(hour));
   const [filter, setFilter, clearFilter] = useFilter();
+  const [sort, setSort] = useSessionState<Sort>("shop.sort", "default");
   const scoped = all.filter((it) => (!maker || it.brand === maker) && (!cls || it.cls === cls));
-  const shown = scoped.filter((it) => matchesFilter(it.model, filter, it.part));
+  const shown = sortItems(scoped.filter((it) => matchesFilter(it.model, filter, it.part)), sort, yearOf(hour));
   const count = (f: (it: Item) => boolean) => all.filter(f).length;
   const [cartOpen, setCartOpen] = useState(false);
   const inCart = useStore((st) => st.cart.reduce((n, l) => n + l.qty, 0));
@@ -83,7 +87,7 @@ export function ShopApp() {
           <span className="grow" />
           <button className="btn ghost" aria-pressed={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingCart />Cart<span className="num shop-count">{inCart}</span></button>
         </div>
-        {!software && !used && <ShopFilter items={scoped} filter={filter} set={setFilter} clear={clearFilter} />}
+        {!software && !used && <ShopFilter items={scoped} filter={filter} set={setFilter} clear={clearFilter} sort={sort} setSort={setSort} />}
         <div className="shop-body">
           {used ? <Used /> : software ? <Software /> : (
             <div className="shop-grid">
@@ -150,14 +154,15 @@ function Card({ model, brand, cls, part, maker }: Item & { maker: Vendor | null 
   const drives = built.filter((p) => ["hdd", "ssd", "nvme"].includes(p.kind));
   const rows: [string, string][] = spec ? [...(part!.size !== undefined && part!.kind !== "gpu" ? [["Size", partSize(part!)]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
     ["Height", height(model)],
-    ...(model.until !== null ? [["End of sale", `${model.until}`]] as [string, string][] : []),
+    ...(!part && model.price > 0 ? [["Release", releaseLabel(brandFrom(model, brand))]] as [string, string][] : []),
+    ...(model.until !== null ? [["End of sale", `${brandUntil(model, brand)}`]] as [string, string][] : []),
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
     ...(s ? [["CPU", VENDOR_NAME[vendor]], ["Cores", cores(sum("cpu"))], ["RAM", ram(custom ? sum("ram") : s.ramGb)],
       ...(cards.length ? [["GPUs", `${cards.length} × ${cardOf(cards[0].size).name}`]] as [string, string][] : []),
       ["Storage", custom ? (drives.length ? `${disk(drives.reduce((n, p) => n + (p.size ?? 0), 0))} in ${drives.length} ${drives.length === 1 ? "drive" : "drives"}` : "None") : `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),
     ...(model.kind === "gateway" && model.price > 0 ? [["Routing", model.fullTable ? "Full table" : "Default route"], ...(model.fullTable ? [["BGP sessions", `${model.bgpSessions}`]] : [])] as [string, string][] : []),
     ...(model.batteryWh ? [["Battery", `${model.batteryWh} Wh`]] as [string, string][] : model.outlets ? [["Outlets", `${model.outlets}`]] as [string, string][] : [[model.kind === "patch" ? "Jacks" : model.kind === "server" ? "NICs" : "Ports", portsText(model)]] as [string, string][]),
-    ...(model.watts ? [...(model.kind === "pdu" || ["kvm", "console", "oob"].includes(model.kind) ? [] : [["PSUs", `${model.psus}`]]), ["Power", `${Math.round(model.watts + cpuWattsShift(model, built) + cardWatts(cards.map((p) => ({ ...p, failedAt: null }))))} W`]] as [string, string][] : []),
+    ...(model.watts ? [...(model.kind === "pdu" || ["kvm", "console", "oob"].includes(model.kind) ? [] : [["PSUs", `${model.psus}`]]), ["Power", `${Math.round(wattsFactorOf(model, brand) * (model.watts + cpuWattsShift(model, built)) + cardWatts(cards.map((p) => ({ ...p, failedAt: null }))))} W`]] as [string, string][] : []),
   ];
   const reset = () => { setQty(1); setCounts({}); setBare(false); setOpen(false); };
   return (

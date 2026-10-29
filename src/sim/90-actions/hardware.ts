@@ -1,5 +1,5 @@
-import { yearOf } from "../00-core/time";
-import { bareParts, boardVendor, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { monthIndexOf, yearOf } from "../00-core/time";
+import { bareParts, boardVendor, brandOnSale, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
@@ -189,6 +189,7 @@ function lineError(s: GameState, line: CartLine): string | null {
   const model = shopModels(yearOf(s.hour)).find((m) => m.id === modelId);
   if (!model) return "error.notInShop";
   if (!brandsOf(model).includes(brand)) return "error.unknownBrand";
+  if (!brandOnSale(model, brand, monthIndexOf(s.hour))) return "error.notInShop";
   if (!Number.isInteger(qty) || qty < 1) return "error.badQuantity";
   if (line.vendor !== undefined && !vendorsOf(model).includes(line.vendor)) return "error.wrongVendor";
   const offers = partOffers(yearOf(s.hour));

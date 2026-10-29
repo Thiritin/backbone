@@ -1,5 +1,5 @@
 import { yearOf } from "../00-core/time";
-import { boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
+import { wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
 import { cpuModel, type Vendor } from "../10-catalog/cpus";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
@@ -231,10 +231,10 @@ export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length 
 // The servers that run at least one workload; the rest draw their idle power. Working GPU cards add their watts either way.
 export const busyDevices = (s: GameState): Set<string | null> => new Set(s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId));
 // A server's CPUs draw their own watts in place of its preset's (cpuWattsShift); idle they draw the model's idle share of it.
-export const deviceWatts = (d: Device): number => { const m = modelById(d.model); return m.watts + cpuWattsShift(m, d.components) + cardWatts(d.components); };
+export const deviceWatts = (d: Device): number => { const m = modelById(d.model), k = wattsFactorOf(m, d.brand); return (m.watts + cpuWattsShift(m, d.components)) * k + cardWatts(d.components); };
 export const drawWatts = (d: Device, busy: Set<string | null>): number => {
-  const m = modelById(d.model), cpus = cpuWattsShift(m, d.components);
-  return (busy.has(d.id) ? m.watts + cpus : m.idleWatts + (cpus && (cpus * m.idleWatts) / m.watts)) + cardWatts(d.components);
+  const m = modelById(d.model), cpus = cpuWattsShift(m, d.components), k = wattsFactorOf(m, d.brand);
+  return (busy.has(d.id) ? m.watts + cpus : m.idleWatts + (cpus && (cpus * m.idleWatts) / m.watts)) * k + cardWatts(d.components);
 };
 
 const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);
