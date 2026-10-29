@@ -99,6 +99,18 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     n = it.slot - 1;
   }
 
+  // A 0U device (a vertical PDU) hangs on the right rail and takes no unit.
+  for (const it of items.filter((x) => x.model.height === 0)) {
+    const x = pad + w + 1, sel = it.id === selected, dots = Math.min(it.model.outlets ?? 8, units * 2);
+    out.push(
+      <g key={it.id} className="rack-dev" aria-label={it.name} aria-pressed={sel} {...press(() => onDevice(it.id))} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
+        <title>{it.name}</title>
+        <rect x={x - 1} y="-2" width="8" height={y + 4} rx="2" fill="oklch(0.24 0.005 255)" stroke={sel ? "var(--accent)" : "var(--metal-line)"} strokeWidth={sel ? 2 : 0.6} />
+        {Array.from({ length: dots }, (_, k) => <rect key={k} x={x + 1} y={3 + (k * (y - 6)) / dots} width="4" height={Math.max(1.5, (y - 6) / dots - 2)} rx="0.8" fill={it.state === "off" ? "oklch(0.35 0.01 255)" : "oklch(0.78 0.18 145)"} />)}
+      </g>,
+    );
+  }
+
   // Port centres in rack coordinates, before the rack is shifted down below the remote boxes.
   const spots = new Map<string, { x: number; y: number; h: number }>();
   if (back) for (const { it, y: py, h } of placed.values()) {

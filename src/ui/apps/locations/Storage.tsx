@@ -1,10 +1,11 @@
-import { ArrowDownToLine, Truck } from "lucide-react";
+import { ArrowDownToLine, Router, Truck } from "lucide-react";
 import { useState } from "react";
-import { modelById } from "../../../sim/10-catalog/hardware";
+import { isOfficeRouter, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
 import { euro } from "../../../sim/00-core/money";
 import { deviceValue, freeSlots, mountFrom, mountMax, storageStacks, travelCost } from "../../../sim/60-infra/status";
 import { mountDevice, mountStack, sellDevice, shipStock } from "../../../sim/90-actions/hardware";
+import { installRouter } from "../../../sim/90-actions/routers";
 import { Isometric } from "../../art/Isometric";
 import { RackFront } from "../../art/RackFront";
 import { useStore } from "../../store";
@@ -52,14 +53,14 @@ function MountSheet({ game, stack, onClose, onMounted }: { game: GameState; stac
   const act = useStore((s) => s.act);
   const m = modelById(stack.model), zone = game.devices.find((d) => d.id === stack.ids[0])!.store!;
   const racks = game.racks.filter((r) => r.locationId === zone && r.arriveAt === null);
-  const fits = (id: string) => freeSlots(game, id, m.height).length > 0;
+  const h = Math.max(1, m.height), fits = (id: string) => freeSlots(game, id, h).length > 0;
   const [picked, setPicked] = useState(racks.find((r) => fits(r.id))?.id ?? racks[0]?.id);
   const [count, setCount] = useState(1);
   const rack = racks.find((r) => r.id === picked);
   const n = Math.min(count, stack.ids.length);
   const mount = (unit: number) => {
     if (!rack) return;
-    const k = mountMax(game, rack.id, m.height, n, unit), from = mountFrom(game, rack.id, m.height, k, unit), id = stack.ids[0];
+    const k = mountMax(game, rack.id, h, n, unit), from = mountFrom(game, rack.id, h, k, unit), id = stack.ids[0];
     if (from === undefined || !act((s) => (k === 1 ? mountDevice(s, id, rack.id, from) : mountStack(s, stack.model, stack.brand, rack.id, k, from))).ok) return;
     onClose();
     onMounted?.(rack.id, id);
@@ -127,8 +128,10 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
   const [shipping, setShipping] = useState(false);
   // Leased units can't be sold, so Sell takes the first paid-off unit of the stack.
   const m = modelById(stack.model), units = game.devices.filter((d) => stack.ids.includes(d.id)), first = units.find((d) => !d.lease) ?? units[0];
+  const rackable = m.height > 0 || m.kind === "pdu", office = isOfficeRouter(m), install = () => act((s) => installRouter(s, units[0].id));
   const entries = (): MenuEntry[] => [
-    m.height > 0 && { label: "Mount…", run: () => setMounting(true) },
+    rackable && { label: "Mount…", run: () => setMounting(true) },
+    office && { label: "Install", run: install },
     { label: "Ship to…", disabled: game.locations.length < 2, run: () => setShipping(true) },
     null,
     { label: "Sell…", disabled: !!first.lease, run: () => setSelling(true) },
@@ -142,7 +145,8 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
           <span className="num loc-muted">{height(m)} · {stack.ids.length} in storage</span>
         </div>
         <span className="grow" />
-        {m.height > 0 && <button className="btn" onClick={() => setMounting(true)}><ArrowDownToLine />Mount</button>}
+        {rackable && <button className="btn" onClick={() => setMounting(true)}><ArrowDownToLine />Mount</button>}
+        {office && <button className="btn" onClick={install}><Router />Install</button>}
         <More label={`${stack.brand} ${m.name}`} entries={entries} />
       </div>
       {mounting && <MountSheet game={game} stack={stack} onClose={() => setMounting(false)} onMounted={onMounted} />}

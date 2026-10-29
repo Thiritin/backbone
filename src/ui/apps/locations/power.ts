@@ -1,5 +1,6 @@
 import { BMC_NAME, hasBmc, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState } from "../../../sim/50-state";
+import { pduOf } from "../../../sim/60-infra/pdu";
 import { working } from "../../../sim/60-infra/status";
 import { powerCycle, pullPower, reset, resetBmc, setPower, shutdown, type ActionResult } from "../../../sim/90-actions/hardware";
 
@@ -12,18 +13,19 @@ export const POWER_ACTION: Record<PowerOp, (g: GameState, id: string) => ActionR
 };
 
 // The power actions of a mounted server: through its management controller when it has one that answers, on site otherwise.
-// via names the controller the first actions go through.
-export function powerOptions(game: GameState, d: Device): { via: string | null; options: PowerOption[] } {
-  const bmc = hasBmc(d.model, d.brand), dead = bmc && d.bmcHung, name = BMC_NAME[d.brand] ?? "IPMI";
+// via names the controller the first actions go through; a switched PDU in the rack cycles and cuts the power without one.
+export function powerOptions(game: GameState, d: Device): { via: string | null; pdu: boolean; options: PowerOption[] } {
+  const bmc = hasBmc(d.model, d.brand), dead = bmc && d.bmcHung, name = BMC_NAME[d.brand] ?? "IPMI", pdu = !!pduOf(game, d);
   const options: PowerOption[] = [];
-  if (!d.on) options.push({ op: "on", label: "Power on", disabled: dead });
+  if (!d.on) options.push({ op: "on", label: "Power on", disabled: dead && !pdu });
   else {
     options.push({ op: "shutdown", label: "Shut down", disabled: !working(game, d.id) });
     if (bmc && !dead) options.push({ op: "reset", label: "Reset" }, { op: "cycle", label: "Power cycle" });
-    options.push({ op: "pull", label: "Pull power", disabled: !!d.hands });
+    else if (pdu) options.push({ op: "cycle", label: "Power cycle" });
+    options.push({ op: "pull", label: pdu ? "Power off" : "Pull power", disabled: !!d.hands });
   }
   if (dead) options.push({ op: "bmc", label: `Reset ${name}`, disabled: !!d.hands });
-  return { via: bmc && !dead ? name : null, options };
+  return { via: bmc && !dead ? name : null, pdu, options };
 }
 
 export const isServerInRack = (d: Device): boolean => modelById(d.model).kind === "server" && !!d.rackId;

@@ -167,15 +167,21 @@ GPU rental is priced per card a month by year, straight between these anchors an
 | Security appliances | Fortinope | 0.90 | 1.25 |
 | Security appliances | Pablo Alto | 1.10 | 0.75 |
 | Patch panels | Pandoot | 1.00 | 1.00 |
+| Routers | AVN | 1.00 | 0.90 |
+| Routers | MicroTick | 1.00 | 1.20 |
+| UPS units and PDUs | Eatin | 1.00 | 1.00 |
 
-**Routers.** Routers keep their price over the years. A router's ports cap how many uplink links a location can have and how fast they run.
+A router is built by one manufacturer only (Sysko, AVN, MicroTick or Junipurr, by model) and sells at its list price. Junipurr's switch price factor does not apply to its routers.
 
-| Router | Height | Ports | Sold from | Price | Full power |
-| --- | --- | --- | --- | --- | --- |
-| Edge S | 1U | 4 × 1G | 2005 | €3,000 | 100 W |
-| Edge M | 1U | 8 × 10G and 4 × 1G | 2008 | €12,000 | 200 W |
-| Edge L | 2U | 32 × 100G | 2014 | €40,000 | 600 W |
-| Edge XL | 2U | 36 × 400G | 2021 | €90,000 | 900 W |
+**Routers.** A router's ports cap how many uplink links a location can have and how fast they run, and its throughput caps what passes through it. The routers below are the Sysko edge routers, which mount in a rack; the other routers are in Routers, UPS and PDUs.
+
+| Router | Height | Ports | Throughput | Full table | Sold from | Price | Full power |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Edge S | 1U | 4 × 1G | 4 Gbit/s | No | 2005 | €3,000 | 100 W |
+| Edge M | 1U | 8 × 10G and 4 × 1G | 40 Gbit/s | Yes | 2008 | €12,000 | 200 W |
+| Edge L | 2U | 32 × 100G | 400 Gbit/s | Yes | 2014 | €40,000 | 600 W |
+| Edge XL | 2U | 36 × 400G | 800 Gbit/s | Yes | 2021 | €90,000 | 900 W |
+| Edge XXL | 2U | 36 × 400G | 1.6 Tbit/s | Yes | 2027 | €150,000 | 1,200 W |
 
 **Switches.** All switches are managed and keep their price over the years. Every switch stays in the shop once it arrives, so an older 1G switch can always link a rack to the provider handoff. Layer 3 can route between networks and act as a gateway in later milestones, so it costs and draws more than the layer 2 model with the same ports. Switches, firewalls and gateways draw their full power at all times. Their prices are estimates.
 
@@ -190,6 +196,7 @@ GPU rental is priced per card a month by year, straight between these anchors an
 | L3 switch 48 SFP, 100G | 3 | 1U | 48 × 25G and 8 × 100G SFP | 2017 | €18,000 | 400 W |
 | L3 spine 32 × 100G | 3 | 1U | 32 × 100G SFP | 2017 | €20,000 | 450 W |
 | L3 spine 32 × 400G | 3 | 1U | 32 × 400G SFP | 2022 | €45,000 | 900 W |
+| L3 spine 32 × 800G | 3 | 1U | 32 × 800G SFP | 2027 | €60,000 | 1,400 W |
 
 **Security appliances.** 1U firewalls sit inline between the gateway and the switches. A firewall forwards like a switch, and every link through it runs at most at its throughput.
 
@@ -199,6 +206,7 @@ GPU rental is priced per card a month by year, straight between these anchors an
 | Firewall 10G | 10 Gbit/s | 1U | 8 × 1G and 4 × 10G SFP | 2011 | €6,000 | 120 W |
 | Firewall 40G | 40 Gbit/s | 1U | 8 × 10G and 4 × 40G SFP | 2017 | €18,000 | 250 W |
 | Firewall 100G | 100 Gbit/s | 1U | 8 × 25G and 4 × 100G SFP | 2022 | €40,000 | 450 W |
+| Firewall 400G | 400 Gbit/s | 1U | 8 × 100G and 4 × 400G SFP | 2027 | €70,000 | 700 W |
 
 **Patch panels and gateways.**
 
@@ -208,10 +216,51 @@ GPU rental is priced per card a month by year, straight between these anchors an
 | Patch panel 24, fiber | 1U | 24 jacks, SFP | 2005 | €250 | 0 W |
 | Patch panel 48, copper | 1U | 48 jacks, 1G | 2005 | €140 | 0 W |
 | Patch panel 48, fiber | 1U | 48 jacks, SFP | 2005 | €450 | 0 W |
-| Home router | Carrier panel | 4 × 1G | Comes with the basement | Free | 10 W |
+| Home router (100 Mbit/s) | Carrier panel | 4 × 1G | Comes with the basement | Free | 10 W |
 | Datacenter handoff | Carrier panel | 2 × 1G | Comes with every datacenter location | Free | 0 W |
 
 A patch panel is passive. Each jack has a front and a back port, and a link through a jack runs at the slower of the two ports on either side of the panel. Gateways sit on the location's carrier panel, not in a rack, so they stay when a rack moves.
+
+**Routers, UPS and PDUs.** Prices are approximate launch street prices in euro from contemporary reviews and price lists, recorded as game anchors; none comes from a single public source. A router passes on at most its throughput. The home router that comes with the basement routes 100 Mbit/s (a router bought for the basement replaces it), and the basement's line carries the lower of its upload and the router's speed. In a datacenter a router's throughput is shared among the links on it. A router with a full table can hold a full BGP table and run an own AS, which announcing a block needs; the others take provider addresses and a default route. BGP sessions is the number of sessions the model takes.
+
+| Router | Maker | Height | Ports | Throughput | Full table | BGP sessions | Sold from | Price | Full power |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Fritz!Bocks 7050 | AVN | Carrier panel | 4 × 1G | 100 Mbit/s | No | 0 | 2006 | €150 | 8 W |
+| Fritz!Bocks 7390 | AVN | Carrier panel | 4 × 1G | 300 Mbit/s | No | 0 | 2010 | €220 | 9 W |
+| Fritz!Bocks 7590 | AVN | Carrier panel | 4 × 1G | 1 Gbit/s | No | 0 | 2018 | €249 | 12 W |
+| Fritz!Bocks 5690 | AVN | Carrier panel | 4 × 1G | 2.5 Gbit/s | No | 0 | 2024 | €330 | 14 W |
+| Router 1841 | Sysko | 1U | 2 × 1G | 100 Mbit/s | No | 2 | 2005 | €1,300 | 40 W |
+| Router 2811 | Sysko | 2U | 4 × 1G | 300 Mbit/s | No | 4 | 2005 | €2,500 | 120 W |
+| Router 2911 | Sysko | 2U | 3 × 1G | 1 Gbit/s | No | 8 | 2009 | €2,800 | 130 W |
+| Router 4451 | Sysko | 2U | 4 × 1G | 2 Gbit/s | Yes | 64 | 2013 | €8,000 | 250 W |
+| Router 8300 | Sysko | 2U | 4 × 10G and 4 × 1G | 10 Gbit/s | Yes | 256 | 2020 | €9,000 | 300 W |
+| RB1100 | MicroTick | 1U | 13 × 1G | 1 Gbit/s | No | 4 | 2010 | €300 | 30 W |
+| CCR1036 | MicroTick | 1U | 12 × 1G and 4 × 10G SFP | 10 Gbit/s | Yes | 128 | 2013 | €1,000 | 40 W |
+| CCR2004 | MicroTick | 1U | 16 × 1G and 2 × 10G SFP | 10 Gbit/s | Yes | 128 | 2020 | €450 | 40 W |
+| CCR2216 | MicroTick | 1U | 16 × 25G and 2 × 100G SFP | 100 Gbit/s | Yes | 512 | 2022 | €2,500 | 120 W |
+| MX80 | Junipurr | 2U | 4 × 10G SFP and 8 × 1G | 80 Gbit/s | Yes | 512 | 2010 | €25,000 | 350 W |
+| MX204 | Junipurr | 1U | 4 × 100G and 8 × 10G SFP | 400 Gbit/s | Yes | 2,048 | 2017 | €40,000 | 400 W |
+| MX304 | Junipurr | 2U | 16 × 100G | 1.6 Tbit/s | Yes | 8,192 | 2022 | €80,000 | 1,000 W |
+
+Anchors: the AVM Fritz!Box 7050, 7390, 7590 and 5690 at their launch prices, the Cisco 1841, 2811, 2911, 4451 and 8300, the MikroTik RB1100, CCR1036, CCR2004 and CCR2216, and the Juniper MX80, MX204 and MX304. The Sysko edge routers follow the table under Routers; their throughput is 4, 40, 400, 800 and 1,600 Gbit/s from S to XXL and every one from M up holds a full table. Rack-mounted routers in the basement count for its line like the carrier panel router, and the fastest one sets the cap.
+
+| UPS | Height | Battery | Sold from | Price | Full power |
+| --- | --- | --- | --- | --- | --- |
+| UPS 1500 VA | 1U | 600 Wh | 2005 | €180 | 10 W |
+| UPS 3000 VA | 2U | 1,800 Wh | 2005 | €900 | 25 W |
+| UPS 5 kVA | 3U | 3,500 Wh | 2005 | €2,500 | 50 W |
+| UPS 10 kVA (two feeds) | 6U | 8,000 Wh | 2008 | €6,000 | 100 W |
+
+Anchors: an APC Smart-UPS 1500 cost about USD 600 in 2005, a 3000 about USD 1,200, and the Smart-UPS RT and Symmetra units of 5 to 10 kVA USD 3,000 to 7,000. A UPS carries a location through a grid outage for its battery in Wh divided by the draw of the location's racks.
+
+| Switched PDU | Height | Outlets | Sold from | Price | Full power |
+| --- | --- | --- | --- | --- | --- |
+| Switched PDU 8 | 1U | 8 | 2005 | €700 | 15 W |
+| Switched PDU 24 | 0U (side rail) | 24 | 2008 | €1,200 | 20 W |
+
+Anchor: the APC AP7900 switched rack PDU at about USD 600. A rack takes one PDU. While it is up, a device in the rack can be power cycled and powered off with the same corruption roll as a pulled plug, without a remote hands fee.
+
+Lifecycle: each row follows the rule in Hardware lifecycle. The newest row of each line (Fritz!Bocks 5690, Router 8300, CCR2216, MX304, Edge XXL, the 800G spine, Firewall 400G, UPS 10 kVA and Switched PDU 24) has no last year on sale, so the Shop never runs out of a kind of device.
 
 ## Market and leads
 
@@ -933,8 +982,8 @@ Rates are rolled hourly (yearly rate ÷ 8,760) per server and do not draw from t
 | Kind | Last year on sale | Support years after it |
 | --- | --- | --- |
 | Server | Launch year of the generation two later, minus one (the two newest generations have none yet) | 5 |
-| Switch, firewall, edge router | Launch year + 6 | 5 |
-| UPS | Launch year + 8 | 3 |
+| Switch, firewall, router | Launch year + 6 (none for the newest model of a line) | 5 |
+| UPS, PDU | Launch year + 8 (none for the newest model of a line) | 3 |
 | Patch panel | Never | None |
 
 - **Price erosion.** A non-server model's list price falls 5% a year from the second year of sale (launch year + n costs 0.95^n of the list price) until its last year on sale, as successors arrive. A server's price follows its parts (see Part prices by year) and is not eroded.

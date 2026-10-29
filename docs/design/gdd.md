@@ -144,7 +144,7 @@ Infrastructure lives in locations: your basement first, then space in other comp
 
 | Location | Protection |
 | --- | --- |
-| Basement | None: every grid outage takes the servers down. A UPS from the shop (Eatin, 1U) rides through outages until its battery runs out. |
+| Basement | None: every grid outage takes the servers down. A UPS from the shop (Eatin, from a 1U 1,500 VA unit to a 6U 10 kVA one) rides through outages until its battery runs out. |
 | Datacenter | Whatever the site has: feeds, UPS and generator differ by datacenter |
 | Private suite or own datacenter | Whatever you build: UPS, batteries, generators and two utility feeds |
 
@@ -174,6 +174,9 @@ Racks hold servers, switches and routers, and you cable them port by port. Bandw
 | Edge router | 1–2U | Connects to transit and peering |
 | Patch panel | 1U | Tidy cross-rack cabling; faster repairs |
 | Aggregation switch | 1U | SFP fiber ports that link racks and uplinks |
+| Small-office router | Carrier panel | The basement's internet router; replaces the provided one |
+| UPS | 1–6U | Carries a location through a grid outage |
+| Switched PDU | 0–1U | Power cycles and cuts the devices in its rack |
 
 Switches come in several sizes: 8, 24 and 48 copper ports, each with a few SFP cages for fiber.
 
@@ -208,7 +211,17 @@ Failover is the safe default. Load balance doubles a server's bandwidth, but if 
 
 **Failures and redundancy.** Disks, power supplies, switches and routers fail at random, and more often as they age. Without a second path, everything behind a failed device goes offline. Two switches, two routers and servers wired to both keep services up. Until you hire technicians, you fix failures yourself.
 
-**Lifecycle.** Every model leaves the Shop in its end of sale year: servers two generations after their own, switches, firewalls and edge routers six years after launch, UPS units eight years, and patch panels never. The Shop card shows "End of sale" with the year, the device page shows "End of support" with the year, and News reports each non-server model that goes. Devices keep working past both dates. Once a device is out of support, swapping, installing and removing parts takes twice as long, spare parts for it cost 1.5 times as much, and its components fail 1.2 times as often. While a model is on sale its price falls 5% a year from the second year, except servers, whose prices follow their parts. See economy.md, Hardware, power and failures.
+**Lifecycle.** Every model leaves the Shop in its end of sale year: servers two generations after their own, switches, firewalls and edge routers six years after launch, UPS units eight years, and patch panels never. The Shop card shows "End of sale" with the year, the device page shows "End of support" with the year, and News reports each non-server model that goes. Devices keep working past both dates. Once a device is out of support, swapping, installing and removing parts takes twice as long, spare parts for it cost 1.5 times as much, and its components fail 1.2 times as often. While a model is on sale its price falls 5% a year from the second year, except servers, whose prices follow their parts. The newest model of each line (switches, firewalls, Sysko edge routers, the AVN, Sysko, MicroTick and Junipurr router lines, UPS units and PDUs) never leaves the Shop until a successor exists, and the 800G spine switch, the 400G firewall and the Sysko edge router XXL, all from 2027, keep the Shop stocked to the end of the game. See economy.md, Hardware, power and failures.
+
+**Routers.** Routers are a class of the Shop with four sources. AVN builds the Fritz!Bocks small-office routers (2006 to 2024) for the basement: a bought one replaces the router that comes with the basement, keeps its cables on the same ports, and the replaced router goes into storage. The basement's home line carries the lower of the line's upload and the router's routed speed, so the provided 100 Mbit router holds back a fast line until a better one is installed. Sysko sells business and branch routers from 2005, MicroTick cheap routers from 2010 and Junipurr carrier routers from 2010; the Sysko edge routers stay. All of them mount in a rack, and a datacenter router passes on no more than its throughput, shared among the links on it. A router either holds a full BGP table (and so can run an own AS) or takes provider addresses and a default route. Announcing an address block from a datacenter needs a router with a full table that is up at that location; the basement's routers never have one. Prices, speeds and which models hold a full table are in economy.md, Routers, UPS and PDUs.
+
+**UPS sizes.** Eatin sells four UPS sizes: 1,500 VA (1U), 3,000 VA (2U), 5 kVA (3U) and 10 kVA (6U, with two feeds). Every location counts the battery of the UPS units in its racks against the load of its devices, so a bigger unit carries the location through a longer outage.
+
+**Switched PDUs.** Eatin sells a switched PDU as a 1U unit with 8 outlets and as a 0U unit with 24 outlets that hangs on the rack's side rail. A rack takes one. While it is up, every device in the rack can be power cycled and powered off from the inspector and the right-click menu, also a server without a management controller, with the same corruption roll as a pulled plug and without a remote hands fee. Devices plug into the PDU without extra cabling. A reset still needs the server's own controller.
+
+**Load balancers and storage arrays.** The Shop has neither on purpose. High availability exists only for cloud clusters and web clustering is a panel trait, so a load balancer device would have no effect on any customer product, and a storage array would only repeat the storage server lines.
+
+**Routers and BGP.** A router passes on at most its throughput. In the basement that caps the home line at the router's routed speed (100 Mbit for the provided router, up to 2.5 Gbit for the newest small-office one). In a datacenter the limit is shared among the links on a router, so a 100 Mbit branch router turns a 1 Gbit transit port into 100 Mbit. Announcing an address block needs a router with a full BGP table at the location (an edge router M or larger, a Sysko 4451 or 8300, a MicroTick CCR, a Junipurr MX); a router without one still takes provider addresses and a default route.
 
 **Upgrades**
 

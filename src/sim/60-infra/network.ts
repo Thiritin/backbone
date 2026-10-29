@@ -17,6 +17,7 @@ import type { GameState, LedgerEntry, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { addressBills } from "./addresses";
 import { workloadsOf } from "./cluster";
+import { routerMbps, throughputShare } from "./routers";
 import { working } from "./status";
 
 // A link takes one router port; it carries traffic from readyAt on, while its router works.
@@ -86,7 +87,11 @@ export function zoneDemand(s: GameState): Record<string, number> {
 }
 
 export const linkUp = (s: GameState, l: UplinkLink): boolean => l.readyAt <= s.hour && working(s, l.device);
-export const uplinkMbps = (s: GameState, u: Uplink): number => u.links.filter((l) => linkUp(s, l)).reduce((n, l) => n + l.gbit * 1000, 0);
+// A router passes on at most its throughput, shared among the links on it.
+const routedGbit = (s: GameState, device: string): number =>
+  s.network.uplinks.flatMap((x) => x.links).filter((l) => l.device === device && linkUp(s, l)).reduce((n, l) => n + l.gbit, 0);
+export const uplinkMbps = (s: GameState, u: Uplink): number =>
+  u.links.filter((l) => linkUp(s, l)).reduce((n, l) => n + l.gbit * 1000 * throughputShare(s, l.device, routedGbit(s, l.device)), 0);
 export const capacityMbps = (u: Uplink): number => u.links.reduce((n, l) => n + l.gbit * 1000, 0);
 
 // Peers reached through an exchange: the route-server networks there, plus your sessions on it.
@@ -99,7 +104,7 @@ export function peersVia(s: GameState, exchange: string): Peer[] {
 interface Exit { id: string; tier: number; cap: number; used: number; share: number }
 
 export function exitsOf(s: GameState, loc: Location): Exit[] {
-  if (!loc.dc) return [{ id: "home", tier: 2, cap: homeLineById(s.homeLine.id).up, used: 0, share: 1 }];
+  if (!loc.dc) return [{ id: "home", tier: 2, cap: Math.min(homeLineById(s.homeLine.id).up, routerMbps(s, loc)), used: 0, share: 1 }];
   const exits: Exit[] = [];
   const seen = new Set<string>();
   for (const u of s.network.uplinks.filter((x) => x.locationId === loc.id)) {

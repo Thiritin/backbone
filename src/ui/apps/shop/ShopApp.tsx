@@ -4,7 +4,7 @@ import { useSessionState } from "../../session";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { cardOf, cardWatts } from "../../../sim/10-catalog/gpu";
-import { brandsFor, COMPONENTS, fits, MANUFACTURERS, modelById, partOffers, shopModels, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { brandsOf, COMPONENTS, fits, MANUFACTURERS, modelById, partOffers, shopModels, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
 import { partPrice } from "../../../sim/10-catalog/parts";
 import { lineParts, unitPrice, type CartLine } from "../../../sim/90-actions/hardware";
 import { Cart, Stepper } from "./Cart";
@@ -25,7 +25,7 @@ const CLASSES: [string, typeof Server][] = [
   ["Layer 2", Network], ["Layer 3", Network], ["Routers", Router], ["Security", Shield], ["Patch panels", Cable], ["Power", BatteryCharging], ["Parts", HardDrive],
 ];
 const classOf = (m: DeviceModel) =>
-  m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "gateway" ? "Routers" : m.kind === "ups" ? "Power" : "Patch panels";
+  m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "gateway" ? "Routers" : m.kind === "ups" || m.kind === "pdu" ? "Power" : "Patch panels";
 
 const SWAP = { raid: "In RAID", dual: "With two", yes: "Yes", no: "No" };
 
@@ -34,7 +34,7 @@ interface Item { model: DeviceModel; brand: string; cls: string; part?: PartSpec
 
 // Every model comes from each manufacturer that builds its kind; parts are sold sized.
 const items = (year: number): Item[] => [
-  ...shopModels(year).filter((m) => m.kind !== "part").flatMap((model) => brandsFor(model.kind).map((brand) => ({ model, brand, cls: classOf(model) }))),
+  ...shopModels(year).filter((m) => m.kind !== "part").flatMap((model) => brandsOf(model).map((brand) => ({ model, brand, cls: classOf(model) }))),
   ...partOffers(year).map((part) => ({ model: modelById(`part-${part.kind}`), brand: "Generic", cls: "Parts", part })),
 ];
 const itemKey = (it: Item) => `${it.model.id}|${it.brand}|${it.part?.size ?? ""}|${it.part?.ff ?? ""}`;
@@ -140,7 +140,8 @@ function Card({ model, brand, cls, part }: Item) {
     ...(s ? [["Cores", cores(custom ? sum("cpu") : s.cores)], ["RAM", ram(custom ? sum("ram") : s.ramGb)],
       ...(cards.length ? [["GPUs", `${cards.length} × ${cardOf(cards[0].size).name}`]] as [string, string][] : []),
       ["Storage", custom ? (drives.length ? `${disk(drives.reduce((n, p) => n + (p.size ?? 0), 0))} in ${drives.length} ${drives.length === 1 ? "drive" : "drives"}` : "None") : `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),
-    ...(model.batteryWh ? [["Battery", `${model.batteryWh} Wh`]] as [string, string][] : [[model.kind === "patch" ? "Jacks" : model.kind === "server" ? "NICs" : "Ports", portsText(model)]] as [string, string][]),
+    ...(model.kind === "gateway" && model.price > 0 ? [["Routing", model.fullTable ? "Full table" : "Default route"], ...(model.fullTable ? [["BGP sessions", `${model.bgpSessions}`]] : [])] as [string, string][] : []),
+    ...(model.batteryWh ? [["Battery", `${model.batteryWh} Wh`]] as [string, string][] : model.outlets ? [["Outlets", `${model.outlets}`]] as [string, string][] : [[model.kind === "patch" ? "Jacks" : model.kind === "server" ? "NICs" : "Ports", portsText(model)]] as [string, string][]),
     ...(model.watts ? [["PSUs", `${model.psus}`], ["Power", `${model.watts + cardWatts(cards.map((p) => ({ ...p, failedAt: null })))} W`]] as [string, string][] : []),
   ];
   const reset = () => { setQty(1); setCounts({}); setBare(false); setOpen(false); };

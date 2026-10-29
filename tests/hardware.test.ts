@@ -35,9 +35,9 @@ describe("catalog", () => {
     expect(new Set(MODELS.map((m) => m.id)).size).toBe(MODELS.length);
     for (const m of MODELS) {
       expect(m.idleWatts).toBeLessThanOrEqual(m.watts);
-      expect(m.ports.length > 0).toBe(m.kind !== "part" && m.kind !== "ups");
-      // Panel gateways and parts take no units; edge routers take 1 or 2.
-      expect(m.height).toBe(m.kind === "part" || (m.kind === "gateway" && !m.price) ? 0 : m.kind === "server" || m.kind === "gateway" ? m.height : 1);
+      expect(m.ports.length > 0).toBe(m.kind !== "part" && m.kind !== "ups" && m.kind !== "pdu");
+      // Panel gateways (provided or small-office) and parts take no rack units; rack gateways, UPS units and PDUs take their own height.
+      expect(m.height).toBe(m.kind === "part" || (m.kind === "gateway" && (!m.price || m.brand === "AVN")) ? 0 : ["server", "gateway", "ups", "pdu"].includes(m.kind) ? m.height : 1);
     }
     expect(() => modelById("nope")).toThrow();
     expect(MODELS.some((m) => m.id === "tower")).toBe(false);

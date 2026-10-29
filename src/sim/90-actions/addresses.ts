@@ -3,6 +3,7 @@ import { yearOf } from "../00-core/time";
 import { DELIST_HOURS, freeBlock, LIR_FEES, transferPrice } from "../10-catalog/addresses";
 import type { GameState } from "../50-state";
 import { buyLineExtra, buyProvider, dynamicLine, holderOf, lineActive, machineLocation, takeAddress, v6Offered } from "../60-infra/addresses";
+import { fullTableAt } from "../60-infra/routers";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -106,6 +107,7 @@ export function announceBlock(s: GameState, blockId: string, locationId: string)
   const b = s.ips.blocks.find((x) => x.id === blockId), loc = s.locations.find((l) => l.id === locationId);
   if (!b) return fail("error.unknownBlock");
   if (!loc?.dc) return fail("error.lirNeedsDatacenter");
+  if (!fullTableAt(s, locationId)) return fail("error.needsBgpRouter");
   if (s.ips.addresses.some((a) => a.blockId === b.id && a.holder)) return fail("error.addressInUse");
   s.ips = { ...s.ips, blocks: s.ips.blocks.map((x) => (x.id === b.id ? { ...x, locationId } : x)), addresses: s.ips.addresses.filter((a) => a.blockId !== b.id) };
   return { ok: true };

@@ -6,7 +6,7 @@ import { sizeSpec } from "../src/sim/10-catalog/products";
 import { requirementsFor } from "../src/sim/30-market/market";
 import { specText } from "../src/sim/30-market/spec";
 import { createTicket } from "../src/sim/40-support/tickets";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { device, newGame, type GameState } from "../src/sim/50-state";
 import { addressBills, addressesOf, addressTick, addSpam, mailAddress, privateIp, publicV4, sharedAddress } from "../src/sim/60-infra/addresses";
 import { lineOffered } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
@@ -135,6 +135,8 @@ describe("addresses", () => {
     expect(s.network.asn).toBe(s.ips.lir?.asn);
     const block = s.ips.blocks[0];
     expect(block).toMatchObject({ size: 2048, locationId: null });
+    expect(err(announceBlock(s, block.id, loc))).toBe("error.needsBgpRouter");
+    s.devices.push(device("devbgp", "edge-m", "Sysko", s.racks.find((r) => r.locationId === loc)!.id, 10, null, "gw", 0));
     ok(announceBlock(s, block.id, loc));
     addressTick(s);
     expect(s.ips.addresses.find((a) => a.source === "lir")?.ip.startsWith(block.prefix.split(".").slice(0, 2).join("."))).toBe(true);

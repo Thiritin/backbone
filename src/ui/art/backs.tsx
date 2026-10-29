@@ -3,7 +3,7 @@
 // server NICs are, and their power supplies and fans look to the rack front.
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import { BrandMark } from "./logos";
-import { AssetTag, fsz, gatewayLayout, Jacks, LED, ledProps, numBand, numSize, partLed, patchLayout, portNo, switchLayout, SwitchPorts, switchX0, tw, type FrontProps, type PartLamp } from "./fronts";
+import { AssetTag, fsz, gatewayLayout, Jacks, LED, ledProps, numBand, numSize, partLed, patchLayout, Pdu, portNo, switchLayout, SwitchPorts, switchX0, tw, type FrontProps, type PartLamp } from "./fronts";
 
 const MONO = "JetBrains Mono, monospace", NUM = "oklch(0.74 0.01 255)";
 
@@ -53,8 +53,8 @@ export const portSpots = (model: DeviceModel, name: string, side: Side, w: numbe
 // Power supplies stand at the left end of the face they are on, in the lowest unit, true to size: a 1U module is
 // about 70 by 38 mm with an IEC C14 inlet of 24 by 16 mm.
 export function psuBoxes(model: DeviceModel, w: number, h: number) {
-  if (model.kind === "gateway" || model.kind === "patch") return [];
-  const mm = mmOf(model, h), u = h / Math.max(1, model.height), ph = Math.min(u - 3, 38 * mm), pw = Math.min(70 * mm, (w * 0.4) / Math.max(1, model.psus));
+  if (model.kind === "gateway" || model.kind === "patch" || model.kind === "pdu") return [];
+  const mm =mmOf(model, h), u = h / Math.max(1, model.height), ph = Math.min(u - 3, 38 * mm), pw = Math.min(70 * mm, (w * 0.4) / Math.max(1, model.psus));
   const iw = 24 * mm, ih = 16 * mm;
   return Array.from({ length: model.psus }, (_, k) => {
     const x = 13 + k * (pw + 3), y = h - u + (u - ph) / 2;
@@ -181,6 +181,7 @@ function PortFace(p: FrontProps) {
 export function Back(p: FrontProps) {
   const { model, w, h, name, ports, state } = p;
   if (reversed(model)) return <PortFace {...p} />;
+  if (model.kind === "pdu") return <Pdu {...p} />;
   const spots = model.kind === "server" || model.kind === "gateway" ? mirroredLayout(model, name, w, h) : new Map<number, Spot>();
   const psus = psuBoxes(model, w, h), used = psus.length ? psus[psus.length - 1].x + psus[psus.length - 1].w : 0;
   const gx = w * 0.5, grille = Math.max(0, w * 0.5 - 14 - used);

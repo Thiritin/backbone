@@ -1,5 +1,5 @@
 import { yearOf } from "../00-core/time";
-import { bareParts, brandsFor, COMPONENT_KINDS, COMPONENTS, componentParts, dualPsuModel, fits as chassisFits, hasBmc, isDriveKind, modelById, partOffers, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { bareParts, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, dualPsuModel, fits as chassisFits, hasBmc, isDriveKind, modelById, partOffers, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
@@ -8,6 +8,7 @@ import { deviceDefaults, type BondMode, type Component, type Device, type End, t
 import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, moveCost, pluggedIn, deviceValue, resaleValue, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { BMC_RESET_HOURS, hardReboot, pullPlug, pushLog } from "../60-infra/power";
+import { hasPdu, pduOf } from "../60-infra/pdu";
 import { endLease, rebuildHours } from "../88-tick/tick";
 import { cardsFree, serverTaken } from "../60-infra/cluster";
 import { nodeName } from "../30-customers/hostnames";
@@ -17,7 +18,7 @@ export type ActionResult = { ok: true; id?: string } | { ok: false; error: strin
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const newId = (s: GameState, prefix: string) => `${prefix}${s.nextId++}`;
-const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", part: "part" } as const;
+const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", pdu: "pdu", part: "part" } as const;
 const roleOf = (modelId: string) => ROLE[modelById(modelId).kind];
 const cents = (v: number) => Math.round(v * 100) / 100;
 
@@ -178,7 +179,7 @@ function lineError(s: GameState, line: CartLine): string | null {
   const { model: modelId, brand, qty } = line;
   const model = shopModels(yearOf(s.hour)).find((m) => m.id === modelId);
   if (!model) return "error.notInShop";
-  if (!brandsFor(model.kind).includes(brand)) return "error.unknownBrand";
+  if (!brandsOf(model).includes(brand)) return "error.unknownBrand";
   if (!Number.isInteger(qty) || qty < 1) return "error.badQuantity";
   const offers = partOffers(yearOf(s.hour));
   if (line.part && (model.kind !== "part" || line.part.kind !== modelId.slice(5) || !offers.some((o) => samePart(o, line.part!)))) return "error.notInShop";
@@ -208,11 +209,15 @@ function stock(s: GameState, line: CartLine, lease: string | null, store: string
 
 const lineTotal = (s: GameState, line: CartLine) => unitPrice(line, yearOf(s.hour)) * line.qty;
 
+// A small-office router only fits the basement's carrier panel.
+const officeError = (s: GameState, modelId: string, locationId: string): string | null =>
+  isOfficeRouter(modelById(modelId)) && s.locations.find((l) => l.id === locationId)?.dc ? "error.basementOnly" : null;
+
 // Bought units go to the storage of the zone at locationId, which may not be ready yet.
 export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "bare" | "part"> = {}): ActionResult {
   const line = { model: modelId, brand, qty, ...rest };
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
-  const error = lineError(s, line);
+  const error = lineError(s, line) ?? officeError(s, modelId, locationId);
   if (error) return fail(error);
   if (s.cash < lineTotal(s, line)) return fail("error.noCash");
   const ids = stock(s, line, null, locationId);
@@ -224,7 +229,7 @@ export function buyDevice(s: GameState, modelId: string, brand: string, qty: num
 export function buyCart(s: GameState, lines: CartLine[], payment: { kind: "cash" } | { kind: "lease"; offerId: string }, locationId: string): ActionResult {
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   if (!lines.length) return fail("error.emptyCart");
-  const error = lines.map((l) => lineError(s, l)).find((e) => e);
+  const error = lines.map((l) => lineError(s, l) ?? officeError(s, l.model, locationId)).find((e) => e);
   if (error) return fail(error);
   const total = lines.reduce((sum, l) => sum + lineTotal(s, l), 0);
   if (payment.kind === "cash") {
@@ -255,10 +260,12 @@ function mountError(s: GameState, d: Device, rackId: string, slot: number): stri
   if (d.transitTo) return "error.inTransit";
   if (!d.store) return "error.alreadyMounted";
   if (modelById(d.model).kind === "part") return "error.notMountable";
+  if (isOfficeRouter(modelById(d.model))) return "error.panelRouter";
   const rack = s.racks.find((r) => r.id === rackId);
   if (!rack) return "error.unknownRack";
   if (rack.arriveAt !== null) return "error.rackMoving";
   if (d.store !== rack.locationId) return "error.notInZone";
+  if (modelById(d.model).kind === "pdu" && hasPdu(s, rackId)) return "error.pduInstalled";
   const h = modelById(d.model).height;
   if (!Number.isInteger(slot) || slot < 1 || slot + h - 1 > rackUnits(rack.model)) return "error.outOfBounds";
   if (!freeSlots(s, rackId, h).includes(slot)) return "error.slotTaken";
@@ -288,7 +295,9 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   if (!rack) return fail("error.unknownRack");
   if (rack.arriveAt !== null) return fail("error.rackMoving");
   if (modelById(modelId).kind === "part") return fail("error.notMountable");
-  const same = (d: Device) => d.model === modelId && d.brand === brand;
+  if (isOfficeRouter(modelById(modelId))) return fail("error.panelRouter");
+  if (modelById(modelId).kind === "pdu" && (count > 1 || hasPdu(s, rackId))) return fail("error.pduInstalled");
+  const same =(d: Device) => d.model === modelId && d.brand === brand;
   const stored = s.devices.filter((d) => same(d) && d.store === rack.locationId);
   if (!Number.isInteger(count) || count < 1 || stored.length < count) {
     return fail(s.devices.filter((d) => same(d) && d.store).length >= count ? "error.notInZone" : "error.notInStorage");
@@ -417,8 +426,10 @@ function reboot(s: GameState, deviceId: string, key: "ipmi.log.reset" | "ipmi.lo
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId && !d.panel) return fail("error.notMounted");
   if (!d.on) return fail("error.alreadyOff");
-  if (!technician && !hasBmc(d.model, d.brand)) return fail("error.noBmc");
-  if (!technician && d.bmcHung) return fail("error.bmcHung");
+  // A switched PDU in the rack cycles the power without a controller; a reset still needs one.
+  const viaPdu = key === "ipmi.log.cycle" && !!pduOf(s, d);
+  if (!technician && !viaPdu && !hasBmc(d.model, d.brand)) return fail("error.noBmc");
+  if (!technician && !viaPdu && d.bmcHung) return fail("error.bmcHung");
   hardReboot(s, d, key);
   return { ok: true };
 }
@@ -432,7 +443,7 @@ export function pullPower(s: GameState, deviceId: string, technician = false): A
   if (!d.rackId && !d.panel) return fail("error.notMounted");
   if (!d.on) return fail("error.alreadyOff");
   if (d.hands) return fail("error.handsBusy");
-  const hands = handsAt(s, d, technician);
+  const hands = pduOf(s, d) ? null : handsAt(s, d, technician);
   if (!hands) return setPower(s, deviceId, false);
   if (s.cash < hands.perHour) return fail("error.noCash");
   book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: 1 }, -hands.perHour);

@@ -35,6 +35,7 @@ export const IPMI_EN: Record<string, (p: Params) => string> = {
   "error.notHung": () => "The server is not hung.",
   "error.notCorrupted": () => "The data is not corrupted.",
   "error.needsRestore": () => "Recovery failed. Restore it from backup.",
+  "error.pduInstalled": () => "This rack already has a switched PDU.",
   "error.handsBusy": () => "Someone is already on the way to this server.",
   "error.recovering": () => "A recovery is already under way.",
 };

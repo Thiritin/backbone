@@ -64,7 +64,7 @@ const partShare = (m: DeviceModel): number => (m.price - chassisPrice(m)) / part
 
 // What a preset costs in a year: its chassis plus its parts at that year's prices, times the brand's price factor.
 export function presetPrice(m: DeviceModel, year: number, brand?: string): number {
-  const factor = (brand && manufacturerByName(brand)?.priceFactor) || 1;
+  const factor = (!m.brand && brand && manufacturerByName(brand)?.priceFactor) || 1;
   if (!m.server) return Math.round(erodedPrice(m, m.price, year) * factor);
   return Math.round((chassisPrice(m) + partShare(m) * partsPrice(componentParts(m), year)) * factor);
 }

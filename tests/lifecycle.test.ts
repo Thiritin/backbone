@@ -23,6 +23,9 @@ const ok = (r: { ok: boolean; id?: string; error?: string }) => {
 };
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
 
+// The newest model of each line stays on sale (Lane 5.2, Successors).
+const NEWEST = ["sw-32e", "fw-400g", "edge-xxl", "ups-10k", "pdu-24", "fb-5690", "isr-8300", "ccr2216", "mx304"];
+
 describe("hardware lifecycle", () => {
   it("gives every model an end of sale and support, except patch panels, unsold models and the newest servers", () => {
     for (const m of MODELS) {
@@ -31,7 +34,8 @@ describe("hardware lifecycle", () => {
       else if (m.server) {
         const i = GENERATIONS.findIndex((g) => g.year === m.from);
         expect([m.until, m.supportYears], m.id).toEqual([GENERATIONS[i + 2] ? GENERATIONS[i + 2].year - 1 : null, 5]);
-      } else if (m.kind === "ups") expect([m.until, m.supportYears], m.id).toEqual([m.from + 8, 3]);
+      } else if (NEWEST.includes(m.id)) expect(m.until, m.id).toBeNull();
+      else if (m.kind === "ups" || m.kind === "pdu") expect([m.until, m.supportYears], m.id).toEqual([m.from + 8, 3]);
       else expect([m.until, m.supportYears], m.id).toEqual([m.from + 6, 5]);
     }
     expect(modelById("g1-compute")).toMatchObject({ until: 2010, supportYears: 5 });

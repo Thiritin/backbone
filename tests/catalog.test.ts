@@ -58,7 +58,7 @@ describe("switches, firewalls and patch panels", () => {
     const switches = MODELS.filter((m) => m.kind === "switch");
     expect(switches.map((m) => [m.id, m.layer, m.ports.length, m.from])).toEqual([
       ["sw-8", 2, 8, 2005], ["sw-24", 2, 26, 2005], ["sw-48", 2, 52, 2008], ["sw-48x", 2, 48, 2011],
-      ["sw-48-l3", 3, 52, 2008], ["sw-48q", 3, 54, 2014], ["sw-48y", 3, 56, 2017], ["sw-32c", 3, 32, 2017], ["sw-32d", 3, 32, 2022],
+      ["sw-48-l3", 3, 52, 2008], ["sw-48q", 3, 54, 2014], ["sw-48y", 3, 56, 2017], ["sw-32c", 3, 32, 2017], ["sw-32d", 3, 32, 2022], ["sw-32e", 3, 32, 2027],
     ]);
     const pairs = switches.filter((m) => m.layer === 3).flatMap((l3) => switches.filter((l2) => l2.layer === 2 && same(l2, l3)).map((l2) => [l2, l3]));
     expect(pairs.length).toBeGreaterThan(0);

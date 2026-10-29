@@ -12,6 +12,7 @@ import {
   acceptChance, activeExchanges, capacityMbps, coolingDown, crossConnects, homePeak, monthlyNetworkCost, p95, route, transitBill, zoneLinkMonthly, type Uplink,
 } from "../../../sim/60-infra/network";
 import { addressBills } from "../../../sim/60-infra/addresses";
+import { routerMbps } from "../../../sim/60-infra/routers";
 import {
   acceptPeering, addUplinkLink, cancelUplink, cancelZoneLink, joinExchange, orderExchangePort, orderTransit, orderZoneLink, registerAsn, rejectPeering,
   requestPeering, setBlackhole, setProtection,
@@ -135,7 +136,7 @@ function Uplinks({ game, loc, routing }: { game: GameState; loc: Location; routi
         <div className="shop-card">
           <div className="mkt-head"><strong>{line.isp} {line.name}</strong><span className="pill">Home line</span></div>
           <dl className="shop-specs">
-            <div><dt>Upload</dt><dd className="num">{mbps(line.up)}</dd></div>
+            <div><dt>Upload</dt><dd className="num">{mbps(Math.min(line.up, routerMbps(game, loc)))}</dd></div>
             <div><dt>In use</dt><dd className="num">{mbps(used.home ?? 0)}</dd></div>
             <div><dt>Peak, 7 days</dt><dd className="num">{mbps(homePeak(game))}</dd></div>
           </dl>

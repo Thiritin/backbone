@@ -68,7 +68,7 @@ function reachesGateway(s: GameState, start: End, origin: string, minGbit: numbe
 
 // The fastest firewall cap on any path to a gateway: Infinity without a firewall on the way, null without a path.
 function gatewayCap(s: GameState, start: End, origin: string): number | null {
-  const caps = [...new Set(s.devices.map((d) => modelById(d.model).throughputGbit).filter((t): t is number => t !== undefined))].sort((a, b) => b - a);
+  const caps = [...new Set(s.devices.map((d) => modelById(d.model)).filter((m) => m.kind === "firewall").map((m) => m.throughputGbit!))].sort((a, b) => b - a);
   return [Infinity, ...caps].find((cap) => reachesGateway(s, start, origin, cap)) ?? null;
 }
 
@@ -262,7 +262,7 @@ export function freePositions(s: GameState, locationId: string): number[] {
   return Array.from({ length: loc.positions }, (_, i) => i + 1).filter((p) => !taken.has(p));
 }
 
-const KIND_ORDER: DeviceKind[] = ["server", "switch", "firewall", "patch", "ups", "gateway", "part"];
+const KIND_ORDER: DeviceKind[] = ["server", "switch", "firewall", "patch", "ups", "pdu", "gateway", "part"];
 
 // A zone's stored devices grouped by model and brand.
 export function storageStacks(s: GameState, locationId: string): { model: string; brand: string; ids: string[] }[] {
