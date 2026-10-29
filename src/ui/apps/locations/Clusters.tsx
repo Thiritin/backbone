@@ -6,16 +6,16 @@ import { phpAt, phpBehind } from "../../../sim/10-catalog/platforms";
 import { nextSlot } from "../../../sim/47-staff/technicians";
 import { PHP_EOL } from "../../../sim/60-infra/php";
 import { queuePhpUpgrade } from "../../../sim/90-actions/staff";
-import { slotTime, TechButton } from "./TechButton";
+import { slotTime } from "./TechButton";
 import type { Device, GameState, Location } from "../../../sim/50-state";
 import { bookable, clusterOf, nodeUsed, vmById, serverTaken, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { nodeUsage } from "../../../sim/60-infra/usage";
-import { addNode, CLUSTER_NAME_MAX, cordon, createCluster, drain, removeNode, phpDue, setPlacement, setRamGuard, uncordon, upgradePhp } from "../../../sim/90-actions/clusters";
+import { addNode, CLUSTER_NAME_MAX, createCluster, phpDue, setPlacement, setRamGuard, upgradePhp } from "../../../sim/90-actions/clusters";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { cores, devName, disk, ram } from "../hw";
-import { ControlPlanePill, softwareName, VM_STATE, vmState } from "../products/parts";
+import { ControlPlanePill, VM_STATE, vmState } from "../products/parts";
 import { Zone } from "./ui";
 import { NodeWorkloads } from "./Workloads";
 
@@ -163,64 +163,26 @@ function PhpRow({ game, cluster, device }: { game: GameState; cluster: Cluster; 
 }
 
 export function NodeCard({ game, device }: { game: GameState; device: Device }) {
-  const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp), setSetup = useStore((s) => s.setSetup);
+  const act = useStore((s) => s.act);
   const cluster = clusterOf(game, device.id), node = cluster?.nodes.find((n) => n.deviceId === device.id);
   const loads = workloadsOn(game, device.id);
-  const az = locationOf(game, device)?.az;
-  const joinable = game.clusters.filter((c) => c.az === az && c.kind === "cloud");
   const owner = (serviceId: string) => {
     const v = game.services.find((x) => x.id === serviceId);
     return { v, c: game.customers.find((x) => x.id === v?.customerId) };
   };
-  if (!cluster && loads.length) {
-    const { v, c } = owner(loads[0].serviceId);
-    return (
-      <div className="loc-card">
-        <div className="loc-card-h"><h3><Boxes />{v?.product === "colocation" ? "Colocation" : "Dedicated"}</h3><span className="grow" /><span>{c?.name}</span></div>
-        <div className="loc-row"><span>{v?.label}</span></div>
-      </div>
-    );
-  }
-  if (!cluster || !node) {
-    return (
-      <div className="loc-card">
-        <div className="loc-card-h"><h3><Boxes />Control plane</h3><span className="grow" /><span className="loc-muted">None</span></div>
-        {device.rackId && (
-          <div className="loc-row">
-            {joinable.map((c) => <button key={c.id} className="btn" onClick={() => act((g) => addNode(g, c.id, device.id))}><Plus />{c.name}</button>)}
-            <button className="btn" onClick={() => setSetup(device.id)}><Plus />Set up</button>
-          </div>
-        )}
-      </div>
-    );
-  }
+  if (!cluster || !node) return null;
   const [label, tone] = STATE[node.state];
   return (
     <div className="loc-card">
       <div className="loc-card-h">
         <h3><Boxes />{cluster.name}</h3>
-        <span className="pill">{cluster.kind === "cloud" ? "Hypervisor node" : "Panel host"}</span>
         <span className={`pill ${tone}`}>{label}</span>
         {game.frozen.includes(device.id) && <span className="pill bad">Frozen</span>}
         <span className="grow" />
-        {node.state === "active"
-          ? <button className="btn" onClick={() => act((g) => cordon(g, device.id))}>Cordon</button>
-          : <button className="btn" onClick={() => act((g) => uncordon(g, device.id))}>Uncordon</button>}
-        {node.state !== "draining" && node.state !== "maintenance" && <button className="btn" onClick={() => act((g) => drain(g, device.id))}>Drain</button>}
-        {node.state !== "draining" && node.state !== "maintenance" && <TechButton game={game} deviceId={device.id} kind="drain" />}
-        {!loads.length && cluster.kind === "cloud" && <button className="btn" onClick={() => act((g) => removeNode(g, device.id))}>Remove</button>}
+        {cluster.controlPlane === device.id && <ControlPlanePill game={game} cluster={cluster} />}
       </div>
       <NodeMeters game={game} d={device} />
       {cluster.kind === "panel" && <PhpRow game={game} cluster={cluster} device={device} />}
-      {cluster.controlPlane === device.id && (
-        <div className="loc-row">
-          <span className="loc-k">Control plane</span>
-          <span>{[cluster.panel, cluster.platform].filter((x) => x).map(softwareName).join(", ") || "None"}</span>
-          <span className="grow" />
-          <ControlPlanePill game={game} cluster={cluster} />
-          <button className="btn" onClick={() => openApp("Products", { kind: "cluster", id: cluster.id })}>{cluster.panel || cluster.platform ? "Change" : "Install"}</button>
-        </div>
-      )}
       {loads.filter((w) => vmState(game, w) === "lost").map((w) => (
         <div key={w.id} className="loc-row">
           <span>{owner(w.serviceId).c?.name}</span>

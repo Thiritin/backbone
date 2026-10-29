@@ -69,11 +69,11 @@ export function ServerSetup({ deviceId }: { deviceId: string }) {
         <div className="alert welcome setup" role="dialog" aria-modal="true" aria-labelledby="setup-title">
           <h2 id="setup-title">Set up {device.name}</h2>
           <p>{friendsWait ? "Choose what this server runs. Jonas, Mira and Tobi are waiting for web hosting." : "Choose what this server runs."}</p>
-          <div className="seg" role="group" aria-label="Role">
-            <button aria-pressed={kind === "panel"} onClick={() => { setKind("panel"); setPick(null); }}>Panel server</button>
-            <button aria-pressed={kind === "cloud"} onClick={() => { setKind("cloud"); setPick(null); }}>Hypervisor</button>
+          <div className="tabs" role="tablist" aria-label="Role">
+            <button role="tab" aria-selected={kind === "panel"} onClick={() => { setKind("panel"); setPick(null); }}>Panel server</button>
+            <button role="tab" aria-selected={kind === "cloud"} onClick={() => { setKind("cloud"); setPick(null); }}>Hypervisor</button>
           </div>
-          <section className="setup-kind">
+          <section className="setup-kind" role="tabpanel">
             <h3>{KIND_NAME[kind]}<span>{servesText(kind)}</span></h3>
             <SoftwareCards kind={kind} value={pick} onPick={setPick} compact />
           </section>

@@ -7,6 +7,7 @@ import { locationOf } from "../../../sim/60-infra/status";
 import { cancelOperation, queueOperation } from "../../../sim/90-actions/staff";
 import { useStore } from "../../store";
 import { PART_NAME } from "../hw";
+import type { MenuItem } from "../../desktop/menu";
 
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 // The time alone today, with the weekday on a later day.
@@ -44,4 +45,16 @@ export function TechButton({ game, deviceId, kind, componentId = null }: { game:
       <Wrench />{slot.name.split(" ")[0]}{slot.onCall && " (on call)"}, <span className="num">{slotTime(game.hour, slot.hour)}</span>
     </button>
   );
+}
+
+// The same choice as TechButton, as a menu item: queue it for the first free technician, or cancel the queued one.
+export function techItem(game: GameState, deviceId: string, kind: OpKind, componentId: string | null = null): MenuItem | undefined {
+  const act = useStore.getState().act;
+  const queued = game.techOps.find((o) => o.deviceId === deviceId && o.kind === kind && o.componentId === componentId);
+  if (queued) return { label: `Cancel queued ${opLabel(game, queued).toLowerCase()}`, run: () => act((g) => cancelOperation(g, queued.id)) };
+  const d = game.devices.find((x) => x.id === deviceId), loc = d && locationOf(game, d);
+  const slot = loc && nextSlot(game, loc.id, OP_TASK[kind], urgent(game, { kind, deviceId, componentId }));
+  if (!slot) return undefined;
+  const what = opLabel(game, { kind, deviceId, componentId } as TechOp);
+  return { label: `${what} by ${slot.name.split(" ")[0]}${slot.onCall ? " (on call)" : ""}, ${slotTime(game.hour, slot.hour)}`, run: () => act((g) => queueOperation(g, kind, deviceId, componentId)) };
 }

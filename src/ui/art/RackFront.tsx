@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import type { End } from "../../sim/50-state";
 import { Back, portSpots, psuInlets, type Side } from "./backs";
@@ -23,6 +23,8 @@ interface Props {
   // The cable to highlight; the others fade.
   hot?: string | null;
   onDevice: (id: string) => void;
+  // A right-click on a mounted device.
+  onDeviceMenu?: (id: string, e: ReactMouseEvent) => void;
   onFree: (unit: number, el: Element) => void;
   // A cable dragged from one port to another on the back.
   onConnect?: (a: End, b: End) => void;
@@ -59,7 +61,7 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onFree, onConnect, onPlug }: Props) {
+export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug }: Props) {
   const back = side === "back";
   const pad = 30, fs = Math.max(7, u * 0.4), at = new Map<number, RackItem>();
   for (const it of items) for (let k = 0; k < it.model.height; k++) at.set(it.slot + k, it);
@@ -87,7 +89,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     if (top === n) {
       placed.set(it.id, { it, y, h });
       out.push(
-        <g key={it.id} className="rack-dev" transform={`translate(${pad} ${y})`} aria-label={it.name} aria-pressed={it.id === selected} {...press(() => onDevice(it.id))}>
+        <g key={it.id} className="rack-dev" transform={`translate(${pad} ${y})`} aria-label={it.name} aria-pressed={it.id === selected} {...press(() => onDevice(it.id))} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
           {back ? <Back {...it} w={w} h={h} /> : <Front {...it} w={w} h={h} />}
         </g>,
       );

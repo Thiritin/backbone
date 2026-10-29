@@ -55,8 +55,9 @@ function Panel({ items, x, y, flipX, onBack, root }: { items: (MenuItem | null)[
   useLayoutEffect(() => {
     const r = ref.current!.getBoundingClientRect();
     setAt(place(x, y, r.width, r.height, innerWidth, innerHeight, flipX));
-    ref.current!.focus();
   }, [x, y, flipX]);
+  // A hidden element takes no focus, so focus waits for the measured position.
+  useEffect(() => { if (at) ref.current?.focus(); }, [at]);
   useEffect(() => { if (active >= 0) ref.current?.querySelectorAll<HTMLElement>(":scope > [role^=menuitem]")[items.slice(0, active).filter(Boolean).length]?.focus(); }, [active, items]);
 
   const openSub = (i: number, keyed: boolean) => {

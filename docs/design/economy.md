@@ -82,7 +82,7 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | G6 | 2020 | 64 | 512 GB | 8 TB NVMe | 400 W | €5,000 |
 | G7 | 2023 | 128 | 1 TB | 15 TB NVMe | 450 W | €5,500 |
 
-**Server lines.** Every generation has one pre-built model per line, and each line scales its generation's row. Specs are fixed at purchase: nothing is added or swapped per unit. The balanced 1U with two power supplies costs 10% more than the one with one and draws 5% more power.
+**Server lines.** Every generation has one pre-built model per line, and each line scales its generation's row. Specs are fixed at purchase, with one exception: a balanced 1U with one power supply can fill its empty second bay later for the price difference to the two-supply build of its brand (€250 for a Dwell G1), which turns it into that build. The balanced 1U with two power supplies costs 10% more than the one with one and draws 5% more power.
 
 | Line | Height | Sockets | Cores | RAM | Drives | Network ports | Power supplies | Full power | Price | Sold |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

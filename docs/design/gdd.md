@@ -77,6 +77,8 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 
 **Look.** Clean and light like macOS, with a dark mode. Interface text in Inter, numbers in a monospace font so columns line up, icons from Lucide. Rack and server fronts are drawn in code, so every device has a consistent, detailed front.
 
+**Context menus.** Every object with actions has a Pear context menu: right-click it, or click its three-dot button on a touchpad. Rack devices, devices in storage, racks, ports, workloads, VMs, customers, tickets, panel hosts, invoices, domains, staff and loans all use it, so a window shows an object's state and keeps buttons for its main flow only, such as a ticket's replies or the steps of an order. The menu works with arrow keys, Enter and Escape, and submenus hold the choices of one action, such as Migrate to or Add to cluster. Destructive items (sell, fire, write off) still ask in a sheet, and an item that cannot run reports why as the usual action error. Sheets that switch between views use tabs sized to their labels, as in the server setup.
+
 ## Locations and space
 
 Infrastructure lives in locations: your basement first, then space in other companies' datacenters, and in the end your own. You always own your racks and everything in them. A location gives you floor space, power, cooling and connectivity, and where you go decides a lot of what you can offer: which carriers and exchanges you reach, how well outages are covered, and which customers trust you.
@@ -247,6 +249,8 @@ Spare parts are bought in the Shop and kept in the zone's storage. You replace a
 **Monitoring.** Without monitoring, the only way to notice a failure is to see the lights in the Locations view, or to wait for customers to complain. Monitoring software is an early research unlock. It notifies you of every failure and warns about parts past their life expectancy. It also opens the Monitoring app, a dashboard of every location, rack, feed, link and server with live usage and a list of alerts. Like other software, it comes in a few products with different prices.
 
 **Keeping it fun at scale.** Cabling port by port is fun for the first few racks and tedious at 200. Three things fix that: rack templates, an auto-cable button that wires a server to the next free ports on its rack's switches, and technicians who do installs for you.
+
+**Device inspector.** A selected device shows its front or back, then its status as plain values: power (On, Off, Booting, Unplugged, No power), link, and for a server its control plane and role, with Set up while it has none. One row of four meters shows CPU, memory, storage and network, followed by the ports, the cluster node, the power supplies, RAID, components and specifications as flat sections. Power on and off sit in the header and in the device's menu. A Balanced 1U with one power supply shows its empty second bay with an Add button and the price of the second supply.
 
 ## Clusters and products
 
