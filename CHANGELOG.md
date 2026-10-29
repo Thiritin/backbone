@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- The Components list only sends remote hands, and only at a datacenter; to work on a server yourself, open Change parts, which now also opens on a running server for hot-swap parts.
 - Installing a part with remote hands works again instead of saying the slot does not exist.
 - Starting hand work on a server skips time until the work is done, and a notification says when it finishes.
 - Attackers can no longer break into a panel host that is switched off, failed or has its panel VM stopped.

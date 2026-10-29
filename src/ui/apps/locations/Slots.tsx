@@ -9,7 +9,7 @@ import type { Component, Device, GameState } from "../../../sim/50-state";
 import { hotKind, hotSwappable, locationOf } from "../../../sim/60-infra/status";
 import { installPart, removePart, replaceComponent, replaceSpares } from "../../../sim/90-actions/hardware";
 import { ageYears, isWorn, PART_NAME, partLabel, partSize, partSlot } from "../hw";
-import { useHandWork } from "./HandSheet";
+import { atDatacenter, useHandWork } from "./HandSheet";
 import { TechButton } from "./TechButton";
 
 interface Group { name: string; kinds: ComponentKind[]; slots: number }
@@ -38,7 +38,7 @@ export const spareSpec = (d: Device): PartSpec => ({ ...d.part, kind: d.model.sl
 // Each slot group of a chassis with the part in every filled slot, its age against its life and its state, and the empty slots,
 // where Add offers the spare parts in the zone's storage that fit.
 export function PartsCard({ game, device }: { game: GameState; device: Device }) {
-  const hand = useHandWork();
+  const hand = useHandWork(true), remote = atDatacenter(game, device.id);
   const [adding, setAdding] = useState<string | null>(null);
   const model = modelById(device.model);
   const zone = device.rackId ? locationOf(game, device) : game.locations.find((l) => l.id === device.store);
@@ -66,11 +66,11 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                   : c.failedAt !== null ? <span className="pill bad">Failed</span>
                   : rebuild ? <span className="pill warn">Rebuilding</span>
                   : worn ? <span className="pill warn">Worn</span> : c.wear ? <span className="pill">Untested</span> : <span className="pill ok">OK</span>;
-                const busy = swap || held !== null || !device.rackId;
+                const busy = swap || held !== null || !device.rackId || !remote;
                 const hot = hotSwappable(device, c);
                 const block = busy ? null : !spareFor(c) ? (c.failedAt !== null || worn ? `No part in ${zone?.az ?? ""}` : "")
                   : device.on && !hot ? "Power off first" : null;
-                const removable = c.kind !== "board" && c.kind !== "nic" && !swap && held === null;
+                const removable = c.kind !== "board" && c.kind !== "nic" && !swap && held === null && remote;
                 return (
                   <tr key={c.id}>
                     <td>{c.vendor ? `${VENDOR_NAME[c.vendor]} ` : ""}{PART_NAME[c.kind]}</td>
@@ -101,7 +101,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                   <td className="num loc-muted">-</td>
                   <td className="num">{g.kinds.length ? partSlot(g.kinds[0], filled.length + i + 1) : `Slot ${i + 1}`}</td>
                   <td /><td />
-                  <td className="r">{g.kinds.length > 0 && held === null && (
+                  <td className="r">{g.kinds.length > 0 && held === null && remote && (
                     <button className="btn" aria-pressed={adding === g.name} onClick={() => setAdding(adding === g.name ? null : g.name)}><Plus />Add</button>
                   )}</td>
                 </tr>

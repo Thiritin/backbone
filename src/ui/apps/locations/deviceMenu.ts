@@ -83,7 +83,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
       m.kind !== "patch" && d.on && !!pduOf(game, d) && { label: "Power cycle", run: () => ui.op("cycle") },
       m.kind !== "patch" && !!(d.rackId || d.panel) && techItem(game, d.id, d.on ? "off" : "on"),
     ]),
-    server && !!(d.rackId || d.store) && ui.lid && { label: "Change parts", disabled: d.on, run: ui.lid },
+    server && !!(d.rackId || d.store) && ui.lid && { label: "Change parts", run: ui.lid },
     ...(server ? [] : psuEntries(d, ui)),
     null,
     server && !!d.rackId && { label: "Add Software…", run: ui.setup },

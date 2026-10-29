@@ -140,7 +140,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
     <div>
       <div className="loc-card-h"><h3><ServerIcon />Server</h3></div>
       <div className="act-tiles">
-        <ActionTile icon={PackageOpen} label="Change parts" disabled={device.on} onClick={() => menus.lid(device)} />
+        <ActionTile icon={PackageOpen} label="Change parts" onClick={() => menus.lid(device)} />
         {device.rackId && <ActionTile icon={Gauge} label="Quick burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, false)} />}
         {device.rackId && <ActionTile icon={Flame} label="Full burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, true)} />}
         {via && <ActionTile icon={Monitor} label={consoleName(game, device)} onClick={() => openConsole(device.id)} />}

@@ -48,13 +48,13 @@ function run(t: HandTask, how: string): ActionResult {
   return r;
 }
 
-// Runs a hand task at once where the player stands, or asks before paying remote hands elsewhere.
-export function useHandWork() {
+// Runs a hand task at once where the player stands, or asks before paying remote hands elsewhere. remote always asks for remote hands.
+export function useHandWork(remote = false) {
   const [task, setTask] = useState<{ t: HandTask; x: number; y: number } | null>(null);
   const start = (game: GameState, t: HandTask) => {
     const loc = workLocation(game, t), w = loc && handWork(game, loc.id);
-    if (!w) run(t, "hands");
-    else if (w.here && !t.at) run(t, "self");
+    if (!w) { if (!remote) run(t, "hands"); }
+    else if (w.here && !t.at && !remote) run(t, "self");
     else setTask({ t, ...pointer });
   };
   return { start, dialog: task && <HandPopover task={task.t} x={task.x} y={task.y} onClose={() => setTask(null)} /> };
