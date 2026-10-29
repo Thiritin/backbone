@@ -171,6 +171,45 @@ export function assignService(s: GameState, serviceId: string): string | null {
   return null;
 }
 
+// Renumbering (economy.md, Workloads and migration): a service that moves to another location gives its IPv4 addresses back and
+// takes new ones from the target's pool. Addresses of an own block stay when the company announces a block at both ends.
+export const RENUMBER_PENALTY = 5;
+export const RENUMBER_ANNOUNCED_PENALTY = 2;
+const announces = (s: GameState, loc: Location): boolean => s.ips.blocks.some((b) => b.locationId === loc.id);
+const keeps = (s: GameState, a: Address, from: Location, to: Location): boolean => a.source === "lir" && announces(s, from) && announces(s, to);
+const given = (s: GameState, id: string, from: Location, to: Location): Address[] =>
+  s.ips.addresses.filter((a) => a.holder === id && a.v === 4 && !keeps(s, a, from, to));
+
+// The error key when the target holds fewer free IPv4 addresses than the services need, or null.
+export function renumberError(s: GameState, serviceIds: string[], from: Location, to: Location): string | null {
+  if (from.id === to.id) return null;
+  const need = serviceIds.reduce((n, id) => n + given(s, id, from, to).length, 0);
+  return need > freeV4(s, to.id) ? "error.noFreeAddress" : null;
+}
+
+// Moves the services' addresses to the target location. announced says per service whether its customer was told beforehand;
+// a customer with a renumbered IPv4 loses RENUMBER_PENALTY happiness, less when every such service was announced.
+export function renumber(s: GameState, serviceIds: string[], from: Location, to: Location, announced: (serviceId: string) => boolean): void {
+  if (from.id === to.id) return;
+  const late = new Map<string, boolean>();
+  for (const id of serviceIds) {
+    const v = s.services.find((x) => x.id === id), old = given(s, id, from, to), v6 = s.ips.addresses.some((a) => a.holder === id && a.v === 6);
+    // Rented addresses go back to their provider, the others become free, and those of an own block follow the service.
+    s.ips = { ...s.ips, addresses: s.ips.addresses.flatMap((a) => {
+      if (a.holder !== id) return [a];
+      if (a.v === 4 && keeps(s, a, from, to)) return [{ ...a, locationId: to.id }];
+      return a.source === "provider" || a.source === "lineExtra" ? [] : [{ ...a, holder: null }];
+    }) };
+    for (let i = 0; i < old.length; i++) takeAddress(s, to, 4, id);
+    if (v6) takeAddress(s, to, 6, id);
+    if (v && old.length) late.set(v.customerId, (late.get(v.customerId) ?? false) || !announced(id));
+  }
+  for (const [customerId, notTold] of late) {
+    const c = s.customers.find((x) => x.id === customerId);
+    if (c && c.churnedAt === null) bump(c, -(notTold ? RENUMBER_PENALTY : RENUMBER_ANNOUNCED_PENALTY));
+  }
+}
+
 // Adds spam mails to the address a machine sends from. Compromised panel hosts (reputation) and shady customers' services send through this.
 export function addSpam(s: GameState, machineId: string, thousands: number): void {
   const own = addressesOf(s, machineId).find((a) => a.v === 4) ?? (machineLocation(s, machineId)?.dc ? undefined : sharedAddress(s));

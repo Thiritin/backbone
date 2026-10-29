@@ -5,6 +5,7 @@ import type { GameState } from "../50-state";
 import {
   bookable, clusterOf, controlPlaneUp, hostOfVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
 } from "../60-infra/cluster";
+import { renumber, renumberError } from "../60-infra/addresses";
 import { handJob, type How } from "../60-infra/handwork";
 import { migrationHours } from "../60-infra/migration";
 import { RECOVER_HOURS } from "../60-infra/power";
@@ -92,8 +93,8 @@ export function migrationTargets(s: GameState, id: string): MigrationTarget[] {
 const left = (a: Resources, b: Resources): Resources => ({ vcpu: Math.max(0, a.vcpu - b.vcpu), ramGb: Math.max(0, a.ramGb - b.ramGb), diskGb: Math.max(0, a.diskGb - b.diskGb) });
 
 // Moves a workload to a node of its cluster, to another cluster in a zone a link reaches, or a web space into a panel VM
-// host (to is then the host's id).
-export function migrateWorkload(s: GameState, id: string, toId: string): ActionResult {
+// host (to is then the host's id). A service that changes location is renumbered; announced says its customer agreed to the move.
+export function migrateWorkload(s: GameState, id: string, toId: string, announced = false): ActionResult {
   const found = clusterWorkload(s, id);
   if (!found) return fail("error.unknownWorkload");
   const { w, c } = found, vmHost = s.clusters.find((x) => x.id === toId && x.vm), to = vmHost ?? clusterOf(s, toId);
@@ -114,9 +115,15 @@ export function migrateWorkload(s: GameState, id: string, toId: string): ActionR
   }
   const gbit = moveGbit(s, c.az, to.az);
   if (!gbit) return fail("error.noZoneLink");
+  const [fromLoc, toLoc] = [c.az, to.az].map((az) => s.locations.find((l) => l.az === az)), ids = w.serviceId ? [w.serviceId] : [];
+  const noAddress = fromLoc && toLoc && renumberError(s, ids, fromLoc, toLoc);
+  if (noAddress) return fail(noAddress);
   const down = migrationDowntime(s, w, gbit, c.az !== to.az, vmHost ? undefined : toId);
   patch(s, id, { deviceId: vmHost ? null : toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + down, stuck: undefined });
-  if (c.az !== to.az) s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
+  if (c.az !== to.az) {
+    s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
+    if (fromLoc && toLoc) renumber(s, ids, fromLoc, toLoc, () => announced);
+  }
   freezeTick(s);
   return { ok: true };
 }
@@ -129,7 +136,9 @@ export function webspaceBlock(s: GameState, w: Workload, c: Cluster, to: Cluster
   if (w.busyUntil > s.hour || w.migrating) return "error.workloadBusy";
   if (!controlPlaneUp(s, c) || !controlPlaneUp(s, to)) return "error.controlPlaneDown";
   if (!pickNode(s, to, w)) return "error.nodeFull";
-  return moveGbit(s, c.az, to.az) > 0 ? null : "error.noZoneLink";
+  if (!moveGbit(s, c.az, to.az)) return "error.noZoneLink";
+  const [a, b] = [c.az, to.az].map((az) => s.locations.find((l) => l.az === az));
+  return a && b && w.serviceId ? renumberError(s, [w.serviceId], a, b) : null;
 }
 
 // The panel hosts a web space can move to, each with the hours the hand task takes.
@@ -144,7 +153,7 @@ export function webspaceTargets(s: GameState, id: string): WebspaceTarget[] {
 
 // Starts moving a web space to another panel host: a hand task of migrationHours during which the site stays up, followed
 // by a ten minute cutover (migrationTick). It costs no money.
-export function migrateWebspace(s: GameState, workloadId: string, toClusterId: string): ActionResult {
+export function migrateWebspace(s: GameState, workloadId: string, toClusterId: string, announced = false): ActionResult {
   const found = clusterWorkload(s, workloadId), to = s.clusters.find((x) => x.id === toClusterId);
   if (!found) return fail("error.unknownWorkload");
   if (!to) return fail("error.unknownCluster");
@@ -152,7 +161,7 @@ export function migrateWebspace(s: GameState, workloadId: string, toClusterId: s
   if (c.kind !== "panel" || !w.serviceId) return fail("error.notWebspace");
   const bad = webspaceBlock(s, w, c, to);
   if (bad) return fail(bad);
-  patch(s, w.id, { migrating: { clusterId: to.id, doneAt: s.hour + migrationHours(s, w, to) } });
+  patch(s, w.id, { migrating: { clusterId: to.id, doneAt: s.hour + migrationHours(s, w, to), ...(announced && { announced: true as const }) } });
   return { ok: true };
 }
 

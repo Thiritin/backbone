@@ -1,6 +1,26 @@
-import { brandFrom, brandWatts, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { brandFrom, brandWatts, MANUFACTURERS, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
 import { unitPrice } from "../../../sim/90-actions/hardware";
-import type { Vendor } from "../../../sim/10-catalog/cpus";
+import { VENDOR_NAME, VENDORS, type Vendor } from "../../../sim/10-catalog/cpus";
+import { lineOf } from "../../art/fronts";
+
+const LINE_NAME: Record<string, string> = {
+  compute: "Balanced", "compute-2psu": "Balanced", dense: "Compute dense", memory: "Memory optimized",
+  storage: "Storage", backup: "Backup", archive: "Archive", gpu: "GPU", arm: "ARM",
+};
+export const classOf = (m: DeviceModel) =>
+  m.kind === "part" ? "Parts" : m.kind === "chassis" ? "Multi-node" : m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "gateway" ? "Routers" : m.kind === "ups" || m.kind === "pdu" ? "Power" : m.kind === "kvm" || m.kind === "console" || m.kind === "oob" ? "Remote access" : "Patch panels";
+
+// Sidebar classes in order, each with the classes it groups.
+export const CLASS_TREE: [string, string[]][] = [
+  ["Servers", [...new Set(Object.values(LINE_NAME)), "Multi-node"]], ["Switches", ["Layer 2", "Layer 3"]],
+  ["Routers", []], ["Security", []], ["Patch panels", []], ["Remote access", []], ["Power", []], ["Parts", []],
+];
+export const inClass = (sel: string | null, cls: string) => !sel || sel === cls || !!CLASS_TREE.find(([p]) => p === sel)?.[1].includes(cls);
+
+// Who made an item: the device's brand, a CPU or board's vendor, or the GPU maker; other parts have none.
+export const makerOf = (brand: string, part?: PartSpec): string | null =>
+  !part ? brand : part.vendor ? VENDOR_NAME[part.vendor] : part.kind === "gpu" ? "nVidea" : null;
+export const MAKERS = [...MANUFACTURERS.filter((m) => m.id !== "generic").map((m) => m.name), ...VENDORS.map((v) => VENDOR_NAME[v]), "nVidea"];
 
 export interface Filter { form: string | null; cores: number; ram: number; disk: string | null; vendor: Vendor | null }
 export const NO_FILTER: Filter = { form: null, cores: 0, ram: 0, disk: null, vendor: null };

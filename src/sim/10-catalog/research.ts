@@ -14,7 +14,7 @@ export interface Skill {
 }
 
 export const SKILLS: Skill[] = [
-  { id: "monitoring", name: "Monitoring", about: "Your team learns to watch the hardware and the queues, so failures and waiting work announce themselves.", tier: 1, knowHow: 50, days: 5, needs: [], opens: ["dockBadges", "Nagiosaurus"] },
+  { id: "monitoring", name: "Monitoring", about: "Your team learns to watch the hardware and the queues, so failures and waiting work announce themselves.", tier: 1, knowHow: 50, days: 5, needs: [], opens: ["Nagiosaurus"] },
   { id: "marketingBasics", name: "Marketing basics", about: "You learn who your customers are, what they write about you and how sponsoring events wins them over.", tier: 1, knowHow: 50, days: 5, needs: [], opens: [] },
   { id: "people", name: "Employee management", about: "You learn to hire, pay and organise people without losing track of who does what.", tier: 1, knowHow: 100, days: 10, needs: [], opens: ["Staff"] },
   { id: "network", name: "Network operations", about: "Your team learns to buy transit, peer with other networks and survive the occasional flood of traffic.", tier: 2, knowHow: 300, days: 14, needs: ["monitoring"], opens: [] },
@@ -25,6 +25,7 @@ export const SKILLS: Skill[] = [
   { id: "virtualization", name: "High availability", about: "Your team learns to move virtual machines between servers while they run, spread them when a server runs hot and restart them elsewhere when one fails.", tier: 3, knowHow: 400, days: 14, needs: ["products", "monitoring"], opens: [] },
   { id: "gpuCompute", name: "GPU computing", about: "Your team learns to hand whole graphics cards to virtual machines, so customers can train models and render on your servers.", tier: 3, knowHow: 400, days: 14, needs: ["products", "monitoring"], opens: [], from: 2011 },
   { id: "market", name: "Market research", about: "You learn to read demand by product and to find out why a sale got away.", tier: 3, knowHow: 800, days: 21, needs: ["products", "marketing"], opens: ["Market"] },
+  { id: "knowledgeBase", name: "Documentation", about: "Your team learns to write the answers to common questions down, so customers find them before they write in.", tier: 2, knowHow: 200, days: 10, needs: ["products"], opens: ["Knowledge base"] },
   { id: "automation", name: "Automation", about: "Your company learns to hand routine tickets and reminders to bots that never sleep and never quite understand.", tier: 3, knowHow: 1500, days: 21, needs: ["people", "monitoring"], opens: ["chadGpt", "clipsy"] },
 ];
 

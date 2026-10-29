@@ -6,7 +6,7 @@ import { DESKS, seats } from "./desks";
 // Values from docs/design/economy.md, section "Pear One subscriptions". The skill each item needs is in research.ts.
 
 // Apps every new game has in the dock, free of charge. Getting started and Notes are desktop documents and never sit in the dock.
-export const STARTER_APPS = ["Locations", "Shop", "Website", "Browser", "Terminal", "Customers", "Support", "Billing", "Finance", "Bank", "Research", "Settings", "Marketing"];
+export const STARTER_APPS = ["Locations", "Shop", "Website", "Browser", "Terminal", "Customers", "Support", "Billing", "Finance", "Research", "Settings", "Marketing", "Security"];
 
 // id is the app name for apps; monthly is the 2005 price, charged once per seat when perSeat is set.
 export interface StoreItem { id: string; kind: "app" | "upgrade" | "bot" | "desk"; name: string; monthly: number; perSeat?: boolean }
@@ -26,7 +26,7 @@ export const STORE: StoreItem[] = [
   { id: "Marketing", kind: "app", name: "Marketing", monthly: 0 },
   { id: "Market", kind: "app", name: "Market", monthly: 15 },
   { id: "Nagiosaurus", kind: "app", name: "Nagiosaurus", monthly: 15 },
-  { id: "dockBadges", kind: "upgrade", name: "Dock badges", monthly: 5 },
+  { id: "Knowledge base", kind: "app", name: "Knowledge base", monthly: 10 },
   { id: "searchlight", kind: "upgrade", name: "Searchlight", monthly: 2 },
   ...WIDGETS.map(([id, name, monthly]): StoreItem => ({ id, kind: "upgrade", name, monthly })),
   // One subscription is one bot; what each bot does is in 47-staff/staff.ts.

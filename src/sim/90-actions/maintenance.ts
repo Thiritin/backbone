@@ -39,6 +39,15 @@ export function planMaintenance(s: GameState, target: MaintenanceTarget, from: n
   return { ok: true, id: m.id };
 }
 
+// Announces a window that starts this hour, for work that begins at once. The notice is late, so the penalties are halved.
+export function announceNow(s: GameState, target: MaintenanceTarget, hours: number): ActionResult {
+  if (!exists(s, target)) return fail("error.maintenanceTarget");
+  const m: Maintenance = { id: `mnt${s.nextId++}`, target, from: s.hour, hours: Math.ceil(hours), notifiedAt: s.hour, customerIds: [] };
+  announce(s, m, "notice");
+  s.maintenance = [...s.maintenance, m];
+  return { ok: true, id: m.id };
+}
+
 // Moving a window is free; every customer gets a new notice, and the day of notice starts again.
 export function moveMaintenance(s: GameState, id: string, from: number, hours?: number): ActionResult {
   const m = s.maintenance.find((x) => x.id === id);

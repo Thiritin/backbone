@@ -7,7 +7,8 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { changePrice } from "../src/sim/90-actions/sales";
-import { replyTicket, resolveTicket } from "../src/sim/90-actions/support";
+import { replyTicket, resolveTicket, retainTicket } from "../src/sim/90-actions/support";
+import { retentionOptions } from "../src/sim/40-support/retention";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 vi.mock("../src/sim/40-support/status", () => ({ serviceOnline: () => true }));
@@ -26,7 +27,7 @@ const open = (s: GameState, id: string, kind: string, topic?: string) =>
   s.tickets.find((t) => t.customerId === id && t.kind === kind && (!topic || t.topic === topic) && !isFinal(t));
 
 describe("price tolerance", () => {
-  it("loses a customer raised from 2 to 10 even with a retention offer", () => {
+  it("loses a customer raised from 2 to 10 because no retention offer brings the price within their maximum", () => {
     for (let seed = 1; seed <= 20; seed++) {
       const { s, ids, cus } = shop(seed, 2);
       const { c, v } = ids[0];
@@ -34,9 +35,11 @@ describe("price tolerance", () => {
       expect(cus(c).happiness).toBe(0);
       const t = open(s, c, "cancellation")!;
       expect(t).toBeDefined();
-      resolveTicket(s, t.id, "retain");
+      expect(retentionOptions(s, t)).toEqual([]);
+      expect(retainTicket(s, t.id, "d12")).toEqual({ ok: false, error: "error.retentionOption" });
+      resolveTicket(s, t.id, "cancel");
       tick(s);
-      expect(s.tickets.find((x) => x.id === t.id)!.outcome).toBe("offerRefused");
+      expect(s.tickets.find((x) => x.id === t.id)!.outcome).toBe("cancelled");
       expect(cus(c).churnedAt).not.toBeNull();
     }
   });
@@ -121,15 +124,16 @@ describe("price complaints", () => {
 });
 
 describe("retention offers", () => {
-  it("are refused below the happiness threshold", () => {
+  it("rarely keep an unhappy customer with a weak offer", () => {
     const { s, ids, cus } = shop(10, 3, "smallBiz", 20);
     const tickets = ids.map(({ c }) => {
       cus(c).happiness = 25;
       return createTicket(s, cus(c), "cancellation", null, "leave");
     });
-    tickets.forEach((t) => resolveTicket(s, t.id, "retain"));
+    tickets.forEach((t) => retainTicket(s, t.id, "free"));
     for (let i = 0; i < 24; i++) tick(s);
-    expect(tickets.every((t) => s.tickets.find((x) => x.id === t.id)!.outcome === "offerRefused")).toBe(true);
+    const kept = tickets.filter((t) => s.tickets.find((x) => x.id === t.id)!.outcome === "retained").length;
+    expect(kept).toBeLessThan(9);
   });
 
   it("keep many happy customers at a fair price", () => {
@@ -138,11 +142,11 @@ describe("retention offers", () => {
       cus(c).happiness = 90;
       return createTicket(s, cus(c), "cancellation", null, "leave");
     });
-    tickets.forEach((t) => resolveTicket(s, t.id, "retain"));
+    tickets.forEach((t) => retainTicket(s, t.id, "free"));
     for (let i = 0; i < 24; i++) tick(s);
     const kept = tickets.filter((t) => s.tickets.find((x) => x.id === t.id)!.outcome === "retained").length;
-    expect(kept).toBeGreaterThan(15);
-    expect(kept).toBeLessThan(35);
+    expect(kept).toBeGreaterThan(25);
+    expect(kept).toBeLessThan(40);
   });
 });
 

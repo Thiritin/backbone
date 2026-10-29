@@ -100,14 +100,13 @@ function Mine({ l }: { l: Listing }) {
   );
 }
 
-// The Shop's Used tab: one channel at a time, its listings as cards and the player's own listings on it.
-export function Used() {
+// The Shop's Used market: one channel at a time, its listings that pass the sidebar as cards and the player's own listings on it.
+export function Used({ channel, setChannel, keep }: { channel: Channel; setChannel: (c: Channel) => void; keep: (l: Listing) => boolean }) {
   const game = useStore((s) => s.game);
-  const [channel, setChannel] = useSessionState<Channel>("shop.usedChannel", "ebuy");
   const [to, setTo] = useSessionState("shop.usedTo", game.locations[0].id);
   const dest = game.locations.some((l) => l.id === to) ? to : game.locations[0].id;
   const [vendor, setVendor] = useSessionState<Vendor | null>("shop.usedVendor", null);
-  const listed = game.used.filter((l) => l.channel === channel && onMarket(game, l));
+  const listed = game.used.filter((l) => l.channel === channel && onMarket(game, l)).filter(keep);
   const shown = listed.filter((l) => !vendor || listingVendor(l) === vendor).sort((a, b) => a.expiresAt - b.expiresAt);
   const vendors = VENDORS.filter((v) => v === vendor || listed.some((l) => listingVendor(l) === v));
   const mine = game.used.filter((l) => l.channel === channel && l.device);

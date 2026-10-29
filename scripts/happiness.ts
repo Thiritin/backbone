@@ -30,7 +30,7 @@ import { openVulns } from "../src/sim/60-infra/vulns";
 import { sitesDown, supports, vmById, vmOf, vmRoom, type Cluster } from "../src/sim/60-infra/cluster";
 import { buyDevice, connect, orderHomeLine } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "../tests/plugged";
-import { acceptUpgrade, confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain, renewDomain } from "../src/sim/90-actions/orders";
+import { confirmOrder, createAccount, offerUpgrade, provisionOrder, quoteOrder, registerOrderDomain, renewDomain } from "../src/sim/90-actions/orders";
 import { quote } from "../src/sim/90-actions/sales";
 import { closeTicket, replyTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { startGame } from "../src/sim/90-actions/start";
@@ -242,7 +242,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
       for (const r of s.sales.requests) {
         if (r.status !== "open" && r.status !== "countered") continue;
         if (r.kind === "order" || missingFor(s, r).length) continue;
-        if (r.kind === "expansion" && r.spec) { if (upgrades) acceptUpgrade(s, r.id, r.counter ?? r.reference); continue; }
+        if (r.kind === "expansion" && r.spec) { if (upgrades) offerUpgrade(s, r.id, r.counter ?? r.reference); continue; }
         quote(s, r.id, r.status === "countered" ? r.counter! : r.reference);
       }
     }

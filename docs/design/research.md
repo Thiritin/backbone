@@ -15,12 +15,6 @@ Until today, a broken disk announced itself through an angry customer. Your comp
 
 The lights on the device fronts still tell the same story. The difference is that you no longer have to be looking at them.
 
-### Dock badges
-
-**Dock badges** are now in the Pear Store. Once installed, each app in the dock shows a red count of what waits for you there: open tickets in Support, unpaid invoices in Billing and failed parts in Locations.
-
-Open the Pear Store from the Shop under Software and choose Get. Pear bills the subscription monthly, as Pear does.
-
 ## Employee management
 
 ### Now available
@@ -190,6 +184,20 @@ Your company can now read the market: which products are in demand, what custome
 **Market** is now in the Pear Store. It shows demand for each product, the requirements customers bring with them and a report for every sale you lost.
 
 The lost-sale reports are the most honest feedback you will get. Customers who leave rarely bother to explain, but the report does it for them.
+
+## Documentation
+
+### Now available
+
+- **Knowledge base** is in the Pear Store and answers basic setup questions before they reach your inbox.
+
+### Answers before questions
+
+Your team now writes down the answers it gives every week: how to upload a site, which server Outlook wants, where the name servers go. New customers ask these the most, and long-standing customers ask about other things.
+
+### The Knowledge base app
+
+**Knowledge base** is now in the Pear Store. Once it is installed, three in ten of the basic setup questions never reach your inbox, because the customer finds the article first. The app shows how often each article was read.
 
 ## Automation
 

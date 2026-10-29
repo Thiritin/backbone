@@ -76,8 +76,8 @@ describe("pear store", () => {
     const s = newGame(5);
     s.unlocks = ["monitoring"];
     s.cash = 4;
-    expect(install(s, "dockBadges")).toEqual({ ok: false, error: "error.noCash" });
-    expect(s.installed).not.toContain("dockBadges");
+    expect(install(s, "Nagiosaurus")).toEqual({ ok: false, error: "error.noCash" });
+    expect(s.installed).not.toContain("Nagiosaurus");
   });
 
   it("installs free apps while in debt", () => {

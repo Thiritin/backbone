@@ -18,6 +18,8 @@ export interface HandTask {
   // The action and its arguments; the way the work gets done (hands, self, friend) is appended as the last argument.
   action: (g: GameState, ...args: any[]) => ActionResult;
   args: unknown[];
+  // The location the hands work at when it is not the device's own, like the far end of a server move.
+  at?: string;
   // The technician operation that does the same work, when there is one.
   tech?: { kind: OpKind; componentId?: string | null; partId?: string | null };
 }
@@ -26,6 +28,11 @@ export interface HandTask {
 export const atDatacenter = (game: GameState, deviceId: string): boolean => {
   const d = game.devices.find((x) => x.id === deviceId), loc = d && locationOf(game, d);
   return !!loc && !!handWork(game, loc.id);
+};
+
+const workLocation = (game: GameState, t: HandTask) => {
+  const d = game.devices.find((x) => x.id === t.deviceId);
+  return t.at ? game.locations.find((l) => l.id === t.at) : d && locationOf(game, d);
 };
 
 // The last click, where the remote hands popover opens; callers start hand work from a click.
@@ -37,7 +44,7 @@ export function useHandWork() {
   const act = useStore((s) => s.act);
   const [task, setTask] = useState<{ t: HandTask; x: number; y: number } | null>(null);
   const start = (game: GameState, t: HandTask) => {
-    const d = game.devices.find((x) => x.id === t.deviceId), loc = d && locationOf(game, d), w = loc && handWork(game, loc.id);
+    const loc = workLocation(game, t), w = loc && handWork(game, loc.id);
     if (!w) act(t.action, ...t.args, "hands");
     else if (w.here) act(t.action, ...t.args, "self");
     else setTask({ t, ...pointer });
@@ -65,7 +72,7 @@ function HandPopover({ task, x, y, onClose }: { task: HandTask; x: number; y: nu
     const g = structuredClone(game), r = task.action(g, ...task.args, "hands");
     return r.ok ? { cost: Math.round((game.cash - g.cash) * 100) / 100 } : { error: r.error };
   }, [game, task]);
-  const device = game.devices.find((d) => d.id === task.deviceId), loc = device && locationOf(game, device), w = loc && handWork(game, loc.id);
+  const device = game.devices.find((d) => d.id === task.deviceId), loc = workLocation(game, task), w = loc && handWork(game, loc.id);
   if (!device || !loc || !w) return null;
   const go = (how: "hands" | "friend") => { if (act(task.action, ...task.args, how).ok) onClose(); };
   const t = task.tech, queued = !!t && game.techOps.some((o) => o.deviceId === device.id && o.kind === t.kind && o.componentId === (t.componentId ?? null) && (o.partId ?? null) === (t.partId ?? null));

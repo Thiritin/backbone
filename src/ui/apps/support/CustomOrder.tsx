@@ -11,7 +11,7 @@ import { canAutomate, invoiceOf, stepsDone } from "../../../sim/30-market/manual
 import type { SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
 import { routeOptions, sumOf } from "../../../sim/60-infra/routes";
-import { acceptUpgrade, confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
+import { offerUpgrade, confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
 import { decline } from "../../../sim/90-actions/sales";
 import { closeTicket } from "../../../sim/90-actions/support";
 import { useStore } from "../../store";
@@ -180,10 +180,10 @@ export function UpgradeCompose({ r }: { r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const v = game.services.find((x) => x.id === r.serviceId);
-  const [price, setPrice] = useState(r.counter ?? r.reference);
-  const [route, setRoute] = useState("auto");
+  const [price, setPrice] = useState(r.counter ?? r.quote ?? r.reference);
+  const [route, setRoute] = useState(r.route ?? "auto");
   if (!v?.spec || !r.spec) return null;
-  const current = v.price * 730, open = ["open", "countered", "refused"].includes(r.status);
+  const current = v.price * 730, open = ["open", "countered", "refused"].includes(r.status), locked = r.status === "quoted";
   const rows: [string, number, number, string][] = r.product === "webHosting"
     ? [["Space", v.spec.diskGb, r.spec.diskGb, "GB"], ["Traffic", v.spec.trafficGb, r.spec.trafficGb, "GB"], ["Mailboxes", v.spec.mailboxes, r.spec.mailboxes, ""]]
     : [["vCPU", v.spec.vcpu, r.spec.vcpu, ""], ["RAM", v.spec.ramGb, r.spec.ramGb, "GB"], ["Disk", v.spec.diskGb, r.spec.diskGb, "GB"]];
@@ -196,15 +196,15 @@ export function UpgradeCompose({ r }: { r: SalesRequest }) {
           <tr><td>Monthly price</td><td className="r num">{euroCents(current)}</td><td className="r num">{euroCents(price)}</td></tr>
         </tbody>
       </table>
-      {open && (
+      {(open || locked) && (
         <div className="compose custom-steps">
-          <PriceField value={price} reference={r.reference} onChange={setPrice} label="New monthly price" />
+          <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} label="New monthly price" />
           <span className="sales-total">Difference <span className="num">{price >= current ? "+" : ""}{euroCents(price - current)}</span> a month</span>
-          <RouteCards product={r.product} city={r.city} size={sizeOf(r.spec)} value={route} onChange={setRoute} serviceId={r.serviceId ?? undefined} />
+          <RouteCards product={r.product} city={r.city} size={sizeOf(r.spec)} value={route} onChange={setRoute} disabled={locked} serviceId={r.serviceId ?? undefined} />
           <div className="actions-row">
-            <button className="btn ghost" onClick={() => act(decline, r.id)}><CircleX />Decline</button>
+            <button className="btn ghost" disabled={locked} onClick={() => act(decline, r.id)}><CircleX />Decline</button>
             <span className="grow" />
-            <button className="btn primary" disabled={!(price > 0)} onClick={() => act(acceptUpgrade, r.id, price, route)}><Check />Accept</button>
+            <button className="btn primary" disabled={locked || !(price > 0)} onClick={() => act(offerUpgrade, r.id, price, route)}><Send />Send offer</button>
           </div>
         </div>
       )}

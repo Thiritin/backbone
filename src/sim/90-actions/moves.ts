@@ -2,8 +2,8 @@
 // customer's window.
 import { MOVE_WINDOW, moveWindowStart, segmentOf } from "../10-catalog/attention";
 import { dateOf } from "../00-core/time";
-import type { Customer } from "../30-customers/customers";
-import { bump, createTicket, type Move } from "../40-support/tickets";
+import type { Customer, Service } from "../30-customers/customers";
+import { bump, createTicket, type Move, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { clusterOf } from "../60-infra/cluster";
@@ -31,8 +31,15 @@ export function moveTargets(s: GameState, workloadId: string): MoveTarget[] {
     : migrationTargets(s, w.id).map((t) => ({ to: t.to, name: t.name, clusterId: t.clusterId }));
 }
 
+// The customer agrees to the move: it runs from its window on (movesTick).
+function accept(s: GameState, t: Ticket, c: Customer, v: Service): void {
+  const m = t.move!, segment = segmentOf(c.profile, v.product), d = dateOf((m.windowAt = moveWindowStart(segment, s.hour)));
+  m.log = [...m.log, { hour: s.hour, key: segment === "private" ? "ticket.migration.acceptAny.text" : "ticket.migration.accept.text", params: { day: d.getUTCDay(), from: d.getUTCHours(), to: MOVE_WINDOW[segment]?.to ?? 0 } }];
+}
+
 // Sends the customer a ticket asking to move a service to a host (a migration target's id, or the panel host's id for a web space).
-export function offerMigration(s: GameState, serviceId: string, to: string): ActionResult {
+// An agreed move (a retention offer the customer took) needs no answer.
+export function offerMigration(s: GameState, serviceId: string, to: string, agreed = false): ActionResult {
   const v = s.services.find((x) => x.id === serviceId && x.endedAt === null), c = v && s.customers.find((x) => x.id === v.customerId && x.churnedAt === null);
   const w = v && workloadOf(s, v.id);
   if (!v || !c || !w) return fail("error.unknownService");
@@ -43,6 +50,7 @@ export function offerMigration(s: GameState, serviceId: string, to: string): Act
   t.status = "waiting";
   t.unread = false;
   t.move = { workloadId: w.id, to, name: target.name, windowAt: null, log: [] };
+  if (agreed) accept(s, t, c, v);
   return { ok: true, id: t.id };
 }
 
@@ -69,7 +77,7 @@ const toDatacenter = (s: GameState, m: Move): boolean => {
 const run = (s: GameState, m: Move): ActionResult => {
   const w = s.workloads.find((x) => x.id === m.workloadId), c = w && s.clusters.find((x) => x.id === w.clusterId);
   if (!w || !c) return fail("error.unknownWorkload");
-  return c.kind === "panel" ? migrateWebspace(s, w.id, m.to) : migrateWorkload(s, w.id, m.to);
+  return c.kind === "panel" ? migrateWebspace(s, w.id, m.to, true) : migrateWorkload(s, w.id, m.to, true);
 };
 
 // Hourly, before customers react to downtime: customers answer offers once their reply time is up and accepted moves run
@@ -93,12 +101,11 @@ export function movesTick(s: GameState, customer: (id: string) => Customer): Sim
         events.push({ app: "Support", key: "event.moveDeclined", params: { name: c.name, service: v.label } });
         continue;
       }
-      const segment = segmentOf(c.profile, v.product), d = dateOf((m.windowAt = moveWindowStart(segment, s.hour)));
-      note(segment === "private" ? "ticket.migration.acceptAny.text" : "ticket.migration.accept.text", { day: d.getUTCDay(), from: d.getUTCHours(), to: MOVE_WINDOW[segment]?.to ?? 0 });
+      accept(s, t, c, v);
       Object.assign(t, { updatedAt: s.hour, unread: true });
       events.push({ app: "Support", key: "event.moveAccepted", params: { name: c.name, service: v.label } });
     }
-    if (s.hour < m.windowAt) continue;
+    if (m.windowAt === null || s.hour < m.windowAt) continue;
     const bonus = toDatacenter(s, m);
     if (run(s, m).ok) {
       if (bonus) bump(c, BASEMENT_BONUS);

@@ -8,7 +8,7 @@ import type { Cable as CableT, Device, End, GameState } from "../../../sim/50-st
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, deviceVendor, deviceWatts, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
-import { addSecondPsu, atServer, buyOutLease, connect, disconnect, LABEL_MAX, pullPower, resetBmc, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, unmountDevice, type ActionResult } from "../../../sim/90-actions/hardware";
+import { addSecondPsu, atServer, buyOutLease, connect, disconnect, LABEL_MAX, moveServer, pullPower, resetBmc, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, unmountDevice, type ActionResult } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
 import { cableColor, DeviceSvg, SWATCHES } from "../../art/fronts";
 import { BrandLogo, Logo } from "../../art/logos";
@@ -75,6 +75,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     plug: (psu) => togglePlug(guarded, d, psu),
     setup: () => setSetup(d.id),
     maintain: () => mnt.plan({ kind: "device", id: d.id }),
+    move: (to) => hand.start(game, { title: `Move ${devName(d)} to ${game.locations.find((l) => l.id === to)?.name}`, deviceId: d.id, at: to, action: moveServer, args: [d.id, to] }),
     rename: () => onRename(d.id),
     unmount: () => { if (act(unmountDevice, d.id).ok) onSelect(null); },
     sell: () => setSelling(d),
