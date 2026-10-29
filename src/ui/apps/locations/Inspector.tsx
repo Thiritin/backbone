@@ -25,6 +25,7 @@ import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
 import { PartsCard } from "./Slots";
 import { AddressRows } from "../network/Addresses";
+import { fqdn } from "../../../sim/30-customers/domains";
 
 // Sells a device or a rack after showing its resale value against the price paid.
 export function SellConfirm({ game, name, price, boughtAt, cables = 0, onCancel, onSell }: { game: GameState; name: string; price: number; boughtAt: number; cables?: number; onCancel: () => void; onSell: () => void }) {
@@ -103,7 +104,10 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         )}
         <More label={name} entries={menu} />
       </div>
-      <div className="loc-model">{model.kind === "gateway" ? "" : `${device.brand} `}{model.name} · <span className="num">{where}</span></div>
+      <div className="loc-model">
+        {device.hostname && <div className="num">{fqdn(game, device.hostname)}</div>}
+        {model.kind === "gateway" ? "" : `${device.brand} `}{model.name} · <span className="num">{where}</span>
+      </div>
 
       <div className={`loc-face${model.kind === "server" ? " wide" : ""}`} onContextMenu={menuOn(menu)}>
         <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={440} u={40} back={side === "back"} />

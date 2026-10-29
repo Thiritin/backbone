@@ -2,6 +2,7 @@ import { ChevronLeft, Contact, Cpu, FileText, Globe, History, LifeBuoy, ListChec
 import { useId, useState } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import type { Customer, Profile, Service } from "../../../sim/30-customers/customers";
+import { fqdn } from "../../../sim/30-customers/domains";
 import { referenceFor } from "../../../sim/30-market/market";
 import { subjectParams } from "../../../sim/40-support/notices";
 import { isFinal, profileStats, serviceMonthly } from "../../../sim/40-support/tickets";
@@ -211,7 +212,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                   <tbody>
                     {services.filter((v) => v.endedAt === null).map((v) => (
                       <tr key={v.id} onClick={() => setTab("services")} onContextMenu={menuOn(serviceMenu(v))}>
-                        <td className="cus-subject"><span className="cus-strong">{v.label}</span></td>
+                        <td className="cus-subject"><span className="cus-strong">{v.label}</span>{v.hostname && <div className="cus-sub num">{fqdn(game, v.hostname)}</div>}</td>
                         <td className="cus-dim">{specText(v.product, v.spec)}</td>
                         <td className="r num">{price(v)}</td>
                         <td className="r">{serviceStatus(v, r)}</td>
@@ -262,6 +263,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                   <div className="fin-card-b">
                     <dl className="fin-rows">
                       <div><dt>Product</dt><dd>{PRODUCT[v.product]}</dd></div>
+                      {v.hostname && <div><dt>Hostname</dt><dd className="num">{fqdn(game, v.hostname)}</dd></div>}
                       {v.domain && <div><dt>Domain</dt><dd>{v.domain}</dd></div>}
                       <div><dt>Resources</dt><dd className="num">{specText(v.product, v.spec)}</dd></div>
                       <div><dt>Price</dt><dd className="num">{price(v)}</dd></div>

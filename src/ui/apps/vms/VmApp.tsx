@@ -21,6 +21,7 @@ import { SoftwareGrid } from "../software/Software";
 import { Mark, IncidentReports, Sparkline, VM_STATE, vmLabel, vmState, type VmState } from "../products/parts";
 import { PRODUCT } from "../support/labels";
 import { AddressRows } from "../network/Addresses";
+import { fqdn } from "../../../sim/30-customers/domains";
 
 type StateFilter = "all" | "running" | "stopped" | "lost";
 const FILTERS: [StateFilter, string][] = [["all", "All"], ["running", "Running"], ["stopped", "Stopped"], ["lost", "Lost disk"]];
@@ -126,7 +127,7 @@ export function VmApp() {
                     return (
                       <tr key={w.id} className={w.id === selected ? "sel" : ""} onClick={() => { setSelected(w.id); setCreating(false); }} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setSelected(w.id)}
                         onContextMenu={menuOn(() => vmMenu(game, w))}>
-                        <td>{v ? v.label : own.name}</td>
+                        <td>{v ? v.label : own.name}{w.hostname && <div className="cus-sub num">{fqdn(game, w.hostname)}</div>}</td>
                         <td>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</td>
                         <td>{v ? PRODUCT[v.product] : own.service}</td>
                         <td>{d && devName(d)}</td>
@@ -159,6 +160,7 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
     <aside className="fin-detail vm-detail">
       <div className="fin-detail-h"><h2>{v ? v.label : own.name}</h2><span className={`pill ${tone}`}>{label}</span><More label={v ? v.label : own.name} entries={() => vmMenu(game, w)} /></div>
       <dl className="fin-facts">
+        {w.hostname && <div><dt>Hostname</dt><dd className="num">{fqdn(game, w.hostname)}</dd></div>}
         <div><dt>Customer</dt><dd>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</dd></div>
         <div><dt>Product</dt><dd>{v ? PRODUCT[v.product] : own.service}</dd></div>
         <div><dt>Host</dt><dd>{host ? devName(host) : "None"}</dd></div>
