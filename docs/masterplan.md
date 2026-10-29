@@ -39,7 +39,7 @@ Balance today (main 84d5851): steady medians L2 2006.2, L3 2006.9, L4 2008.7, L5
 
 ## In flight
 
-Wave 2 in worktrees: Lane 2.1b, Lane 2.2, Lane 4.2, Lane 6 items 6.1, 6.4 and 6.6.
+Wave 2 in worktrees: Lane 2.1b, Lane 4.2, Lane 2.0b. Merged from wave 2: Lane 2.2, Lane 6 items 6.1, 6.4 and 6.6.
 
 ## What Lane 1 left behind (read before Lanes 2 and 3)
 
@@ -56,6 +56,7 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | Lane | Title | Needs |
 | --- | --- | --- |
 | 2.0 | Alerts that pause the game | Built (ed5d404) |
+| 2.0b | News feed and notification settings per type | 2.0 |
 | 2.1 | Company site hosting, customer sites, design ages | Built (8c57a61) |
 | 2.1b | Domains, registrar partners and company email | 2.1 (website channel needs the domain) |
 | 2.2 | Panel traits, migration as a hand task, compromised sites and mail | 2.1 (site status), Lane 1 `addSpam` |
@@ -99,6 +100,22 @@ Decisions:
 - Update gdd.md "Open questions": "Which events auto-pause the game?" now reads: alerts, listed in "The desktop".
 
 Target: alerts.ts, the store change, the generic sheet with the security body kept, the key list, GameOver untouched. Tests: tests/alerts.test.ts for the pure part (`isAlert(key)`, the app per key) and tests/ui-store.test.ts for the pause (advance stops at an alert event and sets speed 0, Continue restores it). Verify typecheck, tests, build. Playwright: let cash go negative and see the sheet pause the clock, Continue resumes, light and dark, screenshots. Record in gdd.md "The desktop" ("Alerts" paragraph with the list) and fix the open question.
+
+### Lane 2.0b: News feed and notification settings per type
+
+Owner's words: "Oh new unlocks should be in the news maybe, and the news should be side notifications maybe, also notifications add a settings wheel and they should be able to customize their notifications!" And: "also as in the types of notifications they get per app".
+
+State on main: notifications are banners from the store's `notify(app, title, text, key?)` (src/ui/store.ts:73, pushed at :264), at most 4 on screen at the right, 50 kept in the notification centre (`history`, opened from the bell in src/ui/desktop/MenuBar.tsx:69, `unseen` badge). Preferences are per app only: `NotifyPref { allow, sound }` (store.ts:21), `prefOf` (:29), `setNotifyPref` (:246), stored in localStorage under `backbone.prefs` (:32), edited in Settings (src/ui/apps/SettingsApp.tsx:51, one row per app). Every event carries `app` and `key` (`SimEvent`); the key names its kind (`event.vuln.hacked`, `event.review`, `event.ddos`, `event.saturated`, `event.networkBills`, `event.tax`, `event.cashNegative`, and so on; `rg -o 'key: "event\.[a-zA-Z.]+' src/sim | sort -u` lists them all). Alerts (Lane 2.0) always show. Nothing in the game announces that new software, hardware or options have become available: software has `from` years (platforms.ts), server generations arrive every three years (economy.ts GENERATIONS), IPv6 arrives in 2010 and 2013 (addresses catalog), design generations every four years (Lane 2.1), registrar and email providers from their years (Lane 2.1b), hardware leaves the shop (Lane 5.1). The AlertSheet names punned outlets ("Heize online", "Twister", ...) in `SOURCE` (src/ui/desktop/AlertSheet.tsx:10).
+
+Decisions:
+- Notification types. A type is a group of event keys inside an app. `NOTIFY_TYPES` in a new src/ui/notify-types.ts: `Record<app, { id: string; label: string; match: (key: string) => boolean }[]>`, plus a fallback type "Other" per app for keys no group claims. Groups per app, as labels the player understands (the i18n keys stay internal): Finance: Bills and tax, Cash and loans; Support: Tickets, Notices and legal; Network: Uplinks and peering, Attacks and saturation, Addresses, Monthly bills; Locations: Hardware failures, Power, Deliveries and moves; Security: Advisories, Compromises; Marketing: Reviews, Campaigns and bills; Website: Site; Staff: Hiring and leaving, Training; Virtual machines: Workloads and migrations, Backups; Customers and Billing: Orders, Payments and dunning; Research: Unlocks; News: Hardware, Software, Internet, Market. Write the mapping by reading the key list; a test asserts every key the sim can emit lands in exactly one group of its app (reuse the key collection in tests/event-keys.test.ts).
+- Preferences gain `types: Record<string, boolean>` (missing means on): `NotifyPref { allow, sound, types }`. A notification shows when the app allows and its type is on; alert keys ignore both (they always pause and show). Sound follows the app as today. Old prefs load with every type on.
+- Settings wheel: a gear button in the notification centre header (next to Clear) opens Settings on the Notifications section, with the app's row expanded; each app row in Settings expands to its types with an On/Off segmented control per type (no dropdowns, no helper text). Keep the per-app Notifications and Sound switches.
+- News. A sim module src/sim/80-business/news.ts emits `event.news.<topic>` events from the app "News" on the day a thing becomes available: a software's `from` year (one per software, at 1 January 09:00 with the punned product name), a new server generation and its first shop day, NVMe bays (G4) and other chassis changes if Lane 4 recorded a year, IPv6 at datacenters (2010) and on home lines (2013), RIPE's last /8 (September 2012) and run-out (November 2019), a new website design generation (every four years from 2009), new registrar or email providers from their years (Lane 2.1b, when built), a product line the player could offer now but does not (checked monthly, once per line), and later lanes add theirs (end of sale, GPU demand waves, part price spikes) by pushing to `NEWS` with a year or hour and a key. Each key has `.title` and `.text` written as a dry headline and one sentence, attributed to a punned outlet picked by topic (reuse and extend `SOURCE`: "Heize online" for hardware and software, "Golem.dy" for internet, "Handelsblah" for market). The headline is the title, the outlet is part of the text.
+- News are side notifications: they go through `notify("News", ...)` like every other event, so the banner stack shows them and the News types in Settings can mute them. They also fill a News app: a dock app (hidden by default like Notes is, opened from the bell's menu and from Searchlight later) listing headlines by date, newest first, with the outlet and the sentence; labels and values. Window 520 by 640.
+- Old saves: news for things that happened before the save's current date are not replayed; `s.news: string[]` records emitted keys so nothing repeats (default [] in newGame and deserialize).
+
+Target: notify-types.ts and the test over every key; `types` on prefs with load and save; the gear and the expanded Settings rows; news.ts with the sources above, `event.news.*` i18n in a new src/i18n/news.ts spread into en.ts; the News app and registry entry; `s.news`. Tests: tests/notify-types.test.ts (every key in one group; a key of an off type is hidden; alert keys are not), tests/news.test.ts (software news on its first year, generation news, IPv6 news dates, a line offerable but not listed produces one news item, nothing repeats, old saves load). Verify typecheck, tests, build (no money moves, balance untouched). Playwright: the gear in the notification centre, switch a type off and see its banner stay away, the News app with the 2008 generation headline, light and dark, screenshots. Record in gdd.md "The desktop" (Notifications and News paragraphs).
 
 ### Lane 2.1: Company site hosting, customer sites, design ages
 
