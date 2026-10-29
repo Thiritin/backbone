@@ -1,6 +1,7 @@
 // Code-drawn device fronts, ported from docs/design/mockups/shell.js. Sizes are px; u is one rack unit.
 import type { ReactNode } from "react";
-import { bayCount, jacksOf, type DeviceModel } from "../../sim/10-catalog/hardware";
+import { bayCount, isOobPort, jacksOf, type DeviceModel } from "../../sim/10-catalog/hardware";
+import { isMgmtModel, MgmtFront, oobLabel } from "./mgmt";
 import { Back, Cord, psuInlets, SwitchRear } from "./backs";
 import { BrandMark } from "./logos";
 
@@ -30,7 +31,7 @@ export const tw = (t: string, fs: number) => t.length * fs * 0.62;
 // Port numbers print in a band above and below the ports.
 export const numSize = (h: number) => Math.min(6, Math.max(3.8, Math.min(h, 32) * 0.19));
 export const numBand = (h: number) => numSize(h) * 0.85 + 1.3;
-export const portNo = (m: DeviceModel, i: number) => (m.kind === "server" ? i : m.kind === "patch" ? (i % jacksOf(m)) + 1 : i + 1);
+export const portNo = (m: DeviceModel, i: number) => (isOobPort(i) ? oobLabel(m, i) : m.kind === "server" ? i : m.kind === "patch" ? (i % jacksOf(m)) + 1 : i + 1);
 
 // Activity flickers faster the busier the link; each port starts at its own point so neighbours never flicker in step.
 const phaseOf = (name: string, i: number) => ([...name].reduce((n, c) => (n * 31 + c.charCodeAt(0)) % 997, 7) / 997 + i * 0.618) % 1;
@@ -369,6 +370,7 @@ export function Front(p: FrontProps) {
   if (p.model.kind === "gateway") return <Gateway {...p} />;
   if (p.model.kind === "ups") return <Ups {...p} />;
   if (p.model.kind === "pdu") return <Pdu {...p} />;
+  if (isMgmtModel(p.model)) return <MgmtFront {...p} />;
   return <Patch {...p} />;
 }
 

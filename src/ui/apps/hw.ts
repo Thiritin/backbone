@@ -1,11 +1,13 @@
 // Hardware labels shared by the Locations and Shop apps.
 import { dateOf } from "../../sim/00-core/time";
 import { cardOf } from "../../sim/10-catalog/gpu";
-import { COMPONENTS, jacksOf, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
+import { COMPONENTS, isOobPort, jacksOf, OOB_PORT, oobPorts, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
 import type { Component, Device, End, GameState } from "../../sim/50-state";
 import { deviceHealth, HOURS_PER_YEAR, isPlugged, linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
+import { isMgmtDevice, oobUp } from "../../sim/60-infra/oob";
 import { portLinks, type PortLink } from "../../sim/60-infra/usage";
 import type { Lamp, PartLamp, Parts, PortLamp, PortLight } from "../art/fronts";
+import { oobLabel } from "../art/mgmt";
 
 export const speed = (g: number) => (g >= 1000 ? `${+(g / 1000).toFixed(1)}T` : g >= 1 ? `${g}G` : `${g * 1000}M`);
 export const ram = (gb: number) => (gb >= 1024 ? `${+(gb / 1024).toFixed(1)} TB` : `${gb} GB`);
@@ -26,6 +28,10 @@ export const CABLE_NAME = { copper: "copper", dac: "DAC", fiber: "fiber", rollov
 
 export function portsText(m: DeviceModel): string {
   if (m.kind === "patch") return `${jacksOf(m)} jacks`;
+  if (m.kind === "kvm" || m.kind === "console" || m.kind === "oob") {
+    const n = (k: string) => oobPorts(m).filter((p) => p === k).length;
+    return m.kind === "oob" ? `${n("net")} × 1G` : `${n(m.kind === "kvm" ? "kvm" : "serial")} × ${m.kind === "kvm" ? "KVM" : "serial"}, 1 × 1G`;
+  }
   const runs: { p: PortSpec; n: number }[] = [];
   for (const p of m.ports) {
     const last = runs.at(-1);
@@ -36,6 +42,7 @@ export function portsText(m: DeviceModel): string {
 }
 
 export function portName(m: DeviceModel, i: number): string {
+  if (isOobPort(i)) { const l = oobLabel(m, i); return /^\d+$/.test(l) ? `${oobPorts(m)[i - OOB_PORT] === "kvm" ? "KVM" : "Serial"} ${l}` : l; }
   if (m.kind === "server") return `eth${i}`;
   if (m.kind === "patch") return i < jacksOf(m) ? `Top ${i + 1}` : `Bottom ${i - jacksOf(m) + 1}`;
   return `${m.ports[i].media === "sfp" && m.ports.some((p) => p.media === "rj45") ? "SFP" : "Port"} ${i + 1}`;
@@ -63,7 +70,8 @@ function partLamps(g: GameState, d: Device): Parts {
 
 // The status light is the worse of link and health; a rebuild blinks it.
 export function deviceLamps(g: GameState, id: string, m: DeviceModel) {
-  const d = g.devices.find((x) => x.id === id)!, h = deviceHealth(g, id).state, link = lampOf(linkStatus(g, id));
+  const d = g.devices.find((x) => x.id === id)!, h = deviceHealth(g, id).state;
+  const link: Lamp = isMgmtDevice(d) ? (oobUp(g, id) ? "ok" : "bad") : lampOf(linkStatus(g, id));
   const state: Lamp = h === "off" || h === "nopower" ? "off" : WORSE[Math.max(WORSE.indexOf(HEALTH_LAMP[h]), WORSE.indexOf(link))];
   const frozen = g.frozen.includes(id);
   return { state: frozen ? "bad" as Lamp : state, blink: frozen || h === "rebuilding" || h === "booting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), lights: portLights(g, id, m), parts: partLamps(g, d) };

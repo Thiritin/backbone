@@ -27,6 +27,9 @@ import { softwareOn } from "../../../sim/90-actions/software";
 import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
 import { PowerCard } from "./PowerCard";
+import { RemoteCard } from "./RemoteCard";
+import { remoteFix } from "../../../sim/60-infra/oob";
+import { continueBoot } from "../../../sim/90-actions/remote";
 import { ActionTile } from "../software/Software";
 import { frontOptions, isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
 import { atDatacenter, useHandWork } from "./HandSheet";
@@ -57,6 +60,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     power: (on) => { if (on && lid) return; if (on) act(setPower, d.id, true); else guarded(`Power off ${devName(d)}?`, "Power off", setPower, d.id, false); },
     op: (op: PowerOp) => { if (op === "on") { if (!lid) act(POWER_ACTION.on, d.id); } else { const label = powerOptions(game, d).options.find((o) => o.op === op)?.label ?? POWER_LABEL[op];
       if (op === "bmc" && !pduOf(game, d) && atDatacenter(game, d.id)) hand.start(game, { title: `${label} ${devName(d)}`, deviceId: d.id, action: resetBmc, args: [d.id] });
+      else if (op === "continue" && !remoteFix(game, d)) hand.start(game, { title: `${label} ${devName(d)}`, deviceId: d.id, action: continueBoot, args: [d.id], tech: { kind: "boot" } });
       else guarded(`${label} ${devName(d)}?`, label, POWER_ACTION[op], d.id); } },
     front: (op) => {
       if (op === "power" && !d.on && lid) return;
@@ -187,6 +191,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       {isServerInRack(device)
         ? <PowerCard game={game} device={device} onOp={(op) => menus.op(device, op)} onFront={(op) => menus.front(device, op)}>{serverActs}</PowerCard>
         : server && device.store && <div className="loc-card"><div className="act-groups">{serverActs}</div></div>}
+      <RemoteCard game={game} device={device} />
 
       {model.kind === "switch" && (
         <div className="seg loc-mode" role="group" aria-label="Port selection">
@@ -400,7 +405,7 @@ function PortCard({ game, device, model, port, peer, onSelect }: { game: GameSta
         </div>
         <div className="loc-path">
           <div className="loc-node here"><span className="k">{devName(device)}</span><strong>{portName(model, port)}</strong></div>
-          <div className={`loc-wire ${cable.kind}`} style={cable.color ? { background: cable.color } : undefined}><span><span className="num">{Math.min(here.gbit, om.ports[peer.port].gbit)} Gbit/s</span> {CABLE_NAME[cable.kind]}</span></div>
+          <div className={`loc-wire ${cable.kind}`} style={cable.color ? { background: cable.color } : undefined}><span><span className="num">{Math.min(here.gbit, (om.ports[peer.port] ?? here).gbit)} Gbit/s</span> {CABLE_NAME[cable.kind]}</span></div>
           <button className="loc-node" onClick={() => onSelect(other.id)}><span className="k">{other.panel ? "Carrier panel" : devName(other)}</span><strong>{other.panel ? `${other.name} ${portName(om, peer.port)}` : portName(om, peer.port)}</strong></button>
         </div>
         <ColorRow cable={cable} />

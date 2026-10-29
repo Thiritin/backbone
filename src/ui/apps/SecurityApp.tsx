@@ -11,6 +11,9 @@ import { phpDue, upgradePhp } from "../../sim/90-actions/clusters";
 import { urgentSoftware, type Severity } from "../../sim/60-infra/vulns";
 import { cleanUp } from "../../sim/90-actions/security";
 import { updateSoftware } from "../../sim/90-actions/software";
+import { updateFirmware } from "../../sim/90-actions/remote";
+import { exposedDevices, firmwareDue, firmwareVulns } from "../../sim/60-infra/oob";
+import { modelById } from "../../sim/10-catalog/hardware";
 import { menuOn, type MenuEntry } from "../desktop/ContextMenu";
 import { useFocus, useStore } from "../store";
 import { devName } from "./hw";
@@ -106,6 +109,35 @@ const SoftwareCard = ({ game, cardRef }: { game: GameState; cardRef: React.RefOb
   );
 };
 
+// KVMs, console servers and OOB switches open to the internet, with their firmware's worst open vulnerability.
+function ManagementCard({ game }: { game: GameState }) {
+  const act = useStore((s) => s.act), rows = exposedDevices(game);
+  if (!rows.length) return null;
+  return (
+    <section className="fin-card" style={{ margin: 14 }}>
+      <h3 className="fin-card-h">Management access</h3>
+      <table className="table">
+        <thead><tr><th>Device</th><th>Model</th><th>Firmware</th><th>Severity</th><th className="r">Exposed</th><th /></tr></thead>
+        <tbody>
+          {rows.map((d) => {
+            const top = firmwareVulns(game, d)[0];
+            return (
+              <tr key={d.id}>
+                <td>{devName(d)}</td>
+                <td>{modelById(d.model).name}</td>
+                <td className="num">{d.fw?.version}</td>
+                <td>{top ? <span className={`pill ${SEVERITY[top.severity][0]}`}>{SEVERITY[top.severity][1]}</span> : <span className="pill ok">Patched</span>}</td>
+                <td className="r num">{top ? `${top.days} d` : ""}</td>
+                <td className="r"><button className="btn" disabled={!firmwareDue(game, d)} onClick={() => act(updateFirmware, d.id)}>Update firmware</button></td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 export function SecurityApp() {
   const game = useStore((s) => s.game);
   const a = advisoryOf(game), nodes = advisoryNodes(game);
@@ -138,6 +170,7 @@ export function SecurityApp() {
         )}
         {view === "advisories" && <div className="fin-scroll">
           <SoftwareCard game={game} cardRef={card} />
+          <ManagementCard game={game} />
           {nodes.length === 0 ? !game.breaches.length && <div className="fin-empty"><ShieldCheck />No affected panel hosts</div> : (
             <table className="table">
               <thead><tr><th>Panel host</th><th>Server</th><th>PHP</th><th className="r">Sites</th><th>Sites state</th><th>Patch</th><th /></tr></thead>

@@ -49,6 +49,7 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
       const brand = game.devices.find((x) => x.id === p.deviceId)?.brand ?? "";
       return <Tile fill={BMC_LOOK[brand]?.color ?? GREY}><rect x="3.5" y="5" width="9" height="6" rx="1" fill="none" stroke="white" strokeWidth="1.3" /><path d="M5.5 8h2" stroke="white" strokeWidth="1.3" strokeLinecap="round" /></Tile>;
     }
+    case "kvm": return <Tile fill="#555555"><rect x="3.5" y="4.5" width="9" height="6" rx="1" fill="none" stroke="white" strokeWidth="1.3" /><path d="M6.5 12.5h3" stroke="white" strokeWidth="1.3" strokeLinecap="round" /></Tile>;
     case "video": return <Tile fill="oklch(0.58 0.22 27)"><path d="M6.4 5.2v5.6L11 8z" fill="white" /></Tile>;
     default: return <Tile fill={GREY}><path d="M6 6.4a2 2 0 1 1 2.6 1.9c-.5.2-.6.5-.6 1M8 11.4v.2" fill="none" stroke="white" strokeWidth="1.4" strokeLinecap="round" /></Tile>;
   }
