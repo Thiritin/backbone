@@ -95,6 +95,17 @@ export function monitoring(s: GameState): MonitorRow[] {
   }).sort((a, b) => (b.worst ? rank(b.worst) : -1) - (a.worst ? rank(a.worst) : -1) || b.days - a.days);
 }
 
+// One own instance with an open high or critical vulnerability, for the update list that needs no monitoring.
+export interface UrgentRow { clusterId: string; software: string; host: string; worst: Severity; days: number }
+
+// Every instance open to a high or critical vulnerability, critical first, then the longest exposed.
+export function urgentSoftware(s: GameState): UrgentRow[] {
+  return s.clusters.flatMap((c) => {
+    const family = familyOf(c), top = family && !c.switching ? openVulns(s, c.id)[0] : undefined;
+    return family && top && top.severity !== "low" ? [{ clusterId: c.id, software: softwareById(family).name, host: c.name, worst: top.severity, days: top.days }] : [];
+  }).sort((a, b) => rank(b.worst) - rank(a.worst) || b.days - a.days);
+}
+
 // The vulnerabilities whose patch comes out this hour for a cluster that is open to them.
 export function patchedNow(s: GameState, c: Cluster): Vulnerability[] {
   const family = familyOf(c);

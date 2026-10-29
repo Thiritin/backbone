@@ -38,7 +38,7 @@ function body(game: GameState, key: string): { rows: Row[]; source?: string } {
 const openBreach = (game: GameState) => game.breaches.filter((b) => b.decision === null).at(-1);
 
 const focus = (game: GameState, key: string) =>
-  key === "event.vulnCritical" ? { kind: "tab", id: "monitoring" } : key === "event.breach" && openBreach(game) ? { kind: "ticket", id: openBreach(game)!.ticketId } : undefined;
+  key === "event.vulnCritical" ? { kind: "card", id: "software" } : key === "event.breach" && openBreach(game) ? { kind: "ticket", id: openBreach(game)!.ticketId } : undefined;
 
 // The sheet an alert event opens with the game paused.
 export function AlertSheet({ alert }: { alert: Banner }) {
