@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { brandFrom, brandsOf, brandWatts, shopModels, vendorsOf } from "../src/sim/10-catalog/hardware";
+import { brandFrom, brandsOf, brandWatts, modelById, partOffers, shopModels, vendorsOf } from "../src/sim/10-catalog/hardware";
 import { unitPrice } from "../src/sim/90-actions/hardware";
-import { CORES, matchesFilter, NO_FILTER, RAMS, sortItems, type Sort } from "../src/ui/apps/shop/filter";
+import { CLASS_TREE, classOf, CORES, inClass, makerOf, MAKERS, matchesFilter, NO_FILTER, RAMS, sortItems, type Sort } from "../src/ui/apps/shop/filter";
 
 const models = (year: number) => shopModels(year).filter((m) => m.server);
 const left = (year: number, p: object) => models(year).filter((m) => matchesFilter(m, { ...NO_FILTER, ...p }));
@@ -63,5 +63,31 @@ describe("shop sort", () => {
     const order = sortItems(same, "power", 2008).map((it) => it.brand);
     expect(order.indexOf("Hewlett-Packet")).toBeLessThan(order.indexOf("Dwell"));
     expect(order.indexOf("Dwell")).toBeLessThan(order.indexOf("SuperMacro"));
+  });
+});
+
+describe("shop classes", () => {
+  it("every model falls in a class of the tree", () => {
+    const known = CLASS_TREE.flatMap(([p, kids]) => [p, ...kids]);
+    for (const m of shopModels(2014).filter((x) => x.kind !== "part")) expect(known).toContain(classOf(m));
+  });
+  it("a parent class holds its children and nothing else", () => {
+    const server = classOf(shopModels(2014).find((m) => m.server)!);
+    expect(inClass("Servers", server)).toBe(true);
+    expect(inClass("Servers", "Layer 2")).toBe(false);
+    expect(inClass("Switches", "Layer 3")).toBe(true);
+    expect(inClass("Layer 2", "Layer 3")).toBe(false);
+    expect(inClass(null, server)).toBe(true);
+    expect(classOf(modelById("part-ram"))).toBe("Parts");
+  });
+  it("parts list under their real maker or none", () => {
+    for (const p of partOffers(2014)) {
+      const make = makerOf("Generic", p);
+      if (p.kind === "cpu" || p.kind === "board") expect(["Indel", "AMB"]).toContain(make);
+      if (p.kind === "gpu") expect(make).toBe("nVidea");
+      if (p.kind === "ram") expect(make).toBeNull();
+      expect(make).not.toBe("Generic");
+    }
+    expect(MAKERS).not.toContain("Generic");
   });
 });

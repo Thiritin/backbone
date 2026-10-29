@@ -5,8 +5,9 @@ import { BACKUP_HOUR } from "../10-catalog/usage";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
-import type { Device, GameState } from "../50-state";
+import type { Device, GameState, Location } from "../50-state";
 import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
+import { exitsOf } from "../60-infra/network";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
 import { installedCores, perCoreOf, raidUsable } from "../60-infra/status";
@@ -40,12 +41,14 @@ export const zoneLinkGbit = (s: GameState, a: string, b: string): number => {
   return s.network.zoneLinks.filter((z) => z.readyAt <= s.hour && ends.includes(z.a) && ends.includes(z.b)).reduce((n, z) => n + z.gbit, 0);
 };
 
-// The speed a workload moves between two zones at: the zone links, or out of the basement over the internet at the home
-// line's upload speed, at most WAN_GB_PER_HOUR. Never 10 Gbit/s, so such a move is always cold.
+// The speed a workload moves between two zones at: the zone links, or else over the internet into a datacenter at the slower
+// side's uplink, at most WAN_GB_PER_HOUR. Never 10 Gbit/s, so such a move is always cold. Nothing moves back into the basement.
 export function moveGbit(s: GameState, a: string, b: string): number {
   const linked = zoneLinkGbit(s, a, b);
-  if (linked || !s.locations.some((l) => l.az === a && !l.dc) || !s.locations.some((l) => l.az === b && l.dc)) return linked;
-  return Math.min(homeLineById(s.homeLine.id).up / 1000, WAN_GB_PER_HOUR / LAN_GB_PER_HOUR);
+  const from = s.locations.find((l) => l.az === a), to = s.locations.find((l) => l.az === b);
+  if (linked || !from || !to?.dc) return linked;
+  const mbps = (l: Location) => (l.dc ? exitsOf(s, l).reduce((n, e) => n + e.cap, 0) : homeLineById(s.homeLine.id).up);
+  return Math.min(Math.min(mbps(from), mbps(to)) / 1000, WAN_GB_PER_HOUR / LAN_GB_PER_HOUR);
 }
 
 function units(s: GameState, c: Cluster, sw: Software): number {

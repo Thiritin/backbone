@@ -77,7 +77,7 @@ const toDatacenter = (s: GameState, m: Move): boolean => {
 const run = (s: GameState, m: Move): ActionResult => {
   const w = s.workloads.find((x) => x.id === m.workloadId), c = w && s.clusters.find((x) => x.id === w.clusterId);
   if (!w || !c) return fail("error.unknownWorkload");
-  return c.kind === "panel" ? migrateWebspace(s, w.id, m.to) : migrateWorkload(s, w.id, m.to);
+  return c.kind === "panel" ? migrateWebspace(s, w.id, m.to, true) : migrateWorkload(s, w.id, m.to, true);
 };
 
 // Hourly, before customers react to downtime: customers answer offers once their reply time is up and accepted moves run
