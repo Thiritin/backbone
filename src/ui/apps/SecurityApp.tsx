@@ -56,7 +56,7 @@ const outcomeOf = (b: Breach): string =>
 
 function Breaches({ game }: { game: GameState }) {
   return (
-    <section className="fin-card">
+    <section className="fin-card" style={{ margin: 14 }}>
       <h3 className="fin-card-h">Breaches</h3>
       <table className="table">
         <thead><tr><th>Date</th><th>Host</th><th className="r">Ransom</th><th>Decision</th><th>Outcome</th></tr></thead>
@@ -66,7 +66,7 @@ function Breaches({ game }: { game: GameState }) {
               <td className="num">{formatClock(b.hour)}</td>
               <td>{game.clusters.find((c) => c.id === b.hostId)?.name ?? b.hostId}</td>
               <td className="r num">{euro(b.ransom)}</td>
-              <td>{b.decision === null ? "Open" : b.decision === "pay" ? "Paid" : "Refused"}</td>
+              <td>{b.decision === null ? "Undecided" : b.decision === "pay" ? "Paid" : "Refused"}</td>
               <td>{outcomeOf(b)}</td>
             </tr>
           ))}
@@ -103,7 +103,7 @@ export function SecurityApp() {
           </div>
         )}
         {view === "advisories" && <div className="fin-scroll">
-          {nodes.length === 0 ? <div className="fin-empty"><ShieldCheck />No affected panel hosts</div> : (
+          {nodes.length === 0 ? !game.breaches.length && <div className="fin-empty"><ShieldCheck />No affected panel hosts</div> : (
             <table className="table">
               <thead><tr><th>Panel host</th><th>Server</th><th>PHP</th><th className="r">Sites</th><th>Sites state</th><th>Patch</th><th /></tr></thead>
               <tbody>{nodes.map((n) => <NodeRow key={n.id} game={game} n={n} />)}</tbody>
