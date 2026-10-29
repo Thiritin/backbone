@@ -1,26 +1,32 @@
 import { COMPONENTS, modelById, type ComponentKind } from "../10-catalog/hardware";
-import { phpAt } from "../10-catalog/platforms";
+import { phpAt, softwareById } from "../10-catalog/platforms";
 import { yearOf } from "../00-core/time";
 import type { Device, GameState } from "../50-state";
 import { beginTransfer, TRANSFER_MINUTES } from "../30-customers/registrar";
 import { anchorOf } from "../60-infra/cluster";
+import { openVulns, rank } from "../60-infra/vulns";
 import { HOURS_PER_YEAR, hotKind, hotSwappable, locationOf } from "../60-infra/status";
 import type { SimEvent } from "../88-tick/tick";
 import { drain, upgradeNodePhp } from "../90-actions/clusters";
+import { updateDue, updateSoftware } from "../90-actions/software";
 import { installPart, removePart, replaceComponent, setPower, spareFits, type ActionResult } from "../90-actions/hardware";
 import { migrateWebspace } from "../90-actions/vms";
 import { callOut, onCallAt, onCallPayroll, respond, restUntil } from "./oncall";
 import { atFair, isWorkHour, onShift, working, type Employee, type Task } from "./staff";
 
-export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "migrate" | "part" | "domains";
+export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "migrate" | "part" | "domains" | "update";
 // One operation on one device; componentId is set for a replace and for taking a part out, partId for putting a spare in,
-// auto when a rule queued it. A migrate runs at the device the web space sits on and carries the web space and the panel
+// auto when a rule queued it; an update carries the cluster id in componentId. A migrate runs at the device the web space sits on and carries the web space and the panel
 // host it moves to.
 export interface TechOp { id: string; kind: OpKind; deviceId: string; componentId: string | null; queuedAt: number; auto: boolean; target?: { workloadId: string; clusterId: string }; partId?: string | null }
 // failed: replace failed parts when a spare is in storage. worn: replace parts past their life that swap while running.
 // blackhole: the on-call technician blackholes an attack that saturates their location's links.
-export interface TechRules { failed: boolean; worn: boolean; blackhole: boolean }
-export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", migrate: "panels", part: "hardware", domains: "panels" };
+// updates: update software with an open high or critical vulnerability.
+export interface TechRules { failed: boolean; worn: boolean; blackhole: boolean; updates: boolean }
+export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", migrate: "panels", part: "hardware", domains: "panels", update: "panels" };
+// An update of a hypervisor is server work; a panel or mail host update is panel work.
+export const taskFor = (s: GameState, kind: OpKind, componentId: string | null): Task =>
+  kind === "update" && s.clusters.find((c) => c.id === componentId)?.kind === "cloud" ? "servers" : OP_TASK[kind];
 
 // A domains operation belongs to the company, not to a device: it is worked at the first location.
 export const opLocation = (s: GameState, o: TechOp): string | null => {
@@ -87,6 +93,17 @@ function autoQueue(s: GameState): void {
   }
 }
 
+// With the updates rule on, software with an open high or critical vulnerability is queued for a technician trained on it.
+function autoUpdates(s: GameState): void {
+  if (!s.techRules.updates) return;
+  for (const c of s.clusters) {
+    const at = anchorOf(s, c), d = s.devices.find((x) => x.id === at), loc = d && locationOf(s, d);
+    if (!d || !loc || !updateDue(s, c) || s.techOps.some((o) => o.kind === "update" && o.componentId === c.id)) continue;
+    if (!openVulns(s, c.id).some((v) => rank(v.severity) >= rank("high")) || !techsAt(s, loc.id, taskFor(s, "update", c.id)).length) continue;
+    queueOp(s, "update", d.id, c.id, true);
+  }
+}
+
 // An operation waits while an earlier one on the same device is queued, a swap is under way, or no spare is in storage.
 function ready(s: GameState, o: TechOp, taken: Set<string>): boolean {
   if (o.kind === "domains") return true;
@@ -116,6 +133,7 @@ function perform(s: GameState, o: TechOp): ActionResult | "off" {
   }
   if (o.kind === "off" || o.kind === "on") return setPower(s, d.id, o.kind === "on");
   if (o.kind === "drain") return drain(s, d.id);
+  if (o.kind === "update") return o.componentId ? updateSoftware(s, o.componentId) : { ok: false, error: "error.unknownCluster" };
   if (o.kind === "migrate") return o.target ? migrateWebspace(s, o.target.workloadId, o.target.clusterId) : { ok: false, error: "error.unknownWorkload" };
   return upgradeNodePhp(s, d.id);
 }
@@ -128,6 +146,7 @@ export function techTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   s.techOps = s.techOps.filter((o) => (o.kind === "domains" ? !!s.registrar?.transfer && s.registrar.transfer.doneAt === null : s.devices.some((d) => d.id === o.deviceId)));
   autoQueue(s);
+  autoUpdates(s);
   const taken = new Set<string>();
   if (!isWorkHour(s.hour)) {
     for (const l of s.locations) {
@@ -142,7 +161,7 @@ export function techTick(s: GameState): SimEvent[] {
 
 // One operation for the technician at their location; true when it took the hour.
 function work(s: GameState, e: Employee, events: SimEvent[], taken: Set<string>, onlyUrgent: boolean): boolean {
-  const o = s.techOps.find((x) => e.trained.includes(OP_TASK[x.kind]) && opLocation(s, x) === e.location && (!onlyUrgent || urgent(s, x)) && ready(s, x, taken));
+  const o = s.techOps.find((x) => e.trained.includes(taskFor(s, x.kind, x.componentId)) && opLocation(s, x) === e.location && (!onlyUrgent || urgent(s, x)) && ready(s, x, taken));
   if (!o) return false;
   if (o.kind === "domains") {
     s.techOps = s.techOps.filter((x) => x !== o);
@@ -166,7 +185,10 @@ function work(s: GameState, e: Employee, events: SimEvent[], taken: Set<string>,
     if (r.error !== "error.unknownComponent") events.push({ app: "Staff", key: "event.techFailed", params: { name: e.name, device, error: r.error } });
   } else if (o.kind === "replace") events.push({ app: "Staff", key: "event.techReplaced", params: { name: e.name, device, component: part } });
   else if (o.kind === "part") events.push({ app: "Staff", key: o.partId ? "event.techInstalled" : "event.techRemoved", params: { name: e.name, device, component: part } });
-  else if (o.kind === "php") {
+  else if (o.kind === "update") {
+    const c = s.clusters.find((x) => x.id === o.componentId);
+    events.push({ app: "Staff", key: "event.techUpdated", params: { name: e.name, software: softwareById(c?.panel ?? c?.platform ?? "").name, device } });
+  } else if (o.kind === "php") {
     const php = phpAt(yearOf(s.hour));
     for (const c of s.clusters.filter((x) => x.kind === "panel" && anchorOf(s, x) === d.id && x.php === php && x.phpUntil >= s.hour)) {
       events.push({ app: "Staff", key: "event.phpUpgraded", params: { cluster: c.name, version: php } });

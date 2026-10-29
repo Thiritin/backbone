@@ -13,9 +13,9 @@ export const PHP_SALES_STEP = 0.25;
 export const PHP_SLOW = 0.7;
 export const PHP_UPGRADE_HOURS = 1;
 
-// A panel host's sites run slower right after a PHP upgrade and while a compromise loads the host with spam.
+// A panel host's sites run slower right after a PHP upgrade; any compromised host runs slower while spam loads it.
 export const hostPerf = (s: GameState, c: Cluster | undefined): number =>
-  c?.kind === "panel" && (s.hour <= c.phpUntil || s.security.hacked.includes(c.id)) ? PHP_SLOW : 1;
+  c && ((c.kind === "panel" && s.hour <= c.phpUntil) || s.security.hacked.includes(c.id)) ? PHP_SLOW : 1;
 
 export const phpLag = (s: GameState, c: Cluster): number => phpBehind(c.php, yearOf(s.hour));
 // How-to tickets rise 5% per version behind, up to 30%.

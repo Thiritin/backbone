@@ -1,15 +1,17 @@
 import { ShieldCheck } from "lucide-react";
+import { useState } from "react";
 import { formatClock } from "../../sim/00-core/time";
 import { t } from "../../i18n/en";
 import type { GameState } from "../../sim/50-state";
 import { anchorOf, type Cluster } from "../../sim/60-infra/cluster";
-import { advisoryNodes, ADVISORY_KEYS, patchOut, STAGE_HOURS, vulnById, vulnerable, webOn } from "../../sim/60-infra/security";
+import { advisoryNodes, ADVISORY_KEYS, MONITORING, patchOut, STAGE_HOURS, vulnById, vulnerable, webOn } from "../../sim/60-infra/security";
 import { phpDue, upgradePhp } from "../../sim/90-actions/clusters";
 import { cleanUp } from "../../sim/90-actions/security";
 import { menuOn, type MenuEntry } from "../desktop/ContextMenu";
-import { useStore } from "../store";
+import { useFocus, useStore } from "../store";
 import { devName } from "./hw";
 import { TechButton } from "./locations/TechButton";
+import { MonitoringTab } from "./Monitoring";
 import { More } from "./More";
 import { sitesMenu } from "./products/PanelHosts";
 
@@ -50,10 +52,22 @@ function NodeRow({ game, n }: { game: GameState; n: Cluster }) {
 export function SecurityApp() {
   const game = useStore((s) => s.game);
   const a = advisoryOf(game), nodes = advisoryNodes(game);
+  const [tab, setTab] = useState<"advisories" | "monitoring">("advisories");
+  const monitored = game.installed.includes(MONITORING), view = monitored ? tab : "advisories";
+  useFocus("Security", (f) => { if (f.kind === "tab" && f.id === "monitoring") setTab("monitoring"); });
   return (
     <div className="fin">
       <div className="fin-main">
-        {a && (
+        {monitored && (
+          <div className="vm-tools">
+            <div className="seg" role="group" aria-label="View">
+              <button aria-pressed={view === "advisories"} onClick={() => setTab("advisories")}>Advisories</button>
+              <button aria-pressed={view === "monitoring"} onClick={() => setTab("monitoring")}>Monitoring</button>
+            </div>
+          </div>
+        )}
+        {view === "monitoring" && <div className="fin-scroll"><MonitoringTab game={game} /></div>}
+        {view === "advisories" && a && (
           <div className="vm-tools">
             <b>{a.title}</b>
             <span className="pill">PHP <span className="num">{a.versions}</span></span>
@@ -61,14 +75,14 @@ export function SecurityApp() {
             <span>Patch <span className="num">{a.patchAt}</span></span>
           </div>
         )}
-        <div className="fin-scroll">
+        {view === "advisories" && <div className="fin-scroll">
           {nodes.length === 0 ? <div className="fin-empty"><ShieldCheck />No affected panel hosts</div> : (
             <table className="table">
               <thead><tr><th>Panel host</th><th>Server</th><th>PHP</th><th className="r">Sites</th><th>Sites state</th><th>Patch</th><th /></tr></thead>
               <tbody>{nodes.map((n) => <NodeRow key={n.id} game={game} n={n} />)}</tbody>
             </table>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );

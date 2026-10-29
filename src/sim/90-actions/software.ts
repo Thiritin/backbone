@@ -1,8 +1,9 @@
 import { yearOf } from "../00-core/time";
-import { clustersIn, SOFTWARE, softwareById } from "../10-catalog/platforms";
+import { clustersIn, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { clusterOf, hostOfVm, workloadsOn, type Cluster } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
+import { familyOf, openVulns } from "../60-infra/vulns";
 import { dropCluster, installHypervisor, installPanel, installPanelInVm, removeNode } from "./clusters";
 import type { ActionResult } from "./hardware";
 
@@ -62,6 +63,31 @@ export function installSoftware(s: GameState, machineId: string, softwareId: str
   const done = !isServer(s, machineId) ? installPanelInVm(s, machineId, sw.id) : sw.kind === "cloud" ? installHypervisor(s, machineId, sw.id) : installPanel(s, machineId, sw.id);
   if (done.ok && sw.kind === "mail") s.company = { ...s.company, mail: { kind: "self", software: sw.id as "postfixit" | "mailpig", clusterId: done.id! } };
   return done;
+}
+
+// economy.md, Security advisories, Updating: minutes the customers on a cluster are down while its software updates. A
+// hypervisor takes 2 hours per node, with every node down at once unless the software moves virtual machines live.
+export const UPDATE_MINUTES: Record<SoftwareKind, number> = { panel: 30, mail: 15, cloud: 120 };
+
+export const updateDue = (s: GameState, c: Cluster): boolean =>
+  !!familyOf(c) && !c.switching && (c.version < yearOf(s.hour) || openVulns(s, c.id).length > 0);
+
+// Updates the cluster's software to this year's release, which closes every vulnerability patched so far. The workloads it
+// takes down are busy for the update and count the time against their SLA.
+export function updateSoftware(s: GameState, clusterId: string): ActionResult {
+  const c = s.clusters.find((x) => x.id === clusterId), family = c && familyOf(c);
+  if (!c || !family) return { ok: false, error: c ? "error.noSoftware" : "error.unknownCluster" };
+  if (!updateDue(s, c)) return { ok: false, error: "error.upToDate" };
+  const sw = softwareById(family), hours = UPDATE_MINUTES[sw.kind] / 60;
+  const live = sw.kind === "cloud" && sw.live && c.nodes.length > 1;
+  const down = live ? [] : s.workloads.filter((w) => w.clusterId === c.id);
+  const ids = new Set(down.map((w) => w.id)), services = new Set(down.map((w) => w.serviceId).filter(Boolean));
+  s.workloads = s.workloads.map((w) => (ids.has(w.id) ? { ...w, busyUntil: Math.max(w.busyUntil, s.hour + hours) } : w));
+  // The hourly tick counts every whole hour a workload is busy; the rest is added here, as for a migration cutover.
+  const rest = hours - (Math.ceil(hours) - 1);
+  for (const id of services) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + rest };
+  s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, version: yearOf(s.hour), updatedAt: s.hour } : x));
+  return { ok: true };
 }
 
 // Uninstalls the machine's software once nothing it serves runs on the machine; a VM stays, empty.

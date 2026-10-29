@@ -6,7 +6,7 @@ import { t } from "../src/i18n/en";
 const APP: Record<string, string> = {
   "event.cashNegative": "Bank", "event.loanMissed": "Bank", "event.loanCalled": "Bank",
   "event.vuln.announced": "Security", "event.vuln.poc": "Security", "event.vuln.warning": "Security", "event.vuln.patch": "Security", "event.vuln.hacked": "Security",
-  "event.dataLoss": "Locations", "event.seized": "Support", "event.ddos": "Network", "event.gridDark": "Locations",
+  "event.dataLoss": "Locations", "event.seized": "Support", "event.ddos": "Network", "event.gridDark": "Locations", "event.vulnCritical": "Security",
 };
 
 describe("alerts", () => {

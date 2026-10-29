@@ -4,11 +4,12 @@ import {
   AD, adCandidates, COURSE_PRICE, FULL_DAY, fullyTrained, needsTraining, salaryUpToNow, staffPrice, startTraining, TASKS, trainerFor, visibleCandidates, WORK_HOURS,
   type AdTier, type Assignment, type Employee, type Role, type Task, type WorkHours,
 } from "../47-staff/staff";
-import { OP_TASK, queueOp, techsAt, type OpKind, type TechRules } from "../47-staff/technicians";
+import { OP_TASK, queueOp, taskFor, techsAt, type OpKind, type TechRules } from "../47-staff/technicians";
 import type { GameState } from "../50-state";
 import { anchorOf, clusterOf } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
 import { phpDue } from "./clusters";
+import { updateDue } from "./software";
 import { webspaceBlock } from "./vms";
 import type { ActionResult } from "./hardware";
 
@@ -132,7 +133,12 @@ export function queueOperation(s: GameState, kind: OpKind, deviceId: string, com
   if (!d) return fail("error.unknownDevice");
   const loc = locationOf(s, d);
   if (!loc) return fail("error.notMounted");
-  if (!techsAt(s, loc.id, OP_TASK[kind]).length) return fail("error.noTechnician");
+  if (!techsAt(s, loc.id, taskFor(s, kind, componentId)).length) return fail("error.noTechnician");
+  if (kind === "update") {
+    const c = s.clusters.find((x) => x.id === componentId);
+    if (!c || anchorOf(s, c) !== deviceId) return fail("error.unknownCluster");
+    if (!updateDue(s, c)) return fail("error.upToDate");
+  }
   if ((kind === "replace" || (kind === "part" && !partId)) && !d.components.some((c) => c.id === componentId)) return fail("error.unknownComponent");
   if (kind === "part" && partId && !s.devices.some((x) => x.id === partId && x.store === loc.id)) return fail("error.noPart");
   if (kind === "drain" && !clusterOf(s, deviceId)) return fail("error.notNode");

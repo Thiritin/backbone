@@ -48,7 +48,7 @@ export function AlertSheet({ alert }: { alert: Banner }) {
   return createPortal(
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
       <div className="alert advisory" role="alertdialog" aria-modal="true" aria-labelledby="alert-title">
-        <span className="alert-icon">{key.startsWith("event.vuln.") ? <ShieldAlert /> : <TriangleAlert />}</span>
+        <span className="alert-icon">{key.startsWith("event.vuln") ? <ShieldAlert /> : <TriangleAlert />}</span>
         {source && <span className="advisory-source">{source}</span>}
         <h2 id="alert-title">{alert.title}</h2>
         <p>{alert.text}</p>
@@ -59,7 +59,7 @@ export function AlertSheet({ alert }: { alert: Banner }) {
         )}
         <div className="alert-actions">
           <button className="btn" onClick={() => closeAlert(true)}>Continue</button>
-          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app); }}>Open {app}</button>
+          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, key === "event.vulnCritical" ? { kind: "tab", id: "monitoring" } : undefined); }}>Open {app}</button>
         </div>
       </div>
     </div>,

@@ -1,11 +1,13 @@
 // economy.md, Security advisories: scripted PHP vulnerabilities, their stages and the exploitation risk.
-import { chance } from "../00-core/rng";
+import { chance, hashRng, rand } from "../00-core/rng";
+import { softwareById } from "../10-catalog/platforms";
 import { formatClock, hourOf } from "../00-core/time";
 import { bump, createTicket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { sitesDown, type Cluster, type Workload } from "./cluster";
+import { controlPlaneUp, sitesDown, type Cluster, type Workload } from "./cluster";
 import { maybeReview } from "./incidents";
+import { familyOf, instanceRisk, openVulns, patchedNow } from "./vulns";
 
 export interface Vuln { id: string; at: number; versions: string[] }
 const at = (y: number, m: number, d: number) => hourOf(new Date(Date.UTC(y, m - 1, d, 9)));
@@ -51,7 +53,12 @@ const params = (s: GameState, v: Vuln) => ({
   nodes: hosts(s).filter((c) => vulnerable(s, c) && webOn(s, c.id).length).length,
 });
 
-// The web sites on the panel host are defaced and send spam; every customer there gets a data leak notice.
+// A generated vulnerability reaches any cluster with software on a working host: panel hosts and hypervisors with customers
+// on them, and the company's mail host.
+const reachable = (s: GameState, c: Cluster): boolean =>
+  !!familyOf(c) && !sitesDown(s, c.id) && controlPlaneUp(s, c) && (c.kind === "mail" || webOn(s, c.id).length > 0);
+
+// The sites or virtual machines on the host are taken over and send spam; every customer there gets a data leak notice.
 function compromise(s: GameState, host: Cluster, events: SimEvent[]): void {
   s.security = { ...s.security, hacked: [...s.security.hacked, host.id] };
   const services = new Set(webOn(s, host.id).map((w) => w.serviceId));
@@ -65,7 +72,7 @@ function compromise(s: GameState, host: Cluster, events: SimEvent[]): void {
     createTicket(s, c, "abuse", svc.id, "spam");
     maybeReview(s, c, "dataLoss", s.rng, events, 1);
   }
-  events.push({ app: "Security", key: "event.vuln.hacked", params: { device: host.name, customers: hit } });
+  events.push({ app: "Security", key: "event.vuln.hacked", params: { device: host.name, customers: hit, kind: host.kind } });
 }
 
 // Hourly: a vulnerability fires on its date for players running affected panel hosts, its stages follow on schedule and
@@ -81,6 +88,7 @@ export function securityTick(s: GameState): SimEvent[] {
     s.security = { ...s.security, vuln: v.id, stage: 0, patched: [] };
     events.push({ app: "Security", key: ADVISORY_KEYS[0], params: params(s, v) });
   }
+  events.push(...generatedTick(s));
   const v = vulnById(s.security.vuln);
   if (!v) return events;
   const next = s.security.stage + 1;
@@ -98,4 +106,28 @@ export function securityTick(s: GameState): SimEvent[] {
 export function markPatched(s: GameState, hostId: string): void {
   const c = s.clusters.find((x) => x.id === hostId);
   if (c && patchOut(s) && vulnerable(s, c)) s.security = { ...s.security, patched: [...s.security.patched, hostId] };
+}
+
+// Monitoring is a Pear Store app; without it the player hears only about critical vulnerabilities.
+export const MONITORING = "Nagiosaurus";
+
+// Generated vulnerabilities: the hour a patch comes out for software that is open to it (a banner for a low or high one when
+// monitoring is installed, an alert for a critical one), and once a day each reachable instance risks a compromise.
+function generatedTick(s: GameState): SimEvent[] {
+  const events: SimEvent[] = [];
+  for (const c of s.clusters) {
+    const family = familyOf(c);
+    if (!family) continue;
+    for (const v of patchedNow(s, c)) {
+      if (v.severity !== "critical" && !s.installed.includes(MONITORING)) continue;
+      events.push({ app: "Security", key: v.severity === "critical" ? "event.vulnCritical" : "event.vulnOpen", params: { software: softwareById(family).name, host: c.name, severity: v.severity } });
+    }
+  }
+  if (s.hour % 24 !== 0) return events;
+  for (const c of s.clusters) {
+    if (!reachable(s, c)) continue;
+    const risk = instanceRisk(openVulns(s, c.id));
+    if (risk > 0 && rand(hashRng(s.seed, Number(c.id.replace(/\D/g, "")) || 0, s.hour / 24, 91)) < risk) compromise(s, c, events);
+  }
+  return events;
 }

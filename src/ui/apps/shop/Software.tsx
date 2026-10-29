@@ -29,6 +29,7 @@ const INCLUDES: Record<string, string[]> = {
   Products: ["Product lines and plans", "Software licences", "Clusters"],
   Staff: ["Job market", "Hiring and salaries", "Task assignment"],
   Marketing: ["Campaigns", "Reviews", "Review platforms"],
+  Nagiosaurus: ["Versions of installed software", "Open vulnerabilities by severity", "Days exposed"],
   Market: ["Demand by product", "Customer requirements", "Lost-sale reports"],
   dockBadges: ["Open tickets in Support", "Unpaid invoices in Billing", "Failed parts in Locations"],
   widgetCalendar: ["Weekday, date and year"],
@@ -42,7 +43,7 @@ const INCLUDES: Record<string, string[]> = {
 };
 
 const SHELVES: [string, string[]][] = [
-  ["Essentials", ["Network", "Products"]],
+  ["Essentials", ["Network", "Products", "Nagiosaurus"]],
   ["Growth", ["Staff", "Marketing", "Market"]],
   ["Bots", ["chadGpt", "clipsy"]],
   ["Upgrades", ["dockBadges", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],
@@ -63,7 +64,7 @@ function Action({ item, big }: { item: StoreItem; big?: boolean }) {
   if (!game.installed.includes(item.id) && storeBlocker(game, item.id) === "error.needsHypervisor") return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Products", { kind: "cluster", id: "new" }); }}>Needs hypervisor</button>;
   if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act((s) => install(s, item.id)); }}>Get</button>;
   if (item.kind !== "app") return <span className="ps-owned"><Check />Installed</span>;
-  return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id); }}>Open</button>;
+  return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id === "Nagiosaurus" ? "Security" : item.id); }}>Open</button>;
 }
 
 // The app unlocked most recently that is not installed yet; then any item on the shelves.

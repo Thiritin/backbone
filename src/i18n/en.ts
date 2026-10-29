@@ -4,6 +4,7 @@ import { ADDRESSES_EN } from "./addresses";
 import { SALES_EN } from "./sales";
 import { SECURITY_EN } from "./security";
 import { NEWS_EN } from "./news";
+import { VULNS_EN } from "./vulns";
 import { SITE_EN } from "./site";
 import { DOMAINS_EN } from "./domains";
 import { ORDERS_EN } from "./orders";
@@ -28,6 +29,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...SALES_EN,
   ...ADDRESSES_EN,
   ...SECURITY_EN,
+  ...VULNS_EN,
   ...ACTIVITY_EN,
   ...SITE_EN,
   ...DOMAINS_EN,

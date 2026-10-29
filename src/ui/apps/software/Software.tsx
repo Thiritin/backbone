@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import type { GameState } from "../../../sim/50-state";
 import { addNode } from "../../../sim/90-actions/clusters";
-import { installBlock, installSoftware, joinableClusters, softwareOn, uninstallSoftware, type Installed } from "../../../sim/90-actions/software";
+import { installBlock, installSoftware, joinableClusters, softwareOn, uninstallSoftware, updateDue, updateSoftware, type Installed } from "../../../sim/90-actions/software";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { devName } from "../hw";
@@ -22,18 +22,24 @@ export function SoftwareGrid({ game, machineId }: { game: GameState; machineId: 
       {softwareOn(game, machineId).map((x) => {
         const open = () => openApp("Products", { kind: "cluster", id: x.cluster.id });
         const join = joinable(game, machineId, x);
+        const due = x.doneAt === null && updateDue(game, x.cluster);
+        const update = () => act((g) => updateSoftware(g, x.cluster.id));
         const entries = (): MenuEntry[] => [
           { label: "Open", run: open },
+          due && { label: "Update", run: update },
           join.length > 0 && { label: "Join cluster", items: join.map((c) => ({ label: c.name, run: () => act((g) => addNode(g, c.id, machineId)) })) },
           null,
           { label: "Uninstall", run: () => act((g) => uninstallSoftware(g, machineId)) },
         ];
         return (
-          <button key={x.id} className="sw-tile" onClick={open} onContextMenu={menuOn(entries)}>
-            <Mark id={x.id} size={32} />
-            <span className="t">{softwareById(x.id).name}</span>
-            {x.doneAt === null ? <span className="s">{x.cluster.name}</span> : <><span className="s">Installing</span><span className="s num">{x.doneAt - game.hour} h left</span></>}
-          </button>
+          <div key={x.id} className="sw-cell">
+            <button className="sw-tile" onClick={open} onContextMenu={menuOn(entries)}>
+              <Mark id={x.id} size={32} />
+              <span className="t">{softwareById(x.id).name}</span>
+              {x.doneAt === null ? <><span className="s">{x.cluster.name}</span><span className="s num">{x.cluster.version}</span></> : <><span className="s">Installing</span><span className="s num">{x.doneAt - game.hour} h left</span></>}
+            </button>
+            {due && <button className="btn sw-update" onClick={update}>Update</button>}
+          </div>
         );
       })}
       <button className="sw-tile sw-add" onClick={() => setSetup(machineId)}>

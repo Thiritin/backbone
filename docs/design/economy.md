@@ -777,6 +777,7 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | --- | --- | --- | --- | --- |
 | Starter | Locations, Shop, Customers, Support, Billing (manual), Finance (account statement), Bank, Research, Checklist, Settings, Pear Store | Free | | Start |
 | Monitoring | Monitoring | €10 | €0.50 per monitored device | Monitoring skill |
+| Nagiosaurus | Monitoring tab in Security | €15 | | Monitoring skill |
 | Virtual machines | Virtual machines | Free | | A hypervisor installed |
 | Network | Network | Free | | None; buying transit and peering needs Network operations |
 | Products | Products | €15 | | Product management skill |
@@ -1457,6 +1458,56 @@ An exposed node runs an affected version without the patch, hosts web sites and 
 
 Offline sites count as outages at the profile's hourly outage penalty (1 to 4). Taking a node offline at the warning and patching on release costs about 12 hours of outage, 12 to 48 happiness. Leaving it online from the proof of concept to the patch risks a compromise with 1 − 0.99²⁴ · 0.96¹² ≈ 52%, worth about −38 happiness with a backup and −69 without for a customer at penalty 2, plus reviews and support work. Going offline at the proof of concept costs 36 outage hours and rarely pays. Patching is the PHP upgrade: it installs the current version with the fix and slows the node's sites for an hour.
 
+### Generated vulnerabilities
+
+Every installed software has a `version`, the year of the release it runs, and `updatedAt`, the hour it was installed or last updated. A new install, and an update, set the version to the current year. A save from before versions gets the year its install finished when it is still installing and otherwise the save's year minus 2, updated at the save's hour.
+
+Each software family releases one version a year. The vulnerabilities of a family's release in a year are drawn from the game's seed, the family and the year, so they are the same whenever they are looked up (Poisson count, mean by kind):
+
+| Software | Vulnerabilities per year |
+| --- | --- |
+| Hosting panels | 2 |
+| Hypervisors | 1 |
+| Mail servers | 1 |
+| Game panels | 1.5 |
+| Customer CMS | 3 |
+
+Game panels and customer CMS take effect with their own lanes.
+
+| Severity | Share | Patch comes out | Daily chance of a compromise |
+| --- | --- | --- | --- |
+| Low | 50% | 0 to 14 days after disclosure | 0.05% |
+| High | 35% | 0 to 14 days after disclosure | 0.25% |
+| Critical | 15% | 0 to 3 days after disclosure | 1% |
+
+With these chances a panel host that is never updated is first compromised after about a year and a half (median); the plan's first numbers were twice as high and hit within the first year.
+
+Disclosure is a random day of the release's year. A vulnerability is open on an instance from its patch until the instance is updated, when the instance runs an older release than the vulnerability's year or the same release from before the patch. Exposure is counted in whole days from the patch, or from the last update when that is later, because before the patch nobody can update. The daily chance is multiplied by 2 from 30 days exposed and by 4 from 90 days exposed, and an instance rolls once a day with the highest chance among its open vulnerabilities.
+
+| Rule | Value |
+| --- | --- |
+| Reached | A panel host with a web space online, a hypervisor with a customer virtual machine, the company's mail host; its control plane must be running |
+| Compromise of a panel host | As in the table above: happiness, abuse reports, reviews, sites down, spam, clean-up |
+| Compromise of a hypervisor | The same effects on its customers' virtual machines, which are down until clean-up |
+| Compromise of a mail host | Spam from its address until clean-up |
+| Banner at the patch (low and high) | Once per instance, only with Nagiosaurus installed |
+| Alert at the patch (critical) | Once per instance |
+
+An unattended panel host installed at the start of the game is compromised for the first time after a median of 0.8 years.
+
+### Updating software
+
+An update installs this year's release at once and sets `updatedAt` to now. The customers on the software are down while it runs:
+
+| Software | Downtime |
+| --- | --- |
+| Hosting panel | 30 minutes, for its web spaces |
+| Game panel | 15 minutes, for its servers |
+| Mail server | 15 minutes, no customers are affected |
+| Hypervisor | 2 hours per node, for the virtual machines on it, none when the hypervisor moves virtual machines live and the cluster has a second node |
+
+A technician at the server does the update in its office hour: panel and mail updates need panel training, hypervisor updates need server training. Nagiosaurus costs €15 a month in 2005 and rises 8% a year like the other Pear Store apps.
+
 ## Marketing and reviews
 
 In 2005 a low-budget lead from search ads costs about €9, so a new private customer costs €25 to €80 depending on your share. Reviews skew negative unless you invite happy customers, which is what review platforms are for.
@@ -1577,7 +1628,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 
 | Skill | Tier | Know-how | Training | Needs | Makes available |
 | --- | --- | --- | --- | --- | --- |
-| Monitoring | 1 | 50 | 5 days | | Dock badges, failure notifications |
+| Monitoring | 1 | 50 | 5 days | | Dock badges, Nagiosaurus, failure notifications |
 | Marketing basics | 1 | 50 | 5 days | | Leads to Marketing campaigns |
 | Employee management | 1 | 100 | 10 days | | Staff |
 | Network operations | 2 | 300 | 14 days | Monitoring | Network |
