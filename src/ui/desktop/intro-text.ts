@@ -5,6 +5,7 @@ export type Inline = { text: string; style?: "b" | "s"; href?: string };
 export type Block =
   | { kind: "p"; fine: boolean; text: Inline[] }
   | { kind: "apps" }
+  | { kind: "checks"; items: Inline[][] }
   | { kind: "table"; rows: [Inline[], Inline[]][] };
 export interface Page { title: string; blocks: Block[] }
 
@@ -29,6 +30,7 @@ export function parseIntro(src: string): Page[] {
     const [title, ...rest] = sec.split("\n");
     const blocks = rest.join("\n").trim().split(/\n\s*\n/).map((b): Block => {
       if (b.trim() === "{apps}") return { kind: "apps" };
+      if (b.startsWith("- ")) return { kind: "checks", items: b.split(/^- /m).slice(1).map((i) => inline(i.trim().replace(/\n/g, " "))) };
       if (b.startsWith("|")) {
         // Drops the header row and the --- separator.
         const rows = b.split("\n").slice(2).map(cells);

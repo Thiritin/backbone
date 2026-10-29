@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- New reviews only send you a notification once Marketing campaigns unlocks the Reviews section where you can read them.
+- The sheet that opens after a training starts with a Now available page that checks off everything the skill unlocks and what you can do with it.
 - The Backbone menu has Report an issue, which opens a new GitHub issue with your game build filled in.
 - The Marketing app opens on Channels once you learn Marketing campaigns, its Domain page has proper margins, and the skill sheet lists the six sections the skill adds.
 - The Backbone menu links to the new Discord server, where you can chat, share screenshots, request features and report bugs.
