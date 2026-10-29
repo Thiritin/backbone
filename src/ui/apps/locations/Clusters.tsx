@@ -42,8 +42,8 @@ export function BookedMeters({ game, devices }: { game: GameState; devices: Devi
   const u = sumOf(live.map((l) => l.used)), p = sumOf(live.map((l) => l.physical));
   const rows: [string, ReactNode, ReactNode][] = [
     ["CPU", <Meter used={used.vcpu} cap={cap.vcpu} text={`${num(used.vcpu)}/${num(cap.vcpu)} vCPU`} />, <Meter used={u.vcpu} cap={p.vcpu} text={`${num(u.vcpu)}/${cores(p.vcpu)}`} />],
-    ["RAM", <Meter used={used.ramGb} cap={cap.ramGb} text={`${num(used.ramGb)}/${ram(+cap.ramGb.toFixed(1))}`} />, <Meter used={u.ramGb} cap={p.ramGb} text={`${num(u.ramGb)}/${ram(p.ramGb)}`} />],
-    ["Disk", <Meter used={used.diskGb} cap={cap.diskGb} text={`${Math.round(used.diskGb)}/${disk(Math.round(cap.diskGb))}`} />, <Meter used={u.diskGb} cap={p.diskGb} text={`${Math.round(u.diskGb)}/${disk(p.diskGb)}`} />],
+    ["RAM", <Meter used={used.ramGb} cap={cap.ramGb} text={`${ram(+used.ramGb.toFixed(1))}/${ram(+cap.ramGb.toFixed(1))}`} />, <Meter used={u.ramGb} cap={p.ramGb} text={`${ram(+u.ramGb.toFixed(1))}/${ram(p.ramGb)}`} />],
+    ["Disk", <Meter used={used.diskGb} cap={cap.diskGb} text={`${disk(Math.round(used.diskGb))}/${disk(Math.round(cap.diskGb))}`} />, <Meter used={u.diskGb} cap={p.diskGb} text={`${disk(Math.round(u.diskGb))}/${disk(p.diskGb)}`} />],
   ];
   return (
     <div className="node-meters">
@@ -59,7 +59,7 @@ function NodeMeters({ game, d }: { game: GameState; d: Device }) {
     <>
       <BookedMeters game={game} devices={[d]} />
       {game.frozen.includes(d.id) && (
-        <div className="loc-row"><span className="loc-k">Frozen</span><span className="pill bad">RAM in use {num(u.ramGb)} of {ram(p.ramGb)}</span></div>
+        <div className="loc-row"><span className="loc-k">Frozen</span><span className="pill bad">RAM in use {ram(+u.ramGb.toFixed(1))} of {ram(p.ramGb)}</span></div>
       )}
       {live.perf < 1 && <div className="loc-row"><span className="loc-k">Performance</span><span className="pill warn">{Math.round(live.perf * 100)}%</span></div>}
     </>

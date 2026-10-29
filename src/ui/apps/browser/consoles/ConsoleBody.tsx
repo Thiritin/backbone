@@ -117,7 +117,7 @@ export function Objects({ game, c, f, node }: Props & { node: string | null }) {
                 <td><span className={`cx-state ${tone}`}>{label}</span></td>
                 <td>
                   <span className="cx-bar"><i style={{ width: pct(lead[0], lead[1]) }} /></span>
-                  <span className="cx-use num">{web ? `${num(u.diskGb)} of ${disk(w.diskGb)}` : `${num(u.vcpu)} of ${w.vcpu} vCPU, ${num(u.ramGb)} of ${ram(w.ramGb)}`}</span>
+                  <span className="cx-use num">{web ? `${disk(Math.round(u.diskGb))} of ${disk(w.diskGb)}` : `${num(u.vcpu)} of ${w.vcpu} vCPU, ${ram(+u.ramGb.toFixed(1))} of ${ram(w.ramGb)}`}</span>
                 </td>
                 <td><div className="cx-acts">
                   {f.start && st === "stopped" && <button className="cx-btn" onClick={() => act(startWorkload, w.id)}>Start</button>}
