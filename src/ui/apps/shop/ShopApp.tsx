@@ -63,7 +63,7 @@ export function ShopApp() {
         <div className="side-h">Manufacturer</div>
         <button className={`side-item${!maker && !software ? " active" : ""}`} aria-pressed={!maker && !software} onClick={() => pick(null, cls)}><Store />All<span className="side-count">{count((it) => !cls || it.cls === cls)}</span></button>
         <button className={`side-item${software ? " active" : ""}`} aria-pressed={software} onClick={() => { pick(null, null); setSoftware(true); }}><AppWindow />Software</button>
-        {MANUFACTURERS.map(({ name }) => (
+        {MANUFACTURERS.filter(({ name }) => all.some((it) => it.brand === name)).map(({ name }) => (
           <button key={name} className={`side-item${maker === name ? " active" : ""}`} aria-pressed={maker === name} onClick={() => pick(name, cls)}>
             <BrandLogo brand={name} size={16} />{name}<span className="side-count">{count((it) => it.brand === name && (!cls || it.cls === cls))}</span>
           </button>
