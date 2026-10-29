@@ -5,7 +5,7 @@ import { dateOf } from "../../../sim/00-core/time";
 import { bayCount, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Cable as CableT, Device, End, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
-import { deviceHealth, drivesOf, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
+import { deviceHealth, drivesOf, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
 import { rebuildHours } from "../../../sim/88-tick/tick";
 import { addSecondPsu, buyOutLease, connect, disconnect, LABEL_MAX, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
@@ -28,8 +28,7 @@ import { AddressRows } from "../network/Addresses";
 import { fqdn } from "../../../sim/30-customers/domains";
 
 // Sells a device or a rack after showing its resale value against the price paid.
-export function SellConfirm({ game, name, price, boughtAt, cables = 0, onCancel, onSell }: { game: GameState; name: string; price: number; boughtAt: number; cables?: number; onCancel: () => void; onSell: () => void }) {
-  const value = resaleValue(game, price, boughtAt);
+export function SellConfirm({ game, name, price, boughtAt, value = resaleValue(game, price, boughtAt), cables = 0, onCancel, onSell }: { game: GameState; name: string; price: number; boughtAt: number; value?: number; cables?: number; onCancel: () => void; onSell: () => void }) {
   const plug = cables ? ` ${cables === 1 ? "Its cable is" : `Its ${cables} cables are`} unplugged.` : "";
   return <Confirm title={`Sell ${name}?`} text={`Resale value ${euro(value)}, paid ${euro(price)}.${plug}`} action={`Sell for ${euro(value)}`} onCancel={onCancel} onConfirm={onSell} />;
 }
@@ -57,7 +56,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
       <>
         {dialog}
         {selling && (
-          <SellConfirm game={game} name={devName(selling)} price={selling.price} boughtAt={selling.boughtAt} cables={cables}
+          <SellConfirm game={game} name={devName(selling)} price={selling.price} boughtAt={selling.boughtAt} value={deviceValue(game, selling)} cables={cables}
             onCancel={() => setSelling(null)}
             onSell={() => { const id = selling.id; setSelling(null); if (act((g) => sellDevice(g, id)).ok) onSelect(null); }} />
         )}

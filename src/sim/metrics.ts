@@ -1,6 +1,6 @@
 import { LEVELS } from "./10-catalog/economy";
 import type { GameState } from "./50-state";
-import { resaleValue } from "./60-infra/status";
+import { deviceValue, resaleValue } from "./60-infra/status";
 
 const HOURS_PER_YEAR = 24 * 365;
 const HOURS_PER_MONTH = 730;
@@ -11,7 +11,7 @@ export const mrr = (s: GameState): number =>
 
 // Book value of owned hardware: devices and racks at their resale value; leased devices belong to the lessor.
 export const hardwareValue = (s: GameState): number =>
-  [...s.devices.filter((d) => !d.lease), ...s.racks.filter((r) => !r.provided)].reduce((sum, x) => sum + resaleValue(s, x.price, x.boughtAt), 0);
+  [...s.devices.filter((d) => !d.lease).map((d) => deviceValue(s, d)), ...s.racks.filter((r) => !r.provided).map((r) => resaleValue(s, r.price, r.boughtAt))].reduce((sum, v) => sum + v, 0);
 
 export function metrics(s: GameState) {
   const revenue = mrr(s), hardware = hardwareValue(s);

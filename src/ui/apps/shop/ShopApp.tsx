@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useSessionState } from "../../session";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { brandsFor, COMPONENTS, fits, MANUFACTURERS, modelById, partOffers, partPrice, shopModels, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { brandsFor, COMPONENTS, fits, MANUFACTURERS, modelById, partOffers, shopModels, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { partPrice } from "../../../sim/10-catalog/parts";
 import { lineParts, unitPrice, type CartLine } from "../../../sim/90-actions/hardware";
 import { Cart, Stepper } from "./Cart";
 import { Software } from "./Software";
@@ -108,7 +109,7 @@ function Build({ model, brand, qty, bare, setBare, counts, setCounts }: {
       {offers.map((p, i) => (
         <div key={`${p.kind}|${p.size}|${p.ff}`} className="shop-extra">
           <span>{partLabel(p)}</span>
-          <span className="num shop-muted">{euro(partPrice(p))}</span>
+          <span className="num shop-muted">{euro(partPrice(p.kind, p.size, p.ff, year))}</span>
           <Stepper value={counts[i] ?? 0} onChange={(n) => set(i, n)} max={fits(model, lineParts(lineWith({ ...counts, [i]: (counts[i] ?? 0) + 1 }))) ? counts[i] ?? 0 : undefined} label={`${partLabel(p)} quantity`} />
         </div>
       ))}
@@ -154,7 +155,7 @@ function Card({ model, brand, cls, part }: Item) {
       </dl>
       {s && open && <Build model={model} brand={brand} qty={qty} bare={bare} setBare={setBare} counts={counts} setCounts={setCounts} />}
       <div className="shop-buy">
-        <strong className="num">{euro(unitPrice(line) * qty)}</strong>
+        <strong className="num">{euro(unitPrice(line, year) * qty)}</strong>
         <span className="grow" />
         <Stepper value={qty} onChange={setQty} min={1} />
         <button className="btn primary" onClick={() => { addToCart(line); reset(); }}><ShoppingCart />Add to cart</button>

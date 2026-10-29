@@ -20,6 +20,7 @@ import { generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
 import { LEASE_FACTOR, LEASE_TERMS } from "../10-catalog/leasing";
 import { modelById, type DeviceModel } from "../10-catalog/hardware";
+import { presetPrice } from "../10-catalog/parts";
 import { skillById } from "../10-catalog/research";
 import { STORE, subscriptionPrice } from "../10-catalog/store";
 import { MONTHLY_RATES } from "../40-support/tickets";
@@ -112,9 +113,11 @@ const priceOf = (p: Profile, product: Product, year: number): number => marketPr
 const cpuOf = (p: Profile, product: Product, year: number): number => specOf(p, product, year).vcpu;
 // The live shop's Dwell server of a generation and line (10-catalog/hardware.ts): balanced 1U or memory-optimized 2U.
 const shopServer = (gen: number, line: "compute" | "memory"): DeviceModel => modelById(`g${gen + 1}-${line}`);
+// What the shop charges for it in a year: its chassis plus its parts at that year's part prices.
+const shopPrice = (gen: number, line: "compute" | "memory", year: number): number => presetPrice(shopServer(gen, line), year);
 const serverOf = (gen: number, line: "compute" | "memory", month: number, basement: boolean): Server => {
   const m = shopServer(gen, line);
-  return { gen, ramGb: m.server!.ramGb, cores: m.server!.cores, watts: m.watts, bought: month, price: m.price, basement };
+  return { gen, ramGb: m.server!.ramGb, cores: m.server!.cores, watts: m.watts, bought: month, price: shopPrice(gen, line, 2005 + Math.floor(month / 12)), basement };
 };
 const ramOf = (p: Profile, product: Product, year: number): number => specOf(p, product, year).ramGb;
 // Mbit/s a customer sends at the evening peak; traffic grows 20% a year like the live TRAFFIC_GROWTH.
@@ -261,7 +264,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       // In the datacenter the bot buys the line with the lowest price per GB it can fill, given the vCPUs its customers book per GB.
       const cpuPerGb = cpuNeeded(newCustomers) / Math.max(1, ramNeeded(newCustomers));
       const usable = (m: DeviceModel) => Math.min(m.server!.ramGb, (m.server!.cores * OVERCOMMIT.cpu) / Math.max(cpuPerGb, 1e-6));
-      const line = basement ? "compute" : (["compute", "memory"] as const).reduce((a, b) => shopServer(gen, b).price / usable(shopServer(gen, b)) < shopServer(gen, a).price / usable(shopServer(gen, a)) ? b : a);
+      const line = basement ? "compute" : (["compute", "memory"] as const).reduce((a, b) => shopPrice(gen, b, year) / usable(shopServer(gen, b)) < shopPrice(gen, a, year) / usable(shopServer(gen, a)) ? b : a);
       const g = serverOf(gen, line, month, basement), reserve = 2000 + 3 * owed();
       const short = g.price + reserve - cash, amount = LOAN_AMOUNTS.find((a) => a >= short);
       const rate = baseRate(year) + RISK_PREMIUM[level0] / 100, payment = amount ? annuity(amount, rate, 60) : 0;
@@ -466,10 +469,10 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     // Two cities at level 3, four at level 4 and every city from level 5, when the late game's cash sits idle.
     const wantCities = level <= 2 ? 1 : level === 3 ? 2 : level === 4 ? 4 : CITIES.length;
     // A new city gets the rack share and a memory-optimized server for its own cluster.
-    while (cities < wantCities && cash > 10000 + shopServer(gen, "memory").price) {
+    while (cities < wantCities && cash > 10000 + shopPrice(gen, "memory", year)) {
       servers.push(serverOf(gen, "memory", month, false));
-      cash -= shopServer(gen, "memory").price;
-      book_("servers", shopServer(gen, "memory").price);
+      cash -= shopPrice(gen, "memory", year);
+      book_("servers", shopPrice(gen, "memory", year));
       cityRents += cityRent(CITY_ORDER[cities].name);
       cities++;
     }

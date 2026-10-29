@@ -3,7 +3,7 @@ import { useState } from "react";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
 import { euro } from "../../../sim/00-core/money";
-import { freeSlots, mountFrom, mountMax, storageStacks, travelCost } from "../../../sim/60-infra/status";
+import { deviceValue, freeSlots, mountFrom, mountMax, storageStacks, travelCost } from "../../../sim/60-infra/status";
 import { mountDevice, mountStack, sellDevice, shipStock } from "../../../sim/90-actions/hardware";
 import { Isometric } from "../../art/Isometric";
 import { RackFront } from "../../art/RackFront";
@@ -148,7 +148,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
       {mounting && <MountSheet game={game} stack={stack} onClose={() => setMounting(false)} onMounted={onMounted} />}
       {shipping && <Ship game={game} ids={stack.ids} onDone={() => setShipping(false)} />}
       {selling && (
-        <SellConfirm game={game} name={first.name} price={first.price} boughtAt={first.boughtAt}
+        <SellConfirm game={game} name={first.name} price={first.price} boughtAt={first.boughtAt} value={deviceValue(game, first)}
           onCancel={() => setSelling(false)}
           onSell={() => { setSelling(false); act((s) => sellDevice(s, first.id)); }} />
       )}

@@ -1,6 +1,7 @@
 import { Minus, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
+import { yearOf } from "../../../sim/00-core/time";
 import { modelById, type FormFactor } from "../../../sim/10-catalog/hardware";
 import { leaseOffers } from "../../../sim/10-catalog/leasing";
 import { REGIONS } from "../../../sim/20-world/datacenters";
@@ -30,7 +31,7 @@ export function Cart() {
   const openLoc = useStore((s) => s.openLoc);
   const [to, setTo] = useState<string | null>(null);
   const dest = game.locations.find((l) => l.id === (to ?? openLoc)) ?? game.locations[0];
-  const total = cart.reduce((n, l) => n + unitPrice(l) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
+  const year = yearOf(game.hour), total = cart.reduce((n, l) => n + unitPrice(l, year) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
   const offers = total ? leaseOffers(game, total) : [];
   const offer = offers.find((o) => o.id === pay);
   const best = Math.min(...offers.map((o) => o.total));
@@ -56,7 +57,7 @@ export function Cart() {
                 <strong>{name}</strong><span>{l.brand}</span>
               </div>
               <Stepper value={l.qty} min={1} onChange={(n) => setCartQty(l, n)} />
-              <span className="num shop-line-total">{euro(unitPrice(l) * l.qty)}</span>
+              <span className="num shop-line-total">{euro(unitPrice(l, year) * l.qty)}</span>
               <button className="btn ghost icon" aria-label={`Remove ${name}`} onClick={() => setCartQty(l, 0)}><X /></button>
               {parts.length > 0 && <div className="shop-line-parts num">{parts.join(", ")}</div>}
             </div>
