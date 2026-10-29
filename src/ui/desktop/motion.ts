@@ -1,4 +1,4 @@
-const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+export const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const slots = new Map<string, DOMRect>();
 const EASE_OUT = "cubic-bezier(0.2, 0.8, 0.2, 1)";
 

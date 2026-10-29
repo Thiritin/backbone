@@ -375,3 +375,24 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .insp > .usage.wide .led-bar { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; display: flex; }
 .insp > .usage.wide .led-bar > span { flex: 1; width: auto; }
 .insp-addon td { color: var(--text-2); }
+
+/* Lid-off view */
+.lid-body { display: grid; gap: 12px; align-content: start; padding: 14px 16px; overflow: auto; min-height: 0; }
+.lid-view { display: block; width: 100%; height: auto; max-height: 52dvh; --lid-rim: var(--metal-line); }
+:root[data-theme="dark"] .lid-view { --lid-rim: oklch(0.6 0.012 258); }
+.lid-tub { fill: var(--metal-2); stroke: var(--lid-rim); stroke-width: 2; }
+.lid-cap { font-size: 11px; font-weight: 600; fill: var(--text-2); }
+.lid-cap.dim { font-weight: 500; fill: var(--text-3); }
+.lid-slot { cursor: pointer; outline: none; }
+.lid-slot:hover { filter: brightness(1.2); }
+.lid-ring { fill: none; stroke: var(--accent); stroke-width: 2.5; opacity: 0; pointer-events: none; }
+.lid-ring-in { fill: none; stroke: oklch(0.98 0.01 262); stroke-width: 1; opacity: 0; pointer-events: none; }
+.lid-slot[aria-pressed="true"] :is(.lid-ring, .lid-ring-in), .lid-slot:focus-visible :is(.lid-ring, .lid-ring-in) { opacity: 1; }
+.lid-counts { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+.lid-counts > span { display: inline-flex; align-items: baseline; gap: 6px; }
+.lid-counts .loc-k { min-width: 0; }
+.lid-card .loc-card-h { flex-wrap: wrap; }
+.lid-card .loc-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.lid-offers { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 12px 14px; }
+.lid-offers .btn .num { margin-left: 8px; color: var(--text-2); }
+.lid-detail { min-height: 108px; }

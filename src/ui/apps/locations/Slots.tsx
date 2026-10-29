@@ -28,11 +28,11 @@ function groupsOf(device: Device): Group[] {
   ];
   return groups.filter((g) => g.slots > 0);
 }
-const specOf = (c: { kind: ComponentKind; size?: number; ff?: Component["ff"] }): PartSpec => ({ kind: c.kind, ...(c.size !== undefined ? { size: c.size } : {}), ...(c.ff ? { ff: c.ff } : {}) });
+export const specOf = (c: { kind: ComponentKind; size?: number; ff?: Component["ff"] }): PartSpec => ({ kind: c.kind, ...(c.size !== undefined ? { size: c.size } : {}), ...(c.ff ? { ff: c.ff } : {}) });
 const EMPTY_SHOWN = 4;
 const clock = (hour: number) => dateOf(hour).toISOString().slice(11, 16);
 // What a spare in storage is.
-const spareSpec = (d: Device): PartSpec => ({ ...d.part, kind: d.model.slice(5) as ComponentKind });
+export const spareSpec = (d: Device): PartSpec => ({ ...d.part, kind: d.model.slice(5) as ComponentKind });
 
 // Each slot group of a chassis with the part in every filled slot, its age against its life and its state, and the empty slots,
 // where Add offers the spare parts in the zone's storage that fit.
