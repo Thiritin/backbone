@@ -44,7 +44,7 @@
 .shop-markup { font-weight: 600; min-width: 40px; text-align: right; }
 .shop-cart-foot { display: flex; justify-content: flex-end; padding: 0 12px 14px; margin-top: auto; }
 
-.shop-dest { display: grid; gap: 6px; padding: 10px 14px 0; font-size: 12px; color: var(--text-2); }
+.shop-dest { display: grid; gap: 6px; padding: 10px 14px 12px; font-size: 12px; color: var(--text-2); }
 .shop-dest .pick { color: var(--text); }
 
 .shop-maker { display: inline-flex; align-items: center; gap: 6px; }
