@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The Terminal is now a small shell: list, create, read, move and remove files and folders on your desk and on every server you log into, and chain commands with && and ;.
+- Running apt update and apt upgrade on a server installs its outstanding software and PHP updates, after asking you to confirm the downtime.
 - You can drag a device to another position in its rack once its power cords are unplugged, and a plugged-in device stays put.
 - A new game opens the Getting started guide right away instead of a welcome popup, and it now starts with naming your company, ordering your domain and booking email, each done right inside the guide.
 - The website step in Getting started asks you to build your website and list a product, with a Build button in the guide.

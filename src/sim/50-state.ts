@@ -78,6 +78,10 @@ export interface Cable { id: string; a: End; b: End; kind: CableKind; color: str
 export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; plugged?: boolean; size?: number; ff?: FormFactor }
 export type RaidLevel = "none" | "1" | "5" | "6" | "10";
 export type RebuildRate = "low" | "medium" | "high";
+// since is the hour of the first change; a data loss after it wipes the changes. A path maps to a file's text, true for a
+// directory, or false for a base entry that was deleted.
+export interface HostFiles { since: number; paths: Record<string, string | boolean> }
+
 // A desktop document; x and y are its icon position on the desktop in pixels.
 export interface Doc { id: string; kind: "guide" | "note"; title: string; body: string; x: number; y: number }
 // domain is the company's own domain once registered; mail is its email service.
@@ -173,6 +177,8 @@ export interface GameState {
   lossReports: LossReport[];
   // PHP security advisories and the nodes patched, offline or compromised.
   security: Security;
+  // Terminal files the player changed, per machine ("desk" or a device id) (60-infra/fs.ts).
+  files: Record<string, HostFiles>;
   // Customer data stolen from a host, the ransom decision and the fine that follows a sale (60-infra/breach.ts).
   breaches: Breach[];
   // Customer sites defaced, their hacks and the customers written to (60-infra/apps.ts).
@@ -245,7 +251,7 @@ export const newGame = (seed: number): GameState => ({
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
   cables: [],
   ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], checklist: [], seenChanges: [],
-  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [],
+  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false,
   heldCustomers: [],

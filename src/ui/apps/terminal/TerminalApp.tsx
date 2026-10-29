@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { t } from "../../../i18n/en";
-import { complete, DESK_PROMPT, promptOf, recoveryReport, runCommand, type Session, type Watch } from "../../../sim/60-infra/terminal";
+import { complete, DESK_PROMPT, promptOf, recoveryReport, runLine, type Session, type Watch } from "../../../sim/60-infra/terminal";
 import { useSessionState } from "../../session";
 import { uiSound, useFocus, useStore } from "../../store";
 import "./terminal.css";
@@ -35,6 +35,9 @@ export function TerminalApp() {
   const [history, setHistory] = useSessionState<string[]>("terminal.history", []);
   const [watching, setWatching] = useSessionState<Watch[]>("terminal.watch", []);
   const [draft, setDraft] = useSessionState("terminal.draft", "");
+  // The working directory, null for the home; the rest of a line waiting on a [Y/n] answer.
+  const [cwd, setCwd] = useSessionState<string | null>("terminal.cwd", null);
+  const [pending, setPending] = useSessionState<string | null>("terminal.confirm", null);
   const recall = useRef(history.length);
   const screen = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -84,25 +87,30 @@ export function TerminalApp() {
   }, [ready, setLines, setDraft]);
 
   const tab = () => {
-    const r = complete(useStore.getState().game, session, draft);
-    if (r.options.length) setLines([...lines, { prompt: promptOf(session), text: draft }, { text: r.options.join("  ") }].slice(-MAX_LINES));
+    if (pending !== null) return;
+    const r = complete(useStore.getState().game, session, draft, cwd);
+    if (r.options.length) setLines([...lines, { prompt: promptOf(session, cwd), text: draft }, { text: r.options.join("  ") }].slice(-MAX_LINES));
     setDraft(r.line);
   };
 
   const submit = (line = draft, from = session) => {
-    const store = useStore.getState();
-    const result = runCommand(store.game, from, line, history.length);
-    const next: Line[] = result.clear ? [] : [...lines, { prompt: promptOf(from), text: line }, ...result.output.map((text) => ({ text }))];
-    if (result.action) {
-      const r = store.act(...result.action);
-      if (!r.ok) next.push({ text: t(r.error) });
+    const asked = pending, dir = from === session ? cwd : null;
+    const shown: Line = { prompt: asked !== null ? t("term.apt.confirm") : promptOf(from, dir), text: line };
+    setDraft("");
+    if (asked !== null) {
+      setPending(null);
+      if (!/^\s*(y|yes)?\s*$/i.test(line)) { setLines([...lines, shown, { text: t("term.apt.abort") }].slice(-MAX_LINES)); return; }
     }
-    setLines(next.slice(-MAX_LINES));
-    if (result.session !== undefined) setSession(result.session);
-    if (result.watch) setWatching([...watching, result.watch]);
+    const result = runLine(() => useStore.getState().game, (c) => useStore.getState().act(...c), from, dir, asked ?? line, history.length);
+    const output = result.output.map((text) => ({ text }));
+    setLines((result.clear ? output : [...lines, shown, ...output]).slice(-MAX_LINES));
+    setSession(result.session);
+    setCwd(result.cwd);
+    setPending(result.confirm);
+    if (result.watch.length) setWatching([...watching, ...result.watch]);
+    if (asked !== null) return;
     if (line.trim()) setHistory([...history, line].slice(-100));
     recall.current = line.trim() ? Math.min(history.length + 1, 100) : history.length;
-    setDraft("");
   };
 
   // Terminal on a server drops any open session and connects to it.
@@ -128,7 +136,7 @@ export function TerminalApp() {
           <div key={i} className="tm-line">{l.prompt && <span className="tm-prompt">{l.prompt} </span>}{l.text}</div>
         ))}
         <div className="tm-row">
-          <span className="tm-prompt">{promptOf(session)}</span>
+          <span className="tm-prompt">{pending !== null ? t("term.apt.confirm") : promptOf(session, cwd)}</span>
           <input
             ref={input} value={draft} aria-label="Command" autoFocus spellCheck={false} autoCapitalize="off" autoComplete="off" readOnly={!ready}
             onChange={(e) => setDraft(e.target.value)}

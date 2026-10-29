@@ -372,6 +372,7 @@ export function sellDevice(s: GameState, deviceId: string): ActionResult {
   if (serverTaken(s, d.id)) return fail("error.serverInUse");
   unplug(s, new Set([d.id]));
   s.devices = s.devices.filter((x) => x.id !== deviceId);
+  s.files = Object.fromEntries(Object.entries(s.files).filter(([id]) => id !== deviceId));
   book(s, "sales", "ledger.sale", { device: d.name }, deviceValue(s, d));
   return { ok: true };
 }

@@ -15,16 +15,28 @@ import { latency } from "./network";
 import { hopDown, pathTo, powered, working, type Hop } from "./status";
 import { nodeUsage, workloadUse } from "./usage";
 import { RECOVER_HOURS } from "./power";
-import { reboot, shutdown } from "../90-actions/hardware";
+import { reboot, shutdown, type ActionResult } from "../90-actions/hardware";
+import { apt } from "./apt";
+import { DESK, homeOf, shortPath } from "./fs";
+import { completePath, FILE_COMMANDS, fileCommand, parseLine, redirect, type Segment } from "./shell";
 
 // An open ssh session on a server; null at the desk.
 export interface Session { host: string; deviceId: string }
 // A recovery the screen reports on once it is done.
 export interface Watch { workloadId: string; host: string }
-export interface CommandResult { output: string[]; session?: Session | null; action?: Call; clear?: boolean; watch?: Watch }
+// cwd is the new working directory; failed stops a && chain; confirm asks [Y/n] before the command runs again with -y.
+export interface CommandResult {
+  output: string[]; session?: Session | null; action?: Call; clear?: boolean; watch?: Watch;
+  cwd?: string; failed?: boolean; confirm?: boolean;
+}
 
-export const DESK_PROMPT = "you@desk $";
-export const promptOf = (session: Session | null): string => (session ? `root@${session.host}:~#` : DESK_PROMPT);
+export const hostOf = (session: Session | null) => session?.deviceId ?? DESK;
+export const DESK_PROMPT = "you@desk:~ $";
+// cwd is null in the home directory.
+export function promptOf(session: Session | null, cwd: string | null = null): string {
+  const at = cwd ? shortPath(cwd, homeOf(hostOf(session))) : "~";
+  return session ? `root@${session.host}:${at}#` : `you@desk:${at} $`;
+}
 
 // What a name or address points at: a server, a workload (a VM or a customer service) or a server's management controller.
 interface Target { label: string; ip: string; kind: "server" | "workload" | "bmc"; deviceId: string; name: string; workload?: Workload }
@@ -264,28 +276,45 @@ export function recoveryReport(s: GameState, watch: Watch): string[] | null {
   return lines(w && w.corrupted ? "term.recover.failed" : "term.recover.done", { name: watch.host });
 }
 
-const DESK_COMMANDS = ["ssh", "ping", "traceroute", "host", "help", "clear"];
-const REMOTE_COMMANDS = ["uptime", "df", "free", "top", "shutdown", "reboot", "recover", "exit", "help", "clear"];
+const SHARED = [...FILE_COMMANDS, "apt", "apt-get", "help", "clear"];
+const DESK_COMMANDS = ["ssh", "ping", "traceroute", "host", "sudo", ...SHARED];
+const REMOTE_COMMANDS = ["uptime", "df", "free", "top", "shutdown", "reboot", "recover", "exit", ...SHARED];
+const PATH_COMMANDS = ["cd", "ls", "cat", "touch", "mkdir", "rm", "rmdir", "mv", "cp"];
 
-// Tab on a line: the first word completes to a command, later ones to a host name. Several matches extend to their
-// shared prefix, and when that adds nothing the matches come back as options to list.
-export function complete(s: GameState, session: Session | null, line: string): { line: string; options: string[] } {
-  const at = line.lastIndexOf(" ") + 1, word = line.slice(at).toLowerCase();
+// Tab on a line: the first word completes to a command, a word after a file command to a path, other words to a host
+// name. Several matches extend to their shared prefix, and when that adds nothing the matches come back as options to list.
+export function complete(s: GameState, session: Session | null, line: string, cwd: string | null = null): { line: string; options: string[] } {
+  const at = line.lastIndexOf(" ") + 1, word = line.slice(at), first = line.trim().split(/\s+/)[0];
+  const host = hostOf(session);
+  const paths = at > 0 && PATH_COMMANDS.includes(first);
   const pool = at === 0 ? (session ? REMOTE_COMMANDS : DESK_COMMANDS)
+    : paths ? completePath(s, host, cwd ?? homeOf(host), word)
     : [...s.devices.map((d) => d.hostname), ...s.workloads.map((w) => w.hostname), ...s.services.map((v) => v.hostname)];
-  const hits = [...new Set(pool.filter((h): h is string => !!h && h.startsWith(word)))].sort();
-  if (hits.length === 1) return { line: line.slice(0, at) + hits[0] + " ", options: [] };
-  let shared = hits[0] ?? word;
+  const key = paths ? word : word.toLowerCase();
+  const hits = [...new Set(pool.filter((h): h is string => !!h && h.startsWith(key)))].sort();
+  if (hits.length === 1) return { line: line.slice(0, at) + hits[0] + (hits[0].endsWith("/") ? "" : " "), options: [] };
+  let shared = hits[0] ?? key;
   for (const h of hits) while (!h.startsWith(shared)) shared = shared.slice(0, -1);
-  return shared.length > word.length ? { line: line.slice(0, at) + shared, options: [] } : { line, options: hits };
+  const shown = paths ? hits.map((h) => h.slice(h.lastIndexOf("/", h.length - 2) + 1)) : hits;
+  return shared.length > key.length ? { line: line.slice(0, at) + shared, options: [] } : { line, options: shown };
 }
 
-// Runs one line. session is the open ssh session, or null at the desk; nonce varies the jitter of repeated commands.
-export function runCommand(s: GameState, session: Session | null, line: string, nonce = 0): CommandResult {
-  const [cmd, ...args] = line.trim().split(/\s+/);
+function runSegment(s: GameState, session: Session | null, cwd: string, seg: Segment, nonce: number): CommandResult {
+  const r = runWords(s, session, cwd, seg.words, nonce);
+  return seg.redirect ? redirect(s, hostOf(session), cwd, r, seg.redirect) : r;
+}
+
+function runWords(s: GameState, session: Session | null, cwd: string, words: string[], nonce: number): CommandResult {
+  let [cmd, ...args] = words;
   if (!cmd) return { output: [] };
   if (cmd === "clear") return { output: [], clear: true };
   if (cmd === "help") return { output: lines(session ? "term.help.remote" : "term.help.desk") };
+  let root = !!session;
+  if (cmd === "sudo") {
+    if (!args.length) return { output: lines("term.sudo.usage"), failed: true };
+    [cmd, ...args] = args;
+    root = true;
+  }
   if (session) {
     if (!working(s, session.deviceId)) return { output: lines("term.ssh.lost", { host: session.host }), session: null };
     if (["uptime", "df", "free", "top", "shutdown", "reboot", "recover", "exit"].includes(cmd)) return remote(s, session, cmd, args);
@@ -293,5 +322,37 @@ export function runCommand(s: GameState, session: Session | null, line: string, 
   else if (cmd === "ping") return { output: ping(s, args[0], nonce) };
   else if (cmd === "traceroute") return { output: traceroute(s, args[0], nonce) };
   else if (cmd === "host") return { output: host(s, args[0]) };
-  return { output: lines("term.notFound", { cmd }) };
+  if (cmd === "apt" || cmd === "apt-get") return apt(s, hostOf(session), args, root);
+  return fileCommand(s, hostOf(session), cwd, cmd, args) ?? { output: lines("term.notFound", { cmd }), failed: true };
+}
+
+// Runs the first command of a line. session is the open ssh session, or null at the desk; nonce varies the jitter of
+// repeated commands; cwd is the working directory, null for the home.
+export function runCommand(s: GameState, session: Session | null, line: string, nonce = 0, cwd: string | null = null): CommandResult {
+  const seg = parseLine(line)[0];
+  return seg ? runSegment(s, session, cwd ?? homeOf(hostOf(session)), seg, nonce) : { output: [] };
+}
+
+export interface LineResult { output: string[]; session: Session | null; cwd: string | null; watch: Watch[]; clear: boolean; confirm: string | null }
+
+// Runs every command of a line in turn, each on the state the one before left: act applies a command's action. A
+// command that asks to confirm ends the run, and confirm holds the rest of the line to run once the player agrees.
+export function runLine(get: () => GameState, act: (a: Call) => ActionResult, session: Session | null, cwd: string | null, line: string, nonce = 0): LineResult {
+  const res: LineResult = { output: [], session, cwd, watch: [], clear: false, confirm: null };
+  for (const seg of parseLine(line)) {
+    const r = runSegment(get(), res.session, res.cwd ?? homeOf(hostOf(res.session)), seg, nonce);
+    if (r.clear) { res.output = []; res.clear = true; }
+    res.output.push(...r.output);
+    let failed = !!r.failed;
+    if (r.action) {
+      const a = act(r.action);
+      if (!a.ok) { res.output.push(t(a.error)); failed = true; }
+    }
+    if (r.session !== undefined) { res.session = r.session; res.cwd = null; }
+    if (r.cwd !== undefined) res.cwd = r.cwd === homeOf(hostOf(res.session)) ? null : r.cwd;
+    if (r.watch) res.watch.push(r.watch);
+    if (r.confirm) { res.confirm = `${line.slice(seg.start, seg.end).trim()} -y${line.slice(seg.end)}`; break; }
+    if (failed && seg.then === "&&") break;
+  }
+  return res;
 }

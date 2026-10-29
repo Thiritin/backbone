@@ -1,10 +1,10 @@
-import { yearOf } from "../00-core/time";
-import { clustersIn, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { dateOf, yearOf } from "../00-core/time";
+import { clustersIn, phpAt, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
-import { clusterOf, hostOfVm, workloadsOn, type Cluster } from "../60-infra/cluster";
+import { anchorOf, clusterOf, hostOfVm, workloadsOn, type Cluster } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
 import { familyOf, openVulns } from "../60-infra/vulns";
-import { dropCluster, installHypervisor, installPanel, installPanelInVm, removeNode } from "./clusters";
+import { dropCluster, installHypervisor, installPanel, installPanelInVm, phpDue, removeNode, upgradeNodePhp } from "./clusters";
 import type { ActionResult } from "./hardware";
 
 // A machine is a server or one of the player's own VMs. It runs one hypervisor or one panel: a panel next to a hypervisor
@@ -99,5 +99,35 @@ export function uninstallSoftware(s: GameState, machineId: string): ActionResult
   if (busy) return { ok: false, error: "error.softwareInUse" };
   if (node) return removeNode(s, machineId);
   dropCluster(s, c.id);
+  return { ok: true };
+}
+
+// docs/design/terminal-shell.md, apt: what an upgrade on a server would bring up to date, as Debian packages. cluster is
+// null for the PHP of the panel hosts on the server.
+export interface Upgrade { pkg: string; from: string; to: string; minutes: number; cluster: string | null }
+
+const release = (hour: number) => `${yearOf(hour)}.${dateOf(hour).getUTCMonth() + 1}`;
+// Debian named PHP by its major version up to 5, then by major and minor.
+const phpPackage = (v: string) => { const [a, b] = v.split("."); return Number(a) < 7 ? `php${a}` : `php${a}.${b}`; };
+
+export function upgradable(s: GameState, deviceId: string): Upgrade[] {
+  const mine = s.clusters.filter((c) => c.nodes.some((n) => n.deviceId === deviceId) || anchorOf(s, c) === deviceId);
+  const out: Upgrade[] = mine.filter((c) => updateDue(s, c)).map((c) => {
+    const sw = softwareById(familyOf(c)!), live = sw.kind === "cloud" && sw.live && c.nodes.length > 1;
+    return { pkg: sw.id, from: release(c.updatedAt), to: release(s.hour), minutes: live ? 0 : UPDATE_MINUTES[sw.kind], cluster: c.id };
+  });
+  const php = mine.find((c) => c.kind === "panel" && anchorOf(s, c) === deviceId && phpDue(s, c)), now = phpAt(yearOf(s.hour));
+  if (php) out.push({ pkg: phpPackage(now), from: php.php, to: `${now}-${release(s.hour)}`, minutes: 0, cluster: null });
+  return out;
+}
+
+// apt upgrade on a server: the software updates and the PHP upgrade the Software app runs, for everything due there.
+export function upgradeServer(s: GameState, deviceId: string): ActionResult {
+  const due = upgradable(s, deviceId);
+  if (!due.length) return { ok: false, error: "error.upToDate" };
+  for (const u of due) {
+    const r = u.cluster ? updateSoftware(s, u.cluster) : upgradeNodePhp(s, deviceId);
+    if (!r.ok) return r;
+  }
   return { ok: true };
 }
