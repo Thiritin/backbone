@@ -35,6 +35,7 @@
 .vm-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0.5px solid var(--line); flex: none; }
 .vm-detail { grid-auto-rows: max-content; }
 .vm-detail .seg { flex-wrap: wrap; }
+.vm-detail .fin-facts .span { grid-column: 1 / -1; overflow-wrap: anywhere; }
 .prd-mark svg.lucide, .sidebar .prd-mark svg.lucide { color: white; }
 .prd-pad .fin-pills, .vm-detail .fin-pills { flex-wrap: wrap; }
 .prd-card dt { white-space: nowrap; }

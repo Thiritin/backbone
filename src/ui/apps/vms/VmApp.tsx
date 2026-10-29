@@ -160,7 +160,7 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
     <aside className="fin-detail vm-detail">
       <div className="fin-detail-h"><h2>{v ? v.label : own.name}</h2><span className={`pill ${tone}`}>{label}</span><More label={v ? v.label : own.name} entries={() => vmMenu(game, w)} /></div>
       <dl className="fin-facts">
-        {w.hostname && <div><dt>Hostname</dt><dd className="num">{fqdn(game, w.hostname)}</dd></div>}
+        {w.hostname && <div className="span"><dt>Hostname</dt><dd className="num">{fqdn(game, w.hostname)}</dd></div>}
         <div><dt>Customer</dt><dd>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</dd></div>
         <div><dt>Product</dt><dd>{v ? PRODUCT[v.product] : own.service}</dd></div>
         <div><dt>Host</dt><dd>{host ? devName(host) : "None"}</dd></div>
