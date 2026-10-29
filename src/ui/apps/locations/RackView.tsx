@@ -5,9 +5,9 @@ import { modelById, type DeviceKind } from "../../../sim/10-catalog/hardware";
 import { BASEMENT, EXTRA_STEP_KW, extraStepPrice, FLAT_CONTRACTS, flatMonthly, maxExtraKw, SHARE_RACKS } from "../../../sim/20-world/datacenters";
 import { yearOf } from "../../../sim/00-core/time";
 import type { Device, GameState, Location, Rack } from "../../../sim/50-state";
-import { EXTRA_CIRCUIT_KW, flatOffer, freePositions, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
+import { EXTRA_CIRCUIT_KW, flatOffer, freePositions, freeSlots, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
 import { FEED_PRICE } from "../../../sim/88-tick/tick";
-import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveInRack, moveRack, sellRack, setExtraPower, setFeed, setFlatPower } from "../../../sim/90-actions/hardware";
+import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveInRack, moveRack, moveServer, sellRack, setExtraPower, setFeed, setFlatPower } from "../../../sim/90-actions/hardware";
 import { Stepper } from "../shop/Cart";
 import type { Side } from "../../art/backs";
 import { Isometric } from "../../art/Isometric";
@@ -24,6 +24,7 @@ import { BookedMeters } from "./Clusters";
 import { clusterOf } from "../../../sim/60-infra/cluster";
 import { present } from "../../../sim/60-infra/handwork";
 import { useSessionState } from "../../session";
+import { useHandWork } from "./HandSheet";
 
 export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
@@ -132,6 +133,8 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   const [side, setSide] = useState<Side>("front");
   const [mount, setMount] = useState<{ unit: number; top: number; left: number } | null>(null);
   const [moving, setMoving] = useState(false);
+  const [movingServers, setMovingServers] = useState(false);
+  const hand = useHandWork();
   const [selling, setSelling] = useState(false);
   const [hot, setHot] = useState<string | null>(null);
   const main = useRef<HTMLDivElement>(null);
@@ -154,6 +157,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   };
   const rackMenu = (): MenuEntry[] => [
     !rack.provided && { label: "Move…", disabled: rack.arriveAt !== null, run: () => setMoving(true) },
+    serverTargets(game, rack).length > 0 && { label: "Move servers…", run: () => setMovingServers(true) },
     !rack.provided && { label: "Sell…", disabled: items.length > 0, run: () => setSelling(true) },
   ];
   const plug = (id: string, k: number) => {
@@ -213,8 +217,10 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
       </div>
       {mount && <MountPop game={game} rack={rack} {...mount} onClose={() => setMount(null)} onMounted={(id) => { setMount(null); onDevice(id); }} />}
       {moving && <MoveRack game={game} rack={rack} onClose={() => setMoving(false)} onMoved={(id) => { setMoving(false); onMoved(id); }} />}
+      {movingServers && <MoveServers game={game} rack={rack} onClose={() => setMovingServers(false)} onMove={(ids, to) => { setMovingServers(false); hand.start(game, { title: `Move ${ids.length} ${ids.length === 1 ? "server" : "servers"} to ${to.name}`, deviceId: ids[0], at: to.id, action: moveServer, args: [ids, to.id] }); }} />}
       {dialog}
       {menus.dialog}
+      {hand.dialog}
       {selling && <SellConfirm game={game} name={rack.name} price={rack.price} boughtAt={rack.boughtAt} onCancel={() => setSelling(false)} onSell={() => { setSelling(false); if (act(sellRack, rack.id).ok) onMoved(null); }} />}
     </div>
   );
@@ -257,6 +263,50 @@ function MountRow({ game, rack, st, unit, onMounted }: { game: GameState; rack: 
       {max > 1 && <Stepper value={n} min={1} onChange={(v) => setCount(Math.min(v, max))} />}
       <button className="btn primary" onClick={mount}>Mount</button>
     </div>
+  );
+}
+
+const rackServers = (game: GameState, rack: Rack) => game.devices.filter((d) => d.rackId === rack.id && modelById(d.model).kind === "server");
+// The other ready locations with a rack that has room for the smallest server in this rack.
+function serverTargets(game: GameState, rack: Rack): Location[] {
+  const servers = rackServers(game, rack);
+  if (!servers.length) return [];
+  const height = Math.min(...servers.map((d) => modelById(d.model).height));
+  return game.locations.filter((l) => l.id !== rack.locationId && l.readyAt <= game.hour
+    && game.racks.some((r) => r.locationId === l.id && r.arriveAt === null && freeSlots(game, r.id, height).length));
+}
+
+function MoveServers({ game, rack, onClose, onMove }: { game: GameState; rack: Rack; onClose: () => void; onMove: (ids: string[], to: Location) => void }) {
+  const servers = rackServers(game, rack), targets = serverTargets(game, rack);
+  const serves = (d: Device) => { const c = clusterOf(game, d.id);
+    return game.workloads.some((w) => (w.deviceId === d.id || (c && w.clusterId === c.id)) && game.services.some((v) => v.id === w.serviceId && v.endedAt === null)); };
+  const [picked, setPicked] = useState(() => servers.filter((d) => !serves(d)).map((d) => d.id));
+  const [to, setTo] = useState(targets[0]?.id ?? "");
+  const target = targets.find((l) => l.id === to), ids = servers.filter((d) => picked.includes(d.id)).map((d) => d.id);
+  return (
+    <Sheet title="Move servers" onClose={onClose}>
+      <div className="loc-form">
+        <div className="picks" role="group" aria-label="Servers">
+          {servers.map((d) => (
+            <button key={d.id} className="pick" aria-pressed={picked.includes(d.id)} onClick={() => setPicked(picked.includes(d.id) ? picked.filter((x) => x !== d.id) : [...picked, d.id])}>
+              <strong>{devName(d)}</strong><span className="sub">{clusterOf(game, d.id)?.name ?? modelById(d.model).name}</span>
+            </button>
+          ))}
+        </div>
+        <div className="picks" role="group" aria-label="Location">
+          {targets.map((l) => (
+            <button key={l.id} className="pick" aria-pressed={l.id === to} onClick={() => setTo(l.id)}>
+              <strong>{l.name}</strong><span className="sub">{l.city} · <span className="num">{l.az}</span></span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="loc-sheet-foot">
+        <span className="grow" />
+        <button className="btn" onClick={onClose}>Cancel</button>
+        <button className="btn primary" disabled={!target || !ids.length} onClick={() => target && onMove(ids, target)}><Truck />Move</button>
+      </div>
+    </Sheet>
   );
 }
 
