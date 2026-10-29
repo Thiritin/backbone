@@ -47,7 +47,7 @@ describe("action log", () => {
     const psus = s.log.filter((e) => e.name === "setPlugged").length;
     expect(psus).toBeGreaterThan(0);
     expect(s.log.map((e) => e.name)).toEqual(["setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "connect", "orderHomeLine", "installPanel"]);
-    expect(s.log[1]).toEqual({ hour: 0, name: "buyDevice", args: ["g1-compute", "Dwell", 1, "loc1"] });
+    expect(s.log[1]).toEqual({ hour: 0, minute: 0, name: "buyDevice", args: ["g1-compute", "Dwell", 1, "loc1"] });
     expect(store().act(mountDevice, "nope", "rack2", 1).ok).toBe(false);
     expect(store().game.log).toHaveLength(s.log.length);
   });

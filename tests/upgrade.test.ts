@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { dualPsuModel } from "../src/sim/10-catalog/hardware";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { deviceHealth, installedRamGb } from "../src/sim/60-infra/status";
+import { BOOT_HOURS, deviceHealth, installedRamGb } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, addSecondPsu, buyRack, installPart, removePart, setPower, type CartLine } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
@@ -59,7 +59,7 @@ describe("installing parts", () => {
     expect(dev(s, id).maintenance).toBeNull();
     expect(dev(s, id).on).toBe(false);
     ok(setPower(s, id, true));
-    expect(dev(s, id).bootUntil).toBe(s.hour + 1);
+    expect(dev(s, id).bootUntil).toBe(s.hour + BOOT_HOURS);
   });
 
   it("swaps a drive into a RAID array with the server running and starts a rebuild", () => {

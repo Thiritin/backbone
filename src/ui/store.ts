@@ -5,7 +5,7 @@ import type { GameState } from "../sim/50-state";
 import { weeklyChallenge } from "../sim/10-catalog/challenges";
 import type { ChangelogDay } from "./changelog";
 import { newChallenge, newCompany } from "./embedded";
-import { tick } from "../sim/88-tick/tick";
+import { tickMinute } from "../sim/88-tick/tick";
 import { isAlert } from "../sim/alerts";
 import { typeOf } from "./notify-types";
 import { deserialize, serialize } from "../sim/91-save/save";
@@ -202,11 +202,12 @@ export const useStore = create<Store>((set, get) => ({
   openLoc: null,
   setOpenLoc: (openLoc) => set({ openLoc }),
 
+  // Steps game minutes, so hours may be fractional; the hourly tick runs on every sixtieth.
   advance: (hours) => {
     const game = { ...get().game, rng: { ...get().game.rng } }, skip = get().speed === SKIP;
     let alert: Banner | null = null, happened = false;
-    for (let i = 0; i < hours; i++) {
-      for (const e of tick(game)) {
+    for (let i = 0, n = Math.round(hours * 60); i < n; i++) {
+      for (const e of tickMinute(game)) {
         happened = true;
         get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params), e.key);
         if (e.key === "event.trainingDone") set({ explain: String(e.params.id) });

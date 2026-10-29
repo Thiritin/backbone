@@ -10,7 +10,7 @@ import { dateOf, formatClock, SKIP, SPEEDS, type Speed } from "../../sim/00-core
 import { euro } from "../../sim/00-core/money";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../sim/90-actions/travel";
-import { clockCarry, useStore, type Win } from "../store";
+import { useStore, type Win } from "../store";
 import { CompanyMark } from "../apps/company";
 import { appFor } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
@@ -84,7 +84,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
         })}
       </div>
       <span className="mb-sep" />
-      <Clock hour={game.hour} running={speed > 0} />
+      <span className="mb-item num">{formatClock(game.hour, game.minute)}</span>
       <span className="mb-sep" />
       <span className="mb-item mb-cash num">{euro(game.cash)}</span>
       <button className="mb-item mb-badge" aria-label={unseen ? `Notifications, ${unseen} new` : "Notifications"} onClick={onBell}>
@@ -109,20 +109,6 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       )}
     </header>
   );
-}
-
-function Clock({ hour, running }: { hour: number; running: boolean }) {
-  const [minute, setMinute] = useState(0);
-  useEffect(() => {
-    let raf = 0;
-    const frame = () => {
-      setMinute(Math.floor(clockCarry.current * 60));
-      if (running) raf = requestAnimationFrame(frame);
-    };
-    frame();
-    return () => cancelAnimationFrame(raf);
-  }, [hour, running]);
-  return <span className="mb-item num">{formatClock(hour, minute)}</span>;
 }
 
 // Today's weather in a city: a pick per city and day, with snow only in winter.

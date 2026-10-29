@@ -108,7 +108,7 @@ describe("custom orders", () => {
     const c = s.customers.find((x) => x.id === req().customerId)!;
     expect(c.name).toBe(req().contact);
     expect(s.services.some((v) => v.customerId === c.id)).toBe(false);
-    expect(tk().replies.length + req().thread.filter((m) => m.from === "you").length).toBe(2);
+    expect(tk().replies.length + req().thread.filter((m) => m.from === "you").length).toBe(1);
     done(s, confirmOrder(s, id));
     const inv = invoiceOf(s, req())!;
     expect(inv.lines.map((l) => l.amount)).toEqual([setupFee(s, "webHosting"), 12, req().owned ? 5 : DOMAIN_FEE]);
@@ -131,7 +131,7 @@ describe("custom orders", () => {
     expect(req().status).toBe("won");
     expect(tk()).toMatchObject({ status: "resolved", outcome: "accepted", serviceId: v.id });
     expect(req().thread.filter((m) => m.from === "you").map((m) => m.key.replace(/\.\d$/, ""))).toEqual(
-      ["reply.order.quote", "reply.order.account", "reply.order.invoice", req().owned ? "reply.order.transfer" : "reply.order.domain", "reply.order.live"]);
+      ["reply.order.quote", "reply.order.invoice", "reply.order.live"]);
     // The first month is prepaid: the next monthly invoice bills only the hours past it.
     runTo(s, 62 * 24 + 1);
     const bill = s.invoices.find((i) => i.lines.some((l) => l.serviceId === v.id))!;

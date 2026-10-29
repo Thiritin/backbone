@@ -94,6 +94,7 @@ export interface GameState {
   seed: number;
   rng: Rng;
   hour: number;
+  minute: number;
   cash: number;
   nextId: number;
   locations: Location[];
@@ -213,7 +214,7 @@ export interface GameState {
   score: Score;
 }
 
-export interface LogEntry { hour: number; name: string; args: unknown[] }
+export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
 export interface Score { netWorth: number | null; level3: number | null; happySum: number; happyHours: number }
 
 // Fields every new device starts with: fresh components installed at hour `at` (the model's parts unless partList says otherwise), powered on, RAID 1 with two or more drives.
@@ -250,7 +251,7 @@ export const device = (id: string, model: string, brand: string, rackId: string 
 
 // Starting infrastructure: an empty 24U basement rack and the home router. The player buys, mounts and cables the first server.
 export const newGame = (seed: number): GameState => ({
-  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, cash: START_CASH, nextId: 8,
+  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: START_CASH, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null }],
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],

@@ -6,7 +6,7 @@ import { serviceOnline } from "../src/sim/40-support/status";
 import { invoiceTotal } from "../src/sim/45-billing/billing";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { nodeCapacity, nodeUsed, vmOf, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
-import { BOOT_HOURS, deviceHealth, freeSlots, installedCores, installedRamGb, rackPower } from "../src/sim/60-infra/status";
+import { deviceHealth, freeSlots, installedCores, installedRamGb, rackPower } from "../src/sim/60-infra/status";
 import { nodeUsage } from "../src/sim/60-infra/usage";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addNode, cordon, createVm, drain, installPanelInVm, resizeVm, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
@@ -95,7 +95,7 @@ describe("starting company", () => {
     ok(setPower(s, "dev4", true));
     expect(deviceHealth(s, "dev4").state).toBe("booting");
     expect(s.services.some((v) => serviceOnline(s, v.id))).toBe(false);
-    run(s, BOOT_HOURS);
+    run(s, 1);
     expect(deviceHealth(s, "dev4").state).toBe("ok");
     expect(s.services.every((v) => serviceOnline(s, v.id))).toBe(true);
   });

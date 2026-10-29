@@ -4,7 +4,7 @@ This doc turns the systems in the [game design document](gdd.md) into formulas a
 
 ## Clock and pacing
 
-At 1×, the game clock runs 60 times faster than real time: one game minute lasts 1 second, one game hour 1 minute, and a game day 24 minutes. The clock shows every game minute, but the simulation ticks every game hour. Billing, salaries, know-how and the market run on the monthly tick.
+At 1×, the game clock runs 60 times faster than real time: one game minute lasts 1 second, one game hour 1 minute, and a game day 24 minutes. The simulation ticks every game hour; between ticks the clock steps game minutes, and queued hand work (a reply, an order step, a domain move) lands at the minute it is done rather than at the next full hour. A server boots in 3 game minutes and a domain registers in 2. Billing, salaries, know-how and the market run on the monthly tick.
 
 | Speed | Game hour | Game day | Game month | Game year |
 | --- | --- | --- | --- | --- |

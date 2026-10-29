@@ -3,7 +3,7 @@ import { yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { COMPONENTS, componentKinds, modelById } from "../src/sim/10-catalog/hardware";
 import { newGame, type Device, type GameState } from "../src/sim/50-state";
-import { arrayLost, BOOT_HOURS, deviceHealth, linkStatus, raidTolerance, raidUsable, rackPower } from "../src/sim/60-infra/status";
+import { arrayLost, deviceHealth, linkStatus, raidTolerance, raidUsable, rackPower } from "../src/sim/60-infra/status";
 import { failComponents, failureChance, rebuildHours, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, buyCircuit, buyRack, connect, replaceComponent, setCableColor, setFeed, setLabel, setPower, setRaid, setRebuildRate, unmountDevice } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
@@ -108,7 +108,7 @@ describe("RAID", () => {
     ok(setRaid(s, id, "5"));
     expect(dev(s, id).dataLost).toBeNull();
     ok(setPower(s, id, true));
-    s.hour += BOOT_HOURS;
+    s.hour += 1;
     hypervisor(s, [id], "Storage 1");
     ok(provisionService(s, addCustomer(s, "Ada", "private"), "vps", { label: "ada.example", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     ok(setPower(s, id, false));
@@ -162,7 +162,7 @@ describe("RAID", () => {
     ok(replaceComponent(s, "dev3", drive.id));
     run(s, 1);
     ok(setPower(s, "dev3", true));
-    s.hour += BOOT_HOURS;
+    s.hour += 1;
     expect(linkStatus(s, "dev3").online).toBe(true);
     expect(dev(s, "dev3")).toMatchObject({ dataLost: 10, rebuild: null });
   });
@@ -214,7 +214,7 @@ describe("power supplies, fans and power", () => {
     expect([linkStatus(s, "dev4").online, linkStatus(s, "dev3").online]).toEqual([false, false]);
     expect(rackPower(s, "rack2").watts).toBe(100);
     ok(setPower(s, "dev4", true));
-    s.hour += BOOT_HOURS;
+    s.hour += 1;
     expect(linkStatus(s, "dev3").online).toBe(true);
     const stored = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     expect(err(setPower(s, stored, false))).toBe("error.notMounted");

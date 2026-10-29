@@ -1,4 +1,4 @@
-import { yearOf } from "../00-core/time";
+import { nowHours, yearOf } from "../00-core/time";
 import { COMPONENTS, jacksOf, modelById, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
@@ -308,8 +308,9 @@ export function deviceHealth(s: GameState, deviceId: string): {
   return { state, failed, worn };
 }
 export const HOURS_PER_YEAR = 8760;
-export const BOOT_HOURS = 1;
-export const booting = (s: GameState, d: Device) => d.on && (d.bootUntil ?? 0) > s.hour;
+export const BOOT_MINUTES = 3;
+export const BOOT_HOURS = BOOT_MINUTES / 60;
+export const booting = (s: GameState, d: Device) => d.on && (d.bootUntil ?? 0) > nowHours(s);
 
 // A device works when it has power, is switched on, and no failure or power-off swap has taken it down.
 export function working(s: GameState, deviceId: string): boolean {

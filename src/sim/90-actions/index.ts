@@ -55,6 +55,6 @@ export function runAction(s: GameState, name: string, args: unknown[]): ActionRe
   while (n > 0 && args[n - 1] === undefined) n--;
   const json = JSON.stringify(args.slice(0, n));
   const r = fn(s, ...(JSON.parse(json) as unknown[]));
-  if (r.ok && s.log.length < LOG_CAP) s.log.push({ hour: s.hour, name, args: JSON.parse(json) as unknown[] });
+  if (r.ok && s.log.length < LOG_CAP) s.log.push({ hour: s.hour, minute: s.minute, name, args: JSON.parse(json) as unknown[] });
   return r;
 }

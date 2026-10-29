@@ -4,7 +4,7 @@ import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
 import { opsTick } from "../40-support/notices";
-import { supportTick } from "../40-support/tick";
+import { supportTick, workTick } from "../40-support/tick";
 import { abandonTickets } from "../40-support/abandon";
 import { financeTick } from "../46-finance/finance";
 import { staffTick } from "../47-staff/staff";
@@ -174,6 +174,7 @@ export const knowHowPerMonth = (s: GameState): number =>
 export function tick(state: GameState): SimEvent[] {
   state.powerDue += powerPerHour(state);
   state.hour++;
+  state.minute = 0;
   const events: SimEvent[] = [];
   // The store shallow-copies the state before ticking, so arrays and their items are replaced rather than changed.
   if (state.racks.some((r) => r.arriveAt !== null && r.arriveAt <= state.hour)) {
@@ -284,4 +285,11 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...usedTick(state));
   scoreTick(state);
   return events;
+}
+
+// One game minute: queued hand work lands at its minute, and the sixtieth minute is the hourly tick.
+export function tickMinute(state: GameState): SimEvent[] {
+  if (state.minute >= 59) return tick(state);
+  state.minute++;
+  return workTick(state);
 }

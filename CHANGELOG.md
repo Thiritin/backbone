@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- Replies, order steps and other hand work now land at the minute they are done instead of at the next full hour, a server boots in three minutes and a new domain shows as registering for two.
+- A custom order now sends the customer three emails, the quote, the confirmation and the notice that everything is live, instead of one per step.
 - A support desk without reply templates still offers the reply that settles the ticket, so a lost panel login or a price complaint can be answered.
 - While you use free Notmail, only half of the businesses that would order by email write to you; private users, gamers and developers do not mind.
 - You buy your company domain in the Marketing app under Domain, which is now installed for free from the start; the rest of the app opens with the Marketing campaigns skill.
