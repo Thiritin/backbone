@@ -10,7 +10,7 @@ import { RECOVER_HOURS } from "../60-infra/power";
 import { working } from "../60-infra/status";
 import { freezeTick } from "../60-infra/usage";
 import {
-  LAN_GB_PER_HOUR, LOSS_RESTORED, LOSS_RESTORED_MAX, lossReview, restoreHours, zoneLinkGbit, type LossItem,
+  LAN_GB_PER_HOUR, LOSS_RESTORED, LOSS_RESTORED_MAX, lossReview, moveGbit, restoreHours, type LossItem,
 } from "../85-products/products";
 import type { ActionResult } from "./hardware";
 
@@ -68,8 +68,8 @@ export function migrationTargets(s: GameState, id: string): MigrationTarget[] {
   if (!found) return [];
   const { w, c } = found, product = s.services.find((v) => v.id === w.serviceId)?.product;
   const takes = (to: Cluster) => (product ? supports(to, product) : to.kind === "cloud" && !!to.platform);
-  return s.clusters.filter((to) => takes(to) && zoneLinkGbit(s, c.az, to.az) > 0).flatMap((to): MigrationTarget[] => {
-    const down = migrationDowntime(s, w, zoneLinkGbit(s, c.az, to.az), c.az !== to.az);
+  return s.clusters.filter((to) => takes(to) && moveGbit(s, c.az, to.az) > 0).flatMap((to): MigrationTarget[] => {
+    const down = migrationDowntime(s, w, moveGbit(s, c.az, to.az), c.az !== to.az);
     if (to.vm) {
       const room = vmRoom(s, to), free = left(room.cap, room.used);
       return to.id !== c.id && pickNode(s, to, w) ? [{ to: to.id, name: to.name, clusterId: to.id, free, down }] : [];
@@ -107,7 +107,7 @@ export function migrateWorkload(s: GameState, id: string, toId: string): ActionR
     if (to.nodes.find((n) => n.deviceId === toId)?.state !== "active" || !working(s, toId)) return fail("error.nodeDown");
     if (!nodeTakes(s, d!, w)) return fail("error.nodeFull");
   }
-  const gbit = zoneLinkGbit(s, c.az, to.az);
+  const gbit = moveGbit(s, c.az, to.az);
   if (!gbit) return fail("error.noZoneLink");
   const down = migrationDowntime(s, w, gbit, c.az !== to.az);
   patch(s, id, { deviceId: vmHost ? null : toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + down, stuck: undefined });
@@ -124,7 +124,7 @@ export function webspaceBlock(s: GameState, w: Workload, c: Cluster, to: Cluster
   if (w.busyUntil > s.hour || w.migrating) return "error.workloadBusy";
   if (!controlPlaneUp(s, c) || !controlPlaneUp(s, to)) return "error.controlPlaneDown";
   if (!pickNode(s, to, w)) return "error.nodeFull";
-  return zoneLinkGbit(s, c.az, to.az) > 0 ? null : "error.noZoneLink";
+  return moveGbit(s, c.az, to.az) > 0 ? null : "error.noZoneLink";
 }
 
 // The panel hosts a web space can move to, each with the hours the hand task takes.

@@ -68,7 +68,7 @@ export function resolveTicket(s: GameState, id: string, action?: TicketAction): 
     if (action === "revert" && (f.t.topic !== "price" || s.services.find((v) => v.id === f.t.serviceId)?.before === undefined)) return fail("error.unknownTicketAction");
     return queue(s, f.t, "resolve", action, ACTION_MINUTES[action]);
   }
-  if (f.t.status !== "waiting") return fail("error.ticketNotAnswered");
+  if (f.t.status !== "waiting" || f.t.kind === "migration") return fail("error.ticketNotAnswered");
   Object.assign(f.t, { status: "resolved", updatedAt: s.hour });
   bump(s.customers.find((c) => c.id === f.t.customerId)!, 5);
   return { ok: true, id };
@@ -91,6 +91,10 @@ export function closeTicket(s: GameState, id: string): ActionResult {
   if (f.t.notice) {
     if (f.t.kind === "notice") ignoreNotice(s, f.t, hashRng(s.seed, s.hour, Number(f.t.id.slice(3)) || 0, 94));
     else Object.assign(f.t, { status: "closed", outcome: "ignored", updatedAt: s.hour, unread: false });
+    return { ok: true, id };
+  }
+  if (f.t.kind === "migration") {
+    Object.assign(f.t, { status: "closed", updatedAt: s.hour, unread: false });
     return { ok: true, id };
   }
   if (f.t.kind === "order") {

@@ -675,6 +675,9 @@ Support is the first job that overwhelms you. Every outage, question, install re
 | Copyright notice | A rights holder reports a URL on a customer's domain | Forward to the customer, take the content down, reject |
 | Legal request | A government agency asks for data or a takedown | Comply, object, ignore at your peril |
 | Refund request | An outage or a data loss hit the customer | Refund one month, credit 10%, refuse |
+| Migration offer | The player offers a customer a move | None; the customer answers |
+
+**Migration offers.** "Offer migration" on a service (the customer page, or the web spaces and VMs of a host) picks a target from the hosts the service can move to and sends the customer a Migration ticket. The player has no reply or action on it; the customer answers once their reply time is up. Below happiness 40 they decline and the ticket resolves. Otherwise they accept and name a window by their segment: players the first 02:00 to 06:00 after the answer, businesses the next weekday from 18:00 to 22:00, private customers any time. The move then runs at the start of the window as the normal move with its downtime (economy.md, Workloads and migration), resolves the ticket and gives +5 happiness when it leaves the basement for a datacenter. A move that has not run within 48 hours of the window costs 10 happiness and reopens the ticket, which the player can close. "Announce migration" on a host offers every service on it the same target in one step. Closing the ticket withdraws the offer.
 
 **Unanswered tickets.** A customer whose ticket gets no answer long past its due time gives up and closes it themselves, marked Ignored. They have already lost happiness for every hour of waiting, and closing stops that loss; the limits per ticket type are in [economy.md](economy.md#tickets-and-work-rates). Cancellations are processed at the next billing date instead, and notices, legal requests and orders are not the customer's to close.
 

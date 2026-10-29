@@ -94,3 +94,20 @@ export function noticedHours(segment: Segment, hours: number): number {
 // The chance a short outage of minutes starting at an hour is noticed at all.
 export const noticeChance = (seed: number, customerId: string, segment: Segment, hour: number, minutes: number): number =>
   1 - Math.exp(-hazard(seed, customerId, segment, hour, hour + 1) * Math.min(1, minutes / 60) - (minutes > 60 ? hazard(seed, customerId, segment, hour + 1, hour + Math.ceil(minutes / 60)) : 0));
+
+// The window a customer accepts a move in, in hours of the day: players in the small hours when nobody is playing,
+// offices on a weekday evening, private customers whenever.
+export const MOVE_WINDOW: Record<Segment, { from: number; to: number; workday: boolean } | null> = {
+  game: { from: 2, to: 6, workday: false },
+  business: { from: 18, to: 22, workday: true },
+  private: null,
+};
+// The hour a move accepted at an hour starts: the next opening of the window (businesses not before the next day), the answer hour for private customers.
+export function moveWindowStart(segment: Segment, answered: number): number {
+  const w = MOVE_WINDOW[segment];
+  if (!w) return answered;
+  let h = answered + 1;
+  const wrong = () => dateOf(h).getUTCHours() !== w.from || (w.workday && (h < (Math.floor(answered / 24) + 1) * 24 || [0, 6].includes(dateOf(h).getUTCDay())));
+  while (wrong()) h++;
+  return h;
+}
