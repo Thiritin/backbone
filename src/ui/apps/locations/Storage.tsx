@@ -12,6 +12,7 @@ import { useStore } from "../../store";
 import { day, height } from "../hw";
 import { Stepper } from "../shop/Cart";
 import { SellConfirm } from "./Inspector";
+import { ListForSale } from "../shop/Used";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { More } from "../More";
 import { rackUnits } from "./Floor";
@@ -140,6 +141,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
   const [mounting, setMounting] = useState(false);
   const [selling, setSelling] = useState(false);
   const [shipping, setShipping] = useState(false);
+  const [listing, setListing] = useState(false);
   // Leased units can't be sold, so Sell takes the first paid-off unit of the stack.
   const m = modelById(stack.model), units = game.devices.filter((d) => stack.ids.includes(d.id)), first = units.find((d) => !d.lease) ?? units[0];
   const rackable = m.height > 0 || m.kind === "pdu", office = isOfficeRouter(m), install = () => act((s) => installRouter(s, units[0].id));
@@ -148,6 +150,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
     office && { label: "Install", run: install },
     { label: "Ship to…", disabled: game.locations.length < 2, run: () => setShipping(true) },
     null,
+    { label: "List for sale…", disabled: !!first.lease, run: () => setListing(true) },
     { label: "Sell…", disabled: !!first.lease, run: () => setSelling(true) },
   ];
   return (
@@ -165,6 +168,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
       </div>
       {mounting && <MountSheet game={game} stack={stack} onClose={() => setMounting(false)} onMounted={onMounted} />}
       {shipping && <Ship game={game} ids={stack.ids} onDone={() => setShipping(false)} />}
+      {listing && <ListForSale game={game} id={first.id} onDone={() => setListing(false)} />}
       {selling && (
         <SellConfirm game={game} name={first.name} price={first.price} boughtAt={first.boughtAt} value={deviceValue(game, first)}
           onCancel={() => setSelling(false)}

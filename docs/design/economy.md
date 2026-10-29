@@ -1013,7 +1013,7 @@ Rates are rolled hourly (yearly rate ÷ 8,760) per server and do not draw from t
 | eBuy | Starts at 25%; the rival's maximum is 35% to 70%; the higher maximum wins and pays the other's maximum |
 | Visible defect | 30% of single units; PSU 2 missing ×0.85 (two-supply models), 1 drive reports errors ×0.8 (the drive arrives one year past its life), no rails ×0.95 (rack-mounted) |
 | Hidden part age | Each part's age is the unit's age times 0.5 to 1.5 |
-| Listing lifetime | eBuy 3 to 7 days, ending at 20:00; board 1 to 6 days after the day of early access; chat 1 to 4 days |
+| Listing lifetime | eBuy 5 to 10 days, ending at 20:00; board 10 to 30 days after the day of early access; chat 4 to 10 days |
 | Shipping | 3 to 5 days; 1 day from a board or chat seller in the destination's city (35% of sellers are in a city where the player has a location) |
 | Selling on the board | Default ask 1.3 times the resale value (Buying and selling); a buyer pays the ask within 7 to 30 days when it is under 1.5 times the value, otherwise the listing expires after 30 days |
 | Selling on eBuy | Starts at half the value and ends at 1 to 1.4 times the value within 7 to 30 days, minus an 8% fee |

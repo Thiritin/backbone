@@ -15,6 +15,8 @@ import type { SimEvent } from "../88-tick/tick";
 import { deliverListing, returned } from "../90-actions/used";
 
 const DAY = 24;
+// Days a listing stays up: auctions run a week or so, board asks linger, chat deals go fast.
+const LIFETIME: Record<Channel, [number, number]> = { ebuy: [5, 10], board: [10, 30], chat: [4, 10] };
 const between = (r: Rng, [a, b]: [number, number]): number => a + (b - a) * rand(r);
 const int = (r: Rng, [a, b]: [number, number]): number => a + Math.floor(rand(r) * (b - a + 1));
 const pick = <T>(r: Rng, xs: T[]): T => xs[Math.floor(rand(r) * xs.length)];
@@ -48,7 +50,7 @@ function listing(s: GameState, r: Rng, d: Draft): Listing {
   const defect = d.qty ? null : defectFor(r, m), base = presetPrice(m, year, brand) * (d.qty ?? 1);
   const older = Math.min(1, (age - 1) / (MAX_AGE - 1));
   const share = d.share ?? (d.channel === "ebuy" ? AUCTION_START : ASK[d.channel][0] + (ASK[d.channel][1] - ASK[d.channel][0]) * older);
-  const days = d.channel === "ebuy" ? int(r, [3, 7]) : d.channel === "board" ? int(r, [1, 6]) : int(r, [1, 4]);
+  const days = int(r, LIFETIME[d.channel]);
   const ends = d.channel === "ebuy" ? d.postedAt - (d.postedAt % DAY) + days * DAY + 20 : d.postedAt + (d.channel === "board" ? EARLY_HOURS : 0) + days * DAY;
   return {
     id: `used${s.nextId++}`, channel: d.channel, model: m.id, brand, qty: d.qty ?? 1, age, wear: wearFor(r, m, age, defect), defect,
