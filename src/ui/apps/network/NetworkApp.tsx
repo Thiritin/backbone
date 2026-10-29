@@ -58,7 +58,7 @@ export function NetworkApp() {
       </nav>
       <div className="fin-main">
         <dl className="fin-totals">
-          <div><dt>Network per month</dt><dd className="num">{euro(monthlyNetworkCost(game))}</dd></div>
+          <div><dt>Network per month</dt><dd className="num">{euro(monthlyNetworkCost(game) || 0)}</dd></div>
           <div><dt>Traffic now</dt><dd className="num">{mbps(now)}</dd></div>
           <div><dt>Dropped now</dt><dd className={`num${dropped > 0 ? " net-bad" : ""}`}>{mbps(dropped)}</dd></div>
           <div><dt>AS number</dt><dd className="num">{game.network.asn ? `AS${game.network.asn}` : "None"}</dd></div>

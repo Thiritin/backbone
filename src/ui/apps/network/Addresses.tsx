@@ -129,7 +129,7 @@ export function Ripe({ game }: { game: GameState }) {
   const free = freeBlock(game.hour);
   if (!lir) {
     return (
-      <div className="shop-grid mkt-flat">
+      <div className="shop-grid net-top">
         <div className="shop-card">
           <div className="shop-name"><strong>RIPE NCC membership</strong><span>Members get an AS number and their own address blocks to announce from a datacenter.</span></div>
           <dl className="shop-specs">
