@@ -19,7 +19,7 @@ function emitted(): [string, string][] {
     ["Support", "event.gridDark"], ["Support", "event.gridCarried"], ["Support", "event.feedDark"], ["Support", "event.feedCarried"], ["Staff", "event.techInstalled"], ["Staff", "event.techRemoved"], ["Security", "event.vulnOpen"], ["Security", "event.vulnCritical"], ["Products", "event.installed"], ["Products", "event.switched"],
     ...ADVISORY_KEYS.map((k) => ["Security", k] as [string, string]),
     ...Array.from({ length: BOT_INCIDENTS }, (_, i) => ["Staff", `event.botIncident${i + 1}`] as [string, string]),
-    ...NEWS.map((d) => ["News", d.key] as [string, string]), ["News", "event.news.line"],
+    ...NEWS.map((d) => ["News", d.key] as [string, string]), ["News", "event.news.line"], ["News", "event.news.release"],
   ];
   extra.forEach(([a, k]) => pairs.add(`${a}|${k}`));
   return [...pairs].map((p) => p.split("|") as [string, string]);
