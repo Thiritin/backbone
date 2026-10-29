@@ -27,6 +27,7 @@ Balance today (main 3ba75ac): steady medians L2 2006.0, L3 2006.8, L4 2008.6, L5
 - DNS per zone, VPN per user, traffic priced per 100 GB, order form invoices a setup fee plus the first month (e27ad87).
 - Software installed per server and VM as a tile grid with Add Software, custom VMs, 5% capacity loss inside a VM, overcommit caps per hypervisor, bigger server art (7c9f934).
 - Bigger default Support and Locations windows (6203d96); notification titles for marketing bills and reviews (c8d1fef); abandoned tickets read "Never mind" (8504606); cart delivery picker padding (22d5ff4); windows and Support selection survive reloads (66804b4); control plane listed under Workloads with neutral gauges (3ba75ac).
+- Accepted orders with no room wait 48 hours for setup instead of failing at once (184cd4e); outage tolerance shows only through a line in the customer's first email (d4f9abf).
 
 ## In flight
 
