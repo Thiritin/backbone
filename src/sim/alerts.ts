@@ -9,6 +9,7 @@ export const ALERT_KEYS: Record<string, string> = {
   "event.vuln.patch": "Security",
   "event.vuln.hacked": "Security",
   "event.dataLoss": "Locations",
+  "event.dataCorrupted": "Locations",
   "event.seized": "Support",
   "event.ddos": "Network",
   "event.gridDark": "Locations",

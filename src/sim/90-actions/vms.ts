@@ -6,6 +6,7 @@ import {
   bookable, clusterOf, controlPlaneUp, hostOfVm, isOwnVm, KEYS, lostDisk, noRoomError, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
 } from "../60-infra/cluster";
 import { migrationHours } from "../60-infra/migration";
+import { RECOVER_HOURS } from "../60-infra/power";
 import { working } from "../60-infra/status";
 import { freezeTick } from "../60-infra/usage";
 import {
@@ -168,7 +169,7 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
   if (!node) return fail("error.noCapacity");
   const hours = w.backupAt !== null ? restoreHours(s, w) : 0;
   const lostAt = s.devices.find((d) => d.id === w.deviceId)?.dataLost ?? s.hour;
-  patch(s, w.id, { deviceId: node, placedAt: s.hour, busyUntil: s.hour + hours, stopped: false, stuck: undefined });
+  patch(s, w.id, { deviceId: node, placedAt: s.hour, busyUntil: s.hour + hours, stopped: false, stuck: undefined, corrupted: undefined, recoverDoneAt: undefined, recoverFailed: undefined });
   const host = isOwnVm(w) ? hostOfVm(s, w.id) : undefined;
   const back = [w.id, ...(host ? s.workloads.filter((x) => x.clusterId === host.id).map((x) => x.id) : [])];
   for (const item of back.map((x) => openItem(s, x))) {
@@ -180,5 +181,18 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
       lossReview(s, cus);
     }
   }
+  return { ok: true };
+}
+
+// Starts repairing a workload a pulled plug corrupted: 30 minutes of work at the server, after which most come back fine and
+// the rest need a restore from backup. A workload whose recovery failed is restored instead.
+export function recover(s: GameState, id: string): ActionResult {
+  const w = s.workloads.find((x) => x.id === id), d = w?.deviceId ? s.devices.find((x) => x.id === w.deviceId) : undefined;
+  if (!w || !d) return fail("error.unknownWorkload");
+  if (!w.corrupted) return fail("error.notCorrupted");
+  if (w.recoverDoneAt !== undefined) return fail("error.recovering");
+  if (w.recoverFailed) return fail("error.needsRestore");
+  if (!working(s, d.id)) return fail("error.unresponsive");
+  patch(s, id, { recoverDoneAt: s.hour + RECOVER_HOURS });
   return { ok: true };
 }

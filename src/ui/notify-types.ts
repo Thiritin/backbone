@@ -23,7 +23,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Domains", "registrarTier", "domainsTransferred"),
   ],
   Locations: [
-    type("Hardware failures", "componentFailed", "dataLoss", "nodeFrozen", "nodeThawed"),
+    type("Hardware failures", "componentFailed", "dataLoss", "dataCorrupted", "recovered", "serverHung", "bmcHung", "nodeFrozen", "nodeThawed"),
     type("Deliveries and moves", "rackArrived", "stockArrived", "drained", "spaceHeld", "holdExpired", "seizedBack"),
     type("Internet line", "lineReady", "lineFull"),
   ],

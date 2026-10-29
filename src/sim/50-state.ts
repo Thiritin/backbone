@@ -50,6 +50,10 @@ export interface Device { id: string; model: string; brand: string; rackId: stri
   dataLost: number | null;
   // The hour a device switched on finishes booting.
   bootUntil?: number;
+  // The operating system froze (hung) or the management controller did (bmcHung); log is the device's last 20 events.
+  hung: boolean; bmcHung: boolean; log: { hour: number; key: string }[];
+  // A hand task waiting for someone on site: pulling the plug or resetting the management controller.
+  hands?: { kind: "pull" | "bmcreset"; doneAt: number } | null;
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
   part?: PartSpec;
   // nodeNNN, set on servers.
@@ -177,6 +181,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
     components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
     rebuild: null, maintenance: null, dataLost: null,
+    hung: false, bmcHung: false, log: [] as { hour: number; key: string }[],
   };
 }
 

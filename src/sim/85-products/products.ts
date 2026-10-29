@@ -4,7 +4,7 @@ import { softwareById, type Software } from "../10-catalog/platforms";
 import { BACKUP_HOUR } from "../10-catalog/usage";
 import type { Customer } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
-import type { GameState } from "../50-state";
+import type { Device, GameState } from "../50-state";
 import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
@@ -118,23 +118,27 @@ function reportLosses(s: GameState, events: SimEvent[]) {
     // A lost panel VM loses every web space in it, with the VM's backup.
     const lost = s.workloads.filter((w) => w.deviceId === d.id && lostDisk(s, w))
       .flatMap((w) => (isOwnVm(w) ? s.workloads.filter((x) => x.clusterId === hostOfVm(s, w.id)?.id) : [w]));
-    if (!lost.length) continue;
-    const items = lost.map((w): LossItem => {
-      const v = s.services.find((x) => x.id === w.serviceId)!;
-      return { workloadId: w.id, serviceId: v.id, customerId: v.customerId, diskGb: w.diskGb, backupAt: (vmOf(s, w) ?? w).backupAt, restored: false };
-    });
-    // A customer without a backup takes the hit per lost disk and asks for a refund once, in Support.
-    const asked = new Set<string>();
-    for (const it of items) {
-      if (it.backupAt !== null) continue;
-      const c = customerCopy(s, it.customerId)!;
-      bump(c, LOSS_NO_BACKUP);
-      if (!asked.has(c.id)) createTicket(s, c, "refund", it.serviceId, "dataLoss");
-      asked.add(c.id);
-    }
-    s.lossReports = [...s.lossReports, { id: `loss${s.nextId++}`, hour: d.dataLost, deviceId: d.id, items }];
-    events.push({ app: "Locations", key: "event.dataLoss", params: { device: d.label ?? d.name, count: items.length } });
+    if (lost.length) reportLoss(s, d, lost, d.dataLost, events);
   }
+}
+
+// Opens a loss report for workloads that lost their data on a device at an hour: customers without a backup take the hit.
+export function reportLoss(s: GameState, d: Device, lost: Workload[], hour: number, events: SimEvent[]) {
+  const items = lost.map((w): LossItem => {
+    const v = s.services.find((x) => x.id === w.serviceId)!;
+    return { workloadId: w.id, serviceId: v.id, customerId: v.customerId, diskGb: w.diskGb, backupAt: (vmOf(s, w) ?? w).backupAt, restored: false };
+  });
+  // A customer without a backup takes the hit per lost disk and asks for a refund once, in Support.
+  const asked = new Set<string>();
+  for (const it of items) {
+    if (it.backupAt !== null) continue;
+    const c = customerCopy(s, it.customerId)!;
+    bump(c, LOSS_NO_BACKUP);
+    if (!asked.has(c.id)) createTicket(s, c, "refund", it.serviceId, "dataLoss");
+    asked.add(c.id);
+  }
+  s.lossReports = [...s.lossReports, { id: `loss${s.nextId++}`, hour, deviceId: d.id, items }];
+  events.push({ app: "Locations", key: "event.dataLoss", params: { device: d.label ?? d.name, count: items.length } });
 }
 
 function runBackups(s: GameState, events: SimEvent[]) {

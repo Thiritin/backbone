@@ -73,7 +73,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
 
 const POWER = {
   ok: ["On", "ok"], booting: ["Booting", "warn"], degraded: ["Degraded", "warn"], hot: ["Running hot", "warn"], rebuilding: ["Rebuilding", "warn"],
-  maintenance: ["Maintenance", "warn"], down: ["Down", "bad"], nopower: ["No power", "bad"], off: ["Off", ""],
+  maintenance: ["Maintenance", "warn"], down: ["Down", "bad"], hung: ["Hung", "bad"], nopower: ["No power", "bad"], off: ["Off", ""],
 } as const;
 
 // onHot reports the cable of the hovered or selected port, so the rack view can highlight it. rename opens the name field.

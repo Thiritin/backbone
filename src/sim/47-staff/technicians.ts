@@ -9,12 +9,12 @@ import { HOURS_PER_YEAR, hotKind, hotSwappable, locationOf } from "../60-infra/s
 import type { SimEvent } from "../88-tick/tick";
 import { drain, upgradeNodePhp } from "../90-actions/clusters";
 import { updateDue, updateSoftware } from "../90-actions/software";
-import { installPart, removePart, replaceComponent, setPower, spareFits, type ActionResult } from "../90-actions/hardware";
-import { migrateWebspace } from "../90-actions/vms";
+import { installPart, removePart, replaceComponent, reset, resetBmc, setPower, shutdown, spareFits, type ActionResult } from "../90-actions/hardware";
+import { migrateWebspace, recover } from "../90-actions/vms";
 import { callOut, onCallAt, onCallPayroll, respond, restUntil } from "./oncall";
 import { atFair, isWorkHour, onShift, working, type Employee, type Task } from "./staff";
 
-export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "migrate" | "part" | "domains" | "update";
+export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "migrate" | "part" | "domains" | "update" | "reset" | "bmcreset" | "recover";
 // One operation on one device; componentId is set for a replace and for taking a part out, partId for putting a spare in,
 // auto when a rule queued it; an update carries the cluster id in componentId. A migrate runs at the device the web space sits on and carries the web space and the panel
 // host it moves to.
@@ -23,7 +23,7 @@ export interface TechOp { id: string; kind: OpKind; deviceId: string; componentI
 // blackhole: the on-call technician blackholes an attack that saturates their location's links.
 // updates: update software with an open high or critical vulnerability.
 export interface TechRules { failed: boolean; worn: boolean; blackhole: boolean; updates: boolean }
-export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", migrate: "panels", part: "hardware", domains: "panels", update: "panels" };
+export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", migrate: "panels", part: "hardware", domains: "panels", update: "panels", reset: "hardware", bmcreset: "hardware", recover: "servers" };
 // An update of a hypervisor is server work; a panel or mail host update is panel work.
 export const taskFor = (s: GameState, kind: OpKind, componentId: string | null): Task =>
   kind === "update" && s.clusters.find((c) => c.id === componentId)?.kind === "cloud" ? "servers" : OP_TASK[kind];
@@ -43,7 +43,7 @@ const worn = (s: GameState, c: Device["components"][number]) => s.hour - c.insta
 
 // Out of office hours the on-call technician comes in for these: a failed part and starting a device again.
 export const urgent = (s: GameState, o: Pick<TechOp, "kind" | "deviceId" | "componentId">): boolean =>
-  o.kind === "on" || (o.kind === "replace" && !!s.devices.find((d) => d.id === o.deviceId)?.components.some((c) => c.id === o.componentId && c.failedAt !== null));
+  o.kind === "on" || o.kind === "reset" || (o.kind === "replace" && !!s.devices.find((d) => d.id === o.deviceId)?.components.some((c) => c.id === o.componentId && c.failedAt !== null));
 
 // The technician and hour a new operation at the location would get, counting the queue ahead of it and rest after call-outs;
 // an urgent one goes to the on-call technician out of office hours.
@@ -114,13 +114,16 @@ function ready(s: GameState, o: TechOp, taken: Set<string>): boolean {
   return !c || !loc || spares(s, loc.id, d, c) > 0;
 }
 
+// A technician shuts a server down cleanly when its OS answers and pulls the plug when it does not.
+const powerDown = (s: GameState, id: string): ActionResult => (shutdown(s, id).ok ? { ok: true } : setPower(s, id, false));
+
 // A part that only swaps with the device off costs a shutdown first; the device is started again after the swap.
 function perform(s: GameState, o: TechOp): ActionResult | "off" {
   const d = s.devices.find((x) => x.id === o.deviceId)!;
   if (o.kind === "replace") {
     const c = d.components.find((x) => x.id === o.componentId);
     if (!c) return { ok: false, error: "error.unknownComponent" };
-    if (d.on && !hotSwappable(d, c)) return setPower(s, d.id, false).ok ? "off" : { ok: false, error: "error.notMounted" };
+    if (d.on && !hotSwappable(d, c)) return powerDown(s, d.id).ok ? "off" : { ok: false, error: "error.notMounted" };
     return replaceComponent(s, d.id, c.id, true);
   }
   if (o.kind === "part") {
@@ -128,10 +131,14 @@ function perform(s: GameState, o: TechOp): ActionResult | "off" {
     const spare = o.partId ? s.devices.find((x) => x.id === o.partId) : undefined;
     if (o.componentId ? !c : !spare) return { ok: false, error: o.componentId ? "error.unknownComponent" : "error.noPart" };
     const hot = c ? hotSwappable(d, c) : hotKind(d, spare!.model.slice(5) as ComponentKind);
-    if (d.rackId && d.on && !hot) return setPower(s, d.id, false).ok ? "off" : { ok: false, error: "error.notMounted" };
+    if (d.rackId && d.on && !hot) return powerDown(s, d.id).ok ? "off" : { ok: false, error: "error.notMounted" };
     return c ? removePart(s, d.id, c.id, true) : installPart(s, d.id, spare!.id, undefined, true);
   }
-  if (o.kind === "off" || o.kind === "on") return setPower(s, d.id, o.kind === "on");
+  if (o.kind === "off") return powerDown(s, d.id);
+  if (o.kind === "on") return setPower(s, d.id, true);
+  if (o.kind === "reset") return reset(s, d.id, true);
+  if (o.kind === "bmcreset") return resetBmc(s, d.id, true);
+  if (o.kind === "recover") return o.componentId ? recover(s, o.componentId) : { ok: false, error: "error.unknownWorkload" };
   if (o.kind === "drain") return drain(s, d.id);
   if (o.kind === "update") return o.componentId ? updateSoftware(s, o.componentId) : { ok: false, error: "error.unknownCluster" };
   if (o.kind === "migrate") return o.target ? migrateWebspace(s, o.target.workloadId, o.target.clusterId) : { ok: false, error: "error.unknownWorkload" };

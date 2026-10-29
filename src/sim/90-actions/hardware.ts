@@ -1,12 +1,13 @@
 import { yearOf } from "../00-core/time";
-import { bareParts, brandsFor, COMPONENT_KINDS, COMPONENTS, componentParts, dualPsuModel, fits as chassisFits, isDriveKind, modelById, partOffers, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { bareParts, brandsFor, COMPONENT_KINDS, COMPONENTS, componentParts, dualPsuModel, fits as chassisFits, hasBmc, isDriveKind, modelById, partOffers, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
 import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, moveCost, pluggedIn, deviceValue, resaleValue, travelCost } from "../60-infra/status";
+import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, moveCost, pluggedIn, deviceValue, resaleValue, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
+import { BMC_RESET_HOURS, hardReboot, pullPlug, pushLog } from "../60-infra/power";
 import { endLease, rebuildHours } from "../88-tick/tick";
 import { serverTaken } from "../60-infra/cluster";
 import { nodeName } from "../30-customers/hostnames";
@@ -382,12 +383,73 @@ export function setPortGroup(s: GameState, switchId: string, ports: number[]): A
   return { ok: true };
 }
 
+// A hard power-off, the pulled plug: workloads that ran may corrupt. Switching on boots the server.
 export function setPower(s: GameState, deviceId: string, on: boolean): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId && !d.panel) return fail("error.notMounted");
-  if (on && !d.on) d.bootUntil = s.hour + BOOT_HOURS;
-  d.on = on;
+  if (on && !d.on) { d.bootUntil = s.hour + BOOT_HOURS; d.on = true; pushLog(d, s.hour, "ipmi.log.powerOn"); }
+  else if (!on && d.on) pullPlug(s, d);
+  return { ok: true };
+}
+
+// Hand work at a device: a datacenter answers after the remote hands' response time and bills at least one hour, the basement is at hand.
+function handsAt(s: GameState, d: Device, technician: boolean): { wait: number; perHour: number } | null {
+  const loc = locationOf(s, d), hands = loc?.dc && !technician ? datacenterById(loc.dc).remoteHands : null;
+  return hands ? { wait: hands.responseHours, perHour: hands.perHour } : null;
+}
+
+// Stops the operating system cleanly: the workloads stop, no data is at risk, and the server is off. Needs a responsive OS.
+export function shutdown(s: GameState, deviceId: string): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (!d.rackId && !d.panel) return fail("error.notMounted");
+  if (!d.on) return fail("error.alreadyOff");
+  if (!working(s, deviceId)) return fail("error.unresponsive");
+  d.on = false;
+  pushLog(d, s.hour, "ipmi.log.shutdown");
+  return { ok: true };
+}
+
+// Reboots (reset) or cycles the power (powerCycle) through the management controller, or with a technician at the machine.
+function reboot(s: GameState, deviceId: string, key: "ipmi.log.reset" | "ipmi.log.cycle", technician: boolean): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (!d.rackId && !d.panel) return fail("error.notMounted");
+  if (!d.on) return fail("error.alreadyOff");
+  if (!technician && !hasBmc(d.model, d.brand)) return fail("error.noBmc");
+  if (!technician && d.bmcHung) return fail("error.bmcHung");
+  hardReboot(s, d, key);
+  return { ok: true };
+}
+export const reset = (s: GameState, deviceId: string, technician = false): ActionResult => reboot(s, deviceId, "ipmi.log.reset", technician);
+export const powerCycle = (s: GameState, deviceId: string, technician = false): ActionResult => reboot(s, deviceId, "ipmi.log.cycle", technician);
+
+// Pulls the plug on site: instant in the basement, after the remote hands' response time (billed for an hour) in a datacenter.
+export function pullPower(s: GameState, deviceId: string, technician = false): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (!d.rackId && !d.panel) return fail("error.notMounted");
+  if (!d.on) return fail("error.alreadyOff");
+  if (d.hands) return fail("error.handsBusy");
+  const hands = handsAt(s, d, technician);
+  if (!hands) return setPower(s, deviceId, false);
+  if (s.cash < hands.perHour) return fail("error.noCash");
+  book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: 1 }, -hands.perHour);
+  d.hands = { kind: "pull", doneAt: s.hour + hands.wait };
+  return { ok: true };
+}
+
+// Resets a hung management controller on site: 15 minutes at the machine, plus the remote hands' response time and an hour's fee in a datacenter.
+export function resetBmc(s: GameState, deviceId: string, technician = false): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (!d.bmcHung) return fail("error.bmcFine");
+  if (d.hands) return fail("error.handsBusy");
+  const hands = handsAt(s, d, technician);
+  if (hands && s.cash < hands.perHour) return fail("error.noCash");
+  if (hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: 1 }, -hands.perHour);
+  d.hands = { kind: "bmcreset", doneAt: s.hour + (hands?.wait ?? 0) + BMC_RESET_HOURS * workFactor(d.model, s.hour) };
   return { ok: true };
 }
 
