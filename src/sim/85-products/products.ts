@@ -9,7 +9,7 @@ import type { Device, GameState } from "../50-state";
 import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
-import { installedCores, raidUsable } from "../60-infra/status";
+import { installedCores, perCoreOf, raidUsable } from "../60-infra/status";
 import { diskFill, nodeUsage } from "../60-infra/usage";
 import { addReview, starsFor } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
@@ -173,14 +173,16 @@ function runBackups(s: GameState, events: SimEvent[]) {
 function overload(s: GameState) {
   const perfs = new Map<string, number>();
   const perfOf = (id: string) => perfs.get(id) ?? perfs.set(id, nodeUsage(s, id).perf).get(id)!;
+  const services = new Map(s.services.map((v) => [v.id, v]));
   for (const w of s.workloads) {
     if (!w.clusterId || w.stopped || isOwnVm(w)) continue;
     const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
     if (!at || s.frozen.includes(at) || vm?.stopped) continue;
-    const c = s.clusters.find((x) => x.id === w.clusterId);
-    const perf = Math.min(perfOf(at), hostPerf(s, c));
+    const c = s.clusters.find((x) => x.id === w.clusterId), v = services.get(w.serviceId);
+    // Game servers run at the speed of one core.
+    const node = v?.product === "gameServer" ? s.devices.find((d) => d.id === at) : undefined;
+    const perf = Math.min(perfOf(at), hostPerf(s, c), node ? perCoreOf(node) : 1);
     if (perf >= 1) continue;
-    const v = s.services.find((x) => x.id === w.serviceId);
     const cus = v && customerCopy(s, v.customerId);
     if (!v || !cus) continue;
     slowed(s, cus, v.id, 1 - perf);

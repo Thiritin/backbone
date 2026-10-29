@@ -31,7 +31,7 @@ function rack(s: GameState, rest: Pick<CartLine, "bare" | "extras"> = {}, model 
   return id;
 }
 const spare = (s: GameState, kind: string, size?: number, ff?: string, loc = "loc1") =>
-  ok(buyDevice(s, `part-${kind}`, "Generic", 1, loc, size === undefined && !ff ? {} : { part: { kind: kind as "ram", size, ...(ff ? { ff: ff as "3.5" } : {}) } }));
+  ok(buyDevice(s, `part-${kind}`, "Generic", 1, loc, size === undefined && !ff ? {} : { part: { kind: kind as "ram", size, ...(ff ? { ff: ff as "3.5" } : {}), ...(kind === "cpu" ? { vendor: "indel" as const, gen: 1 } : {}) } }));
 // A spare the shop of the year does not sell.
 const forged = (s: GameState, kind: string, size: number, ff: string) => {
   const id = spare(s, "ram", 2);

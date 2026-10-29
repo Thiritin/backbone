@@ -1,11 +1,14 @@
 // Hardware labels shared by the Locations and Shop apps.
 import { dateOf } from "../../sim/00-core/time";
 import { cardOf } from "../../sim/10-catalog/gpu";
-import { COMPONENTS, jacksOf, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
+import { COMPONENTS, isOobPort, jacksOf, OOB_PORT, oobPorts, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
+import { VENDOR_NAME } from "../../sim/10-catalog/cpus";
 import type { Component, Device, End, GameState } from "../../sim/50-state";
 import { deviceHealth, HOURS_PER_YEAR, isPlugged, linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
+import { isMgmtDevice, oobUp } from "../../sim/60-infra/oob";
 import { portLinks, type PortLink } from "../../sim/60-infra/usage";
 import type { Lamp, PartLamp, Parts, PortLamp, PortLight } from "../art/fronts";
+import { oobLabel } from "../art/mgmt";
 
 export const speed = (g: number) => (g >= 1000 ? `${+(g / 1000).toFixed(1)}T` : g >= 1 ? `${g}G` : `${g * 1000}M`);
 export const ram = (gb: number) => (gb >= 1024 ? `${+(gb / 1024).toFixed(1)} TB` : `${gb} GB`);
@@ -22,10 +25,14 @@ export const height = (m: DeviceModel) => (m.kind === "gateway" && m.height === 
 export const watts = (w: number) => `${Math.round(w).toLocaleString("en-GB")} W`;
 export const day = (hour: number) => dateOf(hour).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 export const lampOf = (st: LinkStatus): Lamp => (!st.online ? "bad" : st.warning ? "warn" : "ok");
-export const CABLE_NAME = { copper: "copper", dac: "DAC", fiber: "fiber" };
+export const CABLE_NAME = { copper: "copper", dac: "DAC", fiber: "fiber", rollover: "rollover" };
 
 export function portsText(m: DeviceModel): string {
   if (m.kind === "patch") return `${jacksOf(m)} jacks`;
+  if (m.kind === "kvm" || m.kind === "console" || m.kind === "oob") {
+    const n = (k: string) => oobPorts(m).filter((p) => p === k).length;
+    return m.kind === "oob" ? `${n("net")} × 1G` : `${n(m.kind === "kvm" ? "kvm" : "serial")} × ${m.kind === "kvm" ? "KVM" : "serial"}, 1 × 1G`;
+  }
   const runs: { p: PortSpec; n: number }[] = [];
   for (const p of m.ports) {
     const last = runs.at(-1);
@@ -36,6 +43,7 @@ export function portsText(m: DeviceModel): string {
 }
 
 export function portName(m: DeviceModel, i: number): string {
+  if (isOobPort(i)) { const l = oobLabel(m, i); return /^\d+$/.test(l) ? `${oobPorts(m)[i - OOB_PORT] === "kvm" ? "KVM" : "Serial"} ${l}` : l; }
   if (m.kind === "server") return `eth${i}`;
   if (m.kind === "patch") return i < jacksOf(m) ? `Top ${i + 1}` : `Bottom ${i - jacksOf(m) + 1}`;
   return `${m.ports[i].media === "sfp" && m.ports.some((p) => p.media === "rj45") ? "SFP" : "Port"} ${i + 1}`;
@@ -45,14 +53,16 @@ export const portLamps = (m: DeviceModel, peers: (End | null)[]): PortLamp[] => 
 
 export const devName = (d: Device) => d.label ?? d.name;
 export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: "Power supply", fan: "Fan", ram: "RAM stick", board: "Mainboard", cpu: "CPU", nic: "Network card", gpu: "GPU" };
-// A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"".
-export const partLabel = (p: Pick<Component, "kind" | "size" | "ff">): string => `${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}`;
-export const ageYears = (g: GameState, c: Component) => (g.hour - c.installedAt) / HOURS_PER_YEAR;
-export const isWorn = (g: GameState, c: Component) => ageYears(g, c) >= COMPONENTS[c.kind].life;
+// A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"", "Indel G5 CPU 20 cores", "AMB Mainboard".
+export const partLabel = (p: Pick<Component, "kind" | "size" | "ff" | "vendor" | "gen">): string =>
+  `${p.vendor ? `${VENDOR_NAME[p.vendor]} ` : ""}${p.gen ? `G${p.gen} ` : ""}${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}`;
+// A used part's age stays unknown (null) until a burn-in has looked at it.
+export const ageYears = (g: GameState, c: Component): number | null => (c.wear ? null : (g.hour - c.installedAt) / HOURS_PER_YEAR);
+export const isWorn = (g: GameState, c: Component) => { const a = ageYears(g, c); return a === null ? c.wear === "worn" : a >= COMPONENTS[c.kind].life; };
 
 const DRIVE: ReadonlySet<ComponentKind> = new Set(["hdd", "ssd", "nvme"]);
 const WORSE: Lamp[] = ["ok", "warn", "bad"];
-const HEALTH_LAMP = { ok: "ok", degraded: "warn", hot: "warn", rebuilding: "warn", booting: "warn", maintenance: "warn", down: "bad", hung: "bad", nopower: "off", off: "off" } as const;
+const HEALTH_LAMP = { ok: "ok", degraded: "warn", hot: "warn", rebuilding: "warn", booting: "warn", maintenance: "warn", down: "bad", hung: "bad", stuck: "bad", locked: "bad", nopower: "off", off: "off" } as const;
 
 // Per-component lights: failed red, past its life amber, the drive being rebuilt blinking amber; all dark while the device is off.
 function partLamps(g: GameState, d: Device): Parts {
@@ -63,7 +73,8 @@ function partLamps(g: GameState, d: Device): Parts {
 
 // The status light is the worse of link and health; a rebuild blinks it.
 export function deviceLamps(g: GameState, id: string, m: DeviceModel) {
-  const d = g.devices.find((x) => x.id === id)!, h = deviceHealth(g, id).state, link = lampOf(linkStatus(g, id));
+  const d = g.devices.find((x) => x.id === id)!, h = deviceHealth(g, id).state;
+  const link: Lamp = isMgmtDevice(d) ? (oobUp(g, id) ? "ok" : "bad") : lampOf(linkStatus(g, id));
   const state: Lamp = h === "off" || h === "nopower" ? "off" : WORSE[Math.max(WORSE.indexOf(HEALTH_LAMP[h]), WORSE.indexOf(link))];
   const frozen = g.frozen.includes(id);
   return { state: frozen ? "bad" as Lamp : state, blink: frozen || h === "rebuilding" || h === "booting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), lights: portLights(g, id, m), parts: partLamps(g, d) };

@@ -7,7 +7,8 @@ import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { installedCores, installedRamGb, linkStatus, locationOf, raidUsable, rackPower, working } from "./status";
+import { deviceVendor, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, working, burning } from "./status";
+import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
 import { coverage } from "./maintenance";
 
@@ -33,6 +34,8 @@ export interface Cluster {
   switching: { kind: SoftwareKind; to: string; doneAt: number } | null;
   backup: { targetId: string | null; every: BackupEvery };
   ramGuard?: boolean;
+  // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.
+  compat?: boolean;
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
 }
 // One workload runs one service: on a hypervisor node or bare-metal panel server (clusterId and deviceId), inside a panel
@@ -66,11 +69,16 @@ const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
 export const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
 const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcpu, ramGb: a.ramGb - b.ramGb, diskGb: a.diskGb - b.diskGb });
 
-// What a node holds: its physical cores and installed RAM, and the disk it books up to (usable RAID times OVERCOMMIT.disk).
-// Booking CPU and RAM past the physical amounts is always allowed; it costs performance and freezes (usage.ts).
-export function nodeCapacity(d: Device): Resources {
-  return modelById(d.model).server ? { vcpu: installedCores(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
+// What a node holds: the vCPU of its physical cores and its installed RAM, and the disk it books up to (usable RAID times
+// OVERCOMMIT.disk); with s, the vCPU its cluster's compatibility mode leaves. Booking CPU and RAM past the physical amounts is
+// always allowed; it costs performance and freezes (usage.ts).
+export function nodeCapacity(d: Device, s?: GameState): Resources {
+  return modelById(d.model).server ? { vcpu: s ? nodeVcpu(s, d) : installedVcpu(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
 }
+export const nodeVcpu = (s: GameState, d: Device): number => (clusterOf(s, d.id)?.compat ? Math.round(installedVcpu(d) * COMPAT_VCPU * 100) / 100 : installedVcpu(d));
+// Whether a VM moves live between two servers: their boards share a vendor, or both clusters run compatibility mode.
+export const liveBetween = (s: GameState, from: Device, to: Device): boolean =>
+  deviceVendor(from) === deviceVendor(to) || (!!clusterOf(s, from.id)?.compat && !!clusterOf(s, to.id)?.compat);
 
 // The working GPU cards of a server, and the ones no GPU VM has taken yet.
 export const cardsOn = (d: Device): number => d.components.filter((c) => c.kind === "gpu" && c.failedAt === null).length;
@@ -101,13 +109,14 @@ export function controlPlaneUse(c: Pick<Cluster, "panel" | "platform">): Resourc
 // What a node holds for workloads: its capacity less the control plane it runs. Bars show booked against it.
 export function bookable(s: GameState, d: Device): Resources {
   const c = clusterOf(s, d.id);
-  return minus(nodeCapacity(d), c && c.controlPlane === d.id ? controlPlaneUse(c) : ZERO);
+  return minus(nodeCapacity(d, s), c && c.controlPlane === d.id ? controlPlaneUse(c) : ZERO);
 }
 // Whether the resources fit the disk of a pool; CPU and RAM never refuse a booking.
 export const diskFits = (used: Resources, cap: Resources, r: Resources): boolean => used.diskGb + r.diskGb <= cap.diskGb + 1e-9;
 // Whether a node can take r more once freed is released. Disk is the only limit, besides RAM within the installed RAM while
-// the cluster's Memory reservation is on.
+// the cluster's Memory reservation is on, and an ARM node never takes what needs x86.
 export function nodeTakes(s: GameState, d: Device, r: Resources, freed: Resources = ZERO): boolean {
+  if (r.arch === "x86" && modelById(d.model).server?.arch === "arm") return false;
   const cap = bookable(s, d), used = minus(nodeUsed(s, d.id), freed);
   return diskFits(used, cap, r) && !(clusterOf(s, d.id)?.ramGuard && used.ramGb + r.ramGb > cap.ramGb + 1e-9);
 }
@@ -209,7 +218,8 @@ export const clusterOf = (s: GameState, deviceId: string): Cluster | undefined =
 export const workloadsOf = (s: GameState, serviceId: string): Workload[] => s.workloads.filter((w) => w.serviceId === serviceId);
 export const workloadsOn = (s: GameState, deviceId: string): Workload[] => s.workloads.filter((w) => w.deviceId === deviceId);
 // A server taken by a cluster or rented whole as a dedicated server.
-export const serverTaken = (s: GameState, deviceId: string): boolean => !!clusterOf(s, deviceId) || s.workloads.some((w) => w.deviceId === deviceId);
+export const serverTaken = (s: GameState, deviceId: string): boolean =>
+  !!clusterOf(s, deviceId) || s.workloads.some((w) => w.deviceId === deviceId) || s.devices.some((d) => d.id === deviceId && burning(s, d));
 
 // The scheduler: active, working nodes with the disk for it. Booking CPU and RAM past a node never refuses a placement, but
 // a node whose installed RAM it still fits wins (pack picks the busiest of them, spread the idlest); with none, the node

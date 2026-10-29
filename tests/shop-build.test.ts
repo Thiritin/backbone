@@ -129,7 +129,8 @@ describe("Parts tab", () => {
     expect(sizes(2012, "ram")).not.toContain(2);
     expect(sizes(2024, "ram").filter((x) => x !== undefined)).toEqual(expect.arrayContaining([32, 64]));
     expect(partOffers(2012).filter((p) => p.kind === "cpu").map((p) => p.size)).toEqual(expect.arrayContaining([6]));
-    for (const kind of ["psu", "fan", "nic", "board"]) expect(partOffers(2005).filter((p) => p.kind === kind)).toHaveLength(1);
+    for (const kind of ["psu", "fan", "nic"]) expect(partOffers(2005).filter((p) => p.kind === kind)).toHaveLength(1);
+    expect(partOffers(2005).filter((p) => p.kind === "board").map((p) => p.vendor)).toEqual(["indel", "amb"]);
     // NVMe bays come with G4, and so do the drives.
     expect(partOffers(2012).some((p) => p.kind === "nvme")).toBe(false);
     expect(partOffers(2015).filter((p) => p.kind === "nvme").map((p) => p.size)).toEqual([1000]);

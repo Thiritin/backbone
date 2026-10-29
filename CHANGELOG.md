@@ -10,6 +10,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - A support desk without reply templates still offers the reply that settles the ticket, so a lost panel login or a price complaint can be answered.
 - While you use free Notmail, only half of the businesses that would order by email write to you; private users, gamers and developers do not mind.
 - You buy your company domain in the Marketing app under Domain, which is now installed for free from the start; the rest of the app opens with the Marketing campaigns skill.
+- Server manufacturers differ in more than price: SuperMacro releases models four months early and sells them a year longer at 5% more power, Hewlett-Packet releases three months late, stops selling a year earlier and draws 5% less, and Lenovoid releases six months late.
+- The Shop has a Sort menu with Price low to high, Price high to low, Newest and Lowest power, and each card shows its release month.
+- A racked server outside a cluster can be burned in, quick for 6 hours or full for 48: it shows which used parts are worn, a full test also fails weak parts and a passed one lowers the failure rate for a year, and used parts bought on the board or eBuy refund half the price when one fails within 14 days.
 - A new company starts with a free Notmail address that takes order emails without a domain, and moving to mail under your own domain is an optional upgrade.
 - The Email app has a Settings button that opens the email settings.
 - Getting started now begins with your first server, and the domain and email steps come later.
@@ -29,6 +32,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The website step in Getting started asks you to build your website and list a product on its Admin page.
 - Clubs and meetups now write every month or two and ask for free servers for their event, and keeping them up earns know-how, awareness, leads and sometimes a recommended hire.
 - The Marketing app has a Community section that lists running and past sponsorships with their outcome; a sponsored service that is down for more than two hours costs you two bad reviews instead.
+- Servers now come with Indel or AMB CPUs, and from 2020 the ARM line with Ampear CPUs, each with its own cores, speed per core, power draw and price, and the lead between them changes over the years.
+- Every socket of a server holds the same CPU, a CPU change replaces all sockets in one job, VMs move live only between servers of one CPU vendor unless a cluster runs Compatibility mode, and some VPS, game server and cloud orders need x86.
+- The Shop sells KVMs, console servers and an OOB switch, which let you power servers on from afar, open any console from the Browser or with `console` in the Terminal, and recover gear when the network is down.
+- A server can now stop at a BIOS prompt after a part swap or a hard power cut, and switches can hang during a firmware update or lock you out after a port group change, until someone continues or recovers them.
+- Management devices reachable from the internet show up in the Security app with their firmware's vulnerabilities.
 - Weekly challenge seeds start from the title screen, a run can be exported and replayed, and a leaderboard shows verified runs.
 - Loading a save shows a Pear OS update sheet with what changed since you last played, with an Open button for each app it names, and the logo menu has a What's new item that lists the whole changelog.
 - You can book extra power on a rented rack share in steps of 0.25 kW up to twice its base limit, billed monthly with the rent and active after three days.

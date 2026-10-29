@@ -1,0 +1,33 @@
+type Params = Record<string, string | number>;
+
+// Remote access: KVMs, console servers, the OOB switch and gear firmware.
+export const REMOTE_EN: Record<string, (p: Params) => string> = {
+  "ipmi.log.continued": () => "Boot continued",
+  "ipmi.log.stuck": () => "Boot stopped at the firmware prompt",
+  "ipmi.log.gearRecovered": () => "Recovered",
+  "ipmi.log.lockedOut": () => "Management access lost",
+  "ipmi.log.firmware": () => "Firmware updated",
+  "event.serverStuck.title": () => "Boot stuck",
+  "event.serverStuck.text": (p) => `${p.device} stopped at the firmware prompt and waits for someone to continue the boot.`,
+  "event.oobHacked.title": () => "Management access taken over",
+  "event.oobHacked.text": (p) => `Someone got into ${p.device} through an old firmware and cut ${p.count} ${p.count === 1 ? "device" : "devices"} behind it.`,
+  "ledger.atxAdapter": (p) => `ATX power adapter for ${p.device}`,
+  "ledger.mgmtDsl": (p) => `Management DSL for ${p.device}`,
+  "ledger.mgmtModem": (p) => `Cellular modem for ${p.device}`,
+  "error.notStuck": () => "It is not waiting at the firmware prompt.",
+  "error.gearFine": () => "It is running fine.",
+  "error.noFirmware": () => "This device has no firmware to update.",
+  "error.lockedOut": () => "You are locked out of this device.",
+  "error.atxFitted": () => "An ATX adapter is already fitted.",
+  "error.noUplink": () => "Only console servers and OOB switches take a line of their own.",
+  "error.noModem": () => "Cellular modems fit console servers from 2008.",
+  "term.console.usage": () => "usage: console <device>",
+  "term.console.resolve": (p) => `console: ${p.host}: no such device`,
+  "term.console.none": (p) => `console: no out-of-band path to ${p.host}`,
+  "term.console.open": (p) => `Connected to ${p.host} through ${p.via}.\nEscape character is '~.'.`,
+  "term.console.dark": () => "(no signal)",
+  "term.console.stuck": () => "CMOS checksum error - Defaults loaded\nPress F1 to continue, DEL to enter SETUP",
+  "term.console.hung": () => "watchdog: BUG: soft lockup - CPU#0 stuck for 23s!",
+  "term.console.booting": () => "Booting...",
+  "term.console.login": (p) => `${p.host} login:`,
+};

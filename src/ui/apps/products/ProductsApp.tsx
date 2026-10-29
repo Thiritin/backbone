@@ -8,11 +8,12 @@ import { PRODUCTS } from "../../../sim/10-catalog/products";
 import { homeLineById } from "../../../sim/20-world/datacenters";
 import type { Product } from "../../../sim/30-customers/customers";
 import type { GameState } from "../../../sim/50-state";
-import { bookable, controlPlaneUp, gpuReady, hasHosts, lineOffered, supports, controlPlaneUse, fitsControlPlane, nodeUsed, serverTaken, workloadsOn, type BackupEvery, type Cluster, type Ha } from "../../../sim/60-infra/cluster";
-import { installedCores, installedRamGb, locationOf, raidUsable } from "../../../sim/60-infra/status";
+import { bookable, controlPlaneUp, gpuReady, hasHosts, lineOffered, supports, controlPlaneUse, fitsControlPlane, nodeUsed, nodeVcpu, serverTaken, workloadsOn, type BackupEvery, type Cluster, type Ha } from "../../../sim/60-infra/cluster";
+import { installedRamGb, locationOf, raidUsable } from "../../../sim/60-infra/status";
 import { nodeUsage, peakUsage } from "../../../sim/60-infra/usage";
 import { backupPool, licenseCost } from "../../../sim/85-products/products";
 import { addNode, moveControlPlane, setBackup, setHa, setPlacement } from "../../../sim/90-actions/clusters";
+import { setCompatMode } from "../../../sim/90-actions/cpus";
 import { joinableServers } from "../../../sim/90-actions/software";
 import { useFocus, useStore } from "../../store";
 import "../billing/billing.css";
@@ -149,6 +150,15 @@ function HaCard({ game, cluster }: { game: GameState; cluster: Cluster }) {
               </dd>
             </div>
           ))}
+          <div>
+            <dt>Compatibility mode</dt>
+            <dd>
+              <div className="seg" role="group" aria-label="Compatibility mode">
+                <button aria-pressed={!cluster.compat} onClick={() => act(setCompatMode, cluster.id, false)}>Off</button>
+                <button aria-pressed={!!cluster.compat} onClick={() => act(setCompatMode, cluster.id, true)}>On</button>
+              </div>
+            </dd>
+          </div>
         </dl>
       )}
     </section>
@@ -169,7 +179,7 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
     const u = nodeUsed(game, d.id), mine = cluster.controlPlane === d.id;
     return { vcpu: u.vcpu + (mine ? cp.vcpu : 0), ramGb: u.ramGb + (mine ? cp.ramGb : 0), diskGb: u.diskGb + (mine ? cp.diskGb : 0) };
   });
-  const physical = devices.map((d) => ({ vcpu: installedCores(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) }));
+  const physical = devices.map((d) => ({ vcpu: nodeVcpu(game, d), ramGb: installedRamGb(d), diskGb: raidUsable(d) }));
   const rows = (["vcpu", "ramGb", "diskGb"] as const).map((k) => {
     const b = sum(booked, (x) => x[k]), p = sum(physical, (x) => x[k]);
     const fmt = k === "vcpu" ? (v: number) => `${num(v)}` : k === "ramGb" ? (v: number) => ram(+v.toFixed(1)) : (v: number) => disk(Math.round(v));

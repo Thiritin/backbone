@@ -15,7 +15,7 @@ export interface Vulnerability { id: string; family: string; year: number; sever
 export interface OpenVuln extends Vulnerability { days: number }
 
 // Mean vulnerabilities per family and year, by what the software is.
-export const VULN_RATE: Record<string, number> = { panel: 2, cloud: 1, mail: 1, game: 1.5, cms: 3 };
+export const VULN_RATE: Record<string, number> = { panel: 2, cloud: 1, mail: 1, game: 1.5, cms: 3, oob: 1 };
 export const SEVERITY_SHARE: Record<Severity, number> = { low: 0.5, high: 0.35, critical: 0.15 };
 // The most days between disclosure and the patch.
 export const PATCH_DAYS: Record<Severity, number> = { low: 14, high: 14, critical: 3 };

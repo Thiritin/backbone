@@ -10,7 +10,6 @@ import { tick } from "../src/sim/88-tick/tick";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { orderCompanyDomain, queueTransfer, registerCompanyDomain, signRegistrar, transferDomains } from "../src/sim/90-actions/registrar";
 import { hire, setTechLocation } from "../src/sim/90-actions/staff";
-import { install } from "../src/sim/90-actions/store";
 import { setLine } from "../src/sim/90-actions/website";
 import { CHECKS, checkDone, TUTORIAL } from "../src/sim/checklist";
 import { setCompany } from "../src/sim/90-actions/company";

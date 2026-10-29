@@ -3,6 +3,7 @@ import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { modelById, type FormFactor } from "../../../sim/10-catalog/hardware";
+import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
 import { leaseOffers } from "../../../sim/10-catalog/leasing";
 import { REGIONS } from "../../../sim/20-world/datacenters";
 import { buyCart, deliveryWait, unitPrice } from "../../../sim/90-actions/hardware";
@@ -51,10 +52,10 @@ export function Cart() {
           const m = modelById(l.model), name = l.part ? partLabel(l.part) : m.name;
           const parts = [...(l.bare ? ["Bare chassis"] : []), ...(l.extras ?? []).map((e) => `${e.qty} × ${partLabel({ ...e, ff: e.ff as FormFactor | undefined })}`)];
           return (
-            <div key={`${l.model}|${l.brand}|${l.bare}|${JSON.stringify([l.extras, l.part])}`} className="shop-line">
+            <div key={`${l.model}|${l.brand}|${l.vendor}|${l.bare}|${JSON.stringify([l.extras, l.part])}`} className="shop-line">
               <Isometric model={m} brand={l.brand} w={56} />
               <div className="shop-line-name">
-                <strong>{name}</strong><span>{l.brand}</span>
+                <strong>{name}</strong><span>{l.brand}{l.vendor && ` · ${VENDOR_NAME[l.vendor]}`}</span>
               </div>
               <Stepper value={l.qty} min={1} onChange={(n) => setCartQty(l, n)} />
               <span className="num shop-line-total">{euro(unitPrice(l, year) * l.qty)}</span>

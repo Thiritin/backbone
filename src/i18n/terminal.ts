@@ -21,6 +21,7 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
     "traceroute <host>  list the hops to a host",
     "host <name>        print the address of a name",
     ...SHELL_HELP,
+    "console <device>   open the console of a server, switch or router",
   ].join("\n"),
   "term.help.remote": () => [
     "uptime             show how long the server has been up",

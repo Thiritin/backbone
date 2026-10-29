@@ -1,6 +1,6 @@
 import { chance, hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
-import { jacksOf, modelById } from "../10-catalog/hardware";
+import { isOobPort, jacksOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
 import { BACKUP_CHANGED, BACKUP_HOUR, curveFor, curveLoad, growthRate, idNum, JOB_CPU, nightJob, weekMedian } from "../10-catalog/usage";
 import type { Service } from "../30-customers/customers";
@@ -8,9 +8,9 @@ import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { booked, clusterOf, controlPlaneUp, controlPlaneUse, hostOfVm, isOwnVm, lostDisk, workloadsOf, workloadsOn, type Workload } from "./cluster";
+import { booked, clusterOf, controlPlaneUp, controlPlaneUse, hostOfVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
-import { installedCores, installedRamGb, portPeers, raidUsable, working } from "./status";
+import { installedRamGb, portPeers, raidUsable, working } from "./status";
 
 // economy.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
 const RAM_BASE = 0.6;
@@ -87,7 +87,7 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
     const u = workloadUse(s, w, hour);
     used.vcpu += u.vcpu; used.ramGb += u.ramGb; used.diskGb += u.diskGb;
   }
-  const physical = { vcpu: installedCores(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) };
+  const physical = { vcpu: nodeVcpu(s, d), ramGb: installedRamGb(d), diskGb: raidUsable(d) };
   const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
   const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
   return { used, physical, perf: Math.min(cpu, disk) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) };
@@ -184,7 +184,7 @@ export function portLinks(s: GameState): Map<string, (PortLink | null)[]> {
       const jacks = jacksOf(models.get(p.device)!);
       p = peers.get(key({ device: p.device, port: p.port < jacks ? p.port + jacks : p.port - jacks }));
     }
-    return p && kind(p.device) !== "patch" ? p : null;
+    return p && kind(p.device) !== "patch" && !isOobPort(p.port) ? p : null;
   };
   const out = new Map(s.devices.map((d) => {
     const m = models.get(d.id)!;

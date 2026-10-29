@@ -1,5 +1,6 @@
 import { nowHours, yearOf } from "../00-core/time";
-import { COMPONENTS, jacksOf, modelById, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
+import { wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
+import { cpuModel, type Vendor } from "../10-catalog/cpus";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
@@ -34,7 +35,8 @@ export function farEnd(s: GameState, from: End): { end: End; gbit: number } | nu
   const gbit = gbitOf(s, from);
   let peer = peerOf(s, from);
   for (let hops = 0; peer && kindOf(s, peer.device) === "patch" && hops < 64; hops++) peer = peerOf(s, { device: peer.device, port: bridged(s, peer) });
-  if (!peer || kindOf(s, peer.device) === "patch") return null;
+  // A management jack on a data port carries no data.
+  if (!peer || kindOf(s, peer.device) === "patch" || isOobPort(peer.port)) return null;
   return { end: peer, gbit: Math.min(gbit, gbitOf(s, peer)) };
 }
 
@@ -61,7 +63,7 @@ function reachesGateway(s: GameState, start: End, origin: string, minGbit: numbe
     const exits = model.kind === "patch" ? [bridged(s, at)] : model.ports.map((_, i) => i);
     for (const port of exits) {
       const peer = peerOf(s, { device: at.device, port });
-      if (peer) queue.push(peer);
+      if (peer && !isOobPort(peer.port)) queue.push(peer);
     }
   }
   return false;
@@ -149,6 +151,12 @@ function toEdge(s: GameState, id: string, loc: Location, live: boolean, exempt?:
   return hops;
 }
 
+// The working route from a device out to its location's edge, or null.
+export function routeOut(s: GameState, id: string): Hop[] | null {
+  const d = s.devices.find((x) => x.id === id), loc = d && locationOf(s, d);
+  return loc ? toEdge(s, id, loc, true) : null;
+}
+
 // The cabled route from one device to another, through the home line or a datacenter's uplink and the distance between cities when they
 // sit in different locations. Null when no route works; with live off the route ignores stopped devices, to show where a trace ends.
 export function pathTo(s: GameState, fromId: string, toId: string, live = true): Hop[] | null {
@@ -213,7 +221,7 @@ export function resaleValue(s: GameState, price: number, boughtAt: number): numb
 
 // What a device sells for. A sized spare part sells at the current part price, anything else at what was paid.
 export const deviceValue = (s: GameState, d: Device): number =>
-  resaleValue(s, d.part ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour)) : d.price, d.boughtAt);
+  resaleValue(s, d.part ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour), d.part) : d.price, d.boughtAt);
 
 export const psusOf = (d: Device) => d.components.filter((c) => c.kind === "psu");
 export const isPlugged = (c: Component) => c.plugged !== false;
@@ -221,9 +229,16 @@ export const isPlugged = (c: Component) => c.plugged !== false;
 export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length || p.some((c) => isPlugged(c) && c.failedAt === null); };
 
 // The servers that run at least one workload; the rest draw their idle power. Working GPU cards add their watts either way.
-export const busyDevices = (s: GameState): Set<string | null> => new Set(s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId));
-export const deviceWatts = (d: Device): number => modelById(d.model).watts + cardWatts(d.components);
-export const drawWatts = (d: Device, busy: Set<string | null>): number => { const m = modelById(d.model); return (busy.has(d.id) ? m.watts : m.idleWatts) + cardWatts(d.components); };
+// A server under burn-in draws full power and takes no customers.
+export const burning = (s: GameState, d: Device): boolean => !!d.burnin && d.burnin.until > s.hour;
+export const busyDevices = (s: GameState): Set<string | null> =>
+  new Set([...s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId), ...s.devices.filter((d) => burning(s, d)).map((d) => d.id)]);
+// A server's CPUs draw their own watts in place of its preset's (cpuWattsShift); idle they draw the model's idle share of it.
+export const deviceWatts = (d: Device): number => { const m = modelById(d.model), k = wattsFactorOf(m, d.brand); return (m.watts + cpuWattsShift(m, d.components)) * k + cardWatts(d.components); };
+export const drawWatts = (d: Device, busy: Set<string | null>): number => {
+  const m = modelById(d.model), cpus = cpuWattsShift(m, d.components), k = wattsFactorOf(m, d.brand);
+  return (busy.has(d.id) ? m.watts + cpus : m.idleWatts + (cpus && (cpus * m.idleWatts) / m.watts)) * k + cardWatts(d.components);
+};
 
 const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);
 
@@ -257,6 +272,15 @@ const partSum = (d: Device, kind: Component["kind"]): number => d.components.red
 // Cores and RAM of the working CPUs and sticks; a failed part stops counting.
 export const installedCores = (d: Device): number => partSum(d, "cpu");
 export const installedRamGb = (d: Device): number => partSum(d, "ram");
+// The board's vendor, which every CPU in the server shares.
+export const deviceVendor = (d: Device): Vendor => boardVendor(modelById(d.model), d.components);
+// The speed of one core of the server's CPUs, 1 without a known CPU.
+export const perCoreOf = (d: Device): number => {
+  const c = d.components.find((x) => x.kind === "cpu");
+  return (c && cpuModel(c.vendor ?? deviceVendor(d), c.gen ?? genOf(modelById(d.model)))?.perCore) ?? 1;
+};
+// vCPU of the working CPUs: their cores at the speed of one core.
+export const installedVcpu = (d: Device): number => Math.round(installedCores(d) * perCoreOf(d) * 100) / 100;
 
 // Usable GB of the array: all drives, half for mirrors, all but one or two for parity.
 export function raidUsable(d: Device): number {
@@ -298,12 +322,12 @@ function failedDown(d: Device): boolean {
 }
 
 export function deviceHealth(s: GameState, deviceId: string): {
-  state: "ok" | "booting" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "hung" | "nopower" | "off"; failed: Component[]; worn: Component[];
+  state: "ok" | "booting" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "hung" | "stuck" | "locked" | "nopower" | "off"; failed: Component[]; worn: Component[];
 } {
   const d = s.devices.find((x) => x.id === deviceId)!;
   const failed = d.components.filter((c) => c.failedAt !== null);
   const worn = d.components.filter((c) => c.failedAt === null && s.hour - c.installedAt >= COMPONENTS[c.kind].life * HOURS_PER_YEAR);
-  const state = !d.on ? "off" : d.rackId && !pluggedIn(d) && !failedDown(d) ? "nopower" : booting(s, d) ? "booting" : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.hung ? "hung" : d.rebuild ? "rebuilding"
+  const state = !d.on ? "off" : d.rackId && !pluggedIn(d) && !failedDown(d) ? "nopower" : booting(s, d) ? "booting" : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.hung ? "hung" : d.stuck ? "stuck" : d.locked ? "locked" : d.rebuild ? "rebuilding"
     : failed.some((c) => c.kind === "fan") ? "hot" : failed.length ? "degraded" : "ok";
   return { state, failed, worn };
 }
@@ -315,7 +339,7 @@ export const booting = (s: GameState, d: Device) => d.on && (d.bootUntil ?? 0) >
 // A device works when it has power, is switched on, and no failure or power-off swap has taken it down.
 export function working(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
-  if (!d || !d.on || d.hung || booting(s, d) || !powered(s, deviceId) || failedDown(d)) return false;
+  if (!d || !d.on || d.hung || d.stuck || d.locked || booting(s, d) || !powered(s, deviceId) || failedDown(d)) return false;
   const swap = d.maintenance && d.components.find((c) => c.id === d.maintenance!.componentId);
   return !(swap && !hotSwappable(d, swap));
 }
@@ -336,7 +360,7 @@ export function freePositions(s: GameState, locationId: string): number[] {
   return Array.from({ length: loc.positions }, (_, i) => i + 1).filter((p) => !taken.has(p));
 }
 
-const KIND_ORDER: DeviceKind[] = ["server", "switch", "firewall", "patch", "ups", "pdu", "gateway", "part"];
+const KIND_ORDER: DeviceKind[] = ["server", "switch", "firewall", "patch", "ups", "pdu", "kvm", "console", "oob", "gateway", "part"];
 
 // A zone's stored devices grouped by model and brand.
 export function storageStacks(s: GameState, locationId: string): { model: string; brand: string; ids: string[] }[] {
@@ -368,14 +392,15 @@ export function connectError(s: GameState, a: End, b: End): string | null {
   const db = s.devices.find((x) => x.id === b.device);
   if (!da || !db) return "error.unknownDevice";
   const ma = modelById(da.model), mb = modelById(db.model);
-  const pa = ma.ports[a.port], pb = mb.ports[b.port];
-  if (!pa || !pb) return "error.unknownPort";
+  const pa = ma.ports[a.port], pb = mb.ports[b.port], oa = oobPortOf(ma, a.port), ob = oobPortOf(mb, b.port);
+  if (!(pa ?? oa) || !(pb ?? ob)) return "error.unknownPort";
   if (da.id === db.id) return "error.sameDevice";
   if (peerOf(s, a) || peerOf(s, b)) return "error.portInUse";
   const la = locationOf(s, da), lb = locationOf(s, db);
   if (!la || !lb) return "error.notMounted";
   if (s.racks.some((r) => (r.id === da.rackId || r.id === db.rackId) && r.arriveAt !== null)) return "error.rackMoving";
   if (la.id !== lb.id) return "error.otherLocation";
+  if (oa || ob) return oobFits(ma, (oa ?? pa)!, mb, (ob ?? pb)!) ? null : "error.mediaMismatch";
   if (pa.media !== pb.media) return "error.mediaMismatch";
   // A patch panel is passive, so the speed check happens between the devices on either side of it.
   if (ma.kind !== "patch" && mb.kind !== "patch" && pa.gbit !== pb.gbit) return "error.speedMismatch";

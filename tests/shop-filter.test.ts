@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { shopModels } from "../src/sim/10-catalog/hardware";
-import { CORES, matchesFilter, NO_FILTER, RAMS } from "../src/ui/apps/shop/filter";
+import { brandFrom, brandsOf, brandWatts, shopModels, vendorsOf } from "../src/sim/10-catalog/hardware";
+import { unitPrice } from "../src/sim/90-actions/hardware";
+import { CORES, matchesFilter, NO_FILTER, RAMS, sortItems, type Sort } from "../src/ui/apps/shop/filter";
 
 const models = (year: number) => shopModels(year).filter((m) => m.server);
 const left = (year: number, p: object) => models(year).filter((m) => matchesFilter(m, { ...NO_FILTER, ...p }));
@@ -30,5 +31,37 @@ describe("shop filter", () => {
   });
   it("sells no towers", () => {
     expect(left(2005, {}).every((m) => m.height > 0)).toBe(true);
+  });
+});
+
+describe("shop sort", () => {
+  const items = shopModels(2008).filter((m) => m.server).flatMap((model) => brandsOf(model).map((brand) => ({ model, brand })));
+  const price = (it: (typeof items)[number]) => unitPrice({ model: it.model.id, brand: it.brand, qty: 1, vendor: vendorsOf(it.model)[0] }, 2008);
+  const col = (sort: Sort, f: (it: (typeof items)[number]) => number) => sortItems(items, sort, 2008).map(f);
+  const ascending = (a: number[]) => a.every((v, i) => !i || a[i - 1] <= v);
+
+  it("keeps the list for the default order and does not change it", () => {
+    const copy = [...items];
+    expect(sortItems(items, "default", 2008)).toEqual(items);
+    sortItems(items, "priceLow", 2008);
+    expect(items).toEqual(copy);
+  });
+  it("orders by price both ways", () => {
+    expect(ascending(col("priceLow", price))).toBe(true);
+    expect(ascending(col("priceHigh", price).map((p) => -p))).toBe(true);
+    expect(new Set(col("priceLow", price)).size).toBeGreaterThan(1);
+  });
+  it("lists the newest release first", () => {
+    const from = (it: (typeof items)[number]) => brandFrom(it.model, it.brand);
+    expect(ascending(col("newest", from).map((v) => -v))).toBe(true);
+    expect(new Set(col("newest", from)).size).toBeGreaterThan(1);
+  });
+  it("lists the lowest power first", () => {
+    const watts = (it: (typeof items)[number]) => brandWatts(it.model, it.brand);
+    expect(ascending(col("power", watts))).toBe(true);
+    const same = items.filter((it) => it.model.id === "g2-compute");
+    const order = sortItems(same, "power", 2008).map((it) => it.brand);
+    expect(order.indexOf("Hewlett-Packet")).toBeLessThan(order.indexOf("Dwell"));
+    expect(order.indexOf("Dwell")).toBeLessThan(order.indexOf("SuperMacro"));
   });
 });
