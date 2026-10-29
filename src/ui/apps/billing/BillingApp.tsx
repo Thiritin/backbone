@@ -125,7 +125,7 @@ const reminder = (step: number) => STEPS[step].key === "collections" ? "Hand to 
 function domainMenu(name: string, c: Customer | undefined, gone: boolean): MenuEntry[] {
   const { act, openApp } = useStore.getState();
   return [
-    !gone && { label: "Renew", run: () => act((s) => renewDomain(s, name)) },
+    !gone && { label: "Renew", run: () => act(renewDomain, name) },
     null,
     c && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: c.id }) },
   ];
@@ -136,8 +136,8 @@ function invoiceMenu(inv: Invoice, hour: number, onWriteOff: (i: Invoice) => voi
   const { act, openApp } = useStore.getState();
   const step = dueStep(inv, hour), unpaid = inv.status === "open" || inv.status === "overdue";
   return [
-    unpaid && step !== null && { label: reminder(step), run: () => act((s) => sendReminder(s, inv.id)) },
-    unpaid && inv.status === "overdue" && { label: inv.suspended ? "Resume services" : "Suspend services", run: () => act((s) => suspendServices(s, inv.id, !inv.suspended)) },
+    unpaid && step !== null && { label: reminder(step), run: () => act(sendReminder, inv.id) },
+    unpaid && inv.status === "overdue" && { label: inv.suspended ? "Resume services" : "Suspend services", run: () => act(suspendServices, inv.id, !inv.suspended) },
     unpaid && { label: "Write off...", run: () => onWriteOff(inv) },
     null,
     { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: inv.customerId }) },
@@ -148,7 +148,7 @@ function WriteOff({ inv, customer, onClose }: { inv: Invoice; customer: string; 
   const act = useStore((s) => s.act);
   return (
     <Confirm title={`Write off invoice ${inv.number}?`} text={`${customer} will not be asked to pay ${euroCents(invoiceTotal(inv))}.`} action="Write off"
-      onCancel={onClose} onConfirm={() => { act((s) => writeOff(s, inv.id)); onClose(); }} />
+      onCancel={onClose} onConfirm={() => { act(writeOff, inv.id); onClose(); }} />
   );
 }
 
@@ -206,7 +206,7 @@ function Automation() {
   const game = useStore((s) => s.game);
   const rules = game.billingRules;
   const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
-  const set = (r: Partial<BillingRules>) => act((s) => setBillingRules(s, r));
+  const set = (r: Partial<BillingRules>) => act(setBillingRules, r);
   const auto = rulesAutomated(game);
   const clerks = game.staff.filter((e) => e.role === "bookkeeper" || e.role === "accountant").map((e) => e.name);
   return (
@@ -289,7 +289,7 @@ function Detail({ inv, customer, hour, menu }: { inv: Invoice; customer: string;
       )}
       {unpaid && step !== null && (
         <div className="fin-actions">
-          <button className="btn primary" onClick={() => act((s) => sendReminder(s, inv.id))}>
+          <button className="btn primary" onClick={() => act(sendReminder, inv.id)}>
             <Mail />{reminder(step)}
           </button>
         </div>

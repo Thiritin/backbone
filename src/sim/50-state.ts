@@ -180,7 +180,16 @@ export interface GameState {
   nextNode: number;
   nextVm: number;
   nextHostNo: number;
+  // Every successful player action, oldest first, so the run can be replayed (90-actions/index.ts).
+  log: LogEntry[];
+  // The weekly challenge this game was started for (10-catalog/challenges.ts), null for a free game.
+  challenge: string | null;
+  // Leaderboard scores (80-business/scores.ts): net worth at the end of 2007, the hour level 3 was reached and the summed hourly mean happiness.
+  score: Score;
 }
+
+export interface LogEntry { hour: number; name: string; args: unknown[] }
+export interface Score { netWorth: number | null; level3: number | null; happySum: number; happyHours: number }
 
 // Fields every new device starts with: fresh components installed at hour `at` (the model's parts unless partList says otherwise), powered on, RAID 1 with two or more drives.
 export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[]) {
@@ -245,6 +254,7 @@ export const newGame = (seed: number): GameState => ({
   ips: newIps(),
   news: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
+  log: [], challenge: null, score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 },
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

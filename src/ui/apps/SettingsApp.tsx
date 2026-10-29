@@ -32,14 +32,14 @@ export function SettingsApp() {
   });
   const commitName = () => {
     if (name.trim() === game.company.name) setName(game.company.name);
-    else setName(act((s) => setCompany(s, { name })).ok ? name.trim() : game.company.name);
+    else setName(act(setCompany, { name }).ok ? name.trim() : game.company.name);
   };
   return (
     <div className="settings" ref={root}>
       <h2>Company</h2>
       <div className="settings-group settings-company">
         <CompanyFields company={{ ...game.company, name }} onCommit={commitName}
-          onChange={(p) => (p.name !== undefined ? setName(p.name) : act((s) => setCompany(s, p)))} />
+          onChange={(p) => (p.name !== undefined ? setName(p.name) : act(setCompany, p))} />
       </div>
       <EmailSettings />
       <h2>Appearance</h2>

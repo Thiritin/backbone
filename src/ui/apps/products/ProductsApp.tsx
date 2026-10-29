@@ -141,8 +141,8 @@ function HaCard({ game, cluster }: { game: GameState; cluster: Cluster }) {
               <dt>{label}</dt>
               <dd>
                 <div className="seg" role="group" aria-label={label}>
-                  <button aria-pressed={!cluster.ha[k]} onClick={() => act((g) => setHa(g, cluster.id, k, false))}>Off</button>
-                  <button aria-pressed={cluster.ha[k]} disabled={!can(k)} onClick={() => act((g) => setHa(g, cluster.id, k, true))}>On</button>
+                  <button aria-pressed={!cluster.ha[k]} onClick={() => act(setHa, cluster.id, k, false)}>Off</button>
+                  <button aria-pressed={cluster.ha[k]} disabled={!can(k)} onClick={() => act(setHa, cluster.id, k, true)}>On</button>
                 </div>
               </dd>
             </div>
@@ -187,8 +187,8 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
         <span className="grow" />
         <ControlPlanePill game={game} cluster={cluster} />
         <div className="seg" role="group" aria-label="Placement">
-          <button aria-pressed={cluster.placement === "pack"} onClick={() => act((g) => setPlacement(g, cluster.id, "pack"))}>Pack</button>
-          <button aria-pressed={cluster.placement === "spread"} onClick={() => act((g) => setPlacement(g, cluster.id, "spread"))}>Spread</button>
+          <button aria-pressed={cluster.placement === "pack"} onClick={() => act(setPlacement, cluster.id, "pack")}>Pack</button>
+          <button aria-pressed={cluster.placement === "spread"} onClick={() => act(setPlacement, cluster.id, "spread")}>Spread</button>
         </div>
       </div>
 
@@ -240,7 +240,7 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
         )}
         {free.length > 0 && (
           <div className="fin-card-b">
-            <div className="fin-pills">{free.map((d) => <button key={d.id} className="btn" onClick={() => act((g) => addNode(g, cluster.id, d.id))}><Plus />{devName(d)}</button>)}</div>
+            <div className="fin-pills">{free.map((d) => <button key={d.id} className="btn" onClick={() => act(addNode, cluster.id, d.id)}><Plus />{devName(d)}</button>)}</div>
           </div>
         )}
       </section>
@@ -256,7 +256,7 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
           <div className="fin-card-b">
             <div className="fin-pills">
               {devices.filter((d) => d.id !== cluster.controlPlane && fitsControlPlane(game, cluster, d.id)).map((d) => (
-                <button key={d.id} className="btn" onClick={() => act((g) => moveControlPlane(g, cluster.id, d.id))}>Move to {devName(d)}</button>
+                <button key={d.id} className="btn" onClick={() => act(moveControlPlane, cluster.id, d.id)}>Move to {devName(d)}</button>
               ))}
             </div>
           </div>
@@ -269,7 +269,7 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
           <div className="seg" role="group" aria-label="Schedule">
             {(["off", "daily", "weekly"] as BackupEvery[]).map((e) => (
               <button key={e} aria-pressed={cluster.backup.every === e} disabled={e !== "off" && !cluster.backup.targetId && !others.length}
-                onClick={() => act((g) => setBackup(g, cluster.id, e === "off" ? cluster.backup.targetId : cluster.backup.targetId ?? others[0].id, e))}>
+                onClick={() => act(setBackup, cluster.id, e === "off" ? cluster.backup.targetId : cluster.backup.targetId ?? others[0].id, e)}>
                 {e === "off" ? "Off" : e === "daily" ? "Daily" : "Weekly"}
               </button>
             ))}
@@ -277,7 +277,7 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
           {others.length > 0 && (
             <div className="seg" role="group" aria-label="Backup target">
               {others.map((c) => (
-                <button key={c.id} aria-pressed={cluster.backup.targetId === c.id} onClick={() => act((g) => setBackup(g, cluster.id, c.id, cluster.backup.every))}>{c.name} · {c.az}</button>
+                <button key={c.id} aria-pressed={cluster.backup.targetId === c.id} onClick={() => act(setBackup, cluster.id, c.id, cluster.backup.every)}>{c.name} · {c.az}</button>
               ))}
             </div>
           )}

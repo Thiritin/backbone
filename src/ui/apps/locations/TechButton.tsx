@@ -46,7 +46,7 @@ export function TechButton({ game, deviceId, kind, componentId = null, partId = 
     return (
       <>
         <span className="pill accent">Queued</span>
-        <button className="btn" onClick={() => act((g) => cancelOperation(g, queued.id))}>Cancel</button>
+        <button className="btn" onClick={() => act(cancelOperation, queued.id)}>Cancel</button>
       </>
     );
   }
@@ -54,7 +54,7 @@ export function TechButton({ game, deviceId, kind, componentId = null, partId = 
   const slot = loc && nextSlot(game, loc.id, taskFor(game, kind, componentId), urgent(game, { kind, deviceId, componentId }));
   if (!slot) return null;
   return (
-    <button className="btn" onClick={() => act((g) => queueOperation(g, kind, deviceId, componentId, partId))}>
+    <button className="btn" onClick={() => act(queueOperation, kind, deviceId, componentId, partId)}>
       <Wrench />{slot.name.split(" ")[0]}{slot.onCall && " (on call)"}, <span className="num">{slotTime(game.hour, slot.hour)}</span>
     </button>
   );
@@ -64,10 +64,10 @@ export function TechButton({ game, deviceId, kind, componentId = null, partId = 
 export function techItem(game: GameState, deviceId: string, kind: OpKind, componentId: string | null = null, partId: string | null = null): MenuItem | undefined {
   const act = useStore.getState().act;
   const queued = game.techOps.find((o) => o.deviceId === deviceId && o.kind === kind && o.componentId === componentId && (o.partId ?? null) === partId);
-  if (queued) return { label: `Cancel queued ${opLabel(game, queued).toLowerCase()}`, run: () => act((g) => cancelOperation(g, queued.id)) };
+  if (queued) return { label: `Cancel queued ${opLabel(game, queued).toLowerCase()}`, run: () => act(cancelOperation, queued.id) };
   const d = game.devices.find((x) => x.id === deviceId), loc = d && locationOf(game, d);
   const slot = loc && nextSlot(game, loc.id, taskFor(game, kind, componentId), urgent(game, { kind, deviceId, componentId }));
   if (!slot) return undefined;
   const what = opLabel(game, { kind, deviceId, componentId, partId } as TechOp);
-  return { label: `${what} by ${slot.name.split(" ")[0]}${slot.onCall ? " (on call)" : ""}, ${slotTime(game.hour, slot.hour)}`, run: () => act((g) => queueOperation(g, kind, deviceId, componentId, partId)) };
+  return { label: `${what} by ${slot.name.split(" ")[0]}${slot.onCall ? " (on call)" : ""}, ${slotTime(game.hour, slot.hour)}`, run: () => act(queueOperation, kind, deviceId, componentId, partId) };
 }

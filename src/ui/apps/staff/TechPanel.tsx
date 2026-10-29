@@ -24,7 +24,7 @@ export function TechPanel({ game, e }: { game: GameState; e: Employee }) {
       <h3>Location</h3>
       <div className="seg" role="group" aria-label="Location">
         {game.locations.map((l) => (
-          <button key={l.id} aria-pressed={e.location === l.id} onClick={() => act((s) => setTechLocation(s, e.id, l.id))}><MapPin />{l.name}</button>
+          <button key={l.id} aria-pressed={e.location === l.id} onClick={() => act(setTechLocation, e.id, l.id)}><MapPin />{l.name}</button>
         ))}
       </div>
       <h3>Queue</h3>
@@ -38,7 +38,7 @@ export function TechPanel({ game, e }: { game: GameState; e: Employee }) {
               <span className="st-cost">{d ? devName(d) : ""}</span>
               {o.auto && <span className="pill">Rule</span>}
               <span className="grow" />
-              <button className="btn" onClick={() => act((s) => cancelOperation(s, o.id))}>Cancel</button>
+              <button className="btn" onClick={() => act(cancelOperation, o.id)}>Cancel</button>
             </div>
           );
         })}
@@ -56,7 +56,7 @@ export function TechPanel({ game, e }: { game: GameState; e: Employee }) {
               <span className="st-cost num">{calls} {calls === 1 ? "call-out" : "call-outs"}</span>
               <span className="st-cost num">{euroCents((p?.allowance ?? 0) + (p?.callPay ?? 0))}</span>
               <input type="checkbox" role="switch" className="switch" aria-label={`${x.name} on call`} checked={game.onCall.roster.includes(x.id)}
-                onChange={(ev) => act((s) => setOnCall(s, x.id, ev.target.checked))} />
+                onChange={(ev) => act(setOnCall, x.id, ev.target.checked)} />
             </div>
           );
         })}
@@ -82,7 +82,7 @@ export function TechPanel({ game, e }: { game: GameState; e: Employee }) {
             <span>{label}</span>
             <span className="grow" />
             <input type="checkbox" role="switch" className="switch" aria-label={label} checked={game.techRules[k]}
-              onChange={(ev) => act((s) => setTechRules(s, { [k]: ev.target.checked }))} />
+              onChange={(ev) => act(setTechRules, { [k]: ev.target.checked })} />
           </div>
         ))}
       </div>

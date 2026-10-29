@@ -50,9 +50,9 @@ function ticketMenu(game: GameState, tk: Ticket): MenuEntry[] {
   const request = tk.kind === "upgrade" ? game.sales.requests.find((r) => r.ticketId === tk.id) : undefined;
   const customer = game.customers.find((c) => c.id === tk.customerId);
   return [
-    tk.unread && { label: "Mark as read", run: () => act((s) => readTicket(s, tk.id)) },
-    canEscalate(tk.kind) && tk.status === "open" && { label: "Escalate", disabled: locked, run: () => act((s) => escalateTicket(s, tk.id)) },
-    !isFinal(tk) && { label: tk.kind === "order" ? "Decline" : tk.notice ? "Ignore" : "Close", disabled: locked, run: () => act((s) => closeTicket(s, tk.id)) },
+    tk.unread && { label: "Mark as read", run: () => act(readTicket, tk.id) },
+    canEscalate(tk.kind) && tk.status === "open" && { label: "Escalate", disabled: locked, run: () => act(escalateTicket, tk.id) },
+    !isFinal(tk) && { label: tk.kind === "order" ? "Decline" : tk.notice ? "Ignore" : "Close", disabled: locked, run: () => act(closeTicket, tk.id) },
     null,
     customer && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: customer.id }) },
     request && { label: "Open request", run: () => openApp("Support", { kind: "request", id: request.id }) },
@@ -132,7 +132,7 @@ export function SupportApp() {
 
   const open = (tk: Ticket) => {
     setSel(tk.id);
-    if (tk.unread) act((s) => readTicket(s, tk.id));
+    if (tk.unread) act(readTicket, tk.id);
   };
   useFocus("Support", (f) => {
     const tk = game.tickets.find((x) => x.id === f.id), r = game.sales.requests.find((x) => x.id === f.id);
@@ -287,10 +287,10 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
       {r.spec ? <CustomCompose tk={tk} r={r} /> : !isFinal(tk) && (
         <div className="compose">
           <div className="actions-row">
-            <button className="btn ghost" disabled={locked} onClick={() => act((s) => resolveTicket(s, tk.id, "reject"))}><CircleX />Decline</button>
+            <button className="btn ghost" disabled={locked} onClick={() => act(resolveTicket, tk.id, "reject")}><CircleX />Decline</button>
             <span className="grow" />
             <span className="sales-total">Revenue <span className="num">{euroCents(r.quote ?? r.reference)}</span> a month</span>
-            <button className="btn primary" disabled={locked || missing.length > 0} onClick={() => act((s) => resolveTicket(s, tk.id, "accept"))}><Check />Accept order</button>
+            <button className="btn primary" disabled={locked || missing.length > 0} onClick={() => act(resolveTicket, tk.id, "accept")}><Check />Accept order</button>
           </div>
         </div>
       )}
@@ -331,7 +331,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
             <span>Assign</span>
             <span className="seg wrap" role="group" aria-label="Assign">
               {[{ id: null, name: "Nobody" }, ...agents].map((a) => (
-                <button key={a.id ?? "none"} aria-pressed={tk.assignee === a.id} onClick={() => act((s) => assignTicket(s, tk.id, a.id))}>{a.name}</button>
+                <button key={a.id ?? "none"} aria-pressed={tk.assignee === a.id} onClick={() => act(assignTicket, tk.id, a.id)}>{a.name}</button>
               ))}
             </span>
           </div>
@@ -415,15 +415,15 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
           )}
           <div className="actions-row">
             {actionsOf(tk).filter((a) => a !== "revert" || tk.topic === "price").map((a) => (
-              <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => act((s) => resolveTicket(s, tk.id, a))}>
+              <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => act(resolveTicket, tk.id, a)}>
                 {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}{a === "pay" && <span className="num">({euroCents(Number(p.ransom))})</span>}{a === "offerOnce" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updateOnce"))})</span>}{a === "offerManaged" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updates"))} a month)</span>}
               </button>
             ))}
             <span className="grow" />
-            <button className="btn ghost" disabled={locked} onClick={() => act((s) => closeTicket(s, tk.id))}><X />{tk.notice ? "Ignore" : "Close"}</button>
-            {tk.status === "waiting" && <button className="btn primary" disabled={locked} onClick={() => act((s) => resolveTicket(s, tk.id))}><CircleCheck />Resolve</button>}
+            <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? "Ignore" : "Close"}</button>
+            {tk.status === "waiting" && <button className="btn primary" disabled={locked} onClick={() => act(resolveTicket, tk.id)}><CircleCheck />Resolve</button>}
             {tk.status === "open" && templatesOf(tk).length > 0 && (
-              <button className="btn primary" disabled={locked || !tpl} onClick={() => act((s) => replyTicket(s, tk.id, tpl!))}><Send />Send reply</button>
+              <button className="btn primary" disabled={locked || !tpl} onClick={() => act(replyTicket, tk.id, tpl!)}><Send />Send reply</button>
             )}
           </div>
         </div>

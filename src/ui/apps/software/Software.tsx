@@ -23,13 +23,13 @@ export function SoftwareGrid({ game, machineId }: { game: GameState; machineId: 
         const open = () => openApp("Products", { kind: "cluster", id: x.cluster.id });
         const join = joinable(game, machineId, x);
         const due = x.doneAt === null && updateDue(game, x.cluster);
-        const update = () => act((g) => updateSoftware(g, x.cluster.id));
+        const update = () => act(updateSoftware, x.cluster.id);
         const entries = (): MenuEntry[] => [
           { label: "Open", run: open },
           due && { label: "Update", run: update },
-          join.length > 0 && { label: "Join cluster", items: join.map((c) => ({ label: c.name, run: () => act((g) => addNode(g, c.id, machineId)) })) },
+          join.length > 0 && { label: "Join cluster", items: join.map((c) => ({ label: c.name, run: () => act(addNode, c.id, machineId) })) },
           null,
-          { label: "Uninstall", run: () => act((g) => uninstallSoftware(g, machineId)) },
+          { label: "Uninstall", run: () => act(uninstallSoftware, machineId) },
         ];
         return (
           <div key={x.id} className="sw-cell">
@@ -62,7 +62,7 @@ export function SoftwarePicker({ machineId }: { machineId: string }) {
   const device = game.devices.find((d) => d.id === machineId), vm = game.workloads.find((w) => w.id === machineId);
   if (!device && !vm) return null;
   const name = device ? devName(device) : vmLabel(game, vm!).name;
-  const pick = (id: string) => { if (act((g) => installSoftware(g, machineId, id)).ok) close(); };
+  const pick = (id: string) => { if (act(installSoftware, machineId, id).ok) close(); };
   const blocked = (id: string) => installBlock(game, machineId, id) !== null;
   return createPortal(
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>

@@ -54,7 +54,7 @@ function ShelfPick({ game, loc, place, onDone }: { game: GameState; loc: Locatio
               <div className="loc-shop-name">{st.brand} {m.name}</div>
               <div className="loc-shop-specs num">{st.ids.length} in storage</div>
             </div>
-            <button className="btn primary" onClick={() => act((s) => mountDevice(s, st.ids[0], shelfId(loc.id), place)).ok && onDone(st.ids[0])}>Mount</button>
+            <button className="btn primary" onClick={() => act(mountDevice, st.ids[0], shelfId(loc.id), place).ok && onDone(st.ids[0])}>Mount</button>
           </div>
         );
       })}

@@ -76,8 +76,8 @@ function SlotCard({ device, slot, wear, spares, az, act }: { device: Device; slo
           <h3>{partLabel(c)}</h3>
           {busy ? <span className="pill">Work under way</span> : <span className={`pill ${w}`}>{w === "bad" ? "Failed" : w === "warn" ? "Worn" : "OK"}</span>}
           <span className="grow" />
-          {!busy && <button className="btn" disabled={!spare} onClick={() => act((g) => replaceComponent(g, device.id, c.id))}>Replace</button>}
-          {!busy && removable && <button className="btn" onClick={() => act((g) => removePart(g, device.id, c.id))}>Remove</button>}
+          {!busy && <button className="btn" disabled={!spare} onClick={() => act(replaceComponent, device.id, c.id)}>Replace</button>}
+          {!busy && removable && <button className="btn" onClick={() => act(removePart, device.id, c.id)}>Remove</button>}
         </div>
         <Facts rows={[
           ["Slot", <span className="num">{slotName(slot)}</span>],
@@ -97,7 +97,7 @@ function SlotCard({ device, slot, wear, spares, az, act }: { device: Device; slo
         {busy ? <span className="loc-muted">Work under way</span> : offers.length ? offers.map((d) => {
           const spec = spareSpec(d), n = fitting.filter((x) => samePart(spareSpec(x), spec)).length;
           return (
-            <button key={d.id} className="btn" onClick={() => act((g) => installPart(g, device.id, d.id))}>
+            <button key={d.id} className="btn" onClick={() => act(installPart, device.id, d.id)}>
               {partLabel(spec)}<span className="num">{euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour)))}</span>{n > 1 && <span className="num">× {n}</span>}
             </button>
           );

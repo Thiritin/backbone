@@ -94,7 +94,7 @@ function Channels() {
         if (active) state = <span className="pill ok">Active</span>;
         else if (def!.needs && !owns(game, def!.needs)) state = <span className="pill">Needs {CHANNEL_NAME[def!.needs]}</span>;
         else if (year < def!.fromYear) state = <span className="pill">From <span className="num">{def!.fromYear}</span></span>;
-        else state = <button className="btn primary" disabled={game.cash < def!.setup} onClick={() => act((s) => setUpChannel(s, id as OwnedChannel))}>Set up</button>;
+        else state = <button className="btn primary" disabled={game.cash < def!.setup} onClick={() => act(setUpChannel, id as OwnedChannel)}>Set up</button>;
         return (
           <div key={id} className="shop-card">
             <div className="shop-name"><strong>{name}</strong><span>{text}</span></div>
@@ -135,9 +135,9 @@ function CampaignCard({ channel }: { channel: CampaignChannel }) {
     const p = next.profiles ?? profiles, d = next.discount ?? discount;
     const b = next.budget === undefined ? running?.budget ?? null : next.budget;
     if (b === null) {
-      if (running) act((s) => stopCampaign(s, channel));
+      if (running) act(stopCampaign, channel);
       setDraft({ profiles: p, discount: d });
-    } else if (p.length) act((s) => setCampaign(s, channel, p, b, d));
+    } else if (p.length) act(setCampaign, channel, p, b, d);
   };
   const toggle = (p: Profile) => apply({ profiles: profiles.includes(p) ? profiles.filter((x) => x !== p) : [...profiles, p] });
 
@@ -246,9 +246,9 @@ function Reviews() {
                 {active && <span className="pill ok">Active</span>}
                 <span className="grow" />
                 {active
-                  ? <button className="btn" onClick={() => act((s) => setReviewPlatform(s, null))}>Cancel</button>
+                  ? <button className="btn" onClick={() => act(setReviewPlatform, null)}>Cancel</button>
                   : p.fee > 0 && !manager ? <span className="pill">Needs a marketing manager</span>
-                  : <button className="btn primary" onClick={() => act((s) => setReviewPlatform(s, id))}>Sign up</button>}
+                  : <button className="btn primary" onClick={() => act(setReviewPlatform, id)}>Sign up</button>}
               </div>
             </div>
           );
@@ -296,7 +296,7 @@ function FairCard({ d }: { d: FairDate }) {
   else if (d.start <= game.hour) state = <span className="pill">Under way</span>;
   else if (level < fair.level) state = <span className="pill">Needs level <span className="num">{fair.level}</span></span>;
   else if (!game.staff.length) state = <span className="pill">Needs an employee</span>;
-  else state = <button className="btn primary" disabled={!who || game.cash < cost} onClick={() => who && act((s) => bookFair(s, fair.id, who))}>Book</button>;
+  else state = <button className="btn primary" disabled={!who || game.cash < cost} onClick={() => who && act(bookFair, fair.id, who)}>Book</button>;
   return (
     <div className="shop-card">
       <div className="shop-name"><strong>{fair.name}</strong><span>{fair.city} · {formatDay(d.start)}{fair.days > 1 && <> to {formatDay(d.end - 24)}</>}</span></div>

@@ -60,17 +60,17 @@ export function AddressRows({ game, id }: { game: GameState; id: string }) {
         {own.length ? own.map((a) => (
           <span key={a.id} className="net-addr">
             <span className="num">{a.ip}</span>
-            {!fixed && <button className="btn ghost" onClick={() => act((g) => assignAddress(g, a.id, null))}>Unassign</button>}
+            {!fixed && <button className="btn ghost" onClick={() => act(assignAddress, a.id, null)}>Unassign</button>}
           </span>
         )) : v4 ? <><span className="num">{v4.ip}</span><span className="pill">Shared</span></> : "None"}
-        {canBuy(game, loc) && <button className="btn" onClick={() => act((g) => addAddress(g, id, 4))}>Add</button>}
+        {canBuy(game, loc) && <button className="btn" onClick={() => act(addAddress, id, 4)}>Add</button>}
       </dd>
     </div>
     <div>
       <dt>IPv6</dt>
       <dd>
         {v6 ? <span className="num">{v6}</span> : "None"}
-        {!v6 && v6Offered(game, loc) && <button className="btn" onClick={() => act((g) => addAddress(g, id, 6))}>Add</button>}
+        {!v6 && v6Offered(game, loc) && <button className="btn" onClick={() => act(addAddress, id, 6)}>Add</button>}
       </dd>
     </div>
   </>;
@@ -99,8 +99,8 @@ export function AddressList({ game, loc }: { game: GameState; loc: Location }) {
           </div>
           <span className="num">{euroCents(price)} per IPv4 per month</span>
           <span className="grow" />
-          <button className="btn primary" onClick={() => act((g) => buyAddresses(g, loc.id, 4, count))}>Buy IPv4</button>
-          {loc.dc && v6Offered(game, loc) && <button className="btn" onClick={() => act((g) => buyAddresses(g, loc.id, 6, count))}>Buy IPv6</button>}
+          <button className="btn primary" onClick={() => act(buyAddresses, loc.id, 4, count)}>Buy IPv4</button>
+          {loc.dc && v6Offered(game, loc) && <button className="btn" onClick={() => act(buyAddresses, loc.id, 6, count)}>Buy IPv6</button>}
         </div>
       )}
       {list.length ? (
@@ -115,9 +115,9 @@ export function AddressList({ game, loc }: { game: GameState; loc: Location }) {
                 <td><RepCell a={a} /></td>
                 <td className="r">
                   {a.listed && a.delistAt === null && !(a.source === "line" && dynamicLine(game)) &&
-                    <button className="btn" onClick={() => act((g) => requestDelist(g, a.id))}>Delist</button>}
+                    <button className="btn" onClick={() => act(requestDelist, a.id)}>Delist</button>}
                   {!a.holder && (a.source === "provider" || a.source === "lineExtra") &&
-                    <button className="btn" onClick={() => act((g) => releaseAddress(g, a.id))}>Release</button>}
+                    <button className="btn" onClick={() => act(releaseAddress, a.id)}>Release</button>}
                 </td>
               </tr>
             ))}
@@ -171,7 +171,7 @@ export function Ripe({ game }: { game: GameState }) {
               <td className="num r">{game.ips.addresses.filter((a) => a.blockId === b.id && a.holder).length}</td>
               <td>
                 <div className="seg" role="group" aria-label="Announced from">
-                  {dcs.map((l) => <button key={l.id} aria-pressed={b.locationId === l.id} onClick={() => b.locationId !== l.id && act((g) => announceBlock(g, b.id, l.id))}>{l.az}</button>)}
+                  {dcs.map((l) => <button key={l.id} aria-pressed={b.locationId === l.id} onClick={() => b.locationId !== l.id && act(announceBlock, b.id, l.id)}>{l.az}</button>)}
                 </div>
               </td>
             </tr>

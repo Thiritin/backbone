@@ -27,7 +27,7 @@ export function migrateEntries(game: GameState, w: Workload): MenuEntry[] {
   const loc = d && locationOf(game, d), tech = !!loc && techsAt(game, loc.id, OP_TASK.migrate).length > 0;
   const label = (t: (typeof targets)[number]) => `${t.panel} on ${t.name}, ${hoursText(t.hours)}`;
   return [
-    { label: "Migrate to", items: targets.map((t) => ({ label: label(t), run: () => act((g) => migrateWebspace(g, w.id, t.clusterId)) })) },
-    tech && { label: "Migrate by technician to", items: targets.map((t) => ({ label: label(t), run: () => act((g) => queueMigration(g, w.id, t.clusterId)) })) },
+    { label: "Migrate to", items: targets.map((t) => ({ label: label(t), run: () => act(migrateWebspace, w.id, t.clusterId) })) },
+    tech && { label: "Migrate by technician to", items: targets.map((t) => ({ label: label(t), run: () => act(queueMigration, w.id, t.clusterId) })) },
   ];
 }

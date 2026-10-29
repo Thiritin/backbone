@@ -29,7 +29,7 @@ function Ship({ game, ids, onDone }: { game: GameState; ids: string[]; onDone: (
   const [to, setTo] = useState(targets[0].id), [n, setN] = useState(ids.length);
   const dest = targets.find((l) => l.id === to)!, trip = travelCost(game, from, to);
   const ship = () => {
-    if (!act((s) => shipStock(s, ids.slice(0, n), to)).ok) return;
+    if (!act(shipStock, ids.slice(0, n), to).ok) return;
     notify("Locations", `Shipping to ${dest.az}`, `${n} ${n === 1 ? "unit" : "units"}`);
     onDone();
   };
@@ -66,14 +66,14 @@ function MountSheet({ game, stack, onClose, onMounted }: { game: GameState; stac
     let k = 0;
     while (k < n && free.includes(place + k)) k++;
     const id = stack.ids[0];
-    if (!k || !act((s) => (k === 1 ? mountDevice(s, id, shelfId(zone), place) : mountStack(s, stack.model, stack.brand, shelfId(zone), k, place))).ok) return;
+    if (!k || !(k === 1 ? act(mountDevice, id, shelfId(zone), place) : act(mountStack, stack.model, stack.brand, shelfId(zone), k, place)).ok) return;
     onClose();
     onMounted?.(shelfId(zone), id);
   };
   const mount = (unit: number) => {
     if (!rack) return;
     const k = mountMax(game, rack.id, h, n, unit), from = mountFrom(game, rack.id, h, k, unit), id = stack.ids[0];
-    if (from === undefined || !act((s) => (k === 1 ? mountDevice(s, id, rack.id, from) : mountStack(s, stack.model, stack.brand, rack.id, k, from))).ok) return;
+    if (from === undefined || !(k === 1 ? act(mountDevice, id, rack.id, from) : act(mountStack, stack.model, stack.brand, rack.id, k, from)).ok) return;
     onClose();
     onMounted?.(rack.id, id);
   };
@@ -142,7 +142,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
   const [shipping, setShipping] = useState(false);
   // Leased units can't be sold, so Sell takes the first paid-off unit of the stack.
   const m = modelById(stack.model), units = game.devices.filter((d) => stack.ids.includes(d.id)), first = units.find((d) => !d.lease) ?? units[0];
-  const rackable = m.height > 0 || m.kind === "pdu", office = isOfficeRouter(m), install = () => act((s) => installRouter(s, units[0].id));
+  const rackable = m.height > 0 || m.kind === "pdu", office = isOfficeRouter(m), install = () => act(installRouter, units[0].id);
   const entries = (): MenuEntry[] => [
     (rackable || m.shelf) && { label: "Mount…", run: () => setMounting(true) },
     office && { label: "Install", run: install },
@@ -168,7 +168,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
       {selling && (
         <SellConfirm game={game} name={first.name} price={first.price} boughtAt={first.boughtAt} value={deviceValue(game, first)}
           onCancel={() => setSelling(false)}
-          onSell={() => { setSelling(false); act((s) => sellDevice(s, first.id)); }} />
+          onSell={() => { setSelling(false); act(sellDevice, first.id); }} />
       )}
     </div>
   );

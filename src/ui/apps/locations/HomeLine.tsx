@@ -36,9 +36,9 @@ export function HomeLinePanel({ game }: { game: GameState }) {
         {l.id === id ? <span className="pill ok">Active</span>
           : l.id === next?.id ? <>
             <span className="pill">Connects <span className="num">{day(next.at)}</span></span>
-            <button className="btn" onClick={() => act((g) => orderHomeLine(g, id))}>Cancel</button>
+            <button className="btn" onClick={() => act(orderHomeLine, id)}>Cancel</button>
           </>
-          : <button className="btn primary" onClick={() => act((g) => orderHomeLine(g, l.id))}>Order</button>}
+          : <button className="btn primary" onClick={() => act(orderHomeLine, l.id)}>Order</button>}
       </div>
     </div>
   );

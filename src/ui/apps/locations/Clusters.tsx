@@ -76,8 +76,8 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
         <span className="grow" />
         {cluster.kind === "cloud" && (
           <div className="seg" role="group" aria-label="Placement">
-            <button aria-pressed={cluster.placement === "pack"} onClick={() => act((g) => setPlacement(g, cluster.id, "pack"))}>Pack</button>
-            <button aria-pressed={cluster.placement === "spread"} onClick={() => act((g) => setPlacement(g, cluster.id, "spread"))}>Spread</button>
+            <button aria-pressed={cluster.placement === "pack"} onClick={() => act(setPlacement, cluster.id, "pack")}>Pack</button>
+            <button aria-pressed={cluster.placement === "spread"} onClick={() => act(setPlacement, cluster.id, "spread")}>Spread</button>
           </div>
         )}
       </div>
@@ -85,8 +85,8 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
         <div className="loc-row">
           <span className="loc-k">RAM</span>
           <div className="seg" role="group" aria-label="Memory reservation">
-            <button aria-pressed={!cluster.ramGuard} onClick={() => act((g) => setRamGuard(g, cluster.id, false))}>Overbook</button>
-            <button aria-pressed={!!cluster.ramGuard} onClick={() => act((g) => setRamGuard(g, cluster.id, true))}>Reserve</button>
+            <button aria-pressed={!cluster.ramGuard} onClick={() => act(setRamGuard, cluster.id, false)}>Overbook</button>
+            <button aria-pressed={!!cluster.ramGuard} onClick={() => act(setRamGuard, cluster.id, true)}>Reserve</button>
           </div>
         </div>
       )}
@@ -106,7 +106,7 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
       {cluster.vm && <PanelVmRow game={game} cluster={cluster} />}
       {cluster.kind === "cloud" && free.length > 0 && (
         <div className="loc-row">
-          {free.map((d) => <button key={d.id} className="btn" onClick={() => act((g) => addNode(g, cluster.id, d.id))}><Plus />{devName(d)}</button>)}
+          {free.map((d) => <button key={d.id} className="btn" onClick={() => act(addNode, cluster.id, d.id)}><Plus />{devName(d)}</button>)}
         </div>
       )}
     </>
@@ -142,9 +142,9 @@ function PhpRow({ game, cluster, device }: { game: GameState; cluster: Cluster; 
       {behind >= PHP_EOL ? <span className="pill bad">Unsupported</span> : behind > 0 && <span className="pill warn">Outdated</span>}
       <span className="grow" />
       {queued > 0 && <span className="pill accent">Queued <span className="num">{queued}</span></span>}
-      {old && <button className="btn" onClick={() => act((g) => upgradePhp(g, cluster.id))}>{patch ? "Patch" : `Upgrade to ${latest}`}</button>}
+      {old && <button className="btn" onClick={() => act(upgradePhp, cluster.id)}>{patch ? "Patch" : `Upgrade to ${latest}`}</button>}
       {slot && (
-        <button className="btn" onClick={() => act((g) => queuePhpUpgrade(g, cluster.id))}>
+        <button className="btn" onClick={() => act(queuePhpUpgrade, cluster.id)}>
           <Wrench />{slot.name.split(" ")[0]}, <span className="num">{slotTime(game.hour, slot.hour)}</span>
         </button>
       )}
@@ -179,7 +179,7 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
           <span className="loc-muted">{owner(w.serviceId).v?.label}</span>
           <span className="grow" />
           <span className="pill bad">{VM_STATE.lost[0]}</span>
-          <button className="btn" onClick={() => act((g) => restoreWorkload(g, w.id))}>{w.backupAt === null ? "Start empty" : "Restore"}</button>
+          <button className="btn" onClick={() => act(restoreWorkload, w.id)}>{w.backupAt === null ? "Start empty" : "Restore"}</button>
         </div>
       ))}
       <NodeWorkloads game={game} deviceId={device.id} />

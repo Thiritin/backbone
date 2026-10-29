@@ -12,7 +12,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), M
 
 export function newNote(at?: { x: number; y: number }) {
   const { act, openDoc } = useStore.getState();
-  const r = act((s) => addNote(s, at));
+  const r = act(addNote, at);
   if (r.ok && r.id) openDoc(r.id);
 }
 
@@ -63,7 +63,7 @@ export function DesktopIcons() {
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
-      if (pos) act((s) => moveDoc(s, d.id, pos!.x, pos!.y));
+      if (pos) act(moveDoc, d.id, pos!.x, pos!.y);
       setDrag(null);
     };
     window.addEventListener("pointermove", move);
@@ -72,13 +72,13 @@ export function DesktopIcons() {
 
   const rename = (d: Doc, value: string) => {
     setRenaming(null);
-    if (value.trim() && value.trim() !== d.title) act((s) => editNote(s, d.id, { title: value }));
+    if (value.trim() && value.trim() !== d.title) act(editNote, d.id, { title: value });
   };
 
   const remove = (d: Doc) => {
     setTrash(null);
     const { windows, close } = useStore.getState();
-    if (!act((s) => removeDoc(s, d.id)).ok) return;
+    if (!act(removeDoc, d.id).ok) return;
     for (const w of windows) if (w.doc === d.id || (d.kind === "guide" && w.app === "Getting started")) close(w.id);
   };
 

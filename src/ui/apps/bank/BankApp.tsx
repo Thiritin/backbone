@@ -69,7 +69,7 @@ function Offer({ amount, rate, years }: { amount: number; rate: number; years: n
       </dl>
       <div className="shop-buy">
         <span className="grow" />
-        <button className="btn primary" onClick={() => act((s) => takeLoan(s, amount, years))}><HandCoins />Take loan</button>
+        <button className="btn primary" onClick={() => act(takeLoan, amount, years)}><HandCoins />Take loan</button>
       </div>
     </div>
   );
@@ -77,7 +77,7 @@ function Offer({ amount, rate, years }: { amount: number; rate: number; years: n
 
 function LoanCard({ loan }: { loan: Loan }) {
   const act = useStore((s) => s.act);
-  const menu = () => [{ label: "Repay", run: () => act((s) => repayLoan(s, loan.id)) }];
+  const menu = () => [{ label: "Repay", run: () => act(repayLoan, loan.id) }];
   return (
     <div className="shop-card" onContextMenu={menuOn(menu)}>
       <div className="shop-name">

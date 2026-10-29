@@ -364,8 +364,8 @@ function TaxInsurance({ game }: { game: GameState }) {
           <div className="shop-buy">
             <span className="grow" />
             {policy
-              ? <button className="btn" onClick={() => act((s) => cancelInsurance(s))}>Cancel</button>
-              : <button className="btn primary" disabled={game.cash < premium} onClick={() => act((s) => buyInsurance(s))}>Buy</button>}
+              ? <button className="btn" onClick={() => act(cancelInsurance)}>Cancel</button>
+              : <button className="btn primary" disabled={game.cash < premium} onClick={() => act(buyInsurance)}>Buy</button>}
           </div>
         </div>
       </div>

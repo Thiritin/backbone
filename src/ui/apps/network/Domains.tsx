@@ -62,7 +62,7 @@ export function Domains({ game }: { game: GameState }) {
               <div className="shop-buy">
                 <span className="grow" />
                 {own ? <span className="pill ok">Under contract</span>
-                  : <button className="btn primary" disabled={!!t} onClick={() => act((s) => signRegistrar(s, r.id))}>{cur ? "Switch" : "Sign"}</button>}
+                  : <button className="btn primary" disabled={!!t} onClick={() => act(signRegistrar, r.id)}>{cur ? "Switch" : "Sign"}</button>}
               </div>
             </div>
           );
@@ -79,7 +79,7 @@ export function Domains({ game }: { game: GameState }) {
         ) : (
           <div className="shop-buy">
             <input className="field grow" aria-label="Domain name" placeholder={suggestion} spellCheck={false} value={name} onChange={(e) => setName(e.target.value)} />
-            <button className="btn primary" disabled={!cur} onClick={() => act((s) => registerCompanyDomain(s, name || suggestion))}>Register</button>
+            <button className="btn primary" disabled={!cur} onClick={() => act(registerCompanyDomain, name || suggestion)}>Register</button>
           </div>
         )}
       </div>

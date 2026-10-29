@@ -12,8 +12,11 @@ import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
 import { hire, setTechRules } from "../src/sim/90-actions/staff";
+import type { Call } from "../src/sim/90-actions/index";
 import { mountDevice } from "./plugged";
 import { readyGame } from "./fixtures";
+
+const run = (s: GameState, [fn, ...args]: Call) => fn(s, ...args);
 
 const base = readyGame(3);
 const fresh = (): GameState => structuredClone(base);
@@ -214,7 +217,7 @@ describe("terminal", () => {
     expect(out(s, session, "shutdown")).toBe("usage: shutdown -h now");
     const r = runCommand(s, session, "shutdown -h now");
     expect(r.session).toBeNull();
-    expect(r.action!(s).ok).toBe(true);
+    expect(run(s, r.action!).ok).toBe(true);
     expect(dev(s, "dev3").on).toBe(false);
     expect(s.workloads.some((w) => w.corrupted)).toBe(false);
   });
@@ -223,7 +226,7 @@ describe("terminal", () => {
     const s = fresh();
     const r = runCommand(s, login(s), "reboot");
     expect(r.session).toBeNull();
-    expect(r.action!(s).ok).toBe(true);
+    expect(run(s, r.action!).ok).toBe(true);
     expect(dev(s, "dev3").on).toBe(true);
     expect(dev(s, "dev3").bootUntil).toBeGreaterThan(s.hour);
     expect(s.workloads.some((w) => w.corrupted)).toBe(false);
@@ -254,7 +257,7 @@ describe("recover", () => {
     const session = login(s);
     const r = runCommand(s, session, `recover ${w.hostname}`);
     expect(r.output).toEqual([`recover: ${w.hostname}: repairing filesystem`, `recover: ${w.hostname}: estimated time 30 minutes`]);
-    expect(r.action!(s).ok).toBe(true);
+    expect(run(s, r.action!).ok).toBe(true);
     expect(recoveryReport(s, r.watch!)).toBeNull();
     expect(out(s, session, `recover ${w.hostname}`)).toContain("repair already running");
     tick(s);
@@ -268,7 +271,7 @@ describe("recover", () => {
     const space = s.workloads.find((x) => !x.deviceId && x.hostname)!;
     const r = runCommand(s, login(s), `recover ${space.hostname}.${s.company.domain}`);
     expect(r.watch).toEqual({ workloadId: w.id, host: `${space.hostname}.${s.company.domain}` });
-    expect(r.action!(s).ok).toBe(true);
+    expect(run(s, r.action!).ok).toBe(true);
   });
 
   it("explains a service that is clean, unknown or beyond repair", () => {

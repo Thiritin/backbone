@@ -97,14 +97,14 @@ function staffMenu(game: GameState, e: Employee, onLeave: (e: Employee) => void)
   const open = TASKS[e.role].filter((k) => !e.trained.includes(k) && e.training?.task !== k && !e.plan.includes(k));
   const tech = e.role === "technician", onCall = game.onCall.roster.includes(e.id);
   return [
-    e.raise && { label: "Accept raise", run: () => act((s) => answerRaise(s, e.id, true)) },
-    e.raise && { label: "Refuse raise", run: () => act((s) => answerRaise(s, e.id, false)) },
+    e.raise && { label: "Accept raise", run: () => act(answerRaise, e.id, true) },
+    e.raise && { label: "Refuse raise", run: () => act(answerRaise, e.id, false) },
     null,
-    { label: "Hours a day", items: WORK_HOURS.map((h) => ({ label: `${h} h`, checked: e.hours === h, run: () => act((s) => setHours(s, e.id, h)) })) },
-    { label: "Assignment", items: (["queue", "trainer", "forum"] as const).map((a) => ({ label: ASSIGN[a], checked: e.assignment === a, run: () => act((s) => assign(s, e.id, a)) })) },
-    tech && { label: "Location", items: game.locations.map((l) => ({ label: l.name, checked: e.location === l.id, run: () => act((s) => setTechLocation(s, e.id, l.id)) })) },
-    tech && { label: "On call", checked: onCall, run: () => act((s) => setOnCall(s, e.id, !onCall)) },
-    open.length > 0 && { label: "Train all", run: () => act((s) => planTraining(s, e.id, [...e.plan, ...open])) },
+    { label: "Hours a day", items: WORK_HOURS.map((h) => ({ label: `${h} h`, checked: e.hours === h, run: () => act(setHours, e.id, h) })) },
+    { label: "Assignment", items: (["queue", "trainer", "forum"] as const).map((a) => ({ label: ASSIGN[a], checked: e.assignment === a, run: () => act(assign, e.id, a) })) },
+    tech && { label: "Location", items: game.locations.map((l) => ({ label: l.name, checked: e.location === l.id, run: () => act(setTechLocation, e.id, l.id) })) },
+    tech && { label: "On call", checked: onCall, run: () => act(setOnCall, e.id, !onCall) },
+    open.length > 0 && { label: "Train all", run: () => act(planTraining, e.id, [...e.plan, ...open]) },
     null,
     { label: "Let go...", run: () => onLeave(e) },
   ];
@@ -186,11 +186,11 @@ function LetGo({ game, e, onClose }: { game: GameState; e: Employee; onClose: ()
   const act = useStore((s) => s.act);
   const owed = salaryUpToNow(game, e);
   if (e.bot) return (
-    <Confirm title={`Cancel ${e.name}?`} action="Cancel subscription" onCancel={onClose} onConfirm={() => { onClose(); act((s) => cancel(s, e.id)); }}
+    <Confirm title={`Cancel ${e.name}?`} action="Cancel subscription" onCancel={onClose} onConfirm={() => { onClose(); act(cancel, e.id); }}
       text={`The subscription for ${e.name} ends today.`} />
   );
   return (
-    <Confirm title={`Let ${e.name} go?`} action="Let go" onCancel={onClose} onConfirm={() => { onClose(); act((s) => fire(s, e.id)); }}
+    <Confirm title={`Let ${e.name} go?`} action="Let go" onCancel={onClose} onConfirm={() => { onClose(); act(fire, e.id); }}
       text={`This saves ${euro(monthlyPay(e))} a month. ${e.name.split(" ")[0]} leaves today${owed > 0 ? ` and is paid ${euro(owed)} for the days worked this month` : ""}.`} />
   );
 }
@@ -231,7 +231,7 @@ function Detail({ game, e, menu }: { game: GameState; e: Employee; menu: () => M
   const fee = staffPrice(COURSE_PRICE, yearOf(game.hour));
   const canTrain = fullyTrained(e) && game.staff.some((x) => x.id !== e.id && x.role === e.role && needsTraining(x));
   const open = TASKS[e.role].filter((k) => !e.trained.includes(k) && e.training?.task !== k);
-  const toggle = (k: Task) => act((s) => planTraining(s, e.id, e.plan.includes(k) ? e.plan.filter((x) => x !== k) : [...e.plan, k]));
+  const toggle = (k: Task) => act(planTraining, e.id, e.plan.includes(k) ? e.plan.filter((x) => x !== k) : [...e.plan, k]);
   return (
     <section className="st-detail">
       <header className="d-head">
@@ -259,29 +259,29 @@ function Detail({ game, e, menu }: { game: GameState; e: Employee; menu: () => M
               <span><span className="num">{euro(monthlyPay(e))}</span> to <span className="num">{euro(monthlyPay({ salary: e.raise.ask, hours: e.hours }))}</span> a month</span>
             </div>
             <span className="grow" />
-            <button className="btn" onClick={() => act((s) => answerRaise(s, e.id, false))}>Refuse</button>
-            <button className="btn primary" onClick={() => act((s) => answerRaise(s, e.id, true))}><Check />Accept</button>
+            <button className="btn" onClick={() => act(answerRaise, e.id, false)}>Refuse</button>
+            <button className="btn primary" onClick={() => act(answerRaise, e.id, true)}><Check />Accept</button>
           </div>
         )}
         <h3>Assignment</h3>
         <div className="seg" role="group" aria-label="Assignment">
           {(["queue", "trainer", "forum"] as const).map((a) => (
             <button key={a} aria-pressed={e.assignment === a} disabled={a === "trainer" && e.assignment !== "trainer" && !canTrain}
-              onClick={() => act((s) => assign(s, e.id, a))}>
+              onClick={() => act(assign, e.id, a)}>
               {a === "queue" ? <BookOpen /> : a === "trainer" ? <GraduationCap /> : <MessagesSquare />}{ASSIGN[a]}
             </button>
           ))}
         </div>
         <h3>Hours a day</h3>
         <div className="seg" role="group" aria-label="Hours a day">
-          {WORK_HOURS.map((h) => <button key={h} aria-pressed={e.hours === h} onClick={() => act((s) => setHours(s, e.id, h))}>{h} h</button>)}
+          {WORK_HOURS.map((h) => <button key={h} aria-pressed={e.hours === h} onClick={() => act(setHours, e.id, h)}>{h} h</button>)}
         </div>
         {e.role === "technician" && <TechPanel game={game} e={e} />}
         <div className="st-train-h">
           <h3>Training</h3>
           <span className="grow" />
           <span className="st-cost">{trainer ? <>Trainer {trainer.name} · Free · {days(TRAINER_HOURS)}</> : <><span className="num">{euro(fee)}</span> · {days(COURSE_HOURS)} per course</>}</span>
-          <button className="btn" disabled={!open.length || open.every((k) => e.plan.includes(k))} onClick={() => act((s) => planTraining(s, e.id, open))}>Train all</button>
+          <button className="btn" disabled={!open.length || open.every((k) => e.plan.includes(k))} onClick={() => act(planTraining, e.id, open)}>Train all</button>
         </div>
         <div className="st-cards">
           {TASKS[e.role].map((k) => {
@@ -316,7 +316,7 @@ function Market({ game, role, setRole, onHired }: { game: GameState; role: Role;
         <span className="grow" />
         {coming > 0 && <span className="st-coming">Applicants on the way <span className="num">{coming}</span></span>}
         {TIERS.map((tier) => (
-          <button key={tier} className="btn" disabled={game.cash < staffPrice(AD[tier].price, year)} onClick={() => act((s) => postJobAd(s, role, tier))}>
+          <button key={tier} className="btn" disabled={game.cash < staffPrice(AD[tier].price, year)} onClick={() => act(postJobAd, role, tier)}>
             <Megaphone />{tier === "standard" ? "Standard ad" : "Premium ad"} <span className="num">{euro(staffPrice(AD[tier].price, year))}</span>
           </button>
         ))}
@@ -327,7 +327,7 @@ function Market({ game, role, setRole, onHired }: { game: GameState; role: Role;
       </div>
       {hiring && <HireSheet game={game} c={hiring} onClose={() => setHiring(null)} onHire={(hours) => {
         setHiring(null);
-        const r = act((s) => hire(s, hiring.id, hours));
+        const r = act(hire, hiring.id, hours);
         if (r.ok && r.id) onHired(r.id);
       }} />}
     </div>

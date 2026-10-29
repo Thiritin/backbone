@@ -113,10 +113,10 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   const held = game.heldCustomers.includes(c.id);
   const customerMenu = (): MenuEntry[] => [
     { label: "Credit...", run: () => setCrediting(true) },
-    { label: held ? "Unsuspend" : "Suspend", run: () => act((s) => suspendCustomer(s, c.id, !held)) },
+    { label: held ? "Unsuspend" : "Suspend", run: () => act(suspendCustomer, c.id, !held) },
   ];
   const domainMenu = (name: string) => (): MenuEntry[] => [
-    c.churnedAt === null && { label: "Renew", run: () => act((s) => renewDomain(s, name)) },
+    c.churnedAt === null && { label: "Renew", run: () => act(renewDomain, name) },
     { label: "Open in Billing", run: () => openApp("Billing", { kind: "domain", id: name }) },
   ];
   const tabs: [Tab, string, number?][] = [
@@ -342,7 +342,7 @@ function CreditSheet({ customerId, onClose }: { customerId: string; onClose: () 
   const act = useStore((s) => s.act);
   const id = useId();
   const [text, setText] = useState(""), amount = Math.round(Number(text) * 100) / 100;
-  const save = () => { if (act((s) => creditCustomer(s, customerId, amount)).ok) onClose(); };
+  const save = () => { if (act(creditCustomer, customerId, amount).ok) onClose(); };
   return (
     <div className="cus-price cus-credit">
       <div className="price-field">
@@ -364,7 +364,7 @@ function ChangePrice({ v, profile, onClose }: { v: Service; profile: Profile; on
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const [monthly, setMonthly] = useState(Math.round(serviceMonthly(v) * 100) / 100);
-  const save = () => { if (act((s) => changePrice(s, v.id, monthly)).ok) onClose(); };
+  const save = () => { if (act(changePrice, v.id, monthly).ok) onClose(); };
   return (
     <div className="cus-price">
       <PriceField value={monthly} reference={referenceFor(game, profile, v.product, v.spec, v.sla)} onChange={setMonthly} label="New monthly price" />

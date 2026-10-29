@@ -56,7 +56,7 @@ export function NewPanelHost({ game, onDone }: { game: GameState; onDone: (id: s
   const chosen = options.some((o) => o.id === target) ? target : options[0]?.id ?? null;
   const create = () => {
     if (!chosen || !panel) return;
-    const r = act((g) => (where === "vm" ? createPanelVm(g, chosen, panel, size) : installPanel(g, chosen, panel)));
+    const r = (where === "vm" ? act(createPanelVm, chosen, panel, size) : act(installPanel, chosen, panel));
     if (r.ok && r.id) onDone(r.id);
   };
   return (
@@ -98,7 +98,7 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
   const joinable = joinableServers(game, host.id).map((id) => game.devices.find((d) => d.id === id)!);
   const year = yearOf(game.hour), behind = phpBehind(host.php, year);
   const menu = (): MenuEntry[] => [
-    phpDue(game, host) && { label: host.php === phpAt(year) ? "Patch PHP" : `Upgrade to PHP ${phpAt(year)}`, run: () => act((g) => upgradePhp(g, host.id)) },
+    phpDue(game, host) && { label: host.php === phpAt(year) ? "Patch PHP" : `Upgrade to PHP ${phpAt(year)}`, run: () => act(upgradePhp, host.id) },
     ...sitesMenu(game, host),
     null,
     sites.length === 0 && { label: "Remove...", run: () => setRemoving(true) },
@@ -134,7 +134,7 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
           </table>
           {joinable.length > 0 && (
             <div className="fin-card-b">
-              <div className="fin-pills">{joinable.map((x) => <button key={x.id} className="btn" onClick={() => act((g) => addNode(g, host.id, x.id))}><Plus />{devName(x)}</button>)}</div>
+              <div className="fin-pills">{joinable.map((x) => <button key={x.id} className="btn" onClick={() => act(addNode, host.id, x.id)}><Plus />{devName(x)}</button>)}</div>
             </div>
           )}
         </section>
@@ -183,7 +183,7 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
           text={vm ? "The virtual machine is deleted." : "The server is free again."}
           action="Remove"
           onCancel={() => setRemoving(false)}
-          onConfirm={() => { act((g) => removePanelHost(g, host.id)); setRemoving(false); }}
+          onConfirm={() => { act(removePanelHost, host.id); setRemoving(false); }}
         />
       )}
     </div>
@@ -193,9 +193,9 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
 // Taking a panel host's sites offline, back online, or cleaning them up after a breach.
 export function sitesMenu(game: GameState, host: Cluster): MenuEntry[] {
   const act = useStore.getState().act, sec = game.security;
-  if (sec.hacked.includes(host.id)) return [{ label: "Clean up sites", run: () => act((g) => cleanUp(g, host.id)) }];
+  if (sec.hacked.includes(host.id)) return [{ label: "Clean up sites", run: () => act(cleanUp, host.id) }];
   const off = sec.offline.includes(host.id);
-  return [{ label: off ? "Bring sites online" : "Take sites offline", run: () => act((g) => setSitesOffline(g, host.id, !off)) }];
+  return [{ label: off ? "Bring sites online" : "Take sites offline", run: () => act(setSitesOffline, host.id, !off) }];
 }
 
 // A VM's booking, resized within the disk its web spaces need and its server has; a VM without a panel host has no web spaces.
@@ -216,7 +216,7 @@ export function ResizeCard({ game, host, own }: { game: GameState; host?: Cluste
           {inside && <div><dt>Web spaces book</dt><dd className="num">{num(inside.vcpu)} vCPU · {ram(+inside.ramGb.toFixed(2))} · {disk(Math.round(inside.diskGb))}</dd></div>}
           {room && used && <div><dt>Free on {devName(d!)}</dt><dd className="num">{num(Math.max(0, room.vcpu - used.vcpu))} vCPU · {ram(+Math.max(0, room.ramGb - used.ramGb).toFixed(2))} · {disk(Math.round(Math.max(0, room.diskGb - used.diskGb)))}</dd></div>}
         </dl>
-        <div><button className="btn primary" disabled={same} onClick={() => act((g) => (host ? resizePanelVm(g, host.id, size) : resizeVm(g, vm.id, size)))}>Resize</button></div>
+        <div><button className="btn primary" disabled={same} onClick={() => (host ? act(resizePanelVm, host.id, size) : act(resizeVm, vm.id, size))}>Resize</button></div>
       </div>
     </section>
   );

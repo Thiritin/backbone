@@ -42,8 +42,8 @@ export function AdminPage({ onSite }: { onSite: () => void }) {
       <div className="adm-grid">
         <section className="adm-card">
           <h2>Company</h2>
-          <TextSetting label="Name" value={game.company.name} max={NAME_MAX} save={(v) => act((s) => setCompany(s, { name: v })).ok} />
-          <TextSetting label="Tagline" value={game.company.tagline} max={TAGLINE_MAX} save={(v) => act((s) => setCompany(s, { tagline: v })).ok} />
+          <TextSetting label="Name" value={game.company.name} max={NAME_MAX} save={(v) => act(setCompany, { name: v }).ok} />
+          <TextSetting label="Tagline" value={game.company.tagline} max={TAGLINE_MAX} save={(v) => act(setCompany, { tagline: v }).ok} />
         </section>
         <section className="adm-card">
           <h2>Products</h2>
@@ -54,7 +54,7 @@ export function AdminPage({ onSite }: { onSite: () => void }) {
                 <label className="web-line-row">
                   <span>{PRODUCT[p]}</span>
                   <input type="checkbox" role="switch" className="switch" aria-label={`List ${PRODUCT[p]}`} checked={on} disabled={!on && !!why}
-                    onChange={(e) => act((s) => setLine(s, p, e.target.checked))} />
+                    onChange={(e) => act(setLine, p, e.target.checked)} />
                 </label>
                 {why && <p className="web-why">{t(why)}</p>}
               </div>
@@ -65,7 +65,7 @@ export function AdminPage({ onSite }: { onSite: () => void }) {
               <label className="web-line-row">
                 <span>Contact by email</span>
                 <input type="checkbox" role="switch" className="switch" aria-label="Take orders by email" checked={game.marketing.emailOrders && game.company.mail.kind !== "none"}
-                  onChange={(e) => act((s) => setEmailOrders(s, e.target.checked))} />
+                  onChange={(e) => act(setEmailOrders, e.target.checked)} />
               </label>
             </div>
           )}
@@ -76,7 +76,7 @@ export function AdminPage({ onSite }: { onSite: () => void }) {
             <div className="web-line">
               <div className="web-line-row">
                 <span>Design <span className="num">{designYear}</span></span>
-                <button className="btn" disabled={current || game.cash < OWNED.website.setup} onClick={() => act((s) => redesign(s))}>
+                <button className="btn" disabled={current || game.cash < OWNED.website.setup} onClick={() => act(redesign)}>
                   Redesign <span className="num">{euro(OWNED.website.setup)}</span>
                 </button>
               </div>
@@ -86,11 +86,11 @@ export function AdminPage({ onSite }: { onSite: () => void }) {
             <div className="web-line-row"><span>{hostName}</span><span className={`pill ${statusTone}`}>{statusLabel}</span></div>
             {siteHost.kind === "rented" && <p className="web-why"><span className="num">{euroCents(SITE_RENT)}</span> a month</p>}
             <div className="seg wrap" role="group" aria-label="Host">
-              <button aria-pressed={siteHost.kind === "rented"} onClick={() => act((s) => setSiteHost(s, { kind: "rented" }))}>Rented</button>
+              <button aria-pressed={siteHost.kind === "rented"} onClick={() => act(setSiteHost, { kind: "rented" })}>Rented</button>
               {panels.map((c) => (
                 <button key={c.id} aria-pressed={siteHost.kind === "own" && siteHost.clusterId === c.id}
                   disabled={!siteRoom(game, c).fits && !(siteHost.kind === "own" && siteHost.clusterId === c.id)}
-                  onClick={() => act((s) => setSiteHost(s, { kind: "own", clusterId: c.id }))}>{c.name}</button>
+                  onClick={() => act(setSiteHost, { kind: "own", clusterId: c.id })}>{c.name}</button>
               ))}
             </div>
           </div>

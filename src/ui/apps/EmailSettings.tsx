@@ -70,7 +70,7 @@ export function EmailSettings() {
                 </dl>
                 <div className="shop-buy">
                   <span className="grow" />
-                  {own ? <span className="pill ok">Booked</span> : <button className="btn primary" disabled={later} onClick={() => act((s) => bookMail(s, p.id))}>Book</button>}
+                  {own ? <span className="pill ok">Booked</span> : <button className="btn primary" disabled={later} onClick={() => act(bookMail, p.id)}>Book</button>}
                 </div>
               </div>
             );
@@ -105,7 +105,7 @@ export function EmailSettings() {
           ) : (
             <div className="mkt-chips email-where" role="group" aria-label="Install on">
               {where.length === 0 && <span className="email-none">No machine is free for a mail server.</span>}
-              {where.map((w) => <button key={w.id} className="mkt-chip" onClick={() => act((s) => installSoftware(s, w.id, target))}>{w.name}</button>)}
+              {where.map((w) => <button key={w.id} className="mkt-chip" onClick={() => act(installSoftware, w.id, target)}>{w.name}</button>)}
             </div>
           )}
         </>

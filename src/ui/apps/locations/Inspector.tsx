@@ -10,7 +10,7 @@ import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, drivesOf, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
 import { rebuildHours } from "../../../sim/88-tick/tick";
-import { addSecondPsu, buyOutLease, connect, disconnect, LABEL_MAX, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
+import { addSecondPsu, buyOutLease, connect, disconnect, LABEL_MAX, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice, type ActionResult } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
 import { cableColor, DeviceSvg, SWATCHES } from "../../art/fronts";
 import { BrandLogo, Logo } from "../../art/logos";
@@ -48,12 +48,12 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
   const ui = (d: Device, open: boolean): DeviceUi => ({
     open: open ? () => onSelect(d.id) : undefined,
     lid: () => setLid(d.id),
-    power: (on) => { if (on && lid) return; if (on) act((g) => setPower(g, d.id, true)); else guarded((g) => setPower(g, d.id, false), `Power off ${devName(d)}?`, "Power off"); },
-    op: (op: PowerOp) => { if (op === "on") { if (!lid) act((g) => POWER_ACTION.on(g, d.id)); } else { const label = powerOptions(game, d).options.find((o) => o.op === op)?.label ?? POWER_LABEL[op]; guarded((g) => POWER_ACTION[op](g, d.id), `${label} ${devName(d)}?`, label); } },
+    power: (on) => { if (on && lid) return; if (on) act(setPower, d.id, true); else guarded(`Power off ${devName(d)}?`, "Power off", setPower, d.id, false); },
+    op: (op: PowerOp) => { if (op === "on") { if (!lid) act(POWER_ACTION.on, d.id); } else { const label = powerOptions(game, d).options.find((o) => o.op === op)?.label ?? POWER_LABEL[op]; guarded(`${label} ${devName(d)}?`, label, POWER_ACTION[op], d.id); } },
     plug: (psu) => togglePlug(guarded, d, psu),
     setup: () => setSetup(d.id),
     rename: () => onRename(d.id),
-    unmount: () => { if (act((g) => unmountDevice(g, d.id)).ok) onSelect(null); },
+    unmount: () => { if (act(unmountDevice, d.id).ok) onSelect(null); },
     sell: () => setSelling(d),
   });
   const cables = selling ? game.cables.filter((c) => c.a.device === selling.id || c.b.device === selling.id).length : 0;
@@ -70,7 +70,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
         {selling && (
           <SellConfirm game={game} name={devName(selling)} price={selling.price} boughtAt={selling.boughtAt} value={deviceValue(game, selling)} cables={cables}
             onCancel={() => setSelling(null)}
-            onSell={() => { const id = selling.id; setSelling(null); if (act((g) => sellDevice(g, id)).ok) onSelect(null); }} />
+            onSell={() => { const id = selling.id; setSelling(null); if (act(sellDevice, id).ok) onSelect(null); }} />
         )}
       </>
     ),
@@ -140,8 +140,8 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         <div className="loc-row insp-bond">
           <span className="loc-k">Bond</span>
           <div className="seg" role="group" aria-label="Bond mode">
-            <button aria-pressed={device.bond === "failover"} onClick={() => act((g) => setBond(g, device.id, "failover"))}>Failover</button>
-            <button aria-pressed={device.bond === "balance"} onClick={() => act((g) => setBond(g, device.id, "balance"))}>Load balance</button>
+            <button aria-pressed={device.bond === "failover"} onClick={() => act(setBond, device.id, "failover")}>Failover</button>
+            <button aria-pressed={device.bond === "balance"} onClick={() => act(setBond, device.id, "balance")}>Load balance</button>
           </div>
         </div>
       )}
@@ -229,7 +229,7 @@ function LeaseCard({ game, leaseId }: { game: GameState; leaseId: string }) {
   if (!lease) return null;
   const left = lease.months - lease.paid;
   return (
-    <div className="loc-card" onContextMenu={menuOn(() => [{ label: `Buy out lease, ${euro(lease.monthly * left)}`, run: () => act((g) => buyOutLease(g, lease.id)) }])}>
+    <div className="loc-card" onContextMenu={menuOn(() => [{ label: `Buy out lease, ${euro(lease.monthly * left)}`, run: () => act(buyOutLease, lease.id) }])}>
       <div className="loc-card-h">
         <h3><FileSignature />Lease</h3>
         <span className="pill">Leased</span>
@@ -265,8 +265,8 @@ function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { ga
       { label: "Show port", run: () => onPick(i) },
       other && !other.panel && { label: `Show ${devName(other)}`, run: () => onSelect(other.id) },
       null,
-      cable && { label: "Cable colour", items: [...SWATCHES.map(([n, hex]) => ({ label: n, checked: cable.color === hex, run: () => act((g) => setCableColor(g, cable.id, hex)) })), null, { label: "Kind default", checked: cable.color === null, run: () => act((g) => setCableColor(g, cable.id, null)) }] },
-      cable && { label: "Disconnect", run: () => act((g) => disconnect(g, cable.id)) },
+      cable && { label: "Cable colour", items: [...SWATCHES.map(([n, hex]) => ({ label: n, checked: cable.color === hex, run: () => act(setCableColor, cable.id, hex) })), null, { label: "Kind default", checked: cable.color === null, run: () => act(setCableColor, cable.id, null) }] },
+      cable && { label: "Disconnect", run: () => act(disconnect, cable.id) },
     ];
   };
   return (
@@ -332,7 +332,7 @@ function PortCard({ game, device, model, port, peer, onSelect }: { game: GameSta
         <div className="loc-card-h">
           {title}<span className="pill ok">Up</span>{group >= 0 && <span className="pill">Group {group + 1}</span>}
           <span className="grow" />
-          <button className="btn danger" onClick={() => act((g) => disconnect(g, cable.id))}><Unplug />Disconnect</button>
+          <button className="btn danger" onClick={() => act(disconnect, cable.id)}><Unplug />Disconnect</button>
         </div>
         <div className="loc-path">
           <div className="loc-node here"><span className="k">{devName(device)}</span><strong>{portName(model, port)}</strong></div>
@@ -366,7 +366,7 @@ function ConnectRow({ game, device, model, port }: { game: GameState; device: De
   if (!targets.length) return <div className="loc-row loc-muted">No compatible ports</div>;
   const t = targets.find(({ d }) => d.id === picked.device) ?? targets[0];
   const to = picked.port !== null && t.free.includes(picked.port) ? picked.port : t.free[0];
-  const go = () => act((g) => connect(g, { device: device.id, port }, { device: t.d.id, port: to }));
+  const go = () => act(connect, { device: device.id, port }, { device: t.d.id, port: to });
   return (
     <div className="loc-connect">
       <div className="picks" role="group" aria-label="Connect to">
@@ -391,7 +391,7 @@ function GroupCard({ device, sel, onDone }: { device: Device; sel: number[]; onD
   const act = useStore((s) => s.act);
   const sorted = [...sel].sort((a, b) => a - b);
   const inGroup = sorted.find((p) => device.groups.some((g) => g.includes(p)));
-  const run = (ports: number[]) => { if (act((g) => setPortGroup(g, device.id, ports)).ok) onDone(); };
+  const run = (ports: number[]) => { if (act(setPortGroup, device.id, ports).ok) onDone(); };
   return (
     <div className="loc-card">
       <div className="loc-card-h">
@@ -423,7 +423,7 @@ function LabelEdit({ device, editing, onEditing }: { device: Device; editing: bo
       </h2>
     );
   }
-  const done = () => { if (!cancel.current) act((g) => setLabel(g, device.id, text)); cancel.current = false; onEditing(false); };
+  const done = () => { if (!cancel.current) act(setLabel, device.id, text); cancel.current = false; onEditing(false); };
   return (
     <input className="field loc-label-in" autoFocus aria-label="Label" value={text} placeholder={device.name} maxLength={LABEL_MAX}
       onChange={(e) => setText(e.target.value)} onBlur={done}
@@ -437,12 +437,12 @@ const clock = (hour: number) => dateOf(hour).toISOString().slice(11, 16);
 export function useOfflineGuard(game: GameState) {
   const act = useStore((s) => s.act);
   const [down, setDown] = useState<{ names: string[]; title: string; action: string; run: () => void } | null>(null);
-  const guarded = (change: (g: GameState) => unknown, title: string, action: string) => {
+  const guarded = <A extends unknown[]>(title: string, action: string, fn: (g: GameState, ...args: A) => ActionResult, ...args: A) => {
     const after = structuredClone(game);
-    change(after);
+    fn(after, ...args);
     const names = game.devices.filter((d) => linkStatus(game, d.id).online && !linkStatus(after, d.id).online).map(devName);
-    if (names.length) setDown({ names, title, action, run: () => act(change as never) });
-    else act(change as never);
+    if (names.length) setDown({ names, title, action, run: () => act(fn, ...args) });
+    else act(fn, ...args);
   };
   const names = down?.names ?? [];
   const dialog = down && (
@@ -457,8 +457,8 @@ export function useOfflineGuard(game: GameState) {
 export function togglePlug(guarded: ReturnType<typeof useOfflineGuard>["guarded"], device: Device, psu: string) {
   const c = device.components.find((x) => x.id === psu);
   if (!c) return;
-  if (isPlugged(c)) guarded((g) => setPlugged(g, device.id, psu, false), `Unplug ${devName(device)}?`, "Unplug");
-  else useStore.getState().act((g) => setPlugged(g, device.id, psu, true));
+  if (isPlugged(c)) guarded(`Unplug ${devName(device)}?`, "Unplug", setPlugged, device.id, psu, false);
+  else useStore.getState().act(setPlugged, device.id, psu, true);
 }
 
 // Each power supply with its feed and plug, then the empty bay a second supply can fill.
@@ -488,7 +488,7 @@ function PowerSupplies({ game, device, onPlug }: { game: GameState; device: Devi
             <tr className="insp-addon">
               <td>{name(1)}</td>
               <td className="loc-muted">Empty bay</td>
-              <td className="r"><button className="btn" onClick={() => act((g) => addSecondPsu(g, device.id))}><Plus />Add <span className="num">{euro(extra)}</span></button></td>
+              <td className="r"><button className="btn" onClick={() => act(addSecondPsu, device.id)}><Plus />Add <span className="num">{euro(extra)}</span></button></td>
             </tr>
           )}
         </tbody>
@@ -515,7 +515,7 @@ function RaidCard({ game, device }: { game: GameState; device: Device }) {
       </div>
       <div className="loc-row">
         <div className="seg wrap" role="group" aria-label="RAID level">
-          {LEVELS.map(([v, l]) => <button key={v} aria-pressed={device.raid === v} disabled={device.on || !FITS[v](drives)} onClick={() => act((g) => setRaid(g, device.id, v))}>{l}</button>)}
+          {LEVELS.map(([v, l]) => <button key={v} aria-pressed={device.raid === v} disabled={device.on || !FITS[v](drives)} onClick={() => act(setRaid, device.id, v)}>{l}</button>)}
         </div>
       </div>
       <Facts rows={[
@@ -532,7 +532,7 @@ function RaidCard({ game, device }: { game: GameState; device: Device }) {
       <div className="loc-row">
         <span className="loc-k">Rebuild rate</span>
         <div className="seg" role="group" aria-label="Rebuild rate">
-          {RATES.map(([v, l]) => <button key={v} aria-pressed={device.rebuildRate === v} onClick={() => act((g) => setRebuildRate(g, device.id, v))}>{l}</button>)}
+          {RATES.map(([v, l]) => <button key={v} aria-pressed={device.rebuildRate === v} onClick={() => act(setRebuildRate, device.id, v)}>{l}</button>)}
         </div>
       </div>
     </div>
@@ -541,7 +541,7 @@ function RaidCard({ game, device }: { game: GameState; device: Device }) {
 
 function ColorRow({ cable }: { cable: CableT }) {
   const act = useStore((s) => s.act);
-  const set = (color: string | null) => act((g) => setCableColor(g, cable.id, color));
+  const set = (color: string | null) => act(setCableColor, cable.id, color);
   return (
     <div className="loc-row">
       <span className="loc-k">Colour</span>

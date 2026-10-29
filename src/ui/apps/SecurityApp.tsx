@@ -29,7 +29,7 @@ function NodeRow({ game, n }: { game: GameState; n: Cluster }) {
   const hacked = sec.hacked.includes(n.id), offline = sec.offline.includes(n.id);
   const open = vulnerable(game, n);
   const patch = open && patchOut(game) && phpDue(game, n);
-  const menu = (): MenuEntry[] => [...sitesMenu(game, n), patch && { label: "Patch PHP", run: () => act((g) => upgradePhp(g, n.id)) }];
+  const menu = (): MenuEntry[] => [...sitesMenu(game, n), patch && { label: "Patch PHP", run: () => act(upgradePhp, n.id) }];
   const [state, tone] = hacked ? ["Compromised", "bad"] : offline ? ["Offline", "warn"] : open ? ["Online", "accent"] : ["Online", "ok"];
   return (
     <tr onContextMenu={menuOn(menu)}>
@@ -41,8 +41,8 @@ function NodeRow({ game, n }: { game: GameState; n: Cluster }) {
       <td><span className={`pill ${open ? "warn" : "ok"}`}>{open ? "Unpatched" : "Patched"}</span></td>
       <td className="r">
         <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
-          {hacked && <button className="btn" onClick={() => act((g) => cleanUp(g, n.id))}>Clean up</button>}
-          {open && <button className="btn" disabled={!patchOut(game) || !phpDue(game, n)} onClick={() => act((g) => upgradePhp(g, n.id))}>Patch</button>}
+          {hacked && <button className="btn" onClick={() => act(cleanUp, n.id)}>Clean up</button>}
+          {open && <button className="btn" disabled={!patchOut(game) || !phpDue(game, n)} onClick={() => act(upgradePhp, n.id)}>Patch</button>}
           {open && patchOut(game) && at && <TechButton game={game} deviceId={at} kind="php" />}
           <More label={n.name} entries={menu} />
         </span>

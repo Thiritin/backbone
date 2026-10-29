@@ -7,7 +7,7 @@ import { modelById } from "../10-catalog/hardware";
 import { JITTER } from "../10-catalog/network";
 import { fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
-import type { ActionResult } from "../90-actions/hardware";
+import type { Call } from "../90-actions/index";
 import { recover } from "../90-actions/vms";
 import { privateIp, publicV4, publicV6, ipmiIp } from "./addresses";
 import { serverOf, vmOf, workloadOnline, type Workload } from "./cluster";
@@ -15,13 +15,13 @@ import { latency } from "./network";
 import { hopDown, pathTo, powered, working, type Hop } from "./status";
 import { nodeUsage, workloadUse } from "./usage";
 import { RECOVER_HOURS } from "./power";
-import { shutdown, setPower } from "../90-actions/hardware";
+import { restart, shutdown } from "../90-actions/hardware";
 
 // An open ssh session on a server; null at the desk.
 export interface Session { host: string; deviceId: string }
 // A recovery the screen reports on once it is done.
 export interface Watch { workloadId: string; host: string }
-export interface CommandResult { output: string[]; session?: Session | null; action?: (s: GameState) => ActionResult; clear?: boolean; watch?: Watch }
+export interface CommandResult { output: string[]; session?: Session | null; action?: Call; clear?: boolean; watch?: Watch }
 
 export const DESK_PROMPT = "you@desk $";
 export const promptOf = (session: Session | null): string => (session ? `root@${session.host}:~#` : DESK_PROMPT);
@@ -235,8 +235,7 @@ function remote(s: GameState, session: Session, cmd: string, args: string[]): Co
       if (off && args.join(" ") !== "-h now") return { output: lines("term.shutdown.usage") };
       const down = [...lines(off ? "term.shutdown.off" : "term.shutdown.reboot", { host }), t("term.ssh.lost", { host })];
       // A reboot goes through a clean shutdown and boots again; nothing is pulled, so nothing corrupts.
-      const action = (g: GameState): ActionResult => { const r = shutdown(g, deviceId); return off || !r.ok ? r : setPower(g, deviceId, true); };
-      return { output: down, session: null, action };
+      return { output: down, session: null, action: [off ? shutdown : restart, deviceId] };
     }
     case "recover": return recoverCommand(s, session, args[0]);
     case "exit": return { output: [t("term.logout"), t("term.ssh.closed", { host })], session: null };
@@ -255,7 +254,7 @@ function recoverCommand(s: GameState, { deviceId }: Session, arg: string | undef
   if (!w.corrupted) return { output: lines("term.recover.clean", p) };
   if (w.recoverDoneAt !== undefined) return { output: lines("term.recover.running", p) };
   if (w.recoverFailed) return { output: lines("term.recover.restore", p) };
-  return { output: [t("term.recover.start", p), t("term.recover.eta", { ...p, minutes: RECOVER_HOURS * 60 })], action: (g) => recover(g, w.id), watch: { workloadId: w.id, host: arg } };
+  return { output: [t("term.recover.start", p), t("term.recover.eta", { ...p, minutes: RECOVER_HOURS * 60 })], action: [recover, w.id], watch: { workloadId: w.id, host: arg } };
 }
 
 // The lines for a recovery that has finished, or null while it is still under way.
