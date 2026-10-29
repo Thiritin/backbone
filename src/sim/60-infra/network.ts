@@ -3,7 +3,7 @@ import { hashRng, rand } from "../00-core/rng";
 import { isMonthStart, yearOf } from "../00-core/time";
 import {
   carrierById, COMMITS, DC_BANDWIDTH, dcPerTb, DDOS, DECLINE_COOLDOWN_HOURS, EXCHANGE_FEES, exchangeById, exchangePortPrice, PEERS, PROTECTIONS,
-  REQUEST_DAILY, REQUEST_DAYS, SATURATION_FLOOR, SATURATION_PENALTY, TB_PER_MBPS_HOUR, transitPerMbps, zoneLinkPrice,
+  FAST_LINE, LATENCY_MS, QUEUEING, REQUEST_DAILY, REQUEST_DAYS, SATURATION_FLOOR, SATURATION_PENALTY, TB_PER_MBPS_HOUR, transitPerMbps, zoneLinkPrice,
   type Peer, type Protection, type ZoneLinkKind,
 } from "../10-catalog/network";
 import { TRAFFIC_GROWTH } from "../10-catalog/products";
@@ -17,7 +17,7 @@ import type { GameState, LedgerEntry, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { addressBills } from "./addresses";
 import { workloadsOf } from "./cluster";
-import { working } from "./status";
+import { working, type Hop } from "./status";
 
 // A link takes one router port; it carries traffic from readyAt on, while its router works.
 export interface UplinkLink { id: string; gbit: number; device: string; port: number; readyAt: number }
@@ -213,6 +213,29 @@ export function networkBills(s: GameState): LedgerEntry[] {
   return out;
 }
 export const monthlyNetworkCost = (s: GameState): number => -[...networkBills(s), ...addressBills(s)].reduce((n, b) => n + b.amount, 0);
+
+// The share of a location's exit capacity in use this hour, 0 to 1.
+export function loadOf(s: GameState, r: Routing, locationId: string): number {
+  const loc = s.locations.find((l) => l.id === locationId), zone = r.zones[locationId];
+  const exits = loc && zone ? exitsOf(s, loc) : [];
+  const cap = exits.reduce((n, e) => n + e.cap, 0);
+  return cap > 0 ? Math.min(1, exits.reduce((n, e) => n + (zone.exits[e.id] ?? 0), 0) / cap) : 0;
+}
+
+// What a route adds up to: the one-way milliseconds each hop adds and the share of packets lost. A line or uplink above
+// 80% of its capacity queues, which adds delay and loss.
+export function latency(s: GameState, hops: Hop[]): { ms: number[]; loss: number } {
+  const r = route(s);
+  let loss = 0;
+  const ms = hops.map((h) => {
+    let base: number = h.kind === "line" && yearOf(s.hour) >= FAST_LINE.from ? FAST_LINE.ms : LATENCY_MS[h.kind];
+    const over = h.location ? Math.max(0, loadOf(s, r, h.location) - QUEUEING.knee) : 0;
+    base += over * QUEUEING.delayMs;
+    loss += over * QUEUEING.lossPerUnit;
+    return base;
+  });
+  return { ms, loss };
+}
 
 // Your busiest hour of the last day over all zones, in Mbit/s; peers judge you by it.
 export function peakMbps(s: GameState): number {

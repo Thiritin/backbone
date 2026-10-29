@@ -1097,6 +1097,21 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 one
 
 **DDoS protection.** Scrubba Dub On Demand costs €50 a month plus €250 per attack and lets a sixth of the attack's first hour through. Akamaybe Prolexit costs €800 a month and filters everything. A blackhole drops the attack and takes its target offline until it is lifted.
 
+**Latency.** Each hop of a route adds its round trip time; ping and traceroute print it with 10% jitter.
+
+| Hop | Milliseconds | Anchor |
+| --- | --- | --- |
+| Switch | 0.2 | Store-and-forward gigabit switch, 0.1 to 0.3 ms |
+| Firewall | 1 | Stateful inspection |
+| Gateway or router | 1 | |
+| Home line | 18 in 2005, 8 from 2015 | DSL with interleaving 20 to 40 ms in 2005, fastpath 10 ms, VDSL and fibre from 2015 |
+| Datacenter uplink | 3 | Handoff and metro transit |
+| Core hop, same country | 8 | Frankfurt to Berlin 8 to 10 ms |
+| Core hop, other European city | 25 | Frankfurt to Amsterdam is 8 ms in practice and Frankfurt to London or Milan 15 to 25 ms; the game rates every border crossing at 25 ms |
+| Core hop, overseas | 90 | Frankfurt to New York 90 ms |
+
+The core hop applies when the two locations are in different cities: both in one country count as same country (two US cities too), a European and a US city as overseas, everything else as another European city. A line or uplink queues above 80% of its exit capacity (exits used divided by exit capacity): each point above adds 200 ms per unit, so a full link adds 40 ms, and loses 20% of the packets per unit, so a full link loses 4%.
+
 **Saturation in practice.** A zone counts as saturated once more than 2% of its traffic is dropped. Services there stay online, and each hour costs their customers 25% of their outage penalty; when a zone first saturates, each affected customer writes an outage ticket with half their usual chance. The basement is the exception: a full home line slows its sites instead (Home line).
 
 ## Workloads and migration

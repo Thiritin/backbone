@@ -115,3 +115,10 @@ export const PROTECTIONS: Record<Exclude<Protection, "none">, { name: string; mo
 export const SATURATION_PENALTY = 0.25;
 // The dropped share of a zone's traffic from which its customers notice.
 export const SATURATION_FLOOR = 0.02;
+
+// economy.md, Traffic and bandwidth (Latency): milliseconds a hop adds to a round trip. The home line gets its fast figure from 2015.
+export const LATENCY_MS = { switch: 0.2, firewall: 1, gateway: 1, host: 0, line: 18, uplink: 3, domestic: 8, european: 25, overseas: 90 } as const;
+export const FAST_LINE = { from: 2015, ms: 8 } as const;
+// Above this share of capacity a link queues: each point adds delayMs per unit and lossPerUnit of the packets are lost.
+export const QUEUEING = { knee: 0.8, delayMs: 200, lossPerUnit: 0.2 } as const;
+export const JITTER = 0.1;

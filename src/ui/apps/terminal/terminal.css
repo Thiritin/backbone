@@ -1,0 +1,6 @@
+.tm { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--rack); color: oklch(0.9 0.01 250); font: 12.5px/1.5 var(--font-num); }
+.tm-screen { flex: 1; min-height: 0; overflow: auto; padding: 10px 14px; }
+.tm-line { white-space: pre-wrap; word-break: break-all; min-height: 1.5em; }
+.tm-prompt { color: var(--ok); }
+.tm-row { display: flex; gap: 8px; align-items: baseline; }
+.tm-row input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 0; background: none; color: inherit; font: inherit; caret-color: var(--ok); }
