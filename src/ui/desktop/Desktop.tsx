@@ -17,6 +17,8 @@ import { Welcome } from "./Welcome";
 import { SoftwarePicker } from "../apps/software/Software";
 import { ContextMenuHost } from "./ContextMenu";
 import { Searchlight } from "../search/Searchlight";
+import { UpdateSheet } from "./UpdateSheet";
+import { watchUpdates } from "../update";
 
 const AUTOSAVE_MS = 15_000;
 let greeted = false;
@@ -47,6 +49,10 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   const { windows, speed, setSpeed, advance, save, notify, clearUnseen, welcome, explain, setExplain, alert } = useStore();
   const gameOver = useStore((s) => s.game.gameOver);
   const setup = useStore((s) => s.setup);
+  const [update, setUpdate] = useState(false);
+  const dismissed = useRef<number | null>(null);
+
+  useEffect(() => watchUpdates(() => setUpdate(true), () => dismissed.current), []);
   const [center, setCenter] = useState(false);
   const carry = useRef(0);
 
@@ -104,6 +110,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       {setup && !welcome && <SoftwarePicker key={setup} machineId={setup} />}
       {alert && <AlertSheet alert={alert} />}
       {gameOver !== null && <GameOver hour={gameOver} />}
+      {update && <UpdateSheet onLater={() => { dismissed.current = Date.now(); setUpdate(false); }} />}
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
       <ContextMenuHost />
       <Searchlight />
