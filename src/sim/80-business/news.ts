@@ -5,6 +5,7 @@ import { GENERATIONS } from "../10-catalog/economy";
 import { MODELS } from "../10-catalog/hardware";
 import { supportEnd } from "../10-catalog/lifecycle";
 import { GPU_CARDS } from "../10-catalog/gpu";
+import { CLEARANCE_SIZE, LOT_SIZE, USED_EVENTS } from "../10-catalog/used";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { LINE_NAME } from "../30-market/spec";
 import type { GameState } from "../50-state";
@@ -35,6 +36,8 @@ export const NEWS: NewsDef[] = [
   { id: "ripe.runOut", key: "event.news.ripeOut", at: at(2019, 10), params: {} },
   // Website designs come in generations four years apart from 2009 (website.ts, generationOf).
   ...Array.from({ length: 8 }, (_, i) => 2009 + 4 * i).map((year) => ({ id: `design.${year}`, key: "event.news.design", at: at(year), params: { year } })),
+  // The used market's yearly lot and clearance weekend (80-business/used.ts).
+  ...USED_EVENTS.map((e) => ({ id: e.id, key: `event.news.used.${e.kind}`, at: e.at, params: { count: e.kind === "lot" ? LOT_SIZE : CLEARANCE_SIZE } })),
 ];
 
 const lineDef = (p: string): NewsDef => ({ id: `line.${p}`, key: "event.news.line", at: -1, params: { line: LINE_NAME[p as keyof typeof LINE_NAME] } });

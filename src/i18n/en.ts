@@ -15,6 +15,7 @@ import { ORDERS_EN } from "./orders";
 import { MANUAL_EN } from "./manual";
 import { ACTIVITY_EN } from "./activity";
 import { REPLIES_EN } from "./replies";
+import { USED_EN } from "./used";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -42,6 +43,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...SITE_EN,
   ...DOMAINS_EN,
   ...NEWS_EN,
+  ...USED_EN,
   "event.monthStart.title": (p) => `${MONTHS[Number(p.month)]} ${p.year}`,
   "event.monthStart.text": () => "A new month has started.",
   "save.loaded.title": () => "Game loaded",

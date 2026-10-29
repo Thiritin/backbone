@@ -1,0 +1,15 @@
+.used { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.used .grow { flex: 1; }
+.used-bar { gap: 10px; }
+.used-rep { font-size: 12px; color: var(--text-2); display: inline-flex; gap: 6px; align-items: baseline; }
+.used-rep strong { color: var(--text); font-weight: 650; }
+.used-price { display: grid; gap: 1px; }
+.used-price .shop-muted { font-size: 11px; font-weight: 550; }
+.used-input { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; border-radius: 7px; border: 0.5px solid var(--line-strong); background: var(--field); color: var(--text-2); }
+.used-input:focus-within { border-color: var(--accent); }
+.used-input input { width: 64px; border: 0; background: transparent; color: var(--text); font: inherit; font-variant-numeric: tabular-nums; text-align: right; outline: none; }
+.used-mine-list { grid-column: 1 / -1; display: grid; gap: 6px; margin-top: 8px; }
+.used-mine-list h3 { font-size: 12.5px; font-weight: 650; margin: 0 0 2px; }
+.used-mine { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); }
+.used-mine-name { display: grid; gap: 1px; }
+.used-mine-name strong { font-weight: 650; font-size: 12.5px; }

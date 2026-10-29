@@ -195,7 +195,7 @@ const FORMS: FormFactor[] = ["3.5", "2.5", "nvme"];
 
 // Puts qty new units into storage at the manufacturer's price and returns their ids. With wait hours they are in transit to the
 // zone first; spares taken out of a device arrive at once.
-function stock(s: GameState, line: CartLine, lease: string | null, store: string, wait = 0): string[] {
+export function stock(s: GameState, line: CartLine, lease: string | null, store: string, wait = 0): string[] {
   const { model: modelId, brand, qty } = line;
   const price = unitPrice(line, yearOf(s.hour)), custom = line.bare || line.extras?.length;
   return Array.from({ length: qty }, () => {
@@ -559,7 +559,7 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (s.cash < bill + grey) return fail("error.noCash");
   if (hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: Math.max(1, swap) }, -bill);
   if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: c.kind }, -grey);
-  claimRepair(s, d.label ?? d.name, c, part.price, bill);
+  if (!d.used) claimRepair(s, d.label ?? d.name, c, part.price, bill);
   s.devices = s.devices.filter((x) => x.id !== part.id);
   d.maintenance = { componentId, partId: part.id, doneAt: s.hour + (hands ? hands.responseHours : 0) + swap, ...(part.part ? { spec: part.part } : {}) };
   return { ok: true, id: part.id };

@@ -5,9 +5,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-29
 
 - The traffic chart in the Network app has space above the cards below it.
+- Free apps from the Pear Store install even while your cash is below zero.
+- The Shop has a Used tab with eBuy auctions, WebHostingTalc asks and Telegrump deals for second-hand gear, and you can sell your own there.
 - The shop lists only the manufacturers that have hardware on sale in the current year.
 - Servers and virtual machines show their power actions as square tiles, and a custom order shows the CPU, RAM and storage load of the cluster or server you pick to set it up on.
-- Each location shows what its cluster servers have booked next to what they use right now.
+- Each location and rack shows what its cluster servers have booked next to what they use right now.
+- The clock in the menu bar counts minutes in steps of five between the hourly ticks.
 - OpenVeeZee and Proxmocks split cores, so a VPS customer can buy 0.8 of a core, while OpenStash, VMwhere and HyperVee book every VM in whole cores.
 - Locations has a sidebar with every site grouped by region and the racks of the open site, and each site splits into Floor, Cabling, Storage, Clusters and Internet line tabs.
 - The first-hour design note describes the current start, and the datacenter space docs match the rack shares the game rents.
