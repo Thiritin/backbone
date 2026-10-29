@@ -176,7 +176,8 @@ export const installedRamGb = (d: Device): number => partSum(d, "ram");
 // Usable GB of the array: all drives, half for mirrors, all but one or two for parity.
 export function raidUsable(d: Device): number {
   const n = drivesOf(d).length, g = driveGb(d);
-  return { none: n, "1": n / 2, "5": n - 1, "6": n - 2, "10": n / 2 }[d.raid] * g;
+  // A mirror pairs drives, so an odd one out adds nothing.
+  return { none: n, "1": Math.floor(n / 2), "5": n - 1, "6": n - 2, "10": Math.floor(n / 2) }[d.raid] * g;
 }
 
 // Drives the array can lose at once without losing data; RAID 10 survives one per mirror pair, so this is its guaranteed count.
@@ -192,9 +193,13 @@ export function arrayLost(d: Device): boolean {
 
 // A component can be swapped with the device running if it is a drive in RAID, one of two power supplies while the other works, or a fan.
 export function hotSwappable(d: Device, c: Component): boolean {
-  const rule = COMPONENTS[c.kind].hotSwap;
+  return hotKind(d, c.kind, c.id);
+}
+// The same rule for a part of this kind going into a slot, or out of the one named by except.
+export function hotKind(d: Device, kind: Component["kind"], except?: string): boolean {
+  const rule = COMPONENTS[kind].hotSwap;
   if (rule === "raid") return d.raid !== "none";
-  if (rule === "dual") return d.components.some((x) => x.kind === "psu" && x.id !== c.id && x.failedAt === null);
+  if (rule === "dual") return d.components.some((x) => x.kind === "psu" && x.id !== except && x.failedAt === null);
   return rule === "yes";
 }
 

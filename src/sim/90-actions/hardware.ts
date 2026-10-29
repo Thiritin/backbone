@@ -1,11 +1,11 @@
 import { yearOf } from "../00-core/time";
-import { brandsFor, dualPsuModel, modelById, priceOf, shopModels, SWITCH_BRAND } from "../10-catalog/hardware";
+import { bareParts, bayCount, brandsFor, COMPONENT_KINDS, COMPONENTS, componentParts, dualPsuModel, fits as chassisFits, isDriveKind, modelById, partOffers, partsPrice, priceOf, samePart, shopModels, SWITCH_BRAND, FAN_SLOTS, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
-import { deviceDefaults, type BondMode, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, hotSwappable, moveCost, pluggedIn, resaleValue, travelCost } from "../60-infra/status";
+import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
+import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, moveCost, pluggedIn, resaleValue, travelCost } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
-import { endLease } from "../88-tick/tick";
+import { endLease, rebuildHours } from "../88-tick/tick";
 import { serverTaken } from "../60-infra/cluster";
 
 // error is an i18n key.
@@ -145,33 +145,66 @@ export function sellRack(s: GameState, rackId: string): ActionResult {
   return { ok: true };
 }
 
-export interface CartLine { model: string; brand: string; qty: number }
+// extras are parts added to each unit; a bare chassis is the model without CPUs, RAM and drives. part is the size of a spare from the Parts tab.
+export interface CartLine {
+  model: string; brand: string; qty: number;
+  extras?: { kind: ComponentKind; size?: number; ff?: string; qty: number }[];
+  bare?: boolean;
+  part?: PartSpec;
+}
 
-function lineError(s: GameState, { model: modelId, brand, qty }: CartLine): string | null {
+// A bare chassis never costs less than this share of the preset.
+export const BARE_FLOOR = 0.25;
+const extraParts = (line: CartLine): PartSpec[] =>
+  (line.extras ?? []).flatMap((e) => Array.from({ length: e.qty }, (): PartSpec => ({ kind: e.kind, ...(e.size !== undefined ? { size: e.size } : {}), ...(e.ff ? { ff: e.ff as FormFactor } : {}) })));
+// The parts one unit of the line is built from.
+export const lineParts = (line: CartLine): PartSpec[] => {
+  const m = modelById(line.model);
+  return [...(line.bare ? bareParts(m) : componentParts(m)), ...extraParts(line)];
+};
+// What one unit costs: the preset, or the preset minus its CPUs, RAM and drives at part prices, plus the extras at part prices.
+export function unitPrice(line: CartLine): number {
+  const m = modelById(line.model), preset = priceOf(m, line.brand);
+  const bare = Math.max(Math.round(preset * BARE_FLOOR), preset - (partsPrice(componentParts(m)) - partsPrice(bareParts(m))));
+  return (line.bare ? bare : preset) + partsPrice(extraParts(line));
+}
+
+function lineError(s: GameState, line: CartLine): string | null {
+  const { model: modelId, brand, qty } = line;
   const model = shopModels(yearOf(s.hour)).find((m) => m.id === modelId);
   if (!model) return "error.notInShop";
   if (!brandsFor(model.kind).includes(brand)) return "error.unknownBrand";
   if (!Number.isInteger(qty) || qty < 1) return "error.badQuantity";
-  return null;
+  const offers = partOffers(yearOf(s.hour));
+  if (line.part && (model.kind !== "part" || line.part.kind !== modelId.slice(5) || !offers.some((o) => samePart(o, line.part!)))) return "error.notInShop";
+  if (!line.bare && !line.extras?.length) return null;
+  if (model.kind !== "server") return "error.notBuildable";
+  if (line.extras?.some((e) => !COMPONENT_KINDS.includes(e.kind) || !Number.isInteger(e.qty) || e.qty < 1)) return "error.badQuantity";
+  if (line.extras?.some((e) => e.ff !== undefined && !FORMS.includes(e.ff as FormFactor))) return "error.wrongFormFactor";
+  const error = chassisFits(model, lineParts(line));
+  if (error) return error;
+  return extraParts(line).every((p) => offers.some((o) => samePart(o, p))) ? null : "error.notInShop";
 }
+const FORMS: FormFactor[] = ["3.5", "2.5", "nvme"];
 
 // Puts qty new units into storage at the manufacturer's price and returns their ids.
-function stock(s: GameState, { model: modelId, brand, qty }: CartLine, lease: string | null, store: string): string[] {
-  const model = modelById(modelId);
-  const price = priceOf(model, brand);
+function stock(s: GameState, line: CartLine, lease: string | null, store: string): string[] {
+  const { model: modelId, brand, qty } = line;
+  const price = unitPrice(line), custom = line.bare || line.extras?.length;
   return Array.from({ length: qty }, () => {
     const name = nextName(`${prefix(s, store)}-${roleOf(modelId)}`, s.devices.map((d) => d.name));
     const id = newId(s, "dev");
-    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "failover", groups: [], price, boughtAt: s.hour, lease, store, transitTo: null, arriveAt: null, ...deviceDefaults(modelId, s.hour) });
+    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "failover", groups: [], price, boughtAt: s.hour, lease, store, transitTo: null, arriveAt: null,
+      ...deviceDefaults(modelId, s.hour, custom ? lineParts(line) : undefined), ...(line.part ? { part: line.part } : {}) });
     return id;
   });
 }
 
-const lineTotal = (line: CartLine) => priceOf(modelById(line.model), line.brand) * line.qty;
+const lineTotal = (line: CartLine) => unitPrice(line) * line.qty;
 
 // Bought units go to the storage of the zone at locationId, which may not be ready yet.
-export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string): ActionResult {
-  const line = { model: modelId, brand, qty };
+export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "bare" | "part"> = {}): ActionResult {
+  const line = { model: modelId, brand, qty, ...rest };
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   const error = lineError(s, line);
   if (error) return fail(error);
@@ -190,7 +223,7 @@ export function buyCart(s: GameState, lines: CartLine[], payment: { kind: "cash"
   const total = lines.reduce((sum, l) => sum + lineTotal(l), 0);
   if (payment.kind === "cash") {
     if (s.cash < total) return fail("error.noCash");
-    const ids = lines.map((l) => (buyDevice(s, l.model, l.brand, l.qty, locationId) as { id: string }).id);
+    const ids = lines.map((l) => (buyDevice(s, l.model, l.brand, l.qty, locationId, l) as { id: string }).id);
     return { ok: true, id: ids[0] };
   }
   const offer = leaseOffers(s, total).find((o) => o.id === payment.offerId);
@@ -423,7 +456,9 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (!rack) return fail("error.notMounted");
   if (rack.arriveAt !== null) return fail("error.rackMoving");
   if (d.maintenance) return fail("error.busy");
-  const parts = s.devices.filter((x) => x.model === `part-${c.kind}` && x.store === rack.locationId);
+  const model = modelById(d.model);
+  const parts = s.devices.filter((x) => x.model === `part-${c.kind}` && x.store === rack.locationId && spareFits(model, d, x, c))
+    .sort((a, b) => (a.part?.size ?? 0) - (b.part?.size ?? 0));
   const part = parts.find((x) => !x.lease) ?? parts[0];
   if (!part) return fail("error.noPart");
   if (d.on && !hotSwappable(d, c)) return fail("error.powerOffFirst");
@@ -434,8 +469,16 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: Math.max(1, SWAP_HOURS) }, -bill);
   claimRepair(s, d.label ?? d.name, c, part.price, bill);
   s.devices = s.devices.filter((x) => x.id !== part.id);
-  d.maintenance = { componentId, partId: part.id, doneAt: s.hour + (hands ? hands.responseHours : 0) + SWAP_HOURS };
+  d.maintenance = { componentId, partId: part.id, doneAt: s.hour + (hands ? hands.responseHours : 0) + SWAP_HOURS, ...(part.part ? { spec: part.part } : {}) };
   return { ok: true, id: part.id };
+}
+
+// Whether a spare can take the component's place: at least its size, a drive its bays take, and nothing over the chassis limits.
+export function spareFits(model: DeviceModel, d: Device, spare: Device, c: Component): boolean {
+  const p = spare.part;
+  if (!p) return true;
+  if ((p.size ?? 0) < (c.size ?? 0)) return false;
+  return !chassisFits(model, d.components.map((x) => (x === c ? asSpec({ kind: c.kind, size: p.size ?? c.size, ff: p.ff ?? c.ff }) : asSpec(x))));
 }
 
 // A second feed or a high-density feed for a rack in a rented position.
@@ -464,6 +507,7 @@ export function buyCircuit(s: GameState, locationId: string): ActionResult {
 }
 
 // Fills an empty second power supply bay: the device becomes its dual-supply build, and the new supply waits to be plugged in.
+// The supply is bought at the build's price difference and installed like any spare.
 export function addSecondPsu(s: GameState, deviceId: string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
@@ -471,13 +515,106 @@ export function addSecondPsu(s: GameState, deviceId: string): ActionResult {
   if (!to) return fail("error.noSecondPsu");
   const price = priceOf(to, d.brand) - priceOf(modelById(d.model), d.brand);
   if (s.cash < price) return fail("error.noCash");
-  const at = d.components.map((c) => c.kind).lastIndexOf("psu") + 1;
-  const id = `c${Math.max(0, ...d.components.map((c) => Number(c.id.slice(1)) || 0)) + 1}`;
-  d.components.splice(at, 0, { id, kind: "psu", installedAt: s.hour, failedAt: null, plugged: false });
-  d.model = to.id;
+  const zone = d.rackId ? locationOf(s, d)?.id : d.store;
+  if (!zone) return fail("error.inTransit");
+  const spare = stock(s, { model: "part-psu", brand: "Generic", qty: 1 }, null, zone)[0];
+  const r = installPart(s, deviceId, spare);
+  if (!r.ok) { s.devices = s.devices.filter((x) => x.id !== spare); return r; }
   d.price += price;
   book(s, "hardware", "ledger.secondPsu", { device: d.label ?? d.name }, -price);
+  return r;
+}
+
+export const INSTALL_HOURS = 0.5;
+
+// The number of slots a model has for a kind of part; installPart counts them from 0.
+function slotCount(m: DeviceModel, kind: ComponentKind): number {
+  const v = m.server;
+  if (kind === "cpu") return v?.sockets ?? 0;
+  if (kind === "ram") return v?.dimmSlots ?? 0;
+  if (isDriveKind(kind)) return v ? bayCount(v) : 0;
+  if (kind === "psu") return v?.psuBays ?? m.psus;
+  return kind === "fan" ? (v ? FAN_SLOTS : 2) : 1;
+}
+const sameSlots = (a: ComponentKind, b: ComponentKind) => a === b || (isDriveKind(a) && isDriveKind(b));
+
+interface Work { bill: number; billHours: number; wait: number; hands: boolean }
+// Checks hands-on work on a device. One in storage is worked on at once. One in a rack must be off unless the part swaps hot; it takes
+// the remote hands' response time at a datacenter, billed for at least an hour, plus 30 minutes for a part that needs the server off.
+function handsOn(s: GameState, d: Device, hot: boolean, technician: boolean): { error: string } | Work {
+  if (d.maintenance) return { error: "error.busy" };
+  if (!d.rackId) return d.store ? { bill: 0, billHours: 0, wait: 0, hands: false } : { error: "error.inTransit" };
+  const rack = s.racks.find((r) => r.id === d.rackId)!;
+  if (rack.arriveAt !== null) return { error: "error.rackMoving" };
+  if (d.on && !hot) return { error: "error.powerOffFirst" };
+  const loc = s.locations.find((l) => l.id === rack.locationId)!;
+  const hands = loc.dc && !technician ? datacenterById(loc.dc).remoteHands : null;
+  const hours = hot ? 0 : INSTALL_HOURS, billHours = Math.max(1, hours);
+  const bill = hands ? billHours * hands.perHour : 0;
+  if (s.cash < bill) return { error: "error.noCash" };
+  return { bill, billHours, wait: (hands ? hands.responseHours : 0) + hours, hands: !!hands };
+}
+function startWork(s: GameState, d: Device, partId: string, w: Work) {
+  if (w.hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: w.billHours }, -w.bill);
+  if (w.wait > 0) d.maintenance = { componentId: "", partId, doneAt: s.hour + w.wait };
+}
+const asSpec = (c: { kind: ComponentKind; size?: number; ff?: FormFactor }): PartSpec => ({ kind: c.kind, ...(c.size !== undefined ? { size: c.size } : {}), ...(c.ff ? { ff: c.ff } : {}) });
+// A second power supply makes a build with a dual-supply sibling its sibling, and dropping to one supply makes it the single build again.
+function syncPsuBuild(d: Device) {
+  const psus = d.components.filter((c) => c.kind === "psu").length;
+  const dual = dualPsuModel(d.model);
+  if (psus === 2 && dual) d.model = dual.id;
+  else if (psus === 1 && d.model.endsWith("-2psu")) d.model = d.model.slice(0, -5);
+}
+
+// Puts a spare from the device's zone into a free slot. Drives in a RAID array, power supplies and fans go in with the device running;
+// RAM, CPUs and the rest need it off. slot is the index of a free slot of that kind, and the next free one when left out.
+export function installPart(s: GameState, deviceId: string, partId: string, slot?: number, technician = false): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  const zone = d.rackId ? locationOf(s, d)?.id : d.store;
+  const part = s.devices.find((x) => x.id === partId);
+  if (!part || modelById(part.model).kind !== "part" || !zone || part.store !== zone) return fail("error.noPart");
+  const model = modelById(d.model), kind = part.model.slice(5) as ComponentKind, spec: PartSpec = { ...part.part, kind };
+  const used = d.components.filter((c) => sameSlots(c.kind, kind)).length;
+  if (slot !== undefined && (!Number.isInteger(slot) || slot < 0 || slot >= slotCount(model, kind))) return fail("error.unknownSlot");
+  if (slot !== undefined && slot < used) return fail("error.partSlotTaken");
+  const error = chassisFits(model, [...d.components.map(asSpec), spec]);
+  if (error) return fail(error);
+  const w = handsOn(s, d, hotKind(d, kind), technician);
+  if ("error" in w) return fail(w.error);
+  startWork(s, d, partId, w);
+  s.devices = s.devices.filter((x) => x.id !== partId);
+  const id = `c${Math.max(0, ...d.components.map((c) => Number(c.id.slice(1)) || 0)) + 1}`;
+  const at = d.components.map((c) => sameSlots(c.kind, kind)).lastIndexOf(true);
+  d.components.splice(at < 0 ? d.components.length : at + 1, 0, { id, ...spec, installedAt: s.hour, failedAt: null, ...(kind === "psu" && d.rackId ? { plugged: false } : {}) });
+  if (isDriveKind(kind) && d.rackId && d.raid !== "none" && !d.rebuild && !arrayLost(d)) d.rebuild = { componentId: id, doneAt: s.hour + rebuildHours(d) };
+  syncPsuBuild(d);
   return { ok: true, id };
+}
+
+// Takes a part out of its slot. A working part goes back to the zone's storage; a failed or worn one is scrapped.
+// A drive can only leave an array that still fits its RAID level.
+export function removePart(s: GameState, deviceId: string, componentId: string, technician = false): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  const c = d.components.find((x) => x.id === componentId);
+  if (!c) return fail("error.unknownComponent");
+  if (c.kind === "board" || c.kind === "nic") return fail("error.notRemovable");
+  const zone = d.rackId ? locationOf(s, d)?.id : d.store;
+  if (!zone) return fail("error.inTransit");
+  if (isDriveKind(c.kind) && d.raid !== "none" && !raidFits(d.raid, drivesOf(d).length - 1)) return fail("error.raidLevel");
+  const w = handsOn(s, d, hotSwappable(d, c), technician);
+  if ("error" in w) return fail(w.error);
+  startWork(s, d, "", w);
+  d.components = d.components.filter((x) => x.id !== componentId);
+  if (d.rebuild?.componentId === componentId) d.rebuild = null;
+  syncPsuBuild(d);
+  if (c.failedAt === null && s.hour - c.installedAt < COMPONENTS[c.kind].life * HOURS_PER_YEAR) {
+    const spec = asSpec(c);
+    stock(s, { model: `part-${c.kind}`, brand: "Generic", qty: 1, ...(spec.size !== undefined || spec.ff ? { part: spec } : {}) }, null, zone);
+  }
+  return { ok: true };
 }
 
 // Orders another internet line for the basement; it goes live after its install days. Ordering the current line cancels a pending switch.

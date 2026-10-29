@@ -35,7 +35,7 @@ The loop runs clockwise. Work you ignore turns into cancellations, and each canc
 | --- | --- | --- |
 | Support | Pick a reply and an action for each ticket | Support agents, later an AI support bot |
 | Billing | Click to send each reminder and dunning notice | Bookkeepers and accountants |
-| Infrastructure | Install, cable and repair hardware | Technicians and rack templates |
+| Infrastructure | Install, cable, upgrade and repair hardware | Technicians and rack templates |
 | Network | Set up ports, buy transit, arrange peering | Network engineers |
 | Marketing | Run campaigns, read reviews | Marketing manager |
 
@@ -165,7 +165,9 @@ Racks hold servers, switches and routers, and you cable them port by port. Bandw
 
 Switches come in several sizes: 8, 24 and 48 copper ports, each with a few SFP cages for fiber.
 
-**Chassis and parts.** A server is a chassis with slots: DIMM slots, drive bays (3.5", 2.5" or NVMe-capable), PCIe slots and power supply bays, set by its line and generation (economy.md, Hardware, power and failures). Every RAM stick, drive and CPU has a size, and a server's cores, RAM and disk are the sum of its working parts, so a failed stick lowers the RAM of its node and can freeze it when workloads book more than is left. Drives of different sizes in one array count at the smallest size. A 3.5" bay takes 3.5" drives only, a 2.5" bay takes 2.5" drives, and an NVMe drive needs an NVMe-capable bay. The Components card in the inspector lists each part with its size and slot.
+**Chassis and parts.** A server is a chassis with slots: DIMM slots, drive bays (3.5", 2.5" or NVMe-capable), PCIe slots and power supply bays, set by its line and generation (economy.md, Hardware, power and failures). Every RAM stick, drive and CPU has a size, and a server's cores, RAM and disk are the sum of its working parts, so a failed stick lowers the RAM of its node and can freeze it when workloads book more than is left. Drives of different sizes in one array count at the smallest size. A 3.5" bay takes 3.5" drives only, a 2.5" bay takes 2.5" drives, and an NVMe drive needs an NVMe-capable bay. The Components card in the inspector lists the slots of each group (CPU sockets, DIMM slots, drive bays, PCIe slots and power supply bays) with the part in each filled slot and Add on each empty one, which offers the spare parts in the zone's storage that fit.
+
+**Buying servers.** Each server in the Shop is sold as a preset, a bare chassis, or a preset with extras. A preset ships with the CPUs, RAM and drives of its model. A bare chassis keeps the board, fans, network card and one power supply and ships without CPUs, RAM and drives; it costs the preset price minus those parts at their part prices, and never less than a quarter of the preset price. Extras are parts added to each unit in the cart, on a preset or on a bare chassis, and each costs its part price. Extras that do not fit the chassis (more sticks than DIMM slots, more drives than bays, a drive that does not fit the bays, more memory than the board takes) are refused, and the cart line shows the parts and the total. A bare chassis filled with a preset's parts costs the preset price. The Parts tab sells the parts alone into storage: RAM sticks, CPUs and drives of the current generation's sizes and the generation before, drives by form factor, and power supplies, fans, network cards and mainboards. Parts cost a flat price per kind until prices follow the years.
 
 **Brands.** Servers and switches come from parody brands whose fronts look like the real ones: Dwell (hex-mesh bezel), Hewlett-Packet (silver front with a pull tab and a perforated grille), SuperMacro (black chassis with silver drive trays) and Sysko for switches. A player can tell a rack's contents apart at a glance.
 
@@ -198,6 +200,8 @@ Failover is the safe default. Load balance doubles a server's bandwidth, but if 
 
 - A server swaps in place for another of the same height, for example a faster 1U. Bigger machines, such as a 4U GPU server, need free space. Drain the server first, or its workloads go offline during the swap.
 - A switch or router swaps in place only if the new one has at least as many ports as are in use, so you can't downgrade below the used port count. Cables stay on their ports.
+- A server grows in place by adding parts from the zone's storage to its free slots, and shrinks by taking parts out; a removed part goes back to storage and fits another chassis. Drives in a RAID array, fans and power supplies (with another one working) go in and out with the server running, and a drive added to an array starts a rebuild. RAM, CPUs and drives outside an array need the server off. The work takes 30 minutes in the basement, and at a datacenter the provider's remote hands do it at their hourly rate and response time, and a technician can do it instead. The server stays off afterwards until it is powered on and boots. A server in storage takes parts at once. The mainboard and network card cannot be removed, a failed or worn part is scrapped on removal, a part replaces a component of the same kind at the same size or larger, and a drive leaves an array only while the array still has the drives its RAID level needs.
+- A second power supply is a part like any other. Servers sold in a single and a dual build become the dual build once the second supply is in and the single build again when it is out.
 
 **Server models.** Every server is described by the same handful of specs, so comparing two is quick:
 
@@ -242,7 +246,7 @@ Storage servers hold fast disks for block and object storage. Backup servers hol
 - **Fan:** the device runs hot and its other components fail twice as often until the fan is replaced.
 - **RAM, mainboard, CPU or network card:** the device goes down until the part is replaced.
 
-Spare parts are bought in the Shop and kept in the zone's storage. You replace a part from the device in the Locations view. Drives in a RAID array, fans and one of two power supplies can be swapped while the device runs; everything else needs the device powered off, so its workloads go offline unless you migrate them first. At a datacenter the provider's remote hands do the swap, at their hourly rate and response time. A technician at the location can do it instead (see Staff). Replacing worn parts before they fail is your call, and it is cheaper than an outage.
+Spare parts are bought in the Parts tab of the Shop and kept in the zone's storage. You replace a part from the device in the Locations view. Drives in a RAID array, fans and one of two power supplies can be swapped while the device runs; everything else needs the device powered off, so its workloads go offline unless you migrate them first. At a datacenter the provider's remote hands do the swap, at their hourly rate and response time. A technician at the location can do it instead (see Staff). A spare replaces a component of the same kind at the same size or larger, and a drive spare has to fit the bays of the chassis. Replacing worn parts before they fail is your call, and it is cheaper than an outage.
 
 **RAID.** Each server's drives run in a RAID level you choose: none, RAID 1, RAID 5, RAID 6 or RAID 10. More redundancy means less usable space and more drive failures survived. A rebuild runs at the rebuild rate you set: a fast rebuild slows the server, a slow one leaves it exposed for longer. Distributed storage pools across servers, Ceph style, are a later unlock.
 

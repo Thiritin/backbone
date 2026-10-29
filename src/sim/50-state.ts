@@ -1,6 +1,6 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
-import { componentParts, modelById, type ComponentKind, type FormFactor } from "./10-catalog/hardware";
+import { componentParts, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import { STARTER_APPS } from "./10-catalog/store";
 import { seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
@@ -42,11 +42,13 @@ export interface Rack { id: string; model: RackModel; locationId: string; positi
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.
 export interface Device { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
   components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
-  rebuild: { componentId: string; doneAt: number } | null; maintenance: { componentId: string; partId: string; doneAt: number } | null;
+  rebuild: { componentId: string; doneAt: number } | null; maintenance: { componentId: string; partId: string; doneAt: number; spec?: PartSpec } | null;
   // The hour the device's data was lost, if it ever was.
   dataLost: number | null;
   // The hour a device switched on finishes booting.
   bootUntil?: number;
+  // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
+  part?: PartSpec;
 }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
@@ -151,9 +153,9 @@ export interface GameState {
   ips: Ips;
 }
 
-// Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
-export function deviceDefaults(modelId: string, at: number) {
-  const parts = componentParts(modelById(modelId));
+// Fields every new device starts with: fresh components installed at hour `at` (the model's parts unless partList says otherwise), powered on, RAID 1 with two or more drives.
+export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[]) {
+  const parts = partList ?? componentParts(modelById(modelId));
   const drives = parts.filter((p) => p.kind === "hdd" || p.kind === "ssd" || p.kind === "nvme").length;
   return {
     components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),

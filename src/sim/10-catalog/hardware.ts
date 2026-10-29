@@ -1,5 +1,5 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
-import { GENERATIONS } from "./economy";
+import { GENERATIONS, generationAt } from "./economy";
 
 export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "part";
 export interface PortSpec { media: "rj45" | "sfp"; gbit: number }
@@ -71,6 +71,41 @@ export function componentParts(m: DeviceModel): PartSpec[] {
   return [];
 }
 export const componentKinds = (m: DeviceModel): ComponentKind[] => componentParts(m).map((p) => p.kind);
+
+export const isDriveKind = (k: ComponentKind): boolean => k === "hdd" || k === "ssd" || k === "nvme";
+// Fans in the fan wall; a chassis takes no more.
+export const FAN_SLOTS = 4;
+
+// The form factor of a drive part; one without says the chassis preset's.
+const driveFf = (m: DeviceModel, p: PartSpec): FormFactor => p.ff ?? (m.server ? presetFf(m.server) : "2.5");
+
+// A bare chassis keeps its board, fans, NIC and one power supply; CPUs, RAM and drives are bought separately.
+export const bareParts = (m: DeviceModel): PartSpec[] => {
+  let psu = 0;
+  return componentParts(m).filter((p) => !["cpu", "ram", "hdd", "ssd", "nvme"].includes(p.kind) && (p.kind !== "psu" || psu++ < 1));
+};
+// What the shop charges for a part, per piece.
+export const partPrice = (p: PartSpec): number => COMPONENTS[p.kind].price;
+export const partsPrice = (parts: PartSpec[]): number => parts.reduce((n, p) => n + partPrice(p), 0);
+
+// Whether a chassis can carry these parts together; returns an error key, or null when they fit.
+export function fits(m: DeviceModel, parts: PartSpec[]): string | null {
+  const v = m.server, count = (k: ComponentKind) => parts.filter((p) => p.kind === k).length;
+  const fans = m.kind === "server" ? FAN_SLOTS : m.kind === "switch" || m.kind === "firewall" ? 2 : 0;
+  const boards = m.kind === "server" || m.kind === "switch" || m.kind === "firewall" ? 1 : 0;
+  // Network ports come with the model, so a server takes its onboard NIC and no more.
+  if (count("cpu") > (v?.sockets ?? 0) || count("ram") > (v?.dimmSlots ?? 0) || count("psu") > (v ? v.psuBays : m.psus)
+    || count("fan") > fans || count("board") > boards || count("nic") > (v ? 1 : 0)) return "error.noSlot";
+  if (v && parts.filter((p) => p.kind === "ram").reduce((n, p) => n + (p.size ?? 0), 0) > v.maxRamGb) return "error.tooMuchRam";
+  const drives = parts.filter((p) => isDriveKind(p.kind)).map((p) => driveFf(m, p));
+  if (!drives.length) return null;
+  const bays = v?.bays ?? [], cap = (ff: FormFactor) => bays.filter((b) => b.ff === ff).reduce((n, b) => n + b.count, 0);
+  const n = (ff: FormFactor) => drives.filter((f) => f === ff).length;
+  if (drives.some((f) => !bays.some((b) => bayTakes(b.ff, f)))) return "error.wrongFormFactor";
+  // NVMe drives take NVMe bays; 2.5" drives take the rest of the 2.5" and NVMe bays.
+  if (n("3.5") > cap("3.5") || n("nvme") > cap("nvme") || n("2.5") > cap("2.5") + cap("nvme") - n("nvme")) return "error.noSlot";
+  return null;
+}
 
 export interface DeviceModel {
   id: string;
@@ -229,3 +264,16 @@ export const manufacturerByName = (name: string): Manufacturer | undefined => MA
 // What a unit of this model costs from this manufacturer.
 export const priceOf = (model: DeviceModel, brand: string): number => Math.round(model.price * (manufacturerByName(brand)?.priceFactor ?? 1));
 export const shopModels = (year: number): DeviceModel[] => MODELS.filter((m) => m.from <= year && (m.until === null || year <= m.until) && m.price > 0);
+
+// NVMe drive size per generation in GB; NVMe-capable bays come with G4, so the drives do too.
+const NVME_GB = [0, 0, 0, 1000, 2000, 8000, 15000];
+export const samePart = (a: PartSpec, b: PartSpec): boolean => a.kind === b.kind && a.size === b.size && a.ff === b.ff;
+// The sized parts the Parts tab sells: whatever the presets in the shop are built from, which is the current generation's sizes
+// and the one before, plus NVMe drives.
+export function partOffers(year: number): PartSpec[] {
+  const out: PartSpec[] = [], add = (p: PartSpec) => { if (!out.some((o) => samePart(o, p))) out.push(p); };
+  for (const m of shopModels(year)) if (m.server) componentParts(m).forEach(add);
+  const g = generationAt(year);
+  for (const i of [g - 1, g]) if (NVME_GB[i]) add({ kind: "nvme", size: NVME_GB[i], ff: "nvme" });
+  return out.sort((a, b) => COMPONENT_KINDS.indexOf(a.kind) - COMPONENT_KINDS.indexOf(b.kind) || (a.size ?? 0) - (b.size ?? 0));
+}

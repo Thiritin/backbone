@@ -1,22 +1,22 @@
-import { COMPONENTS } from "../10-catalog/hardware";
+import { COMPONENTS, modelById, type ComponentKind } from "../10-catalog/hardware";
 import { phpAt } from "../10-catalog/platforms";
 import { yearOf } from "../00-core/time";
 import type { Device, GameState } from "../50-state";
 import { anchorOf } from "../60-infra/cluster";
-import { HOURS_PER_YEAR, hotSwappable, locationOf } from "../60-infra/status";
+import { HOURS_PER_YEAR, hotKind, hotSwappable, locationOf } from "../60-infra/status";
 import type { SimEvent } from "../88-tick/tick";
 import { drain, upgradeNodePhp } from "../90-actions/clusters";
-import { replaceComponent, setPower, type ActionResult } from "../90-actions/hardware";
+import { installPart, removePart, replaceComponent, setPower, spareFits, type ActionResult } from "../90-actions/hardware";
 import { callOut, onCallAt, onCallPayroll, respond, restUntil } from "./oncall";
 import { atFair, isWorkHour, onShift, working, type Employee, type Task } from "./staff";
 
-export type OpKind = "replace" | "off" | "on" | "drain" | "php";
-// One operation on one device; componentId is set for a replace, auto when a rule queued it.
-export interface TechOp { id: string; kind: OpKind; deviceId: string; componentId: string | null; queuedAt: number; auto: boolean }
+export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "part";
+// One operation on one device; componentId is set for a replace and for taking a part out, partId for putting a spare in, auto when a rule queued it.
+export interface TechOp { id: string; kind: OpKind; deviceId: string; componentId: string | null; queuedAt: number; auto: boolean; partId?: string | null }
 // failed: replace failed parts when a spare is in storage. worn: replace parts past their life that swap while running.
 // blackhole: the on-call technician blackholes an attack that saturates their location's links.
 export interface TechRules { failed: boolean; worn: boolean; blackhole: boolean }
-export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels" };
+export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", part: "hardware" };
 
 export const opLocation = (s: GameState, o: TechOp): string | null => {
   const d = s.devices.find((x) => x.id === o.deviceId);
@@ -24,7 +24,9 @@ export const opLocation = (s: GameState, o: TechOp): string | null => {
 };
 export const techsAt = (s: GameState, locationId: string, task?: Task): Employee[] =>
   s.staff.filter((e) => e.role === "technician" && e.location === locationId && (!task || e.trained.includes(task)));
-const spares = (s: GameState, locationId: string, kind: string) => s.devices.filter((x) => x.model === `part-${kind}` && x.store === locationId).length;
+// Spares in the location's storage that can take the place of a component.
+const spares = (s: GameState, locationId: string, d: Device, c: Device["components"][number]) =>
+  s.devices.filter((x) => x.model === `part-${c.kind}` && x.store === locationId && spareFits(modelById(d.model), d, x, c)).length;
 const worn = (s: GameState, c: Device["components"][number]) => s.hour - c.installedAt >= COMPONENTS[c.kind].life * HOURS_PER_YEAR;
 
 // Out of office hours the on-call technician comes in for these: a failed part and starting a device again.
@@ -56,8 +58,8 @@ export function nextSlot(s: GameState, locationId: string, task: Task, isUrgent 
   return null;
 }
 
-export function queueOp(s: GameState, kind: OpKind, deviceId: string, componentId: string | null = null, auto = false): TechOp {
-  const op: TechOp = { id: `op${s.nextId++}`, kind, deviceId, componentId, queuedAt: s.hour, auto };
+export function queueOp(s: GameState, kind: OpKind, deviceId: string, componentId: string | null = null, auto = false, partId: string | null = null): TechOp {
+  const op: TechOp = { id: `op${s.nextId++}`, kind, deviceId, componentId, queuedAt: s.hour, auto, ...(partId ? { partId } : {}) };
   s.techOps = [...s.techOps, op];
   return op;
 }
@@ -74,7 +76,7 @@ function autoQueue(s: GameState): void {
       if (!due || d.maintenance?.componentId === c.id || s.techOps.some((o) => o.componentId === c.id && o.deviceId === d.id)) continue;
       const queued = s.techOps.filter((o) => o.kind === "replace" && opLocation(s, o) === rack.locationId
         && s.devices.find((x) => x.id === o.deviceId)?.components.find((x) => x.id === o.componentId)?.kind === c.kind).length;
-      if (spares(s, rack.locationId, c.kind) > queued) queueOp(s, "replace", d.id, c.id, true);
+      if (spares(s, rack.locationId, d, c) > queued) queueOp(s, "replace", d.id, c.id, true);
     }
   }
 }
@@ -85,7 +87,7 @@ function ready(s: GameState, o: TechOp, taken: Set<string>): boolean {
   if (d.maintenance || taken.has(d.id) || s.techOps.findIndex((x) => x.deviceId === d.id) !== s.techOps.indexOf(o)) return false;
   if (o.kind !== "replace") return true;
   const c = d.components.find((x) => x.id === o.componentId), loc = locationOf(s, d);
-  return !c || !loc || spares(s, loc.id, c.kind) > 0;
+  return !c || !loc || spares(s, loc.id, d, c) > 0;
 }
 
 // A part that only swaps with the device off costs a shutdown first; the device is started again after the swap.
@@ -96,6 +98,14 @@ function perform(s: GameState, o: TechOp): ActionResult | "off" {
     if (!c) return { ok: false, error: "error.unknownComponent" };
     if (d.on && !hotSwappable(d, c)) return setPower(s, d.id, false).ok ? "off" : { ok: false, error: "error.notMounted" };
     return replaceComponent(s, d.id, c.id, true);
+  }
+  if (o.kind === "part") {
+    const c = o.componentId ? d.components.find((x) => x.id === o.componentId) : undefined;
+    const spare = o.partId ? s.devices.find((x) => x.id === o.partId) : undefined;
+    if (o.componentId ? !c : !spare) return { ok: false, error: o.componentId ? "error.unknownComponent" : "error.noPart" };
+    const hot = c ? hotSwappable(d, c) : hotKind(d, spare!.model.slice(5) as ComponentKind);
+    if (d.rackId && d.on && !hot) return setPower(s, d.id, false).ok ? "off" : { ok: false, error: "error.notMounted" };
+    return c ? removePart(s, d.id, c.id, true) : installPart(s, d.id, spare!.id, undefined, true);
   }
   if (o.kind === "off" || o.kind === "on") return setPower(s, d.id, o.kind === "on");
   if (o.kind === "drain") return drain(s, d.id);
@@ -131,7 +141,7 @@ function work(s: GameState, e: Employee, events: SimEvent[], taken: Set<string>,
   s.devices = s.devices.map((d) => (d.id === o.deviceId ? { ...d } : d));
   s.ledger = [...s.ledger];
   const d = s.devices.find((x) => x.id === o.deviceId)!, device = d.label ?? d.name;
-  const part = d.components.find((c) => c.id === o.componentId)?.kind ?? "";
+  const part = d.components.find((c) => c.id === o.componentId)?.kind ?? s.devices.find((x) => x.id === o.partId)?.model.slice(5) ?? "";
   const r = perform(s, o);
   if (r === "off") {
     const i = s.techOps.indexOf(o);
@@ -142,6 +152,7 @@ function work(s: GameState, e: Employee, events: SimEvent[], taken: Set<string>,
   if (!r.ok) {
     if (r.error !== "error.unknownComponent") events.push({ app: "Staff", key: "event.techFailed", params: { name: e.name, device, error: r.error } });
   } else if (o.kind === "replace") events.push({ app: "Staff", key: "event.techReplaced", params: { name: e.name, device, component: part } });
+  else if (o.kind === "part") events.push({ app: "Staff", key: o.partId ? "event.techInstalled" : "event.techRemoved", params: { name: e.name, device, component: part } });
   else if (o.kind === "php") {
     const php = phpAt(yearOf(s.hour));
     for (const c of s.clusters.filter((x) => x.kind === "panel" && anchorOf(s, x) === d.id && x.php === php && x.phpUntil >= s.hour)) {
