@@ -24,5 +24,6 @@ Design: `docs/design/gdd.md` (game), `docs/design/economy.md` (numbers), `DESIGN
 - Old saves must keep loading: every new state field gets a default in `newGame`, and `deserialize` fills it.
 - Every sim change comes with a seeded test.
 - Text the simulation produces (events, notifications, ledger lines, action errors) goes through i18n keys. UI labels stay inline in components for now; the game is English only.
+- Every change that lands in main adds one or two bullets to CHANGELOG.md under today's `## YYYY-MM-DD` heading: one player-facing sentence each saying what changed in the game, no file or code names. The game shows new bullets when it offers a reload, and tests/update.test.ts checks the shape.
 - No em dashes in code, comments, docs or UI copy.
 - UI copy: labels and values only, no filler hints; captions are full sentences with a verb.
