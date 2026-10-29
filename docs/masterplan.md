@@ -15,7 +15,7 @@ This is the work plan for the next stretch of Backbone. It lists what is built a
 - The owner plays on the Vite dev server (port 5173) from this checkout, so merging code here reloads their page; windows and the Support selection survive reloads (src/ui/session.ts).
 - One lane at a time on its own branch or worktree, merged into main only when everything above is green.
 
-Balance today (main after Merge Lane 6.5): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 865 tests pass.
+Balance today (main after Merge Lane 5.2): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 905 tests pass.
 
 ## Built
 
@@ -38,6 +38,7 @@ Balance today (main after Merge Lane 6.5): steady medians L2 2006.3, L3 2007.1, 
 - Lane 2b.4, breaches and ransom (f54c3d8): a critical hit on an instance exposed over 30 days becomes a breach 25% of the time, the extortion ticket with Pay and Refuse and a 72 hour default, 90/10 on paying, sale effects, BDSG and GDPR fines, the Breaches card, a "fees" ledger category.
 - Lane 3.4, IPMI and power (029bc78): `hasBmc` by brand and generation, management addresses, iDRAQ, iLOL, SuperMacro IPMI and XClarify pages in the browser, `shutdown`, `reset`, `powerCycle` and the pull with a corruption roll, OS and controller hangs, `recover`, the RAID rebuild performance factor, device event logs.
 - Lane 6.5 (Merge Lane 6.5): deliveries take 3 days in 2005 falling to 1 by 2015 (the first server arrives at once), the Tower server line for G1 and G2 on a 4-place basement shelf with no controller.
+- Lane 5.2, routers, UPS sizes and PDUs (Merge Lane 5.2): AVN small-office routers that replace the basement router and cap the line, Sysko ISR, MicroTick and Junipurr routers with `fullTable` and `bgpSessions`, announcing a block needs a full-table router, Eatin UPS 3000, 5k and 10k, switched PDUs that power cycle any device in the rack, 2027 successors and the newest-never-ends-sale rule.
 - Lane 3.5, terminal: the Terminal app (src/ui/apps/terminal), `runCommand` and `recoveryReport` in src/sim/60-infra/terminal.ts, `pathTo` and `Hop` in status.ts, `latency` and `loadOf` in network.ts, `TechRules.recover` (the technician runs `recover` on corrupted workloads on their own).
 - Lane 3.3, consoles (0b4fa1f): login pages and consoles per software family at each host's FQDN, `consoleFeatures` matrix in src/sim/80-business/consoles.ts, actions routed to the existing 90-actions functions.
 - Lane 2b.2, customer applications (85d817b): WordPass, Joomlah, Drupel and static sites with versions, self-updates by skill, hacks that deface and spam, Notify from Monitoring, update tickets with one-off, managed and free, Pricing units updateOnce and updates.
@@ -60,7 +61,7 @@ Balance today (main after Merge Lane 6.5): steady medians L2 2006.3, L3 2007.1, 
 
 ## In flight
 
-In worktrees: Lane 3.5, Lane 5.2.
+In a worktree: Lane 6.10 (overprovisioning always allowed).
 
 ## What Lane 1 left behind (read before Lanes 2 and 3)
 
@@ -89,7 +90,7 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 3.2 | Browser app, company site Admin, customer sites, easter egg | Built (3a85863) |
 | 3.3 | Server consoles by hostname with a feature matrix | Built (0b4fa1f) |
 | 3.4 | IPMI, power actions, hangs and pulled plugs | Built (029bc78) |
-| 3.5 | Terminal: ssh, ping, traceroute, recover | 3.4 |
+| 3.5 | Terminal: ssh, ping, traceroute, recover | Built (29f4111) |
 | 3b | Searchlight | Built (e90b7a7) |
 | 4.1 | Chassis slots and capacity from parts | Built (9c20670) |
 | 4.2 | Shop: bare chassis, presets with extras, parts, upgrades in the rack | Built |
@@ -97,7 +98,7 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 4.4 | Part prices over time | Built (2798fbf) |
 | 4.5 | GPU computing | Built (9a153c8) |
 | 5.1 | Hardware lifecycle: end of sale and end of support | Built (523e06c) |
-| 5.2 | Routers, UPS sizes, switched PDUs | 5.1, 3.4 (PDU power cycle) |
+| 5.2 | Routers, UPS sizes, switched PDUs | Built |
 | 6 | Small briefs | any time, one each |
 
 ### Lane 1: IP addresses, paid internet, a real start (built, kept for reference)
