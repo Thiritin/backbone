@@ -17,7 +17,7 @@ export const SAVE_KEY = "backbone.save";
 // What another app asked a window to show; n changes on every request so repeating one still applies.
 export interface Focus { kind: string; id: string; n: number }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; focus?: Focus }
-export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string }
+export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string; target?: string }
 // Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
 // types holds the notification types switched off or on by id (notify-types.ts); a missing id is on.
 export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<string, boolean> }
@@ -201,7 +201,7 @@ export const useStore = create<Store>((set, get) => ({
       for (const e of tick(game)) {
         get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params), e.key);
         if (e.key === "event.trainingDone") set({ explain: String(e.params.id) });
-        if (isAlert(e.key) && !alert) alert = { id: ++bannerId, app: e.app, title: t(`${e.key}.title`, e.params), text: t(`${e.key}.text`, e.params), hour: game.hour, key: e.key };
+        if (isAlert(e.key) && !alert) alert = { id: ++bannerId, app: e.app, title: t(`${e.key}.title`, e.params), text: t(`${e.key}.text`, e.params), hour: game.hour, key: e.key, target: e.params.deviceId === undefined ? undefined : String(e.params.deviceId) };
       }
       if (game.gameOver !== null || alert) break;
     }

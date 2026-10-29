@@ -124,7 +124,7 @@ export function powerTick(s: GameState): SimEvent[] {
   if (fresh.length) {
     for (const id of new Set(fresh.map((w) => w.deviceId!))) {
       const device = s.devices.find((x) => x.id === id)!;
-      events.push({ app: "Locations", key: "event.dataCorrupted", params: { device: name(device), count: fresh.filter((w) => w.deviceId === id).length } });
+      events.push({ app: "Locations", key: "event.dataCorrupted", params: { device: name(device), deviceId: device.id, count: fresh.filter((w) => w.deviceId === id).length } });
     }
     s.workloads = s.workloads.map((w) => (w.corrupted && !w.noticed && w.deviceId ? { ...w, noticed: true } : w));
   }

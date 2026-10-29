@@ -11,6 +11,7 @@ import { useSessionState } from "../../session";
 import { useFocus, useStore } from "../../store";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
+import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
 import { AdminPage } from "./sites/AdminPage";
 import { CompanySite } from "./sites/CompanySite";
 import { CannotReach, CustomerSite, HostPage, NotFound, VendorSite, VideoPage } from "./sites/Pages";
@@ -34,6 +35,10 @@ function titleOf(game: GameState, r: Resolved): string {
     case "console": {
       const c = game.clusters.find((x) => x.id === p.clusterId), family = c && familyOf(c);
       return family ? `${consoleTitle(family)} ${c.name}` : r.host;
+    }
+    case "ipmi": {
+      const d = game.devices.find((x) => x.id === p.deviceId);
+      return d ? `${bmcTitle(d.brand)} ${d.hostname ?? d.name}` : r.host;
     }
     case "video": return VIDEO_TITLE;
     default: return "Not found";
@@ -59,6 +64,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "vendor") body = <VendorSite maker={p.maker} go={go} />;
   else if (p.kind === "video") body = <VideoPage />;
   else if (p.kind === "console") body = <ConsolePage game={game} hostname={p.hostname} host={r.host} cluster={game.clusters.find((x) => x.id === p.clusterId)} defaced={p.defaced} />;
+  else if (p.kind === "ipmi") body = <IpmiPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
   const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor"].includes(p.kind);

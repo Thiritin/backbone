@@ -24,6 +24,8 @@ import { NodeCard } from "./Clusters";
 import { softwareOn } from "../../../sim/90-actions/software";
 import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
+import { PowerCard } from "./PowerCard";
+import { isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
 import { LidSheet } from "./LidSheet";
 import { PartsCard } from "./Slots";
 import { AddressRows } from "../network/Addresses";
@@ -45,6 +47,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     open: open ? () => onSelect(d.id) : undefined,
     lid: () => setLid(d.id),
     power: (on) => { if (on && lid) return; if (on) act((g) => setPower(g, d.id, true)); else guarded((g) => setPower(g, d.id, false), `Power off ${devName(d)}?`, "Power off"); },
+    op: (op: PowerOp) => { if (op === "on") { if (!lid) act((g) => POWER_ACTION.on(g, d.id)); } else { const label = powerOptions(game, d).options.find((o) => o.op === op)?.label ?? POWER_LABEL[op]; guarded((g) => POWER_ACTION[op](g, d.id), `${label} ${devName(d)}?`, label); } },
     plug: (psu) => togglePlug(guarded, d, psu),
     setup: () => setSetup(d.id),
     rename: () => onRename(d.id),
@@ -55,6 +58,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
   return {
     entries: (d: Device, open = false) => deviceMenu(game, d, ui(d, open)),
     power: (d: Device, on: boolean) => ui(d, false).power(on),
+    op: (d: Device, op: PowerOp) => ui(d, false).op(op),
     plug: (d: Device, psu: string) => togglePlug(guarded, d, psu),
     lid: (d: Device) => ui(d, false).lid?.(),
     dialog: (
@@ -103,8 +107,8 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         <span className="grow" />
         {model.kind === "server" && !device.on && !!(device.rackId || device.store) && <button className="btn" onClick={() => menus.lid(device)}><PackageOpen />Open chassis</button>}
         {powered && (
-          <button className={`btn ghost icon insp-power${device.on ? " on" : ""}`} aria-label={device.on ? "Power off" : "Power on"} title={device.on ? "Power off" : "Power on"}
-            disabled={!device.rackId && !device.panel} onClick={() => menus.power(device, !device.on)}>
+          <button className={`btn ghost icon insp-power${device.on ? " on" : ""}`} aria-label={device.on ? "Shut down" : "Power on"} title={device.on ? "Shut down" : "Power on"}
+            disabled={!device.rackId && !device.panel} onClick={() => (isServerInRack(device) ? menus.op(device, device.on ? "shutdown" : "on") : menus.power(device, !device.on))}>
             <Power />
           </button>
         )}
@@ -125,6 +129,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         <UsageBars usage={usageOf(game, [device])} only={model.kind === "server" ? undefined : ["net"]} wide />
       )}
 
+      {isServerInRack(device) && <PowerCard game={game} device={device} onOp={(op) => menus.op(device, op)} />}
       {model.kind === "server" && <PortTable game={game} device={device} peers={peers} sel={sel} onPick={pick} onHover={setHover} onSelect={onSelect} />}
       {model.kind === "server" && model.ports.length > 1 && (
         <div className="loc-row insp-bond">

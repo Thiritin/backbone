@@ -59,7 +59,7 @@ export function AlertSheet({ alert }: { alert: Banner }) {
         )}
         <div className="alert-actions">
           <button className="btn" onClick={() => closeAlert(true)}>Continue</button>
-          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, key === "event.vulnCritical" ? { kind: "tab", id: "monitoring" } : undefined); }}>Open {app}</button>
+          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, key === "event.vulnCritical" ? { kind: "tab", id: "monitoring" } : alert.target ? { kind: "device", id: alert.target } : undefined); }}>Open {app}</button>
         </div>
       </div>
     </div>,
