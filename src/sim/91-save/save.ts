@@ -81,7 +81,7 @@ export function deserialize(raw: string): GameState {
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.
     // The Sales app moved into Support and the Checklist into Getting started, so their ids are dropped; saves from before the Website app get it in the dock.
-    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id)).filter((id) => id !== "Sales" && id !== "Checklist"), "Website", "Browser", "Marketing"])] : [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
+    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id)).filter((id) => id !== "Sales" && id !== "Checklist" && id !== "dockBadges"), "Website", "Browser", "Marketing"])] : [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [], credit: c.credit ?? 0 })),

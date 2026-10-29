@@ -20,8 +20,8 @@ import { serviceOnline } from "./status";
 import { outgoing, sendAction } from "./replies";
 import { overpricing, retains, revertPrice } from "../30-customers/pricing";
 import {
-  bump, cancelCustomer, createTicket, credit, GAMER_ABUSE_RATE, HOURS_PER_MONTH, isFinal, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
-  profileStats, replyDue, rightTemplate, UPGRADE_CHANCE, WAITING_CLOSE_HOURS, type Ticket,
+  bump, cancelCustomer, createTicket, credit, GAMER_ABUSE_RATE, HOURS_PER_MONTH, HOW_TO, isFinal, KB_DEFLECT, KNOWLEDGE_BASE, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
+  pickHowTo, profileStats, replyDue, rightTemplate, UPGRADE_CHANCE, WAITING_CLOSE_HOURS, type Ticket,
 } from "./tickets";
 
 // A shady customer draws this many times the abuse reports.
@@ -100,7 +100,12 @@ function spawnHourly(s: GameState): void {
     const { skill } = profileStats(c.profile);
     for (const kind of ["howTo", "billing", "abuse"] as const) {
       const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1) * (kind === "abuse" ? phpAbuse(s, c.id) : 1);
-      if (chance(s.rng, rate / HOURS_PER_MONTH)) createTicket(s, c, kind);
+      if (!chance(s.rng, rate / HOURS_PER_MONTH)) continue;
+      if (kind !== "howTo") { createTicket(s, c, kind); continue; }
+      const ask = pickHowTo(s, c);
+      if (!ask) continue;
+      if (HOW_TO[ask.topic].basic && s.installed.includes(KNOWLEDGE_BASE) && chance(s.rng, KB_DEFLECT)) s.kbReads = { ...s.kbReads, [ask.topic]: (s.kbReads[ask.topic] ?? 0) + 1 };
+      else createTicket(s, c, kind, ask.serviceId, ask.topic);
     }
   }
 }

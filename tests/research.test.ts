@@ -17,7 +17,7 @@ describe("research", () => {
   it("is a tree: every prerequisite exists in an earlier tier and every gated item has one skill", () => {
     for (const k of SKILLS) for (const n of k.needs) expect(skillById(n)!.tier).toBeLessThan(k.tier);
     expect(new Set(SKILLS.map((k) => k.tier)).size).toBeGreaterThanOrEqual(3);
-    for (const id of ["Products", "Staff", "Marketing", "Market", "dockBadges"]) expect(SKILLS.filter((k) => k.opens.includes(id))).toHaveLength(1);
+    for (const id of ["Products", "Staff", "Marketing", "Market", "Nagiosaurus"]) expect(SKILLS.filter((k) => k.opens.includes(id))).toHaveLength(1);
     for (const k of SKILLS) for (const id of k.opens) expect(STORE.some((i) => i.id === id)).toBe(true);
   });
 
@@ -47,7 +47,7 @@ describe("research", () => {
     const s = newGame(12);
     s.knowHow = 50;
     research(s, "monitoring");
-    expect(install(s, "dockBadges")).toEqual({ ok: false, error: "error.needsResearch" });
+    expect(install(s, "Nagiosaurus")).toEqual({ ok: false, error: "error.needsResearch" });
     const doneAt = s.training!.doneAt;
     expect(runTo(s, doneAt - 1).some((e) => e.key === "event.trainingDone")).toBe(false);
     expect(s.unlocks).not.toContain("monitoring");
@@ -56,7 +56,7 @@ describe("research", () => {
     expect(s.unlocks).toContain("monitoring");
     expect(s.training).toBeNull();
     expect(research(s, "monitoring")).toEqual({ ok: false, error: "error.researched" });
-    expect(install(s, "dockBadges")).toEqual({ ok: true });
+    expect(install(s, "Nagiosaurus")).toEqual({ ok: true });
   });
 
   it("keeps a running training across a save and migrates old saves", () => {

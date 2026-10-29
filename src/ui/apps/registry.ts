@@ -34,7 +34,7 @@ export interface AppDef {
   about: string;
   hidden?: boolean;
   body?: ComponentType;
-  // The red count on the dock tile, shown once the Dock badges upgrade is bought.
+  // The red count on the dock tile.
   badge?: (s: GameState) => number;
 }
 

@@ -15,12 +15,6 @@ Until today, a broken disk announced itself through an angry customer. Your comp
 
 The lights on the device fronts still tell the same story. The difference is that you no longer have to be looking at them.
 
-### Dock badges
-
-**Dock badges** are now in the Pear Store. Once installed, each app in the dock shows a red count of what waits for you there: open tickets in Support, unpaid invoices in Billing and failed parts in Locations.
-
-Open the Pear Store from the Shop under Software and choose Get. Pear bills the subscription monthly, as Pear does.
-
 ## Employee management
 
 ### Now available

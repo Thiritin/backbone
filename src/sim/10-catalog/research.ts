@@ -14,7 +14,7 @@ export interface Skill {
 }
 
 export const SKILLS: Skill[] = [
-  { id: "monitoring", name: "Monitoring", about: "Your team learns to watch the hardware and the queues, so failures and waiting work announce themselves.", tier: 1, knowHow: 50, days: 5, needs: [], opens: ["dockBadges", "Nagiosaurus"] },
+  { id: "monitoring", name: "Monitoring", about: "Your team learns to watch the hardware and the queues, so failures and waiting work announce themselves.", tier: 1, knowHow: 50, days: 5, needs: [], opens: ["Nagiosaurus"] },
   { id: "marketingBasics", name: "Marketing basics", about: "You learn who your customers are and what makes them pick one host over another.", tier: 1, knowHow: 50, days: 5, needs: [], opens: [] },
   { id: "people", name: "Employee management", about: "You learn to hire, pay and organise people without losing track of who does what.", tier: 1, knowHow: 100, days: 10, needs: [], opens: ["Staff"] },
   { id: "network", name: "Network operations", about: "Your team learns to buy transit, peer with other networks and survive the occasional flood of traffic.", tier: 2, knowHow: 300, days: 14, needs: ["monitoring"], opens: [] },

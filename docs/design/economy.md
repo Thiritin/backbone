@@ -898,7 +898,6 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | Staff | Staff | €20 | €5 per employee | Employee management skill |
 | Marketing | Marketing | €20 | | Marketing campaigns skill |
 | Market | Market | €15 | | Market research skill |
-| Dock badges | Upgrade: counts on dock apps | €5 | | Monitoring skill |
 | Searchlight | Upgrade: global search on Ctrl+K and Cmd+K | €2 | | Start |
 | Widgets | Upgrade: one desktop widget each | €1 (calendar, open tickets, cash, customers), €2 (monthly revenue, level) | | Start |
 | AI bots | ChadGPT Support €50, Clipsy Reminders €100, per bot | ChadGPT: every reply in tokens, see [ChadGPT usage](#chadgpt-usage) | | Automation skill |
@@ -1945,7 +1944,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 
 | Skill | Tier | Know-how | Training | Needs | Makes available |
 | --- | --- | --- | --- | --- | --- |
-| Monitoring | 1 | 50 | 5 days | | Dock badges, Nagiosaurus, failure notifications |
+| Monitoring | 1 | 50 | 5 days | | Nagiosaurus, failure notifications |
 | Marketing basics | 1 | 50 | 5 days | | Leads to Marketing campaigns |
 | Employee management | 1 | 100 | 10 days | | Staff |
 | Network operations | 2 | 300 | 14 days | Monitoring | Network |

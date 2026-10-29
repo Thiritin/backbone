@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The dock shows a count of open tickets, unpaid invoices and failed parts from the start, and the Dock badges upgrade is gone from the Pear Store.
 - New reviews only send you a notification once Marketing campaigns unlocks the Reviews section where you can read them.
 - The sheet that opens after a training starts with a Now available page that checks off everything the skill unlocks and what you can do with it.
 - The Backbone menu has Report an issue, which opens a new GitHub issue with your game build filled in.

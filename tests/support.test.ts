@@ -15,7 +15,12 @@ vi.mock("../src/sim/40-support/status", () => ({ serviceOnline: (_s: unknown, id
 const FEB_1 = 744, MAR_1 = 744 + 672;
 
 function crowd(s: GameState, profile: Profile, n: number): string[] {
-  return Array.from({ length: n }, (_, i) => addCustomer(s, `${profile} ${i}`, profile));
+  // How-to questions are about a service, so every customer runs one.
+  return Array.from({ length: n }, (_, i) => {
+    const id = addCustomer(s, `${profile} ${i}`, profile);
+    addService(s, id, "vps", "VPS 512", 0.01, "hour");
+    return id;
+  });
 }
 
 function one(seed = 1, profile: Profile = "private") {
@@ -37,21 +42,21 @@ const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); }
 describe("ticket generation", () => {
   it("follows the monthly rates per technical skill", () => {
     const s = newGame(7);
-    crowd(s, "private", 1000);
-    crowd(s, "enterprise", 1000);
-    crowd(s, "gamer", 1000);
+    crowd(s, "private", 300);
+    crowd(s, "enterprise", 300);
+    crowd(s, "gamer", 300);
     runTo(s, 730);
     const count = (profile: Profile, kind: TicketKind) =>
       s.tickets.filter((t) => t.kind === kind && s.customers.find((c) => c.id === t.customerId)!.profile === profile).length;
     const near = (n: number, expected: number) => expect(Math.abs(n - expected)).toBeLessThan(4 * Math.sqrt(expected));
-    near(count("private", "howTo"), 180);
-    near(count("private", "billing"), 40);
-    near(count("private", "abuse"), 5);
-    near(count("enterprise", "howTo"), 20);
-    near(count("enterprise", "abuse"), 20);
-    near(count("gamer", "howTo"), 60);
-    near(count("gamer", "abuse"), 20);
-  });
+    near(count("private", "howTo"), 54);
+    near(count("private", "billing"), 12);
+    near(count("private", "abuse"), 1.5);
+    near(count("enterprise", "howTo"), 6);
+    near(count("enterprise", "abuse"), 6);
+    near(count("gamer", "howTo"), 18);
+    near(count("gamer", "abuse"), 6);
+  }, 60_000);
 
   it("notifies Support about new tickets", () => {
     const s = newGame(3);

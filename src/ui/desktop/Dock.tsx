@@ -7,13 +7,12 @@ import { bounce, rememberSlot } from "./motion";
 export function Dock() {
   const { windows, openApp, openDoc, game } = useStore();
   const minimized = windows.filter((w) => w.minimized);
-  const badges = game.installed.includes("dockBadges");
 
   return (
     <nav className="dock" aria-label="Apps">
       {APPS.filter((a) => !a.hidden && game.installed.includes(a.name)).map((a, i) => {
         const win = windows.find((w) => w.app === a.name);
-        const badge = (badges && a.badge?.(game)) || 0;
+        const badge = a.badge?.(game) ?? 0;
         const shown = appFor(game, a.name);
         return (
           <Fragment key={a.name}>
