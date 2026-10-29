@@ -1,5 +1,5 @@
 import { chance } from "../00-core/rng";
-import { dateOf, isMonthStart } from "../00-core/time";
+import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { softwareById, type Software } from "../10-catalog/platforms";
 import { BACKUP_HOUR } from "../10-catalog/usage";
 import type { Customer } from "../30-customers/customers";
@@ -97,7 +97,7 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
   for (const c of s.clusters) {
     if (!c.switching || c.switching.doneAt > s.hour) continue;
     const { kind, to } = c.switching, fresh = !(kind === "cloud" ? c.platform : c.panel);
-    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, ...(kind === "cloud" ? { platform: to } : { panel: to }) } : x));
+    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to } : { panel: to }) } : x));
     events.push({ app: "Products", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
     if (kind === "panel" && welcomeFriends(s, c.id)) events.push({ app: "Customers", key: "event.friendsJoined", params: { cluster: c.name } });
   }

@@ -25,7 +25,7 @@ export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
 const blank = (s: GameState, id: string, name: string, az: string, kind: SoftwareKind): Cluster => ({
   id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null,
-  backup: { targetId: null, every: "off" }, php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF },
+  backup: { targetId: null, every: "off" }, php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
 });
 // The next free name of the pattern, numbered from 1.
 const freeName = (s: GameState, base: string): string => {

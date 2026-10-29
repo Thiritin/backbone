@@ -1,7 +1,7 @@
 import { Wrench } from "lucide-react";
 import { dateOf, yearOf } from "../../../sim/00-core/time";
-import { phpAt } from "../../../sim/10-catalog/platforms";
-import { nextSlot, OP_TASK, urgent, type OpKind, type TechOp } from "../../../sim/47-staff/technicians";
+import { phpAt, softwareById } from "../../../sim/10-catalog/platforms";
+import { nextSlot, taskFor, urgent, type OpKind, type TechOp } from "../../../sim/47-staff/technicians";
 import type { GameState } from "../../../sim/50-state";
 import { locationOf } from "../../../sim/60-infra/status";
 import { cancelOperation, queueOperation } from "../../../sim/90-actions/staff";
@@ -30,6 +30,10 @@ export function opLabel(game: GameState, o: TechOp): string {
     const c = d?.components.find((x) => x.id === o.componentId), kind = c?.kind ?? game.devices.find((x) => x.id === o.partId)?.model.slice(5);
     return `${o.partId ? "Install" : "Remove"} ${kind ? PART_NAME[kind as keyof typeof PART_NAME].toLowerCase() : "part"}`;
   }
+  if (o.kind === "update") {
+    const c = game.clusters.find((x) => x.id === o.componentId);
+    return `Update ${softwareById(c?.panel ?? c?.platform ?? "").name}`;
+  }
   return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}`, domains: "Move domains" }[o.kind];
 }
 
@@ -46,7 +50,7 @@ export function TechButton({ game, deviceId, kind, componentId = null, partId = 
     );
   }
   const d = game.devices.find((x) => x.id === deviceId), loc = d && locationOf(game, d);
-  const slot = loc && nextSlot(game, loc.id, OP_TASK[kind], urgent(game, { kind, deviceId, componentId }));
+  const slot = loc && nextSlot(game, loc.id, taskFor(game, kind, componentId), urgent(game, { kind, deviceId, componentId }));
   if (!slot) return null;
   return (
     <button className="btn" onClick={() => act((g) => queueOperation(g, kind, deviceId, componentId, partId))}>
@@ -61,7 +65,7 @@ export function techItem(game: GameState, deviceId: string, kind: OpKind, compon
   const queued = game.techOps.find((o) => o.deviceId === deviceId && o.kind === kind && o.componentId === componentId && (o.partId ?? null) === partId);
   if (queued) return { label: `Cancel queued ${opLabel(game, queued).toLowerCase()}`, run: () => act((g) => cancelOperation(g, queued.id)) };
   const d = game.devices.find((x) => x.id === deviceId), loc = d && locationOf(game, d);
-  const slot = loc && nextSlot(game, loc.id, OP_TASK[kind], urgent(game, { kind, deviceId, componentId }));
+  const slot = loc && nextSlot(game, loc.id, taskFor(game, kind, componentId), urgent(game, { kind, deviceId, componentId }));
   if (!slot) return undefined;
   const what = opLabel(game, { kind, deviceId, componentId, partId } as TechOp);
   return { label: `${what} by ${slot.name.split(" ")[0]}${slot.onCall ? " (on call)" : ""}, ${slotTime(game.hour, slot.hour)}`, run: () => act((g) => queueOperation(g, kind, deviceId, componentId, partId)) };

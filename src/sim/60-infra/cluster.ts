@@ -1,5 +1,5 @@
 import { modelById } from "../10-catalog/hardware";
-import { yearOf } from "../00-core/time";
+import { START_YEAR, yearOf } from "../00-core/time";
 import { IN_VM, kindServing, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
@@ -23,14 +23,15 @@ export const HA_OFF: Ha = { live: false, balance: false, failover: false };
 // the installed software of the kind, null until installed; controlPlane is the node that runs it, null for a panel VM.
 // While switching (an install or a change), the control plane is busy until doneAt. Backups copy every workload to the
 // target cluster. ramGuard (Memory reservation) keeps booked RAM within each node's installed RAM. php and phpUntil are a
-// panel host's PHP version; after an upgrade its sites run slower up to and including the hour phpUntil.
+// panel host's PHP version; after an upgrade its sites run slower up to and including the hour phpUntil. version is the
+// year of the release the installed software runs and updatedAt the hour it was installed or last updated (vulns.ts).
 export interface Cluster {
   id: string; name: string; az: string; kind: SoftwareKind; placement: Placement; nodes: ClusterNode[];
   panel: string | null; platform: string | null; vm: string | null; controlPlane: string | null;
   switching: { kind: SoftwareKind; to: string; doneAt: number } | null;
   backup: { targetId: string | null; every: BackupEvery };
   ramGuard?: boolean;
-  php: string; phpUntil: number; ha: Ha;
+  php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
 }
 // One workload runs one service: on a hypervisor node or bare-metal panel server (clusterId and deviceId), inside a panel
 // VM (clusterId of the panel host, no deviceId), on a whole server (deviceId only), or in rack units for colocation (rackId,
@@ -44,8 +45,10 @@ export interface Workload extends Resources {
 }
 
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.
+// Software of a save from before versions runs its install year, or two years before the save while no install date is known.
 export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, hour = 0): Cluster => ({
-  panel: null, platform: null, vm: null, switching: null, backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1, ...c,
+  panel: null, platform: null, vm: null, switching: null, backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
+  version: c.switching ? yearOf(c.switching.doneAt) : Math.max(START_YEAR, yearOf(hour) - 2), updatedAt: c.switching?.doneAt ?? hour, ...c,
   ha: { ...HA_OFF, ...c.ha },
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
@@ -237,7 +240,7 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   if (w.stopped || w.busyUntil > s.hour) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching) return false;
-  if (c?.kind === "panel" && sitesDown(s, c.id)) return false;
+  if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;
   if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm); }
   if (c && w.deviceId && s.frozen.includes(w.deviceId)) return false;
   if (w.deviceId) {

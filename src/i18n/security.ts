@@ -17,7 +17,11 @@ export const SECURITY_EN: Record<string, (p: Params) => string> = {
   "event.vuln.patch.title": () => "PHP patch released",
   "event.vuln.patch.text": (p) => `The PHP project released the fix for PHP ${p.versions} on the announced date, to general surprise.`,
   "event.vuln.hacked.title": () => "Node compromised",
-  "event.vuln.hacked.text": (p) => `Attackers defaced the sites on ${p.device} and are sending spam from it. ${p.customers} ${Number(p.customers) === 1 ? "customer received" : "customers received"} a data leak notice.`,
+  "event.vuln.hacked.text": (p) => {
+    const leak = `${p.customers} ${Number(p.customers) === 1 ? "customer received" : "customers received"} a data leak notice.`;
+    if (p.kind === "mail") return `Attackers took over ${p.device} and are sending spam from it.`;
+    return `Attackers ${p.kind === "cloud" ? "took over the virtual machines on" : "defaced the sites on"} ${p.device} and are sending spam from it. ${leak}`;
+  },
   "error.patchPending": () => "The patch for this vulnerability is not out yet.",
   "error.sitesOffline": () => "The sites on this node are already offline.",
   "error.sitesOnline": () => "The sites on this node are already online.",
