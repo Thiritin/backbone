@@ -21,8 +21,8 @@ export interface NotifyPref { allow: boolean; sound: boolean }
 const WIDE = { w: 1240, h: 680 };
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
   Security: { w: 900, h: 420 }, Website: { w: 1100, h: 700 },
-  Locations: { w: 1280, h: 760 }, Shop: { w: 1180, h: 700 }, Billing: WIDE, Bank: WIDE, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
-  Support: { w: 1240, h: 720 }, Research: { w: 1140, h: 600 }, Products: { w: 1120, h: 720 }, "Virtual machines": { w: 1180, h: 680 }, Staff: { w: 1240, h: 640 },
+  Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Billing: WIDE, Bank: WIDE, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
+  Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Products: { w: 1120, h: 720 }, "Virtual machines": { w: 1180, h: 680 }, Staff: { w: 1240, h: 640 },
 };
 
 export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: true, ...prefs[app] });
@@ -210,8 +210,11 @@ export const useStore = create<Store>((set, get) => ({
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
     const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
+    const x = 96 + n * 32, y = 64 + n * 28;
+    // Leaves room for the dock on small screens.
+    const w = Math.min(size.w, (globalThis.innerWidth ?? Infinity) - x - 16), h = Math.min(size.h, (globalThis.innerHeight ?? Infinity) - y - 110);
     uiSound("open");
-    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x: 96 + n * 32, y: 64 + n * 28, ...size, z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
+    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: Math.max(w, 480), h: Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   openDoc: (doc) => {
     const ws = get().windows, d = get().game.docs.find((x) => x.id === doc);
