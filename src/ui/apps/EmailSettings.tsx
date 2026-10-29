@@ -32,7 +32,7 @@ function machines(game: GameState, softwareId: string): { id: string; name: stri
 }
 
 // The company's email: an external provider per seat, or a mail server of its own.
-export function EmailSettings() {
+export function EmailSettings({ title = "Email" }: { title?: string }) {
   const { game, act } = useStore();
   const m = game.company.mail, year = yearOf(game.hour);
   const [mode, setMode] = useState<Mode>(m.kind === "self" ? "self" : "external");
@@ -43,7 +43,7 @@ export function EmailSettings() {
   const where = machines(game, target);
   return (
     <>
-      <h2>Email</h2>
+      <h2>{title}</h2>
       <div className="email-body">
       <div className="settings-group">
         <div className="settings-line"><span>Service</span><span>{provider?.name ?? (m.kind === "self" ? softwareById(m.software).name : "None")}</span></div>

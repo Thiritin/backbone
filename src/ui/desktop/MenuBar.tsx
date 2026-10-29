@@ -8,14 +8,14 @@ import { newNote } from "./DesktopIcons";
 import { restoreGuide } from "../../sim/90-actions/docs";
 import { dateOf, formatClock, SPEEDS, type Speed } from "../../sim/00-core/time";
 import { euro } from "../../sim/00-core/money";
-import { useStore } from "../store";
+import { useStore, type Win } from "../store";
 import { CompanyMark } from "../apps/company";
 import { appFor } from "../apps/registry";
 
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
 export function MenuBar({ theme, onTheme, onBell }: Props) {
-  const { game, speed, setSpeed, windows, openApp, openDoc, act, unseen, importSave, deleteProgress } = useStore();
+  const { game, speed, setSpeed, windows, openApp, openDoc, act, unseen, importSave, deleteProgress, minimize, close } = useStore();
   const guideGone = !game.docs.some((d) => d.kind === "guide");
   const docTitle = (id: string) => game.docs.find((d) => d.id === id)?.title ?? "";
   const [menu, setMenu] = useState<string | null>(null);
@@ -39,6 +39,14 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
     URL.revokeObjectURL(a.href);
   };
 
+  // The front window's menu: what the app offers, then the window controls.
+  const appMenu = (w: Win): [string, () => void][] => [
+    ...(w.app === "Support" ? [["Change provider…", () => openApp("Support", { kind: "mailSetup", id: "" })]] as [string, () => void][] : []),
+    ...(w.app !== "Settings" ? [["Settings…", () => openApp("Settings")]] as [string, () => void][] : []),
+    ["Minimize", () => minimize(w.id)],
+    ["Close", () => close(w.id)],
+  ];
+
   const item = (label: string, items: [string, () => void][], face: ReactNode = label, cls = "") => (
     <div className="mb-menu" onPointerDown={(e) => e.stopPropagation()}>
       <button className={`mb-item ${cls}`} aria-label={label} aria-expanded={menu === label} onClick={() => setMenu(menu === label ? null : label)}>{face}</button>
@@ -53,7 +61,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
   return (
     <header className="menubar" role="menubar">
       {item("Backbone", [["Introduction…", () => setIntro(true)], ["Backbone on GitHub", () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], ["New note", () => newNote()], ...(guideGone ? [["Restore Getting started", () => act(restoreGuide)] as [string, () => void]] : []), ["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
-      <span className="mb-item mb-app">{front ? appFor(game, front.app).name : "Backbone"}</span>
+      {front ? item(appFor(game, front.app).name, appMenu(front), appFor(game, front.app).name, "mb-app") : <span className="mb-item mb-app">Backbone</span>}
       {item("Window", windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : [appFor(game, w.app).name, () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
       <div className="speed" role="group" aria-label="Game speed">

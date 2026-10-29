@@ -16,6 +16,7 @@ import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useFocus, useStore } from "../../store";
 import { useSessionState } from "../../session";
 import { More } from "../More";
+import { EmailSettings } from "../EmailSettings";
 import { CustomerLink } from "../customers/CustomersApp";
 import { Incidents } from "./Incidents";
 import { CustomerCard } from "./CustomerCard";
@@ -112,6 +113,8 @@ export function SupportApp() {
   const [kindState, setKind] = useSessionState<Kind | null>("support.kind", null);
   const [sel, setSel] = useSessionState<string | null>("support.sel", null);
   const [query, setQuery] = useSessionState("support.query", "");
+  // The first open without a mail service asks for a provider; the app menu opens it again.
+  const [setup, setSetup] = useSessionState("support.setup", game.company.mail.kind === "none");
   const desk = deskOf(game);
   const { style, dim } = supportApp(game);
   const has = (f: DeskFeature) => deskHas(game, f);
@@ -135,6 +138,7 @@ export function SupportApp() {
     if (tk.unread) act((s) => readTicket(s, tk.id));
   };
   useFocus("Support", (f) => {
+    if (f.kind === "mailSetup") return setSetup(true);
     const tk = game.tickets.find((x) => x.id === f.id), r = game.sales.requests.find((x) => x.id === f.id);
     setKind(null);
     setQuery("");
@@ -156,6 +160,13 @@ export function SupportApp() {
     <button key={`type-${id ?? "all"}`} className={`side-item${kind === id ? " active" : ""}`} aria-pressed={kind === id} onClick={() => setKind(id)}>
       <Icon />{label}<span className="side-count">{inBox.filter((it) => ofKind(it, id)).length}</span>
     </button>
+  );
+
+  if (setup) return (
+    <div className="settings">
+      <EmailSettings title="Choose an email provider" />
+      <button className="btn" onClick={() => setSetup(false)}>{game.company.mail.kind === "none" ? "Later" : "Done"}</button>
+    </div>
   );
 
   return (
