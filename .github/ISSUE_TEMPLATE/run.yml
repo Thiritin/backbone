@@ -1,0 +1,20 @@
+name: Leaderboard run
+description: Runs reach the leaderboard through a pull request that adds the run file.
+title: "Run: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Runs are submitted as a pull request, and an issue is not needed. Export the run in Settings, Leaderboard, then open a pull request that adds the file to the `leaderboard/` folder. A check replays the run and passes when the scores match. Once the pull request is merged, the run appears on the leaderboard with the next deploy. The README section "Submitting a run" has the steps.
+  - type: input
+    id: pr
+    attributes:
+      label: Pull request
+      description: Enter the link to the pull request when its check fails and you want help with it.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: What happened
+      description: Describe what the check reported.
