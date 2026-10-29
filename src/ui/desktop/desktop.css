@@ -52,6 +52,7 @@ button { font: inherit; color: inherit; cursor: default; }
   position: absolute; top: -6px; left: -6px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%;
   display: grid; place-items: center; background: var(--banner); box-shadow: var(--shadow-pop); opacity: 0;
 }
+.b-set { left: 18px; }
 .banner:hover .b-close, .b-close:focus-visible { opacity: 1; }
 .b-close svg.lucide { width: 11px; height: 11px; }
 
@@ -85,6 +86,11 @@ button { font: inherit; color: inherit; cursor: default; }
 .settings-app { display: flex; align-items: center; gap: 10px; }
 .settings-ico { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; color: white; background: var(--tile); }
 .settings-ico svg.lucide { width: 14px; height: 14px; }
+.settings-block + .settings-block, .settings-headrow + .settings-block { border-top: 0.5px solid var(--line); }
+.settings-expand { width: 18px; height: 18px; padding: 0; border: 0; background: none; display: grid; place-items: center; color: var(--text-2); }
+.settings-expand svg.lucide { width: 14px; height: 14px; transition: transform 120ms; }
+.settings-expand[aria-expanded="true"] svg.lucide { transform: rotate(90deg); }
+.settings-type { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px 6px 66px; }
 .settings-group + h2 { margin-top: 24px; }
 .settings-company { padding: 12px 14px; }
 .settings-company .field { max-width: 280px; }
@@ -135,6 +141,7 @@ button { font: inherit; color: inherit; cursor: default; }
 .notif-center .banner { background: var(--field); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; animation: none; }
 .notif-head { display: flex; align-items: center; gap: 4px; padding: 4px 6px; }
 .notif-head h2 { margin-right: auto; font-size: 15px; font-weight: 650; }
+.b-gear svg.lucide { width: 15px; height: 15px; display: block; }
 .notif-empty { padding: 12px; border-radius: 14px; background: var(--field); color: var(--text-2); }
 
 .app-empty { margin: auto; max-width: 360px; display: grid; justify-items: center; gap: 10px; text-align: center; padding: 24px; }

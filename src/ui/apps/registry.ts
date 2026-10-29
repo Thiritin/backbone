@@ -1,5 +1,5 @@
 import {
-  AppWindow, BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, Landmark, LifeBuoy, ListChecks, Megaphone, MonitorCog, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, Users,
+  AppWindow, BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, Landmark, LifeBuoy, ListChecks, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, Users,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -10,6 +10,7 @@ import { FinanceApp } from "./finance/FinanceApp";
 import { MarketingApp } from "./marketing/MarketingApp";
 import { MarketApp } from "./market/MarketApp";
 import { NetworkApp } from "./network/NetworkApp";
+import { NewsApp } from "./news/NewsApp";
 import { SecurityApp } from "./SecurityApp";
 import { missingFor } from "../../sim/30-market/market";
 import type { GameState } from "../../sim/50-state";
@@ -61,6 +62,7 @@ export const APPS: AppDef[] = [
   { name: "Getting started", icon: BookOpen, tile: "oklch(0.55 0.15 255)", about: "Explains the controls and how the game saves.", hidden: true },
   { name: "Security", icon: ShieldAlert, tile: "oklch(0.58 0.17 25)", about: "Lists the nodes a PHP vulnerability affects and takes their sites offline, patches and cleans them up.", hidden: true, body: SecurityApp },
   { name: "Notes", icon: FileText, tile: "oklch(0.7 0.13 85)", about: "Edits the notes on your desktop.", hidden: true },
+  { name: "News", icon: Newspaper, tile: "oklch(0.55 0.12 30)", about: "Lists the headlines about new software, hardware and market changes.", hidden: true, body: NewsApp },
   { name: "Checklist", icon: ListChecks, tile: "oklch(0.58 0.14 150)", about: "Lists the goals from your first server to your own datacenter and marks the ones you reach.", body: ChecklistApp },
   { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: "Sets your company name and logo, the theme and which apps may send notifications." },
 ];
