@@ -42,13 +42,9 @@ describe("notification settings", () => {
     expect(s().history).toEqual([]);
   });
 
-  it("opens Welcome to Pear on a new game and Getting started once it closes", () => {
+  it("opens Getting started on a new game", () => {
     const s = useStore.getState;
     s().startGame();
-    expect(s().welcome).toBe(true);
-    expect(s().windows).toHaveLength(0);
-    s().closeWelcome();
-    expect(s().welcome).toBe(false);
     expect(s().windows.map((w) => w.app)).toEqual(["Getting started"]);
   });
 });

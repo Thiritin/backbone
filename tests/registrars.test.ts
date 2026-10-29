@@ -8,7 +8,7 @@ import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { queueTransfer, registerCompanyDomain, signRegistrar, transferDomains } from "../src/sim/90-actions/registrar";
+import { orderCompanyDomain, queueTransfer, registerCompanyDomain, signRegistrar, transferDomains } from "../src/sim/90-actions/registrar";
 import { hire, setTechLocation } from "../src/sim/90-actions/staff";
 import { setLine } from "../src/sim/90-actions/website";
 import { CHECKS, TUTORIAL } from "../src/sim/checklist";
@@ -217,8 +217,35 @@ describe("company domain", () => {
 });
 
 describe("tutorial", () => {
-  it("runs buyServer, mountServer, internet, setup, domain, website, email, firstCustomer", () => {
-    expect(TUTORIAL).toEqual(["buyServer", "mountServer", "internet", "setup", "domain", "website", "email", "firstCustomer"]);
+  it("runs company, domain, email, buyServer, mountServer, internet, setup, website, firstCustomer", () => {
+    expect(TUTORIAL).toEqual(["company", "domain", "email", "buyServer", "mountServer", "internet", "setup", "website", "firstCustomer"]);
+  });
+
+  it("orders the company domain with a new contract in one step", () => {
+    const s = newGame(1);
+    expect(orderCompanyDomain(s, "nameCheep", "no").ok).toBe(false);
+    expect(s.registrar).toBeNull();
+    expect(orderCompanyDomain(s, "nameCheep", " Basement-Hosting.de ").ok).toBe(true);
+    expect(s.registrar?.id).toBe("nameCheep");
+    expect(s.company.domain).toBe("basement-hosting.de");
+    expect(CHECKS.domain(s)).toBe(true);
+    expect(orderCompanyDomain(s, "nameCheep", "other.de").ok).toBe(false);
+  });
+
+  it("keeps the signed registrar when ordering the domain", () => {
+    const s = newGame(1);
+    signRegistrar(s, "goDuddy");
+    expect(orderCompanyDomain(s, "nameCheep", "basement-hosting.de").ok).toBe(true);
+    expect(s.registrar?.id).toBe("goDuddy");
+  });
+
+  it("checks the website step by a built site with a listed product", () => {
+    const s = { ...newGame(1), cash: 10_000 };
+    s.company = { ...s.company, domain: "mine.de" };
+    s.marketing = { ...s.marketing, lines: ["webHosting"] };
+    expect(CHECKS.website(s)).toBe(false);
+    expect(setUpChannel(s, "website").ok).toBe(true);
+    expect(CHECKS.website(s)).toBe(true);
   });
 
   it("checks the domain step by a contract and an owned company domain", () => {

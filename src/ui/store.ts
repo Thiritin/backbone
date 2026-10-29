@@ -51,9 +51,6 @@ interface Store {
   setSound: (patch: Partial<SoundPref>) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  // The Welcome to Pear sheet a new game opens with.
-  welcome: boolean;
-  closeWelcome: () => void;
   // The Pear OS update sheet: the changelog days it lists, or null when closed.
   news: ChangelogDay[] | null;
   openNews: (days: ChangelogDay[]) => void;
@@ -108,7 +105,7 @@ export const sameLine = (a: CartLine, b: CartLine): boolean =>
   a.model === b.model && a.brand === b.brand && !!a.bare === !!b.bare && JSON.stringify([a.extras ?? [], a.part ?? null]) === JSON.stringify([b.extras ?? [], b.part ?? null]);
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, news: null, setup: null, explain: null, alert: null });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, setup: null, explain: null, alert: null });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -186,11 +183,6 @@ export const useStore = create<Store>((set, get) => ({
     } catch {
       // Kept for this session only.
     }
-  },
-  welcome: false,
-  closeWelcome: () => {
-    set({ welcome: false });
-    get().openApp("Getting started");
   },
   news: initial.loaded ? unseenOf(initial.game) : null,
   openNews: (news) => set({ news }),
@@ -318,11 +310,13 @@ export const useStore = create<Store>((set, get) => ({
     }
   },
   startGame: () => {
-    set({ ...fresh(), game: newCompany(Date.now() >>> 0), started: true, welcome: true });
+    set({ ...fresh(), game: newCompany(Date.now() >>> 0), started: true });
+    get().openApp("Getting started");
     get().save();
   },
   startChallenge: () => {
-    set({ ...fresh(), game: newChallenge(weeklyChallenge(new Date()).id), started: true, welcome: true });
+    set({ ...fresh(), game: newChallenge(weeklyChallenge(new Date()).id), started: true });
+    get().openApp("Getting started");
     get().save();
   },
   importSave: (raw) => {

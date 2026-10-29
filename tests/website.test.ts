@@ -30,6 +30,8 @@ describe("company website", () => {
     expect(setLine(ready, "webHosting", true).ok).toBe(true);
     expect(setLine(ready, "webHosting", true).ok).toBe(true);
     expect(ready.marketing.lines).toEqual(["webHosting"]);
+    expect(checkDone(ready, "website")).toBe(false);
+    ready.marketing = { ...ready.marketing, owned: ["website"] };
     expect(checkDone(ready, "website")).toBe(true);
   });
 

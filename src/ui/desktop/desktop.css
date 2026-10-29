@@ -262,6 +262,9 @@ button { font: inherit; color: inherit; cursor: default; }
 .guide-steps { list-style: none; margin: 8px 0 12px; padding: 0; }
 .guide-steps .chk-row { padding: 8px 0; align-items: center; }
 .guide-steps .chk-row .btn { flex: none; }
+.guide-form { display: grid; gap: 8px; margin-top: 8px; justify-items: start; }
+.guide-line { display: flex; align-items: center; gap: 8px; justify-self: stretch; }
+.guide-line .grow { flex: 1; min-width: 0; }
 .guide kbd { font: 500 11.5px var(--font-num); padding: 1px 5px; border-radius: 4px; background: var(--hover); box-shadow: inset 0 -1px 0 var(--line-strong); color: var(--text); }
 
 @media (prefers-reduced-motion: reduce) {

@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- A new game opens the Getting started guide right away instead of a welcome popup, and it now starts with naming your company, ordering your domain and booking email, each done right inside the guide.
+- The website step in Getting started asks you to build your website and list a product, with a Build button in the guide.
 - Weekly challenge seeds start from the title screen, a run can be exported and replayed, and a leaderboard shows verified runs.
 - Loading a save shows a Pear OS update sheet with what changed since you last played, with an Open button for each app it names, and the logo menu has a What's new item that lists the whole changelog.
 - You can book extra power on a rented rack share in steps of 0.25 kW up to twice its base limit, billed monthly with the rent and active after three days.

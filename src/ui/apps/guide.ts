@@ -16,6 +16,8 @@ export function stepOf(s: GameState, id: StepId): Step {
   const home = basement(s), server = firstServer(s);
   const mailApp = deskOf(s) ? "Support" : "Email";
   switch (id) {
+    case "company":
+      return { title: "Name your company", text: "Choose the name, logo and colour of your company.", app: "Settings" };
     case "buyServer":
       return { title: "Buy a server", text: "Buy your first server in the Shop.", app: "Shop" };
     case "mountServer":
@@ -33,7 +35,7 @@ export function stepOf(s: GameState, id: StepId): Step {
       };
     }
     case "website":
-      return { title: "List a product", text: "List your first product on your website from the Admin page in the Browser.", app: "Browser", focus: { kind: "url", id: adminUrl(s) } };
+      return { title: "Build your website", text: "Build your website and list your first product from the Admin page in the Browser.", app: "Browser", focus: { kind: "url", id: adminUrl(s) } };
     case "email":
       return { title: "Set up company email", text: "Choose an email provider in the Email app.", app: "Support", focus: { kind: "mailSetup", id: "" } };
     case "firstCustomer":

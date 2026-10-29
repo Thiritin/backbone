@@ -41,6 +41,18 @@ export function registerCompanyDomain(s: GameState, input: string): ActionResult
   return { ok: true, id: name };
 }
 
+// The Getting started order: signs the chosen registrar when none is under contract yet, then registers the name.
+export function orderCompanyDomain(s: GameState, registrarId: string, input: string): ActionResult {
+  if (s.company.domain) return fail("error.companyDomainOwned");
+  const bad = companyDomainError(s, input.trim().toLowerCase());
+  if (bad) return fail(bad);
+  if (!s.registrar) {
+    const signed = signRegistrar(s, registrarId);
+    if (!signed.ok) return signed;
+  }
+  return registerCompanyDomain(s, input);
+}
+
 // Moves the domains to the new partner by hand: the player is busy for TRANSFER_MINUTES a domain.
 export function transferDomains(s: GameState): ActionResult {
   const t = s.registrar?.transfer;
