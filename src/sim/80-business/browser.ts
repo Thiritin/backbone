@@ -8,7 +8,6 @@ import { ipmiIp, oobIp, privateIp } from "../60-infra/addresses";
 import { oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
-import { owns } from "./marketing";
 import { BOARD_HOST } from "./sponsorboard";
 import { consoleBookmarks, consoleCluster, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
@@ -49,7 +48,7 @@ export const companyUrl = (s: GameState): string => `www.${companyDomain(s)}/`;
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
   { title: s.company.name, url: companyUrl(s) },
   { title: "Admin", url: adminUrl(s) },
-  ...(owns(s, "website") ? [{ title: BOARD_TITLE, url: BOARD_URL }] : []),
+  { title: BOARD_TITLE, url: BOARD_URL },
   ...consoleBookmarks(s),
 ];
 

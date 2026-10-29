@@ -2,7 +2,7 @@
 import { yearOf } from "../00-core/time";
 import { sizeSpec } from "../10-catalog/products";
 import { eventOf, sponsorshipOf, type CommunityEvent, type Sponsorship } from "../80-business/community";
-import { BOARD, newOffer, offerOpen, takeSlot, validOffer, type SponsorOffer } from "../80-business/sponsorboard";
+import { BOARD, closeApplications, newOffer, offerOpen, takeSlot, validOffer, type SponsorOffer } from "../80-business/sponsorboard";
 import { isFinal } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { addCustomer } from "./customers";
@@ -56,6 +56,15 @@ export function postOffer(s: GameState, offer: Pick<SponsorOffer, "product" | "s
   const o = newOffer(s, offer);
   s.sponsorOffers = [...s.sponsorOffers, o];
   return { ok: true, id: o.id };
+}
+
+// Stops further applications and closes the pending ones; running sponsorships carry on.
+export function withdrawOffer(s: GameState, offerId: string): ActionResult {
+  const o = s.sponsorOffers.find((x) => x.id === offerId);
+  if (!o || !offerOpen(s, o)) return fail("error.unknownOffer");
+  s.sponsorOffers = s.sponsorOffers.map((x) => (x.id === offerId ? { ...x, applyAt: x.applyAt.slice(0, x.sent) } : x));
+  closeApplications(s, o);
+  return { ok: true, id: offerId };
 }
 
 // Closes the request without any penalty.

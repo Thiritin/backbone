@@ -67,6 +67,7 @@ export const COMMUNITY_EN: Record<string, (p: Params) => string> = {
   "event.boardDone.text": (p) => `The sponsorship of ${p.event} has ended.`,
   "error.badOffer": () => "This offer cannot be posted.",
   "error.offersOpen": () => "Three offers are already open.",
+  "error.unknownOffer": () => "This offer is no longer open.",
   "error.offerFull": () => "All slots of this offer are taken.",
   "event.sponsorFailed.title": (p) => `${p.event} went wrong`,
   "event.sponsorFailed.text": (p) => `The servers for ${p.event} were down for ${p.hours} ${plural(p.hours, "hour", "hours")}. Two bad reviews were posted and your awareness dropped.`,

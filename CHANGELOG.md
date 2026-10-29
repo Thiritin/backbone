@@ -4,7 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
-- The Browser has a new site, Sponsor-Bored where you post an offer for a free or half-price server, and clans, LAN parties, fan sites, student projects and mirrors apply by email; a running sponsorship adds awareness and leads every month, but some of the applicants misuse the server or drop your banner.
+- The Browser has a new site, Sponsor-Bored, bookmarked from the start, where you post an offer for a free or half-price server, and clans, LAN parties, fan sites, student projects and mirrors apply by email; a running sponsorship adds awareness and leads every month, but some of the applicants misuse the server or drop your banner.
+- An open offer on Sponsor-Bored can be withdrawn, which closes its waiting applications and keeps running sponsorships going.
 - Marketing basics now opens the Reviews and Community sections in Marketing, and new reviews only send you a notification once you can read them there.
 - Event organisers only ask you for sponsoring once you have learned Marketing basics.
 - A VM or game server stuck on a switched-off server whose cluster's control plane is down can be recovered to a server of another cluster in the same location by remote hands, by you or by a friend.

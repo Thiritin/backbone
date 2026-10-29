@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
 import { marketPrice, sizeSpec } from "../src/sim/10-catalog/products";
 import { opsTick } from "../src/sim/40-support/notices";
-import { type GameState } from "../src/sim/50-state";
+import { newGame, type GameState } from "../src/sim/50-state";
 import { MONTH, type Sponsorship } from "../src/sim/80-business/community";
 import { leadsThisMonth } from "../src/sim/80-business/marketing";
-import { BOARD, boardGranted, boardTick, type SponsorOffer } from "../src/sim/80-business/sponsorboard";
+import { BOARD, boardGranted, boardTick, offerOpen, type SponsorOffer } from "../src/sim/80-business/sponsorboard";
 import { resolve, defaultBookmarks } from "../src/sim/80-business/browser";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { acceptSponsorship, postOffer } from "../src/sim/90-actions/community";
+import { acceptSponsorship, postOffer, withdrawOffer } from "../src/sim/90-actions/community";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame } from "./fixtures";
 
@@ -95,6 +95,22 @@ describe("the Sponsor-Bored board", () => {
     expect(s.customers.find((c) => c.id === sp.customerId)).toMatchObject({ churnedAt: null });
     expect(s.customers.find((c) => c.id === sp.customerId)!.sponsor).toBeUndefined();
   }, 60_000);
+
+  it("withdraws an open offer and closes its waiting applications", () => {
+    const s = applied(7);
+    accept(s, board(s)[0]);
+    while (board(s).length < 2) tick(s);
+    const o = s.sponsorOffers[0], [running, waiting] = board(s);
+    expect(withdrawOffer(s, o.id)).toEqual({ ok: true, id: o.id });
+    expect(board(s).find((x) => x.id === waiting.id)!.status).toBe("declined");
+    expect(s.tickets.find((t) => t.id === waiting.ticketId)).toMatchObject({ status: "closed", outcome: "ignored" });
+    expect(board(s).find((x) => x.id === running.id)!.status).toBe("running");
+    expect(offerOpen(s, s.sponsorOffers[0])).toBe(false);
+    runTo(s, s.hour + 24 * 11);
+    expect(board(s)).toHaveLength(2);
+    expect(withdrawOffer(s, o.id)).toEqual({ ok: false, error: "error.unknownOffer" });
+    expect(withdrawOffer(s, "ofr0")).toEqual({ ok: false, error: "error.unknownOffer" });
+  }, 90_000);
 
   it("adds awareness and a lead batch each month while it runs", () => {
     const s = applied(8);
@@ -215,12 +231,10 @@ describe("the Sponsor-Bored board", () => {
     expect(mine(withBoard)).toEqual(mine(without));
   }, 90_000);
 
-  it("is a site in the Browser with a bookmark once the web design exists", () => {
-    const s = readyGame(1);
+  it("is a site in the Browser with a bookmark from the start", () => {
+    const s = newGame(1);
     expect(resolve(s, "sponsorbored.example").page).toEqual({ kind: "sponsorboard" });
     expect(resolve(s, "https://www.sponsorbored.example/").page).toEqual({ kind: "sponsorboard" });
-    expect(defaultBookmarks(s).some((m) => m.url === "sponsorbored.example/")).toBe(false);
-    s.marketing.owned = [...s.marketing.owned, "website"];
     expect(defaultBookmarks(s).find((m) => m.title === "Sponsor-Bored")).toEqual({ title: "Sponsor-Bored", url: "sponsorbored.example/" });
   });
 

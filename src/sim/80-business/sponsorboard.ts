@@ -83,7 +83,10 @@ function apply(s: GameState, o: SponsorOffer, events: SimEvent[]): void {
 export function takeSlot(s: GameState, offerId: string): void {
   patchOffer(s, offerId, (o) => ({ taken: o.taken + 1 }));
   const o = s.sponsorOffers.find((x) => x.id === offerId)!;
-  if (o.taken < o.slots) return;
+  if (o.taken >= o.slots) closeApplications(s, o);
+}
+
+export function closeApplications(s: GameState, o: Pick<SponsorOffer, "id">): void {
   const rest = pendingOf(s, o);
   for (const sp of rest) patchSponsorship(s, sp.id, () => ({ status: "declined" }));
   const ids = new Set(rest.map((x) => x.ticketId));

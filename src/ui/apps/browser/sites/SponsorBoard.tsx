@@ -5,7 +5,7 @@ import { specText } from "../../../../sim/30-market/spec";
 import type { Product } from "../../../../sim/30-customers/customers";
 import type { GameState } from "../../../../sim/50-state";
 import { BOARD_MONTHS, BOARD_PRODUCTS, BOARD_SLOTS, offerOpen, type Ad } from "../../../../sim/80-business/sponsorboard";
-import { acceptSponsorship, declineSponsorship, postOffer } from "../../../../sim/90-actions/community";
+import { acceptSponsorship, declineSponsorship, postOffer, withdrawOffer } from "../../../../sim/90-actions/community";
 import { AUDIENCE } from "../../marketing/MarketingApp";
 import { formatDay } from "../../billing/BillingApp";
 import { PRODUCT } from "../../support/labels";
@@ -61,6 +61,7 @@ export function SponsorBoard({ game }: { game: GameState }) {
                 <div className="sb-meta"><span>{monthsText(o.months)}</span><span>{o.free ? "Free" : "50% off"}</span></div>
               </div>
               <div className="sb-meta sb-num"><span>{o.taken} of {o.slots} slots</span><span>{o.sent} applied</span></div>
+              <div className="sb-acts"><button className="sb-button ghost" onClick={() => act(withdrawOffer, o.id)}>Withdraw</button></div>
             </div>
           )) : <p className="sb-none">No open offers.</p>}
         </section>
