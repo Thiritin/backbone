@@ -2,6 +2,7 @@ import { Cable, Database, EthernetPort, FileSignature, Plug, PlugZap, Plus, Powe
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
+import { cardWatts } from "../../../sim/10-catalog/gpu";
 import { bayCount, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Cable as CableT, Device, End, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
@@ -159,7 +160,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         <Facts rows={[
           ...(model.server ? [["CPU", `${model.server.sockets} × ${cores(model.server.cores / model.server.sockets)}`], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${bayCount(model.server)} bays`]] as [string, string][] : []),
           ["Network", portsText(model)],
-          ["Power", model.idleWatts === model.watts ? `${model.watts} W` : `${model.idleWatts}–${model.watts} W`],
+          ["Power", model.idleWatts === model.watts + cardWatts(device.components) ? `${model.watts} W` : `${model.idleWatts}–${model.watts + cardWatts(device.components)} W`],
           ...(model.height ? [["Height", height(model)]] as [string, string][] : []),
           ...(device.price ? [["Paid", euro(device.price)]] as [string, string][] : []),
         ].map(([k, v]): [string, ReactNode] => [k, <span className="num">{v}</span>])} />

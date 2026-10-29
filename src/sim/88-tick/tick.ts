@@ -25,13 +25,13 @@ import { networkTick } from "../60-infra/network";
 import { securityTick } from "../60-infra/security";
 import { usageTick } from "../60-infra/usage";
 import { productsTick } from "../85-products/products";
-import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
+import { COMPONENTS, manufacturerByName } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
 import { skillById } from "../10-catalog/research";
 import { KNOW_HOW, storeItem, subscriptionPrice } from "../10-catalog/store";
 import { capacityAt, DATACENTERS, datacenterById, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry } from "../50-state";
-import { arrayLost, dcAvailability, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
+import { arrayLost, dcAvailability, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered, deviceWatts } from "../60-infra/status";
 
 export interface SimEvent {
   app: string;
@@ -52,7 +52,7 @@ export function powerPerHour(s: GameState): number {
   const price = businessPowerPrice(yearOf(s.hour));
   return s.devices.filter((d) => d.on && powered(s, d.id)).reduce((sum, d) => {
     const loc = locationOf(s, d)!;
-    return sum + (modelById(d.model).watts / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
+    return sum + (deviceWatts(d) / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
   }, 0);
 }
 

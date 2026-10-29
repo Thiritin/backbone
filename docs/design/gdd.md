@@ -224,7 +224,7 @@ The Shop app sells pre-built hardware from several manufacturers, each with its 
 
 | Class | Lines | Notes |
 | --- | --- | --- |
-| Servers | Balanced 1U, compute-dense 1U, memory-optimized 2U, storage 2U, backup storage 4U, archive storage 4U, GPU 4U from 2016, ARM 1U from 2020 | One model per line and generation, so capacity can be matched to what customers need |
+| Servers | Balanced 1U, compute-dense 1U, memory-optimized 2U, storage 2U, backup storage 4U, archive storage 4U, GPU 4U from 2011, ARM 1U from 2020 | One model per line and generation, so capacity can be matched to what customers need |
 | Switches | Layer 2 or layer 3, with copper or SFP ports | All managed; layer 3 can route between networks and act as a gateway in later milestones |
 | Security appliances | 1U firewalls with a throughput rating | Sit inline between the gateway and the switches; needed for firewall and DDoS features later |
 | Patch panels | 24 or 48 ports, copper or fiber | Passive |
@@ -285,7 +285,10 @@ Servers join clusters, and products draw their resources from clusters. Everythi
 | Web space | A slice of a web server's CPU, RAM and disk | Copying its files; a few seconds offline |
 | Game server | Mostly CPU and traffic | Restarting on the new node; players are kicked |
 | Storage volume | Disk | Copying its data; slow, and uses bandwidth |
+| GPU server | vCPUs, RAM, disk and whole GPU cards | Moving to a node with enough free cards |
 | Dedicated server | A whole node | It can't move; the customer rents that machine |
+
+**GPU servers.** From 2011 a GPU 4U server carries four GPU cards, and a hypervisor cluster with a free card on one of its nodes can sell GPU servers once the team has learned GPU computing in Research. A GPU server is a virtual machine that books 1, 2, 4 or 8 whole cards of one node together with its vCPUs, RAM and disk, so no order for more cards than a node holds can be placed. Cards are parts of the server: they sit in PCIe slots, add their watts to the rack's power, fail like other parts and cannot be taken out while a virtual machine uses them. Demand for GPU servers is small until deep learning in 2017 and generative AI in 2023, and the News app announces both and every new card. Card prices and the rental market are in economy.md, Prices over time.
 
 **Placement.** The cluster's scheduler picks a node for every new workload, the way OpenStack does. Each cluster has a policy: *pack* fills one node before the next, so fewer servers draw full power, and *spread* keeps every node equally loaded, so a failed node hits fewer customers. Each cluster also sets two rules in its settings, in the spirit of Ceph's default placement rules:
 
@@ -369,7 +372,7 @@ Draining stops with a message when the rest of the cluster has no room, and says
 
 **Colocation.** Customers rent space in your racks: 1/8, 1/4 or 1/2 of a rack or a full rack, the same sizes the datacenters rent to you. A request names the size, the power it needs and its uplinks, such as 2 × 1G or 2 × 10G. You assign a rack with enough free units and power, and the game marks that section as the customer's and puts a patch panel at its top. The customer's hardware is a closed block that draws its power. Your job is to cable the panel's requested ports to your switches. The service is online once every requested uplink reaches the internet at its speed, and it counts against the rack's power limit like your own servers.
 
-Worth adding later: email hosting and GPU compute.
+Worth adding later: email hosting.
 
 **How the first build plays.** These decisions hold until the parts above them are built:
 

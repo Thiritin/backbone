@@ -9,7 +9,7 @@ import type { GameState } from "../50-state";
 // What each line is called in requests, emails and lists.
 export const LINE_NAME: Record<Product, string> = {
   webHosting: "Web hosting", vps: "VPS", gameServer: "Game server", dns: "DNS hosting", vpn: "VPN", storage: "Storage",
-  cloud: "Cloud server", dedicated: "Dedicated server", colocation: "Colocation", domain: "Domain", ssl: "SSL certificate",
+  cloud: "Cloud server", dedicated: "Dedicated server", colocation: "Colocation", domain: "Domain", ssl: "SSL certificate", gpu: "GPU server",
 };
 // Lines whose customers scale their size; the others take it as it is.
 const SCALED: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn"];
@@ -21,7 +21,7 @@ export const UPGRADE_FACTORS = [1.5, 2];
 const half = (x: number) => Math.max(0.5, Math.round(x * 2) / 2);
 const quarter = (x: number) => Math.max(0.25, Math.round(x * 4) / 4);
 
-export const sizeOf = (x: Resources): Resources => ({ vcpu: x.vcpu, ramGb: x.ramGb, diskGb: x.diskGb });
+export const sizeOf = (x: Resources): Resources => ({ vcpu: x.vcpu, ramGb: x.ramGb, diskGb: x.diskGb, ...(x.gpus ? { gpus: x.gpus } : {}) });
 
 // A spec around size i of the line; key makes it stable for a seed.
 export function specFor(seed: number, key: number, product: Product, size: number, year: number, factor?: number): Spec {
@@ -73,6 +73,7 @@ export function specText(product: Product, spec: Spec): string {
   const parts: string[] =
     product === "webHosting" ? [gb(spec.diskGb), `${spec.mailboxes} ${spec.mailboxes === 1 ? "mailbox" : "mailboxes"}`]
       : product === "vps" || product === "gameServer" || product === "cloud" ? [`${num(spec.vcpu)} vCPU`, gb(spec.ramGb), gb(spec.diskGb)]
+        : product === "gpu" ? [`${spec.gpus ?? 0} ${spec.gpus === 1 ? "GPU" : "GPUs"}`, `${num(spec.vcpu)} vCPU`, gb(spec.ramGb), gb(spec.diskGb)]
         : product === "storage" ? [gb(spec.diskGb)]
           : product === "dedicated" ? [`${gb(spec.ramGb)} RAM`]
             : product === "colocation" ? [`${spec.units ?? 0}U`, `${spec.watts ?? 0} W`]

@@ -5,6 +5,7 @@ const SLA: Record<string, string> = { basic: "Basic", business: "Business", prem
 const sla = (p: Params) => (p.sla === "basic" ? "" : ` We need the ${SLA[p.sla] ?? p.sla} SLA.`);
 const price = (p: Params) => euroCents(Number(p.price));
 const web = (p: Params) => `${p.disk} GB of space and ${p.mail} mailbox${Number(p.mail) === 1 ? "" : "es"}`;
+const cards = (p: Params) => `${p.gpu} GPU${Number(p.gpu) === 1 ? "" : "s"}`;
 const box = (p: Params) => `${p.cpu} vCPU${Number(p.cpu) === 1 ? "" : "s"}, ${p.ram} GB of RAM and ${p.disk} GB of disk`;
 
 const STUDY_NAME: Record<string, string> = {
@@ -32,6 +33,8 @@ export const SALES_EN: Record<string, (p: Params) => string> = {
   "sales.msg.gameServer.1": (p) => `Looking for a game server with ${box(p)} close to ${p.city} for low ping. What do you charge?`,
   "sales.msg.dedicated.0": (p) => `We are looking for a dedicated server with at least ${p.ram} GB of RAM in ${p.city} on a twelve-month contract.${sla(p)} Please quote a monthly price.`,
   "sales.msg.dedicated.1": (p) => `Our team wants hardware of our own. Could you provide a server with at least ${p.ram} GB of RAM?${sla(p)}`,
+  "sales.msg.gpu.0": (p) => `We are training models and need ${cards(p)} with ${box(p)} in ${p.city}.${sla(p)} What would that cost a month?`,
+  "sales.msg.gpu.1": (p) => `Our team needs GPU servers for rendering and inference: ${cards(p)}, ${box(p)}.${sla(p)} Please send your monthly price.`,
   "sales.msg.shady": (p) => `We need a VPS with ${box(p)} today. Lots of traffic, no questions, no paperwork. We pay in crypto, always on time. Name your price.`,
   "sales.msg.discount": (p) => `Your campaign mentioned ${p.discount}% off for agencies. We would like to take you up on that.`,
   "sales.reply.accept": (p) => `That works for us. Please set it up. Best, ${p.name}`,

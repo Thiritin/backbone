@@ -1,5 +1,6 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
 import { GENERATIONS, generationAt } from "./economy";
+import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
 
 export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "part";
 export interface PortSpec { media: "rj45" | "sfp"; gbit: number }
@@ -26,8 +27,8 @@ export interface ServerSpec {
 }
 // Values from economy.md (Components): life in years, yearly failure rates before and after it, part price, and when a swap
 // can happen with the device running: in a RAID array, with a second working power supply, always, or never.
-export type ComponentKind = "hdd" | "ssd" | "nvme" | "psu" | "fan" | "ram" | "board" | "cpu" | "nic";
-export const COMPONENT_KINDS: ComponentKind[] = ["hdd", "ssd", "nvme", "psu", "fan", "ram", "board", "cpu", "nic"];
+export type ComponentKind = "hdd" | "ssd" | "nvme" | "psu" | "fan" | "ram" | "board" | "cpu" | "nic" | "gpu";
+export const COMPONENT_KINDS: ComponentKind[] = ["hdd", "ssd", "nvme", "psu", "fan", "ram", "board", "cpu", "nic", "gpu"];
 export const COMPONENTS: Record<ComponentKind, { life: number; before: number; after: number; price: number; hotSwap: "raid" | "dual" | "yes" | "no" }> = {
   hdd: { life: 5, before: 0.015, after: 0.08, price: 120, hotSwap: "raid" },
   ssd: { life: 5, before: 0.008, after: 0.04, price: 150, hotSwap: "raid" },
@@ -38,9 +39,10 @@ export const COMPONENTS: Record<ComponentKind, { life: number; before: number; a
   board: { life: 12, before: 0.003, after: 0.01, price: 600, hotSwap: "no" },
   cpu: { life: 15, before: 0.0005, after: 0.002, price: 400, hotSwap: "no" },
   nic: { life: 10, before: 0.003, after: 0.01, price: 80, hotSwap: "no" },
+  gpu: { life: 5, before: 0.015, after: 0.08, price: 9000, hotSwap: "no" },
 };
 const COMPONENT_NAMES: Record<ComponentKind, string> = {
-  hdd: "HDD", ssd: "SSD", nvme: "NVMe drive", psu: "power supply", fan: "fan", ram: "RAM stick", board: "mainboard", cpu: "CPU", nic: "network card",
+  hdd: "HDD", ssd: "SSD", nvme: "NVMe drive", psu: "power supply", fan: "fan", ram: "RAM stick", board: "mainboard", cpu: "CPU", nic: "network card", gpu: "GPU card",
 };
 const DRIVE_KIND = { HDD: "hdd", SSD: "ssd", NVMe: "nvme" } as const;
 
@@ -65,6 +67,8 @@ export function componentParts(m: DeviceModel): PartSpec[] {
     return [
       ...n(DRIVE_KIND[v.disk], v.drives, () => v.diskGb / v.drives, presetFf(v)), ...n("psu", m.psus), ...n("fan", 4),
       ...n("ram", v.ramSticks, () => v.ramGb / v.ramSticks), ...n("board", 1), ...n("cpu", v.sockets, cpu), ...n("nic", 1),
+      // A GPU line ships with the newest card of its generation; a part names its card by launch year.
+      ...n("gpu", v.gpus, () => cardAt(m.from)?.year ?? 0),
     ];
   }
   if (m.kind === "switch" || m.kind === "firewall") return [...n("psu", m.psus), ...n("fan", 2), ...n("board", 1)];
@@ -82,8 +86,11 @@ const driveFf = (m: DeviceModel, p: PartSpec): FormFactor => p.ff ?? (m.server ?
 // A bare chassis keeps its board, fans, NIC and one power supply; CPUs, RAM and drives are bought separately.
 export const bareParts = (m: DeviceModel): PartSpec[] => {
   let psu = 0;
-  return componentParts(m).filter((p) => !["cpu", "ram", "hdd", "ssd", "nvme"].includes(p.kind) && (p.kind !== "psu" || psu++ < 1));
+  return componentParts(m).filter((p) => !["cpu", "ram", "hdd", "ssd", "nvme", "gpu"].includes(p.kind) && (p.kind !== "psu" || psu++ < 1));
 };
+
+// Cards a chassis takes: the GPU 4U line four, a 2U up to the 2014 generation one single-width card (later PSUs cannot feed it), a 1U none.
+const gpuSlots = (m: DeviceModel): number => (m.server && m.server.gpus > 0 ? m.server.gpus : m.server && m.height === 2 && m.from <= 2016 ? 1 : 0);
 
 // How many slots a model has for a kind of part (all drive kinds share the bays).
 export function slotsOf(m: DeviceModel, kind: ComponentKind): number {
@@ -92,6 +99,7 @@ export function slotsOf(m: DeviceModel, kind: ComponentKind): number {
   if (kind === "ram") return v?.dimmSlots ?? 0;
   if (isDriveKind(kind)) return v ? bayCount(v) : 0;
   if (kind === "psu") return v?.psuBays ?? m.psus;
+  if (kind === "gpu") return gpuSlots(m);
   if (kind === "fan") return m.kind === "server" ? FAN_SLOTS : m.kind === "switch" || m.kind === "firewall" ? 2 : 0;
   return m.kind === "server" || m.kind === "switch" || m.kind === "firewall" ? 1 : 0;
 }
@@ -104,6 +112,8 @@ export function fits(m: DeviceModel, parts: PartSpec[]): string | null {
   // Network ports come with the model, so a server takes its onboard NIC and no more.
   if (count("cpu") > (v?.sockets ?? 0) || count("ram") > (v?.dimmSlots ?? 0) || count("psu") > (v ? v.psuBays : m.psus)
     || count("fan") > fans || count("board") > boards || count("nic") > (v ? 1 : 0)) return "error.noSlot";
+  const cards = parts.filter((p) => p.kind === "gpu");
+  if (cards.length > gpuSlots(m) || (m.height < 4 && cards.some((p) => cardOf(p.size).wide))) return "error.noSlot";
   if (v && parts.filter((p) => p.kind === "ram").reduce((n, p) => n + (p.size ?? 0), 0) > v.maxRamGb) return "error.tooMuchRam";
   const drives = parts.filter((p) => isDriveKind(p.kind)).map((p) => driveFf(m, p));
   if (!drives.length) return null;
@@ -183,7 +193,7 @@ const SERVER_LINES = [
   { id: "storage", name: "Storage 2U", arch: "x86", height: 2, sockets: 2, cores: 1, ram: 1, bays: BAYS_STORAGE, dimms: [8, 12, 16, 24], pcie: 4, drives: 12, disk: "gen", ports: 2, psus: 2, gpus: 0, watts: 1.7, price: 2, from: 2005 },
   { id: "backup", name: "Backup storage 4U", arch: "x86", height: 4, sockets: 1, cores: 0.5, ram: 0.5, bays: BAYS_3_5(36), dimms: [8, 12, 16, 24], pcie: 4, drives: 36, disk: "large", ports: 2, psus: 2, gpus: 0, watts: 2, price: 2.4, from: 2005 },
   { id: "archive", name: "Archive storage 4U", arch: "x86", height: 4, sockets: 1, cores: 0.25, ram: 0.25, bays: BAYS_3_5(60), dimms: [8, 8, 16, 16], pcie: 2, drives: 60, disk: "dense", ports: 2, psus: 2, gpus: 0, watts: 2.2, price: 3.2, from: 2005 },
-  { id: "gpu", name: "GPU 4U", arch: "x86", height: 4, sockets: 2, cores: 1, ram: 2, bays: BAYS_8, dimms: [16, 24, 32, 48], pcie: 8, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 4, watts: 5, price: 6, from: 2016 },
+  { id: "gpu", name: "GPU 4U", arch: "x86", height: 4, sockets: 2, cores: 1, ram: 2, bays: BAYS_8, dimms: [16, 24, 32, 48], pcie: 8, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 4, watts: 2, price: 3, from: 2011 },
   { id: "arm", name: "ARM 1U", arch: "arm", height: 1, sockets: 1, cores: 1.5, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.6, price: 0.9, from: 2020 },
 ] as const;
 
@@ -204,7 +214,7 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
       watts: Math.round(g.watts * v.watts),
       idleWatts: Math.round(g.watts * v.watts * 0.4),
       psus: v.psus,
-      price: Math.round(g.price * v.price),
+      price: Math.round(g.price * v.price) + (v.gpus ? v.gpus * Math.round(gpuPrice(cardAt(g.year)!, g.year)) : 0),
       from: g.year,
       until: GENERATIONS[i + 2] ? GENERATIONS[i + 2].year - 1 : null,
       server: {
@@ -283,5 +293,6 @@ export function partOffers(year: number): PartSpec[] {
   for (const m of shopModels(year)) if (m.server) componentParts(m).forEach(add);
   const g = generationAt(year);
   for (const i of [g - 1, g]) if (NVME_GB[i]) add({ kind: "nvme", size: NVME_GB[i], ff: "nvme" });
+  for (const c of gpuOffers(year)) add({ kind: "gpu", size: c.year });
   return out.sort((a, b) => COMPONENT_KINDS.indexOf(a.kind) - COMPONENT_KINDS.indexOf(b.kind) || (a.size ?? 0) - (b.size ?? 0));
 }

@@ -1,5 +1,6 @@
 import { yearOf } from "../00-core/time";
 import { COMPONENTS, jacksOf, modelById, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
+import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, inUs, MOVE, rackUnits, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import type { Component, Device, End, GameState, Location, SpaceKind } from "../50-state";
@@ -148,12 +149,15 @@ export const isPlugged = (c: Component) => c.plugged !== false;
 // A device gets power through a plugged-in supply that has not failed; one without supplies needs none.
 export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length || p.some((c) => isPlugged(c) && c.failedAt === null); };
 
+// The power a device draws: its model's rating plus the watts of its working GPU cards.
+export const deviceWatts = (d: Device): number => modelById(d.model).watts + cardWatts(d.components);
+
 // ponytail: full rated power for every device; load-based draw comes with workloads.
 export function rackPower(s: GameState, rackId: string): { watts: number; limitWatts: number; tripped: boolean } {
   const rack = s.racks.find((r) => r.id === rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
   if (!rack || !loc) return { watts: 0, limitWatts: 0, tripped: false };
-  const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on && pluggedIn(d)).reduce((sum, d) => sum + modelById(d.model).watts, 0)
+  const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on && pluggedIn(d)).reduce((sum, d) => sum + deviceWatts(d), 0)
     + s.workloads.reduce((sum, w) => sum + (w.rackId === rackId ? w.watts : 0), 0) : 0;
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.

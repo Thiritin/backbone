@@ -24,7 +24,7 @@ export const statusOf = (tk: { status: TicketStatus; outcome: string | null }): 
 
 export const PRODUCT: Record<Product, string> = {
   webHosting: "Web hosting", domain: "Domain", ssl: "SSL", dns: "DNS", gameServer: "Game server", vps: "VPS",
-  vpn: "VPN", dedicated: "Dedicated", storage: "Storage", cloud: "Cloud", colocation: "Colocation",
+  vpn: "VPN", dedicated: "Dedicated", storage: "Storage", cloud: "Cloud", colocation: "Colocation", gpu: "GPU server",
 };
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

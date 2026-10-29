@@ -94,7 +94,7 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Storage 2U | 2U | 2 | 1× | 1× | 12 of the generation's disk | 2 | 2 | 1.7× | 2× | Always |
 | Backup storage 4U | 4U | 1 | 0.5× | 0.5× | 36 large HDDs | 2 | 2 | 2× | 2.4× | Always |
 | Archive storage 4U | 4U | 1 | 0.25× | 0.25× | 60 densest HDDs | 2 | 2 | 2.2× | 3.2× | Always |
-| GPU 4U | 4U | 2 | 1× | 2× | 1 of the generation's disk in 4 bays, 4 GPUs | 2 | 2 | 5× | 6× | From 2016 |
+| GPU 4U | 4U | 2 | 1× | 2× | 1 of the generation's disk in 4 bays, 4 GPU cards | 2 | 2 | 2× plus the cards | 3× plus the cards | From 2011 |
 | ARM 1U | 1U | 1 | 1.5× | 1× | 1 of the generation's disk in 4 bays | 2 | 1 | 0.6× | 0.9× | From 2020 |
 
 Backup and archive servers use HDDs whatever the generation's disk type. Archive storage is the cheapest per TB, then backup, then the storage 2U.
@@ -131,6 +131,22 @@ Backup and archive servers use HDDs whatever the generation's disk type. Archive
 Anchors: John C. McCallum's memory price history (DRAM about US$100 to 150 per GB in 2005 for consumer DDR2, about $4 to 5 in 2013 and 2016, the 2017 to 2018 shortage that roughly doubled module prices, about $3 in 2020, the 2023 trough); the 2025 to 2026 AI-driven shortage (DDR5 about $17 per GB in October 2026 after a rise of 200% to 400%, TrendForce; Bernstein expects a further rise in 2027 and a fall in 2028); Backblaze's drive cost per GB ($0.11 in 2009, 0.033 in 2017, 0.0144 in 2022); SSD retail (about $3 per GB in 2010, 0.30 in 2016, 0.11 in 2020, 0.06 at the mid-2023 bottom, 0.09 in 2024, doubled by late 2025). The CPU column is the least anchored.
 
 Fixed parts: a power supply costs €150 in 2005, falling in a straight line to €90 in 2015 and flat after; a fan €25; a mainboard €600 falling to €400 by 2015; a network card €80 falling to €40 by 2015, times 4 for 10G and faster cards until 2017 and times 2 from 2017.
+
+**GPU cards and rental.** A GPU card is a PCIe part sold in the Parts tab and fitted in the GPU 4U line. It is named by its launch year, and the shop sells the newest card and the one before. The cards are puns on Nvidia's Tesla line:
+
+| Card | Launch | List price | Power | Slots | Anchor |
+| --- | --- | --- | --- | --- | --- |
+| nVidea Tezla C870 | 2007 | €1,300 | 170 W | 1 | Tesla C870, June 2007, about US$1,500 |
+| nVidea Tezla M2050 | 2010 | €2,200 | 225 W | 1 | Tesla M2050, 2010, about US$2,500 |
+| nVidea Tezla K80 | 2014 | €4,500 | 300 W | 1 | Tesla K80, 2014, about US$5,000 |
+| nVidea Tezla V100 | 2017 | €9,000 | 300 W | 2 | Tesla V100, 2017, about US$10,000 |
+| nVidea Tezla A100 | 2020 | €11,000 | 400 W | 2 | A100, 2020, US$10,000 to 15,000 |
+| nVidea Tezla H100 | 2023 | €28,000 | 700 W | 2 | H100, 2023, about US$30,000 |
+| nVidea Tezla B200 | 2025 | €35,000 | 1,000 W | 2 | B200, 2025, about US$35,000 |
+
+A card falls 10% of its list price every year after its launch, down to half, and sits at half from the day its successor launches. The GPU 4U takes up to four cards of any width. A 2U of G1 to G4 takes one single-width card, because the power supplies of later generations cannot feed it, and a 1U takes none. A card's watts add to the server's draw for the rack's power limit and the electricity bill, and a failed card draws nothing. A GPU 4U ships with four of the newest card at its generation's launch, and its list price includes them at that year's card price; the line's base is 2× the generation's power and 3× its price (the cards come on top). Bare chassis leave the cards out.
+
+GPU rental is priced per card a month by year, straight between these anchors and flat before 2011 and after 2026: €600 in 2011, €450 in 2016, €1,500 in 2017, €1,800 in 2020, €4,000 in 2023 and €2,500 in 2026. Anchors: AWS cg1 at US$2.10 an hour for two M2050 in 2010, p2 with K80 at US$0.90 an hour in 2016, p3 with V100 at US$3.06 in 2017, p4d with A100 at US$4.10 a card-hour in 2020, p5 with H100 at US$12.29 a card-hour in 2023, the June 2025 AWS price cut of up to 45%, and Hetzner's GEX44 at €184 a month in 2024. The market rate has no further multiplier, since the table is already by year.
 
 **Chassis and preset prices.** The chassis price of a model is its list price (generations table times the line's multiplier) minus all its parts at the prices of its generation's launch year, and never less than 25% of the list price. A preset costs its chassis plus its parts at the year's prices, times the brand factor, so a preset costs exactly its list price in its launch year and gets cheaper within a generation as parts fall, then jumps in the spikes. Where the parts at launch cost more than the list price leaves after the 25% floor (most models, because RAM, CPUs and drives priced per unit add up to more than the list price), the preset buys its parts at a share of their price, chosen so the launch price stays the list price; the share is the same in every later year. A bare chassis costs the preset price minus its CPUs, RAM and drives at the year's full part prices, never less than 25% of the preset price, so building a machine from parts costs more than the preset wherever the share applies.
 
@@ -237,6 +253,8 @@ The cap is 2.4% of a city's new customers at level 1, 4% at level 3 and 6.4% at 
 - **Paid:** campaign budget ÷ cost per lead (see [Marketing and reviews](#marketing-and-reviews)).
 
 Website and campaign leads send 10% to cities without a location of yours, where they cannot buy.
+
+**GPU demand.** Hobby developers, agencies, online shops and enterprises ask for GPU servers in 3% of their orders at a demand factor of 1 (`gpuDemand` in `gpu.ts`). The factor is 0 before 2011, 0.2 from 2011 to 2016, 0.6 from 2017 (deep learning), 1 from 2020 and 2.5 from 2023 (generative AI), so those profiles ask for a GPU server in 0.6%, 1.8%, 3% and 7.5% of their orders, and their other products give way proportionally. News announces the two jumps. A GPU order that finds no free card is lost as no capacity, like any other line. The portfolio score ignores the GPU line.
 
 **Site state.** The company site is rented from "Strateaux" (always up) or runs as a small workload (0.25 vCPU, 0.5 GB RAM, 2 GB disk) on one of your panel hosts. On an own host the site is down while the host is off, failed, frozen, taken offline or compromised, and slow while the host performs below 1 (overload, a PHP upgrade) or has over 90% of its RAM booked. Website leads and the orders of the order form are multiplied by 0 while the site is down and by 0.5 while it is slow, at the daily roll; search ads, campaigns, fairs, referrals and email orders are untouched. The site adds no awareness (the 0.004 a month under Marketing and reviews) while it is down.
 
@@ -407,13 +425,13 @@ The balance model keeps the four archetypes in every segment and leaves the spec
 | --- | --- |
 | Private individual | Web hosting |
 | Gamer | Game server 60%, VPS 20%, web hosting 20% |
-| Hobby developer | VPS 90%, web hosting 10% |
+| Hobby developer | VPS 90%, web hosting 10%, GPU server (GPU demand) |
 | Sole proprietor | Web hosting 90%, VPS 10% |
 | Small business | Web hosting 60%, VPS 40% |
-| Agency or startup | Web hosting 30%, VPS 70% |
+| Agency or startup | Web hosting 30%, VPS 70%, GPU server (GPU demand) |
 | Doctor's or law office | Web hosting 90%, VPS 10% |
-| Online shop | Web hosting 50%, VPS 50% |
-| Enterprise | VPS 50%, dedicated 50% |
+| Online shop | Web hosting 50%, VPS 50%, GPU server (GPU demand) |
+| Enterprise | VPS 50%, dedicated 50%, GPU server (GPU demand) |
 
 **Requirements.** A request needs a location in its city and a cluster with nodes there (a free mounted server for dedicated). A Business or Premium SLA needs a datacenter location in the city, Premium also a company at least 12 months old, and high-budget profiles a review score of 3 stars. A request that misses one arrives greyed out and becomes a lost sale with that reason when it expires.
 
@@ -1067,6 +1085,7 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 one
 | VPN | 1, 3 or 10 users | A vCPU per three users (at least 0.5, in quarters), 0.5 GB RAM, 1 GB disk | €2.03, €5, €15.22 a month | Cluster |
 | Storage hosting | 100 GB, 500 GB, 1 TB | Disk only | About €8, €42, €83 a month | Cluster |
 | Cloud servers | 1 | Like the 1 × base RAM VPS | 1.25 × that VPS | High-availability cluster |
+| GPU servers | 4 | 1, 2, 4 or 8 cards; per card 4 vCPUs, 8 GB RAM × growth and 50 GB disk × growth | 1, 2, 4 or 8 × the card rate of GPU cards and rental | Cluster with free cards |
 | Dedicated servers | 2 | A whole server with at least 8 or 32 GB × growth | €79, €299 a month | A free server |
 | Colocation | 1U, quarter, half, full rack | 1, 10, 21 or 42 units and 150 W, 1, 2 or 4 kW | €60, €415, €845, €1,675 a month | Datacenter rack |
 | Domains | 1 | Nothing | €15 a year | Resold |
@@ -1085,6 +1104,7 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 one
 | VPN | €0.50 | €1.50 per user |
 | Domain | €15 a year | |
 | SSL certificate | €50 a year until 2015, then €0 | |
+| GPU server | €0 | The year's card rate per GPU (GPU cards and rental), 1% of the 2-card price taken by traffic |
 | Dedicated server | €6 | €220 ÷ 24 ÷ g per GB of the smallest server RAM it accepts |
 | Colocation | €15 | €30 per rack unit, €100 per kW |
 

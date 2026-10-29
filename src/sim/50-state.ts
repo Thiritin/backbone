@@ -28,7 +28,8 @@ import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
 import { firstHostNo } from "./30-customers/hostnames";
 
-export const SAVE_VERSION = 2;
+// 3: GPU line servers carry their preset cards.
+export const SAVE_VERSION = 3;
 
 export type BondMode = "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber";
@@ -187,6 +188,14 @@ export function fillSizes(modelId: string, components: Component[]): Component[]
     const p = preset.filter((x) => x.kind === c.kind)[seen[c.kind] = (seen[c.kind] ?? -1) + 1];
     return c.size === undefined && p?.size !== undefined ? { ...c, size: p.size, ...(p.ff ? { ff: p.ff } : {}) } : c;
   });
+}
+
+// GPU line servers saved before cards were parts get their preset's cards, installed with the device's oldest part.
+export function fillCards(modelId: string, components: Component[]): Component[] {
+  const cards = componentParts(modelById(modelId)).filter((p) => p.kind === "gpu");
+  if (!cards.length || components.some((c) => c.kind === "gpu")) return components;
+  const top = Math.max(0, ...components.map((c) => Number(c.id.slice(1)) || 0)), at = Math.min(...components.map((c) => c.installedAt));
+  return [...components, ...cards.map((p, i): Component => ({ id: `c${top + i + 1}`, ...p, installedAt: Number.isFinite(at) ? at : 0, failedAt: null }))];
 }
 
 export const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>

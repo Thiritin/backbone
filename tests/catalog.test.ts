@@ -17,10 +17,10 @@ const lines = (gen: number) => MODELS.filter((m) => m.id.startsWith(`g${gen}-`))
 const line = (gen: number, id: string) => MODELS.find((m) => m.id === `g${gen}-${id}`);
 
 describe("server lines", () => {
-  it("offers every line in every generation, GPU from 2016 and ARM from 2020", () => {
+  it("offers every line in every generation, GPU from 2011 and ARM from 2020", () => {
     GENERATIONS.forEach((g, i) => {
       const ids = lines(i + 1).map((m) => m.id.slice(`g${i + 1}-`.length));
-      expect(ids).toEqual(["compute", "compute-2psu", "dense", "memory", "storage", "backup", "archive", ...(g.year >= 2016 ? ["gpu"] : []), ...(g.year >= 2020 ? ["arm"] : [])]);
+      expect(ids).toEqual(["compute", "compute-2psu", "dense", "memory", "storage", "backup", "archive", ...(g.year >= 2011 ? ["gpu"] : []), ...(g.year >= 2020 ? ["arm"] : [])]);
     });
   });
   it("scales specs from the generation row", () => {

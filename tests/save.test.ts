@@ -1,7 +1,7 @@
 import { START_CASH } from "../src/sim/10-catalog/economy";
 import { WIDGETS } from "../src/sim/10-catalog/store";
 import { describe, expect, it } from "vitest";
-import { newGame } from "../src/sim/50-state";
+import { newGame, SAVE_VERSION } from "../src/sim/50-state";
 import { linkStatus } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
@@ -39,7 +39,7 @@ describe("save", () => {
     expect(repaired.hour).toBe(50);
     expect(repaired.cash).toBe(START_CASH);
     expect(repaired.rng.s).toBe(4);
-    expect(repaired.version).toBe(2);
+    expect(repaired.version).toBe(SAVE_VERSION);
     expect(repaired.devices.map((d) => d.model)).toEqual(["home-router"]);
   });
   it("replaces the basement shelf of a version 1 save and keeps seed, rng, hour, cash and ledger", () => {

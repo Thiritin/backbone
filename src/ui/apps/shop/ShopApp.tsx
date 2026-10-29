@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useSessionState } from "../../session";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
+import { cardOf, cardWatts } from "../../../sim/10-catalog/gpu";
 import { brandsFor, COMPONENTS, fits, MANUFACTURERS, modelById, partOffers, shopModels, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
 import { partPrice } from "../../../sim/10-catalog/parts";
 import { lineParts, unitPrice, type CartLine } from "../../../sim/90-actions/hardware";
@@ -88,7 +89,7 @@ export function ShopApp() {
   );
 }
 
-const BUILD_KINDS = ["cpu", "ram", "hdd", "ssd", "nvme"];
+const BUILD_KINDS = ["cpu", "ram", "hdd", "ssd", "nvme", "gpu"];
 
 // Parts a server can carry on top of its preset or bare chassis, with a count each.
 function Build({ model, brand, qty, bare, setBare, counts, setCounts }: {
@@ -129,15 +130,17 @@ function Card({ model, brand, cls, part }: Item) {
   const extras = offers.flatMap((p, i) => (counts[i] ? [{ kind: p.kind, size: p.size, ff: p.ff, qty: counts[i] }] : []));
   const line: CartLine = { model: model.id, brand, qty, ...(part ? { part } : {}), ...(bare ? { bare } : {}), ...(extras.length ? { extras } : {}) };
   const built = lineParts(line), custom = bare || extras.length > 0;
+  const cards = built.filter((p) => p.kind === "gpu");
   const sum = (kind: string) => built.filter((p) => p.kind === kind).reduce((n, p) => n + (p.size ?? 0), 0);
   const drives = built.filter((p) => ["hdd", "ssd", "nvme"].includes(p.kind));
-  const rows: [string, string][] = spec ? [...(part!.size !== undefined ? [["Size", partSize(part!)]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]]] : [
+  const rows: [string, string][] = spec ? [...(part!.size !== undefined ? [["Size", partSize(part!)]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
     ["Height", height(model)],
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
     ...(s ? [["Cores", cores(custom ? sum("cpu") : s.cores)], ["RAM", ram(custom ? sum("ram") : s.ramGb)],
+      ...(cards.length ? [["GPUs", `${cards.length} × ${cardOf(cards[0].size).name}`]] as [string, string][] : []),
       ["Storage", custom ? (drives.length ? `${disk(drives.reduce((n, p) => n + (p.size ?? 0), 0))} in ${drives.length} ${drives.length === 1 ? "drive" : "drives"}` : "None") : `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),
     ...(model.batteryWh ? [["Battery", `${model.batteryWh} Wh`]] as [string, string][] : [[model.kind === "patch" ? "Jacks" : model.kind === "server" ? "NICs" : "Ports", portsText(model)]] as [string, string][]),
-    ...(model.watts ? [["PSUs", `${model.psus}`], ["Power", `${model.watts} W`]] as [string, string][] : []),
+    ...(model.watts ? [["PSUs", `${model.psus}`], ["Power", `${model.watts + cardWatts(cards.map((p) => ({ ...p, failedAt: null })))} W`]] as [string, string][] : []),
   ];
   const reset = () => { setQty(1); setCounts({}); setBare(false); setOpen(false); };
   return (

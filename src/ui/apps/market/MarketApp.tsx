@@ -3,7 +3,8 @@ import { useState, type ReactNode } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { CITIES, COMPETITORS } from "../../../sim/10-catalog/economy";
 import type { Profile } from "../../../sim/30-customers/customers";
-import { cityMarket, NEEDS, OFFER, SLA_ASKED } from "../../../sim/30-market/market";
+import { yearOf } from "../../../sim/00-core/time";
+import { cityMarket, needsOf, OFFER, SLA_ASKED } from "../../../sim/30-market/market";
 import { BUDGET_RANGE } from "../../../sim/30-market/sales";
 import { demand, lostReasons, segmentsOf, studied, studyCost } from "../../../sim/30-market/research";
 import { profileStats } from "../../../sim/40-support/tickets";
@@ -151,7 +152,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
       </div>
       <div className="mkt-row">
         <span className="mkt-label">Buys</span>
-        <div className="mkt-chips">{NEEDS[profile].map(([p, w]) => <span key={p} className="mk-tag">{PRODUCT[p]} <span className="num">{pct(w)}</span></span>)}</div>
+        <div className="mkt-chips">{needsOf(profile, yearOf(game.hour)).map(([p, w]) => <span key={p} className="mk-tag">{PRODUCT[p]} <span className="num">{pct(w)}</span></span>)}</div>
       </div>
       <div className="mkt-row">
         <span className="mkt-label">Demands</span>

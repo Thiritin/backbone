@@ -10,7 +10,7 @@ import { addReview, starsFor, type ReviewReason } from "../80-business/marketing
 import type { SimEvent } from "../88-tick/tick";
 import { hostOfVm, isOwnVm, pickNode, vmOf, type Workload } from "./cluster";
 import type { Incident } from "./ops";
-import { HOURS_PER_YEAR, locationOf } from "./status";
+import { deviceWatts, HOURS_PER_YEAR, locationOf } from "./status";
 
 export const GRID = {
   // Outages a year: the household line in the basement fails more often than a datacenter's utility feed.
@@ -63,7 +63,7 @@ function record(s: GameState, inc: Omit<Incident, "id">): Incident {
 export function upsMinutes(s: GameState, locId: string): number {
   const here = s.devices.filter((d) => d.rackId && d.on && locationOf(s, d)?.id === locId);
   const wh = here.reduce((n, d) => n + (modelById(d.model).batteryWh ?? 0), 0);
-  const watts = here.reduce((n, d) => n + modelById(d.model).watts, 0);
+  const watts = here.reduce((n, d) => n + deviceWatts(d), 0);
   return wh && watts ? (wh / watts) * 60 : 0;
 }
 

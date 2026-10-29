@@ -52,7 +52,7 @@ export const SOFTWARE: Software[] = [
 ];
 
 // The product lines each kind of software lets a cluster sell; the rest runs on whole servers, in racks or nowhere.
-export const SERVES: Record<SoftwareKind, Product[]> = { panel: ["webHosting"], cloud: ["vps", "gameServer", "dns", "vpn", "storage", "cloud"], mail: [] };
+export const SERVES: Record<SoftwareKind, Product[]> = { panel: ["webHosting"], cloud: ["vps", "gameServer", "dns", "vpn", "storage", "cloud", "gpu"], mail: [] };
 export const kindServing = (p: Product): SoftwareKind | null => (SERVES.panel.includes(p) ? "panel" : SERVES.cloud.includes(p) ? "cloud" : null);
 
 // economy.md, Platforms and licenses: software in a virtual machine gets this share of the VM's CPU and RAM.

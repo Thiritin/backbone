@@ -90,6 +90,18 @@ Failover only helps when the other servers have room. A cluster packed to the br
 
 Auto-balancing needs live migration, and live migration needs a hypervisor that can do it. HyperVee cannot.
 
+## GPU computing
+
+### Cards for customers
+
+Your team now knows how to hand whole graphics cards to virtual machines. A GPU server is a virtual machine that books one or more cards of the server it runs on, together with its share of processors, memory and disk.
+
+### Where the cards go
+
+Cards sit in the PCIe slots of a GPU 4U server, which takes up to four. A hypervisor cluster with a free card can sell the GPU server line, and every virtual machine keeps its cards until its customer leaves.
+
+A card draws as much power as a small server, so check the rack before you add one.
+
 ## Marketing campaigns
 
 ### Being found on purpose

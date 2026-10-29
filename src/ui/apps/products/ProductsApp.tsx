@@ -8,7 +8,7 @@ import { PRODUCTS } from "../../../sim/10-catalog/products";
 import { homeLineById } from "../../../sim/20-world/datacenters";
 import type { Product } from "../../../sim/30-customers/customers";
 import type { GameState } from "../../../sim/50-state";
-import { bookable, controlPlaneUp, hasHosts, lineOffered, supports, controlPlaneUse, fitsControlPlane, nodeUsed, serverTaken, workloadsOn, type BackupEvery, type Cluster, type Ha } from "../../../sim/60-infra/cluster";
+import { bookable, controlPlaneUp, gpuReady, hasHosts, lineOffered, supports, controlPlaneUse, fitsControlPlane, nodeUsed, serverTaken, workloadsOn, type BackupEvery, type Cluster, type Ha } from "../../../sim/60-infra/cluster";
 import { installedCores, installedRamGb, locationOf, raidUsable } from "../../../sim/60-infra/status";
 import { nodeUsage, peakUsage } from "../../../sim/60-infra/usage";
 import { backupPool, licenseCost } from "../../../sim/85-products/products";
@@ -64,12 +64,12 @@ export function ProductsApp() {
   );
 }
 
-const LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation"];
+const LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "gpu", "dedicated", "colocation"];
 
 // Whether a zone can take new orders of a product.
 function offered(game: GameState, p: Product, az: string): boolean {
   const spec = PRODUCTS[p];
-  if (spec.runsOn === "cluster") return !spec.ha && game.clusters.some((c) => c.az === az && hasHosts(c) && supports(c, p) && controlPlaneUp(game, c));
+  if (spec.runsOn === "cluster") return !spec.ha && game.clusters.some((c) => c.az === az && hasHosts(c) && supports(c, p) && controlPlaneUp(game, c) && (p !== "gpu" || gpuReady(game, c)));
   if (spec.runsOn === "server") return game.devices.some((d) => d.rackId && modelById(d.model).server && locationOf(game, d)?.az === az && !serverTaken(game, d.id));
   return game.locations.some((l) => l.az === az && l.dc);
 }
@@ -107,7 +107,7 @@ function ProductLines({ game }: { game: GameState }) {
                   <td>{PRODUCT[p]}</td>
                   <td>
                     {kind ? KIND_NAME[kind] : PRODUCTS[p].runsOn === "server" ? "Whole server" : "Rack space"}
-                    {kind && !lineOffered(game, p) && <> <span className="pill bad">Not installed</span></>}
+                    {kind && p !== "gpu" && !lineOffered(game, p) && <> <span className="pill bad">Not installed</span></>}
                   </td>
                   {zones.map((z) => {
                     const n = mine.filter((v) => v.zone === z).length;

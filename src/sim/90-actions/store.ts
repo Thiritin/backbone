@@ -11,6 +11,7 @@ export function research(s: GameState, id: string): ActionResult {
   const skill = skillById(id);
   if (!skill) return fail("error.unknownSkill");
   if (s.unlocks.includes(id)) return fail("error.researched");
+  if (skill.from && yearOf(s.hour) < skill.from) return fail("error.notYet");
   if (s.training) return fail("error.trainingBusy");
   if (!skill.needs.every((n) => s.unlocks.includes(n))) return fail("error.missingSkill");
   if (s.knowHow < skill.knowHow) return fail("error.noKnowHow");

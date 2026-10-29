@@ -83,7 +83,7 @@ const budgetOf = (r: Rng): number => BUDGET_RANGE[0] + (BUDGET_RANGE[1] - BUDGET
 export const nextSpec = (s: GameState, need: Need, profile: Profile) =>
   withAddressNeeds(s.seed, s.nextId, profile, need.product, specFor(s.seed, s.nextId, need.product, need.size, yearOf(s.hour)), yearOf(s.hour));
 
-export function newLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile)): SalesRequest {
+export function newLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour))): SalesRequest {
   const who = senderFor(s.rng, profile, false, inUs(city));
   const variant = Math.floor(rand(s.rng) * 2), spec = nextSpec(s, need, profile);
   const req = addRequest(s, {
@@ -112,7 +112,7 @@ function morningMail(s: GameState, events: SimEvent[]): void {
     const n = poisson(s.rng, f.leads / DAYS_PER_MONTH);
     for (let i = 0; i < n; i++) {
       // An order the form takes weighs the setup fee too.
-      const need = needFor(s.rng, f.profile), form = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${form}`;
+      const need = needFor(s.rng, f.profile, yearOf(s.hour)), form = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${form}`;
       if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, form ? setupPremium(s, need.product) : 0));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads only write about lines on the website, which needs a control plane that sells them.

@@ -35,7 +35,7 @@ const cents = (v: number) => Math.round(v * 100) / 100;
 
 // Thread params naming a spec's resources; "0" and "1" suffixes for the current and the requested spec of an upgrade.
 export const specParams = (spec: Spec, suffix = ""): Record<string, number> => ({
-  [`cpu${suffix}`]: spec.vcpu, [`ram${suffix}`]: spec.ramGb, [`disk${suffix}`]: spec.diskGb, [`traffic${suffix}`]: spec.trafficGb, [`mail${suffix}`]: spec.mailboxes,
+  [`cpu${suffix}`]: spec.vcpu, [`ram${suffix}`]: spec.ramGb, [`disk${suffix}`]: spec.diskGb, [`traffic${suffix}`]: spec.trafficGb, [`mail${suffix}`]: spec.mailboxes, [`gpu${suffix}`]: spec.gpus ?? 0,
 });
 
 export const invoiceOf = (s: GameState, r: SalesRequest): Invoice | undefined => (r.invoiceId ? s.invoices.find((i) => i.id === r.invoiceId) : undefined);

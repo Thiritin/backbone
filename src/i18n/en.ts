@@ -55,6 +55,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownStoreItem": () => "The Pear Store does not sell this.",
   "error.unknownSkill": () => "There is no such training.",
   "error.researched": () => "Your company already knows this.",
+  "error.notYet": () => "This training is not offered yet.",
   "error.trainingBusy": () => "Another training is already running.",
   "error.missingSkill": () => "Learn the skills this training builds on first.",
   "error.noKnowHow": () => "You do not have enough know-how.",
@@ -458,6 +459,8 @@ export const en: Record<string, (p: Params) => string> = {
   "error.placed": () => "This service already runs on your hardware.",
   "error.needsHaCluster": () => "This product needs a hypervisor cluster with automatic failover.",
   "error.noCapacity": () => "No cluster in this zone has room for it.",
+  "error.noCard": () => "No server in this zone has a free GPU card.",
+  "error.cardInUse": () => "A virtual machine is using this card.",
   "error.noFreeServer": () => "No free server in this zone is big enough.",
   "error.noRackSpace": () => "No datacenter rack in this zone has the units and power free.",
   // Network.

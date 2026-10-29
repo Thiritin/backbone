@@ -54,13 +54,13 @@ export interface Competitor {
   targets?: string[];
 }
 
-const EVERYTHING: Product[] = ["webHosting", "domain", "ssl", "dns", "gameServer", "vps", "vpn", "dedicated", "storage", "cloud", "colocation"];
+const EVERYTHING: Product[] = ["webHosting", "domain", "ssl", "dns", "gameServer", "vps", "vpn", "dedicated", "storage", "cloud", "colocation", "gpu"];
 
 // Customer choice, Competitors: the four archetypes plus two specialists (decision, recorded in economy.md).
 export const COMPETITORS: Competitor[] = [
   { name: "Ionose", priceFactor: 0.8, P: 55, R: 60, C: 70, sells: ["webHosting", "domain", "ssl", "dns", "vps"] },
   { name: "OVHeat", priceFactor: 0.75, P: 70, R: 65, C: 50, sells: EVERYTHING },
-  { name: "Hetzna", priceFactor: 0.7, P: 85, R: 70, C: 40, sells: ["vps", "dedicated", "storage", "cloud", "colocation"] },
+  { name: "Hetzna", priceFactor: 0.7, P: 85, R: 70, C: 40, sells: ["vps", "dedicated", "storage", "cloud", "colocation", "gpu"] },
   { name: "Rackspice", priceFactor: 1.3, P: 80, R: 90, C: 75, sells: EVERYTHING },
   { name: "Nitradoh", priceFactor: 0.9, P: 75, R: 60, C: 60, sells: ["gameServer"], targets: ["gamer"] },
   { name: "WP Engyne", priceFactor: 1.4, P: 70, R: 80, C: 85, sells: ["webHosting"], targets: ["sole", "small", "office", "agency"] },

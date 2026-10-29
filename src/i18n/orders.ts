@@ -7,6 +7,7 @@ export const ORDERS_EN: Record<string, (p: Params) => string> = {
   "ticket.order.webHosting.subject": (p) => (p.domain ? `Order: hosting for ${p.domain}` : "Order: web hosting"),
   "ticket.order.vps.subject": () => "Order: VPS",
   "ticket.order.gameServer.subject": () => "Order: game server",
+  "ticket.order.gpu.subject": () => "Order: GPU server",
   "outcome.accepted": () => "Order accepted",
   "outcome.declined": () => "Order declined",
   "outcome.failed": () => "Setup failed",

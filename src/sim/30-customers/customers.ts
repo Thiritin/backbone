@@ -1,7 +1,7 @@
 import type { Sla, Spec } from "../10-catalog/products";
 
 export type Profile = "private" | "gamer" | "hobbyDev" | "soleProp" | "smallBiz" | "agency" | "office" | "onlineShop" | "enterprise";
-export type Product = "webHosting" | "domain" | "ssl" | "dns" | "gameServer" | "vps" | "vpn" | "dedicated" | "storage" | "cloud" | "colocation";
+export type Product = "webHosting" | "domain" | "ssl" | "dns" | "gameServer" | "vps" | "vpn" | "dedicated" | "storage" | "cloud" | "colocation" | "gpu";
 // A friend always pays on time.
 export type PaymentHabit = "prompt" | "late" | "bad" | "friend";
 // history holds happiness at each of the last 12 month starts, oldest first.

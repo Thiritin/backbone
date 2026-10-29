@@ -1,5 +1,6 @@
 // Hardware labels shared by the Locations and Shop apps.
 import { dateOf } from "../../sim/00-core/time";
+import { cardOf } from "../../sim/10-catalog/gpu";
 import { COMPONENTS, jacksOf, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
 import type { Component, Device, End, GameState } from "../../sim/50-state";
 import { deviceHealth, HOURS_PER_YEAR, isPlugged, linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
@@ -13,8 +14,8 @@ export const cores = (n: number) => `${n} ${n === 1 ? "core" : "cores"}`;
 const FF_LABEL = { "3.5": '3.5"', "2.5": '2.5"', nvme: "NVMe" } as const;
 // Size of a sized part ("16 GB", "4 TB, 3.5\"", "32 cores"), or a dash for parts without one.
 export const partSize = (c: Pick<Component, "kind" | "size" | "ff">): string =>
-  c.size === undefined ? "-" : c.kind === "ram" ? ram(c.size) : c.kind === "cpu" ? cores(c.size) : `${disk(c.size)}${c.ff ? `, ${FF_LABEL[c.ff]}` : ""}`;
-const SLOT_NAME: Partial<Record<ComponentKind, string>> = { hdd: "Bay", ssd: "Bay", nvme: "Bay", ram: "DIMM", cpu: "Socket", psu: "PSU bay", fan: "Fan" };
+  c.size === undefined ? "-" : c.kind === "ram" ? ram(c.size) : c.kind === "cpu" ? cores(c.size) : c.kind === "gpu" ? cardOf(c.size).name : `${disk(c.size)}${c.ff ? `, ${FF_LABEL[c.ff]}` : ""}`;
+const SLOT_NAME: Partial<Record<ComponentKind, string>> = { hdd: "Bay", ssd: "Bay", nvme: "Bay", ram: "DIMM", cpu: "Socket", psu: "PSU bay", fan: "Fan", gpu: "PCIe slot" };
 // Slot a part sits in: the nth of its kind, or its fixed place on the board.
 export const partSlot = (kind: ComponentKind, nth: number): string => (SLOT_NAME[kind] ? `${SLOT_NAME[kind]} ${nth}` : "Onboard");
 export const height = (m: DeviceModel) => `${m.height}U`;
@@ -43,7 +44,7 @@ export function portName(m: DeviceModel, i: number): string {
 export const portLamps = (m: DeviceModel, peers: (End | null)[]): PortLamp[] => peers.map((p, i) => (p ? (m.ports[i].media === "sfp" ? "fiber" : "ok") : "off"));
 
 export const devName = (d: Device) => d.label ?? d.name;
-export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: "Power supply", fan: "Fan", ram: "RAM stick", board: "Mainboard", cpu: "CPU", nic: "Network card" };
+export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: "Power supply", fan: "Fan", ram: "RAM stick", board: "Mainboard", cpu: "CPU", nic: "Network card", gpu: "GPU" };
 // A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"".
 export const partLabel = (p: Pick<Component, "kind" | "size" | "ff">): string => `${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}`;
 export const ageYears = (g: GameState, c: Component) => (g.hour - c.installedAt) / HOURS_PER_YEAR;

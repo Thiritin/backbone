@@ -3,12 +3,13 @@
 import { rand, type Rng } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
+import { gpuDemand, GPU_SHARE } from "../10-catalog/gpu";
 import { modelById } from "../10-catalog/hardware";
 import { marketPrice, PRODUCTS, SIZES, type Sla, type Spec } from "../10-catalog/products";
 import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
-import { hasHosts, serverTaken, supports } from "../60-infra/cluster";
+import { gpuReady, hasHosts, serverTaken, supports } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
 import { awareness, leadsThisMonth, PROFILE_IDS, reviewMultiplier, reviewScore, trustBonus } from "../80-business/marketing";
 import { forumAwareness } from "../47-staff/staff";
@@ -53,22 +54,29 @@ export const FORUM_PROFILES: Profile[] = ["hobbyDev", "gamer", "smallBiz"];
 export const OFFER: Record<Budget, number> = { low: 0.9, medium: 1, high: 1.3 };
 export const REQUEST_HOURS = 72;
 
-// What each profile asks for: product and weight. Sizes scale with the budget (decision).
+// What each profile asks for: product and weight. Sizes scale with the budget (decision). The GPU weight is the share of orders
+// at demand 1; needsOf scales it by the year.
 export const NEEDS: Record<Profile, [Product, number][]> = {
   private: [["webHosting", 1]],
   gamer: [["gameServer", 0.6], ["vps", 0.2], ["webHosting", 0.2]],
-  hobbyDev: [["vps", 0.9], ["webHosting", 0.1]],
+  hobbyDev: [["vps", 0.9], ["webHosting", 0.1], ["gpu", GPU_SHARE]],
   soleProp: [["webHosting", 0.9], ["vps", 0.1]],
   smallBiz: [["webHosting", 0.6], ["vps", 0.4]],
-  agency: [["webHosting", 0.3], ["vps", 0.7]],
+  agency: [["webHosting", 0.3], ["vps", 0.7], ["gpu", GPU_SHARE]],
   office: [["webHosting", 0.9], ["vps", 0.1]],
-  onlineShop: [["webHosting", 0.5], ["vps", 0.5]],
-  enterprise: [["vps", 0.5], ["dedicated", 0.5]],
+  onlineShop: [["webHosting", 0.5], ["vps", 0.5], ["gpu", GPU_SHARE]],
+  enterprise: [["vps", 0.5], ["dedicated", 0.5], ["gpu", GPU_SHARE]],
 };
 export const SLA_ASKED: Record<Profile, Sla> = {
   private: "basic", gamer: "basic", hobbyDev: "basic", soleProp: "basic", smallBiz: "business", agency: "business",
   office: "business", onlineShop: "premium", enterprise: "premium",
 };
+
+// A profile's needs in a year: the GPU share scaled by the year's demand, the other weights making room for it; none before GPU servers.
+export function needsOf(profile: Profile, year: number): [Product, number][] {
+  const g = (NEEDS[profile].find(([p]) => p === "gpu")?.[1] ?? 0) * gpuDemand(year);
+  return NEEDS[profile].map(([p, w]): [Product, number] => [p, p === "gpu" ? g : w * (1 - g)]).filter(([, w]) => w > 0);
+}
 
 const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.length)];
 export const cityMarket = (city: string, hour: number): number =>
@@ -80,7 +88,7 @@ const zonesIn = (s: GameState, city: string): string[] => s.locations.filter((l)
 // dedicated servers a free mounted server.
 export function offers(s: GameState, product: Product, city: string): boolean {
   const zones = zonesIn(s, city), runsOn = PRODUCTS[product].runsOn;
-  if (runsOn === "cluster") return s.clusters.some((c) => zones.includes(c.az) && hasHosts(c) && supports(c, product));
+  if (runsOn === "cluster") return s.clusters.some((c) => zones.includes(c.az) && hasHosts(c) && supports(c, product) && (product !== "gpu" || gpuReady(s, c)));
   if (runsOn === "server") return s.devices.some((d) => d.rackId && modelById(d.model).server && zones.includes(locationOf(s, d)?.az ?? "") && !serverTaken(s, d.id));
   return runsOn === "none" || s.locations.some((l) => l.city === city && l.dc);
 }
@@ -101,7 +109,7 @@ export function playerScores(s: GameState, profile: Profile, city: string): { P:
   const ratio = answered.length ? answered.reduce((n, t) => n + (t.replies[0].hour - t.createdAt) / Math.max(1, t.dueAt - t.createdAt), 0) / answered.length : 0.75;
   const support = ratio <= 0.5 ? 100 : ratio <= 1 ? 100 - 100 * (ratio - 0.5) : Math.max(0, 50 - 50 * (ratio - 1));
   const R = 0.5 * uptime + 0.3 * support + 0.2 * 40;
-  const bundle = NEEDS[profile];
+  const bundle = NEEDS[profile].filter(([p]) => p !== "gpu");
   const portfolio = (100 * bundle.filter(([p]) => offers(s, p, city)).length) / bundle.length;
   const C = 0.5 * 60 + 0.3 * portfolio;
   return { P, R, C };
@@ -175,9 +183,10 @@ export function leadFlows(s: GameState): LeadFlow[] {
 
 // What a lead of this profile asks for: a product by the profile's weights, the size it starts from by budget (SIZES) and an SLA.
 export interface Need { product: Product; size: number; sla: Sla }
-export function needFor(r: Rng, profile: Profile): Need {
-  let x = rand(r), product = NEEDS[profile][0][0];
-  for (const [p, w] of NEEDS[profile]) {
+export function needFor(r: Rng, profile: Profile, year: number): Need {
+  const needs = needsOf(profile, year);
+  let x = rand(r), product = needs[0][0];
+  for (const [p, w] of needs) {
     if (x < w) { product = p; break; }
     x -= w;
   }

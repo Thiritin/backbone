@@ -18,6 +18,12 @@ export const NEWS_EN: Record<string, (p: Params) => string> = {
   "event.news.ripeLast.text": () => "Golem.dy reports that RIPE is down to its last /8, and new members now receive a /22 instead of a /21.",
   "event.news.ripeOut.title": () => "IPv4 pool exhausted",
   "event.news.ripeOut.text": () => "Golem.dy reports that RIPE has no free IPv4 addresses left, and new members join a waiting list for a /24.",
+  "event.news.gpu.title": (p) => `${p.name} launched`,
+  "event.news.gpu.text": (p) => `Heize online reports that the ${p.name} is out for ${p.price} euro list price, and draws ${p.watts} watts for it.`,
+  "event.news.gpuDemand.title": (p) => (p.year === 2017 ? "Deep learning needs GPUs" : "Generative AI needs GPUs"),
+  "event.news.gpuDemand.text": (p) => (p.year === 2017
+    ? "Handelsblah reports that deep learning has teams looking for rented GPU servers, and agencies and developers now ask hosters for them."
+    : "Handelsblah reports that generative AI has companies queuing for rented GPU servers, and hosters with free cards can name their price."),
   "event.news.design.title": (p) => `Web design of ${p.year}`,
   "event.news.design.text": (p) => `Handelsblah reports that visitors now expect the ${p.year} look from every website, and older designs lose requests.`,
   "event.news.line.title": (p) => `${p.line} could sell`,

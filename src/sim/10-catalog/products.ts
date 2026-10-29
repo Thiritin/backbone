@@ -1,9 +1,10 @@
 import type { Product } from "../30-customers/customers";
 import { priceAt, vpsPlanGb, vpsRatePerGb } from "./economy";
 import { retailV4 } from "./addresses";
+import { gpuRent } from "./gpu";
 
-// What one unit of a product takes from a node: booked vCPUs, GB of RAM and GB of disk.
-export interface Resources { vcpu: number; ramGb: number; diskGb: number }
+// What one unit of a product takes from a node: booked vCPUs, GB of RAM and GB of disk, and whole GPU cards.
+export interface Resources { vcpu: number; ramGb: number; diskGb: number; gpus?: number }
 // What a customer orders and a service books: its resources, traffic per month, mailboxes (web hosting), zones (DNS),
 // users (VPN) and, for colocation, rack units and watts. A dedicated server's RAM is the smallest server it accepts.
 // ipv4 counts the dedicated IPv4 addresses ordered and ipv6 asks for an IPv6 address (60-infra/addresses.ts).
@@ -33,6 +34,7 @@ export const PRODUCTS: Record<Product, ProductSpec> = {
   cloud: { runsOn: "cluster", period: "hour", commitMonths: 0, ha: true },
   dedicated: { runsOn: "server", period: "hour", commitMonths: 12 },
   colocation: { runsOn: "rack", period: "hour", commitMonths: 12 },
+  gpu: { runsOn: "cluster", period: "hour", commitMonths: 1 },
   domain: { runsOn: "none", period: "year", commitMonths: 12 },
   ssl: { runsOn: "none", period: "year", commitMonths: 12 },
 };
@@ -46,6 +48,8 @@ const web = (gb: number): Size => (y) => ({ vcpu: 0.1, ramGb: 0.25, diskGb: Math
 const vm = (share: number): Size => (y) => { const ramGb = share * grow(y); return { vcpu: Math.max(1, Math.round(ramGb / 2)), ramGb, diskGb: Math.round(20 * ramGb) }; };
 // Game servers start at 2 vCPUs and 4 GB, doubling like VMs.
 const game = (share: number): Size => (y) => ({ vcpu: 2 * share * grow(y), ramGb: 4 * share * grow(y), diskGb: Math.round(10 * share * grow(y)) });
+// A GPU VM books whole cards, 4 vCPUs, 8 GB of RAM and 50 GB of disk per card; RAM and disk grow like VMs.
+const cards = (n: number): Size => (y) => ({ vcpu: 4 * n, ramGb: 8 * n * grow(y), diskGb: Math.round(50 * n * grow(y)), gpus: n });
 const volume = (gb: number): Size => () => ({ ...NONE, diskGb: gb });
 const dedicated = (ramGb: number): Size => (y) => ({ ...NONE, ramGb: ramGb * grow(y) });
 const colo = (units: number, watts: number): Size => () => ({ ...NONE, units, watts });
@@ -66,13 +70,14 @@ export const SIZES: Record<Product, Size[]> = {
   cloud: [vm(1)],
   dedicated: [dedicated(8), dedicated(32)],
   colocation: [colo(1, 150), colo(10, 1000), colo(21, 2000), colo(42, 4000)],
+  gpu: [cards(1), cards(2), cards(4), cards(8)],
   domain: [fixed(NONE)],
   ssl: [fixed(NONE)],
 };
 
 // economy.md, Traffic and bandwidth: an average customer's GB per month in 2005, growing 20% a year.
 export const TRAFFIC_GB: Record<Product, number> = {
-  webHosting: 2, domain: 0, ssl: 0, dns: 1, gameServer: 60, vps: 20, vpn: 300, dedicated: 150, storage: 100, cloud: 20, colocation: 500,
+  webHosting: 2, domain: 0, ssl: 0, dns: 1, gameServer: 60, vps: 20, vpn: 300, dedicated: 150, storage: 100, cloud: 20, colocation: 500, gpu: 20,
 };
 export const TRAFFIC_GROWTH = 1.2;
 
@@ -86,12 +91,12 @@ export function sizeSpec(product: Product, i: number, year: number): Spec {
 
 // What a line charges for: a base fee per service and a price per resource unit; traffic is per 100 GB a month.
 // ip is a dedicated IPv4 address a month.
-export type Unit = "base" | "vcpu" | "ramGb" | "diskGb" | "mailbox" | "zone" | "user" | "unit" | "kw" | "traffic" | "ip";
+export type Unit = "base" | "vcpu" | "ramGb" | "diskGb" | "mailbox" | "zone" | "user" | "unit" | "kw" | "traffic" | "ip" | "gpu";
 const VM: Unit[] = ["base", "vcpu", "ramGb", "diskGb", "traffic", "ip"];
 export const UNITS: Record<Product, Unit[]> = {
   webHosting: ["base", "diskGb", "mailbox", "traffic", "ip"], vps: VM, gameServer: VM, cloud: VM, storage: ["base", "diskGb", "traffic"],
   dns: ["base", "zone", "traffic"], vpn: ["base", "user", "traffic"], domain: ["base"], ssl: ["base"], dedicated: ["base", "ramGb", "traffic", "ip"],
-  colocation: ["base", "unit", "kw", "traffic", "ip"],
+  colocation: ["base", "unit", "kw", "traffic", "ip"], gpu: ["gpu", "traffic", "ip"],
 };
 // A line's rates in euros per unit, and its one-time setup fee; a unit without one charges the market rate.
 export type Rates = Partial<Record<Unit | "setup", number>>;
@@ -99,11 +104,11 @@ export type Rates = Partial<Record<Unit | "setup", number>>;
 // economy.md, Traffic: the share of the middle size's price that is its traffic at the market rates; the other rates give
 // up that share, so the middle size keeps its price.
 export const TRAFFIC_SHARE: Partial<Record<Product, number>> = {
-  webHosting: 0.02, dns: 0.02, vps: 0.03, cloud: 0.03, storage: 0.03, dedicated: 0.04, vpn: 0.05, colocation: 0.05, gameServer: 0.06,
+  webHosting: 0.02, dns: 0.02, gpu: 0.01, vps: 0.03, cloud: 0.03, storage: 0.03, dedicated: 0.04, vpn: 0.05, colocation: 0.05, gameServer: 0.06,
 };
 // economy.md, Setup fees: the market's one-time fee per order in 2005, falling to a third by 2026.
 const SETUP_2005: Partial<Record<Product, number>> = {
-  webHosting: 10, vps: 15, gameServer: 15, dns: 5, vpn: 10, storage: 10, cloud: 0, dedicated: 75, colocation: 150,
+  webHosting: 10, vps: 15, gameServer: 15, dns: 5, vpn: 10, storage: 10, cloud: 0, dedicated: 75, colocation: 150, gpu: 15,
 };
 export const marketSetup = (product: Product, year: number): number => Math.round(priceAt((SETUP_2005[product] ?? 0) / 3, 3, year));
 
@@ -131,12 +136,13 @@ function resourceRates(product: Product, year: number): Rates {
     case "ssl": return { base: year < 2016 ? 50 : 0 };
     case "dedicated": return { base: 6, ramGb: 220 / 24 / g };
     case "colocation": return { base: 15, unit: 30, kw: 100 };
+    case "gpu": return { gpu: gpuRent(year) };
   }
 }
 
 export const unitAmount = (spec: Spec, u: Unit): number =>
   u === "base" ? 1 : u === "mailbox" ? spec.mailboxes : u === "zone" ? spec.zones ?? 0 : u === "user" ? spec.users ?? 0
-    : u === "unit" ? spec.units ?? 0 : u === "kw" ? (spec.watts ?? 0) / 1000 : u === "traffic" ? spec.trafficGb / 100 : u === "ip" ? spec.ipv4 ?? 0 : spec[u];
+    : u === "unit" ? spec.units ?? 0 : u === "kw" ? (spec.watts ?? 0) / 1000 : u === "traffic" ? spec.trafficGb / 100 : u === "ip" ? spec.ipv4 ?? 0 : u === "gpu" ? spec.gpus ?? 0 : spec[u];
 
 // A spec's price at a line's rates (the market's where unset) and an SLA, rounded to cents.
 export function specPrice(product: Product, spec: Spec, year: number, sla: Sla = "basic", rates: Rates = {}): number {

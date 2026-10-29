@@ -21,7 +21,7 @@ function groupsOf(device: Device): Group[] {
     { name: "CPU sockets", kinds: ["cpu"], slots: slotsOf(m, "cpu") },
     { name: "DIMM slots", kinds: ["ram"], slots: slotsOf(m, "ram") },
     { name: `Drive bays${v ? `, ${v.bays.map((b) => (b.ff === "nvme" ? "NVMe-capable" : `${b.ff}"`)).join(" and ")}` : ""}`, kinds: ["hdd", "ssd", "nvme"], slots: slotsOf(m, "hdd") },
-    { name: "PCIe slots", kinds: [], slots: v?.pcie ?? 0 },
+    { name: slotsOf(m, "gpu") ? "GPU slots" : "PCIe slots", kinds: ["gpu"], slots: slotsOf(m, "gpu") || (v?.pcie ?? 0) },
     { name: "Power supply bays", kinds: ["psu"], slots: slotsOf(m, "psu") },
     { name: "Fans", kinds: ["fan"], slots: slotsOf(m, "fan") },
     { name: "Onboard", kinds: ["board", "nic"], slots: onboard },

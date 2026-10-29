@@ -7,7 +7,7 @@ import { fqdn } from "./domains";
 
 // Domain and SSL services have no machine behind them and no hostname.
 export const HOST_PREFIX: Partial<Record<Product, string>> = {
-  webHosting: "web", vps: "vps", gameServer: "game", dns: "dns", vpn: "vpn", dedicated: "dedi", storage: "store", cloud: "cloud", colocation: "colo",
+  webHosting: "web", vps: "vps", gameServer: "game", dns: "dns", vpn: "vpn", dedicated: "dedi", storage: "store", cloud: "cloud", colocation: "colo", gpu: "gpu",
 };
 
 const pad = (n: number) => String(n).padStart(3, "0");

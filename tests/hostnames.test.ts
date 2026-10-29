@@ -12,7 +12,7 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { t } from "../src/i18n/en";
 import { readyGame } from "./fixtures";
 
-const PRODUCTS: Product[] = ["webHosting", "domain", "ssl", "dns", "gameServer", "vps", "vpn", "dedicated", "storage", "cloud", "colocation"];
+const PRODUCTS: Product[] = ["webHosting", "domain", "ssl", "dns", "gameServer", "vps", "vpn", "dedicated", "storage", "cloud", "colocation", "gpu"];
 const SIZE = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
 describe("hostnames", () => {
