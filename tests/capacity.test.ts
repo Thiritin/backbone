@@ -6,7 +6,8 @@ import { homePeak, networkTick, zoneDemand } from "../src/sim/60-infra/network";
 import { tick } from "../src/sim/88-tick/tick";
 import { takeLoan } from "../src/sim/90-actions/billing";
 
-import { buyDevice, connect, orderHomeLine } from "../src/sim/90-actions/hardware";
+import { connect, orderHomeLine } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { research } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { checkDone } from "../src/sim/checklist";

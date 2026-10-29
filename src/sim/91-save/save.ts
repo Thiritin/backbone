@@ -32,7 +32,7 @@ export function deserialize(raw: string): GameState {
   const base = newGame(data.seed);
   if ((data.version ?? 1) < 2) for (const k of INFRA) delete data[k];
   const locations: GameState["locations"] = [];
-  for (const l of data.locations ?? base.locations) locations.push({ ...l, az: l.az ?? nextAz(locations, l.city), extraCircuit: l.extraCircuit ?? false });
+  for (const l of data.locations ?? base.locations) locations.push({ ...l, az: l.az ?? nextAz(locations, l.city), extraCircuit: l.extraCircuit ?? false, shelf: l.shelf ?? (l.space === "basement" ? 4 : 0) });
   // Older saves had one stockroom; its units go to the first location.
   const stored = (d: Device) => d.store !== undefined ? d.store : !d.rackId && !d.panel ? locations[0].id : null;
   // Old devices get the components of their model, installed when they were bought.

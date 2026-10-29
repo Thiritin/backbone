@@ -12,7 +12,8 @@ import {
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { buyDevice, connect, type ActionResult } from "../src/sim/90-actions/hardware";
+import { connect, type ActionResult } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { cleanUp } from "../src/sim/90-actions/security";
 import { installSoftware, updateSoftware } from "../src/sim/90-actions/software";
 import { hire, queueOperation, setTechRules } from "../src/sim/90-actions/staff";

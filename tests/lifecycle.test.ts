@@ -8,7 +8,8 @@ import { presetPrice } from "../src/sim/10-catalog/parts";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { failComponents, failureChance } from "../src/sim/88-tick/tick";
 import { feed, NEWS, newsTick } from "../src/sim/80-business/news";
-import { buyDevice, INSTALL_HOURS, installPart, removePart, replaceComponent, SWAP_HOURS } from "../src/sim/90-actions/hardware";
+import { INSTALL_HOURS, installPart, removePart, replaceComponent, SWAP_HOURS } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { withServer } from "./fixtures";
 
 const jan = (year: number) => hourOf(new Date(Date.UTC(year, 0, 1, 9)));
@@ -30,7 +31,7 @@ describe("hardware lifecycle", () => {
       else if (m.kind === "patch") expect(m.until, m.id).toBeNull();
       else if (m.server) {
         const i = GENERATIONS.findIndex((g) => g.year === m.from);
-        expect([m.until, m.supportYears], m.id).toEqual([GENERATIONS[i + 2] ? GENERATIONS[i + 2].year - 1 : null, 5]);
+        expect([m.until, m.supportYears], m.id).toEqual([m.shelf ? GENERATIONS[2].year - 1 : GENERATIONS[i + 2] ? GENERATIONS[i + 2].year - 1 : null, 5]);
       } else if (m.kind === "ups") expect([m.until, m.supportYears], m.id).toEqual([m.from + 8, 3]);
       else expect([m.until, m.supportYears], m.id).toEqual([m.from + 6, 5]);
     }

@@ -5,7 +5,8 @@ import { newGame, SAVE_VERSION } from "../src/sim/50-state";
 import { linkStatus } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { addLocation, buyDevice, moveRack } from "../src/sim/90-actions/hardware";
+import { addLocation, moveRack } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame } from "./fixtures";
 

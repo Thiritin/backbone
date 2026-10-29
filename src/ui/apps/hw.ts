@@ -18,7 +18,7 @@ export const partSize = (c: Pick<Component, "kind" | "size" | "ff">): string =>
 const SLOT_NAME: Partial<Record<ComponentKind, string>> = { hdd: "Bay", ssd: "Bay", nvme: "Bay", ram: "DIMM", cpu: "Socket", psu: "PSU bay", fan: "Fan", gpu: "PCIe slot" };
 // Slot a part sits in: the nth of its kind, or its fixed place on the board.
 export const partSlot = (kind: ComponentKind, nth: number): string => (SLOT_NAME[kind] ? `${SLOT_NAME[kind]} ${nth}` : "Onboard");
-export const height = (m: DeviceModel) => `${m.height}U`;
+export const height = (m: DeviceModel) => (m.shelf ? "Shelf" : `${m.height}U`);
 export const watts = (w: number) => `${Math.round(w).toLocaleString("en-GB")} W`;
 export const day = (hour: number) => dateOf(hour).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 export const lampOf = (st: LinkStatus): Lamp => (!st.online ? "bad" : st.warning ? "warn" : "ok");

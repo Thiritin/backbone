@@ -94,8 +94,27 @@ export function linkStatus(s: GameState, deviceId: string): LinkStatus {
   return grouped ? { online: true, gbit: up.reduce((sum, f) => sum + f.gbit, 0), warning: null } : { online: true, gbit: fastest, warning: "bondNotGrouped" };
 }
 
-// Every slot where a device of this height fits, lowest first. Units rented out for colocation are taken.
+// A tower's rackId is the shelf id of its location, and its slot is the place on the shelf.
+export const shelfId = (locationId: string): string => `shelf:${locationId}`;
+export const onShelf = (d: Device): boolean => !!d.rackId?.startsWith("shelf:");
+
+// Where a device can be mounted: a rack, or the shelf of a location.
+export function spotOf(s: GameState, id: string | null): { locationId: string; moving: boolean; shelf: boolean; units: number } | undefined {
+  if (id?.startsWith("shelf:")) {
+    const loc = s.locations.find((l) => shelfId(l.id) === id);
+    return loc && { locationId: loc.id, moving: false, shelf: true, units: loc.shelf };
+  }
+  const rack = s.racks.find((r) => r.id === id);
+  return rack && { locationId: rack.locationId, moving: rack.arriveAt !== null, shelf: false, units: rackUnits(rack.model) };
+}
+
+// Every slot where a device of this height fits, lowest first. Units rented out for colocation are taken; on a shelf every
+// place holds one tower.
 export function freeSlots(s: GameState, rackId: string, height: number): number[] {
+  if (rackId.startsWith("shelf:")) {
+    const taken = new Set(s.devices.filter((d) => d.rackId === rackId).map((d) => d.slot));
+    return Array.from({ length: spotOf(s, rackId)?.units ?? 0 }, (_, i) => i + 1).filter((p) => !taken.has(p));
+  }
   const rack = s.racks.find((r) => r.id === rackId);
   if (!rack) return [];
   const used = new Set(s.devices.filter((d) => d.rackId === rackId).flatMap((d) => {
@@ -127,7 +146,7 @@ const MONTH = 730;
 
 // The location a device is in, or undefined in storage.
 export function locationOf(s: GameState, d: Device): Location | undefined {
-  const id = d.panel ?? s.racks.find((r) => r.id === d.rackId)?.locationId;
+  const id = d.panel ?? spotOf(s, d.rackId)?.locationId;
   return s.locations.find((l) => l.id === id);
 }
 
@@ -154,6 +173,18 @@ export const busyDevices = (s: GameState): Set<string | null> => new Set(s.workl
 export const deviceWatts = (d: Device): number => modelById(d.model).watts + cardWatts(d.components);
 export const drawWatts = (d: Device, busy: Set<string | null>): number => { const m = modelById(d.model); return (busy.has(d.id) ? m.watts : m.idleWatts) + cardWatts(d.components); };
 
+// The towers on a location's shelf draw from the same circuit as its racks.
+const shelfWatts = (s: GameState, locationId: string): number => {
+  const busy = busyDevices(s);
+  return s.devices.filter((d) => d.rackId === shelfId(locationId) && d.on && pluggedIn(d)).reduce((sum, d) => sum + drawWatts(d, busy), 0);
+};
+const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);
+// The shelf has no breaker of its own: it trips with the basement's racks, or alone when no rack is left.
+const circuitTripped = (s: GameState, loc: Location): boolean => {
+  const racks = s.racks.filter((r) => r.locationId === loc.id);
+  return racks.length ? racks.some((r) => rackPower(s, r.id).tripped) : shelfWatts(s, loc.id) > 1000 * circuitKw(loc);
+};
+
 // ponytail: a device draws its rated power, or its idle power when it runs no workload; no finer load-based draw.
 export function rackPower(s: GameState, rackId: string): { watts: number; limitWatts: number; tripped: boolean } {
   const rack = s.racks.find((r) => r.id === rackId);
@@ -161,10 +192,10 @@ export function rackPower(s: GameState, rackId: string): { watts: number; limitW
   if (!rack || !loc) return { watts: 0, limitWatts: 0, tripped: false };
   const busy = busyDevices(s);
   const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on && pluggedIn(d)).reduce((sum, d) => sum + drawWatts(d, busy), 0)
-    + s.workloads.reduce((sum, w) => sum + (w.rackId === rackId ? w.watts : 0), 0) : 0;
+    + s.workloads.reduce((sum, w) => sum + (w.rackId === rackId ? w.watts : 0), 0) + (loc.dc ? 0 : shelfWatts(s, loc.id)) : 0;
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.
-  const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);
+  const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : circuitKw(loc);
   const limitWatts = Math.round((1000 * kw) / share);
   return { watts, limitWatts, tripped: watts > limitWatts };
 }
@@ -251,6 +282,7 @@ export function powered(s: GameState, deviceId: string): boolean {
   const loc = d && locationOf(s, d);
   if (!d || !loc || loc.readyAt > s.hour || (s.ops.dark[loc.id] ?? 0) > s.hour) return false;
   if (!d.rackId) return true;
+  if (onShelf(d)) return pluggedIn(d) && !circuitTripped(s, loc);
   const rack = s.racks.find((r) => r.id === d.rackId)!;
   return rack.arriveAt === null && pluggedIn(d) && !rackPower(s, rack.id).tripped;
 }

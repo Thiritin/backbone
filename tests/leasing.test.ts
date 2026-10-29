@@ -3,7 +3,8 @@ import { LEASE_FACTOR, leaseOffers, LESSORS } from "../src/sim/10-catalog/leasin
 import { newGame, type GameState } from "../src/sim/50-state";
 import { connectError, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
-import { buyCart, buyOutLease, connect, mountStack, buyDevice, sellDevice, type CartLine } from "../src/sim/90-actions/hardware";
+import { buyOutLease, connect, mountStack, sellDevice, type CartLine } from "../src/sim/90-actions/hardware";
+import { buyCart, buyDevice } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
 

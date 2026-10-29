@@ -3,7 +3,7 @@ import { useEffect, useRef, type PointerEvent as RPointerEvent } from "react";
 import { useSessionState } from "../../session";
 import { modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Device, End, GameState, Location } from "../../../sim/50-state";
-import { connectError, portPeers } from "../../../sim/60-infra/status";
+import { connectError, portPeers, shelfId } from "../../../sim/60-infra/status";
 import { connect, disconnect } from "../../../sim/90-actions/hardware";
 import { cableColor, LED } from "../../art/fronts";
 import { useStore } from "../../store";
@@ -21,13 +21,14 @@ type Spot = { x: number; y: number; left: number; right: number };
 function layout(g: GameState, loc: Location) {
   const racks = g.racks.filter((r) => r.locationId === loc.id).sort((a, b) => a.position - b.position);
   const rackOf = new Map(racks.map((r) => [r.id, r]));
-  const devs = g.devices.filter((d) => d.panel === loc.id || (d.rackId && rackOf.has(d.rackId)));
+  const shelf = shelfId(loc.id);
+  const devs = g.devices.filter((d) => d.panel === loc.id || (d.rackId && (rackOf.has(d.rackId) || d.rackId === shelf)));
   const kind = (d: Device) => modelById(d.model).kind;
   const net = (d: Device) => !d.panel && kind(d) !== "server";
   const cols: { title: string; groups: { head?: string; ds: Device[] }[] }[] = [
     { title: "Carrier panel", groups: [{ ds: devs.filter((d) => d.panel) }] },
     { title: "Network", groups: [{ ds: devs.filter(net).sort((a, b) => Number(kind(a) === "patch") - Number(kind(b) === "patch") || b.slot - a.slot) }] },
-    { title: "Servers", groups: racks.map((r) => ({ head: r.name, ds: devs.filter((d) => d.rackId === r.id && kind(d) === "server").sort((a, b) => b.slot - a.slot) })) },
+    { title: "Servers", groups: racks.map((r) => ({ head: r.name, ds: devs.filter((d) => d.rackId === r.id && kind(d) === "server").sort((a, b) => b.slot - a.slot) })).concat({ head: "Shelf", ds: devs.filter((d) => d.rackId === shelf).sort((a, b) => a.slot - b.slot) }) },
   ].map((c) => ({ ...c, groups: c.groups.filter((gr) => gr.ds.length) })).filter((c) => c.groups.length);
   const nodes: Node[] = [], spots = new Map<string, Spot>(), heads: { text: string; x: number; y: number }[] = [];
   cols.forEach((c, ci) => {
@@ -40,7 +41,7 @@ function layout(g: GameState, loc: Location) {
         const m = modelById(d.model), rack = d.rackId ? rackOf.get(d.rackId) : undefined;
         m.ports.forEach((_, p) => spots.set(key({ device: d.id, port: p }), { x, y: y + HEAD + p * PITCH + PITCH / 2, left: x, right: x + NODE_W }));
         const h = HEAD + m.ports.length * PITCH + 6;
-        nodes.push({ d, m, x, y, h, sub: rack ? `${rack.name} · U${d.slot}` : "Carrier panel" });
+        nodes.push({ d, m, x, y, h, sub: rack ? `${rack.name} · U${d.slot}` : d.rackId === shelf ? `Shelf ${d.slot}` : "Carrier panel" });
         y += h + GAP_Y;
       }
     }

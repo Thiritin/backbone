@@ -5,10 +5,8 @@ import { COMPONENTS, componentKinds, modelById } from "../src/sim/10-catalog/har
 import { newGame, type Device, type GameState } from "../src/sim/50-state";
 import { arrayLost, BOOT_HOURS, deviceHealth, linkStatus, raidTolerance, raidUsable, rackPower } from "../src/sim/60-infra/status";
 import { failComponents, failureChance, rebuildHours, tick, type SimEvent } from "../src/sim/88-tick/tick";
-import {
-  addLocation, buyCircuit, buyDevice, buyRack, connect, replaceComponent, setCableColor, setFeed, setLabel, setPower,
-  setRaid, setRebuildRate, unmountDevice,
-} from "../src/sim/90-actions/hardware";
+import { addLocation, buyCircuit, buyRack, connect, replaceComponent, setCableColor, setFeed, setLabel, setPower, setRaid, setRebuildRate, unmountDevice } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { provisionService } from "../src/sim/90-actions/clusters";

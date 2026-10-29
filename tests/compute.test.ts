@@ -13,7 +13,8 @@ import {
 } from "../src/sim/90-actions/clusters";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
+import { connect, setPower } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { migrateWorkload } from "../src/sim/90-actions/vms";
 import { startGame } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";

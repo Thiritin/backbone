@@ -5,7 +5,7 @@ import { yearOf } from "../../../sim/00-core/time";
 import { modelById, type FormFactor } from "../../../sim/10-catalog/hardware";
 import { leaseOffers } from "../../../sim/10-catalog/leasing";
 import { REGIONS } from "../../../sim/20-world/datacenters";
-import { buyCart, unitPrice } from "../../../sim/90-actions/hardware";
+import { buyCart, deliveryWait, unitPrice } from "../../../sim/90-actions/hardware";
 import { Isometric } from "../../art/Isometric";
 import { Logo } from "../../art/logos";
 import { useStore } from "../../store";
@@ -31,7 +31,7 @@ export function Cart() {
   const openLoc = useStore((s) => s.openLoc);
   const [to, setTo] = useState<string | null>(null);
   const dest = game.locations.find((l) => l.id === (to ?? openLoc)) ?? game.locations[0];
-  const year = yearOf(game.hour), total = cart.reduce((n, l) => n + unitPrice(l, year) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
+  const wait = deliveryWait(game), year = yearOf(game.hour), total = cart.reduce((n, l) => n + unitPrice(l, year) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
   const offers = total ? leaseOffers(game, total) : [];
   const offer = offers.find((o) => o.id === pay);
   const best = Math.min(...offers.map((o) => o.total));
@@ -40,7 +40,7 @@ export function Cart() {
     if (!r.ok) return;
     clearCart();
     setPay("cash");
-    notify("Shop", `Added to storage in ${dest.az}`, `${units} ${units === 1 ? "unit" : "units"}`);
+    notify("Shop", wait ? `Ordered for ${dest.az}` : `Added to storage in ${dest.az}`, `${units} ${units === 1 ? "unit" : "units"}`);
   };
 
   return (
@@ -76,6 +76,7 @@ export function Cart() {
             ))}
           </div>
         </div>
+        <div className="shop-cart-total"><span>Delivery</span><span className="grow" /><span className="num">{wait ? `Arrives in ${Math.ceil(wait / 24)} ${wait > 24 ? "days" : "day"}` : "Arrives now"}</span></div>
         <div className="shop-cart-total"><span>Total</span><span className="grow" /><strong className="num">{euro(total)}</strong></div>
         <div className="shop-pay" role="radiogroup" aria-label="Payment">
           <button role="radio" aria-checked={!offer} className="shop-offer" onClick={() => setPay("cash")}>

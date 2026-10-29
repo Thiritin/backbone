@@ -104,8 +104,23 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     const c = s.clusters[0];
     for (const x of s.clusters.filter((x) => x !== c && x.platform === c.platform && !x.switching && x.nodes.length === 1)) addNode(s, c.id, x.nodes[0].deviceId);
   };
+  // An order waits for its delivery; the server is fitted in the hour it arrives.
+  let ordered: string | null = null;
+  const fitOrdered = () => {
+    const id = ordered!;
+    if (s.devices.find((d) => d.id === id)!.transitTo) return;
+    for (let slot = 2; slot < 24 && !s.devices.find((d) => d.id === id)!.rackId; slot++) mountDevice(s, id, "rack2", slot);
+    for (let port = 1; port < 4 && !connect(s, { device: id, port: 0 }, { device: "dev5", port }).ok; port++);
+    if (installSoftware(s, id, "openveezee").ok) servers++;
+    ordered = null;
+  };
   const grow = () => {
     growWeb();
+    if (ordered) {
+      fitOrdered();
+      needServer = ordered !== null;
+      if (needServer) return;
+    }
     const c = s.clusters[0];
     const ram = (f: (id: string) => number) => c.nodes.reduce((n, x) => n + f(x.deviceId), 0);
     const booked = ram((id) => nodeUsed(s, id).ramGb) + controlPlaneUse(c).ramGb, installed = ram((id) => installedRamGb(s.devices.find((d) => d.id === id)!));
@@ -117,10 +132,8 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     if (s.cash < SERVER_PRICE + 2000) return;
     const bought = buyDevice(s, "g1-compute", "Dwell", 1, "loc1");
     if (!bought.ok) return;
-    const id = bought.id!;
-    for (let slot = 2; slot < 24 && !s.devices.find((d) => d.id === id)!.rackId; slot++) mountDevice(s, id, "rack2", slot);
-    for (let port = 1; port < 4 && !connect(s, { device: id, port: 0 }, { device: "dev5", port }).ok; port++);
-    if (installSoftware(s, id, "openveezee").ok) servers++;
+    ordered = bought.id!;
+    fitOrdered();
   };
   let servers = 0;
   const reached: Record<string, number> = {};

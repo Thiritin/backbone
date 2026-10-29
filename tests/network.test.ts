@@ -10,7 +10,8 @@ import { blackholed, monthlyNetworkCost, networkBills, networkTick, p95, route, 
 import { addressBills, addressTick } from "../src/sim/60-infra/addresses";
 import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { addLocation, buyDevice } from "../src/sim/90-actions/hardware";
+import { addLocation } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import {
   acceptPeering, addUplinkLink, freeRouterPort, joinExchange, orderExchangePort, orderTransit, orderZoneLink, registerAsn, rejectPeering, requestPeering, setBlackhole, setProtection,
 } from "../src/sim/90-actions/network";

@@ -5,7 +5,7 @@ import type { Device, GameState } from "../50-state";
 import { beginTransfer, TRANSFER_MINUTES } from "../30-customers/registrar";
 import { anchorOf } from "../60-infra/cluster";
 import { openVulns, rank } from "../60-infra/vulns";
-import { HOURS_PER_YEAR, hotKind, hotSwappable, locationOf } from "../60-infra/status";
+import { HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, spotOf } from "../60-infra/status";
 import type { SimEvent } from "../88-tick/tick";
 import { drain, upgradeNodePhp } from "../90-actions/clusters";
 import { updateDue, updateSoftware } from "../90-actions/software";
@@ -81,7 +81,7 @@ function autoQueue(s: GameState): void {
   if (!s.techRules.failed && !s.techRules.worn) return;
   const sites = new Set(s.staff.filter((e) => e.role === "technician" && e.trained.includes("hardware")).map((e) => e.location));
   for (const d of s.devices) {
-    const rack = d.rackId ? s.racks.find((r) => r.id === d.rackId) : undefined;
+    const rack = d.rackId ? spotOf(s, d.rackId) : undefined;
     if (!rack || !sites.has(rack.locationId)) continue;
     for (const c of d.components) {
       const due = (s.techRules.failed && c.failedAt !== null) || (s.techRules.worn && c.failedAt === null && worn(s, c) && hotSwappable(d, c));
