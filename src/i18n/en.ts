@@ -11,6 +11,7 @@ import { BREACH_EN } from "./breach";
 import { VULNS_EN } from "./vulns";
 import { SITE_EN } from "./site";
 import { DOMAINS_EN } from "./domains";
+import { MAINTENANCE_EN } from "./maintenance";
 import { MOVES_EN } from "./moves";
 import { ORDERS_EN } from "./orders";
 import { MANUAL_EN } from "./manual";
@@ -528,6 +529,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownAttack": () => "This attack is over.",
   ...OPS,
   ...MOVES_EN,
+  ...MAINTENANCE_EN,
   ...ORDERS_EN,
   ...MANUAL_EN,
   ...REPLIES_EN,

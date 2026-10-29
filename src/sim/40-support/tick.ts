@@ -8,6 +8,7 @@ import { grantExtension, isSuspended, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPIN
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { takenDown } from "../60-infra/ops";
+import { coverage } from "../60-infra/maintenance";
 import { applyNoticeWork } from "./notices";
 import { applyOrderWork } from "../30-market/orders";
 import { howToFactor } from "../85-products/products";
@@ -113,10 +114,13 @@ function outages(s: GameState, customer: (id: string) => Customer): void {
   for (const v of down) {
     since[v.id] = s.downSince[v.id] ?? s.hour;
     const c = customer(v.customerId), p = profileStats(c.profile), { clock } = p.tolerance;
+    // Downtime inside an announced window costs nothing and the outage counts from the window's end; a late announcement halves it.
+    const cover = coverage(s, v), share = cover?.factor ?? 1;
+    if (share === 0) { since[v.id] = cover!.end; continue; }
     const n = noticed(s.seed, c.id, v.id, segmentOf(c.profile, v.product), since[v.id], s.hour);
     if (!n.seen || (!n.fresh && !counts(clock, s.hour))) continue;
-    bump(c, -p.outagePenalty);
-    if (!n.fresh || !chance(s.rng, OUTAGE_WRITE_CHANCE[p.budget])) continue;
+    bump(c, -p.outagePenalty * share);
+    if (!n.fresh || !chance(s.rng, OUTAGE_WRITE_CHANCE[p.budget] * share)) continue;
     for (let i = 0; i < (p.budget === "high" ? 3 : 1); i++) createTicket(s, c, "outage", v.id);
   }
   s.downSince = since;

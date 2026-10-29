@@ -323,6 +323,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
   const services = game.services.filter((v) => v.customerId === tk.customerId && v.endedAt === null);
   const locked = !!tk.work || isFinal(tk);
   const agents = game.staff.filter((e) => e.role === "support");
+  const sent = tk.kind === "migration" || (tk.kind === "maintenance" && (tk.topic === "notice" || tk.topic === "moved"));
 
   const body = (
     <div className="sup-detail">
@@ -378,8 +379,8 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
       )}
 
       <div className="thread">
-        <div className={tk.kind === "migration" ? "msg you" : "msg"}>
-          <div className="from">{sender ? sender.name : tk.kind === "migration" ? "You" : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
+        <div className={sent ? "msg you" : "msg"}>
+          <div className="from">{sender ? sender.name : sent ? "You" : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
         </div>
         {tk.replies.map((r, i) => (

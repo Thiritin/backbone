@@ -10,6 +10,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - An open rack fills the whole Locations window, and a selected server splits into Actions, Software, Lease, Power supplies, RAID and Components tabs.
 - The power button on the server drawing turns the server on and off, and the Change parts button stays visible but greyed out until the server is powered down.
 - A notice about a site that is not on your network offers only Reject, and the reply tells the sender it is not yours and how to find the right host with whois.
+- You can plan a maintenance window on a server, a cluster or a location, and the customers it affects get a notice email; downtime inside a window announced a day ahead costs no happiness, tickets or SLA credit.
 - Workloads move between locations over a zone link or, from the basement, over the internet, and you can offer customers a migration they accept with a maintenance window.
 - The traffic chart in the Network app has space above the cards below it.
 - Free apps from the Pear Store install even while your cash is below zero.

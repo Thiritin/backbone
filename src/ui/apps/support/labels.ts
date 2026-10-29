@@ -1,4 +1,4 @@
-import { CircleHelp, Copyright, DoorOpen, KeyRound, Landmark, LockKeyholeOpen, Receipt, ShieldAlert, ShoppingCart, TrendingUp, Truck, Undo2, ZapOff, type LucideIcon } from "lucide-react";
+import { CircleHelp, Copyright, DoorOpen, KeyRound, Landmark, LockKeyholeOpen, Receipt, ShieldAlert, ShoppingCart, TrendingUp, Truck, Undo2, Wrench, ZapOff, type LucideIcon } from "lucide-react";
 import { dateOf } from "../../../sim/00-core/time";
 import { BUSINESS_DAY, type Patience } from "../../../sim/00-core/workhours";
 import type { Product } from "../../../sim/30-customers/customers";
@@ -18,6 +18,7 @@ export const KINDS: { id: TicketKind; label: string; icon: LucideIcon }[] = [
   { id: "order", label: "Order", icon: ShoppingCart },
   { id: "extortion", label: "Ransom demand", icon: KeyRound },
   { id: "migration", label: "Migration", icon: Truck },
+  { id: "maintenance", label: "Maintenance", icon: Wrench },
 ];
 export const kindOf = (id: TicketKind) => KINDS.find((k) => k.id === id)!;
 

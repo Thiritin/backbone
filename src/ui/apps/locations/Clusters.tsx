@@ -17,6 +17,8 @@ import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { cores, devName, disk, ram } from "../hw";
 import { ControlPlanePill, VM_STATE, vmState } from "../products/parts";
+import { menuOn } from "../../desktop/ContextMenu";
+import { PlanButton, useMaintenance, Windows } from "./Maintenance";
 import { Zone } from "./ui";
 import { NodeWorkloads } from "./Workloads";
 
@@ -78,9 +80,10 @@ export function Clusters({ game, loc }: { game: GameState; loc: Location }) {
 function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
   const act = useStore((s) => s.act);
   const free = joinableServers(game, cluster.id).map((id) => game.devices.find((d) => d.id === id)!);
+  const mnt = useMaintenance(), target = { kind: "cluster", id: cluster.id } as const;
   return (
     <>
-      <div className="loc-card-h loc-sub">
+      <div className="loc-card-h loc-sub" onContextMenu={menuOn(() => [{ label: "Plan maintenance…", run: () => mnt.plan(target) }])}>
         <h3>{cluster.name}</h3>
         <span className="pill">{cluster.kind === "cloud" ? "Hypervisor" : cluster.kind === "mail" ? "Mail server" : cluster.kind === "game" ? "Game panel host" : "Panel host"}</span>
         <span className="grow" />
@@ -90,7 +93,10 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
             <button aria-pressed={cluster.placement === "spread"} onClick={() => act(setPlacement, cluster.id, "spread")}>Spread</button>
           </div>
         )}
+        <PlanButton target={target} plan={(t) => mnt.plan(t)} />
       </div>
+      <Windows game={game} windows={game.maintenance.filter((m) => m.target.kind === "cluster" && m.target.id === cluster.id)} plan={mnt.plan} />
+      {mnt.dialog}
       {game.unlocks.includes("memoryReservation") && (
         <div className="loc-row">
           <span className="loc-k">RAM</span>

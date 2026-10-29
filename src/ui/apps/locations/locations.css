@@ -89,6 +89,9 @@ svg.logo-mark { flex: none; }
 .loc-sheet-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 16px; border-top: 0.5px solid var(--line); min-height: 52px; }
 .loc-sheet-foot > * { white-space: nowrap; flex-shrink: 0; }
 .loc-sheet-foot > .btn.primary { margin-left: auto; }
+.mnt-body { display: flex; flex-direction: column; min-height: 0; overflow: auto; }
+.mnt-list { min-height: 0; overflow: auto; max-height: 260px; border-top: 0.5px solid var(--line); }
+.mnt-short { color: var(--warn-text); }
 .loc-dcs { overflow: auto; min-height: 0; }
 .loc-dcs tr { cursor: pointer; }
 .loc-dcs tr.sel td { background: var(--accent-soft); }
