@@ -1,6 +1,7 @@
 import { START_CASH } from "../src/sim/10-catalog/economy";
-import { describe, expect, it } from "vitest";
-import { prefOf, useStore } from "../src/ui/store";
+import { describe, expect, it, vi } from "vitest";
+import { prefOf, useStore, type Win } from "../src/ui/store";
+import { readSession } from "../src/ui/session";
 import { newGame } from "../src/sim/50-state";
 import { readyGame } from "./fixtures";
 import { metrics } from "../src/sim/metrics";
@@ -100,5 +101,20 @@ describe("cross-app focus", () => {
     s().openApp("Billing", { kind: "invoice", id: "inv1" });
     expect(s().windows.filter((w) => w.app === "Billing")).toHaveLength(1);
     expect(s().windows.find((w) => w.app === "Billing")!.focus!.n).toBeGreaterThan(first.n);
+  });
+});
+
+describe("reload", () => {
+  it("keeps the open windows for the tab, without the focus another app asked for", () => {
+    const kept = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", { getItem: (k: string) => kept.get(k) ?? null, setItem: (k: string, v: string) => kept.set(k, v) });
+    try {
+      useStore.getState().openApp("Support", { kind: "ticket", id: "tkt1" });
+      const ws = readSession<Win[]>("windows", []);
+      expect(ws.map((w) => w.app)).toContain("Support");
+      expect(ws.find((w) => w.app === "Support")!.focus).toBeUndefined();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
