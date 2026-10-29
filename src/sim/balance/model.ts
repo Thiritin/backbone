@@ -4,7 +4,7 @@ import { binomial, createRng, rand, type Rng } from "../00-core/rng";
 import { WORK_SHARE, type Patience } from "../00-core/workhours";
 import {
   BASEMENT_SLOTS, BUDGET_SIZE, businessPowerPrice, CHOICE_TAU, CITIES, COMPETITORS, generationAt,
-  KNOW_HOW, LEAD_CAP_SHARE, ORGANIC_BASE, LEVELS, MARKET_GROWTH, monthlySalary, NEVER_PAYS, ON_TIME, PAYMENT_MINUTES, PROFILES,
+  KNOW_HOW, leadCapShare, LEVELS, MARKET_GROWTH, monthlySalary, NEVER_PAYS, ON_TIME, PAYMENT_MINUTES, PROFILES,
   REPAIR_HOURS, SEARCH_AD_COST, SERVER_AFR, STAFF_HOURS_PER_MONTH, START_CASH,
   TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vpsPlanGb, vpsRatePerGb,
   WEB_BASE, type ProductId, type Profile,
@@ -12,10 +12,15 @@ import {
 import { DATACENTERS, HOME_LINES, MOVE, spacePrice } from "../20-world/datacenters";
 import { dcPerTb } from "../10-catalog/network";
 import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
-import { OFFER } from "../30-market/market";
+import { OFFER, ORGANIC_CONSIDER, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
+import { BUDGETS, OWNED, PLATFORMS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
 import { LEASE_FACTOR, LEASE_TERMS } from "../10-catalog/leasing";
 import { modelById, type DeviceModel } from "../10-catalog/hardware";
+import { skillById } from "../10-catalog/research";
+import { STORE, subscriptionPrice } from "../10-catalog/store";
+import { MONTHLY_RATES } from "../40-support/tickets";
+import { BOT_RIGHT, BOT_SPEED } from "../47-staff/staff";
 import { OVERCOMMIT } from "../10-catalog/products";
 
 // Average hours a ticket written at a random hour waits for the office to open: four 16-hour nights and a 64-hour weekend.
@@ -61,6 +66,16 @@ const TRAFFIC: Record<Product, number> = { web: 2, vps: 20, game: 60 };
 // or whole positions past a full rack, and pays power per kWh and the datacenter's bandwidth per TB (Datacenters and space).
 const HOME_DC = DATACENTERS.filter((d) => d.city === CITIES[0].name).sort((a, b) => a.positionPrice - b.positionPrice)[0];
 const DRAW_SHARE = 0.6;
+// Cities the bot opens after its home city, largest market first, each in its cheapest datacenter's 1/8 rack share.
+// ponytail: capacity stays one pool; per-city clusters come with a placement-aware model.
+const CITY_ORDER = [CITIES[0], ...CITIES.slice(1).sort((a, b) => b.market - a.market)];
+const cityRent = (city: string) => Math.min(...DATACENTERS.filter((d) => d.city === city).map((d) => spacePrice(d, "share", 8)));
+// ChadGPT Support (Pear Store, Automation skill) answers how-to and billing tickets around the clock at twice a skill-50
+// person's rate. The model learns Employee management, Monitoring and Automation on the way.
+const CHAD = STORE.find((i) => i.id === "chadGpt")!;
+const CHAD_KNOW_HOW = ["people", "monitoring", "automation"].reduce((a, id) => a + skillById(id)!.knowHow, 0);
+// Awareness starts at 5% for private individuals and gamers and 2% for the rest (80-business/marketing.ts).
+const AWARENESS_START = (p: Profile) => (p.id === "private" || p.id === "gamer" ? 0.05 : 0.02);
 // The model has none of year 1's setup work (trainings, website, order form) and would fill the basement by April;
 // the happiness run's careful player fills it in the last quarter, so the bot moves out no earlier than October.
 const MOVE_MONTH = 9;
@@ -127,7 +142,10 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
   const books: Worker[] = [];
   let cash = START_CASH, minCash = cash, level = 1, knowHow = 0, cities = 1, rackUnlocked = false, hireUnlocked = false;
   let backlogT = 0, backlogP = 0, waitHours = 4, downFrac = 0, lastMrr = 0, lastPerGb = 0, lastRunning = 0, yearProfit = 0, negMonths = 0, bankrupt = false;
-  let reviewSum = 0, reviewN = 0;
+  let reviewSum = 0, reviewN = 0, website = false, cityRents = 0, chad = false;
+  const aware: number[] = PROFILES.map(AWARENESS_START);
+  // Customers of a cohort with happiness 70 or more, from its average.
+  const happyOf = (i: number, k: number) => cohorts[i][k].n * Math.min(1, Math.max(0, (cohorts[i][k].H - 50) / 40));
   const rows: YearRow[] = [];
   const levelYear: Record<number, number> = {};
   let flow: Record<string, number> = {};
@@ -163,25 +181,37 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       return you / (you + others);
     };
 
-    // Leads (Market and leads): organic and paid per location city, referrals from happy customers.
-    const adBudget = cash > 3000 ? bot.adShare * lastMrr : 0;
-    let adSpent = 0;
+    // Leads (Market and leads), as 30-market/market.ts leadFlows: organic by awareness and referrals from happy customers,
+    // capped per city, plus website and search campaign leads, of which 10% spill to cities without a location.
+    if (!website && rackUnlocked && cash > 3000 + OWNED.website.setup + OWNED.orderForm.setup) { website = true; cash -= OWNED.website.setup + OWNED.orderForm.setup; }
+    // The search campaign: the largest preset budget within the bot's ad share, spread over every profile and city.
+    const adSpent = cash > 3000 ? BUDGETS.filter((b) => b <= bot.adShare * lastMrr).at(-1) ?? 0 : 0;
+    const perCity = adSpent / cities, dearer = 1 + perCity / SATURATION;
+    const paidBy = PROFILES.map(() => 0);
     const newCustomers: number[][] = PROFILES.map(() => PRODUCTS.map(() => 0));
     for (let c = 0; c < cities; c++) {
-      const market = CITIES[c].market * Math.pow(1 + MARKET_GROWTH, yf - 2005);
-      const citySpend = adBudget / cities;
+      const market = CITY_ORDER[c].market * Math.pow(1 + MARKET_GROWTH, yf - 2005);
       PROFILES.forEach((p, i) => {
-        const organic = ORGANIC_BASE.value * (1 + 0.5 * (level - 1)) * revMult * p.mix;
-        const referrals = c === 0 ? PRODUCTS.reduce((a, _, k) => a + cohorts[i][k].n * Math.min(1, Math.max(0, (cohorts[i][k].H - 50) / 40)), 0) * 0.005 * revMult : 0;
-        const spend = citySpend * p.mix;
-        const cpl = priceAt(SEARCH_AD_COST[p.budget], 0.6, year) * (1 + citySpend / 5000);
-        const paid = spend / cpl;
-        adSpent += spend;
-        const leads = Math.min(organic + referrals + paid, LEAD_CAP_SHARE * market * p.mix);
-        book_("organic", organic); book_("referrals", referrals); book_("paid", paid); book_("leads", leads);
+        const organic = ORGANIC_CONSIDER * market * p.mix * aware[i] * (1 + 0.5 * (level - 1)) * revMult;
+        const referrals = c === 0 ? PRODUCTS.reduce((a, _, k) => a + happyOf(i, k), 0) * REFERRAL_LEADS * revMult : 0;
+        const cap = leadCapShare(level) * market * p.mix;
+        const paid = perCity / PROFILES.length / (priceAt(SEARCH_AD_COST[p.budget], 0.6, year) * dearer);
+        const site = website ? WEBSITE_LEADS * p.mix : 0;
+        paidBy[i] += paid;
+        const leads = Math.min(organic + referrals, cap) + (paid + site) * (1 - SPILL_SHARE);
+        book_("organic", organic); book_("referrals", referrals); book_("paid", paid); book_("website", site); book_("leads", leads); book_("cap", cap);
+        book_("city" + c, leads);
         PRODUCTS.forEach((pr, k) => { newCustomers[i][k] += binomial(rng, Math.round(leads * wants(p, pr)), share(p, pr)); });
       });
     }
+    // Awareness (Marketing and reviews): paid leads, the website, the review score, the free listing's trust and happy customers.
+    const score = (3.5 * 20 + reviewSum) / (20 + reviewN);
+    PROFILES.forEach((_, i) => {
+      const happy = PRODUCTS.reduce((a, _, k) => a + happyOf(i, k), 0);
+      const g = 0.05 * (1 - Math.exp(-paidBy[i] / 100)) + (website ? 0.004 : 0) + 0.006 * (score - 3.5)
+        + 0.001 * (website ? PLATFORMS.free.trust : 0) + Math.min(0.01, 0.0005 * happy);
+      aware[i] = Math.min(1, Math.max(0.02, aware[i] + (1 - aware[i]) * g - 0.02 * aware[i]));
+    });
 
     // Capacity, like the live game: every product books RAM, the cluster keeps RAM for its control planes, and while the
     // company is in the basement the home line's upload caps the evening peak.
@@ -267,9 +297,11 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     }));
     support.forEach((w) => grow(w, month));
     books.forEach((w) => grow(w, month));
+    const routine = PROFILES.reduce((a, p, i) => a + cohorts[i].reduce((b, c) => b + c.n, 0) * (MONTHLY_RATES.howTo[p.budget] + MONTHLY_RATES.billing[p.budget]), 0);
+    const botT = chad ? Math.min(BOT_SPEED * 730 * tasksPerHour(TICKET_MINUTES, 50), routine * (1 + backlogT / Math.max(1, ticketLoad))) : 0;
     const staffT = support.reduce((a, w) => a + STAFF_HOURS_PER_MONTH * tasksPerHour(TICKET_MINUTES, w.skill), 0);
-    const playerT = Math.min(bot.playerHours * tasksPerHour(TICKET_MINUTES, 50), ticketLoad + backlogT);
-    const capT = staffT + playerT;
+    const playerT = Math.min(bot.playerHours * tasksPerHour(TICKET_MINUTES, 50), Math.max(0, ticketLoad + backlogT - botT));
+    const capT = staffT + playerT + botT;
     const hoursLeft = bot.playerHours - playerT / tasksPerHour(TICKET_MINUTES, 50);
     const capP = books.reduce((a, w) => a + STAFF_HOURS_PER_MONTH * tasksPerHour(PAYMENT_MINUTES, w.skill), 0)
       + hoursLeft * tasksPerHour(PAYMENT_MINUTES, 50);
@@ -278,7 +310,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     waitHours = 4 + (backlogT / Math.max(capT, 1)) * 730;
     const processed = customers ? Math.min(1, capP / Math.max(customers, 1)) : 1;
     const avgSkill = support.length ? support.reduce((a, w) => a + w.skill, 0) / support.length : 100;
-    const pRight = support.length ? (playerT + staffT * (0.75 + 0.25 * avgSkill / 100)) / Math.max(capT, 1) : 1;
+    const pRight = support.length || chad ? (playerT + staffT * (0.75 + 0.25 * avgSkill / 100) + botT * BOT_RIGHT) / Math.max(capT, 1) : 1;
 
     // Failures: each failed server takes its VPS share down for the repair.
     const failures = binomial(rng, vpsServers, SERVER_AFR / 12);
@@ -305,6 +337,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       const pCancel = Math.min(1, p.churn + 0.5 * Math.max(0, (50 - c.H) / 50));
       const gone = binomial(rng, c.n, pCancel);
       cancels += gone;
+      if (gone) book_("churnNatural", (gone * p.churn) / pCancel);
       const stars = Math.min(5, Math.max(1, 1 + (4 * c.H) / 100));
       const written = c.n * tpc * 0.05 + gone * 0.3 + (pr !== "web" ? c.n * hitShare * 0.1 : 0);
       reviewsStars += written * stars;
@@ -346,12 +379,14 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const leasing = leases.reduce((a, l) => a + l.payment, 0);
     for (let l = leases.length - 1; l >= 0; l--) if (leases[l].until <= month + 1) leases.splice(l, 1);
     const depreciation = servers.reduce((a, s) => a + (!s.leasedUntil && month - s.bought < 60 ? s.price / 60 : 0), 0);
-    const opex = leasing + power + space + bandwidth + salaries + adSpent + (rackUnlocked ? 0 : line.monthly);
+    const marketing = website ? OWNED.website.upkeep + OWNED.orderForm.upkeep : 0;
+    const chadPrice = chad ? subscriptionPrice(CHAD, year) : 0;
+    const opex = chadPrice + leasing + power + space + cityRents + bandwidth + salaries + adSpent + marketing + (rackUnlocked ? 0 : line.monthly);
     cash += collectedShare - opex - instalments;
     profits.push(collectedShare - opex - interest - servers.filter((x) => x.bought === month && !x.leasedUntil).reduce((a, x) => a + x.price, 0));
     if (profits.length > 6) profits.shift();
     book_("instalments", instalments);
-    book_("collected", collectedShare); book_("leasing", leasing); book_("space", space); book_("bandwidth", bandwidth); book_("power", power);
+    book_("collected", collectedShare); book_("leasing", leasing); book_("space", space + cityRents); book_("bandwidth", bandwidth); book_("power", power);
     book_("salaries", salaries); book_("ads", adSpent);
     yearProfit += collectedShare - opex - depreciation - interest;
     if (month % 12 === 3 && yearProfit > 0) { cash -= TAX_RATE * yearProfit; book_("tax", TAX_RATE * yearProfit); }
@@ -362,6 +397,8 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
 
     // Staff decisions: hire when the queue is more than a day old.
     knowHow += PROFILES.reduce((a, _, i) => a + PRODUCTS.reduce((b, pr, k) => b + cohorts[i][k].n * KNOW[pr], 0), 0);
+    // ChadGPT once support runs behind and cash covers three months of it.
+    if (!chad && knowHow >= CHAD_KNOW_HOW && backlogT > 0 && cash > 3 * subscriptionPrice(CHAD, year)) chad = true;
     if (bot.hires && !hireUnlocked && knowHow >= 100 && cash > 3000) { hireUnlocked = true; cash -= 1000; }
     if (bot.hires && hireUnlocked) {
       // Hire only when this month's capacity can't clear the load plus a third of the backlog.
@@ -385,15 +422,23 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       level++;
       levelYear[level] = yf;
     }
-    const wantCities = Math.min(CITIES.length, level <= 2 ? 1 : [0, 0, 0, 2, 4, 6, 8][level]);
-    while (cities < wantCities && cash > 10000) { cities++; cash -= 2000; }
+    // Two cities at level 3, four at level 4 and every city from level 5, when the late game's cash sits idle.
+    const wantCities = level <= 2 ? 1 : level === 3 ? 2 : level === 4 ? 4 : CITIES.length;
+    // A new city gets the rack share and a memory-optimized server for its own cluster.
+    while (cities < wantCities && cash > 10000 + shopServer(gen, "memory").price) {
+      servers.push(serverOf(gen, "memory", month, false));
+      cash -= shopServer(gen, "memory").price;
+      book_("servers", shopServer(gen, "memory").price);
+      cityRents += cityRent(CITY_ORDER[cities].name);
+      cities++;
+    }
 
     minCash = Math.min(minCash, cash);
     negMonths = cash < 0 ? negMonths + 1 : 0;
     if (negMonths >= 2) bankrupt = true;
 
     if (month % 12 === 11) {
-      Object.assign(flow, { cash, debt: debt(), netWorth, nServers: servers.length, ramUsed: ramNeeded(PROFILES.map(() => PRODUCTS.map(() => 0))), ramHave: ramHave() });
+      Object.assign(flow, { aware: 1000 * PROFILES.reduce((a, p, i) => a + p.mix * aware[i], 0), cities, cash, debt: debt(), netWorth, nServers: servers.length, ramUsed: ramNeeded(PROFILES.map(() => PRODUCTS.map(() => 0))), ramHave: ramHave() });
       rows.push({ year, level, customers: Math.round(customers), mrr: Math.round(mrr), minCash: Math.round(minCash), staff: support.length + books.length, flow });
       minCash = cash;
       flow = {};

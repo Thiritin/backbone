@@ -37,9 +37,9 @@ function byBudget(factor: number): Record<Profile, number> {
 export const BUDGETS = [100, 250, 500, 1000, 2500, 5000];
 export const DISCOUNTS = [0, 0.1, 0.2, 0.3];
 // Spending more in one channel and city gets dearer: cost per lead × (1 + monthly spend ÷ €5,000).
-const SATURATION = 5000;
+export const SATURATION = 5000;
 // Website requests per month and location city, split by the profile mix.
-const WEBSITE_LEADS = 4;
+export const WEBSITE_LEADS = 4;
 
 export type PlatformId = "free" | "provenExpat" | "trustPylon";
 // fee: euros per month; invite: share of customers with happiness 60 or more asked for a review each month; trust: bonus T.

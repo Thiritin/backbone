@@ -194,15 +194,20 @@ Customers belong to their city's country and prefer datacenters there (see the l
 | Medium budget | Sole proprietor 15% | Small business 15% | Agency or startup 8% |
 | High budget | Doctor's or law office 5% | Online shop 5% | Enterprise 2% |
 
-**Leads.** Leads per month for each profile and city come from three sources and are capped at a quarter of that city's new customers:
+**Leads.** Leads per month for each profile and city come from organic reach and referrals, which are capped at a share of that city's new customers that grows with your level, plus website and campaign leads on top:
 
 ```math
-\text{leads} = \min(\text{organic} + \text{referrals} + \text{paid},\ 0.25 \cdot \text{market}_{new})
+\text{leads} = \min(\text{organic} + \text{referrals},\ 0.016 \cdot (1 + 0.5 \cdot \text{level}) \cdot \text{market}_{new}) + \text{website} + \text{paid}
 ```
 
-- **Organic:** 20 × (1 + 0.5 × (level − 1)) × review multiplier per month, split by the profile mix. Organic leads only come from your home city and cities where you have a location.
-- **Referrals:** every customer with happiness 70 or more brings 0.005 leads per month × review multiplier, of their own profile.
+The cap is 2.4% of a city's new customers at level 1, 4% at level 3 and 6.4% at level 6.
+
+- **Organic:** 0.4 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × review multiplier per month (see Organic leads in the game below). Organic leads only come from cities where you have a location.
+- **Referrals:** every customer with happiness 70 or more brings 0.005 leads per month × review multiplier, of their own profile, in your home city.
+- **Website:** 4 a month per location city once you own a website, split by the profile mix.
 - **Paid:** campaign budget ÷ cost per lead (see [Marketing and reviews](#marketing-and-reviews)).
+
+Website and campaign leads send 10% to cities without a location of yours, where they cannot buy.
 
 The review multiplier is 0.4 + 0.25 × (stars − 1), so 1 star gives 0.4, 3 stars 0.9 and 5 stars 1.4.
 
@@ -1451,7 +1456,7 @@ The numbers above are first guesses. A headless run of the simulation proves or 
 **The balance run.** `npm run balance` plays 15 game years over 20 seeds with two scripted players and prints, per year, the level, customers, recurring revenue and lowest cash.
 
 - **Steady bot:** prices at 0.8× base, hires a support agent whenever the queue is over a day old, and adds capacity whenever a cluster is 80% full. Its median run must hit each level within a year of the pacing target and never go bankrupt.
-- **Solo bot:** plays the same way but never hires. It must survive but level up clearly later, which shows that hiring is how you scale and still optional.
+- **Solo bot:** plays the same way but never hires. It must survive and reach level 5 within a year of its target, and reach level 6 later than the steady bot, which shows that hiring is how you scale and still optional.
 
 A Vitest suite runs both bots on fixed seeds and fails when either rule breaks. The `balance` skill from the GDD reads the run's output and suggests which value to tune.
 
@@ -1535,12 +1540,47 @@ From 2006 every sale fits the cluster, so leads set the pace. Median years reach
 
 Neither bot goes bankrupt. Level 3 arrives with fewer customers than the pacing table (about 190 instead of 400) at the same revenue, because VPS and game servers pay more per customer than the table assumed. Level 4 arrives a year early: once leases pay for themselves, capacity grows as fast as sales. If level 4 should land closer to 2010, the lease offers are the place to tune. The solo bot reaches level 3 a little before the steady bot because it pays no hiring unlock or salaries in 2006; it falls behind from level 4 when support runs out.
 
-**Level 6.** The steady bot stays at level 5 with about 15,000 customers in 2019 against 40,000 targeted. The cause is lead flow, not money: it brings in about 14,600 leads a year against a cap of 68,000, wins about 4,800 of them and loses about 3,700 a year to churn (25% a year), which settles near 19,000 customers, while €6 million of cash sits idle. Organic leads stop growing once the bot stops opening cities (6 at level 5, of 18), paid leads get dearer with spend (cost per lead × (1 + city spend ÷ €5,000)), and referrals add only about 500 a year. Fixing it means retuning the lead economy or the bot's city expansion and is left for a lead-flow pass.
+**Level 6.** The steady bot stayed at level 5 with about 15,000 customers in 2019 against 40,000 targeted, while €6 million of cash sat idle. Counting leads by source, wins and cancellations by cause per year (median of 20 seeds) showed:
+
+| Year | Customers | MRR | Leads | Organic | Referrals | Paid | Won | Cancelled | Of them natural churn | Cities |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2010 | 4,082 | €97,768 | 7,120 | 2,674 | 120 | 4,328 | 2,412 | 907 | 884 | 4 |
+| 2013 | 8,189 | €175,431 | 11,064 | 3,720 | 261 | 7,081 | 3,560 | 1,911 | 1,910 | 6 |
+| 2016 | 12,492 | €256,375 | 14,399 | 4,770 | 416 | 9,213 | 4,670 | 3,141 | 3,030 | 6 |
+| 2019 | 14,833 | €289,245 | 14,626 | 4,752 | 518 | 9,297 | 4,799 | 3,659 | 3,659 | 6 |
+
+A third of leads bought every year. Churn ran at about 25% a year and nearly all of it was the profiles' own monthly churn (1% to 4% a month by profile, inside the 1% to 3% a month of real small-business hosting); happiness, outages and price added almost nothing, since the bot prices at 0.8 and keeps support up. So churn was not inflated by a bug. The binding constraint was lead flow, and the model computed it with rules the live game no longer has:
+
+- **Organic leads.** The model gave every location city a flat 20 leads a month × the level factor × the review multiplier. The live game (`30-market/market.ts`) gives 0.4 × the city's new customers × the profile's awareness × the same factors, and awareness grows from the website, reviews, happy customers and campaigns (see Awareness under [Marketing and reviews](#marketing-and-reviews)). The model had no awareness, no website leads and no market growth in organic leads.
+- **Paid leads.** The model spent 10% of MRR on search ads without a limit, €29,000 a month by 2019. The live game runs one campaign per channel at €5,000 a month at most.
+- **Cities.** The bot opened 6 of 18 cities and stopped, although every city has a datacenter whose cheapest 1/8 share costs €32 to €140 a month, and a location there is all a lead needs to buy.
+
+With the live rules in the model, the problem turned around: awareness reached 30% by 2007 and 55% by 2010, organic leads ran at ten times the old flat rate, and the old cap of a quarter of each city's new customers let the steady bot reach level 5 in 2010 and level 6 in 2013, at the floors set by company age. Every competent player who sets up a website would hit the cap in each location city from about 2008. Once leads sit at the cap, the cap and the number of cities set the pace, so the cap had to carry a real-world anchor instead of an open question. A host that 25% of a city's new customers look at is the market leader. At level 6 the pacing table targets about 40,000 customers in 2018, which is about 10,000 new customers a year at 25% churn; at a third of leads won, that is about 30,000 leads, or 5% of the 2018 new customers of all 18 cities.
+
+The cap is now 1.6% × (1 + 0.5 × level) of a city's new customers per profile, from 2.4% at level 1 to 6.4% at level 6, on organic leads and referrals; website and campaign leads come on top as in the live game. It grows with level like organic reach, since a bigger company is known to more buyers. The bot now follows the live lead rules: awareness per profile, a website and order form once out of the basement, website leads, and a search campaign at the largest preset budget within 10% of MRR, at most €5,000, spread over every profile and city with 10% spilling to cities without a location. It opens 2 cities at level 3, 4 at level 4 and all 18 from level 5, largest market first, each with its cheapest datacenter's 1/8 share and a memory-optimized server. It also buys ChadGPT Support once it knows Employee management, Monitoring and Automation and support runs behind: the bot answers how-to and billing tickets around the clock at twice a skill-50 person's rate with the right reply 60% of the time, for €300 a month in 2005. Organic leads now count the live formula; the old flat 20 is gone.
+
+| Year | Customers | MRR | Leads | Organic before the cap | Cap | Paid | Won | Cancelled | Cities |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2010 | 5,480 | €133,348 | 8,133 | 66,655 | 5,700 | 2,511 | 2,868 | 1,122 | 4 |
+| 2013 | 17,781 | €410,707 | 25,755 | 312,769 | 22,490 | 2,765 | 8,794 | 3,569 | 18 |
+| 2016 | 30,210 | €650,478 | 31,421 | 398,905 | 28,330 | 2,570 | 10,181 | 6,181 | 18 |
+| 2018 | 39,408 | €819,858 | 40,746 | 538,677 | 37,765 | 2,448 | 12,712 | 7,892 | 18 |
+
+Churn stays nearly all natural, at about 21% a year. Median years reached, before and after:
+
+| Level | Target | Steady before | Steady after | Solo before | Solo after |
+| --- | --- | --- | --- | --- | --- |
+| 2 | 2005 | 2006.0 | 2006.0 | 2005.8 | 2005.8 |
+| 3 | 2007 | 2006.8 | 2006.8 | 2006.6 | 2006.5 |
+| 4 | 2010 | 2008.9 | 2008.6 | 2009.7 | 2008.3 |
+| 5 | 2013 | 2013.5 | 2011.8 | never | 2012.2 |
+| 6 | 2018 | never | 2017.5 | never | never |
+
+Neither bot goes bankrupt. The solo bot now reaches level 5: ChadGPT carries the routine tickets that used to bury its 60 hours a month, and it settles near 20,000 customers in 2019, held back by the tickets only people answer. Level 5 arrives about a year early because the bot opens every city the moment it reaches level 5; a later level 5 would come from a slower expansion, not from the cap. The steady bot still hires: 35 people by 2019 for the upgrade, outage and cancellation tickets the bot does not take. ChadGPT covers the routine tickets of about 20,000 customers for €300 a month, which makes support hires optional until then; if hiring should matter earlier, its work rate or price is the place to look.
 
 **Open questions**
 
 - Should customers be simulated one by one or in cohorts? Per-customer happiness assumes one by one; 40,000 customers on an hourly tick should be fine in TypeScript, but save size needs a check.
 - Should competitor scores stay fixed forever, or rise about 1 point a year so late-game players can't coast?
-- Is a lead cap of 25% of a city's new customers too generous for the late game?
 - After 2026, do prices stay flat (as written) or keep their trend?
 - Bankruptcy as the lose condition is new; does it fit the game?

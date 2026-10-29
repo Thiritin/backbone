@@ -90,9 +90,10 @@ export const CITIES = [
   { name: "Los Angeles", market: 1500 },
 ];
 export const MARKET_GROWTH = 0.08;
-export const LEAD_CAP_SHARE = 0.25;
-// Organic leads per month at level 1 and 3 review stars, per location city.
-export const ORGANIC_BASE = { value: 20 };
+// Organic leads and referrals per city and profile are capped at a share of the city's new customers that grows with
+// the company's level: 2.4% for a basement hoster, 6.4% at level 6 (economy.md, Market and leads).
+export const LEAD_CAP_SHARE = 0.016;
+export const leadCapShare = (level: number): number => LEAD_CAP_SHARE * (1 + 0.5 * level);
 
 // Prices over time: p(y) = p2026 · m^((2026 − y) / 21), flat after 2026.
 export const priceAt = (p2026: number, m: number, year: number): number =>
