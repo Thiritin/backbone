@@ -6,12 +6,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - The menu bar shows where you are with the local weather, and you can drive to any of your datacenters for a fare while the clock skips ahead and the computer stays locked.
 - Hand work at the datacenter you stand in starts at once; anywhere else a popover shows the remote hands price to accept or decline, next to sending a friend or a technician.
-- Getting started has a step to install the Network app from the Pear Store, with an Install button in the guide, right before you order your domain.
+- Getting started has a step to install the Network app from the Pear Store, right before you order your domain.
 - The Terminal is now a small shell: list, create, read, move and remove files and folders on your desk and on every server you log into, and chain commands with && and ;.
 - Running apt update and apt upgrade on a server installs its outstanding software and PHP updates, after asking you to confirm the downtime.
 - You can drag a device to another position in its rack once its power cords are unplugged, and a plugged-in device stays put.
-- A new game opens the Getting started guide right away instead of a welcome popup, and it now starts with naming your company, ordering your domain and booking email, each done right inside the guide.
-- The website step in Getting started asks you to build your website and list a product, with a Build button in the guide.
+- A new game opens the Getting started guide right away instead of a welcome popup, and the guide now starts with naming your company, ordering your domain and booking email, each with an Open button to the app where you do it.
+- The website step in Getting started asks you to build your website and list a product on its Admin page.
 - Weekly challenge seeds start from the title screen, a run can be exported and replayed, and a leaderboard shows verified runs.
 - Loading a save shows a Pear OS update sheet with what changed since you last played, with an Open button for each app it names, and the logo menu has a What's new item that lists the whole changelog.
 - You can book extra power on a rented rack share in steps of 0.25 kW up to twice its base limit, billed monthly with the rent and active after three days.

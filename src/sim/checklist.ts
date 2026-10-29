@@ -45,5 +45,5 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
 export const tracked = (id: string): boolean => id in CHECKS;
 export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) || s.checklist.includes(id);
 
-// The Getting started tutorial: each step is a checklist goal, done in this order. company is ticked by its Save button.
+// The Getting started tutorial: each step is a checklist goal, done in this order. company is ticked by any change in Settings under Company.
 export const TUTORIAL = ["company", "networkApp", "domain", "email", "buyServer", "mountServer", "internet", "setup", "website", "firstCustomer"] as const;

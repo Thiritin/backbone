@@ -10,6 +10,7 @@ export const COMPANY_COLORS = [
 export const NAME_MAX = 32;
 export const TAGLINE_MAX = 60;
 
+// Any saved change ticks the company step of Getting started.
 export function setCompany(s: GameState, patch: Partial<Company>): ActionResult {
   const name = patch.name?.trim();
   if (name !== undefined && (name.length === 0 || name.length > NAME_MAX)) return { ok: false, error: "error.companyName" };
@@ -18,5 +19,6 @@ export function setCompany(s: GameState, patch: Partial<Company>): ActionResult 
   if (patch.logo !== undefined && !COMPANY_LOGOS.includes(patch.logo)) return { ok: false, error: "error.companyLogo" };
   if (patch.color !== undefined && !COMPANY_COLORS.includes(patch.color)) return { ok: false, error: "error.companyColor" };
   s.company = { ...s.company, ...patch, ...(name !== undefined && { name }), ...(tagline !== undefined && { tagline }) };
+  if (!s.checklist.includes("company")) s.checklist = [...s.checklist, "company"];
   return { ok: true };
 }

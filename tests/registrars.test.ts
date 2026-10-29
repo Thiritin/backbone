@@ -8,11 +8,12 @@ import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { orderCompanyDomain, queueTransfer, registerCompanyDomain, signRegistrar, transferDomains } from "../src/sim/90-actions/registrar";
+import { queueTransfer, registerCompanyDomain, signRegistrar, transferDomains } from "../src/sim/90-actions/registrar";
 import { hire, setTechLocation } from "../src/sim/90-actions/staff";
 import { install } from "../src/sim/90-actions/store";
 import { setLine } from "../src/sim/90-actions/website";
-import { CHECKS, TUTORIAL } from "../src/sim/checklist";
+import { CHECKS, checkDone, TUTORIAL } from "../src/sim/checklist";
+import { setCompany } from "../src/sim/90-actions/company";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame } from "./fixtures";
 
@@ -229,22 +230,13 @@ describe("tutorial", () => {
     expect(CHECKS.networkApp(s)).toBe(true);
   });
 
-  it("orders the company domain with a new contract in one step", () => {
+  it("ticks the company step on a saved company change", () => {
     const s = newGame(1);
-    expect(orderCompanyDomain(s, "nameCheep", "no").ok).toBe(false);
-    expect(s.registrar).toBeNull();
-    expect(orderCompanyDomain(s, "nameCheep", " Basement-Hosting.de ").ok).toBe(true);
-    expect(s.registrar?.id).toBe("nameCheep");
-    expect(s.company.domain).toBe("basement-hosting.de");
-    expect(CHECKS.domain(s)).toBe(true);
-    expect(orderCompanyDomain(s, "nameCheep", "other.de").ok).toBe(false);
-  });
-
-  it("keeps the signed registrar when ordering the domain", () => {
-    const s = newGame(1);
-    signRegistrar(s, "goDuddy");
-    expect(orderCompanyDomain(s, "nameCheep", "basement-hosting.de").ok).toBe(true);
-    expect(s.registrar?.id).toBe("goDuddy");
+    expect(checkDone(s, "company")).toBe(false);
+    expect(setCompany(s, { name: "" }).ok).toBe(false);
+    expect(checkDone(s, "company")).toBe(false);
+    expect(setCompany(s, { name: "Cellar Hosting" }).ok).toBe(true);
+    expect(checkDone(s, "company")).toBe(true);
   });
 
   it("checks the website step by a built site with a listed product", () => {
