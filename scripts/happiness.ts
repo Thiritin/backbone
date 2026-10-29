@@ -102,7 +102,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     const c = s.clusters[0];
     const ram = (f: (id: string) => number) => c.nodes.reduce((n, x) => n + f(x.deviceId), 0);
     const booked = ram((id) => nodeUsed(s, id).ramGb) + controlPlaneUse(c).ramGb, installed = ram((id) => installedRamGb(s.devices.find((d) => d.id === id)!));
-    needServer = booked >= 0.8 * installed && c.nodes.length < BASEMENT_SLOTS;
+    needServer = (booked >= 0.8 * installed || booked + 2 > installed) && c.nodes.length < BASEMENT_SLOTS;
     if (!needServer) return;
     // Short of cash: the smallest preset loan that covers the server and a reserve, over five years.
     const short = SERVER_PRICE + 2000 - s.cash, amount = LOAN_AMOUNTS.find((a) => a >= short);
