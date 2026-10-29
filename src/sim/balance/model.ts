@@ -101,13 +101,13 @@ function rackRent(watts: number): number {
 
 // A customer's spec, sized like the live SIZES (10-catalog/products.ts) and scaled by the budget: a web space of 2 GB of
 // the year's disk and two mailboxes per size step in 0.25 GB of a panel VM, a VPS of the year's base RAM (one vCPU per
-// 2 GB, at least one, and 20 GB of disk per GB), a game server of 2 vCPUs, 4 GB and 10 GB of the year's base; traffic
+// 2 GB, at least one, and 20 GB of disk per GB), a game server of 0.5 vCPU, 0.5 GB and 5 GB of the year's base; traffic
 // scales with the budget like the rest.
 const LIVE: Record<Product, LiveProduct> = { web: "webHosting", vps: "vps", game: "gameServer" };
 function specOf(p: Profile, product: Product, year: number): Spec {
   const k = BUDGET_SIZE[p.budget], g = vpsPlanGb(year), trafficGb = monthlyGb(product, year) * k;
   if (product === "web") return { vcpu: 0.1, ramGb: 0.25, diskGb: 2 * g * k, trafficGb, mailboxes: 2 * k };
-  if (product === "game") return { vcpu: 2 * g * k, ramGb: 4 * g * k, diskGb: 10 * g * k, trafficGb, mailboxes: 0 };
+  if (product === "game") return { vcpu: 0.5 * g * k, ramGb: 0.5 * g * k, diskGb: 5 * g * k, trafficGb, mailboxes: 0 };
   return { vcpu: Math.max(1, Math.round((g * k) / 2)), ramGb: g * k, diskGb: 20 * g * k, trafficGb, mailboxes: 0 };
 }
 // The monthly price of that spec at the live market rates per resource.
@@ -251,7 +251,9 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const cpuNeeded = (extra: number[][]) => PROFILES.reduce((a, p, i) => a + PRODUCTS.reduce((b, pr, k) => b + (cohorts[i][k].n + extra[i][k]) * cpuOf(p, pr, year), 0), 0);
     const cpuHave = () => servers.reduce((a, s) => a + s.cores * CPU_PER_CORE, 0);
     const peakNeeded = (extra: number[][]) => PROFILES.reduce((a, _, i) => a + PRODUCTS.reduce((b, pr, k) => b + (cohorts[i][k].n + extra[i][k]) * peakMbit(pr, year), 0), 0);
-    if (!rackUnlocked && month >= MOVE_MONTH && servers.length >= BASEMENT_SLOTS && knowHow >= 50 && cash > 1500 + MOVE.sameCity.price) {
+    // The basement is full once its slots are taken or its customers' evening peak takes 90% of the home line's upload.
+    const basementFull = servers.length >= BASEMENT_SLOTS || peakNeeded(PROFILES.map(() => PRODUCTS.map(() => 0))) > 0.9 * line.up;
+    if (!rackUnlocked && month >= MOVE_MONTH && basementFull && knowHow >= 50 && cash > 1500 + MOVE.sameCity.price) {
       // The move: the basement servers ride along to the rack share and the home line is cancelled.
       rackUnlocked = true;
       cash -= 500 + MOVE.sameCity.price;
@@ -265,7 +267,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const limit = () => Math.max(MIN_LIMIT[level0], (12 * profits.reduce((a, b) => a + b, 0)) / 6) - debt();
     while (ramNeeded(newCustomers) > 0.8 * ramHave() || cpuNeeded(newCustomers) > 0.8 * cpuHave()) {
       const basement = !rackUnlocked;
-      if (basement && servers.length >= BASEMENT_SLOTS) break;
+      if (basement && basementFull) break;
       // In the datacenter the bot buys the line with the lowest price per GB it can fill, given the vCPUs its customers book per GB.
       const cpuPerGb = cpuNeeded(newCustomers) / Math.max(1, ramNeeded(newCustomers));
       const usable = (m: DeviceModel) => Math.min(m.server!.ramGb, (vcpuOf(m) * CPU_PER_CORE) / Math.max(cpuPerGb, 1e-6));

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CURVES } from "../src/sim/10-catalog/usage";
+import { sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { bookable, nodeUsed } from "../src/sim/60-infra/cluster";
@@ -12,6 +13,9 @@ import { buyDevice } from "./fixtures";
 import { migrateWorkload, migrationTargets, stopWorkload } from "../src/sim/90-actions/vms";
 import { hypervisor, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
+
+// A big 2005 game server, so two of them fill most of an 8 GB node.
+const FRAG = { ...sizeSpec("gameServer", 0, 2005), vcpu: 2, ramGb: 4, diskGb: 10 };
 
 type R = ReturnType<typeof setPower>;
 const ok = (r: R) => {
@@ -27,8 +31,8 @@ function setup() {
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
   const cluster = hypervisor(s, ["dev3", second], "Cloud 1");
   const gamer = addCustomer(s, "Kai Frag", "gamer");
-  ok(provisionService(s, gamer, "gameServer", { label: "Frag 1", clusterId: cluster, deviceId: "dev3" }));
-  ok(provisionService(s, gamer, "gameServer", { label: "Frag 2", clusterId: cluster, deviceId: "dev3" }));
+  ok(provisionService(s, gamer, "gameServer", { label: "Frag 1", spec: FRAG, clusterId: cluster, deviceId: "dev3" }));
+  ok(provisionService(s, gamer, "gameServer", { label: "Frag 2", spec: FRAG, clusterId: cluster, deviceId: "dev3" }));
   return { s, cluster, second, gamer };
 }
 
@@ -44,11 +48,11 @@ function freeze(s: GameState): SimEvent[] {
 describe("RAM over-provisioning", () => {
   it("places automatically within the installed RAM first, then books past it instead of refusing", () => {
     const { s, cluster, second, gamer } = setup();
-    ok(provisionService(s, gamer, "gameServer", { label: "Frag 3", clusterId: cluster }));
+    ok(provisionService(s, gamer, "gameServer", { label: "Frag 3", spec: FRAG, clusterId: cluster }));
     expect(s.workloads.at(-1)!.deviceId).toBe(second);
-    ok(provisionService(s, gamer, "gameServer", { label: "Frag 4", clusterId: cluster }));
+    ok(provisionService(s, gamer, "gameServer", { label: "Frag 4", spec: FRAG, clusterId: cluster }));
     expect(nodeUsed(s, second).ramGb).toBe(8);
-    ok(provisionService(s, gamer, "gameServer", { label: "Frag 5", clusterId: cluster }));
+    ok(provisionService(s, gamer, "gameServer", { label: "Frag 5", spec: FRAG, clusterId: cluster }));
     expect(Math.max(nodeUsed(s, "dev3").ramGb, nodeUsed(s, second).ramGb)).toBeGreaterThan(8);
   });
 
@@ -120,7 +124,7 @@ describe("Memory reservation", () => {
     // 4 GB booked plus another 4 GB would pass the installed 8 GB less the control plane.
     expect(migrateWorkload(s, moved.id, "dev3")).toEqual({ ok: false, error: "error.nodeFull" });
     expect(migrationTargets(s, moved.id)).toEqual([]);
-    ok(provisionService(s, gamer, "gameServer", { label: "Frag 3", clusterId: cluster }));
+    ok(provisionService(s, gamer, "gameServer", { label: "Frag 3", spec: FRAG, clusterId: cluster }));
     expect(s.workloads.at(-1)!.deviceId).toBe(second);
     ok(setRamGuard(s, cluster, false));
     ok(migrateWorkload(s, moved.id, "dev3"));

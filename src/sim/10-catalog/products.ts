@@ -53,7 +53,7 @@ export const cores = (x: number): number => (x < 1 ? Math.max(0.2, Math.round(x 
 // A VM of a share of the year's base RAM: one vCPU per 2 GB (at least one) and 20 GB of disk per GB of RAM.
 const vm = (share: number): Size => (y) => { const ramGb = share * grow(y); return { vcpu: Math.max(1, Math.round(ramGb / 2)), ramGb, diskGb: Math.round(20 * ramGb) }; };
 // Game servers start at 2 vCPUs and 4 GB, doubling like VMs.
-const game = (share: number): Size => (y) => ({ vcpu: 2 * share * grow(y), ramGb: 4 * share * grow(y), diskGb: Math.round(10 * share * grow(y)) });
+const game = (share: number): Size => (y) => ({ vcpu: 0.5 * share * grow(y), ramGb: 0.5 * share * grow(y), diskGb: Math.round(5 * share * grow(y)) });
 // A GPU VM books whole cards, 4 vCPUs, 8 GB of RAM and 50 GB of disk per card; RAM and disk grow like VMs.
 const cards = (n: number): Size => (y) => ({ vcpu: 4 * n, ramGb: Math.round(32 * n * grow(y)) / 4, diskGb: Math.round(50 * n * grow(y)), gpus: n });
 const volume = (gb: number): Size => () => ({ ...NONE, diskGb: gb });

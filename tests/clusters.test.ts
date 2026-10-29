@@ -50,9 +50,13 @@ describe("product catalog", () => {
     const web = (y: number) => marketPrice("webHosting", sizeSpec("webHosting", 1, y), y);
     expect(web(2005)).toBe(6);
     expect(web(2020)).toBeCloseTo(6, 0);
-    // economy.md: 1 vCPU, 512 MB and 10 GB in 2005 come to 0.65 × the €16.5 GB rate, less the traffic below the middle size's.
+    // economy.md: 1 vCPU, 512 MB and 10 GB in 2005 come to 0.65 × the €30 GB rate, less the traffic below the middle size's.
     const vps = (y: number, sla?: "premium") => marketPrice("vps", sizeSpec("vps", 0, y), y, sla);
-    expect(vps(2005)).toBeCloseTo(10.68, 2);
+    expect(vps(2005)).toBeCloseTo(19.41, 2);
+    // A small game server costs about €29 in 2005 and €12 in 2026.
+    const game = (y: number) => marketPrice("gameServer", sizeSpec("gameServer", 0, y), y);
+    expect(game(2005)).toBeCloseTo(29.25, 2);
+    expect(game(2026)).toBeCloseTo(11.7, 2);
     expect(vps(2026)).toBeLessThan(vps(2005));
     expect(vps(2005, "premium")).toBeCloseTo(1.5 * vps(2005), 1);
     expect(marketPrice("ssl", sizeSpec("ssl", 0, 2010), 2010)).toBe(50);

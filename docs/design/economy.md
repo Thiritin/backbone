@@ -70,7 +70,7 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | --- | --- | --- |
 | IP transit, per Mbit/s | 108 | 1 Gbit/s commit: €190 per month in 2026, about €20 per Mbit/s in 2005 |
 | Internet exchange ports | 5 | AMS-IX 10G: €650 per month in 2026 |
-| Customer base rate per GB of RAM | 11 | VPS: about €1.50 per GB in 2026, €16 per GB in 2005 |
+| Customer base rate per GB of RAM | 20 | VPS: about €1.50 per GB in 2026, €30 per GB in 2005 |
 | Customer base rate per TB of storage | 32 | Object storage: €6.50 per TB in 2026, €210 in 2005 |
 | Customer base rate per TB of traffic | 46 | Overage and traffic-heavy services |
 | Fixed-price products | 1 | Web hosting, domains and dedicated servers keep their price per size; the sizes get bigger |
@@ -1309,15 +1309,15 @@ The core hop applies when the two locations are in different cities: both in one
 
 ## Workloads and migration
 
-**Sizes.** A web space uses 0.1 vCPU, 0.25 GB of RAM and its spec's disk. A VM uses its spec's vCPUs, RAM and disk. A game server starts at 2 vCPUs and 4 GB of RAM in 2005, doubling every 7 years like VPS sizes.
+**Sizes.** A web space uses 0.1 vCPU, 0.25 GB of RAM and its spec's disk. A VM uses its spec's vCPUs, RAM and disk. A game server starts at 0.5 vCPU and 0.5 GB of RAM in 2005, doubling every 7 years like VPS sizes.
 
 **Starting sizes.** The catalog in `src/sim/10-catalog/products.ts` holds the sizes each line's customers start from (`SIZES`). "Base" is the year's base RAM g (`vpsPlanGb`), 1 GB in 2005 and doubling every 7 years. Each size is priced by Per-resource pricing below; the prices in the table are for 2005 at the basic SLA.
 
 | Product | Sizes | One unit uses | Market price (2005) | Runs on |
 | --- | --- | --- | --- | --- |
 | Web hosting | 3 | 0.1 vCPU, 0.25 GB RAM, 1, 2 or 5 GB disk × growth, two mailboxes | €3.75, €6, €12.75 a month | Cluster |
-| VPS | 4 | 0.5, 1, 2 or 4 × base RAM; 1 vCPU per 2 GB (at least 1); 20 GB disk per GB of RAM | 0.65, 1.1, 2 or 4 × the VPS rate (€16.50 per GB); from 2012 the smallest is 1.1 × | Cluster |
-| Game server | 2 | 2 or 4 vCPUs, 4 or 8 GB RAM, 10 or 20 GB disk × growth | 6.4 or 12.8 × the VPS rate | Cluster |
+| VPS | 4 | 0.5, 1, 2 or 4 × base RAM; 1 vCPU per 2 GB (at least 1); 20 GB disk per GB of RAM | 0.65, 1.1, 2 or 4 × the VPS rate (€30 per GB); from 2012 the smallest is 1.1 × | Cluster |
+| Game server | 2 | 0.5 or 1 vCPU, 0.5 or 1 GB RAM, 5 or 10 GB disk × growth | €29.25 or €58.50 a month (€11.70 or €23.40 in 2026) | Cluster |
 | DNS hosting | 2, 5 or 15 zones | 0.05 vCPU, 0.1 GB RAM, 1 GB disk | €1.10, €2, €4.98 a month | Cluster |
 | VPN | 1, 3 or 10 users | A vCPU per three users (at least 0.5, in quarters), 0.5 GB RAM, 1 GB disk | €2.03, €5, €15.22 a month | Cluster |
 | Storage hosting | 100 GB, 500 GB, 1 TB | Disk only | About €8, €42, €83 a month | Cluster |
@@ -1328,7 +1328,7 @@ The core hop applies when the two locations are in different cities: both in one
 | Domains | 1 | Nothing | €15 a year | Resold |
 | SSL certificates | 1 | Nothing | €50 a year until 2015, then free | Resold |
 
-**Per-resource pricing.** Every line charges a base fee per service plus a price per unit of the spec (`marketRates` and `specPrice` in `products.ts`). The market's rates are per month at the basic SLA, per year for domains and SSL, with r the year's VPS rate per GB of RAM (`vpsRatePerGb`, €16.50 in 2005) and g the base RAM. An SLA multiplies the sum by its price factor, and a request's market reference is that price × the profile's offer factor (Reference and budget).
+**Per-resource pricing.** Every line charges a base fee per service plus a price per unit of the spec (`marketRates` and `specPrice` in `products.ts`). The market's rates are per month at the basic SLA, per year for domains and SSL, with r the year's VPS rate per GB of RAM (`vpsRatePerGb`, €30 in 2005) and g the base RAM. An SLA multiplies the sum by its price factor, and a request's market reference is that price × the profile's offer factor (Reference and budget).
 
 | Line | Base fee | Per unit |
 | --- | --- | --- |
@@ -2168,7 +2168,7 @@ The year 1 targets for customers and revenue hold (median 47 customers and €61
 - Each cohort's spec is the year's middle size × 1, 2 or 4 by budget (`BUDGET_SIZE`), a web space with two mailboxes per step, priced at the live market rates (Per-resource pricing). It books its spec's vCPUs and RAM: a web space 0.25 GB, a VPS the year's base RAM by budget, and a game server 4 GB of the year's base by budget. Gamers ask for a game server 60% of the time. The cluster keeps 1 GB for its hypervisor and panel.
 - The starting server and every basement server are the year's Dwell server at its full price and RAM (8 GB for €2,500 in 2005).
 - While in the basement, the home line's upload caps the evening peak at 2× each customer's mean traffic, and the bot switches to the cheapest faster line at 90%.
-- The bot borrows in the basement like the happiness run; out of the basement it borrows only while all instalments stay under 60% of its recurring revenue. It buys a server only when cash keeps €2,000 plus three instalments, and it moves to the datacenter once the basement's four servers are in place.
+- The bot borrows in the basement like the happiness run; out of the basement it borrows only while all instalments stay under 60% of its recurring revenue. It buys a server only when cash keeps €2,000 plus three instalments, and it moves to the datacenter once the basement's four servers are in place or its customers' evening peak takes 90% of the home line's upload. While the upload is that full it buys no more basement servers.
 - Net worth subtracts debt and values hardware at its resale value, as `metrics.ts` does.
 
 The basement VPS cap of 8 is gone, since RAM and upload now set the limit. Against the model before these changes, level 2 arrives at the same time (median 2006.6 against 2006.3, half the seeds in 2005), level 3 later (2011.3 against 2009.9), level 4 earlier (2014.1 against 2017.6), and neither bot goes bankrupt. Levels 3 to 6 still missed their pacing years; the next paragraphs find why and bring the median steady run to level 2 in 2006.0, level 3 in 2006.8, level 4 in 2008.9 and level 5 in 2013.5.
@@ -2294,6 +2294,8 @@ The solo bot reaches level 5 in 2012.9 instead of 2012.8. Neither bot goes bankr
 | 6 | 2018 | 2018.2 | 2017.9 |
 
 The solo bot reaches level 5 in 2012.8 instead of 2012.9. Neither bot goes bankrupt.
+
+**Game server prices.** A game server used to start at 2 vCPUs and 4 GB of RAM, so in 2005 the smallest one cost €106 a month and took all the cores and half the RAM of a basement server, and in 2026 it was 16 vCPUs and 32 GB for €77. Game servers made 30 to 48% of the steady bot's recurring revenue, although gamers are 15% of the leads. A game server now starts at 0.5 vCPU, 0.5 GB and 5 GB of disk, which comes to €29.25 in 2005 and €11.70 in 2026, close to a 16-slot server of 2005 and a 4 GB server of 2026. With the old VPS rate the steady bot lost about a third of its revenue, stalled after the move and went bankrupt on 3 of 20 seeds, mostly in a basement whose upload was full while two servers stood half empty. The VPS rate's 2005 multiplier went from 11 to 20, which puts the smallest VPS at €19.41 in 2005 and leaves 2026 unchanged, and the bot now moves out when the basement's upload is full. Steady medians: 2006.1, 2006.8, 2008.5, 2011.7, 2017.9 (before 2006.3, 2007.1, 2008.8, 2012.1, 2018.2), none bankrupt. Solo: 2005.9, 2006.7, 2008.4, 2012.8, never (before 2005.8, 2006.5, 2008.3, 2012.9, never).
 
 **Open questions**
 

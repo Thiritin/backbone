@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Game servers are now sized and priced like real ones, starting at about €29 a month in 2005 and €12 today, while VPS and cloud servers cost more in the early years.
 - Selling DNS, VPN and storage now needs DNS, VPN or storage server software, installed on a server or in one of your VMs, instead of only a hypervisor.
 - Nine new programs join the software catalog: Bound, PowerDNZ and Knut DNS for DNS, OpenVeePeeN, Sysko AnyConnekt and WireGuarded for VPN, and vsFTPeed, OwnClod and MinnIO for storage.
 - The Components list only sends remote hands, and only at a datacenter; to work on a server yourself, open Change parts, which now also opens on a running server for hot-swap parts.

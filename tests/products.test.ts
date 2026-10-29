@@ -4,6 +4,7 @@ import { skillFor } from "../src/sim/10-catalog/research";
 import { install } from "../src/sim/90-actions/store";
 import { storeItem } from "../src/sim/10-catalog/store";
 import { curveLoad } from "../src/sim/10-catalog/usage";
+import { sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { bookable, controlPlaneUp, lostDisk, workloadsOf } from "../src/sim/60-infra/cluster";
@@ -21,6 +22,9 @@ import { buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { migrateWorkload, restoreWorkload, startWorkload, stopWorkload } from "../src/sim/90-actions/vms";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+
+// A big 2005 game server, so two of them fill most of an 8 GB node.
+const FRAG = { ...sizeSpec("gameServer", 0, 2005), vcpu: 2, ramGb: 4, diskGb: 10 };
 
 type R = ReturnType<typeof setPower>;
 const ok = (r: R) => {
@@ -132,8 +136,8 @@ describe("usage curves and overcommit", () => {
   it("slows a node of game servers on Saturday night and opens slow tickets, but not on a Tuesday", () => {
     const { s, cluster } = setup();
     const gamer = addCustomer(s, "Kai Frag", "gamer");
-    ok(provisionService(s, gamer, "gameServer", { label: "Frag 1", clusterId: cluster, deviceId: "dev3" }));
-    ok(provisionService(s, gamer, "gameServer", { label: "Frag 2", clusterId: cluster, deviceId: "dev3" }));
+    ok(provisionService(s, gamer, "gameServer", { label: "Frag 1", spec: FRAG, clusterId: cluster, deviceId: "dev3" }));
+    ok(provisionService(s, gamer, "gameServer", { label: "Frag 2", spec: FRAG, clusterId: cluster, deviceId: "dev3" }));
     // Small RAM bookings keep the node within its memory, so only the CPU contends.
     s.workloads = s.workloads.map((w) => (w.vcpu === 2 ? { ...w, ramGb: 1 } : w));
     expect(nodeUsage(s, "dev3", TUE_10).perf).toBe(1);

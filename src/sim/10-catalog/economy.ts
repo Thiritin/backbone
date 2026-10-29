@@ -105,8 +105,8 @@ export const BUDGET_SIZE: Record<Budget, number> = { low: 1, medium: 2, high: 4 
 export const WEB_BASE = 6;
 export const RESOLD_COST_SHARE = 0.4;
 
-// VPS: €1.50 per GB of RAM in 2026, m = 11. Plan RAM doubling every 7 years is an estimate.
-export const vpsRatePerGb = (year: number): number => priceAt(1.5, 11, year);
+// VPS: €1.50 per GB of RAM in 2026, m = 20. Plan RAM doubling every 7 years is an estimate.
+export const vpsRatePerGb = (year: number): number => priceAt(1.5, 20, year);
 export const vpsPlanGb = (year: number): number => Math.pow(2, (year - 2005) / 7);
 
 // Hardware, Server generations.
