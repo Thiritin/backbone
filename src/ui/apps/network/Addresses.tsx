@@ -51,7 +51,7 @@ export function AddressRows({ game, id }: { game: GameState; id: string }) {
     {mgmt && (
       <div>
         <dt>Management</dt>
-        <dd><button className="btn ghost num" onClick={() => openApp("Browser", { kind: "url", id: `http://${mgmt}/` })}>{mgmt}</button></dd>
+        <dd><button className="loc-link num" onClick={() => openApp("Browser", { kind: "url", id: `http://${mgmt}/` })}>{mgmt}</button></dd>
       </div>
     )}
     <div>

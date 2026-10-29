@@ -899,6 +899,17 @@ A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD t
 
 **Maintenance.** A swap takes 15 minutes once someone is there. In the basement you are there at once. At a datacenter remote hands arrive after their response time and bill their hourly rate for at least one hour.
 
+**Remote management, hangs and pulled plugs.** A baseboard management controller is part of the server board: it needs no extra part and costs nothing. Anchors for when it appears: Dell DRAC 5 on PowerEdge 9G in 2006 as an add-in card and iDRAC standard from 11G in 2009; HP iLO 2 on ProLiant G5 in 2006; Supermicro onboard IPMI on X8 boards in 2009; Lenovo IMM on System x from 2008. The game maps them to the generations: Dwell and Hewlett-Packet from generation 2 (2008), SuperMacro and Lenovoid from generation 3 (2011), the ARM line always, generation 1 (2005) never. The management address follows the private address rule: 192.168.3.x in the basement, 10.n.2.x in datacenter n, with the same host octet. Hang rates have no public source and are game choices.
+
+| Event | Rate | Raised by |
+| --- | --- | --- |
+| Operating system hang | 1% a year | × 2 while a part has failed (degraded or hot), × 3 while the node is frozen from RAM overcommit |
+| Management controller hang | 1% a year | × 3 once the server is 6 years old |
+| Corruption after a hard stop with running workloads | 15% | Pulled power, reset and power cycle; never after a graceful shutdown |
+| Recovered workload comes back fine | 70% | The other 30% need a restore from backup |
+
+Rates are rolled hourly (yearly rate ÷ 8,760) per server and do not draw from the game's random sequence. A reset or power cycle boots for 1 hour. A graceful shutdown completes within the hour and stops the workloads cleanly. A recovery takes 30 minutes per workload, with no remote hands fee because the work happens in the operating system. Resetting a hung controller takes 15 minutes on site, plus the remote hands' response time and a one-hour fee in a datacenter; a technician does it without a fee. When corruption hits a server whose array has all its drives and no rebuild running, the array resyncs for the rebuild time of a drive instead (server performance × 0.95, × 0.8 or × 0.6 by rebuild rate) and no workload is corrupted.
+
 **Hardware lifecycle.** Every model on sale has a last year on sale (end of sale) and a number of support years after it; the model is out of support once the year passes that sum. Devices keep working past both dates. The anchor is Cisco's policy of ending sale six months after the notice and keeping support and spares for five more years; Dell and HPE sell five to seven years of support for servers.
 
 | Kind | Last year on sale | Support years after it |
