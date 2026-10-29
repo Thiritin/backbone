@@ -18,6 +18,7 @@
 .prd-card-h { display: flex; align-items: center; gap: 8px; }
 .prd-card-h .t { font-weight: 650; }
 .prd-card dl { display: grid; gap: 4px; margin: 0; font-size: 12px; }
+.prd-traits { display: flex; flex-wrap: wrap; gap: 4px; }
 .prd-card dl > div { display: flex; justify-content: space-between; gap: 8px; }
 .prd-card dt { color: var(--text-2); }
 .prd-card dd { margin: 0; font-weight: 550; }

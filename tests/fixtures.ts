@@ -1,3 +1,4 @@
+import { hourOf } from "../src/sim/00-core/time";
 import type { Resources } from "../src/sim/10-catalog/products";
 import { device, type GameState } from "../src/sim/50-state";
 import { addNode, createPanelVm, installHypervisor, installPanel } from "../src/sim/90-actions/clusters";
@@ -12,6 +13,9 @@ const must = (r: { ok: boolean; id?: string; error?: string }): string => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;
 };
+
+// Moves a game that started in 2005 on to the first day of the year, for software that is not on the market at the start.
+export const skipTo = (s: GameState, year: number): void => { s.hour += hourOf(new Date(Date.UTC(year, 0, 1))); };
 
 export const BASEMENT_SERVER = "dev3";
 

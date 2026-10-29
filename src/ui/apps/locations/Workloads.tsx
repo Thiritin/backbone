@@ -6,6 +6,7 @@ import { softwareById } from "../../../sim/10-catalog/platforms";
 import { clusterOf, controlPlaneUse, workloadsOn, type Workload } from "../../../sim/60-infra/cluster";
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
+import { migrateEntries } from "../vms/migrate";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { More } from "../More";
@@ -97,10 +98,11 @@ function WorkloadRow({ game, w, u }: { game: GameState; w: Workload; u: Resource
 // A workload's actions: move it to a node with room, stop or start it, or open it elsewhere.
 export function workloadMenu(game: GameState, w: Workload): MenuEntry[] {
   const { act, openApp } = useStore.getState();
-  const targets = migrationTargets(game, w.id);
+  const web = game.clusters.find((c) => c.id === w.clusterId)?.kind === "panel";
+  const targets = web ? [] : migrationTargets(game, w.id);
   const customer = game.services.find((v) => v.id === w.serviceId)?.customerId;
   return [
-    { label: "Migrate to", disabled: !targets.length, items: targets.map((t) => ({ label: `${t.name}${t.down ? `, offline ${t.down} h` : ""}`, run: () => act((g) => migrateWorkload(g, w.id, t.to)) })) },
+    ...(web ? migrateEntries(game, w) : [{ label: "Migrate to", disabled: !targets.length, items: targets.map((t) => ({ label: `${t.name}${t.down ? `, offline ${t.down} h` : ""}`, run: () => act((g) => migrateWorkload(g, w.id, t.to)) })) }]),
     w.stopped ? { label: "Start", run: () => act((g) => startWorkload(g, w.id)) } : { label: "Stop", run: () => act((g) => stopWorkload(g, w.id)) },
     null,
     { label: "Open in Virtual machines", run: () => openApp("Virtual machines", { kind: "workload", id: w.id }) },

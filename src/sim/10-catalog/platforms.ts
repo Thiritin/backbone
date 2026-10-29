@@ -28,17 +28,23 @@ export interface Software {
   controlPlane: Resources;
   // Game hours an install, or a change to this software, keeps the cluster's control plane busy.
   installHours: number;
+  // First year the software exists; it cannot be installed before. Installs made earlier keep running.
+  from: number;
+  // Years from which the software imports a web space from the same software (same) and from another panel (other); null never.
+  migration: { same: number | null; other: number | null };
+  // Year from which a panel runs on more than one server; null never.
+  cluster: number | null;
 }
 
 export const SOFTWARE: Software[] = [
-  { id: "cpanic", kind: "panel", name: "cPanic", console: "cPanic", pricing: "account", fee: 0.4, tickets: 0.8, density: 1, live: true, convenience: 90, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3 },
-  { id: "pleskit", kind: "panel", name: "Pleskit", console: "Pleskit", pricing: "server", fee: 12, tickets: 0.9, density: 1, live: true, convenience: 80, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3 },
-  { id: "directadmen", kind: "panel", name: "DirectAdmen", console: "DirectAdmen", pricing: "server", fee: 4, tickets: 1.2, density: 1, live: true, convenience: 60, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 2 },
-  { id: "freepanel", kind: "panel", name: "FreePanel", console: "FreePanel", pricing: "free", fee: 0, tickets: 1.5, density: 1, live: true, convenience: 45, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 2 },
-  { id: "openstash", kind: "cloud", name: "OpenStash", console: "OpenStash Horizont", pricing: "free", fee: 0, tickets: 1.3, density: 1, live: true, convenience: 60, overcommit: { cpu: 4, ram: 1 }, controlPlane: { vcpu: 2, ramGb: 2, diskGb: 20 }, installHours: 8 },
-  { id: "vmwhere", kind: "cloud", name: "VMwhere", console: "VMwhere vSphear", pricing: "core", fee: 8, tickets: 0.7, density: 1.15, live: true, convenience: 60, overcommit: { cpu: 10, ram: 1.25 }, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 10 }, installHours: 5 },
-  { id: "proxmocks", kind: "cloud", name: "Proxmocks", console: "Proxmocks VE", pricing: "free", fee: 0, tickets: 1, density: 1, live: true, convenience: 60, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3 },
-  { id: "hypervee", kind: "cloud", name: "HyperVee", console: "HyperVee Manager", pricing: "server", fee: 20, tickets: 0.9, density: 1.05, live: false, convenience: 60, overcommit: { cpu: 6, ram: 1.2 }, controlPlane: { vcpu: 1, ramGb: 1, diskGb: 10 }, installHours: 4 },
+  { id: "cpanic", kind: "panel", name: "cPanic", console: "cPanic", pricing: "account", fee: 0.4, tickets: 0.8, density: 1, live: true, convenience: 90, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2005, migration: { same: 2005, other: 2012 }, cluster: null },
+  { id: "pleskit", kind: "panel", name: "Pleskit", console: "Pleskit", pricing: "server", fee: 12, tickets: 0.9, density: 1, live: true, convenience: 80, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2005, migration: { same: 2005, other: 2015 }, cluster: null },
+  { id: "directadmen", kind: "panel", name: "DirectAdmen", console: "DirectAdmen", pricing: "server", fee: 4, tickets: 1.2, density: 1, live: true, convenience: 60, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 2, from: 2005, migration: { same: 2010, other: null }, cluster: null },
+  { id: "freepanel", kind: "panel", name: "FreePanel", console: "FreePanel", pricing: "free", fee: 0, tickets: 1.5, density: 1, live: true, convenience: 45, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 2, from: 2005, migration: { same: null, other: null }, cluster: 2009 },
+  { id: "openstash", kind: "cloud", name: "OpenStash", console: "OpenStash Horizont", pricing: "free", fee: 0, tickets: 1.3, density: 1, live: true, convenience: 60, overcommit: { cpu: 4, ram: 1 }, controlPlane: { vcpu: 2, ramGb: 2, diskGb: 20 }, installHours: 8, from: 2010, migration: { same: 2010, other: null }, cluster: 2010 },
+  { id: "vmwhere", kind: "cloud", name: "VMwhere", console: "VMwhere vSphear", pricing: "core", fee: 8, tickets: 0.7, density: 1.15, live: true, convenience: 60, overcommit: { cpu: 10, ram: 1.25 }, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 10 }, installHours: 5, from: 2005, migration: { same: 2005, other: null }, cluster: 2005 },
+  { id: "proxmocks", kind: "cloud", name: "Proxmocks", console: "Proxmocks VE", pricing: "free", fee: 0, tickets: 1, density: 1, live: true, convenience: 60, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2008, migration: { same: 2008, other: null }, cluster: 2008 },
+  { id: "hypervee", kind: "cloud", name: "HyperVee", console: "HyperVee Manager", pricing: "server", fee: 20, tickets: 0.9, density: 1.05, live: false, convenience: 60, overcommit: { cpu: 6, ram: 1.2 }, controlPlane: { vcpu: 1, ramGb: 1, diskGb: 10 }, installHours: 4, from: 2008, migration: { same: 2008, other: null }, cluster: 2012 },
 ];
 
 // The product lines each kind of software lets a cluster sell; the rest runs on whole servers, in racks or nowhere.
@@ -49,6 +55,12 @@ export const kindServing = (p: Product): SoftwareKind | null => (SERVES.panel.in
 export const IN_VM = 0.95;
 
 export const softwareById =(id: string): Software => SOFTWARE.find((x) => x.id === id) ?? SOFTWARE.find((x) => x.id === "proxmocks")!;
+// Whether the target's migration tool applies to a web space coming from the source panel in that year.
+export const importsFrom = (target: Software, source: string, year: number): boolean => {
+  const from = source === target.id ? target.migration.same : target.migration.other;
+  return from !== null && year >= from;
+};
+export const clustersIn = (sw: Software, year: number): boolean => sw.cluster !== null && year >= sw.cluster;
 export const softwareOf = (kind: SoftwareKind): Software[] => SOFTWARE.filter((x) => x.kind === kind);
 
 // economy.md, PHP versions: each from 1 January after its release, when web hosts start to install it.

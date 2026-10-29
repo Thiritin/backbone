@@ -1,4 +1,4 @@
-// High availability per hypervisor cluster (gdd.md, Compute): automatic failover and auto-balancing.
+// High availability per hypervisor cluster (gdd.md, Compute): automatic failover and auto-balancing. Clustered panel hosts fail over too.
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { bookable, hostOfVm, isOwnVm, lostDisk, moveControlPlaneOff, nodeUsed, pickNode, type Cluster, type Workload } from "./cluster";
@@ -37,8 +37,8 @@ function failover(s: GameState, c: Cluster, events: SimEvent[]) {
     for (const id of servicesIn(s, w)) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + FAILOVER_MINUTES / 60 };
     moved++;
   }
-  if (moved) events.push({ app: "Virtual machines", key: "event.failedOver", params: { cluster: c.name, count: moved } });
-  if (stuck) events.push({ app: "Virtual machines", key: "event.failoverStuck", params: { cluster: c.name, count: stuck } });
+  if (moved) events.push({ app: "Virtual machines", key: "event.failedOver", params: { cluster: c.name, count: moved, web: c.kind === "panel" ? 1 : 0 } });
+  if (stuck) events.push({ app: "Virtual machines", key: "event.failoverStuck", params: { cluster: c.name, count: stuck, web: c.kind === "panel" ? 1 : 0 } });
 }
 
 // A node runs hot when its RAM in use nears the installed RAM, its busy vCPUs outnumber its cores, or it books more than it can.
@@ -75,5 +75,7 @@ export function haTick(s: GameState): SimEvent[] {
     const c = cluster(s, id);
     if (c.ha.balance && c.ha.live) balance(s, c);
   }
+  // A clustered panel host restarts the web spaces of a failed server on the others without any research.
+  for (const c of s.clusters.filter((x) => x.kind === "panel" && x.nodes.length > 1)) failover(s, c, events);
   return events;
 }

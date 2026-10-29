@@ -5,6 +5,7 @@ import type { GameState } from "../50-state";
 import {
   bookable, clusterOf, controlPlaneUp, hostOfVm, isOwnVm, KEYS, lostDisk, noRoomError, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
 } from "../60-infra/cluster";
+import { migrationHours } from "../60-infra/migration";
 import { working } from "../60-infra/status";
 import { freezeTick } from "../60-infra/usage";
 import {
@@ -91,9 +92,10 @@ export function migrateWorkload(s: GameState, id: string, toId: string): ActionR
   const { w, c } = found, vmHost = s.clusters.find((x) => x.id === toId && x.vm), to = vmHost ?? clusterOf(s, toId);
   const d = s.devices.find((x) => x.id === toId);
   if (!to || (!vmHost && !d)) return fail("error.notNode");
+  if (c.kind === "panel" && to.id !== c.id) return migrateWebspace(s, id, to.id);
   if (w.deviceId === toId || w.clusterId === vmHost?.id) return fail("error.sameHost");
   if (lostDisk(s, w)) return fail("error.lostDisk");
-  if (w.busyUntil > s.hour) return fail("error.workloadBusy");
+  if (w.busyUntil > s.hour || w.migrating) return fail("error.workloadBusy");
   if (!controlPlaneUp(s, c) || !controlPlaneUp(s, to)) return fail("error.controlPlaneDown");
   const product = s.services.find((v) => v.id === w.serviceId)?.product;
   if (product ? !supports(to, product) : to.kind !== "cloud") return fail(product ? noRoomError(s, product, to.id) : "error.needsPlatform");
@@ -110,6 +112,41 @@ export function migrateWorkload(s: GameState, id: string, toId: string): ActionR
   patch(s, id, { deviceId: vmHost ? null : toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + down, stuck: undefined });
   if (c.az !== to.az) s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
   freezeTick(s);
+  return { ok: true };
+}
+
+// Why the web space cannot move to the panel host, or null.
+export function webspaceBlock(s: GameState, w: Workload, c: Cluster, to: Cluster): string | null {
+  if (to.id === c.id) return "error.sameHost";
+  if (to.kind !== "panel" || !to.panel) return "error.noPanelHost";
+  if (lostDisk(s, w)) return "error.lostDisk";
+  if (w.busyUntil > s.hour || w.migrating) return "error.workloadBusy";
+  if (!controlPlaneUp(s, c) || !controlPlaneUp(s, to)) return "error.controlPlaneDown";
+  if (!pickNode(s, to, w)) return "error.nodeFull";
+  return zoneLinkGbit(s, c.az, to.az) > 0 ? null : "error.noZoneLink";
+}
+
+// The panel hosts a web space can move to, each with the hours the hand task takes.
+export interface WebspaceTarget { clusterId: string; name: string; panel: string; hours: number }
+export function webspaceTargets(s: GameState, id: string): WebspaceTarget[] {
+  const found = clusterWorkload(s, id);
+  if (!found || found.c.kind !== "panel") return [];
+  const { w, c } = found;
+  return s.clusters.filter((to) => !webspaceBlock(s, w, c, to))
+    .map((to) => ({ clusterId: to.id, name: to.name, panel: softwareById(to.panel!).name, hours: migrationHours(s, w, to) }));
+}
+
+// Starts moving a web space to another panel host: a hand task of migrationHours during which the site stays up, followed
+// by a ten minute cutover (migrationTick). It costs no money.
+export function migrateWebspace(s: GameState, workloadId: string, toClusterId: string): ActionResult {
+  const found = clusterWorkload(s, workloadId), to = s.clusters.find((x) => x.id === toClusterId);
+  if (!found) return fail("error.unknownWorkload");
+  if (!to) return fail("error.unknownCluster");
+  const { w, c } = found;
+  if (c.kind !== "panel" || !w.serviceId) return fail("error.notWebspace");
+  const bad = webspaceBlock(s, w, c, to);
+  if (bad) return fail(bad);
+  patch(s, w.id, { migrating: { clusterId: to.id, doneAt: s.hour + migrationHours(s, w, to) } });
   return { ok: true };
 }
 

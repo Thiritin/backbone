@@ -13,7 +13,7 @@ import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
 import { FRIEND_HAPPINESS } from "../src/sim/90-actions/start";
-import { hypervisor, readyGame, withServer } from "./fixtures";
+import { hypervisor, readyGame, skipTo, withServer } from "./fixtures";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { mrr } from "../src/sim/metrics";
@@ -200,6 +200,7 @@ describe("nodes", () => {
     expect(err(addNode(s, cluster, "dev4"))).toBe("error.noHypervisor");
     const stored = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     expect(err(addNode(s, cluster, stored))).toBe("error.noHypervisor");
+    skipTo(s, 2010);
     expect(err(installSoftware(s, stored, "proxmocks"))).toBe("error.notMounted");
     expect(err(installSoftware(s, "dev4", "proxmocks"))).toBe("error.notServer");
   });
@@ -242,6 +243,7 @@ describe("dedicated and colocation", () => {
     const id = ok(provisionService(s, cus, "dedicated", { label: "ded" }));
     expect(workloadsOf(s, id)).toMatchObject([{ deviceId: third, clusterId: null }]);
     expect(serviceOnline(s, id)).toBe(true);
+    skipTo(s, 2010);
     expect(err(installSoftware(s, third, "proxmocks"))).toBe("error.serverInUse");
   });
   it("rents rack units with power in a datacenter rack, from the top", () => {

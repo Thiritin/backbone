@@ -36,10 +36,11 @@ export interface Cluster {
 // VM (clusterId of the panel host, no deviceId), on a whole server (deviceId only), or in rack units for colocation (rackId,
 // slot, units, watts). The player's own panel VMs have no service. Resources are booked at placement; placedAt is the hour
 // it last moved. A stopped workload keeps its booking; busyUntil is the hour a restore or cold migration finishes; backupAt
-// the last backup; stuck marks a VM that failover found no room for.
+// the last backup; stuck marks a VM that failover found no room for; migrating is a web space on its way to a panel host,
+// moved at the hour doneAt.
 export interface Workload extends Resources {
   id: string; serviceId: string; clusterId: string | null; deviceId: string | null; rackId: string | null; slot: number; units: number; watts: number; placedAt: number;
-  stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
+  stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean; migrating?: { clusterId: string; doneAt: number };
 }
 
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.

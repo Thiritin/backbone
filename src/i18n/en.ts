@@ -19,6 +19,7 @@ const CHANNELS: Record<string, string> = {
   website: "Website", orderForm: "Order form", searchAds: "Goggle Ads", aiAds: "AI ads",
   search: "Goggle Ads", ai: "AI ads", gaming: "Gaming communities", coldCall: "Cold calling", agency: "Agency outreach",
 };
+const thing = (p: Params) => `${p.web ? "web space" : "virtual machine"}${p.count === 1 ? "" : "s"}`;
 const units = (n: string | number) => `${n} ${Number(n) === 1 ? "unit" : "units"}`;
 
 export const en: Record<string, (p: Params) => string> = {
@@ -513,14 +514,23 @@ export const en: Record<string, (p: Params) => string> = {
   "event.nodeThawed.title": () => "Server running again",
   "event.nodeThawed.text": (p) => `${p.device} fits in its RAM again and its workloads are back.`,
   "event.failedOver.title": () => "Failover",
-  "event.failedOver.text": (p) => `${p.count} ${p.count === 1 ? "virtual machine" : "virtual machines"} restarted on other servers of ${p.cluster}.`,
+  "event.failedOver.text": (p) => `${p.count} ${thing(p)} restarted on other servers of ${p.cluster}.`,
   "event.failoverStuck.title": () => "Failover found no room",
-  "event.failoverStuck.text": (p) => `${p.count} ${p.count === 1 ? "virtual machine" : "virtual machines"} on ${p.cluster} stay down until a server has room or the failed one is back.`,
+  "event.failoverStuck.text": (p) => `${p.count} ${thing(p)} on ${p.cluster} stay down until a server has room or the failed one is back.`,
   "error.notPanelHost": () => "This is not a panel host.",
   "error.notPanelVm": () => "This panel host does not run in a virtual machine.",
   "error.vmSize": () => "The virtual machine is smaller than the panel needs.",
   "error.vmTooSmall": () => "The web spaces on this panel host need more than that.",
-  "error.panelHostOneServer": () => "A panel host runs on exactly one server.",
+  "error.panelHostOneServer": () => "This panel host cannot take another server.",
+  "error.noPanel": () => "Install the panel host's panel on this server first.",
+  "error.otherPanel": () => "This server runs a different panel.",
+  "error.softwareNotYet": () => "This software is not on the market yet.",
+  "error.notWebspace": () => "This is not a web space.",
+  "error.noPanelHost": () => "That is not a panel host that can take it.",
+  "event.migrated.title": () => "Web space migrated",
+  "event.migrated.text": (p) => `${p.service} moved to ${p.cluster}.`,
+  "event.migrationFailed.title": () => "Migration failed",
+  "event.migrationFailed.text": (p) => `The migration of ${p.service} to ${p.cluster} did not run.`,
   "error.noLiveMigration": () => "This hypervisor cannot move running virtual machines.",
   "error.needsLiveMigration": () => "Auto-balancing needs live migration.",
   "error.needsHypervisor": () => "Install a hypervisor first.",

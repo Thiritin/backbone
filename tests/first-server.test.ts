@@ -9,6 +9,7 @@ import { installSoftware } from "../src/sim/90-actions/software";
 import { buyDevice, connect, mountDevice, orderHomeLine, setPlugged } from "../src/sim/90-actions/hardware";
 import { startGame } from "../src/sim/90-actions/start";
 import { checkDone } from "../src/sim/checklist";
+import { skipTo } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);
@@ -59,6 +60,7 @@ describe("first server", () => {
 
   it("moves the friends onto the panel VM of a hypervisor", () => {
     const s = startGame(3);
+    skipTo(s, 2010);
     const srv = firstServer(s);
     const c = ok(installSoftware(s, srv, "proxmocks"));
     ok(createPanelVm(s, c, "freepanel"));
