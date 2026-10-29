@@ -26,6 +26,7 @@ Balance today (main 3ba75ac): steady medians L2 2006.0, L3 2006.8, L4 2008.6, L5
 - Packages removed: every order is a custom spec priced per resource in Products, Pricing.
 - DNS per zone, VPN per user, traffic priced per 100 GB, order form invoices a setup fee plus the first month (e27ad87).
 - Software installed per server and VM as a tile grid with Add Software, custom VMs, 5% capacity loss inside a VM, overcommit caps per hypervisor, bigger server art (7c9f934).
+- Euro sign after amounts with a space (422229e); zoomable rack view with ctrl+wheel, pinch and buttons.
 - Bigger default Support and Locations windows (6203d96); notification titles for marketing bills and reviews (c8d1fef); abandoned tickets read "Never mind" (8504606); cart delivery picker padding (22d5ff4); windows and Support selection survive reloads (66804b4); control plane listed under Workloads with neutral gauges (3ba75ac).
 - Accepted orders with no room wait 48 hours for setup instead of failing at once (184cd4e); outage tolerance shows only through a line in the customer's first email (d4f9abf).
 
@@ -102,6 +103,12 @@ Owner additions (translated from German): consoles are reached by the server's s
 Owner bug report: every customer service gets a numbered hostname, for example vps12312312.companydomain for a VPS (and matching prefixes for other lines: web, game, dedi, and so on), shown on the service, the customer page and the Virtual machines app. Customers reference that hostname in tickets instead of their own name, for example "vps12312312.backbone.example takes ages to answer tonight". Old saves: services get a number on load. Seeded test that tickets name the service hostname.
 
 Easter egg: in the browser, opening a Downloads page (the browser's own downloads and any vendor site's Downloads link) lands on a video page on a punned video site ("YouTub" or similar) playing a Rickroll, titled "Never Gonna Give You Uptime" with a punned artist name. No lyrics on the page; a play button may open the real video in a new tab.
+
+### Lane 3b: Searchlight (global search)
+
+Owner's words: "global search by ctrl + k to have a global search they can unlock to quickly get to specific sites i.e. spotlight (rename that)".
+
+Target: a global search named Searchlight (a pun on the real thing), unlocked by a purchase in the Pear Store or a research step (pick one, record it). Once owned, Ctrl+K and Cmd+K open a centred search field over the desktop with results as you type, grouped and keyboard driven (arrows, Enter, Escape): apps, customers, services by name and hostname, servers and VMs by hostname or address, tickets by subject, browser sites and consoles from Lane 3, locations, and settings. Enter opens the result in its app (openApp with a focus target, as Customers already does for tickets). Before it is owned the shortcut does nothing. A pure ranking function with a test, a seeded test for the unlock, a Playwright check light and dark. Runs after Lane 3, since it searches the browser's sites and hostnames.
 
 ### Lane 4: Server components, part prices over time, GPUs
 
