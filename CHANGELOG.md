@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-29
 
 - A VM or game server stuck on a switched-off server whose cluster's control plane is down can be recovered to a server of another cluster in the same location by remote hands, by you or by a friend.
+- Restoring a defaced customer site now needs a backup of it, and without one you can only tell the customer to rebuild it from their own copy, which costs happiness.
 - New reviews only send you a notification once Marketing campaigns unlocks the Reviews section where you can read them.
 - The sheet that opens after a training starts with a Now available page that checks off everything the skill unlocks and what you can do with it.
 - The Used tab has listings from the first day: servers and network gear sold since before 2005 turn up on eBuy, WebHostingTalc and Telegrump right away, one to three years old.

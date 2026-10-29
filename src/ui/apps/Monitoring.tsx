@@ -5,7 +5,7 @@ import { APP_NAME, NOTIFY_BATCH, NOTIFY_MINUTES } from "../../sim/10-catalog/app
 import { softwareById } from "../../sim/10-catalog/platforms";
 import type { GameState } from "../../sim/50-state";
 import { anchorOf } from "../../sim/60-infra/cluster";
-import { appMonitoring, cleanSite, notifyCustomers, type AppRow } from "../../sim/60-infra/apps";
+import { appMonitoring, cleanSite, hasBackup, notifyCustomers, type AppRow } from "../../sim/60-infra/apps";
 import { monitoring, type MonitorRow, type Severity } from "../../sim/60-infra/vulns";
 import { updateDue, updateSoftware } from "../../sim/90-actions/software";
 import { cleanUp } from "../../sim/90-actions/security";
@@ -80,7 +80,7 @@ function DefacedRow({ game, id }: { game: GameState; id: string }) {
       <td>{c.name}</td>
       <td>{APP_NAME[v.spec.app!]}</td>
       <td><span className="pill bad">Defaced</span></td>
-      <td className="r"><button className="btn" onClick={() => act(cleanSite, id)}>Clean up</button></td>
+      <td className="r"><button className="btn" disabled={!hasBackup(game, id)} onClick={() => act(cleanSite, id)}>Clean up</button></td>
     </tr>
   );
 }

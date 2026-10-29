@@ -330,10 +330,18 @@ describe("hacked customer sites", () => {
     expect(mailAddress(clean.s, clean.host)!.rep).toBeGreaterThanOrEqual(start);
   });
 
-  it("are cleaned up by the player in 30 minutes, which resolves the ticket", () => {
+  // Test sites run without a workload, so a backed-up one is added for the restore and dropped again to keep the site online.
+  const backed = (s: GameState, id: string) => {
+    s.workloads.push({ id: `wb${id}`, serviceId: id, clusterId: null, deviceId: null, rackId: null, slot: 0, units: 0, watts: 0, placedAt: 0, vcpu: 1, ramGb: 1, diskGb: 1, stopped: false, busyUntil: 0, backupAt: s.hour });
+  };
+  const unbacked = (s: GameState, id: string) => { s.workloads = s.workloads.filter((w) => w.id !== `wb${id}`); };
+
+  it("are restored by the player from a backup in 30 minutes, which resolves the ticket", () => {
     const s = newGame(2), id = stuck(s);
     days(s, 600, () => s.sites.defaced.length > 0);
     s.playerBusyUntil = 0;
+    expect(cleanSite(s, id)).toEqual({ ok: false, error: "error.noBackup" });
+    backed(s, id);
     const happy = customerOf(s, id).happiness;
     ok(cleanSite(s, id));
     expect(s.playerBusyUntil).toBe(s.hour * 60 + 30);
@@ -343,17 +351,30 @@ describe("hacked customer sites", () => {
     expect(cleanSite(s, id)).toEqual({ ok: false, error: "error.notDefaced" });
   });
 
-  it("are cleaned up from the ticket in 30 minutes", () => {
+  it("are restored from the ticket in 30 minutes when a backup exists", () => {
     const s = newGame(2), id = stuck(s);
     days(s, 600, () => s.sites.defaced.length > 0);
     const t = s.tickets.find((x) => x.topic === "hacked")!;
     s.playerBusyUntil = 0;
+    expect(resolveTicket(s, t.id, "clean")).toEqual({ ok: false, error: "error.noBackup" });
+    backed(s, id);
     ok(resolveTicket(s, t.id, "clean"));
     expect(s.playerBusyUntil).toBe(s.hour * 60 + 30);
     for (let h = 0; h < 3 && s.tickets.find((x) => x.id === t.id)!.work; h++) tick(s);
     expect(s.tickets.find((x) => x.id === t.id)).toMatchObject({ status: "resolved", outcome: "cleaned" });
     expect(s.sites.defaced).toEqual([]);
     expect(id).toBeTruthy();
+  });
+
+  it("without a backup are left to the customer to rebuild, at a loss of happiness", () => {
+    const s = newGame(2), id = stuck(s);
+    days(s, 600, () => s.sites.defaced.length > 0);
+    const t = s.tickets.find((x) => x.topic === "hacked")!, happy = customerOf(s, id).happiness;
+    ok(resolveTicket(s, t.id, "noBackup"));
+    for (let h = 0; h < 3 && s.tickets.find((x) => x.id === t.id)!.work; h++) tick(s);
+    expect(s.tickets.find((x) => x.id === t.id)).toMatchObject({ status: "resolved", outcome: "noBackup" });
+    expect(s.sites.defaced).toEqual([]);
+    expect(customerOf(s, id).happiness).toBeLessThan(happy);
   });
 
   it("are cleaned up by customers of medium and high skill half the time within three days, never by low skill", () => {
@@ -378,7 +399,9 @@ describe("hacked customer sites", () => {
       if (n < 3) {
         expect(s.sites.hacks[id]).toHaveLength(n);
         expect(customerOf(s, id).churnedAt).toBeNull();
+        backed(s, id);
         ok(cleanSite(s, id));
+        unbacked(s, id);
       }
     }
     expect(customerOf(s, id).churnedAt).not.toBeNull();
