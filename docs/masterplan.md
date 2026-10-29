@@ -98,6 +98,8 @@ Record in gdd.md and economy.md. Verify typecheck, tests, build, and a Playwrigh
 
 Owner additions (translated from German): consoles are reached by the server's subdomain, through IPMI where the server has one or through the panel (for example Pleskit). Without IPMI the player connects with the Terminal to shut a server down, or pulls the plug; a pulled plug can crash databases and other services, which the player then repairs through the Terminal too (a recover command per service, with time and a chance of needing a backup restore). This is deliberately a lot of hand work, which the player can later hand to a hired technician (staff), who runs the same recoveries on their own.
 
+Owner bug report: every customer service gets a numbered hostname, for example vps12312312.companydomain for a VPS (and matching prefixes for other lines: web, game, dedi, and so on), shown on the service, the customer page and the Virtual machines app. Customers reference that hostname in tickets instead of their own name, for example "vps12312312.backbone.example takes ages to answer tonight". Old saves: services get a number on load. Seeded test that tickets name the service hostname.
+
 ### Lane 4: Server components, part prices over time, GPUs
 
 Owner's words: "add custom components to servers aka servers have slots and cpu and disk slots (2,5 3,5 or nvme) and we can fill em, ram and ssd is very very expensive and prices of it change through the years cheaper at the start more expensive up to the ai years where ram is very expensive like it is right now. Also GPU Computing." And: "buying servers allows them to either do it just the chassis and do it entirely custom OR just add stuff to existing configurations when adding to cart."
