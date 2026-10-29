@@ -591,7 +591,7 @@ export function setRaid(s: GameState, deviceId: string, level: RaidLevel): Actio
   if (!d) return fail("error.unknownDevice");
   if (modelById(d.model).kind !== "server") return fail("error.notServer");
   if (!(level in { none: 1, "1": 1, "5": 1, "6": 1, "10": 1 }) || !raidFits(level, drivesOf(d).length)) return fail("error.raidLevel");
-  if (d.on && (d.rackId || d.panel)) return fail("error.powerOffFirst");
+  if (d.on && (d.rackId || d.panel) && !d.setup) return fail("error.raidInSetup");
   if (d.raid === level) return { ok: true };
   Object.assign(d, { raid: level, rebuild: null, dataLost: holdsData(s, d) ? s.hour : d.dataLost });
   return { ok: true };

@@ -15,7 +15,7 @@ export const kvmTitle = (d: Device): string => `${modelById(d.model).name} ${d.l
 
 // One device behind the KVM or console server: its state, the power buttons the KVM can press, and the console's last line.
 function Target({ game, d }: { game: GameState; d: Device }) {
-  const act = useStore((s) => s.act);
+  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole);
   const state = deviceHealth(game, d.id).state, screen = consoleScreen(d, state), server = modelById(d.model).kind === "server";
   const power = server && !!kvmPower(game, d);
   return (
@@ -26,6 +26,7 @@ function Target({ game, d }: { game: GameState; d: Device }) {
       </dl>
       <pre className="kvm-screen">{t(screen.key, screen.params)}</pre>
       <div className="bmc-actions">
+        {server && <button className="cx-btn" onClick={() => openConsole(d.id)}>Open console</button>}
         {power && <button className="cx-btn primary" disabled={d.on} onClick={() => act(remotePower, d.id, true)}>Power on</button>}
         {power && <button className="cx-btn" disabled={!d.on} onClick={() => act(remotePower, d.id, false)}>Power off</button>}
         {power && <button className="cx-btn" disabled={!d.on} onClick={() => act(reset, d.id)}>Reset</button>}

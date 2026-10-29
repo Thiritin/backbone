@@ -322,19 +322,20 @@ function failedDown(d: Device): boolean {
 }
 
 export function deviceHealth(s: GameState, deviceId: string): {
-  state: "ok" | "booting" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "hung" | "stuck" | "locked" | "nopower" | "off"; failed: Component[]; worn: Component[];
+  state: "ok" | "booting" | "setup" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "hung" | "stuck" | "locked" | "nopower" | "off"; failed: Component[]; worn: Component[];
 } {
   const d = s.devices.find((x) => x.id === deviceId)!;
   const failed = d.components.filter((c) => c.failedAt !== null);
   const worn = d.components.filter((c) => c.failedAt === null && s.hour - c.installedAt >= COMPONENTS[c.kind].life * HOURS_PER_YEAR);
-  const state = !d.on ? "off" : d.rackId && !pluggedIn(d) && !failedDown(d) ? "nopower" : booting(s, d) ? "booting" : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.hung ? "hung" : d.stuck ? "stuck" : d.locked ? "locked" : d.rebuild ? "rebuilding"
+  const state = !d.on ? "off" : d.rackId && !pluggedIn(d) && !failedDown(d) ? "nopower" : booting(s, d) ? (d.setup ? "setup" : "booting") : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.hung ? "hung" : d.stuck ? "stuck" : d.locked ? "locked" : d.rebuild ? "rebuilding"
     : failed.some((c) => c.kind === "fan") ? "hot" : failed.length ? "degraded" : "ok";
   return { state, failed, worn };
 }
 export const HOURS_PER_YEAR = 8760;
 export const BOOT_MINUTES = 3;
 export const BOOT_HOURS = BOOT_MINUTES / 60;
-export const booting = (s: GameState, d: Device) => d.on && (d.bootUntil ?? 0) > nowHours(s);
+// A server in its BIOS setup never finishes booting.
+export const booting = (s: GameState, d: Device) => d.on && (d.setup || (d.bootUntil ?? 0) > nowHours(s));
 
 // A device works when it has power, is switched on, and no failure or power-off swap has taken it down.
 export function working(s: GameState, deviceId: string): boolean {
