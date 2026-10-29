@@ -2,7 +2,8 @@ import { Cpu, HardDrive, MemoryStick } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { Resources } from "../../../sim/10-catalog/products";
 import type { GameState } from "../../../sim/50-state";
-import { workloadsOn, type Workload } from "../../../sim/60-infra/cluster";
+import { softwareById } from "../../../sim/10-catalog/platforms";
+import { clusterOf, controlPlaneUse, workloadsOn, type Workload } from "../../../sim/60-infra/cluster";
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
@@ -33,20 +34,39 @@ const share = (u: Resources, w: Workload, k: Sort) => (w[k] ? u[k] / w[k] : 0);
 export function NodeWorkloads({ game, deviceId }: { game: GameState; deviceId: string }) {
   const [sort, setSort] = useState<Sort>("vcpu");
   const loads = workloadsOn(game, deviceId).filter((w) => w.clusterId).map((w) => ({ w, u: workloadUse(game, w) }));
-  if (!loads.length) return null;
+  const c = clusterOf(game, deviceId), cpId = c?.controlPlane === deviceId ? c.panel ?? c.platform : null;
+  if (!loads.length && !cpId) return null;
   loads.sort((a, b) => share(b.u, b.w, sort) - share(a.u, a.w, sort) || b.u[sort] - a.u[sort]);
   return (
     <>
       <div className="loc-card-h loc-sub">
         <h3>Workloads</h3>
-        <span className="num loc-muted">{loads.length}</span>
+        <span className="num loc-muted">{loads.length + (cpId ? 1 : 0)}</span>
         <span className="grow" />
         <div className="seg" role="group" aria-label="Sort by">
           {SORTS.map(([k, label]) => <button key={k} aria-pressed={sort === k} onClick={() => setSort(k)}>{label}</button>)}
         </div>
       </div>
+      {cpId && <ControlPlaneRow name={softwareById(cpId).name} u={controlPlaneUse(c!)} />}
       {loads.map(({ w, u }) => <WorkloadRow key={w.id} game={game} w={w} u={u} />)}
     </>
+  );
+}
+
+// The cluster's management services take a fixed share of the node that runs them.
+function ControlPlaneRow({ name, u }: { name: string; u: Resources }) {
+  return (
+    <div className="wl-row">
+      <div className="wl-line">
+        <span className="wl-name">Control plane</span>
+        <span className="loc-muted wl-service">{name}</span>
+      </div>
+      <div className="wl-gauges">
+        <Gauge icon={<Cpu />} label="CPU" used={u.vcpu} max={u.vcpu} unit="vCPU" />
+        <Gauge icon={<MemoryStick />} label="RAM" used={u.ramGb} max={u.ramGb} unit="GB" />
+        <Gauge icon={<HardDrive />} label="Disk" used={u.diskGb} max={u.diskGb} unit="GB" />
+      </div>
+    </div>
   );
 }
 
