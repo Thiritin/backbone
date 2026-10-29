@@ -12,7 +12,7 @@ import { MenuBar } from "./MenuBar";
 import { StartScreen } from "./StartScreen";
 import { wallpaperSvg } from "./wallpaper";
 import { Widgets } from "./Widgets";
-import { SecurityAlert } from "./SecurityAlert";
+import { AlertSheet } from "./AlertSheet";
 import { Welcome } from "./Welcome";
 import { SoftwarePicker } from "../apps/software/Software";
 import { ContextMenuHost } from "./ContextMenu";
@@ -43,7 +43,7 @@ export function Desktop() {
 }
 
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
-  const { windows, speed, setSpeed, advance, save, notify, clearUnseen, welcome, explain, setExplain, advisory } = useStore();
+  const { windows, speed, setSpeed, advance, save, notify, clearUnseen, welcome, explain, setExplain, alert } = useStore();
   const gameOver = useStore((s) => s.game.gameOver);
   const setup = useStore((s) => s.setup);
   const [center, setCenter] = useState(false);
@@ -101,7 +101,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       <Dock />
       {welcome && <Welcome />}
       {setup && !welcome && <SoftwarePicker key={setup} machineId={setup} />}
-      {advisory && <SecurityAlert />}
+      {alert && <AlertSheet alert={alert} />}
       {gameOver !== null && <GameOver hour={gameOver} />}
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
       <ContextMenuHost />

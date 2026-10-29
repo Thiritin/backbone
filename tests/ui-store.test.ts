@@ -118,3 +118,31 @@ describe("reload", () => {
     }
   });
 });
+
+describe("alerts", () => {
+  it("stops advancing at an alert event, pauses, and Continue restores the speed", () => {
+    const s = useStore.getState;
+    const game = readyGame(11);
+    game.cash = -1000;
+    game.brokeSince = null;
+    useStore.setState({ game, speed: 4, alert: null, resume: 0 });
+    s().setNotifyPref("Finance", { allow: false });
+    const start = game.hour;
+    s().advance(48);
+    expect(s().alert).toMatchObject({ key: "event.cashNegative", title: expect.any(String) });
+    expect(s().speed).toBe(0);
+    expect(s().resume).toBe(4);
+    expect(s().game.hour).toBeLessThan(start + 48);
+    s().closeAlert(true);
+    expect(s().alert).toBeNull();
+    expect(s().speed).toBe(4);
+    s().setNotifyPref("Finance", { allow: true });
+  });
+
+  it("keeps the game paused when the sheet opens an app", () => {
+    const s = useStore.getState;
+    useStore.setState({ speed: 0, resume: 8, alert: { id: 1, app: "Finance", title: "a", text: "b", hour: 0, key: "event.cashNegative" } });
+    s().closeAlert(false);
+    expect(s()).toMatchObject({ alert: null, speed: 0 });
+  });
+});

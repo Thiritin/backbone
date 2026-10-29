@@ -4,7 +4,7 @@ import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
 import { startGame as newCompany } from "../sim/90-actions/start";
 import { tick } from "../sim/88-tick/tick";
-import { ADVISORY_KEYS } from "../sim/60-infra/security";
+import { isAlert } from "../sim/alerts";
 import { deserialize, serialize } from "../sim/91-save/save";
 import type { Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
@@ -16,7 +16,7 @@ export const SAVE_KEY = "backbone.save";
 // What another app asked a window to show; n changes on every request so repeating one still applies.
 export interface Focus { kind: string; id: string; n: number }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; focus?: Focus }
-export interface Banner { id: number; app: string; title: string; text: string; hour: number }
+export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string }
 // Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
 export interface NotifyPref { allow: boolean; sound: boolean }
 const WIDE = { w: 1240, h: 680 };
@@ -51,9 +51,10 @@ interface Store {
   // The server or VM whose Add Software sheet is open.
   setup: string | null;
   setSetup: (deviceId: string | null) => void;
-  // The security advisory sheet a vulnerability stage opens; the stage pauses the game.
-  advisory: boolean;
-  setAdvisory: (open: boolean) => void;
+  // The alert sheet an alert event opens; the event pauses the game and resume is the speed to return to.
+  alert: Banner | null;
+  resume: Speed;
+  closeAlert: (resume: boolean) => void;
   // The skill whose How it works sheet is open.
   explain: string | null;
   setExplain: (id: string | null) => void;
@@ -91,7 +92,7 @@ interface Store {
 export interface CartLine { model: string; brand: string; qty: number }
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, setup: null, explain: null, advisory: false });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, setup: null, explain: null, alert: null });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -167,8 +168,9 @@ export const useStore = create<Store>((set, get) => ({
   },
   setup: null,
   setSetup: (setup) => set({ setup }),
-  advisory: false,
-  setAdvisory: (advisory) => set({ advisory }),
+  alert: null,
+  resume: 0,
+  closeAlert: (resume) => set(({ resume: speed }) => (resume ? { alert: null, speed } : { alert: null })),
   explain: null,
   setExplain: (explain) => set({ explain }),
   started: initial.loaded,
@@ -187,16 +189,18 @@ export const useStore = create<Store>((set, get) => ({
 
   advance: (hours) => {
     const game = { ...get().game, rng: { ...get().game.rng } };
-    let advisory = false;
+    let alert: Banner | null = null;
     for (let i = 0; i < hours; i++) {
       for (const e of tick(game)) {
         get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params), e.key);
         if (e.key === "event.trainingDone") set({ explain: String(e.params.id) });
-        if (ADVISORY_KEYS.includes(e.key)) advisory = true;
+        if (isAlert(e.key) && !alert) alert = { id: ++bannerId, app: e.app, title: t(`${e.key}.title`, e.params), text: t(`${e.key}.text`, e.params), hour: game.hour, key: e.key };
       }
-      if (game.gameOver !== null || advisory) break;
+      if (game.gameOver !== null || alert) break;
     }
-    set(game.gameOver !== null ? { game, speed: 0 } : advisory ? { game, speed: 0, advisory } : { game });
+    if (game.gameOver !== null) set({ game, speed: 0 });
+    else if (alert) set(({ speed, alert: open, resume }) => ({ game, alert: open ?? alert, speed: 0, resume: open ? resume : speed }));
+    else set({ game });
   },
   act: (fn) => {
     const game = structuredClone(get().game);
@@ -261,7 +265,7 @@ export const useStore = create<Store>((set, get) => ({
       });
       pending.add(kind);
     }
-    const b = { id: ++bannerId, app, title, text, hour: get().game.hour };
+    const b = { id: ++bannerId, app, title, text, hour: get().game.hour, key };
     set(({ banners, history, unseen }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
     setTimeout(() => get().dismiss(b.id), 6000);
   },

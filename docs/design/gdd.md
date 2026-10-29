@@ -19,7 +19,7 @@ The game is about running a whole hosting company, not just its hardware: infras
 - Saves stay in the player's browser.
 - Set in Europe and North America. The map opens on Western Europe's big cities; the American hubs are a later expansion across the Atlantic, and the rest of the world only appears as distant transit destinations. The game starts around 2005, and technology advances over the years.
 - Prices are in euros and roughly match the real European market.
-- Time controls: pause, 1×, 2×, 4×, 8×. Nothing pauses automatically. A player can run the whole company alone if they want; hiring is how you scale, not a requirement.
+- Time controls: pause, 1×, 2×, 4×, 8×. Only alerts pause automatically (see "The desktop"). A player can run the whole company alone if they want; hiring is how you scale, not a requirement.
 
 **Inspirations:** Software Inc. (UI and company management), Der Planer (the office PC you play the whole game on), King of Retail (customer demand).
 
@@ -71,7 +71,9 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 | Market | Market research: demand, customer requirements, lost-sale reports |
 | Research | The skill tree: trainings that make Pear Store items available |
 
-**Notifications.** Banners for new tickets, overdue invoices, hardware failures, attacks and staff requests. Each one opens the right app at the right place, and a notification center keeps the history. Nothing pauses the game automatically.
+**Alerts.** A few events pause the game and open a sheet, like the bankruptcy warning, because the player has to look at them before time moves on. They are: cash below zero, a missed loan payment, a loan called in, every stage of a PHP security advisory (announcement, proof of concept, agency warning, patch) and a compromised panel host, lost customer data, a server seized by the authorities, the start of a DDoS attack, and a location that lost power. Later features add their own: a critical vulnerability on the player's own software, an extortion ticket after a breach, and corrupted data after a pulled plug. The sheet shows the event's title and text, up to two figures, an Open button for the app that handles the event (Bank, Security, Locations, Support or Network) and a Continue button that resumes the speed from before the pause; Escape is Continue. Opening the app leaves the game paused. Every alert also goes into the notification history, bankruptcy keeps its own sheet, and there is no setting to switch alerts off. The list lives in `ALERT_KEYS` in src/sim/alerts.ts; every other event stays a banner.
+
+**Notifications.** Banners for new tickets, overdue invoices, hardware failures, attacks and staff requests. Each one opens the right app at the right place, and a notification center keeps the history. Alerts also pause the game (see below).
 
 **Reloading the tab.** A reload of the page reopens the saved game with the same windows where they were, and Support keeps its box, type filter and open email. The clock starts paused, as it does on every load. A closed tab starts from the desktop with no windows open.
 
@@ -998,7 +1000,7 @@ The MVP has the basement rack, one datacenter location, web hosting and VPS, sup
 - [x] Do competitors expand and react to you, or are they a static backdrop? they are a static backdrop, there should be like some other bigger providers, and its a really hard and fought overm arket
 - [x] Parody names: puns on the real name ("TrustPylon") or fully invented names? puns on real names
 - [x] Which open-source license (MIT, GPL)? MIT
-- [x] Which events auto-pause the game? Alerts: the owner asked (October 2026) for notifications that pause and pop up like the bankruptcy warning. The list is in docs/masterplan.md, Lane 2.0, and moves into "The desktop" when it is built.
+- [x] Which events auto-pause the game? Alerts: the owner asked (October 2026) for notifications that pause and pop up like the bankruptcy warning. The list is in "The desktop", paragraph Alerts.
 - [x] Do hardware brands differ in price and failure rate, or only in look? Both: each manufacturer has a price factor and a failure factor (economy.md, Manufacturers).
 - [x] Without price lists, should the player still have one lever on price, such as a premium or discount per product that changes which requests arrive? Yes: you quote a price on every request against a market reference, set rates per resource for the order form, and can raise prices of running services (see Quoting a price).
 
