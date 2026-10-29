@@ -37,7 +37,7 @@ describe("datacenter catalog", () => {
     expect(datacenterById("equinox-fr5")).toEqual({
       id: "equinox-fr5", name: "Equinox FR5", provider: "equinox", city: "Frankfurt", carriers: 30, exchange: { name: "DE-KICKS", onSite: true },
       feeds: "ab", backup: "ups+generator", green: true, kwPerPosition: 8, positionPrice: 750, powerFactor: 1.4, crossConnect: 250,
-      remoteHands: { perHour: 150, responseHours: 1 }, certified: true, cages: true, size: "large", visitBooking: true,
+      remoteHands: { perHour: 150, responseHours: 1 }, certified: true, cages: true, size: "large", visitBooking: true, power: "metered",
     });
     expect(datacenterById("hetzler-park")).toMatchObject({ carriers: 1, exchange: null, feeds: "single", kwPerPosition: 4, positionPrice: 180, powerFactor: 1.1, certified: false, cages: false });
     expect(datacenterById("docklands-data")).toMatchObject({ backup: "ups", green: false, remoteHands: { perHour: 80, responseHours: 8 } });
@@ -95,7 +95,7 @@ describe("racks", () => {
     const s = rich(10_000);
     const id = ok(addLocation(s, "interaction-fra", "positions", 2));
     const r = ok(buyRack(s, id, "rack-42", 2));
-    expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null });
+    expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null });
     expect(s.cash).toBe(9200);
     expect(s.ledger.at(-1)).toMatchObject({ category: "hardware", key: "ledger.hardware", params: { model: "42U rack", device: "fra2-rack-01" }, amount: -800 });
     expect(freePositions(s, id)).toEqual([1]);

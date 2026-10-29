@@ -35,7 +35,7 @@ import { lessorName } from "../10-catalog/leasing";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
 import { KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
-import { capacityAt, DATACENTERS, datacenterById, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
+import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry } from "../50-state";
 import { scoreTick } from "../80-business/scores";
 import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
@@ -55,10 +55,11 @@ export function endLease(s: GameState, leaseId: string) {
 }
 
 // Euros of power drawn in one hour: every powered device at the business price × the datacenter's power factor, or the household price in the basement.
+// Racks on a flat-rate contract pay it monthly instead.
 export function powerPerHour(s: GameState): number {
   const price = businessPowerPrice(yearOf(s.hour));
-  const busy = busyDevices(s);
-  return s.devices.filter((d) => d.on && powered(s, d.id)).reduce((sum, d) => {
+  const busy = busyDevices(s), flat = new Set(s.racks.filter((r) => r.flatKw).map((r) => r.id));
+  return s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id)).reduce((sum, d) => {
     const loc = locationOf(s, d)!;
     return sum + (drawWatts(d, busy) / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
   }, 0);
@@ -195,6 +196,9 @@ export function tick(state: GameState): SimEvent[] {
   if (state.racks.some((r) => r.extraKwAt && r.extraKwAt.at <= state.hour)) {
     state.racks = state.racks.map((r) => (r.extraKwAt && r.extraKwAt.at <= state.hour ? { ...r, extraKw: r.extraKwAt.kw, extraKwAt: null } : r));
   }
+  if (state.racks.some((r) => r.flatKwAt && r.flatKwAt.at <= state.hour)) {
+    state.racks = state.racks.map((r) => (r.flatKwAt && r.flatKwAt.at <= state.hour ? { ...r, flatKw: r.flatKwAt.kw, flatKwAt: null } : r));
+  }
   if (state.devices.some((d) => d.arriveAt !== null && d.arriveAt <= state.hour)) {
     const arrived = new Map<string, number>();
     state.devices = state.devices.map((d) => {
@@ -240,6 +244,10 @@ export function tick(state: GameState): SimEvent[] {
       for (const feed of ["feedB", "highDensity"] as const) {
         if (r[feed]) bills.push({ hour: state.hour, category: "rent", key: "ledger.feed", params: { rack: r.name, feed }, amount: -Math.round(FEED_PRICE[feed] * datacenterById(loc.dc).positionPrice) });
       }
+    }
+    for (const r of state.racks.filter((x) => x.flatKw)) {
+      const dc = datacenterById(state.locations.find((l) => l.id === r.locationId)!.dc!);
+      bills.push({ hour: state.hour, category: "rent", key: "ledger.flatPower", params: { rack: r.name, kw: r.flatKw }, amount: -flatMonthly(dc, r.flatKw, yearOf(state.hour)) });
     }
     const line = homeLineById(state.homeLine.id);
     bills.push(...addressBills(state));

@@ -3,7 +3,7 @@ import { boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, mode
 import { cpuModel, type Vendor } from "../10-catalog/cpus";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
-import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
 import type { Component, Device, End, GameState, Location, SpaceKind } from "../50-state";
 
@@ -250,7 +250,8 @@ export function rackPower(s: GameState, rackId: string): { watts: number; limitW
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.
   const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : circuitKw(loc);
-  const limitWatts = Math.round((1000 * kw) / share) + Math.round(1000 * rack.extraKw);
+  // A flat-rate contract's kW replaces the position's limit.
+  const limitWatts = rack.flatKw ? Math.round(1000 * rack.flatKw) : Math.round((1000 * kw) / share) + Math.round(1000 * rack.extraKw);
   return { watts, limitWatts, tripped: watts > limitWatts };
 }
 
@@ -416,6 +417,12 @@ export function locationRent(s: GameState, loc: Location): number {
   const dc = datacenterById(loc.dc);
   const extra = s.racks.filter((r) => r.locationId === loc.id).reduce((sum, r) => sum + (r.extraKw / EXTRA_STEP_KW) * extraStepPrice(dc), 0);
   return spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc)) + extra;
+}
+
+// How a rack in this location can bill power: flat-rate contracts are offered on rack positions only.
+export function flatOffer(s: GameState, locationId: string): Datacenter["power"] {
+  const loc = s.locations.find((l) => l.id === locationId);
+  return loc?.dc && loc.space === "positions" ? datacenterById(loc.dc).power : "metered";
 }
 
 // Floor space in eighths of a position, so a 1/8 share is 1 and a position is 8.

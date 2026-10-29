@@ -4,9 +4,9 @@ import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
-import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
+import { arrayLost, connectError, drivesOf, fits, flatOffer, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { atFront, BMC_RESET_HOURS, bootUp, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
@@ -41,6 +41,9 @@ const unplug = (s: GameState, deviceIds: Set<string>, keep = (_: string) => fals
   s.cables = s.cables.filter((c) => !((deviceIds.has(c.a.device) && !keep(c.b.device)) || (deviceIds.has(c.b.device) && !keep(c.a.device))));
 };
 
+// A rack at a site that only bills flat starts on the smaller contract.
+const flatDefault = (s: GameState, locationId: string): number => (flatOffer(s, locationId) === "flat" ? FLAT_CONTRACTS[0].kw : 0);
+
 // For a share, size is n for 1/n of a rack; the location then has one position, taken by the provider's rack.
 export function addLocation(s: GameState, dcId: string, space: "share" | "positions" | "cage" | "suite", size: number): ActionResult {
   const dc = DATACENTERS.find((d) => d.id === dcId);
@@ -60,7 +63,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "positi
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
   if (shareRack) {
     const rackName = nextName(`${prefix(s, loc.id)}-rack`, s.racks.map((r) => r.name));
-    s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null });
+    s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null });
   }
   return { ok: true, id: loc.id };
 }
@@ -114,7 +117,7 @@ export function buyRack(s: GameState, locationId: string, model: RackModel, posi
   if (error) return fail(error);
   if (s.cash < spec.price) return fail("error.noCash");
   const name = nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
-  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null };
+  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null };
   s.racks.push(rack);
   book(s, "hardware", "ledger.hardware", { model: `${spec.units}U rack`, device: name }, -spec.price);
   return { ok: true, id: rack.id };
@@ -139,6 +142,8 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
   Object.assign(rack, { locationId: toLocationId, position, arriveAt: s.hour + move.hours });
   // Feeds belong to rented positions, so the basement has none.
   if (!to.dc) Object.assign(rack, { feedB: false, highDensity: false });
+  // The power contract belongs to the position too; the new one starts on its site's default.
+  if (to.id !== from.id) Object.assign(rack, { flatKw: flatDefault(s, to.id), flatKwAt: null });
   book(s, "moving", "ledger.move", { rack: rack.name, location: to.name }, -move.price);
   return { ok: true, id: rack.id };
 }
@@ -689,6 +694,17 @@ export function setExtraPower(s: GameState, rackId: string, kw: number): ActionR
   const size = SHARE_RACKS.find((m) => m.id === rack.model)!.size;
   if (!Number.isInteger(kw / EXTRA_STEP_KW) || kw < 0 || kw > maxExtraKw(dc, size)) return fail("error.extraPowerRange");
   rack.extraKwAt = kw === rack.extraKw ? null : { kw, at: s.hour + 24 * EXTRA_POWER_LEAD_DAYS };
+  return { ok: true };
+}
+
+// A rack position's power contract: 0 for metered or one of the flat-rate contracts' kW, taking effect after the lead time.
+export function setFlatPower(s: GameState, rackId: string, kw: number): ActionResult {
+  const rack = s.racks.find((r) => r.id === rackId);
+  if (!rack) return fail("error.unknownRack");
+  const offer = flatOffer(s, rack.locationId);
+  if (offer === "metered") return fail("error.noFlatPower");
+  if (kw === 0 ? offer === "flat" : !FLAT_CONTRACTS.some((c) => c.kw === kw)) return fail("error.flatPowerRange");
+  rack.flatKwAt = kw === rack.flatKw ? null : { kw, at: s.hour + 24 * EXTRA_POWER_LEAD_DAYS };
   return { ok: true };
 }
 

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- Rack positions at Hetzler and the smaller budget datacenters can take a flat-rate power contract of 2 × 10 A or 2 × 16 A for a fixed monthly price, which sets the rack's breaker limit.
 - A new company starts with a free Notmail address that takes order emails without a domain, and moving to mail under your own domain is an optional upgrade.
 - The Email app has a Settings button that opens the email settings.
 - Getting started now begins with your first server, and the domain and email steps come later.

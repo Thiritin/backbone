@@ -48,7 +48,9 @@ export interface Location { id: string; dc: string | null; city: string; az: str
 // share-N racks belong to the provider of a rack share and hold N units.
 export type RackModel = "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-10" | "share-21" | "share-42";
 // arriveAt is the hour a moving rack arrives; null when it is in place. A moving rack already holds its target location and position.
-export interface Rack { id: string; model: RackModel; locationId: string; position: number; name: string; arriveAt: number | null; price: number; boughtAt: number; provided: boolean; feedB: boolean; highDensity: boolean; extraKw: number; extraKwAt: { kw: number; at: number } | null }
+export interface Rack { id: string; model: RackModel; locationId: string; position: number; name: string; arriveAt: number | null; price: number; boughtAt: number; provided: boolean; feedB: boolean; highDensity: boolean; extraKw: number; extraKwAt: { kw: number; at: number } | null;
+  // A flat-rate power contract's kW, 0 for metered, and a change booked for a later hour.
+  flatKw: number; flatKwAt: { kw: number; at: number } | null }
 // slot is the lowest unit the device occupies, counted from 1 at the bottom.
 // A gateway sits on its location's carrier panel: rackId null, panel = location id. A stored unit has store = its zone's location id;
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.
@@ -261,7 +263,7 @@ export const device = (id: string, model: string, brand: string, rackId: string 
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, cash: START_CASH, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
-  racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null }],
+  racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null }],
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
   cables: [],
   ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], checklist: [], seenChanges: [],

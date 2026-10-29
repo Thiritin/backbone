@@ -750,6 +750,15 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 
 **Extra power on a share.** A provided share cannot take feed B or a high-density feed. It can book extra power in steps of 0.25 kW, up to the share's base limit again (the datacenter's kW per position divided by the share size, so a limit of at most twice the base). A step costs 15% of the position price times the datacenter's power factor per month, so a full extra kW costs about 60% of a position. It is billed with the share's rent under the same ledger line, and a booking or a reduction takes effect after 3 days. A rack over its limit still trips. Anchor: colocation power sold per amp at roughly €30 to 60 per 0.5 A step in 2010s Frankfurt. At Hetzler Park (€180, factor 1.1) a step costs €30 a month; at mainqubes FRA (€450, factor 1.3) it costs €88.
 
+**Flat-rate power.** A rack position at a datacenter that offers it can take a contract of 2 × 10 A (4.4 kW) or 2 × 16 A (7 kW) instead of metered power. The monthly price is the metered cost of drawing 60% of the contract: kW × 0.6 × 730 hours × the business power price × the datacenter's power factor, at each month's power price. It pays when the rack averages above 60% of its limit and costs more below, and because the price scales with the limit the late game stays even. The contract's kW replaces the position's limit, including a high-density feed, and is billed as its own line with the rent. At Hetzler (factor 1.1) 2 × 10 A costs €191 a month in 2005, €254 in 2010 and €382 in 2020; 2 × 16 A costs €304, €405 and €607. Anchor: German colocation racks sold per amp with a fixed monthly price, 2 × 10 A or 2 × 16 A at 230 V per rack in the 2000s and 2010s.
+
+| Datacenter | Power |
+| --- | --- |
+| Hetzler Park, Hetzler FSN | Metered or flat |
+| Hetzler NBG | Flat only |
+| Docklands Data, Spree Colo, Next Lair VIE, SkyBlink Eygelshoven, Arubaba Hub, CoreSpite VA1, CoreSpite CH1 | Metered or flat |
+| Every other datacenter | Metered only |
+
 **Availability.** Datacenters are not endless. Each one has a floor capacity in positions that grows in expansion phases over the years up to a final size, and most of it is rented by competitors you never see. You can only rent what is free right now.
 
 | Datacenter size | Positions at opening | Expansion | Final size |

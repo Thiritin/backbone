@@ -50,7 +50,7 @@ export function deserialize(raw: string): GameState {
       ...defaults, ...d, model, components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
     };
   });
-  const racks = (data.racks ?? base.racks).map((r) => ({ ...r, provided: r.provided ?? false, feedB: r.feedB ?? false, highDensity: r.highDensity ?? false, extraKw: r.extraKw ?? 0, extraKwAt: r.extraKwAt ?? null }));
+  const racks = (data.racks ?? base.racks).map((r) => ({ ...r, provided: r.provided ?? false, feedB: r.feedB ?? false, highDensity: r.highDensity ?? false, extraKw: r.extraKw ?? 0, extraKwAt: r.extraKwAt ?? null, flatKw: r.flatKw ?? 0, flatKwAt: r.flatKwAt ?? null }));
   const cables = (data.cables ?? base.cables).map((c) => ({ ...c, color: c.color ?? null }));
   // Competitors fill datacenters the save has not seen yet as if the game had started this year. A datacenter far below
   // last year's capacity can't come from play (competitors refill every month), so it is reseeded for this year too.

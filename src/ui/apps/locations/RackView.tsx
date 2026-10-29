@@ -2,11 +2,12 @@ import { Gauge, Plug, Truck, Zap, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { modelById, type DeviceKind } from "../../../sim/10-catalog/hardware";
-import { BASEMENT, EXTRA_STEP_KW, extraStepPrice, maxExtraKw, SHARE_RACKS } from "../../../sim/20-world/datacenters";
+import { BASEMENT, EXTRA_STEP_KW, extraStepPrice, FLAT_CONTRACTS, flatMonthly, maxExtraKw, SHARE_RACKS } from "../../../sim/20-world/datacenters";
+import { yearOf } from "../../../sim/00-core/time";
 import type { Device, GameState, Location, Rack } from "../../../sim/50-state";
-import { EXTRA_CIRCUIT_KW, freePositions, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
+import { EXTRA_CIRCUIT_KW, flatOffer, freePositions, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
 import { FEED_PRICE } from "../../../sim/88-tick/tick";
-import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveInRack, moveRack, sellRack, setExtraPower, setFeed } from "../../../sim/90-actions/hardware";
+import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveInRack, moveRack, sellRack, setExtraPower, setFeed, setFlatPower } from "../../../sim/90-actions/hardware";
 import { Stepper } from "../shop/Cart";
 import type { Side } from "../../art/backs";
 import { Isometric } from "../../art/Isometric";
@@ -295,9 +296,9 @@ function MoveRack({ game, rack, onClose, onMoved }: { game: GameState; rack: Rac
   );
 }
 
-// Power upgrades: the basement's extra household circuit, and a rented rack's second and high-density feeds.
+// Power upgrades: the basement's extra household circuit, a rented rack's second and high-density feeds and its power contract.
 export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
-  const act = useStore((s) => s.act);
+  const act = useStore((s) => s.act), game = useStore((s) => s.game);
   const dc = dcOf(loc);
   const rows: { name: string; effect: string; price: string; on: boolean; buy: () => void; drop?: () => void; control?: ReactNode }[] = [];
   if (loc.space === "basement") rows.push({ name: "Extra circuit", effect: `+${EXTRA_CIRCUIT_KW} kW`, price: euro(CIRCUIT_PRICE), on: loc.extraCircuit, buy: () => act(buyCircuit, loc.id) });
@@ -316,6 +317,20 @@ export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
       name: "Extra power", effect: `+${rack.extraKw} kW${rack.extraKwAt ? `, +${rack.extraKwAt.kw} kW on ${day(rack.extraKwAt.at)}` : ""}`,
       price: `${euro((target / EXTRA_STEP_KW) * extraStepPrice(dc))}/mo`, on: false, buy: () => {},
       control: <Stepper label="Extra power" value={target} step={EXTRA_STEP_KW} max={maxExtraKw(dc, size)} onChange={(kw) => act(setExtraPower, rack.id, kw)} />,
+    });
+  }
+  const offer = rack && !rack.provided ? flatOffer(game, rack.locationId) : "metered";
+  if (dc && rack && offer !== "metered") {
+    const target = rack.flatKwAt?.kw ?? rack.flatKw, year = yearOf(game.hour);
+    const options = [...(offer === "both" ? [{ kw: 0, label: "Metered" }] : []), ...FLAT_CONTRACTS.map((c) => ({ kw: c.kw, label: `2 × ${c.amps} A` }))];
+    rows.push({
+      name: "Power contract", effect: `${rack.flatKw ? `${rack.flatKw} kW` : "Metered"}${rack.flatKwAt ? `, ${rack.flatKwAt.kw ? `${rack.flatKwAt.kw} kW` : "metered"} on ${day(rack.flatKwAt.at)}` : ""}`,
+      price: target ? `${euro(flatMonthly(dc, target, year))}/mo` : "Per kWh", on: false, buy: () => {},
+      control: (
+        <div className="seg" role="group" aria-label="Power contract">
+          {options.map((o) => <button key={o.kw} aria-pressed={target === o.kw} onClick={() => act(setFlatPower, rack.id, o.kw)}>{o.label}</button>)}
+        </div>
+      ),
     });
   }
   if (!rows.length) return null;
