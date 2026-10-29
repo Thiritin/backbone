@@ -8,7 +8,7 @@ import { deviceDefaults, newGame, SAVE_VERSION, type Device, type GameState } fr
 import { workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
-import { fillLines } from "../80-business/website";
+import { fillDesign, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
@@ -52,7 +52,7 @@ export function deserialize(raw: string): GameState {
   }));
   // Saves from before addresses get theirs.
   const fill = data.ips ? (x: GameState) => x : fillAddresses;
-  return fill(fillLines(upgradeCompute(fillDomains(fillSpecs({
+  return fill(fillDesign(fillLines(upgradeCompute(fillDomains(fillSpecs({
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
     company: { ...base.company, ...data.company },
@@ -78,5 +78,5 @@ export function deserialize(raw: string): GameState {
     // upgradeCompute fills the cluster defaults.
     clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map(workloadDefaults), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
-  }))), data.marketing?.lines));
+  }))), data.marketing?.lines), data.marketing?.designYear));
 }

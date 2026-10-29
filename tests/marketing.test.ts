@@ -68,13 +68,13 @@ describe("campaigns", () => {
     setCampaign(s, "gaming", ["gamer"], 250);
     hireManager(s);
     setReviewPlatform(s, "provenExpat");
-    expect(monthlyMarketingCost(s)).toBe(15 + 250 + 49);
+    expect(monthlyMarketingCost(s)).toBeCloseTo(15 + 250 + 49 + 9.9, 9);
     const before = s.cash;
     until(s, FEB_1);
     const lines = s.ledger.filter((l) => l.category === "marketing" && l.hour === FEB_1);
-    expect(lines.map((l) => l.key).sort()).toEqual(["ledger.marketingCampaign", "ledger.marketingUpkeep", "ledger.reviewPlatform"]);
-    expect(lines.reduce((n, l) => n + l.amount, 0)).toBe(-314);
-    expect(s.cash).toBeLessThanOrEqual(before - 314);
+    expect(lines.map((l) => l.key).sort()).toEqual(["ledger.marketingCampaign", "ledger.marketingUpkeep", "ledger.reviewPlatform", "ledger.siteHosting"]);
+    expect(lines.reduce((n, l) => n + l.amount, 0)).toBeCloseTo(-323.9, 9);
+    expect(s.cash).toBeLessThanOrEqual(before - 323.9);
   });
 });
 
