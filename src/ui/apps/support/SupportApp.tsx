@@ -1,7 +1,8 @@
-import { AlarmClock, BadgeCheck, Check, CircleCheck, CircleX, Handshake, Hourglass, Inbox, Layers, Mails, Send, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
-import { useState } from "react";
+import { AlarmClock, BadgeCheck, ChartColumn, Check, CircleCheck, CircleX, Handshake, Hourglass, Inbox, Layers, Mails, Search, Send, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
+import { useState, type CSSProperties } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import { updatePrice } from "../../../sim/10-catalog/apps";
+import { deskHas, deskOf, type DeskFeature } from "../../../sim/10-catalog/desks";
 import { actionsOf, canEscalate, isFinal, monthlyValue, templatesOf, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
 import { senderById, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-support/notices";
 import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
@@ -17,11 +18,15 @@ import { useSessionState } from "../../session";
 import { More } from "../More";
 import { CustomerLink } from "../customers/CustomersApp";
 import { Incidents } from "./Incidents";
+import { CustomerCard } from "./CustomerCard";
+import { Reports } from "./Reports";
+import { supportApp } from "./desk";
 import { CustomCompose, InvoicePill } from "./CustomOrder";
 import { specText } from "../../../sim/30-market/spec";
 import { due, initials, KINDS, kindOf, monthYear, moodClass, PRODUCT, span, stamp, statusOf } from "./labels";
 import { Bars, Card, Deadline, LostSales, need, OPEN, SALES_BOXES, STATUS as SALES_STATUS, type SalesBox } from "../sales/SalesApp";
 import "./support.css";
+import "./mail-styles.css";
 
 type TicketBox = "open" | "overdue" | "waiting" | "escalated" | "done";
 const BOXES: { id: TicketBox; label: string; icon: typeof Inbox; match: (t: Ticket, hour: number) => boolean }[] = [
@@ -54,6 +59,9 @@ function ticketMenu(game: GameState, tk: Ticket): MenuEntry[] {
   ];
 }
 
+// The replies available without a desk.
+const DEFAULT_REPLIES = 3;
+
 const subjectOf = (s: GameState, tk: Ticket) => t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(s, tk));
 
 function Sender({ id }: { id: string }) {
@@ -69,7 +77,9 @@ function Sla({ tk, hour }: { tk: Ticket; hour: number }) {
   return <span className={`sla ${cls}`}><span className="num">{span(left)}</span> {left < 0 ? "over" : "left"}</span>;
 }
 
-type Box = "all" | TicketBox | `s:${SalesBox}` | "lost" | "incidents";
+type Box = "all" | TicketBox | `s:${SalesBox}` | "lost" | "incidents" | "reports";
+// What the installed desk unlocks in the thread view.
+type Gates = Record<"assign" | "templates" | "slaTimers" | "customerSidebar", boolean>;
 type Kind = TicketKind | "sales";
 interface Item { id: string; due: number; tk?: Ticket; r?: SalesRequest }
 
@@ -89,21 +99,36 @@ function itemsIn(game: GameState, box: Box): Item[] {
 const ofKind = (it: Item, kind: Kind | null) => !kind || (kind === "sales" ? !!it.r : it.tk?.kind === kind);
 const newestFirst = (box: Box) => box === "done" || box === "s:won";
 const stampOf = (it: Item) => (it.tk ? it.tk.updatedAt : it.r!.createdAt);
+const createdOf = (it: Item) => (it.tk ? it.tk.createdAt : it.r!.createdAt);
+// A search matches the sender, the subject and the ticket number.
+const textOf = (game: GameState, it: Item) => (it.tk
+  ? `${game.customers.find((c) => c.id === it.tk!.customerId)?.name ?? ""} ${it.tk.notice ? senderById(it.tk.notice.sender).name : ""} ${subjectOf(game, it.tk)} ${it.tk.id.slice(3)}`
+  : `${requestName(it.r!)} ${need(it.r!)}`).toLowerCase();
 
 export function SupportApp() {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
-  const [box, setBox] = useSessionState<Box>("support.box", "all");
-  const [kind, setKind] = useSessionState<Kind | null>("support.kind", null);
+  const [boxState, setBox] = useSessionState<Box>("support.box", "all");
+  const [kindState, setKind] = useSessionState<Kind | null>("support.kind", null);
   const [sel, setSel] = useSessionState<string | null>("support.sel", null);
+  const [query, setQuery] = useSessionState("support.query", "");
+  const desk = deskOf(game);
+  const { style, dim } = supportApp(game);
+  const has = (f: DeskFeature) => deskHas(game, f);
+  const gates: Gates = { assign: has("assign"), templates: has("templates"), slaTimers: has("slaTimers"), customerSidebar: has("customerSidebar") };
+  // Without a desk the app is one inbox; the desk decides which boxes and filters exist.
+  const box: Box = desk && (boxState !== "reports" || has("reports")) ? boxState : "all";
+  const kind = has("filters") ? kindState : null;
+  const needle = has("search") ? query.trim().toLowerCase() : "";
 
   const inBox = itemsIn(game, box);
-  const list = inBox.filter((it) => ofKind(it, kind)).sort((a, b) => (newestFirst(box) ? stampOf(b) - stampOf(a) : a.due - b.due));
+  const list = inBox.filter((it) => ofKind(it, kind) && (!needle || textOf(game, it).includes(needle)))
+    .sort((a, b) => (!desk ? createdOf(b) - createdOf(a) : newestFirst(box) ? stampOf(b) - stampOf(a) : a.due - b.due));
   const current = game.tickets.find((tk) => tk.id === sel) ?? null;
   const request = game.sales.requests.find((r) => r.id === sel) ?? null;
   const order = current?.kind === "order" ? orderOf(game, current) : undefined;
   const busy = game.playerBusyUntil > game.hour * 60;
-  const title = box === "all" ? "All" : (BOXES.find((b) => b.id === box) ?? SALES_BOXES.find((b) => `s:${b.id}` === box))?.label;
+  const title = !desk ? "Inbox" : box === "all" ? "All" : (BOXES.find((b) => b.id === box) ?? SALES_BOXES.find((b) => `s:${b.id}` === box))?.label;
 
   const open = (tk: Ticket) => {
     setSel(tk.id);
@@ -112,6 +137,7 @@ export function SupportApp() {
   useFocus("Support", (f) => {
     const tk = game.tickets.find((x) => x.id === f.id), r = game.sales.requests.find((x) => x.id === f.id);
     setKind(null);
+    setQuery("");
     if (f.kind === "ticket" && tk) {
       setBox(isFinal(tk) ? "done" : "all");
       open(tk);
@@ -133,43 +159,50 @@ export function SupportApp() {
   );
 
   return (
-    <div className={`sup sales${box === "lost" ? " sales-wide" : ""}`}>
-      <aside className="sidebar sup-side">
+    <div className={`sup sales${box === "lost" || box === "reports" ? " sales-wide" : ""}`} data-style={style} data-mode={desk ? "desk" : "inbox"} data-dim={dim || undefined}>
+      {desk && <aside className="sidebar sup-side">
         <div className="side-h">Inbox</div>
         {side("all", "All", Mails, itemsIn(game, "all").length)}
         {BOXES.map((b) => side(b.id, b.label, b.icon, game.tickets.filter((tk) => b.match(tk, game.hour)).length))}
         <div className="side-h">Sales</div>
         {SALES_BOXES.map((b) => side(`s:${b.id}`, b.label, b.icon, game.sales.requests.filter((r) => inSales(r) && b.match(game, r)).length))}
         {side("lost", "Lost sales", TrendingDown, game.sales.lost.length)}
-        <div className="side-h">Type</div>
-        {typeItem(null, "All types", Layers)}
-        {typeItem("sales", "Sales request", Handshake)}
-        {KINDS.map((k) => typeItem(k.id, k.label, k.icon))}
+        {has("filters") && <>
+          <div className="side-h">Type</div>
+          {typeItem(null, "All types", Layers)}
+          {typeItem("sales", "Sales request", Handshake)}
+          {KINDS.map((k) => typeItem(k.id, k.label, k.icon))}
+        </>}
         <div className="side-h">Reports</div>
         {side("incidents", "Incidents", TriangleAlert, game.ops.incidents.length)}
-      </aside>
+        {has("reports") && side("reports", "Tickets", ChartColumn, game.tickets.length)}
+      </aside>}
 
-      {box === "incidents" ? <Incidents /> : box === "lost" ? <LostSales /> : <>
+      {box === "incidents" ? <Incidents /> : box === "lost" ? <LostSales /> : box === "reports" ? <Reports /> : <>
 
       <div className="sup-list" role="list">
         <div className="sup-list-h">
           <h2>{title}{kind && ` · ${kind === "sales" ? "Sales request" : kindOf(kind).label}`}</h2>
+          {!desk && <span className="sup-unread num">{inBox.filter((it) => it.tk?.unread).length}</span>}
           {busy && <span className="sup-busy">Busy until <span className="num">{stamp(game.playerBusyUntil / 60)}</span></span>}
         </div>
-        {list.map((it) => (it.tk ? <TicketRow key={it.id} tk={it.tk} active={it.id === sel} onOpen={open} /> : <RequestRow key={it.id} r={it.r!} active={it.id === sel} onOpen={setSel} />))}
+        {has("search") && (
+          <label className="sup-search"><Search aria-hidden /><input type="search" aria-label="Search" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} /></label>
+        )}
+        {list.map((it) => (it.tk ? <TicketRow key={it.id} tk={it.tk} active={it.id === sel} timers={gates.slaTimers} onOpen={open} /> : <RequestRow key={it.id} r={it.r!} active={it.id === sel} timers={gates.slaTimers} onOpen={setSel} />))}
         {!list.length && <div className="sup-none">No emails</div>}
       </div>
 
       {request ? <Card key={request.id} r={request} />
-        : current && order ? <OrderThread key={current.id} tk={current} r={order} />
-        : current ? <Thread key={current.id} tk={current} />
+        : current && order ? <OrderThread key={current.id} tk={current} r={order} gates={gates} />
+        : current ? <Thread key={current.id} tk={current} gates={gates} />
         : <div className="sup-detail sup-none">No email selected</div>}
       </>}
     </div>
   );
 }
 
-function TicketRow({ tk, active, onOpen }: { tk: Ticket; active: boolean; onOpen: (tk: Ticket) => void }) {
+function TicketRow({ tk, active, timers, onOpen }: { tk: Ticket; active: boolean; timers: boolean; onOpen: (tk: Ticket) => void }) {
   const game = useStore((s) => s.game);
   const c = game.customers.find((x) => x.id === tk.customerId);
   const order = tk.kind === "order" ? orderOf(game, tk) : undefined;
@@ -177,20 +210,20 @@ function TicketRow({ tk, active, onOpen }: { tk: Ticket; active: boolean; onOpen
   return (
     <button role="listitem" className={`tk${active ? " active" : ""}${tk.unread ? " unread" : ""}`} onClick={() => onOpen(tk)} onContextMenu={menuOn(() => ticketMenu(game, tk))}>
       <span className="who">{tk.unread && <i className="dot" aria-label="Unread" />}{tk.notice ? <Sender id={tk.notice.sender} /> : <span>{order ? requestName(order) : c?.name}</span>}</span>
-      <Sla tk={tk} hour={game.hour} />
+      {timers ? <Sla tk={tk} hour={game.hour} /> : <span className="sla num">{stamp(tk.status === "open" ? tk.createdAt : tk.updatedAt)}</span>}
       <span className="subj">{order ? need(order) : subjectOf(game, tk)}</span>
-      <span className="meta"><span className="type"><K.icon />{K.label}</span>{tk.work && <span className="pill accent">Queued</span>}</span>
+      <span className="meta"><span className="type" style={{ "--k": KINDS.findIndex((x) => x.id === tk.kind) } as CSSProperties}><K.icon />{K.label}</span>{tk.work && <span className="pill accent">Queued</span>}</span>
     </button>
   );
 }
 
-function RequestRow({ r, active, onOpen }: { r: SalesRequest; active: boolean; onOpen: (id: string) => void }) {
+function RequestRow({ r, active, timers, onOpen }: { r: SalesRequest; active: boolean; timers: boolean; onOpen: (id: string) => void }) {
   const game = useStore((s) => s.game);
   const greyed = r.status === "open" && missingFor(game, r).length > 0;
   return (
     <button role="listitem" className={`tk${active ? " active" : ""}${greyed ? " greyed" : ""}`} onClick={() => onOpen(r.id)}>
       <span className="who"><span>{requestName(r)}</span></span>
-      <Deadline r={r} hour={game.hour} />
+      {timers ? <Deadline r={r} hour={game.hour} /> : <span className="sla num">{stamp(r.createdAt)}</span>}
       <span className="subj">{need(r)}</span>
       <span className="meta">
         <span className="type"><Handshake />{PRODUCT[r.product]}{r.kind === "expansion" && " · Expansion"}</span>
@@ -200,7 +233,7 @@ function RequestRow({ r, active, onOpen }: { r: SalesRequest; active: boolean; o
   );
 }
 
-function OrderThread({ tk, r }: { tk: Ticket; r: SalesRequest }) {
+function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gates }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const reqs = requirementsFor(game, r), missing = reqs.filter((x) => !x.ok);
@@ -217,7 +250,7 @@ function OrderThread({ tk, r }: { tk: Ticket; r: SalesRequest }) {
           {r.domain && <span>{r.domain}</span>}
           <span>{r.city}</span>
           <InvoicePill r={r} />
-          {tk.status === "open"
+          {tk.status === "open" && gates.slaTimers
             ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer /><span><span className="num">{Math.max(0, left)} h</span> to respond</span></span>
             : <span className="pill">{statusOf(tk)}</span>}
         </div>
@@ -265,7 +298,7 @@ function OrderThread({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   );
 }
 
-function Thread({ tk }: { tk: Ticket }) {
+function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const [tpl, setTpl] = useState<string | null>(null);
@@ -280,20 +313,20 @@ function Thread({ tk }: { tk: Ticket }) {
   const locked = !!tk.work || isFinal(tk);
   const agents = game.staff.filter((e) => e.role === "support");
 
-  return (
+  const body = (
     <div className="sup-detail">
       <div className="d-head">
         <div className="top"><h2>{t(`ticket.${tk.kind}.${tk.topic}.subject`, p)}</h2><span className="id num">#{tk.id.slice(3)}</span><More label={`ticket ${tk.id.slice(3)}`} entries={() => ticketMenu(game, tk)} /></div>
         <div className="facts">
           <span className="type"><K.icon />{K.label}</span>
           <span>Opened <span className="num">{stamp(tk.createdAt)}</span></span>
-          {tk.status === "open"
+          {tk.status === "open" && gates.slaTimers
             ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer />{tk.notice || left < 0
                 ? <span><span className="num">{span(left)}</span> {left < 0 ? "overdue" : "to respond"}</span>
                 : <span>Due <span className="num">{due(tk.dueAt, game.hour)}</span></span>}</span>
             : <span className="pill">{statusOf(tk)}</span>}
         </div>
-        {agents.length > 0 && !isFinal(tk) && (
+        {gates.assign && agents.length > 0 && !isFinal(tk) && (
           <div className="facts">
             <span>Assign</span>
             <span className="seg wrap" role="group" aria-label="Assign">
@@ -317,7 +350,7 @@ function Thread({ tk }: { tk: Ticket }) {
             <div>{c ? <CustomerLink id={c.id} name={c.name} /> : "None"}</div>
           </div>
         </div>
-      ) : c && (
+      ) : c && !gates.customerSidebar && (
       <div className="cust">
         <div className="logo">{initials(c.name)}</div>
         <div>
@@ -370,11 +403,11 @@ function Thread({ tk }: { tk: Ticket }) {
             <>
               <h3>Reply</h3>
               <div className="templates" role="radiogroup" aria-label="Reply template">
-                {templatesOf(tk).map((id) => (
+                {(gates.templates ? templatesOf(tk) : templatesOf(tk).slice(0, DEFAULT_REPLIES)).map((id) => (
                   <label key={id} className="tpl">
                     <input type="radio" name={`tpl-${tk.id}`} checked={tpl === id} disabled={locked} onChange={() => setTpl(id)} />
                     <span className="t">{t(`template.${id}.title`)}</span>
-                    <span className="p">{t(`template.${id}.text`, { ...companyParams(game), ...p })}</span>
+                    {gates.templates && <span className="p">{t(`template.${id}.text`, { ...companyParams(game), ...p })}</span>}
                   </label>
                 ))}
               </div>
@@ -397,4 +430,5 @@ function Thread({ tk }: { tk: Ticket }) {
       )}
     </div>
   );
+  return gates.customerSidebar && c ? <div className="sup-split">{body}<CustomerCard game={game} id={c.id} /></div> : body;
 }
