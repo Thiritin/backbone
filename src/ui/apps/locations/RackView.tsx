@@ -90,8 +90,36 @@ function useRackZoom() {
       step(acc.current < 0 ? 1 : -1, { x: e.clientX - r.left, y: e.clientY - r.top });
       acc.current = 0;
     };
+    // Dragging anywhere but a port pans the rack; a drag past a few pixels swallows the click it ends with.
+    let pan: { x: number; y: number; left: number; top: number; moved: boolean } | null = null;
+    const down = (e: PointerEvent) => {
+      if (e.button !== 0 || (e.target as Element).closest("[data-end]")) return;
+      pan = { x: e.clientX, y: e.clientY, left: el.scrollLeft, top: el.scrollTop, moved: false };
+    };
+    const move = (e: PointerEvent) => {
+      if (!pan) return;
+      const dx = e.clientX - pan.x, dy = e.clientY - pan.y;
+      if (!pan.moved && Math.hypot(dx, dy) < 5) return;
+      if (!pan.moved) { pan.moved = true; el.setPointerCapture(e.pointerId); el.classList.add("panning"); }
+      el.scrollLeft = pan.left - dx;
+      el.scrollTop = pan.top - dy;
+    };
+    const up = () => { el.classList.remove("panning"); if (!pan?.moved) pan = null; };
+    const click = (e: MouseEvent) => { if (pan?.moved) { e.stopPropagation(); e.preventDefault(); } pan = null; };
     el.addEventListener("wheel", wheel, { passive: false });
-    return () => el.removeEventListener("wheel", wheel);
+    el.addEventListener("pointerdown", down);
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", up);
+    el.addEventListener("click", click, true);
+    return () => {
+      el.removeEventListener("wheel", wheel);
+      el.removeEventListener("pointerdown", down);
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerup", up);
+      el.removeEventListener("pointercancel", up);
+      el.removeEventListener("click", click, true);
+    };
   }, [step]);
   return { zoom, ref, step, width: zoom > 1 ? base.current : undefined };
 }
