@@ -2,6 +2,7 @@
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { isMonthStart, yearOf } from "../00-core/time";
 import { priceAt, SEARCH_AD_COST } from "../10-catalog/economy";
+import { isAvailable } from "../10-catalog/research";
 import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
@@ -145,8 +146,9 @@ export function monthlyMarketingCost(s: GameState): number {
   return upkeep + fee + siteHostingCost(s) + s.marketing.campaigns.reduce((n, c) => n + c.budget, 0);
 }
 
-function reviewEvent(r: Review): SimEvent {
-  return { app: "Marketing", key: "event.review", params: { customer: r.name, stars: r.stars } };
+// The review always counts; the notification waits for the skill that shows the Reviews section.
+export function announceReview(s: GameState, r: Review | null, events: SimEvent[]): void {
+  if (r && isAvailable("Marketing", s.unlocks)) events.push({ app: "Marketing", key: "event.review", params: { customer: r.name, stars: r.stars } });
 }
 
 // 10% of customers write after a closed ticket or a cancellation, 20% below happiness 40.
@@ -160,8 +162,7 @@ function rollReviews(s: GameState, events: SimEvent[]): void {
     const c = s.customers[i], r = hashRng(s.seed, hour, i, 77);
     if (c.sponsor) return;
     if (rand(r) >= (c.happiness < 40 ? 0.2 : 0.1)) return;
-    const review = addReview(s, id, starsFor(c.happiness, r), reason);
-    if (review) events.push(reviewEvent(review));
+    announceReview(s, addReview(s, id, starsFor(c.happiness, r), reason), events);
   };
   for (const c of s.customers) if (c.churnedAt !== null && c.churnedAt >= from && c.churnedAt < s.hour) hit(c.id, "cancellation", c.churnedAt);
   for (const t of s.tickets) if (t.status === "closed" && t.updatedAt >= from && t.updatedAt < s.hour) hit(t.customerId, "ticket", t.updatedAt);
@@ -204,8 +205,7 @@ function invite(s: GameState, events: SimEvent[]): void {
     if (c.churnedAt !== null || c.happiness < 60) return;
     const r = hashRng(s.seed, s.hour, i, 78);
     if (rand(r) >= rate) return;
-    const review = addReview(s, c.id, starsFor(c.happiness, r), "invite");
-    if (review) events.push(reviewEvent(review));
+    announceReview(s, addReview(s, c.id, starsFor(c.happiness, r), "invite"), events);
   });
 }
 

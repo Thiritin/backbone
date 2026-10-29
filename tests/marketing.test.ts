@@ -3,9 +3,9 @@ import { isMonthStart } from "../src/sim/00-core/time";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { newGame, type GameState } from "../src/sim/50-state";
 import {
-  addAwareness, addReview, awareness, discountFor, leadsThisMonth, monthlyMarketingCost, reviewMultiplier, reviewScore, trustBonus,
+  addAwareness, addReview, announceReview, awareness, discountFor, leadsThisMonth, monthlyMarketingCost, reviewMultiplier, reviewScore, trustBonus,
 } from "../src/sim/80-business/marketing";
-import { tick } from "../src/sim/88-tick/tick";
+import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../src/sim/90-actions/marketing";
 import { hire } from "../src/sim/90-actions/staff";
@@ -102,6 +102,18 @@ describe("awareness", () => {
 });
 
 describe("reviews", () => {
+  it("counts every review but notifies only once the Reviews section is unlocked", () => {
+    const s = newGame(6);
+    const id = addCustomer(s, "Jonas Weber", "private");
+    const events: SimEvent[] = [];
+    announceReview(s, addReview(s, id, 1), events);
+    expect(s.marketing.reviews).toHaveLength(1);
+    expect(events).toHaveLength(0);
+    s.unlocks = ["marketing"];
+    announceReview(s, addReview(s, id, 5), events);
+    expect(events).toMatchObject([{ app: "Marketing", key: "event.review", params: { stars: 5 } }]);
+  });
+
   it("scores from a prior of 3.5 stars worth 20 reviews", () => {
     const s = newGame(6);
     const id = addCustomer(s, "Jonas Weber", "private");

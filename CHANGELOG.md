@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-29
 
 - A VM or game server stuck on a switched-off server whose cluster's control plane is down can be recovered to a server of another cluster in the same location by remote hands, by you or by a friend.
+- New reviews only send you a notification once Marketing campaigns unlocks the Reviews section where you can read them.
+- The sheet that opens after a training starts with a Now available page that checks off everything the skill unlocks and what you can do with it.
 - The Used tab has listings from the first day: servers and network gear sold since before 2005 turn up on eBuy, WebHostingTalc and Telegrump right away, one to three years old.
 - Every server has a screen now: a Console tile on managed servers and the controller's page open it in its own window, a KVM opens it from its page, and clicking the blue console end on the back of a server in the rack plugs in a monitor on the spot.
 - The RAID level moves from the server page into the BIOS setup on that screen, entered with Del during the boot splash or at the firmware prompt, and a server left in the setup stays down until you leave it.
