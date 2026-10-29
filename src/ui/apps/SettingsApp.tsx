@@ -18,7 +18,11 @@ export function SettingsApp() {
   useFocus("Settings", (f) => {
     if (f.kind !== "notifications") return;
     setOpen(f.id || null);
-    section.current?.scrollIntoView({ block: "start" });
+    // The expanded rows exist after the next render.
+    requestAnimationFrame(() => {
+      const row = f.id ? section.current?.parentElement?.querySelector(`[data-app="${f.id}"]`) : null;
+      (row ? row.lastElementChild : section.current)?.scrollIntoView({ block: row ? "nearest" : "start" });
+    });
   });
   const commitName = () => {
     if (name.trim() === game.company.name) setName(game.company.name);
@@ -60,7 +64,7 @@ export function SettingsApp() {
         {APPS.filter((a) => a.name !== "Settings" && (!a.hidden || NOTIFY_TYPES[a.name])).map((a) => {
           const p = prefOf(notifyPrefs, a.name), types = (NOTIFY_TYPES[a.name] ?? []).filter((g) => g.id !== "other"), expanded = open === a.name && types.length > 0;
           return (
-            <div className="settings-block" role="rowgroup" key={a.name}>
+            <div className="settings-block" role="rowgroup" data-app={a.name} key={a.name}>
               <div className="settings-row settings-cols3" role="row">
                 <span className="settings-app" role="cell">
                   {types.length > 0
