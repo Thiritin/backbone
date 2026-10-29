@@ -7,6 +7,7 @@ import type { ActionResult } from "./hardware";
 import { logActivity } from "../47-staff/activity";
 import { sendAction } from "../40-support/replies";
 import { breachOf } from "../60-infra/breach";
+import { hasBackup } from "../60-infra/apps";
 import { declineSponsorship } from "./community";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -63,6 +64,7 @@ export function resolveTicket(s: GameState, id: string, action?: TicketAction): 
   if (action) {
     if (!actionsOf(f.t).includes(action)) return fail("error.unknownTicketAction");
     if ((action === "forward" || action === "takedown") && !f.t.customerId) return fail("error.notHosted");
+    if (action === "clean" && !hasBackup(s, f.t.serviceId)) return fail("error.noBackup");
     if (action === "pay" && s.cash < (breachOf(s, f.t.id)?.ransom ?? 0)) return fail("error.noCash");
     const order = action === "accept" ? orderError(s, f.t) : null;
     if (order) return fail(order);
