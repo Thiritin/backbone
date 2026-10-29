@@ -163,7 +163,7 @@ function PhpRow({ game, cluster, device }: { game: GameState; cluster: Cluster; 
 }
 
 export function NodeCard({ game, device }: { game: GameState; device: Device }) {
-  const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
+  const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp), setSetup = useStore((s) => s.setSetup);
   const cluster = clusterOf(game, device.id), node = cluster?.nodes.find((n) => n.deviceId === device.id);
   const loads = workloadsOn(game, device.id);
   const az = locationOf(game, device)?.az;
@@ -188,7 +188,7 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
         {device.rackId && (
           <div className="loc-row">
             {joinable.map((c) => <button key={c.id} className="btn" onClick={() => act((g) => addNode(g, c.id, device.id))}><Plus />{c.name}</button>)}
-            <button className="btn" onClick={() => openApp("Products", { kind: "cluster", id: "newHost" })}><Plus />Panel host</button>
+            <button className="btn" onClick={() => setSetup(device.id)}><Plus />Set up</button>
           </div>
         )}
       </div>

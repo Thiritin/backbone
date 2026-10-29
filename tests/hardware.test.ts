@@ -8,8 +8,9 @@ import {
   addLocation, buyDevice, buyRack, connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice,
 } from "../src/sim/90-actions/hardware";
 import { mountDevice, mountStack } from "./plugged";
+import { withServer } from "./fixtures";
 
-const atYear = (year: number, cash = 1_000_000): GameState => ({ ...newGame(1), hour: hourOf(new Date(Date.UTC(year, 0, 1))), cash });
+const atYear = (year: number, cash = 1_000_000): GameState => ({ ...withServer(newGame(1)), hour: hourOf(new Date(Date.UTC(year, 0, 1))), cash });
 const ok = (r: ReturnType<typeof buyDevice>) => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;
@@ -78,20 +79,16 @@ describe("catalog", () => {
 });
 
 describe("new game", () => {
-  it("starts with a server and switch in the basement rack, online through the home router", () => {
+  it("starts with an empty basement rack and the home router", () => {
     const s = newGame(3);
     expect(s.cash).toBe(START_CASH);
     expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }]);
     expect(s.racks).toEqual([{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false }]);
     expect(s.devices.map((d) => [d.model, d.brand, d.name, d.rackId, d.panel, d.price, d.boughtAt])).toEqual([
-      ["g1-compute", "Dwell", "fra1-srv-01", "rack2", null, 2500, 0],
-      ["sw-8", "Sysko", "fra1-sw-01", "rack2", null, 60, 0],
       ["home-router", "Sysko", "fra1-gw-01", null, "loc1", 0, 0],
     ]);
-    expect(linkStatus(s, "dev3")).toEqual({ online: true, gbit: 1, warning: null });
-    expect(freeSlots(s, "rack2", 1)).toEqual(Array.from({ length: 22 }, (_, i) => i + 2));
-    expect(portPeers(s, "dev3")).toEqual([{ device: "dev4", port: 0 }, null]);
-    expect(portPeers(s, "dev4")[7]).toEqual({ device: "dev5", port: 0 });
+    expect(freeSlots(s, "rack2", 1)).toEqual(Array.from({ length: 24 }, (_, i) => i + 1));
+    expect(portPeers(s, "dev5")).toEqual([null, null, null, null]);
   });
 });
 
@@ -157,7 +154,7 @@ describe("mounting", () => {
     expect(storageStacks(s, "loc1")[0].ids).toHaveLength(9);
   });
   it("unmounts to storage, unplugs every cable and keeps name, bond and groups", () => {
-    const s = newGame(1);
+    const s = withServer(newGame(1));
     ok(setBond(s, "dev3", "balance"));
     ok(setPortGroup(s, "dev4", [2, 3]));
     ok(unmountDevice(s, "dev4"));
@@ -220,7 +217,7 @@ describe("connect", () => {
     expect(err(connect(s, { device: srv, port: 1 }, { device: sw24, port: 24 }))).toBe("error.speedMismatch");
   });
   it("disconnects", () => {
-    const s = newGame(1);
+    const s = withServer(newGame(1));
     ok(disconnect(s, "cab6"));
     expect(linkStatus(s, "dev3").online).toBe(false);
     expect(err(disconnect(s, "cab6"))).toBe("error.unknownCable");
@@ -270,7 +267,7 @@ describe("linkStatus", () => {
 
 describe("setBond and setPortGroup", () => {
   it("rejects non-servers for bonds", () => {
-    const s = newGame(1);
+    const s = withServer(newGame(1));
     expect(err(setBond(s, "dev4", "balance"))).toBe("error.notServer");
     expect(err(setBond(s, "x", "balance"))).toBe("error.unknownDevice");
   });

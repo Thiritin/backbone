@@ -2,12 +2,11 @@ import { newGame, type GameState } from "../50-state";
 import { provisionService } from "./clusters";
 import { addCustomer } from "./customers";
 
-// economy.md, Starting state: the basement server with no control plane; the first-time setup installs a panel on it or a
-// hypervisor with a panel VM. Three friends wait for web hosting at €6 a month and move their sites over once the first
+// economy.md, Starting state: an empty basement rack. The player buys the first server and sets it up as a panel server or
+// a hypervisor with a panel VM. Three friends wait for web hosting at €6 a month and move their sites over once the first
 // panel host is ready.
 export const FRIENDS: [string, string][] = [["Jonas Weber", "jonasweber.de"], ["Mira Schulz", "mira-schulz.de"], ["Tobi Kraus", "tobikraus.de"]];
 export const FRIEND_HAPPINESS = 85;
-export const BASEMENT_SERVER = "dev3";
 
 export const startGame = (seed: number): GameState => newGame(seed);
 

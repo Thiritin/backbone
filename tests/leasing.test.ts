@@ -5,8 +5,9 @@ import { connectError, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { buyCart, buyOutLease, connect, mountStack, buyDevice, sellDevice, type CartLine } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { withServer } from "./fixtures";
 
-const rich = (cash = 100_000): GameState => ({ ...newGame(1), cash });
+const rich = (cash = 100_000): GameState => ({ ...withServer(newGame(1)), cash });
 const ok = (r: ReturnType<typeof buyCart>) => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;
@@ -23,7 +24,7 @@ describe("leaseOffers", () => {
   it("makes one offer per lessor with a factor between 1.06 and 1.40", () => {
     for (let seed = 1; seed <= 30; seed++) {
       for (const amount of [1000, 5060, 77_777]) {
-        const s = { ...newGame(seed), hour: seed * 997 };
+        const s = { ...withServer(newGame(seed)), hour: seed * 997 };
         const offers = leaseOffers(s, amount);
         expect(offers.map((o) => o.lessor)).toEqual(LESSORS.map((l) => l.id));
         for (const o of offers) {
@@ -36,14 +37,14 @@ describe("leaseOffers", () => {
     }
   });
   it("holds for the month, changes in the next one and leaves the game rng alone", () => {
-    const s = newGame(7);
+    const s = withServer(newGame(7));
     const january = leaseOffers(s, 5060);
     s.hour = 743;
     expect(leaseOffers(s, 5060)).toEqual(january);
-    expect(s.rng).toEqual(newGame(7).rng);
+    expect(s.rng).toEqual(withServer(newGame(7)).rng);
     s.hour = 744;
     expect(leaseOffers(s, 5060).map((o) => o.total)).not.toEqual(january.map((o) => o.total));
-    expect(leaseOffers({ ...newGame(8), hour: 0 }, 5060)).not.toEqual(january);
+    expect(leaseOffers({ ...withServer(newGame(8)), hour: 0 }, 5060)).not.toEqual(january);
   });
 });
 
@@ -116,7 +117,7 @@ describe("lease payments", () => {
     const s = rich();
     lease(s);
     expect(deserialize(serialize(s))).toEqual(s);
-    const old = JSON.parse(serialize(newGame(2)));
+    const old = JSON.parse(serialize(withServer(newGame(2))));
     delete old.leases;
     for (const d of old.devices) delete d.lease;
     const loaded = deserialize(JSON.stringify(old));

@@ -9,7 +9,7 @@ import { phpNeeded, phpRefusal, phpTickets } from "../src/sim/60-infra/php";
 import { failComponents, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { howToFactor } from "../src/sim/85-products/products";
 import { addNode, createCluster, provisionService, upgradePhp } from "../src/sim/90-actions/clusters";
-import { installed, panelServer } from "./fixtures";
+import { installed, panelServer, withServer } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice, buyRack, connect, setPower } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
@@ -59,7 +59,7 @@ function panels(s: GameState) {
 
 describe("technicians", () => {
   it("are hired into the basement and do at most one operation per office hour", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     expect(err(queueOperation(s, "off", "dev3"))).toBe("error.noTechnician");
     const id = technician(s);
     expect(s.staff[0].location).toBe("loc1");
@@ -82,13 +82,13 @@ describe("technicians", () => {
   });
 
   it("only take the kinds of operation they are trained on", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     technician(s, ["servers"]);
     expect(err(queueOperation(s, "off", "dev3"))).toBe("error.noTechnician");
   });
 
   it("drain a node with all its VMs as a single operation", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     const { second } = twoNodes(s);
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
     for (let i = 0; i < 3; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, plan: "vps-s" }));
@@ -104,7 +104,7 @@ describe("technicians", () => {
   });
 
   it("replace a failed part from storage by rule, with no remote hands bill", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     technician(s);
     toMonday(s);
     const fan = dev(s, "dev3").components.find((c) => c.kind === "fan")!;
@@ -122,7 +122,7 @@ describe("technicians", () => {
   });
 
   it("leave failed parts alone with the rule off", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     technician(s);
     ok(setTechRules(s, { failed: false }));
     toMonday(s);
@@ -134,7 +134,7 @@ describe("technicians", () => {
   });
 
   it("shut a server down for a part that needs it, swap it and start it again, one operation an hour", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     technician(s);
     ok(setTechRules(s, { failed: false }));
     toMonday(s);
@@ -153,7 +153,7 @@ describe("technicians", () => {
   });
 
   it("work at a datacenter instead of remote hands", () => {
-    const s = { ...newGame(1), cash: 1_000_000 };
+    const s = { ...withServer(newGame(1)), cash: 1_000_000 };
     const loc = ok(addLocation(s, "interaction-fra", "positions", 1));
     s.locations.find((l) => l.id === loc)!.readyAt = 0;
     const rack = ok(buyRack(s, loc, "rack-42", 1));
@@ -172,7 +172,7 @@ describe("technicians", () => {
   });
 
   it("cancel a queued operation", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     technician(s);
     const op = ok(queueOperation(s, "off", "dev3"));
     ok(cancelOperation(s, op));
@@ -193,7 +193,7 @@ describe("PHP versions", () => {
   });
 
   it("age on a cluster, raise how-to tickets and block some web hosting sales", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     const { a } = panels(s);
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
     ok(provisionService(s, cus, "webHosting", { label: "ada.de", plan: "web-s", clusterId: a }));
@@ -209,7 +209,7 @@ describe("PHP versions", () => {
   });
 
   it("upgrade one panel host per technician operation with a short slowdown", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     const { a, b, second } = panels(s);
     technician(s);
     s.hour = hourOf(new Date(Date.UTC(2010, 0, 4, 8)));
@@ -231,7 +231,7 @@ describe("PHP versions", () => {
 
 describe("old saves", () => {
   it("load without technicians, queues or PHP versions", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     panels(s);
     technician(s);
     s.hour = hourOf(new Date(Date.UTC(2012, 5, 1)));

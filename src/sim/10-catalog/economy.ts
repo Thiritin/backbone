@@ -182,4 +182,4 @@ export const LEVELS = [
 export const PACING_YEAR: Record<number, number> = { 2: 2005, 3: 2007, 4: 2010, 5: 2013, 6: 2018 };
 
 export const TAX_RATE = 0.3;
-export const START_CASH = 1000;
+export const START_CASH = 3500;

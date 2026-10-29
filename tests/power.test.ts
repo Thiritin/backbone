@@ -4,8 +4,9 @@ import { BOOT_HOURS, deviceHealth, linkStatus, powered, rackPower, working } fro
 import { failComponents, tick } from "../src/sim/88-tick/tick";
 import { buyDevice, connect, mountDevice, mountStack, setPlugged, unmountDevice } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { withServer } from "./fixtures";
 
-const rich = (): GameState => ({ ...newGame(7), cash: 1_000_000 });
+const rich = (): GameState => ({ ...withServer(newGame(7)), cash: 1_000_000 });
 const ok = (r: ReturnType<typeof setPlugged>) => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;

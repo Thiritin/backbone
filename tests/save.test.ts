@@ -7,6 +7,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice, moveRack } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { readyGame } from "./fixtures";
 
 describe("tick", () => {
   it("emits a month event on the first hour of each month", () => {
@@ -39,7 +40,7 @@ describe("save", () => {
     expect(repaired.cash).toBe(START_CASH);
     expect(repaired.rng.s).toBe(4);
     expect(repaired.version).toBe(2);
-    expect(linkStatus(repaired, "dev3").online).toBe(true);
+    expect(repaired.devices.map((d) => d.model)).toEqual(["home-router"]);
   });
   it("replaces the basement shelf of a version 1 save and keeps seed, rng, hour, cash and ledger", () => {
     const ledger = [{ hour: 10, category: "rent", key: "ledger.rent", params: { rack: "fra2-rack-01" }, amount: -2520 }];
@@ -60,7 +61,7 @@ describe("save", () => {
       ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...fresh.installed, ...WIDGETS.map(([id]) => id)],
       marketing: { ...fresh.marketing, lines: ["dedicated", "colocation"] },
     });
-    expect(linkStatus(s, "dev3").online).toBe(true);
+    expect(s.devices.map((d) => d.model)).toEqual(["home-router"]);
     tick(s);
   });
   it("fills customer, billing and support fields in a version 1 save and a version 2 save without them", () => {
@@ -86,6 +87,11 @@ describe("save", () => {
     const c = addCustomer(s, "Ada", "private");
     addService(s, c, "vps", "ada-vps", 0.1, "hour", 0, "loc1");
     expect(deserialize(serialize(s)).services[0].zone).toBe("loc1");
+  });
+  it("keeps the basement server of a save from before the empty start", () => {
+    const s = deserialize(serialize(readyGame(3)));
+    expect(linkStatus(s, "dev3").online).toBe(true);
+    expect(s.customers.filter((c) => c.habit === "friend")).toHaveLength(3);
   });
   it("rejects garbage", () => {
     expect(() => deserialize("{}")).toThrow();

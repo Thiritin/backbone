@@ -14,7 +14,7 @@ import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
 import { migrateWorkload } from "../src/sim/90-actions/vms";
 import { startGame } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { basement, installed, panelServer, panelVm, readyGame } from "./fixtures";
+import { basement, installed, panelServer, panelVm, readyGame, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
@@ -26,7 +26,7 @@ const fill = (s: GameState, cus: string) => { let n = 0; while (web(s, cus, n).o
 
 // The basement with a second G1 server cabled to the switch, both in the hypervisor cluster "Basement 1".
 function twoNodes(): { s: GameState; cluster: string; second: string } {
-  const s = { ...newGame(1), cash: 100_000 };
+  const s = { ...withServer(newGame(1)), cash: 100_000 };
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
@@ -37,7 +37,7 @@ function twoNodes(): { s: GameState; cluster: string; second: string } {
 
 describe("compute", () => {
   it("starts with the basement server running nothing, no customers and no product line on sale", () => {
-    const s = startGame(1);
+    const s = withServer(startGame(1));
     expect([s.clusters.length, s.customers.length]).toEqual([0, 0]);
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
     expect(err(web(s, cus, 0))).toBe("error.needsPanel");
@@ -46,7 +46,7 @@ describe("compute", () => {
   });
 
   it("runs one control plane per server: a panel server takes no hypervisor and a hypervisor node no panel", () => {
-    const s = startGame(1);
+    const s = withServer(startGame(1));
     const host = ok(installPanel(s, "dev3", "freepanel"));
     const cluster = ok(createCluster(s, "loc1", "Cloud 1"));
     expect(err(addNode(s, cluster, "dev3"))).toBe("error.serverInUse");
@@ -60,7 +60,7 @@ describe("compute", () => {
   });
 
   it("sets the basement up as a panel server: installs for the panel's hours, then the friends move in and only web hosting sells", () => {
-    const s = startGame(1);
+    const s = withServer(startGame(1));
     const host = ok(installPanel(s, "dev3", "cpanic"));
     run(s, softwareById("cpanic").installHours - 1);
     expect(s.customers).toHaveLength(0);
@@ -71,7 +71,7 @@ describe("compute", () => {
   });
 
   it("sets the basement up as a hypervisor with a panel VM: the panel follows the hypervisor, then the friends move in", () => {
-    const s = startGame(1);
+    const s = withServer(startGame(1));
     const cluster = ok(createCluster(s, "loc1", "Basement 1"));
     ok(addNode(s, cluster, "dev3"));
     ok(setSoftware(s, cluster, "proxmocks"));
@@ -86,7 +86,7 @@ describe("compute", () => {
   });
 
   it("limits web hosting to the panel VM's booking, grows it with a resize and refuses one below its web spaces", () => {
-    const s = startGame(1), cus = addCustomer(s, "Ada Lang", "hobbyDev");
+    const s = withServer(startGame(1)), cus = addCustomer(s, "Ada Lang", "hobbyDev");
     const host = panelVm(s, basement(s), "freepanel", { vcpu: 2, ramGb: 1.1, diskGb: 100 });
     // 1.1 GB less FreePanel's 0.1 GB holds four web spaces of 0.25 GB.
     expect(fill(s, cus)).toBe(4);
@@ -100,14 +100,14 @@ describe("compute", () => {
   });
 
   it("limits web hosting on a panel server to the server", () => {
-    const s = startGame(1), cus = addCustomer(s, "Ada Lang", "hobbyDev");
+    const s = withServer(startGame(1)), cus = addCustomer(s, "Ada Lang", "hobbyDev");
     panelServer(s, "dev3");
     // Automatic placement books up to the installed 8 GB less FreePanel's 0.1 GB: 31 web spaces of 0.25 GB.
     expect(fill(s, cus)).toBe(31);
   });
 
   it("takes web hosting down with its bare-metal panel server, while a panel VM moves with its VM", () => {
-    const bare = startGame(1), cus = addCustomer(bare, "Ada Lang", "hobbyDev");
+    const bare = withServer(startGame(1)), cus = addCustomer(bare, "Ada Lang", "hobbyDev");
     panelServer(bare, "dev3");
     const site = ok(web(bare, cus, 0));
     ok(setPower(bare, "dev3", false));
@@ -164,7 +164,7 @@ describe("compute", () => {
     ok(setHa(s, cluster, "failover", true));
     ok(provisionService(s, cus, "cloud", { label: "Cloud" }));
     expect(lineOffered(s, "cloud")).toBe(true);
-    const hyper = { ...newGame(2) };
+    const hyper = { ...withServer(newGame(2)) };
     const c2 = installed(hyper, ok(createCluster(hyper, "loc1", "Hyper 1")), "hypervee");
     hyper.unlocks = ["virtualization"];
     expect(err(setHa(hyper, c2, "live", true))).toBe("error.noLiveMigration");

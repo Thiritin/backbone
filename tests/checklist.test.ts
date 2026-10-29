@@ -22,16 +22,21 @@ describe("checklist", () => {
     expect(done(s)).toEqual([]);
   });
 
-  it("detects a loan, a second online server and datacenter space", () => {
+  it("detects a loan, the first and second online server and datacenter space", () => {
     const s = { ...newGame(1), cash: 100_000 };
     ok(takeLoan(s, 10_000, 1));
-    const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
-    ok(mountDevice(s, srv, "rack2", 2));
+    const [a, b] = [1, 2].map((slot) => {
+      const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
+      ok(mountDevice(s, srv, "rack2", slot));
+      return srv;
+    });
     expect(done(s)).toEqual(["loan"]);
-    ok(connect(s, { device: srv, port: 0 }, { device: "dev4", port: 1 }));
-    expect(done(s)).toEqual(["loan", "secondServer"]);
+    ok(connect(s, { device: a, port: 0 }, { device: "dev5", port: 0 }));
+    expect(done(s)).toEqual(["loan", "firstServer"]);
+    ok(connect(s, { device: b, port: 0 }, { device: "dev5", port: 1 }));
+    expect(done(s)).toEqual(["loan", "firstServer", "secondServer"]);
     ok(addLocation(s, "interaction-fra", "positions", 1));
-    expect(done(s)).toEqual(["loan", "secondServer", "datacenter"]);
+    expect(done(s)).toEqual(["loan", "firstServer", "secondServer", "datacenter"]);
   });
 
   it("detects a datacenter cluster that sells", () => {

@@ -118,6 +118,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
   const rng = createRng(seed);
   const cohorts: Cohort[][] = PROFILES.map(() => PRODUCTS.map(() => ({ n: 0, H: 70 })));
   cohorts[0][0] = { n: 3, H: 85 };
+  // The first server, bought from the starting savings in January.
   const servers: Server[] = [serverOf(0, "compute", 0, true)];
   const loans: Loan[] = [];
   const leases: Lease[] = [];
@@ -125,7 +126,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
   let line = HOME_LINES[0];
   const support: Worker[] = [];
   const books: Worker[] = [];
-  let cash = START_CASH, minCash = cash, level = 1, knowHow = 0, cities = 1, rackUnlocked = false, hireUnlocked = false;
+  let cash = START_CASH - servers[0].price, minCash = cash, level = 1, knowHow = 0, cities = 1, rackUnlocked = false, hireUnlocked = false;
   let backlogT = 0, backlogP = 0, waitHours = 4, downFrac = 0, lastMrr = 0, lastPerGb = 0, lastRunning = 0, yearProfit = 0, negMonths = 0, bankrupt = false;
   let reviewSum = 0, reviewN = 0;
   const rows: YearRow[] = [];

@@ -10,10 +10,10 @@ import {
 import { mountDevice } from "./plugged";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addNode, createCluster, provisionService } from "../src/sim/90-actions/clusters";
-import { installed } from "./fixtures";
+import { installed, withServer } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
-const rich = (): GameState => ({ ...newGame(1), cash: 1_000_000 });
+const rich = (): GameState => ({ ...withServer(newGame(1)), cash: 1_000_000 });
 const ok = (r: ReturnType<typeof setPower>) => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;
@@ -49,7 +49,7 @@ describe("components and failure rates", () => {
     expect(kinds("fw-1g")).toEqual(["psu", "fan", "fan", "board"]);
     expect(kinds("patch-24")).toEqual([]);
     expect(modelById("part-hdd")).toMatchObject({ kind: "part", price: 120, height: 0 });
-    expect(newGame(1).devices[0].components.every((c) => c.installedAt === 0 && c.failedAt === null)).toBe(true);
+    expect(withServer(newGame(1)).devices[0].components.every((c) => c.installedAt === 0 && c.failedAt === null)).toBe(true);
   });
   it("uses the rate before and after the life expectancy, the manufacturer factor and double while hot", () => {
     const s = rich();

@@ -7,6 +7,7 @@ import { linkStatus } from "../src/sim/60-infra/status";
 import { addLocation, buyDevice, buyRack, connect, disconnect } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { withServer } from "./fixtures";
 
 const ok = (r: ReturnType<typeof buyDevice>) => {
   if (!r.ok) throw new Error(r.error);
@@ -90,7 +91,7 @@ describe("manufacturers", () => {
     expect(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid"].map((b) => priceOf(g1, b))).toEqual([2500, 2700, 2250, 2375]);
   });
   it("charges the manufacturer's price and rejects a brand that does not make the class", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     const id = ok(buyDevice(s, "sw-24", "Junipurr", 1, "loc1"));
     expect(s.devices.find((d) => d.id === id)).toMatchObject({ brand: "Junipurr", price: 990 });
     expect(s.cash).toBe(100_000 - 990);
@@ -104,7 +105,7 @@ describe("manufacturers", () => {
 describe("firewall links", () => {
   // A 10G server behind an L2 switch whose 1G copper uplink runs through a 1G firewall to the handoff.
   function setup(): { s: GameState; srv: string; sw: string; fw: string; handoff: string } {
-    const s = { ...newGame(1), hour: hourOf(new Date(Date.UTC(2011, 0, 1))), cash: 1_000_000 };
+    const s = { ...withServer(newGame(1)), hour: hourOf(new Date(Date.UTC(2011, 0, 1))), cash: 1_000_000 };
     const loc = ok(addLocation(s, "interaction-fra", "positions", 1));
     s.locations.find((l) => l.id === loc)!.readyAt = s.hour;
     const rack = ok(buyRack(s, loc, "rack-47", 1));
@@ -131,7 +132,7 @@ describe("firewall links", () => {
 
 describe("old model ids", () => {
   it("maps one-socket and high-memory servers from older saves onto the new lines", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     ok(buyDevice(s, "g1-compute", "Dwell", 2, "loc1"));
     const raw = JSON.parse(serialize(s));
     raw.devices[3].model = "g1-compute-1s";

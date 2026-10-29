@@ -43,6 +43,9 @@ interface Store {
   // The Welcome to Pear sheet a new game opens with.
   welcome: boolean;
   closeWelcome: () => void;
+  // The server whose first-time setup sheet is open.
+  setup: string | null;
+  setSetup: (deviceId: string | null) => void;
   // The security advisory sheet a vulnerability stage opens; the stage pauses the game.
   advisory: boolean;
   setAdvisory: (open: boolean) => void;
@@ -82,7 +85,7 @@ interface Store {
 export interface CartLine { model: string; brand: string; qty: number }
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, explain: null, advisory: false });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, setup: null, explain: null, advisory: false });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -136,6 +139,8 @@ export const useStore = create<Store>((set, get) => ({
     set({ welcome: false });
     get().openApp("Getting started");
   },
+  setup: null,
+  setSetup: (setup) => set({ setup }),
   advisory: false,
   setAdvisory: (advisory) => set({ advisory }),
   explain: null,
