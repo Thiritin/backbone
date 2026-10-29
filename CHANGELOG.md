@@ -4,6 +4,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- A new company starts with a free Notmail address that takes order emails without a domain, and moving to mail under your own domain is an optional upgrade.
+- The Email app has a Settings button that opens the email settings.
+- Getting started now begins with your first server, and the domain and email steps come later.
 - On the desk, the Terminal shows your desktop notes and Getting started in ~/Desktop, and the new edit command opens any file in a simple editor that saves with Ctrl+S.
 - A power outage that takes servers dark now cuts them off uncleanly, and they boot again once the power is back.
 - Datacenter power feeds can fail on their own: servers with two power supplies on a dual-fed rack ride through it with a notification, the rest go dark.
