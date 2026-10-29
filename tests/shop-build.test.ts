@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { bareParts, componentParts, fits, MODELS, modelById, partOffers, priceOf, shopModels, type PartSpec } from "../src/sim/10-catalog/hardware";
+import { bareParts, componentParts, fits, MODELS, modelById, partOffers, priceOf, shopModels } from "../src/sim/10-catalog/hardware";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { installedCores, installedRamGb, raidUsable } from "../src/sim/60-infra/status";
 import { BARE_FLOOR, buyCart, buyDevice, replaceComponent, unitPrice, type CartLine } from "../src/sim/90-actions/hardware";

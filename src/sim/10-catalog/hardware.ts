@@ -88,6 +88,17 @@ export const bareParts = (m: DeviceModel): PartSpec[] => {
 export const partPrice = (p: PartSpec): number => COMPONENTS[p.kind].price;
 export const partsPrice = (parts: PartSpec[]): number => parts.reduce((n, p) => n + partPrice(p), 0);
 
+// How many slots a model has for a kind of part (all drive kinds share the bays).
+export function slotsOf(m: DeviceModel, kind: ComponentKind): number {
+  const v = m.server;
+  if (kind === "cpu") return v?.sockets ?? 0;
+  if (kind === "ram") return v?.dimmSlots ?? 0;
+  if (isDriveKind(kind)) return v ? bayCount(v) : 0;
+  if (kind === "psu") return v?.psuBays ?? m.psus;
+  if (kind === "fan") return m.kind === "server" ? FAN_SLOTS : m.kind === "switch" || m.kind === "firewall" ? 2 : 0;
+  return m.kind === "server" || m.kind === "switch" || m.kind === "firewall" ? 1 : 0;
+}
+
 // Whether a chassis can carry these parts together; returns an error key, or null when they fit.
 export function fits(m: DeviceModel, parts: PartSpec[]): string | null {
   const v = m.server, count = (k: ComponentKind) => parts.filter((p) => p.kind === k).length;

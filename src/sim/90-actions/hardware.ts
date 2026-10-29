@@ -1,5 +1,5 @@
 import { yearOf } from "../00-core/time";
-import { bareParts, bayCount, brandsFor, COMPONENT_KINDS, COMPONENTS, componentParts, dualPsuModel, fits as chassisFits, isDriveKind, modelById, partOffers, partsPrice, priceOf, samePart, shopModels, SWITCH_BRAND, FAN_SLOTS, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { bareParts, brandsFor, COMPONENT_KINDS, COMPONENTS, componentParts, dualPsuModel, fits as chassisFits, isDriveKind, modelById, partOffers, partsPrice, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
@@ -527,15 +527,6 @@ export function addSecondPsu(s: GameState, deviceId: string): ActionResult {
 
 export const INSTALL_HOURS = 0.5;
 
-// The number of slots a model has for a kind of part; installPart counts them from 0.
-function slotCount(m: DeviceModel, kind: ComponentKind): number {
-  const v = m.server;
-  if (kind === "cpu") return v?.sockets ?? 0;
-  if (kind === "ram") return v?.dimmSlots ?? 0;
-  if (isDriveKind(kind)) return v ? bayCount(v) : 0;
-  if (kind === "psu") return v?.psuBays ?? m.psus;
-  return kind === "fan" ? (v ? FAN_SLOTS : 2) : 1;
-}
 const sameSlots = (a: ComponentKind, b: ComponentKind) => a === b || (isDriveKind(a) && isDriveKind(b));
 
 interface Work { bill: number; billHours: number; wait: number; hands: boolean }
@@ -577,7 +568,7 @@ export function installPart(s: GameState, deviceId: string, partId: string, slot
   if (!part || modelById(part.model).kind !== "part" || !zone || part.store !== zone) return fail("error.noPart");
   const model = modelById(d.model), kind = part.model.slice(5) as ComponentKind, spec: PartSpec = { ...part.part, kind };
   const used = d.components.filter((c) => sameSlots(c.kind, kind)).length;
-  if (slot !== undefined && (!Number.isInteger(slot) || slot < 0 || slot >= slotCount(model, kind))) return fail("error.unknownSlot");
+  if (slot !== undefined && (!Number.isInteger(slot) || slot < 0 || slot >= slotsOf(model, kind))) return fail("error.unknownSlot");
   if (slot !== undefined && slot < used) return fail("error.partSlotTaken");
   const error = chassisFits(model, [...d.components.map(asSpec), spec]);
   if (error) return fail(error);

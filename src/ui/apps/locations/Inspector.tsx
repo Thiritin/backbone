@@ -1,20 +1,20 @@
-import { Cable, Cpu, Database, EthernetPort, FileSignature, Plug, PlugZap, Plus, Power, Unplug } from "lucide-react";
+import { Cable, Database, EthernetPort, FileSignature, Plug, PlugZap, Plus, Power, Unplug } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { bayCount, COMPONENTS, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { bayCount, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Cable as CableT, Device, End, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
-import { deviceHealth, drivesOf, hotSwappable, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
+import { deviceHealth, drivesOf, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
 import { rebuildHours } from "../../../sim/88-tick/tick";
-import { addSecondPsu, buyOutLease, connect, disconnect, LABEL_MAX, replaceComponent, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
+import { addSecondPsu, buyOutLease, connect, disconnect, LABEL_MAX, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
 import { cableColor, DeviceSvg, SWATCHES } from "../../art/fronts";
 import { BrandLogo, Logo } from "../../art/logos";
 import { Confirm } from "../../desktop/Confirm";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
-import { ageYears, CABLE_NAME, cores, deviceLamps, devName, disk, height, isWorn, PART_NAME, partSize, partSlot, portLamps, portName, portsText, ram, speed } from "../hw";
+import { CABLE_NAME, cores, deviceLamps, devName, disk, height, portLamps, portName, portsText, ram, speed } from "../hw";
 import { More } from "../More";
 import { softwareName } from "../products/parts";
 import { dcOf, Facts, UsageBars } from "./ui";
@@ -23,7 +23,7 @@ import { NodeCard } from "./Clusters";
 import { softwareOn } from "../../../sim/90-actions/software";
 import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
-import { TechButton } from "./TechButton";
+import { PartsCard } from "./Slots";
 import { AddressRows } from "../network/Addresses";
 
 // Sells a device or a rack after showing its resale value against the price paid.
@@ -469,58 +469,6 @@ function PowerSupplies({ game, device, onPlug }: { game: GameState; device: Devi
               <td className="r"><button className="btn" onClick={() => act((g) => addSecondPsu(g, device.id))}><Plus />Add <span className="num">{euro(extra)}</span></button></td>
             </tr>
           )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// Each component with its age against its life, its state and a Replace that names what blocks it.
-function PartsCard({ game, device }: { game: GameState; device: Device }) {
-  const act = useStore((s) => s.act);
-  const loc = locationOf(game, device);
-  const n: Record<string, number> = {}, total: Record<string, number> = {};
-  for (const c of device.components) total[c.kind] = (total[c.kind] ?? 0) + 1;
-  const held = !device.rackId ? "Not mounted" : device.maintenance ? "Swap under way" : null;
-  const spare = (kind: string) => game.devices.some((d) => d.model === `part-${kind}` && d.store === loc?.id);
-  return (
-    <div className="loc-card">
-      <div className="loc-card-h"><h3><Cpu />Components</h3>{held && <span className="loc-muted">{held}</span>}</div>
-      <table className="table loc-parts">
-        <thead><tr><th>Part</th><th>Size</th><th>Slot</th><th>Age</th><th>Status</th><th /></tr></thead>
-        <tbody>
-          {device.components.map((c) => {
-            n[c.kind] = (n[c.kind] ?? 0) + 1;
-            const life = COMPONENTS[c.kind].life, age = ageYears(game, c), worn = isWorn(game, c);
-            const swap = device.maintenance?.componentId === c.id, rebuild = device.rebuild?.componentId === c.id;
-            const status = swap ? <span className="pill">Swap at <span className="num">{clock(device.maintenance!.doneAt)}</span></span>
-              : c.failedAt !== null ? <span className="pill bad">Failed</span>
-              : rebuild ? <span className="pill warn">Rebuilding</span>
-              : worn ? <span className="pill warn">Worn</span> : <span className="pill ok">OK</span>;
-            const block = swap || held ? null : !spare(c.kind) ? (c.failedAt !== null || worn ? `No part in ${loc?.az ?? ""}` : "")
-              : device.on && !hotSwappable(device, c) ? "Power off first" : null;
-            return (
-              <tr key={c.id}>
-                <td>{PART_NAME[c.kind]}{total[c.kind] > 1 && <span className="num"> {n[c.kind]}</span>}</td>
-                <td className="num">{partSize(c)}</td>
-                <td className="num">{partSlot(c.kind, n[c.kind])}</td>
-                <td>
-                  <span className={`loc-meter${worn ? " worn" : ""}`}>
-                    <span className="loc-meter-bar"><span style={{ width: `${Math.min(1, age / life) * 100}%` }} /></span>
-                    <span className="num">{age.toFixed(1)} / {life} y</span>
-                  </span>
-                </td>
-                <td>{status}</td>
-                <td className="r">
-                  <span className="loc-acts">
-                    {swap || held ? null : block !== null ? <span className="loc-muted">{block}</span>
-                      : <button className="btn" onClick={() => act((g) => replaceComponent(g, device.id, c.id))}>Replace</button>}
-                    {!swap && !held && spare(c.kind) && <TechButton game={game} deviceId={device.id} kind="replace" componentId={c.id} />}
-                  </span>
-                </td>
-              </tr>
-            );
-          })}
         </tbody>
       </table>
     </div>

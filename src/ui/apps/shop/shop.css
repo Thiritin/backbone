@@ -5,7 +5,7 @@
 .shop-side button.side-item.active { background: var(--accent); color: var(--accent-ink); }
 .shop-grid { flex: 1; min-width: 0; overflow: auto; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; align-content: start; }
 .shop-card { display: flex; flex-direction: column; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); min-width: 0; }
-.shop-pic { height: 128px; display: grid; place-items: center; background: var(--win-side); border-radius: 10px 10px 0 0; border-bottom: 0.5px solid var(--line); }
+.shop-pic { position: relative; height: 128px; display: grid; place-items: center; background: var(--win-side); border-radius: 10px 10px 0 0; border-bottom: 0.5px solid var(--line); }
 .shop-name { display: grid; gap: 1px; padding: 10px 14px 0; }
 .shop-name strong { font-weight: 650; font-size: 12.5px; }
 .shop-name span { color: var(--text-2); font-size: 12px; }
@@ -28,7 +28,8 @@
 .shop-cart { width: 380px; flex: none; display: flex; flex-direction: column; border-left: 0.5px solid var(--line); background: var(--win); overflow: auto; }
 .shop-cart-h { display: flex; align-items: center; padding: 12px 16px 8px; }
 .shop-cart-h h3 { font-size: 12.5px; font-weight: 650; }
-.shop-line { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 16px; border-top: 0.5px solid var(--line); }
+.shop-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 8px 8px 16px; border-top: 0.5px solid var(--line); }
+.shop-line-parts { flex: 1 0 100%; padding-left: 64px; font-size: 11.5px; color: var(--text-2); }
 .shop-line-name { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .shop-line-name strong { font-weight: 600; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shop-line-name span { font-size: 11.5px; color: var(--text-2); }
@@ -47,6 +48,11 @@
 .shop-dest { display: grid; gap: 6px; padding: 10px 14px 12px; font-size: 12px; color: var(--text-2); }
 .shop-dest .pick { color: var(--text); }
 
+.shop-pic .shop-customize { position: absolute; top: 8px; right: 8px; }
+.shop-buy strong { white-space: nowrap; }
+.shop-build { display: grid; gap: 6px; padding: 10px 14px 12px; border-top: 0.5px solid var(--line); }
+.shop-build .seg { justify-self: start; margin-bottom: 4px; }
+.shop-extra { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; font-size: 12px; }
 .shop-maker { display: inline-flex; align-items: center; gap: 6px; }
 .shop-maker .pill { margin-left: 2px; }
 .ps { flex: 1; min-width: 0; overflow: auto; padding: 20px 24px 28px; display: flex; flex-direction: column; gap: 22px; }

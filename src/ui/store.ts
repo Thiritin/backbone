@@ -8,7 +8,7 @@ import { isAlert } from "../sim/alerts";
 import { deserialize, serialize } from "../sim/91-save/save";
 import type { Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
-import type { ActionResult } from "../sim/90-actions/hardware";
+import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
 import { readSession, writeSession } from "./session";
 
 export const SAVE_KEY = "backbone.save";
@@ -82,14 +82,17 @@ interface Store {
   deleteProgress: () => void;
   cart: CartLine[];
   addToCart: (line: CartLine) => void;
-  setCartQty: (model: string, brand: string, qty: number) => void;
+  setCartQty: (line: CartLine, qty: number) => void;
   clearCart: () => void;
   // The location open in Locations; the Shop delivers there by default.
   openLoc: string | null;
   setOpenLoc: (id: string | null) => void;
 }
 
-export interface CartLine { model: string; brand: string; qty: number }
+export type { CartLine };
+// Two lines are the same item when model, brand, build and part match.
+export const sameLine = (a: CartLine, b: CartLine): boolean =>
+  a.model === b.model && a.brand === b.brand && !!a.bare === !!b.bare && JSON.stringify([a.extras ?? [], a.part ?? null]) === JSON.stringify([b.extras ?? [], b.part ?? null]);
 
 let bannerId = 0, focusId = 0;
 const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, setup: null, explain: null, alert: null });
@@ -179,10 +182,10 @@ export const useStore = create<Store>((set, get) => ({
 
   // The cart lives only in memory; a line at qty 0 leaves the cart.
   addToCart: (l) => {
-    const cart = get().cart, at = cart.find((c) => c.model === l.model && c.brand === l.brand);
+    const cart = get().cart, at = cart.find((c) => sameLine(c, l));
     set({ cart: at ? cart.map((c) => (c === at ? { ...c, qty: c.qty + l.qty } : c)) : [...cart, l] });
   },
-  setCartQty: (model, brand, qty) => set({ cart: get().cart.flatMap((c) => (c.model === model && c.brand === brand ? (qty > 0 ? [{ ...c, qty }] : []) : [c])) }),
+  setCartQty: (line, qty) => set({ cart: get().cart.flatMap((c) => (sameLine(c, line) ? (qty > 0 ? [{ ...c, qty }] : []) : [c])) }),
   clearCart: () => set({ cart: [] }),
   openLoc: null,
   setOpenLoc: (openLoc) => set({ openLoc }),
