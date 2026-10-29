@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The Shop filters servers by form factor, cores, RAM and disk type across all manufacturers.
 - The game offers a reload when a newer version is online and lists what changed.
 - Important notifications pause the game and open a sheet with Open and Continue.
 - Notifications have types per app that can be switched off, and a News app reports new hardware, software and market changes.
