@@ -73,6 +73,7 @@ export function losePower(s: GameState, d: Device): void {
 export function pullPlug(s: GameState, d: Device): void {
   losePower(s, d);
   d.on = false;
+  d.setup = false;
 }
 
 export function bootUp(s: GameState, d: Device): void {
@@ -108,6 +109,7 @@ export function atFront(s: GameState, d: Device, op: FrontOp): void {
 export function hardReboot(s: GameState, d: Device, key: "ipmi.log.reset" | "ipmi.log.cycle"): void {
   const outcome = uncleanStop(s, d);
   d.hung = false;
+  d.setup = false;
   rollStuck(s, d);
   d.bootUntil = s.hour + BOOT_HOURS;
   pushLog(d, s.hour, key);

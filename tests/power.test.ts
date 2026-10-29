@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { BOOT_HOURS, deviceHealth, linkStatus, powered, rackPower, working } from "../src/sim/60-infra/status";
+import { deviceHealth, linkStatus, powered, rackPower, working } from "../src/sim/60-infra/status";
 import { connect, mountDevice, mountStack, setPlugged, unmountDevice } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -60,7 +60,7 @@ describe("power plugs", () => {
     expect(powered(s, id)).toBe(true);
     expect(deviceHealth(s, id).state).toBe("booting");
     expect(working(s, id)).toBe(false);
-    run(s, BOOT_HOURS);
+    run(s, 1);
     expect(working(s, id)).toBe(true);
     expect(linkStatus(s, id).online).toBe(true);
     ok(setPlugged(s, id, psus(s, id)[0].id, false));
@@ -73,7 +73,7 @@ describe("power plugs", () => {
     const [a, b] = psus(s, id);
     ok(setPlugged(s, id, a.id, true));
     ok(setPlugged(s, id, b.id, true));
-    run(s, BOOT_HOURS);
+    run(s, 1);
     s.devices = s.devices.map((d) => (d.id === id ? failComponents(s, d, [a.id]) : d));
     expect(working(s, id)).toBe(true);
     // A second plug into an already running device does not reboot it.
@@ -81,13 +81,13 @@ describe("power plugs", () => {
     expect(working(s, id)).toBe(false);
     ok(setPlugged(s, id, b.id, true));
     expect(deviceHealth(s, id).state).toBe("booting");
-    run(s, BOOT_HOURS);
+    run(s, 1);
     const one = rich();
     const solo = fresh(one, "g1-compute-2psu");
     const [x, y] = psus(one, solo);
     ok(setPlugged(one, solo, x.id, true));
     ok(setPlugged(one, solo, y.id, true));
-    run(one, BOOT_HOURS);
+    run(one, 1);
     ok(setPlugged(one, solo, y.id, false));
     expect(deviceHealth(one, solo).state).toBe("ok");
     one.devices = one.devices.map((d) => (d.id === solo ? failComponents(one, d, [x.id]) : d));

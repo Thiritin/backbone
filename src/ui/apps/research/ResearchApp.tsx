@@ -77,7 +77,7 @@ function Panel({ k, g }: { k: Skill; g: GameState }) {
       <dl className="rs-facts">{facts.map(([dt, dd]) => <div key={dt}><dt>{dt}</dt><dd>{dd}</dd></div>)}</dl>
       {k.opens.length > 0 && (
         <section>
-          <h3>Pear Store</h3>
+          <h3>Unlocks</h3>
           <ul className="rs-opens">{k.opens.map((id) => <li key={id}><Tile item={storeItem(id)!} size={24} />{storeItem(id)!.name}</li>)}</ul>
         </section>
       )}
@@ -90,7 +90,9 @@ function Panel({ k, g }: { k: Skill; g: GameState }) {
       <div className="rs-actions">
         {state === "learned" ? <>
           <button className="btn" onClick={() => setExplain(k.id)}><BookOpen />How it works</button>
-          {k.opens.length > 0 && <button className="btn" onClick={() => openApp("Shop", { kind: "software", id: "" })}><Store />Pear Store</button>}
+          {k.opens.length > 0 && (g.installed.includes(k.opens[0])
+            ? <button className="btn" onClick={() => openApp(k.opens[0])}>Open {storeItem(k.opens[0])!.name}</button>
+            : <button className="btn" onClick={() => openApp("Shop", { kind: "software", id: "" })}><Store />Pear Store</button>)}
         </> : state !== "training" && <button className="btn primary" disabled={!canStart} onClick={() => act(research, k.id)}>Start training</button>}
       </div>
     </aside>

@@ -2,10 +2,12 @@ import type { GameState, LogEntry } from "../50-state";
 import type { ActionResult } from "./hardware";
 import * as addresses from "./addresses";
 import * as billing from "./billing";
+import * as burnin from "./burnin";
 import * as changes from "./changes";
 import * as checklist from "./checklist";
 import * as clusters from "./clusters";
 import * as community from "./community";
+import * as console_ from "./console";
 import * as company from "./company";
 import * as cpus from "./cpus";
 import * as customers from "./customers";
@@ -42,7 +44,7 @@ export type Call = [Action, ...unknown[]];
 export type { LogEntry };
 export const LOG_CAP = 50_000;
 
-const modules = [addresses, billing, changes, checklist, clusters, community, company, cpus, customers, docs, files, finance, hardware, mail, maintenance, market, marketing, moves, network, orders, rates, registrar, remote, routers, sales, security, software, staff, start, store, support, travel, used, vms, website];
+const modules = [addresses, billing, burnin, changes, checklist, clusters, community, company, console_, cpus, customers, docs, files, finance, hardware, mail, maintenance, market, marketing, moves, network, orders, rates, registrar, remote, routers, sales, security, software, staff, start, store, support, travel, used, vms, website];
 // Every exported function of 90-actions by its name, so a replay can call the actions a run logged.
 export const ACTIONS: Record<string, Action> = Object.fromEntries(modules.flatMap((m) => Object.entries(m).filter(([, f]) => typeof f === "function"))) as Record<string, Action>;
 const NAMES = new Map<unknown, string>(Object.entries(ACTIONS).map(([k, f]) => [f, k]));
@@ -57,6 +59,6 @@ export function runAction(s: GameState, name: string, args: unknown[]): ActionRe
   while (n > 0 && args[n - 1] === undefined) n--;
   const json = JSON.stringify(args.slice(0, n));
   const r = fn(s, ...(JSON.parse(json) as unknown[]));
-  if (r.ok && s.log.length < LOG_CAP) s.log.push({ hour: s.hour, name, args: JSON.parse(json) as unknown[] });
+  if (r.ok && s.log.length < LOG_CAP) s.log.push({ hour: s.hour, minute: s.minute, name, args: JSON.parse(json) as unknown[] });
   return r;
 }

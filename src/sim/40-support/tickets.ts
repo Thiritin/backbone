@@ -10,7 +10,7 @@ export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellat
 // open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
 export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
 export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund" | "accept" | "revert"
-  | "offerOnce" | "offerManaged" | "free" | "clean" | "pay" | "refuse";
+  | "offerOnce" | "offerManaged" | "free" | "clean" | "noBackup" | "pay" | "refuse";
 // by names the employee who answered; the player otherwise. key and params give the email as sent (replies.ts); older replies show the template.
 export interface Reply { hour: number; template: string; right: boolean; by?: string; key?: string; params?: Record<string, string | number> }
 // doneAt is in game minutes; the reply or action takes effect on the first tick at or after it.
@@ -25,7 +25,7 @@ export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
   outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | "forwarded" | "takenDown" | "rejected" | "ignored" | "withdrawn" | "complied" | "objected"
-    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "reverted" | "cleaned" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | "moved" | "moveDeclined" | "sponsored" | "sponsorDeclined" | null;
+    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "reverted" | "cleaned" | "noBackup" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | "moved" | "moveDeclined" | "sponsored" | "sponsorDeclined" | null;
   work: Work | null; notice?: Notice; move?: Move;
   // The maintenance window a maintenance email is about.
   maint?: { windowId: string; from: number; hours: number };
@@ -63,12 +63,21 @@ export const ACTIONS: Record<TicketKind, TicketAction[]> = {
   notice: ["forward", "takedown", "reject"], legal: ["comply", "object"], refund: ["refund", "credit", "reject"], order: ["accept", "reject"], extortion: ["pay", "refuse"], migration: [], maintenance: [], sponsor: [],
 };
 // Actions only tickets of one topic offer: the customer asks for help with an outdated site, or a defaced site waits for clean-up.
-export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": ["clean"] };
+export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": ["clean", "noBackup"] };
 export const ACTION_MINUTES: Partial<Record<TicketAction, number>> = { clean: CLEAN_MINUTES };
 export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])];
 // Tickets with their own actions have no reply templates.
 export const templatesOf = (t: Pick<Ticket, "kind" | "topic">): string[] => (`${t.kind}.${t.topic}` in TOPIC_ACTIONS ? [] : TEMPLATES[t.kind]);
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
+export const SHORT_REPLIES = 3;
+// A desk without the templates feature lists only a few replies; the one that settles the ticket stays in.
+export function shownTemplates(s: GameState, t: Ticket, all: boolean): string[] {
+  const list = templatesOf(t);
+  if (all || list.length <= SHORT_REPLIES) return list;
+  const keep = list.slice(0, SHORT_REPLIES), right = rightTemplate(s, t);
+  if (!keep.includes(right) && list.includes(right)) keep[keep.length - 1] = right;
+  return list.filter((id) => keep.includes(id));
+}
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
 const RIGHT: Record<string, string> = {
   suspended: "resend", upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer", more: "offer",

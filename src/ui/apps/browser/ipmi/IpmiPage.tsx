@@ -1,8 +1,12 @@
-import { LogOut, Server } from "lucide-react";
+import { LogOut, Monitor, Server } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { BMC_NAME } from "../../../../sim/10-catalog/hardware";
 import { t } from "../../../../i18n/en";
-import type { Device, GameState } from "../../../../sim/50-state";
+import type { Device, GameState, RebuildRate } from "../../../../sim/50-state";
+import { drivesOf, raidUsable } from "../../../../sim/60-infra/status";
+import { rebuildHours } from "../../../../sim/88-tick/tick";
+import { setRebuildRate } from "../../../../sim/90-actions/hardware";
+import { consoleName } from "../../console/ConsoleWindow";
 import { sensorsOf } from "../../../../sim/60-infra/sensors";
 import { booting } from "../../../../sim/60-infra/status";
 import { powerCycle, reset, setPower, shutdown } from "../../../../sim/90-actions/hardware";
@@ -23,8 +27,28 @@ export const BMC_LOOK: Record<string, { look: BmcLook; frame: "top" | "side"; co
 const FALLBACK = BMC_LOOK.SuperMacro;
 export const bmcTitle = (brand: string): string => (brand === "SuperMacro" ? "SuperMacro IPMI" : BMC_NAME[brand] ?? "IPMI");
 
-type Tab = "power" | "sensors" | "log";
-const TABS: [Tab, string][] = [["power", "Power"], ["sensors", "Sensors"], ["log", "Event log"]];
+type Tab = "power" | "storage" | "sensors" | "log";
+const TABS: [Tab, string][] = [["power", "Power"], ["storage", "Storage"], ["sensors", "Sensors"], ["log", "Event log"]];
+const RATES: [RebuildRate, string][] = [["low", "Low"], ["medium", "Medium"], ["high", "High"]];
+
+// The array as the BIOS set it up, with the rebuild rate the controller can change while the server runs.
+function StorageTab({ game, d }: { game: GameState; d: Device }) {
+  const act = useStore((s) => s.act);
+  const rb = d.rebuild, done = rb ? Math.max(0, Math.min(1, 1 - (rb.doneAt - game.hour) / rebuildHours(d))) : 0;
+  return (
+    <>
+      <dl className="bmc-facts">
+        <div><dt>RAID level</dt><dd>{d.raid === "none" ? "None" : `RAID ${d.raid}`}</dd></div>
+        <div><dt>Drives</dt><dd className="num">{drivesOf(d).length}</dd></div>
+        <div><dt>Usable</dt><dd className="num">{raidUsable(d)} GB</dd></div>
+        {rb && <div><dt>Rebuild</dt><dd className="num">{Math.floor(done * 100)}%</dd></div>}
+      </dl>
+      <div className="bmc-actions">
+        {RATES.map(([v, l]) => <button key={v} className={`cx-btn${d.rebuildRate === v ? " primary" : ""}`} aria-pressed={d.rebuildRate === v} onClick={() => act(setRebuildRate, d.id, v)}>Rebuild rate {l}</button>)}
+      </div>
+    </>
+  );
+}
 const SIGN_IN: Record<BmcLook, string> = { idraq: "Log in", ilol: "Sign in", ipmi: "Login", xclarify: "Connect" };
 
 function Brand({ brand, size = 22 }: { brand: string; size?: number }) {
@@ -102,13 +126,17 @@ function Login({ brand, host, onLogin }: { brand: string; host: string; onLogin:
 export function IpmiPage({ game, deviceId, host }: { game: GameState; deviceId: string; host: string }) {
   const [logins, setLogins] = useSessionState<string[]>("browser.logins", []);
   const [tab, setTab] = useState<Tab>("power");
+  const openConsole = useStore((s) => s.openConsole);
   const d = game.devices.find((x) => x.id === deviceId);
   if (!d) return null;
   const key = `ipmi:${d.id}`, look = BMC_LOOK[d.brand] ?? FALLBACK;
   if (!logins.includes(key)) return <Login brand={d.brand} host={host} onLogin={() => setLogins([...logins, key])} />;
-  const body: ReactNode = tab === "power" ? <PowerTab game={game} d={d} /> : tab === "sensors" ? <SensorsTab game={game} d={d} /> : <LogTab d={d} />;
+  const body: ReactNode = tab === "power" ? <PowerTab game={game} d={d} /> : tab === "storage" ? <StorageTab game={game} d={d} /> : tab === "sensors" ? <SensorsTab game={game} d={d} /> : <LogTab d={d} />;
   const tabs = TABS.map(([id, label]) => <button key={id} className="cx-tab" aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>);
-  const logout = <button className="cx-btn ghost" onClick={() => setLogins(logins.filter((x) => x !== key))}><LogOut aria-hidden />Log out</button>;
+  const logout = <>
+    <button className="cx-btn ghost" onClick={() => openConsole(d.id)}><Monitor aria-hidden />{consoleName(game, d).replace(/^\S+ /, "")}</button>
+    <button className="cx-btn ghost" onClick={() => setLogins(logins.filter((x) => x !== key))}><LogOut aria-hidden />Log out</button>
+  </>;
   return look.frame === "top" ? (
     <div className="cx" data-look={look.look} data-frame="top">
       <header className="cx-head"><Brand brand={d.brand} /><span className="cx-host">{host}</span>{logout}</header>

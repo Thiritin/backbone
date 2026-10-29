@@ -2,6 +2,7 @@
 // Numbers in economy.md, Company email.
 import { isMonthStart, yearOf } from "../00-core/time";
 import type { GameState, LedgerEntry } from "../50-state";
+import type { Profile } from "../30-customers/customers";
 import { anchorOf, controlPlaneUp, type Cluster } from "../60-infra/cluster";
 import { mailAddress } from "../60-infra/addresses";
 import { linkStatus } from "../60-infra/status";
@@ -52,8 +53,13 @@ export function mailImpaired(s: GameState): boolean {
   return !a || a.listed;
 }
 
-// What reaches the company by email: half while delivery is impaired.
-export const mailShare = (s: GameState): number => (mailImpaired(s) ? IMPAIRED_SHARE : 1);
+// The share of businesses that still write to a freemail sales address.
+export const FREEMAIL_BUSINESS_SHARE = 0.5;
+const PERSONS: Profile[] = ["private", "gamer", "hobbyDev"];
+
+// What reaches the company by email: half while delivery is impaired, and half of the businesses while it uses Notmail.
+export const mailShare = (s: GameState, profile: Profile = "private"): number =>
+  (mailImpaired(s) ? IMPAIRED_SHARE : 1) * (s.company.mail.kind === "free" && !PERSONS.includes(profile) ? FREEMAIL_BUSINESS_SHARE : 1);
 
 // Hours an invoice sent now waits longer for its payment.
 export const mailDelay = (s: GameState): number => (mailImpaired(s) ? MAIL_DELAY_HOURS : 0);

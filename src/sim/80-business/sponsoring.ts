@@ -18,8 +18,9 @@ const closeTicket = (s: GameState, id: string, outcome: Ticket["outcome"]) => {
   s.tickets = s.tickets.map((t) => (t.id === id && !isFinal(t) ? { ...t, status: "closed", outcome, updatedAt: s.hour, unread: false, work: null } : t));
 };
 
-// A request about every 4 to 8 weeks, drawn from the events open at the company's level.
+// After Marketing basics, a request about every 4 to 8 weeks, drawn from the events open at the company's level.
 function request(s: GameState, events: SimEvent[]): void {
+  if (!s.unlocks.includes("marketingBasics")) return;
   const mine = s.sponsorships.filter((x) => !x.board);
   const last = mine.reduce((m, x) => Math.max(m, x.offeredAt), 0), r = hashRng(s.seed, mine.length, 21);
   const [lo, hi] = REQUEST_DAYS;

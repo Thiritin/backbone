@@ -34,8 +34,9 @@ export interface AppDef {
   about: string;
   hidden?: boolean;
   body?: ComponentType;
-  // The red count on the dock tile, shown once the Dock badges upgrade is bought.
+  // The red count on the dock tile: free apps always show it, the rest once Dock badges is bought.
   badge?: (s: GameState) => number;
+  free?: boolean;
 }
 
 // Dock order; a divider follows every 4th app.
@@ -52,7 +53,7 @@ export const APPS: AppDef[] = [
   { name: "Website", icon: AppWindow, tile: "oklch(0.6 0.13 230)", about: "Opens your company website in the Browser.", body: WebsiteApp },
   { name: "Browser", icon: Compass, tile: "oklch(0.56 0.15 250)", about: "Opens your company site, your customers' sites and the pages of your suppliers.", body: BrowserApp },
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: "Lists your customers with their contracts and happiness.", body: CustomersApp },
-  { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets, orders and sales requests so you can answer, accept, quote or decline them.", body: SupportApp,
+  { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets, orders and sales requests so you can answer, accept, quote or decline them.", body: SupportApp, free: true,
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length
       + s.sales.requests.filter((r) => r.kind !== "order" && (r.status === "open" || r.status === "countered") && !missingFor(s, r).length).length },
   { name: "Billing", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: "Sends invoices, reminders and dunning notices.", body: BillingApp,
@@ -72,6 +73,8 @@ export const APPS: AppDef[] = [
 ];
 
 export const appByName = (name: string): AppDef => APPS.find((a) => a.name === name) ?? APPS[0];
+
+export const dockBadge = (s: GameState, a: AppDef): number => ((a.free || s.installed.includes("dockBadges")) && a.badge?.(s)) || 0;
 
 // The app as the player sees it: Support is Email, or the installed desk, with its own name, mark and tile.
 export const appFor = (s: GameState, name: string): AppDef => (name === "Support" ? { ...appByName(name), ...supportApp(s) } : appByName(name));

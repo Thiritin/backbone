@@ -2,7 +2,7 @@ import { START_CASH } from "../src/sim/10-catalog/economy";
 import { hourOf } from "../src/sim/00-core/time";
 import { describe, expect, it, vi } from "vitest";
 import type { Profile } from "../src/sim/30-customers/customers";
-import { createTicket, monthlyValue, type Ticket, type TicketKind } from "../src/sim/40-support/tickets";
+import { createTicket, monthlyValue, rightTemplate, shownTemplates, SHORT_REPLIES, type Ticket, type TicketKind } from "../src/sim/40-support/tickets";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
@@ -281,5 +281,17 @@ describe("support saves", () => {
     replyTicket(s, s.tickets[0].id, "ftp");
     expect(s.tickets.length).toBeGreaterThan(10);
     expect(deserialize(serialize(s))).toEqual(s);
+  });
+});
+
+describe("short reply list", () => {
+  it("keeps the settling reply when the desk shows only a few", () => {
+    const { s, cus, svc } = one();
+    for (const [kind, topic] of [["howTo", "panel"], ["billing", "price"], ["howTo", "upload"]] as const) {
+      const t = ticketOf(s, kind, topic, cus, svc);
+      const shown = shownTemplates(s, t, false);
+      expect(shown).toHaveLength(SHORT_REPLIES);
+      expect(shown).toContain(rightTemplate(s, t));
+    }
   });
 });

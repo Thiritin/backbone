@@ -1,8 +1,13 @@
 # Research explainers
 
-The sheet the game shows when a training completes, and again from the skill's panel in Research under "How it works". Each `##` section is a skill, named exactly as in the research tree, and each `###` inside it is one page of the sheet. Pages use the same markup as intro.md: **bold** and plain paragraphs.
+The sheet the game shows when a training completes, and again from the skill's panel in Research under "How it works". Each `##` section is a skill, named exactly as in the research tree, and each `###` inside it is one page of the sheet. Pages use the same markup as intro.md: **bold** and plain paragraphs, plus `- ` lines, which show as a checklist.
 
 ## Monitoring
+
+### Now available
+
+- **Failure notifications** tell you the moment a part breaks or a server hangs.
+- **Nagiosaurus** is in the Pear Store and lists your installed software with known vulnerabilities.
 
 ### Your team can see now
 
@@ -18,6 +23,10 @@ Open the Pear Store from the Shop under Software and choose Get. Pear bills the 
 
 ## Employee management
 
+### Now available
+
+- **Staff** is in the Pear Store, where you hire people and give each one a task.
+
 ### You are allowed to hire
 
 Your company now knows how to hire people, pay them and give them something to do. Doing all of it alone was heroic, and it was also the reason the tickets piled up while you slept.
@@ -30,9 +39,15 @@ Salaries are paid every month whether the person is busy or not. A good hire pay
 
 ## Marketing basics
 
+### Now available
+
+- **Reviews** in Marketing shows what customers write about you, and new reviews now send you a notification.
+- **Community** in Marketing lets you sponsor events, and event organisers now write to you with sponsoring requests.
+- **Marketing campaigns** can now be trained in Research once you know how to manage employees.
+
 ### Who your customers are
 
-Your company now understands why a customer picks one host over another: price, reliability and whether anyone answers the phone. This knowledge has no app of its own.
+Your company now understands why a customer picks one host over another: price, reliability and whether anyone answers the phone. The **Marketing** app now shows two more sections: **Reviews** collects what customers write about you, and **Community** sponsors events.
 
 ### What it leads to
 
@@ -41,6 +56,10 @@ Marketing basics is the foundation for two further trainings. **Product manageme
 Both are now available in Research.
 
 ## Memory reservation
+
+### Now available
+
+- **Memory reservation** is a switch on each cluster in Locations that keeps servers from freezing.
 
 ### Memory is not elastic
 
@@ -56,6 +75,12 @@ You sell fewer plans per server, and none of them freeze it.
 
 ## Network operations
 
+### Now available
+
+- **Transit** lets you buy bandwidth from carriers in the Network app.
+- **Peering** connects you directly to other networks.
+- **DDoS protection** can be switched on for each location.
+
 ### Beyond the home line
 
 Your team now knows how real networks are run: buying transit from carriers, peering with other networks and keeping traffic flowing when someone decides to flood it.
@@ -67,6 +92,10 @@ The **Network** app already shows your lines and ports. With this training it ca
 A network with two upstreams survives one carrier having a bad day. A network with one upstream finds out how much its customers like you.
 
 ## Product management
+
+### Now available
+
+- **Products** is in the Pear Store, where you set up product lines, clusters and backups.
 
 ### From services to products
 
@@ -80,6 +109,11 @@ Web hosting runs on panel hosts and virtual machines run on hypervisor clusters.
 
 ## Provisioning automation
 
+### Now available
+
+- **Automatic** placement picks a host for you when you set up an order.
+- **Place orders automatically** in Settings runs accepted orders from account to setup by itself.
+
 ### Setup without picking a host
 
 Setting up an order now offers **Automatic** next to your hosts. The game picks the first host in the order's city that has the disk for it.
@@ -91,6 +125,12 @@ Settings has a new **Place orders automatically** switch. With it on, an order f
 Quotes are still yours to send. A step that cannot run, such as a setup with no room, waits in the inbox for you.
 
 ## High availability
+
+### Now available
+
+- **Live migration** moves running virtual machines between servers.
+- **Auto-balancing** moves virtual machines off a server that runs hot.
+- **Automatic failover** restarts virtual machines on another server when one fails.
 
 ### Machines that move
 
@@ -104,6 +144,10 @@ Auto-balancing needs live migration, and live migration needs a hypervisor that 
 
 ## GPU computing
 
+### Now available
+
+- **GPU servers** can be sold as a product line on a hypervisor cluster with free cards.
+
 ### Cards for customers
 
 Your team now knows how to hand whole graphics cards to virtual machines. A GPU server is a virtual machine that books one or more cards of the server it runs on, together with its share of processors, memory and disk.
@@ -116,17 +160,26 @@ A card draws as much power as a small server, so check the rack before you add o
 
 ## Marketing campaigns
 
+### Now available
+
+- **Channels**, **Campaigns** and **Awareness** in Marketing bring customers in on purpose.
+- **Trade fairs** in Marketing lets you book stands.
+
 ### Being found on purpose
 
-Your staff now knows how to run campaigns and how to keep an eye on what customers write about you. Word of mouth still works, but it no longer has to work alone.
+Your staff now knows how to run campaigns, track awareness and book trade fairs. Word of mouth still works, but it no longer has to work alone.
 
 ### The Marketing app
 
-**Marketing** is now in the Pear Store. It runs campaigns with a budget and a target, collects the reviews customers leave and shows how you score on the review platforms.
+The **Marketing** app you bought your domain in now has four more sections. **Channels** sets up web design, an order form and search ads. **Campaigns** runs ads with a budget and a target. **Awareness** shows how well known you are, and **Trade fairs** books stands.
 
 A campaign brings in requests, and the reviews decide how many of them become customers. Answering tickets quickly is still the cheapest advertising you will ever buy.
 
 ## Market research
+
+### Now available
+
+- **Market** is in the Pear Store and shows demand, customer requirements and every lost sale.
 
 ### Knowing what sells
 
@@ -139,6 +192,11 @@ Your company can now read the market: which products are in demand, what custome
 The lost-sale reports are the most honest feedback you will get. Customers who leave rarely bother to explain, but the report does it for them.
 
 ## Automation
+
+### Now available
+
+- **ChadGPT Support** and **Clipsy Reminders** are in the Pear Store and work your queue as bots.
+- **Billing rules** now run by themselves instead of waiting for your staff.
 
 ### The bots are here
 

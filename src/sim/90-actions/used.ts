@@ -1,5 +1,6 @@
 // Used hardware: buy a fixed ask, bid on an auction, list a stored device for sale, take a listing down.
 import { hashRng, rand } from "../00-core/rng";
+import { REFUND_HOURS, REFUND_SHARE } from "../10-catalog/burnin";
 import { isOfficeRouter, modelById } from "../10-catalog/hardware";
 import {
   currentBid, onMarket, SELL_ASK, SELL_CAP, SELL_DAYS, SELL_FINAL, SELL_LISTED_DAYS, SELL_START, shipHours, type Listing,
@@ -31,10 +32,11 @@ export function deliverListing(s: GameState, l: Listing, locationId: string, pri
   let psus = 0;
   s.devices = s.devices.map((d) => {
     if (!ids.includes(d.id)) return d;
-    const components = d.components.map((c, i) => ({ ...c, installedAt: Math.round(s.hour - (l.wear[i] ?? l.age) * HOURS_PER_YEAR) }))
+    const components = d.components.map((c, i) => ({ ...c, installedAt: Math.round(s.hour - (l.wear[i] ?? l.age) * HOURS_PER_YEAR), wear: "hidden" as const }))
       .filter((c) => !(l.defect === "psu" && c.kind === "psu" && psus++ === 1));
     psus = 0;
-    return { ...d, price: cents(price / l.qty), boughtAt: s.hour, used: true as const, components };
+    const refund = l.channel === "chat" ? null : { until: (d.arriveAt ?? s.hour) + REFUND_HOURS, amount: cents((price / l.qty) * REFUND_SHARE) };
+    return { ...d, price: cents(price / l.qty), boughtAt: s.hour, used: true as const, components, refund };
   });
   return ids;
 }
