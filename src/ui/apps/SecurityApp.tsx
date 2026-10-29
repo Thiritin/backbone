@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { euro } from "../../sim/00-core/money";
 import { formatClock } from "../../sim/00-core/time";
 import { t } from "../../i18n/en";
@@ -8,7 +8,9 @@ import type { Breach } from "../../sim/60-infra/breach";
 import { anchorOf, type Cluster } from "../../sim/60-infra/cluster";
 import { advisoryNodes, ADVISORY_KEYS, MONITORING, patchOut, STAGE_HOURS, vulnById, vulnerable, webOn } from "../../sim/60-infra/security";
 import { phpDue, upgradePhp } from "../../sim/90-actions/clusters";
+import { urgentSoftware, type Severity } from "../../sim/60-infra/vulns";
 import { cleanUp } from "../../sim/90-actions/security";
+import { updateSoftware } from "../../sim/90-actions/software";
 import { menuOn, type MenuEntry } from "../desktop/ContextMenu";
 import { useFocus, useStore } from "../store";
 import { devName } from "./hw";
@@ -76,12 +78,44 @@ function Breaches({ game }: { game: GameState }) {
   );
 }
 
+// The software with an open high or critical vulnerability and its update, shown without Monitoring.
+const SEVERITY: Record<Severity, [tone: string, name: string]> = { low: ["accent", "Low"], high: ["warn", "High"], critical: ["bad", "Critical"] };
+
+const SoftwareCard = ({ game, cardRef }: { game: GameState; cardRef: React.RefObject<HTMLElement | null> }) => {
+  const act = useStore((s) => s.act), rows = urgentSoftware(game);
+  return (
+    <section ref={cardRef} className="fin-card" style={{ margin: 14 }}>
+      <h3 className="fin-card-h">Software</h3>
+      {rows.length === 0 ? <div className="fin-card-b">No open vulnerabilities</div> : (
+        <table className="table">
+          <thead><tr><th>Software</th><th>Host</th><th>Severity</th><th className="r">Exposed</th><th /></tr></thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.clusterId}>
+                <td>{r.software}</td>
+                <td>{r.host}</td>
+                <td><span className={`pill ${SEVERITY[r.worst][0]}`}>{SEVERITY[r.worst][1]}</span></td>
+                <td className="r num">{r.days} d</td>
+                <td className="r"><button className="btn" onClick={() => act((g) => updateSoftware(g, r.clusterId))}>Update</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
+  );
+};
+
 export function SecurityApp() {
   const game = useStore((s) => s.game);
   const a = advisoryOf(game), nodes = advisoryNodes(game);
   const [tab, setTab] = useState<"advisories" | "monitoring">("advisories");
+  const card = useRef<HTMLElement>(null);
   const monitored = game.installed.includes(MONITORING), view = monitored ? tab : "advisories";
-  useFocus("Security", (f) => { if (f.kind === "tab" && f.id === "monitoring") setTab("monitoring"); });
+  useFocus("Security", (f) => {
+    if (f.kind === "tab" && f.id === "monitoring") setTab("monitoring");
+    if (f.kind === "card" && f.id === "software") { setTab("advisories"); requestAnimationFrame(() => card.current?.scrollIntoView({ block: "start" })); }
+  });
   return (
     <div className="fin">
       <div className="fin-main">
@@ -103,6 +137,7 @@ export function SecurityApp() {
           </div>
         )}
         {view === "advisories" && <div className="fin-scroll">
+          <SoftwareCard game={game} cardRef={card} />
           {nodes.length === 0 ? !game.breaches.length && <div className="fin-empty"><ShieldCheck />No affected panel hosts</div> : (
             <table className="table">
               <thead><tr><th>Panel host</th><th>Server</th><th>PHP</th><th className="r">Sites</th><th>Sites state</th><th>Patch</th><th /></tr></thead>

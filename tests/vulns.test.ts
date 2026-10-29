@@ -7,7 +7,7 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { workloadOnline } from "../src/sim/60-infra/cluster";
 import { MONITORING, securityTick } from "../src/sim/60-infra/security";
 import {
-  DAILY_RISK, PATCH_DAYS, VULN_RATE, affects, dailyRisk, exposureDays, instanceRisk, monitoring, openVulns, vulnsFor, type Severity,
+  DAILY_RISK, PATCH_DAYS, VULN_RATE, affects, dailyRisk, exposureDays, instanceRisk, monitoring, openVulns, urgentSoftware, vulnsFor, type Severity,
 } from "../src/sim/60-infra/vulns";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
@@ -197,6 +197,29 @@ describe("updating software", () => {
     s.clusters = s.clusters.map((c) => ({ ...c, switching: null, panel: "postfixit", version: 2004 }));
     ok(updateSoftware(s, s.clusters[0].id));
     expect(s.clusters[0].version).toBe(2005);
+  });
+});
+
+describe("urgent software", () => {
+  it("lists high and critical instances, critical first, and drops an updated one", () => {
+    const s = start(), a = host(s, "dev3", "ada.de"), b = host(s, second(s), "lang.de");
+    // 2014 has a critical patch followed by a high one.
+    s.hour = 87_000;
+    patch(s, a, { version: 2014, updatedAt: 86_400 });
+    patch(s, b, { version: 2014, updatedAt: 0 });
+    expect(urgentSoftware(s).map((r) => [r.clusterId, r.worst])).toEqual([[b, "critical"], [a, "high"]]);
+    expect(urgentSoftware(s)[0]).toMatchObject({ software: "FreePanel", host: cluster(s, b).name, days: 28 });
+    ok(updateSoftware(s, b));
+    expect(urgentSoftware(s).map((r) => r.clusterId)).toEqual([a]);
+  });
+
+  it("leaves out an instance with only a low vulnerability", () => {
+    const s = start(), a = host(s);
+    // 2019 has a single low vulnerability.
+    s.hour = 129_384 + 24;
+    patch(s, a, { version: 2019, updatedAt: 0 });
+    expect(openVulns(s, a).map((v) => v.severity)).toEqual(["low"]);
+    expect(urgentSoftware(s)).toEqual([]);
   });
 });
 
