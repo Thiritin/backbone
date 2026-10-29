@@ -1,9 +1,14 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
 import { GENERATIONS, generationAt } from "./economy";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
+import { cpuWatts, defaultVendor, genOfYear, socketCores, VENDOR_ARCH, VENDORS, vendorsAt, type Vendor } from "./cpus";
 
-export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part";
+export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part" | "kvm" | "console" | "oob";
 export interface PortSpec { media: "rj45" | "sfp"; gbit: number }
+// Management ports outside the data plane, numbered from OOB_PORT: a server's console end, a switch or router's mgmt and RS-232
+// console ports, a KVM's outputs, a console server's serial ports, and the network jack of every management device.
+export type OobPort = "console" | "mgmt" | "kvm" | "serial" | "net";
+export const OOB_PORT = 100;
 // Form factor of a drive and of a bay group. A "nvme" bay is a 2.5" bay that takes SATA/SAS and NVMe drives; a "2.5" bay takes
 // SATA/SAS only; a "3.5" bay takes 3.5" drives only.
 export type FormFactor = "3.5" | "2.5" | "nvme";
@@ -52,26 +57,31 @@ export const bayTakes = (bay: FormFactor, drive: FormFactor): boolean => (drive 
 // The form factor of the drives a server ships with.
 const presetFf = (v: ServerSpec): FormFactor => (v.disk === "NVMe" ? "nvme" : v.bays[0].ff === "3.5" ? "3.5" : "2.5");
 
-// A part of a model as it ships: size in GB for RAM sticks and drives, in cores for CPUs.
-export interface PartSpec { kind: ComponentKind; size?: number; ff?: FormFactor }
+// A part of a model as it ships: size in GB for RAM sticks and drives, in cores for CPUs. CPUs and boards carry their vendor,
+// CPUs their generation (1 for G1); a spare without them fits any board.
+export interface PartSpec { kind: ComponentKind; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number }
+export const specOf = (c: PartSpec): PartSpec => ({
+  kind: c.kind, ...(c.size !== undefined ? { size: c.size } : {}), ...(c.ff ? { ff: c.ff } : {}), ...(c.vendor ? { vendor: c.vendor } : {}), ...(c.gen ? { gen: c.gen } : {}),
+});
 
-// The parts a model is built from: drives, power supplies, fans, RAM, board, CPUs and a NIC for a server;
-// power supplies, 2 fans and a board for a switch or firewall; nothing for patch panels, gateways and parts.
-export function componentParts(m: DeviceModel): PartSpec[] {
+// The parts a model is built from: drives, power supplies, fans, RAM, board, CPUs and a NIC for a server, with the board
+// and CPUs of vendor (Indel, or Ampear for ARM, when left out); power supplies, 2 fans and a board for a switch or firewall;
+// nothing for patch panels, gateways and parts.
+export function componentParts(m: DeviceModel, vendor?: Vendor): PartSpec[] {
   const n = (k: ComponentKind, count: number, size?: (i: number) => number, ff?: FormFactor): PartSpec[] =>
     Array.from({ length: count }, (_, i) => ({ kind: k, ...(size ? { size: size(i) } : {}), ...(ff ? { ff } : {}) }));
   if (m.server) {
-    const v = m.server;
-    // The first (cores mod sockets) CPUs carry the odd core.
-    const cpu = (i: number) => Math.floor(v.cores / v.sockets) + (i < v.cores % v.sockets ? 1 : 0);
+    const v = m.server, maker = vendor ?? defaultVendor(v.arch), gen = genOf(m);
+    const cpu = (): PartSpec => ({ kind: "cpu", size: socketCores(v.cores / v.sockets, maker, gen), vendor: maker, gen });
     return [
       ...n(DRIVE_KIND[v.disk], v.drives, () => v.diskGb / v.drives, presetFf(v)), ...n("psu", m.psus), ...n("fan", 4),
-      ...n("ram", v.ramSticks, () => v.ramGb / v.ramSticks), ...n("board", 1), ...n("cpu", v.sockets, cpu), ...n("nic", 1),
+      ...n("ram", v.ramSticks, () => v.ramGb / v.ramSticks), { kind: "board", vendor: maker }, ...Array.from({ length: v.sockets }, cpu), ...n("nic", 1),
       // A GPU line ships with the newest card of its generation; a part names its card by launch year.
       ...n("gpu", v.gpus, () => cardAt(m.from)?.year ?? 0),
     ];
   }
   if (m.kind === "switch" || m.kind === "firewall") return [...n("psu", m.psus), ...n("fan", 2), ...n("board", 1)];
+  if (m.kind === "kvm" || m.kind === "console" || m.kind === "oob") return n("board", 1);
   return [];
 }
 export const componentKinds = (m: DeviceModel): ComponentKind[] => componentParts(m).map((p) => p.kind);
@@ -84,9 +94,9 @@ export const FAN_SLOTS = 4;
 const driveFf = (m: DeviceModel, p: PartSpec): FormFactor => p.ff ?? (m.server ? presetFf(m.server) : "2.5");
 
 // A bare chassis keeps its board, fans, NIC and one power supply; CPUs, RAM and drives are bought separately.
-export const bareParts = (m: DeviceModel): PartSpec[] => {
+export const bareParts = (m: DeviceModel, vendor?: Vendor): PartSpec[] => {
   let psu = 0;
-  return componentParts(m).filter((p) => !["cpu", "ram", "hdd", "ssd", "nvme", "gpu"].includes(p.kind) && (p.kind !== "psu" || psu++ < 1));
+  return componentParts(m, vendor).filter((p) => !["cpu", "ram", "hdd", "ssd", "nvme", "gpu"].includes(p.kind) && (p.kind !== "psu" || psu++ < 1));
 };
 
 // Cards a chassis takes: the GPU 4U line four, a 2U up to the 2014 generation one single-width card (later PSUs cannot feed it), a 1U none.
@@ -115,6 +125,8 @@ export function fits(m: DeviceModel, parts: PartSpec[]): string | null {
   const cards = parts.filter((p) => p.kind === "gpu");
   if (cards.length > gpuSlots(m) || (m.height < 4 && cards.some((p) => cardOf(p.size).wide))) return "error.noSlot";
   if (v && parts.filter((p) => p.kind === "ram").reduce((n, p) => n + (p.size ?? 0), 0) > v.maxRamGb) return "error.tooMuchRam";
+  const cpus = v ? cpuError(m, v.arch, parts) : null;
+  if (cpus) return cpus;
   const drives = parts.filter((p) => isDriveKind(p.kind)).map((p) => driveFf(m, p));
   if (!drives.length) return null;
   const bays = v?.bays ?? [], cap = (ff: FormFactor) => bays.filter((b) => b.ff === ff).reduce((n, b) => n + b.count, 0);
@@ -123,6 +135,42 @@ export function fits(m: DeviceModel, parts: PartSpec[]): string | null {
   // NVMe drives take NVMe bays; 2.5" drives take the rest of the 2.5" and NVMe bays.
   if (n("3.5") > cap("3.5") || n("nvme") > cap("nvme") || n("2.5") > cap("2.5") + cap("nvme") - n("nvme")) return "error.noSlot";
   return null;
+}
+
+// A board and CPUs of the chassis's architecture, CPUs of the board's vendor and the chassis's generation, every socket alike.
+function cpuError(m: DeviceModel, arch: "x86" | "arm", parts: PartSpec[]): string | null {
+  const board = parts.find((p) => p.kind === "board")?.vendor, cpus = parts.filter((p) => p.kind === "cpu");
+  if ([board, ...cpus.map((c) => c.vendor)].some((x) => x && (VENDOR_ARCH[x] !== arch || (board && x !== board)))) return "error.wrongVendor";
+  if (cpus.some((c) => c.gen !== undefined && c.gen !== genOf(m))) return "error.wrongGeneration";
+  const alike = (a: PartSpec, b: PartSpec) => a.size === b.size && (!a.vendor || !b.vendor || a.vendor === b.vendor);
+  return cpus.every((c) => alike(c, cpus[0])) ? null : "error.mixedCpus";
+}
+
+// The generation of a server model, 1 for G1; 0 for other models.
+export const genOf = (m: DeviceModel): number => (m.server ? genOfYear(m.from) : 0);
+// The CPU makers a server model is sold with.
+export const vendorsOf = (m: DeviceModel): Vendor[] => (m.server ? vendorsAt(m.server.arch, genOf(m)) : []);
+// The vendor of a device's board, or of its preset's.
+export const boardVendor = (m: DeviceModel, parts: PartSpec[]): Vendor =>
+  parts.find((p) => p.kind === "board")?.vendor ?? defaultVendor(m.server?.arch ?? "x86");
+// What the CPUs among these parts draw.
+export const cpuWattsOf = (m: DeviceModel, parts: PartSpec[]): number =>
+  parts.reduce((n, p) => n + (p.kind === "cpu" ? cpuWatts(p.vendor ?? boardVendor(m, parts), p.gen ?? genOf(m), p.size ?? 0) : 0), 0);
+// Saves from before CPU vendors: the board and CPUs take the preset's vendor and the chassis's generation, and every socket
+// the largest CPU so no server runs a mixed pair.
+export function fillCpus<T extends PartSpec>(m: DeviceModel, parts: T[]): T[] {
+  if (!m.server) return parts;
+  const vendor = boardVendor(m, parts), top = Math.max(0, ...parts.map((p) => (p.kind === "cpu" ? p.size ?? 0 : 0)));
+  return parts.map((p) => (p.kind === "board" ? { ...p, vendor: p.vendor ?? vendor }
+    : p.kind === "cpu" ? { ...p, ...(top ? { size: top } : {}), vendor: p.vendor ?? vendor, gen: p.gen ?? genOf(m) } : p));
+}
+const presetCpuWatts = new Map<string, number>();
+// How far these parts' CPUs draw above the preset's, below it when negative: a server's watts less its preset's CPUs are the
+// rest of the chassis.
+export function cpuWattsShift(m: DeviceModel, parts: PartSpec[]): number {
+  if (!m.server) return 0;
+  if (!presetCpuWatts.has(m.id)) presetCpuWatts.set(m.id, cpuWattsOf(m, componentParts(m)));
+  return cpuWattsOf(m, parts) - presetCpuWatts.get(m.id)!;
 }
 
 export interface DeviceModel {
@@ -154,15 +202,23 @@ export interface DeviceModel {
   bgpSessions?: number;
   // A switched PDU's outlets; a rack with one lets the player cut or cycle the power of every device in it.
   outlets?: number;
+  // Management ports; servers, switches and rack routers get theirs from oobPorts.
+  oob?: OobPort[];
+  // A KVM that switches its server's power through its own ATX adapter.
+  atx?: boolean;
+  // A yearly failure rate in place of the component rates.
+  failYearly?: number;
 }
 
-// Within a class, manufacturers differ in price and failure rate, never in specs.
-export interface Manufacturer { id: string; name: string; kinds: DeviceKind[]; priceFactor: number; failureFactor: number }
+// Within a class, manufacturers differ in price, failure rate, release month, end of sale and power draw, never in specs.
+// fromShift moves a model's release in months, untilShift its last year on sale in years, wattsFactor scales its draw; the
+// defaults are 0, 0 and 1.
+export interface Manufacturer { id: string; name: string; kinds: DeviceKind[]; priceFactor: number; failureFactor: number; fromShift?: number; untilShift?: number; wattsFactor?: number }
 export const MANUFACTURERS: Manufacturer[] = [
   { id: "dwell", name: "Dwell", kinds: ["server"], priceFactor: 1, failureFactor: 1 },
-  { id: "hewlett-packet", name: "Hewlett-Packet", kinds: ["server"], priceFactor: 1.08, failureFactor: 0.8 },
-  { id: "supermacro", name: "SuperMacro", kinds: ["server"], priceFactor: 0.9, failureFactor: 1.3 },
-  { id: "lenovoid", name: "Lenovoid", kinds: ["server"], priceFactor: 0.95, failureFactor: 1.1 },
+  { id: "hewlett-packet", name: "Hewlett-Packet", kinds: ["server"], priceFactor: 1.08, failureFactor: 0.8, fromShift: 3, untilShift: -1, wattsFactor: 0.95 },
+  { id: "supermacro", name: "SuperMacro", kinds: ["server"], priceFactor: 0.9, failureFactor: 1.3, fromShift: -4, untilShift: 1, wattsFactor: 1.05 },
+  { id: "lenovoid", name: "Lenovoid", kinds: ["server"], priceFactor: 0.95, failureFactor: 1.1, fromShift: 6 },
   { id: "sysko", name: "Sysko", kinds: ["switch", "firewall", "gateway"], priceFactor: 1, failureFactor: 1 },
   { id: "junipurr", name: "Junipurr", kinds: ["switch", "gateway"], priceFactor: 1.1, failureFactor: 0.7 },
   { id: "aristotle", name: "Aristotle", kinds: ["switch"], priceFactor: 0.93, failureFactor: 1.2 },
@@ -244,7 +300,7 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
   }),
 );
 
-type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus">>;
+type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus" | "oob" | "atx" | "failYearly">>;
 // Years on sale after launch and years of support after that (economy.md, Hardware lifecycle); other kinds never end.
 const LIFE: Partial<Record<DeviceKind, { sale: number; support: number }>> = {
   switch: { sale: 6, support: 5 }, firewall: { sale: 6, support: 5 }, gateway: { sale: 6, support: 5 }, ups: { sale: 8, support: 3 }, pdu: { sale: 8, support: 3 },
@@ -257,6 +313,7 @@ const other = (id: string, name: string, kind: DeviceKind, height: number, p: Po
 };
 // Routers: throughput in Gbit, a full BGP table or not, and the BGP sessions they take.
 const router = (tp: number, bgp: number, full = false): Extra => ({ throughputGbit: tp, bgpSessions: bgp, fullTable: full });
+const oobs = (n: number, p: OobPort): OobPort[] => Array.from({ length: n }, () => p);
 const L2 = { layer: 2 } as const, L3 = { layer: 3 } as const;
 
 export const MODELS: DeviceModel[] = [
@@ -313,6 +370,13 @@ export const MODELS: DeviceModel[] = [
   // A switched PDU cuts or cycles any device in its rack; a 0U one hangs on the rack's side rail.
   other("pdu-8", "Switched PDU 8", "pdu", 1, [], 15, 700, 2005, { outlets: 8 }),
   other("pdu-24", "Switched PDU 24", "pdu", 0, [], 20, 1200, 2008, { outlets: 24 }),
+  // Remote access (economy.md, Hardware, power and failures): KVMs over IP, serial console servers and an OOB management switch.
+  other("pikvn", "PiKVN", "kvm", 0, [], 5, 60, 2019, { brand: "Pear Street Electronics", oob: ["net", "kvm"], atx: true, failYearly: 0.04 }),
+  other("ipkvn-8", "IP-KVN 8", "kvm", 1, [], 25, 1200, 2005, { brand: "Avoscent", oob: ["net", ...oobs(8, "kvm")], failYearly: 0.04 }),
+  other("ogb-8", "OpenGearbox 8", "console", 1, [], 15, 1500, 2005, { brand: "OpenGearbox", oob: ["net", ...oobs(8, "serial")] }),
+  other("ogb-16", "OpenGearbox 16", "console", 1, [], 18, 2500, 2005, { brand: "OpenGearbox", oob: ["net", ...oobs(16, "serial")] }),
+  other("ogb-48", "OpenGearbox 48", "console", 1, [], 30, 6000, 2005, { brand: "OpenGearbox", oob: ["net", ...oobs(48, "serial")] }),
+  other("oob-8", "OOB switch 8", "oob", 1, [], 8, 150, 2005, { brand: "Rarytan", oob: oobs(8, "net") }),
   // Price 0 keeps gateways out of the shop; they come with the basement and with every datacenter location.
   other("home-router", "Home router", "gateway", 0, ports(4, 1), 10, 0, 2005, router(0.1, 0)),
   other("handoff", "Datacenter handoff", "gateway", 0, ports(2, 1), 0, 0),
@@ -332,6 +396,27 @@ export function hasBmc(modelId: string, brand: string): boolean {
   const m = /^g(\d+)-(.+)$/.exec(modelId);
   return !!m && (m[2] === "arm" || Number(m[1]) >= (BMC_FROM[brand] ?? 3));
 }
+// A model's management ports: a server's console end, a switch or rack router's mgmt and console ports, or the model's own.
+export const oobPorts = (m: DeviceModel): OobPort[] =>
+  m.oob ?? (m.kind === "server" ? ["console"] : m.kind === "switch" || (m.kind === "gateway" && m.height > 0) ? ["mgmt", "console"] : []);
+export const isOobPort = (port: number): boolean => port >= OOB_PORT;
+// Whether a cable may join these two ends when one is a management port: a KVM output or a serial port to a console port
+// (a KVM only to a server's), a mgmt port to the OOB switch, and a management device's network jack to the OOB switch or to
+// a data switch's copper port.
+export function oobFits(ma: DeviceModel, a: OobPort | PortSpec, mb: DeviceModel, b: OobPort | PortSpec): boolean {
+  const one = (x: OobPort | PortSpec, mx: DeviceModel, y: OobPort | PortSpec, my: DeviceModel): boolean => {
+    if (x === "kvm") return y === "console" && my.kind === "server";
+    if (x === "serial") return y === "console";
+    if (x !== "net") return false;
+    if (typeof y !== "string") return y.media === "rj45" && my.kind === "switch";
+    return mx.kind === "oob" ? y === "mgmt" || y === "net" : y === "net" && my.kind === "oob";
+  };
+  return one(a, ma, b, mb) || one(b, mb, a, ma);
+}
+// Network and management gear runs firmware with a yearly release (oob.ts).
+export const hasFirmware = (m: DeviceModel): boolean => m.kind !== "server" && oobPorts(m).length > 0;
+// The kind of a management port; undefined for a data port or one the model does not have.
+export const oobPortOf = (m: DeviceModel, port: number): OobPort | undefined => (isOobPort(port) ? oobPorts(m)[port - OOB_PORT] : undefined);
 // A bought router that sits on the carrier panel in place of the location's provided one.
 export const isOfficeRouter = (m: DeviceModel): boolean => m.kind === "gateway" && m.height === 0 && m.price > 0;
 export const jacksOf =(m: DeviceModel): number => m.ports.length / 2;
@@ -347,18 +432,33 @@ export const dualPsuModel = (id: string): DeviceModel | undefined => MODELS.find
 export const manufacturerByName = (name: string): Manufacturer | undefined => MANUFACTURERS.find((m) => m.name === name);
 // What a unit of this model costs from this manufacturer.
 export const priceOf = (model: DeviceModel, brand: string): number => Math.round(model.price * (model.brand ? 1 : manufacturerByName(brand)?.priceFactor ?? 1));
-export const shopModels = (year: number): DeviceModel[] => MODELS.filter((m) => m.from <= year && (m.until === null || year <= m.until) && m.price > 0);
+// What a brand's variant of a model does: the release as a month count (year * 12 + month, January 0), the last year on
+// sale (null while it stays on sale) and the draw in watts. A model fixed to one brand has no variants.
+const shifted = (m: DeviceModel, brand: string) => (m.brand ? undefined : manufacturerByName(brand));
+export const brandFrom = (m: DeviceModel, brand: string): number => m.from * 12 + (shifted(m, brand)?.fromShift ?? 0);
+export const brandUntil = (m: DeviceModel, brand: string): number | null => (m.until === null ? null : m.until + (shifted(m, brand)?.untilShift ?? 0));
+export const wattsFactorOf = (m: DeviceModel, brand: string): number => shifted(m, brand)?.wattsFactor ?? 1;
+export const brandWatts = (m: DeviceModel, brand: string): number => m.watts * wattsFactorOf(m, brand);
+// Whether the brand sells the model in this month (year * 12 + month); the end of sale is the last month of its last year.
+export const brandOnSale = (m: DeviceModel, brand: string, month: number): boolean => {
+  const until = brandUntil(m, brand);
+  return brandFrom(m, brand) <= month && (until === null || month < (until + 1) * 12);
+};
+// The models some brand sells during the year.
+export const shopModels = (year: number): DeviceModel[] =>
+  MODELS.filter((m) => m.price > 0 && brandsOf(m).some((b) => brandFrom(m, b) < (year + 1) * 12 && (brandUntil(m, b) ?? year) >= year));
 
 // NVMe drive size per generation in GB; NVMe-capable bays come with G4, so the drives do too.
 const NVME_GB = [0, 0, 0, 1000, 2000, 8000, 15000];
-export const samePart = (a: PartSpec, b: PartSpec): boolean => a.kind === b.kind && a.size === b.size && a.ff === b.ff;
-// The sized parts the Parts tab sells: whatever the presets in the shop are built from, which is the current generation's sizes
-// and the one before, plus NVMe drives.
+export const samePart = (a: PartSpec, b: PartSpec): boolean => a.kind === b.kind && a.size === b.size && a.ff === b.ff && a.vendor === b.vendor && a.gen === b.gen;
+// The sized parts the Parts tab sells: whatever the presets in the shop are built from with each of their CPU makers, which is
+// the current generation's sizes and the one before, plus NVMe drives.
 export function partOffers(year: number): PartSpec[] {
   const out: PartSpec[] = [], add = (p: PartSpec) => { if (!out.some((o) => samePart(o, p))) out.push(p); };
-  for (const m of shopModels(year)) if (m.server) componentParts(m).forEach(add);
+  for (const m of MODELS.filter((x) => x.from <= year && (x.until === null || year <= x.until) && x.price > 0)) for (const v of vendorsOf(m)) componentParts(m, v).forEach(add);
   const g = generationAt(year);
   for (const i of [g - 1, g]) if (NVME_GB[i]) add({ kind: "nvme", size: NVME_GB[i], ff: "nvme" });
   for (const c of gpuOffers(year)) add({ kind: "gpu", size: c.year });
-  return out.sort((a, b) => COMPONENT_KINDS.indexOf(a.kind) - COMPONENT_KINDS.indexOf(b.kind) || (a.size ?? 0) - (b.size ?? 0));
+  const maker = (p: PartSpec) => (p.vendor ? VENDORS.indexOf(p.vendor) : -1);
+  return out.sort((a, b) => COMPONENT_KINDS.indexOf(a.kind) - COMPONENT_KINDS.indexOf(b.kind) || maker(a) - maker(b) || (a.size ?? 0) - (b.size ?? 0));
 }

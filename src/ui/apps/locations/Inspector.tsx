@@ -1,13 +1,13 @@
 import { supportEnd } from "../../../sim/10-catalog/lifecycle";
-import { Cable, Database, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, Server as ServerIcon, SquareTerminal, Unplug, Wrench } from "lucide-react";
+import { Cable, Database, Flame, Gauge, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, Server as ServerIcon, SquareTerminal, Unplug, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { cardWatts } from "../../../sim/10-catalog/gpu";
-import { bayCount, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
+import { bayCount, jacksOf, modelById, wattsFactorOf, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Cable as CableT, Device, End, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
-import { deviceHealth, drivesOf, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
+import { deviceHealth, deviceVendor, deviceWatts, drivesOf, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
 import { rebuildHours } from "../../../sim/88-tick/tick";
 import { addSecondPsu, atServer, buyOutLease, connect, disconnect, LABEL_MAX, pullPower, resetBmc, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice, type ActionResult } from "../../../sim/90-actions/hardware";
@@ -27,7 +27,14 @@ import { softwareOn } from "../../../sim/90-actions/software";
 import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
 import { PowerCard } from "./PowerCard";
+import { RemoteCard } from "./RemoteCard";
+import { remoteFix } from "../../../sim/60-infra/oob";
+import { continueBoot } from "../../../sim/90-actions/remote";
 import { ActionTile } from "../software/Software";
+import { stamp } from "../support/labels";
+import { startBurnin } from "../../../sim/90-actions/burnin";
+import { burning } from "../../../sim/60-infra/status";
+import { serverTaken } from "../../../sim/60-infra/cluster";
 import { frontOptions, isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
 import { atDatacenter, useHandWork } from "./HandSheet";
 import type { FrontOp } from "../../../sim/60-infra/power";
@@ -57,6 +64,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     power: (on) => { if (on && lid) return; if (on) act(setPower, d.id, true); else guarded(`Power off ${devName(d)}?`, "Power off", setPower, d.id, false); },
     op: (op: PowerOp) => { if (op === "on") { if (!lid) act(POWER_ACTION.on, d.id); } else { const label = powerOptions(game, d).options.find((o) => o.op === op)?.label ?? POWER_LABEL[op];
       if (op === "bmc" && !pduOf(game, d) && atDatacenter(game, d.id)) hand.start(game, { title: `${label} ${devName(d)}`, deviceId: d.id, action: resetBmc, args: [d.id] });
+      else if (op === "continue" && !remoteFix(game, d)) hand.start(game, { title: `${label} ${devName(d)}`, deviceId: d.id, action: continueBoot, args: [d.id], tech: { kind: "boot" } });
       else guarded(`${label} ${devName(d)}?`, label, POWER_ACTION[op], d.id); } },
     front: (op) => {
       if (op === "power" && !d.on && lid) return;
@@ -98,7 +106,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
 
 const POWER = {
   ok: ["On", "ok"], booting: ["Booting", "warn"], degraded: ["Degraded", "warn"], hot: ["Running hot", "warn"], rebuilding: ["Rebuilding", "warn"],
-  maintenance: ["Maintenance", "warn"], down: ["Down", "bad"], hung: ["Hung", "bad"], nopower: ["No power", "bad"], off: ["Off", ""],
+  maintenance: ["Maintenance", "warn"], down: ["Down", "bad"], hung: ["Hung", "bad"], stuck: ["Stuck at boot", "bad"], locked: ["Locked out", "bad"], nopower: ["No power", "bad"], off: ["Off", ""],
 } as const;
 
 // onHot reports the cable of the hovered or selected port, so the rack view can highlight it. rename opens the name field.
@@ -125,11 +133,14 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
   const togglePower = () => (isServerInRack(device) ? menus.op(device, device.on ? "shutdown" : "on") : menus.power(device, !device.on));
   const [picked, setTab] = useState<InspTab>("actions");
   const openApp = useStore((s) => s.openApp);
+  const canBurn = device.on && !device.burnin && !device.maintenance && !device.rebuild && !serverTaken(game, device.id);
   const serverActs = (
     <div>
       <div className="loc-card-h"><h3><ServerIcon />Server</h3></div>
       <div className="act-tiles">
         <ActionTile icon={PackageOpen} label="Change parts" disabled={device.on} onClick={() => menus.lid(device)} />
+        {device.rackId && <ActionTile icon={Gauge} label="Quick burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, false)} />}
+        {device.rackId && <ActionTile icon={Flame} label="Full burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, true)} />}
         {device.rackId && <ActionTile icon={SquareTerminal} label="Terminal" disabled={!device.on || !device.hostname} onClick={() => openApp("Terminal", { kind: "ssh", id: device.hostname! })} />}
       </div>
     </div>
@@ -187,6 +198,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       {isServerInRack(device)
         ? <PowerCard game={game} device={device} onOp={(op) => menus.op(device, op)} onFront={(op) => menus.front(device, op)}>{serverActs}</PowerCard>
         : server && device.store && <div className="loc-card"><div className="act-groups">{serverActs}</div></div>}
+      <RemoteCard game={game} device={device} />
 
       {model.kind === "switch" && (
         <div className="seg loc-mode" role="group" aria-label="Port selection">
@@ -238,9 +250,9 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       {show("parts") && <div className="loc-card">
         <div className="loc-card-h"><h3>Specifications</h3></div>
         <Facts rows={[
-          ...(model.server ? [["CPU", `${model.server.sockets} × ${cores(model.server.cores / model.server.sockets)}`], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${bayCount(model.server)} bays`]] as [string, string][] : []),
+          ...(model.server ? [["CPU", `${model.server.sockets} × ${VENDOR_NAME[deviceVendor(device)]}, ${cores(device.components.find((c) => c.kind === "cpu")?.size ?? model.server.cores / model.server.sockets)}`], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${bayCount(model.server)} bays`]] as [string, string][] : []),
           ["Network", portsText(model)],
-          ["Power", model.idleWatts === model.watts + cardWatts(device.components) ? `${model.watts} W` : `${model.idleWatts}–${model.watts + cardWatts(device.components)} W`],
+          ["Power", model.idleWatts === Math.round(deviceWatts(device)) ? `${model.watts} W` : `${Math.round(model.idleWatts * wattsFactorOf(model, device.brand))}–${Math.round(deviceWatts(device))} W`],
           ...(model.height ? [["Height", height(model)]] as [string, string][] : []),
           ...(device.price ? [["Paid", euro(device.price)]] as [string, string][] : []),
           ...(supportEnd(model) !== null ? [["End of support", `${supportEnd(model)}`]] as [string, string][] : []),
@@ -260,7 +272,8 @@ function Status({ game, device }: { game: GameState; device: Device }) {
   const service = loads.length ? game.services.find((v) => v.id === loads[0].serviceId) : undefined;
   const customer = service && game.customers.find((c) => c.id === service.customerId);
   const role = cluster ? `${cluster.kind === "cloud" ? "Hypervisor node" : cluster.kind === "mail" ? "Mail server" : cluster.kind === "game" ? "Game panel host" : "Panel host"} in ${cluster.name}`
-    : service ? `${service.product === "colocation" ? "Colocation" : "Dedicated"} for ${customer?.name ?? "a customer"}` : "Free";
+    : service ? `${service.product === "colocation" ? "Colocation" : "Dedicated"} for ${customer?.name ?? "a customer"}`
+    : burning(game, device) ? `Burn-in until ${stamp(device.burnin!.until)}` : "Free";
   const plane = softwareOn(game, device.id).map((x) => softwareName(x.id)).join(", ") || "None";
   return (
     <dl className="insp-status">
@@ -400,7 +413,7 @@ function PortCard({ game, device, model, port, peer, onSelect }: { game: GameSta
         </div>
         <div className="loc-path">
           <div className="loc-node here"><span className="k">{devName(device)}</span><strong>{portName(model, port)}</strong></div>
-          <div className={`loc-wire ${cable.kind}`} style={cable.color ? { background: cable.color } : undefined}><span><span className="num">{Math.min(here.gbit, om.ports[peer.port].gbit)} Gbit/s</span> {CABLE_NAME[cable.kind]}</span></div>
+          <div className={`loc-wire ${cable.kind}`} style={cable.color ? { background: cable.color } : undefined}><span><span className="num">{Math.min(here.gbit, (om.ports[peer.port] ?? here).gbit)} Gbit/s</span> {CABLE_NAME[cable.kind]}</span></div>
           <button className="loc-node" onClick={() => onSelect(other.id)}><span className="k">{other.panel ? "Carrier panel" : devName(other)}</span><strong>{other.panel ? `${other.name} ${portName(om, peer.port)}` : portName(om, peer.port)}</strong></button>
         </div>
         <ColorRow cable={cable} />

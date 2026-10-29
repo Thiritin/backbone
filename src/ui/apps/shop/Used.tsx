@@ -2,6 +2,7 @@ import { Gavel, ShoppingBag, Tag, X } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { modelById } from "../../../sim/10-catalog/hardware";
+import { defaultVendor, VENDOR_NAME, VENDORS, type Vendor } from "../../../sim/10-catalog/cpus";
 import { CHANNELS, channelName, currentBid, EBUY_FEE, leading, onMarket, SELL_ASK, SELL_START, shipHours, type Channel, type Defect, type Listing } from "../../../sim/10-catalog/used";
 import type { GameState } from "../../../sim/50-state";
 import { deviceValue } from "../../../sim/60-infra/status";
@@ -16,6 +17,11 @@ import "./used.css";
 const DEFECT: Record<Defect, string> = { psu: "PSU 2 missing", drive: "1 drive reports errors", rails: "No rails" };
 const days = (h: number) => (h >= 48 ? `${Math.floor(h / 24)} days` : h >= 24 ? "1 day" : `${Math.max(1, h)} h`);
 const years = (y: number) => `${y.toFixed(1)} ${y === 1 ? "year" : "years"}`;
+// A server listing's CPU maker; older listings carry the preset's.
+const listingVendor = (l: Listing): Vendor | undefined => {
+  const m = modelById(l.model);
+  return m.server ? l.vendor ?? defaultVendor(m.server.arch) : undefined;
+};
 
 function Money({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
   return (
@@ -38,7 +44,9 @@ function ListingCard({ game, l, to }: { game: GameState; l: Listing; to: string 
   const place = () => {
     if (act(bidListing, l.id, max, to).ok) notify("Shop", `Bid on ${name}`, `Maximum ${euro(max)}`);
   };
+  const vendor = listingVendor(l);
   const rows: [string, string][] = [
+    ...(vendor ? [["CPU", VENDOR_NAME[vendor]]] as [string, string][] : []),
     ["Age", years(l.age)],
     ["Seller", l.city],
     [auction ? "Ends" : "Listed for", days(l.expiresAt - game.hour)],
@@ -98,7 +106,10 @@ export function Used() {
   const [channel, setChannel] = useSessionState<Channel>("shop.usedChannel", "ebuy");
   const [to, setTo] = useSessionState("shop.usedTo", game.locations[0].id);
   const dest = game.locations.some((l) => l.id === to) ? to : game.locations[0].id;
-  const shown = game.used.filter((l) => l.channel === channel && onMarket(game, l)).sort((a, b) => a.expiresAt - b.expiresAt);
+  const [vendor, setVendor] = useSessionState<Vendor | null>("shop.usedVendor", null);
+  const listed = game.used.filter((l) => l.channel === channel && onMarket(game, l));
+  const shown = listed.filter((l) => !vendor || listingVendor(l) === vendor).sort((a, b) => a.expiresAt - b.expiresAt);
+  const vendors = VENDORS.filter((v) => v === vendor || listed.some((l) => listingVendor(l) === v));
   const mine = game.used.filter((l) => l.channel === channel && l.device);
   return (
     <div className="used">
@@ -106,6 +117,15 @@ export function Used() {
         <div className="seg" role="group" aria-label="Channel">
           {CHANNELS.map((c) => <button key={c.id} aria-pressed={channel === c.id} onClick={() => setChannel(c.id)}>{c.name}</button>)}
         </div>
+        {vendors.length > 0 && (
+          <div className="shop-filter-row" role="group" aria-label="Vendor">
+            {vendors.map((v) => (
+              <button key={v} className="shop-chip" aria-pressed={vendor === v} onClick={() => setVendor(vendor === v ? null : v)}>
+                {VENDOR_NAME[v]} <span className="num">{listed.filter((l) => listingVendor(l) === v).length}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <span className="grow" />
         {channel === "board" && <span className="used-rep">Reputation <strong className="num">{game.usedRep}</strong></span>}
         {game.locations.length > 1 && (

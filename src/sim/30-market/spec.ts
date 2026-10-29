@@ -4,6 +4,7 @@ import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { cores, marketPrice, marketSetup, SIZES, sizeSpec, specPrice, type Resources, type Sla, type Spec } from "../10-catalog/products";
 import type { Product, Service } from "../30-customers/customers";
+import { x86Share } from "../10-catalog/cpus";
 import type { GameState } from "../50-state";
 
 // What each line is called in requests, emails and lists.
@@ -21,10 +22,16 @@ export const UPGRADE_FACTORS = [1.5, 2];
 const half = (x: number) => Math.max(0.5, Math.round(x * 2) / 2);
 const quarter = (x: number) => Math.max(0.25, Math.round(x * 4) / 4);
 
-export const sizeOf = (x: Resources): Resources => ({ vcpu: x.vcpu, ramGb: x.ramGb, diskGb: x.diskGb, ...(x.gpus ? { gpus: x.gpus } : {}) });
+export const sizeOf = (x: Resources): Resources => ({ vcpu: x.vcpu, ramGb: x.ramGb, diskGb: x.diskGb, ...(x.gpus ? { gpus: x.gpus } : {}), ...(x.arch ? { arch: x.arch } : {}) });
+// Lines whose orders can need x86 (Windows VMs, old images, most game servers); the rest run anywhere.
+const ARCH_LINES: Product[] = ["vps", "gameServer", "cloud"];
 
-// A spec around size i of the line; key makes it stable for a seed.
+// A spec around size i of the line; key makes it stable for a seed. A share of VPS, game server and cloud orders needs x86.
 export function specFor(seed: number, key: number, product: Product, size: number, year: number, factor?: number): Spec {
+  const spec = sizedSpec(seed, key, product, size, year, factor);
+  return ARCH_LINES.includes(product) && rand(hashRng(seed, key, 227)) < x86Share(year) ? { ...spec, arch: "x86" } : spec;
+}
+function sizedSpec(seed: number, key: number, product: Product, size: number, year: number, factor?: number): Spec {
   const base = sizeSpec(product, size, year);
   if (!SCALED.includes(product)) return base;
   const r = hashRng(seed, key, 211);
@@ -81,5 +88,5 @@ export function specText(product: Product, spec: Spec): string {
                 : product === "vpn" ? [`${spec.users ?? 0} ${spec.users === 1 ? "user" : "users"}`]
               : [];
   const addresses = [...(spec.ipv4 ? [`${spec.ipv4} dedicated IPv4`] : []), ...(spec.ipv6 ? ["IPv6"] : [])];
-  return [LINE_NAME[product], ...parts, ...addresses].join(", ");
+  return [LINE_NAME[product], ...parts, ...(spec.arch ? [spec.arch] : []), ...addresses].join(", ");
 }

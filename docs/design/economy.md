@@ -146,6 +146,22 @@ Anchors: John C. McCallum's memory price history (DRAM about US$100 to 150 per G
 
 Fixed parts: a power supply costs €150 in 2005, falling in a straight line to €90 in 2015 and flat after; a fan €25; a mainboard €600 falling to €400 by 2015; a network card €80 falling to €40 by 2015, times 4 for 10G and faster cards until 2017 and times 2 from 2017.
 
+**CPU vendors.** Every CPU and mainboard comes from one of three makers (`CPU_MODELS` in `cpus.ts`): Indel and AMB build x86 parts from 2005, Ampear builds ARM parts from 2020. A row gives a full socket's cores (the compute-dense line's socket; the generation table's cores are the Indel row), the speed of one core (`perCore`), the watts of a full socket and the price factor on the per-core CPU price. A line's socket is its share of a full socket: the balanced 1U takes half, the backup line half, the archive line a quarter, the ARM 1U one and a half. A server's vCPU is its working cores times `perCore`; a game server on a node below 1 runs at that speed, so it is slowed by the gap.
+
+| Generation | Year | Indel cores, speed, W | AMB cores, speed, W, price | Ampear cores, speed, W, price |
+| --- | --- | --- | --- | --- |
+| G1 | 2005 | 2, 0.9, 110 W | 2, 1.0, 95 W, 1 | |
+| G2 | 2008 | 8, 1.15, 130 W | 8, 0.95, 145 W, 0.8 | |
+| G3 | 2011 | 12, 1.15, 130 W | 12, 0.95, 145 W, 0.8 | |
+| G4 | 2014 | 24, 1.15, 165 W | 24, 0.95, 180 W, 0.8 | |
+| G5 | 2017 | 40, 1.05, 205 W | 64, 0.95, 180 W, 0.5 | |
+| G6 | 2020 | 64, 1.05, 270 W | 102, 0.95, 225 W, 0.5 | 64, 0.8, 135 W, 0.7 |
+| G7 | 2023 | 128, 1.05, 320 W | 205, 0.95, 360 W, 0.5 | 128, 0.8, 160 W, 0.7 |
+
+Indel's price factor is 1. From G5 an AMB socket has 1.6 times the cores at 0.8 the price of an Indel socket, which is 0.5 per core; an Ampear core draws half the watts of an Indel core of its generation at 0.7 the price. A CPU draws its row's watts times its cores over the full socket's cores. A server's rated watts split into its preset's CPUs and the rest of the chassis: a server draws the rest plus the watts of the CPUs it has, so an Indel preset (Ampear on the ARM line) draws exactly the line's watts, and idle it draws the model's idle share of its CPUs' difference. The x86 watts stay below three quarters of the generation's watts per full socket so the rest of a compute-dense chassis stays above zero. Compatibility mode on a hypervisor cluster masks CPU features so VMs move live between vendors, at 0.9 of every node's vCPU.
+
+Anchors: AMD Opteron 2005 (dual core at 95 W against the 110 W single and dual core Xeons of the Irwindale and Paxville years), Intel Xeon 5500 2009 (Nehalem retakes the lead per core and per watt until Skylake), AMD EPYC 2017 (32 cores per socket against 28 at a lower price; Rome and Genoa keep the core lead), Ampere Altra 2020 (80 Arm cores at about 250 W, Altra Max 128), and VMware EVC and Proxmox CPU types for compatibility mode. The speeds are game values that keep the lead swaps visible rather than benchmark ratios.
+
 **GPU cards and rental.** A GPU card is a PCIe part sold in the Parts tab and fitted in the GPU 4U line. It is named by its launch year, and the shop sells the newest card and the one before. The cards are puns on Nvidia's Tesla line:
 
 | Card | Launch | List price | Power | Slots | Anchor |
@@ -166,24 +182,24 @@ GPU rental is priced per card a month by year, straight between these anchors an
 
 **Resale of parts.** A spare part in storage sells at the current part price times the resale curve of Buying and selling, and counts at that value in net worth. A RAM stick bought in 2023 and sold in 2026 sells for more than it cost.
 
-**Manufacturers.** Within a class, manufacturers differ in price and failure rate, never in specs. A unit costs the model's price × the price factor, and its failure rate is the base AFR × the failure factor.
+**Manufacturers.** Within a class, manufacturers differ in price, failure rate, release, end of sale and power draw, never in specs. A unit costs the model's price × the price factor, its failure rate is the base AFR × the failure factor, it reaches the Shop the release shift in months from the model's year, its last year on sale moves by the end of sale shift in years, and it draws the model's watts × the power factor (CPUs and chassis; GPU cards are unchanged). The Shop lists a model while any manufacturer sells it, and a unit can only be bought from the month its manufacturer releases it. Switches, security appliances, patch panels, routers, UPS units and PDUs have no shift and a power factor of 1.00.
 
-| Class | Manufacturer | Price factor | Failure factor |
-| --- | --- | --- | --- |
-| Servers | Dwell | 1.00 | 1.00 |
-| Servers | Hewlett-Packet | 1.08 | 0.80 |
-| Servers | SuperMacro | 0.90 | 1.30 |
-| Servers | Lenovoid | 0.95 | 1.10 |
-| Switches | Sysko | 1.00 | 1.00 |
-| Switches | Junipurr | 1.10 | 0.70 |
-| Switches | Aristotle | 0.93 | 1.20 |
-| Security appliances | Sysko | 1.00 | 1.00 |
-| Security appliances | Fortinope | 0.90 | 1.25 |
-| Security appliances | Pablo Alto | 1.10 | 0.75 |
-| Patch panels | Pandoot | 1.00 | 1.00 |
-| Routers | AVN | 1.00 | 0.90 |
-| Routers | MicroTick | 1.00 | 1.20 |
-| UPS units and PDUs | Eatin | 1.00 | 1.00 |
+| Class | Manufacturer | Price factor | Failure factor | Release shift | End of sale shift | Power factor |
+| --- | --- | --- | --- | --- | --- | --- |
+| Servers | Dwell | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Servers | Hewlett-Packet | 1.08 | 0.80 | +3 months | -1 year | 0.95 |
+| Servers | SuperMacro | 0.90 | 1.30 | -4 months | +1 year | 1.05 |
+| Servers | Lenovoid | 0.95 | 1.10 | +6 months | 0 | 1.00 |
+| Switches | Sysko | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Switches | Junipurr | 1.10 | 0.70 | 0 | 0 | 1.00 |
+| Switches | Aristotle | 0.93 | 1.20 | 0 | 0 | 1.00 |
+| Security appliances | Sysko | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Security appliances | Fortinope | 0.90 | 1.25 | 0 | 0 | 1.00 |
+| Security appliances | Pablo Alto | 1.10 | 0.75 | 0 | 0 | 1.00 |
+| Patch panels | Pandoot | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Routers | AVN | 1.00 | 0.90 | 0 | 0 | 1.00 |
+| Routers | MicroTick | 1.00 | 1.20 | 0 | 0 | 1.00 |
+| UPS units and PDUs | Eatin | 1.00 | 1.00 | 0 | 0 | 1.00 |
 
 A router is built by one manufacturer only (Sysko, AVN, MicroTick or Junipurr, by model) and sells at its list price. Junipurr's switch price factor does not apply to its routers.
 
@@ -316,6 +332,8 @@ The cap is 2.4% of a city's new customers at level 1, 4% at level 3 and 6.4% at 
 - **Paid:** campaign budget ÷ cost per lead (see [Marketing and reviews](#marketing-and-reviews)).
 
 Website and campaign leads send 10% to cities without a location of yours, where they cannot buy.
+
+**x86 orders.** A share of VPS, game server and cloud orders needs x86 (`x86Share` in `cpus.ts`), drawn per order from its own seed: 60% in 2020, falling in a straight line to 30% in 2026 and flat after. Orders before 2020 carry no requirement, since no ARM server exists yet. Ampear nodes take only the orders without it; web hosting, DNS and the other lines run anywhere. Anchors: Windows Server images, old x86-only images and most game server binaries, against the growing share of Arm instances at the big clouds (AWS Graviton from 2018).
 
 **GPU demand.** Hobby developers, agencies, online shops and enterprises ask for GPU servers in 3% of their orders at a demand factor of 1 (`gpuDemand` in `gpu.ts`). The factor is 0 before 2011, 0.2 from 2011 to 2016, 0.6 from 2017 (deep learning), 1 from 2020 and 2.5 from 2023 (generative AI), so those profiles ask for a GPU server in 0.6%, 1.8%, 3% and 7.5% of their orders, and their other products give way proportionally. News announces the two jumps. A GPU order that finds no free card is lost as no capacity, like any other line. The portfolio score ignores the GPU line.
 
@@ -1015,6 +1033,31 @@ A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD t
 
 Rates are rolled hourly (yearly rate ÷ 8,760) per server and do not draw from the game's random sequence. A reset or power cycle boots for 1 hour. A graceful shutdown completes within the hour and stops the workloads cleanly. A recovery takes 30 minutes per workload, with no remote hands fee because the work happens in the operating system. Resetting a hung controller takes 15 minutes on site, plus the remote hands' response time and a one-hour fee in a datacenter; a technician does it without a fee. When corruption hits a server whose array has all its drives and no rebuild running, the array resyncs for the rebuild time of a drive instead (server performance × 0.95, × 0.8 or × 0.6 by rebuild rate) and no workload is corrupted.
 
+**Remote access.** KVMs, console servers and OOB switches are bought once and stay in the Shop to the end of the game. Anchors: a PiKVM v3 kit cost about USD 150 in 2021 and DIY builds about EUR 60; Avocent 8-port IP KVMs sold around USD 1,500 in the 2000s; Opengear 16-port console servers cost around USD 2,500; Raritan sold small OOB management switches.
+
+| Item | From | Price | Draw | Notes |
+| --- | --- | --- | --- | --- |
+| PiKVN | 2019 | 60 € | 5 W | 0U on the rail, one server, power through its own ATX adapter |
+| IP-KVN 8 | 2005 | 1,200 € | 25 W | 1U, 8 servers, console only |
+| ATX adapter | 2005 | 25 € | | Fitted to a server, lets an IP-KVN switch its power |
+| OpenGearbox 8, 16, 48 | 2005 | 1,500 €, 2,500 €, 6,000 € | 15, 18, 30 W | 1U, rollover cables to console ports |
+| OOB switch 8 | 2005 | 150 € | 8 W | 1U, 8 management ports |
+| Management DSL | 2005 | 20 € a month | | Own way in for a console server or OOB switch |
+| Cellular modem | 2008 | 30 € a month | | Same, on the mobile network |
+
+| Event | Rate or time |
+| --- | --- |
+| Stuck boot after a part swap or a hard power event | 5% per server |
+| Continue boot | 2 minutes over a controller or a console |
+| KVM, console server and OOB switch failure | 4% a year for KVMs, the default device rate for the others |
+| Firmware update | 10 minutes of reboot |
+| Switch or router hangs during a firmware update | 10% |
+| Lockout on a port group change | 2% |
+| Recover over console | 5 minutes |
+| Management firmware vulnerabilities | 1 a year |
+
+Stuck boots, hangs and lockouts are rolled per device and hour and do not draw from the game's random sequence. Without a console, Continue boot and Recover are hand tasks billed as one hour of remote hands in a datacenter. An exposed management device is checked once a day against the risk of its open vulnerabilities, the same risk as an exposed software instance.
+
 **Hardware lifecycle.** Every model on sale has a last year on sale (end of sale) and a number of support years after it; the model is out of support once the year passes that sum. Devices keep working past both dates. The anchor is Cisco's policy of ending sale six months after the notice and keeping support and spares for five more years; Dell and HPE sell five to seven years of support for servers.
 
 | Kind | Last year on sale | Support years after it |
@@ -1048,6 +1091,16 @@ Rates are rolled hourly (yearly rate ÷ 8,760) per server and do not draw from t
 | Clearance weekend | Once a year: 10 eBuy auctions ending on the second evening |
 
 Used devices are never insured, cannot be leased and resell from the price paid like any other device. Anchors: eBay server lots sold at 30% to 50% of list in the 2000s, and WebHostingTalk marketplace asks sit around half of the new price.
+
+**Burn-in.** A racked server that is on, has power and sits in no cluster and runs no workload can be burned in. The server counts as busy for the whole test: it draws its full rated power at the location's rate, and in a datacenter the rack position and power limit are used as usual. The test ends early if the server loses power.
+
+| Rule | Value |
+| --- | --- |
+| Quick | 6 hours; every hidden part at 80% of its life or more is marked worn, the others stay unknown; no failures |
+| Full | 48 hours; every hidden part shows its real age; each working part past its life fails with 50% (seeded by game seed, hour and device) |
+| Bonus | A full burn-in in which no part failed multiplies the server's failure chance by 0.9 for 365 days (it stacks with the other failure factors) |
+| Used parts | Parts bought on the used market are hidden until a burn-in has looked at them; replaced parts are known |
+| Buyer protection | The first failed part of a unit bought on the board or eBuy within 14 days of its arrival refunds half the unit price, once; Telegrump deals never refund |
 
 **Power feeds.**
 

@@ -89,6 +89,14 @@ export function ipmiIp(s: GameState, id: string): string | null {
   return loc.dc ? `10.${s.locations.indexOf(loc) + 1}.2.${host}` : `192.168.3.${host}`;
 }
 
+// A KVM, console server or OOB switch's address on the management network, one subnet above the controllers.
+export function oobIp(s: GameState, id: string): string | null {
+  const d = s.devices.find((x) => x.id === id), loc = d && locationOf(s, d);
+  if (!d || !loc || !d.rackId || !["kvm", "console", "oob"].includes(modelById(d.model).kind)) return null;
+  const host = 10 + ((Number(id.replace(/\D/g, "")) || 0) % 240);
+  return loc.dc ? `10.${s.locations.indexOf(loc) + 1}.3.${host}` : `192.168.4.${host}`;
+}
+
 // Who holds addresses for a machine: a customer's VM holds them through its service.
 export const holderOf = (s: GameState, id: string): string => s.workloads.find((w) => w.id === id && !isOwnVm(w))?.serviceId ?? id;
 export const addressesOf = (s: GameState, id: string): Address[] => s.ips.addresses.filter((a) => a.holder === holderOf(s, id));

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { bayCount, bayTakes, componentParts, MODELS, modelById, type FormFactor } from "../src/sim/10-catalog/hardware";
+import { bayCount, bayTakes, componentParts, genOf, MODELS, modelById, type FormFactor } from "../src/sim/10-catalog/hardware";
+import { cpuModel } from "../src/sim/10-catalog/cpus";
 import { OVERCOMMIT } from "../src/sim/10-catalog/products";
 import { device, deviceDefaults, newGame, type GameState } from "../src/sim/50-state";
 import { installedCores, installedRamGb, raidUsable } from "../src/sim/60-infra/status";
@@ -65,8 +66,9 @@ describe("capacity from parts", () => {
       expect(installedCores(d), m.id).toBe(v.cores);
       expect(installedRamGb(d), m.id).toBe(v.ramGb);
       expect(raidUsable(d), m.id).toBe(factor * (v.diskGb / v.drives));
-      expect(nodeCapacity(d), m.id).toEqual({ vcpu: v.cores, ramGb: v.ramGb, diskGb: raidUsable(d) * OVERCOMMIT.disk });
-      expect(nodeUsage(s, id).physical, m.id).toEqual({ vcpu: v.cores, ramGb: v.ramGb, diskGb: raidUsable(d) });
+      const vcpu = Math.round(v.cores * cpuModel(v.arch === "arm" ? "ampear" : "indel", genOf(m))!.perCore * 100) / 100;
+      expect(nodeCapacity(d), m.id).toEqual({ vcpu, ramGb: v.ramGb, diskGb: raidUsable(d) * OVERCOMMIT.disk });
+      expect(nodeUsage(s, id).physical, m.id).toEqual({ vcpu, ramGb: v.ramGb, diskGb: raidUsable(d) });
     }
   });
 

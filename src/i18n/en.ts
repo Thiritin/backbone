@@ -3,6 +3,7 @@ import { OPS } from "./en-ops";
 import { ADDRESSES_EN } from "./addresses";
 import { IPMI_EN } from "./ipmi";
 import { TERMINAL_EN } from "./terminal";
+import { REMOTE_EN } from "./remote";
 import { SALES_EN } from "./sales";
 import { SECURITY_EN } from "./security";
 import { NEWS_EN } from "./news";
@@ -18,6 +19,7 @@ import { COMMUNITY_EN } from "./community";
 import { MANUAL_EN } from "./manual";
 import { ACTIVITY_EN } from "./activity";
 import { REPLIES_EN } from "./replies";
+import { BURNIN_EN } from "./burnin";
 import { USED_EN } from "./used";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -38,6 +40,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...ADDRESSES_EN,
   ...IPMI_EN,
   ...TERMINAL_EN,
+  ...REMOTE_EN,
   ...SECURITY_EN,
   ...VULNS_EN,
   ...BREACH_EN,
@@ -47,6 +50,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...DOMAINS_EN,
   ...NEWS_EN,
   ...USED_EN,
+  ...BURNIN_EN,
   "event.monthStart.title": (p) => `${MONTHS[Number(p.month)]} ${p.year}`,
   "event.monthStart.text": () => "A new month has started.",
   "save.loaded.title": () => "Game loaded",
@@ -192,6 +196,9 @@ export const en: Record<string, (p: Params) => string> = {
   "error.noSlot": () => "The chassis has no free slot for this part.",
   "error.wrongFormFactor": () => "This drive does not fit the bays of the chassis.",
   "error.tooMuchRam": () => "The chassis takes no more memory.",
+  "error.wrongVendor": () => "This part does not fit the board's socket.",
+  "error.wrongGeneration": () => "This CPU belongs to another generation of the chassis.",
+  "error.mixedCpus": () => "Every socket needs the same CPU.",
   "error.unknownSlot": () => "This slot does not exist.",
   "error.partSlotTaken": () => "This slot is already filled.",
   "error.notRemovable": () => "This part is soldered to the chassis.",

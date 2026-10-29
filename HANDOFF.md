@@ -6,9 +6,10 @@ Build the lanes in `docs/masterplan.md`, in order, one at a time. Every lane bri
 
 ## Current progress
 
-- main is at the latest "Plan ..." commit (run `git log --oneline -5`). Typecheck, 550 tests, build and balance pass (steady L2 2006.0, L3 2006.8, L4 2008.6, L5 2011.9, L6 2017.9; solo L5 2012.8; no bankruptcies).
-- Everything built so far is listed under "Built" in the masterplan. Nothing is in flight.
-- The plan was audited against main in October 2026: every lane's file references were checked, wrong ones corrected, open choices settled, real-world anchors written in, and the big lanes split (2.0 to 2.2, 2b.1 to 2b.4, 3.1 to 3.5, 4.1 to 4.5, 5.1 to 5.2, plus Lane 6 small briefs).
+- Every lane in docs/masterplan.md is built and on origin main (Lanes 2.0 to 13, all Lane 6 items except the hand playtest 6.9). GitHub issues 2 to 21 are closed with the commit that fixed each; issue 1 (German translation) is untouched on purpose.
+- origin main is the source of truth. Another session works and commits in the main checkout at the same time; when its working tree holds uncommitted edits, integrate on a side worktree (`git worktree add -b integ .claude/worktrees/integ main`, merge the lane branch and origin/main there, verify, then push `integ:main` in a fetch, merge, push loop) and let the main checkout pull.
+- Verification baseline: typecheck clean, 1083 tests, build, balance steady L2 2006.3 to L6 2018.2 and solo L5 2012.9, 0 bankrupt, happiness harness seeds all growing.
+- Conventions added this round: every UI action call is `act(fn, ...args)` with fn exported from a 90-actions module and registered in src/sim/90-actions/index.ts (tests/replay.test.ts enforces it, the action log drives the leaderboard replay); every change adds one or two CHANGELOG.md bullets under today's date (the update sheet and What's new read them; tests/update.test.ts checks the shape).
 
 ## What worked
 

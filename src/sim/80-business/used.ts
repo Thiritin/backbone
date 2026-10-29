@@ -3,7 +3,7 @@
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { isMonthStart, yearOf } from "../00-core/time";
 import { CITIES } from "../10-catalog/economy";
-import { brandsOf, COMPONENTS, componentParts, isDriveKind, MODELS, modelById, type DeviceModel } from "../10-catalog/hardware";
+import { brandsOf, COMPONENTS, componentParts, isDriveKind, MODELS, modelById, vendorsOf, type DeviceModel } from "../10-catalog/hardware";
 import { presetPrice } from "../10-catalog/parts";
 import {
   ASK, AUCTION_START, channelName, CLEARANCE_SIZE, DEFECT_CHANCE, DEFECTS, EARLY_HOURS, EBUY_FEE, leading, LOCAL_CHANCE, LOT_SHARE, LOT_SIZE, MAX_AGE,
@@ -46,14 +46,16 @@ interface Draft { channel: Channel; model?: DeviceModel; postedAt: number; expir
 
 function listing(s: GameState, r: Rng, d: Draft): Listing {
   const year = yearOf(s.hour), m = d.model ?? pick(r, usedModels(year)), brand = pick(r, brandsOf(m));
+  // The CPU maker comes from its own draw so the listing's other draws stay as they were.
+  const makers = vendorsOf(m), vendor = makers.length ? pick(hashRng(s.seed, s.nextId, 1019), makers) : undefined;
   const age = Math.round(between(r, [1, Math.max(1, year - m.from)]) * 10) / 10;
-  const defect = d.qty ? null : defectFor(r, m), base = presetPrice(m, year, brand) * (d.qty ?? 1);
+  const defect = d.qty ? null : defectFor(r, m), base = presetPrice(m, year, brand, vendor) * (d.qty ?? 1);
   const older = Math.min(1, (age - 1) / (MAX_AGE - 1));
   const share = d.share ?? (d.channel === "ebuy" ? AUCTION_START : ASK[d.channel][0] + (ASK[d.channel][1] - ASK[d.channel][0]) * older);
   const days = int(r, LIFETIME[d.channel]);
   const ends = d.channel === "ebuy" ? d.postedAt - (d.postedAt % DAY) + days * DAY + 20 : d.postedAt + (d.channel === "board" ? EARLY_HOURS : 0) + days * DAY;
   return {
-    id: `used${s.nextId++}`, channel: d.channel, model: m.id, brand, qty: d.qty ?? 1, age, wear: wearFor(r, m, age, defect), defect,
+    id: `used${s.nextId++}`, channel: d.channel, model: m.id, brand, ...(vendor ? { vendor } : {}), qty: d.qty ?? 1, age, wear: wearFor(r, m, age, defect), defect,
     price: Math.round(base * share * (defect ? DEFECTS[defect] : 1)), city: d.city ?? sellerCity(s, r), shipDays: int(r, SHIP_DAYS),
     postedAt: d.postedAt, expiresAt: d.expiresAt ?? ends,
     ...(d.channel === "chat" && rand(r) < SCAM_CHANCE ? { scam: true } : {}),

@@ -30,7 +30,7 @@ const NEWEST = ["sw-32e", "fw-400g", "edge-xxl", "ups-10k", "pdu-24", "fb-5690",
 describe("hardware lifecycle", () => {
   it("gives every model an end of sale and support, except patch panels, unsold models and the newest servers", () => {
     for (const m of MODELS) {
-      if (m.kind === "part" || m.price === 0) expect([m.until, m.supportYears], m.id).toEqual([null, 0]);
+      if (m.kind === "part" || m.price === 0 || m.kind === "kvm" || m.kind === "console" || m.kind === "oob") expect([m.until, m.supportYears], m.id).toEqual([null, 0]);
       else if (m.kind === "patch") expect(m.until, m.id).toBeNull();
       else if (m.server) {
         const i = GENERATIONS.findIndex((g) => g.year === m.from);

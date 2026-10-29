@@ -1,4 +1,4 @@
-import { MODELS, RENAMED_MODELS } from "../10-catalog/hardware";
+import { fillCpus, MODELS, modelById, RENAMED_MODELS } from "../10-catalog/hardware";
 import { dropCluster, leave } from "../90-actions/clusters";
 import { yearOf } from "../00-core/time";
 import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, nextAz, seedDcs } from "../20-world/datacenters";
@@ -45,7 +45,7 @@ export function deserialize(raw: string): GameState {
   const devices = (data.devices ?? base.devices).filter(known).map((d) => {
     const model = RENAMED_MODELS[d.model] ?? d.model;
     const defaults = deviceDefaults(model, d.boughtAt ?? 0);
-    const sized = fillSizes(model, d.components ?? defaults.components);
+    const sized = fillCpus(modelById(model), fillSizes(model, d.components ?? defaults.components));
     return {
       ...defaults, ...d, model, components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
     };

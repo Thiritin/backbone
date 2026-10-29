@@ -19,6 +19,8 @@ export const dateOf = (hour: number): Date => new Date(START + hour * HOUR);
 export const hourOf = (d: Date): number => Math.floor((d.getTime() - START) / HOUR);
 
 export const yearOf = (hour: number): number => dateOf(hour).getUTCFullYear();
+// Months since year 0, January 0, for comparing against a release month.
+export const monthIndexOf = (hour: number): number => { const d = dateOf(hour); return d.getUTCFullYear() * 12 + d.getUTCMonth(); };
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

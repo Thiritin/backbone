@@ -1,6 +1,8 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
-import { componentParts, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
+import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
+import type { Vendor } from "./10-catalog/cpus";
+import { yearOf } from "./00-core/time";
 import { STARTER_APPS } from "./10-catalog/store";
 import { seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
@@ -38,7 +40,7 @@ import { firstHostNo } from "./30-customers/hostnames";
 export const SAVE_VERSION = 3;
 
 export type BondMode = "none" | "failover" | "balance";
-export type CableKind = "copper" | "dac" | "fiber";
+export type CableKind = "copper" | "dac" | "fiber" | "rollover";
 
 export type SpaceKind = "basement" | "share" | "positions" | "cage" | "suite";
 // Each location is an availability zone (az, like fra2) in the region of its city.
@@ -52,7 +54,8 @@ export interface Rack { id: string; model: RackModel; locationId: string; positi
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.
 export interface Device { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
   components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
-  rebuild: { componentId: string; doneAt: number } | null; maintenance: { componentId: string; partId: string; doneAt: number; spec?: PartSpec } | null;
+  // others are the further CPUs a swap of every socket replaces with the same spec.
+  rebuild: { componentId: string; doneAt: number } | null; maintenance: { componentId: string; partId: string; doneAt: number; spec?: PartSpec; others?: string[] } | null;
   // The hour the device's data was lost, if it ever was.
   dataLost: number | null;
   // The hour a device switched on finishes booting.
@@ -60,13 +63,21 @@ export interface Device { id: string; model: string; brand: string; rackId: stri
   // The operating system froze (hung) or the management controller did (bmcHung); log is the device's last 20 events.
   hung: boolean; bmcHung: boolean; log: { hour: number; key: string }[];
   // A hand task waiting for someone on site: pulling the plug or resetting the management controller.
-  hands?: { kind: FrontOp | "bmcreset"; doneAt: number } | null;
+  hands?: { kind: FrontOp | "bmcreset" | "continue" | "recover"; doneAt: number } | null;
+  // Remote access (60-infra/oob.ts): a server waiting at the firmware prompt (latent while off), a switch or router that locked
+  // the player out, an ATX power adapter fitted for a console-only KVM, the own way in of a console server or OOB switch,
+  // and the firmware release of network and management gear.
+  stuck: boolean; locked: boolean; atx?: true; uplink?: "dsl" | "modem"; fw?: { version: number; updatedAt: number };
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
   part?: PartSpec;
   // nodeNNN, set on servers.
   hostname?: string;
   // Bought on the used market: no insurance covers it.
   used?: true;
+  // A burn-in test running until the hour; full is the long one. burnedInAt is the hour a full burn-in passed.
+  burnin: { until: number; full: boolean } | null; burnedInAt: number | null;
+  // Buyer protection from a board or eBuy purchase: the first failure before the hour refunds this much.
+  refund?: { until: number; amount: number } | null;
 }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
@@ -75,8 +86,10 @@ export interface WaitlistEntry { id: string; dc: string; space: "share" | "posit
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
 // failedAt is the hour the component broke; null while it works. A power supply is plugged in unless plugged is false.
-// size is GB for RAM sticks and drives, cores for CPUs; ff is the form factor of a drive.
-export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; plugged?: boolean; size?: number; ff?: FormFactor }
+// size is GB for RAM sticks and drives, cores for CPUs; ff is the form factor of a drive. CPUs and boards carry their vendor,
+// CPUs their generation (1 for G1).
+// wear is what a used part's owner knows of it: hidden until a burn-in, or worn after a quick one; unset once known.
+export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; wear?: "hidden" | "worn"; plugged?: boolean; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number }
 export type RaidLevel = "none" | "1" | "5" | "6" | "10";
 export type RebuildRate = "low" | "medium" | "high";
 // since is the hour of the first change; a data loss after it wipes the changes. A path maps to a file's text, true for a
@@ -224,8 +237,9 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
   return {
     components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
-    rebuild: null, maintenance: null, dataLost: null,
+    rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null,
     hung: false, bmcHung: false, log: [] as { hour: number; key: string }[],
+    stuck: false, locked: false, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
   };
 }
 

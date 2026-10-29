@@ -5,7 +5,7 @@ import type { Device, GameState } from "../50-state";
 import { hostOfVm, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
-import { BOOT_HOURS, booting, deviceHealth, drivesOf, HOURS_PER_YEAR, powered, pluggedIn, psusOf, working } from "./status";
+import { BOOT_HOURS, booting, deviceHealth, drivesOf, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, working } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -18,6 +18,16 @@ export const HANG_YEARLY = 0.01;
 export const BMC_HANG_YEARLY = 0.01;
 export const BMC_OLD_YEARS = 6;
 export const LOG_MAX = 20;
+
+// A server sticks at the firmware prompt after a hard power event or a part swap with this chance, until a console or hands
+// continue the boot (oob.ts).
+export const STUCK_CHANCE = 0.05;
+
+// Only in a datacenter: in the basement the player sees the screen and presses the key at once.
+export function rollStuck(s: GameState, d: Device): void {
+  if (!locationOf(s, d)?.dc) return;
+  if (modelById(d.model).kind === "server" && rand(hashRng(s.seed, s.hour, Number(d.id.replace(/\D/g, "")) || 0, 41)) < STUCK_CHANCE) d.stuck = true;
+}
 
 export function pushLog(d: Pick<Device, "log">, hour: number, key: string): void {
   d.log = [...d.log, { hour, key }].slice(-LOG_MAX);
@@ -54,6 +64,7 @@ function uncleanStop(s: GameState, d: Device): "ipmi.log.resync" | "ipmi.log.cor
 export function losePower(s: GameState, d: Device): void {
   const outcome = uncleanStop(s, d);
   d.hung = false;
+  rollStuck(s, d);
   pushLog(d, s.hour, "ipmi.log.pulled");
   if (outcome) pushLog(d, s.hour, outcome);
 }
@@ -97,6 +108,7 @@ export function atFront(s: GameState, d: Device, op: FrontOp): void {
 export function hardReboot(s: GameState, d: Device, key: "ipmi.log.reset" | "ipmi.log.cycle"): void {
   const outcome = uncleanStop(s, d);
   d.hung = false;
+  rollStuck(s, d);
   d.bootUntil = s.hour + BOOT_HOURS;
   pushLog(d, s.hour, key);
   if (outcome) pushLog(d, s.hour, outcome);
@@ -113,12 +125,20 @@ export function powerTick(s: GameState): SimEvent[] {
     const n: Device = { ...d };
     let changed = false;
     if (d.hands && d.hands.doneAt <= s.hour) {
-      if (d.hands.kind !== "bmcreset") atFront(s, n, d.hands.kind);
-      else { n.bmcHung = false; pushLog(n, s.hour, "ipmi.log.bmcReset"); }
+      if (d.hands.kind === "bmcreset") { n.bmcHung = false; pushLog(n, s.hour, "ipmi.log.bmcReset"); }
+      else if (d.hands.kind === "continue") { n.stuck = false; pushLog(n, s.hour, "ipmi.log.continued"); }
+      else if (d.hands.kind === "recover") { n.hung = false; n.locked = false; pushLog(n, s.hour, "ipmi.log.gearRecovered"); }
+      else atFront(s, n, d.hands.kind);
       n.hands = null;
       changed = true;
     }
     const seed = Number(d.id.replace(/\D/g, "")) || 0;
+    // A boot that ended this hour at the firmware prompt.
+    if (server && n.stuck && n.on && n.bootUntil !== undefined && n.bootUntil <= s.hour && n.bootUntil > s.hour - 1) {
+      pushLog(n, s.hour, "ipmi.log.stuck");
+      events.push({ app: "Locations", key: "event.serverStuck", params: { device: name(d) } });
+      changed = true;
+    }
     if (server && n.on && !n.hung && powered(s, d.id) && !booting(s, d) && rand(hashRng(s.hour, seed, 1)) < hangChance(s, d)) {
       n.hung = true;
       pushLog(n, s.hour, "ipmi.log.hung");

@@ -1,6 +1,7 @@
 // Used hardware market (economy.md, Hardware, power and failures, Used hardware): channels, price bands and the yearly events.
 import { hourOf } from "../00-core/time";
 import type { Device, GameState } from "../50-state";
+import type { Vendor } from "./cpus";
 
 export type Channel = "ebuy" | "board" | "chat";
 export const CHANNELS: { id: Channel; name: string }[] = [
@@ -63,6 +64,8 @@ export interface Listing {
   channel: Channel;
   model: string;
   brand: string;
+  // A server's CPU maker; listings from before CPU vendors carry the preset's.
+  vendor?: Vendor;
   qty: number;
   // Years since the unit was first bought.
   age: number;

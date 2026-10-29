@@ -2,11 +2,12 @@ import { Cpu, Plus } from "lucide-react";
 import { Fragment, useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf, yearOf } from "../../../sim/00-core/time";
-import { COMPONENTS, fits, modelById, samePart, slotsOf, type ComponentKind, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { COMPONENTS, fits, modelById, samePart, slotsOf, specOf as catalogSpec, type ComponentKind, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
 import { partPrice } from "../../../sim/10-catalog/parts";
 import type { Component, Device, GameState } from "../../../sim/50-state";
 import { hotKind, hotSwappable, locationOf } from "../../../sim/60-infra/status";
-import { installPart, removePart, replaceComponent } from "../../../sim/90-actions/hardware";
+import { installPart, removePart, replaceComponent, replaceSpares } from "../../../sim/90-actions/hardware";
 import { ageYears, isWorn, PART_NAME, partLabel, partSize, partSlot } from "../hw";
 import { useHandWork } from "./HandSheet";
 import { TechButton } from "./TechButton";
@@ -28,7 +29,7 @@ function groupsOf(device: Device): Group[] {
   ];
   return groups.filter((g) => g.slots > 0);
 }
-export const specOf = (c: { kind: ComponentKind; size?: number; ff?: Component["ff"] }): PartSpec => ({ kind: c.kind, ...(c.size !== undefined ? { size: c.size } : {}), ...(c.ff ? { ff: c.ff } : {}) });
+export const specOf = catalogSpec;
 const EMPTY_SHOWN = 4;
 const clock = (hour: number) => dateOf(hour).toISOString().slice(11, 16);
 // What a spare in storage is.
@@ -43,7 +44,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
   const zone = device.rackId ? locationOf(game, device) : game.locations.find((l) => l.id === device.store);
   const held = device.maintenance ? "Work under way" : device.rackId || device.store ? null : "In transit";
   const spares = (kinds: ComponentKind[]) => game.devices.filter((d) => d.store === zone?.id && kinds.some((k) => d.model === `part-${k}`));
-  const spareFor = (c: Component) => spares([c.kind]).some((d) => d.part === undefined || (d.part.size ?? 0) >= (c.size ?? 0));
+  const swapSet = (c: Component) => (zone ? replaceSpares(game, device, c, zone.id).length : 0), spareFor = (c: Component) => swapSet(c) > 0;
   return (
     <div className="loc-card">
       <div className="loc-card-h"><h3><Cpu />Components</h3>{held && <span className="loc-muted">{held}</span>}</div>
@@ -60,11 +61,11 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
               <tr className="loc-group"><th colSpan={6}>{g.name}<span className="num loc-muted"> {filled.length} of {g.slots}</span></th></tr>
               {filled.map((c, i) => {
                 const life = COMPONENTS[c.kind].life, age = ageYears(game, c), worn = isWorn(game, c);
-                const swap = device.maintenance?.componentId === c.id, rebuild = device.rebuild?.componentId === c.id;
+                const m = device.maintenance, swap = m?.componentId === c.id || !!m?.others?.includes(c.id),rebuild = device.rebuild?.componentId === c.id;
                 const status = swap ? <span className="pill">Swap at <span className="num">{clock(device.maintenance!.doneAt)}</span></span>
                   : c.failedAt !== null ? <span className="pill bad">Failed</span>
                   : rebuild ? <span className="pill warn">Rebuilding</span>
-                  : worn ? <span className="pill warn">Worn</span> : <span className="pill ok">OK</span>;
+                  : worn ? <span className="pill warn">Worn</span> : c.wear ? <span className="pill">Untested</span> : <span className="pill ok">OK</span>;
                 const busy = swap || held !== null || !device.rackId;
                 const hot = hotSwappable(device, c);
                 const block = busy ? null : !spareFor(c) ? (c.failedAt !== null || worn ? `No part in ${zone?.az ?? ""}` : "")
@@ -72,20 +73,20 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                 const removable = c.kind !== "board" && c.kind !== "nic" && !swap && held === null;
                 return (
                   <tr key={c.id}>
-                    <td>{PART_NAME[c.kind]}</td>
+                    <td>{c.vendor ? `${VENDOR_NAME[c.vendor]} ` : ""}{PART_NAME[c.kind]}</td>
                     <td className="num">{partSize(c)}</td>
                     <td className="num">{partSlot(c.kind, i + 1)}</td>
                     <td>
                       <span className={`loc-meter${worn ? " worn" : ""}`}>
-                        <span className="loc-meter-bar"><span style={{ width: `${Math.min(1, age / life) * 100}%` }} /></span>
-                        <span className="num">{age.toFixed(1)} / {life} y</span>
+                        <span className="loc-meter-bar"><span style={{ width: `${age === null ? (worn ? 80 : 0) : Math.min(1, age / life) * 100}%` }} /></span>
+                        <span className="num">{age === null ? "Unknown" : `${age.toFixed(1)} / ${life} y`}</span>
                       </span>
                     </td>
                     <td>{status}</td>
                     <td className="r">
                       <span className="loc-acts">
                         {busy ? null : block !== null ? <span className="loc-muted">{block}</span>
-                          : <button className="btn" onClick={() => hand.start(game, { title: `Replace ${PART_NAME[c.kind].toLowerCase()}`, deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id } })}>Replace</button>}
+                          : <button className="btn" onClick={() => hand.start(game, { title: swapSet(c) > 1 ? `Replace ${swapSet(c)} CPUs` : `Replace ${PART_NAME[c.kind].toLowerCase()}`, deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id } })}>Replace</button>}
                         {!busy && spareFor(c) && <TechButton game={game} deviceId={device.id} kind="replace" componentId={c.id} />}
                         {removable && (device.rackId && device.on && !hot ? null : <button className="btn" onClick={() => hand.start(game, { title: `Remove ${PART_NAME[c.kind].toLowerCase()}`, deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id } })}>Remove</button>)}
                         {removable && !!device.rackId && <TechButton game={game} deviceId={device.id} kind="part" componentId={c.id} />}
@@ -115,7 +116,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                         return (
                           <Fragment key={d.id}>
                             <button className="btn" disabled={cold(d)} onClick={() => { hand.start(game, { title: `Install ${partLabel(spec)}`, deviceId: device.id, action: installPart, args: [device.id, d.id, undefined], tech: { kind: "part", partId: d.id } }); setAdding(null); }}>
-                              {partLabel(spec)}{n > 1 && <span className="num"> × {n}</span>}<span className="num loc-muted"> {euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour)))}</span>
+                              {partLabel(spec)}{n > 1 && <span className="num"> × {n}</span>}<span className="num loc-muted"> {euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour), spec))}</span>
                             </button>
                             {!!device.rackId && <TechButton game={game} deviceId={device.id} kind="part" partId={d.id} />}
                           </Fragment>

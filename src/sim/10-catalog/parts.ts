@@ -3,6 +3,7 @@
 import { erodedPrice } from "./lifecycle";
 import { cardOf, gpuPrice } from "./gpu";
 import { bareParts, componentParts, manufacturerByName, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "./hardware";
+import { cpuModel, type Vendor } from "./cpus";
 
 type Keyframes = [year: number, price: number][];
 
@@ -30,8 +31,10 @@ const FAN = 25;
 const SOLD_FROM: Partial<Record<ComponentKind, number>> = { ssd: 2009, nvme: 2014, gpu: 2007 };
 export const partSold = (kind: ComponentKind, year: number): boolean => year >= (SOLD_FROM[kind] ?? 0);
 
-// A part of unknown size counts as one unit (1 GB, 1 GB of HDD, 1 core). The price is a whole euro.
-export const partPrice = (kind: ComponentKind, size: number | undefined, _ff: FormFactor | undefined, year: number): number => Math.round(rawPrice(kind, size ?? 1, year));
+// A part of unknown size counts as one unit (1 GB, 1 GB of HDD, 1 core). The price is a whole euro; a CPU's follows its vendor's
+// price factor (cpus.ts).
+export const partPrice = (kind: ComponentKind, size: number | undefined, _ff: FormFactor | undefined, year: number, cpu?: Pick<PartSpec, "vendor" | "gen">): number =>
+  Math.round(rawPrice(kind, size ?? 1, year) * (kind === "cpu" && cpu?.vendor && cpu.gen ? cpuModel(cpu.vendor, cpu.gen)?.price ?? 1 : 1));
 function rawPrice(kind: ComponentKind, n: number, year: number): number {
   switch (kind) {
     case "ram": return n * lerp(RAM, year);
@@ -48,7 +51,7 @@ function rawPrice(kind: ComponentKind, n: number, year: number): number {
     case "gpu": return gpuPrice(cardOf(n), year);
   }
 }
-export const partsPrice = (parts: PartSpec[], year: number): number => parts.reduce((n, p) => n + partPrice(p.kind, p.size, p.ff, year), 0);
+export const partsPrice = (parts: PartSpec[], year: number): number => parts.reduce((n, p) => n + partPrice(p.kind, p.size, p.ff, year, p), 0);
 
 // A chassis never costs less than this share of the preset's list price.
 export const CHASSIS_FLOOR = 0.25;
@@ -62,15 +65,15 @@ export function chassisPrice(m: DeviceModel): number {
 // their price; the launch year price stays the list price.
 const partShare = (m: DeviceModel): number => (m.price - chassisPrice(m)) / partsPrice(componentParts(m), m.from);
 
-// What a preset costs in a year: its chassis plus its parts at that year's prices, times the brand's price factor.
-export function presetPrice(m: DeviceModel, year: number, brand?: string): number {
+// What a preset costs in a year: its chassis plus its parts with the vendor's CPUs at that year's prices, times the brand's price factor.
+export function presetPrice(m: DeviceModel, year: number, brand?: string, vendor?: Vendor): number {
   const factor = (!m.brand && brand && manufacturerByName(brand)?.priceFactor) || 1;
   if (!m.server) return Math.round(erodedPrice(m, m.price, year) * factor);
-  return Math.round((chassisPrice(m) + partShare(m) * partsPrice(componentParts(m), year)) * factor);
+  return Math.round((chassisPrice(m) + partShare(m) * partsPrice(componentParts(m, vendor), year)) * factor);
 }
 
 // A preset with its CPUs, RAM and drives left out, never below a quarter of the preset.
-export function bareChassisPrice(m: DeviceModel, year: number, brand?: string): number {
-  const preset = presetPrice(m, year, brand);
-  return Math.max(Math.round(preset * CHASSIS_FLOOR), preset - (partsPrice(componentParts(m), year) - partsPrice(bareParts(m), year)));
+export function bareChassisPrice(m: DeviceModel, year: number, brand?: string, vendor?: Vendor): number {
+  const preset = presetPrice(m, year, brand, vendor);
+  return Math.max(Math.round(preset * CHASSIS_FLOOR), preset - (partsPrice(componentParts(m, vendor), year) - partsPrice(bareParts(m, vendor), year)));
 }

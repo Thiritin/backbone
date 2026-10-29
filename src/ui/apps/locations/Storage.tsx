@@ -130,7 +130,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
   const [listing, setListing] = useState(false);
   // Leased units can't be sold, so Sell takes the first paid-off unit of the stack.
   const m = modelById(stack.model), units = game.devices.filter((d) => stack.ids.includes(d.id)), first = units.find((d) => !d.lease) ?? units[0];
-  const rackable = m.height > 0 || m.kind === "pdu", office = isOfficeRouter(m), install = () => act(installRouter, units[0].id);
+  const rackable = m.height > 0 || m.kind === "pdu" || m.kind === "kvm", office = isOfficeRouter(m), install = () => act(installRouter, units[0].id);
   const entries = (): MenuEntry[] => [
     rackable && { label: "Mount…", run: () => setMounting(true) },
     office && { label: "Install", run: install },
