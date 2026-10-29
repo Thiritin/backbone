@@ -10,7 +10,7 @@ import { setupFee, sizeOf } from "../../../sim/30-market/spec";
 import { invoiceOf, stepsDone } from "../../../sim/30-market/manual";
 import type { SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
-import { routeOptions } from "../../../sim/60-infra/routes";
+import { routeOptions, sumOf } from "../../../sim/60-infra/routes";
 import { acceptUpgrade, confirmOrder, createAccount, provisionOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
 import { decline } from "../../../sim/90-actions/sales";
 import { closeTicket } from "../../../sim/90-actions/support";
@@ -23,12 +23,40 @@ const gb = (x: number) => `${n(x)} GB`;
 
 const free = (r: Resources) => `${n(r.vcpu)} vCPU · ${gb(r.ramGb)} RAM · ${gb(r.diskGb)} disk free`;
 
-// Where the service goes: automatic, a cluster in the city or one of its servers, with what each can still book.
-export function RouteCards({ product, city, size, value, onChange, disabled }: {
-  product: Product; city: string; size: Resources; value: string; onChange: (v: string) => void; disabled?: boolean;
+const LOAD: [string, "vcpu" | "ramGb" | "diskGb", string][] = [["CPU", "vcpu", "vCPU"], ["RAM", "ramGb", "GB"], ["Storage", "diskGb", "GB"]];
+const tone = (x: number) => (x >= 0.9 ? "bad" : x >= 0.7 ? "warn" : "ok");
+
+// What a target has booked now and once the service lands on it.
+function Load({ title, cap, used, size }: { title: string; cap: Resources; used: Resources; size: Resources }) {
+  return (
+    <section className="sales-bars route-load">
+      <h3>{title}</h3>
+      {LOAD.map(([label, k, unit]) => {
+        const before = cap[k] ? used[k] / cap[k] : 1, after = cap[k] ? (used[k] + size[k]) / cap[k] : 1;
+        return (
+          <div key={k} className="res">
+            <span className="res-k">{label}</span>
+            <span className="res-bar" role="img" aria-label={`${label} ${Math.round(before * 100)}% now, ${Math.round(after * 100)}% after`}>
+              <i className={`after ${tone(after)}`} style={{ width: `${Math.min(100, after * 100)}%` }} />
+              <i className="before" style={{ width: `${Math.min(100, before * 100)}%` }} />
+            </span>
+            <span className="res-v num">{n(size[k])} {unit}</span>
+            <span className={`res-p num ${after > 1 ? "over" : ""}`}>{Math.round(after * 100)}%</span>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+// Where the service goes: automatic, a cluster in the city or one of its servers, with what each can still book and the
+// load of the chosen one. An upgrade frees the service it replaces wherever that runs now.
+export function RouteCards({ product, city, size, value, onChange, disabled, serviceId }: {
+  product: Product; city: string; size: Resources; value: string; onChange: (v: string) => void; disabled?: boolean; serviceId?: string;
 }) {
   const game = useStore((s) => s.game);
   const clusters = routeOptions(game, product, city, size), name = useId();
+  const old = serviceId ? game.workloads.find((w) => w.serviceId === serviceId) : undefined;
   const card = (id: string, title: string, sub: string, fits: boolean, nested = false) => (
     <label key={id} className={`route${nested ? " node" : ""}${fits ? "" : " full"}`}>
       <input type="radio" name={name} checked={value === id} disabled={disabled} onChange={() => onChange(id)} />
@@ -36,14 +64,22 @@ export function RouteCards({ product, city, size, value, onChange, disabled }: {
       <span className="route-s num">{sub}</span>
     </label>
   );
+  const picked = clusters.find((c) => c.id === value), node = clusters.flatMap((c) => c.nodes).find((d) => d.id === value);
+  const target = picked ? { title: `${picked.name} · ${picked.az}`, ...picked, holds: old?.clusterId === picked.id }
+    : node ? { title: node.name, ...node, holds: old?.deviceId === node.id }
+    : { title: city, cap: sumOf(clusters.map((c) => c.cap)), used: sumOf(clusters.map((c) => c.used)), holds: clusters.some((c) => c.id === old?.clusterId) };
+  const used = old && target.holds ? { vcpu: target.used.vcpu - old.vcpu, ramGb: target.used.ramGb - old.ramGb, diskGb: target.used.diskGb - old.diskGb } : target.used;
   return (
-    <div className="routes" role="radiogroup" aria-label="Target">
-      {card("auto", "Automatic", `${clusters.length} cluster${clusters.length === 1 ? "" : "s"} in ${city}`, clusters.some((c) => c.fits))}
-      {clusters.flatMap((c) => [
-        card(c.id, `${c.name} · ${c.az}`, free(c.free), c.fits),
-        ...c.nodes.map((d) => card(d.id, d.name, free(d.free), d.fits, true)),
-      ])}
-    </div>
+    <>
+      <div className="routes" role="radiogroup" aria-label="Target">
+        {card("auto", "Automatic", `${clusters.length} cluster${clusters.length === 1 ? "" : "s"} in ${city}`, clusters.some((c) => c.fits))}
+        {clusters.flatMap((c) => [
+          card(c.id, `${c.name} · ${c.az}`, free(c.free), c.fits),
+          ...c.nodes.map((d) => card(d.id, d.name, free(d.free), d.fits, true)),
+        ])}
+      </div>
+      {clusters.length > 0 && (size.vcpu || size.ramGb || size.diskGb) ? <Load title={target.title} cap={target.cap} used={used} size={size} /> : null}
+    </>
   );
 }
 
@@ -131,7 +167,7 @@ export function UpgradeCompose({ r }: { r: SalesRequest }) {
         <div className="compose custom-steps">
           <PriceField value={price} reference={r.reference} onChange={setPrice} label="New monthly price" />
           <span className="sales-total">Difference <span className="num">{price >= current ? "+" : ""}{euroCents(price - current)}</span> a month</span>
-          <RouteCards product={r.product} city={r.city} size={sizeOf(r.spec)} value={route} onChange={setRoute} />
+          <RouteCards product={r.product} city={r.city} size={sizeOf(r.spec)} value={route} onChange={setRoute} serviceId={r.serviceId ?? undefined} />
           <div className="actions-row">
             <button className="btn ghost" onClick={() => act((s) => decline(s, r.id))}><CircleX />Decline</button>
             <span className="grow" />

@@ -4,7 +4,8 @@ import { workloadsOn } from "../../../sim/60-infra/cluster";
 import { recover, restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { TechButton } from "./TechButton";
-import { powerOptions, type PowerOp } from "./power";
+import { ActionTile } from "../software/Software";
+import { POWER_ICON, powerOptions, type PowerOp } from "./power";
 
 const HANDS: Record<"pull" | "bmcreset", string> = { pull: "Pulling power", bmcreset: "Resetting controller" };
 
@@ -19,11 +20,15 @@ export function PowerCard({ game, device, onOp }: { game: GameState; device: Dev
         <h3><Power />Power{via && <span className="loc-muted"> via {via}</span>}</h3>
         {device.hands && <span className="pill accent">{HANDS[device.hands.kind]}</span>}
       </div>
-      <div className="loc-row insp-power-row">
-        {options.map((o) => <button key={o.op} className="btn" disabled={o.disabled} onClick={() => onOp(o.op)}>{o.label}</button>)}
-        {device.hung && <TechButton game={game} deviceId={device.id} kind="reset" />}
-        {device.bmcHung && !device.hands && <TechButton game={game} deviceId={device.id} kind="bmcreset" />}
+      <div className="act-tiles">
+        {options.map((o) => <ActionTile key={o.op} icon={POWER_ICON[o.op]} label={o.label} disabled={o.disabled} onClick={() => onOp(o.op)} />)}
       </div>
+      {(device.hung || (device.bmcHung && !device.hands)) && (
+        <div className="loc-row insp-power-row">
+          {device.hung && <TechButton game={game} deviceId={device.id} kind="reset" />}
+          {device.bmcHung && !device.hands && <TechButton game={game} deviceId={device.id} kind="bmcreset" />}
+        </div>
+      )}
       {bad.length > 0 && (
         <table className="table loc-parts">
           <tbody>

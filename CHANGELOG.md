@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- Servers and virtual machines show their power actions as square tiles, and a custom order shows the CPU, RAM and storage load of the cluster or server you pick to set it up on.
+- Each location shows what its cluster servers have booked next to what they use right now.
 - OpenVeeZee and Proxmocks split cores, so a VPS customer can buy 0.8 of a core, while OpenStash, VMwhere and HyperVee book every VM in whole cores.
 - Locations has a sidebar with every site grouped by region and the racks of the open site, and each site splits into Floor, Cabling, Storage, Clusters and Internet line tabs.
 - The first-hour design note describes the current start, and the datacenter space docs match the rack shares the game rents.

@@ -1,4 +1,4 @@
-import { Boxes, MonitorCog, Plus, RotateCcw, TriangleAlert } from "lucide-react";
+import { Boxes, MonitorCog, Plus, Power, PowerOff, RotateCcw, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { useSessionState } from "../../session";
 import { softwareById } from "../../../sim/10-catalog/platforms";
@@ -17,7 +17,7 @@ import "../billing/billing.css";
 import { CustomerLink } from "../customers/CustomersApp";
 import { day, devName, disk, ram } from "../hw";
 import { ResizeCard, SizeFields } from "../products/PanelHosts";
-import { SoftwareGrid } from "../software/Software";
+import { ActionTile, SoftwareGrid } from "../software/Software";
 import { Mark, IncidentReports, Sparkline, VM_STATE, vmLabel, vmState, type VmState } from "../products/parts";
 import { PRODUCT } from "../support/labels";
 import { AddressRows } from "../network/Addresses";
@@ -180,6 +180,13 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
         <div><dt>Last backup</dt><dd className="num">{w.backupAt === null ? "None" : day(w.backupAt)}</dd></div>
         {w.busyUntil > game.hour && <div><dt>Back in</dt><dd className="num">{w.busyUntil - game.hour} h</dd></div>}
       </dl>
+      <section className="fin-card">
+        <div className="fin-card-h">Power</div>
+        <div className="fin-card-b act-tiles">
+          <ActionTile icon={Power} label="Power on" disabled={st !== "stopped"} onClick={() => act((g) => startWorkload(g, w.id))} />
+          <ActionTile icon={PowerOff} label="Shut down" disabled={!(st === "running" || st === "down" || st === "frozen")} onClick={() => act((g) => stopWorkload(g, w.id))} />
+        </div>
+      </section>
       <section className="fin-card">
         <div className="fin-card-h">Load today</div>
         <div className="fin-card-b"><Sparkline values={load} from={from} w={250} /></div>

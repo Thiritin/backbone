@@ -10,6 +10,7 @@ import type { Device, GameState, Location } from "../../../sim/50-state";
 import { bookable, clusterOf, nodeUsed, vmById, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { nodeUsage } from "../../../sim/60-infra/usage";
+import { sumOf } from "../../../sim/60-infra/routes";
 import { joinableServers } from "../../../sim/90-actions/software";
 import { addNode, phpDue, setPlacement, setRamGuard, upgradePhp } from "../../../sim/90-actions/clusters";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
@@ -32,20 +33,29 @@ export function Meter({ used, cap, text }: { used: number; cap: number; text: st
   );
 }
 
-// Booked against what the node physically holds, next to live use against the hardware, row by row.
-function NodeMeters({ game, d }: { game: GameState; d: Device }) {
-  const cap = bookable(game, d), used = nodeUsed(game, d.id), live = nodeUsage(game, d.id), { used: u, physical: p } = live;
+// Booked against what the servers physically hold, next to live use against the hardware, row by row.
+export function BookedMeters({ game, devices }: { game: GameState; devices: Device[] }) {
+  const live = devices.map((d) => nodeUsage(game, d.id));
+  const cap = sumOf(devices.map((d) => bookable(game, d))), used = sumOf(devices.map((d) => nodeUsed(game, d.id)));
+  const u = sumOf(live.map((l) => l.used)), p = sumOf(live.map((l) => l.physical));
   const rows: [string, ReactNode, ReactNode][] = [
     ["CPU", <Meter used={used.vcpu} cap={cap.vcpu} text={`${num(used.vcpu)}/${num(cap.vcpu)} vCPU`} />, <Meter used={u.vcpu} cap={p.vcpu} text={`${num(u.vcpu)}/${cores(p.vcpu)}`} />],
     ["RAM", <Meter used={used.ramGb} cap={cap.ramGb} text={`${num(used.ramGb)}/${ram(+cap.ramGb.toFixed(1))}`} />, <Meter used={u.ramGb} cap={p.ramGb} text={`${num(u.ramGb)}/${ram(p.ramGb)}`} />],
     ["Disk", <Meter used={used.diskGb} cap={cap.diskGb} text={`${Math.round(used.diskGb)}/${disk(Math.round(cap.diskGb))}`} />, <Meter used={u.diskGb} cap={p.diskGb} text={`${Math.round(u.diskGb)}/${disk(p.diskGb)}`} />],
   ];
   return (
+    <div className="node-meters">
+      <span /><span className="loc-k">Booked</span><span className="loc-k">In use</span>
+      {rows.map(([k, a, b]) => <Fragment key={k}><span className="loc-k">{k}</span>{a}{b}</Fragment>)}
+    </div>
+  );
+}
+
+function NodeMeters({ game, d }: { game: GameState; d: Device }) {
+  const live = nodeUsage(game, d.id), { used: u, physical: p } = live;
+  return (
     <>
-      <div className="node-meters">
-        <span /><span className="loc-k">Booked</span><span className="loc-k">In use</span>
-        {rows.map(([k, a, b]) => <Fragment key={k}><span className="loc-k">{k}</span>{a}{b}</Fragment>)}
-      </div>
+      <BookedMeters game={game} devices={[d]} />
       {game.frozen.includes(d.id) && (
         <div className="loc-row"><span className="loc-k">Frozen</span><span className="pill bad">RAM in use {num(u.ramGb)} of {ram(p.ramGb)}</span></div>
       )}

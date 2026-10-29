@@ -25,7 +25,7 @@ import { supportApp } from "./desk";
 import { CustomCompose, InvoicePill } from "./CustomOrder";
 import { specText } from "../../../sim/30-market/spec";
 import { due, initials, KINDS, kindOf, monthYear, moodClass, PRODUCT, span, stamp, statusOf } from "./labels";
-import { Bars, Card, Deadline, LostSales, need, OPEN, SALES_BOXES, STATUS as SALES_STATUS, type SalesBox } from "../sales/SalesApp";
+import { Card, Deadline, LostSales, need, OPEN, SALES_BOXES, STATUS as SALES_STATUS, type SalesBox } from "../sales/SalesApp";
 import "./support.css";
 import "./mail-styles.css";
 
@@ -282,7 +282,6 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
           ))}
         </ul>
       )}
-      {!missing.length && !isFinal(tk) && <Bars r={r} />}
 
       <div className="thread">
         {r.thread.map((m, i) => (

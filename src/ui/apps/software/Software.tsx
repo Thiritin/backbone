@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, type LucideIcon } from "lucide-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { softwareById } from "../../../sim/10-catalog/platforms";
@@ -13,6 +13,11 @@ import "./software.css";
 
 // The clusters a server's software can join: the zone's other clusters on the same software, while nothing runs on it.
 const joinable = (game: GameState, machineId: string, x: Installed) => (x.doneAt === null ? joinableClusters(game, machineId) : []);
+
+// A square action button with its icon above the label, sized like the software tiles.
+export function ActionTile({ icon: Icon, label, disabled, onClick }: { icon: LucideIcon; label: string; disabled?: boolean; onClick: () => void }) {
+  return <button className="sw-tile act-tile" disabled={disabled} onClick={onClick}><Icon size={22} /><span className="t">{label}</span></button>;
+}
 
 // The software installed on a server or one of the player's VMs as tiles, then a tile that adds more.
 export function SoftwareGrid({ game, machineId }: { game: GameState; machineId: string }) {

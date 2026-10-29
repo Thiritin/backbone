@@ -1,3 +1,4 @@
+import { Power, PowerOff, RefreshCw, RotateCcw, ServerCog, Unplug, type LucideIcon } from "lucide-react";
 import { BMC_NAME, hasBmc, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState } from "../../../sim/50-state";
 import { pduOf } from "../../../sim/60-infra/pdu";
@@ -6,6 +7,7 @@ import { powerCycle, pullPower, reset, resetBmc, setPower, shutdown, type Action
 
 export type PowerOp = "on" | "shutdown" | "reset" | "cycle" | "pull" | "bmc";
 export const POWER_LABEL: Record<PowerOp, string> = { on: "Power on", shutdown: "Shut down", reset: "Reset", cycle: "Power cycle", pull: "Pull power", bmc: "Reset controller" };
+export const POWER_ICON: Record<PowerOp, LucideIcon> = { on: Power, shutdown: PowerOff, reset: RotateCcw, cycle: RefreshCw, pull: Unplug, bmc: ServerCog };
 export interface PowerOption { op: PowerOp; label: string; disabled?: boolean }
 
 export const POWER_ACTION: Record<PowerOp, (g: GameState, id: string) => ActionResult> = {

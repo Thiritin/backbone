@@ -259,9 +259,12 @@ describe("routing and upgrades", () => {
     const options = routeOptions(s, "vps", "Frankfurt", req().spec!);
     expect(options.length).toBe(1);
     const node = options[0].nodes[0];
+    expect(options[0].free.diskGb).toBeCloseTo(Math.max(0, options[0].cap.diskGb - options[0].used.diskGb));
+    expect(options[0].cap.diskGb).toBeCloseTo(options[0].nodes.reduce((a, n) => a + n.cap.diskGb, 0));
     expect(provisionOrder(s, id, "dev999")).toEqual({ ok: false, error: "error.unknownCluster" });
     done(s, provisionOrder(s, id, node.id));
     expect(s.workloads.find((w) => w.serviceId === req().serviceId)!.deviceId).toBe(node.id);
+    expect(routeOptions(s, "vps", "Frankfurt", req().spec!)[0].nodes.find((n) => n.id === node.id)!.used.vcpu).toBeCloseTo(node.used.vcpu + s.workloads.find((w) => w.serviceId === req().serviceId)!.vcpu);
     const big = order(s, vps);
     done(s, createAccount(s, big.id));
     s.sales.requests = s.sales.requests.map((r) => (r.id === big.r.id ? { ...r, spec: { ...r.spec!, diskGb: 10_000_000 } } : r));

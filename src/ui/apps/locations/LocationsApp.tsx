@@ -3,13 +3,13 @@ import { useState, type ReactNode } from "react";
 import { useSessionState } from "../../session";
 import type { GameState } from "../../../sim/50-state";
 import { locationOf, storageStacks } from "../../../sim/60-infra/status";
-import { usageOf } from "../../../sim/60-infra/usage";
+import { clusterOf } from "../../../sim/60-infra/cluster";
 import { Logo } from "../../art/logos";
 import { useFocus, useStore } from "../../store";
 import { day } from "../hw";
 import { AddLocation } from "./AddLocation";
 import { Cabling } from "./Cabling";
-import { Clusters } from "./Clusters";
+import { BookedMeters, Clusters } from "./Clusters";
 import { CarrierPanel, Floor } from "./Floor";
 import { HomeLinePanel } from "./HomeLine";
 import { Inspector } from "./Inspector";
@@ -17,7 +17,7 @@ import "./locations.css";
 import { Overview, Waitlist } from "./Overview";
 import { RackView, Upgrades } from "./RackView";
 import { Storage } from "./Storage";
-import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, UsageBars, Zone } from "./ui";
+import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, Zone } from "./ui";
 import { REGIONS } from "../../../sim/20-world/datacenters";
 
 type Tab = "floor" | "cabling" | "storage" | "clusters" | "line";
@@ -141,6 +141,7 @@ function LocationTabs({ game, locId, tab, rack, onTab }: { game: GameState; locI
 
 function LocationHead({ game, locId }: { game: GameState; locId: string }) {
   const loc = game.locations.find((l) => l.id === locId)!, dc = dcOf(loc), power = locationPower(game, loc.id);
+  const nodes = game.devices.filter((d) => d.rackId && clusterOf(game, d.id) && locationOf(game, d)?.id === loc.id);
   return (
     <header className="loc-top">
     <div className="loc-head">
@@ -157,7 +158,7 @@ function LocationHead({ game, locId }: { game: GameState; locId: string }) {
       {dc && <span className="pill">{exchangeLabel(dc)}</span>}
       <PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} />
     </div>
-    <UsageBars wide usage={usageOf(game, game.devices.filter((d) => d.rackId && locationOf(game, d)?.id === loc.id))} />
+    {nodes.length > 0 && <div className="loc-head-meters"><BookedMeters game={game} devices={nodes} /></div>}
     </header>
   );
 }

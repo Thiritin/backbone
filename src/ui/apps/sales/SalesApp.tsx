@@ -3,7 +3,6 @@ import { useState } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { SLAS } from "../../../sim/10-catalog/products";
 import { missingFor, requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
-import { nodeCapacity, nodeUsed } from "../../../sim/60-infra/cluster";
 import { profileStats } from "../../../sim/40-support/tickets";
 import type { GameState } from "../../../sim/50-state";
 import { decline, quote } from "../../../sim/90-actions/sales";
@@ -13,7 +12,7 @@ import { CustomerLink } from "../customers/CustomersApp";
 import { initials, patience, PRODUCT, stamp } from "../support/labels";
 import { PriceField } from "./PriceField";
 import { UpgradeCompose } from "../support/CustomOrder";
-import { sizeOf, specText } from "../../../sim/30-market/spec";
+import { specText } from "../../../sim/30-market/spec";
 import "../support/support.css";
 import "./sales.css";
 
@@ -36,45 +35,6 @@ export function Deadline({ r, hour }: { r: SalesRequest; hour: number }) {
   if (!OPEN.includes(r.status)) return <span className="sla num">{stamp(r.createdAt)}</span>;
   const left = r.deadline - hour;
   return <span className={`sla ${left <= 12 ? "warn" : ""}`}><span className="num">{Math.max(0, left)}</span> h left</span>;
-}
-
-// The target cluster's booked share before and after this request, per resource.
-export function Bars({ r }: { r: SalesRequest }) {
-  const game = useStore((s) => s.game);
-  const zones = game.locations.filter((l) => l.city === r.city).map((l) => l.az);
-  const cluster = game.clusters.find((c) => zones.includes(c.az) && c.nodes.length);
-  const size = sizeOf(r.spec);
-  if (!cluster || !size.vcpu && !size.ramGb && !size.diskGb) return null;
-  const cap = { vcpu: 0, ramGb: 0, diskGb: 0 }, used = { ...cap };
-  for (const n of cluster.nodes) {
-    const d = game.devices.find((x) => x.id === n.deviceId);
-    if (!d || n.state !== "active") continue;
-    const c = nodeCapacity(d), u = nodeUsed(game, d.id);
-    for (const k of ["vcpu", "ramGb", "diskGb"] as const) { cap[k] += c[k]; used[k] += u[k]; }
-  }
-  // An expansion frees the service it replaces.
-  const old = r.kind === "expansion" && r.serviceId ? game.workloads.find((w) => w.serviceId === r.serviceId && w.clusterId === cluster.id) : undefined;
-  const rows: [string, "vcpu" | "ramGb" | "diskGb", string][] = [["CPU", "vcpu", "vCPU"], ["RAM", "ramGb", "GB"], ["Storage", "diskGb", "GB"]];
-  const cls = (x: number) => (x >= 0.9 ? "bad" : x >= 0.7 ? "warn" : "ok");
-  return (
-    <section className="sales-bars">
-      <h3>{cluster.name} · {cluster.az}</h3>
-      {rows.map(([label, k, unit]) => {
-        const before = cap[k] ? used[k] / cap[k] : 1, after = cap[k] ? (used[k] - (old?.[k] ?? 0) + size[k]) / cap[k] : 1;
-        return (
-          <div key={k} className="res">
-            <span className="res-k">{label}</span>
-            <span className="res-bar" role="img" aria-label={`${label} ${Math.round(before * 100)}% now, ${Math.round(after * 100)}% after`}>
-              <i className={`after ${cls(after)}`} style={{ width: `${Math.min(100, after * 100)}%` }} />
-              <i className="before" style={{ width: `${Math.min(100, before * 100)}%` }} />
-            </span>
-            <span className="res-v num">{Math.round(size[k] * 10) / 10} {unit}</span>
-            <span className={`res-p num ${after > 1 ? "over" : ""}`}>{Math.round(after * 100)}%</span>
-          </div>
-        );
-      })}
-    </section>
-  );
 }
 
 export function Card({ r }: { r: SalesRequest }) {
@@ -113,8 +73,6 @@ export function Card({ r }: { r: SalesRequest }) {
           <li key={x.key} className={x.ok ? "ok" : "bad"}>{x.ok ? <Check aria-label="Met" /> : <X aria-label="Missing" />}{t(x.key.replace("sales.need.", "sales.req."), x.params)}</li>
         ))}
       </ul>
-
-      {!missing.length && <Bars r={r} />}
 
       <div className="thread">
         {r.thread.map((m, i) => (
