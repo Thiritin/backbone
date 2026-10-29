@@ -80,7 +80,7 @@ describe("game server panels", () => {
     expect(supports(game, "vps")).toBe(false);
   });
 
-  it("scale the how-to tickets of their customers by the software factor and book a denser node", () => {
+  it("scale the how-to tickets of their customers by the software factor and book the physical cores less the panel", () => {
     const { s, two } = start(2016), cloud = hypervisor(s, ["dev3"], "Cloud 1"), game = panelServer(s, two, "tcadmen");
     const a = addCustomer(s, "Ada Lang", "hobbyDev"), b = addCustomer(s, "Bo Lang", "hobbyDev");
     ok(order(s, a, "ada", game));
@@ -88,7 +88,7 @@ describe("game server panels", () => {
     expect(howToFactor(s, a)).toBe(softwareById("tcadmen").tickets);
     expect(howToFactor(s, b)).toBe(softwareById("proxmocks").tickets);
     const d = s.devices.find((x) => x.id === cluster(s, game).nodes[0].deviceId)!;
-    expect(bookable(s, d).vcpu).toBeCloseTo(nodeCapacity(d, softwareById("tcadmen")).vcpu * 1.2 - 0.25, 6);
+    expect(bookable(s, d).vcpu).toBeCloseTo(nodeCapacity(d).vcpu - 0.25, 6);
   });
 
   it("have versions and vulnerabilities that compromise the host until it is updated", () => {

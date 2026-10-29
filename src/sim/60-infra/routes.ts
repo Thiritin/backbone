@@ -11,7 +11,7 @@ export interface RouteCluster { id: string; name: string; az: string; free: Reso
 
 const free = (s: GameState, deviceId: string): Resources => {
   const d = s.devices.find((x) => x.id === deviceId)!, cap = bookable(s, d), used = nodeUsed(s, deviceId);
-  return { vcpu: cap.vcpu - used.vcpu, ramGb: cap.ramGb - used.ramGb, diskGb: cap.diskGb - used.diskGb };
+  return { vcpu: Math.max(0, cap.vcpu - used.vcpu), ramGb: Math.max(0, cap.ramGb - used.ramGb), diskGb: Math.max(0, cap.diskGb - used.diskGb) };
 };
 const only = (c: Cluster, deviceId: string): Cluster => ({ ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) });
 
@@ -27,7 +27,7 @@ export function routeOptions(s: GameState, product: Product, city: string, size:
     }
     const nodes = c.nodes.filter((n) => n.state === "active" && working(s, n.deviceId)).map((n): RouteNode => {
       const d = s.devices.find((x) => x.id === n.deviceId)!;
-      return { id: d.id, name: d.label ?? d.name, free: free(s, d.id), fits: up && !!pickNode(s, only(c, d.id), size, null, true) };
+      return { id: d.id, name: d.label ?? d.name, free: free(s, d.id), fits: up && !!pickNode(s, only(c, d.id), size) };
     });
     const sum = Object.fromEntries(KEYS.map((k) => [k, nodes.reduce((a, n) => a + Math.max(0, n.free[k]), 0)])) as unknown as Resources;
     return { id: c.id, name: c.name, az: c.az, free: sum, fits: nodes.some((n) => n.fits), nodes };
@@ -43,7 +43,7 @@ export function routeTarget(s: GameState, route: string): { clusterId: string; d
   return owner ? { clusterId: owner.id, deviceId: route } : { clusterId: route, deviceId: null };
 }
 
-// Why a route cannot take the size now, or null: an unknown or foreign cluster, missing software, a control plane down, no room.
+// Why a route cannot take the size now, or null: an unknown or foreign cluster, missing software, a control plane down, no disk.
 export function routeError(s: GameState, product: Product, city: string, size: Resources, route: string): string | null {
   const target = routeTarget(s, route);
   if (!target) return null;
@@ -52,5 +52,5 @@ export function routeError(s: GameState, product: Product, city: string, size: R
   if (!s.locations.some((l) => l.city === city && l.az === c.az)) return "error.routeElsewhere";
   if (!supports(c, product)) return noRoomError(s, product, c.id);
   if (!controlPlaneUp(s, c)) return "error.controlPlaneDown";
-  return pickNode(s, target.deviceId ? only(c, target.deviceId) : c, size, null, !!target.deviceId) ? null : "error.noCapacity";
+  return pickNode(s, target.deviceId ? only(c, target.deviceId) : c, size) ? null : "error.noCapacity";
 }

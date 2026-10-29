@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { yearOf } from "../src/sim/00-core/time";
-import { sizeSpec } from "../src/sim/10-catalog/products";
 import { FIRST_ORDER_DAYS, isStandard, orderLead, orderOf } from "../src/sim/30-market/orders";
 import { targetFor } from "../src/sim/30-market/sales";
 import { MINUTES } from "../src/sim/40-support/tickets";
@@ -59,11 +57,11 @@ describe("orders by email", () => {
     expect(tk()).toMatchObject({ status: "resolved", outcome: "accepted", customerId: c.id, serviceId: v.id });
   });
 
-  it("refuses to accept without capacity or an offer in the city", () => {
+  it("refuses to accept without disk or an offer in the city", () => {
     const s = readyGame(1);
     const { r, t } = order(s);
     const friend = s.customers[0].id, cluster = s.clusters.find((c) => c.kind === "panel")!.id;
-    for (let i = 0; i < 500 && targetFor(s, r); i++) provisionService(s, friend, "webHosting", { label: `fill${i}`, spec: sizeSpec("webHosting", 2, yearOf(s.hour)), clusterId: cluster });
+    for (let i = 0; i < 500 && targetFor(s, r); i++) provisionService(s, friend, "webHosting", { label: `fill${i}`, spec: r.spec, clusterId: cluster });
     expect(resolveTicket(s, t.id, "accept")).toEqual({ ok: false, error: "error.noCapacity" });
     expect(resolveTicket(s, order(s, "London").t.id, "accept")).toEqual({ ok: false, error: "error.orderNotOffered" });
   });

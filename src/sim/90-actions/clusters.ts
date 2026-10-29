@@ -10,7 +10,7 @@ import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
-  anchorOf, bookable, clusterOf, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeUsed, pickNode, serverTaken,
+  anchorOf, clusterOf, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
   setNodeState, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
 import { freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
@@ -119,7 +119,7 @@ export function createPanelVm(s: GameState, clusterId: string, panelId: string, 
 const sizeError = (r: Resources, panel: Resources): string | null =>
   KEYS.some((k) => !Number.isFinite(r[k]) || r[k] < PANEL_VM_MIN[k] || vmCap(r, panel)[k] < 0) ? "error.vmSize" : null;
 
-// Books a panel VM bigger or smaller: it must still hold its web spaces and fit on its node.
+// Books a panel VM bigger or smaller: its disk must still hold its web spaces and fit on its node.
 export function resizePanelVm(s: GameState, hostId: string, size: Resources): ActionResult {
   const c = s.clusters.find((x) => x.id === hostId), vm = c && vmById(s, c.vm);
   if (!c || !vm) return fail("error.notPanelVm");
@@ -127,12 +127,9 @@ export function resizePanelVm(s: GameState, hostId: string, size: Resources): Ac
   const bad = sizeError(size, panel);
   if (bad) return fail(bad);
   const inside = vmRoom(s, c).used, cap = vmCap(size, panel);
-  if (KEYS.some((k) => inside[k] > cap[k] + 1e-9)) return fail("error.vmTooSmall");
+  if (inside.diskGb > cap.diskGb + 1e-9) return fail("error.vmTooSmall");
   const d = vm.deviceId ? s.devices.find((x) => x.id === vm.deviceId) : undefined;
-  if (d) {
-    const cap = bookable(s, d), used = nodeUsed(s, d.id);
-    if (KEYS.some((k) => used[k] - vm[k] + size[k] > cap[k] + 1e-9)) return fail("error.nodeFull");
-  }
+  if (d && !nodeTakes(s, d, size, vm)) return fail("error.nodeFull");
   s.workloads = s.workloads.map((w) => (w.id === vm.id ? { ...w, ...size } : w));
   freezeTick(s);
   return { ok: true };
@@ -141,7 +138,7 @@ export function resizePanelVm(s: GameState, hostId: string, size: Resources): Ac
 // Minutes a VM is down while its hypervisor restarts it at the new size.
 const RESIZE_MINUTES = 10;
 
-// Books one of the player's own VMs bigger or smaller, as far as its server has room. Only RAM growth is live, and only
+// Books one of the player's own VMs bigger or smaller, as far as its server has the disk. Only RAM growth is live, and only
 // on a hypervisor that balloons; any other change restarts the VM.
 export function resizeVm(s: GameState, vmId: string, size: Resources): ActionResult {
   const vm = vmById(s, vmId);
@@ -150,10 +147,7 @@ export function resizeVm(s: GameState, vmId: string, size: Resources): ActionRes
   const bad = sizeError(size, { vcpu: 0, ramGb: 0, diskGb: 0 });
   if (bad) return fail(bad);
   const d = vm.deviceId ? s.devices.find((x) => x.id === vm.deviceId) : undefined;
-  if (d) {
-    const cap = bookable(s, d), used = nodeUsed(s, d.id);
-    if (KEYS.some((k) => used[k] - vm[k] + size[k] > cap[k] + 1e-9)) return fail("error.nodeFull");
-  }
+  if (d && !nodeTakes(s, d, size, vm)) return fail("error.nodeFull");
   const c = s.clusters.find((x) => x.id === vm.clusterId);
   const live = !!c?.platform && balloons(softwareById(c.platform), yearOf(s.hour)) && size.ramGb >= vm.ramGb && size.vcpu === vm.vcpu && size.diskGb === vm.diskGb;
   const busyUntil = live || vm.stopped ? vm.busyUntil : Math.max(vm.busyUntil, s.hour + RESIZE_MINUTES / 60);
@@ -332,9 +326,14 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
   let w: Workload | null = null, az = "";
   if (spec.runsOn === "none") return { ok: true };
   if (spec.runsOn === "cluster") {
-    for (const c of s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)) && supports(x, v.product)).sort(gameFirst)) {
-      const node = controlPlaneUp(s, c) ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, size, null, !!deviceId) : null;
-      if (node) { w = workload(s, v.id, { ...size, clusterId: c.id, deviceId: c.vm ? null : node }); az = c.az; break; }
+    const candidates = s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)) && supports(x, v.product)).sort(gameFirst);
+    // A cluster with the RAM for it wins; with none, the first cluster with the disk takes it past its RAM.
+    for (const roomyOnly of [true, false]) {
+      for (const c of candidates) {
+        const node = controlPlaneUp(s, c) ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, size, null, c.placement, roomyOnly) : null;
+        if (node) { w = workload(s, v.id, { ...size, clusterId: c.id, deviceId: c.vm ? null : node }); az = c.az; break; }
+      }
+      if (w) break;
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;
     if (!w) return fail(target && supports(target, v.product) && !controlPlaneUp(s, target) ? "error.controlPlaneDown" : noRoomError(s, v.product, clusterId));

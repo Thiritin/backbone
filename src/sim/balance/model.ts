@@ -26,7 +26,7 @@ import { KNOW_HOW, STORE, subscriptionPrice } from "../10-catalog/store";
 import { MONTHLY_RATES } from "../40-support/tickets";
 import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
-import { marketPrice, marketSetup, OVERCOMMIT, type Spec } from "../10-catalog/products";
+import { marketPrice, marketSetup, type Spec } from "../10-catalog/products";
 import { EMAIL_SHARE } from "../30-market/orders";
 import { factorFor, REGISTRARS, tierFor } from "../10-catalog/registrars";
 import { DOMAIN_FEE, registryCost } from "../30-customers/registry";
@@ -69,6 +69,8 @@ const MONTHS = 12;
 const GAME_SHARE = 0.6;
 // RAM per cluster for the hypervisor and the panel VM's own panel.
 const CONTROL_RAM = 1;
+// The bot plans for this many vCPU per physical core; the game lets it book more, at the cost of performance.
+const CPU_PER_CORE = 8;
 // A basement server's average draw and the evening peak over a service's mean traffic (Traffic and bandwidth).
 const BASEMENT_WATTS = 150, PEAK_FACTOR = 2;
 const KNOW: Record<Product, number> = { web: KNOW_HOW.webHosting, vps: KNOW_HOW.vps, game: KNOW_HOW.gameServer };
@@ -244,7 +246,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const ramNeeded = (extra: number[][]) => PROFILES.reduce((a, p, i) => a + PRODUCTS.reduce((b, pr, k) => b + (cohorts[i][k].n + extra[i][k]) * ramOf(p, pr, year), 0), 0);
     const ramHave = () => servers.reduce((a, s) => a + s.ramGb, 0) - CONTROL_RAM;
     const cpuNeeded = (extra: number[][]) => PROFILES.reduce((a, p, i) => a + PRODUCTS.reduce((b, pr, k) => b + (cohorts[i][k].n + extra[i][k]) * cpuOf(p, pr, year), 0), 0);
-    const cpuHave = () => servers.reduce((a, s) => a + s.cores * OVERCOMMIT.cpu, 0);
+    const cpuHave = () => servers.reduce((a, s) => a + s.cores * CPU_PER_CORE, 0);
     const peakNeeded = (extra: number[][]) => PROFILES.reduce((a, _, i) => a + PRODUCTS.reduce((b, pr, k) => b + (cohorts[i][k].n + extra[i][k]) * peakMbit(pr, year), 0), 0);
     if (!rackUnlocked && month >= MOVE_MONTH && servers.length >= BASEMENT_SLOTS && knowHow >= 50 && cash > 1500 + MOVE.sameCity.price) {
       // The move: the basement servers ride along to the rack share and the home line is cancelled.
@@ -263,7 +265,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       if (basement && servers.length >= BASEMENT_SLOTS) break;
       // In the datacenter the bot buys the line with the lowest price per GB it can fill, given the vCPUs its customers book per GB.
       const cpuPerGb = cpuNeeded(newCustomers) / Math.max(1, ramNeeded(newCustomers));
-      const usable = (m: DeviceModel) => Math.min(m.server!.ramGb, (m.server!.cores * OVERCOMMIT.cpu) / Math.max(cpuPerGb, 1e-6));
+      const usable = (m: DeviceModel) => Math.min(m.server!.ramGb, (m.server!.cores * CPU_PER_CORE) / Math.max(cpuPerGb, 1e-6));
       const line = basement ? "compute" : (["compute", "memory"] as const).reduce((a, b) => shopPrice(gen, b, year) / usable(shopServer(gen, b)) < shopPrice(gen, a, year) / usable(shopServer(gen, a)) ? b : a);
       const g = serverOf(gen, line, month, basement), reserve = 2000 + 3 * owed();
       const short = g.price + reserve - cash, amount = LOAN_AMOUNTS.find((a) => a >= short);

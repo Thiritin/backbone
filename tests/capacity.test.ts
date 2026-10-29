@@ -19,7 +19,7 @@ const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   return r.id!;
 };
 const happiness = (s: GameState) => s.customers.map((c) => c.happiness);
-const clusterRam = (s: GameState) => s.clusters[0].nodes.reduce((n, x) => n + bookable(s, s.devices.find((d) => d.id === x.deviceId)!, true).ramGb, 0);
+const clusterRam = (s: GameState) => s.clusters[0].nodes.reduce((n, x) => n + bookable(s, s.devices.find((d) => d.id === x.deviceId)!).ramGb, 0);
 
 // Scales every basement service's traffic so the basement sends exactly mbit this hour (an evening hour).
 function sendAt(s: GameState, mbit: number) {

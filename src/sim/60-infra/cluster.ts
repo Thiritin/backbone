@@ -1,7 +1,7 @@
 import { modelById } from "../10-catalog/hardware";
 import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
-import { balloons, IN_VM, kindsServing, kindServing, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
+import { IN_VM, kindsServing, kindServing, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
@@ -23,7 +23,7 @@ export const HA_OFF: Ha = { live: false, balance: false, failover: false };
 // nodes, or inside the player's own virtual machine vm on a hypervisor cluster, with nodes empty). panel and platform hold
 // the installed software of the kind, null until installed; controlPlane is the node that runs it, null for a panel VM.
 // While switching (an install or a change), the control plane is busy until doneAt. Backups copy every workload to the
-// target cluster. ramGuard (Memory reservation) keeps booked RAM within each node's installed RAM. php and phpUntil are a
+// target cluster. ramGuard (Memory reservation) keeps booked RAM within each node's installed RAM; it is the only way RAM refuses a booking. php and phpUntil are a
 // panel host's PHP version; after an upgrade its sites run slower up to and including the hour phpUntil. version is the
 // year of the release the installed software runs and updatedAt the hour it was installed or last updated (vulns.ts).
 export interface Cluster {
@@ -65,14 +65,11 @@ const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
 export const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
 const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcpu, ramGb: a.ramGb - b.ramGb, diskGb: a.diskGb - b.diskGb });
 
-// What a node can book: physical cores, RAM and usable RAID disk times the overcommit ratios its software allows. A
-// hypervisor that does not balloon (yet, in that year) books RAM no further than installed.
-export function nodeCapacity(d: Device, sw: Software | null = null, year = 0): Resources {
-  const v = modelById(d.model).server, o = sw?.overcommit ?? OVERCOMMIT;
-  const r = sw?.kind === "cloud" && !balloons(sw, year) ? { ...o, ram: Math.min(o.ram, 1) } : o;
-  return v ? { vcpu: installedCores(d) * r.cpu, ramGb: installedRamGb(d) * r.ram, diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
+// What a node holds: its physical cores and installed RAM, and the disk it books up to (usable RAID times OVERCOMMIT.disk).
+// Booking CPU and RAM past the physical amounts is always allowed; it costs performance and freezes (usage.ts).
+export function nodeCapacity(d: Device): Resources {
+  return modelById(d.model).server ? { vcpu: installedCores(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
 }
-const softwareOf = (c: Pick<Cluster, "panel" | "platform">): Software | null => { const id = c.panel ?? c.platform; return id ? softwareById(id) : null; };
 
 // The working GPU cards of a server, and the ones no GPU VM has taken yet.
 export const cardsOn = (d: Device): number => d.components.filter((c) => c.kind === "gpu" && c.failedAt === null).length;
@@ -91,16 +88,18 @@ export function controlPlaneUse(c: Pick<Cluster, "panel" | "platform">): Resourc
   const id = c.panel ?? c.platform;
   return id ? softwareById(id).controlPlane : ZERO;
 }
-const density = (c: Cluster) => softwareOf(c)?.density ?? 1;
-
-// What a node can book for workloads: its capacity times the hypervisor's density, less the control plane it runs. With
-// Memory reservation on, or for automatic placement (guard), RAM stops at the installed RAM.
-export function bookable(s: GameState, d: Device, guard = false): Resources {
-  const c = clusterOf(s, d.id), cap = nodeCapacity(d, c ? softwareOf(c) : null, yearOf(s.hour));
-  if (!c) return cap;
-  const k = density(c), cp = c.controlPlane === d.id ? controlPlaneUse(c) : ZERO;
-  const ram = c.ramGuard || guard ? Math.min(cap.ramGb * k, installedRamGb(d)) : cap.ramGb * k;
-  return { vcpu: cap.vcpu * k - cp.vcpu, ramGb: ram - cp.ramGb, diskGb: cap.diskGb * k - cp.diskGb };
+// What a node holds for workloads: its capacity less the control plane it runs. Bars show booked against it.
+export function bookable(s: GameState, d: Device): Resources {
+  const c = clusterOf(s, d.id);
+  return minus(nodeCapacity(d), c && c.controlPlane === d.id ? controlPlaneUse(c) : ZERO);
+}
+// Whether the resources fit the disk of a pool; CPU and RAM never refuse a booking.
+export const diskFits = (used: Resources, cap: Resources, r: Resources): boolean => used.diskGb + r.diskGb <= cap.diskGb + 1e-9;
+// Whether a node can take r more once freed is released. Disk is the only limit, besides RAM within the installed RAM while
+// the cluster's Memory reservation is on.
+export function nodeTakes(s: GameState, d: Device, r: Resources, freed: Resources = ZERO): boolean {
+  const cap = bookable(s, d), used = minus(nodeUsed(s, d.id), freed);
+  return diskFits(used, cap, r) && !(clusterOf(s, d.id)?.ramGuard && used.ramGb + r.ramGb > cap.ramGb + 1e-9);
 }
 
 // The player's own VM a panel host runs in, or the VM a web space inside it runs in.
@@ -116,21 +115,20 @@ export const isOwnVm = (w: Workload): boolean => !w.serviceId;
 // The server a panel host runs on: its bare-metal node or its VM's node.
 export const anchorOf = (s: GameState, c: Cluster): string | null => c.nodes[0]?.deviceId ?? vmById(s, c.vm)?.deviceId ?? null;
 
-// What software in a VM of that size can book: CPU and RAM at IN_VM of bare metal, less the panel.
+// What a VM of that size holds for software: CPU and RAM at IN_VM of bare metal, less the panel.
 export const vmCap = (r: Resources, panel: Resources): Resources => minus({ vcpu: r.vcpu * IN_VM, ramGb: r.ramGb * IN_VM, diskGb: r.diskGb }, panel);
-// A panel VM's room: its booking less the panel, and what its web spaces book.
+// A panel VM's room: what it holds less the panel, and what its web spaces book. Only its disk limits the booking.
 export function vmRoom(s: GameState, c: Cluster): { cap: Resources; used: Resources } {
   const vm = vmById(s, c.vm), used = { ...ZERO };
   for (const w of s.workloads) if (w.clusterId === c.id) for (const k of KEYS) used[k] += w[k];
   return { cap: vm ? vmCap(vm, controlPlaneUse(c)) : ZERO, used };
 }
 
-// Whether a working node of the cluster has room for its control plane next to its workloads.
+// Whether a working node of the cluster has the disk for its control plane next to its workloads.
 export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d || !working(s, deviceId)) return false;
-  const cap = nodeCapacity(d, softwareOf(c), yearOf(s.hour)), used = nodeUsed(s, deviceId), cp = controlPlaneUse(c), k = density(c);
-  return fits(used, { vcpu: cap.vcpu * k, ramGb: cap.ramGb * k, diskGb: cap.diskGb * k }, cp);
+  return diskFits(nodeUsed(s, deviceId), nodeCapacity(d), controlPlaneUse(c));
 }
 
 // Whether the cluster sells the product line: web hosting on a panel host, virtual machines on a hypervisor cluster, game
@@ -203,25 +201,28 @@ export const workloadsOn = (s: GameState, deviceId: string): Workload[] => s.wor
 // A server taken by a cluster or rented whole as a dedicated server.
 export const serverTaken = (s: GameState, deviceId: string): boolean => !!clusterOf(s, deviceId) || s.workloads.some((w) => w.deviceId === deviceId);
 
-// The scheduler: active, working nodes with room; pack picks the busiest of them, spread the idlest. Ties keep node order.
-// A panel VM is its one node: it returns the VM's id while the VM runs and has room. RAM is booked only up to the installed
-// RAM; overbooking RAM takes the player's choice of node (overbook).
+// The scheduler: active, working nodes with the disk for it. Booking CPU and RAM past a node never refuses a placement, but
+// a node whose installed RAM it still fits wins (pack picks the busiest of them, spread the idlest); with none, the node
+// with the least RAM booked takes it and risks a freeze; roomyOnly refuses that fallback, for callers that try the next cluster first.
+// Ties keep node order. A panel VM is its one node: it returns the VM's id while the VM runs and has the disk (and, with
+// roomyOnly, the RAM).
 export function pickNode(
-  s: GameState, cluster: Cluster, r: Resources, skip: string | null = null, overbook = false, placement: Placement = cluster.placement,
+  s: GameState, cluster: Cluster, r: Resources, skip: string | null = null, placement: Placement = cluster.placement, roomyOnly = false,
 ): string | null {
   if (cluster.vm) {
     const vm = vmById(s, cluster.vm), room = vmRoom(s, cluster);
-    return vm && !vm.stopped && vm.deviceId && working(s, vm.deviceId) && fits(room.used, room.cap, r) ? vm.id : null;
+    return vm && !vm.stopped && vm.deviceId && working(s, vm.deviceId) && diskFits(room.used, room.cap, r) && (!roomyOnly || room.used.ramGb + r.ramGb <= room.cap.ramGb + 1e-9) ? vm.id : null;
   }
-  let best: { id: string; load: number } | null = null;
+  let best: { id: string; load: number; roomy: boolean } | null = null;
   for (const n of cluster.nodes) {
     const d = s.devices.find((x) => x.id === n.deviceId);
     if (!d || n.state !== "active" || n.deviceId === skip || !working(s, d.id)) continue;
-    if ((r.gpus ?? 0) > cardsFree(s, d)) continue;
-    const cap = bookable(s, d, !overbook), used = nodeUsed(s, d.id);
-    if (!fits(used, cap, r)) continue;
-    const l = load(used, cap);
-    if (!best || (placement === "pack" ? l > best.load : l < best.load)) best = { id: d.id, load: l };
+    if ((r.gpus ?? 0) > cardsFree(s, d) || !nodeTakes(s, d, r)) continue;
+    const cap = bookable(s, d), used = nodeUsed(s, d.id), roomy = used.ramGb + r.ramGb <= cap.ramGb + 1e-9;
+    // Past every node's RAM, the one with the lowest share of RAM booked is the least likely to freeze.
+    const l = roomy ? load(used, cap) : cap.ramGb ? used.ramGb / cap.ramGb : Infinity;
+    if (roomyOnly && !roomy) continue;
+    if (!best || (roomy !== best.roomy ? roomy : roomy && placement === "pack" ? l > best.load : l < best.load)) best = { id: d.id, load: l, roomy };
   }
   return best?.id ?? null;
 }

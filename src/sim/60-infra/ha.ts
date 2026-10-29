@@ -1,7 +1,7 @@
 // High availability per hypervisor cluster (gdd.md, Compute): automatic failover and auto-balancing. Clustered panel hosts fail over too.
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { bookable, hostOfVm, isOwnVm, lostDisk, moveControlPlaneOff, nodeUsed, pickNode, type Cluster, type Workload } from "./cluster";
+import { hostOfVm, isOwnVm, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
 import { working } from "./status";
 import { nodeUsage } from "./usage";
 
@@ -27,7 +27,7 @@ function failover(s: GameState, c: Cluster, events: SimEvent[]) {
   if (c.controlPlane && dead.has(c.controlPlane)) moveControlPlaneOff(s, c.id, c.controlPlane);
   let moved = 0, stuck = 0;
   for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !lostDisk(s, x))) {
-    const to = pickNode(s, cluster(s, c.id), w, w.deviceId, false, "spread");
+    const to = pickNode(s, cluster(s, c.id), w, w.deviceId, "spread");
     if (!to) {
       if (!w.stuck) stuck++;
       patch(s, w.id, { stuck: true });
@@ -41,12 +41,11 @@ function failover(s: GameState, c: Cluster, events: SimEvent[]) {
   if (stuck) events.push({ app: "Virtual machines", key: "event.failoverStuck", params: { cluster: c.name, count: stuck, web: c.kind === "panel" ? 1 : 0 } });
 }
 
-// A node runs hot when its RAM in use nears the installed RAM, its busy vCPUs outnumber its cores, or it books more than it can.
+// A node runs hot when its RAM in use nears the installed RAM or its busy vCPUs outnumber its cores.
 export function runsHot(s: GameState, deviceId: string): boolean {
-  const d = s.devices.find((x) => x.id === deviceId);
-  if (!d) return false;
-  const u = nodeUsage(s, deviceId), cap = bookable(s, d), used = nodeUsed(s, deviceId);
-  return u.used.ramGb > HOT_RAM * u.physical.ramGb || u.used.vcpu > u.physical.vcpu || used.ramGb > cap.ramGb + 1e-9 || used.vcpu > cap.vcpu + 1e-9;
+  if (!s.devices.some((x) => x.id === deviceId)) return false;
+  const u = nodeUsage(s, deviceId);
+  return u.used.ramGb > HOT_RAM * u.physical.ramGb || u.used.vcpu > u.physical.vcpu;
 }
 
 // Moves the smallest running VM off each hot node to the idlest node that is not hot itself, live, one per node an hour.
@@ -57,7 +56,7 @@ function balance(s: GameState, c: Cluster) {
     const vms = s.workloads.filter((w) => w.clusterId === c.id && w.deviceId === n.deviceId && !w.stopped && w.busyUntil <= s.hour && !lostDisk(s, w))
       .sort((a, b) => a.ramGb - b.ramGb);
     for (const w of vms) {
-      const to = pickNode(s, cluster(s, c.id), w, n.deviceId, false, "spread");
+      const to = pickNode(s, cluster(s, c.id), w, n.deviceId, "spread");
       if (!to || runsHot(s, to)) continue;
       patch(s, w.id, { deviceId: to, placedAt: s.hour });
       break;

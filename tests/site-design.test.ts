@@ -53,7 +53,7 @@ describe("company site hosting", () => {
     expect(s.ledger.slice(from).some((e) => e.key === "ledger.siteHosting")).toBe(false);
   });
 
-  it("moves to an own panel host only when it has room, and back for free", () => {
+  it("moves to an own panel host only when it has the disk, and back for free", () => {
     const s = readyGame(1);
     const cash = s.cash;
     expect(setSiteHost(s, { kind: "own", clusterId: "nope" })).toEqual({ ok: false, error: "error.unknownCluster" });
@@ -67,7 +67,7 @@ describe("company site hosting", () => {
 
     const full = readyGame(1);
     const vm = full.workloads.find((w) => !w.serviceId)!;
-    full.workloads = full.workloads.map((w) => (w.id === vm.id ? { ...w, ramGb: 0.1 } : w));
+    full.workloads = full.workloads.map((w) => (w.id === vm.id ? { ...w, diskGb: 0.1 } : w));
     expect(setSiteHost(full, { kind: "own", clusterId: hostOf(full) })).toEqual({ ok: false, error: "error.siteHostNoRoom" });
   });
 

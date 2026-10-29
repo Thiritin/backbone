@@ -24,8 +24,8 @@ export const SLAS: Record<Sla, { uptime: number; responseHours: number; factor: 
   premium: { uptime: 0.9999, responseHours: 1, factor: 1.5, credit: 0.25 },
 };
 
-// economy.md, Usage curves and overcommit: the most a cluster books per physical core, GB of RAM and GB of disk.
-export const OVERCOMMIT = { cpu: 8, ram: 1.5, disk: 2 } as const;
+// economy.md, Usage curves and overcommit: the most a cluster books per GB of usable disk. CPU and RAM have no limit.
+export const OVERCOMMIT = { disk: 2 } as const;
 
 export const PRODUCTS: Record<Product, ProductSpec> = {
   webHosting: { runsOn: "cluster", period: "hour", commitMonths: 1 },

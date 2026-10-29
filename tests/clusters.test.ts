@@ -5,9 +5,9 @@ import { marketPrice, PRODUCTS, SIZES, sizeSpec } from "../src/sim/10-catalog/pr
 import { serviceOnline } from "../src/sim/40-support/status";
 import { invoiceTotal } from "../src/sim/45-billing/billing";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { softwareById } from "../src/sim/10-catalog/platforms";
 import { nodeCapacity, nodeUsed, vmOf, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
-import { BOOT_HOURS, deviceHealth, freeSlots, installedRamGb, rackPower } from "../src/sim/60-infra/status";
+import { BOOT_HOURS, deviceHealth, freeSlots, installedCores, installedRamGb, rackPower } from "../src/sim/60-infra/status";
+import { nodeUsage } from "../src/sim/60-infra/usage";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addNode, cordon, createVm, drain, installPanelInVm, resizeVm, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
@@ -123,21 +123,32 @@ describe("placement", () => {
     for (let i = 0; i < 4; i++) ok(provisionService(s, cus, "vps", { label: `spread ${i}`, spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     expect(workloadsOn(s, second)).toHaveLength(4);
   });
-  it("books RAM up to the installed RAM automatically and up to 1.5 × on a chosen node, recording nothing on a refusal", () => {
+  it("fills a node's installed RAM first and books past it when every node is full, recording nothing on a disk refusal", () => {
     const { s, cluster, second, cus } = twoNodes();
-    expect(nodeCapacity(s.devices.find((d) => d.id === "dev3")!)).toEqual({ vcpu: 16, ramGb: 12, diskGb: 1000 });
-    // Automatic placement stops at the installed 8 GB: dev3 holds 3 VPS L of 2 GB next to its control plane, the second node 4.
+    expect(nodeCapacity(s.devices.find((d) => d.id === "dev3")!)).toEqual({ vcpu: 2, ramGb: 8, diskGb: 1000 });
+    // Nodes within their installed 8 GB win: dev3 holds 3 VPS L of 2 GB next to its control plane, the second node 4.
     for (let i = 0; i < 7; i++) ok(provisionService(s, cus, "vps", { label: `big ${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)) }));
     expect([nodeUsed(s, "dev3").ramGb, nodeUsed(s, second).ramGb]).toEqual([6, 8]);
-    const services = s.services.length, nextId = s.nextId;
-    expect(err(provisionService(s, cus, "vps", { label: "one more", spec: sizeSpec("vps", 2, yearOf(s.hour)) }))).toBe("error.noCapacity");
-    expect([s.services.length, s.nextId]).toEqual([services, nextId]);
-    // On a node the player picks, RAM books up to 1.5 × the installed RAM.
+    // With none left, the idlest node takes the next one.
+    ok(provisionService(s, cus, "vps", { label: "one more", spec: sizeSpec("vps", 2, yearOf(s.hour)) }));
+    expect(nodeUsed(s, "dev3").ramGb).toBe(8);
     const onDev3 = (label: string) => provisionService(s, cus, "vps", { label, spec: sizeSpec("vps", 2, yearOf(s.hour)), clusterId: cluster, deviceId: "dev3" });
     ok(onDev3("chosen 1"));
     ok(onDev3("chosen 2"));
-    expect(nodeUsed(s, "dev3").ramGb).toBe(10);
-    expect(err(onDev3("chosen 3"))).toBe("error.noCapacity");
+    expect(nodeUsed(s, "dev3").ramGb).toBe(12);
+    // Disk is the one limit: a booking past 2 x the usable disk is refused and leaves nothing behind.
+    const services = s.services.length, nextId = s.nextId;
+    expect(err(provisionService(s, cus, "vps", { label: "huge", spec: { ...sizeSpec("vps", 2, yearOf(s.hour)), diskGb: 99999 } }))).toBe("error.noCapacity");
+    expect([s.services.length, s.nextId]).toEqual([services, nextId]);
+  });
+  it("books CPU past the cores without a limit and slows the node while the CPU in use passes them", () => {
+    const { s, cluster, cus } = twoNodes();
+    for (let i = 0; i < 6; i++) ok(provisionService(s, cus, "vps", { label: `busy ${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)), clusterId: cluster, deviceId: "dev3" }));
+    const cores = installedCores(s.devices.find((d) => d.id === "dev3")!);
+    expect(nodeUsed(s, "dev3").vcpu).toBeGreaterThan(cores * 2);
+    let perf = 1;
+    for (let h = 0; h < 48; h++) { run(s, 1); perf = Math.min(perf, nodeUsage(s, "dev3").perf); }
+    expect(perf).toBeLessThan(1);
   });
   it("skips cordoned and broken nodes and takes the zone of the cluster it lands in", () => {
     const { s, second, cus } = twoNodes();
@@ -176,25 +187,18 @@ describe("nodes", () => {
     ok(removeNode(s, "dev3"));
     ok(unmountDevice(s, "dev3"));
   });
-  it("keeps draining as room appears and reports the empty node", () => {
+  it("drains onto a node that has no RAM left instead of leaving workloads behind", () => {
     const { s, cluster, second, cus } = twoNodes();
     ok(cordon(s, second));
     // dev3 holds 5 VPS L next to the control plane when the player picks it.
     for (let i = 0; i < 5; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)), clusterId: cluster, deviceId: "dev3" }));
     ok(uncordon(s, second));
     for (let i = 0; i < 2; i++) ok(provisionService(s, cus, "vps", { label: `w${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)) }));
-    // Draining places automatically, so the second node takes VPS only up to its installed 8 GB.
     ok(drain(s, "dev3"));
-    expect(workloadsOn(s, "dev3")).toHaveLength(3);
-    expect(s.clusters.find((c) => c.id === cluster)!.nodes[0].state).toBe("draining");
-    // Two of the second node's customers leave, which frees room for two more.
-    s.services = s.services.map((v) => (v.label === "w0" || v.label === "w1" ? { ...v, endedAt: s.hour } : v));
-    run(s, 1);
-    expect(workloadsOn(s, "dev3")).toHaveLength(1);
-    s.services = s.services.map((v) => (v.label === "v0" || v.label === "v1" ? { ...v, endedAt: s.hour } : v));
-    const events = run(s, 1);
     expect(workloadsOn(s, "dev3")).toHaveLength(0);
-    expect(events).toContainEqual({ app: "Locations", key: "event.drained", params: { device: "fra1-srv-01" } });
+    expect(workloadsOn(s, second)).toHaveLength(7);
+    expect(s.clusters.find((c) => c.id === cluster)!.nodes[0].state).toBe("maintenance");
+    expect(nodeUsed(s, second).ramGb).toBeGreaterThan(installedRamGb(s.devices.find((d) => d.id === second)!));
   });
   it("only joins servers of the cluster's zone that run its hypervisor", () => {
     const { s, cluster, second } = twoNodes();
@@ -290,13 +294,14 @@ describe("ballooning and resizing custom VMs", () => {
   const vmById = (s: GameState, id: string) => s.workloads.find((w) => w.id === id)!;
   const SMALL = { vcpu: 1, ramGb: 2, diskGb: 20 };
 
-  it("books RAM past the installed RAM only on a hypervisor that balloons", () => {
-    for (const [platform, year, ratio] of [["proxmocks", 2012, 1.5], ["vmwhere", 2012, 1.25], ["openstash", 2012, 1], ["openveezee", 2012, 1], ["hypervee", 2011, 1], ["hypervee", 2012, 1.2]] as const) {
-      const { s } = start(platform, year), d = dev3(s);
-      expect(nodeCapacity(d, softwareById(platform), yearOf(s.hour)).ramGb, `${platform} ${year}`).toBeCloseTo(installedRamGb(d) * ratio);
+  it("holds the physical cores and RAM on every platform and books past them, balloon or not", () => {
+    for (const [platform, year] of [["proxmocks", 2012], ["vmwhere", 2012], ["openstash", 2012], ["openveezee", 2012], ["hypervee", 2011]] as const) {
+      const { s, cluster } = start(platform, year), d = dev3(s);
+      expect(nodeCapacity(d), platform).toMatchObject({ ramGb: installedRamGb(d), vcpu: installedCores(d) });
+      const big = { vcpu: installedCores(d) * 20, ramGb: installedRamGb(d) * 3, diskGb: 20 };
+      expect(vmById(s, ok(createVm(s, cluster, big))).deviceId, platform).toBe("dev3");
+      expect(nodeUsed(s, "dev3").ramGb, platform).toBeGreaterThan(installedRamGb(d));
     }
-    const { s } = start("proxmocks");
-    expect(nodeCapacity(dev3(s), softwareById("freepanel")).ramGb).toBeCloseTo(installedRamGb(dev3(s)) * 1.5);
   });
 
   it("grows the RAM of a custom VM without downtime when the hypervisor balloons", () => {
@@ -315,10 +320,11 @@ describe("ballooning and resizing custom VMs", () => {
     expect(vmById(plain.s, id).busyUntil).toBeCloseTo(plain.s.hour + 10 / 60);
   });
 
-  it("refuses a size below the minimum, one past the node's room, and a VM that runs software", () => {
+  it("refuses a size below the minimum, one past the node's disk, and a VM that runs software", () => {
     const { s, cluster } = start("openstash"), vm = ok(createVm(s, cluster, SMALL));
     expect(err(resizeVm(s, vm, { ...SMALL, vcpu: 0 }))).toBe("error.vmSize");
-    expect(err(resizeVm(s, vm, { ...SMALL, ramGb: 999 }))).toBe("error.nodeFull");
+    expect(err(resizeVm(s, vm, { ...SMALL, diskGb: 999999 }))).toBe("error.nodeFull");
+    ok(resizeVm(s, vm, { vcpu: 999, ramGb: 999, diskGb: 20 }));
     expect(err(resizeVm(s, "nope", SMALL))).toBe("error.notOwnVm");
     ok(installPanelInVm(s, vm, "freepanel"));
     expect(err(resizeVm(s, vm, { ...SMALL, ramGb: 3 }))).toBe("error.softwareInUse");

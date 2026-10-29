@@ -43,6 +43,8 @@ svg.logo-mark { flex: none; }
 .loc-meter-bar > span { display: block; height: 100%; background: var(--accent); }
 .loc-meter.tripped .loc-meter-bar > span { background: var(--bad); }
 .loc-meter.tripped .num { color: var(--bad-text); }
+.loc-meter.over .loc-meter-bar > span { background: var(--warn); }
+.loc-meter.over .num { color: var(--warn-text); }
 .pill svg.lucide { width: 13px; height: 13px; }
 
 /* Location */

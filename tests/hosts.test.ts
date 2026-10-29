@@ -42,13 +42,14 @@ function freeze(s: GameState): SimEvent[] {
 }
 
 describe("RAM over-provisioning", () => {
-  it("places automatically only up to the installed RAM", () => {
+  it("places automatically within the installed RAM first, then books past it instead of refusing", () => {
     const { s, cluster, second, gamer } = setup();
     ok(provisionService(s, gamer, "gameServer", { label: "Frag 3", clusterId: cluster }));
     expect(s.workloads.at(-1)!.deviceId).toBe(second);
     ok(provisionService(s, gamer, "gameServer", { label: "Frag 4", clusterId: cluster }));
     expect(nodeUsed(s, second).ramGb).toBe(8);
-    expect(provisionService(s, gamer, "gameServer", { label: "Frag 5", clusterId: cluster })).toEqual({ ok: false, error: "error.noCapacity" });
+    ok(provisionService(s, gamer, "gameServer", { label: "Frag 5", clusterId: cluster }));
+    expect(Math.max(nodeUsed(s, "dev3").ramGb, nodeUsed(s, second).ramGb)).toBeGreaterThan(8);
   });
 
   it("books more RAM than installed on a node the player picks and freezes it once RAM in use exceeds it", () => {
@@ -111,7 +112,6 @@ describe("Memory reservation", () => {
     s.unlocks = [...s.unlocks, "memoryReservation", "virtualization"];
     ok(setHa(s, cluster, "live", true));
     const dev3 = s.devices.find((d) => d.id === "dev3")!;
-    expect(bookable(s, dev3).ramGb).toBeGreaterThan(8);
     ok(setRamGuard(s, cluster, true));
     // 8 GB installed less the hypervisor's 0.25 GB.
     expect(bookable(s, dev3).ramGb).toBeCloseTo(8 - 0.25);

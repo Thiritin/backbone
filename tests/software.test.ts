@@ -98,15 +98,15 @@ describe("software on machines", () => {
     expect(cap.diskGb).toBeCloseTo(vm.diskGb - cp.diskGb, 9);
   });
 
-  it("books CPU and RAM past the hardware on Proxmocks and not past OpenStash's caps", () => {
+  it("books CPU and RAM past the hardware on every hypervisor and refuses only a disk past twice the usable disk", () => {
     const book = (platform: string, size: typeof VM) => { const { s } = twoServers(); return createVm(s, hypervisor(s, ["dev3"], undefined, platform), size); };
     // The basement server has 2 cores and 8 GB.
-    const ram = { vcpu: 1, ramGb: 7, diskGb: 10 }, cpu = { vcpu: 10, ramGb: 1, diskGb: 10 };
-    expect(err(book("openstash", ram))).toBe("error.noCapacity");
-    expect(err(book("openstash", cpu))).toBe("error.noCapacity");
-    ok(book("proxmocks", ram));
-    ok(book("proxmocks", cpu));
-    expect(softwareById("openstash").overcommit).toEqual({ cpu: 4, ram: 1 });
+    const ram = { vcpu: 1, ramGb: 70, diskGb: 10 }, cpu = { vcpu: 100, ramGb: 1, diskGb: 10 };
+    for (const platform of ["openstash", "proxmocks"]) {
+      ok(book(platform, ram));
+      ok(book(platform, cpu));
+      expect(err(book(platform, { ...VM, diskGb: 99999 }))).toBe("error.noCapacity");
+    }
   });
 
   it("loads a save with the software on its machines and drops a cluster with nothing installed", () => {

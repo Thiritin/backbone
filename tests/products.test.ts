@@ -63,11 +63,11 @@ describe("platforms and licenses", () => {
       { hour: 744, category: "licenses", key: "ledger.license", params: { cluster: "Cloud 1", name: "VMwhere" }, amount: -32 },
     ]);
   });
-  it("gives a denser platform more bookable capacity", () => {
+  it("holds the installed RAM on every platform", () => {
     const a = setup("vmwhere"), b = setup("proxmocks");
     const dev = (x: typeof a) => x.s.devices.find((d) => d.id === x.second)!;
-    expect(bookable(a.s, dev(a)).ramGb).toBeCloseTo(8 * softwareById("vmwhere").overcommit.ram * softwareById("vmwhere").density);
-    expect(bookable(b.s, dev(b)).ramGb).toBe(12);
+    expect(bookable(a.s, dev(a)).ramGb).toBe(8);
+    expect(bookable(b.s, dev(b)).ramGb).toBe(8);
   });
   it("swaps a panel only once nothing it serves runs on it, busy for the new panel's install hours", () => {
     const { s, cluster, cus } = setup();
@@ -101,7 +101,7 @@ describe("control planes", () => {
     const { s, cluster, second, cus } = setup();
     const c = clusterById(s, cluster);
     expect(c.controlPlane).toBe("dev3");
-    expect(bookable(s, s.devices.find((d) => d.id === "dev3")!).ramGb).toBeCloseTo(12 - 0.25);
+    expect(bookable(s, s.devices.find((d) => d.id === "dev3")!).ramGb).toBeCloseTo(8 - 0.25);
     ok(setPower(s, "dev3", false));
     expect(err(provisionService(s, cus, "vps", { label: "Box", clusterId: cluster }))).toBe("error.controlPlaneDown");
     ok(moveControlPlane(s, cluster, second));

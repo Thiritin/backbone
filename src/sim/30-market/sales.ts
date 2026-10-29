@@ -162,7 +162,9 @@ export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product"
   const zones = s.locations.filter((l) => l.city === r.city && addressesFit(s, l, r.product, r.spec)).map((l) => l.az);
   const spec = PRODUCTS[r.product], size = sizeOf(r.spec);
   if (spec.runsOn === "cluster") {
-    const c = [...s.clusters].sort(gameFirst).find((x) => zones.includes(x.az) && supports(x, r.product) && pickNode(s, x, size));
+    // A cluster with the RAM for it wins; with none, the first cluster with the disk takes it past its RAM.
+    const fit = [...s.clusters].sort(gameFirst).filter((x) => zones.includes(x.az) && supports(x, r.product));
+    const c = fit.find((x) => pickNode(s, x, size, null, x.placement, true)) ?? fit.find((x) => pickNode(s, x, size));
     return c ? { clusterId: c.id, zone: c.az } : null;
   }
   if (spec.runsOn === "server") {

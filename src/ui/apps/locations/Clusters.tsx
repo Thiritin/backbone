@@ -25,14 +25,14 @@ const num = (n: number) => `${+n.toFixed(1)}`;
 
 export function Meter({ used, cap, text }: { used: number; cap: number; text: string }) {
   return (
-    <span className={`loc-meter${used > cap ? " tripped" : ""}`}>
+    <span className={`loc-meter${used > cap + 1e-9 ? " over" : ""}`}>
       <span className="loc-meter-bar"><span style={{ width: `${cap ? Math.min(100, (used / cap) * 100) : 0}%` }} /></span>
-      <span className="num">{text}</span>
+      <span className="num">{text}{used > cap + 1e-9 && cap > 0 ? ` · ${Math.round((used / cap) * 100)}%` : ""}</span>
     </span>
   );
 }
 
-// Booked against what the node can book, next to live use against the hardware, row by row.
+// Booked against what the node physically holds, next to live use against the hardware, row by row.
 function NodeMeters({ game, d }: { game: GameState; d: Device }) {
   const cap = bookable(game, d), used = nodeUsed(game, d.id), live = nodeUsage(game, d.id), { used: u, physical: p } = live;
   const rows: [string, ReactNode, ReactNode][] = [
