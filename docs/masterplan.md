@@ -171,3 +171,4 @@ Record in gdd.md and economy.md. Verify typecheck, tests, build, balance, and a 
 - No delivery wait and no cheap starter tower in the Shop.
 - The clock starts paused after a reload, and apps other than Support forget their selection.
 - A full hand playtest of year one has not been done.
+- From Lane 1: the Products page shows no internet line status, Network per month leaves out address costs, and the datacenter and RIPE flows (Buy, Delist, Join, Announce) were checked by tests only, not in the browser.
