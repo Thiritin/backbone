@@ -1,9 +1,10 @@
 import { yearOf } from "../00-core/time";
-import { bareParts, brandsFor, COMPONENT_KINDS, COMPONENTS, componentParts, dualPsuModel, fits as chassisFits, isDriveKind, modelById, partOffers, partsPrice, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { bareParts, brandsFor, COMPONENT_KINDS, COMPONENTS, componentParts, dualPsuModel, fits as chassisFits, isDriveKind, modelById, partOffers, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
+import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
 import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, moveCost, pluggedIn, resaleValue, travelCost } from "../60-infra/status";
+import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, moveCost, pluggedIn, deviceValue, resaleValue, travelCost } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { endLease, rebuildHours } from "../88-tick/tick";
 import { serverTaken } from "../60-infra/cluster";
@@ -154,7 +155,7 @@ export interface CartLine {
 }
 
 // A bare chassis never costs less than this share of the preset.
-export const BARE_FLOOR = 0.25;
+export const BARE_FLOOR = CHASSIS_FLOOR;
 const extraParts = (line: CartLine): PartSpec[] =>
   (line.extras ?? []).flatMap((e) => Array.from({ length: e.qty }, (): PartSpec => ({ kind: e.kind, ...(e.size !== undefined ? { size: e.size } : {}), ...(e.ff ? { ff: e.ff as FormFactor } : {}) })));
 // The parts one unit of the line is built from.
@@ -162,11 +163,12 @@ export const lineParts = (line: CartLine): PartSpec[] => {
   const m = modelById(line.model);
   return [...(line.bare ? bareParts(m) : componentParts(m)), ...extraParts(line)];
 };
-// What one unit costs: the preset, or the preset minus its CPUs, RAM and drives at part prices, plus the extras at part prices.
-export function unitPrice(line: CartLine): number {
-  const m = modelById(line.model), preset = priceOf(m, line.brand);
-  const bare = Math.max(Math.round(preset * BARE_FLOOR), preset - (partsPrice(componentParts(m)) - partsPrice(bareParts(m))));
-  return (line.bare ? bare : preset) + partsPrice(extraParts(line));
+// What one unit costs in a year: the preset, or the preset minus its CPUs, RAM and drives, plus the extras, all at that year's
+// part prices; a part alone costs its part price.
+export function unitPrice(line: CartLine, year: number): number {
+  const m = modelById(line.model);
+  if (m.kind === "part") return partPrice(m.id.slice(5) as ComponentKind, line.part?.size, line.part?.ff, year);
+  return (line.bare ? bareChassisPrice(m, year, line.brand) : presetPrice(m, year, line.brand)) + partsPrice(extraParts(line), year);
 }
 
 function lineError(s: GameState, line: CartLine): string | null {
@@ -190,7 +192,7 @@ const FORMS: FormFactor[] = ["3.5", "2.5", "nvme"];
 // Puts qty new units into storage at the manufacturer's price and returns their ids.
 function stock(s: GameState, line: CartLine, lease: string | null, store: string): string[] {
   const { model: modelId, brand, qty } = line;
-  const price = unitPrice(line), custom = line.bare || line.extras?.length;
+  const price = unitPrice(line, yearOf(s.hour)), custom = line.bare || line.extras?.length;
   return Array.from({ length: qty }, () => {
     const name = nextName(`${prefix(s, store)}-${roleOf(modelId)}`, s.devices.map((d) => d.name));
     const id = newId(s, "dev");
@@ -200,7 +202,7 @@ function stock(s: GameState, line: CartLine, lease: string | null, store: string
   });
 }
 
-const lineTotal = (line: CartLine) => unitPrice(line) * line.qty;
+const lineTotal = (s: GameState, line: CartLine) => unitPrice(line, yearOf(s.hour)) * line.qty;
 
 // Bought units go to the storage of the zone at locationId, which may not be ready yet.
 export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "bare" | "part"> = {}): ActionResult {
@@ -208,9 +210,9 @@ export function buyDevice(s: GameState, modelId: string, brand: string, qty: num
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   const error = lineError(s, line);
   if (error) return fail(error);
-  if (s.cash < lineTotal(line)) return fail("error.noCash");
+  if (s.cash < lineTotal(s, line)) return fail("error.noCash");
   const ids = stock(s, line, null, locationId);
-  book(s, "hardware", "ledger.hardware", { model: modelById(modelId).name, qty }, -lineTotal(line));
+  book(s, "hardware", "ledger.hardware", { model: modelById(modelId).name, qty }, -lineTotal(s, line));
   return { ok: true, id: ids[0] };
 }
 
@@ -220,7 +222,7 @@ export function buyCart(s: GameState, lines: CartLine[], payment: { kind: "cash"
   if (!lines.length) return fail("error.emptyCart");
   const error = lines.map((l) => lineError(s, l)).find((e) => e);
   if (error) return fail(error);
-  const total = lines.reduce((sum, l) => sum + lineTotal(l), 0);
+  const total = lines.reduce((sum, l) => sum + lineTotal(s, l), 0);
   if (payment.kind === "cash") {
     if (s.cash < total) return fail("error.noCash");
     const ids = lines.map((l) => (buyDevice(s, l.model, l.brand, l.qty, locationId, l) as { id: string }).id);
@@ -334,7 +336,7 @@ export function sellDevice(s: GameState, deviceId: string): ActionResult {
   if (serverTaken(s, d.id)) return fail("error.serverInUse");
   unplug(s, new Set([d.id]));
   s.devices = s.devices.filter((x) => x.id !== deviceId);
-  book(s, "sales", "ledger.sale", { device: d.name }, resaleValue(s, d.price, d.boughtAt));
+  book(s, "sales", "ledger.sale", { device: d.name }, deviceValue(s, d));
   return { ok: true };
 }
 

@@ -1,5 +1,6 @@
 import { yearOf } from "../00-core/time";
-import { COMPONENTS, jacksOf, modelById, type DeviceKind } from "../10-catalog/hardware";
+import { COMPONENTS, jacksOf, modelById, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
+import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, inUs, MOVE, rackUnits, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import type { Component, Device, End, GameState, Location, SpaceKind } from "../50-state";
 
@@ -137,6 +138,10 @@ export function resaleValue(s: GameState, price: number, boughtAt: number): numb
   const share = months <= 1 ? 1 - 0.2 * months : Math.max(0.2, 0.8 - (0.6 * (months - 1)) / 24);
   return Math.round(price * share * 100) / 100;
 }
+
+// What a device sells for. A sized spare part sells at the current part price, anything else at what was paid.
+export const deviceValue = (s: GameState, d: Device): number =>
+  resaleValue(s, d.part ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour)) : d.price, d.boughtAt);
 
 const psusOf = (d: Device) => d.components.filter((c) => c.kind === "psu");
 export const isPlugged = (c: Component) => c.plugged !== false;

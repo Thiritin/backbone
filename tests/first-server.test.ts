@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { START_CASH } from "../src/sim/10-catalog/economy";
+import { yearOf } from "../src/sim/00-core/time";
 import { modelById } from "../src/sim/10-catalog/hardware";
+import { presetPrice } from "../src/sim/10-catalog/parts";
 import type { GameState } from "../src/sim/50-state";
 import { linkStatus } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
@@ -22,7 +24,7 @@ const run = (s: GameState, hours: number) => { for (let h = 0; h < hours; h++) t
 // the DSL line is in.
 function firstServer(s: GameState): string {
   const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
-  expect(s.cash).toBe(START_CASH - 2500);
+  expect(s.cash).toBe(START_CASH - presetPrice(modelById("g1-compute"), yearOf(s.hour), "Dwell"));
   ok(mountDevice(s, srv, "rack2", 1));
   expect(linkStatus(s, srv).online).toBe(false);
   for (const c of s.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(setPlugged(s, srv, c.id, true));

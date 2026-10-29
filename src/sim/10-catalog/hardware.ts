@@ -84,9 +84,6 @@ export const bareParts = (m: DeviceModel): PartSpec[] => {
   let psu = 0;
   return componentParts(m).filter((p) => !["cpu", "ram", "hdd", "ssd", "nvme"].includes(p.kind) && (p.kind !== "psu" || psu++ < 1));
 };
-// What the shop charges for a part, per piece.
-export const partPrice = (p: PartSpec): number => COMPONENTS[p.kind].price;
-export const partsPrice = (parts: PartSpec[]): number => parts.reduce((n, p) => n + partPrice(p), 0);
 
 // How many slots a model has for a kind of part (all drive kinds share the bays).
 export function slotsOf(m: DeviceModel, kind: ComponentKind): number {

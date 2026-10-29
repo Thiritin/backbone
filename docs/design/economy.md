@@ -61,7 +61,7 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Customer base rate per TB of traffic | 46 | Overage and traffic-heavy services |
 | Fixed-price products | 1 | Web hosting, domains and dedicated servers keep their price per size; the sizes get bigger |
 | Rented space per U, rack or cage | 1 | Power is billed separately |
-| Server purchase price | 1 | Resources per server come from the generations table below |
+| Server purchase price | Parts | Resources per server come from the generations table below; the price in later years follows the parts (Part prices by year) |
 | Salaries | 0.6 | Support agent, junior: €38,700 in 2026, about €23,000 in 2005 |
 | Search ads, per click | 0.6 | |
 | SSL certificate (DV) | Special | €50 per year until 2015, then free (the Let's Encrypt stand-in) |
@@ -108,6 +108,33 @@ Backup and archive servers use HDDs whatever the generation's disk type. Archive
 - **Port speed.** Server ports run at 1G until 2011, then 10G, 25G from 2017 and 100G from 2023.
 - **Ports.** 1G ports are copper (RJ45); 10G and faster ports are SFP cages.
 - **Shop window.** A generation stays in the shop until the generation two steps newer arrives, so G1 is sold until the end of 2010 and G2 until the end of 2013. G6 and G7 stay in the shop.
+
+**Part prices by year.** A part costs its size times the year's price per unit, with straight lines between the keyframe years and flat prices after the last one (2028). The prices are enterprise prices (registered RAM about 1.6 times consumer RAM, enterprise SSDs about 1.5 times, enterprise HDDs about 1.6 times). SSDs are sold from 2009 and NVMe drives from 2014.
+
+| Year | RAM, € per GB | SSD, € per GB | NVMe, € per GB | HDD, € per TB | CPU, € per core |
+| --- | --- | --- | --- | --- | --- |
+| 2005 | 200 | not sold | not sold | 500 | 200 |
+| 2008 | 40 | 12 (sold from 2009) | not sold | 200 | 120 |
+| 2010 | 45 | 3.0 | not sold | 100 | 90 |
+| 2012 | 11 | 1.5 | not sold | 60 (flood spike) | 70 |
+| 2013 | 8 | 1.0 | not sold | 50 | 65 |
+| 2014 | 14 | 0.70 | 1.2 | 42 | 60 |
+| 2016 | 8 | 0.40 | 0.65 | 40 | 50 |
+| 2018 | 13 (DRAM spike) | 0.35 | 0.50 | 35 | 45 |
+| 2020 | 5 | 0.14 | 0.18 | 25 | 35 |
+| 2023 | 3.5 | 0.07 | 0.09 | 18 | 30 |
+| 2025 | 7 | 0.12 | 0.14 | 16 | 28 |
+| 2026 | 22 (AI spike) | 0.30 | 0.33 | 15 | 28 |
+| 2027 | 30 | 0.35 | 0.38 | 15 | 28 |
+| 2028 | 15 | 0.20 | 0.22 | 14 | 27 |
+
+Anchors: John C. McCallum's memory price history (DRAM about US$100 to 150 per GB in 2005 for consumer DDR2, about $4 to 5 in 2013 and 2016, the 2017 to 2018 shortage that roughly doubled module prices, about $3 in 2020, the 2023 trough); the 2025 to 2026 AI-driven shortage (DDR5 about $17 per GB in October 2026 after a rise of 200% to 400%, TrendForce; Bernstein expects a further rise in 2027 and a fall in 2028); Backblaze's drive cost per GB ($0.11 in 2009, 0.033 in 2017, 0.0144 in 2022); SSD retail (about $3 per GB in 2010, 0.30 in 2016, 0.11 in 2020, 0.06 at the mid-2023 bottom, 0.09 in 2024, doubled by late 2025). The CPU column is the least anchored.
+
+Fixed parts: a power supply costs €150 in 2005, falling in a straight line to €90 in 2015 and flat after; a fan €25; a mainboard €600 falling to €400 by 2015; a network card €80 falling to €40 by 2015, times 4 for 10G and faster cards until 2017 and times 2 from 2017.
+
+**Chassis and preset prices.** The chassis price of a model is its list price (generations table times the line's multiplier) minus all its parts at the prices of its generation's launch year, and never less than 25% of the list price. A preset costs its chassis plus its parts at the year's prices, times the brand factor, so a preset costs exactly its list price in its launch year and gets cheaper within a generation as parts fall, then jumps in the spikes. Where the parts at launch cost more than the list price leaves after the 25% floor (most models, because RAM, CPUs and drives priced per unit add up to more than the list price), the preset buys its parts at a share of their price, chosen so the launch price stays the list price; the share is the same in every later year. A bare chassis costs the preset price minus its CPUs, RAM and drives at the year's full part prices, never less than 25% of the preset price, so building a machine from parts costs more than the preset wherever the share applies.
+
+**Resale of parts.** A spare part in storage sells at the current part price times the resale curve of Buying and selling, and counts at that value in net worth. A RAM stick bought in 2023 and sold in 2026 sells for more than it cost.
 
 **Manufacturers.** Within a class, manufacturers differ in price and failure rate, never in specs. A unit costs the model's price × the price factor, and its failure rate is the base AFR × the failure factor.
 
@@ -797,7 +824,7 @@ A G1 server costs about €26 a month in power in 2005; a G7 costs €89 in 2026
 
 Only devices that are switched on and have a plugged-in, working power supply count as W. Plugging and unplugging a supply is free; a device that gets power from its first supply boots for 1 hour.
 
-**Buying and selling.** Hardware arrives 3 days after ordering in 2005, falling to 1 day by 2015. Bought hardware goes to storage, and mounting it into a rack is instant and free. Resale value falls in a straight line from 100% to 80% of the price over the first month, then in a straight line to 20% over the next 24 months, and stays at 20%. Racks sell the same way. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
+**Buying and selling.** Hardware arrives 3 days after ordering in 2005, falling to 1 day by 2015. Bought hardware goes to storage, and mounting it into a rack is instant and free. Resale value falls in a straight line from 100% to 80% of the price over the first month, then in a straight line to 20% over the next 24 months, and stays at 20%. Racks sell the same way; spare parts sell at the current part price. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
 
 **Failures.** Each device has a base annual failure rate (AFR), raised in its first 3 months and again after 3 years of age:
 
@@ -831,7 +858,7 @@ Without a spare kit in stock, a repair waits for a delivery first.
 | CPU | 15 years | 0.05% | 0.2% | €400 | No |
 | Network card | 10 years | 0.3% | 1% | €80 | No |
 
-A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. Part prices are 2026 values with m = 1.
+A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare and sets the insurance premium; the shop sells parts at the prices of Part prices by year.
 
 **Chassis slots.** Each server line has a fixed number of DIMM slots, drive bays, PCIe slots and power supply bays. Sockets are 2 (1 for ARM, backup and archive). The DIMM column interpolates between the generations given: G1 and G2 share the G1 value, G3 and G4 the G3 value, G5 and G6 the G5 value.
 
@@ -848,7 +875,7 @@ Anchors: Dell PowerEdge 1950 (2006) has 8 DIMMs, 4 × 3.5" or 6 × 2.5" bays and
 
 A part has a size: GB for RAM sticks and drives, cores for CPUs. The preset splits the model's RAM, drive capacity and cores evenly over its sticks, drives and sockets, so the capacity of a bought server is the number in its spec. Capacity comes from the working parts: a failed stick or CPU stops counting. All installed drives are array members, and the smallest sets the size each contributes, so RAID usable space is the level's formula over the drive count times the smallest drive. A failed drive stays in the array until replaced. A mirror pairs drives, so an odd drive count in RAID 1 or RAID 10 leaves one drive unused.
 
-**Bare chassis, extras and parts.** A bare chassis costs the preset price (with the brand factor) minus the CPUs, RAM and drives of the preset at the flat part prices above, and never less than 25% of the preset price. Extras and parts cost the flat part price each, whatever their size, and the brand factor does not apply to parts; a bare chassis plus the preset's parts therefore costs the preset price. Part prices by year replace the flat prices later. The Parts tab offers every size the presets in the shop are built from, which is the current generation and the one before it (a generation stays in the shop until the one two steps newer arrives), plus NVMe drives of 1, 2, 8 and 15 TB from G4, G5, G6 and G7 (Intel P3700 800 GB in 2014). Installing or removing a part that swaps while running is instant in the basement; any other part takes 30 minutes in the basement, and at a datacenter the work takes the remote hands' response time and is billed at their hourly rate for at least one hour, as a swap is.
+**Bare chassis, extras and parts.** A bare chassis costs the preset price (with the brand factor) minus the CPUs, RAM and drives of the preset at the year's part prices (Part prices by year), and never less than 25% of the preset price. Extras and parts cost the year's part price for their size each, and the brand factor does not apply to parts; where the 25% floor does not apply, a bare chassis plus the preset's parts costs the preset price. The Parts tab offers every size the presets in the shop are built from, which is the current generation and the one before it (a generation stays in the shop until the one two steps newer arrives), plus NVMe drives of 1, 2, 8 and 15 TB from G4, G5, G6 and G7 (Intel P3700 800 GB in 2014). Installing or removing a part that swaps while running is instant in the basement; any other part takes 30 minutes in the basement, and at a datacenter the work takes the remote hands' response time and is billed at their hourly rate for at least one hour, as a swap is.
 
 **RAID.**
 

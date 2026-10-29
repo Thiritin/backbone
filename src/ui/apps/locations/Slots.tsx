@@ -1,7 +1,9 @@
 import { Cpu, Plus } from "lucide-react";
 import { Fragment, useState } from "react";
-import { dateOf } from "../../../sim/00-core/time";
+import { euro } from "../../../sim/00-core/money";
+import { dateOf, yearOf } from "../../../sim/00-core/time";
 import { COMPONENTS, fits, modelById, samePart, slotsOf, type ComponentKind, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { partPrice } from "../../../sim/10-catalog/parts";
 import type { Component, Device, GameState } from "../../../sim/50-state";
 import { hotKind, hotSwappable, locationOf } from "../../../sim/60-infra/status";
 import { installPart, removePart, replaceComponent } from "../../../sim/90-actions/hardware";
@@ -113,7 +115,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                         return (
                           <Fragment key={d.id}>
                             <button className="btn" disabled={cold(d)} onClick={() => { act((gm) => installPart(gm, device.id, d.id)); setAdding(null); }}>
-                              {partLabel(spec)}{n > 1 && <span className="num"> × {n}</span>}
+                              {partLabel(spec)}{n > 1 && <span className="num"> × {n}</span>}<span className="num loc-muted"> {euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour)))}</span>
                             </button>
                             {!!device.rackId && <TechButton game={game} deviceId={device.id} kind="part" partId={d.id} />}
                           </Fragment>
