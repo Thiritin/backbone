@@ -47,7 +47,7 @@ function rows(game: GameState): Row[] {
   }
   for (const tk of game.tickets) if (!isFinal(tk)) add(tickets, tk.customerId, 1);
   for (const v of game.services) labels.set(v.customerId, `${labels.get(v.customerId) ?? ""} ${v.label.toLowerCase()}`);
-  return game.customers.map((c) => {
+  return game.customers.filter((c) => !c.sponsor).map((c) => {
     const services = activeServices(game.services, c.id);
     return {
       c, status: c.churnedAt !== null ? "churned" : status.get(c.id) ?? "active", services: services.length,
