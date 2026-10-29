@@ -106,7 +106,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
       null,
       ...(w ? workloadActions(game, w) : []),
       null,
-      w && kind === "cloud" && vms && { label: "Open in Virtual machines", run: () => openApp("Virtual machines", { kind: "workload", id: w.id }) },
+      w && (kind === "cloud" || kind === "game") && vms && { label: "Open in Virtual machines", run: () => openApp("Virtual machines", { kind: "workload", id: w.id }) },
       w && kind === "panel" && { label: "Open panel host", run: () => openApp("Products", { kind: "cluster", id: w.clusterId! }) },
     ];
   };

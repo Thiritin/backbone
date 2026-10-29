@@ -1243,6 +1243,9 @@ Every server runs at most one control plane. A hypervisor ("Cloud" below) runs o
 | VMwhere | Cloud | €8 per physical core | 5 h | ×0.7 | 1.15 | Yes | 10× | 1.25× | 1 vCPU, 2 GB, 10 GB |
 | Proxmocks | Cloud | Free | 3 h | ×1.0 | 1.0 | Yes | 8× | 1.5× | 0.25 vCPU, 0.25 GB, 5 GB |
 | HyperVee | Cloud | €20 per node | 4 h | ×0.9 | 1.05 | No | 6× | 1.2× | 1 vCPU, 1 GB, 10 GB |
+| TCAdmen | Game | €25 per server | 2 h | ×0.9 | 1.2 | No | 8× | 1.5× | 0.25 vCPU, 0.5 GB, 5 GB |
+| MultiKraft | Game | €20 per server | 2 h | ×1.0 | 1.2 | No | 8× | 1.5× | 0.25 vCPU, 0.5 GB, 5 GB |
+| Pterodaktyl | Game | Free | 3 h | ×1.2 | 1.2 | No | 8× | 1.5× | 0.25 vCPU, 0.5 GB, 5 GB |
 
 | Software | From | Imports from same | Imports from other | Clusters from |
 | --- | --- | --- | --- | --- |
@@ -1255,6 +1258,11 @@ Every server runs at most one control plane. A hypervisor ("Cloud" below) runs o
 | VMwhere | 2005 | 2005 | Never | 2005 |
 | Proxmocks | 2008 | 2008 | Never | 2008 |
 | HyperVee | 2008 | 2008 | Never | 2012 |
+| TCAdmen | 2005 | Never | Never | Never |
+| MultiKraft | 2010 | Never | Never | Never |
+| Pterodaktyl | 2016 | Never | Never | Never |
+
+Game panel anchors: TCAdmin has been sold since 2004 at about USD 30 a month per server (TCAdmen, €25 a month); Multicraft has been sold since 2010 at about USD 25 a month per host (MultiKraft, €20 a month); Pterodactyl's repository was created in December 2015 and its 1.0 came in 2020, and it is free (Pterodaktyl, from 2016).
 
 Anchors: cPanel could copy accounts between servers with WHM's "Copy an account" since 2005 and gained its transfer tool for other panels around 2012; Plesk's Migration Manager appeared with Plesk 7.5.6 in 2005 and the Plesk Migrator extension (2015) imports cPanel, Confixx and others; DirectAdmin moves accounts through backup and restore since about 2010; ISPConfig 3 introduced multiserver setups in March 2009, which is where FreePanel clusters from, while cPanel and Plesk never clustered web serving (only DNS). Hypervisor years follow the products: OpenStack 2010, VMware ESX long before 2005, Proxmox VE 2008, Hyper-V 2008 (clustering of Hyper-V hosts from the 2012 release).
 
@@ -1268,6 +1276,7 @@ Anchors: cPanel could copy accounts between servers with WHM's "Copy an account"
 - **Switching** software is an uninstall and an install. Uninstalling needs the machine empty of what the software serves; a VM stays, empty, and the player deletes it separately.
 - **Selling:** the website, order emails and leads only carry product lines that an installed control plane on a cluster with nodes sells. Placement refuses with "No cluster runs a hosting panel" or "No cluster runs a virtualization platform" when no cluster in scope has the right software, and with the capacity error when it has but no node has room.
 - **Years and traits.** Software cannot be installed before its `from` year (`error.softwareNotYet`); old saves keep what they have. `migration.same` and `migration.other` are the years from which the software imports a web space from the same software and from another panel (null never), `cluster` the year from which a panel host takes a second server (null never). Panels cluster by joining an empty server that runs the same panel in the zone, through the same join flow as a hypervisor node; a panel host in a VM stays on one server. The clustering years of hypervisors are recorded for reference; hypervisor clusters can grow from the day the hypervisor is installed. There is no replication trait: no panel of the period replicated sites between hosts.
+- **Game server panels** (kind "game") run containers for game servers on a server or in one of the player's own VMs, one panel per machine like a web panel. A game panel sells game servers and nothing else, at the how-to factor of its software and, on bare metal, with the density 1.2 that containers pack tighter. Hypervisor clusters keep selling game servers as plain virtual machines, so a game server order goes to a game panel with room first and to a hypervisor cluster otherwise. Game panels ship one release a year like every software and have 1.5 vulnerabilities per release; a compromised game panel takes its game servers down until the player cleans it up (Security advisories, Generated vulnerabilities). A license per game is not modelled yet; the panels bill only their own fee, per server.
 - A new game starts with no software installed. Old saves keep the panel and platform they had, and saves from before platforms load with FreePanel and Proxmocks installed.
 
 **Migration in the first build.** Inside a zone, links count as 1 Gbit/s, which moves 450 GB an hour. Virtual machines move live on platforms with live migration; on HyperVee they are offline for (disk + RAM) ÷ 450 GB per hour, rounded up to whole hours. Web spaces move between panel hosts as the hand task above; game servers and storage volumes move without a lost hour. Moves between zones need a link between the zones; until the network links between locations exist, they are refused. A workload with a lost disk can't migrate; it is restored instead.

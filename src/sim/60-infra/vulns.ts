@@ -13,8 +13,8 @@ export interface Vulnerability { id: string; family: string; year: number; sever
 // A vulnerability an instance is open to, with the whole days it has been exposed.
 export interface OpenVuln extends Vulnerability { days: number }
 
-// Mean vulnerabilities per family and year, by what the software is. Game panels and CMS families come with Lane 2b.2 and 2b.3.
-export const VULN_RATE: Record<string, number> = { panel: 2, cloud: 1, mail: 1, gamePanel: 1.5, cms: 3 };
+// Mean vulnerabilities per family and year, by what the software is. CMS families come with Lane 2b.2.
+export const VULN_RATE: Record<string, number> = { panel: 2, cloud: 1, mail: 1, game: 1.5, cms: 3 };
 export const SEVERITY_SHARE: Record<Severity, number> = { low: 0.5, high: 0.35, critical: 0.15 };
 // The most days between disclosure and the patch.
 export const PATCH_DAYS: Record<Severity, number> = { low: 14, high: 14, critical: 3 };

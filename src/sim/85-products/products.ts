@@ -38,7 +38,7 @@ export const zoneLinkGbit = (_s: GameState, a: string, b: string): number => (a 
 
 function units(s: GameState, c: Cluster, sw: Software): number {
   if (sw.pricing === "account") return s.workloads.filter((w) => w.clusterId === c.id && servedBy(s, w) === "panel").length;
-  if (sw.pricing === "server") return c.kind === "panel" ? 1 : c.nodes.length;
+  if (sw.pricing === "server") return c.kind === "cloud" ? c.nodes.length : 1;
   if (sw.pricing === "core") return c.nodes.reduce((n, x) => n + installedCores(s.devices.find((d) => d.id === x.deviceId)!), 0);
   return 0;
 }
@@ -55,7 +55,8 @@ export function howToFactor(s: GameState, customerId: string): number {
   const services = new Set(s.services.filter((v) => v.customerId === customerId && v.endedAt === null).map((v) => v.id));
   const factors = s.workloads.filter((w) => w.clusterId && services.has(w.serviceId)).map((w) => {
     const c = s.clusters.find((x) => x.id === w.clusterId)!;
-    return servedBy(s, w) === "panel" ? tickets(c.panel) * phpTickets(s, c) : tickets(c.platform);
+    const kind = servedBy(s, w);
+    return kind === "panel" ? tickets(c.panel) * phpTickets(s, c) : tickets(kind === "game" ? c.panel : c.platform);
   });
   return factors.length ? factors.reduce((a, b) => a + b, 0) / factors.length : 1;
 }
