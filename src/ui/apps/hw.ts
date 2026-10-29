@@ -7,7 +7,7 @@ import { deviceHealth, HOURS_PER_YEAR, isPlugged, linkStatus, portPeers, type Li
 import { portLinks, type PortLink } from "../../sim/60-infra/usage";
 import type { Lamp, PartLamp, Parts, PortLamp, PortLight } from "../art/fronts";
 
-export const speed = (g: number) => (g >= 1 ? `${g}G` : `${g * 1000}M`);
+export const speed = (g: number) => (g >= 1000 ? `${+(g / 1000).toFixed(1)}T` : g >= 1 ? `${g}G` : `${g * 1000}M`);
 export const ram = (gb: number) => (gb >= 1024 ? `${+(gb / 1024).toFixed(1)} TB` : `${gb} GB`);
 export const disk = (gb: number) => (gb >= 1000 ? `${+(gb / 1000).toFixed(1)} TB` : `${gb} GB`);
 export const cores = (n: number) => `${n} ${n === 1 ? "core" : "cores"}`;
@@ -18,7 +18,7 @@ export const partSize = (c: Pick<Component, "kind" | "size" | "ff">): string =>
 const SLOT_NAME: Partial<Record<ComponentKind, string>> = { hdd: "Bay", ssd: "Bay", nvme: "Bay", ram: "DIMM", cpu: "Socket", psu: "PSU bay", fan: "Fan", gpu: "PCIe slot" };
 // Slot a part sits in: the nth of its kind, or its fixed place on the board.
 export const partSlot = (kind: ComponentKind, nth: number): string => (SLOT_NAME[kind] ? `${SLOT_NAME[kind]} ${nth}` : "Onboard");
-export const height = (m: DeviceModel) => (m.shelf ? "Shelf" : `${m.height}U`);
+export const height = (m: DeviceModel) => (m.shelf ? "Shelf" : m.kind === "gateway" && m.height === 0 ? "Panel" : `${m.height}U`);
 export const watts = (w: number) => `${Math.round(w).toLocaleString("en-GB")} W`;
 export const day = (hour: number) => dateOf(hour).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 export const lampOf = (st: LinkStatus): Lamp => (!st.online ? "bad" : st.warning ? "warn" : "ok");

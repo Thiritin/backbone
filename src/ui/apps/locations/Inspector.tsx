@@ -1,5 +1,5 @@
 import { supportEnd } from "../../../sim/10-catalog/lifecycle";
-import { Cable, Database, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, Unplug } from "lucide-react";
+import { Cable, Database, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, Unplug } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
@@ -8,6 +8,7 @@ import { bayCount, jacksOf, modelById, type DeviceModel } from "../../../sim/10-
 import type { Cable as CableT, Device, End, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, drivesOf, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
+import { pduOf } from "../../../sim/60-infra/pdu";
 import { rebuildHours } from "../../../sim/88-tick/tick";
 import { addSecondPsu, buyOutLease, connect, disconnect, LABEL_MAX, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
@@ -107,6 +108,9 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         <LabelEdit device={device} editing={editing} onEditing={setEditing} />
         <span className="grow" />
         {model.kind === "server" && !device.on && !!(device.rackId || device.store) && <button className="btn" onClick={() => menus.lid(device)}><PackageOpen />Open chassis</button>}
+        {powered && !isServerInRack(device) && device.on && !!pduOf(game, device) && (
+          <button className="btn ghost icon" aria-label="Power cycle" title="Power cycle" onClick={() => menus.op(device, "cycle")}><RotateCw /></button>
+        )}
         {powered && (
           <button className={`btn ghost icon insp-power${device.on ? " on" : ""}`} aria-label={device.on ? "Shut down" : "Power on"} title={device.on ? "Shut down" : "Power on"}
             disabled={!device.rackId && !device.panel} onClick={() => (isServerInRack(device) ? menus.op(device, device.on ? "shutdown" : "on") : menus.power(device, !device.on))}>
@@ -197,7 +201,8 @@ function Status({ game, device }: { game: GameState; device: Device }) {
   return (
     <dl className="insp-status">
       <div><dt>Power</dt><dd><span className={`insp-dot ${tone}`} />{power}</dd></div>
-      {model.kind !== "ups" && (
+      {model.kind === "pdu" && <div><dt>Outlets</dt><dd className="num">{model.outlets}</dd></div>}
+      {model.kind !== "ups" && model.kind !== "pdu" && (
         <div>
           <dt>Link</dt>
           <dd>

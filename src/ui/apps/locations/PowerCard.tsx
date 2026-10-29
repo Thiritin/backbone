@@ -11,7 +11,7 @@ const HANDS: Record<"pull" | "bmcreset", string> = { pull: "Pulling power", bmcr
 // The power actions of a mounted server, the pending hand task, and the workloads a pulled plug corrupted.
 export function PowerCard({ game, device, onOp }: { game: GameState; device: Device; onOp: (op: PowerOp) => void }) {
   const act = useStore((s) => s.act);
-  const { via, options } = powerOptions(game, device);
+  const { via: bmc, pdu, options } = powerOptions(game, device), via = bmc ?? (pdu ? "PDU" : null);
   const bad = workloadsOn(game, device.id).filter((w) => w.corrupted);
   return (
     <div className="loc-card">

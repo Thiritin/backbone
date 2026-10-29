@@ -2,7 +2,7 @@
 import { GENERATIONS, generationAt } from "./economy";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
 
-export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "part";
+export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part";
 export interface PortSpec { media: "rj45" | "sfp"; gbit: number }
 // Form factor of a drive and of a bay group. A "nvme" bay is a 2.5" bay that takes SATA/SAS and NVMe drives; a "2.5" bay takes
 // SATA/SAS only; a "3.5" bay takes 3.5" drives only.
@@ -149,6 +149,13 @@ export interface DeviceModel {
   throughputGbit?: number;
   // A UPS carries its location through a grid outage for batteryWh ÷ load.
   batteryWh?: number;
+  // A model only one manufacturer builds, sold at its list price; models without one come from every manufacturer of the kind.
+  brand?: string;
+  // Routers: can hold a full BGP table and run an own AS (needed to announce a block), and how many BGP sessions it takes.
+  fullTable?: boolean;
+  bgpSessions?: number;
+  // A switched PDU's outlets; a rack with one lets the player cut or cycle the power of every device in it.
+  outlets?: number;
 }
 
 // Within a class, manufacturers differ in price and failure rate, never in specs.
@@ -159,17 +166,21 @@ export const MANUFACTURERS: Manufacturer[] = [
   { id: "supermacro", name: "SuperMacro", kinds: ["server"], priceFactor: 0.9, failureFactor: 1.3 },
   { id: "lenovoid", name: "Lenovoid", kinds: ["server"], priceFactor: 0.95, failureFactor: 1.1 },
   { id: "sysko", name: "Sysko", kinds: ["switch", "firewall", "gateway"], priceFactor: 1, failureFactor: 1 },
-  { id: "junipurr", name: "Junipurr", kinds: ["switch"], priceFactor: 1.1, failureFactor: 0.7 },
+  { id: "junipurr", name: "Junipurr", kinds: ["switch", "gateway"], priceFactor: 1.1, failureFactor: 0.7 },
   { id: "aristotle", name: "Aristotle", kinds: ["switch"], priceFactor: 0.93, failureFactor: 1.2 },
   { id: "fortinope", name: "Fortinope", kinds: ["firewall"], priceFactor: 0.9, failureFactor: 1.25 },
   { id: "pablo-alto", name: "Pablo Alto", kinds: ["firewall"], priceFactor: 1.1, failureFactor: 0.75 },
   { id: "pandoot", name: "Pandoot", kinds: ["patch"], priceFactor: 1, failureFactor: 1 },
-  { id: "eatin", name: "Eatin", kinds: ["ups"], priceFactor: 1, failureFactor: 1 },
+  { id: "avn", name: "AVN", kinds: ["gateway"], priceFactor: 1, failureFactor: 0.9 },
+  { id: "microtick", name: "MicroTick", kinds: ["gateway"], priceFactor: 1, failureFactor: 1.2 },
+  { id: "eatin", name: "Eatin", kinds: ["ups", "pdu"], priceFactor: 1, failureFactor: 1 },
   { id: "generic", name: "Generic", kinds: ["part"], priceFactor: 1, failureFactor: 1 },
 ];
 export const brandsFor = (kind: DeviceKind): string[] => MANUFACTURERS.filter((m) => m.kinds.includes(kind)).map((m) => m.name);
 // Hours from an order to the stockroom: 3 days in 2005 falling in a straight line to 1 day in 2015.
 export const deliveryHours = (year: number): number => Math.round(72 - 48 * Math.min(1, Math.max(0, (year - 2005) / 10)));
+// The manufacturers that sell this model.
+export const brandsOf = (m: DeviceModel): string[] => (m.brand ? [m.brand] : brandsFor(m.kind));
 export const SERVER_BRANDS = brandsFor("server");
 export const SWITCH_BRAND = "Sysko";
 export const PATCH_BRAND = "Pandoot";
@@ -238,15 +249,19 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
   }),
 );
 
-type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "batteryWh">>;
+type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus">>;
 // Years on sale after launch and years of support after that (economy.md, Hardware lifecycle); other kinds never end.
 const LIFE: Partial<Record<DeviceKind, { sale: number; support: number }>> = {
-  switch: { sale: 6, support: 5 }, firewall: { sale: 6, support: 5 }, gateway: { sale: 6, support: 5 }, ups: { sale: 8, support: 3 },
+  switch: { sale: 6, support: 5 }, firewall: { sale: 6, support: 5 }, gateway: { sale: 6, support: 5 }, ups: { sale: 8, support: 3 }, pdu: { sale: 8, support: 3 },
 };
+// The newest model of each line stays on sale until a successor row exists (economy.md, Routers, UPS and PDUs).
+const NEWEST = new Set(["sw-32e", "fw-400g", "edge-xxl", "ups-10k", "pdu-24", "fb-5690", "isr-8300", "ccr2216", "mx304"]);
 const other = (id: string, name: string, kind: DeviceKind, height: number, p: PortSpec[], watts: number, price: number, from = 2005, extra: Extra = {}): DeviceModel => {
   const life = price > 0 ? LIFE[kind] : undefined;
-  return { id, name, kind, height, ports: p, watts, idleWatts: watts, psus: 1, price, from, until: life ? from + life.sale : null, supportYears: life?.support ?? 0, ...extra };
+  return { id, name, kind, height, ports: p, watts, idleWatts: watts, psus: 1, price, from, until: life && !NEWEST.has(id) ? from + life.sale : null, supportYears: life?.support ?? 0, ...extra };
 };
+// Routers: throughput in Gbit, a full BGP table or not, and the BGP sessions they take.
+const router = (tp: number, bgp: number, full = false): Extra => ({ throughputGbit: tp, bgpSessions: bgp, fullTable: full });
 const L2 = { layer: 2 } as const, L3 = { layer: 3 } as const;
 
 export const MODELS: DeviceModel[] = [
@@ -260,24 +275,51 @@ export const MODELS: DeviceModel[] = [
   other("sw-48y", "L3 switch 48 SFP, 100G", "switch", 1, [...ports(48, 25), ...ports(8, 100)], 400, 18000, 2017, L3),
   other("sw-32c", "L3 spine 32 × 100G", "switch", 1, ports(32, 100), 450, 20000, 2017, L3),
   other("sw-32d", "L3 spine 32 × 400G", "switch", 1, ports(32, 400), 900, 45000, 2022, L3),
+  other("sw-32e", "L3 spine 32 × 800G", "switch", 1, ports(32, 800), 1400, 60000, 2027, L3),
   other("fw-1g", "Firewall 1G", "firewall", 1, ports(4, 1), 40, 1500, 2005, { throughputGbit: 1 }),
   other("fw-10g", "Firewall 10G", "firewall", 1, [...ports(8, 1), ...ports(4, 10)], 120, 6000, 2011, { throughputGbit: 10 }),
   other("fw-40g", "Firewall 40G", "firewall", 1, [...ports(8, 10), ...ports(4, 40)], 250, 18000, 2017, { throughputGbit: 40 }),
   other("fw-100g", "Firewall 100G", "firewall", 1, [...ports(8, 25), ...ports(4, 100)], 450, 40000, 2022, { throughputGbit: 100 }),
+  other("fw-400g", "Firewall 400G", "firewall", 1, [...ports(8, 100), ...ports(4, 400)], 700, 70000, 2027, { throughputGbit: 400 }),
   // The first half of the ports are the front jacks, the second half the back; front i is wired to back jacks + i.
   other("patch-24", "Patch panel 24, copper", "patch", 1, ports(48, 1), 0, 80),
   other("patch-24f", "Patch panel 24, fiber", "patch", 1, ports(48, 400, "sfp"), 0, 250),
   other("patch-48", "Patch panel 48, copper", "patch", 1, ports(96, 1), 0, 140),
   other("patch-48f", "Patch panel 48, fiber", "patch", 1, ports(96, 400, "sfp"), 0, 450),
   // Edge routers mount in a rack; every uplink link takes one of their ports.
-  other("edge-s", "Edge router S", "gateway", 1, ports(4, 1), 100, 3000, 2005),
-  other("edge-m", "Edge router M", "gateway", 1, [...ports(8, 10), ...ports(4, 1)], 200, 12000, 2008),
-  other("edge-l", "Edge router L", "gateway", 2, ports(32, 100), 600, 40000, 2014),
-  other("edge-xl", "Edge router XL", "gateway", 2, ports(36, 400), 900, 90000, 2021),
+  other("edge-s", "Edge router S", "gateway", 1, ports(4, 1), 100, 3000, 2005, { brand: "Sysko", ...router(4, 4) }),
+  other("edge-m", "Edge router M", "gateway", 1, [...ports(8, 10), ...ports(4, 1)], 200, 12000, 2008, { brand: "Sysko", ...router(40, 128, true) }),
+  other("edge-l", "Edge router L", "gateway", 2, ports(32, 100), 600, 40000, 2014, { brand: "Sysko", ...router(400, 512, true) }),
+  other("edge-xl", "Edge router XL", "gateway", 2, ports(36, 400), 900, 90000, 2021, { brand: "Sysko", ...router(800, 2048, true) }),
+  other("edge-xxl", "Edge router XXL", "gateway", 2, ports(36, 400), 1200, 150000, 2027, { brand: "Sysko", ...router(1600, 4096, true) }),
+  // Small-office routers replace the basement's carrier panel router; the routed speed caps the home line.
+  other("fb-7050", "Fritz!Bocks 7050", "gateway", 0, ports(4, 1), 8, 150, 2006, { brand: "AVN", ...router(0.1, 0) }),
+  other("fb-7390", "Fritz!Bocks 7390", "gateway", 0, ports(4, 1), 9, 220, 2010, { brand: "AVN", ...router(0.3, 0) }),
+  other("fb-7590", "Fritz!Bocks 7590", "gateway", 0, ports(4, 1), 12, 249, 2018, { brand: "AVN", ...router(1, 0) }),
+  other("fb-5690", "Fritz!Bocks 5690", "gateway", 0, ports(4, 1), 14, 330, 2024, { brand: "AVN", ...router(2.5, 0) }),
+  // Business and branch routers mount in a rack; only the ones with a full table can run an own AS.
+  other("isr-1841", "Router 1841", "gateway", 1, ports(2, 1), 40, 1300, 2005, { brand: "Sysko", ...router(0.1, 2) }),
+  other("isr-2811", "Router 2811", "gateway", 2, ports(4, 1), 120, 2500, 2005, { brand: "Sysko", ...router(0.3, 4) }),
+  other("isr-2911", "Router 2911", "gateway", 2, ports(3, 1), 130, 2800, 2009, { brand: "Sysko", ...router(1, 8) }),
+  other("isr-4451", "Router 4451", "gateway", 2, ports(4, 1), 250, 8000, 2013, { brand: "Sysko", ...router(2, 64, true) }),
+  other("isr-8300", "Router 8300", "gateway", 2, [...ports(4, 10), ...ports(4, 1)], 300, 9000, 2020, { brand: "Sysko", ...router(10, 256, true) }),
+  other("rb1100", "RB1100", "gateway", 1, ports(13, 1), 30, 300, 2010, { brand: "MicroTick", ...router(1, 4) }),
+  other("ccr1036", "CCR1036", "gateway", 1, [...ports(12, 1), ...ports(4, 10)], 40, 1000, 2013, { brand: "MicroTick", ...router(10, 128, true) }),
+  other("ccr2004", "CCR2004", "gateway", 1, [...ports(16, 1), ...ports(2, 10)], 40, 450, 2020, { brand: "MicroTick", ...router(10, 128, true) }),
+  other("ccr2216", "CCR2216", "gateway", 1, [...ports(16, 25), ...ports(2, 100)], 120, 2500, 2022, { brand: "MicroTick", ...router(100, 512, true) }),
+  other("mx80", "MX80", "gateway", 2, [...ports(4, 10), ...ports(8, 1)], 350, 25000, 2010, { brand: "Junipurr", ...router(80, 512, true) }),
+  other("mx204", "MX204", "gateway", 1, [...ports(4, 100), ...ports(8, 10)], 400, 40000, 2017, { brand: "Junipurr", ...router(400, 2048, true) }),
+  other("mx304", "MX304", "gateway", 2, ports(16, 100), 1000, 80000, 2022, { brand: "Junipurr", ...router(1600, 8192, true) }),
   // economy.md, Power outages: the small UPS carries a 0.2 kW basement rack for about 3 hours.
   other("ups-1500", "UPS 1500 VA", "ups", 1, [], 10, 180, 2005, { batteryWh: 600 }),
+  other("ups-3000", "UPS 3000 VA", "ups", 2, [], 25, 900, 2005, { batteryWh: 1800 }),
+  other("ups-5k", "UPS 5 kVA", "ups", 3, [], 50, 2500, 2005, { batteryWh: 3500 }),
+  other("ups-10k", "UPS 10 kVA", "ups", 6, [], 100, 6000, 2008, { batteryWh: 8000, psus: 2 }),
+  // A switched PDU cuts or cycles any device in its rack; a 0U one hangs on the rack's side rail.
+  other("pdu-8", "Switched PDU 8", "pdu", 1, [], 15, 700, 2005, { outlets: 8 }),
+  other("pdu-24", "Switched PDU 24", "pdu", 0, [], 20, 1200, 2008, { outlets: 24 }),
   // Price 0 keeps gateways out of the shop; they come with the basement and with every datacenter location.
-  other("home-router", "Home router", "gateway", 0, ports(4, 1), 10, 0),
+  other("home-router", "Home router", "gateway", 0, ports(4, 1), 10, 0, 2005, router(0.1, 0)),
   other("handoff", "Datacenter handoff", "gateway", 0, ports(2, 1), 0, 0),
   ...COMPONENT_KINDS.map((k) => other(`part-${k}`, `Spare ${COMPONENT_NAMES[k]}`, "part", 0, [], 0, COMPONENTS[k].price)),
 ];
@@ -295,7 +337,9 @@ export function hasBmc(modelId: string, brand: string): boolean {
   const m = /^g(\d+)-(.+)$/.exec(modelId);
   return !!m && m[2] !== "tower" && (m[2] === "arm" || Number(m[1]) >= (BMC_FROM[brand] ?? 3));
 }
-export const jacksOf = (m: DeviceModel): number => m.ports.length / 2;
+// A bought router that sits on the carrier panel in place of the location's provided one.
+export const isOfficeRouter = (m: DeviceModel): boolean => m.kind === "gateway" && m.height === 0 && m.price > 0;
+export const jacksOf =(m: DeviceModel): number => m.ports.length / 2;
 // Jacks on a 24-port panel; use jacksOf for the 48-port panels.
 export const PATCH_JACKS = 24;
 export const modelById = (id: string): DeviceModel => {
@@ -307,7 +351,7 @@ export const modelById = (id: string): DeviceModel => {
 export const dualPsuModel = (id: string): DeviceModel | undefined => MODELS.find((x) => x.id === `${id}-2psu`);
 export const manufacturerByName = (name: string): Manufacturer | undefined => MANUFACTURERS.find((m) => m.name === name);
 // What a unit of this model costs from this manufacturer.
-export const priceOf = (model: DeviceModel, brand: string): number => Math.round(model.price * (manufacturerByName(brand)?.priceFactor ?? 1));
+export const priceOf = (model: DeviceModel, brand: string): number => Math.round(model.price * (model.brand ? 1 : manufacturerByName(brand)?.priceFactor ?? 1));
 export const shopModels = (year: number): DeviceModel[] => MODELS.filter((m) => m.from <= year && (m.until === null || year <= m.until) && m.price > 0);
 
 // NVMe drive size per generation in GB; NVMe-capable bays come with G4, so the drives do too.

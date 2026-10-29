@@ -353,6 +353,23 @@ function Tower({ w, h, state, blink }: FrontProps) {
   );
 }
 
+// A switched PDU: the name and a row of outlets, each with a lamp.
+export function Pdu({ w, h, name, model, state }: FrontProps) {
+  const fs = fsz(Math.min(h, 24)) * 0.9, n = model.outlets ?? 8, x0 = Math.max(w * 0.34, 18 + tw(name, fs)), step = (w - x0 - 30) / n;
+  return (
+    <>
+      <Ears w={w} h={h} fill="oklch(0.24 0.005 255)" />
+      <Label x={10} y={h / 2 + fs * 0.35} text={name} size={fs} />
+      {Array.from({ length: n }, (_, i) => (
+        <g key={i}>
+          <rect x={x0 + i * step} y={h * 0.3} width={Math.max(2, step - 2)} height={h * 0.4} rx={1} fill="oklch(0.12 0.004 255)" />
+          <circle cx={x0 + i * step + Math.max(2, step - 2) / 2} cy={h * 0.5} r={Math.min(1.2, step * 0.18)} fill={state === "off" ? "oklch(0.35 0.01 255)" : "oklch(0.78 0.18 145)"} />
+        </g>
+      ))}
+    </>
+  );
+}
+
 export function Front(p: FrontProps) {
   if (p.model.kind === "server") {
     const line = lineOf(p.model);
@@ -362,6 +379,7 @@ export function Front(p: FrontProps) {
   if (p.model.kind === "switch" || p.model.kind === "firewall") return <SwitchRear {...p} />;
   if (p.model.kind === "gateway") return <Gateway {...p} />;
   if (p.model.kind === "ups") return <Ups {...p} />;
+  if (p.model.kind === "pdu") return <Pdu {...p} />;
   return <Patch {...p} />;
 }
 

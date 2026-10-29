@@ -34,7 +34,7 @@ function rackLinks(g: GameState, rackId: string): RackLink[] {
   return g.cables.flatMap((c) => [[c.a, c.b], [c.b, c.a]].flatMap(([end, peer]) => (dev.get(end.device)?.rackId === rackId ? [{ id: c.id, end, peer, color: cableColor(c) }] : [])));
 }
 
-const KIND_LABEL: Record<DeviceKind, string> = { server: "Server", switch: "Switch", firewall: "Firewall", gateway: "Carrier panel", patch: "Patch panel", ups: "UPS", part: "Part" };
+const KIND_LABEL: Record<DeviceKind, string> = { server: "Server", switch: "Switch", firewall: "Firewall", gateway: "Carrier panel", patch: "Patch panel", ups: "UPS", pdu: "PDU", part: "Part" };
 
 // Devices outside the rack that it is cabled to, plus the location's carrier panel and patch panels to cable to.
 function rackRemotes(g: GameState, rack: Rack): RackRemote[] {

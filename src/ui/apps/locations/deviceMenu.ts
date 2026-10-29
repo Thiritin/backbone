@@ -2,6 +2,7 @@ import { euro } from "../../../sim/00-core/money";
 import { dualPsuModel, modelById, priceOf } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
+import { pduOf } from "../../../sim/60-infra/pdu";
 import { isPlugged } from "../../../sim/60-infra/status";
 import { joinableClusters } from "../../../sim/90-actions/software";
 import { addNode, cordon, drain, removeNode, uncordon } from "../../../sim/90-actions/clusters";
@@ -56,6 +57,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
     null,
     ...(server && d.rackId ? serverPower(game, d, ui) : [
       m.kind !== "patch" && { label: d.on ? "Power off" : "Power on", disabled: !d.rackId && !d.panel, run: () => ui.power(!d.on) },
+      m.kind !== "patch" && d.on && !!pduOf(game, d) && { label: "Power cycle", run: () => ui.op("cycle") },
       m.kind !== "patch" && !!(d.rackId || d.panel) && techItem(game, d.id, d.on ? "off" : "on"),
     ]),
     server && !d.on && !!(d.rackId || d.store) && ui.lid && { label: "Open chassis", run: ui.lid },

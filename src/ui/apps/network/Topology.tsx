@@ -5,6 +5,7 @@ import { modelById } from "../../../sim/10-catalog/hardware";
 import type { GameState, Location } from "../../../sim/50-state";
 import { workloadsOn } from "../../../sim/60-infra/cluster";
 import { capacityMbps, serviceMbps, type Routing } from "../../../sim/60-infra/network";
+import { routerMbps } from "../../../sim/60-infra/routers";
 import { farEnd, locationOf } from "../../../sim/60-infra/status";
 import { loadClass, mbps } from "./NetworkApp";
 
@@ -29,7 +30,7 @@ export function Topology({ game, loc, routing }: { game: GameState; loc: Locatio
 
   // The panel gateway carries the home line or the datacenter's bandwidth.
   if (panel) {
-    const cap = loc.dc ? DC_BANDWIDTH.mbps : homeLineById(game.homeLine.id).up, key = loc.dc ? `dc:${loc.id}` : "home";
+    const cap = loc.dc ? DC_BANDWIDTH.mbps : Math.min(homeLineById(game.homeLine.id).up, routerMbps(game, loc)), key = loc.dc ? `dc:${loc.id}` : "home";
     add({ id: "p:own", col: 0, label: loc.dc ? "Datacenter" : homeLineById(game.homeLine.id).isp, sub: loc.dc ? "Bandwidth" : "Home line" });
     add({ id: "u:own", col: 1, label: loc.dc ? "Datacenter bandwidth" : homeLineById(game.homeLine.id).name, sub: mbps(cap) });
     edges.push({ from: "p:own", to: "u:own", load: (used[key] ?? 0) / cap, speed: mbps(used[key] ?? 0) });
