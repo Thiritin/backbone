@@ -12,7 +12,6 @@ export const RAISE_PENALTY = 1, PAST_MAX_PENALTY = 2, CUT_BONUS = 0.2, CUT_MAX =
 export const LEAVE_SPAN = 0.3;
 export const OVER_DRIFT = 0.1, PAST_MAX_DRIFT = 1;
 export const COMPLAIN_FROM = 5, COMPLAIN_PER_PCT = 1 / 40, COMPLAIN_PAST_MAX = 0.5, COMPLAIN_MONTHLY = 0.5, COMPLAIN_MONTHLY_PAST_MAX = 0.3;
-export const RETAIN_MIN = 30, RETAIN_DISCOUNT = 1 / 12;
 
 const idHash = (id: string) => [...id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 0);
 // The customer's share of their profile's cap, fixed per game and customer.
@@ -49,7 +48,7 @@ export function reprice(s: GameState, v: Service, price: number, agreed = false)
   if (pct <= 0) return bump(cust, Math.min(CUT_MAX, -CUT_BONUS * pct));
   bump(cust, -RAISE_PENALTY * pct - PAST_MAX_PENALTY * Math.max(0, pctOver(price, max) - pctOver(old, max)));
   if (price > max && chance(s.rng, Math.min(1, (price / max - 1) / LEAVE_SPAN))) {
-    if (!hasOpen(s, cust, "cancellation")) createTicket(s, cust, "cancellation", v.id);
+    if (!hasOpen(s, cust, "cancellation")) createTicket(s, cust, "cancellation", v.id).topic = "price";
   } else if (pct >= COMPLAIN_FROM) complain(s, cust, v, Math.min(1, pct * COMPLAIN_PER_PCT + (price > max ? COMPLAIN_PAST_MAX : 0)));
 }
 
@@ -66,13 +65,6 @@ export function overpricing(s: GameState): void {
     }
     bump(c, -worst);
   }
-}
-
-// A retention offer (a free month) works only on a customer happy enough whose prices, less the free month, stay within their maximum.
-export function retains(s: GameState, c: Customer): boolean {
-  if (c.happiness < RETAIN_MIN) return false;
-  const tooDear = activeServices(s.services, c.id).some((v) => v.period === "hour" && v.price * 730 * (1 - RETAIN_DISCOUNT) > limits(s, c, v).max);
-  return !tooDear && chance(s.rng, (c.happiness - RETAIN_MIN) / 100);
 }
 
 // Puts the service back on its price from before the raises.

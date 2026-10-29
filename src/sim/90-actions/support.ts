@@ -8,6 +8,7 @@ import { logActivity } from "../47-staff/activity";
 import { sendAction } from "../40-support/replies";
 import { breachOf } from "../60-infra/breach";
 import { declineSponsorship } from "./community";
+import { retentionOptions, type RetentionId } from "../40-support/retention";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -73,6 +74,14 @@ export function resolveTicket(s: GameState, id: string, action?: TicketAction): 
   Object.assign(f.t, { status: "resolved", updatedAt: s.hour });
   bump(s.customers.find((c) => c.id === f.t.customerId)!, 5);
   return { ok: true, id };
+}
+
+// Offers a cancelling customer one of the ticket's retention cards.
+export function retainTicket(s: GameState, id: string, option: RetentionId): ActionResult {
+  const f = find(s, id);
+  if ("error" in f) return f.error;
+  if (f.t.status !== "open" || !retentionOptions(s, f.t).some((o) => o.id === option)) return fail("error.retentionOption");
+  return queue(s, f.t, "resolve", `retain.${option}`);
 }
 
 export function escalateTicket(s: GameState, id: string): ActionResult {

@@ -9,7 +9,7 @@ import { serviceOnline } from "./status";
 export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse" | "appeal" | "notice" | "legal" | "refund" | "order" | "extortion" | "migration" | "maintenance" | "sponsor";
 // open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
 export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
-export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund" | "accept" | "revert"
+export type TicketAction = "credit" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund" | "accept" | "revert"
   | "offerOnce" | "offerManaged" | "free" | "clean" | "pay" | "refuse";
 // by names the employee who answered; the player otherwise. key and params give the email as sent (replies.ts); older replies show the template.
 export interface Reply { hour: number; template: string; right: boolean; by?: string; key?: string; params?: Record<string, string | number> }
@@ -25,7 +25,7 @@ export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
   outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | "forwarded" | "takenDown" | "rejected" | "ignored" | "withdrawn" | "complied" | "objected"
-    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "reverted" | "cleaned" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | "moved" | "moveDeclined" | "sponsored" | "sponsorDeclined" | null;
+    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "fixFailed" | "reverted" | "cleaned" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | "moved" | "moveDeclined" | "sponsored" | "sponsorDeclined" | null;
   work: Work | null; notice?: Notice; move?: Move;
   // The maintenance window a maintenance email is about.
   maint?: { windowId: string; from: number; hours: number };
@@ -59,7 +59,7 @@ export const TEMPLATES: Record<TicketKind, string[]> = {
   appeal: ["awaitPayment", "askDetails"], notice: [], legal: [], refund: [], order: [], extortion: [], migration: [], maintenance: [], sponsor: [],
 };
 export const ACTIONS: Record<TicketKind, TicketAction[]> = {
-  outage: ["credit"], howTo: [], billing: ["credit", "revert"], upgrade: [], cancellation: ["retain", "cancel"], abuse: [], appeal: ["unsuspend", "keep"],
+  outage: ["credit"], howTo: [], billing: ["credit", "revert"], upgrade: [], cancellation: ["cancel"], abuse: [], appeal: ["unsuspend", "keep"],
   notice: ["forward", "takedown", "reject"], legal: ["comply", "object"], refund: ["refund", "credit", "reject"], order: ["accept", "reject"], extortion: ["pay", "refuse"], migration: [], maintenance: [], sponsor: [],
 };
 // Actions only tickets of one topic offer: the customer asks for help with an outdated site, or a defaced site waits for clean-up.

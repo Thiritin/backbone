@@ -135,10 +135,35 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `You are right to ask. ${svc(p)} goes back to its previous price from the next invoice.`,
     (p) => `We have reverted the price change for ${svc(p)}. Your next invoice shows the old price again.`,
   ],
-  retain: [
+  "retain.half": [
+    () => "We would be sorry to see you go. If you stay, your next month costs you half, with everything as it is now.",
+    () => "Before you leave, we would like to take 50% off your next month. Reply if you would like to stay.",
+    () => "We value you as a customer. Stay with us and we halve your next month.",
+  ],
+  "retain.free": [
     () => "We would be sorry to see you go. If you stay, your next month is on us, with everything as it is now.",
     () => "Before you leave, we would like to offer you a free month to make up for the trouble. Reply if you would like to stay.",
     () => "We value you as a customer. Stay with us and the next month costs you nothing.",
+  ],
+  "retain.discount": [
+    (p) => `We would be sorry to see you go. If you stay, we take 20% off your services for the next ${p.months} months.`,
+    (p) => `Before you leave, we would like to offer you 20% off for ${p.months} months. Reply if you would like to stay.`,
+    (p) => `We value you as a customer. Stay with us and your price drops by a fifth for ${p.months} months.`,
+  ],
+  "retain.upgrade": [
+    () => "We would be sorry to see you go. If you stay, we move your service up one size at the price you pay today.",
+    () => "Before you leave, we would like to give you more resources at no extra charge. Reply if you would like to stay.",
+    () => "We value you as a customer. Stay with us and we upgrade your service for free.",
+  ],
+  "retain.fix": [
+    (p) => `We are sorry for the trouble. We will fix it within ${p.fixDays} days and check back with you then. Please give us the chance to put it right.`,
+    (p) => `Please accept our apology. Our team is on it, and within ${p.fixDays} days your service will run the way it should.`,
+    (p) => `We let you down, and we are sorry. Give us ${p.fixDays} days to fix this before you decide.`,
+  ],
+  "retain.move": [
+    () => "We are sorry for the trouble. If you stay, we move your service to a better server in our datacenter and take care of the move.",
+    () => "Before you leave, let us move your service to a better server. We arrange the move for a time that suits you.",
+    () => "We value you as a customer. Stay with us and we move your service to a newer server at no charge.",
   ],
   cancel: [
     () => "We have processed your cancellation. Your services end today and you will receive a final invoice. Thank you for hosting with us.",

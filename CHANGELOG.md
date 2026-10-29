@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- A customer who wants to cancel can be offered 50% off the next month, a free month, 20% off for 3, 6 or 12 months, a free upgrade, a move to a better server or an apology with a fix promise, each shown as a card with its cost and how likely it is to work, and customers at any happiness can be kept by a strong enough offer.
 - A new company starts with a free Notmail address that takes order emails without a domain, and moving to mail under your own domain is an optional upgrade.
 - The Email app has a Settings button that opens the email settings.
 - Getting started now begins with your first server, and the domain and email steps come later.

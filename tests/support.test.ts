@@ -6,7 +6,7 @@ import { createTicket, monthlyValue, type Ticket, type TicketKind } from "../src
 import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } from "../src/sim/90-actions/support";
+import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket, retainTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const down = vi.hoisted(() => new Set<string>());
@@ -186,11 +186,11 @@ describe("support actions", () => {
     const ids = crowd(s, "smallBiz", 40);
     ids.forEach((id) => addService(s, id, "webHosting", "Web S", 0.005, "hour"));
     const tickets = ids.map((id) => ticketOf(s, "cancellation", "leave", id, null));
-    tickets.forEach((t) => resolveTicket(s, t.id, "retain"));
+    tickets.forEach((t) => retainTicket(s, t.id, "free"));
     runTo(s, 12);
     const kept = tickets.filter((t) => get(s, t.id).outcome === "retained");
-    expect(kept.length).toBeGreaterThan(4);
-    expect(kept.length).toBeLessThan(25);
+    expect(kept.length).toBeGreaterThan(10);
+    expect(kept.length).toBeLessThan(36);
     for (const t of tickets) expect(s.customers.find((c) => c.id === t.customerId)!.churnedAt === null).toBe(get(s, t.id).outcome === "retained");
   });
 

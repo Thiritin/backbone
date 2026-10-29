@@ -11,7 +11,8 @@ import { orderOf } from "../../../sim/30-market/orders";
 import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
 import { acceptSponsorship, declineSponsorship } from "../../../sim/90-actions/community";
-import { assignTicket, closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } from "../../../sim/90-actions/support";
+import { retentionOptions, type RetentionId } from "../../../sim/40-support/retention";
+import { assignTicket, closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket, retainTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useFocus, useStore } from "../../store";
@@ -39,10 +40,15 @@ const BOXES: { id: TicketBox; label: string; icon: typeof Inbox; match: (t: Tick
   { id: "done", label: "Closed", icon: CircleCheck, match: isFinal },
 ];
 const ACTION_LABEL: Record<TicketAction, string> = {
-  credit: "Credit 10%", retain: "Retention offer", cancel: "Process cancellation", unsuspend: `Unsuspend with ${EXTENSION_DAYS}-day extension`, keep: "Keep suspended",
+  credit: "Credit 10%", cancel: "Process cancellation", unsuspend: `Unsuspend with ${EXTENSION_DAYS}-day extension`, keep: "Keep suspended",
   forward: "Forward to customer", takedown: `Take down for ${TAKEDOWN_HOURS} h`, reject: "Reject", comply: "Comply", object: "Object", refund: "Refund one month", revert: "Revert price",
   pay: "Pay ransom", refuse: "Refuse", accept: "Accept order", offerOnce: "Offer one-off update", offerManaged: "Offer managed updates", free: "Update for free", clean: "Clean up site",
 };
+const OFFER_TITLE: Record<RetentionId, string> = {
+  half: "50% off the next month", free: "One month free", d3: "20% off for 3 months", d6: "20% off for 6 months", d12: "20% off for 12 months",
+  upgrade: "Free upgrade", fix: "Apology and fix", move: "Move to a better server",
+};
+const ODDS_LABEL = { unlikely: "Unlikely", even: "Even", likely: "Likely" } as const;
 const actionLabel = (tk: Ticket, a: TicketAction) => (tk.kind === "refund" && a === "reject" ? "Refuse" : ACTION_LABEL[a]);
 
 // Read, escalate and close for a ticket, and the customer or request behind it.
@@ -434,6 +440,23 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
               </div>
             </>
           )}
+          {tk.kind === "cancellation" && tk.status === "open" && (
+            <>
+              <h3>Retention offers</h3>
+              <div className="offers">
+                {retentionOptions(game, tk).map((o) => {
+                  const v = game.services.find((x) => x.id === o.serviceId);
+                  return (
+                    <button key={o.id} className="offer" disabled={locked} onClick={() => act(retainTicket, tk.id, o.id)}>
+                      <span className="t">{OFFER_TITLE[o.id]}</span>
+                      <span className="v num">{o.spec && v ? specText(v.product, o.spec) : o.target ?? (o.cost > 0 ? euroCents(o.cost) : "No cost")}</span>
+                      <span className={`odds ${o.odds}`}>{ODDS_LABEL[o.odds]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
           <div className="actions-row">
             {actionsOf(tk).filter((a) => (a !== "revert" || tk.topic === "price") && (!stray || a === "reject")).map((a) => (
               <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => act(resolveTicket, tk.id, a)}>
@@ -444,7 +467,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
             {tk.kind === "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(declineSponsorship, tk.id)}><CircleX />Decline</button>}
             {tk.kind === "sponsor" && <button className="btn primary" disabled={locked} onClick={() => act(acceptSponsorship, tk.id)}><Check />Accept</button>}
             {!stray && tk.kind !== "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? "Ignore" : "Close"}</button>}
-            {tk.status === "waiting" && tk.kind !== "migration" && <button className="btn primary" disabled={locked} onClick={() => act(resolveTicket, tk.id)}><CircleCheck />Resolve</button>}
+            {tk.status === "waiting" && tk.kind !== "migration" && !tk.work && <button className="btn primary" disabled={locked} onClick={() => act(resolveTicket, tk.id)}><CircleCheck />Resolve</button>}
             {tk.status === "open" && templatesOf(tk).length > 0 && (
               <button className="btn primary" disabled={locked || !tpl} onClick={() => act(replyTicket, tk.id, tpl!)}><Send />Send reply</button>
             )}

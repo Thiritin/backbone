@@ -9,6 +9,7 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { isWorkHour } from "../00-core/workhours";
 import { orderError } from "../30-market/orders";
+import { cheapestOption } from "../40-support/retention";
 import { orderMinutes, staffOrderStep } from "../30-market/manual";
 import { billAttempt, billChadUsage, BOT_RIGHT, BOT_RUNAROUND, BOT_TRIES, type ChadKind } from "./chad";
 
@@ -183,7 +184,10 @@ const rightChance = (e: Employee, kind: TicketKind) => (e.bot ? BOT_RIGHT[kind a
 
 // A support agent queues a reply or action on the ticket the same way the player does; finishWork in the support tick applies it.
 function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "resolve"; arg: string } {
-  if (t.kind === "cancellation") return { op: "resolve", arg: "retain" };
+  if (t.kind === "cancellation") {
+    const offer = cheapestOption(s, t);
+    return { op: "resolve", arg: offer ? `retain.${offer}` : "cancel" };
+  }
   if (t.kind === "order") return { op: "resolve", arg: staffOrderStep(s, t, orderError(s, t)) ?? "accept" };
   const topic = TOPIC_ACTIONS[`${t.kind}.${t.topic}`];
   if (topic) return { op: "resolve", arg: topic.includes("free") ? "free" : topic[0] };
