@@ -2,6 +2,7 @@ import { chance } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { softwareById, type Software } from "../10-catalog/platforms";
 import { BACKUP_HOUR } from "../10-catalog/usage";
+import { homeLineById } from "../20-world/datacenters";
 import type { Customer } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
 import type { Device, GameState } from "../50-state";
@@ -32,9 +33,20 @@ export interface LossItem { workloadId: string; serviceId: string; customerId: s
 // The incident report the game opens when a server's array is lost.
 export interface LossReport { id: string; hour: number; deviceId: string; items: LossItem[] }
 
-// The speed of the link between two zones in Gbit/s, 0 without one.
-// ponytail: no links between zones exist yet; the network lane's leased wavelengths and dark fiber set this.
-export const zoneLinkGbit = (_s: GameState, a: string, b: string): number => (a === b ? 1 : 0);
+// The speed of the links between two zones in Gbit/s, 0 without a ready one; parallel links add up.
+export const zoneLinkGbit = (s: GameState, a: string, b: string): number => {
+  if (a === b) return 1;
+  const ends = [a, b].map((az) => s.locations.find((l) => l.az === az)?.id);
+  return s.network.zoneLinks.filter((z) => z.readyAt <= s.hour && ends.includes(z.a) && ends.includes(z.b)).reduce((n, z) => n + z.gbit, 0);
+};
+
+// The speed a workload moves between two zones at: the zone links, or out of the basement over the internet at the home
+// line's upload speed, at most WAN_GB_PER_HOUR. Never 10 Gbit/s, so such a move is always cold.
+export function moveGbit(s: GameState, a: string, b: string): number {
+  const linked = zoneLinkGbit(s, a, b);
+  if (linked || !s.locations.some((l) => l.az === a && !l.dc) || !s.locations.some((l) => l.az === b && l.dc)) return linked;
+  return Math.min(homeLineById(s.homeLine.id).up / 1000, WAN_GB_PER_HOUR / LAN_GB_PER_HOUR);
+}
 
 function units(s: GameState, c: Cluster, sw: Software): number {
   if (sw.pricing === "account") return s.workloads.filter((w) => w.clusterId === c.id && servedBy(s, w) === "panel").length;

@@ -11,6 +11,7 @@ import { takenDown } from "../60-infra/ops";
 import { applyNoticeWork } from "./notices";
 import { applyOrderWork } from "../30-market/orders";
 import { howToFactor } from "../85-products/products";
+import { movesTick } from "../90-actions/moves";
 import { phpAbuse } from "../60-infra/php";
 import { APP_ACTIONS, applyAppWork } from "../60-infra/apps";
 import { decideBreach } from "../60-infra/breach";
@@ -153,11 +154,12 @@ export function supportTick(s: GameState): SimEvent[] {
 
   const events: SimEvent[] = [];
   finishWork(s, customer, events);
+  events.push(...movesTick(s, customer));
   for (const t of s.tickets) {
     const c = customer(t.customerId);
     // The customer does not wait on a notice or legal request about them, nor on an order before their account exists.
     // An order waiting on payment stays open until paid.
-    if (t.notice || (t.kind === "order" && (!t.customerId || t.status !== "open"))) continue;
+    if (t.notice || t.kind === "migration" || (t.kind === "order" && (!t.customerId || t.status !== "open"))) continue;
     if (t.status === "waiting" && s.hour - t.updatedAt >= WAITING_CLOSE_HOURS) resolve(s, t, c);
     else if (t.status === "escalated" && (!t.serviceId || serviceOnline(s, t.serviceId))) resolve(s, t, c);
     else if (t.status === "open" && c.churnedAt === null && s.hour > t.dueAt) {

@@ -12,7 +12,7 @@ import type { MenuEntry } from "../../desktop/ContextMenu";
 import { menuOn } from "../../desktop/ContextMenu";
 import { useFocus, useStore } from "../../store";
 import { More } from "../More";
-import { migrateEntries } from "./migrate";
+import { migrateEntries, offerEntries } from "./migrate";
 import "../billing/billing.css";
 import { CustomerLink } from "../customers/CustomersApp";
 import { day, devName, disk, ram } from "../hw";
@@ -48,6 +48,7 @@ export function workloadActions(game: GameState, w: Workload): MenuEntry[] {
         run: () => act((g) => migrateWorkload(g, w.id, t.to)),
       })),
     },
+    ...offerEntries(game, w),
   ];
 }
 

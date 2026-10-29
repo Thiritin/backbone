@@ -205,7 +205,7 @@ const breachParams = (s: GameState, t: Ticket) => {
 
 export const subjectParams = (s: GameState, t: Ticket): Record<string, string | number> => ({
   service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", video: t.notice?.video ?? "",
-  round: t.notice?.round ?? 1, sender: t.notice ? senderById(t.notice.sender).name : "",
+  target: t.move?.name ?? "", round: t.notice?.round ?? 1, sender: t.notice ? senderById(t.notice.sender).name : "",
   ...(t.kind === "extortion" && breachParams(s, t)),
 });
 

@@ -11,6 +11,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   Bank: [type("Loans", "loanMissed", "loanCalled")],
   Support: [
     type("Tickets", "ticket", "tickets", "stepFailed", "offerDeclined"),
+    type("Migration offers", "moveAccepted", "moveDeclined", "moveDone", "moveMissed"),
     type("Orders and sales", "order", "orderFailed", "orderPaid", "sales*"),
     type("Notices and legal", "seized", "breach"),
     type("Power", "gridDark", "gridCarried"),

@@ -6,7 +6,7 @@ import { activeServices, type Customer, type Profile, type Service } from "../30
 import type { GameState } from "../50-state";
 import { serviceOnline } from "./status";
 
-export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse" | "appeal" | "notice" | "legal" | "refund" | "order" | "extortion";
+export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse" | "appeal" | "notice" | "legal" | "refund" | "order" | "extortion" | "migration";
 // open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
 export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
 export type TicketAction = "credit" | "retain" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund" | "accept" | "revert"
@@ -18,12 +18,15 @@ export interface Work { op: "reply" | "resolve" | "escalate"; arg: string; doneA
 // A notice or legal request comes from a sender, not the customer; customerId is "" when no customer uses the domain.
 // real is hidden from the player. followAt is the hour the next, angrier step arrives.
 export interface Notice { sender: string; from: string; url: string; video: string | null; real: boolean; round: number; followAt: number | null }
+// A move offered to the customer: the workload, the target the migrate actions take and its name. windowAt is the hour the
+// accepted move starts (null until the customer answers); log holds the customer's answers.
+export interface Move { workloadId: string; to: string; name: string; windowAt: number | null; log: { hour: number; key: string; params: Record<string, number> }[] }
 export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
   outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | "forwarded" | "takenDown" | "rejected" | "ignored" | "withdrawn" | "complied" | "objected"
-    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "reverted" | "cleaned" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | null;
-  work: Work | null; notice?: Notice;
+    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "reverted" | "cleaned" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | "moved" | "moveDeclined" | null;
+  work: Work | null; notice?: Notice; move?: Move;
   // The support agent (an employee id) who takes the ticket before anyone else.
   assignee: string | null;
 }
@@ -33,7 +36,7 @@ export const HOURS_PER_MONTH = 730;
 export const WAITING_CLOSE_HOURS = 48;
 
 // economy.md, Tickets and work rates.
-export const MINUTES: Record<TicketKind, number> = { outage: 10, howTo: 20, billing: 15, upgrade: 20, cancellation: 15, abuse: 30, appeal: 15, notice: 15, legal: 30, refund: 10, order: 10, extortion: 10 };
+export const MINUTES: Record<TicketKind, number> = { outage: 10, howTo: 20, billing: 15, upgrade: 20, cancellation: 15, abuse: 30, appeal: 15, notice: 15, legal: 30, refund: 10, order: 10, extortion: 10, migration: 10 };
 export const MONTHLY_RATES: Record<"howTo" | "billing" | "abuse", Record<Budget, number>> = {
   howTo: { low: 0.18, medium: 0.06, high: 0.02 },
   billing: { low: 0.04, medium: 0.04, high: 0.02 },
@@ -46,16 +49,16 @@ export const OUTAGE_WRITE_CHANCE: Record<Budget, number> = { low: 0.3, medium: 0
 export const TOPICS: Record<TicketKind, string[]> = {
   outage: ["down"], howTo: ["upload", "email", "dns", "panel"], billing: ["charge", "copy", "delay"],
   upgrade: ["grow"], cancellation: ["leave"], abuse: ["spam", "attack"], appeal: ["forgot", "boss", "access", "onWay"],
-  notice: ["movie", "music", "youtuber", "phishing", "spam"], legal: ["data", "takedown"], refund: ["outage", "dataLoss"], order: [], extortion: ["data"],
+  notice: ["movie", "music", "youtuber", "phishing", "spam"], legal: ["data", "takedown"], refund: ["outage", "dataLoss"], order: [], extortion: ["data"], migration: ["offer"],
 };
 export const TEMPLATES: Record<TicketKind, string[]> = {
   outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "panel", "askDetails"],
   billing: ["explain", "resend", "extension", "newPrice", "askDetails"], upgrade: ["offer", "askDetails"], cancellation: [], abuse: ["warn", "askDetails"],
-  appeal: ["awaitPayment", "askDetails"], notice: [], legal: [], refund: [], order: [], extortion: [],
+  appeal: ["awaitPayment", "askDetails"], notice: [], legal: [], refund: [], order: [], extortion: [], migration: [],
 };
 export const ACTIONS: Record<TicketKind, TicketAction[]> = {
   outage: ["credit"], howTo: [], billing: ["credit", "revert"], upgrade: [], cancellation: ["retain", "cancel"], abuse: [], appeal: ["unsuspend", "keep"],
-  notice: ["forward", "takedown", "reject"], legal: ["comply", "object"], refund: ["refund", "credit", "reject"], order: ["accept", "reject"], extortion: ["pay", "refuse"],
+  notice: ["forward", "takedown", "reject"], legal: ["comply", "object"], refund: ["refund", "credit", "reject"], order: ["accept", "reject"], extortion: ["pay", "refuse"], migration: [],
 };
 // Actions only tickets of one topic offer: the customer asks for help with an outdated site, or a defaced site waits for clean-up.
 export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": ["clean"] };

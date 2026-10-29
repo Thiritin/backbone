@@ -1,0 +1,252 @@
+import { describe, expect, it } from "vitest";
+import { moveWindowStart } from "../src/sim/10-catalog/attention";
+import { sizeSpec } from "../src/sim/10-catalog/products";
+import { ZONE_LINK_LEAD_HOURS } from "../src/sim/10-catalog/network";
+import { dateOf, hourOf, yearOf } from "../src/sim/00-core/time";
+import type { Profile } from "../src/sim/30-customers/customers";
+import { newGame, type GameState } from "../src/sim/50-state";
+import { workloadsOf } from "../src/sim/60-infra/cluster";
+import { tick } from "../src/sim/88-tick/tick";
+import { provisionService } from "../src/sim/90-actions/clusters";
+import { addCustomer } from "../src/sim/90-actions/customers";
+import { connect } from "../src/sim/90-actions/hardware";
+import { announceMigration, BASEMENT_BONUS, DECLINE_BELOW, MISSED_AFTER_HOURS, MISSED_PENALTY, moveTargets, movesTick, offerMigration } from "../src/sim/90-actions/moves";
+import { orderZoneLink } from "../src/sim/90-actions/network";
+import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
+import { migrateWorkload, migrationTargets, webspaceTargets } from "../src/sim/90-actions/vms";
+import { LAN_GB_PER_HOUR, moveGbit, WAN_GB_PER_HOUR, zoneLinkGbit } from "../src/sim/85-products/products";
+import { deserialize, serialize } from "../src/sim/91-save/save";
+import { basement, buyDevice, hypervisor, panelVm, withServer } from "./fixtures";
+import { mountDevice } from "./plugged";
+
+const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
+const err = (r: { ok: boolean; error?: string }) => r.error;
+
+// A hypervisor cluster in the basement and one on a second server, both in zone fra1. place() then rents two datacenter
+// locations, loc2 (zone fra2) and loc3 (fra3) in the same city, and labels the clusters with the zones given; the servers
+// stay put. Services are provisioned first, so they land in the basement.
+function world() {
+  const s = { ...withServer(newGame(1)), cash: 100_000 };
+  const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
+  ok(mountDevice(s, second, "rack2", 2));
+  ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
+  const a = basement(s), b = hypervisor(s, [second], "Remote");
+  const place = (zones: { a?: string; b?: string } = {}, line = "vdsl-50") => {
+    const home = s.locations[0];
+    s.locations = [...s.locations, { ...home, id: "loc2", dc: "equinox-fr5", az: "fra2", name: "FR5", space: "positions" }, { ...home, id: "loc3", dc: "equinox-fr5", az: "fra3", name: "FR5 B", space: "positions" }];
+    s.clusters = s.clusters.map((c) => (c.id === b ? { ...c, az: zones.b ?? "fra2" } : c.id === a ? { ...c, az: zones.a ?? c.az } : c));
+    s.homeLine = { id: line, next: null };
+  };
+  return { s, a, b, second, place };
+}
+const vps = (s: GameState, cus: string, label: string) => ok(provisionService(s, cus, "vps", { label, spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
+const customer = (s: GameState, profile: Profile = "hobbyDev") => addCustomer(s, `Ada Lang ${s.nextId}`, profile);
+const who = (s: GameState) => (id: string) => s.customers.find((c) => c.id === id)!;
+const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
+const ticketOf = (s: GameState, id: string) => s.tickets.find((t) => t.id === id)!;
+
+describe("zone link speed", () => {
+  it("reads the links between two zones once they are ready", () => {
+    const { s, place } = world();
+    place();
+    s.unlocks = [...s.unlocks, "network"];
+    expect(zoneLinkGbit(s, "fra2", "fra2")).toBe(1);
+    expect(zoneLinkGbit(s, "fra2", "fra3")).toBe(0);
+    ok(orderZoneLink(s, "loc2", "loc3", "fiber", 0));
+    expect(zoneLinkGbit(s, "fra2", "fra3")).toBe(0);
+    s.hour += ZONE_LINK_LEAD_HOURS;
+    expect(zoneLinkGbit(s, "fra2", "fra3")).toBe(100);
+    expect(zoneLinkGbit(s, "fra3", "fra2")).toBe(100);
+    expect(zoneLinkGbit(s, "fra1", "fra3")).toBe(0);
+  });
+
+  it("lets a VM move to a zone a link reaches, with the downtime of the link", () => {
+    const { s, second, place } = world();
+    const cus = customer(s), id = vps(s, cus, "vm"), w = workloadsOf(s, id)[0];
+    place({ a: "fra2", b: "fra3" });
+    expect(migrationTargets(s, w.id)).toEqual([]);
+    expect(err(migrateWorkload(s, w.id, second))).toBe("error.noZoneLink");
+    s.unlocks = [...s.unlocks, "network"];
+    ok(orderZoneLink(s, "loc2", "loc3", "fiber", 0));
+    s.hour += ZONE_LINK_LEAD_HOURS;
+    expect(migrationTargets(s, w.id).map((t) => t.to)).toEqual([second]);
+    const hour = s.hour;
+    ok(migrateWorkload(s, w.id, second));
+    const moved = workloadsOf(s, id)[0];
+    expect(moved.busyUntil).toBe(hour + Math.max(1, Math.ceil((w.diskGb + w.ramGb) / (100 * LAN_GB_PER_HOUR))));
+    expect(s.services.find((v) => v.id === id)!.zone).toBe("fra3");
+  });
+});
+
+describe("moves out of the basement", () => {
+  it("runs over the home line's upload speed as a cold move", () => {
+    const { s, second, place } = world();
+    const cus = customer(s), id = vps(s, cus, "vm"), w = workloadsOf(s, id)[0];
+    place();
+    expect(moveGbit(s, "fra1", "fra2")).toBeCloseTo(0.01);
+    expect(moveGbit(s, "fra2", "fra1")).toBe(0);
+    expect(migrationTargets(s, w.id).map((t) => t.to)).toEqual([second]);
+    const down = Math.ceil((w.diskGb + w.ramGb) / (0.01 * LAN_GB_PER_HOUR));
+    expect(down).toBeGreaterThan(1);
+    expect(migrationTargets(s, w.id)[0].down).toBe(down);
+    const hour = s.hour;
+    ok(migrateWorkload(s, w.id, second));
+    expect(workloadsOf(s, id)[0].busyUntil).toBe(hour + down);
+    expect(s.services.find((v) => v.id === id)!.zone).toBe("fra2");
+  });
+
+  it("is capped by what the internet moves in an hour and needs a line", () => {
+    const { s, second, place } = world();
+    const cus = customer(s), id = vps(s, cus, "vm"), w = workloadsOf(s, id)[0];
+    place({}, "biz-fiber-1000");
+    expect(moveGbit(s, "fra1", "fra2") * LAN_GB_PER_HOUR).toBe(WAN_GB_PER_HOUR);
+    s.homeLine = { id: "", next: null };
+    expect(err(migrateWorkload(s, w.id, second))).toBe("error.noZoneLink");
+  });
+
+  it("adds the copy time to a web space's hand task into another zone", () => {
+    const { s, a, b, place } = world();
+    const home = panelVm(s, a), cus = customer(s);
+    ok(provisionService(s, cus, "webHosting", { label: "site.example", spec: sizeSpec("webHosting", 1, yearOf(s.hour)) }));
+    const twin = panelVm(s, a), far = panelVm(s, b);
+    place();
+    s.clusters = s.clusters.map((c) => (c.id === far ? { ...c, az: "fra2" } : c));
+    const w = s.workloads.find((x) => x.clusterId === home)!;
+    const hours = (id: string) => webspaceTargets(s, w.id).find((t) => t.clusterId === id)!.hours;
+    expect(hours(far)).toBeGreaterThan(hours(twin));
+  });
+});
+
+describe("move windows", () => {
+  const at = (iso: string) => hourOf(new Date(iso));
+  const hours = (h: number) => `${dateOf(h).getUTCDay()} ${dateOf(h).getUTCHours()}`;
+  it("opens at 02:00 for players, 18:00 on the next weekday for businesses and at once for private customers", () => {
+    const tuesdayNoon = at("2006-03-07T12:00:00Z");
+    expect(hours(moveWindowStart("game", tuesdayNoon))).toBe("3 2");
+    expect(hours(moveWindowStart("game", at("2006-03-07T01:00:00Z")))).toBe("2 2");
+    expect(hours(moveWindowStart("business", tuesdayNoon))).toBe("3 18");
+    expect(hours(moveWindowStart("business", at("2006-03-10T12:00:00Z")))).toBe("1 18");
+    expect(moveWindowStart("private", tuesdayNoon)).toBe(tuesdayNoon);
+  });
+});
+
+describe("migration offers", () => {
+  it("sends the customer a ticket that nobody answers for the player", () => {
+    const { s, second, place } = world();
+    const cus = customer(s), id = vps(s, cus, "vm");
+    place();
+    const t = ticketOf(s, ok(offerMigration(s, id, second)));
+    expect([t.kind, t.status, t.customerId, t.serviceId, t.move!.to, t.move!.windowAt]).toEqual(["migration", "waiting", cus, id, second, null]);
+    expect(err(resolveTicket(s, t.id, "credit"))).toBe("error.unknownTicketAction");
+    expect(err(resolveTicket(s, t.id))).toBe("error.ticketNotAnswered");
+    expect(err(offerMigration(s, id, second))).toBe("error.moveOffered");
+    expect(err(offerMigration(s, id, "dev3"))).toBe("error.moveTarget");
+    ok(closeTicket(s, t.id));
+    expect(ticketOf(s, t.id).status).toBe("closed");
+    expect(s.customers.find((c) => c.id === cus)!.happiness).toBe(who(s)(cus).happiness);
+  });
+
+  it("is accepted by a private customer at once and runs, with the basement bonus once", () => {
+    const { s, second, place } = world();
+    const cus = customer(s), id = vps(s, cus, "vm"), c = who(s)(cus);
+    place();
+    c.happiness = 60;
+    const t = ticketOf(s, ok(offerMigration(s, id, second)));
+    s.hour = t.dueAt;
+    const events = movesTick(s, who(s));
+    expect(events.map((e) => e.key)).toEqual(["event.moveAccepted", "event.moveDone"]);
+    expect([t.status, t.outcome, c.happiness]).toEqual(["resolved", "moved", 60 + BASEMENT_BONUS]);
+    expect(workloadsOf(s, id)[0].deviceId).toBe(second);
+    expect(s.services.find((v) => v.id === id)!.zone).toBe("fra2");
+    expect(t.move!.log.map((l) => l.key)).toEqual(["ticket.migration.acceptAny.text"]);
+  });
+
+  it("is accepted by a business for the next weekday evening and runs then", () => {
+    const { s, second, place } = world();
+    const cus = customer(s, "smallBiz"), id = vps(s, cus, "vm"), c = who(s)(cus);
+    place();
+    c.happiness = 60;
+    const t = ticketOf(s, ok(offerMigration(s, id, second)));
+    s.hour = t.dueAt;
+    expect(movesTick(s, who(s)).map((e) => e.key)).toEqual(["event.moveAccepted"]);
+    const start = t.move!.windowAt!;
+    expect([dateOf(start).getUTCHours(), [0, 6].includes(dateOf(start).getUTCDay())]).toEqual([18, false]);
+    expect(start).toBeGreaterThan(t.dueAt);
+    expect(t.status).toBe("waiting");
+    s.hour = start - 1;
+    expect(movesTick(s, who(s))).toEqual([]);
+    s.hour = start;
+    expect(movesTick(s, who(s)).map((e) => e.key)).toEqual(["event.moveDone"]);
+    expect(t.status).toBe("resolved");
+  });
+
+  it("is declined below the happiness line", () => {
+    const { s, second, place } = world();
+    const cus = customer(s), id = vps(s, cus, "vm"), c = who(s)(cus);
+    place();
+    c.happiness = DECLINE_BELOW - 1;
+    const t = ticketOf(s, ok(offerMigration(s, id, second)));
+    s.hour = t.dueAt - 1;
+    expect(movesTick(s, who(s))).toEqual([]);
+    s.hour = t.dueAt;
+    expect(movesTick(s, who(s)).map((e) => e.key)).toEqual(["event.moveDeclined"]);
+    expect([t.status, t.outcome, c.happiness]).toEqual(["resolved", "moveDeclined", DECLINE_BELOW - 1]);
+    expect(workloadsOf(s, id)[0].busyUntil).toBe(0);
+  });
+
+  it("announces a move for every service on a host", () => {
+    const { s, second, place } = world();
+    const ids = [vps(s, customer(s), "one"), vps(s, customer(s), "two")];
+    place();
+    expect(moveTargets(s, workloadsOf(s, ids[0])[0].id).map((t) => t.to)).toEqual([second]);
+    expect(ok(announceMigration(s, "dev3", second))).toBe("2");
+    expect(s.tickets.filter((t) => t.kind === "migration").map((t) => t.serviceId)).toEqual(ids);
+    expect(err(announceMigration(s, "dev3", second))).toBe("error.moveTarget");
+  });
+
+  it("costs the customer happiness and reopens the ticket when the move did not run within 48 hours of the window", () => {
+    const { s, second, place } = world();
+    const cus = customer(s, "smallBiz"), id = vps(s, cus, "vm"), c = who(s)(cus);
+    place();
+    c.happiness = 60;
+    const t = ticketOf(s, ok(offerMigration(s, id, second)));
+    s.hour = t.dueAt;
+    movesTick(s, who(s));
+    const start = t.move!.windowAt!;
+    // The VM is stuck in another job past the window.
+    s.workloads = s.workloads.map((w) => (w.id === t.move!.workloadId ? { ...w, busyUntil: start + 1000 } : w));
+    s.hour = start + MISSED_AFTER_HOURS - 1;
+    expect(movesTick(s, who(s))).toEqual([]);
+    expect(t.status).toBe("waiting");
+    s.hour = start + MISSED_AFTER_HOURS;
+    expect(movesTick(s, who(s)).map((e) => e.key)).toEqual(["event.moveMissed"]);
+    expect([t.status, c.happiness]).toEqual(["open", 60 - MISSED_PENALTY]);
+    s.hour += 1;
+    expect(movesTick(s, who(s))).toEqual([]);
+  });
+
+  it("runs end to end through the tick", () => {
+    const { s, second, place } = world();
+    const cus = customer(s), id = vps(s, cus, "vm");
+    place();
+    who(s)(cus).happiness = 90;
+    const t = ticketOf(s, ok(offerMigration(s, id, second)));
+    run(s, Math.ceil(t.dueAt - s.hour) + 2);
+    expect(ticketOf(s, t.id).status).toBe("resolved");
+    expect(ticketOf(s, t.id).outcome).toBe("moved");
+    expect(workloadsOf(s, id)[0].clusterId).toBe(s.clusters.find((c) => c.name === "Remote")!.id);
+  });
+});
+
+describe("old saves", () => {
+  it("loads a save without move offers and keeps an offer through a save", () => {
+    const { s, second, place } = world();
+    const cus = customer(s), id = vps(s, cus, "vm");
+    place();
+    const before = deserialize(serialize(s));
+    expect(before.tickets.filter((t) => t.kind === "migration")).toEqual([]);
+    ok(offerMigration(s, id, second));
+    const back = deserialize(serialize(s));
+    expect(back.tickets.find((t) => t.kind === "migration")!.move).toMatchObject({ to: second, windowAt: null });
+  });
+});

@@ -6,7 +6,7 @@ import { softwareById } from "../../../sim/10-catalog/platforms";
 import { clusterOf, controlPlaneUse, workloadsOn, type Workload } from "../../../sim/60-infra/cluster";
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
-import { migrateEntries } from "../vms/migrate";
+import { announceEntries, migrateEntries, offerEntries } from "../vms/migrate";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { More } from "../More";
@@ -44,6 +44,7 @@ export function NodeWorkloads({ game, deviceId }: { game: GameState; deviceId: s
         <h3>Workloads</h3>
         <span className="num loc-muted">{loads.length + (cpId ? 1 : 0)}</span>
         <span className="grow" />
+        {announceEntries(game, deviceId).length > 0 && <More label="workloads" entries={() => announceEntries(game, deviceId)} />}
         <div className="seg" role="group" aria-label="Sort by">
           {SORTS.map(([k, label]) => <button key={k} aria-pressed={sort === k} onClick={() => setSort(k)}>{label}</button>)}
         </div>
@@ -103,6 +104,7 @@ export function workloadMenu(game: GameState, w: Workload): MenuEntry[] {
   const customer = game.services.find((v) => v.id === w.serviceId)?.customerId;
   return [
     ...(web ? migrateEntries(game, w) : [{ label: "Migrate to", disabled: !targets.length, items: targets.map((t) => ({ label: `${t.name}${t.down ? `, offline ${t.down} h` : ""}`, run: () => act((g) => migrateWorkload(g, w.id, t.to)) })) }]),
+    ...offerEntries(game, w),
     w.stopped ? { label: "Start", run: () => act((g) => startWorkload(g, w.id)) } : { label: "Stop", run: () => act((g) => stopWorkload(g, w.id)) },
     null,
     { label: "Open in Virtual machines", run: () => openApp("Virtual machines", { kind: "workload", id: w.id }) },

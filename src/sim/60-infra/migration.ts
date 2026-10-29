@@ -3,11 +3,12 @@ import { importsFrom, softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { pickNode, type Cluster, type Workload } from "./cluster";
+import { LAN_GB_PER_HOUR, moveGbit } from "../85-products/products";
 import { freezeTick } from "./usage";
 
 // economy.md, Workloads and migration: a web space moves between panel hosts as a hand task. Hours are a base (2 within the
 // same panel, 4 between different ones) plus 3 minutes per GB of web storage, halved by a migration tool; the site is
-// unreachable for the last ten minutes.
+// unreachable for the last ten minutes. Into another zone the copy also takes its disk ÷ the link speed.
 export const MIGRATE_BASE = { same: 2, other: 4 };
 export const MIGRATE_PER_GB = 0.05;
 export const MIGRATE_MIN_HOURS = 0.25;
@@ -17,7 +18,8 @@ export const CUTOVER_MINUTES = 10;
 export function migrationHours(s: GameState, w: Workload, to: Cluster): number {
   const from = s.clusters.find((c) => c.id === w.clusterId)?.panel ?? null;
   const gb = s.services.find((v) => v.id === w.serviceId)?.spec.diskGb ?? 0;
-  const raw = (from === to.panel ? MIGRATE_BASE.same : MIGRATE_BASE.other) + MIGRATE_PER_GB * gb;
+  const az = s.clusters.find((c) => c.id === w.clusterId)?.az, gbit = az && az !== to.az ? moveGbit(s, az, to.az) : 0;
+  const raw = (from === to.panel ? MIGRATE_BASE.same : MIGRATE_BASE.other) + MIGRATE_PER_GB * gb + (gbit ? gb / (gbit * LAN_GB_PER_HOUR) : 0);
   const tool = !!from && !!to.panel && importsFrom(softwareById(to.panel), from, yearOf(s.hour));
   return Math.max(MIGRATE_MIN_HOURS, Math.ceil(+((tool ? raw / 2 : raw) * 4).toFixed(6)) / 4);
 }

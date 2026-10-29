@@ -23,7 +23,7 @@ import { Meter } from "../locations/Clusters";
 import { Stepper } from "../shop/Cart";
 import { ControlPlanePill, Mark, SoftwareCards, softwareName, VM_STATE, vmState } from "./parts";
 import { joinableServers } from "../../../sim/90-actions/software";
-import { migrateEntries } from "../vms/migrate";
+import { announceEntries, migrateEntries, offerEntries } from "../vms/migrate";
 
 const num = (n: number) => `${+n.toFixed(2)}`;
 
@@ -100,6 +100,7 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
   const menu = (): MenuEntry[] => [
     phpDue(game, host) && { label: host.php === phpAt(year) ? "Patch PHP" : `Upgrade to PHP ${phpAt(year)}`, run: () => act((g) => upgradePhp(g, host.id)) },
     ...sitesMenu(game, host),
+    ...announceEntries(game, host.id),
     null,
     sites.length === 0 && { label: "Remove...", run: () => setRemoving(true) },
   ];
@@ -148,7 +149,7 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
             <tbody>
               {sites.map((w) => {
                 const label = game.services.find((v) => v.id === w.serviceId)?.label ?? w.id, [state, tone] = VM_STATE[vmState(game, w)];
-                const entries = () => migrateEntries(game, w);
+                const entries = () => [...migrateEntries(game, w), ...offerEntries(game, w)];
                 return (
                   <tr key={w.id} onContextMenu={menuOn(entries)}>
                     <td>{label}</td>
