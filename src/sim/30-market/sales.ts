@@ -39,8 +39,6 @@ const MAIL_HOUR = 8;
 const SHADY_PER_MONTH = 0.3;
 const EXPANSION_HOURS = 7 * 24;
 const RETRY_HOURS = 48;
-// economy.md, Sales requests: how long a customer who accepted waits for a server with room before going elsewhere.
-export const SETUP_WAIT_HOURS = 48;
 const KEEP_HOURS = 60 * 24;
 const LOST_KEPT = 300;
 // A refusal this far above the ratio accepted half the time reads as "no budget"; closer ones may counter.
@@ -277,8 +275,8 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
     say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
     if (r.kind === "order") return acceptQuote(s, r, events);
     if (setUp(s, r, events)) return;
-    editRequest(s, r.id, () => ({ status: "accepted", replyAt: null, deadline: s.hour + SETUP_WAIT_HOURS }));
-    events.push({ app: "Support", key: "event.salesNoRoom", params: { name, spec, city: r.city, hours: SETUP_WAIT_HOURS } });
+    loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
+    events.push({ app: "Support", key: "event.salesFailed", params: { name, spec, city: r.city } });
     return;
   }
   const mid = acceptMid(s, r), ratio = price / r.reference;
@@ -308,20 +306,10 @@ function setUp(s: GameState, r: SalesRequest, events: SimEvent[]): boolean {
   return true;
 }
 
-// Accepted orders wait for room: each hour the setup is tried again until the customer gives up.
-function awaitSetup(s: GameState, events: SimEvent[]): void {
-  for (const r of s.sales.requests) {
-    if (r.kind === "order" || r.status !== "accepted" || setUp(s, r, events) || s.hour < r.deadline) continue;
-    say(s, r.id, "customer", "sales.reply.gone", { name: r.contact });
-    loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
-    events.push({ app: "Support", key: "event.salesFailed", params: { name: requestName(r), spec: specText(r.product, r.spec), city: r.city } });
-  }
-}
-
 function expire(s: GameState): void {
   for (const r of s.sales.requests) {
     // An accepted quote waits for the steps until its deadline too.
-    const accepted = r.kind === "order" && r.status === "accepted";
+    const accepted = r.status === "accepted";
     if (!(["open", "countered", "refused"].includes(r.status) || accepted) || s.hour < r.deadline || orderQueued(s, r)) continue;
     const missing = missingFor(s, r)[0];
     if (r.status !== "open" && !accepted) loseRequest(s, r, "lost", "lost.price");
@@ -363,7 +351,6 @@ export function salesTick(s: GameState): SimEvent[] {
   if (s.hour % 24 === MAIL_HOUR) morningMail(s, events);
   expansions(s);
   for (const r of s.sales.requests) if (r.status === "quoted" && r.replyAt !== null && r.replyAt <= s.hour) reply(s, r, events);
-  awaitSetup(s, events);
   expire(s);
   return events;
 }

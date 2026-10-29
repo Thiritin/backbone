@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Domains are now bought on registrar websites in the Browser, where a search suggests names across every ending with the price of each.
 - Your reseller contract, tier and domain list moved from the Network app to your registrar's website, and Network has a new icon.
+- A customer who accepts a quote when no server has room now goes elsewhere right away, instead of waiting and signing hours later.
 
 ## 2026-10-29
 
