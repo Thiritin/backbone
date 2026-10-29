@@ -49,6 +49,12 @@ export function attention(segment: Segment, hour: number): number {
   return at(day === 5 || day === 6 ? GAME.eveFree : GAME.eveWork, h);
 }
 
+// When new customers write: an hour's attention scaled so the week averages 1. Offices write in business hours, everyone else in the evening.
+export function arrivalWeight(profile: Profile, hour: number): number {
+  const segment: Segment = BUSINESS_PROFILES.includes(profile) ? "business" : "private";
+  return (attention(segment, hour) * 168 * SENSITIVITY[segment]) / weekly(segment).week;
+}
+
 // Running sums of a segment's hourly rate over one week from Sunday 00:00, so a stretch of any length sums in one step.
 const SUNDAY = ((7 - dateOf(0).getUTCDay()) % 7) * 24;
 const sums = new Map<Segment, { prefix: number[]; week: number }>();

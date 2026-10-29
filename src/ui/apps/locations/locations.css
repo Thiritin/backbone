@@ -405,3 +405,7 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .hand-opt dd { margin: 0; }
 .rack-dev.movable { cursor: grab; }
 .rack-dev.movable:active { cursor: grabbing; }
+.act-groups { display: flex; flex-wrap: wrap; }
+.act-groups > div { flex: 1 1 auto; min-width: 0; }
+.act-groups .act-tiles { display: flex; flex-wrap: wrap; }
+.act-groups .act-tile { width: 92px; }

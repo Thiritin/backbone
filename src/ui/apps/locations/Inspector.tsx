@@ -1,5 +1,5 @@
 import { supportEnd } from "../../../sim/10-catalog/lifecycle";
-import { Cable, Database, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, Unplug, Wrench } from "lucide-react";
+import { Cable, Database, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, Server as ServerIcon, SquareTerminal, Unplug, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
@@ -27,6 +27,7 @@ import { softwareOn } from "../../../sim/90-actions/software";
 import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
 import { PowerCard } from "./PowerCard";
+import { ActionTile } from "../software/Software";
 import { frontOptions, isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
 import { atDatacenter, useHandWork } from "./HandSheet";
 import type { FrontOp } from "../../../sim/60-infra/power";
@@ -101,7 +102,7 @@ const POWER = {
 } as const;
 
 // onHot reports the cable of the hovered or selected port, so the rack view can highlight it. rename opens the name field.
-type InspTab = "actions" | "software" | "lease" | "psu" | "raid" | "parts";
+type InspTab = "actions" | "ports" | "software" | "lease" | "psu" | "raid" | "parts";
 
 export function Inspector({ game, device, side = "front", onSelect, onHot, rename = false, onRenaming }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void; rename?: boolean; onRenaming?: () => void }) {
   const act = useStore((s) => s.act);
@@ -123,8 +124,18 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
   const psus = device.components.filter((c) => c.kind === "psu");
   const togglePower = () => (isServerInRack(device) ? menus.op(device, device.on ? "shutdown" : "on") : menus.power(device, !device.on));
   const [picked, setTab] = useState<InspTab>("actions");
+  const openApp = useStore((s) => s.openApp);
+  const serverActs = (
+    <div>
+      <div className="loc-card-h"><h3><ServerIcon />Server</h3></div>
+      <div className="act-tiles">
+        <ActionTile icon={PackageOpen} label="Change parts" disabled={device.on} onClick={() => menus.lid(device)} />
+        {device.rackId && <ActionTile icon={SquareTerminal} label="Terminal" disabled={!device.on || !device.hostname} onClick={() => openApp("Terminal", { kind: "ssh", id: device.hostname! })} />}
+      </div>
+    </div>
+  );
   const tabs = server ? ([
-    ["actions", "Actions"], !!device.rackId && ["software", "Software"], !!device.lease && ["lease", "Lease"],
+    ["actions", "Actions"], ["ports", "Ports"], !!device.rackId && ["software", "Software"], !!device.lease && ["lease", "Lease"],
     ["psu", "Power supplies"], drivesOf(device).length > 0 && ["raid", "RAID"], ["parts", "Components"],
   ].filter(Boolean) as [InspTab, string][]) : [];
   const tab = tabs.some(([id]) => id === picked) ? picked : "actions";
@@ -138,15 +149,10 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         <LabelEdit device={device} editing={editing} onEditing={setEditing} />
         <span className="grow" />
         {model.kind === "server" && !!device.rackId && <PlanButton target={{ kind: "device", id: device.id }} plan={(t) => menus.plan(t)} />}
-        {server && !!(device.rackId || device.store) && (
-          <span title={device.on ? "Power down the server first" : undefined}>
-            <button className="btn" disabled={device.on} onClick={() => menus.lid(device)}><PackageOpen />Change parts</button>
-          </span>
-        )}
         {powered && !isServerInRack(device) && device.on && !!pduOf(game, device) && (
           <button className="btn ghost icon" aria-label="Power cycle" title="Power cycle" onClick={() => menus.op(device, "cycle")}><RotateCw /></button>
         )}
-        {powered && (
+        {powered && !isServerInRack(device) && (
           <button className={`btn ghost icon insp-power${device.on ? " on" : ""}`} aria-label={device.on ? "Shut down" : "Power on"} title={device.on ? "Shut down" : "Power on"}
             disabled={!device.rackId && !device.panel} onClick={togglePower}>
             <Power />
@@ -178,17 +184,9 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         <UsageBars usage={usageOf(game, [device])} only={server ? undefined : ["net"]} wide />
       )}
 
-      {isServerInRack(device) && <PowerCard game={game} device={device} onOp={(op) => menus.op(device, op)} onFront={(op) => menus.front(device, op)} />}
-      {server && <PortTable game={game} device={device} peers={peers} sel={sel} onPick={pick} onHover={setHover} onSelect={onSelect} />}
-      {server && model.ports.length > 1 && (
-        <div className="loc-row insp-bond">
-          <span className="loc-k">Bond</span>
-          <div className="seg" role="group" aria-label="Bond mode">
-            <button aria-pressed={device.bond === "failover"} onClick={() => act(setBond, device.id, "failover")}>Failover</button>
-            <button aria-pressed={device.bond === "balance"} onClick={() => act(setBond, device.id, "balance")}>Load balance</button>
-          </div>
-        </div>
-      )}
+      {isServerInRack(device)
+        ? <PowerCard game={game} device={device} onOp={(op) => menus.op(device, op)} onFront={(op) => menus.front(device, op)}>{serverActs}</PowerCard>
+        : server && device.store && <div className="loc-card"><div className="act-groups">{serverActs}</div></div>}
 
       {model.kind === "switch" && (
         <div className="seg loc-mode" role="group" aria-label="Port selection">
@@ -199,10 +197,25 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
 
       {mode === "group" && model.kind === "switch" ? (
         <GroupCard device={device} sel={sel} onDone={() => setSel([])} />
-      ) : sel.length === 1 ? (
+      ) : sel.length === 1 && !server ? (
         <PortCard game={game} device={device} model={model} port={sel[0]} peer={peers[sel[0]]} onSelect={onSelect} />
       ) : null}
       {server && <NodeCard game={game} device={device} />}
+      </>}
+
+      {show("ports") && server && <>
+        <PortTable game={game} device={device} peers={peers} sel={sel} onPick={pick} onHover={setHover} onSelect={onSelect} />
+        {model.ports.length > 1 && (
+          <div className="loc-row insp-bond">
+            <span className="loc-k">Bond</span>
+            <div className="seg" role="group" aria-label="Bond mode">
+              <button aria-pressed={device.bond === "none"} onClick={() => act(setBond, device.id, "none")}>None</button>
+              <button aria-pressed={device.bond === "failover"} onClick={() => act(setBond, device.id, "failover")}>Failover</button>
+              <button aria-pressed={device.bond === "balance"} onClick={() => act(setBond, device.id, "balance")}>Load balance</button>
+            </div>
+          </div>
+        )}
+        {sel.length === 1 && <PortCard game={game} device={device} model={model} port={sel[0]} peer={peers[sel[0]]} onSelect={onSelect} />}
       </>}
 
       {show("software") && server && device.rackId && (
@@ -334,7 +347,7 @@ function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { ga
                 <td>{p.media === "sfp" ? "SFP" : "RJ45"}</td>
                 <td className="r num">{speed(p.gbit)}</td>
                 <td><span className={`pill${link === "Up" ? " ok" : link === "Down" ? " bad" : ""}`}>{link}</span></td>
-                <td className="num">{model.ports.length > 1 ? "bond0" : ""}</td>
+                <td className="num">{model.ports.length > 1 && device.bond !== "none" ? "bond0" : ""}</td>
                 <td>
                   {!other ? null : other.panel ? "Carrier panel" : other.rackId === device.rackId ? (
                     <button className="loc-link num" onClick={(e) => { e.stopPropagation(); onSelect(other.id); }}>{devName(other)} {portName(modelById(other.model), peer!.port)}</button>

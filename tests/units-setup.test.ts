@@ -68,7 +68,7 @@ describe("traffic", () => {
 
 describe("setup fees", () => {
   it("bill a form order at once with the first month, and the monthly run skips that month", () => {
-    const s = withForm(2);
+    const s = withForm(1);
     expect(setRate(s, "webHosting", "setup", 25).ok).toBe(true);
     const r = orderLead(s, "private", "Frankfurt", [], web, false);
     const won = s.sales.requests.find((x) => x.id === r.id)!;

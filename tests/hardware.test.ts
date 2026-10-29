@@ -262,6 +262,19 @@ describe("linkStatus", () => {
     ok(setPortGroup(s, sw, [1, 0]));
     expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 2, warning: null });
   });
+  it("uses only the first cabled port until a failover bond is set", () => {
+    const s = atYear(2005);
+    const { racks: [rack], handoff } = colo(s);
+    const srv = mounted(s, "g1-compute", rack, 1);
+    const sw = mounted(s, "sw-24", rack, 41);
+    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 0 }));
+    const dead = mounted(s, "sw-24", rack, 40);
+    ok(connect(s, { device: srv, port: 0 }, { device: dead, port: 0 }));
+    ok(connect(s, { device: srv, port: 1 }, { device: sw, port: 1 }));
+    expect(linkStatus(s, srv).online).toBe(false);
+    ok(setBond(s, srv, "failover"));
+    expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 1, warning: null });
+  });
 });
 
 describe("setBond and setPortGroup", () => {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { t } from "../../../i18n/en";
 import { complete, DESK_PROMPT, promptOf, recoveryReport, runCommand, type Session, type Watch } from "../../../sim/60-infra/terminal";
 import { useSessionState } from "../../session";
-import { uiSound, useStore } from "../../store";
+import { uiSound, useFocus, useStore } from "../../store";
 import "./terminal.css";
 
 interface Line { prompt?: string; text: string }
@@ -89,11 +89,10 @@ export function TerminalApp() {
     setDraft(r.line);
   };
 
-  const submit = () => {
-    const line = draft;
+  const submit = (line = draft, from = session) => {
     const store = useStore.getState();
-    const result = runCommand(store.game, session, line, history.length);
-    const next: Line[] = result.clear ? [] : [...lines, { prompt: promptOf(session), text: line }, ...result.output.map((text) => ({ text }))];
+    const result = runCommand(store.game, from, line, history.length);
+    const next: Line[] = result.clear ? [] : [...lines, { prompt: promptOf(from), text: line }, ...result.output.map((text) => ({ text }))];
     if (result.action) {
       const r = store.act(...result.action);
       if (!r.ok) next.push({ text: t(r.error) });
@@ -105,6 +104,16 @@ export function TerminalApp() {
     recall.current = line.trim() ? Math.min(history.length + 1, 100) : history.length;
     setDraft("");
   };
+
+  // Terminal on a server drops any open session and connects to it.
+  const [target, setTarget] = useState<string | null>(null);
+  useFocus("Terminal", (f) => { if (f.kind === "ssh") setTarget(f.id); });
+  useEffect(() => {
+    if (!ready || !target) return;
+    setTarget(null);
+    setSession(null);
+    submit(`ssh ${target}`, null);
+  }, [ready, target]);
 
   const walk = (step: number) => {
     const at = Math.max(0, Math.min(history.length, recall.current + step));

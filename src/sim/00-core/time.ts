@@ -4,7 +4,7 @@ const START = Date.UTC(START_YEAR, 0, 1);
 const HOUR = 3_600_000;
 
 // Real milliseconds per game hour at 1× (docs/design/economy.md, Clock and pacing).
-export const MS_PER_HOUR = 180_000;
+export const MS_PER_HOUR = 120_000;
 export const SPEEDS = [0, 1, 2, 4, 8, 16] as const;
 export type Speed = (typeof SPEEDS)[number];
 
