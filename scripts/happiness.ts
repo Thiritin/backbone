@@ -23,7 +23,9 @@ import { bookable, controlPlaneUse, nodeUsed } from "../src/sim/60-infra/cluster
 import { sizeOf } from "../src/sim/30-market/spec";
 import type { SalesRequest } from "../src/sim/30-market/market";
 import { addNode, createPanelVm, resizePanelVm } from "../src/sim/90-actions/clusters";
-import { installSoftware } from "../src/sim/90-actions/software";
+import { installSoftware, updateSoftware } from "../src/sim/90-actions/software";
+import { cleanUp } from "../src/sim/90-actions/security";
+import { openVulns } from "../src/sim/60-infra/vulns";
 import { sitesDown, vmById, vmOf, vmRoom } from "../src/sim/60-infra/cluster";
 import { buyDevice, connect, orderHomeLine } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "../tests/plugged";
@@ -154,6 +156,11 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
       // One spare line address keeps basement VPS and game server sales open.
       if (s.hour % 24 === 9 && freeV4(s, "loc1") < 1) buyAddresses(s, "loc1", 4, 1);
       if (s.hour % 24 === 9) learn();
+      // A careful player updates software with an open vulnerability and cleans a hacked host the same morning.
+      if (s.hour % 24 === 9) for (const c of s.clusters) {
+        if (s.security.hacked.includes(c.id)) cleanUp(s, c.id);
+        else if (openVulns(s, c.id).length > 0) updateSoftware(s, c.id);
+      }
       if (s.hour % 24 === 9) for (const d of s.domains) if (d.expiresAt - s.hour < 7 * 24 && s.customers.some((c) => c.id === d.customerId && c.churnedAt === null)) renewDomain(s, d.name);
       for (const v of s.services) {
         if (v.endedAt !== null || isSuspended(s, v.customerId) || serviceOnline(s, v.id)) continue;
