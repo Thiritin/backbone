@@ -2,15 +2,14 @@ import { ArrowLeft, ArrowRight, RotateCw } from "lucide-react";
 import type { CSSProperties } from "react";
 import { t } from "../../../i18n/en";
 import { yearOf } from "../../../sim/00-core/time";
-import { PRODUCTS } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import { companyDomain } from "../../../sim/30-customers/domains";
 import type { GameState } from "../../../sim/50-state";
 import { euro } from "../../../sim/00-core/money";
 import { hasOrderForm, OWNED, owns } from "../../../sim/80-business/marketing";
 import { setUpChannel } from "../../../sim/90-actions/marketing";
-import { lineBlocker, listed, SITE_LINES } from "../../../sim/80-business/website";
-import { setLine } from "../../../sim/90-actions/website";
+import { lineBlocker, listed, SITE_LINES, siteContent } from "../../../sim/80-business/website";
+import { setEmailOrders, setLine } from "../../../sim/90-actions/website";
 import { useStore } from "../../store";
 import { CompanyMark } from "../company";
 import { PRODUCT } from "../support/labels";
@@ -64,6 +63,15 @@ export function WebsiteApp() {
             </div>
           );
         })}
+        {hasOrderForm(game) && (
+          <div className="web-line">
+            <label className="web-line-row">
+              <span>Email orders</span>
+              <input type="checkbox" role="switch" className="switch" aria-label="Take orders by email" checked={game.marketing.emailOrders}
+                onChange={(e) => act((s) => setEmailOrders(s, e.target.checked))} />
+            </label>
+          </div>
+        )}
       </nav>
       <div className="web-browser">
         <div className="web-bar">
@@ -77,9 +85,8 @@ export function WebsiteApp() {
 }
 
 function Site({ game }: { game: GameState }) {
-  const lines = SITE_LINES.filter((p) => listed(game, p));
-  const form = hasOrderForm(game), domain = companyDomain(game);
-  const city = game.locations[0]?.city ?? "Frankfurt";
+  const { lines, email } = siteContent(game);
+  const domain = companyDomain(game), city = game.locations[0]?.city ?? "Frankfurt";
   return (
     <div className={`site${owns(game, "website") ? " designed" : ""}`} style={{ "--brand": game.company.color } as CSSProperties}>
       <header className="site-head">
@@ -90,16 +97,25 @@ function Site({ game }: { game: GameState }) {
       <h2>Products</h2>
       {lines.length ? (
         <div className="site-products">
-          {lines.map((p) => (
+          {lines.map(({ product: p, plans }) => (
             <section key={p} className="site-product">
               <h3>{PRODUCT[p]}</h3>
               <p>{BLURB[p]}</p>
-              <p className="site-plans">{PRODUCTS[p].plans.map((x) => x.name).join(" | ")}</p>
-              {form ? <span className="site-button">Order</span> : <span className="site-link">Order by email</span>}
+              {plans.length > 0 && (
+                <ul className="site-plans">
+                  {plans.map((x) => <li key={x}><span>{x}</span><span className="site-button">Order</span></li>)}
+                </ul>
+              )}
             </section>
           ))}
         </div>
       ) : <p className="site-empty">This page is under construction.</p>}
+      {email && lines.length > 0 && (
+        <>
+          <h2>Contact us</h2>
+          <p className="site-contact">Tell us what you need and we will send you an offer: <span className="site-link">{email}</span></p>
+        </>
+      )}
       <footer className="site-foot">
         <span>Contact: <span className="site-link">sales@{domain}</span></span>
         <span>&copy; {yearOf(game.hour)} {game.company.name}</span>

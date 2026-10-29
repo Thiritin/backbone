@@ -20,7 +20,9 @@
 .site-pitch { margin-top: 10px; font-style: italic; }
 .site-products { display: grid; gap: 14px; }
 .site-product p { margin-top: 3px; }
-.site-plans { font-size: 13px; color: #404040; }
+.site-plans { display: grid; gap: 4px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; color: #404040; }
+.site-plans li { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.site-plans .site-button { margin-top: 0; }
 .site-link { color: #0000ee; text-decoration: underline; }
 .site-button { display: inline-block; margin-top: 6px; padding: 2px 14px; font: 13px Arial, sans-serif; color: #000000; background: #d4d0c8; border: 2px outset #ffffff; }
 .site-empty { color: #404040; }
@@ -36,7 +38,9 @@
 .site.designed .site-products { margin: 0 32px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
 .site.designed .site-product { display: flex; flex-direction: column; align-items: flex-start; padding: 14px; border: 1px solid #dddddd; border-radius: 6px; }
 .site.designed .site-product .site-button { margin-top: auto; }
-.site.designed .site-plans { margin-bottom: 8px; }
+.site.designed .site-plans { align-self: stretch; margin-top: 10px; }
+.site.designed .site-plans .site-button { margin-top: 0; padding: 2px 12px; }
+.site.designed .site-contact { margin: 0 32px; }
 .site.designed h3 { color: var(--brand); font-size: 15px; }
 .site.designed .site-button { padding: 4px 16px; border: 0; border-radius: 4px; background: var(--brand); color: #ffffff; font: 600 13px Verdana, sans-serif; }
 .site.designed .site-empty { margin: 0 32px; }

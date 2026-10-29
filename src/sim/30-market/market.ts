@@ -13,7 +13,7 @@ import { locationOf } from "../60-infra/status";
 import { awareness, leadsThisMonth, PROFILE_IDS, reviewMultiplier, reviewScore, trustBonus } from "../80-business/marketing";
 import { forumAwareness } from "../47-staff/staff";
 import { metrics } from "../metrics";
-import { CUSTOM_NAME, serviceMarket, type CustomSpec } from "./custom";
+import { LINE_NAME, serviceMarket, type CustomSpec } from "./custom";
 
 export type RequestStatus = "open" | "quoted" | "countered" | "refused" | "won" | "lost" | "declined";
 // by names the employee who sent a "you" message; the player otherwise.
@@ -30,6 +30,8 @@ export interface SalesRequest {
   // A custom order (custom.ts): its resources, whether the customer owns the domain already, its first invoice and the
   // route chosen for its setup ("auto", a cluster id or a node's device id).
   spec?: CustomSpec; owned?: boolean; invoiceId?: string; route?: string;
+  // Whether its line sold packages when it arrived; without them it asks for the line, not a plan.
+  packaged?: boolean;
 }
 // reason is an i18n key with its params.
 export interface LostSale { hour: number; name: string; product: Product; plan: string; reference: number; reason: string; params: Record<string, string | number> }
@@ -243,4 +245,6 @@ export function senderFor(r: Rng, profile: Profile, shady = false, us = false): 
 }
 
 export const requestName = (r: Pick<SalesRequest, "contact" | "company">): string => r.company ?? r.contact;
-export const planName = (r: Pick<SalesRequest, "product" | "plan" | "spec">): string => (r.spec && CUSTOM_NAME[r.product]) || planOf(r.product, r.plan).name;
+// A request names its plan only when it orders one of the player's packages.
+export const planName = (r: Pick<SalesRequest, "product" | "plan" | "spec" | "packaged">): string =>
+  r.spec || !r.packaged ? LINE_NAME[r.product] : planOf(r.product, r.plan).name;

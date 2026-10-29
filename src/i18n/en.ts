@@ -60,6 +60,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownCable": () => "This cable no longer exists.",
   "error.unknownBrand": () => "This brand does not sell servers.",
   "error.unknownSiteLine": () => "This product cannot go on the website.",
+  "error.needsOrderForm": () => "Set up the order form first.",
   "error.notInShop": () => "The shop does not sell this model.",
   "error.outOfBounds": () => "The device does not fit at this height.",
   "error.slotTaken": () => "Another device is in the way.",
