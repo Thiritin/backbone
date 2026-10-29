@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { euro } from "../../../sim/00-core/money";
-import { bayTakes, COMPONENTS, fits, modelById, partPrice, samePart, type ComponentKind } from "../../../sim/10-catalog/hardware";
+import { yearOf } from "../../../sim/00-core/time";
+import { bayTakes, COMPONENTS, fits, modelById, samePart, type ComponentKind } from "../../../sim/10-catalog/hardware";
+import { partPrice } from "../../../sim/10-catalog/parts";
 import type { Component, Device } from "../../../sim/50-state";
 import { locationOf } from "../../../sim/60-infra/status";
 import { installPart, removePart, replaceComponent } from "../../../sim/90-actions/hardware";
@@ -80,7 +82,7 @@ function SlotCard({ device, slot, wear, spares, az, act }: { device: Device; slo
         <Facts rows={[
           ["Slot", <span className="num">{slotName(slot)}</span>],
           ["Age", <span className="num">{ageYears(game, c).toFixed(1)} / {COMPONENTS[c.kind].life} y</span>],
-          ["Price", <span className="num">{euro(partPrice(specOf(c)))}</span>],
+          ["Price", <span className="num">{euro(partPrice(c.kind, c.size, c.ff, yearOf(game.hour)))}</span>],
         ]} />
       </div>
     );
@@ -96,7 +98,7 @@ function SlotCard({ device, slot, wear, spares, az, act }: { device: Device; slo
           const spec = spareSpec(d), n = fitting.filter((x) => samePart(spareSpec(x), spec)).length;
           return (
             <button key={d.id} className="btn" onClick={() => act((g) => installPart(g, device.id, d.id))}>
-              {partLabel(spec)}<span className="num">{euro(partPrice(spec))}</span>{n > 1 && <span className="num">× {n}</span>}
+              {partLabel(spec)}<span className="num">{euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour)))}</span>{n > 1 && <span className="num">× {n}</span>}
             </button>
           );
         }) : <span className="loc-muted">No fitting part in {az}</span>}
