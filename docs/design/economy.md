@@ -1002,6 +1002,27 @@ Rates are rolled hourly (yearly rate ÷ 8,760) per server and do not draw from t
 - **Out of support.** Hands-on work on the device (swapping, installing or removing a part) takes twice as long, a spare part for it costs 1.5 times its price (the extra half is booked as a grey market premium when the part goes in), and every component fails 1.2 times as often because the firmware no longer gets fixes. Work that takes no time on a running device stays instant.
 - **News.** Each non-server model ends with a Heize online item on 1 January of the year after its last year on sale.
 
+**Used hardware.** Listings come from the current preset price of the model (Part prices by year for servers, eroded list prices for the rest) with the seller's brand factor.
+
+| Rule | Value |
+| --- | --- |
+| New listings per channel and month | 2 to 6, posted over the month at random hours; a model qualifies once its launch is at least 2 years back |
+| Age of a unit | 1 year up to the years since the model's launch |
+| WebHostingTalc ask | 60% of the preset price at 1 year falling in a straight line to 45% at 6 years and older |
+| Telegrump ask | 45% falling to 30% the same way; 15% of the deals are scams that take the money and ship nothing |
+| eBuy | Starts at 25%; the rival's maximum is 35% to 70%; the higher maximum wins and pays the other's maximum |
+| Visible defect | 30% of single units; PSU 2 missing ×0.85 (two-supply models), 1 drive reports errors ×0.8 (the drive arrives one year past its life), no rails ×0.95 (rack-mounted) |
+| Hidden part age | Each part's age is the unit's age times 0.5 to 1.5 |
+| Listing lifetime | eBuy 3 to 7 days, ending at 20:00; board 1 to 6 days after the day of early access; chat 1 to 4 days |
+| Shipping | 3 to 5 days; 1 day from a board or chat seller in the destination's city (35% of sellers are in a city where the player has a location) |
+| Selling on the board | Default ask 1.3 times the resale value (Buying and selling); a buyer pays the ask within 7 to 30 days when it is under 1.5 times the value, otherwise the listing expires after 30 days |
+| Selling on eBuy | Starts at half the value and ends at 1 to 1.4 times the value within 7 to 30 days, minus an 8% fee |
+| Board reputation | +1 per board purchase or board sale, never from scams; 5 shows board listings 24 hours early; 15 brings one VPS lead a month |
+| Bust hoster's lot | Once a year: 20 servers of one model as one board listing at 35% of their preset price, from the player's first city, for 14 days |
+| Clearance weekend | Once a year: 10 eBuy auctions ending on the second evening |
+
+Used devices are never insured, cannot be leased and resell from the price paid like any other device. Anchors: eBay server lots sold at 30% to 50% of list in the 2000s, and WebHostingTalk marketplace asks sit around half of the new price.
+
 **Power feeds.**
 
 | Feed | Effect | Price |

@@ -28,6 +28,7 @@ import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 import { newIps, type Ips } from "./60-infra/addresses";
 import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
+import type { Listing } from "./10-catalog/used";
 import { firstHostNo } from "./30-customers/hostnames";
 
 // 3: GPU line servers carry their preset cards.
@@ -63,6 +64,8 @@ export interface Device { id: string; model: string; brand: string; rackId: stri
   part?: PartSpec;
   // nodeNNN, set on servers.
   hostname?: string;
+  // Bought on the used market: no insurance covers it.
+  used?: true;
 }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
@@ -180,6 +183,9 @@ export interface GameState {
   nextNode: number;
   nextVm: number;
   nextHostNo: number;
+  // The used hardware market's listings, the player's own among them, and the player's reputation on the board (80-business/used.ts).
+  used: Listing[];
+  usedRep: number;
 }
 
 // Fields every new device starts with: fresh components installed at hour `at` (the model's parts unless partList says otherwise), powered on, RAID 1 with two or more drives.
@@ -245,6 +251,7 @@ export const newGame = (seed: number): GameState => ({
   ips: newIps(),
   news: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
+  used: [], usedRep: 0,
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

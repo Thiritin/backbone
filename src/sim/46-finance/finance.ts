@@ -62,7 +62,7 @@ const withinLife = (c: Component, at: number) => at - c.installedAt < COMPONENTS
 
 // A month's hardware premium: the expected cost of spare parts for every covered component at its current failure rate, with the insurer's markup.
 export function hardwarePremium(s: GameState): number {
-  const yearly = s.devices.reduce((sum, d) => sum + d.components.filter((c) => c.failedAt === null && withinLife(c, s.hour))
+  const yearly = s.devices.filter((d) => !d.used).reduce((sum, d) => sum + d.components.filter((c) => c.failedAt === null && withinLife(c, s.hour))
     .reduce((a, c) => a + failureChance(s, d, c) * HOURS_PER_YEAR * COMPONENTS[c.kind].price, 0), 0);
   return Math.max(MIN_PREMIUM, cents((yearly * PREMIUM_MARKUP) / 12));
 }
