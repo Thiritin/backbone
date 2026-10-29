@@ -44,6 +44,8 @@ export const MONTHLY_RATES: Record<"howTo" | "billing" | "abuse", Record<Budget,
   billing: { low: 0.04, medium: 0.04, high: 0.02 },
   abuse: { low: 0.005, medium: 0.005, high: 0.02 },
 };
+// Customers ask most while they set up and rarely once settled: ×2.5 at signup, ×0.85 per month, never below ×0.15.
+export const tenureFactor = (s: GameState, c: Customer): number => Math.max(0.15, 2.5 * 0.85 ** ((s.hour - c.since) / HOURS_PER_MONTH));
 export const GAMER_ABUSE_RATE = 0.02;
 export const UPGRADE_CHANCE: Record<Budget, number> = { low: 0.02, medium: 0.03, high: 0.04 };
 export const OUTAGE_WRITE_CHANCE: Record<Budget, number> = { low: 0.3, medium: 0.6, high: 0.9 };

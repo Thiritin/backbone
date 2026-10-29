@@ -653,6 +653,8 @@ Gamers create abuse reports at 0.02, like high-skill customers. Each payment rem
 
 A ticket someone is working on stays open. Cancellations are processed at the next billing date instead.
 
+**Tenure** changes the how-to rate: customers ask most while they set up, ×2.5 at signup and ×0.85 per month after, down to ×0.15 for settled customers, so a low-skill customer who stays for years writes about once every three years.
+
 **Control panels** change the how-to rate: cPanic ×0.8, Pleskit ×0.9, DirectAdmen ×1.2, FreePanel ×1.5.
 
 **Work rate.** A worker with skill s (0 to 100) finishes tasks of handling time t minutes at this rate and gets each one right with the given chance:
