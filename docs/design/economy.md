@@ -27,7 +27,7 @@ Level 6 lands before the cloud and GPU boom, so the late game still has new prod
 
 ## Starting state
 
-A new game starts on 1 January 2005 with €3,500 in cash, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
+A new game opens paused on 1 January 2005 at 00:00 with €3,500 in cash, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
 
 | Item | Starting value |
 | --- | --- |
@@ -60,7 +60,7 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Customer base rate per TB of storage | 32 | Object storage: €6.50 per TB in 2026, €210 in 2005 |
 | Customer base rate per TB of traffic | 46 | Overage and traffic-heavy services |
 | Fixed-price products | 1 | Web hosting, domains and dedicated servers keep their price per size; the sizes get bigger |
-| Rented space per U, rack or cage | 1 | Power is billed separately |
+| Rented space, rack share, position or cage | 1 | Power is billed separately |
 | Server purchase price | Parts | Resources per server come from the generations table below; the price in later years follows the parts (Part prices by year) |
 | Salaries | 0.6 | Support agent, junior: €38,700 in 2026, about €23,000 in 2005 |
 | Search ads, per click | 0.6 | |
@@ -702,11 +702,20 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 
 | Space | Price | Lead time | Minimum term | Needs |
 | --- | --- | --- | --- | --- |
-| Rack share, 1/8 (5U) / 1/4 (10U) / 1/2 (21U) / full (42U) | 0.2× / 0.35× / 0.6× / 1.1× the position price | 2 days | 1 month | Datacenter positions unlock |
-| Rack positions, 1 to 4 | The datacenter's position price each | 7 days | 1 month | Datacenter positions unlock |
+| Rack share, 1/8 (5U) / 1/4 (10U) / 1/2 (21U) / full (42U) | 0.2× / 0.35× / 0.6× / 1.1× the position price | 2 days | 1 month | Nothing |
+| Rack positions, 1 to 4 | The datacenter's position price each | 7 days | 1 month | Nothing |
 | Cage, 4 / 8 / 16 positions | 3.4× / 6.4× / 12× the position price | 30 days | 12 months | Cage unlock; datacenters with cages |
 | Private suite, 20 / 40 positions | 15× / 28× the position price | 90 days | 36 months | Private suite unlock |
 | Own datacenter | Set when it is designed | | | Own datacenter unlock |
+
+**Rack shares.** The smallest space is a 1/8 share of the provider's rack (5U). Any datacenter with free room rents shares and positions from the first day. A share comes with the provider's rack, you mount hardware into it directly, and its sizes are 5U, 10U, 21U and 42U (a full rack). The price is the multiplier above times the datacenter's position price:
+
+| Datacenter (position price) | 1/8 | 1/4 | 1/2 | Full |
+| --- | --- | --- | --- | --- |
+| Hetzler FSN, Falkenstein (€160), the cheapest | €32 | €56 | €96 | €176 |
+| Hetzler Park, Frankfurt (€180), the cheapest in the home city | €36 | €63 | €108 | €198 |
+| mainqubes FRA, Frankfurt (€450) | €90 | €158 | €270 | €495 |
+| Equinox FR5, Frankfurt (€750) | €150 | €263 | €450 | €825 |
 
 **Availability.** Datacenters are not endless. Each one has a floor capacity in positions that grows in expansion phases over the years up to a final size, and most of it is rented by competitors you never see. You can only rent what is free right now.
 
@@ -1846,7 +1855,6 @@ Product management was tier 2 at 200 know-how and 14 days after Marketing basics
 
 | Unlock | Branch | Know-how | Launch cost | Needs |
 | --- | --- | --- | --- | --- |
-| Datacenter positions | Infrastructure | 50 | €500 | Level 1 |
 | SSL certificates | Products | 80 | €500 | Level 1 |
 | Own DNS hosting | Products | 60 | €500 | Level 1 |
 | First hire | Business | 100 | €1,000 | Level 1 |
