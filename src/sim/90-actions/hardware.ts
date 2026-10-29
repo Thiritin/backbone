@@ -53,7 +53,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "positi
   const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };
   s.locations.push(loc);
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
-  s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "failover", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
+  s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
   if (shareRack) {
     const rackName = nextName(`${prefix(s, loc.id)}-rack`, s.racks.map((r) => r.name));
@@ -201,7 +201,7 @@ export function stock(s: GameState, line: CartLine, lease: string | null, store:
   return Array.from({ length: qty }, () => {
     const name = nextName(`${prefix(s, store)}-${roleOf(modelId)}`, s.devices.map((d) => d.name));
     const id = newId(s, "dev");
-    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "failover", groups: [], price, boughtAt: s.hour, lease, ...(wait ? { store: null, transitTo: store, arriveAt: s.hour + wait } : { store, transitTo: null, arriveAt: null }),
+    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "none", groups: [], price, boughtAt: s.hour, lease, ...(wait ? { store: null, transitTo: store, arriveAt: s.hour + wait } : { store, transitTo: null, arriveAt: null }),
       ...deviceDefaults(modelId, s.hour, custom ? lineParts(line) : undefined), ...(line.part ? { part: line.part } : {}),
       ...(modelById(modelId).kind === "server" ? { hostname: nodeName(s) } : {}) });
     return id;

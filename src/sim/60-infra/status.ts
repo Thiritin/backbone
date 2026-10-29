@@ -80,15 +80,17 @@ export function linkStatus(s: GameState, deviceId: string): LinkStatus {
   const ports = modelById(d.model).ports;
   if (modelById(d.model).kind === "gateway") return { online: lineUp(s, d.id), gbit: Math.max(...ports.map((p) => p.gbit)), warning: null };
   const own = modelById(d.model).throughputGbit ?? Infinity;
-  const up = ports
-    .map((_, port) => farEnd(s, { device: deviceId, port }))
+  const ends = ports.map((_, port) => farEnd(s, { device: deviceId, port }));
+  // An unbonded server only uses its first cabled port.
+  const first = ends.findIndex(Boolean);
+  const up = (modelById(d.model).kind === "server" && d.bond === "none" ? ends.slice(first, first + 1) : ends)
     .flatMap((f) => {
       const cap = f && gatewayCap(s, f.end, deviceId);
       return f && cap !== null ? [{ ...f, gbit: Math.min(f.gbit, cap, own) }] : [];
     });
   if (!up.length) return { online: false, gbit: 0, warning: null };
   const fastest = Math.max(...up.map((f) => f.gbit));
-  if (d.bond === "failover" || up.length === 1) return { online: true, gbit: fastest, warning: null };
+  if (d.bond !== "balance" || up.length === 1) return { online: true, gbit: fastest, warning: null };
   const sw = s.devices.find((x) => x.id === up[0].end.device)!;
   const grouped = modelById(sw.model).kind === "switch" && up.every((f) => f.end.device === sw.id)
     && sw.groups.some((g) => up.every((f) => g.includes(f.end.port)));

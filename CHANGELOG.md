@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- A server's power, front panel, Change parts and a new Terminal action that connects over ssh now sit together on its Actions page, and its ports and bond have their own Ports page.
+- New servers start without a bond and use only their first cabled port until you set Failover or Load balance.
 - New customers write throughout the day, offices during business hours and private customers mostly in the evening, instead of all at once in the morning mail.
 - The shop filter now appears on every shop page and fits on one line with dropdowns for form factor, cores, RAM and disk.
 

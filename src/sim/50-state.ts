@@ -35,7 +35,7 @@ import { firstHostNo } from "./30-customers/hostnames";
 // 3: GPU line servers carry their preset cards.
 export const SAVE_VERSION = 3;
 
-export type BondMode = "failover" | "balance";
+export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber";
 
 export type SpaceKind = "basement" | "share" | "positions" | "cage" | "suite";
@@ -217,7 +217,7 @@ export function fillCards(modelId: string, components: Component[]): Component[]
 }
 
 export const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>
-  ({ id, model, brand, rackId, slot, panel, name, bond: "failover", groups: [], price, boughtAt: 0, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults(model, 0) });
+  ({ id, model, brand, rackId, slot, panel, name, bond: "none", groups: [], price, boughtAt: 0, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults(model, 0) });
 
 // Starting infrastructure: an empty 24U basement rack and the home router. The player buys, mounts and cables the first server.
 export const newGame = (seed: number): GameState => ({
