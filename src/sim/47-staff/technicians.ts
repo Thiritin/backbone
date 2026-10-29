@@ -5,7 +5,7 @@ import type { Device, GameState } from "../50-state";
 import { beginTransfer, TRANSFER_MINUTES } from "../30-customers/registrar";
 import { anchorOf } from "../60-infra/cluster";
 import { openVulns, rank } from "../60-infra/vulns";
-import { HOURS_PER_YEAR, hotKind, hotSwappable, locationOf } from "../60-infra/status";
+import { HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, working as deviceWorks } from "../60-infra/status";
 import type { SimEvent } from "../88-tick/tick";
 import { drain, upgradeNodePhp } from "../90-actions/clusters";
 import { updateDue, updateSoftware } from "../90-actions/software";
@@ -22,7 +22,8 @@ export interface TechOp { id: string; kind: OpKind; deviceId: string; componentI
 // failed: replace failed parts when a spare is in storage. worn: replace parts past their life that swap while running.
 // blackhole: the on-call technician blackholes an attack that saturates their location's links.
 // updates: update software with an open high or critical vulnerability.
-export interface TechRules { failed: boolean; worn: boolean; blackhole: boolean; updates: boolean }
+// recover: run the recovery of workloads a pulled plug corrupted.
+export interface TechRules { failed: boolean; worn: boolean; blackhole: boolean; updates: boolean; recover: boolean }
 export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", migrate: "panels", part: "hardware", domains: "panels", update: "panels", reset: "hardware", bmcreset: "hardware", recover: "servers" };
 // An update of a hypervisor is server work; a panel or mail host update is panel work.
 export const taskFor = (s: GameState, kind: OpKind, componentId: string | null): Task =>
@@ -104,6 +105,17 @@ function autoUpdates(s: GameState): void {
   }
 }
 
+// With the recover rule on, a corrupted workload that is not being repaired or restored is queued where a technician trained on servers works.
+function autoRecover(s: GameState): void {
+  if (!s.techRules.recover) return;
+  for (const w of s.workloads) {
+    const d = w.deviceId ? s.devices.find((x) => x.id === w.deviceId) : undefined, loc = d && locationOf(s, d);
+    if (!d || !loc || !w.corrupted || w.recoverDoneAt !== undefined || w.recoverFailed || !deviceWorks(s, d.id)) continue;
+    if (!techsAt(s, loc.id, "servers").length || s.techOps.some((o) => o.kind === "recover" && o.componentId === w.id)) continue;
+    queueOp(s, "recover", d.id, w.id, true);
+  }
+}
+
 // An operation waits while an earlier one on the same device is queued, a swap is under way, or no spare is in storage.
 function ready(s: GameState, o: TechOp, taken: Set<string>): boolean {
   if (o.kind === "domains") return true;
@@ -154,6 +166,7 @@ export function techTick(s: GameState): SimEvent[] {
   s.techOps = s.techOps.filter((o) => (o.kind === "domains" ? !!s.registrar?.transfer && s.registrar.transfer.doneAt === null : s.devices.some((d) => d.id === o.deviceId)));
   autoQueue(s);
   autoUpdates(s);
+  autoRecover(s);
   const taken = new Set<string>();
   if (!isWorkHour(s.hour)) {
     for (const l of s.locations) {

@@ -228,7 +228,7 @@ export const newGame = (seed: number): GameState => ({
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "none" }, tagline: "" },
   homeLine: { id: "", next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
-  staff: [], candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false }, onCall: { roster: [], lastCall: {}, month: {} },
+  staff: [], candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
   marketing: newMarketing(), fairs: [],
   network: newNetwork(),
   ops: newOps(),

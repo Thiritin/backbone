@@ -10,7 +10,7 @@ import { useStore } from "../../store";
 import { devName } from "../hw";
 import { opLabel } from "../locations/TechButton";
 
-const RULES: [keyof TechRules, string][] = [["failed", "Replace failed parts"], ["worn", "Replace worn parts"], ["blackhole", "Blackhole attacks"], ["updates", "Update vulnerable software"]];
+const RULES: [keyof TechRules, string][] = [["failed", "Replace failed parts"], ["worn", "Replace worn parts"], ["blackhole", "Blackhole attacks"], ["updates", "Update vulnerable software"], ["recover", "Recover corrupted data"]];
 const WEEK_OF = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
 
 // A technician's location, the operations queued there, the location's on-call rotation and the rules all technicians follow.
