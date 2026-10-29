@@ -15,7 +15,7 @@ import "./finance.css";
 
 const CATEGORY: Record<string, string> = {
   payments: "Customer payments", setup: "Setup fees", sales: "Hardware sales", hardware: "Hardware", rent: "Rent", power: "Power", transit: "Transit", salaries: "Salaries",
-  leasing: "Leasing", maintenance: "Remote hands", moving: "Moving", insurance: "Insurance", loans: "Loans", tax: "Tax", subscriptions: "Pear One", ai: "ChadGPT usage", marketing: "Marketing",
+  leasing: "Leasing", maintenance: "Remote hands", moving: "Moving", insurance: "Insurance", loans: "Loans", tax: "Tax", subscriptions: "Pear One", ai: "ChadGPT usage", marketing: "Marketing", fees: "Ransoms and fines",
 };
 const categoryLabel = (c: string) => CATEGORY[c] ?? c.charAt(0).toUpperCase() + c.slice(1);
 const REVENUE = ["payments", "setup", "sales"];

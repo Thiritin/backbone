@@ -6,6 +6,7 @@ import { bump, createTicket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { controlPlaneUp, sitesDown, type Cluster, type Workload } from "./cluster";
+import { breachEligible, breachTick, startBreach, BREACH_CHANCE } from "./breach";
 import { maybeReview } from "./incidents";
 import { familyOf, instanceRisk, openVulns, patchedNow } from "./vulns";
 
@@ -88,7 +89,7 @@ export function securityTick(s: GameState): SimEvent[] {
     s.security = { ...s.security, vuln: v.id, stage: 0, patched: [] };
     events.push({ app: "Security", key: ADVISORY_KEYS[0], params: params(s, v) });
   }
-  events.push(...generatedTick(s));
+  events.push(...generatedTick(s), ...breachTick(s));
   const v = vulnById(s.security.vuln);
   if (!v) return events;
   const next = s.security.stage + 1;
@@ -126,8 +127,10 @@ function generatedTick(s: GameState): SimEvent[] {
   if (s.hour % 24 !== 0) return events;
   for (const c of s.clusters) {
     if (!reachable(s, c)) continue;
-    const risk = instanceRisk(openVulns(s, c.id));
-    if (risk > 0 && rand(hashRng(s.seed, Number(c.id.replace(/\D/g, "")) || 0, s.hour / 24, 91)) < risk) compromise(s, c, events);
+    const open = openVulns(s, c.id), risk = instanceRisk(open), num = Number(c.id.replace(/\D/g, "")) || 0;
+    if (risk <= 0 || rand(hashRng(s.seed, num, s.hour / 24, 91)) >= risk) continue;
+    if (breachEligible(s, c.id, open) && rand(hashRng(s.seed, num, s.hour / 24, 92)) < BREACH_CHANCE) startBreach(s, c, events);
+    else compromise(s, c, events);
   }
   return events;
 }

@@ -107,7 +107,7 @@ describe("replies", () => {
   it("sends an email in the thread for each ticket action", () => {
     const topic: Partial<Record<TicketKind, string>> = { billing: "price", refund: "outage", notice: "movie", legal: "data", appeal: "forgot" };
     for (const [kind, actions] of Object.entries(ACTIONS) as [TicketKind, TicketAction[]][]) {
-      if (kind === "order") continue;
+      if (kind === "order" || kind === "extortion") continue;
       for (const action of actions) {
         const { s, t } = ticket(7, kind, topic[kind] ?? "down");
         expect(resolveTicket(s, t.id, action)).toMatchObject({ ok: true });

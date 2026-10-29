@@ -1520,6 +1520,33 @@ Disclosure is a random day of the release's year. A vulnerability is open on an 
 
 An unattended panel host installed at the start of the game is compromised for the first time after a median of 0.8 years.
 
+### Breaches and ransom
+
+A critical vulnerability that has been open on an instance for more than 30 days can turn the daily exploitation roll into a breach. When the roll hits an instance (the table above) and the instance has such a vulnerability open, 25% of the hits are breaches: the attackers steal the customer data on the host and the host is not compromised in the usual way (no clean-up, no spam). A host with a ransom still undecided cannot be breached again. The customers on a host are those with a workload on it; a mail host holds every customer's mailbox. The tick draws from the seed, the host and the day (the exploitation roll uses tag 91, the breach roll tag 92).
+
+The breach opens an extortion ticket from the Lockbitt Crew. It is an alert, so the game pauses and the sheet opens the ticket in Support. The ticket says the data is offered for sale online and names the sum. The player pays or refuses within 72 hours; no decision by then counts as a refusal, and so does Ignore.
+
+| Rule | Value |
+| --- | --- |
+| Demand | 2 months of the monthly revenue of the customers on the host, at least €500 and at most €50,000, then × 3 from 2013 and × 5 from 2020 |
+| Paying | The demand is booked as `ledger.ransom` (category fees); in 10% of the draws the data is sold anyway, otherwise nothing further happens |
+| Refusing | The data is sold |
+| Customers on a sold host | −40 happiness, 30% cancel at once, 20% write a 1-star review (reason data loss) |
+| Awareness | Falls by 20% in every customer profile (a multiplier of 0.8, so a low awareness cannot go below zero) |
+| Press | A banner reports the breach |
+| Fine | 30 days after a sale, drawn once (table below), booked as `ledger.fine` (category fees) |
+
+| Sale date | Chance of a fine | Fine |
+| --- | --- | --- |
+| Before 25 May 2018 | 20% | €2,000 to €25,000, log-uniform |
+| From 25 May 2018 | 50% | 2% of the last twelve months of customer payments and setup fees, at least €2,000 and at most €200,000 |
+
+The Security app lists every breach in a Breaches card: date, host, ransom, decision and outcome (open, data kept, or sold with the fine pending, none or its sum).
+
+Anchors. Symantec's 2016 Internet Security Threat Report puts the average ransom at USD 679 (up from USD 294 in 2015). Small-business ransoms ran from USD 500 to USD 50,000 in 2016, which gives the bounds before the multipliers. NetDiligence's SME claims data has a median demand near USD 12,000 in 2017 to 2020, and Coalition reports an average demand of about USD 1.2 million for its insured firms in 2021, so the 2020 multiplier of 5 on a demand capped at €50,000 reaches €250,000 for a large host and stays well below that average. A paid ransom is no guarantee, which is why 10% of the payments still end in a sale. Fines: the old German Federal Data Protection Act (BDSG) allowed up to €300,000 and authorities used it rarely, hence 20% and a range far below the cap. The GDPR applies from 25 May 2018 with up to 2% or 4% of annual turnover; the first large fine was €9.55 million against 1&1 Telecom in 2019, so a small company pays the 2% of its own turnover with a floor and a ceiling. The 25% breach share, the 10% and the 30-day exposure are game choices: a patch that is a month old is long enough for the player to have reacted. Ledger category fees is new and holds both the ransom and the fine; no existing expense category fits them.
+
+The balance bot never calls the tick, so its medians do not change; the exposure for a breach stays at 30 days.
+
 ### Updating software
 
 An update installs this year's release at once and sets `updatedAt` to now. The customers on the software are down while it runs:

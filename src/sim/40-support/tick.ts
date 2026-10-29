@@ -13,6 +13,7 @@ import { applyOrderWork } from "../30-market/orders";
 import { howToFactor } from "../85-products/products";
 import { phpAbuse } from "../60-infra/php";
 import { APP_ACTIONS, applyAppWork } from "../60-infra/apps";
+import { decideBreach } from "../60-infra/breach";
 import { serviceOnline } from "./status";
 import { outgoing, sendAction } from "./replies";
 import { overpricing, retains, revertPrice } from "../30-customers/pricing";
@@ -38,6 +39,10 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
     if (!t.work) continue;
     const work = t.work, c = customer(t.customerId);
     t.work = null;
+    if (t.kind === "extortion") {
+      decideBreach(s, t, work.arg === "pay" ? "pay" : "refuse", events);
+      continue;
+    }
     if (t.kind === "order") {
       const e = applyOrderWork(s, t, work.arg, work.by);
       if (e) events.push(e);

@@ -34,7 +34,7 @@ const BOXES: { id: TicketBox; label: string; icon: typeof Inbox; match: (t: Tick
 const ACTION_LABEL: Record<TicketAction, string> = {
   credit: "Credit 10%", retain: "Retention offer", cancel: "Process cancellation", unsuspend: `Unsuspend with ${EXTENSION_DAYS}-day extension`, keep: "Keep suspended",
   forward: "Forward to customer", takedown: `Take down for ${TAKEDOWN_HOURS} h`, reject: "Reject", comply: "Comply", object: "Object", refund: "Refund one month", revert: "Revert price",
-  accept: "Accept order", offerOnce: "Offer one-off update", offerManaged: "Offer managed updates", free: "Update for free", clean: "Clean up site",
+  pay: "Pay ransom", refuse: "Refuse", accept: "Accept order", offerOnce: "Offer one-off update", offerManaged: "Offer managed updates", free: "Update for free", clean: "Clean up site",
 };
 const actionLabel = (tk: Ticket, a: TicketAction) => (tk.kind === "refund" && a === "reject" ? "Refuse" : ACTION_LABEL[a]);
 
@@ -383,7 +383,7 @@ function Thread({ tk }: { tk: Ticket }) {
           <div className="actions-row">
             {actionsOf(tk).filter((a) => a !== "revert" || tk.topic === "price").map((a) => (
               <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => act((s) => resolveTicket(s, tk.id, a))}>
-                {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}{a === "offerOnce" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updateOnce"))})</span>}{a === "offerManaged" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updates"))} a month)</span>}
+                {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}{a === "pay" && <span className="num">({euroCents(Number(p.ransom))})</span>}{a === "offerOnce" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updateOnce"))})</span>}{a === "offerManaged" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updates"))} a month)</span>}
               </button>
             ))}
             <span className="grow" />
