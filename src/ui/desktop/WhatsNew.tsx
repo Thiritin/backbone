@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { appInSentence } from "../apps/registry";
 import type { ChangelogDay } from "../changelog";
@@ -9,6 +9,9 @@ import { PearMark } from "./Intro";
 // The Pear OS update sheet: what changed since the save last saw the game, or the whole changelog from the logo menu.
 export function WhatsNew({ changes }: { changes: ChangelogDay[] }) {
   const { game, openApp, closeNews } = useStore();
+  // The desktop is not in the page yet when a save opens the sheet on the first render.
+  const [host, setHost] = useState<Element | null>(null);
+  useEffect(() => setHost(document.querySelector(".desktop")), []);
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => e.key === "Escape" && closeNews();
@@ -16,7 +19,7 @@ export function WhatsNew({ changes }: { changes: ChangelogDay[] }) {
     return () => window.removeEventListener("keydown", key);
   }, [closeNews]);
 
-  return createPortal(
+  return host && createPortal(
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
       <div className="alert welcome whats-new" role="dialog" aria-modal="true" aria-labelledby="news-title">
         <PearMark />
@@ -27,6 +30,6 @@ export function WhatsNew({ changes }: { changes: ChangelogDay[] }) {
         </div>
       </div>
     </div>,
-    document.querySelector(".desktop")!,
+    host,
   );
 }

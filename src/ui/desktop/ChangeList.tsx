@@ -20,7 +20,7 @@ export function ChangeList({ changes, max = Infinity, appOf, onOpen }: Props) {
               return (
                 <li key={i}>
                   {i}
-                  {app && <button className="btn ghost update-open" onClick={() => onOpen(app)}>Open</button>}
+                  {app && <button className="btn update-open" onClick={() => onOpen(app)}>Open</button>}
                 </li>
               );
             })}
