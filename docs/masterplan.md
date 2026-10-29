@@ -15,7 +15,7 @@ This is the work plan for the next stretch of Backbone. It lists what is built a
 - The owner plays on the Vite dev server (port 5173) from this checkout, so merging code here reloads their page; windows and the Support selection survive reloads (src/ui/session.ts).
 - One lane at a time on its own branch or worktree, merged into main only when everything above is green.
 
-Balance today (main 84d5851): steady medians L2 2006.2, L3 2006.9, L4 2008.7, L5 2012.0, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 589 tests pass.
+Balance today (main 05297ba): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.1; solo L2 2005.8, L3 2006.6, L4 2008.3, L5 2013.1, L6 never; 0 of 20 bankrupt in both. 671 tests pass.
 
 ## Built
 
@@ -35,11 +35,15 @@ Balance today (main 84d5851): steady medians L2 2006.2, L3 2006.9, L4 2008.7, L5
 - Lane 2.0, alerts that pause (ed5d404): `ALERT_KEYS` in src/sim/alerts.ts, `alert` in the store, src/ui/desktop/AlertSheet.tsx with Open and Continue; gdd.md "The desktop", Alerts.
 - Lane 2.1, company site hosting and design ages (8c57a61): rented Strateaux or an own panel host, `siteStatus`, lead and order factors, design generations with Redesign and the age penalty, `customerSite`, Website app styles per generation; the site factor is applied once per website lead flow (84d5851).
 - Lane 4.1, chassis slots and capacity from parts (9c20670): `dimmSlots`, bays by form factor, `pcie`, `psuBays`, sized components, capacity from installed non-failed parts; gdd.md "Chassis and parts", economy.md "Chassis slots".
+- Lane 2.2, panel traits and migration (merged before 05297ba): `from`, `migration` and `cluster` on software, `migrateWebspace` with hours and a 10 minute cutover as a technician operation, clustered FreePanel hosts, spam through `addSpam`, perf 0.7 while hacked; OpenVeeZee added as the free 2005 container platform so the year gate leaves a free hypervisor at the start.
+- Lane 6.1, 6.4, 6.6 (1a3f756): email orders bill the setup fee and the manual quote has a Setup fee field; customer credit and suspend actions, ticket assignment to an agent, cancel confirmations; speed and app selections survive a reload.
+- Lane 4.2, shop builds and rack upgrades (Merge Lane 4.2): bare chassis, presets with extras in the cart, a Parts tab with sized parts, `installPart` and `removePart` with hot-swap rules and the "part" technician operation, slots per group in the Components card.
+- Lane 2.1b, domains, registrar partners and company email (05297ba): NameCheep, GoDuddy, InterNetY and OpenSRSly with tiers, monthly domain billing, the company domain gating the website, tutorial steps for domain and email, external mail (Hosted Exchange, Goggle Workspace, Lookout 365) or self-hosted Postfixit and Mailpig with impaired delivery effects.
 - Lane 6.2 and 6.7 (62c30a9): setup fees booked as their own Finance category, the Products app shows the internet line, Network per month includes address costs, the RIPE buttons checked in the browser.
 
 ## In flight
 
-Wave 2 in worktrees: Lane 2.1b, Lane 4.2, Lane 2.0b. Merged from wave 2: Lane 2.2, Lane 6 items 6.1, 6.4 and 6.6.
+Wave 3 in worktrees: Lane 2.0b, Lane 2b.1, Lane 3.1, Lane 4.3, Lane 4.4.
 
 ## What Lane 1 left behind (read before Lanes 2 and 3)
 
@@ -58,8 +62,8 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 2.0 | Alerts that pause the game | Built (ed5d404) |
 | 2.0b | News feed and notification settings per type | 2.0 |
 | 2.1 | Company site hosting, customer sites, design ages | Built (8c57a61) |
-| 2.1b | Domains, registrar partners and company email | 2.1 (website channel needs the domain) |
-| 2.2 | Panel traits, migration as a hand task, compromised sites and mail | 2.1 (site status), Lane 1 `addSpam` |
+| 2.1b | Domains, registrar partners and company email | Built (05297ba) |
+| 2.2 | Panel traits, migration as a hand task, compromised sites and mail | Built |
 | 2b.1 | Software versions, generated vulnerabilities, monitoring, updates | 2.0 (alerts), 2.2 (panel traits in the catalog) |
 | 2b.2 | Customer applications, notify and the update service | 2b.1 |
 | 2b.3 | Game server panels | 2b.1 |
@@ -71,7 +75,7 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 3.5 | Terminal: ssh, ping, traceroute, recover | 3.4 |
 | 3b | Searchlight | 3.2 (searches sites and consoles) |
 | 4.1 | Chassis slots and capacity from parts | Built (9c20670) |
-| 4.2 | Shop: bare chassis, presets with extras, parts, upgrades in the rack | 4.1 |
+| 4.2 | Shop: bare chassis, presets with extras, parts, upgrades in the rack | Built |
 | 4.3 | Top-down lid-off view | 4.1, 4.2 |
 | 4.4 | Part prices over time | 4.1, 4.2 |
 | 4.5 | GPU computing | 4.1, 4.4 |
