@@ -72,4 +72,13 @@ describe("checklist", () => {
     const { checklist: _, ...old } = newGame(1);
     expect(deserialize(JSON.stringify(old)).checklist).toEqual([]);
   });
+
+  it("drops the removed Checklist app from an old save's dock", () => {
+    const raw = JSON.parse(serialize(newGame(1)));
+    raw.installed = [...raw.installed, "Checklist"];
+    const s = deserialize(JSON.stringify(raw));
+    expect(s.installed).not.toContain("Checklist");
+    expect(s.installed).toContain("Support");
+    expect(newGame(1).installed).not.toContain("Checklist");
+  });
 });

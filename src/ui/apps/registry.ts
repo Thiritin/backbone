@@ -1,12 +1,11 @@
 import {
-  Activity, AppWindow, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, Landmark, LifeBuoy, ListChecks, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, AppWindow, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, Landmark, LifeBuoy, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { BankApp } from "./bank/BankApp";
 import { BillingApp } from "./billing/BillingApp";
 import { BrowserApp } from "./browser/BrowserApp";
-import { ChecklistApp } from "./checklist/ChecklistApp";
 import { FinanceApp } from "./finance/FinanceApp";
 import { MarketingApp } from "./marketing/MarketingApp";
 import { MarketApp } from "./market/MarketApp";
@@ -68,7 +67,6 @@ export const APPS: AppDef[] = [
   { name: "Security", icon: ShieldAlert, tile: "oklch(0.58 0.17 25)", about: "Lists the nodes a PHP vulnerability affects and takes their sites offline, patches and cleans them up.", hidden: true, body: SecurityApp },
   { name: "Notes", icon: FileText, tile: "oklch(0.7 0.13 85)", about: "Edits the notes on your desktop.", hidden: true },
   { name: "News", icon: Newspaper, tile: "oklch(0.55 0.12 30)", about: "Lists the headlines about new software, hardware and market changes.", hidden: true, body: NewsApp },
-  { name: "Checklist", icon: ListChecks, tile: "oklch(0.58 0.14 150)", about: "Lists the goals from your first server to your own datacenter and marks the ones you reach.", body: ChecklistApp },
   { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: "Sets your company name and logo, the theme and which apps may send notifications." },
 ];
 
