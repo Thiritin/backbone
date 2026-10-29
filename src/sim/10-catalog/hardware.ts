@@ -210,13 +210,15 @@ export interface DeviceModel {
   failYearly?: number;
 }
 
-// Within a class, manufacturers differ in price and failure rate, never in specs.
-export interface Manufacturer { id: string; name: string; kinds: DeviceKind[]; priceFactor: number; failureFactor: number }
+// Within a class, manufacturers differ in price, failure rate, release month, end of sale and power draw, never in specs.
+// fromShift moves a model's release in months, untilShift its last year on sale in years, wattsFactor scales its draw; the
+// defaults are 0, 0 and 1.
+export interface Manufacturer { id: string; name: string; kinds: DeviceKind[]; priceFactor: number; failureFactor: number; fromShift?: number; untilShift?: number; wattsFactor?: number }
 export const MANUFACTURERS: Manufacturer[] = [
   { id: "dwell", name: "Dwell", kinds: ["server"], priceFactor: 1, failureFactor: 1 },
-  { id: "hewlett-packet", name: "Hewlett-Packet", kinds: ["server"], priceFactor: 1.08, failureFactor: 0.8 },
-  { id: "supermacro", name: "SuperMacro", kinds: ["server"], priceFactor: 0.9, failureFactor: 1.3 },
-  { id: "lenovoid", name: "Lenovoid", kinds: ["server"], priceFactor: 0.95, failureFactor: 1.1 },
+  { id: "hewlett-packet", name: "Hewlett-Packet", kinds: ["server"], priceFactor: 1.08, failureFactor: 0.8, fromShift: 3, untilShift: -1, wattsFactor: 0.95 },
+  { id: "supermacro", name: "SuperMacro", kinds: ["server"], priceFactor: 0.9, failureFactor: 1.3, fromShift: -4, untilShift: 1, wattsFactor: 1.05 },
+  { id: "lenovoid", name: "Lenovoid", kinds: ["server"], priceFactor: 0.95, failureFactor: 1.1, fromShift: 6 },
   { id: "sysko", name: "Sysko", kinds: ["switch", "firewall", "gateway"], priceFactor: 1, failureFactor: 1 },
   { id: "junipurr", name: "Junipurr", kinds: ["switch", "gateway"], priceFactor: 1.1, failureFactor: 0.7 },
   { id: "aristotle", name: "Aristotle", kinds: ["switch"], priceFactor: 0.93, failureFactor: 1.2 },
@@ -430,7 +432,21 @@ export const dualPsuModel = (id: string): DeviceModel | undefined => MODELS.find
 export const manufacturerByName = (name: string): Manufacturer | undefined => MANUFACTURERS.find((m) => m.name === name);
 // What a unit of this model costs from this manufacturer.
 export const priceOf = (model: DeviceModel, brand: string): number => Math.round(model.price * (model.brand ? 1 : manufacturerByName(brand)?.priceFactor ?? 1));
-export const shopModels = (year: number): DeviceModel[] => MODELS.filter((m) => m.from <= year && (m.until === null || year <= m.until) && m.price > 0);
+// What a brand's variant of a model does: the release as a month count (year * 12 + month, January 0), the last year on
+// sale (null while it stays on sale) and the draw in watts. A model fixed to one brand has no variants.
+const shifted = (m: DeviceModel, brand: string) => (m.brand ? undefined : manufacturerByName(brand));
+export const brandFrom = (m: DeviceModel, brand: string): number => m.from * 12 + (shifted(m, brand)?.fromShift ?? 0);
+export const brandUntil = (m: DeviceModel, brand: string): number | null => (m.until === null ? null : m.until + (shifted(m, brand)?.untilShift ?? 0));
+export const wattsFactorOf = (m: DeviceModel, brand: string): number => shifted(m, brand)?.wattsFactor ?? 1;
+export const brandWatts = (m: DeviceModel, brand: string): number => m.watts * wattsFactorOf(m, brand);
+// Whether the brand sells the model in this month (year * 12 + month); the end of sale is the last month of its last year.
+export const brandOnSale = (m: DeviceModel, brand: string, month: number): boolean => {
+  const until = brandUntil(m, brand);
+  return brandFrom(m, brand) <= month && (until === null || month < (until + 1) * 12);
+};
+// The models some brand sells during the year.
+export const shopModels = (year: number): DeviceModel[] =>
+  MODELS.filter((m) => m.price > 0 && brandsOf(m).some((b) => brandFrom(m, b) < (year + 1) * 12 && (brandUntil(m, b) ?? year) >= year));
 
 // NVMe drive size per generation in GB; NVMe-capable bays come with G4, so the drives do too.
 const NVME_GB = [0, 0, 0, 1000, 2000, 8000, 15000];
@@ -439,7 +455,7 @@ export const samePart = (a: PartSpec, b: PartSpec): boolean => a.kind === b.kind
 // the current generation's sizes and the one before, plus NVMe drives.
 export function partOffers(year: number): PartSpec[] {
   const out: PartSpec[] = [], add = (p: PartSpec) => { if (!out.some((o) => samePart(o, p))) out.push(p); };
-  for (const m of shopModels(year)) for (const v of vendorsOf(m)) componentParts(m, v).forEach(add);
+  for (const m of MODELS.filter((x) => x.from <= year && (x.until === null || year <= x.until) && x.price > 0)) for (const v of vendorsOf(m)) componentParts(m, v).forEach(add);
   const g = generationAt(year);
   for (const i of [g - 1, g]) if (NVME_GB[i]) add({ kind: "nvme", size: NVME_GB[i], ff: "nvme" });
   for (const c of gpuOffers(year)) add({ kind: "gpu", size: c.year });

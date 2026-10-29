@@ -10,10 +10,11 @@ import { dateOf, formatClock, SKIP, SPEEDS, type Speed } from "../../sim/00-core
 import { euro } from "../../sim/00-core/money";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../sim/90-actions/travel";
-import { clockCarry, useStore, type Win } from "../store";
+import { useStore, type Win } from "../store";
 import { CompanyMark } from "../apps/company";
 import { appFor } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
+import { BUILD_ID } from "../leaderboard";
 
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
@@ -64,7 +65,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      {item("Backbone", [["Introduction…", () => setIntro(true)], ["Backbone on GitHub", () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], ["New note", () => newNote()], ...(guideGone ? [["Restore Getting started", () => act(restoreGuide)] as [string, () => void]] : []), ["What's new", () => openNews(EMBEDDED)], ["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
+      {item("Backbone", [["Introduction…", () => setIntro(true)], ["Backbone on GitHub", () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], ["Backbone on Discord", () => window.open("https://discord.gg/e8nTAV8Yk7", "_blank", "noopener")], ["Report an issue", () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], ["New note", () => newNote()], ...(guideGone ? [["Restore Getting started", () => act(restoreGuide)] as [string, () => void]] : []), ["What's new", () => openNews(EMBEDDED)], ["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
       {front ? item(appFor(game, front.app).name, appMenu(front), appFor(game, front.app).name, "mb-app") : <span className="mb-item mb-app">Backbone</span>}
       {item("Window", windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : [appFor(game, w.app).name, () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
@@ -84,7 +85,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
         })}
       </div>
       <span className="mb-sep" />
-      <Clock hour={game.hour} running={speed > 0} />
+      <span className="mb-item num">{formatClock(game.hour, game.minute)}</span>
       <span className="mb-sep" />
       <span className="mb-item mb-cash num">{euro(game.cash)}</span>
       <button className="mb-item mb-badge" aria-label={unseen ? `Notifications, ${unseen} new` : "Notifications"} onClick={onBell}>
@@ -109,20 +110,6 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       )}
     </header>
   );
-}
-
-function Clock({ hour, running }: { hour: number; running: boolean }) {
-  const [minute, setMinute] = useState(0);
-  useEffect(() => {
-    let raf = 0;
-    const frame = () => {
-      setMinute(Math.floor(clockCarry.current * 60));
-      if (running) raf = requestAnimationFrame(frame);
-    };
-    frame();
-    return () => cancelAnimationFrame(raf);
-  }, [hour, running]);
-  return <span className="mb-item num">{formatClock(hour, minute)}</span>;
 }
 
 // Today's weather in a city: a pick per city and day, with snow only in winter.

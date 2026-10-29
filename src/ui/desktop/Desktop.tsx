@@ -64,15 +64,15 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
     notify("Settings", t("save.loaded.title"), t("save.loaded.text"));
   }, [notify]);
 
-  // Clock: whole game hours from real time × speed; leftovers carry into the next frame.
+  // Clock: whole game minutes from real time × speed; leftovers carry into the next frame.
   useEffect(() => {
     if (!speed) return;
     let last = performance.now(), raf = 0;
     const frame = (now: number) => {
       carry.current += ((now - last) * speed) / MS_PER_HOUR;
       last = now;
-      const hours = Math.floor(carry.current);
-      if (hours > 0) { carry.current -= hours; advance(Math.min(hours, 24)); }
+      const minutes = Math.floor(carry.current * 60);
+      if (minutes > 0) { carry.current -= minutes / 60; advance(Math.min(minutes, 24 * 60) / 60); }
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);

@@ -68,7 +68,7 @@ describe("search", () => {
 
   it("hides apps that are not installed and caps groups and the total", () => {
     const s = readyGame(4);
-    expect(search(s, "marketing")).toEqual([]);
+    expect(search(s, "virtual")).toEqual([]);
     for (let i = 0; i < 40; i++) addCustomer(s, `Cust ${i}`, "private");
     const hits = search(s, "c");
     expect(hits.filter((h) => h.group === "Customers").length).toBeLessThanOrEqual(PER_GROUP);

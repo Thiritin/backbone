@@ -6,7 +6,7 @@ import { datacenterById } from "../20-world/datacenters";
 import type { Customer } from "../30-customers/customers";
 import { bump, createTicket, profileStats } from "../40-support/tickets";
 import type { Device, GameState, Location, Rack } from "../50-state";
-import { addReview, starsFor, type ReviewReason } from "../80-business/marketing";
+import { addReview, announceReview, starsFor, type ReviewReason } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
 import { hostOfVm, isOwnVm, pickNode, vmOf, type Workload } from "./cluster";
 import type { Incident } from "./ops";
@@ -37,8 +37,7 @@ export const hasBackupElsewhere = (s: GameState, workloadId: string): boolean =>
 // economy.md, Reviews: 10% of affected customers write one, 20% below happiness 40.
 export function maybeReview(s: GameState, c: Customer, reason: ReviewReason, r: Rng, events: SimEvent[], stars = starsFor(c.happiness, r)): void {
   if (rand(r) >= (c.happiness < 40 ? 0.2 : 0.1)) return;
-  const review = addReview(s, c.id, stars, reason);
-  if (review) events.push({ app: "Marketing", key: "event.review", params: { customer: review.name, stars: review.stars } });
+  announceReview(s, addReview(s, c.id, stars, reason), events);
 }
 
 const atLocation = (s: GameState, w: Workload, locId: string): boolean => {

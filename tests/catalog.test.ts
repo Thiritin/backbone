@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { hourOf } from "../src/sim/00-core/time";
+import { hourOf, monthIndexOf } from "../src/sim/00-core/time";
 import { GENERATIONS } from "../src/sim/10-catalog/economy";
-import { brandsFor, MANUFACTURERS, MODELS, modelById, priceOf, shopModels, type DeviceModel } from "../src/sim/10-catalog/hardware";
-import { newGame, type GameState } from "../src/sim/50-state";
-import { linkStatus } from "../src/sim/60-infra/status";
+import { brandFrom, brandOnSale, brandUntil, brandWatts, brandsFor, MANUFACTURERS, MODELS, modelById, priceOf, shopModels, type DeviceModel } from "../src/sim/10-catalog/hardware";
+import { device, newGame, type GameState } from "../src/sim/50-state";
+import { deviceWatts, linkStatus } from "../src/sim/60-infra/status";
 import { addLocation, buyRack, connect, disconnect } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
@@ -141,5 +141,50 @@ describe("old model ids", () => {
     const loaded = deserialize(JSON.stringify(raw));
     expect(loaded.devices.map((d) => d.model)).toEqual(["g1-compute", "sw-8", "home-router", "g1-compute", "g2-memory"]);
     for (const d of loaded.devices) expect(() => modelById(d.model)).not.toThrow();
+  });
+});
+
+describe("manufacturer variation", () => {
+  const m = modelById("g2-compute");
+  const month = (year: number, mo: number) => year * 12 + mo;
+  it("shifts the release in months", () => {
+    expect(["SuperMacro", "Dwell", "Hewlett-Packet", "Lenovoid"].map((b) => brandFrom(m, b) - m.from * 12)).toEqual([-4, 0, 3, 6]);
+  });
+  it("a SuperMacro model is on sale before Dwell's and leaves later", () => {
+    expect(brandOnSale(m, "SuperMacro", month(2007, 8))).toBe(true);
+    expect(brandOnSale(m, "Dwell", month(2007, 8))).toBe(false);
+    expect(brandOnSale(m, "Dwell", month(2008, 0))).toBe(true);
+    expect(brandOnSale(m, "Hewlett-Packet", month(2008, 2))).toBe(false);
+    expect(brandOnSale(m, "Hewlett-Packet", month(2008, 3))).toBe(true);
+    expect(brandUntil(m, "SuperMacro")).toBe(m.until! + 1);
+    expect(brandUntil(m, "Hewlett-Packet")).toBe(m.until! - 1);
+    expect(brandOnSale(m, "Dwell", month(m.until! + 1, 0))).toBe(false);
+    expect(brandOnSale(m, "SuperMacro", month(m.until! + 1, 0))).toBe(true);
+  });
+  it("lists a model in the shop while any brand sells it", () => {
+    expect(shopModels(2007).map((x) => x.id)).toContain("g2-compute");
+    expect(shopModels(2006).map((x) => x.id)).not.toContain("g2-compute");
+    expect(shopModels(m.until! + 1).map((x) => x.id)).toContain("g2-compute");
+    expect(shopModels(m.until! + 2).map((x) => x.id)).not.toContain("g2-compute");
+  });
+  it("watts differ by brand", () => {
+    expect(brandWatts(m, "SuperMacro")).toBeCloseTo(m.watts * 1.05, 9);
+    expect(brandWatts(m, "Hewlett-Packet")).toBeCloseTo(m.watts * 0.95, 9);
+    expect(brandWatts(m, "Dwell")).toBe(m.watts);
+    expect(brandWatts(m, "Lenovoid")).toBe(m.watts);
+  });
+  it("a device draws its brand's watts", () => {
+    const draw = (brand: string) => deviceWatts(device("d", "g2-compute", brand, null, 0, null, "d", 0));
+    expect(draw("SuperMacro")).toBeGreaterThan(draw("Dwell"));
+    expect(draw("Hewlett-Packet")).toBeLessThan(draw("Dwell"));
+    expect(draw("Dwell")).toBe(m.watts);
+  });
+  it("refuses to buy a brand before its release month", () => {
+    const s = newGame(1);
+    s.hour = hourOf(new Date(Date.UTC(2008, 1, 1)));
+    expect(monthIndexOf(s.hour)).toBe(month(2008, 1));
+    s.cash = 1e9;
+    expect(buyDevice(s, "g2-compute", "Hewlett-Packet", 1, "loc1")).toEqual({ ok: false, error: "error.notInShop" });
+    expect(buyDevice(s, "g2-compute", "SuperMacro", 1, "loc1").ok).toBe(true);
   });
 });

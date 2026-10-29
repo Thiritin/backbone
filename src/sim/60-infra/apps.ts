@@ -12,6 +12,8 @@ import { serviceOnline } from "../40-support/status";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "../90-actions/hardware";
+import { vmOf } from "./cluster";
+import { REBUILT } from "./security";
 import { HOURS_PER_YEAR } from "./status";
 import { affects, exposureDays, instanceRisk, rank, vulnsFor, type OpenVuln, type Vulnerability } from "./vulns";
 
@@ -20,7 +22,13 @@ import { affects, exposureDays, instanceRisk, rank, vulnsFor, type OpenVuln, typ
 export interface Sites { defaced: string[]; hacks: Record<string, number[]>; notified: string[] }
 export const newSites = (): Sites => ({ defaced: [], hacks: {}, notified: [] });
 
-export const APP_ACTIONS: TicketAction[] = ["offerOnce", "offerManaged", "free", "clean"];
+export const APP_ACTIONS: TicketAction[] = ["offerOnce", "offerManaged", "free", "clean", "noBackup"];
+
+// Only a backup of the site lets the player restore it after a defacement.
+export function hasBackup(s: GameState, serviceId: string | null): boolean {
+  const w = s.workloads.find((x) => x.serviceId === serviceId);
+  return !!w && (vmOf(s, w) ?? w).backupAt !== null;
+}
 
 const idNum = (id: string): number => Number(id.replace(/\D/g, "")) || 0;
 const vulnNo = (v: Vulnerability): number => Number(v.id.split("-").pop());
@@ -76,10 +84,11 @@ function clearDefacement(s: GameState, serviceId: string): void {
   s.sites = { ...s.sites, defaced: s.sites.defaced.filter((id) => id !== serviceId) };
 }
 
-// The player cleans a defaced site up: 30 minutes of their time, and the customer's ticket is resolved.
+// The player restores a defaced site from its backup: 30 minutes of their time, and the customer's ticket is resolved.
 export function cleanSite(s: GameState, serviceId: string): ActionResult {
   const v = s.services.find((x) => x.id === serviceId);
   if (!v || !s.sites.defaced.includes(serviceId)) return { ok: false, error: "error.notDefaced" };
+  if (!hasBackup(s, serviceId)) return { ok: false, error: "error.noBackup" };
   s.playerBusyUntil = Math.max(s.playerBusyUntil, s.hour * 60) + CLEAN_MINUTES;
   clearDefacement(s, serviceId);
   s.customers = s.customers.map((c) => (c.id === v.customerId ? { ...c } : c));
@@ -183,9 +192,15 @@ export function appMonitoring(s: GameState): AppRow[] {
 export function applyAppWork(s: GameState, t: Ticket, c: Customer, action: string): Ticket["outcome"] | null {
   const v = s.services.find((x) => x.id === t.serviceId);
   if (!v || v.endedAt !== null) return "updated";
-  if (action === "clean") {
+  if (action === "clean" && hasBackup(s, v.id)) {
     clearDefacement(s, v.id);
     return "cleaned";
+  }
+  // Without a backup the customer has to rebuild the site themselves.
+  if (action === "clean" || action === "noBackup") {
+    clearDefacement(s, v.id);
+    bump(c, REBUILT);
+    return "noBackup";
   }
   if (action === "free") {
     updateApps(s, new Set([v.id]));

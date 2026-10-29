@@ -22,6 +22,8 @@ const day = (p: Params) => {
 };
 const setupFee = (p: Params) => (Number(p.setup) > 0 ? ` plus a one-time setup fee of ${euroCents(Number(p.setup))}` : "");
 const hosting = (p: Params) => (p.domain ? `${p.line} for ${p.domain}` : p.line);
+// The live mail covers the domain step too: registered for a new name, transferred for one the customer owned.
+const domainLine = (p: Params) => (Number(p.owned) ? `The transfer of ${p.domain} to us is complete, and we take care of its renewals from now on.` : `We have registered ${p.domain} for you.`);
 
 // Three wordings for each email the company sends; replies.ts picks one by the seed.
 const MAILS: Record<string, [Mail, Mail, Mail]> = {
@@ -99,6 +101,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Our costs went up this year, and the new price for ${svc(p)} lets us keep it fast and reliable.`,
     (p) => `We understand the increase is unwelcome. Power and hardware prices rose, and the new price keeps ${svc(p)} at the quality you know.`,
     (p) => `The new price for ${svc(p)} reflects higher costs for power and hardware. It also pays for the people who answer emails like this one.`,
+  ],
+  noBackup: [
+    (p) => `We have no backup of ${site(p)} to restore. Please upload the site again from your own copy and choose new passwords.`,
+    (p) => `Unfortunately there is no backup of ${site(p)} on our side. You will need to restore it from your own files and change your passwords.`,
+    (p) => `We cannot restore ${site(p)} because no backup exists. Please rebuild it from your own copy and keep the software up to date.`,
   ],
   "tpl.awaitPayment": [
     () => "Thank you. Your services come back online as soon as the payment arrives.",
@@ -240,37 +247,22 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Here is our offer for ${hosting(p)} in ${p.city}: ${euroCents(Number(p.price))} a month${setupFee(p)}. We set everything up as soon as you confirm.`,
     (p) => `Thanks for getting in touch. For ${hosting(p)} we would charge ${euroCents(Number(p.price))} a month${setupFee(p)}. Tell us if you would like to go ahead.`,
   ],
-  "order.account": [
-    (p) => `Thank you for your order of ${hosting(p)}. We have opened a customer account for you and will send the order confirmation with your invoice shortly.`,
-    (p) => `Welcome to ${p.company}! Your customer account is ready. The confirmation of ${hosting(p)} and the invoice follow in a moment.`,
-    () => "Thank you for choosing us. Your customer account has been created, and we are preparing your order confirmation now.",
-  ],
   "order.invoice": [
     (p) => `We confirm your order of ${hosting(p)} at ${euroCents(Number(p.price))} a month. Invoice ${p.invoice} over ${euroCents(Number(p.total))} is attached. We set everything up as soon as it is paid.`,
     (p) => `Your order is confirmed: ${hosting(p)} in ${p.city} for ${euroCents(Number(p.price))} a month. Please pay invoice ${p.invoice} (${euroCents(Number(p.total))}), and we will get started.`,
     (p) => `Thank you, the order stands. ${hosting(p)} costs ${euroCents(Number(p.price))} a month; the first invoice, ${p.invoice}, comes to ${euroCents(Number(p.total))}.`,
   ],
-  "order.domain": [
-    (p) => `Good news: ${p.domain} is registered in your name. It will point to your web space once that is set up.`,
-    (p) => `We have registered ${p.domain} for you. It is yours for a year and renews with us.`,
-    (p) => `${p.domain} is now registered for you. The web space follows next.`,
-  ],
-  "order.transfer": [
-    (p) => `The transfer of ${p.domain} to us is complete. Nothing changes for you except who renews it.`,
-    (p) => `${p.domain} has moved to us. We will take care of the renewals from now on.`,
-    (p) => `We have taken over ${p.domain} from your previous provider. It will point to your new web space.`,
-  ],
   "order.live": [
     (p) => (p.domain
-      ? `${p.domain} is live on our servers in ${p.city} since ${day(p)}. Log in at panel.${p.host} with the user name ${String(p.domain).split(".")[0]}; the password follows in a separate email. Upload your site by FTP to ftp.${p.domain}.`
+      ? `${domainLine(p)} It is live on our servers in ${p.city} since ${day(p)}. Log in at panel.${p.host} with the user name ${String(p.domain).split(".")[0]}; the password follows in a separate email. Upload your site by FTP to ftp.${p.domain}.`
       : `Your ${p.line} in ${p.city} is running since ${day(p)}. Log in as root over SSH; the address and password follow in a separate email.`),
     (p) => (p.domain
-      ? `Your web space for ${p.domain} is ready since ${day(p)}. The control panel is at panel.${p.host}, and your mailboxes are set up at mail.${p.host}.`
+      ? `${domainLine(p)} Your web space is ready since ${day(p)}. The control panel is at panel.${p.host}, and your mailboxes are set up at mail.${p.host}.`
       : `${p.line} is up in ${p.city} since ${day(p)}. Your root login is on its way by separate email.`),
-    (p) => `Everything is set up: ${hosting(p)} runs in ${p.city} since ${day(p)}. Your access details follow in a separate email.`,
+    (p) => `Everything is set up: ${hosting(p)} runs in ${p.city} since ${day(p)}.${p.domain ? ` ${domainLine(p)}` : ""} Your access details follow in a separate email.`,
   ],
 };
-const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.account", "order.invoice", "order.domain", "order.transfer", "order.live"];
+const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live"];
 const SENDER = ["forward", "takedown", "notOurs", "reject", "comply", "object"];
 
 // Outgoing emails; spread into en.

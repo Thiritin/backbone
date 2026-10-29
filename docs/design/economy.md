@@ -4,7 +4,7 @@ This doc turns the systems in the [game design document](gdd.md) into formulas a
 
 ## Clock and pacing
 
-At 1×, the game clock runs 60 times faster than real time: one game minute lasts 1 second, one game hour 1 minute, and a game day 24 minutes. The clock shows every game minute, but the simulation ticks every game hour. Billing, salaries, know-how and the market run on the monthly tick.
+At 1×, the game clock runs 60 times faster than real time: one game minute lasts 1 second, one game hour 1 minute, and a game day 24 minutes. The simulation ticks every game hour; between ticks the clock steps game minutes, and queued hand work (a reply, an order step, a domain move) lands at the minute it is done rather than at the next full hour. A server boots in 3 game minutes and a domain registers in 2. Billing, salaries, know-how and the market run on the monthly tick.
 
 | Speed | Game hour | Game day | Game month | Game year |
 | --- | --- | --- | --- | --- |
@@ -182,24 +182,24 @@ GPU rental is priced per card a month by year, straight between these anchors an
 
 **Resale of parts.** A spare part in storage sells at the current part price times the resale curve of Buying and selling, and counts at that value in net worth. A RAM stick bought in 2023 and sold in 2026 sells for more than it cost.
 
-**Manufacturers.** Within a class, manufacturers differ in price and failure rate, never in specs. A unit costs the model's price × the price factor, and its failure rate is the base AFR × the failure factor.
+**Manufacturers.** Within a class, manufacturers differ in price, failure rate, release, end of sale and power draw, never in specs. A unit costs the model's price × the price factor, its failure rate is the base AFR × the failure factor, it reaches the Shop the release shift in months from the model's year, its last year on sale moves by the end of sale shift in years, and it draws the model's watts × the power factor (CPUs and chassis; GPU cards are unchanged). The Shop lists a model while any manufacturer sells it, and a unit can only be bought from the month its manufacturer releases it. Switches, security appliances, patch panels, routers, UPS units and PDUs have no shift and a power factor of 1.00.
 
-| Class | Manufacturer | Price factor | Failure factor |
-| --- | --- | --- | --- |
-| Servers | Dwell | 1.00 | 1.00 |
-| Servers | Hewlett-Packet | 1.08 | 0.80 |
-| Servers | SuperMacro | 0.90 | 1.30 |
-| Servers | Lenovoid | 0.95 | 1.10 |
-| Switches | Sysko | 1.00 | 1.00 |
-| Switches | Junipurr | 1.10 | 0.70 |
-| Switches | Aristotle | 0.93 | 1.20 |
-| Security appliances | Sysko | 1.00 | 1.00 |
-| Security appliances | Fortinope | 0.90 | 1.25 |
-| Security appliances | Pablo Alto | 1.10 | 0.75 |
-| Patch panels | Pandoot | 1.00 | 1.00 |
-| Routers | AVN | 1.00 | 0.90 |
-| Routers | MicroTick | 1.00 | 1.20 |
-| UPS units and PDUs | Eatin | 1.00 | 1.00 |
+| Class | Manufacturer | Price factor | Failure factor | Release shift | End of sale shift | Power factor |
+| --- | --- | --- | --- | --- | --- | --- |
+| Servers | Dwell | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Servers | Hewlett-Packet | 1.08 | 0.80 | +3 months | -1 year | 0.95 |
+| Servers | SuperMacro | 0.90 | 1.30 | -4 months | +1 year | 1.05 |
+| Servers | Lenovoid | 0.95 | 1.10 | +6 months | 0 | 1.00 |
+| Switches | Sysko | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Switches | Junipurr | 1.10 | 0.70 | 0 | 0 | 1.00 |
+| Switches | Aristotle | 0.93 | 1.20 | 0 | 0 | 1.00 |
+| Security appliances | Sysko | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Security appliances | Fortinope | 0.90 | 1.25 | 0 | 0 | 1.00 |
+| Security appliances | Pablo Alto | 1.10 | 0.75 | 0 | 0 | 1.00 |
+| Patch panels | Pandoot | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Routers | AVN | 1.00 | 0.90 | 0 | 0 | 1.00 |
+| Routers | MicroTick | 1.00 | 1.20 | 0 | 0 | 1.00 |
+| UPS units and PDUs | Eatin | 1.00 | 1.00 | 0 | 0 | 1.00 |
 
 A router is built by one manufacturer only (Sysko, AVN, MicroTick or Junipurr, by model) and sells at its list price. Junipurr's switch price factor does not apply to its routers.
 
@@ -551,6 +551,7 @@ Every customer has a happiness value H from 0 to 100. Events move it up and down
 | Ticket closed with a wrong answer | −10, plus a follow-up ticket |
 | An hour of outage on one of their services, once the outage has outlasted their tolerance | − outage penalty per hour that counts on the customer's clock (profile table) |
 | Credit issued | +3 per 10% of the monthly fee |
+| A month in which every service kept its SLA uptime | +2, at the monthly billing date |
 | Price raised | −1 per 1% of increase, more past the customer's maximum (Price tolerance) |
 | Price lowered | +0.2 per 1% of decrease, at most +10 |
 
@@ -918,7 +919,7 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | Staff | Staff | €20 | €5 per employee | Employee management skill |
 | Marketing | Marketing | €20 | | Marketing campaigns skill |
 | Market | Market | €15 | | Market research skill |
-| Dock badges | Upgrade: counts on dock apps | €5 | | Monitoring skill |
+| Dock badges | Upgrade: counts on dock apps other than Support | €5 | | Monitoring skill |
 | Searchlight | Upgrade: global search on Ctrl+K and Cmd+K | €2 | | Start |
 | Widgets | Upgrade: one desktop widget each | €1 (calendar, open tickets, cash, customers), €2 (monthly revenue, level) | | Start |
 | AI bots | ChadGPT Support €50, Clipsy Reminders €100, per bot | ChadGPT: every reply in tokens, see [ChadGPT usage](#chadgpt-usage) | | Automation skill |
@@ -1092,11 +1093,11 @@ Stuck boots, hangs and lockouts are rolled per device and hour and do not draw f
 - **Out of support.** Hands-on work on the device (swapping, installing or removing a part) takes twice as long, a spare part for it costs 1.5 times its price (the extra half is booked as a grey market premium when the part goes in), and every component fails 1.2 times as often because the firmware no longer gets fixes. Work that takes no time on a running device stays instant.
 - **News.** Each non-server model ends with a Heize online item on 1 January of the year after its last year on sale.
 
-**Used hardware.** Listings come from the current preset price of the model (Part prices by year for servers, eroded list prices for the rest) with the seller's brand factor.
+**Used hardware.** Listings come from the current preset price of the model (Part prices by year for servers, eroded list prices for the rest) with the seller's brand factor. A listing's brand has already released the model.
 
 | Rule | Value |
 | --- | --- |
-| New listings per channel and month | 2 to 6, posted over the month at random hours; a model qualifies once its launch is at least 2 years back |
+| New listings per channel and month | 2 to 6, posted over the month at random hours, the first month with the new game; a model qualifies once its launch is at least 2 years back, and a model from 2005 counts as launched in 2002, so 2005 listings are 1 to 3 years old at the usual price bands |
 | Age of a unit | 1 year up to the years since the model's launch |
 | WebHostingTalc ask | 60% of the preset price at 1 year falling in a straight line to 45% at 6 years and older |
 | Telegrump ask | 45% falling to 30% the same way; 15% of the deals are scams that take the money and ship nothing |
@@ -1112,6 +1113,16 @@ Stuck boots, hangs and lockouts are rolled per device and hour and do not draw f
 | Clearance weekend | Once a year: 10 eBuy auctions ending on the second evening |
 
 Used devices are never insured, cannot be leased and resell from the price paid like any other device. Anchors: eBay server lots sold at 30% to 50% of list in the 2000s, and WebHostingTalk marketplace asks sit around half of the new price.
+
+**Burn-in.** A racked server that is on, has power and sits in no cluster and runs no workload can be burned in. The server counts as busy for the whole test: it draws its full rated power at the location's rate, and in a datacenter the rack position and power limit are used as usual. The test ends early if the server loses power.
+
+| Rule | Value |
+| --- | --- |
+| Quick | 6 hours; every hidden part at 80% of its life or more is marked worn, the others stay unknown; no failures |
+| Full | 48 hours; every hidden part shows its real age; each working part past its life fails with 50% (seeded by game seed, hour and device) |
+| Bonus | A full burn-in in which no part failed multiplies the server's failure chance by 0.9 for 365 days (it stacks with the other failure factors) |
+| Used parts | Parts bought on the used market are hidden until a burn-in has looked at them; replaced parts are known |
+| Buyer protection | The first failed part of a unit bought on the board or eBuy within 14 days of its arrival refunds half the unit price, once; Telegrump deals never refund |
 
 **Power feeds.**
 
@@ -1363,6 +1374,9 @@ Game servers and colocation move the most data per euro and carry the largest sh
 | Storage volume | Disk ÷ link speed | None; reads come from the old node until it finishes |
 | Between zones (cold) | (Disk + RAM) ÷ free bandwidth of the link between the zones | The whole transfer; needs a link between the zones |
 | Between zones (live) | As above, then a final sync of RAM × 0.1 ÷ free bandwidth | Under 5 seconds; needs a link of 10G or more |
+| Recovery off a server that is off, by hand | The hand work's wait + 1 hour + (disk + RAM) ÷ link speed | The whole time |
+
+A VM or game server on a server that is off or failed, whose cluster's control plane is also down, can be recovered by hand to a working node of another cluster in the same location (`rescueWorkload`, src/sim/90-actions/vms.ts). It needs no control plane and is billed like other hand work.
 
 **Migrating a web space.** A web space moves to another panel host as a hand task (`migrateWebspace`, src/sim/90-actions/vms.ts; hours in src/sim/60-infra/migration.ts). The anchor is the owner's own words: about 4 hours to move a customer between two panels, 2 if the panel is the same, scaling with web storage.
 
