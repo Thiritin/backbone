@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- You can plan a maintenance window on a server, a cluster or a location, and the customers it affects get a notice email; downtime inside a window announced a day ahead costs no happiness, tickets or SLA credit.
 - Workloads move between locations over a zone link or, from the basement, over the internet, and you can offer customers a migration they accept with a maintenance window.
 - The traffic chart in the Network app has space above the cards below it.
 - Free apps from the Pear Store install even while your cash is below zero.

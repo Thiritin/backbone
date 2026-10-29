@@ -18,6 +18,8 @@ import { useFocus, useStore } from "../../store";
 import "../billing/billing.css";
 import { devName, disk, ram } from "../hw";
 import { Meter, NODE_STATE } from "../locations/Clusters";
+import { PlanButton, useMaintenance, Windows } from "../locations/Maintenance";
+import { menuOn } from "../../desktop/ContextMenu";
 import { PRODUCT } from "../support/labels";
 import { NewPanelHost, PanelHostDetail } from "./PanelHosts";
 import { Rates } from "./Rates";
@@ -178,10 +180,11 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
   const others = game.clusters.filter((c) => c.id !== cluster.id);
   const pool = cluster.backup.targetId ? backupPool(game, cluster.backup.targetId) : null;
   const free = joinableServers(game, cluster.id).map((id) => game.devices.find((d) => d.id === id)!);
+  const mnt = useMaintenance(), target = { kind: "cluster", id: cluster.id } as const;
 
   return (
     <div className="prd-pad">
-      <div className="prd-title">
+      <div className="prd-title" onContextMenu={menuOn(() => [{ label: "Plan maintenance…", run: () => mnt.plan(target) }])}>
         <Mark id={cluster.platform} size={36} />
         <div><h2>{cluster.name}</h2><span className="loc-muted">{cluster.az}</span></div>
         <span className="grow" />
@@ -190,7 +193,10 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
           <button aria-pressed={cluster.placement === "pack"} onClick={() => act((g) => setPlacement(g, cluster.id, "pack"))}>Pack</button>
           <button aria-pressed={cluster.placement === "spread"} onClick={() => act((g) => setPlacement(g, cluster.id, "spread"))}>Spread</button>
         </div>
+        <PlanButton target={target} plan={(t) => mnt.plan(t)} />
       </div>
+      <Windows game={game} windows={game.maintenance.filter((m) => m.target.kind === "cluster" && m.target.id === cluster.id)} plan={mnt.plan} />
+      {mnt.dialog}
 
       <h3 className="prd-h">{softwareName(cluster.switching?.to ?? cluster.platform)}<span className="loc-muted">{servesText("cloud")}</span><span className="loc-muted num">{euroCents(lic.platform)} per month</span></h3>
 

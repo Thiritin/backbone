@@ -1,5 +1,5 @@
 import { supportEnd } from "../../../sim/10-catalog/lifecycle";
-import { Cable, Database, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, Unplug } from "lucide-react";
+import { Cable, Database, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, Unplug, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
@@ -29,6 +29,7 @@ import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
 import { PowerCard } from "./PowerCard";
 import { isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
 import { LidSheet } from "./LidSheet";
+import { PlanButton, useMaintenance, Windows, windowsOnDevice } from "./Maintenance";
 import { PartsCard } from "./Slots";
 import { AddressRows } from "../network/Addresses";
 import { fqdn } from "../../../sim/30-customers/domains";
@@ -45,6 +46,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
   const { guarded, dialog } = useOfflineGuard(game);
   const [selling, setSelling] = useState<Device | null>(null);
   const [lid, setLid] = useState<string | null>(null);
+  const mnt = useMaintenance();
   const ui = (d: Device, open: boolean): DeviceUi => ({
     open: open ? () => onSelect(d.id) : undefined,
     lid: () => setLid(d.id),
@@ -52,12 +54,14 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     op: (op: PowerOp) => { if (op === "on") { if (!lid) act((g) => POWER_ACTION.on(g, d.id)); } else { const label = powerOptions(game, d).options.find((o) => o.op === op)?.label ?? POWER_LABEL[op]; guarded((g) => POWER_ACTION[op](g, d.id), `${label} ${devName(d)}?`, label); } },
     plug: (psu) => togglePlug(guarded, d, psu),
     setup: () => setSetup(d.id),
+    maintain: () => mnt.plan({ kind: "device", id: d.id }),
     rename: () => onRename(d.id),
     unmount: () => { if (act((g) => unmountDevice(g, d.id)).ok) onSelect(null); },
     sell: () => setSelling(d),
   });
   const cables = selling ? game.cables.filter((c) => c.a.device === selling.id || c.b.device === selling.id).length : 0;
   return {
+    plan: mnt.plan,
     entries: (d: Device, open = false) => deviceMenu(game, d, ui(d, open)),
     power: (d: Device, on: boolean) => ui(d, false).power(on),
     op: (d: Device, op: PowerOp) => ui(d, false).op(op),
@@ -66,6 +70,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     dialog: (
       <>
         {dialog}
+        {mnt.dialog}
         {lid && <LidSheet deviceId={lid} onClose={() => setLid(null)} />}
         {selling && (
           <SellConfirm game={game} name={devName(selling)} price={selling.price} boughtAt={selling.boughtAt} value={deviceValue(game, selling)} cables={cables}
@@ -107,6 +112,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         {model.kind !== "gateway" && <BrandLogo brand={device.brand} size={20} />}
         <LabelEdit device={device} editing={editing} onEditing={setEditing} />
         <span className="grow" />
+        {model.kind === "server" && !!device.rackId && <PlanButton target={{ kind: "device", id: device.id }} plan={(t) => menus.plan(t)} />}
         {model.kind === "server" && !device.on && !!(device.rackId || device.store) && <button className="btn" onClick={() => menus.lid(device)}><PackageOpen />Open chassis</button>}
         {powered && !isServerInRack(device) && device.on && !!pduOf(game, device) && (
           <button className="btn ghost icon" aria-label="Power cycle" title="Power cycle" onClick={() => menus.op(device, "cycle")}><RotateCw /></button>
@@ -166,6 +172,12 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         </div>
       )}
       {model.kind === "server" && <NodeCard game={game} device={device} />}
+      {windowsOnDevice(game, device).length > 0 && (
+        <div className="loc-card">
+          <div className="loc-card-h"><h3><Wrench />Maintenance</h3></div>
+          <Windows game={game} windows={windowsOnDevice(game, device)} plan={menus.plan} />
+        </div>
+      )}
       {device.lease && <LeaseCard game={game} leaseId={device.lease} />}
       {powered && <PowerSupplies game={game} device={device} onPlug={(psu) => menus.plug(device, psu)} />}
       {model.kind === "server" && drivesOf(device).length > 0 && <RaidCard game={game} device={device} />}

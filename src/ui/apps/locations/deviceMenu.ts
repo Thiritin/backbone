@@ -20,6 +20,7 @@ export interface DeviceUi {
   op: (op: PowerOp) => void;
   plug: (psuId: string) => void;
   setup: () => void;
+  maintain?: () => void;
   rename: () => void;
   unmount: () => void;
   sell: () => void;
@@ -64,6 +65,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
     ...psus.map((c, i) => ({ label: `${isPlugged(c) ? "Unplug" : "Plug in"} ${psus.length > 1 ? `power supply ${i + 1}` : "power supply"}`, run: () => ui.plug(c.id) })),
     null,
     server && !!d.rackId && { label: "Add Software…", run: ui.setup },
+    server && !!d.rackId && ui.maintain && { label: "Plan maintenance…", run: ui.maintain },
     joinable.length > 0 && { label: "Join cluster", items: joinable.map((c) => ({ label: c.name, run: () => act((g) => addNode(g, c.id, d.id)) })) },
     node && (node.state === "active" ? { label: "Cordon", run: () => act((g) => cordon(g, d.id)) } : node.state === "cordoned" && { label: "Uncordon", run: () => act((g) => uncordon(g, d.id)) }),
     node && !busy && { label: "Drain", run: () => act((g) => drain(g, d.id)) },

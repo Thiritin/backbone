@@ -13,6 +13,8 @@ import { BookedMeters, Clusters } from "./Clusters";
 import { CarrierPanel, Floor } from "./Floor";
 import { HomeLinePanel } from "./HomeLine";
 import { Inspector } from "./Inspector";
+import { PlanButton, useMaintenance, Windows, windowsAtLocation } from "./Maintenance";
+import { menuOn } from "../../desktop/ContextMenu";
 import "./locations.css";
 import { Overview, Waitlist } from "./Overview";
 import { RackView, Upgrades } from "./RackView";
@@ -142,9 +144,10 @@ function LocationTabs({ game, locId, tab, rack, onTab }: { game: GameState; locI
 function LocationHead({ game, locId }: { game: GameState; locId: string }) {
   const loc = game.locations.find((l) => l.id === locId)!, dc = dcOf(loc), power = locationPower(game, loc.id);
   const nodes = game.devices.filter((d) => d.rackId && clusterOf(game, d.id) && locationOf(game, d)?.id === loc.id);
+  const mnt = useMaintenance(), target = { kind: "location", id: loc.id } as const, windows = windowsAtLocation(game, loc.id);
   return (
     <header className="loc-top">
-    <div className="loc-head">
+    <div className="loc-head" onContextMenu={menuOn(() => [{ label: "Plan maintenance…", run: () => mnt.plan(target) }])}>
       <Logo provider={providerOf(loc)} size={28} />
       <div className="loc-head-name">
         <h2>{loc.name}<Zone loc={loc} /></h2>
@@ -157,7 +160,10 @@ function LocationHead({ game, locId }: { game: GameState; locId: string }) {
       {dc?.green && <span className="pill">Green power</span>}
       {dc && <span className="pill">{exchangeLabel(dc)}</span>}
       <PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} />
+      <PlanButton target={target} plan={(t) => mnt.plan(t)} />
     </div>
+    {windows.length > 0 && <div className="loc-head-meters"><Windows game={game} windows={windows} plan={mnt.plan} /></div>}
+    {mnt.dialog}
     {nodes.length > 0 && <div className="loc-head-meters"><BookedMeters game={game} devices={nodes} /></div>}
     </header>
   );
