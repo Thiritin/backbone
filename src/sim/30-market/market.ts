@@ -2,7 +2,7 @@
 // Values and decisions are in docs/design/economy.md, "Market and leads", "Customer choice" and "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
-import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, LEAD_CAP_SHARE, MARKET_GROWTH, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
+import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
 import { modelById } from "../10-catalog/hardware";
 import { marketPrice, planOf, PRODUCTS, type Sla } from "../10-catalog/products";
 import type { Product, Profile } from "../30-customers/customers";
@@ -155,7 +155,7 @@ export function leadFlows(s: GameState): LeadFlow[] {
   for (const profile of PROFILE_IDS) {
     const mix = profileStats(profile).mix;
     for (const city of cities) {
-      const cap = LEAD_CAP_SHARE * cityMarket(city, s.hour) * mix;
+      const cap = leadCapShare(level) * cityMarket(city, s.hour) * mix;
       const organic = ORGANIC_CONSIDER * cityMarket(city, s.hour) * mix * awareness(s, profile) * (1 + 0.5 * (level - 1)) * rev;
       const happy = city === home ? s.customers.filter((c) => c.profile === profile && c.churnedAt === null && c.happiness >= 70).length : 0;
       const posts = city === home && FORUM_PROFILES.includes(profile) ? forum / FORUM_PROFILES.length : 0;

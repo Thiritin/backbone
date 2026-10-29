@@ -42,7 +42,8 @@ describe("price tolerance", () => {
   });
 
   it("keeps a customer through a 5% raise within their maximum with a small hit", () => {
-    const { s, ids, cus, svc } = shop(3, 3);
+    // A seed whose customer opens no ticket in the month, so only the raise moves happiness.
+    const { s, ids, cus, svc } = shop(2, 3);
     const { c, v } = ids[0];
     expect(3.15).toBeLessThan(limits(s, cus(c), svc(v)).max);
     changePrice(s, v, 3.15);

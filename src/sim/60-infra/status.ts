@@ -102,6 +102,19 @@ export function freeSlots(s: GameState, rackId: string, height: number): number[
   return free;
 }
 
+// The lowest slot for count devices of this height stacked over the clicked unit, its top on that unit where it fits.
+export function mountFrom(s: GameState, rackId: string, height: number, count: number, unit: number): number | undefined {
+  const span = height * count;
+  return freeSlots(s, rackId, span).find((from) => from <= unit && unit < from + span);
+}
+
+// The most devices of this height, up to count, that fit stacked over the clicked unit.
+export function mountMax(s: GameState, rackId: string, height: number, count: number, unit: number): number {
+  let n = count;
+  while (n > 0 && mountFrom(s, rackId, height, n, unit) === undefined) n--;
+  return n;
+}
+
 const MONTH = 730;
 
 // The location a device is in, or undefined in storage.

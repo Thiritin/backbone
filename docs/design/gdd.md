@@ -528,6 +528,8 @@ Once the order form is owned, orders name a package (Web S, VPS M and so on) and
 
 **Domain registration.** Each TLD has its registry: DENIQ for .de, nick.at for .at, SWISCH for .ch, Nominot for .co.uk, AFNIQUE for .fr, SIDNey for .nl and Registrato.it for .it. A domain is registered or transferred for a year at the registry's cost of that year; you renew it by hand in **Billing, Domains**, which lists every domain with its customer, registry, expiry and yearly cost, and the customer page lists the customer's own. Renewing pays the registry and invoices the customer the yearly fee. A month before expiry a notification reminds you; a domain left to expire takes its site offline, and the customer complains like about any outage until you renew it. Domains of customers who left are not renewed.
 
+**Reach and new cities.** Only buyers in cities where you have a location can buy from you, and only a share of each city's new customers ever looks at your offer. That share grows with your level, from about 2% in the basement to about 6% for a Datacenter Baron, so marketing fills your reach in a city and new locations widen it. Once your awareness is up, opening a location in another city is the main way to keep growing; a 1/8 rack share there costs €32 to €140 a month.
+
 ## Company level and reputation
 
 Your company climbs a ladder of levels set by its net worth. Business customers only consider a host at a level they trust, so no enterprise moves its systems to a company running out of a garage.

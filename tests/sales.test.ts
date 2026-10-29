@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { isMonthStart } from "../src/sim/00-core/time";
-import { acceptChance, leadFlows, missingFor, priceIndex, rivals, share, type SalesRequest } from "../src/sim/30-market/market";
+import { acceptChance, cityMarket, leadFlows, missingFor, priceIndex, rivals, share, type SalesRequest } from "../src/sim/30-market/market";
 import { addRequest, newLead, shadyLead } from "../src/sim/30-market/sales";
-import { createTicket } from "../src/sim/40-support/tickets";
+import { createTicket, profileStats } from "../src/sim/40-support/tickets";
+import { leadCapShare } from "../src/sim/10-catalog/economy";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
@@ -36,6 +37,16 @@ describe("lead generation", () => {
     expect(leadFlows(s).reduce((n, f) => n + f.leads, 0)).toBeGreaterThan(before + 3);
     // Website leads spill into cities without a location; those arrive greyed out.
     expect(leadFlows(s).some((f) => f.city === "London")).toBe(true);
+  });
+
+  it("caps organic leads per city at the level's share of its new customers", () => {
+    const s = readyGame(1);
+    s.marketing = { ...s.marketing, awareness: Object.fromEntries(Object.keys(s.marketing.awareness).map((p) => [p, 1])) as typeof s.marketing.awareness };
+    const flows = leadFlows(s);
+    expect(flows.length).toBe(9);
+    for (const f of flows) expect(f.leads).toBeCloseTo(leadCapShare(1) * cityMarket("Frankfurt", s.hour) * profileStats(f.profile).mix);
+    expect(leadCapShare(1)).toBeCloseTo(0.024);
+    expect(leadCapShare(6)).toBeCloseTo(0.064);
   });
 
   it("raises forum profiles' awareness from staff posting", () => {

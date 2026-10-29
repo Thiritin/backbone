@@ -17,9 +17,10 @@ describe("balance run (docs/design/economy.md, Balancing)", () => {
     expect(steady.filter((r) => r.bankrupt).map((r) => r.seed)).toEqual([]);
   });
 
-  it("lets the solo bot survive but level up later", () => {
+  it("lets the solo bot survive and reach level 5 but level 6 later", () => {
     expect(solo.filter((r) => r.bankrupt).map((r) => r.seed)).toEqual([]);
-    expect(medianYear(solo, 4)).toBeGreaterThan(medianYear(steady, 4));
+    expect(medianYear(solo, 5)).toBeLessThanOrEqual(PACING_YEAR[5] + 1);
+    expect(medianYear(solo, 6)).toBeGreaterThan(medianYear(steady, 6));
   });
 
   it("brings the steady bot to levels 2 to 5 within a year of the pacing target", () => {
@@ -32,8 +33,7 @@ describe("balance run (docs/design/economy.md, Balancing)", () => {
     expect(dec2005).toBeLessThan(60);
   });
 
-  // Known gap: past level 5 leads run out (economy.md, Balancing). Flip to `it` once lead flow is tuned.
-  it.fails("brings the steady bot to level 6 within a year of the pacing target", () => {
+  it("brings the steady bot to level 6 within a year of the pacing target", () => {
     expect(medianYear(steady, 6)).toBeLessThanOrEqual(PACING_YEAR[6] + 1);
   });
 });
