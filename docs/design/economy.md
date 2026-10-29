@@ -1481,7 +1481,7 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 
 ## Platforms and licenses
 
-Every server runs at most one control plane. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers, DNS, VPN, storage and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years.
+Every server runs at most one control plane. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Service software runs the same way as a panel, on one bare-metal server or one of the player's VMs, and sells one line each: a game panel sells game servers, a DNS server DNS, a VPN server VPN and a storage server storage. Game servers also run on a hypervisor; DNS, VPN and storage need their own software. A DNS, VPN or storage service already on a hypervisor keeps running there. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years.
 
 | Software | Kind | License | Install | How-to tickets | Live migration | Control plane |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1497,8 +1497,17 @@ Every server runs at most one control plane. A hypervisor ("Cloud" below) runs o
 | TCAdmen | Game | €25 per server | 2 h | ×0.9 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | MultiKraft | Game | €20 per server | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Pterodaktyl | Game | Free | 3 h | ×1.2 | No | 0.25 vCPU, 0.5 GB, 5 GB |
+| Bound | DNS | Free | 2 h | ×1.3 | No | 0.1 vCPU, 0.25 GB, 2 GB |
+| PowerDNZ | DNS | Free | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
+| Knut DNS | DNS | Free | 1 h | ×1.1 | No | 0.1 vCPU, 0.25 GB, 2 GB |
+| OpenVeePeeN | VPN | Free | 2 h | ×1.3 | No | 0.25 vCPU, 0.25 GB, 2 GB |
+| Sysko AnyConnekt | VPN | €30 per server | 3 h | ×0.7 | No | 0.5 vCPU, 1 GB, 5 GB |
+| WireGuarded | VPN | Free | 1 h | ×0.9 | No | 0.1 vCPU, 0.1 GB, 1 GB |
+| vsFTPeed | Storage | Free | 1 h | ×1.4 | No | 0.1 vCPU, 0.25 GB, 2 GB |
+| OwnClod | Storage | Free | 2 h | ×1.2 | No | 0.5 vCPU, 1 GB, 10 GB |
+| MinnIO | Storage | Free | 2 h | ×1.0 | No | 0.5 vCPU, 1 GB, 10 GB |
 
-**Split cores.** OpenVeeZee and Proxmocks give a guest a fraction of a core through containers and CPU limits, so a VM books exactly the vCPUs it sold. OpenStash, VMwhere and HyperVee give a VM whole vCPUs: a VM books its vCPUs rounded up and uses that much CPU at load. Web spaces, DNS zones and VPN gateways share a guest per node and keep their fraction everywhere. A customer who scales a VPS below one core asks for tenths of a core (at least 0.2), so 0.75 of one core becomes 0.8.
+**Split cores.** OpenVeeZee and Proxmocks give a guest a fraction of a core through containers and CPU limits, so a VM books exactly the vCPUs it sold. OpenStash, VMwhere and HyperVee give a VM whole vCPUs: a VM books its vCPUs rounded up and uses that much CPU at load. Web spaces, game servers, DNS zones, VPN gateways and storage volumes run as containers in their software and keep their fraction everywhere. A customer who scales a VPS below one core asks for tenths of a core (at least 0.2), so 0.75 of one core becomes 0.8.
 
 | Software | From | Imports from same | Imports from other | Clusters from |
 | --- | --- | --- | --- | --- |
@@ -1514,13 +1523,20 @@ Every server runs at most one control plane. A hypervisor ("Cloud" below) runs o
 | TCAdmen | 2005 | Never | Never | Never |
 | MultiKraft | 2010 | Never | Never | Never |
 | Pterodaktyl | 2016 | Never | Never | Never |
+| Bound, PowerDNZ, OpenVeePeeN, Sysko AnyConnekt, vsFTPeed | 2005 | Never | Never | Never |
+| OwnClod | 2010 | Never | Never | Never |
+| Knut DNS | 2011 | Never | Never | Never |
+| MinnIO | 2016 | Never | Never | Never |
+| WireGuarded | 2018 | Never | Never | Never |
 
 Game panel anchors: TCAdmin has been sold since 2004 at about USD 30 a month per server (TCAdmen, €25 a month); Multicraft has been sold since 2010 at about USD 25 a month per host (MultiKraft, €20 a month); Pterodactyl's repository was created in December 2015 and its 1.0 came in 2020, and it is free (Pterodaktyl, from 2016).
+
+Service software anchors: BIND (Bound) and PowerDNS (PowerDNZ) both predate 2005 and are free; Knot DNS (Knut DNS) was first released in 2011. OpenVPN (OpenVeePeeN) is free and dates from 2001, Cisco AnyConnect (Sysko AnyConnekt) was licensed per appliance, and WireGuard (WireGuarded) reached its first stable releases around 2018 before landing in Linux 5.6 in 2020. vsftpd (vsFTPeed) is free and older than 2005, ownCloud (OwnClod) was founded in 2010 and MinIO (MinnIO) shipped its S3 server from about 2016.
 
 Anchors: cPanel could copy accounts between servers with WHM's "Copy an account" since 2005 and gained its transfer tool for other panels around 2012; Plesk's Migration Manager appeared with Plesk 7.5.6 in 2005 and the Plesk Migrator extension (2015) imports cPanel, Confixx and others; DirectAdmin moves accounts through backup and restore since about 2010; ISPConfig 3 introduced multiserver setups in March 2009, which is where FreePanel clusters from, while cPanel and Plesk never clustered web serving (only DNS). Hypervisor years follow the products: OpenStack 2010, VMware ESX long before 2005, Proxmox VE 2008, Hyper-V 2008 (clustering of Hyper-V hosts from the 2012 release).
 
 - **Licenses** are billed on the 1st of each month per hypervisor cluster and per panel host, as ledger lines in the category "licenses".
-- **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the hypervisor for the rest).
+- **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the service software for game servers, DNS, VPN and storage, the hypervisor for the rest).
 - **Booking:** software sets no limit on what a node books. Every hypervisor and panel books vCPU and RAM past the physical amounts and disk up to twice the usable RAID disk (see Usage curves and overcommit). Ballooning decides one thing: a resize of one of the player's own VMs that only grows its RAM is live on a hypervisor that balloons (Proxmocks and VMwhere, HyperVee from 2012; OpenStash and OpenVeeZee never); any other resize restarts the VM for 10 minutes.
 - **Software in a VM** gets 95% of the VM's vCPU and RAM (`IN_VM` in 10-catalog/platforms.ts): a panel VM's web hosting room is 0.95 times its booked vCPU and RAM, less the panel, with its full disk. The same panel on bare metal gets the whole server.
 - **Control plane:** a hypervisor's control plane runs on one node of the cluster, the first one added, and counts against what it can book and what it uses. A bare-metal panel host runs its panel on its server; a panel VM runs its panel inside the VM, so the panel counts against the VM's booking. While that node is down, or while the cluster switches software, nothing can be sold, started, migrated or restored on the cluster. Draining moves the control plane to another node once the drained node is empty, and the player can move it to any working node with room.

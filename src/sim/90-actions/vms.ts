@@ -1,4 +1,4 @@
-import { softwareById } from "../10-catalog/platforms";
+import { isService, softwareById } from "../10-catalog/platforms";
 import type { Resources } from "../10-catalog/products";
 import { bump } from "../40-support/tickets";
 import type { GameState } from "../50-state";
@@ -56,7 +56,7 @@ export function startWorkload(s: GameState, id: string): ActionResult {
 // minute inside a zone.
 export function migrationDowntime(s: GameState, w: Workload, gbit: number, otherZone: boolean, toId?: string): number {
   const c = s.clusters.find((x) => x.id === w.clusterId);
-  const vm = isOwnVm(w) || c?.kind === "cloud" || c?.kind === "game";
+  const vm = isOwnVm(w) || c?.kind === "cloud" || (!!c && isService(c.kind));
   const from = s.devices.find((d) => d.id === w.deviceId), to = s.devices.find((d) => d.id === toId);
   const live = !!c?.platform && softwareById(c.platform).live && c.ha.live && !!from && working(s, from.id) && (!otherZone || gbit >= LIVE_ZONE_GBIT)
     && (!to || liveBetween(s, from, to));

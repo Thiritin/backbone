@@ -16,7 +16,7 @@ import { addNode, phpDue, setPlacement, setRamGuard, upgradePhp } from "../../..
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { cores, devName, disk, ram } from "../hw";
-import { ControlPlanePill, VM_STATE, vmState } from "../products/parts";
+import { ControlPlanePill, HOST_NAME, VM_STATE, vmState } from "../products/parts";
 import { menuOn } from "../../desktop/ContextMenu";
 import { PlanButton, useMaintenance, Windows } from "./Maintenance";
 import { Zone } from "./ui";
@@ -85,7 +85,7 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
     <>
       <div className="loc-card-h loc-sub" onContextMenu={menuOn(() => [{ label: "Plan maintenance…", run: () => mnt.plan(target) }])}>
         <h3>{cluster.name}</h3>
-        <span className="pill">{cluster.kind === "cloud" ? "Hypervisor" : cluster.kind === "mail" ? "Mail server" : cluster.kind === "game" ? "Game panel host" : "Panel host"}</span>
+        <span className="pill">{HOST_NAME[cluster.kind]}</span>
         <span className="grow" />
         {cluster.kind === "cloud" && (
           <div className="seg" role="group" aria-label="Placement">

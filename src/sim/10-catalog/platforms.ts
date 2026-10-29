@@ -2,7 +2,7 @@ import type { Product } from "../30-customers/customers";
 import type { Resources } from "./products";
 
 // Values from docs/design/economy.md, section "Platforms and licenses". EU competition rules make Pear offer four of each.
-export type SoftwareKind = "panel" | "cloud" | "game" | "mail";
+export type SoftwareKind = "panel" | "cloud" | "game" | "mail" | "dns" | "vpn" | "storage";
 // free, or a monthly fee per web space (account), per node (server) or per physical core of the nodes (core).
 export type Pricing = "free" | "account" | "server" | "core";
 export interface Software {
@@ -51,16 +51,33 @@ export const SOFTWARE: Software[] = [
   { id: "tcadmen", kind: "game", name: "TCAdmen", console: "TCAdmen", pricing: "server", fee: 25, tickets: 0.9, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 5 }, installHours: 2, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   { id: "multikraft", kind: "game", name: "MultiKraft", console: "MultiKraft", pricing: "server", fee: 20, tickets: 1, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 5 }, installHours: 2, from: 2010, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   { id: "pterodaktyl", kind: "game", name: "Pterodaktyl", console: "Pterodaktyl", pricing: "free", fee: 0, tickets: 1.2, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 5 }, installHours: 3, from: 2016, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  // Service software: DNS zones, VPN gateways and storage volumes as containers on a server or VM, like a game panel.
+  { id: "bound", kind: "dns", name: "Bound", console: "Bound", pricing: "free", fee: 0, tickets: 1.3, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.1, ramGb: 0.25, diskGb: 2 }, installHours: 2, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  { id: "powerdnz", kind: "dns", name: "PowerDNZ", console: "PowerDNZ Admin", pricing: "free", fee: 0, tickets: 1, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 5 }, installHours: 2, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  { id: "knut", kind: "dns", name: "Knut DNS", console: "Knut DNS", pricing: "free", fee: 0, tickets: 1.1, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.1, ramGb: 0.25, diskGb: 2 }, installHours: 1, from: 2011, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  { id: "openveepeen", kind: "vpn", name: "OpenVeePeeN", console: "OpenVeePeeN Access", pricing: "free", fee: 0, tickets: 1.3, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 2 }, installHours: 2, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  { id: "anyconnekt", kind: "vpn", name: "Sysko AnyConnekt", console: "Sysko AnyConnekt", pricing: "server", fee: 30, tickets: 0.7, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 5 }, installHours: 3, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  { id: "wireguarded", kind: "vpn", name: "WireGuarded", console: "WireGuarded", pricing: "free", fee: 0, tickets: 0.9, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 1 }, installHours: 1, from: 2018, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  { id: "vsftpeed", kind: "storage", name: "vsFTPeed", console: "vsFTPeed", pricing: "free", fee: 0, tickets: 1.4, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.1, ramGb: 0.25, diskGb: 2 }, installHours: 1, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  { id: "ownclod", kind: "storage", name: "OwnClod", console: "OwnClod", pricing: "free", fee: 0, tickets: 1.2, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 10 }, installHours: 2, from: 2010, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  { id: "minnio", kind: "storage", name: "MinnIO", console: "MinnIO Console", pricing: "free", fee: 0, tickets: 1, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 10 }, installHours: 2, from: 2016, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   // Mail servers: the company's own mail on a server or VM; the control plane is what the server takes (economy.md, Company email).
   { id: "postfixit", kind: "mail", name: "Postfixit", console: "Postfixit", pricing: "free", fee: 0, tickets: 1.4, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 20 }, installHours: 4, from: 2005 , migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   { id: "mailpig", kind: "mail", name: "Mailpig", console: "Mailpig", pricing: "free", fee: 0, tickets: 1, live: false, split: true, balloon: null, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 20 }, installHours: 2, from: 2015 , migration: { same: null, other: null }, cluster: null, autoUpdate: null },
 ];
 
 // The product lines each kind of software lets a cluster sell; the rest runs on whole servers, in racks or nowhere.
-export const SERVES: Record<SoftwareKind, Product[]> = { panel: ["webHosting"], cloud: ["vps", "gameServer", "dns", "vpn", "storage", "cloud", "gpu"], game: ["gameServer"], mail: [] };
+export const SERVES: Record<SoftwareKind, Product[]> = {
+  panel: ["webHosting"], cloud: ["vps", "gameServer", "cloud", "gpu"], game: ["gameServer"], mail: [], dns: ["dns"], vpn: ["vpn"], storage: ["storage"],
+};
+// Kinds that run customers' workloads as containers on one server or VM, the way a game panel does. They take the panel slot.
+export const SERVICE_KINDS: SoftwareKind[] = ["game", "dns", "vpn", "storage"];
+export const isService = (k: SoftwareKind): boolean => SERVICE_KINDS.includes(k);
+// The order the software picker lists the kinds in.
+export const KINDS: SoftwareKind[] = ["cloud", "panel", "game", "dns", "vpn", "storage", "mail"];
 // Game servers also run on plain virtual machines, so a line can have more than one kind; kindServing is the general one.
 export const kindsServing = (p: Product): SoftwareKind[] => (Object.keys(SERVES) as SoftwareKind[]).filter((k) => SERVES[k].includes(p));
-export const kindServing = (p: Product): SoftwareKind | null => (SERVES.panel.includes(p) ? "panel" : SERVES.cloud.includes(p) ? "cloud" : null);
+export const kindServing = (p: Product): SoftwareKind | null => (["panel", "cloud", "dns", "vpn", "storage"] as SoftwareKind[]).find((k) => SERVES[k].includes(p)) ?? null;
 
 // economy.md, Platforms and licenses: software in a virtual machine gets this share of the VM's CPU and RAM.
 export const IN_VM = 0.95;

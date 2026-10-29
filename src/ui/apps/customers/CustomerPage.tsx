@@ -1,6 +1,7 @@
 import { ChevronLeft, Contact, Cpu, FileText, Globe, History, LifeBuoy, ListChecks, Receipt, Server } from "lucide-react";
 import { useId, useState } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
+import { isService } from "../../../sim/10-catalog/platforms";
 import type { Customer, Profile, Service } from "../../../sim/30-customers/customers";
 import { fqdn } from "../../../sim/30-customers/domains";
 import { referenceFor } from "../../../sim/30-market/market";
@@ -106,7 +107,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
       null,
       ...(w ? workloadActions(game, w) : []),
       null,
-      w && (kind === "cloud" || kind === "game") && vms && { label: "Open in Virtual machines", run: () => openApp("Virtual machines", { kind: "workload", id: w.id }) },
+      w && (kind === "cloud" || (!!kind && isService(kind))) && vms && { label: "Open in Virtual machines", run: () => openApp("Virtual machines", { kind: "workload", id: w.id }) },
       w && kind === "panel" && { label: "Open panel host", run: () => openApp("Products", { kind: "cluster", id: w.clusterId! }) },
     ];
   };

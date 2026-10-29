@@ -17,7 +17,7 @@ import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { CABLE_NAME, cores, deviceLamps, devName, disk, height, portLamps, portName, portsText, ram, speed } from "../hw";
 import { More } from "../More";
-import { softwareName } from "../products/parts";
+import { HOST_NAME, softwareName } from "../products/parts";
 import { dcOf, Facts, UsageBars } from "./ui";
 import { usageOf } from "../../../sim/60-infra/usage";
 import { NodeCard } from "./Clusters";
@@ -281,7 +281,7 @@ function Status({ game, device }: { game: GameState; device: Device }) {
   const loads = model.kind === "server" && !cluster ? workloadsOn(game, device.id) : [];
   const service = loads.length ? game.services.find((v) => v.id === loads[0].serviceId) : undefined;
   const customer = service && game.customers.find((c) => c.id === service.customerId);
-  const role = cluster ? `${cluster.kind === "cloud" ? "Hypervisor node" : cluster.kind === "mail" ? "Mail server" : cluster.kind === "game" ? "Game panel host" : "Panel host"} in ${cluster.name}`
+  const role = cluster ? `${cluster.kind === "cloud" ? "Hypervisor node" : HOST_NAME[cluster.kind]} in ${cluster.name}`
     : service ? `${service.product === "colocation" ? "Colocation" : "Dedicated"} for ${customer?.name ?? "a customer"}`
     : burning(game, device) ? `Burn-in until ${stamp(device.burnin!.until)}` : "Free";
   const plane = softwareOn(game, device.id).map((x) => softwareName(x.id)).join(", ") || "None";

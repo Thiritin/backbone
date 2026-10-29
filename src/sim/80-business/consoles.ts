@@ -1,5 +1,5 @@
 // GDD, Software choices (Consoles): what the web console of each piece of software offers. Pure; the browser draws it.
-import { softwareById } from "../10-catalog/platforms";
+import { isService, softwareById } from "../10-catalog/platforms";
 import { fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { clusterOf, hostOfVm, isOwnVm, vmById, type Cluster } from "../60-infra/cluster";
@@ -37,7 +37,7 @@ export function consoleTitle(softwareId: string): string {
 export function consoleLook(softwareId: string): ConsoleLook {
   if (GAME_PANELS.includes(softwareId)) return "game";
   const sw = softwareById(softwareId);
-  return LOOK[sw.id] ?? ((sw.kind as string) === "game" ? "game" : sw.kind === "cloud" ? "proxmocks" : sw.kind === "mail" ? "mail" : "freepanel");
+  return LOOK[sw.id] ?? (isService(sw.kind) ? "game" : sw.kind === "cloud" ? "proxmocks" : sw.kind === "mail" ? "mail" : "freepanel");
 }
 
 // docs/design/gdd.md, Software choices: the matrix. Panels migrate from the year their tool imports from another panel;

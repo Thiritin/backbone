@@ -1,5 +1,5 @@
 import { dateOf, yearOf } from "../00-core/time";
-import { autoUpdates, clustersIn, phpAt, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { autoUpdates, clustersIn, isService, phpAt, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { anchorOf, clusterOf, hostOfVm, workloadsOn, type Cluster } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
@@ -49,7 +49,7 @@ export function installBlock(s: GameState, machineId: string, softwareId: string
   }
   if (!have) return null;
   const on = softwareById(have.id).kind;
-  if (on === "panel" || on === "game") return "error.onePanel";
+  if (on === "panel" || isService(on)) return "error.onePanel";
   if (on === "mail") return "error.mailHost";
   return sw.kind === "cloud" ? "error.oneHypervisor" : sw.kind === "mail" ? "error.mailInVm" : "error.panelInVm";
 }
@@ -67,7 +67,7 @@ export function installSoftware(s: GameState, machineId: string, softwareId: str
 
 // economy.md, Security advisories, Updating: minutes the customers on a cluster are down while its software updates. A
 // hypervisor takes 2 hours per node, with every node down at once unless the software moves virtual machines live.
-export const UPDATE_MINUTES: Record<SoftwareKind, number> = { panel: 30, game: 30, mail: 15, cloud: 120 };
+export const UPDATE_MINUTES: Record<SoftwareKind, number> = { panel: 30, game: 30, mail: 15, cloud: 120, dns: 15, vpn: 15, storage: 30 };
 
 export const updateDue = (s: GameState, c: Cluster): boolean =>
   !!familyOf(c) && !c.switching && (c.version < yearOf(s.hour) || openVulns(s, c.id).length > 0);

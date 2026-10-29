@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Selling DNS, VPN and storage now needs DNS, VPN or storage server software, installed on a server or in one of your VMs, instead of only a hypervisor.
+- Nine new programs join the software catalog: Bound, PowerDNZ and Knut DNS for DNS, OpenVeePeeN, Sysko AnyConnekt and WireGuarded for VPN, and vsFTPeed, OwnClod and MinnIO for storage.
 - The Components list only sends remote hands, and only at a datacenter; to work on a server yourself, open Change parts, which now also opens on a running server for hot-swap parts.
 - Installing a part with remote hands works again instead of saying the slot does not exist.
 - Starting hand work on a server skips time until the work is done, and a notification says when it finishes.

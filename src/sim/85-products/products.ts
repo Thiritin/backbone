@@ -1,6 +1,6 @@
 import { chance } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
-import { softwareById, type Software } from "../10-catalog/platforms";
+import { isService, softwareById, type Software } from "../10-catalog/platforms";
 import { BACKUP_HOUR } from "../10-catalog/usage";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
@@ -71,7 +71,7 @@ export function howToFactor(s: GameState, customerId: string): number {
   const factors = s.workloads.filter((w) => w.clusterId && services.has(w.serviceId)).map((w) => {
     const c = s.clusters.find((x) => x.id === w.clusterId)!;
     const kind = servedBy(s, w);
-    return kind === "panel" ? tickets(c.panel) * phpTickets(s, c) : tickets(kind === "game" ? c.panel : c.platform);
+    return kind === "panel" ? tickets(c.panel) * phpTickets(s, c) : tickets(isService(kind) ? c.panel : c.platform);
   });
   return factors.length ? factors.reduce((a, b) => a + b, 0) / factors.length : 1;
 }

@@ -21,7 +21,7 @@ import { hoursText } from "../../vms/migrate";
 export type Tab = "objects" | "nodes" | "software";
 
 export const objectsLabel = (f: ConsoleFeatures, c: Cluster): string =>
-  f.look === "game" ? "Game servers" : f.look === "mail" ? "Mailboxes" : c.kind === "cloud" ? "Virtual machines" : "Web spaces";
+  c.kind === "dns" ? "DNS zones" : c.kind === "vpn" ? "VPN gateways" : c.kind === "storage" ? "Storage volumes" : f.look === "game" ? "Game servers" : f.look === "mail" ? "Mailboxes" : c.kind === "cloud" ? "Virtual machines" : "Web spaces";
 
 const num = (n: number) => `${+n.toFixed(2)}`;
 const pct = (used: number, of: number) => `${Math.min(100, of > 0 ? (used / of) * 100 : 0)}%`;

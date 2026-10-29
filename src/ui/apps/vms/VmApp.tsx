@@ -1,7 +1,7 @@
 import { Boxes, MonitorCog, Plus, Power, PowerOff, RotateCcw, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { useSessionState } from "../../session";
-import { softwareById } from "../../../sim/10-catalog/platforms";
+import { isService, softwareById } from "../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../sim/10-catalog/products";
 import type { GameState } from "../../../sim/50-state";
 import { hostOfVm, type Workload } from "../../../sim/60-infra/cluster";
@@ -75,7 +75,7 @@ export function VmApp() {
   useFocus("Virtual machines", (f) => { if (f.kind === "workload") { setCluster(null); setNode(null); setFilter("all"); setIncidents(false); setSelected(f.id); } });
   const cluster = game.clusters.find((c) => c.id === clusterId);
   const clouds = game.clusters.filter((c) => c.kind === "cloud");
-  const lists = game.clusters.filter((c) => c.kind === "cloud" || c.kind === "game");
+  const lists = game.clusters.filter((c) => c.kind === "cloud" || isService(c.kind));
   const vms = game.workloads.filter((w) => lists.some((c) => c.id === w.clusterId));
   const brandId = cluster?.platform ?? cluster?.panel;
   const brand = brandId ? softwareById(brandId) : null;

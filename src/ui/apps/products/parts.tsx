@@ -39,7 +39,13 @@ const UNIT: Record<Software["pricing"], string> = { free: "", account: "per web 
 export const licenseText = (sw: Software) => (sw.pricing === "free" ? "Free" : `${euroCents(sw.fee)} ${UNIT[sw.pricing]}`);
 const cp = (sw: Software) => `${+sw.controlPlane.vcpu.toFixed(2)} vCPU · ${+sw.controlPlane.ramGb.toFixed(2)} GB`;
 
-export const KIND_NAME: Record<SoftwareKind, string> = { panel: "Hosting panel", cloud: "Hypervisor", game: "Game server panel", mail: "Mail server" };
+export const KIND_NAME: Record<SoftwareKind, string> = {
+  panel: "Hosting panel", cloud: "Hypervisor", game: "Game server panel", mail: "Mail server", dns: "DNS server", vpn: "VPN server", storage: "Storage server",
+};
+// What a server or VM running the kind of software is called.
+export const HOST_NAME: Record<SoftwareKind, string> = {
+  panel: "Panel host", cloud: "Hypervisor", game: "Game panel host", mail: "Mail server", dns: "DNS server", vpn: "VPN server", storage: "Storage server",
+};
 export const servesText = (kind: SoftwareKind) => SERVES[kind].filter((p) => !PRODUCTS[p].ha).map((p) => PRODUCT[p]).join(", ");
 
 // What the software can do, as labels: its first year, how it imports web spaces, whether it clusters or moves live.

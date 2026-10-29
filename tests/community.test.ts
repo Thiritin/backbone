@@ -10,7 +10,7 @@ import { acceptSponsorship, declineSponsorship, offerHalf } from "../src/sim/90-
 import { closeTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { mrr, metrics } from "../src/sim/metrics";
-import { readyGame as fresh } from "./fixtures";
+import { panelVm, readyGame as fresh } from "./fixtures";
 
 // Sponsoring requests need Marketing basics.
 const readyGame = (seed: number) => { const s = fresh(seed); s.unlocks = [...s.unlocks, "marketingBasics"]; return s; };
@@ -24,6 +24,8 @@ function asked(seed: number, event?: string, roomy = true): GameState {
   if (roomy) for (const c of s.devices.find((d) => d.id === "dev3")!.components) if (c.kind === "ram") c.size = 16;
   while (!s.sponsorships.length) tick(s);
   if (event) {
+    // The mirror is a storage service, which needs storage server software.
+    if (event === "mirror") panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "vsftpeed", { vcpu: 1, ramGb: 2, diskGb: 600 });
     s.sponsorships[0].event = event;
     ticketOf(s).topic = event;
   }

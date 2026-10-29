@@ -1,7 +1,7 @@
 import { Plus, type LucideIcon } from "lucide-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { autoUpdates, softwareById } from "../../../sim/10-catalog/platforms";
+import { autoUpdates, KINDS, softwareById } from "../../../sim/10-catalog/platforms";
 import { yearOf } from "../../../sim/00-core/time";
 import type { GameState } from "../../../sim/50-state";
 import { addNode } from "../../../sim/90-actions/clusters";
@@ -75,7 +75,7 @@ export function SoftwarePicker({ machineId }: { machineId: string }) {
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
       <div className="alert welcome setup sw-picker" role="dialog" aria-modal="true" aria-labelledby="sw-title">
         <h2 id="sw-title">Add Software to {name}</h2>
-        {(["cloud", "panel", "game", "mail"] as const).map((kind) => (
+        {KINDS.map((kind) => (
           <section key={kind} className="setup-kind">
             <h3>{KIND_NAME[kind]}</h3>
             <SoftwareCards kind={kind} value={null} onPick={pick} blocked={blocked} compact />

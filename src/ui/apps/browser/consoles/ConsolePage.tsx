@@ -1,6 +1,7 @@
-import { Gamepad2, LogOut } from "lucide-react";
+import { Gamepad2, Globe, HardDrive, LogOut, ShieldCheck } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
+import { softwareById } from "../../../../sim/10-catalog/platforms";
 import type { GameState } from "../../../../sim/50-state";
 import { workloadsOn, type Cluster } from "../../../../sim/60-infra/cluster";
 import { familyOf } from "../../../../sim/60-infra/vulns";
@@ -21,10 +22,15 @@ const LOGIN: Record<ConsoleLook, string> = {
   proxmocks: "Login", hypervee: "Connect", openveezee: "Log in", mail: "Sign in", game: "Sign in",
 };
 
+// The mark of a service console: a gamepad for game panels, otherwise the kind's own.
+function ServiceIcon({ kind, size }: { kind: string; size: number }) {
+  return kind === "dns" ? <Globe size={size} /> : kind === "vpn" ? <ShieldCheck size={size} /> : kind === "storage" ? <HardDrive size={size} /> : <Gamepad2 size={size} />;
+}
+
 function Brand({ look, family, size = 26 }: { look: ConsoleLook; family: string; size?: number }) {
   return (
     <span className="cx-brand">
-      {look === "game" ? <span className="prd-mark" style={{ width: size, height: size, background: "oklch(0.62 0.17 150)" }}><Gamepad2 size={Math.round(size * 0.62)} /></span> : <Mark id={family} size={size} />}
+      {look === "game" ? <span className="prd-mark" style={{ width: size, height: size, background: "oklch(0.62 0.17 150)" }}><ServiceIcon kind={softwareById(family).kind} size={Math.round(size * 0.62)} /></span> : <Mark id={family} size={size} />}
       <b>{consoleTitle(family)}</b>
     </span>
   );

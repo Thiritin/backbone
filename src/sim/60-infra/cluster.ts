@@ -1,7 +1,7 @@
 import { modelById } from "../10-catalog/hardware";
 import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
-import { IN_VM, kindsServing, kindServing, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
@@ -153,7 +153,8 @@ export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): bo
 }
 
 // Whether the cluster sells the product line: web hosting on a panel host, virtual machines on a hypervisor cluster, game
-// servers on either a game panel or a hypervisor cluster, and products that need high availability only with automatic failover on.
+// servers on either a game panel or a hypervisor cluster, DNS, VPN and storage on their own software, and products that need
+// high availability only with automatic failover on.
 export function supports(c: Cluster, p: Product): boolean {
   if (!kindsServing(p).includes(c.kind) || !(c.kind === "cloud" ? c.platform : c.panel)) return false;
   return !PRODUCTS[p].ha || c.ha.failover;
@@ -175,13 +176,14 @@ export function lineOffered(s: GameState, p: Product): boolean {
 export const hasFreeCard = (s: GameState, c: Cluster): boolean => c.nodes.some((n) => { const d = s.devices.find((x) => x.id === n.deviceId); return !!d && cardsFree(s, d) > 0; });
 // Whether the cluster can rent out GPUs: the team has the skill and a node has a free card.
 export const gpuReady = (s: GameState, c: Cluster): boolean => s.unlocks.includes(GPU_SKILL) && hasFreeCard(s, c);
+const NEEDS: Partial<Record<SoftwareKind, string>> = { panel: "error.needsPanel", dns: "error.needsDnsServer", vpn: "error.needsVpnServer", storage: "error.needsStorageServer" };
 // Why a product found no place: no software that sells it, no failover for a product that needs it, or no room.
 export function noRoomError(s: GameState, p: Product, clusterId: string | null = null): string {
   if (p === "gpu" && !s.unlocks.includes(GPU_SKILL)) return "error.needsResearch";
   if (PRODUCTS[p].runsOn === "server") return "error.noFreeServer";
   if (PRODUCTS[p].runsOn === "rack") return "error.needsDatacenter";
   const kind = kindServing(p), mine = s.clusters.filter((c) => (clusterId ? c.id === clusterId : true) && kindsServing(p).includes(c.kind) && (c.panel || c.platform));
-  if (!mine.length) return kind === "panel" ? "error.needsPanel" : "error.needsPlatform";
+  if (!mine.length) return NEEDS[kind ?? "cloud"] ?? "error.needsPlatform";
   if (!mine.some((c) => supports(c, p))) return "error.needsHaCluster";
   if (!mine.some((c) => clusterReachable(s, c))) return "error.needsInternet";
   if (!mine.some((c) => s.locations.some((l) => l.az === c.az && sellsFrom(s, l, p)))) return "error.needsStaticLine";
@@ -196,8 +198,8 @@ export function controlPlaneUp(s: GameState, c: Cluster): boolean {
   return !!c.controlPlane && c.nodes.some((n) => n.deviceId === c.controlPlane) && working(s, c.controlPlane);
 }
 
-// Game panels come first when a game server looks for a cluster.
-export const gameFirst = (a: Cluster, b: Cluster): number => Number(b.kind === "game") - Number(a.kind === "game");
+// Service software comes before a hypervisor when a workload looks for a cluster.
+export const gameFirst = (a: Cluster, b: Cluster): number => Number(isService(b.kind)) - Number(isService(a.kind));
 
 // The kind of software that serves a workload: the panel of a panel host, otherwise the hypervisor.
 export const servedBy = (s: GameState, w: Workload): SoftwareKind => s.clusters.find((c) => c.id === w.clusterId)?.kind ?? "cloud";

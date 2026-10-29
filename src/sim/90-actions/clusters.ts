@@ -4,7 +4,7 @@ import { marketPrice, PRODUCTS, sizeSpec, type Resources, type Sla, type Spec } 
 import type { Product } from "../30-customers/customers";
 import { vmName } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
-import { balloons, clustersIn, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
+import { balloons, clustersIn, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
 import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
@@ -28,6 +28,9 @@ const blank = (s: GameState, id: string, name: string, az: string, kind: Softwar
   id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null,
   backup: { targetId: null, every: "off" }, php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
 });
+// The name a cluster in one of the player's VMs gets, by the kind of its software.
+const PREFIX: Record<SoftwareKind, string> = { panel: "Web", cloud: "Cloud", game: "Game", mail: "Mail", dns: "DNS", vpn: "VPN", storage: "Storage" };
+
 // The next free name of the pattern, numbered from 1.
 const freeName = (s: GameState, base: string): string => {
   for (let i = 1; ; i++) if (!s.clusters.some((c) => c.name === `${base} ${i}`)) return `${base} ${i}`;
@@ -102,7 +105,7 @@ export function installPanelInVm(s: GameState, vmId: string, panelId: string): A
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
   if (sizeError(vm, sw.controlPlane)) return fail("error.vmSize");
   const id = `clu${s.nextId++}`, after = Math.max(s.hour, c.switching?.doneAt ?? s.hour);
-  s.clusters = [...s.clusters, { ...blank(s, id, freeName(s, sw.kind === "mail" ? "Mail" : sw.kind === "game" ? "Game" : "Web"), c.az, sw.kind), vm: vm.id, switching: { kind: sw.kind, to: panelId, doneAt: after + sw.installHours } }];
+  s.clusters = [...s.clusters, { ...blank(s, id, freeName(s, PREFIX[sw.kind]), c.az, sw.kind), vm: vm.id, switching: { kind: sw.kind, to: panelId, doneAt: after + sw.installHours } }];
   return { ok: true, id };
 }
 
@@ -204,7 +207,7 @@ const update = (s: GameState, id: string, fn: (c: Cluster) => Cluster) => {
 export function addNode(s: GameState, clusterId: string, deviceId: string): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
-  const panel = c.kind === "panel" || c.kind === "game", id = c.panel ?? c.platform;
+  const panel = c.kind === "panel" || isService(c.kind), id = c.panel ?? c.platform;
   if (panel && (c.vm || !id || !clustersIn(softwareById(id), yearOf(s.hour)))) return fail("error.panelHostOneServer");
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
@@ -252,7 +255,7 @@ export function upgradeNodePhp(s: GameState, deviceId: string): ActionResult {
 export function removeNode(s: GameState, deviceId: string): ActionResult {
   const c = clusterOf(s, deviceId);
   if (!c) return fail("error.notNode");
-  if ((c.kind === "panel" || c.kind === "game") && c.nodes.length < 2) return fail("error.panelHostOneServer");
+  if ((c.kind === "panel" || isService(c.kind)) && c.nodes.length < 2) return fail("error.panelHostOneServer");
   if (workloadsOn(s, deviceId).length) return fail("error.nodeNotEmpty");
   leave(s, c.id, deviceId);
   return { ok: true };
