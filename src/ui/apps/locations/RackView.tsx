@@ -18,8 +18,9 @@ import { rackUnits } from "./Floor";
 import { Inspector, SellConfirm, togglePlug, useDeviceMenu, useOfflineGuard } from "./Inspector";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { More } from "../More";
-import { dcOf, Facts, positionsLabel, PowerMeter, Sheet, UsageBars, useDismiss } from "./ui";
-import { usageOf } from "../../../sim/60-infra/usage";
+import { dcOf, Facts, positionsLabel, PowerMeter, Sheet, useDismiss } from "./ui";
+import { BookedMeters } from "./Clusters";
+import { clusterOf } from "../../../sim/60-infra/cluster";
 
 export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
@@ -134,6 +135,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   const { zoom, ref: rackRef, step, width: rackWidth } = useRackZoom();
   const items = rackItems(game, rack.id), units = rackUnits(rack), power = rackPower(game, rack.id);
   const used = items.reduce((n, it) => n + it.model.height, 0);
+  const nodes = game.devices.filter((d) => d.rackId === rack.id && clusterOf(game, d.id));
   const dev = game.devices.find((d) => d.id === device && d.rackId === rack.id);
   const loc = game.locations.find((l) => l.id === rack.locationId)!;
   const { guarded, dialog } = useOfflineGuard(game);
@@ -193,10 +195,12 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
             <div className="loc-card">
               <div className="loc-card-h"><h3><Plug />Power</h3><span className="grow" /><PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.tripped} /></div>
             </div>
-            <div className="loc-card">
-              <div className="loc-card-h"><h3><Gauge />Utilization</h3></div>
-              <UsageBars usage={usageOf(game, game.devices.filter((d) => d.rackId === rack.id))} />
-            </div>
+            {nodes.length > 0 && (
+              <div className="loc-card">
+                <div className="loc-card-h"><h3><Gauge />Utilization</h3></div>
+                <BookedMeters game={game} devices={nodes} />
+              </div>
+            )}
             <Upgrades loc={loc} rack={rack} />
           </>
         )}
