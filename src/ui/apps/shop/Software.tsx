@@ -42,6 +42,7 @@ const INCLUDES: Record<string, string[]> = {
   Staff: ["Job market", "Hiring and salaries", "Task assignment"],
   Marketing: ["Campaigns", "Reviews", "Review platforms"],
   Nagiosaurus: ["Versions of installed software", "Open vulnerabilities by severity", "Days exposed"],
+  "Knowledge base": ["Articles for basic setup questions", "Fewer how-to tickets", "Reads per article"],
   Market: ["Demand by product", "Customer requirements", "Lost-sale reports"],
   searchlight: ["Opens with Ctrl+K or Cmd+K", "Apps, customers and machines", "Tickets, sites and settings"],
   widgetCalendar: ["Weekday, date and year"],
@@ -55,7 +56,7 @@ const INCLUDES: Record<string, string[]> = {
 };
 
 const SHELVES: [string, string[]][] = [
-  ["Essentials", ["Network", "Products", "Nagiosaurus"]],
+  ["Essentials", ["Network", "Products", "Nagiosaurus", "Knowledge base"]],
   ["Growth", ["Staff", "Marketing", "Market"]],
   ["Bots", ["chadGpt", "clipsy"]],
   ["Support desks", ["ostickit", "zendusk", "freshdusk", "freescoot"]],
