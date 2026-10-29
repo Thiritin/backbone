@@ -44,6 +44,7 @@ export function EmailSettings() {
   return (
     <>
       <h2>Email</h2>
+      <div className="email-body">
       <div className="settings-group">
         <div className="settings-line"><span>Service</span><span>{provider?.name ?? (m.kind === "self" ? softwareById(m.software).name : "None")}</span></div>
         <div className="settings-line settings-divide"><span>Status</span><span>{status(game)}</span></div>
@@ -86,7 +87,8 @@ export function EmailSettings() {
                   <dl className="shop-specs">
                     <div><dt>License</dt><dd>Free</dd></div>
                     <div><dt>Install</dt><dd className="num">{sw.installHours} h</dd></div>
-                    <div><dt>Needs</dt><dd className="num">{sw.controlPlane.vcpu} vCPU · {sw.controlPlane.ramGb} GB</dd></div>
+                    <div><dt>CPU</dt><dd className="num">{sw.controlPlane.vcpu} vCPU</dd></div>
+                    <div><dt>RAM</dt><dd className="num">{sw.controlPlane.ramGb} GB</dd></div>
                     <div><dt>Disk</dt><dd className="num">{sw.controlPlane.diskGb} GB</dd></div>
                     <div><dt>From</dt><dd className="num">{sw.from}</dd></div>
                     {own && <div><dt>Status</dt><dd>In use</dd></div>}
@@ -108,6 +110,7 @@ export function EmailSettings() {
           )}
         </>
       )}
+      </div>
     </>
   );
 }

@@ -24,7 +24,7 @@ export function Domains({ game }: { game: GameState }) {
   return (
     <div className="net-addrs">
       {cur && def && (
-        <dl className="fin-facts">
+        <dl className="fin-facts net-contract">
           <div><dt>Partner</dt><dd>{def.name}</dd></div>
           <div><dt>Tier</dt><dd className="num">{cur.tier + 1} of {TIERS.length}</dd></div>
           <div><dt>Domains</dt><dd className="num">{count}</dd></div>

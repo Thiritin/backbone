@@ -5,3 +5,5 @@
 .email-sw:disabled { opacity: 0.5; cursor: default; }
 .email-where { margin-top: 4px; }
 .email-none { color: var(--text-2); }
+.email-body { margin-bottom: 24px; }
+.email-cards .shop-buy { justify-content: flex-end; }
