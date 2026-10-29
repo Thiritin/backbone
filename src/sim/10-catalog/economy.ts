@@ -166,9 +166,6 @@ export const NEVER_PAYS: Record<Budget, number> = { low: 0.02, medium: 0.01, hig
 // Marketing: search ads per lead in 2026, m = 0.6.
 export const SEARCH_AD_COST: Record<Budget, number> = { low: 15, medium: 35, high: 90 };
 
-// Know-how per active contract per month.
-export const KNOW_HOW: Record<ProductId, number> = { web: 1, vps: 2 };
-
 // Net worth and level thresholds.
 export const LEVELS = [
   { level: 1, name: "Basement Hoster", netWorth: 0, years: 0 },

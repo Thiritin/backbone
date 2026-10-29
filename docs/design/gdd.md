@@ -881,7 +881,7 @@ Hardware generations unlock by year, not through research (see Racks, hardware a
 
 ## Prices
 
-Starting values come from today's Western European market (checked October 2026, excluding VAT, dollars converted at about €0.86). Because the game starts around 2005, hardware and transit start higher and fall every year until they reach these levels.
+Starting values come from today's Western European market (checked October 2026, excluding VAT, dollars converted at about €0.86). Because the game starts around 2005, transit starts higher and falls every year until it reaches these levels, while hardware prices follow the parts, whose prices change by year (economy.md, Part prices by year).
 
 **Space and power**
 
