@@ -6,6 +6,7 @@ import { yearOf } from "../../../sim/00-core/time";
 import { isAvailable, skillFor } from "../../../sim/10-catalog/research";
 import { storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
 import { cancel, install, storeBlocker } from "../../../sim/90-actions/store";
+import { Confirm } from "../../desktop/Confirm";
 import { PearMark } from "../../desktop/Intro";
 import { appByName } from "../registry";
 import { useStore } from "../../store";
@@ -123,6 +124,7 @@ export function Software() {
 function Detail({ item, price, back }: { item: StoreItem; price: string; back: () => void }) {
   const { game, act } = useStore();
   const has = game.installed.includes(item.id);
+  const [cancelling, setCancelling] = useState(false);
   const facts: [string, string][] = [
     ["Subscription", price],
     ["Skill", skillFor(item.id)?.name ?? "None"],
@@ -138,12 +140,14 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
           <p>{artOf(item).about}</p>
           <div className="ps-detail-actions">
             <Action item={item} big />
-            {has && <button className="btn" onClick={() => act((s) => cancel(s, item.id))}>Cancel subscription</button>}
+            {has && <button className="btn" onClick={() => setCancelling(true)}>Cancel subscription</button>}
           </div>
         </div>
       </header>
       <dl className="ps-facts">
         {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={k === "Subscription" ? "num" : undefined}>{v}</dd></div>)}
+        {cancelling && <Confirm title={`Cancel ${item.name}?`} action="Cancel subscription" onCancel={() => setCancelling(false)}
+          onConfirm={() => { setCancelling(false); act((s) => cancel(s, item.id)); }} text={`The subscription for ${item.name} ends today.`} />}
       </dl>
       <section className="ps-shelf">
         <h3>Includes</h3>

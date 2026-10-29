@@ -622,6 +622,10 @@ A legal request shows a verified mark next to the agency's name and a countdown 
 
 **Automating support.** Support agents work through the queue at their own speed. Later, an AI support bot handles simple ticket types such as how-to and billing questions, and passes the rest to humans. A public status page (an unlock) cuts outage tickets.
 
+**Assigning tickets.** The Support ticket header lists the support agents as chips. A ticket assigned to an agent waits for that agent, who answers it before the rest of the queue; the other agents leave it alone. Choosing Nobody hands it back, and a ticket whose agent has left the company counts as unassigned.
+
+**Customer credit and suspension.** The right-click menu of a customer page has Credit, which takes an amount and lowers the customer's next invoice by it (what the invoice is too small to take stays for the one after), and Suspend or Unsuspend, which holds every service of the customer offline. The first suspension costs happiness and brings a ticket, as an invoice suspension does. The two Cancel subscription buttons for bots and Pear Store subscriptions ask for confirmation first.
+
 **Replies.** Everything you or an employee do on a ticket or order goes out as an email in the thread, written in the company's voice for that situation: a template answer, a credit or refund with its amount, a retention offer, a cancellation confirmation, an unsuspension with its payment deadline, a forwarded or rejected notice, an answer to an authority, an accepted order with what was set up, where and when, and a declined order or request with its reason in the customer's terms (the product is not offered in that city, the city is full, or no reason beyond not taking it on). Each email has three wordings, picked by the seed, so the inbox does not repeat itself. Customers may write with dry humour; the company's replies stay professional.
 
 ## Billing, finance and insurance

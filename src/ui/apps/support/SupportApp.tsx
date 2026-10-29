@@ -8,7 +8,7 @@ import { missingFor, requestName, requirementsFor, type SalesRequest } from "../
 import { orderOf } from "../../../sim/30-market/orders";
 import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
-import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } from "../../../sim/90-actions/support";
+import { assignTicket, closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useFocus, useStore } from "../../store";
@@ -277,6 +277,7 @@ function Thread({ tk }: { tk: Ticket }) {
   const left = tk.dueAt - game.hour;
   const services = game.services.filter((v) => v.customerId === tk.customerId && v.endedAt === null);
   const locked = !!tk.work || isFinal(tk);
+  const agents = game.staff.filter((e) => e.role === "support");
 
   return (
     <div className="sup-detail">
@@ -291,6 +292,16 @@ function Thread({ tk }: { tk: Ticket }) {
                 : <span>Due <span className="num">{due(tk.dueAt, game.hour)}</span></span>}</span>
             : <span className="pill">{statusOf(tk)}</span>}
         </div>
+        {agents.length > 0 && !isFinal(tk) && (
+          <div className="facts">
+            <span>Assign</span>
+            <span className="seg wrap" role="group" aria-label="Assign">
+              {[{ id: null, name: "Nobody" }, ...agents].map((a) => (
+                <button key={a.id ?? "none"} aria-pressed={tk.assignee === a.id} onClick={() => act((s) => assignTicket(s, tk.id, a.id))}>{a.name}</button>
+              ))}
+            </span>
+          </div>
+        )}
       </div>
 
       {sender ? (

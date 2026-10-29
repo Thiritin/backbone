@@ -89,6 +89,8 @@ export interface GameState {
   // A missed repayment blocks new loans until this hour.
   loansBlockedUntil: number;
   billingRules: BillingRules;
+  // Customers whose services the player holds offline.
+  heldCustomers: string[];
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
   tickets: Ticket[];
   playerBusyUntil: number;
@@ -185,6 +187,7 @@ export const newGame = (seed: number): GameState => ({
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, lossReports: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
+  heldCustomers: [],
   tickets: [], playerBusyUntil: 0, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)" },
   homeLine: { id: "", next: null },

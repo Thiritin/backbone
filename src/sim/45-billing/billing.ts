@@ -102,7 +102,7 @@ export function dueStep(inv: Invoice, hour: number): number | null {
 }
 
 export const isSuspended = (s: GameState, customerId: string): boolean =>
-  s.invoices.some((i) => i.customerId === customerId && i.suspended && isUnpaid(i));
+  s.heldCustomers.includes(customerId) || s.invoices.some((i) => i.customerId === customerId && i.suspended && isUnpaid(i));
 
 const customerName = (s: GameState, id: string) => s.customers.find((c) => c.id === id)?.name ?? id;
 
@@ -310,6 +310,13 @@ export function billingTick(s: GameState): SimEvent[] {
 
   const issued: Invoice[] = [];
   for (const [customerId, ls] of lines) {
+    // A credit note takes off what is billed, never more.
+    const owner = s.customers.find((c) => c.id === customerId);
+    const take = owner ? Math.min(owner.credit, cents(ls.reduce((sum, l) => sum + l.amount, 0))) : 0;
+    if (owner && take > 0) {
+      ls.push({ serviceId: null, key: "invoice.line.credit", params: {}, amount: -take });
+      s.customers = s.customers.map((c) => (c === owner ? { ...c, credit: cents(c.credit - take) } : c));
+    }
     const payStep = rollPayStep(s.rng, s.customers.find((c) => c.id === customerId)?.habit ?? "prompt");
     issued.push({
       id: `inv${s.nextId++}`, number: `${yearOf(s.hour)}-${String(invoices.length + issued.length + 1).padStart(4, "0")}`,

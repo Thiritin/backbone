@@ -36,6 +36,16 @@ export function readTicket(s: GameState, id: string): ActionResult {
   return { ok: true, id };
 }
 
+// Reserves a ticket for one support agent, who answers it before the rest of the queue; null hands it back.
+export function assignTicket(s: GameState, id: string, employeeId: string | null): ActionResult {
+  const t = s.tickets.find((x) => x.id === id);
+  if (!t) return fail("error.unknownTicket");
+  if (isFinal(t)) return fail("error.ticketDone");
+  if (employeeId !== null && !s.staff.some((e) => e.id === employeeId && e.role === "support")) return fail("error.unknownEmployee");
+  t.assignee = employeeId;
+  return { ok: true, id };
+}
+
 export function replyTicket(s: GameState, id: string, template: string): ActionResult {
   const f = find(s, id);
   if ("error" in f) return f.error;

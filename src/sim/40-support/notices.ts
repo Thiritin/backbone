@@ -57,7 +57,7 @@ export function domainOf(s: GameState, c: Customer): { domain: string; serviceId
 function addTicket(s: GameState, kind: "notice" | "legal", topic: string, c: Customer | null, serviceId: string | null, notice: Notice, dueHours: number): Ticket {
   const t: Ticket = {
     id: `tkt${s.nextId++}`, customerId: c?.id ?? "", serviceId, kind, topic, status: "open", createdAt: s.hour, dueAt: s.hour + dueHours,
-    updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null, notice,
+    updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null, assignee: null, notice,
   };
   s.tickets = [...s.tickets, t];
   return t;

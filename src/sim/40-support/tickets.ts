@@ -22,6 +22,8 @@ export interface Ticket {
   outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | "forwarded" | "takenDown" | "rejected" | "ignored" | "withdrawn" | "complied" | "objected"
     | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "reverted" | null;
   work: Work | null; notice?: Notice;
+  // The support agent (an employee id) who takes the ticket before anyone else.
+  assignee: string | null;
 }
 
 export const HOURS_PER_MONTH = 730;
@@ -110,7 +112,7 @@ export function createTicket(s: GameState, c: Customer, kind: TicketKind, servic
     id: `tkt${s.nextId++}`, customerId: c.id,
     serviceId: serviceId !== undefined ? serviceId : services.length ? services[Math.floor(rand(s.rng) * services.length)].id : null,
     kind, topic: topic ?? topics[Math.floor(rand(s.rng) * topics.length)], status: "open",
-    createdAt: s.hour, dueAt: replyDue(c, s.hour), updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null,
+    createdAt: s.hour, dueAt: replyDue(c, s.hour), updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null, assignee: null,
   };
   s.tickets = [...s.tickets, t];
   return t;

@@ -6,6 +6,8 @@ export type Product = "webHosting" | "domain" | "ssl" | "dns" | "gameServer" | "
 export type PaymentHabit = "prompt" | "late" | "bad" | "friend";
 // history holds happiness at each of the last 12 month starts, oldest first.
 export interface Customer { id: string; name: string; profile: Profile; since: number; happiness: number; habit: PaymentHabit; churnedAt: number | null; history: number[];
+  // The balance of credit notes the next invoice takes off.
+  credit: number;
   // A customer who draws abuse reports and legal requests; never shown to the player. Set on customers won from a shady request.
   shady?: boolean }
 // price is per hour for period "hour" (invoiced monthly in arrears) and per year for period "year" (invoiced in advance).

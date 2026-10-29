@@ -1,5 +1,5 @@
 import { ChevronLeft, Contact, Cpu, FileText, Globe, History, LifeBuoy, ListChecks, Receipt, Server } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import type { Customer, Profile, Service } from "../../../sim/30-customers/customers";
 import { referenceFor } from "../../../sim/30-market/market";
@@ -8,6 +8,7 @@ import { isFinal, profileStats, serviceMonthly } from "../../../sim/40-support/t
 import { invoiceTotal, isUnpaid, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { zoneOf } from "../../../sim/60-infra/network";
+import { creditCustomer, suspendCustomer } from "../../../sim/90-actions/customers";
 import { renewDomain } from "../../../sim/90-actions/orders";
 import { changePrice } from "../../../sim/90-actions/sales";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
@@ -86,6 +87,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   const openApp = useStore((s) => s.openApp);
   const [tab, setTab] = useState<Tab>(first);
   const [pricing, setPricing] = useState<string | null>(null);
+  const [crediting, setCrediting] = useState(false);
   const { c } = r;
   const vms = game.installed.includes("Virtual machines");
   const services = game.services.filter((v) => v.customerId === c.id).sort((a, b) => Number(a.endedAt !== null) - Number(b.endedAt !== null) || b.startedAt - a.startedAt);
@@ -107,6 +109,11 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
       w && kind === "panel" && { label: "Open panel host", run: () => openApp("Products", { kind: "cluster", id: w.clusterId! }) },
     ];
   };
+  const held = game.heldCustomers.includes(c.id);
+  const customerMenu = (): MenuEntry[] => [
+    { label: "Credit...", run: () => setCrediting(true) },
+    { label: held ? "Unsuspend" : "Suspend", run: () => act((s) => suspendCustomer(s, c.id, !held)) },
+  ];
   const domainMenu = (name: string) => (): MenuEntry[] => [
     c.churnedAt === null && { label: "Renew", run: () => act((s) => renewDomain(s, name)) },
     { label: "Open in Billing", run: () => openApp("Billing", { kind: "domain", id: name }) },
@@ -143,7 +150,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   const ticketHead = <thead><tr><th>Subject</th><th>Type</th><th>Opened</th><th className="r">Status</th></tr></thead>;
 
   return (
-    <div className="cus-page">
+    <div className="cus-page" onContextMenu={c.churnedAt === null ? menuOn(customerMenu) : undefined}>
       <header className="cus-page-head">
         <button className="btn ghost cus-back" onClick={onBack}><ChevronLeft />Customers</button>
         <div className="cus-head">
@@ -155,6 +162,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
           <StatusChip s={r.status} />
         </div>
       </header>
+      {crediting && c.churnedAt === null && <CreditSheet customerId={c.id} onClose={() => setCrediting(false)} />}
       <dl className="fin-totals cus-totals">
         <div><dt>Monthly value</dt><dd className="num">{euroPrice(r.monthly)}</dd></div>
         <div><dt>Open balance</dt><dd className="num">{euroCents(r.balance)}</dd></div>
@@ -325,6 +333,28 @@ function Timeline({ invoices, tickets, subject }: { invoices: Invoice[]; tickets
         ))}
       </tbody>
     </table>
+  );
+}
+
+function CreditSheet({ customerId, onClose }: { customerId: string; onClose: () => void }) {
+  const act = useStore((s) => s.act);
+  const id = useId();
+  const [text, setText] = useState(""), amount = Math.round(Number(text) * 100) / 100;
+  const save = () => { if (act((s) => creditCustomer(s, customerId, amount)).ok) onClose(); };
+  return (
+    <div className="cus-price cus-credit">
+      <div className="price-field">
+        <label className="price-label" htmlFor={id}>Credit amount</label>
+        <span className="price-input">
+          <input id={id} type="number" min={0} step={0.01} autoFocus value={text} onChange={(e) => setText(e.target.value)} />
+          <span aria-hidden>€</span>
+        </span>
+      </div>
+      <div className="fin-actions">
+        <button className="btn ghost" onClick={onClose}>Cancel</button>
+        <button className="btn primary" disabled={!(amount > 0)} onClick={save}>Credit</button>
+      </div>
+    </div>
   );
 }
 
