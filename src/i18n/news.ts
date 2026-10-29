@@ -1,7 +1,7 @@
 type Params = Record<string, string | number>;
 
 // Headlines of the News app; spread into en. Heize online covers hardware and software, Golem.dy the internet, Handelsblah the market.
-const kind = (p: Params) => (p.kind === "panel" ? "hosting panel" : "cloud platform");
+const kind = (p: Params) => (p.kind === "panel" ? "hosting panel" : p.kind === "game" ? "game server panel" : "cloud platform");
 
 export const NEWS_EN: Record<string, (p: Params) => string> = {
   "event.news.software.title": (p) => `${p.name} released`,

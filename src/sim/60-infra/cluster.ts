@@ -1,6 +1,6 @@
 import { modelById } from "../10-catalog/hardware";
 import { START_YEAR, yearOf } from "../00-core/time";
-import { IN_VM, kindServing, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
+import { IN_VM, kindsServing, kindServing, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
@@ -80,7 +80,7 @@ export function controlPlaneUse(c: Pick<Cluster, "panel" | "platform">): Resourc
   const id = c.panel ?? c.platform;
   return id ? softwareById(id).controlPlane : ZERO;
 }
-const density = (c: Cluster) => (c.platform ? softwareById(c.platform).density : 1);
+const density = (c: Cluster) => softwareOf(c)?.density ?? 1;
 
 // What a node can book for workloads: its capacity times the hypervisor's density, less the control plane it runs. With
 // Memory reservation on, or for automatic placement (guard), RAM stops at the installed RAM.
@@ -122,11 +122,10 @@ export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): bo
   return fits(used, { vcpu: cap.vcpu * k, ramGb: cap.ramGb * k, diskGb: cap.diskGb * k }, cp);
 }
 
-// Whether the cluster sells the product line: web hosting on a panel host, virtual machines on a hypervisor cluster, and
-// products that need high availability only with automatic failover on.
+// Whether the cluster sells the product line: web hosting on a panel host, virtual machines on a hypervisor cluster, game
+// servers on either a game panel or a hypervisor cluster, and products that need high availability only with automatic failover on.
 export function supports(c: Cluster, p: Product): boolean {
-  const kind = kindServing(p);
-  if (!kind || c.kind !== kind || !(kind === "panel" ? c.panel : c.platform)) return false;
+  if (!kindsServing(p).includes(c.kind) || !(c.kind === "cloud" ? c.platform : c.panel)) return false;
   return !PRODUCTS[p].ha || c.ha.failover;
 }
 export const hasHosts = (c: Cluster): boolean => c.nodes.length > 0 || !!c.vm;
@@ -146,7 +145,7 @@ export function lineOffered(s: GameState, p: Product): boolean {
 export function noRoomError(s: GameState, p: Product, clusterId: string | null = null): string {
   if (PRODUCTS[p].runsOn === "server") return "error.noFreeServer";
   if (PRODUCTS[p].runsOn === "rack") return "error.needsDatacenter";
-  const kind = kindServing(p), mine = s.clusters.filter((c) => (clusterId ? c.id === clusterId : true) && c.kind === kind && (c.panel || c.platform));
+  const kind = kindServing(p), mine = s.clusters.filter((c) => (clusterId ? c.id === clusterId : true) && kindsServing(p).includes(c.kind) && (c.panel || c.platform));
   if (!mine.length) return kind === "panel" ? "error.needsPanel" : "error.needsPlatform";
   if (!mine.some((c) => supports(c, p))) return "error.needsHaCluster";
   if (!mine.some((c) => clusterReachable(s, c))) return "error.needsInternet";
@@ -161,6 +160,9 @@ export function controlPlaneUp(s: GameState, c: Cluster): boolean {
   if (c.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm); }
   return !!c.controlPlane && c.nodes.some((n) => n.deviceId === c.controlPlane) && working(s, c.controlPlane);
 }
+
+// Game panels come first when a game server looks for a cluster.
+export const gameFirst = (a: Cluster, b: Cluster): number => Number(b.kind === "game") - Number(a.kind === "game");
 
 // The kind of software that serves a workload: the panel of a panel host, otherwise the hypervisor.
 export const servedBy = (s: GameState, w: Workload): SoftwareKind => s.clusters.find((c) => c.id === w.clusterId)?.kind ?? "cloud";

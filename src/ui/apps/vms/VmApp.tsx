@@ -71,8 +71,10 @@ export function VmApp() {
   useFocus("Virtual machines", (f) => { if (f.kind === "workload") { setCluster(null); setNode(null); setFilter("all"); setIncidents(false); setSelected(f.id); } });
   const cluster = game.clusters.find((c) => c.id === clusterId);
   const clouds = game.clusters.filter((c) => c.kind === "cloud");
-  const vms = game.workloads.filter((w) => clouds.some((c) => c.id === w.clusterId));
-  const brand = cluster?.platform ? softwareById(cluster.platform) : null;
+  const lists = game.clusters.filter((c) => c.kind === "cloud" || c.kind === "game");
+  const vms = game.workloads.filter((w) => lists.some((c) => c.id === w.clusterId));
+  const brandId = cluster?.platform ?? cluster?.panel;
+  const brand = brandId ? softwareById(brandId) : null;
   const shown = vms.filter((w) => (!cluster || w.clusterId === cluster.id) && (!node || w.deviceId === node) && matches(filter, vmState(game, w)));
   const vm = game.workloads.find((w) => w.id === selected);
   const pickCluster = (id: string | null) => { setCluster(id); setNode(null); setIncidents(false); };
@@ -88,9 +90,9 @@ export function VmApp() {
         <button className={`side-item${!cluster && !incidents ? " active" : ""}`} aria-pressed={!cluster && !incidents} onClick={() => pickCluster(null)}>
           <Boxes />All clusters<span className="side-count">{vms.length}</span>
         </button>
-        {clouds.map((c) => (
+        {lists.map((c) => (
           <button key={c.id} className={`side-item${c.id === clusterId && !incidents ? " active" : ""}`} aria-pressed={c.id === clusterId && !incidents} onClick={() => pickCluster(c.id)}>
-            <Mark id={c.platform} size={16} />{c.name}<span className="side-count">{game.workloads.filter((w) => w.clusterId === c.id).length}</span>
+            <Mark id={c.platform ?? c.panel} size={16} />{c.name}<span className="side-count">{game.workloads.filter((w) => w.clusterId === c.id).length}</span>
           </button>
         ))}
         <button className={`side-item fin-auto-item${incidents ? " active" : ""}`} aria-pressed={incidents} onClick={() => setIncidents(true)}>
@@ -130,7 +132,7 @@ export function VmApp() {
                         <td>{v ? v.label : own.name}{w.hostname && <div className="cus-sub num">{fqdn(game, w.hostname)}</div>}</td>
                         <td>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</td>
                         <td>{v ? PRODUCT[v.product] : own.service}</td>
-                        <td>{d && devName(d)}</td>
+                        <td>{d ? devName(d) : hostName(game, w)}</td>
                         <td className="r num">{num(w.vcpu)} vCPU · {ram(+w.ramGb.toFixed(2))}</td>
                         <td><span className={`pill ${tone}`}>{label}</span></td>
                       </tr>
@@ -148,6 +150,12 @@ export function VmApp() {
   );
 }
 
+// The player's VM a game server runs in when its game panel is installed in one, otherwise nothing.
+const hostName = (game: GameState, w: Workload): string => {
+  const vm = game.workloads.find((x) => x.id === game.clusters.find((c) => c.id === w.clusterId)?.vm);
+  return vm ? vmLabel(game, vm).name : "";
+};
+
 function VmDetail({ game, w }: { game: GameState; w: Workload }) {
   const act = useStore((s) => s.act);
   const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId);
@@ -163,7 +171,7 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
         {w.hostname && <div className="span"><dt>Hostname</dt><dd className="num">{fqdn(game, w.hostname)}</dd></div>}
         <div><dt>Customer</dt><dd>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</dd></div>
         <div><dt>Product</dt><dd>{v ? PRODUCT[v.product] : own.service}</dd></div>
-        <div><dt>Host</dt><dd>{host ? devName(host) : "None"}</dd></div>
+        <div><dt>Host</dt><dd>{host ? devName(host) : hostName(game, w) || "None"}</dd></div>
         <div><dt>Cluster</dt><dd>{cluster.name}</dd></div>
         <AddressRows game={game} id={w.id} />
         <div><dt>vCPU</dt><dd className="num">{num(w.vcpu)}</dd></div>

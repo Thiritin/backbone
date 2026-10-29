@@ -72,7 +72,7 @@ function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
     <>
       <div className="loc-card-h loc-sub">
         <h3>{cluster.name}</h3>
-        <span className="pill">{cluster.kind === "cloud" ? "Hypervisor" : cluster.kind === "mail" ? "Mail server" : "Panel host"}</span>
+        <span className="pill">{cluster.kind === "cloud" ? "Hypervisor" : cluster.kind === "mail" ? "Mail server" : cluster.kind === "game" ? "Game panel host" : "Panel host"}</span>
         <span className="grow" />
         {cluster.kind === "cloud" && (
           <div className="seg" role="group" aria-label="Placement">

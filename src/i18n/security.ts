@@ -20,7 +20,8 @@ export const SECURITY_EN: Record<string, (p: Params) => string> = {
   "event.vuln.hacked.text": (p) => {
     const leak = `${p.customers} ${Number(p.customers) === 1 ? "customer received" : "customers received"} a data leak notice.`;
     if (p.kind === "mail") return `Attackers took over ${p.device} and are sending spam from it.`;
-    return `Attackers ${p.kind === "cloud" ? "took over the virtual machines on" : "defaced the sites on"} ${p.device} and are sending spam from it. ${leak}`;
+    const hit = p.kind === "cloud" ? "took over the virtual machines on" : p.kind === "game" ? "took over the game servers on" : "defaced the sites on";
+    return `Attackers ${hit} ${p.device} and are sending spam from it. ${leak}`;
   },
   "error.patchPending": () => "The patch for this vulnerability is not out yet.",
   "error.sitesOffline": () => "The sites on this node are already offline.",

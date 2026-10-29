@@ -52,7 +52,7 @@ export function startWorkload(s: GameState, id: string): ActionResult {
 // off a failed node); web spaces are back within a minute inside a zone.
 export function migrationDowntime(s: GameState, w: Workload, gbit: number, otherZone: boolean): number {
   const c = s.clusters.find((x) => x.id === w.clusterId);
-  const vm = isOwnVm(w) || c?.kind === "cloud";
+  const vm = isOwnVm(w) || c?.kind === "cloud" || c?.kind === "game";
   const live = !!c?.platform && softwareById(c.platform).live && c.ha.live && !!w.deviceId && working(s, w.deviceId) && (!otherZone || gbit >= LIVE_ZONE_GBIT);
   if (live || (!otherZone && !vm)) return 0;
   return Math.max(1, Math.ceil((w.diskGb + w.ramGb) / (gbit * LAN_GB_PER_HOUR)));

@@ -9,7 +9,7 @@ import { inUs } from "../20-world/datacenters";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
 import { bump, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
-import { lineOffered, noRoomError, pickNode, serverTaken, supports, workloadsOf } from "../60-infra/cluster";
+import { gameFirst, lineOffered, noRoomError, pickNode, serverTaken, supports, workloadsOf } from "../60-infra/cluster";
 import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
 import { addAwareness, discountFor } from "../80-business/marketing";
@@ -162,7 +162,7 @@ export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product"
   const zones = s.locations.filter((l) => l.city === r.city && addressesFit(s, l, r.product, r.spec)).map((l) => l.az);
   const spec = PRODUCTS[r.product], size = sizeOf(r.spec);
   if (spec.runsOn === "cluster") {
-    const c = s.clusters.find((x) => zones.includes(x.az) && supports(x, r.product) && pickNode(s, x, size));
+    const c = [...s.clusters].sort(gameFirst).find((x) => zones.includes(x.az) && supports(x, r.product) && pickNode(s, x, size));
     return c ? { clusterId: c.id, zone: c.az } : null;
   }
   if (spec.runsOn === "server") {
