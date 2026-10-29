@@ -1,4 +1,4 @@
-import { ding } from "./ding";
+import { monthNet, pickSound, playSound, soundFor, type Sound } from "./sounds";
 import { useEffect } from "react";
 import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
@@ -25,7 +25,9 @@ const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
   Support: { w: 1240, h: 720 }, Research: { w: 1140, h: 600 }, Products: { w: 1120, h: 720 }, "Virtual machines": { w: 1180, h: 680 }, Staff: { w: 1240, h: 640 },
 };
 
-export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: app === "Support", ...prefs[app] });
+export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: true, ...prefs[app] });
+export interface SoundPref { on: boolean; volume: number }
+const SOUND_DEFAULT: SoundPref = { on: true, volume: 0.6 };
 const PREFS_KEY = "backbone.prefs";
 export type Theme = "light" | "dark" | "auto";
 const THEME_KEY = "backbone.theme";
@@ -38,6 +40,8 @@ interface Store {
   history: Banner[];
   notifyPrefs: Record<string, Partial<NotifyPref>>;
   setNotifyPref: (app: string, patch: Partial<NotifyPref>) => void;
+  sound: SoundPref;
+  setSound: (patch: Partial<SoundPref>) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
   // The Welcome to Pear sheet a new game opens with.
@@ -60,7 +64,8 @@ interface Store {
   minimize: (id: string) => void;
   toggleZoom: (id: string) => void;
   place: (id: string, box: Partial<Pick<Win, "x" | "y" | "w" | "h">>) => void;
-  notify: (app: string, title: string, text: string) => void;
+  // key is the sim event key that picks the sound.
+  notify: (app: string, title: string, text: string, key?: string) => void;
   dismiss: (id: number) => void;
   forget: (id: number | null) => void;
   started: boolean;
@@ -97,13 +102,30 @@ function loadGame(): { game: GameState; loaded: boolean } {
 
 const initial = loadGame();
 
-function loadPrefs(): Record<string, Partial<NotifyPref>> {
+function loadPrefs(): { notify: Record<string, Partial<NotifyPref>>; sound: SoundPref } {
   try {
-    return JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}").notify ?? {};
+    const p = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}");
+    return { notify: p.notify ?? {}, sound: { ...SOUND_DEFAULT, ...p.sound } };
   } catch {
-    return {};
+    return { notify: {}, sound: SOUND_DEFAULT };
   }
 }
+const prefs = loadPrefs();
+
+function savePrefs(notify: Record<string, Partial<NotifyPref>>, sound: SoundPref) {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ notify, sound }));
+  } catch {
+    // Kept for this session only.
+  }
+}
+
+// Sounds queued during one advance or action play together once it returns.
+const uiSound = (kind: "open" | "close") => {
+  const { on, volume } = useStore.getState().sound;
+  if (on) playSound(kind, volume);
+};
+const pending = new Set<Sound>(), lastPlayed: Partial<Record<Sound, number>> = {};
 
 function loadTheme(): Theme {
   try {
@@ -121,7 +143,8 @@ export const useStore = create<Store>((set, get) => ({
   windows: [],
   banners: [],
   history: [],
-  notifyPrefs: loadPrefs(),
+  notifyPrefs: prefs.notify,
+  sound: prefs.sound,
   theme: loadTheme(),
   setTheme: (theme) => {
     set({ theme });
@@ -159,7 +182,7 @@ export const useStore = create<Store>((set, get) => ({
     let advisory = false;
     for (let i = 0; i < hours; i++) {
       for (const e of tick(game)) {
-        get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params));
+        get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params), e.key);
         if (e.key === "event.trainingDone") set({ explain: String(e.params.id) });
         if (ADVISORY_KEYS.includes(e.key)) advisory = true;
       }
@@ -182,6 +205,7 @@ export const useStore = create<Store>((set, get) => ({
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
     const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
+    uiSound("open");
     set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x: 96 + n * 32, y: 64 + n * 28, ...size, z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   openDoc: (doc) => {
@@ -194,7 +218,10 @@ export const useStore = create<Store>((set, get) => ({
     set({ windows: [...ws, { id: `${doc}-${Date.now()}`, app: "Notes", doc, x: 160 + n * 32, y: 84 + n * 28, w: 560, h: 420, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },
   focus: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, z: topZ(windows) + 1 } : w)) })),
-  close: (id) => set(({ windows }) => ({ windows: windows.filter((w) => w.id !== id) })),
+  close: (id) => {
+    uiSound("close");
+    set(({ windows }) => ({ windows: windows.filter((w) => w.id !== id) }));
+  },
   minimize: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, minimized: true } : w)) })),
   toggleZoom: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, zoomed: !w.zoomed } : w)) })),
   place: (id, box) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, ...box } : w)) })),
@@ -202,16 +229,27 @@ export const useStore = create<Store>((set, get) => ({
   setNotifyPref: (app, patch) => {
     const notifyPrefs = { ...get().notifyPrefs, [app]: { ...prefOf(get().notifyPrefs, app), ...patch } };
     set({ notifyPrefs });
-    try {
-      localStorage.setItem(PREFS_KEY, JSON.stringify({ notify: notifyPrefs }));
-    } catch {
-      // Kept for this session only.
-    }
+    savePrefs(notifyPrefs, get().sound);
   },
-  notify: (app, title, text) => {
+  setSound: (patch) => {
+    const sound = { ...get().sound, ...patch };
+    set({ sound });
+    savePrefs(get().notifyPrefs, sound);
+  },
+  notify: (app, title, text, key) => {
     const pref = prefOf(get().notifyPrefs, app);
     if (!pref.allow) return;
-    if (pref.sound) ding();
+    const kind = key ? soundFor(app, key) : null;
+    if (kind && pref.sound && get().speed > 0 && get().sound.on && !globalThis.document?.hidden) {
+      if (!pending.size) queueMicrotask(() => {
+        const now = Date.now(), pick = pickSound(pending, now, lastPlayed), { game, sound } = get();
+        pending.clear();
+        if (!pick) return;
+        lastPlayed[pick] = now;
+        playSound(pick, sound.volume, pick === "month" && monthNet(game.ledger, game.hour) > 0);
+      });
+      pending.add(kind);
+    }
     const b = { id: ++bannerId, app, title, text, hour: get().game.hour };
     set(({ banners, history, unseen }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
     setTimeout(() => get().dismiss(b.id), 6000);

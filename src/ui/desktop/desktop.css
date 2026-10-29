@@ -89,6 +89,9 @@ button { font: inherit; color: inherit; cursor: default; }
 .settings-company { padding: 12px 14px; }
 .settings-company .field { max-width: 280px; }
 .settings-line { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; }
+.settings-divide { border-top: 0.5px solid var(--line); }
+.settings-volume { width: 180px; accent-color: var(--accent); }
+.settings-volume:disabled { opacity: 0.45; }
 
 .co-fields { width: 100%; display: grid; gap: 6px; text-align: left; }
 .co-label { font-size: 12px; font-weight: 550; color: var(--text-2); margin-top: 6px; }

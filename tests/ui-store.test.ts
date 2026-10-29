@@ -20,9 +20,9 @@ describe("notification settings", () => {
     expect(s().banners).toHaveLength(1);
   });
 
-  it("plays a sound for Support by default and nowhere else until switched on", () => {
+  it("plays sounds for every app by default until switched off", () => {
     expect(prefOf({}, "Support")).toEqual({ allow: true, sound: true });
-    expect(prefOf({}, "Billing")).toEqual({ allow: true, sound: false });
+    expect(prefOf({}, "Billing")).toEqual({ allow: true, sound: true });
     expect(prefOf({ Support: { sound: false } }, "Support").sound).toBe(false);
   });
 

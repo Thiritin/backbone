@@ -3,11 +3,12 @@ import { setCompany } from "../../sim/90-actions/company";
 import { APPS } from "./registry";
 import { CompanyFields } from "./company";
 import { prefOf, useStore, type Theme } from "../store";
+import { playSound } from "../sounds";
 
 const THEMES: [Theme, string][] = [["light", "Light"], ["dark", "Dark"], ["auto", "Automatic"]];
 
 export function SettingsApp() {
-  const { notifyPrefs, setNotifyPref, game, act, theme, setTheme } = useStore();
+  const { notifyPrefs, setNotifyPref, game, act, theme, setTheme, sound, setSound } = useStore();
   const [name, setName] = useState(game.company.name);
   const commitName = () => {
     if (name.trim() === game.company.name) setName(game.company.name);
@@ -25,6 +26,18 @@ export function SettingsApp() {
         <span>Theme</span>
         <div className="seg" role="group" aria-label="Theme">
           {THEMES.map(([t, label]) => <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>{label}</button>)}
+        </div>
+      </div>
+      <h2>Sound</h2>
+      <div className="settings-group">
+        <div className="settings-line">
+          <span>Sound effects</span>
+          <input type="checkbox" role="switch" className="switch" aria-label="Sound effects" checked={sound.on} onChange={(e) => setSound({ on: e.target.checked })} />
+        </div>
+        <div className="settings-line settings-divide">
+          <span>Volume</span>
+          <input type="range" className="settings-volume" aria-label="Volume" min={0} max={1} step={0.05} value={sound.volume} disabled={!sound.on}
+            onChange={(e) => setSound({ volume: Number(e.target.value) })} onPointerUp={(e) => playSound("ticket", Number(e.currentTarget.value))} />
         </div>
       </div>
       <h2>Notifications</h2>
