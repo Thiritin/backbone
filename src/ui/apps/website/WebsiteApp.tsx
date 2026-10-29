@@ -9,8 +9,8 @@ import { euro, euroCents } from "../../../sim/00-core/money";
 import { PRODUCTS } from "../../../sim/10-catalog/products";
 import { hasOrderForm, OWNED, owns } from "../../../sim/80-business/marketing";
 import { setUpChannel } from "../../../sim/90-actions/marketing";
-import { lineBlocker, listed, SITE_LINES, siteContent } from "../../../sim/80-business/website";
-import { setEmailOrders, setLine } from "../../../sim/90-actions/website";
+import { generationOf, lineBlocker, listed, SITE_LINES, SITE_RENT, siteContent, siteRoom, siteStatus, type SiteStatus } from "../../../sim/80-business/website";
+import { redesign, setEmailOrders, setLine, setSiteHost } from "../../../sim/90-actions/website";
 import { useStore } from "../../store";
 import { CompanyMark } from "../company";
 import { PRODUCT } from "../support/labels";
@@ -30,9 +30,15 @@ const BLURB: Record<Product, string> = {
   domain: "", ssl: "",
 };
 
+const STATUS: Record<SiteStatus, [string, string]> = { up: ["Up", "ok"], slow: ["Slow", "warn"], down: ["Down", "bad"] };
+
 export function WebsiteApp() {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
+  const { siteHost, designYear } = game.marketing, status = siteStatus(game), [statusLabel, statusTone] = STATUS[status];
+  const panels = game.clusters.filter((c) => c.kind === "panel" && c.panel);
+  const hostName = siteHost.kind === "own" ? game.clusters.find((c) => c.id === siteHost.clusterId)?.name ?? "Missing host" : "Strateaux";
+  const current = designYear >= generationOf(yearOf(game.hour));
   return (
     <div className="web">
       <nav className="sidebar web-side" aria-label="Products on the website">
@@ -73,14 +79,47 @@ export function WebsiteApp() {
             </label>
           </div>
         )}
+        {owns(game, "website") && (
+          <div className="web-line">
+            <div className="web-line-row">
+              <span>Design <span className="num">{designYear}</span></span>
+              <button className="btn" disabled={current || game.cash < OWNED.website.setup} onClick={() => act((s) => redesign(s))}>
+                Redesign <span className="num">{euro(OWNED.website.setup)}</span>
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="side-h">Hosting</div>
+        <div className="web-line web-host">
+          <div className="web-line-row"><span>{hostName}</span><span className={`pill ${statusTone}`}>{statusLabel}</span></div>
+          {siteHost.kind === "rented" && <p className="web-why"><span className="num">{euroCents(SITE_RENT)}</span> a month</p>}
+          <div className="seg wrap" role="group" aria-label="Host">
+            <button aria-pressed={siteHost.kind === "rented"} onClick={() => act((s) => setSiteHost(s, { kind: "rented" }))}>Rented</button>
+            {panels.map((c) => (
+              <button key={c.id} aria-pressed={siteHost.kind === "own" && siteHost.clusterId === c.id}
+                disabled={!siteRoom(game, c).fits && !(siteHost.kind === "own" && siteHost.clusterId === c.id)}
+                onClick={() => act((s) => setSiteHost(s, { kind: "own", clusterId: c.id }))}>{c.name}</button>
+            ))}
+          </div>
+        </div>
       </nav>
       <div className="web-browser">
         <div className="web-bar">
           <ArrowLeft aria-hidden /><ArrowRight aria-hidden /><RotateCw aria-hidden />
           <div className="web-url">http://www.{companyDomain(game)}/</div>
         </div>
-        <div className="web-view"><Site game={game} /></div>
+        {status === "slow" && <div className="web-load" aria-hidden />}
+        <div className="web-view">{status === "down" ? <SiteError domain={companyDomain(game)} /> : <Site game={game} />}</div>
       </div>
+    </div>
+  );
+}
+
+function SiteError({ domain }: { domain: string }) {
+  return (
+    <div className="site-error">
+      <h1>This site can't be reached</h1>
+      <p>www.{domain} took too long to respond.</p>
     </div>
   );
 }
@@ -89,7 +128,7 @@ function Site({ game }: { game: GameState }) {
   const { lines, email } = siteContent(game);
   const domain = companyDomain(game), city = game.locations[0]?.city ?? "Frankfurt";
   return (
-    <div className={`site${owns(game, "website") ? " designed" : ""}`} style={{ "--brand": game.company.color } as CSSProperties}>
+    <div className={`site${owns(game, "website") ? ` designed g${Math.min(2025, game.marketing.designYear)}` : ""}`} style={{ "--brand": game.company.color } as CSSProperties}>
       <header className="site-head">
         <CompanyMark company={game.company} className="co-mark site-logo" />
         <h1>{game.company.name}</h1>
@@ -121,7 +160,9 @@ function Site({ game }: { game: GameState }) {
       <footer className="site-foot">
         <span>Contact: <span className="site-link">sales@{domain}</span></span>
         <span>&copy; {yearOf(game.hour)} {game.company.name}</span>
+        {owns(game, "website") && game.marketing.designYear === 2005 && <span className="site-counter">{String(1000 + Math.floor(game.hour / 24) * 3).padStart(6, "0")}</span>}
       </footer>
+      {owns(game, "website") && game.marketing.designYear >= 2025 && <span className="site-chat" aria-hidden><i /><i /><i /></span>}
     </div>
   );
 }

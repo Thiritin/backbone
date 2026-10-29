@@ -8,6 +8,7 @@ import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
 import { fairBatches, fairGain } from "./fairs";
+import { siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
 
 export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
 
@@ -64,14 +65,19 @@ export interface Marketing {
   lines: Product[];
   // Whether orders still arrive by email.
   emailOrders: boolean;
+  // Where the company site runs, the generation of its design and whether the current outage has been announced.
+  siteHost: SiteHost;
+  designYear: number;
+  siteOutage: boolean;
 }
+export type SiteHost = { kind: "rented" } | { kind: "own"; clusterId: string };
 
 const AWARENESS_FLOOR = 0.02;
 const AWARENESS_DECAY = 0.02;
 const REVIEW_HOURS = 2 * 8760;
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true,
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false,
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 
@@ -89,7 +95,7 @@ export function leadsThisMonth(s: GameState): LeadBatch[] {
   const year = yearOf(s.hour), cities = marketCities(s), out: LeadBatch[] = [];
   if (owns(s, "website")) {
     for (const city of cities) for (const profile of PROFILE_IDS) {
-      out.push({ profile, city, source: "website", count: WEBSITE_LEADS * profileStats(profile).mix, conversion: 1 });
+      out.push({ profile, city, source: "website", count: WEBSITE_LEADS * profileStats(profile).mix * siteFactor(s), conversion: 1 });
     }
   }
   const boost = campaignBoost(s);
@@ -135,7 +141,7 @@ export function addAwareness(s: GameState, p: Profile, amount: number): void {
 export function monthlyMarketingCost(s: GameState): number {
   const upkeep = s.marketing.owned.reduce((n, c) => n + OWNED[c].upkeep, 0);
   const fee = s.marketing.platform ? PLATFORMS[s.marketing.platform].fee : 0;
-  return upkeep + fee + s.marketing.campaigns.reduce((n, c) => n + c.budget, 0);
+  return upkeep + fee + siteHostingCost(s) + s.marketing.campaigns.reduce((n, c) => n + c.budget, 0);
 }
 
 function reviewEvent(r: Review): SimEvent {
@@ -163,7 +169,7 @@ function updateAwareness(s: GameState): void {
   const paid = Object.fromEntries(PROFILE_IDS.map((p) => [p, 0])) as Record<Profile, number>;
   for (const b of leadsThisMonth(s)) if (b.source !== "website" && b.source !== "fair") paid[b.profile] += b.count;
   const reviews = 0.006 * (reviewScore(s) - 3.5) + 0.001 * trustBonus(s);
-  const site = owns(s, "website") ? 0.004 : 0;
+  const site = owns(s, "website") && siteStatus(s) !== "down" ? 0.004 : 0;
   const next = { ...s.marketing.awareness };
   for (const p of PROFILE_IDS) {
     const happy = s.customers.filter((c) => c.profile === p && c.churnedAt === null && c.happiness >= 70).length;
@@ -182,6 +188,7 @@ function bill(s: GameState): number {
   ];
   const platform = s.marketing.platform && PLATFORMS[s.marketing.platform];
   if (platform && platform.fee > 0) bills.push(entry("ledger.reviewPlatform", { name: platform.name }, platform.fee));
+  if (siteHostingCost(s) > 0) bills.push(entry("ledger.siteHosting", {}, siteHostingCost(s)));
   const total = bills.reduce((n, b) => n - b.amount, 0);
   s.cash = Math.round((s.cash - total) * 100) / 100;
   s.ledger = [...s.ledger, ...bills];
@@ -203,6 +210,7 @@ function invite(s: GameState, events: SimEvent[]): void {
 export function marketingTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   rollReviews(s, events);
+  siteDownEvent(s, events);
   if (!isMonthStart(s.hour)) return events;
   if (s.marketing.platform && PLATFORMS[s.marketing.platform].fee > 0 && !hasMarketingManager(s)) {
     events.push({ app: "Marketing", key: "event.platformDropped", params: { name: PLATFORMS[s.marketing.platform].name } });

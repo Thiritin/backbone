@@ -13,7 +13,7 @@ import { lineOffered, noRoomError, pickNode, serverTaken, supports, workloadsOf 
 import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
 import { addAwareness, discountFor } from "../80-business/marketing";
-import { listed } from "../80-business/website";
+import { listed, siteFactor } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
@@ -106,7 +106,7 @@ export function shadyLead(s: GameState, city: string, events: SimEvent[]): Sales
 }
 
 function morningMail(s: GameState, events: SimEvent[]): void {
-  const cache = new Map<string, number>();
+  const cache = new Map<string, number>(), site = siteFactor(s);
   for (const f of leadFlows(s)) {
     const n = poisson(s.rng, f.leads / DAYS_PER_MONTH);
     for (let i = 0; i < n; i++) {
@@ -116,6 +116,8 @@ function morningMail(s: GameState, events: SimEvent[]): void {
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads only write about lines on the website, which needs a control plane that sells them.
       if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
+      // The order form is part of the website: a down, slow or dated site loses its orders.
+      if (form && site < 1 && rand(s.rng) >= site) continue;
       if (!isStandard(f.profile, need.sla)) {
         newLead(s, f.profile, f.city, events, need);
         continue;

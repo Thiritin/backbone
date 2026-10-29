@@ -205,10 +205,12 @@ The cap is 2.4% of a city's new customers at level 1, 4% at level 3 and 6.4% at 
 
 - **Organic:** 0.4 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × review multiplier per month (see Organic leads in the game below). Organic leads only come from cities where you have a location.
 - **Referrals:** every customer with happiness 70 or more brings 0.005 leads per month × review multiplier, of their own profile, in your home city.
-- **Website:** 4 a month per location city once you own a website, split by the profile mix.
+- **Website:** 4 a month per location city once you own a website, split by the profile mix, times the site factor below.
 - **Paid:** campaign budget ÷ cost per lead (see [Marketing and reviews](#marketing-and-reviews)).
 
 Website and campaign leads send 10% to cities without a location of yours, where they cannot buy.
+
+**Site state.** The company site is rented from "Strateaux" (always up) or runs as a small workload (0.25 vCPU, 0.5 GB RAM, 2 GB disk) on one of your panel hosts. On an own host the site is down while the host is off, failed, frozen, taken offline or compromised, and slow while the host performs below 1 (overload, a PHP upgrade) or has over 90% of its RAM booked. Website leads and the orders of the order form are multiplied by 0 while the site is down and by 0.5 while it is slow, at the daily roll; search ads, campaigns, fairs, referrals and email orders are untouched. The site adds no awareness (the 0.004 a month under Marketing and reviews) while it is down.
 
 The review multiplier is 0.4 + 0.25 × (stars − 1), so 1 star gives 0.4, 3 stars 0.9 and 5 stars 1.4.
 
@@ -1418,6 +1420,16 @@ Web design and the order form are set up in the Website app's sidebar from the f
 | AI ads | €1,500 | None | Web design, from 2023 |
 
 The basic website every company starts with is free and brings no leads of its own. The web design brings 4 leads a month per location city, split by the profile mix. Every lead only writes when its product is listed on the website.
+
+**Site hosting.** A rented host costs €9.90 a month from the month the web design is bought, flat over the years (ledger line "Website hosting: Strateaux"). Anchor: German shared hosting packages from Strato and 1&1 cost €5 to €10 a month in 2005. An own host costs nothing extra.
+
+**Design generations.** The design belongs to a generation: 2005, 2009, 2013, 2017, 2021 or 2025 (every four years; the web design takes the generation of the year it is bought). With b = (current generation − design generation) ÷ 4, website leads and order form orders are multiplied by 1 for b of 0 or 1 and by max(0.4, 1 − 0.2 × (b − 1)) from b = 2:
+
+| Design from | 2012 | 2013 to 2016 | 2017 to 2020 | 2021 on |
+| --- | --- | --- | --- | --- |
+| 2005 | 100% | 80% | 60% | 40% |
+
+A redesign costs the web design setup (€400, ledger line "Website redesign") and sets the design to the current generation. Anchor: a small-business site cost $2,000 to $7,500 in 2005 to 2009 (WebpageFX, 2013); the game keeps all channel prices far below real agency prices on purpose, so the age penalty is the lever and not the price. The balance bot redesigns when it is two generations behind with more than €5,000 cash and keeps its site on the rented host.
 
 **Trade fairs.** Costs are 2026 euros, scaled back with m = 0.6 like campaigns. Each fair needs one attendee of any role, who is away for the fair's days.
 

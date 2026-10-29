@@ -4,6 +4,7 @@ import type { GameState } from "../50-state";
 import { BUDGETS, CAMPAIGNS, DISCOUNTS, OWNED, owns, PLATFORMS, reach, type CampaignChannel, type OwnedChannel, type PlatformId } from "../80-business/marketing";
 import { hasMarketingManager } from "../47-staff/staff";
 import { fairCost, upcomingFairs } from "../80-business/fairs";
+import { generationOf } from "../80-business/website";
 import { metrics } from "../metrics";
 import type { ActionResult } from "./hardware";
 
@@ -18,7 +19,7 @@ export function setUpChannel(s: GameState, channel: OwnedChannel): ActionResult 
   if (s.cash < def.setup) return fail("error.noCash");
   s.cash = Math.round((s.cash - def.setup) * 100) / 100;
   s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key: "ledger.marketingSetup", params: { channel }, amount: -def.setup }];
-  s.marketing = { ...s.marketing, owned: [...s.marketing.owned, channel] };
+  s.marketing = { ...s.marketing, owned: [...s.marketing.owned, channel], ...(channel === "website" && { designYear: generationOf(yearOf(s.hour)) }) };
   return { ok: true, id: channel };
 }
 

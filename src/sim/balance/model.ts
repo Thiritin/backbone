@@ -16,6 +16,7 @@ import { dcPerTb } from "../10-catalog/network";
 import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
 import { OFFER, ORGANIC_CONSIDER, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
 import { BUDGETS, OWNED, PLATFORMS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
+import { generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
 import { LEASE_FACTOR, LEASE_TERMS } from "../10-catalog/leasing";
 import { modelById, type DeviceModel } from "../10-catalog/hardware";
@@ -157,7 +158,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
   const books: Worker[] = [];
   let cash = START_CASH - servers[0].price, minCash = cash, level = 1, knowHow = 0, cities = 1, rackUnlocked = false, hireUnlocked = false;
   let backlogT = 0, backlogP = 0, waitHours = 4, downFrac = 0, lastMrr = 0, lastPerGb = 0, lastRunning = 0, yearProfit = 0, negMonths = 0, bankrupt = false;
-  let reviewSum = 0, reviewN = 0, website = false, cityRents = 0, chad = false;
+  let reviewSum = 0, reviewN = 0, website = false, designYear = 2005, cityRents = 0, chad = false;
   const aware: number[] = PROFILES.map(AWARENESS_START);
   // Customers of a cohort with happiness 70 or more, from its average.
   const happyOf = (i: number, k: number) => cohorts[i][k].n * Math.min(1, Math.max(0, (cohorts[i][k].H - 50) / 40));
@@ -198,7 +199,9 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
 
     // Leads (Market and leads), as 30-market/market.ts leadFlows: organic by awareness and referrals from happy customers,
     // capped per city, plus website and search campaign leads, of which 10% spill to cities without a location.
-    if (!website && rackUnlocked && cash > 3000 + OWNED.website.setup + OWNED.orderForm.setup) { website = true; cash -= OWNED.website.setup + OWNED.orderForm.setup; }
+    if (!website && rackUnlocked && cash > 3000 + OWNED.website.setup + OWNED.orderForm.setup) { website = true; designYear = generationOf(year); cash -= OWNED.website.setup + OWNED.orderForm.setup; }
+    // The bot redesigns once the site is 2 generations behind; its site stays on the rented host.
+    if (website && generationOf(year) - designYear >= 8 && cash > 5000) { designYear = generationOf(year); cash -= OWNED.website.setup; }
     // The search campaign: the largest preset budget within the bot's ad share, spread over every profile and city.
     const adSpent = cash > 3000 ? BUDGETS.filter((b) => b <= bot.adShare * lastMrr).at(-1) ?? 0 : 0;
     const perCity = adSpent / cities, dearer = 1 + perCity / SATURATION;
@@ -211,7 +214,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
         const referrals = c === 0 ? PRODUCTS.reduce((a, _, k) => a + happyOf(i, k), 0) * REFERRAL_LEADS * revMult : 0;
         const cap = leadCapShare(level) * market * p.mix;
         const paid = perCity / PROFILES.length / (priceAt(SEARCH_AD_COST[p.budget], 0.6, year) * dearer);
-        const site = website ? WEBSITE_LEADS * p.mix : 0;
+        const site = website ? WEBSITE_LEADS * p.mix * penaltyFor((generationOf(year) - designYear) / 4) : 0;
         paidBy[i] += paid;
         const leads = Math.min(organic + referrals, cap) + (paid + site) * (1 - SPILL_SHARE);
         book_("organic", organic); book_("referrals", referrals); book_("paid", paid); book_("website", site); book_("leads", leads); book_("cap", cap);
@@ -401,7 +404,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const leasing = leases.reduce((a, l) => a + l.payment, 0);
     for (let l = leases.length - 1; l >= 0; l--) if (leases[l].until <= month + 1) leases.splice(l, 1);
     const depreciation = servers.reduce((a, s) => a + (!s.leasedUntil && month - s.bought < 60 ? s.price / 60 : 0), 0);
-    const marketing = website ? OWNED.website.upkeep + OWNED.orderForm.upkeep : 0;
+    const marketing = website ? OWNED.website.upkeep + OWNED.orderForm.upkeep + SITE_RENT : 0;
     const chadPrice = chad ? subscriptionPrice(CHAD, year) + botTickets * mix((k) => costPerTicket(k, year)) : 0;
     // Every VPS and game server holds an address: extra business line addresses in the basement, provider addresses (one
     // per server too) in a datacenter.
