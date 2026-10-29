@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4A72F0"/>
+      <stop offset="1" stop-color="#2142B8"/>
+    </linearGradient>
+    <linearGradient id="unit" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#454A52"/>
+      <stop offset="1" stop-color="#2A2E34"/>
+    </linearGradient>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0B1650" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="230" fill="#FFFFFF" opacity="0.06"/>
+
+  <!-- spine cable -->
+  <rect x="246" y="92" width="20" height="328" rx="10" fill="#14286E" opacity="0.55"/>
+
+  <g filter="url(#sh)">
+    <!-- vertebrae: server units, widest in the middle -->
+    <g transform="translate(256 132)">
+      <rect x="-92" y="-26" width="184" height="52" rx="14" fill="url(#unit)"/>
+      <rect x="-78" y="-24" width="156" height="6" rx="3" fill="#FFFFFF" opacity="0.10"/>
+      <rect x="-70" y="-5" width="72" height="10" rx="5" fill="#1B1E22"/>
+      <circle cx="40" cy="0" r="7" fill="#3CCB7F"/>
+      <circle cx="64" cy="0" r="7" fill="#3CCB7F"/>
+    </g>
+    <g transform="translate(256 200)">
+      <rect x="-112" y="-26" width="224" height="52" rx="14" fill="url(#unit)"/>
+      <rect x="-98" y="-24" width="196" height="6" rx="3" fill="#FFFFFF" opacity="0.10"/>
+      <rect x="-90" y="-5" width="96" height="10" rx="5" fill="#1B1E22"/>
+      <circle cx="56" cy="0" r="7" fill="#3CCB7F"/>
+      <circle cx="80" cy="0" r="7" fill="#F2B33D"/>
+    </g>
+    <g transform="translate(256 268)">
+      <rect x="-120" y="-26" width="240" height="52" rx="14" fill="url(#unit)"/>
+      <rect x="-106" y="-24" width="212" height="6" rx="3" fill="#FFFFFF" opacity="0.10"/>
+      <rect x="-98" y="-5" width="104" height="10" rx="5" fill="#1B1E22"/>
+      <circle cx="64" cy="0" r="7" fill="#3CCB7F"/>
+      <circle cx="88" cy="0" r="7" fill="#3CCB7F"/>
+    </g>
+    <g transform="translate(256 336)">
+      <rect x="-104" y="-26" width="208" height="52" rx="14" fill="url(#unit)"/>
+      <rect x="-90" y="-24" width="180" height="6" rx="3" fill="#FFFFFF" opacity="0.10"/>
+      <rect x="-82" y="-5" width="88" height="10" rx="5" fill="#1B1E22"/>
+      <circle cx="48" cy="0" r="7" fill="#3CCB7F"/>
+      <circle cx="72" cy="0" r="7" fill="#3CCB7F"/>
+    </g>
+    <g transform="translate(256 400)">
+      <rect x="-78" y="-22" width="156" height="44" rx="12" fill="url(#unit)"/>
+      <rect x="-64" y="-20" width="128" height="5" rx="2.5" fill="#FFFFFF" opacity="0.10"/>
+      <rect x="-58" y="-4" width="60" height="8" rx="4" fill="#1B1E22"/>
+      <circle cx="34" cy="0" r="6" fill="#3CCB7F"/>
+      <circle cx="54" cy="0" r="6" fill="#3CCB7F"/>
+    </g>
+  </g>
+</svg>
