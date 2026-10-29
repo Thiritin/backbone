@@ -133,6 +133,7 @@ function Card({ model, brand, cls, part }: Item) {
   const drives = built.filter((p) => ["hdd", "ssd", "nvme"].includes(p.kind));
   const rows: [string, string][] = spec ? [...(part!.size !== undefined ? [["Size", partSize(part!)]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]]] : [
     ["Height", height(model)],
+    ...(model.until !== null ? [["End of sale", `${model.until}`]] as [string, string][] : []),
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
     ...(s ? [["Cores", cores(custom ? sum("cpu") : s.cores)], ["RAM", ram(custom ? sum("ram") : s.ramGb)],
       ["Storage", custom ? (drives.length ? `${disk(drives.reduce((n, p) => n + (p.size ?? 0), 0))} in ${drives.length} ${drives.length === 1 ? "drive" : "drives"}` : "None") : `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),

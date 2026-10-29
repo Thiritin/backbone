@@ -69,7 +69,7 @@ describe("switches, firewalls and patch panels", () => {
   });
   it("sells firewalls by year and patch panels with 24 or 48 jacks", () => {
     const fw = (y: number) => shopModels(y).filter((m) => m.kind === "firewall").map((m) => m.throughputGbit);
-    expect([fw(2005), fw(2011), fw(2017), fw(2022)]).toEqual([[1], [1, 10], [1, 10, 40], [1, 10, 40, 100]]);
+    expect([fw(2005), fw(2011), fw(2017), fw(2022)]).toEqual([[1], [1, 10], [10, 40], [40, 100]]);
     expect(modelById("fw-10g")).toMatchObject({ height: 1, kind: "firewall" });
     expect(MODELS.filter((m) => m.kind === "patch").map((m) => [m.id, m.ports.length / 2, m.ports[0].media])).toEqual([
       ["patch-24", 24, "rj45"], ["patch-24f", 24, "sfp"], ["patch-48", 48, "rj45"], ["patch-48f", 48, "sfp"],

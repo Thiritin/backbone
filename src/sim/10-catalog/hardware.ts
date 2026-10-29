@@ -127,7 +127,10 @@ export interface DeviceModel {
   psus: 1 | 2;
   price: number;
   from: number;
+  // Last year on sale, null for a model that stays on sale (patch panels, the newest server generations) or is not sold.
   until: number | null;
+  // Years of support after the last year on sale; the model is out of support once the year passes until + supportYears.
+  supportYears: number;
   server?: ServerSpec;
   layer?: 2 | 3;
   // Firewalls cap every link through them at this speed.
@@ -207,6 +210,7 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
       price: Math.round(g.price * v.price),
       from: g.year,
       until: GENERATIONS[i + 2] ? GENERATIONS[i + 2].year - 1 : null,
+      supportYears: 5,
       server: {
         arch: v.arch, sockets: v.sockets, cores: Math.round(g.cores * v.cores), ramGb, maxRamGb: 2 * ramGb,
         dimmSlots, bays: v.bays(i), pcie: v.pcie, psuBays: 2, diskGb: driveGb * v.drives, disk: v.disk === "gen" ? g.disk : "HDD", gpus: v.gpus,
@@ -217,8 +221,14 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
 );
 
 type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "batteryWh">>;
-const other = (id: string, name: string, kind: DeviceKind, height: number, p: PortSpec[], watts: number, price: number, from = 2005, extra: Extra = {}): DeviceModel =>
-  ({ id, name, kind, height, ports: p, watts, idleWatts: watts, psus: 1, price, from, until: null, ...extra });
+// Years on sale after launch and years of support after that (economy.md, Hardware lifecycle); other kinds never end.
+const LIFE: Partial<Record<DeviceKind, { sale: number; support: number }>> = {
+  switch: { sale: 6, support: 5 }, firewall: { sale: 6, support: 5 }, gateway: { sale: 6, support: 5 }, ups: { sale: 8, support: 3 },
+};
+const other = (id: string, name: string, kind: DeviceKind, height: number, p: PortSpec[], watts: number, price: number, from = 2005, extra: Extra = {}): DeviceModel => {
+  const life = price > 0 ? LIFE[kind] : undefined;
+  return { id, name, kind, height, ports: p, watts, idleWatts: watts, psus: 1, price, from, until: life ? from + life.sale : null, supportYears: life?.support ?? 0, ...extra };
+};
 const L2 = { layer: 2 } as const, L3 = { layer: 3 } as const;
 
 export const MODELS: DeviceModel[] = [

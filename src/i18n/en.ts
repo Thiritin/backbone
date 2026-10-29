@@ -102,6 +102,7 @@ export const en: Record<string, (p: Params) => string> = {
   "event.holdExpired.title": () => "Hold expired",
   "event.holdExpired.text": (p) => `${p.datacenter} released the space it held for you.`,
   "ledger.remoteHands": (p) => `Remote hands for ${p.device}, ${p.hours} h`,
+  "ledger.greyMarket": (p) => `Grey market premium for ${p.device}, ${p.component}`,
   "ledger.feed": (p) => `${p.feed === "feedB" ? "Feed B" : "High-density feed"} for ${p.rack}`,
   "ledger.circuit": () => "Extra household circuit",
   "ledger.secondPsu": (p) => `Second power supply for ${p.device}`,

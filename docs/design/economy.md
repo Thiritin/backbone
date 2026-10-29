@@ -897,6 +897,19 @@ A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD t
 
 **Maintenance.** A swap takes 15 minutes once someone is there. In the basement you are there at once. At a datacenter remote hands arrive after their response time and bill their hourly rate for at least one hour.
 
+**Hardware lifecycle.** Every model on sale has a last year on sale (end of sale) and a number of support years after it; the model is out of support once the year passes that sum. Devices keep working past both dates. The anchor is Cisco's policy of ending sale six months after the notice and keeping support and spares for five more years; Dell and HPE sell five to seven years of support for servers.
+
+| Kind | Last year on sale | Support years after it |
+| --- | --- | --- |
+| Server | Launch year of the generation two later, minus one (the two newest generations have none yet) | 5 |
+| Switch, firewall, edge router | Launch year + 6 | 5 |
+| UPS | Launch year + 8 | 3 |
+| Patch panel | Never | None |
+
+- **Price erosion.** A non-server model's list price falls 5% a year from the second year of sale (launch year + n costs 0.95^n of the list price) until its last year on sale, as successors arrive. A server's price follows its parts (see Part prices by year) and is not eroded.
+- **Out of support.** Hands-on work on the device (swapping, installing or removing a part) takes twice as long, a spare part for it costs 1.5 times its price (the extra half is booked as a grey market premium when the part goes in), and every component fails 1.2 times as often because the firmware no longer gets fixes. Work that takes no time on a running device stays instant.
+- **News.** Each non-server model ends with a Heize online item on 1 January of the year after its last year on sale.
+
 **Power feeds.**
 
 | Feed | Effect | Price |

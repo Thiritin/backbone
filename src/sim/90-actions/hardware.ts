@@ -1,6 +1,7 @@
 import { yearOf } from "../00-core/time";
 import { bareParts, brandsFor, COMPONENT_KINDS, COMPONENTS, componentParts, dualPsuModel, fits as chassisFits, isDriveKind, modelById, partOffers, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
+import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
 import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
@@ -449,6 +450,10 @@ export function setRebuildRate(s: GameState, deviceId: string, rate: RebuildRate
 
 export const SWAP_HOURS = 0.25;
 
+// The grey market surcharge for a spare going into a device that is out of support.
+const greyMarket = (s: GameState, d: Device, part: Device): number =>
+  greySurcharge(d.model, s.hour, partPrice(part.model.slice(5) as ComponentKind, part.part?.size, part.part?.ff, yearOf(s.hour)));
+
 // Swaps a failed or worn component for a spare from the zone's storage: 15 minutes in the basement, or the remote hands'
 // response time plus 15 minutes at a datacenter, billed for at least one hour. A technician on site swaps it in 15 minutes.
 export function replaceComponent(s: GameState, deviceId: string, componentId: string, technician = false): ActionResult {
@@ -468,12 +473,14 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (d.on && !hotSwappable(d, c)) return fail("error.powerOffFirst");
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
   const hands = loc.dc && !technician ? datacenterById(loc.dc).remoteHands : null;
-  const bill = hands ? Math.max(1, SWAP_HOURS) * hands.perHour : 0;
-  if (s.cash < bill) return fail("error.noCash");
-  if (hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: Math.max(1, SWAP_HOURS) }, -bill);
+  const swap = SWAP_HOURS * workFactor(d.model, s.hour), grey = greyMarket(s, d, part);
+  const bill = hands ? Math.max(1, swap) * hands.perHour : 0;
+  if (s.cash < bill + grey) return fail("error.noCash");
+  if (hands) book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: Math.max(1, swap) }, -bill);
+  if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: c.kind }, -grey);
   claimRepair(s, d.label ?? d.name, c, part.price, bill);
   s.devices = s.devices.filter((x) => x.id !== part.id);
-  d.maintenance = { componentId, partId: part.id, doneAt: s.hour + (hands ? hands.responseHours : 0) + SWAP_HOURS, ...(part.part ? { spec: part.part } : {}) };
+  d.maintenance = { componentId, partId: part.id, doneAt: s.hour + (hands ? hands.responseHours : 0) + swap, ...(part.part ? { spec: part.part } : {}) };
   return { ok: true, id: part.id };
 }
 
@@ -544,7 +551,7 @@ function handsOn(s: GameState, d: Device, hot: boolean, technician: boolean): { 
   if (d.on && !hot) return { error: "error.powerOffFirst" };
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
   const hands = loc.dc && !technician ? datacenterById(loc.dc).remoteHands : null;
-  const hours = hot ? 0 : INSTALL_HOURS, billHours = Math.max(1, hours);
+  const hours = (hot ? 0 : INSTALL_HOURS) * workFactor(d.model, s.hour), billHours = Math.max(1, hours);
   const bill = hands ? billHours * hands.perHour : 0;
   if (s.cash < bill) return { error: "error.noCash" };
   return { bill, billHours, wait: (hands ? hands.responseHours : 0) + hours, hands: !!hands };
@@ -578,7 +585,10 @@ export function installPart(s: GameState, deviceId: string, partId: string, slot
   if (error) return fail(error);
   const w = handsOn(s, d, hotKind(d, kind), technician);
   if ("error" in w) return fail(w.error);
+  const grey = greyMarket(s, d, part);
+  if (s.cash < w.bill + grey) return fail("error.noCash");
   startWork(s, d, partId, w);
+  if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: kind }, -grey);
   s.devices = s.devices.filter((x) => x.id !== partId);
   const id = `c${Math.max(0, ...d.components.map((c) => Number(c.id.slice(1)) || 0)) + 1}`;
   const at = d.components.map((c) => sameSlots(c.kind, kind)).lastIndexOf(true);

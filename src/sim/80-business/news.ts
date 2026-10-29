@@ -2,6 +2,8 @@
 import { hourOf, isMonthStart, START_YEAR } from "../00-core/time";
 import { IPV6_FROM } from "../10-catalog/addresses";
 import { GENERATIONS } from "../10-catalog/economy";
+import { MODELS } from "../10-catalog/hardware";
+import { supportEnd } from "../10-catalog/lifecycle";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { LINE_NAME } from "../30-market/spec";
 import type { GameState } from "../50-state";
@@ -20,6 +22,8 @@ export const NEWS: NewsDef[] = [
   ...SOFTWARE.filter((x) => x.from > START_YEAR).map((x) => ({ id: `software.${x.id}`, key: "event.news.software", at: at(x.from), params: { name: x.name, kind: x.kind } })),
   ...GENERATIONS.flatMap((g, i) => (g.year > START_YEAR ? [{ id: `generation.${i + 1}`, key: "event.news.generation", at: at(g.year), params: { gen: i + 1, cores: g.cores, ramGb: g.ramGb, disk: g.disk } }] : [])),
   ...MAIL_PROVIDERS.filter((x) => x.from > START_YEAR).map((x) => ({ id: `mail.${x.id}`, key: "event.news.mail", at: at(x.from), params: { name: x.name, price: x.price(x.from) } })),
+  // A model other than a server leaves the shop on the first of January after its last year on sale (servers have generation news).
+  ...MODELS.filter((m) => !m.server && m.until !== null).map((m) => ({ id: `endOfSale.${m.id}`, key: "event.news.endOfSale", at: at(m.until! + 1), params: { name: m.name, supportEnd: supportEnd(m)! } })),
   { id: "ipv6.dc", key: "event.news.ipv6Dc", at: at(IPV6_FROM.dc), params: {} },
   { id: "ipv6.home", key: "event.news.ipv6Home", at: at(IPV6_FROM.home), params: {} },
   { id: "ripe.last8", key: "event.news.ripeLast", at: at(2012, 8), params: {} },
