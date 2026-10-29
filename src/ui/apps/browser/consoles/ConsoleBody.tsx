@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
-import { SOFTWARE } from "../../../../sim/10-catalog/platforms";
+import { autoUpdates, SOFTWARE, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import type { GameState } from "../../../../sim/50-state";
 import { hostOfVm, isOwnVm, vmById, workloadsOn, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
@@ -11,7 +11,7 @@ import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/
 import { mailImpaired, seatsFor } from "../../../../sim/80-business/mail";
 import { createPanelVm, createVm, deleteVm, PANEL_VM_SIZE, removePanelHost, resizePanelVm } from "../../../../sim/90-actions/clusters";
 import { setSitesOffline } from "../../../../sim/90-actions/security";
-import { uninstallSoftware, updateDue, updateSoftware } from "../../../../sim/90-actions/software";
+import { setAutoUpdate, uninstallSoftware, updateDue, updateSoftware } from "../../../../sim/90-actions/software";
 import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../../../sim/90-actions/vms";
 import { useStore } from "../../../store";
 import { disk, ram } from "../../hw";
@@ -170,6 +170,7 @@ export function Nodes({ game, c }: { game: GameState; c: Cluster }) {
 export function Software({ game, c, f }: Props) {
   const act = useStore((s) => s.act), [sizing, setSizing] = useState(false), [removing, setRemoving] = useState(false);
   const family = familyOf(c)!, year = yearOf(game.hour), vulns = openVulns(game, c.id).length, due = updateDue(game, c);
+  const auto = f.update && autoUpdates(softwareById(family), year), on = !!c.autoUpdate;
   const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "";
   const remove = () => (c.kind === "panel" ? act(removePanelHost, c.id) : act(uninstallSoftware, machine));
   return (
@@ -178,6 +179,7 @@ export function Software({ game, c, f }: Props) {
         <tbody>
           <tr><th>Software</th><td>{consoleTitle(family)}</td></tr>
           <tr><th>Version</th><td className="num">{c.version}</td></tr>
+          {auto && <tr><th>Automatic updates</th><td>{on ? "On" : "Off"}</td></tr>}
           <tr><th>Open vulnerabilities</th><td className="num">{vulns}</td></tr>
           {f.backups && <tr><th>Backups</th><td className="cx-cap">{c.backup.every}</td></tr>}
         </tbody>
@@ -185,6 +187,7 @@ export function Software({ game, c, f }: Props) {
       <div className="cx-tools">
         {f.update && due && <button className="cx-btn primary" onClick={() => act(updateSoftware, c.id)}>{`Update to ${year}`}</button>}
         {f.update && !due && <span className="cx-note">Up to date</span>}
+        {auto && <button className="cx-btn" onClick={() => act(setAutoUpdate, c.id, !on)}>{on ? "Turn off automatic updates" : "Turn on automatic updates"}</button>}
         {f.sitesOffline && c.kind === "panel" && <button className="cx-btn" onClick={() => act(setSitesOffline, c.id, !off)}>{off ? "Bring sites online" : "Take sites offline"}</button>}
         {f.resize && c.kind === "panel" && c.vm && <button className="cx-btn" onClick={() => setSizing(!sizing)}>Resize</button>}
         {f.delete && !removing && <button className="cx-btn" onClick={() => setRemoving(true)}>Remove host</button>}

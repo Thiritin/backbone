@@ -9,6 +9,7 @@ import { abandonTickets } from "../40-support/abandon";
 import { financeTick } from "../46-finance/finance";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
+import { autoUpdateTick } from "../90-actions/software";
 import { fairsTick } from "../80-business/fairs";
 import { communityTick } from "../80-business/sponsoring";
 import { marketingTick } from "../80-business/marketing";
@@ -304,6 +305,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...financeTick(state));
   events.push(...staffTick(state));
   events.push(...techTick(state));
+  autoUpdateTick(state);
   events.push(...fairsTick(state));
   events.push(...marketingTick(state));
   events.push(...newsTick(state));

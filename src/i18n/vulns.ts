@@ -9,4 +9,5 @@ export const VULNS_EN: Record<string, (p: Params) => string> = {
   "event.techUpdated.title": () => "Software updated",
   "event.techUpdated.text": (p) => `${p.name} updated ${p.software} on ${p.device}.`,
   "error.upToDate": () => "This software is up to date.",
+  "error.noAutoUpdate": () => "This software has no automatic updates yet.",
 };

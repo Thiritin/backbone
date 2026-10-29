@@ -22,6 +22,7 @@ const at = (year: number, month = 0): number => hourOf(new Date(Date.UTC(year, m
 // Fixed announcements; a later lane adds its own by pushing a NewsDef with its date. What exists when a game starts is not news.
 export const NEWS: NewsDef[] = [
   ...SOFTWARE.filter((x) => x.from > START_YEAR).map((x) => ({ id: `software.${x.id}`, key: "event.news.software", at: at(x.from), params: { name: x.name, kind: x.kind } })),
+  ...SOFTWARE.filter((x) => x.autoUpdate !== null && x.autoUpdate > START_YEAR).map((x) => ({ id: `autoUpdate.${x.id}`, key: "event.news.autoUpdate", at: at(x.autoUpdate!), params: { name: x.name } })),
   ...GENERATIONS.flatMap((g, i) => (g.year > START_YEAR ? [{ id: `generation.${i + 1}`, key: "event.news.generation", at: at(g.year), params: { gen: i + 1, cores: g.cores, ramGb: g.ramGb, disk: g.disk } }] : [])),
   ...MAIL_PROVIDERS.filter((x) => x.from > START_YEAR).map((x) => ({ id: `mail.${x.id}`, key: "event.news.mail", at: at(x.from), params: { name: x.name, price: x.price(x.from) } })),
   // A model other than a server leaves the shop on the first of January after its last year on sale (servers have generation news).

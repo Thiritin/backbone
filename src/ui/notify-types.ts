@@ -44,7 +44,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   Billing: [type("Payments and dunning", "collected", "invoices", "suspended", "suspendedLeft"), type("Domains", "domainExpired", "domainExpiring")],
   Research: [type("Unlocks", "trainingDone")],
   Shop: [type("Used market", "used*")],
-  News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu"), type("Software", "news.software"), type("Internet", "news.ipv6*", "news.ripe*"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*")],
+  News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu"), type("Software", "news.software", "news.autoUpdate"), type("Internet", "news.ipv6*", "news.ripe*"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*")],
 };
 
 const OTHER: NotifyType = { id: "other", label: "Other", match: () => true };

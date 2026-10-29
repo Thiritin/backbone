@@ -1,10 +1,11 @@
 import { Plus, type LucideIcon } from "lucide-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { softwareById } from "../../../sim/10-catalog/platforms";
+import { autoUpdates, softwareById } from "../../../sim/10-catalog/platforms";
+import { yearOf } from "../../../sim/00-core/time";
 import type { GameState } from "../../../sim/50-state";
 import { addNode } from "../../../sim/90-actions/clusters";
-import { installBlock, installSoftware, joinableClusters, softwareOn, uninstallSoftware, updateDue, updateSoftware, type Installed } from "../../../sim/90-actions/software";
+import { installBlock, installSoftware, setAutoUpdate, joinableClusters, softwareOn, uninstallSoftware, updateDue, updateSoftware, type Installed } from "../../../sim/90-actions/software";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { devName } from "../hw";
@@ -32,6 +33,7 @@ export function SoftwareGrid({ game, machineId }: { game: GameState; machineId: 
         const entries = (): MenuEntry[] => [
           { label: "Open", run: open },
           due && { label: "Update", run: update },
+          x.doneAt === null && autoUpdates(softwareById(x.id), yearOf(game.hour)) && { label: "Automatic updates", checked: !!x.cluster.autoUpdate, run: () => act(setAutoUpdate, x.cluster.id, !x.cluster.autoUpdate) },
           join.length > 0 && { label: "Join cluster", items: join.map((c) => ({ label: c.name, run: () => act(addNode, c.id, machineId) })) },
           null,
           { label: "Uninstall", run: () => act(uninstallSoftware, machineId) },

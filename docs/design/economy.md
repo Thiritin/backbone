@@ -1810,7 +1810,11 @@ An update installs this year's release at once and sets `updatedAt` to now. The 
 | Mail server | 15 minutes, no customers are affected |
 | Hypervisor | 2 hours per node, for the virtual machines on it, none when the hypervisor moves virtual machines live and the cluster has a second node |
 
-A technician at the server does the update in its office hour: panel and mail updates need panel training, hypervisor updates need server training. Nagiosaurus costs €15 a month in 2005 and rises 8% a year like the other Pear Store apps.
+A technician at the server does the update in its office hour: panel and mail updates need panel training, hypervisor updates need server training.
+
+Some software can update itself from a year on: cPanic from 2008, HyperVee from 2012 (cluster-aware updating), Pleskit from 2014, DirectAdmen from 2019 and VMwhere from 2020 (lifecycle manager). The player turns automatic updates on per cluster in its console or the Software menu; it is off by default. At 3:00 game time each night such a cluster runs any due update with the same downtime, and the News app announces the year each software gets it.
+
+Nagiosaurus costs €15 a month in 2005 and rises 8% a year like the other Pear Store apps.
 
 ### Customer applications
 

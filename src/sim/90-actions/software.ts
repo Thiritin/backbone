@@ -1,5 +1,5 @@
 import { dateOf, yearOf } from "../00-core/time";
-import { clustersIn, phpAt, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { autoUpdates, clustersIn, phpAt, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { anchorOf, clusterOf, hostOfVm, workloadsOn, type Cluster } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
@@ -88,6 +88,25 @@ export function updateSoftware(s: GameState, clusterId: string): ActionResult {
   for (const id of services) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + rest };
   s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, version: yearOf(s.hour), updatedAt: s.hour } : x));
   return { ok: true };
+}
+
+// Turns the cluster's automatic updates on or off, once its software offers them.
+export function setAutoUpdate(s: GameState, clusterId: string, on: boolean): ActionResult {
+  const c = s.clusters.find((x) => x.id === clusterId), family = c && familyOf(c);
+  if (!c || !family) return { ok: false, error: c ? "error.noSoftware" : "error.unknownCluster" };
+  if (!autoUpdates(softwareById(family), yearOf(s.hour))) return { ok: false, error: "error.noAutoUpdate" };
+  s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, autoUpdate: on } : x));
+  return { ok: true };
+}
+
+// The hour of the night, game time, when clusters with automatic updates run a due update.
+export const AUTO_UPDATE_HOUR = 3;
+
+export function autoUpdateTick(s: GameState): void {
+  if (dateOf(s.hour).getUTCHours() !== AUTO_UPDATE_HOUR) return;
+  for (const c of s.clusters) {
+    if (c.autoUpdate && updateDue(s, c) && autoUpdates(softwareById(familyOf(c)!), yearOf(s.hour))) updateSoftware(s, c.id);
+  }
 }
 
 // Uninstalls the machine's software once nothing it serves runs on the machine; a VM stays, empty.

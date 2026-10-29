@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- cPanic, Pleskit, DirectAdmen, HyperVee and VMwhere can install their updates automatically at night once their vendor offers it, turned on per cluster in its console or the Software menu.
 - The Getting started step for company email now names the Support app once a support desk is installed, matching the app in your dock.
 - Move servers on a rack takes several servers to a datacenter in one go: drive them yourself for the fare and rack them on arrival with no shipping or remote hands bill, or have a friend take them from home.
 - Disk and RAM meters on locations and nodes now show the used amount in its own unit, so 2 GB of 1 TB no longer reads as 2 TB.

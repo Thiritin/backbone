@@ -36,6 +36,8 @@ export interface Cluster {
   ramGuard?: boolean;
   // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.
   compat?: boolean;
+  // Whether the software updates itself at AUTO_UPDATE_HOUR when an update is due (software.ts).
+  autoUpdate?: boolean;
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
 }
 // One workload runs one service: on a hypervisor node or bare-metal panel server (clusterId and deviceId), inside a panel
