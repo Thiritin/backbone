@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { isMonthStart, yearOf } from "../src/sim/00-core/time";
-import { acceptChance, cityMarket, leadFlows, missingFor, priceIndex, rivals, share, type SalesRequest } from "../src/sim/30-market/market";
+import { acceptChance, acceptMid, cityMarket, leadFlows, missingFor, priceIndex, rivals, share, type SalesRequest } from "../src/sim/30-market/market";
 import { addRequest, newLead, SETUP_WAIT_HOURS, shadyLead } from "../src/sim/30-market/sales";
 import { createTicket, profileStats } from "../src/sim/40-support/tickets";
 import { leadCapShare } from "../src/sim/10-catalog/economy";
@@ -11,7 +11,7 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { assign, hire } from "../src/sim/90-actions/staff";
 import { changePrice, decline, quote } from "../src/sim/90-actions/sales";
-import { acceptUpgrade } from "../src/sim/90-actions/orders";
+import { offerUpgrade } from "../src/sim/90-actions/orders";
 import { serviceMarket } from "../src/sim/30-market/spec";
 import { readyGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -205,10 +205,26 @@ describe("expansion", () => {
     expect(r).toMatchObject({ kind: "expansion", customerId: c.id, product: "webHosting", serviceId: old.id });
     expect(r.thread[0].key).toBe("sales.msg.upgrade");
     expect(r.spec.diskGb).toBeGreaterThan(old.spec.diskGb);
-    expect(acceptUpgrade(s, r.id, r.reference).ok).toBe(true);
+    expect(offerUpgrade(s, r.id, r.reference * 0.5).ok).toBe(true);
+    expect(req(s, r.id).status).toBe("quoted");
+    for (let i = 0; i < 25; i++) tick(s);
     expect(req(s, r.id).status).toBe("won");
     expect(s.services.filter((v) => v.customerId === c.id && v.endedAt === null).map((v) => [v.id, v.spec])).toEqual([[old.id, r.spec]]);
     expect(s.tickets.find((x) => x.id === t.id)!.status).toBe("closed");
+  });
+
+  it("brings the ticket back to the inbox when the customer counters an upgrade offer", () => {
+    const s = readyGame(1);
+    const c = s.customers[0], old = s.services.find((v) => v.customerId === c.id)!;
+    const t = createTicket(s, c, "upgrade", old.id);
+    tick(s);
+    const r = s.sales.requests.find((x) => x.ticketId === t.id)!;
+    expect(offerUpgrade(s, r.id, r.reference * (acceptMid(s, r) + 0.1)).ok).toBe(true);
+    for (let i = 0; i < 25; i++) tick(s);
+    expect(req(s, r.id).status).toBe("countered");
+    expect(req(s, r.id).thread.at(-1)!.from).toBe("customer");
+    expect(s.tickets.find((x) => x.id === t.id)).toMatchObject({ status: "open", unread: true });
+    expect(s.services.find((v) => v.id === old.id)!.spec).toEqual(old.spec);
   });
 });
 

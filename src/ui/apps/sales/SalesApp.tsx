@@ -84,7 +84,7 @@ export function Card({ r }: { r: SalesRequest }) {
         {r.status === "quoted" && <div className="event"><span>Awaiting reply</span></div>}
       </div>
 
-      {r.kind === "expansion" && r.spec ? <UpgradeCompose r={r} /> : canQuote && (
+      {r.kind === "expansion" && r.spec ? <UpgradeCompose key={r.status} r={r} /> : canQuote && (
         <div className="compose">
           <PriceField value={price} reference={r.reference} onChange={setPrice} />
           <div className="actions-row">

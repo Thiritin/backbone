@@ -10,7 +10,7 @@ import type { SalesRequest } from "../src/sim/30-market/market";
 import type { GameState } from "../src/sim/50-state";
 import { routeOptions } from "../src/sim/60-infra/routes";
 import { tick } from "../src/sim/88-tick/tick";
-import { acceptUpgrade, confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain, renewDomain, setAutoOrders } from "../src/sim/90-actions/orders";
+import { confirmOrder, offerUpgrade, createAccount, provisionOrder, quoteOrder, registerOrderDomain, renewDomain, setAutoOrders } from "../src/sim/90-actions/orders";
 import { hire } from "../src/sim/90-actions/staff";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -297,7 +297,7 @@ describe("routing and upgrades", () => {
     expect(provisionOrder(s, big.id, node.id)).toEqual({ ok: false, error: "error.noCapacity" });
   });
 
-  it("asks what upgrading costs and grows the service in one step", () => {
+  it("offers the upgrade price, locks the request until the customer answers and then grows the service", () => {
     const s = readyGame(10);
     const { id, req } = accepted(s, vps, 20);
     done(s, createAccount(s, id));
@@ -310,7 +310,12 @@ describe("routing and upgrades", () => {
     expect(up.thread[0].key).toBe("sales.msg.upgrade");
     expect(up.spec!.ramGb).toBeGreaterThan(v.spec!.ramGb);
     expect(s.tickets.find((x) => x.id === t.id)!.topic).toBe("more");
-    expect(acceptUpgrade(s, up.id, up.reference * 0.5).ok).toBe(true);
+    expect(offerUpgrade(s, up.id, up.reference * 0.5).ok).toBe(true);
+    expect(s.sales.requests.find((r) => r.id === up.id)!.status).toBe("quoted");
+    expect(s.tickets.find((x) => x.id === t.id)!.status).toBe("waiting");
+    expect(offerUpgrade(s, up.id, up.reference * 0.4)).toEqual({ ok: false, error: "error.unknownRequest" });
+    expect(s.services.find((x) => x.id === v.id)!.spec).toEqual(v.spec);
+    run(s, 25);
     const after = s.services.find((x) => x.id === v.id)!;
     expect(after.spec).toEqual(up.spec);
     expect(after.price * 730).toBeCloseTo(up.reference * 0.5, 2);

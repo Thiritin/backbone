@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- Sending an upgrade offer locks its price and buttons until the customer writes back a few hours later, and a counter-offer brings the ticket back to your inbox.
 - An upgrade request now opens in Support with its quote, the same way an order email does, and customers only ask to upgrade services that can grow; the reply that offered more resources without a price is gone.
 - Sponsoring requests only ask for products you sell on your website, and four new events can write in: a school coding club, an animal shelter, a game jam and an open data hackday.
 - Customers now ask how-to questions that fit what they run and how long they have been with you: newcomers ask about uploads, Outlook and name servers, server customers about SSH, and long-standing customers about PHP versions, a second domain or mail on a new phone.
