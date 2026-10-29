@@ -3,6 +3,7 @@ import type { Customer, Product, Profile, PaymentHabit } from "../30-customers/c
 import { sizeSpec, type Sla, type Spec } from "../10-catalog/products";
 import { yearOf } from "../00-core/time";
 import { webDomain } from "../30-customers/domains";
+import { serviceHostname } from "../30-customers/hostnames";
 import { isSuspended, SUSPEND_HAPPINESS } from "../45-billing/billing";
 import { bump, createTicket, profileStats } from "../40-support/tickets";
 import type { ActionResult } from "./hardware";
@@ -18,7 +19,8 @@ export function addService(s: GameState, customerId: string, product: Product, l
   spec: Spec = sizeSpec(product, 0, yearOf(s.hour)), sla: Sla = "basic"): string {
   const id = `svc${s.nextId++}`;
   const domain = product === "webHosting" ? webDomain(s, customerId, label, zone, id) : undefined;
-  s.services.push({ id, customerId, product, label: domain ?? label, price, period, commitMonths, startedAt: s.hour, endedAt: null, zone, spec, sla, ...(domain && { domain }) });
+  const hostname = serviceHostname(s, product);
+  s.services.push({ id, customerId, product, label: domain ?? label, price, period, commitMonths, startedAt: s.hour, endedAt: null, zone, spec, sla, ...(domain && { domain }), ...(hostname && { hostname }) });
   return id;
 }
 

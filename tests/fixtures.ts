@@ -6,6 +6,7 @@ import { startGame, welcomeFriends } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
+import { nodeName } from "../src/sim/30-customers/hostnames";
 
 const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][number]>) => {
   s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, ...patch, switching: null } : c));
@@ -28,6 +29,7 @@ export function withServer(s: GameState): GameState {
   s.homeLine = { id: "dsl-16-biz", next: null };
   s.ips = { ...s.ips, blocks: [{ id: "blk-test", prefix: "185.1.0.0/24", size: 256, locationId: "loc1", boughtAt: 0 }] };
   s.devices.unshift(device("dev3", "g1-compute", "Dwell", "rack2", 1, null, "fra1-srv-01", 2500), device("dev4", "sw-8", "Sysko", "rack2", 24, null, "fra1-sw-01", 60));
+  s.devices[0].hostname = nodeName(s);
   s.cables.push(
     { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper", color: null },
     { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper", color: null },

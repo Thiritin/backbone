@@ -40,7 +40,10 @@ export interface Cluster {
 // moved at the hour doneAt.
 export interface Workload extends Resources {
   id: string; serviceId: string; clusterId: string | null; deviceId: string | null; rackId: string | null; slot: number; units: number; watts: number; placedAt: number;
-  stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean; migrating?: { clusterId: string; doneAt: number };
+  stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
+  // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
+  hostname?: string;
+  migrating?: { clusterId: string; doneAt: number };
 }
 
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.

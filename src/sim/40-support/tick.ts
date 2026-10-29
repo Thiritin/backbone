@@ -3,6 +3,7 @@ import { isMonthStart } from "../00-core/time";
 import { counts } from "../00-core/workhours";
 import { noticed, segmentOf } from "../10-catalog/attention";
 import type { Customer } from "../30-customers/customers";
+import { serviceFqdn } from "../30-customers/hostnames";
 import { grantExtension, isSuspended, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -158,5 +159,5 @@ export function supportTick(s: GameState): SimEvent[] {
   if (fresh.length > 1) return [...events, { app: "Support", key: "event.tickets", params: { count: fresh.length } }];
   if (!fresh.length) return events;
   const t = fresh[0], service = s.services.find((v) => v.id === t.serviceId);
-  return [...events, { app: "Support", key: "event.ticket", params: { name: customer(t.customerId).name, subject: `ticket.${t.kind}.${t.topic}.subject`, service: service?.label ?? "" } }];
+  return [...events, { app: "Support", key: "event.ticket", params: { name: customer(t.customerId).name, subject: `ticket.${t.kind}.${t.topic}.subject`, service: service?.label ?? "", hostname: serviceFqdn(s, service) } }];
 }

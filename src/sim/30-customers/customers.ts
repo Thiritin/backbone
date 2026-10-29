@@ -18,6 +18,8 @@ export interface Service { id: string; customerId: string; product: Product; lab
   before?: number;
   // Web hosting only: the customer's domain, fixed at sign-up (domains.ts).
   domain?: string;
+  // The machine name customers quote in tickets: a product prefix and an eight-digit number; domain and SSL services have none.
+  hostname?: string;
   // The hour up to which an email order's first invoice paid it.
   prepaidUntil?: number }
 export const activeServices = (services: Service[], customerId: string): Service[] => services.filter((v) => v.customerId === customerId && v.endedAt === null);

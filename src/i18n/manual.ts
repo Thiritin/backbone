@@ -26,7 +26,7 @@ export const MANUAL_EN: Record<string, (p: Params) => string> = {
   "sales.msg.upgrade": (p) => `We keep hitting our limits. We need ${more(p)}. What would upgrading cost us?`,
   "sales.you.upgrade": (p) => `We can do the upgrade for ${euroCents(Number(p.price))} a month in total.`,
   "sales.you.upgradeDone": (p) => `The upgrade is live. Your service runs with the new resources at ${euroCents(Number(p.price))} a month from now on.`,
-  "ticket.upgrade.more.subject": (p) => `${p.service || "My service"} is getting too small`,
+  "ticket.upgrade.more.subject": (p) => `${p.hostname || p.service || "My service"} is getting too small`,
   "ticket.upgrade.more.text": () => "We keep running out of room. What would upgrading cost us?",
   "invoice.line.firstMonth": (p) => `${p.label}, first month`,
   "invoice.line.setupFee": (p) => `${p.label}, setup fee`,

@@ -169,7 +169,7 @@ export function ControlPlanePill({ game, cluster }: { game: GameState; cluster: 
 export function vmLabel(game: GameState, w: Workload): { name: string; service: string } {
   const host = hostOfVm(game, w.id);
   if (host) return { name: host.name, service: "Panel VM" };
-  if (!w.serviceId) return { name: `vm-${w.id.replace(/\D/g, "")}`, service: "VM" };
+  if (!w.serviceId) return { name: w.hostname ?? `vm-${w.id.replace(/\D/g, "")}`, service: "VM" };
   const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId);
   return { name: c?.name ?? "", service: v?.domain ?? v?.label ?? "" };
 }
