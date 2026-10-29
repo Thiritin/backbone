@@ -25,6 +25,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The Marketing app has a Community section that lists running and past sponsorships with their outcome; a sponsored service that is down for more than two hours costs you two bad reviews instead.
 - Servers now come with Indel or AMB CPUs, and from 2020 the ARM line with Ampear CPUs, each with its own cores, speed per core, power draw and price, and the lead between them changes over the years.
 - Every socket of a server holds the same CPU, a CPU change replaces all sockets in one job, VMs move live only between servers of one CPU vendor unless a cluster runs Compatibility mode, and some VPS, game server and cloud orders need x86.
+- The Shop sells KVMs, console servers and an OOB switch, which let you power servers on from afar, open any console from the Browser or with `console` in the Terminal, and recover gear when the network is down.
+- A server can now stop at a BIOS prompt after a part swap or a hard power cut, and switches can hang during a firmware update or lock you out after a port group change, until someone continues or recovers them.
+- Management devices reachable from the internet show up in the Security app with their firmware's vulnerabilities.
 - Weekly challenge seeds start from the title screen, a run can be exported and replayed, and a leaderboard shows verified runs.
 - Loading a save shows a Pear OS update sheet with what changed since you last played, with an Open button for each app it names, and the logo menu has a What's new item that lists the whole changelog.
 - You can book extra power on a rented rack share in steps of 0.25 kW up to twice its base limit, billed monthly with the rent and active after three days.

@@ -11,10 +11,11 @@ import { drain, upgradeNodePhp } from "../90-actions/clusters";
 import { updateDue, updateSoftware } from "../90-actions/software";
 import { installPart, removePart, replaceComponent, replaceSpares, reset, resetBmc, setPower, shutdown, spareFits, type ActionResult } from "../90-actions/hardware";
 import { migrateWebspace, recover } from "../90-actions/vms";
+import { continueBoot, recoverGear } from "../90-actions/remote";
 import { callOut, onCallAt, onCallPayroll, respond, restUntil } from "./oncall";
 import { atFair, isWorkHour, onShift, working, type Employee, type Task } from "./staff";
 
-export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "migrate" | "part" | "domains" | "update" | "reset" | "bmcreset" | "recover";
+export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "migrate" | "part" | "domains" | "update" | "reset" | "bmcreset" | "recover" | "boot" | "gear";
 // One operation on one device; componentId is set for a replace and for taking a part out, partId for putting a spare in,
 // auto when a rule queued it; an update carries the cluster id in componentId. A migrate runs at the device the web space sits on and carries the web space and the panel
 // host it moves to.
@@ -24,7 +25,7 @@ export interface TechOp { id: string; kind: OpKind; deviceId: string; componentI
 // updates: update software with an open high or critical vulnerability.
 // recover: run the recovery of workloads a pulled plug corrupted.
 export interface TechRules { failed: boolean; worn: boolean; blackhole: boolean; updates: boolean; recover: boolean }
-export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", migrate: "panels", part: "hardware", domains: "panels", update: "panels", reset: "hardware", bmcreset: "hardware", recover: "servers" };
+export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", migrate: "panels", part: "hardware", domains: "panels", update: "panels", reset: "hardware", bmcreset: "hardware", recover: "servers", boot: "hardware", gear: "hardware" };
 // An update of a hypervisor is server work; a panel or mail host update is panel work.
 export const taskFor = (s: GameState, kind: OpKind, componentId: string | null): Task =>
   kind === "update" && s.clusters.find((c) => c.id === componentId)?.kind === "cloud" ? "servers" : OP_TASK[kind];
@@ -150,6 +151,8 @@ function perform(s: GameState, o: TechOp): ActionResult | "off" {
   if (o.kind === "on") return setPower(s, d.id, true);
   if (o.kind === "reset") return reset(s, d.id, true);
   if (o.kind === "bmcreset") return resetBmc(s, d.id, true);
+  if (o.kind === "boot") return continueBoot(s, d.id, true);
+  if (o.kind === "gear") return recoverGear(s, d.id, true);
   if (o.kind === "recover") return o.componentId ? recover(s, o.componentId) : { ok: false, error: "error.unknownWorkload" };
   if (o.kind === "drain") return drain(s, d.id);
   if (o.kind === "update") return o.componentId ? updateSoftware(s, o.componentId) : { ok: false, error: "error.unknownCluster" };

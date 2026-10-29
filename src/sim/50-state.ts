@@ -1,7 +1,8 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
-import { componentParts, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
+import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { Vendor } from "./10-catalog/cpus";
+import { yearOf } from "./00-core/time";
 import { STARTER_APPS } from "./10-catalog/store";
 import { seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
@@ -39,7 +40,7 @@ import { firstHostNo } from "./30-customers/hostnames";
 export const SAVE_VERSION = 3;
 
 export type BondMode = "none" | "failover" | "balance";
-export type CableKind = "copper" | "dac" | "fiber";
+export type CableKind = "copper" | "dac" | "fiber" | "rollover";
 
 export type SpaceKind = "basement" | "share" | "positions" | "cage" | "suite";
 // Each location is an availability zone (az, like fra2) in the region of its city.
@@ -62,7 +63,11 @@ export interface Device { id: string; model: string; brand: string; rackId: stri
   // The operating system froze (hung) or the management controller did (bmcHung); log is the device's last 20 events.
   hung: boolean; bmcHung: boolean; log: { hour: number; key: string }[];
   // A hand task waiting for someone on site: pulling the plug or resetting the management controller.
-  hands?: { kind: FrontOp | "bmcreset"; doneAt: number } | null;
+  hands?: { kind: FrontOp | "bmcreset" | "continue" | "recover"; doneAt: number } | null;
+  // Remote access (60-infra/oob.ts): a server waiting at the firmware prompt (latent while off), a switch or router that locked
+  // the player out, an ATX power adapter fitted for a console-only KVM, the own way in of a console server or OOB switch,
+  // and the firmware release of network and management gear.
+  stuck: boolean; locked: boolean; atx?: true; uplink?: "dsl" | "modem"; fw?: { version: number; updatedAt: number };
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
   part?: PartSpec;
   // nodeNNN, set on servers.
@@ -228,6 +233,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
     rebuild: null, maintenance: null, dataLost: null,
     hung: false, bmcHung: false, log: [] as { hour: number; key: string }[],
+    stuck: false, locked: false, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
   };
 }
 

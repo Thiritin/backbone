@@ -3,7 +3,8 @@
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
-import { modelById } from "../10-catalog/hardware";
+import { BMC_NAME, modelById } from "../10-catalog/hardware";
+import { consoleScreen, consoleVia } from "./oob";
 import { JITTER } from "../10-catalog/network";
 import { fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
@@ -12,7 +13,7 @@ import { recover } from "../90-actions/vms";
 import { privateIp, publicV4, publicV6, ipmiIp } from "./addresses";
 import { serverOf, vmOf, workloadOnline, type Workload } from "./cluster";
 import { latency } from "./network";
-import { hopDown, pathTo, powered, working, type Hop } from "./status";
+import { deviceHealth, hopDown, pathTo, powered, working, type Hop } from "./status";
 import { nodeUsage, workloadUse } from "./usage";
 import { RECOVER_HOURS } from "./power";
 import { reboot, shutdown, type ActionResult } from "../90-actions/hardware";
@@ -166,6 +167,18 @@ function ssh(s: GameState, args: string[]): CommandResult {
   return { output: lines("term.ssh.welcome", { host: tg.name }), session: { host: tg.name, deviceId: tg.deviceId } };
 }
 
+// Opens a device's console through its controller, KVM or console server, which works while the data network is down.
+function consoleCommand(s: GameState, arg: string | undefined): string[] {
+  if (!arg) return lines("term.console.usage");
+  const name = arg.toLowerCase(), d = s.devices.find((x) => [x.name, x.label, x.hostname].some((n) => n?.toLowerCase() === name) && (x.rackId || x.panel));
+  if (!d) return lines("term.console.resolve", { host: arg });
+  const via = consoleVia(s, d.id);
+  if (!via) return lines("term.console.none", { host: arg });
+  const screen = consoleScreen(d, deviceHealth(s, d.id).state);
+  const through = via.kind === "bmc" ? BMC_NAME[d.brand] ?? "BMC" : via.device.label ?? via.device.name;
+  return [...lines("term.console.open", { host: d.label ?? d.name, via: through }), ...lines(screen.key, screen.params)];
+}
+
 // Remote shell ---------------------------------------------------------------------------------------------------------
 
 const clock = (s: GameState) => `${String(dateOf(s.hour).getUTCHours()).padStart(2, "0")}:00:00`;
@@ -279,7 +292,7 @@ export function recoveryReport(s: GameState, watch: Watch): string[] | null {
 }
 
 const SHARED = [...FILE_COMMANDS, "apt", "apt-get", "help", "clear"];
-const DESK_COMMANDS = ["ssh", "ping", "traceroute", "host", "sudo", ...SHARED];
+const DESK_COMMANDS = ["ssh", "ping", "traceroute", "host", "console", "sudo", ...SHARED];
 const REMOTE_COMMANDS = ["uptime", "df", "free", "top", "shutdown", "reboot", "recover", "exit", ...SHARED];
 const PATH_COMMANDS = ["cd", "ls", "cat", "edit", "touch", "mkdir", "rm", "rmdir", "mv", "cp"];
 
@@ -324,6 +337,7 @@ function runWords(s: GameState, session: Session | null, cwd: string, words: str
   else if (cmd === "ping") return { output: ping(s, args[0], nonce) };
   else if (cmd === "traceroute") return { output: traceroute(s, args[0], nonce) };
   else if (cmd === "host") return { output: host(s, args[0]) };
+  if (cmd === "console") return { output: consoleCommand(s, args[0]) };
   if (cmd === "apt" || cmd === "apt-get") return apt(s, hostOf(session), args, root);
   return fileCommand(s, hostOf(session), cwd, cmd, args) ?? { output: lines("term.notFound", { cmd }), failed: true };
 }

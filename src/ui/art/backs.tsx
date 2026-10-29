@@ -3,6 +3,7 @@
 // server NICs are, and their power supplies and fans look to the rack front.
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import { BrandMark } from "./logos";
+import { isMgmtModel, MgmtBack, OobJacks, oobSpots } from "./mgmt";
 import { AssetTag, fsz, gatewayLayout, Jacks, LED, ledProps, numBand, numSize, partLed, patchLayout, Pdu, portNo, switchLayout, SwitchPorts, switchX0, tw, type FrontProps, type PartLamp } from "./fronts";
 
 const MONO = "JetBrains Mono, monospace", NUM = "oklch(0.74 0.01 255)";
@@ -48,12 +49,15 @@ const reversed = (model: DeviceModel) => model.kind === "switch" || model.kind =
 
 // Every port is on the back.
 export const portSpots = (model: DeviceModel, name: string, side: Side, w: number, h: number): Map<number, Spot> =>
-  side !== "back" ? new Map() : reversed(model) ? portFace(model, name, w, h) : mirror(mirroredLayout(model, name, w, h), w);
+  side !== "back" ? new Map() : new Map([
+    ...(isMgmtModel(model) ? [] : reversed(model) ? portFace(model, name, w, h) : mirror(mirroredLayout(model, name, w, h), w)),
+    ...oobSpots(model, name, w, h),
+  ]);
 
 // Power supplies stand at the left end of the face they are on, in the lowest unit, true to size: a 1U module is
 // about 70 by 38 mm with an IEC C14 inlet of 24 by 16 mm.
 export function psuBoxes(model: DeviceModel, w: number, h: number) {
-  if (model.kind === "gateway" || model.kind === "patch" || model.kind === "pdu") return [];
+  if (model.kind === "gateway" || model.kind === "patch" || model.kind === "pdu" || isMgmtModel(model)) return [];
   const mm =mmOf(model, h), u = h / Math.max(1, model.height), ph = Math.min(u - 3, 38 * mm), pw = Math.min(70 * mm, (w * 0.4) / Math.max(1, model.psus));
   const iw = 24 * mm, ih = 16 * mm;
   return Array.from({ length: model.psus }, (_, k) => {
@@ -177,12 +181,14 @@ function LedPanel({ model, name, h, lights = [], state, x, x2 }: FrontProps & { 
 
 // The port face of a switch or firewall: asset tag, console port, ports, status lights and the maker mark.
 function PortFace(p: FrontProps) {
-  const { model, w, h, name, ports, state, blink, brand } = p, x0 = switchX0(model, name, h), s = Math.min(10, h * 0.42), at = portFace(model, name, w, h);
+  const { model, w, h, name, ports, state, blink, brand } = p, at = portFace(model, name, w, h);
   return (
     <>
       <rect x="0" y="0.5" width={w} height={h - 1} rx="1.5" fill="oklch(0.24 0.006 255)" stroke="var(--metal-line)" />
       <AssetTag x={6} y={h / 2} text={name} h={h} />
-      <rect x={x0} y={h / 2 - s * 0.45} width={s * 0.9} height={s * 0.8} rx="0.6" fill="oklch(0.5 0.09 230)" aria-label="Console port" />
+      {model.kind === "firewall"
+        ? <rect x={switchX0(model, name, h)} y={h / 2 - Math.min(10, h * 0.42) * 0.45} width={Math.min(10, h * 0.42) * 0.9} height={Math.min(10, h * 0.42) * 0.8} rx="0.6" fill="oklch(0.5 0.09 230)" aria-label="Console port" />
+        : <OobJacks model={model} name={name} w={w} h={h} />}
       <SwitchPorts at={at} ports={ports} lights={p.lights} name={name} groups={p.groups} />
       <PortNums model={model} spots={at} h={h} below={(i) => !at.get(i)!.top} />
       <circle cx={w - 24} cy={h / 2 - 3} r="1.3" fill={LED[state]} className={blink ? "led-blink" : undefined} />
@@ -196,6 +202,7 @@ export function Back(p: FrontProps) {
   const { model, w, h, name, ports, state } = p;
   if (reversed(model)) return <PortFace {...p} />;
   if (model.kind === "pdu") return <Pdu {...p} />;
+  if (isMgmtModel(model)) return <MgmtBack {...p} />;
   const spots = model.kind === "server" || model.kind === "gateway" ? mirroredLayout(model, name, w, h) : new Map<number, Spot>();
   const psus = psuBoxes(model, w, h), used = psus.length ? psus[psus.length - 1].x + psus[psus.length - 1].w : 0;
   const gx = w * 0.5, grille = Math.max(0, w * 0.5 - 14 - used);
@@ -215,7 +222,8 @@ export function Back(p: FrontProps) {
         ))}
         {model.kind === "gateway" && <rect x={w - 20} y={h / 2 - 3} width="8" height="6" rx="1" fill="oklch(0.1 0.004 255)" />}
       </g>
-      <PortNums model={model} spots={portSpots(model, name, "back", w, h)} h={model.kind === "server" ? h / model.height : h} below={(i) => model.kind === "patch" && i >= model.ports.length / 2} />
+      <PortNums model={model} spots={mirror(mirroredLayout(model, name, w, h), w)} h={model.kind === "server" ? h / model.height : h} below={(i) => model.kind === "patch" && i >= model.ports.length / 2} />
+      <OobJacks model={model} name={name} w={w} h={h} />
       {model.kind !== "gateway" && model.kind !== "patch" && <Psus model={model} w={w} h={h} on={state !== "off"} lamps={p.parts?.psus} />}
       <AssetTag x={w - 8} y={Math.min(h / 2, fs + 2)} text={name} h={h} anchor="end" />
     </>

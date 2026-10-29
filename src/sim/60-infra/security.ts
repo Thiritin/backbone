@@ -9,6 +9,7 @@ import { controlPlaneUp, sitesDown, type Cluster, type Workload } from "./cluste
 import { breachEligible, breachTick, startBreach, BREACH_CHANCE } from "./breach";
 import { maybeReview } from "./incidents";
 import { familyOf, instanceRisk, openVulns, patchedNow } from "./vulns";
+import { oobSecurityTick } from "./oob";
 
 export interface Vuln { id: string; at: number; versions: string[] }
 const at = (y: number, m: number, d: number) => hourOf(new Date(Date.UTC(y, m - 1, d, 9)));
@@ -89,7 +90,7 @@ export function securityTick(s: GameState): SimEvent[] {
     s.security = { ...s.security, vuln: v.id, stage: 0, patched: [] };
     events.push({ app: "Security", key: ADVISORY_KEYS[0], params: params(s, v) });
   }
-  events.push(...generatedTick(s), ...breachTick(s));
+  events.push(...generatedTick(s), ...breachTick(s), ...oobSecurityTick(s));
   const v = vulnById(s.security.vuln);
   if (!v) return events;
   const next = s.security.stage + 1;

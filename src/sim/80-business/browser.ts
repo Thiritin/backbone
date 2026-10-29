@@ -4,7 +4,8 @@ import { companyDomain } from "../30-customers/domains";
 import { serviceOnline } from "../40-support/status";
 import type { GameState } from "../50-state";
 import { isOwnVm, workloadOnline, workloadsOf, type Workload } from "../60-infra/cluster";
-import { ipmiIp, privateIp } from "../60-infra/addresses";
+import { ipmiIp, oobIp, privateIp } from "../60-infra/addresses";
+import { oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
 import { consoleBookmarks, consoleCluster, isDefaced } from "./consoles";
@@ -21,6 +22,7 @@ export type Page =
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean }
   | { kind: "ipmi"; deviceId: string }
+  | { kind: "kvm"; deviceId: string }
   | { kind: "video" }
   | { kind: "notfound" };
 
@@ -112,6 +114,8 @@ export function resolve(s: GameState, raw: string): Resolved {
     // The management controller answers on standby power, so a switched-off server still has its page; a hung one answers nothing.
     const bmc = s.devices.find((d) => ipmiIp(s, d.id) === host);
     if (bmc) return out({ kind: "ipmi", deviceId: bmc.id }, powered(s, bmc.id) && !bmc.bmcHung ? "fast" : "down");
+    const kvm = s.devices.find((d) => oobIp(s, d.id) === host);
+    if (kvm) return out({ kind: "kvm", deviceId: kvm.id }, oobUp(s, kvm.id) ? "fast" : "down");
     const m = machineOf(s, host, true);
     return m ? { url, host, path, ...machinePage(s, m) } : out({ kind: "notfound" });
   }

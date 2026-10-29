@@ -16,6 +16,7 @@ import { isSuspended } from "../45-billing/billing";
 import type { GameState, LedgerEntry, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { addressBills } from "./addresses";
+import { UPLINK_MONTHLY } from "./oob";
 import { workloadsOf } from "./cluster";
 import { routerMbps, throughputShare } from "./routers";
 import { working, type Hop } from "./status";
@@ -214,6 +215,7 @@ export function networkBills(s: GameState): LedgerEntry[] {
   for (const x of n.memberships) line("ledger.exchangeMember", { exchange: exchangeById(x)!.name }, EXCHANGE_FEES.yearly / 12);
   for (const [id, tb] of Object.entries(n.dcTb)) line("ledger.dcBandwidth", { location: name(id), tb: round2(tb) }, tb * dcPerTb(year));
   for (const zl of n.zoneLinks.filter((z) => z.readyAt <= s.hour)) line("ledger.zoneLink", { a: name(zl.a), b: name(zl.b) }, zoneLinkMonthly(s, zl));
+  for (const d of s.devices) if (d.uplink) line(d.uplink === "dsl" ? "ledger.mgmtDsl" : "ledger.mgmtModem", { device: d.label ?? d.name }, UPLINK_MONTHLY[d.uplink]);
   if (n.protection !== "none") line("ledger.ddosProtection", { name: PROTECTIONS[n.protection].name }, PROTECTIONS[n.protection].monthly);
   return out;
 }

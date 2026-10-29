@@ -35,7 +35,7 @@ export function opLabel(game: GameState, o: TechOp): string {
     const c = game.clusters.find((x) => x.id === o.componentId);
     return `Update ${softwareById(c?.panel ?? c?.platform ?? "").name}`;
   }
-  return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}`, domains: "Move domains", reset: "Reset", bmcreset: `Reset ${BMC_NAME[d?.brand ?? ""] ?? "IPMI"}`, recover: "Recover" }[o.kind];
+  return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}`, domains: "Move domains", reset: "Reset", bmcreset: `Reset ${BMC_NAME[d?.brand ?? ""] ?? "IPMI"}`, recover: "Recover", boot: "Continue boot", gear: "Recover" }[o.kind];
 }
 
 // Queues the operation for the technician who gets to it first, or shows it queued with a Cancel.

@@ -1,4 +1,4 @@
-import { AppWindow, BatteryCharging, Cable, HardDrive, History, Network, Router, Server, Shield, ShoppingCart, SlidersHorizontal, Store } from "lucide-react";
+import { AppWindow, BatteryCharging, Cable, HardDrive, History, MonitorCog, Network, Router, Server, Shield, ShoppingCart, SlidersHorizontal, Store } from "lucide-react";
 import { useState } from "react";
 import { useSessionState } from "../../session";
 import { euro } from "../../../sim/00-core/money";
@@ -26,10 +26,10 @@ const LINE_NAME: Record<string, string> = {
 };
 const CLASSES: [string, typeof Server][] = [
   ...[...new Set(Object.values(LINE_NAME))].map((c): [string, typeof Server] => [c, Server]),
-  ["Layer 2", Network], ["Layer 3", Network], ["Routers", Router], ["Security", Shield], ["Patch panels", Cable], ["Power", BatteryCharging], ["Parts", HardDrive],
+  ["Layer 2", Network], ["Layer 3", Network], ["Routers", Router], ["Security", Shield], ["Patch panels", Cable], ["Remote access", MonitorCog], ["Power", BatteryCharging], ["Parts", HardDrive],
 ];
 const classOf = (m: DeviceModel) =>
-  m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "gateway" ? "Routers" : m.kind === "ups" || m.kind === "pdu" ? "Power" : "Patch panels";
+  m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "gateway" ? "Routers" : m.kind === "ups" || m.kind === "pdu" ? "Power" : m.kind === "kvm" || m.kind === "console" || m.kind === "oob" ? "Remote access" : "Patch panels";
 
 const SWAP = { raid: "In RAID", dual: "With two", yes: "Yes", no: "No" };
 
@@ -157,7 +157,7 @@ function Card({ model, brand, cls, part, maker }: Item & { maker: Vendor | null 
       ["Storage", custom ? (drives.length ? `${disk(drives.reduce((n, p) => n + (p.size ?? 0), 0))} in ${drives.length} ${drives.length === 1 ? "drive" : "drives"}` : "None") : `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),
     ...(model.kind === "gateway" && model.price > 0 ? [["Routing", model.fullTable ? "Full table" : "Default route"], ...(model.fullTable ? [["BGP sessions", `${model.bgpSessions}`]] : [])] as [string, string][] : []),
     ...(model.batteryWh ? [["Battery", `${model.batteryWh} Wh`]] as [string, string][] : model.outlets ? [["Outlets", `${model.outlets}`]] as [string, string][] : [[model.kind === "patch" ? "Jacks" : model.kind === "server" ? "NICs" : "Ports", portsText(model)]] as [string, string][]),
-    ...(model.watts ? [...(model.kind === "pdu" ? [] : [["PSUs", `${model.psus}`]]), ["Power", `${Math.round(model.watts + cpuWattsShift(model, built) + cardWatts(cards.map((p) => ({ ...p, failedAt: null }))))} W`]] as [string, string][] : []),
+    ...(model.watts ? [...(model.kind === "pdu" || ["kvm", "console", "oob"].includes(model.kind) ? [] : [["PSUs", `${model.psus}`]]), ["Power", `${Math.round(model.watts + cpuWattsShift(model, built) + cardWatts(cards.map((p) => ({ ...p, failedAt: null }))))} W`]] as [string, string][] : []),
   ];
   const reset = () => { setQty(1); setCounts({}); setBare(false); setOpen(false); };
   return (

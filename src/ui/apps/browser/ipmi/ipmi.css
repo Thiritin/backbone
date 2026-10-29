@@ -42,3 +42,9 @@
 .bmc-table .bad { color: var(--bad); font-weight: 600; }
 .bmc-table .num { font-variant-numeric: tabular-nums; }
 .bmc-empty { color: var(--muted); }
+
+/* KVMs and console servers: a plain page with one block per device and its console. */
+.cx[data-look="kvm"] { --bg: #f2f2f2; --panel: #ffffff; --head: #333333; --accent: #333333; --accent-fg: #ffffff; --info: #333333; --line: #bdbdbd; --font: Arial, Helvetica, sans-serif; --r: 2px; }
+.cx[data-look="kvm"] .bmc-mark { background: #555555; color: #ffffff; width: 20px; height: 20px; }
+.kvm-target { background: var(--panel); border: 1px solid var(--line); padding: 12px 14px; margin: 0 0 12px; }
+.kvm-screen { background: #101010; color: #c8d0c8; font-family: "JetBrains Mono", monospace; font-size: 12px; padding: 8px 10px; margin: 0 0 12px; white-space: pre-wrap; min-height: 2.6em; }

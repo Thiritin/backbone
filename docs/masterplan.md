@@ -16,7 +16,7 @@ This is the work plan for the next stretch of Backbone. It lists what is built a
 - The owner plays on the Vite dev server (port 5173) from this checkout, so merging code here reloads their page; windows and the Support selection survive reloads (src/ui/session.ts).
 - One lane at a time on its own branch or worktree, merged into main only when everything above is green.
 
-Balance today (integration branch after Lane 8): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 1003 tests pass.
+Balance today (origin main after Lane 12): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 1083 tests pass.
 
 ## Built
 
@@ -39,6 +39,9 @@ Balance today (integration branch after Lane 8): steady medians L2 2006.3, L3 20
 - Lane 2b.4, breaches and ransom (f54c3d8): a critical hit on an instance exposed over 30 days becomes a breach 25% of the time, the extortion ticket with Pay and Refuse and a 72 hour default, 90/10 on paying, sale effects, BDSG and GDPR fines, the Breaches card, a "fees" ledger category.
 - Lane 3.4, IPMI and power (029bc78): `hasBmc` by brand and generation, management addresses, iDRAQ, iLOL, SuperMacro IPMI and XClarify pages in the browser, `shutdown`, `reset`, `powerCycle` and the pull with a corruption roll, OS and controller hangs, `recover`, the RAID rebuild performance factor, device event logs.
 - Lane 6.5 (Merge Lane 6.5): deliveries take 3 days in 2005 falling to 1 by 2015 (the first server arrives at once), the Tower server line for G1 and G2 on a 4-place basement shelf with no controller.
+- Lane 11, CPU vendors (issues 17, 18): Indel, AMB and Ampear CPUs per generation with per-core speed, watts and price, boards lock a vendor, matched sockets swapped in one task, compatibility mode for live migration across vendors, an x86 share of orders from 2020.
+- Lane 12, remote access (issues 19, 20): PiKVN and IP-KVN consoles with remote power, stuck boots in datacenters cleared over a console, mgmt and console ports on gear, OpenGearbox console servers and an OOB switch with their own uplinks, gear firmware hangs and lockouts recovered over console, the Terminal console command.
+- Lane 13, community sponsoring (issue 21): punned events ask for free services, rewards in know-how, awareness, leads and hires, a downtime flip, the Community card in Marketing.
 - Lane 8, order flow (Merge Lane 8): email requests start with a Quote step the customer accepts, haggles or declines; then account, invoice, domain and a hand-picked host; the Provisioning automation skill (150 know-how) adds Automatic and a Settings switch; form orders skip the quote and wait for the steps.
 - Lane 9, leaderboard (Merge Lane 9, issue 10): every action is logged by name in `s.log`, a run exports as seed plus actions, scripts/replay.ts verifies, weekly challenge seeds from the title screen, a GitHub Action replays submitted runs into public/leaderboard.json, shown in Settings and on the start screen.
 - Lane 10, used hardware market (792ff32, issue 11): eBuy auctions, WebHostingTalc asks and Telegrump deals with hidden wear and scams, selling own gear, board reputation, yearly lots.
@@ -114,9 +117,9 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 9 | Leaderboard with seeded challenges (issue 10) | Built |
 | 10 | Used hardware market (issue 11) | Built (792ff32) |
 | 6.11 to 6.19 | GitHub issues 2 to 8 and 12 to 16 | Built |
-| 11 | CPU vendors and matched sockets (issues 17, 18) | 4.2, 4.4 |
-| 12 | Remote access: add-on KVMs and out-of-band management (issues 19, 20) | 3.4, 3.5, 5.2 |
-| 13 | Community sponsoring (issue 21) | 2.0b, 8 |
+| 11 | CPU vendors and matched sockets (issues 17, 18) | Built |
+| 12 | Remote access: add-on KVMs and out-of-band management (issues 19, 20) | Built |
+| 13 | Community sponsoring (issue 21) | Built |
 
 
 ### Lane 1: IP addresses, paid internet, a real start (built, kept for reference)
