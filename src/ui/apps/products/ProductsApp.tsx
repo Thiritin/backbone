@@ -1,10 +1,11 @@
-import { Boxes, LayoutGrid, Plus, ShieldCheck, Tags, TriangleAlert } from "lucide-react";
+import { Boxes, Globe, LayoutGrid, Plus, ShieldCheck, Tags, TriangleAlert } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { kindServing, softwareById } from "../../../sim/10-catalog/platforms";
 import { HA_SKILL } from "../../../sim/10-catalog/research";
 import { PRODUCTS } from "../../../sim/10-catalog/products";
+import { homeLineById } from "../../../sim/20-world/datacenters";
 import type { Product } from "../../../sim/30-customers/customers";
 import type { GameState } from "../../../sim/50-state";
 import { bookable, controlPlaneUp, hasHosts, lineOffered, supports, controlPlaneUse, fitsControlPlane, nodeUsed, serverTaken, workloadsOn, type BackupEvery, type Cluster, type Ha } from "../../../sim/60-infra/cluster";
@@ -76,8 +77,22 @@ function offered(game: GameState, p: Product, az: string): boolean {
 function ProductLines({ game }: { game: GameState }) {
   const zones = [...new Set(game.locations.map((l) => l.az))];
   const live = game.services.filter((v) => v.endedAt === null);
+  const line = homeLineById(game.homeLine.id);
   return (
     <div className="prd-pad">
+      <section className="fin-card">
+        <div className="fin-card-h"><Globe />Internet line</div>
+        <table className="table">
+          <thead><tr><th>Line</th><th>Addresses</th><th className="r">Monthly</th></tr></thead>
+          <tbody>
+            {game.homeLine.id === "" ? (
+              <tr><td>No line</td><td /><td className="r"><button className="btn" onClick={() => useStore.getState().openApp("Locations")}>Open Locations</button></td></tr>
+            ) : (
+              <tr><td>{line.name}</td><td>{line.staticIp ? "Static" : "Dynamic"}</td><td className="r num">{euroCents(line.monthly)}</td></tr>
+            )}
+          </tbody>
+        </table>
+      </section>
       <section className="fin-card">
         <div className="fin-card-h"><LayoutGrid />Product lines</div>
         <table className="table">

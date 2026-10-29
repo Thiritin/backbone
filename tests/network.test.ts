@@ -6,7 +6,9 @@ import { datacenterById } from "../src/sim/20-world/datacenters";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { blackholed, networkBills, networkTick, p95, route, serviceMbps, transitBill, zoneDemand } from "../src/sim/60-infra/network";
+import { blackholed, monthlyNetworkCost, networkBills, networkTick, p95, route, serviceMbps, transitBill, zoneDemand } from "../src/sim/60-infra/network";
+import { addressBills, addressTick } from "../src/sim/60-infra/addresses";
+import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice } from "../src/sim/90-actions/hardware";
 import {
@@ -283,5 +285,18 @@ describe("DDoS", () => {
     expect(gamers).toBe(count("gamer"));
     expect(gamers).toBeGreaterThan(others * 3);
     expect(gamers).toBeGreaterThan(5);
+  });
+});
+
+describe("monthly cost", () => {
+  it("adds the address bills to the network bills", () => {
+    const { s, loc } = datacenter();
+    addressTick(s);
+    ok(buyAddresses(s, loc, 4, 5));
+    const bills = -addressBills(s).reduce((n, b) => n + b.amount, 0);
+    expect(bills).toBeGreaterThan(0);
+    const network = -networkBills(s).reduce((n, b) => n + b.amount, 0);
+    expect(monthlyNetworkCost(s)).toBeCloseTo(network + bills, 2);
+    expect(monthlyNetworkCost(s)).toBeGreaterThan(network);
   });
 });

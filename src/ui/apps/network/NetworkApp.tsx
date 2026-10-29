@@ -11,6 +11,7 @@ import type { GameState, Location } from "../../../sim/50-state";
 import {
   acceptChance, activeExchanges, capacityMbps, coolingDown, crossConnects, homePeak, monthlyNetworkCost, p95, route, transitBill, zoneLinkMonthly, type Uplink,
 } from "../../../sim/60-infra/network";
+import { addressBills } from "../../../sim/60-infra/addresses";
 import {
   acceptPeering, addUplinkLink, cancelUplink, cancelZoneLink, joinExchange, orderExchangePort, orderTransit, orderZoneLink, registerAsn, rejectPeering,
   requestPeering, setBlackhole, setProtection,
@@ -59,6 +60,7 @@ export function NetworkApp() {
       <div className="fin-main">
         <dl className="fin-totals">
           <div><dt>Network per month</dt><dd className="num">{euro(monthlyNetworkCost(game) || 0)}</dd></div>
+          <div><dt>Addresses</dt><dd className="num">{euro(-addressBills(game).reduce((n, b) => n + b.amount, 0) || 0)}</dd></div>
           <div><dt>Traffic now</dt><dd className="num">{mbps(now)}</dd></div>
           <div><dt>Dropped now</dt><dd className={`num${dropped > 0 ? " net-bad" : ""}`}>{mbps(dropped)}</dd></div>
           <div><dt>AS number</dt><dd className="num">{game.network.asn ? `AS${game.network.asn}` : "None"}</dd></div>

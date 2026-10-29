@@ -17,6 +17,15 @@ const ok = (r: ActionResult) => { expect(r).toMatchObject({ ok: true }); return 
 const tickInto = (s: GameState, hour: number): SimEvent[] => { s.hour = hour - 1; return tick(s); };
 const runFor = (s: GameState, hours: number): SimEvent[] => Array.from({ length: hours }, () => tick(s)).flat();
 
+describe("setup fee income", () => {
+  it("counts toward profit next to the customer payments of the same invoice", () => {
+    const s = withServer(newGame(3));
+    const h = s.hour;
+    s.ledger = [entry(h, "setup", 5, "ledger.setup"), entry(h, "payments", 12, "ledger.payment")];
+    expect(profitBetween(s, h, h + 1)).toBe(17);
+  });
+});
+
 describe("corporate tax", () => {
   it("takes 30% of last year's profit on April 1, counting loan interest and leaving principal out", () => {
     const s = withServer(newGame(11));

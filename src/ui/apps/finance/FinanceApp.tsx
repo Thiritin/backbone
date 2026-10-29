@@ -14,11 +14,11 @@ import "../shop/shop.css";
 import "./finance.css";
 
 const CATEGORY: Record<string, string> = {
-  payments: "Customer payments", sales: "Hardware sales", hardware: "Hardware", rent: "Rent", power: "Power", transit: "Transit", salaries: "Salaries",
+  payments: "Customer payments", setup: "Setup fees", sales: "Hardware sales", hardware: "Hardware", rent: "Rent", power: "Power", transit: "Transit", salaries: "Salaries",
   leasing: "Leasing", maintenance: "Remote hands", moving: "Moving", insurance: "Insurance", loans: "Loans", tax: "Tax", subscriptions: "Pear One", ai: "ChadGPT usage", marketing: "Marketing",
 };
 const categoryLabel = (c: string) => CATEGORY[c] ?? c.charAt(0).toUpperCase() + c.slice(1);
-const REVENUE = ["payments", "sales"];
+const REVENUE = ["payments", "setup", "sales"];
 const monthKey = (hour: number) => dateOf(hour).toISOString().slice(0, 7);
 const monthLabel = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
 const monthShort = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });

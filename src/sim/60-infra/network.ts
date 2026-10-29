@@ -15,6 +15,7 @@ import { attention, segmentOf } from "../10-catalog/attention";
 import { isSuspended } from "../45-billing/billing";
 import type { GameState, LedgerEntry, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { addressBills } from "./addresses";
 import { workloadsOf } from "./cluster";
 import { working } from "./status";
 
@@ -211,7 +212,7 @@ export function networkBills(s: GameState): LedgerEntry[] {
   if (n.protection !== "none") line("ledger.ddosProtection", { name: PROTECTIONS[n.protection].name }, PROTECTIONS[n.protection].monthly);
   return out;
 }
-export const monthlyNetworkCost = (s: GameState): number => -networkBills(s).reduce((n, b) => n + b.amount, 0);
+export const monthlyNetworkCost = (s: GameState): number => -[...networkBills(s), ...addressBills(s)].reduce((n, b) => n + b.amount, 0);
 
 // Your busiest hour of the last day over all zones, in Mbit/s; peers judge you by it.
 export function peakMbps(s: GameState): number {
