@@ -3,7 +3,7 @@
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { LINE_NAME, offerPrice, setupFee, specText } from "./spec";
-import { applyStep, isStep, issueInvoice, ORDER_PAY_DAYS } from "./manual";
+import { applyStep, canAutomate, isStep, issueInvoice, ORDER_PAY_DAYS } from "./manual";
 import { PRODUCTS } from "../10-catalog/products";
 import { inUs } from "../20-world/datacenters";
 import type { Profile } from "../30-customers/customers";
@@ -46,16 +46,18 @@ function place(s: GameState, r: SalesRequest): ActionResult & { reason?: string;
   return done;
 }
 
-// email: the customer writes an order email, worked step by step at a price set by hand; otherwise the order form takes
-// the spec at the player's rates and places it at once.
+// email: the customer writes an order email and gets a quote first; otherwise the order form takes the spec at the player's
+// rates, which counts as the accepted quote. With automation switched on the form places it at once, otherwise it waits in
+// Support like an email order.
 export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour)), email = emailFor(s)): SalesRequest {
   const who = senderFor(s.rng, profile, false, inUs(city)), variant = Math.floor(rand(s.rng) * 2);
   const key = s.nextId, spec = nextSpec(s, need, profile), reference = referenceFor(s, profile, need.product, spec, need.sla), discount = discountFor(s, profile);
   // One in three web customers already owns the domain they name.
   const owned = email && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
   const price = email ? reference : offerPrice(s, need.product, spec, need.sla);
+  const budget = email ? ORDER_BUDGET[0] + (ORDER_BUDGET[1] - ORDER_BUDGET[0]) * rand(hashRng(s.seed, key, 263)) : 1;
   let r = addRequest(s, {
-    kind: "order", customerId: null, ...who, profile, city, product: need.product, spec, sla: need.sla, reference, discount, budget: 1, shady: false,
+    kind: "order", customerId: null, ...who, profile, city, product: need.product, spec, sla: need.sla, reference, discount, budget, shady: false,
     serviceId: null, ticketId: null, deadline: s.hour + REQUEST_HOURS,
   }, `order.msg.${need.product}.${variant}`);
   r = editRequest(s, r.id, (x) => ({
@@ -63,7 +65,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0 } })) }),
   }));
   const params = { name: requestName(r), spec: specText(r.product, spec) };
-  if (!email) {
+  if (!email && s.autoOrders && canAutomate(s)) {
     const done = !missingFor(s, r).length && targetFor(s, r) ? place(s, r) : null;
     if (done?.ok) {
       formInvoice(s, r.id);
@@ -81,7 +83,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     createdAt: s.hour, dueAt: r.deadline, updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null, assignee: null,
   };
   s.tickets = [...s.tickets, t];
-  r = editRequest(s, r.id, () => ({ ticketId: t.id }));
+  r = editRequest(s, r.id, () => ({ ticketId: t.id, ...(!email && { form: true, status: "accepted" as const }) }));
   if (!missingFor(s, r).length) events.push({ app: "Support", key: "event.order", params });
   return r;
 }
@@ -105,6 +107,10 @@ export function firstOrder(s: GameState, events: SimEvent[]): void {
   if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events);
 }
 
+// An email customer weighs the quote against a budget like a sales lead does; a standard order is a shelf product, so
+// the budgets sit in the upper half of a sales lead's range and a quote at the market reference is mostly taken.
+export const ORDER_BUDGET: [number, number] = [1.1, 1.25];
+
 // With the order form and email orders on, this share of order leads still writes an email.
 export const EMAIL_SHARE = 0.25;
 // Whether the next order lead writes an email: always before the order form, never with email orders off or without company mail.
@@ -127,7 +133,7 @@ export function applyOrderWork(s: GameState, t: Ticket, action: string, by?: str
   if (isStep(action)) return applyStep(s, t, action, by);
   const r = orderOf(s, t);
   // A confirmed custom order waits on payment as "quoted" and can still be declined.
-  if (!r || !["open", "quoted"].includes(r.status)) {
+  if (!r || !["open", "quoted", "countered", "refused", "accepted"].includes(r.status)) {
     Object.assign(t, { status: "closed", updatedAt: s.hour });
     return null;
   }

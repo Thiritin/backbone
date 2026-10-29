@@ -388,7 +388,8 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       mrr += v;
       collectedShare += v * (ON_TIME[p.budget] + (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * processed);
       stuck += v * (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * (1 - processed);
-      // The order form bills its standard orders the market's setup fee once; big budgets and email orders pay none.
+      // The bot places every order on acceptance, as a company with automatic orders would; the quote and setup steps done by
+      // hand are the happiness harness's. The order form bills its standard orders the market's setup fee once; big budgets and email orders pay none.
       if (website && p.budget !== "high") collectedShare += newCustomers[i][k] * (1 - EMAIL_SHARE) * marketSetup(LIVE[pr], year) * ON_TIME[p.budget];
     }));
     const inBasement = servers.filter((s) => s.basement);

@@ -7,6 +7,7 @@ import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
+import { quoteOrder, setAutoOrders } from "../src/sim/90-actions/orders";
 import { hire } from "../src/sim/90-actions/staff";
 import { readyGame } from "./fixtures";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
@@ -88,28 +89,34 @@ describe("orders by email", () => {
     expect(s.sales.lost.at(-1)).toMatchObject({ name: r.company ?? r.contact, reason: "lost.expired" });
   });
 
-  it("is accepted by a support employee trained on orders", () => {
+  it("is worked by a support employee trained on orders once the player has quoted", () => {
     const s = readyGame(1);
     runTo(s, MONDAY_9);
     const c = visibleCandidates(s).find((x) => x.role === "support")!;
     const id = hire(s, c.id);
     if (!id.ok) throw new Error(id.error);
     s.staff.find((e) => e.id === id.id)!.trained = ["order"];
-    const { req, tk } = order(s);
+    const { r, req, tk } = order(s);
     run(s, 3);
+    expect(req().customerId).toBeNull();
+    s.sales.requests = s.sales.requests.map((x) => (x.id === r.id ? { ...x, budget: 100 } : x));
+    expect(quoteOrder(s, tk().id, r.quote!).ok).toBe(true);
+    for (let i = 0; i < 24 * 4 && !req().invoiceId; i++) run(s, 1);
     expect(tk().status).toBe("waiting");
     s.invoices = s.invoices.map((i) => (i.id === req().invoiceId ? { ...i, payStep: 0, payAt: s.hour } : i));
-    run(s, 3);
+    for (let i = 0; i < 24 * 4 && req().status !== "won"; i++) run(s, 1);
     expect(req().status).toBe("won");
     expect(tk().replies).toEqual([]);
     expect(tk().outcome).toBe("accepted");
   });
 
-  it("orders directly once the order form is set up", () => {
+  it("orders directly once the order form is set up and orders run automatically", () => {
     const s = readyGame(1);
     s.cash = 1e6;
     expect(setUpChannel(s, "website").ok).toBe(true);
     expect(setUpChannel(s, "orderForm").ok).toBe(true);
+    s.unlocks = [...s.unlocks, "products", "provisioning"];
+    expect(setAutoOrders(s, true).ok).toBe(true);
     const tickets = s.tickets.length;
     const r = orderLead(s, "private", "Frankfurt", [], web, false);
     const done = s.sales.requests.find((x) => x.id === r.id)!;

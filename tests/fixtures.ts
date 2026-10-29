@@ -64,6 +64,13 @@ export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", si
 // A bare-metal panel host on a free mounted server with its panel already installed; returns the panel host id.
 export const panelServer = (s: GameState, deviceId: string, panel = "freepanel"): string => done(s, must(installPanel(s, deviceId, panel)), { panel });
 
+// The company has learned Provisioning automation and switched on Place orders automatically.
+export const automate = (s: GameState): GameState => {
+  s.unlocks = [...new Set([...s.unlocks, "products", "provisioning"])];
+  s.autoOrders = true;
+  return s;
+};
+
 // The basement server as the hypervisor cluster "Basement 1" with Proxmocks installed; returns the cluster id.
 export const basement = (s: GameState): string => hypervisor(s, [BASEMENT_SERVER], "Basement 1");
 

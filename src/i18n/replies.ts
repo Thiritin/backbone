@@ -20,6 +20,7 @@ const day = (p: Params) => {
   const d = dateOf(Number(p.hour));
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} at ${String(d.getUTCHours()).padStart(2, "0")}:00`;
 };
+const setupFee = (p: Params) => (Number(p.setup) > 0 ? ` plus a one-time setup fee of ${euroCents(Number(p.setup))}` : "");
 const hosting = (p: Params) => (p.domain ? `${p.line} for ${p.domain}` : p.line);
 
 // Three wordings for each email the company sends; replies.ts picks one by the seed.
@@ -209,6 +210,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `We are sorry: the setup of ${hosting(p)} in ${p.city} failed, so we have to cancel your order. You have not been charged.`,
     (p) => `Unfortunately, we could not set up ${hosting(p)} as ordered. The order is cancelled and nothing will be invoiced.`,
   ],
+  "order.quote": [
+    (p) => `Thank you for your request for ${hosting(p)}. We can offer it for ${euroCents(Number(p.price))} a month${setupFee(p)}. Let us know if that works for you.`,
+    (p) => `Here is our offer for ${hosting(p)} in ${p.city}: ${euroCents(Number(p.price))} a month${setupFee(p)}. We set everything up as soon as you confirm.`,
+    (p) => `Thanks for getting in touch. For ${hosting(p)} we would charge ${euroCents(Number(p.price))} a month${setupFee(p)}. Tell us if you would like to go ahead.`,
+  ],
   "order.account": [
     (p) => `Thank you for your order of ${hosting(p)}. We have opened a customer account for you and will send the order confirmation with your invoice shortly.`,
     (p) => `Welcome to ${p.company}! Your customer account is ready. The confirmation of ${hosting(p)} and the invoice follow in a moment.`,
@@ -239,7 +245,7 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Everything is set up: ${hosting(p)} runs in ${p.city} since ${day(p)}. Your access details follow in a separate email.`,
   ],
 };
-const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.account", "order.invoice", "order.domain", "order.transfer", "order.live"];
+const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.account", "order.invoice", "order.domain", "order.transfer", "order.live"];
 const SENDER = ["forward", "takedown", "notOurs", "reject", "comply", "object"];
 
 // Outgoing emails; spread into en.

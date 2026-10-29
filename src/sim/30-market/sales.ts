@@ -24,7 +24,7 @@ import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
 import { withAddressNeeds } from "../10-catalog/addresses";
 import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
-import { specParams } from "./manual";
+import { acceptQuote, specParams } from "./manual";
 import type { ActionResult } from "../90-actions/hardware";
 import {
   acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor, REQUEST_HOURS,
@@ -216,6 +216,17 @@ const closeTicket = (s: GameState, r: SalesRequest) => {
   if (r.ticketId) s.tickets = s.tickets.map((t) => (t.id === r.ticketId && !isFinal(t) ? { ...t, status: "closed", updatedAt: s.hour, work: null } : t));
 };
 
+// The customer answers 4 to 24 hours after a quote, 2 hours after you meet their counter-offer.
+const REPLY_MIN = 4, REPLY_SPREAD = 20, COUNTER_REPLY = 2;
+export const answerAt = (s: GameState, r: SalesRequest, price: number): number =>
+  s.hour + (r.counter !== null && price <= r.counter ? COUNTER_REPLY : REPLY_MIN + Math.floor(rand(s.rng) * REPLY_SPREAD));
+
+// An order's ticket goes back to the inbox when the customer answers with something to act on.
+const wake = (s: GameState, id: string): void => {
+  const r = s.sales.requests.find((x) => x.id === id)!;
+  if (r.kind === "order") s.tickets = s.tickets.map((t) => (t.id === r.ticketId && !isFinal(t) ? { ...t, status: "open", unread: true, dueAt: r.deadline, updatedAt: s.hour } : t));
+};
+
 function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   const name = requestName(r), spec = specText(r.product, r.spec), price = r.quote!;
   const accepts = (r.counter !== null && price <= r.counter) || rand(s.rng) < acceptChance(s, r, price);
@@ -228,6 +239,7 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   }
   if (accepts) {
     say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
+    if (r.kind === "order") return acceptQuote(s, r, events);
     if (setUp(s, r, events)) return;
     editRequest(s, r.id, () => ({ status: "accepted", replyAt: null, deadline: s.hour + SETUP_WAIT_HOURS }));
     events.push({ app: "Support", key: "event.salesNoRoom", params: { name, spec, city: r.city, hours: SETUP_WAIT_HOURS } });
@@ -239,13 +251,16 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
     editRequest(s, r.id, () => ({ status: "countered", counter, replyAt: null, deadline: s.hour + RETRY_HOURS }));
     say(s, r.id, "customer", "sales.reply.counter", { name: r.contact, price: counter });
     events.push({ app: "Support", key: "event.salesCounter", params: { name, price: counter } });
+    wake(s, r.id);
     return;
   }
   const key = ratio > mid + NO_BUDGET_GAP ? "sales.reply.noBudget" : "sales.reply.refused";
   say(s, r.id, "customer", key, { name: r.contact });
   events.push({ app: "Support", key: "event.salesRefused", params: { name } });
-  if (r.attempts < 2) editRequest(s, r.id, () => ({ status: "refused", replyAt: null, deadline: s.hour + RETRY_HOURS }));
-  else loseRequest(s, r, "lost", "lost.price");
+  if (r.attempts < 2) {
+    editRequest(s, r.id, () => ({ status: "refused", replyAt: null, deadline: s.hour + RETRY_HOURS }));
+    wake(s, r.id);
+  } else loseRequest(s, r, "lost", "lost.price");
 }
 
 function setUp(s: GameState, r: SalesRequest, events: SimEvent[]): boolean {
@@ -260,7 +275,7 @@ function setUp(s: GameState, r: SalesRequest, events: SimEvent[]): boolean {
 // Accepted orders wait for room: each hour the setup is tried again until the customer gives up.
 function awaitSetup(s: GameState, events: SimEvent[]): void {
   for (const r of s.sales.requests) {
-    if (r.status !== "accepted" || setUp(s, r, events) || s.hour < r.deadline) continue;
+    if (r.kind === "order" || r.status !== "accepted" || setUp(s, r, events) || s.hour < r.deadline) continue;
     say(s, r.id, "customer", "sales.reply.gone", { name: r.contact });
     loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
     events.push({ app: "Support", key: "event.salesFailed", params: { name: requestName(r), spec: specText(r.product, r.spec), city: r.city } });
@@ -269,9 +284,11 @@ function awaitSetup(s: GameState, events: SimEvent[]): void {
 
 function expire(s: GameState): void {
   for (const r of s.sales.requests) {
-    if (!["open", "countered", "refused"].includes(r.status) || s.hour < r.deadline || orderQueued(s, r)) continue;
+    // An accepted quote waits for the steps until its deadline too.
+    const accepted = r.kind === "order" && r.status === "accepted";
+    if (!(["open", "countered", "refused"].includes(r.status) || accepted) || s.hour < r.deadline || orderQueued(s, r)) continue;
     const missing = missingFor(s, r)[0];
-    if (r.status !== "open") loseRequest(s, r, "lost", "lost.price");
+    if (r.status !== "open" && !accepted) loseRequest(s, r, "lost", "lost.price");
     else if (missing) loseRequest(s, r, "lost", missing.key, missing.params);
     else loseRequest(s, r, "lost", "lost.expired");
   }

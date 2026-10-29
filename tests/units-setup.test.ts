@@ -10,14 +10,14 @@ import { tick } from "../src/sim/88-tick/tick";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { resetRates, setRate } from "../src/sim/90-actions/rates";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { automate, readyGame } from "./fixtures";
 
 const withForm = (seed: number) => {
   const s = readyGame(seed);
   s.cash = 1e6;
   setUpChannel(s, "website");
   setUpChannel(s, "orderForm");
-  return s;
+  return automate(s);
 };
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 

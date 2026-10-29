@@ -13,7 +13,7 @@ import { takenDown } from "../src/sim/60-infra/ops";
 import { installedRamGb, linkStatus } from "../src/sim/60-infra/status";
 import { activeServices } from "../src/sim/30-customers/customers";
 import { missingFor } from "../src/sim/30-market/market";
-import { nextStep, stepError } from "../src/sim/30-market/manual";
+import { hostFor, nextStep, stepError, stepsDone } from "../src/sim/30-market/manual";
 import { orderOf } from "../src/sim/30-market/orders";
 import { bumpProbe, isFinal, monthlyValue, profileStats, rightTemplate, TEMPLATES, type TicketAction, type TicketKind } from "../src/sim/40-support/tickets";
 import type { GameState } from "../src/sim/50-state";
@@ -30,7 +30,7 @@ import { openVulns } from "../src/sim/60-infra/vulns";
 import { sitesDown, supports, vmById, vmOf, vmRoom, type Cluster } from "../src/sim/60-infra/cluster";
 import { buyDevice, connect, orderHomeLine } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "../tests/plugged";
-import { acceptUpgrade, confirmOrder, createAccount, provisionOrder, registerOrderDomain, renewDomain } from "../src/sim/90-actions/orders";
+import { acceptUpgrade, confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain, renewDomain } from "../src/sim/90-actions/orders";
 import { quote } from "../src/sim/90-actions/sales";
 import { closeTicket, replyTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { startGame } from "../src/sim/90-actions/start";
@@ -87,8 +87,10 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     bySource[k] = (bySource[k] ?? 0) + d;
   };
   const rows: Month[] = [];
-  const doStep = (t: string, step: string, reference: number) =>
-    step === "account" ? createAccount(s, t) : step === "invoice" ? confirmOrder(s, t, reference) : step === "domain" ? registerOrderDomain(s, t) : provisionOrder(s, t);
+  // An order is quoted at the market price (or the counter), then worked by hand; the setup picks the first host with disk room.
+  const doStep = (t: string, step: string, r: SalesRequest) =>
+    step === "quote" ? quoteOrder(s, t, r.status === "countered" ? r.counter! : r.reference)
+      : step === "account" ? createAccount(s, t) : step === "invoice" ? confirmOrder(s, t) : step === "domain" ? registerOrderDomain(s, t) : provisionOrder(s, t, hostFor(s, r) ?? "");
   // The model's steady capacity rule: another basement server once the cluster's RAM is 80% booked and cash allows.
   // Web hosting lives in panel VMs: one 80% full grows by 2 GB, or a new one starts next to it once its node is full.
   const ramFits = (deviceId: string, gb: number) => nodeUsed(s, deviceId).ramGb + gb <= bookable(s, s.devices.find((d) => d.id === deviceId)!).ramGb;
@@ -174,7 +176,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     return s.clusters.some((c) => supports(c, r.product) && (c.vm ? vmRoom(s, c).used.ramGb + need <= vmRoom(s, c).cap.ramGb + 1e-9 : c.nodes.some((n) => ramFits(n.deviceId, need))));
   };
   const room = (r: SalesRequest) => {
-    const taken = s.sales.requests.filter((x) => x.kind === "order" && x.customerId && !x.serviceId && ["open", "quoted"].includes(x.status));
+    const taken = s.sales.requests.filter((x) => x.kind === "order" && x.customerId && !x.serviceId && ["open", "quoted", "accepted"].includes(x.status));
     const need = [...taken, r].map((x) => sizeOf(x.spec)).reduce((a, b) => ({ vcpu: a.vcpu + b.vcpu, ramGb: a.ramGb + b.ramGb, diskGb: a.diskGb + b.diskGb }));
     const free = s.clusters[0].nodes.map((n) => { const cap = bookable(s, s.devices.find((d) => d.id === n.deviceId)!), used = nodeUsed(s, n.deviceId); return { ramGb: cap.ramGb - used.ramGb, diskGb: cap.diskGb - used.diskGb }; });
     // Web spaces booked past their panel VM are RAM the VM will have to grow into.
@@ -220,15 +222,16 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
         if (t.kind === "order") {
           const r = orderOf(s, t);
           if (!r) continue;
-          const step = nextStep(s, r);
-          if (!step) continue;
+          // A form order is served at once on any host with disk room, declined when none has, as the form did; an email order waits for its payment and the RAM.
+          const sd = stepsDone(s, r), step = nextStep(s, r) ?? (r.form && sd.account && sd.invoice && sd.domain && !sd.provision ? "provision" : null);
+          if (!step || (step === "quote" && r.status === "refused")) continue;
           // A careful player declines an order the cluster cannot also fit after the orders already taken, and sets one up
           // only where its RAM fits, waiting for a panel VM to grow or a server to arrive.
-          if (step === "account" && !room(r)) { closeTicket(s, t.id); continue; }
-          if (step === "provision" && !ramRoom(r)) { stepErrors["wait.ram"] = (stepErrors["wait.ram"] ?? 0) + 1; continue; }
+          if (step === "account" && (r.form ? !hostFor(s, r) : !room(r))) { closeTicket(s, t.id); continue; }
+          if (step === "provision" && !r.form && !ramRoom(r)) { stepErrors["wait.ram"] = (stepErrors["wait.ram"] ?? 0) + 1; continue; }
           const error = stepError(s, t, step);
           if (error) { stepErrors[error] = (stepErrors[error] ?? 0) + 1; continue; }
-          doStep(t.id, step, r.reference);
+          doStep(t.id, step, r);
           continue;
         }
         if (t.status !== "open") continue;

@@ -11,7 +11,7 @@ import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { setRate } from "../src/sim/90-actions/rates";
 import { setEmailOrders } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { automate, readyGame } from "./fixtures";
 
 const OLD_NAMES = ["Web S", "Web M", "Web L", "VPS S", "VPS M", "VPS L", "VPS XL", "Game S", "Game L", "Dedicated S", "Dedicated L", "package"];
 const run = (s: GameState, days: number) => {
@@ -24,7 +24,7 @@ const withForm = (seed: number) => {
   s.cash = 1e6;
   setUpChannel(s, "website");
   setUpChannel(s, "orderForm");
-  return s;
+  return automate(s);
 };
 const orders = (s: GameState, from = 0) => s.sales.requests.filter((r) => r.kind === "order" && r.createdAt >= from);
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };

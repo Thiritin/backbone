@@ -78,6 +78,18 @@ Your company now knows how to sell plans instead of improvising a price for ever
 
 Web hosting runs on panel hosts and virtual machines run on hypervisor clusters. The free panels and hypervisors cost nothing and bring more tickets, the paid ones send a license bill every month, and switching later needs the host empty. Products is also where you set up nightly backups to another cluster.
 
+## Provisioning automation
+
+### Setup without picking a host
+
+Setting up an order now offers **Automatic** next to your hosts. The game picks the first host in the order's city that has the disk for it.
+
+### Place orders automatically
+
+Settings has a new **Place orders automatically** switch. With it on, an order form order is invoiced and set up the moment it arrives, and an order by email runs from the customer account to the setup the moment the customer accepts your quote.
+
+Quotes are still yours to send. A step that cannot run, such as a setup with no room, waits in the inbox for you.
+
 ## High availability
 
 ### Machines that move
