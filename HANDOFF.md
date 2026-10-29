@@ -8,7 +8,7 @@ Make `docs/masterplan.md` complete and unambiguous, so Sonnet agents can impleme
 
 - main is at the latest "Plan ..." commit (run `git log --oneline -5`). Typecheck, 531 tests, build and balance pass (steady L2 2006.0, L3 2006.8, L4 2008.6, L5 2011.9, L6 2017.9; solo L5 2012.8; no bankruptcies).
 - Everything built so far is listed under "Built" in the masterplan.
-- Lane 1 (IP addresses, paid internet, the real start and tutorial, outage noticing, home line upgrades, business lines and IP pricing) is still running in the first session, on branch `wt/agent-a8f07283ca291585d` (worktree `.claude/worktrees/agent-a8f07283ca291585d`). The first session will verify and merge it into main when it finishes. Do not start Lane 1 and do not edit that worktree.
+- Lane 1 (addresses and internet) is merged into main (191c25b); 550 tests, build and balance pass. Nothing is running. Lane 2b (vulnerable software, monitoring, update upsell, breaches and ransom, game server panels) was added after this handoff was first written.
 
 ## What worked
 
@@ -35,5 +35,5 @@ Make `docs/masterplan.md` complete and unambiguous, so Sonnet agents can impleme
    - tests, the browser check and the balance limits are listed.
 2. Split any lane too large for one Sonnet agent into ordered sub-lanes with their own briefs (Lane 3 and Lane 4 are the likely ones), each ending in a green, mergeable state.
 3. Turn "Smaller gaps" into small briefs too.
-4. Lane 1 is being built now in the first session (see Current progress); review its brief only for what Lanes 2 to 5 depend on, and check `git log main` for whether it has merged before relying on its code.
+4. Lane 1 is built; read its code (src/sim/*/addresses.ts, attention.ts) where later lanes depend on it.
 5. Commit the updated plan (message of at most 4 words, no co-author lines, never mention an AI tool) and push main. Tell the owner which lanes are ready to hand to Sonnet and in what order.

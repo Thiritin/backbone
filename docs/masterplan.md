@@ -26,19 +26,20 @@ Balance today (main 3ba75ac): steady medians L2 2006.0, L3 2006.8, L4 2008.6, L5
 - Packages removed: every order is a custom spec priced per resource in Products, Pricing.
 - DNS per zone, VPN per user, traffic priced per 100 GB, order form invoices a setup fee plus the first month (e27ad87).
 - Software installed per server and VM as a tile grid with Add Software, custom VMs, 5% capacity loss inside a VM, overcommit caps per hypervisor, bigger server art (7c9f934).
+- Lane 1, addresses and internet (191c25b): private, shared dynamic and static addresses, business home lines with static IPs, datacenter IPv4 with volume tiers, IPv6 from 2010, RIPE LIR membership and /24s, IP reputation with blocklists and delisting, dedicated IPv4 and IPv6 in specs and Pricing, an empty start with no line and no product lines, the 6-step tutorial in Getting started, attention curves per segment for noticing outages (src/sim/10-catalog/attention.ts), and the Network Addresses and RIPE views. Docs: gdd.md and economy.md "Addresses and internet" and "Noticing outages".
 - Euro sign after amounts with a space (422229e); zoomable rack view with ctrl+wheel, pinch and buttons.
 - Bigger default Support and Locations windows (6203d96); notification titles for marketing bills and reviews (c8d1fef); abandoned tickets read "Never mind" (8504606); cart delivery picker padding (22d5ff4); windows and Support selection survive reloads (66804b4); control plane listed under Workloads with neutral gauges (3ba75ac).
 - Accepted orders with no room wait 48 hours for setup instead of failing at once (184cd4e); outage tolerance shows only through a line in the customer's first email (d4f9abf).
 
 ## In flight
 
-Lane 1 (addresses, paid internet, the real start, tutorial, outage noticing) was running when this plan was written, on branch wt/agent-a8f07283ca291585d in .claude/worktrees/agent-a8f07283ca291585d. If that branch has its finished work, merge it into main after verifying; otherwise continue from its last commit or start the lane over from the brief below.
+Nothing. Lane 1 is merged (see Built).
 
 ## Lanes, in order
 
 Run them one after another; each later lane builds on the earlier ones.
 
-### Lane 1: IP addresses, paid internet, a real start
+### Lane 1: IP addresses, paid internet, a real start (built, kept for reference)
 
 Owner's words: "servers need to be assigned their own ips, also virtual machines if they should be internet reachable, they get a local ip always, (we predefine that tho) each server gets a ipv4 address by default, ipv6 unlocks later and customers may have that requirement ipv6 is a lot cheaper. Please design this ip feature fully, at the start this also means they shouldnt start with dedicated servers or anything and have all products disabled. We need to create a small tutorial thats on their desktop to get started aka buy your first server, add internet (internet should cost always something) dynamic internet is going to cause outages at like 3am which means they cannot take on business customers at the start or any big ones private customers or like flower shops shouldnt notice tho." Also: "if they have their own ips on the servers" spam lowers "the ip reputation".
 
@@ -79,6 +80,24 @@ Target:
 Record rules in gdd.md and numbers in economy.md. Verify typecheck, tests, build, balance, and a Playwright run: move the company site onto an own panel host, crash that host and see the site down, migrate a customer between panels, a compromised site sending spam and the address reputation dropping, light and dark. Commit at green checkpoints and record decisions in the design docs.
 
 Owner addition: every web hosting customer gets a small site of their own that the player can open in the browser from lane 3 (generated from the customer's name and business, showing whether it is up, slow, defaced or down).
+
+### Lane 2b: Vulnerable software everywhere
+
+Owner's words: "Security vulnerabilities, we should add monitoring for vulnerable software versions, customers run wordpress but likely never update so we need to notify them to update please, if they dont know how we can offer it to them meaning we get money for it. Also our servers panels, openstack every software that runs somewhere can be vulnerable, too long open and a big vulnerability could cause loss of customer data aka we getting a ticket about data being sold online and we can pay a ransom, which will 90% not sell our data and 10% sell our data regardless. Php, for webhosting etc. gameserver usually dont just the panel, oh gameservers also get panels like pterodactyl and some other panels same thing there."
+
+State on main: src/sim/60-infra/security.ts has scripted PHP vulnerabilities (VULNS with dates and affected versions, STAGES announced, poc, warning, patch at 0, 24, 48, 60 hours, exploitation risk per stage, defacement and spam, a SecurityAlert sheet that pauses the game); src/sim/60-infra/php.ts has PHP versions, end of life, abuse and sales effects; the software catalog is src/sim/10-catalog/platforms.ts; address reputation and spam come from Lane 1 (src/sim/60-infra/addresses.ts).
+
+Target:
+1. Versions everywhere. Every installed software (panels, hypervisors, OpenStash and the others, PHP on web hosting, game server panels) and every customer application has a version that ages. Vulnerabilities are generated per software family over the years (not only scripted ones): severity (low, high, critical), disclosure, patch release, and an exploitation chance that grows the longer a vulnerable version stays exposed. Keep the existing scripted PHP advisories as the big ones.
+2. Customer applications. Web hosting customers run a CMS (a WordPress pun such as WordPass, plus one or two others) with its own version that most customers never update. Game servers run only their game, but their panel can be vulnerable.
+3. Monitoring. A purchasable monitoring tool (Pear Store or research) lists vulnerable versions across own software and customer applications, by severity and exposure time, with labels and values. Without it, the player learns about vulnerabilities only from advisories and incidents.
+4. Notify and upsell. From monitoring, the player can mail affected customers to update (a hand task per batch); some update themselves (by profile skill), others ask for help; the player can offer an update service as a paid one-off or a monthly managed-updates add-on (priced in Pricing, with a market reference). Customers who ignore it stay vulnerable.
+5. Breaches. A critical vulnerability left open too long on a panel, hypervisor or control plane can lead to a data breach: a legal or extortion ticket saying customer data is being sold online, with a ransom demand. Paying: 90% the data is not sold, 10% it is sold anyway. Not paying or a sale: customers on that host lose a lot of happiness, some churn, press coverage hits reviews and awareness, and a data protection fine is possible (record amounts with real anchors). Compromised customer sites keep the existing deface and spam effects and feed Lane 1's IP reputation.
+6. Game server panels. Add game server panels to the software catalog (a Pterodactyl pun such as Pterodaktyl, plus one or two more) with their own features, overhead and vulnerabilities; game servers run under a panel the way web hosting runs under one.
+7. Updating own software is a hand task with downtime by software (panel minutes, hypervisor hours with live migration avoiding it where the software supports it); a hired technician can take it over later.
+8. Balance model and harness follow; report medians before and after, keep within about half a year, no bankruptcies. Seeded tests per rule (generation per year, exposure risk growth, notify and update shares, ransom 90/10, game panel install). Old saves load: installed software gets versions of its install year.
+
+Record in gdd.md and economy.md. Verify typecheck, tests, build, balance, and a Playwright run of monitoring, notifying customers, selling the update service, and a breach ticket with the ransom choice, light and dark.
 
 ### Lane 3: Web browser, server consoles, IPMI and terminal
 
