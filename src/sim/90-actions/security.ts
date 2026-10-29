@@ -3,6 +3,7 @@ import type { GameState } from "../50-state";
 import { REBUILD_HOURS, REBUILT, RESTORE_HOURS, webOn } from "../60-infra/security";
 import type { ActionResult } from "./hardware";
 // Player actions on hacked sites and app advisories, kept with the app model.
+import { hasBackup } from "../60-infra/apps";
 export { cleanSite, notifyCustomers } from "../60-infra/apps";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -20,7 +21,7 @@ export function setSitesOffline(s: GameState, hostId: string, off: boolean): Act
 export function cleanUp(s: GameState, hostId: string): ActionResult {
   if (!s.security.hacked.includes(hostId)) return fail("error.notHacked");
   const web = webOn(s, hostId);
-  const bare = new Set(web.filter((w) => w.backupAt === null).map((w) => w.serviceId));
+  const bare = new Set(web.filter((w) => !hasBackup(s, w.serviceId)).map((w) => w.serviceId));
   s.workloads = s.workloads.map((w) => (web.includes(w) ? { ...w, busyUntil: s.hour + (bare.has(w.serviceId) ? REBUILD_HOURS : RESTORE_HOURS) } : w));
   const owners = new Set(s.services.filter((v) => bare.has(v.id)).map((v) => v.customerId));
   s.customers = s.customers.map((c) => (owners.has(c.id) ? { ...c } : c));

@@ -48,7 +48,7 @@ export const vulnerable = (s: GameState, c: Cluster): boolean =>
 // Panel hosts the Security app lists: on an affected version, or patched, offline or compromised.
 export const advisoryNodes = (s: GameState): Cluster[] =>
   hosts(s).filter((c) => vulnerable(s, c) || s.security.patched.includes(c.id) || sitesDown(s, c.id));
-const exposed = (s: GameState, c: Cluster): boolean => vulnerable(s, c) && !sitesDown(s, c.id) && webOn(s, c.id).length > 0;
+const exposed = (s: GameState, c: Cluster): boolean => vulnerable(s, c) && !sitesDown(s, c.id) && controlPlaneUp(s, c) && webOn(s, c.id).length > 0;
 
 const params = (s: GameState, v: Vuln) => ({
   name: v.id, versions: v.versions.join(", "), date: formatClock(v.at + STAGE_HOURS[3]),

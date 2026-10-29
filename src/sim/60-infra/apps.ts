@@ -24,10 +24,10 @@ export const newSites = (): Sites => ({ defaced: [], hacks: {}, notified: [] });
 
 export const APP_ACTIONS: TicketAction[] = ["offerOnce", "offerManaged", "free", "clean", "noBackup"];
 
-// Only a backup of the site lets the player restore it after a defacement.
+// Only a backup of the site, or of the panel VM it lives in, lets the player restore it after a defacement.
 export function hasBackup(s: GameState, serviceId: string | null): boolean {
   const w = s.workloads.find((x) => x.serviceId === serviceId);
-  return !!w && (vmOf(s, w) ?? w).backupAt !== null;
+  return !!w && (w.backupAt !== null || (vmOf(s, w)?.backupAt ?? null) !== null);
 }
 
 const idNum = (id: string): number => Number(id.replace(/\D/g, "")) || 0;

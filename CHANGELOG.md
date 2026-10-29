@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Attackers can no longer break into a panel host that is switched off, failed or has its panel VM stopped.
+- Cleaning up a hacked panel host now restores every site that has a backup of its own or of the panel VM it runs in, and the site Clean up button counts both the same way.
 - Domains are now bought on registrar websites in the Browser, where a search suggests names across every ending with the price of each.
 - Your reseller contract, tier and domain list moved from the Network app to your registrar's website, and Network has a new icon.
 - A customer who accepts a quote when no server has room now goes elsewhere right away, instead of waiting and signing hours later.
