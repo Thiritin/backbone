@@ -1889,6 +1889,18 @@ The leads arrive over the 730 hours after the fair, split evenly over the locati
 | DevOops Conference | Conference streaming | Tech | 3 | 8 VPS (2 GB) | 7 days | Agencies, enterprises | Know-how 40 |
 Awareness gains use the same share-of-the-gap rule as forum posts and fairs, each applied once when the event ends. A tech event adds a recommendation with a 20% chance: a technician applicant whose skill is a drawn applicant's plus 20 (at most 95, talent above it) stays in the market for 30 days. A public event adds a 5-star review with a 50% chance (written under the event's name) and a batch of 3 to 6 leads with conversion 1, split over the location cities and the audience, counted in the month after the event like fair leads. More than 2 hours down on any one service replaces all of this with two 1-star reviews and 0.9 times the awareness of every audience profile. The balance bot ignores every request, so balance runs are unchanged.
 
+**Sponsor board.** An offer draws its slots plus 2 applications, each at a uniform 2 to 10 days after posting (hourly resolution, seeded by the offer). An application is drawn evenly from five applicants. Anchors are the audiences of a gaming clan, a LAN party in a gymnasium, a fan forum, a course project and a distribution mirror.
+
+| Applicant | Audience | People | Advertises |
+| --- | --- | --- | --- |
+| Clan | Gamers | 80 to 400 | Banner on the site |
+| Small LAN party | Gamers | 30 to 120 | Mention on stage |
+| Fan site | Private users | 300 to 3,000 | Banner on the site |
+| Student project | Developers | 20 to 150 | Forum signature |
+| Open source mirror | Developers | 200 to 2,000 | Forum signature |
+
+The service is one unit of the offer's size and runs for the term (730 hours a month). Free offers book EUR 0 for a hidden organiser; half-price offers charge 50% of the list price to a normal customer, who churns when the term ends. A sponsorship that runs a full month adds +0.005 awareness to its audience profile through the usual share-of-the-gap rule, at every 730th hour of the term, and the board adds at most 0.03 in total over all sponsorships. While it runs and the banner is up it also adds a lead batch of `min(4, max(1, round(audience / 250)))` leads of that profile a month, split over the location cities. At the first month, 15% of applicants drop the banner: that month's awareness still counts, then awareness and leads stop. 10% of applicants are shady customers (notice rates in Notices and legal requests). Downtime is judged as in a community event: more than 2 hours down at the end of the term gives two 1-star reviews and 10% less awareness in the audience. Applications lapse after 14 days. The cap of three open offers keeps the inbox readable.
+
 **Campaign channels.** Cost per lead in 2026, scaled back with m = 0.6 like search ads. Conversion multiplies the chance that a lead buys:
 
 | Channel | Profiles | Cost per lead | Conversion |

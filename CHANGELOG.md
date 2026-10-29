@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The Browser has a new site, Sponsor-Bored, where you post an offer for a free or half-price server, and clans, LAN parties, fan sites, student projects and mirrors apply by email; a running sponsorship adds awareness and leads every month, but some of the applicants misuse the server or drop your banner.
 - A new company starts with a free Notmail address that takes order emails without a domain, and moving to mail under your own domain is an optional upgrade.
 - The Email app has a Settings button that opens the email settings.
 - Getting started now begins with your first server, and the domain and email steps come later.

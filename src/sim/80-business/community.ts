@@ -36,6 +36,16 @@ export const LEADS = [3, 6] as const;
 export const FAIL_AWARENESS = 0.9;
 export const FAIL_REVIEWS = 2;
 
+// An application from the Sponsor-Bored board (sponsorboard.ts); the offer's product, size and term ride along so the sponsorship needs no event.
+export interface BoardInfo {
+  offerId: string; kind: string; name: string; audience: number; profile: Profile; ad: "banner" | "signature" | "stage";
+  product: Product; size: number; hours: number; free: boolean; leads: number;
+  // Fixed when the application arrives: the applicant misuses the server, or drops the banner after the first month.
+  abuser: boolean; drops: boolean; dropped: boolean;
+  // Awareness this sponsorship has added so far, counted against the board's cap.
+  granted: number;
+}
+
 export interface SponsorReward { knowHow: number; awareness: number; stars: number | null; recommendation: boolean; leads: number }
 // offered: the request waits in the inbox. running: the free services are up. done: the event ended; reward is null when downtime turned it into bad press.
 export interface Sponsorship {
@@ -44,13 +54,32 @@ export interface Sponsorship {
   // Hours down per service while the event runs, and the month total last read from downHours.
   down: Record<string, number>; seen: Record<string, number>;
   reward: SponsorReward | null;
+  board?: BoardInfo;
 }
 
-const MONTH = 730;
+export const MONTH = 730;
+
+export const patchSponsorship = (s: GameState, id: string, f: (x: Sponsorship) => Partial<Sponsorship>): void => {
+  s.sponsorships = s.sponsorships.map((x) => (x.id === id ? { ...x, ...f(x) } : x));
+};
+
+// A board application as a public event: one service for the term, rewarding monthly instead of at the end.
+export function eventOf(sp: Sponsorship): CommunityEvent {
+  const b = sp.board;
+  if (!b) return eventById(sp.event)!;
+  return { id: sp.event, name: b.name, kind: "public", level: 1, product: b.product, size: b.size, count: 1, hours: b.hours, audience: [b.profile], knowHow: 0, awareness: 0 };
+}
 
 // Leads from a finished public event count in the month after it, split evenly over the location cities and the audience.
+// A running board sponsorship brings its monthly batch until the banner is dropped.
 export function communityBatches(s: GameState, cities: string[]) {
-  return s.sponsorships.filter((x) => x.reward && x.reward.leads > 0 && x.endedAt !== null && x.endedAt <= s.hour && s.hour - x.endedAt < MONTH)
+  const board = s.sponsorships.filter((x) => x.board && x.status === "running" && !x.board.dropped)
+    .flatMap((x) => cities.map((city) => ({ profile: x.board!.profile, city, source: "community" as const, count: x.board!.leads / cities.length, conversion: 1 })));
+  return [...board, ...finished(s, cities)];
+}
+
+function finished(s: GameState, cities: string[]) {
+  return s.sponsorships.filter((x) => !x.board && x.reward && x.reward.leads > 0 && x.endedAt !== null && x.endedAt <= s.hour && s.hour - x.endedAt < MONTH)
     .flatMap((x) => {
       const ev = eventById(x.event)!;
       return cities.flatMap((city) => ev.audience.map((profile) => ({
@@ -62,7 +91,12 @@ export function communityBatches(s: GameState, cities: string[]) {
 export const sponsorshipOf = (s: GameState, t: Pick<Ticket, "id">): Sponsorship | undefined => s.sponsorships.find((x) => x.ticketId === t.id);
 
 // What the ticket text names: the event, how many services of what size and for how long.
-export function sponsorParams(t: Ticket): Record<string, string | number> {
+export function sponsorParams(s: GameState, t: Ticket): Record<string, string | number> {
+  const sp = sponsorshipOf(s, t), b = sp?.board;
+  if (b) {
+    const spec = sizeSpec(b.product, b.size, yearOf(t.createdAt));
+    return { event: b.name, count: 1, product: b.product, vcpu: spec.vcpu, ramGb: spec.ramGb, diskGb: spec.diskGb, days: b.hours / DAY, months: b.hours / MONTH, audience: b.audience, profile: b.profile, free: b.free ? 1 : 0 };
+  }
   const ev = eventById(t.topic);
   if (!ev) return {};
   const spec = sizeSpec(ev.product, ev.size, yearOf(t.createdAt));

@@ -26,6 +26,7 @@ import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
 import type { FairBooking } from "./80-business/fairs";
 import type { Sponsorship } from "./80-business/community";
+import type { SponsorOffer } from "./80-business/sponsorboard";
 import type { LossReport } from "./85-products/products";
 import type { Rates } from "./10-catalog/products";
 import type { Domain } from "./30-customers/registry";
@@ -173,6 +174,8 @@ export interface GameState {
   fairs: FairBooking[];
   // Community sponsoring requests and the events running on free services.
   sponsorships: Sponsorship[];
+  // Offers posted on the Sponsor-Bored board; their applications are sponsorships with a board.
+  sponsorOffers: SponsorOffer[];
   clusters: Cluster[];
   workloads: Workload[];
   // Sales requests and lost sales (30-market).
@@ -274,7 +277,7 @@ export const newGame = (seed: number): GameState => ({
   homeLine: { id: "", next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
   staff: [], candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
-  marketing: newMarketing(), fairs: [], sponsorships: [],
+  marketing: newMarketing(), fairs: [], sponsorships: [], sponsorOffers: [],
   network: newNetwork(),
   ops: newOps(),
   security: newSecurity(),
