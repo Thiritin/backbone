@@ -367,8 +367,8 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
       )}
 
       <div className="thread">
-        <div className="msg">
-          <div className="from">{sender ? sender.name : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
+        <div className={tk.kind === "migration" ? "msg you" : "msg"}>
+          <div className="from">{sender ? sender.name : tk.kind === "migration" ? "You" : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
         </div>
         {tk.replies.map((r, i) => (
@@ -385,6 +385,13 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
             )}
           </div>
         ))}
+        {tk.move?.log.map((m, i) => (
+          <div key={`m${i}`} className="msg">
+            <div className="from">{c?.name} · <span className="num">{stamp(m.hour)}</span></div>
+            <p>{t(m.key, m.params)}</p>
+          </div>
+        ))}
+        {tk.move?.windowAt != null && tk.status === "waiting" && <div className="event"><span>Move at <span className="num">{stamp(tk.move.windowAt)}</span></span></div>}
         {tk.outcome === "withdrawn" && (
           <div className="msg">
             <div className="from">{c?.name} · <span className="num">{stamp(tk.updatedAt)}</span></div>
@@ -421,7 +428,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
             ))}
             <span className="grow" />
             <button className="btn ghost" disabled={locked} onClick={() => act((s) => closeTicket(s, tk.id))}><X />{tk.notice ? "Ignore" : "Close"}</button>
-            {tk.status === "waiting" && <button className="btn primary" disabled={locked} onClick={() => act((s) => resolveTicket(s, tk.id))}><CircleCheck />Resolve</button>}
+            {tk.status === "waiting" && tk.kind !== "migration" && <button className="btn primary" disabled={locked} onClick={() => act((s) => resolveTicket(s, tk.id))}><CircleCheck />Resolve</button>}
             {tk.status === "open" && templatesOf(tk).length > 0 && (
               <button className="btn primary" disabled={locked || !tpl} onClick={() => act((s) => replyTicket(s, tk.id, tpl!))}><Send />Send reply</button>
             )}

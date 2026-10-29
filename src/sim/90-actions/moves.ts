@@ -22,12 +22,13 @@ export const MISSED_AFTER_HOURS = 48;
 
 // The workload a service runs on and the hosts it can move to.
 const workloadOf = (s: GameState, serviceId: string) => s.workloads.find((w) => w.serviceId === serviceId && w.clusterId);
-export function moveTargets(s: GameState, workloadId: string): { to: string; name: string }[] {
+export interface MoveTarget { to: string; name: string; clusterId: string }
+export function moveTargets(s: GameState, workloadId: string): MoveTarget[] {
   const w = s.workloads.find((x) => x.id === workloadId), c = w && s.clusters.find((x) => x.id === w.clusterId);
   if (!w || !c) return [];
   return c.kind === "panel"
-    ? webspaceTargets(s, w.id).map((t) => ({ to: t.clusterId, name: t.name }))
-    : migrationTargets(s, w.id).map((t) => ({ to: t.to, name: t.name }));
+    ? webspaceTargets(s, w.id).map((t) => ({ to: t.clusterId, name: t.name, clusterId: t.clusterId }))
+    : migrationTargets(s, w.id).map((t) => ({ to: t.to, name: t.name, clusterId: t.clusterId }));
 }
 
 // Sends the customer a ticket asking to move a service to a host (a migration target's id, or the panel host's id for a web space).

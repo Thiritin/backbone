@@ -3,6 +3,7 @@ import type { GameState } from "../../../sim/50-state";
 import { anchorOf, type Workload } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { queueMigration } from "../../../sim/90-actions/staff";
+import { announceMigration, moveTargets, offerMigration, type MoveTarget } from "../../../sim/90-actions/moves";
 import { migrateWebspace, webspaceTargets } from "../../../sim/90-actions/vms";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
@@ -30,4 +31,27 @@ export function migrateEntries(game: GameState, w: Workload): MenuEntry[] {
     { label: "Migrate to", items: targets.map((t) => ({ label: label(t), run: () => act((g) => migrateWebspace(g, w.id, t.clusterId)) })) },
     tech && { label: "Migrate by technician to", items: targets.map((t) => ({ label: label(t), run: () => act((g) => queueMigration(g, w.id, t.clusterId)) })) },
   ];
+}
+
+// A target's menu label: the host, with its cluster when that is another one.
+const targetLabel = (game: GameState, t: MoveTarget, from: string | null) =>
+  t.clusterId !== from && t.to !== t.clusterId ? `${t.name} · ${game.clusters.find((c) => c.id === t.clusterId)?.name}` : t.name;
+
+// "Offer migration": asks the service's customer to agree to a move to one of the hosts it can move to.
+export function offerEntries(game: GameState, w: Workload): MenuEntry[] {
+  if (!w.serviceId) return [];
+  const act = useStore.getState().act, serviceId = w.serviceId, targets = moveTargets(game, w.id);
+  if (!targets.length) return [];
+  if (game.tickets.some((t) => t.kind === "migration" && t.serviceId === serviceId && t.status === "waiting")) return [{ label: "Migration offered", disabled: true }];
+  return [{ label: "Offer migration", items: targets.map((t) => ({ label: targetLabel(game, t, w.clusterId), run: () => act((g) => offerMigration(g, serviceId, t.to)) })) }];
+}
+
+// "Announce migration": offers every service on a host (a node's device id or a panel host's cluster id) the same move.
+export function announceEntries(game: GameState, hostId: string): MenuEntry[] {
+  const act = useStore.getState().act;
+  const loads = game.workloads.filter((w) => w.serviceId && (w.deviceId === hostId || w.clusterId === hostId));
+  const targets = new Map<string, MoveTarget>();
+  for (const w of loads) for (const t of moveTargets(game, w.id)) targets.set(t.to, t);
+  if (!targets.size) return [];
+  return [{ label: "Announce migration", items: [...targets.values()].map((t) => ({ label: targetLabel(game, t, null), run: () => act((g) => announceMigration(g, hostId, t.to)) })) }];
 }
