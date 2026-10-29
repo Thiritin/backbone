@@ -10,8 +10,12 @@ import type { GameState } from "../50-state";
 // What a custom order or service books, plus the web extras: traffic per month and mailboxes.
 export interface CustomSpec extends Resources { trafficGb: number; mailboxes: number }
 
-export const CUSTOM_NAME: Partial<Record<Product, string>> = { webHosting: "Web hosting", vps: "VPS", gameServer: "Game server" };
-export const customizable = (p: Product): boolean => p in CUSTOM_NAME;
+// What a request without a package is called.
+export const LINE_NAME: Record<Product, string> = {
+  webHosting: "Web hosting", vps: "VPS", gameServer: "Game server", dns: "DNS hosting", vpn: "VPN", storage: "Storage",
+  cloud: "Cloud server", dedicated: "Dedicated server", colocation: "Colocation", domain: "Domain", ssl: "SSL certificate",
+};
+export const customizable = (p: Product): boolean => p === "webHosting" || p === "vps" || p === "gameServer";
 
 // Each order scales its profile's usual plan by one of these factors.
 const FACTORS = [0.5, 0.75, 1, 1.25, 1.5, 2];

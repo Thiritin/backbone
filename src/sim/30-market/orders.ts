@@ -6,11 +6,12 @@ import { CUSTOM_LATER, customizable, customSpec } from "./custom";
 import { applyStep, customReference, isStep, specParams } from "./manual";
 import { PRODUCTS } from "../10-catalog/products";
 import { inUs } from "../20-world/datacenters";
-import type { Profile } from "../30-customers/customers";
+import type { Product, Profile } from "../30-customers/customers";
 import { profileStats, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { phpNeeded } from "../60-infra/php";
 import { discountFor, hasOrderForm } from "../80-business/marketing";
+import { hasPackages } from "../80-business/website";
 import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "../90-actions/hardware";
 import { missingFor, needFor, planName, referenceFor, REQUEST_HOURS, requestName, senderFor, type SalesRequest } from "./market";
@@ -61,9 +62,17 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     ...(spec && { spec, owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, ...specParams(spec), owned: owned ? 1 : 0 } })) }),
   }));
   const params = { name: requestName(r), plan: planName(r) };
-  if (!spec && hasOrderForm(s) && !missingFor(s, r).length && targetFor(s, r) && place(s, r).ok) {
-    events.push({ app: "Customers", key: "event.orderPlaced", params: { ...params, price: r.quote! } });
-    return r;
+  if (!spec && hasOrderForm(s)) {
+    const done = !missingFor(s, r).length && targetFor(s, r) ? place(s, r) : null;
+    if (done?.ok) {
+      events.push({ app: "Customers", key: "event.orderPlaced", params: { ...params, price: r.quote! } });
+      return r;
+    }
+    // Without email orders, an order the form cannot place goes elsewhere.
+    if (!s.marketing.emailOrders) {
+      loseRequest(s, r, "lost", done?.reason ?? "lost.noCapacity", done?.params ?? { city: r.city });
+      return r;
+    }
   }
   const t: Ticket = {
     id: `tkt${s.nextId++}`, customerId: "", serviceId: null, kind: "order", topic: need.product, status: "open",
@@ -78,11 +87,11 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
 export function firstOrder(s: GameState, events: SimEvent[]): void {
   const day = Math.floor(s.hour / 24);
   if (day >= FIRST_ORDER_DAYS || !s.customers.some((c) => c.habit === "friend") || s.sales.requests.some((r) => r.kind === "order")) return;
-  if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events, undefined, customFor(s));
+  if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events, undefined, customFor(s, "webHosting"));
 }
 
-// Orders ask for their own resources until the order form sells packages; a quarter still do after it.
-export const customFor = (s: GameState): boolean => !hasOrderForm(s) || rand(hashRng(s.seed, s.hour, s.nextId, 233)) < CUSTOM_LATER;
+// Orders ask for their own resources until their line sells packages; a quarter still do after it.
+export const customFor = (s: GameState, p: Product): boolean => !hasPackages(s, p) || rand(hashRng(s.seed, s.hour, s.nextId, 233)) < CUSTOM_LATER;
 
 // Why a request is declined, in the customer's terms: the product is not sold there, there is no room, or neither.
 export const declineReason = (s: GameState, r: SalesRequest): string =>

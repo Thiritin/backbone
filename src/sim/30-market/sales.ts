@@ -13,7 +13,7 @@ import { phpNeeded } from "../60-infra/php";
 import { locationOf } from "../60-infra/status";
 import { modelById } from "../10-catalog/hardware";
 import { addAwareness, discountFor } from "../80-business/marketing";
-import { listed } from "../80-business/website";
+import { hasPackages, listed } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
@@ -59,8 +59,8 @@ export function say(s: GameState, id: string, from: SalesMessage["from"], key: s
   editRequest(s, id, (r) => ({ thread: [...r.thread, { ...msg(s, from, key, params), ...(by && { by }) }] }));
 }
 
-export function addRequest(s: GameState, r: Omit<SalesRequest, "id" | "createdAt" | "status" | "quote" | "counter" | "replyAt" | "attempts" | "thread">, key: string): SalesRequest {
-  const req: SalesRequest = { ...r, id: `req${s.nextId++}`, createdAt: s.hour, status: "open", quote: null, counter: null, replyAt: null, attempts: 0, thread: [] };
+export function addRequest(s: GameState, r: Omit<SalesRequest, "id" | "createdAt" | "status" | "quote" | "counter" | "replyAt" | "attempts" | "thread" | "packaged">, key: string): SalesRequest {
+  const req: SalesRequest = { ...r, id: `req${s.nextId++}`, createdAt: s.hour, status: "open", quote: null, counter: null, replyAt: null, attempts: 0, thread: [], packaged: hasPackages(s, r.product) };
   if (req.product === "webHosting") req.domain = s.services.find((v) => v.id === req.serviceId)?.domain ?? domainFor(s, requestName(req), req.profile, req.city, Number(req.id.slice(3)));
   const params = { plan: planName(req), city: req.city, sla: req.sla, name: req.contact, domain: req.domain ?? "" };
   req.thread = [msg(s, "customer", key, params)];
@@ -106,8 +106,13 @@ function morningMail(s: GameState, events: SimEvent[]): void {
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads only write about lines on the website, which needs a control plane that sells them.
       if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
-      if (isStandard(f.profile, need.sla)) orderLead(s, f.profile, f.city, events, need, customFor(s));
-      else newLead(s, f.profile, f.city, events, need);
+      if (!isStandard(f.profile, need.sla)) {
+        newLead(s, f.profile, f.city, events, need);
+        continue;
+      }
+      // With email orders off, a lead that wants something custom leaves without writing.
+      const custom = customFor(s, need.product);
+      if (s.marketing.emailOrders || !custom) orderLead(s, f.profile, f.city, events, need, custom);
     }
   }
   if (listed(s, "webHosting")) firstOrder(s, events);

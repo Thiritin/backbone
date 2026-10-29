@@ -10,7 +10,10 @@ import type { GameState } from "../../../sim/50-state";
 import { bookable, controlPlaneUp, hasHosts, lineOffered, supports, controlPlaneUse, fitsControlPlane, nodeUsed, serverTaken, workloadsOn, type BackupEvery, type Cluster, type Ha } from "../../../sim/60-infra/cluster";
 import { locationOf, raidUsable } from "../../../sim/60-infra/status";
 import { nodeUsage, peakUsage } from "../../../sim/60-infra/usage";
+import { hasOrderForm } from "../../../sim/80-business/marketing";
+import { hasPackages } from "../../../sim/80-business/website";
 import { backupPool, licenseCost } from "../../../sim/85-products/products";
+import { setPackages } from "../../../sim/90-actions/website";
 import { addNode, CLUSTER_NAME_MAX, createCluster, moveControlPlane, setBackup, setHa, setPlacement, setSoftware } from "../../../sim/90-actions/clusters";
 import { Confirm } from "../../desktop/Confirm";
 import { useFocus, useStore } from "../../store";
@@ -74,12 +77,13 @@ function offered(game: GameState, p: Product, az: string): boolean {
 function ProductLines({ game }: { game: GameState }) {
   const zones = [...new Set(game.locations.map((l) => l.az))];
   const live = game.services.filter((v) => v.endedAt === null);
+  const act = useStore((s) => s.act), form = hasOrderForm(game);
   return (
     <div className="prd-pad">
       <section className="fin-card">
         <div className="fin-card-h"><LayoutGrid />Product lines</div>
         <table className="table">
-          <thead><tr><th>Product</th><th>Runs on</th>{zones.map((z) => <th key={z} className="r">{z}</th>)}<th className="r">Monthly</th></tr></thead>
+          <thead><tr><th>Product</th><th>Runs on</th>{zones.map((z) => <th key={z} className="r">{z}</th>)}<th className="r">Monthly</th>{form && <th className="r">Packages</th>}</tr></thead>
           <tbody>
             {LINES.map((p) => {
               const mine = live.filter((v) => v.product === p);
@@ -97,6 +101,12 @@ function ProductLines({ game }: { game: GameState }) {
                     return <td key={z} className="r num">{n > 0 ? n : offered(game, p, z) ? <span className="pill ok">Offered</span> : <span className="loc-muted">None</span>}</td>;
                   })}
                   <td className="r num">{euroCents(monthly)}</td>
+                  {form && (
+                    <td className="r">
+                      <input type="checkbox" role="switch" className="switch" aria-label={`Sell ${PRODUCT[p]} packages`} checked={hasPackages(game, p)}
+                        onChange={(e) => act((s) => setPackages(s, p, e.target.checked))} />
+                    </td>
+                  )}
                 </tr>
               );
             })}
