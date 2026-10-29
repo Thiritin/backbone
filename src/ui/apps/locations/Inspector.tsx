@@ -10,7 +10,7 @@ import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, drivesOf, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
 import { rebuildHours } from "../../../sim/88-tick/tick";
-import { addSecondPsu, buyOutLease, connect, disconnect, LABEL_MAX, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
+import { addSecondPsu, buyOutLease, connect, disconnect, LABEL_MAX, pullPower, resetBmc, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
 import { cableColor, DeviceSvg, SWATCHES } from "../../art/fronts";
 import { BrandLogo, Logo } from "../../art/logos";
@@ -28,6 +28,7 @@ import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
 import { PowerCard } from "./PowerCard";
 import { isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
+import { atDatacenter, useHandWork } from "./HandSheet";
 import { LidSheet } from "./LidSheet";
 import { PartsCard } from "./Slots";
 import { AddressRows } from "../network/Addresses";
@@ -45,11 +46,14 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
   const { guarded, dialog } = useOfflineGuard(game);
   const [selling, setSelling] = useState<Device | null>(null);
   const [lid, setLid] = useState<string | null>(null);
+  const hand = useHandWork();
   const ui = (d: Device, open: boolean): DeviceUi => ({
     open: open ? () => onSelect(d.id) : undefined,
     lid: () => setLid(d.id),
     power: (on) => { if (on && lid) return; if (on) act((g) => setPower(g, d.id, true)); else guarded((g) => setPower(g, d.id, false), `Power off ${devName(d)}?`, "Power off"); },
-    op: (op: PowerOp) => { if (op === "on") { if (!lid) act((g) => POWER_ACTION.on(g, d.id)); } else { const label = powerOptions(game, d).options.find((o) => o.op === op)?.label ?? POWER_LABEL[op]; guarded((g) => POWER_ACTION[op](g, d.id), `${label} ${devName(d)}?`, label); } },
+    op: (op: PowerOp) => { if (op === "on") { if (!lid) act((g) => POWER_ACTION.on(g, d.id)); } else { const label = powerOptions(game, d).options.find((o) => o.op === op)?.label ?? POWER_LABEL[op];
+      if ((op === "pull" || op === "bmc") && !pduOf(game, d) && atDatacenter(game, d.id)) hand.start(game, { title: `${label} ${devName(d)}`, deviceId: d.id, run: (g, how) => (op === "pull" ? pullPower(g, d.id, how) : resetBmc(g, d.id, how)) });
+      else guarded((g) => POWER_ACTION[op](g, d.id), `${label} ${devName(d)}?`, label); } },
     plug: (psu) => togglePlug(guarded, d, psu),
     setup: () => setSetup(d.id),
     rename: () => onRename(d.id),
@@ -66,6 +70,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     dialog: (
       <>
         {dialog}
+        {hand.dialog}
         {lid && <LidSheet deviceId={lid} onClose={() => setLid(null)} />}
         {selling && (
           <SellConfirm game={game} name={devName(selling)} price={selling.price} boughtAt={selling.boughtAt} value={deviceValue(game, selling)} cables={cables}
