@@ -4,11 +4,19 @@ import { companyDomain, fqdn } from "../src/sim/30-customers/domains";
 import { privateIp } from "../src/sim/60-infra/addresses";
 import { adminUrl, defaultBookmarks, resolve, split, VENDORS, VIDEO_URL } from "../src/sim/80-business/browser";
 import { newGame } from "../src/sim/50-state";
+import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { setSiteHost } from "../src/sim/90-actions/website";
 import { readyGame } from "./fixtures";
 
 const web = (s: ReturnType<typeof readyGame>) => s.services.find((v) => v.product === "webHosting" && v.domain)!;
+
+// A server and a VM without management software, which serve no console.
+function bare(s: ReturnType<typeof readyGame>) {
+  s.devices.push({ ...s.devices.find((x) => x.hostname)!, id: "dev99", hostname: "node099" });
+  const made = createVm(s, s.clusters[0].id, PANEL_VM_SIZE), vm = s.workloads.find((w) => w.id === (made.ok ? made.id : ""))!;
+  return { node: s.devices.at(-1)!, vm };
+}
 
 describe("browser resolver", () => {
   it("splits an address into a lowercase host and a path", () => {
@@ -21,7 +29,7 @@ describe("browser resolver", () => {
     expect(resolve(s, d).page).toEqual({ kind: "company" });
     expect(resolve(s, `https://www.${d}/`)).toMatchObject({ page: { kind: "company" }, load: "fast" });
     expect(resolve(s, adminUrl(s)).page).toEqual({ kind: "admin" });
-    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["company", "admin"]);
+    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["company", "admin", "console", "console"]);
   });
 
   it("resolves every customer domain to its site", () => {
@@ -34,7 +42,7 @@ describe("browser resolver", () => {
   });
 
   it("resolves machine and service names to the placeholder host page", () => {
-    const s = readyGame(1), node = s.devices.find((x) => x.hostname)!, vm = s.workloads.find((w) => !w.serviceId)!;
+    const s = readyGame(1), { node, vm } = bare(s);
     expect(resolve(s, fqdn(s, node.hostname!)).page).toEqual({ kind: "host", hostname: node.hostname });
     expect(resolve(s, fqdn(s, vm.hostname!)).page).toEqual({ kind: "host", hostname: vm.hostname });
     const svc = s.services.find((v) => v.hostname)!;
@@ -42,7 +50,7 @@ describe("browser resolver", () => {
   });
 
   it("resolves private addresses typed as URLs to the machine", () => {
-    const s = readyGame(1), node = s.devices.find((x) => x.hostname)!, ip = privateIp(s, node.id)!;
+    const s = readyGame(1), { node } = bare(s), ip = privateIp(s, node.id)!;
     expect(resolve(s, `http://${ip}/`).page).toEqual({ kind: "host", hostname: node.hostname });
     expect(resolve(s, "10.99.99.99").page).toEqual({ kind: "notfound" });
   });
