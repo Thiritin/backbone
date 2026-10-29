@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The first-hour design note describes the current start, and the datacenter space docs match the rack shares the game rents.
 - The Shop filters servers by form factor, cores, RAM and disk type across all manufacturers.
 - The game offers a reload when a newer version is online and lists what changed.
 - Important notifications pause the game and open a sheet with Open and Continue.
