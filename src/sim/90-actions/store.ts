@@ -36,7 +36,7 @@ export function install(s: GameState, id: string): ActionResult {
   if (s.installed.includes(id)) return fail("error.installed");
   if (item.kind === "desk" && !deskReady(s, id)) return fail("error.deskNotYet");
   const price = monthlyCharge(s, item);
-  if (s.cash < price) return fail("error.noCash");
+  if (price > 0 && s.cash < price) return fail("error.noCash");
   s.cash = Math.round((s.cash - price) * 100) / 100;
   if (price > 0) s.ledger = [...s.ledger, subscriptionEntry(s, item)];
   // One desk at a time: the new desk replaces the one in use.

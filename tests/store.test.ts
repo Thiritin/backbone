@@ -80,6 +80,13 @@ describe("pear store", () => {
     expect(s.installed).not.toContain("dockBadges");
   });
 
+  it("installs free apps while in debt", () => {
+    const s = newGame(5);
+    s.cash = -500;
+    expect(install(s, "Network")).toEqual({ ok: true });
+    expect(s.cash).toBe(-500);
+  });
+
   it("raises prices 8% every year", () => {
     const net = storeItem("Products")!;
     expect(subscriptionPrice(net, 2005)).toBe(15);
