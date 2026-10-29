@@ -404,13 +404,13 @@ describe("quote first", () => {
 
   it("learns the provisioning skill in ten days after Product management", () => {
     const skill = SKILLS.find((k) => k.id === "provisioning")!;
-    expect(skill).toMatchObject({ name: "Provisioning automation", tier: 2, knowHow: 15, days: 10, needs: ["products"] });
+    expect(skill).toMatchObject({ name: "Provisioning automation", tier: 2, knowHow: 150, days: 10, needs: ["products"] });
     const s = readyGame(1);
     s.knowHow = 500;
     expect(research(s, "provisioning")).toEqual({ ok: false, error: "error.missingSkill" });
     s.unlocks = [...s.unlocks, "products"];
     expect(research(s, "provisioning").ok).toBe(true);
-    expect(s.knowHow).toBe(485);
+    expect(s.knowHow).toBe(350);
     run(s, 10 * 24);
     expect(s.unlocks).toContain("provisioning");
   });

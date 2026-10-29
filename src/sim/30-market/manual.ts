@@ -50,9 +50,12 @@ export const canAutomate = (s: GameState): boolean => s.unlocks.includes(AUTOMAT
 // The quote counts as accepted once the customer said yes or the order came through the form; an order past its account
 // from an older save counts too.
 export const quoteAccepted = (r: SalesRequest): boolean => r.status === "accepted" || !!r.customerId || !!r.invoiceId || !!r.serviceId;
-// The first host in the order's city with disk room: the pick of staff and of a setup nobody chose a host for.
-export const hostFor = (s: GameState, r: SalesRequest): string | null =>
-  routeOptions(s, r.product, r.city, sizeOf(r.spec)).find((c) => c.fits)?.id ?? null;
+// The first host in the order's city with disk room, one with the RAM for it first like Automatic: the pick of staff and
+// of a setup nobody chose a host for.
+export function hostFor(s: GameState, r: SalesRequest): string | null {
+  const hosts = routeOptions(s, r.product, r.city, sizeOf(r.spec)).filter((c) => c.fits);
+  return (hosts.find((c) => c.free.ramGb >= sizeOf(r.spec).ramGb) ?? hosts[0])?.id ?? null;
+}
 
 // Which steps the order has behind it.
 export function stepsDone(s: GameState, r: SalesRequest): Record<OrderStep, boolean> {
