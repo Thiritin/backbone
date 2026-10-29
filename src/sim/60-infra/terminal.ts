@@ -265,6 +265,22 @@ export function recoveryReport(s: GameState, watch: Watch): string[] | null {
   return lines(w && w.corrupted ? "term.recover.failed" : "term.recover.done", { name: watch.host });
 }
 
+const DESK_COMMANDS = ["ssh", "ping", "traceroute", "host", "help", "clear"];
+const REMOTE_COMMANDS = ["uptime", "df", "free", "top", "shutdown", "reboot", "recover", "exit", "help", "clear"];
+
+// Tab on a line: the first word completes to a command, later ones to a host name. Several matches extend to their
+// shared prefix, and when that adds nothing the matches come back as options to list.
+export function complete(s: GameState, session: Session | null, line: string): { line: string; options: string[] } {
+  const at = line.lastIndexOf(" ") + 1, word = line.slice(at).toLowerCase();
+  const pool = at === 0 ? (session ? REMOTE_COMMANDS : DESK_COMMANDS)
+    : [...s.devices.map((d) => d.hostname), ...s.workloads.map((w) => w.hostname), ...s.services.map((v) => v.hostname)];
+  const hits = [...new Set(pool.filter((h): h is string => !!h && h.startsWith(word)))].sort();
+  if (hits.length === 1) return { line: line.slice(0, at) + hits[0] + " ", options: [] };
+  let shared = hits[0] ?? word;
+  for (const h of hits) while (!h.startsWith(shared)) shared = shared.slice(0, -1);
+  return shared.length > word.length ? { line: line.slice(0, at) + shared, options: [] } : { line, options: hits };
+}
+
 // Runs one line. session is the open ssh session, or null at the desk; nonce varies the jitter of repeated commands.
 export function runCommand(s: GameState, session: Session | null, line: string, nonce = 0): CommandResult {
   const [cmd, ...args] = line.trim().split(/\s+/);

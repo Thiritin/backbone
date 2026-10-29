@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The first time you open the Terminal it installs zsh after a couple of typos, and afterwards Tab completes commands and server names.
 - An open rack fills the whole Locations window, and a selected server splits into Actions, Software, Lease, Power supplies, RAID and Components tabs.
 - The power button on the server drawing turns the server on and off, and the Change parts button stays visible but greyed out until the server is powered down.
 - A notice about a site that is not on your network offers only Reject, and the reply tells the sender it is not yours and how to find the right host with whois.

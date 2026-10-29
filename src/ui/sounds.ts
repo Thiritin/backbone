@@ -5,7 +5,7 @@ import { dateOf, hourOf } from "../sim/00-core/time";
 // Highest priority first: one batch of events plays only its top sound.
 export const SOUNDS = ["month", "warn", "level", "research", "money", "ticket"] as const;
 export type Sound = (typeof SOUNDS)[number];
-export type UiSound = "open" | "close";
+export type UiSound = "open" | "close" | "key" | "thump";
 
 const BY_KEY: Record<string, Sound> = {
   "event.monthStart": "month",
@@ -66,14 +66,14 @@ function tone(c: AudioContext, out: AudioNode, hz: number, at: number, dur: numb
   o.stop(at + dur + 0.02);
 }
 
-// A short band-passed noise burst, the drawer of a cash register.
-function rattle(c: AudioContext, out: AudioNode, at: number, peak: number) {
-  const len = Math.floor(c.sampleRate * 0.06), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
+// A short band-passed noise burst: the drawer of a cash register, or at a short length and other pitch a key press.
+function rattle(c: AudioContext, out: AudioNode, at: number, peak: number, hz = 3200, secs = 0.06) {
+  const len = Math.floor(c.sampleRate * secs), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
   for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
   const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
   src.buffer = buf;
   bp.type = "bandpass";
-  bp.frequency.value = 3200;
+  bp.frequency.value = hz;
   g.gain.value = peak;
   src.connect(bp).connect(g).connect(out);
   src.start(at);
@@ -120,6 +120,22 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false)
       case "close":
         tone(c, out, kind === "open" ? 1700 : 1200, t, 0.05, 0.012);
         break;
+      case "key":
+        rattle(c, out, t, 0.05, 1800 + Math.random() * 1400, 0.018);
+        break;
+      case "thump": {
+        // A fist on the desk: a falling low tone under a dull knock.
+        const g = c.createGain(), o = c.createOscillator();
+        o.frequency.setValueAtTime(110, t);
+        o.frequency.exponentialRampToValueAtTime(45, t + 0.18);
+        g.gain.setValueAtTime(0.5, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        o.connect(g).connect(out);
+        o.start(t);
+        o.stop(t + 0.32);
+        rattle(c, out, t, 0.25, 220, 0.08);
+        break;
+      }
     }
   } catch {
     // A failed sound is not worth an error.

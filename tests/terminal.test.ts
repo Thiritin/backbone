@@ -6,7 +6,7 @@ import { visibleCandidates } from "../src/sim/47-staff/staff";
 import type { GameState } from "../src/sim/50-state";
 import { latency, loadOf, route } from "../src/sim/60-infra/network";
 import { pathTo, type Hop } from "../src/sim/60-infra/status";
-import { deskRouter, recoveryReport, runCommand, type Session } from "../src/sim/60-infra/terminal";
+import { complete, deskRouter, recoveryReport, runCommand, type Session } from "../src/sim/60-infra/terminal";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect } from "../src/sim/90-actions/hardware";
@@ -299,5 +299,20 @@ describe("recover", () => {
     expect(off.corrupted).toBe(true);
     expect(off.recoverDoneAt).toBeUndefined();
     expect(base.techRules.recover).toBe(true);
+  });
+});
+
+describe("tab completion", () => {
+  it("completes commands, a unique host, and lists ambiguous hosts", () => {
+    const s = fresh();
+    expect(complete(s, null, "tr").line).toBe("traceroute ");
+    expect(complete(s, login(s), "reb").line).toBe("reboot ");
+    const name = host(s);
+    expect(complete(s, null, `ssh ${name.slice(0, -1)}`).line).toBe(`ssh ${name} `);
+    s.devices = s.devices.map((d) => (d.id === "dev3" ? { ...d, hostname: "node010" } : d));
+    s.devices.push({ ...dev(s, "dev3"), id: "devX", hostname: "node011" });
+    expect(complete(s, null, "ssh n").line).toBe("ssh node01");
+    expect(complete(s, null, "ssh node01").options).toEqual(["node010", "node011"]);
+    expect(complete(s, null, "ssh zz")).toEqual({ line: "ssh zz", options: [] });
   });
 });
