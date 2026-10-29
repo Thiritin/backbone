@@ -4,7 +4,7 @@
 import { nowHours } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import type { Device, GameState } from "../50-state";
-import { clusterOf, dropCluster, hostOfVm, isOwnVm, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
+import { clusterOf, dropCluster, hostOfVm, isOwnVm, vmById, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
 import { pushLog } from "../60-infra/power";
 import { BOOT_HOURS, booting, powered } from "../60-infra/status";
 import { reportLoss } from "../85-products/products";
@@ -13,7 +13,10 @@ import type { ActionResult } from "./hardware";
 import { installSoftware, uninstallSoftware } from "./software";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
-const hostOf = (d: Device) => d.hostname ?? d.label ?? d.name;
+// A machine is a server or one of the player's own VMs; a VM has no label, so its hostname is the vmNNN it got at birth.
+type Machine = Device | Workload;
+const isDevice = (m: Machine): m is Device => "components" in m;
+const hostOf = (m: Machine) => (isDevice(m) ? m.hostname ?? m.label ?? m.name : m.hostname ?? m.id);
 
 const server = (s: GameState, deviceId: string): Device | string => {
   const d = s.devices.find((x) => x.id === deviceId);
@@ -60,62 +63,83 @@ export function bootFromUsb(s: GameState, deviceId: string): ActionResult {
 }
 
 // What the installer finds on the disks: nothing, software nobody uses, or software with customers on it. workloads is
-// what sits on the server, lost what dies with it: the customers' workloads, those inside the player's own VMs included.
+// what sits on the server (nothing for a VM), lost what dies with it: the customers' workloads, those inside the player's
+// own VMs included.
 export type InstallCase = { kind: "empty" } | { kind: "idle"; cluster: Cluster } | { kind: "busy"; cluster: Cluster; workloads: Workload[]; lost: Workload[] };
-export function installCase(s: GameState, deviceId: string): InstallCase {
-  const cluster = clusterOf(s, deviceId);
+export function installCase(s: GameState, machineId: string): InstallCase {
+  const vm = !s.devices.some((d) => d.id === machineId);
+  const cluster = vm ? hostOfVm(s, machineId) : clusterOf(s, machineId);
   if (!cluster) return { kind: "empty" };
-  const workloads = workloadsOn(s, deviceId);
-  if (!workloads.length) return { kind: "idle", cluster };
-  const lost = workloads.flatMap((w) => (isOwnVm(w) ? s.workloads.filter((x) => x.clusterId === hostOfVm(s, w.id)?.id) : [w]));
+  const workloads = vm ? [] : workloadsOn(s, machineId);
+  const lost = vm ? s.workloads.filter((w) => w.clusterId === cluster.id) : workloads.flatMap((w) => (isOwnVm(w) ? s.workloads.filter((x) => x.clusterId === hostOfVm(s, w.id)?.id) : [w]));
+  if (!workloads.length && !lost.length) return { kind: "idle", cluster };
   return { kind: "busy", cluster, workloads, lost };
 }
 
-// Erasing a server with customers on it loses their data the way a dead array does: the same loss report, refund tickets
-// and reputation hit. Their services end with it, since nothing is left to restore to.
-// ponytail: no restore from backup onto the reinstalled server; add when a player asks for it.
-function wipe(s: GameState, d: Device, c: Cluster, ws: Workload[], lost: Workload[]): void {
-  d.dataLost = s.hour;
-  reportLoss(s, d, lost, s.hour, []);
+// Erasing a machine with customers on it loses their data the way a dead array does: the same loss report, refund tickets
+// and reputation hit. Their services end with it, since nothing is left to restore to. A VM's loss is booked on its host.
+// ponytail: no restore from backup onto the reinstalled machine; add when a player asks for it.
+function wipe(s: GameState, m: Machine, c: Cluster, ws: Workload[], lost: Workload[]): void {
+  const d = isDevice(m) ? m : s.devices.find((x) => x.id === m.deviceId);
+  if (isDevice(m)) m.dataLost = s.hour;
+  if (d) reportLoss(s, d, lost, s.hour, []);
   const gone = new Set([...ws, ...lost].map((w) => w.id)), services = new Set(lost.map((w) => w.serviceId));
   for (const nested of s.clusters.filter((x) => x.vm && gone.has(x.vm))) dropCluster(s, nested.id);
   s.workloads = s.workloads.filter((w) => !gone.has(w.id));
   s.services = s.services.map((v) => (services.has(v.id) && v.endedAt === null ? { ...v, endedAt: s.hour } : v));
-  if (c.nodes.length > 1) leave(s, c.id, d.id); else dropCluster(s, c.id);
-  pushLog(d, s.hour, "ipmi.log.erased");
+  if (isDevice(m) && c.nodes.length > 1) leave(s, c.id, m.id); else dropCluster(s, c.id);
+  if (isDevice(m)) pushLog(m, s.hour, "ipmi.log.erased");
 }
 
-// Clears the disks for the installer: software nobody uses goes quietly, software with customers on it needs the server's
-// hostname typed. Returns what to put back when the install that follows is refused.
-function clear(s: GameState, d: Device, confirm: string | undefined): ActionResult {
-  const c = installCase(s, d.id);
+// Clears the disks for the installer: software nobody uses goes quietly, software with customers on it needs the machine's
+// hostname typed.
+function clear(s: GameState, m: Machine, confirm: string | undefined): ActionResult {
+  const c = installCase(s, m.id);
   if (c.kind === "empty") return { ok: true };
-  if (c.kind === "idle") return uninstallSoftware(s, d.id);
-  if (confirm !== hostOf(d)) return fail("error.confirmHostname");
-  wipe(s, d, c.cluster, c.workloads, c.lost);
+  if (c.kind === "idle") return uninstallSoftware(s, m.id);
+  if (confirm !== hostOf(m)) return fail("error.confirmHostname");
+  wipe(s, m, c.cluster, c.workloads, c.lost);
   return { ok: true };
 }
 
-const snapshot = (s: GameState, d: Device) => ({ clusters: s.clusters, workloads: s.workloads, services: s.services, company: s.company, security: s.security, lossReports: s.lossReports, tickets: s.tickets, customers: s.customers, nextId: s.nextId, dataLost: d.dataLost, log: d.log });
-const restore = (s: GameState, d: Device, snap: ReturnType<typeof snapshot>) => { const { dataLost, log, ...rest } = snap; Object.assign(s, rest); Object.assign(d, { dataLost, log }); };
+const snapshot = (s: GameState, m: Machine) => ({ clusters: s.clusters, workloads: s.workloads, services: s.services, company: s.company, security: s.security, lossReports: s.lossReports, tickets: s.tickets, customers: s.customers, nextId: s.nextId, device: isDevice(m) ? { dataLost: m.dataLost, log: m.log } : null });
+const restore = (s: GameState, m: Machine, snap: ReturnType<typeof snapshot>) => { const { device, ...rest } = snap; Object.assign(s, rest); if (device) Object.assign(m, device); };
 
-// The installer's Install: whatever the disks held goes first, then the software installs as from the catalog.
-export function installFromUsb(s: GameState, deviceId: string, softwareId: string, confirm?: string): ActionResult {
-  const d = server(s, deviceId);
-  if (typeof d === "string") return fail(d);
-  if (d.bootFrom !== "usb") return fail("error.notFromUsb");
-  const snap = snapshot(s, d), cleared = clear(s, d, confirm);
+// The machine booted into its installer: a server from the stick, a VM from the ISO, or why not.
+const atInstaller = (s: GameState, machineId: string): Machine | string => {
+  const vm = vmById(s, machineId);
+  if (vm) return !isOwnVm(vm) ? "error.notOwnVm" : vm.stopped ? "error.alreadyStopped" : !vm.media ? "error.noMedia" : vm;
+  const d = server(s, machineId);
+  return typeof d === "string" ? d : d.bootFrom !== "usb" ? "error.notFromUsb" : d;
+};
+
+// The installer's Install: whatever the disks held goes first, then the software installs as from the catalog. What the
+// erase took is put back when the install is refused.
+function installOn(s: GameState, machineId: string, softwareId: string, confirm?: string): ActionResult {
+  const m = atInstaller(s, machineId);
+  if (typeof m === "string") return fail(m);
+  const snap = snapshot(s, m), cleared = clear(s, m, confirm);
   if (!cleared.ok) return cleared;
-  const r = installSoftware(s, deviceId, softwareId);
-  if (!r.ok) restore(s, d, snap);
+  const r = installSoftware(s, machineId, softwareId);
+  if (!r.ok) restore(s, m, snap);
   return r;
 }
+export const installFromUsb = (s: GameState, deviceId: string, softwareId: string, confirm?: string): ActionResult => installOn(s, deviceId, softwareId, confirm);
+export const installFromIso = (s: GameState, vmId: string, softwareId: string, confirm?: string): ActionResult => installOn(s, vmId, softwareId, confirm);
 
-// The installer's Erase disk: bare metal again, under the same confirmation as a reinstall.
-export function eraseDisk(s: GameState, deviceId: string, confirm?: string): ActionResult {
-  const d = server(s, deviceId);
-  if (typeof d === "string") return fail(d);
-  if (d.bootFrom !== "usb") return fail("error.notFromUsb");
-  if (installCase(s, deviceId).kind === "empty") return fail("error.noSoftware");
-  return clear(s, d, confirm);
+// The installer's Erase disk: bare metal, or an empty VM, under the same confirmation as a reinstall.
+export function eraseDisk(s: GameState, machineId: string, confirm?: string): ActionResult {
+  const m = atInstaller(s, machineId);
+  if (typeof m === "string") return fail(m);
+  if (installCase(s, machineId).kind === "empty") return fail("error.noSoftware");
+  return clear(s, m, confirm);
+}
+
+// The ISO in one of the player's own VMs: loaded, the VM boots the installer; ejected or once an install finishes, its own
+// disk again. A VM has no BIOS and no boot menu, the media decides.
+export function setMedia(s: GameState, vmId: string, media: "iso" | null): ActionResult {
+  const vm = vmById(s, vmId);
+  if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
+  s.workloads = s.workloads.map((w) => (w.id === vmId ? { ...w, media: media ?? undefined } : w));
+  return { ok: true };
 }

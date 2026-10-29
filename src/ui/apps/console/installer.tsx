@@ -3,9 +3,9 @@ import { useState } from "react";
 import { nowHours, yearOf } from "../../../sim/00-core/time";
 import { SOFTWARE, softwareById, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
 import type { Device, GameState } from "../../../sim/50-state";
-import { installingOn } from "../../../sim/60-infra/cluster";
+import { hostOfVm, installingOn, type Workload } from "../../../sim/60-infra/cluster";
 import { drivesOf, raidUsable } from "../../../sim/60-infra/status";
-import { eraseDisk, installCase, installFromUsb } from "../../../sim/90-actions/console";
+import { eraseDisk, installCase, installFromIso, installFromUsb, setMedia } from "../../../sim/90-actions/console";
 import { reboot } from "../../../sim/90-actions/hardware";
 import { installBlock } from "../../../sim/90-actions/software";
 import { t } from "../../../i18n/en";
@@ -15,24 +15,27 @@ import { KIND_NAME, licenseText, vmLabel } from "../products/parts";
 
 const KINDS: SoftwareKind[] = ["cloud", "panel", "game", "mail"];
 const STAGES = ["Partitioning disks", "Installing the base system", "Installing software", "Configuring the system", "Finishing the installation"];
-const hostOf = (d: Device) => d.hostname ?? d.label ?? d.name;
+type Machine = Device | Workload;
+const isDevice = (m: Machine): m is Device => "components" in m;
+const hostOf = (m: Machine) => (isDevice(m) ? m.hostname ?? m.label ?? m.name : m.hostname ?? m.id);
 
 interface Row { label: string; dim?: boolean; run?: () => void }
 type Step = { kind: "menu" } | { kind: "target"; sw: Software | null };
 
-// The installer on the USB stick: the catalog, the target screen with its three cases, and the progress screen while the
-// install runs. Keys come from the screen.
-export function useInstaller(game: GameState, d: Device): { view: ReactNode; onKey: (key: string) => void } {
+// The installer on the USB stick or the ISO: the catalog, the target screen with its three cases, and the progress screen
+// while the install runs. Keys come from the screen.
+export function useInstaller(game: GameState, d: Machine): { view: ReactNode; onKey: (key: string) => void } {
   const act = useStore((s) => s.act);
   const [step, setStep] = useState<Step>({ kind: "menu" });
   const [row, setRow] = useState(0);
   const [typed, setTyped] = useState("");
   const [note, setNote] = useState("");
-  const year = yearOf(game.hour), found = installCase(game, d.id), drives = drivesOf(d);
-  const running = installingOn(game, d.id);
+  const year = yearOf(game.hour), found = installCase(game, d.id), drives = isDevice(d) ? drivesOf(d) : [];
+  const vmHost = isDevice(d) ? undefined : hostOfVm(game, d.id);
+  const running = isDevice(d) ? installingOn(game, d.id) : vmHost?.switching && !vmHost.panel ? vmHost : undefined;
   const back = () => { setStep({ kind: "menu" }); setRow(0); setTyped(""); setNote(""); };
   const run = (r: { ok: boolean; error?: string }) => { if (r.ok) back(); else setNote(t(r.error ?? "")); };
-  const array = `${drives.length} x ${disk(drives[0]?.size ?? 0)}${d.raid === "none" ? "" : ` RAID ${d.raid}`}, ${disk(raidUsable(d))} usable`;
+  const array = isDevice(d) ? `${drives.length} x ${disk(drives[0]?.size ?? 0)}${d.raid === "none" ? "" : ` RAID ${d.raid}`}, ${disk(raidUsable(d))} usable` : `${disk(d.diskGb)} virtual disk`;
 
   let rows: Row[], body: ReactNode;
   if (step.kind === "menu") {
@@ -40,11 +43,12 @@ export function useInstaller(game: GameState, d: Device): { view: ReactNode; onK
       const block = installBlock(game, d.id, sw.id, true);
       return { label: `${sw.name}  (${KIND_NAME[kind]}, ${licenseText(sw)}, ${sw.installHours} h)`, dim: !!block, run: () => { if (block) setNote(t(block)); else { setStep({ kind: "target", sw }); setRow(0); setNote(""); } } };
     }));
-    rows = [...items, { label: "Erase disk", dim: found.kind === "empty", run: () => { if (found.kind === "empty") setNote(t("error.noSoftware")); else { setStep({ kind: "target", sw: null }); setRow(0); setNote(""); } } }, { label: "Reboot", run: () => act(reboot, d.id) }];
+    rows = [...items, { label: "Erase disk", dim: found.kind === "empty", run: () => { if (found.kind === "empty") setNote(t("error.noSoftware")); else { setStep({ kind: "target", sw: null }); setRow(0); setNote(""); } } }, isDevice(d) ? { label: "Reboot", run: () => act(reboot, d.id) } : { label: "Eject and reboot", run: () => act(setMedia, d.id, null) }];
     body = <div className="inst-box"><div className="inst-t">Select software to install</div>{rows.map((r, i) => <div key={r.label} className={`inst-row${i === row ? " on" : ""}${r.dim ? " dim" : ""}`}>{r.label}</div>)}</div>;
   } else {
     const sw = step.sw, verb = sw ? `Install ${sw.name}` : "Erase disk", busy = found.kind === "busy";
-    const go = () => run(sw ? act(installFromUsb, d.id, sw.id, busy ? typed : undefined) : act(eraseDisk, d.id, busy ? typed : undefined));
+    const install = isDevice(d) ? installFromUsb : installFromIso;
+    const go = () => run(sw ? act(install, d.id, sw.id, busy ? typed : undefined) : act(eraseDisk, d.id, busy ? typed : undefined));
     rows = [{ label: busy ? (sw ? "Erase and install" : "Erase") : (sw ? "Install" : "Erase"), run: go }, { label: "Back", run: back }];
     const had = found.kind === "empty" ? null : softwareById(found.cluster.panel ?? found.cluster.platform ?? found.cluster.switching?.to ?? "").name;
     const dies = found.kind === "busy" ? [...new Set([...found.workloads, ...found.lost])] : [];
@@ -92,7 +96,7 @@ export function useInstaller(game: GameState, d: Device): { view: ReactNode; onK
   };
   const view = (
     <div className="inst">
-      <div className="inst-h">Backbone Installer {year}</div>
+      <div className="inst-h">Backbone Installer {year}{isDevice(d) ? "" : " (ISO)"}</div>
       {body}
       {note && <div className="inst-note">{note}</div>}
       <div className="inst-f"><span>&uarr;&darr; Select</span><span>Enter Choose</span><span>Esc Back</span></div>

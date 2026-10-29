@@ -82,7 +82,7 @@ function Create({ game, c }: { game: GameState; c: Cluster }) {
 }
 
 export function Objects({ game, c, f, node }: Props & { node: string | null }) {
-  const act = useStore((s) => s.act), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" } | null>(null);
+  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" } | null>(null);
   if (f.look === "mail") {
     const mine = game.company.mail.kind === "self" && game.company.mail.clusterId === c.id;
     return (
@@ -125,6 +125,7 @@ export function Objects({ game, c, f, node }: Props & { node: string | null }) {
                   {st === "lost" && f.backups && <button className="cx-btn" onClick={() => act(restoreWorkload, w.id)}>{w.backupAt === null ? "Start empty" : "Restore"}</button>}
                   {f.migrate && movable && <button className="cx-btn" onClick={() => setOpen({ id: w.id, kind: "migrate" })}>Migrate</button>}
                   {f.resize && host && c.kind === "cloud" && <button className="cx-btn" onClick={() => setOpen({ id: w.id, kind: "resize" })}>Resize</button>}
+                  {c.kind === "cloud" && isOwnVm(w) && <button className="cx-btn" onClick={() => openConsole(w.id)}>Console</button>}
                   {f.delete && c.kind === "cloud" && isOwnVm(w) && !host && <button className="cx-btn" onClick={() => act(deleteVm, w.id)}>Delete</button>}
                 </div></td>
               </FragmentRow>

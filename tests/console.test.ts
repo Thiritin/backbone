@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { modelById } from "../src/sim/10-catalog/hardware";
 import { device, type GameState } from "../src/sim/50-state";
-import { clusterOf, workloadsOn } from "../src/sim/60-infra/cluster";
+import { clusterOf, hostOfVm, vmById, workloadsOn } from "../src/sim/60-infra/cluster";
 import { consoleScreen } from "../src/sim/60-infra/oob";
 import { hardReboot, powerTick } from "../src/sim/60-infra/power";
 import { BOOT_HOURS, booting, deviceHealth, working } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
-import { bootFromUsb, enterSetup, eraseDisk, exitSetup, installCase, installFromUsb } from "../src/sim/90-actions/console";
+import { bootFromUsb, enterSetup, eraseDisk, exitSetup, installCase, installFromIso, installFromUsb, setMedia } from "../src/sim/90-actions/console";
+import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
+import { stopWorkload } from "../src/sim/90-actions/vms";
 import { softwareOn } from "../src/sim/90-actions/software";
 import { setPower, setRaid } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -177,5 +179,56 @@ describe("USB installer", () => {
     const old = JSON.parse(serialize(s)) as { devices: Record<string, unknown>[] };
     for (const x of old.devices) delete x.bootFrom;
     expect(dev(deserialize(JSON.stringify(old)), "dev3").bootFrom).toBe("disk");
+  });
+});
+
+describe("VM console", () => {
+  const basement = (s: GameState) => clusterOf(s, "dev3")!;
+  const panelVm = (s: GameState) => s.clusters.find((c) => c.vm)!.vm!;
+
+  it("boots the installer from the ISO and ejects it once the install is done", () => {
+    const s = readyGame(7), made = createVm(s, basement(s).id, PANEL_VM_SIZE), vm = made.ok ? made.id! : "";
+    ok(made);
+    expect(err(installFromIso(s, vm, "cpanic"))).toBe("error.noMedia");
+    ok(setMedia(s, vm, "iso"));
+    expect(vmById(s, vm)?.media).toBe("iso");
+    expect(installCase(s, vm).kind).toBe("empty");
+    ok(installFromIso(s, vm, "cpanic"));
+    expect(hostOfVm(s, vm)?.switching?.to).toBe("cpanic");
+    expect(vmById(deserialize(serialize(s)), vm)?.media).toBe("iso");
+    for (let h = 0; h < 4; h++) tick(s);
+    expect(hostOfVm(s, vm)?.panel).toBe("cpanic");
+    expect(vmById(s, vm)?.media).toBeUndefined();
+    ok(stopWorkload(s, vm));
+    ok(setMedia(s, vm, "iso"));
+    expect(err(installFromIso(s, vm, "cpanic"))).toBe("error.alreadyStopped");
+  });
+
+  it("needs the VM's hostname to erase a panel with customers on it, booked on the host", () => {
+    const s = readyGame(7), vm = panelVm(s), w = vmById(s, vm)!, before = s.workloads.length;
+    ok(setMedia(s, vm, "iso"));
+    expect(installCase(s, vm).kind).toBe("busy");
+    expect(err(installFromIso(s, vm, "cpanic"))).toBe("error.confirmHostname");
+    expect(s.workloads).toHaveLength(before);
+    expect(err(installFromIso(s, vm, "nope", w.hostname))).toBe("error.unknownSoftware");
+    expect(s.workloads).toHaveLength(before);
+    expect(hostOfVm(s, vm)?.panel).toBe("freepanel");
+    ok(installFromIso(s, vm, "cpanic", w.hostname));
+    expect(s.workloads.filter((x) => x.clusterId === hostOfVm(s, vm)?.id)).toHaveLength(0);
+    expect(s.lossReports[0]).toMatchObject({ deviceId: "dev3" });
+    expect(s.services.filter((v) => v.endedAt === null)).toHaveLength(0);
+    expect(hostOfVm(s, vm)?.switching?.to).toBe("cpanic");
+    expect(vmById(s, vm)).toBeDefined();
+  });
+
+  it("erases a VM to an empty disk", () => {
+    const s = readyGame(7), vm = panelVm(s), w = vmById(s, vm)!;
+    ok(setMedia(s, vm, "iso"));
+    expect(err(eraseDisk(s, vm))).toBe("error.confirmHostname");
+    ok(eraseDisk(s, vm, w.hostname));
+    expect(hostOfVm(s, vm)).toBeUndefined();
+    expect(err(eraseDisk(s, vm))).toBe("error.noSoftware");
+    ok(setMedia(s, vm, null));
+    expect(vmById(s, vm)?.media).toBeUndefined();
   });
 });

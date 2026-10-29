@@ -16,8 +16,8 @@ export type Via = "bmc" | "kvm" | "monitor";
 type Phase = "dark" | "post" | "stuck" | "bios" | "menu" | "installer" | "os";
 type Look = "debian" | "dcui" | "windows" | "nodisk";
 
-const SOFT_KEYS: [string, string][] = [["Del", "Delete"], ["F1", "F1"], ["F2", "F2"], ["F10", "F10"], ["F11", "F11"], ["Esc", "Escape"], ["Enter", "Enter"], ["←", "ArrowLeft"], ["↑", "ArrowUp"], ["↓", "ArrowDown"], ["→", "ArrowRight"]];
-const HANDLED = new Set([...SOFT_KEYS.map(([, k]) => k), "Backspace"]);
+export const SOFT_KEYS: [string, string][] = [["Del", "Delete"], ["F1", "F1"], ["F2", "F2"], ["F10", "F10"], ["F11", "F11"], ["Esc", "Escape"], ["Enter", "Enter"], ["←", "ArrowLeft"], ["↑", "ArrowUp"], ["↓", "ArrowDown"], ["→", "ArrowRight"]];
+export const HANDLED = new Set([...SOFT_KEYS.map(([, k]) => k), "Backspace"]);
 const BOOT_DEVICES = ["Hard Disk", "USB: Backbone Installer", "Network (PXE)"];
 const DEBIAN: [number, string][] = [[2023, "12"], [2021, "11"], [2019, "10"], [2017, "9"], [2015, "8"], [2013, "7"], [2011, "6.0"], [2009, "5.0"], [2007, "4.0"], [2005, "3.1"]];
 const debian = (year: number) => DEBIAN.find(([y]) => year >= y)?.[1] ?? "3.1";

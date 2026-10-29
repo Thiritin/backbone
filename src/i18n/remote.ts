@@ -43,4 +43,5 @@ export const REMOTE_EN: Record<string, (p: Params) => string> = {
   "ipmi.log.erased": () => "Disks erased",
   "error.notFromUsb": () => "Boot the server from the USB stick to install software.",
   "error.confirmHostname": () => "Type the server's hostname to confirm.",
+  "error.noMedia": () => "Load the installer ISO in the virtual machine first.",
 };

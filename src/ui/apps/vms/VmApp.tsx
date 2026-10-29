@@ -1,4 +1,4 @@
-import { Boxes, MonitorCog, Plus, Power, PowerOff, RotateCcw, TriangleAlert } from "lucide-react";
+import { Boxes, Monitor, MonitorCog, Plus, Power, PowerOff, RotateCcw, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { useSessionState } from "../../session";
 import { isService, softwareById } from "../../../sim/10-catalog/platforms";
@@ -18,7 +18,7 @@ import "../billing/billing.css";
 import { CustomerLink } from "../customers/CustomersApp";
 import { day, devName, disk, ram } from "../hw";
 import { ResizeCard, SizeFields } from "../products/PanelHosts";
-import { ActionTile, SoftwareGrid } from "../software/Software";
+import { ActionTile } from "../software/Software";
 import { Mark, IncidentReports, Sparkline, VM_STATE, vmLabel, vmState, type VmState } from "../products/parts";
 import { PRODUCT } from "../support/labels";
 import { AddressRows } from "../network/Addresses";
@@ -162,7 +162,7 @@ const hostName = (game: GameState, w: Workload): string => {
 };
 
 function VmDetail({ game, w, start }: { game: GameState; w: Workload; start: (game: GameState, t: HandTask) => void }) {
-  const act = useStore((s) => s.act);
+  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole);
   const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId);
   const cluster = game.clusters.find((x) => x.id === w.clusterId)!;
   const host = game.devices.find((x) => x.id === w.deviceId), panel = hostOfVm(game, w.id);
@@ -190,6 +190,7 @@ function VmDetail({ game, w, start }: { game: GameState; w: Workload; start: (ga
         <div className="fin-card-b act-tiles">
           <ActionTile icon={Power} label="Power on" disabled={st !== "stopped"} onClick={() => act(startWorkload, w.id)} />
           <ActionTile icon={PowerOff} label="Shut down" disabled={!(st === "running" || st === "down" || st === "frozen")} onClick={() => act(stopWorkload, w.id)} />
+          {!v && <ActionTile icon={Monitor} label="Console" onClick={() => openConsole(w.id)} />}
         </div>
       </section>
       <section className="fin-card">
@@ -197,12 +198,6 @@ function VmDetail({ game, w, start }: { game: GameState; w: Workload; start: (ga
         <div className="fin-card-b"><Sparkline values={load} from={from} w={250} /></div>
       </section>
       {st === "lost" && <div className="fin-actions"><button className="btn primary" onClick={() => act(restoreWorkload, w.id)}><RotateCcw />{w.backupAt === null ? "Start empty" : "Restore"}</button></div>}
-      {!v && (
-        <section className="fin-card">
-          <div className="fin-card-h">Software</div>
-          <div className="fin-card-b"><SoftwareGrid game={game} machineId={w.id} /></div>
-        </section>
-      )}
       {panel && <ResizeCard key={panel.id} game={game} host={panel} />}
       {!v && !panel && <ResizeCard key={w.id} game={game} own={w} />}
     </aside>

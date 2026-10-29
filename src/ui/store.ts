@@ -54,9 +54,6 @@ interface Store {
   news: ChangelogDay[] | null;
   openNews: (days: ChangelogDay[]) => void;
   closeNews: () => void;
-  // The server or VM whose Add Software sheet is open.
-  setup: string | null;
-  setSetup: (deviceId: string | null) => void;
   // The alert sheet an alert event opens; the event pauses the game and resume is the speed to return to.
   alert: Banner | null;
   resume: Speed;
@@ -106,7 +103,7 @@ export const sameLine = (a: CartLine, b: CartLine): boolean =>
   a.model === b.model && a.brand === b.brand && a.vendor === b.vendor && !!a.bare === !!b.bare && JSON.stringify([a.extras ?? [], a.part ?? null]) === JSON.stringify([b.extras ?? [], b.part ?? null]);
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, setup: null, explain: null, alert: null });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, explain: null, alert: null });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -183,8 +180,6 @@ export const useStore = create<Store>((set, get) => ({
   news: null,
   openNews: (news) => set({ news }),
   closeNews: () => set({ news: null }),
-  setup: null,
-  setSetup: (setup) => set({ setup }),
   alert: null,
   resume: 0,
   closeAlert: (resume) => set(({ resume: speed }) => (resume ? { alert: null, speed } : { alert: null })),

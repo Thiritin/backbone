@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-30
 
 - At the server you now only press the power button, whose icon shows whether the server is on; unplug a cord from its power supply instead of using the old unplug, hold and reset buttons.
+- Your own virtual machines install software from their console: the Console tile in the VMs app or the Console button on the hypervisor's page opens it, Load installer ISO boots the same installer as on a server, and the Software tiles are gone from the VM page.
 - Game servers are now sized and priced like real ones, starting at about €29 a month in 2005 and €12 today, while VPS and cloud servers cost more in the early years.
 - Selling DNS, VPN and storage now needs DNS, VPN or storage server software, installed on a server or in one of your VMs, instead of only a hypervisor.
 - Nine new programs join the software catalog: Bound, PowerDNZ and Knut DNS for DNS, OpenVeePeeN, Sysko AnyConnekt and WireGuarded for VPN, and vsFTPeed, OwnClod and MinnIO for storage.
