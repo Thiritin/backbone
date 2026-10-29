@@ -72,8 +72,9 @@ svg.logo-mark { flex: none; }
 .loc-panel-dev svg { max-width: 100%; height: auto; display: block; }
 .loc-panel-dev[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.loc-rack { padding: 14px 16px; border-right: 0.5px solid var(--line); overflow: auto; display: grid; gap: 10px; align-content: start; background: var(--win-side); }
+.loc-rack { padding: 14px 16px; border-right: 0.5px solid var(--line); overflow: hidden; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; background: var(--win-side); }
 .loc-rack-h { display: flex; align-items: center; gap: 6px; }
+.loc-rack-scroll { overflow: auto; min-height: 0; }
 .loc-rack-h h2 { font-size: 13px; font-weight: 650; margin-right: auto; }
 .loc-rack-facts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 

@@ -1,5 +1,5 @@
-import { Gauge, Plug, Truck, Zap } from "lucide-react";
-import { useCallback, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { Gauge, Plug, Truck, Zap, ZoomIn, ZoomOut } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { modelById, type DeviceKind } from "../../../sim/10-catalog/hardware";
 import { BASEMENT } from "../../../sim/20-world/datacenters";
@@ -55,6 +55,46 @@ function rackRemotes(g: GameState, rack: Rack): RackRemote[] {
   });
 }
 
+const ZOOMS = [1, 1.5, 2, 3];
+// Wheel delta per zoom step; a trackpad pinch sends many small ctrl+wheel events.
+const WHEEL_STEP = 40;
+
+// Ctrl or Cmd with the wheel (or a pinch) over the rack zooms around the pointer; the rack column then scrolls.
+function useRackZoom() {
+  const [zoom, setZoom] = useState(1);
+  const ref = useRef<HTMLDivElement>(null), anchor = useRef<{ x: number; y: number } | null>(null), acc = useRef(0), cur = useRef(1), base = useRef(0);
+  cur.current = zoom;
+  const step = useCallback((dir: 1 | -1, at?: { x: number; y: number }) => {
+    const el = ref.current, z = cur.current, n = ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, ZOOMS.indexOf(z) + dir))];
+    if (!el || n === z) return;
+    if (z === 1) base.current = el.offsetWidth;
+    const p = at ?? { x: el.clientWidth / 2, y: el.clientHeight / 2 };
+    anchor.current = { x: (el.scrollLeft + p.x) * (n / z) - p.x, y: (el.scrollTop + p.y) * (n / z) - p.y };
+    cur.current = n;
+    setZoom(n);
+  }, []);
+  useLayoutEffect(() => {
+    const el = ref.current, a = anchor.current;
+    if (el && a) { el.scrollLeft = a.x; el.scrollTop = a.y; anchor.current = null; }
+  }, [zoom]);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const wheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      acc.current += e.deltaY;
+      if (Math.abs(acc.current) < WHEEL_STEP) return;
+      const r = el.getBoundingClientRect();
+      step(acc.current < 0 ? 1 : -1, { x: e.clientX - r.left, y: e.clientY - r.top });
+      acc.current = 0;
+    };
+    el.addEventListener("wheel", wheel, { passive: false });
+    return () => el.removeEventListener("wheel", wheel);
+  }, [step]);
+  return { zoom, ref, step, width: zoom > 1 ? base.current : undefined };
+}
+
 export function RackView({ game, rack, device, onDevice, onMoved }: { game: GameState; rack: Rack; device: string | null; onDevice: (id: string | null) => void; onMoved: (locId: string | null) => void }) {
   const act = useStore((s) => s.act);
   const [side, setSide] = useState<Side>("front");
@@ -63,6 +103,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   const [selling, setSelling] = useState(false);
   const [hot, setHot] = useState<string | null>(null);
   const main = useRef<HTMLDivElement>(null);
+  const { zoom, ref: rackRef, step, width: rackWidth } = useRackZoom();
   const items = rackItems(game, rack.id), units = rackUnits(rack), power = rackPower(game, rack.id);
   const used = items.reduce((n, it) => n + it.model.height, 0);
   const dev = game.devices.find((d) => d.id === device && d.rackId === rack.id);
@@ -93,14 +134,20 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
       <div className="loc-rack">
         <div className="loc-rack-h">
           <h2>{rack.name}</h2>
+          <div className="seg" role="group" aria-label="Zoom">
+            <button aria-label="Zoom out" disabled={zoom === ZOOMS[0]} onClick={() => step(-1)}><ZoomOut /></button>
+            <button aria-label="Zoom in" disabled={zoom === ZOOMS.at(-1)} onClick={() => step(1)}><ZoomIn /></button>
+          </div>
           <div className="seg" role="group" aria-label="Side">
             <button aria-pressed={side === "front"} onClick={() => setSide("front")}>Front</button>
             <button aria-pressed={side === "back"} onClick={() => setSide("back")}>Back</button>
           </div>
         </div>
-        <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420} u={22}
-          hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onDeviceMenu={deviceMenu} onFree={openMount}
-          onConnect={(a, b) => act((g) => connect(g, a, b))} onPlug={plug} />
+        <div className="loc-rack-scroll" ref={rackRef} style={{ width: rackWidth }}>
+          <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420 * zoom} u={22 * zoom}
+            hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onDeviceMenu={deviceMenu} onFree={openMount}
+            onConnect={(a, b) => act((g) => connect(g, a, b))} onPlug={plug} />
+        </div>
       </div>
       <div className="loc-insp">
         {dev ? <Inspector key={dev.id} game={game} device={dev} side={side} onSelect={onDevice} onHot={setHot} rename={rename === dev.id} onRenaming={clearRename} /> : (
