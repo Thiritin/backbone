@@ -32,8 +32,9 @@ export function powerOptions(game: GameState, d: Device): { via: string | null; 
 }
 
 export const FRONT_ICON: Record<FrontOp, LucideIcon> = { power: CirclePower, hold: PowerOff, reset: RotateCcw, pull: Unplug, plug: Plug };
-export const FRONT_BUSY: Record<FrontOp | "bmcreset", string> = {
+export const FRONT_BUSY: Record<FrontOp | "bmcreset" | "continue" | "recover", string> = {
   power: "Pressing power button", hold: "Holding power button", reset: "Pressing reset button", pull: "Unplugging power", plug: "Plugging in power", bmcreset: "Resetting controller",
+  continue: "Continuing boot", recover: "Recovering",
 };
 export interface FrontOption { op: FrontOp; label: string; disabled?: boolean }
 

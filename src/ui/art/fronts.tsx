@@ -12,7 +12,7 @@ export interface Parts { drives: PartLamp[]; psus: PartLamp[]; fans: PartLamp[] 
 export type PortLight = { lamp: "ok" | "warn"; load: number } | null;
 
 export const LED = { ok: "oklch(0.78 0.2 145)", warn: "oklch(0.83 0.17 80)", bad: "oklch(0.66 0.23 27)", off: "oklch(0.4 0.01 255)", act: "oklch(0.8 0.14 225)", fiber: "oklch(0.8 0.12 195)" };
-export const CABLE = { copper: "oklch(0.62 0.14 250)", dac: "oklch(0.7 0.02 255)", fiber: LED.fiber, uplink: "oklch(0.82 0.15 90)" };
+export const CABLE = { copper: "oklch(0.62 0.14 250)", dac: "oklch(0.7 0.02 255)", fiber: LED.fiber, rollover: "oklch(0.84 0.07 220)", uplink: "oklch(0.82 0.15 90)" };
 // Custom cable colours; a cable without one takes its kind's colour.
 export const SWATCHES: [string, string][] = [
   ["Red", "#d9453b"], ["Orange", "#e8862d"], ["Yellow", "#e9c53a"], ["Green", "#3fa45b"],

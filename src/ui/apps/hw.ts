@@ -22,7 +22,7 @@ export const height = (m: DeviceModel) => (m.kind === "gateway" && m.height === 
 export const watts = (w: number) => `${Math.round(w).toLocaleString("en-GB")} W`;
 export const day = (hour: number) => dateOf(hour).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 export const lampOf = (st: LinkStatus): Lamp => (!st.online ? "bad" : st.warning ? "warn" : "ok");
-export const CABLE_NAME = { copper: "copper", dac: "DAC", fiber: "fiber" };
+export const CABLE_NAME = { copper: "copper", dac: "DAC", fiber: "fiber", rollover: "rollover" };
 
 export function portsText(m: DeviceModel): string {
   if (m.kind === "patch") return `${jacksOf(m)} jacks`;
@@ -52,7 +52,7 @@ export const isWorn = (g: GameState, c: Component) => ageYears(g, c) >= COMPONEN
 
 const DRIVE: ReadonlySet<ComponentKind> = new Set(["hdd", "ssd", "nvme"]);
 const WORSE: Lamp[] = ["ok", "warn", "bad"];
-const HEALTH_LAMP = { ok: "ok", degraded: "warn", hot: "warn", rebuilding: "warn", booting: "warn", maintenance: "warn", down: "bad", hung: "bad", nopower: "off", off: "off" } as const;
+const HEALTH_LAMP = { ok: "ok", degraded: "warn", hot: "warn", rebuilding: "warn", booting: "warn", maintenance: "warn", down: "bad", hung: "bad", stuck: "bad", locked: "bad", nopower: "off", off: "off" } as const;
 
 // Per-component lights: failed red, past its life amber, the drive being rebuilt blinking amber; all dark while the device is off.
 function partLamps(g: GameState, d: Device): Parts {

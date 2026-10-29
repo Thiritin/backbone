@@ -1,6 +1,6 @@
 import { chance, hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
-import { jacksOf, modelById } from "../10-catalog/hardware";
+import { isOobPort, jacksOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
 import { BACKUP_CHANGED, BACKUP_HOUR, curveFor, curveLoad, growthRate, idNum, JOB_CPU, nightJob, weekMedian } from "../10-catalog/usage";
 import type { Service } from "../30-customers/customers";
@@ -184,7 +184,7 @@ export function portLinks(s: GameState): Map<string, (PortLink | null)[]> {
       const jacks = jacksOf(models.get(p.device)!);
       p = peers.get(key({ device: p.device, port: p.port < jacks ? p.port + jacks : p.port - jacks }));
     }
-    return p && kind(p.device) !== "patch" ? p : null;
+    return p && kind(p.device) !== "patch" && !isOobPort(p.port) ? p : null;
   };
   const out = new Map(s.devices.map((d) => {
     const m = models.get(d.id)!;

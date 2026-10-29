@@ -2,8 +2,12 @@
 import { GENERATIONS, generationAt } from "./economy";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
 
-export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part";
+export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part" | "kvm" | "console" | "oob";
 export interface PortSpec { media: "rj45" | "sfp"; gbit: number }
+// Management ports outside the data plane, numbered from OOB_PORT: a server's console end, a switch or router's mgmt and RS-232
+// console ports, a KVM's outputs, a console server's serial ports, and the network jack of every management device.
+export type OobPort = "console" | "mgmt" | "kvm" | "serial" | "net";
+export const OOB_PORT = 100;
 // Form factor of a drive and of a bay group. A "nvme" bay is a 2.5" bay that takes SATA/SAS and NVMe drives; a "2.5" bay takes
 // SATA/SAS only; a "3.5" bay takes 3.5" drives only.
 export type FormFactor = "3.5" | "2.5" | "nvme";
@@ -72,6 +76,7 @@ export function componentParts(m: DeviceModel): PartSpec[] {
     ];
   }
   if (m.kind === "switch" || m.kind === "firewall") return [...n("psu", m.psus), ...n("fan", 2), ...n("board", 1)];
+  if (m.kind === "kvm" || m.kind === "console" || m.kind === "oob") return n("board", 1);
   return [];
 }
 export const componentKinds = (m: DeviceModel): ComponentKind[] => componentParts(m).map((p) => p.kind);
@@ -154,6 +159,12 @@ export interface DeviceModel {
   bgpSessions?: number;
   // A switched PDU's outlets; a rack with one lets the player cut or cycle the power of every device in it.
   outlets?: number;
+  // Management ports; servers, switches and rack routers get theirs from oobPorts.
+  oob?: OobPort[];
+  // A KVM that switches its server's power through its own ATX adapter.
+  atx?: boolean;
+  // A yearly failure rate in place of the component rates.
+  failYearly?: number;
 }
 
 // Within a class, manufacturers differ in price and failure rate, never in specs.
@@ -244,7 +255,7 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
   }),
 );
 
-type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus">>;
+type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus" | "oob" | "atx" | "failYearly">>;
 // Years on sale after launch and years of support after that (economy.md, Hardware lifecycle); other kinds never end.
 const LIFE: Partial<Record<DeviceKind, { sale: number; support: number }>> = {
   switch: { sale: 6, support: 5 }, firewall: { sale: 6, support: 5 }, gateway: { sale: 6, support: 5 }, ups: { sale: 8, support: 3 }, pdu: { sale: 8, support: 3 },
@@ -257,6 +268,7 @@ const other = (id: string, name: string, kind: DeviceKind, height: number, p: Po
 };
 // Routers: throughput in Gbit, a full BGP table or not, and the BGP sessions they take.
 const router = (tp: number, bgp: number, full = false): Extra => ({ throughputGbit: tp, bgpSessions: bgp, fullTable: full });
+const oobs = (n: number, p: OobPort): OobPort[] => Array.from({ length: n }, () => p);
 const L2 = { layer: 2 } as const, L3 = { layer: 3 } as const;
 
 export const MODELS: DeviceModel[] = [
@@ -313,6 +325,13 @@ export const MODELS: DeviceModel[] = [
   // A switched PDU cuts or cycles any device in its rack; a 0U one hangs on the rack's side rail.
   other("pdu-8", "Switched PDU 8", "pdu", 1, [], 15, 700, 2005, { outlets: 8 }),
   other("pdu-24", "Switched PDU 24", "pdu", 0, [], 20, 1200, 2008, { outlets: 24 }),
+  // Remote access (economy.md, Hardware, power and failures): KVMs over IP, serial console servers and an OOB management switch.
+  other("pikvn", "PiKVN", "kvm", 0, [], 5, 60, 2019, { brand: "Pear Street Electronics", oob: ["net", "kvm"], atx: true, failYearly: 0.04 }),
+  other("ipkvn-8", "IP-KVN 8", "kvm", 1, [], 25, 1200, 2005, { brand: "Avoscent", oob: ["net", ...oobs(8, "kvm")], failYearly: 0.04 }),
+  other("ogb-8", "OpenGearbox 8", "console", 1, [], 15, 1500, 2005, { brand: "OpenGearbox", oob: ["net", ...oobs(8, "serial")] }),
+  other("ogb-16", "OpenGearbox 16", "console", 1, [], 18, 2500, 2005, { brand: "OpenGearbox", oob: ["net", ...oobs(16, "serial")] }),
+  other("ogb-48", "OpenGearbox 48", "console", 1, [], 30, 6000, 2005, { brand: "OpenGearbox", oob: ["net", ...oobs(48, "serial")] }),
+  other("oob-8", "OOB switch 8", "oob", 1, [], 8, 150, 2005, { brand: "Rarytan", oob: oobs(8, "net") }),
   // Price 0 keeps gateways out of the shop; they come with the basement and with every datacenter location.
   other("home-router", "Home router", "gateway", 0, ports(4, 1), 10, 0, 2005, router(0.1, 0)),
   other("handoff", "Datacenter handoff", "gateway", 0, ports(2, 1), 0, 0),
@@ -332,6 +351,27 @@ export function hasBmc(modelId: string, brand: string): boolean {
   const m = /^g(\d+)-(.+)$/.exec(modelId);
   return !!m && (m[2] === "arm" || Number(m[1]) >= (BMC_FROM[brand] ?? 3));
 }
+// A model's management ports: a server's console end, a switch or rack router's mgmt and console ports, or the model's own.
+export const oobPorts = (m: DeviceModel): OobPort[] =>
+  m.oob ?? (m.kind === "server" ? ["console"] : m.kind === "switch" || (m.kind === "gateway" && m.height > 0) ? ["mgmt", "console"] : []);
+export const isOobPort = (port: number): boolean => port >= OOB_PORT;
+// Whether a cable may join these two ends when one is a management port: a KVM output or a serial port to a console port
+// (a KVM only to a server's), a mgmt port to the OOB switch, and a management device's network jack to the OOB switch or to
+// a data switch's copper port.
+export function oobFits(ma: DeviceModel, a: OobPort | PortSpec, mb: DeviceModel, b: OobPort | PortSpec): boolean {
+  const one = (x: OobPort | PortSpec, mx: DeviceModel, y: OobPort | PortSpec, my: DeviceModel): boolean => {
+    if (x === "kvm") return y === "console" && my.kind === "server";
+    if (x === "serial") return y === "console";
+    if (x !== "net") return false;
+    if (typeof y !== "string") return y.media === "rj45" && my.kind === "switch";
+    return mx.kind === "oob" ? y === "mgmt" || y === "net" : y === "net" && my.kind === "oob";
+  };
+  return one(a, ma, b, mb) || one(b, mb, a, ma);
+}
+// Network and management gear runs firmware with a yearly release (oob.ts).
+export const hasFirmware = (m: DeviceModel): boolean => m.kind !== "server" && oobPorts(m).length > 0;
+// The kind of a management port; undefined for a data port or one the model does not have.
+export const oobPortOf = (m: DeviceModel, port: number): OobPort | undefined => (isOobPort(port) ? oobPorts(m)[port - OOB_PORT] : undefined);
 // A bought router that sits on the carrier panel in place of the location's provided one.
 export const isOfficeRouter = (m: DeviceModel): boolean => m.kind === "gateway" && m.height === 0 && m.price > 0;
 export const jacksOf =(m: DeviceModel): number => m.ports.length / 2;

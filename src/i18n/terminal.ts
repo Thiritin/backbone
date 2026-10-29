@@ -10,6 +10,7 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
     "ping <host>        send four echo requests",
     "traceroute <host>  list the hops to a host",
     "host <name>        print the address of a name",
+    "console <device>   open the console of a server, switch or router",
     "clear              empty the screen",
   ].join("\n"),
   "term.help.remote": () => [

@@ -3,6 +3,7 @@ import { OPS } from "./en-ops";
 import { ADDRESSES_EN } from "./addresses";
 import { IPMI_EN } from "./ipmi";
 import { TERMINAL_EN } from "./terminal";
+import { REMOTE_EN } from "./remote";
 import { SALES_EN } from "./sales";
 import { SECURITY_EN } from "./security";
 import { NEWS_EN } from "./news";
@@ -37,6 +38,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...ADDRESSES_EN,
   ...IPMI_EN,
   ...TERMINAL_EN,
+  ...REMOTE_EN,
   ...SECURITY_EN,
   ...VULNS_EN,
   ...BREACH_EN,

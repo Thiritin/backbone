@@ -1,5 +1,5 @@
 import { yearOf } from "../00-core/time";
-import { bareParts, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, hasBmc, isDriveKind, modelById, partOffers, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { bareParts, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
@@ -7,8 +7,9 @@ import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STE
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { arrayLost, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
-import { atFront, BMC_RESET_HOURS, bootUp, hardReboot, plugCords, pullPlug, pushLog, type FrontOp } from "../60-infra/power";
+import { atFront, BMC_RESET_HOURS, bootUp, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
+import { kvmPower, lockoutRoll } from "../60-infra/oob";
 import { handJob, type HandJob, type How } from "../60-infra/handwork";
 import { endLease, rebuildHours } from "../88-tick/tick";
 import { cardsFree, serverTaken } from "../60-infra/cluster";
@@ -19,7 +20,7 @@ export type ActionResult = { ok: true; id?: string } | { ok: false; error: strin
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const newId = (s: GameState, prefix: string) => `${prefix}${s.nextId++}`;
-const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", pdu: "pdu", part: "part" } as const;
+const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", pdu: "pdu", part: "part", kvm: "kvm", console: "con", oob: "oob" } as const;
 const roleOf = (modelId: string) => ROLE[modelById(modelId).kind];
 const cents = (v: number) => Math.round(v * 100) / 100;
 
@@ -380,7 +381,8 @@ export function connect(s: GameState, a: End, b: End): ActionResult {
   const error = connectError(s, a, b);
   if (error) return fail(error);
   const da = s.devices.find((x) => x.id === a.device)!, db = s.devices.find((x) => x.id === b.device)!;
-  const kind = modelById(da.model).ports[a.port].media === "rj45" ? "copper" : da.rackId === db.rackId ? "dac" : "fiber";
+  const ma = modelById(da.model), mb = modelById(db.model), serial = [oobPortOf(ma, a.port), oobPortOf(mb, b.port)].includes("serial");
+  const kind = serial ? "rollover" : (ma.ports[a.port] ?? mb.ports[b.port] ?? { media: "rj45" }).media === "rj45" ? "copper" : da.rackId === db.rackId ? "dac" : "fiber";
   const id = newId(s, "cab");
   s.cables.push({ id, a: { ...a }, b: { ...b }, kind, color: null });
   return { ok: true, id };
@@ -410,8 +412,10 @@ export function setPortGroup(s: GameState, switchId: string, ports: number[]): A
   const unique = [...new Set(ports)].sort((x, y) => x - y);
   if (unique.some((p) => !Number.isInteger(p) || !model.ports[p])) return fail("error.unknownPort");
   if (unique.length > 8) return fail("error.groupSize");
+  if (d.locked) return fail("error.lockedOut");
   d.groups = unique.length ? d.groups.filter((g) => !g.some((p) => unique.includes(p))) : [];
   if (unique.length >= 2) d.groups.push(unique);
+  lockoutRoll(s, d);
   return { ok: true };
 }
 
@@ -447,9 +451,9 @@ export function reboot(s: GameState, deviceId: string): ActionResult {
   return r;
 }
 
-// Why the server cannot be switched from afar: neither a switched PDU in its rack nor a management controller that answers.
+// Why the server cannot be switched from afar: no switched PDU in its rack, no KVM that switches its power and no management controller that answers.
 function remoteError(s: GameState, d: Device): string | null {
-  if (pduOf(s, d)) return null;
+  if (pduOf(s, d) || kvmPower(s, d)) return null;
   return !hasBmc(d.model, d.brand) ? "error.noBmc" : d.bmcHung ? "error.bmcHung" : null;
 }
 
@@ -489,7 +493,7 @@ function hardRestart(s: GameState, deviceId: string, key: "ipmi.log.reset" | "ip
   if (!d.rackId && !d.panel) return fail("error.notMounted");
   if (!d.on) return fail("error.alreadyOff");
   // A switched PDU in the rack cycles the power without a controller; a reset still needs one.
-  const viaPdu = key === "ipmi.log.cycle" && !!pduOf(s, d);
+  const viaPdu = (key === "ipmi.log.cycle" && !!pduOf(s, d)) || !!kvmPower(s, d);
   if (!technician && !viaPdu && !hasBmc(d.model, d.brand)) return fail("error.noBmc");
   if (!technician && !viaPdu && d.bmcHung) return fail("error.bmcHung");
   hardReboot(s, d, key);
@@ -626,6 +630,7 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (!d.used) claimRepair(s, d.label ?? d.name, c, part.price, job.bill);
   s.devices = s.devices.filter((x) => x.id !== part.id);
   d.maintenance = { componentId, partId: part.id, doneAt: s.hour + wait, ...(part.part ? { spec: part.part } : {}) };
+  if (!d.on) rollStuck(s, d);
   return { ok: true, id: part.id };
 }
 
@@ -713,6 +718,7 @@ function handsOn(s: GameState, d: Device, hot: boolean, how: How | boolean): { e
 function startWork(s: GameState, d: Device, partId: string, job: HandJob) {
   const wait = job.commit();
   if (wait > 0) d.maintenance = { componentId: "", partId, doneAt: s.hour + wait };
+  if (d.rackId && !d.on) rollStuck(s, d);
 }
 const asSpec = (c: { kind: ComponentKind; size?: number; ff?: FormFactor }): PartSpec => ({ kind: c.kind, ...(c.size !== undefined ? { size: c.size } : {}), ...(c.ff ? { ff: c.ff } : {}) });
 // A second power supply makes a build with a dual-supply sibling its sibling, and dropping to one supply makes it the single build again.
