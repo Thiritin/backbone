@@ -3,6 +3,8 @@ import { device, type GameState } from "../src/sim/50-state";
 import { addNode, createPanelVm, installHypervisor, installPanel } from "../src/sim/90-actions/clusters";
 import { startGame, welcomeFriends } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
+import { derivedDomain } from "../src/sim/30-customers/domains";
+import { register } from "../src/sim/30-customers/registry";
 
 const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][number]>) => {
   s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, ...patch, switching: null } : c));
@@ -56,5 +58,15 @@ export const basement = (s: GameState): string => hypervisor(s, [BASEMENT_SERVER
 export function readyGame(seed: number): GameState {
   const s = withServer(startGame(seed));
   welcomeFriends(s, panelVm(s, basement(s)));
-  return fillLines(s, undefined);
+  return withCompany(fillLines(s, undefined));
+}
+
+// The company has signed with NameCheep, owns its derived domain and books Hosted Exchange for the owner, which a game needs
+// before it can go online; suites that are not about domains or email start from it.
+export function withCompany(s: GameState): GameState {
+  s.registrar = { id: "nameCheep", since: 0, tier: 0, billed: true, transfer: null };
+  const name = derivedDomain(s);
+  s.company = { ...s.company, domain: name, mail: { kind: "external", provider: "hostedExchange", seats: 1 } };
+  register(s, name, null, false);
+  return s;
 }

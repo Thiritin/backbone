@@ -10,6 +10,7 @@ export function setLine(s: GameState, p: Product, on: boolean): ActionResult {
   if (!SITE_LINES.includes(p)) return { ok: false, error: "error.unknownSiteLine" };
   const blocker = on ? lineBlocker(s, p) : null;
   if (blocker) return { ok: false, error: blocker };
+  if (on && !s.company.domain) return { ok: false, error: "error.needsDomain" };
   const lines = s.marketing.lines.filter((x) => x !== p);
   s.marketing = { ...s.marketing, lines: on ? [...lines, p] : lines };
   return { ok: true, id: p };
@@ -18,6 +19,7 @@ export function setLine(s: GameState, p: Product, on: boolean): ActionResult {
 // Stops or resumes taking orders by email; with them off, only the order form takes orders.
 export function setEmailOrders(s: GameState, on: boolean): ActionResult {
   if (!on && !hasOrderForm(s)) return { ok: false, error: "error.needsOrderForm" };
+  if (on && s.company.mail.kind === "none") return { ok: false, error: "error.needsMail" };
   s.marketing = { ...s.marketing, emailOrders: on };
   return { ok: true };
 }

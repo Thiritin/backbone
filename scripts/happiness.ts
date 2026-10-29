@@ -34,6 +34,9 @@ import { startGame } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 import { OWNED, owns } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
+import { bookMail } from "../src/sim/90-actions/mail";
+import { registerCompanyDomain, signRegistrar } from "../src/sim/90-actions/registrar";
+import { derivedDomain } from "../src/sim/30-customers/domains";
 import { research } from "../src/sim/90-actions/store";
 import { debt, LOAN_AMOUNTS, loanAvailable } from "../src/sim/45-billing/billing";
 import { takeLoan } from "../src/sim/90-actions/billing";
@@ -65,6 +68,8 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   // The first server: the Shop's Dwell 1U from the savings, in the basement rack cabled to the home router, then Proxmocks
   // with a FreePanel VM. The friends move in once the panel VM is ready and every line it sells goes on the website.
   const s: GameState = startGame(seed);
+  // A careful player signs a registrar, registers the company domain and books company email before going online.
+  signRegistrar(s, "nameCheep"); registerCompanyDomain(s, derivedDomain(s)); bookMail(s, "hostedExchange");
   // The business DSL line: static addresses for the VPS and game servers the basement sells.
   orderHomeLine(s, "dsl-16-biz");
   const first = (buyDevice(s, "g1-compute", "Dwell", 1, "loc1") as { id: string }).id;

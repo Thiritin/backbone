@@ -24,6 +24,8 @@ import type { Rates } from "./10-catalog/products";
 import type { Domain } from "./30-customers/registry";
 import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 import { newIps, type Ips } from "./60-infra/addresses";
+import type { CompanyMail } from "./80-business/mail";
+import type { Registrar } from "./30-customers/registrar";
 
 export const SAVE_VERSION = 2;
 
@@ -61,7 +63,8 @@ export type RaidLevel = "none" | "1" | "5" | "6" | "10";
 export type RebuildRate = "low" | "medium" | "high";
 // A desktop document; x and y are its icon position on the desktop in pixels.
 export interface Doc { id: string; kind: "guide" | "note"; title: string; body: string; x: number; y: number }
-export interface Company { name: string; logo: string; color: string }
+// domain is the company's own domain once registered; mail is its email service.
+export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
 
 export interface GameState {
@@ -145,6 +148,8 @@ export interface GameState {
   security: Security;
   // Domains registered or transferred for customers (30-customers/registry.ts).
   domains: Domain[];
+  // The registrar partner under contract (30-customers/registrar.ts); null before the first contract.
+  registrar: Registrar | null;
   // ChadGPT replies this month, billed at the next month start.
   chadUsage: ChadUsage;
   // Public addresses, the LIR membership and its blocks (60-infra/addresses.ts).
@@ -186,7 +191,7 @@ export const newGame = (seed: number): GameState => ({
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
   tickets: [], playerBusyUntil: 0, downSince: {}, frozen: [],
-  company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)" },
+  company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "none" } },
   homeLine: { id: "", next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
   staff: [], candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true }, onCall: { roster: [], lastCall: {}, month: {} },
@@ -197,6 +202,7 @@ export const newGame = (seed: number): GameState => ({
   sales: newSales(),
   rates: {},
   domains: [],
+  registrar: null,
   chadUsage: newChadUsage(),
   ips: newIps(),
 });

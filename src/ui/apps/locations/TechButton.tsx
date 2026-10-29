@@ -22,7 +22,7 @@ export function opLabel(game: GameState, o: TechOp): string {
     const c = d?.components.find((x) => x.id === o.componentId);
     return `Replace ${c ? PART_NAME[c.kind].toLowerCase() : "part"}`;
   }
-  return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}` }[o.kind];
+  return { off: "Shut down", on: "Power on", drain: "Drain", php: `Upgrade to PHP ${phpAt(yearOf(game.hour))}`, domains: "Move domains" }[o.kind];
 }
 
 // Queues the operation for the technician who gets to it first, or shows it queued with a Cancel.

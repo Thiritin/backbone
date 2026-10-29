@@ -15,6 +15,7 @@ export function setUpChannel(s: GameState, channel: OwnedChannel): ActionResult 
   if (!def) return fail("error.unknownChannel");
   if (owns(s, channel)) return fail("error.channelOwned");
   if (def.needs && !owns(s, def.needs)) return fail("error.needsWebsite");
+  if (channel === "website" && !s.company.domain) return fail("error.needsDomain");
   if (yearOf(s.hour) < def.fromYear) return fail("error.channelLater");
   if (s.cash < def.setup) return fail("error.noCash");
   s.cash = Math.round((s.cash - def.setup) * 100) / 100;

@@ -4,6 +4,7 @@ import { ADDRESSES_EN } from "./addresses";
 import { SALES_EN } from "./sales";
 import { SECURITY_EN } from "./security";
 import { SITE_EN } from "./site";
+import { DOMAINS_EN } from "./domains";
 import { ORDERS_EN } from "./orders";
 import { MANUAL_EN } from "./manual";
 import { ACTIVITY_EN } from "./activity";
@@ -27,6 +28,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...SECURITY_EN,
   ...ACTIVITY_EN,
   ...SITE_EN,
+  ...DOMAINS_EN,
   "event.monthStart.title": (p) => `${MONTHS[Number(p.month)]} ${p.year}`,
   "event.monthStart.text": () => "A new month has started.",
   "save.loaded.title": () => "Game loaded",

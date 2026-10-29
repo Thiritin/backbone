@@ -74,7 +74,7 @@ export function WebsiteApp() {
           <div className="web-line">
             <label className="web-line-row">
               <span>Email orders</span>
-              <input type="checkbox" role="switch" className="switch" aria-label="Take orders by email" checked={game.marketing.emailOrders}
+              <input type="checkbox" role="switch" className="switch" aria-label="Take orders by email" checked={game.marketing.emailOrders && game.company.mail.kind !== "none"}
                 onChange={(e) => act((s) => setEmailOrders(s, e.target.checked))} />
             </label>
           </div>

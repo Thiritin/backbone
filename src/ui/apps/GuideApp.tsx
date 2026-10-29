@@ -9,7 +9,9 @@ const STEPS: Record<(typeof TUTORIAL)[number], [string, string]> = {
   mountServer: ["Mount and power it", "Open the basement in Locations, mount the server in the rack and plug in its power."],
   internet: ["Add internet", "Order a home line in Locations and cable the server to the home router. The line connects after its installation days."],
   setup: ["Install software", "Use Add Software on the server to install a panel, or a hypervisor with a panel VM."],
+  domain: ["Register your domain", "Sign a registrar contract and register your domain in Network, Domains."],
   website: ["Switch on a product", "Switch on web hosting in Website so customers can request it."],
+  email: ["Set up company email", "Set up company email in Settings, Email."],
   firstCustomer: ["Win your first customer", "Your friends move their websites to the panel, and paying customers follow."],
 };
 

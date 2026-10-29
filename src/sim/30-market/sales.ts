@@ -13,6 +13,7 @@ import { lineOffered, noRoomError, pickNode, serverTaken, supports, workloadsOf 
 import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
 import { addAwareness, discountFor } from "../80-business/marketing";
+import { mailShare } from "../80-business/mail";
 import { listed, siteFactor } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
@@ -122,6 +123,8 @@ function morningMail(s: GameState, events: SimEvent[]): void {
         newLead(s, f.profile, f.city, events, need);
         continue;
       }
+      // Email orders reach a company with working mail; none arrive without it and half while delivery is impaired.
+      if (!form && mailShare(s) < 1 && rand(s.rng) >= mailShare(s)) continue;
       orderLead(s, f.profile, f.city, events, need, !form);
     }
   }

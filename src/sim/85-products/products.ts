@@ -96,8 +96,8 @@ const customerCopy = (s: GameState, id: string): Customer | undefined => {
 function finishSwitches(s: GameState, events: SimEvent[]) {
   for (const c of s.clusters) {
     if (!c.switching || c.switching.doneAt > s.hour) continue;
-    const { kind, to } = c.switching, fresh = !(kind === "panel" ? c.panel : c.platform);
-    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, ...(kind === "panel" ? { panel: to } : { platform: to }) } : x));
+    const { kind, to } = c.switching, fresh = !(kind === "cloud" ? c.platform : c.panel);
+    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, ...(kind === "cloud" ? { platform: to } : { panel: to }) } : x));
     events.push({ app: "Products", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
     if (kind === "panel" && welcomeFriends(s, c.id)) events.push({ app: "Customers", key: "event.friendsJoined", params: { cluster: c.name } });
   }

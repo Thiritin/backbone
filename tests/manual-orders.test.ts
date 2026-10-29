@@ -100,7 +100,8 @@ describe("custom orders", () => {
     const cash = s.cash;
     done(s, registerOrderDomain(s, id));
     expect(domainOf(s, req().domain!)).toMatchObject({ customerId: c.id, transfer: !!req().owned });
-    expect(s.cash).toBeCloseTo(cash - registryCost(req().domain!, 2005), 2);
+    // The registrar bills the registry cost at the month start, not at the registration.
+    expect(s.cash).toBeCloseTo(cash, 2);
     done(s, provisionOrder(s, id));
     const v = s.services.find((x) => x.id === req().serviceId)!;
     expect(v.spec).toEqual(req().spec);

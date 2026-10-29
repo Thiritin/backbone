@@ -27,6 +27,9 @@ import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
 import { marketPrice, marketSetup, OVERCOMMIT, type Spec } from "../10-catalog/products";
 import { EMAIL_SHARE } from "../30-market/orders";
+import { factorFor, REGISTRARS, tierFor } from "../10-catalog/registrars";
+import { DOMAIN_FEE, registryCost } from "../30-customers/registry";
+import { providerById } from "../80-business/mail";
 import type { Product as LiveProduct } from "../30-customers/customers";
 
 // Average hours a ticket written at a random hour waits for the office to open: four 16-hour nights and a 64-hour weekend.
@@ -405,6 +408,12 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     for (let l = leases.length - 1; l >= 0; l--) if (leases[l].until <= month + 1) leases.splice(l, 1);
     const depreciation = servers.reduce((a, s) => a + (!s.leasedUntil && month - s.bought < 60 ? s.price / 60 : 0), 0);
     const marketing = website ? OWNED.website.upkeep + OWNED.orderForm.upkeep + SITE_RENT : 0;
+    // Domain registration: the registrar bills one twelfth of the yearly wholesale of the company domain and of the domains of web
+    // customers who ordered by email, who pay the yearly fee in return. The company books Hosted Exchange for the owner and every
+    // employee (Company email).
+    const customerDomains = PROFILES.reduce((a, _, i) => a + cohorts[i][0].n, 0) * (website ? EMAIL_SHARE : 1), domains = 1 + customerDomains;
+    const domainBill = (domains * registryCost("x.de", year) * factorFor(REGISTRARS[0], "de", tierFor(domains)) - customerDomains * DOMAIN_FEE) / 12;
+    const mailBill = (1 + support.length + books.length) * providerById("hostedExchange")!.price(year);
     const chadPrice = chad ? subscriptionPrice(CHAD, year) + botTickets * mix((k) => costPerTicket(k, year)) : 0;
     // Every VPS and game server holds an address: extra business line addresses in the basement, provider addresses (one
     // per server too) in a datacenter.
@@ -413,13 +422,13 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       ? (ownAddresses + servers.length) * providerV4(year, ownAddresses + servers.length)
       : Math.max(0, ownAddresses - (STATIC_LINE_ADDRESSES - 1)) * LINE_EXTRA_V4;
     book_("addresses", addresses);
-    const opex = chadPrice + leasing + power + space + cityRents + bandwidth + salaries + adSpent + marketing + addresses + (rackUnlocked ? 0 : line.monthly);
+    const opex = chadPrice + leasing + power + space + cityRents + bandwidth + salaries + adSpent + marketing + domainBill + mailBill + addresses + (rackUnlocked ? 0 : line.monthly);
     cash += collectedShare - opex - instalments;
     profits.push(collectedShare - opex - interest - servers.filter((x) => x.bought === month && !x.leasedUntil).reduce((a, x) => a + x.price, 0));
     if (profits.length > 6) profits.shift();
     book_("instalments", instalments);
     book_("collected", collectedShare); book_("leasing", leasing); book_("space", space + cityRents); book_("bandwidth", bandwidth); book_("power", power);
-    book_("salaries", salaries); book_("ads", adSpent); book_("chad", chadPrice);
+    book_("salaries", salaries); book_("ads", adSpent); book_("chad", chadPrice); book_("domains", domainBill); book_("mail", mailBill);
     yearProfit += collectedShare - opex - depreciation - interest;
     if (month % 12 === 3 && yearProfit > 0) { cash -= TAX_RATE * yearProfit; book_("tax", TAX_RATE * yearProfit); }
     if (month % 12 === 3) yearProfit = 0;

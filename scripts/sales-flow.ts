@@ -7,9 +7,13 @@ import { missingFor } from "../src/sim/30-market/market";
 import { replyTicket } from "../src/sim/90-actions/support";
 import { rightTemplate, isFinal } from "../src/sim/40-support/tickets";
 import { setCampaign, setUpChannel } from "../src/sim/90-actions/marketing";
+import { bookMail } from "../src/sim/90-actions/mail";
+import { registerCompanyDomain, signRegistrar } from "../src/sim/90-actions/registrar";
+import { derivedDomain } from "../src/sim/30-customers/domains";
 
 const s = startGame(Number(process.argv[2] ?? 1));
 const months = Number(process.argv[3] ?? 12);
+signRegistrar(s, "nameCheep"); registerCompanyDomain(s, derivedDomain(s)); bookMail(s, "hostedExchange");
 for (let m = 0; m < months; m++) {
   if (m === 2) setUpChannel(s, "website");
   if (m === 5) { setUpChannel(s, "searchAds"); setCampaign(s, "search", ["private", "gamer", "hobbyDev", "soleProp"], 250); }

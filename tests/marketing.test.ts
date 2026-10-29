@@ -11,6 +11,7 @@ import { setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../s
 import { hire } from "../src/sim/90-actions/staff";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { withCompany } from "./fixtures";
 
 const FEB_1 = 744;
 // Paid review platforms need a marketing manager on staff.
@@ -20,7 +21,7 @@ const months = (s: GameState, n: number) => { for (let i = 0; i < n; i++) { tick
 
 describe("owned channels", () => {
   it("sets up the website, then the order form and ads that need it", () => {
-    const s = { ...newGame(1), cash: 1000 };
+    const s = withCompany({ ...newGame(1), cash: 1000 });
     expect(setUpChannel(s, "orderForm")).toEqual({ ok: false, error: "error.needsWebsite" });
     expect(setUpChannel(s, "website").ok).toBe(true);
     expect(s.cash).toBe(600);
@@ -62,7 +63,7 @@ describe("campaigns", () => {
   });
 
   it("bills campaigns, upkeep and the platform at the month start", () => {
-    const s = newGame(4);
+    const s = withCompany(newGame(4));
     s.cash = 5000;
     setUpChannel(s, "website");
     setCampaign(s, "gaming", ["gamer"], 250);
@@ -150,7 +151,7 @@ describe("reviews", () => {
 
 describe("saves", () => {
   it("loads a save without marketing with defaults", () => {
-    const s = newGame(9);
+    const s = withCompany(newGame(9));
     until(s, 100);
     const raw = JSON.parse(serialize(s));
     delete raw.marketing;

@@ -36,7 +36,8 @@ A new game starts on 1 January 2005 with €3,500 in cash, an empty 24U rack in 
 | Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
 | Home line | None. The player orders one in Locations; it goes live after its install days, and every line costs money (Home line) |
 | Hardware | An empty 24U rack and the home router. The player buys the first server in the Shop, mounts it, plugs in its power and cables it to the home router; it runs no control plane until its setup installs a panel or a hypervisor on it |
-| Reseller accounts | Domains from a registrar, at 40% of the retail price |
+| Reseller accounts | None. The first registrar contract is signed in the first month (NameCheep needs no signup), and every domain costs the partner's wholesale a month (Sales and quotes, Domains) |
+| Company domain and email | None. A domain and a mail service are needed before the website and the first email order (Sales and quotes, Domains and Company email) |
 | Product lines | None offered; each line unlocks once the player can deliver it (Addresses and internet, The start) |
 | Customers | None until the first hosting panel runs on a server the internet reaches. Then 3 friends (Jonas Weber, Mira Schulz and Tobi Kraus, private individuals) sign up for the 2 GB web hosting size at €6 a month on that cluster; happiness 85, and they always pay |
 
@@ -327,6 +328,32 @@ How the market above turns into order emails and sales requests in the Support a
 **Custom orders.** Every order names its own resources, by email or through the form (`spec.ts`, `manual.ts`). It starts from the size its profile's budget picks (What a lead asks for). Web hosting, VPS and game server orders scale that size by one of 0.5, 0.75, 1, 1, 1.25 or 1.5, which average to 1: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, with 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. DNS and VPN orders scale their zones or users and their traffic the same way (DNS zones and VPN users). Other lines take the size as it is. A spec's monthly market price comes from Per-resource pricing, and the SLA factor and the profile's offer factor apply on top. Step times: account 5, confirmation and invoice 10, domain 5, setup 15 minutes. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
 
 **Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8, .com €6 to €9 (VeriSigh raised its price over the years). The customer pays €15 a year for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
+
+**Registrar partners.** One contract at a time (`10-catalog/registrars.ts`, `30-customers/registrar.ts`). A domain's wholesale a year is the registry cost of the year above times the partner's factor for the tier, plus the ICANN fee on a .com (€0.18, €0.20 from July 2025). The tier is the number of domains under management (the company's and the customers') at the month start: 0, 100, 500 and 5,000. At a month start the partner invoices the signup once (first month under the contract), the fee, or for a minimum the part the domains did not use, and one twelfth of every domain's wholesale; the ledger books `ledger.registrarSignup`, `ledger.registrar` and `ledger.domains` in the category "domains". Registering and renewing book nothing; the customer pays €15 a year or €5 for a transfer, as above. Moving every domain to a new partner is a hand task of 5 minutes per domain (the Network row of the gdd By hand table). The factors follow the real reseller schemes: GoDaddy's Basic Reseller plan at USD 107.88 a year, Enom's USD 50 enrollment and the OpenSRS and Enom tiers (Essential none, Advanced USD 2,000 and 100 registrations, Premium USD 50,000 and 500, Enterprise USD 100,000 and 1,000), Name.com's Bronze, Silver and Gold at 100, 250 and 1,000 registrations, German resellers such as InterNetX with no setup fee but a monthly minimum, and Verisign's .com fee (USD 6.00 to 2007, 6.42 from October 2007, 7.85 from 2012, 8.39 in 2021, 8.97 in 2022, 9.59 in 2023, 10.26 in 2024, 10.97 from November 2026, which the .com curve above follows). The game uses the count of domains only.
+
+| Partner (pun on) | Signup | Per month | Factor at 0+ / 100+ / 500+ / 5,000+ | Notes |
+| --- | --- | --- | --- | --- |
+| NameCheep (Namecheap) | €0 | €0 | 1.50 / 1.50 / 1.50 / 1.50 | No tiers; the start option |
+| GoDuddy Reseller (GoDaddy) | €0 | €9 fee | 1.30 / 1.20 / 1.15 / 1.10 | |
+| InterNetY (InterNetX) | €200 | €50 minimum, the unused part is lost | 1.15 / 1.08 / 1.05 / 1.03 | .de at 1.00 in every tier |
+| OpenSRSly (OpenSRS, Tucows) | €100 | €0 | 1.25 / 1.15 / 1.08 / 1.04 | Tiers as the real four |
+
+**Company domain.** Registering it through the partner under contract costs its wholesale a month like any domain and needs no cash at once; it renews with the contract. A name is 3 to 40 letters, digits or hyphens (not at either end) in front of a TLD from the registry table above, and must not belong to a customer. Going online (the web design and listing a line on the website) is refused until it exists.
+
+**Company email.** Per seat and month, seats are 1 plus the employees, recomputed at each month start and booked in the ledger category "subscriptions" as `ledger.companyMail`. Anchors: hosted Exchange from German hosters about €10 a seat in 2005, Google Apps Premier Edition USD 50 a user a year from 2007 and Google Workspace USD 6 a user a month from 2020, Office 365 USD 6 a user a month from June 2011.
+
+| Provider (pun on) | From | Price per seat and month |
+| --- | --- | --- |
+| Hosted Exchange by Ionose (Ionos) | 2005 | €10, falling in a straight line to €6 by 2015 |
+| Goggle Workspace (Google Workspace) | 2007 | €4, €5 from 2020 |
+| Lookout 365 (Outlook, Microsoft 365) | 2011 | €5, €6 from 2022 |
+
+| Mail server | From | License | Install | Needs |
+| --- | --- | --- | --- | --- |
+| Postfixit (Postfix) | 2005 | Free | 4 h | 0.5 vCPU, 1 GB, 20 GB |
+| Mailpig (mailcow) | 2015 | Free | 2 h | 1 vCPU, 2 GB, 20 GB |
+
+One mail server per company, on a server or in a VM. Its address is the host's public address; on a dynamic line that address is always listed (Addresses and internet), so a basement mail server works on a business line only. While the host is down or its address is listed, delivery is impaired: order emails arrive at half the rate (`IMPAIRED_SHARE` 0.5) and invoices issued in that window get their payment day 72 hours later (`MAIL_DELAY_HOURS`, applied to the first payment day and to the day a reminder sets). Without any mail service no order email arrives (`mailShare` 0). The balance model's steady bot books Hosted Exchange for the owner and every employee from the start, signs NameCheep, and pays the wholesale of the company domain and of the domains of web customers who ordered by email, against the €15 a year those customers pay; the shift moves the medians by about 0.1 to 0.2 years.
 
 **Organic leads in the game.** Organic leads scale with the market and with awareness instead of a flat 20: 0.4 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × the review multiplier. With the starting awareness (5% for private individuals and gamers, 2% for the rest) Frankfurt gives about 20 leads a month in 2005, and every point of awareness a campaign buys raises organic leads too. Referrals (0.005 a month per customer with happiness 70 or more) and forum posts (2 × (0.5 + s/100) a month per employee, split over hobby developers, gamers and small businesses) come from the home city. Each forum lead also adds 0.5% of the gap to the awareness of those three profiles every month.
 

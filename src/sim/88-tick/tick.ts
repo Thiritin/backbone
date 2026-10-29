@@ -14,6 +14,8 @@ import { marketingTick } from "../80-business/marketing";
 import { salesTick } from "../30-market/sales";
 import { ordersTick } from "../30-market/manual";
 import { domainsTick } from "../30-customers/registry";
+import { registrarTick } from "../30-customers/registrar";
+import { mailTick } from "../80-business/mail";
 import { computeTick } from "../60-infra/cluster";
 import { haTick } from "../60-infra/ha";
 import { freezeTick } from "../60-infra/usage";
@@ -241,6 +243,8 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...billingTick(state));
   events.push(...ordersTick(state));
   events.push(...domainsTick(state));
+  events.push(...registrarTick(state));
+  mailTick(state);
   events.push(...networkTick(state));
   events.push(...securityTick(state));
   events.push(...supportTick(state));
