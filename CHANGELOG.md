@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- A VM or game server stuck on a switched-off server whose cluster's control plane is down can be recovered to a server of another cluster in the same location by remote hands, by you or by a friend.
 - A customer whose services all kept their SLA uptime through a month gains a little happiness at the billing date, so steady service slowly builds loyalty.
 - Replies, order steps and other hand work now land at the minute they are done instead of at the next full hour, a server boots in three minutes and a new domain shows as registering for two.
 - A custom order now sends the customer three emails, the quote, the confirmation and the notice that everything is live, instead of one per step.
