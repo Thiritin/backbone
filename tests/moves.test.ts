@@ -9,7 +9,9 @@ import { workloadsOf } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { connect } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, connect } from "../src/sim/90-actions/hardware";
+import { addressesOf, RENUMBER_ANNOUNCED_PENALTY, RENUMBER_PENALTY } from "../src/sim/60-infra/addresses";
+import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { announceMigration, BASEMENT_BONUS, DECLINE_BELOW, MISSED_AFTER_HOURS, MISSED_PENALTY, moveTargets, movesTick, offerMigration } from "../src/sim/90-actions/moves";
 import { orderZoneLink } from "../src/sim/90-actions/network";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
@@ -36,6 +38,7 @@ function world() {
     s.locations = [...s.locations, { ...home, id: "loc2", dc: "equinox-fr5", az: "fra2", name: "FR5", space: "positions" }, { ...home, id: "loc3", dc: "equinox-fr5", az: "fra3", name: "FR5 B", space: "positions" }];
     s.clusters = s.clusters.map((c) => (c.id === b ? { ...c, az: zones.b ?? "fra2" } : c.id === a ? { ...c, az: zones.a ?? c.az } : c));
     s.homeLine = { id: line, next: null };
+    for (const loc of ["loc2", "loc3"]) ok(buyAddresses(s, loc, 4, 4));
   };
   return { s, a, b, second, place };
 }
@@ -64,8 +67,7 @@ describe("zone link speed", () => {
     const { s, second, place } = world();
     const cus = customer(s), id = vps(s, cus, "vm"), w = workloadsOf(s, id)[0];
     place({ a: "fra2", b: "fra3" });
-    expect(migrationTargets(s, w.id)).toEqual([]);
-    expect(err(migrateWorkload(s, w.id, second))).toBe("error.noZoneLink");
+    expect(migrationTargets(s, w.id)[0].down).toBe(Math.ceil((w.diskGb + w.ramGb) / WAN_GB_PER_HOUR));
     s.unlocks = [...s.unlocks, "network"];
     ok(orderZoneLink(s, "loc2", "loc3", "fiber", 0));
     s.hour += ZONE_LINK_LEAD_HOURS;
@@ -155,7 +157,7 @@ describe("migration offers", () => {
     s.hour = t.dueAt;
     const events = movesTick(s, who(s));
     expect(events.map((e) => e.key)).toEqual(["event.moveAccepted", "event.moveDone"]);
-    expect([t.status, t.outcome, c.happiness]).toEqual(["resolved", "moved", 60 + BASEMENT_BONUS]);
+    expect([t.status, t.outcome, c.happiness]).toEqual(["resolved", "moved", 60 + BASEMENT_BONUS - RENUMBER_ANNOUNCED_PENALTY]);
     expect(workloadsOf(s, id)[0].deviceId).toBe(second);
     expect(s.services.find((v) => v.id === id)!.zone).toBe("fra2");
     expect(t.move!.log.map((l) => l.key)).toEqual(["ticket.migration.acceptAny.text"]);
@@ -235,6 +237,77 @@ describe("migration offers", () => {
     expect(ticketOf(s, t.id).status).toBe("resolved");
     expect(ticketOf(s, t.id).outcome).toBe("moved");
     expect(workloadsOf(s, id)[0].clusterId).toBe(s.clusters.find((c) => c.name === "Remote")!.id);
+  });
+});
+
+// Two Frankfurt datacenter locations, each with a rack and a hypervisor server; a and b are the location ids, ca and cb the
+// clusters, da and db the servers, az the zone of a location.
+function twoDcs() {
+  const s = { ...withServer(newGame(1)), cash: 10_000_000 };
+  const [a, b] = [ok(addLocation(s, "interaction-fra", "positions", 1)), ok(addLocation(s, "mainqubes-fra", "positions", 1))];
+  for (const l of s.locations) l.readyAt = 0;
+  const racks = [a, b].map((loc) => ok(buyRack(s, loc, "rack-42", 1)));
+  const [da, db] = [a, b].map((loc, i) => { const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, loc)); ok(mountDevice(s, id, racks[i], 1)); return id; });
+  const [ca, cb] = [hypervisor(s, [da], "A"), hypervisor(s, [db], "B")];
+  const az = (id: string) => s.locations.find((l) => l.id === id)!.az;
+  const vmAt = (cluster: string, cus: string, label = "vm") => ok(provisionService(s, cus, "vps", { label, spec: sizeSpec("vps", 0, yearOf(s.hour)), clusterId: cluster }));
+  return { s, a, b, da, db, ca, cb, az, vmAt };
+}
+const ipsOf = (s: GameState, id: string) => addressesOf(s, id).filter((x) => x.v === 4);
+
+describe("moves between datacenters", () => {
+  it("runs a cold move over the internet at the capped speed", () => {
+    const { s, a, b, db, ca, az, vmAt } = twoDcs();
+    ok(buyAddresses(s, a, 4, 1));
+    ok(buyAddresses(s, b, 4, 1));
+    const cus = customer(s), id = vmAt(ca, cus), w = workloadsOf(s, id)[0];
+    expect(moveGbit(s, az(a), az(b))).toBeCloseTo(WAN_GB_PER_HOUR / LAN_GB_PER_HOUR);
+    expect(moveGbit(s, az(b), az(a))).toBeCloseTo(WAN_GB_PER_HOUR / LAN_GB_PER_HOUR);
+    const down = Math.ceil((w.diskGb + w.ramGb) / WAN_GB_PER_HOUR);
+    expect(migrationTargets(s, w.id).find((t) => t.to === db)!.down).toBe(down);
+    const hour = s.hour;
+    ok(migrateWorkload(s, w.id, db));
+    expect(workloadsOf(s, id)[0].busyUntil).toBe(hour + down);
+    expect(s.services.find((v) => v.id === id)!.zone).toBe(az(b));
+  });
+
+  it("gives a customer new addresses from the target and costs happiness, less when announced", () => {
+    for (const announced of [false, true]) {
+      const { s, a, b, db, ca, vmAt } = twoDcs();
+      ok(buyAddresses(s, a, 4, 1));
+      ok(buyAddresses(s, b, 4, 1));
+      const cus = customer(s), id = vmAt(ca, cus), w = workloadsOf(s, id)[0];
+      who(s)(cus).happiness = 50;
+      const old = ipsOf(s, id)[0];
+      expect(old.locationId).toBe(a);
+      ok(migrateWorkload(s, w.id, db, announced));
+      const now = ipsOf(s, id);
+      expect(now.map((x) => x.locationId)).toEqual([b]);
+      expect(now[0].ip).not.toBe(old.ip);
+      expect(s.ips.addresses.some((x) => x.id === old.id)).toBe(false);
+      expect(who(s)(cus).happiness).toBe(50 - (announced ? RENUMBER_ANNOUNCED_PENALTY : RENUMBER_PENALTY));
+    }
+  });
+
+  it("refuses the move when the target has no free address", () => {
+    const { s, a, b, db, ca, az, vmAt } = twoDcs();
+    ok(buyAddresses(s, a, 4, 1));
+    const cus = customer(s), id = vmAt(ca, cus), w = workloadsOf(s, id)[0];
+    expect(err(migrateWorkload(s, w.id, db))).toBe("error.noFreeAddress");
+    expect(s.services.find((v) => v.id === id)!.zone).not.toBe(az(b));
+    expect(ipsOf(s, id)[0].locationId).toBe(a);
+  });
+
+  it("keeps the addresses of an own block announced at both ends", () => {
+    const { s, a, b, db, ca, vmAt } = twoDcs();
+    s.ips = { ...s.ips, lir: { since: 0, asn: 1 }, blocks: [a, b].map((loc, i) => ({ id: `blk${i}`, prefix: `185.${i + 1}.0.0/24`, size: 256, locationId: loc, boughtAt: 0 })) };
+    const cus = customer(s), id = vmAt(ca, cus), w = workloadsOf(s, id)[0];
+    who(s)(cus).happiness = 50;
+    const old = ipsOf(s, id)[0];
+    expect(old.source).toBe("lir");
+    ok(migrateWorkload(s, w.id, db));
+    expect(ipsOf(s, id).map((x) => [x.ip, x.locationId])).toEqual([[old.ip, b]]);
+    expect(who(s)(cus).happiness).toBe(50);
   });
 });
 

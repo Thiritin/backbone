@@ -49,7 +49,7 @@ export interface Workload extends Resources {
   stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
   hostname?: string;
-  migrating?: { clusterId: string; doneAt: number };
+  migrating?: { clusterId: string; doneAt: number; announced?: true };
   // A pulled plug corrupted the data: it counts as lost until recovered (recoverDoneAt is the hour a recovery finishes) or
   // restored; noticed is set once the alert went out, recoverFailed once a recovery did not bring the data back.
   corrupted?: boolean; noticed?: boolean; recoverDoneAt?: number; recoverFailed?: boolean;
