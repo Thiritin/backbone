@@ -1,0 +1,89 @@
+import { describe, expect, it } from "vitest";
+import { MANUFACTURERS } from "../src/sim/10-catalog/hardware";
+import { companyDomain, fqdn } from "../src/sim/30-customers/domains";
+import { privateIp } from "../src/sim/60-infra/addresses";
+import { adminUrl, defaultBookmarks, resolve, split, VENDORS, VIDEO_URL } from "../src/sim/80-business/browser";
+import { newGame } from "../src/sim/50-state";
+import { setPower } from "../src/sim/90-actions/hardware";
+import { setSiteHost } from "../src/sim/90-actions/website";
+import { readyGame } from "./fixtures";
+
+const web = (s: ReturnType<typeof readyGame>) => s.services.find((v) => v.product === "webHosting" && v.domain)!;
+
+describe("browser resolver", () => {
+  it("splits an address into a lowercase host and a path", () => {
+    expect(split("HTTPS://WWW.Example.de/a/b?x=1#top")).toEqual({ host: "www.example.de", path: "/a/b?x=1" });
+    expect(split("example.de")).toEqual({ host: "example.de", path: "/" });
+  });
+
+  it("resolves the company domain, with and without www, and its admin page", () => {
+    const s = readyGame(1), d = companyDomain(s);
+    expect(resolve(s, d).page).toEqual({ kind: "company" });
+    expect(resolve(s, `https://www.${d}/`)).toMatchObject({ page: { kind: "company" }, load: "fast" });
+    expect(resolve(s, adminUrl(s)).page).toEqual({ kind: "admin" });
+    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["company", "admin"]);
+  });
+
+  it("resolves every customer domain to its site", () => {
+    const s = readyGame(1), sites = s.services.filter((v) => v.product === "webHosting" && v.domain);
+    expect(sites.length).toBeGreaterThan(0);
+    for (const v of sites) {
+      expect(resolve(s, v.domain!).page).toEqual({ kind: "customer", serviceId: v.id });
+      expect(resolve(s, `www.${v.domain}/index.html`).page).toEqual({ kind: "customer", serviceId: v.id });
+    }
+  });
+
+  it("resolves machine and service names to the placeholder host page", () => {
+    const s = readyGame(1), node = s.devices.find((x) => x.hostname)!, vm = s.workloads.find((w) => !w.serviceId)!;
+    expect(resolve(s, fqdn(s, node.hostname!)).page).toEqual({ kind: "host", hostname: node.hostname });
+    expect(resolve(s, fqdn(s, vm.hostname!)).page).toEqual({ kind: "host", hostname: vm.hostname });
+    const svc = s.services.find((v) => v.hostname)!;
+    expect(resolve(s, fqdn(s, svc.hostname!)).page).toEqual({ kind: "host", hostname: svc.hostname });
+  });
+
+  it("resolves private addresses typed as URLs to the machine", () => {
+    const s = readyGame(1), node = s.devices.find((x) => x.hostname)!, ip = privateIp(s, node.id)!;
+    expect(resolve(s, `http://${ip}/`).page).toEqual({ kind: "host", hostname: node.hostname });
+    expect(resolve(s, "10.99.99.99").page).toEqual({ kind: "notfound" });
+  });
+
+  it("gives every manufacturer but the generic parts a vendor site and sends Downloads to the video", () => {
+    const s = readyGame(1);
+    expect(VENDORS.length).toBe(MANUFACTURERS.length - 1);
+    for (const m of VENDORS) expect(resolve(s, `www.${m.id}.example`).page).toEqual({ kind: "vendor", maker: m.id });
+    expect(resolve(s, "generic.example").page).toEqual({ kind: "notfound" });
+    expect(resolve(s, VIDEO_URL).page).toEqual({ kind: "video" });
+    expect(resolve(s, "youtub.example/watch?v=other").page).toEqual({ kind: "notfound" });
+  });
+
+  it("does not know other names", () => {
+    const s = readyGame(1);
+    for (const u of ["example.com", "nonsense", `nope.${companyDomain(s)}`, "node001", "https://www.google.com/search?q=x"]) expect(resolve(s, u).page).toEqual({ kind: "notfound" });
+  });
+
+  it("cannot reach a site or machine on a host that is down", () => {
+    const s = readyGame(1), node = s.devices.find((x) => x.hostname)!;
+    expect(resolve(s, fqdn(s, node.hostname!)).load).toBe("fast");
+    expect(resolve(s, web(s).domain!).load).toBe("fast");
+    expect(setPower(s, node.id, false).ok).toBe(true);
+    expect(resolve(s, fqdn(s, node.hostname!)).load).toBe("down");
+    expect(resolve(s, web(s).domain!).load).toBe("down");
+    expect(resolve(s, `http://${privateIp(s, node.id)}/`).load).toBe("down");
+  });
+
+  it("cannot reach the company site on a down own host, while the admin page still opens", () => {
+    const s = readyGame(1), host = s.clusters.find((c) => c.kind === "panel")!;
+    expect(setSiteHost(s, { kind: "own", clusterId: host.id }).ok).toBe(true);
+    expect(resolve(s, companyDomain(s)).load).toBe("fast");
+    expect(setPower(s, s.devices.find((x) => x.hostname)!.id, false).ok).toBe(true);
+    expect(resolve(s, companyDomain(s)).load).toBe("down");
+    expect(resolve(s, adminUrl(s))).toMatchObject({ page: { kind: "admin" }, load: "fast" });
+  });
+
+  it("has no company hostnames before a domain is registered", () => {
+    const s = readyGame(1), node = s.devices.find((x) => x.hostname)!;
+    s.company = { ...s.company, domain: null };
+    expect(resolve(s, fqdn(s, node.hostname!)).page).toEqual({ kind: "notfound" });
+    expect(resolve(newGame(3), "example.com").page).toEqual({ kind: "notfound" });
+  });
+});

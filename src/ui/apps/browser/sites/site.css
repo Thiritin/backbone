@@ -1,15 +1,3 @@
-.web { flex: 1; min-width: 0; display: flex; }
-.web-side { width: 250px; }
-.web-line { padding: 4px 8px; }
-.web-line-row { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }
-.web-why { font-size: 11px; color: var(--text-3); margin-top: 2px; }
-
-.web-browser { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.web-bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--win-bar); border-bottom: 0.5px solid var(--line); color: var(--text-3); }
-.web-bar svg.lucide { width: 15px; height: 15px; flex: none; }
-.web-url { flex: 1; min-width: 0; height: 26px; line-height: 26px; padding: 0 10px; border-radius: 6px; background: var(--field); color: var(--text); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.web-view { flex: 1; overflow: auto; background: #ffffff; }
-
 /* The website is the company's own page and keeps its colours in both themes, like any page in a browser. */
 .site { max-width: 760px; margin: 0 auto; padding: 24px 28px; color: #000000; font: 15px/1.4 "Times New Roman", Times, serif; }
 .site h1 { font-size: 30px; font-weight: 700; }
@@ -45,12 +33,6 @@
 .site.designed .site-empty { margin: 0 32px; }
 .site.designed .site-foot { margin: 28px 32px 0; }
 
-.web-host .seg { margin-top: 6px; }
-.web-load { height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 40% 100%; background-repeat: no-repeat; animation: web-load 1.4s linear infinite; }
-@keyframes web-load { from { background-position: -40% 0; } to { background-position: 140% 0; } }
-@media (prefers-reduced-motion: reduce) { .web-load { animation: none; background-size: 100% 100%; } }
-.site-error { max-width: 460px; margin: 0 auto; padding: 72px 28px; color: #202124; font: 14px/1.5 system-ui, sans-serif; }
-.site-error h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
 
 /* One look per design generation; the site keeps its own colours in both themes, except the two newest, which follow the theme. */
 .site { position: relative; }
@@ -108,3 +90,7 @@
 :root[data-theme="dark"] .site.g2021 .site-foot, :root[data-theme="dark"] .site.g2025 .site-foot { border-color: #2c2c30; }
 :root[data-theme="dark"] .site.g2021 .site-order, :root[data-theme="dark"] .site.g2025 .site-order { color: #a1a1a6; }
 :root[data-theme="dark"] .site.g2021 .site-link, :root[data-theme="dark"] .site.g2025 .site-link { color: #7cb0ff; }
+.site-name { display: flex; flex-direction: column; min-width: 0; }
+.site-tagline { margin-top: 2px; font-size: 16px; font-weight: 400; font-style: normal; line-height: 1.3; opacity: 0.85; }
+.site-admin { position: absolute; top: 10px; right: 12px; z-index: 2; padding: 3px 11px; border: 0; border-radius: 12px; background: #000000b3; color: #ffffff; font: 600 12px system-ui, sans-serif; cursor: pointer; }
+.site-admin:hover { background: #000000e6; }

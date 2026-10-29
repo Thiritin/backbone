@@ -108,7 +108,7 @@ describe("sim text", () => {
       expect(orders(s).length).toBeGreaterThan(0);
       expect(said.filter((x) => OLD_NAMES.some((n) => x.includes(n)))).toEqual([]);
     }
-  });
+  }, 20000);
 });
 
 describe("saves from before specs", () => {

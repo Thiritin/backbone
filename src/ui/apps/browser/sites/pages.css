@@ -1,0 +1,34 @@
+/* Pages of other people keep their own colours in both themes, like any page in a browser. */
+.cs { min-height: 100%; background: #ffffff; color: #202124; font: 15px/1.5 Georgia, "Times New Roman", serif; }
+.cs-head { padding: 28px 40px; background: oklch(0.58 0.13 var(--hue)); color: #ffffff; }
+.cs-head h1 { font-size: 28px; font-weight: 700; }
+.cs-blurb { max-width: 560px; margin: 28px 40px; font-size: 17px; }
+.cs-defaced { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; background: #000000; color: #33ff33; font-family: "Courier New", monospace; text-align: center; }
+.cs-defaced h1 { font-size: 30px; }
+
+.vs { min-height: 100%; background: #ffffff; color: #1b1d21; font: 15px/1.5 Inter, system-ui, sans-serif; }
+.vs-head { display: flex; align-items: center; padding: 18px 40px; border-bottom: 1px solid #e3e5e8; }
+.vs-head .logo-word { font-size: 20px; }
+.vs-main { max-width: 640px; padding: 72px 40px; }
+.vs-main h1 { font-size: 34px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+.vs-main p { margin: 14px 0 28px; color: #4a4f57; font-size: 17px; }
+.vs-button { display: inline-block; padding: 9px 20px; border-radius: 6px; background: #1b1d21; color: #ffffff; font-weight: 600; text-decoration: none; }
+.vs-button:hover { background: #33373d; }
+
+.yt { min-height: 100%; background: #0f0f0f; color: #f1f1f1; font: 14px/1.4 Roboto, system-ui, sans-serif; }
+.yt-head { padding: 12px 24px; }
+.yt-logo { display: inline-flex; align-items: center; gap: 6px; font-size: 18px; font-weight: 700; letter-spacing: -0.04em; }
+.yt-logo i { display: inline-grid; place-items: center; width: 28px; height: 20px; border-radius: 6px; background: oklch(0.58 0.22 27); color: #ffffff; }
+.yt-logo svg { width: 10px; height: 10px; fill: currentColor; }
+.yt-body { max-width: 680px; margin: 0 auto; padding: 8px 24px 40px; }
+.yt-player { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 12px; cursor: pointer; background: radial-gradient(circle at 30% 30%, oklch(0.5 0.17 300), transparent 55%), radial-gradient(circle at 75% 70%, oklch(0.55 0.18 25), transparent 50%), #1b1020; }
+.yt-play { display: grid; place-items: center; width: 72px; height: 50px; border-radius: 14px; background: oklch(0.58 0.22 27); color: #ffffff; transition: transform 0.12s; }
+.yt-play svg { width: 22px; height: 22px; }
+.yt-player:hover .yt-play { transform: scale(1.08); }
+.yt-player:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+.yt-body h1 { margin: 14px 0 8px; font-size: 20px; font-weight: 600; }
+.yt-meta { display: flex; align-items: center; gap: 16px; color: #aaaaaa; }
+.yt-artist { display: inline-flex; align-items: center; gap: 8px; color: #f1f1f1; font-weight: 600; }
+.yt-artist i { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: oklch(0.5 0.15 262); font-style: normal; }
+.yt-like { margin-left: auto; height: 32px; padding: 0 16px; border: 0; border-radius: 16px; background: #272727; color: #f1f1f1; font-weight: 600; cursor: pointer; }
+.yt-like[aria-pressed="true"] { background: #f1f1f1; color: #0f0f0f; }

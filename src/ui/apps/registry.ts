@@ -1,10 +1,11 @@
 import {
-  Activity, AppWindow, BookOpen, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, Landmark, LifeBuoy, ListChecks, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, Users,
+  Activity, AppWindow, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, Landmark, LifeBuoy, ListChecks, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, Users,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { BankApp } from "./bank/BankApp";
 import { BillingApp } from "./billing/BillingApp";
+import { BrowserApp } from "./browser/BrowserApp";
 import { ChecklistApp } from "./checklist/ChecklistApp";
 import { FinanceApp } from "./finance/FinanceApp";
 import { MarketingApp } from "./marketing/MarketingApp";
@@ -46,7 +47,8 @@ export const APPS: AppDef[] = [
   { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters.", body: ProductsApp,
     badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored)).length },
   { name: "Virtual machines", icon: MonitorCog, tile: "oklch(0.5 0.12 200)", about: "Starts, stops, migrates and restores the workloads on your clusters.", body: VmApp },
-  { name: "Website", icon: AppWindow, tile: "oklch(0.6 0.13 230)", about: "Shows your company website and the products it offers.", body: WebsiteApp },
+  { name: "Website", icon: AppWindow, tile: "oklch(0.6 0.13 230)", about: "Opens your company website in the Browser.", body: WebsiteApp },
+  { name: "Browser", icon: Compass, tile: "oklch(0.56 0.15 250)", about: "Opens your company site, your customers' sites and the pages of your suppliers.", body: BrowserApp },
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: "Lists your customers with their contracts and happiness.", body: CustomersApp },
   { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets, orders and sales requests so you can answer, accept, quote or decline them.", body: SupportApp,
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length
