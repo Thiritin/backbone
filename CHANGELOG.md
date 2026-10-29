@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The Getting started step for company email now names the Support app once a support desk is installed, matching the app in your dock.
 - When you are at the datacenter, the server's power and plug buttons now work at once instead of calling remote hands, and from afar you can send a friend to press them.
 - The Browser has a new site, Sponsor-Bored, bookmarked from the start, where you post an offer for a free or half-price server, and clans, LAN parties, fan sites, student projects and mirrors apply by email; a running sponsorship adds awareness and leads every month, but some of the applicants misuse the server or drop your banner.
 - An open offer on Sponsor-Bored can be withdrawn, which closes its waiting applications and keeps running sponsorships going.

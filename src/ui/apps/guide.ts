@@ -1,6 +1,6 @@
 import { modelById } from "../../sim/10-catalog/hardware";
 import { registrarById } from "../../sim/10-catalog/registrars";
-import { deskOf } from "../../sim/10-catalog/desks";
+import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
 import type { GameState } from "../../sim/50-state";
 import { adminUrl } from "../../sim/80-business/browser";
@@ -15,7 +15,7 @@ const firstServer = (s: GameState) => s.devices.find((d) => modelById(d.model).k
 // Where each tutorial step happens and what the Open button shows there.
 export function stepOf(s: GameState, id: StepId): Step {
   const home = basement(s), server = firstServer(s);
-  const mailApp = deskOf(s) ? "Support" : "Email";
+  const mailApp = supportApp(s).name;
   switch (id) {
     case "company":
       return { title: t("guide.step.company"), text: "Choose the name, logo and colour of your company.", app: "Settings" };
@@ -38,7 +38,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "website":
       return { title: t("guide.step.website"), text: "Build your website and list your first product from the Admin page in the Browser.", app: "Browser", focus: { kind: "url", id: adminUrl(s) } };
     case "email":
-      return { title: t("guide.step.email"), text: "Choose an email provider in the Email app.", app: "Support", focus: { kind: "mailSetup", id: "" } };
+      return { title: t("guide.step.email"), text: `Choose an email provider in ${mailApp}.`, app: "Support", focus: { kind: "mailSetup", id: "" } };
     case "firstCustomer":
       return { title: t("guide.step.firstCustomer"), text: `Answer your first customer in ${mailApp}.`, app: "Support" };
   }

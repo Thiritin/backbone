@@ -7,6 +7,7 @@ import type { Employee } from "../src/sim/47-staff/staff";
 import { tick } from "../src/sim/88-tick/tick";
 import { cancel, install } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { stepOf } from "../src/ui/apps/guide";
 import { DESK_FEATURES, supportApp } from "../src/ui/apps/support/desk";
 import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, OsTickitMark, PearMailMark, ZenduskMark } from "../src/ui/art/mailmarks";
 
@@ -115,6 +116,13 @@ describe("support desks", () => {
       install(s, d.id);
       expect(supportApp(s)).toMatchObject({ name: "Support", icon: marks[d.id as keyof typeof marks], style: d.id });
     }
+  });
+
+  it("names the dock's mail app in the Getting started steps", () => {
+    const s = year(2018);
+    for (const id of ["email", "firstCustomer"] as const) expect(stepOf(s, id).text).toContain("in Email.");
+    install(s, "zendusk");
+    for (const id of ["email", "firstCustomer"] as const) expect(stepOf(s, id).text).toContain("in Support.");
   });
 
   it("keeps the app id Support in a save and loads a save without a desk as Email", () => {
