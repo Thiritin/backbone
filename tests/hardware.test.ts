@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { GENERATIONS, START_CASH } from "../src/sim/10-catalog/economy";
-import { brandsFor, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
+import { brandsFor, deliveryHours, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, mountFrom, mountMax, portPeers, storageStacks } from "../src/sim/60-infra/status";
-import {
-  addLocation, buyDevice, buyRack, connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice,
-} from "../src/sim/90-actions/hardware";
+import { tick } from "../src/sim/88-tick/tick";
+import { addLocation, buyCart as buyCartReal, buyDevice as buyReal, buyRack, connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { withServer } from "./fixtures";
 
@@ -82,7 +82,7 @@ describe("new game", () => {
   it("starts with an empty basement rack and the home router", () => {
     const s = newGame(3);
     expect(s.cash).toBe(START_CASH);
-    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }]);
+    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false, shelf: 4 }]);
     expect(s.racks).toEqual([{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false }]);
     expect(s.devices.map((d) => [d.model, d.brand, d.name, d.rackId, d.panel, d.price, d.boughtAt])).toEqual([
       ["home-router", "Sysko", "fra1-gw-01", null, "loc1", 0, 0],
@@ -302,5 +302,36 @@ describe("mount over a clicked unit", () => {
     expect(mountFrom(s, rack, 2, 1, 4)).toBeUndefined();
     expect(mountMax(s, rack, 2, 5, 3)).toBe(1);
     expect(mountMax(s, rack, 2, 5, 47)).toBe(5);
+  });
+});
+
+describe("delivery wait", () => {
+  it("falls from 72 hours in 2005 to 24 in 2015 and stays there", () => {
+    expect([2005, 2010, 2015, 2024].map(deliveryHours)).toEqual([72, 48, 24, 24]);
+  });
+  it("lands the purchases of a company without a server at once", () => {
+    const s = { ...newGame(1), cash: 100_000 };
+    const first = ok(buyReal(s, "g1-compute", "Dwell", 2, "loc1"));
+    expect(dev(s, first)).toMatchObject({ store: "loc1", transitTo: null, arriveAt: null });
+    expect(err(mountDevice(s, first, "rack2", 1))).toBe("ok");
+  });
+  it("keeps a later order in transit for 72 hours in 2005 and 24 hours in 2015, and refuses to mount it", () => {
+    for (const [year, model, wait] of [[2005, "g1-compute", 72], [2015, "g4-compute", 24]] as const) {
+      const s = atYear(year);
+      const id = ok(buyReal(s, model, "Dwell", 1, "loc1"));
+      expect(dev(s, id)).toMatchObject({ store: null, transitTo: "loc1", arriveAt: s.hour + wait });
+      expect(err(mountDevice(s, id, "rack2", 5))).toBe("error.inTransit");
+      for (let h = 1; h < wait; h++) tick(s);
+      expect(err(mountDevice(s, id, "rack2", 5))).toBe("error.inTransit");
+      const events = tick(s);
+      expect(events).toContainEqual(expect.objectContaining({ key: "event.stockArrived", params: { count: 1, location: "Basement" } }));
+      expect(dev(s, id)).toMatchObject({ store: "loc1", transitTo: null, arriveAt: null });
+      expect(err(mountDevice(s, id, "rack2", 5))).toBe("ok");
+    }
+  });
+  it("delays a cart on cash or lease alike", () => {
+    const s = atYear(2005);
+    const id = ok(buyCartReal(s, [{ model: "g1-compute", brand: "Dwell", qty: 1 }], { kind: "cash" }, "loc1"));
+    expect(dev(s, id).arriveAt).toBe(s.hour + 72);
   });
 });

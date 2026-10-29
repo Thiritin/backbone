@@ -131,6 +131,8 @@ export interface DeviceModel {
   kind: DeviceKind;
   // Rack units; panel gateways are 0 and live on a carrier panel, edge routers mount in a rack.
   height: number;
+  // A tower stands on a shelf place (height 0) and cannot go into a rack unit.
+  shelf?: true;
   ports: PortSpec[];
   watts: number;
   idleWatts: number;
@@ -166,6 +168,8 @@ export const MANUFACTURERS: Manufacturer[] = [
   { id: "generic", name: "Generic", kinds: ["part"], priceFactor: 1, failureFactor: 1 },
 ];
 export const brandsFor = (kind: DeviceKind): string[] => MANUFACTURERS.filter((m) => m.kinds.includes(kind)).map((m) => m.name);
+// Hours from an order to the stockroom: 3 days in 2005 falling in a straight line to 1 day in 2015.
+export const deliveryHours = (year: number): number => Math.round(72 - 48 * Math.min(1, Math.max(0, (year - 2005) / 10)));
 export const SERVER_BRANDS = brandsFor("server");
 export const SWITCH_BRAND = "Sysko";
 export const PATCH_BRAND = "Pandoot";
@@ -197,12 +201,15 @@ const SERVER_LINES = [
   { id: "backup", name: "Backup storage 4U", arch: "x86", height: 4, sockets: 1, cores: 0.5, ram: 0.5, bays: BAYS_3_5(36), dimms: [8, 12, 16, 24], pcie: 4, drives: 36, disk: "large", ports: 2, psus: 2, gpus: 0, watts: 2, price: 2.4, from: 2005 },
   { id: "archive", name: "Archive storage 4U", arch: "x86", height: 4, sockets: 1, cores: 0.25, ram: 0.25, bays: BAYS_3_5(60), dimms: [8, 8, 16, 16], pcie: 2, drives: 60, disk: "dense", ports: 2, psus: 2, gpus: 0, watts: 2.2, price: 3.2, from: 2005 },
   { id: "gpu", name: "GPU 4U", arch: "x86", height: 4, sockets: 2, cores: 1, ram: 2, bays: BAYS_8, dimms: [16, 24, 32, 48], pcie: 8, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 4, watts: 2, price: 3, from: 2011 },
+  // No BMC. Not rackable: stands on a shelf place in the basement. G1 and G2 only, off sale when G3 arrives.
+  { id: "tower", name: "Tower server", arch: "x86", height: 0, sockets: 1, cores: 0.5, ram: 0.5, bays: BAYS_3_5(2), dimms: [4, 4, 4, 4], pcie: 2, drives: 1, disk: "gen", ports: 1, psus: 1, psuBays: 1, gpus: 0, watts: 0.6, price: 0.4, from: 2005, last: 1 },
   { id: "arm", name: "ARM 1U", arch: "arm", height: 1, sockets: 1, cores: 1.5, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.6, price: 0.9, from: 2020 },
 ] as const;
 
 // A generation stays in the shop until the one two steps newer arrives.
 const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
-  SERVER_LINES.filter((v) => v.from <= g.year).map((v) => {
+  SERVER_LINES.filter((v) => v.from <= g.year && (!("last" in v) || i <= v.last)).map((v) => {
+    const off = GENERATIONS["last" in v ? 2 : i + 2];
     const driveGb = v.disk === "large" ? LARGE_HDD_GB[i] : v.disk === "dense" ? DENSE_HDD_GB[i] : g.diskGb;
     const ramGb = g.ramGb * v.ram, dimmSlots = v.dimms[Math.floor(i / 2)];
     // Sticks double in size until they fit the slots (the memory line outgrows the generation's standard stick).
@@ -213,17 +220,18 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
       name: `${v.name} G${i + 1}`,
       kind: "server" as const,
       height: v.height,
+      ...(v.height === 0 ? { shelf: true as const } : {}),
       ports: ports(v.ports, portGbit(g.year)),
       watts: Math.round(g.watts * v.watts),
       idleWatts: Math.round(g.watts * v.watts * 0.4),
       psus: v.psus,
       price: Math.round(g.price * v.price) + (v.gpus ? v.gpus * Math.round(gpuPrice(cardAt(g.year)!, g.year)) : 0),
       from: g.year,
-      until: GENERATIONS[i + 2] ? GENERATIONS[i + 2].year - 1 : null,
+      until: off ? off.year - 1 : null,
       supportYears: 5,
       server: {
         arch: v.arch, sockets: v.sockets, cores: Math.round(g.cores * v.cores), ramGb, maxRamGb: 2 * ramGb,
-        dimmSlots, bays: v.bays(i), pcie: v.pcie, psuBays: 2, diskGb: driveGb * v.drives, disk: v.disk === "gen" ? g.disk : "HDD", gpus: v.gpus,
+        dimmSlots, bays: v.bays(i), pcie: v.pcie, psuBays: "psuBays" in v ? v.psuBays : 2, diskGb: driveGb * v.drives, disk: v.disk === "gen" ? g.disk : "HDD", gpus: v.gpus,
         drives: v.drives, ramSticks: Math.max(1, Math.round(ramGb / stickGb)),
       },
     };

@@ -6,7 +6,8 @@ import { serviceMbps } from "../src/sim/60-infra/network";
 import { ASK_FILL, backupFlows, diskFill, FULL_PENALTY, portLinks, usageOf, usageTick, workloadLoad } from "../src/sim/60-infra/usage";
 import { provisionService, setBackup } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
+import { connect, setPower } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { hypervisor, readyGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 

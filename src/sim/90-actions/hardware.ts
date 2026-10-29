@@ -1,11 +1,11 @@
 import { yearOf } from "../00-core/time";
-import { bareParts, brandsFor, COMPONENT_KINDS, COMPONENTS, componentParts, dualPsuModel, fits as chassisFits, isDriveKind, modelById, partOffers, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { bareParts, brandsFor, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, isDriveKind, modelById, partOffers, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
 import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, moveCost, pluggedIn, deviceValue, resaleValue, travelCost } from "../60-infra/status";
+import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, moveCost, pluggedIn, deviceValue, resaleValue, spotOf, travelCost } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { endLease, rebuildHours } from "../88-tick/tick";
 import { cardsFree, serverTaken } from "../60-infra/cluster";
@@ -48,7 +48,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "positi
   if (s.cash < spacePrice(dc, space, size)) return fail("error.noCash");
   if (hold) s.waitlist = s.waitlist.filter((w) => w.id !== hold.id);
   const positions = space === "share" ? 1 : size;
-  const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };
+  const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false, shelf: 0 };
   s.locations.push(loc);
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "failover", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
@@ -191,14 +191,15 @@ function lineError(s: GameState, line: CartLine): string | null {
 }
 const FORMS: FormFactor[] = ["3.5", "2.5", "nvme"];
 
-// Puts qty new units into storage at the manufacturer's price and returns their ids.
-function stock(s: GameState, line: CartLine, lease: string | null, store: string): string[] {
+// Puts qty new units into storage at the manufacturer's price and returns their ids. With wait hours they are in transit to the
+// zone first; spares taken out of a device arrive at once.
+function stock(s: GameState, line: CartLine, lease: string | null, store: string, wait = 0): string[] {
   const { model: modelId, brand, qty } = line;
   const price = unitPrice(line, yearOf(s.hour)), custom = line.bare || line.extras?.length;
   return Array.from({ length: qty }, () => {
     const name = nextName(`${prefix(s, store)}-${roleOf(modelId)}`, s.devices.map((d) => d.name));
     const id = newId(s, "dev");
-    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "failover", groups: [], price, boughtAt: s.hour, lease, store, transitTo: null, arriveAt: null,
+    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "failover", groups: [], price, boughtAt: s.hour, lease, ...(wait ? { store: null, transitTo: store, arriveAt: s.hour + wait } : { store, transitTo: null, arriveAt: null }),
       ...deviceDefaults(modelId, s.hour, custom ? lineParts(line) : undefined), ...(line.part ? { part: line.part } : {}),
       ...(modelById(modelId).kind === "server" ? { hostname: nodeName(s) } : {}) });
     return id;
@@ -206,6 +207,14 @@ function stock(s: GameState, line: CartLine, lease: string | null, store: string
 }
 
 const lineTotal = (s: GameState, line: CartLine) => unitPrice(line, yearOf(s.hour)) * line.qty;
+// Orders wait for delivery, except while the company owns no server: the first purchases arrive at once.
+const deliveryWait = (s: GameState): number => (s.devices.some((d) => modelById(d.model).kind === "server") ? deliveryHours(yearOf(s.hour)) : 0);
+
+function buyLine(s: GameState, line: CartLine, locationId: string, wait: number): string {
+  const ids = stock(s, line, null, locationId, wait);
+  book(s, "hardware", "ledger.hardware", { model: modelById(line.model).name, qty: line.qty }, -lineTotal(s, line));
+  return ids[0];
+}
 
 // Bought units go to the storage of the zone at locationId, which may not be ready yet.
 export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "bare" | "part"> = {}): ActionResult {
@@ -214,9 +223,7 @@ export function buyDevice(s: GameState, modelId: string, brand: string, qty: num
   const error = lineError(s, line);
   if (error) return fail(error);
   if (s.cash < lineTotal(s, line)) return fail("error.noCash");
-  const ids = stock(s, line, null, locationId);
-  book(s, "hardware", "ledger.hardware", { model: modelById(modelId).name, qty }, -lineTotal(s, line));
-  return { ok: true, id: ids[0] };
+  return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s)) };
 }
 
 // Pays in cash or leases the whole cart; the lease offer must be one leaseOffers makes for the cart total right now.
@@ -228,13 +235,14 @@ export function buyCart(s: GameState, lines: CartLine[], payment: { kind: "cash"
   const total = lines.reduce((sum, l) => sum + lineTotal(s, l), 0);
   if (payment.kind === "cash") {
     if (s.cash < total) return fail("error.noCash");
-    const ids = lines.map((l) => (buyDevice(s, l.model, l.brand, l.qty, locationId, l) as { id: string }).id);
-    return { ok: true, id: ids[0] };
+    const wait = deliveryWait(s);
+    return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait))[0] };
   }
   const offer = leaseOffers(s, total).find((o) => o.id === payment.offerId);
   if (!offer) return fail("error.offerExpired");
+  const wait = deliveryWait(s);
   const lease = { id: newId(s, "lease"), lessor: offer.lessor, monthly: offer.monthly, months: offer.months, startedAt: s.hour, paid: 0, devices: [] as string[] };
-  lease.devices = lines.flatMap((l) => stock(s, l, lease.id, locationId));
+  lease.devices = lines.flatMap((l) => stock(s, l, lease.id, locationId, wait));
   s.leases = [...s.leases, lease];
   return { ok: true, id: lease.devices[0] };
 }
@@ -254,19 +262,21 @@ function mountError(s: GameState, d: Device, rackId: string, slot: number): stri
   if (d.transitTo) return "error.inTransit";
   if (!d.store) return "error.alreadyMounted";
   if (modelById(d.model).kind === "part") return "error.notMountable";
-  const rack = s.racks.find((r) => r.id === rackId);
-  if (!rack) return "error.unknownRack";
-  if (rack.arriveAt !== null) return "error.rackMoving";
-  if (d.store !== rack.locationId) return "error.notInZone";
-  const h = modelById(d.model).height;
-  if (!Number.isInteger(slot) || slot < 1 || slot + h - 1 > rackUnits(rack.model)) return "error.outOfBounds";
+  const spot = spotOf(s, rackId);
+  if (!spot) return "error.unknownRack";
+  if (spot.moving) return "error.rackMoving";
+  if (d.store !== spot.locationId) return "error.notInZone";
+  const m = modelById(d.model);
+  if (!!m.shelf !== spot.shelf) return m.shelf ? "error.towerNoRack" : "error.shelfTowerOnly";
+  const h = m.shelf ? 1 : m.height;
+  if (!Number.isInteger(slot) || slot < 1 || slot + h - 1 > spot.units) return "error.outOfBounds";
   if (!freeSlots(s, rackId, h).includes(slot)) return "error.slotTaken";
   return null;
 }
 
 // A device takes a name from its new location unless it already has one there.
 function mount(s: GameState, d: Device, rackId: string, slot: number) {
-  const base = prefix(s, s.racks.find((r) => r.id === rackId)!.locationId);
+  const base = prefix(s, spotOf(s, rackId)!.locationId);
   if (!d.name.startsWith(`${base}-`)) d.name = nextName(`${base}-${roleOf(d.model)}`, s.devices.map((x) => x.name));
   Object.assign(d, { rackId, slot, store: null });
   for (const c of d.components) if (c.kind === "psu") c.plugged = false;
@@ -283,16 +293,17 @@ export function mountDevice(s: GameState, deviceId: string, rackId: string, slot
 
 // Stored units go into the lowest free run of slots, or the run starting at fromSlot, each directly on top of the previous one.
 export function mountStack(s: GameState, modelId: string, brand: string, rackId: string, count: number, fromSlot?: number): ActionResult {
-  const rack = s.racks.find((r) => r.id === rackId);
+  const rack = spotOf(s, rackId);
   if (!rack) return fail("error.unknownRack");
-  if (rack.arriveAt !== null) return fail("error.rackMoving");
+  if (rack.moving) return fail("error.rackMoving");
   if (modelById(modelId).kind === "part") return fail("error.notMountable");
+  if (!!modelById(modelId).shelf !== rack.shelf) return fail(rack.shelf ? "error.shelfTowerOnly" : "error.towerNoRack");
   const same = (d: Device) => d.model === modelId && d.brand === brand;
   const stored = s.devices.filter((d) => same(d) && d.store === rack.locationId);
   if (!Number.isInteger(count) || count < 1 || stored.length < count) {
     return fail(s.devices.filter((d) => same(d) && d.store).length >= count ? "error.notInZone" : "error.notInStorage");
   }
-  const h = modelById(modelId).height;
+  const h = modelById(modelId).shelf ? 1 : modelById(modelId).height;
   const free = new Set(freeSlots(s, rackId, h));
   const start = [...free].filter((slot) => fromSlot === undefined || slot === fromSlot).find((slot) => Array.from({ length: count }, (_, i) => slot + i * h).every((x) => free.has(x)));
   if (start === undefined) return fail("error.noRoom");
@@ -304,8 +315,8 @@ export function unmountDevice(s: GameState, deviceId: string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId) return fail("error.notMounted");
-  const rack = s.racks.find((r) => r.id === d.rackId)!;
-  if (rack.arriveAt !== null) return fail("error.rackMoving");
+  const rack = spotOf(s, d.rackId)!;
+  if (rack.moving) return fail("error.rackMoving");
   if (serverTaken(s, d.id)) return fail("error.serverInUse");
   unplug(s, new Set([d.id]));
   Object.assign(d, { rackId: null, slot: 0, store: rack.locationId });
@@ -461,9 +472,9 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (!d) return fail("error.unknownDevice");
   const c = d.components.find((x) => x.id === componentId);
   if (!c) return fail("error.unknownComponent");
-  const rack = s.racks.find((r) => r.id === d.rackId);
+  const rack = spotOf(s, d.rackId);
   if (!rack) return fail("error.notMounted");
-  if (rack.arriveAt !== null) return fail("error.rackMoving");
+  if (rack.moving) return fail("error.rackMoving");
   if (d.maintenance) return fail("error.busy");
   const model = modelById(d.model);
   const parts = s.devices.filter((x) => x.model === `part-${c.kind}` && x.store === rack.locationId && spareFits(model, d, x, c))
@@ -546,8 +557,8 @@ interface Work { bill: number; billHours: number; wait: number; hands: boolean }
 function handsOn(s: GameState, d: Device, hot: boolean, technician: boolean): { error: string } | Work {
   if (d.maintenance) return { error: "error.busy" };
   if (!d.rackId) return d.store ? { bill: 0, billHours: 0, wait: 0, hands: false } : { error: "error.inTransit" };
-  const rack = s.racks.find((r) => r.id === d.rackId)!;
-  if (rack.arriveAt !== null) return { error: "error.rackMoving" };
+  const rack = spotOf(s, d.rackId)!;
+  if (rack.moving) return { error: "error.rackMoving" };
   if (d.on && !hot) return { error: "error.powerOffFirst" };
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
   const hands = loc.dc && !technician ? datacenterById(loc.dc).remoteHands : null;

@@ -7,7 +7,8 @@ import { clusterOf, controlPlaneUse, vmById, vmRoom } from "../src/sim/60-infra/
 import { tick } from "../src/sim/88-tick/tick";
 import { addNode, createVm, deleteVm, provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { buyDevice, connect } from "../src/sim/90-actions/hardware";
+import { connect } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { installSoftware, softwareOn, uninstallSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { hypervisor, readyGame, skipTo, withServer } from "./fixtures";

@@ -4,7 +4,8 @@ import { bareParts, componentParts, fits, MODELS, modelById, partOffers, shopMod
 import { bareChassisPrice, partPrice, partsPrice, presetPrice } from "../src/sim/10-catalog/parts";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { installedCores, installedRamGb, raidUsable } from "../src/sim/60-infra/status";
-import { BARE_FLOOR, buyCart, buyDevice, replaceComponent, unitPrice, type CartLine } from "../src/sim/90-actions/hardware";
+import { BARE_FLOOR, replaceComponent, unitPrice, type CartLine } from "../src/sim/90-actions/hardware";
+import { buyCart, buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { withServer } from "./fixtures";
 

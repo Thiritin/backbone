@@ -12,7 +12,8 @@ import { busyDevices, deviceWatts, rackPower } from "../src/sim/60-infra/status"
 import { newsTick } from "../src/sim/80-business/news";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { buyDevice, connect, installPart, removePart, type CartLine } from "../src/sim/90-actions/hardware";
+import { connect, installPart, removePart, type CartLine } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { research } from "../src/sim/90-actions/store";
 import { tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";

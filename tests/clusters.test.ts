@@ -11,7 +11,8 @@ import { BOOT_HOURS, deviceHealth, freeSlots, installedRamGb, rackPower } from "
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addNode, cordon, createVm, drain, installPanelInVm, resizeVm, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { addLocation, buyDevice, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { FRIEND_HAPPINESS } from "../src/sim/90-actions/start";
 import { hypervisor, readyGame, skipTo, withServer } from "./fixtures";

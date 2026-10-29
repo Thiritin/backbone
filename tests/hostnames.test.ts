@@ -7,7 +7,7 @@ import { subjectParams } from "../src/sim/40-support/notices";
 import { newGame } from "../src/sim/50-state";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { createVm, provisionService } from "../src/sim/90-actions/clusters";
-import { buyDevice } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { t } from "../src/i18n/en";
 import { readyGame } from "./fixtures";

@@ -9,7 +9,8 @@ import { DATA_LOSS, gridOutage, RESTORED, seize } from "../src/sim/60-infra/inci
 import { linkStatus, powered } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 
-import { buyDevice, connect } from "../src/sim/90-actions/hardware";
+import { connect } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { join, readyGame } from "./fixtures";

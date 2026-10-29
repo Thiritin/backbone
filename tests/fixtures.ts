@@ -2,6 +2,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import { modelById } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
 import { device, type GameState } from "../src/sim/50-state";
+import { buyCart as buyCartReal, buyDevice as buyDeviceReal } from "../src/sim/90-actions/hardware";
 import { addNode, createPanelVm, installHypervisor, installPanel, workload } from "../src/sim/90-actions/clusters";
 import { startGame, welcomeFriends } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
@@ -83,3 +84,14 @@ export function withCompany(s: GameState): GameState {
   register(s, name, null, false);
   return s;
 }
+
+// Purchases that land at once, so a test can mount what it bought in the same hour. Tests of the delivery wait use the real
+// actions from src/sim/90-actions/hardware.
+const landing = <T extends unknown[], R>(buy: (s: GameState, ...a: T) => R) => (s: GameState, ...a: T): R => {
+  const moving = new Set(s.devices.filter((d) => d.arriveAt !== null).map((d) => d.id));
+  const r = buy(s, ...a);
+  for (const d of s.devices) if (d.arriveAt !== null && !moving.has(d.id)) Object.assign(d, { store: d.transitTo, transitTo: null, arriveAt: null });
+  return r;
+};
+export const buyDevice = landing(buyDeviceReal);
+export const buyCart = landing(buyCartReal);

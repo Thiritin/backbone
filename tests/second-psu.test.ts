@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { modelById } from "../src/sim/10-catalog/hardware";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { psuInlets } from "../src/ui/art/backs";
-import { addSecondPsu, buyDevice, mountDevice, setPlugged } from "../src/sim/90-actions/hardware";
+import { addSecondPsu, mountDevice, setPlugged } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { withServer } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {

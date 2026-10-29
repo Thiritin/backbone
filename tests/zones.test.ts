@@ -3,9 +3,8 @@ import { REGIONS, regionOf } from "../src/sim/20-world/datacenters";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { storageStacks } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import {
-  addLocation, buyCart, buyDevice, buyRack, closeLocation, mountDevice, mountStack, sellDevice, shipStock, unmountDevice,
-} from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, closeLocation, mountDevice, mountStack, sellDevice, shipStock, unmountDevice } from "../src/sim/90-actions/hardware";
+import { buyCart, buyDevice } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
 

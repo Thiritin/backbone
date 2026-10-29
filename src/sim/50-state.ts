@@ -37,7 +37,9 @@ export type CableKind = "copper" | "dac" | "fiber";
 
 export type SpaceKind = "basement" | "share" | "positions" | "cage" | "suite";
 // Each location is an availability zone (az, like fra2) in the region of its city.
-export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean }
+export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean;
+  // Places on the shelf for towers; only the basement has one.
+  shelf: number }
 // share-N racks belong to the provider of a rack share and hold N units.
 export type RackModel = "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-10" | "share-21" | "share-42";
 // arriveAt is the hour a moving rack arrives; null when it is in place. A moving rack already holds its target location and position.
@@ -207,7 +209,7 @@ export const device = (id: string, model: string, brand: string, rackId: string 
 // Starting infrastructure: an empty 24U basement rack and the home router. The player buys, mounts and cables the first server.
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, cash: START_CASH, nextId: 8,
-  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
+  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false, shelf: 4 }],
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false }],
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
   cables: [],

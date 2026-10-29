@@ -4,7 +4,8 @@ import { capacityAt, DATACENTERS, datacenterById } from "../src/sim/20-world/dat
 import { newGame, type GameState } from "../src/sim/50-state";
 import { dcAvailability, fits } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addLocation, buyDevice, joinWaitlist, leaveWaitlist } from "../src/sim/90-actions/hardware";
+import { addLocation, joinWaitlist, leaveWaitlist } from "../src/sim/90-actions/hardware";
+import { buyDevice } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const ok = (r: ReturnType<typeof addLocation>) => {
