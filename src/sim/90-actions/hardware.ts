@@ -904,6 +904,8 @@ export function installPart(s: GameState, deviceId: string, partId: string, slot
   const specFor = (x: Device): PartSpec => (kind === "cpu" ? { vendor: boardVendor(model, d.components), gen: genOf(model), ...x.part, kind } : { ...x.part, kind });
   const spec = specFor(part);
   const used = d.components.filter((c) => sameSlots(c.kind, kind)).length;
+  // Replayed and UI actions pass a left-out slot as null.
+  if (slot === null) slot = undefined;
   if (slot !== undefined && (!Number.isInteger(slot) || slot < 0 || slot >= slotsOf(model, kind))) return fail("error.unknownSlot");
   if (slot !== undefined && slot < used) return fail("error.partSlotTaken");
   const set = kind !== "cpu" ? [part]

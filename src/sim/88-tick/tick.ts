@@ -156,10 +156,11 @@ function wear(s: GameState, events: SimEvent[]) {
 }
 
 // Finished swaps put a new component in; a drive in an array that survived starts a rebuild. Finished rebuilds end.
-function service(s: GameState) {
+function service(s: GameState, events: SimEvent[]) {
   s.devices = s.devices.map((d) => {
     let next = d;
     if (d.maintenance && d.maintenance.doneAt <= s.hour) {
+      events.push({ app: "Locations", key: "event.workDone", params: { device: d.label ?? d.name } });
       const old = d.components.find((c) => c.id === d.maintenance!.componentId);
       // Installing or removing a part changed the device when it started; the work only keeps it busy.
       if (!old) next = { ...d, maintenance: null };
@@ -236,7 +237,7 @@ export function tick(state: GameState): SimEvent[] {
   state.rng = { ...state.rng };
   wear(state, events);
   burninTick(state, events);
-  if (state.devices.some((d) => d.maintenance || d.rebuild)) service(state);
+  if (state.devices.some((d) => d.maintenance || d.rebuild)) service(state, events);
   events.push(...powerTick(state));
   const monthStart = isMonthStart(state.hour);
   if (monthStart) {

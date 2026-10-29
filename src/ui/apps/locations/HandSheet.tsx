@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { t as tr } from "../../../i18n/en";
 import { euro } from "../../../sim/00-core/money";
+import { SKIP } from "../../../sim/00-core/time";
 import { nextSlot, taskFor, urgent, type OpKind } from "../../../sim/47-staff/technicians";
 import type { GameState } from "../../../sim/50-state";
 import { FAVOURS_PER_YEAR, handWork, present } from "../../../sim/60-infra/handwork";
@@ -40,14 +41,20 @@ const workLocation = (game: GameState, t: HandTask) => {
 let pointer = { x: 0, y: 0 };
 if (typeof window !== "undefined") window.addEventListener("pointerdown", (e) => { pointer = { x: e.clientX, y: e.clientY }; }, true);
 
+// Runs the task and skips time to the end of the work it started.
+function run(t: HandTask, how: string): ActionResult {
+  const { act, setSpeed } = useStore.getState(), r = act(t.action, ...t.args, how);
+  if (r.ok && useStore.getState().game.devices.find((d) => d.id === t.deviceId)?.maintenance) setSpeed(SKIP);
+  return r;
+}
+
 // Runs a hand task at once where the player stands, or asks before paying remote hands elsewhere.
 export function useHandWork() {
-  const act = useStore((s) => s.act);
   const [task, setTask] = useState<{ t: HandTask; x: number; y: number } | null>(null);
   const start = (game: GameState, t: HandTask) => {
     const loc = workLocation(game, t), w = loc && handWork(game, loc.id);
-    if (!w) act(t.action, ...t.args, "hands");
-    else if (w.here && !t.at) act(t.action, ...t.args, "self");
+    if (!w) run(t, "hands");
+    else if (w.here && !t.at) run(t, "self");
     else setTask({ t, ...pointer });
   };
   return { start, dialog: task && <HandPopover task={task.t} x={task.x} y={task.y} onClose={() => setTask(null)} /> };
@@ -76,7 +83,7 @@ function HandPopover({ task, x, y, onClose }: { task: HandTask; x: number; y: nu
   const device = game.devices.find((d) => d.id === task.deviceId), loc = workLocation(game, task), w = loc && handWork(game, loc.id);
   if (!device || !loc || !w) return null;
   const from = locationOf(game, device), fare = task.at && from && present(game, from.id) && game.player.until <= game.hour ? drive(game, loc.id) : null;
-  const go = (how: "hands" | "friend" | "self") => { if (act(task.action, ...task.args, how).ok) onClose(); };
+  const go = (how: "hands" | "friend" | "self") => { if (run(task, how).ok) onClose(); };
   const t = task.tech, queued = !!t && game.techOps.some((o) => o.deviceId === device.id && o.kind === t.kind && o.componentId === (t.componentId ?? null) && (o.partId ?? null) === (t.partId ?? null));
   const slot = t && !queued ? nextSlot(game, loc.id, taskFor(game, t.kind, t.componentId ?? null), urgent(game, { kind: t.kind, deviceId: device.id, componentId: t.componentId ?? null })) : null;
   return createPortal(

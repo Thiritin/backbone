@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Installing a part with remote hands works again instead of saying the slot does not exist.
+- Starting hand work on a server skips time until the work is done, and a notification says when it finishes.
 - Attackers can no longer break into a panel host that is switched off, failed or has its panel VM stopped.
 - Cleaning up a hacked panel host now restores every site that has a backup of its own or of the panel VM it runs in, and the site Clean up button counts both the same way.
 - Domains are now bought on registrar websites in the Browser, where a search suggests names across every ending with the price of each.

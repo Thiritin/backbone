@@ -11,6 +11,7 @@ import { setCompatMode } from "../src/sim/90-actions/cpus";
 import { installPart, replaceComponent, setPower } from "../src/sim/90-actions/hardware";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { migrationDowntime } from "../src/sim/90-actions/vms";
+import { runAction } from "../src/sim/90-actions";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { buyDevice, hypervisor, join, skipTo, withServer } from "./fixtures";
 
@@ -101,6 +102,20 @@ describe("matched sockets", () => {
     while (dev(s, "dev3").maintenance) tick(s);
     expect(cpus(s, "dev3").find((c) => c.id === b.id)).toBeDefined();
     expect(cpus(s, "dev3").map((c) => c.size)).toEqual([1, 1]);
+  });
+});
+
+describe("installing from the UI", () => {
+  it("adds a CPU to a powered-off server with the slot left out, and reports the work done", () => {
+    const s = rich(), d = dev(s, "dev3"), cpu = cpus(s, "dev3")[0], sockets = cpus(s, "dev3").length;
+    d.on = false;
+    ok(runAction(s, "removePart", ["dev3", cpu.id, "hands"]));
+    dev(s, "dev3").maintenance = null;
+    const part = ok(buyDevice(s, "part-cpu", "Generic", 1, "loc1", { part: { kind: "cpu", size: cpu.size, vendor: cpu.vendor, gen: cpu.gen } }));
+    ok(runAction(s, "installPart", ["dev3", part, undefined, "hands"]));
+    expect(cpus(s, "dev3")).toHaveLength(sockets);
+    const events = Array.from({ length: 2 }, () => tick(s)).flat();
+    expect(events.map((e) => e.key)).toContain("event.workDone");
   });
 });
 
