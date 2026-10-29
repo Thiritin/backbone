@@ -38,7 +38,7 @@ function collect(s: GameState): Hit[] {
     if (v.endedAt !== null) continue;
     const host = v.hostname ? fqdn(s, v.hostname) : undefined, who = customers.get(v.customerId)?.name;
     add({
-      group: "Services", id: v.id, title: v.hostname ?? v.domain ?? v.label, sub: [v.label, v.domain, who].filter((x) => x && x !== (v.hostname ?? v.domain ?? v.label)).join(" · "),
+      group: "Services", id: v.id, title: v.hostname ?? v.domain ?? v.label, sub: [...new Set([v.label, v.domain, who])].filter((x) => x && x !== (v.hostname ?? v.domain ?? v.label)).join(" · "),
       keys: [v.hostname, host, v.label, v.domain].filter((x): x is string => !!x), recent: v.startedAt, app: "Customers", target: { kind: "customer", id: v.customerId },
     });
   }
