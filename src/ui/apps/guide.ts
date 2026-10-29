@@ -1,9 +1,9 @@
 import { modelById } from "../../sim/10-catalog/hardware";
-import { registrarById } from "../../sim/10-catalog/registrars";
+import { registrarById, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
 import type { GameState } from "../../sim/50-state";
-import { adminUrl } from "../../sim/80-business/browser";
+import { adminUrl, registrarUrl } from "../../sim/80-business/browser";
 import type { TUTORIAL } from "../../sim/checklist";
 
 export type StepId = (typeof TUTORIAL)[number];
@@ -28,11 +28,11 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "setup":
       return { title: t("guide.step.setup"), text: "Install a hypervisor or a web panel from the server's Add Software tile.", app: "Locations", focus: server && { kind: "device", id: server.id } };
     case "domain": {
-      const partner = s.registrar && registrarById(s.registrar.id)?.name;
+      const partner = (s.registrar && registrarById(s.registrar.id)?.name) ?? REGISTRARS[0].name;
       return {
         title: t("guide.step.domain"),
-        text: partner ? `Buy your company domain with ${partner} in Marketing under Domain.` : "Choose a registrar and buy your company domain in Marketing under Domain.",
-        app: "Marketing", focus: { kind: "page", id: "domain" },
+        text: `Search for your company domain on the ${partner} site in the Browser and buy it.`,
+        app: "Browser", focus: { kind: "url", id: registrarUrl(s) },
       };
     }
     case "website":

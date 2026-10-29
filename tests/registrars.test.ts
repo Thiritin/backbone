@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { hourOf, isMonthStart } from "../src/sim/00-core/time";
 import { registrarById, tierFor } from "../src/sim/10-catalog/registrars";
 import { companyDomain, derivedDomain } from "../src/sim/30-customers/domains";
-import { monthlyDomains, wholesale } from "../src/sim/30-customers/registrar";
+import { monthlyDomains, spinNames, wholesale, yearlyAt } from "../src/sim/30-customers/registrar";
+import { registrarUrl, resolve } from "../src/sim/80-business/browser";
 import { domainOf, extend, register, registryCost } from "../src/sim/30-customers/registry";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { newGame, type GameState } from "../src/sim/50-state";
@@ -241,10 +242,11 @@ describe("tutorial", () => {
     expect(orderCompanyDomain(s, "nameCheep", "other.de").ok).toBe(false);
   });
 
-  it("keeps the signed registrar when buying the domain", () => {
+  it("buys the domain only on the site of the signed registrar", () => {
     const s = newGame(1);
     signRegistrar(s, "goDuddy");
-    expect(orderCompanyDomain(s, "nameCheep", "basement-hosting.de").ok).toBe(true);
+    expect(err(orderCompanyDomain(s, "nameCheep", "basement-hosting.de"))).toBe("error.registrarOther");
+    expect(orderCompanyDomain(s, "goDuddy", "basement-hosting.de").ok).toBe(true);
     expect(s.registrar?.id).toBe("goDuddy");
   });
 
@@ -305,5 +307,33 @@ describe("old saves", () => {
     expect(loaded.registrar).toBeNull();
     expect(loaded.company.domain).toBeNull();
     expect(loaded.domains).toEqual([]);
+  });
+});
+
+describe("registrar sites", () => {
+  it("spins the typed name across TLDs and variations", () => {
+    const names = spinNames(" Basement Hosting.de ");
+    expect(names[0]).toBe("basement-hosting.de");
+    expect(names).toContain("basement-hosting.com");
+    expect(names).toContain("getbasement.de");
+    expect(names).toContain("basementweb.de");
+    expect(new Set(names).size).toBe(names.length);
+    expect(spinNames("acme")[0]).toBe("acme.com");
+    expect(spinNames("  !! ")).toEqual([]);
+  });
+
+  it("prices a search at the registrar's own factor", () => {
+    const s = readyGame(1);
+    expect(yearlyAt(s, registrarById("goDuddy")!, 0, "a.de")).toBe(15.6);
+    expect(yearlyAt(s, registrarById("nameCheep")!, 0, "a.de")).toBe(wholesale(s, "a.de"));
+  });
+
+  it("serves each registrar's site and bookmarks the one under contract", () => {
+    const s = newGame(1);
+    expect(registrarUrl(s)).toBe("www.namecheep.example/");
+    expect(resolve(s, "goduddy.example").page).toEqual({ kind: "registrar", id: "goDuddy" });
+    signRegistrar(s, "openSrsly");
+    expect(registrarUrl(s)).toBe("www.opensrsly.example/");
+    expect(resolve(s, registrarUrl(s)).page).toEqual({ kind: "registrar", id: "openSrsly" });
   });
 });

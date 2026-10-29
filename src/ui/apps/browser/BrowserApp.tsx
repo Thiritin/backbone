@@ -6,6 +6,7 @@ import { familyOf } from "../../../sim/60-infra/vulns";
 import { consoleTitle } from "../../../sim/80-business/consoles";
 import type { GameState } from "../../../sim/50-state";
 import { MANUFACTURERS } from "../../../sim/10-catalog/hardware";
+import { registrarById } from "../../../sim/10-catalog/registrars";
 import { reduced } from "../../desktop/motion";
 import { useSessionState } from "../../session";
 import { useFocus, useStore } from "../../store";
@@ -16,6 +17,7 @@ import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
 import { AdminPage } from "./sites/AdminPage";
 import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
+import { RegistrarSite } from "./sites/RegistrarSite";
 import { CannotReach, CustomerSite, HostPage, NotFound, VendorSite, VideoPage } from "./sites/Pages";
 import "./browser.css";
 
@@ -33,6 +35,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "admin": return "Admin";
     case "customer": return customerSite(game, p.serviceId)?.title ?? r.host;
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
+    case "registrar": return registrarById(p.id)?.name ?? r.host;
     case "host": return r.host;
     case "console": {
       const c = game.clusters.find((x) => x.id === p.clusterId), family = c && familyOf(c);
@@ -69,6 +72,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "admin") body = <AdminPage onSite={() => go(companyUrl(game))} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
   else if (p.kind === "vendor") body = <VendorSite maker={p.maker} go={go} />;
+  else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} />;
   else if (p.kind === "video") body = <VideoPage />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "console") body = <ConsolePage game={game} hostname={p.hostname} host={r.host} cluster={game.clusters.find((x) => x.id === p.clusterId)} defaced={p.defaced} />;
@@ -76,7 +80,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "kvm") body = <KvmPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}

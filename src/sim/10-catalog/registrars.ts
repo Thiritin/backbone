@@ -29,6 +29,8 @@ export const REGISTRARS: Registrar[] = [
 ];
 
 export const registrarById = (id: string): Registrar | undefined => REGISTRARS.find((r) => r.id === id);
+// The registrar's web site in the in-game browser.
+export const registrarHost = (r: Registrar): string => `${r.name.split(" ")[0].toLowerCase()}.example`;
 
 // The tier a number of domains under management falls into.
 export const tierFor = (domains: number): number => TIERS.reduce<number>((t, at, i) => (domains >= at ? i : t), 0);

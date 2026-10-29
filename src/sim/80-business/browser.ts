@@ -1,5 +1,6 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
 import { MANUFACTURERS } from "../10-catalog/hardware";
+import { registrarById, registrarHost, REGISTRARS, type RegistrarId } from "../10-catalog/registrars";
 import { companyDomain } from "../30-customers/domains";
 import { serviceOnline } from "../40-support/status";
 import type { GameState } from "../50-state";
@@ -20,6 +21,7 @@ export type Page =
   | { kind: "admin" }
   | { kind: "customer"; serviceId: string }
   | { kind: "vendor"; maker: string }
+  | { kind: "registrar"; id: RegistrarId }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean }
   | { kind: "ipmi"; deviceId: string }
@@ -44,11 +46,18 @@ export const BOARD_URL = `${BOARD_HOST}/`;
 export const adminUrl = (s: GameState): string => `www.${companyDomain(s)}/admin`;
 export const companyUrl = (s: GameState): string => `www.${companyDomain(s)}/`;
 
-// Bookmarks every game has, and a console for each management software the company runs.
+// The registrar under contract, or the first one before any contract.
+export function registrarUrl(s: GameState): string {
+  const r = (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
+  return `www.${registrarHost(r)}/`;
+}
+
+// Bookmarks every game has, the registrar, and a console for each management software the company runs.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
   { title: s.company.name, url: companyUrl(s) },
   { title: "Admin", url: adminUrl(s) },
   { title: BOARD_TITLE, url: BOARD_URL },
+  { title: ((s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0]).name, url: registrarUrl(s) },
   ...consoleBookmarks(s),
 ];
 
@@ -113,6 +122,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   const vendor = VENDORS.find((m) => host === vendorHost(m.id) || host === `www.${vendorHost(m.id)}`);
   if (vendor) return out({ kind: "vendor", maker: vendor.id });
   if (host === BOARD_HOST || host === `www.${BOARD_HOST}`) return out({ kind: "sponsorboard" });
+  const registrar = REGISTRARS.find((r) => host === registrarHost(r) || host === `www.${registrarHost(r)}`);
+  if (registrar) return out({ kind: "registrar", id: registrar.id });
   if (host === "youtub.example" || host === "www.youtub.example") {
     return /[?&]v=uptime(&|$)/.test(path) ? out({ kind: "video" }) : out({ kind: "notfound" });
   }

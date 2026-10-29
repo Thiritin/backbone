@@ -88,12 +88,12 @@ describe("checklist", () => {
   it("names the place of every tutorial step and the partner once a contract exists", () => {
     const s = newGame(1);
     for (const id of TUTORIAL) expect(stepOf(s, id).text).toMatch(/\.$/);
-    expect(stepOf(s, "domain").text).toBe("Choose a registrar and buy your company domain in Marketing under Domain.");
-    expect(stepOf(s, "domain")).toMatchObject({ app: "Marketing", focus: { kind: "page", id: "domain" } });
+    expect(stepOf(s, "domain").text).toBe("Search for your company domain on the NameCheep site in the Browser and buy it.");
+    expect(stepOf(s, "domain")).toMatchObject({ app: "Browser", focus: { kind: "url", id: "www.namecheep.example/" } });
     expect(stepOf(s, "internet")).toMatchObject({ app: "Locations", focus: { kind: "line" } });
     expect(stepOf(s, "email")).toMatchObject({ app: "Support", focus: { kind: "mailSetup", id: "" } });
     ok(signRegistrar(s, "goDuddy"));
-    expect(stepOf(s, "domain").text).toBe("Buy your company domain with GoDuddy Reseller in Marketing under Domain.");
+    expect(stepOf(s, "domain").text).toBe("Search for your company domain on the GoDuddy Reseller site in the Browser and buy it.");
   });
 
   it("points the server steps at the basement and the first server", () => {

@@ -1,4 +1,4 @@
-import { Globe, Handshake, House, Landmark, Server, ShieldAlert } from "lucide-react";
+import { Handshake, House, Landmark, Server, ShieldAlert } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -18,10 +18,9 @@ import {
   requestPeering, setBlackhole, setProtection,
 } from "../../../sim/90-actions/network";
 import { cityNamed, WorldMap, type Marker } from "../../map/WorldMap";
-import { useFocus, useStore } from "../../store";
+import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
 import { AddressList, Ripe } from "./Addresses";
-import { Domains } from "./Domains";
 import { Topology } from "./Topology";
 import "../shop/shop.css";
 import "../billing/billing.css";
@@ -33,12 +32,11 @@ const pct = (v: number) => `${Math.round(v * 100)}%`;
 const partnerName = (u: Uplink) => carrierById(u.partner)?.name ?? exchangeById(u.partner)?.name ?? u.partner;
 export const loadClass = (load: number) => (load >= 0.9 ? "bad" : load >= 0.6 ? "warn" : "ok");
 
-type Page = { kind: "zone"; id: string } | { kind: "peering" } | { kind: "ddos" } | { kind: "ripe" } | { kind: "domains" };
+type Page = { kind: "zone"; id: string } | { kind: "peering" } | { kind: "ddos" } | { kind: "ripe" };
 
 export function NetworkApp() {
   const game = useStore((s) => s.game);
   const [page, setPage] = useState<Page>({ kind: "zone", id: game.locations[0].id });
-  useFocus("Network", (f) => { if (f.kind === "page" && f.id === "domains") setPage({ kind: "domains" }); });
   const routing = useMemo(() => route(game), [game]);
   const now = Object.values(routing.zones).reduce((n, z) => n + z.carried, 0);
   const dropped = Object.values(routing.zones).reduce((n, z) => n + z.dropped, 0);
@@ -59,7 +57,6 @@ export function NetworkApp() {
         {item("peering", page.kind === "peering", <Handshake />, "Peering", game.network.requests.length, () => setPage({ kind: "peering" }))}
         {item("ddos", page.kind === "ddos", <ShieldAlert />, "DDoS", game.network.attacks.length, () => setPage({ kind: "ddos" }))}
         {item("ripe", page.kind === "ripe", <Landmark />, "RIPE", null, () => setPage({ kind: "ripe" }))}
-        {item("domains", page.kind === "domains", <Globe />, "Domains", null, () => setPage({ kind: "domains" }))}
       </nav>
       <div className="fin-main">
         <dl className="fin-totals">
@@ -74,7 +71,6 @@ export function NetworkApp() {
           {page.kind === "peering" && <Peering game={game} />}
           {page.kind === "ddos" && <Ddos game={game} />}
           {page.kind === "ripe" && <Ripe game={game} />}
-          {page.kind === "domains" && <Domains game={game} />}
         </div>
       </div>
     </div>

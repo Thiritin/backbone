@@ -11,6 +11,7 @@ export const DOMAINS_EN: Record<string, (p: Params) => string> = {
   "error.registrarCurrent": () => "You already have a contract with this partner.",
   "error.transferBusy": () => "The domains are still moving to the current partner.",
   "error.needsRegistrar": () => "Sign a registrar contract first.",
+  "error.registrarOther": () => "Your domains are registered with another partner.",
   "error.domainInvalid": () => "Use 3 to 40 letters, digits or hyphens in front of a TLD the registries sell.",
   "error.companyDomainOwned": () => "The company already has a domain.",
   "error.noTransfer": () => "No domains are waiting to move.",

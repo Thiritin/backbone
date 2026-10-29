@@ -2,6 +2,11 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here.
 
+## 2026-10-30
+
+- Domains are now bought on registrar websites in the Browser, where a search suggests names across every ending with the price of each.
+- Your reseller contract, tier and domain list moved from the Network app to your registrar's website, and Network has a new icon.
+
 ## 2026-10-29
 
 - cPanic, Pleskit, DirectAdmen, HyperVee and VMwhere can install their updates automatically at night once their vendor offers it, turned on per cluster in its console or the Software menu.

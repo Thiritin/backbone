@@ -55,3 +55,28 @@
 .sb-acts { display: flex; gap: 6px; flex: none; }
 .sb-num { font-variant-numeric: tabular-nums; }
 .sb-none { color: #7a6650; }
+/* Registrar sites: one hue per brand. */
+.rg { min-height: 100%; background: #ffffff; color: #1b1d21; font: 15px/1.5 Inter, system-ui, sans-serif; --rg: oklch(0.55 0.15 var(--hue)); }
+.rg-head { padding: 16px 40px; background: var(--rg); color: #ffffff; font-size: 20px; letter-spacing: -0.01em; }
+.rg-hero { padding: 48px 40px 32px; background: oklch(0.97 0.02 var(--hue)); }
+.rg-hero h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px; }
+.rg-search { display: flex; gap: 8px; max-width: 560px; }
+.rg-search input { flex: 1; min-width: 0; padding: 10px 14px; border: 1px solid #c9ccd1; border-radius: 6px; font: inherit; background: #ffffff; color: inherit; }
+.rg-search button, .rg-btn { padding: 9px 18px; border: 0; border-radius: 6px; background: var(--rg); color: #ffffff; font: inherit; font-weight: 600; cursor: pointer; }
+.rg-btn { padding: 5px 14px; }
+.rg-btn.ghost { background: transparent; color: var(--rg); border: 1px solid var(--rg); }
+.rg-btn:disabled { opacity: 0.45; cursor: default; }
+.rg-sec { padding: 24px 40px; max-width: 760px; }
+.rg-sec h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+.rg-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.rg-table th { text-align: left; font-size: 12px; font-weight: 600; color: #6b7079; padding: 6px 8px; border-bottom: 1px solid #e3e5e8; }
+.rg-table td { padding: 8px; border-bottom: 1px solid #eef0f2; }
+.rg-table .r { text-align: right; }
+.rg-taken { color: #8a8f97; }
+.rg-note { margin-top: 12px; color: #4a4f57; font-size: 13px; }
+.rg-specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 20px; margin-bottom: 16px; }
+.rg-specs dt { font-size: 12px; color: #6b7079; }
+.rg-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; background: oklch(0.94 0.05 var(--hue)); color: oklch(0.4 0.12 var(--hue)); font-size: 13px; font-weight: 600; }
+.rg-transfer { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; background: #f5f6f7; }
+.rg-transfer > span:first-child { flex: 1; }
+@media (max-width: 560px) { .rg-head, .rg-hero, .rg-sec { padding-left: 16px; padding-right: 16px; } }

@@ -5,6 +5,7 @@ import type { GameState } from "../../sim/50-state";
 import { isOwnVm } from "../../sim/60-infra/cluster";
 import { privateIp, publicV4 } from "../../sim/60-infra/addresses";
 import { adminUrl, companyUrl, resolve } from "../../sim/80-business/browser";
+import { registrarHost, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { APPS, appFor } from "../apps/registry";
 import { vmLabel } from "../apps/products/parts";
 import { rank, type Rankable } from "./rank";
@@ -71,6 +72,7 @@ function collect(s: GameState): Hit[] {
   };
   site(companyUrl(s).replace(/\/$/, ""), companyUrl(s), s.company.name);
   site("Admin", adminUrl(s));
+  for (const r of REGISTRARS) site(r.name, `www.${registrarHost(r)}/`, "Domains");
   for (const v of s.services) if (v.domain && v.endedAt === null) site(v.domain, v.domain, customers.get(v.customerId)?.name);
   for (const d of s.devices) if (d.hostname) site(fqdn(s, d.hostname), fqdn(s, d.hostname), d.label ?? d.name);
   for (const w of s.workloads) if (isOwnVm(w) && w.hostname) site(fqdn(s, w.hostname), fqdn(s, w.hostname), vmLabel(s, w).name);

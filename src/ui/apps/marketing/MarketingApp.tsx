@@ -3,11 +3,10 @@ import { useState, type ReactNode } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import type { Profile } from "../../../sim/30-customers/customers";
-import { REGISTRARS, registrarById } from "../../../sim/10-catalog/registrars";
-import { derivedDomain } from "../../../sim/30-customers/domains";
+import { registrarById } from "../../../sim/10-catalog/registrars";
+import { registrarUrl } from "../../../sim/80-business/browser";
 import { wholesale } from "../../../sim/30-customers/registrar";
 import { registryOf } from "../../../sim/30-customers/registry";
-import { orderCompanyDomain } from "../../../sim/90-actions/registrar";
 import { isAvailable } from "../../../sim/10-catalog/research";
 import {
   BUDGETS, CAMPAIGNS, costPerLead, DISCOUNTS, leadsThisMonth, monthlyMarketingCost, OWNED, owns, PLATFORMS, PROFILE_IDS, reach, reviewScore,
@@ -79,11 +78,11 @@ export function MarketingApp() {
         ))}
       </nav>
       <div className="fin-main">
-        <dl className="fin-totals">
+        {full && <dl className="fin-totals">
           <div><dt>Marketing per month</dt><dd className="num">{euro(monthlyMarketingCost(game))}</dd></div>
           <div><dt>Leads this month</dt><dd className="num">{leads(total)}</dd></div>
           <div><dt>Review score</dt><dd className="num">{reviewScore(game).toFixed(1)}</dd></div>
-        </dl>
+        </dl>}
         <div className="fin-scroll">
           {section === "domain" && <div className="mkt-list"><CompanyDomain /></div>}
           {section === "channels" && <Channels />}
@@ -98,38 +97,23 @@ export function MarketingApp() {
   );
 }
 
-// The company domain: bought here, with a registrar contract signed on the way when there is none yet.
+// The company domain, bought on a registrar site in the Browser.
 function CompanyDomain() {
   const game = useStore((s) => s.game);
-  const act = useStore((s) => s.act);
-  const year = yearOf(game.hour), open = REGISTRARS.filter((r) => year >= r.from);
-  const [registrar, setRegistrar] = useState<string>(open[0]?.id ?? "");
-  const [name, setName] = useState("");
+  const openApp = useStore((s) => s.openApp);
   const domain = game.company.domain, partner = game.registrar && registrarById(game.registrar.id);
-  if (domain) return (
-    <dl className="fin-facts">
-      <div><dt>Domain</dt><dd className="num">{domain}</dd></div>
-      <div><dt>Registry</dt><dd>{registryOf(domain).name}</dd></div>
-      <div><dt>Registrar</dt><dd>{partner?.name}</dd></div>
-      <div><dt>Per year</dt><dd className="num">{euroCents(wholesale(game, domain))}</dd></div>
-    </dl>
-  );
-  const suggestion = derivedDomain(game);
+  const open = () => openApp("Browser", { kind: "url", id: registrarUrl(game) });
+  if (!domain) return <button className="btn primary" onClick={open}>Find a domain</button>;
   return (
-    <div className="shop-card">
-      <div className="shop-name"><strong>Company domain</strong><span>Your website and your email run under this name.</span></div>
-      <dl className="shop-specs">
-        <div><dt>Registrar</dt><dd>{partner ? partner.name : (
-          <select className="field" aria-label="Registrar" value={registrar} onChange={(e) => setRegistrar(e.target.value)}>
-            {open.map((r) => <option key={r.id} value={r.id}>{r.name}{r.signup ? `, ${euro(r.signup)} signup` : ""}</option>)}
-          </select>
-        )}</dd></div>
+    <>
+      <dl className="fin-facts">
+        <div><dt>Domain</dt><dd className="num">{domain}</dd></div>
+        <div><dt>Registry</dt><dd>{registryOf(domain).name}</dd></div>
+        <div><dt>Registrar</dt><dd>{partner?.name}</dd></div>
+        <div><dt>Per year</dt><dd className="num">{euroCents(wholesale(game, domain))}</dd></div>
       </dl>
-      <div className="shop-buy">
-        <input className="field grow" aria-label="Domain name" placeholder={suggestion} spellCheck={false} value={name} onChange={(e) => setName(e.target.value)} />
-        <button className="btn primary" onClick={() => act(orderCompanyDomain, registrar, name || suggestion)}>Buy</button>
-      </div>
-    </div>
+      <button className="btn" onClick={open}>Open {partner?.name}</button>
+    </>
   );
 }
 

@@ -41,9 +41,10 @@ export function registerCompanyDomain(s: GameState, input: string): ActionResult
   return { ok: true, id: name };
 }
 
-// Marketing, Domain: signs the chosen registrar when none is under contract yet, then registers the company domain.
+// The registrar site: signs that registrar when none is under contract yet, then registers the company domain.
 export function orderCompanyDomain(s: GameState, registrarId: string, input: string): ActionResult {
   if (s.company.domain) return fail("error.companyDomainOwned");
+  if (s.registrar && s.registrar.id !== registrarId) return fail("error.registrarOther");
   const bad = companyDomainError(s, input.trim().toLowerCase());
   if (bad) return fail(bad);
   if (!s.registrar) {

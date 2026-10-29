@@ -21,6 +21,8 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Attacks and saturation", "ddos", "saturated"),
     type("Addresses", "addressListed"),
     type("Monthly bills", "networkBills"),
+  ],
+  Browser: [
     type("Domains", "registrarTier", "domainsTransferred"),
   ],
   Locations: [

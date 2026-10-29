@@ -29,7 +29,7 @@ describe("browser resolver", () => {
     expect(resolve(s, d).page).toEqual({ kind: "company" });
     expect(resolve(s, `https://www.${d}/`)).toMatchObject({ page: { kind: "company" }, load: "fast" });
     expect(resolve(s, adminUrl(s)).page).toEqual({ kind: "admin" });
-    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["company", "admin", "sponsorboard", "console", "console"]);
+    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["company", "admin", "sponsorboard", "registrar", "console", "console"]);
   });
 
   it("resolves every customer domain to its site", () => {

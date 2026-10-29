@@ -1,5 +1,5 @@
 import {
-  Activity, AppWindow, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, LifeBuoy, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, AppWindow, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { BillingApp } from "./billing/BillingApp";
@@ -43,7 +43,7 @@ export const APPS: AppDef[] = [
   { name: "Locations", icon: Server, tile: "oklch(0.5 0.06 250)", about: "Shows your sites on a map, the racks inside them and every device front.",
     badge: (s) => s.devices.reduce((n, d) => n + deviceHealth(s, d.id).failed.length, 0) },
   { name: "Shop", icon: ShoppingCart, tile: "oklch(0.6 0.15 40)", about: "Sells servers, switches and patch panels into your storage." },
-  { name: "Network", icon: Globe, tile: "oklch(0.58 0.12 210)", about: "Manages transit, peering and DDoS protection.", body: NetworkApp,
+  { name: "Network", icon: Network, tile: "oklch(0.58 0.12 210)", about: "Manages transit, peering and DDoS protection.", body: NetworkApp,
     badge: (s) => s.network.requests.length + s.network.attacks.length },
   { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters.", body: ProductsApp,
     badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored)).length },

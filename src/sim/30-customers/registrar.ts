@@ -1,11 +1,11 @@
 // GDD, Domain registration: the registrar partner under contract bills the registry cost of every domain under management
 // monthly, at a factor that falls with the number of domains. Numbers in economy.md, Sales and quotes (Domains).
 import { dateOf, isMonthStart } from "../00-core/time";
-import { factorFor, icannFee, registrarById, tierFor, type RegistrarId } from "../10-catalog/registrars";
+import { factorFor, icannFee, registrarById, tierFor, type Registrar as Partner, type RegistrarId } from "../10-catalog/registrars";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { derivedDomain } from "./domains";
-import { register, registryCost, tldOf, YEAR } from "./registry";
+import { register, REGISTRIES, registryCost, tldOf, YEAR } from "./registry";
 
 // transfer is the move of every domain to a new partner, a hand task: doneAt is null until someone starts it.
 export interface Transfer { from: RegistrarId; domains: number; doneAt: number | null }
@@ -22,12 +22,30 @@ export function beginTransfer(s: GameState, doneAt: number): void {
   if (s.registrar?.transfer) s.registrar = { ...s.registrar, transfer: { ...s.registrar.transfer, doneAt } };
 }
 
+// What a partner charges a year for a domain at a tier.
+export function yearlyAt(s: GameState, r: Partner, tier: number, name: string): number {
+  const tld = tldOf(name), d = dateOf(s.hour);
+  return cents(registryCost(name, d.getUTCFullYear()) * factorFor(r, tld, tier) + (tld === "com" ? icannFee(d.getUTCFullYear(), d.getUTCMonth()) : 0));
+}
+
 // What the partner under contract charges a year for a domain at this tier; 0 without a contract.
 export function wholesale(s: GameState, name: string): number {
   const r = s.registrar && registrarById(s.registrar.id);
-  if (!r) return 0;
-  const tld = tldOf(name), d = dateOf(s.hour);
-  return cents(registryCost(name, d.getUTCFullYear()) * factorFor(r, tld, s.registrar!.tier) + (tld === "com" ? icannFee(d.getUTCFullYear(), d.getUTCMonth()) : 0));
+  return r ? yearlyAt(s, r, s.registrar!.tier, name) : 0;
+}
+
+const PREFIXES = ["get", "my", "the"], SUFFIXES = ["hosting", "host", "web", "online", "net"];
+
+// The registrar search: the typed name under every TLD, then common variations under the TLD typed or .com.
+export function spinNames(input: string): string[] {
+  const raw = input.trim().toLowerCase().replace(/^www\./, "");
+  const tld = Object.keys(REGISTRIES).find((t) => raw.endsWith(`.${t}`));
+  const label = (tld ? raw.slice(0, -tld.length - 1) : raw).replace(/[\s_.]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/^-+|-+$/g, "");
+  if (!label) return [];
+  const main = tld ?? "com", tlds = [main, ...Object.keys(REGISTRIES).filter((t) => t !== main)];
+  const stem = SUFFIXES.reduce((x, w) => (x.endsWith(w) && x.length > w.length + 2 ? x.slice(0, -w.length).replace(/-$/, "") : x), label);
+  const variants = [...PREFIXES.map((p) => `${p}${stem}`), ...SUFFIXES.map((w) => `${stem}${w}`)].filter((v) => v !== label);
+  return [...new Set([...tlds.map((t) => `${label}.${t}`), ...variants.map((v) => `${v}.${main}`)])];
 }
 
 // One twelfth of every domain's wholesale, the monthly domain total.
@@ -52,12 +70,12 @@ export function registrarTick(s: GameState): SimEvent[] {
   if (!r) return events;
   if (r.transfer?.doneAt != null && s.hour >= r.transfer.doneAt) {
     s.registrar = { ...r, transfer: null };
-    events.push({ app: "Network", key: "event.domainsTransferred", params: { name: registrarById(r.id)!.name, count: r.transfer.domains } });
+    events.push({ app: "Browser", key: "event.domainsTransferred", params: { name: registrarById(r.id)!.name, count: r.transfer.domains } });
   }
   if (!isMonthStart(s.hour)) return events;
   const tier = tierFor(s.domains.length), was = s.registrar!.tier;
   s.registrar = { ...s.registrar!, tier };
-  if (tier > was) events.push({ app: "Network", key: "event.registrarTier", params: { name: registrarById(r.id)!.name, domains: s.domains.length } });
+  if (tier > was) events.push({ app: "Browser", key: "event.registrarTier", params: { name: registrarById(r.id)!.name, domains: s.domains.length } });
   // The company's domain renews with the contract, so only customers' domains need renewing by hand.
   s.domains = s.domains.map((d) => (d.customerId === null && d.expiresAt - s.hour < MONTH ? { ...d, expiresAt: d.expiresAt + YEAR } : d));
   const bill = registrarBill(s), total = cents(bill.reduce((n, e) => n - e.amount, 0));
