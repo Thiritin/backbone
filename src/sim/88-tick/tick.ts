@@ -27,7 +27,7 @@ import { skillById } from "../10-catalog/research";
 import { KNOW_HOW, storeItem, subscriptionPrice } from "../10-catalog/store";
 import { capacityAt, DATACENTERS, datacenterById, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry } from "../50-state";
-import { arrayLost, dcAvailability, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
+import { arrayLost, dcAvailability, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
 
 export interface SimEvent {
   app: string;
@@ -97,8 +97,7 @@ export const DRIVE_USED_SHARE = 0.7;
 export const FEED_PRICE = { feedB: 0.4, highDensity: 0.6 } as const;
 
 export const rebuildHours = (d: Device): number => {
-  const v = modelById(d.model).server!;
-  return ((v.diskGb / v.drives) * 1000 * DRIVE_USED_SHARE) / REBUILD_MBPS[d.rebuildRate] / 3600;
+  return (driveGb(d) * 1000 * DRIVE_USED_SHARE) / REBUILD_MBPS[d.rebuildRate] / 3600;
 };
 
 // Each component of a running device fails at its yearly rate for its age, × the manufacturer's factor, × 2 while a fan is out.
@@ -141,7 +140,7 @@ function service(s: GameState) {
       const rebuild = isDrive && d.raid !== "none" && !arrayLost(d) ? { componentId: id, doneAt: s.hour + rebuildHours(d) } : d.rebuild;
       next = {
         ...d, maintenance: null, rebuild,
-        components: d.components.map((c) => (c.id === old.id ? { id, kind: c.kind, installedAt: s.hour, failedAt: null } : c)),
+        components: d.components.map((c) => (c.id === old.id ? { id, kind: c.kind, installedAt: s.hour, failedAt: null, size: c.size, ff: c.ff } : c)),
       };
     }
     if (next.rebuild && next.rebuild.doneAt <= s.hour) next = { ...next, rebuild: null };

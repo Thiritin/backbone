@@ -163,10 +163,15 @@ export const EXTRA_CIRCUIT_KW = 3;
 
 export const isDrive = (c: Component): boolean => c.kind === "hdd" || c.kind === "ssd" || c.kind === "nvme";
 export const drivesOf = (d: Device): Component[] => d.components.filter(isDrive);
-const driveGb = (d: Device) => {
-  const v = modelById(d.model).server;
-  return v ? v.diskGb / v.drives : 0;
+// Every installed drive is an array member, failed or not, and the smallest sets the size each member contributes.
+export const driveGb = (d: Device): number => {
+  const sizes = drivesOf(d).map((c) => c.size ?? 0);
+  return sizes.length ? Math.min(...sizes) : 0;
 };
+const partSum = (d: Device, kind: Component["kind"]): number => d.components.reduce((n, c) => n + (c.kind === kind && c.failedAt === null ? c.size ?? 0 : 0), 0);
+// Cores and RAM of the working CPUs and sticks; a failed part stops counting.
+export const installedCores = (d: Device): number => partSum(d, "cpu");
+export const installedRamGb = (d: Device): number => partSum(d, "ram");
 
 // Usable GB of the array: all drives, half for mirrors, all but one or two for parity.
 export function raidUsable(d: Device): number {

@@ -1,6 +1,6 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
-import { componentKinds, modelById, type ComponentKind } from "./10-catalog/hardware";
+import { componentParts, modelById, type ComponentKind, type FormFactor } from "./10-catalog/hardware";
 import { STARTER_APPS } from "./10-catalog/store";
 import { seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
@@ -55,7 +55,8 @@ export interface WaitlistEntry { id: string; dc: string; space: "share" | "posit
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
 // failedAt is the hour the component broke; null while it works. A power supply is plugged in unless plugged is false.
-export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; plugged?: boolean }
+// size is GB for RAM sticks and drives, cores for CPUs; ff is the form factor of a drive.
+export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; plugged?: boolean; size?: number; ff?: FormFactor }
 export type RaidLevel = "none" | "1" | "5" | "6" | "10";
 export type RebuildRate = "low" | "medium" | "high";
 // A desktop document; x and y are its icon position on the desktop in pixels.
@@ -152,13 +153,22 @@ export interface GameState {
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
 export function deviceDefaults(modelId: string, at: number) {
-  const kinds = componentKinds(modelById(modelId));
-  const drives = kinds.filter((k) => k === "hdd" || k === "ssd" || k === "nvme").length;
+  const parts = componentParts(modelById(modelId));
+  const drives = parts.filter((p) => p.kind === "hdd" || p.kind === "ssd" || p.kind === "nvme").length;
   return {
-    components: kinds.map((kind, i): Component => ({ id: `c${i + 1}`, kind, installedAt: at, failedAt: null })),
+    components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
     rebuild: null, maintenance: null, dataLost: null,
   };
+}
+
+// Sizes for components saved before parts had them: the nth component of a kind takes the nth part of that kind in the model's preset.
+export function fillSizes(modelId: string, components: Component[]): Component[] {
+  const preset = componentParts(modelById(modelId)), seen: Partial<Record<ComponentKind, number>> = {};
+  return components.map((c) => {
+    const p = preset.filter((x) => x.kind === c.kind)[seen[c.kind] = (seen[c.kind] ?? -1) + 1];
+    return c.size === undefined && p?.size !== undefined ? { ...c, size: p.size, ...(p.ff ? { ff: p.ff } : {}) } : c;
+  });
 }
 
 export const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>

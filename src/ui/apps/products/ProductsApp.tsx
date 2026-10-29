@@ -9,7 +9,7 @@ import { homeLineById } from "../../../sim/20-world/datacenters";
 import type { Product } from "../../../sim/30-customers/customers";
 import type { GameState } from "../../../sim/50-state";
 import { bookable, controlPlaneUp, hasHosts, lineOffered, supports, controlPlaneUse, fitsControlPlane, nodeUsed, serverTaken, workloadsOn, type BackupEvery, type Cluster, type Ha } from "../../../sim/60-infra/cluster";
-import { locationOf, raidUsable } from "../../../sim/60-infra/status";
+import { installedCores, installedRamGb, locationOf, raidUsable } from "../../../sim/60-infra/status";
 import { nodeUsage, peakUsage } from "../../../sim/60-infra/usage";
 import { backupPool, licenseCost } from "../../../sim/85-products/products";
 import { addNode, moveControlPlane, setBackup, setHa, setPlacement } from "../../../sim/90-actions/clusters";
@@ -167,7 +167,7 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
     const u = nodeUsed(game, d.id), mine = cluster.controlPlane === d.id;
     return { vcpu: u.vcpu + (mine ? cp.vcpu : 0), ramGb: u.ramGb + (mine ? cp.ramGb : 0), diskGb: u.diskGb + (mine ? cp.diskGb : 0) };
   });
-  const physical = devices.map((d) => ({ vcpu: modelById(d.model).server?.cores ?? 0, ramGb: modelById(d.model).server?.ramGb ?? 0, diskGb: raidUsable(d) }));
+  const physical = devices.map((d) => ({ vcpu: installedCores(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) }));
   const rows = (["vcpu", "ramGb", "diskGb"] as const).map((k) => {
     const b = sum(booked, (x) => x[k]), p = sum(physical, (x) => x[k]);
     const fmt = k === "vcpu" ? (v: number) => `${num(v)}` : k === "ramGb" ? (v: number) => ram(+v.toFixed(1)) : (v: number) => disk(Math.round(v));

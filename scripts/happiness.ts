@@ -10,7 +10,7 @@ import { serviceOnline } from "../src/sim/40-support/status";
 import { isSuspended } from "../src/sim/45-billing/billing";
 import { lostDisk, workloadsOf, type Workload } from "../src/sim/60-infra/cluster";
 import { takenDown } from "../src/sim/60-infra/ops";
-import { linkStatus } from "../src/sim/60-infra/status";
+import { installedRamGb, linkStatus } from "../src/sim/60-infra/status";
 import { activeServices } from "../src/sim/30-customers/customers";
 import { missingFor } from "../src/sim/30-market/market";
 import { nextStep, stepError } from "../src/sim/30-market/manual";
@@ -19,7 +19,6 @@ import { bumpProbe, isFinal, monthlyValue, profileStats, rightTemplate, TEMPLATE
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { BASEMENT_SLOTS } from "../src/sim/10-catalog/economy";
-import { modelById } from "../src/sim/10-catalog/hardware";
 import { bookable, controlPlaneUse, nodeUsed } from "../src/sim/60-infra/cluster";
 import { sizeOf } from "../src/sim/30-market/spec";
 import type { SalesRequest } from "../src/sim/30-market/market";
@@ -102,7 +101,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     growWeb();
     const c = s.clusters[0];
     const ram = (f: (id: string) => number) => c.nodes.reduce((n, x) => n + f(x.deviceId), 0);
-    const booked = ram((id) => nodeUsed(s, id).ramGb) + controlPlaneUse(c).ramGb, installed = ram((id) => modelById(s.devices.find((d) => d.id === id)!.model).server!.ramGb);
+    const booked = ram((id) => nodeUsed(s, id).ramGb) + controlPlaneUse(c).ramGb, installed = ram((id) => installedRamGb(s.devices.find((d) => d.id === id)!));
     needServer = booked >= 0.8 * installed && c.nodes.length < BASEMENT_SLOTS;
     if (!needServer) return;
     // Short of cash: the smallest preset loan that covers the server and a reserve, over five years.

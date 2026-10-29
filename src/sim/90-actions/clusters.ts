@@ -12,7 +12,7 @@ import {
   anchorOf, bookable, clusterOf, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeUsed, pickNode, serverTaken,
   setNodeState, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
-import { freeSlots, locationOf, rackPower, working } from "../60-infra/status";
+import { freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
 import { assignService } from "../60-infra/addresses";
 import type { ActionResult } from "./hardware";
@@ -306,7 +306,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;
     if (!w) return fail(target && supports(target, v.product) && !controlPlaneUp(s, target) ? "error.controlPlaneDown" : noRoomError(s, v.product, clusterId));
   } else if (spec.runsOn === "server") {
-    const d = s.devices.find((x) => x.rackId && (modelById(x.model).server?.ramGb ?? 0) >= size.ramGb && inZone(locationOf(s, x)?.az ?? "") && !serverTaken(s, x.id));
+    const d = s.devices.find((x) => x.rackId && installedRamGb(x) >= size.ramGb && inZone(locationOf(s, x)?.az ?? "") && !serverTaken(s, x.id));
     if (!d) return fail("error.noFreeServer");
     w = workload(s, v.id, { deviceId: d.id });
     az = locationOf(s, d)!.az;

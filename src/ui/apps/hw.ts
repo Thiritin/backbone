@@ -10,6 +10,13 @@ export const speed = (g: number) => (g >= 1 ? `${g}G` : `${g * 1000}M`);
 export const ram = (gb: number) => (gb >= 1024 ? `${+(gb / 1024).toFixed(1)} TB` : `${gb} GB`);
 export const disk = (gb: number) => (gb >= 1000 ? `${+(gb / 1000).toFixed(1)} TB` : `${gb} GB`);
 export const cores = (n: number) => `${n} ${n === 1 ? "core" : "cores"}`;
+const FF_LABEL = { "3.5": '3.5"', "2.5": '2.5"', nvme: "NVMe" } as const;
+// Size of a sized part ("16 GB", "4 TB, 3.5\"", "32 cores"), or a dash for parts without one.
+export const partSize = (c: Component): string =>
+  c.size === undefined ? "-" : c.kind === "ram" ? ram(c.size) : c.kind === "cpu" ? cores(c.size) : `${disk(c.size)}${c.ff ? `, ${FF_LABEL[c.ff]}` : ""}`;
+const SLOT_NAME: Partial<Record<ComponentKind, string>> = { hdd: "Bay", ssd: "Bay", nvme: "Bay", ram: "DIMM", cpu: "Socket", psu: "PSU bay", fan: "Fan" };
+// Slot a part sits in: the nth of its kind, or its fixed place on the board.
+export const partSlot = (kind: ComponentKind, nth: number): string => (SLOT_NAME[kind] ? `${SLOT_NAME[kind]} ${nth}` : "Onboard");
 export const height = (m: DeviceModel) => `${m.height}U`;
 export const watts = (w: number) => `${Math.round(w).toLocaleString("en-GB")} W`;
 export const day = (hour: number) => dateOf(hour).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });

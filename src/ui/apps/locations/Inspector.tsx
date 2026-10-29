@@ -2,7 +2,7 @@ import { Cable, Cpu, Database, EthernetPort, FileSignature, Plug, PlugZap, Plus,
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { COMPONENTS, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { bayCount, COMPONENTS, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Cable as CableT, Device, End, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, drivesOf, hotSwappable, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
@@ -14,7 +14,7 @@ import { BrandLogo, Logo } from "../../art/logos";
 import { Confirm } from "../../desktop/Confirm";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
-import { ageYears, CABLE_NAME, cores, deviceLamps, devName, disk, height, isWorn, PART_NAME, portLamps, portName, portsText, ram, speed } from "../hw";
+import { ageYears, CABLE_NAME, cores, deviceLamps, devName, disk, height, isWorn, PART_NAME, partSize, partSlot, portLamps, portName, portsText, ram, speed } from "../hw";
 import { More } from "../More";
 import { softwareName } from "../products/parts";
 import { dcOf, Facts, UsageBars } from "./ui";
@@ -154,7 +154,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       <div className="loc-card">
         <div className="loc-card-h"><h3>Specifications</h3></div>
         <Facts rows={[
-          ...(model.server ? [["CPU", `${model.server.sockets} × ${cores(model.server.cores / model.server.sockets)}`], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${model.server.bays} bays`]] as [string, string][] : []),
+          ...(model.server ? [["CPU", `${model.server.sockets} × ${cores(model.server.cores / model.server.sockets)}`], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${bayCount(model.server)} bays`]] as [string, string][] : []),
           ["Network", portsText(model)],
           ["Power", model.idleWatts === model.watts ? `${model.watts} W` : `${model.idleWatts}–${model.watts} W`],
           ...(model.height ? [["Height", height(model)]] as [string, string][] : []),
@@ -487,7 +487,7 @@ function PartsCard({ game, device }: { game: GameState; device: Device }) {
     <div className="loc-card">
       <div className="loc-card-h"><h3><Cpu />Components</h3>{held && <span className="loc-muted">{held}</span>}</div>
       <table className="table loc-parts">
-        <thead><tr><th>Part</th><th>Age</th><th>Status</th><th /></tr></thead>
+        <thead><tr><th>Part</th><th>Size</th><th>Slot</th><th>Age</th><th>Status</th><th /></tr></thead>
         <tbody>
           {device.components.map((c) => {
             n[c.kind] = (n[c.kind] ?? 0) + 1;
@@ -502,6 +502,8 @@ function PartsCard({ game, device }: { game: GameState; device: Device }) {
             return (
               <tr key={c.id}>
                 <td>{PART_NAME[c.kind]}{total[c.kind] > 1 && <span className="num"> {n[c.kind]}</span>}</td>
+                <td className="num">{partSize(c)}</td>
+                <td className="num">{partSlot(c.kind, n[c.kind])}</td>
                 <td>
                   <span className={`loc-meter${worn ? " worn" : ""}`}>
                     <span className="loc-meter-bar"><span style={{ width: `${Math.min(1, age / life) * 100}%` }} /></span>

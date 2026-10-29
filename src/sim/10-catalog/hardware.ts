@@ -3,13 +3,20 @@ import { GENERATIONS } from "./economy";
 
 export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "part";
 export interface PortSpec { media: "rj45" | "sfp"; gbit: number }
+// Form factor of a drive and of a bay group. A "nvme" bay is a 2.5" bay that takes SATA/SAS and NVMe drives; a "2.5" bay takes
+// SATA/SAS only; a "3.5" bay takes 3.5" drives only.
+export type FormFactor = "3.5" | "2.5" | "nvme";
+export interface BayGroup { ff: FormFactor; count: number }
 export interface ServerSpec {
   arch: "x86" | "arm";
   sockets: number;
   cores: number;
   ramGb: number;
   maxRamGb: number;
-  bays: number;
+  dimmSlots: number;
+  bays: BayGroup[];
+  pcie: number;
+  psuBays: number;
   diskGb: number;
   disk: "HDD" | "SSD" | "NVMe";
   gpus: number;
@@ -37,17 +44,33 @@ const COMPONENT_NAMES: Record<ComponentKind, string> = {
 };
 const DRIVE_KIND = { HDD: "hdd", SSD: "ssd", NVMe: "nvme" } as const;
 
-// The components a model is built from: drives, power supplies, fans, RAM, board, CPUs and a NIC for a server;
+export const bayCount = (v: ServerSpec): number => v.bays.reduce((n, b) => n + b.count, 0);
+// Whether a drive of this form factor goes into a bay group.
+export const bayTakes = (bay: FormFactor, drive: FormFactor): boolean => (drive === "3.5" ? bay === "3.5" : drive === "2.5" ? bay !== "3.5" : bay === "nvme");
+// The form factor of the drives a server ships with.
+const presetFf = (v: ServerSpec): FormFactor => (v.disk === "NVMe" ? "nvme" : v.bays[0].ff === "3.5" ? "3.5" : "2.5");
+
+// A part of a model as it ships: size in GB for RAM sticks and drives, in cores for CPUs.
+export interface PartSpec { kind: ComponentKind; size?: number; ff?: FormFactor }
+
+// The parts a model is built from: drives, power supplies, fans, RAM, board, CPUs and a NIC for a server;
 // power supplies, 2 fans and a board for a switch or firewall; nothing for patch panels, gateways and parts.
-export function componentKinds(m: DeviceModel): ComponentKind[] {
-  const n = (k: ComponentKind, count: number) => Array<ComponentKind>(count).fill(k);
+export function componentParts(m: DeviceModel): PartSpec[] {
+  const n = (k: ComponentKind, count: number, size?: (i: number) => number, ff?: FormFactor): PartSpec[] =>
+    Array.from({ length: count }, (_, i) => ({ kind: k, ...(size ? { size: size(i) } : {}), ...(ff ? { ff } : {}) }));
   if (m.server) {
     const v = m.server;
-    return [...n(DRIVE_KIND[v.disk], v.drives), ...n("psu", m.psus), ...n("fan", 4), ...n("ram", v.ramSticks), "board", ...n("cpu", v.sockets), "nic"];
+    // The first (cores mod sockets) CPUs carry the odd core.
+    const cpu = (i: number) => Math.floor(v.cores / v.sockets) + (i < v.cores % v.sockets ? 1 : 0);
+    return [
+      ...n(DRIVE_KIND[v.disk], v.drives, () => v.diskGb / v.drives, presetFf(v)), ...n("psu", m.psus), ...n("fan", 4),
+      ...n("ram", v.ramSticks, () => v.ramGb / v.ramSticks), ...n("board", 1), ...n("cpu", v.sockets, cpu), ...n("nic", 1),
+    ];
   }
-  if (m.kind === "switch" || m.kind === "firewall") return [...n("psu", m.psus), ...n("fan", 2), "board"];
+  if (m.kind === "switch" || m.kind === "firewall") return [...n("psu", m.psus), ...n("fan", 2), ...n("board", 1)];
   return [];
 }
+export const componentKinds = (m: DeviceModel): ComponentKind[] => componentParts(m).map((p) => p.kind);
 
 export interface DeviceModel {
   id: string;
@@ -103,22 +126,32 @@ export const DENSE_HDD_GB = [750, 2000, 4000, 8000, 14000, 20000, 28000];
 export const RAM_STICK_GB = [2, 4, 8, 16, 32, 32, 64];
 
 // Multipliers on the generation row. disk picks the drive: the generation's disk, or a large or dense HDD.
+// dimms: DIMM slots at G1, G3, G5 and G7; generations in between share the value of the older one. bays: the drive bays at a generation index.
+const BAYS_SMALL = (i: number): BayGroup[] => (i <= 1 ? [{ ff: "3.5", count: 4 }] : i === 2 ? [{ ff: "2.5", count: 8 }] : [{ ff: "nvme", count: 10 }]);
+const BAYS_8 = (i: number): BayGroup[] => [{ ff: i <= 2 ? "2.5" : "nvme", count: 8 }];
+const BAYS_3_5 = (count: number) => (): BayGroup[] => [{ ff: "3.5", count }];
+// The storage line ships NVMe drives from G6; those need NVMe-capable bays.
+const BAYS_STORAGE = (i: number): BayGroup[] => [{ ff: i >= 5 ? "nvme" : "3.5", count: 12 }];
 const SERVER_LINES = [
-  { id: "compute", name: "Balanced 1U", arch: "x86", height: 1, sockets: 2, cores: 1, ram: 1, bays: 4, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 1, price: 1, from: 2005 },
-  { id: "compute-2psu", name: "Balanced 1U, 2 PSU", arch: "x86", height: 1, sockets: 2, cores: 1, ram: 1, bays: 4, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 0, watts: 1.05, price: 1.1, from: 2005 },
-  { id: "dense", name: "Compute-dense 1U", arch: "x86", height: 1, sockets: 2, cores: 2, ram: 1, bays: 4, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 1.5, price: 1.6, from: 2005 },
-  { id: "memory", name: "Memory-optimized 2U", arch: "x86", height: 2, sockets: 2, cores: 1, ram: 4, bays: 4, drives: 1, disk: "gen", ports: 4, psus: 2, gpus: 0, watts: 1.6, price: 1.8, from: 2005 },
-  { id: "storage", name: "Storage 2U", arch: "x86", height: 2, sockets: 2, cores: 1, ram: 1, bays: 12, drives: 12, disk: "gen", ports: 2, psus: 2, gpus: 0, watts: 1.7, price: 2, from: 2005 },
-  { id: "backup", name: "Backup storage 4U", arch: "x86", height: 4, sockets: 1, cores: 0.5, ram: 0.5, bays: 36, drives: 36, disk: "large", ports: 2, psus: 2, gpus: 0, watts: 2, price: 2.4, from: 2005 },
-  { id: "archive", name: "Archive storage 4U", arch: "x86", height: 4, sockets: 1, cores: 0.25, ram: 0.25, bays: 60, drives: 60, disk: "dense", ports: 2, psus: 2, gpus: 0, watts: 2.2, price: 3.2, from: 2005 },
-  { id: "gpu", name: "GPU 4U", arch: "x86", height: 4, sockets: 2, cores: 1, ram: 2, bays: 4, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 4, watts: 5, price: 6, from: 2016 },
-  { id: "arm", name: "ARM 1U", arch: "arm", height: 1, sockets: 1, cores: 1.5, ram: 1, bays: 4, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.6, price: 0.9, from: 2020 },
+  { id: "compute", name: "Balanced 1U", arch: "x86", height: 1, sockets: 2, cores: 1, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 1, price: 1, from: 2005 },
+  { id: "compute-2psu", name: "Balanced 1U, 2 PSU", arch: "x86", height: 1, sockets: 2, cores: 1, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 0, watts: 1.05, price: 1.1, from: 2005 },
+  { id: "dense", name: "Compute-dense 1U", arch: "x86", height: 1, sockets: 2, cores: 2, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 1.5, price: 1.6, from: 2005 },
+  { id: "memory", name: "Memory-optimized 2U", arch: "x86", height: 2, sockets: 2, cores: 1, ram: 4, bays: BAYS_8, dimms: [16, 24, 32, 48], pcie: 4, drives: 1, disk: "gen", ports: 4, psus: 2, gpus: 0, watts: 1.6, price: 1.8, from: 2005 },
+  { id: "storage", name: "Storage 2U", arch: "x86", height: 2, sockets: 2, cores: 1, ram: 1, bays: BAYS_STORAGE, dimms: [8, 12, 16, 24], pcie: 4, drives: 12, disk: "gen", ports: 2, psus: 2, gpus: 0, watts: 1.7, price: 2, from: 2005 },
+  { id: "backup", name: "Backup storage 4U", arch: "x86", height: 4, sockets: 1, cores: 0.5, ram: 0.5, bays: BAYS_3_5(36), dimms: [8, 12, 16, 24], pcie: 4, drives: 36, disk: "large", ports: 2, psus: 2, gpus: 0, watts: 2, price: 2.4, from: 2005 },
+  { id: "archive", name: "Archive storage 4U", arch: "x86", height: 4, sockets: 1, cores: 0.25, ram: 0.25, bays: BAYS_3_5(60), dimms: [8, 8, 16, 16], pcie: 2, drives: 60, disk: "dense", ports: 2, psus: 2, gpus: 0, watts: 2.2, price: 3.2, from: 2005 },
+  { id: "gpu", name: "GPU 4U", arch: "x86", height: 4, sockets: 2, cores: 1, ram: 2, bays: BAYS_8, dimms: [16, 24, 32, 48], pcie: 8, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 4, watts: 5, price: 6, from: 2016 },
+  { id: "arm", name: "ARM 1U", arch: "arm", height: 1, sockets: 1, cores: 1.5, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.6, price: 0.9, from: 2020 },
 ] as const;
 
 // A generation stays in the shop until the one two steps newer arrives.
 const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
   SERVER_LINES.filter((v) => v.from <= g.year).map((v) => {
     const driveGb = v.disk === "large" ? LARGE_HDD_GB[i] : v.disk === "dense" ? DENSE_HDD_GB[i] : g.diskGb;
+    const ramGb = g.ramGb * v.ram, dimmSlots = v.dimms[Math.floor(i / 2)];
+    // Sticks double in size until they fit the slots (the memory line outgrows the generation's standard stick).
+    let stickGb = RAM_STICK_GB[i];
+    while (ramGb / stickGb > dimmSlots) stickGb *= 2;
     return {
       id: `g${i + 1}-${v.id}`,
       name: `${v.name} G${i + 1}`,
@@ -132,9 +165,9 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
       from: g.year,
       until: GENERATIONS[i + 2] ? GENERATIONS[i + 2].year - 1 : null,
       server: {
-        arch: v.arch, sockets: v.sockets, cores: Math.round(g.cores * v.cores), ramGb: g.ramGb * v.ram, maxRamGb: 2 * g.ramGb * v.ram,
-        bays: v.bays, diskGb: driveGb * v.drives, disk: v.disk === "gen" ? g.disk : "HDD", gpus: v.gpus,
-        drives: v.drives, ramSticks: Math.max(1, Math.round((g.ramGb * v.ram) / RAM_STICK_GB[i])),
+        arch: v.arch, sockets: v.sockets, cores: Math.round(g.cores * v.cores), ramGb, maxRamGb: 2 * ramGb,
+        dimmSlots, bays: v.bays(i), pcie: v.pcie, psuBays: 2, diskGb: driveGb * v.drives, disk: v.disk === "gen" ? g.disk : "HDD", gpus: v.gpus,
+        drives: v.drives, ramSticks: Math.max(1, Math.round(ramGb / stickGb)),
       },
     };
   }),

@@ -165,6 +165,8 @@ Racks hold servers, switches and routers, and you cable them port by port. Bandw
 
 Switches come in several sizes: 8, 24 and 48 copper ports, each with a few SFP cages for fiber.
 
+**Chassis and parts.** A server is a chassis with slots: DIMM slots, drive bays (3.5", 2.5" or NVMe-capable), PCIe slots and power supply bays, set by its line and generation (economy.md, Hardware, power and failures). Every RAM stick, drive and CPU has a size, and a server's cores, RAM and disk are the sum of its working parts, so a failed stick lowers the RAM of its node and can freeze it when workloads book more than is left. Drives of different sizes in one array count at the smallest size. A 3.5" bay takes 3.5" drives only, a 2.5" bay takes 2.5" drives, and an NVMe drive needs an NVMe-capable bay. The Components card in the inspector lists each part with its size and slot.
+
 **Brands.** Servers and switches come from parody brands whose fronts look like the real ones: Dwell (hex-mesh bezel), Hewlett-Packet (silver front with a pull tab and a perforated grille), SuperMacro (black chassis with silver drive trays) and Sysko for switches. A player can tell a rack's contents apart at a glance.
 
 **Rack front view.** Clicking a rack shows its front: every device drawn at its real height, with status lights. Clicking a device opens it in the inspector on the right.

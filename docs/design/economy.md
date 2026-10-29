@@ -804,6 +804,21 @@ Without a spare kit in stock, a repair waits for a delivery first.
 
 A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. Part prices are 2026 values with m = 1.
 
+**Chassis slots.** Each server line has a fixed number of DIMM slots, drive bays, PCIe slots and power supply bays. Sockets are 2 (1 for ARM, backup and archive). The DIMM column interpolates between the generations given: G1 and G2 share the G1 value, G3 and G4 the G3 value, G5 and G6 the G5 value.
+
+| Line | DIMM slots G1 / G3 / G5 / G7 | Bays | PCIe | PSU bays |
+| --- | --- | --- | --- | --- |
+| Balanced 1U, Compute-dense 1U, ARM 1U | 8 / 12 / 16 / 32 | 4 × 3.5" to G2, 8 × 2.5" at G3, 10 NVMe-capable from G4 | 2 | 2 |
+| Memory-optimized 2U | 16 / 24 / 32 / 48 | 8 × 2.5" to G3, 8 NVMe-capable from G4 | 4 | 2 |
+| Storage 2U | 8 / 12 / 16 / 24 | 12 × 3.5" to G5, 12 NVMe-capable from G6 | 4 | 2 |
+| Backup storage 4U | 8 / 12 / 16 / 24 | 36 × 3.5" | 4 | 2 |
+| Archive storage 4U | 8 / 8 / 16 / 16 | 60 × 3.5" | 2 | 2 |
+| GPU 4U | 16 / 24 / 32 / 48 | 8 NVMe-capable | 8 (a GPU takes 2) | 2 |
+
+Anchors: Dell PowerEdge 1950 (2006) has 8 DIMMs, 4 × 3.5" or 6 × 2.5" bays and 2 PCIe slots; the R630 (2014) has 24 DIMMs and 10 × 2.5" bays with 4 NVMe; the R660 (2023) has 32 DIMMs and 10 NVMe bays. A 2.5" bay takes SATA or SAS drives, an NVMe-capable bay also takes NVMe drives, and a 3.5" bay takes 3.5" drives only (a 3.5" SSD counts as a 3.5" drive). The storage line moves to NVMe-capable bays when its generation ships NVMe drives. The memory line outgrows the generation's standard stick, so its presets use sticks of twice the size until they fit the DIMM slots.
+
+A part has a size: GB for RAM sticks and drives, cores for CPUs. The preset splits the model's RAM, drive capacity and cores evenly over its sticks, drives and sockets, so the capacity of a bought server is the number in its spec. Capacity comes from the working parts: a failed stick or CPU stops counting. All installed drives are array members, and the smallest sets the size each contributes, so RAID usable space is the level's formula over the drive count times the smallest drive. A failed drive stays in the array until replaced.
+
 **RAID.**
 
 | Level | Drives | Usable | Survives |

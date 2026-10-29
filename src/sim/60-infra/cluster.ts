@@ -6,7 +6,7 @@ import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { linkStatus, locationOf, raidUsable, rackPower, working } from "./status";
+import { installedCores, installedRamGb, linkStatus, locationOf, raidUsable, rackPower, working } from "./status";
 import { hasPublicAddress, sellsFrom } from "./addresses";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
@@ -57,7 +57,7 @@ const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcp
 // What a node can book: physical cores, RAM and usable RAID disk times the overcommit ratios its software allows.
 export function nodeCapacity(d: Device, sw: Software | null = null): Resources {
   const v = modelById(d.model).server, r = sw?.overcommit ?? OVERCOMMIT;
-  return v ? { vcpu: v.cores * r.cpu, ramGb: v.ramGb * r.ram, diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
+  return v ? { vcpu: installedCores(d) * r.cpu, ramGb: installedRamGb(d) * r.ram, diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
 }
 const softwareOf = (c: Pick<Cluster, "panel" | "platform">): Software | null => { const id = c.panel ?? c.platform; return id ? softwareById(id) : null; };
 
@@ -81,7 +81,7 @@ export function bookable(s: GameState, d: Device, guard = false): Resources {
   const c = clusterOf(s, d.id), cap = nodeCapacity(d, c ? softwareOf(c) : null);
   if (!c) return cap;
   const k = density(c), cp = c.controlPlane === d.id ? controlPlaneUse(c) : ZERO;
-  const ram = c.ramGuard || guard ? Math.min(cap.ramGb * k, modelById(d.model).server?.ramGb ?? 0) : cap.ramGb * k;
+  const ram = c.ramGuard || guard ? Math.min(cap.ramGb * k, installedRamGb(d)) : cap.ramGb * k;
   return { vcpu: cap.vcpu * k - cp.vcpu, ramGb: ram - cp.ramGb, diskGb: cap.diskGb * k - cp.diskGb };
 }
 
