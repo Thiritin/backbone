@@ -5,9 +5,9 @@ import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
 import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, BOOT_HOURS, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, moveCost, pluggedIn, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
+import { arrayLost, connectError, drivesOf, fits, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
-import { BMC_RESET_HOURS, hardReboot, pullPlug, pushLog } from "../60-infra/power";
+import { atFront, BMC_RESET_HOURS, bootUp, hardReboot, plugCords, pullPlug, pushLog, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
 import { handJob, type HandJob, type How } from "../60-infra/handwork";
 import { endLease, rebuildHours } from "../88-tick/tick";
@@ -319,6 +319,20 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   return { ok: true, id: stored[0].id };
 }
 
+// Slides a powered-off device to another free position in its rack; its cables and power cords stay attached.
+export function moveInRack(s: GameState, deviceId: string, slot: number): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (!d.rackId) return fail("error.notMounted");
+  const spot = spotOf(s, d.rackId)!, h = modelById(d.model).height;
+  if (spot.moving) return fail("error.rackMoving");
+  if (d.on) return fail("error.powerOffFirst");
+  if (!Number.isInteger(slot) || slot < 1 || slot + h - 1 > spot.units) return fail("error.outOfBounds");
+  if (!freeSlots({ ...s, devices: s.devices.filter((x) => x.id !== d.id) }, d.rackId, h).includes(slot)) return fail("error.slotTaken");
+  d.slot = slot;
+  return { ok: true };
+}
+
 export function unmountDevice(s: GameState, deviceId: string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
@@ -406,7 +420,7 @@ export function setPower(s: GameState, deviceId: string, on: boolean): ActionRes
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId && !d.panel) return fail("error.notMounted");
-  if (on && !d.on) { d.bootUntil = s.hour + BOOT_HOURS; d.on = true; pushLog(d, s.hour, "ipmi.log.powerOn"); }
+  if (on && !d.on) bootUp(s, d);
   else if (!on && d.on) pullPlug(s, d);
   return { ok: true };
 }
@@ -426,16 +440,50 @@ export function shutdown(s: GameState, deviceId: string): ActionResult {
   return { ok: true };
 }
 
-export const powerOn = (s: GameState, deviceId: string): ActionResult => setPower(s, deviceId, true);
-
-// A reboot from the operating system: a clean shutdown, then the server boots again.
-export function restart(s: GameState, deviceId: string): ActionResult {
+// A clean shutdown and a boot: nothing is cut, so nothing corrupts.
+export function reboot(s: GameState, deviceId: string): ActionResult {
   const r = shutdown(s, deviceId);
-  return r.ok ? setPower(s, deviceId, true) : r;
+  if (r.ok) bootUp(s, s.devices.find((x) => x.id === deviceId)!);
+  return r;
+}
+
+// Why the server cannot be switched from afar: neither a switched PDU in its rack nor a management controller that answers.
+function remoteError(s: GameState, d: Device): string | null {
+  if (pduOf(s, d)) return null;
+  return !hasBmc(d.model, d.brand) ? "error.noBmc" : d.bmcHung ? "error.bmcHung" : null;
+}
+
+// Switches the server on or hard off through its management controller or the rack's switched PDU.
+export function remotePower(s: GameState, deviceId: string, on: boolean): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (!d.rackId) return fail("error.notMounted");
+  if (!on && !d.on) return fail("error.alreadyOff");
+  const error = remoteError(s, d);
+  if (error) return fail(error);
+  return setPower(s, deviceId, on);
+}
+
+// Named so replays can log them (90-actions/index.ts).
+export const powerOn = (s: GameState, deviceId: string): ActionResult => remotePower(s, deviceId, true);
+export const powerOff = (s: GameState, deviceId: string): ActionResult => remotePower(s, deviceId, false);
+
+// Pulls the plug on site through the hand work sheet: instant in the basement, after the hand work's wait in a datacenter.
+export function pullPower(s: GameState, deviceId: string, how: How | boolean = false): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (!d.on) return fail("error.alreadyOff");
+  const loc = locationOf(s, d);
+  if (pduOf(s, d) || !loc?.dc || onSite(how)) return setPower(s, deviceId, false);
+  const job = handJob(s, d.label ?? d.name, loc, how, 0);
+  if ("error" in job) return fail(job.error);
+  if (s.cash < job.cost) return fail("error.noCash");
+  d.hands = { kind: "pull", doneAt: s.hour + job.commit() };
+  return { ok: true };
 }
 
 // Reboots (reset) or cycles the power (powerCycle) through the management controller, or with a technician at the machine.
-function reboot(s: GameState, deviceId: string, key: "ipmi.log.reset" | "ipmi.log.cycle", technician: boolean): ActionResult {
+function hardRestart(s: GameState, deviceId: string, key: "ipmi.log.reset" | "ipmi.log.cycle", technician: boolean): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId && !d.panel) return fail("error.notMounted");
@@ -447,22 +495,32 @@ function reboot(s: GameState, deviceId: string, key: "ipmi.log.reset" | "ipmi.lo
   hardReboot(s, d, key);
   return { ok: true };
 }
-export const reset = (s: GameState, deviceId: string, technician = false): ActionResult => reboot(s, deviceId, "ipmi.log.reset", technician);
-export const powerCycle = (s: GameState, deviceId: string, technician = false): ActionResult => reboot(s, deviceId, "ipmi.log.cycle", technician);
+export const reset = (s: GameState, deviceId: string, technician = false): ActionResult => hardRestart(s, deviceId, "ipmi.log.reset", technician);
+export const powerCycle = (s: GameState, deviceId: string, technician = false): ActionResult => hardRestart(s, deviceId, "ipmi.log.cycle", technician);
 
-// Pulls the plug on site: instant in the basement, after the hand work's wait (remote hands billed for an hour) in a datacenter.
-export function pullPower(s: GameState, deviceId: string, how: How | boolean = false): ActionResult {
+// The remote hands of a datacenter, unless a technician is at the machine; null where the player works for free.
+function handsAt(s: GameState, d: Device, technician: boolean): { wait: number; perHour: number } | null {
+  const loc = locationOf(s, d), hands = loc?.dc && !technician ? datacenterById(loc.dc).remoteHands : null;
+  return hands ? { wait: hands.responseHours, perHour: hands.perHour } : null;
+}
+
+// Works the server's front panel or its power cords on site: at once in the basement, after the remote hands' response
+// time (billed for an hour) in a datacenter.
+export function atServer(s: GameState, deviceId: string, op: FrontOp, technician = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
-  if (!d.rackId && !d.panel) return fail("error.notMounted");
-  if (!d.on) return fail("error.alreadyOff");
+  if (!d.rackId) return fail("error.notMounted");
   if (d.hands) return fail("error.handsBusy");
-  const loc = locationOf(s, d);
-  if (pduOf(s, d) || !loc?.dc || onSite(how)) return setPower(s, deviceId, false);
-  const job = handJob(s, d.label ?? d.name, loc, how, 0);
-  if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
-  d.hands = { kind: "pull", doneAt: s.hour + job.commit() };
+  const cords = psusOf(d);
+  if ((op === "hold" || op === "reset") && !d.on) return fail("error.alreadyOff");
+  if (op === "power" && d.on && !working(s, deviceId)) return fail("error.unresponsive");
+  if (op === "pull" && !cords.some(isPlugged)) return fail("error.unplugged");
+  if (op === "plug" && cords.every(isPlugged)) return fail("error.plugged");
+  const hands = handsAt(s, d, technician);
+  if (!hands) { atFront(s, d, op); return { ok: true }; }
+  if (s.cash < hands.perHour) return fail("error.noCash");
+  book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: 1 }, -hands.perHour);
+  d.hands = { kind: op, doneAt: s.hour + hands.wait };
   return { ok: true };
 }
 
@@ -479,16 +537,14 @@ export function resetBmc(s: GameState, deviceId: string, how: How | boolean = fa
   return { ok: true };
 }
 
-// Plugs a power supply into the rack's power strip or pulls it. A switched-on device that gets its first live supply boots.
+// Plugs one power supply into the rack's power strip or pulls it.
 export function setPlugged(s: GameState, deviceId: string, componentId: string, plugged: boolean): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   const c = d.components.find((x) => x.id === componentId && x.kind === "psu");
   if (!c) return fail("error.unknownComponent");
   if (!d.rackId) return fail("error.notMounted");
-  const before = pluggedIn(d);
-  c.plugged = plugged;
-  if (d.on && !before && pluggedIn(d)) d.bootUntil = s.hour + BOOT_HOURS;
+  plugCords(s, d, plugged, [c.id]);
   return { ok: true };
 }
 

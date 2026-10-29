@@ -8,7 +8,7 @@ import { exitsOf, uplinkMbps } from "../src/sim/60-infra/network";
 import { pduOf } from "../src/sim/60-infra/pdu";
 import { deviceWatts, linkStatus } from "../src/sim/60-infra/status";
 import { announceBlock } from "../src/sim/90-actions/addresses";
-import { addLocation, buyRack, mountDevice, powerCycle, pullPower, reset, sellDevice, setPower } from "../src/sim/90-actions/hardware";
+import { addLocation, atServer, buyRack, mountDevice, powerCycle, remotePower, reset, sellDevice, setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
 import { orderTransit } from "../src/sim/90-actions/network";
 import { installRouter } from "../src/sim/90-actions/routers";
@@ -235,7 +235,7 @@ describe("switched PDUs", () => {
     expect(powerCycle(s, "dev3").ok).toBe(true);
     expect(dev(s, "dev3").log.at(-1)?.key).toMatch(/^ipmi\.log\.(cycle|corrupted|resync)$/);
     expect(dev(s, "dev3").log.some((e) => e.key === "ipmi.log.cycle")).toBe(true);
-    expect(pullPower(s, "dev3").ok).toBe(true);
+    expect(remotePower(s, "dev3", false).ok).toBe(true);
     expect(dev(s, "dev3").on).toBe(false);
     expect(dev(s, "dev3").hands ?? null).toBeNull();
     expect(s.cash).toBe(cash);
@@ -247,7 +247,8 @@ describe("switched PDUs", () => {
     const s = at(5);
     s.locations[0].dc = DATACENTERS[0].id;
     const cash = s.cash;
-    expect(pullPower(s, "dev3").ok).toBe(true);
+    expect(err(remotePower(s, "dev3", false))).toBe("error.noBmc");
+    expect(atServer(s, "dev3", "pull").ok).toBe(true);
     expect(dev(s, "dev3").on).toBe(true);
     expect(s.cash).toBeLessThan(cash);
   });
@@ -260,7 +261,7 @@ describe("switched PDUs", () => {
       expect(powerCycle(s, "dev3").ok).toBe(true);
       expect(corrupted(s).length).toBe(onSrv(s).length);
       const t = withPdu(at(r));
-      expect(pullPower(t, "dev3").ok).toBe(true);
+      expect(remotePower(t, "dev3", false).ok).toBe(true);
       expect(corrupted(t).length).toBe(onSrv(t).length);
     }
     const misses = seeds.filter((r) => !hits.includes(r)).slice(0, 3);

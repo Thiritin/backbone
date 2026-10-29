@@ -37,5 +37,7 @@ export const IPMI_EN: Record<string, (p: Params) => string> = {
   "error.needsRestore": () => "Recovery failed. Restore it from backup.",
   "error.pduInstalled": () => "This rack already has a switched PDU.",
   "error.handsBusy": () => "Someone is already on the way to this server.",
+  "error.unplugged": () => "The power cords are already unplugged.",
+  "error.plugged": () => "The power cords are already plugged in.",
   "error.recovering": () => "A recovery is already under way.",
 };

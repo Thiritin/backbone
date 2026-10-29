@@ -7,6 +7,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Weekly challenge seeds start from the title screen, a run can be exported and replayed, and a leaderboard shows verified runs.
 - Loading a save shows a Pear OS update sheet with what changed since you last played, with an Open button for each app it names, and the logo menu has a What's new item that lists the whole changelog.
 - You can book extra power on a rented rack share in steps of 0.25 kW up to twice its base limit, billed monthly with the rent and active after three days.
+- Servers have a power button you can press to boot or shut down cleanly or hold to force off, a reset button, and Unplug power pulls every cord, which can corrupt data on a running server.
+- Reboot and Power off join the remote power actions, and powering on from afar needs a management controller or a switched PDU.
+- Clicking a power inlet on the back of a server plugs its cord in or pulls it, and a powered-off device can be dragged on the rack front to a free spot.
+- The first time you open the Terminal it installs zsh after a couple of typos, and afterwards Tab completes commands and server names.
+- The clock counts every game minute, a game hour lasts three real minutes at 1×, and a new 16× speed fast-forwards the clock.
 - An open rack fills the whole Locations window, and a selected server splits into Actions, Software, Lease, Power supplies, RAID and Components tabs.
 - The power button on the server drawing turns the server on and off, and the Change parts button stays visible but greyed out until the server is powered down.
 - A notice about a site that is not on your network offers only Reject, and the reply tells the sender it is not yours and how to find the right host with whois.

@@ -6,7 +6,7 @@ import { deviceMenu, type DeviceUi } from "../src/ui/apps/locations/deviceMenu";
 import { useStore } from "../src/ui/store";
 import { withServer } from "./fixtures";
 
-const ui: DeviceUi = { power: () => {}, op: () => {}, plug: () => {}, setup: () => {}, rename: () => {}, unmount: () => {}, sell: () => {} };
+const ui: DeviceUi = { power: () => {}, op: () => {}, front: () => {}, plug: () => {}, setup: () => {}, rename: () => {}, unmount: () => {}, sell: () => {} };
 const labels = (g: GameState, id: string, extra: Partial<DeviceUi> = {}) =>
   tidy(deviceMenu(g, g.devices.find((d) => d.id === id)!, { ...ui, ...extra })).map((e) => e?.label ?? "-");
 
@@ -14,7 +14,7 @@ describe("device menu", () => {
   it("lists a free mounted server's actions, the second power supply with its price, and removal last", () => {
     const g = withServer(newGame(7));
     expect(labels(g, "dev3", { open: () => {} })).toEqual([
-      "Show details", "-", "Shut down", "Pull power", "Unplug power supply", "-", "Add Software…", "-",
+      "Show details", "-", "Shut down", "Reboot", "At the server", "-", "Add Software…", "-",
       "Add second power supply, 250 €", "Rename…", "-", "Unmount", "Sell…",
     ]);
   });
@@ -22,9 +22,11 @@ describe("device menu", () => {
   it("routes a server's power through its management controller when it has one", () => {
     const g = withServer(newGame(7));
     Object.assign(g.devices.find((d) => d.id === "dev3")!, { model: "g2-compute" });
-    expect(labels(g, "dev3").slice(0, 4)).toEqual(["Shut down via iDRAQ", "Reset via iDRAQ", "Power cycle via iDRAQ", "Pull power"]);
+    expect(labels(g, "dev3").slice(0, 6)).toEqual(["Shut down via iDRAQ", "Reboot via iDRAQ", "Reset via iDRAQ", "Power cycle via iDRAQ", "Power off via iDRAQ", "At the server"]);
     g.devices.find((d) => d.id === "dev3")!.bmcHung = true;
-    expect(labels(g, "dev3").slice(0, 3)).toEqual(["Shut down", "Pull power", "Reset iDRAQ"]);
+    expect(labels(g, "dev3").slice(0, 4)).toEqual(["Shut down", "Reboot", "Reset iDRAQ", "At the server"]);
+    const front = deviceMenu(g, g.devices.find((d) => d.id === "dev3")!, ui).find((e) => e && e.label === "At the server");
+    expect(front && front.items?.map((e) => e && e.label)).toEqual(["Press power button", "Hold power button", "Press reset button", "Unplug power"]);
   });
 
   it("offers power and sale only for a device in storage", () => {

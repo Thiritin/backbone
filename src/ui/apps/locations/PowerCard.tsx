@@ -1,16 +1,16 @@
-import { Power } from "lucide-react";
+import { Hand, Power } from "lucide-react";
 import type { Device, GameState } from "../../../sim/50-state";
 import { workloadsOn } from "../../../sim/60-infra/cluster";
 import { recover, restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { TechButton } from "./TechButton";
 import { ActionTile } from "../software/Software";
-import { POWER_ICON, powerOptions, type PowerOp } from "./power";
+import { FRONT_BUSY, FRONT_ICON, frontOptions, POWER_ICON, powerOptions, type PowerOp } from "./power";
+import type { FrontOp } from "../../../sim/60-infra/power";
+import { locationOf } from "../../../sim/60-infra/status";
 
-const HANDS: Record<"pull" | "bmcreset", string> = { pull: "Pulling power", bmcreset: "Resetting controller" };
-
-// The power actions of a mounted server, the pending hand task, and the workloads a pulled plug corrupted.
-export function PowerCard({ game, device, onOp }: { game: GameState; device: Device; onOp: (op: PowerOp) => void }) {
+// The power actions of a mounted server from afar and at the machine, the pending hand task, and the workloads a pulled plug corrupted.
+export function PowerCard({ game, device, onOp, onFront }: { game: GameState; device: Device; onOp: (op: PowerOp) => void; onFront: (op: FrontOp) => void }) {
   const act = useStore((s) => s.act);
   const { via: bmc, pdu, options } = powerOptions(game, device), via = bmc ?? (pdu ? "PDU" : null);
   const bad = workloadsOn(game, device.id).filter((w) => w.corrupted);
@@ -18,10 +18,16 @@ export function PowerCard({ game, device, onOp }: { game: GameState; device: Dev
     <div className="loc-card">
       <div className="loc-card-h">
         <h3><Power />Power{via && <span className="loc-muted"> via {via}</span>}</h3>
-        {device.hands && <span className="pill accent">{HANDS[device.hands.kind]}</span>}
+        {device.hands && <span className="pill accent">{FRONT_BUSY[device.hands.kind]}</span>}
       </div>
+      {options.length > 0 && (
+        <div className="act-tiles">
+          {options.map((o) => <ActionTile key={o.op} icon={POWER_ICON[o.op]} label={o.label} disabled={o.disabled} onClick={() => onOp(o.op)} />)}
+        </div>
+      )}
+      <div className="loc-card-h"><h3><Hand />{locationOf(game, device)?.dc ? "Remote hands" : "At the server"}</h3></div>
       <div className="act-tiles">
-        {options.map((o) => <ActionTile key={o.op} icon={POWER_ICON[o.op]} label={o.label} disabled={o.disabled} onClick={() => onOp(o.op)} />)}
+        {frontOptions(game, device).map((o) => <ActionTile key={o.op} icon={FRONT_ICON[o.op]} label={o.label} disabled={o.disabled} onClick={() => onFront(o.op)} />)}
       </div>
       {(device.hung || (device.bmcHung && !device.hands)) && (
         <div className="loc-row insp-power-row">

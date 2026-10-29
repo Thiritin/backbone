@@ -32,7 +32,7 @@ export function GuideApp() {
       </ol>
       <p>When the server fills up, the Bank app lends you the money for the next one.</p>
       <h3>Time</h3>
-      <p>The clock starts paused. Press <kbd>Space</kbd> to start or pause it, and <kbd>1</kbd> to <kbd>4</kbd> to switch between 1×, 2×, 4× and 8× speed. The buttons in the menu bar do the same.</p>
+      <p>The clock starts paused. Press <kbd>Space</kbd> to start or pause it, and <kbd>1</kbd> to <kbd>5</kbd> to switch between 1×, 2×, 4×, 8× and 16× speed. The buttons in the menu bar do the same.</p>
       <h3>Apps and windows</h3>
       <p>Open apps from the dock at the bottom. Drag a window by its title bar and resize it from any edge. The three buttons on the left of a window close, minimize and zoom it.</p>
       <h3>Notifications</h3>

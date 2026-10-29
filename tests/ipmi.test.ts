@@ -8,7 +8,7 @@ import { deviceHealth, powered, working } from "../src/sim/60-infra/status";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { resolve } from "../src/sim/80-business/browser";
-import { powerCycle, pullPower, reset, resetBmc, setPower, shutdown } from "../src/sim/90-actions/hardware";
+import { atServer, powerCycle, reset, resetBmc, setPower, shutdown } from "../src/sim/90-actions/hardware";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { hire, queueOperation } from "../src/sim/90-actions/staff";
 import { readyGame } from "./fixtures";
@@ -97,10 +97,10 @@ describe("power actions", () => {
     expect(powerCycle(s, "dev3")).toEqual({ ok: false, error: "error.bmcHung" });
   });
 
-  it("let a hung server out through pulling the plug, which also clears the hang", () => {
+  it("let a hung server out through holding its power button, which also clears the hang", () => {
     const s = game("g1-compute");
     dev3(s).hung = true;
-    expect(pullPower(s, "dev3").ok).toBe(true);
+    expect(atServer(s, "dev3", "hold").ok).toBe(true);
     expect(dev3(s).on).toBe(false);
     expect(dev3(s).hung).toBe(false);
     expect(setPower(s, "dev3", true).ok).toBe(true);
@@ -136,12 +136,12 @@ describe("hung management controllers", () => {
     expect(dev3(s).hands!.doneAt).toBeCloseTo(s.hour + dc.remoteHands.responseHours + 0.25, 9);
   });
 
-  it("make pulling the plug wait for the remote hands in a datacenter and happen at once in the basement", () => {
+  it("make holding the power button wait for the remote hands in a datacenter and happen at once in the basement", () => {
     const s = game("g1-compute");
     s.locations[0].dc = DATACENTERS[0].id;
     const dc = DATACENTERS[0];
     const cash = s.cash;
-    expect(pullPower(s, "dev3").ok).toBe(true);
+    expect(atServer(s, "dev3", "hold").ok).toBe(true);
     expect(dev3(s).on).toBe(true);
     expect(s.cash).toBeCloseTo(cash - dc.remoteHands.perHour, 6);
     s.hour = Math.ceil(dev3(s).hands!.doneAt);
@@ -149,7 +149,7 @@ describe("hung management controllers", () => {
     expect(dev3(s).on).toBe(false);
     expect(dev3(s).hands).toBeNull();
     const b = game("g1-compute");
-    expect(pullPower(b, "dev3").ok).toBe(true);
+    expect(atServer(b, "dev3", "hold").ok).toBe(true);
     expect(dev3(b).on).toBe(false);
   });
 });

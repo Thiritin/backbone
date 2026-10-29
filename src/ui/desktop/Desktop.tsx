@@ -85,13 +85,13 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
     return () => { clearInterval(id); window.removeEventListener("pagehide", save); };
   }, [save]);
 
-  // Space pauses; 1 to 4 pick 1×, 2×, 4× and 8×.
+  // Space pauses; 1 to 5 pick 1×, 2×, 4×, 8× and 16×.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).closest("input, textarea, select, [role=alertdialog], [role=dialog], [role=menu]")) return;
       if (e.code === "Space") { e.preventDefault(); setSpeed(speed ? 0 : 1); }
       const n = Number(e.key);
-      if (n >= 1 && n <= 4) setSpeed(SPEEDS[n]);
+      if (n >= 1 && n <= 5) setSpeed(SPEEDS[n]);
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);

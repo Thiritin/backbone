@@ -5,7 +5,7 @@ import type { Device, GameState } from "../50-state";
 import { hostOfVm, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
-import { BOOT_HOURS, booting, deviceHealth, drivesOf, HOURS_PER_YEAR, powered } from "./status";
+import { BOOT_HOURS, booting, deviceHealth, drivesOf, HOURS_PER_YEAR, powered, pluggedIn, psusOf, working } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -51,13 +51,46 @@ function uncleanStop(s: GameState, d: Device): "ipmi.log.resync" | "ipmi.log.cor
   return "ipmi.log.corrupted";
 }
 
-// Cuts the power: the server is off and its OS no longer hung.
-export function pullPlug(s: GameState, d: Device): void {
+function losePower(s: GameState, d: Device): void {
   const outcome = uncleanStop(s, d);
-  d.on = false;
   d.hung = false;
   pushLog(d, s.hour, "ipmi.log.pulled");
   if (outcome) pushLog(d, s.hour, outcome);
+}
+
+// Cuts the power: the server is off and its OS no longer hung.
+export function pullPlug(s: GameState, d: Device): void {
+  losePower(s, d);
+  d.on = false;
+}
+
+export function bootUp(s: GameState, d: Device): void {
+  d.bootUntil = s.hour + BOOT_HOURS;
+  d.on = true;
+  pushLog(d, s.hour, "ipmi.log.powerOn");
+}
+
+// Plugs power cords into the rack's power strip or pulls them, every cord unless named. A running server that loses its
+// last live supply stops uncleanly but stays switched on, so it boots once a cord is back.
+export function plugCords(s: GameState, d: Device, plugged: boolean, ids = psusOf(d).map((c) => c.id)): void {
+  const components = d.components.map((c) => (ids.includes(c.id) ? { ...c, plugged } : c));
+  const before = pluggedIn(d), after = pluggedIn({ ...d, components });
+  // The roll reads the server as it ran, so it comes before the cords move.
+  if (d.on && before && !after) losePower(s, d);
+  d.components = components;
+  if (d.on && !before && after) d.bootUntil = s.hour + BOOT_HOURS;
+}
+
+export type FrontOp = "power" | "hold" | "reset" | "pull" | "plug";
+
+// A hand at the server: the power button boots it or shuts it down cleanly, a hung or booting OS ignores the press,
+// holding the button cuts the power, the reset button reboots it hard, and the cords leave or join the power strip.
+export function atFront(s: GameState, d: Device, op: FrontOp): void {
+  if (op === "power" && !d.on) bootUp(s, d);
+  else if (op === "power") { if (working(s, d.id)) { d.on = false; pushLog(d, s.hour, "ipmi.log.shutdown"); } }
+  else if (op === "hold") { if (d.on) pullPlug(s, d); }
+  else if (op === "reset") { if (d.on) hardReboot(s, d, "ipmi.log.reset"); }
+  else plugCords(s, d, op === "plug");
 }
 
 // Reboots without losing power or after a ten second cycle: the same roll, then the server boots again.
@@ -80,7 +113,7 @@ export function powerTick(s: GameState): SimEvent[] {
     const n: Device = { ...d };
     let changed = false;
     if (d.hands && d.hands.doneAt <= s.hour) {
-      if (d.hands.kind === "pull") pullPlug(s, n);
+      if (d.hands.kind !== "bmcreset") atFront(s, n, d.hands.kind);
       else { n.bmcHung = false; pushLog(n, s.hour, "ipmi.log.bmcReset"); }
       n.hands = null;
       changed = true;

@@ -15,6 +15,7 @@ import type { ActivityEntry } from "./47-staff/activity";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
 import type { Maintenance } from "./60-infra/maintenance";
+import type { FrontOp } from "./60-infra/power";
 import { newNetwork, type Network } from "./60-infra/network";
 import { newOps, type Ops } from "./60-infra/ops";
 import { newSites, type Sites } from "./60-infra/apps";
@@ -58,7 +59,7 @@ export interface Device { id: string; model: string; brand: string; rackId: stri
   // The operating system froze (hung) or the management controller did (bmcHung); log is the device's last 20 events.
   hung: boolean; bmcHung: boolean; log: { hour: number; key: string }[];
   // A hand task waiting for someone on site: pulling the plug or resetting the management controller.
-  hands?: { kind: "pull" | "bmcreset"; doneAt: number } | null;
+  hands?: { kind: FrontOp | "bmcreset"; doneAt: number } | null;
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
   part?: PartSpec;
   // nodeNNN, set on servers.

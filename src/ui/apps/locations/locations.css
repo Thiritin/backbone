@@ -403,3 +403,5 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .hand-opt dl div { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
 .hand-opt dt { color: var(--text-3); }
 .hand-opt dd { margin: 0; }
+.rack-dev.movable { cursor: grab; }
+.rack-dev.movable:active { cursor: grabbing; }

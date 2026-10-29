@@ -6,7 +6,7 @@ import { BASEMENT, EXTRA_STEP_KW, extraStepPrice, maxExtraKw, SHARE_RACKS } from
 import type { Device, GameState, Location, Rack } from "../../../sim/50-state";
 import { EXTRA_CIRCUIT_KW, freePositions, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
 import { FEED_PRICE } from "../../../sim/88-tick/tick";
-import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveRack, sellRack, setExtraPower, setFeed } from "../../../sim/90-actions/hardware";
+import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveInRack, moveRack, sellRack, setExtraPower, setFeed } from "../../../sim/90-actions/hardware";
 import { Stepper } from "../shop/Cart";
 import type { Side } from "../../art/backs";
 import { Isometric } from "../../art/Isometric";
@@ -176,7 +176,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
         <div className="loc-rack-scroll" ref={rackRef} style={{ width: rackWidth }}>
           <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420 * zoom} u={22 * zoom}
             hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onDeviceMenu={deviceMenu} onFree={openMount}
-            onConnect={(a, b) => act(connect, a, b)} onPlug={plug} />
+            onConnect={(a, b) => act(connect, a, b)} onPlug={plug} onMove={(id, slot) => act(moveInRack, id, slot)} />
         </div>
       </div>
       <div className="loc-insp">

@@ -1,4 +1,4 @@
-import { monthNet, pickSound, playSound, soundFor, type Sound } from "./sounds";
+import { monthNet, pickSound, playSound, soundFor, type Sound, type UiSound } from "./sounds";
 import { useEffect } from "react";
 import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
@@ -151,7 +151,7 @@ function savePrefs(notify: Record<string, Partial<NotifyPref>>, sound: SoundPref
 }
 
 // Sounds queued during one advance or action play together once it returns.
-const uiSound = (kind: "open" | "close") => {
+export const uiSound = (kind: UiSound) => {
   const { on, volume } = useStore.getState().sound;
   if (on) playSound(kind, volume);
 };
