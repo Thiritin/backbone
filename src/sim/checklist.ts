@@ -15,6 +15,7 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   buyServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server"),
   mountServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server" && d.rackId && d.on),
   internet: (s) => lineActive(s),
+  networkApp: (s) => s.installed.includes("Network"),
   domain: (s) => !!s.registrar && !!s.company.domain,
   website: (s) => owns(s, "website") && s.marketing.lines.length > 0,
   email: (s) => s.company.mail.kind !== "none",
@@ -45,4 +46,4 @@ export const tracked = (id: string): boolean => id in CHECKS;
 export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) || s.checklist.includes(id);
 
 // The Getting started tutorial: each step is a checklist goal, done in this order. company is ticked by its Save button.
-export const TUTORIAL = ["company", "domain", "email", "buyServer", "mountServer", "internet", "setup", "website", "firstCustomer"] as const;
+export const TUTORIAL = ["company", "networkApp", "domain", "email", "buyServer", "mountServer", "internet", "setup", "website", "firstCustomer"] as const;

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- Getting started has a step to install the Network app from the Pear Store, with an Install button in the guide, right before you order your domain.
 - The Terminal is now a small shell: list, create, read, move and remove files and folders on your desk and on every server you log into, and chain commands with && and ;.
 - Running apt update and apt upgrade on a server installs its outstanding software and PHP updates, after asking you to confirm the downtime.
 - You can drag a device to another position in its rack once its power cords are unplugged, and a plugged-in device stays put.

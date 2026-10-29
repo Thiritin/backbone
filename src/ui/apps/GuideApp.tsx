@@ -12,6 +12,7 @@ import { setCompany } from "../../sim/90-actions/company";
 import { bookMail } from "../../sim/90-actions/mail";
 import { setUpChannel } from "../../sim/90-actions/marketing";
 import { orderCompanyDomain } from "../../sim/90-actions/registrar";
+import { install } from "../../sim/90-actions/store";
 import { checkDone, TUTORIAL } from "../../sim/checklist";
 import { CompanyFields } from "./company";
 import { stepOf, type StepId } from "./guide";
@@ -27,6 +28,15 @@ function CompanyStep({ game }: { game: GameState }) {
     <div className="guide-form">
       <CompanyFields company={draft} onChange={(p) => setDraft({ ...draft, ...p })} />
       <button className="btn primary" disabled={!draft.name.trim()} onClick={save}>Save</button>
+    </div>
+  );
+}
+
+function NetworkStep() {
+  const act = useStore((s) => s.act);
+  return (
+    <div className="guide-form">
+      <button className="btn primary" onClick={() => act(install, "Network")}>Install</button>
     </div>
   );
 }
@@ -79,7 +89,7 @@ function WebsiteStep({ game }: { game: GameState }) {
   );
 }
 
-const FORMS: Partial<Record<StepId, (p: { game: GameState }) => ReactNode>> = { company: CompanyStep, domain: DomainStep, email: EmailStep, website: WebsiteStep };
+const FORMS: Partial<Record<StepId, (p: { game: GameState }) => ReactNode>> = { company: CompanyStep, networkApp: NetworkStep, domain: DomainStep, email: EmailStep, website: WebsiteStep };
 
 export function GuideApp() {
   const game = useStore((s) => s.game);

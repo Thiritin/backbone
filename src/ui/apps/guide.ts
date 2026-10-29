@@ -18,6 +18,8 @@ export function stepOf(s: GameState, id: StepId): Step {
   switch (id) {
     case "company":
       return { title: "Name your company", text: "Choose the name, logo and colour of your company.", app: "Settings" };
+    case "networkApp":
+      return { title: "Install the Network app", text: "Install the Network app from the Pear Store, where you order and manage your domains.", app: "Shop", focus: { kind: "software", id: "" } };
     case "buyServer":
       return { title: "Buy a server", text: "Buy your first server in the Shop.", app: "Shop" };
     case "mountServer":

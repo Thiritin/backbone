@@ -10,6 +10,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { orderCompanyDomain, queueTransfer, registerCompanyDomain, signRegistrar, transferDomains } from "../src/sim/90-actions/registrar";
 import { hire, setTechLocation } from "../src/sim/90-actions/staff";
+import { install } from "../src/sim/90-actions/store";
 import { setLine } from "../src/sim/90-actions/website";
 import { CHECKS, TUTORIAL } from "../src/sim/checklist";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -217,8 +218,15 @@ describe("company domain", () => {
 });
 
 describe("tutorial", () => {
-  it("runs company, domain, email, buyServer, mountServer, internet, setup, website, firstCustomer", () => {
-    expect(TUTORIAL).toEqual(["company", "domain", "email", "buyServer", "mountServer", "internet", "setup", "website", "firstCustomer"]);
+  it("runs company, networkApp, domain, email, buyServer, mountServer, internet, setup, website, firstCustomer", () => {
+    expect(TUTORIAL).toEqual(["company", "networkApp", "domain", "email", "buyServer", "mountServer", "internet", "setup", "website", "firstCustomer"]);
+  });
+
+  it("checks the Network step once the app is installed", () => {
+    const s = newGame(1);
+    expect(CHECKS.networkApp(s)).toBe(false);
+    expect(install(s, "Network").ok).toBe(true);
+    expect(CHECKS.networkApp(s)).toBe(true);
   });
 
   it("orders the company domain with a new contract in one step", () => {
