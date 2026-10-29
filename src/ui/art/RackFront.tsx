@@ -30,6 +30,8 @@ interface Props {
   onConnect?: (a: End, b: End) => void;
   // A click on a power supply's inlet; psu is its index among the device's power supplies.
   onPlug?: (device: string, psu: number) => void;
+  // A click on a server's console end on the back, where the monitor plugs in.
+  onConsole?: (device: string) => void;
   // A powered-off device dragged on the front to a new bottom unit.
   onMove?: (device: string, slot: number) => void;
 }
@@ -63,7 +65,7 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onMove }: Props) {
+export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, onMove }: Props) {
   const back = side === "back";
   const [slide, setSlide] = useState<{ id: string; from: number; y0: number; to: number; px: number } | null>(null);
   const slid = useRef(false);
@@ -255,8 +257,8 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
   const hits: ReactNode[] = [];
   if (back) for (const { it, y: py, h } of placed.values()) {
     for (const [i, s] of portSpots(it.model, it.name, side, w, h)) {
-      const end = { device: it.id, port: i };
-      hits.push(<rect key={endKey(end)} className="rack-port" data-end={endKey(end)} x={pad + s.x - 1} y={top + py + s.y - 1} width={s.w + 2} height={s.h + 2} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} />);
+      const end = { device: it.id, port: i }, vga = onConsole && it.model.kind === "server" && oobPorts(it.model)[i - OOB_PORT] === "console";
+      hits.push(<rect key={endKey(end)} className={`rack-port${vga ? " rack-vga" : ""}`} data-end={endKey(end)} x={pad + s.x - 1} y={top + py + s.y - 1} width={s.w + 2} height={s.h + 2} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} onClick={vga ? () => onConsole(it.id) : undefined}>{vga && <title>Plug in monitor</title>}</rect>);
     }
   }
 

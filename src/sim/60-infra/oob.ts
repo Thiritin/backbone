@@ -91,7 +91,7 @@ export const firmwareHangs = (s: GameState, d: Device): boolean => isGear(d) && 
 // The i18n key and params of what a device's console shows.
 export function consoleScreen(d: Device, state: string): { key: string; params: Record<string, string> } {
   const host = d.hostname ?? d.label ?? d.name;
-  const key = !d.on || state === "nopower" ? "term.console.dark" : d.stuck && state !== "booting" ? "term.console.stuck"
+  const key = !d.on || state === "nopower" ? "term.console.dark" : d.setup ? "term.console.setup" : d.stuck && state !== "booting" ? "term.console.stuck"
     : state === "hung" ? "term.console.hung" : state === "booting" ? "term.console.booting" : "term.console.login";
   return { key, params: { host } };
 }

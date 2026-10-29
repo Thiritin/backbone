@@ -62,7 +62,7 @@ export const isWorn = (g: GameState, c: Component) => { const a = ageYears(g, c)
 
 const DRIVE: ReadonlySet<ComponentKind> = new Set(["hdd", "ssd", "nvme"]);
 const WORSE: Lamp[] = ["ok", "warn", "bad"];
-const HEALTH_LAMP = { ok: "ok", degraded: "warn", hot: "warn", rebuilding: "warn", booting: "warn", maintenance: "warn", down: "bad", hung: "bad", stuck: "bad", locked: "bad", nopower: "off", off: "off" } as const;
+const HEALTH_LAMP = { ok: "ok", degraded: "warn", hot: "warn", rebuilding: "warn", booting: "warn", setup: "warn", maintenance: "warn", down: "bad", hung: "bad", stuck: "bad", locked: "bad", nopower: "off", off: "off" } as const;
 
 // Per-component lights: failed red, past its life amber, the drive being rebuilt blinking amber; all dark while the device is off.
 function partLamps(g: GameState, d: Device): Parts {
