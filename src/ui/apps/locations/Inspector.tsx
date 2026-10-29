@@ -1,4 +1,4 @@
-import { Cable, Database, EthernetPort, FileSignature, Plug, PlugZap, Plus, Power, Unplug } from "lucide-react";
+import { Cable, Database, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, Unplug } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
@@ -23,6 +23,7 @@ import { NodeCard } from "./Clusters";
 import { softwareOn } from "../../../sim/90-actions/software";
 import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
+import { LidSheet } from "./LidSheet";
 import { PartsCard } from "./Slots";
 import { AddressRows } from "../network/Addresses";
 
@@ -38,9 +39,11 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
   const act = useStore((s) => s.act), setSetup = useStore((s) => s.setSetup);
   const { guarded, dialog } = useOfflineGuard(game);
   const [selling, setSelling] = useState<Device | null>(null);
+  const [lid, setLid] = useState<string | null>(null);
   const ui = (d: Device, open: boolean): DeviceUi => ({
     open: open ? () => onSelect(d.id) : undefined,
-    power: (on) => { if (on) act((g) => setPower(g, d.id, true)); else guarded((g) => setPower(g, d.id, false), `Power off ${devName(d)}?`, "Power off"); },
+    lid: () => setLid(d.id),
+    power: (on) => { if (on && lid) return; if (on) act((g) => setPower(g, d.id, true)); else guarded((g) => setPower(g, d.id, false), `Power off ${devName(d)}?`, "Power off"); },
     plug: (psu) => togglePlug(guarded, d, psu),
     setup: () => setSetup(d.id),
     rename: () => onRename(d.id),
@@ -52,9 +55,11 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     entries: (d: Device, open = false) => deviceMenu(game, d, ui(d, open)),
     power: (d: Device, on: boolean) => ui(d, false).power(on),
     plug: (d: Device, psu: string) => togglePlug(guarded, d, psu),
+    lid: (d: Device) => ui(d, false).lid?.(),
     dialog: (
       <>
         {dialog}
+        {lid && <LidSheet deviceId={lid} onClose={() => setLid(null)} />}
         {selling && (
           <SellConfirm game={game} name={devName(selling)} price={selling.price} boughtAt={selling.boughtAt} cables={cables}
             onCancel={() => setSelling(null)}
@@ -95,6 +100,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         {model.kind !== "gateway" && <BrandLogo brand={device.brand} size={20} />}
         <LabelEdit device={device} editing={editing} onEditing={setEditing} />
         <span className="grow" />
+        {model.kind === "server" && !device.on && !!(device.rackId || device.store) && <button className="btn" onClick={() => menus.lid(device)}><PackageOpen />Open chassis</button>}
         {powered && (
           <button className={`btn ghost icon insp-power${device.on ? " on" : ""}`} aria-label={device.on ? "Power off" : "Power on"} title={device.on ? "Power off" : "Power on"}
             disabled={!device.rackId && !device.panel} onClick={() => menus.power(device, !device.on)}>

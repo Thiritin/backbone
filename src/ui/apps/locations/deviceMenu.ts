@@ -13,6 +13,7 @@ import { techItem } from "./TechButton";
 // What the menu hands back to its view: steps that need a sheet, a field or the offline check.
 export interface DeviceUi {
   open?: () => void;
+  lid?: () => void;
   power: (on: boolean) => void;
   plug: (psuId: string) => void;
   setup: () => void;
@@ -42,6 +43,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
     null,
     m.kind !== "patch" && { label: d.on ? "Power off" : "Power on", disabled: !d.rackId && !d.panel, run: () => ui.power(!d.on) },
     m.kind !== "patch" && !!(d.rackId || d.panel) && techItem(game, d.id, d.on ? "off" : "on"),
+    server && !d.on && !!(d.rackId || d.store) && ui.lid && { label: "Open chassis", run: ui.lid },
     ...psus.map((c, i) => ({ label: `${isPlugged(c) ? "Unplug" : "Plug in"} ${psus.length > 1 ? `power supply ${i + 1}` : "power supply"}`, run: () => ui.plug(c.id) })),
     null,
     server && !!d.rackId && { label: "Add Software…", run: ui.setup },
