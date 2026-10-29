@@ -10,7 +10,7 @@ import {
 import { bookFair, setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../../../sim/90-actions/marketing";
 import { hasMarketingManager } from "../../../sim/47-staff/staff";
 import { fairCost, tradeFairBonus, upcomingFairs, type FairDate } from "../../../sim/80-business/fairs";
-import { eventById, FAIL_AWARENESS, FAIL_REVIEWS, type Sponsorship } from "../../../sim/80-business/community";
+import { eventOf, FAIL_AWARENESS, FAIL_REVIEWS, type Sponsorship } from "../../../sim/80-business/community";
 import { metrics } from "../../../sim/metrics";
 import { PRODUCT } from "../support/labels";
 import { t } from "../../../i18n/en";
@@ -338,7 +338,7 @@ function Community() {
 }
 
 function SponsorCard({ sp }: { sp: Sponsorship }) {
-  const ev = eventById(sp.event)!, r = sp.reward;
+  const ev = eventOf(sp), r = sp.reward;
   const down = Math.ceil(Math.max(0, ...Object.values(sp.down)));
   const state = sp.status === "running" ? <span className="pill accent">Running</span> : r ? <span className="pill ok">Rewarded</span> : <span className="pill bad">Failed</span>;
   return (
@@ -347,6 +347,8 @@ function SponsorCard({ sp }: { sp: Sponsorship }) {
       <dl className="shop-specs">
         <div><dt>Services</dt><dd className="num">{ev.count} × {PRODUCT[ev.product]}</dd></div>
         <div><dt>Audience</dt><dd>{ev.audience.map((p) => AUDIENCE[p]).join(", ")}</dd></div>
+        {sp.board && <div><dt>Awareness</dt><dd className="num">+{(sp.board.granted * 100).toFixed(1)}%</dd></div>}
+        {sp.board?.dropped && <div><dt>Banner</dt><dd>Dropped</dd></div>}
         <div><dt>Hours down</dt><dd className="num">{down}</dd></div>
         {r && r.knowHow > 0 && <div><dt>Know-how</dt><dd className="num">+{r.knowHow}</dd></div>}
         {r && r.awareness > 0 && <div><dt>Awareness</dt><dd className="num">+{pct(r.awareness)}</dd></div>}

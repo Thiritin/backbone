@@ -38,6 +38,7 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
         </svg>
       );
     }
+    case "sponsorboard": return <Tile fill="oklch(0.66 0.17 55)"><path d="M3.5 5h9v4.5h-4L6 12V9.5H3.5z" fill="white" /></Tile>;
     case "vendor": return <Logo provider={p.maker} size={16} />;
     case "host": return <Tile fill="oklch(0.38 0.01 255)"><rect x="3.5" y="3.5" width="9" height="3" rx="0.8" fill="white" /><rect x="3.5" y="8.5" width="9" height="3" rx="0.8" fill="white" opacity="0.7" /></Tile>;
     case "console": {
