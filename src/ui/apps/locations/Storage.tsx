@@ -3,7 +3,7 @@ import { useState } from "react";
 import { isOfficeRouter, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
 import { euro } from "../../../sim/00-core/money";
-import { deviceValue, freeSlots, mountFrom, mountMax, shelfId, storageStacks, travelCost } from "../../../sim/60-infra/status";
+import { deviceValue, freeSlots, mountFrom, mountMax, storageStacks, travelCost } from "../../../sim/60-infra/status";
 import { mountDevice, mountStack, sellDevice, shipStock } from "../../../sim/90-actions/hardware";
 import { installRouter } from "../../../sim/90-actions/routers";
 import { Isometric } from "../../art/Isometric";
@@ -16,7 +16,6 @@ import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { More } from "../More";
 import { rackUnits } from "./Floor";
 import { rackItems } from "./RackView";
-import { Shelf } from "./Shelf";
 import { LocName, Sheet, Zone } from "./ui";
 
 type Stack = ReturnType<typeof storageStacks>[number];
@@ -59,17 +58,6 @@ function MountSheet({ game, stack, onClose, onMounted }: { game: GameState; stac
   const [count, setCount] = useState(1);
   const rack = racks.find((r) => r.id === picked);
   const n = Math.min(count, stack.ids.length);
-  const loc = game.locations.find((l) => l.id === zone)!;
-  // Towers stand on the shelf: consecutive free places from the clicked one.
-  const mountTower = (place: number) => {
-    const free = freeSlots(game, shelfId(zone), 0);
-    let k = 0;
-    while (k < n && free.includes(place + k)) k++;
-    const id = stack.ids[0];
-    if (!k || !act((s) => (k === 1 ? mountDevice(s, id, shelfId(zone), place) : mountStack(s, stack.model, stack.brand, shelfId(zone), k, place))).ok) return;
-    onClose();
-    onMounted?.(shelfId(zone), id);
-  };
   const mount = (unit: number) => {
     if (!rack) return;
     const k = mountMax(game, rack.id, h, n, unit), from = mountFrom(game, rack.id, h, k, unit), id = stack.ids[0];
@@ -80,7 +68,6 @@ function MountSheet({ game, stack, onClose, onMounted }: { game: GameState; stac
   return (
     <Sheet title={`Mount ${stack.brand} ${m.name}`} onClose={onClose}>
       <div className="loc-mount">
-        {m.shelf ? <Shelf game={game} loc={loc} onFree={mountTower} /> : <>
         <div className="picks" role="group" aria-label="Rack">
           {racks.map((r) => {
             const used = game.devices.filter((d) => d.rackId === r.id).reduce((u, d) => u + modelById(d.model).height, 0);
@@ -97,7 +84,6 @@ function MountSheet({ game, stack, onClose, onMounted }: { game: GameState; stac
             <RackFront units={rackUnits(rack)} items={rackItems(game, rack.id)} w={340} u={18} onDevice={() => {}} onFree={(unit) => mount(unit)} />
           </div>
         )}
-        </>}
       </div>
       {stack.ids.length > 1 && (
         <div className="loc-sheet-foot">
@@ -144,7 +130,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
   const m = modelById(stack.model), units = game.devices.filter((d) => stack.ids.includes(d.id)), first = units.find((d) => !d.lease) ?? units[0];
   const rackable = m.height > 0 || m.kind === "pdu", office = isOfficeRouter(m), install = () => act((s) => installRouter(s, units[0].id));
   const entries = (): MenuEntry[] => [
-    (rackable || m.shelf) && { label: "Mount…", run: () => setMounting(true) },
+    rackable && { label: "Mount…", run: () => setMounting(true) },
     office && { label: "Install", run: install },
     { label: "Ship to…", disabled: game.locations.length < 2, run: () => setShipping(true) },
     null,
@@ -159,7 +145,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
           <span className="num loc-muted">{height(m)} · {stack.ids.length} in storage</span>
         </div>
         <span className="grow" />
-        {(rackable || m.shelf) && <button className="btn" onClick={() => setMounting(true)}><ArrowDownToLine />Mount</button>}
+        {rackable && <button className="btn" onClick={() => setMounting(true)}><ArrowDownToLine />Mount</button>}
         {office && <button className="btn" onClick={install}><Router />Install</button>}
         <More label={`${stack.brand} ${m.name}`} entries={entries} />
       </div>

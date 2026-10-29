@@ -220,7 +220,7 @@ export function addNode(s: GameState, clusterId: string, deviceId: string): Acti
 }
 
 // A node leaves its cluster; its control plane moves to the next node, and the last node takes the cluster with it.
-const leave = (s: GameState, clusterId: string, deviceId: string) => {
+export const leave = (s: GameState, clusterId: string, deviceId: string) => {
   const c = s.clusters.find((x) => x.id === clusterId)!, nodes = c.nodes.filter((n) => n.deviceId !== deviceId);
   if (!nodes.length) return dropCluster(s, c.id);
   update(s, c.id, (x) => ({ ...x, nodes, controlPlane: x.controlPlane === deviceId ? nodes[0].deviceId : x.controlPlane }));

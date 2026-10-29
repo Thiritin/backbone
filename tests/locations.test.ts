@@ -60,7 +60,7 @@ describe("addLocation and closeLocation", () => {
   it("rents space with a handoff on the carrier panel, ready after the lead time", () => {
     const s = rich();
     const id = ok(addLocation(s, "equinox-fr5", "cage", 8));
-    expect(loc(s, id)).toEqual({ id, dc: "equinox-fr5", city: "Frankfurt", az: "fra2", name: "Equinox FR5", space: "cage", positions: 8, readyAt: 720, extraCircuit: false, shelf: 0 });
+    expect(loc(s, id)).toEqual({ id, dc: "equinox-fr5", city: "Frankfurt", az: "fra2", name: "Equinox FR5", space: "cage", positions: 8, readyAt: 720, extraCircuit: false });
     expect(s.devices.find((d) => d.panel === id)).toMatchObject({ model: "handoff", rackId: null, name: "fra2-gw-01" });
     expect(loc(s, ok(addLocation(s, "tellyhouse-north", "suite", 20))).readyAt).toBe(2160);
     expect(loc(s, ok(addLocation(s, "hetzler-park", "positions", 4))).readyAt).toBe(168);

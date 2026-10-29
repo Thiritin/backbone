@@ -43,14 +43,14 @@ describe("save", () => {
     expect(repaired.version).toBe(SAVE_VERSION);
     expect(repaired.devices.map((d) => d.model)).toEqual(["home-router"]);
   });
-  it("replaces the basement shelf of a version 1 save and keeps seed, rng, hour, cash and ledger", () => {
+  it("replaces the infrastructure of a version 1 save and keeps seed, rng, hour, cash and ledger", () => {
     const ledger = [{ hour: 10, category: "rent", key: "ledger.rent", params: { rack: "fra2-rack-01" }, amount: -2520 }];
     const v1 = {
       version: 1, seed: 4, rng: { s: 77 }, hour: 5000, cash: 1234, nextId: 9, ledger, powerDue: 3.5,
       locations: [{ id: "loc1", kind: "basement", city: "Frankfurt", name: "Basement" }, { id: "loc6", kind: "rented", city: "Frankfurt", name: "Frankfurt colocation" }],
-      racks: [{ id: "rack2", locationId: "loc1", name: "fra1-shelf", units: 4, shelf: true, rentPerMonth: 0 }],
+      racks: [{ id: "rack2", locationId: "loc1", name: "fra1-rack", units: 4, rentPerMonth: 0 }],
       devices: [
-        { id: "dev3", model: "tower", brand: "Dwell", rackId: "rack2", slot: 1, name: "fra1-srv-01", bond: "failover", groups: [] },
+        { id: "dev3", model: "compute", brand: "Dwell", rackId: "rack2", slot: 1, name: "fra1-srv-01", bond: "failover", groups: [] },
         { id: "dev4", model: "home-router", brand: "Sysko", rackId: "rack2", slot: 4, name: "fra1-gw-01", bond: "failover", groups: [] },
       ],
       cables: [{ id: "cab5", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper" }],
@@ -100,5 +100,32 @@ describe("save", () => {
   });
   it("rejects garbage", () => {
     expect(() => deserialize("{}")).toThrow();
+  });
+});
+
+describe("retired tower servers", () => {
+  it("loads a save with a tower on the shelf and one in storage without them or anything pointing at them", () => {
+    const old = JSON.parse(serialize(readyGame(7)));
+    const dev3 = old.devices.find((d: { id: string }) => d.id === "dev3");
+    // The basement server running the cluster, the panel VM and the friends' sites becomes a tower on the shelf.
+    Object.assign(dev3, { model: "g1-tower", rackId: "shelf:loc1", slot: 1 });
+    old.devices.push({ ...dev3, id: "dev900", model: "g2-tower", rackId: null, slot: 0, store: "loc1" });
+    old.leases.push({ id: "lease901", lessor: "Dwell", monthly: 10, months: 12, startedAt: 0, paid: 0, devices: ["dev900"] });
+    old.techOps.push({ id: "op902", kind: "replace", deviceId: "dev3", componentId: null, queuedAt: 0, auto: false });
+    old.locations[0].shelf = 4;
+    expect(old.clusters.length).toBeGreaterThan(0);
+    expect(old.workloads.length).toBeGreaterThan(0);
+    expect(old.cables.some((c: { a: { device: string } }) => c.a.device === "dev3")).toBe(true);
+
+    const s = deserialize(JSON.stringify(old));
+    expect(s.devices.some((d) => d.model.endsWith("-tower"))).toBe(false);
+    expect(s.clusters).toEqual([]);
+    expect(s.workloads).toEqual([]);
+    expect(s.services.length).toBe(old.services.length);
+    expect("shelf" in s.locations[0]).toBe(false);
+    for (const id of ["dev3", "dev900", ...old.workloads.map((w: { id: string }) => w.id), ...old.clusters.map((c: { id: string }) => c.id)]) {
+      expect(JSON.stringify(s), id).not.toContain(`"${id}"`);
+    }
+    tick(s);
   });
 });

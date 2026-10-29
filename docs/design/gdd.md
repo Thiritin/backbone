@@ -119,8 +119,6 @@ Infrastructure lives in locations: your basement first, then space in other comp
 | Private suite | A room of your own in the provider's building | 20 or 40 positions | Lease per month; you add your own UPS and feeds |
 | Own datacenter | A building you lease or build | 100 positions and up | Lease or purchase; power room, generators and carrier room are yours |
 
-**The shelf.** The basement has a shelf with 4 places next to its rack. Tower servers stand on it and are mounted there like a rack server, from the storage list or the Locations app; a tower does not fit into a rack unit and a rack server does not fit on the shelf. Towers draw from the basement circuit together with the rack and are cabled to the home router like any server. Datacenter locations have no shelf.
-
 **Racks are yours.** You buy racks (24U, 42U or 47U) and place each one in a free position. A rack can move with everything in it: the servers inside go offline, cables to other racks and to the carrier panel are unplugged, and the rack arrives a day later in the same city or three days later in another. That is how a company grows out of the basement: you rent a position in a datacenter and move the basement rack there.
 
 **Datacenters.** Every city has several datacenters from different providers, and each one has its strengths and weaknesses. The Add location dialog compares them side by side:
@@ -174,7 +172,6 @@ Racks hold servers, switches and routers, and you cable them port by port. Bandw
 | Device | Size | Role |
 | --- | --- | --- |
 | Compute server | 1U | VPS, web and game servers |
-| Tower server | Shelf | The cheap first machine of 2005 to 2010 |
 | Storage server | 2U | Storage hosting, backups |
 | GPU server | 4U | AI compute, late game |
 | Access switch | 1U | Connects the servers in one rack |
