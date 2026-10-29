@@ -12,6 +12,7 @@ import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } f
 import { t } from "../../../i18n/en";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useFocus, useStore } from "../../store";
+import { useSessionState } from "../../session";
 import { More } from "../More";
 import { CustomerLink } from "../customers/CustomersApp";
 import { Incidents } from "./Incidents";
@@ -91,9 +92,9 @@ const stampOf = (it: Item) => (it.tk ? it.tk.updatedAt : it.r!.createdAt);
 export function SupportApp() {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
-  const [box, setBox] = useState<Box>("all");
-  const [kind, setKind] = useState<Kind | null>(null);
-  const [sel, setSel] = useState<string | null>(null);
+  const [box, setBox] = useSessionState<Box>("support.box", "all");
+  const [kind, setKind] = useSessionState<Kind | null>("support.kind", null);
+  const [sel, setSel] = useSessionState<string | null>("support.sel", null);
 
   const inBox = itemsIn(game, box);
   const list = inBox.filter((it) => ofKind(it, kind)).sort((a, b) => (newestFirst(box) ? stampOf(b) - stampOf(a) : a.due - b.due));
