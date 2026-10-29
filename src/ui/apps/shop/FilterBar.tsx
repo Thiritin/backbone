@@ -20,34 +20,22 @@ export function useFilter(): [Filter, (patch: Partial<Filter>) => void, () => vo
 // Each option shows how many of `models` stay when it is chosen with the other filters kept.
 export function ShopFilter({ models, filter, set, clear }: { models: DeviceModel[]; filter: Filter; set: (p: Partial<Filter>) => void; clear: () => void }) {
   const left = (p: Partial<Filter>) => models.filter((m) => matchesFilter(m, { ...filter, ...p })).length;
-  const chips = (key: "form" | "disk", label: string, options: string[]) => (
-    <div className="shop-filter-row">
+  const pick = <K extends keyof Filter>(key: K, label: string, options: Filter[K][], text: (o: NonNullable<Filter[K]>) => string, any: Filter[K]) => (
+    <label className="shop-filter-row">
       <span className="shop-filter-h">{label}</span>
-      {options.map((o) => (
-        <button key={o} className="shop-chip" data-empty={!left({ [key]: o })} aria-pressed={filter[key] === o} onClick={() => set({ [key]: filter[key] === o ? null : o })}>
-          {o}<span className="num">{left({ [key]: o })}</span>
-        </button>
-      ))}
-    </div>
-  );
-  const steps = (key: "cores" | "ram", label: string, options: number[], text: (n: number) => string) => (
-    <div className="shop-filter-row">
-      <span className="shop-filter-h">{label}</span>
-      <div className="seg" role="group" aria-label={label}>
-        {options.map((o) => (
-          <button key={o} data-empty={!left({ [key]: o })} aria-pressed={filter[key] === o} onClick={() => set({ [key]: o })}>
-            {o ? text(o) : "Any"}<span className="num shop-filter-n">{left({ [key]: o })}</span>
-          </button>
+      <select value={String(filter[key] ?? "")} onChange={(e) => set({ [key]: options.find((o) => String(o ?? "") === e.target.value) ?? any })}>
+        {[any, ...options.filter((o) => o !== any)].map((o) => (
+          <option key={String(o)} value={String(o ?? "")}>{o === any ? "Any" : text(o!)} ({left({ [key]: o })})</option>
         ))}
-      </div>
-    </div>
+      </select>
+    </label>
   );
   return (
     <div className="shop-filter">
-      {chips("form", "Form factor", FORMS)}
-      {steps("cores", "Min cores", CORES, String)}
-      {steps("ram", "Min RAM", RAMS, ram)}
-      {chips("disk", "Disk", DISKS)}
+      {pick("form", "Form factor", FORMS, String, null)}
+      {pick("cores", "Min cores", CORES, String, 0)}
+      {pick("ram", "Min RAM", RAMS, ram, 0)}
+      {pick("disk", "Disk", DISKS, String, null)}
       {isSet(filter) && <button className="shop-chip" onClick={clear}>Clear</button>}
     </div>
   );

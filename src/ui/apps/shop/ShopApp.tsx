@@ -52,9 +52,8 @@ export function ShopApp() {
   useFocus("Shop", (f) => { if (f.kind === "software") { pick(null, null); setSoftware(true); } });
   const all = items(yearOf(hour));
   const [filter, setFilter, clearFilter] = useFilter();
-  const serverCls = !!cls && Object.values(LINE_NAME).includes(cls);
   const scoped = all.filter((it) => (!maker || it.brand === maker) && (!cls || it.cls === cls));
-  const shown = serverCls ? scoped.filter((it) => matchesFilter(it.model, filter)) : scoped;
+  const shown = scoped.filter((it) => matchesFilter(it.model, filter));
   const count = (f: (it: Item) => boolean) => all.filter(f).length;
   const [cartOpen, setCartOpen] = useState(false);
   const inCart = useStore((st) => st.cart.reduce((n, l) => n + l.qty, 0));
@@ -83,7 +82,7 @@ export function ShopApp() {
           <span className="grow" />
           <button className="btn ghost" aria-pressed={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingCart />Cart<span className="num shop-count">{inCart}</span></button>
         </div>
-        {serverCls && !software && <ShopFilter models={scoped.map((it) => it.model)} filter={filter} set={setFilter} clear={clearFilter} />}
+        {!software && !used && <ShopFilter models={scoped.map((it) => it.model)} filter={filter} set={setFilter} clear={clearFilter} />}
         <div className="shop-body">
           {used ? <Used /> : software ? <Software /> : (
             <div className="shop-grid">

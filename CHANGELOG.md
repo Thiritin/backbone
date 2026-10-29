@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- The shop filter now appears on every shop page and fits on one line with dropdowns for form factor, cores, RAM and disk.
+
 - Servers have a power button you can press to boot or shut down cleanly or hold to force off, a reset button, and Unplug power pulls every cord, which can corrupt data on a running server.
 - Reboot and Power off join the remote power actions, and powering on from afar needs a management controller or a switched PDU.
 - Clicking a power inlet on the back of a server plugs its cord in or pulls it, and a powered-off device can be dragged on the rack front to a free spot.
