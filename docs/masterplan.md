@@ -15,7 +15,7 @@ This is the work plan for the next stretch of Backbone. It lists what is built a
 - The owner plays on the Vite dev server (port 5173) from this checkout, so merging code here reloads their page; windows and the Support selection survive reloads (src/ui/session.ts).
 - One lane at a time on its own branch or worktree, merged into main only when everything above is green.
 
-Balance today (main 587f3ab): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 720 tests pass.
+Balance today (main f31b2f2): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 752 tests pass.
 
 ## Built
 
@@ -35,6 +35,10 @@ Balance today (main 587f3ab): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5
 - Lane 2.0, alerts that pause (ed5d404): `ALERT_KEYS` in src/sim/alerts.ts, `alert` in the store, src/ui/desktop/AlertSheet.tsx with Open and Continue; gdd.md "The desktop", Alerts.
 - Lane 2.1, company site hosting and design ages (8c57a61): rented Strateaux or an own panel host, `siteStatus`, lead and order factors, design generations with Redesign and the age penalty, `customerSite`, Website app styles per generation; the site factor is applied once per website lead flow (84d5851).
 - Lane 4.1, chassis slots and capacity from parts (9c20670): `dimmSlots`, bays by form factor, `pcie`, `psuBays`, sized components, capacity from installed non-failed parts; gdd.md "Chassis and parts", economy.md "Chassis slots".
+- Lane 3.2, browser (3a85863): the Browser app with tabs, address bar, favicons and bookmarks, `resolve` in src/sim/80-business/browser.ts, the company site with its Admin page (name, tagline, lines, contact, hosting, redesign), customer sites, vendor sites per pun brand, the Downloads easter egg; the Website app opens the browser.
+- Lane 3b, Searchlight (e90b7a7): a Pear Store upgrade; Ctrl+K and Cmd+K open a grouped, keyboard-driven search over apps, customers, services, machines, tickets, sites, consoles, locations and settings with `rank` in src/ui/search/rank.ts.
+- Lane 2b.3, game server panels (f31b2f2): TCAdmen, MultiKraft and Pterodaktyl as software kind "game", game servers prefer a game panel cluster, versions and vulnerabilities for the family.
+- Lane 5.1, hardware lifecycle (523e06c): `until` and `supportYears` on every model, price erosion for non-server gear, end-of-support penalties (twice the swap time, grey market parts at 1.5 times, failure factor 1.2), End of sale and End of support shown, end-of-sale news.
 - Lane 2.0b, news and notification types (d88a4d1): `NOTIFY_TYPES` per app with On/Off per type in Settings and a gear in the notification centre, the News app and `event.news.*` headlines for software, generations, IPv6, RIPE, design generations, mail providers and offerable lines.
 - Lane 2b.1, versions and generated vulnerabilities (587f3ab): `version` and `updatedAt` on clusters, src/sim/60-infra/vulns.ts with seeded vulnerabilities per family and year, daily exploitation rolls (0.05%, 0.25%, 1%, rising with exposure), Nagiosaurus monitoring with the Monitoring tab, `updateSoftware` with downtime by kind and the "update" technician operation, `TechRules.updates`, critical vulnerabilities as alerts.
 - Lane 3.1, hostnames (47c94f9): `node001` servers, `vm001` own VMs, `vps12345678`-style service hostnames with `fqdn`, tickets name the service hostname, shown on customer, VM and server pages.
@@ -48,7 +52,7 @@ Balance today (main 587f3ab): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5
 
 ## In flight
 
-In worktrees: Lane 3.2, Lane 4.5, Lane 5.1, Lane 2b.2, Lane 2b.3.
+In worktrees: Lane 4.5, Lane 2b.2, Lane 3.3, Lane 6 items 6.3 and 6.8.
 
 ## What Lane 1 left behind (read before Lanes 2 and 3)
 
@@ -71,20 +75,20 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 2.2 | Panel traits, migration as a hand task, compromised sites and mail | Built |
 | 2b.1 | Software versions, generated vulnerabilities, monitoring, updates | Built (587f3ab) |
 | 2b.2 | Customer applications, notify and the update service | 2b.1 |
-| 2b.3 | Game server panels | 2b.1 |
+| 2b.3 | Game server panels | Built (f31b2f2) |
 | 2b.4 | Breaches, ransom and fines | 2.0, 2b.1 |
 | 3.1 | Hostnames everywhere | Built (47c94f9) |
-| 3.2 | Browser app, company site Admin, customer sites, easter egg | 2.1, 3.1 |
+| 3.2 | Browser app, company site Admin, customer sites, easter egg | Built (3a85863) |
 | 3.3 | Server consoles by hostname with a feature matrix | 3.2, 2.2 |
 | 3.4 | IPMI, power actions, hangs and pulled plugs | 3.1, 3.2 |
 | 3.5 | Terminal: ssh, ping, traceroute, recover | 3.4 |
-| 3b | Searchlight | 3.2 (searches sites and consoles) |
+| 3b | Searchlight | Built (e90b7a7) |
 | 4.1 | Chassis slots and capacity from parts | Built (9c20670) |
 | 4.2 | Shop: bare chassis, presets with extras, parts, upgrades in the rack | Built |
 | 4.3 | Top-down lid-off view | Built |
 | 4.4 | Part prices over time | Built (2798fbf) |
 | 4.5 | GPU computing | 4.1, 4.4 |
-| 5.1 | Hardware lifecycle: end of sale and end of support | 4.4 |
+| 5.1 | Hardware lifecycle: end of sale and end of support | Built (523e06c) |
 | 5.2 | Routers, UPS sizes, switched PDUs | 5.1, 3.4 (PDU power cycle) |
 | 6 | Small briefs | any time, one each |
 
