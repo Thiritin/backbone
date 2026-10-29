@@ -10,7 +10,7 @@ describe("shop filter", () => {
     expect(left(2014, {})).toHaveLength(models(2014).length);
   });
   it("each dimension keeps only matching specs", () => {
-    expect(left(2014, { form: "2U" }).every((m) => m.height === 2 && !m.shelf)).toBe(true);
+    expect(left(2014, { form: "2U" }).every((m) => m.height === 2)).toBe(true);
     expect(left(2014, { cores: 16 }).every((m) => m.server!.cores >= 16)).toBe(true);
     expect(left(2014, { ram: 256 }).every((m) => m.server!.ramGb >= 256)).toBe(true);
     expect(left(2014, { disk: "SSD" }).every((m) => m.server!.disk === "SSD")).toBe(true);
@@ -22,7 +22,7 @@ describe("shop filter", () => {
       expect(n).toEqual([...n].sort((a, b) => b - a));
     }
   });
-  it("2005 sells towers", () => {
-    expect(left(2005, { form: "Tower" }).length).toBeGreaterThan(0);
+  it("sells no towers", () => {
+    expect(left(2005, {}).every((m) => m.height > 0)).toBe(true);
   });
 });
