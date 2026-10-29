@@ -63,9 +63,9 @@ describe("notification types in the store", () => {
   });
 
   it("always shows alert keys", () => {
-    s().setNotifyPref("Bank", { allow: false, types: { [typeOf("Bank", "event.loanMissed")]: false } });
+    s().setNotifyPref("Finance", { allow: false, types: { [typeOf("Finance", "event.loanMissed")]: false } });
     expect(Object.keys(ALERT_KEYS)).toContain("event.loanMissed");
-    s().notify("Bank", "missed", "x", "event.loanMissed");
+    s().notify("Finance", "missed", "x", "event.loanMissed");
     expect(s().history.map((b) => b.title)).toEqual(["missed"]);
   });
 

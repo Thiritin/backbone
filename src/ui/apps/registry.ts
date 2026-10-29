@@ -1,8 +1,7 @@
 import {
-  Activity, AppWindow, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, Landmark, LifeBuoy, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, AppWindow, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Globe, GraduationCap, LifeBuoy, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
-import { BankApp } from "./bank/BankApp";
 import { BillingApp } from "./billing/BillingApp";
 import { BrowserApp } from "./browser/BrowserApp";
 import { FinanceApp } from "./finance/FinanceApp";
@@ -59,14 +58,13 @@ export const APPS: AppDef[] = [
   { name: "Billing", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: "Sends invoices, reminders and dunning notices.", body: BillingApp,
     badge: (s) => s.invoices.filter(isUnpaid).length },
   { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Shows your profit and loss, cash flow, tax, insurance and the account statement with every booking.", body: FinanceApp },
-  { name: "Bank", icon: Landmark, tile: "oklch(0.45 0.04 255)", about: "Offers loans up to your credit limit and lets you repay them early.", body: BankApp },
   { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: "Hires people and assigns them to work queues.", body: StaffApp },
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: "Runs campaigns and manages reviews.", body: MarketingApp },
   { name: "Market", icon: ChartPie, tile: "oklch(0.62 0.12 230)", about: "Shows demand, customer requirements and lost sales.", body: MarketApp },
   { name: "Nagiosaurus", icon: Activity, tile: "oklch(0.58 0.14 150)", about: "Watches every installed software for known vulnerabilities and lists the most exposed first.", hidden: true },
   { name: "Research", icon: GraduationCap, tile: "oklch(0.72 0.15 95)", about: "Trains your company in new skills with the know-how it earns.", body: ResearchApp },
   { name: "Getting started", icon: BookOpen, tile: "oklch(0.55 0.15 255)", about: "Explains the controls and how the game saves.", hidden: true },
-  { name: "Security", icon: ShieldAlert, tile: "oklch(0.58 0.17 25)", about: "Lists the nodes a PHP vulnerability affects and takes their sites offline, patches and cleans them up.", hidden: true, body: SecurityApp },
+  { name: "Security", icon: ShieldAlert, tile: "oklch(0.58 0.17 25)", about: "Lists the nodes a PHP vulnerability affects and takes their sites offline, patches and cleans them up.", body: SecurityApp },
   { name: "Notes", icon: FileText, tile: "oklch(0.7 0.13 85)", about: "Edits the notes on your desktop.", hidden: true },
   { name: "News", icon: Newspaper, tile: "oklch(0.55 0.12 30)", about: "Lists the headlines about new software, hardware and market changes.", hidden: true, body: NewsApp },
   { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: "Sets your company name and logo, the theme and which apps may send notifications." },

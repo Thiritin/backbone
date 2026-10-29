@@ -30,7 +30,7 @@ export function GuideApp() {
           );
         })}
       </ol>
-      <p>When the server fills up, the Bank app lends you the money for the next one.</p>
+      <p>When the server fills up, the Loans page in Finance lends you the money for the next one.</p>
       <h3>Time</h3>
       <p>The clock starts paused. Press <kbd>Space</kbd> to start or pause it, and <kbd>1</kbd> to <kbd>3</kbd> to switch between 1×, 2× and 4× speed, and <kbd>4</kbd> to skip ahead until something happens. The buttons in the menu bar do the same.</p>
       <h3>Apps and windows</h3>

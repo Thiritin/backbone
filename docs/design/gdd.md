@@ -770,7 +770,7 @@ Payment habits differ by segment. Private individuals forget most often, and ent
 
 **Account statement.** The Finance app lists every booking on the company account: date, counterparty, description, category and amount, with the running balance. Filters narrow it by category (customer payments, hardware, rent, power, transit, salaries, loans, tax) and by month.
 
-**Bank app.** The Bank app holds only loans. Your active loans appear as cards with the remaining balance, monthly instalment, instalments left and a Repay button. Below them, offers appear as a grid of cards in the style of the shop: you pick a term (1, 2, 3, 5 or 10 years), and each card shows a preset amount up to your limit, plus one for the whole remaining limit, with its interest rate, monthly instalment, total interest and a Take loan button. The rate and the limit depend on your company level and repayment history, and missed repayments add penalties.
+**Loans in Finance.** The Loans page in the Finance app holds the loans. Your active loans appear as cards with the remaining balance, monthly instalment, instalments left and a Repay button. Below them, offers appear as a grid of cards in the style of the shop: you pick a term (1, 2, 3, 5 or 10 years), and each card shows a preset amount up to your limit, plus one for the whole remaining limit, with its interest rate, monthly instalment, total interest and a Take loan button. The rate and the limit depend on your company level and repayment history, and missed repayments add penalties.
 
 **Insurance.** SLA insurance pays the credits you owe customers when you miss an SLA. It covers three claims; after the third, the insurer blocks you for a year. The premium rises with a poor uptime record.
 
@@ -942,7 +942,7 @@ Each location connects to the internet through what its city offers: transit car
 | Equinix | Equinox | Datacenter operator |
 | Interxion | Interaction | Datacenter operator |
 | Cloudflare | Crowdflare | CDN, peers openly |
-| Deutsche Bank | Deutsche Bankrupt | Bank in the Bank app |
+| Deutsche Bank | Deutsche Bankrupt | Bank on the Loans page in Finance |
 
 **DDoS attacks.** Attacks target one customer, and gamers attract the most. The flood saturates your links, so everyone sharing them suffers. Your options:
 

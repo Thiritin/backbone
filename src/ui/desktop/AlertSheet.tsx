@@ -37,7 +37,9 @@ function body(game: GameState, key: string): { rows: Row[]; source?: string } {
 // The ransom still waiting for a decision, newest first.
 const openBreach = (game: GameState) => game.breaches.filter((b) => b.decision === null).at(-1);
 
+const LOAN_KEYS = ["event.cashNegative", "event.loanMissed", "event.loanCalled"];
 const focus = (game: GameState, key: string) =>
+  LOAN_KEYS.includes(key) ? { kind: "tab", id: "loans" } :
   key === "event.vulnCritical" ? { kind: "card", id: "software" } : key === "event.breach" && openBreach(game) ? { kind: "ticket", id: openBreach(game)!.ticketId } : undefined;
 
 // The sheet an alert event opens with the game paused.
