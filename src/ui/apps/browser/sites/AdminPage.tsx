@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { t } from "../../../../i18n/en";
 import { yearOf } from "../../../../sim/00-core/time";
 import { euro, euroCents } from "../../../../sim/00-core/money";
-import { hasOrderForm, OWNED, owns } from "../../../../sim/80-business/marketing";
+import { hasOrderForm, OWNED, owns, type OwnedChannel } from "../../../../sim/80-business/marketing";
+import { setUpChannel } from "../../../../sim/90-actions/marketing";
 import { generationOf, lineBlocker, listed, SITE_LINES, SITE_RENT, siteRoom, siteStatus, type SiteStatus } from "../../../../sim/80-business/website";
 import { NAME_MAX, setCompany, TAGLINE_MAX } from "../../../../sim/90-actions/company";
 import { redesign, setEmailOrders, setLine, setSiteHost } from "../../../../sim/90-actions/website";
@@ -22,6 +23,22 @@ function TextSetting({ label, value, max, save }: { label: string; value: string
       <input className="field" maxLength={max} value={draft} spellCheck={false} onChange={(e) => setDraft(e.target.value)} onBlur={commit}
         onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
     </label>
+  );
+}
+
+// A channel not yet owned: setup and upkeep as values, and a button that stays off while the channel is out of reach.
+function ChannelOffer({ id, label }: { id: OwnedChannel; label: string }) {
+  const game = useStore((s) => s.game);
+  const act = useStore((s) => s.act);
+  const def = OWNED[id];
+  const blocked = game.cash < def.setup || (def.needs !== null && !owns(game, def.needs)) || (id === "website" && !game.company.domain);
+  return (
+    <div className="web-line">
+      <div className="web-line-row">
+        <span>{label} <span className="num">{euro(def.setup)}</span> + <span className="num">{euro(def.upkeep)}</span> / month</span>
+        <button className="btn primary" disabled={blocked} onClick={() => act((s) => setUpChannel(s, id))}>Set up</button>
+      </div>
+    </div>
   );
 }
 
@@ -82,6 +99,8 @@ export function AdminPage({ onSite }: { onSite: () => void }) {
               </div>
             </div>
           )}
+          {!owns(game, "website") && <ChannelOffer id="website" label="Web design" />}
+          {owns(game, "website") && !owns(game, "orderForm") && <ChannelOffer id="orderForm" label="Order form" />}
           <div className="web-line">
             <div className="web-line-row"><span>{hostName}</span><span className={`pill ${statusTone}`}>{statusLabel}</span></div>
             {siteHost.kind === "rented" && <p className="web-why"><span className="num">{euroCents(SITE_RENT)}</span> a month</p>}
