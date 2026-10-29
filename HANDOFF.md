@@ -21,6 +21,7 @@ Make `docs/masterplan.md` complete and unambiguous, so Sonnet agents can impleme
 
 - Assuming a UI bug is in the game: the "ticket closes on new order" report was the owner's dev page reloading when code merged into this checkout. Windows and the Support selection now survive reloads (`src/ui/session.ts`). Merging into main still reloads the owner's page on port 5173.
 - Importing `/src/ui/store.ts` without the HMR query string gives a separate store instance; use the exact URL from performance entries.
+- `tests/network.test.ts` "DDoS ... deterministically by seed" can hit the 5 s timeout under full-suite load and passes alone; rerun before chasing it, or give it a longer timeout.
 - Charging a new price on top of existing ones (traffic) moved the late-game medians; take a new resource's share out of the existing rates instead.
 
 ## Next steps
