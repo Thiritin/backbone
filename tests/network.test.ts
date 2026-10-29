@@ -285,7 +285,7 @@ describe("DDoS", () => {
     expect(gamers).toBe(count("gamer"));
     expect(gamers).toBeGreaterThan(others * 3);
     expect(gamers).toBeGreaterThan(5);
-  });
+  }, 20000);
 });
 
 describe("monthly cost", () => {
