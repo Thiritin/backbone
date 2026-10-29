@@ -53,8 +53,8 @@ export function MarketingApp() {
   const game = useStore((s) => s.game);
   // Until the Marketing campaigns skill, the app only buys the company domain.
   const full = isAvailable("Marketing", game.unlocks);
-  const [picked, setSection] = useState<Section>(full ? "channels" : "domain");
-  const section = full ? picked : "domain";
+  const [picked, setSection] = useState<Section | null>(null);
+  const section = full ? picked ?? "channels" : "domain";
   useFocus("Marketing", (f) => { if (f.kind === "page" && f.id === "domain") setSection("domain"); });
   const total = leadsThisMonth(game).reduce((n, b) => n + b.count, 0);
   const items: [Section, string, ReactNode, number | null][] = [
@@ -84,7 +84,7 @@ export function MarketingApp() {
           <div><dt>Review score</dt><dd className="num">{reviewScore(game).toFixed(1)}</dd></div>
         </dl>
         <div className="fin-scroll">
-          {section === "domain" && <CompanyDomain />}
+          {section === "domain" && <div className="mkt-list"><CompanyDomain /></div>}
           {section === "channels" && <Channels />}
           {section === "campaigns" && <Campaigns />}
           {section === "awareness" && <Awareness />}

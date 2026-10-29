@@ -113,6 +113,7 @@ console.log(`Server: ${guild.name} (${guild.id})`);
 
 const icon = readFileSync(new URL('../docs/brand/logo-512.png', import.meta.url)).toString('base64');
 guild = await api('PATCH', `/guilds/${guild.id}`, { icon: `data:image/png;base64,${icon}` });
+if (!me.avatar) await api('PATCH', '/users/@me', { avatar: `data:image/png;base64,${icon}` });
 console.log('Icon set');
 
 const roles = await api('GET', `/guilds/${guild.id}/roles`);
