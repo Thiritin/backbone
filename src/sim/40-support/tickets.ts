@@ -69,6 +69,15 @@ export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => 
 // Tickets with their own actions have no reply templates.
 export const templatesOf = (t: Pick<Ticket, "kind" | "topic">): string[] => (`${t.kind}.${t.topic}` in TOPIC_ACTIONS ? [] : TEMPLATES[t.kind]);
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
+export const SHORT_REPLIES = 3;
+// A desk without the templates feature lists only a few replies; the one that settles the ticket stays in.
+export function shownTemplates(s: GameState, t: Ticket, all: boolean): string[] {
+  const list = templatesOf(t);
+  if (all || list.length <= SHORT_REPLIES) return list;
+  const keep = list.slice(0, SHORT_REPLIES), right = rightTemplate(s, t);
+  if (!keep.includes(right) && list.includes(right)) keep[keep.length - 1] = right;
+  return list.filter((id) => keep.includes(id));
+}
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
 const RIGHT: Record<string, string> = {
   suspended: "resend", upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer", more: "offer",

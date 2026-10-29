@@ -3,7 +3,7 @@ import { useState, type CSSProperties } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import { updatePrice } from "../../../sim/10-catalog/apps";
 import { deskHas, deskOf, type DeskFeature } from "../../../sim/10-catalog/desks";
-import { actionsOf, canEscalate, isFinal, monthlyValue, templatesOf, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
+import { actionsOf, canEscalate, isFinal, monthlyValue, shownTemplates, templatesOf, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
 import { senderById, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-support/notices";
 import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
 import { missingFor, requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
@@ -62,7 +62,6 @@ function ticketMenu(game: GameState, tk: Ticket): MenuEntry[] {
 }
 
 // The replies available without a desk.
-const DEFAULT_REPLIES = 3;
 
 const subjectOf = (s: GameState, tk: Ticket) => t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(s, tk));
 
@@ -424,7 +423,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
             <>
               <h3>Reply</h3>
               <div className="templates" role="radiogroup" aria-label="Reply template">
-                {(gates.templates ? templatesOf(tk) : templatesOf(tk).slice(0, DEFAULT_REPLIES)).map((id) => (
+                {shownTemplates(game, tk, gates.templates).map((id) => (
                   <label key={id} className="tpl">
                     <input type="radio" name={`tpl-${tk.id}`} checked={tpl === id} disabled={locked} onChange={() => setTpl(id)} />
                     <span className="t">{t(`template.${id}.title`)}</span>
