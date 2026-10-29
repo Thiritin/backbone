@@ -13,8 +13,9 @@ import { PRODUCT } from "../support/labels";
 
 const LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "domain", "ssl"];
 const UNIT: Record<Unit, string> = { base: "Base fee", vcpu: "Per vCPU", ramGb: "Per GB RAM", diskGb: "Per GB disk", mailbox: "Per mailbox", unit: "Per rack unit", kw: "Per kW" };
-// Rates below a euro need a tenth of a cent.
-const rate = (x: number) => (x < 1 && x > 0 ? `€${x.toFixed(3)}` : euroCents(x));
+// Rates below ten cents need a tenth of a cent.
+const fine = (x: number) => x > 0 && x < 0.1;
+const rate = (x: number) => (fine(x) ? `€${x.toFixed(3)}` : euroCents(x));
 
 // One rate: the player's euros per unit, the market's beside it.
 function RateRow({ product, unit, mine, market }: { product: Product; unit: Unit; mine: number | undefined; market: number }) {
@@ -31,7 +32,7 @@ function RateRow({ product, unit, mine, market }: { product: Product; unit: Unit
       <label htmlFor={`rate-${product}-${unit}`}>{UNIT[unit]}</label>
       <span className="price-input">
         <span aria-hidden>€</span>
-        <input id={`rate-${product}-${unit}`} type="number" min={0} step={0.001} placeholder={market.toFixed(market < 1 ? 3 : 2)} value={text}
+        <input id={`rate-${product}-${unit}`} type="number" min={0} step={0.001} placeholder={market.toFixed(fine(market) ? 3 : 2)} value={text}
           onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === "Enter" && commit()} />
       </span>
       <span className="rate-ref">Market <span className="num">{rate(market)}</span></span>

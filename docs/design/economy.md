@@ -37,7 +37,7 @@ A new game starts on 1 January 2005 with €3,500 in cash, an empty 24U rack in 
 | Home line | Deutsche Telekomm DSL 16000, 16 Mbit/s down and 1 Mbit/s up; paid privately, so it costs the company nothing |
 | Hardware | An empty 24U rack and the home router. The player buys the first server in the Shop, mounts it, plugs in its power and cables it to the home router; it runs no control plane until its setup installs a panel or a hypervisor on it |
 | Reseller accounts | Domains from a registrar, at 40% of the retail price |
-| Customers | None until the first hosting panel finishes installing. Then 3 friends (Jonas Weber, Mira Schulz and Tobi Kraus, private individuals) sign up for Web M hosting at €6 a month on that cluster; happiness 85, and they always pay |
+| Customers | None until the first hosting panel finishes installing. Then 3 friends (Jonas Weber, Mira Schulz and Tobi Kraus, private individuals) sign up for the 2 GB web hosting size at €6 a month on that cluster; happiness 85, and they always pay |
 
 
 ## Prices over time
@@ -56,8 +56,8 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Internet exchange ports | 5 | AMS-IX 10G: €650 per month in 2026 |
 | Customer base rate per GB of RAM | 11 | VPS: about €1.50 per GB in 2026, €16 per GB in 2005 |
 | Customer base rate per TB of storage | 32 | Object storage: €6.50 per TB in 2026, €210 in 2005 |
-| Customer base rate per TB of traffic | 46 | Overage and traffic-heavy plans |
-| Fixed-price products | 1 | Web hosting plans, domains and dedicated server tiers keep their price; the plans get bigger |
+| Customer base rate per TB of traffic | 46 | Overage and traffic-heavy services |
+| Fixed-price products | 1 | Web hosting, domains and dedicated servers keep their price per size; the sizes get bigger |
 | Rented space per U, rack or cage | 1 | Power is billed separately |
 | Server purchase price | 1 | Resources per server come from the generations table below |
 | Salaries | 0.6 | Support agent, junior: €38,700 in 2026, about €23,000 in 2005 |
@@ -217,7 +217,7 @@ Each lead first checks the profile's requirements on the host. A lead that fails
 
 Each lead scores every host that meets its requirements and picks one at random, weighted so that better scores win most of the time. Every host gets the same offer, so price plays no part in the choice.
 
-**Scores.** Each plan gets three scores from 0 to 100.
+**Scores.** Each host gets three scores from 0 to 100.
 
 | Score | Formula | Parts |
 | --- | --- | --- |
@@ -315,11 +315,11 @@ Hours a service is down are left off its invoice line. When the hours up fall be
 
 How the market above turns into order emails and sales requests in the Support app. Code: `src/sim/30-market`.
 
-**Orders by email.** A lead asking for a basic SLA from a profile with a low or medium budget is a standard order (`orders.ts`). Its price is the request's market reference less any campaign discount, and it has the same 72 hours as a sales request. Accepting it or declining it takes 10 minutes of player or support time. Without packages on its line it asks for custom resources (below); with packages it is placed directly through the order form when the city has the product and room, and arrives as an order ticket otherwise. A new game always gets its first order email within 14 days: each morning before then without an order, a friend's recommendation brings one from a private individual with chance 1 / (14 − day). Seeds 1 to 8 already brought one between day 1 and day 22 from organic leads alone, so the recommendation only fills the gap.
+**Orders by email.** A lead asking for a basic SLA from a profile with a low or medium budget is a standard order (`orders.ts`). It names its own resources (Custom orders, below), its price starts at the request's market reference less any campaign discount, and it has the same 72 hours as a sales request. Accepting it or declining it takes 10 minutes of player or support time. Before the order form every order lead writes an email. With the order form and email orders on, a quarter of the order leads (`EMAIL_SHARE`, 0.25) still write one and the rest go through the form, which places the order at once at the player's rates (Per-resource pricing) when the city has the product and room; an order the form cannot place arrives as an order email. A new game always gets its first order email within 14 days: each morning before then without an order, a friend's recommendation brings one from a private individual with chance 1 / (14 − day). Seeds 1 to 8 already brought one between day 1 and day 22 from organic leads alone, so the recommendation only fills the gap.
 
-**Email orders off.** Switching email orders off (`website.ts`, needs the order form) keeps every order lead that would order a package: on a line with packages that is three in four, and those go through the order form. The other quarter, and every order lead on a line without packages, leaves without writing. A package order the form cannot place is a lost sale instead of an order ticket. Sales requests (business SLA or high budget), upgrades and the shady request are not affected. On a line with packages, email off therefore costs a quarter of its order leads, all of them custom deals, and saves their 30 to 35 minutes of step work each, plus the 10 minutes of every package order the form could not place.
+**Email orders off.** Switching email orders off (`website.ts`, needs the order form) sends every order lead through the order form, and an order the form cannot place is a lost sale instead of an order email. Sales requests (business SLA or high budget), upgrades and the shady request are not affected. Email off therefore saves the 30 to 35 minutes of step work of a quarter of the order leads and costs only the orders the form cannot place.
 
-**Custom orders.** Before a line sells packages (and for a quarter of its email orders after) an order names its own resources (`custom.ts`, `manual.ts`). The plan its profile would pick is scaled by one of 0.5, 0.75, 1, 1.25, 1.5 or 2: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. The monthly market price of a spec: web space along Web S, M and L by disk in that year's GB (€1.50 at none, €3 at 1, €6 at 2, €12 at 5, extended beyond) plus €0.30 per mailbox past two; a VPS the year's rate per GB of RAM (1.6 × for game servers), plus half a GB's rate per vCPU past one per 2 GB and 1/40 of it per GB of disk past 20 per GB of RAM. The SLA factor and the profile's offer factor apply as for plans. Step times: account 5, confirmation and invoice 10, domain 5, setup 15 minutes. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
+**Custom orders.** Every order names its own resources, by email or through the form (`spec.ts`, `manual.ts`). It starts from the size its profile's budget picks (What a lead asks for). Web hosting, VPS and game server orders scale that size by one of 0.5, 0.75, 1, 1, 1.25 or 1.5, which average to 1: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, with 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. Other lines take the size as it is. A spec's monthly market price comes from Per-resource pricing, and the SLA factor and the profile's offer factor apply on top. Step times: account 5, confirmation and invoice 10, domain 5, setup 15 minutes. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
 
 **Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8, .com €6 to €9 (VeriSigh raised its price over the years). The customer pays €15 a year for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
 
@@ -342,7 +342,7 @@ How the market above turns into order emails and sales requests in the Support a
 
 The balance model keeps the four archetypes in every segment and leaves the specialists out.
 
-**What a lead asks for.** Plans follow the budget: the smallest plan for low budgets, the second for medium and the largest for high. Four in ten leads settle for one SLA level less than their profile asks.
+**What a lead asks for.** A lead starts from one of its line's sizes by budget (`SIZES` in `products.ts`): the smallest for low budgets, the second for medium and the largest for high. Four in ten leads settle for one SLA level less than their profile asks.
 
 | Profile | Products asked for |
 | --- | --- |
@@ -358,7 +358,7 @@ The balance model keeps the four archetypes in every segment and leaves the spec
 
 **Requirements.** A request needs a location in its city and a cluster with nodes there (a free mounted server for dedicated). A Business or Premium SLA needs a datacenter location in the city, Premium also a company at least 12 months old, and high-budget profiles a review score of 3 stars. A request that misses one arrives greyed out and becomes a lost sale with that reason when it expires.
 
-**Reference and budget.** The market reference is the plan's market price × the SLA factor × the profile's offer (0.9, 1.0 or 1.3 by budget). Each request has a hidden budget b, uniform between 0.97 and 1.24, and the customer accepts a quote q with this probability:
+**Reference and budget.** The market reference is the spec's market price at the basic SLA × the SLA factor × the profile's offer (0.9, 1.0 or 1.3 by budget). Each request has a hidden budget b, uniform between 0.97 and 1.24, and the customer accepts a quote q with this probability:
 
 ```math
 P(\text{accept}) = \frac{1}{1 + e^{(q / \text{ref} - m) / 0.06}}, \quad m = b \cdot (1 - d) \cdot e_{\text{existing}} \cdot (1 + 0.05\,(\text{stars} - 3.5)) \cdot (1 + 0.1\,a)
@@ -370,7 +370,7 @@ d is the agency discount from a campaign, e is 1.15 for an existing customer and
 
 **Winning.** An accepted quote signs the customer (payment habit drawn from Billing and payment habits) and provisions the service in the request's city at the quoted price. Without room the deal is lost as "No capacity in Frankfurt" and the customer goes elsewhere.
 
-**Expansion.** Every upgrade ticket (2% to 4% of customers a month, see Happiness and churn) opens an expansion request for the next bigger plan of its service, or one more of the biggest. Winning it replaces the service and closes the ticket.
+**Expansion.** Every upgrade ticket (2% to 4% of customers a month, see Happiness and churn) opens an expansion request for 1.5 or 2 times every resource of its service, answered in one step with the upgrade flow (`acceptUpgrade`). Winning it grows the service, in place when its server has room, and closes the ticket.
 
 **Shady requests.** From the fourth month, about one request every three months asks for the biggest VPS, no questions asked, paid in crypto. Its budget is 1.8, so it accepts nearly any price. A won shady customer carries a hidden `shady` flag for abuse and legal follow-ups.
 
@@ -382,7 +382,7 @@ d is the agency discount from a campaign, e is 1.15 for an existing customer and
 
 ## Happiness and churn
 
-Every customer has a happiness value H from 0 to 100. Events move it up and down, it slowly drifts toward how good your plan is compared with the best competitor, and it sets the chance of cancelling at each renewal. New customers start at 70; the three starting friends start at 85.
+Every customer has a happiness value H from 0 to 100. Events move it up and down, it slowly drifts toward how good your offer is compared with the best competitor, and it sets the chance of cancelling at each renewal. New customers start at 70; the three starting friends start at 85.
 
 **Events.**
 
@@ -396,7 +396,7 @@ Every customer has a happiness value H from 0 to 100. Events move it up and down
 | Price raised | −1 per 1% of increase, more past the customer's maximum (Price tolerance) |
 | Price lowered | +0.2 per 1% of decrease, at most +10 |
 
-**Drift.** On each monthly tick H moves a fifth of the way toward a target set by your plan's value U against the best competitor's:
+**Drift.** On each monthly tick H moves a fifth of the way toward a target set by your value U against the best competitor's:
 
 ```math
 H \leftarrow H + 0.2\,(H^{*} - H), \quad H^{*} = \operatorname{clamp}\big(70 + 0.5\,(U_{you} - U_{best}),\ 20,\ 95\big)
@@ -436,7 +436,7 @@ A 5% raise inside the maximum costs 5 happiness once and about 0.5 a month while
 
 In the balance model, cohorts take the same monthly cost at the bot's price factor with t at its mean of 1.05. The standard bots price at 0.8 × market and are unaffected. A probe bot at 1.2 × market ends year 5 with 39 customers instead of 43 and year 10 with €6,817 MRR instead of €7,017; at 1.4 × market it ends year 10 with 42 customers instead of 61.
 
-**Upgrades.** Each month a customer outgrows their plan with a 2% chance at low budget, 3% at medium and 4% at high budget, which creates an upgrade ticket.
+**Upgrades.** Each month a customer outgrows their service with a 2% chance at low budget, 3% at medium and 4% at high budget, which creates an upgrade ticket.
 
 **Customer clocks.** Each profile keeps one of two clocks. On business hours (Monday to Friday, 9:00 to 17:00, the same hours staff work) only those hours count; one business day is 8 business hours. Around the clock, every hour counts. A ticket is due once the reply time has passed on the customer's clock, so a ticket written Friday at 16:00 by a customer who expects a reply within one business day is due Monday at 16:00. The wait penalty only accrues in hours that count, so business-hour customers do not mind a ticket left overnight or over the weekend.
 
@@ -892,7 +892,7 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 one
 
 **DDoS attacks.** Each gamer customer draws 0.02 attacks a month and every other customer 0.002. A typical attack is 0.5 Gbit/s in 2005, growing 25% a year to about 54 Gbit/s in 2026, and lasts 1 to 6 hours. On-demand protection starts after a 10-minute detection delay; until then the attack hits the links.
 
-**Per plan.** The table is the average customer, on the middle plan of a product (the lower middle when the count is even). Each plan step up doubles the traffic and each step down halves it, so VPS S, M, L and XL send 10, 20, 40 and 80 GB a month in 2005. Domains and certificates send nothing, DNS hosting 1 GB, cloud servers like a VPS.
+**Per size.** The table is the average customer, on the middle size of a line (the lower middle when the count is even). Each size step up doubles the traffic and each step down halves it, so the four VPS sizes send 10, 20, 40 and 80 GB a month in 2005. A service sends its spec's traffic, grown 20% a year since it started. Domains and certificates send nothing, DNS hosting 1 GB, cloud servers like a VPS.
 
 **Daily wave.** Until workloads have their usage curves, every service follows one wave of 1 + 0.9 × cos(2π (hour − 21) ÷ 24): 1.9 × the average at 21:00 and 0.1 × at 09:00, which puts the 95th percentile near GB per month ÷ 164.
 
@@ -932,25 +932,43 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 one
 
 ## Workloads and migration
 
-**Sizes.** A web space uses 0.1 vCPU, 0.25 GB of RAM and its plan's disk. A VM uses its plan's vCPUs, RAM and disk. A game server uses 2 vCPUs and 4 GB of RAM in 2005, doubling every 7 years like VPS plans.
+**Sizes.** A web space uses 0.1 vCPU, 0.25 GB of RAM and its spec's disk. A VM uses its spec's vCPUs, RAM and disk. A game server starts at 2 vCPUs and 4 GB of RAM in 2005, doubling every 7 years like VPS sizes.
 
-**Plans and market references.** The catalog in `src/sim/10-catalog/products.ts` holds these plans. "Base" is the year's base plan RAM, 1 GB in 2005 and doubling every 7 years; fixed-price plans keep their price and grow at the same pace. The market reference is the 2005 price; priced plans follow their base rate over the years, and an SLA multiplies it by its price factor.
+**Starting sizes.** The catalog in `src/sim/10-catalog/products.ts` holds the sizes each line's customers start from (`SIZES`). "Base" is the year's base RAM g (`vpsPlanGb`), 1 GB in 2005 and doubling every 7 years. Each size is priced by Per-resource pricing below; the prices in the table are for 2005 at the basic SLA.
 
-| Product | Plans | One unit uses | Market reference (2005) | Runs on |
+| Product | Sizes | One unit uses | Market price (2005) | Runs on |
 | --- | --- | --- | --- | --- |
-| Web hosting | S, M, L | 0.1 vCPU, 0.25 GB RAM, 1, 2 or 5 GB disk × growth | €3, €6, €12 a month | Cluster |
-| VPS | S, M, L, XL | 0.5, 1, 2 or 4 × base RAM; 1 vCPU per 2 GB (at least 1); 20 GB disk per GB of RAM | RAM × the VPS rate (€16.50 per GB) | Cluster |
-| Game server | S, L | 2 or 4 vCPUs, 4 or 8 GB RAM, 10 or 20 GB disk × growth | RAM × 1.6 × the VPS rate, the low end of €2.40 to €6.10 per GB | Cluster |
-| DNS hosting | DNS | 0.05 vCPU, 0.1 GB RAM, 1 GB disk | €2 a month | Cluster |
-| VPN | VPN | 1 vCPU, 0.5 GB RAM, 1 GB disk | €5 a month | Cluster |
-| Storage hosting | 100 GB, 500 GB, 1 TB | Disk only | €2.60 per TB in 2026 with m = 32, about €83 per TB in 2005 | Cluster |
-| Cloud servers | M | Like VPS M | 1.25 × VPS M | High-availability cluster |
-| Dedicated servers | S, L | A whole server with at least 8 or 32 GB × growth | €79, €299 a month | A free server |
-| Colocation | 1U, quarter, half, full rack | 1, 10, 21 or 42 units and 150 W, 1, 2 or 4 kW | €60, €420, €840, €1,600 a month | Datacenter rack |
-| Domains | Domain | Nothing | €15 a year | Resold |
-| SSL certificates | Certificate | Nothing | €50 a year until 2015, then free | Resold |
+| Web hosting | 3 | 0.1 vCPU, 0.25 GB RAM, 1, 2 or 5 GB disk × growth, two mailboxes | €3.75, €6, €12.75 a month | Cluster |
+| VPS | 4 | 0.5, 1, 2 or 4 × base RAM; 1 vCPU per 2 GB (at least 1); 20 GB disk per GB of RAM | 0.65, 1.1, 2 or 4 × the VPS rate (€16.50 per GB); from 2012 the smallest is 1.1 × | Cluster |
+| Game server | 2 | 2 or 4 vCPUs, 4 or 8 GB RAM, 10 or 20 GB disk × growth | 6.4 or 12.8 × the VPS rate | Cluster |
+| DNS hosting | 1 | 0.05 vCPU, 0.1 GB RAM, 1 GB disk | €2 a month | Cluster |
+| VPN | 1 | 1 vCPU, 0.5 GB RAM, 1 GB disk | €5 a month | Cluster |
+| Storage hosting | 100 GB, 500 GB, 1 TB | Disk only | About €8, €42, €83 a month | Cluster |
+| Cloud servers | 1 | Like the 1 × base RAM VPS | 1.25 × that VPS | High-availability cluster |
+| Dedicated servers | 2 | A whole server with at least 8 or 32 GB × growth | €79, €299 a month | A free server |
+| Colocation | 1U, quarter, half, full rack | 1, 10, 21 or 42 units and 150 W, 1, 2 or 4 kW | €60, €415, €845, €1,675 a month | Datacenter rack |
+| Domains | 1 | Nothing | €15 a year | Resold |
+| SSL certificates | 1 | Nothing | €50 a year until 2015, then free | Resold |
 
-**Capacity.** A node books up to its physical cores × 8 in vCPUs, its RAM × 1.5 and its usable RAID disk × 2. A G1 balanced server books 16 vCPUs, 12 GB of RAM and 1 TB of disk: 48 web spaces, or 24 VPS S, or 6 VPS L by RAM. Booking counts what workloads booked; the load they put on the hardware follows the usage curves.
+**Per-resource pricing.** Every line charges a base fee per service plus a price per unit of the spec (`marketRates` and `specPrice` in `products.ts`). The market's rates are per month at the basic SLA, per year for domains and SSL, with r the year's VPS rate per GB of RAM (`vpsRatePerGb`, €16.50 in 2005) and g the base RAM. An SLA multiplies the sum by its price factor, and a request's market reference is that price × the profile's offer factor (Reference and budget).
+
+| Line | Base fee | Per unit |
+| --- | --- | --- |
+| Web hosting | €0.90 | €2.25 ÷ g per GB of disk, €0.30 per mailbox |
+| VPS | €0 | 0.2r per vCPU, 0.5r per GB of RAM, 0.02r per GB of disk |
+| Game server | €0 | 0.4r per vCPU, 1.35r per GB of RAM, 0.02r per GB of disk |
+| Cloud server | €0 | 1.25 × the VPS rates |
+| Storage hosting | €0 | €2.60 per TB in 2026 with m = 32, charged per GB |
+| DNS hosting | €2 | |
+| VPN | €5 | |
+| Domain | €15 a year | |
+| SSL certificate | €50 a year until 2015, then €0 | |
+| Dedicated server | €6 | €220 ÷ 24 ÷ g per GB of the smallest server RAM it accepts |
+| Colocation | €15 | €30 per rack unit, €100 per kW |
+
+**The player's rates.** The Products app's Pricing view holds one rate per unit for each line (`rates.ts`). An empty rate charges the market rate, and Market rates resets the whole line. Rates apply to new sales: the order form charges a spec at the player's rates × the SLA factor × (1 − campaign discount) and places it at once. Overpricing costs leads through the price factor in Choice with prices and customers through Price tolerance and churn. Services already sold keep the price they were sold at, and raising one goes through Price changes with its tolerance, complaint and retention rules. Email orders are priced by hand, prefilled at the market reference less any campaign discount. Saves from before per-resource pricing give every service, request and lost sale with a plan that plan's size as its spec in the year it started, and start with every rate empty.
+
+**Capacity.** A node books up to its physical cores × 8 in vCPUs, its RAM × 1.5 and its usable RAID disk × 2. A G1 balanced server books 16 vCPUs, 12 GB of RAM and 1 TB of disk: 48 web spaces, or 24 of the 0.5 GB VPS, or 6 of the 2 GB VPS by RAM. Booking counts what workloads booked; the load they put on the hardware follows the usage curves.
 
 **Moving a workload**
 
@@ -1030,7 +1048,7 @@ A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, w
 
 Disk use starts at 30% of booked and stops at 100%; the average customer reaches about 66% after two years, as before. CPU load is the curve × (1 + rate × years) with jitter, capped at 100%. An upgrade is a new service, so both start over.
 
-**Outgrowing a plan.** Once a day at noon, a customer whose disk is at 90% or more, or whose CPU demand × the curve's weekly median reaches 0.9 (near 100% for more than half the week), writes an upgrade ticket with a chance of 1 in 7, so about a week after crossing the line; sales turns it into an expansion request. A full disk breaks the site: the customer loses 2 happiness a day and writes an "our site shows errors" upgrade ticket with a chance of 25% a day while none is open. A fast-growing disk crosses 90% after about 14 months and fills after 17. A fast-growing shop's CPU pegs after about 17 months, a news or enterprise site's after two years, while game servers and office sites, quiet for most of the week, take ten.
+**Outgrowing a service.** Once a day at noon, a customer whose disk is at 90% or more, or whose CPU demand × the curve's weekly median reaches 0.9 (near 100% for more than half the week), writes an upgrade ticket with a chance of 1 in 7, so about a week after crossing the line; sales turns it into an expansion request. A full disk breaks the site: the customer loses 2 happiness a day and writes an "our site shows errors" upgrade ticket with a chance of 25% a day while none is open. A fast-growing disk crosses 90% after about 14 months and fills after 17. A fast-growing shop's CPU pegs after about 17 months, a news or enterprise site's after two years, while game servers and office sites, quiet for most of the week, take ten.
 
 **Before and after.** Measured over 30 days with a mixed set of customers (web hosting, VPS, game servers, VPN, storage, dedicated): early game in 2005 with 13 services moves 0.59 TB before and after, with a 95th percentile of 3.4 Mbit/s before and 3.8 after (night jobs add short peaks to a small base); mid game in 2012 with 200 services moves 17.9 TB before and 17.8 after, with a 95th percentile of 103 Mbit/s before and 88 after, so transit bills drop about 15% (€311 to €264 a month at Cogentle's price), because the floors and staggered peaks flatten the sum.
 
@@ -1188,7 +1206,7 @@ A panel VM is one of the player's own VMs on a hypervisor cluster with a panel i
 
 | Value | Amount |
 | --- | --- |
-| Suggested size in the setup and the Products app | 2 vCPU, 2 GB RAM, 50 GB disk, about 7 Web M spaces; the basement server keeps room for a Game S next to it |
+| Suggested size in the setup and the Products app | 2 vCPU, 2 GB RAM, 50 GB disk, about 7 web spaces of 2 GB; the basement server keeps room for the smaller game server next to it |
 | Smallest size | 1 vCPU, 1 GB RAM, 10 GB disk, and at least the panel's control plane |
 | Resize | Any size that still holds the web spaces' bookings plus the panel and fits on the VM's server |
 | Use | What its web spaces use plus the panel's control plane |
@@ -1515,7 +1533,7 @@ The year 1 targets for customers and revenue hold (median 47 customers and €61
 
 **The balance model and the live rules.** The cohort model in `src/sim/balance/model.ts` follows the live capacity rules:
 
-- Every product books RAM: a web space 0.25 GB, a VPS the year's plan RAM by budget, and a game server 4 GB of the year's plan at 1.6× the VPS rate per GB. Gamers ask for a game server 60% of the time. The cluster keeps 1 GB for its hypervisor and panel.
+- Each cohort's spec is the year's middle size × 1, 2 or 4 by budget (`BUDGET_SIZE`), a web space with two mailboxes per step, priced at the live market rates (Per-resource pricing). It books its spec's vCPUs and RAM: a web space 0.25 GB, a VPS the year's base RAM by budget, and a game server 4 GB of the year's base by budget. Gamers ask for a game server 60% of the time. The cluster keeps 1 GB for its hypervisor and panel.
 - The starting server and every basement server are the year's Dwell server at its full price and RAM (8 GB for €2,500 in 2005). The model used to start with a half-RAM tower worth €1,000.
 - While in the basement, the home line's upload caps the evening peak at 2× each customer's mean traffic, and the bot switches to the cheapest faster line at 90%.
 - The bot borrows in the basement like the happiness run; out of the basement it borrows only while all instalments stay under 60% of its recurring revenue. It buys a server only when cash keeps €2,000 plus three instalments, and it moves to the datacenter once the basement's four servers are in place.
@@ -1620,6 +1638,18 @@ Neither bot goes bankrupt. The solo bot now reaches level 5: ChadGPT carries the
 | 6 | 2018 | 2017.5 | 2017.9 | never | never |
 
 Neither bot goes bankrupt. The steady bot pays €500 a month for ChadGPT in 2008, €5,400 in 2012 and about €10,600 from 2014, when one ChadGPT runs at capacity, next to €118,000 of salaries in 2018. The solo bot pays €3,400 a month in 2012 and €10,600 by 2018. It reaches level 5 about half a year later than before, because the tickets ChadGPT gives up on land in its 60 hours a month; with 3 tries instead of 4 it reached level 5 only in 2013.6.
+
+**Per-resource pricing.** The model now prices each cohort's spec at the live market rates per resource. The steady bot's median years reached, before and after:
+
+| Level | Target | Steady before | Steady after |
+| --- | --- | --- | --- |
+| 2 | 2005 | 2006.0 | 2006.0 |
+| 3 | 2007 | 2006.8 | 2006.8 |
+| 4 | 2010 | 2008.6 | 2008.7 |
+| 5 | 2013 | 2011.9 | 2011.9 |
+| 6 | 2018 | 2017.9 | 2018.2 |
+
+The solo bot reaches level 5 in 2012.9 instead of 2012.8. Neither bot goes bankrupt.
 
 **Open questions**
 
