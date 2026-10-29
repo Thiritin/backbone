@@ -2,6 +2,7 @@
 import { dateOf } from "../../sim/00-core/time";
 import { cardOf } from "../../sim/10-catalog/gpu";
 import { COMPONENTS, jacksOf, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
+import { VENDOR_NAME } from "../../sim/10-catalog/cpus";
 import type { Component, Device, End, GameState } from "../../sim/50-state";
 import { deviceHealth, HOURS_PER_YEAR, isPlugged, linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
 import { portLinks, type PortLink } from "../../sim/60-infra/usage";
@@ -45,8 +46,9 @@ export const portLamps = (m: DeviceModel, peers: (End | null)[]): PortLamp[] => 
 
 export const devName = (d: Device) => d.label ?? d.name;
 export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: "Power supply", fan: "Fan", ram: "RAM stick", board: "Mainboard", cpu: "CPU", nic: "Network card", gpu: "GPU" };
-// A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"".
-export const partLabel = (p: Pick<Component, "kind" | "size" | "ff">): string => `${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}`;
+// A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"", "Indel G5 CPU 20 cores", "AMB Mainboard".
+export const partLabel = (p: Pick<Component, "kind" | "size" | "ff" | "vendor" | "gen">): string =>
+  `${p.vendor ? `${VENDOR_NAME[p.vendor]} ` : ""}${p.gen ? `G${p.gen} ` : ""}${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}`;
 export const ageYears = (g: GameState, c: Component) => (g.hour - c.installedAt) / HOURS_PER_YEAR;
 export const isWorn = (g: GameState, c: Component) => ageYears(g, c) >= COMPONENTS[c.kind].life;
 

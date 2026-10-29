@@ -1,5 +1,6 @@
 import { yearOf } from "../00-core/time";
-import { COMPONENTS, jacksOf, modelById, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
+import { boardVendor, COMPONENTS, cpuWattsShift, genOf, jacksOf, modelById, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
+import { cpuModel, type Vendor } from "../10-catalog/cpus";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
@@ -213,7 +214,7 @@ export function resaleValue(s: GameState, price: number, boughtAt: number): numb
 
 // What a device sells for. A sized spare part sells at the current part price, anything else at what was paid.
 export const deviceValue = (s: GameState, d: Device): number =>
-  resaleValue(s, d.part ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour)) : d.price, d.boughtAt);
+  resaleValue(s, d.part ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour), d.part) : d.price, d.boughtAt);
 
 export const psusOf = (d: Device) => d.components.filter((c) => c.kind === "psu");
 export const isPlugged = (c: Component) => c.plugged !== false;
@@ -222,8 +223,12 @@ export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length 
 
 // The servers that run at least one workload; the rest draw their idle power. Working GPU cards add their watts either way.
 export const busyDevices = (s: GameState): Set<string | null> => new Set(s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId));
-export const deviceWatts = (d: Device): number => modelById(d.model).watts + cardWatts(d.components);
-export const drawWatts = (d: Device, busy: Set<string | null>): number => { const m = modelById(d.model); return (busy.has(d.id) ? m.watts : m.idleWatts) + cardWatts(d.components); };
+// A server's CPUs draw their own watts in place of its preset's (cpuWattsShift); idle they draw the model's idle share of it.
+export const deviceWatts = (d: Device): number => { const m = modelById(d.model); return m.watts + cpuWattsShift(m, d.components) + cardWatts(d.components); };
+export const drawWatts = (d: Device, busy: Set<string | null>): number => {
+  const m = modelById(d.model), cpus = cpuWattsShift(m, d.components);
+  return (busy.has(d.id) ? m.watts + cpus : m.idleWatts + (cpus && (cpus * m.idleWatts) / m.watts)) + cardWatts(d.components);
+};
 
 const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);
 
@@ -257,6 +262,15 @@ const partSum = (d: Device, kind: Component["kind"]): number => d.components.red
 // Cores and RAM of the working CPUs and sticks; a failed part stops counting.
 export const installedCores = (d: Device): number => partSum(d, "cpu");
 export const installedRamGb = (d: Device): number => partSum(d, "ram");
+// The board's vendor, which every CPU in the server shares.
+export const deviceVendor = (d: Device): Vendor => boardVendor(modelById(d.model), d.components);
+// The speed of one core of the server's CPUs, 1 without a known CPU.
+export const perCoreOf = (d: Device): number => {
+  const c = d.components.find((x) => x.kind === "cpu");
+  return (c && cpuModel(c.vendor ?? deviceVendor(d), c.gen ?? genOf(modelById(d.model)))?.perCore) ?? 1;
+};
+// vCPU of the working CPUs: their cores at the speed of one core.
+export const installedVcpu = (d: Device): number => Math.round(installedCores(d) * perCoreOf(d) * 100) / 100;
 
 // Usable GB of the array: all drives, half for mirrors, all but one or two for parity.
 export function raidUsable(d: Device): number {

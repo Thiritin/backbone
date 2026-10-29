@@ -3,11 +3,11 @@ import { Cable, Database, EthernetPort, FileSignature, PackageOpen, Plug, PlugZa
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { cardWatts } from "../../../sim/10-catalog/gpu";
+import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
 import { bayCount, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Cable as CableT, Device, End, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
-import { deviceHealth, drivesOf, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
+import { deviceHealth, deviceVendor, deviceWatts, drivesOf, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
 import { rebuildHours } from "../../../sim/88-tick/tick";
 import { addSecondPsu, atServer, buyOutLease, connect, disconnect, LABEL_MAX, pullPower, resetBmc, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice, type ActionResult } from "../../../sim/90-actions/hardware";
@@ -238,9 +238,9 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       {show("parts") && <div className="loc-card">
         <div className="loc-card-h"><h3>Specifications</h3></div>
         <Facts rows={[
-          ...(model.server ? [["CPU", `${model.server.sockets} × ${cores(model.server.cores / model.server.sockets)}`], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${bayCount(model.server)} bays`]] as [string, string][] : []),
+          ...(model.server ? [["CPU", `${model.server.sockets} × ${VENDOR_NAME[deviceVendor(device)]}, ${cores(device.components.find((c) => c.kind === "cpu")?.size ?? model.server.cores / model.server.sockets)}`], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${bayCount(model.server)} bays`]] as [string, string][] : []),
           ["Network", portsText(model)],
-          ["Power", model.idleWatts === model.watts + cardWatts(device.components) ? `${model.watts} W` : `${model.idleWatts}–${model.watts + cardWatts(device.components)} W`],
+          ["Power", model.idleWatts === Math.round(deviceWatts(device)) ? `${model.watts} W` : `${model.idleWatts}–${Math.round(deviceWatts(device))} W`],
           ...(model.height ? [["Height", height(model)]] as [string, string][] : []),
           ...(device.price ? [["Paid", euro(device.price)]] as [string, string][] : []),
           ...(supportEnd(model) !== null ? [["End of support", `${supportEnd(model)}`]] as [string, string][] : []),

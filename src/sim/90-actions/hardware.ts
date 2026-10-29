@@ -1,5 +1,6 @@
 import { yearOf } from "../00-core/time";
-import { bareParts, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, hasBmc, isDriveKind, modelById, partOffers, priceOf, samePart, shopModels, SWITCH_BRAND, slotsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { bareParts, boardVendor, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
@@ -157,23 +158,29 @@ export interface CartLine {
   extras?: { kind: ComponentKind; size?: number; ff?: string; qty: number }[];
   bare?: boolean;
   part?: PartSpec;
+  // The CPU maker of a server's board and CPUs; the model's preset maker when left out.
+  vendor?: Vendor;
 }
 
 // A bare chassis never costs less than this share of the preset.
 export const BARE_FLOOR = CHASSIS_FLOOR;
-const extraParts = (line: CartLine): PartSpec[] =>
-  (line.extras ?? []).flatMap((e) => Array.from({ length: e.qty }, (): PartSpec => ({ kind: e.kind, ...(e.size !== undefined ? { size: e.size } : {}), ...(e.ff ? { ff: e.ff as FormFactor } : {}) })));
+// Extra CPUs are the line's vendor and the chassis's generation.
+const extraParts = (line: CartLine): PartSpec[] => {
+  const m = modelById(line.model), cpu = { vendor: boardVendor(m, componentParts(m, line.vendor)), gen: genOf(m) };
+  return (line.extras ?? []).flatMap((e) => Array.from({ length: e.qty }, (): PartSpec =>
+    ({ kind: e.kind, ...(e.size !== undefined ? { size: e.size } : {}), ...(e.ff ? { ff: e.ff as FormFactor } : {}), ...(e.kind === "cpu" ? cpu : {}) })));
+};
 // The parts one unit of the line is built from.
 export const lineParts = (line: CartLine): PartSpec[] => {
   const m = modelById(line.model);
-  return [...(line.bare ? bareParts(m) : componentParts(m)), ...extraParts(line)];
+  return [...(line.bare ? bareParts(m, line.vendor) : componentParts(m, line.vendor)), ...extraParts(line)];
 };
 // What one unit costs in a year: the preset, or the preset minus its CPUs, RAM and drives, plus the extras, all at that year's
 // part prices; a part alone costs its part price.
 export function unitPrice(line: CartLine, year: number): number {
   const m = modelById(line.model);
-  if (m.kind === "part") return partPrice(m.id.slice(5) as ComponentKind, line.part?.size, line.part?.ff, year);
-  return (line.bare ? bareChassisPrice(m, year, line.brand) : presetPrice(m, year, line.brand)) + partsPrice(extraParts(line), year);
+  if (m.kind === "part") return partPrice(m.id.slice(5) as ComponentKind, line.part?.size, line.part?.ff, year, line.part);
+  return (line.bare ? bareChassisPrice(m, year, line.brand, line.vendor) : presetPrice(m, year, line.brand, line.vendor)) + partsPrice(extraParts(line), year);
 }
 
 function lineError(s: GameState, line: CartLine): string | null {
@@ -182,6 +189,7 @@ function lineError(s: GameState, line: CartLine): string | null {
   if (!model) return "error.notInShop";
   if (!brandsOf(model).includes(brand)) return "error.unknownBrand";
   if (!Number.isInteger(qty) || qty < 1) return "error.badQuantity";
+  if (line.vendor !== undefined && !vendorsOf(model).includes(line.vendor)) return "error.wrongVendor";
   const offers = partOffers(yearOf(s.hour));
   if (line.part && (model.kind !== "part" || line.part.kind !== modelId.slice(5) || !offers.some((o) => samePart(o, line.part!)))) return "error.notInShop";
   if (!line.bare && !line.extras?.length) return null;
@@ -198,12 +206,12 @@ const FORMS: FormFactor[] = ["3.5", "2.5", "nvme"];
 // zone first; spares taken out of a device arrive at once.
 export function stock(s: GameState, line: CartLine, lease: string | null, store: string, wait = 0): string[] {
   const { model: modelId, brand, qty } = line;
-  const price = unitPrice(line, yearOf(s.hour)), custom = line.bare || line.extras?.length;
+  const price = unitPrice(line, yearOf(s.hour));
   return Array.from({ length: qty }, () => {
     const name = nextName(`${prefix(s, store)}-${roleOf(modelId)}`, s.devices.map((d) => d.name));
     const id = newId(s, "dev");
     s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "none", groups: [], price, boughtAt: s.hour, lease, ...(wait ? { store: null, transitTo: store, arriveAt: s.hour + wait } : { store, transitTo: null, arriveAt: null }),
-      ...deviceDefaults(modelId, s.hour, custom ? lineParts(line) : undefined), ...(line.part ? { part: line.part } : {}),
+      ...deviceDefaults(modelId, s.hour, lineParts(line)), ...(line.part ? { part: line.part } : {}),
       ...(modelById(modelId).kind === "server" ? { hostname: nodeName(s) } : {}) });
     return id;
   });
@@ -224,7 +232,7 @@ const officeError = (s: GameState, modelId: string, locationId: string): string 
   isOfficeRouter(modelById(modelId)) && s.locations.find((l) => l.id === locationId)?.dc ? "error.basementOnly" : null;
 
 // Bought units go to the storage of the zone at locationId, which may not be ready yet.
-export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "bare" | "part"> = {}): ActionResult {
+export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "bare" | "part" | "vendor"> = {}): ActionResult {
   const line = { model: modelId, brand, qty, ...rest };
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   const error = lineError(s, line) ?? officeError(s, modelId, locationId);
@@ -597,7 +605,7 @@ export const SWAP_HOURS = 0.25;
 
 // The grey market surcharge for a spare going into a device that is out of support.
 const greyMarket = (s: GameState, d: Device, part: Device): number =>
-  greySurcharge(d.model, s.hour, partPrice(part.model.slice(5) as ComponentKind, part.part?.size, part.part?.ff, yearOf(s.hour)));
+  greySurcharge(d.model, s.hour, partPrice(part.model.slice(5) as ComponentKind, part.part?.size, part.part?.ff, yearOf(s.hour), part.part));
 
 // Swaps a failed or worn component for a spare from the zone's storage: 15 minutes in the basement, or the remote hands'
 // response time plus 15 minutes at a datacenter, billed for at least one hour. A technician on site swaps it in 15 minutes.
@@ -611,31 +619,48 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (!rack) return fail("error.notMounted");
   if (rack.moving) return fail("error.rackMoving");
   if (d.maintenance) return fail("error.busy");
-  const model = modelById(d.model);
-  const parts = s.devices.filter((x) => x.model === `part-${c.kind}` && x.store === rack.locationId && spareFits(model, d, x, c))
-    .sort((a, b) => (a.part?.size ?? 0) - (b.part?.size ?? 0));
-  const part = parts.find((x) => !x.lease) ?? parts[0];
+  const spares = replaceSpares(s, d, c, rack.locationId), part = spares[0];
   if (!part) return fail("error.noPart");
   if (d.on && !hotSwappable(d, c)) return fail("error.powerOffFirst");
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
-  const swap = SWAP_HOURS * workFactor(d.model, s.hour), grey = greyMarket(s, d, part);
+  const swap = SWAP_HOURS * spares.length * workFactor(d.model, s.hour), grey = spares.reduce((n, x) => n + greyMarket(s, d, x), 0);
   const job = handJob(s, d.label ?? d.name, loc, how, swap);
   if ("error" in job) return fail(job.error);
   if (s.cash < job.cost + grey) return fail("error.noCash");
   const wait = job.commit();
   if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: c.kind }, -grey);
-  if (!d.used) claimRepair(s, d.label ?? d.name, c, part.price, job.bill);
-  s.devices = s.devices.filter((x) => x.id !== part.id);
-  d.maintenance = { componentId, partId: part.id, doneAt: s.hour + wait, ...(part.part ? { spec: part.part } : {}) };
+  if (!d.used) claimRepair(s, d.label ?? d.name, c, spares.reduce((n, x) => n + x.price, 0), job.bill);
+  s.devices = s.devices.filter((x) => !spares.includes(x));
+  const others = spares.length > 1 ? d.components.filter((x) => x.kind === "cpu" && x !== c).map((x) => x.id) : [];
+  d.maintenance = { componentId, partId: part.id, doneAt: s.hour + wait, ...(part.part ? { spec: part.part } : {}), ...(others.length ? { others } : {}) };
   return { ok: true, id: part.id };
 }
 
 // Whether a spare can take the component's place: at least its size, a drive its bays take, and nothing over the chassis limits.
+// A CPU is checked in every socket, since a CPU of another spec replaces them all.
 export function spareFits(model: DeviceModel, d: Device, spare: Device, c: Component): boolean {
   const p = spare.part;
   if (!p) return true;
   if ((p.size ?? 0) < (c.size ?? 0)) return false;
-  return !chassisFits(model, d.components.map((x) => (x === c ? asSpec({ kind: c.kind, size: p.size ?? c.size, ff: p.ff ?? c.ff }) : asSpec(x))));
+  const next = (x: Component) => asSpec({ ...x, size: p.size ?? x.size, ff: p.ff ?? x.ff, vendor: p.vendor ?? x.vendor, gen: p.gen ?? x.gen });
+  return !chassisFits(model, d.components.map((x) => (x === c || (c.kind === "cpu" && x.kind === "cpu") ? next(x) : asSpec(x))));
+}
+
+// The spares in the zone's storage a replacement takes, unleased first: the smallest that fits, or for a CPU of another spec than
+// the one it replaces, one per socket so every socket matches. None when the storage cannot cover it.
+export function replaceSpares(s: GameState, d: Device, c: Component, zone: string): Device[] {
+  const model = modelById(d.model);
+  const fit = s.devices.filter((x) => x.model === `part-${c.kind}` && x.store === zone && spareFits(model, d, x, c))
+    .sort((a, b) => (a.part?.size ?? 0) - (b.part?.size ?? 0) || Number(!!a.lease) - Number(!!b.lease));
+  if (c.kind !== "cpu") return fit.length ? [fit.find((x) => !x.lease) ?? fit[0]] : [];
+  const spec = (x: Device) => asSpec({ ...c, ...x.part });
+  const sockets = d.components.filter((x) => x.kind === "cpu").length;
+  for (const x of fit) {
+    const set = fit.filter((y) => samePart(spec(y), spec(x)));
+    const need = samePart(spec(x), asSpec(c)) ? 1 : sockets;
+    if (set.length >= need) return set.slice(0, need);
+  }
+  return [];
 }
 
 // A second feed or a high-density feed for a rack in a rented position.
@@ -715,7 +740,7 @@ function startWork(s: GameState, d: Device, partId: string, job: HandJob) {
   const wait = job.commit();
   if (wait > 0) d.maintenance = { componentId: "", partId, doneAt: s.hour + wait };
 }
-const asSpec = (c: { kind: ComponentKind; size?: number; ff?: FormFactor }): PartSpec => ({ kind: c.kind, ...(c.size !== undefined ? { size: c.size } : {}), ...(c.ff ? { ff: c.ff } : {}) });
+const asSpec = specOf;
 // A second power supply makes a build with a dual-supply sibling its sibling, and dropping to one supply makes it the single build again.
 function syncPsuBuild(d: Device) {
   const psus = d.components.filter((c) => c.kind === "psu").length;
@@ -732,22 +757,28 @@ export function installPart(s: GameState, deviceId: string, partId: string, slot
   const zone = d.rackId ? locationOf(s, d)?.id : d.store;
   const part = s.devices.find((x) => x.id === partId);
   if (!part || modelById(part.model).kind !== "part" || !zone || part.store !== zone) return fail("error.noPart");
-  const model = modelById(d.model), kind = part.model.slice(5) as ComponentKind, spec: PartSpec = { ...part.part, kind };
+  const model = modelById(d.model), kind = part.model.slice(5) as ComponentKind;
+  // A CPU without a vendor takes the board's, and fills the free sockets with the zone's other spares of its spec.
+  const specFor = (x: Device): PartSpec => (kind === "cpu" ? { vendor: boardVendor(model, d.components), gen: genOf(model), ...x.part, kind } : { ...x.part, kind });
+  const spec = specFor(part);
   const used = d.components.filter((c) => sameSlots(c.kind, kind)).length;
   if (slot !== undefined && (!Number.isInteger(slot) || slot < 0 || slot >= slotsOf(model, kind))) return fail("error.unknownSlot");
   if (slot !== undefined && slot < used) return fail("error.partSlotTaken");
-  const error = chassisFits(model, [...d.components.map(asSpec), spec]);
+  const set = kind !== "cpu" ? [part]
+    : [part, ...s.devices.filter((x) => x !== part && x.model === part.model && x.store === zone && samePart(specFor(x), spec)).slice(0, Math.max(0, slotsOf(model, kind) - used - 1))];
+  const error = chassisFits(model, [...d.components.map(asSpec), ...set.map(() => spec)]);
   if (error) return fail(error);
   const w = handsOn(s, d, hotKind(d, kind), how);
   if ("error" in w) return fail(w.error);
-  const grey = greyMarket(s, d, part);
+  const grey = set.reduce((n, x) => n + greyMarket(s, d, x), 0);
   if (s.cash < w.cost + grey) return fail("error.noCash");
   startWork(s, d, partId, w);
   if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: kind }, -grey);
-  s.devices = s.devices.filter((x) => x.id !== partId);
-  const id = `c${Math.max(0, ...d.components.map((c) => Number(c.id.slice(1)) || 0)) + 1}`;
+  s.devices = s.devices.filter((x) => !set.includes(x));
+  const top = Math.max(0, ...d.components.map((c) => Number(c.id.slice(1)) || 0)), id = `c${top + 1}`;
   const at = d.components.map((c) => sameSlots(c.kind, kind)).lastIndexOf(true);
-  d.components.splice(at < 0 ? d.components.length : at + 1, 0, { id, ...spec, installedAt: s.hour, failedAt: null, ...(kind === "psu" && d.rackId ? { plugged: false } : {}) });
+  d.components.splice(at < 0 ? d.components.length : at + 1, 0, ...set.map((_, i): Component =>
+    ({ id: `c${top + 1 + i}`, ...spec, installedAt: s.hour, failedAt: null, ...(kind === "psu" && d.rackId ? { plugged: false } : {}) })));
   if (isDriveKind(kind) && d.rackId && d.raid !== "none" && !d.rebuild && !arrayLost(d)) d.rebuild = { componentId: id, doneAt: s.hour + rebuildHours(d) };
   syncPsuBuild(d);
   return { ok: true, id };

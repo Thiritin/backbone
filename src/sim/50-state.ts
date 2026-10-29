@@ -1,6 +1,7 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
 import { componentParts, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
+import type { Vendor } from "./10-catalog/cpus";
 import { STARTER_APPS } from "./10-catalog/store";
 import { seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
@@ -52,7 +53,8 @@ export interface Rack { id: string; model: RackModel; locationId: string; positi
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.
 export interface Device { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
   components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
-  rebuild: { componentId: string; doneAt: number } | null; maintenance: { componentId: string; partId: string; doneAt: number; spec?: PartSpec } | null;
+  // others are the further CPUs a swap of every socket replaces with the same spec.
+  rebuild: { componentId: string; doneAt: number } | null; maintenance: { componentId: string; partId: string; doneAt: number; spec?: PartSpec; others?: string[] } | null;
   // The hour the device's data was lost, if it ever was.
   dataLost: number | null;
   // The hour a device switched on finishes booting.
@@ -75,8 +77,9 @@ export interface WaitlistEntry { id: string; dc: string; space: "share" | "posit
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
 // failedAt is the hour the component broke; null while it works. A power supply is plugged in unless plugged is false.
-// size is GB for RAM sticks and drives, cores for CPUs; ff is the form factor of a drive.
-export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; plugged?: boolean; size?: number; ff?: FormFactor }
+// size is GB for RAM sticks and drives, cores for CPUs; ff is the form factor of a drive. CPUs and boards carry their vendor,
+// CPUs their generation (1 for G1).
+export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; plugged?: boolean; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number }
 export type RaidLevel = "none" | "1" | "5" | "6" | "10";
 export type RebuildRate = "low" | "medium" | "high";
 // since is the hour of the first change; a data loss after it wipes the changes. A path maps to a file's text, true for a

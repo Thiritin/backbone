@@ -30,7 +30,7 @@ import { appsTick } from "../60-infra/apps";
 import { securityTick } from "../60-infra/security";
 import { usageTick } from "../60-infra/usage";
 import { productsTick } from "../85-products/products";
-import { COMPONENTS, manufacturerByName } from "../10-catalog/hardware";
+import { COMPONENTS, manufacturerByName, specOf } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
@@ -153,12 +153,20 @@ function service(s: GameState) {
       // Installing or removing a part changed the device when it started; the work only keeps it busy.
       if (!old) next = { ...d, maintenance: null };
       else {
-        const id = `c${Math.max(...d.components.map((c) => Number(c.id.slice(1)) || 0)) + 1}`;
+        const top = Math.max(...d.components.map((c) => Number(c.id.slice(1)) || 0)), id = `c${top + 1}`;
         const isDrive = drivesOf(d).includes(old), spec = d.maintenance.spec;
         const rebuild = isDrive && d.raid !== "none" && !arrayLost(d) ? { componentId: id, doneAt: s.hour + rebuildHours(d) } : d.rebuild;
+        // A swap of every CPU socket replaces the others too.
+        const swapped = [old.id, ...(d.maintenance.others ?? [])];
         next = {
           ...d, maintenance: null, rebuild,
-          components: d.components.map((c) => (c.id === old.id ? { id, kind: c.kind, installedAt: s.hour, failedAt: null, size: spec?.size ?? c.size, ff: spec?.ff ?? c.ff } : c)),
+          components: d.components.map((c) => {
+            const i = swapped.indexOf(c.id);
+            return i < 0 ? c : {
+              ...specOf({ kind: c.kind, size: spec?.size ?? c.size, ff: spec?.ff ?? c.ff, vendor: spec?.vendor ?? c.vendor, gen: spec?.gen ?? c.gen }),
+              id: `c${top + 1 + i}`, installedAt: s.hour, failedAt: null,
+            };
+          }),
         };
       }
     }

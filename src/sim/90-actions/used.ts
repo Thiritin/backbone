@@ -27,7 +27,7 @@ function placeError(s: GameState, l: Listing, locationId: string): string | null
 export function deliverListing(s: GameState, l: Listing, locationId: string, price: number): string[] {
   const city = s.locations.find((x) => x.id === locationId)!.city;
   pay(s, l, price);
-  const ids = stock(s, { model: l.model, brand: l.brand, qty: l.qty }, null, locationId, shipHours(l, city));
+  const ids = stock(s, { model: l.model, brand: l.brand, qty: l.qty, ...(l.vendor ? { vendor: l.vendor } : {}) }, null, locationId, shipHours(l, city));
   let psus = 0;
   s.devices = s.devices.map((d) => {
     if (!ids.includes(d.id)) return d;

@@ -9,7 +9,7 @@ import { HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, spotOf, working as d
 import type { SimEvent } from "../88-tick/tick";
 import { drain, upgradeNodePhp } from "../90-actions/clusters";
 import { updateDue, updateSoftware } from "../90-actions/software";
-import { installPart, removePart, replaceComponent, reset, resetBmc, setPower, shutdown, spareFits, type ActionResult } from "../90-actions/hardware";
+import { installPart, removePart, replaceComponent, replaceSpares, reset, resetBmc, setPower, shutdown, spareFits, type ActionResult } from "../90-actions/hardware";
 import { migrateWebspace, recover } from "../90-actions/vms";
 import { callOut, onCallAt, onCallPayroll, respond, restUntil } from "./oncall";
 import { atFair, isWorkHour, onShift, working, type Employee, type Task } from "./staff";
@@ -37,9 +37,9 @@ export const opLocation = (s: GameState, o: TechOp): string | null => {
 };
 export const techsAt = (s: GameState, locationId: string, task?: Task): Employee[] =>
   s.staff.filter((e) => e.role === "technician" && e.location === locationId && (!task || e.trained.includes(task)));
-// Spares in the location's storage that can take the place of a component.
+// Spares in the location's storage that can take the place of a component, none while they cannot cover a swap.
 const spares = (s: GameState, locationId: string, d: Device, c: Device["components"][number]) =>
-  s.devices.filter((x) => x.model === `part-${c.kind}` && x.store === locationId && spareFits(modelById(d.model), d, x, c)).length;
+  replaceSpares(s, d, c, locationId).length && s.devices.filter((x) => x.model === `part-${c.kind}` && x.store === locationId && spareFits(modelById(d.model), d, x, c)).length;
 const worn = (s: GameState, c: Device["components"][number]) => s.hour - c.installedAt >= COMPONENTS[c.kind].life * HOURS_PER_YEAR;
 
 // Out of office hours the on-call technician comes in for these: a failed part and starting a device again.
