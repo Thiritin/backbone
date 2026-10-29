@@ -17,10 +17,10 @@ const num = (n: number) => `${+n.toFixed(n < 1 ? 2 : n < 10 ? 1 : 0)}`;
 const HOT = 0.9;
 
 // Use against the workload's booking: a small bar and the figures.
-function Gauge({ icon, used, max, unit, label }: { icon: ReactNode; used: number; max: number; unit: string; label: string }) {
+function Gauge({ icon, used, max, unit, label, fixed }: { icon: ReactNode; used: number; max: number; unit: string; label: string; fixed?: boolean }) {
   const share = max ? used / max : 0;
   return (
-    <span className={`wl-gauge${share >= HOT ? " hot" : ""}`} aria-label={`${label} ${num(used)} of ${num(max)} ${unit}`}>
+    <span className={`wl-gauge${share >= HOT && !fixed ? " hot" : ""}`} aria-label={`${label} ${num(used)} of ${num(max)} ${unit}`}>
       {icon}
       <span className="wl-gauge-bar"><span style={{ width: `${Math.min(100, share * 100)}%` }} /></span>
       <span className="num">{num(used)}/{num(max)} {unit}</span>
@@ -62,9 +62,9 @@ function ControlPlaneRow({ name, u }: { name: string; u: Resources }) {
         <span className="loc-muted wl-service">{name}</span>
       </div>
       <div className="wl-gauges">
-        <Gauge icon={<Cpu />} label="CPU" used={u.vcpu} max={u.vcpu} unit="vCPU" />
-        <Gauge icon={<MemoryStick />} label="RAM" used={u.ramGb} max={u.ramGb} unit="GB" />
-        <Gauge icon={<HardDrive />} label="Disk" used={u.diskGb} max={u.diskGb} unit="GB" />
+        <Gauge icon={<Cpu />} label="CPU" used={u.vcpu} max={u.vcpu} unit="vCPU" fixed />
+        <Gauge icon={<MemoryStick />} label="RAM" used={u.ramGb} max={u.ramGb} unit="GB" fixed />
+        <Gauge icon={<HardDrive />} label="Disk" used={u.diskGb} max={u.diskGb} unit="GB" fixed />
       </div>
     </div>
   );
