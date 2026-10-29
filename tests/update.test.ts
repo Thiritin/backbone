@@ -4,7 +4,6 @@ import { changeKeys, newEntries, parseChangelog, unseenChanges } from "../src/ui
 import { EMBEDDED, newCompany } from "../src/ui/embedded";
 import { markChangesSeen } from "../src/sim/90-actions/changes";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { appInSentence } from "../src/ui/apps/registry";
 import { shouldOffer, SNOOZE_MS } from "../src/ui/update";
 
 describe("update offer", () => {
@@ -23,7 +22,7 @@ describe("update offer", () => {
 describe("changelog", () => {
   it("parses days and bullets newest first and ignores other lines", () => {
     const days = parseChangelog("# Changelog\n\nIntro text.\n\n## 2026-10-29\n\n- First change.\n- Second change.\n\n## 2026-10-28\n- Older change.\n");
-    expect(days).toEqual([{ date: "2026-10-29", items: ["First change.", "Second change."] }, { date: "2026-10-28", items: ["Older change."] }]);
+    expect(days).toEqual([{ date: "2026-10-29", items: ["First change.", "Second change."], version: 2 }, { date: "2026-10-28", items: ["Older change."], version: 1 }]);
   });
 
   it("lists only the bullets the running build lacks", () => {
@@ -71,14 +70,5 @@ describe("what is new since the last play", () => {
     expect(unseenChanges(g.seenChanges, EMBEDDED)).toEqual([]);
     const later = [{ date: "2099-01-01", items: ["A later change."] }, ...EMBEDDED];
     expect(unseenChanges(deserialize(serialize(g)).seenChanges, later)).toEqual([later[0]]);
-  });
-
-  it("offers Open for the app a sentence names", () => {
-    const g = newCompany(7);
-    expect(appInSentence(g, "Offers an Email reply for every ticket.")).toBe("Support");
-    expect(appInSentence(g, "The Shop has a Used tab.")).toBe("Shop");
-    expect(appInSentence(g, "The Shop sells hardware that Email mentions later.")).toBe("Shop");
-    expect(appInSentence(g, "Marketing campaigns run longer.")).toBeNull();
-    expect(appInSentence(g, "Servers show power actions.")).toBeNull();
   });
 });

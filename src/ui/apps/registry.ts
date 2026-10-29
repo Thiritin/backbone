@@ -75,16 +75,3 @@ export const appByName = (name: string): AppDef => APPS.find((a) => a.name === n
 
 // The app as the player sees it: Support is Email, or the installed desk, with its own name, mark and tile.
 export const appFor = (s: GameState, name: string): AppDef => (name === "Support" ? { ...appByName(name), ...supportApp(s) } : appByName(name));
-
-// The dock app a changelog sentence names, by its registry name or the name it shows (Email for Support); the first mention wins.
-export function appInSentence(s: GameState, text: string): string | null {
-  let best: { at: number; app: string } | null = null;
-  for (const a of APPS) {
-    if (a.hidden || !s.installed.includes(a.name)) continue;
-    for (const name of new Set([a.name, appFor(s, a.name).name])) {
-      const at = new RegExp(`\\b${name}\\b`).exec(text)?.index;
-      if (at !== undefined && (!best || at < best.at)) best = { at, app: a.name };
-    }
-  }
-  return best?.app ?? null;
-}

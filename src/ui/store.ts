@@ -3,9 +3,8 @@ import { useEffect } from "react";
 import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
 import { weeklyChallenge } from "../sim/10-catalog/challenges";
-import { changeKeys, unseenChanges, type ChangelogDay } from "./changelog";
-import { EMBEDDED, newChallenge, newCompany } from "./embedded";
-import { markChangesSeen } from "../sim/90-actions/changes";
+import type { ChangelogDay } from "./changelog";
+import { newChallenge, newCompany } from "./embedded";
 import { tick } from "../sim/88-tick/tick";
 import { isAlert } from "../sim/alerts";
 import { typeOf } from "./notify-types";
@@ -118,11 +117,6 @@ function loadGame(): { game: GameState; loaded: boolean } {
   return { game: newCompany(Date.now() >>> 0), loaded: false };
 }
 
-const unseenOf = (g: GameState): ChangelogDay[] | null => {
-  const days = unseenChanges(g.seenChanges, EMBEDDED);
-  return days.length ? days : null;
-};
-
 const initial = loadGame();
 // A reload (the dev server's after a code change, or the player's) reopens the windows of the saved game and keeps its clock running.
 const restored = initial.loaded ? readSession<Win[]>("windows", []) : [];
@@ -184,12 +178,9 @@ export const useStore = create<Store>((set, get) => ({
       // Kept for this session only.
     }
   },
-  news: initial.loaded ? unseenOf(initial.game) : null,
+  news: null,
   openNews: (news) => set({ news }),
-  closeNews: () => {
-    get().act(markChangesSeen, changeKeys(EMBEDDED));
-    set({ news: null });
-  },
+  closeNews: () => set({ news: null }),
   setup: null,
   setSetup: (setup) => set({ setup }),
   alert: null,
@@ -324,7 +315,7 @@ export const useStore = create<Store>((set, get) => ({
   importSave: (raw) => {
     try {
       const game = deserialize(raw);
-      set({ ...fresh(), game, started: true, news: unseenOf(game) });
+      set({ ...fresh(), game, started: true });
     } catch {
       get().notify("Settings", t("save.importFailed.title"), t("save.importFailed.text"));
       return;
