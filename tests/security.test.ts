@@ -7,7 +7,7 @@ import {
 } from "../src/sim/60-infra/security";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService, upgradeNodePhp } from "../src/sim/90-actions/clusters";
-import { panelServer } from "./fixtures";
+import { panelServer, withServer } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
@@ -31,7 +31,7 @@ const run = (s: GameState, hours: number) => {
 // The basement's two servers as two bare-metal panel hosts with a web space on each, running PHP 4.4, one hour before the
 // 2007 advisory.
 function hosting(web = true) {
-  const s = { ...newGame(1), cash: 100_000 };
+  const s = { ...withServer(newGame(1)), cash: 100_000 };
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
@@ -150,7 +150,7 @@ describe("security advisories", () => {
   });
 
   it("load into old saves with nothing under way", () => {
-    const data = JSON.parse(serialize(newGame(2)));
+    const data = JSON.parse(serialize(withServer(newGame(2))));
     delete data.security;
     expect(deserialize(JSON.stringify(data)).security).toEqual({ vuln: null, stage: 0, seen: [], patched: [], offline: [], hacked: [] });
   });

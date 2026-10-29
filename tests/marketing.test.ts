@@ -20,7 +20,7 @@ const months = (s: GameState, n: number) => { for (let i = 0; i < n; i++) { tick
 
 describe("owned channels", () => {
   it("sets up the website, then the order form and ads that need it", () => {
-    const s = newGame(1);
+    const s = { ...newGame(1), cash: 1000 };
     expect(setUpChannel(s, "orderForm")).toEqual({ ok: false, error: "error.needsWebsite" });
     expect(setUpChannel(s, "website").ok).toBe(true);
     expect(s.cash).toBe(600);

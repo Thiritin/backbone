@@ -27,15 +27,15 @@ Level 6 lands before the cloud and GPU boom, so the late game still has new prod
 
 ## Starting state
 
-A new game starts on 1 January 2005 with €1,000 in cash, a 24U rack in the basement with one server and a switch, and three friends waiting for web hosting.
+A new game starts on 1 January 2005 with €3,500 in cash, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
 
 | Item | Starting value |
 | --- | --- |
-| Cash | €1,000, no debt; the bank lends up to the level 1 minimum of €10,000 from day one |
+| Cash | €3,500, no debt; the bank lends up to the level 1 minimum of €10,000 from day one |
 | Company | Level 1, 0 know-how, no reviews yet |
 | Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
 | Home line | Deutsche Telekomm DSL 16000, 16 Mbit/s down and 1 Mbit/s up; paid privately, so it costs the company nothing |
-| Hardware | A 24U rack with one Dwell Balanced 1U G1 and a Sysko L2 switch 8, cabled to the home router; the server runs no control plane until the first-time setup installs a panel or a hypervisor on it |
+| Hardware | An empty 24U rack and the home router. The player buys the first server in the Shop, mounts it, plugs in its power and cables it to the home router; it runs no control plane until its setup installs a panel or a hypervisor on it |
 | Reseller accounts | Domains from a registrar, at 40% of the retail price |
 | Customers | None until the first hosting panel finishes installing. Then 3 friends (Jonas Weber, Mira Schulz and Tobi Kraus, private individuals) sign up for Web M hosting at €6 a month on that cluster; happiness 85, and they always pay |
 

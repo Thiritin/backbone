@@ -11,7 +11,7 @@ import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
 import { FRIEND_HAPPINESS } from "../src/sim/90-actions/start";
-import { installed, readyGame } from "./fixtures";
+import { installed, readyGame, withServer } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { mrr } from "../src/sim/metrics";
 
@@ -30,7 +30,7 @@ const FEB_1 = 744;
 
 // The basement with a second G1 server cabled to the switch and both servers in one cluster.
 function twoNodes() {
-  const s = { ...newGame(1), cash: 100_000 };
+  const s = { ...withServer(newGame(1)), cash: 100_000 };
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
@@ -74,7 +74,7 @@ describe("starting company", () => {
     expect(s.services.map((v) => vmOf(s, workloadsOf(s, v.id)[0])?.deviceId)).toEqual(["dev3", "dev3", "dev3"]);
     expect(s.services.every((v) => serviceOnline(s, v.id))).toBe(true);
     expect(mrr(s)).toBeCloseTo(18);
-    expect(s.cash).toBe(newGame(1).cash);
+    expect(s.cash).toBe(withServer(newGame(1)).cash);
   });
   it("takes the friends offline and opens outage tickets when the switch loses power", () => {
     // A seed where a friend writes in once the outage is noticed.

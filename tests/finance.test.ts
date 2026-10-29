@@ -8,6 +8,7 @@ import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { buyInsurance, cancelInsurance } from "../src/sim/90-actions/finance";
 import { buyDevice, replaceComponent, type ActionResult } from "../src/sim/90-actions/hardware";
 import { deserialize } from "../src/sim/91-save/save";
+import { withServer } from "./fixtures";
 
 const at = (y: number, m: number, d: number) => hourOf(new Date(Date.UTC(y, m - 1, d)));
 const entry = (hour: number, category: string, amount: number, key = "ledger.x", params: LedgerEntry["params"] = {}): LedgerEntry => ({ hour, category, key, params, amount });
@@ -18,7 +19,7 @@ const runFor = (s: GameState, hours: number): SimEvent[] => Array.from({ length:
 
 describe("corporate tax", () => {
   it("takes 30% of last year's profit on April 1, counting loan interest and leaving principal out", () => {
-    const s = newGame(11);
+    const s = withServer(newGame(11));
     const h = at(2005, 6, 1);
     s.ledger = [
       entry(h, "payments", 10_000), entry(h, "hardware", -2_000), entry(h, "loans", 5_000, "ledger.loanTaken"),
@@ -33,7 +34,7 @@ describe("corporate tax", () => {
   });
 
   it("carries a loss forward and offsets it against the next year's profit", () => {
-    const s = newGame(12);
+    const s = withServer(newGame(12));
     s.ledger = [entry(at(2005, 6, 1), "hardware", -3_000), entry(at(2006, 6, 1), "payments", 5_000)];
     const loss = tickInto(s, at(2006, 4, 1));
     expect(loss).toContainEqual({ app: "Finance", key: "event.taxLoss", params: { year: 2005, carry: 3_000 } });
@@ -52,7 +53,7 @@ describe("corporate tax", () => {
 
 describe("hardware insurance", () => {
   it("charges a premium on purchase and each month, and pays the part of a component that fails while insured", () => {
-    const s = newGame(13);
+    const s = withServer(newGame(13));
     s.cash = 5_000;
     const premium = hardwarePremium(s);
     expect(premium).toBeGreaterThan(0);
@@ -72,7 +73,7 @@ describe("hardware insurance", () => {
   });
 
   it("pays nothing for a failure from before the policy or after it is cancelled", () => {
-    const s = newGame(14);
+    const s = withServer(newGame(14));
     s.cash = 5_000;
     ok(buyDevice(s, "part-fan", "Generic", 1, "loc1"));
     ok(buyDevice(s, "part-fan", "Generic", 1, "loc1"));
@@ -94,7 +95,7 @@ describe("hardware insurance", () => {
 
 describe("insurance and wear", () => {
   it("does not pay for a part that failed after its life expectancy", () => {
-    const s = newGame(16);
+    const s = withServer(newGame(16));
     s.cash = 5_000;
     ok(buyDevice(s, "part-fan", "Generic", 1, "loc1"));
     ok(buyInsurance(s));
@@ -109,7 +110,7 @@ describe("insurance and wear", () => {
 
 describe("bankruptcy", () => {
   it("ends the game after 30 days below zero when the bank lends nothing", () => {
-    const s = newGame(15);
+    const s = withServer(newGame(15));
     s.cash = -50_000;
     s.loansBlockedUntil = at(2010, 1, 1);
     const events = runFor(s, INSOLVENT_DAYS * 24);
@@ -120,7 +121,7 @@ describe("bankruptcy", () => {
   });
 
   it("keeps going while a loan could cover the deficit, and resets once cash is back above zero", () => {
-    const s = newGame(16);
+    const s = withServer(newGame(16));
     s.cash = -100;
     runFor(s, (INSOLVENT_DAYS + 2) * 24);
     expect(s.gameOver).toBe(null);
@@ -134,7 +135,7 @@ describe("bankruptcy", () => {
   });
 
   it("loads an old save without finance fields", () => {
-    const old = { ...newGame(17) } as Partial<GameState>;
+    const old = { ...withServer(newGame(17)) } as Partial<GameState>;
     delete old.taxLoss; delete old.insurance; delete old.brokeSince; delete old.gameOver;
     expect(deserialize(JSON.stringify(old))).toMatchObject({ taxLoss: 0, insurance: [], brokeSince: null, gameOver: null });
   });

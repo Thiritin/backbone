@@ -7,8 +7,9 @@ import {
   addLocation, buyCart, buyDevice, buyRack, closeLocation, mountDevice, mountStack, sellDevice, shipStock, unmountDevice,
 } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { withServer } from "./fixtures";
 
-const rich = (): GameState => ({ ...newGame(1), cash: 100_000 });
+const rich = (): GameState => ({ ...withServer(newGame(1)), cash: 100_000 });
 const ok = (r: ReturnType<typeof buyDevice>) => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;

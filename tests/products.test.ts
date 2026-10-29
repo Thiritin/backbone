@@ -11,7 +11,7 @@ import { nodeUsage } from "../src/sim/60-infra/usage";
 import { howToFactor, licenseCost, SLOW_PENALTY } from "../src/sim/85-products/products";
 import { tick } from "../src/sim/88-tick/tick";
 import { addNode, createCluster, moveControlPlane, provisionService, setBackup, setHa, setSoftware } from "../src/sim/90-actions/clusters";
-import { installed, panelVm } from "./fixtures";
+import { installed, panelVm, withServer } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { monthlyValue } from "../src/sim/40-support/tickets";
@@ -41,7 +41,7 @@ function server(s: GameState, slot: number, port: number) {
 
 // The basement with a second server, both in one cluster, and a third server in a backup cluster.
 function setup(platform = "proxmocks") {
-  const s = { ...newGame(1), cash: 100_000 };
+  const s = { ...withServer(newGame(1)), cash: 100_000 };
   const second = server(s, 2, 1), third = server(s, 3, 2);
   const cluster = installed(s, ok(createCluster(s, "loc1", "Cloud 1")), platform);
   ok(addNode(s, cluster, "dev3"));
@@ -208,7 +208,7 @@ describe("Virtual machines app", () => {
   it("is a free Pear Store app once a hypervisor is installed", () => {
     expect(storeItem("Virtual machines")).toMatchObject({ kind: "app", monthly: 0 });
     expect(skillFor("Virtual machines")).toBeUndefined();
-    const s = newGame(1);
+    const s = withServer(newGame(1));
     expect(err(install(s, "Virtual machines"))).toBe("error.needsHypervisor");
     const { s: ready } = setup();
     const cash = ready.cash;

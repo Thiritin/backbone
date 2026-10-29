@@ -9,7 +9,7 @@ import { addNode, createCluster, provisionService, setHa, setRamGuard } from "..
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { buyDevice, connect, setPower } from "../src/sim/90-actions/hardware";
 import { migrateWorkload, migrationTargets, stopWorkload } from "../src/sim/90-actions/vms";
-import { installed } from "./fixtures";
+import { installed, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = ReturnType<typeof setPower>;
@@ -20,7 +20,7 @@ const ok = (r: R) => {
 
 // The basement server and a second one in one cluster, a gamer with two Game S servers the player put on the basement server.
 function setup() {
-  const s = { ...newGame(1), cash: 100_000 };
+  const s = { ...withServer(newGame(1)), cash: 100_000 };
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));

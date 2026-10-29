@@ -14,6 +14,7 @@ import { wallpaperSvg } from "./wallpaper";
 import { Widgets } from "./Widgets";
 import { SecurityAlert } from "./SecurityAlert";
 import { Welcome } from "./Welcome";
+import { ServerSetup, useFirstServerSetup } from "./ServerSetup";
 
 const AUTOSAVE_MS = 15_000;
 let greeted = false;
@@ -43,6 +44,8 @@ export function Desktop() {
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   const { windows, speed, setSpeed, advance, save, notify, clearUnseen, welcome, explain, setExplain, advisory } = useStore();
   const gameOver = useStore((s) => s.game.gameOver);
+  const setup = useStore((s) => s.setup);
+  useFirstServerSetup();
   const [center, setCenter] = useState(false);
   const carry = useRef(0);
 
@@ -97,6 +100,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
       <Dock />
       {welcome && <Welcome />}
+      {setup && !welcome && <ServerSetup key={setup} deviceId={setup} />}
       {advisory && <SecurityAlert />}
       {gameOver !== null && <GameOver hour={gameOver} />}
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}

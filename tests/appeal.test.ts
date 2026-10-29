@@ -9,6 +9,7 @@ import { setBillingRules, suspendServices } from "../src/sim/90-actions/billing"
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { withServer } from "./fixtures";
 
 const DAY = 24;
 const bill = (s: GameState, hour: number) => { while (s.hour < hour) { s.hour++; billingTick(s); } };
@@ -17,7 +18,7 @@ const run = (s: GameState, hour: number) => { while (s.hour < hour) { s.hour++; 
 
 // A yearly domain whose invoice is overdue by a day and never paid unless something moves the customer.
 function overdue(seed: number, profile: Profile = "enterprise") {
-  const s = newGame(seed);
+  const s = withServer(newGame(seed));
   // Billing rules run by themselves after the Automation research; staff carry them out before it (staff-time.test.ts).
   s.unlocks = ["people", "monitoring", "automation"];
   const c = addCustomer(s, "Initech", profile, "late");

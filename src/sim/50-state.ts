@@ -152,24 +152,16 @@ export function deviceDefaults(modelId: string, at: number) {
   };
 }
 
-const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>
+export const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>
   ({ id, model, brand, rackId, slot, panel, name, bond: "failover", groups: [], price, boughtAt: 0, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults(model, 0) });
 
-// Starting infrastructure: a 24U basement rack with a server and a switch, cabled to the home router so the server starts online.
-// startGame in 90-actions/start.ts adds the starting customers.
+// Starting infrastructure: an empty 24U basement rack and the home router. The player buys, mounts and cables the first server.
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, cash: START_CASH, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false }],
-  devices: [
-    device("dev3", "g1-compute", "Dwell", "rack2", 1, null, "fra1-srv-01", 2500),
-    device("dev4", "sw-8", "Sysko", "rack2", 24, null, "fra1-sw-01", 60),
-    device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0),
-  ],
-  cables: [
-    { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper", color: null },
-    { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper", color: null },
-  ],
+  devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
+  cables: [],
   ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], checklist: [],
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, lossReports: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,

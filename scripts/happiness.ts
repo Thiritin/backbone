@@ -23,14 +23,15 @@ import { modelById } from "../src/sim/10-catalog/hardware";
 import { bookable, controlPlaneUse, nodeUsed } from "../src/sim/60-infra/cluster";
 import { requestSize } from "../src/sim/30-market/custom";
 import type { SalesRequest } from "../src/sim/30-market/market";
-import { addNode, createPanelVm, resizePanelVm } from "../src/sim/90-actions/clusters";
+import { addNode, createCluster, createPanelVm, resizePanelVm, setSoftware } from "../src/sim/90-actions/clusters";
 import { sitesDown, vmById, vmOf, vmRoom } from "../src/sim/60-infra/cluster";
 import { buyDevice, connect, orderHomeLine } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "../tests/plugged";
 import { acceptUpgrade, confirmOrder, createAccount, provisionOrder, registerOrderDomain, renewDomain } from "../src/sim/90-actions/orders";
 import { quote } from "../src/sim/90-actions/sales";
 import { closeTicket, replyTicket, resolveTicket } from "../src/sim/90-actions/support";
-import { readyGame } from "../tests/fixtures";
+import { startGame } from "../src/sim/90-actions/start";
+import { fillLines } from "../src/sim/80-business/website";
 import { OWNED, owns } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { research } from "../src/sim/90-actions/store";
@@ -59,7 +60,16 @@ function source(stack: string): string {
 export interface Month { month: number; servers: number; cash: number; debt: number; netWorth: number; level: number; knowHow: number; line: string; live: number; mrr: number; happiness: number; churned: number; won: number; lost: Record<string, number>; bySource: Record<string, number>; waitByKind: Record<string, number>; stepErrors: Record<string, number>; downHours: Record<string, number> }
 
 export function play(seed: number, months: number, upgrades = false, buy = true): { rows: Month[]; s: GameState; reached: Record<string, number> } {
-  const s: GameState = readyGame(seed);
+  // The first server: the Shop's Dwell 1U from the savings, in the basement rack cabled to the home router, then Proxmocks
+  // with a FreePanel VM. The friends move in once the panel VM is ready and every line it sells goes on the website.
+  const s: GameState = startGame(seed);
+  const first = (buyDevice(s, "g1-compute", "Dwell", 1, "loc1") as { id: string }).id;
+  mountDevice(s, first, "rack2", 1);
+  connect(s, { device: first, port: 0 }, { device: "dev5", port: 0 });
+  const hv = (createCluster(s, "loc1", "Basement 1") as { id: string }).id;
+  addNode(s, hv, first);
+  setSoftware(s, hv, "proxmocks");
+  createPanelVm(s, hv, "freepanel");
   let bySource: Record<string, number> = {}, waitByKind: Record<string, number> = {}, stepErrors: Record<string, number> = {}, downHours: Record<string, number> = {};
   bumpProbe.fn = (_c, d) => {
     if (!d) return;
@@ -95,7 +105,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     if (!bought.ok) return;
     const id = bought.id!;
     for (let slot = 2; slot < 24 && !s.devices.find((d) => d.id === id)!.rackId; slot++) mountDevice(s, id, "rack2", slot);
-    for (let port = 1; port < 7 && !connect(s, { device: id, port: 0 }, { device: "dev4", port }).ok; port++);
+    for (let port = 1; port < 4 && !connect(s, { device: id, port: 0 }, { device: "dev5", port }).ok; port++);
     if (addNode(s, c.id, id).ok) servers++;
   };
   let servers = 0;
@@ -126,6 +136,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     const churnedBefore = s.customers.filter((c) => c.churnedAt !== null && s.services.some((v) => v.customerId === c.id)).length, before = s.customers.length, lostBefore = s.sales.lost.length;
     for (let h = 0; h < MONTH; h++) {
       tick(s);
+      if (!s.marketing.lines.length && s.customers.some((c) => c.habit === "friend")) s.marketing.lines = fillLines(s, undefined).marketing.lines;
       if (buy && s.hour % 24 === 9) { grow(); upgradeLine(); }
       if (s.hour % 24 === 9) learn();
       if (s.hour % 24 === 9) for (const d of s.domains) if (d.expiresAt - s.hour < 7 * 24 && s.customers.some((c) => c.id === d.customerId && c.churnedAt === null)) renewDomain(s, d.name);

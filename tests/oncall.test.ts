@@ -11,6 +11,7 @@ import { addCustomer } from "../src/sim/90-actions/customers";
 import { buyDevice, setPower } from "../src/sim/90-actions/hardware";
 import { hire, queueOperation, setOnCall, setTechRules } from "../src/sim/90-actions/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { withServer } from "./fixtures";
 
 type R = ReturnType<typeof setPower>;
 const ok = (r: R) => {
@@ -49,13 +50,13 @@ const fanFailed = (s: GameState, id: string) => dev(s, "dev3").components.find((
 
 describe("on-call duty", () => {
   it("replaces a failed part on Saturday night only with a roster", () => {
-    const without = { ...newGame(1), cash: 100_000 };
+    const without = { ...withServer(newGame(1)), cash: 100_000 };
     technician(without);
     const lost = failedFan(without, SATURDAY_2);
     run(without, 4);
     expect(fanFailed(without, lost)).toBe(true);
 
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     const id = technician(s);
     ok(setOnCall(s, id, true));
     const fan = failedFan(s, SATURDAY_2);
@@ -69,7 +70,7 @@ describe("on-call duty", () => {
   });
 
   it("pays a week's allowance as 5 weekdays at 2 and 2 weekend days at 4 hourly wages", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     const id = technician(s);
     ok(setOnCall(s, id, true));
     s.hour = MONDAY_9 - 1;
@@ -90,7 +91,7 @@ describe("on-call duty", () => {
     expect(callOutRate(TUESDAY_2)).toBeCloseTo(1.5);
     expect(callOutRate(SUNDAY_2)).toBeCloseTo(1.75);
     expect(callOutRate(SATURDAY_2 + 12)).toBeCloseTo(1.3);
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     const id = technician(s), e = staffer(s, id);
     s.hour = TUESDAY_2;
     callOut(s, e);
@@ -101,7 +102,7 @@ describe("on-call duty", () => {
   });
 
   it("lets a technician rest 11 hours after a call-out before the next office hour", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     const id = technician(s);
     ok(setOnCall(s, id, true));
     const fan = failedFan(s, TUESDAY_2);
@@ -119,7 +120,7 @@ describe("on-call duty", () => {
   });
 
   it("rotates weekly with the handover on Monday at 09:00 and shows the on-call slot", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     const a = technician(s), b = technician(s);
     ok(setOnCall(s, a, true));
     ok(setOnCall(s, b, true));
@@ -137,7 +138,7 @@ describe("on-call duty", () => {
   });
 
   it("blackholes a saturating attack by rule and answers abuse reports", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     const id = technician(s), e = staffer(s, id);
     const attack = { id: "ddos1", serviceId: "v1", locationId: "loc1", mbps: 500, startedAt: SATURDAY_2, endsAt: SATURDAY_2 + 5, blackholed: false };
     s.hour = SATURDAY_2;
@@ -158,7 +159,7 @@ describe("on-call duty", () => {
   });
 
   it("loads saves from before on-call duty", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
     technician(s);
     const data = JSON.parse(serialize(s));
     delete data.onCall;

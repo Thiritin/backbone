@@ -9,13 +9,14 @@ import { tick } from "../src/sim/88-tick/tick";
 import { repayLoan, sendReminder, suspendServices, takeLoan, writeOff } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { withServer } from "./fixtures";
 
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
 const at = (y: number, m: number, d: number) => hourOf(new Date(Date.UTC(y, m - 1, d)));
 
 // One customer with a yearly domain, invoiced on the first tick.
 function withInvoice(payStep: number) {
-  const s = newGame(3);
+  const s = withServer(newGame(3));
   const c = addCustomer(s, "Ada", "private");
   addService(s, c, "domain", "ada.example", 12, "year");
   tick(s);
@@ -26,7 +27,7 @@ function withInvoice(payStep: number) {
 
 describe("invoices", () => {
   it("bills hourly services in arrears for the hours they ran", () => {
-    const s = newGame(1);
+    const s = withServer(newGame(1));
     runTo(s, at(2005, 1, 10) + 12);
     addService(s, addCustomer(s, "Bob", "gamer"), "gameServer", "Bob's server", 0.01, "hour");
     runTo(s, at(2005, 2, 1));
@@ -38,7 +39,7 @@ describe("invoices", () => {
   });
 
   it("bills an ended service only for its hours", () => {
-    const s = newGame(1);
+    const s = withServer(newGame(1));
     const v = addService(s, addCustomer(s, "Cy", "hobbyDev"), "vps", "cy-vps", 0.1, "hour");
     runTo(s, 100);
     s.services.find((x) => x.id === v)!.endedAt = 100;
@@ -47,7 +48,7 @@ describe("invoices", () => {
   });
 
   it("bills yearly services in advance at start and on each anniversary", () => {
-    const s = newGame(2);
+    const s = withServer(newGame(2));
     runTo(s, 100);
     addService(s, addCustomer(s, "Dee", "soleProp"), "ssl", "dee.example SSL", 30, "year");
     // Billing only, so support churn can't end the service during the year.
@@ -73,7 +74,7 @@ describe("payment habits", () => {
   }
 
   it("pays an on-time invoice before the due date and books it", () => {
-    const s = newGame(5);
+    const s = withServer(newGame(5));
     addService(s, addCustomer(s, "Eve", "office", "prompt"), "domain", "eve.example", 12, "year");
     tick(s);
     const inv = s.invoices[0];
@@ -141,7 +142,7 @@ describe("dunning", () => {
 
 describe("bank", () => {
   it("amortizes a loan in equal monthly instalments", () => {
-    const s = newGame(7);
+    const s = withServer(newGame(7));
     const netWorth = metrics(s).netWorth;
     expect(takeLoan(s, 25_000, 1)).toEqual({ ok: false, error: "error.loanLimit" });
     expect(takeLoan(s, 10_000, 1).ok).toBe(true);
@@ -158,7 +159,7 @@ describe("bank", () => {
   });
 
   it("penalizes missed instalments and calls the loan in after three", () => {
-    const s = newGame(8);
+    const s = withServer(newGame(8));
     takeLoan(s, 10_000, 2);
     const rate = s.loans[0].rate;
     s.cash = 0;
@@ -181,7 +182,7 @@ describe("bank", () => {
   });
 
   it("lends the whole remaining limit when it is not a preset", () => {
-    const s = newGame(13);
+    const s = withServer(newGame(13));
     s.loans.push({ id: "old", amount: 3_000, rate: 0.1, months: 12, left: 12, payment: 0, balance: 2_999.5, takenAt: 0, missed: 0 });
     expect(loanAvailable(s)).toBe(7_000.5);
     expect(takeLoan(s, 7_001, 1)).toEqual({ ok: false, error: "error.loanLimit" });
@@ -200,7 +201,7 @@ describe("bank", () => {
 
 describe("billing saves", () => {
   it("round-trips invoices and loans", () => {
-    const s = newGame(11);
+    const s = withServer(newGame(11));
     const c = addCustomer(s, "Fay", "agency", "late");
     addService(s, c, "webHosting", "fay.example", 0.02, "hour");
     addService(s, c, "domain", "fay.example", 12, "year");
@@ -211,7 +212,7 @@ describe("billing saves", () => {
   });
 
   it("fills billing defaults into an old save", () => {
-    const old = JSON.parse(serialize(newGame(12)));
+    const old = JSON.parse(serialize(withServer(newGame(12))));
     for (const k of ["customers", "services", "invoices", "yearlyBilledUntil", "loans", "loansBlockedUntil"]) delete old[k];
     const s = deserialize(JSON.stringify(old));
     expect(s).toMatchObject({ customers: [], services: [], invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0 });

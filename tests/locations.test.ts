@@ -10,8 +10,9 @@ import {
   addLocation, buyDevice, buyRack, closeLocation, connect, moveRack, sellDevice, sellRack, unmountDevice,
 } from "../src/sim/90-actions/hardware";
 import { mountDevice, mountStack } from "./plugged";
+import { withServer } from "./fixtures";
 
-const rich = (cash = 1_000_000): GameState => ({ ...newGame(1), cash });
+const rich = (cash = 1_000_000): GameState => ({ ...withServer(newGame(1)), cash });
 const ok = (r: ReturnType<typeof addLocation>) => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;
@@ -135,7 +136,7 @@ describe("racks", () => {
 
 describe("resaleValue", () => {
   it("falls to 80% over the first month, then to 20% over 24 months, and stays there", () => {
-    const s = newGame(1);
+    const s = withServer(newGame(1));
     const at = (months: number) => {
       s.hour = Math.round(months * 730);
       return resaleValue(s, 1000, 0);
@@ -237,13 +238,13 @@ describe("monthly bills", () => {
     expect(powerPerHour(s)).toBeCloseTo(basement + 0.25 * 0.09 * 1.4, 10);
   });
   it("pays power and the rent of every datacenter location on the first of the month", () => {
-    const s = newGame(1);
+    const s = withServer(newGame(1));
     ok(addLocation(s, "hetzler-park", "positions", 2));
     const events = run(s, 24 * 31);
     // Server 250 W, switch 8 W and home router 10 W for 744 h at 9 ct × 1.6.
     const power = Math.round(0.268 * 744 * 0.09 * 1.6 * 100) / 100;
     expect(power).toBe(28.71);
-    expect(s.cash).toBe(START_CASH - 360 - power);
+    expect(s.cash).toBe(START_CASH - 2500 - 360 - power);
     expect(s.powerDue).toBe(0);
     expect(s.ledger.map((l) => [l.category, l.key, l.amount])).toEqual([["power", "ledger.power", -power], ["rent", "ledger.space", -360]]);
     expect(events).toContainEqual({ app: "Finance", key: "event.bills", params: { power, rent: 360, leasing: 0, subscriptions: 0, total: 360 + power } });
@@ -301,11 +302,11 @@ describe("rack shares", () => {
     expect(s.locations.some((l) => l.id === id)).toBe(false);
   });
   it("bills the share each month and fills provided on older racks", () => {
-    const s = newGame(1);
+    const s = withServer(newGame(1));
     ok(addLocation(s, "hetzler-park", "share", 4));
     run(s, 24 * 31);
     expect(s.ledger.find((l) => l.key === "ledger.space")!.amount).toBe(-63);
-    const raw = JSON.parse(JSON.stringify(newGame(2)));
+    const raw = JSON.parse(JSON.stringify(withServer(newGame(2))));
     delete raw.racks[0].provided;
     expect(deserialize(JSON.stringify(raw)).racks[0].provided).toBe(false);
   });

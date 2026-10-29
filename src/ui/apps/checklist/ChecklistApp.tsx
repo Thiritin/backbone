@@ -9,9 +9,11 @@ interface Goal { id: string; title: string; text: string }
 
 const STAGES: { name: string; goals: Goal[] }[] = [
   { name: "Basement", goals: [
+    { id: "firstServer", title: "Bring your first server online", text: "Buy a server in the Shop, mount it in the basement rack in Locations, plug in its power and cable it to the home router." },
+    { id: "setup", title: "Set up your first server", text: "Choose a panel or a hypervisor for the server in Locations so Jonas, Mira and Tobi can move their websites to it." },
     { id: "website", title: "Put a product on your website", text: "Switch on a product in Website once a control plane that sells it is installed, so customers can request it." },
-    { id: "loan", title: "Take a loan from the Bank", text: "A loan pays for hardware before your first customers pay you." },
-    { id: "secondServer", title: "Bring a second server online", text: "Buy a server in the Shop, mount it in your rack, plug in its power, cable it to the switch and add it to a cluster in Locations." },
+    { id: "loan", title: "Take a loan from the Bank", text: "A loan pays for your next server before your customers pay you for it." },
+    { id: "secondServer", title: "Bring a second server online", text: "Buy another server, mount it, plug in its power, cable it to the home router or a switch and add it to a cluster in Locations." },
     { id: "homeLine", title: "Upgrade the home line", text: "Order a line with more upload in Locations once the basement's peak upload reaches the line's limit." },
     { id: "firstCustomer", title: "Win your first customer", text: "Customers rent space on your servers and pay you every month." },
     { id: "ticket", title: "Answer a support ticket", text: "Pick a reply in Support before the ticket runs past its deadline." },

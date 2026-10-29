@@ -1,0 +1,66 @@
+import { describe, expect, it } from "vitest";
+import { START_CASH } from "../src/sim/10-catalog/economy";
+import { modelById } from "../src/sim/10-catalog/hardware";
+import type { GameState } from "../src/sim/50-state";
+import { linkStatus } from "../src/sim/60-infra/status";
+import { tick } from "../src/sim/88-tick/tick";
+import { addNode, createCluster, createPanelVm, installPanel, setSoftware } from "../src/sim/90-actions/clusters";
+import { buyDevice, connect, mountDevice, setPlugged } from "../src/sim/90-actions/hardware";
+import { startGame } from "../src/sim/90-actions/start";
+import { checkDone } from "../src/sim/checklist";
+
+const ok = (r: { ok: boolean; id?: string; error?: string }) => {
+  if (!r.ok) throw new Error(r.error);
+  return r.id!;
+};
+const friends = (s: GameState) => s.customers.filter((c) => c.habit === "friend");
+const run = (s: GameState, hours: number) => { for (let h = 0; h < hours; h++) tick(s); };
+
+// The first server from the Shop to the home router: bought from the savings, mounted, plugged in and cabled.
+function firstServer(s: GameState): string {
+  const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
+  expect(s.cash).toBe(START_CASH - 2500);
+  ok(mountDevice(s, srv, "rack2", 1));
+  expect(linkStatus(s, srv).online).toBe(false);
+  for (const c of s.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(setPlugged(s, srv, c.id, true));
+  ok(connect(s, { device: srv, port: 0 }, { device: "dev5", port: 0 }));
+  run(s, 1);
+  expect(linkStatus(s, srv).online).toBe(true);
+  return srv;
+}
+
+describe("first server", () => {
+  it("starts with an empty basement rack and the home router", () => {
+    const s = startGame(1);
+    expect(s.cash).toBe(START_CASH);
+    expect(s.devices.map((d) => modelById(d.model).kind)).toEqual(["gateway"]);
+    expect(s.racks.map((r) => r.locationId)).toEqual(["loc1"]);
+    expect(s.cables).toEqual([]);
+    expect(s.customers).toEqual([]);
+  });
+
+  it("brings a bought server online and moves the friends onto a panel server", () => {
+    const s = startGame(2);
+    const srv = firstServer(s);
+    expect(checkDone(s, "firstServer")).toBe(true);
+    run(s, 24 * 7);
+    expect(friends(s)).toEqual([]);
+    ok(installPanel(s, srv, "freepanel"));
+    run(s, 24 * 7);
+    expect(friends(s)).toHaveLength(3);
+    expect(s.services.filter((v) => v.product === "webHosting")).toHaveLength(3);
+    expect(checkDone(s, "setup")).toBe(true);
+  });
+
+  it("moves the friends onto the panel VM of a hypervisor", () => {
+    const s = startGame(3);
+    const srv = firstServer(s);
+    const c = ok(createCluster(s, "loc1", "Basement 1"));
+    ok(addNode(s, c, srv));
+    ok(setSoftware(s, c, "proxmocks"));
+    ok(createPanelVm(s, c, "freepanel"));
+    run(s, 24 * 7);
+    expect(friends(s)).toHaveLength(3);
+    expect(s.clusters.find((x) => x.vm)!.panel).toBe("freepanel");
+  });
+});
