@@ -9,6 +9,7 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { isWorkHour } from "../00-core/workhours";
 import { orderError } from "../30-market/orders";
+import { cheapestOption } from "../40-support/retention";
 import { orderMinutes, staffOrderStep } from "../30-market/manual";
 import { billAttempt, billChadUsage, BOT_RIGHT, BOT_RUNAROUND, BOT_TRIES, type ChadKind } from "./chad";
 
@@ -183,7 +184,10 @@ const rightChance = (e: Employee, kind: TicketKind) => (e.bot ? BOT_RIGHT[kind a
 
 // A support agent queues a reply or action on the ticket the same way the player does; finishWork in the support tick applies it.
 function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "resolve"; arg: string } {
-  if (t.kind === "cancellation") return { op: "resolve", arg: "retain" };
+  if (t.kind === "cancellation") {
+    const offer = cheapestOption(s, t);
+    return { op: "resolve", arg: offer ? `retain.${offer}` : "cancel" };
+  }
   if (t.kind === "order") return { op: "resolve", arg: staffOrderStep(s, t, orderError(s, t)) ?? "accept" };
   const topic = TOPIC_ACTIONS[`${t.kind}.${t.topic}`];
   if (topic) return { op: "resolve", arg: topic.includes("free") ? "free" : topic[0] };
@@ -212,9 +216,9 @@ function answerTickets(s: GameState, agents: Employee[], r: Rng): BotTask[] {
   const owner = (t: Ticket) => (t.assignee && s.staff.some((x) => x.id === t.assignee) ? t.assignee : null);
   for (const e of agents) {
     for (const t of [...queue.filter((x) => owner(x) === e.id), ...queue.filter((x) => owner(x) === null)]) {
-      // An order that cannot be set up waits for the player.
+      // An order that cannot be set up waits for the player, and an upgrade waits for the player's quote.
       const step = t.kind === "order" ? staffOrderStep(s, t, orderError(s, t)) : null;
-      if (taken.has(t.id) || !e.trained.includes(t.kind) || (t.kind === "order" && !step)) continue;
+      if (taken.has(t.id) || !e.trained.includes(t.kind) || (t.kind === "order" && !step) || t.kind === "upgrade") continue;
       const tries = e.bot ? t.replies.filter((x) => x.by === e.name).length : 0;
       if (tries >= BOT_TRIES) continue;
       const took = take(s, e, step ? orderMinutes(s, t, step, MINUTES.order) : MINUTES[t.kind]);

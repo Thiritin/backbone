@@ -10,6 +10,7 @@ import { MarketApp } from "./market/MarketApp";
 import { NetworkApp } from "./network/NetworkApp";
 import { NewsApp } from "./news/NewsApp";
 import { SecurityApp } from "./SecurityApp";
+import { KnowledgeBaseApp } from "./KnowledgeBaseApp";
 import { missingFor } from "../../sim/30-market/market";
 import type { GameState } from "../../sim/50-state";
 import { CustomersApp } from "./customers/CustomersApp";
@@ -33,9 +34,8 @@ export interface AppDef {
   about: string;
   hidden?: boolean;
   body?: ComponentType;
-  // The red count on the dock tile: free apps always show it, the rest once Dock badges is bought.
+  // The red count on the dock tile.
   badge?: (s: GameState) => number;
-  free?: boolean;
 }
 
 // Dock order; a divider follows every 4th app.
@@ -52,15 +52,16 @@ export const APPS: AppDef[] = [
   { name: "Website", icon: AppWindow, tile: "oklch(0.6 0.13 230)", about: "Opens your company website in the Browser.", body: WebsiteApp },
   { name: "Browser", icon: Compass, tile: "oklch(0.56 0.15 250)", about: "Opens your company site, your customers' sites and the pages of your suppliers.", body: BrowserApp },
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: "Lists your customers with their contracts and happiness.", body: CustomersApp },
-  { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets, orders and sales requests so you can answer, accept, quote or decline them.", body: SupportApp, free: true,
+  { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Collects tickets, orders and sales requests so you can answer, accept, quote or decline them.", body: SupportApp,
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length
-      + s.sales.requests.filter((r) => r.kind !== "order" && (r.status === "open" || r.status === "countered") && !missingFor(s, r).length).length },
+      + s.sales.requests.filter((r) => r.kind === "new" && (r.status === "open" || r.status === "countered") && !missingFor(s, r).length).length },
   { name: "Billing", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: "Sends invoices, reminders and dunning notices.", body: BillingApp,
     badge: (s) => s.invoices.filter(isUnpaid).length },
   { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Shows your profit and loss, cash flow, tax, insurance and the account statement with every booking.", body: FinanceApp },
   { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: "Hires people and assigns them to work queues.", body: StaffApp },
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: "Runs campaigns and manages reviews.", body: MarketingApp },
   { name: "Market", icon: ChartPie, tile: "oklch(0.62 0.12 230)", about: "Shows demand, customer requirements and lost sales.", body: MarketApp },
+  { name: "Knowledge base", icon: BookOpen, tile: "oklch(0.6 0.12 200)", about: "Lists the help articles customers read instead of writing in.", body: KnowledgeBaseApp },
   { name: "Nagiosaurus", icon: Activity, tile: "oklch(0.58 0.14 150)", about: "Watches every installed software for known vulnerabilities and lists the most exposed first.", hidden: true },
   { name: "Research", icon: GraduationCap, tile: "oklch(0.72 0.15 95)", about: "Trains your company in new skills with the know-how it earns.", body: ResearchApp },
   { name: "Getting started", icon: BookOpen, tile: "oklch(0.55 0.15 255)", about: "Explains the controls and how the game saves.", hidden: true },
@@ -72,7 +73,6 @@ export const APPS: AppDef[] = [
 
 export const appByName = (name: string): AppDef => APPS.find((a) => a.name === name) ?? APPS[0];
 
-export const dockBadge = (s: GameState, a: AppDef): number => ((a.free || s.installed.includes("dockBadges")) && a.badge?.(s)) || 0;
 
 // The app as the player sees it: Support is Email, or the installed desk, with its own name, mark and tile.
 export const appFor = (s: GameState, name: string): AppDef => (name === "Support" ? { ...appByName(name), ...supportApp(s) } : appByName(name));

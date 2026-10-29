@@ -62,6 +62,26 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `A new panel password is on its way to your inbox. The login page is panel.${p.host}.`,
     (p) => `We have reset your control panel login and emailed you the new password. Please log in at panel.${p.host} and change it.`,
   ],
+  "tpl.ssl": [
+    (p) => `We can install an SSL certificate for ${site(p)}. Once you order it, the padlock shows within the hour and the warning is gone.`,
+    (p) => `The warning goes away with an SSL certificate. Order one for ${site(p)} and we install it for you.`,
+    (p) => `${site(p)} needs an SSL certificate for the padlock. We set it up for you as soon as you order it.`,
+  ],
+  "tpl.ssh": [
+    (p) => `Open an SSH client such as PuTTY and connect to ${p.hostname || "your server"} as root. The password is in the setup email we sent from ${p.host}.`,
+    (p) => `You log in over SSH: connect to ${p.hostname || "your server"} with the user root and the password from your setup email.`,
+    (p) => `Use any SSH client and connect to ${p.hostname || "your server"} as root. If you lost the setup email with the password, reply here and we send a new one.`,
+  ],
+  "tpl.addon": [
+    (p) => `Yes, it can share the package. Add the new domain in the control panel at panel.${p.host} under Domains and pick a folder for it.`,
+    (p) => `No second package needed. In the control panel at panel.${p.host}, add the domain under Domains and point it to its own folder.`,
+    (p) => `You can run the new domain on the same hosting. Open Domains in the control panel at panel.${p.host}, add it and choose a folder.`,
+  ],
+  "tpl.php": [
+    (p) => `You can pick the PHP version for ${site(p)} yourself in the control panel at panel.${p.host} under PHP settings. It applies straight away.`,
+    (p) => `Open PHP settings in the control panel at panel.${p.host} and choose the newer version. ${site(p)} uses it right away.`,
+    (p) => `In the control panel at panel.${p.host}, PHP settings lets you switch versions for ${site(p)}. We recommend the newest one your plugins support.`,
+  ],
   offerOnce: [
     (p) => `We can bring ${site(p)} up to date for you. It is a one-off job for ${euroCents(Number(p.once))}, and you do not have to do anything.`,
     (p) => `The software behind ${site(p)} is missing security updates. We will install them for a one-off fee of ${euroCents(Number(p.once))}.`,
@@ -82,6 +102,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `${site(p)} is clean again and shows your own homepage. Updating the software and changing your passwords will keep it that way.`,
     (p) => `Your site ${site(p)} is back to normal. We removed the intruder's files; please update the software and choose new passwords.`,
   ],
+  noBackup: [
+    (p) => `We have no backup of ${site(p)} to restore. Please upload the site again from your own copy and choose new passwords.`,
+    (p) => `Unfortunately there is no backup of ${site(p)} on our side. You will need to restore it from your own files and change your passwords.`,
+    (p) => `We cannot restore ${site(p)} because no backup exists. Please rebuild it from your own copy and keep the software up to date.`,
+  ],
   "tpl.explain": [
     () => "The second payment covers last month's usage, which we invoice in arrears. You have not been charged twice.",
     () => "There are two invoices because usage is billed at the end of each month for the month before. Both are correct, and nothing was charged twice.",
@@ -101,11 +126,6 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Our costs went up this year, and the new price for ${svc(p)} lets us keep it fast and reliable.`,
     (p) => `We understand the increase is unwelcome. Power and hardware prices rose, and the new price keeps ${svc(p)} at the quality you know.`,
     (p) => `The new price for ${svc(p)} reflects higher costs for power and hardware. It also pays for the people who answer emails like this one.`,
-  ],
-  noBackup: [
-    (p) => `We have no backup of ${site(p)} to restore. Please upload the site again from your own copy and choose new passwords.`,
-    (p) => `Unfortunately there is no backup of ${site(p)} on our side. You will need to restore it from your own files and change your passwords.`,
-    (p) => `We cannot restore ${site(p)} because no backup exists. Please rebuild it from your own copy and keep the software up to date.`,
   ],
   "tpl.awaitPayment": [
     () => "Thank you. Your services come back online as soon as the payment arrives.",
@@ -142,10 +162,35 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `You are right to ask. ${svc(p)} goes back to its previous price from the next invoice.`,
     (p) => `We have reverted the price change for ${svc(p)}. Your next invoice shows the old price again.`,
   ],
-  retain: [
+  "retain.half": [
+    () => "We would be sorry to see you go. If you stay, your next month costs you half, with everything as it is now.",
+    () => "Before you leave, we would like to take 50% off your next month. Reply if you would like to stay.",
+    () => "We value you as a customer. Stay with us and we halve your next month.",
+  ],
+  "retain.free": [
     () => "We would be sorry to see you go. If you stay, your next month is on us, with everything as it is now.",
     () => "Before you leave, we would like to offer you a free month to make up for the trouble. Reply if you would like to stay.",
     () => "We value you as a customer. Stay with us and the next month costs you nothing.",
+  ],
+  "retain.discount": [
+    (p) => `We would be sorry to see you go. If you stay, we take 20% off your services for the next ${p.months} months.`,
+    (p) => `Before you leave, we would like to offer you 20% off for ${p.months} months. Reply if you would like to stay.`,
+    (p) => `We value you as a customer. Stay with us and your price drops by a fifth for ${p.months} months.`,
+  ],
+  "retain.upgrade": [
+    () => "We would be sorry to see you go. If you stay, we move your service up one size at the price you pay today.",
+    () => "Before you leave, we would like to give you more resources at no extra charge. Reply if you would like to stay.",
+    () => "We value you as a customer. Stay with us and we upgrade your service for free.",
+  ],
+  "retain.fix": [
+    (p) => `We are sorry for the trouble. We will fix it within ${p.fixDays} days and check back with you then. Please give us the chance to put it right.`,
+    (p) => `Please accept our apology. Our team is on it, and within ${p.fixDays} days your service will run the way it should.`,
+    (p) => `We let you down, and we are sorry. Give us ${p.fixDays} days to fix this before you decide.`,
+  ],
+  "retain.move": [
+    () => "We are sorry for the trouble. If you stay, we move your service to a better server in our datacenter and take care of the move.",
+    () => "Before you leave, let us move your service to a better server. We arrange the move for a time that suits you.",
+    () => "We value you as a customer. Stay with us and we move your service to a newer server at no charge.",
   ],
   cancel: [
     () => "We have processed your cancellation. Your services end today and you will receive a final invoice. Thank you for hosting with us.",

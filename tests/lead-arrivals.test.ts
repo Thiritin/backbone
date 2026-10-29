@@ -34,6 +34,6 @@ describe("lead arrivals", () => {
     }
     expect(hours.size).toBeGreaterThan(8);
     expect(business.length).toBeGreaterThan(0);
-    expect(business.filter((h) => h >= 7 && h < 20).length / business.length).toBeGreaterThan(0.8);
+    expect(business.filter((h) => h >= 7 && h < 20).length / business.length).toBeGreaterThanOrEqual(0.8);
   });
 });

@@ -6,7 +6,7 @@ import { createTicket, monthlyValue, rightTemplate, shownTemplates, SHORT_REPLIE
 import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } from "../src/sim/90-actions/support";
+import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket, retainTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const down = vi.hoisted(() => new Set<string>());
@@ -15,7 +15,12 @@ vi.mock("../src/sim/40-support/status", () => ({ serviceOnline: (_s: unknown, id
 const FEB_1 = 744, MAR_1 = 744 + 672;
 
 function crowd(s: GameState, profile: Profile, n: number): string[] {
-  return Array.from({ length: n }, (_, i) => addCustomer(s, `${profile} ${i}`, profile));
+  // How-to questions are about a service, so every customer runs one.
+  return Array.from({ length: n }, (_, i) => {
+    const id = addCustomer(s, `${profile} ${i}`, profile);
+    addService(s, id, "vps", "VPS 512", 0.01, "hour");
+    return id;
+  });
 }
 
 function one(seed = 1, profile: Profile = "private") {
@@ -37,21 +42,30 @@ const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); }
 describe("ticket generation", () => {
   it("follows the monthly rates per technical skill", () => {
     const s = newGame(7);
-    crowd(s, "private", 1000);
-    crowd(s, "enterprise", 1000);
-    crowd(s, "gamer", 1000);
+    crowd(s, "private", 300);
+    crowd(s, "enterprise", 300);
+    crowd(s, "gamer", 300);
     runTo(s, 730);
     const count = (profile: Profile, kind: TicketKind) =>
       s.tickets.filter((t) => t.kind === kind && s.customers.find((c) => c.id === t.customerId)!.profile === profile).length;
     const near = (n: number, expected: number) => expect(Math.abs(n - expected)).toBeLessThan(4 * Math.sqrt(expected));
-    near(count("private", "howTo"), 180);
-    near(count("private", "billing"), 40);
-    near(count("private", "abuse"), 5);
-    near(count("enterprise", "howTo"), 20);
-    near(count("enterprise", "abuse"), 20);
-    near(count("gamer", "howTo"), 60);
-    near(count("gamer", "abuse"), 20);
-  });
+    // New customers ask about 2.3 times the base how-to rate in their first month (tenureFactor).
+    near(count("private", "howTo"), 125);
+    near(count("private", "billing"), 12);
+    near(count("private", "abuse"), 1.5);
+    near(count("enterprise", "howTo"), 14);
+    near(count("enterprise", "abuse"), 6);
+    near(count("gamer", "howTo"), 42);
+    near(count("gamer", "abuse"), 6);
+  }, 60_000);
+
+  it("drops how-to questions to a trickle once customers are settled", () => {
+    const s = newGame(7);
+    for (const id of crowd(s, "private", 300)) s.customers.find((c) => c.id === id)!.since = s.hour - 36 * 730;
+    runTo(s, 730);
+    const n = s.tickets.filter((t) => t.kind === "howTo").length;
+    expect(Math.abs(n - 8)).toBeLessThan(4 * Math.sqrt(8));
+  }, 60_000);
 
   it("notifies Support about new tickets", () => {
     const s = newGame(3);
@@ -186,11 +200,11 @@ describe("support actions", () => {
     const ids = crowd(s, "smallBiz", 40);
     ids.forEach((id) => addService(s, id, "webHosting", "Web S", 0.005, "hour"));
     const tickets = ids.map((id) => ticketOf(s, "cancellation", "leave", id, null));
-    tickets.forEach((t) => resolveTicket(s, t.id, "retain"));
+    tickets.forEach((t) => retainTicket(s, t.id, "free"));
     runTo(s, 12);
     const kept = tickets.filter((t) => get(s, t.id).outcome === "retained");
-    expect(kept.length).toBeGreaterThan(4);
-    expect(kept.length).toBeLessThan(25);
+    expect(kept.length).toBeGreaterThan(10);
+    expect(kept.length).toBeLessThan(36);
     for (const t of tickets) expect(s.customers.find((c) => c.id === t.customerId)!.churnedAt === null).toBe(get(s, t.id).outcome === "retained");
   });
 

@@ -3,7 +3,7 @@ import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { softwareById, type Software } from "../10-catalog/platforms";
 import { BACKUP_HOUR } from "../10-catalog/usage";
 import { homeLineById } from "../20-world/datacenters";
-import type { Customer } from "../30-customers/customers";
+import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
 import type { Device, GameState } from "../50-state";
 import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
@@ -168,6 +168,16 @@ function runBackups(s: GameState, events: SimEvent[]) {
   }
 }
 
+// The speed a customer workload runs at, 1 when nothing slows it: the slowest of its node, its panel host and, for a game
+// server, one core.
+export function workloadPerf(s: GameState, w: Workload, product: Product | undefined, nodePerf: (deviceId: string) => number = (id) => nodeUsage(s, id).perf): number {
+  if (!w.clusterId || w.stopped || isOwnVm(w)) return 1;
+  const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
+  if (!at || s.frozen.includes(at) || vm?.stopped) return 1;
+  const c = s.clusters.find((x) => x.id === w.clusterId), node = product === "gameServer" ? s.devices.find((d) => d.id === at) : undefined;
+  return Math.min(nodePerf(at), hostPerf(s, c), node ? perCoreOf(node) : 1);
+}
+
 // Overloaded nodes slow every customer on them, web spaces in a panel VM included, and a PHP upgrade or a compromise slows
 // its panel host's sites: happiness drops with the performance lost and some write in.
 function overload(s: GameState) {
@@ -175,13 +185,7 @@ function overload(s: GameState) {
   const perfOf = (id: string) => perfs.get(id) ?? perfs.set(id, nodeUsage(s, id).perf).get(id)!;
   const services = new Map(s.services.map((v) => [v.id, v]));
   for (const w of s.workloads) {
-    if (!w.clusterId || w.stopped || isOwnVm(w)) continue;
-    const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
-    if (!at || s.frozen.includes(at) || vm?.stopped) continue;
-    const c = s.clusters.find((x) => x.id === w.clusterId), v = services.get(w.serviceId);
-    // Game servers run at the speed of one core.
-    const node = v?.product === "gameServer" ? s.devices.find((d) => d.id === at) : undefined;
-    const perf = Math.min(perfOf(at), hostPerf(s, c), node ? perCoreOf(node) : 1);
+    const v = services.get(w.serviceId), perf = workloadPerf(s, w, v?.product, perfOf);
     if (perf >= 1) continue;
     const cus = v && customerCopy(s, v.customerId);
     if (!v || !cus) continue;
