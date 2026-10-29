@@ -178,6 +178,7 @@ export const en: Record<string, (p: Params) => string> = {
   "invoice.step.final": () => "Final notice",
   "invoice.step.collections": () => "Collections",
   "ledger.payment": (p) => `Invoice ${p.invoice} from ${p.customer}`,
+  "ledger.setup": (p) => `Setup fees on invoice ${p.invoice} from ${p.customer}`,
   "ledger.collections": (p) => `Collections on invoice ${p.invoice} from ${p.customer}`,
   "ledger.loanTaken": (p) => `Loan of ${euro(Number(p.amount))}`,
   "ledger.loanRepayment": (p) => `Instalment on the ${euro(Number(p.amount))} loan, ${euroCents(Number(p.interest))} interest`,

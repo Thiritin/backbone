@@ -88,6 +88,40 @@ describe("payment habits", () => {
   });
 });
 
+describe("setup fees", () => {
+  const setupInvoice = (payStep: number) => {
+    const { s, inv } = withInvoice(payStep);
+    inv().lines.push({ serviceId: null, key: "invoice.line.setupFee", params: { label: "ada.example" }, amount: 5 });
+    inv().payAt = s.hour + 24;
+    return { s, inv };
+  };
+
+  it("books the setup lines apart from the rest of the invoice", () => {
+    const { s, inv } = setupInvoice(0);
+    runTo(s, inv().payAt!);
+    const [setup] = s.ledger.filter((e) => e.category === "setup"), [pay] = s.ledger.filter((e) => e.category === "payments");
+    expect(setup).toMatchObject({ key: "ledger.setup", amount: 5, params: { customer: "Ada" } });
+    expect(pay).toMatchObject({ key: "ledger.payment", amount: 12 });
+    expect(setup.amount + pay.amount).toBe(invoiceTotal(inv()));
+  });
+
+  it("splits the collections share the same way", () => {
+    const { s, inv } = setupInvoice(0);
+    inv().status = "writtenOff";
+    runTo(s, inv().payAt!);
+    const setup = s.ledger.find((e) => e.category === "setup")!, pay = s.ledger.find((e) => e.category === "payments")!;
+    expect(pay.key).toBe("ledger.collections");
+    expect(setup.amount + pay.amount).toBeCloseTo(invoiceTotal(inv()) * 0.3, 2);
+  });
+
+  it("books nothing under setup for an invoice without setup lines", () => {
+    const { s, inv } = withInvoice(0);
+    inv().payAt = s.hour + 24;
+    runTo(s, inv().payAt!);
+    expect(s.ledger.some((e) => e.category === "setup")).toBe(false);
+  });
+});
+
 describe("dunning", () => {
   it("sends each step when it is due, adds fees and gets paid after the final notice", () => {
     const { s, inv } = withInvoice(3);

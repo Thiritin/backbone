@@ -264,7 +264,11 @@ export function billingTick(s: GameState): SimEvent[] {
       changed = true;
       const collected = inv.status === "writtenOff";
       const params = { invoice: inv.number, customer: customerName(s, inv.customerId) };
-      book("payments", collected ? "ledger.collections" : "ledger.payment", params, cents(invoiceTotal(inv) * (collected ? COLLECTIONS_SHARE : 1)));
+      const share = collected ? COLLECTIONS_SHARE : 1;
+      const setup = cents(inv.lines.filter((l) => l.key === "invoice.line.setupFee").reduce((sum, l) => sum + l.amount, 0) * share);
+      const total = cents(invoiceTotal(inv) * share);
+      if (setup !== 0) book("setup", "ledger.setup", params, setup);
+      book("payments", collected ? "ledger.collections" : "ledger.payment", params, cents(total - setup));
       return { ...inv, payAt: null, status: collected ? inv.status : "paid", suspended: false, paidAt: s.hour } satisfies Invoice;
     }
     const due = inv.status === "open" && s.hour >= inv.dueAt;
