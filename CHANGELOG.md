@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- A customer whose services all kept their SLA uptime through a month gains a little happiness at the billing date, so steady service slowly builds loyalty.
 - Replies, order steps and other hand work now land at the minute they are done instead of at the next full hour, a server boots in three minutes and a new domain shows as registering for two.
 - A custom order now sends the customer three emails, the quote, the confirmation and the notice that everything is live, instead of one per step.
 - A support desk without reply templates still offers the reply that settles the ticket, so a lost panel login or a price complaint can be answered.

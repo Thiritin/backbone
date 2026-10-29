@@ -533,6 +533,7 @@ Every customer has a happiness value H from 0 to 100. Events move it up and down
 | Ticket closed with a wrong answer | −10, plus a follow-up ticket |
 | An hour of outage on one of their services, once the outage has outlasted their tolerance | − outage penalty per hour that counts on the customer's clock (profile table) |
 | Credit issued | +3 per 10% of the monthly fee |
+| A month in which every service kept its SLA uptime | +2, at the monthly billing date |
 | Price raised | −1 per 1% of increase, more past the customer's maximum (Price tolerance) |
 | Price lowered | +0.2 per 1% of decrease, at most +10 |
 

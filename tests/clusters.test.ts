@@ -3,7 +3,8 @@ import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { yearOf } from "../src/sim/00-core/time";
 import { marketPrice, PRODUCTS, SIZES, sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
-import { invoiceTotal } from "../src/sim/45-billing/billing";
+import { bumpProbe } from "../src/sim/40-support/tickets";
+import { invoiceTotal, SLA_KEPT_HAPPINESS } from "../src/sim/45-billing/billing";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { nodeCapacity, nodeUsed, vmOf, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
 import { deviceHealth, freeSlots, installedCores, installedRamGb, rackPower } from "../src/sim/60-infra/status";
@@ -236,6 +237,22 @@ describe("outages and billing", () => {
       { serviceId: id, key: "invoice.line.hours", params: { label: "shop", hours: FEB_1 - 5 }, amount: (FEB_1 - 5) * 0.1 },
       { serviceId: id, key: "invoice.line.slaCredit", params: { label: "shop" }, amount: -Math.round((FEB_1 - 5) * 0.1 * 0.1 * 100) / 100 },
     ]);
+  });
+  it("rewards a month with every SLA kept, and not one with a missed SLA", () => {
+    const deltas = (outage: number) => {
+      const { s, cus } = twoNodes();
+      ok(provisionService(s, cus, "vps", { label: "shop", spec: sizeSpec("vps", 0, yearOf(s.hour)), sla: "business", price: 0.1 }));
+      run(s, 1);
+      if (outage) { ok(setPower(s, "dev4", false)); run(s, outage); ok(setPower(s, "dev4", true)); }
+      run(s, FEB_1 - 2 - outage);
+      const seen: number[] = [];
+      bumpProbe.fn = (c, d) => { if (c.id === cus) seen.push(d); };
+      run(s, 1);
+      bumpProbe.fn = null;
+      return seen;
+    };
+    expect(deltas(0)).toContain(SLA_KEPT_HAPPINESS);
+    expect(deltas(5)).not.toContain(SLA_KEPT_HAPPINESS);
   });
 });
 
