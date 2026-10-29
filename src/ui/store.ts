@@ -19,7 +19,7 @@ export const SAVE_KEY = "backbone.save";
 
 // What another app asked a window to show; n changes on every request so repeating one still applies.
 export interface Focus { kind: string; id: string; n: number }
-export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; focus?: Focus }
+export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; console?: string; focus?: Focus }
 export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string; target?: string }
 // Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
 // types holds the notification types switched off or on by id (notify-types.ts); a missing id is on.
@@ -69,6 +69,8 @@ interface Store {
   act: <A extends unknown[]>(fn: (s: GameState, ...args: A) => ActionResult, ...args: A) => ActionResult;
   setSpeed: (s: Speed) => void;
   openApp: (app: string, focus?: Omit<Focus, "n">) => void;
+  // Opens a server's console in its own window, one per server.
+  openConsole: (deviceId: string) => void;
   // Opens a desktop document: the guide in Getting started, a note in its own Notes window.
   openDoc: (id: string) => void;
   focus: (id: string) => void;
@@ -242,6 +244,13 @@ export const useStore = create<Store>((set, get) => ({
     const w = Math.min(size.w, (globalThis.innerWidth ?? Infinity) - x - 16), h = Math.min(size.h, (globalThis.innerHeight ?? Infinity) - y - 110);
     uiSound("open");
     set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: Math.max(w, 480), h: Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
+  },
+  openConsole: (deviceId) => {
+    const ws = get().windows, open = ws.find((w) => w.console === deviceId);
+    if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
+    const n = ws.length % 8, x = 140 + n * 32, y = 80 + n * 28;
+    uiSound("open");
+    set({ windows: [...ws, { id: `console-${deviceId}-${Date.now()}`, app: "Console", console: deviceId, x, y, w: 720, h: 620, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },
   openDoc: (doc) => {
     const ws = get().windows, d = get().game.docs.find((x) => x.id === doc);
