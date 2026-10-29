@@ -229,7 +229,10 @@ export const isPlugged = (c: Component) => c.plugged !== false;
 export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length || p.some((c) => isPlugged(c) && c.failedAt === null); };
 
 // The servers that run at least one workload; the rest draw their idle power. Working GPU cards add their watts either way.
-export const busyDevices = (s: GameState): Set<string | null> => new Set(s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId));
+// A server under burn-in draws full power and takes no customers.
+export const burning = (s: GameState, d: Device): boolean => !!d.burnin && d.burnin.until > s.hour;
+export const busyDevices = (s: GameState): Set<string | null> =>
+  new Set([...s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId), ...s.devices.filter((d) => burning(s, d)).map((d) => d.id)]);
 // A server's CPUs draw their own watts in place of its preset's (cpuWattsShift); idle they draw the model's idle share of it.
 export const deviceWatts = (d: Device): number => { const m = modelById(d.model); return m.watts + cpuWattsShift(m, d.components) + cardWatts(d.components); };
 export const drawWatts = (d: Device, busy: Set<string | null>): number => {

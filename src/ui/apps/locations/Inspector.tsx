@@ -1,5 +1,5 @@
 import { supportEnd } from "../../../sim/10-catalog/lifecycle";
-import { Cable, Database, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, Server as ServerIcon, SquareTerminal, Unplug, Wrench } from "lucide-react";
+import { Cable, Database, Flame, Gauge, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, Server as ServerIcon, SquareTerminal, Unplug, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
@@ -31,6 +31,10 @@ import { RemoteCard } from "./RemoteCard";
 import { remoteFix } from "../../../sim/60-infra/oob";
 import { continueBoot } from "../../../sim/90-actions/remote";
 import { ActionTile } from "../software/Software";
+import { stamp } from "../support/labels";
+import { startBurnin } from "../../../sim/90-actions/burnin";
+import { burning } from "../../../sim/60-infra/status";
+import { serverTaken } from "../../../sim/60-infra/cluster";
 import { frontOptions, isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
 import { atDatacenter, useHandWork } from "./HandSheet";
 import type { FrontOp } from "../../../sim/60-infra/power";
@@ -129,11 +133,14 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
   const togglePower = () => (isServerInRack(device) ? menus.op(device, device.on ? "shutdown" : "on") : menus.power(device, !device.on));
   const [picked, setTab] = useState<InspTab>("actions");
   const openApp = useStore((s) => s.openApp);
+  const canBurn = device.on && !device.burnin && !device.maintenance && !device.rebuild && !serverTaken(game, device.id);
   const serverActs = (
     <div>
       <div className="loc-card-h"><h3><ServerIcon />Server</h3></div>
       <div className="act-tiles">
         <ActionTile icon={PackageOpen} label="Change parts" disabled={device.on} onClick={() => menus.lid(device)} />
+        {device.rackId && <ActionTile icon={Gauge} label="Quick burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, false)} />}
+        {device.rackId && <ActionTile icon={Flame} label="Full burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, true)} />}
         {device.rackId && <ActionTile icon={SquareTerminal} label="Terminal" disabled={!device.on || !device.hostname} onClick={() => openApp("Terminal", { kind: "ssh", id: device.hostname! })} />}
       </div>
     </div>
@@ -265,7 +272,8 @@ function Status({ game, device }: { game: GameState; device: Device }) {
   const service = loads.length ? game.services.find((v) => v.id === loads[0].serviceId) : undefined;
   const customer = service && game.customers.find((c) => c.id === service.customerId);
   const role = cluster ? `${cluster.kind === "cloud" ? "Hypervisor node" : cluster.kind === "mail" ? "Mail server" : cluster.kind === "game" ? "Game panel host" : "Panel host"} in ${cluster.name}`
-    : service ? `${service.product === "colocation" ? "Colocation" : "Dedicated"} for ${customer?.name ?? "a customer"}` : "Free";
+    : service ? `${service.product === "colocation" ? "Colocation" : "Dedicated"} for ${customer?.name ?? "a customer"}`
+    : burning(game, device) ? `Burn-in until ${stamp(device.burnin!.until)}` : "Free";
   const plane = softwareOn(game, device.id).map((x) => softwareName(x.id)).join(", ") || "None";
   return (
     <dl className="insp-status">

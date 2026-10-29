@@ -81,7 +81,7 @@ function SlotCard({ device, slot, wear, spares, az }: { device: Device; slot: Sl
         </div>
         <Facts rows={[
           ["Slot", <span className="num">{slotName(slot)}</span>],
-          ["Age", <span className="num">{ageYears(game, c).toFixed(1)} / {COMPONENTS[c.kind].life} y</span>],
+          ["Age", <span className="num">{ageYears(game, c) === null ? "Unknown" : `${ageYears(game, c)!.toFixed(1)} / ${COMPONENTS[c.kind].life} y`}</span>],
           ["Price", <span className="num">{euro(partPrice(c.kind, c.size, c.ff, yearOf(game.hour), c))}</span>],
         ]} />
         {hand.dialog}
