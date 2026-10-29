@@ -1,4 +1,4 @@
-import { BellDot, Bot, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
+import { BellDot, Bot, Search, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { useSessionState } from "../../session";
 import { euroCents } from "../../../sim/00-core/money";
@@ -14,6 +14,7 @@ import { useStore } from "../../store";
 
 const UPGRADES: Record<string, { icon: LucideIcon; tile: string; about: string }> = {
   dockBadges: { icon: BellDot, tile: "oklch(0.6 0.2 25)", about: "Shows a count on each dock app of what waits for you." },
+  searchlight: { icon: Search, tile: "oklch(0.55 0.16 255)", about: "Finds apps, customers, machines, tickets and sites from one field." },
   widgetCalendar: { icon: CalendarDays, tile: "oklch(0.6 0.2 25)", about: "Shows today's date on your desktop." },
   widgetTickets: { icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Shows your open tickets on your desktop." },
   widgetCash: { icon: Wallet, tile: "oklch(0.55 0.13 175)", about: "Shows your cash on your desktop." },
@@ -32,6 +33,7 @@ const INCLUDES: Record<string, string[]> = {
   Nagiosaurus: ["Versions of installed software", "Open vulnerabilities by severity", "Days exposed"],
   Market: ["Demand by product", "Customer requirements", "Lost-sale reports"],
   dockBadges: ["Open tickets in Support", "Unpaid invoices in Billing", "Failed parts in Locations"],
+  searchlight: ["Opens with Ctrl+K or Cmd+K", "Apps, customers and machines", "Tickets, sites and settings"],
   widgetCalendar: ["Weekday, date and year"],
   widgetTickets: ["Open ticket count", "Opens Support"],
   widgetCash: ["Cash balance", "Opens Finance"],
@@ -46,7 +48,7 @@ const SHELVES: [string, string[]][] = [
   ["Essentials", ["Network", "Products", "Nagiosaurus"]],
   ["Growth", ["Staff", "Marketing", "Market"]],
   ["Bots", ["chadGpt", "clipsy"]],
-  ["Upgrades", ["dockBadges", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],
+  ["Upgrades", ["dockBadges", "searchlight", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],
 ];
 
 export const artOf = (item: StoreItem) => (item.kind === "app" ? appByName(item.id) : UPGRADES[item.id]);

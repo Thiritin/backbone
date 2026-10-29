@@ -16,6 +16,7 @@ import { AlertSheet } from "./AlertSheet";
 import { Welcome } from "./Welcome";
 import { SoftwarePicker } from "../apps/software/Software";
 import { ContextMenuHost } from "./ContextMenu";
+import { Searchlight } from "../search/Searchlight";
 
 const AUTOSAVE_MS = 15_000;
 let greeted = false;
@@ -105,6 +106,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       {gameOver !== null && <GameOver hour={gameOver} />}
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
       <ContextMenuHost />
+      <Searchlight />
     </>
   );
 }

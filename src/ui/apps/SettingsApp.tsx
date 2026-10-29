@@ -15,8 +15,13 @@ export function SettingsApp() {
   const [name, setName] = useState(game.company.name);
   const [open, setOpen] = useState<string | null>(null);
   const section = useRef<HTMLHeadingElement>(null);
+  const root = useRef<HTMLDivElement>(null);
   // The gear in the notification centre opens the Notifications section, with the row of the notification's app expanded.
   useFocus("Settings", (f) => {
+    if (f.kind === "section") {
+      requestAnimationFrame(() => [...root.current?.querySelectorAll("h2") ?? []].find((h) => h.textContent === f.id)?.scrollIntoView({ block: "start" }));
+      return;
+    }
     if (f.kind !== "notifications") return;
     setOpen(f.id || null);
     // The expanded rows exist after the next render.
@@ -30,7 +35,7 @@ export function SettingsApp() {
     else setName(act((s) => setCompany(s, { name })).ok ? name.trim() : game.company.name);
   };
   return (
-    <div className="settings">
+    <div className="settings" ref={root}>
       <h2>Company</h2>
       <div className="settings-group settings-company">
         <CompanyFields company={{ ...game.company, name }} onCommit={commitName}

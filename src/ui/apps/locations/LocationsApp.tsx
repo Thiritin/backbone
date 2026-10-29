@@ -5,7 +5,7 @@ import type { GameState } from "../../../sim/50-state";
 import { locationOf, storageStacks } from "../../../sim/60-infra/status";
 import { usageOf } from "../../../sim/60-infra/usage";
 import { Logo } from "../../art/logos";
-import { useStore } from "../../store";
+import { useFocus, useStore } from "../../store";
 import { day } from "../hw";
 import { AddLocation } from "./AddLocation";
 import { Cabling } from "./Cabling";
@@ -37,6 +37,15 @@ export function LocationsApp() {
     setView(v); setRackId(r); setDeviceId(null); setCabling(false);
     if (v && v !== "storage") setOpenLoc(v);
   };
+  // Another app asked for a location, or for a device in its rack or on its floor.
+  useFocus("Locations", (f) => {
+    if (f.kind !== "device" && f.kind !== "location") return;
+    const d = f.kind === "device" ? game.devices.find((x) => x.id === f.id) : undefined;
+    const l = d ? locationOf(game, d) : game.locations.find((x) => x.id === f.id);
+    if (!l) return;
+    go(l.id, d?.rackId ?? null);
+    if (d) setDeviceId(d.id);
+  });
   const stored = storageStacks(game, zone.id).reduce((n, s) => n + s.ids.length, 0);
 
   return (
