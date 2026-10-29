@@ -5,6 +5,14 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-29
 
 - A customer who wants to cancel can be offered 50% off the next month, a free month, 20% off for 3, 6 or 12 months, a free upgrade, a move to a better server or an apology with a fix promise, each shown as a card with its cost and how likely it is to work, and customers at any happiness can be kept by a strong enough offer.
+- Sending an upgrade offer locks its price and buttons until the customer writes back a few hours later, and a counter-offer brings the ticket back to your inbox.
+- An upgrade request now opens in Support with its quote, the same way an order email does, and customers only ask to upgrade services that can grow; the reply that offered more resources without a price is gone.
+- Sponsoring requests only ask for products you sell on your website, and four new events can write in: a school coding club, an animal shelter, a game jam and an open data hackday.
+- Customers now ask how-to questions that fit what they run and how long they have been with you: newcomers ask about uploads, Outlook and name servers, server customers about SSH, and long-standing customers about PHP versions, a second domain or mail on a new phone.
+- The Documentation skill unlocks the Knowledge base app in the Pear Store, which answers three in ten basic setup questions before they reach your inbox and shows how often each article was read.
+- Customers send most of their how-to questions in their first months while they set up, and long-standing customers only write in now and then.
+- The dock shows a count of open tickets, unpaid invoices and failed parts from the start, and the Dock badges upgrade is gone from the Pear Store.
+- New reviews only send you a notification once Marketing campaigns unlocks the Reviews section where you can read them.
 - The Security app lists every compromised host, including virtual machine clusters, game panels and the mail host, with a Clean up button that works without Monitoring.
 - The Security app now sits in the dock from the start, so you can clean up a compromised host without waiting for an alert.
 - Loans moved from the Bank app into a new Loans page in Finance, and loan alerts open it directly.
@@ -16,7 +24,6 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The Used tab has listings from the first day: servers and network gear sold since before 2005 turn up on eBuy, WebHostingTalc and Telegrump right away, one to three years old.
 - Every server has a screen now: a Console tile on managed servers and the controller's page open it in its own window, a KVM opens it from its page, and clicking the blue console end on the back of a server in the rack plugs in a monitor on the spot.
 - The RAID level moves from the server page into the BIOS setup on that screen, entered with Del during the boot splash or at the firmware prompt, and a server left in the setup stays down until you leave it.
-- Your Email or Support icon in the dock now shows how many tickets and requests are waiting from the start, and the Dock badges upgrade adds counts to the other apps.
 - The Backbone menu has Report an issue, which opens a new GitHub issue with your game build filled in.
 - The Marketing app opens on Channels once you learn Marketing campaigns, its Domain page has proper margins, and the skill sheet lists the six sections the skill adds.
 - The Backbone menu links to the new Discord server, where you can chat, share screenshots, request features and report bugs.

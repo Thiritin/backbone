@@ -1,8 +1,8 @@
-import { chance } from "../00-core/rng";
+import { chance, rand } from "../00-core/rng";
 import { isMonthStart, nowMinutes } from "../00-core/time";
 import { counts } from "../00-core/workhours";
 import { noticed, segmentOf } from "../10-catalog/attention";
-import type { Customer } from "../30-customers/customers";
+import { activeServices, type Customer } from "../30-customers/customers";
 import { serviceFqdn } from "../30-customers/hostnames";
 import { grantExtension, isSuspended, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
@@ -21,8 +21,8 @@ import { outgoing, sendAction } from "./replies";
 import { overpricing, revertPrice } from "../30-customers/pricing";
 import { applyRetention, cancelReason, endDiscounts, FIX_CHECK, sendOffer, settleFix, type RetentionId } from "./retention";
 import {
-  bump, cancelCustomer, createTicket, credit, GAMER_ABUSE_RATE, HOURS_PER_MONTH, isFinal, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
-  profileStats, replyDue, rightTemplate, UPGRADE_CHANCE, WAITING_CLOSE_HOURS, type Ticket,
+  bump, cancelCustomer, createTicket, credit, expandable, GAMER_ABUSE_RATE, HOURS_PER_MONTH, HOW_TO, isFinal, KB_DEFLECT, KNOWLEDGE_BASE, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
+  pickHowTo, profileStats, replyDue, rightTemplate, tenureFactor, TOPICS, UPGRADE_CHANCE, WAITING_CLOSE_HOURS, type Ticket,
 } from "./tickets";
 
 // A shady customer draws this many times the abuse reports.
@@ -110,8 +110,13 @@ function spawnHourly(s: GameState): void {
     if (c.churnedAt !== null) continue;
     const { skill } = profileStats(c.profile);
     for (const kind of ["howTo", "billing", "abuse"] as const) {
-      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1) * (kind === "abuse" ? phpAbuse(s, c.id) : 1);
-      if (chance(s.rng, rate / HOURS_PER_MONTH)) createTicket(s, c, kind);
+      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) * tenureFactor(s, c) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1) * (kind === "abuse" ? phpAbuse(s, c.id) : 1);
+      if (!chance(s.rng, rate / HOURS_PER_MONTH)) continue;
+      if (kind !== "howTo") { createTicket(s, c, kind); continue; }
+      const ask = pickHowTo(s, c);
+      if (!ask) continue;
+      if (HOW_TO[ask.topic].basic && s.installed.includes(KNOWLEDGE_BASE) && chance(s.rng, KB_DEFLECT)) s.kbReads = { ...s.kbReads, [ask.topic]: (s.kbReads[ask.topic] ?? 0) + 1 };
+      else createTicket(s, c, kind, ask.serviceId, ask.topic);
     }
   }
 }
@@ -154,7 +159,10 @@ function monthly(s: GameState): void {
     const p = profileStats(c.profile);
     const cancels = c.happiness < 15 || chance(s.rng, p.churn + 0.5 * Math.max(0, (50 - c.happiness) / 50));
     if (cancels && !s.tickets.some((t) => t.customerId === c.id && t.kind === "cancellation" && !isFinal(t))) createTicket(s, c, "cancellation", null).topic = cancelReason(s, c);
-    else if (chance(s.rng, UPGRADE_CHANCE[p.budget])) createTicket(s, c, "upgrade");
+    else if (chance(s.rng, UPGRADE_CHANCE[p.budget])) {
+      const grow = activeServices(s.services, c.id).filter(expandable);
+      if (grow.length) createTicket(s, c, "upgrade", grow[Math.floor(rand(s.rng) * grow.length)].id, TOPICS.upgrade[0]);
+    }
   }
 }
 

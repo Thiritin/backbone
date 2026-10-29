@@ -8,7 +8,7 @@ import { PRODUCTS, sizeSpec, SIZES } from "../10-catalog/products";
 import { yearOf } from "../00-core/time";
 import { inUs } from "../20-world/datacenters";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
-import { bump, isFinal, profileStats } from "../40-support/tickets";
+import { bump, expandable, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { gameFirst, lineOffered, noRoomError, pickNode, serverTaken, supports, workloadsOf } from "../60-infra/cluster";
 import { phpNeeded } from "../60-infra/php";
@@ -25,7 +25,8 @@ import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
 import { withAddressNeeds } from "../10-catalog/addresses";
 import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
-import { acceptQuote, specParams } from "./manual";
+import { acceptQuote, resize, specParams } from "./manual";
+import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
 import {
   acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor, REQUEST_HOURS,
@@ -141,7 +142,7 @@ function expansions(s: GameState): void {
   for (const t of s.tickets) {
     if (t.kind !== "upgrade" || isFinal(t) || s.sales.requests.some((r) => r.ticketId === t.id)) continue;
     const c = s.customers.find((x) => x.id === t.customerId), v = s.services.find((x) => x.id === t.serviceId);
-    if (!c || c.churnedAt !== null || !v || v.endedAt !== null || PRODUCTS[v.product].runsOn === "none" || PRODUCTS[v.product].period !== "hour") continue;
+    if (!c || c.churnedAt !== null || !v || v.endedAt !== null || !expandable(v)) continue;
     const loc = s.locations.find((l) => l.az === v.zone);
     const spec = grownSpec(s.seed, Number(t.id.slice(3)) || 0, v.product, v.spec), old = v.spec;
     const r = addRequest(s, {
@@ -228,10 +229,41 @@ export const answerAt = (s: GameState, r: SalesRequest, price: number): number =
 // An order's ticket goes back to the inbox when the customer answers with something to act on.
 const wake = (s: GameState, id: string): void => {
   const r = s.sales.requests.find((x) => x.id === id)!;
-  if (r.kind === "order") s.tickets = s.tickets.map((t) => (t.id === r.ticketId && !isFinal(t) ? { ...t, status: "open", unread: true, dueAt: r.deadline, updatedAt: s.hour } : t));
+  if (r.kind === "order" || r.kind === "expansion") s.tickets = s.tickets.map((t) => (t.id === r.ticketId && !isFinal(t) ? { ...t, status: "open", unread: true, dueAt: r.deadline, updatedAt: s.hour } : t));
 };
 
+// The customer's answer to an upgrade offer: taken, the service grows by the offered route; otherwise a counter or a no.
+function replyUpgrade(s: GameState, r: SalesRequest, events: SimEvent[]): void {
+  const name = requestName(r), price = r.quote!, v = s.services.find((x) => x.id === r.serviceId && x.endedAt === null);
+  if (!v) return loseRequest(s, r, "lost", "lost.declined");
+  const accepts = (r.counter !== null && price <= r.counter) || rand(s.rng) < acceptChance(s, r, price);
+  if (accepts) {
+    say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
+    if (!resize(s, v, r.spec!, r.route ?? "auto", r.city).ok) return loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
+    s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730, before: undefined } : x));
+    say(s, r.id, "you", "sales.you.upgradeDone", { price });
+    editRequest(s, r.id, () => ({ status: "won", replyAt: null }));
+    closeTicket(s, r);
+    logActivity(s, { customerId: v.customerId, serviceId: v.id, by: null, key: "activity.upgrade", params: { price }, minutes: 0 });
+    events.push({ app: "Support", key: "event.salesWon", params: { name, spec: specText(r.product, r.spec), price } });
+    return;
+  }
+  const mid = acceptMid(s, r);
+  if (r.attempts < 3 && price / r.reference <= mid + NO_BUDGET_GAP) {
+    const counter = Math.min(price - 0.01, Math.round(r.reference * mid * 0.97 * 100) / 100);
+    editRequest(s, r.id, () => ({ status: "countered", counter, replyAt: null, deadline: s.hour + RETRY_HOURS }));
+    say(s, r.id, "customer", "sales.reply.counter", { name: r.contact, price: counter });
+    events.push({ app: "Support", key: "event.salesCounter", params: { name, price: counter } });
+    wake(s, r.id);
+    return;
+  }
+  say(s, r.id, "customer", "sales.reply.noBudget", { name: r.contact });
+  events.push({ app: "Support", key: "event.salesRefused", params: { name } });
+  loseRequest(s, r, "lost", "lost.price");
+}
+
 function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
+  if (r.kind === "expansion" && r.spec) return replyUpgrade(s, r, events);
   const name = requestName(r), spec = specText(r.product, r.spec), price = r.quote!;
   const accepts = (r.counter !== null && price <= r.counter) || rand(s.rng) < acceptChance(s, r, price);
   const php = accepts && r.product === "webHosting" ? phpNeeded(s, r.id, targetFor(s, r)?.clusterId ?? null) : null;

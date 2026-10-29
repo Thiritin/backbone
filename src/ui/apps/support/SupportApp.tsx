@@ -90,8 +90,8 @@ type Gates = Record<"assign" | "templates" | "slaTimers" | "customerSidebar", bo
 type Kind = TicketKind | "sales";
 interface Item { id: string; due: number; tk?: Ticket; r?: SalesRequest }
 
-// Order emails show as tickets; their request carries the order.
-const inSales = (r: SalesRequest) => r.kind !== "order";
+// Order and upgrade emails show as tickets; their request carries the order or the quote.
+const inSales = (r: SalesRequest) => r.kind === "new";
 const liveRequest = (r: SalesRequest) => OPEN.includes(r.status) || r.status === "quoted" || r.status === "accepted";
 
 function itemsIn(game: GameState, box: Box): Item[] {
@@ -136,6 +136,7 @@ export function SupportApp() {
   const current = game.tickets.find((tk) => tk.id === sel) ?? null;
   const request = game.sales.requests.find((r) => r.id === sel) ?? null;
   const order = current?.kind === "order" ? orderOf(game, current) : undefined;
+  const upgrade = current?.kind === "upgrade" ? game.sales.requests.find((r) => r.ticketId === current.id) : undefined;
   const busy = game.playerBusyUntil > game.hour * 60;
   const title = !desk ? "Inbox" : box === "all" ? "All" : (BOXES.find((b) => b.id === box) ?? SALES_BOXES.find((b) => `s:${b.id}` === box))?.label;
 
@@ -145,10 +146,11 @@ export function SupportApp() {
   };
   useFocus("Support", (f) => {
     if (f.kind === "mailSetup") return setSetup(true);
-    const tk = game.tickets.find((x) => x.id === f.id), r = game.sales.requests.find((x) => x.id === f.id);
+    // An upgrade request opens on its ticket.
+    const r = game.sales.requests.find((x) => x.id === f.id), tk = game.tickets.find((x) => x.id === (r?.kind === "expansion" ? r.ticketId : f.id));
     setKind(null);
     setQuery("");
-    if (f.kind === "ticket" && tk) {
+    if ((f.kind === "ticket" || r?.kind === "expansion") && tk) {
       setBox(isFinal(tk) ? "done" : "all");
       open(tk);
     } else if (f.kind === "request" && r) {
@@ -212,6 +214,7 @@ export function SupportApp() {
       </div>
 
       {request ? <Card key={request.id} r={request} />
+        : upgrade ? <Card key={upgrade.id} r={upgrade} />
         : current && order ? <OrderThread key={current.id} tk={current} r={order} gates={gates} />
         : current ? <Thread key={current.id} tk={current} gates={gates} />
         : <div className="sup-detail sup-none">No email selected</div>}

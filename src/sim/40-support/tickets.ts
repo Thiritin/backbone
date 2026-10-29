@@ -1,8 +1,9 @@
 import { chance, rand } from "../00-core/rng";
 import { addHoursOn } from "../00-core/workhours";
 import { CLEAN_MINUTES } from "../10-catalog/apps";
+import { PRODUCTS } from "../10-catalog/products";
 import { PROFILES, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
-import { activeServices, type Customer, type Profile, type Service } from "../30-customers/customers";
+import { activeServices, type Customer, type Product, type Profile, type Service } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { serviceOnline } from "./status";
 
@@ -44,18 +45,52 @@ export const MONTHLY_RATES: Record<"howTo" | "billing" | "abuse", Record<Budget,
   billing: { low: 0.04, medium: 0.04, high: 0.02 },
   abuse: { low: 0.005, medium: 0.005, high: 0.02 },
 };
+// Customers ask most while they set up and rarely once settled: ×2.5 at signup, ×0.85 per month, never below ×0.15.
+export const tenureFactor = (s: GameState, c: Customer): number => Math.max(0.15, 2.5 * 0.85 ** ((s.hour - c.since) / HOURS_PER_MONTH));
 export const GAMER_ABUSE_RATE = 0.02;
 export const UPGRADE_CHANCE: Record<Budget, number> = { low: 0.02, medium: 0.03, high: 0.04 };
 export const OUTAGE_WRITE_CHANCE: Record<Budget, number> = { low: 0.3, medium: 0.6, high: 0.9 };
 
+// How-to questions by the services the customer runs and their months with us: newcomers ask how to set things up,
+// long-standing customers ask about what changes over the years. basic: answered by a Knowledge base article.
+export interface HowTo { on: Product[]; without?: Product; minMonths?: number; maxMonths?: number; basic?: true }
+const SERVERS: Product[] = ["vps", "dedicated", "cloud", "gpu"];
+export const HOW_TO: Record<string, HowTo> = {
+  upload: { on: ["webHosting"], maxMonths: 6, basic: true },
+  email: { on: ["webHosting"], maxMonths: 12, basic: true },
+  dns: { on: ["webHosting"], maxMonths: 3, basic: true },
+  ssl: { on: ["webHosting"], without: "ssl", basic: true },
+  ssh: { on: SERVERS, maxMonths: 6, basic: true },
+  panel: { on: ["webHosting", ...SERVERS] },
+  phone: { on: ["webHosting"], minMonths: 12, basic: true },
+  addon: { on: ["webHosting"], minMonths: 12 },
+  php: { on: ["webHosting"], minMonths: 24 },
+};
+export const KNOWLEDGE_BASE = "Knowledge base";
+// Share of basic questions a customer answers from the Knowledge base instead of writing in.
+export const KB_DEFLECT = 0.3;
+
+// The question a customer would ask now and the service it is about, drawn among the topics that fit them; null when none does.
+export function pickHowTo(s: GameState, c: Customer): { topic: string; serviceId: string } | null {
+  const services = activeServices(s.services, c.id), months = (s.hour - c.since) / HOURS_PER_MONTH;
+  const fits = Object.entries(HOW_TO).flatMap(([topic, h]) => {
+    if (months < (h.minMonths ?? 0) || months >= (h.maxMonths ?? Infinity) || (h.without && services.some((v) => v.product === h.without))) return [];
+    const on = services.filter((v) => h.on.includes(v.product));
+    return on.length ? [{ topic, on }] : [];
+  });
+  if (!fits.length) return null;
+  const { topic, on } = fits[Math.floor(rand(s.rng) * fits.length)];
+  return { topic, serviceId: on[Math.floor(rand(s.rng) * on.length)].id };
+}
+
 export const TOPICS: Record<TicketKind, string[]> = {
-  outage: ["down"], howTo: ["upload", "email", "dns", "panel"], billing: ["charge", "copy", "delay"],
+  outage: ["down"], howTo: Object.keys(HOW_TO), billing: ["charge", "copy", "delay"],
   upgrade: ["grow"], cancellation: ["leave"], abuse: ["spam", "attack"], appeal: ["forgot", "boss", "access", "onWay"],
   notice: ["movie", "music", "youtuber", "phishing", "spam"], legal: ["data", "takedown"], refund: ["outage", "dataLoss"], order: [], extortion: ["data"], migration: ["offer"], maintenance: ["notice", "moved", "move", "declined"], sponsor: [],
 };
 export const TEMPLATES: Record<TicketKind, string[]> = {
-  outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "panel", "askDetails"],
-  billing: ["explain", "resend", "extension", "newPrice", "askDetails"], upgrade: ["offer", "askDetails"], cancellation: [], abuse: ["warn", "askDetails"],
+  outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "ssl", "ssh", "panel", "addon", "php", "askDetails"],
+  billing: ["explain", "resend", "extension", "newPrice", "askDetails"], upgrade: [], cancellation: [], abuse: ["warn", "askDetails"],
   appeal: ["awaitPayment", "askDetails"], notice: [], legal: [], refund: [], order: [], extortion: [], migration: [], maintenance: [], sponsor: [],
 };
 export const ACTIONS: Record<TicketKind, TicketAction[]> = {
@@ -68,6 +103,8 @@ export const ACTION_MINUTES: Partial<Record<TicketAction, number>> = { clean: CL
 export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])];
 // Tickets with their own actions have no reply templates.
 export const templatesOf = (t: Pick<Ticket, "kind" | "topic">): string[] => (`${t.kind}.${t.topic}` in TOPIC_ACTIONS ? [] : TEMPLATES[t.kind]);
+// A service that can grow in place: it runs on hardware and bills by the hour. Upgrade requests are only about these.
+export const expandable = (v: Service): boolean => PRODUCTS[v.product].runsOn !== "none" && PRODUCTS[v.product].period === "hour";
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
 export const SHORT_REPLIES = 3;
 // A desk without the templates feature lists only a few replies; the one that settles the ticket stays in.
@@ -80,7 +117,7 @@ export function shownTemplates(s: GameState, t: Ticket, all: boolean): string[] 
 }
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
 const RIGHT: Record<string, string> = {
-  suspended: "resend", upload: "ftp", email: "mail", dns: "dns", panel: "panel", charge: "explain", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer", more: "offer",
+  suspended: "resend", upload: "ftp", email: "mail", phone: "mail", dns: "dns", ssl: "ssl", ssh: "ssh", panel: "panel", addon: "addon", php: "php", charge: "explain", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer", more: "offer",
   spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment", bounce: "mail",
 };
 
