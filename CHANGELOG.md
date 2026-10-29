@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- Server manufacturers differ in more than price: SuperMacro releases models four months early and sells them a year longer at 5% more power, Hewlett-Packet releases three months late, stops selling a year earlier and draws 5% less, and Lenovoid releases six months late.
+- The Shop has a Sort menu with Price low to high, Price high to low, Newest and Lowest power, and each card shows its release month.
 - A new company starts with a free Notmail address that takes order emails without a domain, and moving to mail under your own domain is an optional upgrade.
 - The Email app has a Settings button that opens the email settings.
 - Getting started now begins with your first server, and the domain and email steps come later.

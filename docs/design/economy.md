@@ -182,24 +182,24 @@ GPU rental is priced per card a month by year, straight between these anchors an
 
 **Resale of parts.** A spare part in storage sells at the current part price times the resale curve of Buying and selling, and counts at that value in net worth. A RAM stick bought in 2023 and sold in 2026 sells for more than it cost.
 
-**Manufacturers.** Within a class, manufacturers differ in price and failure rate, never in specs. A unit costs the model's price × the price factor, and its failure rate is the base AFR × the failure factor.
+**Manufacturers.** Within a class, manufacturers differ in price, failure rate, release, end of sale and power draw, never in specs. A unit costs the model's price × the price factor, its failure rate is the base AFR × the failure factor, it reaches the Shop the release shift in months from the model's year, its last year on sale moves by the end of sale shift in years, and it draws the model's watts × the power factor (CPUs and chassis; GPU cards are unchanged). The Shop lists a model while any manufacturer sells it, and a unit can only be bought from the month its manufacturer releases it. Switches, security appliances, patch panels, routers, UPS units and PDUs have no shift and a power factor of 1.00.
 
-| Class | Manufacturer | Price factor | Failure factor |
-| --- | --- | --- | --- |
-| Servers | Dwell | 1.00 | 1.00 |
-| Servers | Hewlett-Packet | 1.08 | 0.80 |
-| Servers | SuperMacro | 0.90 | 1.30 |
-| Servers | Lenovoid | 0.95 | 1.10 |
-| Switches | Sysko | 1.00 | 1.00 |
-| Switches | Junipurr | 1.10 | 0.70 |
-| Switches | Aristotle | 0.93 | 1.20 |
-| Security appliances | Sysko | 1.00 | 1.00 |
-| Security appliances | Fortinope | 0.90 | 1.25 |
-| Security appliances | Pablo Alto | 1.10 | 0.75 |
-| Patch panels | Pandoot | 1.00 | 1.00 |
-| Routers | AVN | 1.00 | 0.90 |
-| Routers | MicroTick | 1.00 | 1.20 |
-| UPS units and PDUs | Eatin | 1.00 | 1.00 |
+| Class | Manufacturer | Price factor | Failure factor | Release shift | End of sale shift | Power factor |
+| --- | --- | --- | --- | --- | --- | --- |
+| Servers | Dwell | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Servers | Hewlett-Packet | 1.08 | 0.80 | +3 months | -1 year | 0.95 |
+| Servers | SuperMacro | 0.90 | 1.30 | -4 months | +1 year | 1.05 |
+| Servers | Lenovoid | 0.95 | 1.10 | +6 months | 0 | 1.00 |
+| Switches | Sysko | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Switches | Junipurr | 1.10 | 0.70 | 0 | 0 | 1.00 |
+| Switches | Aristotle | 0.93 | 1.20 | 0 | 0 | 1.00 |
+| Security appliances | Sysko | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Security appliances | Fortinope | 0.90 | 1.25 | 0 | 0 | 1.00 |
+| Security appliances | Pablo Alto | 1.10 | 0.75 | 0 | 0 | 1.00 |
+| Patch panels | Pandoot | 1.00 | 1.00 | 0 | 0 | 1.00 |
+| Routers | AVN | 1.00 | 0.90 | 0 | 0 | 1.00 |
+| Routers | MicroTick | 1.00 | 1.20 | 0 | 0 | 1.00 |
+| UPS units and PDUs | Eatin | 1.00 | 1.00 | 0 | 0 | 1.00 |
 
 A router is built by one manufacturer only (Sysko, AVN, MicroTick or Junipurr, by model) and sells at its list price. Junipurr's switch price factor does not apply to its routers.
 
