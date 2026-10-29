@@ -3,6 +3,7 @@ import { OPS } from "./en-ops";
 import { ADDRESSES_EN } from "./addresses";
 import { SALES_EN } from "./sales";
 import { SECURITY_EN } from "./security";
+import { NEWS_EN } from "./news";
 import { SITE_EN } from "./site";
 import { DOMAINS_EN } from "./domains";
 import { ORDERS_EN } from "./orders";
@@ -30,6 +31,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...ACTIVITY_EN,
   ...SITE_EN,
   ...DOMAINS_EN,
+  ...NEWS_EN,
   "event.monthStart.title": (p) => `${MONTHS[Number(p.month)]} ${p.year}`,
   "event.monthStart.text": () => "A new month has started.",
   "save.loaded.title": () => "Game loaded",

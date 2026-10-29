@@ -5,6 +5,7 @@ import type { GameState } from "../sim/50-state";
 import { startGame as newCompany } from "../sim/90-actions/start";
 import { tick } from "../sim/88-tick/tick";
 import { isAlert } from "../sim/alerts";
+import { typeOf } from "./notify-types";
 import { deserialize, serialize } from "../sim/91-save/save";
 import { SPEEDS, type Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
@@ -18,10 +19,11 @@ export interface Focus { kind: string; id: string; n: number }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; focus?: Focus }
 export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string }
 // Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
-export interface NotifyPref { allow: boolean; sound: boolean }
+// types holds the notification types switched off or on by id (notify-types.ts); a missing id is on.
+export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<string, boolean> }
 const WIDE = { w: 1240, h: 680 };
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
-  Security: { w: 900, h: 420 }, Website: { w: 1100, h: 780 },
+  Security: { w: 900, h: 420 }, News: { w: 520, h: 640 }, Website: { w: 1100, h: 780 },
   Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Billing: WIDE, Bank: WIDE, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
   Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Products: { w: 1120, h: 720 }, "Virtual machines": { w: 1180, h: 680 }, Staff: { w: 1240, h: 640 },
 };
@@ -258,9 +260,10 @@ export const useStore = create<Store>((set, get) => ({
   },
   notify: (app, title, text, key) => {
     const pref = prefOf(get().notifyPrefs, app);
-    if (!pref.allow) return;
+    // Alerts show whatever the preferences say.
+    if (!(key && isAlert(key)) && (!pref.allow || (key && pref.types?.[typeOf(app, key)] === false))) return;
     const kind = key ? soundFor(app, key) : null;
-    if (kind && pref.sound && get().speed > 0 && get().sound.on && !globalThis.document?.hidden) {
+    if (kind && pref.allow && pref.sound && get().speed > 0 && get().sound.on && !globalThis.document?.hidden) {
       if (!pending.size) queueMicrotask(() => {
         const now = Date.now(), pick = pickSound(pending, now, lastPlayed), { game, sound } = get();
         pending.clear();
