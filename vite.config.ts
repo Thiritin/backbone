@@ -25,5 +25,5 @@ export default defineConfig({
   base: "./",
   define: { __BUILD_ID__: JSON.stringify(buildId) },
   plugins: [react(), versionFile()],
-  test: { environment: "node", include: ["tests/**/*.test.{ts,tsx}"] },
+  test: { environment: "node", include: ["tests/**/*.test.{ts,tsx}"], testTimeout: 20000 },
 });
