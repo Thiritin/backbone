@@ -40,7 +40,6 @@ describe("catalog", () => {
       expect(m.height).toBe(m.kind === "part" || (m.kind === "gateway" && (!m.price || m.brand === "AVN")) ? 0 : ["server", "gateway", "ups", "pdu"].includes(m.kind) ? m.height : 1);
     }
     expect(() => modelById("nope")).toThrow();
-    expect(MODELS.some((m) => m.id === "tower")).toBe(false);
   });
   it("scales servers from the generation row", () => {
     const g1 = modelById("g1-compute");
@@ -82,7 +81,7 @@ describe("new game", () => {
   it("starts with an empty basement rack and the home router", () => {
     const s = newGame(3);
     expect(s.cash).toBe(START_CASH);
-    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false, shelf: 4 }]);
+    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }]);
     expect(s.racks).toEqual([{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false }]);
     expect(s.devices.map((d) => [d.model, d.brand, d.name, d.rackId, d.panel, d.price, d.boughtAt])).toEqual([
       ["home-router", "Sysko", "fra1-gw-01", null, "loc1", 0, 0],

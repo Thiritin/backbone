@@ -338,21 +338,6 @@ function Ups({ w, h, name }: FrontProps) {
   );
 }
 
-// Tower for the basement shelf: a plain case with a drive door, a vent and a power light.
-function Tower({ w, h, state, blink }: FrontProps) {
-  const pad = Math.max(2, w * 0.1), lamp = Math.max(1.5, w * 0.045), door = h * 0.3;
-  return (
-    <>
-      <rect x={0.5} y={0.5} width={w - 1} height={h - 1} rx={Math.min(4, w * 0.08)} fill="oklch(0.3 0.006 255)" stroke="oklch(0.42 0.008 255)" />
-      <rect x={pad} y={pad} width={w - 2 * pad} height={door} rx={1.5} fill="oklch(0.2 0.005 255)" stroke="oklch(0.38 0.006 255)" strokeWidth={0.6} />
-      <rect x={pad * 1.6} y={pad + door * 0.42} width={w - 3.2 * pad} height={door * 0.16} rx={0.6} fill="oklch(0.12 0.004 255)" />
-      {[0, 1, 2, 3, 4].map((i) => <rect key={i} x={pad} y={pad * 2 + door + i * h * 0.05} width={w - 2 * pad} height={Math.max(0.8, h * 0.014)} rx={0.4} fill="oklch(0.18 0.005 255)" />)}
-      <rect x={pad} y={h - pad - lamp * 3} width={lamp * 3} height={lamp * 3} rx={1} fill="oklch(0.22 0.005 255)" stroke="oklch(0.44 0.008 255)" strokeWidth={0.5} />
-      <circle cx={w - pad - lamp} cy={h - pad - lamp * 1.5} r={lamp} fill={LED[state]} className={blink ? "led-blink" : undefined} />
-    </>
-  );
-}
-
 // A switched PDU: the name and a row of outlets, each with a lamp.
 export function Pdu({ w, h, name, model, state }: FrontProps) {
   const fs = fsz(Math.min(h, 24)) * 0.9, n = model.outlets ?? 8, x0 = Math.max(w * 0.34, 18 + tw(name, fs)), step = (w - x0 - 30) / n;
@@ -373,7 +358,6 @@ export function Pdu({ w, h, name, model, state }: FrontProps) {
 export function Front(p: FrontProps) {
   if (p.model.kind === "server") {
     const line = lineOf(p.model);
-    if (line === "tower") return <Tower {...p} />;
     return line === "backup" || line === "archive" ? <Caddies {...p} /> : line === "gpu" ? <Gpu {...p} /> : serverFront(p);
   }
   if (p.model.kind === "switch" || p.model.kind === "firewall") return <SwitchRear {...p} />;

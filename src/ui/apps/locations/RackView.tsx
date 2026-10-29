@@ -4,7 +4,7 @@ import { euro } from "../../../sim/00-core/money";
 import { modelById, type DeviceKind } from "../../../sim/10-catalog/hardware";
 import { BASEMENT } from "../../../sim/20-world/datacenters";
 import type { Device, GameState, Location, Rack } from "../../../sim/50-state";
-import { EXTRA_CIRCUIT_KW, freePositions, shelfId, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
+import { EXTRA_CIRCUIT_KW, freePositions, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
 import { FEED_PRICE } from "../../../sim/88-tick/tick";
 import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveRack, sellRack, setFeed } from "../../../sim/90-actions/hardware";
 import { Stepper } from "../shop/Cart";
@@ -15,7 +15,6 @@ import { RackFront, type RackItem, type RackLink, type RackRemote } from "../../
 import { useStore } from "../../store";
 import { day, deviceLamps, devName, height, portLamps, portLights } from "../hw";
 import { rackUnits } from "./Floor";
-import { Shelf } from "./Shelf";
 import { Inspector, SellConfirm, togglePlug, useDeviceMenu, useOfflineGuard } from "./Inspector";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { More } from "../More";
@@ -107,7 +106,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   const { zoom, ref: rackRef, step, width: rackWidth } = useRackZoom();
   const items = rackItems(game, rack.id), units = rackUnits(rack), power = rackPower(game, rack.id);
   const used = items.reduce((n, it) => n + it.model.height, 0);
-  const dev = game.devices.find((d) => d.id === device && (d.rackId === rack.id || d.rackId === shelfId(rack.locationId)));
+  const dev = game.devices.find((d) => d.id === device && d.rackId === rack.id);
   const loc = game.locations.find((l) => l.id === rack.locationId)!;
   const { guarded, dialog } = useOfflineGuard(game);
   const [rename, setRename] = useState<string | null>(null);
@@ -148,7 +147,6 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
           <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420 * zoom} u={22 * zoom}
             hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onDeviceMenu={deviceMenu} onFree={openMount}
             onConnect={(a, b) => act((g) => connect(g, a, b))} onPlug={plug} />
-          <Shelf game={game} loc={loc} selected={dev?.id} onDevice={(id) => { onDevice(id); setMount(null); }} onMenu={deviceMenu} />
         </div>
       </div>
       <div className="loc-insp">

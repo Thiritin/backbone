@@ -21,7 +21,7 @@ describe("server lines", () => {
   it("offers every line in every generation, GPU from 2011 and ARM from 2020", () => {
     GENERATIONS.forEach((g, i) => {
       const ids = lines(i + 1).map((m) => m.id.slice(`g${i + 1}-`.length));
-      expect(ids).toEqual(["compute", "compute-2psu", "dense", "memory", "storage", "backup", "archive", ...(i <= 1 ? ["tower"] : []), ...(g.year >= 2011 ? ["gpu"] : []), ...(g.year >= 2020 ? ["arm"] : [])]);
+      expect(ids).toEqual(["compute", "compute-2psu", "dense", "memory", "storage", "backup", "archive", ...(g.year >= 2011 ? ["gpu"] : []), ...(g.year >= 2020 ? ["arm"] : [])]);
     });
   });
   it("scales specs from the generation row", () => {
@@ -36,7 +36,7 @@ describe("server lines", () => {
   it("draws more for every bigger or denser line than the smaller ones in its generation", () => {
     GENERATIONS.forEach((_, i) => {
       const balanced = line(i + 1, "compute")!.watts;
-      const x86 = lines(i + 1).filter((m) => m.server!.arch === "x86" && !m.shelf && m.id !== `g${i + 1}-compute`);
+      const x86 = lines(i + 1).filter((m) => m.server!.arch === "x86" && m.id !== `g${i + 1}-compute`);
       for (const m of x86) expect(m.watts, m.id).toBeGreaterThan(balanced);
       const twoU = x86.filter((m) => m.height === 2), fourU = x86.filter((m) => m.height === 4);
       for (const big of fourU) for (const small of twoU) expect(big.watts, `${big.id} > ${small.id}`).toBeGreaterThan(small.watts);

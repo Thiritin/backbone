@@ -27,7 +27,7 @@ The game opens paused on Saturday 1 January 2005 at 08:00, with the basement on 
 
 - **Menu bar:** paused, the date, €5,000 cash, and the support badge at 0.
 - **Dock:** all twelve apps. Market shows a lock until market research is unlocked, and Network shows only the home line.
-- **Locations window, open on the basement:** a shelf with four slots. Slot 1 holds the tower with a green light, a spare-parts kit sits beside it, and the home router shows 1 Mbit/s up.
+- **Locations window, open on the basement:** a rack. The starting server sits in it with a green light, a spare-parts kit waits in storage, and the home router shows 1 Mbit/s up.
 - **Desktop:** the "Getting started" document with its steps.
 
 **Getting started.** Each step names where to do it and opens that place; a step ticks itself when done.
@@ -36,7 +36,7 @@ The game opens paused on Saturday 1 January 2005 at 08:00, with the basement on 
 2. Answer Jonas's ticket
 3. Create a VPS plan
 4. Send a payment reminder
-5. Repair the tower
+5. Repair the server
 6. Add capacity outside the basement
 
 The three friends (Jonas, Mira and Tobi) are already customers on web hosting at €6 a month, running on the basement server.
@@ -49,16 +49,16 @@ The hour ends in mid-April with 8 VPS customers, the three friends, about €70 
 | --- | --- | --- | --- | --- |
 | 0:00 | 1 Jan | The game opens paused on the basement | Looks around, presses play | Desktop, time controls |
 | 0:00 | 1 Jan | Taught: Jonas asks how to upload his website | Picks the FTP reply in Support | Tickets and reply templates |
-| 0:02 | 1 Jan | Checklist: create a VPS plan. The plans editor shows the base rate, €8 for 512 MB, and that the tower fits 8 of them | Creates "VPS 512", priced around €6.50 | Plans, base rates, capacity |
+| 0:02 | 1 Jan | Checklist: create a VPS plan. The plans editor shows the base rate, €8 for 512 MB, and that the server fits 16 of them | Creates "VPS 512", priced around €6.50 | Plans, base rates, capacity |
 | 0:05 | 5 Jan | Taught: the first lead buys. A gamer orders VPS 512, and an invoice goes out, due 19 Jan | Opens Customers to look at them | Leads, profiles |
 | 0:12 | 12 Jan | Likely: a second customer, often a hobby developer | Nothing | Sales arrive on their own |
 | 0:15 | 15 Jan | The friends pay; cash rises by €18 | Switches to 2× | Invoices pay themselves |
 | 0:21 | 26 Jan | Taught: the gamer has not paid, and a reminder button appears in Billing | Sends the reminder; they pay two days later | Dunning by hand |
 | 0:24 | 1 Feb | Monthly tick: about 5 know-how and a January report in Finance. Research shows rented rack units at 50 know-how | Opens Finance and Research | Monthly rhythm, research |
-| 0:33 | 18 Feb | Taught: the tower's power supply fails. Every VPS goes down and outage tickets arrive | Clicks Repair, which uses the spare kit; answers the tickets with a status reply or a credit | Failures, no redundancy, spares |
+| 0:33 | 18 Feb | Taught: the server's power supply fails. Every VPS goes down and outage tickets arrive | Clicks Repair, which uses the spare kit; answers the tickets with a status reply or a credit | Failures, no redundancy, spares |
 | 0:35 | 22 Feb | No spare kit is left in stock | Buys a new kit for €50 | Spares cost money |
 | 0:45 | 15 Mar | The home line passes 60% at peak, and the performance score starts to fall | Opens Network and sees the evening peak | Bandwidth, headroom |
-| 0:50 | 25 Mar | The tower's RAM is 80% sold, and lost-sale reports name low performance | Weighs three options (below) | The first real decision |
+| 0:50 | 25 Mar | The server's RAM is 80% sold, and lost-sale reports name low performance | Weighs three options (below) | The first real decision |
 | 0:55 | 4 Apr | The rented server comes online and joins the cluster | Moves new sales onto it | Clusters span locations |
 | 1:00 | Mid-April | Checklist complete | Plays on | |
 
@@ -66,7 +66,7 @@ The hour ends in mid-April with 8 VPS customers, the three friends, about €70 
 
 | Option | Cost | Fixes RAM | Fixes upload | Catch |
 | --- | --- | --- | --- | --- |
-| A second tower | €1,000 once | Yes | No | The line is still full |
+| A second basement server | €2,500 once | Yes | No | The line is still full |
 | Rent a server from the wholesale provider | €59 a month | Yes, 8 GB | Yes, 100 Mbit/s | Thin margin until it fills up |
 | Wait for rented rack units | 50 know-how and €500, then rent and a €2,500 server | Yes | Yes | Know-how arrives around May; sales are lost until then |
 
@@ -79,7 +79,7 @@ Four scripted first occurrences make sure every player meets a ticket, a sale, a
 | Jonas's ticket | The clock starts for the first time | A how-to ticket from a friend |
 | First sale | The first lead that passes the requirements, if a VPS plan is priced at 1.3× base or less | The lead buys |
 | Late payer | The first invoice to a customer who is not a friend | They pay only after a reminder |
-| Power supply failure | Day 45 with at least 2 VPS customers, or 1 March at the latest | The tower's power supply fails, and at least one customer writes an outage ticket |
+| Power supply failure | Day 45 with at least 2 VPS customers, or 1 March at the latest | The basement server's power supply fails, and at least one customer writes an outage ticket |
 
 **Rules.**
 
@@ -100,7 +100,7 @@ The rest of 2005 takes about 2 to 3 more hours at 2× to 4×. The player grows f
 | Jun | 18 | €120 | A gamer draws the first DDoS attack, which fills the line their server shares | Blackholes the address, or waits it out |
 | Jul | 22 | €160 | 80 know-how: SSL certificates unlock | Adds SSL to web hosting |
 | Aug | 26 | €200 | 100 know-how: the first hire unlocks; support runs at about 8 tickets a month | Most players keep doing it alone |
-| Sep | 30 | €250 | The tower has half the resources of the rented servers, and the home line is still full | Moves VPS customers off the basement |
+| Sep | 30 | €250 | The basement server and the home line are both full | Moves VPS customers off the basement |
 | Oct | 34 | €300 | About 5 reviews; the score sits near 3.6 | Answers tickets faster |
 | Nov | 37 | €350 | Organic leads flatten out | Tries search ads at €100 a month for about 11 leads |
 | Dec | 40 | €400 | Net worth passes €15,000: level 2 | Unlocks email hosting and dedicated servers; the rented rack follows at 400 know-how |
@@ -115,7 +115,7 @@ Working through the script turned up four changes, all now applied to the [econo
 | --- | --- | --- | --- |
 | Rented server from the wholesale provider | €99 a month | €59 a month | At €99, a full server of 16 VPS at €6.50 earned €5 a month |
 | Level 2 threshold | €10,000 net worth | €15,000 | The €5,000 starting cash counts toward net worth, so €10,000 arrived in August instead of December |
-| Starting hardware | Tower only | Tower plus one spare-parts kit | The taught failure needs a quick repair |
+| Starting hardware | Server only | Server plus one spare-parts kit | The taught failure needs a quick repair |
 | Price of resold lines | Not set | 40% of the base rate | Resold web hosting at €6 costs €2.40 |
 
 The script also assumes 1U of rented rack space costs €60 a month in 2005, including a shared 100 Mbit/s uplink, which sits inside the GDD's range.

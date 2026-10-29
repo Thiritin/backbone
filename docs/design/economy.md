@@ -96,9 +96,6 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Archive storage 4U | 4U | 1 | 0.25× | 0.25× | 60 densest HDDs | 2 | 2 | 2.2× | 3.2× | Always |
 | GPU 4U | 4U | 2 | 1× | 2× | 1 of the generation's disk in 4 bays, 4 GPU cards | 2 | 2 | 2× plus the cards | 3× plus the cards | From 2011 |
 | ARM 1U | 1U | 1 | 1.5× | 1× | 1 of the generation's disk in 4 bays | 2 | 1 | 0.6× | 0.9× | From 2020 |
-| Tower server | Shelf | 1 | 0.5× | 0.5× | 1 of the generation's disk in 2 bays | 1 | 1 | 0.6× | 0.4× | G1 and G2 only, until G3 arrives |
-
-The tower server is the starter machine: about €1,000 in 2005 (Dell PowerEdge SC430, a single-socket tower, at roughly USD 500 to 800 in 2005), with 4 DIMM slots, 2 bays for 3.5" drives, 2 PCIe slots and 1 power supply bay. It has no BMC. It takes no rack units: it stands on one of the 4 places of the basement shelf, only tower servers fit on the shelf, and a tower does not fit into a rack. Its power counts against the basement circuit like the rack's devices. It leaves the shop in the year G3 arrives.
 
 Backup and archive servers use HDDs whatever the generation's disk type. Archive storage is the cheapest per TB, then backup, then the storage 2U.
 
@@ -905,7 +902,7 @@ A G1 server costs about €26 a month in power in 2005; a G7 costs €89 in 2026
 
 Only devices that are switched on and have a plugged-in, working power supply count as W. Plugging and unplugging a supply is free; a device that gets power from its first supply boots for 1 hour.
 
-**Buying and selling.** Hardware arrives 72 hours after ordering in 2005, falling in a straight line to 24 hours in 2015 and staying there (`deliveryHours`). Until it arrives a unit is in transit and cannot be mounted, sold or shipped; the Cart shows the wait as "Arrives in 3 days". A company that owns no server yet gets its orders at once, so the first server and the first tower are in the stockroom the moment they are bought (the starter rule). Spares taken out of a device go to storage at once. Bought hardware goes to storage, and mounting it into a rack or onto the shelf is instant and free. Resale value falls in a straight line from 100% to 80% of the price over the first month, then in a straight line to 20% over the next 24 months, and stays at 20%. Racks sell the same way; spare parts sell at the current part price. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
+**Buying and selling.** Hardware arrives 72 hours after ordering in 2005, falling in a straight line to 24 hours in 2015 and staying there (`deliveryHours`). Until it arrives a unit is in transit and cannot be mounted, sold or shipped; the Cart shows the wait as "Arrives in 3 days". A company that owns no server yet gets its orders at once, so the first server is in the stockroom the moment it is bought (the starter rule). Spares taken out of a device go to storage at once. Bought hardware goes to storage, and mounting it into a rack is instant and free. Resale value falls in a straight line from 100% to 80% of the price over the first month, then in a straight line to 20% over the next 24 months, and stays at 20%. Racks sell the same way; spare parts sell at the current part price. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
 
 **Failures.** Each device has a base annual failure rate (AFR), raised in its first 3 months and again after 3 years of age:
 
@@ -1976,7 +1973,7 @@ The year 1 targets for customers and revenue hold (median 47 customers and €61
 **The balance model and the live rules.** The cohort model in `src/sim/balance/model.ts` follows the live capacity rules:
 
 - Each cohort's spec is the year's middle size × 1, 2 or 4 by budget (`BUDGET_SIZE`), a web space with two mailboxes per step, priced at the live market rates (Per-resource pricing). It books its spec's vCPUs and RAM: a web space 0.25 GB, a VPS the year's base RAM by budget, and a game server 4 GB of the year's base by budget. Gamers ask for a game server 60% of the time. The cluster keeps 1 GB for its hypervisor and panel.
-- The starting server and every basement server are the year's Dwell server at its full price and RAM (8 GB for €2,500 in 2005). The model used to start with a half-RAM tower worth €1,000.
+- The starting server and every basement server are the year's Dwell server at its full price and RAM (8 GB for €2,500 in 2005).
 - While in the basement, the home line's upload caps the evening peak at 2× each customer's mean traffic, and the bot switches to the cheapest faster line at 90%.
 - The bot borrows in the basement like the happiness run; out of the basement it borrows only while all instalments stay under 60% of its recurring revenue. It buys a server only when cash keeps €2,000 plus three instalments, and it moves to the datacenter once the basement's four servers are in place.
 - Net worth subtracts debt and values hardware at its resale value, as `metrics.ts` does.

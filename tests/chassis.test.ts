@@ -16,7 +16,7 @@ const withDevice = (model: string): { s: GameState; id: string } => {
 };
 
 describe("chassis slots", () => {
-  it("has the 58 server models", () => expect(SERVERS).toHaveLength(58));
+  it("has the 56 server models", () => expect(SERVERS).toHaveLength(56));
 
   it("gives every preset parts that fit its chassis", () => {
     for (const m of SERVERS) {

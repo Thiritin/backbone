@@ -2,7 +2,7 @@ import { ChevronDown, ChevronRight, Map as MapIcon, Package, Plus } from "lucide
 import { useRef, useState } from "react";
 import { useSessionState } from "../../session";
 import type { GameState } from "../../../sim/50-state";
-import { locationOf, shelfId, storageStacks } from "../../../sim/60-infra/status";
+import { locationOf, storageStacks } from "../../../sim/60-infra/status";
 import { usageOf } from "../../../sim/60-infra/usage";
 import { Logo } from "../../art/logos";
 import { useFocus, useStore } from "../../store";
@@ -16,7 +16,6 @@ import { Inspector } from "./Inspector";
 import "./locations.css";
 import { Overview } from "./Overview";
 import { RackView, Upgrades } from "./RackView";
-import { Shelf } from "./Shelf";
 import { Storage } from "./Storage";
 import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, UsageBars, useDismiss, Zone } from "./ui";
 import { REGIONS } from "../../../sim/20-world/datacenters";
@@ -30,8 +29,7 @@ export function LocationsApp() {
   const [adding, setAdding] = useState(false);
   const [cabling, setCabling] = useState(false);
   const loc = game.locations.find((l) => l.id === view);
-  // A tower's rack id names the shelf; its rack view is the one of the location's rack.
-  const rack = loc && (rackId?.startsWith("shelf:") ? game.racks.find((r) => r.locationId === loc.id) : game.racks.find((r) => r.id === rackId && r.locationId === loc.id));
+  const rack = loc && game.racks.find((r) => r.id === rackId && r.locationId === loc.id);
   const openLoc = useStore((s) => s.openLoc), setOpenLoc = useStore((s) => s.setOpenLoc);
   // Storage shows the zone of the last location opened, the basement before that.
   const zone = game.locations.find((l) => l.id === (loc?.id ?? openLoc)) ?? game.locations[0];
@@ -87,13 +85,12 @@ export function LocationsApp() {
               <LocationHead game={game} locId={loc.id} />
               <Upgrades loc={loc} />
               <Floor game={game} loc={loc} onRack={(id) => go(loc.id, id)} />
-              <Shelf game={game} loc={loc} selected={deviceId} onDevice={setDeviceId} />
               <CarrierPanel game={game} loc={loc} selected={deviceId} onDevice={setDeviceId} />
               {loc.space === "basement" && <HomeLinePanel game={game} />}
               <Storage game={game} loc={loc} onMounted={(r, d) => { go(loc.id, r); setDeviceId(d); }} />
               <Clusters game={game} loc={loc} />
             </div>
-            {deviceId && game.devices.some((d) => d.id === deviceId && (d.panel === loc.id || d.rackId === shelfId(loc.id))) && (
+            {deviceId && game.devices.some((d) => d.id === deviceId && d.panel === loc.id) && (
               <div className="loc-insp"><Inspector key={deviceId} game={game} device={game.devices.find((d) => d.id === deviceId)!} onSelect={setDeviceId} /></div>
             )}
           </div>

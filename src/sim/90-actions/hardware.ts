@@ -50,7 +50,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "positi
   if (s.cash < spacePrice(dc, space, size)) return fail("error.noCash");
   if (hold) s.waitlist = s.waitlist.filter((w) => w.id !== hold.id);
   const positions = space === "share" ? 1 : size;
-  const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false, shelf: 0 };
+  const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };
   s.locations.push(loc);
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "failover", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
@@ -212,10 +212,6 @@ const lineTotal = (s: GameState, line: CartLine) => unitPrice(line, yearOf(s.hou
 // Orders wait for delivery, except while the company owns no server: the first purchases arrive at once.
 export const deliveryWait = (s: GameState): number => (s.devices.some((d) => modelById(d.model).kind === "server") ? deliveryHours(yearOf(s.hour)) : 0);
 
-// A tower is only delivered where a shelf can hold it.
-const noShelf = (s: GameState, locationId: string, lines: CartLine[]): boolean =>
-  lines.some((l) => modelById(l.model).shelf) && !s.locations.find((l) => l.id === locationId)!.shelf;
-
 function buyLine(s: GameState, line: CartLine, locationId: string, wait: number): string {
   const ids = stock(s, line, null, locationId, wait);
   book(s, "hardware", "ledger.hardware", { model: modelById(line.model).name, qty: line.qty }, -lineTotal(s, line));
@@ -232,7 +228,6 @@ export function buyDevice(s: GameState, modelId: string, brand: string, qty: num
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   const error = lineError(s, line) ?? officeError(s, modelId, locationId);
   if (error) return fail(error);
-  if (noShelf(s, locationId, [line])) return fail("error.noShelf");
   if (s.cash < lineTotal(s, line)) return fail("error.noCash");
   return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s)) };
 }
@@ -243,7 +238,6 @@ export function buyCart(s: GameState, lines: CartLine[], payment: { kind: "cash"
   if (!lines.length) return fail("error.emptyCart");
   const error = lines.map((l) => lineError(s, l) ?? officeError(s, l.model, locationId)).find((e) => e);
   if (error) return fail(error);
-  if (noShelf(s, locationId, lines)) return fail("error.noShelf");
   const total = lines.reduce((sum, l) => sum + lineTotal(s, l), 0);
   if (payment.kind === "cash") {
     if (s.cash < total) return fail("error.noCash");
@@ -280,11 +274,9 @@ function mountError(s: GameState, d: Device, rackId: string, slot: number): stri
   if (spot.moving) return "error.rackMoving";
   if (d.store !== spot.locationId) return "error.notInZone";
   const m = modelById(d.model);
-  if (!!m.shelf !== spot.shelf) return m.shelf ? "error.towerNoRack" : "error.shelfTowerOnly";
   if (m.kind === "pdu" && hasPdu(s, rackId)) return "error.pduInstalled";
-  const h = m.shelf ? 1 : m.height;
-  if (!Number.isInteger(slot) || slot < 1 || slot + h - 1 > spot.units) return "error.outOfBounds";
-  if (!freeSlots(s, rackId, h).includes(slot)) return "error.slotTaken";
+  if (!Number.isInteger(slot) || slot < 1 || slot + m.height - 1 > spot.units) return "error.outOfBounds";
+  if (!freeSlots(s, rackId, m.height).includes(slot)) return "error.slotTaken";
   return null;
 }
 
@@ -313,13 +305,12 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   if (modelById(modelId).kind === "part") return fail("error.notMountable");
   if (isOfficeRouter(modelById(modelId))) return fail("error.panelRouter");
   if (modelById(modelId).kind === "pdu" && (count > 1 || hasPdu(s, rackId))) return fail("error.pduInstalled");
-  if (!!modelById(modelId).shelf !== rack.shelf) return fail(rack.shelf ? "error.shelfTowerOnly" : "error.towerNoRack");
   const same = (d: Device) => d.model === modelId && d.brand === brand;
   const stored = s.devices.filter((d) => same(d) && d.store === rack.locationId);
   if (!Number.isInteger(count) || count < 1 || stored.length < count) {
     return fail(s.devices.filter((d) => same(d) && d.store).length >= count ? "error.notInZone" : "error.notInStorage");
   }
-  const h = modelById(modelId).shelf ? 1 : modelById(modelId).height;
+  const h = modelById(modelId).height;
   const free = new Set(freeSlots(s, rackId, h));
   const start = [...free].filter((slot) => fromSlot === undefined || slot === fromSlot).find((slot) => Array.from({ length: count }, (_, i) => slot + i * h).every((x) => free.has(x)));
   if (start === undefined) return fail("error.noRoom");
