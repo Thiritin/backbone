@@ -109,7 +109,7 @@ describe("reviews", () => {
     announceReview(s, addReview(s, id, 1), events);
     expect(s.marketing.reviews).toHaveLength(1);
     expect(events).toHaveLength(0);
-    s.unlocks = ["marketing"];
+    s.unlocks = ["marketingBasics"];
     announceReview(s, addReview(s, id, 5), events);
     expect(events).toMatchObject([{ app: "Marketing", key: "event.review", params: { stars: 5 } }]);
   });

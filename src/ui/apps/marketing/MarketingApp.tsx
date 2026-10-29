@@ -51,10 +51,11 @@ const leads = (n: number) => (n < 10 ? n.toFixed(1) : String(Math.round(n)));
 
 export function MarketingApp() {
   const game = useStore((s) => s.game);
-  // Until the Marketing campaigns skill, the app only buys the company domain.
-  const full = isAvailable("Marketing", game.unlocks);
+  // Domain is always open, Reviews and Community open with Marketing basics, the rest with Marketing campaigns.
+  const full = isAvailable("Marketing", game.unlocks), basics = game.unlocks.includes("marketingBasics");
+  const open = (id: Section) => full || id === "domain" || (basics && (id === "reviews" || id === "community"));
   const [picked, setSection] = useState<Section | null>(null);
-  const section = full ? picked ?? "channels" : "domain";
+  const section = picked && open(picked) ? picked : full ? "channels" : "domain";
   useFocus("Marketing", (f) => { if (f.kind === "page" && f.id === "domain") setSection("domain"); });
   const total = leadsThisMonth(game).reduce((n, b) => n + b.count, 0);
   const items: [Section, string, ReactNode, number | null][] = [
@@ -71,7 +72,7 @@ export function MarketingApp() {
     <div className="fin">
       <nav className="sidebar fin-side" aria-label="Sections">
         <div className="side-h">Marketing</div>
-        {items.filter(([id]) => full || id === "domain").map(([id, label, icon, count]) => (
+        {items.filter(([id]) => open(id)).map(([id, label, icon, count]) => (
           <button key={id} className={`side-item${section === id ? " active" : ""}`} aria-pressed={section === id} onClick={() => setSection(id)}>
             {icon}{label}{count !== null && <span className="side-count">{count}</span>}
           </button>

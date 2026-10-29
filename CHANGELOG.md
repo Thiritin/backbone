@@ -4,7 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
-- New reviews only send you a notification once Marketing campaigns unlocks the Reviews section where you can read them.
+- Marketing basics now opens the Reviews and Community sections in Marketing, and new reviews only send you a notification once you can read them there.
+- Event organisers only ask you for sponsoring once you have learned Marketing basics.
 - The sheet that opens after a training starts with a Now available page that checks off everything the skill unlocks and what you can do with it.
 - The Used tab has listings from the first day: servers and network gear sold since before 2005 turn up on eBuy, WebHostingTalc and Telegrump right away, one to three years old.
 - Every server has a screen now: a Console tile on managed servers and the controller's page open it in its own window, a KVM opens it from its page, and clicking the blue console end on the back of a server in the rack plugs in a monitor on the spot.
