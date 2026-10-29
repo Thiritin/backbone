@@ -198,7 +198,7 @@ export function sitesMenu(game: GameState, host: Cluster): MenuEntry[] {
   return [{ label: off ? "Bring sites online" : "Take sites offline", run: () => act((g) => setSitesOffline(g, host.id, !off)) }];
 }
 
-// A VM's booking, resized within what its web spaces need and its server has room for; a VM without a panel host has no web spaces.
+// A VM's booking, resized within the disk its web spaces need and its server has; a VM without a panel host has no web spaces.
 export function ResizeCard({ game, host, own }: { game: GameState; host?: Cluster; own?: Workload }) {
   const act = useStore((s) => s.act);
   const vm = own ?? vmById(game, host!.vm)!;
@@ -214,7 +214,7 @@ export function ResizeCard({ game, host, own }: { game: GameState; host?: Cluste
         <SizeFields value={size} onChange={setSize} />
         <dl className="fin-rows">
           {inside && <div><dt>Web spaces book</dt><dd className="num">{num(inside.vcpu)} vCPU · {ram(+inside.ramGb.toFixed(2))} · {disk(Math.round(inside.diskGb))}</dd></div>}
-          {room && used && <div><dt>Free on {devName(d!)}</dt><dd className="num">{num(room.vcpu - used.vcpu)} vCPU · {ram(+(room.ramGb - used.ramGb).toFixed(2))} · {disk(Math.round(room.diskGb - used.diskGb))}</dd></div>}
+          {room && used && <div><dt>Free on {devName(d!)}</dt><dd className="num">{num(Math.max(0, room.vcpu - used.vcpu))} vCPU · {ram(+Math.max(0, room.ramGb - used.ramGb).toFixed(2))} · {disk(Math.round(Math.max(0, room.diskGb - used.diskGb)))}</dd></div>}
         </dl>
         <div><button className="btn primary" disabled={same} onClick={() => act((g) => (host ? resizePanelVm(g, host.id, size) : resizeVm(g, vm.id, size)))}>Resize</button></div>
       </div>

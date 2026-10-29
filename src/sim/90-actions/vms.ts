@@ -3,7 +3,7 @@ import type { Resources } from "../10-catalog/products";
 import { bump } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import {
-  bookable, clusterOf, controlPlaneUp, hostOfVm, isOwnVm, KEYS, lostDisk, noRoomError, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
+  bookable, clusterOf, controlPlaneUp, hostOfVm, isOwnVm, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
 } from "../60-infra/cluster";
 import { migrationHours } from "../60-infra/migration";
 import { RECOVER_HOURS } from "../60-infra/power";
@@ -60,7 +60,7 @@ export function migrationDowntime(s: GameState, w: Workload, gbit: number, other
 }
 
 // Where a workload can move: active, working nodes of hypervisor clusters for a VM, other panel hosts for a web space, of
-// clusters that sell its product and a link reaches, with room for its booking. to is a node's device id or a panel VM
+// clusters that sell its product and a link reaches, with the disk for its booking. to is a node's device id or a panel VM
 // host's id; free is what it has left to book; down the hours the move takes it offline.
 export interface MigrationTarget { to: string; name: string; clusterId: string; free: Resources; down: number }
 export function migrationTargets(s: GameState, id: string): MigrationTarget[] {
@@ -71,19 +71,20 @@ export function migrationTargets(s: GameState, id: string): MigrationTarget[] {
   return s.clusters.filter((to) => takes(to) && zoneLinkGbit(s, c.az, to.az) > 0).flatMap((to): MigrationTarget[] => {
     const down = migrationDowntime(s, w, zoneLinkGbit(s, c.az, to.az), c.az !== to.az);
     if (to.vm) {
-      const room = vmRoom(s, to), free = minus(room.cap, room.used);
+      const room = vmRoom(s, to), free = left(room.cap, room.used);
       return to.id !== c.id && pickNode(s, to, w) ? [{ to: to.id, name: to.name, clusterId: to.id, free, down }] : [];
     }
     return to.nodes.flatMap((n) => {
       const d = s.devices.find((x) => x.id === n.deviceId);
       if (!d || n.state !== "active" || d.id === w.deviceId || !working(s, d.id)) return [];
-      const free = minus(bookable(s, d), nodeUsed(s, d.id));
-      if (KEYS.some((k) => w[k] > free[k] + 1e-9)) return [];
+      if (!nodeTakes(s, d, w)) return [];
+      const free = left(bookable(s, d), nodeUsed(s, d.id));
       return [{ to: d.id, name: d.label ?? d.name, clusterId: to.id, free, down }];
     });
   });
 }
-const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcpu, ramGb: a.ramGb - b.ramGb, diskGb: a.diskGb - b.diskGb });
+// What is left to book; a booking past the physical amount leaves none.
+const left = (a: Resources, b: Resources): Resources => ({ vcpu: Math.max(0, a.vcpu - b.vcpu), ramGb: Math.max(0, a.ramGb - b.ramGb), diskGb: Math.max(0, a.diskGb - b.diskGb) });
 
 // Moves a workload to a node of its cluster, to another cluster in a zone a link reaches, or a web space into a panel VM
 // host (to is then the host's id).
@@ -104,8 +105,7 @@ export function migrateWorkload(s: GameState, id: string, toId: string): ActionR
     if (!pickNode(s, vmHost, w)) return fail("error.nodeFull");
   } else {
     if (to.nodes.find((n) => n.deviceId === toId)?.state !== "active" || !working(s, toId)) return fail("error.nodeDown");
-    const cap = bookable(s, d!), used = nodeUsed(s, toId);
-    if (KEYS.some((k) => used[k] + w[k] > cap[k] + 1e-9)) return fail("error.nodeFull");
+    if (!nodeTakes(s, d!, w)) return fail("error.nodeFull");
   }
   const gbit = zoneLinkGbit(s, c.az, to.az);
   if (!gbit) return fail("error.noZoneLink");

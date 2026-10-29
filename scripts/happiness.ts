@@ -20,13 +20,14 @@ import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { BASEMENT_SLOTS } from "../src/sim/10-catalog/economy";
 import { bookable, controlPlaneUse, nodeUsed } from "../src/sim/60-infra/cluster";
+import { PRODUCTS } from "../src/sim/10-catalog/products";
 import { sizeOf } from "../src/sim/30-market/spec";
 import type { SalesRequest } from "../src/sim/30-market/market";
-import { addNode, createPanelVm, resizePanelVm } from "../src/sim/90-actions/clusters";
+import { addNode, cordon, createPanelVm, PANEL_VM_SIZE, resizePanelVm, uncordon } from "../src/sim/90-actions/clusters";
 import { installSoftware, updateSoftware } from "../src/sim/90-actions/software";
 import { cleanUp } from "../src/sim/90-actions/security";
 import { openVulns } from "../src/sim/60-infra/vulns";
-import { sitesDown, vmById, vmOf, vmRoom } from "../src/sim/60-infra/cluster";
+import { sitesDown, supports, vmById, vmOf, vmRoom, type Cluster } from "../src/sim/60-infra/cluster";
 import { buyDevice, connect, orderHomeLine } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "../tests/plugged";
 import { acceptUpgrade, confirmOrder, createAccount, provisionOrder, registerOrderDomain, renewDomain } from "../src/sim/90-actions/orders";
@@ -90,19 +91,33 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     step === "account" ? createAccount(s, t) : step === "invoice" ? confirmOrder(s, t, reference) : step === "domain" ? registerOrderDomain(s, t) : provisionOrder(s, t);
   // The model's steady capacity rule: another basement server once the cluster's RAM is 80% booked and cash allows.
   // Web hosting lives in panel VMs: one 80% full grows by 2 GB, or a new one starts next to it once its node is full.
+  const ramFits = (deviceId: string, gb: number) => nodeUsed(s, deviceId).ramGb + gb <= bookable(s, s.devices.find((d) => d.id === deviceId)!).ramGb;
+  // A careful player sizes a panel VM to what its web spaces book, within its server's installed RAM, though the game
+  // would take more; a crowded VM grows in 2 GB steps, or a new one starts next to the last once its node is full.
+  const crowded = (h: Cluster) => { const { cap, used } = vmRoom(s, h); return used.ramGb >= 0.8 * cap.ramGb || used.diskGb >= 0.8 * cap.diskGb; };
   const growWeb = () => {
-    for (const h of s.clusters.filter((x) => x.vm)) {
-      const vm = vmById(s, h.vm)!, { cap, used } = vmRoom(s, h);
-      if (used.ramGb < 0.8 * cap.ramGb && used.diskGb < 0.8 * cap.diskGb) continue;
-      // A careful player grows the VM only within its server's installed RAM.
-      const d = s.devices.find((x) => x.id === vm.deviceId)!, fits = nodeUsed(s, d.id).ramGb + 2 <= bookable(s, d, true).ramGb;
-      if (!(fits && resizePanelVm(s, h.id, { vcpu: vm.vcpu + 1, ramGb: vm.ramGb + 2, diskGb: vm.diskGb + 50 }).ok) && h === s.clusters.filter((x) => x.vm).at(-1)) createPanelVm(s, s.clusters[0].id, h.panel!);
+    const hosts = s.clusters.filter((x) => x.vm);
+    for (const h of hosts) {
+      for (let grown = true; grown && crowded(h);) {
+        const vm = vmById(s, h.vm)!;
+        grown = ramFits(vm.deviceId!, 2) && resizePanelVm(s, h.id, { vcpu: vm.vcpu + 1, ramGb: vm.ramGb + 2, diskGb: vm.diskGb + 50 }).ok;
+      }
+      if (crowded(h) && h === hosts.at(-1) && s.clusters[0].nodes.some((n) => ramFits(n.deviceId, PANEL_VM_SIZE.ramGb))) createPanelVm(s, s.clusters[0].id, h.panel!);
     }
   };
   // Servers whose Proxmocks finished installing join the first cluster in the hour it finishes.
   const joinReady = () => {
     const c = s.clusters[0];
     for (const x of s.clusters.filter((x) => x !== c && x.platform === c.platform && !x.switching && x.nodes.length === 1)) addNode(s, c.id, x.nodes[0].deviceId);
+  };
+  // A careful player cordons a node that is full to its installed RAM, so nothing new lands past it, and reopens it once
+  // a customer leaves.
+  const keepRoom = () => {
+    for (const n of s.clusters[0].nodes) {
+      const d = s.devices.find((x) => x.id === n.deviceId)!, free = bookable(s, d).ramGb - nodeUsed(s, d.id).ramGb;
+      if (n.state === "active" && free < 1) cordon(s, d.id);
+      else if (n.state === "cordoned" && free >= 2) uncordon(s, d.id);
+    }
   };
   // An order waits for its delivery; the server is fitted in the hour it arrives.
   let ordered: string | null = null;
@@ -153,17 +168,25 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     const better = HOME_LINES.filter((l) => l.staticIp && l.from <= yearOf(s.hour) && l.up > up).sort((a, b) => a.monthly - b.monthly)[0];
     if (better) orderHomeLine(s, better.id);
   };
+  const ramRoom = (r: SalesRequest) => {
+    const need = sizeOf(r.spec!).ramGb;
+    if (PRODUCTS[r.product].runsOn !== "cluster") return true;
+    return s.clusters.some((c) => supports(c, r.product) && (c.vm ? vmRoom(s, c).used.ramGb + need <= vmRoom(s, c).cap.ramGb + 1e-9 : c.nodes.some((n) => ramFits(n.deviceId, need))));
+  };
   const room = (r: SalesRequest) => {
     const taken = s.sales.requests.filter((x) => x.kind === "order" && x.customerId && !x.serviceId && ["open", "quoted"].includes(x.status));
     const need = [...taken, r].map((x) => sizeOf(x.spec)).reduce((a, b) => ({ vcpu: a.vcpu + b.vcpu, ramGb: a.ramGb + b.ramGb, diskGb: a.diskGb + b.diskGb }));
-    const free = s.clusters[0].nodes.map((n) => { const cap = bookable(s, s.devices.find((d) => d.id === n.deviceId)!, true), used = nodeUsed(s, n.deviceId); return { ramGb: cap.ramGb - used.ramGb, diskGb: cap.diskGb - used.diskGb }; });
-    return free.reduce((n, f) => n + f.ramGb, 0) >= need.ramGb && free.reduce((n, f) => n + f.diskGb, 0) >= need.diskGb;
+    const free = s.clusters[0].nodes.map((n) => { const cap = bookable(s, s.devices.find((d) => d.id === n.deviceId)!), used = nodeUsed(s, n.deviceId); return { ramGb: cap.ramGb - used.ramGb, diskGb: cap.diskGb - used.diskGb }; });
+    // Web spaces booked past their panel VM are RAM the VM will have to grow into.
+    const overflow = s.clusters.filter((x) => x.vm).reduce((n, h) => { const { cap, used } = vmRoom(s, h); return n + Math.max(0, used.ramGb - cap.ramGb); }, 0);
+    return free.reduce((n, f) => n + f.ramGb, 0) - overflow >= need.ramGb && free.reduce((n, f) => n + f.diskGb, 0) >= need.diskGb;
   };
   for (let m = 0; m < months; m++) {
     const churnedBefore = s.customers.filter((c) => c.churnedAt !== null && s.services.some((v) => v.customerId === c.id)).length, before = s.customers.length, lostBefore = s.sales.lost.length;
     for (let h = 0; h < MONTH; h++) {
       tick(s);
       joinReady();
+      keepRoom();
       if (!s.marketing.lines.length && s.customers.some((c) => c.habit === "friend")) s.marketing.lines = fillLines(s, undefined).marketing.lines;
       if (buy && s.hour % 24 === 9) { grow(); upgradeLine(); }
       // One spare line address keeps basement VPS and game server sales open.
@@ -199,8 +222,10 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
           if (!r) continue;
           const step = nextStep(s, r);
           if (!step) continue;
-          // A careful player declines an order the cluster cannot also fit after the orders already taken.
+          // A careful player declines an order the cluster cannot also fit after the orders already taken, and sets one up
+          // only where its RAM fits, waiting for a panel VM to grow or a server to arrive.
           if (step === "account" && !room(r)) { closeTicket(s, t.id); continue; }
+          if (step === "provision" && !ramRoom(r)) { stepErrors["wait.ram"] = (stepErrors["wait.ram"] ?? 0) + 1; continue; }
           const error = stepError(s, t, step);
           if (error) { stepErrors[error] = (stepErrors[error] ?? 0) + 1; continue; }
           doStep(t.id, step, r.reference);

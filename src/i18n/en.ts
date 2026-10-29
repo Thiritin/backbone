@@ -475,7 +475,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.creditAmount": () => "Enter an amount above zero.",
   "error.placed": () => "This service already runs on your hardware.",
   "error.needsHaCluster": () => "This product needs a hypervisor cluster with automatic failover.",
-  "error.noCapacity": () => "No cluster in this zone has room for it.",
+  "error.noCapacity": () => "No cluster in this zone has the disk for it.",
   "error.noCard": () => "No server in this zone has a free GPU card.",
   "error.cardInUse": () => "A virtual machine is using this card.",
   "error.noFreeServer": () => "No free server in this zone is big enough.",

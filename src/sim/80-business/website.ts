@@ -7,7 +7,7 @@ import type { Product } from "../30-customers/customers";
 import { companyDomain } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { serviceOnline } from "../40-support/status";
-import { bookable, fits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
+import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { hostPerf } from "../60-infra/php";
 import { nodeUsage } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
@@ -55,12 +55,12 @@ export function slowHost(s: GameState, w: Workload, c: Cluster | undefined): boo
   return Math.min(at ? nodeUsage(s, at).perf : 1, hostPerf(s, c)) < 1;
 }
 
-// Whether a panel host has room for the site next to its web spaces, and whether its RAM is over 90% booked with the site.
+// Whether a panel host has the disk for the site next to its web spaces, and whether its RAM is over 90% booked with the site.
 export function siteRoom(s: GameState, c: Cluster): { fits: boolean; crowded: boolean } {
   const d = c.vm ? null : s.devices.find((x) => x.id === c.nodes[0]?.deviceId);
-  const room = c.vm ? vmRoom(s, c) : d ? { cap: bookable(s, d, true), used: nodeUsed(s, d.id) } : null;
+  const room = c.vm ? vmRoom(s, c) : d ? { cap: bookable(s, d), used: nodeUsed(s, d.id) } : null;
   if (!room) return { fits: false, crowded: true };
-  return { fits: fits(room.used, room.cap, SITE_LOAD), crowded: room.used.ramGb + SITE_LOAD.ramGb > SLOW_RAM * room.cap.ramGb };
+  return { fits: diskFits(room.used, room.cap, SITE_LOAD), crowded: room.used.ramGb + SITE_LOAD.ramGb > SLOW_RAM * room.cap.ramGb };
 }
 
 export type SiteStatus = "up" | "slow" | "down";

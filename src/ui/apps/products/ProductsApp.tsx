@@ -206,7 +206,7 @@ function ClusterDetail({ game, cluster }: { game: GameState; cluster: Cluster })
                 <td>{r.label}</td>
                 <td className="r num">{r.fmt(r.b)}{r.label === "CPU" ? " vCPU" : ""}</td>
                 <td className="r num">{r.fmt(r.p)}{r.label === "CPU" ? " cores" : ""}</td>
-                <td className="r num">{r.p ? `${num(r.b / r.p)}:1` : "None"}</td>
+                <td className={`r num${r.b > r.p ? " prd-over" : ""}`}>{r.p ? `${num(r.b / r.p)}:1` : "None"}</td>
                 <td className="r num">{r.fmt(r.now)}</td>
                 <td className={`r num${r.peak > r.p ? " prd-over" : ""}`}>{r.fmt(r.peak)}</td>
               </tr>

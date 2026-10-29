@@ -251,7 +251,7 @@ describe("staff on custom orders", () => {
 });
 
 describe("routing and upgrades", () => {
-  it("sets up on a chosen node and refuses one without room", () => {
+  it("sets up on a chosen node and refuses one without the disk", () => {
     const s = readyGame(9);
     const { id, req } = order(s, vps);
     done(s, createAccount(s, id));
@@ -264,7 +264,7 @@ describe("routing and upgrades", () => {
     expect(s.workloads.find((w) => w.serviceId === req().serviceId)!.deviceId).toBe(node.id);
     const big = order(s, vps);
     done(s, createAccount(s, big.id));
-    s.sales.requests = s.sales.requests.map((r) => (r.id === big.r.id ? { ...r, spec: { ...r.spec!, ramGb: 10_000 } } : r));
+    s.sales.requests = s.sales.requests.map((r) => (r.id === big.r.id ? { ...r, spec: { ...r.spec!, diskGb: 10_000_000 } } : r));
     done(s, confirmOrder(s, big.id, 20));
     expect(provisionOrder(s, big.id, node.id)).toEqual({ ok: false, error: "error.noCapacity" });
   });

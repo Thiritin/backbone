@@ -5,7 +5,8 @@ import { softwareById } from "../src/sim/10-catalog/platforms";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { offers } from "../src/sim/30-market/market";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { controlPlaneUp, lineOffered, vmById, vmOf, workloadsOf } from "../src/sim/60-infra/cluster";
+import { controlPlaneUp, lineOffered, nodeCapacity, nodeUsed, vmById, vmOf, workloadsOf } from "../src/sim/60-infra/cluster";
+import { installedRamGb } from "../src/sim/60-infra/status";
 import { FAILOVER_MINUTES } from "../src/sim/60-infra/ha";
 import { tick } from "../src/sim/88-tick/tick";
 import {
@@ -88,25 +89,41 @@ describe("compute", () => {
     expect([lineOffered(s, "webHosting"), lineOffered(s, "vps")]).toEqual([true, true]);
   });
 
-  it("limits web hosting to the panel VM's booking, grows it with a resize and refuses one below its web spaces", () => {
+  it("books web hosting past the panel VM's CPU and RAM, refuses only on its disk, and refuses a resize below its web spaces' disk", () => {
     const s = withServer(startGame(1)), cus = addCustomer(s, "Ada Lang", "hobbyDev");
-    const host = panelVm(s, basement(s), "freepanel", { vcpu: 2, ramGb: 1.2, diskGb: 100 });
-    // 95 percent of 1.2 GB less FreePanel's 0.1 GB holds four web spaces of 0.25 GB.
-    expect(fill(s, cus)).toBe(4);
-    expect(err(web(s, cus, 9))).toBe("error.noCapacity");
-    expect(err(resizePanelVm(s, host, { vcpu: 2, ramGb: 1, diskGb: 100 }))).toBe("error.vmTooSmall");
-    ok(resizePanelVm(s, host, { vcpu: 2, ramGb: 2.3, diskGb: 100 }));
-    expect(fill(s, cus)).toBe(4);
-    expect(vmById(s, s.clusters.find((c) => c.id === host)!.vm)!.ramGb).toBe(2.3);
-    expect(err(resizePanelVm(s, host, { vcpu: 2, ramGb: 50, diskGb: 100 }))).toBe("error.nodeFull");
+    const host = panelVm(s, basement(s), "freepanel", { vcpu: 2, ramGb: 1.2, diskGb: 40 });
+    const spec = sizeSpec("webHosting", 1, yearOf(s.hour));
+    // The VM's 40 GB less FreePanel's 2 GB holds the web spaces; their RAM books far past the VM's 1.2 GB.
+    const n = fill(s, cus), booked = s.workloads.filter((w) => w.clusterId === host).reduce((a, w) => a + w.ramGb, 0);
+    expect(n).toBe(Math.floor((38 + 1e-9) / spec.diskGb));
+    expect(booked).toBeGreaterThan(1.2 * 0.95);
+    expect(err(web(s, cus, 999))).toBe("error.noCapacity");
+    expect(err(resizePanelVm(s, host, { vcpu: 2, ramGb: 1.2, diskGb: 20 }))).toBe("error.vmTooSmall");
+    ok(resizePanelVm(s, host, { vcpu: 2, ramGb: 1.2, diskGb: 80 }));
+    ok(web(s, cus, 1000));
+    expect(vmById(s, s.clusters.find((c) => c.id === host)!.vm)!.diskGb).toBe(80);
+    expect(err(resizePanelVm(s, host, { vcpu: 2, ramGb: 1.2, diskGb: 999999 }))).toBe("error.nodeFull");
     expect(err(removePanelHost(s, host))).toBe("error.nodeNotEmpty");
   });
 
-  it("limits web hosting on a panel server to the server", () => {
+  it("books web hosting on a panel server until its disk is full and freezes it once the RAM in use passes the installed RAM", () => {
     const s = withServer(startGame(1)), cus = addCustomer(s, "Ada Lang", "hobbyDev");
     panelServer(s, "dev3");
-    // Automatic placement books up to the installed 8 GB less FreePanel's 0.1 GB: 31 web spaces of 0.25 GB.
-    expect(fill(s, cus)).toBe(31);
+    const d = s.devices.find((x) => x.id === "dev3")!, spec = sizeSpec("webHosting", 1, yearOf(s.hour));
+    const n = fill(s, cus);
+    expect(n).toBe(Math.floor((nodeCapacity(d).diskGb - 2 + 1e-9) / spec.diskGb));
+    expect(nodeUsed(s, "dev3").ramGb).toBeGreaterThan(installedRamGb(d));
+    expect(run(s, 1).map((e) => e.key)).toContain("event.nodeFrozen");
+    expect(s.frozen).toContain("dev3");
+  });
+
+  it("sends web hosting to the panel VM with the RAM first and past a full one only when none is left", () => {
+    const { s, cluster } = twoNodes(), cus = addCustomer(s, "Ada Lang", "hobbyDev");
+    const small = panelVm(s, cluster, "freepanel", { vcpu: 2, ramGb: 1.2, diskGb: 100 }), big = panelVm(s, cluster, "freepanel", { vcpu: 2, ramGb: 4, diskGb: 100 });
+    const inside = (id: string) => s.workloads.filter((w) => w.clusterId === id).length;
+    for (let i = 0; i < 20; i++) ok(web(s, cus, i));
+    // The small VM holds four web spaces within its RAM and the big one fourteen; the last two go past the small VM's RAM.
+    expect([inside(small), inside(big)]).toEqual([6, 14]);
   });
 
   it("takes web hosting down with its bare-metal panel server, while a panel VM moves with its VM", () => {

@@ -65,7 +65,7 @@ describe("capacity from parts", () => {
       expect(installedCores(d), m.id).toBe(v.cores);
       expect(installedRamGb(d), m.id).toBe(v.ramGb);
       expect(raidUsable(d), m.id).toBe(factor * (v.diskGb / v.drives));
-      expect(nodeCapacity(d), m.id).toEqual({ vcpu: v.cores * OVERCOMMIT.cpu, ramGb: v.ramGb * OVERCOMMIT.ram, diskGb: raidUsable(d) * OVERCOMMIT.disk });
+      expect(nodeCapacity(d), m.id).toEqual({ vcpu: v.cores, ramGb: v.ramGb, diskGb: raidUsable(d) * OVERCOMMIT.disk });
       expect(nodeUsage(s, id).physical, m.id).toEqual({ vcpu: v.cores, ramGb: v.ramGb, diskGb: raidUsable(d) });
     }
   });
@@ -76,7 +76,7 @@ describe("capacity from parts", () => {
     stick.failedAt = 10;
     expect(installedRamGb(d)).toBe(before - stick.size!);
     expect(nodeUsage(s, id).physical.ramGb).toBe(before - stick.size!);
-    expect(nodeCapacity(d).ramGb).toBe((before - stick.size!) * OVERCOMMIT.ram);
+    expect(nodeCapacity(d).ramGb).toBe(before - stick.size!);
     expect(freezeTick(s)).toEqual([]);
   });
 
