@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { yearOf } from "../src/sim/00-core/time";
+import { sizeSpec } from "../src/sim/10-catalog/products";
 import { COMPONENTS, componentKinds, modelById } from "../src/sim/10-catalog/hardware";
 import { newGame, type Device, type GameState } from "../src/sim/50-state";
 import { arrayLost, BOOT_HOURS, deviceHealth, linkStatus, raidTolerance, raidUsable, rackPower } from "../src/sim/60-infra/status";
@@ -110,7 +112,7 @@ describe("RAID", () => {
     ok(setPower(s, id, true));
     s.hour += BOOT_HOURS;
     ok(addNode(s, installed(s, ok(createCluster(s, "loc1", "Storage 1"))), id));
-    ok(provisionService(s, addCustomer(s, "Ada", "private"), "vps", { label: "ada.example", plan: "vps-s" }));
+    ok(provisionService(s, addCustomer(s, "Ada", "private"), "vps", { label: "ada.example", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     ok(setPower(s, id, false));
     s.hour = 7;
     ok(setRaid(s, id, "none"));

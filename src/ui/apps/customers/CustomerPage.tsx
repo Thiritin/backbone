@@ -1,7 +1,6 @@
 import { ChevronLeft, Contact, Cpu, FileText, Globe, History, LifeBuoy, ListChecks, Receipt, Server } from "lucide-react";
 import { useState } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
-import { planOf } from "../../../sim/10-catalog/products";
 import type { Customer, Profile, Service } from "../../../sim/30-customers/customers";
 import { referenceFor } from "../../../sim/30-market/market";
 import { subjectParams } from "../../../sim/40-support/notices";
@@ -20,8 +19,7 @@ import { formatDay } from "../billing/BillingApp";
 import { PriceField } from "../sales/PriceField";
 import { ActivityLog } from "./ActivityLog";
 import { registryOf } from "../../../sim/30-customers/registry";
-import { customReference } from "../../../sim/30-market/manual";
-import { specLine } from "../support/CustomOrder";
+import { specText } from "../../../sim/30-market/spec";
 import { initials, kindOf, monthYear, moodClass, noticed, patience, PRODUCT, STATUS } from "../support/labels";
 
 export type Status = "active" | "overdue" | "suspended" | "churned";
@@ -207,7 +205,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                     {services.filter((v) => v.endedAt === null).map((v) => (
                       <tr key={v.id} onClick={() => setTab("services")} onContextMenu={menuOn(serviceMenu(v))}>
                         <td className="cus-subject"><span className="cus-strong">{v.label}</span></td>
-                        <td className="cus-dim">{v.spec ? specLine(v.product, v.spec) : planOf(v.product, v.plan).name}</td>
+                        <td className="cus-dim">{specText(v.product, v.spec)}</td>
                         <td className="r num">{price(v)}</td>
                         <td className="r">{serviceStatus(v, r)}</td>
                       </tr>
@@ -258,7 +256,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                     <dl className="fin-rows">
                       <div><dt>Product</dt><dd>{PRODUCT[v.product]}</dd></div>
                       {v.domain && <div><dt>Domain</dt><dd>{v.domain}</dd></div>}
-                      {v.spec ? <div><dt>Resources</dt><dd className="num">{specLine(v.product, v.spec)}</dd></div> : <div><dt>Plan</dt><dd>{planOf(v.product, v.plan).name}</dd></div>}
+                      <div><dt>Resources</dt><dd className="num">{specText(v.product, v.spec)}</dd></div>
                       <div><dt>Price</dt><dd className="num">{price(v)}</dd></div>
                       <div><dt>Billing</dt><dd>{v.period === "hour" ? "Monthly" : "Yearly"}</dd></div>
                       <div><dt>SLA</dt><dd>{SLA[v.sla]}</dd></div>
@@ -338,7 +336,7 @@ function ChangePrice({ v, profile, onClose }: { v: Service; profile: Profile; on
   const save = () => { if (act((s) => changePrice(s, v.id, monthly)).ok) onClose(); };
   return (
     <div className="cus-price">
-      <PriceField value={monthly} reference={v.spec ? customReference(game, profile, v.product, v.spec, v.sla) : referenceFor(game, profile, v.product, v.plan ?? "", v.sla)} onChange={setMonthly} label="New monthly price" />
+      <PriceField value={monthly} reference={referenceFor(game, profile, v.product, v.spec, v.sla)} onChange={setMonthly} label="New monthly price" />
       <div className="fin-actions">
         <button className="btn ghost" onClick={onClose}>Cancel</button>
         <button className="btn primary" disabled={!(monthly > 0)} onClick={save}>Save price</button>

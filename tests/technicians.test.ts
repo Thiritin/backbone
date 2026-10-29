@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { hourOf } from "../src/sim/00-core/time";
+import { sizeSpec } from "../src/sim/10-catalog/products";
+import { hourOf, yearOf } from "../src/sim/00-core/time";
 import { phpAt, phpBehind } from "../src/sim/10-catalog/platforms";
 import { visibleCandidates, type Task } from "../src/sim/47-staff/staff";
 import { nextSlot } from "../src/sim/47-staff/technicians";
@@ -91,7 +92,7 @@ describe("technicians", () => {
     const s = { ...withServer(newGame(1)), cash: 100_000 };
     const { second } = twoNodes(s);
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
-    for (let i = 0; i < 3; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, plan: "vps-s" }));
+    for (let i = 0; i < 3; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     expect(workloadsOn(s, "dev3")).toHaveLength(3);
     technician(s);
     toMonday(s);
@@ -196,7 +197,7 @@ describe("PHP versions", () => {
     const s = { ...withServer(newGame(1)), cash: 100_000 };
     const { a } = panels(s);
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
-    ok(provisionService(s, cus, "webHosting", { label: "ada.de", plan: "web-s", clusterId: a }));
+    ok(provisionService(s, cus, "webHosting", { label: "ada.de", spec: sizeSpec("webHosting", 0, yearOf(s.hour)), clusterId: a }));
     const fresh = howToFactor(s, cus);
     expect(s.clusters.map((c) => c.php)).toEqual(["4.4", "4.4"]);
     s.hour = hourOf(new Date(Date.UTC(2010, 0, 4, 8)));

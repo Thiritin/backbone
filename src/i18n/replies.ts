@@ -19,7 +19,7 @@ const day = (p: Params) => {
   const d = dateOf(Number(p.hour));
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} at ${String(d.getUTCHours()).padStart(2, "0")}:00`;
 };
-const hosting = (p: Params) => (p.domain ? `${p.plan} for ${p.domain}` : p.plan);
+const hosting = (p: Params) => (p.domain ? `${p.line} for ${p.domain}` : p.line);
 
 // Three wordings for each email the company sends; replies.ts picks one by the seed.
 const MAILS: Record<string, [Mail, Mail, Mail]> = {
@@ -84,9 +84,9 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     () => "Understood. Your services return the moment the payment is booked on our side.",
   ],
   "tpl.offer": [
-    (p) => `We can move ${svc(p)} to the next plan without downtime. The prices are in the attached overview, just reply and we will switch it.`,
-    (p) => `A bigger plan is no problem. The upgrade takes a few minutes, ${svc(p)} stays online, and you can see the prices in the attachment.`,
-    (p) => `Thank you for growing with us. We have attached the prices of the larger plans, and we switch ${svc(p)} over the same day you reply.`,
+    (p) => `We can give ${svc(p)} more resources without downtime. The prices are in the attached overview, just reply and we will switch it.`,
+    (p) => `More resources are no problem. The upgrade takes a few minutes, ${svc(p)} stays online, and you can see the prices in the attachment.`,
+    (p) => `Thank you for growing with us. We have attached the prices of more resources, and we switch ${svc(p)} over the same day you reply.`,
   ],
   "tpl.warn": [
     (p) => `${svc(p)} is sending abuse traffic that other networks report to us. Please fix it within 24 hours, otherwise we have to suspend it.`,
@@ -105,7 +105,7 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
   ],
   refuse: [
     () => "We have looked into your request carefully. The interruption is covered by your contract terms, so we cannot offer a refund this time.",
-    () => "Thank you for your message. Your plan's service level covers this case, so a refund is not possible. We are sorry for the inconvenience.",
+    () => "Thank you for your message. Your service level covers this case, so a refund is not possible. We are sorry for the inconvenience.",
     () => "We understand your frustration, but we are not able to refund this period. Your contract terms apply here.",
   ],
   revert: [
@@ -160,13 +160,13 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
   ],
   "decline.notOffered": [
     (p) => `Thank you for your interest in ${hosting(p)}. Unfortunately, we do not offer this product in ${p.city} at the moment, so we cannot take on your order.`,
-    (p) => `Thank you for your order. We are sorry, but ${p.plan} is not available in ${p.city} yet. We hope to be able to help you in the future.`,
-    (p) => `We appreciate you thinking of us. ${p.plan} is not part of our offer in ${p.city} right now, so we have to decline this order.`,
+    (p) => `Thank you for your order. We are sorry, but ${p.line} is not available in ${p.city} yet. We hope to be able to help you in the future.`,
+    (p) => `We appreciate you thinking of us. ${p.line} is not part of our offer in ${p.city} right now, so we have to decline this order.`,
   ],
   "decline.noCapacity": [
     (p) => `Thank you for your order of ${hosting(p)}. Our servers in ${p.city} are fully booked at the moment, so we cannot set it up for you.`,
     (p) => `We are sorry, but we have no free capacity in ${p.city} right now and cannot accept your order. We hope to welcome you another time.`,
-    (p) => `Thank you for choosing us. Unfortunately, ${p.city} is at full capacity, and we would rather decline than set up ${p.plan} badly.`,
+    (p) => `Thank you for choosing us. Unfortunately, ${p.city} is at full capacity, and we would rather decline than set up ${p.line} badly.`,
   ],
   "decline.busy": [
     (p) => `Thank you for your interest in ${hosting(p)}. We are not taking on new orders of this kind at the moment.`,
@@ -206,10 +206,10 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
   "order.live": [
     (p) => (p.domain
       ? `${p.domain} is live on our servers in ${p.city} since ${day(p)}. Log in at panel.${p.host} with the user name ${String(p.domain).split(".")[0]}; the password follows in a separate email. Upload your site by FTP to ftp.${p.domain}.`
-      : `Your ${p.plan} in ${p.city} is running since ${day(p)}. Log in as root over SSH; the address and password follow in a separate email.`),
+      : `Your ${p.line} in ${p.city} is running since ${day(p)}. Log in as root over SSH; the address and password follow in a separate email.`),
     (p) => (p.domain
       ? `Your web space for ${p.domain} is ready since ${day(p)}. The control panel is at panel.${p.host}, and your mailboxes are set up at mail.${p.host}.`
-      : `${p.plan} is up in ${p.city} since ${day(p)}. Your root login is on its way by separate email.`),
+      : `${p.line} is up in ${p.city} since ${day(p)}. Your root login is on its way by separate email.`),
     (p) => `Everything is set up: ${hosting(p)} runs in ${p.city} since ${day(p)}. Your access details follow in a separate email.`,
   ],
 };

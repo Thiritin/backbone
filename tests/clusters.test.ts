@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { marketPrice, PRODUCTS } from "../src/sim/10-catalog/products";
+import { yearOf } from "../src/sim/00-core/time";
+import { marketPrice, PRODUCTS, SIZES, sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { invoiceTotal } from "../src/sim/45-billing/billing";
 import { newGame, type GameState } from "../src/sim/50-state";
@@ -42,23 +43,25 @@ function twoNodes() {
 }
 
 describe("product catalog", () => {
-  it("prices plans at the market reference for the year", () => {
-    expect(marketPrice("webHosting", "web-m", 2005)).toBe(6);
-    expect(marketPrice("webHosting", "web-m", 2020)).toBe(6);
-    // economy.md: €16 per GB of RAM in 2005, so 512 MB is about €8.
-    expect(marketPrice("vps", "vps-s", 2005)).toBeCloseTo(8.25, 1);
-    expect(marketPrice("vps", "vps-s", 2026)).toBeLessThan(marketPrice("vps", "vps-s", 2005));
-    expect(marketPrice("vps", "vps-s", 2005, "premium")).toBeCloseTo(1.5 * marketPrice("vps", "vps-s", 2005), 1);
-    expect(marketPrice("ssl", null, 2010)).toBe(50);
-    expect(marketPrice("ssl", null, 2016)).toBe(0);
+  it("prices sizes at the market reference for the year", () => {
+    const web = (y: number) => marketPrice("webHosting", sizeSpec("webHosting", 1, y), y);
+    expect(web(2005)).toBe(6);
+    expect(web(2020)).toBeCloseTo(6, 0);
+    // economy.md: 1 vCPU, 512 MB and 10 GB in 2005 come to 0.65 × the €16.5 GB rate.
+    const vps = (y: number, sla?: "premium") => marketPrice("vps", sizeSpec("vps", 0, y), y, sla);
+    expect(vps(2005)).toBeCloseTo(10.73, 1);
+    expect(vps(2026)).toBeLessThan(vps(2005));
+    expect(vps(2005, "premium")).toBeCloseTo(1.5 * vps(2005), 1);
+    expect(marketPrice("ssl", sizeSpec("ssl", 0, 2010), 2010)).toBe(50);
+    expect(marketPrice("ssl", sizeSpec("ssl", 0, 2016), 2016)).toBe(0);
   });
-  it("gives every product a place to run, terms and at least one plan", () => {
-    for (const spec of Object.values(PRODUCTS)) expect(spec.plans.length).toBeGreaterThan(0);
+  it("gives every product a place to run, terms and at least one size", () => {
+    for (const sizes of Object.values(SIZES)) expect(sizes.length).toBeGreaterThan(0);
     expect(PRODUCTS.dedicated.runsOn).toBe("server");
     expect(PRODUCTS.colocation.runsOn).toBe("rack");
     expect(PRODUCTS.domain).toMatchObject({ runsOn: "none", period: "year" });
-    expect(PRODUCTS.vps.plans[0].size(2005)).toEqual({ vcpu: 1, ramGb: 0.5, diskGb: 10 });
-    expect(PRODUCTS.vps.plans[0].size(2012).ramGb).toBeCloseTo(1);
+    expect(sizeSpec("vps", 0, 2005)).toMatchObject({ vcpu: 1, ramGb: 0.5, diskGb: 10 });
+    expect(sizeSpec("vps", 0, 2012).ramGb).toBeCloseTo(1);
   });
 });
 
@@ -112,23 +115,23 @@ describe("starting company", () => {
 describe("placement", () => {
   it("packs onto one node by default and spreads across nodes when set", () => {
     const { s, cluster, second, cus } = twoNodes();
-    for (let i = 0; i < 4; i++) ok(provisionService(s, cus, "vps", { label: `pack ${i}`, plan: "vps-s" }));
+    for (let i = 0; i < 4; i++) ok(provisionService(s, cus, "vps", { label: `pack ${i}`, spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     expect(workloadsOn(s, "dev3")).toHaveLength(4);
     ok(setPlacement(s, cluster, "spread"));
-    for (let i = 0; i < 4; i++) ok(provisionService(s, cus, "vps", { label: `spread ${i}`, plan: "vps-s" }));
+    for (let i = 0; i < 4; i++) ok(provisionService(s, cus, "vps", { label: `spread ${i}`, spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     expect(workloadsOn(s, second)).toHaveLength(4);
   });
   it("books RAM up to the installed RAM automatically and up to 1.5 × on a chosen node, recording nothing on a refusal", () => {
     const { s, cluster, second, cus } = twoNodes();
     expect(nodeCapacity(s.devices.find((d) => d.id === "dev3")!)).toEqual({ vcpu: 16, ramGb: 12, diskGb: 1000 });
     // Automatic placement stops at the installed 8 GB: dev3 holds 3 VPS L of 2 GB next to its control plane, the second node 4.
-    for (let i = 0; i < 7; i++) ok(provisionService(s, cus, "vps", { label: `big ${i}`, plan: "vps-l" }));
+    for (let i = 0; i < 7; i++) ok(provisionService(s, cus, "vps", { label: `big ${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)) }));
     expect([nodeUsed(s, "dev3").ramGb, nodeUsed(s, second).ramGb]).toEqual([6, 8]);
     const services = s.services.length, nextId = s.nextId;
-    expect(err(provisionService(s, cus, "vps", { label: "one more", plan: "vps-l" }))).toBe("error.noCapacity");
+    expect(err(provisionService(s, cus, "vps", { label: "one more", spec: sizeSpec("vps", 2, yearOf(s.hour)) }))).toBe("error.noCapacity");
     expect([s.services.length, s.nextId]).toEqual([services, nextId]);
     // On a node the player picks, RAM books up to 1.5 × the installed RAM.
-    const onDev3 = (label: string) => provisionService(s, cus, "vps", { label, plan: "vps-l", clusterId: cluster, deviceId: "dev3" });
+    const onDev3 = (label: string) => provisionService(s, cus, "vps", { label, spec: sizeSpec("vps", 2, yearOf(s.hour)), clusterId: cluster, deviceId: "dev3" });
     ok(onDev3("chosen 1"));
     ok(onDev3("chosen 2"));
     expect(nodeUsed(s, "dev3").ramGb).toBe(10);
@@ -137,14 +140,14 @@ describe("placement", () => {
   it("skips cordoned and broken nodes and takes the zone of the cluster it lands in", () => {
     const { s, second, cus } = twoNodes();
     ok(cordon(s, "dev3"));
-    const id = ok(provisionService(s, cus, "vps", { label: "ada.example", plan: "vps-s" }));
+    const id = ok(provisionService(s, cus, "vps", { label: "ada.example", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     expect(workloadsOf(s, id)[0].deviceId).toBe(second);
     expect(s.services.find((v) => v.id === id)!.zone).toBe("fra1");
     ok(setPower(s, second, false));
-    expect(err(provisionService(s, cus, "vps", { label: "two.example", plan: "vps-s" }))).toBe("error.noCapacity");
+    expect(err(provisionService(s, cus, "vps", { label: "two.example", spec: sizeSpec("vps", 0, yearOf(s.hour)) }))).toBe("error.noCapacity");
     ok(uncordon(s, "dev3"));
-    ok(provisionService(s, cus, "vps", { label: "two.example", plan: "vps-s" }));
-    expect(err(provisionService(s, cus, "vps", { label: "far.example", plan: "vps-s", zone: "ams1" }))).toBe("error.noCapacity");
+    ok(provisionService(s, cus, "vps", { label: "two.example", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
+    expect(err(provisionService(s, cus, "vps", { label: "far.example", spec: sizeSpec("vps", 0, yearOf(s.hour)), zone: "ams1" }))).toBe("error.noCapacity");
     expect(err(provisionService(s, cus, "cloud", { label: "cloud" }))).toBe("error.needsHaCluster");
   });
   it("places a plain contract once and leaves resold products unplaced", () => {
@@ -161,7 +164,7 @@ describe("placement", () => {
 describe("nodes", () => {
   it("drains a node onto the others and puts it into maintenance", () => {
     const { s, second, cus } = twoNodes();
-    for (let i = 0; i < 3; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, plan: "vps-s" }));
+    for (let i = 0; i < 3; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     expect(err(removeNode(s, "dev3"))).toBe("error.nodeNotEmpty");
     expect(err(unmountDevice(s, "dev3"))).toBe("error.serverInUse");
     expect(err(sellDevice(s, "dev3"))).toBe("error.serverInUse");
@@ -175,9 +178,9 @@ describe("nodes", () => {
     const { s, cluster, second, cus } = twoNodes();
     ok(cordon(s, second));
     // dev3 holds 5 VPS L next to the control plane when the player picks it.
-    for (let i = 0; i < 5; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, plan: "vps-l", clusterId: cluster, deviceId: "dev3" }));
+    for (let i = 0; i < 5; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)), clusterId: cluster, deviceId: "dev3" }));
     ok(uncordon(s, second));
-    for (let i = 0; i < 2; i++) ok(provisionService(s, cus, "vps", { label: `w${i}`, plan: "vps-l" }));
+    for (let i = 0; i < 2; i++) ok(provisionService(s, cus, "vps", { label: `w${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)) }));
     // Draining places automatically, so the second node takes VPS only up to its installed 8 GB.
     ok(drain(s, "dev3"));
     expect(workloadsOn(s, "dev3")).toHaveLength(3);
@@ -205,7 +208,7 @@ describe("nodes", () => {
 describe("outages and billing", () => {
   it("loses a workload's data with its node until it moves to a fresh one", () => {
     const { s, second, cus } = twoNodes();
-    const id = ok(provisionService(s, cus, "vps", { label: "v", plan: "vps-s" }));
+    const id = ok(provisionService(s, cus, "vps", { label: "v", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     s.hour = 5;
     s.devices = s.devices.map((d) => (d.id === "dev3" ? { ...d, dataLost: 5 } : d));
     expect(serviceOnline(s, id)).toBe(false);
@@ -215,7 +218,7 @@ describe("outages and billing", () => {
   });
   it("credits a business SLA missed by downtime and bills only the hours up", () => {
     const { s, cus } = twoNodes();
-    const id = ok(provisionService(s, cus, "vps", { label: "shop", plan: "vps-s", sla: "business", price: 0.1 }));
+    const id = ok(provisionService(s, cus, "vps", { label: "shop", spec: sizeSpec("vps", 0, yearOf(s.hour)), sla: "business", price: 0.1 }));
     run(s, 1);
     ok(setPower(s, "dev4", false));
     run(s, 5);
@@ -243,10 +246,10 @@ describe("dedicated and colocation", () => {
   });
   it("rents rack units with power in a datacenter rack, from the top", () => {
     const { s, cus } = twoNodes();
-    expect(err(provisionService(s, cus, "colocation", { label: "colo", plan: "colo-q" }))).toBe("error.noRackSpace");
+    expect(err(provisionService(s, cus, "colocation", { label: "colo", spec: sizeSpec("colocation", 1, yearOf(s.hour)) }))).toBe("error.noRackSpace");
     const loc = ok(addLocation(s, "hetzler-park", "positions", 1));
     const rack = ok(buyRack(s, loc, "rack-42", 1));
-    const id = ok(provisionService(s, cus, "colocation", { label: "colo", plan: "colo-q" }));
+    const id = ok(provisionService(s, cus, "colocation", { label: "colo", spec: sizeSpec("colocation", 1, yearOf(s.hour)) }));
     expect(workloadsOf(s, id)).toMatchObject([{ rackId: rack, slot: 33, units: 10, watts: 1000 }]);
     expect(freeSlots(s, rack, 1)).not.toContain(33);
     expect(rackPower(s, rack).watts).toBe(1000);
@@ -262,10 +265,10 @@ describe("saves", () => {
     expect([back.clusters, back.workloads]).toEqual([s.clusters, s.workloads]);
     const old = JSON.parse(serialize(s));
     for (const k of ["clusters", "workloads", "downHours"]) delete old[k];
-    for (const v of old.services) { delete v.plan; delete v.sla; }
+    for (const v of old.services) { delete v.spec; delete v.sla; }
     const loaded = deserialize(JSON.stringify(old));
     expect([loaded.clusters, loaded.workloads, loaded.downHours]).toEqual([[], [], {}]);
-    expect(loaded.services[0]).toMatchObject({ plan: null, sla: "basic" });
+    expect(loaded.services[0]).toMatchObject({ spec: sizeSpec("webHosting", 0, yearOf(s.services[0].startedAt)), sla: "basic" });
     expect(loaded.services.every((v) => serviceOnline(loaded, v.id))).toBe(true);
   });
 });

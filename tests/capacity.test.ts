@@ -24,7 +24,7 @@ const clusterRam = (s: GameState) => s.clusters[0].nodes.reduce((n, x) => n + bo
 function sendAt(s: GameState, mbit: number) {
   s.hour = s.hour - (s.hour % 24) + 20;
   const now = zoneDemand(s).loc1;
-  s.services = s.services.map((v) => (v.zone ? { ...v, spec: { vcpu: 0.1, ramGb: 0.25, diskGb: 1, mailboxes: 1, ...v.spec, trafficGb: (v.spec?.trafficGb ?? 2) * (mbit / now) } } : v));
+  s.services = s.services.map((v) => (v.zone ? { ...v, spec: { ...v.spec, trafficGb: v.spec.trafficGb * (mbit / now) } } : v));
   expect(zoneDemand(s).loc1).toBeCloseTo(mbit, 6);
 }
 

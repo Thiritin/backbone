@@ -4,6 +4,8 @@ type Params = Record<string, string | number>;
 const SLA: Record<string, string> = { basic: "Basic", business: "Business", premium: "Premium" };
 const sla = (p: Params) => (p.sla === "basic" ? "" : ` We need the ${SLA[p.sla] ?? p.sla} SLA.`);
 const price = (p: Params) => euroCents(Number(p.price));
+const web = (p: Params) => `${p.disk} GB of space and ${p.mail} mailbox${Number(p.mail) === 1 ? "" : "es"}`;
+const box = (p: Params) => `${p.cpu} vCPU${Number(p.cpu) === 1 ? "" : "s"}, ${p.ram} GB of RAM and ${p.disk} GB of disk`;
 
 const STUDY_NAME: Record<string, string> = {
   private: "Private individuals", gamer: "Gamers", hobbyDev: "Hobby developers", soleProp: "Sole proprietors", smallBiz: "Small businesses",
@@ -12,16 +14,15 @@ const STUDY_NAME: Record<string, string> = {
 
 // Sales requests, customer replies and lost-sale reasons; spread into en.
 export const SALES_EN: Record<string, (p: Params) => string> = {
-  "sales.msg.webHosting.0": (p) => `Hello, I am looking for a home for ${p.domain || "my website"}. Would ${p.plan} work for us, and what would it cost a month?${sla(p)}`,
-  "sales.msg.webHosting.1": (p) => `A friend recommended you. We need ${p.plan} for ${p.domain || "our site"}, hosted in ${p.city} if possible.${sla(p)} What is your price?`,
-  "sales.msg.vps.0": (p) => `We need a ${p.plan} with root access in ${p.city}.${sla(p)} Please send me your monthly price.`,
-  "sales.msg.vps.1": (p) => `Our app has outgrown shared hosting. Can you offer a ${p.plan}?${sla(p)} Monthly billing would suit us best.`,
-  "sales.msg.gameServer.0": (p) => `Our clan needs a ${p.plan} that does not lag on Friday nights. How much a month?`,
-  "sales.msg.gameServer.1": (p) => `Looking for a ${p.plan} close to ${p.city} for low ping. What do you charge?`,
-  "sales.msg.dedicated.0": (p) => `We are looking for a ${p.plan} in ${p.city} on a twelve-month contract.${sla(p)} Please quote a monthly price.`,
-  "sales.msg.dedicated.1": (p) => `Our team wants hardware of our own. Could you provide a ${p.plan}?${sla(p)}`,
-  "sales.msg.expansion": (p) => `We keep hitting the limits of our plan. What would ${p.plan} cost us a month?`,
-  "sales.msg.shady": (p) => `We need ${p.plan} today. Lots of traffic, no questions, no paperwork. We pay in crypto, always on time. Name your price.`,
+  "sales.msg.webHosting.0": (p) => `Hello, I am looking for a home for ${p.domain || "my website"}: about ${web(p)}. What would it cost a month?${sla(p)}`,
+  "sales.msg.webHosting.1": (p) => `A friend recommended you. We need ${web(p)} for ${p.domain || "our site"}, hosted in ${p.city} if possible.${sla(p)} What is your price?`,
+  "sales.msg.vps.0": (p) => `We need a VPS with ${box(p)} and root access in ${p.city}.${sla(p)} Please send me your monthly price.`,
+  "sales.msg.vps.1": (p) => `Our app has outgrown shared hosting. Can you offer a VPS with ${box(p)}?${sla(p)} Monthly billing would suit us best.`,
+  "sales.msg.gameServer.0": (p) => `Our clan needs a game server with ${box(p)} that does not lag on Friday nights. How much a month?`,
+  "sales.msg.gameServer.1": (p) => `Looking for a game server with ${box(p)} close to ${p.city} for low ping. What do you charge?`,
+  "sales.msg.dedicated.0": (p) => `We are looking for a dedicated server with at least ${p.ram} GB of RAM in ${p.city} on a twelve-month contract.${sla(p)} Please quote a monthly price.`,
+  "sales.msg.dedicated.1": (p) => `Our team wants hardware of our own. Could you provide a server with at least ${p.ram} GB of RAM?${sla(p)}`,
+  "sales.msg.shady": (p) => `We need a VPS with ${box(p)} today. Lots of traffic, no questions, no paperwork. We pay in crypto, always on time. Name your price.`,
   "sales.msg.discount": (p) => `Your campaign mentioned ${p.discount}% off for agencies. We would like to take you up on that.`,
   "sales.reply.accept": (p) => `That works for us. Please set it up. Best, ${p.name}`,
   "sales.reply.gone": () => "We waited for the login details, but nothing came. We have signed with another host.",
@@ -44,11 +45,11 @@ export const SALES_EN: Record<string, (p: Params) => string> = {
   "lost.declined": () => "Declined",
   "lost.noCapacity": (p) => `No capacity in ${p.city}`,
   "event.salesRequest.title": () => "New request",
-  "event.salesRequest.text": (p) => `${p.name} asks for ${p.plan}.`,
+  "event.salesRequest.text": (p) => `${p.name} asks for ${p.spec}.`,
   "event.salesWon.title": () => "Deal won",
-  "event.salesWon.text": (p) => `${p.name} signed for ${p.plan} at ${price(p)} a month.`,
+  "event.salesWon.text": (p) => `${p.name} signed at ${price(p)} a month for ${p.spec}.`,
   "event.salesFailed.title": () => "Setup failed",
-  "event.salesFailed.text": (p) => `${p.plan} for ${p.name} found no room in ${p.city}. The customer went elsewhere.`,
+  "event.salesFailed.text": (p) => `The order of ${p.name} found no room in ${p.city}, and the customer went elsewhere. It was for ${p.spec}.`,
   "event.salesCounter.title": () => "Counter-offer",
   "event.salesCounter.text": (p) => `${p.name} offers ${price(p)} a month.`,
   "event.salesRefused.title": () => "Quote refused",

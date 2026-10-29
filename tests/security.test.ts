@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { yearOf } from "../src/sim/00-core/time";
+import { sizeSpec } from "../src/sim/10-catalog/products";
 import { createRng } from "../src/sim/00-core/rng";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { newGame, type GameState } from "../src/sim/50-state";
@@ -38,8 +40,8 @@ function hosting(web = true) {
   const a = panelServer(s, "dev3"), b = panelServer(s, second);
   const cus = addCustomer(s, "Ada Lang", "hobbyDev");
   if (web) {
-    ok(provisionService(s, cus, "webHosting", { label: "ada.de", plan: "web-s", clusterId: a }));
-    ok(provisionService(s, cus, "webHosting", { label: "lang.de", plan: "web-s", clusterId: b }));
+    ok(provisionService(s, cus, "webHosting", { label: "ada.de", spec: sizeSpec("webHosting", 0, yearOf(s.hour)), clusterId: a }));
+    ok(provisionService(s, cus, "webHosting", { label: "lang.de", spec: sizeSpec("webHosting", 0, yearOf(s.hour)), clusterId: b }));
   }
   s.hour = MOPB.at - 1;
   return { s, second, cus, a, b };

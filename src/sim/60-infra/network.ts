@@ -6,7 +6,7 @@ import {
   REQUEST_DAILY, REQUEST_DAYS, SATURATION_FLOOR, SATURATION_PENALTY, TB_PER_MBPS_HOUR, transitPerMbps, zoneLinkPrice,
   type Peer, type Protection, type ZoneLinkKind,
 } from "../10-catalog/network";
-import { trafficGb } from "../10-catalog/products";
+import { TRAFFIC_GROWTH } from "../10-catalog/products";
 import { trafficShape } from "../10-catalog/usage";
 import { datacenterById, homeLineById, inUs } from "../20-world/datacenters";
 import type { Service } from "../30-customers/customers";
@@ -55,10 +55,11 @@ const HISTORY_HOURS = 168, SAMPLE_HOURS = 720, GOODWILL_DECAY = 0.05;
 const round2 = (v: number) => Math.round(v * 100) / 100;
 const cents = round2;
 
-// A running service's Mbit/s this hour: GB per month spread over the month's seconds, shaped by its activity and night job.
+// A running service's Mbit/s this hour: its GB per month, grown 20% a year since it started, spread over the month's seconds and
+// shaped by its activity and night job.
 export function serviceMbps(s: GameState, v: Service): number {
   const c = s.customers.find((x) => x.id === v.customerId);
-  return ((v.spec?.trafficGb ?? trafficGb(v.product, v.plan, yearOf(s.hour))) * 8000) / (730 * 3600) * (c ? trafficShape(s.seed, v, c.profile, s.hour) : 1);
+  return (v.spec.trafficGb * Math.pow(TRAFFIC_GROWTH, Math.max(0, s.hour - v.startedAt) / 8760) * 8000) / (730 * 3600) * (c ? trafficShape(s.seed, v, c.profile, s.hour) : 1);
 }
 
 export const zoneOf = (s: GameState, v: Service): Location | undefined => (v.zone ? s.locations.find((l) => l.az === v.zone) : undefined);

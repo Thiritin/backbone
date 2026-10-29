@@ -1,6 +1,6 @@
 import { yearOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
-import { marketPrice, planOf, PRODUCTS, type Resources, type Sla } from "../10-catalog/products";
+import { marketPrice, PRODUCTS, sizeSpec, type Resources, type Sla, type Spec } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
@@ -15,7 +15,7 @@ import {
 import { freeSlots, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
 import type { ActionResult } from "./hardware";
-import { sizeOf, type CustomSpec } from "../30-market/custom";
+import { sizeOf } from "../30-market/spec";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 export const CLUSTER_NAME_MAX = 40;
@@ -268,7 +268,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
   const v = s.services.find((x) => x.id === serviceId);
   if (!v || v.endedAt !== null) return fail("error.unknownService");
   if (workloadsOf(s, v.id).length) return fail("error.placed");
-  const spec = PRODUCTS[v.product], plan = planOf(v.product, v.plan), size = v.spec ? sizeOf(v.spec) : plan.size(yearOf(s.hour));
+  const spec = PRODUCTS[v.product], size = sizeOf(v.spec);
   const inZone = (az: string) => v.zone === null || v.zone === az;
   let w: Workload | null = null, az = "";
   if (spec.runsOn === "none") return { ok: true };
@@ -285,7 +285,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     w = workload(s, v.id, { deviceId: d.id });
     az = locationOf(s, d)!.az;
   } else {
-    const units = plan.units!, watts = plan.watts!;
+    const units = v.spec.units ?? 1, watts = v.spec.watts ?? 0;
     for (const r of s.racks) {
       const loc = s.locations.find((l) => l.id === r.locationId)!;
       const p = rackPower(s, r.id), slot = freeSlots(s, r.id, units).at(-1);
@@ -301,18 +301,18 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
   return { ok: true, id: w.id };
 }
 
-export interface Order { label: string; plan?: string | null; zone?: string | null; clusterId?: string | null; sla?: Sla; price?: number; spec?: CustomSpec; deviceId?: string | null }
+// spec defaults to the line's smallest size this year.
+export interface Order { label: string; zone?: string | null; clusterId?: string | null; sla?: Sla; price?: number; spec?: Spec; deviceId?: string | null }
 
 // Signs a contract with the catalog's terms and places it; nothing is recorded when it can't be placed.
 // price is per hour for hourly products and per year for yearly ones; it defaults to the market reference.
 export function provisionService(s: GameState, customerId: string, product: Product, order: Order): ActionResult {
   if (!s.customers.some((c) => c.id === customerId && c.churnedAt === null)) return fail("error.unknownCustomer");
-  const spec = PRODUCTS[product], plan = planOf(product, order.plan ?? null), sla = order.sla ?? "basic";
-  const reference = marketPrice(product, plan.id, yearOf(s.hour), sla);
+  const spec = PRODUCTS[product], sla = order.sla ?? "basic", want = order.spec ?? sizeSpec(product, 0, yearOf(s.hour));
+  const reference = marketPrice(product, want, yearOf(s.hour), sla);
   const price = order.price ?? (spec.period === "hour" ? reference / 730 : reference);
   const nextId = s.nextId;
-  const id = addService(s, customerId, product, order.label, price, spec.period, spec.commitMonths, order.zone ?? null, plan.id, sla);
-  if (order.spec) s.services = s.services.map((v) => (v.id === id ? { ...v, spec: order.spec } : v));
+  const id = addService(s, customerId, product, order.label, price, spec.period, spec.commitMonths, order.zone ?? null, want, sla);
   const placed = placeService(s, id, order.clusterId ?? null, order.deviceId ?? null);
   if (!placed.ok) {
     Object.assign(s, { services: s.services.filter((v) => v.id !== id), nextId });

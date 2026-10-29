@@ -37,3 +37,17 @@
 .prd-pad .fin-pills, .vm-detail .fin-pills { flex-wrap: wrap; }
 .prd-card dt { white-space: nowrap; }
 .prd-card dd { text-align: right; }
+
+.rate-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; align-items: start; }
+.rate-cards .fin-card-h .grow { flex: 1; }
+.rate-cards .fin-card-h .btn { font-weight: 500; }
+.rate-row { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "label input" "ref pill"; gap: 2px 10px; align-items: center; font-size: 12.5px; }
+.rate-row label { grid-area: label; color: var(--text-2); }
+.rate-row .price-input { grid-area: input; }
+.rate-row .price-input input { width: 72px; }
+.rate-row .rate-ref { grid-area: ref; font-size: 11.5px; color: var(--text-3); }
+.rate-row .pill { grid-area: pill; justify-self: end; }
+.rate-from { display: grid; gap: 4px; margin: 0; padding-top: 10px; border-top: 0.5px solid var(--line); font-size: 12.5px; }
+.rate-from > div { display: flex; justify-content: space-between; gap: 8px; }
+.rate-from dt { color: var(--text-2); }
+.rate-from dd { margin: 0; font-weight: 600; }

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { trafficGb } from "../src/sim/10-catalog/products";
 import { growthRate, JOB_CPU, nightJob, trafficShape } from "../src/sim/10-catalog/usage";
 import type { Product, Profile } from "../src/sim/30-customers/customers";
 import type { GameState } from "../src/sim/50-state";
@@ -43,7 +42,7 @@ const shape = (s: GameState, id: string) => { const v = s.services.find((x) => x
 function customerWith(s: GameState, profile: Profile, product: Product, want: (id: string) => boolean = () => true) {
   let cus = addCustomer(s, `C${s.nextId}`, profile);
   while (!want(cus)) cus = addCustomer(s, `C${s.nextId}`, profile);
-  const v = ok(provisionService(s, cus, product, { label: `${product} ${s.nextId}`, plan: null }));
+  const v = ok(provisionService(s, cus, product, { label: `${product} ${s.nextId}` }));
   return { cus, v };
 }
 const at = (day: number, h: number) => day * 24 + h;
@@ -82,8 +81,8 @@ describe("traffic follows activity", () => {
       const v = s.services.find((x) => x.id === id)!;
       let gb = 0;
       for (let h = 0; h < 730; h++) { s.hour = h; gb += (shape(s, id) * 3600) / 8000; }
-      expect(gb / trafficGb(v.product, v.plan, 2005)).toBeGreaterThan(0.9);
-      expect(gb / trafficGb(v.product, v.plan, 2005)).toBeLessThan(1.1);
+      expect(gb / v.spec.trafficGb).toBeGreaterThan(0.9);
+      expect(gb / v.spec.trafficGb).toBeLessThan(1.1);
     }
   });
 });
@@ -155,7 +154,7 @@ describe("growth", () => {
     expect(s.customers.find((c) => c.id === fast.cus)!.happiness).toBeLessThanOrEqual(before - FULL_PENALTY);
   });
 
-  it("asks for a faster plan when the CPU runs near 100% most of the week", () => {
+  it("asks for an upgrade when the CPU runs near 100% most of the week", () => {
     const s = readyGame(10);
     const busy = customerWith(s, "onlineShop", "vps", (id) => growthRate(s.seed, id, "cpu") === 0.5 && growthRate(s.seed, id, "disk") === 0.02);
     const w = s.workloads.find((x) => x.serviceId === busy.v)!;

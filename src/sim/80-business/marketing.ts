@@ -62,8 +62,7 @@ export interface Marketing {
   studies: Profile[];
   // Product lines listed on the company website.
   lines: Product[];
-  // Lines that sell packages through the order form, and whether orders still arrive by email.
-  packages: Product[];
+  // Whether orders still arrive by email.
   emailOrders: boolean;
 }
 
@@ -72,7 +71,7 @@ const AWARENESS_DECAY = 0.02;
 const REVIEW_HOURS = 2 * 8760;
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], packages: [], emailOrders: true,
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true,
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 

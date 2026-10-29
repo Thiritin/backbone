@@ -5,7 +5,8 @@ import { yearOf } from "../../../sim/00-core/time";
 import type { Product } from "../../../sim/30-customers/customers";
 import { companyDomain } from "../../../sim/30-customers/domains";
 import type { GameState } from "../../../sim/50-state";
-import { euro } from "../../../sim/00-core/money";
+import { euro, euroCents } from "../../../sim/00-core/money";
+import { PRODUCTS } from "../../../sim/10-catalog/products";
 import { hasOrderForm, OWNED, owns } from "../../../sim/80-business/marketing";
 import { setUpChannel } from "../../../sim/90-actions/marketing";
 import { lineBlocker, listed, SITE_LINES, siteContent } from "../../../sim/80-business/website";
@@ -97,14 +98,15 @@ function Site({ game }: { game: GameState }) {
       <h2>Products</h2>
       {lines.length ? (
         <div className="site-products">
-          {lines.map(({ product: p, plans }) => (
+          {lines.map(({ product: p, from }) => (
             <section key={p} className="site-product">
               <h3>{PRODUCT[p]}</h3>
               <p>{BLURB[p]}</p>
-              {plans.length > 0 && (
-                <ul className="site-plans">
-                  {plans.map((x) => <li key={x}><span>{x}</span><span className="site-button">Order</span></li>)}
-                </ul>
+              {from !== null && (
+                <div className="site-order">
+                  <span>from <b className="num">{euroCents(from)}</b> {PRODUCTS[p].period === "year" ? "a year" : "a month"}</span>
+                  <span className="site-button">Order</span>
+                </div>
               )}
             </section>
           ))}

@@ -1,6 +1,9 @@
 import { newGame, type GameState } from "../50-state";
 import { provisionService } from "./clusters";
 import { addCustomer } from "./customers";
+import { yearOf } from "../00-core/time";
+import { WEB_BASE } from "../10-catalog/economy";
+import { sizeSpec } from "../10-catalog/products";
 
 // economy.md, Starting state: an empty basement rack. The player buys the first server and sets it up as a panel server or
 // a hypervisor with a panel VM. Three friends wait for web hosting at €6 a month and move their sites over once the first
@@ -17,7 +20,7 @@ export function welcomeFriends(s: GameState, hostId: string): boolean {
   for (const [name, label] of FRIENDS) {
     const id = addCustomer(s, name, "private", "friend");
     s.customers.find((c) => c.id === id)!.happiness = FRIEND_HAPPINESS;
-    if (!provisionService(s, id, "webHosting", { label, plan: "web-m", clusterId: hostId }).ok) {
+    if (!provisionService(s, id, "webHosting", { label, spec: sizeSpec("webHosting", 1, yearOf(s.hour)), price: WEB_BASE / 730, clusterId: hostId }).ok) {
       Object.assign(s, before);
       return false;
     }

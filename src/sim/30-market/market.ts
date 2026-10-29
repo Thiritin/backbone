@@ -4,7 +4,7 @@ import { rand, type Rng } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
 import { modelById } from "../10-catalog/hardware";
-import { marketPrice, planOf, PRODUCTS, type Sla } from "../10-catalog/products";
+import { marketPrice, PRODUCTS, SIZES, type Sla, type Spec } from "../10-catalog/products";
 import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
@@ -13,7 +13,7 @@ import { locationOf } from "../60-infra/status";
 import { awareness, leadsThisMonth, PROFILE_IDS, reviewMultiplier, reviewScore, trustBonus } from "../80-business/marketing";
 import { forumAwareness } from "../47-staff/staff";
 import { metrics } from "../metrics";
-import { LINE_NAME, serviceMarket, type CustomSpec } from "./custom";
+import { serviceMarket } from "./spec";
 
 export type RequestStatus = "open" | "quoted" | "countered" | "refused" | "won" | "lost" | "declined";
 // by names the employee who sent a "you" message; the player otherwise.
@@ -22,19 +22,17 @@ export interface SalesMessage { hour: number; from: "customer" | "you"; key: str
 // budget is the price ratio to it at which the customer accepts half the time. serviceId is the service an expansion replaces.
 export interface SalesRequest {
   id: string; kind: "new" | "expansion" | "order"; customerId: string | null; contact: string; company: string | null; profile: Profile;
-  city: string; product: Product; plan: string; sla: Sla; reference: number; discount: number; budget: number; shady: boolean;
+  city: string; product: Product; spec: Spec; sla: Sla; reference: number; discount: number; budget: number; shady: boolean;
   serviceId: string | null; ticketId: string | null; createdAt: number; deadline: number; status: RequestStatus;
   quote: number | null; counter: number | null; replyAt: number | null; attempts: number; thread: SalesMessage[];
   // Web hosting only: the domain the service will carry.
   domain?: string;
-  // A custom order (custom.ts): its resources, whether the customer owns the domain already, its first invoice and the
-  // route chosen for its setup ("auto", a cluster id or a node's device id).
-  spec?: CustomSpec; owned?: boolean; invoiceId?: string; route?: string;
-  // Whether its line sold packages when it arrived; without them it asks for the line, not a plan.
-  packaged?: boolean;
+  // An email order: whether the customer owns the domain already, its first invoice and the route chosen for its setup
+  // ("auto", a cluster id or a node's device id).
+  owned?: boolean; invoiceId?: string; route?: string;
 }
 // reason is an i18n key with its params.
-export interface LostSale { hour: number; name: string; product: Product; plan: string; reference: number; reason: string; params: Record<string, string | number> }
+export interface LostSale { hour: number; name: string; product: Product; spec: Spec; reference: number; reason: string; params: Record<string, string | number> }
 export interface Sales { requests: SalesRequest[]; lost: LostSale[] }
 export const newSales = (): Sales => ({ requests: [], lost: [] });
 
@@ -52,7 +50,7 @@ export const FORUM_PROFILES: Profile[] = ["hobbyDev", "gamer", "smallBiz"];
 export const OFFER: Record<Budget, number> = { low: 0.9, medium: 1, high: 1.3 };
 export const REQUEST_HOURS = 72;
 
-// What each profile asks for: product and weight. Plans scale with the budget (decision).
+// What each profile asks for: product and weight. Sizes scale with the budget (decision).
 export const NEEDS: Record<Profile, [Product, number][]> = {
   private: [["webHosting", 1]],
   gamer: [["gameServer", 0.6], ["vps", 0.2], ["webHosting", 0.2]],
@@ -171,23 +169,25 @@ export function leadFlows(s: GameState): LeadFlow[] {
   return out;
 }
 
-// What a lead of this profile asks for: a product by the profile's weights, a plan by budget and an SLA.
-export function needFor(r: Rng, profile: Profile): { product: Product; plan: string; sla: Sla } {
+// What a lead of this profile asks for: a product by the profile's weights, the size it starts from by budget (SIZES) and an SLA.
+export interface Need { product: Product; size: number; sla: Sla }
+export function needFor(r: Rng, profile: Profile): Need {
   let x = rand(r), product = NEEDS[profile][0][0];
   for (const [p, w] of NEEDS[profile]) {
     if (x < w) { product = p; break; }
     x -= w;
   }
-  const plans = PRODUCTS[product].plans, budget = profileStats(profile).budget;
-  const i = budget === "low" ? 0 : budget === "medium" ? Math.min(1, plans.length - 1) : plans.length - 1;
+  const n = SIZES[product].length, budget = profileStats(profile).budget;
+  const size = budget === "low" ? 0 : budget === "medium" ? Math.min(1, n - 1) : n - 1;
   const asked = SLA_ASKED[profile];
   // Four in ten settle for one SLA level less than their profile asks.
   const sla: Sla = rand(r) < 0.4 ? (asked === "premium" ? "business" : "basic") : asked;
-  return { product, plan: plans[i].id, sla };
+  return { product, size, sla };
 }
 
-export const referenceFor = (s: GameState, profile: Profile, product: Product, plan: string, sla: Sla): number =>
-  Math.round(marketPrice(product, plan, yearOf(s.hour), sla) * OFFER[profileStats(profile).budget] * 100) / 100;
+// The monthly market price of a spec as this profile sees it.
+export const referenceFor = (s: GameState, profile: Profile, product: Product, spec: Spec, sla: Sla): number =>
+  Math.round(marketPrice(product, spec, yearOf(s.hour), sla) * OFFER[profileStats(profile).budget] * 100) / 100;
 
 export interface Requirement { key: string; params: Record<string, string | number>; ok: boolean }
 
@@ -245,6 +245,3 @@ export function senderFor(r: Rng, profile: Profile, shady = false, us = false): 
 }
 
 export const requestName = (r: Pick<SalesRequest, "contact" | "company">): string => r.company ?? r.contact;
-// A request names its plan only when it orders one of the player's packages.
-export const planName = (r: Pick<SalesRequest, "product" | "plan" | "spec" | "packaged">): string =>
-  r.spec || !r.packaged ? LINE_NAME[r.product] : planOf(r.product, r.plan).name;

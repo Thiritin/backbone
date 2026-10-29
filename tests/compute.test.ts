@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { yearOf } from "../src/sim/00-core/time";
+import { sizeSpec } from "../src/sim/10-catalog/products";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { offers } from "../src/sim/30-market/market";
@@ -20,7 +22,7 @@ import { mountDevice } from "./plugged";
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
 const err = (r: { ok: boolean; error?: string }) => r.error;
 const run = (s: GameState, hours: number) => Array.from({ length: hours }, () => tick(s)).flat();
-const web = (s: GameState, cus: string, i: number) => provisionService(s, cus, "webHosting", { label: `site${i}.example`, plan: "web-m" });
+const web = (s: GameState, cus: string, i: number) => provisionService(s, cus, "webHosting", { label: `site${i}.example`, spec: sizeSpec("webHosting", 1, yearOf(s.hour)) });
 // Fills web spaces until one does not fit; returns how many did.
 const fill = (s: GameState, cus: string) => { let n = 0; while (web(s, cus, n).ok) n++; return n; };
 
@@ -129,7 +131,7 @@ describe("compute", () => {
       const { s, cluster, second } = twoNodes(), cus = addCustomer(s, "Ada Lang", "hobbyDev");
       s.unlocks = [...s.unlocks, "virtualization"];
       if (ha) ok(setHa(s, cluster, "failover", true));
-      const box = ok(provisionService(s, cus, "vps", { label: "Box", plan: "vps-s" }));
+      const box = ok(provisionService(s, cus, "vps", { label: "Box", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
       expect(workloadsOf(s, box)[0].deviceId).toBe("dev3");
       return { s, cluster, second, box };
     };
@@ -172,7 +174,7 @@ describe("compute", () => {
 
   it("moves VMs live only with live migration on", () => {
     const { s, cluster, second } = twoNodes(), cus = addCustomer(s, "Ada Lang", "hobbyDev");
-    const a = ok(provisionService(s, cus, "vps", { label: "A", plan: "vps-s" })), b = ok(provisionService(s, cus, "vps", { label: "B", plan: "vps-s" }));
+    const a = ok(provisionService(s, cus, "vps", { label: "A", spec: sizeSpec("vps", 0, yearOf(s.hour)) })), b = ok(provisionService(s, cus, "vps", { label: "B", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     ok(migrateWorkload(s, workloadsOf(s, a)[0].id, second));
     expect(workloadsOf(s, a)[0].busyUntil).toBeGreaterThan(s.hour);
     s.unlocks = [...s.unlocks, "virtualization"];

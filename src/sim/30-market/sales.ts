@@ -3,7 +3,8 @@
 import { rand, type Rng } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
 import { CHOICE_TAU, NEVER_PAYS, ON_TIME } from "../10-catalog/economy";
-import { PRODUCTS } from "../10-catalog/products";
+import { PRODUCTS, sizeSpec, SIZES } from "../10-catalog/products";
+import { yearOf } from "../00-core/time";
 import { inUs } from "../20-world/datacenters";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
 import { bump, isFinal, profileStats } from "../40-support/tickets";
@@ -13,19 +14,19 @@ import { phpNeeded } from "../60-infra/php";
 import { locationOf } from "../60-infra/status";
 import { modelById } from "../10-catalog/hardware";
 import { addAwareness, discountFor } from "../80-business/marketing";
-import { hasPackages, listed } from "../80-business/website";
+import { listed } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { domainFor } from "../30-customers/domains";
-import { customFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
+import { firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { provisionService } from "../90-actions/clusters";
-import { grownSpec, requestSize } from "./custom";
-import { customReference, specParams } from "./manual";
+import { grownSpec, sizeOf, specFor, specText } from "./spec";
+import { specParams } from "./manual";
 import type { ActionResult } from "../90-actions/hardware";
 import {
-  acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, planName, referenceFor, REQUEST_HOURS,
-  requestName, senderFor, share, values, type SalesMessage, type SalesRequest,
+  acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor, REQUEST_HOURS,
+  requestName, senderFor, share, values, type Need, type SalesMessage, type SalesRequest,
 } from "./market";
 
 const DAYS_PER_MONTH = 30.4;
@@ -59,10 +60,10 @@ export function say(s: GameState, id: string, from: SalesMessage["from"], key: s
   editRequest(s, id, (r) => ({ thread: [...r.thread, { ...msg(s, from, key, params), ...(by && { by }) }] }));
 }
 
-export function addRequest(s: GameState, r: Omit<SalesRequest, "id" | "createdAt" | "status" | "quote" | "counter" | "replyAt" | "attempts" | "thread" | "packaged">, key: string): SalesRequest {
-  const req: SalesRequest = { ...r, id: `req${s.nextId++}`, createdAt: s.hour, status: "open", quote: null, counter: null, replyAt: null, attempts: 0, thread: [], packaged: hasPackages(s, r.product) };
+export function addRequest(s: GameState, r: Omit<SalesRequest, "id" | "createdAt" | "status" | "quote" | "counter" | "replyAt" | "attempts" | "thread">, key: string): SalesRequest {
+  const req: SalesRequest = { ...r, id: `req${s.nextId++}`, createdAt: s.hour, status: "open", quote: null, counter: null, replyAt: null, attempts: 0, thread: [] };
   if (req.product === "webHosting") req.domain = s.services.find((v) => v.id === req.serviceId)?.domain ?? domainFor(s, requestName(req), req.profile, req.city, Number(req.id.slice(3)));
-  const params = { plan: planName(req), city: req.city, sla: req.sla, name: req.contact, domain: req.domain ?? "" };
+  const params = { spec: specText(req.product, req.spec), ...specParams(req.spec), city: req.city, sla: req.sla, name: req.contact, domain: req.domain ?? "" };
   req.thread = [msg(s, "customer", key, params)];
   if (req.discount > 0) req.thread.push(msg(s, "customer", "sales.msg.discount", { discount: Math.round(req.discount * 100) }));
   s.sales = { ...s.sales, requests: [...s.sales.requests, req] };
@@ -73,26 +74,29 @@ export function addRequest(s: GameState, r: Omit<SalesRequest, "id" | "createdAt
 export const BUDGET_RANGE: [number, number] = [1.08 * 0.9, 1.08 * 1.15];
 const budgetOf = (r: Rng): number => BUDGET_RANGE[0] + (BUDGET_RANGE[1] - BUDGET_RANGE[0]) * rand(r);
 
+// The spec of the request about to be added: drawn with its id as the key, so it is stable for a seed.
+export const nextSpec = (s: GameState, need: Need) => specFor(s.seed, s.nextId, need.product, need.size, yearOf(s.hour));
+
 export function newLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile)): SalesRequest {
   const who = senderFor(s.rng, profile, false, inUs(city));
-  const variant = Math.floor(rand(s.rng) * 2);
+  const variant = Math.floor(rand(s.rng) * 2), spec = nextSpec(s, need);
   const req = addRequest(s, {
-    kind: "new", customerId: null, ...who, profile, city, ...need, reference: referenceFor(s, profile, need.product, need.plan, need.sla),
+    kind: "new", customerId: null, ...who, profile, city, product: need.product, spec, sla: need.sla, reference: referenceFor(s, profile, need.product, spec, need.sla),
     discount: discountFor(s, profile), budget: budgetOf(s.rng), shady: false, serviceId: null, ticketId: null, deadline: s.hour + REQUEST_HOURS,
   }, `sales.msg.${need.product}.${variant}`);
-  if (!missingFor(s, req).length) events.push({ app: "Support", key: "event.salesRequest", params: { name: requestName(req), plan: planName(req) } });
+  if (!missingFor(s, req).length) events.push({ app: "Support", key: "event.salesRequest", params: { name: requestName(req), spec: specText(req.product, spec) } });
   return req;
 }
 
 // High volume, no questions, crypto: pays well and carries a hidden flag for abuse and legal follow-ups.
 export function shadyLead(s: GameState, city: string, events: SimEvent[]): SalesRequest {
-  const who = senderFor(s.rng, "hobbyDev", true), plan = PRODUCTS.vps.plans.at(-1)!.id;
+  const who = senderFor(s.rng, "hobbyDev", true), spec = sizeSpec("vps", SIZES.vps.length - 1, yearOf(s.hour));
   const req = addRequest(s, {
-    kind: "new", customerId: null, ...who, profile: "hobbyDev", city, product: "vps", plan, sla: "basic",
-    reference: referenceFor(s, "hobbyDev", "vps", plan, "basic"), discount: 0, budget: 1.8, shady: true, serviceId: null, ticketId: null,
+    kind: "new", customerId: null, ...who, profile: "hobbyDev", city, product: "vps", spec, sla: "basic",
+    reference: referenceFor(s, "hobbyDev", "vps", spec, "basic"), discount: 0, budget: 1.8, shady: true, serviceId: null, ticketId: null,
     deadline: s.hour + REQUEST_HOURS,
   }, "sales.msg.shady");
-  if (!missingFor(s, req).length) events.push({ app: "Support", key: "event.salesRequest", params: { name: requestName(req), plan: planName(req) } });
+  if (!missingFor(s, req).length) events.push({ app: "Support", key: "event.salesRequest", params: { name: requestName(req), spec: specText("vps", spec) } });
   return req;
 }
 
@@ -110,41 +114,28 @@ function morningMail(s: GameState, events: SimEvent[]): void {
         newLead(s, f.profile, f.city, events, need);
         continue;
       }
-      // With email orders off, a lead that wants something custom leaves without writing.
-      const custom = customFor(s, need.product);
-      if (s.marketing.emailOrders || !custom) orderLead(s, f.profile, f.city, events, need, custom);
+      orderLead(s, f.profile, f.city, events, need);
     }
   }
   if (listed(s, "webHosting")) firstOrder(s, events);
   if (s.hour > 2160 && lineOffered(s, "vps") && listed(s, "vps") && rand(s.rng) < SHADY_PER_MONTH / DAYS_PER_MONTH) shadyLead(s, s.locations[0]?.city ?? "Frankfurt", events);
 }
 
-// An open upgrade ticket asks for the next bigger plan of its service, or one more of the biggest.
+// An open upgrade ticket asks what more of each resource of its service would cost; taken, the service grows in place.
 function expansions(s: GameState): void {
   for (const t of s.tickets) {
     if (t.kind !== "upgrade" || isFinal(t) || s.sales.requests.some((r) => r.ticketId === t.id)) continue;
     const c = s.customers.find((x) => x.id === t.customerId), v = s.services.find((x) => x.id === t.serviceId);
     if (!c || c.churnedAt !== null || !v || v.endedAt !== null || PRODUCTS[v.product].runsOn === "none" || PRODUCTS[v.product].period !== "hour") continue;
-    const plans = PRODUCTS[v.product].plans, i = Math.max(0, plans.findIndex((p) => p.id === v.plan));
-    const bigger = plans[i + 1], plan = (bigger ?? plans[i]).id;
     const loc = s.locations.find((l) => l.az === v.zone);
-    // A custom service asks what more of each resource would cost, and grows in place.
-    if (v.spec) {
-      const spec = grownSpec(s.seed, Number(t.id.slice(3)) || 0, v.product, v.spec), old = v.spec;
-      const r = addRequest(s, {
-        kind: "expansion", customerId: c.id, contact: c.name, company: null, profile: c.profile, city: loc?.city ?? s.locations[0].city,
-        product: v.product, plan: plans[i].id, sla: v.sla, reference: customReference(s, c.profile, v.product, spec, v.sla), discount: 0, budget: budgetOf(s.rng),
-        shady: !!c.shady, serviceId: v.id, ticketId: t.id, deadline: s.hour + EXPANSION_HOURS,
-      }, "sales.msg.upgrade");
-      editRequest(s, r.id, (x) => ({ spec, thread: x.thread.map((m, n) => (n ? m : { ...m, params: { ...m.params, product: v.product, ...specParams(old, "0"), ...specParams(spec, "1") } })) }));
-      s.tickets = s.tickets.map((x) => (x.id === t.id ? { ...x, topic: "more" } : x));
-      continue;
-    }
-    addRequest(s, {
+    const spec = grownSpec(s.seed, Number(t.id.slice(3)) || 0, v.product, v.spec), old = v.spec;
+    const r = addRequest(s, {
       kind: "expansion", customerId: c.id, contact: c.name, company: null, profile: c.profile, city: loc?.city ?? s.locations[0].city,
-      product: v.product, plan, sla: v.sla, reference: referenceFor(s, c.profile, v.product, plan, v.sla), discount: 0, budget: budgetOf(s.rng),
-      shady: !!c.shady, serviceId: bigger ? v.id : null, ticketId: t.id, deadline: s.hour + EXPANSION_HOURS,
-    }, "sales.msg.expansion");
+      product: v.product, spec, sla: v.sla, reference: referenceFor(s, c.profile, v.product, spec, v.sla), discount: 0, budget: budgetOf(s.rng),
+      shady: !!c.shady, serviceId: v.id, ticketId: t.id, deadline: s.hour + EXPANSION_HOURS,
+    }, "sales.msg.upgrade");
+    editRequest(s, r.id, (x) => ({ thread: x.thread.map((m, n) => (n ? m : { ...m, params: { ...m.params, product: v.product, ...specParams(old, "0"), ...specParams(spec, "1") } })) }));
+    s.tickets = s.tickets.map((x) => (x.id === t.id ? { ...x, topic: "more" } : x));
   }
 }
 
@@ -155,9 +146,9 @@ const labelFor = (r: SalesRequest): string => {
 };
 
 // The cluster or zone in the request's city where the service fits; null when nothing has room.
-export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "plan" | "spec">): { clusterId: string | null; zone: string | null } | null {
+export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "spec">): { clusterId: string | null; zone: string | null } | null {
   const zones = s.locations.filter((l) => l.city === r.city).map((l) => l.az);
-  const spec = PRODUCTS[r.product], size = requestSize(s, r);
+  const spec = PRODUCTS[r.product], size = sizeOf(r.spec);
   if (spec.runsOn === "cluster") {
     const c = s.clusters.find((x) => zones.includes(x.az) && supports(x, r.product) && pickNode(s, x, size));
     return c ? { clusterId: c.id, zone: c.az } : null;
@@ -194,7 +185,7 @@ export function fulfil(s: GameState, r: SalesRequest): ActionResult {
   }
   const target = targetFor(s, r);
   const placed: ActionResult = target
-    ? provisionService(s, customerId, r.product, { label, plan: r.plan, sla: r.sla, price: r.quote! / 730, clusterId: target.clusterId, zone: target.zone })
+    ? provisionService(s, customerId, r.product, { label, spec: r.spec, sla: r.sla, price: r.quote! / 730, clusterId: target.clusterId, zone: target.zone })
     : { ok: false, error: noRoomError(s, r.product) };
   if (!placed.ok) Object.assign(s, before);
   else if (r.kind !== "expansion") editRequest(s, r.id, () => ({ customerId }));
@@ -203,7 +194,7 @@ export function fulfil(s: GameState, r: SalesRequest): ActionResult {
 
 export function loseRequest(s: GameState, r: SalesRequest, status: "lost" | "declined", reason: string, params: Record<string, string | number> = {}): void {
   editRequest(s, r.id, () => ({ status, replyAt: null }));
-  s.sales = { ...s.sales, lost: [...s.sales.lost, { hour: s.hour, name: requestName(r), product: r.product, plan: r.plan, reference: r.reference, reason, params }].slice(-LOST_KEPT) };
+  s.sales = { ...s.sales, lost: [...s.sales.lost, { hour: s.hour, name: requestName(r), product: r.product, spec: r.spec, reference: r.reference, reason, params }].slice(-LOST_KEPT) };
   closeTicket(s, r);
 }
 
@@ -212,13 +203,13 @@ const closeTicket = (s: GameState, r: SalesRequest) => {
 };
 
 function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
-  const name = requestName(r), plan = planName(r), price = r.quote!;
+  const name = requestName(r), spec = specText(r.product, r.spec), price = r.quote!;
   const accepts = (r.counter !== null && price <= r.counter) || rand(s.rng) < acceptChance(s, r, price);
   const php = accepts && r.product === "webHosting" ? phpNeeded(s, r.id, targetFor(s, r)?.clusterId ?? null) : null;
   if (php) {
     say(s, r.id, "customer", "sales.reply.oldPhp", { name: r.contact, version: php });
     loseRequest(s, r, "lost", "lost.oldPhp", { version: php });
-    events.push({ app: "Support", key: "event.salesPhp", params: { name, plan, version: php } });
+    events.push({ app: "Support", key: "event.salesPhp", params: { name, spec, version: php } });
     return;
   }
   if (accepts) {
@@ -227,11 +218,11 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
     if (done.ok) {
       editRequest(s, r.id, () => ({ status: "won", replyAt: null, serviceId: done.id ?? r.serviceId }));
       closeTicket(s, r);
-      events.push({ app: "Support", key: "event.salesWon", params: { name, plan, price } });
+      events.push({ app: "Support", key: "event.salesWon", params: { name, spec, price } });
     } else {
       say(s, r.id, "customer", "sales.reply.gone", { name: r.contact });
       loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
-      events.push({ app: "Support", key: "event.salesFailed", params: { name, plan, city: r.city } });
+      events.push({ app: "Support", key: "event.salesFailed", params: { name, spec, city: r.city } });
     }
     return;
   }

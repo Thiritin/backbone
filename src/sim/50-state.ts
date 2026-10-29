@@ -4,7 +4,7 @@ import { componentKinds, modelById, type ComponentKind } from "./10-catalog/hard
 import { STARTER_APPS } from "./10-catalog/store";
 import { DEFAULT_HOME_LINE, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
-import type { Customer, Service } from "./30-customers/customers";
+import type { Customer, Product, Service } from "./30-customers/customers";
 import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
@@ -20,6 +20,7 @@ import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
 import type { FairBooking } from "./80-business/fairs";
 import type { LossReport } from "./85-products/products";
+import type { Rates } from "./10-catalog/products";
 import type { Domain } from "./30-customers/registry";
 import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 
@@ -129,6 +130,8 @@ export interface GameState {
   workloads: Workload[];
   // Sales requests and lost sales (30-market).
   sales: Sales;
+  // The player's price per resource unit by line (Products app); unset units charge the market rate.
+  rates: Partial<Record<Product, Rates>>;
   // Hours each service has been down since the last monthly invoice.
   downHours: Record<string, number>;
   network: Network;
@@ -179,6 +182,7 @@ export const newGame = (seed: number): GameState => ({
   ops: newOps(),
   security: newSecurity(),
   sales: newSales(),
+  rates: {},
   domains: [],
   chadUsage: newChadUsage(),
 });

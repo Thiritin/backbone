@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { sizeSpec } from "../src/sim/10-catalog/products";
 import { COMPETITORS } from "../src/sim/10-catalog/economy";
 import { cityMarket } from "../src/sim/30-market/market";
 import { demand, lostReasons, segmentsOf, studied, studyCost } from "../src/sim/30-market/research";
@@ -30,7 +31,7 @@ describe("market research", () => {
     const s = startGame(1);
     s.hour = 8760;
     const lose = (hour: number, reason: string, params: Record<string, string | number> = {}, reference = 3) =>
-      s.sales.lost.push({ hour, name: "x", product: "webHosting", plan: "web-s", reference, reason, params });
+      s.sales.lost.push({ hour, name: "x", product: "webHosting", spec: sizeSpec("webHosting", 0, 2006), reference, reason, params });
     lose(8000, "lost.price");
     lose(8100, "lost.price");
     lose(8200, "sales.need.location", { city: "London" });

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { yearOf } from "../src/sim/00-core/time";
+import { sizeSpec } from "../src/sim/10-catalog/products";
 import { FIRST_ORDER_DAYS, isStandard, orderLead, orderOf } from "../src/sim/30-market/orders";
 import { targetFor } from "../src/sim/30-market/sales";
 import { MINUTES } from "../src/sim/40-support/tickets";
@@ -15,7 +17,7 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 const MONDAY_9 = 48 + 9;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
-const web = { product: "webHosting" as const, plan: "web-s", sla: "basic" as const };
+const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
 
 function order(s: GameState, city = "Frankfurt") {
   const r = orderLead(s, "private", city, [], web);
@@ -52,7 +54,7 @@ describe("orders by email", () => {
     const c = s.customers.find((x) => x.id === req().customerId)!;
     const v = s.services.find((x) => x.customerId === c.id)!;
     expect(req().status).toBe("won");
-    expect(v).toMatchObject({ product: "webHosting", plan: "web-s", sla: "basic" });
+    expect(v).toMatchObject({ product: "webHosting", spec: r.spec, sla: "basic" });
     expect(v.price).toBeCloseTo(r.quote! / 730, 6);
     expect(tk()).toMatchObject({ status: "resolved", outcome: "accepted", customerId: c.id, serviceId: v.id });
   });
@@ -61,7 +63,7 @@ describe("orders by email", () => {
     const s = readyGame(1);
     const { r, t } = order(s);
     const friend = s.customers[0].id, cluster = s.clusters.find((c) => c.kind === "panel")!.id;
-    for (let i = 0; i < 500 && targetFor(s, r); i++) provisionService(s, friend, "webHosting", { label: `fill${i}`, plan: "web-l", clusterId: cluster });
+    for (let i = 0; i < 500 && targetFor(s, r); i++) provisionService(s, friend, "webHosting", { label: `fill${i}`, spec: sizeSpec("webHosting", 2, yearOf(s.hour)), clusterId: cluster });
     expect(resolveTicket(s, t.id, "accept")).toEqual({ ok: false, error: "error.noCapacity" });
     expect(resolveTicket(s, order(s, "London").t.id, "accept")).toEqual({ ok: false, error: "error.orderNotOffered" });
   });
@@ -96,7 +98,10 @@ describe("orders by email", () => {
     if (!id.ok) throw new Error(id.error);
     s.staff.find((e) => e.id === id.id)!.trained = ["order"];
     const { req, tk } = order(s);
-    run(s, 2);
+    run(s, 3);
+    expect(tk().status).toBe("waiting");
+    s.invoices = s.invoices.map((i) => (i.id === req().invoiceId ? { ...i, payStep: 0, payAt: s.hour } : i));
+    run(s, 3);
     expect(req().status).toBe("won");
     expect(tk().replies).toEqual([]);
     expect(tk().outcome).toBe("accepted");
@@ -108,13 +113,14 @@ describe("orders by email", () => {
     expect(setUpChannel(s, "website").ok).toBe(true);
     expect(setUpChannel(s, "orderForm").ok).toBe(true);
     const tickets = s.tickets.length;
-    const r = orderLead(s, "private", "Frankfurt", [], web);
+    const r = orderLead(s, "private", "Frankfurt", [], web, false);
     const done = s.sales.requests.find((x) => x.id === r.id)!;
     expect(done.status).toBe("won");
     expect(s.tickets.length).toBe(tickets);
-    expect(s.services.some((v) => v.customerId === done.customerId && v.plan === "web-s")).toBe(true);
+    expect(s.services.some((v) => v.customerId === done.customerId && v.id === done.serviceId)).toBe(true);
+    expect(s.services.find((v) => v.id === done.serviceId)!.spec).toEqual(r.spec);
     // Without room the order still arrives as an email.
-    expect(orderLead(s, "private", "London", [], web).ticketId).not.toBeNull();
+    expect(orderLead(s, "private", "London", [], web, false).ticketId).not.toBeNull();
   });
 
   it("keeps an open order through a save", () => {

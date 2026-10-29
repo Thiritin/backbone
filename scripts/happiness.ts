@@ -21,7 +21,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { BASEMENT_SLOTS } from "../src/sim/10-catalog/economy";
 import { modelById } from "../src/sim/10-catalog/hardware";
 import { bookable, controlPlaneUse, nodeUsed } from "../src/sim/60-infra/cluster";
-import { requestSize } from "../src/sim/30-market/custom";
+import { sizeOf } from "../src/sim/30-market/spec";
 import type { SalesRequest } from "../src/sim/30-market/market";
 import { addNode, createCluster, createPanelVm, resizePanelVm, setSoftware } from "../src/sim/90-actions/clusters";
 import { sitesDown, vmById, vmOf, vmRoom } from "../src/sim/60-infra/cluster";
@@ -34,7 +34,6 @@ import { startGame } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 import { OWNED, owns } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { setPackages } from "../src/sim/90-actions/website";
 import { research } from "../src/sim/90-actions/store";
 import { debt, LOAN_AMOUNTS, loanAvailable } from "../src/sim/45-billing/billing";
 import { takeLoan } from "../src/sim/90-actions/billing";
@@ -118,7 +117,6 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     const next = ["products", "marketingBasics"].find((id) => !s.unlocks.includes(id));
     if (next && !s.training) research(s, next);
     for (const c of ["website", "orderForm"] as const) if (!owns(s, c) && !needServer && s.cash >= OWNED[c].setup + 2000) setUpChannel(s, c);
-    if (owns(s, "orderForm")) for (const p of s.marketing.lines) if (!s.marketing.packages.includes(p)) setPackages(s, p, true);
     for (const k of ["products", "orderForm"]) if (!(k in reached) && (s.unlocks.includes(k) || owns(s, k as "orderForm"))) reached[k] = Math.round((10 * s.hour) / MONTH) / 10;
   };
   // The cheapest line with more upload this year, once the basement's evening peak reaches 90% of the line.
@@ -130,7 +128,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   };
   const room = (r: SalesRequest) => {
     const taken = s.sales.requests.filter((x) => x.kind === "order" && x.customerId && !x.serviceId && ["open", "quoted"].includes(x.status));
-    const need = [...taken, r].map((x) => requestSize(s, x)).reduce((a, b) => ({ vcpu: a.vcpu + b.vcpu, ramGb: a.ramGb + b.ramGb, diskGb: a.diskGb + b.diskGb }));
+    const need = [...taken, r].map((x) => sizeOf(x.spec)).reduce((a, b) => ({ vcpu: a.vcpu + b.vcpu, ramGb: a.ramGb + b.ramGb, diskGb: a.diskGb + b.diskGb }));
     const free = s.clusters[0].nodes.map((n) => { const cap = bookable(s, s.devices.find((d) => d.id === n.deviceId)!, true), used = nodeUsed(s, n.deviceId); return { ramGb: cap.ramGb - used.ramGb, diskGb: cap.diskGb - used.diskGb }; });
     return free.reduce((n, f) => n + f.ramGb, 0) >= need.ramGb && free.reduce((n, f) => n + f.diskGb, 0) >= need.diskGb;
   };
@@ -163,7 +161,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
         if (isFinal(t) || t.work) continue;
         if (t.kind === "order") {
           const r = orderOf(s, t);
-          if (!r?.spec) { if (t.status === "open") resolveTicket(s, t.id, "accept"); continue; }
+          if (!r) continue;
           const step = nextStep(s, r);
           if (!step) continue;
           // A careful player declines an order the cluster cannot also fit after the orders already taken.

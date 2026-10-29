@@ -6,8 +6,8 @@ import {
   BASEMENT_SLOTS, BUDGET_SIZE, businessPowerPrice, CHOICE_TAU, CITIES, COMPETITORS, generationAt,
   KNOW_HOW, leadCapShare, LEVELS, MARKET_GROWTH, monthlySalary, NEVER_PAYS, ON_TIME, PAYMENT_MINUTES, PROFILES,
   REPAIR_HOURS, SEARCH_AD_COST, SERVER_AFR, STAFF_HOURS_PER_MONTH, START_CASH,
-  TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vpsPlanGb, vpsRatePerGb,
-  WEB_BASE, type ProductId, type Profile,
+  TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vpsPlanGb,
+  type ProductId, type Profile,
 } from "../10-catalog/economy";
 import { DATACENTERS, HOME_LINES, MOVE, spacePrice } from "../20-world/datacenters";
 import { dcPerTb } from "../10-catalog/network";
@@ -22,7 +22,8 @@ import { STORE, subscriptionPrice } from "../10-catalog/store";
 import { MONTHLY_RATES } from "../40-support/tickets";
 import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
-import { OVERCOMMIT } from "../10-catalog/products";
+import { marketPrice, OVERCOMMIT, type Spec } from "../10-catalog/products";
+import type { Product as LiveProduct } from "../30-customers/customers";
 
 // Average hours a ticket written at a random hour waits for the office to open: four 16-hour nights and a 64-hour weekend.
 const OFF_HOURS_WAIT = (4 * 16 ** 2 + 64 ** 2) / 2 / 168;
@@ -54,9 +55,8 @@ export interface RunResult { bot: string; seed: number; rows: YearRow[]; levelYe
 
 const PRODUCTS: Product[] = ["web", "vps", "game"];
 const MONTHS = 12;
-// Live rules (10-catalog/products.ts): a web space books 0.25 GB in a panel VM, a game server 4 GB of the year's plan
-// at 1.6x the VPS rate per GB. Gamers ask for a game server 60% of the time (30-market/market.ts, NEEDS).
-const WEB_RAM = 0.25, GAME_RAM = 4, GAME_RATE = 1.6, GAME_SHARE = 0.6;
+// Gamers ask for a game server 60% of the time (30-market/market.ts, NEEDS).
+const GAME_SHARE = 0.6;
 // RAM per cluster for the hypervisor and the panel VM's own panel.
 const CONTROL_RAM = 1;
 // A basement server's average draw and the evening peak over a service's mean traffic (Traffic and bandwidth).
@@ -86,21 +86,27 @@ function rackRent(watts: number): number {
   return share ? spacePrice(HOME_DC, "share", share) : Math.ceil(kw / HOME_DC.kwPerPosition) * HOME_DC.positionPrice;
 }
 
-const priceOf = (p: Profile, product: Product, year: number): number =>
-  product === "web" ? WEB_BASE * BUDGET_SIZE[p.budget]
-    : product === "game" ? GAME_RATE * vpsRatePerGb(year) * GAME_RAM * vpsPlanGb(year) * BUDGET_SIZE[p.budget]
-    : vpsRatePerGb(year) * vpsPlanGb(year) * BUDGET_SIZE[p.budget];
-// Booked vCPUs, as the live plans size them: 0.1 for a web space, one per 2 GB of a VPS (at least one), 2 per 4 GB game server.
-const cpuOf = (p: Profile, product: Product, year: number): number =>
-  product === "web" ? 0.1 : product === "game" ? GAME_RAM / 2 * vpsPlanGb(year) * BUDGET_SIZE[p.budget] : Math.max(1, Math.round(vpsPlanGb(year) * BUDGET_SIZE[p.budget] / 2));
+// A customer's spec, sized like the live SIZES (10-catalog/products.ts) and scaled by the budget: a web space of 2 GB of
+// the year's disk and two mailboxes per size step in 0.25 GB of a panel VM, a VPS of the year's base RAM (one vCPU per
+// 2 GB, at least one, and 20 GB of disk per GB), a game server of 2 vCPUs, 4 GB and 10 GB of the year's base.
+const LIVE: Record<Product, LiveProduct> = { web: "webHosting", vps: "vps", game: "gameServer" };
+function specOf(p: Profile, product: Product, year: number): Spec {
+  const k = BUDGET_SIZE[p.budget], g = vpsPlanGb(year);
+  if (product === "web") return { vcpu: 0.1, ramGb: 0.25, diskGb: 2 * g * k, trafficGb: 0, mailboxes: 2 * k };
+  if (product === "game") return { vcpu: 2 * g * k, ramGb: 4 * g * k, diskGb: 10 * g * k, trafficGb: 0, mailboxes: 0 };
+  return { vcpu: Math.max(1, Math.round((g * k) / 2)), ramGb: g * k, diskGb: 20 * g * k, trafficGb: 0, mailboxes: 0 };
+}
+// The monthly price of that spec at the live market rates per resource.
+const priceOf = (p: Profile, product: Product, year: number): number => marketPrice(LIVE[product], specOf(p, product, year), year);
+// Booked vCPUs and GB of RAM of that spec.
+const cpuOf = (p: Profile, product: Product, year: number): number => specOf(p, product, year).vcpu;
 // The live shop's Dwell server of a generation and line (10-catalog/hardware.ts): balanced 1U or memory-optimized 2U.
 const shopServer = (gen: number, line: "compute" | "memory"): DeviceModel => modelById(`g${gen + 1}-${line}`);
 const serverOf = (gen: number, line: "compute" | "memory", month: number, basement: boolean): Server => {
   const m = shopServer(gen, line);
   return { gen, ramGb: m.server!.ramGb, cores: m.server!.cores, watts: m.watts, bought: month, price: m.price, basement };
 };
-const ramOf = (p: Profile, product: Product, year: number): number =>
-  product === "web" ? WEB_RAM : (product === "game" ? GAME_RAM : 1) * vpsPlanGb(year) * BUDGET_SIZE[p.budget];
+const ramOf = (p: Profile, product: Product, year: number): number => specOf(p, product, year).ramGb;
 // Mbit/s a customer sends at the evening peak; traffic grows 20% a year like the live TRAFFIC_GROWTH.
 const monthlyGb = (product: Product, year: number): number => TRAFFIC[product] * Math.pow(1.2, year - 2005);
 const peakMbit = (product: Product, year: number): number => (monthlyGb(product, year) * 8000) / (730 * 3600) * PEAK_FACTOR;

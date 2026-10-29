@@ -4,7 +4,7 @@ import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import { ACTIONS, canEscalate, isFinal, monthlyValue, TEMPLATES, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
 import { senderById, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-support/notices";
 import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
-import { missingFor, planName, requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
+import { missingFor, requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
 import { orderOf } from "../../../sim/30-market/orders";
 import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
@@ -15,7 +15,8 @@ import { useFocus, useStore } from "../../store";
 import { More } from "../More";
 import { CustomerLink } from "../customers/CustomersApp";
 import { Incidents } from "./Incidents";
-import { CustomCompose, InvoicePill, specLine } from "./CustomOrder";
+import { CustomCompose, InvoicePill } from "./CustomOrder";
+import { specText } from "../../../sim/30-market/spec";
 import { due, initials, KINDS, kindOf, monthYear, moodClass, PRODUCT, span, stamp, STATUS } from "./labels";
 import { Bars, Card, Deadline, LostSales, need, OPEN, SALES_BOXES, STATUS as SALES_STATUS, type SalesBox } from "../sales/SalesApp";
 import "./support.css";
@@ -208,14 +209,12 @@ function OrderThread({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   return (
     <div className={`sup-detail${missing.length && !isFinal(tk) ? " greyed" : ""}`}>
       <div className="d-head">
-        <div className="top"><h2>{planName(r)}</h2><span className="id num">#{tk.id.slice(3)}</span><More label={planName(r)} entries={() => ticketMenu(game, tk)} /></div>
+        <div className="top"><h2>{specText(r.product, r.spec)}</h2><span className="id num">#{tk.id.slice(3)}</span><More label={specText(r.product, r.spec)} entries={() => ticketMenu(game, tk)} /></div>
         <div className="facts">
           <span className="type"><K.icon />{K.label}</span>
-          <span>{PRODUCT[r.product]}</span>
           {r.domain && <span>{r.domain}</span>}
-          {r.spec && <span className="num">{specLine(r.product, r.spec)}</span>}
           <span>{r.city}</span>
-          {r.spec && <InvoicePill r={r} />}
+          <InvoicePill r={r} />
           {tk.status === "open"
             ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer /><span><span className="num">{Math.max(0, left)} h</span> to respond</span></span>
             : <span className="pill">{STATUS[tk.status]}</span>}

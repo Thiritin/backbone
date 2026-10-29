@@ -112,7 +112,8 @@ describe("price complaints", () => {
 
   it("brings monthly complaints while a raised price stays above a fair one", () => {
     const { s, ids } = shop(9, 3, "smallBiz", 40);
-    for (const { v } of ids) changePrice(s, v, 3.45);
+    // 15% over the €3.75 market for the smallest web space.
+    for (const { v } of ids) changePrice(s, v, 4.31);
     for (const t of s.tickets) t.status = "resolved";
     nextMonth(s);
     expect(s.tickets.filter((t) => t.topic === "price" && !isFinal(t)).length).toBeGreaterThan(0);

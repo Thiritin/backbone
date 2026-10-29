@@ -1,8 +1,8 @@
 import { Ban, Check, CircleCheck, CircleX, Hourglass, Inbox, Send, X } from "lucide-react";
 import { useState } from "react";
 import { euroCents } from "../../../sim/00-core/money";
-import { planOf, SLAS } from "../../../sim/10-catalog/products";
-import { missingFor, planName, requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
+import { SLAS } from "../../../sim/10-catalog/products";
+import { missingFor, requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
 import { nodeCapacity, nodeUsed } from "../../../sim/60-infra/cluster";
 import { profileStats } from "../../../sim/40-support/tickets";
 import type { GameState } from "../../../sim/50-state";
@@ -13,7 +13,7 @@ import { CustomerLink } from "../customers/CustomersApp";
 import { initials, noticed, patience, PRODUCT, stamp } from "../support/labels";
 import { PriceField } from "./PriceField";
 import { UpgradeCompose } from "../support/CustomOrder";
-import { requestSize } from "../../../sim/30-market/custom";
+import { sizeOf, specText } from "../../../sim/30-market/spec";
 import "../support/support.css";
 import "./sales.css";
 
@@ -30,7 +30,7 @@ export const STATUS: Record<SalesRequest["status"], string> = {
 };
 export const SLA_LABEL = { basic: "Basic", business: "Business", premium: "Premium" } as const;
 
-export const need = (r: SalesRequest) => `${r.domain ? `${r.domain} · ` : ""}${planName(r)} · ${r.city}${r.sla === "basic" ? "" : ` · ${SLA_LABEL[r.sla]} SLA`}`;
+export const need = (r: SalesRequest) => `${r.domain ? `${r.domain} · ` : ""}${specText(r.product, r.spec)} · ${r.city}${r.sla === "basic" ? "" : ` · ${SLA_LABEL[r.sla]} SLA`}`;
 
 export function Deadline({ r, hour }: { r: SalesRequest; hour: number }) {
   if (!OPEN.includes(r.status)) return <span className="sla num">{stamp(r.createdAt)}</span>;
@@ -43,7 +43,7 @@ export function Bars({ r }: { r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const zones = game.locations.filter((l) => l.city === r.city).map((l) => l.az);
   const cluster = game.clusters.find((c) => zones.includes(c.az) && c.nodes.length);
-  const size = requestSize(game, r);
+  const size = sizeOf(r.spec);
   if (!cluster || !size.vcpu && !size.ramGb && !size.diskGb) return null;
   const cap = { vcpu: 0, ramGb: 0, diskGb: 0 }, used = { ...cap };
   for (const n of cluster.nodes) {
@@ -90,7 +90,7 @@ export function Card({ r }: { r: SalesRequest }) {
   return (
     <div className={`sup-detail${missing.length && OPEN.includes(r.status) ? " greyed" : ""}`}>
       <div className="d-head">
-        <div className="top"><h2>{planName(r)}{r.kind === "expansion" && (r.spec ? " upgrade" : " expansion")}</h2><span className="id num">#{r.id.slice(3)}</span></div>
+        <div className="top"><h2>{specText(r.product, r.spec)}{r.kind === "expansion" && " upgrade"}</h2><span className="id num">#{r.id.slice(3)}</span></div>
         <div className="facts">
           <span className="type">{PRODUCT[r.product]}</span>
           <span>{r.city}</span>
@@ -155,7 +155,7 @@ export function LostSales() {
             <tr key={i}>
               <td className="num">{stamp(l.hour)}</td>
               <td>{l.name}</td>
-              <td>{planOf(l.product, l.plan).name}</td>
+              <td>{specText(l.product, l.spec)}</td>
               <td className="num">{euroCents(l.reference)}</td>
               <td>{t(l.reason, l.params)}</td>
             </tr>

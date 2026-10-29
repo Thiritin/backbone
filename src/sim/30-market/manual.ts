@@ -2,9 +2,9 @@
 // confirm the order with its invoice, register or transfer the domain, then set up the service. Numbers in economy.md, Custom orders.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
-import type { Profile, Service } from "../30-customers/customers";
+import type { Service } from "../30-customers/customers";
 import { DOMAIN_FEE, domainOf, register, registryCost, TRANSFER_FEE } from "../30-customers/registry";
-import { cancelCustomer, isFinal, profileStats, replyDue, type Ticket } from "../40-support/tickets";
+import { cancelCustomer, isFinal, replyDue, type Ticket } from "../40-support/tickets";
 import { DUE_DAYS, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
 import type { GameState } from "../50-state";
@@ -14,12 +14,11 @@ import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { placeService, provisionService } from "../90-actions/clusters";
 import type { ActionResult } from "../90-actions/hardware";
-import { customMarket, requestSize, sizeOf, type CustomSpec } from "./custom";
-import { missingFor, OFFER, requestName, type SalesRequest } from "./market";
+import { sizeOf } from "./spec";
+import { missingFor, requestName, type SalesRequest } from "./market";
 import { mailRequest, orderOf } from "./orders";
 import { editRequest, habitFor, loseRequest } from "./sales";
-import type { Product } from "../30-customers/customers";
-import type { Sla } from "../10-catalog/products";
+import type { Spec } from "../10-catalog/products";
 
 export type OrderStep = "account" | "invoice" | "domain" | "provision";
 export const ORDER_STEPS: OrderStep[] = ["account", "invoice", "domain", "provision"];
@@ -33,11 +32,8 @@ export const ORDER_PAY_DAYS = 3;
 const DAY = 24, MONTH = 730;
 const cents = (v: number) => Math.round(v * 100) / 100;
 
-export const customReference = (s: GameState, profile: Profile, product: Product, spec: CustomSpec, sla: Sla): number =>
-  cents(customMarket(product, spec, yearOf(s.hour), sla) * OFFER[profileStats(profile).budget]);
-
 // Thread params naming a spec's resources; "0" and "1" suffixes for the current and the requested spec of an upgrade.
-export const specParams = (spec: CustomSpec, suffix = ""): Record<string, number> => ({
+export const specParams = (spec: Spec, suffix = ""): Record<string, number> => ({
   [`cpu${suffix}`]: spec.vcpu, [`ram${suffix}`]: spec.ramGb, [`disk${suffix}`]: spec.diskGb, [`traffic${suffix}`]: spec.trafficGb, [`mail${suffix}`]: spec.mailboxes,
 });
 
@@ -53,7 +49,7 @@ export function stepsDone(s: GameState, r: SalesRequest): Record<OrderStep, bool
 // Why a step of a custom order cannot run now, or null. Steps run in order; the domain only for web hosting.
 export function stepError(s: GameState, t: Ticket, step: OrderStep, route = "auto"): string | null {
   const r = orderOf(s, t);
-  if (!r?.spec || isFinal(t) || !["open", "quoted"].includes(r.status)) return "error.unknownRequest";
+  if (!r || isFinal(t) || !["open", "quoted"].includes(r.status)) return "error.unknownRequest";
   if (missingFor(s, r).length) return "error.orderNotOffered";
   const done = stepsDone(s, r);
   if (done[step]) return "error.stepDone";
@@ -66,12 +62,12 @@ export function stepError(s: GameState, t: Ticket, step: OrderStep, route = "aut
     return domainOf(s, r.domain!) ? "error.domainTaken" : s.cash < registryCost(r.domain!, yearOf(s.hour)) ? "error.noCash" : null;
   }
   if (!done.domain) return "error.needsDomain";
-  return routeError(s, r.product, r.city, requestSize(s, r), route) ?? (routeTarget(s, route) || autoFits(s, r) ? null : "error.noCapacity");
+  return routeError(s, r.product, r.city, sizeOf(r.spec), route) ?? (routeTarget(s, route) || autoFits(s, r) ? null : "error.noCapacity");
 }
 
 const autoFits = (s: GameState, r: SalesRequest) => {
   const zones = s.locations.filter((l) => l.city === r.city).map((l) => l.az);
-  return s.clusters.some((c) => zones.includes(c.az) && !routeError(s, r.product, r.city, requestSize(s, r), c.id));
+  return s.clusters.some((c) => zones.includes(c.az) && !routeError(s, r.product, r.city, sizeOf(r.spec), c.id));
 };
 
 // The step staff work next: everything in order, the setup only once the invoice is paid.
@@ -83,11 +79,11 @@ export function nextStep(s: GameState, r: SalesRequest): OrderStep | null {
 // What a support agent does on an order ticket, or null when it waits for the player or the customer.
 export function staffOrderStep(s: GameState, t: Ticket, legacyError: string | null): string | null {
   const r = orderOf(s, t);
-  if (!r?.spec) return legacyError ? null : "accept";
+  if (!r) return legacyError ? null : "accept";
   const step = nextStep(s, r);
   return step && !stepError(s, t, step) ? step : null;
 }
-export const orderMinutes = (s: GameState, t: Ticket, arg: string, legacy: number): number => (isStep(arg) && orderOf(s, t)?.spec ? stepMinutes(arg) : legacy);
+export const orderMinutes = (s: GameState, t: Ticket, arg: string, legacy: number): number => (isStep(arg) && orderOf(s, t) ? stepMinutes(arg) : legacy);
 
 // A new invoice outside the monthly run, paid by the customer's habit; an order is paid within ORDER_PAY_DAYS when on time.
 export function issueInvoice(s: GameState, customerId: string, lines: InvoiceLine[], payDays = DUE_DAYS - 1): Invoice {
@@ -134,7 +130,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
   } else {
     const target = routeTarget(s, r.route ?? "auto");
     const done = provisionService(s, customerId, r.product, {
-      label: r.domain ?? requestName(r), plan: r.plan, sla: r.sla, price: r.quote! / MONTH, spec: r.spec, clusterId: target?.clusterId ?? null, deviceId: target?.deviceId ?? null,
+      label: r.domain ?? requestName(r), sla: r.sla, price: r.quote! / MONTH, spec: r.spec, clusterId: target?.clusterId ?? null, deviceId: target?.deviceId ?? null,
     });
     if (!done.ok) return { app: "Support", key: "event.stepFailed", params: { name: requestName(r), error: done.error ?? "error.noCapacity" } };
     s.services = s.services.map((v) => (v.id === done.id ? { ...v, prepaidUntil: s.hour + MONTH } : v));
@@ -166,7 +162,7 @@ export function ordersTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   for (const { id } of s.sales.requests) {
     let r = s.sales.requests.find((x) => x.id === id)!;
-    if (r.kind !== "order" || !r.spec) continue;
+    if (r.kind !== "order") continue;
     if (r.status === "quoted") {
       const t = s.tickets.find((x) => x.id === r.ticketId);
       if (!t || !isFinal(t)) {
@@ -189,7 +185,7 @@ export function ordersTick(s: GameState): SimEvent[] {
 }
 
 // Grows a custom service to spec at a new hourly price: in place when its node has room, otherwise placed again by route.
-export function resize(s: GameState, v: Service, spec: CustomSpec, route: string, city: string): ActionResult {
+export function resize(s: GameState, v: Service, spec: Spec, route: string, city: string): ActionResult {
   const size = sizeOf(spec), w = workloadsOf(s, v.id)[0];
   const d = w?.deviceId && w.clusterId ? s.devices.find((x) => x.id === w.deviceId) : undefined;
   if (route === "auto" && d) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { orderLead } from "../src/sim/30-market/orders";
-import { planName } from "../src/sim/30-market/market";
+import { specText } from "../src/sim/30-market/spec";
 import { invoiceOf } from "../src/sim/30-market/manual";
 import { domainOf, DOMAIN_FEE, registryCost, REGISTRIES } from "../src/sim/30-customers/registry";
 import { serviceOnline } from "../src/sim/40-support/status";
@@ -20,8 +20,8 @@ import { readyGame } from "./fixtures";
 const MONDAY_9 = 48 + 9;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
-const web = { product: "webHosting" as const, plan: "web-s", sla: "basic" as const };
-const vps = { product: "vps" as const, plan: "vps-s", sla: "basic" as const };
+const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
+const vps = { product: "vps" as const, size: 0, sla: "basic" as const };
 
 function order(s: GameState, need: typeof web | typeof vps = web) {
   const r = orderLead(s, "private", "Frankfurt", [], need, true);
@@ -38,26 +38,25 @@ const payNow = (s: GameState, invoiceId: string) => {
 };
 
 describe("custom orders", () => {
-  it("asks for its own resources, different for each order, until the order form sells packages", () => {
+  it("asks for its own resources, different for each order, and the order form places one at once", () => {
     const s = readyGame(3);
     const specs = Array.from({ length: 6 }, () => order(s).r);
     for (const r of specs) {
-      expect(r.spec).toBeDefined();
-      expect(planName(r)).toBe("Web hosting");
+      expect(specText(r.product, r.spec)).toMatch(/^Web hosting, /);
       expect(r.reference).toBeGreaterThan(0);
-      expect(r.thread[0].key).toMatch(/^order\.msg\.custom\.webHosting/);
+      expect(r.thread[0].key).toMatch(/^order\.msg\.webHosting/);
     }
     expect(new Set(specs.map((r) => JSON.stringify(r.spec))).size).toBeGreaterThan(2);
     const v = order(s, vps).r;
-    expect(planName(v)).toBe("VPS");
-    expect(v.spec!.vcpu).toBeGreaterThanOrEqual(1);
-    // With the order form, a package order places itself.
+    expect(specText(v.product, v.spec)).toMatch(/^VPS, /);
+    expect(v.spec.vcpu).toBeGreaterThanOrEqual(1);
+    // With the order form, an order without an email places itself.
     s.cash = 1e6;
     setUpChannel(s, "website");
     setUpChannel(s, "orderForm");
-    const pkg = orderLead(s, "private", "Frankfurt", [], web);
-    expect(pkg.spec).toBeUndefined();
-    expect(s.sales.requests.find((x) => x.id === pkg.id)!.status).toBe("won");
+    const placed = orderLead(s, "private", "Frankfurt", [], web, false);
+    expect(placed.ticketId).toBeNull();
+    expect(s.sales.requests.find((x) => x.id === placed.id)!.status).toBe("won");
   });
 
   it("works the first order of a company without customers", () => {

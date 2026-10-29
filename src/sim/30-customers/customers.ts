@@ -1,5 +1,4 @@
-import type { Sla } from "../10-catalog/products";
-import type { CustomSpec } from "../30-market/custom";
+import type { Sla, Spec } from "../10-catalog/products";
 
 export type Profile = "private" | "gamer" | "hobbyDev" | "soleProp" | "smallBiz" | "agency" | "office" | "onlineShop" | "enterprise";
 export type Product = "webHosting" | "domain" | "ssl" | "dns" | "gameServer" | "vps" | "vpn" | "dedicated" | "storage" | "cloud" | "colocation";
@@ -10,13 +9,13 @@ export interface Customer { id: string; name: string; profile: Profile; since: n
   // A customer who draws abuse reports and legal requests; never shown to the player. Set on customers won from a shady request.
   shady?: boolean }
 // price is per hour for period "hour" (invoiced monthly in arrears) and per year for period "year" (invoiced in advance).
-// plan is a PRODUCTS plan id, null for the product's first plan; its workloads point back at it by serviceId.
+// spec is what the customer ordered and the service books; its workloads point back at it by serviceId.
 export interface Service { id: string; customerId: string; product: Product; label: string; price: number; period: "hour" | "year"; commitMonths: number; startedAt: number; endedAt: number | null; zone: string | null;
-  plan: string | null; sla: Sla;
+  spec: Spec; sla: Sla;
   // Hourly price from before the first of a run of raises; unset once the price is back at or below it.
   before?: number;
   // Web hosting only: the customer's domain, fixed at sign-up (domains.ts).
   domain?: string;
-  // A custom order's resources in place of its plan's (custom.ts), and the hour up to which its first invoice paid it.
-  spec?: CustomSpec; prepaidUntil?: number }
+  // The hour up to which an email order's first invoice paid it.
+  prepaidUntil?: number }
 export const activeServices = (services: Service[], customerId: string): Service[] => services.filter((v) => v.customerId === customerId && v.endedAt === null);

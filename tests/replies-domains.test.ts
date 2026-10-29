@@ -16,7 +16,7 @@ import { closeTicket, replyTicket, resolveTicket } from "../src/sim/90-actions/s
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame } from "./fixtures";
 
-const web = { product: "webHosting" as const, plan: "web-s", sla: "basic" as const };
+const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
 const PROFILES: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
 const CITIES = Object.keys(CITY_TLD);
 const DOMAIN = /^[a-z0-9]+(-[a-z0-9]+)*\.(de|at|ch|co\.uk|fr|nl|it|com)$/;
@@ -90,7 +90,7 @@ describe("domains", () => {
 
 describe("replies", () => {
   it("has every wording of every email", () => {
-    const p = { name: "Anna", company: "Basement Hosting", host: "basement-hosting.de", service: "x.de", domain: "x.de", credit: 1, refund: 10, days: 7, hours: 48, url: "https://x.de/", sender: "S", plan: "Web S", city: "Paris", price: 5, hour: 100, invoice: "2005-0001", total: 20 };
+    const p = { name: "Anna", company: "Basement Hosting", host: "basement-hosting.de", service: "x.de", domain: "x.de", credit: 1, refund: 10, days: 7, hours: 48, url: "https://x.de/", sender: "S", line: "Web hosting", city: "Paris", price: 5, hour: 100, invoice: "2005-0001", total: 20 };
     for (const k of REPLY_KINDS) for (let i = 0; i < REPLY_VARIANTS; i++) rendered(`reply.${k}.${i}`, p);
   });
 

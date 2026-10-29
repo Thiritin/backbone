@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ASN_FEE, carriersAt, DDOS, EXCHANGE_FEES, PEERS, TRANSIT, transitPerMbps } from "../src/sim/10-catalog/network";
-import { trafficGb } from "../src/sim/10-catalog/products";
+import { sizeSpec } from "../src/sim/10-catalog/products";
+import { yearOf } from "../src/sim/00-core/time";
 import { datacenterById } from "../src/sim/20-world/datacenters";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
@@ -21,9 +22,9 @@ const ok = (r: R) => {
 const err = (r: R) => (r.ok ? "ok" : r.error);
 
 // A running service in a zone: a service with one workload, which is all the traffic model looks at.
-function service(s: GameState, az: string, product: "vps" | "gameServer" | "colocation" = "vps", profile: Profile = "hobbyDev", plan: string | null = null) {
+function service(s: GameState, az: string, product: "vps" | "gameServer" | "colocation" = "vps", profile: Profile = "hobbyDev", size = 0) {
   const c = addCustomer(s, `C${s.nextId}`, profile);
-  const id = addService(s, c, product, `${product} ${s.nextId}`, 10, "hour", 0, az, plan);
+  const id = addService(s, c, product, `${product} ${s.nextId}`, 10, "hour", 0, az, sizeSpec(product, size, yearOf(s.hour)));
   s.workloads.push({ id: `w${s.nextId++}`, serviceId: id, clusterId: null, deviceId: null, rackId: null, slot: 0, units: 0, watts: 0, placedAt: s.hour, vcpu: 1, ramGb: 1, diskGb: 10, stopped: false, busyUntil: 0, backupAt: null });
   return id;
 }
@@ -42,13 +43,13 @@ function datacenter(seed = 1) {
 const ready = (s: GameState) => { s.hour += 24 * 15; };
 
 describe("traffic", () => {
-  it("follows the plan and the year, averaging the economy table over a week", () => {
-    expect(trafficGb("vps", "vps-m", 2005)).toBe(20);
-    expect(trafficGb("vps", "vps-s", 2005)).toBe(10);
-    expect(trafficGb("gameServer", "game-s", 2005)).toBe(60);
-    expect(trafficGb("vps", "vps-m", 2026)).toBeCloseTo(20 * Math.pow(1.2, 21), 5);
+  it("follows the size and the year, averaging the economy table over a week", () => {
+    expect(sizeSpec("vps", 1, 2005).trafficGb).toBe(20);
+    expect(sizeSpec("vps", 0, 2005).trafficGb).toBe(10);
+    expect(sizeSpec("gameServer", 0, 2005).trafficGb).toBe(60);
+    expect(sizeSpec("vps", 1, 2026).trafficGb).toBeCloseTo(20 * Math.pow(1.2, 21), 5);
     const s = newGame(1);
-    const id = service(s, "fra1", "vps", "hobbyDev", "vps-m");
+    const id = service(s, "fra1", "vps", "hobbyDev", 1);
     const v = s.services.find((x) => x.id === id)!;
     let sum = 0;
     for (let h = 0; h < 168; h++) { s.hour = h; sum += serviceMbps(s, v); }
@@ -57,7 +58,7 @@ describe("traffic", () => {
 
   it("a dozen VPS fill the basement's 1 Mbit/s upload in the evening and degrade without going offline", () => {
     const s = newGame(2);
-    const ids = Array.from({ length: 12 }, () => service(s, "fra1", "vps", "onlineShop", "vps-m"));
+    const ids = Array.from({ length: 12 }, () => service(s, "fra1", "vps", "onlineShop", 1));
     s.hour = 20;
     const r = route(s);
     const z = r.zones.loc1;
@@ -81,7 +82,7 @@ describe("routing", () => {
     ok(orderTransit(s, loc, "cogentle", 1, 0.2));
     ready(s);
     // 500 shops' colocation at 20:00 send far more than 1 Gbit/s.
-    for (let i = 0; i < 500; i++) service(s, "fra2", "colocation", "onlineShop", "colo-f");
+    for (let i = 0; i < 500; i++) service(s, "fra2", "colocation", "onlineShop", 3);
     s.hour = s.hour - (s.hour % 24) + 20;
     const r = route(s), z = r.zones[loc];
     const [ex, tr] = s.network.uplinks;
@@ -110,7 +111,7 @@ describe("routing", () => {
     s.locations = s.locations.map((l) => ({ ...l, readyAt: 0 }));
     ok(orderZoneLink(s, loc, second, "fiber", 0));
     s.hour += 24 * 31;
-    for (let i = 0; i < 250; i++) service(s, "fra2", "colocation", "onlineShop", "colo-f");
+    for (let i = 0; i < 250; i++) service(s, "fra2", "colocation", "onlineShop", 3);
     s.hour = s.hour - (s.hour % 24) + 20;
     const r = route(s), z = r.zones[loc], other = r.zones[second];
     const link = s.network.zoneLinks[0];

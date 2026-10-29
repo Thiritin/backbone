@@ -5,7 +5,7 @@ import { yearOf } from "../../../sim/00-core/time";
 import type { Resources } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import { registryCost, registryOf } from "../../../sim/30-customers/registry";
-import { sizeOf, type CustomSpec } from "../../../sim/30-market/custom";
+import { sizeOf } from "../../../sim/30-market/spec";
 import { invoiceOf, stepsDone } from "../../../sim/30-market/manual";
 import type { SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
@@ -19,12 +19,6 @@ import "./custom-order.css";
 
 const n = (x: number) => Math.round(x * 100) / 100;
 const gb = (x: number) => `${n(x)} GB`;
-
-// A custom spec as one line of values, the way the customer asked for it.
-export function specLine(product: Product, x: CustomSpec): string {
-  if (product === "webHosting") return `${gb(x.diskGb)} space · ${gb(x.trafficGb)} traffic · ${x.mailboxes} mailbox${x.mailboxes === 1 ? "" : "es"}`;
-  return `${x.vcpu} vCPU · ${gb(x.ramGb)} RAM · ${gb(x.diskGb)} disk`;
-}
 
 const free = (r: Resources) => `${n(r.vcpu)} vCPU · ${gb(r.ramGb)} RAM · ${gb(r.diskGb)} disk free`;
 

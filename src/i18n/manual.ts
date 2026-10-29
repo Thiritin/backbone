@@ -10,16 +10,19 @@ const box = (p: Params) => `${p.cpu} vCPU${Number(p.cpu) === 1 ? "" : "s"}, ${gb
 const domain = (p: Params) => (Number(p.owned) ? `I already own ${p.domain} and would like to move it to you.` : `Please register ${p.domain} for me as well.`);
 const more = (p: Params) => (p.product === "webHosting"
   ? `${gb(p.disk0)} to ${gb(p.disk1)} of space, ${gb(p.traffic0)} to ${gb(p.traffic1)} of traffic and ${p.mail0} to ${mailboxes(p.mail1)}`
-  : `${p.cpu0} to ${p.cpu1} vCPUs, ${gb(p.ram0)} to ${gb(p.ram1)} of RAM and ${gb(p.disk0)} to ${gb(p.disk1)} of disk`);
+  : and([
+    Number(p.cpu1) > 0 && `${p.cpu0} to ${p.cpu1} vCPUs`, Number(p.ram1) > 0 && `${gb(p.ram0)} to ${gb(p.ram1)} of RAM`, Number(p.disk1) > 0 && `${gb(p.disk0)} to ${gb(p.disk1)} of disk`,
+  ].filter((x): x is string => !!x)));
+const and = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}` : xs[0] ?? "more room");
 
 // Custom orders, domains and upgrades of custom services; spread into en.
 export const MANUAL_EN: Record<string, (p: Params) => string> = {
-  "order.msg.custom.webHosting.0": (p) => `Hello, I need web hosting for ${p.domain}: about ${web(p)}. ${domain(p)}`,
-  "order.msg.custom.webHosting.1": (p) => `A friend recommended you. My website ${p.domain} needs ${web(p)}. ${domain(p)} What would that cost?`,
-  "order.msg.custom.vps.0": (p) => `I would like a VPS in ${p.city} with ${box(p)}. Root access, please. I know what I am doing.`,
-  "order.msg.custom.vps.1": (p) => `Please set up a virtual server for me: ${box(p)}. Debian would be nice, and monthly billing.`,
-  "order.msg.custom.gameServer.0": (p) => `We need a game server for our clan with ${box(p)}. It has to be up by Friday night.`,
-  "order.msg.custom.gameServer.1": (p) => `Please set up a game server in ${p.city}: ${box(p)}. Low ping matters more to us than anything.`,
+  "order.msg.webHosting.0": (p) => `Hello, I need web hosting for ${p.domain}: about ${web(p)}. ${domain(p)}`,
+  "order.msg.webHosting.1": (p) => `A friend recommended you. My website ${p.domain} needs ${web(p)}. ${domain(p)} What would that cost?`,
+  "order.msg.vps.0": (p) => `I would like a VPS in ${p.city} with ${box(p)}. Root access, please. I know what I am doing.`,
+  "order.msg.vps.1": (p) => `Please set up a virtual server for me: ${box(p)}. Debian would be nice, and monthly billing.`,
+  "order.msg.gameServer.0": (p) => `We need a game server for our clan with ${box(p)}. It has to be up by Friday night.`,
+  "order.msg.gameServer.1": (p) => `Please set up a game server in ${p.city}: ${box(p)}. Low ping matters more to us than anything.`,
   "sales.msg.upgrade": (p) => `We keep hitting our limits. We need ${more(p)}. What would upgrading cost us?`,
   "sales.you.upgrade": (p) => `We can do the upgrade for ${euroCents(Number(p.price))} a month in total.`,
   "sales.you.upgradeDone": (p) => `The upgrade is live. Your service runs with the new resources at ${euroCents(Number(p.price))} a month from now on.`,

@@ -14,15 +14,6 @@ export function setLine(s: GameState, p: Product, on: boolean): ActionResult {
   return { ok: true, id: p };
 }
 
-// Sells a line's packages through the order form, or stops; orders on a line without packages ask for their own resources.
-export function setPackages(s: GameState, p: Product, on: boolean): ActionResult {
-  if (!SITE_LINES.includes(p)) return { ok: false, error: "error.unknownSiteLine" };
-  if (on && !hasOrderForm(s)) return { ok: false, error: "error.needsOrderForm" };
-  const lines = s.marketing.packages.filter((x) => x !== p);
-  s.marketing = { ...s.marketing, packages: on ? [...lines, p] : lines };
-  return { ok: true, id: p };
-}
-
 // Stops or resumes taking orders by email; with them off, only the order form takes orders.
 export function setEmailOrders(s: GameState, on: boolean): ActionResult {
   if (!on && !hasOrderForm(s)) return { ok: false, error: "error.needsOrderForm" };

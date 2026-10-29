@@ -16,7 +16,7 @@ import { readyGame } from "./fixtures";
 const NEW = ["Düsseldorf", "Kerkrade", "Nuremberg", "Falkenstein", "Munich", "Ashburn", "New York", "Chicago", "Dallas", "Los Angeles"];
 const US = ["Ashburn", "New York", "Chicago", "Dallas", "Los Angeles"];
 const PROFILES: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
-const web = { product: "webHosting" as const, plan: "web-s", sla: "basic" as const };
+const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
 const rich = (): GameState => ({ ...newGame(3), cash: 1_000_000 });
 const open = (s: GameState, dc: string) => {
   const r = addLocation(s, dc, "share", 8);

@@ -1,7 +1,7 @@
 import { chance, hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { OFFER } from "../30-market/market";
-import { serviceMarket } from "../30-market/custom";
+import { serviceMarket } from "../30-market/spec";
 import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { activeServices, type Customer, type Service } from "./customers";
