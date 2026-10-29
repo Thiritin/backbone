@@ -2,7 +2,8 @@ import { monthNet, pickSound, playSound, soundFor, type Sound } from "./sounds";
 import { useEffect } from "react";
 import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
-import { startGame as newCompany } from "../sim/90-actions/start";
+import { startChallenge as newChallenge, startGame as newCompany } from "../sim/90-actions/start";
+import { weeklyChallenge } from "../sim/10-catalog/challenges";
 import { tick } from "../sim/88-tick/tick";
 import { isAlert } from "../sim/alerts";
 import { typeOf } from "./notify-types";
@@ -82,6 +83,8 @@ interface Store {
   clearUnseen: () => void;
   save: () => void;
   startGame: () => void;
+  // Starts this week's challenge: its seed and twist.
+  startChallenge: () => void;
   importSave: (raw: string) => void;
   deleteProgress: () => void;
   cart: CartLine[];
@@ -296,6 +299,10 @@ export const useStore = create<Store>((set, get) => ({
   },
   startGame: () => {
     set({ ...fresh(), game: newCompany(Date.now() >>> 0), started: true, welcome: true });
+    get().save();
+  },
+  startChallenge: () => {
+    set({ ...fresh(), game: newChallenge(weeklyChallenge(new Date()).id), started: true, welcome: true });
     get().save();
   },
   importSave: (raw) => {

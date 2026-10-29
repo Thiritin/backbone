@@ -4,6 +4,7 @@ import { setCompany } from "../../sim/90-actions/company";
 import { APPS, appFor } from "./registry";
 import { CompanyFields } from "./company";
 import { EmailSettings } from "./EmailSettings";
+import { LeaderboardSettings } from "./LeaderboardSettings";
 import { NOTIFY_TYPES } from "../notify-types";
 import { prefOf, useFocus, useStore, type Theme } from "../store";
 import { playSound } from "../sounds";
@@ -104,6 +105,7 @@ export function SettingsApp() {
           );
         })}
       </div>
+      <LeaderboardSettings />
     </div>
   );
 }
