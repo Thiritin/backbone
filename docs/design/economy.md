@@ -1066,11 +1066,26 @@ Game servers and colocation move the most data per euro and carry the largest sh
 | --- | --- | --- |
 | Virtual machine (live) | RAM × 1.5 ÷ link speed | Under 1 second |
 | VM with local disk | Above, plus disk ÷ link speed | Under 1 second |
-| Web space | Disk ÷ link speed | 5 seconds |
+| Web space, between panel hosts | A hand task of 2 to 4 hours plus 3 minutes a GB, halved by a migration tool (Migrating a web space) | 10 minutes |
+| Web space, between servers of a clustered panel host | Immediate | None |
 | Game server | 1 minute | 1 minute |
 | Storage volume | Disk ÷ link speed | None; reads come from the old node until it finishes |
 | Between zones (cold) | (Disk + RAM) ÷ free bandwidth of the link between the zones | The whole transfer; needs a link between the zones |
 | Between zones (live) | As above, then a final sync of RAM × 0.1 ÷ free bandwidth | Under 5 seconds; needs a link of 10G or more |
+
+**Migrating a web space.** A web space moves to another panel host as a hand task (`migrateWebspace`, src/sim/90-actions/vms.ts; hours in src/sim/60-infra/migration.ts). The anchor is the owner's own words: about 4 hours to move a customer between two panels, 2 if the panel is the same, scaling with web storage.
+
+| Part | Value |
+| --- | --- |
+| Base, same panel on both hosts | 2 hours |
+| Base, different panels | 4 hours |
+| Per GB of web storage (`spec.diskGb`) | 0.05 hours (3 minutes; 20 GB adds an hour) |
+| Target panel has a migration tool for the source | Half of the total |
+| Rounding | Up to quarter hours, at least 15 minutes |
+| Cutover, the last part | 10 minutes unreachable; the site is up before |
+| Money | None; the work is remote, so a datacenter bills no remote hands |
+
+The tool applies when the target panel's `migration.same` (source is the same panel) or `migration.other` (any other panel) year has come (Platforms and licenses). A technician trained on panels can run the task (OpKind "migrate") at the server the web space sits on, one operation per office hour; the hours then run as for the player. A web space is migrating until the first tick at or after its hours are over, then it is placed on a node of the target with room, and the 10 minutes count as down time. If the target has lost its room by then, the move is dropped. Web spaces on the servers of a clustered panel host are rebalanced by the scheduler without a task. The link speed below applies to virtual machines, game servers and storage volumes.
 
 The link speed is the slowest link between the two nodes, shared by every migration running at the same time. Between zones, the free bandwidth is the link's capacity minus the customer traffic it already carries at that hour, so a 1G link at its evening peak migrates slowly, and a 100 GB VM over a free 1G link takes about 15 minutes. Draining runs 2 migrations at once per node by default.
 
@@ -1157,6 +1172,19 @@ Every server runs at most one control plane. A hypervisor ("Cloud" below) runs o
 | Proxmocks | Cloud | Free | 3 h | ×1.0 | 1.0 | Yes | 8× | 1.5× | 0.25 vCPU, 0.25 GB, 5 GB |
 | HyperVee | Cloud | €20 per node | 4 h | ×0.9 | 1.05 | No | 6× | 1.2× | 1 vCPU, 1 GB, 10 GB |
 
+| Software | From | Imports from same | Imports from other | Clusters from |
+| --- | --- | --- | --- | --- |
+| cPanic | 2005 | 2005 | 2012 | Never |
+| Pleskit | 2005 | 2005 | 2015 | Never |
+| DirectAdmen | 2005 | 2010 | Never | Never |
+| FreePanel | 2005 | Never | Never | 2009 |
+| OpenStash | 2010 | 2010 | Never | 2010 |
+| VMwhere | 2005 | 2005 | Never | 2005 |
+| Proxmocks | 2008 | 2008 | Never | 2008 |
+| HyperVee | 2008 | 2008 | Never | 2012 |
+
+Anchors: cPanel could copy accounts between servers with WHM's "Copy an account" since 2005 and gained its transfer tool for other panels around 2012; Plesk's Migration Manager appeared with Plesk 7.5.6 in 2005 and the Plesk Migrator extension (2015) imports cPanel, Confixx and others; DirectAdmin moves accounts through backup and restore since about 2010; ISPConfig 3 introduced multiserver setups in March 2009, which is where FreePanel clusters from, while cPanel and Plesk never clustered web serving (only DNS). Hypervisor years follow the products: OpenStack 2010, VMware ESX long before 2005, Proxmox VE 2008, Hyper-V 2008 (clustering of Hyper-V hosts from the 2012 release).
+
 - **Licenses** are billed on the 1st of each month per hypervisor cluster and per panel host, as ledger lines in the category "licenses".
 - **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the hypervisor for the rest).
 - **Density** multiplies what a node can book, from memory sharing and lighter hypervisors.
@@ -1166,9 +1194,10 @@ Every server runs at most one control plane. A hypervisor ("Cloud" below) runs o
 - **Installing** goes on a machine: a free mounted server, or one of the player's own VMs for a panel, with room for the control plane on it. A hypervisor on a server makes it a one-server hypervisor cluster named after its location; servers with the same installed hypervisor join a cluster once nothing runs on them. A panel VM can be created while its cluster's hypervisor is still installing; its panel starts installing once the hypervisor is done. The control plane is busy for the install hours in the table, and nothing can be placed on the cluster until it is done. An install costs nothing up front; the license is billed from the next 1st of the month.
 - **Switching** software is an uninstall and an install. Uninstalling needs the machine empty of what the software serves; a VM stays, empty, and the player deletes it separately.
 - **Selling:** the website, order emails and leads only carry product lines that an installed control plane on a cluster with nodes sells. Placement refuses with "No cluster runs a hosting panel" or "No cluster runs a virtualization platform" when no cluster in scope has the right software, and with the capacity error when it has but no node has room.
+- **Years and traits.** Software cannot be installed before its `from` year (`error.softwareNotYet`); old saves keep what they have. `migration.same` and `migration.other` are the years from which the software imports a web space from the same software and from another panel (null never), `cluster` the year from which a panel host takes a second server (null never). Panels cluster by joining an empty server that runs the same panel in the zone, through the same join flow as a hypervisor node; a panel host in a VM stays on one server. The clustering years of hypervisors are recorded for reference; hypervisor clusters can grow from the day the hypervisor is installed. There is no replication trait: no panel of the period replicated sites between hosts.
 - A new game starts with no software installed. Old saves keep the panel and platform they had, and saves from before platforms load with FreePanel and Proxmocks installed.
 
-**Migration in the first build.** Inside a zone, links count as 1 Gbit/s, which moves 450 GB an hour. Virtual machines move live on platforms with live migration; on HyperVee they are offline for (disk + RAM) ÷ 450 GB per hour, rounded up to whole hours. Web spaces, game servers and storage volumes move without a lost hour. Moves between zones need a link between the zones; until the network links between locations exist, they are refused. A workload with a lost disk can't migrate; it is restored instead.
+**Migration in the first build.** Inside a zone, links count as 1 Gbit/s, which moves 450 GB an hour. Virtual machines move live on platforms with live migration; on HyperVee they are offline for (disk + RAM) ÷ 450 GB per hour, rounded up to whole hours. Web spaces move between panel hosts as the hand task above; game servers and storage volumes move without a lost hour. Moves between zones need a link between the zones; until the network links between locations exist, they are refused. A workload with a lost disk can't migrate; it is restored instead.
 
 ## Staff: salaries, skill growth and quitting
 
@@ -1363,6 +1392,8 @@ An exposed node runs an affected version without the patch, hosts web sites and 
 | Abuse report per such customer | 1 (spam) |
 | Review | 1 star, written by 10% (20% below happiness 40) |
 | Sites on the node | Down until cleaned up |
+| Spam sent from the host's mail address | 12,000 a day through `addSpam`, as for any sender (Reputation) |
+| Performance of the host's sites while compromised | 70% (the PHP upgrade slowdown) |
 | Clean-up with a backup | 4 hours |
 | Clean-up without a backup (rebuild) | 12 hours and −15 happiness |
 

@@ -11,7 +11,7 @@ import { PHP_EOL } from "../../../sim/60-infra/php";
 import { locationOf } from "../../../sim/60-infra/status";
 import { licenseCost } from "../../../sim/85-products/products";
 import {
-  createPanelVm, installPanel, PANEL_VM_MIN, PANEL_VM_SIZE, phpDue, removePanelHost, resizePanelVm, upgradePhp,
+  addNode, createPanelVm, installPanel, PANEL_VM_MIN, PANEL_VM_SIZE, phpDue, removePanelHost, resizePanelVm, upgradePhp,
 } from "../../../sim/90-actions/clusters";
 import { cleanUp, setSitesOffline } from "../../../sim/90-actions/security";
 import { Confirm } from "../../desktop/Confirm";
@@ -21,7 +21,9 @@ import { useStore } from "../../store";
 import { devName, disk, ram } from "../hw";
 import { Meter } from "../locations/Clusters";
 import { Stepper } from "../shop/Cart";
-import { ControlPlanePill, Mark, SoftwareCards, softwareName } from "./parts";
+import { ControlPlanePill, Mark, SoftwareCards, softwareName, VM_STATE, vmState } from "./parts";
+import { joinableServers } from "../../../sim/90-actions/software";
+import { migrateEntries } from "../vms/migrate";
 
 const num = (n: number) => `${+n.toFixed(2)}`;
 
@@ -93,6 +95,7 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
   const cap: Resources = vm ? { vcpu: vm.vcpu, ramGb: vm.ramGb, diskGb: vm.diskGb }
     : d ? (() => { const b = bookable(game, d); return { vcpu: b.vcpu + panel.vcpu, ramGb: b.ramGb + panel.ramGb, diskGb: b.diskGb + panel.diskGb }; })() : { vcpu: 0, ramGb: 0, diskGb: 0 };
   const lic = licenseCost(game, host).panel;
+  const joinable = joinableServers(game, host.id).map((id) => game.devices.find((d) => d.id === id)!);
   const year = yearOf(game.hour), behind = phpBehind(host.php, year);
   const menu = (): MenuEntry[] => [
     phpDue(game, host) && { label: host.php === phpAt(year) ? "Patch PHP" : `Upgrade to PHP ${phpAt(year)}`, run: () => act((g) => upgradePhp(g, host.id)) },
@@ -120,6 +123,45 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
           <div><dt>PHP</dt><dd className="num">{host.php}{behind >= PHP_EOL ? <> <span className="pill bad">Unsupported</span></> : behind > 0 ? <> <span className="pill warn">Outdated</span></> : null}</dd></div>
         </dl>
       </section>
+
+      {(host.nodes.length > 1 || joinable.length > 0) && (
+        <section className="fin-card">
+          <div className="fin-card-h"><Server />Servers</div>
+          <table className="table">
+            <tbody>
+              {host.nodes.map((n) => { const nd = game.devices.find((x) => x.id === n.deviceId); return <tr key={n.deviceId}><td>{nd ? devName(nd) : n.deviceId}</td><td className="r">{host.controlPlane === n.deviceId ? "Control plane" : ""}</td></tr>; })}
+            </tbody>
+          </table>
+          {joinable.length > 0 && (
+            <div className="fin-card-b">
+              <div className="fin-pills">{joinable.map((x) => <button key={x.id} className="btn" onClick={() => act((g) => addNode(g, host.id, x.id))}><Plus />{devName(x)}</button>)}</div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {sites.length > 0 && (
+        <section className="fin-card">
+          <div className="fin-card-h"><Globe />Web spaces</div>
+          <table className="table">
+            <thead><tr><th>Web space</th><th className="r">Disk</th><th>Status</th><th /></tr></thead>
+            <tbody>
+              {sites.map((w) => {
+                const label = game.services.find((v) => v.id === w.serviceId)?.label ?? w.id, [state, tone] = VM_STATE[vmState(game, w)];
+                const entries = () => migrateEntries(game, w);
+                return (
+                  <tr key={w.id} onContextMenu={menuOn(entries)}>
+                    <td>{label}</td>
+                    <td className="r num">{disk(Math.round(w.diskGb))}</td>
+                    <td><span className={`pill ${tone}`}>{state}</span></td>
+                    <td className="r"><More label={label} entries={entries} /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       <section className="fin-card">
         <div className="fin-card-h"><Globe />Web hosting capacity</div>

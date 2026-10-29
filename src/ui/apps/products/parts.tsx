@@ -1,6 +1,6 @@
 import { AppWindow, Boxes, Feather, Gauge, Layers, PanelsTopLeft, Server, SquareTerminal, TriangleAlert, type LucideIcon } from "lucide-react";
 import { euroCents } from "../../../sim/00-core/money";
-import { formatClock } from "../../../sim/00-core/time";
+import { formatClock, START_YEAR } from "../../../sim/00-core/time";
 import { SERVES, softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
 import { PRODUCTS } from "../../../sim/10-catalog/products";
 import { PRODUCT } from "../support/labels";
@@ -36,6 +36,20 @@ const cp = (sw: Software) => `${+sw.controlPlane.vcpu.toFixed(2)} vCPU · ${+sw.
 export const KIND_NAME: Record<SoftwareKind, string> = { panel: "Hosting panel", cloud: "Hypervisor" };
 export const servesText = (kind: SoftwareKind) => SERVES[kind].filter((p) => !PRODUCTS[p].ha).map((p) => PRODUCT[p]).join(", ");
 
+// What the software can do, as labels: its first year, how it imports web spaces, whether it clusters or moves live.
+export function traits(sw: Software, compact?: boolean): string[] {
+  const out: string[] = [];
+  if (sw.from > START_YEAR) out.push(`Available from ${sw.from}`);
+  if (sw.kind === "panel") {
+    const { same, other } = sw.migration;
+    if (same !== null) out.push(`Imports from ${sw.name} from ${same}`);
+    if (other !== null) out.push(`Imports from other panels from ${other}`);
+    if (same === null && other === null) out.push("No migration tool");
+    out.push(sw.cluster === null ? "Single host" : `Clusters from ${sw.cluster}`);
+  } else if (compact && sw.live) out.push("Live migration");
+  return out;
+}
+
 // The competing software of one kind as cards; the chosen one is pressed.
 export function SoftwareCards({ kind, value, onPick, compact, blocked }: { kind: SoftwareKind; value: string | null; onPick: (id: string) => void; compact?: boolean; blocked?: (id: string) => boolean }) {
   return (
@@ -55,6 +69,7 @@ export function SoftwareCards({ kind, value, onPick, compact, blocked }: { kind:
             <div><dt>Control plane</dt><dd className="num">{cp(sw)}</dd></div>
             </>}
           </dl>
+          <span className="prd-traits">{traits(sw, compact).map((x) => <span key={x} className="pill">{x}</span>)}</span>
         </button>
       ))}
     </div>
@@ -84,6 +99,7 @@ export const VM_STATE: Record<VmState, [string, string]> = {
 };
 export function vmState(game: GameState, w: Workload): VmState {
   if (lostDisk(game, w)) return "lost";
+  if (w.migrating) return "migrating";
   if (w.busyUntil > game.hour) return game.lossReports.some((r) => r.items.some((i) => i.workloadId === w.id && i.restored)) ? "restoring" : "migrating";
   if (w.stopped) return "stopped";
   if (w.clusterId && w.deviceId && game.frozen.includes(w.deviceId)) return "frozen";

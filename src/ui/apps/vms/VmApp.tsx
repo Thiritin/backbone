@@ -11,6 +11,7 @@ import type { MenuEntry } from "../../desktop/ContextMenu";
 import { menuOn } from "../../desktop/ContextMenu";
 import { useFocus, useStore } from "../../store";
 import { More } from "../More";
+import { migrateEntries } from "./migrate";
 import "../billing/billing.css";
 import { CustomerLink } from "../customers/CustomersApp";
 import { day, devName, disk, ram } from "../hw";
@@ -30,12 +31,14 @@ export function workloadActions(game: GameState, w: Workload): MenuEntry[] {
   const act = useStore.getState().act;
   const st = vmState(game, w);
   const on = st === "running" || st === "down" || st === "frozen";
-  const targets = on || st === "stopped" ? migrationTargets(game, w.id) : [];
+  const web = game.clusters.find((c) => c.id === w.clusterId)?.kind === "panel";
+  const targets = !web && (on || st === "stopped") ? migrationTargets(game, w.id) : [];
   const where = (id: string) => game.clusters.find((c) => c.id === id)?.name;
   return [
     st === "lost" && { label: w.backupAt === null ? "Start empty" : "Restore", run: () => act((g) => restoreWorkload(g, w.id)) },
     st === "stopped" && { label: "Start", run: () => act((g) => startWorkload(g, w.id)) },
     on && { label: "Stop", run: () => act((g) => stopWorkload(g, w.id)) },
+    ...(web && (on || st === "stopped" || st === "migrating") ? migrateEntries(game, w) : []),
     targets.length > 0 && {
       label: "Migrate to",
       items: targets.map((t) => ({
