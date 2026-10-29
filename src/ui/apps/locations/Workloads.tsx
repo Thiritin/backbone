@@ -6,10 +6,11 @@ import { softwareById } from "../../../sim/10-catalog/platforms";
 import { clusterOf, controlPlaneUse, workloadsOn, type Workload } from "../../../sim/60-infra/cluster";
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
-import { announceEntries, migrateEntries, offerEntries } from "../vms/migrate";
+import { announceEntries, migrateEntries, offerEntries, rescueEntries } from "../vms/migrate";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { More } from "../More";
+import { useHandWork, type HandTask } from "./HandSheet";
 import { VM_STATE, vmLabel, vmState } from "../products/parts";
 
 type Sort = "vcpu" | "ramGb" | "diskGb";
@@ -76,7 +77,8 @@ function WorkloadRow({ game, w, u }: { game: GameState; w: Workload; u: Resource
   const { name, service } = vmLabel(game, w);
   const st = vmState(game, w), [label, tone] = VM_STATE[st];
   const hot = st === "running" && pegged(game, w);
-  const entries = () => workloadMenu(game, w);
+  const hand = useHandWork();
+  const entries = () => workloadMenu(game, w, hand.start);
   return (
     <div className="wl-row" onContextMenu={menuOn(entries)}>
       <div className="wl-line">
@@ -92,18 +94,20 @@ function WorkloadRow({ game, w, u }: { game: GameState; w: Workload; u: Resource
         <Gauge icon={<MemoryStick />} label="RAM" used={u.ramGb} max={w.ramGb} unit="GB" />
         <Gauge icon={<HardDrive />} label="Disk" used={u.diskGb} max={w.diskGb} unit="GB" />
       </div>
+      {hand.dialog}
     </div>
   );
 }
 
-// A workload's actions: move it to a node with room, stop or start it, or open it elsewhere.
-export function workloadMenu(game: GameState, w: Workload): MenuEntry[] {
+// A workload's actions: move it to a node with room or recover it by hand, stop or start it, or open it elsewhere.
+export function workloadMenu(game: GameState, w: Workload, start: (game: GameState, t: HandTask) => void): MenuEntry[] {
   const { act, openApp } = useStore.getState();
   const web = game.clusters.find((c) => c.id === w.clusterId)?.kind === "panel";
-  const targets = web ? [] : migrationTargets(game, w.id);
+  const targets = web ? [] : migrationTargets(game, w.id), rescue = rescueEntries(game, w, start);
   const customer = game.services.find((v) => v.id === w.serviceId)?.customerId;
   return [
-    ...(web ? migrateEntries(game, w) : [{ label: "Migrate to", disabled: !targets.length, items: targets.map((t) => ({ label: `${t.name}${t.down ? `, offline ${t.down} h` : ""}`, run: () => act(migrateWorkload, w.id, t.to) })) }]),
+    ...rescue,
+    ...(web ? migrateEntries(game, w) : rescue.length ? [] : [{ label: "Migrate to", disabled: !targets.length, items: targets.map((t) => ({ label: `${t.name}${t.down ? `, offline ${t.down} h` : ""}`, run: () => act(migrateWorkload, w.id, t.to) })) }]),
     ...offerEntries(game, w),
     w.stopped ? { label: "Start", run: () => act(startWorkload, w.id) } : { label: "Stop", run: () => act(stopWorkload, w.id) },
     null,

@@ -1353,6 +1353,9 @@ Game servers and colocation move the most data per euro and carry the largest sh
 | Storage volume | Disk ÷ link speed | None; reads come from the old node until it finishes |
 | Between zones (cold) | (Disk + RAM) ÷ free bandwidth of the link between the zones | The whole transfer; needs a link between the zones |
 | Between zones (live) | As above, then a final sync of RAM × 0.1 ÷ free bandwidth | Under 5 seconds; needs a link of 10G or more |
+| Recovery off a server that is off, by hand | The hand work's wait + 1 hour + (disk + RAM) ÷ link speed | The whole time |
+
+A VM or game server on a server that is off or failed, whose cluster's control plane is also down, can be recovered by hand to a working node of another cluster in the same location (`rescueWorkload`, src/sim/90-actions/vms.ts). It needs no control plane and is billed like other hand work.
 
 **Migrating a web space.** A web space moves to another panel host as a hand task (`migrateWebspace`, src/sim/90-actions/vms.ts; hours in src/sim/60-infra/migration.ts). The anchor is the owner's own words: about 4 hours to move a customer between two panels, 2 if the panel is the same, scaling with web storage.
 

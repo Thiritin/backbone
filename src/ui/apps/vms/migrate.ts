@@ -4,9 +4,11 @@ import { anchorOf, type Workload } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { queueMigration } from "../../../sim/90-actions/staff";
 import { announceMigration, moveTargets, offerMigration, type MoveTarget } from "../../../sim/90-actions/moves";
-import { migrateWebspace, webspaceTargets } from "../../../sim/90-actions/vms";
+import { migrateWebspace, rescueTargets, rescueWorkload, webspaceTargets } from "../../../sim/90-actions/vms";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
+import type { HandTask } from "../locations/HandSheet";
+import { vmLabel } from "../products/parts";
 
 // Quarter hours as "2 h 30 min".
 export function hoursText(hours: number): string {
@@ -54,4 +56,13 @@ export function announceEntries(game: GameState, hostId: string): MenuEntry[] {
   for (const w of loads) for (const t of moveTargets(game, w.id)) targets.set(t.to, t);
   if (!targets.size) return [];
   return [{ label: "Announce migration", items: [...targets.values()].map((t) => ({ label: targetLabel(game, t, null), run: () => act(announceMigration, hostId, t.to) })) }];
+}
+
+// Recovery by hand off a server that is off, when its cluster's control plane is down; start runs the hand work.
+export function rescueEntries(game: GameState, w: Workload, start: (game: GameState, t: HandTask) => void): MenuEntry[] {
+  const targets = rescueTargets(game, w.id), { name } = vmLabel(game, w);
+  return targets.length ? [{ label: "Recover to", items: targets.map((t) => ({
+    label: `${t.name}, offline ${t.down} h`,
+    run: () => start(game, { title: `Recover ${name} to ${t.name}`, deviceId: w.deviceId!, action: rescueWorkload, args: [w.id, t.to] }),
+  })) }] : [];
 }
