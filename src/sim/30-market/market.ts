@@ -31,6 +31,8 @@ export interface SalesRequest {
   // An email order: whether the customer owns the domain already, its first invoice and the route chosen for its setup
   // ("auto", a cluster id or a node's device id).
   owned?: boolean; invoiceId?: string; route?: string;
+  // The one-time fee the manual quote's invoice carries; the line's rate where unset.
+  setup?: number;
 }
 // reason is an i18n key with its params.
 export interface LostSale { hour: number; name: string; product: Product; spec: Spec; reference: number; reason: string; params: Record<string, string | number> }

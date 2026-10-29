@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { orderLead } from "../src/sim/30-market/orders";
-import { specText } from "../src/sim/30-market/spec";
+import { setupFee, specText } from "../src/sim/30-market/spec";
 import { invoiceOf } from "../src/sim/30-market/manual";
 import { domainOf, DOMAIN_FEE, registryCost, REGISTRIES } from "../src/sim/30-customers/registry";
 import { serviceOnline } from "../src/sim/40-support/status";
@@ -15,6 +15,7 @@ import { createTicket } from "../src/sim/40-support/tickets";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { closeTicket } from "../src/sim/90-actions/support";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
+import { setRate } from "../src/sim/90-actions/rates";
 import { readyGame } from "./fixtures";
 
 const MONDAY_9 = 48 + 9;
@@ -91,7 +92,7 @@ describe("custom orders", () => {
     expect(tk().replies.length + req().thread.filter((m) => m.from === "you").length).toBe(1);
     done(s, confirmOrder(s, id, 12));
     const inv = invoiceOf(s, req())!;
-    expect(inv.lines.map((l) => l.amount)).toEqual([12, req().owned ? 5 : DOMAIN_FEE]);
+    expect(inv.lines.map((l) => l.amount)).toEqual([setupFee(s, "webHosting"), 12, req().owned ? 5 : DOMAIN_FEE]);
     expect(tk().status).toBe("waiting");
     payNow(s, inv.id);
     run(s, 1);
@@ -158,6 +159,26 @@ describe("custom orders", () => {
     run(s, 1);
     expect(s.customers.find((x) => x.id === req().customerId)!.churnedAt).not.toBeNull();
     expect(invoiceOf(s, req())!.status).toBe("writtenOff");
+  });
+
+  it("bills the setup fee on the confirmation invoice, the rate's by default and the quote's when given", () => {
+    const s = readyGame(2);
+    s.cash = 1e6;
+    expect(setRate(s, "webHosting", "setup", 25).ok).toBe(true);
+    const a = order(s);
+    done(s, createAccount(s, a.id));
+    done(s, confirmOrder(s, a.id, 12));
+    const first = invoiceOf(s, a.req())!.lines.filter((l) => l.key !== "invoice.line.domain" && l.key !== "invoice.line.domainTransfer");
+    expect(first.map((l) => [l.key, l.amount])).toEqual([["invoice.line.setupFee", 25], ["invoice.line.firstMonth", 12]]);
+    const b = order(s);
+    done(s, createAccount(s, b.id));
+    expect(confirmOrder(s, b.id, 12, -1)).toEqual({ ok: false, error: "error.quotePrice" });
+    done(s, confirmOrder(s, b.id, 12, 40));
+    expect(invoiceOf(s, b.req())!.lines[0]).toMatchObject({ key: "invoice.line.setupFee", amount: 40 });
+    const c = order(s);
+    done(s, createAccount(s, c.id));
+    done(s, confirmOrder(s, c.id, 12, 0));
+    expect(invoiceOf(s, c.req())!.lines.some((l) => l.key === "invoice.line.setupFee")).toBe(false);
   });
 });
 

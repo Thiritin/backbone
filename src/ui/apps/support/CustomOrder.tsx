@@ -5,7 +5,7 @@ import { yearOf } from "../../../sim/00-core/time";
 import type { Resources } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import { registryCost, registryOf } from "../../../sim/30-customers/registry";
-import { sizeOf } from "../../../sim/30-market/spec";
+import { setupFee, sizeOf } from "../../../sim/30-market/spec";
 import { invoiceOf, stepsDone } from "../../../sim/30-market/manual";
 import type { SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
@@ -64,6 +64,7 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const [price, setPrice] = useState(r.quote ?? r.reference);
+  const fee = setupFee(game, r.product), [setup, setSetup] = useState(r.setup ?? fee);
   const [route, setRoute] = useState(r.route ?? "auto");
   if (isFinal(tk)) return null;
   const done = stepsDone(game, r), locked = !!tk.work;
@@ -86,7 +87,8 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
         {row("invoice", "Order confirmation", done.invoice ? `${euroCents(r.quote ?? 0)} a month` : "Not sent",
           <div className="step-row">
             <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} />
-            <button className="btn primary" disabled={locked || !(price > 0)} onClick={() => act((s) => confirmOrder(s, tk.id, price))}><Send />Confirm order and send invoice</button>
+            <PriceField value={setup} reference={fee} onChange={setSetup} disabled={locked} label="Setup fee" />
+            <button className="btn primary" disabled={locked || !(price > 0) || !(setup >= 0)} onClick={() => act((s) => confirmOrder(s, tk.id, price, setup))}><Send />Confirm order and send invoice</button>
           </div>)}
         {web && row("domain", r.owned ? "Domain transfer" : "Domain", done.domain ? "Registered" : `${r.domain} · ${registryOf(r.domain!).name} · ${euroCents(cost)} a year`,
           <button className="btn primary" disabled={locked} onClick={() => act((s) => registerOrderDomain(s, tk.id))}><Globe />{r.owned ? "Transfer domain" : "Register domain"}</button>)}
