@@ -8,7 +8,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - A power outage that takes servers dark now cuts them off uncleanly, and they boot again once the power is back.
 - Datacenter power feeds can fail on their own: servers with two power supplies on a dual-fed rack ride through it with a notification, the rest go dark.
 - Loading a saved game no longer opens the Pear OS update sheet; What's new in the logo menu shows the full changelog in a larger sheet, grouped by version.
-- The speed buttons show one to four arrows for 1×, 2×, 4× and 16×, and a new skip button runs the clock at 64× until something happens.
+- The speed buttons show one to three arrows for 1×, 2× and 4×, and a new skip button runs the clock at 12 game hours a second until something happens.
 - The Email app no longer installs a mail server with one click; its self-hosted view shows the mail server options and an Open button to Locations, where you install one from a server's Add Software tile.
 - The menu bar shows where you are with the local weather, and you can drive to any of your datacenters for a fare while the clock skips ahead and the computer stays locked.
 - Hand work at the datacenter you stand in starts at once; anywhere else a popover shows the remote hands price to accept or decline, next to sending a friend or a technician.
@@ -30,7 +30,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Reboot and Power off join the remote power actions, and powering on from afar needs a management controller or a switched PDU.
 - Clicking a power inlet on the back of a server plugs its cord in or pulls it, and a powered-off device can be dragged on the rack front to a free spot.
 - The first time you open the Terminal it installs zsh after a couple of typos, and afterwards Tab completes commands and server names.
-- The clock counts every game minute, a game hour lasts two real minutes at 1×, and a new 16× speed fast-forwards the clock.
+- The clock counts every game minute, and a game hour lasts one real minute at 1×.
 - An open rack fills the whole Locations window, and a selected server splits into Actions, Software, Lease, Power supplies, RAID and Components tabs.
 - The power button on the server drawing turns the server on and off, and the Change parts button stays visible but greyed out until the server is powered down.
 - A notice about a site that is not on your network offers only Reject, and the reply tells the sender it is not yours and how to find the right host with whois.

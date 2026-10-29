@@ -166,7 +166,7 @@ describe("alerts", () => {
 
   it("keeps the game paused when the sheet opens an app", () => {
     const s = useStore.getState;
-    useStore.setState({ speed: 0, resume: 16, alert: { id: 1, app: "Finance", title: "a", text: "b", hour: 0, key: "event.cashNegative" } });
+    useStore.setState({ speed: 0, resume: 4, alert: { id: 1, app: "Finance", title: "a", text: "b", hour: 0, key: "event.cashNegative" } });
     s().closeAlert(false);
     expect(s()).toMatchObject({ alert: null, speed: 0 });
   });

@@ -4,17 +4,16 @@ This doc turns the systems in the [game design document](gdd.md) into formulas a
 
 ## Clock and pacing
 
-At 1×, the game clock runs 30 times faster than real time: one game minute lasts 2 seconds, one game hour 2 minutes, and a game day 48 minutes. The clock shows every game minute, but the simulation ticks every game hour. Billing, salaries, know-how and the market run on the monthly tick.
+At 1×, the game clock runs 60 times faster than real time: one game minute lasts 1 second, one game hour 1 minute, and a game day 24 minutes. The clock shows every game minute, but the simulation ticks every game hour. Billing, salaries, know-how and the market run on the monthly tick.
 
 | Speed | Game hour | Game day | Game month | Game year |
 | --- | --- | --- | --- | --- |
-| 1× | 2 min | 48 min | 24 h | 292 h |
-| 2× | 60 s | 24 min | 12 h | 146 h |
-| 4× | 30 s | 12 min | 6 h | 73 h |
-| 16× | 7.5 s | 3 min | 1.5 h | 18 h |
-| Skip (64×) | 1.9 s | 45 s | 22.5 min | 4.6 h |
+| 1× | 60 s | 24 min | 12 h | 146 h |
+| 2× | 30 s | 12 min | 6 h | 73 h |
+| 4× | 15 s | 6 min | 3 h | 36.5 h |
+| Skip (720×) | 0.08 s | 2 s | 1 min | 12 min |
 
-Skip runs at 64× until the simulation produces any event, then drops back to 1×.
+Skip runs at 12 game hours a second until the simulation produces any event, then drops back to 1×.
 
 **Pacing targets.** A player who plays reasonably well should hit each level around these years. The headless balance run checks them (see [Balancing](#balancing)).
 
