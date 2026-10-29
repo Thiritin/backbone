@@ -8,7 +8,7 @@ import type { Cable as CableT, Device, End, GameState } from "../../../sim/50-st
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, deviceVendor, deviceWatts, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
-import { addSecondPsu, atServer, buyOutLease, connect, disconnect, LABEL_MAX, pullPower, resetBmc, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, unmountDevice, type ActionResult } from "../../../sim/90-actions/hardware";
+import { addSecondPsu, atServer, buyOutLease, connect, disconnect, LABEL_MAX, resetBmc, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, unmountDevice, type ActionResult } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
 import { cableColor, DeviceSvg, SWATCHES } from "../../art/fronts";
 import { BrandLogo, Logo } from "../../art/logos";
@@ -35,7 +35,7 @@ import { stamp } from "../support/labels";
 import { startBurnin } from "../../../sim/90-actions/burnin";
 import { burning } from "../../../sim/60-infra/status";
 import { serverTaken } from "../../../sim/60-infra/cluster";
-import { frontOptions, isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
+import { frontOptions, handsAway, isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
 import { atDatacenter, useHandWork } from "./HandSheet";
 import type { FrontOp } from "../../../sim/60-infra/power";
 import { LidSheet } from "./LidSheet";
@@ -63,14 +63,14 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     lid: () => setLid(d.id),
     power: (on) => { if (on && lid) return; if (on) act(setPower, d.id, true); else guarded(`Power off ${devName(d)}?`, "Power off", setPower, d.id, false); },
     op: (op: PowerOp) => { if (op === "on") { if (!lid) act(POWER_ACTION.on, d.id); } else { const label = powerOptions(game, d).options.find((o) => o.op === op)?.label ?? POWER_LABEL[op];
-      if (op === "bmc" && !pduOf(game, d) && atDatacenter(game, d.id)) hand.start(game, { title: `${label} ${devName(d)}`, deviceId: d.id, action: resetBmc, args: [d.id] });
+      if (op === "bmc" && atDatacenter(game, d.id)) hand.start(game, { title: `${label} ${devName(d)}`, deviceId: d.id, action: resetBmc, args: [d.id] });
       else if (op === "continue" && !remoteFix(game, d)) hand.start(game, { title: `${label} ${devName(d)}`, deviceId: d.id, action: continueBoot, args: [d.id], tech: { kind: "boot" } });
       else guarded(`${label} ${devName(d)}?`, label, POWER_ACTION[op], d.id); } },
     front: (op) => {
       if (op === "power" && !d.on && lid) return;
       const label = frontOptions(game, d).find((o) => o.op === op)?.label ?? "";
-      if (op === "pull" && !pduOf(game, d) && atDatacenter(game, d.id)) hand.start(game, { title: `${label} ${devName(d)}`, deviceId: d.id, action: pullPower, args: [d.id] });
-      else guarded(`${label} on ${devName(d)}?`, label, atServer, d.id, op);
+      if (handsAway(game, d)) hand.start(game, { title: `${label} ${devName(d)}`, deviceId: d.id, action: atServer, args: [d.id, op] });
+      else guarded(`${label} on ${devName(d)}?`, label, atServer, d.id, op, "self");
     },
     plug: (psu) => togglePlug(guarded, d, psu),
     setup: () => setSetup(d.id),

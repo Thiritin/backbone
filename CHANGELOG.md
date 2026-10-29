@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- When you are at the datacenter, the server's power and plug buttons now work at once instead of calling remote hands, and from afar you can send a friend to press them.
 - The Security app lists every compromised host, including virtual machine clusters, game panels and the mail host, with a Clean up button that works without Monitoring.
 - The Security app now sits in the dock from the start, so you can clean up a compromised host without waiting for an alert.
 - Loans moved from the Bank app into a new Loans page in Finance, and loan alerts open it directly.

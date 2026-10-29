@@ -5,7 +5,7 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { BOOKED_HOURS, FRIEND_FEE, handWork } from "../src/sim/60-infra/handwork";
 import { drive, travelTo } from "../src/sim/90-actions/travel";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { addLocation, buyRack, installPart, pullPower, setPower } from "../src/sim/90-actions/hardware";
+import { addLocation, atServer, buyRack, installPart, pullPower, setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
@@ -99,6 +99,25 @@ describe("driving there", () => {
     ok(pullPower(s, id, "self"));
     expect(s.cash).toBe(980);
     expect(dev(s, id).hands).toMatchObject({ kind: "pull", doneAt: s.hour });
+  });
+
+  it("presses the front buttons on site at once, without remote hands", () => {
+    const hands = DATACENTERS.find((d) => d.id === "interaction-fra")!.remoteHands;
+    const away = setup("interaction-fra");
+    expect(err(atServer(away.s, away.id, "power", "self"))).toBe("error.notThere");
+    const cash = away.s.cash;
+    ok(atServer(away.s, away.id, "power"));
+    expect(dev(away.s, away.id).hands).toEqual({ kind: "power", doneAt: away.s.hour + hands.responseHours });
+    expect(away.s.cash).toBe(cash - hands.perHour);
+
+    const { s, loc, id } = setup("interaction-fra");
+    ok(travelTo(s, loc));
+    s.hour += 1;
+    const before = s.cash;
+    ok(atServer(s, id, "power", "self"));
+    expect(dev(s, id).on).toBe(true);
+    expect(dev(s, id).hands).toBeUndefined();
+    expect(s.cash).toBe(before);
   });
 
   it("starts an old save at home", () => {

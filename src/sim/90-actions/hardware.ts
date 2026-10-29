@@ -512,15 +512,9 @@ function hardRestart(s: GameState, deviceId: string, key: "ipmi.log.reset" | "ip
 export const reset = (s: GameState, deviceId: string, technician = false): ActionResult => hardRestart(s, deviceId, "ipmi.log.reset", technician);
 export const powerCycle = (s: GameState, deviceId: string, technician = false): ActionResult => hardRestart(s, deviceId, "ipmi.log.cycle", technician);
 
-// The remote hands of a datacenter, unless a technician is at the machine; null where the player works for free.
-function handsAt(s: GameState, d: Device, technician: boolean): { wait: number; perHour: number } | null {
-  const loc = locationOf(s, d), hands = loc?.dc && !technician ? datacenterById(loc.dc).remoteHands : null;
-  return hands ? { wait: hands.responseHours, perHour: hands.perHour } : null;
-}
-
-// Works the server's front panel or its power cords on site: at once in the basement, after the remote hands' response
-// time (billed for an hour) in a datacenter.
-export function atServer(s: GameState, deviceId: string, op: FrontOp, technician = false): ActionResult {
+// Works the server's front panel or its power cords through the hand work sheet: at once in the basement or with the
+// player on site, after the remote hands' response time (billed for an hour) or the friend's trip in a datacenter.
+export function atServer(s: GameState, deviceId: string, op: FrontOp, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId) return fail("error.notMounted");
@@ -530,11 +524,13 @@ export function atServer(s: GameState, deviceId: string, op: FrontOp, technician
   if (op === "power" && d.on && !working(s, deviceId)) return fail("error.unresponsive");
   if (op === "pull" && !cords.some(isPlugged)) return fail("error.unplugged");
   if (op === "plug" && cords.every(isPlugged)) return fail("error.plugged");
-  const hands = handsAt(s, d, technician);
-  if (!hands) { atFront(s, d, op); return { ok: true }; }
-  if (s.cash < hands.perHour) return fail("error.noCash");
-  book(s, "maintenance", "ledger.remoteHands", { device: d.label ?? d.name, hours: 1 }, -hands.perHour);
-  d.hands = { kind: op, doneAt: s.hour + hands.wait };
+  const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, 0);
+  if ("error" in job) return fail(job.error);
+  if (s.cash < job.cost) return fail("error.noCash");
+  // d.hands only finishes in the hourly power tick, so work without a wait applies now.
+  const wait = job.commit();
+  if (wait > 0) d.hands = { kind: op, doneAt: s.hour + wait };
+  else atFront(s, d, op);
   return { ok: true };
 }
 

@@ -6,9 +6,8 @@ import { recover, restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { TechButton } from "./TechButton";
 import { ActionTile } from "../software/Software";
-import { FRONT_BUSY, FRONT_ICON, frontOptions, POWER_ICON, powerOptions, type PowerOp } from "./power";
+import { FRONT_BUSY, FRONT_ICON, frontOptions, handsLabel, POWER_ICON, powerOptions, type PowerOp } from "./power";
 import type { FrontOp } from "../../../sim/60-infra/power";
-import { locationOf } from "../../../sim/60-infra/status";
 
 // The power actions of a mounted server from afar and at the machine, extra action groups, the pending hand task, and the workloads a pulled plug corrupted.
 export function PowerCard({ game, device, onOp, onFront, children }: { game: GameState; device: Device; onOp: (op: PowerOp) => void; onFront: (op: FrontOp) => void; children?: ReactNode }) {
@@ -31,7 +30,7 @@ export function PowerCard({ game, device, onOp, onFront, children }: { game: Gam
         )}
         <div>
           <div className="loc-card-h">
-            <h3><Hand />{locationOf(game, device)?.dc ? "Remote hands" : "At the server"}</h3>
+            <h3><Hand />{handsLabel(game, device)}</h3>
             {!options.length && device.hands && <span className="pill accent">{FRONT_BUSY[device.hands.kind]}</span>}
           </div>
           <div className="act-tiles">
