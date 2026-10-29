@@ -1092,6 +1092,16 @@ Stuck boots, hangs and lockouts are rolled per device and hour and do not draw f
 
 Used devices are never insured, cannot be leased and resell from the price paid like any other device. Anchors: eBay server lots sold at 30% to 50% of list in the 2000s, and WebHostingTalk marketplace asks sit around half of the new price.
 
+**Burn-in.** A racked server that is on, has power and sits in no cluster and runs no workload can be burned in. The server counts as busy for the whole test: it draws its full rated power at the location's rate, and in a datacenter the rack position and power limit are used as usual. The test ends early if the server loses power.
+
+| Rule | Value |
+| --- | --- |
+| Quick | 6 hours; every hidden part at 80% of its life or more is marked worn, the others stay unknown; no failures |
+| Full | 48 hours; every hidden part shows its real age; each working part past its life fails with 50% (seeded by game seed, hour and device) |
+| Bonus | A full burn-in in which no part failed multiplies the server's failure chance by 0.9 for 365 days (it stacks with the other failure factors) |
+| Used parts | Parts bought on the used market are hidden until a burn-in has looked at them; replaced parts are known |
+| Buyer protection | The first failed part of a unit bought on the board or eBuy within 14 days of its arrival refunds half the unit price, once; Telegrump deals never refund |
+
 **Power feeds.**
 
 | Feed | Effect | Price |

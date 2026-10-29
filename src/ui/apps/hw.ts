@@ -56,8 +56,9 @@ export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD"
 // A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"", "Indel G5 CPU 20 cores", "AMB Mainboard".
 export const partLabel = (p: Pick<Component, "kind" | "size" | "ff" | "vendor" | "gen">): string =>
   `${p.vendor ? `${VENDOR_NAME[p.vendor]} ` : ""}${p.gen ? `G${p.gen} ` : ""}${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}`;
-export const ageYears = (g: GameState, c: Component) => (g.hour - c.installedAt) / HOURS_PER_YEAR;
-export const isWorn = (g: GameState, c: Component) => ageYears(g, c) >= COMPONENTS[c.kind].life;
+// A used part's age stays unknown (null) until a burn-in has looked at it.
+export const ageYears = (g: GameState, c: Component): number | null => (c.wear ? null : (g.hour - c.installedAt) / HOURS_PER_YEAR);
+export const isWorn = (g: GameState, c: Component) => { const a = ageYears(g, c); return a === null ? c.wear === "worn" : a >= COMPONENTS[c.kind].life; };
 
 const DRIVE: ReadonlySet<ComponentKind> = new Set(["hdd", "ssd", "nvme"]);
 const WORSE: Lamp[] = ["ok", "warn", "bad"];

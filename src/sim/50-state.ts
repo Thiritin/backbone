@@ -74,6 +74,10 @@ export interface Device { id: string; model: string; brand: string; rackId: stri
   hostname?: string;
   // Bought on the used market: no insurance covers it.
   used?: true;
+  // A burn-in test running until the hour; full is the long one. burnedInAt is the hour a full burn-in passed.
+  burnin: { until: number; full: boolean } | null; burnedInAt: number | null;
+  // Buyer protection from a board or eBuy purchase: the first failure before the hour refunds this much.
+  refund?: { until: number; amount: number } | null;
 }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
@@ -84,7 +88,8 @@ export interface Cable { id: string; a: End; b: End; kind: CableKind; color: str
 // failedAt is the hour the component broke; null while it works. A power supply is plugged in unless plugged is false.
 // size is GB for RAM sticks and drives, cores for CPUs; ff is the form factor of a drive. CPUs and boards carry their vendor,
 // CPUs their generation (1 for G1).
-export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; plugged?: boolean; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number }
+// wear is what a used part's owner knows of it: hidden until a burn-in, or worn after a quick one; unset once known.
+export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; wear?: "hidden" | "worn"; plugged?: boolean; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number }
 export type RaidLevel = "none" | "1" | "5" | "6" | "10";
 export type RebuildRate = "low" | "medium" | "high";
 // since is the hour of the first change; a data loss after it wipes the changes. A path maps to a file's text, true for a
@@ -231,7 +236,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
   return {
     components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
-    rebuild: null, maintenance: null, dataLost: null,
+    rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null,
     hung: false, bmcHung: false, log: [] as { hour: number; key: string }[],
     stuck: false, locked: false, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
   };
