@@ -1,4 +1,4 @@
-import { Boxes, Globe, Plus, Server, Trash2 } from "lucide-react";
+import { Boxes, Globe, Plus, Server } from "lucide-react";
 import { useState } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -13,7 +13,10 @@ import { licenseCost } from "../../../sim/85-products/products";
 import {
   createPanelVm, installPanel, PANEL_VM_MIN, PANEL_VM_SIZE, phpDue, removePanelHost, resizePanelVm, setSoftware, upgradePhp,
 } from "../../../sim/90-actions/clusters";
+import { cleanUp, setSitesOffline } from "../../../sim/90-actions/security";
 import { Confirm } from "../../desktop/Confirm";
+import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { More } from "../More";
 import { useStore } from "../../store";
 import { devName, disk, ram } from "../hw";
 import { Meter } from "../locations/Clusters";
@@ -94,14 +97,20 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
   const year = yearOf(game.hour), behind = phpBehind(host.php, year);
   const target = pending ? softwareById(pending) : null;
   const fresh = !host.panel;
+  const menu = (): MenuEntry[] => [
+    phpDue(game, host) && { label: host.php === phpAt(year) ? "Patch PHP" : `Upgrade to PHP ${phpAt(year)}`, run: () => act((g) => upgradePhp(g, host.id)) },
+    ...sitesMenu(game, host),
+    null,
+    sites.length === 0 && { label: "Remove...", run: () => setRemoving(true) },
+  ];
   return (
     <div className="prd-pad">
-      <div className="prd-title">
+      <div className="prd-title" onContextMenu={menuOn(menu)}>
         <Mark id={host.panel ?? host.switching?.to ?? null} size={36} />
         <div><h2>{host.name}</h2><span className="loc-muted">{host.az}</span></div>
         <span className="grow" />
         <ControlPlanePill game={game} cluster={host} />
-        {sites.length === 0 && <button className="btn" onClick={() => setRemoving(true)}><Trash2 />Remove</button>}
+        <More label={host.name} entries={menu} />
       </div>
 
       <h3 className="prd-h">Hosting panel<span className="loc-muted num">{euroCents(lic)} per month</span></h3>
@@ -114,11 +123,6 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
           <div><dt>Web spaces</dt><dd className="num">{sites.length}</dd></div>
           <div><dt>PHP</dt><dd className="num">{host.php}{behind >= PHP_EOL ? <> <span className="pill bad">Unsupported</span></> : behind > 0 ? <> <span className="pill warn">Outdated</span></> : null}</dd></div>
         </dl>
-        {phpDue(game, host) && (
-          <div className="fin-card-b">
-            <div className="fin-pills"><button className="btn" onClick={() => act((g) => upgradePhp(g, host.id))}>{host.php === phpAt(year) ? "Patch" : `Upgrade to ${phpAt(year)}`}</button></div>
-          </div>
-        )}
       </section>
 
       <section className="fin-card">
@@ -155,6 +159,14 @@ export function PanelHostDetail({ game, host }: { game: GameState; host: Cluster
       )}
     </div>
   );
+}
+
+// Taking a panel host's sites offline, back online, or cleaning them up after a breach.
+export function sitesMenu(game: GameState, host: Cluster): MenuEntry[] {
+  const act = useStore.getState().act, sec = game.security;
+  if (sec.hacked.includes(host.id)) return [{ label: "Clean up sites", run: () => act((g) => cleanUp(g, host.id)) }];
+  const off = sec.offline.includes(host.id);
+  return [{ label: off ? "Bring sites online" : "Take sites offline", run: () => act((g) => setSitesOffline(g, host.id, !off)) }];
 }
 
 // The panel VM's booking, resized within what its web spaces need and its server has room for.

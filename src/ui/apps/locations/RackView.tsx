@@ -1,5 +1,5 @@
-import { CircleDollarSign, Gauge, Plug, Truck, Zap } from "lucide-react";
-import { useRef, useState, type ReactNode } from "react";
+import { Gauge, Plug, Truck, Zap } from "lucide-react";
+import { useCallback, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { modelById, type DeviceKind } from "../../../sim/10-catalog/hardware";
 import { BASEMENT } from "../../../sim/20-world/datacenters";
@@ -15,7 +15,9 @@ import { RackFront, type RackItem, type RackLink, type RackRemote } from "../../
 import { useStore } from "../../store";
 import { day, deviceLamps, devName, height, portLamps, portLights } from "../hw";
 import { rackUnits } from "./Floor";
-import { Inspector, SellConfirm, togglePlug, useOfflineGuard } from "./Inspector";
+import { Inspector, SellConfirm, togglePlug, useDeviceMenu, useOfflineGuard } from "./Inspector";
+import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { More } from "../More";
 import { dcOf, Facts, positionsLabel, PowerMeter, Sheet, UsageBars, useDismiss } from "./ui";
 import { usageOf } from "../../../sim/60-infra/usage";
 
@@ -66,6 +68,17 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   const dev = game.devices.find((d) => d.id === device && d.rackId === rack.id);
   const loc = game.locations.find((l) => l.id === rack.locationId)!;
   const { guarded, dialog } = useOfflineGuard(game);
+  const [rename, setRename] = useState<string | null>(null);
+  const clearRename = useCallback(() => setRename(null), []);
+  const menus = useDeviceMenu(game, onDevice, (id) => { onDevice(id); setRename(id); });
+  const deviceMenu = (id: string, e: ReactMouseEvent) => {
+    const d = game.devices.find((x) => x.id === id);
+    if (d) menuOn(() => menus.entries(d, id !== dev?.id))(e);
+  };
+  const rackMenu = (): MenuEntry[] => [
+    !rack.provided && { label: "Move…", disabled: rack.arriveAt !== null, run: () => setMoving(true) },
+    !rack.provided && { label: "Sell…", disabled: items.length > 0, run: () => setSelling(true) },
+  ];
   const plug = (id: string, k: number) => {
     const d = game.devices.find((x) => x.id === id), psu = d?.components.filter((c) => c.kind === "psu")[k];
     if (d && psu) togglePlug(guarded, d, psu.id);
@@ -86,19 +99,18 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
           </div>
         </div>
         <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420} u={22}
-          hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onFree={openMount}
+          hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); }} onDeviceMenu={deviceMenu} onFree={openMount}
           onConnect={(a, b) => act((g) => connect(g, a, b))} onPlug={plug} />
       </div>
       <div className="loc-insp">
-        {dev ? <Inspector key={dev.id} game={game} device={dev} side={side} onSelect={onDevice} onHot={setHot} /> : (
+        {dev ? <Inspector key={dev.id} game={game} device={dev} side={side} onSelect={onDevice} onHot={setHot} rename={rename === dev.id} onRenaming={clearRename} /> : (
           <>
-            <div className="loc-insp-h">
+            <div className="loc-insp-h" onContextMenu={menuOn(rackMenu)}>
               <h2>{rack.name}</h2>
               {power.tripped && <span className="pill bad">Tripped</span>}
               {rack.arriveAt !== null && <span className="pill"><Truck />Arrives <span className="num">{day(rack.arriveAt)}</span></span>}
               <span className="grow" />
-              {!rack.provided && <button className="btn" disabled={rack.arriveAt !== null} onClick={() => setMoving(true)}><Truck />Move</button>}
-              {!items.length && !rack.provided && <button className="btn" onClick={() => setSelling(true)}><CircleDollarSign />Sell</button>}
+              {!rack.provided && <More label={rack.name} entries={rackMenu} />}
             </div>
             <div className="loc-card">
               <Facts rows={[["Location", loc.name], ["Position", <span className="num">{rack.position}</span>], ["Used", <span className="num">{used} / {units} U</span>], ...(rack.provided ? [["Owner", "Provided"]] as [string, string][] : [["Paid", <span className="num">{euro(rack.price)}</span>]] as [string, ReactNode][])]} />
@@ -117,6 +129,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
       {mount && <MountPop game={game} rack={rack} {...mount} onClose={() => setMount(null)} onMounted={(id) => { setMount(null); onDevice(id); }} />}
       {moving && <MoveRack game={game} rack={rack} onClose={() => setMoving(false)} onMoved={(id) => { setMoving(false); onMoved(id); }} />}
       {dialog}
+      {menus.dialog}
       {selling && <SellConfirm game={game} name={rack.name} price={rack.price} boughtAt={rack.boughtAt} onCancel={() => setSelling(false)} onSell={() => { setSelling(false); if (act((s) => sellRack(s, rack.id)).ok) onMoved(null); }} />}
     </div>
   );

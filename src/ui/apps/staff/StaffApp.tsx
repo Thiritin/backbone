@@ -1,4 +1,4 @@
-import { BookOpen, Bot, Check, GraduationCap, Megaphone, MessagesSquare, Search, UserMinus, UserPlus, Users } from "lucide-react";
+import { BookOpen, Bot, Check, GraduationCap, Megaphone, MessagesSquare, Search, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import { runwayMonths } from "../../../sim/46-finance/finance";
 import { euro, euroCents } from "../../../sim/00-core/money";
@@ -11,8 +11,10 @@ import { storeItem, subscriptionPrice } from "../../../sim/10-catalog/store";
 import { pricePerMTokens } from "../../../sim/47-staff/chad";
 import type { GameState } from "../../../sim/50-state";
 import { cancel } from "../../../sim/90-actions/store";
-import { answerRaise, assign, fire, hire, planTraining, postJobAd, setHours } from "../../../sim/90-actions/staff";
+import { answerRaise, assign, fire, hire, planTraining, postJobAd, setHours, setOnCall, setTechLocation } from "../../../sim/90-actions/staff";
 import { Confirm } from "../../desktop/Confirm";
+import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { More } from "../More";
 import { useFocus, useStore } from "../../store";
 import { runwayLabel } from "../finance/FinanceApp";
 import { Facts, Sheet } from "../locations/ui";
@@ -87,8 +89,29 @@ export function StaffApp() {
   );
 }
 
+// Hours, assignment, training, raise and leaving for an employee; a bot only cancels.
+function staffMenu(game: GameState, e: Employee, onLeave: (e: Employee) => void): MenuEntry[] {
+  const act = useStore.getState().act;
+  if (e.bot) return [{ label: "Cancel subscription", run: () => act((s) => cancel(s, e.id)) }];
+  const open = TASKS[e.role].filter((k) => !e.trained.includes(k) && e.training?.task !== k && !e.plan.includes(k));
+  const tech = e.role === "technician", onCall = game.onCall.roster.includes(e.id);
+  return [
+    e.raise && { label: "Accept raise", run: () => act((s) => answerRaise(s, e.id, true)) },
+    e.raise && { label: "Refuse raise", run: () => act((s) => answerRaise(s, e.id, false)) },
+    null,
+    { label: "Hours a day", items: WORK_HOURS.map((h) => ({ label: `${h} h`, checked: e.hours === h, run: () => act((s) => setHours(s, e.id, h)) })) },
+    { label: "Assignment", items: (["queue", "trainer", "forum"] as const).map((a) => ({ label: ASSIGN[a], checked: e.assignment === a, run: () => act((s) => assign(s, e.id, a)) })) },
+    tech && { label: "Location", items: game.locations.map((l) => ({ label: l.name, checked: e.location === l.id, run: () => act((s) => setTechLocation(s, e.id, l.id)) })) },
+    tech && { label: "On call", checked: onCall, run: () => act((s) => setOnCall(s, e.id, !onCall)) },
+    open.length > 0 && { label: "Train all", run: () => act((s) => planTraining(s, e.id, [...e.plan, ...open])) },
+    null,
+    { label: "Let go...", run: () => onLeave(e) },
+  ];
+}
+
 function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | null; setSel: (id: string) => void; onMarket: () => void }) {
   const bots = activeBots(game);
+  const [leaving, setLeaving] = useState<Employee | null>(null);
   if (!game.staff.length && !bots.length) {
     return (
       <div className="st-empty">
@@ -98,6 +121,7 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
     );
   }
   const current = [...game.staff, ...bots].find((e) => e.id === sel) ?? game.staff[0] ?? bots[0];
+  const menu = (e: Employee) => () => staffMenu(game, e, setLeaving);
   const payroll = game.staff.reduce((sum, e) => sum + monthlyPay(e), 0);
   return (
     <>
@@ -106,7 +130,7 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
         {game.staff.map((e) => {
           const st = status(game, e);
           return (
-            <button key={e.id} role="listitem" className={`st-row${e.id === current.id ? " active" : ""}`} onClick={() => setSel(e.id)}>
+            <button key={e.id} role="listitem" className={`st-row${e.id === current.id ? " active" : ""}`} onClick={() => setSel(e.id)} onContextMenu={menuOn(menu(e))}>
               <span className="logo">{initials(e.name)}</span>
               <span className="who">
                 <span className="name">{e.name}</span>
@@ -121,7 +145,7 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
           );
         })}
         {bots.map((b) => (
-          <button key={b.id} role="listitem" className={`st-row${b.id === current.id ? " active" : ""}`} onClick={() => setSel(b.id)}>
+          <button key={b.id} role="listitem" className={`st-row${b.id === current.id ? " active" : ""}`} onClick={() => setSel(b.id)} onContextMenu={menuOn(menu(b))}>
             <span className="logo"><Bot /></span>
             <span className="who">
               <span className="name">{b.name}</span>
@@ -131,7 +155,8 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
           </button>
         ))}
       </div>
-      {current.bot ? <BotDetail game={game} b={current} /> : <Detail game={game} e={current} />}
+      {current.bot ? <BotDetail game={game} b={current} menu={menu(current)} /> : <Detail game={game} e={current} menu={menu(current)} />}
+      {leaving && <LetGo game={game} e={leaving} onClose={() => setLeaving(null)} />}
     </>
   );
 }
@@ -156,8 +181,16 @@ function ChadUsageFacts({ game }: { game: GameState }) {
   );
 }
 
-function BotDetail({ game, b }: { game: GameState; b: Employee }) {
+function LetGo({ game, e, onClose }: { game: GameState; e: Employee; onClose: () => void }) {
   const act = useStore((s) => s.act);
+  const owed = salaryUpToNow(game, e);
+  return (
+    <Confirm title={`Let ${e.name} go?`} action="Let go" onCancel={onClose} onConfirm={() => { onClose(); act((s) => fire(s, e.id)); }}
+      text={`This saves ${euro(monthlyPay(e))} a month. ${e.name.split(" ")[0]} leaves today${owed > 0 ? ` and is paid ${euro(owed)} for the days worked this month` : ""}.`} />
+  );
+}
+
+function BotDetail({ game, b, menu }: { game: GameState; b: Employee; menu: () => MenuEntry[] }) {
   return (
     <section className="st-detail">
       <header className="d-head">
@@ -168,7 +201,7 @@ function BotDetail({ game, b }: { game: GameState; b: Employee }) {
             <div className="sub">Pear One subscription</div>
           </div>
           <span className="grow" />
-          <button className="btn danger" onClick={() => act((s) => cancel(s, b.id))}><UserMinus />Cancel subscription</button>
+          <More label={b.name} entries={menu} />
         </div>
         <dl className="st-facts">
           <div><dt>Subscription</dt><dd className="num">{euro(botPrice(game, b))}</dd></div>
@@ -187,14 +220,12 @@ function BotDetail({ game, b }: { game: GameState; b: Employee }) {
   );
 }
 
-function Detail({ game, e }: { game: GameState; e: Employee }) {
+function Detail({ game, e, menu }: { game: GameState; e: Employee; menu: () => MenuEntry[] }) {
   const act = useStore((s) => s.act);
   const trainer = trainerFor(game, e);
   const fee = staffPrice(COURSE_PRICE, yearOf(game.hour));
   const canTrain = fullyTrained(e) && game.staff.some((x) => x.id !== e.id && x.role === e.role && needsTraining(x));
   const open = TASKS[e.role].filter((k) => !e.trained.includes(k) && e.training?.task !== k);
-  const [leaving, setLeaving] = useState(false);
-  const owed = salaryUpToNow(game, e);
   const toggle = (k: Task) => act((s) => planTraining(s, e.id, e.plan.includes(k) ? e.plan.filter((x) => x !== k) : [...e.plan, k]));
   return (
     <section className="st-detail">
@@ -206,7 +237,7 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
             <div className="sub">{ROLE[e.role].one} since {formatDay(e.hiredAt)}</div>
           </div>
           <span className="grow" />
-          <button className="btn danger" onClick={() => setLeaving(true)}><UserMinus />Let go</button>
+          <More label={e.name} entries={menu} />
         </div>
         <dl className="st-facts">
           <div><dt>Skill</dt><dd><span className="num">{Math.round(e.skill)}</span><SkillBar value={e.skill} /></dd></div>
@@ -215,10 +246,6 @@ function Detail({ game, e }: { game: GameState; e: Employee }) {
           <div><dt>Next raise talk</dt><dd className="num">{formatDay(e.nextRaiseAt)}</dd></div>
         </dl>
       </header>
-      {leaving && (
-        <Confirm title={`Let ${e.name} go?`} action="Let go" onCancel={() => setLeaving(false)} onConfirm={() => { setLeaving(false); act((s) => fire(s, e.id)); }}
-          text={`This saves ${euro(monthlyPay(e))} a month. ${e.name.split(" ")[0]} leaves today${owed > 0 ? ` and is paid ${euro(owed)} for the days worked this month` : ""}.`} />
-      )}
       <div className="st-body">
         {e.raise && (
           <div className="st-raise">

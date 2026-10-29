@@ -1,4 +1,4 @@
-import { ArrowDownToLine, CircleDollarSign, Truck } from "lucide-react";
+import { ArrowDownToLine, Truck } from "lucide-react";
 import { useState } from "react";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
@@ -11,6 +11,8 @@ import { useStore } from "../../store";
 import { day, height } from "../hw";
 import { Stepper } from "../shop/Cart";
 import { SellConfirm } from "./Inspector";
+import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { More } from "../More";
 import { rackUnits } from "./Floor";
 import { rackItems } from "./RackView";
 import { LocName, Sheet, Zone } from "./ui";
@@ -125,8 +127,14 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
   const [shipping, setShipping] = useState(false);
   // Leased units can't be sold, so Sell takes the first paid-off unit of the stack.
   const m = modelById(stack.model), units = game.devices.filter((d) => stack.ids.includes(d.id)), first = units.find((d) => !d.lease) ?? units[0];
+  const entries = (): MenuEntry[] => [
+    m.height > 0 && { label: "Mount…", run: () => setMounting(true) },
+    { label: "Ship to…", disabled: game.locations.length < 2, run: () => setShipping(true) },
+    null,
+    { label: "Sell…", disabled: !!first.lease, run: () => setSelling(true) },
+  ];
   return (
-    <div className="loc-stack">
+    <div className="loc-stack" onContextMenu={menuOn(entries)}>
       <div className="loc-stack-main">
         <Isometric model={m} brand={stack.brand} w={96} count={stack.ids.length} />
         <div className="loc-stack-name">
@@ -135,8 +143,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
         </div>
         <span className="grow" />
         {m.height > 0 && <button className="btn" onClick={() => setMounting(true)}><ArrowDownToLine />Mount</button>}
-        <button className="btn" aria-expanded={shipping} disabled={game.locations.length < 2} onClick={() => setShipping(!shipping)}><Truck />Ship to…</button>
-        <button className="btn" disabled={!!first.lease} onClick={() => setSelling(true)}><CircleDollarSign />Sell</button>
+        <More label={`${stack.brand} ${m.name}`} entries={entries} />
       </div>
       {mounting && <MountSheet game={game} stack={stack} onClose={() => setMounting(false)} onMounted={onMounted} />}
       {shipping && <Ship game={game} ids={stack.ids} onDone={() => setShipping(false)} />}

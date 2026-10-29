@@ -5,10 +5,13 @@ import type { GameState } from "../../sim/50-state";
 import { anchorOf, type Cluster } from "../../sim/60-infra/cluster";
 import { advisoryNodes, ADVISORY_KEYS, patchOut, STAGE_HOURS, vulnById, vulnerable, webOn } from "../../sim/60-infra/security";
 import { phpDue, upgradePhp } from "../../sim/90-actions/clusters";
-import { cleanUp, setSitesOffline } from "../../sim/90-actions/security";
+import { cleanUp } from "../../sim/90-actions/security";
+import { menuOn, type MenuEntry } from "../desktop/ContextMenu";
 import { useStore } from "../store";
 import { devName } from "./hw";
 import { TechButton } from "./locations/TechButton";
+import { More } from "./More";
+import { sitesMenu } from "./products/PanelHosts";
 
 // The advisory's current stage title, and the hour its patch is due.
 export const advisoryOf = (game: GameState) => {
@@ -21,9 +24,11 @@ function NodeRow({ game, n }: { game: GameState; n: Cluster }) {
   const at = anchorOf(game, n), d = game.devices.find((x) => x.id === at), sec = game.security;
   const hacked = sec.hacked.includes(n.id), offline = sec.offline.includes(n.id);
   const open = vulnerable(game, n);
+  const patch = open && patchOut(game) && phpDue(game, n);
+  const menu = (): MenuEntry[] => [...sitesMenu(game, n), patch && { label: "Patch PHP", run: () => act((g) => upgradePhp(g, n.id)) }];
   const [state, tone] = hacked ? ["Compromised", "bad"] : offline ? ["Offline", "warn"] : open ? ["Online", "accent"] : ["Online", "ok"];
   return (
-    <tr>
+    <tr onContextMenu={menuOn(menu)}>
       <td>{n.name}</td>
       <td>{d && devName(d)}</td>
       <td className="num">{n.php}</td>
@@ -33,11 +38,9 @@ function NodeRow({ game, n }: { game: GameState; n: Cluster }) {
       <td className="r">
         <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
           {hacked && <button className="btn" onClick={() => act((g) => cleanUp(g, n.id))}>Clean up</button>}
-          {!hacked && (offline
-            ? <button className="btn" onClick={() => act((g) => setSitesOffline(g, n.id, false))}>Bring online</button>
-            : <button className="btn" onClick={() => act((g) => setSitesOffline(g, n.id, true))}>Take offline</button>)}
           {open && <button className="btn" disabled={!patchOut(game) || !phpDue(game, n)} onClick={() => act((g) => upgradePhp(g, n.id))}>Patch</button>}
           {open && patchOut(game) && at && <TechButton game={game} deviceId={at} kind="php" />}
+          <More label={n.name} entries={menu} />
         </span>
       </td>
     </tr>

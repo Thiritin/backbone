@@ -1,5 +1,5 @@
 import { yearOf } from "../00-core/time";
-import { brandsFor, modelById, priceOf, shopModels, SWITCH_BRAND } from "../10-catalog/hardware";
+import { brandsFor, dualPsuModel, modelById, priceOf, shopModels, SWITCH_BRAND } from "../10-catalog/hardware";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { BASEMENT, DATACENTERS, datacenterById, HOME_LINES, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
@@ -461,6 +461,23 @@ export function buyCircuit(s: GameState, locationId: string): ActionResult {
   loc.extraCircuit = true;
   book(s, "hardware", "ledger.circuit", {}, -CIRCUIT_PRICE);
   return { ok: true };
+}
+
+// Fills an empty second power supply bay: the device becomes its dual-supply build, and the new supply waits to be plugged in.
+export function addSecondPsu(s: GameState, deviceId: string): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  const to = dualPsuModel(d.model);
+  if (!to) return fail("error.noSecondPsu");
+  const price = priceOf(to, d.brand) - priceOf(modelById(d.model), d.brand);
+  if (s.cash < price) return fail("error.noCash");
+  const at = d.components.map((c) => c.kind).lastIndexOf("psu") + 1;
+  const id = `c${Math.max(0, ...d.components.map((c) => Number(c.id.slice(1)) || 0)) + 1}`;
+  d.components.splice(at, 0, { id, kind: "psu", installedAt: s.hour, failedAt: null, plugged: false });
+  d.model = to.id;
+  d.price += price;
+  book(s, "hardware", "ledger.secondPsu", { device: d.label ?? d.name }, -price);
+  return { ok: true, id };
 }
 
 // Orders another internet line for the basement; it goes live after its install days. Ordering the current line cancels a pending switch.

@@ -1,4 +1,4 @@
-import { Ban, CircleCheck, CircleDot, Files, Globe, ListChecks, RefreshCw, Mail, OctagonAlert, Pause, Play, Receipt, Trash2, Workflow } from "lucide-react";
+import { Ban, CircleCheck, CircleDot, Files, Globe, ListChecks, Mail, OctagonAlert, Receipt, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
@@ -6,9 +6,12 @@ import { AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, dueStep, freeRiding, invoiceTotal
 import { sendReminder, setBillingRules, suspendServices, writeOff } from "../../../sim/90-actions/billing";
 import { renewDomain } from "../../../sim/90-actions/orders";
 import { DOMAIN_FEE, registryCost, registryOf } from "../../../sim/30-customers/registry";
+import type { Customer } from "../../../sim/30-customers/customers";
 import { yearOf } from "../../../sim/00-core/time";
 import { t } from "../../../i18n/en";
 import { Confirm } from "../../desktop/Confirm";
+import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { More } from "../More";
 import { useFocus, useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
 import "./billing.css";
@@ -41,6 +44,7 @@ export function BillingApp() {
   const game = useStore((s) => s.game);
   const [filter, setFilter] = useState<InvoiceStatus | "all" | "automation" | "domains">("all");
   const [selected, setSelected] = useState<string | null>(null);
+  const [writing, setWriting] = useState<Invoice | null>(null);
   useFocus("Billing", (f) => {
     if (f.kind === "domain") setFilter("domains");
     if (f.kind !== "invoice") return;
@@ -51,6 +55,7 @@ export function BillingApp() {
   const auto = rulesAutomated(game);
   const shown = game.invoices.filter((i) => filter === "all" || i.status === filter).reverse();
   const invoice = game.invoices.find((i) => i.id === selected);
+  const menu = (i: Invoice) => () => invoiceMenu(i, game.hour, setWriting);
   const totals: [string, number][] = [
     ["Open", sum(game.invoices.filter((i) => i.status === "open"))],
     ["Overdue", sum(game.invoices.filter((i) => i.status === "overdue"))],
@@ -93,7 +98,7 @@ export function BillingApp() {
               <tbody>
                 {shown.map((i) => (
                   <tr key={i.id} className={i.id === selected ? "sel" : ""} onClick={() => setSelected(i.id)} tabIndex={0}
-                    onKeyDown={(e) => e.key === "Enter" && setSelected(i.id)}>
+                    onKeyDown={(e) => e.key === "Enter" && setSelected(i.id)} onContextMenu={menuOn(menu(i))}>
                     <td className="num">{i.number}</td>
                     <td><CustomerLink id={i.customerId} name={name(i.customerId)} /></td>
                     <td className="r num">{euroCents(invoiceTotal(i))}</td>
@@ -108,15 +113,47 @@ export function BillingApp() {
           )}
         </div>
       </div>}
-      {filter !== "automation" && filter !== "domains" && invoice && <Detail key={invoice.id} inv={invoice} customer={name(invoice.customerId)} hour={game.hour} />}
+      {filter !== "automation" && filter !== "domains" && invoice && <Detail key={invoice.id} inv={invoice} customer={name(invoice.customerId)} hour={game.hour} menu={menu(invoice)} />}
+      {writing && <WriteOff inv={writing} customer={name(writing.customerId)} onClose={() => setWriting(null)} />}
     </div>
+  );
+}
+
+const reminder = (step: number) => STEPS[step].key === "collections" ? "Hand to collections" : `Send ${t(`invoice.step.${STEPS[step].key}`).toLowerCase()}`;
+
+function domainMenu(name: string, c: Customer | undefined, gone: boolean): MenuEntry[] {
+  const { act, openApp } = useStore.getState();
+  return [
+    !gone && { label: "Renew", run: () => act((s) => renewDomain(s, name)) },
+    null,
+    c && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: c.id }) },
+  ];
+}
+
+// Reminder, suspension and write-off for an unpaid invoice.
+function invoiceMenu(inv: Invoice, hour: number, onWriteOff: (i: Invoice) => void): MenuEntry[] {
+  const { act, openApp } = useStore.getState();
+  const step = dueStep(inv, hour), unpaid = inv.status === "open" || inv.status === "overdue";
+  return [
+    unpaid && step !== null && { label: reminder(step), run: () => act((s) => sendReminder(s, inv.id)) },
+    unpaid && inv.status === "overdue" && { label: inv.suspended ? "Resume services" : "Suspend services", run: () => act((s) => suspendServices(s, inv.id, !inv.suspended)) },
+    unpaid && { label: "Write off...", run: () => onWriteOff(inv) },
+    null,
+    { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: inv.customerId }) },
+  ];
+}
+
+function WriteOff({ inv, customer, onClose }: { inv: Invoice; customer: string; onClose: () => void }) {
+  const act = useStore((s) => s.act);
+  return (
+    <Confirm title={`Write off invoice ${inv.number}?`} text={`${customer} will not be asked to pay ${euroCents(invoiceTotal(inv))}.`} action="Write off"
+      onCancel={onClose} onConfirm={() => { act((s) => writeOff(s, inv.id)); onClose(); }} />
   );
 }
 
 // Every domain with its customer, registry and expiry, soonest first; renewing pays the registry and invoices the customer.
 function Domains() {
   const game = useStore((s) => s.game);
-  const act = useStore((s) => s.act);
   const year = yearOf(game.hour);
   const list = [...game.domains].sort((a, b) => a.expiresAt - b.expiresAt);
   const customer = (id: string) => game.customers.find((c) => c.id === id);
@@ -132,7 +169,7 @@ function Domains() {
               {list.map((d) => {
                 const c = customer(d.customerId), gone = !c || c.churnedAt !== null, left = d.expiresAt - game.hour;
                 return (
-                  <tr key={d.name}>
+                  <tr key={d.name} onContextMenu={menuOn(() => domainMenu(d.name, c, gone))}>
                     <td>{d.name}</td>
                     <td>{c ? <CustomerLink id={c.id} name={c.name} /> : ""}</td>
                     <td>{registryOf(d.name).name}</td>
@@ -140,7 +177,7 @@ function Domains() {
                     <td className="r num">{euroCents(registryCost(d.name, year))}</td>
                     <td className="r num">{euroCents(DOMAIN_FEE)}</td>
                     <td>{gone ? <span className="pill">Customer left</span> : left <= 0 ? <span className="pill bad">Expired</span> : left <= 30 * 24 ? <span className="pill warn">Expires soon</span> : <span className="pill">Active</span>}</td>
-                    <td className="r">{!gone && <button className="btn" onClick={() => act((s) => renewDomain(s, d.name))}><RefreshCw />Renew</button>}</td>
+                    <td className="r"><More label={d.name} entries={() => domainMenu(d.name, c, gone)} /></td>
                   </tr>
                 );
               })}
@@ -210,9 +247,8 @@ function StatusPill({ inv }: { inv: Invoice }) {
   );
 }
 
-function Detail({ inv, customer, hour }: { inv: Invoice; customer: string; hour: number }) {
+function Detail({ inv, customer, hour, menu }: { inv: Invoice; customer: string; hour: number; menu: () => MenuEntry[] }) {
   const act = useStore((s) => s.act);
-  const [confirm, setConfirm] = useState(false);
   const step = dueStep(inv, hour);
   const unpaid = inv.status === "open" || inv.status === "overdue";
   const facts: [string, ReactNode][] = [
@@ -228,6 +264,7 @@ function Detail({ inv, customer, hour }: { inv: Invoice; customer: string; hour:
       <div className="fin-detail-h">
         <h2 className="num">{inv.number}</h2>
         <StatusPill inv={inv} />
+        <More label={`invoice ${inv.number}`} entries={menu} />
       </div>
       <dl className="fin-facts">
         {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={k === "Customer" ? "" : "num"}>{v}</dd></div>)}
@@ -249,24 +286,12 @@ function Detail({ inv, customer, hour }: { inv: Invoice; customer: string; hour:
           </dl>
         </section>
       )}
-      {unpaid && (
+      {unpaid && step !== null && (
         <div className="fin-actions">
-          {step !== null && (
-            <button className="btn primary" onClick={() => act((s) => sendReminder(s, inv.id))}>
-              <Mail />{STEPS[step].key === "collections" ? "Hand to collections" : `Send ${t(`invoice.step.${STEPS[step].key}`).toLowerCase()}`}
-            </button>
-          )}
-          {inv.status === "overdue" && (
-            <button className="btn" onClick={() => act((s) => suspendServices(s, inv.id, !inv.suspended))}>
-              {inv.suspended ? <><Play />Resume services</> : <><Pause />Suspend services</>}
-            </button>
-          )}
-          <button className="btn danger" onClick={() => setConfirm(true)}><Trash2 />Write off</button>
+          <button className="btn primary" onClick={() => act((s) => sendReminder(s, inv.id))}>
+            <Mail />{reminder(step)}
+          </button>
         </div>
-      )}
-      {confirm && (
-        <Confirm title={`Write off invoice ${inv.number}?`} text={`${customer} will not be asked to pay ${euroCents(invoiceTotal(inv))}.`} action="Write off"
-          onCancel={() => setConfirm(false)} onConfirm={() => { act((s) => writeOff(s, inv.id)); setConfirm(false); }} />
       )}
     </aside>
   );

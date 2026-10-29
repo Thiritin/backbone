@@ -3,7 +3,9 @@ import { useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, type Loan } from "../../../sim/45-billing/billing";
 import { repayLoan, takeLoan } from "../../../sim/90-actions/billing";
+import { menuOn } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
+import { More } from "../More";
 import { formatDay } from "../billing/BillingApp";
 import "../shop/shop.css";
 import "./bank.css";
@@ -74,10 +76,10 @@ function Offer({ amount, rate, years }: { amount: number; rate: number; years: n
 }
 
 function LoanCard({ loan }: { loan: Loan }) {
-  const cash = useStore((s) => s.game.cash);
   const act = useStore((s) => s.act);
+  const menu = () => [{ label: "Repay", run: () => act((s) => repayLoan(s, loan.id)) }];
   return (
-    <div className="shop-card">
+    <div className="shop-card" onContextMenu={menuOn(menu)}>
       <div className="shop-name">
         <strong className="num bank-amount">{euro(loan.amount)}</strong>
         <span>Taken {formatDay(loan.takenAt)}</span>
@@ -90,7 +92,7 @@ function LoanCard({ loan }: { loan: Loan }) {
       </dl>
       <div className="shop-buy">
         <span className="grow" />
-        <button className="btn" disabled={cash < loan.balance} onClick={() => act((s) => repayLoan(s, loan.id))}>Repay</button>
+        <More label={`loan of ${euro(loan.amount)}`} entries={menu} />
       </div>
     </div>
   );

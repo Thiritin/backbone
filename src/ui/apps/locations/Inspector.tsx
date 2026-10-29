@@ -1,22 +1,26 @@
-import { ArchiveRestore, Cable, CircleDollarSign, Cpu, Database, EthernetPort, FileSignature, Gauge, Network, PlugZap, Power, Unplug } from "lucide-react";
+import { Cable, Cpu, Database, EthernetPort, FileSignature, Plug, PlugZap, Plus, Power, Unplug } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
 import { COMPONENTS, jacksOf, modelById, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Cable as CableT, Device, End, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
+import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, drivesOf, hotSwappable, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, raidTolerance, raidUsable, resaleValue, working } from "../../../sim/60-infra/status";
 import { rebuildHours } from "../../../sim/88-tick/tick";
-import { buyOutLease, connect, disconnect, LABEL_MAX, replaceComponent, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
+import { addSecondPsu, buyOutLease, connect, disconnect, LABEL_MAX, replaceComponent, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, setRaid, setRebuildRate, unmountDevice } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
 import { cableColor, DeviceSvg, SWATCHES } from "../../art/fronts";
 import { BrandLogo, Logo } from "../../art/logos";
-
 import { Confirm } from "../../desktop/Confirm";
+import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { ageYears, CABLE_NAME, cores, deviceLamps, devName, disk, height, isWorn, PART_NAME, portLamps, portName, portsText, ram, speed } from "../hw";
+import { More } from "../More";
+import { softwareName } from "../products/parts";
 import { dcOf, Facts, UsageBars } from "./ui";
 import { usageOf } from "../../../sim/60-infra/usage";
 import { NodeCard } from "./Clusters";
+import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
 import { TechButton } from "./TechButton";
 
 // Sells a device or a rack after showing its resale value against the price paid.
@@ -26,15 +30,53 @@ export function SellConfirm({ game, name, price, boughtAt, cables = 0, onCancel,
   return <Confirm title={`Sell ${name}?`} text={`Resale value ${euro(value)}, paid ${euro(price)}.${plug}`} action={`Sell for ${euro(value)}`} onCancel={onCancel} onConfirm={onSell} />;
 }
 
-// onHot reports the cable of the hovered or selected port, so the rack view can highlight it.
-export function Inspector({ game, device, side = "front", onSelect, onHot }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void }) {
+// The device menu's state: the offline check, the sell sheet, and what the view does on select and rename.
+export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => void, onRename: (id: string) => void) {
+  const act = useStore((s) => s.act), setSetup = useStore((s) => s.setSetup);
+  const { guarded, dialog } = useOfflineGuard(game);
+  const [selling, setSelling] = useState<Device | null>(null);
+  const ui = (d: Device, open: boolean): DeviceUi => ({
+    open: open ? () => onSelect(d.id) : undefined,
+    power: (on) => { if (on) act((g) => setPower(g, d.id, true)); else guarded((g) => setPower(g, d.id, false), `Power off ${devName(d)}?`, "Power off"); },
+    plug: (psu) => togglePlug(guarded, d, psu),
+    setup: () => setSetup(d.id),
+    rename: () => onRename(d.id),
+    unmount: () => { if (act((g) => unmountDevice(g, d.id)).ok) onSelect(null); },
+    sell: () => setSelling(d),
+  });
+  const cables = selling ? game.cables.filter((c) => c.a.device === selling.id || c.b.device === selling.id).length : 0;
+  return {
+    entries: (d: Device, open = false) => deviceMenu(game, d, ui(d, open)),
+    power: (d: Device, on: boolean) => ui(d, false).power(on),
+    plug: (d: Device, psu: string) => togglePlug(guarded, d, psu),
+    dialog: (
+      <>
+        {dialog}
+        {selling && (
+          <SellConfirm game={game} name={devName(selling)} price={selling.price} boughtAt={selling.boughtAt} cables={cables}
+            onCancel={() => setSelling(null)}
+            onSell={() => { const id = selling.id; setSelling(null); if (act((g) => sellDevice(g, id)).ok) onSelect(null); }} />
+        )}
+      </>
+    ),
+  };
+}
+
+const POWER = {
+  ok: ["On", "ok"], booting: ["Booting", "warn"], degraded: ["Degraded", "warn"], hot: ["Running hot", "warn"], rebuilding: ["Rebuilding", "warn"],
+  maintenance: ["Maintenance", "warn"], down: ["Down", "bad"], nopower: ["No power", "bad"], off: ["Off", ""],
+} as const;
+
+// onHot reports the cable of the hovered or selected port, so the rack view can highlight it. rename opens the name field.
+export function Inspector({ game, device, side = "front", onSelect, onHot, rename = false, onRenaming }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void; rename?: boolean; onRenaming?: () => void }) {
   const act = useStore((s) => s.act);
   const [sel, setSel] = useState<number[]>([]);
   const [mode, setMode] = useState<"cable" | "group">("cable");
-  const [selling, setSelling] = useState(false);
-  const model = modelById(device.model), st = linkStatus(game, device.id), peers = portPeers(game, device.id), name = devName(device);
-  const cables = game.cables.filter((c) => c.a.device === device.id || c.b.device === device.id);
-  const s = model.server;
+  const [editing, setEditing] = useState(false);
+  useEffect(() => { if (rename) { setEditing(true); onRenaming?.(); } }, [rename, onRenaming]);
+  const menus = useDeviceMenu(game, onSelect, () => setEditing(true));
+  const menu = () => menus.entries(device);
+  const model = modelById(device.model), peers = portPeers(game, device.id), name = devName(device);
   const pick = (i: number) => setSel((cur) => (mode === "group" ? (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]) : cur.length === 1 && cur[0] === i ? [] : [i]));
   const [hover, setHover] = useState<number | null>(null);
   const focus = hover ?? (sel.length === 1 ? sel[0] : null);
@@ -42,25 +84,44 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
   useEffect(() => { onHot?.(hot); }, [hot, onHot]);
   useEffect(() => () => onHot?.(null), [onHot]);
   const where = device.panel ? "Carrier panel" : model.height > 1 ? `U${device.slot}–U${device.slot + model.height - 1}` : `U${device.slot}`;
+  const powered = model.kind !== "patch";
 
   return (
-    <>
-      <div className="loc-insp-h">
+    <div className="insp">
+      <div className="loc-insp-h" onContextMenu={menuOn(menu)}>
         {model.kind !== "gateway" && <BrandLogo brand={device.brand} size={20} />}
-        <LabelEdit device={device} />
-        {model.kind !== "patch" && model.kind !== "ups" && <span className={`pill ${st.online ? "ok" : "bad"}`}>{st.online ? "Online" : device.rackId && !pluggedIn(device) ? "Unplugged" : "Offline"}</span>}
+        <LabelEdit device={device} editing={editing} onEditing={setEditing} />
         <span className="grow" />
-        {device.rackId && <button className="btn" onClick={() => { if (act((g) => unmountDevice(g, device.id)).ok) onSelect(null); }}><ArchiveRestore />Unmount</button>}
-        {model.kind !== "gateway" && <button className="btn" disabled={!!device.lease} onClick={() => setSelling(true)}><CircleDollarSign />Sell</button>}
+        {powered && (
+          <button className={`btn ghost icon insp-power${device.on ? " on" : ""}`} aria-label={device.on ? "Power off" : "Power on"} title={device.on ? "Power off" : "Power on"}
+            disabled={!device.rackId && !device.panel} onClick={() => menus.power(device, !device.on)}>
+            <Power />
+          </button>
+        )}
+        <More label={name} entries={menu} />
       </div>
       <div className="loc-model">{model.kind === "gateway" ? "" : `${device.brand} `}{model.name} · <span className="num">{where}</span></div>
 
-      <div className="loc-face">
+      <div className="loc-face" onContextMenu={menuOn(menu)}>
         <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={440} u={40} back={side === "back"} />
         {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} />}
       </div>
 
+      {powered && <Status game={game} device={device} />}
+      {(model.kind === "server" || model.kind === "switch" || model.kind === "firewall") && (
+        <UsageBars usage={usageOf(game, [device])} only={model.kind === "server" ? undefined : ["net"]} wide />
+      )}
+
       {model.kind === "server" && <PortTable game={game} device={device} peers={peers} sel={sel} onPick={pick} onHover={setHover} onSelect={onSelect} />}
+      {model.kind === "server" && model.ports.length > 1 && (
+        <div className="loc-row insp-bond">
+          <span className="loc-k">Bond</span>
+          <div className="seg" role="group" aria-label="Bond mode">
+            <button aria-pressed={device.bond === "failover"} onClick={() => act((g) => setBond(g, device.id, "failover"))}>Failover</button>
+            <button aria-pressed={device.bond === "balance"} onClick={() => act((g) => setBond(g, device.id, "balance"))}>Load balance</button>
+          </div>
+        </div>
+      )}
 
       {model.kind === "switch" && (
         <div className="seg loc-mode" role="group" aria-label="Port selection">
@@ -75,56 +136,62 @@ export function Inspector({ game, device, side = "front", onSelect, onHot }: { g
         <PortCard game={game} device={device} model={model} port={sel[0]} peer={peers[sel[0]]} onSelect={onSelect} />
       ) : null}
 
-      {device.lease && <LeaseCard game={game} leaseId={device.lease} />}
-
-
-      {model.kind === "server" && (
-        <div className="loc-card">
-          <div className="loc-card-h">
-            <h3><Network />Link</h3>
-            <span className={`pill ${st.online ? "ok" : "bad"}`}>{st.online ? "Online" : "Offline"}</span>
-            {st.warning === "bondNotGrouped" && <span className="pill warn">Bond not grouped</span>}
-            <span className="grow" />
-            <span className="num">{st.gbit} Gbit/s</span>
-          </div>
-          {model.ports.length > 1 && <div className="loc-row">
-            <span className="loc-k">Bond</span>
-            <div className="seg" role="group" aria-label="Bond mode">
-              <button aria-pressed={device.bond === "failover"} onClick={() => act((g) => setBond(g, device.id, "failover"))}>Failover</button>
-              <button aria-pressed={device.bond === "balance"} onClick={() => act((g) => setBond(g, device.id, "balance"))}>Load balance</button>
-            </div>
-          </div>}
-        </div>
-      )}
-
-      {(model.kind === "server" || model.kind === "switch" || model.kind === "firewall") && (
-        <div className="loc-card">
-          <div className="loc-card-h"><h3><Gauge />Utilization</h3></div>
-          <UsageBars usage={usageOf(game, [device])} only={model.kind === "server" ? undefined : ["net"]} />
-        </div>
-      )}
       {model.kind === "server" && <NodeCard game={game} device={device} />}
-      {model.kind !== "patch" && <PowerCard game={game} device={device} />}
+      {device.lease && <LeaseCard game={game} leaseId={device.lease} />}
+      {powered && <PowerSupplies game={game} device={device} onPlug={(psu) => menus.plug(device, psu)} />}
       {model.kind === "server" && drivesOf(device).length > 0 && <RaidCard game={game} device={device} />}
       {device.components.length > 0 && <PartsCard game={game} device={device} />}
 
       <div className="loc-card">
+        <div className="loc-card-h"><h3>Specifications</h3></div>
         <Facts rows={[
-          ...(s ? [["CPU", `${s.sockets} × ${cores(s.cores / s.sockets)}`], ["RAM", `${ram(s.ramGb)} of ${ram(s.maxRamGb)}`], ["Disk", `${disk(s.diskGb)} ${s.disk}, ${s.bays} bays`]] as [string, string][] : []),
+          ...(model.server ? [["CPU", `${model.server.sockets} × ${cores(model.server.cores / model.server.sockets)}`], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${model.server.bays} bays`]] as [string, string][] : []),
           ["Network", portsText(model)],
           ["Power", model.idleWatts === model.watts ? `${model.watts} W` : `${model.idleWatts}–${model.watts} W`],
-          ...(model.kind === "server" ? [] : [["Power supplies", `${model.psus}`]] as [string, string][]),
           ...(model.height ? [["Height", height(model)]] as [string, string][] : []),
           ...(device.price ? [["Paid", euro(device.price)]] as [string, string][] : []),
         ].map(([k, v]): [string, ReactNode] => [k, <span className="num">{v}</span>])} />
       </div>
+      {menus.dialog}
+    </div>
+  );
+}
 
-      {selling && (
-        <SellConfirm game={game} name={name} price={device.price} boughtAt={device.boughtAt} cables={cables.length}
-          onCancel={() => setSelling(false)}
-          onSell={() => { setSelling(false); if (act((g) => sellDevice(g, device.id)).ok) onSelect(null); }} />
+// Power, link, control plane and role as plain values under the device.
+function Status({ game, device }: { game: GameState; device: Device }) {
+  const setSetup = useStore((s) => s.setSetup);
+  const model = modelById(device.model), st = linkStatus(game, device.id);
+  const [power, tone] = !device.rackId && !device.panel ? ["Not mounted", ""] : device.on && device.rackId && !pluggedIn(device) ? ["Unplugged", "bad"] : POWER[deviceHealth(game, device.id).state];
+  const cluster = model.kind === "server" ? clusterOf(game, device.id) : undefined;
+  const loads = model.kind === "server" && !cluster ? workloadsOn(game, device.id) : [];
+  const service = loads.length ? game.services.find((v) => v.id === loads[0].serviceId) : undefined;
+  const customer = service && game.customers.find((c) => c.id === service.customerId);
+  const role = cluster ? `${cluster.kind === "cloud" ? "Hypervisor node" : "Panel host"} in ${cluster.name}`
+    : service ? `${service.product === "colocation" ? "Colocation" : "Dedicated"} for ${customer?.name ?? "a customer"}` : "Free";
+  const plane = cluster ? [cluster.panel, cluster.platform].filter((x) => x).map(softwareName).join(", ") || "None" : "None";
+  return (
+    <dl className="insp-status">
+      <div><dt>Power</dt><dd><span className={`insp-dot ${tone}`} />{power}</dd></div>
+      {model.kind !== "ups" && (
+        <div>
+          <dt>Link</dt>
+          <dd>
+            <span className={`insp-dot ${st.online ? "ok" : "bad"}`} />{st.online ? <>Online <span className="num insp-sub">{st.gbit} Gbit/s</span></> : "Offline"}
+            {st.warning === "bondNotGrouped" && <span className="pill warn">Bond not grouped</span>}
+          </dd>
+        </div>
       )}
-    </>
+      {model.kind === "server" && (
+        <div>
+          <dt>Control plane</dt>
+          <dd>
+            {plane}
+            {!cluster && !loads.length && device.rackId && <button className="btn insp-setup" onClick={() => setSetup(device.id)}>Set up</button>}
+          </dd>
+        </div>
+      )}
+      {model.kind === "server" && <div><dt>Role</dt><dd>{role}</dd></div>}
+    </dl>
   );
 }
 
@@ -134,12 +201,10 @@ function LeaseCard({ game, leaseId }: { game: GameState; leaseId: string }) {
   if (!lease) return null;
   const left = lease.months - lease.paid;
   return (
-    <div className="loc-card">
+    <div className="loc-card" onContextMenu={menuOn(() => [{ label: `Buy out lease, ${euro(lease.monthly * left)}`, run: () => act((g) => buyOutLease(g, lease.id)) }])}>
       <div className="loc-card-h">
         <h3><FileSignature />Lease</h3>
         <span className="pill">Leased</span>
-        <span className="grow" />
-        <button className="btn" onClick={() => act((g) => buyOutLease(g, lease.id))}>Buy out for <span className="num">{euro(lease.monthly * left)}</span></button>
       </div>
       <Facts rows={[
         ["Lessor", <Logo provider={lease.lessor} size={16} word />],
@@ -163,7 +228,19 @@ function portBlocks(m: DeviceModel): { rows: number; ports: number[] }[] {
 
 // A server's NICs and power supplies, one row each, with the device at the other end of every cable.
 function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { game: GameState; device: Device; peers: (End | null)[]; sel: number[]; onPick: (i: number) => void; onHover: (i: number | null) => void; onSelect: (id: string) => void }) {
+  const act = useStore((s) => s.act);
   const model = modelById(device.model), on = working(game, device.id);
+  const portMenu = (i: number): MenuEntry[] => {
+    const cable = game.cables.find((c) => [c.a, c.b].some((e) => e.device === device.id && e.port === i));
+    const peer = peers[i], other = peer && game.devices.find((d) => d.id === peer.device);
+    return [
+      { label: "Show port", run: () => onPick(i) },
+      other && !other.panel && { label: `Show ${devName(other)}`, run: () => onSelect(other.id) },
+      null,
+      cable && { label: "Cable colour", items: [...SWATCHES.map(([n, hex]) => ({ label: n, checked: cable.color === hex, run: () => act((g) => setCableColor(g, cable.id, hex)) })), null, { label: "Kind default", checked: cable.color === null, run: () => act((g) => setCableColor(g, cable.id, null)) }] },
+      cable && { label: "Disconnect", run: () => act((g) => disconnect(g, cable.id)) },
+    ];
+  };
   return (
     <div className="loc-card">
       <table className="table loc-port-table">
@@ -173,7 +250,7 @@ function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { ga
             const peer = peers[i], other = peer && game.devices.find((d) => d.id === peer.device)!;
             const link = !other ? "Unplugged" : on && working(game, other.id) ? "Up" : "Down";
             return (
-              <tr key={i} aria-selected={sel.includes(i)} onClick={() => onPick(i)} onMouseEnter={() => onHover(i)} onMouseLeave={() => onHover(null)}>
+              <tr key={i} aria-selected={sel.includes(i)} onClick={() => onPick(i)} onContextMenu={menuOn(() => portMenu(i))} onMouseEnter={() => onHover(i)} onMouseLeave={() => onHover(null)}>
                 <td className="num">{portName(model, i)}</td>
                 <td>{p.media === "sfp" ? "SFP" : "RJ45"}</td>
                 <td className="r num">{speed(p.gbit)}</td>
@@ -306,19 +383,19 @@ function GroupCard({ device, sel, onDone }: { device: Device; sel: number[]; onD
 }
 
 // The name doubles as the label field: click to rename, Enter or leaving the field saves, Escape cancels, empty clears.
-function LabelEdit({ device }: { device: Device }) {
+function LabelEdit({ device, editing, onEditing }: { device: Device; editing: boolean; onEditing: (on: boolean) => void }) {
   const act = useStore((s) => s.act);
-  const [text, setText] = useState<string | null>(null);
+  const [text, setText] = useState(device.label ?? "");
   const cancel = useRef(false);
-  if (text === null) {
+  if (!editing) {
     return (
       <h2 className="loc-label">
-        <button onClick={() => { cancel.current = false; setText(device.label ?? ""); }} aria-label={`Label ${devName(device)}`}>{devName(device)}</button>
+        <button onClick={() => { cancel.current = false; setText(device.label ?? ""); onEditing(true); }} aria-label={`Label ${devName(device)}`}>{devName(device)}</button>
         {device.label && <span className="loc-muted">{device.name}</span>}
       </h2>
     );
   }
-  const done = () => { if (!cancel.current) act((g) => setLabel(g, device.id, text)); setText(null); };
+  const done = () => { if (!cancel.current) act((g) => setLabel(g, device.id, text)); cancel.current = false; onEditing(false); };
   return (
     <input className="field loc-label-in" autoFocus aria-label="Label" value={text} placeholder={device.name} maxLength={LABEL_MAX}
       onChange={(e) => setText(e.target.value)} onBlur={done}
@@ -326,10 +403,6 @@ function LabelEdit({ device }: { device: Device }) {
   );
 }
 
-const HEALTH = {
-  ok: ["Running", "ok"], booting: ["Booting", "warn"], degraded: ["Degraded", "warn"], hot: ["Running hot", "warn"], rebuilding: ["Rebuilding", "warn"],
-  maintenance: ["Maintenance", "warn"], down: ["Down", "bad"], nopower: ["No power", "bad"], off: ["Off", ""],
-} as const;
 const clock = (hour: number) => dateOf(hour).toISOString().slice(11, 16);
 
 // Runs a change at once, or asks first when it takes devices that are online now offline.
@@ -360,45 +433,38 @@ export function togglePlug(guarded: ReturnType<typeof useOfflineGuard>["guarded"
   else useStore.getState().act((g) => setPlugged(g, device.id, psu, true));
 }
 
-function PowerCard({ game, device }: { game: GameState; device: Device }) {
+// Each power supply with its feed and plug, then the empty bay a second supply can fill.
+function PowerSupplies({ game, device, onPlug }: { game: GameState; device: Device; onPlug: (psu: string) => void }) {
   const act = useStore((s) => s.act);
-  const { guarded, dialog } = useOfflineGuard(game);
-  const [label, tone] = HEALTH[deviceHealth(game, device.id).state];
   const loc = locationOf(game, device), rack = game.racks.find((r) => r.id === device.rackId);
   const ab = !!loc && dcOf(loc)?.feeds === "ab";
   const psus = device.rackId ? device.components.filter((c) => c.kind === "psu") : [];
+  const extra = device.rackId ? secondPsuPrice(device) : null;
+  if (!psus.length) return null;
+  const name = (i: number) => `Power supply${psus.length > 1 || extra !== null ? ` ${i + 1}` : ""}`;
   return (
     <div className="loc-card">
-      <div className="loc-card-h">
-        <h3><Power />Power</h3>
-        <span className={`pill ${tone}`}>{label}</span>
-        <span className="grow" />
-        <TechButton game={game} deviceId={device.id} kind={device.on ? "off" : "on"} />
-        <button className={`btn power-btn${device.on ? " on" : ""}`} disabled={!device.rackId && !device.panel}
-          onClick={() => (device.on ? guarded((g) => setPower(g, device.id, false), `Power off ${devName(device)}?`, "Power off") : act((g) => setPower(g, device.id, true)))}>
-          <Power />{device.on ? "Shut down" : "Power on"}
-        </button>
-      </div>
-      {psus.length > 0 && (
-        <table className="table loc-parts">
-          <thead><tr><th>Supply</th><th>Feed</th><th>Plug</th><th /></tr></thead>
-          <tbody>
-            {psus.map((c, i) => (
-              <tr key={c.id}>
-                <td>Power supply{psus.length > 1 && <span className="num"> {i + 1}</span>}</td>
-                <td>{(ab || rack?.feedB) && i === 1 ? "B" : "A"}</td>
-                <td>{isPlugged(c) ? <span className="pill ok">Plugged in</span> : <span className="pill">Unplugged</span>}</td>
-                <td className="r">
-                  {isPlugged(c)
-                    ? <button className="btn" onClick={() => togglePlug(guarded, device, c.id)}><Unplug />Disconnect</button>
-                    : <button className="btn primary" onClick={() => togglePlug(guarded, device, c.id)}><PlugZap />Connect</button>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {dialog}
+      <div className="loc-card-h"><h3><Plug />Power supplies</h3></div>
+      <table className="table loc-parts">
+        <tbody>
+          {psus.map((c, i) => (
+            <tr key={c.id} onContextMenu={menuOn(() => [{ label: isPlugged(c) ? "Unplug" : "Plug in", run: () => onPlug(c.id) }])}>
+              <td>{name(i)}</td>
+              <td className="loc-muted">Feed {(ab || rack?.feedB) && i === 1 ? "B" : "A"}</td>
+              <td className="r">
+                {isPlugged(c) ? <span className="pill ok">Plugged in</span> : <button className="btn primary" onClick={() => onPlug(c.id)}><PlugZap />Plug in</button>}
+              </td>
+            </tr>
+          ))}
+          {extra !== null && (
+            <tr className="insp-addon">
+              <td>{name(1)}</td>
+              <td className="loc-muted">Empty bay</td>
+              <td className="r"><button className="btn" onClick={() => act((g) => addSecondPsu(g, device.id))}><Plus />Add <span className="num">{euro(extra)}</span></button></td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }

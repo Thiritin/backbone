@@ -1,11 +1,14 @@
-import { Boxes, MonitorCog, Play, RotateCcw, Square, TriangleAlert } from "lucide-react";
+import { Boxes, MonitorCog, RotateCcw, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import type { GameState } from "../../../sim/50-state";
 import { hostOfVm, type Workload } from "../../../sim/60-infra/cluster";
 import { workloadLoad } from "../../../sim/60-infra/usage";
 import { migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
+import type { MenuEntry } from "../../desktop/ContextMenu";
+import { menuOn } from "../../desktop/ContextMenu";
 import { useFocus, useStore } from "../../store";
+import { More } from "../More";
 import "../billing/billing.css";
 import { CustomerLink } from "../customers/CustomersApp";
 import { day, devName, disk, ram } from "../hw";
@@ -17,6 +20,32 @@ type StateFilter = "all" | "running" | "stopped" | "lost";
 const FILTERS: [StateFilter, string][] = [["all", "All"], ["running", "Running"], ["stopped", "Stopped"], ["lost", "Lost disk"]];
 const matches = (f: StateFilter, st: VmState) => f === "all" || (f === "lost" ? st === "lost" : f === "stopped" ? st === "stopped" : st === "running");
 const num = (n: number) => `${+n.toFixed(2)}`;
+
+// Start, stop, restore and migrate for a VM or web space, shared by every list that shows one.
+export function workloadActions(game: GameState, w: Workload): MenuEntry[] {
+  const act = useStore.getState().act;
+  const st = vmState(game, w);
+  const on = st === "running" || st === "down" || st === "frozen";
+  const targets = on || st === "stopped" ? migrationTargets(game, w.id) : [];
+  const where = (id: string) => game.clusters.find((c) => c.id === id)?.name;
+  return [
+    st === "lost" && { label: w.backupAt === null ? "Start empty" : "Restore", run: () => act((g) => restoreWorkload(g, w.id)) },
+    st === "stopped" && { label: "Start", run: () => act((g) => startWorkload(g, w.id)) },
+    on && { label: "Stop", run: () => act((g) => stopWorkload(g, w.id)) },
+    targets.length > 0 && {
+      label: "Migrate to",
+      items: targets.map((t) => ({
+        label: t.to !== t.clusterId && t.clusterId !== w.clusterId ? `${t.name} · ${where(t.clusterId)}` : t.name,
+        run: () => act((g) => migrateWorkload(g, w.id, t.to)),
+      })),
+    },
+  ];
+}
+
+function vmMenu(game: GameState, w: Workload): MenuEntry[] {
+  const v = game.services.find((x) => x.id === w.serviceId), openApp = useStore.getState().openApp;
+  return [...workloadActions(game, w), null, v && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: v.customerId }) }];
+}
 
 export function VmApp() {
   const game = useStore((s) => s.game);
@@ -81,7 +110,8 @@ export function VmApp() {
                     const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId), own = vmLabel(game, w);
                     const d = game.devices.find((x) => x.id === w.deviceId), [label, tone] = VM_STATE[vmState(game, w)];
                     return (
-                      <tr key={w.id} className={w.id === selected ? "sel" : ""} onClick={() => setSelected(w.id)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setSelected(w.id)}>
+                      <tr key={w.id} className={w.id === selected ? "sel" : ""} onClick={() => setSelected(w.id)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setSelected(w.id)}
+                        onContextMenu={menuOn(() => vmMenu(game, w))}>
                         <td>{v ? v.label : own.name}</td>
                         <td>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</td>
                         <td>{v ? PRODUCT[v.product] : own.service}</td>
@@ -110,11 +140,9 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
   const st = vmState(game, w), [label, tone] = VM_STATE[st];
   const from = game.hour - (game.hour % 24);
   const load = Array.from({ length: 24 }, (_, i) => workloadLoad(game, { ...w, stopped: false, busyUntil: 0 }, from + i));
-  const targets = migrationTargets(game, w.id).map((t) => ({ c: game.clusters.find((x) => x.id === t.clusterId)!, d: game.devices.find((d) => d.id === t.to)! }));
-  const live = !!cluster.platform && softwareById(cluster.platform).live && cluster.ha.live;
   return (
     <aside className="fin-detail vm-detail">
-      <div className="fin-detail-h"><h2>{v ? v.label : panel?.name}</h2><span className={`pill ${tone}`}>{label}</span></div>
+      <div className="fin-detail-h"><h2>{v ? v.label : panel?.name}</h2><span className={`pill ${tone}`}>{label}</span><More label={v ? v.label : panel?.name ?? "VM"} entries={() => vmMenu(game, w)} /></div>
       <dl className="fin-facts">
         <div><dt>Customer</dt><dd>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</dd></div>
         <div><dt>Product</dt><dd>{v ? PRODUCT[v.product] : "Panel VM"}</dd></div>
@@ -130,21 +158,7 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
         <div className="fin-card-h">Load today</div>
         <div className="fin-card-b"><Sparkline values={load} from={from} w={250} /></div>
       </section>
-      <div className="fin-actions">
-        {st === "lost" && <button className="btn primary" onClick={() => act((g) => restoreWorkload(g, w.id))}><RotateCcw />{w.backupAt === null ? "Start empty" : "Restore"}</button>}
-        {st === "stopped" && <button className="btn" onClick={() => act((g) => startWorkload(g, w.id))}><Play />Start</button>}
-        {(st === "running" || st === "down" || st === "frozen") && <button className="btn" onClick={() => act((g) => stopWorkload(g, w.id))}><Square />Stop</button>}
-      </div>
-      {(st === "running" || st === "down" || st === "frozen" || st === "stopped") && targets.length > 0 && (
-        <section className="fin-card">
-          <div className="fin-card-h">{live ? "Live migration" : "Cold migration"}</div>
-          <div className="fin-card-b">
-            <div className="fin-pills">
-              {targets.map(({ c: tc, d }) => <button key={d.id} className="btn" onClick={() => act((g) => migrateWorkload(g, w.id, d.id))}>{devName(d)}{tc.id !== cluster.id ? ` · ${tc.name}` : ""}</button>)}
-            </div>
-          </div>
-        </section>
-      )}
+      {st === "lost" && <div className="fin-actions"><button className="btn primary" onClick={() => act((g) => restoreWorkload(g, w.id))}><RotateCcw />{w.backupAt === null ? "Start empty" : "Restore"}</button></div>}
       {panel && <ResizeCard key={panel.id} game={game} host={panel} />}
     </aside>
   );

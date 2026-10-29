@@ -15,6 +15,7 @@ import { Widgets } from "./Widgets";
 import { SecurityAlert } from "./SecurityAlert";
 import { Welcome } from "./Welcome";
 import { ServerSetup, useFirstServerSetup } from "./ServerSetup";
+import { ContextMenuHost } from "./ContextMenu";
 
 const AUTOSAVE_MS = 15_000;
 let greeted = false;
@@ -79,7 +80,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   // Space pauses; 1 to 4 pick 1×, 2×, 4× and 8×.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).closest("input, textarea, select, [role=alertdialog], [role=dialog]")) return;
+      if ((e.target as HTMLElement).closest("input, textarea, select, [role=alertdialog], [role=dialog], [role=menu]")) return;
       if (e.code === "Space") { e.preventDefault(); setSpeed(speed ? 0 : 1); }
       const n = Number(e.key);
       if (n >= 1 && n <= 4) setSpeed(SPEEDS[n]);
@@ -104,6 +105,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       {advisory && <SecurityAlert />}
       {gameOver !== null && <GameOver hour={gameOver} />}
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
+      <ContextMenuHost />
     </>
   );
 }
