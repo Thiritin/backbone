@@ -20,7 +20,7 @@ import { PriceField } from "../sales/PriceField";
 import { ActivityLog } from "./ActivityLog";
 import { registryOf } from "../../../sim/30-customers/registry";
 import { specText } from "../../../sim/30-market/spec";
-import { initials, kindOf, monthYear, moodClass, noticed, patience, PRODUCT, STATUS } from "../support/labels";
+import { initials, kindOf, monthYear, moodClass, noticed, patience, PRODUCT, statusOf } from "../support/labels";
 
 export type Status = "active" | "overdue" | "suspended" | "churned";
 export interface Row { c: Customer; status: Status; services: number; monthly: number; lifetime: number; balance: number; invoices: number; tickets: number; labels: string }
@@ -135,7 +135,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
         <td className="cus-subject">{subject(tk)}</td>
         <td><span className="cus-kind-cell"><K.icon className="cus-kind" />{K.label}</span></td>
         <td className="num">{formatDay(tk.createdAt)}</td>
-        <td className="r"><span className="pill">{STATUS[tk.status]}</span></td>
+        <td className="r"><span className="pill">{statusOf(tk)}</span></td>
       </tr>
     );
   });
@@ -311,7 +311,7 @@ function Timeline({ invoices, tickets, subject }: { invoices: Invoice[]; tickets
   const items = [
     ...invoices.map((i) => ({ at: i.issuedAt, what: `Invoice ${i.number} issued`, value: <span className="num">{euroCents(invoiceTotal(i))}</span>, open: () => openApp("Billing", { kind: "invoice", id: i.id }) })),
     ...invoices.filter((i) => i.paidAt !== null).map((i) => ({ at: i.paidAt!, what: `Invoice ${i.number} paid`, value: <span className="num">{euroCents(invoiceTotal(i))}</span>, open: () => openApp("Billing", { kind: "invoice", id: i.id }) })),
-    ...tickets.map((tk) => ({ at: tk.createdAt, what: `Ticket opened: ${subject(tk)}`, value: <span className="pill">{STATUS[tk.status]}</span>, open: () => openApp("Support", { kind: "ticket", id: tk.id }) })),
+    ...tickets.map((tk) => ({ at: tk.createdAt, what: `Ticket opened: ${subject(tk)}`, value: <span className="pill">{statusOf(tk)}</span>, open: () => openApp("Support", { kind: "ticket", id: tk.id }) })),
   ].sort((a, b) => b.at - a.at);
   if (!items.length) return <div className="fin-none">No activity</div>;
   return (

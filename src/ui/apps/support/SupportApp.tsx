@@ -17,7 +17,7 @@ import { CustomerLink } from "../customers/CustomersApp";
 import { Incidents } from "./Incidents";
 import { CustomCompose, InvoicePill } from "./CustomOrder";
 import { specText } from "../../../sim/30-market/spec";
-import { due, initials, KINDS, kindOf, monthYear, moodClass, PRODUCT, span, stamp, STATUS } from "./labels";
+import { due, initials, KINDS, kindOf, monthYear, moodClass, PRODUCT, span, stamp, statusOf } from "./labels";
 import { Bars, Card, Deadline, LostSales, need, OPEN, SALES_BOXES, STATUS as SALES_STATUS, type SalesBox } from "../sales/SalesApp";
 import "./support.css";
 
@@ -217,7 +217,7 @@ function OrderThread({ tk, r }: { tk: Ticket; r: SalesRequest }) {
           <InvoicePill r={r} />
           {tk.status === "open"
             ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer /><span><span className="num">{Math.max(0, left)} h</span> to respond</span></span>
-            : <span className="pill">{STATUS[tk.status]}</span>}
+            : <span className="pill">{statusOf(tk)}</span>}
         </div>
       </div>
 
@@ -288,7 +288,7 @@ function Thread({ tk }: { tk: Ticket }) {
             ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer />{tk.notice || left < 0
                 ? <span><span className="num">{span(left)}</span> {left < 0 ? "overdue" : "to respond"}</span>
                 : <span>Due <span className="num">{due(tk.dueAt, game.hour)}</span></span>}</span>
-            : <span className="pill">{STATUS[tk.status]}</span>}
+            : <span className="pill">{statusOf(tk)}</span>}
         </div>
       </div>
 
@@ -339,6 +339,12 @@ function Thread({ tk }: { tk: Ticket }) {
             )}
           </div>
         ))}
+        {tk.outcome === "withdrawn" && (
+          <div className="msg">
+            <div className="from">{c?.name} · <span className="num">{stamp(tk.updatedAt)}</span></div>
+            <p>{t("ticket.withdrawn.text")}</p>
+          </div>
+        )}
         {tk.work && <div className="event"><span>Queued until <span className="num">{stamp(tk.work.doneAt / 60)}</span></span></div>}
         {(tk.status === "escalated" || isFinal(tk)) && (
           <div className="event"><span>{t(`outcome.${tk.outcome ?? (tk.status === "closed" ? "closed" : tk.status === "escalated" ? "escalated" : "resolved")}`)} · <span className="num">{stamp(tk.updatedAt)}</span></span></div>

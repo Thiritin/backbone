@@ -293,6 +293,8 @@ export const en: Record<string, (p: Params) => string> = {
   "outcome.escalated": () => "Escalated to a technician",
   "outcome.resolved": () => "Resolved",
   "outcome.closed": () => "Closed",
+  "outcome.withdrawn": () => "The customer withdrew the ticket",
+  "ticket.withdrawn.text": () => "Never mind, I sorted it out myself.",
   "outcome.credit": () => "Credit issued and resolved",
   "outcome.retained": () => "Customer stays with a free month",
   "outcome.offerRefused": () => "Offer refused, contract cancelled",

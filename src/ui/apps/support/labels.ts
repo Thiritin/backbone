@@ -20,6 +20,7 @@ export const KINDS: { id: TicketKind; label: string; icon: LucideIcon }[] = [
 export const kindOf = (id: TicketKind) => KINDS.find((k) => k.id === id)!;
 
 export const STATUS: Record<TicketStatus, string> = { open: "Open", waiting: "Waiting on customer", escalated: "Escalated", resolved: "Resolved", closed: "Closed" };
+export const statusOf = (tk: { status: TicketStatus; outcome: string | null }): string => (tk.outcome === "withdrawn" ? "Never mind" : STATUS[tk.status]);
 
 export const PRODUCT: Record<Product, string> = {
   webHosting: "Web hosting", domain: "Domain", ssl: "SSL", dns: "DNS", gameServer: "Game server", vps: "VPS",

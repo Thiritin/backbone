@@ -14,5 +14,5 @@ export function abandonTickets(s: GameState): void {
     return limit !== undefined && t.status === "open" && !t.work && !t.notice && s.hour - t.dueAt >= limit;
   };
   if (!s.tickets.some(gone)) return;
-  s.tickets = s.tickets.map((t) => (gone(t) ? { ...t, status: "closed", outcome: "ignored", updatedAt: s.hour, unread: false } : t));
+  s.tickets = s.tickets.map((t) => (gone(t) ? { ...t, status: "closed", outcome: "withdrawn", updatedAt: s.hour, unread: false } : t));
 }

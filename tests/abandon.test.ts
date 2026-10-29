@@ -24,7 +24,7 @@ describe("unanswered tickets", () => {
     const before = happy();
     expect(before).toBeLessThan(70);
     tick(s);
-    expect(get()).toMatchObject({ status: "closed", outcome: "ignored", unread: false, updatedAt: limit });
+    expect(get()).toMatchObject({ status: "closed", outcome: "withdrawn", unread: false, updatedAt: limit });
     while (s.hour < limit + 24) tick(s);
     expect(happy()).toBeGreaterThanOrEqual(before - 1);
   });
