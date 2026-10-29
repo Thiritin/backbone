@@ -1,4 +1,4 @@
-import { Bot, GitPullRequest } from "lucide-react";
+import { Bot, Check, GitPullRequest } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -52,6 +52,7 @@ const text = (parts: Inline[]) => parts.map((p, i) => (p.href ? <a key={i} href=
 
 function BlockView({ b }: { b: Block }) {
   if (b.kind === "p") return <p className={b.fine ? "intro-fine" : undefined}>{text(b.text)}</p>;
+  if (b.kind === "checks") return <ul className="intro-checks">{b.items.map((t, i) => <li key={i}><Check /><span>{text(t)}</span></li>)}</ul>;
   if (b.kind === "table") {
     return <dl className="intro-glossary">{b.rows.map(([t, d], i) => <div key={i}><dt>{text(t)}</dt><dd>{text(d)}</dd></div>)}</dl>;
   }

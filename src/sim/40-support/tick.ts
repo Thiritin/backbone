@@ -1,5 +1,5 @@
 import { chance } from "../00-core/rng";
-import { isMonthStart } from "../00-core/time";
+import { isMonthStart, nowMinutes } from "../00-core/time";
 import { counts } from "../00-core/workhours";
 import { noticed, segmentOf } from "../10-catalog/attention";
 import type { Customer } from "../30-customers/customers";
@@ -30,12 +30,12 @@ const RIGHT_ANSWER = 5, WRONG_ANSWER = -10, HISTORY_MONTHS = 12;
 
 function resolve(s: GameState, t: Ticket, c: Customer, outcome: Ticket["outcome"] = null): void {
   Object.assign(t, { status: "resolved", updatedAt: s.hour, outcome });
-  if (outcome !== "cancelled" && outcome !== "offerRefused") bump(c, RIGHT_ANSWER);
+  if (outcome !== "cancelled" && outcome !== "offerRefused" && outcome !== "noBackup") bump(c, RIGHT_ANSWER);
 }
 
 // Player work queued by the support actions takes effect once its time has passed.
 function finishWork(s: GameState, customer: (id: string) => Customer, events: SimEvent[]): void {
-  const due = s.tickets.filter((t) => t.work && t.work.doneAt <= s.hour * 60).sort((a, b) => a.work!.doneAt - b.work!.doneAt);
+  const due = s.tickets.filter((t) => t.work && t.work.doneAt <= nowMinutes(s)).sort((a, b) => a.work!.doneAt - b.work!.doneAt);
   for (const t of due) {
     // An earlier retention loss in this batch may have closed the customer's other tickets.
     if (!t.work) continue;
@@ -144,6 +144,18 @@ function monthly(s: GameState): void {
     if (cancels && !s.tickets.some((t) => t.customerId === c.id && t.kind === "cancellation" && !isFinal(t))) createTicket(s, c, "cancellation", null);
     else if (chance(s.rng, UPGRADE_CHANCE[p.budget])) createTicket(s, c, "upgrade");
   }
+}
+
+// Between hourly ticks: the queued work whose minute has come.
+export function workTick(s: GameState): SimEvent[] {
+  if (!s.tickets.some((t) => t.work && t.work.doneAt <= nowMinutes(s))) return [];
+  s.customers = s.customers.map((c) => ({ ...c }));
+  s.tickets = s.tickets.map((t) => ({ ...t }));
+  const byId = new Map(s.customers.map((c) => [c.id, c]));
+  const customer = (id: string) => byId.get(id) ?? s.customers.find((c) => c.id === id)!;
+  const events: SimEvent[] = [];
+  finishWork(s, customer, events);
+  return events;
 }
 
 export function supportTick(s: GameState): SimEvent[] {

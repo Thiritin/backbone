@@ -5,6 +5,8 @@ import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { pduOf } from "../../../sim/60-infra/pdu";
 import { freeSlots, isPlugged, locationOf, travelCost } from "../../../sim/60-infra/status";
 import { joinableClusters } from "../../../sim/90-actions/software";
+import { startBurnin } from "../../../sim/90-actions/burnin";
+import { burning } from "../../../sim/60-infra/status";
 import { addNode, cordon, drain, removeNode, uncordon } from "../../../sim/90-actions/clusters";
 import { addSecondPsu, buyOutLease } from "../../../sim/90-actions/hardware";
 import type { MenuEntry } from "../../desktop/menu";
@@ -86,6 +88,10 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
     null,
     server && !!d.rackId && { label: "Add Software…", run: ui.setup },
     server && !!d.rackId && ui.maintain && { label: "Plan maintenance…", run: ui.maintain },
+    server && !!d.rackId && !cluster && { label: "Burn-in", disabled: !d.on || burning(game, d) || loads.length > 0, items: [
+      { label: "Quick, 6 hours", run: () => act(startBurnin, d.id, false) },
+      { label: "Full, 48 hours", run: () => act(startBurnin, d.id, true) },
+    ] },
     ...(server && d.rackId && ui.move ? moveEntries(game, d, ui) : []),
     joinable.length > 0 && { label: "Join cluster", items: joinable.map((c) => ({ label: c.name, run: () => act(addNode, c.id, d.id) })) },
     node && (node.state === "active" ? { label: "Cordon", run: () => act(cordon, d.id) } : node.state === "cordoned" && { label: "Uncordon", run: () => act(uncordon, d.id) }),

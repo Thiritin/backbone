@@ -1,6 +1,6 @@
 import { rand } from "../00-core/rng";
-import { yearOf } from "../00-core/time";
-import { bareParts, boardVendor, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { monthIndexOf, yearOf } from "../00-core/time";
+import { bareParts, boardVendor, brandOnSale, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
@@ -193,6 +193,7 @@ function lineError(s: GameState, line: CartLine): string | null {
   const model = shopModels(yearOf(s.hour)).find((m) => m.id === modelId);
   if (!model) return "error.notInShop";
   if (!brandsOf(model).includes(brand)) return "error.unknownBrand";
+  if (!brandOnSale(model, brand, monthIndexOf(s.hour))) return "error.notInShop";
   if (!Number.isInteger(qty) || qty < 1) return "error.badQuantity";
   if (line.vendor !== undefined && !vendorsOf(model).includes(line.vendor)) return "error.wrongVendor";
   const offers = partOffers(yearOf(s.hour));
@@ -654,7 +655,7 @@ export function setRaid(s: GameState, deviceId: string, level: RaidLevel): Actio
   if (!d) return fail("error.unknownDevice");
   if (modelById(d.model).kind !== "server") return fail("error.notServer");
   if (!(level in { none: 1, "1": 1, "5": 1, "6": 1, "10": 1 }) || !raidFits(level, drivesOf(d).length)) return fail("error.raidLevel");
-  if (d.on && (d.rackId || d.panel)) return fail("error.powerOffFirst");
+  if (d.on && (d.rackId || d.panel) && !d.setup) return fail("error.raidInSetup");
   if (d.raid === level) return { ok: true };
   Object.assign(d, { raid: level, rebuild: null, dataLost: holdsData(s, d) ? s.hour : d.dataLost });
   return { ok: true };

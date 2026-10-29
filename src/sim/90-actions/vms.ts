@@ -6,9 +6,10 @@ import {
   bookable, clusterOf, controlPlaneUp, hostOfVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
 } from "../60-infra/cluster";
 import { renumber, renumberError } from "../60-infra/addresses";
+import { handJob, type How } from "../60-infra/handwork";
 import { migrationHours } from "../60-infra/migration";
 import { RECOVER_HOURS } from "../60-infra/power";
-import { working } from "../60-infra/status";
+import { locationOf, working } from "../60-infra/status";
 import { freezeTick } from "../60-infra/usage";
 import {
   LAN_GB_PER_HOUR, LOSS_RESTORED, LOSS_RESTORED_MAX, lossReview, moveGbit, restoreHours, type LossItem,
@@ -71,6 +72,7 @@ export function migrationTargets(s: GameState, id: string): MigrationTarget[] {
   const found = clusterWorkload(s, id);
   if (!found) return [];
   const { w, c } = found, product = s.services.find((v) => v.id === w.serviceId)?.product;
+  if (!controlPlaneUp(s, c)) return [];
   const takes = (to: Cluster) => (product ? supports(to, product) : to.kind === "cloud" && !!to.platform);
   return s.clusters.filter((to) => takes(to) && moveGbit(s, c.az, to.az) > 0).flatMap((to): MigrationTarget[] => {
     const down = migrationDowntime(s, w, moveGbit(s, c.az, to.az), c.az !== to.az);
@@ -206,5 +208,51 @@ export function recover(s: GameState, id: string): ActionResult {
   if (w.recoverFailed) return fail("error.needsRestore");
   if (!working(s, d.id)) return fail("error.unresponsive");
   patch(s, id, { recoverDoneAt: s.hour + RECOVER_HOURS });
+  return { ok: true };
+}
+
+// Hand work to move the drives into the other server.
+export const RESCUE_HOURS = 1;
+
+// Where a workload stuck on a server that is off or failed, with its cluster's control plane down, can be recovered by hand:
+// active, working nodes of another cluster in the same location that sell its product and have room.
+export function rescueTargets(s: GameState, id: string): MigrationTarget[] {
+  const found = clusterWorkload(s, id);
+  if (!found) return [];
+  const { w, c } = found, from = s.devices.find((d) => d.id === w.deviceId);
+  if (!from || working(s, from.id) || controlPlaneUp(s, c) || lostDisk(s, w) || c.kind === "panel" || w.busyUntil > s.hour || w.migrating) return [];
+  const product = s.services.find((v) => v.id === w.serviceId)?.product, here = locationOf(s, from)?.id;
+  const takes = (to: Cluster) => (product ? supports(to, product) : to.kind === "cloud" && !!to.platform);
+  return s.clusters.filter((to) => to.id !== c.id && !to.vm && controlPlaneUp(s, to) && takes(to)).flatMap((to) => to.nodes.flatMap((n): MigrationTarget[] => {
+    const d = s.devices.find((x) => x.id === n.deviceId);
+    if (!d || n.state !== "active" || !working(s, d.id) || !nodeTakes(s, d, w) || locationOf(s, d)?.id !== here) return [];
+    const down = migrationDowntime(s, w, moveGbit(s, c.az, to.az), c.az !== to.az, d.id);
+    return [{ to: d.id, name: d.label ?? d.name, clusterId: to.id, free: left(bookable(s, d), nodeUsed(s, d.id)), down }];
+  }));
+}
+
+// Recovers a workload off a server that is off or failed onto a node of another cluster in the same location, as hand work:
+// offline for the wait, the hand work and the copy.
+export function rescueWorkload(s: GameState, id: string, toId: string, how: How | boolean = false): ActionResult {
+  const w = s.workloads.find((x) => x.id === id), from = w && s.devices.find((d) => d.id === w.deviceId);
+  if (!w || !from) return fail("error.unknownWorkload");
+  if (working(s, from.id)) return fail("error.powerOffFirst");
+  const c = s.clusters.find((x) => x.id === w.clusterId), to = clusterOf(s, toId), d = s.devices.find((x) => x.id === toId);
+  if (!c || !to || !d || to.vm || to.id === c.id) return fail("error.notNode");
+  if (locationOf(s, d)?.id !== locationOf(s, from)?.id) return fail("error.otherLocation");
+  if (lostDisk(s, w)) return fail("error.lostDisk");
+  if (w.busyUntil > s.hour || w.migrating) return fail("error.workloadBusy");
+  if (!controlPlaneUp(s, to)) return fail("error.controlPlaneDown");
+  const product = s.services.find((v) => v.id === w.serviceId)?.product;
+  if (product ? !supports(to, product) : to.kind !== "cloud") return fail(product ? noRoomError(s, product, to.id) : "error.needsPlatform");
+  if (to.nodes.find((n) => n.deviceId === toId)?.state !== "active" || !working(s, toId)) return fail("error.nodeDown");
+  if (!nodeTakes(s, d, w)) return fail("error.nodeFull");
+  const job = handJob(s, from.label ?? from.name, locationOf(s, from), how, RESCUE_HOURS, 1);
+  if ("error" in job) return fail(job.error);
+  if (s.cash < job.cost) return fail("error.noCash");
+  const down = migrationDowntime(s, w, moveGbit(s, c.az, to.az), c.az !== to.az, toId);
+  patch(s, id, { deviceId: toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + job.commit() + down, stuck: undefined, stopped: false });
+  if (c.az !== to.az) s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
+  freezeTick(s);
   return { ok: true };
 }

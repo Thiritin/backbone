@@ -2,7 +2,7 @@ import { useSessionState } from "../../session";
 import type { DeviceModel, PartSpec } from "../../../sim/10-catalog/hardware";
 import { VENDOR_NAME, VENDORS, type Vendor } from "../../../sim/10-catalog/cpus";
 import { ram } from "../hw";
-import { CORES, DISKS, FORMS, isSet, matchesFilter, NO_FILTER, RAMS, type Filter } from "./filter";
+import { CORES, DISKS, FORMS, isSet, matchesFilter, NO_FILTER, RAMS, SORTS, type Filter, type Sort } from "./filter";
 
 export function useFilter(): [Filter, (patch: Partial<Filter>) => void, () => void] {
   const [form, setForm] = useSessionState<string | null>("shop.filter.form", null);
@@ -21,7 +21,7 @@ export function useFilter(): [Filter, (patch: Partial<Filter>) => void, () => vo
 }
 
 // Each option shows how many of `items` stay when it is chosen with the other filters kept.
-export function ShopFilter({ items, filter, set, clear }: { items: { model: DeviceModel; part?: PartSpec }[]; filter: Filter; set: (p: Partial<Filter>) => void; clear: () => void }) {
+export function ShopFilter({ items, filter, set, clear, sort, setSort }: { sort: Sort; setSort: (s: Sort) => void; items: { model: DeviceModel; part?: PartSpec }[]; filter: Filter; set: (p: Partial<Filter>) => void; clear: () => void }) {
   const left = (p: Partial<Filter>) => items.filter((it) => matchesFilter(it.model, { ...filter, ...p }, it.part)).length;
   const pick = <K extends keyof Filter>(key: K, label: string, options: Filter[K][], text: (o: NonNullable<Filter[K]>) => string, any: Filter[K]) => (
     <label className="shop-filter-row">
@@ -36,6 +36,12 @@ export function ShopFilter({ items, filter, set, clear }: { items: { model: Devi
   const vendors = VENDORS.filter((v) => filter.vendor === v || left({ vendor: v }) > 0);
   return (
     <div className="shop-filter">
+      <label className="shop-filter-row">
+        <span className="shop-filter-h">Sort</span>
+        <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+          {SORTS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+        </select>
+      </label>
       {pick("form", "Form factor", FORMS, String, null)}
       {pick("cores", "Min cores", CORES, String, 0)}
       {pick("ram", "Min RAM", RAMS, ram, 0)}

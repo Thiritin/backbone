@@ -66,6 +66,8 @@ export const APPEAL_CHANCE = 0.6;
 export const EXTENSION_DAYS = 7;
 export const EXTENSION_PAY_CHANCE = 0.85;
 export const UNSUSPEND_HAPPINESS = 15;
+// economy.md, Happiness and churn: a month in which every service kept its SLA uptime.
+export const SLA_KEPT_HAPPINESS = 2;
 export const KEEP_SUSPENDED_HAPPINESS = -15;
 export const SUSPEND_CHURN_DAYS = 14;
 export const SUSPEND_CHURN_CHANCE = 0.5;
@@ -297,6 +299,17 @@ export function billingTick(s: GameState): SimEvent[] {
       if (billed > 0 && sla.credit && billed / hours < sla.uptime) {
         add(v.customerId, { serviceId: v.id, key: "invoice.line.slaCredit", params: { label: v.label }, amount: -cents(sla.credit * billed * v.price) });
       }
+    }
+    const missed = new Set<string>(), kept = new Set<string>();
+    for (const v of s.services) {
+      const hours = Math.min(v.endedAt ?? s.hour, s.hour) - Math.max(v.startedAt, from);
+      if (hours <= 0) continue;
+      (1 - Math.min(hours, s.downHours[v.id] ?? 0) / hours < SLAS[v.sla].uptime ? missed : kept).add(v.customerId);
+    }
+    for (const id of kept) {
+      if (missed.has(id) || isSuspended(s, id)) continue;
+      const c = ownCustomer(s, id);
+      if (c && c.churnedAt === null) bump(c, SLA_KEPT_HAPPINESS);
     }
     s.downHours = {};
   }

@@ -1,0 +1,54 @@
+/* A server's screen: the console window and the monitor at the rack share it. Looks keep their own colours whatever the desktop theme. */
+.scr-wrap { display: grid; gap: 8px; min-width: 0; }
+.scr {
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  position: relative; aspect-ratio: 4 / 3; width: 100%; max-height: 100%; overflow: hidden; border-radius: 6px; outline: none;
+  background: #000; color: #b8b8b8; font: 13px/1.5 var(--mono); padding: 14px 18px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+.scr:focus-visible { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 2px var(--accent); }
+.scr pre { margin: 0; font: inherit; white-space: pre-wrap; }
+.scr[data-look="post"] { color: #c8c8c8; }
+.scr[data-look="stuck"] { color: #d0d0d0; }
+.scr[data-look="debian"] { color: #e6e6e6; }
+.scr[data-look="nodisk"] { color: #bfbfbf; }
+.scr[data-hung] { filter: saturate(0.6) brightness(0.85); }
+.scr-osd { position: absolute; inset: auto 18px 14px auto; padding: 6px 12px; border-radius: 4px; background: #1f6fd0; color: #fff; font: 600 12px/1 system-ui, sans-serif; }
+
+.scr[data-look="bios"] { background: #0000a8; color: #ffff55; padding: 0; }
+.bios { display: grid; grid-template-rows: auto auto 1fr auto; height: 100%; position: relative; }
+.bios-h { text-align: center; background: #a8a8a8; color: #0000a8; font-weight: 700; }
+.bios-tabs { display: flex; gap: 0; background: #a8a8a8; color: #0000a8; }
+.bios-tabs span { padding: 0 14px; }
+.bios-tabs span.on { background: #0000a8; color: #ffffff; }
+.bios-body { display: grid; grid-template-columns: 1fr 42%; min-height: 0; }
+.bios-items { padding: 10px 12px; border-right: 2px solid #a8a8a8; display: grid; align-content: start; gap: 2px; }
+.bios-row { display: flex; justify-content: space-between; gap: 12px; padding: 0 6px; color: #ffffff; }
+.bios-row.ro { color: #c8c8c8; }
+.bios-row.on { background: #a8a8a8; color: #0000a8; }
+.bios-help { padding: 10px 12px; color: #ffffff; }
+.bios-f { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 4px 12px; background: #a8a8a8; color: #0000a8; }
+.bios-dlg { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); display: grid; gap: 6px; padding: 12px 22px; background: #a8a8a8; color: #0000a8; border: 2px double #0000a8; text-align: center; }
+
+.scr[data-look="dcui"] { background: #3a3a3a; color: #e8e8e8; padding: 0; }
+.dcui { display: grid; grid-template-rows: auto 1fr auto; height: 100%; }
+.dcui-top { display: flex; justify-content: space-between; padding: 8px 16px; background: #7d7d7d; color: #fff; }
+.dcui-mid { padding: 24px 16px; }
+.dcui-f { display: flex; justify-content: space-between; padding: 8px 16px; background: #f2c744; color: #1a1a1a; }
+
+.scr[data-look="windows"] { background: #1b4f9c; color: #fff; font-family: "Segoe UI", system-ui, sans-serif; display: grid; place-items: center; }
+.winlogon { text-align: center; display: grid; gap: 14px; }
+.winlogon-b { font-size: 22px; font-weight: 300; }
+
+.scr-keys { display: flex; flex-wrap: wrap; gap: 4px; }
+.scr-keys button { min-width: 38px; padding: 3px 8px; border: 0.5px solid var(--line); border-radius: 5px; background: var(--panel); color: var(--text); font: 11.5px var(--font-num); cursor: pointer; }
+.scr-keys button:hover { background: var(--hover); }
+
+/* The console window: the way in and the controller's own power keys above the screen. */
+.con { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+.con-bar { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-bottom: 0.5px solid var(--line); background: var(--panel); min-height: 36px; }
+.con-bar b { font-size: 12.5px; }
+.con-bar .grow { flex: 1; }
+.con-bar .muted { color: var(--text-2); font-size: 12px; }
+.con-bar button { padding: 3px 9px; border: 0.5px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); font: 12px var(--font); cursor: pointer; }
+.con-bar button:disabled { opacity: 0.45; cursor: default; }
+.con-body { padding: 12px; overflow: auto; display: grid; align-content: start; }

@@ -7,7 +7,7 @@ import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { deviceVendor, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, working } from "./status";
+import { deviceVendor, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
 import { coverage } from "./maintenance";
@@ -218,7 +218,8 @@ export const clusterOf = (s: GameState, deviceId: string): Cluster | undefined =
 export const workloadsOf = (s: GameState, serviceId: string): Workload[] => s.workloads.filter((w) => w.serviceId === serviceId);
 export const workloadsOn = (s: GameState, deviceId: string): Workload[] => s.workloads.filter((w) => w.deviceId === deviceId);
 // A server taken by a cluster or rented whole as a dedicated server.
-export const serverTaken = (s: GameState, deviceId: string): boolean => !!clusterOf(s, deviceId) || s.workloads.some((w) => w.deviceId === deviceId);
+export const serverTaken = (s: GameState, deviceId: string): boolean =>
+  !!clusterOf(s, deviceId) || s.workloads.some((w) => w.deviceId === deviceId) || s.devices.some((d) => d.id === deviceId && burning(s, d));
 
 // The scheduler: active, working nodes with the disk for it. Booking CPU and RAM past a node never refuses a placement, but
 // a node whose installed RAM it still fits wins (pack picks the busiest of them, spread the idlest); with none, the node
