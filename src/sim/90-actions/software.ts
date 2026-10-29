@@ -4,7 +4,7 @@ import type { GameState } from "../50-state";
 import { anchorOf, clusterOf, dropCluster, hostOfVm, workloadsOn, type Cluster } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
 import { familyOf, openVulns } from "../60-infra/vulns";
-import { installHypervisor, installPanel, installPanelInVm, phpDue, removeNode, upgradeNodePhp } from "./clusters";
+import { createVm, installHypervisor, installPanel, installPanelInVm, PANEL_VM_SIZE, phpDue, removeNode, upgradeNodePhp } from "./clusters";
 import type { ActionResult } from "./hardware";
 
 // A machine is a server or one of the player's own VMs. It runs one hypervisor or one panel: a panel next to a hypervisor
@@ -62,6 +62,15 @@ export function installSoftware(s: GameState, machineId: string, softwareId: str
   if (block) return { ok: false, error: block };
   const done = !isServer(s, machineId) ? installPanelInVm(s, machineId, sw.id) : sw.kind === "cloud" ? installHypervisor(s, machineId, sw.id) : installPanel(s, machineId, sw.id);
   if (done.ok && sw.kind === "mail") s.company = { ...s.company, mail: { kind: "self", software: sw.id as "postfixit" | "mailpig", clusterId: done.id! } };
+  return done;
+}
+
+// A new VM on a hypervisor cluster with catalog software in it; returns the new host's id.
+export function createSoftwareVm(s: GameState, clusterId: string, softwareId: string): ActionResult {
+  const vm = createVm(s, clusterId, PANEL_VM_SIZE);
+  if (!vm.ok) return vm;
+  const done = installSoftware(s, vm.id!, softwareId);
+  if (!done.ok) s.workloads = s.workloads.filter((w) => w.id !== vm.id);
   return done;
 }
 

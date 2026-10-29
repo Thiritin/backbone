@@ -9,9 +9,9 @@ import { workloadUse } from "../../../../sim/60-infra/usage";
 import { familyOf, openVulns } from "../../../../sim/60-infra/vulns";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { mailImpaired, seatsFor } from "../../../../sim/80-business/mail";
-import { createPanelVm, createVm, deleteVm, PANEL_VM_SIZE, removePanelHost, resizePanelVm } from "../../../../sim/90-actions/clusters";
+import { createVm, deleteVm, PANEL_VM_SIZE, removePanelHost, resizePanelVm } from "../../../../sim/90-actions/clusters";
 import { setSitesOffline } from "../../../../sim/90-actions/security";
-import { setAutoUpdate, uninstallSoftware, updateDue, updateSoftware } from "../../../../sim/90-actions/software";
+import { createSoftwareVm, setAutoUpdate, uninstallSoftware, updateDue, updateSoftware } from "../../../../sim/90-actions/software";
 import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../../../sim/90-actions/vms";
 import { useStore } from "../../../store";
 import { disk, ram } from "../../hw";
@@ -74,8 +74,8 @@ function Create({ game, c }: { game: GameState; c: Cluster }) {
   return (
     <div className="cx-tools">
       <button className="cx-btn primary" onClick={() => act(createVm, c.id, PANEL_VM_SIZE)}>New VM</button>
-      {SOFTWARE.filter((x) => x.kind === "panel" && x.from <= year).map((x) => (
-        <button key={x.id} className="cx-btn" onClick={() => act(createPanelVm, c.id, x.id)}>{x.console} VM</button>
+      {SOFTWARE.filter((x) => x.kind !== "cloud" && x.from <= year).map((x) => (
+        <button key={x.id} className="cx-btn" onClick={() => act(createSoftwareVm, c.id, x.id)}>{x.console} VM</button>
       ))}
     </div>
   );

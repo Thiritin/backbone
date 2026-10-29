@@ -9,7 +9,7 @@ import { addNode, createVm, deleteVm, provisionService } from "../src/sim/90-act
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
-import { installSoftware, softwareOn, uninstallSoftware } from "../src/sim/90-actions/software";
+import { createSoftwareVm, installSoftware, softwareOn, uninstallSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { hypervisor, readyGame, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
@@ -119,5 +119,19 @@ describe("software on machines", () => {
     expect(softwareOn(back, vm)).toMatchObject([{ id: "freepanel" }]);
     expect(clusterOf(back, second)).toBeUndefined();
     ok(installSoftware(back, second, "proxmocks"));
+  });
+
+  it("creates a VM with game or mail software on a hypervisor, and leaves no VM when the software is refused", () => {
+    const { s } = twoServers();
+    const c = hypervisor(s, ["dev3"]);
+    const game = ok(createSoftwareVm(s, c, "tcadmen"));
+    expect(s.clusters.find((x) => x.id === game)).toMatchObject({ kind: "game" });
+    const vms = s.workloads.length;
+    s.company = { ...s.company, domain: null };
+    expect(err(createSoftwareVm(s, c, "postfixit"))).toBe("error.needsDomain");
+    expect(s.workloads.length).toBe(vms);
+    s.company = { ...s.company, domain: "example.com" };
+    const mail = ok(createSoftwareVm(s, c, "postfixit"));
+    expect(s.company.mail).toMatchObject({ kind: "self", clusterId: mail });
   });
 });

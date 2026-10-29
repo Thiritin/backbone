@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- The New VM bar in a hypervisor console now also creates VMs with game server or mail software, not only web hosting panels.
 - At the server you now only press the power button, whose icon shows whether the server is on; unplug a cord from its power supply instead of using the old unplug, hold and reset buttons.
 - Your own virtual machines install software from their console: the Console tile in the VMs app or the Console button on the hypervisor's page opens it, Load installer ISO boots the same installer as on a server, and the Software tiles are gone from the VM page.
 - Game servers are now sized and priced like real ones, starting at about €29 a month in 2005 and €12 today, while VPS and cloud servers cost more in the early years.
