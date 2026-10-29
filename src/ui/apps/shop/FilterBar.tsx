@@ -24,7 +24,7 @@ export function ShopFilter({ models, filter, set, clear }: { models: DeviceModel
     <div className="shop-filter-row">
       <span className="shop-filter-h">{label}</span>
       {options.map((o) => (
-        <button key={o} className="shop-chip" aria-pressed={filter[key] === o} onClick={() => set({ [key]: filter[key] === o ? null : o })}>
+        <button key={o} className="shop-chip" data-empty={!left({ [key]: o })} aria-pressed={filter[key] === o} onClick={() => set({ [key]: filter[key] === o ? null : o })}>
           {o}<span className="num">{left({ [key]: o })}</span>
         </button>
       ))}
@@ -35,7 +35,7 @@ export function ShopFilter({ models, filter, set, clear }: { models: DeviceModel
       <span className="shop-filter-h">{label}</span>
       <div className="seg" role="group" aria-label={label}>
         {options.map((o) => (
-          <button key={o} aria-pressed={filter[key] === o} onClick={() => set({ [key]: o })}>
+          <button key={o} data-empty={!left({ [key]: o })} aria-pressed={filter[key] === o} onClick={() => set({ [key]: o })}>
             {o ? text(o) : "Any"}<span className="num shop-filter-n">{left({ [key]: o })}</span>
           </button>
         ))}

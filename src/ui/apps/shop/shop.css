@@ -108,3 +108,4 @@
 .shop-chip[aria-pressed="true"] { background: var(--accent-soft); border-color: transparent; color: var(--accent-text); }
 .shop-filter-n, .shop-chip .num { color: var(--text-3); font-size: 11px; }
 .shop-filter-n { margin-left: 5px; }
+.shop-filter [data-empty="true"]:not([aria-pressed="true"]) { opacity: 0.5; }
