@@ -15,7 +15,7 @@ This is the work plan for the next stretch of Backbone. It lists what is built a
 - The owner plays on the Vite dev server (port 5173) from this checkout, so merging code here reloads their page; windows and the Support selection survive reloads (src/ui/session.ts).
 - One lane at a time on its own branch or worktree, merged into main only when everything above is green.
 
-Balance today (main 05297ba): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.1; solo L2 2005.8, L3 2006.6, L4 2008.3, L5 2013.1, L6 never; 0 of 20 bankrupt in both. 671 tests pass.
+Balance today (main 587f3ab): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 720 tests pass.
 
 ## Built
 
@@ -35,6 +35,11 @@ Balance today (main 05297ba): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5
 - Lane 2.0, alerts that pause (ed5d404): `ALERT_KEYS` in src/sim/alerts.ts, `alert` in the store, src/ui/desktop/AlertSheet.tsx with Open and Continue; gdd.md "The desktop", Alerts.
 - Lane 2.1, company site hosting and design ages (8c57a61): rented Strateaux or an own panel host, `siteStatus`, lead and order factors, design generations with Redesign and the age penalty, `customerSite`, Website app styles per generation; the site factor is applied once per website lead flow (84d5851).
 - Lane 4.1, chassis slots and capacity from parts (9c20670): `dimmSlots`, bays by form factor, `pcie`, `psuBays`, sized components, capacity from installed non-failed parts; gdd.md "Chassis and parts", economy.md "Chassis slots".
+- Lane 2.0b, news and notification types (d88a4d1): `NOTIFY_TYPES` per app with On/Off per type in Settings and a gear in the notification centre, the News app and `event.news.*` headlines for software, generations, IPv6, RIPE, design generations, mail providers and offerable lines.
+- Lane 2b.1, versions and generated vulnerabilities (587f3ab): `version` and `updatedAt` on clusters, src/sim/60-infra/vulns.ts with seeded vulnerabilities per family and year, daily exploitation rolls (0.05%, 0.25%, 1%, rising with exposure), Nagiosaurus monitoring with the Monitoring tab, `updateSoftware` with downtime by kind and the "update" technician operation, `TechRules.updates`, critical vulnerabilities as alerts.
+- Lane 3.1, hostnames (47c94f9): `node001` servers, `vm001` own VMs, `vps12345678`-style service hostnames with `fqdn`, tickets name the service hostname, shown on customer, VM and server pages.
+- Lane 4.3, top-down lid-off view (Merge Lane 4.3): Open chassis on a powered-off server, SVG top-down view per line with the lid sliding off, clickable slots with Remove, Replace and Add from storage.
+- Lane 4.4, part prices by year (2798fbf): src/sim/10-catalog/parts.ts keyframes for RAM, SSD, NVMe, HDD and CPU with the 2012 flood, 2018 DRAM and 2026 AI spikes, `presetPrice` and `chassisPrice` (presets buy parts at an OEM share so launch prices match the generation table; a custom build costs about 15% more), resale at current prices, the balance bot prices servers by year.
 - Lane 2.2, panel traits and migration (merged before 05297ba): `from`, `migration` and `cluster` on software, `migrateWebspace` with hours and a 10 minute cutover as a technician operation, clustered FreePanel hosts, spam through `addSpam`, perf 0.7 while hacked; OpenVeeZee added as the free 2005 container platform so the year gate leaves a free hypervisor at the start.
 - Lane 6.1, 6.4, 6.6 (1a3f756): email orders bill the setup fee and the manual quote has a Setup fee field; customer credit and suspend actions, ticket assignment to an agent, cancel confirmations; speed and app selections survive a reload.
 - Lane 4.2, shop builds and rack upgrades (Merge Lane 4.2): bare chassis, presets with extras in the cart, a Parts tab with sized parts, `installPart` and `removePart` with hot-swap rules and the "part" technician operation, slots per group in the Components card.
@@ -43,7 +48,7 @@ Balance today (main 05297ba): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5
 
 ## In flight
 
-Wave 3 in worktrees: Lane 2.0b, Lane 2b.1, Lane 3.1, Lane 4.3, Lane 4.4.
+In worktrees: Lane 3.2, Lane 4.5, Lane 5.1, Lane 2b.2, Lane 2b.3.
 
 ## What Lane 1 left behind (read before Lanes 2 and 3)
 
@@ -60,15 +65,15 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | Lane | Title | Needs |
 | --- | --- | --- |
 | 2.0 | Alerts that pause the game | Built (ed5d404) |
-| 2.0b | News feed and notification settings per type | 2.0 |
+| 2.0b | News feed and notification settings per type | Built (d88a4d1) |
 | 2.1 | Company site hosting, customer sites, design ages | Built (8c57a61) |
 | 2.1b | Domains, registrar partners and company email | Built (05297ba) |
 | 2.2 | Panel traits, migration as a hand task, compromised sites and mail | Built |
-| 2b.1 | Software versions, generated vulnerabilities, monitoring, updates | 2.0 (alerts), 2.2 (panel traits in the catalog) |
+| 2b.1 | Software versions, generated vulnerabilities, monitoring, updates | Built (587f3ab) |
 | 2b.2 | Customer applications, notify and the update service | 2b.1 |
 | 2b.3 | Game server panels | 2b.1 |
 | 2b.4 | Breaches, ransom and fines | 2.0, 2b.1 |
-| 3.1 | Hostnames everywhere | 2.1b (the stored company domain) |
+| 3.1 | Hostnames everywhere | Built (47c94f9) |
 | 3.2 | Browser app, company site Admin, customer sites, easter egg | 2.1, 3.1 |
 | 3.3 | Server consoles by hostname with a feature matrix | 3.2, 2.2 |
 | 3.4 | IPMI, power actions, hangs and pulled plugs | 3.1, 3.2 |
@@ -76,8 +81,8 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 3b | Searchlight | 3.2 (searches sites and consoles) |
 | 4.1 | Chassis slots and capacity from parts | Built (9c20670) |
 | 4.2 | Shop: bare chassis, presets with extras, parts, upgrades in the rack | Built |
-| 4.3 | Top-down lid-off view | 4.1, 4.2 |
-| 4.4 | Part prices over time | 4.1, 4.2 |
+| 4.3 | Top-down lid-off view | Built |
+| 4.4 | Part prices over time | Built (2798fbf) |
 | 4.5 | GPU computing | 4.1, 4.4 |
 | 5.1 | Hardware lifecycle: end of sale and end of support | 4.4 |
 | 5.2 | Routers, UPS sizes, switched PDUs | 5.1, 3.4 (PDU power cycle) |
