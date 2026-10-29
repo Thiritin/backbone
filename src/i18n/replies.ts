@@ -102,6 +102,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `We understand the increase is unwelcome. Power and hardware prices rose, and the new price keeps ${svc(p)} at the quality you know.`,
     (p) => `The new price for ${svc(p)} reflects higher costs for power and hardware. It also pays for the people who answer emails like this one.`,
   ],
+  noBackup: [
+    (p) => `We have no backup of ${site(p)} to restore. Please upload the site again from your own copy and choose new passwords.`,
+    (p) => `Unfortunately there is no backup of ${site(p)} on our side. You will need to restore it from your own files and change your passwords.`,
+    (p) => `We cannot restore ${site(p)} because no backup exists. Please rebuild it from your own copy and keep the software up to date.`,
+  ],
   "tpl.awaitPayment": [
     () => "Thank you. Your services come back online as soon as the payment arrives.",
     () => "Thank you for letting us know. Once the payment reaches us, everything is switched back on automatically.",
