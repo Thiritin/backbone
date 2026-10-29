@@ -40,7 +40,7 @@ describe("AI bots", () => {
     runTo(s, FEB_1 + 1);
     const bills = s.ledger.filter((l) => l.key === "ledger.subscription" && l.hour === FEB_1).map((l) => l.params.name);
     expect(bills).toEqual(expect.arrayContaining(["ChadGPT Support", "Clipsy Reminders"]));
-    expect(subscriptionPrice(storeItem("chadGpt")!, 2010)).toBeCloseTo(300 * 1.08 ** 5, 2);
+    expect(subscriptionPrice(storeItem("chadGpt")!, 2010)).toBeCloseTo(50 * 1.08 ** 5, 2);
     expect(cancel(s, "chadGpt").ok).toBe(true);
     expect(activeBots(s).map((b) => b.id)).toEqual(["clipsy"]);
   });
@@ -66,11 +66,13 @@ describe("AI bots", () => {
       createTicket(s, c, i % 2 ? "howTo" : "billing");
     }
     runTo(s, 24 * 7);
-    const replies = s.tickets.flatMap((t) => t.replies).filter((r) => r.by === "ChadGPT Support");
-    expect(replies.length).toBeGreaterThan(300);
-    const right = replies.filter((r) => r.right).length / replies.length;
-    expect(right).toBeGreaterThan(BOT_RIGHT - 0.08);
-    expect(right).toBeLessThan(BOT_RIGHT + 0.08);
+    const firsts = (kind: "howTo" | "billing") => s.tickets.filter((t) => t.kind === kind).map((t) => t.replies[0]).filter((r) => r?.by === "ChadGPT Support");
+    expect(s.tickets.flatMap((t) => t.replies).filter((r) => r.by === "ChadGPT Support").length).toBeGreaterThan(300);
+    for (const kind of ["howTo", "billing"] as const) {
+      const right = firsts(kind).filter((r) => r.right).length / firsts(kind).length;
+      expect(right).toBeGreaterThan(BOT_RIGHT[kind] - 0.1);
+      expect(right).toBeLessThan(BOT_RIGHT[kind] + 0.1);
+    }
     expect(activeBots(s)[0].skill).toBe(0);
   });
 

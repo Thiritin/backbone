@@ -679,7 +679,7 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | Market | Market | €15 | | Market research skill |
 | Dock badges | Upgrade: counts on dock apps | €5 | | Monitoring skill |
 | Widgets | Upgrade: one desktop widget each | €1 (calendar, open tickets, cash, customers), €2 (monthly revenue, level) | | Start |
-| AI bots | ChadGPT Support €300, Clipsy Reminders €100, per bot | | | Automation skill |
+| AI bots | ChadGPT Support €50, Clipsy Reminders €100, per bot | ChadGPT: every reply in tokens, see [ChadGPT usage](#chadgpt-usage) | | Automation skill |
 | Storefront | The customer shop in Sales | €40 | 0.5% of shop revenue | Shop unlock |
 
 Installing pays the first month at once and is refused without the cash for it; later months are billed on the 1st as "Pear One" in the ledger. Cancelling stops billing and keeps the skill. Saves from before the Pear Store keep every widget, billed like a new purchase. The per-device, per-customer and per-employee extras and the surprise price adjustments are not in the game yet.
@@ -1116,10 +1116,39 @@ A raise request left unanswered for 30 days counts as refused. Salaries are bill
 
 | Bot | Base per month (2005) | Handles |
 | --- | --- | --- |
-| "ChadGPT Support" | €300 | How-to and billing tickets |
+| "ChadGPT Support" | €50 plus usage | How-to and billing tickets |
 | "Clipsy Reminders" | €100 | Payment reminders |
 
-A bot works at 2 × the base rate (a skill-50 human works at 1 ×), picks the right reply with P = 0.6 and never gains skill. Each reminder a bot sends makes the customer open a billing ticket with a 5% chance. Each bot task causes an incident with a 0.2% chance: the customer loses 15 happiness and opens a billing ticket, and the Staff app reports one of five absurd lines. A bot that handles 500 tasks a month causes about one incident a month.
+A bot works at 2 × the base rate (a skill-50 human works at 1 ×) and never gains skill. ChadGPT picks the right reply with P = 0.6 on how-to tickets and P = 0.5 on billing tickets. Each reminder a bot sends makes the customer open a billing ticket with a 5% chance. Each bot task causes an incident with a 0.2% chance: the customer loses 15 happiness and opens a billing ticket, and the Staff app reports one of five absurd lines. A bot that handles 500 tasks a month causes about one incident a month.
+
+### ChadGPT usage
+
+ChadGPT bills every reply it sends in tokens on top of its €50 base subscription. The month's usage becomes one "ChadGPT usage" ledger line on the first of the next month, booked under its own Finance category. A reply rereads the whole thread, so a retry costs more than the first answer:
+
+```math
+\text{tokens} = (6{,}000 + 3{,}000 \cdot r) \cdot 1.18^{\,y - 2005}
+\qquad
+\text{price per 1M tokens} = €280 \cdot 0.85^{\,y - 2005}
+```
+
+Here r is the number of replies already in the thread and y the year, held at 2026 after 2026. The price per token falls 15% a year, like real model prices, while each model generation reads and reasons 18% more per reply. A reply therefore costs about the same in every year: €1.68 for a first reply and €2.52 for the second in 2005, €1.79 and €2.68 from 2026.
+
+| Year | Price per 1M tokens | First reply |
+| --- | --- | --- |
+| 2005 | €280 | 6,000 tokens |
+| 2010 | €124 | 13,700 tokens |
+| 2015 | €55 | 31,400 tokens |
+| 2020 | €24.50 | 71,800 tokens |
+| 2026 | €9.20 | 194,000 tokens |
+
+**Retries.** A wrong reply brings a follow-up in the same thread, and ChadGPT answers it again. After 4 replies of its own on one ticket it leaves the ticket in the queue for staff and the player, and the customer loses 10 happiness for the runaround on top of the 10 for each wrong reply.
+
+| Kind | P(right) | Replies per ticket | Solved by ChadGPT | Replies per solved ticket | Cost per solved ticket, 2008 | Share of an agent's |
+| --- | --- | --- | --- | --- | --- | --- |
+| How-to | 0.6 | 1.62 | 97% | 1.67 | €3.62 | 42% |
+| Billing | 0.5 | 1.88 | 94% | 2.0 | €4.63 | 53% |
+
+**Against a support agent.** The reference is a full-time skill-50 support agent whose salary is spread over the tickets they solve in a month at full load: 140 hours at 3.16 tickets an hour with P(right) = 0.875, about 387 solved tickets, which is €8.05 a ticket in 2005 and €11.05 in 2018. From 2006 to 2018 a solved ticket from ChadGPT costs 34% to 44% of that on how-to tickets and 43% to 56% on billing tickets; the share falls slowly as salaries rise. One ChadGPT has room for about 5,000 replies a month, so a company with many customers, an outage or a price rise pays a five-figure monthly bill: the balance model's steady company pays about €10,600 a month from 2014 on.
 
 **Technicians.** A technician costs the technician role base above (€47,000 in 2026) and does one operation per office hour, so at most 40 a week, at their location. Skill sets the salary and does not change the work rate, because every operation fills its hour. Against remote hands at €120 an hour, a technician at a datacenter pays off from about 25 swaps a month; in the basement the gain is only the time the player saves.
 
@@ -1577,6 +1606,18 @@ Churn stays nearly all natural, at about 21% a year. Median years reached, befor
 | 6 | 2018 | never | 2017.5 | never | never |
 
 Neither bot goes bankrupt. The solo bot now reaches level 5: ChadGPT carries the routine tickets that used to bury its 60 hours a month, and it settles near 20,000 customers in 2019, held back by the tickets only people answer. Level 5 arrives about a year early because the bot opens every city the moment it reaches level 5; a later level 5 would come from a slower expansion, not from the cap. The steady bot still hires: 35 people by 2019 for the upgrade, outage and cancellation tickets the bot does not take. ChadGPT covers the routine tickets of about 20,000 customers for €300 a month, which makes support hires optional until then; if hiring should matter earlier, its work rate or price is the place to look.
+
+**ChadGPT usage pricing.** ChadGPT moved from a flat €300 to €50 plus tokens per reply, with up to 4 replies per ticket before the ticket goes back to people. The model now counts ChadGPT's work in replies: it clears its capacity divided by the replies per ticket, the unsolved rest stays in the queue, and every reply is billed. Median years reached, before and after:
+
+| Level | Target | Steady before | Steady after | Solo before | Solo after |
+| --- | --- | --- | --- | --- | --- |
+| 2 | 2005 | 2006.0 | 2006.0 | 2005.8 | 2005.8 |
+| 3 | 2007 | 2006.8 | 2006.8 | 2006.5 | 2006.5 |
+| 4 | 2010 | 2008.6 | 2008.6 | 2008.3 | 2008.3 |
+| 5 | 2013 | 2011.8 | 2011.9 | 2012.2 | 2012.8 |
+| 6 | 2018 | 2017.5 | 2017.9 | never | never |
+
+Neither bot goes bankrupt. The steady bot pays €500 a month for ChadGPT in 2008, €5,400 in 2012 and about €10,600 from 2014, when one ChadGPT runs at capacity, next to €118,000 of salaries in 2018. The solo bot pays €3,400 a month in 2012 and €10,600 by 2018. It reaches level 5 about half a year later than before, because the tickets ChadGPT gives up on land in its 60 hours a month; with 3 tries instead of 4 it reached level 5 only in 2013.6.
 
 **Open questions**
 

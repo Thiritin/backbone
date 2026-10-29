@@ -1,13 +1,14 @@
 import { BookOpen, Bot, Check, GraduationCap, Megaphone, MessagesSquare, Search, UserMinus, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import { runwayMonths } from "../../../sim/46-finance/finance";
-import { euro } from "../../../sim/00-core/money";
+import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import {
   activeBots, AD, atFair, BOT_RIGHT, BOT_SPEED, COURSE_HOURS, COURSE_PRICE, fullyTrained, marketSalary, monthlyPay, needsTraining, ROLES, salaryUpToNow, staffPrice, TASKS, TRAINER_HOURS, trainerFor, visibleCandidates, WORK_HOURS,
   type AdTier, type Assignment, type Candidate, type Employee, type Role, type Task, type WorkHours,
 } from "../../../sim/47-staff/staff";
 import { storeItem, subscriptionPrice } from "../../../sim/10-catalog/store";
+import { pricePerMTokens } from "../../../sim/47-staff/chad";
 import type { GameState } from "../../../sim/50-state";
 import { cancel } from "../../../sim/90-actions/store";
 import { answerRaise, assign, fire, hire, planTraining, postJobAd, setHours } from "../../../sim/90-actions/staff";
@@ -137,6 +138,24 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
 
 const botPrice = (game: GameState, b: Employee) => subscriptionPrice(storeItem(b.id)!, yearOf(game.hour));
 
+function ChadUsageFacts({ game }: { game: GameState }) {
+  const u = game.chadUsage, year = yearOf(game.hour);
+  return (
+    <>
+      <h3>Usage this month</h3>
+      <dl className="st-facts">
+        <div><dt>Price</dt><dd className="num">{euroCents(pricePerMTokens(year))} / 1M tokens</dd></div>
+        <div><dt>Replies</dt><dd className="num">{u.attempts.toLocaleString("en-GB")}</dd></div>
+        <div><dt>Tokens</dt><dd className="num">{(u.tokens / 1e6).toFixed(1)}M</dd></div>
+        <div><dt>Cost</dt><dd className="num">{euro(u.cost)}</dd></div>
+        <div><dt>Per solved ticket</dt><dd className="num">{u.solved ? euroCents(u.cost / u.solved) : "None"}</dd></div>
+        <div><dt>Right on how-to</dt><dd className="num">{Math.round(BOT_RIGHT.howTo * 100)}%</dd></div>
+        <div><dt>Right on billing</dt><dd className="num">{Math.round(BOT_RIGHT.billing * 100)}%</dd></div>
+      </dl>
+    </>
+  );
+}
+
 function BotDetail({ game, b }: { game: GameState; b: Employee }) {
   const act = useStore((s) => s.act);
   return (
@@ -155,10 +174,10 @@ function BotDetail({ game, b }: { game: GameState; b: Employee }) {
           <div><dt>Subscription</dt><dd className="num">{euro(botPrice(game, b))}</dd></div>
           <div><dt>Hours</dt><dd>Around the clock</dd></div>
           <div><dt>Speed</dt><dd className="num">{BOT_SPEED}×</dd></div>
-          <div><dt>Right answers</dt><dd className="num">{Math.round(BOT_RIGHT * 100)}%</dd></div>
         </dl>
       </header>
       <div className="st-body">
+        {b.id === "chadGpt" && <ChadUsageFacts game={game} />}
         <h3>Handles</h3>
         <div className="st-cards">
           {b.trained.map((k) => <div key={k} className="st-card done"><span className="t">{TASK[k]}</span><span className="p"><Check />Built in</span></div>)}

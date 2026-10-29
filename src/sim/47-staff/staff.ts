@@ -10,6 +10,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { isWorkHour } from "../00-core/workhours";
 import { orderError } from "../30-market/orders";
 import { orderMinutes, staffOrderStep } from "../30-market/manual";
+import { billAttempt, billChadUsage, BOT_RIGHT, BOT_RUNAROUND, BOT_TRIES, type ChadKind } from "./chad";
 
 export type Role = "support" | "bookkeeper" | "accountant" | "marketing" | "technician";
 export type Task = TicketKind | "reminder" | "dunning" | "final" | "suspend" | "campaigns" | "reviews" | "fairs" | "hardware" | "servers" | "panels";
@@ -139,7 +140,7 @@ export const BOTS: Record<string, { role: Role; tasks: Task[] }> = {
   clipsy: { role: "bookkeeper", tasks: ["reminder"] },
 };
 export const BOT_SPEED = 2;
-export const BOT_RIGHT = 0.6;
+export { BOT_RIGHT };
 // Chance per reminder that the customer writes in about it, and per task of something memorable.
 export const BOT_SLIP = 0.05;
 export const BOT_INCIDENT = 0.002;
@@ -178,7 +179,7 @@ export const REVIEW_INVITE_BOOST = 1.5;
 export const reviewBoost = (s: GameState): number => 1 + (REVIEW_INVITE_BOOST - 1) * dayShare(manager(s, "reviews"), "reviews");
 
 const speed = (e: Employee) => (e.bot ? BOT_SPEED : 0.5 + e.skill / 100);
-const rightChance = (e: Employee) => (e.bot ? BOT_RIGHT : 0.75 + 0.25 * (e.skill / 100));
+const rightChance = (e: Employee, kind: TicketKind) => (e.bot ? BOT_RIGHT[kind as ChadKind] ?? 0.6 : 0.75 + 0.25 * (e.skill / 100));
 
 // A support agent queues a reply or action on the ticket the same way the player does; finishWork in the support tick applies it.
 function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "resolve"; arg: string } {
@@ -186,7 +187,7 @@ function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "
   if (t.kind === "order") return { op: "resolve", arg: staffOrderStep(s, t, orderError(s, t)) ?? "accept" };
   const right = rightTemplate(s, t);
   if (!right) return { op: "resolve", arg: "unsuspend" };
-  if (rand(r) < rightChance(e)) return { op: "reply", arg: right };
+  if (rand(r) < rightChance(e, t.kind)) return { op: "reply", arg: right };
   return { op: "reply", arg: pick(r, TEMPLATES[t.kind].filter((x) => x !== right)) };
 }
 
@@ -210,16 +211,29 @@ function answerTickets(s: GameState, agents: Employee[], r: Rng): BotTask[] {
       // An order that cannot be set up waits for the player.
       const step = t.kind === "order" ? staffOrderStep(s, t, orderError(s, t)) : null;
       if (taken.has(t.id) || !e.trained.includes(t.kind) || (t.kind === "order" && !step)) continue;
+      const tries = e.bot ? t.replies.filter((x) => x.by === e.name).length : 0;
+      if (tries >= BOT_TRIES) continue;
       const took = take(s, e, step ? orderMinutes(s, t, step, MINUTES.order) : MINUTES[t.kind]);
       if (took === null) continue;
       const work = { ...choose(s, e, t, r), doneAt: Math.ceil(e.busyUntil), by: e.name };
       taken.set(t.id, work);
+      if (e.bot) {
+        const solved = work.op !== "reply" || work.arg === rightTemplate(s, t);
+        billAttempt(s, t.replies.length, solved, yearOf(s.hour));
+        if (!solved && tries + 1 === BOT_TRIES) runaround(s, t.customerId);
+      }
       logActivity(s, { customerId: t.customerId, serviceId: t.serviceId, by: e.name, key: `activity.${work.op}`, params: { kind: t.kind, arg: work.arg }, minutes: took });
       if (e.bot) byBot.push({ bot: e, customerId: t.customerId, reminder: false });
     }
   }
   if (taken.size) s.tickets = s.tickets.map((t) => (taken.has(t.id) ? { ...t, work: taken.get(t.id)!, unread: false } : t));
   return byBot;
+}
+
+function runaround(s: GameState, customerId: string): void {
+  s.customers = s.customers.map((x) => (x.id === customerId ? { ...x } : x));
+  const c = s.customers.find((x) => x.id === customerId);
+  if (c) bump(c, BOT_RUNAROUND);
 }
 
 type BillingWork = { inv: Invoice; step: number } | { inv: Invoice; step: "suspend" };
@@ -320,6 +334,7 @@ export const forumAwareness = (s: GameState): number =>
 
 export function staffTick(s: GameState): SimEvent[] {
   const bots = activeBots(s);
+  if (isMonthStart(s.hour)) billChadUsage(s);
   if (!s.staff.length && !bots.length) {
     if (isMonthStart(s.hour)) refreshMarket(s);
     return [];

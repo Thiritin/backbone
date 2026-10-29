@@ -42,6 +42,7 @@ export const en: Record<string, (p: Params) => string> = {
     return `You paid ${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}.`;
   },
   "ledger.subscription": (p) => `Pear One subscription: ${p.name}`,
+  "ledger.chadUsage": (p) => `ChadGPT usage: ${Number(p.attempts).toLocaleString("en-GB")} replies, ${(Number(p.tokens) / 1e6).toFixed(1)}M tokens`,
   "error.unknownStoreItem": () => "The Pear Store does not sell this.",
   "error.unknownSkill": () => "There is no such training.",
   "error.researched": () => "Your company already knows this.",

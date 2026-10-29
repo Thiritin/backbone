@@ -20,7 +20,8 @@ import { modelById, type DeviceModel } from "../10-catalog/hardware";
 import { skillById } from "../10-catalog/research";
 import { STORE, subscriptionPrice } from "../10-catalog/store";
 import { MONTHLY_RATES } from "../40-support/tickets";
-import { BOT_RIGHT, BOT_SPEED } from "../47-staff/staff";
+import { BOT_SPEED } from "../47-staff/staff";
+import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
 import { OVERCOMMIT } from "../10-catalog/products";
 
 // Average hours a ticket written at a random hour waits for the office to open: four 16-hour nights and a 64-hour weekend.
@@ -298,8 +299,12 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     }));
     support.forEach((w) => grow(w, month));
     books.forEach((w) => grow(w, month));
-    const routine = PROFILES.reduce((a, p, i) => a + cohorts[i].reduce((b, c) => b + c.n, 0) * (MONTHLY_RATES.howTo[p.budget] + MONTHLY_RATES.billing[p.budget]), 0);
-    const botT = chad ? Math.min(BOT_SPEED * 730 * tasksPerHour(TICKET_MINUTES, 50), routine * (1 + backlogT / Math.max(1, ticketLoad))) : 0;
+    const routineOf = (kind: ChadKind) => PROFILES.reduce((a, p, i) => a + cohorts[i].reduce((b, c) => b + c.n, 0) * MONTHLY_RATES[kind][p.budget], 0);
+    const routine = routineOf("howTo") + routineOf("billing"), howToShare = routineOf("howTo") / Math.max(routine, 1);
+    const mix = (f: (k: ChadKind) => number) => howToShare * f("howTo") + (1 - howToShare) * f("billing");
+    // ChadGPT replies up to BOT_TRIES times per ticket, each reply billed, and leaves the unsolved rest in the queue.
+    const botTickets = chad ? Math.min(BOT_SPEED * 730 * tasksPerHour(TICKET_MINUTES, 50) / mix((k) => botOdds(k).attempts), routine * (1 + backlogT / Math.max(1, ticketLoad))) : 0;
+    const botT = botTickets * mix((k) => botOdds(k).solved);
     const staffT = support.reduce((a, w) => a + STAFF_HOURS_PER_MONTH * tasksPerHour(TICKET_MINUTES, w.skill), 0);
     const playerT = Math.min(bot.playerHours * tasksPerHour(TICKET_MINUTES, 50), Math.max(0, ticketLoad + backlogT - botT));
     const capT = staffT + playerT + botT;
@@ -311,7 +316,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     waitHours = 4 + (backlogT / Math.max(capT, 1)) * 730;
     const processed = customers ? Math.min(1, capP / Math.max(customers, 1)) : 1;
     const avgSkill = support.length ? support.reduce((a, w) => a + w.skill, 0) / support.length : 100;
-    const pRight = support.length || chad ? (playerT + staffT * (0.75 + 0.25 * avgSkill / 100) + botT * BOT_RIGHT) / Math.max(capT, 1) : 1;
+    const pRight = support.length || chad ? (playerT + staffT * (0.75 + 0.25 * avgSkill / 100) + botT * mix((k) => BOT_RIGHT[k])) / Math.max(capT, 1) : 1;
 
     // Failures: each failed server takes its VPS share down for the repair.
     const failures = binomial(rng, vpsServers, SERVER_AFR / 12);
@@ -381,14 +386,14 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     for (let l = leases.length - 1; l >= 0; l--) if (leases[l].until <= month + 1) leases.splice(l, 1);
     const depreciation = servers.reduce((a, s) => a + (!s.leasedUntil && month - s.bought < 60 ? s.price / 60 : 0), 0);
     const marketing = website ? OWNED.website.upkeep + OWNED.orderForm.upkeep : 0;
-    const chadPrice = chad ? subscriptionPrice(CHAD, year) : 0;
+    const chadPrice = chad ? subscriptionPrice(CHAD, year) + botTickets * mix((k) => costPerTicket(k, year)) : 0;
     const opex = chadPrice + leasing + power + space + cityRents + bandwidth + salaries + adSpent + marketing + (rackUnlocked ? 0 : line.monthly);
     cash += collectedShare - opex - instalments;
     profits.push(collectedShare - opex - interest - servers.filter((x) => x.bought === month && !x.leasedUntil).reduce((a, x) => a + x.price, 0));
     if (profits.length > 6) profits.shift();
     book_("instalments", instalments);
     book_("collected", collectedShare); book_("leasing", leasing); book_("space", space + cityRents); book_("bandwidth", bandwidth); book_("power", power);
-    book_("salaries", salaries); book_("ads", adSpent);
+    book_("salaries", salaries); book_("ads", adSpent); book_("chad", chadPrice);
     yearProfit += collectedShare - opex - depreciation - interest;
     if (month % 12 === 3 && yearProfit > 0) { cash -= TAX_RATE * yearProfit; book_("tax", TAX_RATE * yearProfit); }
     if (month % 12 === 3) yearProfit = 0;
