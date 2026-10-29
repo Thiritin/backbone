@@ -142,15 +142,16 @@ export function share(s: GameState, profile: Profile, product: Product, city: st
   return e / (e + others.reduce((n, u) => n + Math.exp(u / CHOICE_TAU), 0));
 }
 
-export interface LeadFlow { profile: Profile; city: string; leads: number; conversion: number }
+// site marks the website batch, whose count already carries the site factor.
+export interface LeadFlow { profile: Profile; city: string; leads: number; conversion: number; site?: boolean }
 
 // Expected leads per month by profile and city: organic, referrals, forum posts, website and campaigns, capped per city.
 export function leadFlows(s: GameState): LeadFlow[] {
   const home = s.locations[0]?.city ?? "Frankfurt", cities = locationCities(s), level = metrics(s).level.level, rev = reviewMultiplier(s);
   const others = CITIES.map((c) => c.name).filter((c) => !cities.includes(c));
   const out: LeadFlow[] = [];
-  const add = (profile: Profile, city: string, leads: number, conversion = 1) => {
-    if (leads > 0) out.push({ profile, city, leads, conversion });
+  const add = (profile: Profile, city: string, leads: number, conversion = 1, site = false) => {
+    if (leads > 0) out.push({ profile, city, leads, conversion, site });
   };
   const forum = forumAwareness(s);
   for (const profile of PROFILE_IDS) {
@@ -164,8 +165,8 @@ export function leadFlows(s: GameState): LeadFlow[] {
     }
   }
   for (const b of leadsThisMonth(s)) {
-    add(b.profile, b.city, b.count * (1 - SPILL_SHARE), b.conversion);
-    for (const city of others) add(b.profile, city, (b.count * SPILL_SHARE) / others.length, b.conversion);
+    add(b.profile, b.city, b.count * (1 - SPILL_SHARE), b.conversion, b.source === "website");
+    for (const city of others) add(b.profile, city, (b.count * SPILL_SHARE) / others.length, b.conversion, b.source === "website");
   }
   return out;
 }
