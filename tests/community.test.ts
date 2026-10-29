@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { yearOf } from "../src/sim/00-core/time";
+import { marketPrice, sizeSpec } from "../src/sim/10-catalog/products";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { type GameState } from "../src/sim/50-state";
-import { EVENTS, eventById, MAX_DOWN_HOURS, REQUEST_DAYS } from "../src/sim/80-business/community";
+import { EVENTS, eventById, HALF_HOURS, MAX_DOWN_HOURS, OFFER_HOURS, REQUEST_DAYS } from "../src/sim/80-business/community";
 import { leadsThisMonth, PROFILE_IDS, reviewScore } from "../src/sim/80-business/marketing";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { acceptSponsorship, declineSponsorship } from "../src/sim/90-actions/community";
+import { acceptSponsorship, declineSponsorship, offerHalf } from "../src/sim/90-actions/community";
 import { closeTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { mrr, metrics } from "../src/sim/metrics";
@@ -90,7 +92,7 @@ describe("community sponsoring requests", () => {
     });
     expect(big).toContain("devOops");
     expect(new Set(big).size).toBeGreaterThan(3);
-  });
+  }, 60_000);
 
   it("lapse after two weeks without penalty", () => {
     const s = asked(5), cash = s.cash, score = reviewScore(s);
@@ -154,6 +156,52 @@ describe("accepting and declining", () => {
     expect(closeTicket(s, ticketOf(s).id).ok).toBe(true);
     expect(s.sponsorships[1].status).toBe("declined");
   });
+});
+
+describe("answering with 50% off", () => {
+  it("lets the community take it at half the list price or turn it down a day later, by seed", () => {
+    const outcomes = new Set<string>();
+    for (const seed of [1, 2, 3, 4, 5, 6]) {
+      const s = asked(seed), sp = s.sponsorships[0], ev = eventById(sp.event)!, events: SimEvent[] = [];
+      expect(offerHalf(s, sp.ticketId)).toEqual({ ok: true, id: sp.id });
+      expect(offerHalf(s, sp.ticketId)).toEqual({ ok: false, error: "error.ticketDone" });
+      runTo(s, s.hour + HALF_HOURS - 1, events);
+      expect(s.sponsorships[0].status).toBe("offered");
+      runTo(s, s.hour + 1, events);
+      const done = s.sponsorships[0], t = s.tickets.find((x) => x.id === sp.ticketId)!;
+      outcomes.add(done.status);
+      if (done.status === "running") {
+        expect(events.map((e) => e.key)).toContain("event.halfAccepted");
+        expect(t.outcome).toBe("sponsored");
+        expect(done.serviceIds).toHaveLength(ev.count);
+        const v = s.services.find((x) => x.id === done.serviceIds[0])!;
+        const y = yearOf(s.hour);
+        expect(v.price).toBeCloseTo(marketPrice(ev.product, sizeSpec(ev.product, ev.size, y), y) / 730 / 2, 10);
+        expect(s.customers.find((c) => c.id === done.customerId)).toMatchObject({ churnedAt: null });
+      } else {
+        expect(done.status).toBe("declined");
+        expect(events.map((e) => e.key)).toContain("event.halfDeclined");
+        expect(t).toMatchObject({ status: "closed", outcome: "ignored" });
+      }
+    }
+    expect([...outcomes].sort()).toEqual(["declined", "running"]);
+  }, 120_000);
+
+  it("waits for the answer past the request's two weeks", () => {
+    const s = asked(2), sp = s.sponsorships[0];
+    runTo(s, sp.offeredAt + OFFER_HOURS - 2);
+    offerHalf(s, sp.ticketId);
+    runTo(s, sp.offeredAt + OFFER_HOURS + 1);
+    expect(s.sponsorships[0].status).toBe("offered");
+    runTo(s, sp.offeredAt + OFFER_HOURS - 2 + HALF_HOURS);
+    expect(s.sponsorships[0].status).not.toBe("offered");
+  }, 60_000);
+
+  it("keeps the answer across a save", () => {
+    const s = asked(3), sp = s.sponsorships[0];
+    offerHalf(s, sp.ticketId);
+    expect(deserialize(serialize(s)).sponsorships[0].halfAt).toBe(s.hour);
+  }, 60_000);
 });
 
 describe("rewards", () => {

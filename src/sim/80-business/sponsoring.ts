@@ -6,11 +6,12 @@ import { candidate, CANDIDATE_DAYS, marketSalary } from "../47-staff/staff";
 import { isFinal, type Ticket } from "../40-support/tickets";
 import { metrics } from "../metrics";
 import {
-  EVENTS, eventOf, FAIL_AWARENESS, FAIL_REVIEWS, LEADS, MAX_DOWN_HOURS, OFFER_HOURS, RECOMMEND_CHANCE, RECOMMEND_SKILL, patchSponsorship as patch, REQUEST_DAYS, REVIEW_CHANCE,
+  EVENTS, eventOf, FAIL_AWARENESS, FAIL_REVIEWS, HALF_ACCEPT, HALF_HOURS, LEADS, MAX_DOWN_HOURS, OFFER_HOURS, RECOMMEND_CHANCE, RECOMMEND_SKILL, patchSponsorship as patch, REQUEST_DAYS, REVIEW_CHANCE,
   type CommunityEvent, type SponsorReward, type Sponsorship,
 } from "./community";
 import { addAwareness, addReview } from "./marketing";
 import { boardTick } from "./sponsorboard";
+import { acceptSponsorship } from "../90-actions/community";
 
 const DAY = 24;
 const cents = (v: number) => Math.round(v * 100) / 100;
@@ -100,15 +101,30 @@ function running(s: GameState, events: SimEvent[]): void {
 
 // An unanswered request lapses after two weeks without penalty.
 function lapse(s: GameState): void {
-  for (const sp of s.sponsorships.filter((x) => x.status === "offered" && s.hour - x.offeredAt >= OFFER_HOURS)) {
+  for (const sp of s.sponsorships.filter((x) => x.status === "offered" && x.halfAt === undefined && s.hour - x.offeredAt >= OFFER_HOURS)) {
     closeTicket(s, sp.ticketId, "ignored");
     patch(s, sp.id, () => ({ status: "declined" }));
+  }
+}
+
+// A day after a 50% off answer the community takes it or goes with another sponsor; no room counts as going elsewhere.
+function decide(s: GameState, events: SimEvent[]): void {
+  for (const sp of s.sponsorships.filter((x) => x.status === "offered" && x.halfAt !== undefined && s.hour >= x.halfAt + HALF_HOURS)) {
+    const name = eventOf(sp).name;
+    if (rand(hashRng(s.seed, Number(sp.id.slice(3)), 25)) < HALF_ACCEPT && acceptSponsorship(s, sp.ticketId).ok) {
+      events.push({ app: "Marketing", key: "event.halfAccepted", params: { event: name } });
+      continue;
+    }
+    closeTicket(s, sp.ticketId, "ignored");
+    patch(s, sp.id, () => ({ status: "declined" }));
+    events.push({ app: "Marketing", key: "event.halfDeclined", params: { event: name } });
   }
 }
 
 // Hourly, before billing: requests, downtime counting, rewards.
 export function communityTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
+  decide(s, events);
   lapse(s);
   boardTick(s, events);
   running(s, events);

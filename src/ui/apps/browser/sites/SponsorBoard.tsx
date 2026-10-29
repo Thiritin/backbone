@@ -4,8 +4,9 @@ import { sizeSpec, SIZES } from "../../../../sim/10-catalog/products";
 import { specText } from "../../../../sim/30-market/spec";
 import type { Product } from "../../../../sim/30-customers/customers";
 import type { GameState } from "../../../../sim/50-state";
+import { eventOf, OFFER_HOURS } from "../../../../sim/80-business/community";
 import { BOARD_MONTHS, BOARD_PRODUCTS, BOARD_SLOTS, offerOpen, type Ad } from "../../../../sim/80-business/sponsorboard";
-import { acceptSponsorship, declineSponsorship, postOffer, withdrawOffer } from "../../../../sim/90-actions/community";
+import { acceptSponsorship, declineSponsorship, offerHalf, postOffer, withdrawOffer } from "../../../../sim/90-actions/community";
 import { AUDIENCE } from "../../marketing/MarketingApp";
 import { formatDay } from "../../billing/BillingApp";
 import { PRODUCT } from "../../support/labels";
@@ -14,6 +15,7 @@ import "./pages.css";
 
 const AD: Record<Ad, string> = { banner: "Banner on the site", signature: "Forum signature", stage: "Mention on stage" };
 const monthsText = (n: number) => (n === 1 ? "1 month" : `${n} months`);
+const daysText = (h: number) => (h === 24 ? "1 day" : `${h / 24} days`);
 
 function Seg<T extends string | number>({ label, value, options, onChange }: { label: string; value: T; options: { id: T; text: string }[]; onChange: (v: T) => void }) {
   return (
@@ -39,10 +41,32 @@ export function SponsorBoard({ game }: { game: GameState }) {
   const offers = game.sponsorOffers.filter((o) => offerOpen(game, o));
   const applicants = game.sponsorships.filter((x) => x.board && x.status === "offered");
   const running = game.sponsorships.filter((x) => x.board && x.status === "running");
+  const requests = game.sponsorships.filter((x) => !x.board && x.status === "offered");
   return (
     <div className="sb">
       <header className="sb-head"><span className="sb-logo">Sponsor<i>-</i>Bored</span><span>Servers wanted, logos welcome.</span></header>
       <main className="sb-main">
+        <section className="sb-card">
+          <h2>Requests</h2>
+          {requests.length ? requests.map((x) => {
+            const ev = eventOf(x);
+            return (
+              <div key={x.id} className="sb-row">
+                <div className="sb-who">
+                  <strong>{ev.name}</strong>
+                  <div className="sb-meta"><span>{ev.audience.map((p) => AUDIENCE[p]).join(", ")}</span><span className="sb-num">{ev.people.toLocaleString("en-US")} people</span><span>{ev.kind === "tech" ? "Know-how" : "Mention at the event"}</span></div>
+                  <div className="sb-meta"><span>{ev.count} × {specText(ev.product, sizeSpec(ev.product, ev.size, year))}</span><span>{daysText(ev.hours)}</span><span className="sb-num">until {formatDay(x.offeredAt + OFFER_HOURS)}</span></div>
+                </div>
+                <div className="sb-acts">
+                  {x.halfAt !== undefined ? <span className="sb-meta">50% off offered</span> : <>
+                    <button className="sb-button ghost" onClick={() => act(offerHalf, x.ticketId)}>Offer 50% off</button>
+                    <button className="sb-button" onClick={() => act(acceptSponsorship, x.ticketId)}>Offer free</button>
+                  </>}
+                </div>
+              </div>
+            );
+          }) : <p className="sb-none">No requests.</p>}
+        </section>
         <section className="sb-card">
           <h2>Post an offer</h2>
           <Seg label="Product" value={product} options={BOARD_PRODUCTS.map((p) => ({ id: p, text: PRODUCT[p] }))} onChange={(p) => { setProduct(p); setSize(0); }} />

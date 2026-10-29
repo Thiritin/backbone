@@ -22,12 +22,12 @@ const settle = (s: GameState, id: string, outcome: "sponsored" | "sponsorDecline
   s.tickets = s.tickets.map((t) => (t.id === id ? { ...t, status: "closed", outcome, updatedAt: s.hour, unread: false, work: null } : t));
 };
 
-// Provisions the event's services through the normal placement, at EUR 0 or at half the list price for a board application;
-// nothing is kept when one of them finds no room.
+// Provisions the event's services through the normal placement, at EUR 0, or at half the list price for a half-price board
+// application or a request answered with 50% off; nothing is kept when one of them finds no room.
 export function acceptSponsorship(s: GameState, ticketId: string): ActionResult {
   const o = open(s, ticketId);
   if ("ok" in o) return o;
-  const { sp, ev } = o, b = sp.board, paid = !!b && !b.free;
+  const { sp, ev } = o, b = sp.board, paid = b ? !b.free : sp.halfAt !== undefined;
   const offer = b && s.sponsorOffers.find((x) => x.id === b.offerId);
   if (offer && offer.taken >= offer.slots) return fail("error.offerFull");
   const before = { customers: [...s.customers], services: [...s.services], workloads: [...s.workloads], nextId: s.nextId };
@@ -65,6 +65,15 @@ export function withdrawOffer(s: GameState, offerId: string): ActionResult {
   s.sponsorOffers = s.sponsorOffers.map((x) => (x.id === offerId ? { ...x, applyAt: x.applyAt.slice(0, x.sent) } : x));
   closeApplications(s, o);
   return { ok: true, id: offerId };
+}
+
+// Answers a community request with 50% off; the community decides a day later (80-business/sponsoring.ts).
+export function offerHalf(s: GameState, ticketId: string): ActionResult {
+  const o = open(s, ticketId);
+  if ("ok" in o) return o;
+  if (o.sp.board || o.sp.halfAt !== undefined) return fail("error.ticketDone");
+  s.sponsorships = s.sponsorships.map((x) => (x.id === o.sp.id ? { ...x, halfAt: s.hour } : x));
+  return { ok: true, id: o.sp.id };
 }
 
 // Closes the request without any penalty.
