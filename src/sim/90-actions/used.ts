@@ -31,6 +31,10 @@ export function deliverListing(s: GameState, l: Listing, locationId: string, pri
   const ids = stock(s, { model: l.model, brand: l.brand, qty: l.qty, ...(l.vendor ? { vendor: l.vendor } : {}) }, null, locationId, shipHours(l, city));
   let psus = 0;
   s.devices = s.devices.map((d) => {
+    // A chassis lot's nodes are as old as the lot; the chassis carries the price.
+    if (d.chassisId && ids.includes(d.chassisId)) {
+      return { ...d, boughtAt: s.hour, used: true as const, components: d.components.map((c) => ({ ...c, installedAt: Math.round(s.hour - l.age * HOURS_PER_YEAR), wear: "hidden" as const })) };
+    }
     if (!ids.includes(d.id)) return d;
     const components = d.components.map((c, i) => ({ ...c, installedAt: Math.round(s.hour - (l.wear[i] ?? l.age) * HOURS_PER_YEAR), wear: "hidden" as const }))
       .filter((c) => !(l.defect === "psu" && c.kind === "psu" && psus++ === 1));

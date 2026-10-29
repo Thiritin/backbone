@@ -1,6 +1,6 @@
 // Code-drawn device fronts, ported from docs/design/mockups/shell.js. Sizes are px; u is one rack unit.
 import type { ReactNode } from "react";
-import { bayCount, isOobPort, jacksOf, type DeviceModel } from "../../sim/10-catalog/hardware";
+import { bayCount, isOobPort, jacksOf, modelById as nodeModel, type DeviceModel } from "../../sim/10-catalog/hardware";
 import { isMgmtModel, MgmtFront, oobLabel } from "./mgmt";
 import { Back, Cord, psuInlets, SwitchRear } from "./backs";
 import { BrandMark } from "./logos";
@@ -179,6 +179,46 @@ function ServerFace(p: FrontProps) {
 }
 
 const serverFront = (p: FrontProps) => <ServerFace {...p} />;
+
+// A Twin chassis's node bays on the front: four columns between the ears.
+export const frontBays = (count: number, w: number, h: number) =>
+  Array.from({ length: count }, (_, i) => ({ x: 14 + (i * (w - 28)) / count, y: 1, w: (w - 28) / count, h: h - 2 }));
+
+// One Twin node's slice of the chassis front: its drive caddies side by side over a strip with its tag, status lights and power button.
+function NodeFace(p: FrontProps) {
+  const { w, h, state, name, model, brand, blink } = p, st = STYLE[brand] ?? STYLE.SuperMacro;
+  const n = model.server ? bayCount(model.server) : 3, strip = Math.max(8, h * 0.32), bw = (w - 4) / n, bh = h - strip - 3;
+  return (
+    <>
+      <rect x="0.3" y="0.3" width={w - 0.6} height={h - 0.6} rx="1" fill={st.ear} stroke="oklch(0.12 0.004 255)" strokeWidth="0.6" />
+      {Array.from({ length: n }, (_, i) => (
+        <g key={i}>
+          <rect x={2 + i * bw + 0.3} y="1.5" width={bw - 0.6} height={bh} rx="0.6" fill={st.bay} stroke="oklch(0.18 0.004 255)" strokeWidth="0.5" />
+          <rect x={2 + i * bw + bw * 0.2} y={1.5 + bh * 0.3} width={bw * 0.6} height={bh * 0.5} rx="0.5" fill={st.trim} opacity="0.6" />
+          <circle cx={2 + i * bw + bw / 2} cy={3.6} r="0.8" {...bayLed(p, i, LED.ok)} />
+        </g>
+      ))}
+      {name && <AssetTag x={3} y={h - strip / 2 - 1} text={name} h={Math.min(h, 16)} />}
+      <StatusLeds x={w - 22} y={h - strip / 2 - 1} state={state} blink={blink} />
+      <circle cx={w - 5} cy={h - strip / 2 - 1} r={Math.min(2.6, strip * 0.3)} fill="oklch(0.2 0.004 255)" stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.8" aria-label="Power button" />
+    </>
+  );
+}
+
+// The Twin 2U front: ears with handles around four node columns. In a rack the nodes draw themselves over their bays.
+function TwinFace(p: FrontProps) {
+  const { w, h, model, brand, state } = p, st = STYLE[brand] ?? STYLE.SuperMacro;
+  const node = model.nodes ? nodeModel(model.nodes.model) : undefined;
+  return (
+    <>
+      <rect x="0" y="0.5" width={w} height={h - 1} rx="1.5" fill={st.ear} stroke="var(--metal-line)" />
+      {[3, w - 9].map((x) => <rect key={x} x={x} y={h * 0.2} width="6" height={h * 0.6} rx="2" fill="none" stroke={st.trim} strokeWidth="0.8" aria-hidden="true" />)}
+      {node && frontBays(model.nodes!.count, w, h).map((b, i) => (
+        <g key={i} transform={`translate(${b.x} ${b.y})`}><NodeFace {...p} model={node} name="" state={state} parts={undefined} w={b.w} h={b.h} /></g>
+      ))}
+    </>
+  );
+}
 
 // Backup and archive chassis: a wall of drive caddies, 3 rows for backup and 5 for archive.
 function Caddies(p: FrontProps) {
@@ -364,8 +404,9 @@ export function Pdu({ w, h, name, model, state }: FrontProps) {
 export function Front(p: FrontProps) {
   if (p.model.kind === "server") {
     const line = lineOf(p.model);
-    return line === "backup" || line === "archive" ? <Caddies {...p} /> : line === "gpu" ? <Gpu {...p} /> : serverFront(p);
+    return line === "backup" || line === "archive" ? <Caddies {...p} /> : line === "gpu" ? <Gpu {...p} /> : p.model.chassis ? <NodeFace {...p} /> : serverFront(p);
   }
+  if (p.model.kind === "chassis") return <TwinFace {...p} />;
   if (p.model.kind === "switch" || p.model.kind === "firewall") return <SwitchRear {...p} />;
   if (p.model.kind === "gateway") return <Gateway {...p} />;
   if (p.model.kind === "ups") return <Ups {...p} />;

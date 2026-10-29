@@ -24,7 +24,7 @@ const cents = (v: number) => Math.round(v * 100) / 100;
 
 // Models a hoster could be getting rid of: sold for at least two years by now.
 export const usedModels = (year: number): DeviceModel[] =>
-  MODELS.filter((m) => m.price > 0 && m.kind !== "part" && m.kind !== "patch" && usedSince(m) <= year - MIN_YEARS_ON_SALE);
+  MODELS.filter((m) => m.price > 0 && m.kind !== "part" && m.kind !== "patch" && !m.chassis && usedSince(m) <= year - MIN_YEARS_ON_SALE);
 
 const sellerCity = (s: GameState, r: Rng): string =>
   rand(r) < LOCAL_CHANCE ? pick(r, s.locations).city : pick(r, CITIES).name;

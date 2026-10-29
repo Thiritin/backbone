@@ -3,7 +3,8 @@ import { GENERATIONS, generationAt } from "./economy";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
 import { cpuWatts, defaultVendor, genOfYear, socketCores, VENDOR_ARCH, VENDORS, vendorsAt, type Vendor } from "./cpus";
 
-export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part" | "kvm" | "console" | "oob";
+// A chassis holds the nodes of a multi-node server with their shared power supplies and fans; the nodes are servers.
+export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part" | "kvm" | "console" | "oob" | "chassis";
 export interface PortSpec { media: "rj45" | "sfp"; gbit: number }
 // Management ports outside the data plane, numbered from OOB_PORT: a server's console end, a switch or router's mgmt and RS-232
 // console ports, a KVM's outputs, a console server's serial ports, and the network jack of every management device.
@@ -70,11 +71,13 @@ export const specOf = (c: PartSpec): PartSpec => ({
 export function componentParts(m: DeviceModel, vendor?: Vendor): PartSpec[] {
   const n = (k: ComponentKind, count: number, size?: (i: number) => number, ff?: FormFactor): PartSpec[] =>
     Array.from({ length: count }, (_, i) => ({ kind: k, ...(size ? { size: size(i) } : {}), ...(ff ? { ff } : {}) }));
+  if (m.kind === "chassis") return [...n("psu", m.psus), ...n("fan", FAN_SLOTS)];
   if (m.server) {
     const v = m.server, maker = vendor ?? defaultVendor(v.arch), gen = genOf(m);
     const cpu = (): PartSpec => ({ kind: "cpu", size: socketCores(v.cores / v.sockets, maker, gen), vendor: maker, gen });
     return [
-      ...n(DRIVE_KIND[v.disk], v.drives, () => v.diskGb / v.drives, presetFf(v)), ...n("psu", m.psus), ...n("fan", 4),
+      // A node runs on its chassis's power supplies and fans.
+      ...n(DRIVE_KIND[v.disk], v.drives, () => v.diskGb / v.drives, presetFf(v)), ...(m.chassis ? [] : [...n("psu", m.psus), ...n("fan", 4)]),
       ...n("ram", v.ramSticks, () => v.ramGb / v.ramSticks), { kind: "board", vendor: maker }, ...Array.from({ length: v.sockets }, cpu), ...n("nic", 1),
       // A GPU line ships with the newest card of its generation; a part names its card by launch year.
       ...n("gpu", v.gpus, () => cardAt(m.from)?.year ?? 0),
@@ -102,25 +105,28 @@ export const bareParts = (m: DeviceModel, vendor?: Vendor): PartSpec[] => {
 // Cards a chassis takes: the GPU 4U line four, a 2U up to the 2014 generation one single-width card (later PSUs cannot feed it), a 1U none.
 const gpuSlots = (m: DeviceModel): number => (m.server && m.server.gpus > 0 ? m.server.gpus : m.server && m.height === 2 && m.from <= 2016 ? 1 : 0);
 
+const fanSlots = (m: DeviceModel): number =>
+  m.chassis ? 0 : m.kind === "server" || m.kind === "chassis" ? FAN_SLOTS : m.kind === "switch" || m.kind === "firewall" ? 2 : 0;
+
 // How many slots a model has for a kind of part (all drive kinds share the bays).
 export function slotsOf(m: DeviceModel, kind: ComponentKind): number {
   const v = m.server;
   if (kind === "cpu") return v?.sockets ?? 0;
   if (kind === "ram") return v?.dimmSlots ?? 0;
   if (isDriveKind(kind)) return v ? bayCount(v) : 0;
-  if (kind === "psu") return v?.psuBays ?? m.psus;
+  if (kind === "psu") return m.chassis ? 0 : v?.psuBays ?? m.psus;
   if (kind === "gpu") return gpuSlots(m);
-  if (kind === "fan") return m.kind === "server" ? FAN_SLOTS : m.kind === "switch" || m.kind === "firewall" ? 2 : 0;
+  if (kind === "fan") return fanSlots(m);
   return m.kind === "server" || m.kind === "switch" || m.kind === "firewall" ? 1 : 0;
 }
 
 // Whether a chassis can carry these parts together; returns an error key, or null when they fit.
 export function fits(m: DeviceModel, parts: PartSpec[]): string | null {
   const v = m.server, count = (k: ComponentKind) => parts.filter((p) => p.kind === k).length;
-  const fans = m.kind === "server" ? FAN_SLOTS : m.kind === "switch" || m.kind === "firewall" ? 2 : 0;
+  const fans = fanSlots(m);
   const boards = m.kind === "server" || m.kind === "switch" || m.kind === "firewall" ? 1 : 0;
   // Network ports come with the model, so a server takes its onboard NIC and no more.
-  if (count("cpu") > (v?.sockets ?? 0) || count("ram") > (v?.dimmSlots ?? 0) || count("psu") > (v ? v.psuBays : m.psus)
+  if (count("cpu") > (v?.sockets ?? 0) || count("ram") > (v?.dimmSlots ?? 0) || count("psu") > slotsOf(m, "psu")
     || count("fan") > fans || count("board") > boards || count("nic") > (v ? 1 : 0)) return "error.noSlot";
   const cards = parts.filter((p) => p.kind === "gpu");
   if (cards.length > gpuSlots(m) || (m.height < 4 && cards.some((p) => cardOf(p.size).wide))) return "error.noSlot";
@@ -208,6 +214,9 @@ export interface DeviceModel {
   atx?: boolean;
   // A yearly failure rate in place of the component rates.
   failYearly?: number;
+  // A multi-node chassis: the node model and how many nodes one purchase brings. A node names its chassis model.
+  nodes?: { model: string; count: number };
+  chassis?: string;
 }
 
 // Within a class, manufacturers differ in price, failure rate, release month, end of sale and power draw, never in specs.
@@ -215,9 +224,9 @@ export interface DeviceModel {
 // defaults are 0, 0 and 1.
 export interface Manufacturer { id: string; name: string; kinds: DeviceKind[]; priceFactor: number; failureFactor: number; fromShift?: number; untilShift?: number; wattsFactor?: number }
 export const MANUFACTURERS: Manufacturer[] = [
-  { id: "dwell", name: "Dwell", kinds: ["server"], priceFactor: 1, failureFactor: 1 },
+  { id: "dwell", name: "Dwell", kinds: ["server", "chassis"], priceFactor: 1, failureFactor: 1 },
   { id: "hewlett-packet", name: "Hewlett-Packet", kinds: ["server"], priceFactor: 1.08, failureFactor: 0.8, fromShift: 3, untilShift: -1, wattsFactor: 0.95 },
-  { id: "supermacro", name: "SuperMacro", kinds: ["server"], priceFactor: 0.9, failureFactor: 1.3, fromShift: -4, untilShift: 1, wattsFactor: 1.05 },
+  { id: "supermacro", name: "SuperMacro", kinds: ["server", "chassis"], priceFactor: 0.9, failureFactor: 1.3, fromShift: -4, untilShift: 1, wattsFactor: 1.05 },
   { id: "lenovoid", name: "Lenovoid", kinds: ["server"], priceFactor: 0.95, failureFactor: 1.1, fromShift: 6 },
   { id: "sysko", name: "Sysko", kinds: ["switch", "firewall", "gateway"], priceFactor: 1, failureFactor: 1 },
   { id: "junipurr", name: "Junipurr", kinds: ["switch", "gateway"], priceFactor: 1.1, failureFactor: 0.7 },
@@ -257,6 +266,8 @@ const BAYS_8 = (i: number): BayGroup[] => [{ ff: i <= 2 ? "2.5" : "nvme", count:
 const BAYS_3_5 = (count: number) => (): BayGroup[] => [{ ff: "3.5", count }];
 // The storage line ships NVMe drives from G6; those need NVMe-capable bays.
 const BAYS_STORAGE = (i: number): BayGroup[] => [{ ff: i >= 5 ? "nvme" : "3.5", count: 12 }];
+// A Twin node's share of the chassis front: three 3.5" bays, six 2.5" bays from the 2014 generation, NVMe from G4.
+const BAYS_TWIN = (i: number): BayGroup[] => (i <= 1 ? [{ ff: "3.5", count: 3 }] : [{ ff: i === 2 ? "2.5" : "nvme", count: 6 }]);
 const SERVER_LINES = [
   { id: "compute", name: "Balanced 1U", arch: "x86", height: 1, sockets: 2, cores: 1, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 1, price: 1, from: 2005 },
   { id: "compute-2psu", name: "Balanced 1U, 2 PSU", arch: "x86", height: 1, sockets: 2, cores: 1, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 0, watts: 1.05, price: 1.1, from: 2005 },
@@ -266,6 +277,8 @@ const SERVER_LINES = [
   { id: "backup", name: "Backup storage 4U", arch: "x86", height: 4, sockets: 1, cores: 0.5, ram: 0.5, bays: BAYS_3_5(36), dimms: [8, 12, 16, 24], pcie: 4, drives: 36, disk: "large", ports: 2, psus: 2, gpus: 0, watts: 2, price: 2.4, from: 2005 },
   { id: "archive", name: "Archive storage 4U", arch: "x86", height: 4, sockets: 1, cores: 0.25, ram: 0.25, bays: BAYS_3_5(60), dimms: [8, 8, 16, 16], pcie: 2, drives: 60, disk: "dense", ports: 2, psus: 2, gpus: 0, watts: 2.2, price: 3.2, from: 2005 },
   { id: "gpu", name: "GPU 4U", arch: "x86", height: 4, sockets: 2, cores: 1, ram: 2, bays: BAYS_8, dimms: [16, 24, 32, 48], pcie: 8, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 4, watts: 2, price: 3, from: 2011 },
+  // Four nodes in a shared 2U chassis (Twin 2U below); a node has no height of its own.
+  { id: "twin-node", name: "Twin node", arch: "x86", height: 0, sockets: 2, cores: 1, ram: 1, bays: BAYS_TWIN, dimms: [8, 12, 16, 16], pcie: 1, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.8, price: 0.6, from: 2008 },
   { id: "arm", name: "ARM 1U", arch: "arm", height: 1, sockets: 1, cores: 1.5, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.6, price: 0.9, from: 2020 },
 ] as const;
 
@@ -300,6 +313,17 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
   }),
 );
 
+// The Twin 2U chassis of each generation: two shared power supplies, the fan wall and four nodes, priced as the four nodes.
+export const TWIN_NODES = 4;
+const TWINS: DeviceModel[] = SERVERS.filter((m) => m.id.endsWith("-twin-node")).map((node) => {
+  const id = node.id.replace(/-node$/, "");
+  node.chassis = id;
+  return {
+    id, name: node.name.replace("Twin node", "Twin 2U"), kind: "chassis", height: 2, ports: [], watts: 0, idleWatts: 0, psus: 2, price: node.price * TWIN_NODES,
+    from: node.from, until: node.until, supportYears: node.supportYears, nodes: { model: node.id, count: TWIN_NODES },
+  };
+});
+
 type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus" | "oob" | "atx" | "failYearly">>;
 // Years on sale after launch and years of support after that (economy.md, Hardware lifecycle); other kinds never end.
 const LIFE: Partial<Record<DeviceKind, { sale: number; support: number }>> = {
@@ -318,6 +342,7 @@ const L2 = { layer: 2 } as const, L3 = { layer: 3 } as const;
 
 export const MODELS: DeviceModel[] = [
   ...SERVERS,
+  ...TWINS,
   other("sw-8", "L2 switch 8", "switch", 1, ports(8, 1), 8, 60, 2005, L2),
   other("sw-24", "L2 switch 24", "switch", 1, [...ports(24, 1), ...ports(2, 1, "sfp")], 40, 900, 2005, L2),
   other("sw-48", "L2 switch 48", "switch", 1, [...ports(48, 1), ...ports(4, 10)], 70, 2800, 2008, L2),
@@ -444,9 +469,9 @@ export const brandOnSale = (m: DeviceModel, brand: string, month: number): boole
   const until = brandUntil(m, brand);
   return brandFrom(m, brand) <= month && (until === null || month < (until + 1) * 12);
 };
-// The models some brand sells during the year.
+// The models some brand sells during the year. Nodes come with their chassis and are not sold alone.
 export const shopModels = (year: number): DeviceModel[] =>
-  MODELS.filter((m) => m.price > 0 && brandsOf(m).some((b) => brandFrom(m, b) < (year + 1) * 12 && (brandUntil(m, b) ?? year) >= year));
+  MODELS.filter((m) => m.price > 0 && !m.chassis && brandsOf(m).some((b) => brandFrom(m, b) < (year + 1) * 12 && (brandUntil(m, b) ?? year) >= year));
 
 // NVMe drive size per generation in GB; NVMe-capable bays come with G4, so the drives do too.
 const NVME_GB = [0, 0, 0, 1000, 2000, 8000, 15000];
