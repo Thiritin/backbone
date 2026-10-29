@@ -131,6 +131,8 @@ export interface GameState {
   installed: string[];
   // Checklist goals the player ticked by hand.
   checklist: string[];
+  // The changelog entries (date|text) the player has been shown.
+  seenChanges: string[];
   company: Company;
   // Finance: loss carried to the next tax year, insurance policies, the hour cash went below zero and the hour of bankruptcy.
   taxLoss: number;
@@ -225,7 +227,7 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false }],
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
   cables: [],
-  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], checklist: [],
+  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], checklist: [], seenChanges: [],
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, lossReports: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },

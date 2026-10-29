@@ -2,7 +2,9 @@ import { monthNet, pickSound, playSound, soundFor, type Sound } from "./sounds";
 import { useEffect } from "react";
 import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
-import { startGame as newCompany } from "../sim/90-actions/start";
+import { changeKeys, unseenChanges, type ChangelogDay } from "./changelog";
+import { EMBEDDED, newCompany } from "./embedded";
+import { markChangesSeen } from "../sim/90-actions/changes";
 import { tick } from "../sim/88-tick/tick";
 import { isAlert } from "../sim/alerts";
 import { typeOf } from "./notify-types";
@@ -50,6 +52,10 @@ interface Store {
   // The Welcome to Pear sheet a new game opens with.
   welcome: boolean;
   closeWelcome: () => void;
+  // The Pear OS update sheet: the changelog days it lists, or null when closed.
+  news: ChangelogDay[] | null;
+  openNews: (days: ChangelogDay[]) => void;
+  closeNews: () => void;
   // The server or VM whose Add Software sheet is open.
   setup: string | null;
   setSetup: (deviceId: string | null) => void;
@@ -97,7 +103,7 @@ export const sameLine = (a: CartLine, b: CartLine): boolean =>
   a.model === b.model && a.brand === b.brand && !!a.bare === !!b.bare && JSON.stringify([a.extras ?? [], a.part ?? null]) === JSON.stringify([b.extras ?? [], b.part ?? null]);
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, setup: null, explain: null, alert: null });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, welcome: false, news: null, setup: null, explain: null, alert: null });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -109,6 +115,11 @@ function loadGame(): { game: GameState; loaded: boolean } {
   }
   return { game: newCompany(Date.now() >>> 0), loaded: false };
 }
+
+const unseenOf = (g: GameState): ChangelogDay[] | null => {
+  const days = unseenChanges(g.seenChanges, EMBEDDED);
+  return days.length ? days : null;
+};
 
 const initial = loadGame();
 // A reload (the dev server's after a code change, or the player's) reopens the windows of the saved game and keeps its clock running.
@@ -175,6 +186,12 @@ export const useStore = create<Store>((set, get) => ({
   closeWelcome: () => {
     set({ welcome: false });
     get().openApp("Getting started");
+  },
+  news: initial.loaded ? unseenOf(initial.game) : null,
+  openNews: (news) => set({ news }),
+  closeNews: () => {
+    get().act((s) => markChangesSeen(s, changeKeys(EMBEDDED)));
+    set({ news: null });
   },
   setup: null,
   setSetup: (setup) => set({ setup }),
@@ -299,7 +316,8 @@ export const useStore = create<Store>((set, get) => ({
   },
   importSave: (raw) => {
     try {
-      set({ ...fresh(), game: deserialize(raw), started: true });
+      const game = deserialize(raw);
+      set({ ...fresh(), game, started: true, news: unseenOf(game) });
     } catch {
       get().notify("Settings", t("save.importFailed.title"), t("save.importFailed.text"));
       return;

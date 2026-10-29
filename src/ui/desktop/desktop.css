@@ -170,6 +170,11 @@ button { font: inherit; color: inherit; cursor: default; }
 .update-changes section:first-child h3 { margin-top: 0; }
 .update-changes ul { margin: 0; padding-left: 16px; }
 .update-changes li { font-size: 11.5px; color: var(--text-2); margin: 2px 0; }
+.update-changes li { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.update-open { flex: none; height: 20px; padding: 0 8px; font-size: 11px; }
+.alert.whats-new { width: 420px; }
+.alert.whats-new .alert-actions { grid-template-columns: 1fr; }
+.alert.whats-new .update-changes { width: 100%; max-height: min(360px, 55vh); box-sizing: border-box; }
 .update-more { font-size: 11px; color: var(--text-3); margin-top: 6px; }
 .alert-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 .alert-actions .btn { justify-content: center; }
