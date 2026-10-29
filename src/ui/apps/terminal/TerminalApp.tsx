@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { t } from "../../../i18n/en";
-import { complete, DESK_PROMPT, promptOf, recoveryReport, runLine, type Session, type Watch } from "../../../sim/60-infra/terminal";
+import { complete, DESK_PROMPT, hostOf, promptOf, recoveryReport, runLine, type Editing, type Session, type Watch } from "../../../sim/60-infra/terminal";
+import { editFiles } from "../../../sim/90-actions/files";
 import { useSessionState } from "../../session";
 import { uiSound, useFocus, useStore } from "../../store";
 import "./terminal.css";
 
 interface Line { prompt?: string; text: string }
+// A file open in edit: the machine it is on, the text as last saved and the text being typed.
+interface Open extends Editing { host: string; saved: string }
 
 const MAX_LINES = 400;
 const SETUP_KEY = "backbone.shell";
@@ -38,6 +41,7 @@ export function TerminalApp() {
   // The working directory, null for the home; the rest of a line waiting on a [Y/n] answer.
   const [cwd, setCwd] = useSessionState<string | null>("terminal.cwd", null);
   const [pending, setPending] = useSessionState<string | null>("terminal.confirm", null);
+  const [open, setOpen] = useSessionState<Open | null>("terminal.edit", null);
   const recall = useRef(history.length);
   const screen = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -107,6 +111,7 @@ export function TerminalApp() {
     setSession(result.session);
     setCwd(result.cwd);
     setPending(result.confirm);
+    if (result.edit) setOpen({ ...result.edit, host: hostOf(result.session), saved: result.edit.text });
     if (result.watch.length) setWatching([...watching, ...result.watch]);
     if (asked !== null) return;
     if (line.trim()) setHistory([...history, line].slice(-100));
@@ -129,6 +134,8 @@ export function TerminalApp() {
     setDraft(history[at] ?? "");
   };
 
+  if (open) return <Editor file={open} onChange={setOpen} onClose={() => { setOpen(null); setTimeout(() => input.current?.focus()); }} />;
+
   return (
     <div className="tm" onClick={() => { if (!getSelection()?.toString()) input.current?.focus(); }}>
       <div className="tm-screen" ref={screen}>
@@ -150,6 +157,36 @@ export function TerminalApp() {
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+// edit: the whole window is the file. Ctrl+S saves, Ctrl+X or Escape closes, twice when there are unsaved changes.
+function Editor({ file, onChange, onClose }: { file: Open; onChange: (f: Open) => void; onClose: () => void }) {
+  const [status, setStatus] = useState<string | null>(null);
+  const dirty = file.text !== file.saved;
+  const save = () => {
+    const r = useStore.getState().act(editFiles, file.host, [["write", file.path, file.text]]);
+    if (r.ok) onChange({ ...file, saved: file.text });
+    setStatus(r.ok ? "Saved" : t(r.error));
+  };
+  const close = () => {
+    if (dirty && status !== "Unsaved changes") setStatus("Unsaved changes");
+    else onClose();
+  };
+  return (
+    <div className="tm tm-edit">
+      <div className="tm-bar"><span>edit</span><span>{file.name}{dirty ? " *" : ""}</span></div>
+      <textarea
+        value={file.text} aria-label={file.name} autoFocus spellCheck={false} autoCapitalize="off" autoComplete="off"
+        onChange={(e) => { onChange({ ...file, text: e.target.value }); setStatus(null); }}
+        onKeyDown={(e) => {
+          const key = e.key.toLowerCase();
+          if ((e.ctrlKey || e.metaKey) && key === "s") { e.preventDefault(); save(); }
+          else if ((e.ctrlKey && key === "x") || e.key === "Escape") { e.preventDefault(); close(); }
+        }}
+      />
+      <div className="tm-bar"><span>{status ?? ""}</span><span>^S Save   ^X Exit</span></div>
     </div>
   );
 }

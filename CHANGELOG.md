@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-29
 
+- On the desk, the Terminal shows your desktop notes and Getting started in ~/Desktop, and the new edit command opens any file in a simple editor that saves with Ctrl+S.
 - A power outage that takes servers dark now cuts them off uncleanly, and they boot again once the power is back.
 - Datacenter power feeds can fail on their own: servers with two power supplies on a dual-fed rack ride through it with a notification, the rest go dark.
 - Loading a saved game no longer opens the Pear OS update sheet; What's new in the logo menu shows the full changelog in a larger sheet, grouped by version.

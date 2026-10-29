@@ -60,13 +60,25 @@ What the player changes is stored per machine as a flat map from absolute path t
 
 Each map remembers the hour of its first change. When a device's data is lost after that hour (a failed array, a rebuilt RAID), the map counts as empty and the next change starts a new one. Selling a device drops its map.
 
+## The desktop in ~/Desktop
+
+On the desk, `~/Desktop` is the desktop itself: every document there is a file named after its title, a repeated title with a number, as in `Untitled (2)`. A note's file is its text, so `cat`, `echo >>` and `edit` read and change the note, `mv` renames it, `rm` removes it, and a new file in `~/Desktop` becomes a new note. The desktop holds no folders, so `mkdir` there is refused.
+
+Getting started is a file too, showing its steps with `[x]` for the done ones. It follows the game, so it is read-only: writing, moving or removing it answers `Permission denied`.
+
+None of this is stored with the terminal's files; the documents are the only copy.
+
+## edit
+
+`edit <file>` opens the file in the whole Terminal window, or an empty buffer for a file that does not exist yet. Ctrl+S saves through the same action as every other change, so the size limit and the desktop rules apply. Ctrl+X or Escape closes the editor; with unsaved changes the first press shows `Unsaved changes` and the second closes without saving.
+
 ## Commands
 
-The shell parses quotes (`"..."` and `'...'`), `~`, relative paths with `.` and `..`, the redirections `>` and `>>`, and chains with `&&` and `;`. Pipes, globs, variables and job control are not part of it; those words fall through to `command not found` like any other unknown command.
+The shell parses quotes (`"..."` and `'...'`), backslash escapes, `~`, relative paths with `.` and `..`, the redirections `>` and `>>`, and chains with `&&` and `;`. Pipes, globs, variables and job control are not part of it; those words fall through to `command not found` like any other unknown command.
 
-The file commands are `pwd`, `cd`, `ls` (with `-l` and `-a`), `cat`, `echo`, `touch`, `mkdir` (with `-p`), `rm` (with `-r` and `-f`), `rmdir`, `mv` and `cp` (with `-r`). Small informational commands come along because they cost one line each: `whoami`, `hostname`, `uname -a` and `date`. Errors use the real GNU wording, for example `rm: cannot remove 'x': No such file or directory`.
+The file commands are `pwd`, `cd`, `ls` (with `-l` and `-a`), `cat`, `edit`, `echo`, `touch`, `mkdir` (with `-p`), `rm` (with `-r` and `-f`), `rmdir`, `mv` and `cp` (with `-r`). Small informational commands come along because they cost one line each: `whoami`, `hostname`, `uname -a` and `date`. Errors use the real GNU wording, for example `rm: cannot remove 'x': No such file or directory`.
 
-Tab completion learns paths: after a file command, the word completes against the current directory, the same way it completes host names after `ssh` today.
+Tab completion learns paths: after a file command, the word completes against the current directory with spaces escaped, the same way it completes host names after `ssh` today.
 
 ## apt
 
@@ -91,4 +103,4 @@ Tests: `tests/shell.test.ts` covers paths, the file commands, the size limits an
 
 ## Left out
 
-Text editors (`nano`, `vi`), `apt install` and `apt dist-upgrade` are not part of this. An editor needs a full-screen mode the Terminal does not have; `echo >` and `>>` cover writing notes. Installing software stays in the Software app, where placement and licences are shown.
+`apt install` and `apt dist-upgrade` are not part of this. Installing software stays in the Software app, where placement and licences are shown.

@@ -3,13 +3,13 @@ import { t } from "../../i18n/en";
 import { dateOf } from "../00-core/time";
 import type { GameState } from "../50-state";
 import { editFiles } from "../90-actions/files";
-import { applyOps, childrenOf, homeOf, hostnameOf, nameOf, parentOf, releaseOf, resolve, treeOf, userOf, type FileOp, type Tree } from "./fs";
+import { applyOps, childrenOf, DESK, DESKTOP, homeOf, hostnameOf, nameOf, parentOf, readOnly, releaseOf, resolve, treeOf, under, userOf, type FileOp, type Tree } from "./fs";
 import type { CommandResult } from "./terminal";
 
 // One command of a line: its words, an output redirection, and where it sits in the line so a prompt can re-run the rest.
 export interface Segment { words: string[]; redirect: { to: string; append: boolean } | null; then: "&&" | ";" | null; start: number; end: number }
 
-// Splits a line at && and ; into commands, with quotes, > and >>. Pipes, globs and variables are not shell syntax here.
+// Splits a line at && and ; into commands, with quotes, backslash escapes, > and >>. Pipes, globs and variables are not shell syntax here.
 export function parseLine(line: string): Segment[] {
   const out: Segment[] = [];
   let words: string[] = [], word: string | null = null, redirect: Segment["redirect"] = null, pending: boolean | null = null, start = 0;
@@ -29,7 +29,8 @@ export function parseLine(line: string): Segment[] {
       const shut = line.indexOf(c, i + 1), stop = shut < 0 ? line.length : shut;
       word = (word ?? "") + line.slice(i + 1, stop);
       i = stop;
-    } else if (/\s/.test(c)) flush();
+    } else if (c === "\\" && i + 1 < line.length) word = (word ?? "") + line[++i];
+    else if (/\s/.test(c)) flush();
     else if (c === ";" || (c === "&" && line[i + 1] === "&")) {
       close(c === ";" ? ";" : "&&", i);
       if (c === "&") i++;
@@ -45,7 +46,7 @@ export function parseLine(line: string): Segment[] {
 }
 
 const lines = (key: string, p: Record<string, string | number> = {}) => t(key, p).split("\n");
-const why = (k: "noent" | "isdir" | "notdir" | "exists" | "notempty") => t(`term.fs.${k}`);
+const why = (k: "noent" | "isdir" | "notdir" | "exists" | "notempty" | "perm") => t(`term.fs.${k}`);
 const kindOf = (tree: Tree, p: string) => (tree[p] === undefined ? null : tree[p] === true ? "dir" : "file");
 // A file's text as screen lines, without the empty line after its final newline.
 const textLines = (text: string) => (text ? text.replace(/\n$/, "").split("\n") : []);
@@ -75,6 +76,8 @@ export function fileCommand(s: GameState, host: string, cwd: string, cmd: string
   const err = (key: string, p: Record<string, string>) => { out.push(t(key, p)); failed = true; };
   const done = (): CommandResult => ({ output: out, failed, action: ops.length ? [editFiles, host, ops] : undefined });
   const { flags, rest } = flagsOf(args);
+  // Getting started on the desk, or a folder holding it.
+  const guarded = (p: string) => under(tree, p).some((x) => readOnly(s, host, x));
   const operand = () => {
     if (rest.length) return false;
     err("term.fs.operand", { cmd });
@@ -105,7 +108,7 @@ export function fileCommand(s: GameState, host: string, cwd: string, cmd: string
       const row = (name: string, p: string) => {
         if (!flags.has("l")) return name;
         const dir = tree[p] === true;
-        return t("term.ls.long", { mode: dir ? "drwxr-xr-x" : "-rw-r--r--", links: dir ? 2 : 1, user, size: dir ? 4096 : String(tree[p]).length, date: `${d.mon} ${d.day.padStart(2)} ${d.time.slice(0, 5)}`, name });
+        return t("term.ls.long", { mode: dir ? "drwxr-xr-x" : readOnly(s, host, p) ? "-r--r--r--" : "-rw-r--r--", links: dir ? 2 : 1, user, size: dir ? 4096 : String(tree[p]).length, date: `${d.mon} ${d.day.padStart(2)} ${d.time.slice(0, 5)}`, name });
       };
       const targets = rest.length ? rest : ["."];
       targets.forEach((a, i) => {
@@ -145,6 +148,7 @@ export function fileCommand(s: GameState, host: string, cwd: string, cmd: string
         let up = p;
         while (!kindOf(tree, up)) { chain.unshift(up); up = parentOf(up); }
         if (kindOf(tree, up) === "file") { err("term.fs.mkdir", { path: a, why: why("notdir") }); continue; }
+        if (host === DESK && chain.some((c) => c.startsWith(`${DESKTOP}/`))) { err("term.fs.mkdir", { path: a, why: why("perm") }); continue; }
         if (chain.length > 1 && !flags.has("p")) { err("term.fs.mkdir", { path: a, why: why("noent") }); continue; }
         for (const c of chain) change(["mkdir", c]);
       }
@@ -156,6 +160,7 @@ export function fileCommand(s: GameState, host: string, cwd: string, cmd: string
         if (p === "/") { err("term.fs.root", {}); continue; }
         if (!k) { if (!flags.has("f")) err("term.fs.rm", { path: a, why: why("noent") }); continue; }
         if (k === "dir" && !flags.has("r") && !flags.has("R")) { err("term.fs.rm", { path: a, why: why("isdir") }); continue; }
+        if (guarded(p)) { err("term.fs.rm", { path: a, why: why("perm") }); continue; }
         change(["rm", p]);
       }
       return done();
@@ -179,9 +184,17 @@ export function fileCommand(s: GameState, host: string, cwd: string, cmd: string
         if (cmd === "cp" && k === "dir" && !flags.has("r") && !flags.has("R")) { err("term.fs.omit", { path: a }); continue; }
         if (to === p || to.startsWith(`${p}/`)) { err("term.fs.into", { cmd, from: a, to: dest }); continue; }
         if (kindOf(tree, parentOf(to)) !== "dir") { err("term.fs.create", { cmd, path: dest, why: why("noent") }); continue; }
+        if ((cmd === "mv" && guarded(p)) || guarded(to)) { err("term.fs.move", { cmd, from: a, to: dest, why: why("perm") }); continue; }
         change([cmd === "mv" ? "move" : "copy", p, to]);
       }
       return done();
+    }
+    case "edit": {
+      if (rest.length !== 1) return { output: lines("term.edit.usage"), failed: true };
+      const p = at(rest[0]), k = kindOf(tree, p);
+      const no = k === "dir" ? "isdir" : readOnly(s, host, p) ? "perm" : !k && kindOf(tree, parentOf(p)) !== "dir" ? "noent" : null;
+      if (no) return { output: [t("term.fs.edit", { path: rest[0], why: why(no) })], failed: true };
+      return { output: [], edit: { path: p, name: rest[0], text: k ? String(tree[p]) : "" } };
     }
     default: return null;
   }
@@ -194,17 +207,20 @@ export function redirect(s: GameState, host: string, cwd: string, r: CommandResu
   const tree = treeOf(s, host), p = resolve(cwd, to.to, homeOf(host));
   const k = kindOf(tree, p), parent = kindOf(tree, parentOf(p));
   if (k === "dir" || parent !== "dir") return { ...r, output: [t("term.fs.redirect", { path: to.to, why: why(k ? "isdir" : parent ? "notdir" : "noent") })], failed: true };
+  if (readOnly(s, host, p)) return { ...r, output: [t("term.fs.redirect", { path: to.to, why: why("perm") })], failed: true };
   const text = r.output.length ? `${r.output.join("\n")}\n` : "";
   return { ...r, output: [], action: [editFiles, host, [[to.append ? "append" : "write", p, text]]] };
 }
 
-// Tab after a file command: the word completes to the names in its directory, a directory with a slash.
+// Tab after a file command: the word completes to the names in its directory, a directory with a slash, spaces escaped.
 export function completePath(s: GameState, host: string, cwd: string, word: string): string[] {
-  const tree = treeOf(s, host), cut = word.lastIndexOf("/") + 1, dir = word.slice(0, cut), part = word.slice(cut);
-  const base = resolve(cwd, dir || ".", homeOf(host));
+  const tree = treeOf(s, host), cut = word.lastIndexOf("/") + 1, dir = word.slice(0, cut), part = unescape(word.slice(cut));
+  const base = resolve(cwd, unescape(dir) || ".", homeOf(host));
   if (tree[base] !== true) return [];
   return childrenOf(tree, base).filter((n) => n.startsWith(part) && (part.startsWith(".") || !n.startsWith(".")))
-    .map((n) => `${dir}${n}${tree[`${base === "/" ? "" : base}/${n}`] === true ? "/" : ""}`);
+    .map((n) => `${dir}${n.replace(/([\s\\'"])/g, "\\$1")}${tree[`${base === "/" ? "" : base}/${n}`] === true ? "/" : ""}`);
 }
 
-export const FILE_COMMANDS = ["pwd", "cd", "ls", "cat", "echo", "touch", "mkdir", "rm", "rmdir", "mv", "cp", "whoami", "hostname", "uname", "date"];
+const unescape = (w: string) => w.replace(/\\(.)/g, "$1");
+
+export const FILE_COMMANDS = ["pwd", "cd", "ls", "cat", "edit", "echo", "touch", "mkdir", "rm", "rmdir", "mv", "cp", "whoami", "hostname", "uname", "date"];
