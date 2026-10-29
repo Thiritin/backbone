@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import { Hand, Power } from "lucide-react";
+import { Hand, Power, PowerOff } from "lucide-react";
 import type { Device, GameState } from "../../../sim/50-state";
 import { workloadsOn } from "../../../sim/60-infra/cluster";
 import { recover, restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
 import { TechButton } from "./TechButton";
 import { ActionTile } from "../software/Software";
-import { FRONT_BUSY, FRONT_ICON, frontOptions, handsLabel, POWER_ICON, powerOptions, type PowerOp } from "./power";
+import { FRONT_BUSY, frontOptions, handsLabel, POWER_ICON, powerOptions, type PowerOp } from "./power";
 import type { FrontOp } from "../../../sim/60-infra/power";
 
 // The power actions of a mounted server from afar and at the machine, extra action groups, the pending hand task, and the workloads a pulled plug corrupted.
@@ -34,7 +34,7 @@ export function PowerCard({ game, device, onOp, onFront, children }: { game: Gam
             {!options.length && device.hands && <span className="pill accent">{FRONT_BUSY[device.hands.kind]}</span>}
           </div>
           <div className="act-tiles">
-            {frontOptions(game, device).map((o) => <ActionTile key={o.op} icon={FRONT_ICON[o.op]} label={o.label} disabled={o.disabled} onClick={() => onFront(o.op)} />)}
+            {frontOptions(game, device).map((o) => <ActionTile key={o.op} icon={device.on ? Power : PowerOff} label={o.label} disabled={o.disabled} onClick={() => onFront(o.op)} />)}
           </div>
         </div>
         {children}

@@ -1,10 +1,10 @@
-import { CirclePower, Play, Plug, Power, PowerOff, RefreshCw, RotateCcw, RotateCw, ServerCog, Unplug, type LucideIcon } from "lucide-react";
+import { Play, Power, PowerOff, RefreshCw, RotateCcw, RotateCw, ServerCog, type LucideIcon } from "lucide-react";
 import { BMC_NAME, hasBmc, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState } from "../../../sim/50-state";
 import { kvmPower } from "../../../sim/60-infra/oob";
 import { pduOf } from "../../../sim/60-infra/pdu";
 import type { FrontOp } from "../../../sim/60-infra/power";
-import { isPlugged, locationOf, psusOf, working } from "../../../sim/60-infra/status";
+import { locationOf, working } from "../../../sim/60-infra/status";
 import { present } from "../../../sim/60-infra/handwork";
 import { powerCycle, powerOff, powerOn, reboot, reset, resetBmc, shutdown, type ActionResult } from "../../../sim/90-actions/hardware";
 import { continueBoot } from "../../../sim/90-actions/remote";
@@ -35,7 +35,6 @@ export function powerOptions(game: GameState, d: Device): { via: string | null; 
   return { via: bmc && !dead ? name : kvm ? modelById(kvm.model).name : null, pdu, options };
 }
 
-export const FRONT_ICON: Record<FrontOp, LucideIcon> = { power: CirclePower, hold: PowerOff, reset: RotateCcw, pull: Unplug, plug: Plug };
 export const FRONT_BUSY: Record<FrontOp | "bmcreset" | "continue" | "recover", string> = {
   power: "Pressing power button", hold: "Holding power button", reset: "Pressing reset button", pull: "Unplugging power", plug: "Plugging in power", bmcreset: "Resetting controller",
   continue: "Continuing boot", recover: "Recovering",
@@ -49,15 +48,9 @@ export function handsAway(game: GameState, d: Device): boolean {
 }
 export const handsLabel = (game: GameState, d: Device): string => handsAway(game, d) ? "Remote hands" : "At the server";
 
-// What a hand at the server can do: its front buttons and its power cords.
+// What a hand at the server can do: press its power button.
 export function frontOptions(game: GameState, d: Device): FrontOption[] {
-  const busy = !!d.hands, cords = psusOf(d);
-  return [
-    { op: "power" as const, label: "Press power button", disabled: busy || (d.on && !working(game, d.id)) },
-    ...(d.on ? [{ op: "hold" as const, label: "Hold power button", disabled: busy }, { op: "reset" as const, label: "Press reset button", disabled: busy }] : []),
-    ...(cords.some(isPlugged) ? [{ op: "pull" as const, label: "Unplug power", disabled: busy }] : []),
-    ...(cords.some((c) => !isPlugged(c)) ? [{ op: "plug" as const, label: "Plug in power", disabled: busy }] : []),
-  ];
+  return [{ op: "power", label: "Press power button", disabled: !!d.hands || (d.on && !working(game, d.id)) }];
 }
 
 export const isServerInRack = (d: Device): boolean => modelById(d.model).kind === "server" && !!d.rackId;
