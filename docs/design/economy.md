@@ -1014,6 +1014,31 @@ A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD t
 
 Rates are rolled hourly (yearly rate ÷ 8,760) per server and do not draw from the game's random sequence. A reset or power cycle boots for 1 hour. A graceful shutdown completes within the hour and stops the workloads cleanly. A recovery takes 30 minutes per workload, with no remote hands fee because the work happens in the operating system. Resetting a hung controller takes 15 minutes on site, plus the remote hands' response time and a one-hour fee in a datacenter; a technician does it without a fee. When corruption hits a server whose array has all its drives and no rebuild running, the array resyncs for the rebuild time of a drive instead (server performance × 0.95, × 0.8 or × 0.6 by rebuild rate) and no workload is corrupted.
 
+**Remote access.** KVMs, console servers and OOB switches are bought once and stay in the Shop to the end of the game. Anchors: a PiKVM v3 kit cost about USD 150 in 2021 and DIY builds about EUR 60; Avocent 8-port IP KVMs sold around USD 1,500 in the 2000s; Opengear 16-port console servers cost around USD 2,500; Raritan sold small OOB management switches.
+
+| Item | From | Price | Draw | Notes |
+| --- | --- | --- | --- | --- |
+| PiKVN | 2019 | 60 € | 5 W | 0U on the rail, one server, power through its own ATX adapter |
+| IP-KVN 8 | 2005 | 1,200 € | 25 W | 1U, 8 servers, console only |
+| ATX adapter | 2005 | 25 € | | Fitted to a server, lets an IP-KVN switch its power |
+| OpenGearbox 8, 16, 48 | 2005 | 1,500 €, 2,500 €, 6,000 € | 15, 18, 30 W | 1U, rollover cables to console ports |
+| OOB switch 8 | 2005 | 150 € | 8 W | 1U, 8 management ports |
+| Management DSL | 2005 | 20 € a month | | Own way in for a console server or OOB switch |
+| Cellular modem | 2008 | 30 € a month | | Same, on the mobile network |
+
+| Event | Rate or time |
+| --- | --- |
+| Stuck boot after a part swap or a hard power event | 5% per server |
+| Continue boot | 2 minutes over a controller or a console |
+| KVM, console server and OOB switch failure | 4% a year for KVMs, the default device rate for the others |
+| Firmware update | 10 minutes of reboot |
+| Switch or router hangs during a firmware update | 10% |
+| Lockout on a port group change | 2% |
+| Recover over console | 5 minutes |
+| Management firmware vulnerabilities | 1 a year |
+
+Stuck boots, hangs and lockouts are rolled per device and hour and do not draw from the game's random sequence. Without a console, Continue boot and Recover are hand tasks billed as one hour of remote hands in a datacenter. An exposed management device is checked once a day against the risk of its open vulnerabilities, the same risk as an exposed software instance.
+
 **Hardware lifecycle.** Every model on sale has a last year on sale (end of sale) and a number of support years after it; the model is out of support once the year passes that sum. Devices keep working past both dates. The anchor is Cisco's policy of ending sale six months after the notice and keeping support and spares for five more years; Dell and HPE sell five to seven years of support for servers.
 
 | Kind | Last year on sale | Support years after it |
