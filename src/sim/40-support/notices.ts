@@ -8,6 +8,7 @@ import { breachOf, decideBreach } from "../60-infra/breach";
 import { gridTick, maybeReview, returnSeized, seize } from "../60-infra/incidents";
 import type { SimEvent } from "../88-tick/tick";
 import { maintParams } from "../60-infra/maintenance";
+import { sponsorParams } from "../80-business/community";
 import { bump, cancelCustomer, credit, HOURS_PER_MONTH, monthlyValue, type Notice, type Ticket } from "./tickets";
 
 export interface Sender { id: string; name: string; domain: string; topics: string[]; agency: boolean }
@@ -209,6 +210,7 @@ export const subjectParams = (s: GameState, t: Ticket): Record<string, string | 
   target: t.move?.name ?? "", round: t.notice?.round ?? 1, sender: t.notice ? senderById(t.notice.sender).name : "",
   ...(t.kind === "extortion" && breachParams(s, t)),
   ...(t.maint && maintParams(t.maint)),
+  ...(t.kind === "sponsor" && sponsorParams(t)),
 });
 
 // Hourly, before the infrastructure and support ticks: grid outages, returned servers, notices, deadlines and seizures.

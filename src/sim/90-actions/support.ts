@@ -7,6 +7,7 @@ import type { ActionResult } from "./hardware";
 import { logActivity } from "../47-staff/activity";
 import { sendAction } from "../40-support/replies";
 import { breachOf } from "../60-infra/breach";
+import { declineSponsorship } from "./community";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -88,6 +89,7 @@ export function closeTicket(s: GameState, id: string): ActionResult {
   if ("error" in f) return f.error;
   // Closing a notice or legal request ignores it.
   if (f.t.kind === "extortion") return queue(s, f.t, "resolve", "refuse");
+  if (f.t.kind === "sponsor") return declineSponsorship(s, id);
   if (f.t.notice) {
     if (f.t.kind === "notice") ignoreNotice(s, f.t, hashRng(s.seed, s.hour, Number(f.t.id.slice(3)) || 0, 94));
     else Object.assign(f.t, { status: "closed", outcome: "ignored", updatedAt: s.hour, unread: false });

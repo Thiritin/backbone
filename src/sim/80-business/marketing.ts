@@ -7,6 +7,7 @@ import { profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
+import { communityBatches } from "./community";
 import { fairBatches, fairGain } from "./fairs";
 import { siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
 
@@ -50,7 +51,7 @@ export const PLATFORMS: Record<PlatformId, { name: string; fee: number; invite: 
   trustPylon: { name: "TrustPylon", fee: 199, invite: 0.02, trust: 6 },
 };
 
-export type ReviewReason = "ticket" | "cancellation" | "invite" | "outage" | "dataLoss";
+export type ReviewReason = "ticket" | "cancellation" | "invite" | "outage" | "dataLoss" | "sponsor";
 export interface Review { hour: number; customerId: string; name: string; stars: number; reason: ReviewReason }
 export interface Campaign { channel: CampaignChannel; profiles: Profile[]; budget: number; discount: number }
 export interface Marketing {
@@ -88,7 +89,7 @@ export const reach = (channel: CampaignChannel): Profile[] => PROFILE_IDS.filter
 export const awareness = (s: GameState, p: Profile): number => s.marketing.awareness[p];
 const marketCities = (s: GameState): string[] => [...new Set(s.locations.map((l) => l.city))];
 
-export interface LeadBatch { profile: Profile; city: string; source: CampaignChannel | "website" | "fair"; count: number; conversion: number }
+export interface LeadBatch { profile: Profile; city: string; source: CampaignChannel | "website" | "fair" | "community"; count: number; conversion: number }
 
 // Expected leads this month from the website and running campaigns; organic leads and referrals belong to the market.
 export function leadsThisMonth(s: GameState): LeadBatch[] {
@@ -106,7 +107,7 @@ export function leadsThisMonth(s: GameState): LeadBatch[] {
       out.push({ profile, city, source: c.channel, count, conversion: CAMPAIGNS[c.channel].conversion });
     }
   }
-  out.push(...fairBatches(s, cities));
+  out.push(...fairBatches(s, cities), ...communityBatches(s, cities));
   return out;
 }
 
@@ -157,6 +158,7 @@ function rollReviews(s: GameState, events: SimEvent[]): void {
     if (i < 0 || seen.has(id)) return;
     seen.add(id);
     const c = s.customers[i], r = hashRng(s.seed, hour, i, 77);
+    if (c.sponsor) return;
     if (rand(r) >= (c.happiness < 40 ? 0.2 : 0.1)) return;
     const review = addReview(s, id, starsFor(c.happiness, r), reason);
     if (review) events.push(reviewEvent(review));
@@ -167,7 +169,7 @@ function rollReviews(s: GameState, events: SimEvent[]): void {
 
 function updateAwareness(s: GameState): void {
   const paid = Object.fromEntries(PROFILE_IDS.map((p) => [p, 0])) as Record<Profile, number>;
-  for (const b of leadsThisMonth(s)) if (b.source !== "website" && b.source !== "fair") paid[b.profile] += b.count;
+  for (const b of leadsThisMonth(s)) if (b.source !== "website" && b.source !== "fair" && b.source !== "community") paid[b.profile] += b.count;
   const reviews = 0.006 * (reviewScore(s) - 3.5) + 0.001 * trustBonus(s);
   const site = owns(s, "website") && siteStatus(s) !== "down" ? 0.004 : 0;
   const next = { ...s.marketing.awareness };

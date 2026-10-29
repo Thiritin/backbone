@@ -281,7 +281,8 @@ export function billingTick(s: GameState): SimEvent[] {
   });
 
   const lines = new Map<string, InvoiceLine[]>();
-  const add = (customerId: string, line: InvoiceLine) => lines.set(customerId, [...(lines.get(customerId) ?? []), line]);
+  const free = new Set(s.customers.filter((c) => c.sponsor).map((c) => c.id));
+  const add = (customerId: string, line: InvoiceLine) => !free.has(customerId) && lines.set(customerId, [...(lines.get(customerId) ?? []), line]);
   const monthStart = isMonthStart(s.hour);
   if (monthStart) {
     const d = dateOf(s.hour);

@@ -163,7 +163,7 @@ export function supportTick(s: GameState): SimEvent[] {
     const c = customer(t.customerId);
     // The customer does not wait on a notice or legal request about them, nor on an order before their account exists.
     // An order waiting on payment stays open until paid.
-    if (t.notice || t.kind === "migration" || (t.kind === "order" && (!t.customerId || t.status !== "open"))) continue;
+    if (t.notice || t.kind === "migration" || t.kind === "sponsor" || (t.kind === "order" && (!t.customerId || t.status !== "open"))) continue;
     if (t.status === "waiting" && s.hour - t.updatedAt >= WAITING_CLOSE_HOURS) resolve(s, t, c);
     else if (t.status === "escalated" && (!t.serviceId || serviceOnline(s, t.serviceId))) resolve(s, t, c);
     else if (t.status === "open" && c.churnedAt === null && s.hour > t.dueAt) {

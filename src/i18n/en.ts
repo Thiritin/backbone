@@ -14,6 +14,7 @@ import { DOMAINS_EN } from "./domains";
 import { MAINTENANCE_EN } from "./maintenance";
 import { MOVES_EN } from "./moves";
 import { ORDERS_EN } from "./orders";
+import { COMMUNITY_EN } from "./community";
 import { MANUAL_EN } from "./manual";
 import { ACTIVITY_EN } from "./activity";
 import { REPLIES_EN } from "./replies";
@@ -535,6 +536,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...MOVES_EN,
   ...MAINTENANCE_EN,
   ...ORDERS_EN,
+  ...COMMUNITY_EN,
   ...MANUAL_EN,
   ...REPLIES_EN,
   // Platforms, virtual machines and backups.
