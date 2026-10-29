@@ -1,5 +1,6 @@
 // Part prices by year (economy.md, Prices over time, Part prices by year). Enterprise parts are priced in: RDIMM about 1.6 x
 // consumer RAM, enterprise SSD about 1.5 x, enterprise HDD about 1.6 x.
+import { erodedPrice } from "./lifecycle";
 import { bareParts, componentParts, manufacturerByName, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "./hardware";
 
 type Keyframes = [year: number, price: number][];
@@ -61,7 +62,7 @@ const partShare = (m: DeviceModel): number => (m.price - chassisPrice(m)) / part
 // What a preset costs in a year: its chassis plus its parts at that year's prices, times the brand's price factor.
 export function presetPrice(m: DeviceModel, year: number, brand?: string): number {
   const factor = (brand && manufacturerByName(brand)?.priceFactor) || 1;
-  if (!m.server) return Math.round(m.price * factor);
+  if (!m.server) return Math.round(erodedPrice(m, m.price, year) * factor);
   return Math.round((chassisPrice(m) + partShare(m) * partsPrice(componentParts(m), year)) * factor);
 }
 

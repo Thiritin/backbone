@@ -74,7 +74,7 @@ describe("catalog", () => {
     expect(ids(2005)).not.toContain("handoff");
     expect(ids(2010)).toEqual(expect.arrayContaining(["g1-compute", "g2-compute"]));
     expect(ids(2011)).not.toContain("g1-compute");
-    expect(ids(2026)).toEqual(expect.arrayContaining(["g6-compute", "g7-compute", "sw-24", "sw-32c"]));
+    expect(ids(2026)).toEqual(expect.arrayContaining(["g6-compute", "g7-compute", "sw-32d"]));
   });
 });
 

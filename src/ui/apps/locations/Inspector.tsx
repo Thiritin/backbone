@@ -1,3 +1,4 @@
+import { supportEnd } from "../../../sim/10-catalog/lifecycle";
 import { Cable, Database, EthernetPort, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, Unplug } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
@@ -168,6 +169,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
           ["Power", model.idleWatts === model.watts ? `${model.watts} W` : `${model.idleWatts}–${model.watts} W`],
           ...(model.height ? [["Height", height(model)]] as [string, string][] : []),
           ...(device.price ? [["Paid", euro(device.price)]] as [string, string][] : []),
+          ...(supportEnd(model) !== null ? [["End of support", `${supportEnd(model)}`]] as [string, string][] : []),
         ].map(([k, v]): [string, ReactNode] => [k, <span className="num">{v}</span>])} />
       </div>
       {menus.dialog}

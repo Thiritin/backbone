@@ -206,6 +206,8 @@ Failover is the safe default. Load balance doubles a server's bandwidth, but if 
 
 **Failures and redundancy.** Disks, power supplies, switches and routers fail at random, and more often as they age. Without a second path, everything behind a failed device goes offline. Two switches, two routers and servers wired to both keep services up. Until you hire technicians, you fix failures yourself.
 
+**Lifecycle.** Every model leaves the Shop in its end of sale year: servers two generations after their own, switches, firewalls and edge routers six years after launch, UPS units eight years, and patch panels never. The Shop card shows "End of sale" with the year, the device page shows "End of support" with the year, and News reports each non-server model that goes. Devices keep working past both dates. Once a device is out of support, swapping, installing and removing parts takes twice as long, spare parts for it cost 1.5 times as much, and its components fail 1.2 times as often. While a model is on sale its price falls 5% a year from the second year, except servers, whose prices follow their parts. See economy.md, Hardware, power and failures.
+
 **Upgrades**
 
 - A server swaps in place for another of the same height, for example a faster 1U. Bigger machines, such as a 4U GPU server, need free space. Drain the server first, or its workloads go offline during the swap.

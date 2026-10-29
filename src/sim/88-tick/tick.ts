@@ -27,6 +27,7 @@ import { usageTick } from "../60-infra/usage";
 import { productsTick } from "../85-products/products";
 import { COMPONENTS, manufacturerByName, modelById } from "../10-catalog/hardware";
 import { lessorName } from "../10-catalog/leasing";
+import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
 import { KNOW_HOW, storeItem, subscriptionPrice } from "../10-catalog/store";
 import { capacityAt, DATACENTERS, datacenterById, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
@@ -104,12 +105,14 @@ export const rebuildHours = (d: Device): number => {
   return (driveGb(d) * 1000 * DRIVE_USED_SHARE) / REBUILD_MBPS[d.rebuildRate] / 3600;
 };
 
-// Each component of a running device fails at its yearly rate for its age, × the manufacturer's factor, × 2 while a fan is out.
+// Each component of a running device fails at its yearly rate for its age, × the manufacturer's factor, × 2 while a fan is out,
+// × 1.2 once the device is out of support.
 export function failureChance(s: GameState, d: Device, c: Component): number {
   const spec = COMPONENTS[c.kind];
   const yearly = s.hour - c.installedAt < spec.life * HOURS_PER_YEAR ? spec.before : spec.after;
   const hot = d.components.some((x) => x.kind === "fan" && x.failedAt !== null) ? 2 : 1;
-  return (yearly * (manufacturerByName(d.brand)?.failureFactor ?? 1) * hot) / HOURS_PER_YEAR;
+  const old = unsupported(d.model, s.hour) ? FAILURE_FACTOR : 1;
+  return (yearly * (manufacturerByName(d.brand)?.failureFactor ?? 1) * hot * old) / HOURS_PER_YEAR;
 }
 
 // Records failed components on a device: a drive failure the array can't survive loses its data and stops any rebuild.

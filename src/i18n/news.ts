@@ -8,6 +8,8 @@ export const NEWS_EN: Record<string, (p: Params) => string> = {
   "event.news.software.text": (p) => `Heize online reports that the ${kind(p)} ${p.name} is out and can be installed on your servers.`,
   "event.news.generation.title": (p) => `G${p.gen} servers in the shop`,
   "event.news.generation.text": (p) => `Heize online reports that the G${p.gen} generation brings ${p.cores} cores and ${p.ramGb} GB of RAM per standard server, with ${p.disk} storage.`,
+  "event.news.endOfSale.title": (p) => `${p.name} off the market`,
+  "event.news.endOfSale.text": (p) => `Heize online reports that the ${p.name} has left the shop, and support for the model ends in ${p.supportEnd}.`,
   "event.news.mail.title": (p) => `${p.name} opens for business mail`,
   "event.news.mail.text": (p) => `Handelsblah reports that ${p.name} now sells hosted mailboxes to companies at ${p.price} euro a seat each month.`,
   "event.news.ipv6Dc.title": () => "IPv6 at datacenters",
