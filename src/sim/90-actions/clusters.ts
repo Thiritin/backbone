@@ -160,7 +160,7 @@ export function resizeVm(s: GameState, vmId: string, size: Resources): ActionRes
 export function dropCluster(s: GameState, id: string) {
   s.clusters = s.clusters.filter((x) => x.id !== id).map((x) => (x.backup.targetId === id ? { ...x, backup: { targetId: null, every: "off" } } : x));
   const drop = (ids: string[]) => ids.filter((x) => x !== id);
-  if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "none" } };
+  if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };
   s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };
 }
 

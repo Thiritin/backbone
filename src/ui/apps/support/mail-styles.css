@@ -59,7 +59,6 @@ svg.lucide.mark.dim { opacity: 0.55; }
 
 /* Pear Mail: a plain light list under a grey header. */
 .sup[data-style="pear"] .sup-list-h, .sup[data-style="ionose"] .sup-list-h { margin: -8px -8px 6px; padding: 10px 14px; background: var(--win-side); border-bottom: 0.5px solid var(--line); }
-.sup[data-style="pear"][data-dim] .sup-list-h h2 { color: var(--text-2); }
 
 /* Hosted Exchange by Ionose: the same list with a teal accent. */
 .sup[data-style="ionose"] { --accent: oklch(0.5 0.11 200); --accent-soft: oklch(0.94 0.035 200); }

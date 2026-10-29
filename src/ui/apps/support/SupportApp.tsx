@@ -113,10 +113,10 @@ export function SupportApp() {
   const [kindState, setKind] = useSessionState<Kind | null>("support.kind", null);
   const [sel, setSel] = useSessionState<string | null>("support.sel", null);
   const [query, setQuery] = useSessionState("support.query", "");
-  // The first open without a mail service asks for a provider; the app menu opens it again.
-  const [setup, setSetup] = useSessionState("support.setup", game.company.mail.kind === "none");
+  // The email settings: the Settings button and the app menu open them.
+  const [setup, setSetup] = useSessionState("support.setup", false);
   const desk = deskOf(game);
-  const { style, dim } = supportApp(game);
+  const { style } = supportApp(game);
   const has = (f: DeskFeature) => deskHas(game, f);
   const gates: Gates = { assign: has("assign"), templates: has("templates"), slaTimers: has("slaTimers"), customerSidebar: has("customerSidebar") };
   // Without a desk the app is one inbox; the desk decides which boxes and filters exist.
@@ -164,13 +164,13 @@ export function SupportApp() {
 
   if (setup) return (
     <div className="settings">
-      <EmailSettings title="Choose an email provider" />
-      <button className="btn" onClick={() => setSetup(false)}>{game.company.mail.kind === "none" ? "Later" : "Done"}</button>
+      <EmailSettings />
+      <button className="btn" onClick={() => setSetup(false)}>Done</button>
     </div>
   );
 
   return (
-    <div className={`sup sales${box === "lost" || box === "reports" ? " sales-wide" : ""}`} data-style={style} data-mode={desk ? "desk" : "inbox"} data-dim={dim || undefined}>
+    <div className={`sup sales${box === "lost" || box === "reports" ? " sales-wide" : ""}`} data-style={style} data-mode={desk ? "desk" : "inbox"}>
       {desk && <aside className="sidebar sup-side">
         <div className="side-h">Inbox</div>
         {side("all", "All", Mails, itemsIn(game, "all").length)}
@@ -196,6 +196,7 @@ export function SupportApp() {
           <h2>{title}{kind && ` · ${kind === "sales" ? "Sales request" : kindOf(kind).label}`}</h2>
           {!desk && <span className="sup-unread num">{inBox.filter((it) => it.tk?.unread).length}</span>}
           {busy && <span className="sup-busy">Busy until <span className="num">{stamp(game.playerBusyUntil / 60)}</span></span>}
+          <button className="btn sup-settings" onClick={() => setSetup(true)}>Settings</button>
         </div>
         {has("search") && (
           <label className="sup-search"><Search aria-hidden /><input type="search" aria-label="Search" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} /></label>

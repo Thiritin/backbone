@@ -4,7 +4,6 @@ import { yearOf } from "../00-core/time";
 import { sizeSpec } from "../10-catalog/products";
 import { offerPrice } from "../30-market/spec";
 import type { Product } from "../30-customers/customers";
-import { companyDomain } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { serviceOnline } from "../40-support/status";
 import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
@@ -12,6 +11,7 @@ import { hostPerf } from "../60-infra/php";
 import { nodeUsage } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
 import { hasOrderForm, owns } from "./marketing";
+import { salesAddress } from "./mail";
 
 export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu"];
 
@@ -29,7 +29,7 @@ export const fillLines = (s: GameState, saved: Product[] | undefined): GameState
 // order form takes orders, and the order address while orders still come by email.
 export const siteContent = (s: GameState): { lines: { product: Product; from: number | null }[]; email: string | null } => ({
   lines: SITE_LINES.filter((p) => listed(s, p)).map((p) => ({ product: p, from: hasOrderForm(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null })),
-  email: s.marketing.emailOrders && s.company.mail.kind !== "none" ? `sales@${companyDomain(s)}` : null,
+  email: s.marketing.emailOrders ? salesAddress(s) : null,
 });
 
 // The company site is rented from Strateaux at a flat price (economy.md, "Market and leads") or runs on an own panel host.

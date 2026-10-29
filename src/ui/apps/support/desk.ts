@@ -1,4 +1,4 @@
-import { createElement, type ComponentType } from "react";
+import type { ComponentType } from "react";
 import { deskOf } from "../../../sim/10-catalog/desks";
 import type { GameState } from "../../../sim/50-state";
 import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, OsTickitMark, PearMailMark, ZenduskMark, type MarkProps } from "../../art/mailmarks";
@@ -6,9 +6,8 @@ import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, OsTi
 export { DESK_FEATURES } from "../../../sim/10-catalog/desks";
 
 export type SupportStyle = "goggle" | "lookout" | "ionose" | "pear" | "ostickit" | "zendusk" | "freshdusk" | "freescoot";
-export interface SupportApp { name: "Email" | "Support"; icon: ComponentType<MarkProps>; tile: string; style: SupportStyle; dim: boolean }
+export interface SupportApp { name: "Email" | "Support"; icon: ComponentType<MarkProps>; tile: string; style: SupportStyle }
 
-const DimPear = ({ className }: MarkProps) => createElement(PearMailMark, { className: `dim${className ? ` ${className}` : ""}` });
 
 const MAIL: Record<string, { icon: ComponentType<MarkProps>; tile: string; style: SupportStyle }> = {
   goggleWorkspace: { icon: GoggleMark, tile: "oklch(0.97 0.005 255)", style: "goggle" },
@@ -27,9 +26,7 @@ export const DESK: Record<string, { icon: ComponentType<MarkProps>; tile: string
 // The Support app shows as Email until a support desk is installed; its id stays "Support" everywhere else.
 export function supportApp(s: Pick<GameState, "installed" | "company">): SupportApp {
   const desk = deskOf(s);
-  if (desk) return { name: "Support", ...DESK[desk.id], dim: false };
+  if (desk) return { name: "Support", ...DESK[desk.id] };
   const m = s.company.mail;
-  if (m.kind === "external") return { name: "Email", ...MAIL[m.provider], dim: false };
-  if (m.kind === "self") return { name: "Email", ...PEAR, dim: false };
-  return { name: "Email", ...PEAR, icon: DimPear, tile: "oklch(0.72 0.02 255)", dim: true };
+  return m.kind === "external" ? { name: "Email", ...MAIL[m.provider] } : { name: "Email", ...PEAR };
 }

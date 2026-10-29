@@ -113,9 +113,9 @@ export const ORDER_BUDGET: [number, number] = [1.1, 1.25];
 
 // With the order form and email orders on, this share of order leads still writes an email.
 export const EMAIL_SHARE = 0.25;
-// Whether the next order lead writes an email: always before the order form, never with email orders off or without company mail.
+// Whether the next order lead writes an email: always before the order form, never with email orders off.
 export const emailFor = (s: GameState): boolean =>
-  !hasOrderForm(s) || (s.marketing.emailOrders && s.company.mail.kind !== "none" && rand(hashRng(s.seed, s.hour, s.nextId, 233)) < EMAIL_SHARE);
+  !hasOrderForm(s) || (s.marketing.emailOrders && rand(hashRng(s.seed, s.hour, s.nextId, 233)) < EMAIL_SHARE);
 
 // Why a request is declined, in the customer's terms: the product is not sold there, there is no room, or neither.
 export const declineReason = (s: GameState, r: SalesRequest): string =>

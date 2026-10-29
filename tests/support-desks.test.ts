@@ -98,13 +98,13 @@ describe("support desks", () => {
 
   it("shows the app as Email with the provider's mark until a desk is installed", () => {
     const s = year(2012);
-    expect(s.company.mail.kind).toBe("none");
-    expect(supportApp(s)).toMatchObject({ name: "Email", style: "pear", dim: true });
+    expect(s.company.mail.kind).toBe("free");
+    expect(supportApp(s)).toMatchObject({ name: "Email", icon: PearMailMark, style: "pear" });
     const mail = (m: GameState["company"]["mail"]) => supportApp({ ...s, company: { ...s.company, mail: m } });
     expect(mail({ kind: "external", provider: "goggleWorkspace", seats: 1 })).toMatchObject({ name: "Email", icon: GoggleMark, style: "goggle" });
     expect(mail({ kind: "external", provider: "lookout365", seats: 1 })).toMatchObject({ icon: LookoutMark, style: "lookout" });
     expect(mail({ kind: "external", provider: "hostedExchange", seats: 1 })).toMatchObject({ icon: IonoseMark, style: "ionose" });
-    expect(mail({ kind: "self", software: "postfixit", clusterId: "c1" })).toMatchObject({ icon: PearMailMark, style: "pear", dim: false });
+    expect(mail({ kind: "self", software: "postfixit", clusterId: "c1" })).toMatchObject({ icon: PearMailMark, style: "pear" });
   });
 
   it("shows the app as Support with the desk's mark once one is installed, whatever the mail", () => {

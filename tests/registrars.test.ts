@@ -219,8 +219,8 @@ describe("company domain", () => {
 });
 
 describe("tutorial", () => {
-  it("runs company, networkApp, domain, email, buyServer, mountServer, internet, setup, website, firstCustomer", () => {
-    expect(TUTORIAL).toEqual(["company", "networkApp", "domain", "email", "buyServer", "mountServer", "internet", "setup", "website", "firstCustomer"]);
+  it("runs company, buyServer, mountServer, internet, setup, networkApp, domain, website, email, firstCustomer", () => {
+    expect(TUTORIAL).toEqual(["company", "buyServer", "mountServer", "internet", "setup", "networkApp", "domain", "website", "email", "firstCustomer"]);
   });
 
   it("checks the Network step once the app is installed", () => {
@@ -267,7 +267,7 @@ describe("old saves", () => {
     raw.domains = [];
     const loaded = deserialize(JSON.stringify(raw));
     expect(loaded.registrar).toMatchObject({ id: "nameCheep", tier: 0, billed: true, transfer: null });
-    expect(loaded.company).toMatchObject({ domain: "basement-hosting.de", mail: { kind: "none" } });
+    expect(loaded.company).toMatchObject({ domain: "basement-hosting.de", mail: { kind: "free" } });
     expect(domainOf(loaded, "basement-hosting.de")).toMatchObject({ customerId: null });
     expect(registrarById(loaded.registrar!.id)!.signup).toBe(0);
   });

@@ -19,7 +19,6 @@ export function setLine(s: GameState, p: Product, on: boolean): ActionResult {
 // Stops or resumes taking orders by email; with them off, only the order form takes orders.
 export function setEmailOrders(s: GameState, on: boolean): ActionResult {
   if (!on && !hasOrderForm(s)) return { ok: false, error: "error.needsOrderForm" };
-  if (on && s.company.mail.kind === "none") return { ok: false, error: "error.needsMail" };
   s.marketing = { ...s.marketing, emailOrders: on };
   return { ok: true };
 }

@@ -1,15 +1,16 @@
-// GDD, Company email: the company's own mail comes from an external provider or from a mail server of its own.
+// GDD, Company email: the company starts on free Notmail and can move to an external provider or a mail server of its own.
 // Numbers in economy.md, Company email.
 import { isMonthStart, yearOf } from "../00-core/time";
 import type { GameState, LedgerEntry } from "../50-state";
 import { anchorOf, controlPlaneUp, type Cluster } from "../60-infra/cluster";
 import { mailAddress } from "../60-infra/addresses";
 import { linkStatus } from "../60-infra/status";
+import { ascii, companyDomain } from "../30-customers/domains";
 
 export type MailProviderId = "hostedExchange" | "goggleWorkspace" | "lookout365";
 export type SelfMailSoftware = "postfixit" | "mailpig";
 export type CompanyMail =
-  | { kind: "none" }
+  | { kind: "free" }
   | { kind: "external"; provider: MailProviderId; seats: number }
   | { kind: "self"; software: SelfMailSoftware; clusterId: string };
 
@@ -20,6 +21,12 @@ export const MAIL_PROVIDERS: MailProvider[] = [
   { id: "goggleWorkspace", name: "Goggle Workspace", from: 2007, price: (y) => (y >= 2020 ? 5 : 4) },
   { id: "lookout365", name: "Lookout 365", from: 2011, price: (y) => (y >= 2022 ? 6 : 5) },
 ];
+export const FREEMAIL = "Notmail";
+
+// The address customers write to: a free Notmail box until the company has mail under its own domain.
+export const salesAddress = (s: GameState): string =>
+  s.company.mail.kind === "free" ? `${ascii(s.company.name) || "hosting"}@notmail.com` : `sales@${companyDomain(s)}`;
+
 export const providerById = (id: string): MailProvider | undefined => MAIL_PROVIDERS.find((p) => p.id === id);
 
 // While the mail host is down or its address is listed, invoices sent in that window are paid this many hours later.
@@ -45,8 +52,8 @@ export function mailImpaired(s: GameState): boolean {
   return !a || a.listed;
 }
 
-// What reaches the company by email: nothing without a mail service, half while delivery is impaired.
-export const mailShare = (s: GameState): number => (s.company.mail.kind === "none" ? 0 : mailImpaired(s) ? IMPAIRED_SHARE : 1);
+// What reaches the company by email: half while delivery is impaired.
+export const mailShare = (s: GameState): number => (mailImpaired(s) ? IMPAIRED_SHARE : 1);
 
 // Hours an invoice sent now waits longer for its payment.
 export const mailDelay = (s: GameState): number => (mailImpaired(s) ? MAIL_DELAY_HOURS : 0);
