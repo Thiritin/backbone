@@ -5,10 +5,11 @@ import { marketPrice, PRODUCTS, SIZES, sizeSpec } from "../src/sim/10-catalog/pr
 import { serviceOnline } from "../src/sim/40-support/status";
 import { invoiceTotal } from "../src/sim/45-billing/billing";
 import { newGame, type GameState } from "../src/sim/50-state";
+import { softwareById } from "../src/sim/10-catalog/platforms";
 import { nodeCapacity, nodeUsed, vmOf, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
-import { BOOT_HOURS, deviceHealth, freeSlots, rackPower } from "../src/sim/60-infra/status";
+import { BOOT_HOURS, deviceHealth, freeSlots, installedRamGb, rackPower } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addNode, cordon, drain, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
+import { addNode, cordon, createVm, drain, installPanelInVm, resizeVm, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyDevice, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
@@ -275,5 +276,50 @@ describe("saves", () => {
     expect([loaded.clusters, loaded.workloads, loaded.downHours]).toEqual([[], [], {}]);
     expect(loaded.services[0]).toMatchObject({ spec: sizeSpec("webHosting", 0, yearOf(s.services[0].startedAt)), sla: "basic" });
     expect(loaded.services.every((v) => serviceOnline(loaded, v.id))).toBe(true);
+  });
+});
+
+describe("ballooning and resizing custom VMs", () => {
+  const start = (platform: string, year = 2012) => {
+    const s = withServer(newGame(1));
+    skipTo(s, year);
+    return { s, cluster: hypervisor(s, ["dev3"], "Cloud 1", platform) };
+  };
+  const dev3 = (s: GameState) => s.devices.find((d) => d.id === "dev3")!;
+  const vmById = (s: GameState, id: string) => s.workloads.find((w) => w.id === id)!;
+  const SMALL = { vcpu: 1, ramGb: 2, diskGb: 20 };
+
+  it("books RAM past the installed RAM only on a hypervisor that balloons", () => {
+    for (const [platform, year, ratio] of [["proxmocks", 2012, 1.5], ["vmwhere", 2012, 1.25], ["openstash", 2012, 1], ["openveezee", 2012, 1], ["hypervee", 2011, 1], ["hypervee", 2012, 1.2]] as const) {
+      const { s } = start(platform, year), d = dev3(s);
+      expect(nodeCapacity(d, softwareById(platform), yearOf(s.hour)).ramGb, `${platform} ${year}`).toBeCloseTo(installedRamGb(d) * ratio);
+    }
+    const { s } = start("proxmocks");
+    expect(nodeCapacity(dev3(s), softwareById("freepanel")).ramGb).toBeCloseTo(installedRamGb(dev3(s)) * 1.5);
+  });
+
+  it("grows the RAM of a custom VM without downtime when the hypervisor balloons", () => {
+    const { s, cluster } = start("proxmocks"), vm = ok(createVm(s, cluster, SMALL));
+    ok(resizeVm(s, vm, { ...SMALL, ramGb: 4 }));
+    expect(vmById(s, vm)).toMatchObject({ ramGb: 4, busyUntil: 0, stopped: false });
+  });
+
+  it("restarts a custom VM for any other resize, and for RAM growth without ballooning", () => {
+    const { s, cluster } = start("proxmocks"), vm = ok(createVm(s, cluster, SMALL));
+    ok(resizeVm(s, vm, { ...SMALL, vcpu: 2 }));
+    expect(vmById(s, vm).busyUntil).toBeCloseTo(s.hour + 10 / 60);
+    const plain = start("openstash"), id = ok(createVm(plain.s, plain.cluster, SMALL));
+    ok(resizeVm(plain.s, id, { ...SMALL, ramGb: 4 }));
+    expect(vmById(plain.s, id)).toMatchObject({ ramGb: 4, stopped: false });
+    expect(vmById(plain.s, id).busyUntil).toBeCloseTo(plain.s.hour + 10 / 60);
+  });
+
+  it("refuses a size below the minimum, one past the node's room, and a VM that runs software", () => {
+    const { s, cluster } = start("openstash"), vm = ok(createVm(s, cluster, SMALL));
+    expect(err(resizeVm(s, vm, { ...SMALL, vcpu: 0 }))).toBe("error.vmSize");
+    expect(err(resizeVm(s, vm, { ...SMALL, ramGb: 999 }))).toBe("error.nodeFull");
+    expect(err(resizeVm(s, "nope", SMALL))).toBe("error.notOwnVm");
+    ok(installPanelInVm(s, vm, "freepanel"));
+    expect(err(resizeVm(s, vm, { ...SMALL, ramGb: 3 }))).toBe("error.softwareInUse");
   });
 });

@@ -4,7 +4,7 @@ import { marketPrice, PRODUCTS, sizeSpec, type Resources, type Sla, type Spec } 
 import type { Product } from "../30-customers/customers";
 import { vmName } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
-import { clustersIn, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
+import { balloons, clustersIn, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
 import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
@@ -134,6 +134,30 @@ export function resizePanelVm(s: GameState, hostId: string, size: Resources): Ac
     if (KEYS.some((k) => used[k] - vm[k] + size[k] > cap[k] + 1e-9)) return fail("error.nodeFull");
   }
   s.workloads = s.workloads.map((w) => (w.id === vm.id ? { ...w, ...size } : w));
+  freezeTick(s);
+  return { ok: true };
+}
+
+// Minutes a VM is down while its hypervisor restarts it at the new size.
+const RESIZE_MINUTES = 10;
+
+// Books one of the player's own VMs bigger or smaller, as far as its server has room. Only RAM growth is live, and only
+// on a hypervisor that balloons; any other change restarts the VM.
+export function resizeVm(s: GameState, vmId: string, size: Resources): ActionResult {
+  const vm = vmById(s, vmId);
+  if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
+  if (hostOfVm(s, vm.id)) return fail("error.softwareInUse");
+  const bad = sizeError(size, { vcpu: 0, ramGb: 0, diskGb: 0 });
+  if (bad) return fail(bad);
+  const d = vm.deviceId ? s.devices.find((x) => x.id === vm.deviceId) : undefined;
+  if (d) {
+    const cap = bookable(s, d), used = nodeUsed(s, d.id);
+    if (KEYS.some((k) => used[k] - vm[k] + size[k] > cap[k] + 1e-9)) return fail("error.nodeFull");
+  }
+  const c = s.clusters.find((x) => x.id === vm.clusterId);
+  const live = !!c?.platform && balloons(softwareById(c.platform), yearOf(s.hour)) && size.ramGb >= vm.ramGb && size.vcpu === vm.vcpu && size.diskGb === vm.diskGb;
+  const busyUntil = live || vm.stopped ? vm.busyUntil : Math.max(vm.busyUntil, s.hour + RESIZE_MINUTES / 60);
+  s.workloads = s.workloads.map((w) => (w.id === vm.id ? { ...w, ...size, busyUntil } : w));
   freezeTick(s);
   return { ok: true };
 }

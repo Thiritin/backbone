@@ -192,6 +192,7 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
         </section>
       )}
       {panel && <ResizeCard key={panel.id} game={game} host={panel} />}
+      {!v && !panel && <ResizeCard key={w.id} game={game} own={w} />}
     </aside>
   );
 }

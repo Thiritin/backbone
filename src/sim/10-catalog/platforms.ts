@@ -20,8 +20,8 @@ export interface Software {
   density: number;
   // Whether virtual machines move between nodes without downtime.
   live: boolean;
-  // Convenience score customers give the panel when they compare hosts (economy.md, Customer choice).
-  convenience: number;
+  // First year the hypervisor balloons guest RAM, so a cluster books RAM up to overcommit.ram and a VM grows RAM live; null never.
+  balloon: number | null;
   // The most vCPU per physical core and booked RAM per installed GB the software lets a node book.
   overcommit: { cpu: number; ram: number };
   // What the platform's management services take on the control-plane node.
@@ -37,22 +37,22 @@ export interface Software {
 }
 
 export const SOFTWARE: Software[] = [
-  { id: "cpanic", kind: "panel", name: "cPanic", console: "cPanic", pricing: "account", fee: 0.4, tickets: 0.8, density: 1, live: true, convenience: 90, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2005, migration: { same: 2005, other: 2012 }, cluster: null },
-  { id: "pleskit", kind: "panel", name: "Pleskit", console: "Pleskit", pricing: "server", fee: 12, tickets: 0.9, density: 1, live: true, convenience: 80, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2005, migration: { same: 2005, other: 2015 }, cluster: null },
-  { id: "directadmen", kind: "panel", name: "DirectAdmen", console: "DirectAdmen", pricing: "server", fee: 4, tickets: 1.2, density: 1, live: true, convenience: 60, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 2, from: 2005, migration: { same: 2010, other: null }, cluster: null },
-  { id: "freepanel", kind: "panel", name: "FreePanel", console: "FreePanel", pricing: "free", fee: 0, tickets: 1.5, density: 1, live: true, convenience: 45, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 2, from: 2005, migration: { same: null, other: null }, cluster: 2009 },
-  { id: "openveezee", kind: "cloud", name: "OpenVeeZee", console: "OpenVeeZee Web Panel", pricing: "free", fee: 0, tickets: 1.4, density: 1.1, live: false, convenience: 40, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 3, from: 2005, migration: { same: 2005, other: null }, cluster: null },
-  { id: "openstash", kind: "cloud", name: "OpenStash", console: "OpenStash Horizont", pricing: "free", fee: 0, tickets: 1.3, density: 1, live: true, convenience: 60, overcommit: { cpu: 4, ram: 1 }, controlPlane: { vcpu: 2, ramGb: 2, diskGb: 20 }, installHours: 8, from: 2010, migration: { same: 2010, other: null }, cluster: 2010 },
-  { id: "vmwhere", kind: "cloud", name: "VMwhere", console: "VMwhere vSphear", pricing: "core", fee: 8, tickets: 0.7, density: 1.15, live: true, convenience: 60, overcommit: { cpu: 10, ram: 1.25 }, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 10 }, installHours: 5, from: 2005, migration: { same: 2005, other: null }, cluster: 2005 },
-  { id: "proxmocks", kind: "cloud", name: "Proxmocks", console: "Proxmocks VE", pricing: "free", fee: 0, tickets: 1, density: 1, live: true, convenience: 60, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2008, migration: { same: 2008, other: null }, cluster: 2008 },
-  { id: "hypervee", kind: "cloud", name: "HyperVee", console: "HyperVee Manager", pricing: "server", fee: 20, tickets: 0.9, density: 1.05, live: false, convenience: 60, overcommit: { cpu: 6, ram: 1.2 }, controlPlane: { vcpu: 1, ramGb: 1, diskGb: 10 }, installHours: 4, from: 2008, migration: { same: 2008, other: null }, cluster: 2012 },
+  { id: "cpanic", kind: "panel", name: "cPanic", console: "cPanic", pricing: "account", fee: 0.4, tickets: 0.8, density: 1, live: true, balloon: null, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2005, migration: { same: 2005, other: 2012 }, cluster: null },
+  { id: "pleskit", kind: "panel", name: "Pleskit", console: "Pleskit", pricing: "server", fee: 12, tickets: 0.9, density: 1, live: true, balloon: null, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2005, migration: { same: 2005, other: 2015 }, cluster: null },
+  { id: "directadmen", kind: "panel", name: "DirectAdmen", console: "DirectAdmen", pricing: "server", fee: 4, tickets: 1.2, density: 1, live: true, balloon: null, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 2, from: 2005, migration: { same: 2010, other: null }, cluster: null },
+  { id: "freepanel", kind: "panel", name: "FreePanel", console: "FreePanel", pricing: "free", fee: 0, tickets: 1.5, density: 1, live: true, balloon: null, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 2, from: 2005, migration: { same: null, other: null }, cluster: 2009 },
+  { id: "openveezee", kind: "cloud", name: "OpenVeeZee", console: "OpenVeeZee Web Panel", pricing: "free", fee: 0, tickets: 1.4, density: 1.1, live: false, balloon: null, overcommit: { cpu: 8, ram: 1 }, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 3, from: 2005, migration: { same: 2005, other: null }, cluster: null },
+  { id: "openstash", kind: "cloud", name: "OpenStash", console: "OpenStash Horizont", pricing: "free", fee: 0, tickets: 1.3, density: 1, live: true, balloon: null, overcommit: { cpu: 4, ram: 1 }, controlPlane: { vcpu: 2, ramGb: 2, diskGb: 20 }, installHours: 8, from: 2010, migration: { same: 2010, other: null }, cluster: 2010 },
+  { id: "vmwhere", kind: "cloud", name: "VMwhere", console: "VMwhere vSphear", pricing: "core", fee: 8, tickets: 0.7, density: 1.15, live: true, balloon: 2005, overcommit: { cpu: 10, ram: 1.25 }, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 10 }, installHours: 5, from: 2005, migration: { same: 2005, other: null }, cluster: 2005 },
+  { id: "proxmocks", kind: "cloud", name: "Proxmocks", console: "Proxmocks VE", pricing: "free", fee: 0, tickets: 1, density: 1, live: true, balloon: 2005, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2008, migration: { same: 2008, other: null }, cluster: 2008 },
+  { id: "hypervee", kind: "cloud", name: "HyperVee", console: "HyperVee Manager", pricing: "server", fee: 20, tickets: 0.9, density: 1.05, live: false, balloon: 2012, overcommit: { cpu: 6, ram: 1.2 }, controlPlane: { vcpu: 1, ramGb: 1, diskGb: 10 }, installHours: 4, from: 2008, migration: { same: 2008, other: null }, cluster: 2012 },
   // Game server panels: containers for game servers on a server or VM; a license per game is not modelled yet.
-  { id: "tcadmen", kind: "game", name: "TCAdmen", console: "TCAdmen", pricing: "server", fee: 25, tickets: 0.9, density: 1.2, live: false, convenience: 0, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 5 }, installHours: 2, from: 2005, migration: { same: null, other: null }, cluster: null },
-  { id: "multikraft", kind: "game", name: "MultiKraft", console: "MultiKraft", pricing: "server", fee: 20, tickets: 1, density: 1.2, live: false, convenience: 0, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 5 }, installHours: 2, from: 2010, migration: { same: null, other: null }, cluster: null },
-  { id: "pterodaktyl", kind: "game", name: "Pterodaktyl", console: "Pterodaktyl", pricing: "free", fee: 0, tickets: 1.2, density: 1.2, live: false, convenience: 0, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 5 }, installHours: 3, from: 2016, migration: { same: null, other: null }, cluster: null },
+  { id: "tcadmen", kind: "game", name: "TCAdmen", console: "TCAdmen", pricing: "server", fee: 25, tickets: 0.9, density: 1.2, live: false, balloon: null, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 5 }, installHours: 2, from: 2005, migration: { same: null, other: null }, cluster: null },
+  { id: "multikraft", kind: "game", name: "MultiKraft", console: "MultiKraft", pricing: "server", fee: 20, tickets: 1, density: 1.2, live: false, balloon: null, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 5 }, installHours: 2, from: 2010, migration: { same: null, other: null }, cluster: null },
+  { id: "pterodaktyl", kind: "game", name: "Pterodaktyl", console: "Pterodaktyl", pricing: "free", fee: 0, tickets: 1.2, density: 1.2, live: false, balloon: null, overcommit: { cpu: 8, ram: 1.5 }, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 5 }, installHours: 3, from: 2016, migration: { same: null, other: null }, cluster: null },
   // Mail servers: the company's own mail on a server or VM; the control plane is what the server takes (economy.md, Company email).
-  { id: "postfixit", kind: "mail", name: "Postfixit", console: "Postfixit", pricing: "free", fee: 0, tickets: 1.4, density: 1, live: false, convenience: 0, overcommit: { cpu: 1, ram: 1 }, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 20 }, installHours: 4, from: 2005 , migration: { same: null, other: null }, cluster: null },
-  { id: "mailpig", kind: "mail", name: "Mailpig", console: "Mailpig", pricing: "free", fee: 0, tickets: 1, density: 1, live: false, convenience: 0, overcommit: { cpu: 1, ram: 1 }, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 20 }, installHours: 2, from: 2015 , migration: { same: null, other: null }, cluster: null },
+  { id: "postfixit", kind: "mail", name: "Postfixit", console: "Postfixit", pricing: "free", fee: 0, tickets: 1.4, density: 1, live: false, balloon: null, overcommit: { cpu: 1, ram: 1 }, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 20 }, installHours: 4, from: 2005 , migration: { same: null, other: null }, cluster: null },
+  { id: "mailpig", kind: "mail", name: "Mailpig", console: "Mailpig", pricing: "free", fee: 0, tickets: 1, density: 1, live: false, balloon: null, overcommit: { cpu: 1, ram: 1 }, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 20 }, installHours: 2, from: 2015 , migration: { same: null, other: null }, cluster: null },
 ];
 
 // The product lines each kind of software lets a cluster sell; the rest runs on whole servers, in racks or nowhere.
@@ -71,6 +71,8 @@ export const importsFrom = (target: Software, source: string, year: number): boo
   return from !== null && year >= from;
 };
 export const clustersIn = (sw: Software, year: number): boolean => sw.cluster !== null && year >= sw.cluster;
+// Whether the software balloons guest RAM in that year.
+export const balloons = (sw: Software, year: number): boolean => sw.balloon !== null && year >= sw.balloon;
 export const softwareOf = (kind: SoftwareKind): Software[] => SOFTWARE.filter((x) => x.kind === kind);
 
 // economy.md, PHP versions: each from 1 January after its release, when web hosts start to install it.
