@@ -15,7 +15,7 @@ This is the work plan for the next stretch of Backbone. It lists what is built a
 - The owner plays on the Vite dev server (port 5173) from this checkout, so merging code here reloads their page; windows and the Support selection survive reloads (src/ui/session.ts).
 - One lane at a time on its own branch or worktree, merged into main only when everything above is green.
 
-Balance today (main after Merge Lane 5.2): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 905 tests pass.
+Balance today (main after Lane 6.10): steady medians L2 2006.3, L3 2007.1, L4 2008.8, L5 2012.1, L6 2018.2; solo L2 2005.8, L3 2006.5, L4 2008.3, L5 2012.9, L6 never; 0 of 20 bankrupt in both. 921 tests pass.
 
 ## Built
 
@@ -38,6 +38,9 @@ Balance today (main after Merge Lane 5.2): steady medians L2 2006.3, L3 2007.1, 
 - Lane 2b.4, breaches and ransom (f54c3d8): a critical hit on an instance exposed over 30 days becomes a breach 25% of the time, the extortion ticket with Pay and Refuse and a 72 hour default, 90/10 on paying, sale effects, BDSG and GDPR fines, the Breaches card, a "fees" ledger category.
 - Lane 3.4, IPMI and power (029bc78): `hasBmc` by brand and generation, management addresses, iDRAQ, iLOL, SuperMacro IPMI and XClarify pages in the browser, `shutdown`, `reset`, `powerCycle` and the pull with a corruption roll, OS and controller hangs, `recover`, the RAID rebuild performance factor, device event logs.
 - Lane 6.5 (Merge Lane 6.5): deliveries take 3 days in 2005 falling to 1 by 2015 (the first server arrives at once), the Tower server line for G1 and G2 on a 4-place basement shelf with no controller.
+- Update offer (bdf3537): the build writes version.json with the commit id, the page polls it every five minutes and on focus and offers Reload or Later in a sheet (src/ui/update.ts, src/ui/desktop/UpdateSheet.tsx).
+- Lane 7, Getting started, Email and support desks (7348114): the Checklist app removed, Getting started steps name the place and open it, Support shows as Email with the mail provider's mark and style and an inbox without filters, OsTickit, Zendusk, Freshdusk and FreeScoot as per-seat Pear Store desks with `DESK_FEATURES`, their marks and styles and a Reports tab.
+- Lane 6.10, overprovisioning always allowed (Merge of the owner's bug report): vCPU and RAM booking never block a placement, resize or migration; disk is the only hard limit; `overcommit` and `density` removed from the catalog; bars run past 100% in the warning colour; the scheduler prefers nodes whose RAM fits and freezes stay the consequence.
 - Lane 5.2, routers, UPS sizes and PDUs (Merge Lane 5.2): AVN small-office routers that replace the basement router and cap the line, Sysko ISR, MicroTick and Junipurr routers with `fullTable` and `bgpSessions`, announcing a block needs a full-table router, Eatin UPS 3000, 5k and 10k, switched PDUs that power cycle any device in the rack, 2027 successors and the newest-never-ends-sale rule.
 - Lane 3.5, terminal: the Terminal app (src/ui/apps/terminal), `runCommand` and `recoveryReport` in src/sim/60-infra/terminal.ts, `pathTo` and `Hop` in status.ts, `latency` and `loadOf` in network.ts, `TechRules.recover` (the technician runs `recover` on corrupted workloads on their own).
 - Lane 3.3, consoles (0b4fa1f): login pages and consoles per software family at each host's FQDN, `consoleFeatures` matrix in src/sim/80-business/consoles.ts, actions routed to the existing 90-actions functions.
@@ -61,7 +64,7 @@ Balance today (main after Merge Lane 5.2): steady medians L2 2006.3, L3 2007.1, 
 
 ## In flight
 
-In a worktree: Lane 6.10 (overprovisioning always allowed).
+In a worktree: Lane 8 (order flow: quote first, hand-picked setup, automation unlock).
 
 ## What Lane 1 left behind (read before Lanes 2 and 3)
 
@@ -100,7 +103,7 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 5.1 | Hardware lifecycle: end of sale and end of support | Built (523e06c) |
 | 5.2 | Routers, UPS sizes, switched PDUs | Built |
 | 6 | Small briefs | any time, one each |
-| 7 | Getting started, the Email app and support desks | 2.1b (mail providers), 2.0b |
+| 7 | Getting started, the Email app and support desks | Built (7348114) |
 | 8 | Order flow: quote first, hand-picked setup, automation unlock | 7 (the Email app), 6.10 |
 
 
