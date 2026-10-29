@@ -1,9 +1,5 @@
 .email-mode { margin: 14px 0 12px; }
 .email-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px; }
-.email-sw { text-align: left; font: inherit; color: inherit; cursor: pointer; }
-.email-sw[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.email-sw:disabled { opacity: 0.5; cursor: default; }
-.email-where { margin-top: 4px; }
-.email-none { color: var(--text-2); }
+.email-sw.later { opacity: 0.5; }
 .email-body { margin-bottom: 24px; }
 .email-cards .shop-buy { justify-content: flex-end; }

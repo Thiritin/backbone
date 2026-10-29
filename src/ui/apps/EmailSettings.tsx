@@ -5,12 +5,8 @@ import { softwareById, softwareOf } from "../../sim/10-catalog/platforms";
 import type { GameState } from "../../sim/50-state";
 import { mailHost, mailImpaired, MAIL_PROVIDERS, providerById, seatsFor } from "../../sim/80-business/mail";
 import { bookMail, cancelMail, selectMailServer } from "../../sim/90-actions/mail";
-import { installBlock, installSoftware } from "../../sim/90-actions/software";
-import { modelById } from "../../sim/10-catalog/hardware";
-import { isOwnVm } from "../../sim/60-infra/cluster";
 import { useStore } from "../store";
-import { devName } from "./hw";
-import { Mark, vmLabel } from "./products/parts";
+import { Mark } from "./products/parts";
 import "./shop/shop.css";
 import "./marketing/marketing.css";
 import "./email.css";
@@ -24,23 +20,13 @@ function status(game: GameState): string {
   return mailImpaired(game) ? "Mail delivery impaired" : "Delivering";
 }
 
-// Where the mail server could go: servers in a rack and the player's own VMs that run nothing yet.
-function machines(game: GameState, softwareId: string): { id: string; name: string }[] {
-  const servers = game.devices.filter((d) => modelById(d.model).server && d.rackId).map((d) => ({ id: d.id, name: devName(d) }));
-  const vms = game.workloads.filter(isOwnVm).map((w) => ({ id: w.id, name: vmLabel(game, w).name }));
-  return [...servers, ...vms].filter((m) => installBlock(game, m.id, softwareId) === null);
-}
-
 // The company's email: an external provider per seat, or a mail server of its own.
 export function EmailSettings({ title = "Email" }: { title?: string }) {
-  const { game, act } = useStore();
+  const { game, act, openApp } = useStore();
   const m = game.company.mail, year = yearOf(game.hour);
   const [mode, setMode] = useState<Mode>(m.kind === "self" ? "self" : "external");
-  const [pick, setPick] = useState<string | null>(null);
   const provider = m.kind === "external" ? providerById(m.provider) : undefined, host = mailHost(game);
   const monthly = provider && m.kind === "external" ? seatsFor(game) * provider.price(year) : 0;
-  const target = pick ?? softwareOf("mail").find((sw) => !sw.from || year >= sw.from)?.id ?? "postfixit";
-  const where = machines(game, target);
   return (
     <>
       <h2>{title}</h2>
@@ -82,7 +68,7 @@ export function EmailSettings({ title = "Email" }: { title?: string }) {
             {softwareOf("mail").map((sw) => {
               const own = m.kind === "self" && m.software === sw.id, later = !!sw.from && year < sw.from;
               return (
-                <button key={sw.id} className="shop-card email-sw" aria-pressed={target === sw.id} disabled={later} onClick={() => setPick(sw.id)}>
+                <div key={sw.id} className={`shop-card email-sw${later ? " later" : ""}`}>
                   <div className="shop-name"><strong><Mark id={sw.id} size={20} /> {sw.name}</strong></div>
                   <dl className="shop-specs">
                     <div><dt>License</dt><dd>Free</dd></div>
@@ -93,7 +79,7 @@ export function EmailSettings({ title = "Email" }: { title?: string }) {
                     <div><dt>From</dt><dd className="num">{sw.from}</dd></div>
                     {own && <div><dt>Status</dt><dd>In use</dd></div>}
                   </dl>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -103,9 +89,8 @@ export function EmailSettings({ title = "Email" }: { title?: string }) {
               {m.kind !== "self" && <div className="settings-line settings-divide"><span /><button className="btn primary" onClick={() => act(selectMailServer)}>Use</button></div>}
             </div>
           ) : (
-            <div className="mkt-chips email-where" role="group" aria-label="Install on">
-              {where.length === 0 && <span className="email-none">No machine is free for a mail server.</span>}
-              {where.map((w) => <button key={w.id} className="mkt-chip" onClick={() => act(installSoftware, w.id, target)}>{w.name}</button>)}
+            <div className="settings-group">
+              <div className="settings-line"><span>Install a mail server from the Add Software tile of a server in Locations.</span><button className="btn" onClick={() => openApp("Locations")}>Open</button></div>
             </div>
           )}
         </>
