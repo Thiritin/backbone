@@ -19,9 +19,9 @@ describe("skip", () => {
     const game = readyGame(1), probe = structuredClone(game);
     let first = 0;
     while (!tick(probe).length) first++;
-    useStore.setState({ game, speed: 16, alert: null });
+    useStore.setState({ game, speed: 4, alert: null });
     useStore.getState().advance(first + 1);
     expect(useStore.getState().game.hour).toBe(game.hour + first + 1);
-    expect(useStore.getState().speed).toBe(16);
+    expect(useStore.getState().speed).toBe(4);
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hourOf, isMonthStart } from "../src/sim/00-core/time";
-import { MAIL_PROVIDERS, mailDelay, mailImpaired, mailShare, providerById, seatsFor } from "../src/sim/80-business/mail";
+import { MAIL_PROVIDERS, mailDelay, mailImpaired, mailShare, providerById, salesAddress, seatsFor } from "../src/sim/80-business/mail";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { issueInvoice } from "../src/sim/30-market/manual";
 import { newGame, type GameState } from "../src/sim/50-state";
@@ -24,7 +24,7 @@ const mailLedger = (s: GameState) => s.ledger.filter((e) => e.hour === s.hour &&
 
 // A mail server in a VM on the basement hypervisor, installed and running.
 function selfHosted(s: GameState, software = "postfixit"): string {
-  s.company = { ...s.company, mail: { kind: "none" } };
+  s.company = { ...s.company, mail: { kind: "free" } };
   const vm = createVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, { vcpu: 2, ramGb: 4, diskGb: 40 });
   expect(vm.ok).toBe(true);
   const r = installSoftware(s, idOf(vm), software);
@@ -52,7 +52,7 @@ describe("external providers", () => {
     expect(bookMail(s, "hostedExchange").ok).toBe(true);
     expect(s.company.mail).toEqual({ kind: "external", provider: "hostedExchange", seats: 1 });
     expect(cancelMail(s).ok).toBe(true);
-    expect(s.company.mail).toEqual({ kind: "none" });
+    expect(s.company.mail).toEqual({ kind: "free" });
     expect(err(cancelMail(s))).toBe("error.noMailService");
   });
 
@@ -110,12 +110,12 @@ describe("the mail software", () => {
     expect(s.clusters.find((c) => c.id === id)).toMatchObject({ kind: "mail", panel: "mailpig" });
   });
 
-  it("goes back to no mail when the server is uninstalled", () => {
+  it("goes back to free mail when the server is uninstalled", () => {
     const s = readyGame(3);
     selfHosted(s);
     const vm = s.clusters.find((c) => c.kind === "mail")!.vm!;
     expect(uninstallSoftware(s, vm).ok).toBe(true);
-    expect(s.company.mail).toEqual({ kind: "none" });
+    expect(s.company.mail).toEqual({ kind: "free" });
     expect(s.clusters.some((c) => c.kind === "mail")).toBe(false);
   });
 
@@ -190,44 +190,42 @@ describe("impaired delivery", () => {
 });
 
 describe("email orders", () => {
-  it("cannot be switched on without a mail service", () => {
+  it("start on free Notmail without a domain and keep arriving", () => {
+    const s = newGame(1);
+    expect(s.company.mail).toEqual({ kind: "free" });
+    expect(salesAddress(s)).toBe("basement-hosting@notmail.com");
+    let n = 0;
+    for (const seed of [1, 2, 3]) {
+      const g = readyGame(seed);
+      g.company = { ...g.company, mail: { kind: "free" } };
+      run(g, 24 * 60);
+      n += g.sales.requests.filter((r) => r.kind === "order").length;
+    }
+    expect(n).toBeGreaterThan(0);
+  }, 60_000);
+
+  it("can be switched on with free mail", () => {
     const s = readyGame(6);
     s.marketing.owned = ["website", "orderForm"];
+    s.company = { ...s.company, mail: { kind: "free" } };
     expect(setEmailOrders(s, false).ok).toBe(true);
-    s.company = { ...s.company, mail: { kind: "none" } };
-    expect(err(setEmailOrders(s, true))).toBe("error.needsMail");
-    bookMail(s, "hostedExchange");
     expect(setEmailOrders(s, true).ok).toBe(true);
   });
 
-  it("bring no order leads without mail before the order form", () => {
-    const orders = (mail: boolean) => {
-      let n = 0;
-      for (const seed of [1, 2, 3]) {
-        const s = readyGame(seed);
-        if (!mail) s.company = { ...s.company, mail: { kind: "none" } };
-        run(s, 24 * 60);
-        n += s.sales.requests.filter((r) => r.kind === "order").length;
-      }
-      return n;
-    };
-    expect(orders(true)).toBeGreaterThan(0);
-    expect(orders(false)).toBe(0);
-  }, 60_000);
-
-  it("show the sales address on the site only with a mail service", async () => {
+  it("show the free address on the site until mail runs under the domain", async () => {
     const { siteContent } = await import("../src/sim/80-business/website");
     const s = readyGame(6);
     expect(siteContent(s).email).toBe(`sales@${s.company.domain}`);
-    s.company = { ...s.company, mail: { kind: "none" } };
-    expect(siteContent(s).email).toBeNull();
+    s.company = { ...s.company, mail: { kind: "free" } };
+    expect(siteContent(s).email).toBe(salesAddress(s));
+    expect(siteContent(s).email).toMatch(/@notmail\.com$/);
   });
 });
 
 describe("tutorial and saves", () => {
-  it("checks the email step by a mail service of any kind", () => {
+  it("checks the email step by an upgrade from free mail", () => {
     const s = readyGame(7);
-    s.company = { ...s.company, mail: { kind: "none" } };
+    s.company = { ...s.company, mail: { kind: "free" } };
     expect(CHECKS.email(s)).toBe(false);
     bookMail(s, "hostedExchange");
     expect(CHECKS.email(s)).toBe(true);
@@ -235,11 +233,13 @@ describe("tutorial and saves", () => {
     expect(CHECKS.email(s)).toBe(true);
   });
 
-  it("keeps the mail service through a save and defaults it to none in older saves", () => {
+  it("keeps the mail service through a save and gives older saves free mail", () => {
     const s = readyGame(7);
     expect(deserialize(serialize(s)).company.mail).toEqual(s.company.mail);
     const raw = JSON.parse(serialize(s));
     raw.company = { name: s.company.name, logo: s.company.logo, color: s.company.color };
-    expect(deserialize(JSON.stringify(raw)).company.mail).toEqual({ kind: "none" });
+    expect(deserialize(JSON.stringify(raw)).company.mail).toEqual({ kind: "free" });
+    raw.company.mail = { kind: "none" };
+    expect(deserialize(JSON.stringify(raw)).company.mail).toEqual({ kind: "free" });
   });
 });

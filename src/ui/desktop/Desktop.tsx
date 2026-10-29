@@ -85,14 +85,14 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
     return () => { clearInterval(id); window.removeEventListener("pagehide", save); };
   }, [save]);
 
-  // Space pauses; 1 to 4 pick 1×, 2×, 4× and 16×, and 5 skips ahead.
+  // Space pauses; 1 to 3 pick 1×, 2× and 4×, and 4 skips ahead.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (useStore.getState().game.player.until > useStore.getState().game.hour) return;
       if ((e.target as HTMLElement).closest("input, textarea, select, [role=alertdialog], [role=dialog], [role=menu]")) return;
       if (e.code === "Space") { e.preventDefault(); setSpeed(speed ? 0 : 1); }
       const n = Number(e.key);
-      if (n >= 1 && n <= 5) setSpeed(SPEEDS[n]);
+      if (n >= 1 && n <= 4) setSpeed(SPEEDS[n]);
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);

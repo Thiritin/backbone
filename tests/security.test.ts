@@ -76,9 +76,9 @@ describe("security advisories", () => {
     for (let h = 0; h < 80; h++) for (const e of tick(s)) if (ADVISORY_KEYS.includes(e.key)) at[e.key] = s.hour - 1 - start;
     expect(Object.values(at)).toEqual(STAGE_HOURS);
 
-    useStore.setState({ game: hosting().s, speed: 16, alert: null });
+    useStore.setState({ game: hosting().s, speed: 4, alert: null });
     useStore.getState().advance(5);
-    expect(useStore.getState()).toMatchObject({ speed: 0, resume: 16, alert: expect.objectContaining({ key: "event.vuln.announced" }) });
+    expect(useStore.getState()).toMatchObject({ speed: 0, resume: 4, alert: expect.objectContaining({ key: "event.vuln.announced" }) });
     expect(useStore.getState().game.hour).toBe(MOPB.at);
   });
 

@@ -3,7 +3,7 @@ import { euro } from "../../sim/00-core/money";
 import { yearOf } from "../../sim/00-core/time";
 import { softwareById, softwareOf } from "../../sim/10-catalog/platforms";
 import type { GameState } from "../../sim/50-state";
-import { mailHost, mailImpaired, MAIL_PROVIDERS, providerById, seatsFor } from "../../sim/80-business/mail";
+import { FREEMAIL, mailHost, mailImpaired, MAIL_PROVIDERS, providerById, salesAddress, seatsFor } from "../../sim/80-business/mail";
 import { bookMail, cancelMail, selectMailServer } from "../../sim/90-actions/mail";
 import { useStore } from "../store";
 import { Mark } from "./products/parts";
@@ -14,13 +14,11 @@ import "./email.css";
 type Mode = "external" | "self";
 
 function status(game: GameState): string {
-  const m = game.company.mail, host = mailHost(game);
-  if (m.kind === "none") return "None";
-  if (host?.switching) return "Installing";
+  if (mailHost(game)?.switching) return "Installing";
   return mailImpaired(game) ? "Mail delivery impaired" : "Delivering";
 }
 
-// The company's email: an external provider per seat, or a mail server of its own.
+// The company's email: free Notmail, an external provider per seat, or a mail server of its own.
 export function EmailSettings({ title = "Email" }: { title?: string }) {
   const { game, act, openApp } = useStore();
   const m = game.company.mail, year = yearOf(game.hour);
@@ -32,11 +30,12 @@ export function EmailSettings({ title = "Email" }: { title?: string }) {
       <h2>{title}</h2>
       <div className="email-body">
       <div className="settings-group">
-        <div className="settings-line"><span>Service</span><span>{provider?.name ?? (m.kind === "self" ? softwareById(m.software).name : "None")}</span></div>
+        <div className="settings-line"><span>Service</span><span>{provider?.name ?? (m.kind === "self" ? softwareById(m.software).name : FREEMAIL)}</span></div>
         <div className="settings-line settings-divide"><span>Status</span><span>{status(game)}</span></div>
+        <div className="settings-line settings-divide"><span>Address</span><span>{salesAddress(game)}</span></div>
         {m.kind === "external" && <div className="settings-line settings-divide"><span>Seats</span><span className="num">{m.seats}</span></div>}
         {m.kind === "external" && <div className="settings-line settings-divide"><span>Per month</span><span className="num">{euro(monthly)}</span></div>}
-        {m.kind !== "none" && <div className="settings-line settings-divide"><span /><button className="btn" onClick={() => act(cancelMail)}>Cancel</button></div>}
+        {m.kind !== "free" && <div className="settings-line settings-divide"><span /><button className="btn" onClick={() => act(cancelMail)}>Cancel</button></div>}
       </div>
       <div className="seg email-mode" role="group" aria-label="Email hosting">
         <button aria-pressed={mode === "external"} onClick={() => setMode("external")}>External</button>

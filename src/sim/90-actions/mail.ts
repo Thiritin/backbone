@@ -24,9 +24,9 @@ export function selectMailServer(s: GameState): ActionResult {
   return { ok: true, id: c.id };
 }
 
-// Cancels the company's mail service; a mail server stays installed.
+// Cancels the company's mail service and goes back to free Notmail; a mail server stays installed.
 export function cancelMail(s: GameState): ActionResult {
-  if (s.company.mail.kind === "none") return fail("error.noMailService");
-  s.company = { ...s.company, mail: { kind: "none" } };
+  if (s.company.mail.kind === "free") return fail("error.noMailService");
+  s.company = { ...s.company, mail: { kind: "free" } };
   return { ok: true };
 }

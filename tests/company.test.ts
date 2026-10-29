@@ -7,7 +7,7 @@ describe("company profile", () => {
   it("sets a trimmed name, a logo and a colour", () => {
     const s = newGame(7);
     expect(setCompany(s, { name: "  Pixel Pipes  ", logo: "rocket", color: COMPANY_COLORS[3] })).toEqual({ ok: true });
-    expect(s.company).toEqual({ name: "Pixel Pipes", logo: "rocket", color: COMPANY_COLORS[3], domain: null, mail: { kind: "none" }, tagline: "" });
+    expect(s.company).toEqual({ name: "Pixel Pipes", logo: "rocket", color: COMPANY_COLORS[3], domain: null, mail: { kind: "free" }, tagline: "" });
   });
 
   it("rejects empty or long names and unknown marks", () => {

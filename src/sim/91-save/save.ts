@@ -65,7 +65,8 @@ export function deserialize(raw: string): GameState {
   return dropGone(gone, fillRegistrar(fill(fillDesign(fillLines(fillHostnames(upgradeCompute(fillDomains(fillSpecs({
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
-    company: { ...base.company, ...data.company },
+    // Saves from before free mail had no mail service at all.
+    company: { ...base.company, ...data.company, ...((data.company?.mail as { kind: string } | undefined)?.kind === "none" && { mail: base.company.mail }) },
     score: { ...base.score, ...data.score },
     network: { ...base.network, ...data.network },
     ops: { ...base.ops, ...data.ops },

@@ -9,6 +9,8 @@
 .sup-list-h { display: flex; align-items: center; gap: 8px; padding: 6px 6px 8px; }
 .sup-list-h h2 { font-size: 13px; font-weight: 650; }
 .sup-busy { margin-left: auto; color: var(--text-3); font-size: 12px; }
+.sup-settings { flex: none; }
+.sup-list-h:not(:has(.sup-busy)) .sup-settings { margin-left: auto; }
 
 .sup .tk { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; padding: 9px 10px; border-radius: 8px; }
 .sup .tk:hover { background: var(--hover); }

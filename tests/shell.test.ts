@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { GameState } from "../src/sim/50-state";
 import { MAX_FILE, treeOf } from "../src/sim/60-infra/fs";
 import { parseLine } from "../src/sim/60-infra/shell";
-import { complete, promptOf, runLine, type Session } from "../src/sim/60-infra/terminal";
+import { complete, promptOf, runCommand, runLine, type Session } from "../src/sim/60-infra/terminal";
+import { addNote, editNote } from "../src/sim/90-actions/docs";
 import type { Call } from "../src/sim/90-actions/index";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame } from "./fixtures";
@@ -99,5 +100,54 @@ describe("files", () => {
     expect(complete(s, at, "cat /etc/os").line).toBe("cat /etc/os-release ");
     expect(complete(s, at, "cd /et").line).toBe("cd /etc/");
     expect(complete(s, at, "ls /etc/").options).toEqual(["apt/", "hostname", "os-release"]);
+  });
+});
+
+describe("the desktop in ~/Desktop", () => {
+  const note = (s: GameState, title: string) => s.docs.find((d) => d.title === title);
+
+  it("shows Getting started as its checklist and keeps it read-only", () => {
+    const s = fresh();
+    expect(text(s, "ls ~/Desktop")).toBe("Getting started");
+    expect(text(s, "cat ~/Desktop/Getting\\ started").split("\n")).toContain("[ ] Install the Network app");
+    expect(text(s, "rm ~/Desktop/Getting\\ started")).toBe("rm: cannot remove '~/Desktop/Getting started': Permission denied");
+    expect(text(s, "echo hi > 'Desktop/Getting started'")).toBe("bash: Desktop/Getting started: Permission denied");
+    expect(text(s, "edit 'Desktop/Getting started'")).toBe("edit: Desktop/Getting started: Permission denied");
+    expect(text(s, "rm -r Desktop")).toBe("rm: cannot remove 'Desktop': Permission denied");
+    expect(text(s, "mkdir Desktop/sub")).toBe("mkdir: cannot create directory 'Desktop/sub': Permission denied");
+    expect(s.docs.map((d) => d.kind)).toEqual(["guide"]);
+  });
+
+  it("turns new files into notes and edits, renames and removes them", () => {
+    const s = fresh();
+    sh(s, "echo 'call the bank' > Desktop/todo");
+    const id = note(s, "todo")!.id;
+    expect(note(s, "todo")!.body).toBe("call the bank\n");
+    sh(s, "echo later >> Desktop/todo && mv Desktop/todo Desktop/plan");
+    expect(s.docs.find((d) => d.id === id)).toMatchObject({ title: "plan", body: "call the bank\nlater\n" });
+    sh(s, "rm Desktop/plan");
+    expect(s.docs.some((d) => d.id === id)).toBe(false);
+    expect(Object.keys(s.files.desk?.paths ?? {}).some((p) => p.includes("Desktop"))).toBe(false);
+  });
+
+  it("names notes with the same title apart", () => {
+    const s = fresh();
+    for (const body of ["a", "b"]) { const r = addNote(s); editNote(s, r.ok ? r.id! : "", { body }); }
+    expect(text(s, "ls Desktop")).toBe("Getting started  Untitled  Untitled (2)");
+    expect(text(s, "cat 'Desktop/Untitled (2)'")).toBe("b");
+  });
+
+  it("opens files in edit, and saving writes them", () => {
+    const s = fresh();
+    sh(s, "echo draft > Desktop/memo");
+    expect(runCommand(s, null, "edit Desktop/memo").edit).toEqual({ path: "/home/you/Desktop/memo", name: "Desktop/memo", text: "draft\n" });
+    expect(runCommand(s, null, "edit fresh.txt").edit?.text).toBe("");
+    expect(text(s, "edit Desktop")).toBe("edit: Desktop: Is a directory");
+    expect(sh(s, "edit Desktop/memo; echo skipped").output).toEqual([]);
+  });
+
+  it("completes names with spaces escaped", () => {
+    const s = fresh();
+    expect(complete(s, null, "cat Desktop/Get").line).toBe("cat Desktop/Getting\\ started ");
   });
 });

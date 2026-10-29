@@ -82,7 +82,7 @@ export function AdminPage({ onSite }: { onSite: () => void }) {
             <div className="web-line">
               <label className="web-line-row">
                 <span>Contact by email</span>
-                <input type="checkbox" role="switch" className="switch" aria-label="Take orders by email" checked={game.marketing.emailOrders && game.company.mail.kind !== "none"}
+                <input type="checkbox" role="switch" className="switch" aria-label="Take orders by email" checked={game.marketing.emailOrders}
                   onChange={(e) => act(setEmailOrders, e.target.checked)} />
               </label>
             </div>

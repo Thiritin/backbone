@@ -27,8 +27,10 @@ export interface Watch { workloadId: string; host: string }
 // cwd is the new working directory; failed stops a && chain; confirm asks [Y/n] before the command runs again with -y.
 export interface CommandResult {
   output: string[]; session?: Session | null; action?: Call; clear?: boolean; watch?: Watch;
-  cwd?: string; failed?: boolean; confirm?: boolean;
+  cwd?: string; failed?: boolean; confirm?: boolean; edit?: Editing;
 }
+// A file open in the editor: its absolute path, the name as typed and its text.
+export interface Editing { path: string; name: string; text: string }
 
 export const hostOf = (session: Session | null) => session?.deviceId ?? DESK;
 export const DESK_PROMPT = "you@desk:~ $";
@@ -279,12 +281,12 @@ export function recoveryReport(s: GameState, watch: Watch): string[] | null {
 const SHARED = [...FILE_COMMANDS, "apt", "apt-get", "help", "clear"];
 const DESK_COMMANDS = ["ssh", "ping", "traceroute", "host", "sudo", ...SHARED];
 const REMOTE_COMMANDS = ["uptime", "df", "free", "top", "shutdown", "reboot", "recover", "exit", ...SHARED];
-const PATH_COMMANDS = ["cd", "ls", "cat", "touch", "mkdir", "rm", "rmdir", "mv", "cp"];
+const PATH_COMMANDS = ["cd", "ls", "cat", "edit", "touch", "mkdir", "rm", "rmdir", "mv", "cp"];
 
 // Tab on a line: the first word completes to a command, a word after a file command to a path, other words to a host
 // name. Several matches extend to their shared prefix, and when that adds nothing the matches come back as options to list.
 export function complete(s: GameState, session: Session | null, line: string, cwd: string | null = null): { line: string; options: string[] } {
-  const at = line.lastIndexOf(" ") + 1, word = line.slice(at), first = line.trim().split(/\s+/)[0];
+  const word = /(?:\\.|[^\s\\])*$/.exec(line)![0], at = line.length - word.length, first = line.trim().split(/\s+/)[0];
   const host = hostOf(session);
   const paths = at > 0 && PATH_COMMANDS.includes(first);
   const pool = at === 0 ? (session ? REMOTE_COMMANDS : DESK_COMMANDS)
@@ -333,12 +335,12 @@ export function runCommand(s: GameState, session: Session | null, line: string, 
   return seg ? runSegment(s, session, cwd ?? homeOf(hostOf(session)), seg, nonce) : { output: [] };
 }
 
-export interface LineResult { output: string[]; session: Session | null; cwd: string | null; watch: Watch[]; clear: boolean; confirm: string | null }
+export interface LineResult { output: string[]; session: Session | null; cwd: string | null; watch: Watch[]; clear: boolean; confirm: string | null; edit: Editing | null }
 
 // Runs every command of a line in turn, each on the state the one before left: act applies a command's action. A
 // command that asks to confirm ends the run, and confirm holds the rest of the line to run once the player agrees.
 export function runLine(get: () => GameState, act: (a: Call) => ActionResult, session: Session | null, cwd: string | null, line: string, nonce = 0): LineResult {
-  const res: LineResult = { output: [], session, cwd, watch: [], clear: false, confirm: null };
+  const res: LineResult = { output: [], session, cwd, watch: [], clear: false, confirm: null, edit: null };
   for (const seg of parseLine(line)) {
     const r = runSegment(get(), res.session, res.cwd ?? homeOf(hostOf(res.session)), seg, nonce);
     if (r.clear) { res.output = []; res.clear = true; }
@@ -351,6 +353,7 @@ export function runLine(get: () => GameState, act: (a: Call) => ActionResult, se
     if (r.session !== undefined) { res.session = r.session; res.cwd = null; }
     if (r.cwd !== undefined) res.cwd = r.cwd === homeOf(hostOf(res.session)) ? null : r.cwd;
     if (r.watch) res.watch.push(r.watch);
+    if (r.edit) { res.edit = r.edit; break; }
     if (r.confirm) { res.confirm = `${line.slice(seg.start, seg.end).trim()} -y${line.slice(seg.end)}`; break; }
     if (failed && seg.then === "&&") break;
   }

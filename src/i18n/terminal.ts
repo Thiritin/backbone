@@ -6,6 +6,7 @@ const left = (v: string | number, n: number) => String(v).padStart(n);
 const SHELL_HELP = [
   "ls, cd, pwd        list and move between directories",
   "cat <file>         print a file",
+  "edit <file>        open a file in the editor",
   "echo text > file   write text to a file, >> appends",
   "touch, mkdir       create a file or a directory",
   "rm, rmdir, mv, cp  remove, move or copy files",
@@ -50,6 +51,10 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "term.fs.exists": () => "File exists",
   "term.fs.notempty": () => "Directory not empty",
   "term.fs.full": () => "No space left on device",
+  "term.fs.perm": () => "Permission denied",
+  "term.fs.move": (p) => `${p.cmd}: cannot move '${p.from}' to '${p.to}': ${p.why}`,
+  "term.fs.edit": (p) => `edit: ${p.path}: ${p.why}`,
+  "term.edit.usage": () => "usage: edit file",
   "term.fs.cd": (p) => `bash: cd: ${p.path}: ${p.why}`,
   "term.fs.redirect": (p) => `bash: ${p.path}: ${p.why}`,
   "term.fs.cat": (p) => `cat: ${p.path}: ${p.why}`,

@@ -2,9 +2,11 @@
 // the player changed on top of it.
 import { t } from "../../i18n/en";
 import { dateOf, yearOf } from "../00-core/time";
-import type { GameState } from "../50-state";
+import type { Doc, GameState } from "../50-state";
+import { checkDone, TUTORIAL } from "../checklist";
 
 export const DESK = "desk";
+export const DESKTOP = "/home/you/Desktop";
 export const MAX_PATHS = 200;
 export const MAX_FILE = 4096;
 
@@ -55,6 +57,24 @@ export const nameOf = (path: string) => path.slice(path.lastIndexOf("/") + 1);
 // The path as a prompt shows it: the home and what is under it start with ~.
 export const shortPath = (path: string, home: string) => (path === home ? "~" : path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path);
 
+// The desktop's documents as files in ~/Desktop, named by title; a repeated title gets a number.
+export function desktopFiles(s: GameState): { path: string; doc: Doc }[] {
+  const seen = new Map<string, number>();
+  return s.docs.map((doc) => {
+    const name = doc.title.replace(/\//g, "-"), n = (seen.get(name) ?? 0) + 1;
+    seen.set(name, n);
+    return { path: `${DESKTOP}/${n > 1 ? `${name} (${n})` : name}`, doc };
+  });
+}
+
+// Getting started as text: its steps, the done ones ticked.
+export const guideText = (s: GameState) =>
+  `${t("doc.guide")}\n\n${TUTORIAL.map((id) => `[${checkDone(s, id) ? "x" : " "}] ${t(`guide.step.${id}`)}`).join("\n")}\n`;
+
+// Getting started follows the game, so the terminal only reads it.
+export const readOnly = (s: GameState, host: string, path: string) =>
+  host === DESK && desktopFiles(s).some((f) => f.doc.kind === "guide" && f.path === path);
+
 const stamp = (hour: number) => dateOf(hour).toISOString().slice(0, 16).replace("T", " ");
 
 function baseTree(s: GameState, host: string): Tree {
@@ -67,6 +87,10 @@ function baseTree(s: GameState, host: string): Tree {
   ].join("\n");
   tree["/etc/apt/sources.list"] = `deb http://ftp.debian.org/debian ${r.codename} main\n`;
   tree["/var/log/syslog"] = (d?.log ?? []).map((e) => `${stamp(e.hour)} ${hostnameOf(s, host)} ${t(e.key)}\n`).join("");
+  if (host === DESK) {
+    tree[DESKTOP] = true;
+    for (const f of desktopFiles(s)) tree[f.path] = f.doc.kind === "guide" ? guideText(s) : f.doc.body;
+  }
   return tree;
 }
 
@@ -86,11 +110,12 @@ export function treeOf(s: GameState, host: string): Tree {
   return tree;
 }
 
-// What differs from the base tree, to be stored.
+// What differs from the base tree, to be stored. The desktop's files live in its documents, so they are never stored.
 export function changesFrom(s: GameState, host: string, tree: Tree): Record<string, string | boolean> {
   const base = baseTree(s, host), out: Record<string, string | boolean> = {};
   for (const [path, v] of Object.entries(tree)) if (base[path] !== v) out[path] = v;
   for (const path of Object.keys(base)) if (!(path in tree)) out[path] = false;
+  if (host === DESK) for (const path of Object.keys(out)) if (path === DESKTOP || path.startsWith(`${DESKTOP}/`)) delete out[path];
   return out;
 }
 
