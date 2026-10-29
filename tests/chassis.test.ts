@@ -17,7 +17,8 @@ const withDevice = (model: string): { s: GameState; id: string } => {
 };
 
 describe("chassis slots", () => {
-  it("has the 56 server models", () => expect(SERVERS).toHaveLength(56));
+  // 56 single-node models and a Twin node in each generation from 2008.
+  it("has the 62 server models", () => expect(SERVERS).toHaveLength(62));
 
   it("gives every preset parts that fit its chassis", () => {
     for (const m of SERVERS) {

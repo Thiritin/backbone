@@ -6,7 +6,7 @@ import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
 import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, connectError, drivesOf, fits, flatOffer, freePositions, holdsData, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
+import { arrayLost, connectError, drivesOf, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { atFront, BMC_RESET_HOURS, bootUp, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
@@ -21,7 +21,7 @@ export type ActionResult = { ok: true; id?: string } | { ok: false; error: strin
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const newId = (s: GameState, prefix: string) => `${prefix}${s.nextId++}`;
-const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", pdu: "pdu", part: "part", kvm: "kvm", console: "con", oob: "oob" } as const;
+const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", pdu: "pdu", part: "part", kvm: "kvm", console: "con", oob: "oob", chassis: "twin" } as const;
 const roleOf = (modelId: string) => ROLE[modelById(modelId).kind];
 const cents = (v: number) => Math.round(v * 100) / 100;
 
@@ -217,9 +217,17 @@ export function stock(s: GameState, line: CartLine, lease: string | null, store:
   return Array.from({ length: qty }, () => {
     const name = nextName(`${prefix(s, store)}-${roleOf(modelId)}`, s.devices.map((d) => d.name));
     const id = newId(s, "dev");
-    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "none", groups: [], price, boughtAt: s.hour, lease, ...(wait ? { store: null, transitTo: store, arriveAt: s.hour + wait } : { store, transitTo: null, arriveAt: null }),
+    const at = wait ? { store: null, transitTo: store, arriveAt: s.hour + wait } : { store, transitTo: null, arriveAt: null };
+    s.devices.push({ id, model: modelId, brand, rackId: null, slot: 0, panel: null, name, bond: "none", groups: [], price, boughtAt: s.hour, lease, ...at,
       ...deviceDefaults(modelId, s.hour, lineParts(line)), ...(line.part ? { part: line.part } : {}),
       ...(modelById(modelId).kind === "server" ? { hostname: nodeName(s) } : {}) });
+    // The chassis carries the price; its nodes come with it.
+    const nodes = modelById(modelId).nodes;
+    for (let k = 0; nodes && k < nodes.count; k++) {
+      const node = nextName(`${prefix(s, store)}-srv`, s.devices.map((d) => d.name));
+      s.devices.push({ id: newId(s, "dev"), model: nodes.model, brand, rackId: null, slot: 0, panel: null, name: node, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease, ...at,
+        ...deviceDefaults(nodes.model, s.hour), chassisId: id, hostname: nodeName(s) });
+    }
     return id;
   });
 }
@@ -280,7 +288,14 @@ export function buyOutLease(s: GameState, leaseId: string): ActionResult {
   return { ok: true };
 }
 
+// A chassis's nodes stand, travel and wait where the chassis does.
+function carry(s: GameState, chassis: Device) {
+  for (const n of nodesOf(s, chassis.id)) Object.assign(n, { rackId: chassis.rackId, slot: chassis.slot, store: chassis.store, transitTo: chassis.transitTo, arriveAt: chassis.arriveAt });
+}
+const withNodes = (s: GameState, d: Device): Device[] => [d, ...nodesOf(s, d.id)];
+
 function mountError(s: GameState, d: Device, rackId: string, slot: number): string | null {
+  if (d.chassisId) return "error.inChassis";
   if (d.transitTo) return "error.inTransit";
   if (!d.store) return "error.alreadyMounted";
   if (modelById(d.model).kind === "part") return "error.notMountable";
@@ -302,6 +317,8 @@ function mount(s: GameState, d: Device, rackId: string, slot: number) {
   if (!d.name.startsWith(`${base}-`)) d.name = nextName(`${base}-${roleOf(d.model)}`, s.devices.map((x) => x.name));
   Object.assign(d, { rackId, slot, store: null });
   for (const c of d.components) if (c.kind === "psu") c.plugged = false;
+  carry(s, d);
+  for (const n of nodesOf(s, d.id)) if (!n.name.startsWith(`${base}-`)) n.name = nextName(`${base}-${roleOf(n.model)}`, s.devices.map((x) => x.name));
 }
 
 export function mountDevice(s: GameState, deviceId: string, rackId: string, slot: number): ActionResult {
@@ -319,6 +336,7 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   if (!rack) return fail("error.unknownRack");
   if (rack.moving) return fail("error.rackMoving");
   if (modelById(modelId).kind === "part") return fail("error.notMountable");
+  if (modelById(modelId).chassis) return fail("error.inChassis");
   if (isOfficeRouter(modelById(modelId))) return fail("error.panelRouter");
   if (modelById(modelId).kind === "pdu" && (count > 1 || hasPdu(s, rackId))) return fail("error.pduInstalled");
   const same = (d: Device) => d.model === modelId && d.brand === brand;
@@ -338,6 +356,7 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
 export function moveInRack(s: GameState, deviceId: string, slot: number): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
+  if (d.chassisId) return fail("error.inChassis");
   if (!d.rackId) return fail("error.notMounted");
   const spot = spotOf(s, d.rackId)!, h = modelById(d.model).height;
   if (spot.moving) return fail("error.rackMoving");
@@ -345,18 +364,21 @@ export function moveInRack(s: GameState, deviceId: string, slot: number): Action
   if (!Number.isInteger(slot) || slot < 1 || slot + h - 1 > spot.units) return fail("error.outOfBounds");
   if (!freeSlots({ ...s, devices: s.devices.filter((x) => x.id !== d.id) }, d.rackId, h).includes(slot)) return fail("error.slotTaken");
   d.slot = slot;
+  carry(s, d);
   return { ok: true };
 }
 
 export function unmountDevice(s: GameState, deviceId: string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
+  if (d.chassisId) return fail("error.inChassis");
   if (!d.rackId) return fail("error.notMounted");
   const rack = spotOf(s, d.rackId)!;
   if (rack.moving) return fail("error.rackMoving");
-  if (serverTaken(s, d.id)) return fail("error.serverInUse");
-  unplug(s, new Set([d.id]));
+  if (withNodes(s, d).some((x) => serverTaken(s, x.id))) return fail("error.serverInUse");
+  unplug(s, new Set(withNodes(s, d).map((x) => x.id)));
   Object.assign(d, { rackId: null, slot: 0, store: rack.locationId });
+  carry(s, d);
   return { ok: true };
 }
 
@@ -365,6 +387,7 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   const units = [...new Set(deviceIds)].map((id) => s.devices.find((d) => d.id === id));
   if (!units.length) return fail("error.emptyShipment");
   if (units.some((d) => !d)) return fail("error.unknownDevice");
+  if (units.some((d) => d!.chassisId)) return fail("error.inChassis");
   if (units.some((d) => !d!.store)) return fail("error.notInStorage");
   const from = units[0]!.store!;
   if (units.some((d) => d!.store !== from)) return fail("error.mixedZones");
@@ -373,7 +396,7 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   if (to.id === from) return fail("error.sameZone");
   const trip = travelCost(s, from, to.id);
   if (s.cash < trip.price) return fail("error.noCash");
-  for (const d of units) Object.assign(d!, { store: null, transitTo: to.id, arriveAt: s.hour + trip.hours });
+  for (const d of units) { Object.assign(d!, { store: null, transitTo: to.id, arriveAt: s.hour + trip.hours }); carry(s, d!); }
   book(s, "moving", "ledger.ship", { count: units.length, location: to.name }, -trip.price);
   return { ok: true, id: units[0]!.id };
 }
@@ -383,11 +406,13 @@ export function sellDevice(s: GameState, deviceId: string): ActionResult {
   if (!d) return fail("error.unknownDevice");
   if (modelById(d.model).kind === "gateway" && !modelById(d.model).price) return fail("error.cannotSell");
   if (d.lease) return fail("error.leased");
+  if (d.chassisId) return fail("error.inChassis");
   if (d.transitTo) return fail("error.inTransit");
-  if (serverTaken(s, d.id)) return fail("error.serverInUse");
-  unplug(s, new Set([d.id]));
-  s.devices = s.devices.filter((x) => x.id !== deviceId);
-  s.files = Object.fromEntries(Object.entries(s.files).filter(([id]) => id !== deviceId));
+  const gone = new Set(withNodes(s, d).map((x) => x.id));
+  if ([...gone].some((id) => serverTaken(s, id))) return fail("error.serverInUse");
+  unplug(s, gone);
+  s.devices = s.devices.filter((x) => !gone.has(x.id));
+  s.files = Object.fromEntries(Object.entries(s.files).filter(([id]) => !gone.has(id)));
   book(s, "sales", "ledger.sale", { device: d.name }, deviceValue(s, d));
   return { ok: true };
 }

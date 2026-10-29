@@ -28,7 +28,7 @@ import { useSessionState } from "../../session";
 export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
     const model = modelById(d.model);
-    return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, plugs: d.components.filter((c) => c.kind === "psu").map(isPlugged), ...deviceLamps(g, d.id, model) };
+    return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, chassisId: d.chassisId, plugs: d.components.filter((c) => c.kind === "psu").map(isPlugged), ...deviceLamps(g, d.id, model) };
   });
 }
 
@@ -37,7 +37,7 @@ function rackLinks(g: GameState, rackId: string): RackLink[] {
   return g.cables.flatMap((c) => [[c.a, c.b], [c.b, c.a]].flatMap(([end, peer]) => (dev.get(end.device)?.rackId === rackId ? [{ id: c.id, end, peer, color: cableColor(c) }] : [])));
 }
 
-const KIND_LABEL: Record<DeviceKind, string> = { server: "Server", switch: "Switch", firewall: "Firewall", gateway: "Carrier panel", patch: "Patch panel", ups: "UPS", pdu: "PDU", part: "Part", kvm: "KVM", console: "Console server", oob: "OOB switch" };
+const KIND_LABEL: Record<DeviceKind, string> = { server: "Server", switch: "Switch", firewall: "Firewall", gateway: "Carrier panel", patch: "Patch panel", ups: "UPS", pdu: "PDU", part: "Part", kvm: "KVM", console: "Console server", oob: "OOB switch", chassis: "Chassis" };
 
 // Devices outside the rack that it is cabled to, plus the location's carrier panel and patch panels to cable to.
 function rackRemotes(g: GameState, rack: Rack): RackRemote[] {

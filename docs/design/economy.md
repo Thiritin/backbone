@@ -110,6 +110,9 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Archive storage 4U | 4U | 1 | 0.25× | 0.25× | 60 densest HDDs | 2 | 2 | 2.2× | 3.2× | Always |
 | GPU 4U | 4U | 2 | 1× | 2× | 1 of the generation's disk in 4 bays, 4 GPU cards | 2 | 2 | 2× plus the cards | 3× plus the cards | From 2011 |
 | ARM 1U | 1U | 1 | 1.5× | 1× | 1 of the generation's disk in 4 bays | 2 | 1 | 0.6× | 0.9× | From 2020 |
+| Twin 2U, per node | 2U for four nodes | 2 | 1× | 1× | 1 of the generation's disk in 3 bays (6 from 2014) | 2 | 2 shared by the chassis | 0.8× | 0.6× | From 2008 |
+
+**Twin 2U.** One purchase is a 2U chassis with two shared power supplies and the fan wall, and four nodes with their own CPUs, RAM, drives and network card. Each node costs 0.6 times and draws 0.8 times a balanced 1U of its generation, so four servers take 2U at 2.4 times the price of one 1U. SuperMacro and Dwell sell it at their price factors; the chassis carries the price and sells with its nodes. A G2 Twin from SuperMacro costs €6,004 in 2010 (€1,501 a node), and from 2010 the used market lists Twin lots at the usual discount, €450 to €900 a node. Rented as the smaller dedicated server at about €79 a month, a used node pays for itself in 6 to 11 months and a new one in about 19; the same node as a VPS host earns more a month and brings more tickets, so dedicated stays the lower-touch path at a lower margin. Dedicated prices stay as they are. A node at full load draws 240 W, about €23 a month metered at Hetzler in 2010. Anchors: Supermicro's Twin (2007) and 2U Twin (2008) with four dual-socket nodes, Dell PowerEdge C6100 (2010), four nodes sharing two 1100 W supplies.
 
 Backup and archive servers use HDDs whatever the generation's disk type. Archive storage is the cheapest per TB, then backup, then the storage 2U.
 

@@ -190,6 +190,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.noFeeds": () => "The basement has no extra feeds.",
   "error.ownRack": () => "This rack is not a provided share.",
   "error.extraPowerRange": () => "This amount of extra power is not available.",
+  "error.inChassis": () => "This node moves with its chassis.",
   "error.noFlatPower": () => "This datacenter does not offer flat-rate power on this rack.",
   "error.flatPowerRange": () => "This power contract is not available.",
   "error.unknownFeed": () => "This feed does not exist.",

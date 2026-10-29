@@ -4,7 +4,7 @@
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import { BrandMark } from "./logos";
 import { isMgmtModel, MgmtBack, OobJacks, oobSpots } from "./mgmt";
-import { AssetTag, fsz, gatewayLayout, Jacks, LED, ledProps, numBand, numSize, partLed, patchLayout, Pdu, portNo, switchLayout, SwitchPorts, switchX0, tw, type FrontProps, type PartLamp } from "./fronts";
+import { AssetTag, frontBays, fsz, gatewayLayout, Jacks, LED, ledProps, numBand, numSize, partLed, patchLayout, Pdu, portNo, switchLayout, SwitchPorts, switchX0, tw, type FrontProps, type PartLamp } from "./fronts";
 
 const MONO = "JetBrains Mono, monospace", NUM = "oklch(0.74 0.01 255)";
 
@@ -26,7 +26,7 @@ const mmOf = (model: DeviceModel, h: number) => h / Math.max(1, model.height) / 
 
 // Server NICs sit in the lowest unit on the left; PSUs stand at the right edge.
 function nicLayout(model: DeviceModel, w: number, h: number): Map<number, Spot> {
-  const u = h / model.height, ph = Math.min(u - 2 * numBand(u), 10), y = h - u + (u - ph) / 2;
+  const u = h / Math.max(1, model.height), ph = Math.min(u - 2 * numBand(u), 10), y = h - u + (u - ph) / 2;
   let x = w * 0.3;
   return new Map(model.ports.map((p, i) => {
     const pw = p.media === "sfp" ? 12 : 9, at = { x, y, w: pw, h: ph };
@@ -57,13 +57,21 @@ export const portSpots = (model: DeviceModel, name: string, side: Side, w: numbe
 // Power supplies stand at the left end of the face they are on, in the lowest unit, true to size: a 1U module is
 // about 70 by 38 mm with an IEC C14 inlet of 24 by 16 mm.
 export function psuBoxes(model: DeviceModel, w: number, h: number) {
-  if (model.kind === "gateway" || model.kind === "patch" || model.kind === "pdu" || isMgmtModel(model)) return [];
+  if (model.chassis || model.kind === "gateway" || model.kind === "patch" || model.kind === "pdu" || isMgmtModel(model)) return [];
   const mm =mmOf(model, h), u = h / Math.max(1, model.height), ph = Math.min(u - 3, 38 * mm), pw = Math.min(70 * mm, (w * 0.4) / Math.max(1, model.psus));
   const iw = 24 * mm, ih = 16 * mm;
   return Array.from({ length: model.psus }, (_, k) => {
     const x = 13 + k * (pw + 3), y = h - u + (u - ph) / 2;
     return { x, y, w: pw, h: ph, inlet: { x: x + 2.5 * mm + 2, y: y + (ph - ih) / 2, w: iw, h: ih } };
   });
+}
+
+// Where a Twin chassis's nodes sit: four front columns, or on the back a 2 × 2 grid of trays beside the shared power supplies.
+export function bayRects(model: DeviceModel, side: Side, w: number, h: number): Spot[] {
+  const n = model.nodes?.count ?? 0;
+  if (side === "front") return frontBays(n, w, h);
+  const last = psuBoxes(model, w, h).at(-1), x0 = last ? last.x + last.w + 4 : 14, cw = (w - 4 - x0) / 2, ch = (h - 2) / 2;
+  return Array.from({ length: n }, (_, i) => ({ x: x0 + (i % 2) * cw, y: 1 + Math.floor(i / 2) * ch, w: cw, h: ch }));
 }
 
 // The face that carries the power inlets, and each inlet's centre on it.
@@ -222,7 +230,7 @@ export function Back(p: FrontProps) {
         ))}
         {model.kind === "gateway" && <rect x={w - 20} y={h / 2 - 3} width="8" height="6" rx="1" fill="oklch(0.1 0.004 255)" />}
       </g>
-      <PortNums model={model} spots={mirror(mirroredLayout(model, name, w, h), w)} h={model.kind === "server" ? h / model.height : h} below={(i) => model.kind === "patch" && i >= model.ports.length / 2} />
+      <PortNums model={model} spots={mirror(mirroredLayout(model, name, w, h), w)} h={model.kind === "server" ? h / Math.max(1, model.height) : h} below={(i) => model.kind === "patch" && i >= model.ports.length / 2} />
       <OobJacks model={model} name={name} w={w} h={h} />
       {model.kind !== "gateway" && model.kind !== "patch" && <Psus model={model} w={w} h={h} on={state !== "off"} lamps={p.parts?.psus} />}
       <AssetTag x={w - 8} y={Math.min(h / 2, fs + 2)} text={name} h={h} anchor="end" />

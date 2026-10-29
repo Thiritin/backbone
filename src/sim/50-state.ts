@@ -64,6 +64,8 @@ export interface Device { id: string; model: string; brand: string; rackId: stri
   bootUntil?: number;
   // The operating system froze (hung) or the management controller did (bmcHung); log is the device's last 20 events.
   hung: boolean; bmcHung: boolean; log: { hour: number; key: string }[];
+  // The chassis a multi-node server's node sits in; it mounts, moves and gets power with it.
+  chassisId: string | null;
   // A hand task waiting for someone on site: pulling the plug or resetting the management controller.
   hands?: { kind: FrontOp | "bmcreset" | "continue" | "recover"; doneAt: number } | null;
   // Remote access (60-infra/oob.ts): a server waiting at the firmware prompt (latent while off), a switch or router that locked
@@ -241,7 +243,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
   return {
     components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
-    rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null,
+    rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null,
     hung: false, bmcHung: false, log: [] as { hour: number; key: string }[],
     stuck: false, locked: false, setup: false, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
   };

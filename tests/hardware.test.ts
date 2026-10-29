@@ -35,9 +35,9 @@ describe("catalog", () => {
     expect(new Set(MODELS.map((m) => m.id)).size).toBe(MODELS.length);
     for (const m of MODELS) {
       expect(m.idleWatts).toBeLessThanOrEqual(m.watts);
-      expect(m.ports.length > 0).toBe(!["part", "ups", "pdu", "kvm", "console", "oob"].includes(m.kind));
+      expect(m.ports.length > 0).toBe(!["part", "ups", "pdu", "kvm", "console", "oob", "chassis"].includes(m.kind));
       // Panel gateways (provided or small-office) and parts take no rack units; rack gateways, UPS units and PDUs take their own height.
-      expect(m.height).toBe(m.kind === "part" || (m.kind === "gateway" && (!m.price || m.brand === "AVN")) ? 0 : ["server", "gateway", "ups", "pdu", "kvm"].includes(m.kind) ? m.height : 1);
+      expect(m.height).toBe(m.kind === "part" || (m.kind === "gateway" && (!m.price || m.brand === "AVN")) ? 0 : ["server", "gateway", "ups", "pdu", "kvm", "chassis"].includes(m.kind) ? m.height : 1);
     }
     expect(() => modelById("nope")).toThrow();
   });

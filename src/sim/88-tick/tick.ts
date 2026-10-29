@@ -213,7 +213,7 @@ export function tick(state: GameState): SimEvent[] {
     const arrived = new Map<string, number>();
     state.devices = state.devices.map((d) => {
       if (d.arriveAt === null || d.arriveAt > state.hour) return d;
-      arrived.set(d.transitTo!, (arrived.get(d.transitTo!) ?? 0) + 1);
+      if (!d.chassisId) arrived.set(d.transitTo!, (arrived.get(d.transitTo!) ?? 0) + 1);
       return { ...d, store: d.transitTo, transitTo: null, arriveAt: null };
     });
     for (const [id, count] of arrived) {

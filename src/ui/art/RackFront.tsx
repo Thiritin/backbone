@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { OOB_PORT, oobPorts, type DeviceModel } from "../../sim/10-catalog/hardware";
 import type { End } from "../../sim/50-state";
-import { Back, Cord, portSpots, psuInlets, type Side, type Spot } from "./backs";
+import { Back, bayRects, Cord, portSpots, psuInlets, type Side, type Spot } from "./backs";
 import { CABLE, Defs, Front, ledProps, portNo, type Lamp, type Parts, type PortLamp, type PortLight } from "./fronts";
 
 // plugs holds whether each power supply is plugged in.
-export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; blink?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[] }
+export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; blink?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[]; chassisId?: string | null }
 // One cable end in this rack and the end it leads to, in this rack or on a remote box.
 export interface RackLink { id: string; end: End; peer: End; color: string }
 // A device outside the rack that the rack is or can be cabled to, drawn as a small box above it.
@@ -119,10 +119,27 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     n = it.slot - 1;
   }
 
+  // The nodes of a multi-node chassis draw over its bays, each with its own ports on the back.
+  const bays: { it: RackItem; x: number; y: number; w: number; h: number }[] = [];
+  for (const { it: c, y: cy, h: ch } of placed.values()) {
+    if (!c.model.nodes) continue;
+    const rects = bayRects(c.model, side, w, ch), dy = slide?.id === c.id ? (slide.from - slide.to) * u : 0;
+    items.filter((x) => x.chassisId === c.id).forEach((it, i) => { if (rects[i]) bays.push({ it, x: pad + rects[i].x, y: cy + dy + rects[i].y, w: rects[i].w, h: rects[i].h }); });
+  }
+  for (const b of bays) {
+    const sel = b.it.id === selected;
+    out.push(
+      <g key={b.it.id} className="rack-dev" transform={`translate(${b.x} ${b.y})`} aria-label={b.it.name} aria-pressed={sel} {...press(() => onDevice(b.it.id))} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(b.it.id, e))}>
+        {back ? <Back {...b.it} w={b.w} h={b.h} /> : <Front {...b.it} w={b.w} h={b.h} />}
+        {sel && <rect x="-1" y="-1" width={b.w + 2} height={b.h + 2} rx="2" fill="none" stroke="var(--accent)" strokeWidth="1.5" pointerEvents="none" />}
+      </g>,
+    );
+  }
+
   // A 0U device (a vertical PDU) hangs on the right rail and takes no unit.
   // A 0U KVM hangs on the same rail at its slot, its two jacks stacked.
   const railSpots: [End, Spot][] = [];
-  for (const it of items.filter((x) => x.model.height === 0)) {
+  for (const it of items.filter((x) => x.model.height === 0 && !x.model.chassis)) {
     const x = pad + w + 1, sel = it.id === selected, dots = Math.min(it.model.outlets ?? 8, units * 2);
     if (it.model.kind === "kvm") {
       const y0 = (units - it.slot) * u, jh = (u - 5) / 2;
@@ -150,6 +167,9 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
   const spots = new Map<string, { x: number; y: number; h: number }>();
   if (back) for (const { it, y: py, h } of placed.values()) {
     for (const [i, s] of portSpots(it.model, it.name, side, w, h)) spots.set(endKey({ device: it.id, port: i }), { x: pad + s.x + s.w / 2, y: py + s.y + s.h / 2, h: s.h });
+  }
+  if (back) for (const b of bays) {
+    for (const [i, s] of portSpots(b.it.model, b.it.name, side, b.w, b.h)) spots.set(endKey({ device: b.it.id, port: i }), { x: b.x + s.x + s.w / 2, y: b.y + s.y + s.h / 2, h: s.h });
   }
   if (back) for (const [e, s] of railSpots) spots.set(endKey(e), { x: s.x + s.w / 2, y: s.y + s.h / 2, h: s.h });
   const remoteIds = new Set(remotes.map((r) => r.id));

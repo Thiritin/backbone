@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-29
 
 - Rack positions at Hetzler and the smaller budget datacenters can take a flat-rate power contract of 2 × 10 A or 2 × 16 A for a fixed monthly price, which sets the rack's breaker limit.
+- From 2008 SuperMacro and Dwell sell the Twin 2U, a chassis with four server nodes that share two power supplies and a fan wall, so a failure of the shared parts takes all four nodes down, and used Twin lots show up on the used market.
 - Marketing basics now opens the Reviews and Community sections in Marketing, and new reviews only send you a notification once you can read them there.
 - Event organisers only ask you for sponsoring once you have learned Marketing basics.
 - A VM or game server stuck on a switched-off server whose cluster's control plane is down can be recovered to a server of another cluster in the same location by remote hands, by you or by a friend.
