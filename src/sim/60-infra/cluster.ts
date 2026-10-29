@@ -9,6 +9,7 @@ import type { Device, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { installedCores, installedRamGb, linkStatus, locationOf, raidUsable, rackPower, working } from "./status";
 import { hasPublicAddress, sellsFrom } from "./addresses";
+import { coverage } from "./maintenance";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
@@ -304,6 +305,8 @@ export function computeTick(s: GameState): SimEvent[] {
   }
   const ids = [...new Set(s.workloads.filter((w) => !isOwnVm(w)).map((w) => w.serviceId))];
   const down = ids.filter((id) => !workloadsUp(s, id) && !isSuspended(s, s.services.find((v) => v.id === id)!.customerId));
-  if (down.length) s.downHours = { ...s.downHours, ...Object.fromEntries(down.map((id) => [id, (s.downHours[id] ?? 0) + 1])) };
+  // Hours inside an announced maintenance window are no downtime for the SLA; a late announcement counts half.
+  const hours = (id: string) => coverage(s, s.services.find((v) => v.id === id)!)?.factor ?? 1;
+  if (down.length) s.downHours = { ...s.downHours, ...Object.fromEntries(down.map((id) => [id, (s.downHours[id] ?? 0) + hours(id)])) };
   return events;
 }

@@ -7,6 +7,7 @@ import { serverOf, type Workload } from "../60-infra/cluster";
 import { breachOf, decideBreach } from "../60-infra/breach";
 import { gridTick, maybeReview, returnSeized, seize } from "../60-infra/incidents";
 import type { SimEvent } from "../88-tick/tick";
+import { maintParams } from "../60-infra/maintenance";
 import { bump, cancelCustomer, credit, HOURS_PER_MONTH, monthlyValue, type Notice, type Ticket } from "./tickets";
 
 export interface Sender { id: string; name: string; domain: string; topics: string[]; agency: boolean }
@@ -207,6 +208,7 @@ export const subjectParams = (s: GameState, t: Ticket): Record<string, string | 
   service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", video: t.notice?.video ?? "",
   target: t.move?.name ?? "", round: t.notice?.round ?? 1, sender: t.notice ? senderById(t.notice.sender).name : "",
   ...(t.kind === "extortion" && breachParams(s, t)),
+  ...(t.maint && maintParams(t.maint)),
 });
 
 // Hourly, before the infrastructure and support ticks: grid outages, returned servers, notices, deadlines and seizures.

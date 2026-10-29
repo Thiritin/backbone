@@ -14,6 +14,7 @@ import type { TechOp, TechRules } from "./47-staff/technicians";
 import type { ActivityEntry } from "./47-staff/activity";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
+import type { Maintenance } from "./60-infra/maintenance";
 import { newNetwork, type Network } from "./60-infra/network";
 import { newOps, type Ops } from "./60-infra/ops";
 import { newSites, type Sites } from "./60-infra/apps";
@@ -156,6 +157,8 @@ export interface GameState {
   rates: Partial<Record<Product, Rates>>;
   // Hours each service has been down since the last monthly invoice.
   downHours: Record<string, number>;
+  // Planned maintenance windows that have not ended yet.
+  maintenance: Maintenance[];
   network: Network;
   // Incidents, seized servers, dark locations and taken-down services.
   ops: Ops;
@@ -226,7 +229,7 @@ export const newGame = (seed: number): GameState => ({
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
   cables: [],
   ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], checklist: [],
-  customers: [], services: [], clusters: [], workloads: [], downHours: {}, lossReports: [],
+  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [],
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 },
   heldCustomers: [],
