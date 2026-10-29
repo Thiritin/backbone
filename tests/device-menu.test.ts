@@ -6,7 +6,7 @@ import { deviceMenu, type DeviceUi } from "../src/ui/apps/locations/deviceMenu";
 import { useStore } from "../src/ui/store";
 import { withServer } from "./fixtures";
 
-const ui: DeviceUi = { power: () => {}, op: () => {}, front: () => {}, plug: () => {}, setup: () => {}, rename: () => {}, unmount: () => {}, sell: () => {} };
+const ui: DeviceUi = { power: () => {}, op: () => {}, front: () => {}, plug: () => {}, rename: () => {}, unmount: () => {}, sell: () => {} };
 const labels = (g: GameState, id: string, extra: Partial<DeviceUi> = {}) =>
   tidy(deviceMenu(g, g.devices.find((d) => d.id === id)!, { ...ui, ...extra })).map((e) => e?.label ?? "-");
 
@@ -14,7 +14,7 @@ describe("device menu", () => {
   it("lists a free mounted server's actions, the second power supply with its price, and removal last", () => {
     const g = withServer(newGame(7));
     expect(labels(g, "dev3", { open: () => {} })).toEqual([
-      "Show details", "-", "Shut down", "Reboot", "At the server", "-", "Add Software…", "Burn-in", "-",
+      "Show details", "-", "Shut down", "Reboot", "At the server", "-", "Burn-in", "-",
       "Add second power supply, 250 €", "Rename…", "-", "Unmount", "Sell…",
     ]);
   });

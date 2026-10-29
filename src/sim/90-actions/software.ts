@@ -1,10 +1,10 @@
 import { dateOf, yearOf } from "../00-core/time";
 import { autoUpdates, clustersIn, isService, phpAt, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
-import { anchorOf, clusterOf, hostOfVm, workloadsOn, type Cluster } from "../60-infra/cluster";
+import { anchorOf, clusterOf, dropCluster, hostOfVm, workloadsOn, type Cluster } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
 import { familyOf, openVulns } from "../60-infra/vulns";
-import { dropCluster, installHypervisor, installPanel, installPanelInVm, phpDue, removeNode, upgradeNodePhp } from "./clusters";
+import { installHypervisor, installPanel, installPanelInVm, phpDue, removeNode, upgradeNodePhp } from "./clusters";
 import type { ActionResult } from "./hardware";
 
 // A machine is a server or one of the player's own VMs. It runs one hypervisor or one panel: a panel next to a hypervisor
@@ -38,9 +38,9 @@ export function joinableClusters(s: GameState, deviceId: string): Cluster[] {
   return s.clusters.filter((c) => c.id !== own.id && c.kind === own.kind && c.az === az && (c.panel ?? c.platform) === id && joinsAt(s, c));
 }
 
-// Why the software cannot go on the machine next to what it runs, or null.
-export function installBlock(s: GameState, machineId: string, softwareId: string): string | null {
-  const sw = softwareById(softwareId), vm = !isServer(s, machineId), have = softwareOn(s, machineId)[0];
+// Why the software cannot go on the machine next to what it runs, or null; the installer erases what it runs first.
+export function installBlock(s: GameState, machineId: string, softwareId: string, replacing = false): string | null {
+  const sw = softwareById(softwareId), vm = !isServer(s, machineId), have = replacing ? undefined : softwareOn(s, machineId)[0];
   if (yearOf(s.hour) < sw.from) return "error.softwareNotYet";
   if (vm && sw.kind === "cloud") return "error.nestedHypervisor";
   if (sw.kind === "mail") {

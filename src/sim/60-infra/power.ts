@@ -1,8 +1,9 @@
 // GDD, Racks, hardware and cabling (Remote management, Hangs and pulled plugs). Numbers in economy.md, Hardware, power and failures.
+import { nowHours } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { hasBmc, modelById } from "../10-catalog/hardware";
 import type { Device, GameState } from "../50-state";
-import { hostOfVm, isOwnVm, type Workload } from "./cluster";
+import { dropCluster, hostOfVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
 import { BOOT_HOURS, booting, deviceHealth, drivesOf, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, working } from "./status";
@@ -69,15 +70,24 @@ export function losePower(s: GameState, d: Device): void {
   if (outcome) pushLog(d, s.hour, outcome);
 }
 
+// Power cut or reset while booted from the USB stick: a first install still running is gone and the disks are empty.
+export function leaveUsb(s: GameState, d: Device): void {
+  if (d.bootFrom !== "usb") return;
+  const c = installingOn(s, d.id);
+  if (c) { dropCluster(s, c.id); pushLog(d, s.hour, "ipmi.log.installAborted"); }
+  d.bootFrom = "disk";
+}
+
 // Cuts the power: the server is off and its OS no longer hung.
 export function pullPlug(s: GameState, d: Device): void {
   losePower(s, d);
+  leaveUsb(s, d);
   d.on = false;
   d.setup = false;
 }
 
 export function bootUp(s: GameState, d: Device): void {
-  d.bootUntil = s.hour + BOOT_HOURS;
+  d.bootUntil = nowHours(s) + BOOT_HOURS;
   d.on = true;
   pushLog(d, s.hour, "ipmi.log.powerOn");
 }
@@ -90,7 +100,7 @@ export function plugCords(s: GameState, d: Device, plugged: boolean, ids = psusO
   // The roll reads the server as it ran, so it comes before the cords move.
   if (d.on && before && !after) losePower(s, d);
   d.components = components;
-  if (d.on && !before && after) d.bootUntil = s.hour + BOOT_HOURS;
+  if (d.on && !before && after) d.bootUntil = nowHours(s) + BOOT_HOURS;
 }
 
 export type FrontOp = "power" | "hold" | "reset" | "pull" | "plug";
@@ -99,7 +109,7 @@ export type FrontOp = "power" | "hold" | "reset" | "pull" | "plug";
 // holding the button cuts the power, the reset button reboots it hard, and the cords leave or join the power strip.
 export function atFront(s: GameState, d: Device, op: FrontOp): void {
   if (op === "power" && !d.on) bootUp(s, d);
-  else if (op === "power") { if (working(s, d.id)) { d.on = false; pushLog(d, s.hour, "ipmi.log.shutdown"); } }
+  else if (op === "power") { if (working(s, d.id)) { leaveUsb(s, d); d.on = false; pushLog(d, s.hour, "ipmi.log.shutdown"); } }
   else if (op === "hold") { if (d.on) pullPlug(s, d); }
   else if (op === "reset") { if (d.on) hardReboot(s, d, "ipmi.log.reset"); }
   else plugCords(s, d, op === "plug");
@@ -110,8 +120,9 @@ export function hardReboot(s: GameState, d: Device, key: "ipmi.log.reset" | "ipm
   const outcome = uncleanStop(s, d);
   d.hung = false;
   d.setup = false;
+  leaveUsb(s, d);
   rollStuck(s, d);
-  d.bootUntil = s.hour + BOOT_HOURS;
+  d.bootUntil = nowHours(s) + BOOT_HOURS;
   pushLog(d, s.hour, key);
   if (outcome) pushLog(d, s.hour, outcome);
 }

@@ -219,6 +219,19 @@ export const load = (used: Resources, cap: Resources) => Math.max(...KEYS.map((k
 export const fits = (used: Resources, cap: Resources, r: Resources) => KEYS.every((k) => used[k] + r[k] <= cap[k] + 1e-9);
 
 export const clusterOf = (s: GameState, deviceId: string): Cluster | undefined => s.clusters.find((c) => c.nodes.some((n) => n.deviceId === deviceId));
+// The one-server cluster a server is still installing its first software into.
+export const installingOn = (s: GameState, deviceId: string): Cluster | undefined => {
+  const c = clusterOf(s, deviceId);
+  return c && c.switching && !c.panel && !c.platform ? c : undefined;
+};
+
+// Removes a cluster with nothing on it: backups to it stop and its security marks go.
+export function dropCluster(s: GameState, id: string) {
+  s.clusters = s.clusters.filter((x) => x.id !== id).map((x) => (x.backup.targetId === id ? { ...x, backup: { targetId: null, every: "off" } } : x));
+  const drop = (ids: string[]) => ids.filter((x) => x !== id);
+  if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };
+  s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };
+}
 export const workloadsOf = (s: GameState, serviceId: string): Workload[] => s.workloads.filter((w) => w.serviceId === serviceId);
 export const workloadsOn = (s: GameState, deviceId: string): Workload[] => s.workloads.filter((w) => w.deviceId === deviceId);
 // A server taken by a cluster or rented whole as a dedicated server.

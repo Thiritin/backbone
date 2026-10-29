@@ -73,8 +73,9 @@ export interface Device { id: string; model: string; brand: string; rackId: stri
   // the player out, an ATX power adapter fitted for a console-only KVM, the own way in of a console server or OOB switch,
   // and the firmware release of network and management gear.
   stuck: boolean; locked: boolean; atx?: true; uplink?: "dsl" | "modem"; fw?: { version: number; updatedAt: number };
-  // The server sits in its BIOS setup (90-actions/console.ts): the boot waits until the player leaves it.
-  setup: boolean;
+  // The server sits in its BIOS setup (90-actions/console.ts): the boot waits until the player leaves it. bootFrom is what
+  // this boot came from: the USB stick shows the installer in place of the operating system.
+  setup: boolean; bootFrom: "disk" | "usb";
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
   part?: PartSpec;
   // nodeNNN, set on servers.
@@ -250,7 +251,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
     rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null,
     hung: false, bmcHung: false, log: [] as { hour: number; key: string }[],
-    stuck: false, locked: false, setup: false, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
+    stuck: false, locked: false, setup: false, bootFrom: "disk" as const, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
   };
 }
 

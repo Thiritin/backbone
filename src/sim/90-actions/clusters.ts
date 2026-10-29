@@ -10,7 +10,7 @@ import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
-  anchorOf, clusterOf, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
+  anchorOf, clusterOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
   setNodeState, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
 import { freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
@@ -157,14 +157,6 @@ export function resizeVm(s: GameState, vmId: string, size: Resources): ActionRes
   s.workloads = s.workloads.map((w) => (w.id === vm.id ? { ...w, ...size, busyUntil } : w));
   freezeTick(s);
   return { ok: true };
-}
-
-// Removes a cluster with nothing on it: backups to it stop and its security marks go.
-export function dropCluster(s: GameState, id: string) {
-  s.clusters = s.clusters.filter((x) => x.id !== id).map((x) => (x.backup.targetId === id ? { ...x, backup: { targetId: null, every: "off" } } : x));
-  const drop = (ids: string[]) => ids.filter((x) => x !== id);
-  if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };
-  s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };
 }
 
 // Removes an empty panel host: its server is free again, its VM is deleted.

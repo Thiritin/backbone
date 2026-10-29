@@ -89,7 +89,7 @@ export function EmailSettings({ title = "Email" }: { title?: string }) {
             </div>
           ) : (
             <div className="settings-group">
-              <div className="settings-line"><span>Install a mail server from the Add Software tile of a server in Locations.</span><button className="btn" onClick={() => openApp("Locations")}>Open</button></div>
+              <div className="settings-line"><span>Install a mail server from the USB stick on a server's console in Locations.</span><button className="btn" onClick={() => openApp("Locations")}>Open</button></div>
             </div>
           )}
         </>

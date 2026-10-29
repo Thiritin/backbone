@@ -22,7 +22,6 @@ import { dcOf, Facts, UsageBars } from "./ui";
 import { usageOf } from "../../../sim/60-infra/usage";
 import { NodeCard } from "./Clusters";
 import { softwareOn } from "../../../sim/90-actions/software";
-import { SoftwareGrid } from "../software/Software";
 import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
 import { PowerCard } from "./PowerCard";
 import { RemoteCard } from "./RemoteCard";
@@ -52,7 +51,7 @@ export function SellConfirm({ game, name, price, boughtAt, value = resaleValue(g
 
 // The device menu's state: the offline check, the sell sheet, and what the view does on select and rename.
 export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => void, onRename: (id: string) => void) {
-  const act = useStore((s) => s.act), setSetup = useStore((s) => s.setSetup);
+  const act = useStore((s) => s.act);
   const { guarded, dialog } = useOfflineGuard(game);
   const [selling, setSelling] = useState<Device | null>(null);
   const [lid, setLid] = useState<string | null>(null);
@@ -73,7 +72,6 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
       else guarded(`${label} on ${devName(d)}?`, label, atServer, d.id, op, "self");
     },
     plug: (psu) => togglePlug(guarded, d, psu),
-    setup: () => setSetup(d.id),
     maintain: () => mnt.plan({ kind: "device", id: d.id }),
     move: (to) => hand.start(game, { title: `Move ${devName(d)} to ${game.locations.find((l) => l.id === to)?.name}`, deviceId: d.id, at: to, action: moveServer, args: [d.id, to] }),
     rename: () => onRename(d.id),
@@ -111,7 +109,7 @@ const POWER = {
 } as const;
 
 // onHot reports the cable of the hovered or selected port, so the rack view can highlight it. rename opens the name field.
-type InspTab = "actions" | "ports" | "software" | "lease" | "psu" | "parts";
+type InspTab = "actions" | "ports" | "lease" | "psu" | "parts";
 
 export function Inspector({ game, device, side = "front", onSelect, onHot, rename = false, onRenaming, monitor = false, onUnplug }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void; rename?: boolean; onRenaming?: () => void; monitor?: boolean; onUnplug?: () => void }) {
   const act = useStore((s) => s.act);
@@ -149,7 +147,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
     </div>
   );
   const tabs = server ? ([
-    ["actions", "Actions"], ["ports", "Ports"], !!device.rackId && ["software", "Software"], !!device.lease && ["lease", "Lease"],
+    ["actions", "Actions"], ["ports", "Ports"], !!device.lease && ["lease", "Lease"],
     ["psu", "Power supplies"], ["parts", "Components"],
   ].filter(Boolean) as [InspTab, string][]) : [];
   const tab = tabs.some(([id]) => id === picked) ? picked : "actions";
@@ -240,12 +238,6 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         {sel.length === 1 && <PortCard game={game} device={device} model={model} port={sel[0]} peer={peers[sel[0]]} onSelect={onSelect} />}
       </>}
 
-      {show("software") && server && device.rackId && (
-        <div className="loc-card">
-          <div className="loc-card-h"><h3>Software</h3></div>
-          <SoftwareGrid game={game} machineId={device.id} />
-        </div>
-      )}
       {windowsOnDevice(game, device).length > 0 && (
         <div className="loc-card">
           <div className="loc-card-h"><h3><Wrench />Maintenance</h3></div>

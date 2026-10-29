@@ -23,7 +23,6 @@ export interface DeviceUi {
   op: (op: PowerOp) => void;
   front: (op: FrontOp) => void;
   plug: (psuId: string) => void;
-  setup: () => void;
   maintain?: () => void;
   move?: (locationId: string) => void;
   rename: () => void;
@@ -86,7 +85,6 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
     server && !!(d.rackId || d.store) && ui.lid && { label: "Change parts", run: ui.lid },
     ...(server ? [] : psuEntries(d, ui)),
     null,
-    server && !!d.rackId && { label: "Add Software…", run: ui.setup },
     server && !!d.rackId && ui.maintain && { label: "Plan maintenance…", run: ui.maintain },
     server && !!d.rackId && !cluster && { label: "Burn-in", disabled: !d.on || burning(game, d) || loads.length > 0, items: [
       { label: "Quick, 6 hours", run: () => act(startBurnin, d.id, false) },

@@ -37,4 +37,10 @@ export const REMOTE_EN: Record<string, (p: Params) => string> = {
   "error.notInSetup": () => "It is not in the BIOS setup.",
   "error.serverOff": () => "It has no power.",
   "error.raidInSetup": () => "Change the RAID level in the BIOS setup or with the server off.",
+  "term.console.installer": () => "Installer",
+  "ipmi.log.usbBoot": () => "Booted from USB",
+  "ipmi.log.installAborted": () => "Install aborted, disks empty",
+  "ipmi.log.erased": () => "Disks erased",
+  "error.notFromUsb": () => "Boot the server from the USB stick to install software.",
+  "error.confirmHostname": () => "Type the server's hostname to confirm.",
 };

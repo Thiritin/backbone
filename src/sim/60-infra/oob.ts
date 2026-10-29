@@ -92,7 +92,7 @@ export const firmwareHangs = (s: GameState, d: Device): boolean => isGear(d) && 
 export function consoleScreen(d: Device, state: string): { key: string; params: Record<string, string> } {
   const host = d.hostname ?? d.label ?? d.name;
   const key = !d.on || state === "nopower" ? "term.console.dark" : d.setup ? "term.console.setup" : d.stuck && state !== "booting" ? "term.console.stuck"
-    : state === "hung" ? "term.console.hung" : state === "booting" ? "term.console.booting" : "term.console.login";
+    : state === "hung" ? "term.console.hung" : state === "booting" ? "term.console.booting" : d.bootFrom === "usb" ? "term.console.installer" : "term.console.login";
   return { key, params: { host } };
 }
 

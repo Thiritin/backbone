@@ -1,12 +1,12 @@
 import { fillCpus, MODELS, modelById, RENAMED_MODELS } from "../10-catalog/hardware";
-import { dropCluster, leave } from "../90-actions/clusters";
+import { leave } from "../90-actions/clusters";
 import { yearOf } from "../00-core/time";
 import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, nextAz, seedDcs } from "../20-world/datacenters";
 import { fillAddresses } from "../60-infra/addresses";
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState, type Location } from "../50-state";
-import { workloadDefaults } from "../60-infra/cluster";
+import { dropCluster, workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
 import { fillHostnames } from "../30-customers/hostnames";

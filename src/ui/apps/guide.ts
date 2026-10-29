@@ -26,7 +26,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "internet":
       return { title: t("guide.step.internet"), text: "Order an internet line in Locations under Internet line.", app: "Locations", focus: { kind: "line", id: "home" } };
     case "setup":
-      return { title: t("guide.step.setup"), text: "Install a hypervisor or a web panel from the server's Add Software tile.", app: "Locations", focus: server && { kind: "device", id: server.id } };
+      return { title: t("guide.step.setup"), text: "Open the server's console, press F11 during POST, boot from USB and install a hypervisor or a web panel.", app: "Locations", focus: server && { kind: "device", id: server.id } };
     case "domain": {
       const partner = (s.registrar && registrarById(s.registrar.id)?.name) ?? REGISTRARS[0].name;
       return {

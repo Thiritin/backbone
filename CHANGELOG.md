@@ -14,6 +14,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Domains are now bought on registrar websites in the Browser, where a search suggests names across every ending with the price of each.
 - Your reseller contract, tier and domain list moved from the Network app to your registrar's website, and Network has a new icon.
 - A customer who accepts a quote when no server has room now goes elsewhere right away, instead of waiting and signing hours later.
+- Software now installs from the server's screen: press F11 during POST, boot from the USB stick and pick from the installer's catalog, which shows the array, what the disks hold and the install's progress. The Software tab and the Add Software entry are gone from servers.
+- Reinstalling over software with customers on it lists what dies and needs the server's hostname typed; the data is lost like on a dead array. The installer also erases a server to bare metal, and a reset or a pulled plug during an install leaves the disks empty.
 
 ## 2026-10-29
 

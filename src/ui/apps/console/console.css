@@ -39,6 +39,23 @@
 .winlogon { text-align: center; display: grid; gap: 14px; }
 .winlogon-b { font-size: 22px; font-weight: 300; }
 
+.scr[data-look="menu"] { color: #d0d0d0; }
+.bootmenu { display: grid; gap: 2px; padding: 6px 0; }
+.bootmenu-t { margin-bottom: 8px; }
+.inst-row { padding: 0 8px; }
+.inst-row.on { background: #c0c0c0; color: #000; }
+.inst-row.dim { color: #8a8a8a; }
+.scr[data-look="installer"] { background: #1b1b6b; color: #e0e0e0; padding: 0; }
+.inst { display: grid; grid-template-rows: auto 1fr auto auto; height: 100%; }
+.inst-h { background: #c0c0c0; color: #1b1b6b; font-weight: 700; padding: 0 10px; }
+.inst-box { margin: 12px 18px 0; padding: 8px 12px; background: #d6d6d6; color: #000; display: grid; align-content: start; gap: 2px; overflow: hidden; }
+.inst-box ul { margin: 0; padding-left: 20px; }
+.inst-t { font-weight: 700; margin-bottom: 6px; }
+.inst-bar { height: 12px; border: 1px solid #000; background: #fff; }
+.inst-bar span { display: block; height: 100%; background: #1b1b6b; }
+.inst-note { margin: 4px 18px; color: #ffb3b3; }
+.inst-f { display: flex; gap: 18px; padding: 0 10px; background: #c0c0c0; color: #1b1b6b; }
+
 .scr-keys { display: flex; flex-wrap: wrap; gap: 4px; }
 .scr-keys button { min-width: 38px; padding: 3px 8px; border: 0.5px solid var(--line); border-radius: 5px; background: var(--panel); color: var(--text); font: 11.5px var(--font-num); cursor: pointer; }
 .scr-keys button:hover { background: var(--hover); }

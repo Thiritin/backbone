@@ -1,5 +1,5 @@
 import { chance } from "../00-core/rng";
-import { dateOf, isMonthStart, yearOf } from "../00-core/time";
+import { dateOf, isMonthStart, nowHours, yearOf } from "../00-core/time";
 import { isService, softwareById, type Software } from "../10-catalog/platforms";
 import { BACKUP_HOUR } from "../10-catalog/usage";
 import { homeLineById } from "../20-world/datacenters";
@@ -8,6 +8,7 @@ import { bump, createTicket, slowed } from "../40-support/tickets";
 import type { Device, GameState, Location } from "../50-state";
 import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
+import { BOOT_HOURS } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
 import { installedCores, perCoreOf, raidUsable } from "../60-infra/status";
@@ -115,6 +116,8 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
     const { kind, to } = c.switching, fresh = !(kind === "cloud" ? c.platform : c.panel);
     s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to } : { panel: to }) } : x));
     events.push({ app: "Products", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
+    const d = fresh ? s.devices.find((x) => x.id === c.controlPlane) : undefined;
+    if (d?.bootFrom === "usb") Object.assign(d, { bootFrom: "disk", bootUntil: nowHours(s) + BOOT_HOURS });
     if (kind === "panel" && welcomeFriends(s, c.id)) events.push({ app: "Customers", key: "event.friendsJoined", params: { cluster: c.name } });
   }
 }

@@ -9,7 +9,7 @@ import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STE
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { arrayLost, connectError, drivesOf, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
-import { atFront, BMC_RESET_HOURS, bootUp, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
+import { atFront, BMC_RESET_HOURS, bootUp, hardReboot, leaveUsb, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
 import { handJob, present, trip as drive, type HandJob, type How } from "../60-infra/handwork";
@@ -577,6 +577,7 @@ export function shutdown(s: GameState, deviceId: string): ActionResult {
   if (!d.rackId && !d.panel) return fail("error.notMounted");
   if (!d.on) return fail("error.alreadyOff");
   if (!working(s, deviceId)) return fail("error.unresponsive");
+  leaveUsb(s, d);
   d.on = false;
   pushLog(d, s.hour, "ipmi.log.shutdown");
   return { ok: true };

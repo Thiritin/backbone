@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { modelById } from "../src/sim/10-catalog/hardware";
 import { device, type GameState } from "../src/sim/50-state";
+import { clusterOf, workloadsOn } from "../src/sim/60-infra/cluster";
 import { consoleScreen } from "../src/sim/60-infra/oob";
 import { hardReboot, powerTick } from "../src/sim/60-infra/power";
 import { BOOT_HOURS, booting, deviceHealth, working } from "../src/sim/60-infra/status";
-import { enterSetup, exitSetup } from "../src/sim/90-actions/console";
+import { tick } from "../src/sim/88-tick/tick";
+import { bootFromUsb, enterSetup, eraseDisk, exitSetup, installCase, installFromUsb } from "../src/sim/90-actions/console";
+import { softwareOn } from "../src/sim/90-actions/software";
 import { setPower, setRaid } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame } from "./fixtures";
@@ -86,5 +89,93 @@ describe("BIOS setup", () => {
     const old = JSON.parse(serialize(s)) as { devices: Record<string, unknown>[] };
     for (const x of old.devices) delete x.setup;
     expect(dev(deserialize(JSON.stringify(old)), "dev3").setup).toBe(false);
+  });
+});
+
+describe("USB installer", () => {
+  const host = (d: { hostname?: string; label: string | null; name: string }) => d.hostname ?? d.label ?? d.name;
+  const installed = (s: GameState, id: string) => { ok(bootFromUsb(s, id)); ok(installFromUsb(s, id, "vmwhere")); for (let h = 0; h < 6; h++) tick(s); };
+
+  it("installs from the stick and reboots the server off it when done", () => {
+    const s = readyGame(7), id = storage(s), d = dev(s, id);
+    expect(err(installFromUsb(s, id, "vmwhere"))).toBe("error.notFromUsb");
+    ok(bootFromUsb(s, id));
+    expect(consoleScreen(d, "ok").key).toBe("term.console.installer");
+    expect(installCase(s, id).kind).toBe("empty");
+    ok(installFromUsb(s, id, "vmwhere"));
+    expect(softwareOn(s, id)[0]).toMatchObject({ id: "vmwhere" });
+    expect(softwareOn(s, id)[0].doneAt).not.toBeNull();
+    for (let h = 0; h < 6; h++) tick(s);
+    expect(softwareOn(s, id)[0].doneAt).toBeNull();
+    expect(dev(s, id).bootFrom).toBe("disk");
+    expect(dev(s, id).bootUntil).toBe(5 + BOOT_HOURS);
+  });
+
+  it("boots for the full three minutes after a reset late in the hour", () => {
+    const s = readyGame(7), d = dev(s, "dev3");
+    minutes(s, 40);
+    hardReboot(s, d, "ipmi.log.reset");
+    expect(booting(s, d)).toBe(true);
+    minutes(s, 2);
+    expect(booting(s, d)).toBe(true);
+    minutes(s, 2);
+    expect(booting(s, d)).toBe(false);
+  });
+
+  it("aborts a first install on a reset or a pulled plug, leaving the disks empty", () => {
+    const s = readyGame(7), id = storage(s), d = dev(s, id);
+    ok(bootFromUsb(s, id));
+    ok(installFromUsb(s, id, "vmwhere"));
+    hardReboot(s, d, "ipmi.log.reset");
+    expect(clusterOf(s, id)).toBeUndefined();
+    expect(d.bootFrom).toBe("disk");
+    expect(d.log.at(-2)?.key).toBe("ipmi.log.installAborted");
+    expect(err(installFromUsb(s, id, "vmwhere"))).toBe("error.notFromUsb");
+  });
+
+  it("replaces software nobody uses, and puts it back when the new one is refused", () => {
+    const s = readyGame(7), id = storage(s);
+    installed(s, id);
+    expect(installCase(s, id).kind).toBe("idle");
+    ok(bootFromUsb(s, id));
+    expect(err(installFromUsb(s, id, "nope"))).toBe("error.unknownSoftware");
+    expect(softwareOn(s, id)[0]).toMatchObject({ id: "vmwhere", doneAt: null });
+    ok(installFromUsb(s, id, "freepanel"));
+    expect(softwareOn(s, id)[0]).toMatchObject({ id: "freepanel" });
+    expect(s.clusters.filter((c) => c.nodes.some((n) => n.deviceId === id))).toHaveLength(1);
+  });
+
+  it("needs the hostname typed to erase software with customers on it, and loses their data", () => {
+    const s = readyGame(7), d = dev(s, "dev3"), before = s.workloads.length;
+    expect(installCase(s, "dev3").kind).toBe("busy");
+    ok(bootFromUsb(s, "dev3"));
+    expect(working(s, "dev3")).toBe(true);
+    expect(err(installFromUsb(s, "dev3", "vmwhere"))).toBe("error.confirmHostname");
+    expect(err(installFromUsb(s, "dev3", "vmwhere", "wrong"))).toBe("error.confirmHostname");
+    expect(s.workloads).toHaveLength(before);
+    ok(installFromUsb(s, "dev3", "vmwhere", host(d)));
+    expect(workloadsOn(s, "dev3")).toHaveLength(0);
+    expect(s.lossReports).toHaveLength(1);
+    expect(s.lossReports[0].items.length).toBeGreaterThan(0);
+    expect(s.services.filter((v) => v.endedAt === null)).toHaveLength(0);
+    expect(s.tickets.some((t) => t.kind === "refund")).toBe(true);
+    expect(s.clusters).toHaveLength(1);
+    expect(softwareOn(s, "dev3")[0]).toMatchObject({ id: "vmwhere" });
+    expect(softwareOn(s, "dev3")[0].doneAt).not.toBeNull();
+  });
+
+  it("erases to bare metal under the same confirmation", () => {
+    const s = readyGame(7), d = dev(s, "dev3");
+    ok(bootFromUsb(s, "dev3"));
+    expect(err(eraseDisk(s, "dev3"))).toBe("error.confirmHostname");
+    ok(eraseDisk(s, "dev3", host(d)));
+    expect(clusterOf(s, "dev3")).toBeUndefined();
+    expect(s.workloads).toHaveLength(0);
+    expect(err(eraseDisk(s, "dev3"))).toBe("error.noSoftware");
+    expect(d.bootFrom).toBe("usb");
+    expect(dev(deserialize(serialize(s)), "dev3").bootFrom).toBe("usb");
+    const old = JSON.parse(serialize(s)) as { devices: Record<string, unknown>[] };
+    for (const x of old.devices) delete x.bootFrom;
+    expect(dev(deserialize(JSON.stringify(old)), "dev3").bootFrom).toBe("disk");
   });
 });
