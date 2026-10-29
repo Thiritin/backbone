@@ -41,7 +41,7 @@ const BOXES: { id: TicketBox; label: string; icon: typeof Inbox; match: (t: Tick
 const ACTION_LABEL: Record<TicketAction, string> = {
   credit: "Credit 10%", retain: "Retention offer", cancel: "Process cancellation", unsuspend: `Unsuspend with ${EXTENSION_DAYS}-day extension`, keep: "Keep suspended",
   forward: "Forward to customer", takedown: `Take down for ${TAKEDOWN_HOURS} h`, reject: "Reject", comply: "Comply", object: "Object", refund: "Refund one month", revert: "Revert price",
-  pay: "Pay ransom", refuse: "Refuse", accept: "Accept order", offerOnce: "Offer one-off update", offerManaged: "Offer managed updates", free: "Update for free", clean: "Clean up site",
+  pay: "Pay ransom", refuse: "Refuse", accept: "Accept order", offerOnce: "Offer one-off update", offerManaged: "Offer managed updates", free: "Update for free", clean: "Clean up site", noBackup: "No backup",
 };
 const actionLabel = (tk: Ticket, a: TicketAction) => (tk.kind === "refund" && a === "reject" ? "Refuse" : ACTION_LABEL[a]);
 

@@ -35,11 +35,13 @@ Salaries are paid every month whether the person is busy or not. A good hire pay
 
 ### Now available
 
+- **Reviews** in Marketing shows what customers write about you, and new reviews now send you a notification.
+- **Community** in Marketing lets you sponsor events, and event organisers now write to you with sponsoring requests.
 - **Marketing campaigns** can now be trained in Research once you know how to manage employees.
 
 ### Who your customers are
 
-Your company now understands why a customer picks one host over another: price, reliability and whether anyone answers the phone. This knowledge has no app of its own.
+Your company now understands why a customer picks one host over another: price, reliability and whether anyone answers the phone. The **Marketing** app now shows two more sections: **Reviews** collects what customers write about you, and **Community** sponsors events.
 
 ### What it leads to
 
@@ -155,16 +157,15 @@ A card draws as much power as a small server, so check the rack before you add o
 ### Now available
 
 - **Channels**, **Campaigns** and **Awareness** in Marketing bring customers in on purpose.
-- **Reviews** in Marketing shows what customers write about you, and new reviews now send you a notification.
-- **Trade fairs** and **Community** in Marketing let you book stands and sponsor events.
+- **Trade fairs** in Marketing lets you book stands.
 
 ### Being found on purpose
 
-Your staff now knows how to run campaigns and how to keep an eye on what customers write about you. Word of mouth still works, but it no longer has to work alone.
+Your staff now knows how to run campaigns, track awareness and book trade fairs. Word of mouth still works, but it no longer has to work alone.
 
 ### The Marketing app
 
-The **Marketing** app you bought your domain in now has six more sections. **Channels** sets up web design, an order form and search ads. **Campaigns** runs ads with a budget and a target. **Awareness** shows how well known you are, **Reviews** collects what customers write about you, **Trade fairs** books stands, and **Community** sponsors events.
+The **Marketing** app you bought your domain in now has four more sections. **Channels** sets up web design, an order form and search ads. **Campaigns** runs ads with a budget and a target. **Awareness** shows how well known you are, and **Trade fairs** books stands.
 
 A campaign brings in requests, and the reviews decide how many of them become customers. Answering tickets quickly is still the cheapest advertising you will ever buy.
 

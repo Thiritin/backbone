@@ -30,7 +30,7 @@ const RIGHT_ANSWER = 5, WRONG_ANSWER = -10, HISTORY_MONTHS = 12;
 
 function resolve(s: GameState, t: Ticket, c: Customer, outcome: Ticket["outcome"] = null): void {
   Object.assign(t, { status: "resolved", updatedAt: s.hour, outcome });
-  if (outcome !== "cancelled" && outcome !== "offerRefused") bump(c, RIGHT_ANSWER);
+  if (outcome !== "cancelled" && outcome !== "offerRefused" && outcome !== "noBackup") bump(c, RIGHT_ANSWER);
 }
 
 // Player work queued by the support actions takes effect once its time has passed.

@@ -30,4 +30,11 @@ export const REMOTE_EN: Record<string, (p: Params) => string> = {
   "term.console.hung": () => "watchdog: BUG: soft lockup - CPU#0 stuck for 23s!",
   "term.console.booting": () => "Booting...",
   "term.console.login": (p) => `${p.host} login:`,
+  "term.console.setup": () => "BIOS SETUP UTILITY",
+  "ipmi.log.setup": () => "Entered BIOS setup",
+  "ipmi.log.setupLeft": () => "Left BIOS setup",
+  "error.notAtPost": () => "It is past the firmware prompt; reset it and press the key during POST.",
+  "error.notInSetup": () => "It is not in the BIOS setup.",
+  "error.serverOff": () => "It has no power.",
+  "error.raidInSetup": () => "Change the RAID level in the BIOS setup or with the server off.",
 };

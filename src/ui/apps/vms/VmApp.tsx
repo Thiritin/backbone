@@ -12,7 +12,8 @@ import type { MenuEntry } from "../../desktop/ContextMenu";
 import { menuOn } from "../../desktop/ContextMenu";
 import { useFocus, useStore } from "../../store";
 import { More } from "../More";
-import { migrateEntries, offerEntries } from "./migrate";
+import { migrateEntries, offerEntries, rescueEntries } from "./migrate";
+import { useHandWork, type HandTask } from "../locations/HandSheet";
 import "../billing/billing.css";
 import { CustomerLink } from "../customers/CustomersApp";
 import { day, devName, disk, ram } from "../hw";
@@ -28,8 +29,8 @@ const FILTERS: [StateFilter, string][] = [["all", "All"], ["running", "Running"]
 const matches = (f: StateFilter, st: VmState) => f === "all" || (f === "lost" ? st === "lost" : f === "stopped" ? st === "stopped" : st === "running");
 const num = (n: number) => `${+n.toFixed(2)}`;
 
-// Start, stop, restore and migrate for a VM or web space, shared by every list that shows one.
-export function workloadActions(game: GameState, w: Workload): MenuEntry[] {
+// Start, stop, restore and migrate for a VM or web space, shared by every list that shows one; with start, also recovery by hand.
+export function workloadActions(game: GameState, w: Workload, start?: (game: GameState, t: HandTask) => void): MenuEntry[] {
   const act = useStore.getState().act;
   const st = vmState(game, w);
   const on = st === "running" || st === "down" || st === "frozen";
@@ -40,6 +41,7 @@ export function workloadActions(game: GameState, w: Workload): MenuEntry[] {
     st === "lost" && { label: w.backupAt === null ? "Start empty" : "Restore", run: () => act(restoreWorkload, w.id) },
     st === "stopped" && { label: "Start", run: () => act(startWorkload, w.id) },
     on && { label: "Stop", run: () => act(stopWorkload, w.id) },
+    ...(start ? rescueEntries(game, w, start) : []),
     ...(web && (on || st === "stopped" || st === "migrating") ? migrateEntries(game, w) : []),
     targets.length > 0 && {
       label: "Migrate to",
@@ -52,10 +54,10 @@ export function workloadActions(game: GameState, w: Workload): MenuEntry[] {
   ];
 }
 
-function vmMenu(game: GameState, w: Workload): MenuEntry[] {
+function vmMenu(game: GameState, w: Workload, start: (game: GameState, t: HandTask) => void): MenuEntry[] {
   const v = game.services.find((x) => x.id === w.serviceId), { act, openApp } = useStore.getState();
   return [
-    ...workloadActions(game, w), null,
+    ...workloadActions(game, w, start), null,
     v && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: v.customerId }) },
     !v && !hostOfVm(game, w.id) && { label: "Delete", run: () => act(deleteVm, w.id) },
   ];
@@ -69,6 +71,7 @@ export function VmApp() {
   const [filter, setFilter] = useSessionState<StateFilter>("vms.tab", "all");
   const [selected, setSelected] = useSessionState<string | null>("vms.sel", null);
   const [creating, setCreating] = useState(false);
+  const hand = useHandWork();
   useFocus("Virtual machines", (f) => { if (f.kind === "workload") { setCluster(null); setNode(null); setFilter("all"); setIncidents(false); setSelected(f.id); } });
   const cluster = game.clusters.find((c) => c.id === clusterId);
   const clouds = game.clusters.filter((c) => c.kind === "cloud");
@@ -129,7 +132,7 @@ export function VmApp() {
                     const d = game.devices.find((x) => x.id === w.deviceId), [label, tone] = VM_STATE[vmState(game, w)];
                     return (
                       <tr key={w.id} className={w.id === selected ? "sel" : ""} onClick={() => { setSelected(w.id); setCreating(false); }} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setSelected(w.id)}
-                        onContextMenu={menuOn(() => vmMenu(game, w))}>
+                        onContextMenu={menuOn(() => vmMenu(game, w, hand.start))}>
                         <td>{v ? v.label : own.name}{w.hostname && <div className="cus-sub num">{fqdn(game, w.hostname)}</div>}</td>
                         <td>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</td>
                         <td>{v ? PRODUCT[v.product] : own.service}</td>
@@ -146,7 +149,8 @@ export function VmApp() {
         </div>
       )}
       {!incidents && creating && <NewVm game={game} clusterId={clusterId ?? clouds[0]?.id} onDone={(id) => { setCreating(false); setSelected(id); }} />}
-      {!incidents && !creating && vm && <VmDetail game={game} w={vm} />}
+      {!incidents && !creating && vm && <VmDetail game={game} w={vm} start={hand.start} />}
+      {hand.dialog}
     </div>
   );
 }
@@ -157,7 +161,7 @@ const hostName = (game: GameState, w: Workload): string => {
   return vm ? vmLabel(game, vm).name : "";
 };
 
-function VmDetail({ game, w }: { game: GameState; w: Workload }) {
+function VmDetail({ game, w, start }: { game: GameState; w: Workload; start: (game: GameState, t: HandTask) => void }) {
   const act = useStore((s) => s.act);
   const v = game.services.find((x) => x.id === w.serviceId), c = game.customers.find((x) => x.id === v?.customerId);
   const cluster = game.clusters.find((x) => x.id === w.clusterId)!;
@@ -167,7 +171,7 @@ function VmDetail({ game, w }: { game: GameState; w: Workload }) {
   const load = Array.from({ length: 24 }, (_, i) => workloadLoad(game, { ...w, stopped: false, busyUntil: 0 }, from + i));
   return (
     <aside className="fin-detail vm-detail">
-      <div className="fin-detail-h"><h2>{v ? v.label : own.name}</h2><span className={`pill ${tone}`}>{label}</span><More label={v ? v.label : own.name} entries={() => vmMenu(game, w)} /></div>
+      <div className="fin-detail-h"><h2>{v ? v.label : own.name}</h2><span className={`pill ${tone}`}>{label}</span><More label={v ? v.label : own.name} entries={() => vmMenu(game, w, start)} /></div>
       <dl className="fin-facts">
         {w.hostname && <div className="span"><dt>Hostname</dt><dd className="num">{fqdn(game, w.hostname)}</dd></div>}
         <div><dt>Customer</dt><dd>{c ? <CustomerLink id={c.id} name={c.name} /> : "Own"}</dd></div>

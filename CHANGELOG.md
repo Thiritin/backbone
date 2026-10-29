@@ -12,7 +12,14 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Customers send most of their how-to questions in their first months while they set up, and long-standing customers only write in now and then.
 - The dock shows a count of open tickets, unpaid invoices and failed parts from the start, and the Dock badges upgrade is gone from the Pear Store.
 - New reviews only send you a notification once Marketing campaigns unlocks the Reviews section where you can read them.
+- Marketing basics now opens the Reviews and Community sections in Marketing, and new reviews only send you a notification once you can read them there.
+- Event organisers only ask you for sponsoring once you have learned Marketing basics.
+- A VM or game server stuck on a switched-off server whose cluster's control plane is down can be recovered to a server of another cluster in the same location by remote hands, by you or by a friend.
+- Restoring a defaced customer site now needs a backup of it, and without one you can only tell the customer to rebuild it from their own copy, which costs happiness.
 - The sheet that opens after a training starts with a Now available page that checks off everything the skill unlocks and what you can do with it.
+- The Used tab has listings from the first day: servers and network gear sold since before 2005 turn up on eBuy, WebHostingTalc and Telegrump right away, one to three years old.
+- Every server has a screen now: a Console tile on managed servers and the controller's page open it in its own window, a KVM opens it from its page, and clicking the blue console end on the back of a server in the rack plugs in a monitor on the spot.
+- The RAID level moves from the server page into the BIOS setup on that screen, entered with Del during the boot splash or at the firmware prompt, and a server left in the setup stays down until you leave it.
 - The Backbone menu has Report an issue, which opens a new GitHub issue with your game build filled in.
 - The Marketing app opens on Channels once you learn Marketing campaigns, its Domain page has proper margins, and the skill sheet lists the six sections the skill adds.
 - The Backbone menu links to the new Discord server, where you can chat, share screenshots, request features and report bugs.

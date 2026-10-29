@@ -27,6 +27,7 @@ describe("upgrade requests", () => {
 describe("sponsoring requests", () => {
   it("ask only for lines the company sells on its website", () => {
     const s = readyGame(9);
+    s.unlocks = [...s.unlocks, "marketingBasics"];
     s.marketing = { ...s.marketing, lines: ["webHosting"] };
     while (s.hour < 365 * 24) tick(s);
     expect(s.sponsorships.length).toBeGreaterThan(2);
@@ -35,6 +36,7 @@ describe("sponsoring requests", () => {
 
   it("stay away while no line is on the website", () => {
     const s = readyGame(9);
+    s.unlocks = [...s.unlocks, "marketingBasics"];
     s.marketing = { ...s.marketing, lines: [] };
     while (s.hour < 120 * 24) tick(s);
     expect(s.sponsorships).toEqual([]);

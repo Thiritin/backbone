@@ -75,5 +75,6 @@ export const APPS: AppDef[] = [
 
 export const appByName = (name: string): AppDef => APPS.find((a) => a.name === name) ?? APPS[0];
 
+
 // The app as the player sees it: Support is Email, or the installed desk, with its own name, mark and tile.
 export const appFor = (s: GameState, name: string): AppDef => (name === "Support" ? { ...appByName(name), ...supportApp(s) } : appByName(name));

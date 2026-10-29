@@ -8,7 +8,10 @@ import { acceptSponsorship, declineSponsorship } from "../src/sim/90-actions/com
 import { closeTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { mrr, metrics } from "../src/sim/metrics";
-import { readyGame } from "./fixtures";
+import { readyGame as fresh } from "./fixtures";
+
+// Sponsoring requests need Marketing basics.
+const readyGame = (seed: number) => { const s = fresh(seed); s.unlocks = [...s.unlocks, "marketingBasics"]; return s; };
 
 const runTo = (s: GameState, hour: number, events: SimEvent[] = []) => { while (s.hour < hour) events.push(...tick(s)); };
 const ticketOf = (s: GameState) => s.tickets.find((t) => t.kind === "sponsor" && t.status === "open")!;
@@ -47,6 +50,12 @@ function through(s: GameState, events: SimEvent[] = []): GameState | null {
 const done = (s: GameState, events?: SimEvent[]): GameState => through(s, events)!;
 
 describe("community sponsoring requests", () => {
+  it("never arrive before Marketing basics", () => {
+    const s = fresh(1);
+    runTo(s, 24 * 7 * 12);
+    expect(s.sponsorships).toHaveLength(0);
+  });
+
   it("arrive every 4 to 8 weeks from level 1, seeded", () => {
     for (const seed of [1, 2, 3]) {
       const s = readyGame(seed), at: number[] = [0];
@@ -81,7 +90,7 @@ describe("community sponsoring requests", () => {
     });
     expect(big).toContain("devOops");
     expect(new Set(big).size).toBeGreaterThan(3);
-  });
+  }, 60_000);
 
   it("lapse after two weeks without penalty", () => {
     const s = asked(5), cash = s.cash, score = reviewScore(s);

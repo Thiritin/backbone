@@ -13,11 +13,13 @@ export const APPS_EN: Record<string, (p: Params) => string> = {
   "event.offerDeclined.title": () => "Offer declined",
   "event.offerDeclined.text": (p) => `${p.name} turned down the offer.`,
   "outcome.cleaned": () => "Site cleaned up",
+  "outcome.noBackup": () => "No backup, customer rebuilds the site",
   "outcome.updated": () => "Software updated",
   "outcome.updateSold": () => "Update sold",
   "outcome.managedSold": () => "Managed updates sold",
   "ledger.appUpdate": (p) => `Update of ${p.site}`,
   "error.notDefaced": () => "This site is not defaced.",
+  "error.noBackup": () => "This site has no backup to restore.",
   "error.unknownVulnerability": () => "This vulnerability is not known.",
   "error.nobodyToNotify": () => "No customers to notify.",
 };

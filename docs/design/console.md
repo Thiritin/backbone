@@ -91,6 +91,8 @@ Window controls sit in the title bar as a group on the right, before close, in t
 
 ## Phases
 
+Phase 1 is built. The console window, the KVM and monitor paths, POST, the stuck prompt's Del, the BIOS with its Storage page and the status line are in; the Software tab and Add Software sheet stay until phase 2. The game ticks by the minute since, and a boot takes three game minutes, so the POST splash lasts the boot instead of a real-time window and the key counts for the whole boot; pausing is the sure way in. Leaving the setup reboots the server, so the splash shows again.
+
 1. Console window and monitor with the screen state machine, POST, the stuck prompt's DEL, BIOS with Storage, the status line, the RAID tab removed. A server becomes installable and configurable without the Software tab existing, with the installer still reached from the Add Software sheet underneath.
 2. Boot menu, USB boot, the installer with its three target cases, abort on reset, Erase disk, the Software tab and Add Software sheet removed, the guide steps, the changelog bullets.
 3. VMs: the hypervisor's console page gets a Console button per VM that opens the same window with Media in the title bar, where the player loads the catalog ISO; a VM has no BIOS and no RAID, so it boots straight to the ISO or to "Operating system not found". The VMs app loses its Software grid.
