@@ -142,7 +142,7 @@ function Card({ model, brand, cls, part }: Item) {
       ["Storage", custom ? (drives.length ? `${disk(drives.reduce((n, p) => n + (p.size ?? 0), 0))} in ${drives.length} ${drives.length === 1 ? "drive" : "drives"}` : "None") : `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),
     ...(model.kind === "gateway" && model.price > 0 ? [["Routing", model.fullTable ? "Full table" : "Default route"], ...(model.fullTable ? [["BGP sessions", `${model.bgpSessions}`]] : [])] as [string, string][] : []),
     ...(model.batteryWh ? [["Battery", `${model.batteryWh} Wh`]] as [string, string][] : model.outlets ? [["Outlets", `${model.outlets}`]] as [string, string][] : [[model.kind === "patch" ? "Jacks" : model.kind === "server" ? "NICs" : "Ports", portsText(model)]] as [string, string][]),
-    ...(model.watts ? [["PSUs", `${model.psus}`], ["Power", `${model.watts + cardWatts(cards.map((p) => ({ ...p, failedAt: null })))} W`]] as [string, string][] : []),
+    ...(model.watts ? [...(model.kind === "pdu" ? [] : [["PSUs", `${model.psus}`]]), ["Power", `${model.watts + cardWatts(cards.map((p) => ({ ...p, failedAt: null })))} W`]] as [string, string][] : []),
   ];
   const reset = () => { setQty(1); setCounts({}); setBare(false); setOpen(false); };
   return (
