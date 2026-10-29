@@ -121,7 +121,7 @@ describe("RAID", () => {
     expect(err(setRaid(s, "dev3", "1"))).toBe("error.raidLevel");
     expect(err(setRaid(s, "dev4", "none"))).toBe("error.notServer");
     const id = server(s, "g1-storage");
-    expect(err(setRaid(s, id, "5"))).toBe("error.powerOffFirst");
+    expect(err(setRaid(s, id, "5"))).toBe("error.raidInSetup");
     ok(setRebuildRate(s, id, "high"));
     expect(err(setRebuildRate(s, id, "warp" as never))).toBe("error.unknownRate");
   });

@@ -5,6 +5,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-29
 
 - The Used tab has listings from the first day: servers and network gear sold since before 2005 turn up on eBuy, WebHostingTalc and Telegrump right away, one to three years old.
+- Every server has a screen now: a Console tile on managed servers and the controller's page open it in its own window, a KVM opens it from its page, and clicking the blue console end on the back of a server in the rack plugs in a monitor on the spot.
+- The RAID level moves from the server page into the BIOS setup on that screen, entered with Del during the boot splash or at the firmware prompt, and a server left in the setup stays down until you leave it.
+- Your Email or Support icon in the dock now shows how many tickets and requests are waiting from the start, and the Dock badges upgrade adds counts to the other apps.
+- The Marketing app opens on Channels once you learn Marketing campaigns, its Domain page has proper margins, and the skill sheet lists the six sections the skill adds.
+- The Backbone menu links to the new Discord server, where you can chat, share screenshots, request features and report bugs.
+- The browser tab shows the new Backbone logo.
 - A customer whose services all kept their SLA uptime through a month gains a little happiness at the billing date, so steady service slowly builds loyalty.
 - Replies, order steps and other hand work now land at the minute they are done instead of at the next full hour, a server boots in three minutes and a new domain shows as registering for two.
 - A custom order now sends the customer three emails, the quote, the confirmation and the notice that everything is live, instead of one per step.

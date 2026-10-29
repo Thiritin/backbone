@@ -122,7 +122,7 @@ Your staff now knows how to run campaigns and how to keep an eye on what custome
 
 ### The Marketing app
 
-**Marketing** is now in the Pear Store. It runs campaigns with a budget and a target, collects the reviews customers leave and shows how you score on the review platforms.
+The **Marketing** app you bought your domain in now has six more sections. **Channels** sets up web design, an order form and search ads. **Campaigns** runs ads with a budget and a target. **Awareness** shows how well known you are, **Reviews** collects what customers write about you, **Trade fairs** books stands, and **Community** sponsors events.
 
 A campaign brings in requests, and the reviews decide how many of them become customers. Answering tickets quickly is still the cheapest advertising you will ever buy.
 
