@@ -2,6 +2,8 @@
 // parsed list; the update sheet shows the bullets a newer build has that this one does not.
 export interface ChangelogDay { date: string; items: string[] }
 
+export const changeKeys = (days: ChangelogDay[]): string[] => days.flatMap((d) => d.items.map((i) => `${d.date}|${i}`));
+
 export function parseChangelog(text: string): ChangelogDay[] {
   const days: ChangelogDay[] = [];
   for (const raw of text.split("\n")) {
@@ -13,8 +15,11 @@ export function parseChangelog(text: string): ChangelogDay[] {
   return days;
 }
 
-// The bullets in the served changelog that the running build does not know, newest first, grouped by day.
-export function newEntries(running: ChangelogDay[], served: ChangelogDay[]): ChangelogDay[] {
-  const known = new Set(running.flatMap((d) => d.items.map((i) => `${d.date}|${i}`)));
+// The bullets in the served changelog that the key list does not hold, newest first, grouped by day.
+export function unseenChanges(seen: string[], served: ChangelogDay[]): ChangelogDay[] {
+  const known = new Set(seen);
   return served.map((d) => ({ date: d.date, items: d.items.filter((i) => !known.has(`${d.date}|${i}`)) })).filter((d) => d.items.length > 0);
 }
+
+// The bullets in the served changelog that the running build does not know.
+export const newEntries = (running: ChangelogDay[], served: ChangelogDay[]): ChangelogDay[] => unseenChanges(changeKeys(running), served);

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { newEntries, parseChangelog } from "../src/ui/changelog";
+import { changeKeys, newEntries, parseChangelog, unseenChanges } from "../src/ui/changelog";
+import { EMBEDDED, newCompany } from "../src/ui/embedded";
+import { markChangesSeen } from "../src/sim/90-actions/changes";
+import { deserialize, serialize } from "../src/sim/91-save/save";
+import { appInSentence } from "../src/ui/apps/registry";
 import { shouldOffer, SNOOZE_MS } from "../src/ui/update";
 
 describe("update offer", () => {
@@ -39,5 +43,42 @@ describe("changelog", () => {
         expect(i).not.toMatch(/\.(ts|tsx|md|css)\b/);
       }
     }
+  });
+});
+
+describe("what is new since the last play", () => {
+  const oldSave = () => {
+    const { seenChanges: _, ...rest } = newCompany(7);
+    return deserialize(JSON.stringify(rest));
+  };
+
+  it("shows a new game nothing", () => {
+    const g = newCompany(7);
+    expect(EMBEDDED.length).toBeGreaterThan(0);
+    expect(unseenChanges(g.seenChanges, EMBEDDED)).toEqual([]);
+    expect(unseenChanges(deserialize(serialize(g)).seenChanges, EMBEDDED)).toEqual([]);
+  });
+
+  it("shows an old save every entry, newest day first", () => {
+    const g = oldSave();
+    expect(g.seenChanges).toEqual([]);
+    expect(unseenChanges(g.seenChanges, EMBEDDED)).toEqual(EMBEDDED);
+  });
+
+  it("leaves nothing after closing and shows only later entries next time", () => {
+    const g = oldSave();
+    markChangesSeen(g, changeKeys(EMBEDDED));
+    expect(unseenChanges(g.seenChanges, EMBEDDED)).toEqual([]);
+    const later = [{ date: "2099-01-01", items: ["A later change."] }, ...EMBEDDED];
+    expect(unseenChanges(deserialize(serialize(g)).seenChanges, later)).toEqual([later[0]]);
+  });
+
+  it("offers Open for the app a sentence names", () => {
+    const g = newCompany(7);
+    expect(appInSentence(g, "Offers an Email reply for every ticket.")).toBe("Support");
+    expect(appInSentence(g, "The Shop has a Used tab.")).toBe("Shop");
+    expect(appInSentence(g, "The Shop sells hardware that Email mentions later.")).toBe("Shop");
+    expect(appInSentence(g, "Marketing campaigns run longer.")).toBeNull();
+    expect(appInSentence(g, "Servers show power actions.")).toBeNull();
   });
 });

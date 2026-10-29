@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-29
 
 - Weekly challenge seeds start from the title screen, a run can be exported and replayed, and a leaderboard shows verified runs.
+- Loading a save shows a Pear OS update sheet with what changed since you last played, with an Open button for each app it names, and the logo menu has a What's new item that lists the whole changelog.
 - Workloads move between locations over a zone link or, from the basement, over the internet, and you can offer customers a migration they accept with a maintenance window.
 - The traffic chart in the Network app has space above the cards below it.
 - Free apps from the Pear Store install even while your cash is below zero.

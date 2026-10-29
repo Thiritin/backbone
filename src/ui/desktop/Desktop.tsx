@@ -14,6 +14,7 @@ import { wallpaperSvg } from "./wallpaper";
 import { Widgets } from "./Widgets";
 import { AlertSheet } from "./AlertSheet";
 import { Welcome } from "./Welcome";
+import { WhatsNew } from "./WhatsNew";
 import { SoftwarePicker } from "../apps/software/Software";
 import { ContextMenuHost } from "./ContextMenu";
 import { Searchlight } from "../search/Searchlight";
@@ -47,7 +48,7 @@ export function Desktop() {
 }
 
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
-  const { windows, speed, setSpeed, advance, save, notify, clearUnseen, welcome, explain, setExplain, alert } = useStore();
+  const { windows, speed, setSpeed, advance, save, notify, clearUnseen, welcome, news, explain, setExplain, alert } = useStore();
   const gameOver = useStore((s) => s.game.gameOver);
   const setup = useStore((s) => s.setup);
   const [update, setUpdate] = useState<ChangelogDay[] | null>(null);
@@ -108,6 +109,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
       <Dock />
       {welcome && <Welcome />}
+      {news && !welcome && <WhatsNew changes={news} />}
       {setup && !welcome && <SoftwarePicker key={setup} machineId={setup} />}
       {alert && <AlertSheet alert={alert} />}
       {gameOver !== null && <GameOver hour={gameOver} />}

@@ -1,8 +1,8 @@
 // Offers a reload when the deployed build changes: the page polls version.json (written by the build) and compares its id.
 import { newEntries, type ChangelogDay } from "./changelog";
+import { EMBEDDED } from "./embedded";
 
 declare const __BUILD_ID__: string;
-declare const __CHANGELOG__: ChangelogDay[];
 
 export const POLL_MS = 5 * 60 * 1000;
 export const SNOOZE_MS = 60 * 60 * 1000;
@@ -29,7 +29,7 @@ export function watchUpdates(onUpdate: (changes: ChangelogDay[]) => void, dismis
   if (import.meta.env.DEV) return () => {};
   const check = async () => {
     const served = await servedVersion();
-    if (shouldOffer(__BUILD_ID__, served?.build ?? null, dismissedAt(), Date.now())) onUpdate(newEntries(__CHANGELOG__, served!.changelog));
+    if (shouldOffer(__BUILD_ID__, served?.build ?? null, dismissedAt(), Date.now())) onUpdate(newEntries(EMBEDDED, served!.changelog));
   };
   const timer = window.setInterval(check, POLL_MS);
   const focus = () => void check();
