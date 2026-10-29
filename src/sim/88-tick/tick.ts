@@ -11,6 +11,7 @@ import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
 import { fairsTick } from "../80-business/fairs";
 import { marketingTick } from "../80-business/marketing";
+import { newsTick } from "../80-business/news";
 import { salesTick } from "../30-market/sales";
 import { ordersTick } from "../30-market/manual";
 import { domainsTick } from "../30-customers/registry";
@@ -252,6 +253,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...techTick(state));
   events.push(...fairsTick(state));
   events.push(...marketingTick(state));
+  events.push(...newsTick(state));
   events.push(...salesTick(state));
   return events;
 }

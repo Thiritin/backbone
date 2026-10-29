@@ -151,6 +151,8 @@ export interface GameState {
   chadUsage: ChadUsage;
   // Public addresses, the LIR membership and its blocks (60-infra/addresses.ts).
   ips: Ips;
+  // News already published, as "<id>@<hour>" (80-business/news.ts).
+  news: string[];
 }
 
 // Fields every new device starts with: fresh components installed at hour `at`, powered on, RAID 1 with two or more drives.
@@ -202,6 +204,7 @@ export const newGame = (seed: number): GameState => ({
   domains: [],
   chadUsage: newChadUsage(),
   ips: newIps(),
+  news: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
