@@ -10,6 +10,7 @@ import { missingFor, requestName, requirementsFor, type SalesRequest } from "../
 import { orderOf } from "../../../sim/30-market/orders";
 import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
+import { acceptSponsorship, declineSponsorship } from "../../../sim/90-actions/community";
 import { assignTicket, closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
@@ -53,7 +54,7 @@ function ticketMenu(game: GameState, tk: Ticket): MenuEntry[] {
   return [
     tk.unread && { label: "Mark as read", run: () => act(readTicket, tk.id) },
     canEscalate(tk.kind) && tk.status === "open" && { label: "Escalate", disabled: locked, run: () => act(escalateTicket, tk.id) },
-    !isFinal(tk) && { label: tk.kind === "order" ? "Decline" : tk.notice ? "Ignore" : "Close", disabled: locked, run: () => act(closeTicket, tk.id) },
+    !isFinal(tk) && { label: tk.kind === "order" || tk.kind === "sponsor" ? "Decline" : tk.notice ? "Ignore" : "Close", disabled: locked, run: () => act(closeTicket, tk.id) },
     null,
     customer && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: customer.id }) },
     request && { label: "Open request", run: () => openApp("Support", { kind: "request", id: request.id }) },
@@ -220,7 +221,7 @@ function TicketRow({ tk, active, timers, onOpen }: { tk: Ticket; active: boolean
   const K = kindOf(tk.kind);
   return (
     <button role="listitem" className={`tk${active ? " active" : ""}${tk.unread ? " unread" : ""}`} onClick={() => onOpen(tk)} onContextMenu={menuOn(() => ticketMenu(game, tk))}>
-      <span className="who">{tk.unread && <i className="dot" aria-label="Unread" />}{tk.notice ? <Sender id={tk.notice.sender} /> : <span>{order ? requestName(order) : c?.name}</span>}</span>
+      <span className="who">{tk.unread && <i className="dot" aria-label="Unread" />}{tk.notice ? <Sender id={tk.notice.sender} /> : <span>{order ? requestName(order) : tk.kind === "sponsor" ? subjectParams(game, tk).event : c?.name}</span>}</span>
       {timers ? <Sla tk={tk} hour={game.hour} /> : <span className="sla num">{stamp(tk.status === "open" ? tk.createdAt : tk.updatedAt)}</span>}
       <span className="subj">{order ? need(order) : subjectOf(game, tk)}</span>
       <span className="meta"><span className="type" style={{ "--k": KINDS.findIndex((x) => x.id === tk.kind) } as CSSProperties}><K.icon />{K.label}</span>{tk.work && <span className="pill accent">Queued</span>}</span>
@@ -380,7 +381,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
 
       <div className="thread">
         <div className={sent ? "msg you" : "msg"}>
-          <div className="from">{sender ? sender.name : sent ? "You" : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
+          <div className="from">{sender ? sender.name : sent ? "You" : tk.kind === "sponsor" ? p.event : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
         </div>
         {tk.replies.map((r, i) => (
@@ -439,7 +440,9 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
               </button>
             ))}
             <span className="grow" />
-            {!stray && <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? "Ignore" : "Close"}</button>}
+            {tk.kind === "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(declineSponsorship, tk.id)}><CircleX />Decline</button>}
+            {tk.kind === "sponsor" && <button className="btn primary" disabled={locked} onClick={() => act(acceptSponsorship, tk.id)}><Check />Accept</button>}
+            {!stray && tk.kind !== "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? "Ignore" : "Close"}</button>}
             {tk.status === "waiting" && tk.kind !== "migration" && <button className="btn primary" disabled={locked} onClick={() => act(resolveTicket, tk.id)}><CircleCheck />Resolve</button>}
             {tk.status === "open" && templatesOf(tk).length > 0 && (
               <button className="btn primary" disabled={locked || !tpl} onClick={() => act(replyTicket, tk.id, tpl!)}><Send />Send reply</button>

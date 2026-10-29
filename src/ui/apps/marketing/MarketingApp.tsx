@@ -1,4 +1,4 @@
-import { Eye, Megaphone, Presentation, Star, Waypoints } from "lucide-react";
+import { Eye, HeartHandshake, Megaphone, Presentation, Star, Waypoints } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -10,7 +10,9 @@ import {
 import { bookFair, setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../../../sim/90-actions/marketing";
 import { hasMarketingManager } from "../../../sim/47-staff/staff";
 import { fairCost, tradeFairBonus, upcomingFairs, type FairDate } from "../../../sim/80-business/fairs";
+import { eventById, FAIL_AWARENESS, FAIL_REVIEWS, type Sponsorship } from "../../../sim/80-business/community";
 import { metrics } from "../../../sim/metrics";
+import { PRODUCT } from "../support/labels";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
@@ -18,7 +20,7 @@ import "../shop/shop.css";
 import "../billing/billing.css";
 import "./marketing.css";
 
-type Section = "channels" | "campaigns" | "awareness" | "reviews" | "fairs";
+type Section = "channels" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
 
 export const AUDIENCE: Record<Profile, string> = {
   private: "Private users", gamer: "Gamers", hobbyDev: "Developers", soleProp: "Sole traders", smallBiz: "Small businesses",
@@ -51,6 +53,7 @@ export function MarketingApp() {
     ["awareness", "Awareness", <Eye />, null],
     ["reviews", "Reviews", <Star />, game.marketing.reviews.length || null],
     ["fairs", "Trade fairs", <Presentation />, upcomingFairs(game).filter((d) => d.booking).length || null],
+    ["community", "Community", <HeartHandshake />, game.sponsorships.filter((x) => x.status === "running").length || null],
   ];
 
   return (
@@ -75,6 +78,7 @@ export function MarketingApp() {
           {section === "awareness" && <Awareness />}
           {section === "reviews" && <Reviews />}
           {section === "fairs" && <Fairs />}
+          {section === "community" && <Community />}
         </div>
       </div>
     </div>
@@ -315,6 +319,43 @@ function FairCard({ d }: { d: FairDate }) {
           </div>
         </div>
       )}
+      <div className="shop-buy"><span className="grow" />{state}</div>
+    </div>
+  );
+}
+
+function Community() {
+  const game = useStore((s) => s.game);
+  const list = game.sponsorships.filter((x) => x.status === "running" || x.status === "done").reverse();
+  return (
+    <div className="mkt-reviews">
+      <div className="mkt-score"><span>Sponsorships</span><span className="num">{list.length}</span></div>
+      {list.length
+        ? <div className="shop-grid mkt-flat">{list.map((x) => <SponsorCard key={x.id} sp={x} />)}</div>
+        : <div className="shop-none mkt-none">No sponsorships yet.</div>}
+    </div>
+  );
+}
+
+function SponsorCard({ sp }: { sp: Sponsorship }) {
+  const ev = eventById(sp.event)!, r = sp.reward;
+  const down = Math.ceil(Math.max(0, ...Object.values(sp.down)));
+  const state = sp.status === "running" ? <span className="pill accent">Running</span> : r ? <span className="pill ok">Rewarded</span> : <span className="pill bad">Failed</span>;
+  return (
+    <div className="shop-card">
+      <div className="shop-name"><strong>{ev.name}</strong><span>{formatDay(sp.startedAt)} to {formatDay(sp.endedAt ?? sp.endsAt)}</span></div>
+      <dl className="shop-specs">
+        <div><dt>Services</dt><dd className="num">{ev.count} × {PRODUCT[ev.product]}</dd></div>
+        <div><dt>Audience</dt><dd>{ev.audience.map((p) => AUDIENCE[p]).join(", ")}</dd></div>
+        <div><dt>Hours down</dt><dd className="num">{down}</dd></div>
+        {r && r.knowHow > 0 && <div><dt>Know-how</dt><dd className="num">+{r.knowHow}</dd></div>}
+        {r && r.awareness > 0 && <div><dt>Awareness</dt><dd className="num">+{pct(r.awareness)}</dd></div>}
+        {r && r.leads > 0 && <div><dt>Leads</dt><dd className="num">{r.leads}</dd></div>}
+        {r?.stars && <div><dt>Review</dt><dd className="num">{r.stars} stars</dd></div>}
+        {r?.recommendation && <div><dt>Recommendation</dt><dd>Candidate in the Staff market</dd></div>}
+        {sp.status === "done" && !r && <div><dt>Reviews</dt><dd className="num">{FAIL_REVIEWS} × 1 star</dd></div>}
+        {sp.status === "done" && !r && <div><dt>Awareness</dt><dd className="num">-{pct(1 - FAIL_AWARENESS)}</dd></div>}
+      </dl>
       <div className="shop-buy"><span className="grow" />{state}</div>
     </div>
   );

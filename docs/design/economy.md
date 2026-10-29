@@ -1835,6 +1835,18 @@ A redesign costs the web design setup (€400, ledger line "Website redesign") a
 
 The leads arrive over the 730 hours after the fair, split evenly over the location cities and the audiences, with a conversion of 1.5. A marketing manager trained on fairs brings back 1.5 × the leads. At the next month start each audience of the fair gains 0.03 awareness on top of g. The network contacts of every fair attended in the last 12 months add up, each fading linearly to 0 over that year, capped at 1; `tradeFairBonus(s)` exposes the sum for transit prices and peering acceptance.
 
+**Community events.** A request arrives 28 to 56 days after the previous one (the first after the start of the game), drawn evenly from the events at or below the company's level; it lapses after 14 days. The services are free, hourly products at the size index of the product's line (SIZES) and end after the duration. A service counts as down by its hours in `downHours`, kept per service while the event runs; the most down hours of any one service decide the outcome.
+| Event | Pun of | Kind | Level | Services | Duration | Audience | Reward |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LAN-tastic | LAN party | Public | 1 | 2 game servers (smaller size) | 3 days | Gamers, private users | Awareness +0.02 for both |
+| Chaos Computing Club | Chaos Computer Club meetup | Tech | 1 | 1 VPS (1 GB) | 90 days | Developers | Know-how 10 |
+| Hack-a-Sorus | Hackathon | Tech | 1 | 2 VPS (1 GB) | 7 days | Developers | Know-how 25 |
+| Debonair Linux mirror | Distribution mirror | Tech | 1 | 1 storage volume (500 GB) | 365 days | Developers | Know-how 15 |
+| Frag-Fest | Gaming tournament | Public | 1 | 4 game servers (smaller size) | 3 days | Gamers | Awareness +0.03 |
+| Linux User Group | User group website | Public | 1 | 1 web space (2 GB) | 365 days | Small businesses, private users | Awareness +0.01 for both |
+| DevOops Conference | Conference streaming | Tech | 3 | 8 VPS (2 GB) | 7 days | Agencies, enterprises | Know-how 40 |
+Awareness gains use the same share-of-the-gap rule as forum posts and fairs, each applied once when the event ends. A tech event adds a recommendation with a 20% chance: a technician applicant whose skill is a drawn applicant's plus 20 (at most 95, talent above it) stays in the market for 30 days. A public event adds a 5-star review with a 50% chance (written under the event's name) and a batch of 3 to 6 leads with conversion 1, split over the location cities and the audience, counted in the month after the event like fair leads. More than 2 hours down on any one service replaces all of this with two 1-star reviews and 0.9 times the awareness of every audience profile. The balance bot ignores every request, so balance runs are unchanged.
+
 **Campaign channels.** Cost per lead in 2026, scaled back with m = 0.6 like search ads. Conversion multiplies the chance that a lead buys:
 
 | Channel | Profiles | Cost per lead | Conversion |

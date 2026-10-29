@@ -65,7 +65,7 @@ const LAST = ["Fischer", "Wagner", "Becker", "Hoffmann", "Schulz", "Koch", "Rich
 const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.length)];
 
 // economy.md, Hiring: 60% juniors (10 to 35), 30% mid-level (35 to 65), 10% seniors (65 to 90); talent between 60 and 100.
-function candidate(r: Rng, id: string, role: Role, arriveAt: number): Candidate {
+export function candidate(r: Rng, id: string, role: Role, arriveAt: number): Candidate {
   const x = rand(r);
   const [lo, hi] = x < 0.6 ? [10, 35] : x < 0.9 ? [35, 65] : [65, 90];
   const skill = Math.round(lo + rand(r) * (hi - lo));

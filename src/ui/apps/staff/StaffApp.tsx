@@ -34,7 +34,7 @@ const ROLE: Record<Role, { one: string; many: string }> = {
 };
 const TASK: Record<Task, string> = {
   howTo: "How-to", billing: "Billing", outage: "Outage", upgrade: "Upgrade", cancellation: "Cancellation", abuse: "Abuse", appeal: "Suspension appeal", order: "Orders", notice: "Notices", legal: "Legal requests", refund: "Refunds", extortion: "Ransom demands", migration: "Migration offers", maintenance: "Maintenance",
-  reminder: "Payment reminders", dunning: "Dunning notices", final: "Final notices", suspend: "Suspensions",
+  sponsor: "Sponsoring", reminder: "Payment reminders", dunning: "Dunning notices", final: "Final notices", suspend: "Suspensions",
   campaigns: "Campaigns", reviews: "Review platforms", fairs: "Trade fairs",
   hardware: "Parts and power", servers: "Draining servers", panels: "PHP upgrades",
 };

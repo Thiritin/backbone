@@ -17,6 +17,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - You can drag a device to another position in its rack once its power cords are unplugged, and a plugged-in device stays put.
 - A new game opens the Getting started guide right away instead of a welcome popup, and the guide now starts with naming your company, ordering your domain and booking email, each with an Open button to the app where you do it.
 - The website step in Getting started asks you to build your website and list a product on its Admin page.
+- Clubs and meetups now write every month or two and ask for free servers for their event, and keeping them up earns know-how, awareness, leads and sometimes a recommended hire.
+- The Marketing app has a Community section that lists running and past sponsorships with their outcome; a sponsored service that is down for more than two hours costs you two bad reviews instead.
 - Weekly challenge seeds start from the title screen, a run can be exported and replayed, and a leaderboard shows verified runs.
 - Loading a save shows a Pear OS update sheet with what changed since you last played, with an Open button for each app it names, and the logo menu has a What's new item that lists the whole changelog.
 - You can book extra power on a rented rack share in steps of 0.25 kW up to twice its base limit, billed monthly with the rent and active after three days.

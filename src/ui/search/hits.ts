@@ -36,7 +36,7 @@ function collect(s: GameState): Hit[] {
   }
 
   const customers = new Map(s.customers.map((c) => [c.id, c]));
-  for (const c of s.customers) add({ group: "Customers", id: c.id, title: c.name, keys: [c.name], recent: c.since, app: "Customers", target: { kind: "customer", id: c.id } });
+  for (const c of s.customers.filter((x) => !x.sponsor)) add({ group: "Customers", id: c.id, title: c.name, keys: [c.name], recent: c.since, app: "Customers", target: { kind: "customer", id: c.id } });
 
   for (const v of s.services) {
     if (v.endedAt !== null) continue;
