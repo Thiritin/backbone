@@ -114,6 +114,9 @@ Run them one after another; each later lane builds on the earlier ones. Lane ord
 | 9 | Leaderboard with seeded challenges (issue 10) | Built |
 | 10 | Used hardware market (issue 11) | Built (792ff32) |
 | 6.11 to 6.19 | GitHub issues 2 to 8 and 12 to 16 | Built |
+| 11 | CPU vendors and matched sockets (issues 17, 18) | 4.2, 4.4 |
+| 12 | Remote access: add-on KVMs and out-of-band management (issues 19, 20) | 3.4, 3.5, 5.2 |
+| 13 | Community sponsoring (issue 21) | 2.0b, 8 |
 
 
 ### Lane 1: IP addresses, paid internet, a real start (built, kept for reference)
@@ -593,6 +596,55 @@ Decisions:
 - Balance: the bot does not buy used; medians unchanged. Harness unchanged.
 
 Target: catalog of channels and the listing generator in src/sim/10-catalog/used.ts and src/sim/80-business/used.ts, actions buy, bid, list and cancel in src/sim/90-actions/used.ts, deliveries through the existing transit path, the Used tab, reputation, events and news. Tests (tests/used.test.ts): listings per month by seed; a bought listing arrives with its hidden wear; a scam loses the money and emits the event; a bid wins at the second price or loses to the rival; a sale on the board pays more than resale and takes time; reputation thresholds; old saves load. Verify typecheck, tests, build, balance. Record in gdd.md "Racks, hardware and cabling" ("Used hardware") and economy.md "Hardware, power and failures" (prices and chances with the anchors: eBay server lots at 30% to 50% of list in the 2000s, WHT marketplace asks around half of new).
+
+### Lane 11: CPU vendors and matched sockets (GitHub issues 17 and 18)
+
+Requests: a dual-socket server must not run two different CPUs (issue 17); CPUs get vendors with a history (issue 18): two x86 makers that swap the lead over the years and an ARM maker later, with per-core speed, watts and price per part, platform lock-in per board, live migration only between nodes of one vendor, and ARM serving only part of the demand at first.
+
+State on main: CPU parts are generic (`COMPONENTS.cpu`, src/sim/10-catalog/hardware.ts; `Component.size` is the core count since Lane 4.1; `partPrice("cpu", cores, ...)` in parts.ts); servers have `arch: "x86" | "arm"` and the ARM 1U line from 2020; `replaceComponent` checks only kind and size (`spareFits`); game servers and VPS book vCPU without a speed factor; `migrationDowntime` uses the `live` trait only; the Shop filter (6.14) and the used market (Lane 10) list parts.
+
+Decisions:
+- Vendors: Indel and AMB (x86), Ampear (ARM). `CPU_MODELS` in a new src/sim/10-catalog/cpus.ts, one row per vendor and generation: cores per socket, `perCore` (speed factor), watts per socket, price factor, from year. History: G1 2005 AMB 2 cores 1.0 at 95 W against Indel 2 cores 0.9 at 110 W (AMB ahead); G2 2008 to G4 2014 Indel leads (perCore 1.15 against 0.95, AMB 20% cheaper); G5 2017 on AMB brings 1.6 times the cores per socket at 0.8 the price with perCore 0.95 against Indel 1.05; Ampear from 2020 with perCore 0.8, half the watts per core, 0.7 the price (anchors: Opteron 2005, Xeon 5500 2009, EPYC 2017, Ampere Altra 2020). The generation table's core counts stay the Indel row; AMB and Ampear rows scale from it.
+- Parts: `Component` for a CPU carries `vendor`; a board carries `vendor` too (the chassis preset picks it: the Shop offers each server model as Indel or AMB where both exist, ARM line Ampear only, as a segmented control on the card; the bare chassis picks the vendor the same way). A CPU part fits only a board of its vendor and generation (`fits` in hardware.ts); the Parts tab sells CPUs per vendor.
+- Matched sockets (issue 17): a CPU change on a multi-socket server replaces every socket in one hand task priced for all CPUs with one downtime; `replaceComponent` and `installPart` for the kind "cpu" take the whole set; mixed CPUs cannot occur. Old saves with mixed cores (the bug) get all sockets set to the largest.
+- Speed: `nodeCapacity` vCPU is cores times `perCore`; game servers also use `perCore` for their perf (a slow per-core node slows game servers by its factor); VPS and cloud care about vCPU only. Watts per socket replace the flat server watts share for CPUs (record how the model watts split).
+- Live migration only between nodes whose boards share a vendor; a cluster setting "Compatibility mode" (Products app, the cluster card) allows it across vendors at 10% less vCPU on every node (the EVC analogue).
+- ARM demand: a share of VPS, game server and cloud orders requires x86 (`spec.arch`): 60% in 2020 falling to 30% by 2026 (Windows VMs, old images, game servers mostly x86); Ampear nodes serve only the rest; web hosting and DNS do not care. Shop filter and used market gain a Vendor chip.
+- Old saves: CPUs become Indel (x86) or Ampear (arm), boards likewise.
+
+Target: cpus.ts, vendor on CPUs and boards, matched-socket replacement, speed factor in capacity and game server perf, watts per socket, the vendor choice in the Shop and Parts tab, compatibility mode, x86 demand share, filter chips, old saves. Record in gdd.md "Racks, hardware and cabling" ("CPU vendors") and "Clusters and products", economy.md "Prices over time" (the CPU table with anchors) and "Market and leads". Tests (tests/cpus.test.ts): a mixed pair cannot be installed; a CPU swap replaces all sockets in one task; vCPU follows perCore; live migration refused across vendors without compatibility mode and allowed with it at the 10% cost; x86 share by year; ARM watts; old saves load with vendors. Verify typecheck, tests, build, balance (the bot buys Indel presets; medians within half a year), harness.
+
+### Lane 12: Remote access: add-on KVMs and out-of-band management (GitHub issues 19 and 20)
+
+Requests: an add-on KVM over IP for servers without a controller (issue 19) and out-of-band access for network gear through management ports, serial console servers and an OOB network (issue 20).
+
+State on main: powering a server on from afar needs a controller (`hasBmc`) or a switched PDU (Lane 5.2); `atServer` works the front panel on site or through remote hands; `BMC_FROM` leaves G1 servers without one; switches and routers have data ports only and no faults other than failure; the Terminal (Lane 3.5) reaches servers over the network path; vulnerabilities apply to software instances (Lane 2b.1).
+
+Decisions:
+- Add-on KVMs in the Shop (brand "Pear Street Electronics", pun free, or "Avoscent"): PiKVN (from 2019, EUR 60, height 0, one server, takes one switch port and a PDU-free power outlet, gives that server remote power on, off and reset through an ATX adapter and a remote console) and IP-KVN 8 (from 2005, 1U, EUR 1,200, 8 servers, console only; power still needs a PDU or the ATX adapters sold as a part, EUR 25). Cabling: a KVM port cables to a server's "console" end (new per-server pseudo port drawn on the back); a server with a KVM counts as remotely switchable in `remotePower` and `remoteError`.
+- Stuck boot fault: after a part swap or a hard power event a server sticks at the firmware prompt with 5% chance (`Device.stuck`), which only a console (controller, KVM) or remote hands clears (a "Continue boot" action, 2 minutes); without any of them the server stays off until hands arrive. KVMs fail at 4% a year and sit on the management network, so a KVM cabled to a public-facing switch is an exposed instance for vulnerabilities (family "oob", 1 a year).
+- Network gear gets a `mgmt` Ethernet port and an RS-232 `console` port drawn on the back. A serial console server (OpenGearbox 8, 16 and 48 ports; 2005; EUR 1,500, 2,500, 6,000; 1U) cables with rollover cables to console ports and to servers' serial ports; it needs its own way in: a management DSL uplink (EUR 20 a month) or, from 2008, a cellular modem (EUR 30 a month) sold as a part; an OOB management switch (8 ports, EUR 150) connects `mgmt` ports, controllers and KVMs with its own uplink.
+- Network faults that OOB fixes: a switch or router hangs after a firmware update (new `updateSoftware` for gear, Lane 2b.1 style, 10% hang chance) or locks the player out after a port group change (2% chance in `setPortGroup`); without OOB the fix is remote hands or a technician on site; with a console path the fix is a 5 minute action ("Recover over console"). Record the faults and chances.
+- Terminal gains `console <device>` which works through the OOB path even when the production path is down, and the IPMI-style page for a KVM in the browser (plain look, power buttons and a console line).
+- Security: a console server or OOB switch whose uplink is not behind the firewall is an exposed instance; the Security app lists it.
+- No research gate; years gate the items.
+
+Target: the two KVMs and the ATX adapter, console ends on servers, remote power through a KVM, the stuck boot fault, mgmt and console ports on gear, console servers with their uplinks, the OOB switch, gear firmware updates and the two faults, the console recovery action, the Terminal command, the browser page, the exposure rule. Record in gdd.md "Racks, hardware and cabling" ("Remote access") and "Network and DDoS", economy.md "Hardware, power and failures" (prices with anchors: PiKVM v3 kit about USD 150 in 2021 and DIY builds about EUR 60, Avocent 8-port IP KVMs around USD 1,500 in the 2000s, Opengear 16-port console servers around USD 2,500, Raritan OOB switches). Tests (tests/remote-access.test.ts): a PiKVN powers a G1 server on from afar; a stuck boot clears over a console and not without; a hung switch recovers in 5 minutes with a console server and waits for hands without; an exposed OOB device shows in Security; old saves load. Verify typecheck, tests, build, balance (unchanged).
+
+### Lane 13: Community sponsoring (GitHub issue 21)
+
+Request: sponsor community events with free services and earn know-how, awareness and leads; a failed sponsored service costs reputation; small events from level 1, bigger ones later.
+
+State on main: trade fairs in src/sim/80-business/fairs.ts cost money and need an employee from level 3; know-how comes from contracts and research; awareness per profile in marketing.ts; reviews through `addReview`; tickets have kinds and actions (Lane 7's Email app); services are provisioned through the order steps (Lane 8).
+
+Decisions:
+- Sponsoring requests arrive as tickets of kind "sponsor" in Email, one every 4 to 8 weeks from level 1 (seeded), from punned events: LAN-tastic (LAN party, game servers for a weekend), Chaos Computing Club meetup (a VPS for 3 months), Hack-a-Sorus (a hackathon, 2 VPS for a week), Mirror request (an open source project, storage for a year), Frag-Fest (a tournament, 4 game servers for a weekend), Linux User Group site (web hosting for a year); from level 3 bigger ones (a conference's streaming VMs, 8 VPS for a week).
+- Each request names the service, size and duration; Accept provisions it like an order at EUR 0 through the normal placement (it uses capacity, traffic and IPv4; without room the accept fails with the usual error), Decline closes it with no penalty; the service ends by itself after the duration.
+- Rewards at the end: tech events give know-how (meetup 10, hackathon 25, mirror 15 a year, conference 40) and a 20% chance of a recommendation (a candidate with +20 skill appears in the Staff market for a month); public events give awareness (LAN party +0.02 for gamer and private, tournament +0.03 gamer, user group site +0.01 small business and private, each applied once) and a 50% chance of a 5-star review; leads from the event's audience arrive through the normal lead path (one batch of 3 to 6 leads of that profile).
+- Risk: if the sponsored service is down for more than 2 hours during the event (checked from `downHours`), the rewards are replaced by two 1-star reviews and -10% awareness for the audience's profiles. Overbooked nodes make this likely, which is the point.
+- A Community card in Marketing lists running and past sponsorships with their outcome (labels and values).
+
+Target: the ticket kind and its texts, the event catalog in src/sim/80-business/community.ts, accept and decline actions, zero-price provisioning and automatic end, rewards and the risk, the Marketing card. Record in gdd.md "Marketing and reviews" ("Community events") and economy.md "Marketing and reviews" (the event table). Tests (tests/community.test.ts): a request every 4 to 8 weeks by seed; accept provisions at EUR 0 and ends on time; know-how and awareness rewards by event; the recommendation chance; the downtime flip; decline has no penalty; old saves load. Verify typecheck, tests, build, balance (the bot declines; unchanged).
 
 ### Lane 6: Small briefs
 
