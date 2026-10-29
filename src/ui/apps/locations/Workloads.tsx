@@ -5,8 +5,8 @@ import type { GameState } from "../../../sim/50-state";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import { clusterOf, controlPlaneUse, workloadsOn, type Workload } from "../../../sim/60-infra/cluster";
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
-import { migrateWorkload, migrationTargets, rescueTargets, rescueWorkload, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
-import { announceEntries, migrateEntries, offerEntries } from "../vms/migrate";
+import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
+import { announceEntries, migrateEntries, offerEntries, rescueEntries } from "../vms/migrate";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { More } from "../More";
@@ -103,13 +103,10 @@ function WorkloadRow({ game, w, u }: { game: GameState; w: Workload; u: Resource
 export function workloadMenu(game: GameState, w: Workload, start: (game: GameState, t: HandTask) => void): MenuEntry[] {
   const { act, openApp } = useStore.getState();
   const web = game.clusters.find((c) => c.id === w.clusterId)?.kind === "panel";
-  const targets = web ? [] : migrationTargets(game, w.id), rescue = web ? [] : rescueTargets(game, w.id);
-  const customer = game.services.find((v) => v.id === w.serviceId)?.customerId, { name } = vmLabel(game, w);
+  const targets = web ? [] : migrationTargets(game, w.id), rescue = rescueEntries(game, w, start);
+  const customer = game.services.find((v) => v.id === w.serviceId)?.customerId;
   return [
-    rescue.length > 0 && { label: "Recover to", items: rescue.map((t) => ({
-      label: `${t.name}, offline ${t.down} h`,
-      run: () => start(game, { title: `Recover ${name} to ${t.name}`, deviceId: w.deviceId!, action: rescueWorkload, args: [w.id, t.to] }),
-    })) },
+    ...rescue,
     ...(web ? migrateEntries(game, w) : rescue.length ? [] : [{ label: "Migrate to", disabled: !targets.length, items: targets.map((t) => ({ label: `${t.name}${t.down ? `, offline ${t.down} h` : ""}`, run: () => act(migrateWorkload, w.id, t.to) })) }]),
     ...offerEntries(game, w),
     w.stopped ? { label: "Start", run: () => act(startWorkload, w.id) } : { label: "Stop", run: () => act(stopWorkload, w.id) },
