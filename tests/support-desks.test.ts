@@ -9,7 +9,7 @@ import { cancel, install } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { stepOf } from "../src/ui/apps/guide";
 import { DESK_FEATURES, supportApp } from "../src/ui/apps/support/desk";
-import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, OsTickitMark, PearMailMark, ZenduskMark } from "../src/ui/art/mailmarks";
+import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, NotmailMark, OsTickitMark, PearMailMark, ZenduskMark } from "../src/ui/art/mailmarks";
 
 const at = (y: number, m: number) => hourOf(new Date(Date.UTC(y, m - 1, 1)));
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
@@ -100,9 +100,9 @@ describe("support desks", () => {
   it("shows the app as Email with the provider's mark until a desk is installed", () => {
     const s = year(2012);
     expect(s.company.mail.kind).toBe("free");
-    expect(supportApp(s)).toMatchObject({ name: "Email", icon: PearMailMark, style: "pear" });
+    expect(supportApp(s)).toMatchObject({ name: "Email", brand: "Notmail", icon: NotmailMark, style: "notmail" });
     const mail = (m: GameState["company"]["mail"]) => supportApp({ ...s, company: { ...s.company, mail: m } });
-    expect(mail({ kind: "external", provider: "goggleWorkspace", seats: 1 })).toMatchObject({ name: "Email", icon: GoggleMark, style: "goggle" });
+    expect(mail({ kind: "external", provider: "goggleWorkspace", seats: 1 })).toMatchObject({ name: "Email", brand: "Goggle Workspace", icon: GoggleMark, style: "goggle" });
     expect(mail({ kind: "external", provider: "lookout365", seats: 1 })).toMatchObject({ icon: LookoutMark, style: "lookout" });
     expect(mail({ kind: "external", provider: "hostedExchange", seats: 1 })).toMatchObject({ icon: IonoseMark, style: "ionose" });
     expect(mail({ kind: "self", software: "postfixit", clusterId: "c1" })).toMatchObject({ icon: PearMailMark, style: "pear" });

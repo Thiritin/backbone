@@ -122,7 +122,7 @@ export function SupportApp() {
   // The email settings: the Settings button and the app menu open them.
   const [setup, setSetup] = useSessionState("support.setup", false);
   const desk = deskOf(game);
-  const { style } = supportApp(game);
+  const { style, brand, icon: Logo, tile } = supportApp(game);
   const has = (f: DeskFeature) => deskHas(game, f);
   const gates: Gates = { assign: has("assign"), templates: has("templates"), slaTimers: has("slaTimers"), customerSidebar: has("customerSidebar") };
   // Without a desk the app is one inbox; the desk decides which boxes and filters exist.
@@ -170,15 +170,14 @@ export function SupportApp() {
     </button>
   );
 
-  if (setup) return (
-    <div className="settings">
-      <EmailSettings />
-      <button className="btn" onClick={() => setSetup(false)}>Done</button>
-    </div>
-  );
-
   return (
     <div className={`sup sales${box === "lost" || box === "reports" ? " sales-wide" : ""}`} data-style={style} data-mode={desk ? "desk" : "inbox"}>
+      <header className="sup-brand">
+        <span className="sup-logo" style={{ "--tile": tile } as CSSProperties}><Logo /></span>
+        <strong>{brand}</strong>
+        <button className="btn sup-settings" onClick={() => setSetup(true)}>Settings</button>
+      </header>
+      {setup && <EmailSettings onClose={() => setSetup(false)} />}
       {desk && <aside className="sidebar sup-side">
         <div className="side-h">Inbox</div>
         {side("all", "All", Mails, itemsIn(game, "all").length)}
@@ -204,7 +203,6 @@ export function SupportApp() {
           <h2>{title}{kind && ` · ${kind === "sales" ? "Sales request" : kindOf(kind).label}`}</h2>
           {!desk && <span className="sup-unread num">{inBox.filter((it) => it.tk?.unread).length}</span>}
           {busy && <span className="sup-busy">Busy until <span className="num">{stamp(game.playerBusyUntil / 60)}</span></span>}
-          <button className="btn sup-settings" onClick={() => setSetup(true)}>Settings</button>
         </div>
         {has("search") && (
           <label className="sup-search"><Search aria-hidden /><input type="search" aria-label="Search" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} /></label>

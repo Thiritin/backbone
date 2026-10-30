@@ -1,5 +1,20 @@
-.email-mode { margin: 14px 0 12px; }
-.email-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px; }
-.email-sw.later { opacity: 0.5; }
-.email-body { margin-bottom: 24px; }
-.email-cards .shop-buy { justify-content: flex-end; }
+/* Email settings: a sheet that drops over the app window. */
+.mail-scrim { position: absolute; inset: 0; z-index: 20; display: grid; justify-items: center; align-items: start; background: oklch(0 0 0 / 0.18); }
+.mail-sheet { width: min(340px, calc(100% - 32px)); margin-top: 0; padding: 4px 0 8px; border-radius: 0 0 12px 12px; background: var(--win); color: var(--text); box-shadow: var(--shadow-win); animation: mail-drop 0.18s ease-out; }
+@keyframes mail-drop { from { transform: translateY(-12px); opacity: 0; } }
+.mail-sheet-h { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 6px 16px; }
+.mail-sheet-h h2 { font-size: 13px; font-weight: 650; }
+.mail-facts { display: grid; gap: 4px; margin: 0 16px 10px; padding: 8px 10px; border-radius: 8px; background: var(--win-side); font-size: 12px; }
+.mail-facts div { display: flex; justify-content: space-between; gap: 12px; }
+.mail-facts dt { color: var(--text-3); }
+.mail-facts dd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-options { display: grid; gap: 2px; padding: 0 8px; }
+.mail-option { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 8px; border: 0; border-radius: 8px; background: none; font: inherit; color: inherit; text-align: left; }
+.mail-option:hover:not(:disabled) { background: var(--hover); }
+.mail-option[aria-checked="true"] { background: var(--accent-soft); }
+.mail-option:disabled .mail-tile, .mail-option:disabled .mail-name { opacity: 0.45; }
+.mail-tile { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; flex: none; background: var(--tile); color: white; box-shadow: inset 0 0 0 0.5px oklch(0 0 0 / 0.12); }
+.mail-tile svg.lucide { width: 18px; height: 18px; }
+.mail-name { flex: 1; min-width: 0; display: grid; font-weight: 500; }
+.mail-name small { font-size: 11.5px; font-weight: 400; color: var(--text-3); }
+.mail-check { width: 16px; height: 16px; color: var(--accent); flex: none; }

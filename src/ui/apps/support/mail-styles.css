@@ -36,8 +36,11 @@ svg.lucide.mark.dim { opacity: 0.55; }
 .sup-reports .m { display: grid; grid-template-rows: auto 1fr auto; justify-items: center; gap: 4px; height: 100%; font-size: 11.5px; color: var(--text-3); }
 .sup-reports .m i { align-self: end; width: 100%; max-width: 28px; min-height: 2px; border-radius: 4px 4px 0 0; background: var(--accent); }
 
-/* Goggle Workspace: white, coloured labels, a rounded header. */
-.sup[data-style="goggle"] { --accent: oklch(0.55 0.17 255); --accent-soft: oklch(0.94 0.03 255); background: var(--win); }
+/* Goggle Workspace: white, coloured labels, rounded pills. */
+.sup[data-style="goggle"] { --accent: oklch(0.55 0.17 255); --accent-soft: oklch(0.94 0.03 255); --brand-bg: var(--win); background: var(--win); }
+.sup[data-style="goggle"] .sup-brand { border-bottom: 0; padding: 10px 16px; }
+.sup[data-style="goggle"] .sup-brand strong { font-size: 17px; font-weight: 450; color: var(--text-2); }
+.sup[data-style="goggle"] .sup-settings { border-radius: 999px; }
 .sup[data-style="goggle"] .sup-list { border-right: 0; padding: 12px; }
 .sup[data-style="goggle"] .sup-list-h { padding: 8px 14px; margin-bottom: 6px; border-radius: 999px; background: color-mix(in oklch, var(--accent) 8%, var(--win)); }
 .sup[data-style="goggle"] .tk { border-radius: 12px; }
@@ -45,37 +48,51 @@ svg.lucide.mark.dim { opacity: 0.55; }
 :root[data-theme="dark"] .sup[data-style="goggle"] { --accent: oklch(0.7 0.14 255); --accent-soft: oklch(0.32 0.05 255); }
 :root[data-theme="dark"] .sup[data-style="goggle"] .tk .type { background: oklch(0.36 0.07 calc(var(--k, 0) * 31 + 15)); color: oklch(0.88 0.08 calc(var(--k, 0) * 31 + 15)); }
 
-/* Lookout 365: a dark blue header bar and dense rows. */
-.sup[data-style="lookout"] { --accent: oklch(0.45 0.15 258); --accent-soft: oklch(0.93 0.035 258); }
+/* Lookout 365: a bright blue bar and dense rows. */
+.sup[data-style="lookout"] { --accent: oklch(0.5 0.16 252); --accent-soft: oklch(0.93 0.035 252); --brand-bg: oklch(0.5 0.16 252); --brand-ink: white; }
+.sup[data-style="lookout"] .sup-brand { border-bottom: 0; }
 .sup[data-style="lookout"] .sup-list { padding: 0 0 8px; gap: 0; }
-.sup[data-style="lookout"] .sup-list-h { padding: 10px 14px; margin-bottom: 4px; background: oklch(0.36 0.11 258); color: white; }
-.sup[data-style="lookout"] .sup-list-h .sup-unread { background: white; color: oklch(0.36 0.11 258); }
-.sup[data-style="lookout"] .sup-busy { color: oklch(0.85 0.04 258); }
-.sup[data-style="lookout"] .tk { padding: 5px 12px; border-radius: 0; gap: 0 10px; }
+.sup[data-style="lookout"] .sup-list-h { padding: 10px 14px; margin-bottom: 4px; border-bottom: 0.5px solid var(--line); }
+.sup[data-style="lookout"] .tk { padding: 5px 12px; border-radius: 0; gap: 0 10px; border-left: 3px solid transparent; }
+.sup[data-style="lookout"] .tk.active { border-left-color: var(--accent); }
 .sup[data-style="lookout"] .tk .meta { margin-top: 0; }
-.sup[data-style="lookout"] .d-head { background: oklch(0.36 0.11 258); color: white; }
-.sup[data-style="lookout"] .d-head .id, .sup[data-style="lookout"] .d-head .facts { color: oklch(0.88 0.03 258); }
-:root[data-theme="dark"] .sup[data-style="lookout"] { --accent: oklch(0.68 0.13 258); --accent-soft: oklch(0.32 0.06 258); }
+:root[data-theme="dark"] .sup[data-style="lookout"] { --accent: oklch(0.68 0.13 252); --accent-soft: oklch(0.32 0.06 252); --brand-bg: oklch(0.38 0.12 252); }
 
-/* Pear Mail: a plain light list under a grey header. */
+/* Notmail: a blue web mail bar with an orange accent. */
+.sup[data-style="notmail"] { --accent: oklch(0.65 0.17 50); --accent-ink: white; --accent-soft: oklch(0.95 0.035 60); --brand-bg: linear-gradient(oklch(0.58 0.14 250), oklch(0.48 0.15 252)); --brand-ink: white; }
+.sup[data-style="notmail"] .sup-brand { border-bottom: 3px solid var(--accent); }
+.sup[data-style="notmail"] .sup-list-h { margin: -8px -8px 6px; padding: 10px 14px; background: oklch(0.95 0.02 250); border-bottom: 0.5px solid var(--line); }
+.sup[data-style="notmail"] .tk { border-radius: 4px; }
+:root[data-theme="dark"] .sup[data-style="notmail"] { --accent: oklch(0.72 0.15 55); --accent-ink: oklch(0.2 0.03 55); --accent-soft: oklch(0.33 0.05 55); --brand-bg: linear-gradient(oklch(0.42 0.12 250), oklch(0.36 0.12 252)); }
+:root[data-theme="dark"] .sup[data-style="notmail"] .sup-list-h { background: var(--win-side); }
+
+/* Pear Mail: a plain light list under a grey toolbar. */
 .sup[data-style="pear"] .sup-list-h, .sup[data-style="ionose"] .sup-list-h { margin: -8px -8px 6px; padding: 10px 14px; background: var(--win-side); border-bottom: 0.5px solid var(--line); }
 
-/* Hosted Exchange by Ionose: the same list with a teal accent. */
-.sup[data-style="ionose"] { --accent: oklch(0.5 0.11 200); --accent-soft: oklch(0.94 0.035 200); }
-.sup[data-style="ionose"] .sup-list-h { border-bottom-color: var(--accent); }
-:root[data-theme="dark"] .sup[data-style="ionose"] { --accent: oklch(0.7 0.11 200); --accent-soft: oklch(0.32 0.05 200); }
+/* Hosted Exchange by Ionose: a navy bar and a square, businesslike list. */
+.sup[data-style="ionose"] { --accent: oklch(0.42 0.15 262); --accent-soft: oklch(0.93 0.03 262); --brand-bg: oklch(0.3 0.12 262); --brand-ink: white; }
+.sup[data-style="ionose"] .sup-brand { border-bottom: 0; }
+.sup[data-style="ionose"] .sup-brand strong { letter-spacing: 0.02em; }
+.sup[data-style="ionose"] .sup-list-h { border-bottom: 2px solid var(--accent); }
+.sup[data-style="ionose"] .tk { border-radius: 2px; }
+:root[data-theme="dark"] .sup[data-style="ionose"] { --accent: oklch(0.7 0.12 262); --accent-ink: oklch(0.2 0.04 262); --accent-soft: oklch(0.32 0.06 262); --brand-bg: oklch(0.26 0.09 262); }
 
-/* OsTickit: grey tables. */
-.sup[data-style="ostickit"] { --accent: oklch(0.45 0.01 255); --accent-soft: oklch(0.92 0.005 255); }
+/* OsTickit: grey tables with an orange accent. */
+.sup[data-style="ostickit"] { --accent: oklch(0.68 0.17 52); --accent-ink: white; --accent-soft: oklch(0.94 0.03 60); --brand-bg: oklch(0.4 0.012 255); --brand-ink: white; background: color-mix(in oklch, var(--text) 3%, var(--win)); }
+.sup[data-style="ostickit"] .sup-brand { border-bottom: 3px solid var(--accent); }
+.sup[data-style="ostickit"] .sup-side { background: oklch(0.93 0.006 255); }
 .sup[data-style="ostickit"] .sup-list { padding: 0; gap: 0; }
 .sup[data-style="ostickit"] .sup-list-h { padding: 8px 12px; background: color-mix(in oklch, var(--text) 10%, var(--win)); border-bottom: 1px solid var(--line-strong); }
 .sup[data-style="ostickit"] .tk { border-radius: 0; border-bottom: 0.5px solid var(--line); padding: 7px 12px; }
 .sup[data-style="ostickit"] .tk:nth-child(even) { background: color-mix(in oklch, var(--text) 3.5%, var(--win)); }
+.sup[data-style="ostickit"] .tk.active { background: var(--accent-soft); }
 .sup[data-style="ostickit"] .d-head h2 { font-size: 15px; }
-:root[data-theme="dark"] .sup[data-style="ostickit"] { --accent: oklch(0.72 0.01 255); --accent-ink: oklch(0.2 0.01 255); --accent-soft: oklch(0.32 0.01 255); }
+:root[data-theme="dark"] .sup[data-style="ostickit"] { --accent: oklch(0.74 0.15 55); --accent-ink: oklch(0.2 0.03 55); --accent-soft: oklch(0.34 0.05 55); --brand-bg: oklch(0.3 0.01 255); }
+:root[data-theme="dark"] .sup[data-style="ostickit"] .sup-side { background: oklch(0.25 0.006 255); }
 
 /* Zendusk: a dark green sidebar. */
-.sup[data-style="zendusk"] { --accent: oklch(0.45 0.09 160); --accent-soft: oklch(0.94 0.03 160); }
+.sup[data-style="zendusk"] { --accent: oklch(0.45 0.09 160); --accent-soft: oklch(0.94 0.03 160); --brand-bg: oklch(0.27 0.045 160); --brand-ink: white; }
+.sup[data-style="zendusk"] .sup-brand { border-bottom-color: oklch(0.35 0.05 160); }
 .sup[data-style="zendusk"] .sup-side { background: oklch(0.27 0.045 160); color: oklch(0.9 0.02 160); border-right: 0; }
 .sup[data-style="zendusk"] .sup-side .side-h { color: oklch(0.7 0.04 160); }
 .sup[data-style="zendusk"] .sup-side svg.lucide { color: oklch(0.78 0.06 160); }
@@ -86,21 +103,20 @@ svg.lucide.mark.dim { opacity: 0.55; }
 :root[data-theme="dark"] .sup[data-style="zendusk"] { --accent: oklch(0.7 0.11 160); --accent-ink: oklch(0.2 0.03 160); --accent-soft: oklch(0.33 0.05 160); }
 
 /* Freshdusk: a teal header with cards. */
-.sup[data-style="freshdusk"] { --accent: oklch(0.5 0.1 195); --accent-soft: oklch(0.94 0.03 195); }
+.sup[data-style="freshdusk"] { --accent: oklch(0.5 0.1 195); --accent-soft: oklch(0.94 0.03 195); --brand-bg: oklch(0.5 0.1 195); --brand-ink: white; }
 .sup[data-style="freshdusk"] .sup-list { padding: 0 10px 10px; gap: 8px; background: var(--win-side); }
-.sup[data-style="freshdusk"] .sup-list-h { margin: 0 -10px 2px; padding: 11px 16px; background: oklch(0.5 0.1 195); color: white; }
-.sup[data-style="freshdusk"] .sup-list-h .sup-busy { color: oklch(0.92 0.04 195); }
+.sup[data-style="freshdusk"] .sup-list-h { padding: 11px 6px 4px; }
 .sup[data-style="freshdusk"] .tk { border-radius: 10px; background: var(--win); border: 0.5px solid var(--line); box-shadow: 0 1px 2px color-mix(in oklch, var(--text) 8%, transparent); }
 .sup[data-style="freshdusk"] .tk.active { border-color: var(--accent); }
 .sup[data-style="freshdusk"] .sup-search { margin: 0; }
 :root[data-theme="dark"] .sup[data-style="freshdusk"] { --accent: oklch(0.7 0.1 195); --accent-ink: oklch(0.2 0.03 195); --accent-soft: oklch(0.33 0.05 195); }
-:root[data-theme="dark"] .sup[data-style="freshdusk"] .sup-list-h { background: oklch(0.38 0.08 195); }
+:root[data-theme="dark"] .sup[data-style="freshdusk"] { --brand-bg: oklch(0.38 0.08 195); }
 
 /* FreeScoot: a light blue list. */
-.sup[data-style="freescoot"] { --accent: oklch(0.55 0.13 235); --accent-soft: oklch(0.93 0.04 235); }
+.sup[data-style="freescoot"] { --accent: oklch(0.55 0.13 235); --accent-soft: oklch(0.93 0.04 235); --brand-bg: oklch(0.965 0.02 235); }
 .sup[data-style="freescoot"] .sup-list { background: oklch(0.965 0.02 235); }
 .sup[data-style="freescoot"] .tk:hover { background: oklch(0.93 0.035 235); }
-:root[data-theme="dark"] .sup[data-style="freescoot"] { --accent: oklch(0.72 0.11 235); --accent-ink: oklch(0.2 0.03 235); --accent-soft: oklch(0.33 0.06 235); }
+:root[data-theme="dark"] .sup[data-style="freescoot"] { --accent: oklch(0.72 0.11 235); --accent-ink: oklch(0.2 0.03 235); --accent-soft: oklch(0.33 0.06 235); --brand-bg: oklch(0.26 0.03 240); }
 :root[data-theme="dark"] .sup[data-style="freescoot"] .sup-list { background: oklch(0.26 0.03 240); }
 :root[data-theme="dark"] .sup[data-style="freescoot"] .tk:hover { background: oklch(0.31 0.04 240); }
 .sup-reports td:first-child { width: 220px; }
