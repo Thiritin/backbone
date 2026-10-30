@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- A price raise on a running service now takes effect from the next monthly invoice, so a customer who cancels over it pays the old price.
 - An upgrade offer now asks you to pick the individual server it grows on, starting with the one the service runs on now.
 - Sending a reply, an offer or an action on a support ticket now plays a short burst of keyboard typing.
 - Downloading an ISO now takes as long as your internet line needs, so DSL 16000 at home is slow and a datacenter is fast, and the browser shows the progress.

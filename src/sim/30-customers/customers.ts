@@ -18,6 +18,8 @@ export interface Service { id: string; customerId: string; product: Product; lab
   spec: Spec; sla: Sla;
   // Hourly price from before the first of a run of raises; unset once the price is back at or below it.
   before?: number;
+  // Hourly price invoiced until the next month start: a raise takes effect from the month after it is made.
+  held?: number;
   // Web hosting only: the customer's domain, fixed at sign-up (domains.ts).
   domain?: string;
   // The machine name customers quote in tickets: a product prefix and an eight-digit number; domain and SSL services have none.

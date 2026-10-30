@@ -545,7 +545,7 @@ d is the agency discount from a campaign, e is 1.15 for an existing customer and
 
 **Shady requests.** From the fourth month, about one request every three months asks for the biggest VPS, no questions asked, paid in crypto. Its budget is 1.8, so it accepts nearly any price. A won shady customer carries a hidden `shady` flag for abuse and legal follow-ups.
 
-**Price changes.** Raising a running service's price costs happiness, lowering it wins some back, and an overpriced service keeps costing happiness every month. The numbers are in Happiness and churn, Price tolerance.
+**Price changes.** Raising a running service's price costs happiness, lowering it wins some back, and an overpriced service keeps costing happiness every month. A raise takes effect from the month after it is made: the invoice for the current month bills the old price, and a customer who cancels over the raise leaves at that billing date without paying it. The numbers are in Happiness and churn, Price tolerance.
 
 **Market research.** A market study reveals one profile in the Market app for good; it is a one-time payment booked as marketing. Studies cost €800 for a low-budget profile, €2,000 for a medium one and €4,000 for a high one, €20,400 for all nine (decision). The Demand section counts a city's buyers of a product as the city's new customers × each profile's mix × that profile's product weight, your part as the expected requests from the lead flows above (leads × product weight × your choice share × conversion), and splits the remainder over the competitors by their softmax among themselves. Code: `src/sim/30-market/research.ts`.
 

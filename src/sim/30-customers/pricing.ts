@@ -39,12 +39,12 @@ function complain(s: GameState, c: Customer, v: Service, p: number): void {
 export function reprice(s: GameState, v: Service, price: number, agreed = false): void {
   const cust = s.customers.find((x) => x.id === v.customerId)!;
   if (agreed) {
-    s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730 } : x));
+    s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730, ...(x.held !== undefined && { held: x.held + price / 730 - x.price }) } : x));
     return;
   }
   const old = v.price * 730, pct = (100 * (price - old)) / old, { max } = limits(s, cust, v);
   const before = price > old ? v.before ?? v.price : v.before !== undefined && price / 730 > v.before ? v.before : undefined;
-  s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730, before } : x));
+  s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730, before, held: Math.min(x.held ?? x.price, price / 730) } : x));
   if (pct <= 0) return bump(cust, Math.min(CUT_MAX, -CUT_BONUS * pct));
   bump(cust, -RAISE_PENALTY * pct - PAST_MAX_PENALTY * Math.max(0, pctOver(price, max) - pctOver(old, max)));
   if (price > max && chance(s.rng, Math.min(1, (price / max - 1) / LEAVE_SPAN))) {

@@ -160,3 +160,36 @@ describe("saves", () => {
     expect(again.services.find((x) => x.id === ids[0].v)!.before).toBeCloseTo(3 / 730);
   });
 });
+
+describe("raise notice", () => {
+  it("bills a raise made just before the invoice at the old price, and a customer who cancels over it never pays the raise", () => {
+    const { s, ids, cus } = shop(3, 3);
+    const { c, v } = ids[0];
+    nextMonth(s);
+    while (!isMonthStart(s.hour + 1)) tick(s);
+    changePrice(s, v, 99_000_000);
+    expect(open(s, c, "cancellation")).toBeDefined();
+    nextMonth(s);
+    const billed = s.invoices.filter((i) => i.customerId === c).flatMap((i) => i.lines).map((l) => l.amount);
+    expect(Math.max(...billed)).toBeLessThanOrEqual(3.1);
+    expect(cus(c).churnedAt).not.toBeNull();
+    nextMonth(s);
+    expect(s.invoices.filter((i) => i.customerId === c).flatMap((i) => i.lines).every((l) => l.amount <= 3.1)).toBe(true);
+  });
+
+  it("bills a raise the customer stays through from the month after it", () => {
+    const { s, ids, svc } = shop(4, 3);
+    const { c, v } = ids[0];
+    nextMonth(s);
+    changePrice(s, v, 3.3);
+    expect(svc(v).held).toBeCloseTo(3 / 730);
+    const t = open(s, c, "cancellation");
+    if (t) resolveTicket(s, t.id, "keep");
+    nextMonth(s);
+    expect(svc(v).held).toBeUndefined();
+    const last = () => s.invoices.filter((i) => i.customerId === c).at(-1)!.lines[0].amount;
+    expect(last()).toBeLessThanOrEqual(3.1);
+    nextMonth(s);
+    expect(last()).toBeGreaterThan(3.2);
+  });
+});

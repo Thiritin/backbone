@@ -294,12 +294,13 @@ export function billingTick(s: GameState): SimEvent[] {
       const hours = Math.min(v.endedAt ?? s.hour, s.hour) - Math.max(v.startedAt, from, v.prepaidUntil ?? 0);
       if (hours <= 0) continue;
       // Hours down are not billed; a missed SLA credits its share of what is billed.
-      const billed = hours - Math.min(hours, s.downHours[v.id] ?? 0), sla = SLAS[v.sla];
-      if (billed > 0) add(v.customerId, { serviceId: v.id, key: "invoice.line.hours", params: { label: v.label, hours: billed }, amount: cents(billed * v.price) });
+      const billed = hours - Math.min(hours, s.downHours[v.id] ?? 0), sla = SLAS[v.sla], rate = Math.min(v.price, v.held ?? v.price);
+      if (billed > 0) add(v.customerId, { serviceId: v.id, key: "invoice.line.hours", params: { label: v.label, hours: billed }, amount: cents(billed * rate) });
       if (billed > 0 && sla.credit && billed / hours < sla.uptime) {
-        add(v.customerId, { serviceId: v.id, key: "invoice.line.slaCredit", params: { label: v.label }, amount: -cents(sla.credit * billed * v.price) });
+        add(v.customerId, { serviceId: v.id, key: "invoice.line.slaCredit", params: { label: v.label }, amount: -cents(sla.credit * billed * rate) });
       }
     }
+    if (s.services.some((v) => v.held !== undefined)) s.services = s.services.map(({ held: _, ...v }) => v);
     const missed = new Set<string>(), kept = new Set<string>();
     for (const v of s.services) {
       const hours = Math.min(v.endedAt ?? s.hour, s.hour) - Math.max(v.startedAt, from);
