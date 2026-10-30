@@ -4,10 +4,12 @@ import type { DeviceKind } from "../10-catalog/hardware";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { registrarHost, REGISTRARS } from "../10-catalog/registrars";
 import { SERVER_OS } from "../10-catalog/server-os";
-import { companyDomain } from "../30-customers/domains";
+import { companyDomain, fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { BOARD_TITLE, BOARD_URL, companyUrl, resolve, vendorHost, VENDORS, VIDEO_TITLE, VIDEO_URL } from "./browser";
-import { consoleBookmarks } from "./consoles";
+import { privateIp } from "../60-infra/addresses";
+import { familyOf } from "../60-infra/vulns";
+import { consoleHost, consoleTitle } from "./consoles";
 
 export interface IndexRow { title: string; url: string; desc: string; down: boolean }
 export interface Category { title: string; rows: IndexRow[] }
@@ -29,6 +31,18 @@ const KIND_DESC: Record<DeviceKind, string> = {
 
 const row = (title: string, url: string, desc: string, down = false): IndexRow => ({ title, url, desc, down });
 
+// One row per console, named by its machine's hostname: at the fqdn once the company has a domain, at the machine's
+// private address before.
+function consoleRows(s: GameState): IndexRow[] {
+  return s.clusters.flatMap((c) => {
+    const family = familyOf(c), host = family && consoleHost(s, c);
+    if (!family || !host) return [];
+    const id = (s.devices.find((d) => d.hostname === host) ?? s.workloads.find((w) => w.hostname === host))?.id;
+    const url = s.company.domain ? fqdn(s, host) : id && privateIp(s, id);
+    return url ? [row(`${consoleTitle(family)} ${host}`, url, url)] : [];
+  });
+}
+
 export function siteIndex(s: GameState): Category[] {
   const year = yearOf(s.hour);
   const software = SOFTWARE_CATEGORIES.map(([title, ids]): Category => ({
@@ -38,7 +52,7 @@ export function siteIndex(s: GameState): Category[] {
   // The company site once launched and one row per console the company runs, down when the host cannot be reached.
   const own = [
     ...(s.marketing.launched ? [row(s.company.name, companyUrl(s), companyDomain(s))] : []),
-    ...consoleBookmarks(s).map((m) => row(m.title, m.url, m.url.split("/")[0])),
+    ...consoleRows(s),
   ].map((r) => ({ ...r, down: resolve(s, r.url).load === "down" }));
   return [
     { title: "Operating systems", rows: SERVER_OS.map((o) => row(o.name, `www.${o.site.host}/`, o.site.tagline)) },

@@ -219,7 +219,7 @@ Categories, in this order, each site from the year it exists:
 9. **Domain resellers**: NameCheep, GoDuddy Reseller, InterNetY, OpenSRSly.
 10. **Community**: Sponsor-Bored.
 11. **Hardware**: every manufacturer site.
-12. **<Company name>**: the company site, and one row per console the company runs ("Proxmocks VE node001", "cPanic vm001"), each a live link; the row is grey with "down" when the host cannot be reached. This category replaces the console bookmarks.
+12. **<Company name>**: the company site, and one row per console the company runs ("Proxmocks VE node001", "cPanic vm001", named by the machine's hostname), each a live link to the machine's fqdn, or to its private address while the company has no domain; the row is grey with "down" when the host cannot be reached. This category replaces the console bookmarks.
 13. **Video**: youtub.com.
 
 A software before its `from` year is absent and its address resolves to Not found. In the 2005 look a category opens at `/dir/<category>`, for example `/dir/virtualization`; the 2013 look shows every category at once. Every other path on the host shows the index.

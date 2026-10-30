@@ -56,10 +56,24 @@ describe("browser index", () => {
 
   it("lists the company's consoles from its clusters, down when the host cannot be reached", () => {
     const s = readyGame(1), company = () => siteIndex(s).find((c) => c.title === s.company.name)!.rows.filter((r) => r.title !== s.company.name);
-    expect(company().map((r) => r.title)).toEqual(consoleBookmarks(s).map((m) => m.title));
+    expect(company().map((r) => r.url)).toEqual(consoleBookmarks(s).map((m) => m.url));
+    expect(company().map((r) => r.title.split(" ").at(-1))).toEqual(consoleBookmarks(s).map((m) => m.url.split(".")[0]));
     expect(consoleBookmarks(s).length).toBeGreaterThan(0);
     expect(company().every((r) => !r.down)).toBe(true);
     for (const d of s.devices.filter((x) => x.hostname)) expect(setPower(s, d.id, false).ok).toBe(true);
     expect(company().every((r) => r.down)).toBe(true);
+  });
+
+  it("lists the consoles at their machines' private addresses before the company has a domain", () => {
+    const s = readyGame(1);
+    s.company.domain = null;
+    const rows = siteIndex(s).find((c) => c.title === s.company.name)!.rows.filter((r) => r.title !== s.company.name);
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) {
+      expect(r.url).toMatch(/^\d+\.\d+\.\d+\.\d+$/);
+      const page = resolve(s, r.url).page;
+      expect(page.kind).toBe("console");
+      if (page.kind === "console") expect(r.title.endsWith(` ${page.hostname}`)).toBe(true);
+    }
   });
 });
