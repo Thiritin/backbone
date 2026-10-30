@@ -1,5 +1,5 @@
 import { supportEnd } from "../../../sim/10-catalog/lifecycle";
-import { Cable, Flame, Gauge, EthernetPort, Monitor, MonitorOff, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, SquareTerminal, Unplug, Wrench } from "lucide-react";
+import { Cable, Flame, Gauge, EthernetPort, Monitor, MonitorOff, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, SquareTerminal, Unplug, Usb, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
@@ -32,6 +32,7 @@ import { continueBoot } from "../../../sim/90-actions/remote";
 import { ActionTile } from "../software/Software";
 import { stamp } from "../support/labels";
 import { startBurnin } from "../../../sim/90-actions/burnin";
+import { plugStick, unplugStick } from "../../../sim/90-actions/media";
 import { burning } from "../../../sim/60-infra/status";
 import { serverTaken } from "../../../sim/60-infra/cluster";
 import { frontOptions, handsAway, isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
@@ -133,6 +134,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
   const [picked, setTab] = useState<InspTab>("actions");
   const openApp = useStore((s) => s.openApp), openConsole = useStore((s) => s.openConsole);
   const via = server && device.rackId ? consoleVia(game, device.id) : null;
+  const hand = useHandWork(), stickIn = game.media.stick.in === device.id;
   const canBurn = device.on && !device.burnin && !device.maintenance && !device.rebuild && !serverTaken(game, device.id);
   const serverActs = (
     <>
@@ -140,6 +142,9 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       {device.rackId && <ActionTile icon={Gauge} label="Quick burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, false)} />}
       {device.rackId && <ActionTile icon={Flame} label="Full burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, true)} />}
       {via && <ActionTile icon={Monitor} label={consoleName(game, device)} onClick={() => openConsole(device.id)} />}
+      {device.rackId && (stickIn
+        ? <ActionTile icon={Usb} label="Unplug USB stick" disabled={handsAway(game, device)} onClick={() => act(unplugStick)} />
+        : <ActionTile icon={Usb} label="Plug in USB stick" disabled={!!device.hands} onClick={() => hand.start(game, { title: `Plug in USB stick ${name}`, deviceId: device.id, action: plugStick, args: [device.id] })} />)}
       {device.rackId && <ActionTile icon={SquareTerminal} label="Terminal" disabled={!device.on || !device.hostname} onClick={() => openApp("Terminal", { kind: "ssh", id: device.hostname! })} />}
     </>
   );
@@ -184,7 +189,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       <div className={`loc-face${model.kind === "server" ? " wide" : ""}`} onContextMenu={menuOn(menu)}>
         <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={440} u={40} back={side === "back"}
           onPower={server && (device.rackId || device.panel) ? togglePower : undefined}
-          plugs={psus.map(isPlugged)} onInlet={device.rackId || device.panel ? (k) => menus.plug(device, psus[k].id) : undefined} onConsole={device.rackId ? onConsole : undefined} />
+          plugs={psus.map(isPlugged)} stick={stickIn} onInlet={device.rackId || device.panel ? (k) => menus.plug(device, psus[k].id) : undefined} onConsole={device.rackId ? onConsole : undefined} />
         {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} />}
       </div>
 
@@ -257,6 +262,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         ].map(([k, v]): [string, ReactNode] => [k, <span className="num">{v}</span>])} />
       </div>}
       {menus.dialog}
+      {hand.dialog}
       </>}
     </div>
   );

@@ -129,6 +129,9 @@ export interface FrontProps {
   parts?: Parts;
   blink?: boolean;
   onPower?: () => void;
+  // The USB stick is in this server; onUsb plugs it in or pulls it.
+  stick?: boolean;
+  onUsb?: () => void;
   w: number;
   h: number;
 }
@@ -401,10 +404,27 @@ export function Pdu({ w, h, name, model, state }: FrontProps) {
   );
 }
 
+// The front USB port left of the control panel, with the stick in it when it is plugged in.
+function UsbPort({ w, h, stick, onUsb }: FrontProps) {
+  const x = w - 23 - Math.max(44, h * 1.8), y = Math.min(h / 2, 9) - 1.6, label = stick ? "Unplug USB stick" : "Plug in USB stick";
+  return (
+    <>
+      <rect x={x} y={y} width="7" height="3.2" rx="0.4" fill="oklch(0.1 0.004 255)" stroke="oklch(0.45 0.005 255)" strokeWidth="0.4" aria-label="USB port" />
+      <rect x={x + 1.2} y={y + 0.8} width="4.6" height="0.9" fill="oklch(0.55 0.12 250)" aria-hidden="true" />
+      {stick && <><rect x={x - 1} y={y - 1.4} width="9" height="6" rx="0.8" fill="oklch(0.42 0.13 150)" stroke="oklch(0.25 0.05 150)" strokeWidth="0.4" /><circle cx={x + 6.6} cy={y + 3.2} r="0.6" fill={LED.act} /></>}
+      {onUsb && (
+        <rect className="svg-hit" x={x - 3} y={y - 3} width="13" height="9.2" fill="transparent" role="button" tabIndex={0} aria-label={label}
+          onClick={(e) => { e.stopPropagation(); onUsb(); }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onUsb(); } }}><title>{label}</title></rect>
+      )}
+    </>
+  );
+}
+
 export function Front(p: FrontProps) {
   if (p.model.kind === "server") {
     const line = lineOf(p.model);
-    return line === "backup" || line === "archive" ? <Caddies {...p} /> : line === "gpu" ? <Gpu {...p} /> : p.model.chassis ? <NodeFace {...p} /> : serverFront(p);
+    const face = line === "backup" || line === "archive" ? <Caddies {...p} /> : line === "gpu" ? <Gpu {...p} /> : p.model.chassis ? <NodeFace {...p} /> : serverFront(p);
+    return <>{face}{!p.model.chassis && <UsbPort {...p} />}</>;
   }
   if (p.model.kind === "chassis") return <TwinFace {...p} />;
   if (p.model.kind === "switch" || p.model.kind === "firewall") return <SwitchRear {...p} />;

@@ -1,0 +1,56 @@
+// Installation media (docs/design/software.md, section 4.1): the ISO images downloaded from the OS sites and the one USB
+// stick, written with one of them and plugged into one server at a time.
+import { modelById } from "../10-catalog/hardware";
+import { SERVER_OS, type ServerOs, type ServerOsId } from "../10-catalog/server-os";
+import type { GameState } from "../50-state";
+import { handJob, present, type How } from "../60-infra/handwork";
+import { locationOf } from "../60-infra/status";
+import type { ActionResult } from "./hardware";
+
+export const PLUG_HOURS = 2 / 60;
+
+const fail = (error: string): ActionResult => ({ ok: false, error });
+
+// The images a VM's Media menu offers.
+export const mountableImages = (s: GameState): ServerOs[] => SERVER_OS.filter((o) => s.media.images.includes(o.id));
+
+export function downloadImage(s: GameState, osId: ServerOsId): ActionResult {
+  if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
+  if (!s.media.images.includes(osId)) s.media.images = [...s.media.images, osId];
+  return { ok: true };
+}
+
+export function writeStick(s: GameState, osId: ServerOsId): ActionResult {
+  if (!s.media.images.includes(osId)) return fail("error.noImage");
+  s.media.stick = { ...s.media.stick, os: osId };
+  return { ok: true };
+}
+
+// At the server the stick goes in at once; at a datacenter the player is away from, hand work brings it there.
+export function plugStick(s: GameState, deviceId: string, how: How | boolean = false): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (modelById(d.model).kind !== "server" || !d.rackId) return fail("error.notServer");
+  if (s.media.stick.in === d.id) return fail("error.stickIn");
+  const loc = locationOf(s, d);
+  if (!loc?.dc || present(s, loc.id)) {
+    s.media.stick = { ...s.media.stick, in: d.id };
+    return { ok: true };
+  }
+  if (d.hands) return fail("error.handsBusy");
+  const job = handJob(s, d.label ?? d.name, loc, how, PLUG_HOURS, 1);
+  if ("error" in job) return fail(job.error);
+  if (s.cash < job.cost) return fail("error.noCash");
+  s.media.stick = { ...s.media.stick, in: null };
+  d.hands = { kind: "stick", doneAt: s.hour + job.commit() };
+  return { ok: true };
+}
+
+export function unplugStick(s: GameState): ActionResult {
+  const d = s.devices.find((x) => x.id === s.media.stick.in);
+  if (!d) return fail("error.stickOut");
+  const loc = locationOf(s, d);
+  if (loc?.dc && !present(s, loc.id)) return fail("error.notThere");
+  s.media.stick = { ...s.media.stick, in: null };
+  return { ok: true };
+}

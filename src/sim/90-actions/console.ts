@@ -6,6 +6,7 @@ import { modelById } from "../10-catalog/hardware";
 import type { Device, GameState } from "../50-state";
 import { clusterOf, dropCluster, hostOfVm, isOwnVm, setMachine, vmById, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
 import { SERVER_OS, serverOsAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
+import { stickOs } from "../60-infra/oob";
 import { pushLog } from "../60-infra/power";
 import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
 import { buyLicenses, licenseDue, reportLoss } from "../85-products/products";
@@ -51,11 +52,12 @@ export function exitSetup(s: GameState, deviceId: string): ActionResult {
   return { ok: true };
 }
 
-// The boot menu's USB entry: the stick holds the installers of both operating systems. The operating system on the disks is not running while the server is booted from the stick, so this is also the one way to erase it.
+// The boot menu's USB entry, there while the stick is in the server and written with an OS. The operating system on the disks is not running while the server is booted from the stick, so this is also the one way to erase it.
 export function bootFromUsb(s: GameState, deviceId: string): ActionResult {
   const d = server(s, deviceId);
   if (typeof d === "string") return fail(d);
   if (d.setup) return fail("error.notAtPost");
+  if (!stickOs(s, d.id)) return fail("error.noBootDevice");
   d.bootFrom = "usb";
   d.stuck = false;
   pushLog(d, s.hour, "ipmi.log.usbBoot");
@@ -107,17 +109,17 @@ const atInstaller = (s: GameState, machineId: string): Machine | string => {
   const vm = vmById(s, machineId);
   if (vm) return !isOwnVm(vm) ? "error.notOwnVm" : vm.stopped ? "error.alreadyStopped" : !vm.media ? "error.noMedia" : vm;
   const d = server(s, machineId);
-  return typeof d === "string" ? d : d.bootFrom !== "usb" ? "error.notFromUsb" : d;
+  return typeof d === "string" ? d : d.bootFrom !== "usb" ? "error.notFromUsb" : !stickOs(s, d.id) ? "error.noBootDevice" : d;
 };
 
 // The installer's Install: whatever the disks held goes first, then the OS installs for its install hours, the newest
 // version of the year. os.installedAt is the hour it is done; a server is held in its boot until then and boots from its
-// disk after, a VM ejects its ISO. The stick holds both operating systems, an ISO the one it is of.
+// disk after, a VM ejects its ISO. The stick and an ISO each hold one OS.
 export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string): ActionResult {
   const m = atInstaller(s, machineId);
   if (typeof m === "string") return fail(m);
   if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
-  if (!isDevice(m) && m.media !== osId) return fail("error.otherMedia");
+  if ((isDevice(m) ? stickOs(s, m.id) : m.media) !== osId) return fail("error.otherMedia");
   if (s.cash < licenseDue(s, machineId, osId, null)) return fail("error.noCash");
   const cleared = clear(s, m, confirm);
   if (!cleared.ok) return cleared;
@@ -144,6 +146,7 @@ export function eraseDisk(s: GameState, machineId: string, confirm?: string): Ac
 export function setMedia(s: GameState, vmId: string, media: ServerOsId | null): ActionResult {
   const vm = vmById(s, vmId);
   if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
+  if (media && !s.media.images.includes(media)) return fail("error.noImage");
   s.workloads = s.workloads.map((w) => (w.id === vmId ? { ...w, media: media ?? undefined } : w));
   return { ok: true };
 }

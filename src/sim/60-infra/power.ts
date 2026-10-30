@@ -158,6 +158,7 @@ export function powerTick(s: GameState): SimEvent[] {
       if (d.hands.kind === "bmcreset") { n.bmcHung = false; pushLog(n, s.hour, "ipmi.log.bmcReset"); }
       else if (d.hands.kind === "continue") { n.stuck = false; pushLog(n, s.hour, "ipmi.log.continued"); }
       else if (d.hands.kind === "recover") { n.hung = false; n.locked = false; pushLog(n, s.hour, "ipmi.log.gearRecovered"); }
+      else if (d.hands.kind === "stick") { s.media.stick = { ...s.media.stick, in: n.id }; pushLog(n, s.hour, "ipmi.log.stickIn"); }
       else atFront(s, n, d.hands.kind);
       n.hands = null;
       changed = true;

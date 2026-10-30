@@ -77,7 +77,7 @@ export interface Device extends MachineState { id: string; model: string; brand:
   // The chassis a multi-node server's node sits in; it mounts, moves and gets power with it.
   chassisId: string | null;
   // A hand task waiting for someone on site: pulling the plug or resetting the management controller.
-  hands?: { kind: FrontOp | "bmcreset" | "continue" | "recover"; doneAt: number } | null;
+  hands?: { kind: FrontOp | "bmcreset" | "continue" | "recover" | "stick"; doneAt: number } | null;
   // Remote access (60-infra/oob.ts): a server waiting at the firmware prompt (latent while off), a switch or router that locked
   // the player out, an ATX power adapter fitted for a console-only KVM, the own way in of a console server or OOB switch,
   // and the firmware release of network and management gear.
@@ -135,6 +135,8 @@ export interface GameState {
   ledger: LedgerEntry[];
   // One-time licenses (docs/design/software.md, section 1): the OS or software id and the machine that holds it.
   licenses: { id: string; machineId: string; boughtAt: number }[];
+  // Operating system images downloaded from their sites and the one USB stick: the image written on it, the server it is in.
+  media: { images: ServerOsId[]; stick: { os: ServerOsId | null; in: string | null } };
   leases: Lease[];
   // Power drawn since the last monthly bill, in euros.
   powerDue: number;
@@ -298,7 +300,7 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null }],
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
   cables: [],
-  ledger: [], licenses: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false,

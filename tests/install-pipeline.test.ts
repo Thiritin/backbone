@@ -11,7 +11,7 @@ import { bootFromUsb, enterSetup, installOs } from "../src/sim/90-actions/consol
 import { reboot } from "../src/sim/90-actions/hardware";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { newGame } from "../src/sim/50-state";
-import { readyGame, skipTo, withServer } from "./fixtures";
+import { readyGame, skipTo, withServer, withStick } from "./fixtures";
 
 // withServer: dev3 is a free, cabled server with an empty disk.
 const err = (r: { ok: boolean; error?: string }) => r.error;
@@ -20,6 +20,7 @@ const minutes = (s: GameState, n: number) => { s.minute += n; };
 const dev = (s: GameState) => s.devices.find((d) => d.id === "dev3")!;
 const installed = (os: "lunix" | "windoors" = "lunix") => {
   const s = withServer(newGame(4));
+  withStick(s, "dev3", os);
   ok(bootFromUsb(s, "dev3"));
   ok(installOs(s, "dev3", os));
   for (let h = 0; h < 3; h++) tick(s);
@@ -38,8 +39,9 @@ describe("install pipeline", () => {
 
   it("installs the OS from the stick over its install hours, then boots it to the login", () => {
     const s = withServer(newGame(4));
+    withStick(s, "dev3");
     ok(bootFromUsb(s, "dev3"));
-    expect(machineScreen(s, "dev3")).toEqual({ kind: "bootMenu", media: ["lunix", "windoors"] });
+    expect(machineScreen(s, "dev3")).toEqual({ kind: "bootMenu", media: ["lunix"] });
     ok(installOs(s, "dev3", "lunix"));
     expect(machineScreen(s, "dev3")).toEqual({ kind: "osInstall", os: "lunix", progress: 0 });
     expect(err(enterSetup(s, "dev3"))).toBe("error.notAtPost");
@@ -62,6 +64,7 @@ describe("install pipeline", () => {
 
   it("leaves the disk empty after a reset mid-install", () => {
     const s = withServer(newGame(4));
+    withStick(s, "dev3", "windoors");
     ok(bootFromUsb(s, "dev3"));
     ok(installOs(s, "dev3", "windoors"));
     minutes(s, 50);
@@ -83,6 +86,7 @@ describe("install pipeline", () => {
     const s = withServer(newGame(4));
     skipTo(s, 2010);
     expect(err(installSoftware(s, "dev3", "proxmocks"))).toBe("error.noOs");
+    withStick(s, "dev3");
     ok(bootFromUsb(s, "dev3"));
     ok(installOs(s, "dev3", "lunix"));
     expect(err(installSoftware(s, "dev3", "proxmocks"))).toBe("error.osNotUp");

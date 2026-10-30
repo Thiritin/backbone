@@ -38,6 +38,13 @@ export function bootedMachine(s: GameState, id: string, os: ServerOsId = "lunix"
   setMachine(s, id, () => ({ os: { id: os, version: serverOsAt(os, yearOf(s.hour)).version, installedAt: s.hour } }));
   return id;
 }
+// The OS image downloaded, as its site's Download ISO leaves it.
+export const withImage = (s: GameState, os: ServerOsId = "lunix"): void => { if (!s.media.images.includes(os)) s.media.images.push(os); };
+// The USB stick written with the OS and plugged into the server.
+export function withStick(s: GameState, deviceId: string, os: ServerOsId = "lunix"): void {
+  withImage(s, os);
+  s.media.stick = { os, in: deviceId };
+}
 const bootedFor = (s: GameState, id: string, softwareId: string) => bootedMachine(s, id, softwareById(softwareId).os[0]);
 
 // A running workload on every server without one, so it draws its rated power instead of the idle power.

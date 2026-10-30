@@ -5,7 +5,7 @@ import { Back, bayRects, Cord, portSpots, psuInlets, type Side, type Spot } from
 import { CABLE, Defs, Front, ledProps, portNo, type Lamp, type Parts, type PortLamp, type PortLight } from "./fronts";
 
 // plugs holds whether each power supply is plugged in.
-export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; blink?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[]; chassisId?: string | null }
+export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; blink?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[]; chassisId?: string | null; stick?: boolean }
 // One cable end in this rack and the end it leads to, in this rack or on a remote box.
 export interface RackLink { id: string; end: End; peer: End; color: string }
 // A device outside the rack that the rack is or can be cabled to, drawn as a small box above it.
@@ -32,6 +32,8 @@ interface Props {
   onPlug?: (device: string, psu: number) => void;
   // A click on a server's console end on the back, where the monitor plugs in.
   onConsole?: (device: string) => void;
+  // A click on a server's front USB port, where the stick plugs in.
+  onUsb?: (device: string) => void;
   // A powered-off device dragged on the front to a new bottom unit.
   onMove?: (device: string, slot: number) => void;
 }
@@ -65,7 +67,7 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, onMove }: Props) {
+export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, onUsb, onMove }: Props) {
   const back = side === "back";
   const [slide, setSlide] = useState<{ id: string; from: number; y0: number; to: number; px: number } | null>(null);
   const slid = useRef(false);
@@ -109,7 +111,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
       out.push(
         <g key={it.id} className={`rack-dev${slides(it) ? " movable" : ""}`} transform={`translate(${pad} ${y + dy})`} aria-label={it.name} aria-pressed={it.id === selected}
           {...press(() => { if (!slid.current) onDevice(it.id); })} {...(slides(it) ? grabDevice(it) : {})} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
-          {back ? <Back {...it} w={w} h={h} /> : <Front {...it} w={w} h={h} />}
+          {back ? <Back {...it} w={w} h={h} /> : <Front {...it} w={w} h={h} onUsb={onUsb && (() => onUsb(it.id))} />}
         </g>,
       );
       if (moving && moving.to !== moving.from) out.push(<rect key="slide" x={pad - 2} y={y + dy - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke={fitsAt(it, moving.to) ? "var(--ok)" : "var(--bad)"} strokeWidth="2" pointerEvents="none" />);

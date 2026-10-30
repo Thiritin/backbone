@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { nowHours, yearOf } from "../../../sim/00-core/time";
 import { modelById } from "../../../sim/10-catalog/hardware";
-import { SERVER_OS, serverOsAt, serverOsById, type ServerOsId } from "../../../sim/10-catalog/server-os";
+import { serverOsAt, serverOsById, type ServerOsId } from "../../../sim/10-catalog/server-os";
 import type { Device, GameState } from "../../../sim/50-state";
-import { machineScreen, type MachineScreen } from "../../../sim/60-infra/oob";
+import { machineScreen, stickOs, type MachineScreen } from "../../../sim/60-infra/oob";
 import { drivesOf } from "../../../sim/60-infra/status";
 import { bootFromUsb, enterSetup } from "../../../sim/90-actions/console";
 import { continueBoot } from "../../../sim/90-actions/remote";
@@ -102,14 +102,14 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   const act = useStore((s) => s.act);
   const box = useRef<HTMLDivElement>(null);
   const bios = useBios(game, d);
-  const [stick, setStick] = useSessionState<ServerOsId>(`console.${d.id}.stick`, "lunix");
+  const usb = stickOs(game, d.id);
   // F11 during POST asks for the boot menu once POST is through; it holds for that boot only.
   const [menuFor, setMenuFor] = useState<number | null>(null);
   const [pick, setPick] = useState(0);
-  const os = useOsScreen(game, d, active, stick), kind = os.screen.kind, year = yearOf(game.hour);
+  const os = useOsScreen(game, d, active, usb ?? "lunix"), kind = os.screen.kind, year = yearOf(game.hour);
   useEffect(() => { if (active) focusIn(box.current); }, [active, kind]);
   const menu = menuFor !== null && menuFor === d.bootUntil && kind !== "post" && kind !== "setup" && kind !== "dark";
-  const devices = ["Hard Disk", ...SERVER_OS.map((o) => `USB: ${stickName(o.id, year)}`), "Network (PXE)"];
+  const devices = ["Hard Disk", ...(usb ? [`USB: ${stickName(usb, year)}`] : []), "Network (PXE)"];
   const dark = kind === "dark" || (via === "bmc" && d.bmcHung);
   const shown = dark ? "dark" : menu ? "menu" : kind === "setup" ? "bios" : kind;
   const onKey = (key: string) => {
@@ -120,7 +120,7 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
       if (key === "ArrowUp") setPick((p) => Math.max(0, p - 1));
       else if (key === "ArrowDown") setPick((p) => Math.min(devices.length - 1, p + 1));
       else if (key === "Escape" || (key === "Enter" && pick === 0)) setMenuFor(null);
-      else if (key === "Enter" && pick <= SERVER_OS.length) { setStick(SERVER_OS[pick - 1].id); act(bootFromUsb, d.id); setMenuFor(null); }
+      else if (key === "Enter" && usb && pick === 1) { act(bootFromUsb, d.id); setMenuFor(null); }
     } else if (shown !== "dark" && shown !== "hung") os.onKey(key);
   };
   const keys = shown === "post" ? ["Delete", "F2", "F11"] : shown === "stuck" ? ["F1", "Delete"] : shown === "bios" ? ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight", "Enter", "Escape", "F10"]

@@ -13,7 +13,7 @@ import { installSoftware, softwareOn } from "../src/sim/90-actions/software";
 import { setPower, setRaid } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { nowHours } from "../src/sim/00-core/time";
-import { readyGame } from "./fixtures";
+import { readyGame, withImage, withStick } from "./fixtures";
 
 // readyGame: dev3 is a G1 Dwell server in rack2, cabled and up.
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
@@ -101,6 +101,7 @@ describe("USB installer", () => {
   it("installs an OS from the stick and boots the server from its disk when done", () => {
     const s = readyGame(7), id = storage(s), d = dev(s, id);
     expect(err(installOs(s, id, "lunix"))).toBe("error.notFromUsb");
+    withStick(s, id);
     ok(bootFromUsb(s, id));
     expect(consoleScreen(s, d).key).toBe("term.console.installer");
     expect(installCase(s, id).kind).toBe("empty");
@@ -127,6 +128,7 @@ describe("USB installer", () => {
 
   it("aborts an OS install on a reset, leaving the disk empty", () => {
     const s = readyGame(7), id = storage(s), d = dev(s, id);
+    withStick(s, id);
     ok(bootFromUsb(s, id));
     ok(installOs(s, id, "lunix"));
     hardReboot(s, d, "ipmi.log.reset");
@@ -139,12 +141,14 @@ describe("USB installer", () => {
   it("reinstalls over software nobody uses, and keeps it when the OS is refused", () => {
     const s = readyGame(7), id = storage(s);
     s.cash = 10000;
+    withStick(s, id);
     ok(bootFromUsb(s, id));
     ok(installOs(s, id, "lunix"));
     for (let h = 0; h < 2; h++) tick(s);
     ok(installSoftware(s, id, "vmwhere"));
     for (let h = 0; h < 6; h++) tick(s);
     expect(installCase(s, id).kind).toBe("idle");
+    withStick(s, id, "windoors");
     ok(bootFromUsb(s, id));
     expect(err(installOs(s, id, "nope" as "lunix"))).toBe("error.unknownOs");
     expect(softwareOn(s, id)[0]).toMatchObject({ id: "vmwhere", doneAt: null });
@@ -157,6 +161,7 @@ describe("USB installer", () => {
   it("needs the hostname typed to erase software with customers on it, and loses their data", () => {
     const s = readyGame(7), d = dev(s, "dev3"), before = s.workloads.length;
     expect(installCase(s, "dev3").kind).toBe("busy");
+    withStick(s, "dev3");
     ok(bootFromUsb(s, "dev3"));
     expect(working(s, "dev3")).toBe(true);
     expect(err(installOs(s, "dev3", "lunix"))).toBe("error.confirmHostname");
@@ -175,6 +180,7 @@ describe("USB installer", () => {
 
   it("erases to bare metal under the same confirmation", () => {
     const s = readyGame(7), d = dev(s, "dev3");
+    withStick(s, "dev3");
     ok(bootFromUsb(s, "dev3"));
     expect(err(eraseDisk(s, "dev3"))).toBe("error.confirmHostname");
     ok(eraseDisk(s, "dev3", host(d)));
@@ -198,6 +204,7 @@ describe("VM console", () => {
     const s = readyGame(7), made = createVm(s, basement(s).id, PANEL_VM_SIZE), vm = made.ok ? made.id! : "";
     ok(made);
     expect(err(installOs(s, vm, "lunix"))).toBe("error.noMedia");
+    withImage(s, "lunix");
     ok(setMedia(s, vm, "lunix"));
     expect(vmById(s, vm)?.media).toBe("lunix");
     expect(machineScreen(s, vm)).toEqual({ kind: "bootMenu", media: ["lunix"] });
@@ -210,12 +217,14 @@ describe("VM console", () => {
     tick(s);
     expect(machineScreen(s, vm)).toEqual({ kind: "login", os: "lunix" });
     ok(stopWorkload(s, vm));
+    withImage(s, "lunix");
     ok(setMedia(s, vm, "lunix"));
     expect(err(installOs(s, vm, "lunix"))).toBe("error.alreadyStopped");
   });
 
   it("needs the VM's hostname to erase a panel with customers on it, booked on the host", () => {
     const s = readyGame(7), vm = panelVm(s), w = vmById(s, vm)!, before = s.workloads.length, panel = hostOfVm(s, vm)!.id;
+    withImage(s, "lunix");
     ok(setMedia(s, vm, "lunix"));
     expect(installCase(s, vm).kind).toBe("busy");
     expect(err(installOs(s, vm, "lunix"))).toBe("error.confirmHostname");
@@ -233,6 +242,7 @@ describe("VM console", () => {
 
   it("erases a VM to an empty disk", () => {
     const s = readyGame(7), vm = panelVm(s), w = vmById(s, vm)!;
+    withImage(s, "lunix");
     ok(setMedia(s, vm, "lunix"));
     expect(err(eraseDisk(s, vm))).toBe("error.confirmHostname");
     ok(eraseDisk(s, vm, w.hostname));

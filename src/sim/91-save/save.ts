@@ -102,6 +102,7 @@ export function deserialize(raw: string): GameState {
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
   // Machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.licenses) s.licenses = heldLicenses(s);
+  s.media = data.media ?? base.media;
   return s;
 }
 

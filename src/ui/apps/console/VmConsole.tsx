@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
 import { yearOf } from "../../../sim/00-core/time";
-import { SERVER_OS, serverOsAt } from "../../../sim/10-catalog/server-os";
+import { serverOsAt } from "../../../sim/10-catalog/server-os";
 import type { GameState } from "../../../sim/50-state";
 import type { Workload } from "../../../sim/60-infra/cluster";
 import { setMedia } from "../../../sim/90-actions/console";
+import { mountableImages } from "../../../sim/90-actions/media";
 import { startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
 import { menuOn } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
@@ -20,7 +21,7 @@ export function VmConsole({ game, vm: w, front }: { game: GameState; vm: Workloa
   const st = vmState(game, w), on = st === "running" || st === "down" || st === "frozen";
   const dark = !on || os.screen.kind === "dark", year = yearOf(game.hour);
   const media = () => [
-    ...SERVER_OS.map((o) => ({ label: `${o.name} ${serverOsAt(o.id, year).version}`, checked: w.media === o.id, run: () => act(setMedia, w.id, o.id) })),
+    ...mountableImages(game).map((o) => ({ label: `${o.name} ${serverOsAt(o.id, year).version}`, checked: w.media === o.id, run: () => act(setMedia, w.id, o.id) })),
     null,
     { label: "Eject", disabled: !w.media, run: () => act(setMedia, w.id, null) },
   ];

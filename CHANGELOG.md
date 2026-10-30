@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Operating system images are downloaded from their websites, written to a USB stick and plugged into the server at the rack, or mounted on a virtual machine.
 - A website you host for free as a sponsor shows your company logo in its footer while the sponsorship runs.
 - A phishing notice links to the reported page, which opens in the browser and shows the fake bank login until you take it down.
 - The Products and Virtual machines apps are gone: you manage machines in the web console of their software, set prices under Pricing in Marketing, and read incident reports in Security.

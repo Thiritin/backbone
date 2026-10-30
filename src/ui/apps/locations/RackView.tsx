@@ -1,4 +1,5 @@
 import { Gauge, Plug, Truck, Zap, ZoomIn, ZoomOut } from "lucide-react";
+import { plugStick, unplugStick } from "../../../sim/90-actions/media";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { modelById, type DeviceKind } from "../../../sim/10-catalog/hardware";
@@ -29,7 +30,7 @@ import { useHandWork } from "./HandSheet";
 export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
     const model = modelById(d.model);
-    return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, chassisId: d.chassisId, plugs: d.components.filter((c) => c.kind === "psu").map(isPlugged), ...deviceLamps(g, d.id, model) };
+    return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, chassisId: d.chassisId, plugs: d.components.filter((c) => c.kind === "psu").map(isPlugged), stick: g.media.stick.in === d.id, ...deviceLamps(g, d.id, model) };
   });
 }
 
@@ -186,7 +187,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
         <div className="loc-rack-scroll" ref={rackRef} style={{ width: rackWidth }}>
           <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420 * zoom} u={22 * zoom}
             hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); if (id !== monitor) setMonitor(null); }} onDeviceMenu={deviceMenu} onFree={openMount}
-            onConnect={(a, b) => act(connect, a, b)} onPlug={plug} onConsole={here ? (id) => { onDevice(id); setMonitor(id); } : undefined} onMove={(id, slot) => act(moveInRack, id, slot)} />
+            onConnect={(a, b) => act(connect, a, b)} onPlug={plug} onConsole={here ? (id) => { onDevice(id); setMonitor(id); } : undefined} onUsb={here ? (id) => (game.media.stick.in === id ? act(unplugStick) : act(plugStick, id)) : undefined} onMove={(id, slot) => act(moveInRack, id, slot)} />
         </div>
       </div>
       <div className="loc-insp">

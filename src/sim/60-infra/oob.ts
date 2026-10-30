@@ -4,7 +4,7 @@ import { hashRng, rand } from "../00-core/rng";
 import { nowHours, yearOf } from "../00-core/time";
 import { hasBmc, isOobPort, modelById, OOB_PORT, oobPorts, type OobPort } from "../10-catalog/hardware";
 import { softwareById } from "../10-catalog/platforms";
-import { SERVER_OS, serverOsById, type ServerOsId } from "../10-catalog/server-os";
+import { serverOsById, type ServerOsId } from "../10-catalog/server-os";
 import type { Device, End, GameState, MachineState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { pullPlug, pushLog } from "./power";
@@ -104,6 +104,9 @@ export type MachineScreen =
 
 const share = (doneAt: number, hours: number, now: number) => Math.max(0, Math.min(1, 1 - (doneAt - now) / hours));
 
+// The OS the USB stick boots on this server: plugged in there and written.
+export const stickOs = (s: GameState, deviceId: string): ServerOsId | null => (s.media.stick.in === deviceId ? s.media.stick.os : null);
+
 // The OS that is up on the disk: installing, installing software or at the login.
 function upScreen(s: GameState, m: MachineState, loggedIn: boolean): MachineScreen {
   const now = nowHours(s);
@@ -131,7 +134,7 @@ export function machineScreen(s: GameState, machineId: string, loggedIn = false)
   if (d.stuck && state !== "booting") return { kind: "stuck" };
   if (state === "hung") return { kind: "hung" };
   if (booting(s, d)) return d.os && d.bootFrom === "disk" && (d.bootUntil ?? 0) - now <= osBootHours(s, d) ? { kind: "booting", os: d.os.id } : { kind: "post" };
-  if (d.bootFrom === "usb") return { kind: "bootMenu", media: SERVER_OS.map((o) => o.id) };
+  if (d.bootFrom === "usb") { const os = stickOs(s, d.id); return os ? { kind: "bootMenu", media: [os] } : { kind: "notFound" }; }
   return upScreen(s, d, loggedIn);
 }
 
@@ -149,7 +152,8 @@ const SCREEN_KEY: Record<MachineScreen["kind"], string> = {
 
 // The i18n key and params of the first line a device's console shows, for the Terminal's console command and the KVM page.
 export function consoleScreen(s: GameState, d: Device): { key: string; params: Record<string, string> } {
-  return { key: SCREEN_KEY[machineScreen(s, d.id).kind], params: { host: d.hostname ?? d.label ?? d.name } };
+  const key = SCREEN_KEY[machineScreen(s, d.id).kind];
+  return { key: key === "term.console.login" && d.os?.id === "windoors" ? "term.console.logon" : key, params: { host: d.hostname ?? d.label ?? d.name } };
 }
 
 // A management device on the internet: a KVM on a data switch with no firewall on its way out, or a console server or OOB switch

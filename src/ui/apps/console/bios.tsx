@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { stickOs } from "../../../sim/60-infra/oob";
 import { useState } from "react";
 import { dateOf } from "../../../sim/00-core/time";
 import { modelById } from "../../../sim/10-catalog/hardware";
@@ -41,6 +42,7 @@ export function useBios(game: GameState, d: Device): { view: ReactNode; onKey: (
         { label: "Memory", value: ram(sv.ramGb) },
       ] : []),
       { label: "Drives", value: `${drives.length}` },
+      { label: "USB Device", value: stickOs(game, d.id) ? "USB Flash Disk" : "Not Present" },
     ],
     [
       { label: "RAID Level", value: LEVELS.find(([v]) => v === d.raid)?.[1] ?? d.raid, help: "Enter cycles through the levels the drives allow. A new level deletes the array.", run: pickLevel },

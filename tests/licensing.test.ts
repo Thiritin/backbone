@@ -9,9 +9,10 @@ import { installedCores } from "../src/sim/60-infra/status";
 import { licenseCost } from "../src/sim/85-products/products";
 import { tick } from "../src/sim/88-tick/tick";
 import { bootFromUsb, installOs } from "../src/sim/90-actions/console";
+import type { ServerOsId } from "../src/sim/10-catalog/server-os";
 import { createSoftwareVm, installSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { hypervisor, readyGame, skipTo, withServer } from "./fixtures";
+import { hypervisor, readyGame, skipTo, withServer, withStick } from "./fixtures";
 import { installScript } from "../src/sim/60-infra/apt";
 import { t } from "../src/i18n/en";
 
@@ -26,9 +27,12 @@ const monthEnd = (s: GameState) => {
 // A fresh G1 storage server in rack2, booted from the USB stick into the installer.
 const atInstaller = (s: GameState, id = "dev90", slot = 10): string => {
   s.devices.push(device(id, "g1-storage", "Dwell", "rack2", slot, null, `st-${id}`, modelById("g1-storage").price));
+  withStick(s, id);
   ok(bootFromUsb(s, id));
   return id;
 };
+// The stick rewritten with the OS the installer installs.
+const install = (s: GameState, id: string, os: ServerOsId) => { withStick(s, id, os); return installOs(s, id, os); };
 const sockets = (s: GameState, id: string) => dev(s, id).components.filter((p) => p.kind === "cpu").length;
 
 describe("license eras", () => {
@@ -47,12 +51,12 @@ describe("Windoors Server", () => {
   it("is bought once per machine in 2005, kept on a reinstall and bills nothing monthly", () => {
     const s = readyGame(7), id = atInstaller(s);
     s.cash = 1000;
-    ok(installOs(s, id, "windoors"));
+    ok(install(s, id, "windoors"));
     expect(s.cash).toBe(400);
     expect(once(s)).toMatchObject([{ category: "licenses", params: { name: "Windoors Server 2003", machine: "st-dev90" }, amount: -600 }]);
     expect(s.licenses).toMatchObject([{ id: "windoors", machineId: id }]);
     ok(bootFromUsb(s, id));
-    ok(installOs(s, id, "windoors"));
+    ok(install(s, id, "windoors"));
     expect(s.cash).toBe(400);
     monthEnd(s);
     expect(s.ledger.filter((l) => l.key === "ledger.windoors")).toEqual([]);
@@ -71,10 +75,10 @@ describe("Windoors Server", () => {
   it("is refused without the cash, and leaves the machine as it was", () => {
     const s = readyGame(7), id = atInstaller(s);
     s.cash = 100;
-    expect(err(installOs(s, id, "windoors"))).toBe("error.noCash");
+    expect(err(install(s, id, "windoors"))).toBe("error.noCash");
     expect(dev(s, id).os).toBeNull();
     expect(s.cash).toBe(100);
-    ok(installOs(s, id, "lunix"));
+    ok(install(s, id, "lunix"));
   });
 
   it("from 2016 costs nothing at install and 4 euros per core each month", () => {
@@ -82,7 +86,7 @@ describe("Windoors Server", () => {
     skipTo(s, 2016);
     const id = atInstaller(s);
     const cash = s.cash;
-    ok(installOs(s, id, "windoors"));
+    ok(install(s, id, "windoors"));
     expect(s.cash).toBe(cash);
     expect(s.licenses).toEqual([]);
     monthEnd(s);
@@ -95,7 +99,7 @@ describe("VMwhere", () => {
     const s = readyGame(7);
     skipTo(s, 2010);
     const id = atInstaller(s);
-    ok(installOs(s, id, "lunix"));
+    ok(install(s, id, "lunix"));
     for (let h = 0; h < 2; h++) tick(s);
     s.cash = 5000;
     ok(installSoftware(s, id, "vmwhere"));
@@ -108,7 +112,7 @@ describe("VMwhere", () => {
 
   it("is refused without the cash", () => {
     const s = readyGame(7), id = atInstaller(s);
-    ok(installOs(s, id, "lunix"));
+    ok(install(s, id, "lunix"));
     for (let h = 0; h < 2; h++) tick(s);
     s.cash = 100;
     expect(err(installSoftware(s, id, "vmwhere"))).toBe("error.noCash");
@@ -118,7 +122,7 @@ describe("VMwhere", () => {
     const s = readyGame(7);
     skipTo(s, 2024);
     const id = atInstaller(s);
-    ok(installOs(s, id, "lunix"));
+    ok(install(s, id, "lunix"));
     for (let h = 0; h < 2; h++) tick(s);
     const cash = s.cash;
     ok(installSoftware(s, id, "vmwhere"));
@@ -133,7 +137,7 @@ describe("old saves", () => {
   it("give every Windoors and VMwhere machine its license for free, billed nothing at month end", () => {
     const s = readyGame(7), id = atInstaller(s);
     s.cash = 1000;
-    ok(installOs(s, id, "windoors"));
+    ok(install(s, id, "windoors"));
     const raw = JSON.parse(serialize(s));
     delete raw.licenses;
     const back = deserialize(JSON.stringify(raw));
@@ -142,7 +146,7 @@ describe("old saves", () => {
     monthEnd(back);
     expect(back.ledger.slice(lines).filter((l) => l.category === "licenses")).toEqual([]);
     ok(bootFromUsb(back, id));
-    ok(installOs(back, id, "windoors"));
+    ok(install(back, id, "windoors"));
     expect(back.ledger.slice(lines).filter((l) => l.key === "ledger.licenseOnce")).toEqual([]);
     expect(back.cash).toBeGreaterThan(cash - 600);
   });
@@ -151,7 +155,7 @@ describe("old saves", () => {
 describe("the Terminal", () => {
   it("refuses the VMwhere install line without the cash", () => {
     const s = readyGame(7), id = atInstaller(s);
-    ok(installOs(s, id, "lunix"));
+    ok(install(s, id, "lunix"));
     for (let h = 0; h < 2; h++) tick(s);
     s.cash = 100;
     const r = installScript(s, id, softwareById("vmwhere").install.commands[0]);

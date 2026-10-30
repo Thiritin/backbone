@@ -35,9 +35,9 @@ export function powerOptions(game: GameState, d: Device): { via: string | null; 
   return { via: bmc && !dead ? name : kvm ? modelById(kvm.model).name : null, pdu, options };
 }
 
-export const FRONT_BUSY: Record<FrontOp | "bmcreset" | "continue" | "recover", string> = {
+export const FRONT_BUSY: Record<FrontOp | "bmcreset" | "continue" | "recover" | "stick", string> = {
   power: "Pressing power button", hold: "Holding power button", reset: "Pressing reset button", pull: "Unplugging power", plug: "Plugging in power", bmcreset: "Resetting controller",
-  continue: "Continuing boot", recover: "Recovering",
+  continue: "Continuing boot", recover: "Recovering", stick: "Plugging in USB stick",
 };
 export interface FrontOption { op: FrontOp; label: string; disabled?: boolean }
 

@@ -102,7 +102,7 @@ Licenses. `licenseCost` adds the Windoors fee of a core era (4 euros per core or
 Every machine goes through the same states; the console shows them.
 
 1. **Empty disk.** A server shows POST and then "Operating system not found"; a VM has no BIOS and goes straight there. Both exist today.
-2. **Boot from media.** Server: F11 in POST, the USB stick, or the BIOS boot order (exists). VM: the Media menu mounts an ISO and the VM boots from it on the next start (exists as `setMedia`; the ISO becomes one of two).
+2. **Boot from media.** Server: F11 in POST and the USB stick, when it is plugged in and written (section 4.1). VM: the Media menu mounts an ISO and the VM boots from it on the next start (exists as `setMedia`; the ISO becomes one of two).
 3. **OS installer.** The existing `installer.tsx` stops listing software and becomes two installers. Lunix: the Debiant text-mode installer, five screens (language, hostname, partition disks with the erase confirmation the current installer already has for a busy target, installing with a progress bar, reboot). Windoors: Setup (edition, license terms, "Where do you want to install", copying files with a percentage, two reboots). `installOs(machineId, osId, confirm?)` replaces the installer's software pick: refused unless the machine booted from media that holds that OS (a server from the stick after `bootFromUsb`, a VM with that ISO in `media`); sets `os` with `installedAt` at the hour the install is done and holds `bootUntil` until the first boot after it; a reset, a pulled plug or a stopped VM mid-install leaves `os` null. The erase and busy-target rules of `installCase` stay as they are. A server boots from its disk once the install starts, a VM ejects its ISO.
 4. **First boot.** Lunix boots to `tty1` login (any key logs in as root; the hostname is the machine's). Windoors boots to the logon screen, then the desktop.
 5. **Install software.** Lunix: type the commands from the software's site into the console or over `ssh` from the Terminal. Windoors: Server Manager on the desktop. `installSoftware(machineId, softwareId)` is refused unless the machine is booted with an OS the software runs on and nothing conflicts; it then runs for `installHours` and the console shows the method's progress text.
@@ -124,6 +124,18 @@ Skipping time skips the screens; at 1× they run in real time. Boot screens are 
 `machineScreen(s, machineId, loggedIn?)` in `60-infra/oob.ts` is the state machine the console renders: `dark`, `post`, `stuck`, `setup`, `bootMenu` (with the operating systems on the media), `notFound`, `osInstall` (os, progress), `booting` (os, the last boot minutes of `bootUntil`), `login` (os), `desktop` (Windoors once `loggedIn`), `installing` (software, progress) and `hung`. `consoleScreen` derives its first line from it.
 
 Uninstall: Lunix `apt-get remove <package>` or the site's uninstall line; Windoors from Server Manager. Refused while the software is a control plane with workloads, with today's reason.
+
+### 4.1 Media
+
+The installer media are real objects: ISO images the player downloads and one USB stick.
+
+- **Images.** `s.media.images` lists the operating systems whose ISO the player has downloaded, once each. The Download page of the Debiant and Windoors sites has a Download ISO button on every release the year allows; any of them adds the OS, since the installer always installs the newest version of the year. A download takes no game time, and Windoors needs no license to download (the license is paid at install).
+- **The stick.** `s.media.stick` holds the OS written on it and the server it is in. Write to USB stick, next to the release list on the same page, writes the OS once its image is downloaded; the stick holds one OS at a time. The stick plugs in at the USB port on every server front in the rack's front view, or with the Plug in USB stick tile in the server's inspector. Where the player stands, or in the basement, it is in at once; at a datacenter the player is away from it is hand work of two minutes (`PLUG_HOURS`), with remote hands or a friend through the hand-work sheet, and the stick is in once it is done. Plugging into another server moves it. Unplug works where the player stands. The stick is never lost.
+- **Boot.** The boot menu lists "USB: <OS> <version>" only while the stick is in that server and holds an OS, and `bootFromUsb` is refused with "No bootable device" otherwise. The BIOS main page shows the USB device or Not Present. A server that booted from the stick and loses it shows Operating system not found until it boots again. `installOs` on a server needs the stick to hold that OS.
+- **VMs.** The VM console's Media menu and the hypervisor consoles' Media menus list `mountableImages(s)`, the downloaded images; Eject stays. `setMedia` refuses an image that is not downloaded.
+- **New game and old saves.** No images, the stick empty and out. Machines that already have an OS keep it.
+
+Actions in `90-actions/media.ts`: `downloadImage(osId)`, `writeStick(osId)`, `plugStick(deviceId, how?)`, `unplugStick()`. Tests: `tests/media.test.ts`; the console and install suites plug the stick through the `withStick` fixture.
 
 ## 5. App installers on paid platforms
 
@@ -147,7 +159,7 @@ The machine's own console runs the same shell once logged in, so the Terminal an
 
 `src/ui/apps/console/` as built, with these changes and additions. Each screen is a colour set and a font, no art.
 
-**Kept as built**: no signal, POST, the stuck prompt, the BIOS, the boot menu (its USB entry renamed to the stick's OS list: "USB: Debiant 8 netinst", "USB: Windoors Server 2012 R2"), Operating system not found, hung, the VM console's title bar (Media gains the two ISOs).
+**Kept as built**: no signal, POST, the stuck prompt, the BIOS, the boot menu (its USB entry names the OS on the stick, "USB: Debiant 8 netinst" or "USB: Windoors Server 2012 R2", and is there only while the stick is in), Operating system not found, hung, the VM console's title bar (Media lists the downloaded ISOs).
 
 **Lunix installer**: blue background, grey boxes with red title bars, white text, as the Debiant installer looks in every year. Tab and Enter move through the five screens of section 4, after the installer boot menu (Install, Erase disk, Reboot) that also holds the bare-metal erase.
 

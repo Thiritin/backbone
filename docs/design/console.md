@@ -55,7 +55,7 @@ The BIOS's cursor and page are UI state in the session. Only "in setup" and ever
 
 ## Installing
 
-The player's USB stick is always plugged in and the VM's ISO is always at hand; both hold operating systems and nothing else (docs/design/software.md, sections 1 and 4). The stick holds both, Debiant GNU/Lunix and Windoors Server, and an ISO holds the one it is of. The boot menu lists the stick once per operating system; the entry picked decides which installer starts, the Debiant text-mode installer or Windoors Setup (software.md, section 7).
+The player downloads an operating system's ISO from its website, writes it to the one USB stick and plugs the stick into the server, or mounts the ISO on a VM (docs/design/software.md, section 4.1). The stick and an ISO each hold one operating system. The boot menu lists the stick only while it is in that server; its operating system decides which installer starts, the Debiant text-mode installer or Windoors Setup (software.md, section 7).
 
 Each installer reaches a target screen: the array as the BIOS configured it, its usable size, and what is on it (Debiant's "Partition disks", Setup's partition list). Three cases.
 
