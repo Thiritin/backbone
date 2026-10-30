@@ -86,7 +86,7 @@ function baseTree(s: GameState, host: string): Tree {
     `PRETTY_NAME="Debian GNU/Linux ${r.version} (${r.codename})"`, `NAME="Debian GNU/Linux"`, `VERSION_ID="${r.version}"`,
     `VERSION="${r.version} (${r.codename})"`, "ID=debian", "",
   ].join("\n");
-  tree["/etc/apt/sources.list"] = `deb http://ftp.debian.org/debian ${r.codename} main\n`;
+  tree["/etc/apt/sources.list"] = `deb http://deb.debiant.org/debian ${r.codename} main\n`;
   tree["/var/log/syslog"] = (d?.log ?? []).map((e) => `${stamp(e.hour)} ${hostnameOf(s, host)} ${t(e.key)}\n`).join("");
   if (host === DESK) {
     tree[DESKTOP] = true;

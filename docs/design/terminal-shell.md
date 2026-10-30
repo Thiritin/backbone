@@ -13,7 +13,7 @@ you@desk $ apt update
 E: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)
 E: Unable to lock directory /var/lib/apt/lists/
 you@desk $ sudo apt update
-Hit:1 http://ftp.debian.org/debian sarge InRelease
+Hit:1 http://deb.debiant.org/debian sarge InRelease
 Reading package lists... Done
 All packages are up to date.
 ```
@@ -28,7 +28,7 @@ drwxr-xr-x 2 root root 4096 Mar 14 09:00 notes
 root@node003:~# cat notes/todo
 moved db to node004 on monday
 root@node003:~# apt update && apt upgrade
-Hit:1 http://ftp.debian.org/debian etch InRelease
+Hit:1 http://deb.debiant.org/debian etch InRelease
 Reading package lists... Done
 2 packages can be upgraded. Run 'apt list --upgradable' to see them.
 Reading package lists... Done

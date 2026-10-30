@@ -76,7 +76,7 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "dev.open": () => "Opening the dev menu.",
   "term.apt.usage": () => "Usage: apt [options] command\nMost used commands:\n  list - list packages\n  update - update list of available packages\n  upgrade - upgrade the system by installing/upgrading packages",
   "term.apt.lock": () => "E: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)\nE: Unable to lock directory /var/lib/apt/lists/",
-  "term.apt.hit": (p) => `Hit:1 http://ftp.debian.org/debian ${p.codename} InRelease\nReading package lists... Done`,
+  "term.apt.hit": (p) => `Hit:1 http://deb.debiant.org/debian ${p.codename} InRelease\nReading package lists... Done`,
   "term.apt.count": (p) => `${p.n} package${p.n === 1 ? "" : "s"} can be upgraded. Run 'apt list --upgradable' to see ${p.n === 1 ? "it" : "them"}.`,
   "term.apt.current": () => "All packages are up to date.",
   "term.apt.listing": () => "Listing... Done",
