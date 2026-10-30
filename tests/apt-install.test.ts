@@ -76,7 +76,7 @@ describe("installing software from the shell", () => {
     const r = run(s, ` ${line} `, at);
     expect(r.output).toEqual(["Starting the cPanic installer ..."]);
     expect(softwareOn(s, "dev3")[0]).toMatchObject({ id: "cpanic" });
-    expect(text(s, "curl -o latest -L https://securedownloads.cpanic.example/latest", at)).toBe("curl: (6) Could not resolve host: securedownloads.cpanic.example");
+    expect(text(s, "curl -o latest -L https://securedownloads.cpanic.net/latest", at)).toBe("curl: (6) Could not resolve host: securedownloads.cpanic.net");
   });
 
   it("removes software through apt, refuses while it serves, prints the OS in uname and lists nothing on a fresh disk", () => {
