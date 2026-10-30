@@ -13,7 +13,7 @@ import { installPart, removePart, replaceComponent, replaceSpares, reset, resetB
 import { migrateWebspace, recover } from "../90-actions/vms";
 import { continueBoot, recoverGear } from "../90-actions/remote";
 import { callOut, onCallAt, onCallPayroll, respond, restUntil } from "./oncall";
-import { atFair, isWorkHour, onShift, working, type Employee, type Task } from "./staff";
+import { atFair, onShift, working, type Employee, type Task } from "./staff";
 
 export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "migrate" | "part" | "domains" | "update" | "reset" | "bmcreset" | "recover" | "boot" | "gear";
 // One operation on one device; componentId is set for a replace and for taking a part out, partId for putting a spare in,
@@ -43,12 +43,12 @@ const spares = (s: GameState, locationId: string, d: Device, c: Device["componen
   replaceSpares(s, d, c, locationId).length && s.devices.filter((x) => x.model === `part-${c.kind}` && x.store === locationId && spareFits(modelById(d.model), d, x, c)).length;
 const worn = (s: GameState, c: Device["components"][number]) => s.hour - c.installedAt >= COMPONENTS[c.kind].life * HOURS_PER_YEAR;
 
-// Out of office hours the on-call technician comes in for these: a failed part and starting a device again.
+// When no technician is on shift the on-call technician comes in for these: a failed part and starting a device again.
 export const urgent = (s: GameState, o: Pick<TechOp, "kind" | "deviceId" | "componentId">): boolean =>
   o.kind === "on" || o.kind === "reset" || (o.kind === "replace" && !!s.devices.find((d) => d.id === o.deviceId)?.components.some((c) => c.id === o.componentId && c.failedAt !== null));
 
 // The technician and hour a new operation at the location would get, counting the queue ahead of it and rest after call-outs;
-// an urgent one goes to the on-call technician out of office hours.
+// an urgent one goes to the on-call technician while nobody is on shift.
 // ponytail: assumes every queued op takes a slot in turn and ignores incidents; a per-technician schedule comes with shifts.
 export function nextSlot(s: GameState, locationId: string, task: Task, isUrgent = false): { name: string; hour: number; onCall?: true } | null {
   const techs = techsAt(s, locationId, task).filter((e) => e.assignment === "queue");
@@ -56,8 +56,9 @@ export function nextSlot(s: GameState, locationId: string, task: Task, isUrgent 
   const ops = s.techOps.filter((o) => opLocation(s, o) === locationId);
   let ahead = ops.length, urgentAhead = ops.filter((o) => urgent(s, o)).length;
   for (let hour = s.hour + 1; hour < s.hour + 24 * 90; hour++) {
-    if (isWorkHour(hour)) {
-      const free = techs.filter((e) => restUntil(s, e) <= hour);
+    const shift = techs.filter((e) => onShift(s, e, hour));
+    if (shift.length) {
+      const free = shift.filter((e) => restUntil(s, e) <= hour);
       if (ahead < free.length) return { name: free[ahead].name, hour };
       ahead -= free.length;
       urgentAhead = Math.max(0, urgentAhead - free.length);
@@ -160,8 +161,8 @@ function perform(s: GameState, o: TechOp): ActionResult | "off" {
   return upgradeNodePhp(s, d.id);
 }
 
-// Hourly: rules queue repairs; in office hours each technician who is not resting does at most one operation at their location.
-// Out of office hours the on-call technician at each location answers incidents first, then urgent operations, one per call-out hour.
+// Hourly: rules queue repairs; each technician on shift who is not resting does at most one operation at their location.
+// At a location with nobody on shift the on-call technician answers incidents first, then urgent operations, one per call-out hour.
 export function techTick(s: GameState): SimEvent[] {
   onCallPayroll(s);
   if (!s.staff.some((e) => e.role === "technician")) return [];
@@ -171,14 +172,13 @@ export function techTick(s: GameState): SimEvent[] {
   autoUpdates(s);
   autoRecover(s);
   const taken = new Set<string>();
-  if (!isWorkHour(s.hour)) {
-    for (const l of s.locations) {
-      const e = onCallAt(s, l.id, s.hour);
-      if (e && (respond(s, e, events) || work(s, e, events, taken, true))) callOut(s, e);
-    }
-  } else {
-    for (const e of s.staff.filter((x) => x.role === "technician" && working(x) && !atFair(s, x) && onShift(x, s.hour) && restUntil(s, x) <= s.hour)) work(s, e, events, taken, false);
+  const shift = s.staff.filter((x) => x.role === "technician" && working(x) && !atFair(s, x) && onShift(s, x, s.hour));
+  for (const l of s.locations) {
+    if (shift.some((x) => x.location === l.id)) continue;
+    const e = onCallAt(s, l.id, s.hour);
+    if (e && (respond(s, e, events) || work(s, e, events, taken, true))) callOut(s, e);
   }
+  for (const e of shift.filter((x) => restUntil(s, x) <= s.hour)) work(s, e, events, taken, false);
   return events;
 }
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { dueStep, type Invoice } from "../src/sim/45-billing/billing";
 import {
-  COURSE_HOURS, forumAwareness, isWorkHour, MARKET_PER_ROLE, quitChance, ROLES, staffPrice, TASKS, TRAINER_HOURS, visibleCandidates, type Role,
+  COURSE_HOURS, forumAwareness, isWorkHour, MARKET_PER_ROLE, MONTHLY_HOURS, quitChance, ROLES, staffPrice, TASKS, TRAINER_HOURS, visibleCandidates, type Role,
 } from "../src/sim/47-staff/staff";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
@@ -184,7 +184,7 @@ describe("work", () => {
 });
 
 describe("pay, raises and quitting", () => {
-  it("bills salaries monthly to the ledger, prorated for the first month", () => {
+  it("bills salaries monthly to the ledger for the hours worked in the first month", () => {
     const s = newGame(13);
     runTo(s, FEB_1 / 2);
     const id = hireOne(s, "support");
@@ -193,12 +193,14 @@ describe("pay, raises and quitting", () => {
     while (s.hour < FEB_1) events.push(...tick(s));
     const line = s.ledger.find((l) => l.key === "ledger.salary")!;
     expect(line.category).toBe("salaries");
-    expect(-line.amount).toBeCloseTo(salary / 2, 0);
+    // Hired on Sunday 16 January: eleven office days of 8 hours follow.
+    expect(-line.amount).toBeCloseTo((salary * 88) / MONTHLY_HOURS, 0);
     expect(events.find((e) => e.key === "event.salaries")).toBeTruthy();
     runTo(s, FEB_1 + 24 * 14);
     const cash = s.cash;
     expect(fire(s, id).ok).toBe(true);
-    expect(cash - s.cash).toBeCloseTo(salary / 2, 0);
+    // Ten office days from 1 to 14 February.
+    expect(cash - s.cash).toBeCloseTo((salary * 80) / MONTHLY_HOURS, 0);
     expect(s.staff).toEqual([]);
   });
 

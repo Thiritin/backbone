@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { createTicket, MINUTES, TEMPLATES } from "../src/sim/40-support/tickets";
 import type { Invoice } from "../src/sim/45-billing/billing";
 import { ACTION_MINUTES, activityFor } from "../src/sim/47-staff/activity";
-import { campaignBoost, forumAwareness, salaryOwed, TASKS, visibleCandidates, type Role } from "../src/sim/47-staff/staff";
+import { campaignBoost, forumAwareness, MONTHLY_HOURS, onShift, shiftEndAt, TASKS, visibleCandidates, type Role } from "../src/sim/47-staff/staff";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { sendReminder, setBillingRules, suspendServices } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { changePrice } from "../src/sim/90-actions/sales";
-import { assign, hire, setHours } from "../src/sim/90-actions/staff";
+import { addTeam, assign, hire, removeTeam, setShift, setTeam } from "../src/sim/90-actions/staff";
 import { replyTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
@@ -36,12 +36,12 @@ function overdueInvoice(s: GameState, customerId: string, days: number): Invoice
   return inv;
 }
 
-describe("working hours", () => {
-  it("pays a 2-hour employee a quarter and gives them at most 120 minutes of work a day", () => {
+describe("teams and shifts", () => {
+  it("pays a part-time team member a quarter and gives them at most 120 minutes of work a day", () => {
     const s = newGame(41);
     const full = hireOne(s, "support"), part = hireOne(s, "support");
-    expect(setHours(s, part, 2).ok).toBe(true);
-    expect(setHours(s, part, 3 as 2)).toEqual({ ok: false, error: "error.workHours" });
+    expect(setTeam(s, part, "parttime").ok).toBe(true);
+    expect(setTeam(s, part, "nope")).toEqual({ ok: false, error: "error.unknownTeam" });
     assign(s, full, "forum");
     const [fullName, partName] = [emp(s, full).name, emp(s, part).name];
     const c = addCustomer(s, "Queue Filler", "private");
@@ -60,40 +60,74 @@ describe("working hours", () => {
     expect(paid(partName)).toBeCloseTo(paid(fullName) / 4, 1);
   });
 
-  it("pays out the old hours when they change, so the month is paid as worked", () => {
+  it("pays the hours actually worked when the team changes mid-month", () => {
     const s = newGame(42);
     const id = hireOne(s, "bookkeeper");
-    const e = emp(s, id);
     runTo(s, 372);
-    setHours(s, id, 2);
+    setTeam(s, id, "parttime");
     runTo(s, FEB_1);
     const paid = -s.ledger.filter((l) => l.key === "ledger.salary").reduce((sum, l) => sum + l.amount, 0);
-    expect(paid).toBeCloseTo(2000 * (372 / 744) + 500 * (372 / 744), 1);
-    expect(salaryOwed({ ...e, hours: 4, hoursFrom: 0 }, 0, 744)).toBe(1000);
+    // Ten office days of 8 hours, then eleven part-time days of 2 hours.
+    expect(paid).toBeCloseTo((102 * 2000) / MONTHLY_HOURS, 1);
+  });
+
+  it("runs night shifts past midnight and covers the week around the clock with three teams", () => {
+    const s = newGame(47);
+    const ids = ["Early", "Late", "Night"].map((n) => (addTeam(s, n) as { id: string }).id);
+    [6, 14, 22].forEach((start, i) => { for (let d = 0; d < 7; d++) setShift(s, ids[i], d, { start, hours: 8 }); });
+    const [early, late, night] = ids.map((id) => s.teams.find((t) => t.id === id)!);
+    // Tuesday 03:00 belongs to Monday's night shift, which ends at 06:00.
+    expect(shiftEndAt(night, MONDAY + 27)).toBe(MONDAY + 30);
+    expect(shiftEndAt(early, MONDAY + 27)).toBeNull();
+    for (let h = MONDAY; h < MONDAY + 168; h++) expect([early, late, night].filter((t) => shiftEndAt(t, h) !== null)).toHaveLength(1);
+
+    const agent = hireOne(s, "support");
+    setTeam(s, agent, ids[2]);
+    expect(onShift(s, emp(s, agent), MONDAY + 23)).toBe(true);
+    expect(onShift(s, emp(s, agent), MONDAY + 12)).toBe(false);
+    const c = addCustomer(s, "Night Owl", "private");
+    runTo(s, MONDAY + 23);
+    createTicket(s, s.customers.find((x) => x.id === c)!, "howTo", null, "upload");
+    runTo(s, MONDAY + 30);
+    expect(activityFor(s, c).some((a) => a.by === emp(s, agent).name)).toBe(true);
+  });
+
+  it("validates shifts and keeps teams with members", () => {
+    const s = newGame(48);
+    const id = hireOne(s, "support");
+    expect(setShift(s, "office", 1, { start: 9, hours: 13 })).toEqual({ ok: false, error: "error.shift" });
+    expect(setShift(s, "office", 7, null)).toEqual({ ok: false, error: "error.shift" });
+    expect(removeTeam(s, "office")).toEqual({ ok: false, error: "error.teamInUse" });
+    expect(addTeam(s, " ")).toEqual({ ok: false, error: "error.teamName" });
+    setTeam(s, id, "parttime");
+    expect(removeTeam(s, "office").ok).toBe(true);
+    expect(s.teams.map((t) => t.id)).toEqual(["parttime"]);
   });
 
   it("scales marketing and forum work with the hours", () => {
     const s = newGame(43);
     const m = hireOne(s, "marketing");
     const full = campaignBoost(s);
-    setHours(s, m, 2);
+    setTeam(s, m, "parttime");
     expect(campaignBoost(s) - 1).toBeCloseTo((full - 1) * (120 / ACTION_MINUTES.campaigns), 6);
     assign(s, m, "forum");
     const two = forumAwareness(s);
-    setHours(s, m, 8);
+    setTeam(s, m, "office");
     expect(forumAwareness(s)).toBeCloseTo(4 * two, 6);
   });
 
-  it("loads old saves with 8 hours and an empty activity log", () => {
+  it("loads old saves into the office team with an empty activity log", () => {
     const s = newGame(44);
     const id = hireOne(s, "support");
     const old = JSON.parse(serialize(s));
     delete old.activity;
-    for (const e of old.staff) { delete e.hours; delete e.hoursFrom; }
+    delete old.teams;
+    for (const e of old.staff) { delete e.team; delete e.worked; Object.assign(e, { hours: 4, hoursFrom: 0 }); }
     const loaded = deserialize(JSON.stringify(old));
     expect(loaded.activity).toEqual([]);
-    expect(emp(loaded, id).hours).toBe(8);
-    expect(salaryOwed(emp(loaded, id), 0, 744)).toBe(2000);
+    expect(loaded.teams.map((t) => t.id)).toEqual(["office", "parttime"]);
+    expect(emp(loaded, id)).toMatchObject({ team: "office", worked: 0 });
+    expect("hours" in emp(loaded, id)).toBe(false);
   });
 });
 
@@ -137,7 +171,7 @@ describe("billing rules", () => {
     s.hour = MONDAY + 8;
     for (let i = 0; i < 10; i++) overdueInvoice(s, c, 8 + i);
     const book = hireOne(s, "bookkeeper");
-    setHours(s, book, 2);
+    setTeam(s, book, "parttime");
     runTo(s, MONDAY + 24);
     // A reminder with its check takes 21 minutes, so five fit in two hours.
     expect(s.invoices.filter((i) => i.reminders.length).length).toBe(5);

@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Staff now belong to teams, and the new Shifts planner sets each team's hours for every weekday, including night shifts, so several teams can cover the clock.
+- Salaries are paid for the hours each person actually worked that month, so a part-time team or a short month costs less.
 - Every VM and container page in a hypervisor console shows its usage over the last day and is laid out the way the real product shows it.
 - A price raise on a running service now takes effect from the next monthly invoice, so a customer who cancels over it pays the old price.
 - An upgrade offer now asks you to pick the individual server it grows on, starting with the one the service runs on now.

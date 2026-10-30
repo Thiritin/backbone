@@ -11,7 +11,7 @@ import type { Customer, Product, Service } from "./30-customers/customers";
 import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
-import { applications, type Candidate, type Employee } from "./47-staff/staff";
+import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
 import type { OnCall } from "./47-staff/oncall";
 import type { TechOp, TechRules } from "./47-staff/technicians";
 import type { ActivityEntry } from "./47-staff/activity";
@@ -199,6 +199,8 @@ export interface GameState {
   gameOver: number | null;
   // Employees and the job market.
   staff: Employee[];
+  // Teams and their weekly shifts; every employee belongs to one.
+  teams: Team[];
   candidates: Candidate[];
   // What staff and the player did for each customer, oldest first.
   activity: ActivityEntry[];
@@ -312,7 +314,7 @@ export const newGame = (seed: number): GameState => ({
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
   homeLine: { id: "", next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
-  staff: [], candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
+  staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
   marketing: newMarketing(), fairs: [], sponsorships: [], sponsorOffers: [],
   network: newNetwork(),
   ops: newOps(),
