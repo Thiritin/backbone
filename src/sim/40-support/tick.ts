@@ -8,6 +8,7 @@ import { grantExtension, isSuspended, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPIN
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { takenDown } from "../60-infra/ops";
+import { readOnlySweep } from "../60-infra/status";
 import { coverage } from "../60-infra/maintenance";
 import { applyNoticeWork } from "./notices";
 import { applyOrderWork } from "../30-market/orders";
@@ -129,7 +130,7 @@ function spawnHourly(s: GameState): void {
 // An outage hurts only once the customer noticed it (10-catalog/attention.ts), in hours that count on their clock; they may
 // write in in the hour they notice.
 function outages(s: GameState, customer: (id: string) => Customer): void {
-  const down = s.services.filter((v) => v.endedAt === null && !serviceOnline(s, v.id) && !isSuspended(s, v.customerId) && !takenDown(s, v.id));
+  const down = readOnlySweep(s, () => s.services.filter((v) => v.endedAt === null && !serviceOnline(s, v.id) && !isSuspended(s, v.customerId) && !takenDown(s, v.id)));
   const since: Record<string, number> = {};
   for (const v of down) {
     since[v.id] = s.downSince[v.id] ?? s.hour;

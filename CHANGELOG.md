@@ -6,6 +6,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - A new company starts without a website: build a free HTML site in Marketing under Channels in three days, buy a domain, pick rented or own hosting and launch it.
 - The site Admin page is gone; once the site is live, Marketing gains a Products section where SSL sits under web hosting as its add-on.
+- The Delete button in confirmation dialogs is red again on the early desktop themes.
+
+- Time runs faster in companies with many services.
 - The first time you open the game, a notice explains that Backbone is in early access and links to GitHub and Discord for feedback.
 - A server's actions now sit in one row of tiles without section headings, and its remote access card only shows when a console is attached.
 - A new Applications app lists every installed app; right-click any app there or in the dock to remove it from the dock, keep it in the dock, or put a link to it on the desktop.
