@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { hourOf, isMonthStart } from "../src/sim/00-core/time";
+import { hourOf } from "../src/sim/00-core/time";
 import { MAIL_PROVIDERS, mailDelay, mailImpaired, mailShare, providerById, salesAddress, seatsFor } from "../src/sim/80-business/mail";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
-import { issueInvoice } from "../src/sim/30-market/manual";
-import { newGame, type GameState } from "../src/sim/50-state";
-import { tick } from "../src/sim/88-tick/tick";
+import { newGame } from "../src/sim/50-state";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { bookMail, cancelMail, selectMailServer } from "../src/sim/90-actions/mail";
 import { signRegistrar, registerCompanyDomain } from "../src/sim/90-actions/registrar";
@@ -13,25 +11,8 @@ import { hire } from "../src/sim/90-actions/staff";
 import { setEmailOrders } from "../src/sim/90-actions/website";
 import { CHECKS } from "../src/sim/checklist";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import type { ActionResult } from "../src/sim/90-actions/hardware";
 import { readyGame } from "./fixtures";
-
-const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
-const idOf = (r: ActionResult) => (r.ok ? r.id! : "");
-const run = (s: GameState, hours: number) => { for (let h = 0; h < hours; h++) tick(s); };
-const toMonthStart = (s: GameState) => { do tick(s); while (!isMonthStart(s.hour)); };
-const mailLedger = (s: GameState) => s.ledger.filter((e) => e.hour === s.hour && e.key === "ledger.companyMail");
-
-// A mail server in a VM on the basement hypervisor, installed and running.
-function selfHosted(s: GameState, software = "postfixit"): string {
-  s.company = { ...s.company, mail: { kind: "free" } };
-  const vm = createVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, { vcpu: 2, ramGb: 4, diskGb: 40 });
-  expect(vm.ok).toBe(true);
-  const r = installSoftware(s, idOf(vm), software);
-  expect(err(r)).toBe("ok");
-  run(s, 6);
-  return idOf(r);
-}
+import { err, idOf, run, toMonthStart, mailLedger, selfHosted } from "./company-mail.helpers";
 
 describe("external providers", () => {
   it("price a seat by the year, Hosted Exchange falling from 10 to 6", () => {
@@ -126,66 +107,6 @@ describe("the mail software", () => {
     expect(s.company.mail.kind).toBe("external");
     expect(selectMailServer(s).ok).toBe(true);
     expect(s.company.mail).toMatchObject({ kind: "self", software: "postfixit" });
-  });
-});
-
-describe("impaired delivery", () => {
-  it("lists a mail server on a dynamic line and halves email orders", () => {
-    const s = readyGame(4);
-    selfHosted(s);
-    expect(mailImpaired(s)).toBe(false);
-    expect(mailShare(s)).toBe(1);
-    s.homeLine = { id: "dsl-16", next: null };
-    run(s, 2);
-    expect(mailImpaired(s)).toBe(true);
-    expect(mailShare(s)).toBe(0.5);
-  });
-
-  it("is impaired while the mail host is down", () => {
-    const s = readyGame(4);
-    selfHosted(s);
-    expect(mailImpaired(s)).toBe(false);
-    s.devices = s.devices.map((d) => (d.id === "dev3" ? { ...d, on: false } : d));
-    expect(mailImpaired(s)).toBe(true);
-  });
-
-  it("brings fewer order emails than external mail over the same weeks", () => {
-    const orders = (impaired: boolean) => {
-      let n = 0;
-      for (const seed of [1, 2, 3, 4, 5, 6]) {
-        const s = readyGame(seed);
-        s.marketing.owned = ["website"];
-        if (impaired) {
-          selfHosted(s);
-          s.homeLine = { id: "dsl-16", next: null };
-        }
-        run(s, 24 * 90);
-        n += s.sales.requests.filter((r) => r.kind === "order").length;
-      }
-      return n;
-    };
-    const healthy = orders(false), impaired = orders(true);
-    expect(healthy).toBeGreaterThan(0);
-    expect(impaired).toBeLessThan(healthy);
-  }, 60_000);
-
-  it("pays invoices sent in that window three days later", () => {
-    const s = readyGame(5), c = s.customers[0];
-    const pay = (x: GameState) => {
-      x.rng = { ...x.rng, s: 12345 };
-      return issueInvoice(x, c.id, [{ serviceId: null, key: "invoice.line.firstMonth", params: { label: "x" }, amount: 10 }]);
-    };
-    const copy = structuredClone(s);
-    const base = pay(s);
-    expect(base.payStep).toBe(0);
-    selfHosted(copy);
-    copy.homeLine = { id: "dsl-16", next: null };
-    run(copy, 2);
-    expect(mailDelay(copy)).toBe(72);
-    const hour = copy.hour;
-    const late = pay(copy);
-    expect(late.payStep).toBe(0);
-    expect(late.payAt! - hour).toBe(base.payAt! - s.hour + 72);
   });
 });
 
