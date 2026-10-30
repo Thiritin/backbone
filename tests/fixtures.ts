@@ -10,6 +10,7 @@ import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
 import { setMachine } from "../src/sim/60-infra/cluster";
+import { portPeers } from "../src/sim/60-infra/status";
 import { serverOsAt, type ServerOsId } from "../src/sim/10-catalog/server-os";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { yearOf } from "../src/sim/00-core/time";
@@ -44,6 +45,11 @@ export const withImage = (s: GameState, os: ServerOsId = "lunix"): void => { if 
 export function withStick(s: GameState, deviceId: string, os: ServerOsId = "lunix"): void {
   withImage(s, os);
   s.media.stick = { os, in: deviceId };
+}
+// The server cabled to a free port of the basement switch, which reaches the home router and its live line.
+export function withNetwork(s: GameState, id: string): void {
+  const sw = s.devices.find((d) => modelById(d.model).kind === "switch")!;
+  s.cables.push({ id: `cab-net-${id}`, a: { device: id, port: 0 }, b: { device: sw.id, port: portPeers(s, sw.id).findIndex((p) => !p) }, kind: "copper", color: null });
 }
 const bootedFor = (s: GameState, id: string, softwareId: string) => bootedMachine(s, id, softwareById(softwareId).os[0]);
 

@@ -5,10 +5,11 @@ import { t } from "../../i18n/en";
 import { nowHours, yearOf } from "../00-core/time";
 import { SOFTWARE, softwareById, type Software } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
-import { installBlock, installSoftware, uninstallSoftware, upgradable, upgradeServer } from "../90-actions/software";
+import { installBlock, uninstallSoftware, upgradable, upgradeServer } from "../90-actions/software";
 import { machineOf } from "./cluster";
 import { DESK, releaseOf, treeOf } from "./fs";
-import { osUp } from "./oob";
+import { installFromSite } from "../90-actions/console";
+import { machineNet, osUp } from "./oob";
 import type { CommandResult, Watch } from "./terminal";
 
 const lines = (key: string, p: Record<string, string | number> = {}) => t(key, p).split("\n");
@@ -21,6 +22,7 @@ export function apt(s: GameState, host: string, args: string[], root: boolean): 
   if ((op === "update" || op === "upgrade") && !root) return { output: lines("term.apt.lock"), failed: true };
   switch (op) {
     case "update":
+      if (host !== DESK && machineNet(s, host)) return unresolved(s, host, r.codename);
       return { output: [...lines("term.apt.hit", { codename: r.codename }), ...lines(due.length ? "term.apt.count" : "term.apt.current", { n: due.length })] };
     case "list":
       return { output: [t("term.apt.listing"), ...due.map((u) => t("term.apt.row", { pkg: u.pkg, codename: r.codename, to: u.to, from: u.from }))] };
@@ -45,6 +47,16 @@ export function apt(s: GameState, host: string, args: string[], root: boolean): 
 }
 
 const norm = (line: string) => line.trim().split(/\s+/).join(" ");
+// docs/design/software.md, section 4.2: the host a software's install lines download from, the OS mirror without a repo line.
+export const MIRROR = "deb.debiant.org";
+const siteOf = (line: string | undefined) => (line && /https?:\/\/([^/\s"]+)/.exec(line)?.[1]) ?? MIRROR;
+const repoSite = (sw: Software) => siteOf(sw.install.commands.find((c) => c.startsWith("echo ")));
+
+// apt-get update without network: every list it reads fails to resolve, the mirror's and the repos the shell added.
+function unresolved(s: GameState, host: string, codename: string): CommandResult {
+  const sites = [MIRROR, ...SOFTWARE.filter((sw) => sw.install.kind === "apt" && repoSite(sw) !== MIRROR && repoAdded(s, host, sw)).map(repoSite)];
+  return { output: [...sites.flatMap((site, i) => lines("term.apt.err", { n: i + 1, site, codename })), ...lines("term.apt.reading").slice(0, 1), ...sites.flatMap((site) => lines("term.apt.fetchFail", { site, codename })), t("term.apt.ignored")], failed: true };
+}
 // Packages a software's site has installed before its own, which apt sets up at once.
 const EXTRA = new Set(SOFTWARE.flatMap((sw) => sw.install.commands.map((c) => /^apt-get install -y (\S+)$/.exec(c)?.[1]).filter((p): p is string => !!p && p !== sw.install.package)));
 const pkgOf = (sw: Software) => sw.install.package ?? sw.id;
@@ -69,8 +81,9 @@ function install(s: GameState, host: string, pkg: string, yes: boolean): Command
   const why = installBlock(s, host, sw.id);
   if (why) return { output: [...lines("term.apt.state"), `E: ${t(why)}`], failed: true };
   const plan = [...lines("term.apt.state"), t("term.apt.new"), `  ${pkg}`, t("term.apt.installs", { n: 1 })];
+  if (machineNet(s, host)) return { output: [...plan, ...lines("term.apt.archives", { site: repoSite(sw), pkg, codename: releaseOf(s, host).codename })], failed: true };
   if (!yes) return { output: plan, confirm: true };
-  return { output: plan, action: [installSoftware, host, sw.id], watch: watching(host, host, sw) };
+  return { output: plan, action: [installFromSite, host, sw.id], watch: watching(host, host, sw) };
 }
 
 function remove(s: GameState, host: string, pkg: string): CommandResult {
@@ -87,7 +100,8 @@ export function installScript(s: GameState, machineId: string, line: string): Co
   if (!sw || !osUp(s, machineId)) return undefined;
   const why = installBlock(s, machineId, sw.id);
   if (why) return { output: [t(why)], failed: true };
-  return { output: lines("term.install.script", { name: sw.name }), action: [installSoftware, machineId, sw.id], watch: watching(machineOf(s, machineId)?.hostname ?? machineId, machineId, sw) };
+  if (machineNet(s, machineId)) return { output: lines(typed.startsWith("wget") ? "term.wget.resolve" : "term.curl.resolve", { host: siteOf(typed) }), failed: true };
+  return { output: lines("term.install.script", { name: sw.name }), action: [installFromSite, machineId, sw.id], watch: watching(machineOf(s, machineId)?.hostname ?? machineId, machineId, sw) };
 }
 
 // One refresh of an install the screen watches: the progress lines due since the last one and the watch to keep, null

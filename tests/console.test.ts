@@ -13,7 +13,7 @@ import { installSoftware, softwareOn } from "../src/sim/90-actions/software";
 import { setPower, setRaid } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { nowHours } from "../src/sim/00-core/time";
-import { readyGame, withImage, withStick } from "./fixtures";
+import { readyGame, withImage, withNetwork, withStick } from "./fixtures";
 
 // readyGame: dev3 is a G1 Dwell server in rack2, cabled and up.
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
@@ -101,6 +101,7 @@ describe("USB installer", () => {
   it("installs an OS from the stick and boots the server from its disk when done", () => {
     const s = readyGame(7), id = storage(s), d = dev(s, id);
     expect(err(installOs(s, id, "lunix"))).toBe("error.notFromUsb");
+    withNetwork(s, id);
     withStick(s, id);
     ok(bootFromUsb(s, id));
     expect(consoleScreen(s, d).key).toBe("term.console.installer");
@@ -128,6 +129,7 @@ describe("USB installer", () => {
 
   it("aborts an OS install on a reset, leaving the disk empty", () => {
     const s = readyGame(7), id = storage(s), d = dev(s, id);
+    withNetwork(s, id);
     withStick(s, id);
     ok(bootFromUsb(s, id));
     ok(installOs(s, id, "lunix"));
@@ -141,6 +143,7 @@ describe("USB installer", () => {
   it("reinstalls over software nobody uses, and keeps it when the OS is refused", () => {
     const s = readyGame(7), id = storage(s);
     s.cash = 10000;
+    withNetwork(s, id);
     withStick(s, id);
     ok(bootFromUsb(s, id));
     ok(installOs(s, id, "lunix"));

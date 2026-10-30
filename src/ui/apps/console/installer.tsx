@@ -3,8 +3,9 @@ import { useState } from "react";
 import { nowHours, yearOf } from "../../../sim/00-core/time";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import { serverOsAt, serverOsById, type ServerOsId } from "../../../sim/10-catalog/server-os";
-import type { Device, GameState } from "../../../sim/50-state";
+import type { Device, GameState, NetFail } from "../../../sim/50-state";
 import type { Workload } from "../../../sim/60-infra/cluster";
+import { machineNet } from "../../../sim/60-infra/oob";
 import { drivesOf, raidUsable } from "../../../sim/60-infra/status";
 import { eraseDisk, installCase, installOs, setMedia } from "../../../sim/90-actions/console";
 import { reboot } from "../../../sim/90-actions/hardware";
@@ -20,7 +21,7 @@ export const hostOf = (m: Machine) => (isDevice(m) ? m.hostname ?? m.label ?? m.
 export interface Keyed { view: ReactNode; onKey: (key: string) => void; keys: string[]; look?: string }
 
 interface Row { label: string; dim?: boolean; run?: () => void }
-interface Page { title: string; body?: ReactNode; rows: Row[]; keys?: Record<string, () => void>; foot?: string }
+interface Page { title: string; body?: ReactNode; rows: Row[]; keys?: Record<string, () => void>; foot?: string; err?: boolean }
 const pct = (x: number) => `${Math.floor(x * 100)}%`;
 const bar = (x: number) => <div className="inst-bar"><span style={{ width: pct(x) }} /></div>;
 // Windoors Setup and the screens after it come in eras: 2003, 2008 to 2012 R2, 2016 and later.
@@ -85,14 +86,14 @@ function Rows({ rows, at, pick }: { rows: Row[]; at: number; pick: (i: number) =
   return <>{rows.map((r, i) => <div key={r.label} className={`inst-row${i === at ? " on" : ""}${r.dim ? " dim" : ""}`} onClick={() => pick(i)}>{r.label}</div>)}</>;
 }
 
-type LunixStep = "boot" | "language" | "hostname" | "disks" | "write" | "erase";
+type LunixStep = "boot" | "language" | "hostname" | "fetch" | "disks" | "write" | "erase";
 const LANGUAGES = ["English", "Deutsch", "Français", "Español", "Nederlands"];
 
 // The Debiant text-mode installer: the boot menu, language, hostname, the partitioner with its erase confirmation; the
 // install itself and the reboot follow from the simulation.
 function useLunixSetup(game: GameState, m: Machine): Keyed {
   const [step, setStep] = useState<LunixStep>("boot");
-  const tg = useTarget(game, m), version = serverOsAt("lunix", yearOf(game.hour)).version;
+  const tg = useTarget(game, m), version = serverOsAt("lunix", yearOf(game.hour)).version, net = machineNet(game, m.id);
   const go = (to: LunixStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
   const back = (to: LunixStep): Row => ({ label: "<Go Back>", run: go(to) });
   const pages: Record<LunixStep, Page> = {
@@ -102,21 +103,24 @@ function useLunixSetup(game: GameState, m: Machine): Keyed {
       { label: isDevice(m) ? "Reboot" : "Eject and reboot", run: tg.leave },
     ] },
     language: { title: "Select a language", rows: [...LANGUAGES.map((l) => ({ label: l, run: go("hostname") })), back("boot")] },
-    hostname: { title: "Configure the network", body: <div>Hostname: {hostOf(m)}</div>, rows: [{ label: "<Continue>", run: go("disks") }, back("language")] },
+    hostname: net
+      ? { title: "Configure the network", err: true, body: <div>{t(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf")}</div>, rows: [{ label: "<Continue>", run: go("fetch") }] }
+      : { title: "Configure the network", body: <div>Hostname: {hostOf(m)}</div>, rows: [{ label: "<Continue>", run: go("disks") }, back("language")] },
+    fetch: { title: "Retrieving packages", err: true, body: <div>{t("term.console.osInstallFailed")} Check your network connection.</div>, rows: [{ label: "<Abort installation>", run: tg.leave }] },
     disks: { title: "Partition disks", body: <div>Partitioning method:</div>, rows: [{ label: `Guided - use entire disk (${tg.array})`, run: go("write") }, back("hostname")] },
     write: { title: "Partition disks", body: <>{tg.what}<div>Write the changes to disks?</div></>, rows: [{ label: "<Yes>", run: () => tg.install("lunix") }, { label: "<No>", run: go("disks") }] },
     erase: { title: "Erase disk", body: tg.what, rows: [{ label: "<Erase>", run: tg.erase }, back("boot")] },
   };
   const page = pages[step], typing = (step === "write" || step === "erase") && tg.found.kind === "busy";
   const pager = usePager({ ...page, keys: { Escape: go("boot") } }, (k) => typing && tg.type(k));
-  const view = <Debiant title={page.title} body={page.body} note={tg.note}><Rows rows={page.rows} at={pager.at} pick={pager.pick} /></Debiant>;
+  const view = <Debiant title={page.title} body={page.body} note={tg.note} err={page.err}><Rows rows={page.rows} at={pager.at} pick={pager.pick} /></Debiant>;
   return { view, onKey: pager.onKey, keys: [...keysOf(page, typing), "Escape"] };
 }
 
-function Debiant({ title, body, note, children }: { title: string; body?: ReactNode; note?: string; children?: ReactNode }) {
+function Debiant({ title, body, note, err, children }: { title: string; body?: ReactNode; note?: string; err?: boolean; children?: ReactNode }) {
   return (
     <div className="deb">
-      <div className="deb-box">
+      <div className={`deb-box${err ? " err" : ""}`}>
         <div className="deb-t">[!!] {title}</div>
         <div className="deb-body">{body}{children}</div>
       </div>
@@ -222,6 +226,15 @@ export function OsInstalling({ game, m, os, progress }: { game: GameState; m: Ma
     <WinSetup era={era} title="Installing Windoors...">
       <ul className="ws-check">{WIN_STEPS.map((x, i) => <li key={x} className={i === at ? "on" : i < at ? "done" : ""}>{x}{i === at && i === 1 ? ` (${pct(share)})` : ""}</li>)}</ul>
     </WinSetup>
+  );
+}
+
+// An install the network dropped out of; any key goes on to the empty disk.
+export function NetFailed({ reason }: { reason: NetFail }) {
+  return (
+    <Debiant title="Retrieving packages" err body={<><div>{t(reason === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf")}</div><div>{t("term.console.osInstallFailed")} Check your network connection.</div></>}>
+      <Rows rows={[{ label: "<Continue>" }]} at={0} pick={() => {}} />
+    </Debiant>
   );
 }
 

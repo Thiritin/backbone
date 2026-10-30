@@ -12,7 +12,7 @@ import { bootFromUsb, installOs } from "../src/sim/90-actions/console";
 import type { ServerOsId } from "../src/sim/10-catalog/server-os";
 import { createSoftwareVm, installSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { hypervisor, readyGame, skipTo, withServer, withStick } from "./fixtures";
+import { hypervisor, readyGame, skipTo, withNetwork, withServer, withStick } from "./fixtures";
 import { installScript } from "../src/sim/60-infra/apt";
 import { t } from "../src/i18n/en";
 
@@ -28,6 +28,7 @@ const monthEnd = (s: GameState) => {
 const atInstaller = (s: GameState, id = "dev90", slot = 10): string => {
   s.devices.push(device(id, "g1-storage", "Dwell", "rack2", slot, null, `st-${id}`, modelById("g1-storage").price));
   withStick(s, id);
+  withNetwork(s, id);
   ok(bootFromUsb(s, id));
   return id;
 };

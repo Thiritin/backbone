@@ -5,11 +5,11 @@ import { nowHours, yearOf } from "../00-core/time";
 import { hasBmc, isOobPort, modelById, OOB_PORT, oobPorts, type OobPort } from "../10-catalog/hardware";
 import { softwareById } from "../10-catalog/platforms";
 import { serverOsById, type ServerOsId } from "../10-catalog/server-os";
-import type { Device, End, GameState, MachineState } from "../50-state";
+import type { Device, End, GameState, MachineState, NetFail } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { pullPlug, pushLog } from "./power";
 import { machineOf, vmById } from "./cluster";
-import { booting, deviceHealth, osBootHours, peerOf, powered, routeOut, working } from "./status";
+import { booting, cabledOut, deviceHealth, osBootHours, peerOf, powered, routeOut, working } from "./status";
 import { affects, exposureDays, instanceRisk, rank, vulnsFor, type OpenVuln } from "./vulns";
 
 export const CONTINUE_HOURS = 2 / 60;
@@ -99,6 +99,7 @@ export type MachineScreen =
   | { kind: "dark" | "post" | "stuck" | "setup" | "notFound" | "desktop" | "hung" }
   | { kind: "bootMenu"; media: ServerOsId[] }
   | { kind: "osInstall"; os: ServerOsId; progress: number }
+  | { kind: "osInstallFailed"; reason: NetFail }
   | { kind: "booting" | "login"; os: ServerOsId }
   | { kind: "installing"; software: string; progress: number };
 
@@ -121,6 +122,7 @@ export function machineScreen(s: GameState, machineId: string, loggedIn = false)
   if (vm) {
     const os = vm.os ?? null;
     if (vm.stopped || !vm.deviceId || !working(s, vm.deviceId)) return { kind: "dark" };
+    if (vm.installFailed) return { kind: "osInstallFailed", reason: vm.installFailed };
     if (os && os.installedAt > now) return { kind: "osInstall", os: os.id, progress: share(os.installedAt, serverOsById(os.id).installHours, now) };
     if (vm.media) return { kind: "bootMenu", media: [vm.media] };
     return upScreen(s, { os, software: vm.software ?? [] }, loggedIn);
@@ -130,12 +132,30 @@ export function machineScreen(s: GameState, machineId: string, loggedIn = false)
   const state = deviceHealth(s, d.id).state;
   if (!d.on || state === "nopower") return { kind: "dark" };
   if (d.setup) return { kind: "setup" };
+  if (d.installFailed) return { kind: "osInstallFailed", reason: d.installFailed };
   if (d.os && d.os.installedAt > now) return { kind: "osInstall", os: d.os.id, progress: share(d.os.installedAt, serverOsById(d.os.id).installHours, now) };
   if (d.stuck && state !== "booting") return { kind: "stuck" };
   if (state === "hung") return { kind: "hung" };
   if (booting(s, d)) return d.os && d.bootFrom === "disk" && (d.bootUntil ?? 0) - now <= osBootHours(s, d) ? { kind: "booting", os: d.os.id } : { kind: "post" };
   if (d.bootFrom === "usb") { const os = stickOs(s, d.id); return os ? { kind: "bootMenu", media: [os] } : { kind: "notFound" }; }
   return upScreen(s, d, loggedIn);
+}
+
+// docs/design/software.md, section 4.2: why a machine has no network, null when it has. A VM has its host's, and its
+// virtual card is always there, so it never lacks an interface.
+export function machineNet(s: GameState, machineId: string): NetFail | null {
+  const vm = vmById(s, machineId);
+  if (!vm) return cabledOut(s, machineId);
+  return vm.deviceId && !cabledOut(s, vm.deviceId) ? null : "noLink";
+}
+
+// A Lunix install whose network is gone is abandoned: the disk stays empty and the console shows why.
+export function installNetTick(s: GameState): void {
+  const now = nowHours(s);
+  const failing = (m: Partial<MachineState> & { id: string }) => m.os?.id === "lunix" && m.os.installedAt > now ? machineNet(s, m.id) : null;
+  const abandon = (why: NetFail) => ({ os: null, software: [], installFailed: why, bootUntil: undefined });
+  if (s.devices.some((d) => failing(d))) s.devices = s.devices.map((d) => { const why = failing(d); return why ? { ...d, ...abandon(why) } : d; });
+  if (s.workloads.some((w) => w.os && failing(w))) s.workloads = s.workloads.map((w) => { const why = w.os && failing(w); return why ? { ...w, ...abandon(why) } : w; });
 }
 
 // The OS on the machine answers on the network: booted, not installing an OS, not hung.
@@ -146,7 +166,7 @@ export const osUp = (s: GameState, machineId: string): ServerOsId | null => {
 
 const SCREEN_KEY: Record<MachineScreen["kind"], string> = {
   dark: "term.console.dark", post: "term.console.booting", stuck: "term.console.stuck", setup: "term.console.setup", bootMenu: "term.console.installer",
-  notFound: "term.console.notFound", osInstall: "term.console.osInstall", booting: "term.console.booting", login: "term.console.login",
+  notFound: "term.console.notFound", osInstall: "term.console.osInstall", osInstallFailed: "term.console.osInstallFailed", booting: "term.console.booting", login: "term.console.login",
   desktop: "term.console.login", installing: "term.console.login", hung: "term.console.hung",
 };
 

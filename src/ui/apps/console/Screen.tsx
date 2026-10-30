@@ -5,12 +5,12 @@ import { serverOsAt, serverOsById, type ServerOsId } from "../../../sim/10-catal
 import type { Device, GameState } from "../../../sim/50-state";
 import { machineScreen, stickOs, type MachineScreen } from "../../../sim/60-infra/oob";
 import { drivesOf } from "../../../sim/60-infra/status";
-import { bootFromUsb, enterSetup } from "../../../sim/90-actions/console";
+import { bootFromUsb, dismissInstallFail, enterSetup } from "../../../sim/90-actions/console";
 import { continueBoot } from "../../../sim/90-actions/remote";
 import { useSessionState } from "../../session";
 import { useStore } from "../../store";
 import { useBios } from "./bios";
-import { isDevice, OsInstalling, useInstaller, winEra, type Machine } from "./installer";
+import { isDevice, NetFailed, OsInstalling, useInstaller, winEra, type Machine } from "./installer";
 import { LunixBoot, LunixLogin, useLunix } from "./lunix";
 import { useWindoors, WindoorsBoot } from "./windoors";
 import "./console.css";
@@ -61,9 +61,11 @@ export function useOsScreen(game: GameState, m: Machine, active: boolean, stick:
   const lunix = useLunix(game, m, version, loggedIn, logIn, logOut, active);
   const windoors = useWindoors(game, m, version, loggedIn, logIn, logOut);
   const none = { onKey: () => {}, keys: [] as string[] };
+  const act = useStore((s) => s.act);
   const win = (v: string) => (winEra(v) === 0 ? "wt" : "ws");
   switch (screen.kind) {
     case "bootMenu": return { screen, look: media === "lunix" ? "deb" : win(serverOsAt("windoors", yearOf(game.hour)).version), ...installer };
+    case "osInstallFailed": return { screen, look: "deb", view: <NetFailed reason={screen.reason} />, onKey: () => act(dismissInstallFail, m.id), keys: ["Enter"] };
     case "osInstall": return { screen, look: screen.os === "lunix" ? "deb" : screen.progress < 0.45 && winEra(version) === 0 ? "wt" : "win", view: <OsInstalling game={game} m={m} os={screen.os} progress={screen.progress} />, ...none };
     case "booting": {
       const left = isDevice(m) ? (m.bootUntil ?? 0) - nowHours(game) : 0, share = 1 - left / (serverOsById(screen.os).bootMinutes / 60);

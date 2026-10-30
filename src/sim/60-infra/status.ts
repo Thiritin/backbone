@@ -6,7 +6,7 @@ import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
 import { serverOsById } from "../10-catalog/server-os";
-import type { Component, Device, End, GameState, Location, SpaceKind } from "../50-state";
+import type { Component, Device, End, GameState, Location, NetFail, SpaceKind } from "../50-state";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
 
@@ -276,6 +276,16 @@ const memoised = <V>(s: GameState, key: string, pick: (m: NonNullable<typeof mem
   map.set(key, v);
   return v;
 };
+// docs/design/software.md, section 4.2: why a server's cables give it no internet, null when they do. Unlike linkStatus it
+// leaves the server's own state out, since an installer runs while the server still counts as booting.
+export function cabledOut(s: GameState, deviceId: string): NetFail | null {
+  const d = s.devices.find((x) => x.id === deviceId);
+  const ends = d ? modelById(d.model).ports.map((_, port) => farEnd(s, { device: deviceId, port })) : [];
+  const first = ends.findIndex(Boolean);
+  if (first < 0) return "noInterfaces";
+  const used = d!.bond === "none" ? ends.slice(first, first + 1) : ends;
+  return used.some((f) => f && gatewayCap(s, f.end, deviceId) !== null) ? null : "noLink";
+}
 export const linkStatus = (s: GameState, deviceId: string): LinkStatus => memoised(s, deviceId, (m) => m.link, () => computeLinkStatus(s, deviceId));
 export const rackPower = (s: GameState, rackId: string): RackPower => memoised(s, rackId, (m) => m.power, () => computeRackPower(s, rackId));
 

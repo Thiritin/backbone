@@ -3,8 +3,9 @@ import { t } from "../../../i18n/en";
 import { dateOf, yearOf } from "../../../sim/00-core/time";
 import { runsOn, SOFTWARE, softwareById, type Software } from "../../../sim/10-catalog/platforms";
 import type { GameState } from "../../../sim/50-state";
-import { machineScreen } from "../../../sim/60-infra/oob";
-import { installBlock, installSoftware, softwareOn, uninstallSoftware } from "../../../sim/90-actions/software";
+import { machineNet, machineScreen } from "../../../sim/60-infra/oob";
+import { installFromSite } from "../../../sim/90-actions/console";
+import { installBlock, softwareOn, uninstallSoftware } from "../../../sim/90-actions/software";
 import { useStore } from "../../store";
 import { hostOf, hoursLeft, winEra, type Keyed, type Machine } from "./installer";
 
@@ -87,11 +88,27 @@ function Desktop({ game, m, version, era, logOut }: { game: GameState; m: Machin
       <div className="wd-task">
         <button className="wd-startbtn" onClick={() => setStart(!start)}>{era === 0 ? "start" : "Start"}</button>
         <span className="wd-tasks">{win && <span>{title}</span>}</span>
+        {machineNet(game, m.id) && <span className="wd-net" title="No network access">{era === 0 ? NO_NET_2003 : NO_NET}</span>}
         <span className="wd-clock">{clock(game)}</span>
       </div>
     </div>
   );
 }
+
+// The tray's no-network icon: the two monitors with the red X, then the globe with the yellow warning.
+const NO_NET_2003 = (
+  <svg viewBox="0 0 16 16" width="16" height="16" aria-label="No network access">
+    <rect x="1" y="2" width="8" height="6" fill="#dfe8f6" stroke="#333" /><rect x="5" y="6" width="8" height="6" fill="#dfe8f6" stroke="#333" />
+    <circle cx="12" cy="12" r="3.5" fill="#d00" /><path d="M10.6 10.6l2.8 2.8M13.4 10.6l-2.8 2.8" stroke="#fff" strokeWidth="1.3" />
+  </svg>
+);
+const NO_NET = (
+  <svg viewBox="0 0 16 16" width="16" height="16" aria-label="No network access">
+    <circle cx="7" cy="7" r="5.5" fill="none" stroke="#cfe3ff" /><path d="M1.5 7h11M7 1.5c-3 3-3 8 0 11M7 1.5c3 3 3 8 0 11" fill="none" stroke="#cfe3ff" />
+    <path d="M11.5 8.3l4 7.2h-8z" fill="#f5c400" stroke="#333" strokeWidth=".6" /><path d="M11.5 10.8v2.4M11.5 14.1v.6" stroke="#000" />
+  </svg>
+);
+const NetLine = ({ game, m }: { game: GameState; m: Machine }) => (machineNet(game, m.id) ? <div className="wm1-sec">Network: no network access</div> : null);
 
 const ROLE_WIZARD: Record<Era, string> = { 0: "Configure Your Server Wizard", 1: "Add Roles Wizard", 2: "Add Roles and Features Wizard" };
 const STEPS: Record<Era, string[]> = {
@@ -132,6 +149,7 @@ function Manager({ game, m, version, era, open }: { game: GameState; m: Machine;
     <div className="wm0">
       <div className="wm0-h"><b>Manage Your Server</b><span>Server: {host}</span></div>
       <div className="wm0-body">
+        <NetLine game={game} m={m} />
         <div className="wm0-t">Your server has been configured with the following roles and programs:</div>
         <Installed game={game} m={m} list={all} label="Remove" />
         <div className="wm-links">
@@ -150,6 +168,7 @@ function Manager({ game, m, version, era, open }: { game: GameState; m: Machine;
       <div className="wm1-main">
         <div className="wm1-h">Server Manager</div>
         <div className="wm1-sec">Server Summary<span>Computer name: {host}, Windoors Server {version}</span></div>
+        <NetLine game={game} m={m} />
         <div className="wm1-sec">Roles Summary</div>
         <Installed game={game} m={m} list={all} label="Remove" />
         <div className="wm-links"><button onClick={() => open("roles")}>Add Roles</button><button onClick={() => open("programs")}>Programs and Features</button></div>
@@ -163,6 +182,7 @@ function Manager({ game, m, version, era, open }: { game: GameState; m: Machine;
         <button onClick={() => open("roles")}><b>2</b> Add roles and features</button>
         <button disabled><b>3</b> Add other servers to manage</button>
       </div>
+      <NetLine game={game} m={m} />
       <div className="wm1-sec">Roles and features on {host}</div>
       <Installed game={game} m={m} list={all} label="Remove" />
     </div>
@@ -173,20 +193,21 @@ function Manager({ game, m, version, era, open }: { game: GameState; m: Machine;
 function Wizard({ game, m, era, items, close, roles = true }: { game: GameState; m: Machine; era: Era; items: Entry[]; close: () => void; roles?: boolean }) {
   const act = useStore((s) => s.act);
   const [pick, setPick] = useState<string | null>(null);
-  const [phase, setPhase] = useState<"pick" | "confirm" | "run">("pick");
+  const [phase, setPhase] = useState<"pick" | "confirm" | "run" | "failed">("pick");
   const [note, setNote] = useState("");
   const sw = pick ? softwareById(pick) : null, mine = items.find((e) => e.sw.id === pick);
   const now = machineScreen(game, m.id, true);
   const shown = phase !== "run" ? phase : mine?.installing ? "progress" : "results";
   const install = () => {
-    const r = act(installSoftware, m.id, pick!);
+    const r = act(installFromSite, m.id, pick!);
     if (r.ok) setPhase("run");
+    else if (r.error === "error.noDownload") setPhase("failed");
     else setNote(t(r.error));
   };
   const doneAt = softwareOn(game, m.id).find((x) => x.id === pick)?.doneAt ?? null;
   return (
     <div className="wz" data-era={era} data-steps={roles || undefined}>
-      {roles && <ul className="wz-steps">{STEPS[era].map((x, i) => <li key={x} className={i === AT[era][shown] ? "on" : ""}>{x}</li>)}</ul>}
+      {roles && <ul className="wz-steps">{STEPS[era].map((x, i) => <li key={x} className={i === AT[era][shown === "failed" ? "progress" : shown] ? "on" : ""}>{x}</li>)}</ul>}
       <div className="wz-main">
         {shown === "pick" && <>
           <div className="wz-t">{!roles ? "Select a program" : era === 0 ? "Select a role" : "Select one or more roles to install on this server"}</div>
@@ -210,6 +231,11 @@ function Wizard({ game, m, era, items, close, roles = true }: { game: GameState;
           <div className="inst-bar"><span style={{ width: `${now.kind === "installing" ? Math.floor(now.progress * 100) : 0}%` }} /></div>
           <div className="muted">{doneAt !== null ? `${hoursLeft(game, doneAt)} h left` : ""}</div>
         </>}
+        {shown === "failed" && sw && <>
+          <div className="wz-t">Installation progress</div>
+          <div>{sw.name}</div>
+          <div className="wm-note">{t("error.noDownload")}</div>
+        </>}
         {shown === "results" && sw && <>
           <div className="wz-t">Installation succeeded</div>
           <div>{sw.name}</div>
@@ -218,7 +244,7 @@ function Wizard({ game, m, era, items, close, roles = true }: { game: GameState;
         <div className="wz-btns">
           {shown === "pick" && <><button disabled={!pick} onClick={() => setPhase("confirm")}>Next</button><button onClick={close}>Cancel</button></>}
           {shown === "confirm" && <><button onClick={() => setPhase("pick")}>Previous</button><button onClick={install}>Install</button></>}
-          {(shown === "progress" || shown === "results") && <button onClick={close}>Close</button>}
+          {(shown === "progress" || shown === "results" || shown === "failed") && <button onClick={close}>Close</button>}
         </div>
       </div>
     </div>
