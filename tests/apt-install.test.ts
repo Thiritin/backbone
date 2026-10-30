@@ -8,7 +8,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import type { Call } from "../src/sim/90-actions/index";
 import { softwareOn } from "../src/sim/90-actions/software";
 import { installLog } from "../src/sim/60-infra/apt";
-import { fqdn } from "../src/sim/30-customers/domains";
+import { privateIp } from "../src/sim/60-infra/addresses";
 import { bootedMachine, hypervisor, skipTo, withServer } from "./fixtures";
 
 // withServer: dev3 is a free server cabled to the desk's router; booted here with an OS.
@@ -41,18 +41,21 @@ describe("installing software from the shell", () => {
     text(s, PROXMOCKS[1], at);
     const r = run(s, PROXMOCKS[2], at);
     expect(r.output).toContain("  proxmocks-ve");
+    const log = installLog(softwareById("proxmocks"));
+    expect(r.output.slice(-2)).toEqual(log.slice(0, 2));
+    expect(r.output.at(-2)).toBe("Get:1 http://deb.debiant.org/debiant stable/main amd64 proxmocks-ve amd64 [48.2 MB]");
     expect(softwareOn(s, "dev3")[0]).toMatchObject({ id: "proxmocks" });
     let w: Watch | null = r.watch[0];
-    const shown: string[] = [];
+    const byHour: string[][] = [];
     for (let h = 0; h < hours && w; h++) {
       tick(s);
       const step = watchStep(s, w);
-      shown.push(...step.output);
+      byHour.push(step.output);
       w = step.next;
     }
     expect(w).toBeNull();
-    expect(shown).toEqual([...installLog(softwareById("proxmocks")), "Proxmocks installation complete.", `You can access your new installation at https://${fqdn(s, at.host)}/`, "Reboot now to finish the installation."]);
-    expect(shown[0]).toBe("Get:1 http://deb.debiant.org/debiant stable/main amd64 proxmocks-ve amd64 [48.2 MB]");
+    expect(s.company.domain).toBeNull();
+    expect(byHour).toEqual([[log[2]], [log[3], log[4]], [log[5], "Proxmocks installation complete.", `You can access your new installation at https://${privateIp(s, "dev3")}:8006/`, "Reboot now to finish the installation."]]);
     expect(clusterOf(s, "dev3")?.platform).toBe("proxmocks");
     expect(text(s, "dpkg -l", at)).toMatch(/ii {2}proxmocks-ve +2017 +amd64 +Proxmocks/);
   });
@@ -77,7 +80,7 @@ describe("installing software from the shell", () => {
     const { s, at } = server();
     const line = softwareById("cpanic").install.commands[0].replace(/ /g, "   ");
     const r = run(s, ` ${line} `, at);
-    expect(r.output).toEqual(["Starting the cPanic installer ..."]);
+    expect(r.output).toEqual(["Starting the cPanic installer ...", ...installLog(softwareById("cpanic")).slice(0, 4)]);
     expect(softwareOn(s, "dev3")[0]).toMatchObject({ id: "cpanic" });
     expect(text(s, "curl -o latest -L https://securedownloads.cpanic.net/latest", at)).toBe("curl: (6) Could not resolve host: securedownloads.cpanic.net");
   });

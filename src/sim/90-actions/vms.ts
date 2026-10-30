@@ -4,7 +4,7 @@ import type { Resources } from "../10-catalog/products";
 import { bump } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import {
-  bookable, clusterOf, controlPlaneUp, hostOfVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
+  bookable, clusterOf, controlPlaneUp, insideVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
 } from "../60-infra/cluster";
 import { renumber, renumberError } from "../60-infra/addresses";
 import { handJob, type How } from "../60-infra/handwork";
@@ -100,7 +100,7 @@ const left = (a: Resources, b: Resources): Resources => ({ vcpu: Math.max(0, a.v
 export function migrateWorkload(s: GameState, id: string, toId: string, announced = false): ActionResult {
   const found = clusterWorkload(s, id);
   if (!found) return fail("error.unknownWorkload");
-  const { w, c } = found, vmHost = s.clusters.find((x) => x.id === toId && x.vm), to = vmHost ?? clusterOf(s, toId);
+  const { w, c } = found, vmHost = s.clusters.find((x) => x.id === toId && x.vm), to = vmHost ?? clusterOf(s, toId, c.kind) ?? clusterOf(s, toId);
   const d = s.devices.find((x) => x.id === toId);
   if (!to || (!vmHost && !d)) return fail("error.notNode");
   if (c.kind === "panel" && to.id !== c.id) return migrateWebspace(s, id, to.id);
@@ -187,8 +187,7 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
   const hours = w.backupAt !== null ? restoreHours(s, w) : 0;
   const lostAt = s.devices.find((d) => d.id === w.deviceId)?.dataLost ?? s.hour;
   patch(s, w.id, { deviceId: node, placedAt: s.hour, busyUntil: s.hour + hours, stopped: false, stuck: undefined, corrupted: undefined, recoverDoneAt: undefined, recoverFailed: undefined });
-  const host = isOwnVm(w) ? hostOfVm(s, w.id) : undefined;
-  const back = [w.id, ...(host ? s.workloads.filter((x) => x.clusterId === host.id).map((x) => x.id) : [])];
+  const back = [w.id, ...(isOwnVm(w) ? insideVm(s, w.id).map((x) => x.id) : [])];
   for (const item of back.map((x) => openItem(s, x))) {
     if (!item) continue;
     s.lossReports = s.lossReports.map((r) => ({ ...r, items: r.items.map((i) => (i === item ? { ...i, restored: true } : i)) }));
@@ -240,7 +239,7 @@ export function rescueWorkload(s: GameState, id: string, toId: string, how: How 
   const w = s.workloads.find((x) => x.id === id), from = w && s.devices.find((d) => d.id === w.deviceId);
   if (!w || !from) return fail("error.unknownWorkload");
   if (working(s, from.id)) return fail("error.powerOffFirst");
-  const c = s.clusters.find((x) => x.id === w.clusterId), to = clusterOf(s, toId), d = s.devices.find((x) => x.id === toId);
+  const c = s.clusters.find((x) => x.id === w.clusterId), to = (c && clusterOf(s, toId, c.kind)) ?? clusterOf(s, toId), d = s.devices.find((x) => x.id === toId);
   if (!c || !to || !d || to.vm || to.id === c.id) return fail("error.notNode");
   if (locationOf(s, d)?.id !== locationOf(s, from)?.id) return fail("error.otherLocation");
   if (lostDisk(s, w)) return fail("error.lostDisk");

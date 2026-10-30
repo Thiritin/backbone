@@ -224,3 +224,9 @@ export function completePath(s: GameState, host: string, cwd: string, word: stri
 const unescape = (w: string) => w.replace(/\\(.)/g, "$1");
 
 export const FILE_COMMANDS = ["pwd", "cd", "ls", "cat", "edit", "echo", "touch", "mkdir", "rm", "rmdir", "mv", "cp", "whoami", "hostname", "uname", "date"];
+
+// A paste into the line editor over [start, end): every pasted line but the last runs in order, the last stays typed.
+export function splitPaste(draft: string, start: number, end: number, text: string): { run: string[]; draft: string } {
+  const lines = (draft.slice(0, start) + text + draft.slice(end)).split(/\r\n|\r|\n/);
+  return { run: lines.slice(0, -1), draft: lines[lines.length - 1] };
+}

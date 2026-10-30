@@ -6,12 +6,13 @@ import { nowHours, yearOf } from "../00-core/time";
 import { SOFTWARE, softwareById, type Software } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { installBlock, uninstallSoftware, upgradable, upgradeServer } from "../90-actions/software";
-import { machineOf } from "./cluster";
+import { clustersOn, machineOf } from "./cluster";
 import { DESK, releaseOf, treeOf } from "./fs";
 import { installFromSite } from "../90-actions/console";
 import { machineNet, osUp } from "./oob";
-import { consoleCluster } from "../80-business/consoles";
+import { consoleSuffix } from "../80-business/consoles";
 import { fqdn } from "../30-customers/domains";
+import { privateIp } from "./addresses";
 import type { CommandResult, Watch } from "./terminal";
 
 const lines = (key: string, p: Record<string, string | number> = {}) => t(key, p).split("\n");
@@ -79,12 +80,18 @@ export function installLog(sw: Software): string[] {
   return Array.from({ length: STEPS[kind] }, (_, i) => t(`term.install.${kind}${i}`, p));
 }
 
-// What a finished install prints: the address its console answers at, if it has one, and the reboot.
+// What a finished install prints: the address its console answers at, if it has one, and the reboot. The address is the
+// fqdn once the company has a domain and the machine's private address before, with the console's port.
 export function installDone(s: GameState, machineId: string, sw: Software): string[] {
-  const host = machineOf(s, machineId)?.hostname, url = host && consoleCluster(s, host) ? `https://${fqdn(s, host)}/` : null;
+  const m = machineOf(s, machineId), host = m?.hostname, at = host && (s.company.domain ? fqdn(s, host) : privateIp(s, m.id));
+  const c = clustersOn(s, machineId).find((x) => [x.panel, x.platform, x.switching?.to].includes(sw.id)), port = c && consoleSuffix(s, c);
+  const url = at && typeof port === "string" ? `https://${at}${port}/` : null;
   return [t("term.install.done", { name: sw.name }), ...(url ? [t("term.install.reach", { url })] : []), t("term.install.reboot")];
 }
-const watching = (host: string, machineId: string, sw: Software): Watch => ({ host, install: { machineId, softwareId: sw.id, step: 0 } });
+// The download lines print as the install starts, the rest across its install hours.
+const atOnce = (sw: Software) => (sw.install.kind === "apt" ? 2 : 4);
+const started = (sw: Software) => installLog(sw).slice(0, atOnce(sw));
+const watching = (host: string, machineId: string, sw: Software): Watch => ({ host, install: { machineId, softwareId: sw.id, step: atOnce(sw) } });
 
 function install(s: GameState, host: string, pkg: string, yes: boolean): CommandResult {
   const sw = SOFTWARE.find((x) => x.install.kind === "apt" && x.install.package === pkg);
@@ -96,7 +103,7 @@ function install(s: GameState, host: string, pkg: string, yes: boolean): Command
   const plan = [...lines("term.apt.state"), t("term.apt.new"), `  ${pkg}`, t("term.apt.installs", { n: 1 })];
   if (machineNet(s, host)) return { output: [...plan, ...lines("term.apt.archives", { site: repoSite(sw), pkg, codename: releaseOf(s, host).codename })], failed: true };
   if (!yes) return { output: plan, confirm: true };
-  return { output: plan, action: [installFromSite, host, sw.id], watch: watching(host, host, sw) };
+  return { output: [...plan, ...started(sw)], action: [installFromSite, host, sw.id], watch: watching(host, host, sw) };
 }
 
 function remove(s: GameState, host: string, pkg: string): CommandResult {
@@ -114,7 +121,7 @@ export function installScript(s: GameState, machineId: string, line: string): Co
   const why = installBlock(s, machineId, sw.id);
   if (why) return { output: [t(why)], failed: true };
   if (machineNet(s, machineId)) return { output: lines(typed.startsWith("wget") ? "term.wget.resolve" : "term.curl.resolve", { host: siteOf(typed) }), failed: true };
-  return { output: lines("term.install.script", { name: sw.name }), action: [installFromSite, machineId, sw.id], watch: watching(machineOf(s, machineId)?.hostname ?? machineId, machineId, sw) };
+  return { output: [...lines("term.install.script", { name: sw.name }), ...started(sw)], action: [installFromSite, machineId, sw.id], watch: watching(machineOf(s, machineId)?.hostname ?? machineId, machineId, sw) };
 }
 
 // One refresh of an install the screen watches: the progress lines due since the last one and the watch to keep, null
@@ -124,7 +131,8 @@ export function installStep(s: GameState, w: Watch): { output: string[]; next: W
   const x = machineOf(s, machineId)?.software?.find((y) => y.id === softwareId), now = nowHours(s);
   if (!x) return { output: [], next: null };
   const done = x.doneAt === null || x.doneAt <= now;
-  const reached = done ? log.length : Math.min(log.length, Math.floor((1 - (x.doneAt! - now) / sw.installHours) * (log.length + 1)));
+  const head = atOnce(sw), rest = log.length - head;
+  const reached = done ? log.length : Math.min(log.length, head + Math.floor((1 - (x.doneAt! - now) / sw.installHours) * (rest + 1) + 1e-9));
   const output = log.slice(step, Math.max(step, reached));
   if (done) return { output: [...output, ...installDone(s, machineId, sw)], next: null };
   return { output, next: reached > step ? { ...w, install: { ...w.install!, step: reached } } : w };

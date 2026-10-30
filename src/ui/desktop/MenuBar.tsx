@@ -19,9 +19,10 @@ import { BUILD_ID } from "../leaderboard";
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
 export function MenuBar({ theme, onTheme, onBell }: Props) {
-  const { game, speed, setSpeed, windows, openApp, openDoc, act, unseen, importSave, openNews, deleteProgress, minimize, close } = useStore();
+  const { game, speed, setSpeed, windows, openApp, openConsole, openDoc, act, unseen, importSave, openNews, deleteProgress, minimize, close } = useStore();
   const guideGone = !game.docs.some((d) => d.kind === "guide");
   const docTitle = (id: string) => game.docs.find((d) => d.id === id)?.title ?? "";
+  const appName = (w: Win) => (w.console ? "Console" : appFor(game, w.app).name);
   const [menu, setMenu] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [intro, setIntro] = useState(false);
@@ -66,8 +67,8 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
   return (
     <header className="menubar" role="menubar">
       {item("Backbone", [["Introduction…", () => setIntro(true)], ["Backbone on GitHub", () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], ["Backbone on Discord", () => window.open("https://discord.gg/e8nTAV8Yk7", "_blank", "noopener")], ["Report an issue", () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], ["New note", () => newNote()], ...(guideGone ? [["Restore Getting started", () => act(restoreGuide)] as [string, () => void]] : []), ["What's new", () => openNews(EMBEDDED)], ["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
-      {front ? item(appFor(game, front.app).name, appMenu(front), appFor(game, front.app).name, "mb-app") : <span className="mb-item mb-app">Backbone</span>}
-      {item("Window", windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : [appFor(game, w.app).name, () => openApp(w.app)]) as [string, () => void]))}
+      {front ? item(appName(front), appMenu(front), appName(front), "mb-app") : <span className="mb-item mb-app">Backbone</span>}
+      {item("Window", windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : w.console ? ["Console", () => openConsole(w.console!)] : [appName(w), () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
       {item("Location", game.locations.flatMap((l) => {
         const d = l.id !== here.id && drive(game, l.id);

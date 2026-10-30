@@ -12,7 +12,7 @@ import { oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
-import { consoleCluster, isDefaced } from "./consoles";
+import { consoleAt, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
 import { vendorHost, VENDORS } from "./vendors";
 import { OFFICE_HOST, OFFICE_TITLE, OFFICE_URL } from "./office";
@@ -53,12 +53,17 @@ export const BOARD_URL = `${BOARD_HOST}/`;
 // docs/design/software.md, 8.1: the home icon and a new browser session open the site index.
 export const INDEX_HOST = "yahoy.com";
 export const HOME_URL = `www.${INDEX_HOST}/dir/`;
-export const companyUrl = (s: GameState): string => `www.${companyDomain(s)}/`;
+// A site's host as links show it: a bare domain gets www., a host that already names a subdomain keeps it as it is.
+export function displayHost(host: string): string {
+  const labels = host.split("."), suffix = /^(co|com|org|net)\.[a-z]{2}$/.test(labels.slice(-2).join(".")) ? 3 : 2;
+  return labels.length > suffix ? host : `www.${host}`;
+}
+export const companyUrl = (s: GameState): string => `${displayHost(companyDomain(s))}/`;
 
 // The registrar under contract, or the first one before any contract.
 export function registrarUrl(s: GameState): string {
   const r = (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
-  return `www.${registrarHost(r)}/`;
+  return `${displayHost(registrarHost(r))}/`;
 }
 
 // Bookmarks every game has: the company site once launched and the registrar. The index lists the rest.
@@ -106,9 +111,11 @@ function machineOf(s: GameState, key: string, byIp: boolean): { hostname: string
   return null;
 }
 
-// A machine with management software answers with its console, a defaced one when the host is hacked.
-function machinePage(s: GameState, m: { hostname: string; load: Load }): Pick<Resolved, "page" | "load"> {
-  const c = consoleCluster(s, m.hostname);
+// A machine with management software answers with its console (the one on the port, when one is given), a defaced one
+// when the host is hacked; a port no console listens on finds nothing.
+function machinePage(s: GameState, m: { hostname: string; load: Load }, port: string, path: string): Pick<Resolved, "page" | "load"> {
+  const c = consoleAt(s, m.hostname, port, path);
+  if (!c && port) return { page: { kind: "notfound" }, load: "fast" };
   return { page: c ? { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c) } : { kind: "host", hostname: m.hostname }, load: m.load };
 }
 
@@ -145,18 +152,20 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (named(VIDEO_HOST)) {
     return /[?&]v=uptime(&|$)/.test(path) ? out({ kind: "video" }) : out({ kind: "notfound" });
   }
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+  // A machine's address may name the port of one of its consoles.
+  const colon = host.indexOf(":"), name = colon < 0 ? host : host.slice(0, colon), port = colon < 0 ? "" : host.slice(colon);
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(name)) {
     // The management controller answers on standby power, so a switched-off server still has its page; a hung one answers nothing.
-    const bmc = s.devices.find((d) => ipmiIp(s, d.id) === host);
+    const bmc = s.devices.find((d) => ipmiIp(s, d.id) === name);
     if (bmc) return out({ kind: "ipmi", deviceId: bmc.id }, powered(s, bmc.id) && !bmc.bmcHung ? "fast" : "down");
-    const kvm = s.devices.find((d) => oobIp(s, d.id) === host);
+    const kvm = s.devices.find((d) => oobIp(s, d.id) === name);
     if (kvm) return out({ kind: "kvm", deviceId: kvm.id }, oobUp(s, kvm.id) ? "fast" : "down");
-    const m = machineOf(s, host, true);
-    return m ? { url, host, path, ...machinePage(s, m) } : out({ kind: "notfound" });
+    const m = machineOf(s, name, true);
+    return m ? { url, host, path, ...machinePage(s, m, port, path) } : out({ kind: "notfound" });
   }
-  if (s.company.domain && host.endsWith(`.${domain}`)) {
-    const m = machineOf(s, host.slice(0, -domain.length - 1), false);
-    if (m) return { url, host, path, ...machinePage(s, m) };
+  if (s.company.domain && name.endsWith(`.${domain}`)) {
+    const m = machineOf(s, name.slice(0, -domain.length - 1), false);
+    if (m) return { url, host, path, ...machinePage(s, m, port, path) };
   }
   return out({ kind: "notfound" });
 }

@@ -57,7 +57,7 @@ export const KB_STEPS: Record<string, (domain: string) => string[]> = {
   ],
   ssh: (d) => [
     "Find the IP address and the root password in your welcome email.",
-    "On Windows, open PuTTY; on a Mac or Linux, open the Terminal.",
+    "On Windoors, open PuTTYcat; on a Pear or Lunix machine, open a terminal.",
     `Connect with ssh root@<your IP> or through the console at panel.${d}.`,
     "Change the root password with passwd right after the first login.",
   ],

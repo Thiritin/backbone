@@ -120,9 +120,9 @@ describe("install pipeline", () => {
     expect(machineScreen(s, "dev3")).toEqual({ kind: "login", os: "lunix" });
   });
 
-  it("names the one cluster per server before the OS, and refuses an uninstall with workloads on it", () => {
+  it("puts a panel next to the hypervisor, and refuses an uninstall of the hypervisor with workloads on it", () => {
     const s = readyGame(4);
-    expect(err(installSoftware(s, "dev3", "freepanel"))).toBe("error.serverInUse");
+    expect(installSoftware(s, "dev3", "freepanel").ok).toBe(true);
     expect(err(uninstallSoftware(s, "dev3"))).toBe("error.softwareInUse");
   });
 });

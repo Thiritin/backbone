@@ -3,7 +3,7 @@ import { nowHours } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { hasBmc, modelById } from "../10-catalog/hardware";
 import type { Device, GameState } from "../50-state";
-import { dropCluster, hostOfVm, installingOn, isOwnVm, type Workload } from "./cluster";
+import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
 import { bootHours, booting, haltHours, deviceHealth, drivesOf, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, working } from "./status";
@@ -216,7 +216,7 @@ export function powerTick(s: GameState): SimEvent[] {
     s.workloads = s.workloads.map((w) => (done.has(w.id) ? { ...w, recoverDoneAt: undefined, ...(fine.has(w.id) ? { corrupted: false } : { recoverFailed: true }) } : w));
     for (const [id, ws] of lost) {
       // A corrupted panel VM takes the web spaces inside it along.
-      const items = ws.flatMap((w) => (isOwnVm(w) ? s.workloads.filter((x) => x.clusterId === hostOfVm(s, w.id)?.id) : [w]));
+      const items = ws.flatMap((w) => (isOwnVm(w) ? insideVm(s, w.id) : [w]));
       if (items.length) reportLoss(s, s.devices.find((x) => x.id === id)!, items, s.hour, events);
     }
   }

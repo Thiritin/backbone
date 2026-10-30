@@ -5,7 +5,7 @@ import { opsTick } from "../src/sim/40-support/notices";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { MONTH, type Sponsorship } from "../src/sim/80-business/community";
 import { leadsThisMonth } from "../src/sim/80-business/marketing";
-import { BOARD, boardGranted, boardTick, offerOpen, type SponsorOffer } from "../src/sim/80-business/sponsorboard";
+import { APPLICANTS, BOARD, boardGranted, boardTick, offerOpen, type SponsorOffer } from "../src/sim/80-business/sponsorboard";
 import { resolve } from "../src/sim/80-business/browser";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { acceptSponsorship, postOffer, withdrawOffer } from "../src/sim/90-actions/community";
@@ -148,10 +148,14 @@ describe("the Sponsor-Bored board", () => {
 
   it("draws about 10 percent abusers and 15 percent droppers", () => {
     const s = roomy(10);
-    const big: SponsorOffer = { id: "ofr9999", postedAt: s.hour, ...offer, slots: 4, applyAt: Array(2000).fill(s.hour), sent: 0, taken: 0 };
+    const h = s.hour, big: SponsorOffer = { id: "ofr9999", postedAt: h, ...offer, slots: 4, applyAt: Array.from({ length: 2000 }, (_, i) => h + i), sent: 0, taken: 0 };
     s.sponsorOffers = [big];
-    // Slots only stop applications once taken, so all 2000 arrive in one tick.
-    boardTick(s, []);
+    // One application an hour, each closed before the next so every name is free again.
+    for (let i = 0; i < 2000; i++) {
+      s.hour = h + i;
+      boardTick(s, []);
+      s.sponsorships = s.sponsorships.map((x) => ({ ...x, status: "declined" }));
+    }
     const all = board(s).map((x) => x.board!);
     expect(all).toHaveLength(2000);
     const share = (f: (b: (typeof all)[number]) => boolean) => all.filter(f).length / all.length;
@@ -160,6 +164,17 @@ describe("the Sponsor-Bored board", () => {
     expect(share((b) => b.drops)).toBeGreaterThan(0.13);
     expect(share((b) => b.drops)).toBeLessThan(0.17);
     expect(new Set(all.map((b) => b.kind))).toEqual(new Set(["clan", "lanParty", "fanSite", "student", "mirror"]));
+  });
+
+  it("never shows the same applicant twice and runs out of people", () => {
+    const s = roomy(11);
+    const names = APPLICANTS.flatMap((a) => a.names);
+    s.sponsorOffers = [{ id: "ofr9999", postedAt: s.hour, ...offer, slots: 4, applyAt: Array(names.length + 5).fill(s.hour), sent: 0, taken: 0 }];
+    boardTick(s, []);
+    const got = board(s).map((x) => x.board!.name);
+    expect(got).toHaveLength(names.length);
+    expect(new Set(got).size).toBe(names.length);
+    expect(offerOpen(s, s.sponsorOffers[0])).toBe(true);
   });
 
   it("drops the banner after the first month and stops the rewards", () => {
