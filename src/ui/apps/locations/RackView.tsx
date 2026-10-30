@@ -190,7 +190,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
         </div>
       </div>
       <div className="loc-insp">
-        {dev ? <Inspector key={dev.id} game={game} device={dev} side={side} onSelect={onDevice} onHot={setHot} rename={rename === dev.id} onRenaming={clearRename} monitor={monitor === dev.id && here} onUnplug={() => setMonitor(null)} /> : (
+        {dev ? <Inspector key={dev.id} game={game} device={dev} side={side} onSelect={onDevice} onHot={setHot} rename={rename === dev.id} onRenaming={clearRename} monitor={monitor === dev.id && here} onUnplug={() => setMonitor(null)} onConsole={here ? () => setMonitor(dev.id) : undefined} /> : (
           <>
             <div className="loc-insp-h" onContextMenu={menuOn(rackMenu)}>
               <h2>{rack.name}</h2>

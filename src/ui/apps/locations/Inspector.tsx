@@ -111,7 +111,7 @@ const POWER = {
 // onHot reports the cable of the hovered or selected port, so the rack view can highlight it. rename opens the name field.
 type InspTab = "actions" | "ports" | "lease" | "psu" | "parts";
 
-export function Inspector({ game, device, side = "front", onSelect, onHot, rename = false, onRenaming, monitor = false, onUnplug }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void; rename?: boolean; onRenaming?: () => void; monitor?: boolean; onUnplug?: () => void }) {
+export function Inspector({ game, device, side = "front", onSelect, onHot, rename = false, onRenaming, monitor = false, onUnplug, onConsole }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void; rename?: boolean; onRenaming?: () => void; monitor?: boolean; onUnplug?: () => void; onConsole?: () => void }) {
   const act = useStore((s) => s.act);
   const [sel, setSel] = useState<number[]>([]);
   const [mode, setMode] = useState<"cable" | "group">("cable");
@@ -184,7 +184,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       <div className={`loc-face${model.kind === "server" ? " wide" : ""}`} onContextMenu={menuOn(menu)}>
         <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={440} u={40} back={side === "back"}
           onPower={server && (device.rackId || device.panel) ? togglePower : undefined}
-          plugs={psus.map(isPlugged)} onInlet={device.rackId || device.panel ? (k) => menus.plug(device, psus[k].id) : undefined} />
+          plugs={psus.map(isPlugged)} onInlet={device.rackId || device.panel ? (k) => menus.plug(device, psus[k].id) : undefined} onConsole={device.rackId ? onConsole : undefined} />
         {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} />}
       </div>
 

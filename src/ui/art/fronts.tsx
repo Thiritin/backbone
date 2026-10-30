@@ -1,8 +1,8 @@
 // Code-drawn device fronts, ported from docs/design/mockups/shell.js. Sizes are px; u is one rack unit.
 import type { ReactNode } from "react";
-import { bayCount, isOobPort, jacksOf, modelById as nodeModel, type DeviceModel } from "../../sim/10-catalog/hardware";
+import { bayCount, isOobPort, jacksOf, modelById as nodeModel, oobPortOf, type DeviceModel } from "../../sim/10-catalog/hardware";
 import { isMgmtModel, MgmtFront, oobLabel } from "./mgmt";
-import { Back, Cord, psuInlets, SwitchRear } from "./backs";
+import { Back, Cord, portSpots, psuInlets, SwitchRear } from "./backs";
 import { BrandMark } from "./logos";
 
 export type Lamp = "ok" | "warn" | "bad" | "off";
@@ -416,9 +416,10 @@ export function Front(p: FrontProps) {
 }
 
 // One device front as a standalone <svg>; panel gateways (height 0) are drawn as one unit.
-// plugs and onInlet draw the cord in each plugged inlet and let a click on an inlet plug it in or pull it.
-export function DeviceSvg({ w, u, back, plugs, onInlet, ...p }: Omit<FrontProps, "h" | "w"> & { w: number; u: number; back?: boolean; plugs?: boolean[]; onInlet?: (psu: number) => void }) {
-  const h = Math.max(1, p.model.height) * u, inlets = psuInlets(p.model, back ? "back" : "front", w, h);
+// plugs and onInlet draw the cord in each plugged inlet and let a click on an inlet plug it in or pull it; onConsole makes a server's VGA port clickable.
+export function DeviceSvg({ w, u, back, plugs, onInlet, onConsole, ...p }: Omit<FrontProps, "h" | "w"> & { w: number; u: number; back?: boolean; plugs?: boolean[]; onInlet?: (psu: number) => void; onConsole?: () => void }) {
+  const side = back ? "back" : "front", h = Math.max(1, p.model.height) * u, inlets = psuInlets(p.model, side, w, h);
+  const vga = onConsole && p.model.kind === "server" ? [...portSpots(p.model, p.name, side, w, h)].find(([i]) => oobPortOf(p.model, i) === "console")?.[1] : undefined;
   return (
     <svg className="device-svg" width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={p.name || p.model.name}>
       <Defs />
@@ -431,6 +432,10 @@ export function DeviceSvg({ w, u, back, plugs, onInlet, ...p }: Omit<FrontProps,
             onClick={() => onInlet(k)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onInlet(k); } }}><title>{label}</title></rect>
         );
       })}
+      {vga && onConsole && (
+        <rect className="rack-port rack-vga" role="button" tabIndex={0} aria-label="Plug in monitor" x={vga.x - 1} y={vga.y - 1} width={vga.w + 2} height={vga.h + 2} rx="1"
+          onClick={onConsole} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onConsole(); } }}><title>Plug in monitor</title></rect>
+      )}
     </svg>
   );
 }
