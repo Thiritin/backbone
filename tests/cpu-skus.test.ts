@@ -111,7 +111,7 @@ describe("maker lineups", () => {
     expect(modelName(modelById("g5-compute"), "Lenovoid")).toBe("ThinkSystem SR630");
     expect(modelName(modelById("g4-twin"), "Dwell")).toBe("PowerEdgy C6320");
     expect(modelName(modelById("g4-twin-node"), "Dwell")).toBe("PowerEdgy C6320 node");
-    expect(modelName(modelById("sw-8"), "Sysko")).toBe("L2 switch 8");
+    expect(modelName(modelById("sw-8"), "Sysko")).toBe("Catalust 2960-8TC");
     expect(brandsOf(modelById("g1-compute"))).toEqual(["Dwell", "Hewlett-Packet", "SuperMacro"]);
     expect(brandsOf(modelById("g3-compute"))).toEqual(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid"]);
     expect(brandsOf(modelById("g4-compute"))).toEqual(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid", "Gigabutt"]);

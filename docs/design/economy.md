@@ -235,30 +235,9 @@ A router is built by one manufacturer only (Sysko, AVN, MicroTick or Junipurr, b
 | Edge XL | 2U | 36 × 400G | 800 Gbit/s | Yes | 2021 | €90,000 | 900 W |
 | Edge XXL | 2U | 36 × 400G | 1.6 Tbit/s | Yes | 2027 | €150,000 | 1,200 W |
 
-**Switches.** All switches are managed and keep their price over the years. Every switch stays in the shop once it arrives, so an older 1G switch can always link a rack to the provider handoff. Layer 3 can route between networks and act as a gateway in later milestones, so it costs and draws more than the layer 2 model with the same ports. Switches, firewalls and gateways draw their full power at all times. Their prices are estimates.
+**Switches.** All switches are managed and keep their list price, less the yearly price erosion. Every switch comes from one maker in the maker's own numbering (`SWITCHES` in `hardware.ts`), so a model's price, power and years on sale are its maker's: Sysko Catalust and Nexxus (6 years on sale, 5 of support), Junipurr EX and QFX (6 and 5), Aristotle 7000 (5 and 5, datacenter only, cheapest per 10G, 25G, 100G and 400G port), Hewlett-Packet ProCurvy and Arugula (7 years on sale, lifetime support), MicroTick CRS (6 and 3, a quarter of the big makers' prices, 100G for 650 euro from 2021), Nettgear ProSafe and M4300 (5 and 3, the 60 euro 8 port box of 2005), Ubiquitea EdgeSwitch and UniFee (5 and 3, from 2015) and D-Lunk DGS (4 and 2, the cheapest 2005 to 2016). In every year the shop sells an 8, a 24 and a 48 port copper switch, one of them under 500 euro. Layer 3 can route between networks and act as a gateway, so within a maker it costs and draws more than the layer 2 model with the same ports. The generic switches of the first builds (`sw-8` to `sw-32e`) live on as Sysko models with their ports, so saved games keep their cabling: Catalust 2960-8TC (the starting switch, 8 × 1G, 60 euro, 8 W), 2960-24TT, 2960S-48TD, 3750X-48, Nexxus 3064, 9372PX, 93180YC-EX, 9336C-FX2, 9364D-GX2 and 9808. Switches, firewalls and gateways draw their full power at all times. Prices are estimates of launch street prices.
 
-| Switch | Layer | Height | Ports | Sold from | Price | Full power |
-| --- | --- | --- | --- | --- | --- | --- |
-| L2 switch 8 (the starting switch) | 2 | 1U | 8 × 1G | 2005 | €60 | 8 W |
-| L2 switch 24 | 2 | 1U | 24 × 1G and 2 × 1G SFP | 2005 | €900 | 40 W |
-| L2 switch 48 | 2 | 1U | 48 × 1G and 4 × 10G SFP | 2008 | €2,800 | 70 W |
-| L2 switch 48 SFP | 2 | 1U | 48 × 10G SFP | 2011 | €8,000 | 200 W |
-| L3 switch 48 | 3 | 1U | 48 × 1G and 4 × 10G SFP | 2008 | €5,500 | 110 W |
-| L3 switch 48 SFP, 40G | 3 | 1U | 48 × 10G and 6 × 40G SFP | 2014 | €14,000 | 280 W |
-| L3 switch 48 SFP, 100G | 3 | 1U | 48 × 25G and 8 × 100G SFP | 2017 | €18,000 | 400 W |
-| L3 spine 32 × 100G | 3 | 1U | 32 × 100G SFP | 2017 | €20,000 | 450 W |
-| L3 spine 32 × 400G | 3 | 1U | 32 × 400G SFP | 2022 | €45,000 | 900 W |
-| L3 spine 32 × 800G | 3 | 1U | 32 × 800G SFP | 2027 | €60,000 | 1,400 W |
-
-**Security appliances.** 1U firewalls sit inline between the gateway and the switches. A firewall forwards like a switch, and every link through it runs at most at its throughput.
-
-| Firewall | Throughput | Height | Ports | Sold from | Price | Full power |
-| --- | --- | --- | --- | --- | --- | --- |
-| Firewall 1G | 1 Gbit/s | 1U | 4 × 1G | 2005 | €1,500 | 40 W |
-| Firewall 10G | 10 Gbit/s | 1U | 8 × 1G and 4 × 10G SFP | 2011 | €6,000 | 120 W |
-| Firewall 40G | 40 Gbit/s | 1U | 8 × 10G and 4 × 40G SFP | 2017 | €18,000 | 250 W |
-| Firewall 100G | 100 Gbit/s | 1U | 8 × 25G and 4 × 100G SFP | 2022 | €40,000 | 450 W |
-| Firewall 400G | 400 Gbit/s | 1U | 8 × 100G and 4 × 400G SFP | 2027 | €70,000 | 700 W |
+**Security appliances.** 1U firewalls sit inline between the gateway and the switches. A firewall forwards like a switch, and every link through it runs at most at its throughput. Every firewall comes from one maker (`FIREWALLS` in `hardware.ts`) and also lists what it inspects (`ipsGbit`, lower than the throughput) and the connections it tracks (`sessions`); both show on the spec sheet and wait for the sim to use them. Sysko PIXel, ASAP and Firepowder (the old `fw-1g` to `fw-400g` are the ASAP 5520, ASAP 5585-X, Firepowder 4120, 4215 and 9300), Fortinope FortiGoat (the most throughput per euro), Pablo Alto PA (the dearest, the best inspection), Junipurr SRX (from 2009), Netgoat pfSinse boxes (from 2015, the cheapest, no inspection before 2018) and SoPhosphate UTM, XG and XGS (from 2011). In every year the shop sells a firewall under 1000 euro and a datacenter one.
 
 **Patch panels and gateways.**
 

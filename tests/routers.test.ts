@@ -48,7 +48,8 @@ describe("router catalog", () => {
   it("sells a router only from its own manufacturer, at its list price", () => {
     expect(brandsOf(modelById("mx80"))).toEqual(["Junipurr"]);
     expect(priceOf(modelById("mx80"), "Junipurr")).toBe(25000);
-    expect(brandsOf(modelById("sw-24"))).toEqual(["Sysko", "Junipurr", "Aristotle"]);
+    expect(brandsOf(modelById("sw-24"))).toEqual(["Sysko"]);
+    expect(brandsOf(modelById("ex2200-24t"))).toEqual(["Junipurr"]);
     const s = { ...readyGame(1), cash: 1e6 };
     s.hour = jan(2013);
     expect(buyDevice(s, "ccr1036", "Sysko", 1, "loc1")).toEqual({ ok: false, error: "error.unknownBrand" });
@@ -60,7 +61,7 @@ describe("router catalog", () => {
     expect(["ups-1500", "ups-3000", "ups-5k", "ups-10k"].map((id) => { const m = modelById(id); return [m.from, m.height, m.price, m.batteryWh, m.psus]; })).toEqual([
       [2005, 1, 180, 600, 1], [2005, 2, 900, 1800, 1], [2005, 3, 2500, 3500, 1], [2008, 6, 6000, 8000, 2],
     ]);
-    expect(["pdu-8", "pdu-24"].map((id) => { const m = modelById(id); return [brandsOf(m), m.from, m.height, m.price, m.outlets]; })).toEqual([[["Eatin"], 2005, 1, 700, 8], [["Eatin"], 2008, 0, 1200, 24]]);
+    expect(["pdu-8", "pdu-24"].map((id) => { const m = modelById(id); return [brandsOf(m), m.from, m.height, m.price, m.outlets]; })).toEqual([[["Eatin", "APCee"], 2005, 1, 700, 8], [["Eatin", "APCee"], 2008, 0, 1200, 24]]);
   });
 
   it("keeps every kind on sale in every year from 2005 to 2035 and the newest model of each line on sale", () => {

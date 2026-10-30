@@ -78,11 +78,11 @@ describe("used listings", () => {
     let scam = false;
     for (let m = 0; m < 48; m++) { s.hour = hourOf(new Date(Date.UTC(2008 + Math.floor(m / 12), m % 12, 1))); usedTick(s); scam ||= s.used.some((l) => l.scam); }
     for (const l of s.used) {
-      const share = l.price / presetPrice(modelById(l.model), yearOf(l.postedAt), l.brand) / (l.defect ? { psu: 0.85, drive: 0.8, rails: 0.95 }[l.defect] : 1);
+      const share = l.price / presetPrice(modelById(l.model), yearOf(l.postedAt), l.brand, l.vendor) / (l.defect ? { psu: 0.85, drive: 0.8, rails: 0.95 }[l.defect] : 1);
       const [lo, hi] = { board: [0.45, 0.6], chat: [0.3, 0.45], ebuy: [0.25, 0.25] }[l.channel];
       expect(share).toBeGreaterThan(lo - 0.01);
       expect(share).toBeLessThan(hi + 0.01);
-      if (l.channel === "ebuy") expect(l.rival! / presetPrice(modelById(l.model), yearOf(l.postedAt), l.brand)).toBeGreaterThanOrEqual(0.349);
+      if (l.channel === "ebuy") expect(l.rival! / presetPrice(modelById(l.model), yearOf(l.postedAt), l.brand, l.vendor)).toBeGreaterThanOrEqual(0.349);
     }
     expect(scam).toBe(true);
   });

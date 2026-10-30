@@ -88,7 +88,7 @@ describe("starting company", () => {
   });
   it("takes the friends offline and opens outage tickets when the switch loses power", () => {
     // A seed where a friend writes in once the outage is noticed.
-    const s = readyGame(2);
+    const s = readyGame(4);
     run(s, 2);
     ok(setPower(s, "dev4", false));
     // Private customers notice slowly (economy.md, Noticing outages): by two weeks one has written in.

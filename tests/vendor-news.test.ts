@@ -12,9 +12,9 @@ const names = (name: string, month: number) => vendorReleases(brand(name), month
 
 describe("vendor news", () => {
   it("lists a brand's releases up to the month, newest first", () => {
-    expect(names("Sysko", 2007 * 12 + 11)).not.toContain("L2 switch 48");
-    expect(names("Sysko", 2008 * 12)).toContain("L2 switch 48");
-    expect(names("Sysko", 2008 * 12)).not.toContain("L2 switch 48 SFP");
+    expect(names("Sysko", 2007 * 12 + 11)).not.toContain("Catalust 2960S-48TD");
+    expect(names("Sysko", 2008 * 12)).toContain("Catalust 2960S-48TD");
+    expect(names("Sysko", 2008 * 12)).not.toContain("Nexxus 3064");
     expect(names("Junipurr", 2010 * 12)).toContain("MX80");
     expect(names("Junipurr", 2030 * 12)).not.toContain("Edge router S");
     expect(names("Eatin", 2005 * 12)).toEqual(expect.arrayContaining(["UPS 1500 VA", "Switched PDU 8"]));

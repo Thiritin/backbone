@@ -31,7 +31,7 @@ describe("news of unlocks", () => {
     expect(of(2007, "event.news.desk")).toEqual([expect.stringContaining("Zendusk")]);
     expect(of(2007, "event.news.homeLines")).toEqual([expect.stringContaining("VDSL 50 (Deutsche Telekomm)")]);
     const y2008 = years.get(2008)!.map((e) => t(`${e.key}.text`, e.params)).join("\n");
-    expect(y2008).toContain("L2 switch 48, L3 switch 48");
+    expect(y2008).toContain("Catalust 2960S-48TD, Catalust 3750X-48");
     expect(y2008).toContain("Twin node servers");
     expect(y2008).toContain("10 Gbit/s ports");
     expect(of(2011, "event.news.training")).toEqual([expect.stringContaining("GPU computing")]);

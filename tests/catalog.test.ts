@@ -59,11 +59,12 @@ describe("switches, firewalls and patch panels", () => {
   const same = (a: DeviceModel, b: DeviceModel) => JSON.stringify(a.ports) === JSON.stringify(b.ports);
   it("has the L2 and L3 table and makes L3 cost and draw more than the L2 model with the same ports", () => {
     const switches = MODELS.filter((m) => m.kind === "switch");
-    expect(switches.map((m) => [m.id, m.layer, m.ports.length, m.from])).toEqual([
-      ["sw-8", 2, 8, 2005], ["sw-24", 2, 26, 2005], ["sw-48", 2, 52, 2008], ["sw-48x", 2, 48, 2011],
-      ["sw-48-l3", 3, 52, 2008], ["sw-48q", 3, 54, 2014], ["sw-48y", 3, 56, 2017], ["sw-32c", 3, 32, 2017], ["sw-32d", 3, 32, 2022], ["sw-32e", 3, 32, 2027],
+    // The generic switches of the first builds live on as Sysko's, with their ports, so saves keep their cabling.
+    expect(switches.filter((m) => m.id.startsWith("sw-")).map((m) => [m.id, m.layer, m.ports.length, m.from, m.brand])).toEqual([
+      ["sw-8", 2, 8, 2005, "Sysko"], ["sw-24", 2, 26, 2005, "Sysko"], ["sw-48", 2, 52, 2008, "Sysko"], ["sw-48-l3", 3, 52, 2008, "Sysko"],
+      ["sw-48x", 2, 48, 2011, "Sysko"], ["sw-48q", 3, 54, 2014, "Sysko"], ["sw-48y", 3, 56, 2017, "Sysko"], ["sw-32c", 3, 32, 2017, "Sysko"], ["sw-32d", 3, 32, 2022, "Sysko"], ["sw-32e", 3, 32, 2027, "Sysko"],
     ]);
-    const pairs = switches.filter((m) => m.layer === 3).flatMap((l3) => switches.filter((l2) => l2.layer === 2 && same(l2, l3)).map((l2) => [l2, l3]));
+    const pairs = switches.filter((m) => m.layer === 3).flatMap((l3) => switches.filter((l2) => l2.layer === 2 && l2.brand === l3.brand && same(l2, l3)).map((l2) => [l2, l3]));
     expect(pairs.length).toBeGreaterThan(0);
     for (const [l2, l3] of pairs) {
       expect(l3.price).toBeGreaterThan(l2.price);
@@ -71,9 +72,11 @@ describe("switches, firewalls and patch panels", () => {
     }
   });
   it("sells firewalls by year and patch panels with 24 or 48 jacks", () => {
-    const fw = (y: number) => shopModels(y).filter((m) => m.kind === "firewall").map((m) => m.throughputGbit);
-    expect([fw(2005), fw(2011), fw(2017), fw(2022)]).toEqual([[1], [1, 10], [10, 40], [40, 100]]);
-    expect(modelById("fw-10g")).toMatchObject({ height: 1, kind: "firewall" });
+    const fw = (y: number) => shopModels(y).filter((m) => m.kind === "firewall").map((m) => m.throughputGbit!);
+    // Sysko's old generic firewalls keep their ids; every year has a small box and a datacenter one.
+    expect([2005, 2011, 2017, 2023].map((y) => Math.max(...fw(y)))).toEqual([1, 240, 240, 1500]);
+    for (let y = 2005; y <= 2030; y++) expect(shopModels(y).filter((m) => m.kind === "firewall" && m.price < 1000).length, `${y}`).toBeGreaterThan(0);
+    expect(modelById("fw-10g")).toMatchObject({ height: 1, kind: "firewall", brand: "Sysko", throughputGbit: 10 });
     expect(MODELS.filter((m) => m.kind === "patch").map((m) => [m.id, m.ports.length / 2, m.ports[0].media])).toEqual([
       ["patch-24", 24, "rj45"], ["patch-24f", 24, "sfp"], ["patch-48", 48, "rj45"], ["patch-48f", 48, "sfp"],
     ]);
@@ -87,19 +90,19 @@ describe("manufacturers", () => {
       expect(Math.abs(m.failureFactor - 1)).toBeLessThanOrEqual(0.3 + 1e-9);
     }
     expect(brandsFor("server")).toEqual(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid", "Gigabutt"]);
-    expect(brandsFor("switch")).toEqual(["Sysko", "Junipurr", "Aristotle"]);
-    expect(brandsFor("firewall")).toEqual(["Sysko", "Fortinope", "Pablo Alto"]);
+    expect(brandsFor("switch")).toEqual(["Hewlett-Packet", "Sysko", "Junipurr", "Aristotle", "MicroTick", "Nettgear", "Ubiquitea", "D-Lunk"]);
+    expect(brandsFor("firewall")).toEqual(["Sysko", "Junipurr", "Fortinope", "Pablo Alto", "Netgoat", "SoPhosphate"]);
     expect(brandsFor("patch")).toEqual(["Pandoot"]);
     const g1 = modelById("g1-compute");
     expect(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid", "Gigabutt"].map((b) => priceOf(g1, b))).toEqual([2500, 2700, 2250, 2375, 2250]);
   });
   it("charges the manufacturer's price and rejects a brand that does not make the class", () => {
     const s = { ...withServer(newGame(1)), cash: 100_000 };
-    const id = ok(buyDevice(s, "sw-24", "Junipurr", 1, "loc1"));
-    expect(s.devices.find((d) => d.id === id)).toMatchObject({ brand: "Junipurr", price: 990 });
-    expect(s.cash).toBe(100_000 - 990);
+    const id = ok(buyDevice(s, "ups-1500", "APCee", 1, "loc1"));
+    expect(s.devices.find((d) => d.id === id)).toMatchObject({ brand: "APCee", price: 189 });
+    expect(s.cash).toBe(100_000 - 189);
     expect(ok(buyDevice(s, "patch-48", "Pandoot", 1, "loc1"))).toBeTruthy();
-    for (const [model, brand] of [["patch-24", "Sysko"], ["sw-8", "Dwell"], ["fw-1g", "Junipurr"], ["g1-compute", "Sysko"]]) {
+    for (const [model, brand] of [["patch-24", "Sysko"], ["sw-8", "Dwell"], ["sw-24", "Junipurr"], ["fw-1g", "Fortinope"], ["g1-compute", "Sysko"]]) {
       expect(buyDevice(s, model, brand, 1, "loc1")).toEqual({ ok: false, error: "error.unknownBrand" });
     }
   });
@@ -117,7 +120,7 @@ describe("firewall links", () => {
       ok(mountDevice(s, id, rack, slot));
       return id;
     };
-    return { s, srv: put("g3-compute", "Dwell", 1), sw: put("sw-48", "Sysko", 40), fw: put("fw-1g", "Fortinope", 41), handoff: s.devices.find((d) => d.panel === loc)!.id };
+    return { s, srv: put("g3-compute", "Dwell", 1), sw: put("sw-48", "Sysko", 40), fw: put("fw-1g", "Sysko", 41), handoff: s.devices.find((d) => d.panel === loc)!.id };
   }
   it("forwards like a switch and caps the speed at its throughput", () => {
     const { s, srv, sw, fw, handoff } = setup();

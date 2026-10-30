@@ -19,6 +19,7 @@ import { PabloAlto } from "./pablo-alto";
 import { Pandoot } from "./pandoot";
 import { SuperMacro } from "./supermacro";
 import { Sysko } from "./sysko";
+import { Plain } from "./plain";
 import { pageOf, type VendorProps } from "./VendorSite";
 
 // docs/design/software.md, 8.6: each manufacturer's site and the year its late look starts.
@@ -37,6 +38,13 @@ const SITES: Record<string, { view: ComponentType<VendorProps>; late: number }> 
   avn: { view: Avn, late: 2014 },
   microtick: { view: MicroTick, late: 2017 },
   eatin: { view: Eatin, late: 2015 },
+  nettgear: { view: Plain, late: 2016 },
+  ubiquitea: { view: Plain, late: 2017 },
+  "d-lunk": { view: Plain, late: 2015 },
+  netgoat: { view: Plain, late: 2018 },
+  sophosphate: { view: Plain, late: 2016 },
+  apcee: { view: Plain, late: 2014 },
+  vertivo: { view: Plain, late: 2017 },
 };
 
 export function VendorSite({ game, maker, path, go }: { game: GameState; maker: string; path: string; go: (url: string) => void }) {

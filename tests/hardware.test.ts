@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { GENERATIONS, START_CASH } from "../src/sim/10-catalog/economy";
-import { brandOnSale, brandsFor, deliveryHours, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
+import { brandOnSale, brandsOf, deliveryHours, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, mountFrom, mountMax, portPeers, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
@@ -17,7 +17,7 @@ const ok = (r: ReturnType<typeof buyDevice>) => {
 };
 const err = (r: ReturnType<typeof buyDevice>) => (r.ok ? "ok" : r.error);
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
-const mounted = (s: GameState, model: string, rack: string, slot: number, brand = brandsFor(modelById(model).kind)[0]) => {
+const mounted = (s: GameState, model: string, rack: string, slot: number, brand = brandsOf(modelById(model))[0]) => {
   const id = ok(buyDevice(s, model, brand, 1, s.racks.find((r) => r.id === rack)!.locationId));
   ok(mountDevice(s, id, rack, slot));
   return id;

@@ -235,8 +235,10 @@ export interface DeviceModel {
   supportYears: number;
   server?: ServerSpec;
   layer?: 2 | 3;
-  // Firewalls cap every link through them at this speed.
+  // Firewalls cap every link through them at this speed; ipsGbit is what they inspect, sessions the connections they track.
   throughputGbit?: number;
+  ipsGbit?: number;
+  sessions?: number;
   // A UPS carries its location through a grid outage for batteryWh ÷ load.
   batteryWh?: number;
   // A model only one manufacturer builds, sold at its list price; models without one come from every manufacturer of the kind.
@@ -268,19 +270,26 @@ export interface DeviceModel {
 export interface Manufacturer { id: string; name: string; kinds: DeviceKind[]; priceFactor: number; failureFactor: number; fromShift?: number; untilShift?: number; wattsFactor?: number }
 export const MANUFACTURERS: Manufacturer[] = [
   { id: "dwell", name: "Dwell", kinds: ["server", "chassis"], priceFactor: 1, failureFactor: 1 },
-  { id: "hewlett-packet", name: "Hewlett-Packet", kinds: ["server"], priceFactor: 1.08, failureFactor: 0.8, fromShift: 3, untilShift: -1, wattsFactor: 0.95 },
+  { id: "hewlett-packet", name: "Hewlett-Packet", kinds: ["server", "switch"], priceFactor: 1.08, failureFactor: 0.8, fromShift: 3, untilShift: -1, wattsFactor: 0.95 },
   { id: "supermacro", name: "SuperMacro", kinds: ["server", "chassis"], priceFactor: 0.9, failureFactor: 1.3, fromShift: -4, untilShift: 1, wattsFactor: 1.05 },
   { id: "lenovoid", name: "Lenovoid", kinds: ["server", "chassis"], priceFactor: 0.95, failureFactor: 1.1, fromShift: 6 },
   { id: "gigabutt", name: "Gigabutt", kinds: ["server", "chassis"], priceFactor: 0.9, failureFactor: 1.25, fromShift: -1, wattsFactor: 1.04 },
   { id: "sysko", name: "Sysko", kinds: ["switch", "firewall", "gateway"], priceFactor: 1, failureFactor: 1 },
-  { id: "junipurr", name: "Junipurr", kinds: ["switch", "gateway"], priceFactor: 1.1, failureFactor: 0.7 },
+  { id: "junipurr", name: "Junipurr", kinds: ["switch", "firewall", "gateway"], priceFactor: 1.1, failureFactor: 0.7 },
   { id: "aristotle", name: "Aristotle", kinds: ["switch"], priceFactor: 0.93, failureFactor: 1.2 },
   { id: "fortinope", name: "Fortinope", kinds: ["firewall"], priceFactor: 0.9, failureFactor: 1.25 },
   { id: "pablo-alto", name: "Pablo Alto", kinds: ["firewall"], priceFactor: 1.1, failureFactor: 0.75 },
+  { id: "netgoat", name: "Netgoat", kinds: ["firewall"], priceFactor: 0.9, failureFactor: 1 },
+  { id: "sophosphate", name: "SoPhosphate", kinds: ["firewall"], priceFactor: 0.95, failureFactor: 1.1 },
   { id: "pandoot", name: "Pandoot", kinds: ["patch"], priceFactor: 1, failureFactor: 1 },
   { id: "avn", name: "AVN", kinds: ["gateway"], priceFactor: 1, failureFactor: 0.9 },
-  { id: "microtick", name: "MicroTick", kinds: ["gateway"], priceFactor: 1, failureFactor: 1.2 },
+  { id: "microtick", name: "MicroTick", kinds: ["switch", "gateway"], priceFactor: 1, failureFactor: 1.2 },
+  { id: "nettgear", name: "Nettgear", kinds: ["switch"], priceFactor: 0.9, failureFactor: 1.2 },
+  { id: "ubiquitea", name: "Ubiquitea", kinds: ["switch"], priceFactor: 0.9, failureFactor: 1.15 },
+  { id: "d-lunk", name: "D-Lunk", kinds: ["switch"], priceFactor: 0.9, failureFactor: 1.3 },
   { id: "eatin", name: "Eatin", kinds: ["ups", "pdu"], priceFactor: 1, failureFactor: 1 },
+  { id: "apcee", name: "APCee", kinds: ["ups", "pdu"], priceFactor: 1.05, failureFactor: 0.85 },
+  { id: "vertivo", name: "Vertivo", kinds: ["ups"], priceFactor: 1.1, failureFactor: 0.8 },
   { id: "generic", name: "Generic", kinds: ["part"], priceFactor: 1, failureFactor: 1 },
 ];
 export const brandsFor = (kind: DeviceKind): string[] => MANUFACTURERS.filter((m) => m.kinds.includes(kind)).map((m) => m.name);
@@ -460,13 +469,13 @@ const TWINS: DeviceModel[] = SERVERS.filter((m) => m.id.endsWith("-twin-node")).
   };
 });
 
-type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus" | "oob" | "atx" | "failYearly">>;
+type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "ipsGbit" | "sessions" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus" | "oob" | "atx" | "failYearly" | "until" | "supportYears">>;
 // Years on sale after launch and years of support after that (economy.md, Hardware lifecycle); other kinds never end.
 const LIFE: Partial<Record<DeviceKind, { sale: number; support: number }>> = {
   switch: { sale: 6, support: 5 }, firewall: { sale: 6, support: 5 }, gateway: { sale: 6, support: 5 }, ups: { sale: 8, support: 3 }, pdu: { sale: 8, support: 3 },
 };
 // The newest model of each line stays on sale until a successor row exists (economy.md, Routers, UPS and PDUs).
-const NEWEST = new Set(["sw-32e", "fw-400g", "edge-xxl", "ups-10k", "pdu-24", "fb-5690", "isr-8300", "ccr2216", "mx304"]);
+export const NEWEST = new Set(["sw-32e", "fw-400g", "edge-xxl", "ups-10k", "pdu-24", "fb-5690", "isr-8300", "ccr2216", "mx304", "qfx5240", "ar-7060x6", "cat9300x-48", "mt-crs518", "ng-m4350-48", "ub-usw-ent-48", "dl-dgs1510-52x", "fg-4800f", "pa-7500", "srx4600", "nt-8200", "sp-xgs4500", "ar-7050sx3", "fg-90g", "sp-xgs87", "cat1000-8", "mt-crs310-8g", "ub-usw-lite-8", "ng-gs724tp", "hp-6100-24g"]);
 const other = (id: string, name: string, kind: DeviceKind, height: number, p: PortSpec[], watts: number, price: number, from = 2005, extra: Extra = {}): DeviceModel => {
   const life = price > 0 ? LIFE[kind] : undefined;
   return { id, name, kind, height, ports: p, watts, idleWatts: watts, psus: 1, price, from, until: life && !NEWEST.has(id) ? from + life.sale : null, supportYears: life?.support ?? 0, ...extra };
@@ -474,26 +483,178 @@ const other = (id: string, name: string, kind: DeviceKind, height: number, p: Po
 // Routers: throughput in Gbit, a full BGP table or not, and the BGP sessions they take.
 const router = (tp: number, bgp: number, full = false): Extra => ({ throughputGbit: tp, bgpSessions: bgp, fullTable: full });
 const oobs = (n: number, p: OobPort): OobPort[] => Array.from({ length: n }, () => p);
-const L2 = { layer: 2 } as const, L3 = { layer: 3 } as const;
+// Switch and firewall makers: years on sale after launch and years of support after that. Hewlett-Packet's lifetime warranty
+// never runs out, the budget makers drop a model fast.
+export const NET_LIFE: Record<string, { sale: number; support: number }> = {
+  Sysko: { sale: 6, support: 5 }, Junipurr: { sale: 6, support: 5 }, Aristotle: { sale: 5, support: 5 }, "Hewlett-Packet": { sale: 7, support: 99 },
+  MicroTick: { sale: 6, support: 3 }, Nettgear: { sale: 5, support: 3 }, Ubiquitea: { sale: 5, support: 3 }, "D-Lunk": { sale: 4, support: 2 },
+  Fortinope: { sale: 6, support: 5 }, "Pablo Alto": { sale: 6, support: 5 }, Netgoat: { sale: 5, support: 3 }, SoPhosphate: { sale: 6, support: 5 },
+};
+// A switch or firewall of one maker, in the maker's own numbering (economy.md, Switches; Security appliances).
+const net = (brand: string, kind: "switch" | "firewall", id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, extra: Extra = {}): DeviceModel => {
+  const life = NET_LIFE[brand];
+  return other(id, name, kind, 1, p, watts, price, from, { brand, until: NEWEST.has(id) ? null : from + life.sale, supportYears: life.support, ...extra });
+};
+const sw = (brand: string, id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, layer: 2 | 3 = 2): DeviceModel => net(brand, "switch", id, name, from, p, watts, price, { layer });
+// A firewall caps every link at its throughput; ipsGbit is what it inspects, sessions the connections it tracks.
+const fw = (brand: string, id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, tp: number, ips: number, sessions: number): DeviceModel =>
+  net(brand, "firewall", id, name, from, p, watts, price, { throughputGbit: tp, ipsGbit: ips, sessions });
+const copper = (n: number, up = 0, upGbit = 10): PortSpec[] => [...ports(n, 1), ...(up ? ports(up, upGbit, upGbit === 1 ? "sfp" : undefined) : [])];
+// Parodies of the real lineups: Catalust and Nexxus (Catalyst, Nexus), EX and QFX, Aristotle 7000, ProCurvy and Arugula
+// (ProCurve, Aruba), CRS, ProSafe and M4300, EdgeSwitch and UniFee (UniFi), DGS. Every year sells an 8, a 24 and a 48 port
+// copper switch, one of them under 500 euro. The old generic ids stay as Sysko's models so saves keep their switches.
+const SWITCHES: DeviceModel[] = [
+  sw("Sysko", "sw-8", "Catalust 2960-8TC", 2005, ports(8, 1), 8, 60),
+  sw("Sysko", "sw-24", "Catalust 2960-24TT", 2005, copper(24, 2, 1), 40, 900),
+  sw("Sysko", "sw-48", "Catalust 2960S-48TD", 2008, copper(48, 4), 70, 2800),
+  sw("Sysko", "sw-48-l3", "Catalust 3750X-48", 2008, copper(48, 4), 110, 5500, 3),
+  sw("Sysko", "cat2960x-24", "Catalust 2960X-24TS", 2013, copper(24, 2), 30, 1100),
+  sw("Sysko", "cat2960x-48", "Catalust 2960X-48TS", 2013, copper(48, 4), 60, 2400),
+  sw("Sysko", "cat2960l-8", "Catalust 2960L-8TS", 2016, copper(8, 2, 1), 10, 300),
+  sw("Sysko", "cat9300-48", "Catalust 9300-48T", 2017, copper(48, 4), 110, 5500, 3),
+  sw("Sysko", "cat9200l-24", "Catalust 9200L-24T", 2018, copper(24, 4), 40, 1500),
+  sw("Sysko", "cat9200l-48", "Catalust 9200L-48T", 2018, copper(48, 4), 70, 2800),
+  sw("Sysko", "cat1000-8", "Catalust 1000-8T", 2020, ports(8, 1), 10, 300),
+  sw("Sysko", "cat9300x-48", "Catalust 9300X-48TX", 2023, copper(48, 4, 25), 120, 6500, 3),
+  sw("Sysko", "nx5010", "Nexxus 5010", 2008, ports(20, 10), 300, 12000),
+  sw("Sysko", "sw-48x", "Nexxus 3064", 2011, ports(48, 10), 200, 8000),
+  sw("Sysko", "sw-48q", "Nexxus 9372PX", 2014, [...ports(48, 10), ...ports(6, 40)], 280, 14000, 3),
+  sw("Sysko", "sw-48y", "Nexxus 93180YC-EX", 2017, [...ports(48, 25), ...ports(8, 100)], 400, 18000, 3),
+  sw("Sysko", "sw-32c", "Nexxus 9336C-FX2", 2017, ports(32, 100), 450, 20000, 3),
+  sw("Sysko", "sw-32d", "Nexxus 9364D-GX2", 2022, ports(32, 400), 900, 45000, 3),
+  sw("Sysko", "sw-32e", "Nexxus 9808", 2027, ports(32, 800), 1400, 60000, 3),
+  sw("Junipurr", "ex4200-48t", "EX4200-48T", 2008, copper(48, 2), 190, 6500, 3),
+  sw("Junipurr", "ex2200-24t", "EX2200-24T", 2010, copper(24, 4, 1), 40, 1200),
+  sw("Junipurr", "ex2200-48t", "EX2200-48T", 2010, copper(48, 4, 1), 60, 2200),
+  sw("Junipurr", "ex3300-48t", "EX3300-48T", 2011, copper(48, 4), 90, 4000, 3),
+  sw("Junipurr", "ex4300-48t", "EX4300-48T", 2013, copper(48, 4, 40), 150, 7000, 3),
+  sw("Junipurr", "qfx5100-48s", "QFX5100-48S", 2014, [...ports(48, 10), ...ports(6, 40)], 300, 15000, 3),
+  sw("Junipurr", "ex2300-24t", "EX2300-24T", 2016, copper(24, 4), 40, 1400),
+  sw("Junipurr", "ex2300-48t", "EX2300-48T", 2016, copper(48, 4), 60, 2500),
+  sw("Junipurr", "qfx5200-32c", "QFX5200-32C", 2016, ports(32, 100), 500, 24000, 3),
+  sw("Junipurr", "qfx5120-48y", "QFX5120-48Y", 2018, [...ports(48, 25), ...ports(8, 100)], 400, 20000, 3),
+  sw("Junipurr", "qfx5220-32cd", "QFX5220-32CD", 2019, ports(32, 400), 900, 50000, 3),
+  sw("Junipurr", "ex4100-24t", "EX4100-24T", 2022, copper(24, 4, 25), 60, 3200, 3),
+  sw("Junipurr", "ex4100-48t", "EX4100-48T", 2022, copper(48, 4, 25), 90, 5200, 3),
+  sw("Junipurr", "qfx5240", "QFX5240-64OD", 2024, ports(32, 800), 1400, 65000, 3),
+  sw("Aristotle", "ar-7048t", "7048T-A", 2009, copper(48, 4), 120, 5000, 3),
+  sw("Aristotle", "ar-7050s", "7050S-64", 2011, [...ports(48, 10), ...ports(4, 40)], 240, 9000, 3),
+  sw("Aristotle", "ar-7010t", "7010T-48", 2013, copper(48, 4), 50, 3000, 3),
+  sw("Aristotle", "ar-7050sx", "7050SX-72", 2013, [...ports(48, 10), ...ports(6, 40)], 200, 10000, 3),
+  sw("Aristotle", "ar-7050tx", "7050TX-48", 2014, [...ports(48, 10, "rj45"), ...ports(4, 40)], 280, 9000, 3),
+  sw("Aristotle", "ar-7060cx", "7060CX-32S", 2016, ports(32, 100), 400, 17000, 3),
+  sw("Aristotle", "ar-7020tr", "7020TR-48", 2017, copper(48, 6), 60, 3200, 3),
+  sw("Aristotle", "ar-7050sx3", "7050SX3-48YC8", 2018, [...ports(48, 25), ...ports(8, 100)], 350, 15000, 3),
+  sw("Aristotle", "ar-7060dx4", "7060DX4-32", 2020, ports(32, 400), 800, 38000, 3),
+  sw("Aristotle", "ar-7060x6", "7060X6-64PE", 2024, ports(32, 800), 1300, 52000, 3),
+  sw("Hewlett-Packet", "hp-1800-8g", "ProCurvy 1800-8G", 2006, ports(8, 1), 8, 150),
+  sw("Hewlett-Packet", "hp-2510-24", "ProCurvy 2510-24", 2007, copper(24, 2, 1), 30, 700),
+  sw("Hewlett-Packet", "hp-2810-48g", "ProCurvy 2810-48G", 2008, copper(48, 4, 1), 60, 2000),
+  sw("Hewlett-Packet", "hp-2920-48g", "ProCurvy 2920-48G", 2013, copper(48, 4), 70, 2600, 3),
+  sw("Hewlett-Packet", "hp-2930f-24g", "Arugula 2930F-24G", 2016, copper(24, 4), 40, 1500, 3),
+  sw("Hewlett-Packet", "hp-2930f-48g", "Arugula 2930F-48G", 2016, copper(48, 4), 65, 2700, 3),
+  sw("Hewlett-Packet", "hp-8325-48y8c", "Arugula 8325-48Y8C", 2019, [...ports(48, 25), ...ports(8, 100)], 400, 22000, 3),
+  sw("Hewlett-Packet", "hp-6300m-48g", "Arugula 6300M-48G", 2020, copper(48, 4, 25), 100, 5000, 3),
+  sw("Hewlett-Packet", "hp-6100-24g", "Arugula 6100-24G", 2021, copper(24, 4), 35, 1100),
+  sw("MicroTick", "mt-crs326-24g", "CRS326-24G-2S+", 2017, copper(24, 2), 20, 200),
+  sw("MicroTick", "mt-crs317", "CRS317-16S+", 2017, ports(16, 10), 45, 400),
+  sw("MicroTick", "mt-crs309", "CRS309-1G-8S+", 2018, ports(8, 10), 20, 250),
+  sw("MicroTick", "mt-crs354", "CRS354-48G-4S+2Q+", 2019, [...copper(48, 4), ...ports(2, 40)], 60, 450),
+  sw("MicroTick", "mt-crs326-24s", "CRS326-24S+2Q+", 2019, [...ports(24, 10), ...ports(2, 40)], 40, 500),
+  sw("MicroTick", "mt-crs504", "CRS504-4XQ", 2021, ports(4, 100), 50, 650),
+  sw("MicroTick", "mt-crs310-8g", "CRS310-8G+2S+", 2022, copper(8, 2), 15, 200),
+  sw("MicroTick", "mt-crs518", "CRS518-16XS-2XQ", 2022, [...ports(16, 25), ...ports(2, 100)], 60, 1300),
+  sw("Nettgear", "ng-gs108t", "ProSafe GS108T", 2005, ports(8, 1), 6, 60),
+  sw("Nettgear", "ng-gs724t", "ProSafe GS724T", 2006, copper(24, 2, 1), 25, 250),
+  sw("Nettgear", "ng-gs748t", "ProSafe GS748T", 2007, copper(48, 4, 1), 45, 500),
+  sw("Nettgear", "ng-gs108tv2", "ProSafe GS108Tv2", 2011, ports(8, 1), 5, 65),
+  sw("Nettgear", "ng-m4300-48x", "M4300-48X", 2016, [...ports(48, 10, "rj45"), ...ports(4, 10)], 150, 4500, 3),
+  sw("Nettgear", "ng-gs308t", "GS308T", 2019, ports(8, 1), 5, 70),
+  sw("Nettgear", "ng-gs724tp", "GS724Tv4", 2020, copper(24, 2, 1), 22, 230),
+  sw("Nettgear", "ng-m4350-48g", "M4350-48G", 2023, copper(48, 4, 25), 80, 2800, 3),
+  sw("Ubiquitea", "ub-es-24", "EdgeSwitch 24", 2015, copper(24, 2, 1), 25, 250),
+  sw("Ubiquitea", "ub-es-48", "EdgeSwitch 48", 2015, copper(48, 4, 1), 45, 450),
+  sw("Ubiquitea", "ub-usw-lite-8", "UniFee USW-Lite-8", 2020, ports(8, 1), 8, 100),
+  sw("Ubiquitea", "ub-usw-pro-24", "UniFee USW-Pro-24", 2020, copper(24, 2), 30, 400, 3),
+  sw("Ubiquitea", "ub-usw-pro-48", "UniFee USW-Pro-48", 2020, copper(48, 4), 55, 700, 3),
+  sw("Ubiquitea", "ub-usw-agg", "UniFee USW-Aggregation", 2020, ports(8, 10), 25, 250),
+  sw("Ubiquitea", "ub-usw-pro-agg", "UniFee USW-Pro-Aggregation", 2022, [...ports(28, 10), ...ports(4, 25)], 60, 900, 3),
+  sw("Ubiquitea", "ub-usw-ent-48", "UniFee USW-Enterprise-48", 2023, copper(48, 4), 70, 1200, 3),
+  sw("D-Lunk", "dl-dgs1008d", "DGS-1008D", 2005, ports(8, 1), 5, 45),
+  sw("D-Lunk", "dl-dgs1224t", "DGS-1224T", 2005, copper(24, 2, 1), 25, 220),
+  sw("D-Lunk", "dl-dgs3100-48", "DGS-3100-48", 2005, copper(48, 4, 1), 50, 600),
+  sw("D-Lunk", "dl-dgs1210-24", "DGS-1210-24", 2010, copper(24, 4, 1), 20, 200),
+  sw("D-Lunk", "dl-dgs1210-48", "DGS-1210-48", 2012, copper(48, 4, 1), 40, 400),
+  sw("D-Lunk", "dl-dgs1510-28x", "DGS-1510-28X", 2015, copper(24, 4), 30, 350),
+  sw("D-Lunk", "dl-dgs1210-08", "DGS-1210-08", 2012, ports(8, 1), 5, 50),
+  sw("D-Lunk", "dl-dgs1510-52x", "DGS-1510-52X", 2016, copper(48, 4), 50, 600),
+];
+// Parodies: PIXel, ASAP and Firepowder (PIX, ASA, Firepower), FortiGoat (FortiGate), PA, SRX, pfSinse on Netgoat boxes
+// (pfSense, Netgate), SoPhosphate (Sophos). Every year sells a firewall under 1000 euro and a datacenter one.
+const FIREWALLS: DeviceModel[] = [
+  fw("Sysko", "pix501", "PIXel 501", 2005, ports(5, 1), 15, 450, 0.1, 0, 7500),
+  fw("Sysko", "fw-1g", "ASAP 5520", 2005, ports(4, 1), 40, 1500, 1, 0.2, 280000),
+  fw("Sysko", "asa5505", "ASAP 5505", 2006, ports(8, 1), 20, 600, 0.15, 0, 10000),
+  fw("Sysko", "asa5510", "ASAP 5510", 2006, ports(5, 1), 30, 1200, 0.3, 0.05, 50000),
+  fw("Sysko", "fw-10g", "ASAP 5585-X", 2011, [...ports(8, 1), ...ports(4, 10)], 120, 6000, 10, 2, 1000000),
+  fw("Sysko", "asa5516x", "ASAP 5516-X", 2015, ports(8, 1), 40, 1800, 1.8, 0.45, 250000),
+  fw("Sysko", "fw-40g", "Firepowder 4120", 2017, [...ports(8, 10), ...ports(4, 40)], 250, 18000, 40, 12, 10000000),
+  fw("Sysko", "fp2130", "Firepowder 2130", 2017, [...ports(8, 1), ...ports(4, 10)], 150, 9000, 5, 2.3, 2000000),
+  fw("Sysko", "fp1010", "Firepowder 1010", 2019, ports(8, 1), 20, 700, 0.65, 0.4, 100000),
+  fw("Sysko", "fp1120", "Firepowder 1120", 2019, ports(12, 1), 40, 2000, 1.5, 0.65, 400000),
+  fw("Sysko", "fw-100g", "Firepowder 4215", 2022, [...ports(8, 25), ...ports(4, 100)], 450, 40000, 100, 35, 30000000),
+  fw("Sysko", "fp3110", "Firepowder 3110", 2022, [...ports(8, 1), ...ports(4, 25)], 120, 7000, 17, 6, 3000000),
+  fw("Sysko", "fw-400g", "Firepowder 9300", 2027, [...ports(8, 100), ...ports(4, 400)], 700, 70000, 400, 150, 100000000),
+  fw("Fortinope", "fg-50b", "FortiGoat 50B", 2007, ports(7, 1), 10, 400, 0.05, 0.02, 50000),
+  fw("Fortinope", "fg-60c", "FortiGoat 60C", 2010, ports(10, 1), 12, 500, 1, 0.06, 100000),
+  fw("Fortinope", "fg-100d", "FortiGoat 100D", 2012, ports(22, 1), 30, 1500, 2.5, 0.25, 2000000),
+  fw("Fortinope", "fg-200e", "FortiGoat 200E", 2016, ports(18, 1), 35, 2200, 20, 1.2, 2000000),
+  fw("Fortinope", "fg-600e", "FortiGoat 600E", 2018, [...ports(8, 1), ...ports(8, 10)], 80, 9000, 36, 7, 8000000),
+  fw("Fortinope", "fg-1100e", "FortiGoat 1100E", 2019, [...ports(8, 10), ...ports(4, 25)], 150, 16000, 80, 11, 12000000),
+  fw("Fortinope", "fg-40f", "FortiGoat 40F", 2020, ports(5, 1), 8, 350, 5, 1, 700000),
+  fw("Fortinope", "fg-2600f", "FortiGoat 2600F", 2021, [...ports(8, 10), ...ports(4, 100)], 300, 40000, 200, 24, 24000000),
+  fw("Fortinope", "fg-3700f", "FortiGoat 3700F", 2022, [...ports(8, 25), ...ports(8, 100)], 500, 70000, 600, 90, 60000000),
+  fw("Fortinope", "fg-90g", "FortiGoat 90G", 2023, ports(8, 1), 15, 700, 10, 2, 1500000),
+  fw("Fortinope", "fg-4800f", "FortiGoat 4800F", 2023, [...ports(8, 100), ...ports(4, 400)], 900, 150000, 1000, 150, 120000000),
+  fw("Pablo Alto", "pa-500", "PA-500", 2010, ports(8, 1), 40, 2500, 0.25, 0.1, 64000),
+  fw("Pablo Alto", "pa-200", "PA-200", 2011, ports(4, 1), 20, 1500, 0.1, 0.05, 64000),
+  fw("Pablo Alto", "pa-3020", "PA-3020", 2012, ports(12, 1), 150, 9000, 2, 1, 250000),
+  fw("Pablo Alto", "pa-7050", "PA-7050", 2013, ports(12, 10), 600, 90000, 120, 100, 24000000),
+  fw("Pablo Alto", "pa-220", "PA-220", 2017, ports(8, 1), 20, 1000, 0.5, 0.15, 64000),
+  fw("Pablo Alto", "pa-5220", "PA-5220", 2017, [...ports(12, 10), ...ports(4, 40)], 400, 45000, 18, 9, 4000000),
+  fw("Pablo Alto", "pa-3220", "PA-3220", 2018, [...ports(12, 1), ...ports(4, 10)], 150, 12000, 2.5, 1.3, 1000000),
+  fw("Pablo Alto", "pa-440", "PA-440", 2021, ports(8, 1), 25, 1500, 3, 1, 200000),
+  fw("Pablo Alto", "pa-5450", "PA-5450", 2021, [...ports(8, 25), ...ports(4, 100)], 800, 120000, 120, 70, 100000000),
+  fw("Pablo Alto", "pa-7500", "PA-7500", 2023, [...ports(8, 100), ...ports(4, 400)], 1500, 300000, 1500, 1000, 300000000),
+  fw("Junipurr", "srx100", "SRX100", 2009, ports(8, 1), 10, 500, 0.7, 0.05, 32000),
+  fw("Junipurr", "srx210", "SRX210", 2009, ports(8, 1), 15, 800, 0.85, 0.08, 64000),
+  fw("Junipurr", "srx240", "SRX240", 2009, ports(16, 1), 30, 2000, 1.5, 0.25, 128000),
+  fw("Junipurr", "srx650", "SRX650", 2009, ports(8, 1), 100, 6000, 7, 0.9, 512000),
+  fw("Junipurr", "srx5400", "SRX5400", 2011, ports(16, 10), 800, 80000, 240, 60, 20000000),
+  fw("Junipurr", "srx300", "SRX300", 2016, ports(8, 1), 15, 700, 1, 0.3, 64000),
+  fw("Junipurr", "srx345", "SRX345", 2016, ports(16, 1), 25, 1800, 5, 0.8, 375000),
+  fw("Junipurr", "srx1500", "SRX1500", 2016, [...ports(12, 1), ...ports(4, 10)], 150, 9000, 9, 3, 2000000),
+  fw("Junipurr", "srx4100", "SRX4100", 2016, ports(8, 10), 200, 15000, 20, 8, 4000000),
+  fw("Junipurr", "srx4600", "SRX4600", 2017, [...ports(8, 10), ...ports(4, 40)], 300, 30000, 80, 20, 10000000),
+  fw("Netgoat", "nt-sg2440", "pfSinse SG-2440", 2015, ports(4, 1), 10, 450, 1, 0, 500000),
+  fw("Netgoat", "nt-sg4860", "pfSinse SG-4860", 2015, ports(6, 1), 20, 800, 2, 0, 2000000),
+  fw("Netgoat", "nt-1100", "pfSinse 1100", 2018, ports(3, 1), 5, 200, 0.5, 0, 100000),
+  fw("Netgoat", "nt-xg7100", "pfSinse XG-7100", 2018, [...ports(8, 1), ...ports(2, 10)], 30, 1200, 10, 2, 4000000),
+  fw("Netgoat", "nt-6100", "pfSinse 6100", 2021, [...ports(4, 1), ...ports(4, 10)], 25, 800, 10, 3, 2000000),
+  fw("Netgoat", "nt-8200", "pfSinse 8200", 2023, [...ports(4, 1), ...ports(4, 25)], 40, 1500, 25, 8, 10000000),
+  fw("SoPhosphate", "sp-utm220", "UTM 220", 2011, ports(8, 1), 30, 1500, 1.5, 0.3, 500000),
+  fw("SoPhosphate", "sp-xg125", "XG 125", 2016, ports(8, 1), 20, 900, 6, 1.5, 1000000),
+  fw("SoPhosphate", "sp-xg450", "XG 450", 2016, [...ports(8, 1), ...ports(4, 10)], 100, 7000, 50, 8, 8000000),
+  fw("SoPhosphate", "sp-xgs87", "XGS 87", 2021, ports(4, 1), 8, 400, 3, 0.5, 300000),
+  fw("SoPhosphate", "sp-xgs2300", "XGS 2300", 2021, [...ports(8, 1), ...ports(2, 10)], 40, 2500, 25, 4, 3000000),
+  fw("SoPhosphate", "sp-xgs4500", "XGS 4500", 2021, [...ports(8, 1), ...ports(8, 10)], 90, 7000, 70, 15, 10000000),
+];
+const NETWORK: DeviceModel[] = [...SWITCHES, ...FIREWALLS];
 
 export const MODELS: DeviceModel[] = [
   ...SERVERS,
   ...TWINS,
-  other("sw-8", "L2 switch 8", "switch", 1, ports(8, 1), 8, 60, 2005, L2),
-  other("sw-24", "L2 switch 24", "switch", 1, [...ports(24, 1), ...ports(2, 1, "sfp")], 40, 900, 2005, L2),
-  other("sw-48", "L2 switch 48", "switch", 1, [...ports(48, 1), ...ports(4, 10)], 70, 2800, 2008, L2),
-  other("sw-48x", "L2 switch 48 SFP", "switch", 1, ports(48, 10), 200, 8000, 2011, L2),
-  other("sw-48-l3", "L3 switch 48", "switch", 1, [...ports(48, 1), ...ports(4, 10)], 110, 5500, 2008, L3),
-  other("sw-48q", "L3 switch 48 SFP, 40G", "switch", 1, [...ports(48, 10), ...ports(6, 40)], 280, 14000, 2014, L3),
-  other("sw-48y", "L3 switch 48 SFP, 100G", "switch", 1, [...ports(48, 25), ...ports(8, 100)], 400, 18000, 2017, L3),
-  other("sw-32c", "L3 spine 32 × 100G", "switch", 1, ports(32, 100), 450, 20000, 2017, L3),
-  other("sw-32d", "L3 spine 32 × 400G", "switch", 1, ports(32, 400), 900, 45000, 2022, L3),
-  other("sw-32e", "L3 spine 32 × 800G", "switch", 1, ports(32, 800), 1400, 60000, 2027, L3),
-  other("fw-1g", "Firewall 1G", "firewall", 1, ports(4, 1), 40, 1500, 2005, { throughputGbit: 1 }),
-  other("fw-10g", "Firewall 10G", "firewall", 1, [...ports(8, 1), ...ports(4, 10)], 120, 6000, 2011, { throughputGbit: 10 }),
-  other("fw-40g", "Firewall 40G", "firewall", 1, [...ports(8, 10), ...ports(4, 40)], 250, 18000, 2017, { throughputGbit: 40 }),
-  other("fw-100g", "Firewall 100G", "firewall", 1, [...ports(8, 25), ...ports(4, 100)], 450, 40000, 2022, { throughputGbit: 100 }),
-  other("fw-400g", "Firewall 400G", "firewall", 1, [...ports(8, 100), ...ports(4, 400)], 700, 70000, 2027, { throughputGbit: 400 }),
+  ...NETWORK,
   // The first half of the ports are the front jacks, the second half the back; front i is wired to back jacks + i.
   other("patch-24", "Patch panel 24, copper", "patch", 1, ports(48, 1), 0, 80),
   other("patch-24f", "Patch panel 24, fiber", "patch", 1, ports(48, 400, "sfp"), 0, 250),

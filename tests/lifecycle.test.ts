@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
 import { hourOf } from "../src/sim/00-core/time";
 import { GENERATIONS } from "../src/sim/10-catalog/economy";
-import { MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
+import { MODELS, modelById, NET_LIFE, NEWEST, shopModels } from "../src/sim/10-catalog/hardware";
 import { erodedPrice, FAILURE_FACTOR, outOfSupport, supportEnd } from "../src/sim/10-catalog/lifecycle";
 import { presetPrice } from "../src/sim/10-catalog/parts";
 import { newGame, type GameState } from "../src/sim/50-state";
@@ -25,7 +25,6 @@ const ok = (r: { ok: boolean; id?: string; error?: string }) => {
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
 
 // The newest model of each line stays on sale (Lane 5.2, Successors).
-const NEWEST = ["sw-32e", "fw-400g", "edge-xxl", "ups-10k", "pdu-24", "fb-5690", "isr-8300", "ccr2216", "mx304"];
 
 describe("hardware lifecycle", () => {
   it("gives every model an end of sale and support, except patch panels, unsold models and the newest servers", () => {
@@ -35,8 +34,9 @@ describe("hardware lifecycle", () => {
       else if (m.server || m.nodes) {
         const i = GENERATIONS.findIndex((g) => g.year === m.from);
         expect([m.until, m.supportYears], m.id).toEqual([GENERATIONS[i + 2] ? GENERATIONS[i + 2].year - 1 : null, 5]);
-      } else if (NEWEST.includes(m.id)) expect(m.until, m.id).toBeNull();
+      } else if (NEWEST.has(m.id)) expect(m.until, m.id).toBeNull();
       else if (m.kind === "ups" || m.kind === "pdu") expect([m.until, m.supportYears], m.id).toEqual([m.from + 8, 3]);
+      else if (m.kind === "switch" || m.kind === "firewall") expect([m.until, m.supportYears], m.id).toEqual([m.from + NET_LIFE[m.brand!].sale, NET_LIFE[m.brand!].support]);
       else expect([m.until, m.supportYears], m.id).toEqual([m.from + 6, 5]);
     }
     expect(modelById("g1-compute")).toMatchObject({ until: 2010, supportYears: 5 });
@@ -57,12 +57,12 @@ describe("hardware lifecycle", () => {
 
   it("announces the end of sale on the first of January after the last year", () => {
     const sw = NEWS.find((d) => d.id === "endOfSale.sw-8")!;
-    expect(sw).toMatchObject({ key: "event.news.endOfSale", at: jan(2012), params: { name: "L2 switch 8", supportEnd: 2016 } });
+    expect(sw).toMatchObject({ key: "event.news.endOfSale", at: jan(2012), params: { name: "Catalust 2960-8TC", supportEnd: 2016 } });
     expect(NEWS.some((d) => d.id.startsWith("endOfSale.g1") || d.id.startsWith("endOfSale.patch"))).toBe(false);
     const s = newGame(1);
     s.hour = jan(2012);
-    const e = newsTick(s).find((x) => x.key === "event.news.endOfSale" && x.params.name === "L2 switch 8")!;
-    expect(t(`${e.key}.title`, e.params)).toBe("L2 switch 8 off the market");
+    const e = newsTick(s).find((x) => x.key === "event.news.endOfSale" && x.params.name === "Catalust 2960-8TC")!;
+    expect(t(`${e.key}.title`, e.params)).toBe("Catalust 2960-8TC off the market");
     expect(t(`${e.key}.text`, e.params)).toContain("Heize online");
     expect(feed(s).some((f) => f.key === "event.news.endOfSale")).toBe(true);
   });
@@ -74,7 +74,9 @@ describe("hardware lifecycle", () => {
     expect(presetPrice(m, m.from + 3)).toBe(Math.round(m.price * 0.95 ** 3));
     expect(presetPrice(m, m.until!)).toBe(Math.round(m.price * 0.95 ** 6));
     expect(erodedPrice(m, 1000, m.until! + 4)).toBe(erodedPrice(m, 1000, m.until!));
-    expect(presetPrice(m, m.from + 1, "Junipurr")).toBe(Math.round(m.price * 0.95 * 1.1));
+    // A switch comes from one maker at its list price; the UPS keeps the maker factors.
+    expect(presetPrice(m, m.from + 1, "Sysko")).toBe(Math.round(m.price * 0.95));
+    expect(presetPrice(modelById("ups-3000"), 2006, "Vertivo")).toBe(Math.round(900 * 0.95 * 1.1));
     expect(presetPrice(modelById("patch-24"), 2030)).toBe(80);
   });
 

@@ -1,0 +1,38 @@
+.vs-plain { --vs-accent: #2f5fa8; font: 12px/1.45 Arial, Helvetica, sans-serif; color: #333333; background: #f4f4f4; }
+.vs-nettgear { --vs-accent: #3a4fb0; }
+.vs-ubiquitea { --vs-accent: #0559c9; }
+.vs-d-lunk { --vs-accent: #d0342c; }
+.vs-netgoat { --vs-accent: #1f7a8c; }
+.vs-sophosphate { --vs-accent: #005bc8; }
+.vs-apcee { --vs-accent: #c8102e; }
+.vs-vertivo { --vs-accent: #2c3e50; }
+.vs-plain header { display: flex; align-items: center; gap: 24px; padding: 10px 20px; background: #ffffff; border-bottom: 3px solid var(--vs-accent); }
+.vs-plain .vs-wm { display: flex; align-items: center; gap: 6px; font: 700 20px/1 Arial, sans-serif; color: var(--vs-accent); }
+.vs-plain nav { display: flex; gap: 14px; }
+.vs-plain nav a { color: #555555; text-decoration: none; }
+.vs-plain nav a[aria-current] { color: var(--vs-accent); font-weight: 700; }
+.vs-plain main { max-width: 820px; margin: 12px 20px; padding: 14px; background: #ffffff; border: 1px solid #dddddd; }
+.vs-plain .vs-hero { padding: 14px; background: var(--vs-accent); color: #ffffff; margin-bottom: 12px; }
+.vs-plain h1 { font-size: 17px; margin-bottom: 8px; }
+.vs-plain h2 { font-size: 13px; margin: 14px 0 6px; color: var(--vs-accent); }
+.vs-plain .vs-cta { display: inline-block; padding: 3px 12px; background: #ffffff; color: var(--vs-accent); text-decoration: none; font-weight: 700; }
+.vs-plain .vs-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.vs-plain .vs-cats a { display: block; padding: 6px 12px; border: 1px solid #cccccc; color: #333333; text-decoration: none; }
+.vs-plain th { background: #eeeeee; padding: 3px 6px; }
+.vs-plain td { padding: 3px 6px; border-bottom: 1px solid #eeeeee; }
+.vs-plain footer { padding: 6px 20px 18px; color: #888888; font-size: 10px; }
+.vs-plain.late { font: 15px/1.55 "Helvetica Neue", Arial, sans-serif; background: #ffffff; }
+.vs-plain.late header { padding: 0 40px; border-bottom: 1px solid #e5e5e5; }
+.vs-plain.late .vs-wm { padding: 14px 0; }
+.vs-plain.late nav a { padding: 18px 0; }
+.vs-plain.late nav a[aria-current] { box-shadow: inset 0 -4px var(--vs-accent); }
+.vs-plain.late main { max-width: none; margin: 0; padding: 0 40px 32px; border: 0; }
+.vs-plain.late .vs-hero { margin: 0 -40px 28px; padding: 64px 40px; }
+.vs-plain.late .vs-hero h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.02em; }
+.vs-plain.late h1 { font-size: 30px; margin: 28px 0 12px; }
+.vs-plain.late .vs-cta { padding: 12px 24px; }
+.vs-plain.late .vs-cats a { padding: 14px 20px; border: 0; background: #f2f2f2; font-weight: 600; }
+.vs-plain.late h2 { font-size: 20px; }
+.vs-plain.late th { background: none; border-bottom: 2px solid var(--vs-accent); padding: 8px; }
+.vs-plain.late td { padding: 8px; }
+.vs-plain.late footer { padding: 20px 40px; background: #f2f2f2; color: #666666; font-size: 12px; }

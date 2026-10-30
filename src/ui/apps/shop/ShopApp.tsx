@@ -169,6 +169,8 @@ function useOffer({ model, brand, part, maker }: Item & { maker: Vendor | null }
     ["Height", height(model)],
     ...(!part && model.price > 0 ? [["Release", releaseLabel(brandFrom(model, brand))]] as [string, string][] : []),
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
+    ...(model.ipsGbit ? [["IPS throughput", speed(model.ipsGbit)]] as [string, string][] : []),
+    ...(model.sessions ? [["Sessions", model.sessions.toLocaleString("en-GB")]] as [string, string][] : []),
     ...(s ? [["CPU", `${s.sockets} × ${VENDOR_NAME[vendor]} ${(cpu && skuById(cpu)?.name) ?? ""}`.trim()], ["Cores", cores(sum("cpu"))], ...(cpu && skuById(cpu) ? [["Threads", `${s.sockets * skuById(cpu)!.threads}`]] : []), ["Clock", clockLabel({ kind: "cpu", vendor, gen: model.gen, sku: cpu })], ["Mainboard", board?.name ?? ""], ["CPU sockets", board ? `${board.sockets} × ${board.socket}, up to ${cores(board.maxCores)} each` : ""], ["RAM", ram(s.ramGb)],
       ...(cards.length ? [["GPUs", `${cards.length} × ${cardOf(cards[0].size).name}`]] as [string, string][] : []),
       ["Storage", `${disk(s.diskGb)} ${s.disk}`], ...memoryDriveRows(built)] as [string, string][] : []),
