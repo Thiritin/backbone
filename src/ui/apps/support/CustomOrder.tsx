@@ -10,7 +10,8 @@ import { setupFee, sizeOf } from "../../../sim/30-market/spec";
 import { canAutomate, invoiceOf, stepsDone } from "../../../sim/30-market/manual";
 import type { SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
-import { routeOptions, sumOf } from "../../../sim/60-infra/routes";
+import type { GameState } from "../../../sim/50-state";
+import { routeOptions } from "../../../sim/60-infra/routes";
 import { offerUpgrade, confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
 import { decline } from "../../../sim/90-actions/sales";
 import { closeTicket } from "../../../sim/90-actions/support";
@@ -49,36 +50,41 @@ function Load({ title, cap, used, size }: { title: string; cap: Resources; used:
   );
 }
 
-// Where the service goes: automatic, a cluster in the city or one of its servers, with what each can still book and the
-// load of the chosen one. An upgrade frees the service it replaces wherever that runs now.
+// The servers of the city that can run the product: each node, or a VM cluster as a whole, with what it can still book
+// and the load of the chosen one. An upgrade frees the service it replaces wherever that runs now.
+function servers(game: GameState, product: Product, city: string, size: Resources) {
+  return routeOptions(game, product, city, size).flatMap((c) =>
+    game.clusters.find((x) => x.id === c.id)?.vm ? [{ ...c, title: `${c.name} · ${c.az}` }] : c.nodes.map((d) => ({ ...d, title: `${d.name} · ${c.name}` })));
+}
+
+// The server an upgrade grows on by default: the one it runs on now, else the first with room.
+function defaultServer(game: GameState, r: SalesRequest): string {
+  if (r.route && r.route !== "auto") return r.route;
+  const list = servers(game, r.product, r.city, sizeOf(r.spec!)), old = game.workloads.find((w) => w.serviceId === r.serviceId);
+  return (list.find((x) => x.id === old?.deviceId || x.id === old?.clusterId) ?? list.find((x) => x.fits) ?? list[0])?.id ?? "";
+}
+
 export function RouteCards({ product, city, size, value, onChange, disabled, serviceId }: {
   product: Product; city: string; size: Resources; value: string; onChange: (v: string) => void; disabled?: boolean; serviceId?: string;
 }) {
   const game = useStore((s) => s.game);
-  const clusters = routeOptions(game, product, city, size), name = useId();
+  const list = servers(game, product, city, size), name = useId();
   const old = serviceId ? game.workloads.find((w) => w.serviceId === serviceId) : undefined;
-  const card = (id: string, title: string, sub: string, fits: boolean, nested = false) => (
-    <label key={id} className={`route${nested ? " node" : ""}${fits ? "" : " full"}`}>
-      <input type="radio" name={name} checked={value === id} disabled={disabled} onChange={() => onChange(id)} />
-      <span className="route-t">{title}{!fits && <span className="pill">Full</span>}</span>
-      <span className="route-s num">{sub}</span>
-    </label>
-  );
-  const picked = clusters.find((c) => c.id === value), node = clusters.flatMap((c) => c.nodes).find((d) => d.id === value);
-  const target = picked ? { title: `${picked.name} · ${picked.az}`, ...picked, holds: old?.clusterId === picked.id }
-    : node ? { title: node.name, ...node, holds: old?.deviceId === node.id }
-    : { title: city, cap: sumOf(clusters.map((c) => c.cap)), used: sumOf(clusters.map((c) => c.used)), holds: clusters.some((c) => c.id === old?.clusterId) };
-  const used = old && target.holds ? { vcpu: target.used.vcpu - old.vcpu, ramGb: target.used.ramGb - old.ramGb, diskGb: target.used.diskGb - old.diskGb } : target.used;
+  const target = list.find((x) => x.id === value);
+  const holds = !!target && (old?.deviceId === target.id || (!old?.deviceId && old?.clusterId === target.id));
+  const used = old && target && holds ? { vcpu: target.used.vcpu - old.vcpu, ramGb: target.used.ramGb - old.ramGb, diskGb: target.used.diskGb - old.diskGb } : target?.used;
   return (
     <>
-      <div className="routes" role="radiogroup" aria-label="Target">
-        {card("auto", "Automatic", `${clusters.length} cluster${clusters.length === 1 ? "" : "s"} in ${city}`, clusters.some((c) => c.fits))}
-        {clusters.flatMap((c) => [
-          card(c.id, `${c.name} · ${c.az}`, free(c.free), c.fits),
-          ...c.nodes.map((d) => card(d.id, d.name, free(d.free), d.fits, true)),
-        ])}
+      <div className="routes" role="radiogroup" aria-label="Server">
+        {list.map((x) => (
+          <label key={x.id} className={`route${x.fits ? "" : " full"}`}>
+            <input type="radio" name={name} checked={value === x.id} disabled={disabled} onChange={() => onChange(x.id)} />
+            <span className="route-t">{x.title}{!x.fits && <span className="pill">Full</span>}</span>
+            <span className="route-s num">{free(x.free)}</span>
+          </label>
+        ))}
       </div>
-      {clusters.length > 0 && (size.vcpu || size.ramGb || size.diskGb) ? <Load title={target.title} cap={target.cap} used={used} size={size} /> : null}
+      {target && used && (size.vcpu || size.ramGb || size.diskGb) ? <Load title={target.title} cap={target.cap} used={used} size={size} /> : null}
     </>
   );
 }
@@ -181,7 +187,7 @@ export function UpgradeCompose({ r }: { r: SalesRequest }) {
   const act = useStore((s) => s.act);
   const v = game.services.find((x) => x.id === r.serviceId);
   const [price, setPrice] = useState(r.counter ?? r.quote ?? r.reference);
-  const [route, setRoute] = useState(r.route ?? "auto");
+  const [route, setRoute] = useState(() => defaultServer(game, r));
   if (!v?.spec || !r.spec) return null;
   const current = v.price * 730, open = ["open", "countered", "refused"].includes(r.status), locked = r.status === "quoted";
   const rows: [string, number, number, string][] = r.product === "webHosting"
@@ -204,7 +210,7 @@ export function UpgradeCompose({ r }: { r: SalesRequest }) {
           <div className="actions-row">
             <button className="btn ghost" disabled={locked} onClick={() => act(decline, r.id)}><CircleX />Decline</button>
             <span className="grow" />
-            <button className="btn primary" disabled={locked || !(price > 0)} onClick={() => act(offerUpgrade, r.id, price, route)}><Send />Send offer</button>
+            <button className="btn primary" disabled={locked || !(price > 0) || !route} onClick={() => act(offerUpgrade, r.id, price, route)}><Send />Send offer</button>
           </div>
         </div>
       )}
