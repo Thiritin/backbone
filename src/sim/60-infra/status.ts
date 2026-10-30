@@ -408,6 +408,9 @@ export function powered(s: GameState, deviceId: string): boolean {
   return rack.arriveAt === null && pluggedIn(d) && !rackPower(s, rack.id).tripped;
 }
 
+// A device switched on with every power cord pulled is as safe to open as one switched off.
+export const energized = (d: Device): boolean => d.on && (!psusOf(d).length || psusOf(d).some(isPlugged));
+
 export function freePositions(s: GameState, locationId: string): number[] {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return [];

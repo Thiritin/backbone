@@ -7,7 +7,7 @@ import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
 import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, bootHours, connectError, drivesOf, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
+import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { atFront, BMC_RESET_HOURS, bootUp, halt, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
@@ -761,7 +761,7 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (d.maintenance) return fail("error.busy");
   const spares = replaceSpares(s, d, c, rack.locationId), part = spares[0];
   if (!part) return fail("error.noPart");
-  if (d.on && !hotSwappable(d, c)) return fail("error.powerOffFirst");
+  if (energized(d) && !hotSwappable(d, c)) return fail("error.powerOffFirst");
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
   const swap = SWAP_HOURS * spares.length * workFactor(d.model, s.hour), grey = spares.reduce((n, x) => n + greyMarket(s, d, x), 0);
   const job = handJob(s, d.label ?? d.name, loc, how, swap);
@@ -882,7 +882,7 @@ function handsOn(s: GameState, d: Device, hot: boolean, how: How | boolean): { e
   if (!d.rackId) return d.store ? { cost: 0, bill: 0, wait: 0, commit: () => 0 } : { error: "error.inTransit" };
   const rack = spotOf(s, d.rackId)!;
   if (rack.moving) return { error: "error.rackMoving" };
-  if (d.on && !hot) return { error: "error.powerOffFirst" };
+  if (energized(d) && !hot) return { error: "error.powerOffFirst" };
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
   const job = handJob(s, d.label ?? d.name, loc, how, (hot ? 0 : INSTALL_HOURS) * workFactor(d.model, s.hour));
   if ("error" in job) return job;

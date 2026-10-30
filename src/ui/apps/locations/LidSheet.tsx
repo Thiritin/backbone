@@ -4,7 +4,7 @@ import { yearOf } from "../../../sim/00-core/time";
 import { bayTakes, COMPONENTS, fits, modelById, samePart, type ComponentKind } from "../../../sim/10-catalog/hardware";
 import { partPrice } from "../../../sim/10-catalog/parts";
 import type { Component, Device } from "../../../sim/50-state";
-import { hotKind, hotSwappable, locationOf } from "../../../sim/60-infra/status";
+import { energized, hotKind, hotSwappable, locationOf } from "../../../sim/60-infra/status";
 import { installPart, removePart, replaceComponent, replaceSpares } from "../../../sim/90-actions/hardware";
 import { chassisSlots, GROUP_KINDS, GROUP_NAME, TopDown, type Group, type Slot } from "../../art/TopDown";
 import { reduced } from "../../desktop/motion";
@@ -64,7 +64,7 @@ export function LidSheet({ deviceId, onClose }: { deviceId: string; onClose: () 
 // A filled slot shows its part with Replace and Remove; an empty slot offers the spare parts in storage that fit.
 function SlotCard({ device, slot, wear, spares, az }: { device: Device; slot: Slot; wear: (c: Component) => "ok" | "warn" | "bad"; spares: (kinds: ComponentKind[]) => Device[]; az: string }) {
   const game = useStore((s) => s.game), hand = useHandWork(), model = modelById(device.model), c = slot.part;
-  const busy = !!device.maintenance, live = !!device.rackId && device.on;
+  const busy = !!device.maintenance, live = !!device.rackId && energized(device);
   if (c) {
     const w = wear(c);
     const zone = device.rackId ? locationOf(game, device)?.id : device.store;

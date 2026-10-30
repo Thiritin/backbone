@@ -6,7 +6,7 @@ import { boardSpec, COMPONENTS, fits, modelById, samePart, slotsOf, specOf as ca
 import { socketOf, VENDOR_NAME } from "../../../sim/10-catalog/cpus";
 import { partPrice } from "../../../sim/10-catalog/parts";
 import type { Component, Device, GameState } from "../../../sim/50-state";
-import { hotKind, hotSwappable, locationOf } from "../../../sim/60-infra/status";
+import { energized, hotKind, hotSwappable, locationOf } from "../../../sim/60-infra/status";
 import { installPart, removePart, replaceComponent, replaceSpares } from "../../../sim/90-actions/hardware";
 import { ageYears, clockLabel, isWorn, PART_NAME, partLabel, partSize, partSlot } from "../hw";
 import { atDatacenter, useHandWork } from "./HandSheet";
@@ -55,7 +55,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
           const empty = Math.max(0, g.slots - filled.length);
           const fitting = g.kinds.length ? spares(g.kinds).filter((d) => !fits(model, [...device.components.map(specOf), spareSpec(d)])) : [];
           const offers = fitting.filter((d, i) => fitting.findIndex((x) => samePart(spareSpec(x), spareSpec(d))) === i);
-          const cold = (d: Device) => !!device.rackId && device.on && !hotKind(device, d.model.slice(5) as ComponentKind);
+          const cold = (d: Device) => !!device.rackId && energized(device) && !hotKind(device, d.model.slice(5) as ComponentKind);
           return (
             <tbody key={g.name}>
               <tr className="loc-group"><th colSpan={6}>{g.name}<span className="num loc-muted"> {filled.length} of {g.slots}</span></th></tr>
@@ -69,7 +69,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                 const busy = swap || held !== null || !device.rackId || !remote;
                 const hot = hotSwappable(device, c);
                 const block = busy ? null : !spareFor(c) ? (c.failedAt !== null || worn ? `No part in ${zone?.az ?? ""}` : "")
-                  : device.on && !hot ? "Power off first" : null;
+                  : energized(device) && !hot ? "Power off first" : null;
                 const removable = c.kind !== "board" && c.kind !== "nic" && !swap && held === null && remote;
                 return (
                   <tr key={c.id}>
@@ -88,7 +88,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                         {busy ? null : block !== null ? <span className="loc-muted">{block}</span>
                           : <button className="btn" onClick={() => hand.start(game, { title: swapSet(c) > 1 ? `Replace ${swapSet(c)} CPUs` : `Replace ${PART_NAME[c.kind].toLowerCase()}`, deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id } })}>Replace</button>}
                         {!busy && spareFor(c) && <TechButton game={game} deviceId={device.id} kind="replace" componentId={c.id} />}
-                        {removable && (device.rackId && device.on && !hot ? null : <button className="btn" onClick={() => hand.start(game, { title: `Remove ${PART_NAME[c.kind].toLowerCase()}`, deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id } })}>Remove</button>)}
+                        {removable && (device.rackId && energized(device) && !hot ? null : <button className="btn" onClick={() => hand.start(game, { title: `Remove ${PART_NAME[c.kind].toLowerCase()}`, deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id } })}>Remove</button>)}
                         {removable && !!device.rackId && <TechButton game={game} deviceId={device.id} kind="part" componentId={c.id} />}
                       </span>
                     </td>

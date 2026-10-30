@@ -4,7 +4,7 @@ import type { GameState } from "../src/sim/50-state";
 import { powerTick } from "../src/sim/60-infra/power";
 import { deviceHealth, halting, pluggedIn, psusOf, working } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
-import { atServer, reboot, remotePower } from "../src/sim/90-actions/hardware";
+import { atServer, reboot, remotePower, removePart } from "../src/sim/90-actions/hardware";
 import { readyGame } from "./fixtures";
 
 const base = readyGame(5);
@@ -35,6 +35,17 @@ describe("power cords", () => {
     expect(pluggedIn(dev3(s))).toBe(true);
     expect(deviceHealth(s, "dev3").state).toBe("booting");
     expect(atServer(s, "dev3", "plug")).toEqual({ ok: false, error: "error.plugged" });
+  });
+});
+
+describe("opening an unplugged server", () => {
+  it("asks for power off while the server runs, but not once every supply is unplugged", () => {
+    const s = game(5);
+    const ram = dev3(s).components.find((c) => c.kind === "ram")!;
+    expect(removePart(s, "dev3", ram.id)).toEqual({ ok: false, error: "error.powerOffFirst" });
+    expect(atServer(s, "dev3", "pull").ok).toBe(true);
+    expect(dev3(s).on).toBe(true);
+    expect(removePart(s, "dev3", ram.id).ok).toBe(true);
   });
 });
 
