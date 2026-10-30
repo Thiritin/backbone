@@ -82,7 +82,7 @@ describe("templates", () => {
     const id = ok(cloneTemplate(s, vm));
     const clone = vmById(s, id)!;
     expect(s.workloads).toHaveLength(count + 1);
-    expect(clone).toMatchObject({ vcpu: t.vcpu, ramGb: t.ramGb, diskGb: t.diskGb, stopped: false, os: { id: t.os!.id, version: t.os!.version } });
+    expect(clone).toMatchObject({ vcpu: t.vcpu, ramGb: t.ramGb, diskGb: t.diskGb, stopped: false, cloning: clone.busyUntil, os: { id: t.os!.id, version: t.os!.version } });
     expect(clone.template).toBeUndefined();
     expect(clone.hostname).not.toBe(t.hostname);
     expect(clone.software!.map((x) => x.id)).toEqual(t.software!.map((x) => x.id));

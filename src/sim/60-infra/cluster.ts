@@ -77,6 +77,8 @@ export interface Workload extends Resources, Partial<MachineState> {
   snapshots?: Snapshot[];
   // An own VM kept as a template to clone from (economy.md, Templates): stopped, it never starts and failover leaves it.
   template?: true;
+  // The hour a clone's copy from its template is done.
+  cloning?: number;
 }
 export interface Snapshot { id: string; at: number; deltaGb: number; machine?: MachineState }
 // The disk a VM's snapshot deltas take on its storage.

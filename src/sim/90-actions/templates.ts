@@ -75,7 +75,7 @@ export function cloneTemplate(s: GameState, templateId: string, toDeviceId?: str
   const node = d?.id ?? pickNode(s, c, disk);
   if (!node) return fail("error.noCapacity");
   const done = s.hour + cloneHours(s, t);
-  const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, busyUntil: done, os: t.os ? { ...t.os, installedAt: s.hour } : null, software: [] });
+  const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, busyUntil: done, cloning: done, os: t.os ? { ...t.os, installedAt: s.hour } : null, software: [] });
   s.workloads = [...s.workloads, vm];
   for (const sw of software) hostInVm(s, vm.id, c.az, sw, done);
   buyLicenses(s, vm.id, os, null);
