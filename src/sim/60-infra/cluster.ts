@@ -8,6 +8,7 @@ import { isSuspended } from "../45-billing/billing";
 import type { Device, GameState, MachineState } from "../50-state";
 import type { ServerOsId } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
+import type { VmSample } from "./stats";
 import { deviceVendor, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
@@ -62,6 +63,8 @@ export interface Workload extends Resources, Partial<MachineState> {
   // A pulled plug corrupted the data: it counts as lost until recovered (recoverDoneAt is the hour a recovery finishes) or
   // restored; noticed is set once the alert went out, recoverFailed once a recovery did not bring the data back.
   corrupted?: boolean; noticed?: boolean; recoverDoneAt?: number; recoverFailed?: boolean;
+  // Own VMs only: the last STATS_HOURS hourly samples (stats.ts) and the hour the VM last came up.
+  stats?: VmSample[]; upSince?: number;
 }
 
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.
@@ -72,7 +75,7 @@ export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, ho
   ha: { ...HA_OFF, ...c.ha },
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
-export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
+export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...(w.serviceId ? {} : { stats: [] }), ...w }) as Workload;
 
 const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
 export const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
