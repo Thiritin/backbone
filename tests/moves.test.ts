@@ -40,7 +40,7 @@ function world() {
   const a = basement(s), b = hypervisor(s, [second], "Remote");
   const place = (zones: { a?: string; b?: string } = {}, line = "vdsl-50") => {
     const home = s.locations[0];
-    s.locations = [...s.locations, { ...home, id: "loc2", dc: "equinox-fr5", az: "fra2", name: "FR5", space: "positions" }, { ...home, id: "loc3", dc: "equinox-fr5", az: "fra3", name: "FR5 B", space: "positions" }];
+    s.locations = [...s.locations, { ...home, id: "loc2", dc: "equinox-fr5", az: "fra2", name: "FR5", space: "cage" }, { ...home, id: "loc3", dc: "equinox-fr5", az: "fra3", name: "FR5 B", space: "cage" }];
     s.clusters = s.clusters.map((c) => (c.id === b ? { ...c, az: zones.b ?? "fra2" } : c.id === a ? { ...c, az: zones.a ?? c.az } : c));
     s.homeLine = { id: line, next: null };
     for (const loc of ["loc2", "loc3"]) ok(buyAddresses(s, loc, 4, 4));
@@ -249,7 +249,7 @@ describe("migration offers", () => {
 // clusters, da and db the servers, az the zone of a location.
 function twoDcs() {
   const s = { ...withServer(newGame(1)), cash: 10_000_000 };
-  const [a, b] = [ok(addLocation(s, "interaction-fra", "positions", 1)), ok(addLocation(s, "mainqubes-fra", "positions", 1))];
+  const [a, b] = [ok(addLocation(s, "interaction-fra", "cage", 4)), ok(addLocation(s, "mainqubes-fra", "cage", 4))];
   for (const l of s.locations) l.readyAt = 0;
   const racks = [a, b].map((loc) => ok(buyRack(s, loc, "rack-42", 1)));
   const [da, db] = [a, b].map((loc, i) => { const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, loc)); ok(mountDevice(s, id, racks[i], 1)); return id; });

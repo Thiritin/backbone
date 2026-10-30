@@ -22,9 +22,9 @@ const mounted = (s: GameState, model: string, rack: string, slot: number, brand 
   ok(mountDevice(s, id, rack, slot));
   return id;
 };
-// A ready datacenter location in Frankfurt with one 47U rack per position.
+// A ready datacenter location in Frankfurt with a 4-position cage and one 47U rack per position asked for.
 function colo(s: GameState, positions = 1) {
-  const loc = ok(addLocation(s, "interaction-fra", "positions", positions));
+  const loc = ok(addLocation(s, "interaction-fra", "cage", 4));
   s.locations.find((l) => l.id === loc)!.readyAt = s.hour;
   const racks = Array.from({ length: positions }, (_, i) => ok(buyRack(s, loc, "rack-47", i + 1)));
   return { loc, racks, handoff: s.devices.find((d) => d.panel === loc)!.id };

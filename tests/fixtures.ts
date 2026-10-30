@@ -109,3 +109,6 @@ const landing = <T extends unknown[], R>(buy: (s: GameState, ...a: T) => R) => (
 };
 export const buyDevice = landing(buyDeviceReal);
 export const buyCart = landing(buyCartReal);
+
+// Clears competitors out of every datacenter, so any space fits.
+export const freeFloor = (s: GameState): GameState => { s.dcs = Object.fromEntries(Object.keys(s.dcs).map((id) => [id, { others: 0 }])); return s; };

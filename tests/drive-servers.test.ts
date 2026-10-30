@@ -16,7 +16,7 @@ function world() {
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   const cluster = hypervisor(s, ["dev3", second], "Home");
-  const dc = ok(addLocation(s, "interaction-fra", "positions", 1));
+  const dc = ok(addLocation(s, "interaction-fra", "cage", 4));
   for (const l of s.locations) l.readyAt = 0;
   ok(buyRack(s, dc, "rack-42", 1));
   for (const r of s.racks) r.arriveAt = null;

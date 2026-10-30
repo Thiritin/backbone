@@ -112,7 +112,7 @@ describe("installing parts", () => {
 
   it("takes parts from the zone's own storage only", () => {
     const s = rich();
-    const loc = ok(addLocation(s, "interaction-fra", "positions", 1));
+    const loc = ok(addLocation(s, "interaction-fra", "cage", 4));
     s.locations.find((l) => l.id === loc)!.readyAt = 0;
     const id = rack(s, { bare: true });
     ok(setPower(s, id, false));
@@ -133,7 +133,7 @@ describe("installing parts", () => {
 
   it("bills remote hands at a datacenter and waits for them", () => {
     const s = rich();
-    const loc = ok(addLocation(s, "interaction-fra", "positions", 1));
+    const loc = ok(addLocation(s, "interaction-fra", "cage", 4));
     s.locations.find((l) => l.id === loc)!.readyAt = 0;
     const r = ok(buyRack(s, loc, "rack-42", 1));
     const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, loc, { bare: true }));

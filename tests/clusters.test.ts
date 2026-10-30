@@ -13,7 +13,7 @@ import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addNode, cordon, createVm, drain, installPanelInVm, resizeVm, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, freeFloor } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { FRIEND_HAPPINESS } from "../src/sim/90-actions/start";
 import { hypervisor, readyGame, skipTo, withServer } from "./fixtures";
@@ -276,7 +276,7 @@ describe("dedicated and colocation", () => {
   it("rents rack units with power in a datacenter rack, from the top", () => {
     const { s, cus } = twoNodes();
     expect(err(provisionService(s, cus, "colocation", { label: "colo", spec: sizeSpec("colocation", 1, yearOf(s.hour)) }))).toBe("error.noRackSpace");
-    const loc = ok(addLocation(s, "hetzler-park", "positions", 1));
+    const loc = ok(addLocation(freeFloor(s), "hetzler-park", "suite", 20));
     const rack = ok(buyRack(s, loc, "rack-42", 1));
     expect(err(provisionService(s, cus, "colocation", { label: "colo", spec: sizeSpec("colocation", 1, yearOf(s.hour)) }))).toBe("error.noFreeAddress");
     ok(buyAddresses(s, loc, 4, 1));

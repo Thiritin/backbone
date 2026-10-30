@@ -453,10 +453,10 @@ export function locationRent(s: GameState, loc: Location): number {
   return spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc)) + extra;
 }
 
-// How a rack in this location can bill power: flat-rate contracts are offered on rack positions only.
+// How a rack in this location can bill power: flat-rate contracts are offered on own racks in cages and suites.
 export function flatOffer(s: GameState, locationId: string): Datacenter["power"] {
   const loc = s.locations.find((l) => l.id === locationId);
-  return loc?.dc && loc.space === "positions" ? datacenterById(loc.dc).power : "metered";
+  return loc?.dc && loc.space !== "share" ? datacenterById(loc.dc).power : "metered";
 }
 
 // Floor space in eighths of a position, so a 1/8 share is 1 and a position is 8.

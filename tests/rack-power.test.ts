@@ -5,7 +5,7 @@ import { rackPower } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { addLocation, buyRack, setExtraPower, setFeed } from "../src/sim/90-actions/hardware";
-import { withServer } from "./fixtures";
+import { withServer, freeFloor } from "./fixtures";
 
 const DC = "hetzler-park";
 const rich = (): GameState => ({ ...withServer(newGame(1)), cash: 1_000_000 });
@@ -71,7 +71,7 @@ describe("extra power on a share", () => {
 describe("own racks", () => {
   it("refuse extra power and keep the feed rule", () => {
     const s = rich();
-    const id = ok(addLocation(s, DC, "positions", 1));
+    const id = ok(addLocation(freeFloor(s), DC, "suite", 20));
     s.locations.find((l) => l.id === id)!.readyAt = 0;
     const own = ok(buyRack(s, id, "rack-42", 1));
     expect(err(setExtraPower(s, own, 0.25))).toBe("error.ownRack");

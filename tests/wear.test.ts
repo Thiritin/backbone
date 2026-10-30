@@ -6,7 +6,7 @@ import { newGame, type Device, type GameState } from "../src/sim/50-state";
 import { arrayLost, deviceHealth, linkStatus, raidTolerance, raidUsable, rackPower } from "../src/sim/60-infra/status";
 import { failComponents, failureChance, rebuildHours, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, buyCircuit, buyRack, connect, replaceComponent, setCableColor, setFeed, setLabel, setPower, setRaid, setRebuildRate, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, freeFloor } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { provisionService } from "../src/sim/90-actions/clusters";
@@ -238,7 +238,7 @@ describe("power supplies, fans and power", () => {
 describe("remote hands", () => {
   it("swaps after the response time plus 15 minutes and bills at least an hour", () => {
     const s = rich();
-    const loc = ok(addLocation(s, "interaction-fra", "positions", 1));
+    const loc = ok(addLocation(freeFloor(s), "interaction-fra", "cage", 4));
     s.locations.find((l) => l.id === loc)!.readyAt = 0;
     const rack = ok(buyRack(s, loc, "rack-42", 1));
     const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, loc));
@@ -269,7 +269,7 @@ describe("remote hands", () => {
 describe("feeds and circuits", () => {
   it("doubles the limit with a high-density feed and bills feeds monthly", () => {
     const s = rich();
-    const loc = ok(addLocation(s, "interaction-fra", "positions", 1));
+    const loc = ok(addLocation(freeFloor(s), "interaction-fra", "cage", 4));
     const rack = ok(buyRack(s, loc, "rack-42", 1));
     expect(rackPower(s, rack).limitWatts).toBe(6000);
     ok(setFeed(s, rack, "highDensity", true));
@@ -288,7 +288,7 @@ describe("feeds and circuits", () => {
     expect(rackPower(s, "rack2").limitWatts).toBe(6000);
     expect(s.cash).toBe(1_000_000 - 400);
     expect(err(buyCircuit(s, "loc1"))).toBe("error.alreadyBought");
-    expect(err(buyCircuit(s, ok(addLocation(s, "spree-colo", "positions", 1))))).toBe("error.notBasement");
+    expect(err(buyCircuit(s, ok(addLocation(freeFloor(s), "spree-colo", "suite", 20))))).toBe("error.notBasement");
   });
 });
 

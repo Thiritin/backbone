@@ -50,7 +50,7 @@ const unplug = (s: GameState, deviceIds: Set<string>, keep = (_: string) => fals
 const flatDefault = (s: GameState, locationId: string): number => (flatOffer(s, locationId) === "flat" ? FLAT_CONTRACTS[0].kw : 0);
 
 // For a share, size is n for 1/n of a rack; the location then has one position, taken by the provider's rack.
-export function addLocation(s: GameState, dcId: string, space: "share" | "positions" | "cage" | "suite", size: number): ActionResult {
+export function addLocation(s: GameState, dcId: string, space: "share" | "cage" | "suite", size: number): ActionResult {
   const dc = DATACENTERS.find((d) => d.id === dcId);
   if (!dc) return fail("error.unknownDatacenter");
   if (!SPACE_SIZES[space]?.includes(size)) return fail("error.unknownSize");
@@ -74,7 +74,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "positi
 }
 
 // Waits for space that is not free yet; tick holds it for 7 days once it is.
-export function joinWaitlist(s: GameState, dcId: string, space: "share" | "positions" | "cage" | "suite", size: number): ActionResult {
+export function joinWaitlist(s: GameState, dcId: string, space: "share" | "cage" | "suite", size: number): ActionResult {
   const dc = DATACENTERS.find((d) => d.id === dcId);
   if (!dc) return fail("error.unknownDatacenter");
   if (!SPACE_SIZES[space]?.includes(size)) return fail("error.unknownSize");

@@ -14,7 +14,7 @@ type Rented = Exclude<SpaceKind, "basement">;
 const CITIES = [...new Set(DATACENTERS.map((d) => d.city))];
 type Area = "eu" | "us";
 const AREAS: [Area, string, Bounds][] = [["eu", "Europe", { west: -1, south: 45, east: 17, north: 53 }], ["us", "North America", { west: -122, south: 28, east: -72, north: 46 }]];
-const KINDS: [Rented, string][] = [["share", "Rack share"], ["positions", "Positions"], ["cage", "Cage"], ["suite", "Suite"]];
+const KINDS: [Rented, string][] = [["share", "Rack"], ["cage", "Cage"], ["suite", "Suite"]];
 
 // A badge for a property; `off` marks the weaker side of the comparison.
 const B = ({ children, off }: { children: ReactNode; off?: boolean }) => <span className={`loc-badge${off ? " off" : ""}`}>{children}</span>;
@@ -32,7 +32,7 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
   const cities = CITIES.filter((c) => inUs(c) === (area === "us"));
   const rows = DATACENTERS.filter((d) => (city ? d.city === city : cities.includes(d.city)) && (!hideFull || dcAvailability(game, d.id).freeEighths > 0));
   const dc = DATACENTERS.find((d) => d.id === dcId && rows.includes(d)) ?? null;
-  const k: Rented = kind === "cage" && dc && !dc.cages ? "positions" : kind;
+  const k: Rented = kind === "cage" && dc && !dc.cages ? "share" : kind;
   const n = SPACE_SIZES[k].includes(size) ? size : SPACE_SIZES[k][0];
   // A size is open when it is free now or the waitlist holds it for the player.
   const open = (s: number) => !!dc && (fits(game, dc.id, k, s) || game.waitlist.some((w) => w.dc === dc.id && w.space === k && w.size === s && w.heldUntil !== null));
@@ -94,7 +94,7 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
           </div>
           <span className="grow" />
           {k === "share" && <>
-            <span className="loc-k">Share</span><strong className="num">{shareUnits(n)}U · {+(dc.kwPerPosition / n).toFixed(2)} kW</strong>
+            <span className="loc-k">Rack</span><strong className="num">{shareUnits(n)}U · {+(dc.kwPerPosition / n).toFixed(2)} kW</strong>
           </>}
           <span className="loc-k">Per month</span><strong className="num">{euro(spacePrice(dc, k, n))}</strong>
           <span className="loc-k">Lead time</span><strong className="num">{LEAD_DAYS[k]} days</strong>

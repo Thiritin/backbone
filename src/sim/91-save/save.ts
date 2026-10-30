@@ -36,9 +36,9 @@ export function deserialize(raw: string): GameState {
   const base = newGame(data.seed);
   if ((data.version ?? 1) < 2) for (const k of INFRA) delete data[k];
   const locations: GameState["locations"] = [];
-  // The basement's tower shelf is gone.
+  // The basement's tower shelf is gone, and rack positions became cages.
   for (const { shelf: _, ...l } of (data.locations ?? base.locations) as (Location & { shelf?: number })[]) {
-    locations.push({ ...l, az: l.az ?? nextAz(locations, l.city), extraCircuit: l.extraCircuit ?? false });
+    locations.push({ ...l, space: (l.space as string) === "positions" ? "cage" : l.space, az: l.az ?? nextAz(locations, l.city), extraCircuit: l.extraCircuit ?? false });
   }
   // Older saves had one stockroom; its units go to the first location.
   const stored = (d: Device) => d.store !== undefined ? d.store : !d.rackId && !d.panel ? locations[0].id : null;
@@ -68,6 +68,7 @@ export function deserialize(raw: string): GameState {
   return fillMachines(dropGone(gone, fillRegistrar(fill(fillLaunch(fillDesign(fillLines(fillHostnames(upgradeCompute(fillDomains(fillSpecs({
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
+    waitlist: (data.waitlist ?? []).filter((w: { space: string }) => w.space !== "positions"),
     // Saves from before free mail had no mail service at all.
     company: { ...base.company, ...data.company, ...((data.company?.mail as { kind: string } | undefined)?.kind === "none" && { mail: base.company.mail }) },
     score: { ...base.score, ...data.score },

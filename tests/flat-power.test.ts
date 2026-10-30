@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { businessPowerPrice } from "../src/sim/10-catalog/economy";
 import { DATACENTERS, datacenterById, FLAT_CONTRACTS, flatMonthly } from "../src/sim/20-world/datacenters";
 import { device, newGame, type GameState } from "../src/sim/50-state";
-import { rackPower, working } from "../src/sim/60-infra/status";
+import { locationRent, rackPower, working } from "../src/sim/60-infra/status";
 import { powerPerHour, tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { addLocation, buyRack, setFlatPower } from "../src/sim/90-actions/hardware";
-import { runServers, withServer } from "./fixtures";
+import { freeFloor, runServers, withServer } from "./fixtures";
 
 const rich = (): GameState => ({ ...withServer(newGame(1)), cash: 1_000_000 });
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
@@ -17,8 +17,10 @@ const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
 const run = (s: GameState, hours: number) => { for (let h = 0; h < hours; h++) tick(s); };
 const MONTH = 730;
 
+// Own racks need a cage, or a suite where the datacenter has no cages.
 function position(s: GameState, dc = "hetzler-park") {
-  const loc = ok(addLocation(s, dc, "positions", 1));
+  const cages = datacenterById(dc).cages;
+  const loc = ok(addLocation(freeFloor(s), dc, cages ? "cage" : "suite", cages ? 4 : 20));
   s.locations.find((l) => l.id === loc)!.readyAt = 0;
   return ok(buyRack(s, loc, "rack-42", 1));
 }
@@ -86,7 +88,7 @@ describe("flat-rate power contract", () => {
     expect(metered(17, true)).toBeGreaterThan(flatMonthly(dc, 4.4, 2005));
   });
 
-  it("is only offered on rack positions where the datacenter sells it", () => {
+  it("is only offered on own racks where the datacenter sells it", () => {
     const s = rich();
     expect(err(setFlatPower(s, position(s, "equinox-fr5"), 4.4))).toBe("error.noFlatPower");
     const share = ok(addLocation(s, "hetzler-park", "share", 1));
@@ -105,5 +107,15 @@ describe("flat-rate power contract", () => {
     const s = rich(), rack = position(s), data = JSON.parse(serialize(s));
     for (const r of data.racks) { delete r.flatKw; delete r.flatKwAt; }
     expect(deserialize(JSON.stringify(data)).racks.find((r) => r.id === rack)).toMatchObject({ flatKw: 0, flatKwAt: null });
+  });
+  it("turns rack positions in old saves into cages and drops their waitlist entries", () => {
+    const s = rich(), rack = position(s, "equinox-fr5"), data = JSON.parse(serialize(s));
+    const loc = rackOf(s, rack).locationId;
+    data.locations = data.locations.map((l: { id: string }) => (l.id === loc ? { ...l, space: "positions", positions: 2 } : l));
+    data.waitlist = [{ id: "w1", dc: "equinox-fr5", space: "positions", size: 2, since: 0, heldUntil: null }, { id: "w2", dc: "equinox-fr5", space: "share", size: 8, since: 0, heldUntil: null }];
+    const loaded = deserialize(JSON.stringify(data));
+    expect(loaded.locations.find((l) => l.id === loc)).toMatchObject({ space: "cage", positions: 2 });
+    expect(loaded.waitlist.map((w) => w.id)).toEqual(["w2"]);
+    expect(locationRent(loaded, loaded.locations.find((l) => l.id === loc)!)).toBe(1500);
   });
 });

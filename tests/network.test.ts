@@ -37,7 +37,7 @@ function datacenter(seed = 1) {
   const s = newGame(seed);
   s.cash = 1e6;
   s.unlocks = ["network"];
-  const loc = ok(addLocation(s, "equinox-fr5", "positions", 1));
+  const loc = ok(addLocation(s, "equinox-fr5", "cage", 4));
   s.locations = s.locations.map((l) => ({ ...l, readyAt: 0 }));
   const router = ok(buyDevice(s, "edge-s", "Sysko", 1, loc));
   s.devices = s.devices.map((d) => (d.id === router ? { ...d, store: null, panel: loc } : d));
@@ -111,7 +111,7 @@ describe("routing", () => {
 
   it("sends overflow over a link to another zone's spare capacity", () => {
     const { s, loc } = datacenter();
-    const second = ok(addLocation(s, "interaction-fra", "positions", 1));
+    const second = ok(addLocation(s, "interaction-fra", "cage", 4));
     s.locations = s.locations.map((l) => ({ ...l, readyAt: 0 }));
     ok(orderZoneLink(s, loc, second, "fiber", 0));
     s.hour += 24 * 31;

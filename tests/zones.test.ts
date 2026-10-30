@@ -4,7 +4,7 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { storageStacks } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, buyRack, closeLocation, mountDevice, mountStack, sellDevice, shipStock, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyCart, buyDevice } from "./fixtures";
+import { buyCart, buyDevice, freeFloor } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
 
@@ -28,22 +28,22 @@ describe("availability zones", () => {
     const s = rich();
     expect(az(s, "loc1")).toBe("fra1");
     const fr5 = ok(addLocation(s, "equinox-fr5", "share", 8));
-    const lon = ok(addLocation(s, "tellyhouse-north", "positions", 1));
-    const zrh = ok(addLocation(s, "greenchz-lupfig", "positions", 1));
-    const fra3 = ok(addLocation(s, "hetzler-park", "positions", 1));
+    const lon = ok(addLocation(freeFloor(s), "tellyhouse-north", "cage", 4));
+    const zrh = ok(addLocation(freeFloor(s), "greenchz-lupfig", "cage", 4));
+    const fra3 = ok(addLocation(freeFloor(s), "hetzler-park", "suite", 20));
     expect([fr5, lon, zrh, fra3].map((id) => az(s, id))).toEqual(["fra2", "lon1", "zrh1", "fra3"]);
     expect(regionOf(s.locations.find((l) => l.id === zrh)!)).toEqual({ id: "zrh", name: "Zurich", city: "Zurich" });
     expect(s.devices.find((d) => d.panel === zrh)!.name).toBe("zrh1-gw-01");
     ok(closeLocation(s, lon));
-    expect(az(s, ok(addLocation(s, "docklands-data", "positions", 1)))).toBe("lon1");
-    expect(az(s, ok(addLocation(s, "mainqubes-fra", "positions", 1)))).toBe("fra4");
+    expect(az(s, ok(addLocation(freeFloor(s), "docklands-data", "suite", 20)))).toBe("lon1");
+    expect(az(s, ok(addLocation(freeFloor(s), "mainqubes-fra", "cage", 4)))).toBe("fra4");
   });
 });
 
 describe("storage per zone", () => {
   it("delivers purchases to the chosen zone, ready or not", () => {
     const s = rich();
-    const lon = ok(addLocation(s, "tellyhouse-north", "positions", 1));
+    const lon = ok(addLocation(freeFloor(s), "tellyhouse-north", "cage", 4));
     const id = ok(buyDevice(s, "g1-compute", "Dwell", 2, lon));
     expect(dev(s, id)).toMatchObject({ store: lon, rackId: null, transitTo: null, arriveAt: null });
     expect(storageStacks(s, lon)[0].ids).toHaveLength(2);
@@ -55,7 +55,7 @@ describe("storage per zone", () => {
   });
   it("mounts only units stored in the rack's zone", () => {
     const s = rich();
-    const fr5 = ok(addLocation(s, "equinox-fr5", "positions", 1));
+    const fr5 = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4));
     const rack = ok(buyRack(s, fr5, "rack-42", 1));
     const here = ok(buyDevice(s, "sw-8", "Sysko", 2, "loc1"));
     expect(err(mountDevice(s, here, rack, 1))).toBe("error.notInZone");
@@ -67,7 +67,7 @@ describe("storage per zone", () => {
   });
   it("returns an unmounted unit to its rack's zone", () => {
     const s = rich();
-    const fr5 = ok(addLocation(s, "equinox-fr5", "positions", 1));
+    const fr5 = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4));
     const rack = ok(buyRack(s, fr5, "rack-42", 1));
     const sw = ok(buyDevice(s, "sw-8", "Sysko", 1, fr5));
     ok(mountDevice(s, sw, rack, 1));
@@ -81,7 +81,7 @@ describe("storage per zone", () => {
 describe("shipStock", () => {
   it("ships within a region for €300 in a day, keeps units unusable on the way and delivers them", () => {
     const s = rich();
-    const fr5 = ok(addLocation(s, "equinox-fr5", "positions", 1));
+    const fr5 = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4));
     const rack = ok(buyRack(s, fr5, "rack-42", 1));
     const first = ok(buyDevice(s, "g1-compute", "Dwell", 2, "loc1"));
     const ids = s.devices.filter((d) => d.store === "loc1").map((d) => d.id);
@@ -101,7 +101,7 @@ describe("shipStock", () => {
   });
   it("takes three days and €1,200 to another region", () => {
     const s = rich();
-    const lon = ok(addLocation(s, "tellyhouse-north", "positions", 1));
+    const lon = ok(addLocation(freeFloor(s), "tellyhouse-north", "cage", 4));
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     const cash = s.cash;
     ok(shipStock(s, [id], lon));
@@ -111,7 +111,7 @@ describe("shipStock", () => {
   });
   it("rejects empty, unknown, mounted, mixed, same-zone and unaffordable shipments", () => {
     const s = rich();
-    const fr5 = ok(addLocation(s, "equinox-fr5", "positions", 1));
+    const fr5 = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4));
     const a = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     const b = ok(buyDevice(s, "sw-8", "Sysko", 1, fr5));
     expect(err(shipStock(s, [], fr5))).toBe("error.emptyShipment");
@@ -128,7 +128,7 @@ describe("shipStock", () => {
 describe("closeLocation and saves", () => {
   it("keeps a zone open while its storage holds anything", () => {
     const s = rich();
-    const fr5 = ok(addLocation(s, "equinox-fr5", "positions", 1));
+    const fr5 = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4));
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, fr5));
     expect(err(closeLocation(s, fr5))).toBe("error.storageNotEmpty");
     ok(sellDevice(s, id));
@@ -136,8 +136,8 @@ describe("closeLocation and saves", () => {
   });
   it("gives older saves zone codes and puts their stored units in the first location", () => {
     const s = rich();
-    const fr5 = ok(addLocation(s, "equinox-fr5", "positions", 1));
-    const lon = ok(addLocation(s, "tellyhouse-north", "positions", 1));
+    const fr5 = ok(addLocation(s, "equinox-fr5", "share", 1));
+    const lon = ok(addLocation(s, "tellyhouse-north", "share", 1));
     const stored = ok(buyDevice(s, "sw-8", "Sysko", 1, fr5));
     const raw = JSON.parse(serialize(s));
     for (const l of raw.locations) delete l.az;

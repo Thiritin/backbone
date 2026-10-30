@@ -7,7 +7,7 @@ import { freePositions, linkStatus, moveCost, rackPower, resaleValue } from "../
 import { powerPerHour, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { deserialize } from "../src/sim/91-save/save";
 import { addLocation, buyRack, closeLocation, connect, moveRack, sellDevice, sellRack, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, freeFloor } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { runServers, withServer } from "./fixtures";
 
@@ -47,10 +47,9 @@ describe("datacenter catalog", () => {
   });
   it("prices space and racks", () => {
     const fr5 = datacenterById("equinox-fr5");
-    expect([1, 2, 3, 4].map((n) => spacePrice(fr5, "positions", n))).toEqual([750, 1500, 2250, 3000]);
     expect(SPACE_SIZES.cage.map((n) => spacePrice(fr5, "cage", n))).toEqual([2550, 4800, 9000]);
     expect(SPACE_SIZES.suite.map((n) => spacePrice(fr5, "suite", n))).toEqual([11250, 21000]);
-    expect(LEAD_DAYS).toEqual({ share: 2, positions: 7, cage: 30, suite: 90 });
+    expect(LEAD_DAYS).toEqual({ share: 2, cage: 30, suite: 90 });
     expect(RACK_MODELS.map((m) => [m.id, m.units, m.price])).toEqual([["rack-24", 24, 350], ["rack-42", 42, 800], ["rack-47", 47, 1000]]);
     expect(BASEMENT).toEqual({ positions: 1, maxUnits: 24, kw: 3 });
   });
@@ -59,26 +58,26 @@ describe("datacenter catalog", () => {
 describe("addLocation and closeLocation", () => {
   it("rents space with a handoff on the carrier panel, ready after the lead time", () => {
     const s = rich();
-    const id = ok(addLocation(s, "equinox-fr5", "cage", 8));
+    const id = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 8));
     expect(loc(s, id)).toEqual({ id, dc: "equinox-fr5", city: "Frankfurt", az: "fra2", name: "Equinox FR5", space: "cage", positions: 8, readyAt: 720, extraCircuit: false });
     expect(s.devices.find((d) => d.panel === id)).toMatchObject({ model: "handoff", rackId: null, name: "fra2-gw-01" });
-    expect(loc(s, ok(addLocation(s, "tellyhouse-north", "suite", 20))).readyAt).toBe(2160);
-    expect(loc(s, ok(addLocation(s, "hetzler-park", "positions", 4))).readyAt).toBe(168);
+    expect(loc(s, ok(addLocation(freeFloor(s), "tellyhouse-north", "suite", 20))).readyAt).toBe(2160);
+    expect(loc(s, ok(addLocation(freeFloor(s), "hetzler-park", "share", 1))).readyAt).toBe(48);
     expect(s.cash).toBe(1_000_000);
     expect(freePositions(s, id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
   it("rejects unknown datacenters and sizes, missing cages and too little cash", () => {
     const s = rich(749);
-    expect(err(addLocation(s, "nope", "positions", 1))).toBe("error.unknownDatacenter");
-    expect(err(addLocation(s, "equinox-fr5", "positions", 5))).toBe("error.unknownSize");
-    expect(err(addLocation(s, "equinox-fr5", "cage", 2))).toBe("error.unknownSize");
-    expect(err(addLocation(s, "hetzler-park", "cage", 4))).toBe("error.noCages");
-    expect(err(addLocation(s, "equinox-fr5", "positions", 1))).toBe("error.noCash");
+    expect(err(addLocation(freeFloor(s), "nope", "cage", 4))).toBe("error.unknownDatacenter");
+    expect(err(addLocation(freeFloor(s), "equinox-fr5", "cage", 5))).toBe("error.unknownSize");
+    expect(err(addLocation(freeFloor(s), "equinox-fr5", "cage", 2))).toBe("error.unknownSize");
+    expect(err(addLocation(freeFloor(s), "hetzler-park", "cage", 4))).toBe("error.noCages");
+    expect(err(addLocation(freeFloor(s), "equinox-fr5", "cage", 4))).toBe("error.noCash");
     expect(s.locations).toHaveLength(1);
   });
   it("closes an empty datacenter location but never the basement or one with racks", () => {
     const s = rich();
-    const id = ok(addLocation(s, "spree-colo", "positions", 1));
+    const id = ok(addLocation(freeFloor(s), "spree-colo", "suite", 20));
     const r = ok(buyRack(s, id, "rack-42", 1));
     expect(err(closeLocation(s, id))).toBe("error.locationNotEmpty");
     expect(err(closeLocation(s, "loc1"))).toBe("error.cannotClose");
@@ -93,29 +92,30 @@ describe("addLocation and closeLocation", () => {
 describe("racks", () => {
   it("buys a rack into a free position, even before the location is ready", () => {
     const s = rich(10_000);
-    const id = ok(addLocation(s, "interaction-fra", "positions", 2));
+    const id = ok(addLocation(freeFloor(s), "interaction-fra", "cage", 4));
     const r = ok(buyRack(s, id, "rack-42", 2));
     expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null });
     expect(s.cash).toBe(9200);
     expect(s.ledger.at(-1)).toMatchObject({ category: "hardware", key: "ledger.hardware", params: { model: "42U rack", device: "fra2-rack-01" }, amount: -800 });
-    expect(freePositions(s, id)).toEqual([1]);
+    expect(freePositions(s, id)).toEqual([1, 3, 4]);
     // Devices in a location that is not ready have no power.
     const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, id));
     ok(mountDevice(s, srv, r, 1));
     expect(rackPower(s, r)).toEqual({ watts: 100, limitWatts: 6000, tripped: false });
     ok(connect(s, { device: srv, port: 0 }, { device: handoffOf(s, id), port: 0 }));
     expect(linkStatus(s, srv).online).toBe(false);
-    s.hour = 168;
+    s.hour = 720;
     expect(linkStatus(s, srv).online).toBe(true);
   });
   it("rejects unknown models and locations, taken positions, tall racks in the basement and too little cash", () => {
-    const s = rich(999);
-    const id = ok(addLocation(s, "spree-colo", "positions", 1));
+    const s = rich();
+    const id = ok(addLocation(freeFloor(s), "spree-colo", "suite", 20));
+    s.cash = 999;
     expect(err(buyRack(s, id, "rack-99" as never, 1))).toBe("error.unknownRackModel");
     expect(err(buyRack(s, "nope", "rack-24", 1))).toBe("error.unknownLocation");
     expect(err(buyRack(s, "loc1", "rack-42", 1))).toBe("error.rackTooTall");
     expect(err(buyRack(s, "loc1", "rack-24", 1))).toBe("error.positionTaken");
-    expect(err(buyRack(s, id, "rack-24", 2))).toBe("error.positionTaken");
+    expect(err(buyRack(s, id, "rack-24", 21))).toBe("error.positionTaken");
     expect(err(buyRack(s, id, "rack-24", 0))).toBe("error.positionTaken");
     expect(err(buyRack(s, id, "rack-47", 1))).toBe("error.noCash");
   });
@@ -149,7 +149,7 @@ describe("resaleValue", () => {
 describe("moveRack", () => {
   it("moves the basement rack to a datacenter: offline in transit, online after arrival once cabled to the handoff", () => {
     const s = rich(10_000);
-    const fr5 = ok(addLocation(s, "equinox-fr5", "positions", 1));
+    const fr5 = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4));
     loc(s, fr5).readyAt = 0;
     expect(moveCost(s, "rack2", fr5)).toEqual({ price: 300, hours: 24 });
     ok(moveRack(s, "rack2", fr5, 1));
@@ -173,7 +173,7 @@ describe("moveRack", () => {
   });
   it("takes three days and €1,200 to another city", () => {
     const s = rich(10_000);
-    const lon = ok(addLocation(s, "tellyhouse-north", "positions", 1));
+    const lon = ok(addLocation(freeFloor(s), "tellyhouse-north", "cage", 4));
     ok(moveRack(s, "rack2", lon, 1));
     expect([rack(s, "rack2").arriveAt, s.cash]).toEqual([72, 8800]);
     run(s, 71);
@@ -183,7 +183,7 @@ describe("moveRack", () => {
   });
   it("rejects unknown racks, racks on their way, taken positions, tall racks for the basement and too little cash", () => {
     const s = rich(10_000);
-    const a = ok(addLocation(s, "interaction-fra", "positions", 2));
+    const a = ok(addLocation(freeFloor(s), "interaction-fra", "cage", 4));
     const tall = ok(buyRack(s, a, "rack-42", 1));
     expect(err(moveRack(s, "nope", a, 2))).toBe("error.unknownRack");
     expect(err(moveRack(s, "rack2", "nope", 1))).toBe("error.unknownLocation");
@@ -217,7 +217,7 @@ describe("breakers", () => {
   });
   it("uses the datacenter's kW per position", () => {
     const s = rich();
-    const id = ok(addLocation(s, "hetzler-park", "positions", 1));
+    const id = ok(addLocation(freeFloor(s), "hetzler-park", "suite", 20));
     const r = ok(buyRack(s, id, "rack-47", 1));
     ok(buyDevice(s, "g1-compute", "Dwell", 17, id));
     ok(mountStack(s, "g1-compute", "Dwell", r, 16));
@@ -234,7 +234,7 @@ describe("monthly bills", () => {
     const s = rich();
     const basement = 0.118 * 0.09 * 1.6;
     expect(powerPerHour(s)).toBeCloseTo(basement, 10);
-    const id = ok(addLocation(s, "equinox-fr5", "positions", 1));
+    const id = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4));
     const r = ok(buyRack(s, id, "rack-24", 1));
     ok(mountDevice(s, ok(buyDevice(s, "g1-compute", "Dwell", 1, id)), r, 1));
     expect(powerPerHour(s)).toBeCloseTo(basement, 10);
@@ -243,16 +243,16 @@ describe("monthly bills", () => {
   });
   it("pays power, the home line and the rent of every datacenter location on the first of the month", () => {
     const s = withServer(newGame(1));
-    ok(addLocation(s, "hetzler-park", "positions", 2));
+    ok(addLocation(s, "hetzler-park", "share", 1));
     const events = run(s, 24 * 31);
     // Idle server 100 W, switch 8 W and home router 10 W for 744 h at 9 ct × 1.6.
     const power = Math.round(0.118 * 744 * 0.09 * 1.6 * 100) / 100;
     expect(power).toBe(12.64);
     // The business DSL line costs €59.
-    expect(s.cash).toBe(START_CASH - 2500 - 360 - 59 - power);
+    expect(s.cash).toBe(START_CASH - 2500 - 198 - 59 - power);
     expect(s.powerDue).toBe(0);
-    expect(s.ledger.map((l) => [l.category, l.key, l.amount])).toEqual([["power", "ledger.power", -power], ["rent", "ledger.space", -360], ["rent", "ledger.homeLine", -59]]);
-    expect(events).toContainEqual({ app: "Finance", key: "event.bills", params: { power, rent: 419, leasing: 0, subscriptions: 0, total: 419 + power } });
+    expect(s.ledger.map((l) => [l.category, l.key, l.amount])).toEqual([["power", "ledger.power", -power], ["rent", "ledger.space", -198], ["rent", "ledger.homeLine", -59]]);
+    expect(events).toContainEqual({ app: "Finance", key: "event.bills", params: { power, rent: 257, leasing: 0, subscriptions: 0, total: 257 + power } });
   });
 });
 
@@ -293,7 +293,7 @@ describe("rack shares", () => {
     const s = rich();
     const id = ok(addLocation(s, "spree-colo", "share", 2));
     const r = s.racks.find((x) => x.locationId === id)!.id;
-    const other = ok(addLocation(s, "spree-colo", "positions", 1));
+    const other = ok(addLocation(freeFloor(s), "spree-colo", "suite", 20));
     expect(err(moveRack(s, r, other, 1))).toBe("error.providedRack");
     expect(err(sellRack(s, r))).toBe("error.providedRack");
     expect(err(buyRack(s, id, "rack-24", 1))).toBe("error.positionTaken");

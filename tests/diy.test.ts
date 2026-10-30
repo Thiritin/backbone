@@ -20,7 +20,7 @@ const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
 // A powered-off server in a rented rack at the datacenter, with a stick of RAM in storage beside it.
 function setup(dcId: string) {
   const s: GameState = { ...withServer(newGame(1)), cash: 10_000_000 };
-  const loc = ok(addLocation(s, dcId, "positions", 1));
+  const loc = ok(addLocation(s, dcId, "cage", 4));
   s.locations.find((l) => l.id === loc)!.readyAt = 0;
   const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, loc, { bare: true }));
   ok(mountDevice(s, id, ok(buyRack(s, loc, "rack-42", 1)), 1));

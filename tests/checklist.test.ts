@@ -42,7 +42,7 @@ describe("checklist", () => {
     expect(done(s)).toEqual(["buyServer", "mountServer", "internet", "loan", "firstServer"]);
     ok(connect(s, { device: b, port: 0 }, { device: "dev5", port: 1 }));
     expect(done(s)).toEqual(["buyServer", "mountServer", "internet", "loan", "firstServer", "secondServer"]);
-    ok(addLocation(s, "interaction-fra", "positions", 1));
+    ok(addLocation(s, "interaction-fra", "share", 1));
     expect(done(s)).toEqual(["buyServer", "mountServer", "internet", "loan", "firstServer", "secondServer", "datacenter"]);
   });
 

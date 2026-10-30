@@ -44,7 +44,7 @@ export const SAVE_VERSION = 3;
 export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover";
 
-export type SpaceKind = "basement" | "share" | "positions" | "cage" | "suite";
+export type SpaceKind = "basement" | "share" | "cage" | "suite";
 // Each location is an availability zone (az, like fra2) in the region of its city.
 export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean }
 // share-N racks belong to the provider of a rack share and hold N units.
@@ -97,7 +97,7 @@ export interface Device extends MachineState { id: string; model: string; brand:
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
 // A waitlist entry gets heldUntil once its space is free; the space is then reserved until that hour.
-export interface WaitlistEntry { id: string; dc: string; space: "share" | "positions" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
+export interface WaitlistEntry { id: string; dc: string; space: "share" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
 // failedAt is the hour the component broke; null while it works. A power supply is plugged in unless plugged is false.

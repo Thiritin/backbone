@@ -109,7 +109,7 @@ describe("firewall links", () => {
   // A 10G server behind an L2 switch whose 1G copper uplink runs through a 1G firewall to the handoff.
   function setup(): { s: GameState; srv: string; sw: string; fw: string; handoff: string } {
     const s = { ...withServer(newGame(1)), hour: hourOf(new Date(Date.UTC(2011, 0, 1))), cash: 1_000_000 };
-    const loc = ok(addLocation(s, "interaction-fra", "positions", 1));
+    const loc = ok(addLocation(s, "interaction-fra", "cage", 4));
     s.locations.find((l) => l.id === loc)!.readyAt = s.hour;
     const rack = ok(buyRack(s, loc, "rack-47", 1));
     const put = (model: string, brand: string, slot: number) => {

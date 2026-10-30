@@ -195,7 +195,7 @@ function hosted() {
   const id = ok(provisionService(s, cus, "vps", { label: "vm", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
   const place = () => {
     const home = s.locations[0];
-    s.locations = [...s.locations, { ...home, id: "loc2", dc: "equinox-fr5", az: "fra2", name: "FR5", space: "positions" }];
+    s.locations = [...s.locations, { ...home, id: "loc2", dc: "equinox-fr5", az: "fra2", name: "FR5", space: "cage" }];
     s.clusters = s.clusters.map((x) => (x.id === b ? { ...x, az: "fra2" } : x));
     s.homeLine = { id: "vdsl-50", next: null };
   };

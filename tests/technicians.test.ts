@@ -154,7 +154,7 @@ describe("technicians", () => {
 
   it("work at a datacenter instead of remote hands", () => {
     const s = { ...withServer(newGame(1)), cash: 1_000_000 };
-    const loc = ok(addLocation(s, "interaction-fra", "positions", 1));
+    const loc = ok(addLocation(s, "interaction-fra", "cage", 4));
     s.locations.find((l) => l.id === loc)!.readyAt = 0;
     const rack = ok(buyRack(s, loc, "rack-42", 1));
     const server = ok(buyDevice(s, "g1-compute", "Dwell", 1, loc));

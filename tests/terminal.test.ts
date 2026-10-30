@@ -10,7 +10,7 @@ import { complete, deskRouter, recoveryReport, runCommand, type Session } from "
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, freeFloor } from "./fixtures";
 import { hire, setTechRules } from "../src/sim/90-actions/staff";
 import type { Call } from "../src/sim/90-actions/index";
 import { mountDevice } from "./plugged";
@@ -32,7 +32,7 @@ const login = (s: GameState): Session => runCommand(s, null, `ssh ${host(s)}`).s
 // A ready rented position in Frankfurt with one server cabled to the datacenter's handoff.
 function datacenter(s: GameState) {
   s.cash = 1e6;
-  const loc = must(addLocation(s, "hetzler-park", "positions", 1));
+  const loc = must(addLocation(freeFloor(s), "hetzler-park", "suite", 20));
   s.locations = s.locations.map((l) => (l.id === loc ? { ...l, readyAt: s.hour } : l));
   const rack = must(buyRack(s, loc, "rack-42", 1));
   s.racks = s.racks.map((r) => (r.id === rack ? { ...r, arriveAt: null } : r));

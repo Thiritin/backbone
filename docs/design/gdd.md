@@ -117,15 +117,14 @@ Infrastructure lives in locations: your basement first, then space in other comp
 | Space | What you get | Size | Billed |
 | --- | --- | --- | --- |
 | Basement | Room for one 24U rack and a home internet line | 1 position | Free; power at the household price |
-| Rack share | Part of a rack the provider owns and installs, with its own lockable section and power share | 1/8, 1/4, 1/2 or a full rack | Per share per month, power per kWh |
-| Rack positions | Floor positions in a provider's shared hall for your own racks | 1 to 4 positions | Per position per month, power per kWh |
-| Cage | A fenced, locked area in the hall | 4, 8 or 16 positions | Per cage; cheaper per position than single positions |
+| Rack | Part of a rack the provider owns and installs, with its own lockable section and power share | 1/8, 1/4, 1/2 or a full rack | Per share per month, power per kWh |
+| Cage | A fenced, locked area in the hall | 4, 8 or 16 positions | Per cage; cheaper per position than full racks |
 | Private suite | A room of your own in the provider's building | 20 or 40 positions | Lease per month; you add your own UPS and feeds |
 | Own datacenter | A building you lease or build | 100 positions and up | Lease or purchase; power room, generators and carrier room are yours |
 
-**Extra power on a share.** A rack share is the provider's rack and has no feeds to add. Its Upgrades card offers extra power instead, in steps of 0.25 kW up to the share's base limit again, so at most twice the limit. A step is billed monthly with the share's rent and takes effect three days after booking. A rack over its limit still trips, and racks in your own positions keep the feed B and high-density feed upgrades.
+**Extra power on a share.** A rack share is the provider's rack and has no feeds to add. Its Upgrades card offers extra power instead, in steps of 0.25 kW up to the share's base limit again, so at most twice the limit. A step is billed monthly with the share's rent and takes effect three days after booking. A rack over its limit still trips, and racks in your own cage or suite keep the feed B and high-density feed upgrades.
 
-**Flat-rate power.** Each datacenter bills the power of a rack position one way: metered per kWh, as a flat-rate contract, or either at your choice. Hetzler offers flat rate at all three sites (Hetzler NBG sells nothing else), and so do the small budget rooms (Docklands Data, Spree Colo, Next Lair VIE, SkyBlink Eygelshoven, Arubaba Hub, CoreSpite VA1 and CH1); the carrier hotels and the other large sites bill metered only. A contract is two feeds of 10 A (4.4 kW) or two of 16 A (7 kW) at a fixed monthly price. The rack's limit becomes the contract's kW, the breaker trips above it as on any rack, and the rack's draw leaves the power bill. The Power contract choice on the rack card switches between metered and the two contracts, and a change takes effect after three days. A rack bought at a flat-only site starts on 2 × 10 A, and a rack moved to another location takes the default of its new site. Shares stay metered and keep their extra power.
+**Flat-rate power.** Each datacenter bills the power of an own rack in a cage or suite one way: metered per kWh, as a flat-rate contract, or either at your choice. Hetzler offers flat rate at all three sites (Hetzler NBG sells nothing else), and so do the small budget rooms (Docklands Data, Spree Colo, Next Lair VIE, SkyBlink Eygelshoven, Arubaba Hub, CoreSpite VA1 and CH1); the carrier hotels and the other large sites bill metered only. A contract is two feeds of 10 A (4.4 kW) or two of 16 A (7 kW) at a fixed monthly price. The rack's limit becomes the contract's kW, the breaker trips above it as on any rack, and the rack's draw leaves the power bill. The Power contract choice on the rack card switches between metered and the two contracts, and a change takes effect after three days. A rack bought at a flat-only site starts on 2 × 10 A, and a rack moved to another location takes the default of its new site. Shares stay metered and keep their extra power.
 
 **Racks are yours.** You buy racks (24U, 42U or 47U) and place each one in a free position. A rack can move with everything in it: the servers inside go offline, cables to other racks and to the carrier panel are unplugged, and the rack arrives a day later in the same city or three days later in another. That is how a company grows out of the basement: you rent a position in a datacenter and move the basement rack there.
 
@@ -977,7 +976,7 @@ Provisioning automation is a tier 2 skill after Product management. It adds Auto
 | Branch | Unlock path, in order |
 | --- | --- |
 | Products | SSL certificates → email → dedicated servers → storage hosting → VPN → CDN → cloud servers → colocation |
-| Infrastructure | Rack share → datacenter positions → second location → cage → private suite → own datacenter; HA clusters; rack templates; auto-cable |
+| Infrastructure | Rack → second location → cage → private suite → own datacenter; HA clusters; rack templates; auto-cable |
 | Network | Transit contracts → internet exchange peering → own network number (ASN) → always-on DDoS protection |
 | Business | First hire → status page → market research → cross-selling boosts → review platforms → insurance → AI bots |
 | Independence | Domain registrar, own control panel and other in-house replacements for bought-in services |

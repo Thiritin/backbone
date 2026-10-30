@@ -14,7 +14,7 @@ import { addAddress, announceBlock, assignAddress, buyAddresses, joinLir, releas
 import { createVm, provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, freeFloor } from "./fixtures";
 import { cleanUp } from "../src/sim/90-actions/security";
 import { setLine } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -32,7 +32,7 @@ const run = (s: GameState, hours: number) => { for (let h = 0; h < hours; h++) t
 // A ready rented rack in Frankfurt with one mounted server cabled to the carrier panel; returns the location and the server.
 function datacenter(s: GameState) {
   s.cash = 100_000;
-  const loc = ok(addLocation(s, "hetzler-park", "positions", 1));
+  const loc = ok(addLocation(freeFloor(s), "hetzler-park", "suite", 20));
   s.locations = s.locations.map((l) => (l.id === loc ? { ...l, readyAt: s.hour } : l));
   const rack = ok(buyRack(s, loc, "rack-42", 1));
   s.racks = s.racks.map((r) => (r.id === rack ? { ...r, arriveAt: null } : r));

@@ -80,7 +80,7 @@ describe("announcing a block", () => {
   function colo(year: number) {
     const s = { ...readyGame(1), cash: 1e7 };
     s.hour = jan(year);
-    const loc = ok(addLocation(s, "hetzler-park", "positions", 1));
+    const loc = ok(addLocation(s, "hetzler-park", "suite", 20));
     s.locations = s.locations.map((l) => (l.id === loc ? { ...l, readyAt: s.hour } : l));
     const rack = ok(buyRack(s, loc, "rack-42", 1));
     s.racks = s.racks.map((r) => (r.id === rack ? { ...r, arriveAt: null } : r));
@@ -161,7 +161,7 @@ describe("the basement router", () => {
   it("only goes on the basement's carrier panel", () => {
     const s = { ...readyGame(1), cash: 1e6 };
     s.hour = jan(2018);
-    const loc = ok(addLocation(s, "hetzler-park", "positions", 1));
+    const loc = ok(addLocation(s, "hetzler-park", "suite", 20));
     expect(err(buyDevice(s, "fb-7590", "AVN", 1, loc))).toBe("error.basementOnly");
     const fast = ok(buyDevice(s, "fb-7590", "AVN", 1, "loc1"));
     expect(isOfficeRouter(modelById("fb-7590"))).toBe(true);
@@ -180,7 +180,7 @@ describe("router throughput in a datacenter", () => {
       const s = newGame(1);
       s.cash = 1e6;
       s.unlocks = ["network"];
-      const loc = ok(addLocation(s, "equinox-fr5", "positions", 1));
+      const loc = ok(addLocation(s, "equinox-fr5", "cage", 4));
       s.locations = s.locations.map((l) => ({ ...l, readyAt: 0 }));
       s.devices = s.devices.filter((d) => d.model !== "handoff");
       const router = ok(buyDevice(s, model, "Sysko", 1, loc));

@@ -74,7 +74,7 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Customer base rate per TB of storage | 32 | Object storage: €6.50 per TB in 2026, €210 in 2005 |
 | Customer base rate per TB of traffic | 46 | Overage and traffic-heavy services |
 | Fixed-price products | 1 | Web hosting, domains and dedicated servers keep their price per size; the sizes get bigger |
-| Rented space, rack share, position or cage | 1 | Power is billed separately |
+| Rented space, rack or cage | 1 | Power is billed separately |
 | Server purchase price | Parts | Resources per server come from the generations table below; the price in later years follows the parts (Part prices by year) |
 | Salaries | 0.6 | Support agent, junior: €38,700 in 2026, about €23,000 in 2005 |
 | Search ads, per click | 0.6 | |
@@ -762,8 +762,7 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 
 | Space | Price | Lead time | Minimum term | Needs |
 | --- | --- | --- | --- | --- |
-| Rack share, 1/8 (5U) / 1/4 (10U) / 1/2 (21U) / full (42U) | 0.2× / 0.35× / 0.6× / 1.1× the position price | 2 days | 1 month | Nothing |
-| Rack positions, 1 to 4 | The datacenter's position price each | 7 days | 1 month | Nothing |
+| Rack, 1/8 (5U) / 1/4 (10U) / 1/2 (21U) / full (42U) | 0.2× / 0.35× / 0.6× / 1.1× the position price | 2 days | 1 month | Nothing |
 | Cage, 4 / 8 / 16 positions | 3.4× / 6.4× / 12× the position price | 30 days | 12 months | Cage unlock; datacenters with cages |
 | Private suite, 20 / 40 positions | 15× / 28× the position price | 90 days | 36 months | Private suite unlock |
 | Own datacenter | Set when it is designed | | | Own datacenter unlock |
@@ -779,7 +778,7 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 
 **Extra power on a share.** A provided share cannot take feed B or a high-density feed. It can book extra power in steps of 0.25 kW, up to the share's base limit again (the datacenter's kW per position divided by the share size, so a limit of at most twice the base). A step costs 15% of the position price times the datacenter's power factor per month, so a full extra kW costs about 60% of a position. It is billed with the share's rent under the same ledger line, and a booking or a reduction takes effect after 3 days. A rack over its limit still trips. Anchor: colocation power sold per amp at roughly €30 to 60 per 0.5 A step in 2010s Frankfurt. At Hetzler Park (€180, factor 1.1) a step costs €30 a month; at mainqubes FRA (€450, factor 1.3) it costs €88.
 
-**Flat-rate power.** A rack position at a datacenter that offers it can take a contract of 2 × 10 A (4.4 kW) or 2 × 16 A (7 kW) instead of metered power. The monthly price is the metered cost of drawing 60% of the contract: kW × 0.6 × 730 hours × the business power price × the datacenter's power factor, at each month's power price. It pays when the rack averages above 60% of its limit and costs more below, and because the price scales with the limit the late game stays even. The contract's kW replaces the position's limit, including a high-density feed, and is billed as its own line with the rent. At Hetzler (factor 1.1) 2 × 10 A costs €191 a month in 2005, €254 in 2010 and €382 in 2020; 2 × 16 A costs €304, €405 and €607. Anchor: German colocation racks sold per amp with a fixed monthly price, 2 × 10 A or 2 × 16 A at 230 V per rack in the 2000s and 2010s.
+**Flat-rate power.** An own rack in a cage or suite at a datacenter that offers it can take a contract of 2 × 10 A (4.4 kW) or 2 × 16 A (7 kW) instead of metered power. The monthly price is the metered cost of drawing 60% of the contract: kW × 0.6 × 730 hours × the business power price × the datacenter's power factor, at each month's power price. It pays when the rack averages above 60% of its limit and costs more below, and because the price scales with the limit the late game stays even. The contract's kW replaces the position's limit, including a high-density feed, and is billed as its own line with the rent. At Hetzler (factor 1.1) 2 × 10 A costs €191 a month in 2005, €254 in 2010 and €382 in 2020; 2 × 16 A costs €304, €405 and €607. Anchor: German colocation racks sold per amp with a fixed monthly price, 2 × 10 A or 2 × 16 A at 230 V per rack in the 2000s and 2010s.
 
 | Datacenter | Power |
 | --- | --- |
@@ -978,7 +977,7 @@ A G1 server costs about €26 a month in power in 2005; a G7 costs €89 in 2026
 | Location | PUE | Billing |
 | --- | --- | --- |
 | Basement | 1.0 | Household price |
-| Rack positions, cage or suite | The datacenter's power factor | City business price × power factor; a rack above its position's kW limit trips |
+| Cage or suite | The datacenter's power factor | City business price × power factor; a rack above its position's kW limit trips |
 | Own room | 1.6 | City business price |
 | Own datacenter | 1.4, or 1.2 with liquid cooling | City business price, or a custom contract: 3 years fixed at 10% below the current price |
 

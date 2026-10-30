@@ -6,6 +6,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - A new company starts without a website: build a free HTML site in Marketing under Channels in three days, buy a domain, pick rented or own hosting and launch it.
 - The site Admin page is gone; once the site is live, Marketing gains a Products section where SSL sits under web hosting as its add-on.
+- Datacenters now rent space as a rack, a cage or a private suite, and rack positions are gone; a location you rented as positions is now a cage.
+- Flat-rate power contracts are now offered for your own racks in cages and suites.
 - The Delete button in confirmation dialogs is red again on the early desktop themes.
 
 - Time runs faster in companies with many services.

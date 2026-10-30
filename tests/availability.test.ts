@@ -77,7 +77,7 @@ describe("capacity", () => {
 describe("renting limited space", () => {
   it("rejects space that is not free and leaves the basement unlimited", () => {
     const s = withFree(0);
-    expect(err(addLocation(s, FR5, "positions", 1))).toBe("error.noSpace");
+    expect(err(addLocation(s, FR5, "cage", 4))).toBe("error.noSpace");
     expect(err(addLocation(s, FR5, "share", 8))).toBe("error.noSpace");
     expect(dcAvailability(s, FR5)).toEqual({ capacity: 300, others: 300, mine: 0, held: 0, free: 0, freeEighths: 0 });
     expect(buyDevice(s, "g1-compute", "Dwell", 50, "loc1").ok).toBe(true);
@@ -89,7 +89,7 @@ describe("renting limited space", () => {
     ok(addLocation(s, FR5, "cage", 4));
     expect(dcAvailability(s, FR5)).toMatchObject({ mine: 4, free: 3 });
     expect(err(addLocation(s, FR5, "cage", 4))).toBe("error.noSpace");
-    ok(addLocation(s, FR5, "positions", 3));
+    ok(addLocation(s, FR5, "share", 1));
   });
   it("packs eight 1/8 shares into one position", () => {
     const s = withFree(1);
@@ -99,7 +99,7 @@ describe("renting limited space", () => {
     const t = withFree(1);
     ok(addLocation(t, FR5, "share", 2));
     expect(dcAvailability(t, FR5)).toMatchObject({ mine: 0.5, free: 0, freeEighths: 4 });
-    expect(err(addLocation(t, FR5, "positions", 1))).toBe("error.noSpace");
+    expect(err(addLocation(t, FR5, "cage", 4))).toBe("error.noSpace");
     ok(addLocation(t, FR5, "share", 4));
     ok(addLocation(t, FR5, "share", 4));
   });
@@ -109,21 +109,21 @@ describe("waitlist", () => {
   it("holds freed space for 7 days, keeps competitors off it, and rents it on the hold", () => {
     const s = withFree(0);
     s.hour = 700;
-    const id = ok(joinWaitlist(s, FR5, "positions", 2));
-    expect(s.waitlist).toEqual([{ id, dc: FR5, space: "positions", size: 2, since: 700, heldUntil: null }]);
+    const id = ok(joinWaitlist(s, FR5, "cage", 4));
+    expect(s.waitlist).toEqual([{ id, dc: FR5, space: "cage", size: 4, since: 700, heldUntil: null }]);
     expect(run(s, 1).some((e) => e.key === "event.spaceHeld")).toBe(false);
-    s.dcs = { ...s.dcs, [FR5]: { others: 297 } };
+    s.dcs = { ...s.dcs, [FR5]: { others: 295 } };
     expect(run(s, 1)).toContainEqual({ app: "Locations", key: "event.spaceHeld", params: { datacenter: "Equinox FR5", days: 7 } });
     expect(s.waitlist[0].heldUntil).toBe(702 + 168);
-    expect(dcAvailability(s, FR5)).toMatchObject({ held: 2, free: 1 });
-    expect(fits(s, FR5, "positions", 2)).toBe(false);
+    expect(dcAvailability(s, FR5)).toMatchObject({ held: 4, free: 1 });
+    expect(fits(s, FR5, "cage", 4)).toBe(false);
     // The month starts at hour 744: competitors take the free position but never the held ones.
     run(s, 744 - s.hour);
-    expect(dcAvailability(s, FR5).held).toBe(2);
-    expect(dcAvailability(s, FR5).others).toBeLessThanOrEqual(298);
-    ok(addLocation(s, FR5, "positions", 2));
+    expect(dcAvailability(s, FR5).held).toBe(4);
+    expect(dcAvailability(s, FR5).others).toBeLessThanOrEqual(296);
+    ok(addLocation(s, FR5, "cage", 4));
     expect(s.waitlist).toEqual([]);
-    expect(dcAvailability(s, FR5)).toMatchObject({ mine: 2, held: 0 });
+    expect(dcAvailability(s, FR5)).toMatchObject({ mine: 4, held: 0 });
   });
   it("releases a hold that is not used within 7 days", () => {
     const s = withFree(0);
@@ -138,10 +138,10 @@ describe("waitlist", () => {
   });
   it("rejects bad entries and space that is free, and leaves the list", () => {
     const s = withFree(1);
-    expect(err(joinWaitlist(s, "nope", "positions", 1))).toBe("error.unknownDatacenter");
-    expect(err(joinWaitlist(s, FR5, "positions", 5))).toBe("error.unknownSize");
+    expect(err(joinWaitlist(s, "nope", "cage", 4))).toBe("error.unknownDatacenter");
+    expect(err(joinWaitlist(s, FR5, "cage", 5))).toBe("error.unknownSize");
     expect(err(joinWaitlist(s, "hetzler-park", "cage", 4))).toBe("error.noCages");
-    expect(err(joinWaitlist(s, FR5, "positions", 1))).toBe("error.spaceAvailable");
+    expect(err(joinWaitlist(s, FR5, "share", 1))).toBe("error.spaceAvailable");
     const id = ok(joinWaitlist(s, FR5, "suite", 20));
     ok(leaveWaitlist(s, id));
     expect(s.waitlist).toEqual([]);
