@@ -193,18 +193,23 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
   if (!node) return fail("error.noCapacity");
   const hours = w.backupAt !== null ? restoreHours(s, w) : 0;
   const lostAt = s.devices.find((d) => d.id === w.deviceId)?.dataLost ?? s.hour;
-  patch(s, w.id, { deviceId: node, placedAt: s.hour, busyUntil: s.hour + hours, stopped: false, stuck: undefined, corrupted: undefined, recoverDoneAt: undefined, recoverFailed: undefined });
+  patch(s, w.id, { deviceId: node, placedAt: s.hour, busyUntil: s.hour + hours, stopped: false, stuck: undefined, corrupted: undefined, recoverDoneAt: undefined, recoverFailed: undefined, snapshots: undefined });
+  settleLoss(s, w, lostAt, w.backupAt);
+  return { ok: true };
+}
+
+// Closes the open loss items of a workload and the web spaces in it; data saved at savedAt wins back some customer trust.
+export function settleLoss(s: GameState, w: Workload, lostAt: number, savedAt: number | null): void {
   const back = [w.id, ...(isOwnVm(w) ? insideVm(s, w.id).map((x) => x.id) : [])];
   for (const item of back.map((x) => openItem(s, x))) {
     if (!item) continue;
     s.lossReports = s.lossReports.map((r) => ({ ...r, items: r.items.map((i) => (i === item ? { ...i, restored: true } : i)) }));
     const cus = s.customers.find((x) => x.id === item.customerId);
-    if (cus && w.backupAt !== null) {
-      bump(cus, Math.max(LOSS_RESTORED_MAX, LOSS_RESTORED - Math.max(0, lostAt - w.backupAt)));
+    if (cus && savedAt !== null) {
+      bump(cus, Math.max(LOSS_RESTORED_MAX, LOSS_RESTORED - Math.max(0, lostAt - savedAt)));
       lossReview(s, cus);
     }
   }
-  return { ok: true };
 }
 
 // Starts repairing a workload a pulled plug corrupted: 30 minutes of work at the server, after which most come back fine and

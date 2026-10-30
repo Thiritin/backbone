@@ -1720,6 +1720,22 @@ A datastore is a server attached to a VMwhere cluster as shared storage for VM d
 - **Failure.** A datastore server that stops working takes every VM on it down. A datastore that loses its data loses every disk on it.
 - **Detaching** needs the datastore empty.
 
+### Snapshots
+
+A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VMs, its installed OS and software. Values live in `src/sim/10-catalog/platforms.ts`.
+
+| Value | Amount |
+| --- | --- |
+| Snapshots per VM | Up to 3 |
+| Taking one | Instant, no downtime; not on a lost or corrupted disk or while the VM is busy |
+| Delta growth | 5% of the VM's disk a day, counted hourly, up to the whole disk |
+| Revert | Instant, the VM restarts for 10 minutes; newer snapshots are gone and the reverted one starts an empty delta |
+| Delete | Instant, frees the delta |
+
+- **Booking.** Deltas book disk on the VM's storage: its datastore, or its node for a local disk. They grow past the storage's room, since room is only checked at placement, and move with the disk.
+- **Revert** clears the corruption of a pulled plug when the snapshot is older than the corruption, and closes the loss report item as a restore from backup would. An own VM gets its OS and software back as they were; a VM that hosts a panel needs that panel in the snapshot.
+- **Loss.** A disk lost with its server or datastore loses its snapshots, and a lost disk cannot revert. A VM that leaves VMwhere loses its snapshots.
+
 ## PHP versions
 
 Each version becomes available on 1 January after its release, rounded so the start of the game has 4.4:

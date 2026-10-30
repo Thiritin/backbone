@@ -166,6 +166,9 @@ export const FC_HBA_PRICE = 700;
 export const fcGbit = (year: number): number => (year >= 2011 ? 16 : year >= 2008 ? 8 : 4);
 // From this year a disk moves between datastores with its VM running (Storage vMotion).
 export const LIVE_DISK_MOVE = 2007;
+// economy.md, Snapshots: per VM on a hypervisor with datastores, each delta growing by a share of the VM's disk a day.
+export const SNAPSHOTS_MAX = 3;
+export const SNAPSHOT_GROWTH = 0.05;
 export const balancerIn = (sw: Software, year: number): Software["balancer"] | null => (sw.balancer && year >= sw.balancer.from ? sw.balancer : null);
 export const balloons = (sw: Software, year: number): boolean => sw.balloon !== null && year >= sw.balloon;
 // Why a and b cannot share a machine, as an error key, or null.

@@ -58,7 +58,7 @@ function uncleanStop(s: GameState, d: Device): "ipmi.log.resync" | "ipmi.log.cor
     return "ipmi.log.resync";
   }
   const ids = new Set(ran.map((w) => w.id));
-  s.workloads = s.workloads.map((w) => (ids.has(w.id) ? { ...w, corrupted: true, noticed: false } : w));
+  s.workloads = s.workloads.map((w) => (ids.has(w.id) ? { ...w, corrupted: true, noticed: false, corruptedAt: s.hour } : w));
   return "ipmi.log.corrupted";
 }
 

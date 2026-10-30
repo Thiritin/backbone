@@ -4,7 +4,7 @@ import { modelById } from "../10-catalog/hardware";
 import { DATASTORE_ATTACH_HOURS, DATASTORE_FROM, DATASTORES_MAX, FC_HBA_PRICE, LIVE_DISK_MOVE, softwareById, type DatastoreProtocol } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import {
-  controlPlaneUp, datastoreFits, datastoreGbit, datastoreUp, lostDisk, nodeTakes, serverTaken, type Cluster, type Datastore,
+  controlPlaneUp, datastoreFits, deltaGb, datastoreGbit, datastoreUp, lostDisk, nodeTakes, serverTaken, type Cluster, type Datastore,
 } from "../60-infra/cluster";
 import { locationOf, raidUsable } from "../60-infra/status";
 import { LAN_GB_PER_HOUR } from "../85-products/products";
@@ -63,7 +63,7 @@ export function diskMoveDowntime(s: GameState, diskGb: number, via: Datastore[])
   return Math.max(1, Math.ceil(diskGb / (gbit * LAN_GB_PER_HOUR)));
 }
 
-// Moves a VM's disk between its node (to null) and a datastore of its cluster with room.
+// Moves a VM's disk with its snapshot deltas between its node (to null) and a datastore of its cluster with room.
 export function moveDisk(s: GameState, workloadId: string, to: string | null): ActionResult {
   const w = s.workloads.find((x) => x.id === workloadId), c = w && s.clusters.find((x) => x.id === w.clusterId);
   if (!w || !c || !w.deviceId) return fail("error.unknownWorkload");
@@ -71,14 +71,14 @@ export function moveDisk(s: GameState, workloadId: string, to: string | null): A
   if (lostDisk(s, w)) return fail("error.lostDisk");
   if (w.busyUntil > s.hour || w.migrating) return fail("error.workloadBusy");
   if (!controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
-  const target = to ? c.datastores.find((x) => x.deviceId === to) : undefined;
+  const target = to ? c.datastores.find((x) => x.deviceId === to) : undefined, disk = w.diskGb + deltaGb(w);
   if (to && !target) return fail("error.notDatastore");
   if (target && !datastoreUp(s, target)) return fail("error.datastoreDown");
-  if (target && !datastoreFits(s, target.deviceId, w.diskGb)) return fail("error.nodeFull");
+  if (target && !datastoreFits(s, target.deviceId, disk)) return fail("error.nodeFull");
   const node = s.devices.find((x) => x.id === w.deviceId);
-  if (!to && (!node || !nodeTakes(s, node, { ...w, datastore: undefined }, w))) return fail("error.nodeFull");
+  if (!to && (!node || !nodeTakes(s, node, { ...w, diskGb: disk, datastore: undefined }, w))) return fail("error.nodeFull");
   const via = c.datastores.filter((x) => x.deviceId === to || x.deviceId === w.datastore);
-  const down = diskMoveDowntime(s, w.diskGb, via);
+  const down = diskMoveDowntime(s, disk, via);
   s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, datastore: to ?? undefined, placedAt: s.hour, busyUntil: Math.max(x.busyUntil, s.hour + down) } : x));
   return { ok: true };
 }

@@ -68,12 +68,17 @@ export interface Workload extends Resources, Partial<MachineState> {
   migrating?: { clusterId: string; doneAt: number; announced?: true };
   // A pulled plug corrupted the data: it counts as lost until recovered (recoverDoneAt is the hour a recovery finishes) or
   // restored; noticed is set once the alert went out, recoverFailed once a recovery did not bring the data back.
-  corrupted?: boolean; noticed?: boolean; recoverDoneAt?: number; recoverFailed?: boolean;
+  corrupted?: boolean; noticed?: boolean; recoverDoneAt?: number; recoverFailed?: boolean; corruptedAt?: number;
   // Own VMs only: the last STATS_HOURS hourly samples (stats.ts), missing until the first tick, and the hour the VM last came up.
   stats?: VmSample[]; upSince?: number;
   // The datastore of its cluster its disk is on; missing for a disk on its node.
   datastore?: string;
+  // Oldest first (economy.md, Snapshots); machine is an own VM's OS and software at the hour taken.
+  snapshots?: Snapshot[];
 }
+export interface Snapshot { id: string; at: number; deltaGb: number; machine?: MachineState }
+// The disk a VM's snapshot deltas take on its storage.
+export const deltaGb = (w: Workload): number => w.snapshots?.reduce((n, x) => n + x.deltaGb, 0) ?? 0;
 
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.
 // Software of a save from before versions runs its install year, or two years before the save while no install date is known.
@@ -117,7 +122,7 @@ export const datastoreOn = (c: Cluster, r: Disk): boolean => !!r.datastore && c.
 // What a VM books on a node of the cluster: none of its disk while that is on one of the cluster's datastores.
 const onNode = (c: Cluster | undefined, r: Disk): Resources => (c && datastoreOn(c, r) ? { ...r, diskGb: 0 } : r);
 export const isDatastore = (s: GameState, deviceId: string): boolean => s.clusters.some((c) => c.datastores.some((x) => x.deviceId === deviceId));
-export const datastoreUsed = (s: GameState, deviceId: string): number => s.workloads.reduce((n, w) => n + (w.datastore === deviceId ? w.diskGb : 0), 0);
+export const datastoreUsed = (s: GameState, deviceId: string): number => s.workloads.reduce((n, w) => n + (w.datastore === deviceId ? w.diskGb + deltaGb(w) : 0), 0);
 export const datastoreCapacity = (s: GameState, deviceId: string): number => {
   const d = s.devices.find((x) => x.id === deviceId);
   return d ? nodeCapacity(d).diskGb : 0;
@@ -142,12 +147,13 @@ export const diskMovesLive = (s: GameState, c: Cluster, w: Workload, toId?: stri
 };
 // Lines that share a guest per node rather than run one each, so they keep their fraction of a core everywhere.
 const SHARED: Product[] = ["webHosting", "dns", "vpn"];
-// What a workload books: on software that does not split cores a VM takes whole vCPUs.
+// What a workload books: its snapshot deltas on its disk, and on software that does not split cores whole vCPUs.
 export function booked(s: GameState, w: Workload): Resources {
   const c = s.clusters.find((x) => x.id === w.clusterId), id = c?.panel ?? c?.platform;
-  if (!id || softwareById(id).split || Number.isInteger(w.vcpu)) return w;
+  const r = w.snapshots?.length ? { ...w, diskGb: w.diskGb + deltaGb(w) } : w;
+  if (!id || softwareById(id).split || Number.isInteger(w.vcpu)) return r;
   const product = s.services.find((v) => v.id === w.serviceId)?.product;
-  return product && SHARED.includes(product) ? w : { ...w, vcpu: Math.ceil(w.vcpu) };
+  return product && SHARED.includes(product) ? r : { ...r, vcpu: Math.ceil(w.vcpu) };
 }
 
 // What the management services of a cluster's software take.
