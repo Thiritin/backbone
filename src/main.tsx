@@ -11,5 +11,6 @@ import "./ui/desktop/shell.css";
 import "./ui/desktop/desktop.css";
 import "./ui/desktop/os.css";
 import { Desktop } from "./ui/desktop/Desktop";
+import { MobileGate, isMobile } from "./ui/desktop/MobileGate";
 
-createRoot(document.getElementById("root")!).render(<StrictMode><Desktop /></StrictMode>);
+createRoot(document.getElementById("root")!).render(<StrictMode>{isMobile ? <MobileGate /> : <Desktop />}</StrictMode>);

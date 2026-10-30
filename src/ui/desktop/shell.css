@@ -334,3 +334,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .copy-stop { border: 0; background: none; padding: 0; color: var(--text-3); display: grid; }
 .copy-stop svg.lucide { width: 18px; height: 18px; }
 .copy-stop:hover { color: var(--text); }
+.mobile-gate { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: var(--win); color: var(--text); font-family: var(--font-ui); }
+.mobile-gate h1 { margin: 8px 0 0; font-size: 22px; font-weight: 700; }
+.mobile-gate p { margin: 0; max-width: 320px; font-size: 15px; line-height: 1.5; }
+.mobile-gate a { margin-top: 12px; padding: 12px 20px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font-weight: 600; text-decoration: none; }
