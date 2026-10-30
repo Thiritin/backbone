@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- The Products and Virtual machines apps are gone: you manage machines in the web console of their software, set prices under Pricing in Marketing, and read incident reports in Security.
+- Servers no longer appear in clusters in Locations, and a new hypervisor takes the name of its server.
 - Clicking the VGA port on the back of a server in the device view now plugs in a monitor, just like in the rack.
 - A cluster named after the place it was built in now takes the name of the location its servers move to.
 - A draining server can now be uncordoned, which stops a drain that has nowhere to move its workloads.

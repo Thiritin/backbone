@@ -73,11 +73,11 @@ export function installPanel(s: GameState, deviceId: string, panelId: string): A
   return installOnServer(s, deviceId, sw, (label) => (s.clusters.some((c) => c.name === label) ? freeName(s, label) : label));
 }
 
-// Installs a hypervisor on a free mounted server: a one-server hypervisor cluster that servers with the same hypervisor join.
+// Installs a hypervisor on a free mounted server, named after the server like a panel host.
 export function installHypervisor(s: GameState, deviceId: string, platformId: string): ActionResult {
   const sw = softwareById(platformId);
   if (sw.id !== platformId || sw.kind !== "cloud") return fail("error.unknownSoftware");
-  return installOnServer(s, deviceId, sw, (_, loc) => freeName(s, loc));
+  return installOnServer(s, deviceId, sw, (label) => (s.clusters.some((c) => c.name === label) ? freeName(s, label) : label));
 }
 
 // Creates one of the player's own VMs on a hypervisor cluster, empty until software is installed in it. A cluster still

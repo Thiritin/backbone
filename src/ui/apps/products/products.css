@@ -1,4 +1,4 @@
-/* Shared by the Products and Virtual machines apps, on top of billing.css. */
+/* Shared product and software views, on top of billing.css. */
 .prd-pad { display: grid; gap: 14px; align-content: start; padding: 16px; }
 .prd-h { display: flex; align-items: baseline; gap: 10px; font-size: 13px; font-weight: 650; margin: 4px 0 -6px; }
 .prd-title { display: flex; align-items: center; gap: 12px; }

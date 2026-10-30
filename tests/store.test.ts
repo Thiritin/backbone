@@ -88,7 +88,7 @@ describe("pear store", () => {
   });
 
   it("raises prices 8% every year", () => {
-    const net = storeItem("Products")!;
+    const net = storeItem("Market")!;
     expect(subscriptionPrice(net, 2005)).toBe(15);
     expect(subscriptionPrice(net, 2007)).toBe(17.5);
   });

@@ -54,12 +54,10 @@ function collect(s: GameState): Hit[] {
     const name = d.label ?? d.name;
     add({ group: "Machines", id: d.id, title: d.hostname, sub: name, keys: [d.hostname, name, ...addresses(d.id)], recent: d.boughtAt, app: "Locations", target: { kind: "device", id: d.id } });
   }
-  if (has("Virtual machines")) {
-    for (const w of s.workloads) {
-      if (!isOwnVm(w) || !w.hostname) continue;
-      const name = vmLabel(s, w).name;
-      add({ group: "Machines", id: w.id, title: w.hostname, sub: name === w.hostname ? undefined : name, keys: [w.hostname, name, ...addresses(w.id)], recent: w.placedAt, app: "Virtual machines", target: { kind: "workload", id: w.id } });
-    }
+  for (const w of s.workloads) {
+    if (!isOwnVm(w) || !w.hostname || !w.deviceId) continue;
+    const name = vmLabel(s, w).name;
+    add({ group: "Machines", id: w.id, title: w.hostname, sub: name === w.hostname ? undefined : name, keys: [w.hostname, name, ...addresses(w.id)], recent: w.placedAt, app: "Locations", target: { kind: "device", id: w.deviceId } });
   }
 
   for (const tk of s.tickets.slice(-TICKETS)) {

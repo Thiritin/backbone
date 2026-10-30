@@ -1,15 +1,15 @@
 import { useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
-import { autoUpdates, SOFTWARE, softwareById } from "../../../../sim/10-catalog/platforms";
+import { autoUpdates, phpAt, SOFTWARE, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import type { GameState } from "../../../../sim/50-state";
-import { hostOfVm, isOwnVm, vmById, workloadsOn, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
+import { hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { workloadUse } from "../../../../sim/60-infra/usage";
 import { familyOf, openVulns } from "../../../../sim/60-infra/vulns";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { mailImpaired, seatsFor } from "../../../../sim/80-business/mail";
-import { createVm, deleteVm, PANEL_VM_SIZE, removePanelHost, resizePanelVm } from "../../../../sim/90-actions/clusters";
+import { createVm, deleteVm, PANEL_VM_SIZE, phpDue, removePanelHost, resizePanelVm, setBackup, upgradePhp } from "../../../../sim/90-actions/clusters";
 import { setSitesOffline } from "../../../../sim/90-actions/security";
 import { createSoftwareVm, setAutoUpdate, uninstallSoftware, updateDue, updateSoftware } from "../../../../sim/90-actions/software";
 import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../../../sim/90-actions/vms";
@@ -182,13 +182,14 @@ export function Software({ game, c, f }: Props) {
           <tr><th>Version</th><td className="num">{c.version}</td></tr>
           {auto && <tr><th>Automatic updates</th><td>{on ? "On" : "Off"}</td></tr>}
           <tr><th>Open vulnerabilities</th><td className="num">{vulns}</td></tr>
-          {f.backups && <tr><th>Backups</th><td className="cx-cap">{c.backup.every}</td></tr>}
+          {c.kind === "panel" && <tr><th>PHP</th><td className="num">{c.php}</td></tr>}
         </tbody>
       </table>
       <div className="cx-tools">
         {f.update && due && <button className="cx-btn primary" onClick={() => act(updateSoftware, c.id)}>{`Update to ${year}`}</button>}
         {f.update && !due && <span className="cx-note">Up to date</span>}
         {auto && <button className="cx-btn" onClick={() => act(setAutoUpdate, c.id, !on)}>{on ? "Turn off automatic updates" : "Turn on automatic updates"}</button>}
+        {c.kind === "panel" && phpDue(game, c) && <button className="cx-btn" onClick={() => act(upgradePhp, c.id)}>{c.php === phpAt(year) ? "Patch PHP" : `Upgrade to PHP ${phpAt(year)}`}</button>}
         {f.sitesOffline && c.kind === "panel" && <button className="cx-btn" onClick={() => act(setSitesOffline, c.id, !off)}>{off ? "Bring sites online" : "Take sites offline"}</button>}
         {f.resize && c.kind === "panel" && c.vm && <button className="cx-btn" onClick={() => setSizing(!sizing)}>Resize</button>}
         {f.delete && !removing && <button className="cx-btn" onClick={() => setRemoving(true)}>Remove host</button>}
@@ -196,6 +197,29 @@ export function Software({ game, c, f }: Props) {
         {removing && <button className="cx-btn" onClick={() => setRemoving(false)}>Cancel</button>}
       </div>
       {sizing && c.vm && <Resize game={game} host={c} done={() => setSizing(false)} />}
+      {f.backups && <Backups game={game} c={c} />}
+    </>
+  );
+}
+
+// The backup schedule and the host the backups go to.
+function Backups({ game, c }: { game: GameState; c: Cluster }) {
+  const act = useStore((s) => s.act), others = game.clusters.filter((x) => x.id !== c.id), target = c.backup.targetId ?? others[0]?.id ?? null;
+  return (
+    <>
+      <h4 className="cx-h">Backups</h4>
+      <div className="cx-tools">
+        {(["off", "daily", "weekly"] as BackupEvery[]).map((e) => (
+          <button key={e} className="cx-chip" aria-pressed={c.backup.every === e} disabled={e !== "off" && !target} onClick={() => act(setBackup, c.id, target, e)}>
+            {e === "off" ? "Off" : e === "daily" ? "Daily" : "Weekly"}
+          </button>
+        ))}
+      </div>
+      {others.length > 0 && (
+        <div className="cx-tools">
+          {others.map((x) => <button key={x.id} className="cx-chip" aria-pressed={c.backup.targetId === x.id} onClick={() => act(setBackup, c.id, x.id, c.backup.every)}>{x.name}</button>)}
+        </div>
+      )}
     </>
   );
 }

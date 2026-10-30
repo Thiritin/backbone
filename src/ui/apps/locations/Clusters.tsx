@@ -1,4 +1,4 @@
-import { Boxes, Plus, Wrench } from "lucide-react";
+import { Boxes, Wrench } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import { yearOf } from "../../../sim/00-core/time";
 import { phpAt, phpBehind } from "../../../sim/10-catalog/platforms";
@@ -6,20 +6,16 @@ import { nextSlot } from "../../../sim/47-staff/technicians";
 import { PHP_EOL } from "../../../sim/60-infra/php";
 import { queuePhpUpgrade } from "../../../sim/90-actions/staff";
 import { slotTime } from "./TechButton";
-import type { Device, GameState, Location } from "../../../sim/50-state";
-import { bookable, clusterOf, nodeUsed, vmById, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
+import type { Device, GameState } from "../../../sim/50-state";
+import { bookable, clusterOf, nodeUsed, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { nodeUsage } from "../../../sim/60-infra/usage";
 import { sumOf } from "../../../sim/60-infra/routes";
-import { joinableServers } from "../../../sim/90-actions/software";
-import { addNode, phpDue, setPlacement, setRamGuard, upgradePhp } from "../../../sim/90-actions/clusters";
+import { phpDue, setRamGuard, upgradePhp } from "../../../sim/90-actions/clusters";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
-import { cores, devName, disk, ram } from "../hw";
-import { ControlPlanePill, HOST_NAME, VM_STATE, vmState } from "../products/parts";
-import { menuOn } from "../../desktop/ContextMenu";
-import { PlanButton, useMaintenance, Windows } from "./Maintenance";
-import { Zone } from "./ui";
+import { cores, disk, ram } from "../hw";
+import { ControlPlanePill, softwareName, VM_STATE, vmState } from "../products/parts";
 import { NodeWorkloads } from "./Workloads";
 
 export const NODE_STATE: Record<NodeState, [string, string]> = { active: ["Active", "ok"], cordoned: ["Cordoned", "warn"], draining: ["Draining", "warn"], maintenance: ["Maintenance", ""] };
@@ -66,84 +62,6 @@ function NodeMeters({ game, d }: { game: GameState; d: Device }) {
   );
 }
 
-// The clusters of a location's zone, with their nodes.
-export function Clusters({ game, loc }: { game: GameState; loc: Location }) {
-  const clusters = game.clusters.filter((c) => c.az === loc.az);
-  return (
-    <div className="loc-card">
-      <div className="loc-card-h"><h3><Boxes />Clusters</h3><Zone loc={loc} /><span className="grow" /><span className="num loc-muted">{clusters.length}</span></div>
-      {clusters.map((c) => <ClusterRows key={c.id} game={game} cluster={c} />)}
-    </div>
-  );
-}
-
-function ClusterRows({ game, cluster }: { game: GameState; cluster: Cluster }) {
-  const act = useStore((s) => s.act);
-  const free = joinableServers(game, cluster.id).map((id) => game.devices.find((d) => d.id === id)!);
-  const mnt = useMaintenance(), target = { kind: "cluster", id: cluster.id } as const;
-  return (
-    <>
-      <div className="loc-card-h loc-sub" onContextMenu={menuOn(() => [{ label: "Plan maintenance…", run: () => mnt.plan(target) }])}>
-        <h3>{cluster.name}</h3>
-        <span className="pill">{HOST_NAME[cluster.kind]}</span>
-        <span className="grow" />
-        {cluster.kind === "cloud" && (
-          <div className="seg" role="group" aria-label="Placement">
-            <button aria-pressed={cluster.placement === "pack"} onClick={() => act(setPlacement, cluster.id, "pack")}>Pack</button>
-            <button aria-pressed={cluster.placement === "spread"} onClick={() => act(setPlacement, cluster.id, "spread")}>Spread</button>
-          </div>
-        )}
-        <PlanButton target={target} plan={(t) => mnt.plan(t)} />
-      </div>
-      <Windows game={game} windows={game.maintenance.filter((m) => m.target.kind === "cluster" && m.target.id === cluster.id)} plan={mnt.plan} />
-      {mnt.dialog}
-      {game.unlocks.includes("memoryReservation") && (
-        <div className="loc-row">
-          <span className="loc-k">RAM</span>
-          <div className="seg" role="group" aria-label="Memory reservation">
-            <button aria-pressed={!cluster.ramGuard} onClick={() => act(setRamGuard, cluster.id, false)}>Overbook</button>
-            <button aria-pressed={!!cluster.ramGuard} onClick={() => act(setRamGuard, cluster.id, true)}>Reserve</button>
-          </div>
-        </div>
-      )}
-      {cluster.nodes.map((n) => {
-        const d = game.devices.find((x) => x.id === n.deviceId)!, [label, tone] = STATE[n.state], used = nodeUsed(game, d.id), cap = bookable(game, d);
-        return (
-          <div key={n.deviceId} className="loc-row">
-            <span>{devName(d)}</span>
-            <span className={`pill ${tone}`}>{label}</span>
-            {game.frozen.includes(d.id) && <span className="pill bad">Frozen</span>}
-            <span className="grow" />
-            <span className="num loc-muted">{workloadsOn(game, d.id).length} workloads</span>
-            <Meter used={used.ramGb} cap={cap.ramGb} text={`${ram(+used.ramGb.toFixed(2))} of ${ram(+cap.ramGb.toFixed(2))}`} />
-          </div>
-        );
-      })}
-      {cluster.vm && <PanelVmRow game={game} cluster={cluster} />}
-      {cluster.kind === "cloud" && free.length > 0 && (
-        <div className="loc-row">
-          {free.map((d) => <button key={d.id} className="btn" onClick={() => act(addNode, cluster.id, d.id)}><Plus />{devName(d)}</button>)}
-        </div>
-      )}
-    </>
-  );
-}
-
-// A panel host that runs as a VM: the hypervisor cluster and node under it, and its booking.
-function PanelVmRow({ game, cluster }: { game: GameState; cluster: Cluster }) {
-  const vm = vmById(game, cluster.vm)!, d = game.devices.find((x) => x.id === vm.deviceId);
-  const on = game.clusters.find((c) => c.id === vm.clusterId);
-  return (
-    <div className="loc-row">
-      <span>Panel VM</span>
-      <span className="loc-muted">{on?.name}{d ? ` · ${devName(d)}` : ""}</span>
-      <span className="grow" />
-      <span className="num loc-muted">{num(vm.vcpu)} vCPU · {ram(vm.ramGb)} · {disk(vm.diskGb)}</span>
-    </div>
-  );
-}
-
-// A server's role: its cluster and node state with the workloads on it, the customer renting it, or a cluster to join.
 // A panel host's PHP version, with an upgrade by hand or through the technicians' queue.
 function PhpRow({ game, cluster, device }: { game: GameState; cluster: Cluster; device: Device }) {
   const act = useStore((s) => s.act);
@@ -181,13 +99,22 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
   return (
     <div className="loc-card">
       <div className="loc-card-h">
-        <h3><Boxes />{cluster.name}</h3>
+        <h3><Boxes />{softwareName(cluster.switching?.to ?? cluster.panel ?? cluster.platform)}</h3>
         <span className={`pill ${tone}`}>{label}</span>
         {game.frozen.includes(device.id) && <span className="pill bad">Frozen</span>}
         <span className="grow" />
         {cluster.controlPlane === device.id && <ControlPlanePill game={game} cluster={cluster} />}
       </div>
       <NodeMeters game={game} d={device} />
+      {game.unlocks.includes("memoryReservation") && (
+        <div className="loc-row">
+          <span className="loc-k">RAM</span>
+          <div className="seg" role="group" aria-label="Memory reservation">
+            <button aria-pressed={!cluster.ramGuard} onClick={() => act(setRamGuard, cluster.id, false)}>Overbook</button>
+            <button aria-pressed={!!cluster.ramGuard} onClick={() => act(setRamGuard, cluster.id, true)}>Reserve</button>
+          </div>
+        </div>
+      )}
       {cluster.kind === "panel" && <PhpRow game={game} cluster={cluster} device={device} />}
       {loads.filter((w) => vmState(game, w) === "lost").map((w) => (
         <div key={w.id} className="loc-row">

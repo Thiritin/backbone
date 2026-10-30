@@ -11,6 +11,8 @@ import { resetRates, setRate } from "../../../sim/90-actions/rates";
 import { useStore } from "../../store";
 import { marketSide } from "../sales/PriceField";
 import { PRODUCT } from "../support/labels";
+import "../products/products.css";
+import "../sales/sales.css";
 
 const LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "gpu", "dedicated", "colocation", "domain", "ssl"];
 const UNIT: Record<Unit | "setup", string> = {

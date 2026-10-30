@@ -4,11 +4,11 @@ import { anchorOf, type Workload } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
 import { queueMigration } from "../../../sim/90-actions/staff";
 import { announceMigration, moveTargets, offerMigration, type MoveTarget } from "../../../sim/90-actions/moves";
-import { migrateWebspace, rescueTargets, rescueWorkload, webspaceTargets } from "../../../sim/90-actions/vms";
+import { migrateWebspace, migrateWorkload, migrationTargets, rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../../sim/90-actions/vms";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
 import type { HandTask } from "../locations/HandSheet";
-import { vmLabel } from "../products/parts";
+import { vmLabel, vmState } from "../products/parts";
 
 // Quarter hours as "2 h 30 min".
 export function hoursText(hours: number): string {
@@ -65,4 +65,29 @@ export function rescueEntries(game: GameState, w: Workload, start: (game: GameSt
     label: `${t.name}, offline ${t.down} h`,
     run: () => start(game, { title: `Recover ${name} to ${t.name}`, deviceId: w.deviceId!, action: rescueWorkload, args: [w.id, t.to] }),
   })) }] : [];
+}
+
+// Start, stop, restore and migrate for a VM or web space, shared by every list that shows one; with start, also recovery by hand.
+export function workloadActions(game: GameState, w: Workload, start?: (game: GameState, t: HandTask) => void): MenuEntry[] {
+  const act = useStore.getState().act;
+  const st = vmState(game, w);
+  const on = st === "running" || st === "down" || st === "frozen";
+  const web = game.clusters.find((c) => c.id === w.clusterId)?.kind === "panel";
+  const targets = !web && (on || st === "stopped") ? migrationTargets(game, w.id) : [];
+  const where = (id: string) => game.clusters.find((c) => c.id === id)?.name;
+  return [
+    st === "lost" && { label: w.backupAt === null ? "Start empty" : "Restore", run: () => act(restoreWorkload, w.id) },
+    st === "stopped" && { label: "Start", run: () => act(startWorkload, w.id) },
+    on && { label: "Stop", run: () => act(stopWorkload, w.id) },
+    ...(start ? rescueEntries(game, w, start) : []),
+    ...(web && (on || st === "stopped" || st === "migrating") ? migrateEntries(game, w) : []),
+    targets.length > 0 && {
+      label: "Migrate to",
+      items: targets.map((t) => ({
+        label: t.to !== t.clusterId && t.clusterId !== w.clusterId ? `${t.name} · ${where(t.clusterId)}` : t.name,
+        run: () => act(migrateWorkload, w.id, t.to),
+      })),
+    },
+    ...offerEntries(game, w),
+  ];
 }

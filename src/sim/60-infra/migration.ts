@@ -39,7 +39,7 @@ export function migrationTick(s: GameState): SimEvent[] {
     const locs = [w.clusterId, to?.id].map((id) => s.locations.find((l) => l.az === s.clusters.find((c) => c.id === id)?.az));
     if (!to || !at || !v || (locs[0] && locs[1] && renumberError(s, [v.id], locs[0], locs[1]))) {
       patch(s, w.id, { migrating: undefined });
-      if (v) events.push({ app: "Products", key: "event.migrationFailed", params: { service: v.label, cluster: to?.name ?? "" } });
+      if (v) events.push({ app: "Locations", key: "event.migrationFailed", params: { service: v.label, cluster: to?.name ?? "" } });
       continue;
     }
     const from = s.clusters.find((c) => c.id === w.clusterId);
@@ -50,7 +50,7 @@ export function migrationTick(s: GameState): SimEvent[] {
       if (locs[0] && locs[1]) renumber(s, [v.id], locs[0], locs[1], () => !!w.migrating!.announced);
     }
     freezeTick(s);
-    events.push({ app: "Products", key: "event.migrated", params: { service: v.label, cluster: to.name } });
+    events.push({ app: "Locations", key: "event.migrated", params: { service: v.label, cluster: to.name } });
   }
   return events;
 }

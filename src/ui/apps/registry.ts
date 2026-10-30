@@ -1,5 +1,5 @@
 import {
-  Activity, AppWindow, LayoutGrid, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, AppWindow, LayoutGrid, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { BillingApp } from "./billing/BillingApp";
@@ -21,8 +21,6 @@ import type { MarkProps } from "../art/mailmarks";
 import { ResearchApp } from "./research/ResearchApp";
 import { StaffApp } from "./staff/StaffApp";
 import { TerminalApp } from "./terminal/TerminalApp";
-import { ProductsApp } from "./products/ProductsApp";
-import { VmApp } from "./vms/VmApp";
 import { WebsiteApp } from "./website/WebsiteApp";
 import { isFinal } from "../../sim/40-support/tickets";
 import { isUnpaid } from "../../sim/45-billing/billing";
@@ -47,9 +45,6 @@ export const APPS: AppDef[] = [
   { name: "Shop", icon: ShoppingCart, tile: "oklch(0.6 0.15 40)", about: "Sells servers, switches and patch panels into your storage." },
   { name: "Network", icon: Network, tile: "oklch(0.58 0.12 210)", about: "Manages transit, peering and DDoS protection.", body: NetworkApp,
     badge: (s) => s.network.requests.length + s.network.attacks.length },
-  { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters.", body: ProductsApp,
-    badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored)).length },
-  { name: "Virtual machines", icon: MonitorCog, tile: "oklch(0.5 0.12 200)", about: "Starts, stops, migrates and restores the workloads on your clusters.", body: VmApp },
   { name: "Terminal", icon: SquareTerminal, tile: "oklch(0.3 0.01 255)", about: "Opens sessions on your servers, pings hosts and traces the route to them.", body: TerminalApp },
   { name: "Website", icon: AppWindow, tile: "oklch(0.6 0.13 230)", about: "Opens your company website in the Browser.", body: WebsiteApp },
   { name: "Browser", icon: Compass, tile: "oklch(0.56 0.15 250)", about: "Opens your company site, your customers' sites and the pages of your suppliers.", body: BrowserApp },
@@ -67,7 +62,8 @@ export const APPS: AppDef[] = [
   { name: "Nagiosaurus", icon: Activity, tile: "oklch(0.58 0.14 150)", about: "Watches every installed software for known vulnerabilities and lists the most exposed first.", hidden: true },
   { name: "Research", icon: GraduationCap, tile: "oklch(0.72 0.15 95)", about: "Trains your company in new skills with the know-how it earns.", body: ResearchApp },
   { name: "Getting started", icon: BookOpen, tile: "oklch(0.55 0.15 255)", about: "Explains the controls and how the game saves.", hidden: true },
-  { name: "Security", icon: ShieldAlert, tile: "oklch(0.58 0.17 25)", about: "Lists the nodes a PHP vulnerability affects and takes their sites offline, patches and cleans them up.", body: SecurityApp },
+  { name: "Security", icon: ShieldAlert, tile: "oklch(0.58 0.17 25)", about: "Lists the nodes a PHP vulnerability affects and takes their sites offline, patches and cleans them up, and keeps the incident reports of lost data.", body: SecurityApp,
+    badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored)).length },
   { name: "Notes", icon: FileText, tile: "oklch(0.7 0.13 85)", about: "Edits the notes on your desktop.", hidden: true },
   { name: "News", icon: Newspaper, tile: "oklch(0.55 0.12 30)", about: "Lists the headlines about new software, hardware and market changes.", hidden: true, body: NewsApp },
   { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: "Sets your company name and logo, the theme and which apps may send notifications." },

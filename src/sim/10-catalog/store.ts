@@ -18,8 +18,6 @@ export const WIDGETS: [string, string, number][] = [
 
 export const STORE: StoreItem[] = [
   { id: "Network", kind: "app", name: "Network", monthly: 0 },
-  { id: "Products", kind: "app", name: "Products", monthly: 15 },
-  { id: "Virtual machines", kind: "app", name: "Virtual machines", monthly: 0 },
   { id: "Terminal", kind: "app", name: "Terminal", monthly: 0 },
   { id: "Staff", kind: "app", name: "Staff", monthly: 20 },
   // Preinstalled for the company domain; the Marketing campaigns skill opens the rest of the app.

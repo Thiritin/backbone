@@ -21,10 +21,9 @@ export function research(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
-// Why an item cannot be installed yet, or null: its skill is missing, or the Virtual machines app has no hypervisor to manage.
+// Why an item cannot be installed yet, or null: its skill is missing.
 export function storeBlocker(s: GameState, id: string): string | null {
-  if (!isAvailable(id, s.unlocks)) return "error.needsResearch";
-  return id === "Virtual machines" && !s.clusters.some((c) => c.kind === "cloud" && (c.platform || c.switching)) ? "error.needsHypervisor" : null;
+  return isAvailable(id, s.unlocks) ? null : "error.needsResearch";
 }
 
 // Installing pays the first month right away; the tick bills every later month start.

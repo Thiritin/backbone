@@ -7,7 +7,7 @@ import { yearOf } from "../../../sim/00-core/time";
 import { isAvailable, skillFor } from "../../../sim/10-catalog/research";
 import { deskById, deskReady, seats, type DeskFeature } from "../../../sim/10-catalog/desks";
 import { storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
-import { cancel, install, storeBlocker } from "../../../sim/90-actions/store";
+import { cancel, install } from "../../../sim/90-actions/store";
 import { Confirm } from "../../desktop/Confirm";
 import { PearMark } from "../../desktop/Intro";
 import { appByName } from "../registry";
@@ -38,7 +38,6 @@ const DESK_ABOUT: Record<string, string> = {
 
 const INCLUDES: Record<string, string[]> = {
   Network: ["Transit and peering", "DDoS protection", "Topology view"],
-  Products: ["Product lines and plans", "Software licences", "Clusters"],
   Staff: ["Job market", "Hiring and salaries", "Task assignment"],
   Marketing: ["Campaigns", "Reviews", "Review platforms"],
   Nagiosaurus: ["Versions of installed software", "Open vulnerabilities by severity", "Days exposed"],
@@ -56,7 +55,7 @@ const INCLUDES: Record<string, string[]> = {
 };
 
 const SHELVES: [string, string[]][] = [
-  ["Essentials", ["Network", "Products", "Nagiosaurus", "Knowledge base"]],
+  ["Essentials", ["Network", "Nagiosaurus", "Knowledge base"]],
   ["Growth", ["Staff", "Marketing", "Market"]],
   ["Bots", ["chadGpt", "clipsy"]],
   ["Support desks", ["ostickit", "zendusk", "freshdusk", "freescoot"]],
@@ -75,7 +74,6 @@ function Action({ item, big }: { item: StoreItem; big?: boolean }) {
   const cls = `ps-get${big ? " big" : ""}`;
   const skill = skillFor(item.id);
   if (skill && !isAvailable(item.id, game.unlocks)) return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Research", { kind: "skill", id: skill.id }); }}>Needs {skill.name}</button>;
-  if (!game.installed.includes(item.id) && storeBlocker(game, item.id) === "error.needsHypervisor") return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Products", { kind: "cluster", id: "new" }); }}>Needs hypervisor</button>;
   if (item.kind === "desk" && !game.installed.includes(item.id) && !deskReady(game, item.id)) return <button className={cls} disabled>From {deskById(item.id)!.from}</button>;
   if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act(install, item.id); }}>Get</button>;
   if (item.kind !== "app") return <span className="ps-owned"><Check />Installed</span>;
@@ -146,7 +144,7 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
     ["Subscription", price],
     ...(item.perSeat ? [["Seats", String(seats(game))] as [string, string]] : []),
     ["Skill", skillFor(item.id)?.name ?? "None"],
-    ["Status", has ? "Installed" : item.kind === "desk" && !deskReady(game, item.id) ? "Not on sale yet" : !isAvailable(item.id, game.unlocks) ? "Not learned" : storeBlocker(game, item.id) ? "Needs hypervisor" : "Available"],
+    ["Status", has ? "Installed" : item.kind === "desk" && !deskReady(game, item.id) ? "Not on sale yet" : !isAvailable(item.id, game.unlocks) ? "Not learned" : "Available"],
   ];
   return (
     <div className="ps">

@@ -9,7 +9,7 @@ import { useFocus, useStore } from "../../store";
 import { readyIn } from "../hw";
 import { AddLocation } from "./AddLocation";
 import { Cabling } from "./Cabling";
-import { BookedMeters, Clusters } from "./Clusters";
+import { BookedMeters } from "./Clusters";
 import { CarrierPanel, Floor } from "./Floor";
 import { HomeLinePanel } from "./HomeLine";
 import { Inspector } from "./Inspector";
@@ -22,7 +22,7 @@ import { Storage } from "./Storage";
 import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, Zone } from "./ui";
 import { REGIONS } from "../../../sim/20-world/datacenters";
 
-type Tab = "floor" | "cabling" | "storage" | "clusters" | "line";
+type Tab = "floor" | "cabling" | "storage" | "line";
 
 // view: null is the overview, "waitlist" the waitlist, otherwise a location id.
 export function LocationsApp() {
@@ -94,8 +94,6 @@ export function LocationsApp() {
                 <Cabling key={loc.id} game={game} loc={loc} />
               ) : tab === "storage" ? (
                 <div className="loc-scroll"><Storage game={game} loc={loc} onMounted={(r, d) => { go(loc.id, r); setDeviceId(d); }} /></div>
-              ) : tab === "clusters" ? (
-                <div className="loc-scroll"><Clusters game={game} loc={loc} /></div>
               ) : tab === "line" ? (
                 <div className="loc-scroll"><HomeLinePanel game={game} /></div>
               ) : rack ? (
@@ -126,7 +124,6 @@ function LocationTabs({ game, locId, tab, onTab }: { game: GameState; locId: str
   const stored = storageStacks(game, loc.id).reduce((n, s) => n + s.ids.length, 0);
   const tabs: [Tab, string, number?][] = [
     ["floor", "Floor"], ["cabling", "Cabling"], ["storage", "Storage", stored],
-    ["clusters", "Clusters", game.clusters.filter((c) => c.az === loc.az).length],
     ...(loc.space === "basement" ? [["line", "Internet line"] as [Tab, string]] : []),
   ];
   return (

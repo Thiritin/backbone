@@ -11,7 +11,7 @@ import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { More } from "../More";
 import { useHandWork, type HandTask } from "./HandSheet";
-import { VM_STATE, vmLabel, vmState } from "../products/parts";
+import { consoleEntry, VM_STATE, vmLabel, vmState } from "../products/parts";
 
 type Sort = "vcpu" | "ramGb" | "diskGb";
 const SORTS: [Sort, string][] = [["vcpu", "CPU"], ["ramGb", "RAM"], ["diskGb", "Disk"]];
@@ -32,7 +32,7 @@ function Gauge({ icon, used, max, unit, label, fixed }: { icon: ReactNode; used:
 
 const share = (u: Resources, w: Workload, k: Sort) => (w[k] ? u[k] / w[k] : 0);
 
-// The workloads of a cluster node, busiest first, each with a menu to move, stop or start it or open it in Virtual machines.
+// The workloads of a cluster node, busiest first, each with a menu to move, stop or start it or open its web console.
 export function NodeWorkloads({ game, deviceId }: { game: GameState; deviceId: string }) {
   const [sort, setSort] = useState<Sort>("vcpu");
   const loads = workloadsOn(game, deviceId).filter((w) => w.clusterId).map((w) => ({ w, u: workloadUse(game, w) }));
@@ -111,7 +111,7 @@ export function workloadMenu(game: GameState, w: Workload, start: (game: GameSta
     ...offerEntries(game, w),
     w.stopped ? { label: "Start", run: () => act(startWorkload, w.id) } : { label: "Stop", run: () => act(stopWorkload, w.id) },
     null,
-    { label: "Open in Virtual machines", run: () => openApp("Virtual machines", { kind: "workload", id: w.id }) },
+    consoleEntry(game, w.clusterId),
     !!customer && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: customer }) },
   ];
 }

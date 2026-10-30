@@ -9,7 +9,7 @@ import { anchorOf, type Cluster } from "../../sim/60-infra/cluster";
 import { advisoryNodes, ADVISORY_KEYS, MONITORING, patchOut, STAGE_HOURS, vulnById, vulnerable, webOn } from "../../sim/60-infra/security";
 import { phpDue, upgradePhp } from "../../sim/90-actions/clusters";
 import { urgentSoftware, type Severity } from "../../sim/60-infra/vulns";
-import { cleanUp } from "../../sim/90-actions/security";
+import { cleanUp, setSitesOffline } from "../../sim/90-actions/security";
 import { updateSoftware } from "../../sim/90-actions/software";
 import { updateFirmware } from "../../sim/90-actions/remote";
 import { exposedDevices, firmwareDue, firmwareVulns } from "../../sim/60-infra/oob";
@@ -20,13 +20,21 @@ import { devName } from "./hw";
 import { TechButton } from "./locations/TechButton";
 import { MonitoringTab } from "./Monitoring";
 import { More } from "./More";
-import { sitesMenu } from "./products/PanelHosts";
+import { IncidentReports } from "./products/parts";
 
 // The advisory's current stage title, and the hour its patch is due.
 export const advisoryOf = (game: GameState) => {
   const v = vulnById(game.security.vuln);
   return v && { title: t(`${ADVISORY_KEYS[game.security.stage]}.title`), patchAt: formatClock(v.at + STAGE_HOURS[3]), versions: v.versions.join(", ") };
 };
+
+// Taking a panel host's sites offline, back online, or cleaning them up after a breach.
+export function sitesMenu(game: GameState, host: Cluster): MenuEntry[] {
+  const act = useStore.getState().act, sec = game.security;
+  if (sec.hacked.includes(host.id)) return [{ label: "Clean up sites", run: () => act(cleanUp, host.id) }];
+  const off = sec.offline.includes(host.id);
+  return [{ label: off ? "Bring sites online" : "Take sites offline", run: () => act(setSitesOffline, host.id, !off) }];
+}
 
 function NodeRow({ game, n }: { game: GameState; n: Cluster }) {
   const act = useStore((s) => s.act);
@@ -163,25 +171,26 @@ function ManagementCard({ game }: { game: GameState }) {
 export function SecurityApp() {
   const game = useStore((s) => s.game);
   const a = advisoryOf(game), nodes = advisoryNodes(game);
-  const [tab, setTab] = useState<"advisories" | "monitoring">("advisories");
+  const [tab, setTab] = useState<"advisories" | "incidents" | "monitoring">("advisories");
   const card = useRef<HTMLElement>(null);
-  const monitored = game.installed.includes(MONITORING), view = monitored ? tab : "advisories";
+  const monitored = game.installed.includes(MONITORING), view = monitored || tab !== "monitoring" ? tab : "advisories";
+  const open = game.lossReports.filter((r) => r.items.some((i) => !i.restored)).length;
   useFocus("Security", (f) => {
-    if (f.kind === "tab" && f.id === "monitoring") setTab("monitoring");
+    if (f.kind === "tab" && (f.id === "monitoring" || f.id === "incidents")) setTab(f.id);
     if (f.kind === "card" && f.id === "software") { setTab("advisories"); requestAnimationFrame(() => card.current?.scrollIntoView({ block: "start" })); }
   });
   return (
     <div className="fin">
       <div className="fin-main">
-        {monitored && (
-          <div className="vm-tools">
-            <div className="seg" role="group" aria-label="View">
-              <button aria-pressed={view === "advisories"} onClick={() => setTab("advisories")}>Advisories</button>
-              <button aria-pressed={view === "monitoring"} onClick={() => setTab("monitoring")}>Monitoring</button>
-            </div>
+        <div className="vm-tools">
+          <div className="seg" role="group" aria-label="View">
+            <button aria-pressed={view === "advisories"} onClick={() => setTab("advisories")}>Advisories</button>
+            <button aria-pressed={view === "incidents"} onClick={() => setTab("incidents")}>Incidents{open > 0 && <> <span className="num">{open}</span></>}</button>
+            {monitored && <button aria-pressed={view === "monitoring"} onClick={() => setTab("monitoring")}>Monitoring</button>}
           </div>
-        )}
+        </div>
         {view === "monitoring" && <div className="fin-scroll"><MonitoringTab game={game} /></div>}
+        {view === "incidents" && <div className="fin-scroll"><IncidentReports game={game} /></div>}
         {view === "advisories" && a && (
           <div className="vm-tools">
             <b>{a.title}</b>

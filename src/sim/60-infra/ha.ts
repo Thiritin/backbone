@@ -37,8 +37,8 @@ function failover(s: GameState, c: Cluster, events: SimEvent[]) {
     for (const id of servicesIn(s, w)) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + FAILOVER_MINUTES / 60 };
     moved++;
   }
-  if (moved) events.push({ app: "Virtual machines", key: "event.failedOver", params: { cluster: c.name, count: moved, web: c.kind === "panel" ? 1 : 0 } });
-  if (stuck) events.push({ app: "Virtual machines", key: "event.failoverStuck", params: { cluster: c.name, count: stuck, web: c.kind === "panel" ? 1 : 0 } });
+  if (moved) events.push({ app: "Locations", key: "event.failedOver", params: { cluster: c.name, count: moved, web: c.kind === "panel" ? 1 : 0 } });
+  if (stuck) events.push({ app: "Locations", key: "event.failoverStuck", params: { cluster: c.name, count: stuck, web: c.kind === "panel" ? 1 : 0 } });
 }
 
 // A node runs hot when its RAM in use nears the installed RAM or its busy vCPUs outnumber its cores.

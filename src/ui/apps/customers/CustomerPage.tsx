@@ -1,7 +1,6 @@
-import { ChevronLeft, Contact, Cpu, FileText, Globe, History, LifeBuoy, ListChecks, Receipt, Server } from "lucide-react";
+import { ChevronLeft, Contact, FileText, Globe, History, LifeBuoy, ListChecks, Receipt, Server } from "lucide-react";
 import { useId, useState } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
-import { isService } from "../../../sim/10-catalog/platforms";
 import type { Customer, Profile, Service } from "../../../sim/30-customers/customers";
 import { fqdn } from "../../../sim/30-customers/domains";
 import { referenceFor } from "../../../sim/30-market/market";
@@ -15,7 +14,8 @@ import { renewDomain } from "../../../sim/90-actions/orders";
 import { changePrice } from "../../../sim/90-actions/sales";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { More } from "../More";
-import { workloadActions } from "../vms/VmApp";
+import { workloadActions } from "../vms/migrate";
+import { consoleEntry } from "../products/parts";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
@@ -91,7 +91,6 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   const [pricing, setPricing] = useState<string | null>(null);
   const [crediting, setCrediting] = useState(false);
   const { c } = r;
-  const vms = game.installed.includes("Virtual machines");
   const services = game.services.filter((v) => v.customerId === c.id).sort((a, b) => Number(a.endedAt !== null) - Number(b.endedAt !== null) || b.startedAt - a.startedAt);
   const invoices = game.invoices.filter((i) => i.customerId === c.id).reverse();
   const domains = game.domains.filter((d) => d.customerId === c.id);
@@ -101,14 +100,12 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   const openTicket = (id: string) => openApp("Support", { kind: "ticket", id });
   const serviceMenu = (v: Service) => (): MenuEntry[] => {
     const w = v.endedAt === null ? game.workloads.find((x) => x.serviceId === v.id) : undefined;
-    const kind = w && game.clusters.find((x) => x.id === w.clusterId)?.kind;
     return [
       v.endedAt === null && v.period === "hour" && { label: "Change price", run: () => { setTab("services"); setPricing(v.id); } },
       null,
       ...(w ? workloadActions(game, w) : []),
       null,
-      w && (kind === "cloud" || (!!kind && isService(kind))) && vms && { label: "Open in Virtual machines", run: () => openApp("Virtual machines", { kind: "workload", id: w.id }) },
-      w && kind === "panel" && { label: "Open panel host", run: () => openApp("Products", { kind: "cluster", id: w.clusterId! }) },
+      w && consoleEntry(game, w.clusterId),
     ];
   };
   const held = game.heldCustomers.includes(c.id);
@@ -256,7 +253,6 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
 
         {tab === "services" && (
           <>
-            {vms && <div className="fin-actions"><button className="btn" onClick={() => openApp("Virtual machines")}><Cpu />Open Virtual machines</button></div>}
             <div className="cus-services">
               {services.map((v) => (
                 <section key={v.id} className={`fin-card${v.endedAt !== null ? " cus-ended" : ""}`} onContextMenu={menuOn(serviceMenu(v))}>

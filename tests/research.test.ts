@@ -17,7 +17,7 @@ describe("research", () => {
   it("is a tree: every prerequisite exists in an earlier tier and every gated item has one skill", () => {
     for (const k of SKILLS) for (const n of k.needs) expect(skillById(n)!.tier).toBeLessThan(k.tier);
     expect(new Set(SKILLS.map((k) => k.tier)).size).toBeGreaterThanOrEqual(3);
-    for (const id of ["Products", "Staff", "Marketing", "Market", "Nagiosaurus"]) expect(SKILLS.filter((k) => k.opens.includes(id))).toHaveLength(1);
+    for (const id of ["Staff", "Marketing", "Market", "Nagiosaurus"]) expect(SKILLS.filter((k) => k.opens.includes(id))).toHaveLength(1);
     for (const k of SKILLS) for (const id of k.opens) expect(STORE.some((i) => i.id === id)).toBe(true);
   });
 

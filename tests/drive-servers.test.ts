@@ -42,12 +42,11 @@ describe("driving servers to a datacenter", () => {
     for (const id of servers) expect(s.devices.find((d) => d.id === id)!.maintenance!.doneAt).toBe(s.player.until);
   });
 
-  it("renames a cluster named after the basement to the datacenter it moves to", () => {
+  it("renames an old save's cluster named after the basement to the datacenter it moves to", () => {
     const { s, dc } = world();
     const own = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     ok(mountDevice(s, own, "rack2", 4));
-    const cluster = hypervisor(s, [own]);
-    expect(s.clusters.find((c) => c.id === cluster)!.name).toBe("Basement 1");
+    const cluster = hypervisor(s, [own], "Basement 1");
     ok(moveServer(s, own, dc, "self"));
     expect(s.clusters.find((c) => c.id === cluster)!.name).toBe(`${s.locations.find((l) => l.id === dc)!.name} 1`);
   });

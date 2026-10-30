@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { softwareById } from "../src/sim/10-catalog/platforms";
-import { skillFor } from "../src/sim/10-catalog/research";
-import { install } from "../src/sim/90-actions/store";
-import { storeItem } from "../src/sim/10-catalog/store";
 import { curveLoad } from "../src/sim/10-catalog/usage";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
@@ -89,7 +86,7 @@ describe("platforms and licenses", () => {
     expect(controlPlaneUp(s, clusterById(s, swapped))).toBe(false);
     expect(err(installSoftware(s, box, "pleskit"))).toBe("error.portTaken");
     const events = Array.from({ length: softwareById("cpanic").installHours }, () => tick(s)).flat();
-    expect(events).toContainEqual({ app: "Products", key: "event.installed", params: { cluster: "Web 2", name: "cPanic" } });
+    expect(events).toContainEqual({ app: "Locations", key: "event.installed", params: { cluster: "Web 2", name: "cPanic" } });
     expect(clusterById(s, swapped).panel).toBe("cpanic");
   });
   it("scales the how-to ticket rate with the panel serving the customer", () => {
@@ -208,19 +205,6 @@ describe("backups and lost disks", () => {
   });
 });
 
-describe("Virtual machines app", () => {
-  it("is a free Pear Store app once a hypervisor is installed", () => {
-    expect(storeItem("Virtual machines")).toMatchObject({ kind: "app", monthly: 0 });
-    expect(skillFor("Virtual machines")).toBeUndefined();
-    const s = withServer(newGame(1));
-    expect(err(install(s, "Virtual machines"))).toBe("error.needsHypervisor");
-    const { s: ready } = setup();
-    const cash = ready.cash;
-    ok(install(ready, "Virtual machines"));
-    expect(ready.cash).toBe(cash);
-  });
-});
-
 describe("virtual machine actions", () => {
   it("stops and starts a VM", () => {
     const { s, cluster, cus } = setup();
@@ -255,5 +239,16 @@ describe("virtual machine actions", () => {
     ok(mountDevice(s, far, "rack9", 1));
     hypervisor(s, [far], "Far 1");
     expect(err(migrateWorkload(s, workloadsOf(s, vps)[0].id, far))).toBe("error.noZoneLink");
+  });
+});
+
+describe("no product or VM app", () => {
+  it("names a hypervisor after its server and drops the removed apps from old saves", () => {
+    const s = withServer(newGame(1));
+    const id = hypervisor(s, ["dev3"]);
+    expect(s.clusters.find((c) => c.id === id)!.name).toBe("fra1-srv-01");
+    s.installed.push("Products", "Virtual machines");
+    expect(deserialize(serialize(s)).installed).not.toContain("Products");
+    expect(deserialize(serialize(s)).installed).not.toContain("Virtual machines");
   });
 });

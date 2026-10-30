@@ -4,13 +4,13 @@ import type { Device, GameState } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { pduOf } from "../../../sim/60-infra/pdu";
 import { freeSlots, isPlugged, locationOf, travelCost } from "../../../sim/60-infra/status";
-import { joinableClusters } from "../../../sim/90-actions/software";
 import { startBurnin } from "../../../sim/90-actions/burnin";
 import { burning } from "../../../sim/60-infra/status";
-import { addNode, cordon, drain, removeNode, uncordon } from "../../../sim/90-actions/clusters";
+import { cordon, drain, removeNode, uncordon } from "../../../sim/90-actions/clusters";
 import { addSecondPsu, buyOutLease } from "../../../sim/90-actions/hardware";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
+import { consoleEntry } from "../products/parts";
 import { techItem } from "./TechButton";
 import { frontOptions, handsLabel, powerOptions, type PowerOp } from "./power";
 import type { FrontOp } from "../../../sim/60-infra/power";
@@ -66,11 +66,10 @@ function moveEntries(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
 
 // A rack device's actions, in the order of a Pear context menu: open, power, role, upgrades, then removal.
 export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
-  const { act, openApp } = useStore.getState();
+  const { act } = useStore.getState();
   const m = modelById(d.model), server = m.kind === "server";
   const cluster = server ? clusterOf(game, d.id) : undefined, node = cluster?.nodes.find((n) => n.deviceId === d.id);
   const loads = server ? workloadsOn(game, d.id) : [];
-  const joinable = server ? joinableClusters(game, d.id) : [];
   const lease = d.lease ? game.leases.find((l) => l.id === d.lease) : undefined;
   const psuPrice = d.rackId ? secondPsuPrice(d) : null;
   const busy = node && (node.state === "draining" || node.state === "maintenance");
@@ -91,11 +90,10 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
       { label: "Full, 48 hours", run: () => act(startBurnin, d.id, true) },
     ] },
     ...(server && d.rackId && ui.move ? moveEntries(game, d, ui) : []),
-    joinable.length > 0 && { label: "Join cluster", items: joinable.map((c) => ({ label: c.name, run: () => act(addNode, c.id, d.id) })) },
     node && (node.state === "active" ? { label: "Cordon", run: () => act(cordon, d.id) } : (node.state === "cordoned" || node.state === "draining") && { label: "Uncordon", run: () => act(uncordon, d.id) }),
     node && !busy && { label: "Drain", run: () => act(drain, d.id) },
     node && !busy && techItem(game, d.id, "drain"),
-    cluster && { label: `Open ${cluster.name}`, run: () => openApp("Products", { kind: "cluster", id: cluster.id }) },
+    cluster && consoleEntry(game, cluster.id),
     node && cluster && cluster.nodes.length > 1 && !loads.length && { label: "Remove from cluster", run: () => act(removeNode, d.id) },
     null,
     psuPrice !== null && { label: `Add second power supply, ${euro(psuPrice)}`, run: () => act(addSecondPsu, d.id) },

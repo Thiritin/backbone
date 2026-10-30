@@ -49,14 +49,13 @@ describe("Searchlight in the store", () => {
 describe("search", () => {
   it("finds machines, customers and sites and opens them in their apps", () => {
     const s = readyGame(3);
-    s.installed.push("Virtual machines");
     s.company.domain = "example.test";
     expect(createVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, { vcpu: 1, ramGb: 1, diskGb: 10 }).ok).toBe(true);
     const cus = addCustomer(s, "Zelda Flowers", "private");
     const tk = createTicket(s, s.customers.find((c) => c.id === cus)!, "howTo", null, "email");
 
     const vm = search(s, "vm001").find((h) => h.group === "Machines")!;
-    expect(vm).toMatchObject({ app: "Virtual machines", target: { kind: "workload" } });
+    expect(vm).toMatchObject({ app: "Locations", target: { kind: "device" } });
     expect(search(s, "node001").find((h) => h.group === "Machines")).toMatchObject({ app: "Locations", target: { kind: "device" } });
     expect(search(s, "zelda")[0]).toMatchObject({ group: "Customers", app: "Customers", target: { kind: "customer", id: cus } });
     expect(search(s, fqdn(s, "vm001")).find((h) => h.group === "Sites and consoles")).toMatchObject({ app: "Browser", target: { kind: "url", id: fqdn(s, "vm001") } });

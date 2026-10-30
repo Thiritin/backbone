@@ -16,7 +16,7 @@ const files = (dir: string): string[] =>
 function emitted(): [string, string][] {
   const pairs = new Set(files("src/sim").flatMap((f) => [...readFileSync(f, "utf8").matchAll(/app: "([A-Za-z ]+)", key: "(event\.[A-Za-z.]+)"/g)].map((m) => `${m[1]}|${m[2]}`)));
   const extra: [string, string][] = [
-    ["Support", "event.gridDark"], ["Support", "event.gridCarried"], ["Support", "event.feedDark"], ["Support", "event.feedCarried"], ["Staff", "event.techInstalled"], ["Staff", "event.techRemoved"], ["Security", "event.vulnOpen"], ["Security", "event.vulnCritical"], ["Products", "event.installed"], ["Products", "event.switched"],
+    ["Support", "event.gridDark"], ["Support", "event.gridCarried"], ["Support", "event.feedDark"], ["Support", "event.feedCarried"], ["Staff", "event.techInstalled"], ["Staff", "event.techRemoved"], ["Security", "event.vulnOpen"], ["Security", "event.vulnCritical"], ["Locations", "event.installed"], ["Locations", "event.switched"],
     ...ADVISORY_KEYS.map((k) => ["Security", k] as [string, string]),
     ...Array.from({ length: BOT_INCIDENTS }, (_, i) => ["Staff", `event.botIncident${i + 1}`] as [string, string]),
     ...NEWS.map((d) => ["News", d.key] as [string, string]), ["News", "event.news.line"], ["News", "event.news.release"],
