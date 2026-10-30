@@ -1,7 +1,7 @@
 import { chance } from "../00-core/rng";
 import { dateOf, isMonthStart, nowHours, yearOf } from "../00-core/time";
 import { isService, softwareById } from "../10-catalog/platforms";
-import { BACKUP_HOUR } from "../10-catalog/usage";
+import { BACKUP_HOUR, slowTolerance } from "../10-catalog/usage";
 import { APP_SUITE_FEE, licensingAt, SERVER_OS, serverOsAt, serverOsById, type LicenseEra, type LicenseKind, type ServerOsId } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
@@ -246,7 +246,9 @@ function overload(s: GameState) {
     if (perf >= 1) continue;
     const cus = v && customerCopy(s, v.customerId);
     if (!v || !cus) continue;
-    slowed(s, cus, v.id, 1 - perf);
+    // Customers notice only the slowdown past what they expect from what they run.
+    const lost = 1 - perf - slowTolerance(s.seed, v.product, cus.profile, cus.id);
+    if (lost > 0) slowed(s, cus, v.id, lost);
   }
 }
 

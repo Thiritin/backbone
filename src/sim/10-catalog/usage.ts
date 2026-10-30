@@ -73,6 +73,13 @@ export function nightJob(seed: number, customerId: string, hour: number): number
   return Math.max(0, Math.min(h + 1, start + 1) - Math.max(h, start));
 }
 
+// economy.md, "How the first build plays": share of performance a service can lose before its customer notices, by what it
+// runs. Each customer's own expectation scales it by 0.5 to 1.5.
+export const SLOW_TOLERANCE: Record<CurveId, number> = { game: 0.05, shop: 0.1, enterprise: 0.1, news: 0.15, vpn: 0.15, business: 0.2, blog: 0.25, dev: 0.35, backup: 0.6 };
+const TOLERANCE_SALT = -4;
+export const slowTolerance = (seed: number, product: Product, profile: Profile, customerId: string): number =>
+  SLOW_TOLERANCE[curveFor(product, profile)] * (0.5 + rand(hashRng(seed, idNum(customerId), TOLERANCE_SALT)));
+
 // Disk and CPU grow at rates drawn separately: a big database and a busy shop are different customers.
 export function growthRate(seed: number, customerId: string, kind: "disk" | "cpu"): number {
   let r = rand(hashRng(seed, idNum(customerId), kind === "disk" ? DISK_SALT : CPU_SALT));

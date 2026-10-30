@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Customers now notice a slow server only past what they expect from what they run, so a light overcommit goes unnoticed by backup and mirror customers while game server players complain early.
 - Every applicant on the Sponsor-Bored board is now a different person with their own project, and the board runs out of applicants once all of them have an open application or a running sponsorship.
 - A server can run several software at once, each with its own console on its own port, as long as none of them share a port.
 - Pasting several commands into a console or the Terminal runs them in order, apt prints its progress as the install runs, and the site index lists your consoles before you own a domain.
