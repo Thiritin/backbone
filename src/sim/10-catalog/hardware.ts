@@ -447,8 +447,9 @@ export const isOfficeRouter = (m: DeviceModel): boolean => m.kind === "gateway" 
 export const jacksOf =(m: DeviceModel): number => m.ports.length / 2;
 // Jacks on a 24-port panel; use jacksOf for the 48-port panels.
 export const PATCH_JACKS = 24;
+const MODEL_INDEX = new Map(MODELS.map((m) => [m.id, m]));
 export const modelById = (id: string): DeviceModel => {
-  const m = MODELS.find((x) => x.id === id);
+  const m = MODEL_INDEX.get(id);
   if (!m) throw new Error(`unknown model ${id}`);
   return m;
 };

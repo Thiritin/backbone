@@ -76,7 +76,7 @@ function gatewayCap(s: GameState, start: End, origin: string): number | null {
 }
 
 // A device is online when it has power and a cable path through powered switches and patch panels reaches a gateway.
-export function linkStatus(s: GameState, deviceId: string): LinkStatus {
+function computeLinkStatus(s: GameState, deviceId: string): LinkStatus {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d || !working(s, d.id)) return { online: false, gbit: 0, warning: null };
   const ports = modelById(d.model).ports;
@@ -243,7 +243,7 @@ export const drawWatts = (d: Device, busy: Set<string | null>): number => {
 const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);
 
 // ponytail: a device draws its rated power, or its idle power when it runs no workload; no finer load-based draw.
-export function rackPower(s: GameState, rackId: string): { watts: number; limitWatts: number; tripped: boolean } {
+function computeRackPower(s: GameState, rackId: string): RackPower {
   const rack = s.racks.find((r) => r.id === rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
   if (!rack || !loc) return { watts: 0, limitWatts: 0, tripped: false };
@@ -258,8 +258,27 @@ export function rackPower(s: GameState, rackId: string): { watts: number; limitW
   return { watts, limitWatts, tripped: watts > limitWatts };
 }
 
+// Link and rack power results memoised for one sweep. Only for code that reads the infrastructure and never changes it.
+type RackPower = { watts: number; limitWatts: number; tripped: boolean };
+let memo: { s: GameState; link: Map<string, LinkStatus>; power: Map<string, RackPower> } | null = null;
+export function readOnlySweep<T>(s: GameState, fn: () => T): T {
+  if (memo) return fn();
+  memo = { s, link: new Map(), power: new Map() };
+  try { return fn(); } finally { memo = null; }
+}
+const memoised = <V>(s: GameState, key: string, pick: (m: NonNullable<typeof memo>) => Map<string, V>, compute: () => V): V => {
+  if (memo?.s !== s) return compute();
+  const map = pick(memo);
+  const hit = map.get(key);
+  if (hit !== undefined) return hit;
+  const v = compute();
+  map.set(key, v);
+  return v;
+};
+export const linkStatus = (s: GameState, deviceId: string): LinkStatus => memoised(s, deviceId, (m) => m.link, () => computeLinkStatus(s, deviceId));
+export const rackPower = (s: GameState, rackId: string): RackPower => memoised(s, rackId, (m) => m.power, () => computeRackPower(s, rackId));
+
 // Stored devices, devices in a moving or tripped rack and devices in a location that is not ready have no power.
-// ponytail: recomputes the rack's draw per call, O(devices) each; cache per tick if large fleets get slow.
 export const EXTRA_CIRCUIT_KW = 3;
 
 export const isDrive = (c: Component): boolean => c.kind === "hdd" || c.kind === "ssd" || c.kind === "nvme";
