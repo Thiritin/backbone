@@ -1,4 +1,4 @@
-import { monthNet, pickSound, playSound, soundFor, type Sound, type UiSound } from "./sounds";
+import { monthNet, pickSound, playSound, soundFor, WINDOW_MS, type Sound, type UiSound } from "./sounds";
 import { useEffect } from "react";
 import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
@@ -142,10 +142,11 @@ function savePrefs(notify: Record<string, Partial<NotifyPref>>, sound: SoundPref
 
 // Sounds queued during one advance or action play together once it returns.
 export const uiSound = (kind: UiSound) => {
-  const { on, volume } = useStore.getState().sound;
-  if (on) playSound(kind, volume);
+  const { sound: { on, volume }, game } = useStore.getState();
+  if (on) playSound(kind, volume, false, game.os);
 };
 const pending = new Set<Sound>(), lastPlayed: Partial<Record<Sound, number>> = {};
+let lastBanner = -Infinity;
 
 function loadTheme(): Theme {
   try {
@@ -223,7 +224,11 @@ export const useStore = create<Store>((set, get) => ({
     if (!name) console.error(`${fn.name || "An action"} is not in ACTIONS, so replays miss it.`);
     const r = name ? runAction(game, name, args) : fn(game, ...args);
     if (r.ok) set({ game });
-    else get().notify("Settings", t("action.failed.title"), t(r.error));
+    else {
+      uiSound("error");
+      lastBanner = Date.now();
+      get().notify("Settings", t("action.failed.title"), t(r.error));
+    }
     return r;
   },
   setSpeed: (speed) => set({ speed }),
@@ -262,7 +267,10 @@ export const useStore = create<Store>((set, get) => ({
     uiSound("close");
     set(({ windows }) => ({ windows: windows.filter((w) => w.id !== id) }));
   },
-  minimize: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, minimized: true } : w)) })),
+  minimize: (id) => {
+    uiSound("minimize");
+    set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, minimized: true } : w)) }));
+  },
   toggleZoom: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, zoomed: !w.zoomed } : w)) })),
   place: (id, box) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, ...box } : w)) })),
 
@@ -290,6 +298,9 @@ export const useStore = create<Store>((set, get) => ({
         playSound(pick, sound.volume, pick === "month" && monthNet(game.ledger, game.hour) > 0);
       });
       pending.add(kind);
+    } else if (!kind && pref.sound && get().sound.on && !globalThis.document?.hidden && Date.now() - lastBanner >= WINDOW_MS) {
+      lastBanner = Date.now();
+      uiSound("banner");
     }
     const b = { id: ++bannerId, app, title, text, hour: get().game.hour, key };
     set(({ banners, history, unseen }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
@@ -310,11 +321,13 @@ export const useStore = create<Store>((set, get) => ({
   },
   startGame: () => {
     set({ ...fresh(), game: newCompany(Date.now() >>> 0), started: true });
+    uiSound("startup");
     get().openApp("Getting started");
     get().save();
   },
   startChallenge: () => {
     set({ ...fresh(), game: newChallenge(weeklyChallenge(new Date()).id), started: true });
+    uiSound("startup");
     get().openApp("Getting started");
     get().save();
   },
@@ -322,6 +335,7 @@ export const useStore = create<Store>((set, get) => ({
     try {
       const game = deserialize(raw);
       set({ ...fresh(), game, started: true });
+      uiSound("startup");
     } catch {
       get().notify("Settings", t("save.importFailed.title"), t("save.importFailed.text"));
       return;

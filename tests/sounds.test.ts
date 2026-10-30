@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { humOf, monthNet, pickSound, soundFor, WINDOW_MS } from "../src/ui/sounds";
+import { humOf, monthNet, pickSound, soundFor, voiceOf, WINDOW_MS } from "../src/ui/sounds";
+import { OS_RELEASES } from "../src/sim/10-catalog/os";
 import { newGame } from "../src/sim/50-state";
 import { withServer } from "./fixtures";
 import { hourOf } from "../src/sim/00-core/time";
@@ -39,5 +40,11 @@ describe("sounds", () => {
     expect(humOf(s, ["rack2"]).pitch).toBeGreaterThan(base.pitch);
     for (const d of s.devices) for (const c of d.components) if (c.kind === "psu") c.failedAt = s.hour;
     expect(humOf(s, ["rack2"]).level).toBe(0);
+  });
+
+  it("voices every Pear OS era differently and falls back to the first", () => {
+    const voices = OS_RELEASES.map((r) => JSON.stringify(voiceOf(r.id)));
+    expect(new Set(voices).size).toBe(OS_RELEASES.length);
+    expect(voiceOf("unknown")).toEqual(voiceOf(OS_RELEASES[0].id));
   });
 });

@@ -10,7 +10,7 @@ import { dateOf, formatClock, SKIP, SPEEDS, type Speed } from "../../sim/00-core
 import { euro } from "../../sim/00-core/money";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../sim/90-actions/travel";
-import { useStore, type Win } from "../store";
+import { uiSound, useStore, type Win } from "../store";
 import { CompanyMark } from "../apps/company";
 import { appFor } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
@@ -54,7 +54,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   const item = (label: string, items: [string, () => void][], face: ReactNode = label, cls = "") => (
     <div className="mb-menu" onPointerDown={(e) => e.stopPropagation()}>
-      <button className={`mb-item ${cls}`} aria-label={label} aria-expanded={menu === label} onClick={() => setMenu(menu === label ? null : label)}>{face}</button>
+      <button className={`mb-item ${cls}`} aria-label={label} aria-expanded={menu === label} onClick={() => { if (menu !== label) uiSound("menu"); setMenu(menu === label ? null : label); }}>{face}</button>
       {menu === label && items.length > 0 && (
         <div className="mb-drop" role="menu">
           {items.map(([l, fn], i) => <button key={i} role="menuitem" onClick={() => { fn(); setMenu(null); }}>{l}</button>)}

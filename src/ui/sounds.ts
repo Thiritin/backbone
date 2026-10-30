@@ -7,7 +7,18 @@ import { dateOf, hourOf } from "../sim/00-core/time";
 // Highest priority first: one batch of events plays only its top sound.
 export const SOUNDS = ["month", "warn", "level", "research", "money", "ticket"] as const;
 export type Sound = (typeof SOUNDS)[number];
-export type UiSound = "open" | "close" | "key" | "thump";
+export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup";
+
+// How each Pear OS era voices the desktop sounds: glassy and long early on, flat and short in the middle years, soft and airy later.
+export interface Voice { wave: OscillatorType; len: number; lift: number; glass: number; air: number }
+const VOICES: Record<string, Voice> = {
+  aqua: { wave: "sine", len: 1.4, lift: 1, glass: 0.5, air: 0 },
+  leopard: { wave: "sine", len: 1.2, lift: 1, glass: 0.35, air: 0 },
+  yosemite: { wave: "triangle", len: 0.7, lift: 0.9, glass: 0, air: 0 },
+  bigsur: { wave: "sine", len: 0.9, lift: 0.8, glass: 0, air: 0.4 },
+  tahoe: { wave: "sine", len: 0.9, lift: 0.85, glass: 0.15, air: 0.6 },
+};
+export const voiceOf = (era: string): Voice => VOICES[era] ?? VOICES.aqua;
 
 const BY_KEY: Record<string, Sound> = {
   "event.monthStart": "month",
@@ -68,6 +79,26 @@ function tone(c: AudioContext, out: AudioNode, hz: number, at: number, dur: numb
   o.stop(at + dur + 0.02);
 }
 
+function note(c: AudioContext, out: AudioNode, v: Voice, hz: number, at: number, dur: number, peak: number) {
+  tone(c, out, hz * v.lift, at, dur * v.len, peak, v.wave);
+  if (v.glass) tone(c, out, hz * v.lift * 2.01, at, dur * v.len * 0.6, peak * v.glass);
+  if (v.air) rattle(c, out, at, peak * v.air, hz * v.lift * 3, 0.04 * v.len);
+}
+
+// Noise whose band glides from one pitch to another: a window swooshing into the dock.
+function sweep(c: AudioContext, out: AudioNode, from: number, to: number, at: number, secs: number, peak: number) {
+  const len = Math.floor(c.sampleRate * secs), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.sin((Math.PI * i) / len);
+  const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+  src.buffer = buf;
+  bp.type = "bandpass";
+  bp.frequency.setValueAtTime(from, at);
+  bp.frequency.exponentialRampToValueAtTime(to, at + secs);
+  g.gain.value = peak;
+  src.connect(bp).connect(g).connect(out);
+  src.start(at);
+}
+
 // A short band-passed noise burst: the drawer of a cash register, or at a short length and other pitch a key press.
 function rattle(c: AudioContext, out: AudioNode, at: number, peak: number, hz = 3200, secs = 0.06) {
   const len = Math.floor(c.sampleRate * secs), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
@@ -81,7 +112,7 @@ function rattle(c: AudioContext, out: AudioNode, at: number, peak: number, hz = 
   src.start(at);
 }
 
-export function playSound(kind: Sound | UiSound, volume: number, profit = false): void {
+export function playSound(kind: Sound | UiSound, volume: number, profit = false, era = "aqua"): void {
   const c = audio();
   if (!c || volume <= 0) return;
   try {
@@ -120,7 +151,29 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false)
         break;
       case "open":
       case "close":
-        tone(c, out, kind === "open" ? 1700 : 1200, t, 0.05, 0.012);
+        note(c, out, voiceOf(era), kind === "open" ? 1700 : 1200, t, 0.05, 0.012);
+        break;
+      case "minimize":
+        sweep(c, out, 2400, 500, t, 0.25 * voiceOf(era).len, 0.05);
+        break;
+      case "menu":
+        note(c, out, voiceOf(era), 2600, t, 0.02, 0.008);
+        break;
+      case "banner":
+        note(c, out, voiceOf(era), 1320, t, 0.12, 0.02);
+        note(c, out, voiceOf(era), 1760, t + 0.06, 0.18, 0.018);
+        break;
+      case "error":
+        note(c, out, voiceOf(era), 196, t, 0.2, 0.06);
+        note(c, out, voiceOf(era), 147, t + 0.09, 0.3, 0.06);
+        break;
+      case "trash":
+        // Paper crumpling: a handful of short rustles.
+        for (let i = 0; i < 6; i++) rattle(c, out, t + i * 0.045 + Math.random() * 0.02, 0.04, 1500 + Math.random() * 3500, 0.035);
+        break;
+      case "startup":
+        // A wide major chord, the voice of the era the desktop runs.
+        [174.6, 220, 261.6, 349.2, 523.3].forEach((hz, i) => note(c, out, voiceOf(era), hz, t + i * 0.008, 2, 0.03));
         break;
       case "key":
         rattle(c, out, t, 0.05, 1800 + Math.random() * 1400, 0.018);

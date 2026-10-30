@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import type { Speed } from "../../sim/00-core/time";
 import { latestOs, type OsRelease } from "../../sim/10-catalog/os";
 import { updateOs } from "../../sim/90-actions/os";
-import { useStore } from "../store";
+import { uiSound, useStore } from "../store";
 
 const INSTALL_MS = 8000;
 
@@ -55,7 +55,7 @@ function Install({ release, host, onDone }: { release: OsRelease; host: Element;
     const id = setInterval(() => setProgress(Math.min(1, (performance.now() - begin) / INSTALL_MS)), 100);
     return () => clearInterval(id);
   }, []);
-  useEffect(() => { if (done) act(updateOs); }, [done, act]);
+  useEffect(() => { if (done && act(updateOs).ok) uiSound("startup"); }, [done, act]);
   return createPortal(
     <div ref={ref} className="os-install" role="alertdialog" aria-label={`Installing Pear OS ${release.version}`} tabIndex={-1}>
       {done ? (

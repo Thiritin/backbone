@@ -2,6 +2,7 @@ import { Check, ChevronRight } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { create } from "zustand";
+import { uiSound } from "../store";
 import { place, step, tidy, type MenuEntry, type MenuItem } from "./menu";
 
 export type { MenuEntry, MenuItem } from "./menu";
@@ -29,6 +30,7 @@ export function ContextMenuHost() {
   const menu = useMenu((s) => s.menu);
   useEffect(() => {
     if (!menu) return;
+    uiSound("menu");
     const outside = (e: Event) => { if (!(e.target as Element).closest?.(".ctx")) closeMenu(); };
     window.addEventListener("pointerdown", outside, true);
     window.addEventListener("wheel", outside, true);
