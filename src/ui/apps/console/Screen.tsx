@@ -113,7 +113,7 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   const dark = kind === "dark" || (via === "bmc" && d.bmcHung);
   const shown = dark ? "dark" : menu ? "menu" : kind === "setup" ? "bios" : kind;
   const onKey = (key: string) => {
-    if (shown === "post") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") setMenuFor(d.bootUntil ?? 0); }
+    if (shown === "post") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") { setMenuFor(d.bootUntil ?? 0); setPick(0); } }
     else if (shown === "stuck") { if (key === "F1") act(continueBoot, d.id); else if (key === "Delete" || key === "F2") act(enterSetup, d.id); }
     else if (shown === "bios") bios.onKey(key);
     else if (shown === "menu") {
