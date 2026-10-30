@@ -84,7 +84,7 @@ export function useLunix(game: GameState, m: Machine, version: string, loggedIn:
   const view = (
     <div className="lx-shell" onClick={() => { if (!getSelection()?.toString()) input.current?.focus(); }}>
       {shell.lines.slice(-SHELL_ROWS).map((l, i) => <div key={i}>{l.prompt && `${l.prompt} `}{l.text}</div>)}
-      <div className="lx-row">
+      <div className="lx-row" style={shell.busy ? { visibility: "hidden" } : undefined}>
         <span>{shell.prompt}&nbsp;</span>
         <input
           ref={input} value={shell.draft} aria-label="Command" spellCheck={false} autoCapitalize="off" autoComplete="off"

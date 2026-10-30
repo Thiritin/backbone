@@ -85,10 +85,8 @@ function repoAdded(s: GameState, host: string, sw: Software): boolean {
 
 // The progress lines a started install prints over its install hours, by the software's install method; a GUI install
 // shows the script's.
-const STEPS = { apt: 6, script: 10 };
 export function installLog(sw: Software): string[] {
-  const kind = sw.install.kind === "apt" ? "apt" : "script", p = { pkg: pkgOf(sw), name: sw.name, ports: sw.ports.join(", ") };
-  return Array.from({ length: STEPS[kind] }, (_, i) => t(`term.install.${kind}${i}`, p));
+  return lines(sw.install.kind === "apt" ? "term.install.apt" : "term.install.scriptLog", { pkg: pkgOf(sw), name: sw.name, ports: sw.ports.join(", ") });
 }
 
 // What a finished install prints: the address its console answers at, if it has one, and the reboot. The address is the
@@ -99,10 +97,10 @@ export function installDone(s: GameState, machineId: string, sw: Software): stri
   const url = at && typeof port === "string" ? `https://${at}${port}/` : null;
   return [t("term.install.done", { name: sw.name }), ...(url ? [t("term.install.reach", { url })] : []), t("term.install.reboot")];
 }
-// The download lines print as the install starts, the rest across its install hours.
-const atOnce = (sw: Software) => (sw.install.kind === "apt" ? 2 : 4);
-const started = (sw: Software) => installLog(sw).slice(0, atOnce(sw));
-const watching = (host: string, machineId: string, sw: Software): Watch => ({ host, install: { machineId, softwareId: sw.id, step: atOnce(sw) } });
+// The first line prints as the install starts, the rest across its install hours.
+const HEAD = 1;
+const started = (sw: Software) => installLog(sw).slice(0, HEAD);
+const watching = (host: string, machineId: string, sw: Software): Watch => ({ host, install: { machineId, softwareId: sw.id, step: HEAD } });
 
 function install(s: GameState, host: string, pkg: string, yes: boolean): CommandResult {
   const sw = SOFTWARE.find((x) => x.install.kind === "apt" && x.install.package === pkg);
@@ -142,7 +140,7 @@ export function installStep(s: GameState, w: Watch): { output: string[]; next: W
   const x = machineOf(s, machineId)?.software?.find((y) => y.id === softwareId), now = nowHours(s);
   if (!x) return { output: [], next: null };
   const done = x.doneAt === null || x.doneAt <= now;
-  const head = atOnce(sw), rest = log.length - head;
+  const head = HEAD, rest = log.length - head;
   const reached = done ? log.length : Math.min(log.length, head + Math.floor((1 - (x.doneAt! - now) / sw.installHours) * (rest + 1) + 1e-9));
   const output = log.slice(step, Math.max(step, reached));
   if (done) return { output: [...output, ...installDone(s, machineId, sw)], next: null };

@@ -42,8 +42,8 @@ describe("installing software from the shell", () => {
     const r = run(s, PROXMOCKS[2], at);
     expect(r.output).toContain("  proxmocks-ve");
     const log = installLog(softwareById("proxmocks"));
-    expect(r.output.slice(-2)).toEqual(log.slice(0, 2));
-    expect(r.output.at(-2)).toBe("Get:1 http://deb.debiant.org/debiant stable/main amd64 proxmocks-ve amd64 [48.2 MB]");
+    expect(r.output.at(-1)).toBe(log[0]);
+    expect(log).toContain("Get:8 http://deb.debiant.org/debiant stable/main amd64 proxmocks-ve amd64 [48.2 MB]");
     expect(softwareOn(s, "dev3")[0]).toMatchObject({ id: "proxmocks" });
     let w: Watch | null = r.watch[0];
     const byHour: string[][] = [];
@@ -55,7 +55,8 @@ describe("installing software from the shell", () => {
     }
     expect(w).toBeNull();
     expect(s.company.domain).toBeNull();
-    expect(byHour).toEqual([[log[2]], [log[3], log[4]], [log[5], "Proxmocks installation complete.", `You can access your new installation at https://${privateIp(s, "dev3")}:8006/`, "Reboot now to finish the installation."]]);
+    expect(byHour.every((h) => h.length > 0)).toBe(true);
+    expect(byHour.flat()).toEqual([...log.slice(1), "Proxmocks installation complete.", `You can access your new installation at https://${privateIp(s, "dev3")}:8006/`, "Reboot now to finish the installation."]);
     expect(clusterOf(s, "dev3")?.platform).toBe("proxmocks");
     expect(text(s, "dpkg -l", at)).toMatch(/ii {2}proxmocks-ve +2017 +amd64 +Proxmocks/);
   });
@@ -80,7 +81,7 @@ describe("installing software from the shell", () => {
     const { s, at } = server();
     const line = softwareById("cpanic").install.commands[0].replace(/ /g, "   ");
     const r = run(s, ` ${line} `, at);
-    expect(r.output).toEqual(["Starting the cPanic installer ...", ...installLog(softwareById("cpanic")).slice(0, 4)]);
+    expect(r.output).toEqual(["Starting the cPanic installer ...", installLog(softwareById("cpanic"))[0]]);
     expect(softwareOn(s, "dev3")[0]).toMatchObject({ id: "cpanic" });
     expect(text(s, "curl -o latest -L https://securedownloads.cpanic.net/latest", at)).toBe("curl: (6) Could not resolve host: securedownloads.cpanic.net");
   });

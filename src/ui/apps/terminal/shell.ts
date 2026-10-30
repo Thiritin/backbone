@@ -27,6 +27,8 @@ export function useShell(prefix: string, start: Session | null = null) {
   // Pasted lines still to run, one per render so each sees the state the last one left.
   const [queue, setQueue] = useSessionState<string[]>(`${prefix}.queue`, []);
   const recall = useRef(history.length);
+  // A running install holds the shell until it finishes, as a foreground process does.
+  const busy = watching.some((w) => w.install);
 
   useEffect(() => {
     const steps = watching.map((w) => watchStep(game, w));
@@ -66,14 +68,15 @@ export function useShell(prefix: string, start: Session | null = null) {
   };
 
   useEffect(() => {
-    if (!queue.length) return;
+    if (!queue.length || busy) return;
     const kept = draft;
     setQueue(queue.slice(1));
     submit(queue[0]);
     setDraft(kept);
-  }, [queue]);
+  }, [queue, busy]);
 
   const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
+    if (busy) { e.preventDefault(); return; }
     const text = e.clipboardData.getData("text");
     if (!/[\r\n]/.test(text)) return;
     e.preventDefault();
@@ -90,6 +93,7 @@ export function useShell(prefix: string, start: Session | null = null) {
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (busy) { e.preventDefault(); return; }
     if (e.key === "Tab") { e.preventDefault(); tab(); }
     else if (e.key === "Enter") submit();
     else if (e.key === "ArrowUp") { e.preventDefault(); walk(-1); }
@@ -100,5 +104,5 @@ export function useShell(prefix: string, start: Session | null = null) {
   const begin = (to: Session | null, shown: Line[]) => { setSession(to); setLines(shown); setCwd(null); setPending(null); setDraft(""); setOpen(null); };
 
   const prompt = pending !== null ? t("term.apt.confirm") : promptOf(session, cwd);
-  return { lines, setLines, session, setSession, draft, setDraft, open, setOpen, prompt, submit, onKeyDown, onPaste, begin };
+  return { lines, setLines, session, setSession, draft, setDraft, open, setOpen, prompt, busy, submit, onKeyDown, onPaste, begin };
 }
