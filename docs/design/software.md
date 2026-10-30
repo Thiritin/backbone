@@ -161,7 +161,7 @@ VMwhere sells the **VMwhere App Suite** (mocks the vSphere Marketplace and OVF a
 - `echo ... > /etc/apt/sources.list.d/<x>.list` lines, `wget`, `curl` and `sh` lines and the `cd ... && curl ... && sh` one-liner are matched whole (after whitespace normalisation) against the catalog's `commands`. A `script` software installs when its line runs.
 - `apt-get remove <package>` uninstalls; `dpkg -l` lists installed software with versions; `uname -a` prints the OS and version.
 - A repo line counts once its file in `/etc/apt/sources.list.d/` holds the line's `deb` entry, so it is the shell's own `echo ... >` that adds it. Packages a site installs before its own (`linux-image-openveezee`, `pdnz-backend-sqlite3`) set up at once and change nothing. A script line is matched whole before the shell splits the line at `&&`; a lone `curl`, `wget` or `sh` that matches nothing fails the way the real tool does.
-- An install the Terminal started prints three progress lines (`INSTALL_STEPS`) at a quarter, half and three quarters of its install hours, then a done line, through `watchStep`.
+- An install started from the Terminal or a console prints its download lines (`installLog`, the first two for apt, the first four for a script) with the plan, spreads the rest evenly across its install hours, and prints the done lines when it finishes, through `watchStep`.
 
 The machine's own console runs the same shell once logged in, so the Terminal and the console are two doors to one session. `src/sim/60-infra/apt.ts` grows into this; the shell stays in `shell.ts`; `runLine` is exposed per machine so the console screen can call it.
 
