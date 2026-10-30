@@ -8,6 +8,8 @@ import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { quoteOrder, setAutoOrders } from "../src/sim/90-actions/orders";
+import { buyModule } from "../src/sim/90-actions/shop";
+import { moduleFor } from "../src/sim/80-business/shop";
 import { hire } from "../src/sim/90-actions/staff";
 import { readyGame } from "./fixtures";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
@@ -117,6 +119,10 @@ describe("orders by email", () => {
     expect(setUpChannel(s, "orderForm").ok).toBe(true);
     s.unlocks = [...s.unlocks, "products", "provisioning"];
     expect(setAutoOrders(s, true).ok).toBe(true);
+    // Without a custom script for the panel the form order waits in Support.
+    const waiting = orderLead(s, "private", "Frankfurt", [], web, false);
+    expect(waiting.status).toBe("accepted");
+    expect(buyModule(s, moduleFor(s, "webHosting", targetFor(s, waiting)!.clusterId)).ok).toBe(true);
     const tickets = s.tickets.length;
     const r = orderLead(s, "private", "Frankfurt", [], web, false);
     const done = s.sales.requests.find((x) => x.id === r.id)!;

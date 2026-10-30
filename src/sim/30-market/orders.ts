@@ -4,7 +4,7 @@ import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { LINE_NAME, offerPrice, setupFee, specText } from "./spec";
 import { applyStep, AUTOMATION, canAutomate, isStep, issueInvoice, ORDER_PAY_DAYS } from "./manual";
-import { PRODUCTS } from "../10-catalog/products";
+import { PRODUCTS, type Spec } from "../10-catalog/products";
 import { inUs } from "../20-world/datacenters";
 import type { Profile } from "../30-customers/customers";
 import { profileStats, type Ticket } from "../40-support/tickets";
@@ -15,7 +15,8 @@ import { discountFor, hasOrderForm } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "../90-actions/hardware";
 import { missingFor, needFor, referenceFor, REQUEST_HOURS, requestName, senderFor, type SalesRequest } from "./market";
-import { addRequest, editRequest, fulfil, loseRequest, nextSpec, say, targetFor } from "./sales";
+import { addRequest, cancelShopOrder, editRequest, fulfil, loseRequest, nextSpec, say, targetFor } from "./sales";
+import { hasModule, moduleFor, shopActive, takeStock } from "../80-business/shop";
 import { companyParams, variant } from "../40-support/replies";
 
 // Without an order, the first one comes from a friend's recommendation within this many days of the friends joining.
@@ -42,17 +43,20 @@ function place(s: GameState, r: SalesRequest): ActionResult & { reason?: string;
   const done = fulfil(s, r);
   if (!done.ok) return { ...done, reason: "lost.noCapacity", params: { city: r.city } };
   editRequest(s, r.id, () => ({ status: "won", serviceId: done.id ?? null }));
+  if (r.shop) s.services = s.services.map((v) => (v.id === done.id ? { ...v, viaShop: true } : v));
   return done;
 }
 
 // email: the customer writes an order email and gets a quote first; otherwise the order form takes the spec at the player's
 // rates, which counts as the accepted quote. With automation switched on the form places it at once, otherwise it waits in
-// Support like an email order.
-export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour)), email = emailFor(s)): SalesRequest {
+// Support like an email order. A shop takes one unit of the line's stock.
+export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour)), email = emailFor(s), given?: Spec): SalesRequest {
   const who = senderFor(s.rng, profile, false, inUs(city)), variant = Math.floor(rand(s.rng) * 2);
-  const key = s.nextId, spec = nextSpec(s, need, profile), reference = referenceFor(s, profile, need.product, spec, need.sla), discount = discountFor(s, profile);
+  const key = s.nextId, spec = given ?? nextSpec(s, need, profile), reference = referenceFor(s, profile, need.product, spec, need.sla), discount = discountFor(s, profile);
   // One in three web customers already owns the domain they name.
   const owned = email && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
+  const shop = !email && shopActive(s);
+  if (shop) takeStock(s, need.product);
   const price = email ? reference : offerPrice(s, need.product, spec, need.sla);
   const budget = email ? ORDER_BUDGET[0] + (ORDER_BUDGET[1] - ORDER_BUDGET[0]) * rand(hashRng(s.seed, key, 263)) : 1;
   let r = addRequest(s, {
@@ -61,17 +65,24 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   }, `order.msg.${need.product}.${variant}`);
   r = editRequest(s, r.id, (x) => ({
     quote: Math.round(price * (1 - discount) * 100) / 100,
+    ...(shop && { shop: true }),
     ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0 } })) }),
   }));
   const params = { name: requestName(r), spec: specText(r.product, spec) };
-  if (!email && s.autoOrders && canAutomate(s)) {
-    const done = !missingFor(s, r).length && targetFor(s, r) ? place(s, r) : null;
+  // The form places an order itself only through the module (or custom script) for the software it lands on.
+  const auto = !email && s.autoOrders && canAutomate(s), target = auto && !missingFor(s, r).length ? targetFor(s, r) : null;
+  if (auto && (!target || hasModule(s, moduleFor(s, r.product, target.clusterId)))) {
+    const done = target ? place(s, r) : null;
     if (done?.ok) {
       formInvoice(s, r.id);
       events.push({ app: "Customers", key: "event.orderPlaced", params: { ...params, price: r.quote! } });
       return r;
     }
     // Without email orders, an order the form cannot place goes elsewhere.
+    if (shop) {
+      cancelShopOrder(s, r);
+      return r;
+    }
     if (!s.marketing.emailOrders) {
       loseRequest(s, r, "lost", done?.reason ?? "lost.noCapacity", done?.params ?? { city: r.city });
       return r;
@@ -151,6 +162,11 @@ export function applyOrderWork(s: GameState, t: Ticket, action: string, by?: str
     return null;
   }
   const done = place(s, r);
+  if (!done.ok && r.shop) {
+    Object.assign(t, { status: "closed", outcome: "failed", updatedAt: s.hour });
+    cancelShopOrder(s, r);
+    return null;
+  }
   mailRequest(s, r.id, done.ok ? "accept" : "failed", by);
   if (!done.ok) {
     Object.assign(t, { status: "closed", outcome: "failed", updatedAt: s.hour });

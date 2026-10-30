@@ -1,6 +1,6 @@
 # Shop systems, stock limits and server groups
 
-Status: proposal, waiting for approval.
+Status: approved 2026-10-30. Milestones 1, 2 and the Marketing part of 4 are built.
 
 The website stays the marketing presentation of product lines (Marketing > Products, `src/sim/80-business/website.ts`). Selling moves into a separate channel: a shop system the player picks from pun-named variants of the order and provisioning software hosters used from 2005 on. The game already bills customers itself, so a shop system here is the order form, the stock and the provisioning modules. Its billing side is not modelled.
 
@@ -53,12 +53,12 @@ Each product line in the shop has a stock setting:
 
 - **Off**: the shop does not sell the line. Leads for it do not become form orders, and no lost sale is recorded.
 - **A number**: the shop sells that many units. Every form order takes one; the player tops it up.
-- **Auto** (variants with auto stock): the shop sells while a new order fits into a for-sale server group (section 4) and leaves a reserve. The reserve is a percentage of the group's capacity, 10% by default, set per product.
+- **Free capacity** (variants with auto stock): the shop sells while a new order fits into a for-sale server group (section 4). A reserve is left out for now; a group that is not for sale keeps headroom instead.
 
 What the shop shows as available is the smaller of the stock number and what fits. When nothing is available the line is "Sold out":
 
 - Leads for a sold-out line are counted as sold-out visitors for the month, shown in the shop console. They are not lost sales, they do not appear in lost-sales reasons, and they never become email orders.
-- An order is placed only after a target is reserved, so a form order can no longer fail for capacity. A reservation lasts until the order is provisioned, or 72 hours for orders waiting in the queue, after which the stock returns.
+- A form order is taken only while a target has room. Capacity is not reserved: a shop order that cannot be set up later, or is not set up within 72 hours, is cancelled and refunded, counts as a sold-out visit and never as a lost sale.
 - Cordoned, draining and maintenance installations count as no capacity.
 
 Customers ordering on their own is the base of every shop. Orders wait in the order queue for the player. With "Provisioning automation" and the module for the target software, the shop provisions them at once. `s.autoOrders` becomes this switch.
@@ -134,7 +134,7 @@ Each milestone lands on main with seeded tests, `newGame` defaults, `deserialize
 1. **Shop catalog and choice.** Catalog of variants and modules in `src/sim/10-catalog/shops.ts`; research "Shop systems"; state `s.shop` (variant, owned modules, switch timer); actions `chooseShop`, `buyModule` in `src/sim/90-actions/shop.ts`; licence billing. The hand-rolled form maps to today's order form.
 2. **Stock limits.** Stock setting per line, reservation on order, sold-out visitors instead of lost sales, `autoOrders` routed through modules.
 3. **Server groups.** Group state and actions (`createGroup`, `addToGroup`, `removeFromGroup`, `setGroupSale`, `setGroupDeploy`); `targetFor` filtering; auto stock from group capacity and reserve.
-4. **Shop console.** A web console in the Browser per variant (Products with stock, Server groups, Orders, Modules), and the channel choice in Marketing.
+4. **Shop UI.** Marketing, Shop holds the variant choice, modules or custom scripts, and stock (built). Server groups join it with milestone 3. A styled admin console per variant in the Browser can follow.
 5. **Software-level cordon, drain, evacuate.** Per-installation `setNodeState`, evacuate action, console buttons, removal from the Locations device menu, technician task moved to an admin task.
 6. **Era events.** ModemBill sunset, WHMCache 2012 breach and 2020 pricing, BoxBillin' abandonment and revival.
 

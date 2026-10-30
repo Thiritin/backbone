@@ -26,6 +26,8 @@ export interface Service { id: string; customerId: string; product: Product; lab
   domain?: string;
   // The machine name customers quote in tickets: a product prefix and an eight-digit number; domain and SSL services have none.
   hostname?: string;
+  // Ordered through a shop system, whose revenue cut it then carries.
+  viaShop?: boolean;
   // The hour up to which an email order's first invoice paid it.
   prepaidUntil?: number;
   // A retention discount: the hourly price from before it and the month starts left until the price returns.

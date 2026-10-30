@@ -12,6 +12,7 @@ import { APPS_EN } from "./apps";
 import { BREACH_EN } from "./breach";
 import { VULNS_EN } from "./vulns";
 import { SITE_EN } from "./site";
+import { SHOP_EN } from "./shop";
 import { DOMAINS_EN } from "./domains";
 import { MAINTENANCE_EN } from "./maintenance";
 import { MOVES_EN } from "./moves";
@@ -53,6 +54,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...ACTIVITY_EN,
   ...SOFTWARE_EN,
   ...SITE_EN,
+  ...SHOP_EN,
   ...DOMAINS_EN,
   ...NEWS_EN,
   ...VENDORS_EN,

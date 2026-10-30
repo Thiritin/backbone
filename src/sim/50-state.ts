@@ -36,6 +36,7 @@ import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
 import type { Listing } from "./10-catalog/used";
 import { firstHostNo } from "./30-customers/hostnames";
+import { newShop, type ShopState } from "./80-business/shop";
 
 // 3: GPU line servers carry their preset cards.
 export const SAVE_VERSION = 3;
@@ -155,6 +156,8 @@ export interface GameState {
   billingRules: BillingRules;
   // Whether accepted orders run from account to setup by themselves (needs the provisioning skill).
   autoOrders: boolean;
+  // The shop system that takes orders, its modules and stock (docs/design/shop.md).
+  shop: ShopState;
   // Customers whose services the player holds offline.
   heldCustomers: string[];
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
@@ -311,6 +314,7 @@ export const newGame = (seed: number): GameState => ({
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false,
+  shop: newShop(),
   heldCustomers: [],
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },

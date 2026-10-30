@@ -101,6 +101,21 @@ Your company now knows how to sell plans instead of improvising a price for ever
 
 Web hosting runs on panel hosts and virtual machines run on hypervisor clusters. The free panels and hypervisors cost nothing and bring more tickets, the paid ones send a license bill every month, and switching later needs the host empty. Products is also where you set up nightly backups to another cluster.
 
+## Shop systems
+
+### Now available
+
+- **Shop systems** in Marketing replace the hand-rolled order form with a bought order and provisioning system.
+- **Stock** per product line decides how much the shop sells.
+
+### Choosing a shop
+
+Each shop system has its own price and its own modules. A module connects the shop to one software, such as a panel or a hypervisor, and lets the shop set up orders on it by itself once you have Provisioning automation. Some shops include many modules, others sell them one by one, and some take a share of the revenue instead of a licence. A new shop takes three days to set up, and only email orders arrive in that time.
+
+### Stock
+
+Every product line has a stock. Set a number and the shop sells that many, or let it follow the free room on your servers. When a line is sold out the shop shows it as sold out, and the visitor leaves without a lost sale. An order the shop cannot set up is cancelled and refunded.
+
 ## Provisioning automation
 
 ### Now available
@@ -114,7 +129,7 @@ Setting up an order now offers **Automatic** next to your hosts. The game picks 
 
 ### Place orders automatically
 
-Settings has a new **Place orders automatically** switch. With it on, an order form order is invoiced and set up the moment it arrives, and an order by email runs from the customer account to the setup the moment the customer accepts your quote.
+Settings has a new **Place orders automatically** switch. With it on, an order form order is invoiced and set up the moment it arrives, as long as the form has a module or a custom script for the software it lands on, and an order by email runs from the customer account to the setup the moment the customer accepts your quote.
 
 An order email gets a quote at your own rate for the line, as long as a host in its city has room for it. An order with no room waits for you to quote it by hand. A step that cannot run, such as a setup with no room, waits in the inbox for you too.
 

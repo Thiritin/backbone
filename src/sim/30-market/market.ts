@@ -34,6 +34,8 @@ export interface SalesRequest {
   owned?: boolean; invoiceId?: string; route?: string;
   // Placed through the order form: the website's prices are the quote and ordering is the acceptance.
   form?: boolean;
+  // Taken by a shop system rather than the hand-rolled form; a shop order that cannot be placed is cancelled, never lost.
+  shop?: boolean;
   // The one-time fee the manual quote's invoice carries; the line's rate where unset.
   setup?: number;
 }

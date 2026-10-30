@@ -9,6 +9,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
 import { communityBatches } from "./community";
 import { fairBatches, fairGain } from "./fairs";
+import { shopActive, shopBills } from "./shop";
 import { siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
 
 export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
@@ -86,7 +87,7 @@ export const newMarketing = (): Marketing => ({
 });
 
 export const owns = (s: GameState, c: OwnedChannel): boolean => s.marketing.owned.includes(c);
-export const hasOrderForm = (s: GameState): boolean => owns(s, "orderForm");
+export const hasOrderForm = (s: GameState): boolean => owns(s, "orderForm") || shopActive(s);
 export const costPerLead = (channel: CampaignChannel, p: Profile, year: number): number => priceAt(CAMPAIGNS[channel].cost[p] ?? 0, 0.6, year);
 export const reach = (channel: CampaignChannel): Profile[] => PROFILE_IDS.filter((p) => CAMPAIGNS[channel].cost[p]);
 export const awareness = (s: GameState, p: Profile): number => s.marketing.awareness[p];
@@ -194,6 +195,7 @@ function bill(s: GameState): number {
   const platform = s.marketing.platform && PLATFORMS[s.marketing.platform];
   if (platform && platform.fee > 0) bills.push(entry("ledger.reviewPlatform", { name: platform.name }, platform.fee));
   if (siteHostingCost(s) > 0) bills.push(entry("ledger.siteHosting", {}, siteHostingCost(s)));
+  bills.push(...shopBills(s).map((b) => entry(b.key, b.params, b.amount)));
   const total = bills.reduce((n, b) => n - b.amount, 0);
   s.cash = Math.round((s.cash - total) * 100) / 100;
   s.ledger = [...s.ledger, ...bills];
@@ -222,6 +224,7 @@ export function marketingTick(s: GameState): SimEvent[] {
     s.marketing = { ...s.marketing, platform: "free" };
   }
   const total = bill(s);
+  s.shop = { ...s.shop, soldOut: {} };
   if (total > 0) events.push({ app: "Marketing", key: "event.marketingBills", params: { total } });
   invite(s, events);
   updateAwareness(s);
