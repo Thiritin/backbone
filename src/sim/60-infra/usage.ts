@@ -8,8 +8,9 @@ import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { booked, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
+import { booked, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
+import { machineScreen } from "./oob";
 import { installedRamGb, portPeers, raidUsable, working } from "./status";
 
 // economy.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
@@ -54,12 +55,23 @@ export function backupFlows(s: GameState, hour: number = s.hour): BackupFlow[] {
 }
 const flowMbps = (s: GameState, id: string) => backupFlows(s).reduce((n, f) => n + (f.from === id || f.to === id ? f.mbps : 0), 0);
 
+// A machine running only its OS still shows load: a little at the login, most of a core while it installs or boots.
+// Panels and platforms count their own through their control plane instead.
+// ponytail: reads the screen now, so a past hour shows today's state; track install history if peaks need it.
+function osUse(s: GameState, id: string, cpus: number, ramGb: number, hour: number): Resources {
+  if (clustersOn(s, id).some((c) => c.panel || c.platform)) return { vcpu: 0, ramGb: 0, diskGb: 0 };
+  const k = machineScreen(s, id).kind, busy = k === "osInstall" || k === "installing" || k === "booting";
+  if (!busy && k !== "login" && k !== "desktop") return { vcpu: 0, ramGb: 0, diskGb: 0 };
+  const r = rand(hashRng(s.seed, idNum(id), hour));
+  return { vcpu: Math.min(cpus, busy ? 0.6 + 0.4 * r : 0.02 + 0.06 * r), ramGb: Math.min(ramGb * (busy ? 0.4 : 0.15), busy ? 1 : 0.5) * (0.9 + 0.2 * r), diskGb: 0 };
+}
+
 // What a workload uses of its booking at an hour; a panel VM uses what its panel and web spaces use.
 export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): Resources {
   if (isOwnVm(w)) {
     const hosts = hostsOfVm(s, w.id), u: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
-    if (!hosts.length || w.stopped || lostDisk(s, w)) return u;
-    const parts = [...hosts.map(controlPlaneUse), ...insideVm(s, w.id).map((x) => workloadUse(s, x, hour))];
+    if (w.stopped || lostDisk(s, w)) return u;
+    const parts = [...hosts.map(controlPlaneUse), ...insideVm(s, w.id).map((x) => workloadUse(s, x, hour)), osUse(s, w.id, w.vcpu, w.ramGb, hour)];
     for (const p of parts) { u.vcpu += p.vcpu; u.ramGb += p.ramGb; u.diskGb += p.diskGb; }
     return u;
   }
@@ -77,8 +89,9 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   const d = s.devices.find((x) => x.id === deviceId), v = d && modelById(d.model).server;
   const used: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
   if (!d || !v) return { used, physical: { ...used }, perf: 1 };
-  const cp = controlPlanesOn(s, deviceId);
-  used.vcpu += cp.vcpu; used.ramGb += cp.ramGb; used.diskGb += cp.diskGb;
+  for (const cp of [controlPlanesOn(s, deviceId), osUse(s, deviceId, nodeVcpu(s, d), installedRamGb(d), hour)]) {
+    used.vcpu += cp.vcpu; used.ramGb += cp.ramGb; used.diskGb += cp.diskGb;
+  }
   for (const w of s.workloads) {
     if (w.deviceId !== deviceId || !w.clusterId) continue;
     const u = workloadUse(s, w, hour);

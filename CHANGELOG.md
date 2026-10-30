@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- A server or VM that only runs its operating system now shows a little CPU and memory use while idle, and close to a full core while it installs software or boots.
 - Business, premium and large-budget customers now write order emails like everyone else and show their SLA on the ticket, and a customer who accepts your quote waits for you to create the account, send the invoice, register the domain and set the service up instead of being set up on their own.
 - Quote requests still waiting in an older save now show up as order emails in Support, and the separate Sales list there is gone.
 - The setup step now suggests the newest, most reliable host and lists hosts best first with their hardware year and downtime, and every automatic placement picks hosts in that same order.
