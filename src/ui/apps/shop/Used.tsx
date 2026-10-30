@@ -1,9 +1,9 @@
 import { Gavel, ShoppingBag, Tag, X } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
-import { boardSpec, componentParts, genOf, isDriveKind, modelById, wattsFactorOf, type ComponentKind, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { boardSpec, componentParts, genOf, isDriveKind, modelById, modelName, wattsFactorOf, type ComponentKind, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import { cardOf } from "../../../sim/10-catalog/gpu";
-import { defaultVendor, VENDOR_NAME, VENDORS, type Vendor } from "../../../sim/10-catalog/cpus";
+import { defaultVendor, skuById, VENDOR_NAME, VENDORS, type Vendor } from "../../../sim/10-catalog/cpus";
 import { CHANNELS, channelName, currentBid, EBUY_FEE, leading, onMarket, SELL_ASK, SELL_START, shipHours, type Channel, type Defect, type Listing } from "../../../sim/10-catalog/used";
 import type { GameState } from "../../../sim/50-state";
 import { deviceValue } from "../../../sim/60-infra/status";
@@ -28,11 +28,13 @@ const listingVendor = (l: Listing): Vendor | undefined => {
 function techRows(m: DeviceModel, brand: string, vendor: Vendor | undefined): [string, string][] {
   const parts = componentParts(m, vendor), sum = (f: (k: ComponentKind) => boolean) => parts.filter((p) => f(p.kind)).reduce((n, p) => n + (p.size ?? 0), 0);
   const s = m.server, board = s && vendor ? boardSpec(m, vendor) : undefined, drives = parts.filter((p) => isDriveKind(p.kind)), cards = parts.filter((p) => p.kind === "gpu");
+  const cpu = parts.find((p) => p.kind === "cpu"), sku = cpu?.sku ? skuById(cpu.sku) : undefined;
   return [
     ["Height", height(m)],
     ...(m.throughputGbit ? [["Throughput", speed(m.throughputGbit)]] as [string, string][] : []),
     ...(s && vendor ? [
-      ["CPU", VENDOR_NAME[vendor]], ["Cores", cores(sum((k) => k === "cpu"))], ["Clock", clockLabel({ kind: "cpu", vendor, gen: genOf(m) })],
+      ["CPU", `${s.sockets} × ${VENDOR_NAME[vendor]} ${sku?.name ?? ""}`.trim()], ["Cores", cores(sum((k) => k === "cpu"))], ...(sku ? [["Threads", `${s.sockets * sku.threads}`]] as [string, string][] : []),
+      ["Clock", clockLabel(cpu ?? { kind: "cpu", vendor, gen: genOf(m) })],
       ["Mainboard", board?.name ?? ""], ["RAM", ram(sum((k) => k === "ram"))],
       ...(cards.length ? [["GPUs", `${cards.length} × ${cardOf(cards[0].size).name}`]] as [string, string][] : []),
       ["Storage", drives.length ? `${disk(sum(isDriveKind))} in ${drives.length} ${drives.length === 1 ? "drive" : "drives"}, ${s.disk}` : "None"],
@@ -57,7 +59,7 @@ function ListingCard({ game, l, to }: { game: GameState; l: Listing; to: string 
   const m = modelById(l.model), city = game.locations.find((x) => x.id === to)!.city;
   const bid = currentBid(l), auction = l.channel === "ebuy";
   const [max, setMax] = useState(Math.ceil((bid * 1.1) / 10) * 10);
-  const name = `${l.qty > 1 ? `${l.qty} × ` : ""}${m.name}`;
+  const name = `${l.qty > 1 ? `${l.qty} × ` : ""}${modelName(m, l.brand)}`;
   const buy = () => {
     if (act(buyListing, l.id, to).ok) notify("Shop", `${name} bought`, `Arrives ${day(game.hour + shipHours(l, city))}`);
   };
