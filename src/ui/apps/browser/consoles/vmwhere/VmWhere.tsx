@@ -1,0 +1,170 @@
+import { useState } from "react";
+import { yearOf } from "../../../../../sim/00-core/time";
+import { serverOsById } from "../../../../../sim/10-catalog/server-os";
+import { useStore } from "../../../../store";
+import { ALL, AppSuiteTile, MediaMenu, NodeList, SizeFields, suiteSoftware, TaskLog, Toolbar, UsageBars, useNewVm, useVms, vmFacts, windoorsLicence, Wizard, type Sel } from "../HypervisorBase";
+import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
+import "./vmwhere.css";
+
+// docs/design/software.md, section 9: the grey and yellow fat client from 2005, the blue web client from 2015.
+const ERAS = erasFrom(2005, 2015);
+const LABELS = { start: "Power On", stop: "Shut Down Guest OS", reset: "Reset", migrate: "Migrate", resize: "Edit Settings", console: "Open Console", delete: "Delete from Disk", restore: "Restore", recover: "Recover" };
+
+export function VmWhere(p: PanelProps) {
+  const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole), year = yearOf(game.hour);
+  const [sel, setSel] = useState<Sel>(ALL), [tab, setTab] = useState("Summary");
+  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c);
+  if (!p.signedIn) return (
+    <div className="cx vsw vsw-login" data-era={era}>
+      <LoginForm className="vsw-card" onLogin={p.login} button="Log in">
+        <div className="vsw-brand">VMwhere <b>vSphear</b>{era === "early" ? " Client" : " Web Client"}</div>
+        <div className="cx-host">{p.host}</div>
+      </LoginForm>
+    </div>
+  );
+  const pick = (s: Sel, t = "Summary") => { setSel(s); setTab(t); };
+  const vm = sel.kind === "vm" ? vms.find((v) => v.id === sel.id) : undefined, node = sel.kind === "node" ? sel.id : null;
+  const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
+  const tabs = vm ? ["Summary", "Monitor", "Configure"] : ["Summary", "Monitor", "Configure", ...(node ? [] : ["Hosts"]), "Datastores", "Networks"];
+  const shown = tabs.includes(tab) ? tab : "Summary", facts = vm && vmFacts(game, vm);
+  const app = nv.suite ? suiteSoftware(year).find((x) => x.id === nv.suite) : undefined, appOs = app && serverOsById(app.os[0]);
+  const finish = () => { const id = nv.create(); if (id) pick({ kind: "vm", id }); };
+  const list = vms.filter((v) => !node || v.w.deviceId === node);
+  return (
+    <div className="cx cx-hv vsw" data-era={era}>
+      <header className="vsw-top">
+        <span className="vsw-brand">VMwhere <b>vSphear</b>{era === "early" ? " Client" : ""}</span>
+        <span className="cx-host">{p.host}</span>
+        <button className="vsw-link" onClick={p.logout}>Log Out</button>
+      </header>
+      {era === "early" && (
+        <div className="vsw-menu"><span>File</span><span>Edit</span><span>View</span><span>Inventory</span><span>Administration</span><span>Help</span></div>
+      )}
+      <div className="vsw-bar">
+        {f.create && <button onClick={() => setSel({ kind: "new" })}><i aria-hidden>✚</i>New Virtual Machine</button>}
+        {vm && <Toolbar actions={vm.actions} labels={LABELS} className="cx-toolbar vsw-tools" />}
+      </div>
+      <div className="cx-hv-body">
+        <aside className="cx-hv-tree vsw-tree">
+          <div className="vsw-tree-h">Hosts and Clusters</div>
+          <ul>
+            <li><button aria-pressed={sel.kind === "all"} onClick={() => pick(ALL)}><i>▥</i>{c.name}</button>
+              <ul>
+                {nodes.map((d) => (
+                  <li key={d.id}>
+                    <button aria-pressed={node === d.id} onClick={() => pick({ kind: "node", id: d.id })}><i>▦</i>{d.hostname ?? d.name}</button>
+                    <ul>
+                      {vms.filter((v) => v.w.deviceId === d.id).map((v) => (
+                        <li key={v.id}><button aria-pressed={vm?.id === v.id} data-state={v.st} onClick={() => pick({ kind: "vm", id: v.id })}><i>{v.st === "running" ? "▶" : "▫"}</i>{v.name}</button></li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          </ul>
+        </aside>
+        <section className="vsw-content">
+          <div className="vsw-title">{vm ? vm.name : node ? nodes.find((d) => d.id === node)?.hostname : c.name}</div>
+          <nav className="cx-hv-tabs vsw-tabs">{tabs.map((t) => <button key={t} aria-pressed={t === shown} onClick={() => setTab(t)}>{t}</button>)}</nav>
+          <main className="cx-hv-main">
+            {vm && vm.panel}
+            {vm && facts && shown === "Summary" && (
+              <div className="vsw-summary">
+                <button className="vsw-thumb" disabled={!vm.own} onClick={() => openConsole(vm.id)}>
+                  <span className="vsw-screen" data-on={vm.st === "running"} />
+                  {vm.own && <span>Launch Web Console</span>}
+                </button>
+                <div>
+                  <Facts facts={[{ ...facts.os, label: "Guest OS" }, { label: "VMwhere Tools", value: vm.own && vm.w.os && vm.st === "running" ? "Running, version current" : "Not running, not installed" }, facts.ip, { ...facts.node, label: "Host" }, facts.status]} />
+                </div>
+                <div className="vsw-tiles">
+                  <div><b>CPU</b><span className="num">{vm.w.vcpu} CPU(s)</span></div>
+                  <div><b>Memory</b><span className="num">{vm.w.ramGb} GB</span></div>
+                  <div><b>Storage</b><span className="num">{vm.w.diskGb} GB</span></div>
+                </div>
+              </div>
+            )}
+            {vm && shown === "Monitor" && <UsageBars v={vm} labels={["CPU", "Memory", "Storage"]} />}
+            {vm && facts && shown === "Configure" && (
+              <>
+                <Facts facts={[{ ...facts.cpu, label: "CPU" }, facts.memory, { ...facts.disk, label: "Hard disk 1" }, { ...facts.media, label: "CD/DVD drive 1" }, { label: "Network adapter 1", value: "VM Network" }, facts.backup]} />
+                <MediaMenu game={game} v={vm} label="CD/DVD drive 1, datastore ISO file" none="Client device" />
+              </>
+            )}
+            {!vm && shown === "Summary" && (
+              <>
+                {!node && <AppSuiteTile c={c} className="cx-suite vsw-suite" />}
+                <table className="cx-table">
+                  <thead><tr><th>Name</th><th>State</th><th>Status</th><th>Host</th><th>Provisioned Space</th><th>Host CPU</th></tr></thead>
+                  <tbody>
+                    {list.map((v) => (
+                      <tr key={v.id} onClick={() => pick({ kind: "vm", id: v.id })}>
+                        <td><b>{v.name}</b>{v.sub && <span className="cx-sub">{v.sub}</span>}</td>
+                        <td>{v.st === "stopped" ? "Powered Off" : v.st === "running" ? "Powered On" : v.state}</td>
+                        <td><span className={`cx-state ${v.tone}`}>{v.tone === "bad" ? "Alert" : "Normal"}</span></td>
+                        <td>{v.node}</td><td className="num">{v.w.diskGb} GB</td><td className="num">{+v.use.vcpu.toFixed(2)} vCPU</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+            {!vm && shown === "Monitor" && <NodeList game={game} c={{ ...c, nodes: c.nodes.filter((n) => !node || n.deviceId === node) }} f={{ ...f, cluster: false }} />}
+            {!vm && shown === "Configure" && (
+              <>
+                <Facts facts={sw.facts} />
+                <Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
+                {sw.panel}
+                {f.backups && <Backups game={game} c={c} title={<h4 className="cx-h">vSphear Data Protection</h4>} />}
+              </>
+            )}
+            {!vm && shown === "Hosts" && <NodeList game={game} c={c} f={f} />}
+            {!vm && shown === "Datastores" && <Facts facts={nodes.map((d) => ({ label: `datastore1 (${d.hostname ?? d.name})`, value: "VMFS", num: true }))} />}
+            {!vm && shown === "Networks" && <Facts facts={[{ label: "VM Network", value: "vSwitch0" }, { label: "Management Network", value: "vSwitch0" }]} />}
+          </main>
+        </section>
+      </div>
+      <TaskLog game={game} c={c} vms={vms} title="Recent Tasks" className="cx-tasks vsw-tasks" />
+      {sel.kind === "new" && (
+        <div className="cx-wiz-back">
+          <Wizard title="New Virtual Machine" className="vsw-wiz" finish="Finish" onCancel={() => setSel(ALL)} onFinish={finish} steps={[
+            { id: "type", label: "Select a creation type", body: (
+              <div className="vsw-radios">
+                <label className="cx-check"><input type="radio" name="vsw-type" checked={!nv.suite} onChange={() => nv.setSuite(null)} />Create a new virtual machine</label>
+                {c.appSuite && <label className="cx-check"><input type="radio" name="vsw-type" checked={!!nv.suite} onChange={() => nv.setSuite(suiteSoftware(year)[0]?.id ?? null)} />Deploy from App Suite</label>}
+              </div>
+            ) },
+            ...(nv.suite ? [{ id: "app", label: "Select an appliance", body: (
+              <table className="cx-table">
+                <thead><tr><th /><th>Appliance</th><th>Guest OS</th></tr></thead>
+                <tbody>
+                  {suiteSoftware(year).map((x) => (
+                    <tr key={x.id} onClick={() => nv.setSuite(x.id)}>
+                      <td><input type="radio" name="vsw-app" checked={nv.suite === x.id} onChange={() => nv.setSuite(x.id)} /></td><td>{x.console}</td><td>{serverOsById(x.os[0]).name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) }] : [{ id: "name", label: "Select a name and folder", body: <Facts facts={[{ label: "Location", value: c.name }]} /> }]),
+            { id: "compute", label: "Select a compute resource", body: <Facts facts={[{ label: "Cluster", value: c.name }, { label: "Hosts", value: String(nodes.length), num: true }]} /> },
+            { id: "storage", label: "Select storage", body: <Facts facts={[{ label: "Datastore", value: "datastore1" }, { label: "Type", value: "VMFS" }]} /> },
+            { id: "hardware", label: "Customize hardware", body: (
+              <>
+                <SizeFields size={nv.size} set={nv.setSize} labels={["CPU", "Memory, GB", "New Hard disk, GB"]} />
+                {!nv.suite && nv.isoPick("New CD/DVD Drive", "Client device")}
+              </>
+            ) },
+            { id: "ready", label: "Ready to complete", body: <Facts facts={[
+              { label: "Cluster", value: c.name },
+              ...(app && appOs ? [{ label: "Appliance", value: app.console }, { label: "Guest OS", value: appOs.name }] : [{ label: "CD/DVD drive", value: nv.isoLabel ?? "Client device", num: !!nv.isoLabel }]),
+              { label: "CPU", value: String(nv.size.vcpu), num: true }, { label: "Memory", value: `${nv.size.ramGb} GB`, num: true }, { label: "Hard disk", value: `${nv.size.diskGb} GB`, num: true },
+              ...(appOs?.id === "windoors" ? [{ label: "Windoors Server licence", value: windoorsLicence(year) }] : []),
+            ]} /> },
+          ]} />
+        </div>
+      )}
+      {dialog}
+    </div>
+  );
+}

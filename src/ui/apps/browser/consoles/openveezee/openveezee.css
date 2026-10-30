@@ -1,0 +1,29 @@
+/* OpenVeeZee Web Panel: a grey and blue PHP admin in Verdana with bevelled buttons; from 2016 the same pages under a dark top bar. */
+.ovz { --bg: #e8e8e8; --panel: #ffffff; --line: #999999; --fg: #000; --muted: #555; --accent: #336699; --accent-fg: #fff; --hover: #dde6ee; --r: 0; --font: Verdana, Geneva, sans-serif; font-size: 11px; }
+.ovz[data-era="late"] { --bg: #f2f2f2; --line: #bbbbbb; --accent: #2a6ebb; }
+
+.ovz-top { display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: var(--accent); color: #fff; }
+.ovz[data-era="late"] .ovz-top { background: #222; border-bottom: 3px solid var(--accent); }
+.ovz-top .cx-host { flex: 1; color: #dde; }
+.ovz-logo { font-weight: 700; font-size: 14px; }
+.ovz-btn { padding: 2px 10px; border: 2px outset #ddd; background: #e4e4e4; color: #000; font: inherit; cursor: pointer; }
+.ovz-btn:active { border-style: inset; }
+
+.ovz-menu { display: flex; flex-direction: column; flex: none; width: 160px; padding: 10px 8px; gap: 4px; background: #d6dde5; border-right: 1px solid var(--line); }
+.ovz[data-era="late"] .ovz-menu { background: #e4e4e4; }
+.ovz-menu button, .ovz-a { padding: 0; border: 0; background: none; color: #0033cc; font: inherit; text-align: left; text-decoration: underline; cursor: pointer; }
+.ovz-menu button[aria-pressed="true"] { color: #000; font-weight: 700; text-decoration: none; }
+.ovz-main h2 { margin: 0; font-size: 14px; color: var(--accent); }
+.ovz-table { border: 1px solid var(--line); }
+.ovz-table th { background: #c8d4e0; color: #000; }
+.ovz-table tbody tr:nth-child(even) td, .ovz-table tbody tr:nth-child(even) th { background: #eef2f6; }
+.ovz-acts .cx-btn { border: 2px outset #ddd; background: #e4e4e4; color: #000; }
+.ovz-acts .cx-btn.danger { color: #900; }
+.ovz-form { display: flex; flex-direction: column; gap: 8px; max-width: 420px; }
+.ovz-tasks h4 { background: #c8d4e0; }
+
+.ovz-login { align-items: center; justify-content: center; padding: 48px 16px; }
+.ovz-card { display: flex; flex-direction: column; gap: 10px; width: min(340px, 100%); padding: 18px; background: var(--panel); border: 1px solid var(--line); }
+.ovz-card .cx-btn { border: 2px outset #ddd; background: #e4e4e4; color: #000; }
+.ovz-login .ovz-logo { color: var(--accent); }
+.ovz-login[data-era="late"] { background: linear-gradient(#222 0 120px, var(--bg) 120px); }

@@ -1,0 +1,35 @@
+/* OpenStash Horizont: the purple dashboard until 2016, then the dark sidebar with the red mark. */
+.hz[data-era="early"] { --bg: #ffffff; --panel: #ffffff; --line: #dddddd; --fg: #333; --muted: #777; --accent: #772953; --accent-fg: #fff; --hover: #f3e9ef; --r: 3px; --font: "Ubuntu", "Helvetica Neue", Arial, sans-serif; --side: #2c001e; --side-fg: #e9d5e1; --mark: #dd4814; font-size: 13px; }
+.hz[data-era="late"] { --bg: #ffffff; --panel: #ffffff; --line: #dddddd; --fg: #333; --muted: #777; --accent: #337ab7; --accent-fg: #fff; --hover: #f5f5f5; --r: 4px; --font: "Helvetica Neue", Helvetica, Arial, sans-serif; --side: #2b2b2b; --side-fg: #cccccc; --mark: #da1a32; font-size: 13px; }
+
+.hz-top { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: var(--side); color: #fff; }
+.hz[data-era="early"] .hz-top { background: linear-gradient(#5e2750, #2c001e); }
+.hz[data-era="late"] .hz-top { background: #fff; color: var(--fg); border-bottom: 1px solid var(--line); }
+.hz-logo { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+.hz[data-era="late"] .hz-logo, .hz-login[data-era="late"] .hz-logo { color: var(--mark); }
+.hz-proj { padding: 2px 8px; border: 1px solid currentColor; border-radius: var(--r); opacity: 0.8; }
+.hz-top .cx-host { flex: 1; opacity: 0.75; }
+.hz-out { border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+
+.hz-side { display: flex; flex-direction: column; flex: none; width: 190px; padding: 8px 0; background: var(--side); color: var(--side-fg); }
+.hz-side h3 { margin: 10px 14px 4px; font-size: 13px; color: #fff; }
+.hz-side h4 { margin: 4px 14px; font-size: 12px; font-weight: 400; opacity: 0.7; }
+.hz-side button { display: block; width: 100%; padding: 5px 14px 5px 26px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hz-side button:hover { background: rgb(255 255 255 / 0.08); }
+.hz-side button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.hz[data-era="late"] .hz-side button[aria-pressed="true"] { background: transparent; color: #fff; border-left: 3px solid var(--mark); padding-left: 23px; }
+
+.hz-main h1 { margin: 0; flex: 1; font-size: 22px; font-weight: 400; }
+.hz-table th { background: #f9f9f9; color: #333; }
+.hz-a { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
+.hz-tabs button[aria-pressed="true"] { border-bottom-color: var(--accent); }
+.hz-log { margin: 0; padding: 10px; min-height: 120px; background: #f5f5f5; border: 1px solid var(--line); font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap; }
+.hz-console { display: flex; align-items: center; justify-content: center; min-height: 220px; background: #000; }
+.hz-wiz .cx-wiz-steps { background: #f5f5f5; }
+.hz-wiz .cx-wiz-steps button[aria-pressed="true"] { color: var(--accent); background: #fff; }
+
+.hz-login { align-items: center; justify-content: center; padding: 48px 16px; }
+.hz-card { display: flex; flex-direction: column; gap: 10px; width: min(360px, 100%); padding: 24px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+.hz-login[data-era="early"] { background: linear-gradient(#5e2750, #2c001e); }
+.hz-login[data-era="early"] .hz-logo { color: var(--accent); }
+.hz-login[data-era="late"] { background: #f5f5f5; }

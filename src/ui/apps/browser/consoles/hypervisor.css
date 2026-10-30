@@ -1,0 +1,45 @@
+/* Blocks every hypervisor console shares; each product's sheet sets the colours and shapes. */
+.cx-toolbar { display: flex; flex-wrap: wrap; gap: 4px; }
+.cx-toolbar button { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); color: var(--fg); font: inherit; cursor: pointer; }
+.cx-toolbar button:hover { background: var(--hover); }
+.cx-toolbar button i { font-style: normal; color: var(--accent); }
+.cx-toolbar button.danger i { color: var(--bad); }
+
+.cx-wiz-back { position: absolute; inset: 0; z-index: 5; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; background: rgb(0 0 0 / 0.3); }
+.cx-wiz { display: flex; flex-direction: column; width: min(680px, 100%); max-height: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 10px 30px rgb(0 0 0 / 0.25); }
+.cx-wiz-title { padding: 8px 12px; font-weight: 700; border-bottom: 1px solid var(--line); }
+.cx-wiz-body { display: flex; flex: 1; min-height: 260px; overflow: auto; }
+.cx-wiz-steps { display: flex; flex-direction: column; flex: none; width: 190px; margin: 0; padding: 10px 0; list-style: none; border-right: 1px solid var(--line); }
+.cx-wiz-steps button { width: 100%; padding: 6px 14px; border: 0; background: none; color: var(--muted); font: inherit; text-align: left; cursor: pointer; }
+.cx-wiz-steps button[aria-pressed="true"] { color: var(--fg); font-weight: 700; background: var(--hover); }
+.cx-wiz-page { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; min-width: 0; }
+.cx-wiz-page h3 { margin: 0 0 4px; font-size: 14px; }
+.cx-wiz-foot { display: flex; justify-content: flex-end; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--line); }
+.cx-wiz.tabs .cx-wiz-body { flex-direction: column; }
+.cx-wiz.tabs .cx-wiz-steps { flex-direction: row; flex-wrap: wrap; width: auto; padding: 0; border-right: 0; border-bottom: 1px solid var(--line); }
+.cx-wiz.tabs .cx-wiz-steps button { width: auto; padding: 6px 12px; }
+.cx-wiz.tabs .cx-wiz-page h3 { display: none; }
+
+.cx-tasks { flex: none; border-top: 1px solid var(--line); background: var(--panel); max-height: 150px; overflow: auto; }
+.cx-tasks h4 { margin: 0; padding: 4px 10px; font-size: 12px; }
+.cx-tasks table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.cx-tasks th, .cx-tasks td { padding: 2px 10px; text-align: left; border-top: 1px solid var(--line); }
+
+.cx-suite { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); }
+.cx-check { display: inline-flex; align-items: center; gap: 6px; }
+.cx-hv { position: relative; }
+.cx-hv-body { display: flex; flex: 1; min-height: 0; }
+.cx-hv-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; overflow: auto; }
+.cx-hv-tree { flex: none; width: 210px; padding: 6px 0; overflow: auto; border-right: 1px solid var(--line); background: var(--panel); }
+.cx-hv-tree ul { margin: 0; padding: 0 0 0 14px; list-style: none; }
+.cx-hv-tree > ul { padding-left: 4px; }
+.cx-hv-tree button { display: block; width: 100%; padding: 2px 6px; border: 0; background: none; color: inherit; font: inherit; text-align: left; white-space: nowrap; cursor: pointer; }
+.cx-hv-tree button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.cx-hv-tree i { display: inline-block; width: 16px; font-style: normal; }
+.cx-hv-tabs { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--line); }
+.cx-hv-tabs button { padding: 6px 12px; border: 0; border-bottom: 2px solid transparent; background: none; color: inherit; font: inherit; cursor: pointer; }
+.cx-hv-tabs button[aria-pressed="true"] { border-bottom-color: var(--accent); font-weight: 700; }
+.cx-hv-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.cx-hv-head h2 { flex: 1; margin: 0; font-size: 15px; }
+.cx-hv-bars { display: grid; grid-template-columns: max-content 1fr max-content; gap: 6px 10px; align-items: center; }
+.cx-hv-bars .cx-bar { width: 100%; }

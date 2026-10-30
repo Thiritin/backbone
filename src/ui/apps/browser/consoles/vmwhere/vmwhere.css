@@ -1,0 +1,51 @@
+/* VMwhere vSphear: the grey and yellow fat client in Tahoma until 2015, then the flat blue web client in Arial. */
+.vsw[data-era="early"] { --bg: #d4d0c8; --panel: #ffffff; --line: #a0a0a0; --fg: #000; --muted: #444; --accent: #316ac5; --accent-fg: #fff; --hover: #e8e4dc; --r: 0; --font: Tahoma, Verdana, Geneva, sans-serif; --mark: #f0b400; font-size: 11px; }
+.vsw[data-era="late"] { --bg: #ffffff; --panel: #ffffff; --line: #d6d6d6; --fg: #333; --muted: #6a6a6a; --accent: #0079b8; --accent-fg: #fff; --hover: #e6f2fa; --r: 2px; --font: Arial, Helvetica, sans-serif; --mark: #1b3d5f; font-size: 12px; }
+
+.vsw-brand { font-size: 14px; }
+.vsw-brand b { font-weight: 700; }
+.vsw-top { display: flex; align-items: center; gap: 12px; padding: 6px 10px; }
+.vsw-top .cx-host { flex: 1; }
+.vsw[data-era="early"] .vsw-top { background: linear-gradient(#5a5a5a, #3a3a3a); color: #fff; border-bottom: 3px solid var(--mark); }
+.vsw[data-era="early"] .vsw-top .cx-host { color: #ddd; }
+.vsw[data-era="late"] .vsw-top { background: var(--mark); color: #fff; }
+.vsw[data-era="late"] .vsw-top .cx-host { color: #c9d6e3; }
+.vsw-link { border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
+.vsw-menu { display: flex; gap: 14px; padding: 2px 10px; border-bottom: 1px solid var(--line); }
+.vsw-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+.vsw-bar > button { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); color: var(--fg); font: inherit; cursor: pointer; }
+.vsw-bar i { font-style: normal; color: #2c8f2c; }
+.vsw[data-era="early"] .vsw-bar > button, .vsw[data-era="early"] .vsw-tools button { background: linear-gradient(#fdfdfb, #e2ded6); }
+.vsw[data-era="early"] .vsw-tools i { color: #2c8f2c; }
+
+.vsw-tree-h { padding: 4px 8px; font-weight: 700; border-bottom: 1px solid var(--line); }
+.vsw[data-era="late"] .vsw-tree { background: #f4f4f4; }
+.vsw-tree button[data-state="running"] i { color: #2c8f2c; }
+.vsw-content { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--panel); }
+.vsw-title { padding: 8px 14px 2px; font-size: 16px; }
+.vsw[data-era="early"] .vsw-title { background: var(--bg); font-size: 13px; font-weight: 700; padding: 6px 10px; }
+.vsw[data-era="early"] .vsw-tabs { background: var(--bg); gap: 2px; padding: 0 6px; }
+.vsw[data-era="early"] .vsw-tabs button { border: 1px solid var(--line); border-bottom: 0; background: #ece9e1; margin-top: 2px; }
+.vsw[data-era="early"] .vsw-tabs button[aria-pressed="true"] { background: var(--panel); font-weight: 400; }
+.vsw[data-era="early"] .cx-table th { background: linear-gradient(#fdfdfb, #e2ded6); color: #000; }
+.vsw[data-era="late"] .cx-table th { background: #f2f2f2; color: #333; }
+
+.vsw-summary { display: grid; grid-template-columns: 180px 1fr; gap: 12px; align-items: start; }
+.vsw-thumb { display: flex; flex-direction: column; gap: 6px; align-items: center; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
+.vsw-screen { display: block; width: 180px; height: 120px; background: #000; border: 1px solid #222; }
+.vsw-screen[data-on="true"] { background: radial-gradient(circle at 50% 50%, #1d2a3a, #000 80%); }
+.vsw-tiles { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.vsw-tiles > div { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r); }
+.vsw[data-era="early"] .vsw-tiles > div { background: #fffbe6; border-color: var(--mark); }
+.vsw-suite b { flex: 1; }
+.vsw[data-era="early"] .vsw-suite { background: #fffbe6; border-color: var(--mark); }
+.vsw-radios { display: flex; flex-direction: column; gap: 8px; }
+.vsw-tasks h4 { background: var(--bg); }
+.vsw[data-era="late"] .vsw-tasks h4 { background: #f2f2f2; }
+.vsw[data-era="late"] .vsw-wiz .cx-wiz-steps { background: #f4f4f4; }
+
+.vsw-login { align-items: center; justify-content: center; padding: 48px 16px; }
+.vsw-card { display: flex; flex-direction: column; gap: 10px; width: min(380px, 100%); padding: 22px; background: var(--panel); border: 1px solid var(--line); }
+.vsw-login[data-era="early"] .vsw-card { border-top: 4px solid var(--mark); background: linear-gradient(#fdfdfb, #e9e5dd); }
+.vsw-login[data-era="late"] { background: linear-gradient(135deg, #1b3d5f, #0079b8); }
+.vsw-login[data-era="late"] .vsw-card { border: 0; border-radius: 4px; }

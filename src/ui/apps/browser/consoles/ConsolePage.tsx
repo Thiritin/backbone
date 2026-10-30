@@ -15,6 +15,11 @@ import { FreePanel } from "./freepanel/FreePanel";
 import { MultiKraft } from "./multikraft/MultiKraft";
 import type { PanelProps } from "./PanelBase";
 import { Pleskit } from "./pleskit/Pleskit";
+import { Proxmocks } from "./proxmocks/Proxmocks";
+import { HyperVee } from "./hypervee/HyperVee";
+import { Horizont } from "./openstash/Horizont";
+import { OpenVeeZee } from "./openveezee/OpenVeeZee";
+import { VmWhere } from "./vmwhere/VmWhere";
 import { Pterodaktyl } from "./pterodaktyl/Pterodaktyl";
 import { TCAdmen } from "./tcadmen/TCAdmen";
 import { AnyConnekt } from "./anyconnekt/AnyConnekt";
@@ -29,6 +34,7 @@ import "./consoles.css";
 // The products that draw their own console by era; any other software still wears one of the shared frames below.
 export const CONSOLES: Record<string, ComponentType<PanelProps>> = {
   cpanic: CPanic, pleskit: Pleskit, directadmen: DirectAdmen, freepanel: FreePanel, tcadmen: TCAdmen, multikraft: MultiKraft, pterodaktyl: Pterodaktyl,
+  proxmocks: Proxmocks, vmwhere: VmWhere, hypervee: HyperVee, openveezee: OpenVeeZee, openstash: Horizont,
   powerdnz: PowerDnz, openveepeen: OpenVeePeeN, anyconnekt: AnyConnekt, ownclod: OwnClod, minnio: MinnIO, mailpig: Mailpig,
 };
 
