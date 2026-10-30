@@ -40,6 +40,8 @@ const ARTICLES: Article[] = [
       </ol>
       <h2>Installing</h2>
       <p>The installer asks for a language and a hostname, then partitions the disks. Partitioning erases everything on them. Once the files are copied the server restarts from its disks, and the USB stick can be pulled and reused for the next server.</p>
+      <h2>Logging in</h2>
+      <p>After the restart the server shows a login prompt. On {os.name} the default user name is <code>root</code>.</p>
       <p>After the operating system runs, further software such as a hypervisor or a web hosting panel is installed with the commands given on that software's website.</p>
     </>,
   },

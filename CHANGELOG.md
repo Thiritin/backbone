@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Wikipedio and the Debiant download page now say that the default user name after installing Debiant GNU/Lunix is root.
 - Stopped VMs on a VMwhere cluster can become templates, which clone into ready VMs with the same size, operating system and software after a disk copy.
 - VMs on a VMwhere cluster can keep up to three snapshots to revert to, which grow on their storage until you delete them.
 - New games start on Mom's DSL, a free private line with 6 Mbit/s down, 0.5 Mbit/s up and a dynamic address, so your first server can go online right away.

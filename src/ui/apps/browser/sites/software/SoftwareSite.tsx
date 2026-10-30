@@ -92,6 +92,7 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
             </tr>
           ))}</tbody>
         </table>
+        {id === "lunix" && <p>The default user name after installation is <code>root</code>.</p>}
       </div>
     );
   }
