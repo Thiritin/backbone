@@ -1,0 +1,29 @@
+/* OwnClod: white with a blue top bar and a file list until 2016, then a dark blue bar and folder cards. */
+.oc[data-era="early"] { --bg: #ffffff; --panel: #ffffff; --line: #e8e8e8; --accent: #1d2d44; --info: #1d6fb8; --font: "Lucida Grande", "Helvetica Neue", Arial, sans-serif; --r: 3px; --bar: #35537a; }
+.oc[data-era="late"] { --bg: #f4f6f8; --panel: #ffffff; --line: #e5e8eb; --accent: #0082c9; --info: #0082c9; --font: "Open Sans", "Helvetica Neue", Arial, sans-serif; --r: 6px; --bar: #1d2d44; }
+
+.oc-logo { display: inline-flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 300; }
+.oc-top { display: flex; align-items: center; gap: 18px; padding: 8px 16px; background: var(--bar); color: #fff; }
+.oc[data-era="early"] .oc-top { background: linear-gradient(#4a6c96, #35537a); }
+.oc-top nav { display: flex; gap: 4px; }
+.oc-top nav button, .oc-out { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 0; border-radius: var(--r); background: none; color: inherit; font: inherit; cursor: pointer; opacity: 0.75; }
+.oc-top nav button[aria-pressed="true"] { opacity: 1; background: rgb(255 255 255 / 0.14); }
+.oc-top .cx-host { flex: 1; color: inherit; opacity: 0.7; text-align: right; }
+.oc-out { opacity: 1; }
+
+.oc-main { flex: 1; padding: 0; overflow: auto; }
+.oc-files { border: 0; }
+.oc-files td:first-child { display: flex; align-items: center; gap: 8px; }
+.oc-folder { color: #3c8ad4; flex: none; }
+.oc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; padding: 18px; }
+.oc-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 16px; background: var(--panel); border-radius: var(--r); box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); }
+.oc-tile .cx-bar { width: 100%; }
+.oc-admin { max-width: 640px; padding: 18px; }
+.oc-admin h2 { margin: 0 0 10px; font-size: 16px; font-weight: 600; }
+.oc-admin .cx-tools { margin-top: 12px; }
+
+.oc-login { align-items: center; justify-content: center; padding: 48px 16px; background: linear-gradient(#35537a, #1d2d44); }
+.oc-card { display: flex; flex-direction: column; gap: 12px; width: min(320px, 100%); padding: 24px; color: #fff; }
+.oc-card .cx-field { color: rgb(255 255 255 / 0.8); }
+.oc-card .cx-host { color: rgb(255 255 255 / 0.6); }
+.oc-card .oc-logo { justify-content: center; font-size: 26px; }

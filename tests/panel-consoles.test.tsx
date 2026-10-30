@@ -23,7 +23,7 @@ function render(id: string, year: number, signedIn: boolean) {
 
 describe("hosting and game panel consoles", () => {
   it("are drawn by their own component", () => {
-    expect(Object.keys(CONSOLES).sort()).toEqual(Object.keys(ERAS).sort());
+    for (const id of Object.keys(ERAS)) expect(CONSOLES[id], id).toBeDefined();
   });
 
   it("wear the early look before the late year and the late look from it, signed in or not", () => {

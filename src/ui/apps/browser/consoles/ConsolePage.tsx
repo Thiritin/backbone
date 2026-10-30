@@ -17,11 +17,19 @@ import type { PanelProps } from "./PanelBase";
 import { Pleskit } from "./pleskit/Pleskit";
 import { Pterodaktyl } from "./pterodaktyl/Pterodaktyl";
 import { TCAdmen } from "./tcadmen/TCAdmen";
+import { AnyConnekt } from "./anyconnekt/AnyConnekt";
+import { CLI_ONLY, HostCli } from "./hostcli/HostCli";
+import { Mailpig } from "./mailpig/Mailpig";
+import { MinnIO } from "./minnio/MinnIO";
+import { OpenVeePeeN } from "./openveepeen/OpenVeePeeN";
+import { OwnClod } from "./ownclod/OwnClod";
+import { PowerDnz } from "./powerdnz/PowerDnz";
 import "./consoles.css";
 
 // The products that draw their own console by era; any other software still wears one of the shared frames below.
 export const CONSOLES: Record<string, ComponentType<PanelProps>> = {
   cpanic: CPanic, pleskit: Pleskit, directadmen: DirectAdmen, freepanel: FreePanel, tcadmen: TCAdmen, multikraft: MultiKraft, pterodaktyl: Pterodaktyl,
+  powerdnz: PowerDnz, openveepeen: OpenVeePeeN, anyconnekt: AnyConnekt, ownclod: OwnClod, minnio: MinnIO, mailpig: Mailpig,
 };
 
 // The four page structures the eleven products share; the look supplies colours, type and shapes.
@@ -137,6 +145,7 @@ export function ConsolePage({ game, hostname, host, cluster, defaced }: { game: 
   const [tab, setTab] = useState<Tab>("objects"), [node, setNode] = useState<string | null>(null);
   const family = cluster && familyOf(cluster);
   if (!cluster || !family) return null;
+  if (CLI_ONLY.has(family)) return <HostCli game={game} c={cluster} family={family} host={host} name={hostname} />;
   if (defaced) return <Defaced />;
   const f = consoleFeatures(family, yearOf(game.hour)), look = f.look;
   const Panel = CONSOLES[family], logout = () => setLogins(logins.filter((x) => x !== hostname));

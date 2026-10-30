@@ -1,5 +1,5 @@
 import { Play } from "lucide-react";
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { t } from "../../../../i18n/en";
 import { VIDEO_ARTIST, VIDEO_REAL, VIDEO_TITLE } from "../../../../sim/80-business/browser";
 import type { GameState } from "../../../../sim/50-state";
@@ -92,11 +92,12 @@ export function CannotReach({ host }: { host: string }) {
   );
 }
 
-export function HostPage({ host }: { host: string }) {
+export function HostPage({ host, children }: { host: string; children?: ReactNode }) {
   return (
     <div className="br-error">
       <h1>This host serves no web page</h1>
       <p>{host}</p>
+      {children}
     </div>
   );
 }

@@ -365,7 +365,7 @@ Each software with a web console gets its own component and stylesheet, modelled
 | MinnIO Console | 2016: dark, red, a bucket list | 2021: white, red, cards |
 | Mailpig | 2015: the dark Mailcow-style admin, pink accent, tabs (Mailboxes, Domains, Queue) | same |
 
-Built so far: the seven hosting and game panels (cPanic to Pterodaktyl). Each lives in `consoles/<id>/` and lays out the blocks of `consoles/PanelBase.tsx` (object rows, nodes, software facts and actions, the backup schedule, the login form) in its own chrome; the `CONSOLES` map in `ConsolePage.tsx` routes a software to its component, and software without an entry still wears the shared frames. The look switches on January 1 of the late year in the table. The pages each panel shows:
+Built so far: the seven hosting and game panels (cPanic to Pterodaktyl) and the six DNS, VPN, storage and mail consoles (PowerDNZ Admin to Mailpig). Each lives in `consoles/<id>/` and lays out the blocks of `consoles/PanelBase.tsx` (object rows, nodes, software facts and actions, the backup schedule, the login form) in its own chrome; the `CONSOLES` map in `ConsolePage.tsx` routes a software to its component, and software without an entry still wears the shared frames. The look switches on January 1 of the late year in the table. The pages each panel shows:
 
 | Console | Pages | Layout |
 | --- | --- | --- |
@@ -376,6 +376,14 @@ Built so far: the seven hosting and game panels (cPanic to Pterodaktyl). Each li
 | TCAdmen | Game Servers, System Settings | a tree of game servers on the left filters the table to one server |
 | MultiKraft | Servers, Settings | early: a table with status dots, memory and CPU; late: one card per server |
 | Pterodaktyl | Servers, Settings | one card per server with CPU and memory meters; the top bar becomes a sidebar in the late look |
+| PowerDNZ Admin | Zones, Server | one row per zone (the customer's web domain or its name, numbered past the first); late adds stat cards for zones, accounts and version |
+| OpenVeePeeN Access | Status Overview, Software Updates | left menu grouped Status and Configuration; early: a gateway table; late: one card per gateway and a current-users card |
+| Sysko AnyConnekt | Home, Configuration | Device Information and VPN Gateways boxes; early tabs are icon buttons in the blue bar |
+| OwnClod | Files, Admin | early: a file list with one folder per volume; late: folder cards with a usage bar |
+| MinnIO Console | Buckets, Settings | dark sidebar; early: a bucket list; late: bucket cards |
+| Mailpig | Mailboxes, Domains, Queue, Configuration | tabs over one pane; mailboxes are admin, support, billing and one per employee at the company domain |
+
+The CLI host pages print, under "This host serves no web page", a root prompt on the machine's hostname and: Bound `named-checkconf -z` and `rndc status` (zones and count), Knut DNS `knotc status` and `knotc zone-status`, WireGuarded `wg show` (one peer per VPN user, a handshake while the gateway runs), vsFTPeed the last ten lines of its log (a login and an upload per running volume), Postfixit `postconf myhostname mydomain` and `mailq`.
 
 ## 11. Economy
 
