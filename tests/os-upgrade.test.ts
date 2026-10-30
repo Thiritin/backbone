@@ -128,7 +128,12 @@ describe("in-place OS upgrade", () => {
     expect(err(upgradeOs(s, vm))).toBe("error.otherMedia");
     ok(setMedia(s, vm, "windoors@2008 R2"));
     const busy = vmById(s, vm)!.busyUntil;
+    s.cash = 599;
+    expect(err(upgradeOs(s, vm))).toBe("error.noCash");
+    s.cash = 1000;
     ok(upgradeOs(s, vm));
+    expect(s.cash).toBe(400);
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.licenseOnce", amount: -600, params: { name: "Windoors Server 2008 R2" } });
     expect(vmById(s, vm)).toMatchObject({ os: { version: "2008 R2", from: "2008" }, media: undefined, busyUntil: busy });
     expect(machineScreen(s, vm).kind).toBe("osInstall");
     expect(renderToString(createElement(VmConsole, { game: s, vm: vmById(s, vm)!, front: false }))).toContain("Upgrading Windoors Server 2008 R2");

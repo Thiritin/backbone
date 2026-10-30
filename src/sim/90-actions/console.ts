@@ -9,7 +9,7 @@ import { imageOf, imageParts, nextVersion, SERVER_OS, serverOsById, type OsImage
 import { machineNet, osUp, stickOs } from "../60-infra/oob";
 import { pushLog } from "../60-infra/power";
 import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
-import { buyLicenses, licenseDue, reportLoss } from "../85-products/products";
+import { buyLicenses, buyUpgradeLicense, licenseDue, reportLoss, upgradeLicenseDue } from "../85-products/products";
 import { leave } from "./clusters";
 import type { ActionResult } from "./hardware";
 import { installSoftware, uninstallSoftware } from "./software";
@@ -165,6 +165,7 @@ export function upgradeOs(s: GameState, machineId: string): ActionResult {
     if (typeof at === "string") return fail(at);
     if ((isDevice(at) ? stickOs(s, at.id) : at.media) !== imageOf(m.os.id, next.version)) return fail("error.otherMedia");
   }
+  if (s.cash < upgradeLicenseDue(s, m.os.id)) return fail("error.noCash");
   const hours = upgradeHours(s, machineId), done = nowHours(s) + serverOsById(m.os.id).installHours, from = m.os.version;
   // What runs on the machine goes down with it; a VM's own console stays on and shows the upgrade.
   const found = installCase(s, machineId), down = found.kind === "busy" ? [...found.workloads, ...found.lost] : [];
@@ -173,6 +174,7 @@ export function upgradeOs(s: GameState, machineId: string): ActionResult {
   // The hourly tick counts every whole hour a workload is busy; the rest is added here, as for a software update.
   const rest = hours - (Math.ceil(hours) - 1);
   for (const id of services) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + rest };
+  buyUpgradeLicense(s, machineId, m.os.id, next.version);
   setMachine(s, machineId, (x) => ({ os: { ...x.os!, version: next.version, installedAt: done, from } }));
   if (isDevice(m)) {
     Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: nowHours(s) + hours });

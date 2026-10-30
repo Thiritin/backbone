@@ -103,6 +103,21 @@ export function buyLicenses(s: GameState, machineId: string, osId: ServerOsId | 
   }
 }
 
+// An in-place upgrade buys the new release in a once era; a monthly era already covers it.
+export const upgradeLicenseDue = (s: GameState, osId: ServerOsId): number => {
+  const era = licensingAt(serverOsById(osId), yearOf(s.hour));
+  return era.kind === "once" ? era.fee : 0;
+};
+
+export function buyUpgradeLicense(s: GameState, machineId: string, osId: ServerOsId, version: string): void {
+  const price = upgradeLicenseDue(s, osId);
+  if (!price) return;
+  const m = [...s.devices, ...s.workloads].find((x) => x.id === machineId);
+  const machine = m && ("components" in m ? m.hostname ?? m.label ?? m.name : m.hostname ?? m.id);
+  s.cash = Math.round((s.cash - price) * 100) / 100;
+  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.licenseOnce", params: { name: `${serverOsById(osId).name} ${version}`, machine: machine ?? machineId }, amount: -price }];
+}
+
 // Old saves: the licenses every machine holds, Windoors or VMwhere on it.
 export const heldLicenses = (s: GameState): GameState["licenses"] =>
   [...s.devices, ...s.workloads].flatMap((m) => [m.os?.id, ...(m.software ?? []).map((x) => x.id)].filter((id): id is string => !!id)

@@ -155,7 +155,7 @@ An installed OS upgrades to the next release once it is out (`upgradeTarget`), o
 - **Windoors.** Setup from the next release's media (the stick in that server, or the ISO on that VM) asks "Which type of installation do you want?" after the license terms when the disk holds the release before it. Upgrade shows the downtime and runs `upgradeOs`; Custom is the clean install.
 - **Downtime.** The machine is down for the OS's install hours and its boot, plus POST on a server (`upgradeHours`). The console shows the upgrade's progress and the KVM line reads "Upgrading the system...". Every workload still on the machine at that moment (web spaces on a panel server, VMs on a hypervisor node and what runs inside them) is busy for that time and the partial hour counts against its SLA, as for a software update. Workloads the player migrated off first stay up; nothing migrates by itself.
 - **Power loss.** A power cut or reset mid-upgrade, or stopping a VM, rolls the machine back to the release it came from (`cutOs`); an install from scratch still leaves an empty disk. A Debiant upgrade has its packages before it starts, so losing the network mid-upgrade does nothing.
-- **Licenses.** The upgrade costs nothing; the license held for the machine carries over.
+- **Licenses.** In a `once` era the upgrade buys the new release for the era fee, charged when it starts as a ledger line ("Windoors Server 2008 R2 license, node001"), and refused without the cash. In a monthly era the running fee already covers it.
 
 Action `upgradeOs(machineId)` in `90-actions/console.ts`. Tests: `tests/os-upgrade.test.ts`.
 
