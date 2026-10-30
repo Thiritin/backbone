@@ -8,6 +8,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The Browser no longer has a Downloads button.
 - Each location now has a Network tab with its traffic, uplinks, addresses, attacks and the peers at its exchange; transit, exchange ports and links between locations appear there once Network operations is learned.
 - The Network app unlocks with the Network operations research and holds the map of all sites, DDoS protection and the RIPE registry.
+- Updating Pear OS installs on a full black screen with the clock stopped, then asks you to log in again.
 - Windoors Server and VMwhere are bought once per machine in the early years and licensed per core each month later on.
 - Servers and VMs boot through POST and the BIOS into a real operating system installer, then into a login and shell on Debiant or a desktop on Windoors.
 - Windoors machines install and remove software from Server Manager.
