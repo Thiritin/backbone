@@ -44,12 +44,12 @@ describe("software on machines", () => {
   it("runs one hypervisor per machine, a panel next to one only in a VM, and no hypervisor in a VM", () => {
     const { s } = twoServers();
     const c = hypervisor(s, ["dev3"]);
-    expect(err(installSoftware(s, "dev3", "hypervee"))).toBe("error.oneHypervisor");
-    expect(err(installSoftware(s, "dev3", "freepanel"))).toBe("error.panelInVm");
+    expect(err(installSoftware(s, "dev3", "hypervee"))).toBe("error.wrongOs");
+    expect(err(installSoftware(s, "dev3", "freepanel"))).toBe("error.serverInUse");
     const vm = ok(createVm(s, c, VM));
     expect(err(installSoftware(s, vm, "proxmocks"))).toBe("error.nestedHypervisor");
     ok(installSoftware(s, vm, "freepanel"));
-    expect(err(installSoftware(s, vm, "cpanic"))).toBe("error.onePanel");
+    expect(err(installSoftware(s, vm, "cpanic"))).toBe("error.portTaken");
   });
 
   it("clusters servers that run the same hypervisor and refuses one with another", () => {

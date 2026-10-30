@@ -87,7 +87,7 @@ describe("platforms and licenses", () => {
     expect(s.cash).toBe(cash);
     expect(serviceOnline(s, web)).toBe(true);
     expect(controlPlaneUp(s, clusterById(s, swapped))).toBe(false);
-    expect(err(installSoftware(s, box, "pleskit"))).toBe("error.onePanel");
+    expect(err(installSoftware(s, box, "pleskit"))).toBe("error.portTaken");
     const events = Array.from({ length: softwareById("cpanic").installHours }, () => tick(s)).flat();
     expect(events).toContainEqual({ app: "Products", key: "event.installed", params: { cluster: "Web 2", name: "cPanic" } });
     expect(clusterById(s, swapped).panel).toBe("cpanic");

@@ -1,0 +1,36 @@
+// docs/design/software.md, section 8.3: the website of every software and operating system. host is bare, the Browser
+// also takes it with www.; a look holds from its year until the next one.
+export type Look = "early" | "late";
+export interface Site { host: string; tagline: string; blurb: string; features: string[]; eras: { from: number; look: Look }[] }
+
+const site = (host: string, tagline: string, blurb: string, features: string[], early: number, late?: number): Site => ({
+  host, tagline, blurb, features, eras: late ? [{ from: early, look: "early" }, { from: late, look: "late" }] : [{ from: early, look: "early" }],
+});
+
+export const SITES: Record<string, Site> = {
+  lunix: site("debiant.example", "The universal operating system", "Debiant is a free operating system built by volunteers. It runs on servers everywhere and installs from one small image.", ["Thousands of packages, one command away", "Security updates for every stable release", "Free forever"], 2005, 2015),
+  windoors: site("windoors.macrosoft.example", "The server for your business", "Windoors Server runs your applications, users and files. Roles add what you need from the desktop.", ["Server Manager for every role", "Remote Desktop included", "Licensed per server"], 2005, 2012),
+  cpanic: site("cpanic.example", "The hosting platform of choice", "cPanic turns a server into a web hosting business. Your customers manage their own sites, mail and databases.", ["Accounts with mail, databases and backups", "One-line install", "Licensed per account"], 2005, 2014),
+  pleskit: site("pleskit.example", "Run, automate and grow", "Pleskit manages web spaces on Lunix and Windoors alike. One panel for the host and every customer on it.", ["Runs on Lunix and Windoors", "Extensions catalog", "Licensed per server"], 2005, 2015),
+  directadmen: site("directadmen.example", "Fast, simple, affordable", "DirectAdmen is a light hosting panel that does what it should. It installs in minutes and stays out of the way.", ["Small footprint", "Reseller accounts", "Low price per server"], 2005, 2018),
+  freepanel: site("freepanel.example", "Open source hosting control", "FreePanel is a free hosting panel maintained by its community. It installs from the package archive.", ["Free and open source", "Web, mail and DNS in one panel", "Clusters several servers"], 2005, 2016),
+  openveezee: site("openveezee.example", "Container virtualization for Lunix", "OpenVeeZee runs many isolated containers on one Lunix kernel. Each container behaves like a server of its own.", ["Near native speed", "Fine-grained CPU limits", "Free"], 2005, 2016),
+  openstash: site("openstash.example", "Open source cloud computing", "OpenStash builds a private cloud from your servers. Compute, storage and networks come from one dashboard.", ["Self-service dashboard", "Scales to many nodes", "Free and open source"], 2010, 2017),
+  vmwhere: site("vmwhere.example", "The virtual datacenter", "VMwhere vSphear runs virtual machines on clusters of servers. Machines move live between hosts while they keep running.", ["Live migration", "Memory ballooning", "The App Suite for one-click applications"], 2005, 2015),
+  proxmocks: site("proxmocks.example", "Open source virtualization management", "Proxmocks VE manages virtual machines and containers from one web interface. It installs on Debiant from its own package repository.", ["Web interface on port 8006", "Clusters and live migration", "Free, with optional subscriptions"], 2008, 2016),
+  hypervee: site("hypervee.macrosoft.example", "Virtualization built into Windoors Server", "HyperVee is a role of Windoors Server. Add it in Server Manager and run virtual machines on the same host.", ["Installs from Server Manager", "Cluster-aware updating", "Licensed per host"], 2008, 2016),
+  tcadmen: site("tcadmen.example", "Game server hosting made easy", "TCAdmen runs game servers for your customers on Windoors. Each game gets its own server, started and updated from the panel.", ["Dozens of games supported", "Customer control panel", "Licensed per server"], 2005, 2016),
+  multikraft: site("multikraft.example", "The block game server panel", "MultiKraft hosts block game servers for any number of players. Customers manage their worlds from their browser.", ["Runs on Lunix and Windoors", "Plugin manager", "Licensed per server"], 2010, 2018),
+  pterodaktyl: site("pterodaktyl.example", "Game server management, free", "Pterodaktyl is a free panel that runs every game server in its own container. It installs from the package archive.", ["Containers per game server", "Modern web panel", "Free and open source"], 2016, 2021),
+  bound: site("bound.example", "The reference name server", "Bound answers DNS for the zones you host. It has run the internet's name servers for decades.", ["Authoritative and recursive DNS", "Zone files", "Free"], 2005, 2019),
+  powerdnz: site("powerdnz.example", "DNS with a database behind it", "PowerDNZ serves DNS zones from a database. An HTTP API manages them from anywhere.", ["Database backends", "HTTP API on port 8081", "Free"], 2005, 2016),
+  knut: site("knut-dns.example", "High performance authoritative DNS", "Knut DNS answers queries fast and nothing else. It is configured from one file.", ["Authoritative only", "Built for speed", "Free"], 2011, 2020),
+  openveepeen: site("openveepeen.example", "Secure access for everyone", "OpenVeePeeN gives remote users a secure tunnel into your network. The Access Server adds a web portal for accounts.", ["Web portal on port 943", "Clients for every desktop", "Free for two connections"], 2005, 2017),
+  anyconnekt: site("anyconnekt.sysko.example", "Secure mobility for the enterprise", "Sysko AnyConnekt connects remote workers to the corporate network. It reaches the network from anywhere the web does.", ["Enterprise VPN on port 443", "Certificate login", "Licensed per server"], 2005, 2016),
+  wireguarded: site("wireguarded.example", "Fast, modern, secure VPN tunnel", "WireGuarded is a VPN that fits in a few thousand lines. It is configured with one file per tunnel.", ["Tiny and fast", "One UDP port", "Free"], 2018),
+  vsftpeed: site("vsftpeed.example", "Probably the most secure FTP server", "vsFTPeed is a small FTP server for Lunix. It does one thing and does it safely.", ["FTP on port 21", "Small and secure", "Free"], 2005),
+  ownclod: site("ownclod.example", "Your files, on your server", "OwnClod keeps files in sync on your own server. Customers reach them from the web and every device.", ["File sync and share", "Web interface", "Free"], 2010, 2016),
+  minnio: site("minnio.example", "Object storage at scale", "MinnIO is object storage compatible with the cloud storage API. It runs as one binary on Lunix or Windoors.", ["Storage API on port 9000", "Console on port 9001", "Free and open source"], 2016, 2021),
+  postfixit: site("postfixit.example", "The mail transfer agent", "Postfixit delivers mail fast and safely. It installs from the package archive.", ["SMTP on ports 25 and 587", "Configured from main.cf", "Free"], 2005),
+  mailpig: site("mailpig.example", "The mail server suite", "Mailpig bundles mail, webmail and spam filtering in one install. It runs the whole mail stack on one server.", ["Webmail included", "Spam filter", "Free"], 2015),
+};

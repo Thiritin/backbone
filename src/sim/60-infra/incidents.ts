@@ -176,7 +176,7 @@ export function seize(s: GameState, deviceId: string, agency: string, r: Rng, ev
   s.devices = s.devices.filter((x) => x.id !== d.id);
   s.cables = s.cables.filter((c) => c.a.device !== d.id && c.b.device !== d.id);
   s.clusters = s.clusters.map((c) => (c.nodes.some((n) => n.deviceId === d.id) ? { ...c, nodes: c.nodes.filter((n) => n.deviceId !== d.id) } : c));
-  s.ops = { ...s.ops, seized: [...s.ops.seized, { device: { ...d, rackId: null, slot: 0, panel: null, store: null }, locationId: loc.id, at: s.hour, returnAt, agency }] };
+  s.ops = { ...s.ops, seized: [...s.ops.seized, { device: { ...d, rackId: null, slot: 0, panel: null, store: null, software: [] }, locationId: loc.id, at: s.hour, returnAt, agency }] };
   const lost = new Set<string>();
   for (const w of workloads) if (!hasBackupElsewhere(s, (vmOf(s, w) ?? w).id)) lost.add(w.serviceId);
   for (const w of own) {

@@ -2,6 +2,7 @@ import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
 import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { Vendor } from "./10-catalog/cpus";
+import type { ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
 import { STARTER_APPS } from "./10-catalog/store";
 import { seedDcs } from "./20-world/datacenters";
@@ -55,7 +56,13 @@ export interface Rack { id: string; model: RackModel; locationId: string; positi
 // slot is the lowest unit the device occupies, counted from 1 at the bottom.
 // A gateway sits on its location's carrier panel: rackId null, panel = location id. A stored unit has store = its zone's location id;
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.
-export interface Device { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
+// docs/design/software.md, section 3: what a server's or own VM's disk holds. os null is an empty disk; a software whose
+// doneAt is still ahead is installing.
+export interface MachineState {
+  os: { id: ServerOsId; version: string; installedAt: number } | null;
+  software: { id: string; version: string; installedAt: number; doneAt: number | null }[];
+}
+export interface Device extends MachineState { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
   components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
   // others are the further CPUs a swap of every socket replaces with the same spec.
   rebuild: { componentId: string; doneAt: number } | null; maintenance: { componentId: string; partId: string; doneAt: number; spec?: PartSpec; others?: string[] } | null;
@@ -255,7 +262,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
     components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
     rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null,
-    hung: false, bmcHung: false, log: [] as { hour: number; key: string }[],
+    hung: false, bmcHung: false, log: [] as { hour: number; key: string }[], os: null as MachineState["os"], software: [] as MachineState["software"],
     stuck: false, locked: false, setup: false, bootFrom: "disk" as const, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
   };
 }

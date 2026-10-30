@@ -190,23 +190,23 @@ describe("VM console", () => {
     const s = readyGame(7), made = createVm(s, basement(s).id, PANEL_VM_SIZE), vm = made.ok ? made.id! : "";
     ok(made);
     expect(err(installFromIso(s, vm, "cpanic"))).toBe("error.noMedia");
-    ok(setMedia(s, vm, "iso"));
-    expect(vmById(s, vm)?.media).toBe("iso");
+    ok(setMedia(s, vm, "lunix"));
+    expect(vmById(s, vm)?.media).toBe("lunix");
     expect(installCase(s, vm).kind).toBe("empty");
     ok(installFromIso(s, vm, "cpanic"));
     expect(hostOfVm(s, vm)?.switching?.to).toBe("cpanic");
-    expect(vmById(deserialize(serialize(s)), vm)?.media).toBe("iso");
+    expect(vmById(deserialize(serialize(s)), vm)?.media).toBe("lunix");
     for (let h = 0; h < 4; h++) tick(s);
     expect(hostOfVm(s, vm)?.panel).toBe("cpanic");
     expect(vmById(s, vm)?.media).toBeUndefined();
     ok(stopWorkload(s, vm));
-    ok(setMedia(s, vm, "iso"));
+    ok(setMedia(s, vm, "lunix"));
     expect(err(installFromIso(s, vm, "cpanic"))).toBe("error.alreadyStopped");
   });
 
   it("needs the VM's hostname to erase a panel with customers on it, booked on the host", () => {
     const s = readyGame(7), vm = panelVm(s), w = vmById(s, vm)!, before = s.workloads.length;
-    ok(setMedia(s, vm, "iso"));
+    ok(setMedia(s, vm, "lunix"));
     expect(installCase(s, vm).kind).toBe("busy");
     expect(err(installFromIso(s, vm, "cpanic"))).toBe("error.confirmHostname");
     expect(s.workloads).toHaveLength(before);
@@ -223,7 +223,7 @@ describe("VM console", () => {
 
   it("erases a VM to an empty disk", () => {
     const s = readyGame(7), vm = panelVm(s), w = vmById(s, vm)!;
-    ok(setMedia(s, vm, "iso"));
+    ok(setMedia(s, vm, "lunix"));
     expect(err(eraseDisk(s, vm))).toBe("error.confirmHostname");
     ok(eraseDisk(s, vm, w.hostname));
     expect(hostOfVm(s, vm)).toBeUndefined();

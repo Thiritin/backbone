@@ -4,7 +4,8 @@
 import { nowHours } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import type { Device, GameState } from "../50-state";
-import { clusterOf, dropCluster, hostOfVm, isOwnVm, vmById, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
+import { clusterOf, dropCluster, hostOfVm, isOwnVm, setMachine, vmById, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
+import type { ServerOsId } from "../10-catalog/server-os";
 import { pushLog } from "../60-infra/power";
 import { BOOT_HOURS, booting, powered } from "../60-infra/status";
 import { reportLoss } from "../85-products/products";
@@ -102,7 +103,7 @@ function clear(s: GameState, m: Machine, confirm: string | undefined): ActionRes
   return { ok: true };
 }
 
-const snapshot = (s: GameState, m: Machine) => ({ clusters: s.clusters, workloads: s.workloads, services: s.services, company: s.company, security: s.security, lossReports: s.lossReports, tickets: s.tickets, customers: s.customers, nextId: s.nextId, device: isDevice(m) ? { dataLost: m.dataLost, log: m.log } : null });
+const snapshot = (s: GameState, m: Machine) => ({ clusters: s.clusters, workloads: s.workloads, services: s.services, company: s.company, security: s.security, lossReports: s.lossReports, tickets: s.tickets, customers: s.customers, nextId: s.nextId, device: isDevice(m) ? { dataLost: m.dataLost, log: m.log, os: m.os, software: m.software } : null });
 const restore = (s: GameState, m: Machine, snap: ReturnType<typeof snapshot>) => { const { device, ...rest } = snap; Object.assign(s, rest); if (device) Object.assign(m, device); };
 
 // The machine booted into its installer: a server from the stick, a VM from the ISO, or why not.
@@ -120,6 +121,7 @@ function installOn(s: GameState, machineId: string, softwareId: string, confirm?
   if (typeof m === "string") return fail(m);
   const snap = snapshot(s, m), cleared = clear(s, m, confirm);
   if (!cleared.ok) return cleared;
+  setMachine(s, machineId, () => ({ os: null, software: [] }));
   const r = installSoftware(s, machineId, softwareId);
   if (!r.ok) restore(s, m, snap);
   return r;
@@ -137,7 +139,7 @@ export function eraseDisk(s: GameState, machineId: string, confirm?: string): Ac
 
 // The ISO in one of the player's own VMs: loaded, the VM boots the installer; ejected or once an install finishes, its own
 // disk again. A VM has no BIOS and no boot menu, the media decides.
-export function setMedia(s: GameState, vmId: string, media: "iso" | null): ActionResult {
+export function setMedia(s: GameState, vmId: string, media: ServerOsId | null): ActionResult {
   const vm = vmById(s, vmId);
   if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
   s.workloads = s.workloads.map((w) => (w.id === vmId ? { ...w, media: media ?? undefined } : w));

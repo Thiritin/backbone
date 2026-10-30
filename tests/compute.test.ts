@@ -54,8 +54,8 @@ describe("compute", () => {
     const s = withServer(startGame(1));
     skipTo(s, 2010);
     const host = ok(installPanel(s, "dev3", "freepanel"));
-    expect(err(installSoftware(s, "dev3", "proxmocks"))).toBe("error.onePanel");
-    expect(err(installSoftware(s, "dev3", "cpanic"))).toBe("error.onePanel");
+    expect(err(installSoftware(s, "dev3", "proxmocks"))).toBe("error.serverInUse");
+    expect(err(installSoftware(s, "dev3", "cpanic"))).toBe("error.portTaken");
     expect(err(installPanel(s, "dev3", "cpanic"))).toBe("error.serverInUse");
     expect(err(addNode(s, host, "dev3"))).toBe("error.panelHostOneServer");
     // Changing the panel needs the server empty of web spaces.

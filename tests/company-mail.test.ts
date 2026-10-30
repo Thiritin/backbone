@@ -100,7 +100,7 @@ describe("the mail software", () => {
     const vm2 = idOf(createVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, { vcpu: 1, ramGb: 2, diskGb: 40 }));
     expect(installBlock(s, vm2, "postfixit")).toBe("error.oneMailServer");
     const mine = s.clusters.find((c) => c.kind === "mail")!.vm!;
-    expect(installBlock(s, mine, "freepanel")).toBe("error.mailHost");
+    expect(installBlock(s, mine, "freepanel")).toBeNull();
   });
 
   it("is on sale from its year and installs Mailpig from 2015", () => {

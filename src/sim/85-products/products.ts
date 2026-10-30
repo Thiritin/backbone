@@ -2,10 +2,11 @@ import { chance } from "../00-core/rng";
 import { dateOf, isMonthStart, nowHours, yearOf } from "../00-core/time";
 import { isService, softwareById, type Software } from "../10-catalog/platforms";
 import { BACKUP_HOUR } from "../10-catalog/usage";
+import { APP_SUITE_FEE, serverOsById } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
-import type { Device, GameState, Location } from "../50-state";
+import type { Device, GameState, Location, MachineState } from "../50-state";
 import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
 import { BOOT_HOURS } from "../60-infra/status";
@@ -58,10 +59,19 @@ function units(s: GameState, c: Cluster, sw: Software): number {
   if (sw.pricing === "core") return c.nodes.reduce((n, x) => n + installedCores(s.devices.find((d) => d.id === x.deviceId)!), 0);
   return 0;
 }
-// The monthly license bill of a cluster's panel and platform.
+const softwareFee = (s: GameState, c: Cluster, id: string | null): number => {
+  if (!id) return 0;
+  const sw = softwareById(id);
+  return Math.round(sw.fee * units(s, c, sw) * 100) / 100;
+};
+// The monthly OS license of every machine, a server or one of the player's own VMs.
+const osFee = (m: Partial<MachineState>): number => (m.os ? serverOsById(m.os.id).fee : 0);
+const machinesOf = (s: GameState, c: Cluster) => (c.vm ? s.workloads.filter((w) => w.id === c.vm) : s.devices.filter((d) => c.nodes.some((n) => n.deviceId === d.id)));
+// The monthly license bill of a cluster's panel and platform; the operating systems of its machines and the App Suite
+// count under platform.
 export function licenseCost(s: GameState, c: Cluster): { panel: number; platform: number } {
-  const cost = (id: string | null) => { if (!id) return 0; const sw = softwareById(id); return Math.round(sw.fee * units(s, c, sw) * 100) / 100; };
-  return { panel: cost(c.panel), platform: cost(c.platform) };
+  const extra = machinesOf(s, c).reduce((n, m) => n + osFee(m), 0) + (c.appSuite ? APP_SUITE_FEE : 0);
+  return { panel: softwareFee(s, c, c.panel), platform: softwareFee(s, c, c.platform) + extra };
 }
 
 const tickets = (id: string | null) => (id ? softwareById(id).tickets : 1);
@@ -200,13 +210,15 @@ function overload(s: GameState) {
   }
 }
 
+// One line per paid software and cluster, one per App Suite, and one for every machine's Windoors together.
 function billLicenses(s: GameState) {
-  const lines = s.clusters.flatMap((c) => {
-    const cost = licenseCost(s, c);
-    return ([["panel", c.panel], ["platform", c.platform]] as const)
-      .filter(([k]) => cost[k] > 0)
-      .map(([k, id]) => ({ hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: c.name, name: softwareById(id!).name }, amount: -cost[k] }));
-  });
+  const line = (key: string, params: Record<string, string | number>, amount: number) => ({ hour: s.hour, category: "licenses", key, params, amount: -amount });
+  const lines = s.clusters.flatMap((c) => [
+    ...[c.panel, c.platform].filter((id) => softwareFee(s, c, id) > 0).map((id) => line("ledger.license", { cluster: c.name, name: softwareById(id!).name }, softwareFee(s, c, id))),
+    ...(c.appSuite ? [line("ledger.appSuite", { cluster: c.name }, APP_SUITE_FEE)] : []),
+  ]);
+  const windoors = [...s.devices, ...s.workloads].filter((m) => m.os?.id === "windoors");
+  if (windoors.length) lines.push(line("ledger.windoors", { count: windoors.length }, windoors.length * serverOsById("windoors").fee));
   if (!lines.length) return;
   s.cash = Math.round((s.cash + lines.reduce((n, l) => n + l.amount, 0)) * 100) / 100;
   s.ledger = [...s.ledger, ...lines];

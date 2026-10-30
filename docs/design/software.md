@@ -75,7 +75,7 @@ cPanic:
 cd /home && curl -o latest -L https://securedownloads.cpanic.example/latest && sh latest
 ```
 
-For `gui` the list is empty; the Windoors desktop installs it. `apt-get install <package>` with the catalog's `package` counts as the install for every `apt` software, so a player who knows the package name can skip the site; a software with a repo line needs that line first or the package is not found.
+For `gui` the list is empty; the Windoors desktop installs it. `install` describes the Lunix way; on Windoors every software installs from the desktop, so Pleskit, MultiKraft, Bound, OpenVeePeeN and MinnIO carry their Lunix method. The `Site` records live in `src/sim/10-catalog/sites.ts` (both operating systems and every software), and a site whose look never changes has one era. `apt-get install <package>` with the catalog's `package` counts as the install for every `apt` software, so a player who knows the package name can skip the site; a software with a repo line needs that line first or the package is not found.
 
 ## 3. Machines and state
 
@@ -90,7 +90,9 @@ Software moves from the cluster to the machine. A machine is a `Device` or an ow
 
 `Cluster` keeps `platform`, `panel` and `vm` as the derived control plane the rest of the sim reads (billing, products, migration, tickets, consoles). `installSoftware` writes the machine's list and still creates the cluster or panel host through the existing `installHypervisor`, `installPanel`, `installPanelInVm` underneath; `uninstallSoftware` the reverse through `dropCluster`, `leave`. The cluster layer is also where `createPanelVm`, `createSoftwareVm`, the test fixtures and the save migration create clusters directly, so the machine's list is written in the cluster layer itself (added in `installOnServer` and `installPanelInVm`, removed in `dropCluster` and `leave`, kept across `addNode`, cleared when a server is seized), not only in `installSoftware`.
 
-Licenses. `licenseCost` adds 15 euros per machine with Windoors and the App Suite per cluster; its result keeps the `{ panel, platform }` shape the tests assert, with Windoors under `platform`. The monthly ledger line names them ("Windoors Server, 3 machines").
+Until the OS installer lands, a machine with `os: null` that gets software takes the first OS the software runs on (Windoors for HyperVee and TCAdmen, Lunix for the rest); `canInstall(s, machineId, softwareId)` in `90-actions/software.ts` is where the OS check goes. The installer's erase empties `os` and `software`. A server still belongs to one cluster, so `installSoftware` on a server that already hosts one is refused with `error.serverInUse`, and a VM that hosts one with `error.onePanel`, even where `installBlock` passes; a second control plane on one machine needs the cluster layer to hold two.
+
+Licenses. `licenseCost` adds 15 euros per machine with Windoors and the App Suite per cluster; its result keeps the `{ panel, platform }` shape the tests assert, with Windoors under `platform`. The monthly ledger has one line for all Windoors machines ("Windoors Server, 3 machines") and one per App Suite cluster ("VMwhere App Suite, Cloud 1"); a Windoors machine in no cluster is billed there too.
 
 ## 4. The install pipeline
 

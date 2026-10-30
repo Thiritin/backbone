@@ -5,7 +5,8 @@ import { IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type 
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
-import type { Device, GameState } from "../50-state";
+import type { Device, GameState, MachineState } from "../50-state";
+import type { ServerOsId } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
 import { deviceVendor, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
@@ -38,6 +39,8 @@ export interface Cluster {
   compat?: boolean;
   // Whether the software updates itself at AUTO_UPDATE_HOUR when an update is due (software.ts).
   autoUpdate?: boolean;
+  // Whether a VMwhere cluster pays for the App Suite (APP_SUITE_FEE).
+  appSuite: boolean;
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
 }
 // One workload runs one service: on a hypervisor node or bare-metal panel server (clusterId and deviceId), inside a panel
@@ -46,13 +49,15 @@ export interface Cluster {
 // it last moved. A stopped workload keeps its booking; busyUntil is the hour a restore or cold migration finishes; backupAt
 // the last backup; stuck marks a VM that failover found no room for; migrating is a web space on its way to a panel host,
 // moved at the hour doneAt.
-export interface Workload extends Resources {
+// The player's own VMs carry MachineState; customer workloads do not.
+export interface Workload extends Resources, Partial<MachineState> {
   id: string; serviceId: string; clusterId: string | null; deviceId: string | null; rackId: string | null; slot: number; units: number; watts: number; placedAt: number;
   stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
   hostname?: string;
-  // The installer ISO loaded in one of the player's own VMs (90-actions/console.ts); the VM boots the installer while it is in.
-  media?: "iso";
+  // The installer ISO of an operating system loaded in one of the player's own VMs (90-actions/console.ts); the VM boots
+  // the installer while it is in.
+  media?: ServerOsId;
   migrating?: { clusterId: string; doneAt: number; announced?: true };
   // A pulled plug corrupted the data: it counts as lost until recovered (recoverDoneAt is the hour a recovery finishes) or
   // restored; noticed is set once the alert went out, recoverFailed once a recovery did not bring the data back.
@@ -62,7 +67,7 @@ export interface Workload extends Resources {
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.
 // Software of a save from before versions runs its install year, or two years before the save while no install date is known.
 export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, hour = 0): Cluster => ({
-  panel: null, platform: null, vm: null, switching: null, backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
+  panel: null, platform: null, vm: null, switching: null, appSuite: false, backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
   version: c.switching ? yearOf(c.switching.doneAt) : Math.max(START_YEAR, yearOf(hour) - 2), updatedAt: c.switching?.doneAt ?? hour, ...c,
   ha: { ...HA_OFF, ...c.ha },
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
@@ -227,8 +232,24 @@ export const installingOn = (s: GameState, deviceId: string): Cluster | undefine
   return c && c.switching && !c.panel && !c.platform ? c : undefined;
 };
 
-// Removes a cluster with nothing on it: backups to it stop and its security marks go.
+// A server or one of the player's own VMs.
+export const machineOf = (s: GameState, id: string): Device | Workload | undefined => s.devices.find((d) => d.id === id) ?? vmById(s, id);
+// Devices change in place, as the console's actions hold them; workloads are replaced.
+export function setMachine(s: GameState, id: string, fn: (m: MachineState) => Partial<MachineState>): void {
+  const d = s.devices.find((x) => x.id === id);
+  if (d) { Object.assign(d, fn(d)); return; }
+  s.workloads = s.workloads.map((w) => (w.id === id ? { ...w, ...fn({ os: w.os ?? null, software: w.software ?? [] }) } : w));
+}
+const machinesOf = (c: Cluster): string[] => (c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId));
+const softwareOfCluster = (c: Cluster): string[] => [c.panel, c.platform, c.switching?.to].filter((x): x is string => !!x);
+// The cluster's software leaves the machine's list.
+export const stripSoftware = (s: GameState, c: Cluster, machineId: string) =>
+  setMachine(s, machineId, (m) => ({ software: m.software.filter((x) => !softwareOfCluster(c).includes(x.id)) }));
+
+// Removes a cluster with nothing on it: backups to it stop, its security marks go and its machines lose its software.
 export function dropCluster(s: GameState, id: string) {
+  const c = s.clusters.find((x) => x.id === id);
+  if (c) for (const m of machinesOf(c)) stripSoftware(s, c, m);
   s.clusters = s.clusters.filter((x) => x.id !== id).map((x) => (x.backup.targetId === id ? { ...x, backup: { targetId: null, every: "off" } } : x));
   const drop = (ids: string[]) => ids.filter((x) => x !== id);
   if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };

@@ -1,5 +1,7 @@
 import type { Product } from "../30-customers/customers";
 import type { Resources } from "./products";
+import type { ServerOsId } from "./server-os";
+import { SITES, type Site } from "./sites";
 
 // Values from docs/design/economy.md, section "Platforms and licenses". EU competition rules make Pear offer four of each.
 export type SoftwareKind = "panel" | "cloud" | "game" | "mail" | "dns" | "vpn" | "storage";
@@ -35,9 +37,51 @@ export interface Software {
   // Year from which the software updates itself overnight when the player turns it on; null never. The hypervisors follow
   // HyperVee's cluster-aware updating (2012) and VMwhere's lifecycle manager (2020).
   autoUpdate: number | null;
+  // docs/design/software.md, section 2: the operating systems it installs on, the first one taken by a machine without one.
+  os: ServerOsId[];
+  // TCP ports it binds; two software sharing one cannot be on one machine.
+  ports: number[];
+  exclusive?: "hypervisor";
+  // How it gets onto Lunix: commands is what its website prints and the console accepts, in order; with apt,
+  // apt-get install of package counts as the install. gui installs from the Windoors desktop, as everything does there.
+  install: { kind: "apt" | "script" | "gui"; package?: string; commands: string[] };
+  site: Site;
 }
+type MachineFields = "os" | "ports" | "exclusive" | "install" | "site";
 
-export const SOFTWARE: Software[] = [
+const apt = (pkg: string, ...before: string[]): Software["install"] => ({ kind: "apt", package: pkg, commands: [...before, `apt-get install -y ${pkg}`] });
+const script = (line: string): Software["install"] => ({ kind: "script", commands: [line] });
+const GUI: Software["install"] = { kind: "gui", commands: [] };
+const L: ServerOsId[] = ["lunix"], LW: ServerOsId[] = ["lunix", "windoors"], W: ServerOsId[] = ["windoors"];
+const WEB = [80, 443];
+const repo = (url: string, file: string) => `echo "deb ${url}" > /etc/apt/sources.list.d/${file}.list`;
+const ON_MACHINE: Record<string, Omit<Pick<Software, MachineFields>, "site">> = {
+  cpanic: { os: L, ports: [...WEB, 2082, 2083, 2086, 2087], install: script("cd /home && curl -o latest -L https://securedownloads.cpanic.example/latest && sh latest") },
+  pleskit: { os: LW, ports: [...WEB, 8443, 8880], install: script("curl -O https://autoinstall.pleskit.example/pleskit-installer && sh pleskit-installer") },
+  directadmen: { os: L, ports: [...WEB, 2222], install: script("wget -O setup.sh https://download.directadmen.example/setup.sh && sh setup.sh auto") },
+  freepanel: { os: L, ports: [...WEB, 10000], install: apt("freepanel", "apt-get update") },
+  openveezee: { os: L, ports: [], exclusive: "hypervisor", install: { kind: "apt", package: "vzctl", commands: ["apt-get install -y linux-image-openveezee", "apt-get install -y vzctl", "reboot"] } },
+  openstash: { os: L, ports: [...WEB, 5000], exclusive: "hypervisor", install: apt("openstash", repo("http://repo.openstash.example/debiant main", "openstash"), "apt-get update") },
+  vmwhere: { os: L, ports: [...WEB, 902], exclusive: "hypervisor", install: script("curl -o install.sh https://downloads.vmwhere.example/vsphear/install.sh && sh install.sh") },
+  proxmocks: { os: L, ports: [8006], exclusive: "hypervisor", install: apt("proxmocks-ve", repo("http://download.proxmocks.example/debiant stretch pve-no-subscription", "pve"), "apt-get update") },
+  hypervee: { os: W, ports: [], exclusive: "hypervisor", install: GUI },
+  tcadmen: { os: W, ports: [...WEB, 8880], install: GUI },
+  multikraft: { os: LW, ports: [...WEB, 8080], install: script("wget https://www.multikraft.example/download/multikraft.tar.gz && tar xzf multikraft.tar.gz && cd multikraft && ./setup.sh") },
+  pterodaktyl: { os: L, ports: [...WEB, 8080], install: apt("pterodaktyl-panel", repo("http://repo.pterodaktyl.example/debiant stable main", "pterodaktyl"), "apt-get update") },
+  bound: { os: LW, ports: [53], install: apt("bound9") },
+  powerdnz: { os: L, ports: [53, 8081], install: apt("pdnz-server", "apt-get install -y pdnz-backend-sqlite3") },
+  knut: { os: L, ports: [53], install: apt("knut") },
+  openveepeen: { os: LW, ports: [943, 1194], install: script("curl -O https://as-repository.openveepeen.example/as.sh && sh as.sh") },
+  anyconnekt: { os: L, ports: [443, 1194], install: script("curl -O https://software.sysko.example/anyconnekt/install.sh && sh install.sh") },
+  wireguarded: { os: L, ports: [51820], install: apt("wireguarded") },
+  vsftpeed: { os: L, ports: [21], install: apt("vsftpeed") },
+  ownclod: { os: L, ports: WEB, install: apt("ownclod", repo("http://download.ownclod.example/debiant /", "ownclod")) },
+  minnio: { os: LW, ports: [9000, 9001], install: script("wget https://dl.minnio.example/server/minnio && chmod +x minnio && ./minnio server /data") },
+  postfixit: { os: L, ports: [25, 587], install: apt("postfixit") },
+  mailpig: { os: L, ports: [25, ...WEB, 587, 143, 993], install: apt("mailpig", repo("http://repo.mailpig.example/debiant stable main", "mailpig"), "apt-get update") },
+};
+
+const CATALOG: Omit<Software, MachineFields>[] = [
   { id: "cpanic", kind: "panel", name: "cPanic", console: "cPanic", pricing: "account", fee: 0.4, tickets: 0.8, live: true, split: true, balloon: null, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2005, migration: { same: 2005, other: 2012 }, cluster: null, autoUpdate: 2008 },
   { id: "pleskit", kind: "panel", name: "Pleskit", console: "Pleskit", pricing: "server", fee: 12, tickets: 0.9, live: true, split: true, balloon: null, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2005, migration: { same: 2005, other: 2015 }, cluster: null, autoUpdate: 2014 },
   { id: "directadmen", kind: "panel", name: "DirectAdmen", console: "DirectAdmen", pricing: "server", fee: 4, tickets: 1.2, live: true, split: true, balloon: null, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 2, from: 2005, migration: { same: 2010, other: null }, cluster: null, autoUpdate: 2019 },
@@ -65,6 +109,7 @@ export const SOFTWARE: Software[] = [
   { id: "postfixit", kind: "mail", name: "Postfixit", console: "Postfixit", pricing: "free", fee: 0, tickets: 1.4, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 20 }, installHours: 4, from: 2005 , migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   { id: "mailpig", kind: "mail", name: "Mailpig", console: "Mailpig", pricing: "free", fee: 0, tickets: 1, live: false, split: true, balloon: null, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 20 }, installHours: 2, from: 2015 , migration: { same: null, other: null }, cluster: null, autoUpdate: null },
 ];
+export const SOFTWARE: Software[] = CATALOG.map((x) => ({ ...x, ...ON_MACHINE[x.id], site: SITES[x.id] }));
 
 // The product lines each kind of software lets a cluster sell; the rest runs on whole servers, in racks or nowhere.
 export const SERVES: Record<SoftwareKind, Product[]> = {
@@ -92,6 +137,10 @@ export const autoUpdates = (sw: Software, year: number): boolean => sw.autoUpdat
 export const clustersIn = (sw: Software, year: number): boolean => sw.cluster !== null && year >= sw.cluster;
 // Whether the software balloons guest RAM in that year.
 export const balloons = (sw: Software, year: number): boolean => sw.balloon !== null && year >= sw.balloon;
+// Why a and b cannot share a machine, as an error key, or null.
+export const conflict = (a: Software, b: Software): string | null =>
+  a.exclusive && a.exclusive === b.exclusive ? "error.oneHypervisor" : a.ports.some((p) => b.ports.includes(p)) ? "error.portTaken" : null;
+export const runsOn = (sw: Software, osId: ServerOsId): boolean => sw.os.includes(osId);
 export const softwareOf = (kind: SoftwareKind): Software[] => SOFTWARE.filter((x) => x.kind === kind);
 
 // economy.md, PHP versions: each from 1 January after its release, when web hosts start to install it.

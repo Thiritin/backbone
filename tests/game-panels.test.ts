@@ -54,7 +54,7 @@ describe("game server panels", () => {
     expect(err(installSoftware(s, "dev3", "pterodaktyl"))).toBe("error.softwareNotYet");
     ok(installSoftware(s, "dev3", "multikraft"));
     expect(softwareOn(s, "dev3")[0]).toMatchObject({ id: "multikraft", cluster: { kind: "game" } });
-    expect(err(installSoftware(s, "dev3", "tcadmen"))).toBe("error.onePanel");
+    expect(err(installSoftware(s, "dev3", "tcadmen"))).toBe("error.wrongOs");
     const { s: late } = start(2016);
     ok(installSoftware(late, "dev3", "pterodaktyl"));
   });

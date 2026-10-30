@@ -102,7 +102,7 @@ export function Screen({ game, device: d, via, active = true }: { game: GameStat
           </div>
         )}
         {phase === "installer" && installer.view}
-        {phase === "os" && <Os game={game} d={d} look={look as Look} version={sw?.cluster.version ?? 0} hung={state === "hung"} />}
+        {phase === "os" && <Os game={game} d={d} look={look as Look} version={sw?.cluster?.version ?? 0} hung={state === "hung"} />}
       </div>
       <div className="scr-keys" role="group" aria-label="Keys">
         {SOFT_KEYS.map(([label, key]) => <button key={key} onClick={() => { onKey(key); box.current?.focus({ preventScroll: true }); }}>{label}</button>)}

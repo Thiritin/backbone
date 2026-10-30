@@ -18,6 +18,7 @@ import { ORDERS_EN } from "./orders";
 import { COMMUNITY_EN } from "./community";
 import { MANUAL_EN } from "./manual";
 import { ACTIVITY_EN } from "./activity";
+import { SOFTWARE_EN } from "./software";
 import { REPLIES_EN } from "./replies";
 import { BURNIN_EN } from "./burnin";
 import { USED_EN } from "./used";
@@ -46,6 +47,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...BREACH_EN,
   ...APPS_EN,
   ...ACTIVITY_EN,
+  ...SOFTWARE_EN,
   ...SITE_EN,
   ...DOMAINS_EN,
   ...NEWS_EN,
@@ -643,7 +645,6 @@ export const en: Record<string, (p: Params) => string> = {
   "error.noSoftware": () => "No software is installed on this machine.",
   "error.onePanel": () => "This machine already runs a panel.",
   "error.oneHypervisor": () => "This server already runs a hypervisor.",
-  "error.panelInVm": () => "A panel on a hypervisor server runs in a virtual machine.",
   "error.nestedHypervisor": () => "Hypervisors do not run inside virtual machines.",
   "error.notOwnVm": () => "This is not one of your virtual machines.",
   "error.alreadyNode": () => "This server is already in the cluster.",

@@ -13,6 +13,7 @@ import { fillHostnames } from "../30-customers/hostnames";
 import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
+import { fillMachines } from "./machines";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
 export const serialize = (state: GameState): string => JSON.stringify(state);
@@ -30,6 +31,8 @@ const INFRA = ["nextId", "locations", "racks", "devices", "cables"] as const;
 export function deserialize(raw: string): GameState {
   const data = JSON.parse(raw) as Partial<GameState>;
   if (typeof data.seed !== "number") throw new Error("save has no seed");
+  // Machines saved before operating systems.
+  const bare = new Set([...(data.devices ?? []), ...(data.workloads ?? [])].filter((m) => m.os === undefined).map((m) => m.id));
   const base = newGame(data.seed);
   if ((data.version ?? 1) < 2) for (const k of INFRA) delete data[k];
   const locations: GameState["locations"] = [];
@@ -62,7 +65,7 @@ export function deserialize(raw: string): GameState {
   }));
   // Saves from before addresses get theirs.
   const fill = data.ips ? (x: GameState) => x : fillAddresses;
-  return dropGone(gone, fillRegistrar(fill(fillDesign(fillLines(fillHostnames(upgradeCompute(fillDomains(fillSpecs({
+  return fillMachines(dropGone(gone, fillRegistrar(fill(fillDesign(fillLines(fillHostnames(upgradeCompute(fillDomains(fillSpecs({
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
     // Saves from before free mail had no mail service at all.
@@ -92,9 +95,9 @@ export function deserialize(raw: string): GameState {
     staff: (data.staff ?? []).map((e) => ({ ...e, location: e.location ?? null, hours: e.hours ?? 8, hoursFrom: e.hoursFrom ?? 0 })),
     techRules: { ...base.techRules, ...data.techRules },
     // upgradeCompute fills the cluster defaults.
-    clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map(workloadDefaults), downHours: data.downHours ?? {},
+    clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map((w) => workloadDefaults({ ...w, media: (w.media as string) === "iso" ? "lunix" : w.media })), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
-  })))), data.marketing?.lines), data.marketing?.designYear)), data.registrar));
+  })))), data.marketing?.lines), data.marketing?.designYear)), data.registrar)), bare);
 }
 
 // Devices whose model left the game (tower servers) are gone with everything that points at them: cables, lease entries,

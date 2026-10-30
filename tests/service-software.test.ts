@@ -45,12 +45,12 @@ describe("service software", () => {
     expect(installBlock(s, vm, "openveepeen")).toBeNull();
     expect(installBlock(s, vm, "minnio")).toBe("error.softwareNotYet");
     expect(installSoftware(s, vm, "openveepeen").ok).toBe(true);
-    expect(installBlock(s, vm, "bound")).toBe("error.onePanel");
+    expect(installBlock(s, vm, "bound")).toBeNull();
 
     const bare = withServer(newGame(2));
     expect(installSoftware(bare, "dev3", "vsftpeed").ok).toBe(true);
     expect(bare.clusters[0]).toMatchObject({ kind: "storage", nodes: [{ deviceId: "dev3" }] });
-    expect(installBlock(bare, "dev3", "vmwhere")).toBe("error.onePanel");
+    expect(installBlock(bare, "dev3", "vmwhere")).toBeNull();
   });
 
   it("opens newer software in its year", () => {

@@ -21,8 +21,6 @@ export const DOMAINS_EN: Record<string, (p: Params) => string> = {
   "error.noMailServer": () => "No mail server is installed.",
   "error.noMailService": () => "The company already uses free email.",
   "error.oneMailServer": () => "The company runs one mail server.",
-  "error.mailHost": () => "This machine already runs the mail server.",
-  "error.mailInVm": () => "A mail server goes into a VM on this hypervisor.",
   "event.domainsTransferred.title": () => "Domains moved",
   "event.domainsTransferred.text": (p) => `${p.count} domain${Number(p.count) === 1 ? " is" : "s are"} now managed by ${p.name}.`,
   "event.registrarTier.title": () => "Better partner rate",

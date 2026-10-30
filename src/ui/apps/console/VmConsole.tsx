@@ -30,7 +30,7 @@ export function VmConsole({ vm: w, front }: { vm: Workload; front: boolean }) {
         <b>{name}</b>
         <span className="muted">Virtual console</span>
         <span className="grow" />
-        <button onClick={() => act(setMedia, w.id, w.media ? null : "iso")}>{w.media ? "Eject ISO" : "Load installer ISO"}</button>
+        <button onClick={() => act(setMedia, w.id, w.media ? null : "lunix")}>{w.media ? "Eject ISO" : "Load installer ISO"}</button>
         {st === "stopped" ? <button onClick={() => act(startWorkload, w.id)}>Power on</button> : <button disabled={!on} onClick={() => act(stopWorkload, w.id)}>Shut down</button>}
       </div>
       <div className="con-body">

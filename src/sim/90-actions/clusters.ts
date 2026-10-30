@@ -6,12 +6,13 @@ import { vmName } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
 import { balloons, clustersIn, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
+import { serverOsAt } from "../10-catalog/server-os";
 import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
   anchorOf, clusterOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
-  setNodeState, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
+  setMachine, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
 import { freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
@@ -25,7 +26,7 @@ export const PANEL_VM_SIZE: Resources = { vcpu: 2, ramGb: 2, diskGb: 50 };
 export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
 const blank = (s: GameState, id: string, name: string, az: string, kind: SoftwareKind): Cluster => ({
-  id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null,
+  id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null, appSuite: false,
   backup: { targetId: null, every: "off" }, php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
 });
 // The name a cluster in one of the player's VMs gets, by the kind of its software.
@@ -44,6 +45,16 @@ const freeServer = (s: GameState, d: GameState["devices"][number] | undefined): 
   return serverTaken(s, d.id) ? "error.serverInUse" : null;
 };
 
+// The software joins the machine's list, installing until doneAt. Until the OS installer exists, a machine without an OS
+// takes the first one the software runs on.
+function addSoftware(s: GameState, machineId: string, sw: Software, doneAt: number): void {
+  const year = yearOf(s.hour);
+  setMachine(s, machineId, (m) => ({
+    os: m.os ?? { id: sw.os[0], version: serverOsAt(sw.os[0], year).version, installedAt: s.hour },
+    software: [...m.software, { id: sw.id, version: String(year), installedAt: s.hour, doneAt }],
+  }));
+}
+
 // Installs software on a free server as a new one-server cluster whose control plane is busy for the install hours.
 function installOnServer(s: GameState, deviceId: string, sw: Software, name: (label: string, loc: string) => string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId), bad = freeServer(s, d);
@@ -52,6 +63,7 @@ function installOnServer(s: GameState, deviceId: string, sw: Software, name: (la
   const c: Cluster = { ...blank(s, id, name(d!.label ?? d!.name, loc.name), loc.az, sw.kind), nodes: [{ deviceId, state: "active" }], controlPlane: deviceId };
   if (!fitsControlPlane(s, { ...c, [slot]: sw.id }, deviceId)) return fail(working(s, deviceId) ? "error.nodeFull" : "error.nodeDown");
   s.clusters = [...s.clusters, { ...c, switching: { kind: sw.kind, to: sw.id, doneAt: s.hour + sw.installHours } }];
+  addSoftware(s, deviceId, sw, s.hour + sw.installHours);
   return { ok: true, id };
 }
 
@@ -79,7 +91,7 @@ export function createVm(s: GameState, clusterId: string, size: Resources): Acti
   if (KEYS.some((k) => !Number.isFinite(size[k]) || size[k] < PANEL_VM_MIN[k])) return fail("error.vmSize");
   const node = pickNode(s, c, size);
   if (!node) return fail("error.noCapacity");
-  const vm = workload(s, "", { ...size, clusterId: c.id, deviceId: node });
+  const vm = workload(s, "", { ...size, clusterId: c.id, deviceId: node, os: null, software: [] });
   s.workloads = [...s.workloads, vm];
   return { ok: true, id: vm.id };
 }
@@ -106,6 +118,7 @@ export function installPanelInVm(s: GameState, vmId: string, panelId: string): A
   if (sizeError(vm, sw.controlPlane)) return fail("error.vmSize");
   const id = `clu${s.nextId++}`, after = Math.max(s.hour, c.switching?.doneAt ?? s.hour);
   s.clusters = [...s.clusters, { ...blank(s, id, freeName(s, PREFIX[sw.kind]), c.az, sw.kind), vm: vm.id, switching: { kind: sw.kind, to: panelId, doneAt: after + sw.installHours } }];
+  addSoftware(s, vm.id, sw, after + sw.installHours);
   return { ok: true, id };
 }
 
@@ -209,7 +222,9 @@ export function addNode(s: GameState, clusterId: string, deviceId: string): Acti
   if (locationOf(s, d)?.az !== c.az) return fail("error.otherZone");
   if ((own.panel ?? own.platform) !== id) return fail(panel ? "error.otherPanel" : "error.otherHypervisor");
   if (workloadsOn(s, d.id).length) return fail("error.nodeNotEmpty");
+  const kept = d.software;
   leave(s, own.id, d.id);
+  d.software = kept;
   update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, { deviceId, state: "active" }], controlPlane: x.controlPlane ?? deviceId }));
   return { ok: true };
 }
@@ -217,6 +232,7 @@ export function addNode(s: GameState, clusterId: string, deviceId: string): Acti
 // A node leaves its cluster; its control plane moves to the next node, and the last node takes the cluster with it.
 export const leave = (s: GameState, clusterId: string, deviceId: string) => {
   const c = s.clusters.find((x) => x.id === clusterId)!, nodes = c.nodes.filter((n) => n.deviceId !== deviceId);
+  stripSoftware(s, c, deviceId);
   if (!nodes.length) return dropCluster(s, c.id);
   update(s, c.id, (x) => ({ ...x, nodes, controlPlane: x.controlPlane === deviceId ? nodes[0].deviceId : x.controlPlane }));
 };

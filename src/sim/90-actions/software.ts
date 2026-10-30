@@ -1,22 +1,22 @@
 import { dateOf, yearOf } from "../00-core/time";
-import { autoUpdates, clustersIn, isService, phpAt, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { autoUpdates, clustersIn, conflict, phpAt, runsOn, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
-import { anchorOf, clusterOf, dropCluster, hostOfVm, workloadsOn, type Cluster } from "../60-infra/cluster";
+import { anchorOf, clusterOf, dropCluster, hostOfVm, machineOf, workloadsOn, type Cluster } from "../60-infra/cluster";
 import { locationOf } from "../60-infra/status";
 import { familyOf, openVulns } from "../60-infra/vulns";
 import { createVm, installHypervisor, installPanel, installPanelInVm, PANEL_VM_SIZE, phpDue, removeNode, upgradeNodePhp } from "./clusters";
 import type { ActionResult } from "./hardware";
 
-// A machine is a server or one of the player's own VMs. It runs one hypervisor or one panel: a panel next to a hypervisor
-// goes into a VM on it, and VMs take no hypervisor. The software is the control plane of the machine's cluster.
-export interface Installed { id: string; doneAt: number | null; cluster: Cluster }
+// A machine is a server or one of the player's own VMs, with the software on its disk; VMs take no hypervisor. The
+// software is the control plane of the machine's cluster. doneAt is null once installed.
+export interface Installed { id: string; doneAt: number | null; cluster?: Cluster }
 
 const isServer = (s: GameState, id: string) => s.devices.some((d) => d.id === id);
 const clusterOn = (s: GameState, id: string): Cluster | undefined => (isServer(s, id) ? clusterOf(s, id) : hostOfVm(s, id));
 
 export function softwareOn(s: GameState, machineId: string): Installed[] {
-  const c = clusterOn(s, machineId), id = c && (c.switching?.to ?? c.panel ?? c.platform);
-  return c && id ? [{ id, doneAt: c.switching?.doneAt ?? null, cluster: c }] : [];
+  const c = clusterOn(s, machineId);
+  return (machineOf(s, machineId)?.software ?? []).map((x) => ({ id: x.id, doneAt: x.doneAt !== null && x.doneAt > s.hour ? x.doneAt : null, cluster: c }));
 }
 
 const joinsAt = (s: GameState, c: Cluster): boolean => c.kind === "cloud" || (!c.vm && clustersIn(softwareById(c.panel ?? ""), yearOf(s.hour)));
@@ -38,20 +38,27 @@ export function joinableClusters(s: GameState, deviceId: string): Cluster[] {
   return s.clusters.filter((c) => c.id !== own.id && c.kind === own.kind && c.az === az && (c.panel ?? c.platform) === id && joinsAt(s, c));
 }
 
-// Why the software cannot go on the machine next to what it runs, or null; the installer erases what it runs first.
+// Why the software cannot go on the machine next to what it runs, or null; the installer erases the disk first.
 export function installBlock(s: GameState, machineId: string, softwareId: string, replacing = false): string | null {
-  const sw = softwareById(softwareId), vm = !isServer(s, machineId), have = replacing ? undefined : softwareOn(s, machineId)[0];
+  const sw = softwareById(softwareId), vm = !isServer(s, machineId);
   if (yearOf(s.hour) < sw.from) return "error.softwareNotYet";
   if (vm && sw.kind === "cloud") return "error.nestedHypervisor";
   if (sw.kind === "mail") {
     if (!s.company.domain) return "error.needsDomain";
     if (s.clusters.some((c) => c.kind === "mail")) return "error.oneMailServer";
   }
-  if (!have) return null;
-  const on = softwareById(have.id).kind;
-  if (on === "panel" || isService(on)) return "error.onePanel";
-  if (on === "mail") return "error.mailHost";
-  return sw.kind === "cloud" ? "error.oneHypervisor" : sw.kind === "mail" ? "error.mailInVm" : "error.panelInVm";
+  return replacing ? null : canInstall(s, machineId, sw.id);
+}
+
+// Why the machine's disk does not take the software: another OS, or a conflict with what is installed.
+export function canInstall(s: GameState, machineId: string, softwareId: string): string | null {
+  const sw = softwareById(softwareId), m = machineOf(s, machineId);
+  if (m?.os && !runsOn(sw, m.os.id)) return "error.wrongOs";
+  for (const x of m?.software ?? []) {
+    const why = conflict(sw, softwareById(x.id));
+    if (why) return why;
+  }
+  return null;
 }
 
 // Installs catalog software on a server or one of the player's VMs; it runs after its install hours.

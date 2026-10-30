@@ -9,9 +9,15 @@ import { fillLines } from "../src/sim/80-business/website";
 import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
+import { setMachine } from "../src/sim/60-infra/cluster";
 
+// The cluster's install is finished, on its machines too.
 const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][number]>) => {
-  s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, ...patch, switching: null } : c));
+  const c = s.clusters.find((x) => x.id === id)!;
+  for (const m of c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId)) {
+    setMachine(s, m, (x) => ({ software: x.software.map((sw) => (sw.doneAt !== null && sw.doneAt > s.hour ? { ...sw, doneAt: s.hour } : sw)) }));
+  }
+  s.clusters = s.clusters.map((x) => (x.id === id ? { ...x, ...patch, switching: null } : x));
   return id;
 };
 const must = (r: { ok: boolean; id?: string; error?: string }): string => {
