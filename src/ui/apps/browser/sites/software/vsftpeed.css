@@ -1,0 +1,11 @@
+.sw-vsftpeed { padding: 12px 16px; font: 14px/1.4 "Courier New", Courier, monospace; color: #000000; }
+.sw-vsftpeed h1 { font-size: 20px; font-weight: 700; }
+.sw-vsftpeed h3 { margin-top: 14px; font-size: 15px; }
+.sw-vsftpeed nav { display: flex; gap: 12px; margin-top: 8px; }
+.sw-vsftpeed nav a { color: #0000ee; }
+.sw-vsftpeed nav a[aria-current] { color: #551a8b; }
+.sw-vsftpeed hr { margin: 10px 0; }
+.sw-vsftpeed p, .sw-vsftpeed ul, .sw-vsftpeed table, .sw-vsftpeed .sws-cmd { margin-top: 8px; }
+.sw-vsftpeed ul { padding-left: 24px; }
+.sw-vsftpeed .sws-cmd pre { background: #ffffff; border: 1px dashed #000000; font-family: "Courier New", Courier, monospace; }
+.sw-vsftpeed address { font-size: 12px; }

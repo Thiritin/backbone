@@ -7,12 +7,13 @@ import { SITE_VIEWS } from "../src/ui/apps/browser/sites/software/registry";
 import { readyGame, skipTo } from "./fixtures";
 
 const PAGES: SitePage[] = ["home", "features", "pricing", "download"];
+const ONE_LOOK = new Set(["wireguarded", "vsftpeed", "postfixit", "mailpig"]);
 
 describe("software sites", () => {
   it("mounts every site in both eras on every page", () => {
     for (const [id, View] of Object.entries(SITE_VIEWS)) {
       const p = productOf(id === "lunix" || id === "windoors" ? "os" : "software", id)!;
-      expect(p.site.eras.map((e) => e.look)).toEqual(["early", "late"]);
+      expect(p.site.eras.map((e) => e.look)).toEqual(ONE_LOOK.has(id) ? ["early"] : ["early", "late"]);
       for (const { look, from } of p.site.eras) for (const page of PAGES) {
         const html = renderToString(<View p={p} look={look} page={page} year={from} go={() => {}} />);
         expect(html).toContain(page === "pricing" ? (p.sw?.pricing === "free" || p.os?.fee === 0 ? "Free" : "€") : "<nav");
@@ -25,6 +26,14 @@ describe("software sites", () => {
     const html = renderToString(<SITE_VIEWS.tcadmen p={productOf("software", "tcadmen")!} look="early" page="pricing" year={2005} go={() => {}} />);
     expect(html).toContain("runs on Windoors Server");
     expect(renderToString(<SITE_VIEWS.cpanic p={productOf("software", "cpanic")!} look="early" page="pricing" year={2005} go={() => {}} />)).not.toContain("runs on Windoors Server");
+  });
+
+  it("says what a software without a web console gives after install", () => {
+    const gets = { bound: "port 53", knut: "port 53", wireguarded: "VPN gateway", vsftpeed: "FTP server", postfixit: "mail server" };
+    for (const [id, text] of Object.entries(gets)) {
+      const p = productOf("software", id)!, View = SITE_VIEWS[id];
+      for (const { look, from } of p.site.eras) expect(renderToString(<View p={p} look={look} page="download" year={from} go={() => {}} />)).toContain(text);
+    }
   });
 
   it("mounts the index in both eras", () => {

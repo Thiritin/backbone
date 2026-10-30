@@ -15,6 +15,17 @@ import { Pterodaktyl } from "./pterodaktyl";
 import { TCAdmen } from "./tcadmen";
 import { VMwhere } from "./vmwhere";
 import { Windoors } from "./windoors";
+import { AnyConnekt } from "./anyconnekt";
+import { Bound } from "./bound";
+import { KnutDns } from "./knut";
+import { Mailpig } from "./mailpig";
+import { MinnIO } from "./minnio";
+import { OpenVeePeeN } from "./openveepeen";
+import { OwnClod } from "./ownclod";
+import { Postfixit } from "./postfixit";
+import { PowerDNZ } from "./powerdnz";
+import { VsFTPeed } from "./vsftpeed";
+import { WireGuarded } from "./wireguarded";
 import { pageOf, PlainSite, productOf, type SiteComponent } from "./SoftwareSite";
 
 // Every software and OS site with a design of its own; the rest render the plain site.
@@ -23,6 +34,8 @@ export const SITE_VIEWS: Record<string, SiteComponent> = {
   openveezee: OpenVeeZee, openstash: OpenStash, vmwhere: VMwhere, proxmocks: Proxmocks, hypervee: HyperVee,
   cpanic: Cpanic, pleskit: Pleskit, directadmen: DirectAdmen, freepanel: FreePanel,
   tcadmen: TCAdmen, multikraft: MultiKraft, pterodaktyl: Pterodaktyl,
+  bound: Bound, powerdnz: PowerDNZ, knut: KnutDns, openveepeen: OpenVeePeeN, anyconnekt: AnyConnekt, wireguarded: WireGuarded,
+  vsftpeed: VsFTPeed, ownclod: OwnClod, minnio: MinnIO, postfixit: Postfixit, mailpig: Mailpig,
 };
 
 export function SoftwarePage({ game, kind, id, path, go }: { game: GameState; kind: "software" | "os"; id: string; path: string; go: (url: string) => void }) {

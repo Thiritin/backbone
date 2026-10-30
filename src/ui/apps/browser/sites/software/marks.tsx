@@ -6,6 +6,8 @@ export const SITE_COLOR: Record<string, string> = {
   openveezee: "#1f8a9e", openstash: "#da1a32", vmwhere: "#3a6ea5", proxmocks: "#e57000", hypervee: "#0063b1",
   cpanic: "#ff6c2c", pleskit: "#53bce6", directadmen: "#2f6f2f", freepanel: "#3c8d3c",
   tcadmen: "#7ac142", multikraft: "#6b4a2b", pterodaktyl: "#0e4688",
+  bound: "#1b4f8a", powerdnz: "#f07d00", knut: "#c3202f", openveepeen: "#ea7e20", anyconnekt: "#005073", wireguarded: "#88171a",
+  vsftpeed: "#444444", ownclod: "#1d63ad", minnio: "#c72c48", postfixit: "#555555", mailpig: "#f0569a",
 };
 
 const W = { stroke: "white", strokeWidth: 1.5, fill: "none", strokeLinecap: "round", strokeLinejoin: "round" } as const;

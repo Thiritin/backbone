@@ -1,0 +1,31 @@
+.sw-powerdnz { font: 12px/1.5 Verdana, Geneva, sans-serif; color: #222222; }
+.sw-powerdnz .sw-wm { display: flex; align-items: center; gap: 8px; font: 700 24px/1 Verdana, Geneva, sans-serif; color: #f07d00; }
+.sw-powerdnz.early header { display: flex; align-items: baseline; gap: 16px; padding: 14px 18px; border-bottom: 3px solid #f07d00; }
+.sw-powerdnz .tag { color: #777777; }
+.sw-powerdnz .cols { display: grid; grid-template-columns: 170px 1fr; min-height: 420px; }
+.sw-powerdnz.early aside { padding: 12px; background: #fff3e6; border-right: 1px solid #f5c48f; }
+.sw-powerdnz aside nav { display: flex; flex-direction: column; gap: 4px; }
+.sw-powerdnz.early aside a { color: #c25f00; font-weight: 700; text-decoration: none; }
+.sw-powerdnz.early aside a[aria-current] { color: #222222; }
+.sw-powerdnz .news { margin-top: 18px; font-size: 11px; }
+.sw-powerdnz main { padding: 14px 22px; max-width: 760px; }
+.sw-powerdnz h1 { margin-bottom: 10px; font-size: 22px; }
+.sw-powerdnz h2 { margin-bottom: 8px; font-size: 16px; color: #f07d00; }
+.sw-powerdnz section > * + * { margin-top: 10px; }
+.sw-powerdnz section ul { padding-left: 18px; }
+.sw-powerdnz th { border-bottom: 2px solid #f07d00; }
+.sw-powerdnz .sws-cta { color: #f07d00; font-weight: 700; }
+.sw-powerdnz.early footer { padding: 8px 18px; border-top: 1px solid #eeeeee; color: #888888; font-size: 10px; }
+.sw-powerdnz.late { font: 15px/1.6 Lato, "Helvetica Neue", Arial, sans-serif; }
+.sw-powerdnz.late header { display: flex; align-items: center; gap: 18px; padding: 12px 28px; background: #2b2b2b; }
+.sw-powerdnz.late .sw-wm { font: 700 20px/1 Lato, "Helvetica Neue", Arial, sans-serif; color: #ffffff; }
+.sw-powerdnz .ver { color: #f9a548; font-size: 13px; }
+.sw-powerdnz .docs { display: grid; grid-template-columns: 230px 1fr; min-height: 480px; }
+.sw-powerdnz.late aside { padding: 18px 20px; background: #343131; color: #cccccc; }
+.sw-powerdnz.late aside h3 { margin: 14px 0 6px; color: #f9a548; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+.sw-powerdnz.late aside a { color: #dddddd; text-decoration: none; }
+.sw-powerdnz.late aside a[aria-current] { color: #ffffff; font-weight: 700; border-left: 3px solid #f07d00; padding-left: 8px; }
+.sw-powerdnz.late aside p { color: #999999; font-size: 14px; }
+.sw-powerdnz .crumbs { margin-bottom: 14px; color: #888888; font-size: 13px; }
+.sw-powerdnz.late main { padding: 24px 40px; }
+.sw-powerdnz.late .sws-cmd pre { background: #2b2b2b; color: #f3f3f3; }

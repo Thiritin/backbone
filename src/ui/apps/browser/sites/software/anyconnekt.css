@@ -1,0 +1,32 @@
+.sw-anyconnekt { font: 11px/1.45 Arial, Helvetica, sans-serif; color: #333333; }
+.sw-anyconnekt .util { padding: 3px 16px; background: #f2f2f2; color: #666666; font-size: 10px; text-align: right; }
+.sw-anyconnekt header { display: flex; align-items: center; gap: 24px; padding: 10px 16px; }
+.sw-anyconnekt .sw-wm { display: flex; align-items: center; gap: 6px; font: 700 20px/1 Arial, Helvetica, sans-serif; letter-spacing: 0.12em; color: #005073; }
+.sw-anyconnekt .crumb { color: #666666; font-size: 10px; }
+.sw-anyconnekt .tabs { display: flex; gap: 2px; padding: 0 16px; border-bottom: 3px solid #005073; }
+.sw-anyconnekt .tabs a { padding: 4px 12px; border: 1px solid #a7bfcc; border-bottom: 0; background: #e1ebf0; color: #005073; font-weight: 700; text-decoration: none; }
+.sw-anyconnekt .tabs a[aria-current] { background: #005073; border-color: #005073; color: #ffffff; }
+.sw-anyconnekt main { padding: 12px 16px; max-width: 760px; }
+.sw-anyconnekt h1 { margin-bottom: 8px; font-size: 16px; color: #005073; }
+.sw-anyconnekt h2 { margin-bottom: 6px; font-size: 13px; color: #005073; }
+.sw-anyconnekt section > * + * { margin-top: 8px; }
+.sw-anyconnekt section ul { padding-left: 16px; }
+.sw-anyconnekt th { background: #e1ebf0; padding-left: 6px; }
+.sw-anyconnekt td { padding-left: 6px; border-bottom: 1px solid #dddddd; }
+.sw-anyconnekt .sws-cta { color: #005073; font-weight: 700; }
+.sw-anyconnekt footer { margin-top: 18px; padding: 8px 16px; border-top: 1px solid #cccccc; color: #777777; font-size: 10px; }
+.sw-anyconnekt.late { font: 15px/1.6 "Helvetica Neue", Arial, sans-serif; }
+.sw-anyconnekt.late .util { background: #ffffff; font-size: 12px; }
+.sw-anyconnekt.late .sw-wm { color: #00a3c4; font-weight: 300; }
+.sw-anyconnekt.late .crumb { font-size: 12px; }
+.sw-anyconnekt.late .tabs { gap: 24px; padding: 0 48px; border-bottom: 1px solid #e5e5e5; }
+.sw-anyconnekt.late .tabs a { padding: 10px 0; border: 0; background: none; color: #39393b; font-weight: 400; }
+.sw-anyconnekt.late .tabs a[aria-current] { box-shadow: inset 0 -3px 0 #00a3c4; color: #005073; }
+.sw-anyconnekt .hero { padding: 48px; background: #f0f9fb; }
+.sw-anyconnekt .hero h1 { font-size: 34px; font-weight: 300; color: #39393b; }
+.sw-anyconnekt .hero p { max-width: 640px; color: #58585b; }
+.sw-anyconnekt .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 32px 48px; padding: 0; list-style: none; background: #dfdfdf; border: 1px solid #dfdfdf; max-width: 960px; }
+.sw-anyconnekt .tiles li { padding: 22px; background: #ffffff; }
+.sw-anyconnekt.late main { padding: 28px 48px; }
+.sw-anyconnekt.late h1, .sw-anyconnekt.late h2 { font-weight: 300; font-size: 26px; color: #39393b; }
+.sw-anyconnekt.late footer { padding: 20px 48px; font-size: 12px; }

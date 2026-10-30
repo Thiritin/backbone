@@ -1,0 +1,14 @@
+.sw-wireguarded { font: 13.5px/1.6 "DejaVu Sans Mono", Menlo, Consolas, monospace; color: #1a1a1a; }
+.sw-wireguarded header { display: flex; align-items: center; gap: 28px; padding: 18px 40px; border-bottom: 1px solid #e8e8e8; }
+.sw-wireguarded .sw-wm { display: flex; align-items: center; gap: 10px; font: 700 20px/1 "DejaVu Sans Mono", Menlo, monospace; color: #88171a; }
+.sw-wireguarded nav { display: flex; gap: 18px; }
+.sw-wireguarded nav a { color: #88171a; }
+.sw-wireguarded nav a[aria-current] { color: #1a1a1a; text-decoration: none; font-weight: 700; }
+.sw-wireguarded main { max-width: 780px; padding: 20px 40px 40px; }
+.sw-wireguarded .man { display: flex; justify-content: space-between; margin: 0 0 16px; color: #555555; }
+.sw-wireguarded .man:last-child { margin: 24px 0 0; }
+.sw-wireguarded h2 { margin: 16px 0 4px; font-size: 13.5px; font-weight: 700; }
+.sw-wireguarded main > :is(p, ul, div):not(.man) { margin-left: 4ch; }
+.sw-wireguarded ul { padding-left: 2ch; list-style: "- "; }
+.sw-wireguarded .sws-cmd { margin-top: 10px; }
+.sw-wireguarded .sws-cmd pre { background: #fbf4f4; border-left: 3px solid #88171a; }

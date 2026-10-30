@@ -1,0 +1,30 @@
+.sw-bound { font: 13px/1.35 "Times New Roman", Times, serif; color: #111111; }
+.sw-bound .sw-wm { display: flex; align-items: center; gap: 8px; font: 700 26px/1 "Times New Roman", Times, serif; color: #1b4f8a; }
+.sw-bound .org { padding: 3px 16px; background: #1b4f8a; color: #ffffff; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.sw-bound.early header { padding: 10px 16px 0; border-bottom: 2px solid #1b4f8a; }
+.sw-bound.early nav { display: flex; gap: 2px; margin-top: 8px; }
+.sw-bound.early nav a { padding: 3px 10px; background: #dfe8f3; color: #1b4f8a; font-size: 12px; }
+.sw-bound.early nav a[aria-current] { background: #1b4f8a; color: #ffffff; text-decoration: none; }
+.sw-bound .cols { display: grid; grid-template-columns: 1fr 210px; gap: 18px; padding: 12px 16px; }
+.sw-bound.late .cols { grid-template-columns: 1fr; padding: 24px 48px; max-width: 980px; }
+.sw-bound h1 { margin-bottom: 6px; font-size: 20px; color: #1b4f8a; }
+.sw-bound h2 { margin-bottom: 6px; font-size: 17px; color: #1b4f8a; }
+.sw-bound section > * + * { margin-top: 8px; }
+.sw-bound section ul { padding-left: 18px; }
+.sw-bound aside { padding: 8px 10px; border: 1px solid #b8c8dc; background: #f4f7fb; font-size: 12px; }
+.sw-bound aside h3 { margin: 6px 0 2px; font-size: 13px; color: #1b4f8a; }
+.sw-bound th { border-bottom: 1px solid #1b4f8a; }
+.sw-bound .sws-cta { color: #1b4f8a; font-weight: 700; }
+.sw-bound footer { padding: 8px 16px; border-top: 1px solid #b8c8dc; color: #555555; font-size: 11px; }
+.sw-bound.late { font: 15px/1.6 "Source Sans Pro", "Segoe UI", Arial, sans-serif; }
+.sw-bound.late header { display: flex; align-items: center; padding: 16px 48px; border-bottom: 1px solid #e3e9f1; }
+.sw-bound.late .sw-wm { font: 700 22px/1 "Source Sans Pro", "Segoe UI", Arial, sans-serif; }
+.sw-bound.late nav { display: flex; gap: 24px; margin-left: auto; }
+.sw-bound.late nav a { color: #1b2b40; text-decoration: none; }
+.sw-bound.late nav a[aria-current] { color: #1b4f8a; font-weight: 600; }
+.sw-bound .hero { padding: 56px 48px 40px; background: #1b4f8a; color: #ffffff; }
+.sw-bound .hero h1 { font-size: 36px; color: #ffffff; }
+.sw-bound .hero p { max-width: 640px; color: #dce7f5; }
+.sw-bound .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 0; list-style: none; }
+.sw-bound .cards li { padding: 18px; border: 1px solid #dbe3ee; border-top: 3px solid #1b4f8a; border-radius: 4px; }
+.sw-bound.late footer { padding: 20px 48px; color: #6b7685; font-size: 12px; }
