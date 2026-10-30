@@ -105,7 +105,8 @@ export type RebuildRate = "low" | "medium" | "high";
 export interface HostFiles { since: number; paths: Record<string, string | boolean> }
 
 // A desktop document; x and y are its icon position on the desktop in pixels.
-export interface Doc { id: string; kind: "guide" | "note"; title: string; body: string; x: number; y: number }
+// An "app" doc is a desktop link whose title is the app name.
+export interface Doc { id: string; kind: "guide" | "note" | "app"; title: string; body: string; x: number; y: number }
 // domain is the company's own domain once registered; mail is its email service.
 export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
@@ -170,6 +171,8 @@ export interface GameState {
   checklist: string[];
   // The changelog entries (date|text) the player has been shown.
   seenChanges: string[];
+  // Installed apps the player took out of the dock.
+  undocked: string[];
   // Pear OS release the desktop runs; it sets the look of the shell.
   os: string;
   company: Company;
@@ -284,7 +287,7 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null }],
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
   cables: [],
-  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], kbReads: {}, checklist: [], seenChanges: [], os: "aqua",
+  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false,

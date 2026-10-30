@@ -60,7 +60,7 @@ export const shortPath = (path: string, home: string) => (path === home ? "~" : 
 // The desktop's documents as files in ~/Desktop, named by title; a repeated title gets a number.
 export function desktopFiles(s: GameState): { path: string; doc: Doc }[] {
   const seen = new Map<string, number>();
-  return s.docs.map((doc) => {
+  return s.docs.filter((doc) => doc.kind !== "app").map((doc) => {
     const name = doc.title.replace(/\//g, "-"), n = (seen.get(name) ?? 0) + 1;
     seen.set(name, n);
     return { path: `${DESKTOP}/${n > 1 ? `${name} (${n})` : name}`, doc };

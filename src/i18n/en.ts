@@ -405,6 +405,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownDoc": () => "This document no longer exists.",
   "error.emptyTitle": () => "A document needs a title.",
   "error.guideOnDesktop": () => "Getting started is already on the desktop.",
+  "error.appNotInstalled": () => "This app is not installed.",
   "role.support": () => "support agent",
   "role.bookkeeper": () => "bookkeeper",
   "role.accountant": () => "accountant",

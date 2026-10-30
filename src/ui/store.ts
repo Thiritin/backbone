@@ -251,6 +251,7 @@ export const useStore = create<Store>((set, get) => ({
     const ws = get().windows, d = get().game.docs.find((x) => x.id === doc);
     if (!d) return;
     if (d.kind === "guide") return get().openApp("Getting started");
+    if (d.kind === "app") return get().openApp(d.title);
     const open = ws.find((w) => w.doc === doc);
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
     const n = ws.length % 8;

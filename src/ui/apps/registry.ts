@@ -1,5 +1,5 @@
 import {
-  Activity, AppWindow, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, AppWindow, LayoutGrid, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MonitorCog, Newspaper, Package, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { BillingApp } from "./billing/BillingApp";
@@ -11,6 +11,7 @@ import { NetworkApp } from "./network/NetworkApp";
 import { NewsApp } from "./news/NewsApp";
 import { SecurityApp } from "./SecurityApp";
 import { KnowledgeBaseApp } from "./KnowledgeBaseApp";
+import { ApplicationsApp } from "./ApplicationsApp";
 import { missingFor } from "../../sim/30-market/market";
 import type { GameState } from "../../sim/50-state";
 import { CustomersApp } from "./customers/CustomersApp";
@@ -40,6 +41,7 @@ export interface AppDef {
 
 // Dock order; a divider follows every 4th app.
 export const APPS: AppDef[] = [
+  { name: "Applications", icon: LayoutGrid, tile: "oklch(0.6 0.12 240)", about: "Lists every installed app so you can open it, keep it in the dock or put a link on the desktop.", body: ApplicationsApp },
   { name: "Locations", icon: Server, tile: "oklch(0.5 0.06 250)", about: "Shows your sites on a map, the racks inside them and every device front.",
     badge: (s) => s.devices.reduce((n, d) => n + deviceHealth(s, d.id).failed.length, 0) },
   { name: "Shop", icon: ShoppingCart, tile: "oklch(0.6 0.15 40)", about: "Sells servers, switches and patch panels into your storage." },

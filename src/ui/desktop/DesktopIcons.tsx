@@ -1,8 +1,9 @@
 import { BookOpen, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { PointerEvent as RPointerEvent } from "react";
+import type { CSSProperties, PointerEvent as RPointerEvent } from "react";
 import type { Doc } from "../../sim/50-state";
 import { addNote, editNote, moveDoc, removeDoc } from "../../sim/90-actions/docs";
+import { APPS, appFor } from "../apps/registry";
 import { useStore } from "../store";
 import { Confirm } from "./Confirm";
 import { menuOn, openMenu } from "./ContextMenu";
@@ -18,7 +19,7 @@ export function newNote(at?: { x: number; y: number }) {
 
 
 export function DesktopIcons() {
-  const docs = useStore((s) => s.game.docs);
+  const game = useStore((s) => s.game), docs = game.docs;
   const act = useStore((s) => s.act), openDoc = useStore((s) => s.openDoc);
   const [selected, setSelected] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -86,7 +87,8 @@ export function DesktopIcons() {
   return (
     <div className="desktop-icons">
       {docs.map((d) => {
-        const Icon = d.kind === "guide" ? BookOpen : FileText;
+        const app = d.kind === "app" && APPS.some((a) => a.name === d.title) ? appFor(game, d.title) : null;
+        const Icon = app?.icon ?? (d.kind === "guide" ? BookOpen : FileText);
         const at = drag?.id === d.id ? drag : d;
         return (
           <div
@@ -98,9 +100,9 @@ export function DesktopIcons() {
             onPointerDown={(e) => grab(e, d)}
             onDoubleClick={() => openDoc(d.id)}
             onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && openDoc(d.id)}
-            onContextMenu={menuOn(() => [{ label: "Open", run: () => openDoc(d.id) }, { label: "Rename", run: () => setRenaming(d.id) }, null, { label: "Move to Trash", run: () => setTrash(d) }])}
+            onContextMenu={menuOn(() => [{ label: "Open", run: () => openDoc(d.id) }, d.kind !== "app" && { label: "Rename", run: () => setRenaming(d.id) }, null, { label: "Move to Trash", run: () => setTrash(d) }])}
           >
-            <span className={`di-page di-${d.kind}`}><Icon /></span>
+            {app ? <span className="dock-tile" style={{ "--tile": app.tile } as CSSProperties}><Icon /></span> : <span className={`di-page di-${d.kind}`}><Icon /></span>}
             {renaming === d.id ? (
               <input
                 className="di-rename"
@@ -117,14 +119,14 @@ export function DesktopIcons() {
                 }}
                 onBlur={(e) => rename(d, e.currentTarget.value)}
               />
-            ) : <span className="di-label">{d.title}</span>}
+            ) : <span className="di-label">{app?.name ?? d.title}</span>}
           </div>
         );
       })}
       {trash && (
         <Confirm
           title={`Move “${trash.title}” to the Trash?`}
-          text={trash.kind === "guide" ? "The guide is removed from the desktop." : "The note and its text are deleted."}
+          text={trash.kind === "guide" ? "The guide is removed from the desktop." : trash.kind === "app" ? "The link is removed from the desktop." : "The note and its text are deleted."}
           action="Move to Trash"
           onCancel={() => setTrash(null)}
           onConfirm={() => remove(trash)}

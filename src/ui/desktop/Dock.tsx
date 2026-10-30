@@ -1,7 +1,9 @@
 import { Fragment } from "react";
 import type { CSSProperties } from "react";
 import { APPS, appFor } from "../apps/registry";
+import { appMenu } from "../apps/ApplicationsApp";
 import { useStore } from "../store";
+import { menuOn } from "./ContextMenu";
 import { bounce, rememberSlot } from "./motion";
 
 export function Dock() {
@@ -10,7 +12,7 @@ export function Dock() {
 
   return (
     <nav className="dock" aria-label="Apps">
-      {APPS.filter((a) => !a.hidden && game.installed.includes(a.name)).map((a, i) => {
+      {APPS.filter((a) => !a.hidden && game.installed.includes(a.name) && (!game.undocked.includes(a.name) || windows.some((w) => w.app === a.name))).map((a, i) => {
         const win = windows.find((w) => w.app === a.name);
         const badge = a.badge?.(game) ?? 0;
         const shown = appFor(game, a.name);
@@ -25,6 +27,7 @@ export function Dock() {
                 if (win?.minimized) rememberSlot(win.id);
                 openApp(a.name);
               }}
+              onContextMenu={menuOn(() => appMenu(a.name))}
             >
               <span className="tip">{shown.name}</span>
               <span className="dock-tile" style={{ "--tile": shown.tile } as CSSProperties}><shown.icon /></span>

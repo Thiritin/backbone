@@ -321,3 +321,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .port-act { animation: port-act 1s step-end infinite; }
 @keyframes port-act { 0% { opacity: 1; } 16% { opacity: 0.2; } 28% { opacity: 1; } 57% { opacity: 0.2; } 64% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .port-act { animation: none; } }
+
+.app-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; padding: 16px; overflow: auto; align-content: start; }
+.app-grid-item { appearance: none; border: 0; background: none; color: inherit; font: inherit; display: grid; justify-items: center; gap: 6px; padding: 8px 4px; border-radius: 8px; font-size: 12px; text-align: center; }
+.app-grid-item:hover, .app-grid-item:focus-visible { background: oklch(0.5 0 0 / 0.12); }

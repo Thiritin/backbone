@@ -55,3 +55,16 @@ export function restoreGuide(s: GameState): ActionResult {
   s.docs.push({ ...guideDoc(), ...freeSpot(s) });
   return { ok: true, id: ORIGIN.id };
 }
+
+export function addAppLink(s: GameState, app: string, at?: { x: number; y: number }): ActionResult {
+  if (!s.installed.includes(app)) return fail("error.appNotInstalled");
+  const id = `doc${s.nextId++}`;
+  s.docs.push({ id, kind: "app", title: app, body: "", ...(at ? place(at.x, at.y) : freeSpot(s)) });
+  return { ok: true, id };
+}
+
+export function setDocked(s: GameState, app: string, docked: boolean): ActionResult {
+  if (!s.installed.includes(app)) return fail("error.appNotInstalled");
+  s.undocked = docked ? s.undocked.filter((a) => a !== app) : [...new Set([...s.undocked, app])];
+  return { ok: true };
+}
