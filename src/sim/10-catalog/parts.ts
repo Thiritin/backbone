@@ -2,7 +2,7 @@
 // consumer RAM, enterprise SSD about 1.5 x, enterprise HDD about 1.6 x.
 import { erodedPrice } from "./lifecycle";
 import { cardOf, gpuPrice } from "./gpu";
-import { bareParts, componentParts, manufacturerByName, modelById, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "./hardware";
+import { componentParts, manufacturerByName, modelById, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "./hardware";
 import { cpuModel, type Vendor } from "./cpus";
 
 type Keyframes = [year: number, price: number][];
@@ -65,16 +65,15 @@ export function chassisPrice(m: DeviceModel): number {
 // their price; the launch year price stays the list price.
 const partShare = (m: DeviceModel): number => (m.price - chassisPrice(m)) / partsPrice(componentParts(m), m.from);
 
-// What a preset costs in a year: its chassis plus its parts with the vendor's CPUs at that year's prices, times the brand's price factor.
+// A whole server never costs more than this share of its parts bought one by one.
+export const BUNDLE = 0.9;
+
+// What a preset costs in a year: its chassis plus its parts with the vendor's CPUs at that year's prices, but at most BUNDLE of
+// the parts alone, times the brand's price factor.
 export function presetPrice(m: DeviceModel, year: number, brand?: string, vendor?: Vendor): number {
   if (m.nodes) return m.nodes.count * presetPrice(modelById(m.nodes.model), year, brand, vendor);
   const factor = (!m.brand && brand && manufacturerByName(brand)?.priceFactor) || 1;
   if (!m.server) return Math.round(erodedPrice(m, m.price, year) * factor);
-  return Math.round((chassisPrice(m) + partShare(m) * partsPrice(componentParts(m, vendor), year)) * factor);
-}
-
-// A preset with its CPUs, RAM and drives left out, never below a quarter of the preset.
-export function bareChassisPrice(m: DeviceModel, year: number, brand?: string, vendor?: Vendor): number {
-  const preset = presetPrice(m, year, brand, vendor);
-  return Math.max(Math.round(preset * CHASSIS_FLOOR), preset - (partsPrice(componentParts(m, vendor), year) - partsPrice(bareParts(m, vendor), year)));
+  const parts = partsPrice(componentParts(m, vendor), year);
+  return Math.round(Math.min(chassisPrice(m) + partShare(m) * parts, BUNDLE * parts) * factor);
 }

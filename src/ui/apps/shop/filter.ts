@@ -1,10 +1,10 @@
-import { brandFrom, brandWatts, MANUFACTURERS, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { brandFrom, brandWatts, MANUFACTURERS, presetCores, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
 import { unitPrice } from "../../../sim/90-actions/hardware";
 import { VENDOR_NAME, VENDORS, type Vendor } from "../../../sim/10-catalog/cpus";
 import { lineOf } from "../../art/fronts";
 
 const LINE_NAME: Record<string, string> = {
-  compute: "Balanced", "compute-2psu": "Balanced", dense: "Compute dense", memory: "Memory optimized",
+  compute: "Balanced", "compute-2psu": "Balanced", value: "Balanced", dense: "Compute dense", memory: "Memory optimized", bigmem: "Memory optimized",
   storage: "Storage", backup: "Backup", archive: "Archive", gpu: "GPU", arm: "ARM",
 };
 export const classOf = (m: DeviceModel) =>
@@ -38,7 +38,7 @@ export const matchesFilter = (m: DeviceModel, f: Filter, part?: PartSpec): boole
   const s = m.server;
   if (f.form && formOf(m) !== f.form) return false;
   if (!s) return !f.cores && !f.ram && !f.disk && (!f.vendor || part?.vendor === f.vendor);
-  return s.cores >= f.cores && s.ramGb >= f.ram && (!f.disk || s.disk === f.disk) && (!f.vendor || vendorsOf(m).includes(f.vendor));
+  return presetCores(m) >= f.cores && s.ramGb >= f.ram && (!f.disk || s.disk === f.disk) && (!f.vendor || vendorsOf(m).includes(f.vendor));
 };
 
 export type Sort = "default" | "priceLow" | "priceHigh" | "newest" | "power";

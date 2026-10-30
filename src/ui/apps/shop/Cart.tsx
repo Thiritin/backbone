@@ -50,9 +50,9 @@ export function Cart() {
       <div className="shop-cart-list">
         {cart.map((l) => {
           const m = modelById(l.model), name = l.part ? partLabel(l.part) : m.name;
-          const parts = [...(l.bare ? ["Bare chassis"] : []), ...(l.extras ?? []).map((e) => `${e.qty} × ${partLabel({ ...e, ff: e.ff as FormFactor | undefined })}`)];
+          const parts = [...(l.extras ?? []).map((e) => `${e.qty} × ${partLabel({ ...e, ff: e.ff as FormFactor | undefined })}`)];
           return (
-            <div key={`${l.model}|${l.brand}|${l.vendor}|${l.bare}|${JSON.stringify([l.extras, l.part])}`} className="shop-line">
+            <div key={`${l.model}|${l.brand}|${l.vendor}|${JSON.stringify([l.extras, l.part])}`} className="shop-line">
               <Isometric model={m} brand={l.brand} w={56} />
               <div className="shop-line-name">
                 <strong>{name}</strong><span>{l.brand}{l.vendor && ` · ${VENDOR_NAME[l.vendor]}`}</span>

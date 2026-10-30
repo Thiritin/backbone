@@ -59,10 +59,6 @@ describe("shop sort", () => {
   it("lists the lowest power first", () => {
     const watts = (it: (typeof items)[number]) => brandWatts(it.model, it.brand);
     expect(ascending(col("power", watts))).toBe(true);
-    const same = items.filter((it) => it.model.id === "g2-compute");
-    const order = sortItems(same, "power", 2008).map((it) => it.brand);
-    expect(order.indexOf("Hewlett-Packet")).toBeLessThan(order.indexOf("Dwell"));
-    expect(order.indexOf("Dwell")).toBeLessThan(order.indexOf("SuperMacro"));
   });
 });
 

@@ -13,7 +13,7 @@ import { newsTick } from "../src/sim/80-business/news";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, installPart, removePart, type CartLine } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyBare, buyDevice } from "./fixtures";
 import { research } from "../src/sim/90-actions/store";
 import { tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -95,8 +95,8 @@ describe("GPU fit rules", () => {
     expect(fits(m, Array.from({ length: 4 }, () => V100))).toBeNull();
     expect(fits(m, Array.from({ length: 5 }, () => V100))).toBe("error.noSlot");
     const s = rich(2017);
-    ok(buyDevice(s, "g5-gpu", "Dwell", 1, "loc1", { bare: true, extras: card(4) }));
-    expect(err(buyDevice(s, "g5-gpu", "Dwell", 1, "loc1", { bare: true, extras: card(5) }))).toBe("error.noSlot");
+    ok(buyBare(s, "g5-gpu", "Dwell", 1, "loc1", { extras: card(4) }));
+    expect(err(buyBare(s, "g5-gpu", "Dwell", 1, "loc1", { extras: card(5) }))).toBe("error.noSlot");
   });
 
   it("refuses a fifth card installed into a full GPU server", () => {

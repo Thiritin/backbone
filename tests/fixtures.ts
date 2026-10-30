@@ -1,8 +1,8 @@
 import { hourOf } from "../src/sim/00-core/time";
-import { modelById } from "../src/sim/10-catalog/hardware";
+import { componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
-import { device, type GameState } from "../src/sim/50-state";
-import { buyCart as buyCartReal, buyDevice as buyDeviceReal } from "../src/sim/90-actions/hardware";
+import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
+import { buyCart as buyCartReal, buyDevice as buyDeviceReal, type CartLine } from "../src/sim/90-actions/hardware";
 import { addNode, createPanelVm, installHypervisor, installPanel, workload } from "../src/sim/90-actions/clusters";
 import { startGame, welcomeFriends } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
@@ -118,6 +118,20 @@ const landing = <T extends unknown[], R>(buy: (s: GameState, ...a: T) => R) => (
   return r;
 };
 export const buyDevice = landing(buyDeviceReal);
+// A server without CPUs, RAM, drives and GPUs (one power supply), plus the extras given: the empty chassis that installs are tested on.
+export function buyBare(s: GameState, modelId: string, brand: string, qty: number, loc: string, rest: { extras?: NonNullable<CartLine["extras"]> } = {}) {
+  const r = buyDevice(s, modelId, brand, qty, loc);
+  if (!r.ok) return r;
+  const m = modelById(modelId);
+  let psu = 0;
+  const kept = componentParts(m).filter((p) => !["cpu", "ram", "hdd", "ssd", "nvme", "gpu"].includes(p.kind) && (p.kind !== "psu" || psu++ < 1));
+  const board = kept.find((p) => p.kind === "board")?.vendor;
+  const extras = (rest.extras ?? []).flatMap((e) => Array.from({ length: e.qty }, (): PartSpec => ({ kind: e.kind, ...(e.size !== undefined ? { size: e.size } : {}), ...(e.ff ? { ff: e.ff as FormFactor } : {}), ...(e.kind === "cpu" ? { vendor: board, gen: genOf(m) } : {}) })));
+  const parts = [...kept, ...extras], error = fits(m, parts);
+  if (error) return { ok: false as const, error };
+  Object.assign(s.devices.find((d) => d.id === r.id)!, deviceDefaults(modelId, s.hour, parts));
+  return r;
+}
 export const buyCart = landing(buyCartReal);
 
 // Clears competitors out of every datacenter, so any space fits.

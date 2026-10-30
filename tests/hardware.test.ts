@@ -72,8 +72,10 @@ describe("catalog", () => {
     expect(ids(2005)).not.toContain("home-router");
     expect(ids(2005)).not.toContain("handoff");
     expect(ids(2010)).toEqual(expect.arrayContaining(["g1-compute", "g2-compute"]));
-    expect(ids(2011)).toContain("g1-compute");
-    expect(ids(2012)).not.toContain("g1-compute");
+    // SuperMacro sells a generation a year longer than Dwell.
+    expect(ids(2011)).toContain("g1-dense");
+    expect(ids(2011)).not.toContain("g1-compute");
+    expect(ids(2012)).not.toContain("g1-dense");
     expect(ids(2026)).toEqual(expect.arrayContaining(["g6-compute", "g7-compute", "sw-32d"]));
   });
 });
@@ -95,15 +97,14 @@ describe("new game", () => {
 describe("buyDevice and storage", () => {
   it("buys identical units into storage, pays for all of them and books one line", () => {
     const s = atYear(2005, 10_000);
-    const first = ok(buyDevice(s, "g1-compute", "SuperMacro", 3, "loc1"));
+    const first = ok(buyDevice(s, "g1-compute", "Dwell", 3, "loc1"));
     expect(first).toBe("dev8");
-    // SuperMacro sells at 0.9 × the catalog price.
-    expect(s.cash).toBe(3250);
-    expect(s.ledger).toEqual([{ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: "Balanced 1U G1", qty: 3 }, amount: -6750 }]);
-    expect(dev(s, first)).toMatchObject({ rackId: null, panel: null, brand: "SuperMacro", name: "fra1-srv-02", price: 2250, boughtAt: s.hour });
+    expect(s.cash).toBe(2500);
+    expect(s.ledger).toEqual([{ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: "Balanced 1U G1", qty: 3 }, amount: -7500 }]);
+    expect(dev(s, first)).toMatchObject({ rackId: null, panel: null, brand: "Dwell", name: "fra1-srv-02", price: 2500, boughtAt: s.hour });
     ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     expect(storageStacks(s, "loc1")).toEqual([
-      { model: "g1-compute", brand: "SuperMacro", ids: ["dev8", "dev9", "dev10"] },
+      { model: "g1-compute", brand: "Dwell", ids: ["dev8", "dev9", "dev10"] },
       { model: "sw-8", brand: "Sysko", ids: ["dev11"] },
     ]);
     expect(linkStatus(s, first).online).toBe(false);

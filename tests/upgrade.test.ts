@@ -5,7 +5,7 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { BOOT_HOURS, deviceHealth, installedRamGb } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, addSecondPsu, buyRack, installPart, removePart, setPower, type CartLine } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyBare, buyDevice } from "./fixtures";
 import { hire, queueOperation } from "../src/sim/90-actions/staff";
 import { mountDevice } from "./plugged";
 import { withServer } from "./fixtures";
@@ -24,9 +24,9 @@ const run = (s: GameState, hours: number) => {
   for (let h = 0; h < hours; h++) events.push(...tick(s));
   return events;
 };
-// A server racked above the starting one; bare and extras are the cart line's.
-function rack(s: GameState, rest: Pick<CartLine, "bare" | "extras"> = {}, model = "g1-compute", at = 10): string {
-  const id = ok(buyDevice(s, model, "Dwell", 1, "loc1", rest));
+// A server racked above the starting one; with bare it has no CPUs, RAM and drives besides the extras, otherwise it is the preset with the extras.
+function rack(s: GameState, rest: { bare?: boolean; extras?: CartLine["extras"] } = {}, model = "g1-compute", at = 10): string {
+  const id = ok(rest.bare ? buyBare(s, model, "Dwell", 1, "loc1", rest) : buyDevice(s, model, "Dwell", 1, "loc1", rest));
   ok(mountDevice(s, id, "rack2", at));
   return id;
 }
@@ -123,7 +123,7 @@ describe("installing parts", () => {
 
   it("works on a server in storage at once", () => {
     const s = rich();
-    const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1", { bare: true }));
+    const id = ok(buyBare(s, "g1-compute", "Dwell", 1, "loc1"));
     ok(installPart(s, id, spare(s, "cpu", 1)));
     ok(installPart(s, id, spare(s, "cpu", 1)));
     expect(dev(s, id).maintenance).toBeNull();
@@ -136,7 +136,7 @@ describe("installing parts", () => {
     const loc = ok(addLocation(s, "interaction-fra", "cage", 4));
     s.locations.find((l) => l.id === loc)!.readyAt = 0;
     const r = ok(buyRack(s, loc, "rack-42", 1));
-    const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, loc, { bare: true }));
+    const id = ok(buyBare(s, "g1-compute", "Dwell", 1, loc));
     ok(mountDevice(s, id, r, 1));
     ok(setPower(s, id, false));
     const ram = spare(s, "ram", 2, undefined, loc), cash = s.cash;

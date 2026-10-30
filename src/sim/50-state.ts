@@ -274,7 +274,7 @@ export function fillSizes(modelId: string, components: Component[]): Component[]
   const preset = componentParts(modelById(modelId)), seen: Partial<Record<ComponentKind, number>> = {};
   return components.map((c) => {
     const p = preset.filter((x) => x.kind === c.kind)[seen[c.kind] = (seen[c.kind] ?? -1) + 1];
-    return c.size === undefined && p?.size !== undefined ? { ...c, size: p.size, ...(p.ff ? { ff: p.ff } : {}) } : c;
+    return c.size === undefined && p?.size !== undefined ? { ...c, size: p.size, ...(p.ff ? { ff: p.ff } : {}), ...(c.kind === "board" && p.gen ? { gen: p.gen } : {}) } : c;
   });
 }
 

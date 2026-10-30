@@ -53,11 +53,15 @@ describe("part prices by year", () => {
     expect(fixed("nic", 2017)).toBe(Math.round(2 * 40));
   });
 
-  it("charges a preset its list price at its generation's launch year, for every model and brand", () => {
+  it("charges a preset at most its list price at its generation's launch year, less only where the list price tops the bundle price", () => {
     expect(SERVERS.length).toBeGreaterThan(0);
     for (const m of SERVERS) {
-      for (const b of brandsFor("server")) expect(presetPrice(m, m.from, b), `${m.id} ${b}`).toBe(priceOf(m, b));
+      for (const b of brandsFor("server")) {
+        expect(presetPrice(m, m.from, b), `${m.id} ${b}`).toBeLessThanOrEqual(priceOf(m, b));
+        expect(presetPrice(m, m.from, b), `${m.id} ${b}`).toBeGreaterThan(priceOf(m, b) * 0.3);
+      }
     }
+    expect(presetPrice(modelById("g1-compute"), 2005, "Dwell")).toBe(2500);
   });
 
   it("keeps the chassis above a quarter of the list price", () => {

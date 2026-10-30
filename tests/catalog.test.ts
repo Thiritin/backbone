@@ -22,14 +22,14 @@ describe("server lines", () => {
     GENERATIONS.forEach((g, i) => {
       const ids = lines(i + 1).map((m) => m.id.slice(`g${i + 1}-`.length));
       const twin = g.year >= 2008;
-      expect(ids).toEqual(["compute", "compute-2psu", "dense", "memory", "storage", "backup", "archive", ...(g.year >= 2011 ? ["gpu"] : []), ...(twin ? ["twin-node"] : []), ...(g.year >= 2020 ? ["arm"] : []), ...(twin ? ["twin"] : [])]);
+      expect(ids).toEqual(["compute", "compute-2psu", "value", "dense", "memory", "bigmem", "storage", "backup", "archive", ...(g.year >= 2011 ? ["gpu"] : []), ...(twin ? ["twin-node"] : []), ...(g.year >= 2020 ? ["arm"] : []), ...(twin ? ["twin"] : [])]);
     });
   });
   it("scales specs from the generation row", () => {
     expect(line(1, "dense")).toMatchObject({ height: 1, watts: 375, price: 4000, server: { cores: 4, ramGb: 8, diskGb: 500 } });
     expect(line(1, "memory")).toMatchObject({ height: 2, watts: 400, price: 4500, server: { cores: 2, ramGb: 32 } });
     expect(line(4, "storage")!.server).toMatchObject({ bays: [{ ff: "3.5", count: 12 }], diskGb: 24000, disk: "SSD" });
-    expect(line(1, "backup")!.server).toMatchObject({ bays: [{ ff: "3.5", count: 36 }], diskGb: 18000, disk: "HDD", cores: 1, ramGb: 4 });
+    expect(line(1, "backup")!.server).toMatchObject({ bays: [{ ff: "3.5", count: 12 }], diskGb: 960, disk: "HDD", cores: 1, ramGb: 4 });
     expect(line(7, "archive")!.server).toMatchObject({ bays: [{ ff: "3.5", count: 60 }], diskGb: 1_680_000, disk: "HDD", cores: 32, ramGb: 256 });
     expect(line(5, "gpu")).toMatchObject({ height: 4, server: { gpus: 4 } });
     expect(line(6, "arm")).toMatchObject({ height: 1, price: 4500, server: { arch: "arm" } });
@@ -38,7 +38,7 @@ describe("server lines", () => {
     GENERATIONS.forEach((_, i) => {
       const balanced = line(i + 1, "compute")!.watts;
       // A Twin node shares its chassis's supplies and fans, so it draws less than a 1U.
-      const x86 = lines(i + 1).filter((m) => m.server?.arch === "x86" && !m.chassis && m.id !== `g${i + 1}-compute`);
+      const x86 = lines(i + 1).filter((m) => m.server?.arch === "x86" && !m.chassis && m.id !== `g${i + 1}-compute` && m.id !== `g${i + 1}-value`);
       for (const m of x86) expect(m.watts, m.id).toBeGreaterThan(balanced);
       const twoU = x86.filter((m) => m.height === 2), fourU = x86.filter((m) => m.height === 4);
       for (const big of fourU) for (const small of twoU) expect(big.watts, `${big.id} > ${small.id}`).toBeGreaterThan(small.watts);
@@ -164,10 +164,11 @@ describe("manufacturer variation", () => {
     expect(brandOnSale(m, "SuperMacro", month(m.until! + 1, 0))).toBe(true);
   });
   it("lists a model in the shop while any brand sells it", () => {
-    expect(shopModels(2007).map((x) => x.id)).toContain("g2-compute");
-    expect(shopModels(2006).map((x) => x.id)).not.toContain("g2-compute");
-    expect(shopModels(m.until! + 1).map((x) => x.id)).toContain("g2-compute");
-    expect(shopModels(m.until! + 2).map((x) => x.id)).not.toContain("g2-compute");
+    // Only SuperMacro sells the dense line: it opens before Dwell's year and closes a year after.
+    expect(shopModels(2007).map((x) => x.id)).toContain("g2-dense");
+    expect(shopModels(2006).map((x) => x.id)).not.toContain("g2-dense");
+    expect(shopModels(m.until! + 1).map((x) => x.id)).toContain("g2-dense");
+    expect(shopModels(m.until! + 2).map((x) => x.id)).not.toContain("g2-dense");
   });
   it("watts differ by brand", () => {
     expect(brandWatts(m, "SuperMacro")).toBeCloseTo(m.watts * 1.05, 9);
@@ -186,7 +187,8 @@ describe("manufacturer variation", () => {
     s.hour = hourOf(new Date(Date.UTC(2008, 1, 1)));
     expect(monthIndexOf(s.hour)).toBe(month(2008, 1));
     s.cash = 1e9;
-    expect(buyDevice(s, "g2-compute", "Hewlett-Packet", 1, "loc1")).toEqual({ ok: false, error: "error.notInShop" });
-    expect(buyDevice(s, "g2-compute", "SuperMacro", 1, "loc1").ok).toBe(true);
+    expect(buyDevice(s, "g2-bigmem", "Hewlett-Packet", 1, "loc1")).toEqual({ ok: false, error: "error.notInShop" });
+    expect(buyDevice(s, "g2-dense", "SuperMacro", 1, "loc1").ok).toBe(true);
+    expect(buyDevice(s, "g2-dense", "Dwell", 1, "loc1")).toEqual({ ok: false, error: "error.unknownBrand" });
   });
 });

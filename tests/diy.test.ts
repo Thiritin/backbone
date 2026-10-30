@@ -6,7 +6,7 @@ import { BOOKED_HOURS, FRIEND_FEE, handWork } from "../src/sim/60-infra/handwork
 import { drive, travelTo } from "../src/sim/90-actions/travel";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { addLocation, atServer, buyRack, installPart, pullPower, setPower } from "../src/sim/90-actions/hardware";
-import { buyDevice, skipTo, withServer } from "./fixtures";
+import { buyBare, buyDevice, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = { ok: boolean; id?: string; error?: string };
@@ -22,7 +22,7 @@ function setup(dcId: string) {
   const s: GameState = { ...withServer(newGame(1)), cash: 10_000_000 };
   const loc = ok(addLocation(s, dcId, "cage", 4));
   s.locations.find((l) => l.id === loc)!.readyAt = 0;
-  const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, loc, { bare: true }));
+  const id = ok(buyBare(s, "g1-compute", "Dwell", 1, loc));
   ok(mountDevice(s, id, ok(buyRack(s, loc, "rack-42", 1)), 1));
   ok(setPower(s, id, false));
   return { s, loc, id };

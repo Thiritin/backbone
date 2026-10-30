@@ -4,6 +4,16 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Mainboards in the Parts tab are sold per socket and biggest CPU, such as "Indel I3-40 Mainboard", and show their socket and the CPUs they take.
+- Storage servers now differ in drives: in 2005 a backup server holds about 1 TB on six 160 GB drives with half its bays empty, a storage server four 160 GB drives, and the archive server twelve 500 GB drives; the Value 1U ships with one 160 GB drive.
+- Each server maker now sells its own lines instead of all makers selling the same servers: Dwell the balanced, 2 PSU, memory, storage, archive and GPU lines, Hewlett-Packet the new Large-memory 2U line, SuperMacro the new Value 1U with one CPU, the compute-dense, backup and Twin lines, and Lenovoid the ARM line.
+- Servers in the Shop list their exact mainboard, with its socket and the biggest CPU it takes, and a board refuses a CPU with more cores than that.
+- The Shop no longer offers a bare chassis, a preset toggle or an add-parts list on server cards: a server comes as listed, and you add CPUs, RAM and drives by buying parts and installing them.
+- A whole server now costs less than its parts bought one by one.
+- The Parts tab sells smaller hard drives in the 2000s, such as 80 and 160 GB.
+- Every CPU now has a clock speed in GHz, shown in the Shop and on the server's components.
+- Mainboards now have a socket and take only CPUs of that socket: Indel changes socket every two generations, AMB every two or three, so an older AMB board can take a newer CPU.
+- Server lines now differ in their CPU makers: the compute-dense, backup and archive lines come with AMB only, the 2 PSU, memory and GPU lines with Indel only, and the balanced, storage and twin lines with either.
 - The DNS, VPN, storage and mail software now have their own websites in the Browser, each in the look of its year, and the Download page says what the server becomes after the install.
 - A clean shutdown now takes a few minutes while the operating system halts, and a reboot waits for that halt before it boots; holding the power button, pulling the plug or a hard power off still cuts the server at once.
 - The USB stick and the virtual machine's ISO now install an operating system, Debiant GNU/Lunix or Windoors Server, and software is installed afterwards from the machine's console or over ssh with the commands its website gives.

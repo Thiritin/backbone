@@ -2,7 +2,7 @@
 import { dateOf } from "../../sim/00-core/time";
 import { cardOf } from "../../sim/10-catalog/gpu";
 import { COMPONENTS, isOobPort, jacksOf, OOB_PORT, oobPorts, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
-import { VENDOR_NAME } from "../../sim/10-catalog/cpus";
+import { cpuModel, socketOf, VENDOR_NAME } from "../../sim/10-catalog/cpus";
 import type { Component, Device, End, GameState } from "../../sim/50-state";
 import { deviceHealth, HOURS_PER_YEAR, isPlugged, linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
 import { isMgmtDevice, oobUp } from "../../sim/60-infra/oob";
@@ -17,7 +17,7 @@ export const cores = (n: number) => `${n} ${n === 1 ? "core" : "cores"}`;
 const FF_LABEL = { "3.5": '3.5"', "2.5": '2.5"', nvme: "NVMe" } as const;
 // Size of a sized part ("16 GB", "4 TB, 3.5\"", "32 cores"), or a dash for parts without one.
 export const partSize = (c: Pick<Component, "kind" | "size" | "ff">): string =>
-  c.size === undefined ? "-" : c.kind === "ram" ? ram(c.size) : c.kind === "cpu" ? cores(c.size) : c.kind === "gpu" ? cardOf(c.size).name : `${disk(c.size)}${c.ff ? `, ${FF_LABEL[c.ff]}` : ""}`;
+  c.size === undefined ? "-" : c.kind === "board" ? `CPUs up to ${cores(c.size)}` : c.kind === "ram" ? ram(c.size) : c.kind === "cpu" ? cores(c.size) : c.kind === "gpu" ? cardOf(c.size).name : `${disk(c.size)}${c.ff ? `, ${FF_LABEL[c.ff]}` : ""}`;
 const SLOT_NAME: Partial<Record<ComponentKind, string>> = { hdd: "Bay", ssd: "Bay", nvme: "Bay", ram: "DIMM", cpu: "Socket", psu: "PSU bay", fan: "Fan", gpu: "PCIe slot" };
 // Slot a part sits in: the nth of its kind, or its fixed place on the board.
 export const partSlot = (kind: ComponentKind, nth: number): string => (SLOT_NAME[kind] ? `${SLOT_NAME[kind]} ${nth}` : "Onboard");
@@ -58,9 +58,14 @@ export const portLamps = (m: DeviceModel, peers: (End | null)[]): PortLamp[] => 
 
 export const devName = (d: Device) => d.label ?? d.name;
 export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: "Power supply", fan: "Fan", ram: "RAM stick", board: "Mainboard", cpu: "CPU", nic: "Network card", gpu: "GPU" };
-// A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"", "Indel G5 CPU 20 cores", "AMB Mainboard".
+// A CPU's clock, "2.5 GHz"; empty for anything else or a CPU of unknown make.
+export const clockLabel = (p: Pick<Component, "kind" | "vendor" | "gen">): string => {
+  const c = p.kind === "cpu" && p.vendor && p.gen ? cpuModel(p.vendor, p.gen) : undefined;
+  return c ? `${c.ghz} GHz` : "";
+};
+// A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"", "Indel G5 CPU 20 cores, 2.5 GHz", "AMB Mainboard".
 export const partLabel = (p: Pick<Component, "kind" | "size" | "ff" | "vendor" | "gen">): string =>
-  `${p.vendor ? `${VENDOR_NAME[p.vendor]} ` : ""}${p.gen ? `G${p.gen} ` : ""}${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}`;
+  p.kind === "board" && p.vendor && p.gen && p.size !== undefined ? `${VENDOR_NAME[p.vendor]} ${socketOf(p.vendor, p.gen)}-${p.size} Mainboard` : `${p.vendor ? `${VENDOR_NAME[p.vendor]} ` : ""}${p.gen ? `G${p.gen} ` : ""}${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}${clockLabel(p) ? `, ${clockLabel(p)}` : ""}`;
 // A used part's age stays unknown (null) until a burn-in has looked at it.
 export const ageYears = (g: GameState, c: Component): number | null => (c.wear ? null : (g.hour - c.installedAt) / HOURS_PER_YEAR);
 export const isWorn = (g: GameState, c: Component) => { const a = ageYears(g, c); return a === null ? c.wear === "worn" : a >= COMPONENTS[c.kind].life; };

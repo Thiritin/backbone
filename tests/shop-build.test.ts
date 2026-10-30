@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { bareParts, componentParts, fits, MODELS, modelById, partOffers, shopModels } from "../src/sim/10-catalog/hardware";
-import { bareChassisPrice, partPrice, partsPrice, presetPrice } from "../src/sim/10-catalog/parts";
+import { componentParts, fits, MODELS, manufacturerByName, modelById, partOffers, shopModels, vendorsOf } from "../src/sim/10-catalog/hardware";
+import { BUNDLE, partPrice, partsPrice, presetPrice } from "../src/sim/10-catalog/parts";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { installedCores, installedRamGb, raidUsable } from "../src/sim/60-infra/status";
-import { BARE_FLOOR, replaceComponent, unitPrice, type CartLine } from "../src/sim/90-actions/hardware";
+import { replaceComponent, type CartLine } from "../src/sim/90-actions/hardware";
 import { buyCart, buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { withServer } from "./fixtures";
@@ -17,63 +17,30 @@ const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
 const rich = (year = 2005): GameState => ({ ...withServer(newGame(1)), cash: 10_000_000, hour: hourOf(new Date(Date.UTC(year, 5, 1))) });
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
 
-// The CPUs, RAM and drives a preset ships with, as cart extras.
-const removed = (modelId: string): NonNullable<CartLine["extras"]> => {
-  const out: NonNullable<CartLine["extras"]> = [];
-  for (const p of componentParts(modelById(modelId))) {
-    if (!["cpu", "ram", "hdd", "ssd", "nvme"].includes(p.kind)) continue;
-    const at = out.find((e) => e.kind === p.kind && e.size === p.size && e.ff === p.ff);
-    if (at) at.qty++;
-    else out.push({ kind: p.kind, size: p.size, ff: p.ff, qty: 1 });
-  }
-  return out;
-};
-
-describe("bare chassis", () => {
-  it("keeps the board, fans, NIC and one power supply and nothing else", () => {
-    const s = rich();
-    const id = ok(buyDevice(s, "g1-compute-2psu", "Dwell", 1, "loc1", { bare: true }));
-    const kinds = dev(s, id).components.map((c) => c.kind);
-    expect(kinds).toEqual(["psu", "fan", "fan", "fan", "fan", "board", "nic"]);
-    expect(dev(s, id).raid).toBe("none");
-    expect(installedCores(dev(s, id))).toBe(0);
-    expect(installedRamGb(dev(s, id))).toBe(0);
-    expect(raidUsable(dev(s, id))).toBe(0);
-    expect(new Set(bareParts(modelById("g1-compute-2psu")).map((p) => p.kind))).toEqual(new Set(["psu", "fan", "board", "nic"]));
-  });
-
-  it("costs the preset price minus its parts at part prices, and the parts bring it back", () => {
+describe("server prices", () => {
+  it("never cost more than the parts bought one by one, and mostly cost less", () => {
+    let cheaper = 0, total = 0;
     for (const brand of ["Dwell", "Hewlett-Packet", "SuperMacro"]) {
       for (const m of MODELS.filter((x) => x.server && x.psus === 1)) {
-        for (const year of [m.from, 2026]) {
-          const preset = presetPrice(m, year, brand), line = { model: m.id, brand, qty: 1, bare: true, extras: removed(m.id) };
-          const bare = unitPrice({ ...line, extras: [] }, year);
-          expect(bare, m.id).toBeGreaterThanOrEqual(Math.round(preset * BARE_FLOOR));
-          if (bare > Math.round(preset * BARE_FLOOR)) expect(unitPrice(line, year), `${m.id} ${brand} ${year}`).toBe(preset);
+        for (const vendor of vendorsOf(m)) {
+          for (const year of [m.from, 2026]) {
+            const parts = partsPrice(componentParts(m, vendor), year), preset = presetPrice(m, year, brand, vendor);
+            total++;
+            if (preset < parts) cheaper++;
+            expect(preset, `${m.id} ${vendor} ${brand} ${year}`).toBeLessThanOrEqual(Math.round(BUNDLE * parts * (manufacturerByName(brand)?.priceFactor ?? 1)));
+          }
         }
       }
     }
+    expect(cheaper / total).toBeGreaterThan(0.7);
   });
 
-  it("never costs less than a quarter of the preset", () => {
-    const m = modelById("g1-archive");
-    expect(unitPrice({ model: m.id, brand: "Dwell", qty: 1, bare: true }, 2005)).toBeGreaterThanOrEqual(Math.round(m.price * BARE_FLOOR));
-  });
-
-  it("is bought and filled from the cart, paying bare plus the extras", () => {
+  it("have no bare chassis: a bought server comes with its CPUs, RAM and drives", () => {
     const s = rich();
-    const cash = s.cash;
-    const extras = [{ kind: "cpu" as const, size: 1, qty: 2 }, { kind: "ram" as const, size: 2, qty: 4 }, { kind: "hdd" as const, size: 500, ff: "3.5", qty: 1 }];
-    const id = ok(buyCart(s, [{ model: "g1-compute", brand: "Dwell", qty: 1, bare: true, extras }], { kind: "cash" }, "loc1"));
-    // The preset sells its parts at a share of their price, so a custom build of the same machine costs more.
-    const paid = bareChassisPrice(modelById("g1-compute"), 2005, "Dwell") + partsPrice(extras.flatMap((e) => Array.from({ length: e.qty }, () => ({ kind: e.kind, size: e.size }))), 2005);
-    expect(cash - s.cash).toBe(paid);
-    expect(dev(s, id).price).toBe(paid);
-    expect(dev(s, id).components.map((c) => c.kind).sort()).toEqual(componentParts(modelById("g1-compute")).map((p) => p.kind).sort());
+    const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     expect(installedCores(dev(s, id))).toBe(2);
     expect(installedRamGb(dev(s, id))).toBe(8);
     expect(raidUsable(dev(s, id))).toBe(500);
-    expect(dev(s, id).raid).toBe("none");
   });
 });
 
@@ -91,10 +58,9 @@ describe("presets with extras", () => {
 
   it("refuses extras beyond the slots", () => {
     const s = rich();
-    const line = (extras: CartLine["extras"], bare = false): CartLine => ({ model: "g1-compute", brand: "Dwell", qty: 1, extras, bare });
+    const line = (extras: CartLine["extras"]): CartLine => ({ model: "g1-compute", brand: "Dwell", qty: 1, extras });
     const cash = s.cash;
     expect(err(buyCart(s, [line([{ kind: "ram", size: 2, qty: 5 }])], { kind: "cash" }, "loc1"))).toBe("error.noSlot");
-    expect(err(buyCart(s, [line([{ kind: "ram", size: 2, qty: 9 }], true)], { kind: "cash" }, "loc1"))).toBe("error.noSlot");
     expect(err(buyCart(s, [line([{ kind: "cpu", size: 1, qty: 1 }])], { kind: "cash" }, "loc1"))).toBe("error.noSlot");
     expect(err(buyCart(s, [line([{ kind: "hdd", size: 500, ff: "3.5", qty: 4 }])], { kind: "cash" }, "loc1"))).toBe("error.noSlot");
     expect(err(buyCart(s, [line([{ kind: "ram", size: 2, qty: 4 }, { kind: "hdd", size: 500, ff: "3.5", qty: 3 }])], { kind: "cash" }, "loc1"))).toBe("ok");
@@ -135,6 +101,15 @@ describe("Parts tab", () => {
     expect(partOffers(2012).some((p) => p.kind === "nvme")).toBe(false);
     expect(partOffers(2015).filter((p) => p.kind === "nvme").map((p) => p.size)).toEqual([1000]);
     expect(shopModels(2015).filter((m) => m.server).length).toBeGreaterThan(0);
+  });
+
+  it("sells small HDDs while they were common and big ones when they arrive", () => {
+    const hdd = (year: number) => partOffers(year).filter((p) => p.kind === "hdd" && p.ff === "3.5").map((p) => p.size);
+    expect(hdd(2005)).toEqual(expect.arrayContaining([80, 160, 500]));
+    expect(hdd(2005)).not.toContain(1000);
+    expect(hdd(2012)).not.toContain(160);
+    expect(hdd(2020)).toEqual(expect.arrayContaining([4000, 12000]));
+    expect(partPrice("hdd", 160, "3.5", 2005)).toBe(80);
   });
 
   it("stores a bought part with its size, and refuses one the shop does not sell", () => {

@@ -1,10 +1,10 @@
 import { rand } from "../00-core/rng";
 import { monthIndexOf, yearOf } from "../00-core/time";
-import { bareParts, boardVendor, brandOnSale, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { boardVendor, brandOnSale, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
-import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
+import { partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
 import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { arrayLost, bootHours, connectError, drivesOf, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
@@ -163,18 +163,15 @@ export function sellRack(s: GameState, rackId: string): ActionResult {
   return { ok: true };
 }
 
-// extras are parts added to each unit; a bare chassis is the model without CPUs, RAM and drives. part is the size of a spare from the Parts tab.
+// extras are parts added to each unit. part is the size of a spare from the Parts tab.
 export interface CartLine {
   model: string; brand: string; qty: number;
   extras?: { kind: ComponentKind; size?: number; ff?: string; qty: number }[];
-  bare?: boolean;
   part?: PartSpec;
   // The CPU maker of a server's board and CPUs; the model's preset maker when left out.
   vendor?: Vendor;
 }
 
-// A bare chassis never costs less than this share of the preset.
-export const BARE_FLOOR = CHASSIS_FLOOR;
 // Extra CPUs are the line's vendor and the chassis's generation.
 const extraParts = (line: CartLine): PartSpec[] => {
   const m = modelById(line.model), cpu = { vendor: boardVendor(m, componentParts(m, line.vendor)), gen: genOf(m) };
@@ -184,14 +181,14 @@ const extraParts = (line: CartLine): PartSpec[] => {
 // The parts one unit of the line is built from.
 export const lineParts = (line: CartLine): PartSpec[] => {
   const m = modelById(line.model);
-  return [...(line.bare ? bareParts(m, line.vendor) : componentParts(m, line.vendor)), ...extraParts(line)];
+  return [...componentParts(m, line.vendor), ...extraParts(line)];
 };
 // What one unit costs in a year: the preset, or the preset minus its CPUs, RAM and drives, plus the extras, all at that year's
 // part prices; a part alone costs its part price.
 export function unitPrice(line: CartLine, year: number): number {
   const m = modelById(line.model);
   if (m.kind === "part") return partPrice(m.id.slice(5) as ComponentKind, line.part?.size, line.part?.ff, year, line.part);
-  return (line.bare ? bareChassisPrice(m, year, line.brand, line.vendor) : presetPrice(m, year, line.brand, line.vendor)) + partsPrice(extraParts(line), year);
+  return presetPrice(m, year, line.brand, line.vendor) + partsPrice(extraParts(line), year);
 }
 
 function lineError(s: GameState, line: CartLine): string | null {
@@ -204,7 +201,7 @@ function lineError(s: GameState, line: CartLine): string | null {
   if (line.vendor !== undefined && !vendorsOf(model).includes(line.vendor)) return "error.wrongVendor";
   const offers = partOffers(yearOf(s.hour));
   if (line.part && (model.kind !== "part" || line.part.kind !== modelId.slice(5) || !offers.some((o) => samePart(o, line.part!)))) return "error.notInShop";
-  if (!line.bare && !line.extras?.length) return null;
+  if (!line.extras?.length) return null;
   if (model.kind !== "server") return "error.notBuildable";
   if (line.extras?.some((e) => !COMPONENT_KINDS.includes(e.kind) || !Number.isInteger(e.qty) || e.qty < 1)) return "error.badQuantity";
   if (line.extras?.some((e) => e.ff !== undefined && !FORMS.includes(e.ff as FormFactor))) return "error.wrongFormFactor";
@@ -252,7 +249,7 @@ const officeError = (s: GameState, modelId: string, locationId: string): string 
   isOfficeRouter(modelById(modelId)) && s.locations.find((l) => l.id === locationId)?.dc ? "error.basementOnly" : null;
 
 // Bought units go to the storage of the zone at locationId, which may not be ready yet.
-export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "bare" | "part" | "vendor"> = {}): ActionResult {
+export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "part" | "vendor"> = {}): ActionResult {
   const line = { model: modelId, brand, qty, ...rest };
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   const error = lineError(s, line) ?? officeError(s, modelId, locationId);

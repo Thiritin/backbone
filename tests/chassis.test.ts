@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bayCount, bayTakes, componentParts, genOf, MODELS, modelById, type FormFactor } from "../src/sim/10-catalog/hardware";
+import { bayCount, bayTakes, componentParts, genOf, MODELS, modelById, presetCores, vendorsOf, type FormFactor } from "../src/sim/10-catalog/hardware";
 import { cpuModel } from "../src/sim/10-catalog/cpus";
 import { OVERCOMMIT } from "../src/sim/10-catalog/products";
 import { device, deviceDefaults, newGame, type GameState } from "../src/sim/50-state";
@@ -17,8 +17,8 @@ const withDevice = (model: string): { s: GameState; id: string } => {
 };
 
 describe("chassis slots", () => {
-  // 56 single-node models and a Twin node in each generation from 2008.
-  it("has the 62 server models", () => expect(SERVERS).toHaveLength(62));
+  // 70 single-node models and a Twin node in each generation from 2008.
+  it("has the 76 server models", () => expect(SERVERS).toHaveLength(76));
 
   it("gives every preset parts that fit its chassis", () => {
     for (const m of SERVERS) {
@@ -51,8 +51,10 @@ describe("chassis slots", () => {
     expect(modelById("g7-memory").server).toMatchObject({ dimmSlots: 48, pcie: 4 });
     expect(bays("g3-memory")).toEqual([{ ff: "2.5", count: 8 }]);
     expect(bays("g4-memory")).toEqual([{ ff: "nvme", count: 8 }]);
-    expect(bays("g1-storage")).toEqual([{ ff: "3.5", count: 12 }]);
-    expect(bays("g1-backup")).toEqual([{ ff: "3.5", count: 36 }]);
+    expect(bays("g1-storage")).toEqual([{ ff: "3.5", count: 8 }]);
+    expect(bays("g1-backup")).toEqual([{ ff: "3.5", count: 12 }]);
+    expect(bays("g1-archive")).toEqual([{ ff: "3.5", count: 24 }]);
+    expect(bays("g4-backup")).toEqual([{ ff: "3.5", count: 36 }]);
     expect(modelById("g6-archive").server).toMatchObject({ dimmSlots: 16, pcie: 2 });
     expect(modelById("g3-archive").server!.dimmSlots).toBe(8);
     expect(modelById("g5-gpu").server).toMatchObject({ dimmSlots: 32, pcie: 8, gpus: 4 });
@@ -64,10 +66,10 @@ describe("capacity from parts", () => {
     for (const m of SERVERS) {
       const v = m.server!, { s, id } = withDevice(m.id), d = s.devices.find((x) => x.id === id)!;
       const n = d.components.filter((c) => c.ff).length, factor = { none: n, "1": n / 2, "5": n - 1, "6": n - 2, "10": n / 2 }[d.raid];
-      expect(installedCores(d), m.id).toBe(v.cores);
+      expect(installedCores(d), m.id).toBe(presetCores(m));
       expect(installedRamGb(d), m.id).toBe(v.ramGb);
       expect(raidUsable(d), m.id).toBe(factor * (v.diskGb / v.drives));
-      const vcpu = Math.round(v.cores * cpuModel(v.arch === "arm" ? "ampear" : "indel", genOf(m))!.perCore * 100) / 100;
+      const vcpu = Math.round(presetCores(m) * cpuModel(vendorsOf(m)[0], genOf(m))!.perCore * 100) / 100;
       expect(nodeCapacity(d), m.id).toEqual({ vcpu, ramGb: v.ramGb, diskGb: raidUsable(d) * OVERCOMMIT.disk });
       expect(nodeUsage(s, id).physical, m.id).toEqual({ vcpu, ramGb: v.ramGb, diskGb: raidUsable(d) });
     }
@@ -93,12 +95,12 @@ describe("capacity from parts", () => {
   it("sizes an array by its smallest drive", () => {
     const { s, id } = withDevice("g1-storage"), d = s.devices.find((x) => x.id === id)!;
     const drives = d.components.filter((c) => c.ff);
-    expect(raidUsable(d)).toBe(12 / 2 * 500);
-    drives[3].size = 250;
-    expect(raidUsable(d)).toBe(12 / 2 * 250);
+    expect(raidUsable(d)).toBe(4 / 2 * 160);
+    drives[3].size = 80;
+    expect(raidUsable(d)).toBe(4 / 2 * 80);
     d.raid = "6";
-    expect(raidUsable(d)).toBe(10 * 250);
-    expect(nodeUsage(s, id).physical.diskGb).toBe(2500);
+    expect(raidUsable(d)).toBe(2 * 80);
+    expect(nodeUsage(s, id).physical.diskGb).toBe(160);
   });
 
   it("keeps a failed drive in the array", () => {

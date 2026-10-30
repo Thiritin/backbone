@@ -4,9 +4,8 @@ import { useSessionState } from "../../session";
 import { euro } from "../../../sim/00-core/money";
 import { monthIndexOf, yearOf } from "../../../sim/00-core/time";
 import { cardOf, cardWatts } from "../../../sim/10-catalog/gpu";
-import { brandOnSale, brandFrom, wattsFactorOf, brandsOf, COMPONENTS, cpuWattsShift, fits, modelById, partOffers, shopModels, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { boardSpec, genOf, brandOnSale, brandFrom, wattsFactorOf, brandsOf, COMPONENTS, cpuWattsShift, modelById, partOffers, shopModels, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
 import { VENDOR_NAME, type Vendor } from "../../../sim/10-catalog/cpus";
-import { partPrice } from "../../../sim/10-catalog/parts";
 import { lineParts, unitPrice, type CartLine } from "../../../sim/90-actions/hardware";
 import { Cart, Stepper } from "./Cart";
 import { Software } from "./Software";
@@ -17,7 +16,8 @@ import { Used } from "./Used";
 import { Isometric } from "../../art/Isometric";
 import { BrandLogo } from "../../art/logos";
 import { useFocus, useStore } from "../../store";
-import { cores, disk, height, partLabel, partSize, portsText, ram, speed } from "../hw";
+import { socketOf } from "../../../sim/10-catalog/cpus";
+import { clockLabel, cores, disk, height, partLabel, partSize, portsText, ram, speed } from "../hw";
 import "./shop.css";
 
 const ICON: Record<string, typeof Server> = {
@@ -137,65 +137,29 @@ export function ShopApp() {
   );
 }
 
-const BUILD_KINDS = ["cpu", "ram", "hdd", "ssd", "nvme", "gpu"];
-
-// Parts a server can carry on top of its preset or bare chassis, with a count each.
-// The parts a chassis with a board of the vendor takes as extras.
-const buildOffers = (model: DeviceModel, vendor: Vendor, year: number) =>
-  partOffers(year).filter((p) => BUILD_KINDS.includes(p.kind) && !fits(model, [{ kind: "board", vendor }, p]));
-
-function Build({ model, brand, vendor, qty, bare, setBare, counts, setCounts }: {
-  model: DeviceModel; brand: string; vendor: Vendor; qty: number; bare: boolean; setBare: (b: boolean) => void; counts: Record<number, number>; setCounts: (c: Record<number, number>) => void;
-}) {
-  const year = yearOf(useStore((s) => s.game.hour));
-  const offers = buildOffers(model, vendor, year);
-  const lineWith = (c: Record<number, number>): CartLine => ({
-    model: model.id, brand, vendor, qty, bare, extras: offers.flatMap((p, i) => (c[i] ? [{ kind: p.kind, size: p.size, ff: p.ff, qty: c[i] }] : [])),
-  });
-  const set = (i: number, n: number) => setCounts({ ...counts, [i]: n });
-  return (
-    <div className="shop-build">
-      <div className="seg" role="group" aria-label="Build">
-        <button aria-pressed={!bare} onClick={() => setBare(false)}>Preset</button>
-        <button aria-pressed={bare} onClick={() => setBare(true)}>Bare chassis</button>
-      </div>
-      {offers.map((p, i) => (
-        <div key={`${p.kind}|${p.size}|${p.ff}`} className="shop-extra">
-          <span>{partLabel(p)}</span>
-          <span className="num shop-muted">{euro(partPrice(p.kind, p.size, p.ff, year, p))}</span>
-          <Stepper value={counts[i] ?? 0} onChange={(n) => set(i, n)} max={fits(model, lineParts(lineWith({ ...counts, [i]: (counts[i] ?? 0) + 1 }))) ? counts[i] ?? 0 : undefined} label={`${partLabel(p)} quantity`} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // The card and the list row share the configured line, its spec rows and the buy controls.
 function useOffer({ model, brand, part, maker }: Item & { maker: Vendor | null }) {
   const addToCart = useStore((s) => s.addToCart);
   const [qty, setQty] = useState(1);
-  const [open, setOpen] = useState(false), [bare, setBare] = useState(false), [counts, setCounts] = useState<Record<number, number>>({});
-  const makers = vendorsOf(model);
+    const makers = vendorsOf(model);
   const [vendor, setVendor] = useState<Vendor>(maker && makers.includes(maker) ? maker : makers[0] ?? "indel");
   const year = yearOf(useStore((s) => s.game.hour));
   const s = model.server;
   const node = model.nodes && modelById(model.nodes.model), nodeCores = node ? lineParts({ model: node.id, brand, qty: 1 }).filter((p) => p.kind === "cpu").reduce((n, p) => n + (p.size ?? 0), 0) : 0;
   const spec = part ? COMPONENTS[part.kind] : null;
-  // The line as configured: the preset or the bare chassis with the vendor's board and CPUs, with the extras ticked in the build panel.
-  const offers = s ? buildOffers(model, vendor, year) : [];
-  const extras = offers.flatMap((p, i) => (counts[i] ? [{ kind: p.kind, size: p.size, ff: p.ff, qty: counts[i] }] : []));
-  const line: CartLine = { model: model.id, brand, qty, ...(s ? { vendor } : {}), ...(part ? { part } : {}), ...(bare ? { bare } : {}), ...(extras.length ? { extras } : {}) };
-  const built = lineParts(line), custom = bare || extras.length > 0;
+  // The line as configured: the server with the vendor's board and CPUs.
+  const line: CartLine = { model: model.id, brand, qty, ...(s ? { vendor } : {}), ...(part ? { part } : {}) };
+  const board = s ? boardSpec(model, vendor) : undefined;
+  const built = lineParts(line);
   const cards = built.filter((p) => p.kind === "gpu");
   const sum = (kind: string) => built.filter((p) => p.kind === kind).reduce((n, p) => n + (p.size ?? 0), 0);
-  const drives = built.filter((p) => ["hdd", "ssd", "nvme"].includes(p.kind));
-  const rows: [string, string][] = spec ? [...(part!.size !== undefined && part!.kind !== "gpu" ? [["Size", partSize(part!)]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
+  const rows: [string, string][] = spec ? [...(part!.size !== undefined && part!.kind !== "gpu" ? [["Size", partSize(part!)]] as [string, string][] : []), ...(part!.kind === "cpu" && part!.vendor && part!.gen ? [["Clock", clockLabel(part!)], ["Socket", socketOf(part!.vendor, part!.gen) ?? ""]] as [string, string][] : []), ...(part!.kind === "board" && part!.vendor && part!.gen ? [["Socket", socketOf(part!.vendor, part!.gen) ?? ""], ["Takes CPUs up to", cores(part!.size ?? 0)], ["Generation", `G${part!.gen}`]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
     ["Height", height(model)],
     ...(!part && model.price > 0 ? [["Release", releaseLabel(brandFrom(model, brand))]] as [string, string][] : []),
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
-    ...(s ? [["CPU", VENDOR_NAME[vendor]], ["Cores", cores(sum("cpu"))], ["RAM", ram(custom ? sum("ram") : s.ramGb)],
+    ...(s ? [["CPU", VENDOR_NAME[vendor]], ["Cores", cores(sum("cpu"))], ["Clock", clockLabel({ kind: "cpu", vendor, gen: genOf(model) })], ["Mainboard", board?.name ?? ""], ["CPU sockets", board ? `${board.sockets} × ${board.socket}, up to ${cores(board.maxCores)} each` : ""], ["RAM", ram(s.ramGb)],
       ...(cards.length ? [["GPUs", `${cards.length} × ${cardOf(cards[0].size).name}`]] as [string, string][] : []),
-      ["Storage", custom ? (drives.length ? `${disk(drives.reduce((n, p) => n + (p.size ?? 0), 0))} in ${drives.length} ${drives.length === 1 ? "drive" : "drives"}` : "None") : `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),
+      ["Storage", `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),
     ...(model.kind === "gateway" && model.price > 0 ? [["Routing", model.fullTable ? "Full table" : "Default route"], ...(model.fullTable ? [["BGP sessions", `${model.bgpSessions}`]] : [])] as [string, string][] : []),
     ...(node?.server ? [["Nodes", `${model.nodes!.count}`], ["Cores per node", cores(nodeCores)], ["RAM per node", ram(node.server.ramGb)], ["Storage per node", `${disk(node.server.diskGb)} ${node.server.disk}`],
       ["NICs per node", portsText(node)], ["PSUs", `${model.psus}`], ["Power", `${Math.round(wattsFactorOf(node, brand) * node.watts * model.nodes!.count)} W`]] as [string, string][] : []),
@@ -204,16 +168,16 @@ function useOffer({ model, brand, part, maker }: Item & { maker: Vendor | null }
   ];
   // The few facts the card and the list row show; the rest sits on the details page.
   const get = (k: string) => rows.find(([l]) => l === k)?.[1] ?? "";
-  const summary: [string, string][] = s ? [["CPU", `${get("Cores")} ${get("CPU")}`], ["RAM", get("RAM")], ["Storage", get("Storage")]]
+  const summary: [string, string][] = s ? [["CPU", `${get("Cores")} ${get("CPU")}, ${get("Clock")}`], ["Board", get("Mainboard")], ["RAM", get("RAM")], ["Storage", get("Storage")], ["PSUs", get("PSUs")]]
     : rows.filter(([k]) => ["Size", "Ports", "Jacks", "Outlets", "Battery", "Nodes"].includes(k)).slice(0, 1);
-  const reset = () => { setQty(1); setCounts({}); setBare(false); setOpen(false); };
+  const reset = () => { setQty(1); };
   const buy = () => { addToCart(line); reset(); };
   const vendorSeg = makers.length > 1 && (
     <div className="seg shop-vendor" role="group" aria-label="CPU vendor">
-      {makers.map((v) => <button key={v} aria-pressed={vendor === v} onClick={() => { setVendor(v); setCounts({}); }}>{VENDOR_NAME[v]}</button>)}
+      {makers.map((v) => <button key={v} aria-pressed={vendor === v} onClick={() => setVendor(v)}>{VENDOR_NAME[v]}</button>)}
     </div>
   );
-  return { s, rows, summary, line, year, qty, setQty, open, setOpen, bare, setBare, counts, setCounts, vendor, vendorSeg, buy };
+  return { s, rows, summary, line, year, qty, setQty, vendor, vendorSeg, buy };
 }
 
 const Maker = ({ make, cls }: { make: string | null; cls: string }) => (
@@ -275,7 +239,7 @@ function Card(props: Item & { maker: Vendor | null; onOpen: () => void }) {
 // Every fact about one item, with the build panel and the buy controls.
 function Details({ onBack, ...props }: Item & { maker: Vendor | null; onBack: () => void }) {
   const { model, brand, make, cls, part } = props;
-  const { s, rows, line, year, qty, setQty, bare, setBare, counts, setCounts, vendor, vendorSeg, buy } = useOffer(props);
+  const { rows, line, year, qty, setQty, vendorSeg, buy } = useOffer(props);
   return (
     <div className="shop-detail">
       <button className="btn ghost shop-back" onClick={onBack}><ChevronLeft />Back</button>
@@ -295,7 +259,6 @@ function Details({ onBack, ...props }: Item & { maker: Vendor | null; onBack: ()
       <dl className="shop-detail-specs">
         {rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{v}</dd></div>)}
       </dl>
-      {s && <Build model={model} brand={brand} vendor={vendor} qty={qty} bare={bare} setBare={setBare} counts={counts} setCounts={setCounts} />}
     </div>
   );
 }

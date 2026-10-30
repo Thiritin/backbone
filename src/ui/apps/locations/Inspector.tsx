@@ -3,7 +3,7 @@ import { Cable, Flame, Gauge, EthernetPort, Monitor, MonitorOff, FileSignature, 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
-import { bayCount, jacksOf, modelById, wattsFactorOf, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { bayCount, boardSpec, jacksOf, modelById, wattsFactorOf, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Cable as CableT, Device, End, GameState } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, deviceVendor, deviceWatts, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, resaleValue, working } from "../../../sim/60-infra/status";
@@ -248,7 +248,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       {show("parts") && <div className="loc-card">
         <div className="loc-card-h"><h3>Specifications</h3></div>
         <Facts rows={[
-          ...(model.server ? [["CPU", `${model.server.sockets} × ${VENDOR_NAME[deviceVendor(device)]}, ${cores(device.components.find((c) => c.kind === "cpu")?.size ?? model.server.cores / model.server.sockets)}`], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${bayCount(model.server)} bays`]] as [string, string][] : []),
+          ...(model.server ? [["CPU", `${model.server.sockets} × ${VENDOR_NAME[deviceVendor(device)]}, ${cores(device.components.find((c) => c.kind === "cpu")?.size ?? model.server.cores / model.server.sockets)}`], ["Mainboard", boardSpec(model, deviceVendor(device))?.name ?? ""], ["RAM", `${ram(model.server.ramGb)} of ${ram(model.server.maxRamGb)}`], ["Disk", `${disk(model.server.diskGb)} ${model.server.disk}, ${bayCount(model.server)} bays`]] as [string, string][] : []),
           ["Network", portsText(model)],
           ["Power", model.idleWatts === Math.round(deviceWatts(device)) ? `${model.watts} W` : `${Math.round(model.idleWatts * wattsFactorOf(model, device.brand))}–${Math.round(deviceWatts(device))} W`],
           ...(model.height ? [["Height", height(model)]] as [string, string][] : []),

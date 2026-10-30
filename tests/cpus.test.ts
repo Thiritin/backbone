@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cpuModel, cpuWatts, x86Share } from "../src/sim/10-catalog/cpus";
-import { componentParts, fits, modelById } from "../src/sim/10-catalog/hardware";
+import { cpuModel, cpuWatts, socketGens, x86Share } from "../src/sim/10-catalog/cpus";
+import { boardSpec, componentParts, fits, modelById, partOffers, vendorsOf } from "../src/sim/10-catalog/hardware";
 import { presetPrice } from "../src/sim/10-catalog/parts";
 import { specFor } from "../src/sim/30-market/spec";
 import { device, deviceDefaults, newGame, type GameState } from "../src/sim/50-state";
@@ -13,7 +13,7 @@ import { createVm } from "../src/sim/90-actions/clusters";
 import { migrationDowntime } from "../src/sim/90-actions/vms";
 import { runAction } from "../src/sim/90-actions";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, hypervisor, join, skipTo, withServer } from "./fixtures";
+import { buyBare, buyDevice, hypervisor, join, skipTo, withServer } from "./fixtures";
 
 type R = { ok: boolean; id?: string; error?: string };
 const ok = (r: R) => {
@@ -54,14 +54,94 @@ describe("CPU vendors", () => {
   });
 });
 
+describe("clock speeds", () => {
+  it("gives every CPU a clock, with Indel giving clock back for cores and AMB holding steadier", () => {
+    for (const c of [cpuModel("indel", 1)!, cpuModel("amb", 4)!, cpuModel("ampear", 7)!]) expect(c.ghz).toBeGreaterThan(2);
+    expect(cpuModel("indel", 1)!.ghz).toBeGreaterThan(cpuModel("indel", 7)!.ghz);
+    expect(cpuModel("amb", 7)!.ghz).toBeGreaterThan(cpuModel("indel", 7)!.ghz);
+    expect(cpuModel("ampear", 5)).toBeUndefined();
+  });
+});
+
+describe("sockets", () => {
+  it("shares a socket across generations, AMB longer than Indel", () => {
+    expect(socketGens("indel", 1)).toEqual([1, 2]);
+    expect(socketGens("indel", 7)).toEqual([7]);
+    expect(socketGens("amb", 1)).toEqual([1, 2, 3]);
+    expect(socketGens("ampear", 6)).toEqual([6, 7]);
+  });
+
+  it("takes a newer CPU of the same socket in an older board, and no CPU of another socket", () => {
+    const m = modelById("g1-compute"), board = { kind: "board" as const, vendor: "indel" as const };
+    expect(fits(m, [board, { kind: "cpu", size: 8, vendor: "indel", gen: 2 }])).toBeNull();
+    expect(fits(m, [board, { kind: "cpu", size: 12, vendor: "indel", gen: 3 }])).toBe("error.wrongSocket");
+    expect(fits(modelById("g3-compute"), [{ kind: "board", vendor: "amb" }, { kind: "cpu", size: 1, vendor: "amb", gen: 1 }])).toBeNull();
+    expect(fits(modelById("g4-compute"), [{ kind: "board", vendor: "amb" }, { kind: "cpu", size: 1, vendor: "amb", gen: 1 }])).toBe("error.wrongSocket");
+  });
+});
+
+describe("mainboards", () => {
+  it("name their socket and the biggest CPU they take, and refuse a bigger one", () => {
+    const m = modelById("g5-compute"), a = boardSpec(m, "indel")!;
+    expect(a).toMatchObject({ socket: "I3", sockets: 2, maxCores: 40 });
+    expect(a.name).toBe("Indel I3-40, dual socket");
+    expect(boardSpec(modelById("g5-archive"), "amb")).toMatchObject({ socket: "A2", sockets: 1 });
+    expect(boardSpec(modelById("g5-compute"), "ampear")).toBeUndefined();
+    const board = { kind: "board" as const, vendor: "indel" as const };
+    expect(fits(m, [board, { kind: "cpu", size: 40, vendor: "indel", gen: 5 }])).toBeNull();
+    expect(fits(m, [board, { kind: "cpu", size: 41, vendor: "indel", gen: 5 }])).toBe("error.cpuTooBig");
+    expect(fits(modelById("g5-archive"), [board, { kind: "cpu", size: 20, vendor: "indel", gen: 5 }])).toBeNull();
+    expect(fits(modelById("g5-archive"), [board, { kind: "cpu", size: 40, vendor: "indel", gen: 5 }])).toBe("error.cpuTooBig");
+  });
+});
+
+describe("mainboard parts", () => {
+  it("are sold per socket and top CPU, and named by them", () => {
+    const boards = partOffers(2017).filter((p) => p.kind === "board");
+    expect(boards.every((p) => p.vendor && p.gen && p.size)).toBe(true);
+    expect(boards.some((p) => p.vendor === "indel" && p.gen === 5 && p.size === 40)).toBe(true);
+    expect(boards.some((p) => p.vendor === "amb" && p.gen === 5 && p.size === 64)).toBe(true);
+    expect(componentParts(modelById("g5-compute")).find((p) => p.kind === "board")).toEqual({ kind: "board", vendor: "indel", gen: 5, size: 40 });
+  });
+});
+
+describe("storage lines", () => {
+  it("start small in 2005 and differ by drives, bays and size", () => {
+    const disk = (id: string) => modelById(id).server!;
+    expect(disk("g1-backup")).toMatchObject({ drives: 6, diskGb: 960 });
+    expect(disk("g1-storage")).toMatchObject({ drives: 4, diskGb: 640 });
+    expect(disk("g1-archive")).toMatchObject({ drives: 12, diskGb: 6000 });
+    expect(disk("g1-value")).toMatchObject({ drives: 1, diskGb: 160 });
+    expect(disk("g1-compute")).toMatchObject({ drives: 1, diskGb: 500 });
+    expect(disk("g1-backup").bays[0].count).toBeGreaterThan(disk("g1-backup").drives);
+  });
+});
+
+describe("lines and CPU makers", () => {
+  it("sells some lines with one maker only", () => {
+    expect(vendorsOf(modelById("g5-compute"))).toEqual(["indel", "amb"]);
+    expect(vendorsOf(modelById("g5-dense"))).toEqual(["amb"]);
+    expect(vendorsOf(modelById("g5-memory"))).toEqual(["indel"]);
+    expect(vendorsOf(modelById("g5-gpu"))).toEqual(["indel"]);
+    expect(vendorsOf(modelById("g6-arm"))).toEqual(["ampear"]);
+    expect(componentParts(modelById("g5-dense")).find((p) => p.kind === "board")!.vendor).toBe("amb");
+    const s = rich();
+    skipTo(s, 2018);
+    expect(err(buyDevice(s, "g5-dense", "SuperMacro", 1, "loc1", { vendor: "indel" }))).toBe("error.wrongVendor");
+    expect(err(buyDevice(s, "g5-memory", "Dwell", 1, "loc1", { vendor: "amb" }))).toBe("error.wrongVendor");
+    expect(cpus(s, ok(buyDevice(s, "g5-dense", "SuperMacro", 1, "loc1"))).map((c) => c.vendor)).toEqual(["amb", "amb"]);
+    expect(partOffers(2017).some((p) => p.kind === "cpu" && p.vendor === "amb")).toBe(true);
+  });
+});
+
 describe("matched sockets", () => {
   it("refuses a mixed pair, another vendor's CPU and another generation's", () => {
     const m = modelById("g2-compute"), board = { kind: "board" as const, vendor: "indel" as const };
     expect(fits(m, [board, { kind: "cpu", size: 4, vendor: "indel", gen: 2 }, { kind: "cpu", size: 8, vendor: "indel", gen: 2 }])).toBe("error.mixedCpus");
     expect(fits(m, [board, { kind: "cpu", size: 4, vendor: "amb", gen: 2 }])).toBe("error.wrongVendor");
-    expect(fits(m, [board, { kind: "cpu", size: 4, vendor: "indel", gen: 1 }])).toBe("error.wrongGeneration");
+    expect(fits(m, [board, { kind: "cpu", size: 4, vendor: "indel", gen: 3 }])).toBe("error.wrongSocket");
     const s = rich();
-    const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1", { bare: true, extras: [{ kind: "cpu", size: 1, qty: 1 }] }));
+    const id = ok(buyBare(s, "g1-compute", "Dwell", 1, "loc1", { extras: [{ kind: "cpu", size: 1, qty: 1 }] }));
     expect(err(installPart(s, id, spare(s, 2)))).toBe("error.mixedCpus");
     expect(err(installPart(s, id, spare(s, 1, "amb")))).toBe("error.wrongVendor");
     ok(installPart(s, id, spare(s, 1)));
@@ -70,7 +150,7 @@ describe("matched sockets", () => {
 
   it("fills every free socket from one install", () => {
     const s = rich();
-    const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1", { bare: true }));
+    const id = ok(buyBare(s, "g1-compute", "Dwell", 1, "loc1"));
     const first = spare(s, 2);
     spare(s, 2);
     ok(installPart(s, id, first));

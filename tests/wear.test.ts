@@ -74,7 +74,7 @@ describe("components and failure rates", () => {
       s.devices = s.devices.map((d) => ({ ...d, components: d.components.map((c) => ({ ...c, installedAt: -10 * 8760 })) }));
       for (let i = 0; i < 5; i++) ok(mountDevice(s, `dev${Number(first.slice(3)) + i}`, "rack2", 1 + 4 * i));
       if (monitoring) s.unlocks = ["monitoring"];
-      const events = run(s, 2000);
+      const events = run(s, 8000);
       return { failed: s.devices.flatMap((d) => d.components.filter((c) => c.failedAt !== null)).length, events: events.filter((e) => e.key === "event.componentFailed").length };
     };
     const quiet = play(false), loud = play(true);
@@ -95,7 +95,7 @@ describe("RAID", () => {
       ok(setRaid(s, id, level));
       return [level, raidUsable(dev(s, id)), raidTolerance(dev(s, id))];
     });
-    expect(rows).toEqual([["none", 6000, 0], ["1", 3000, 1], ["5", 5500, 1], ["6", 5000, 2], ["10", 3000, 1]]);
+    expect(rows).toEqual([["none", 640, 0], ["1", 320, 1], ["5", 480, 1], ["6", 320, 2], ["10", 320, 1]]);
     const drives = dev(s, id).components.filter((c) => c.kind === "hdd");
     expect(arrayLost({ ...dev(s, id), components: dev(s, id).components.map((c) => (c === drives[0] || c === drives[2] ? { ...c, failedAt: 0 } : c)) })).toBe(false);
     expect(arrayLost({ ...dev(s, id), components: dev(s, id).components.map((c) => (c === drives[0] || c === drives[1] ? { ...c, failedAt: 0 } : c)) })).toBe(true);
@@ -143,7 +143,7 @@ describe("RAID", () => {
     expect(fresh).toMatchObject({ kind: "hdd", installedAt: 1, failedAt: null });
     expect(fresh.id).not.toBe(drive.id);
     expect(dev(s, id).rebuild).toEqual({ componentId: fresh.id, doneAt: 1 + rebuildHours(dev(s, id)) });
-    expect(rebuildHours(dev(s, id))).toBeCloseTo((500 * 1000 * 0.7) / 50 / 3600, 9);
+    expect(rebuildHours(dev(s, id))).toBeCloseTo((160 * 1000 * 0.7) / 50 / 3600, 9);
     expect(deviceHealth(s, id).state).toBe("rebuilding");
     run(s, 2);
     expect(deviceHealth(s, id).state).toBe("ok");

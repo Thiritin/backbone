@@ -49,7 +49,7 @@ describe("checklist", () => {
   it("detects a datacenter cluster that sells", () => {
     const s = { ...newGame(1), cash: 100_000 };
     const loc = ok(addLocation(s, "hetzler-park", "share", 4));
-    const srv = ok(buyDevice(s, "g1-memory", "Dwell", 1, loc));
+    const srv = ok(buyDevice(s, "g1-storage", "Dwell", 1, loc));
     ok(mountDevice(s, srv, s.racks.find((r) => r.locationId === loc)!.id, 1));
     ok(connect(s, { device: srv, port: 0 }, { device: s.devices.find((d) => d.panel === loc)!.id, port: 0 }));
     for (let h = 0; h < 72; h++) tick(s);

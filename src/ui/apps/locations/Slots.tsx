@@ -2,13 +2,13 @@ import { Cpu, Plus } from "lucide-react";
 import { Fragment, useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { dateOf, yearOf } from "../../../sim/00-core/time";
-import { COMPONENTS, fits, modelById, samePart, slotsOf, specOf as catalogSpec, type ComponentKind, type PartSpec } from "../../../sim/10-catalog/hardware";
-import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
+import { boardSpec, COMPONENTS, fits, modelById, samePart, slotsOf, specOf as catalogSpec, type ComponentKind, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { socketOf, VENDOR_NAME } from "../../../sim/10-catalog/cpus";
 import { partPrice } from "../../../sim/10-catalog/parts";
 import type { Component, Device, GameState } from "../../../sim/50-state";
 import { hotKind, hotSwappable, locationOf } from "../../../sim/60-infra/status";
 import { installPart, removePart, replaceComponent, replaceSpares } from "../../../sim/90-actions/hardware";
-import { ageYears, isWorn, PART_NAME, partLabel, partSize, partSlot } from "../hw";
+import { ageYears, clockLabel, isWorn, PART_NAME, partLabel, partSize, partSlot } from "../hw";
 import { atDatacenter, useHandWork } from "./HandSheet";
 import { TechButton } from "./TechButton";
 
@@ -73,7 +73,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                 const removable = c.kind !== "board" && c.kind !== "nic" && !swap && held === null && remote;
                 return (
                   <tr key={c.id}>
-                    <td>{c.vendor ? `${VENDOR_NAME[c.vendor]} ` : ""}{PART_NAME[c.kind]}</td>
+                    <td>{c.vendor && c.kind !== "board" ? `${VENDOR_NAME[c.vendor]} ` : ""}{c.kind === "board" && c.vendor ? boardSpec(modelById(device.model), c.vendor)?.name ?? PART_NAME[c.kind] : PART_NAME[c.kind]}{c.kind === "cpu" && clockLabel(c) ? `, ${clockLabel(c)}` : ""}{c.kind === "cpu" && c.vendor && c.gen ? `, socket ${socketOf(c.vendor, c.gen)}` : ""}</td>
                     <td className="num">{partSize(c)}</td>
                     <td className="num">{partSlot(c.kind, i + 1)}</td>
                     <td>
