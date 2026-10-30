@@ -10,7 +10,7 @@ import type { GameState } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
 import { privateIp } from "../../../../sim/60-infra/addresses";
-import { balances, datastoreFits, datastoreUp, hostOfVm, insideVm, isOwnVm, KEYS, nodeTakes, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
+import { balances, datastoreFits, datastoreUp, deltaGb, hostOfVm, insideVm, isOwnVm, KEYS, nodeTakes, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
 import { machineScreen } from "../../../../sim/60-infra/oob";
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { nodeUsage, workloadUse } from "../../../../sim/60-infra/usage";
@@ -127,12 +127,12 @@ export function vmFacts(game: GameState, v: Vm): Record<"status" | "node" | "ip"
 
 // Where a VM's disk can move: its node and every working datastore of the cluster with room, each with the hours offline.
 function DiskMove({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster; done: () => void }) {
-  const act = useStore((s) => s.act), node = game.devices.find((d) => d.id === w.deviceId);
+  const act = useStore((s) => s.act), node = game.devices.find((d) => d.id === w.deviceId), size = w.diskGb + deltaGb(w);
   const to = [
-    ...(w.datastore && node && nodeTakes(game, node, { ...w, datastore: undefined }, w) ? [{ id: null, name: "Local" }] : []),
-    ...c.datastores.filter((x) => x.deviceId !== w.datastore && datastoreUp(game, x) && datastoreFits(game, x.deviceId, w.diskGb)).map((x) => ({ id: x.deviceId, name: nodeName(game, x.deviceId) })),
+    ...(w.datastore && node && nodeTakes(game, node, { ...w, diskGb: size, datastore: undefined }, w) ? [{ id: null, name: "Local" }] : []),
+    ...c.datastores.filter((x) => x.deviceId !== w.datastore && datastoreUp(game, x) && datastoreFits(game, x.deviceId, size)).map((x) => ({ id: x.deviceId, name: nodeName(game, x.deviceId) })),
   ];
-  const down = (id: string | null) => diskMoveDowntime(game, w.diskGb, c.datastores.filter((x) => x.deviceId === id || x.deviceId === w.datastore));
+  const down = (id: string | null) => diskMoveDowntime(game, size, c.datastores.filter((x) => x.deviceId === id || x.deviceId === w.datastore));
   return (
     <div className="cx-inline">
       {to.map((x) => (

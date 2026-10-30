@@ -3,8 +3,10 @@ import { yearOf } from "../../../../../sim/00-core/time";
 import { serverOsById } from "../../../../../sim/10-catalog/server-os";
 import { euro } from "../../../../../sim/00-core/money";
 import { modelById } from "../../../../../sim/10-catalog/hardware";
-import { DATASTORE_FROM, DATASTORES_MAX, FC_HBA_PRICE, type DatastoreProtocol } from "../../../../../sim/10-catalog/platforms";
+import { DATASTORE_FROM, DATASTORES_MAX, FC_HBA_PRICE, SNAPSHOTS_MAX, type DatastoreProtocol } from "../../../../../sim/10-catalog/platforms";
 import { attachDatastore, datastoreBlock, detachDatastore } from "../../../../../sim/90-actions/datastores";
+import { deleteSnapshot, revertSnapshot, takeSnapshot } from "../../../../../sim/90-actions/snapshots";
+import { day } from "../../../hw";
 import { working } from "../../../../../sim/60-infra/status";
 import { useStore } from "../../../../store";
 import type { GameState } from "../../../../../sim/50-state";
@@ -155,6 +157,30 @@ const storageFacts = (game: GameState, c: Cluster, size: Resources) => {
   return x ? [{ label: "Datastore", value: nodeName(game, x.deviceId) }, { label: "Type", value: PROTOCOL[x.protocol] }] : [{ label: "Datastore", value: "datastore1" }, { label: "Type", value: "VMFS" }];
 };
 
+// The Snapshots tab of a VM: its snapshots oldest first with their delta, and the buttons that take, revert and delete them.
+function Snapshots({ v }: { v: Vm }) {
+  const act = useStore((s) => s.act), list = v.w.snapshots ?? [];
+  return (
+    <>
+      <table className="cx-table">
+        <thead><tr><th>Name</th><th>Taken</th><th>Size</th><th /></tr></thead>
+        <tbody>
+          {list.map((x, i) => (
+            <tr key={x.id}>
+              <td>Snapshot {i + 1}</td><td>{day(x.at)}, {String(x.at % 24).padStart(2, "0")}:00</td><td className="num">{gb(x.deltaGb)}</td>
+              <td>
+                <button className="cx-btn" onClick={() => act(revertSnapshot, v.id, x.id)}>Revert</button>{" "}
+                <button className="cx-btn" onClick={() => act(deleteSnapshot, v.id, x.id)}>Delete</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {list.length < SNAPSHOTS_MAX && <div className="cx-inline"><button className="cx-btn primary" onClick={() => act(takeSnapshot, v.id)}>Take Snapshot</button></div>}
+    </>
+  );
+}
+
 // The Datastores tab: each host's local disk, the shared datastores with their use, and the form that attaches a server as one.
 function Datastores({ game, c }: { game: GameState; c: Cluster }) {
   const act = useStore((s) => s.act), year = yearOf(game.hour);
@@ -218,7 +244,7 @@ export function VmWhere(p: PanelProps) {
   const pick = (s: Sel, t = "Summary") => { setSel(s); setTab(t); };
   const vm = sel.kind === "vm" ? vms.find((v) => v.id === sel.id) : undefined, node = sel.kind === "node" ? sel.id : null;
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
-  const tabs = vm ? ["Summary", "Monitor", "Configure"] : ["Summary", "Monitor", "Configure", ...(node ? [] : ["Hosts"]), "Datastores", "Networks"];
+  const tabs = vm ? ["Summary", "Monitor", "Configure", ...(vm.w.deviceId ? ["Snapshots"] : [])] : ["Summary", "Monitor", "Configure", ...(node ? [] : ["Hosts"]), "Datastores", "Networks"];
   const shown = tabs.includes(tab) ? tab : "Summary", facts = vm && vmFacts(game, vm);
   const app = nv.suite ? suiteSoftware(year).find((x) => x.id === nv.suite) : undefined, appOs = app && serverOsById(app.os[0]);
   const finish = () => { const id = nv.create(); if (id) pick({ kind: "vm", id }); };
@@ -264,6 +290,7 @@ export function VmWhere(p: PanelProps) {
             {vm && vm.panel}
             {vm && facts && shown === "Summary" && <VmSummary game={game} v={vm} era={era} />}
             {vm && shown === "Monitor" && <VmMonitor game={game} v={vm} />}
+            {vm && shown === "Snapshots" && <Snapshots v={vm} />}
             {vm && facts && shown === "Configure" && (
               <>
                 <Facts facts={[{ ...facts.cpu, label: "CPU" }, facts.memory, { ...facts.disk, label: "Hard disk 1" }, { label: "Datastore", value: vm.storage }, { ...facts.media, label: "CD/DVD drive 1" }, { label: "Network adapter 1", value: "VM Network" }, facts.backup]} />
