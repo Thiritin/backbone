@@ -60,8 +60,12 @@ export function newOffer(s: GameState, o: Pick<SponsorOffer, "product" | "size" 
 
 // One applicant: who, how big, how it advertises, and the two risks, all fixed by the seed.
 function apply(s: GameState, o: SponsorOffer, events: SimEvent[]): void {
-  const r = hashRng(s.seed, Number(o.id.slice(3)), 24, o.sent), a = APPLICANTS[Math.floor(rand(r) * APPLICANTS.length)];
-  const name = a.names[Math.floor(rand(r) * a.names.length)], audience = Math.round((a.audience[0] + rand(r) * (a.audience[1] - a.audience[0])) / 10) * 10 || 10;
+  // Each name is one person, so nobody applies twice while an application or sponsorship of theirs is live.
+  const busy = new Set(s.sponsorships.filter((x) => x.board && (x.status === "offered" || x.status === "running")).map((x) => x.board!.name));
+  const free = APPLICANTS.flatMap((a) => a.names.filter((n) => !busy.has(n)).map((name) => ({ a, name })));
+  if (!free.length) return void patchOffer(s, o.id, (x) => ({ sent: x.sent + 1 }));
+  const r = hashRng(s.seed, Number(o.id.slice(3)), 24, o.sent), { a, name } = free[Math.floor(rand(r) * free.length)];
+  const audience = Math.round((a.audience[0] + rand(r) * (a.audience[1] - a.audience[0])) / 10) * 10 || 10;
   const board: BoardInfo = {
     offerId: o.id, kind: a.id, name, audience, profile: a.profile, ad: a.ad, product: o.product, size: o.size, hours: o.months * MONTH, free: o.free,
     leads: boardLeads(audience), abuser: rand(r) < BOARD.abuse, drops: rand(r) < BOARD.drop, dropped: false, granted: 0,
