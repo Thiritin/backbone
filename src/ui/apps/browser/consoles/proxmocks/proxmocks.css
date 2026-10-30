@@ -1,0 +1,43 @@
+/* Proxmocks VE: grey ExtJS with blue gradient headers in Tahoma until 2015, then flat white with the orange mark. */
+.pmx[data-era="early"] { --bg: #dfe8f6; --panel: #ffffff; --line: #99bbe8; --fg: #15428b; --muted: #4c6a96; --accent: #3a6fbf; --accent-fg: #fff; --hover: #dde8f8; --r: 2px; --font: Tahoma, Verdana, Geneva, sans-serif; --mark: #e57000; font-size: 11px; }
+.pmx[data-era="late"] { --bg: #f5f5f5; --panel: #ffffff; --line: #cfcfcf; --fg: #333; --muted: #666; --accent: #3892d4; --accent-fg: #fff; --hover: #eef5fb; --r: 0; --font: "Helvetica Neue", Helvetica, Arial, sans-serif; --mark: #e57000; font-size: 12px; }
+
+.pmx-top { display: flex; align-items: center; gap: 12px; padding: 6px 10px; }
+.pmx[data-era="early"] .pmx-top { background: linear-gradient(#d3e1f1, #a9c3e6); border-bottom: 1px solid var(--line); }
+.pmx[data-era="late"] .pmx-top { background: #fff; border-bottom: 1px solid var(--line); }
+.pmx-logo { font-size: 14px; letter-spacing: 0.02em; }
+.pmx-logo b { color: var(--mark); }
+.pmx[data-era="early"] .pmx-logo b { color: #15428b; }
+.pmx-ver { color: var(--muted); }
+.pmx-top .cx-host { flex: 1; }
+.pmx-create, .pmx-out { padding: 3px 10px; border: 1px solid var(--line); border-radius: var(--r); font: inherit; cursor: pointer; }
+.pmx-create { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pmx-out { background: var(--panel); color: var(--fg); }
+.pmx[data-era="early"] .pmx-create { background: linear-gradient(#fff, #d6e3f4); color: var(--fg); border-color: var(--line); }
+
+.pmx-view { padding: 4px 8px; color: var(--muted); border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.pmx[data-era="early"] .pmx-view { background: linear-gradient(#f2f6fb, #cfdcef); color: var(--fg); font-weight: 700; }
+.pmx-tree button[data-state="running"] i { color: #2c9c2c; }
+.pmx-tree button[aria-pressed="true"] i { color: inherit; }
+
+.pmx-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.pmx-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+.pmx[data-era="early"] .pmx-bar { background: linear-gradient(#dae7f6, #b8cfee); font-weight: 700; }
+.pmx-title { flex: 1; }
+.pmx-pane { flex: 1; display: flex; min-height: 0; }
+.pmx-tabs { display: flex; flex-direction: column; flex: none; width: 120px; padding: 6px 0; border-right: 1px solid var(--line); background: var(--panel); }
+.pmx-tabs button { padding: 5px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.pmx-tabs button[aria-pressed="true"] { background: var(--hover); font-weight: 700; }
+.pmx[data-era="late"] .pmx-tabs button[aria-pressed="true"] { border-left: 3px solid var(--accent); }
+.pmx-console { display: flex; align-items: center; justify-content: center; min-height: 200px; background: #000; }
+.pmx[data-era="early"] .cx-table th { background: linear-gradient(#f9f9f9, #e3e4e6); color: #333; }
+.pmx-tasks h4 { color: var(--fg); }
+.pmx[data-era="early"] .pmx-tasks h4 { background: linear-gradient(#dae7f6, #b8cfee); }
+.pmx-wiz .cx-wiz-title { background: var(--hover); }
+
+.pmx-login { align-items: center; justify-content: center; padding: 48px 16px; }
+.pmx-card { display: flex; flex-direction: column; gap: 10px; width: min(380px, 100%); padding: 0 0 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+.pmx-card > *:not(.pmx-card-h) { margin: 0 14px; }
+.pmx-card-h { padding: 6px 10px; font-weight: 700; border-bottom: 1px solid var(--line); }
+.pmx-login[data-era="early"] .pmx-card-h { background: linear-gradient(#dae7f6, #b8cfee); }
+.pmx-login[data-era="late"] .pmx-card-h { background: #fff; border-top: 3px solid var(--mark); }

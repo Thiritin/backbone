@@ -345,6 +345,16 @@ The Virtual machines app leaves the registry and the dock; its detail view, migr
 
 Shared behaviour on every hypervisor console: the VM list with state and load; VM actions (start, stop, reset, resize, migrate when `consoleFeatures` allows it, delete, restore, recover) through today's actions; Console; Media; the node list with usage. The Software tab and its "<console> VM" buttons go away (a VM gets software from its own console).
 
+As built (`consoles/HypervisorBase.tsx` holds the shared blocks, each product lays them out under `consoles/<id>/`):
+
+- A wizard cannot name a VM or pick its node: the VM takes the next `vmNNN` name and the node the cluster places it on, so the name and node steps show the location as a value. The ISO picked in a wizard is loaded with `setMedia` right after `createVm`. HyperVee's Specify Generation step is shown from 2012 and only changes the summary.
+- Reset is Shutdown followed by Start. Restore is offered for every lost VM, as "Start empty" without a backup. Recover lists the rescue targets and runs as hand work.
+- The software facts, updates and backups that the Software tab held sit on a product page: Proxmocks node Updates, vSphear cluster Configure, HyperVee Settings in the Actions pane, OpenVeeZee Updates, Horizont System Information.
+- The task log (Proxmocks Tasks, vSphear and HyperVee Recent Tasks, OpenVeeZee Events, Horizont Overview) lists the software install, VMs moving or restoring, and the disks the nodes lost.
+- Clustering: where `consoleFeatures(...).cluster` holds (Proxmocks from 2008, VMwhere from 2005, OpenStash from 2010, HyperVee from 2012; OpenVeeZee never), the node page (Proxmocks Datacenter, Cluster; vSphear Hosts; HyperVee Failover Cluster Manager; Horizont Hypervisors) has Add node listing `joinableServers` through `addNode`, Remove node on an empty node through `removeNode`, and with the High availability research the three `setHa` switches. There is no cluster licence yet; joining costs nothing beyond each server's own licence.
+- Horizont sizes instances by flavor (m1.tiny to m1.xlarge); a resize takes any size.
+- `src/ui/apps/vms/migrate.ts` stays, because Customers and Locations import its menu entries.
+
 ## 10. Panel, game, mail, DNS, VPN and storage consoles by era
 
 Each software with a web console gets its own component and stylesheet, modelled on the product. The actions stay what `ConsoleBody` has today (objects, nodes, update, auto-update, backups, migrate, clean up); only the chrome changes. Software without a web console (Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit) shows the host page with a plain text status listing in the style of the product's CLI (`named-checkconf`, `wg show`, `mailq`).

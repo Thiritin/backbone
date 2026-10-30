@@ -84,7 +84,7 @@ export function Resize({ game, host, done }: { game: GameState; host: Cluster; d
 }
 
 // Targets with the hours they take; the player sees the hours before confirming.
-function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster; done: () => void }) {
+export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster; done: () => void }) {
   const act = useStore((s) => s.act), hand = c.kind === "panel", [pick, setPick] = useState<string | null>(null);
   const clusterName = (id: string) => game.clusters.find((x) => x.id === id)?.name ?? "";
   const targets = hand

@@ -1,0 +1,50 @@
+/* HyperVee Manager: the glossy white and light blue MMC in Segoe until 2012, then the same three panes with flat chrome. */
+.hv[data-era="early"] { --bg: #f0f0f0; --panel: #ffffff; --line: #a7bad1; --fg: #1e1e1e; --muted: #5a6b80; --accent: #3399ff; --accent-fg: #fff; --hover: #e5f3fb; --r: 3px; --font: "Segoe UI", Tahoma, Verdana, sans-serif; font-size: 12px; }
+.hv[data-era="late"] { --bg: #ffffff; --panel: #ffffff; --line: #d4d4d4; --fg: #1e1e1e; --muted: #666; --accent: #0078d7; --accent-fg: #fff; --hover: #e5f1fb; --r: 0; --font: "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-size: 12px; }
+
+.hv-top { display: flex; align-items: center; gap: 12px; padding: 5px 10px; }
+.hv-top .cx-host { flex: 1; }
+.hv[data-era="early"] .hv-top { background: linear-gradient(#e9f1fa, #c7d9ee); border-bottom: 1px solid var(--line); }
+.hv[data-era="late"] .hv-top { background: #fff; border-bottom: 1px solid var(--line); }
+.hv-title { font-weight: 600; }
+.hv-out { padding: 2px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); color: inherit; font: inherit; cursor: pointer; }
+.hv-menu { display: flex; gap: 14px; padding: 2px 10px; border-bottom: 1px solid var(--line); background: var(--bg); }
+.hv[data-era="late"] .hv-menu { background: #fff; }
+
+.hv-tree { width: 200px; }
+.hv[data-era="early"] .hv-tree button[aria-pressed="true"] { background: linear-gradient(#dcebfc, #c1dbfc); color: var(--fg); border: 1px solid #7da2ce; border-radius: 3px; }
+.hv[data-era="late"] .hv-tree button[aria-pressed="true"] { background: #cce8ff; color: var(--fg); }
+.hv-mid { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: auto; }
+.hv-h { margin: 0; padding: 4px 10px; font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--line); }
+.hv[data-era="early"] .hv-h { background: linear-gradient(#f7fbff, #dce8f5); }
+.hv[data-era="late"] .hv-h { background: #f3f3f3; }
+.hv-list { flex: 1; min-height: 120px; overflow: auto; }
+.hv-list tr { cursor: default; }
+.hv-list tr[aria-selected="true"] td { background: var(--hover); }
+.hv-details { display: flex; flex-direction: column; gap: 8px; padding: 10px; min-height: 140px; }
+
+.hv-side { flex: none; width: 190px; overflow: auto; border-left: 1px solid var(--line); background: var(--panel); }
+.hv-acts h4 { margin: 0; padding: 4px 10px; font-size: 12px; font-weight: 600; }
+.hv[data-era="early"] .hv-acts h4 { background: linear-gradient(#e4eefb, #c7d9ee); }
+.hv[data-era="late"] .hv-acts h4 { background: #f3f3f3; border-bottom: 1px solid var(--line); }
+.hv-acts button { display: block; width: 100%; padding: 3px 10px 3px 22px; border: 0; background: none; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.hv-acts button:hover { background: var(--hover); }
+.hv-acts button.danger { color: #b00020; }
+
+.hv-settings { display: flex; flex-direction: column; flex: 1; }
+.hv-settings-body { display: flex; flex: 1; min-height: 0; }
+.hv-parts { flex: none; width: 190px; margin: 0; padding: 6px 0; list-style: none; border-right: 1px solid var(--line); }
+.hv-group { padding: 6px 10px 2px; font-weight: 600; color: var(--muted); }
+.hv-parts button { width: 100%; padding: 3px 10px 3px 22px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hv-parts button[aria-pressed="true"] { background: var(--hover); }
+.hv-form { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 10px 14px; }
+.hv-settings > .cx-tools { justify-content: flex-end; padding: 8px 10px; border-top: 1px solid var(--line); }
+.hv-radios { display: flex; flex-direction: column; gap: 6px; }
+.hv[data-era="early"] .hv-wiz .cx-wiz-title { background: linear-gradient(#e9f1fa, #c7d9ee); }
+.hv[data-era="early"] .hv-wiz .cx-wiz-steps { background: #f4f8fd; }
+
+.hv-login { align-items: center; justify-content: center; padding: 48px 16px; }
+.hv-card { display: flex; flex-direction: column; gap: 10px; width: min(360px, 100%); padding: 0 0 14px; background: var(--panel); border: 1px solid var(--line); }
+.hv-card > *:not(.hv-card-h) { margin: 0 14px; }
+.hv-card-h { padding: 6px 10px; font-weight: 600; border-bottom: 1px solid var(--line); }
+.hv-login[data-era="early"] .hv-card-h { background: linear-gradient(#e9f1fa, #c7d9ee); }
