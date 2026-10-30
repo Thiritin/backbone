@@ -8,6 +8,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Customer load now changes from day to day and follows the week: gamers play most on Saturdays, shops sell most on Sundays and news sites peak on Mondays.
 - Most private customers now keep a quiet personal page that uses little CPU and traffic beyond its memory, while some still run a busy blog.
 - Software installed from a server's shell now holds the shell until it finishes and prints a full installer log along the way.
+- Company settings offer four more logos: a wolf, a fox, a cat and a toaster.
 - Upgrading a Windoors machine in place before 2016 buys a license for the new release, the same price as a new install.
 - The Debiant and Windoors sites now offer every release as its own download, and an install puts the release that is on the stick or ISO onto the machine.
 - Servers and VMs can upgrade their operating system in place to the next release, with `apt full-upgrade` on Debiant or Windoors Setup from the next release's media, and everything still running on the machine is offline until it finishes, so move VMs off first.

@@ -10,6 +10,14 @@ describe("company profile", () => {
     expect(s.company).toEqual({ name: "Pixel Pipes", logo: "rocket", color: COMPANY_COLORS[3], domain: null, mail: { kind: "free" }, tagline: "" });
   });
 
+  it("accepts the animal and toaster logos", () => {
+    const s = newGame(7);
+    for (const logo of ["wolf", "fox", "cat", "toaster"]) {
+      expect(setCompany(s, { logo })).toEqual({ ok: true });
+      expect(s.company.logo).toBe(logo);
+    }
+  });
+
   it("rejects empty or long names and unknown marks", () => {
     const s = newGame(7), before = structuredClone(s.company);
     expect(setCompany(s, { name: "   " })).toEqual({ ok: false, error: "error.companyName" });

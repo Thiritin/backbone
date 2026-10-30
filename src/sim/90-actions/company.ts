@@ -4,7 +4,7 @@ import { STARTER_APPS } from "../10-catalog/store";
 import { LEGAL_FORMS, officeOpen, registerNumber } from "../80-business/office";
 
 // Logo marks by id; the UI draws each one as an icon on a tile in the chosen colour.
-export const COMPANY_LOGOS = ["server", "cloud", "zap", "globe", "rocket", "database", "cpu", "shield", "leaf", "mountain", "waves", "flame"];
+export const COMPANY_LOGOS = ["server", "cloud", "zap", "globe", "rocket", "database", "cpu", "shield", "leaf", "mountain", "waves", "flame", "wolf", "fox", "cat", "toaster"];
 export const COMPANY_COLORS = [
   "oklch(0.55 0.15 255)", "oklch(0.58 0.12 210)", "oklch(0.6 0.14 160)", "oklch(0.72 0.15 95)",
   "oklch(0.65 0.17 50)", "oklch(0.58 0.2 25)", "oklch(0.6 0.19 350)", "oklch(0.55 0.17 295)", "oklch(0.4 0.03 260)",
