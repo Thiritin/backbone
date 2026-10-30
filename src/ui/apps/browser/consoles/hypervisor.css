@@ -15,10 +15,10 @@
 .cx-wiz-page { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; min-width: 0; }
 .cx-wiz-page h3 { margin: 0 0 4px; font-size: 14px; }
 .cx-wiz-foot { display: flex; justify-content: flex-end; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--line); }
-.cx-wiz.tabs .cx-wiz-body { flex-direction: column; }
-.cx-wiz.tabs .cx-wiz-steps { flex-direction: row; flex-wrap: wrap; width: auto; padding: 0; border-right: 0; border-bottom: 1px solid var(--line); }
-.cx-wiz.tabs .cx-wiz-steps button { width: auto; padding: 6px 12px; }
-.cx-wiz.tabs .cx-wiz-page h3 { display: none; }
+.cx-wiz.cx-wiz-tabs .cx-wiz-body { flex-direction: column; }
+.cx-wiz.cx-wiz-tabs .cx-wiz-steps { flex-direction: row; flex-wrap: wrap; width: auto; padding: 0; border-right: 0; border-bottom: 1px solid var(--line); }
+.cx-wiz.cx-wiz-tabs .cx-wiz-steps button { width: auto; padding: 6px 12px; }
+.cx-wiz.cx-wiz-tabs .cx-wiz-page h3 { display: none; }
 
 .cx-tasks { flex: none; border-top: 1px solid var(--line); background: var(--panel); max-height: 150px; overflow: auto; }
 .cx-tasks h4 { margin: 0; padding: 4px 10px; font-size: 12px; }

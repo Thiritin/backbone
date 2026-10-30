@@ -252,9 +252,10 @@ export interface Task { key: string; at: number; text: string; status: string; t
 
 // The task log: the cluster's software install or update, VMs being moved or restored, and disks its nodes lost.
 export function tasks(game: GameState, c: Cluster, vms: Vm[]): Task[] {
-  const nodes = new Set(c.nodes.map((n) => n.deviceId));
+  const nodes = new Set(c.nodes.map((n) => n.deviceId)), ids = new Set(vms.map((v) => v.id));
+  const installs = game.clusters.filter((x) => x.switching && (x.id === c.id || (x.vm && ids.has(x.vm))));
   const out: Task[] = [
-    ...(c.switching ? [{ key: "sw", at: c.switching.doneAt, text: `Install ${softwareById(c.switching.to).name}`, status: "Running", tone: "accent" }] : []),
+    ...installs.map((x) => ({ key: `sw-${x.id}`, at: x.switching!.doneAt, text: `Install ${softwareById(x.switching!.to).name} on ${x.name}`, status: "Running", tone: "accent" })),
     ...vms.filter((v) => v.st === "migrating" || v.st === "restoring").map((v) => ({ key: v.id, at: v.w.migrating?.doneAt ?? v.w.busyUntil, text: `${v.state} ${v.name}`, status: "Running", tone: "accent" })),
     ...game.lossReports.filter((r) => nodes.has(r.deviceId)).map((r) => ({ key: r.id, at: r.hour, text: `${nodeName(game, r.deviceId)} lost its disks`, status: "Error", tone: "bad" })),
   ];

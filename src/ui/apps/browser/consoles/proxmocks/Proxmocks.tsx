@@ -115,7 +115,7 @@ export function Proxmocks(p: PanelProps) {
       <TaskLog game={game} c={c} vms={vms} title="Tasks" className="cx-tasks pmx-tasks" />
       {sel.kind === "new" && (
         <div className="cx-wiz-back">
-          <Wizard title="Create: Virtual Machine" numbered className="tabs pmx-wiz" finish="Finish" onCancel={() => setSel(ALL)} onFinish={finish} steps={[
+          <Wizard title="Create: Virtual Machine" numbered className="cx-wiz-tabs pmx-wiz" finish="Finish" onCancel={() => setSel(ALL)} onFinish={finish} steps={[
             { id: "general", label: "General", body: <Facts facts={[{ label: "Node", value: nodes.length === 1 ? nodes[0].hostname ?? nodes[0].name : "Any" }, { label: "Resource Pool", value: c.name }]} /> },
             { id: "os", label: "OS", body: nv.isoPick("ISO image") },
             { id: "disk", label: "Hard Disk", body: <SizeFields size={nv.size} set={nv.setSize} only="diskGb" labels={["", "", "Disk size (GiB)"]} /> },
