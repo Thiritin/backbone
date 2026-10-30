@@ -13,7 +13,7 @@ const SHELL_HELP = [
   "clear              empty the screen",
 ];
 
-// The Terminal app: output imitates the real tools, so these are the strings of ping, traceroute, ssh and a Linux shell.
+// The Terminal app: output imitates the real tools, so these are the strings of ping, traceroute, ssh and a Lunix shell.
 export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "term.help.desk": () => [
     "ssh <host>         open a session on a server",
@@ -42,7 +42,7 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "term.ssh.timeout": (p) => `ssh: connect to host ${p.host} port 22: Connection timed out`,
   "term.ssh.refused": (p) => `ssh: connect to host ${p.host} port 22: Connection refused`,
   "term.ssh.denied": (p) => `root@${p.host}: Permission denied (publickey).`,
-  "term.ssh.welcome": (p) => `Welcome to ${p.host} (GNU/Linux x86_64)`,
+  "term.ssh.welcome": (p) => `Welcome to ${p.host} (GNU/Lunix x86_64)`,
   "term.ssh.lost": (p) => `Connection to ${p.host} closed by remote host.`,
   "term.ssh.closed": (p) => `Connection to ${p.host} closed.`,
   "term.logout": () => "logout",

@@ -68,7 +68,7 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `${site(p)} needs an SSL certificate for the padlock. We set it up for you as soon as you order it.`,
   ],
   "tpl.ssh": [
-    (p) => `Open an SSH client such as PuTTY and connect to ${p.hostname || "your server"} as root. The password is in the setup email we sent from ${p.host}.`,
+    (p) => `Open an SSH client such as PuTTYcat and connect to ${p.hostname || "your server"} as root. The password is in the setup email we sent from ${p.host}.`,
     (p) => `You log in over SSH: connect to ${p.hostname || "your server"} with the user root and the password from your setup email.`,
     (p) => `Use any SSH client and connect to ${p.hostname || "your server"} as root. If you lost the setup email with the password, reply here and we send a new one.`,
   ],
