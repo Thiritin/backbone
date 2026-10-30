@@ -109,6 +109,9 @@
 .wl-h { font-size: 20px; font-weight: 300; }
 .wl-clock { font-size: 54px; font-weight: 300; display: grid; line-height: 1.1; }
 .wl-clock small { font-size: 18px; }
+.wl-pass { min-width: 220px; min-height: 26px; padding: 3px 6px; background: #fff; color: #000; border: 1px solid #7f9db9; text-align: left; letter-spacing: 2px; }
+.wl-caret { display: inline-block; width: 1px; height: 16px; vertical-align: middle; background: #000; animation: wl-blink 1s steps(1) infinite; }
+@keyframes wl-blink { 50% { opacity: 0; } }
 
 .wd { display: grid; grid-template-rows: 1fr auto; height: 100%; position: relative; background: #3a6ea5; font-size: 12px; }
 .wd[data-era="0"] { background: #6b7a3a; }

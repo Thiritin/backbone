@@ -3,11 +3,13 @@ import { t } from "../../../i18n/en";
 import { dateOf, yearOf } from "../../../sim/00-core/time";
 import { runsOn, SOFTWARE, softwareById, type Software } from "../../../sim/10-catalog/platforms";
 import type { GameState } from "../../../sim/50-state";
+import { installDone, installLog } from "../../../sim/60-infra/apt";
 import { machineNet, machineScreen } from "../../../sim/60-infra/oob";
+import { reboot } from "../../../sim/90-actions/hardware";
 import { installFromSite } from "../../../sim/90-actions/console";
 import { installBlock, softwareOn, uninstallSoftware } from "../../../sim/90-actions/software";
 import { useStore } from "../../store";
-import { hostOf, hoursLeft, winEra, type Keyed, type Machine } from "./installer";
+import { hostOf, hoursLeft, isDevice, winEra, type Keyed, type Machine } from "./installer";
 
 type Era = 0 | 1 | 2;
 const clock = (game: GameState) => `${String(dateOf(game.hour).getUTCHours()).padStart(2, "0")}:${String(game.minute).padStart(2, "0")}`;
@@ -23,9 +25,11 @@ export function WindoorsBoot({ version }: { version: string }) {
   );
 }
 
-// The logon until someone presses Ctrl+Alt+Delete, then the desktop with Server Manager open.
+// The logon until someone presses Ctrl+Alt+Delete and types any Administrator password, then the desktop with Server
+// Manager open; pass is null until the password box is up.
 export function useWindoors(game: GameState, m: Machine, version: string, loggedIn: boolean, logIn: () => void, logOut: () => void): Keyed {
   const era = winEra(version);
+  const [pass, setPass] = useState<string | null>(null);
   if (loggedIn) return { view: <Desktop game={game} m={m} version={version} era={era} logOut={logOut} />, onKey: () => {}, keys: [] };
   const d = dateOf(game.hour);
   const view = (
@@ -33,11 +37,20 @@ export function useWindoors(game: GameState, m: Machine, version: string, logged
       {era === 2 && <div className="wl-clock">{clock(game)}<small>{d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</small></div>}
       <div className="wl-box">
         {era !== 2 && <div className="wl-h">{`Windoors Server ${version}`}</div>}
-        <div>{era === 0 ? "Press Ctrl-Alt-Delete to begin." : era === 1 ? "Press Ctrl+Alt+Delete to log on." : "Press Ctrl+Alt+Delete to unlock."}</div>
+        {pass === null
+          ? <div>{era === 0 ? "Press Ctrl-Alt-Delete to begin." : era === 1 ? "Press Ctrl+Alt+Delete to log on." : "Press Ctrl+Alt+Delete to unlock."}</div>
+          : <><div>{era === 0 ? "User name: Administrator" : "Administrator"}</div><div className="wl-pass">{"•".repeat(pass.length)}<span className="wl-caret" /></div></>}
       </div>
     </div>
   );
-  return { view, onKey: (k) => { if (k === "CtrlAltDel" || k === "Enter") logIn(); }, keys: ["CtrlAltDel"] };
+  const onKey = (k: string) => {
+    if (pass === null) { if (k === "CtrlAltDel" || k === "Enter") setPass(""); }
+    else if (k === "Enter") { setPass(null); logIn(); }
+    else if (k === "Escape") setPass(null);
+    else if (k === "Backspace") setPass(pass.slice(0, -1));
+    else if (k.length === 1) setPass(pass + k);
+  };
+  return { view, onKey, keys: pass === null ? ["CtrlAltDel"] : ["Enter", "Escape", "Backspace"] };
 }
 
 type Win = "manager" | "roles" | "programs" | null;
@@ -205,6 +218,7 @@ function Wizard({ game, m, era, items, close, roles = true }: { game: GameState;
     else setNote(t(r.error));
   };
   const doneAt = softwareOn(game, m.id).find((x) => x.id === pick)?.doneAt ?? null;
+  const share = now.kind === "installing" ? now.progress : 0, log = sw ? installLog(sw) : [];
   return (
     <div className="wz" data-era={era} data-steps={roles || undefined}>
       {roles && <ul className="wz-steps">{STEPS[era].map((x, i) => <li key={x} className={i === AT[era][shown === "failed" ? "progress" : shown] ? "on" : ""}>{x}</li>)}</ul>}
@@ -228,7 +242,8 @@ function Wizard({ game, m, era, items, close, roles = true }: { game: GameState;
         {shown === "progress" && sw && <>
           <div className="wz-t">Installation progress</div>
           <div>{sw.name}</div>
-          <div className="inst-bar"><span style={{ width: `${now.kind === "installing" ? Math.floor(now.progress * 100) : 0}%` }} /></div>
+          <div>{log[Math.min(log.length - 1, Math.floor(share * log.length))]}</div>
+          <div className="inst-bar"><span style={{ width: `${Math.floor(share * 100)}%` }} /></div>
           <div className="muted">{doneAt !== null ? `${hoursLeft(game, doneAt)} h left` : ""}</div>
         </>}
         {shown === "failed" && sw && <>
@@ -238,12 +253,13 @@ function Wizard({ game, m, era, items, close, roles = true }: { game: GameState;
         </>}
         {shown === "results" && sw && <>
           <div className="wz-t">Installation succeeded</div>
-          <div>{sw.name}</div>
+          {installDone(game, m.id, sw).map((x) => <div key={x}>{x}</div>)}
         </>}
         {note && <div className="wm-note">{note}</div>}
         <div className="wz-btns">
           {shown === "pick" && <><button disabled={!pick} onClick={() => setPhase("confirm")}>Next</button><button onClick={close}>Cancel</button></>}
           {shown === "confirm" && <><button onClick={() => setPhase("pick")}>Previous</button><button onClick={install}>Install</button></>}
+          {shown === "results" && isDevice(m) && <button onClick={() => act(reboot, m.id)}>Restart now</button>}
           {(shown === "progress" || shown === "results" || shown === "failed") && <button onClick={close}>Close</button>}
         </div>
       </div>

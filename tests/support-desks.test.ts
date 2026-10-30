@@ -18,7 +18,7 @@ const year = (y: number): GameState => registered({ ...newGame(1), hour: at(y, 1
 
 const agent = (n: number, role: Employee["role"] = "support"): Employee => ({
   id: `emp${n}`, name: `Agent ${n}`, role, skill: 1, talent: 1, salary: 0, hiredAt: 0, assignment: "queue", location: null,
-  trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 0, refusedAt: null, hours: 8, hoursFrom: 0,
+  trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 0, refusedAt: null, team: "office", worked: 0,
 });
 
 describe("support desks", () => {

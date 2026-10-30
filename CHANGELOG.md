@@ -5,6 +5,14 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-30
 
 - A new game now starts with only the Browser, and your other apps arrive once you register your company on the trade office website during its office hours.
+- Customers who ask for a virtual server now ask for Debiant.
+- A server's /etc/os-release now names Debiant GNU/Lunix.
+- The control plane row in a node's workloads now has a globe button that opens the panel's web console in the browser.
+- Logging in at a server console now asks for a username and password: type root on Lunix and any password, or any Administrator password on Windoors.
+- Software installers print their full log while they run and finish by telling you where to reach the new installation and to reboot.
+- Staff now belong to teams, and the new Shifts planner sets each team's hours for every weekday, including night shifts, so several teams can cover the clock.
+- Salaries are paid for the hours each person actually worked that month, so a part-time team or a short month costs less.
+- The USB stick now stays in a server until the operating system finishes installing from it.
 - Every VM and container page in a hypervisor console shows its usage over the last day and is laid out the way the real product shows it.
 - A price raise on a running service now takes effect from the next monthly invoice, so a customer who cancels over it pays the old price.
 - An upgrade offer now asks you to pick the individual server it grows on, starting with the one the service runs on now.
@@ -13,6 +21,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Holding Shift while scrolling over a rack now zooms in and out around the mouse pointer, and the zoom buttons above the rack are gone.
 - A new game now starts with an empty terminal, a single browser tab and the first-time shell setup again, and keeps only your sound settings.
 - Writing an ISO to the USB stick now takes a few seconds and shows a Copy window with a progress bar, which you can stop.
+- The server shell and apt now fetch packages from the Debiant mirror at deb.debiant.org.
 - Applications is now Finder, with your apps, the desktop, your downloads and the USB stick, and you write an ISO to the stick by right-clicking it or dragging it onto the stick.
 - The browser has a Downloads button that lists your ISOs and opens them in Finder, and the USB stick plays its connect and disconnect sounds as you plug it in and out.
 - The company website grows with the web design into a site with a menu, a products page, an about page and a support page, with pictures of your racks and your support desk, and its newest look is a modern hosting company site.

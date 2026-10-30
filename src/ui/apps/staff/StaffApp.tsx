@@ -1,18 +1,18 @@
-import { BookOpen, Bot, Check, GraduationCap, Megaphone, MessagesSquare, Search, UserPlus, Users } from "lucide-react";
+import { BookOpen, Bot, CalendarClock, Check, GraduationCap, Megaphone, MessagesSquare, Search, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import { useSessionState } from "../../session";
 import { runwayMonths } from "../../../sim/46-finance/finance";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import {
-  activeBots, AD, atFair, BOT_RIGHT, BOT_SPEED, COURSE_HOURS, COURSE_PRICE, fullyTrained, marketSalary, monthlyPay, needsTraining, ROLES, salaryUpToNow, staffPrice, TASKS, TRAINER_HOURS, trainerFor, visibleCandidates, WORK_HOURS,
-  type AdTier, type Assignment, type Candidate, type Employee, type Role, type Task, type WorkHours,
+  activeBots, AD, hourlyWage, atFair, BOT_RIGHT, BOT_SPEED, COURSE_HOURS, COURSE_PRICE, fullyTrained, marketSalary, monthlyPay, needsTraining, payOf, ROLES, salaryUpToNow, staffPrice, TASKS, TRAINER_HOURS, teamOf, trainerFor, visibleCandidates, weekHours,
+  type AdTier, type Assignment, type Candidate, type Employee, type Role, type Task,
 } from "../../../sim/47-staff/staff";
 import { storeItem, subscriptionPrice } from "../../../sim/10-catalog/store";
 import { pricePerMTokens } from "../../../sim/47-staff/chad";
 import type { GameState } from "../../../sim/50-state";
 import { cancel } from "../../../sim/90-actions/store";
-import { answerRaise, assign, fire, hire, planTraining, postJobAd, setHours, setOnCall, setTechLocation } from "../../../sim/90-actions/staff";
+import { answerRaise, assign, fire, hire, planTraining, postJobAd, setOnCall, setTeam, setTechLocation } from "../../../sim/90-actions/staff";
 import { Confirm } from "../../desktop/Confirm";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { More } from "../More";
@@ -20,6 +20,7 @@ import { useFocus, useStore } from "../../store";
 import { runwayLabel } from "../finance/FinanceApp";
 import { Facts, Sheet } from "../locations/ui";
 import { TechPanel } from "./TechPanel";
+import { Shifts } from "./Shifts";
 import { formatDay } from "../billing/BillingApp";
 import { initials } from "../support/labels";
 import "../shop/shop.css";
@@ -69,7 +70,7 @@ function TaskBars({ e, hour }: { e: Employee; hour: number }) {
 
 export function StaffApp() {
   const game = useStore((s) => s.game);
-  const [view, setView] = useSessionState<"team" | "market">("staff.tab", "team");
+  const [view, setView] = useSessionState<"team" | "shifts" | "market">("staff.tab", "team");
   const [sel, setSel] = useSessionState<string | null>("staff.sel", null);
   const [role, setRole] = useState<Role>("support");
   const market = visibleCandidates(game);
@@ -84,13 +85,16 @@ export function StaffApp() {
         <button className={`side-item${view === "market" ? " active" : ""}`} onClick={() => setView("market")}>
           <Search />Job market<span className="side-count">{market.length}</span>
         </button>
+        <button className={`side-item${view === "shifts" ? " active" : ""}`} onClick={() => setView("shifts")}>
+          <CalendarClock />Shifts<span className="side-count">{game.teams.length}</span>
+        </button>
       </aside>
-      {view === "team" ? <Team game={game} sel={sel} setSel={setSel} onMarket={() => setView("market")} /> : <Market game={game} role={role} setRole={setRole} onHired={(id) => { setSel(id); setView("team"); }} />}
+      {view === "team" ? <Team game={game} sel={sel} setSel={setSel} onMarket={() => setView("market")} /> : view === "shifts" ? <Shifts game={game} /> : <Market game={game} role={role} setRole={setRole} onHired={(id) => { setSel(id); setView("team"); }} />}
     </div>
   );
 }
 
-// Hours, assignment, training, raise and leaving for an employee; a bot only cancels.
+// Team, assignment, training, raise and leaving for an employee; a bot only cancels.
 function staffMenu(game: GameState, e: Employee, onLeave: (e: Employee) => void): MenuEntry[] {
   const act = useStore.getState().act;
   if (e.bot) return [{ label: "Cancel subscription", run: () => onLeave(e) }];
@@ -100,7 +104,7 @@ function staffMenu(game: GameState, e: Employee, onLeave: (e: Employee) => void)
     e.raise && { label: "Accept raise", run: () => act(answerRaise, e.id, true) },
     e.raise && { label: "Refuse raise", run: () => act(answerRaise, e.id, false) },
     null,
-    { label: "Hours a day", items: WORK_HOURS.map((h) => ({ label: `${h} h`, checked: e.hours === h, run: () => act(setHours, e.id, h) })) },
+    { label: "Team", items: game.teams.map((t) => ({ label: t.name, checked: e.team === t.id, run: () => act(setTeam, e.id, t.id) })) },
     { label: "Assignment", items: (["queue", "trainer", "forum"] as const).map((a) => ({ label: ASSIGN[a], checked: e.assignment === a, run: () => act(assign, e.id, a) })) },
     tech && { label: "Location", items: game.locations.map((l) => ({ label: l.name, checked: e.location === l.id, run: () => act(setTechLocation, e.id, l.id) })) },
     tech && { label: "On call", checked: onCall, run: () => act(setOnCall, e.id, !onCall) },
@@ -123,7 +127,7 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
   }
   const current = [...game.staff, ...bots].find((e) => e.id === sel) ?? game.staff[0] ?? bots[0];
   const menu = (e: Employee) => () => staffMenu(game, e, setLeaving);
-  const payroll = game.staff.reduce((sum, e) => sum + monthlyPay(e), 0);
+  const payroll = game.staff.reduce((sum, e) => sum + payOf(game, e), 0);
   return (
     <>
       <div className="st-list" role="list">
@@ -135,7 +139,7 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
               <span className="logo">{initials(e.name)}</span>
               <span className="who">
                 <span className="name">{e.name}</span>
-                <span className="sub">{ROLE[e.role].one} · {e.hours} h · <span className="num">{euro(monthlyPay(e))}</span></span>
+                <span className="sub">{ROLE[e.role].one} · {teamOf(game, e)?.name} · <span className="num">{euro(payOf(game, e))}</span></span>
               </span>
               <span className="side">
                 <span className="num st-skill">{Math.round(e.skill)}</span>
@@ -191,7 +195,7 @@ function LetGo({ game, e, onClose }: { game: GameState; e: Employee; onClose: ()
   );
   return (
     <Confirm title={`Let ${e.name} go?`} action="Let go" onCancel={onClose} onConfirm={() => { onClose(); act(fire, e.id); }}
-      text={`This saves ${euro(monthlyPay(e))} a month. ${e.name.split(" ")[0]} leaves today${owed > 0 ? ` and is paid ${euro(owed)} for the days worked this month` : ""}.`} />
+      text={`This saves ${euro(payOf(game, e))} a month. ${e.name.split(" ")[0]} leaves today${owed > 0 ? ` and is paid ${euro(owed)} for the days worked this month` : ""}.`} />
   );
 }
 
@@ -231,6 +235,7 @@ function Detail({ game, e, menu }: { game: GameState; e: Employee; menu: () => M
   const fee = staffPrice(COURSE_PRICE, yearOf(game.hour));
   const canTrain = fullyTrained(e) && game.staff.some((x) => x.id !== e.id && x.role === e.role && needsTraining(x));
   const open = TASKS[e.role].filter((k) => !e.trained.includes(k) && e.training?.task !== k);
+  const week = weekHours(teamOf(game, e));
   const toggle = (k: Task) => act(planTraining, e.id, e.plan.includes(k) ? e.plan.filter((x) => x !== k) : [...e.plan, k]);
   return (
     <section className="st-detail">
@@ -246,8 +251,8 @@ function Detail({ game, e, menu }: { game: GameState; e: Employee; menu: () => M
         </div>
         <dl className="st-facts">
           <div><dt>Skill</dt><dd><span className="num">{Math.round(e.skill)}</span><SkillBar value={e.skill} /></dd></div>
-          <div><dt>Salary</dt><dd className="num">{euro(monthlyPay(e))}</dd></div>
-          <div><dt>Market salary</dt><dd className="num">{euro(monthlyPay({ salary: marketSalary(e, game.hour), hours: e.hours }))}</dd></div>
+          <div><dt>Salary</dt><dd className="num">{euro(payOf(game, e))}</dd></div>
+          <div><dt>Market salary</dt><dd className="num">{euro(monthlyPay(marketSalary(e, game.hour), week))}</dd></div>
           <div><dt>Next raise talk</dt><dd className="num">{formatDay(e.nextRaiseAt)}</dd></div>
         </dl>
       </header>
@@ -256,7 +261,7 @@ function Detail({ game, e, menu }: { game: GameState; e: Employee; menu: () => M
           <div className="st-raise">
             <div>
               <strong>{e.name.split(" ")[0]} asks for a raise</strong>
-              <span><span className="num">{euro(monthlyPay(e))}</span> to <span className="num">{euro(monthlyPay({ salary: e.raise.ask, hours: e.hours }))}</span> a month</span>
+              <span><span className="num">{euro(payOf(game, e))}</span> to <span className="num">{euro(monthlyPay(e.raise.ask, week))}</span> a month</span>
             </div>
             <span className="grow" />
             <button className="btn" onClick={() => act(answerRaise, e.id, false)}>Refuse</button>
@@ -272,9 +277,9 @@ function Detail({ game, e, menu }: { game: GameState; e: Employee; menu: () => M
             </button>
           ))}
         </div>
-        <h3>Hours a day</h3>
-        <div className="seg" role="group" aria-label="Hours a day">
-          {WORK_HOURS.map((h) => <button key={h} aria-pressed={e.hours === h} onClick={() => act(setHours, e.id, h)}>{h} h</button>)}
+        <h3>Team</h3>
+        <div className="seg" role="group" aria-label="Team">
+          {game.teams.map((t) => <button key={t.id} aria-pressed={e.team === t.id} onClick={() => act(setTeam, e.id, t.id)}>{t.name} · {weekHours(t)} h</button>)}
         </div>
         {e.role === "technician" && <TechPanel game={game} e={e} />}
         <div className="st-train-h">
@@ -325,24 +330,25 @@ function Market({ game, role, setRole, onHired }: { game: GameState; role: Role;
         {list.map((c) => <CandidateCard key={c.id} c={c} onHire={() => setHiring(c)} />)}
         {!list.length && <div className="shop-none">No {ROLE[role].many.toLowerCase()} are looking for work right now.</div>}
       </div>
-      {hiring && <HireSheet game={game} c={hiring} onClose={() => setHiring(null)} onHire={(hours) => {
+      {hiring && <HireSheet game={game} c={hiring} onClose={() => setHiring(null)} onHire={(team) => {
         setHiring(null);
-        const r = act(hire, hiring.id, hours);
+        const r = act(hire, hiring.id, team);
         if (r.ok && r.id) onHired(r.id);
       }} />}
     </div>
   );
 }
 
-// The first hire defaults to two hours a day, the cheapest way to start.
-function HireSheet({ game, c, onClose, onHire }: { game: GameState; c: Candidate; onClose: () => void; onHire: (hours: WorkHours) => void }) {
-  const [hours, setHours] = useState<WorkHours>(game.staff.length ? 8 : 2);
-  const pay = monthlyPay({ salary: c.salary, hours });
+// The first hire defaults to the team with the fewest hours, the cheapest way to start.
+function HireSheet({ game, c, onClose, onHire }: { game: GameState; c: Candidate; onClose: () => void; onHire: (team: string) => void }) {
+  const cheapest = [...game.teams].sort((a, b) => weekHours(a) - weekHours(b))[0];
+  const [team, setTeam] = useState(game.staff.length ? game.teams[0].id : cheapest.id);
+  const pay = monthlyPay(c.salary, weekHours(game.teams.find((t) => t.id === team)));
   return (
     <Sheet title={`Hire ${c.name}`} onClose={onClose}>
       <div className="loc-form">
-        <div className="seg" role="group" aria-label="Hours a day">
-          {WORK_HOURS.map((h) => <button key={h} aria-pressed={hours === h} onClick={() => setHours(h)}>{h} h a day</button>)}
+        <div className="seg" role="group" aria-label="Team">
+          {game.teams.map((t) => <button key={t.id} aria-pressed={team === t.id} onClick={() => setTeam(t.id)}>{t.name} · {weekHours(t)} h a week</button>)}
         </div>
         <Facts rows={[
           ["Monthly cost", <span className="num">{euro(pay)}</span>],
@@ -352,7 +358,7 @@ function HireSheet({ game, c, onClose, onHire }: { game: GameState; c: Candidate
       </div>
       <div className="loc-sheet-foot">
         <button className="btn" onClick={onClose}>Cancel</button>
-        <button className="btn primary" onClick={() => onHire(hours)}><UserPlus />Hire for {euro(pay)} a month</button>
+        <button className="btn primary" onClick={() => onHire(team)}><UserPlus />Hire for {euro(pay)} a month</button>
       </div>
     </Sheet>
   );
@@ -368,8 +374,8 @@ function CandidateCard({ c, onHire }: { c: Candidate; onHire: () => void }) {
       </div>
       <dl className="shop-specs">
         <div><dt>Skill</dt><dd><span className="num">{c.skill}</span><SkillBar value={c.skill} /></dd></div>
-        <div><dt>8 h a day</dt><dd className="num">{euro(c.salary)}</dd></div>
-        <div><dt>2 h a day</dt><dd className="num">{euro(monthlyPay({ salary: c.salary, hours: 2 }))}</dd></div>
+        <div><dt>40 h a week</dt><dd className="num">{euro(c.salary)}</dd></div>
+        <div><dt>Per hour</dt><dd className="num">{euroCents(hourlyWage(c))}</dd></div>
         <div><dt>Available until</dt><dd className="num">{formatDay(c.leaveAt)}</dd></div>
       </dl>
       <div className="shop-buy">

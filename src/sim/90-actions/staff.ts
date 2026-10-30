@@ -1,8 +1,8 @@
 import { yearOf } from "../00-core/time";
 import { cents } from "../45-billing/billing";
 import {
-  AD, adCandidates, COURSE_PRICE, FULL_DAY, fullyTrained, needsTraining, salaryUpToNow, staffPrice, startTraining, TASKS, trainerFor, visibleCandidates, WORK_HOURS,
-  type AdTier, type Assignment, type Employee, type Role, type Task, type WorkHours,
+  AD, adCandidates, COURSE_PRICE, fullyTrained, MAX_SHIFT, needsTraining, salaryUpToNow, staffPrice, startTraining, TASKS, trainerFor, visibleCandidates, weekdays,
+  type AdTier, type Assignment, type Employee, type Role, type Shift, type Task,
 } from "../47-staff/staff";
 import { OP_TASK, queueOp, taskFor, techsAt, type OpKind, type TechRules } from "../47-staff/technicians";
 import type { GameState } from "../50-state";
@@ -38,14 +38,14 @@ export function postJobAd(s: GameState, role: Role, tier: AdTier): ActionResult 
   return { ok: true };
 }
 
-export function hire(s: GameState, candidateId: string, hours: WorkHours = FULL_DAY): ActionResult {
+export function hire(s: GameState, candidateId: string, team = s.teams[0]?.id): ActionResult {
   const c = visibleCandidates(s).find((x) => x.id === candidateId);
   if (!c) return fail("error.unknownCandidate");
-  if (!WORK_HOURS.includes(hours)) return fail("error.workHours");
+  if (!s.teams.some((t) => t.id === team)) return fail("error.unknownTeam");
   const e: Employee = {
     id: `emp${s.nextId++}`, name: c.name, role: c.role, skill: c.skill, talent: c.talent, salary: c.salary, hiredAt: s.hour, assignment: "queue",
     location: c.role === "technician" ? s.locations[0]?.id ?? null : null,
-    trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: s.hour + YEAR, refusedAt: null, hours, hoursFrom: s.hour,
+    trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: s.hour + YEAR, refusedAt: null, team, worked: 0,
   };
   s.candidates = s.candidates.filter((x) => x.id !== c.id);
   s.staff = [...s.staff, e];
@@ -62,15 +62,36 @@ export function fire(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
-// New hours count from now: the salary owed at the old hours is paid out first, as when someone leaves.
-export function setHours(s: GameState, id: string, hours: WorkHours): ActionResult {
-  if (!WORK_HOURS.includes(hours)) return fail("error.workHours");
+export function setTeam(s: GameState, id: string, team: string): ActionResult {
+  if (!s.teams.some((t) => t.id === team)) return fail("error.unknownTeam");
   const e = employee(s, id);
   if (!e) return fail("error.unknownEmployee");
-  if (e.hours === hours) return { ok: true };
-  const owed = salaryUpToNow(s, e);
-  if (owed > 0) pay(s, "ledger.salary", { name: e.name, role: e.role }, owed);
-  Object.assign(e, { hours, hoursFrom: s.hour });
+  e.team = team;
+  return { ok: true };
+}
+
+// A new team starts on office hours.
+export function addTeam(s: GameState, name: string): ActionResult {
+  if (!name.trim()) return fail("error.teamName");
+  const id = `team${s.nextId++}`;
+  s.teams = [...s.teams, { id, name: name.trim(), days: weekdays(9, 8) }];
+  return { ok: true, id };
+}
+
+export function removeTeam(s: GameState, id: string): ActionResult {
+  if (!s.teams.some((t) => t.id === id)) return fail("error.unknownTeam");
+  if (s.staff.some((e) => e.team === id)) return fail("error.teamInUse");
+  s.teams = s.teams.filter((t) => t.id !== id);
+  return { ok: true };
+}
+
+// Sets one weekday's shift, or a day off with null; day is 0 for Sunday.
+export function setShift(s: GameState, id: string, day: number, shift: Shift | null): ActionResult {
+  if (!s.teams.some((t) => t.id === id)) return fail("error.unknownTeam");
+  if (!Number.isInteger(day) || day < 0 || day > 6) return fail("error.shift");
+  if (shift && ![shift.start, shift.hours].every(Number.isInteger)) return fail("error.shift");
+  if (shift && (shift.start < 0 || shift.start > 23 || shift.hours < 1 || shift.hours > MAX_SHIFT)) return fail("error.shift");
+  s.teams = s.teams.map((t) => (t.id === id ? { ...t, days: t.days.map((d, i) => (i === day ? shift && { start: shift.start, hours: shift.hours } : d)) } : t));
   return { ok: true };
 }
 

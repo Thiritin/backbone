@@ -10,6 +10,8 @@ import { machineOf } from "./cluster";
 import { DESK, releaseOf, treeOf } from "./fs";
 import { installFromSite } from "../90-actions/console";
 import { machineNet, osUp } from "./oob";
+import { consoleCluster } from "../80-business/consoles";
+import { fqdn } from "../30-customers/domains";
 import type { CommandResult, Watch } from "./terminal";
 
 const lines = (key: string, p: Record<string, string | number> = {}) => t(key, p).split("\n");
@@ -69,8 +71,19 @@ function repoAdded(s: GameState, host: string, sw: Software): boolean {
   return typeof text === "string" && text.split("\n").includes(m[1]);
 }
 
-// The progress lines a started install prints over its install hours, by the software's install method.
-export const INSTALL_STEPS = 3;
+// The progress lines a started install prints over its install hours, by the software's install method; a GUI install
+// shows the script's.
+const STEPS = { apt: 6, script: 10 };
+export function installLog(sw: Software): string[] {
+  const kind = sw.install.kind === "apt" ? "apt" : "script", p = { pkg: pkgOf(sw), name: sw.name, ports: sw.ports.join(", ") };
+  return Array.from({ length: STEPS[kind] }, (_, i) => t(`term.install.${kind}${i}`, p));
+}
+
+// What a finished install prints: the address its console answers at, if it has one, and the reboot.
+export function installDone(s: GameState, machineId: string, sw: Software): string[] {
+  const host = machineOf(s, machineId)?.hostname, url = host && consoleCluster(s, host) ? `https://${fqdn(s, host)}/` : null;
+  return [t("term.install.done", { name: sw.name }), ...(url ? [t("term.install.reach", { url })] : []), t("term.install.reboot")];
+}
 const watching = (host: string, machineId: string, sw: Software): Watch => ({ host, install: { machineId, softwareId: sw.id, step: 0 } });
 
 function install(s: GameState, host: string, pkg: string, yes: boolean): CommandResult {
@@ -107,15 +120,13 @@ export function installScript(s: GameState, machineId: string, line: string): Co
 // One refresh of an install the screen watches: the progress lines due since the last one and the watch to keep, null
 // once the install is done or gone.
 export function installStep(s: GameState, w: Watch): { output: string[]; next: Watch | null } {
-  const { machineId, softwareId, step } = w.install!, sw = softwareById(softwareId);
+  const { machineId, softwareId, step } = w.install!, sw = softwareById(softwareId), log = installLog(sw);
   const x = machineOf(s, machineId)?.software?.find((y) => y.id === softwareId), now = nowHours(s);
-  const kind = sw.install.kind === "apt" ? "apt" : "script", p = { pkg: pkgOf(sw), name: sw.name };
-  const line = (i: number) => t(`term.install.${kind}${i}`, p);
   if (!x) return { output: [], next: null };
   const done = x.doneAt === null || x.doneAt <= now;
-  const reached = done ? INSTALL_STEPS : Math.min(INSTALL_STEPS, Math.floor((1 - (x.doneAt! - now) / sw.installHours) * (INSTALL_STEPS + 1)));
-  const output = Array.from({ length: Math.max(0, reached - step) }, (_, i) => line(step + i));
-  if (done) return { output: [...output, t("term.install.done", p)], next: null };
+  const reached = done ? log.length : Math.min(log.length, Math.floor((1 - (x.doneAt! - now) / sw.installHours) * (log.length + 1)));
+  const output = log.slice(step, Math.max(step, reached));
+  if (done) return { output: [...output, ...installDone(s, machineId, sw)], next: null };
   return { output, next: reached > step ? { ...w, install: { ...w.install!, step: reached } } : w };
 }
 

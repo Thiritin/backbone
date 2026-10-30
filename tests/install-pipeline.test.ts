@@ -9,6 +9,7 @@ import { BOOT_HOURS, HALT_MINUTES } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { bootFromUsb, enterSetup, installOs } from "../src/sim/90-actions/console";
 import { reboot } from "../src/sim/90-actions/hardware";
+import { plugStick, unplugStick } from "../src/sim/90-actions/media";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { newGame } from "../src/sim/50-state";
 import { readyGame, skipTo, withServer, withStick } from "./fixtures";
@@ -60,6 +61,19 @@ describe("install pipeline", () => {
     const s = installed("windoors");
     expect(machineScreen(s, "dev3")).toEqual({ kind: "login", os: "windoors" });
     expect(machineScreen(s, "dev3", true)).toEqual({ kind: "desktop" });
+  });
+
+  it("keeps the stick in the server while the OS installs from it", () => {
+    const s = withServer(newGame(4));
+    withStick(s, "dev3", "lunix");
+    ok(bootFromUsb(s, "dev3"));
+    ok(installOs(s, "dev3", "lunix"));
+    const other = s.devices.find((d) => d.id !== "dev3" && d.rackId && d.model === dev(s).model);
+    expect(err(unplugStick(s))).toBe("error.stickInstalling");
+    if (other) expect(err(plugStick(s, other.id))).toBe("error.stickInstalling");
+    expect(s.media.stick.in).toBe("dev3");
+    s.hour = Math.ceil(dev(s).os!.installedAt);
+    ok(unplugStick(s));
   });
 
   it("leaves the disk empty after a reset mid-install", () => {

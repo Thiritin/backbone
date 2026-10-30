@@ -1,4 +1,4 @@
-import { Cpu, HardDrive, MemoryStick } from "lucide-react";
+import { Cpu, Globe, HardDrive, MemoryStick } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { Resources } from "../../../sim/10-catalog/products";
 import type { GameState } from "../../../sim/50-state";
@@ -50,19 +50,20 @@ export function NodeWorkloads({ game, deviceId }: { game: GameState; deviceId: s
           {SORTS.map(([k, label]) => <button key={k} aria-pressed={sort === k} onClick={() => setSort(k)}>{label}</button>)}
         </div>
       </div>
-      {cpId && <ControlPlaneRow name={softwareById(cpId).name} u={controlPlaneUse(c!)} />}
+      {cpId && <ControlPlaneRow name={softwareById(cpId).name} u={controlPlaneUse(c!)} web={consoleEntry(game, c!.id)} />}
       {loads.map(({ w, u }) => <WorkloadRow key={w.id} game={game} w={w} u={u} />)}
     </>
   );
 }
 
 // The cluster's management services take a fixed share of the node that runs them.
-function ControlPlaneRow({ name, u }: { name: string; u: Resources }) {
+function ControlPlaneRow({ name, u, web }: { name: string; u: Resources; web: MenuEntry | false }) {
   return (
     <div className="wl-row">
       <div className="wl-line">
         <span className="wl-name">Control plane</span>
         <span className="loc-muted wl-service">{name}</span>
+        {web && <button className="btn ghost icon" aria-label={`Open ${name}`} title={`Open ${name}`} onClick={web.run}><Globe /></button>}
       </div>
       <div className="wl-gauges">
         <Gauge icon={<Cpu />} label="CPU" used={u.vcpu} max={u.vcpu} unit="vCPU" fixed />

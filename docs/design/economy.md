@@ -760,7 +760,7 @@ A billing action is the check plus the action, so a reminder takes 21 minutes an
 
 The balance model books 6 staff minutes per customer and month for payments, which matches the times above for a late-paying customer mix. Its steady bot hires a bookkeeper once the late payments left unchased in a month are worth more than a bookkeeper's salary; with that rule none of 20 steady runs goes bankrupt, and level 4 arrives in 2017.6 instead of 2018.5.
 
-**Working hours.** The player sets each employee's day to 2, 4, 6 or 8 hours (8 at hiring). The day starts at 9, Monday to Friday, so a 2-hour employee works 9 to 11. Pay is pro rata: 8 hours is the full salary, 2 hours a quarter. An action starts only if it ends within the employee's hours; whatever is left waits for the next workday. Changing the hours pays out the salary owed so far at the old hours, and the new hours count from then.
+**Working hours.** Each employee works their team's shifts: per weekday a start hour and 1 to 12 hours, and a shift may run past midnight. The salary is for 40 hours a week; each hour on shift earns salary / 173, paid at the month start, so pay follows the hours actually worked. An action starts only if it ends within the shift; whatever is left waits for the next shift. Technicians on shift handle operations at their location; when nobody there is on shift, the on-call technician covers.
 
 ## Datacenters and space
 

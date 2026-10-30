@@ -21,7 +21,7 @@ export const MANUAL_EN: Record<string, (p: Params) => string> = {
   "order.msg.webHosting.0": (p) => `Hello, I need web hosting for ${p.domain}: about ${web(p)}. ${domain(p)}`,
   "order.msg.webHosting.1": (p) => `A friend recommended you. My website ${p.domain} needs ${web(p)}. ${domain(p)} What would that cost?`,
   "order.msg.vps.0": (p) => `I would like a VPS in ${p.city} with ${box(p)}. Root access, please. I know what I am doing.`,
-  "order.msg.vps.1": (p) => `Please set up a virtual server for me: ${box(p)}. Debian would be nice, and monthly billing.`,
+  "order.msg.vps.1": (p) => `Please set up a virtual server for me: ${box(p)}. Debiant would be nice, and monthly billing.`,
   "order.msg.gameServer.0": (p) => `We need a game server for our clan with ${box(p)}. It has to be up by Friday night.`,
   "order.msg.gameServer.1": (p) => `Please set up a game server in ${p.city}: ${box(p)}. Low ping matters more to us than anything.`,
   "order.msg.gpu.0": (p) => `I would like a GPU server in ${p.city} with ${cards(p)}, ${box(p)}. I need it to train my models.`,

@@ -1,5 +1,5 @@
 import { hashRng, rand, type Rng } from "../00-core/rng";
-import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
+import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { monthlySalary, priceAt } from "../10-catalog/economy";
 import { cents, dueStep, ruleStep, ruleSuspendsAt, rulesAutomated, sendStep, STEPS, suspend, type Invoice } from "../45-billing/billing";
 import { ACTION_MINUTES, logActivity } from "./activity";
@@ -19,20 +19,40 @@ export type Task = TicketKind | "reminder" | "dunning" | "final" | "suspend" | "
 export type Assignment = "queue" | "trainer" | "forum";
 
 // talent is the hidden cap skill never passes; busyUntil is in game minutes like the player's queue. location is the
-// location id a technician works at, null for every other role. salary is the full-time salary; hours is the workday
-// the player sets and hoursFrom the hour it was last changed, since when salary is owed at those hours.
+// location id a technician works at, null for every other role. salary is the full-time salary for 40 hours a week;
+// team is the team whose shifts they work and worked the hours on shift since the last payday.
 export interface Employee {
   id: string; name: string; role: Role; skill: number; talent: number; salary: number; hiredAt: number; assignment: Assignment; location: string | null;
   trained: Task[]; plan: Task[]; training: { task: Task; startedAt: number; doneAt: number } | null; busyUntil: number;
-  raise: { ask: number; at: number } | null; nextRaiseAt: number; refusedAt: number | null; hours: WorkHours; hoursFrom: number;
+  raise: { ask: number; at: number } | null; nextRaiseAt: number; refusedAt: number | null; team: string; worked: number;
   // Set on the stand-ins activeBots builds for store bots; never saved.
   bot?: true;
 }
 export interface Candidate { id: string; name: string; role: Role; skill: number; talent: number; salary: number; arriveAt: number; leaveAt: number }
 
-export const WORK_HOURS = [2, 4, 6, 8] as const;
-export type WorkHours = (typeof WORK_HOURS)[number];
-export const FULL_DAY = 8;
+// days is indexed like getUTCDay, Sunday first; a shift may run past midnight into the next day.
+export interface Shift { start: number; hours: number }
+export interface Team { id: string; name: string; days: (Shift | null)[] }
+export const MAX_SHIFT = 12;
+export const FULL_WEEK = 40;
+export const MONTHLY_HOURS = 173;
+
+export const weekdays = (start: number, hours: number): (Shift | null)[] => [0, 1, 2, 3, 4, 5, 6].map((d) => (d >= 1 && d <= 5 ? { start, hours } : null));
+export const defaultTeams = (): Team[] => [
+  { id: "office", name: "Office", days: weekdays(9, 8) },
+  { id: "parttime", name: "Part-time", days: weekdays(9, 2) },
+];
+export const weekHours = (t: Team | undefined): number => t?.days.reduce((n, d) => n + (d?.hours ?? 0), 0) ?? 0;
+export const teamOf = (s: GameState, e: Employee): Team | undefined => s.teams.find((t) => t.id === e.team);
+
+// The hour the team's shift running at the hour ends, or null when the team is off.
+export function shiftEndAt(t: Team, hour: number): number | null {
+  const d = dateOf(hour), h = d.getUTCHours(), day = d.getUTCDay(), midnight = hour - h;
+  const today = t.days[day], before = t.days[(day + 6) % 7];
+  if (today && h >= today.start && h < today.start + today.hours) return midnight + today.start + today.hours;
+  if (before && h + 24 < before.start + before.hours) return midnight - 24 + before.start + before.hours;
+  return null;
+}
 
 export const ROLES: Role[] = ["support", "bookkeeper", "accountant", "marketing", "technician"];
 export const TASKS: Record<Role, Task[]> = {
@@ -102,21 +122,13 @@ export const trainerFor = (s: GameState, e: Employee): Employee | undefined =>
 // Employees in training and trainers do no queue work.
 export const working = (e: Employee): boolean => e.assignment === "queue" && e.training === null;
 
-const monthStart = (hour: number, offset = 0): number => {
-  const d = dateOf(hour);
-  return hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + offset, 1)));
-};
+// Monthly pay for a week of the given hours: 40 hours is the full salary.
+export const monthlyPay = (salary: number, week: number): number => (salary * week) / FULL_WEEK;
+export const payOf = (s: GameState, e: Employee): number => monthlyPay(e.salary, weekHours(teamOf(s, e)));
+export const hourlyWage = (e: Pick<Employee, "salary">): number => e.salary / MONTHLY_HOURS;
 
-// Monthly pay at the employee's hours: 8 hours a day is the full salary.
-export const monthlyPay = (e: Pick<Employee, "salary" | "hours">): number => (e.salary * e.hours) / FULL_DAY;
-
-// Salary owed since the latest of the hire, the last change of hours and the start of the period, as a share of that month.
-export function salaryOwed(e: Employee, from: number, to: number): number {
-  const hours = to - Math.max(e.hiredAt, e.hoursFrom, from);
-  return hours > 0 ? cents((monthlyPay(e) * hours) / (monthStart(from, 1) - from)) : 0;
-}
-
-export const salaryUpToNow = (s: GameState, e: Employee): number => salaryOwed(e, monthStart(s.hour), s.hour);
+// Pay for the hours actually worked since the last payday.
+export const salaryUpToNow = (_s: GameState, e: Employee): number => cents(e.worked * hourlyWage(e));
 
 // Starts the next planned course: one day with a trainer of the same role and free, otherwise two days and a course fee.
 export function startTraining(s: GameState, e: Employee): void {
@@ -132,7 +144,7 @@ export function startTraining(s: GameState, e: Employee): void {
   e.training = { task, startedAt: s.hour, doneAt: s.hour + (trainer ? TRAINER_HOURS : COURSE_HOURS) };
 }
 
-// Staff work business hours.
+// Customers' business hours, which the default Office team works.
 export { isWorkHour };
 
 // economy.md, AI bots. A bot works around the clock at a fixed rate and never learns.
@@ -150,12 +162,16 @@ export const BOT_INCIDENTS = 5;
 
 export const activeBots = (s: GameState): Employee[] => Object.entries(BOTS).filter(([id]) => s.installed.includes(id)).map(([id, b]) => ({
   id, name: storeItem(id)!.name, role: b.role, skill: 0, talent: 0, salary: 0, hiredAt: 0, assignment: "queue", location: null,
-  trained: b.tasks, plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 0, refusedAt: null, hours: FULL_DAY, hoursFrom: 0, bot: true,
+  trained: b.tasks, plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 0, refusedAt: null, team: "", worked: 0, bot: true,
 }));
 
-// An employee works their hours from 9 in office hours; a bot works around the clock.
-export const onShift = (e: Employee, hour: number): boolean => !!e.bot || (isWorkHour(hour) && dateOf(hour).getUTCHours() < 9 + e.hours);
-const shiftEnd = (e: Employee, hour: number): number => (e.bot ? Infinity : (hour - dateOf(hour).getUTCHours() + 9 + e.hours) * 60);
+// An employee works their team's shifts; a bot works around the clock.
+const endOf = (s: GameState, e: Employee, hour: number): number | null => {
+  const t = teamOf(s, e);
+  return e.bot ? Infinity : t ? shiftEndAt(t, hour) : null;
+};
+export const onShift = (s: GameState, e: Employee, hour: number): boolean => endOf(s, e, hour) !== null;
+const shiftEnd = (s: GameState, e: Employee, hour: number): number => (endOf(s, e, hour) ?? hour) * 60;
 
 // An employee at a trade fair does no other work for the fair's days.
 export const atFair = (s: GameState, e: Employee): boolean => s.fairs.some((b) => b.employeeId === e.id && b.start <= s.hour && s.hour < b.end);
@@ -166,18 +182,18 @@ const manager = (s: GameState, task: Task): Employee | undefined =>
   s.staff.filter((e) => e.role === "marketing" && working(e) && !atFair(s, e) && e.trained.includes(task)).sort((a, b) => b.skill - a.skill)[0];
 // Share of a task's full effect the manager's workday covers; campaigns take their minutes before reviews.
 // ponytail: each task's best manager is counted alone, as if nobody else shared the work.
-function dayShare(e: Employee | undefined, task: "campaigns" | "reviews"): number {
+function dayShare(s: GameState, e: Employee | undefined, task: "campaigns" | "reviews"): number {
   if (!e) return 0;
   const before = task === "reviews" && e.trained.includes("campaigns") ? ACTION_MINUTES.campaigns : 0;
-  return Math.min(1, Math.max(0, e.hours * 60 - before) / ACTION_MINUTES[task]);
+  return Math.min(1, Math.max(0, (weekHours(teamOf(s, e)) / 5) * 60 - before) / ACTION_MINUTES[task]);
 }
 // Campaigns bring 5% to 15% more leads with a manager trained on them, by skill.
 export const campaignBoost = (s: GameState): number => {
   const e = manager(s, "campaigns");
-  return e ? 1 + (0.05 + 0.1 * (e.skill / 100)) * dayShare(e, "campaigns") : 1;
+  return e ? 1 + (0.05 + 0.1 * (e.skill / 100)) * dayShare(s, e, "campaigns") : 1;
 };
 export const REVIEW_INVITE_BOOST = 1.5;
-export const reviewBoost = (s: GameState): number => 1 + (REVIEW_INVITE_BOOST - 1) * dayShare(manager(s, "reviews"), "reviews");
+export const reviewBoost = (s: GameState): number => 1 + (REVIEW_INVITE_BOOST - 1) * dayShare(s, manager(s, "reviews"), "reviews");
 
 const speed = (e: Employee) => (e.bot ? BOT_SPEED : 0.5 + e.skill / 100);
 const rightChance = (e: Employee, kind: TicketKind) => (e.bot ? BOT_RIGHT[kind as ChadKind] ?? 0.6 : 0.75 + 0.25 * (e.skill / 100));
@@ -203,7 +219,7 @@ interface BotTask { bot: Employee; customerId: string; reminder: boolean }
 // it took at the employee's speed, or null when it waits. Work that does not fit today waits for the next workday.
 function take(s: GameState, e: Employee, minutes: number): number | null {
   const at = Math.max(e.busyUntil, s.hour * 60), took = minutes / speed(e);
-  if (at >= (s.hour + 1) * 60 || at + took > shiftEnd(e, s.hour)) return null;
+  if (at >= (s.hour + 1) * 60 || at + took > shiftEnd(s, e, s.hour)) return null;
   e.busyUntil = at + took;
   return took;
 }
@@ -318,8 +334,8 @@ export function quitChance(e: Employee, hour: number): number {
 export const raiseAsk = (e: Employee, hour: number): number => Math.round(e.salary * 1.03 + Math.max(0, marketSalary(e, hour) - e.salary));
 
 function monthly(s: GameState, events: SimEvent[], r: Rng): void {
-  const from = monthStart(s.hour, -1);
-  const pay = s.staff.map((e) => ({ e, amount: salaryOwed(e, from, s.hour) })).filter((x) => x.amount > 0);
+  const pay = s.staff.map((e) => ({ e, amount: salaryUpToNow(s, e) })).filter((x) => x.amount > 0);
+  for (const e of s.staff) e.worked = 0;
   const total = cents(pay.reduce((sum, x) => sum + x.amount, 0));
   if (pay.length) {
     s.cash = cents(s.cash - total);
@@ -338,7 +354,7 @@ function monthly(s: GameState, events: SimEvent[], r: Rng): void {
 
 // Leads per month from staff posting in forums; the effect grows with skill. Read by the marketing and market code.
 export const forumAwareness = (s: GameState): number =>
-  s.staff.filter((e) => e.assignment === "forum").reduce((sum, e) => sum + (FORUM_LEADS * speed(e) * e.hours) / FULL_DAY, 0);
+  s.staff.filter((e) => e.assignment === "forum").reduce((sum, e) => sum + (FORUM_LEADS * speed(e) * weekHours(teamOf(s, e))) / FULL_WEEK, 0);
 
 export function staffTick(s: GameState): SimEvent[] {
   const bots = activeBots(s);
@@ -361,7 +377,7 @@ export function staffTick(s: GameState): SimEvent[] {
     if (s.hour >= e.nextRaiseAt) {
       e.raise = { ask: raiseAsk(e, s.hour), at: s.hour };
       e.nextRaiseAt += YEAR;
-      events.push({ app: "Staff", key: "event.raise", params: { name: e.name, salary: monthlyPay({ salary: e.raise.ask, hours: e.hours }) } });
+      events.push({ app: "Staff", key: "event.raise", params: { name: e.name, salary: monthlyPay(e.raise.ask, weekHours(teamOf(s, e))) } });
     }
   }
   // A trainer with nobody left to train goes back to normal work.
@@ -371,10 +387,11 @@ export function staffTick(s: GameState): SimEvent[] {
     events.push({ app: "Staff", key: "event.trainerDone", params: { name: e.name } });
   }
   // Staff take the queue first in their work hours; bots take what is left, day and night.
-  const active = [...s.staff.filter((e) => working(e) && !atFair(s, e) && onShift(e, s.hour)), ...bots];
+  const active = [...s.staff.filter((e) => working(e) && !atFair(s, e) && onShift(s, e, s.hour)), ...bots];
   const support = active.filter((e) => e.role === "support"), clerks = active.filter((e) => e.role === "bookkeeper" || e.role === "accountant");
   const done = [...(support.length ? answerTickets(s, support, r) : []), ...(clerks.length ? chaseInvoices(s, clerks, events) : [])];
   botTrouble(s, events, r, done);
   if (isMonthStart(s.hour)) monthly(s, events, r);
+  for (const e of s.staff) if (onShift(s, e, s.hour)) e.worked++;
   return events;
 }

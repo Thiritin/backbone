@@ -5,7 +5,8 @@ import type { GameState, LedgerEntry } from "../50-state";
 import { attackMbps } from "../60-infra/network";
 import type { SimEvent } from "../88-tick/tick";
 import { setBlackhole } from "../90-actions/network";
-import type { Employee } from "./staff";
+import { hourlyWage, type Employee } from "./staff";
+export { hourlyWage, MONTHLY_HOURS } from "./staff";
 
 // economy.md, On-call duty. Pay this month per employee id; name kept for the payroll line after someone leaves.
 export interface OnCallPay { name: string; days: number; allowance: number; callOuts: number; hours: number; callPay: number }
@@ -18,7 +19,6 @@ const WEEK = 168;
 const HANDOVER = hourOf(new Date(Date.UTC(2005, 0, 3, 9)));
 // The handover hour that starts the duty week k weeks after the one running at the hour.
 export const handover = (hour: number, k: number): number => HANDOVER + (Math.floor((hour - HANDOVER) / WEEK) + k) * WEEK;
-export const MONTHLY_HOURS = 173;
 export const REST_HOURS = 11;
 export const ALLOWANCE = { weekday: 2, weekend: 4 };
 export const OVERTIME = 1.3;
@@ -27,7 +27,6 @@ export const SUNDAY = 0.25;
 // The day's on-call period starts when the office closes.
 const PERIOD_START = 17;
 
-export const hourlyWage = (e: Employee): number => e.salary / MONTHLY_HOURS;
 // Night is 21:00 to 06:00.
 export function callOutRate(hour: number): number {
   const d = dateOf(hour), h = d.getUTCHours();

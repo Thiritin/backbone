@@ -75,3 +75,22 @@
 .st-op + .st-op { border-top: 0.5px solid var(--line); }
 .st-none { color: var(--text-2); }
 .st .shop-bar { height: auto; min-height: 44px; flex-wrap: wrap; row-gap: 6px; padding-block: 6px; }
+
+.st:has(.st-shifts) { grid-template-columns: 210px minmax(0, 1fr); }
+.st-shifts { overflow: auto; padding: 16px 20px; display: grid; gap: 18px; align-content: start; }
+.st-shifts h3 { font-size: 12.5px; font-weight: 650; margin-bottom: 8px; }
+.st-shifts .sub { color: var(--text-2); font-size: 12px; }
+.st-cover { display: grid; grid-template-columns: 34px repeat(24, minmax(0, 1fr)); gap: 2px; font-size: 11px; }
+.st-cover .h { color: var(--text-3); white-space: nowrap; overflow: visible; }
+.st-cover .d { color: var(--text-2); }
+.st-cover i { font-style: normal; height: 20px; border-radius: 3px; display: grid; place-items: center; font-variant-numeric: tabular-nums;
+  background: color-mix(in oklch, var(--text) 6%, transparent); color: var(--text-3); }
+.st-cover i.on { background: color-mix(in oklch, var(--accent) 30%, transparent); color: var(--text); }
+.st-team { border: 0.5px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; }
+.st-team-h { display: flex; align-items: center; gap: 10px; }
+.st-team-h h3 { margin: 0; }
+.st-days { display: grid; gap: 4px; }
+.st-day { display: flex; align-items: center; gap: 10px; min-height: 26px; }
+.st-day > span:first-child { width: 34px; color: var(--text-2); }
+.st-add { display: flex; gap: 8px; }
+.st-add .field { width: 220px; }

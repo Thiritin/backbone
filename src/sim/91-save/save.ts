@@ -6,6 +6,7 @@ import { fillAddresses } from "../60-infra/addresses";
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { legacyRegistration } from "../80-business/office";
+import type { Employee } from "../47-staff/staff";
 import { deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState, type Location } from "../50-state";
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
@@ -97,7 +98,7 @@ export function deserialize(raw: string): GameState {
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, sla: v.sla ?? "basic" })),
     // Saves from before clusters keep their services unplaced, which leaves them online.
     sales: { ...base.sales, ...data.sales },
-    staff: (data.staff ?? []).map((e) => ({ ...e, location: e.location ?? null, hours: e.hours ?? 8, hoursFrom: e.hoursFrom ?? 0 })),
+    staff: (data.staff ?? []).map(({ hours: _h, hoursFrom: _f, ...e }: Employee & { hours?: number; hoursFrom?: number }) => ({ ...e, location: e.location ?? null, team: e.team ?? "office", worked: e.worked ?? 0 })),
     techRules: { ...base.techRules, ...data.techRules },
     // upgradeCompute fills the cluster defaults.
     clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map((w) => workloadDefaults({ ...w, media: (w.media as string) === "iso" ? "lunix" : w.media })), downHours: data.downHours ?? {},

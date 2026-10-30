@@ -16,7 +16,7 @@ const INTRO: { cmd: string; out: string[]; thump?: boolean }[] = [
     cmd: "sudo apt-get install zsh",
     out: [
       "Reading package lists... Done", "Building dependency tree... Done", "The following NEW packages will be installed:", "  zsh",
-      "Get:1 http://ftp.debian.org sarge/main zsh 4.2.5-1 [1772kB]", "Fetched 1772kB in 4s (412kB/s)",
+      "Get:1 http://deb.debiant.org sarge/main zsh 4.2.5-1 [1772kB]", "Fetched 1772kB in 4s (412kB/s)",
       "Unpacking zsh (from .../zsh_4.2.5-1_i386.deb) ...", "Setting up zsh (4.2.5-1) ...",
     ],
   },
