@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { serverOsById } from "../../../sim/10-catalog/server-os";
 import { releaseOf } from "../../../sim/60-infra/fs";
@@ -34,14 +34,19 @@ export function LunixBoot({ game, m, version, share }: { game: GameState; m: Mac
   return <pre>{shown.map((l, i) => <div key={i}>{l.ok ? <><span className="ok">[  OK  ]</span> {l.text}</> : l.text}</div>)}</pre>;
 }
 
-export const LunixLogin = ({ m, version, cursor = "█" }: { m: Machine; version: string; cursor?: string }) =>
-  <pre>{`${serverOsById("lunix").name} ${version} ${hostOf(m)} tty1\n\n${hostOf(m)} login: ${cursor}`}</pre>;
+// pass is null until the username is in; nothing of the password echoes.
+interface Login { user: string; pass: string | null; wrong: boolean }
+const NO_LOGIN: Login = { user: "", pass: null, wrong: false };
 
-// tty1: the login, where any key logs in as root, then the shell on the machine with the Terminal's line editing. A
+export const LunixLogin = ({ m, version, cursor = "█", login = NO_LOGIN }: { m: Machine; version: string; cursor?: string; login?: Login }) =>
+  <pre>{`${serverOsById("lunix").name} ${version} ${hostOf(m)} tty1\n\n${login.wrong ? "Login incorrect\n" : ""}${hostOf(m)} login: ${login.user}${login.pass === null ? cursor : `\nPassword: ${cursor}`}`}</pre>;
+
+// tty1: the login, where root gets in with any password, then the shell on the machine with the Terminal's line editing. A
 // machine running VMwhere shows its direct console after the login instead.
 export function useLunix(game: GameState, m: Machine, version: string, loggedIn: boolean, logIn: () => void, logOut: () => void, active: boolean): Keyed {
   const shell = useShell(`console.${m.id}`, { host: hostOf(m), deviceId: m.id });
   const host = hostOf(m), input = useRef<HTMLInputElement>(null);
+  const [login, setLogin] = useState<Login>(NO_LOGIN);
   const dcui = softwareOn(game, m.id).find((x) => x.id === "vmwhere" && x.doneAt === null);
   useEffect(() => { if (loggedIn && !shell.session) logOut(); }, [loggedIn, shell.session]);
   useEffect(() => { if (active && loggedIn) input.current?.focus({ preventScroll: true }); }, [active, loggedIn, shell.open]);
@@ -51,7 +56,16 @@ export function useLunix(game: GameState, m: Machine, version: string, loggedIn:
       shell.begin({ host, deviceId: m.id }, motd);
       logIn();
     };
-    return { view: <LunixLogin m={m} version={version} />, onKey: enter, keys: ["Enter"] };
+    const onKey = (k: string) => {
+      const field = login.pass === null ? "user" : "pass", value = login[field] ?? "";
+      if (k === "Backspace") setLogin({ ...login, [field]: value.slice(0, -1) });
+      else if (k.length === 1) setLogin({ ...login, [field]: value + k });
+      else if (k !== "Enter" || (field === "user" && !value.trim())) return;
+      else if (field === "user") setLogin({ ...login, pass: "" });
+      else if (login.user.trim() !== "root") setLogin({ ...NO_LOGIN, wrong: true });
+      else { setLogin(NO_LOGIN); enter(); }
+    };
+    return { view: <LunixLogin m={m} version={version} login={login} />, onKey, keys: ["Enter", "Backspace"] };
   }
   if (dcui) {
     const view = (
