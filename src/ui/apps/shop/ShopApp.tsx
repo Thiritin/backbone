@@ -4,8 +4,8 @@ import { useSessionState } from "../../session";
 import { euro } from "../../../sim/00-core/money";
 import { monthIndexOf, yearOf } from "../../../sim/00-core/time";
 import { cardOf, cardWatts } from "../../../sim/10-catalog/gpu";
-import { boardSpec, genOf, brandOnSale, brandFrom, wattsFactorOf, brandsOf, COMPONENTS, cpuWattsShift, modelById, partOffers, shopModels, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
-import { VENDOR_NAME, type Vendor } from "../../../sim/10-catalog/cpus";
+import { boardSpec, brandOnSale, brandFrom, wattsFactorOf, brandsOf, COMPONENTS, cpuOptions, cpuWattsShift, modelById, modelName, partOffers, presetSku, shopModels, vendorsOf, type DeviceModel, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { skuById, VENDOR_NAME, type Vendor } from "../../../sim/10-catalog/cpus";
 import { lineParts, unitPrice, type CartLine } from "../../../sim/90-actions/hardware";
 import { Cart, Stepper } from "./Cart";
 import { Software } from "./Software";
@@ -17,7 +17,7 @@ import { Isometric } from "../../art/Isometric";
 import { BrandLogo } from "../../art/logos";
 import { useFocus, useStore } from "../../store";
 import { socketOf } from "../../../sim/10-catalog/cpus";
-import { clockLabel, cores, disk, height, partLabel, partSize, portsText, ram, speed } from "../hw";
+import { clockLabel, cores, disk, height, partLabel, partSize, portsText, ram, speed, threadsLabel } from "../hw";
 import "./shop.css";
 
 const ICON: Record<string, typeof Server> = {
@@ -37,7 +37,7 @@ const items = (year: number, month: number): Item[] => [
   ...shopModels(year).filter((m) => m.kind !== "part").flatMap((model) => brandsOf(model).filter((brand) => brandOnSale(model, brand, month)).map((brand) => ({ model, brand, make: brand, cls: classOf(model) }))),
   ...partOffers(year).map((part) => ({ model: modelById(`part-${part.kind}`), brand: "Generic", make: makerOf("Generic", part), cls: "Parts", part })),
 ];
-const itemKey = (it: Item) => `${it.model.id}|${it.brand}|${it.part?.size ?? ""}|${it.part?.ff ?? ""}|${it.part?.vendor ?? ""}|${it.part?.gen ?? ""}`;
+const itemKey = (it: Item) => `${it.model.id}|${it.brand}|${it.part?.size ?? ""}|${it.part?.ff ?? ""}|${it.part?.vendor ?? ""}|${it.part?.gen ?? ""}|${it.part?.sku ?? ""}`;
 
 export function ShopApp() {
   const game = useStore((s) => s.game), hour = game.hour;
@@ -145,19 +145,23 @@ function useOffer({ model, brand, part, maker }: Item & { maker: Vendor | null }
   const [vendor, setVendor] = useState<Vendor>(maker && makers.includes(maker) ? maker : makers[0] ?? "indel");
   const year = yearOf(useStore((s) => s.game.hour));
   const s = model.server;
+  // The CPU part in every socket: the line's default until the player picks another of the socket.
+  const options = s ? cpuOptions(model, vendor, year) : [], preset = s ? presetSku(model, vendor)?.id : undefined;
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const cpu = picked[vendor] ?? preset;
   const node = model.nodes && modelById(model.nodes.model), nodeCores = node ? lineParts({ model: node.id, brand, qty: 1 }).filter((p) => p.kind === "cpu").reduce((n, p) => n + (p.size ?? 0), 0) : 0;
   const spec = part ? COMPONENTS[part.kind] : null;
   // The line as configured: the server with the vendor's board and CPUs.
-  const line: CartLine = { model: model.id, brand, qty, ...(s ? { vendor } : {}), ...(part ? { part } : {}) };
+  const line: CartLine = { model: model.id, brand, qty, ...(s ? { vendor } : {}), ...(cpu && cpu !== preset ? { cpu } : {}), ...(part ? { part } : {}) };
   const board = s ? boardSpec(model, vendor) : undefined;
   const built = lineParts(line);
   const cards = built.filter((p) => p.kind === "gpu");
   const sum = (kind: string) => built.filter((p) => p.kind === kind).reduce((n, p) => n + (p.size ?? 0), 0);
-  const rows: [string, string][] = spec ? [...(part!.size !== undefined && part!.kind !== "gpu" ? [["Size", partSize(part!)]] as [string, string][] : []), ...(part!.kind === "cpu" && part!.vendor && part!.gen ? [["Clock", clockLabel(part!)], ["Socket", socketOf(part!.vendor, part!.gen) ?? ""]] as [string, string][] : []), ...(part!.kind === "board" && part!.vendor && part!.gen ? [["Socket", socketOf(part!.vendor, part!.gen) ?? ""], ["Takes CPUs up to", cores(part!.size ?? 0)], ["Generation", `G${part!.gen}`]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
+  const rows: [string, string][] = spec ? [...(part!.size !== undefined && part!.kind !== "gpu" ? [["Size", partSize(part!)]] as [string, string][] : []), ...(part!.kind === "cpu" && part!.vendor && part!.gen ? [...(threadsLabel(part!) ? [["Threads", threadsLabel(part!)]] : []), ["Clock", clockLabel(part!)], ["Socket", socketOf(part!.vendor, part!.gen) ?? ""]] as [string, string][] : []), ...(part!.kind === "board" && part!.vendor && part!.gen ? [["Socket", socketOf(part!.vendor, part!.gen) ?? ""], ["Takes CPUs up to", cores(part!.size ?? 0)], ["Generation", `G${part!.gen}`]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
     ["Height", height(model)],
     ...(!part && model.price > 0 ? [["Release", releaseLabel(brandFrom(model, brand))]] as [string, string][] : []),
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
-    ...(s ? [["CPU", VENDOR_NAME[vendor]], ["Cores", cores(sum("cpu"))], ["Clock", clockLabel({ kind: "cpu", vendor, gen: genOf(model) })], ["Mainboard", board?.name ?? ""], ["CPU sockets", board ? `${board.sockets} × ${board.socket}, up to ${cores(board.maxCores)} each` : ""], ["RAM", ram(s.ramGb)],
+    ...(s ? [["CPU", `${s.sockets} × ${VENDOR_NAME[vendor]} ${(cpu && skuById(cpu)?.name) ?? ""}`.trim()], ["Cores", cores(sum("cpu"))], ...(cpu && skuById(cpu) ? [["Threads", `${s.sockets * skuById(cpu)!.threads}`]] : []), ["Clock", clockLabel({ kind: "cpu", vendor, gen: model.gen, sku: cpu })], ["Mainboard", board?.name ?? ""], ["CPU sockets", board ? `${board.sockets} × ${board.socket}, up to ${cores(board.maxCores)} each` : ""], ["RAM", ram(s.ramGb)],
       ...(cards.length ? [["GPUs", `${cards.length} × ${cardOf(cards[0].size).name}`]] as [string, string][] : []),
       ["Storage", `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),
     ...(model.kind === "gateway" && model.price > 0 ? [["Routing", model.fullTable ? "Full table" : "Default route"], ...(model.fullTable ? [["BGP sessions", `${model.bgpSessions}`]] : [])] as [string, string][] : []),
@@ -172,9 +176,18 @@ function useOffer({ model, brand, part, maker }: Item & { maker: Vendor | null }
     : rows.filter(([k]) => ["Size", "Ports", "Jacks", "Outlets", "Battery", "Nodes"].includes(k)).slice(0, 1);
   const reset = () => { setQty(1); };
   const buy = () => { addToCart(line); reset(); };
-  const vendorSeg = makers.length > 1 && (
-    <div className="seg shop-vendor" role="group" aria-label="CPU vendor">
-      {makers.map((v) => <button key={v} aria-pressed={vendor === v} onClick={() => setVendor(v)}>{VENDOR_NAME[v]}</button>)}
+  const vendorSeg = (makers.length > 1 || options.length > 1) && (
+    <div className="shop-config">
+      {makers.length > 1 && (
+        <div className="seg shop-vendor" role="group" aria-label="CPU vendor">
+          {makers.map((v) => <button key={v} aria-pressed={vendor === v} onClick={() => setVendor(v)}>{VENDOR_NAME[v]}</button>)}
+        </div>
+      )}
+      {options.length > 1 && (
+        <select className="shop-cpu" aria-label="CPU" value={cpu ?? ""} onChange={(e) => setPicked({ ...picked, [vendor]: e.target.value })}>
+          {options.map((c) => <option key={c.id} value={c.id}>{c.name}, {c.cores}c/{c.threads}t, {c.boost} GHz</option>)}
+        </select>
+      )}
     </div>
   );
   return { s, rows, summary, line, year, qty, setQty, vendor, vendorSeg, buy };
@@ -192,7 +205,7 @@ function Row(props: Item & { maker: Vendor | null; onOpen: () => void }) {
       <div className="shop-row-main">
         <button className="shop-row-pic" aria-label="Details" onClick={onOpen}><Isometric model={model} brand={brand} w={64} /></button>
         <div className="shop-row-name">
-          <button className="shop-link" onClick={onOpen}>{part ? partLabel(part) : model.name}</button>
+          <button className="shop-link" onClick={onOpen}>{part ? partLabel(part) : modelName(model, brand)}</button>
           <Maker make={make} cls={cls} />
         </div>
         <dl className="shop-row-specs">
@@ -219,7 +232,7 @@ function Card(props: Item & { maker: Vendor | null; onOpen: () => void }) {
     <div className="shop-card">
       <button className="shop-pic" aria-label="Details" onClick={onOpen}><Isometric model={model} brand={brand} w={170} /></button>
       <div className="shop-name">
-        <button className="shop-link" onClick={onOpen}>{part ? partLabel(part) : model.name}</button>
+        <button className="shop-link" onClick={onOpen}>{part ? partLabel(part) : modelName(model, brand)}</button>
         <Maker make={make} cls={cls} />
       </div>
       {vendorSeg}
@@ -246,7 +259,7 @@ function Details({ onBack, ...props }: Item & { maker: Vendor | null; onBack: ()
       <div className="shop-detail-head">
         <div className="shop-detail-pic"><Isometric model={model} brand={brand} w={200} /></div>
         <div className="shop-detail-info">
-          <h2>{part ? partLabel(part) : model.name}</h2>
+          <h2>{part ? partLabel(part) : modelName(model, brand)}</h2>
           <Maker make={make} cls={cls} />
           {vendorSeg}
           <div className="shop-buy shop-detail-buy">

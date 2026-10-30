@@ -130,7 +130,7 @@ describe("placement", () => {
   });
   it("fills a node's installed RAM first and books past it when every node is full, recording nothing on a disk refusal", () => {
     const { s, cluster, second, cus } = twoNodes();
-    expect(nodeCapacity(s.devices.find((d) => d.id === "dev3")!)).toEqual({ vcpu: 1.8, ramGb: 8, diskGb: 1000 });
+    expect(nodeCapacity(s.devices.find((d) => d.id === "dev3")!)).toEqual({ vcpu: 1.98, ramGb: 8, diskGb: 1000 });
     // Nodes within their installed 8 GB win: dev3 holds 3 VPS L of 2 GB next to its control plane, the second node 4.
     for (let i = 0; i < 7; i++) ok(provisionService(s, cus, "vps", { label: `big ${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)) }));
     expect([nodeUsed(s, "dev3").ramGb, nodeUsed(s, second).ramGb]).toEqual([6, 8]);

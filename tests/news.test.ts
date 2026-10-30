@@ -6,7 +6,6 @@ import { newGame } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { feed, NEWS, newsTick } from "../src/sim/80-business/news";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
 
 const at = (year: number, month = 0, hour = 9) => hourOf(new Date(Date.UTC(year, month, 1, hour)));
 // The news of the hour a game reaches the given date.
@@ -50,23 +49,6 @@ describe("news", () => {
       expect(t(`${d.key}.title`, d.params)).not.toBe(`${d.key}.title`);
       expect(t(`${d.key}.text`, d.params)).toMatch(/^(Heize online|Golem\.dy|Handelsblah) /);
     }
-  });
-
-  it("mentions a product line the player could sell but has not listed, once", () => {
-    const s = readyGame(7);
-    s.hour = at(2008, 0, 0) - 1;
-    s.marketing.lines = [...s.marketing.lines.filter((p) => p !== "webHosting"), "ssl"];
-    const first = tick(s).filter((e) => e.key === "event.news.line");
-    expect(first).toHaveLength(1);
-    expect(first[0].params.line).toBe("Web hosting");
-    s.hour = at(2008, 1, 0) - 1;
-    expect(tick(s).filter((e) => e.key === "event.news.line")).toEqual([]);
-  });
-
-  it("does not mention a line before the player can deliver it", () => {
-    const s = newGame(1);
-    s.hour = at(2005, 1, 0) - 1;
-    expect(tick(s).filter((e) => e.key === "event.news.line")).toEqual([]);
   });
 
   it("does not repeat an announcement", () => {

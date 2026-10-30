@@ -1,5 +1,5 @@
 // Things that become available are announced by the News app on the day they do (gdd.md, The desktop, News).
-import { hourOf, isMonthStart, START_YEAR, yearOf } from "../00-core/time";
+import { hourOf, START_YEAR, yearOf } from "../00-core/time";
 import { IPV6_FROM } from "../10-catalog/addresses";
 import { DESKS } from "../10-catalog/desks";
 import { GENERATIONS } from "../10-catalog/economy";
@@ -16,7 +16,6 @@ import type { GameState } from "../50-state";
 import { familyOf } from "../60-infra/vulns";
 import type { SimEvent } from "../88-tick/tick";
 import { MAIL_PROVIDERS } from "./mail";
-import { lineBlocker, listed, SITE_LINES } from "./website";
 import { vendorHost, vendorReleases, VENDORS } from "./vendors";
 
 type Params = Record<string, string | number>;
@@ -77,6 +76,7 @@ export const NEWS: NewsDef[] = [
   }),
 ];
 
+// Saves from before kept their "could sell" posts in the feed.
 const lineDef = (p: string): NewsDef => ({ id: `line.${p}`, key: "event.news.line", at: -1, params: { line: LINE_NAME[p as keyof typeof LINE_NAME] } });
 
 // The yearly releases of what the player runs on 1 January: each installed software older than the year, and PHP when a
@@ -109,7 +109,5 @@ export function newsTick(s: GameState): SimEvent[] {
   for (const d of NEWS) if (d.at === s.hour) post(d);
   const year = yearOf(s.hour), out = year > START_YEAR && s.hour === at(year) ? releases(s, year) : [];
   if (out.length) post(releaseDef(`release.${year}.${out.join("+")}`));
-  // A line the player could sell but has not put on the website is mentioned once.
-  if (isMonthStart(s.hour)) for (const p of SITE_LINES) if (!lineBlocker(s, p) && !listed(s, p)) post(lineDef(p));
   return events;
 }

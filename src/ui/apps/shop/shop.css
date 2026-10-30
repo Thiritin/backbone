@@ -159,3 +159,7 @@
 .shop-detail-specs dt { font-size: 11px; font-weight: 550; color: var(--text-3); }
 .shop-detail-specs dd { margin: 0; font-size: 13px; }
 .shop-detail .shop-build { padding: 0; border-top: 0; max-width: 520px; }
+.shop-config { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; align-self: flex-start; margin: 10px 14px 0; }
+.shop-config .shop-vendor { margin: 0; }
+.shop-row-buy .shop-config, .shop-detail-info .shop-config { margin: 0; }
+.shop-cpu { max-width: 260px; font-size: 12px; }

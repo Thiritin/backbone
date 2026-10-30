@@ -144,6 +144,7 @@ const STYLE: Record<string, { ear: string; bay: string; trim: string; vent: stri
   "Hewlett-Packet": { ear: "oklch(0.7 0.005 255)", bay: "oklch(0.34 0.006 255)", trim: "oklch(0.6 0.13 250)", vent: "url(#bb-perf)" },
   SuperMacro: { ear: "oklch(0.15 0.004 255)", bay: "oklch(0.28 0.004 255)", trim: "oklch(0.5 0.005 255)", vent: "url(#bb-perf)" },
   Lenovoid: { ear: "oklch(0.13 0.003 255)", bay: "oklch(0.26 0.004 255)", trim: "oklch(0.58 0.2 27)", vent: "url(#bb-hex)" },
+  Gigabutt: { ear: "oklch(0.2 0.005 255)", bay: "oklch(0.27 0.004 255)", trim: "oklch(0.62 0.17 55)", vent: "url(#bb-perf)" },
 };
 const EAR: Record<string, string> = Object.fromEntries(Object.entries(STYLE).map(([b, st]) => [b, st.ear]));
 
@@ -423,7 +424,7 @@ function UsbPort({ w, h, stick, onUsb }: FrontProps) {
 export function Front(p: FrontProps) {
   if (p.model.kind === "server") {
     const line = lineOf(p.model);
-    const face = line === "backup" || line === "archive" ? <Caddies {...p} /> : line === "gpu" ? <Gpu {...p} /> : p.model.chassis ? <NodeFace {...p} /> : serverFront(p);
+    const face = line === "backup" || line === "archive" ? <Caddies {...p} /> : line?.startsWith("gpu") ? <Gpu {...p} /> : p.model.chassis ? <NodeFace {...p} /> : serverFront(p);
     return <>{face}{!p.model.chassis && <UsbPort {...p} />}</>;
   }
   if (p.model.kind === "chassis") return <TwinFace {...p} />;

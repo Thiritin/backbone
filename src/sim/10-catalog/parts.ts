@@ -3,7 +3,7 @@
 import { erodedPrice } from "./lifecycle";
 import { cardOf, gpuPrice } from "./gpu";
 import { componentParts, manufacturerByName, modelById, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "./hardware";
-import { cpuModel, type Vendor } from "./cpus";
+import { cpuModel, skuById, type Vendor } from "./cpus";
 
 type Keyframes = [year: number, price: number][];
 
@@ -31,10 +31,10 @@ const FAN = 25;
 const SOLD_FROM: Partial<Record<ComponentKind, number>> = { ssd: 2009, nvme: 2014, gpu: 2007 };
 export const partSold = (kind: ComponentKind, year: number): boolean => year >= (SOLD_FROM[kind] ?? 0);
 
-// A part of unknown size counts as one unit (1 GB, 1 GB of HDD, 1 core). The price is a whole euro; a CPU's follows its vendor's
-// price factor (cpus.ts).
-export const partPrice = (kind: ComponentKind, size: number | undefined, _ff: FormFactor | undefined, year: number, cpu?: Pick<PartSpec, "vendor" | "gen">): number =>
-  Math.round(rawPrice(kind, size ?? 1, year) * (kind === "cpu" && cpu?.vendor && cpu.gen ? cpuModel(cpu.vendor, cpu.gen)?.price ?? 1 : 1));
+// A part of unknown size counts as one unit (1 GB, 1 GB of HDD, 1 core). The price is a whole euro; a CPU's follows its part's
+// price factor, or its vendor's generation factor for a part without a name (cpus.ts).
+export const partPrice = (kind: ComponentKind, size: number | undefined, _ff: FormFactor | undefined, year: number, cpu?: Pick<PartSpec, "vendor" | "gen" | "sku">): number =>
+  Math.round(rawPrice(kind, size ?? 1, year) * (kind === "cpu" ? (cpu?.sku && skuById(cpu.sku)?.price) || (cpu?.vendor && cpu.gen ? cpuModel(cpu.vendor, cpu.gen)?.price ?? 1 : 1) : 1));
 function rawPrice(kind: ComponentKind, n: number, year: number): number {
   switch (kind) {
     case "ram": return n * lerp(RAM, year);
@@ -68,12 +68,12 @@ const partShare = (m: DeviceModel): number => (m.price - chassisPrice(m)) / part
 // A whole server never costs more than this share of its parts bought one by one.
 export const BUNDLE = 0.9;
 
-// What a preset costs in a year: its chassis plus its parts with the vendor's CPUs at that year's prices, but at most BUNDLE of
-// the parts alone, times the brand's price factor.
-export function presetPrice(m: DeviceModel, year: number, brand?: string, vendor?: Vendor): number {
-  if (m.nodes) return m.nodes.count * presetPrice(modelById(m.nodes.model), year, brand, vendor);
+// What a preset costs in a year: its chassis plus its parts with the vendor's CPUs (the cpu part when named) at that year's
+// prices, but at most BUNDLE of the parts alone, times the brand's price factor.
+export function presetPrice(m: DeviceModel, year: number, brand?: string, vendor?: Vendor, cpu?: string): number {
+  if (m.nodes) return m.nodes.count * presetPrice(modelById(m.nodes.model), year, brand, vendor, cpu);
   const factor = (!m.brand && brand && manufacturerByName(brand)?.priceFactor) || 1;
   if (!m.server) return Math.round(erodedPrice(m, m.price, year) * factor);
-  const parts = partsPrice(componentParts(m, vendor), year);
+  const parts = partsPrice(componentParts(m, vendor, cpu), year);
   return Math.round(Math.min(chassisPrice(m) + partShare(m) * parts, BUNDLE * parts) * factor);
 }

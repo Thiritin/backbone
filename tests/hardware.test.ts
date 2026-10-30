@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { GENERATIONS, START_CASH } from "../src/sim/10-catalog/economy";
-import { brandsFor, deliveryHours, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
+import { brandOnSale, brandsFor, deliveryHours, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, mountFrom, mountMax, portPeers, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
@@ -74,7 +74,8 @@ describe("catalog", () => {
     expect(ids(2010)).toEqual(expect.arrayContaining(["g1-compute", "g2-compute"]));
     // SuperMacro sells a generation a year longer than Dwell.
     expect(ids(2011)).toContain("g1-dense");
-    expect(ids(2011)).not.toContain("g1-compute");
+    expect(brandOnSale(modelById("g1-compute"), "SuperMacro", 2011 * 12)).toBe(true);
+    expect(brandOnSale(modelById("g1-compute"), "Dwell", 2011 * 12)).toBe(false);
     expect(ids(2012)).not.toContain("g1-dense");
     expect(ids(2026)).toEqual(expect.arrayContaining(["g6-compute", "g7-compute", "sw-32d"]));
   });

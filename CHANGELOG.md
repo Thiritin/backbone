@@ -9,7 +9,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - OpenStash now needs the new Cloud orchestration training, an expensive skill that is also the only way to sell cloud computing.
 - The research tree is laid out in Operations, Infrastructure, Sales and Company rows, and every skill lists what it unlocks.
 - With order automation on, order emails get a quote at your own rate as soon as they arrive, and the VMwhere, Proxmocks and HyperVee consoles show memory used against allocated with alarms for over-allocated hosts, full disks and missing failover room.
-
+- Switching a product off on your website now stops Sponsor-Bored applications for it, and the press no longer writes about product lines you have not listed.
+- Servers in the shop now carry their maker's own model names and numbers, such as a PowerEdgy R620 or a ProLight DL360 Gen9, and each maker builds its own set of lines, with Gigabutt joining as the fifth server maker.
+- Every CPU socket now offers a range of named processors with cores, threads, base and boost clocks and power draw, the shop lets you pick the processor when you order a server, and new clock, four-socket, 24-bay storage and 8-card GPU lines join the catalog.
 - Customers now notice a slow server only past what they expect from what they run, so a light overcommit goes unnoticed by backup and mirror customers while game server players complain early.
 - Every applicant on the Sponsor-Bored board is now a different person with their own project, and the board runs out of applicants once all of them have an open application or a running sponsorship.
 - A server can run several software at once, each with its own console on its own port, as long as none of them share a port.

@@ -108,7 +108,7 @@ export interface Cable { id: string; a: End; b: End; kind: CableKind; color: str
 // size is GB for RAM sticks and drives, cores for CPUs; ff is the form factor of a drive. CPUs and boards carry their vendor,
 // CPUs their generation (1 for G1).
 // wear is what a used part's owner knows of it: hidden until a burn-in, or worn after a quick one; unset once known.
-export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; wear?: "hidden" | "worn"; plugged?: boolean; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number }
+export interface Component { id: string; kind: ComponentKind; installedAt: number; failedAt: number | null; wear?: "hidden" | "worn"; plugged?: boolean; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number; sku?: string }
 export type RaidLevel = "none" | "1" | "5" | "6" | "10";
 export type RebuildRate = "low" | "medium" | "high";
 // since is the hour of the first change; a data loss after it wipes the changes. A path maps to a file's text, true for a
