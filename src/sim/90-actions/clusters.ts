@@ -11,7 +11,7 @@ import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
-  anchorOf, clusterOf, clustersOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, hostsOfVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
+  anchorOf, clusterOf, clustersOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, hostsOfVm, insideVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
   backsUpCluster, balances, setMachine, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
 import { burning, freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
@@ -102,11 +102,12 @@ export function createVm(s: GameState, clusterId: string, size: Resources): Acti
   return { ok: true, id: vm.id };
 }
 
-// Deletes one of the player's own VMs once no software runs in it.
+// Deletes one of the player's own VMs with the software installed in it, once nothing runs on that software.
 export function deleteVm(s: GameState, vmId: string): ActionResult {
   const vm = vmById(s, vmId);
   if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
-  if (hostOfVm(s, vm.id)) return fail("error.softwareInUse");
+  if (insideVm(s, vm.id).length) return fail("error.softwareInUse");
+  for (const h of hostsOfVm(s, vm.id)) dropCluster(s, h.id);
   s.workloads = s.workloads.filter((w) => w.id !== vm.id);
   return { ok: true };
 }

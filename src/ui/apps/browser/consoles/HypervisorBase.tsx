@@ -10,7 +10,7 @@ import type { GameState } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
 import { privateIp } from "../../../../sim/60-infra/addresses";
-import { balances, hostOfVm, isOwnVm, KEYS, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
+import { balances, hostOfVm, insideVm, isOwnVm, KEYS, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
 import { machineScreen } from "../../../../sim/60-infra/oob";
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { nodeUsage, workloadUse } from "../../../../sim/60-infra/usage";
@@ -80,7 +80,7 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
       !!f.migrate && (on || st === "stopped") && !w.migrating && { id: "migrate", label: "Migrate", run: toggle("migrate") },
       f.resize && own && { id: "resize", label: "Resize", run: toggle("resize") },
       own && { id: "console", label: "Console", run: () => openConsole(w.id) },
-      f.delete && own && !host && { id: "delete", label: "Delete", tone: "danger", run: toggle("delete") },
+      f.delete && own && !insideVm(game, w.id).length && { id: "delete", label: "Delete", tone: "danger", run: toggle("delete") },
     ];
     const kind = open?.id === w.id ? open.kind : null;
     const panel = kind === "migrate" ? <Migrate game={game} w={w} c={c} done={close} />

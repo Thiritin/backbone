@@ -6,7 +6,7 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { hostOfVm, machineOf } from "../src/sim/60-infra/cluster";
 import { machineScreen } from "../src/sim/60-infra/oob";
 import { tick } from "../src/sim/88-tick/tick";
-import { PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
+import { deleteVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { buyAppSuite, cancelAppSuite, deployFromSuite, SUITE_OS_HOURS } from "../src/sim/90-actions/suite";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { hypervisor, withServer } from "./fixtures";
@@ -45,6 +45,15 @@ describe("VMwhere App Suite", () => {
     tick(s);
     expect(hostOfVm(s, vm)?.panel).toBe("tcadmen");
     expect(machineScreen(s, vm)).toEqual({ kind: "login", os: "windoors" });
+  });
+
+  it("deletes a deployed VM together with its empty host, powered off or not", () => {
+    const s = withServer(newGame(6)), c = hypervisor(s, ["dev3"], "Cloud 1", "vmwhere");
+    ok(buyAppSuite(s, c));
+    const host = ok(deployFromSuite(s, c, PANEL_VM_SIZE, "tcadmen")), vm = s.clusters.find((x) => x.id === host)!.vm!;
+    ok(deleteVm(s, vm));
+    expect(s.clusters.some((x) => x.id === host)).toBe(false);
+    expect(s.workloads.some((w) => w.id === vm)).toBe(false);
   });
 
   it("is billed monthly until cancelled", () => {
