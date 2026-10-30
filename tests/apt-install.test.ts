@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { clusterOf } from "../src/sim/60-infra/cluster";
+import { clusterOf, vmById } from "../src/sim/60-infra/cluster";
+import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { runLine, watchStep, type Session, type Watch } from "../src/sim/60-infra/terminal";
 import { tick } from "../src/sim/88-tick/tick";
 import type { Call } from "../src/sim/90-actions/index";
 import { softwareOn } from "../src/sim/90-actions/software";
-import { bootedMachine, skipTo, withServer } from "./fixtures";
+import { bootedMachine, hypervisor, skipTo, withServer } from "./fixtures";
 
 // withServer: dev3 is a free server cabled to the desk's router; booted here with an OS.
 const act = (s: GameState) => ([fn, ...args]: Call) => fn(s, ...args);
@@ -90,5 +91,20 @@ describe("installing software from the shell", () => {
     for (let h = 0; h < 4; h++) tick(s);
     expect(text(s, "apt-get remove freepanel", at)).toContain("Workloads still run on this software.");
     expect(text(s, "apt-get remove bound9", at)).toContain("Package 'bound9' is not installed, so not removed");
+  });
+
+  it("opens a session on an own VM with Lunix booted, refuses one with Windoors and times out on an empty one", () => {
+    const s = withServer(newGame(5));
+    skipTo(s, 2017);
+    const c = hypervisor(s, ["dev3"]);
+    const vm = (os?: "lunix" | "windoors") => {
+      const r = createVm(s, c, PANEL_VM_SIZE), w = vmById(s, r.ok ? r.id! : "")!;
+      if (os) bootedMachine(s, w.id, os);
+      return w;
+    };
+    const lunix = vm("lunix"), win = vm("windoors"), empty = vm();
+    expect(run(s, `ssh ${lunix.hostname}`, null).session).toEqual({ host: lunix.hostname, deviceId: lunix.id });
+    expect(text(s, `ssh ${win.hostname}`, null)).toBe(`ssh: connect to host ${win.hostname} port 22: Connection refused`);
+    expect(text(s, `ssh ${empty.hostname}`, null)).toBe(`ssh: connect to host ${empty.hostname} port 22: Connection timed out`);
   });
 });

@@ -11,7 +11,7 @@ import type { GameState } from "../50-state";
 import type { Call } from "../90-actions/index";
 import { recover } from "../90-actions/vms";
 import { privateIp, publicV4, publicV6, ipmiIp } from "./addresses";
-import { serverOf, vmOf, workloadOnline, type Workload } from "./cluster";
+import { isOwnVm, serverOf, vmOf, workloadOnline, type Workload } from "./cluster";
 import { latency } from "./network";
 import { hopDown, pathTo, powered, working, type Hop } from "./status";
 import { nodeUsage, workloadUse } from "./usage";
@@ -164,12 +164,12 @@ function ssh(s: GameState, args: string[]): CommandResult {
   const timeout = { output: lines("term.ssh.timeout", { host: arg }) };
   if (tg.kind === "bmc") return pathTo(s, deskRouter(s) ?? "", tg.deviceId) && answers(s, tg) ? { output: lines("term.ssh.refused", { host: arg }) } : timeout;
   if (!reach(s, tg)) return timeout;
-  if (tg.kind === "workload") return { output: lines("term.ssh.denied", { host: tg.name }) };
-  // No sshd on Windoors; a machine whose OS is not up does not answer at all.
-  const os = osUp(s, tg.deviceId);
+  if (tg.kind === "workload" && !isOwnVm(tg.workload!)) return { output: lines("term.ssh.denied", { host: tg.name }) };
+  // No sshd on Windoors; a machine whose OS is not up does not answer at all. One of the player's own VMs is a machine too.
+  const id = tg.workload?.id ?? tg.deviceId, os = osUp(s, id);
   if (!os) return timeout;
   if (os === "windoors") return { output: lines("term.ssh.refused", { host: arg }) };
-  return { output: lines("term.ssh.welcome", { host: tg.name }), session: { host: tg.name, deviceId: tg.deviceId } };
+  return { output: lines("term.ssh.welcome", { host: tg.name }), session: { host: tg.name, deviceId: id } };
 }
 
 // Opens a device's console through its controller, KVM or console server, which works while the data network is down.
