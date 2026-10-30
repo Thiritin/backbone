@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cpuModel, cpuWatts, socketGens, x86Share } from "../src/sim/10-catalog/cpus";
-import { boardSpec, componentParts, fits, modelById, partOffers, vendorsOf } from "../src/sim/10-catalog/hardware";
+import { boardSpec, componentParts, fits, modelById, partOffers, presetSku, vendorsOf } from "../src/sim/10-catalog/hardware";
 import { presetPrice } from "../src/sim/10-catalog/parts";
 import { specFor } from "../src/sim/30-market/spec";
 import { device, deviceDefaults, newGame, type GameState } from "../src/sim/50-state";
@@ -120,15 +120,15 @@ describe("storage lines", () => {
 describe("lines and CPU makers", () => {
   it("sells some lines with one maker only", () => {
     expect(vendorsOf(modelById("g5-compute"))).toEqual(["indel", "amb"]);
-    expect(vendorsOf(modelById("g5-dense"))).toEqual(["amb"]);
-    expect(vendorsOf(modelById("g5-memory"))).toEqual(["indel"]);
-    expect(vendorsOf(modelById("g5-gpu"))).toEqual(["indel"]);
+    expect(vendorsOf(modelById("g5-dense"))).toEqual(["amb", "indel"]);
+    expect(vendorsOf(modelById("g5-memory"))).toEqual(["indel", "amb"]);
+    expect(vendorsOf(modelById("g5-quad"))).toEqual(["indel"]);
     expect(vendorsOf(modelById("g6-arm"))).toEqual(["ampear"]);
     expect(componentParts(modelById("g5-dense")).find((p) => p.kind === "board")!.vendor).toBe("amb");
     const s = rich();
     skipTo(s, 2018);
-    expect(err(buyDevice(s, "g5-dense", "SuperMacro", 1, "loc1", { vendor: "indel" }))).toBe("error.wrongVendor");
-    expect(err(buyDevice(s, "g5-memory", "Dwell", 1, "loc1", { vendor: "amb" }))).toBe("error.wrongVendor");
+    expect(err(buyDevice(s, "g5-quad", "Dwell", 1, "loc1", { vendor: "amb" }))).toBe("error.wrongVendor");
+    expect(err(buyDevice(s, "g5-memory", "Dwell", 1, "loc1", { vendor: "ampear" }))).toBe("error.wrongVendor");
     expect(cpus(s, ok(buyDevice(s, "g5-dense", "SuperMacro", 1, "loc1"))).map((c) => c.vendor)).toEqual(["amb", "amb"]);
     expect(partOffers(2017).some((p) => p.kind === "cpu" && p.vendor === "amb")).toBe(true);
   });
@@ -204,17 +204,20 @@ describe("speed, watts and demand", () => {
     const m = modelById("g2-compute");
     const indel = device("a", "g2-compute", "Dwell", null, 0, null, "a", 0);
     const amb = { ...indel, ...deviceDefaults(m.id, 0, componentParts(m, "amb")) };
-    expect(installedVcpu(indel)).toBe(9.2);
-    expect(installedVcpu(amb)).toBe(7.6);
-    expect(perCoreOf(amb)).toBe(0.95);
-    expect(nodeCapacity(amb).vcpu).toBe(7.6);
+    // Two Xenon E5420 at 1.09 per core, two Opteroni 2356 at 0.97.
+    expect(installedVcpu(indel)).toBe(8.72);
+    expect(installedVcpu(amb)).toBe(7.76);
+    expect(perCoreOf(amb)).toBe(0.97);
+    expect(nodeCapacity(amb).vcpu).toBe(7.76);
   });
 
   it("draws watts per socket: Ampear at half Indel's per core, presets as before", () => {
     expect(cpuWatts("ampear", 6, 64) / 64).toBeCloseTo((cpuWatts("indel", 6, 64) / 64) / 2, 9);
     for (const id of ["g1-compute", "g5-dense", "g6-arm", "g7-dense"]) expect(deviceWatts(device("d", id, "Dwell", null, 0, null, "d", 0)), id).toBe(modelById(id).watts);
     const m = modelById("g5-compute"), amb = { ...device("d", m.id, "Dwell", null, 0, null, "d", 0), ...deviceDefaults(m.id, 0, componentParts(m, "amb")) };
-    expect(deviceWatts(amb)).toBeCloseTo(m.watts - 2 * cpuWatts("indel", 5, 20) + 2 * cpuWatts("amb", 5, 32), 9);
+    // Each socket draws its part's TDP: the preset's Xenon Gold 6148 against the Epyk 7551.
+    const tdp = (v: "indel" | "amb") => 2 * presetSku(m, v)!.tdp;
+    expect(deviceWatts(amb)).toBeCloseTo(m.watts - tdp("indel") + tdp("amb"), 9);
   });
 
   it("asks for x86 in 60% of VPS, game server and cloud orders in 2020, falling to 30% by 2026", () => {

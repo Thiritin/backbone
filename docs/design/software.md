@@ -297,7 +297,7 @@ Paid sites switch earlier; free ones keep a look longer.
 | GoDuddy Reseller | goduddy.com |
 | InterNetY | internety.de |
 | OpenSRSly | opensrsly.com |
-| Dwell, Hewlett-Packet, SuperMacro, Lenovoid, Sysko, Aristotle, Fortinope, Pablo Alto, Pandoot, MicroTick, Eatin | dwell.com, hewlett-packet.com, supermacro.com, lenovoid.com, sysko.com, aristotle.com, fortinope.com, pablo-alto.com, pandoot.com, microtick.com, eatin.com |
+| Dwell, Hewlett-Packet, SuperMacro, Lenovoid, Gigabutt, Sysko, Aristotle, Fortinope, Pablo Alto, Pandoot, MicroTick, Eatin | dwell.com, hewlett-packet.com, supermacro.com, lenovoid.com, gigabutt.com, sysko.com, aristotle.com, fortinope.com, pablo-alto.com, pandoot.com, microtick.com, eatin.com |
 | Junipurr | junipurr.net |
 | AVN | avn.de |
 
@@ -331,6 +331,7 @@ A release is a server model, multi-node chassis or network or power device a bra
 | Hewlett-Packet | dark blue bar with a boxed mark, dense product grid, Arial | 2013: white, the blue circle mark, large light headings |
 | SuperMacro | green and grey, dense bordered tables, Verdana | 2016: flat white, green hero, cards |
 | Lenovoid | white and grey, red wordmark, dark gradient hero, Arial | 2014: red header band, dark hero, bold type |
+| Gigabutt | orange and black, a spec table on the front page, Tahoma | 2018: black hero, orange accents, product cards |
 | Sysko | corporate blue with product tabs and tiny type | 2015: white and teal, product tiles |
 | Junipurr | white with green rules, a serif wordmark, a product column | 2014: dark navy, green accents, flat |
 | Aristotle | navy header, cream page, Georgia italics | 2015: white, dark navy hero, flat tiles |

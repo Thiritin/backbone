@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Servers in the shop now carry their maker's own model names and numbers, such as a PowerEdgy R620 or a ProLight DL360 Gen9, and each maker builds its own set of lines, with Gigabutt joining as the fifth server maker.
+- Every CPU socket now offers a range of named processors with cores, threads, base and boost clocks and power draw, the shop lets you pick the processor when you order a server, and new clock, four-socket, 24-bay storage and 8-card GPU lines join the catalog.
 - A tripped breaker now switches off every server in the rack, so the rack gets power back right away and you can boot the servers it has room for.
 - A new game now starts with only the Browser, and your other apps arrive once you register your company on the trade office website during its office hours.
 - Customers who ask for a virtual server now ask for Debiant.

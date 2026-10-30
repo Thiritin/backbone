@@ -11,7 +11,7 @@ import { VmConsole } from "./VmConsole";
 import { vmLabel } from "../products/parts";
 
 // What each brand calls its controller's screen.
-const CONSOLE_NAME: Record<string, string> = { Dwell: "iDRAQ Virtual Console", "Hewlett-Packet": "iLOL Remote Console", SuperMacro: "SuperMacro iKVM", Lenovoid: "XClarify Remote Control" };
+const CONSOLE_NAME: Record<string, string> = { Dwell: "iDRAQ Virtual Console", "Hewlett-Packet": "iLOL Remote Console", SuperMacro: "SuperMacro iKVM", Lenovoid: "XClarify Remote Control", Gigabutt: "MegaRAQ Remote Console" };
 export const consoleName = (game: GameState, d: Device): string => {
   const via = consoleVia(game, d.id);
   return via?.kind === "bmc" ? CONSOLE_NAME[d.brand] ?? `${BMC_NAME[d.brand] ?? "IPMI"} console` : via ? modelById(via.device.model).name : "Console";

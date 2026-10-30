@@ -4,8 +4,8 @@ import { VENDOR_NAME, VENDORS, type Vendor } from "../../../sim/10-catalog/cpus"
 import { lineOf } from "../../art/fronts";
 
 const LINE_NAME: Record<string, string> = {
-  compute: "Balanced", "compute-2psu": "Balanced", value: "Balanced", dense: "Compute dense", memory: "Memory optimized", bigmem: "Memory optimized",
-  storage: "Storage", backup: "Backup", archive: "Archive", gpu: "GPU", arm: "ARM",
+  compute: "Balanced", "compute-2psu": "Balanced", value: "Balanced", micro: "Clock", dense: "Compute dense", memory: "Memory optimized", bigmem: "Memory optimized", quad: "Four socket",
+  storage: "Storage", "storage-24": "Storage", backup: "Backup", archive: "Archive", gpu: "GPU", "gpu-8": "GPU", arm: "ARM",
 };
 export const classOf = (m: DeviceModel) =>
   m.kind === "part" ? "Parts" : m.kind === "chassis" ? "Multi-node" : m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "gateway" ? "Routers" : m.kind === "ups" || m.kind === "pdu" ? "Power" : m.kind === "kvm" || m.kind === "console" || m.kind === "oob" ? "Remote access" : "Patch panels";

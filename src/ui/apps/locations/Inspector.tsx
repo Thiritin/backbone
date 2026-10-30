@@ -3,7 +3,7 @@ import { Cable, Flame, Gauge, EthernetPort, Monitor, MonitorOff, FileSignature, 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
-import { bayCount, boardSpec, jacksOf, modelById, wattsFactorOf, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { bayCount, boardSpec, jacksOf, modelById, modelName, wattsFactorOf, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import type { Cable as CableT, Device, End, GameState } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, deviceVendor, deviceWatts, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, resaleValue, working } from "../../../sim/60-infra/status";
@@ -177,7 +177,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
       </div>
       <div className="loc-model">
         {device.hostname && <div className="num">{fqdn(game, device.hostname)}</div>}
-        {model.kind === "gateway" ? "" : `${device.brand} `}{model.name} · <span className="num">{where}</span>
+        {model.kind === "gateway" ? "" : `${device.brand} `}{modelName(model, device.brand)} · <span className="num">{where}</span>
       </div>
 
       {monitor && <>

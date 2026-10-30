@@ -22,7 +22,7 @@ describe("server lines", () => {
     GENERATIONS.forEach((g, i) => {
       const ids = lines(i + 1).map((m) => m.id.slice(`g${i + 1}-`.length));
       const twin = g.year >= 2008;
-      expect(ids).toEqual(["compute", "compute-2psu", "value", "dense", "memory", "bigmem", "storage", "backup", "archive", ...(g.year >= 2011 ? ["gpu"] : []), ...(twin ? ["twin-node"] : []), ...(g.year >= 2020 ? ["arm"] : []), ...(twin ? ["twin"] : [])]);
+      expect(ids).toEqual(["compute", "compute-2psu", "value", "micro", "dense", "memory", "bigmem", "quad", "storage", "storage-24", "backup", "archive", ...(g.year >= 2011 ? ["gpu"] : []), ...(g.year >= 2017 ? ["gpu-8"] : []), ...(twin ? ["twin-node"] : []), ...(g.year >= 2020 ? ["arm"] : []), ...(twin ? ["twin"] : [])]);
     });
   });
   it("scales specs from the generation row", () => {
@@ -38,7 +38,7 @@ describe("server lines", () => {
     GENERATIONS.forEach((_, i) => {
       const balanced = line(i + 1, "compute")!.watts;
       // A Twin node shares its chassis's supplies and fans, so it draws less than a 1U.
-      const x86 = lines(i + 1).filter((m) => m.server?.arch === "x86" && !m.chassis && m.id !== `g${i + 1}-compute` && m.id !== `g${i + 1}-value`);
+      const x86 = lines(i + 1).filter((m) => m.server?.arch === "x86" && !m.chassis && m.id !== `g${i + 1}-compute` && m.id !== `g${i + 1}-value` && m.id !== `g${i + 1}-micro`);
       for (const m of x86) expect(m.watts, m.id).toBeGreaterThan(balanced);
       const twoU = x86.filter((m) => m.height === 2), fourU = x86.filter((m) => m.height === 4);
       for (const big of fourU) for (const small of twoU) expect(big.watts, `${big.id} > ${small.id}`).toBeGreaterThan(small.watts);
@@ -86,12 +86,12 @@ describe("manufacturers", () => {
       expect(Math.abs(m.priceFactor - 1)).toBeLessThanOrEqual(0.1 + 1e-9);
       expect(Math.abs(m.failureFactor - 1)).toBeLessThanOrEqual(0.3 + 1e-9);
     }
-    expect(brandsFor("server")).toEqual(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid"]);
+    expect(brandsFor("server")).toEqual(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid", "Gigabutt"]);
     expect(brandsFor("switch")).toEqual(["Sysko", "Junipurr", "Aristotle"]);
     expect(brandsFor("firewall")).toEqual(["Sysko", "Fortinope", "Pablo Alto"]);
     expect(brandsFor("patch")).toEqual(["Pandoot"]);
     const g1 = modelById("g1-compute");
-    expect(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid"].map((b) => priceOf(g1, b))).toEqual([2500, 2700, 2250, 2375]);
+    expect(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid", "Gigabutt"].map((b) => priceOf(g1, b))).toEqual([2500, 2700, 2250, 2375, 2250]);
   });
   it("charges the manufacturer's price and rejects a brand that does not make the class", () => {
     const s = { ...withServer(newGame(1)), cash: 100_000 };

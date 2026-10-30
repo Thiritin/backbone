@@ -1,5 +1,5 @@
 // docs/design/software.md, 8.6: what each hardware manufacturer has released, for its site and the News app. Pure.
-import { brandFrom, brandsOf, jacksOf, MANUFACTURERS, MODELS, type DeviceModel, type Manufacturer } from "../10-catalog/hardware";
+import { brandFrom, brandsOf, jacksOf, MANUFACTURERS, MODELS, modelName, type DeviceModel, type Manufacturer } from "../10-catalog/hardware";
 
 // The brands with a site of their own: every manufacturer that sells machines or network gear.
 export const VENDORS = MANUFACTURERS.filter((m) => m.id !== "generic");
@@ -25,7 +25,7 @@ function spec(m: DeviceModel): Params {
 // Every model the brand sells, newest first, up to and including this month. Twin nodes come with their chassis.
 export function vendorReleases(maker: Manufacturer, month = Infinity): Release[] {
   return MODELS.filter((m) => m.price > 0 && !m.chassis && m.kind !== "part" && brandsOf(m).includes(maker.name))
-    .map((m) => ({ month: brandFrom(m, maker.name), model: m, key: `vendor.release.${m.server ? "server" : m.kind}`, params: { brand: maker.name, model: m.name, ...spec(m) } }))
+    .map((m) => ({ month: brandFrom(m, maker.name), model: m, key: `vendor.release.${m.server ? "server" : m.kind}`, params: { brand: maker.name, model: modelName(m, maker.name), ...spec(m) } }))
     .filter((r) => r.month <= month)
     .sort((a, b) => b.month - a.month || a.model.name.localeCompare(b.model.name));
 }

@@ -35,7 +35,7 @@ describe("management controllers", () => {
     expect(hasBmc("g5-dense", "Dwell")).toBe(true);
     expect(hasBmc("g4-arm", "SuperMacro")).toBe(true);
     expect(hasBmc("sw-8", "Sysko")).toBe(false);
-    expect(MANUFACTURERS.filter((m) => m.kinds.includes("server")).map((m) => m.name)).toEqual(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid"]);
+    expect(MANUFACTURERS.filter((m) => m.kinds.includes("server")).map((m) => m.name)).toEqual(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid", "Gigabutt"]);
   });
 
   it("have a management address in the location's range", () => {

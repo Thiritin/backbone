@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { stickOs } from "../../../sim/60-infra/oob";
 import { useState } from "react";
 import { dateOf } from "../../../sim/00-core/time";
-import { modelById } from "../../../sim/10-catalog/hardware";
+import { modelById, modelName } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, RaidLevel, RebuildRate } from "../../../sim/50-state";
 import { drivesOf, holdsData, raidTolerance, raidUsable } from "../../../sim/60-infra/status";
 import { rebuildHours } from "../../../sim/88-tick/tick";
@@ -36,7 +36,7 @@ export function useBios(game: GameState, d: Device): { view: ReactNode; onKey: (
     [
       { label: "System Time", value: dateOf(game.hour).toISOString().slice(11, 16) + ":00" },
       { label: "System Date", value: dateOf(game.hour).toISOString().slice(0, 10) },
-      { label: "Product", value: `${d.brand} ${model.name}` },
+      { label: "Product", value: `${d.brand} ${modelName(model, d.brand)}` },
       ...(sv ? [
         { label: "Processor", value: `${sv.sockets} x ${cores(sv.cores / sv.sockets)}` },
         { label: "Memory", value: ram(sv.ramGb) },

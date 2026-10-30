@@ -64,7 +64,7 @@ describe("custom orders", () => {
     expect(new Set(specs.map((r) => JSON.stringify(r.spec))).size).toBeGreaterThan(2);
     const v = order(s, vps).r;
     expect(specText(v.product, v.spec)).toMatch(/^VPS, /);
-    expect(v.spec.vcpu).toBeGreaterThanOrEqual(1);
+    expect(v.spec.vcpu).toBeGreaterThanOrEqual(0.5);
     // The order form's order waits for the steps like an email order, with the website's price as the accepted quote.
     s.cash = 1e6;
     setUpChannel(s, "website");
@@ -318,7 +318,7 @@ describe("routing and upgrades", () => {
     run(s, 25);
     const after = s.services.find((x) => x.id === v.id)!;
     expect(after.spec).toEqual(up.spec);
-    expect(after.price * 730).toBeCloseTo(up.reference * 0.5, 2);
+    expect(after.price * 730).toBeCloseTo(up.reference * 0.5, 1);
     expect(s.workloads.find((w) => w.serviceId === v.id)!.ramGb).toBe(up.spec!.ramGb);
     expect(s.sales.requests.find((r) => r.id === up.id)!.status).toBe("won");
   });

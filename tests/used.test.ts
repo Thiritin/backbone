@@ -209,7 +209,7 @@ describe("used listings", () => {
     expect(newsTick(s).map((e) => e.key)).toContain("event.news.used.lot");
     const l = s.used.find((x) => x.qty === LOT_SIZE)!;
     expect(onMarket(s, l)).toBe(true);
-    expect(l.price).toBe(Math.round(presetPrice(modelById(l.model), 2008, l.brand) * LOT_SIZE * 0.35));
+    expect(l.price).toBe(Math.round(presetPrice(modelById(l.model), 2008, l.brand, l.vendor) * LOT_SIZE * 0.35));
     s.hour = sale.at;
     const before = s.used.length;
     usedTick(s);

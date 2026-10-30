@@ -9,6 +9,7 @@ import { Avn } from "./avn";
 import { Dwell } from "./dwell";
 import { Eatin } from "./eatin";
 import { Fortinope } from "./fortinope";
+import { Gigabutt } from "./gigabutt";
 import { HewlettPacket } from "./hewlett-packet";
 import { Junipurr } from "./junipurr";
 import { Lenovoid } from "./lenovoid";
@@ -25,6 +26,7 @@ const SITES: Record<string, { view: ComponentType<VendorProps>; late: number }> 
   "hewlett-packet": { view: HewlettPacket, late: 2013 },
   supermacro: { view: SuperMacro, late: 2016 },
   lenovoid: { view: Lenovoid, late: 2014 },
+  gigabutt: { view: Gigabutt, late: 2018 },
   sysko: { view: Sysko, late: 2015 },
   junipurr: { view: Junipurr, late: 2014 },
   aristotle: { view: Aristotle, late: 2015 },

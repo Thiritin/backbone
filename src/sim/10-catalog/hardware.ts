@@ -1,7 +1,7 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
 import { GENERATIONS, generationAt } from "./economy";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
-import { cpuModel, cpuWatts, defaultVendor, genOfYear, socketCores, socketOf, VENDOR_ARCH, VENDOR_NAME, VENDORS, vendorsAt, type Vendor } from "./cpus";
+import { cpuModel, cpuSkus, cpuWatts, defaultSku, defaultVendor, genOfYear, skuById, skuOf, socketCores, socketOf, VENDOR_ARCH, VENDOR_NAME, VENDORS, vendorsAt, type Vendor } from "./cpus";
 
 // A chassis holds the nodes of a multi-node server with their shared power supplies and fans; the nodes are servers.
 export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part" | "kvm" | "console" | "oob" | "chassis";
@@ -32,6 +32,8 @@ export interface ServerSpec {
   // Drives fitted at purchase; every drive has diskGb / drives.
   drives: number;
   ramSticks: number;
+  // The line ships the fastest CPU of its socket, not the biggest.
+  fast?: boolean;
 }
 // Values from economy.md (Components): life in years, yearly failure rates before and after it, part price, and when a swap
 // can happen with the device running: in a RAID array, with a second working power supply, always, or never.
@@ -61,22 +63,23 @@ export const bayTakes = (bay: FormFactor, drive: FormFactor): boolean => (drive 
 const presetFf = (v: ServerSpec): FormFactor => (v.disk === "NVMe" ? "nvme" : v.bays[0].ff === "3.5" ? "3.5" : "2.5");
 
 // A part of a model as it ships: size in GB for RAM sticks and drives, in cores for CPUs. CPUs and boards carry their vendor,
-// CPUs their generation (1 for G1); a spare without them fits any board.
-export interface PartSpec { kind: ComponentKind; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number }
+// CPUs their generation (1 for G1) and the part they are (cpus.ts); a spare without them fits any board.
+export interface PartSpec { kind: ComponentKind; size?: number; ff?: FormFactor; vendor?: Vendor; gen?: number; sku?: string }
 export const specOf = (c: PartSpec): PartSpec => ({
-  kind: c.kind, ...(c.size !== undefined ? { size: c.size } : {}), ...(c.ff ? { ff: c.ff } : {}), ...(c.vendor ? { vendor: c.vendor } : {}), ...(c.gen ? { gen: c.gen } : {}),
+  kind: c.kind, ...(c.size !== undefined ? { size: c.size } : {}), ...(c.ff ? { ff: c.ff } : {}), ...(c.vendor ? { vendor: c.vendor } : {}), ...(c.gen ? { gen: c.gen } : {}), ...(c.sku ? { sku: c.sku } : {}),
 });
 
 // The parts a model is built from: drives, power supplies, fans, RAM, board, CPUs and a NIC for a server, with the board
-// and CPUs of vendor (Indel, or Ampear for ARM, when left out); power supplies, 2 fans and a board for a switch or firewall;
-// nothing for patch panels, gateways and parts.
-export function componentParts(m: DeviceModel, vendor?: Vendor): PartSpec[] {
+// and CPUs of vendor (Indel, or Ampear for ARM, when left out) and the CPU part named by sku (the line's default when left
+// out); power supplies, 2 fans and a board for a switch or firewall; nothing for patch panels, gateways and parts.
+export function componentParts(m: DeviceModel, vendor?: Vendor, sku?: string): PartSpec[] {
   const n = (k: ComponentKind, count: number, size?: (i: number) => number, ff?: FormFactor): PartSpec[] =>
     Array.from({ length: count }, (_, i) => ({ kind: k, ...(size ? { size: size(i) } : {}), ...(ff ? { ff } : {}) }));
   if (m.kind === "chassis") return [...n("psu", m.psus), ...n("fan", FAN_SLOTS)];
   if (m.server) {
     const v = m.server, maker = vendor ?? vendorsOf(m)[0] ?? defaultVendor(v.arch), gen = genOf(m);
-    const cpu = (): PartSpec => ({ kind: "cpu", size: socketCores(v.cores / v.sockets, maker, gen), vendor: maker, gen });
+    const part = (sku && skuById(sku)) || presetSku(m, maker);
+    const cpu = (): PartSpec => ({ kind: "cpu", size: part?.cores ?? socketCores(v.cores / v.sockets, maker, gen), vendor: maker, gen, ...(part ? { sku: part.id } : {}) });
     return [
       // A node runs on its chassis's power supplies and fans.
       ...n(DRIVE_KIND[v.disk], v.drives, () => v.diskGb / v.drives, presetFf(v)), ...(m.chassis ? [] : [...n("psu", m.psus), ...n("fan", 4)]),
@@ -100,8 +103,20 @@ export function boardSpec(m: DeviceModel, vendor: Vendor): BoardSpec | undefined
   const v = m.server, c = cpuModel(vendor, genOf(m));
   if (!v || !c) return undefined;
   const maxCores = Math.max(1, Math.round(c.cores * boardMaxShare(m)));
-  return { name: `${VENDOR_NAME[vendor]} ${c.socket}-${maxCores}, ${v.sockets === 1 ? "single" : "dual"} socket`, vendor, socket: c.socket, sockets: v.sockets, maxCores };
+  return { name: `${VENDOR_NAME[vendor]} ${c.socket}-${maxCores}, ${SOCKETS[v.sockets] ?? v.sockets} socket`, vendor, socket: c.socket, sockets: v.sockets, maxCores };
 }
+const SOCKETS: Record<number, string> = { 1: "single", 2: "dual", 4: "quad" };
+// The CPU part a line ships with from a maker: the nearest to its share of a full socket, or a fast line's fastest part.
+export const presetSku = (m: DeviceModel, vendor: Vendor) => {
+  const v = m.server, gen = genOf(m);
+  if (!v) return undefined;
+  return defaultSku(vendor, gen, socketCores(v.cores / v.sockets, vendor, gen), v.fast, boardSpec(m, vendor)?.maxCores);
+};
+// The CPU parts a chassis takes from a maker in a year: the socket's parts up to the board's biggest.
+export const cpuOptions = (m: DeviceModel, vendor: Vendor, year: number) => {
+  const max = boardSpec(m, vendor)?.maxCores ?? 0;
+  return cpuSkus(vendor, genOf(m), year).filter((c) => c.cores <= max);
+};
 // The cores a server model ships with: ServerSpec.cores counts them at the Indel row, a line sold with AMB only has more from G5.
 export const presetCores = (m: DeviceModel): number => componentParts(m).reduce((n, p) => n + (p.kind === "cpu" ? p.size ?? 0 : 0), 0);
 export const componentKinds = (m: DeviceModel): ComponentKind[] => componentParts(m).map((p) => p.kind);
@@ -162,14 +177,14 @@ function cpuError(m: DeviceModel, arch: "x86" | "arm", parts: PartSpec[]): strin
   if (cpus.some((c) => c.gen !== undefined && socketOf(c.vendor ?? board ?? defaultVendor(arch), c.gen) !== socket)) return "error.wrongSocket";
   const cap = boardMaxShare(m) + 1e-9;
   if (cpus.some((c) => c.size !== undefined && c.gen !== undefined && c.size / (cpuModel(c.vendor ?? board ?? defaultVendor(arch), c.gen)?.cores ?? Infinity) > cap)) return "error.cpuTooBig";
-  const alike = (a: PartSpec, b: PartSpec) => a.size === b.size && (!a.vendor || !b.vendor || a.vendor === b.vendor);
+  const alike = (a: PartSpec, b: PartSpec) => a.size === b.size && (!a.vendor || !b.vendor || a.vendor === b.vendor) && (!a.sku || !b.sku || a.sku === b.sku);
   return cpus.every((c) => alike(c, cpus[0])) ? null : "error.mixedCpus";
 }
 
 // The generation of a server model, 1 for G1; 0 for other models.
 export const genOf = (m: DeviceModel): number => (m.server ? genOfYear(m.from) : 0);
 // The CPU makers a server model is sold with: the line's, among those that build CPUs for its generation.
-export const vendorsOf = (m: DeviceModel): Vendor[] => (m.server ? vendorsAt(m.server.arch, genOf(m)).filter((v) => m.server!.makers.includes(v)) : []);
+export const vendorsOf = (m: DeviceModel): Vendor[] => (m.server ? m.server.makers.filter((v) => vendorsAt(m.server!.arch, genOf(m)).includes(v)) : []);
 // The socket a server's board has: its maker's socket of the chassis's generation.
 export const boardSocket = (m: DeviceModel, vendor: Vendor): string | undefined => socketOf(vendor, genOf(m));
 // The vendor of a device's board, or of its preset's.
@@ -177,7 +192,7 @@ export const boardVendor = (m: DeviceModel, parts: PartSpec[]): Vendor =>
   parts.find((p) => p.kind === "board")?.vendor ?? defaultVendor(m.server?.arch ?? "x86");
 // What the CPUs among these parts draw.
 export const cpuWattsOf = (m: DeviceModel, parts: PartSpec[]): number =>
-  parts.reduce((n, p) => n + (p.kind === "cpu" ? cpuWatts(p.vendor ?? boardVendor(m, parts), p.gen ?? genOf(m), p.size ?? 0) : 0), 0);
+  parts.reduce((n, p) => n + (p.kind === "cpu" ? skuOf(p)?.tdp ?? cpuWatts(p.vendor ?? boardVendor(m, parts), p.gen ?? genOf(m), p.size ?? 0) : 0), 0);
 // Saves from before CPU vendors: the board and CPUs take the preset's vendor and the chassis's generation, and every socket
 // the largest CPU so no server runs a mixed pair.
 export function fillCpus<T extends PartSpec>(m: DeviceModel, parts: T[]): T[] {
@@ -221,6 +236,9 @@ export interface DeviceModel {
   brand?: string;
   // The manufacturers that build a server line; every manufacturer of the kind builds a model without one.
   brands?: string[];
+  // A server line and its generation (1 for G1); the makers name them in LINEUP.
+  line?: string;
+  gen?: number;
   // Routers: can hold a full BGP table and run an own AS (needed to announce a block), and how many BGP sessions it takes.
   fullTable?: boolean;
   bgpSessions?: number;
@@ -245,7 +263,8 @@ export const MANUFACTURERS: Manufacturer[] = [
   { id: "dwell", name: "Dwell", kinds: ["server", "chassis"], priceFactor: 1, failureFactor: 1 },
   { id: "hewlett-packet", name: "Hewlett-Packet", kinds: ["server"], priceFactor: 1.08, failureFactor: 0.8, fromShift: 3, untilShift: -1, wattsFactor: 0.95 },
   { id: "supermacro", name: "SuperMacro", kinds: ["server", "chassis"], priceFactor: 0.9, failureFactor: 1.3, fromShift: -4, untilShift: 1, wattsFactor: 1.05 },
-  { id: "lenovoid", name: "Lenovoid", kinds: ["server"], priceFactor: 0.95, failureFactor: 1.1, fromShift: 6 },
+  { id: "lenovoid", name: "Lenovoid", kinds: ["server", "chassis"], priceFactor: 0.95, failureFactor: 1.1, fromShift: 6 },
+  { id: "gigabutt", name: "Gigabutt", kinds: ["server", "chassis"], priceFactor: 0.9, failureFactor: 1.25, fromShift: -1, wattsFactor: 1.04 },
   { id: "sysko", name: "Sysko", kinds: ["switch", "firewall", "gateway"], priceFactor: 1, failureFactor: 1 },
   { id: "junipurr", name: "Junipurr", kinds: ["switch", "gateway"], priceFactor: 1.1, failureFactor: 0.7 },
   { id: "aristotle", name: "Aristotle", kinds: ["switch"], priceFactor: 0.93, failureFactor: 1.2 },
@@ -281,30 +300,114 @@ export const RAM_STICK_GB = [2, 4, 8, 16, 32, 32, 64];
 // dimms: DIMM slots at G1, G3, G5 and G7; generations in between share the value of the older one. bays: the drive bays at a generation index.
 const BAYS_SMALL = (i: number): BayGroup[] => (i <= 1 ? [{ ff: "3.5", count: 4 }] : i === 2 ? [{ ff: "2.5", count: 8 }] : [{ ff: "nvme", count: 10 }]);
 const BAYS_8 = (i: number): BayGroup[] => [{ ff: i <= 2 ? "2.5" : "nvme", count: 8 }];
+const BAYS_SFF_24 = (i: number): BayGroup[] => [{ ff: i <= 3 ? "2.5" : "nvme", count: 24 }];
 const BAYS_3_5 = (count: number) => (): BayGroup[] => [{ ff: "3.5", count }];
 // The storage line ships NVMe drives from G6; those need NVMe-capable bays.
 const BAYS_STORAGE = (i: number): BayGroup[] => [{ ff: i >= 5 ? "nvme" : "3.5", count: 12 }];
 // A Twin node's share of the chassis front: three 3.5" bays, six 2.5" bays from the 2014 generation, NVMe from G4.
 const BAYS_TWIN = (i: number): BayGroup[] => (i <= 1 ? [{ ff: "3.5", count: 3 }] : [{ ff: i === 2 ? "2.5" : "nvme", count: 6 }]);
 export const SERVER_LINES = [
-  { id: "compute", name: "Balanced 1U", arch: "x86", makers: ["indel", "amb"], brands: ["Dwell"], height: 1, sockets: 2, cores: 1, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 1, price: 1, from: 2005 },
-  { id: "compute-2psu", name: "Balanced 1U, 2 PSU", arch: "x86", makers: ["indel"], brands: ["Dwell"], height: 1, sockets: 2, cores: 1, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 0, watts: 1.05, price: 1.1, from: 2005 },
-  { id: "value", name: "Value 1U", bayN: [2, 2, 4, 4, 4, 4, 4], driveN: [1, 1, 1, 1, 1, 1, 1], driveGb: [160, 500, 1000, 0, 0, 0, 0], arch: "x86", makers: ["amb"], brands: ["SuperMacro"], height: 1, sockets: 1, cores: 0.5, ram: 0.5, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 1, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.55, price: 0.5, from: 2005 },
-  { id: "dense", name: "Compute-dense 1U", arch: "x86", makers: ["amb"], brands: ["SuperMacro"], height: 1, sockets: 2, cores: 2, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 1.5, price: 1.6, from: 2005 },
-  { id: "memory", name: "Memory-optimized 2U", arch: "x86", makers: ["indel"], brands: ["Dwell"], height: 2, sockets: 2, cores: 1, ram: 4, bays: BAYS_8, dimms: [16, 24, 32, 48], pcie: 4, drives: 1, disk: "gen", ports: 4, psus: 2, gpus: 0, watts: 1.6, price: 1.8, from: 2005 },
-  { id: "bigmem", name: "Large-memory 2U", arch: "x86", makers: ["indel"], brands: ["Hewlett-Packet"], height: 2, sockets: 2, cores: 1, ram: 8, bays: BAYS_8, dimms: [32, 48, 64, 96], pcie: 4, drives: 1, disk: "gen", ports: 4, psus: 2, gpus: 0, watts: 1.9, price: 2.8, from: 2005 },
-  { id: "storage", name: "Storage 2U", bayN: [8, 12, 12, 12, 12, 12, 12], driveN: [4, 8, 12, 12, 12, 12, 12], driveGb: [160, 500, 1000, 0, 0, 0, 0], arch: "x86", makers: ["indel", "amb"], brands: ["Dwell"], height: 2, sockets: 2, cores: 1, ram: 1, bays: BAYS_STORAGE, dimms: [8, 12, 16, 24], pcie: 4, drives: 12, disk: "gen", ports: 2, psus: 2, gpus: 0, watts: 1.7, price: 2, from: 2005 },
-  { id: "backup", name: "Backup storage 4U", bayN: [12, 16, 24, 36, 36, 36, 36], driveN: [6, 12, 16, 36, 36, 36, 36], driveGb: [160, 500, 2000, 0, 0, 0, 0], arch: "x86", makers: ["amb"], brands: ["SuperMacro"], height: 4, sockets: 1, cores: 0.5, ram: 0.5, bays: BAYS_3_5(36), dimms: [8, 12, 16, 24], pcie: 4, drives: 36, disk: "large", ports: 2, psus: 2, gpus: 0, watts: 2, price: 2.4, from: 2005 },
-  { id: "archive", name: "Archive storage 4U", bayN: [24, 36, 48, 60, 60, 60, 60], driveN: [12, 24, 36, 60, 60, 60, 60], driveGb: [500, 1000, 3000, 0, 0, 0, 0], arch: "x86", makers: ["amb"], brands: ["Dwell"], height: 4, sockets: 1, cores: 0.25, ram: 0.25, bays: BAYS_3_5(60), dimms: [8, 8, 16, 16], pcie: 2, drives: 60, disk: "dense", ports: 2, psus: 2, gpus: 0, watts: 2.2, price: 3.2, from: 2005 },
-  { id: "gpu", name: "GPU 4U", arch: "x86", makers: ["indel"], brands: ["Dwell"], height: 4, sockets: 2, cores: 1, ram: 2, bays: BAYS_8, dimms: [16, 24, 32, 48], pcie: 8, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 4, watts: 2, price: 3, from: 2011 },
+  { id: "compute", name: "Balanced 1U", arch: "x86", makers: ["indel", "amb"], height: 1, sockets: 2, cores: 1, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 1, price: 1, from: 2005 },
+  { id: "compute-2psu", name: "Balanced 1U, 2 PSU", arch: "x86", makers: ["indel"], height: 1, sockets: 2, cores: 1, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 0, watts: 1.05, price: 1.1, from: 2005 },
+  { id: "value", name: "Value 1U", bayN: [2, 2, 4, 4, 4, 4, 4], driveN: [1, 1, 1, 1, 1, 1, 1], driveGb: [160, 500, 1000, 0, 0, 0, 0], arch: "x86", makers: ["indel", "amb"], height: 1, sockets: 1, cores: 0.5, ram: 0.5, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 1, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.55, price: 0.5, from: 2005 },
+  // The clock line ships the fastest CPU of its socket for game servers and other single-thread work.
+  { id: "micro", name: "Clock 1U", bayN: [2, 2, 4, 4, 4, 4, 4], driveN: [1, 1, 1, 1, 1, 1, 1], driveGb: [160, 500, 1000, 0, 0, 0, 0], arch: "x86", makers: ["indel", "amb"], height: 1, sockets: 1, cores: 0.5, ram: 0.5, bays: BAYS_SMALL, dimms: [4, 4, 8, 8], pcie: 1, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.6, price: 0.6, from: 2005, fast: true },
+  { id: "dense", name: "Compute-dense 1U", arch: "x86", makers: ["amb", "indel"], height: 1, sockets: 2, cores: 2, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 1.5, price: 1.6, from: 2005 },
+  { id: "memory", name: "Memory-optimized 2U", arch: "x86", makers: ["indel", "amb"], height: 2, sockets: 2, cores: 1, ram: 4, bays: BAYS_8, dimms: [16, 24, 32, 48], pcie: 4, drives: 1, disk: "gen", ports: 4, psus: 2, gpus: 0, watts: 1.6, price: 1.8, from: 2005 },
+  { id: "bigmem", name: "Large-memory 2U", arch: "x86", makers: ["indel", "amb"], height: 2, sockets: 2, cores: 1, ram: 8, bays: BAYS_8, dimms: [32, 48, 64, 96], pcie: 4, drives: 1, disk: "gen", ports: 4, psus: 2, gpus: 0, watts: 1.9, price: 2.8, from: 2005 },
+  { id: "quad", name: "Four-socket 2U", arch: "x86", makers: ["indel"], height: 2, sockets: 4, cores: 2, ram: 8, bays: BAYS_8, dimms: [32, 48, 64, 96], pcie: 6, drives: 2, disk: "gen", ports: 4, psus: 2, gpus: 0, watts: 1.95, price: 4, from: 2005 },
+  { id: "storage", name: "Storage 2U", bayN: [8, 12, 12, 12, 12, 12, 12], driveN: [4, 8, 12, 12, 12, 12, 12], driveGb: [160, 500, 1000, 0, 0, 0, 0], arch: "x86", makers: ["indel", "amb"], height: 2, sockets: 2, cores: 1, ram: 1, bays: BAYS_STORAGE, dimms: [8, 12, 16, 24], pcie: 4, drives: 12, disk: "gen", ports: 2, psus: 2, gpus: 0, watts: 1.7, price: 2, from: 2005 },
+  { id: "storage-24", name: "Storage 2U, 24 bays", bayN: [24, 24, 24, 24, 24, 24, 24], driveN: [8, 12, 24, 24, 24, 24, 24], driveGb: [73, 146, 300, 0, 0, 0, 0], arch: "x86", makers: ["indel", "amb"], height: 2, sockets: 2, cores: 1, ram: 1, bays: BAYS_SFF_24, dimms: [16, 24, 32, 48], pcie: 4, drives: 24, disk: "gen", ports: 2, psus: 2, gpus: 0, watts: 1.8, price: 2.2, from: 2005 },
+  { id: "backup", name: "Backup storage 4U", bayN: [12, 16, 24, 36, 36, 36, 36], driveN: [6, 12, 16, 36, 36, 36, 36], driveGb: [160, 500, 2000, 0, 0, 0, 0], arch: "x86", makers: ["amb", "indel"], height: 4, sockets: 1, cores: 0.5, ram: 0.5, bays: BAYS_3_5(36), dimms: [8, 12, 16, 24], pcie: 4, drives: 36, disk: "large", ports: 2, psus: 2, gpus: 0, watts: 2, price: 2.4, from: 2005 },
+  { id: "archive", name: "Archive storage 4U", bayN: [24, 36, 48, 60, 60, 60, 60], driveN: [12, 24, 36, 60, 60, 60, 60], driveGb: [500, 1000, 3000, 0, 0, 0, 0], arch: "x86", makers: ["amb", "indel"], height: 4, sockets: 1, cores: 0.25, ram: 0.25, bays: BAYS_3_5(60), dimms: [8, 8, 16, 16], pcie: 2, drives: 60, disk: "dense", ports: 2, psus: 2, gpus: 0, watts: 2.2, price: 3.2, from: 2005 },
+  { id: "gpu", name: "GPU 4U", arch: "x86", makers: ["indel", "amb"], height: 4, sockets: 2, cores: 1, ram: 2, bays: BAYS_8, dimms: [16, 24, 32, 48], pcie: 8, drives: 1, disk: "gen", ports: 2, psus: 2, gpus: 4, watts: 2, price: 3, from: 2011 },
+  { id: "gpu-8", name: "GPU 4U, 8 cards", arch: "x86", makers: ["indel", "amb"], height: 4, sockets: 2, cores: 1, ram: 4, bays: BAYS_8, dimms: [16, 24, 32, 48], pcie: 16, drives: 2, disk: "gen", ports: 4, psus: 2, gpus: 8, watts: 2.5, price: 4, from: 2017 },
   // Four nodes in a shared 2U chassis (Twin 2U below); a node has no height of its own.
-  { id: "twin-node", name: "Twin node", arch: "x86", makers: ["indel", "amb"], brands: ["SuperMacro"], height: 0, sockets: 2, cores: 1, ram: 1, bays: BAYS_TWIN, dimms: [8, 12, 16, 16], pcie: 1, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.8, price: 0.6, from: 2008 },
-  { id: "arm", name: "ARM 1U", arch: "arm", makers: ["ampear"], brands: ["Lenovoid"], height: 1, sockets: 1, cores: 1.5, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.6, price: 0.9, from: 2020 },
+  { id: "twin-node", name: "Twin node", arch: "x86", makers: ["indel", "amb"], height: 0, sockets: 2, cores: 1, ram: 1, bays: BAYS_TWIN, dimms: [8, 12, 16, 16], pcie: 1, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.8, price: 0.6, from: 2008 },
+  { id: "arm", name: "ARM 1U", arch: "arm", makers: ["ampear"], height: 1, sockets: 1, cores: 1.5, ram: 1, bays: BAYS_SMALL, dimms: [8, 12, 16, 32], pcie: 2, drives: 1, disk: "gen", ports: 2, psus: 1, gpus: 0, watts: 0.6, price: 0.9, from: 2020 },
 ] as const;
+
+// What each manufacturer calls a line in each generation, in the maker's own numbering; a line a maker does not build has
+// null. Parodies of the real lineups: PowerEdgy (PowerEdge), ProLight (ProLiant), SuperSaver (SuperServer), System x and
+// ThinkSystem, Gigabutt's letter-number boards. Lenovoid starts with the 2011 generation, Gigabutt with 2014.
+type Names = readonly (string | null)[];
+const _ = null;
+export const LINEUP: Record<string, { family: string; lines: Record<string, Names> }> = {
+  Dwell: { family: "PowerEdgy", lines: {
+    compute: ["1850", "R610", "R620", "R630", "R640", "R650", "R660"],
+    "compute-2psu": ["1850 DP", "R610 DP", "R620 DP", "R630 DP", "R640 DP", "R650 DP", "R660 DP"],
+    value: ["R200", "R210", "R220", "R230", "R240", "R250", "R260"],
+    memory: ["2850", "R710", "R720", "R730", "R740", "R750", "R760"],
+    quad: ["R900", "R910", "R920", "R930", "R940", "R950", "R960"],
+    storage: ["2900", "R510", "R720xd", "R730xd", "R740xd", "R750xd", "R760xd"],
+    "storage-24": ["2950 SFF", "R710 SFF", "R720xd SFF", "R730xd SFF", "R740xd SFF", "R750xd SFF", "R760xd SFF"],
+    archive: ["NX1950", "NX3000", "NX3200", "NX3230", "NX3240", "NX3340", "NX3440"],
+    gpu: [_, _, "C410x", "C4130", "C4140", "XE8545", "XE8640"],
+    "gpu-8": [_, _, _, _, _, _, "XE9680"],
+    "twin-node": [_, "C6100", "C6220", "C6320", "C6420", "C6520", "C6620"],
+  } },
+  "Hewlett-Packet": { family: "ProLight", lines: {
+    compute: ["DL360 G5", "DL360 G6", "DL360p Gen8", "DL360 Gen9", "DL360 Gen10", "DL360 Gen10 Plus", "DL360 Gen11"],
+    micro: ["DL120 G5", "DL120 G6", "DL120 Gen8", "DL120 Gen9", "DL20 Gen10", "DL20 Gen10 Plus", "DL20 Gen11"],
+    memory: ["DL380 G5", "DL380 G6", "DL380p Gen8", "DL380 Gen9", "DL380 Gen10", "DL380 Gen10 Plus", "DL380 Gen11"],
+    bigmem: ["DL385 G5", "DL385 G6", "DL385p Gen8", "DL385 Gen9", "DL385 Gen10", "DL385 Gen10 Plus", "DL385 Gen11"],
+    quad: ["DL580 G5", "DL580 G7", "DL580 Gen8", "DL580 Gen9", "DL580 Gen10", "DL560 Gen10 Plus", "DL560 Gen11"],
+    storage: ["DL180 G5", "DL180 G6", "DL180 Gen8", "DL180 Gen9", "DL180 Gen10", "DL180 Gen10 Plus", "DL180 Gen11"],
+    "gpu-8": [_, _, _, _, "Apollo 6500 Gen10", "Apollo 6500 Gen10 Plus", "Apollo 6500 Gen11"],
+    "twin-node": [_, _, _, "Apollo 2000 Gen9", "Apollo 2000 Gen10", "Apollo 2000 Gen10 Plus", "Apollo 2000 Gen11"],
+    arm: [_, _, _, _, _, "RL300 Gen11", "RL300 Gen12"],
+  } },
+  SuperMacro: { family: "SuperSaver", lines: {
+    compute: ["6015P-TR", "6016T-URF", "6017R-WRF", "6018R-WTR", "6019P-WT", "1029P-WTR", "SYS-121C-TN10R"],
+    value: ["5015M-T", "5016I-T", "5017R-MTF", "5018R-WR", "5019P-MTR", "1019P-WTR", "SYS-111E-WR"],
+    micro: ["5015M-MT", "5016T-MTF", "5017C-MTF", "5018D-MTF", "5019S-MR", "5019C-MR", "SYS-511E-WR"],
+    dense: ["6015T-TB", "6016T-NTF", "6017R-NTF", "6018R-TDW", "6019P-WTR", "1029U-TRTP", "SYS-121H-TNR"],
+    memory: ["6025B-TR+", "6026T-URF", "6027R-72RFTP", "6028R-WTR", "6029P-WTR", "2029U-TRT", "SYS-221H-TNR"],
+    quad: [_, _, _, _, "8049U-E1CR4T", "SYS-240P-TNRT", "SYS-241H-TNRTTP"],
+    storage: ["6025W-NTR", "6026T-RFT+", "6027R-E1R12L", "6028R-E1CR12L", "6029P-E1CR12L", "2029P-E1CR12L", "SSG-221P-C9R"],
+    "storage-24": ["6025W-URB", "6026T-6RF+", "6027R-E1R24N", "6028R-E1CR24N", "6029P-E1CR24L", "2029U-E1CR25M", "SYS-221H-TN24R"],
+    backup: ["SC847E1", "847E16-R1400", "6047R-E1R36L", "6048R-E1CR36L", "6049P-E1CR36L", "6049P-E1CR36H", "SSG-641E-E1CR36L"],
+    archive: [_, _, "6047R-E1R72L", "6048R-E1CR60L", "6049P-E1CR60L", "6049P-E1CR60H", "SSG-640SP-E1CR60"],
+    gpu: [_, _, "7047GR-TRF", "7048GR-TR", "7049GP-TRT", "SYS-420GP-TNR", "SYS-421GE-TNRT"],
+    "gpu-8": [_, _, _, _, "4029GP-TRT2", "AS-4124GS-TNR", "SYS-421GU-TNXR"],
+    "twin-node": [_, "6026TT-HTRF", "6027TR-HTRF", "6028TP-HTR", "6029TP-HTR", "2029TP-HTR", "SYS-221BT-HNTR"],
+    arm: [_, _, _, _, _, "ARS-110M-NR", "ARS-210M-NR"],
+  } },
+  Lenovoid: { family: "", lines: {
+    compute: [_, _, "System x3550 M4", "System x3550 M5", "ThinkSystem SR630", "ThinkSystem SR630 V2", "ThinkSystem SR630 V3"],
+    value: [_, _, "System x3250 M4", "System x3250 M5", "ThinkSystem SR250", "ThinkSystem SR250 V2", "ThinkSystem SR250 V3"],
+    memory: [_, _, "System x3650 M4", "System x3650 M5", "ThinkSystem SR650", "ThinkSystem SR650 V2", "ThinkSystem SR650 V3"],
+    bigmem: [_, _, "System x3750 M4", _, "ThinkSystem SR590", "ThinkSystem SR590 V2", "ThinkSystem SR655 V3"],
+    quad: [_, _, "System x3850 X5", "System x3850 X6", "ThinkSystem SR850", "ThinkSystem SR850 V2", "ThinkSystem SR850 V3"],
+    gpu: [_, _, _, _, "ThinkSystem SR670", "ThinkSystem SR670 V2", "ThinkSystem SR675 V3"],
+    "twin-node": [_, _, _, _, "ThinkSystem SD530", "ThinkSystem SD630 V2", "ThinkSystem SD650 V3"],
+  } },
+  Gigabutt: { family: "", lines: {
+    compute: [_, _, _, "R180-F28", "R181-2A0", "R182-Z90", "R183-Z90"],
+    micro: [_, _, _, "R121-X30", "R121-340", "R163-S30", "R163-Z30"],
+    dense: [_, _, _, _, "R181-NA0", "R182-NA1", "R183-S90"],
+    memory: [_, _, _, "R280-F3C", "R281-3C2", "R282-Z93", "R283-Z93"],
+    storage: [_, _, _, _, "S251-3O0", "S252-ZC0", "S253-Z40"],
+    gpu: [_, _, _, _, "G191-H44", "G242-Z10", "G293-S40"],
+    "gpu-8": [_, _, _, _, "G291-281", "G492-ZD2", "G593-SD0"],
+    "twin-node": [_, _, _, _, "H261-H60", "H262-Z62", "H263-S62"],
+    arm: [_, _, _, _, _, "R272-P30", "R263-P33"],
+  } },
+};
+// The manufacturers that build a line in a generation (index 0 for G1).
+const lineBrands = (line: string, i: number): string[] => Object.keys(LINEUP).filter((b) => LINEUP[b].lines[line]?.[i]);
+// The maker's own name for a server, chassis or node ("PowerEdgy R620", "SuperSaver 6027TR-HTRF node"); other models keep
+// their catalog name.
+export function modelName(m: DeviceModel, brand: string): string {
+  if (!m.line || m.gen === undefined) return m.name;
+  const lineup = LINEUP[brand], name = lineup?.lines[m.line]?.[m.gen - 1];
+  if (!name) return m.name;
+  return `${lineup.family} ${name}`.trim() + (m.chassis ? " node" : "");
+}
 
 // A generation stays in the shop until the one two steps newer arrives.
 const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
-  SERVER_LINES.filter((v) => v.from <= g.year).map((v) => {
+  SERVER_LINES.filter((v) => v.from <= g.year && lineBrands(v.id, i).length).map((v) => {
     const off = GENERATIONS[i + 2];
     // A line may ship fewer drives than it has bays and smaller drives in the early generations (0 takes the generation's).
     const own = v as { bayN?: readonly number[]; driveN?: readonly number[]; driveGb?: readonly number[] };
@@ -318,7 +421,9 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
       id: `g${i + 1}-${v.id}`,
       name: `${v.name} G${i + 1}`,
       kind: "server" as const,
-      brands: [...v.brands],
+      brands: lineBrands(v.id, i),
+      line: v.id,
+      gen: i + 1,
       height: v.height,
       ports: ports(v.ports, portGbit(g.year)),
       watts: Math.round(g.watts * v.watts),
@@ -331,7 +436,7 @@ const SERVERS: DeviceModel[] = GENERATIONS.flatMap((g, i) =>
       server: {
         arch: v.arch, makers: [...v.makers], sockets: v.sockets, cores: Math.round(g.cores * v.cores), ramGb, maxRamGb: 2 * ramGb,
         dimmSlots, bays, pcie: v.pcie, psuBays: 2, diskGb: driveGb * driveN, disk: v.disk === "gen" ? g.disk : "HDD", gpus: v.gpus,
-        drives: driveN, ramSticks: Math.max(1, Math.round(ramGb / stickGb)),
+        drives: driveN, ramSticks: Math.max(1, Math.round(ramGb / stickGb)), ...("fast" in v && v.fast ? { fast: true } : {}),
       },
     };
   }),
@@ -343,7 +448,7 @@ const TWINS: DeviceModel[] = SERVERS.filter((m) => m.id.endsWith("-twin-node")).
   const id = node.id.replace(/-node$/, "");
   node.chassis = id;
   return {
-    id, name: node.name.replace("Twin node", "Twin 2U"), kind: "chassis", brands: node.brands, height: 2, ports: [], watts: 0, idleWatts: 0, psus: 2, price: node.price * TWIN_NODES,
+    id, name: node.name.replace("Twin node", "Twin 2U"), kind: "chassis", brands: node.brands, line: node.line, gen: node.gen, height: 2, ports: [], watts: 0, idleWatts: 0, psus: 2, price: node.price * TWIN_NODES,
     from: node.from, until: node.until, supportYears: node.supportYears, nodes: { model: node.id, count: TWIN_NODES },
   };
 });
@@ -438,9 +543,9 @@ export const RENAMED_MODELS: Record<string, string> = Object.fromEntries(GENERAT
 ]));
 // Whether a server model carries a baseboard management controller: Dwell and Hewlett-Packet from the 2008 generation,
 // SuperMacro and Lenovoid from 2011, the ARM line always. The 2005 generation and models outside the generation line never do.
-const BMC_FROM: Record<string, number> = { Dwell: 2, "Hewlett-Packet": 2, SuperMacro: 3, Lenovoid: 3 };
+const BMC_FROM: Record<string, number> = { Dwell: 2, "Hewlett-Packet": 2, SuperMacro: 3, Lenovoid: 3, Gigabutt: 4 };
 // What each brand calls its management controller.
-export const BMC_NAME: Record<string, string> = { Dwell: "iDRAQ", "Hewlett-Packet": "iLOL", SuperMacro: "IPMI", Lenovoid: "XClarify" };
+export const BMC_NAME: Record<string, string> = { Dwell: "iDRAQ", "Hewlett-Packet": "iLOL", SuperMacro: "IPMI", Lenovoid: "XClarify", Gigabutt: "MegaRAQ" };
 export function hasBmc(modelId: string, brand: string): boolean {
   const m = /^g(\d+)-(.+)$/.exec(modelId);
   return !!m && (m[2] === "arm" || Number(m[1]) >= (BMC_FROM[brand] ?? 3));
@@ -505,12 +610,17 @@ const HDD_SIZES: [gb: number, from: number, until: number][] = [
   [80, 2005, 2008], [160, 2005, 2009], [500, 2005, 2014], [1000, 2008, 2018],
   [2000, 2010, 2022], [3000, 2012, 2022], [4000, 2014, 2030], [6000, 2015, 2030], [8000, 2017, 2030], [10000, 2018, 2030], [12000, 2019, 2030],
 ];
-export const samePart = (a: PartSpec, b: PartSpec): boolean => a.kind === b.kind && a.size === b.size && a.ff === b.ff && a.vendor === b.vendor && a.gen === b.gen;
+export const samePart = (a: PartSpec, b: PartSpec): boolean => a.kind === b.kind && a.size === b.size && a.ff === b.ff && a.vendor === b.vendor && a.gen === b.gen && a.sku === b.sku;
+// Whether an offer covers a wanted part: the same part, or the same size of a CPU wanted without a name.
+export const offersPart = (offer: PartSpec, want: PartSpec): boolean => samePart(offer, want) || (want.sku === undefined && samePart({ ...offer, sku: undefined }, want));
 // The sized parts the Parts tab sells: whatever the presets in the shop are built from with each CPU maker of the generation, which is
 // the current generation's sizes and the one before, plus NVMe drives.
 export function partOffers(year: number): PartSpec[] {
   const out: PartSpec[] = [], add = (p: PartSpec) => { if (!out.some((o) => samePart(o, p))) out.push(p); };
-  for (const m of MODELS.filter((x) => x.from <= year && (x.until === null || year <= x.until) && x.price > 0)) for (const v of m.server ? vendorsAt(m.server.arch, genOf(m)) : []) componentParts(m, v).forEach(add);
+  for (const m of MODELS.filter((x) => x.from <= year && (x.until === null || year <= x.until) && x.price > 0)) for (const v of m.server ? vendorsAt(m.server.arch, genOf(m)) : []) {
+    componentParts(m, v).forEach(add);
+    for (const c of cpuSkus(v, genOf(m), year)) add({ kind: "cpu", size: c.cores, vendor: v, gen: c.gen, sku: c.id });
+  }
   const g = generationAt(year);
   for (const [gb, from, until] of HDD_SIZES) if (year >= from && year <= until) for (const ff of year >= 2008 && gb <= 2000 ? (["3.5", "2.5"] as const) : (["3.5"] as const)) add({ kind: "hdd", size: gb, ff });
   for (const i of [g - 1, g]) if (NVME_GB[i]) add({ kind: "nvme", size: NVME_GB[i], ff: "nvme" });
