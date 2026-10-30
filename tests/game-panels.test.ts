@@ -68,7 +68,7 @@ describe("game server panels", () => {
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
     ok(order(s, cus, "first"));
     expect(s.workloads.find((w) => w.serviceId)?.clusterId).toBe(game);
-    setNodeState(s, cluster(s, game).nodes[0].deviceId, "cordoned");
+    setNodeState(s, cluster(s, game).nodes[0].deviceId, "cordoned", cluster(s, game).id);
     expect(targetFor(s, want)?.clusterId).toBe(cloud);
     ok(order(s, cus, "second"));
     expect(s.workloads.filter((w) => w.serviceId).map((w) => w.clusterId)).toEqual([game, cloud]);

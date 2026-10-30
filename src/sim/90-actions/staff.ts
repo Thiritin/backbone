@@ -162,12 +162,13 @@ export function queueOperation(s: GameState, kind: OpKind, deviceId: string, com
   }
   if ((kind === "replace" || (kind === "part" && !partId)) && !d.components.some((c) => c.id === componentId)) return fail("error.unknownComponent");
   if (kind === "part" && partId && !s.devices.some((x) => x.id === partId && x.store === loc.id)) return fail("error.noPart");
-  if (kind === "drain" && !clusterOf(s, deviceId)) return fail("error.notNode");
+  // A drain names the software installation in componentId; without one it drains the server's first.
+  if (kind === "drain" && !(componentId ? s.clusters.some((c) => c.id === componentId && c.nodes.some((n) => n.deviceId === deviceId)) : clusterOf(s, deviceId))) return fail("error.notNode");
   if (kind === "php" && !s.clusters.some((c) => c.kind === "panel" && anchorOf(s, c) === deviceId)) return fail("error.notPanelHost");
   if (kind === "recover" && !s.workloads.some((w) => w.id === componentId && w.deviceId === deviceId && w.corrupted)) return fail("error.notCorrupted");
   if (kind === "reset" && !d.hung) return fail("error.notHung");
   if (kind === "bmcreset" && !d.bmcHung) return fail("error.bmcFine");
-  const comp = kind === "replace" || kind === "part" || kind === "recover" ? componentId : null, spare = kind === "part" ? partId : null;
+  const comp = kind === "replace" || kind === "part" || kind === "recover" || kind === "drain" ? componentId ?? null : null, spare = kind === "part" ? partId : null;
   if (s.techOps.some((o) => o.kind === kind && o.deviceId === deviceId && o.componentId === comp && (o.partId ?? null) === spare)) return fail("error.alreadyQueued");
   return { ok: true, id: queueOp(s, kind, deviceId, comp, false, undefined, spare).id };
 }

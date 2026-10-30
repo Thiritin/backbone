@@ -94,6 +94,7 @@ describe("technicians", () => {
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
     for (let i = 0; i < 3; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     expect(workloadsOn(s, "dev3")).toHaveLength(3);
+    s.clusters = s.clusters.map((c) => ({ ...c, ha: { ...c.ha, live: true } }));
     technician(s);
     toMonday(s);
     ok(queueOperation(s, "drain", "dev3"));

@@ -155,7 +155,7 @@ function perform(s: GameState, o: TechOp): ActionResult | "off" {
   if (o.kind === "boot") return continueBoot(s, d.id, true);
   if (o.kind === "gear") return recoverGear(s, d.id, true);
   if (o.kind === "recover") return o.componentId ? recover(s, o.componentId) : { ok: false, error: "error.unknownWorkload" };
-  if (o.kind === "drain") return drain(s, d.id);
+  if (o.kind === "drain") return drain(s, d.id, o.componentId ?? undefined);
   if (o.kind === "update") return o.componentId ? updateSoftware(s, o.componentId) : { ok: false, error: "error.unknownCluster" };
   if (o.kind === "migrate") return o.target ? migrateWebspace(s, o.target.workloadId, o.target.clusterId) : { ok: false, error: "error.unknownWorkload" };
   return upgradeNodePhp(s, d.id);

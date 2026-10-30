@@ -7,6 +7,7 @@ import { hasOrderForm, owns } from "../src/sim/80-business/marketing";
 import { hasModule, inStock, shopBills, stockOf } from "../src/sim/80-business/shop";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { addToGroup, buyModule, chooseShop, createGroup, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../src/sim/90-actions/shop";
+import { cordon, uncordon } from "../src/sim/90-actions/clusters";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, readyGame } from "./fixtures";
 
@@ -139,5 +140,18 @@ describe("server groups", () => {
     expect(addToGroup(s, other, panel.id).ok).toBe(true);
     const back = deserialize(serialize(s));
     expect(back.shop.groups).toEqual(s.shop.groups);
+  });
+});
+
+describe("node actions", () => {
+  it("cordon one software installation and leave the other software on the server alone", () => {
+    const s = readyGame(12);
+    const c = s.clusters.find((x) => x.nodes.length)!, dev = c.nodes[0].deviceId;
+    s.clusters = [...s.clusters, { ...c, id: "cl-other", name: "Other" }];
+    expect(cordon(s, dev, "cl-other").ok).toBe(true);
+    expect(s.clusters.find((x) => x.id === "cl-other")!.nodes[0].state).toBe("cordoned");
+    expect(s.clusters.find((x) => x.id === c.id)!.nodes[0].state).toBe("active");
+    expect(uncordon(s, dev, "cl-other").ok).toBe(true);
+    expect(cordon(s, dev, "nope")).toMatchObject({ ok: false, error: "error.notNode" });
   });
 });

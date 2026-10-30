@@ -10,13 +10,13 @@ import type { GameState } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
 import { privateIp } from "../../../../sim/60-infra/addresses";
-import { balances, hostOfVm, isOwnVm, KEYS, workloadsOn, type Cluster, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
+import { balances, hostOfVm, isOwnVm, KEYS, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
 import { machineScreen } from "../../../../sim/60-infra/oob";
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { nodeUsage, workloadUse } from "../../../../sim/60-infra/usage";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { setMedia } from "../../../../sim/90-actions/console";
-import { addNode, createVm, deleteVm, PANEL_VM_SIZE, removeNode, resizeVm, setBalancer, setHa } from "../../../../sim/90-actions/clusters";
+import { addNode, cordon, createVm, deleteVm, drain, evacuate, uncordon, PANEL_VM_SIZE, removeNode, resizeVm, setBalancer, setHa } from "../../../../sim/90-actions/clusters";
 import { mountableImages } from "../../../../sim/90-actions/media";
 import { joinableServers } from "../../../../sim/90-actions/software";
 import { buyAppSuite, cancelAppSuite, deployFromSuite } from "../../../../sim/90-actions/suite";
@@ -216,6 +216,18 @@ export function BalancerTile({ game, c, className = "cx-suite" }: { game: GameSt
   );
 }
 
+// Cordon, drain, evacuate and uncordon one node of this software installation; other software on the server is untouched.
+export function NodeActions({ c, n, className }: { c: Cluster; n: ClusterNode; className: string }) {
+  const act = useStore((s) => s.act);
+  return <>
+    {n.state === "active"
+      ? <button className={className} onClick={() => act(cordon, n.deviceId, c.id)}>Cordon</button>
+      : <button className={className} onClick={() => act(uncordon, n.deviceId, c.id)}>Uncordon</button>}
+    {(n.state === "active" || n.state === "cordoned") && <button className={className} onClick={() => act(drain, n.deviceId, c.id)}>Drain</button>}
+    {n.state !== "maintenance" && <button className={className} onClick={() => act(evacuate, n.deviceId, c.id)}>Evacuate</button>}
+  </>;
+}
+
 // The nodes with their usage; where the hypervisor clusters this year, Add node, Remove node and the HA flags.
 export function NodeList({ game, c, f, className = "cx-table" }: { game: GameState; c: Cluster; f: ConsoleFeatures; className?: string }) {
   const act = useStore((s) => s.act), join = f.cluster ? joinableServers(game, c.id) : [], [adding, setAdding] = useState(false);
@@ -224,7 +236,7 @@ export function NodeList({ game, c, f, className = "cx-table" }: { game: GameSta
   return (
     <>
       <table className={className}>
-        <thead><tr><th>Node</th><th>Status</th><th>CPU</th><th>Memory</th><th>VMs</th>{f.cluster && <th />}</tr></thead>
+        <thead><tr><th>Node</th><th>Status</th><th>CPU</th><th>Memory</th><th>VMs</th><th /></tr></thead>
         <tbody>
           {c.nodes.map((n) => {
             const u = nodeUsage(game, n.deviceId), vms = workloadsOn(game, n.deviceId).length;
@@ -235,7 +247,10 @@ export function NodeList({ game, c, f, className = "cx-table" }: { game: GameSta
                 <td><Bar use={[u.used.vcpu, u.physical.vcpu]} /><span className="cx-use num">{num(u.used.vcpu)} of {u.physical.vcpu}</span></td>
                 <td><Bar use={[u.used.ramGb, u.physical.ramGb]} /><span className="cx-use num">{ram(+u.used.ramGb.toFixed(1))} of {ram(u.physical.ramGb)}</span></td>
                 <td className="num">{vms}</td>
-                {f.cluster && <td>{c.nodes.length > 1 && vms === 0 && <button className="cx-btn" onClick={() => act(removeNode, n.deviceId)}>Remove node</button>}</td>}
+                <td>
+                  <NodeActions c={c} n={n} className="cx-btn" />
+                  {f.cluster && c.nodes.length > 1 && vms === 0 && <button className="cx-btn" onClick={() => act(removeNode, n.deviceId)}>Remove node</button>}
+                </td>
               </tr>
             );
           })}

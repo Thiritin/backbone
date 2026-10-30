@@ -9,6 +9,8 @@ import { groupOf, hasModule, shopActive, stockOf, type Stock } from "../../../si
 import { addToGroup, buyModule, chooseShop, createGroup, deleteGroup, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../../../sim/90-actions/shop";
 import { SERVES, type SoftwareKind } from "../../../sim/10-catalog/platforms";
 import { useStore } from "../../store";
+import { NodeActions } from "../browser/consoles/HypervisorBase";
+import type { NodeState } from "../../../sim/60-infra/cluster";
 import { formatDay } from "../billing/BillingApp";
 import { PRODUCT } from "../support/labels";
 
@@ -131,6 +133,7 @@ function StockList({ game }: { game: GameState }) {
   );
 }
 
+const NODE_STATE: Record<NodeState, string> = { active: "Active", cordoned: "Cordoned", draining: "Draining", maintenance: "Maintenance" };
 const KIND: Partial<Record<SoftwareKind, string>> = { panel: "Web panels", cloud: "Hypervisors", game: "Game panels", dns: "DNS", vpn: "VPN", storage: "Storage" };
 
 // Server groups: which software installations the shop sells from and deploys to.
@@ -151,9 +154,18 @@ function Groups({ game }: { game: GameState }) {
               <button className="btn" onClick={() => act(deleteGroup, g.id)}>Delete</button>
             </div>
             {g.members.map((id) => game.clusters.find((c) => c.id === id)).filter((c) => !!c).map((c) => (
-              <div key={c.id} className="mkt-row">
-                <span className="mkt-grow">{c.name}</span>
-                <button className="btn" onClick={() => act(removeFromGroup, g.id, c.id)}>Remove</button>
+              <div key={c.id} className="mkt-list">
+                <div className="mkt-row">
+                  <span className="mkt-grow">{c.name}</span>
+                  <button className="btn" onClick={() => act(removeFromGroup, g.id, c.id)}>Remove</button>
+                </div>
+                {c.nodes.map((n) => (
+                  <div key={n.deviceId} className="mkt-row">
+                    <span className="mkt-grow mkt-sub">{game.devices.find((d) => d.id === n.deviceId)?.label ?? game.devices.find((d) => d.id === n.deviceId)?.name}</span>
+                    <span className="pill">{NODE_STATE[n.state]}</span>
+                    <NodeActions c={c} n={n} className="btn" />
+                  </div>
+                ))}
               </div>
             ))}
             {free.length > 0 && (

@@ -6,7 +6,7 @@ import { pduOf } from "../../../sim/60-infra/pdu";
 import { freeSlots, isPlugged, locationOf, travelCost } from "../../../sim/60-infra/status";
 import { startBurnin } from "../../../sim/90-actions/burnin";
 import { burning } from "../../../sim/60-infra/status";
-import { cordon, drain, removeNode, uncordon } from "../../../sim/90-actions/clusters";
+import { removeNode } from "../../../sim/90-actions/clusters";
 import { addSecondPsu, buyOutLease } from "../../../sim/90-actions/hardware";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
@@ -72,7 +72,6 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
   const loads = server ? workloadsOn(game, d.id) : [];
   const lease = d.lease ? game.leases.find((l) => l.id === d.lease) : undefined;
   const psuPrice = d.rackId ? secondPsuPrice(d) : null;
-  const busy = node && (node.state === "draining" || node.state === "maintenance");
   return [
     ui.open && { label: "Show details", run: ui.open },
     null,
@@ -90,9 +89,6 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
       { label: "Full, 48 hours", run: () => act(startBurnin, d.id, true) },
     ] },
     ...(server && d.rackId && ui.move ? moveEntries(game, d, ui) : []),
-    node && (node.state === "active" ? { label: "Cordon", run: () => act(cordon, d.id) } : (node.state === "cordoned" || node.state === "draining") && { label: "Uncordon", run: () => act(uncordon, d.id) }),
-    node && !busy && { label: "Drain", run: () => act(drain, d.id) },
-    node && !busy && techItem(game, d.id, "drain"),
     cluster && consoleEntry(game, cluster.id),
     node && cluster && cluster.nodes.length > 1 && !loads.length && { label: "Remove from cluster", run: () => act(removeNode, d.id) },
     null,

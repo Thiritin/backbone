@@ -10,7 +10,7 @@ import { nodeCapacity, nodeUsed, vmOf, workloadsOf, workloadsOn } from "../src/s
 import { deviceHealth, freeSlots, installedCores, installedRamGb, installedVcpu, rackPower } from "../src/sim/60-infra/status";
 import { nodeUsage } from "../src/sim/60-infra/usage";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addNode, cordon, createVm, drain, installPanelInVm, resizeVm, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
+import { addNode, cordon, createVm, drain, evacuate, installPanelInVm, resizeVm, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { buyDevice, freeFloor } from "./fixtures";
@@ -186,7 +186,10 @@ describe("nodes", () => {
     expect(err(removeNode(s, "dev3"))).toBe("error.nodeNotEmpty");
     expect(err(unmountDevice(s, "dev3"))).toBe("error.serverInUse");
     expect(err(sellDevice(s, "dev3"))).toBe("error.serverInUse");
+    // Without live migration a drain leaves the VMs where they are; an evacuation moves them cold.
     ok(drain(s, "dev3"));
+    expect(workloadsOn(s, "dev3")).toHaveLength(3);
+    ok(evacuate(s, "dev3"));
     expect(workloadsOn(s, second)).toHaveLength(3);
     expect(s.clusters[0].nodes[0].state).toBe("maintenance");
     ok(removeNode(s, "dev3"));
@@ -211,6 +214,7 @@ describe("nodes", () => {
     for (let i = 0; i < 5; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)), clusterId: cluster, deviceId: "dev3" }));
     ok(uncordon(s, second));
     for (let i = 0; i < 2; i++) ok(provisionService(s, cus, "vps", { label: `w${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)) }));
+    s.clusters = s.clusters.map((c) => (c.id === cluster ? { ...c, ha: { ...c.ha, live: true } } : c));
     ok(drain(s, "dev3"));
     expect(workloadsOn(s, "dev3")).toHaveLength(0);
     expect(workloadsOn(s, second)).toHaveLength(7);
@@ -236,7 +240,7 @@ describe("outages and billing", () => {
     s.hour = 5;
     s.devices = s.devices.map((d) => (d.id === "dev3" ? { ...d, dataLost: 5 } : d));
     expect(serviceOnline(s, id)).toBe(false);
-    ok(drain(s, "dev3"));
+    ok(evacuate(s, "dev3"));
     expect(workloadsOf(s, id)[0].deviceId).toBe(second);
     expect(serviceOnline(s, id)).toBe(true);
   });

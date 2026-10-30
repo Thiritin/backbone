@@ -325,16 +325,23 @@ export function pickNode(
   return best?.id ?? null;
 }
 
-// Moves every workload it can off a draining node; an emptied node goes into maintenance. Returns the workloads left.
+// Whether a workload leaves its node without downtime: a web space or container always, a VM only by live migration.
+export const movesLive = (s: GameState, c: Cluster, w: Workload, fromId: string, toId: string): boolean => {
+  if (!(c.kind === "cloud" || isService(c.kind) || isOwnVm(w))) return true;
+  const from = s.devices.find((d) => d.id === fromId), to = s.devices.find((d) => d.id === toId);
+  return !!c.platform && softwareById(c.platform).live && c.ha.live && !!from && !!to && liveBetween(s, from, to);
+};
+
+// Moves every workload it can live off a draining node; an emptied node goes into maintenance. Returns the workloads left.
 export function moveOff(s: GameState, cluster: Cluster, deviceId: string): number {
   // ponytail: migrations are instant; economy.md's migration times and two moves per node come with link bandwidth.
   let left = 0;
   for (const w of s.workloads.filter((x) => x.deviceId === deviceId && x.clusterId === cluster.id)) {
     const to = pickNode(s, cluster, w, deviceId);
-    if (!to) left++;
+    if (!to || !movesLive(s, cluster, w, deviceId, to)) left++;
     else s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, deviceId: to, placedAt: s.hour } : x));
   }
-  if (!left) setNodeState(s, deviceId, "maintenance");
+  if (!left) setNodeState(s, deviceId, "maintenance", cluster.id);
   if (!left) moveControlPlaneOff(s, cluster.id, deviceId);
   return left;
 }
@@ -348,8 +355,9 @@ export function moveControlPlaneOff(s: GameState, clusterId: string, deviceId: s
   return !!to;
 }
 
-export function setNodeState(s: GameState, deviceId: string, state: NodeState) {
-  s.clusters = s.clusters.map((c) => (c.nodes.some((n) => n.deviceId === deviceId) ? { ...c, nodes: c.nodes.map((n) => (n.deviceId === deviceId ? { ...n, state } : n)) } : c));
+// The node state of one software installation on a server; other software on the same server keeps its own.
+export function setNodeState(s: GameState, deviceId: string, state: NodeState, clusterId: string) {
+  s.clusters = s.clusters.map((c) => (c.id === clusterId ? { ...c, nodes: c.nodes.map((n) => (n.deviceId === deviceId ? { ...n, state } : n)) } : c));
 }
 
 // The web sites of a panel host the player took offline or that were compromised.

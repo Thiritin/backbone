@@ -18,6 +18,7 @@ import { burning, freeSlots, installedRamGb, locationOf, rackPower, working } fr
 import { addService } from "./customers";
 import { assignService } from "../60-infra/addresses";
 import type { ActionResult } from "./hardware";
+import { migrateWorkload } from "./vms";
 import { buyLicenses, licenseDue } from "../85-products/products";
 import { sizeOf } from "../30-market/spec";
 
@@ -282,19 +283,38 @@ export function removeNode(s: GameState, deviceId: string, clusterId?: string): 
   return { ok: true };
 }
 
-const nodeAction = (s: GameState, deviceId: string, state: "active" | "cordoned"): ActionResult => {
-  if (!clusterOf(s, deviceId)) return fail("error.notNode");
-  setNodeState(s, deviceId, state);
+// Cordon, uncordon, drain and evacuate act on one software installation on a server (docs/design/shop.md, section 5);
+// without a cluster id they take the server's first one.
+const nodeOf = (s: GameState, deviceId: string, clusterId?: string): Cluster | undefined =>
+  clusterId ? clustersOf(s, deviceId).find((x) => x.id === clusterId) : clusterOf(s, deviceId);
+const nodeAction = (s: GameState, deviceId: string, state: "active" | "cordoned", clusterId?: string): ActionResult => {
+  const c = nodeOf(s, deviceId, clusterId);
+  if (!c) return fail("error.notNode");
+  setNodeState(s, deviceId, state, c.id);
   return { ok: true };
 };
-export const cordon = (s: GameState, deviceId: string): ActionResult => nodeAction(s, deviceId, "cordoned");
-export const uncordon = (s: GameState, deviceId: string): ActionResult => nodeAction(s, deviceId, "active");
+export const cordon = (s: GameState, deviceId: string, clusterId?: string): ActionResult => nodeAction(s, deviceId, "cordoned", clusterId);
+export const uncordon = (s: GameState, deviceId: string, clusterId?: string): ActionResult => nodeAction(s, deviceId, "active", clusterId);
 
-// Moves every workload that fits elsewhere now; the rest follow each hour as room appears.
-export function drain(s: GameState, deviceId: string): ActionResult {
-  const c = clusterOf(s, deviceId);
+// Moves every workload that can move live and fits elsewhere now; the rest follow each hour as room appears.
+export function drain(s: GameState, deviceId: string, clusterId?: string): ActionResult {
+  const c = nodeOf(s, deviceId, clusterId);
   if (!c) return fail("error.notNode");
-  setNodeState(s, deviceId, "draining");
+  setNodeState(s, deviceId, "draining", c.id);
+  moveOff(s, s.clusters.find((x) => x.id === c.id)!, deviceId);
+  return { ok: true };
+}
+
+// Moves everything that fits elsewhere now, cold where live is not possible; what fits nowhere stays and drains later.
+export function evacuate(s: GameState, deviceId: string, clusterId?: string): ActionResult {
+  const c = nodeOf(s, deviceId, clusterId);
+  if (!c) return fail("error.notNode");
+  setNodeState(s, deviceId, "draining", c.id);
+  for (const w of s.workloads.filter((x) => x.deviceId === deviceId && x.clusterId === c.id)) {
+    const to = pickNode(s, s.clusters.find((x) => x.id === c.id)!, w, deviceId);
+    // A VM the migration refuses, such as one whose disk died with the node, restarts on the new node as it is.
+    if (to && !migrateWorkload(s, w.id, to).ok) s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, deviceId: to, placedAt: s.hour } : x));
+  }
   moveOff(s, s.clusters.find((x) => x.id === c.id)!, deviceId);
   return { ok: true };
 }
