@@ -55,7 +55,7 @@ describe("installing software from the shell", () => {
     }
     expect(w).toBeNull();
     expect(s.company.domain).toBeNull();
-    expect(byHour).toEqual([[log[2]], [log[3], log[4]], [log[5], "Proxmocks installation complete.", `You can access your new installation at https://${privateIp(s, "dev3")}/`, "Reboot now to finish the installation."]]);
+    expect(byHour).toEqual([[log[2]], [log[3], log[4]], [log[5], "Proxmocks installation complete.", `You can access your new installation at https://${privateIp(s, "dev3")}:8006/`, "Reboot now to finish the installation."]]);
     expect(clusterOf(s, "dev3")?.platform).toBe("proxmocks");
     expect(text(s, "dpkg -l", at)).toMatch(/ii {2}proxmocks-ve +2017 +amd64 +Proxmocks/);
   });

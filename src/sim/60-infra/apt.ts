@@ -6,11 +6,11 @@ import { nowHours, yearOf } from "../00-core/time";
 import { SOFTWARE, softwareById, type Software } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { installBlock, uninstallSoftware, upgradable, upgradeServer } from "../90-actions/software";
-import { machineOf } from "./cluster";
+import { clustersOn, machineOf } from "./cluster";
 import { DESK, releaseOf, treeOf } from "./fs";
 import { installFromSite } from "../90-actions/console";
 import { machineNet, osUp } from "./oob";
-import { consoleCluster } from "../80-business/consoles";
+import { consoleSuffix } from "../80-business/consoles";
 import { fqdn } from "../30-customers/domains";
 import { privateIp } from "./addresses";
 import type { CommandResult, Watch } from "./terminal";
@@ -81,10 +81,11 @@ export function installLog(sw: Software): string[] {
 }
 
 // What a finished install prints: the address its console answers at, if it has one, and the reboot. The address is the
-// fqdn once the company has a domain and the machine's private address before.
+// fqdn once the company has a domain and the machine's private address before, with the console's port.
 export function installDone(s: GameState, machineId: string, sw: Software): string[] {
   const m = machineOf(s, machineId), host = m?.hostname, at = host && (s.company.domain ? fqdn(s, host) : privateIp(s, m.id));
-  const url = at && consoleCluster(s, host) ? `https://${at}/` : null;
+  const c = clustersOn(s, machineId).find((x) => [x.panel, x.platform, x.switching?.to].includes(sw.id)), port = c && consoleSuffix(s, c);
+  const url = at && typeof port === "string" ? `https://${at}${port}/` : null;
   return [t("term.install.done", { name: sw.name }), ...(url ? [t("term.install.reach", { url })] : []), t("term.install.reboot")];
 }
 // The download lines print as the install starts, the rest across its install hours.
