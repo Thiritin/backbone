@@ -1,0 +1,32 @@
+.sw-hypervee { font: 11px/1.4 Verdana, Tahoma, sans-serif; color: #000000; }
+.sw-hypervee header { padding: 8px 16px; background: linear-gradient(#2b74c7, #0f4c9a); color: #ffffff; }
+.sw-hypervee .corp { display: flex; align-items: center; gap: 6px; font: 700 15px/1 Tahoma, Verdana, sans-serif; }
+.sw-hypervee .cols { display: grid; grid-template-columns: 200px 1fr; }
+.sw-hypervee aside { min-height: 480px; padding: 10px; background: #e8eef7; border-right: 1px solid #b6c6e0; }
+.sw-hypervee aside nav { display: flex; flex-direction: column; gap: 3px; }
+.sw-hypervee aside a { color: #03558c; text-decoration: none; }
+.sw-hypervee aside a[aria-current] { font-weight: 700; color: #000000; }
+.sw-hypervee main { padding: 10px 18px; max-width: 760px; }
+.sw-hypervee .crumb { margin-bottom: 8px; color: #03558c; font-size: 10.5px; }
+.sw-hypervee h1 { margin-bottom: 8px; font: 700 17px/1.3 Verdana, sans-serif; color: #3f3f3f; }
+.sw-hypervee h2 { margin: 12px 0 6px; font-size: 13px; color: #3f3f3f; }
+.sw-hypervee section > * + * { margin-top: 8px; }
+.sw-hypervee section ul { padding-left: 16px; }
+.sw-hypervee th { background: #cccccc; padding-left: 6px; }
+.sw-hypervee td { padding-left: 6px; border-bottom: 1px solid #dddddd; }
+.sw-hypervee .sws-cta { color: #03558c; }
+.sw-hypervee .foot { margin-top: 24px; color: #666666; font-size: 10px; }
+.sw-hypervee.late { font: 15px/1.6 "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: #171717; }
+.sw-hypervee.late header { background: #ffffff; color: #171717; border-bottom: 1px solid #e6e6e6; }
+.sw-hypervee.late .corp { font: 600 16px/1 "Segoe UI", sans-serif; }
+.sw-hypervee.late aside { background: #ffffff; border-right: 1px solid #e6e6e6; }
+.sw-hypervee .tree { margin-bottom: 8px; color: #505050; font-size: 13px; line-height: 1.8; }
+.sw-hypervee.late aside nav { padding-left: 32px; }
+.sw-hypervee.late aside a { color: #171717; font-size: 13px; }
+.sw-hypervee.late aside a[aria-current] { color: #0063b1; font-weight: 600; box-shadow: inset 2px 0 #0063b1; padding-left: 6px; }
+.sw-hypervee.late main { padding: 16px 32px; }
+.sw-hypervee.late .crumb { font-size: 13px; color: #0063b1; }
+.sw-hypervee.late h1 { font: 600 32px/1.2 "Segoe UI", sans-serif; color: #171717; }
+.sw-hypervee.late h2 { font-size: 22px; font-weight: 600; }
+.sw-hypervee.late th { background: #f2f2f2; }
+.sw-hypervee.late .foot { font-size: 12px; }

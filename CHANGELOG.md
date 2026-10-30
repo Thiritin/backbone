@@ -11,6 +11,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The Delete button in confirmation dialogs is red again on the early desktop themes.
 
 - Time runs faster in companies with many services.
+- The Browser has a home icon that opens the Yahoy! start page, a directory of every site in the game by category, including your own consoles, which replace the Sponsor-Bored and console bookmarks.
+- Every operating system and software has its own website with its features, prices and the commands to install it, and the sites change their look over the years.
 - The first time you open the game, a notice explains that Backbone is in early access and links to GitHub and Discord for feedback.
 - A server's actions now sit in one row of tiles without section headings, and its remote access card only shows when a console is attached.
 - A new Applications app lists every installed app; right-click any app there or in the dock to remove it from the dock, keep it in the dock, or put a link to it on the desktop.

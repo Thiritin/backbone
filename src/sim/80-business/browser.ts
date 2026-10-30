@@ -1,6 +1,9 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
+import { yearOf } from "../00-core/time";
 import { MANUFACTURERS } from "../10-catalog/hardware";
+import { SOFTWARE } from "../10-catalog/platforms";
 import { registrarById, registrarHost, REGISTRARS, type RegistrarId } from "../10-catalog/registrars";
+import { SERVER_OS, type ServerOsId } from "../10-catalog/server-os";
 import { companyDomain } from "../30-customers/domains";
 import { serviceOnline } from "../40-support/status";
 import type { GameState } from "../50-state";
@@ -10,7 +13,7 @@ import { oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
-import { consoleBookmarks, consoleCluster, isDefaced } from "./consoles";
+import { consoleCluster, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
@@ -27,6 +30,9 @@ export type Page =
   | { kind: "kvm"; deviceId: string }
   | { kind: "video" }
   | { kind: "sponsorboard" }
+  | { kind: "index" }
+  | { kind: "software"; id: string }
+  | { kind: "os"; id: ServerOsId }
   | { kind: "notfound" };
 
 export interface Resolved { url: string; host: string; path: string; page: Page; load: Load }
@@ -42,6 +48,9 @@ export const VENDORS = MANUFACTURERS.filter((m) => m.id !== "generic");
 export const vendorHost = (id: string): string => `${id}.example`;
 
 export const BOARD_URL = `${BOARD_HOST}/`;
+// docs/design/software.md, 8.1: the home icon and a new browser session open the site index.
+export const INDEX_HOST = "yahoy.example";
+export const HOME_URL = `www.${INDEX_HOST}/dir/`;
 export const companyUrl = (s: GameState): string => `www.${companyDomain(s)}/`;
 
 // The registrar under contract, or the first one before any contract.
@@ -50,12 +59,10 @@ export function registrarUrl(s: GameState): string {
   return `www.${registrarHost(r)}/`;
 }
 
-// Bookmarks every game has, the registrar, and a console for each management software the company runs.
+// Bookmarks every game has: the company site once launched and the registrar. The index lists the rest.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
   ...(s.marketing.launched ? [{ title: s.company.name, url: companyUrl(s) }] : []),
-  { title: BOARD_TITLE, url: BOARD_URL },
   { title: ((s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0]).name, url: registrarUrl(s) },
-  ...consoleBookmarks(s),
 ];
 
 // Splits what the player typed into a lowercase host and a path with its query; the scheme and a trailing dot fall away.
@@ -116,6 +123,13 @@ export function resolve(s: GameState, raw: string): Resolved {
     const c = customerSite(s, site.id);
     if (c) return out({ kind: "customer", serviceId: site.id }, c.status === "down" ? "down" : c.status === "slow" ? "slow" : "fast");
   }
+  const named = (bare: string) => host === bare || host === `www.${bare}`;
+  if (named(INDEX_HOST)) return out({ kind: "index" });
+  // A software's site exists from the year the software does; an operating system's always.
+  const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
+  if (sw) return out({ kind: "software", id: sw.id });
+  const os = SERVER_OS.find((x) => named(x.site.host));
+  if (os) return out({ kind: "os", id: os.id });
   const vendor = VENDORS.find((m) => host === vendorHost(m.id) || host === `www.${vendorHost(m.id)}`);
   if (vendor) return out({ kind: "vendor", maker: vendor.id });
   if (host === BOARD_HOST || host === `www.${BOARD_HOST}`) return out({ kind: "sponsorboard" });

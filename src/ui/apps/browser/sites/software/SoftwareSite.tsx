@@ -1,0 +1,132 @@
+import { useState, type ReactNode } from "react";
+import { euroPrice } from "../../../../../sim/00-core/money";
+import { SOFTWARE, type Software } from "../../../../../sim/10-catalog/platforms";
+import { SERVER_OS, serverOsAt, serverOsById, type ServerOs, type ServerOsId } from "../../../../../sim/10-catalog/server-os";
+import type { Look, Site } from "../../../../../sim/10-catalog/sites";
+import "./software.css";
+
+// docs/design/software.md, 8.3: the pieces every software and OS site lays out in its own look.
+export type SitePage = "home" | "features" | "pricing" | "download";
+export interface Product { id: string; name: string; site: Site; sw?: Software; os?: ServerOs }
+export interface SiteProps { p: Product; look: Look; page: SitePage; year: number; go: (path: string) => void }
+
+export const productOf = (kind: "software" | "os", id: string): Product | null => {
+  const sw = kind === "software" ? SOFTWARE.find((x) => x.id === id) : undefined, os = kind === "os" ? SERVER_OS.find((x) => x.id === id) : undefined;
+  const x = sw ?? os;
+  return x ? { id: x.id, name: x.name, site: x.site, sw, os } : null;
+};
+
+const PAGES: SitePage[] = ["home", "features", "pricing", "download"];
+export const pageOf = (path: string): SitePage => PAGES.find((x) => x === path.split(/[/?#]/)[1]) ?? "home";
+const pathOf = (page: SitePage) => (page === "home" ? "/" : `/${page}`);
+const gui = (p: Product) => p.sw?.install.kind === "gui";
+
+export function Nav({ p, page, go, className, labels }: Pick<SiteProps, "p" | "page" | "go"> & { className?: string; labels?: Partial<Record<SitePage, string>> }) {
+  const name: Record<SitePage, string> = { home: "Home", features: "Features", pricing: "Pricing", download: gui(p) ? "Install" : "Download", ...labels };
+  return (
+    <nav className={className}>
+      {PAGES.map((x) => (
+        <a key={x} href={`#${x}`} aria-current={x === page ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(pathOf(x)); }}>{name[x]}</a>
+      ))}
+    </nav>
+  );
+}
+
+export const Link = ({ to, go, className, children }: { to: SitePage; go: SiteProps["go"]; className?: string; children: ReactNode }) => (
+  <a href={`#${to}`} className={className} onClick={(e) => { e.preventDefault(); go(pathOf(to)); }}>{children}</a>
+);
+
+export const Features = ({ p, className }: { p: Product; className?: string }) => (
+  <ul className={className}>{p.site.features.map((f) => <li key={f}>{f}</li>)}</ul>
+);
+
+const UNIT: Record<Software["pricing"], string> = { free: "", account: "per web space a month", server: "per server a month", core: "per physical core a month" };
+const windoorsFee = () => euroPrice(serverOsById("windoors").fee);
+
+// The license as the catalog has it, and the Windoors license where the software runs on nothing else.
+export function Pricing({ p, className }: { p: Product; className?: string }) {
+  const rows: [string, string][] = p.os
+    ? [[p.os.name, p.os.fee ? `${euroPrice(p.os.fee)} per machine a month` : "Free"]]
+    : [[p.name, p.sw!.pricing === "free" ? "Free" : `${euroPrice(p.sw!.fee)} ${UNIT[p.sw!.pricing]}`]];
+  const windoors = p.sw && p.sw.os.length === 1 && p.sw.os[0] === "windoors";
+  return (
+    <div className={className}>
+      <table>
+        <thead><tr><th>Edition</th><th>License</th></tr></thead>
+        <tbody>{rows.map(([a, b]) => <tr key={a}><td>{a}</td><td className="num">{b}</td></tr>)}</tbody>
+      </table>
+      {windoors && <p className="sws-note">{p.name} runs on Windoors Server, which costs {windoorsFee()} per machine a month on top.</p>}
+    </div>
+  );
+}
+
+const IMAGE: Record<ServerOsId, (version: string) => string> = { lunix: (v) => `Debiant ${v} netinst`, windoors: (v) => `Windoors Server ${v}` };
+
+// The install commands with a Copy button for the real clipboard; GUI software and operating systems say where they install from.
+export function Commands({ p, year, className }: { p: Product; year: number; className?: string }) {
+  const [copied, setCopied] = useState(false);
+  if (p.os) {
+    const out = p.os.versions.filter((v) => v.from <= year).reverse();
+    return (
+      <div className={className}>
+        <p>Boot a server from the USB stick, or a virtual machine from the ISO list, to install {IMAGE[p.os.id](serverOsAt(p.os.id, year).version)}.</p>
+        <table>
+          <thead><tr><th>Release</th><th>Since</th></tr></thead>
+          <tbody>{out.map((v) => <tr key={v.version}><td>{p.os!.name} {v.version}{v.name && ` ${v.name}`}</td><td className="num">{v.from}</td></tr>)}</tbody>
+        </table>
+      </div>
+    );
+  }
+  if (gui(p)) return <div className={className}><p>{p.name} installs from the Windoors Server desktop.</p></div>;
+  const text = p.sw!.install.commands.join("\n");
+  // The clipboard API needs a secure page and permission; a selected textarea copies where it is refused.
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const area = document.createElement("textarea");
+      area.value = text;
+      document.body.append(area);
+      area.select();
+      const ok = document.execCommand("copy");
+      area.remove();
+      if (!ok) return;
+    }
+    setCopied(true);
+  };
+  return (
+    <div className={className}>
+      <div className="sws-cmd">
+        <pre>{text}</pre>
+        <button type="button" onClick={copy}>{copied ? "Copied" : "Copy"}</button>
+      </div>
+    </div>
+  );
+}
+
+// The page body below a site's own header and hero.
+export function Body({ p, page, year, go, className }: SiteProps & { className?: string }) {
+  if (page === "features") return <section className={className}><h2>Features</h2><Features p={p} /></section>;
+  if (page === "pricing") return <section className={className}><h2>Pricing</h2><Pricing p={p} /></section>;
+  if (page === "download") return <section className={className}><h2>{gui(p) ? "Install" : "Download"}</h2><Commands p={p} year={year} /></section>;
+  return (
+    <section className={className}>
+      <p>{p.site.blurb}</p>
+      <Features p={p} />
+      <Link to="download" go={go} className="sws-cta">{gui(p) ? "Install" : "Download"}</Link>
+    </section>
+  );
+}
+
+// A site without a design of its own yet.
+export function PlainSite(props: SiteProps) {
+  return (
+    <div className="sws-plain">
+      <header><strong>{props.p.name}</strong><Nav {...props} /></header>
+      <h1>{props.p.site.tagline}</h1>
+      <Body {...props} />
+    </div>
+  );
+}
+
+export type SiteComponent = (props: SiteProps) => ReactNode;

@@ -193,13 +193,13 @@ Categories, in this order, each site from the year it exists:
 12. **<Company name>**: the company site, and one row per console the company runs ("Proxmocks VE node001", "cPanic vm001"), each a live link; the row is grey with "down" when the host cannot be reached. This category replaces the console bookmarks.
 13. **Video**: youtub.example.
 
-A software before its `from` year is absent and its address resolves to Not found.
+A software before its `from` year is absent and its address resolves to Not found. In the 2005 look a category opens at `/dir/<category>`, for example `/dir/virtualization`; the 2013 look shows every category at once. Every other path on the host shows the index.
 
 ### 8.3 Site records and eras
 
 Every software and OS has a `Site` record in its catalog entry: `host` (bare, `proxmocks.example`; the Browser accepts it with and without `www.`), `tagline`, `blurb` (two sentences), `features` (five to seven short lines), `eras: [{ from, look }]` with two entries. The Browser resolves the host to `{ kind: "software", id }` or `{ kind: "os", id }`. Pages: Home, Features, Pricing, Download (or Install), at `/`, `/features`, `/pricing`, `/download`, with a nav bar. Pricing shows the license as the catalog has it and the Windoors note where the software needs it. Download holds the commands in a `pre` block with a Copy button that puts them on the real clipboard; for `gui` software it says the software installs from the Windoors desktop.
 
-Each site is its own component and stylesheet under `src/ui/apps/browser/sites/software/<id>.tsx` and `.css`; shared pieces (nav, pricing table, commands block) in `SoftwareSite.tsx`. A look is a colour set, a font stack, a header layout and a hero; no images, code-drawn marks only. One `eraOf(site, year)` helper shared by every site and console.
+Each site is its own component and stylesheet under `src/ui/apps/browser/sites/software/<id>.tsx` and `.css`; shared pieces (nav, pricing table, commands block) in `SoftwareSite.tsx`. A look is a colour set, a font stack, a header layout and a hero; no images, code-drawn marks only. One `eraOf(eras, year)` helper in `src/ui/apps/browser/sites/era.ts` shared by every site and console. Every software with a site record resolves from its `from` year; one without its own component yet renders a plain site from `SoftwareSite.tsx`, and a component is registered in `sites/software/registry.tsx`. An OS site's Download page lists its releases up to the game year.
 
 | Site | Early look (from) | Late look (from) |
 | --- | --- | --- |

@@ -1,0 +1,19 @@
+.sw-lunix { font: 13px/1.5 Verdana, Geneva, sans-serif; color: #222222; }
+.sw-lunix header { display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid #c70036; }
+.sw-lunix .sw-wm { font: 700 30px/1 Verdana, sans-serif; letter-spacing: -0.04em; color: #c70036; }
+.sw-lunix .sub { margin-left: auto; color: #555555; font-style: italic; }
+.sw-lunix .cols { display: grid; grid-template-columns: 180px 1fr; gap: 28px; padding: 20px 24px; }
+.sw-lunix .side { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-right: 1px dotted #c70036; }
+.sw-lunix .side a { padding: 3px 8px; color: #0035c7; }
+.sw-lunix .side a[aria-current] { color: #c70036; font-weight: 700; text-decoration: none; }
+.sw-lunix main { max-width: 680px; }
+.sw-lunix h1 { margin-bottom: 12px; font-size: 20px; color: #c70036; }
+.sw-lunix h2 { margin-bottom: 10px; font-size: 16px; color: #c70036; }
+.sw-lunix section > * + * { margin-top: 12px; }
+.sw-lunix ul { padding-left: 20px; list-style: square; }
+.sw-lunix th { border-bottom: 1px solid #c70036; }
+.sw-lunix .sws-cta { color: #0035c7; font-weight: 700; }
+.sw-lunix footer { margin: 0 24px; padding: 12px 0 24px; border-top: 1px solid #dddddd; color: #777777; font-size: 11px; }
+.sw-lunix.late header { background: #c70036; border-bottom: 0; color: #ffffff; }
+.sw-lunix.late .sw-wm, .sw-lunix.late .sub { color: #ffffff; }
+.sw-lunix.late .side { border-right: 0; background: #f6f0f2; border-radius: 4px; }

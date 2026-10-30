@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fqdn } from "../src/sim/30-customers/domains";
 import { consoleBookmarks, consoleFeatures } from "../src/sim/80-business/consoles";
-import { defaultBookmarks, resolve } from "../src/sim/80-business/browser";
+import { resolve } from "../src/sim/80-business/browser";
 import type { GameState } from "../src/sim/50-state";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
@@ -112,10 +112,9 @@ describe("console resolution", () => {
     expect(resolve(s, fqdn(s, node.hostname!)).page).toMatchObject({ kind: "console", defaced: false });
   });
 
-  it("bookmarks every console the company runs", () => {
+  it("lists every console the company runs", () => {
     const { s } = lab(), marks = consoleBookmarks(s);
     expect(marks.length).toBe(s.clusters.length);
-    expect(defaultBookmarks(s).slice(3)).toEqual(marks);
     for (const m of marks) expect(resolve(s, m.url).page.kind).toBe("console");
   });
 });

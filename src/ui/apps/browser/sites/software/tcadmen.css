@@ -1,0 +1,33 @@
+.sw-tcadmen { min-height: 100%; font: 12px/1.45 Tahoma, Verdana, sans-serif; background: #000000; color: #d6d6d6; }
+.sw-tcadmen header { display: flex; align-items: center; gap: 24px; padding: 12px 20px; background: #0d0d0d; border-bottom: 2px solid #7ac142; }
+.sw-tcadmen .sw-wm { display: flex; align-items: center; gap: 8px; color: #a6ff00; font: 700 26px/1 Tahoma, sans-serif; letter-spacing: -0.02em; }
+.sw-tcadmen nav { display: flex; gap: 16px; }
+.sw-tcadmen nav a { color: #a6ff00; font-weight: 700; text-decoration: none; }
+.sw-tcadmen nav a[aria-current] { color: #ffffff; text-decoration: underline; }
+.sw-tcadmen .board { width: calc(100% - 40px); margin: 16px 20px; border: 1px solid #3a3a3a; }
+.sw-tcadmen .board th { padding: 5px 8px; background: linear-gradient(#4b7d1f, #2d4d12); color: #ffffff; }
+.sw-tcadmen .board td { padding: 6px 8px; background: #141414; border-bottom: 1px solid #2a2a2a; }
+.sw-tcadmen .board tr:nth-child(even) td { background: #1c1c1c; }
+.sw-tcadmen .board b { color: #a6ff00; }
+.sw-tcadmen .board small { color: #888888; }
+.sw-tcadmen main { max-width: 760px; padding: 16px 20px; }
+.sw-tcadmen h2 { margin-bottom: 8px; font-size: 15px; color: #a6ff00; }
+.sw-tcadmen section > * + * { margin-top: 10px; }
+.sw-tcadmen section ul { padding-left: 18px; }
+.sw-tcadmen th { color: #a6ff00; border-bottom: 1px solid #3a3a3a; }
+.sw-tcadmen .sws-cta { color: #a6ff00; }
+.sw-tcadmen footer { padding: 12px 20px; color: #666666; font-size: 10px; }
+.sw-tcadmen.late { font: 15px/1.6 "Segoe UI", "Helvetica Neue", Arial, sans-serif; background: #22262a; color: #d9dde1; }
+.sw-tcadmen.late header { background: #1a1d20; border-bottom: 0; }
+.sw-tcadmen.late .sw-wm { color: #ffffff; font-family: "Segoe UI", sans-serif; }
+.sw-tcadmen.late nav { margin-left: auto; }
+.sw-tcadmen.late nav a { color: #d9dde1; font-weight: 400; }
+.sw-tcadmen.late nav a[aria-current] { color: #7ac142; text-decoration: none; }
+.sw-tcadmen .hero { padding: 56px 40px 32px; }
+.sw-tcadmen .hero h1 { color: #ffffff; font-size: 36px; font-weight: 600; }
+.sw-tcadmen .hero p { max-width: 600px; color: #a8b0b8; }
+.sw-tcadmen .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; padding: 0 40px 40px; }
+.sw-tcadmen .tile { min-height: 90px; padding: 16px; background: #2d3237; border-bottom: 3px solid #7ac142; color: #ffffff; text-decoration: none; }
+.sw-tcadmen.late main { padding: 32px 40px; }
+.sw-tcadmen.late h2 { color: #ffffff; font-size: 24px; }
+.sw-tcadmen.late th { color: #7ac142; }

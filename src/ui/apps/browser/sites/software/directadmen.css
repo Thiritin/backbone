@@ -1,0 +1,31 @@
+.sw-directadmen.early { padding: 16px 24px; font: 16px/1.35 "Times New Roman", Times, serif; color: #000000; }
+.sw-directadmen.early h1 { display: flex; align-items: center; gap: 8px; font-size: 26px; }
+.sw-directadmen .links { display: flex; gap: 6px; margin: 6px 0; }
+.sw-directadmen.early .links a { color: #0000ee; }
+.sw-directadmen.early .links a[aria-current] { color: #551a8b; }
+.sw-directadmen.early .links a + a::before { content: "| "; color: #000000; }
+.sw-directadmen hr { margin: 10px 0; }
+.sw-directadmen.early section > * + * { margin-top: 10px; }
+.sw-directadmen.early h2 { font-size: 20px; }
+.sw-directadmen.early ul { padding-left: 24px; }
+.sw-directadmen.early table { border: 2px outset #999999; background: #ffff99; }
+.sw-directadmen.early th, .sw-directadmen.early td { border: 1px inset #999999; padding: 4px 10px; }
+.sw-directadmen.early .sws-cta { color: #0000ee; }
+.sw-directadmen.early .sws-cmd pre { background: #ffffff; border: 1px dashed #000000; }
+.sw-directadmen .upd { font-size: 12px; }
+.sw-directadmen.late { font: 15px/1.6 "Inter", "Helvetica Neue", Arial, sans-serif; background: #0f1512; color: #e5ece8; }
+.sw-directadmen.late header { position: sticky; top: 0; display: flex; align-items: center; gap: 28px; padding: 14px 40px; background: rgba(15, 21, 18, 0.92); border-bottom: 1px solid #22302a; }
+.sw-directadmen.late .sw-wm { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 20px; color: #ffffff; }
+.sw-directadmen.late nav { display: flex; gap: 22px; margin-left: auto; }
+.sw-directadmen.late nav a { color: #a9bdb2; text-decoration: none; }
+.sw-directadmen.late nav a[aria-current] { color: #3ddc84; }
+.sw-directadmen .hero { padding: 88px 40px 64px; }
+.sw-directadmen .hero h1 { font-size: 48px; font-weight: 800; letter-spacing: -0.03em; color: #3ddc84; }
+.sw-directadmen .hero p { max-width: 560px; margin-top: 12px; color: #a9bdb2; font-size: 17px; }
+.sw-directadmen.late section { padding: 40px; border-top: 1px solid #22302a; }
+.sw-directadmen.late h2 { margin-bottom: 16px; font-size: 26px; color: #ffffff; }
+.sw-directadmen .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; padding: 0; list-style: none; }
+.sw-directadmen .grid li { padding: 16px; border-radius: 8px; background: #17201b; border-left: 3px solid #3ddc84; }
+.sw-directadmen.late th { color: #3ddc84; border-bottom: 1px solid #22302a; }
+.sw-directadmen.late .sws-cmd pre { background: #050806; color: #3ddc84; }
+.sw-directadmen.late footer { padding: 24px 40px; color: #5f7468; font-size: 12px; }

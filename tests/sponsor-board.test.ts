@@ -6,7 +6,7 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { MONTH, type Sponsorship } from "../src/sim/80-business/community";
 import { leadsThisMonth } from "../src/sim/80-business/marketing";
 import { BOARD, boardGranted, boardTick, offerOpen, type SponsorOffer } from "../src/sim/80-business/sponsorboard";
-import { resolve, defaultBookmarks } from "../src/sim/80-business/browser";
+import { resolve } from "../src/sim/80-business/browser";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { acceptSponsorship, postOffer, withdrawOffer } from "../src/sim/90-actions/community";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -231,11 +231,10 @@ describe("the Sponsor-Bored board", () => {
     expect(mine(withBoard)).toEqual(mine(without));
   }, 90_000);
 
-  it("is a site in the Browser with a bookmark from the start", () => {
+  it("is a site in the Browser from the start", () => {
     const s = newGame(1);
     expect(resolve(s, "sponsorbored.example").page).toEqual({ kind: "sponsorboard" });
     expect(resolve(s, "https://www.sponsorbored.example/").page).toEqual({ kind: "sponsorboard" });
-    expect(defaultBookmarks(s).find((m) => m.title === "Sponsor-Bored")).toEqual({ title: "Sponsor-Bored", url: "sponsorbored.example/" });
   });
 
   it("loads old saves without offers", () => {

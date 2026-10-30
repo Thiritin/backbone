@@ -1,11 +1,13 @@
-import { ArrowLeft, ArrowRight, Download, Plus, RotateCw, Star, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, House, Plus, RotateCw, Star, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BOARD_TITLE, companyUrl, defaultBookmarks, resolve, split, VIDEO_TITLE, VIDEO_URL, type Resolved } from "../../../sim/80-business/browser";
+import { BOARD_TITLE, defaultBookmarks, HOME_URL, resolve, split, VIDEO_TITLE, VIDEO_URL, type Resolved } from "../../../sim/80-business/browser";
 import { customerSite } from "../../../sim/80-business/website";
 import { familyOf } from "../../../sim/60-infra/vulns";
 import { consoleTitle } from "../../../sim/80-business/consoles";
 import type { GameState } from "../../../sim/50-state";
 import { MANUFACTURERS } from "../../../sim/10-catalog/hardware";
+import { softwareById } from "../../../sim/10-catalog/platforms";
+import { serverOsById } from "../../../sim/10-catalog/server-os";
 import { registrarById } from "../../../sim/10-catalog/registrars";
 import { reduced } from "../../desktop/motion";
 import { useSessionState } from "../../session";
@@ -16,6 +18,8 @@ import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
 import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
+import { IndexSite } from "./sites/index/IndexSite";
+import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/RegistrarSite";
 import { CannotReach, CustomerSite, HostPage, NotFound, VendorSite, VideoPage } from "./sites/Pages";
 import "./browser.css";
@@ -49,6 +53,9 @@ function titleOf(game: GameState, r: Resolved): string {
     }
     case "video": return VIDEO_TITLE;
     case "sponsorboard": return BOARD_TITLE;
+    case "index": return "Yahoy! Directory";
+    case "software": return softwareById(p.id).name;
+    case "os": return serverOsById(p.id).name;
     default: return "Not found";
   }
 }
@@ -71,12 +78,14 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} />;
   else if (p.kind === "video") body = <VideoPage />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
+  else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "software" || p.kind === "os") body = <SoftwarePage game={game} kind={p.kind} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "console") body = <ConsolePage game={game} hostname={p.hostname} host={r.host} cluster={game.clusters.find((x) => x.id === p.clusterId)} defaced={p.defaced} />;
   else if (p.kind === "ipmi") body = <IpmiPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "kvm") body = <KvmPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "index", "software", "os"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}
@@ -87,8 +96,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
 
 export function BrowserApp() {
   const game = useStore((s) => s.game);
-  const home = companyUrl(game);
-  const [tabs, setTabs] = useSessionState<Tab[]>("browser.tabs", [{ id: 1, history: [home], at: 0, nav: 0 }]);
+  const [tabs, setTabs] = useSessionState<Tab[]>("browser.tabs", [{ id: 1, history: [HOME_URL], at: 0, nav: 0 }]);
   const [active, setActive] = useSessionState<number>("browser.active", tabs[0]?.id ?? 1);
   const [marks, setMarks] = useSessionState<Mark[]>("browser.marks", []);
   const tab = tabs.find((x) => x.id === active) ?? tabs[0];
@@ -143,12 +151,13 @@ export function BrowserApp() {
             </div>
           );
         })}
-        <button className="br-new" aria-label="New tab" onClick={() => open(home)}><Plus aria-hidden /></button>
+        <button className="br-new" aria-label="New tab" onClick={() => open(HOME_URL)}><Plus aria-hidden /></button>
       </div>
       <div className="br-bar">
         <button className="btn icon ghost" aria-label="Back" disabled={tab.at === 0} onClick={() => step(-1)}><ArrowLeft aria-hidden /></button>
         <button className="btn icon ghost" aria-label="Forward" disabled={tab.at >= tab.history.length - 1} onClick={() => step(1)}><ArrowRight aria-hidden /></button>
         <button className="btn icon ghost" aria-label="Reload" onClick={reload}><RotateCw aria-hidden /></button>
+        <button className="btn icon ghost" aria-label="Home" onClick={() => go(HOME_URL)}><House aria-hidden /></button>
         <form className="br-addr" onSubmit={(e) => { e.preventDefault(); if (addr.trim()) go(addr); }}>
           <Favicon game={game} r={r} />
           <input aria-label="Address" value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} />

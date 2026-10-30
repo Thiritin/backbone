@@ -1,0 +1,27 @@
+.sw-openstash { font: 15px/1.55 "Helvetica Neue", Helvetica, Arial, sans-serif; color: #2b2b2b; }
+.sw-openstash header { display: flex; align-items: center; gap: 32px; padding: 16px 40px; border-bottom: 1px solid #ececec; }
+.sw-openstash .sw-wm { display: flex; align-items: center; gap: 8px; color: #da1a32; font: 700 24px/1 "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.02em; }
+.sw-openstash nav { display: flex; gap: 22px; margin-left: auto; }
+.sw-openstash nav a { text-decoration: none; color: #555555; }
+.sw-openstash nav a[aria-current] { color: #da1a32; }
+.sw-openstash .hero { padding: 64px 40px 40px; text-align: center; }
+.sw-openstash .hero h1 { font-size: 40px; font-weight: 300; letter-spacing: -0.02em; }
+.sw-openstash .hero p { max-width: 580px; margin: 14px auto 28px; color: #555555; }
+.sw-openstash .go { display: inline-block; padding: 16px 44px; border-radius: 4px; background: #da1a32; color: #ffffff; font-size: 20px; font-weight: 700; text-decoration: none; }
+.sw-openstash .list { max-width: 580px; margin: 0 auto 40px; padding-left: 20px; }
+.sw-openstash main { max-width: 760px; padding: 32px 40px; }
+.sw-openstash main h2 { margin-bottom: 14px; font-weight: 300; font-size: 28px; }
+.sw-openstash section > * + * { margin-top: 14px; }
+.sw-openstash section ul { padding-left: 20px; }
+.sw-openstash .sws-cta { color: #da1a32; font-weight: 700; }
+.sw-openstash th { border-bottom: 2px solid #da1a32; }
+.sw-openstash footer { padding: 20px 40px; color: #999999; font-size: 12px; border-top: 1px solid #ececec; }
+.sw-openstash.late { background: #f4f6f9; }
+.sw-openstash.late header { background: #0b1e3d; border-bottom: 0; }
+.sw-openstash.late nav a { color: #c9d3e3; }
+.sw-openstash.late .hero { background: #0b1e3d; color: #ffffff; text-align: left; padding: 56px 40px 72px; }
+.sw-openstash.late .hero p { margin: 14px 0 28px; color: #c9d3e3; }
+.sw-openstash.late .go { border-radius: 24px; padding: 12px 32px; font-size: 16px; }
+.sw-openstash .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin: -36px 40px 40px; padding: 0; list-style: none; }
+.sw-openstash .cards li { padding: 20px; border-radius: 8px; background: #ffffff; border-top: 3px solid #da1a32; }
+.sw-openstash.late main { background: #ffffff; margin: 24px 40px; border-radius: 8px; }

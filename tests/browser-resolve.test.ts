@@ -29,7 +29,7 @@ describe("browser resolver", () => {
     expect(resolve(s, d).page).toEqual({ kind: "company" });
     expect(resolve(s, `https://www.${d}/`)).toMatchObject({ page: { kind: "company" }, load: "fast" });
     expect(resolve(s, `${d}/admin`).page).toEqual({ kind: "company" });
-    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["company", "sponsorboard", "registrar", "console", "console"]);
+    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["company", "registrar"]);
     s.marketing.launched = false;
     expect(resolve(s, d).page).toEqual({ kind: "notfound" });
     expect(defaultBookmarks(s).map((m) => m.title)).not.toContain(s.company.name);
