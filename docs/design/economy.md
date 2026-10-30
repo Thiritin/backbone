@@ -1736,6 +1736,21 @@ A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VM
 - **Revert** clears the corruption of a pulled plug when the snapshot is older than the corruption, and closes the loss report item as a restore from backup would. An own VM gets its OS and software back as they were; a VM that hosts a panel needs that panel in the snapshot.
 - **Loss.** A disk lost with its server or datastore loses its snapshots, and a lost disk cannot revert. A VM that leaves VMwhere loses its snapshots.
 
+### Templates
+
+A template is a stopped own VM on a VMwhere cluster kept to clone ready VMs from. Actions live in `src/sim/90-actions/templates.ts`.
+
+| Value | Amount |
+| --- | --- |
+| Making a template | Instant; the VM must be stopped, not busy, with no install running and nothing hosted inside it |
+| Turning it back | Instant, into a stopped VM |
+| Clone time | Disk ÷ (Gbit × 450 GB/h) of the template's storage, at least 1 hour: its datastore's speed, else its node's fastest port |
+| Clone result | A new own VM with the template's size, OS and software, on the host picked or the one the scheduler picks |
+| Clone cost | The once licences a fresh install of its OS and software would buy |
+
+- **Templates** keep their disk booking, OS, software and snapshots. They never start, cannot be migrated, are not balanced, and failover leaves them on a dead node.
+- **Clones** put their disk where a new VM's goes, a datastore with room first. They are busy for the copy; each software they carry runs as its own cluster once the copy is done. A template running mail cannot be cloned.
+
 ## PHP versions
 
 Each version becomes available on 1 January after its release, rounded so the start of the game has 4.4:

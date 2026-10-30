@@ -46,6 +46,7 @@ export function startWorkload(s: GameState, id: string): ActionResult {
   const found = clusterWorkload(s, id);
   if (!found) return fail("error.unknownWorkload");
   if (!found.w.stopped) return fail("error.alreadyRunning");
+  if (found.w.template) return fail("error.isTemplate");
   if (!controlPlaneUp(s, found.c)) return fail("error.controlPlaneDown");
   if (lostDisk(s, found.w)) return fail("error.lostDisk");
   patch(s, id, { stopped: false });
@@ -105,6 +106,7 @@ export function migrateWorkload(s: GameState, id: string, toId: string, announce
   if (!to || (!vmHost && !d)) return fail("error.notNode");
   if (c.kind === "panel" && to.id !== c.id) return migrateWebspace(s, id, to.id, announced);
   if (w.deviceId === toId || w.clusterId === vmHost?.id) return fail("error.sameHost");
+  if (w.template) return fail("error.isTemplate");
   if (lostDisk(s, w)) return fail("error.lostDisk");
   if (w.busyUntil > s.hour || w.migrating) return fail("error.workloadBusy");
   if (!controlPlaneUp(s, c) || !controlPlaneUp(s, to)) return fail("error.controlPlaneDown");
@@ -193,7 +195,7 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
   if (!node) return fail("error.noCapacity");
   const hours = w.backupAt !== null ? restoreHours(s, w) : 0;
   const lostAt = s.devices.find((d) => d.id === w.deviceId)?.dataLost ?? s.hour;
-  patch(s, w.id, { deviceId: node, placedAt: s.hour, busyUntil: s.hour + hours, stopped: false, stuck: undefined, corrupted: undefined, recoverDoneAt: undefined, recoverFailed: undefined, snapshots: undefined });
+  patch(s, w.id, { deviceId: node, placedAt: s.hour, busyUntil: s.hour + hours, stopped: !!w.template, stuck: undefined, corrupted: undefined, recoverDoneAt: undefined, recoverFailed: undefined, snapshots: undefined });
   settleLoss(s, w, lostAt, w.backupAt);
   return { ok: true };
 }
@@ -265,7 +267,7 @@ export function rescueWorkload(s: GameState, id: string, toId: string, how: How 
   if ("error" in job) return fail(job.error);
   if (s.cash < job.cost) return fail("error.noCash");
   const down = migrationDowntime(s, w, moveGbit(s, c.az, to.az), c.az !== to.az, toId);
-  patch(s, id, { deviceId: toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + job.commit() + down, stuck: undefined, stopped: false, datastore: undefined });
+  patch(s, id, { deviceId: toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + job.commit() + down, stuck: undefined, stopped: !!w.template, datastore: undefined });
   if (c.az !== to.az) s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
   freezeTick(s);
   return { ok: true };

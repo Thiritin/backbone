@@ -22,14 +22,14 @@ const servicesIn = (s: GameState, w: Workload): string[] =>
 
 // Restarts the VMs of failed nodes on working nodes with room; the control plane moves first when its node failed. A VM
 // that fits nowhere stays down, and the player hears about it once. On a hypervisor with datastores only a VM whose disk is
-// on a working datastore restarts; one with its disk on the dead node waits for the node.
+// on a working datastore restarts; one with its disk on the dead node waits for the node. A template stays where it is.
 function failover(s: GameState, c: Cluster, events: SimEvent[]) {
   const dead = new Set(c.nodes.filter((n) => !working(s, n.deviceId)).map((n) => n.deviceId));
   if (!dead.size) return;
   if (c.controlPlane && dead.has(c.controlPlane)) moveControlPlaneOff(s, c.id, c.controlPlane);
   let moved = 0, stuck = 0;
   const shared = (w: Workload) => !(c.platform && softwareById(c.platform).datastores) || (datastoreOn(c, w) && working(s, w.datastore!));
-  for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !lostDisk(s, x) && shared(x))) {
+  for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !x.template && !lostDisk(s, x) && shared(x))) {
     const to = pickNode(s, cluster(s, c.id), w, w.deviceId, "spread");
     if (!to) {
       if (!w.stuck) stuck++;

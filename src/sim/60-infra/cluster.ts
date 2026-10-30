@@ -75,6 +75,8 @@ export interface Workload extends Resources, Partial<MachineState> {
   datastore?: string;
   // Oldest first (economy.md, Snapshots); machine is an own VM's OS and software at the hour taken.
   snapshots?: Snapshot[];
+  // An own VM kept as a template to clone from (economy.md, Templates): stopped, it never starts and failover leaves it.
+  template?: true;
 }
 export interface Snapshot { id: string; at: number; deltaGb: number; machine?: MachineState }
 // The disk a VM's snapshot deltas take on its storage.
@@ -129,11 +131,13 @@ export const datastoreCapacity = (s: GameState, deviceId: string): number => {
 };
 export const datastoreUp = (s: GameState, x: Datastore): boolean => x.readyAt <= s.hour && working(s, x.deviceId);
 export const datastoreFits = (s: GameState, deviceId: string, diskGb: number): boolean => datastoreUsed(s, deviceId) + diskGb <= datastoreCapacity(s, deviceId) + 1e-9;
-// Fibre Channel runs at its year's speed, NFS and iSCSI at the server's fastest port.
-export const datastoreGbit = (s: GameState, x: Datastore): number => {
-  const d = s.devices.find((v) => v.id === x.deviceId);
-  return x.protocol === "fc" ? fcGbit(yearOf(s.hour)) : d ? Math.max(...modelById(d.model).ports.map((p) => p.gbit)) : 0;
+// A server's fastest port.
+export const portGbit = (s: GameState, deviceId: string): number => {
+  const d = s.devices.find((v) => v.id === deviceId);
+  return d ? Math.max(...modelById(d.model).ports.map((p) => p.gbit)) : 0;
 };
+// Fibre Channel runs at its year's speed, NFS and iSCSI at the server's fastest port.
+export const datastoreGbit = (s: GameState, x: Datastore): number => (x.protocol === "fc" ? fcGbit(yearOf(s.hour)) : portGbit(s, x.deviceId));
 // A new VM's disk goes on the cluster's first working datastore with room, otherwise on its node.
 export const withDatastore = <R extends Resources>(s: GameState, c: Cluster, r: R): R & { datastore?: string } => {
   const x = c.datastores.find((v) => datastoreUp(s, v) && datastoreFits(s, v.deviceId, r.diskGb));

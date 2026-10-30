@@ -123,10 +123,16 @@ export function installPanelInVm(s: GameState, vmId: string, panelId: string): A
   if (!c) return fail("error.unknownCluster");
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
   if (sizeError(vm, sw.controlPlane)) return fail("error.vmSize");
-  const id = `clu${s.nextId++}`, after = Math.max(s.hour, c.switching?.doneAt ?? s.hour);
-  s.clusters = [...s.clusters, { ...blank(s, id, freeName(s, PREFIX[sw.kind]), c.az, sw.kind), vm: vm.id, switching: { kind: sw.kind, to: panelId, doneAt: after + sw.installHours } }];
-  addSoftware(s, vm.id, sw, after + sw.installHours);
-  return { ok: true, id };
+  const after = Math.max(s.hour, c.switching?.doneAt ?? s.hour);
+  return { ok: true, id: hostInVm(s, vm.id, c.az, sw, after + sw.installHours) };
+}
+
+// Adds the software to one of the player's VMs as a cluster of its own, installing until doneAt; returns the cluster id.
+export function hostInVm(s: GameState, vmId: string, az: string, sw: Software, doneAt: number): string {
+  const id = `clu${s.nextId++}`;
+  s.clusters = [...s.clusters, { ...blank(s, id, freeName(s, PREFIX[sw.kind]), az, sw.kind), vm: vmId, switching: { kind: sw.kind, to: sw.id, doneAt } }];
+  addSoftware(s, vmId, sw, doneAt);
+  return id;
 }
 
 // A new VM with a panel in it, as the guided setup and the Products app book it; returns the panel host id.
