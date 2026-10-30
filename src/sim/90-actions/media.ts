@@ -20,8 +20,12 @@ export function downloadImage(s: GameState, osId: ServerOsId): ActionResult {
   return { ok: true };
 }
 
+// Out of every server and not on its way to one, the stick sits in the player's own computer.
+export const stickHome = (s: GameState): boolean => s.media.stick.in === null && !s.devices.some((d) => d.hands?.kind === "stick");
+
 export function writeStick(s: GameState, osId: ServerOsId): ActionResult {
   if (!s.media.images.includes(osId)) return fail("error.noImage");
+  if (!stickHome(s)) return fail("error.stickAway");
   s.media.stick = { ...s.media.stick, os: osId };
   return { ok: true };
 }

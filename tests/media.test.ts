@@ -4,7 +4,7 @@ import { consoleScreen, machineScreen } from "../src/sim/60-infra/oob";
 import { powerTick } from "../src/sim/60-infra/power";
 import { bootFromUsb, installOs, setMedia } from "../src/sim/90-actions/console";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
-import { downloadImage, mountableImages, plugStick, unplugStick, writeStick } from "../src/sim/90-actions/media";
+import { downloadImage, mountableImages, plugStick, stickHome, unplugStick, writeStick } from "../src/sim/90-actions/media";
 import { clusterOf } from "../src/sim/60-infra/cluster";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { newGame } from "../src/sim/50-state";
@@ -37,6 +37,18 @@ describe("installation media", () => {
     expect(s.media.stick.os).toBe("windoors");
   });
 
+  it("writes the stick only while it is in the computer", () => {
+    const s = readyGame(7);
+    downloadImage(s, "lunix");
+    plugStick(s, "dev3");
+    expect(stickHome(s)).toBe(false);
+    expect(err(writeStick(s, "lunix"))).toBe("error.stickAway");
+    unplugStick(s);
+    expect(err(writeStick(s, "lunix"))).toBe("ok");
+    dev(s).hands = { kind: "stick", doneAt: s.hour + 1 };
+    expect(err(writeStick(s, "lunix"))).toBe("error.stickAway");
+  });
+
   it("plugs the stick in, moves it to a second server and unplugs it", () => {
     const s = readyGame(7), other = s.devices.find((d) => d.id !== "dev3" && d.rackId && d.model === dev(s).model);
     expect(err(unplugStick(s))).toBe("error.stickOut");
@@ -56,8 +68,10 @@ describe("installation media", () => {
     expect(err(bootFromUsb(s, "dev3"))).toBe("error.noBootDevice");
     plugStick(s, "dev3");
     expect(err(bootFromUsb(s, "dev3"))).toBe("error.noBootDevice");
+    unplugStick(s);
     downloadImage(s, "lunix");
     writeStick(s, "lunix");
+    plugStick(s, "dev3");
     expect(err(bootFromUsb(s, "dev3"))).toBe("ok");
     expect(machineScreen(s, "dev3")).toEqual({ kind: "bootMenu", media: ["lunix"] });
     expect(err(installOs(s, "dev3", "windoors"))).toBe("error.otherMedia");

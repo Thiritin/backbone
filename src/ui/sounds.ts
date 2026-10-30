@@ -7,7 +7,7 @@ import { dateOf, hourOf } from "../sim/00-core/time";
 // Highest priority first: one batch of events plays only its top sound.
 export const SOUNDS = ["month", "warn", "level", "research", "money", "ticket"] as const;
 export type Sound = (typeof SOUNDS)[number];
-export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup" | "post";
+export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup" | "post" | "plug" | "unplug";
 
 // How each Pear OS era voices the desktop sounds: glassy and long early on, flat and short in the middle years, soft and airy later.
 export interface Voice { wave: OscillatorType; len: number; lift: number; glass: number; air: number }
@@ -175,6 +175,14 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false,
         // The single PC speaker beep of a clean power-on self test.
         tone(c, out, 1000, t, 0.12, 0.02, "square");
         break;
+      case "plug":
+      case "unplug": {
+        // The two-note USB chime: rising as a device connects, falling as it leaves.
+        const [a, b] = kind === "plug" ? [587, 880] : [880, 587];
+        note(c, out, voiceOf(era), a, t, 0.16, 0.05);
+        note(c, out, voiceOf(era), b, t + 0.11, 0.26, 0.05);
+        break;
+      }
       case "startup":
         // A wide major chord, the voice of the era the desktop runs.
         [174.6, 220, 261.6, 349.2, 523.3].forEach((hz, i) => note(c, out, voiceOf(era), hz, t + i * 0.008, 2, 0.03));

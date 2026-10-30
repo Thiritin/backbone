@@ -4,7 +4,7 @@ import { SOFTWARE, type Software } from "../../../../../sim/10-catalog/platforms
 import { licensingAt, SERVER_OS, serverOsAt, serverOsById, type LicenseEra, type LicenseKind, type ServerOs, type ServerOsId } from "../../../../../sim/10-catalog/server-os";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { useStore } from "../../../../store";
-import { downloadImage, writeStick } from "../../../../../sim/90-actions/media";
+import { downloadImage } from "../../../../../sim/90-actions/media";
 import type { Look, Site } from "../../../../../sim/10-catalog/sites";
 import "./software.css";
 
@@ -65,16 +65,17 @@ export function Pricing({ p, className }: { p: Product; className?: string }) {
 }
 
 const IMAGE: Record<ServerOsId, (version: string) => string> = { lunix: (v) => `Debiant ${v} netinst`, windoors: (v) => `Windoors Server ${v}` };
+export const isoFile = (id: ServerOsId, year: number) => `${IMAGE[id](serverOsAt(id, year).version).toLowerCase().replaceAll(" ", "-")}.iso`;
 
 // The install commands with a Copy button for the real clipboard; GUI software and operating systems say where they install from.
 export function Commands({ p, year, className }: { p: Product; year: number; className?: string }) {
   const [copied, setCopied] = useState(false);
   const media = useStore((s) => s.game.media), act = useStore((s) => s.act);
   if (p.os) {
-    const id = p.os.id, out = p.os.versions.filter((v) => v.from <= year).reverse(), has = media.images.includes(id), written = media.stick.os === id;
+    const id = p.os.id, out = p.os.versions.filter((v) => v.from <= year).reverse(), has = media.images.includes(id);
     return (
       <div className={className}>
-        <p>Download the ISO and write it to the USB stick to boot a server from it, or mount it in a virtual machine, to install {IMAGE[id](serverOsAt(id, year).version)}.</p>
+        <p>Download the ISO and write it to the USB stick in Finder to boot a server from it, or mount it in a virtual machine, to install {IMAGE[id](serverOsAt(id, year).version)}.</p>
         <table>
           <thead><tr><th>Release</th><th>Since</th><th /></tr></thead>
           <tbody>{out.map((v) => (
@@ -84,7 +85,6 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
             </tr>
           ))}</tbody>
         </table>
-        <button type="button" className="sws-iso" disabled={!has || written} onClick={() => act(writeStick, id)}>{written ? "Written to USB stick" : "Write to USB stick"}</button>
       </div>
     );
   }

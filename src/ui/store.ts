@@ -225,6 +225,7 @@ export const useStore = create<Store>((set, get) => ({
     const r = name ? runAction(game, name, args) : fn(game, ...args);
     if (r.ok) {
       if (booted(get().game, game)) setTimeout(() => uiSound("post"), 1200);
+      if (game.media.stick.in !== get().game.media.stick.in) uiSound(game.media.stick.in ? "plug" : "unplug");
       set({ game });
     } else {
       uiSound("error");

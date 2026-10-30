@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, House, Plus, RotateCw, Star, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleArrowDown, House, Plus, RotateCw, Star, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BOARD_TITLE, defaultBookmarks, HOME_URL, resolve, split, VIDEO_TITLE, type Resolved } from "../../../sim/80-business/browser";
 import { customerSite } from "../../../sim/80-business/website";
@@ -10,6 +10,9 @@ import { softwareById } from "../../../sim/10-catalog/platforms";
 import { serverOsById } from "../../../sim/10-catalog/server-os";
 import { registrarById } from "../../../sim/10-catalog/registrars";
 import { reduced } from "../../desktop/motion";
+import { menuOn } from "../../desktop/ContextMenu";
+import { yearOf } from "../../../sim/00-core/time";
+import { isoFile } from "./sites/software/SoftwareSite";
 import { useSessionState } from "../../session";
 import { useFocus, useStore } from "../../store";
 import { Favicon } from "./Favicon";
@@ -98,6 +101,8 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   );
 }
 
+const showDownloads = () => useStore.getState().openApp("Applications", { kind: "folder", id: "downloads" });
+
 export function BrowserApp() {
   const game = useStore((s) => s.game);
   const [tabs, setTabs] = useSessionState<Tab[]>("browser.tabs", [{ id: 1, history: [HOME_URL], at: 0, nav: 0 }]);
@@ -167,6 +172,12 @@ export function BrowserApp() {
           <input aria-label="Address" value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} />
           <button type="button" className="br-star" aria-label="Bookmark" aria-pressed={marked} disabled={isDefault} onClick={toggleMark}><Star aria-hidden /></button>
         </form>
+        <button className="btn icon ghost" aria-label="Downloads" onClick={menuOn(() => [
+          ...game.media.images.map((id) => ({ label: isoFile(id, yearOf(game.hour)), run: showDownloads })),
+          !game.media.images.length && { label: "No downloads", disabled: true },
+          null,
+          { label: "Show in Finder", run: showDownloads },
+        ])}><CircleArrowDown aria-hidden /></button>
       </div>
       <div className="br-marks">
         {bookmarks.map((m) => (

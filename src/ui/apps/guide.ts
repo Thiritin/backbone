@@ -25,7 +25,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "internet":
       return { title: t("guide.step.internet"), text: "Order an internet line in Locations under Internet line.", app: "Locations", focus: { kind: "line", id: "home" } };
     case "setup":
-      return { title: t("guide.step.setup"), text: "Download Debiant from its website, write it to the USB stick, plug the stick into the server at the rack and boot from it. Install Debiant, then install a hypervisor or a web panel with the commands from its website.", app: "Locations", focus: server && { kind: "device", id: server.id } };
+      return { title: t("guide.step.setup"), text: "Download Debiant from its website, write the ISO to the USB stick in Finder, plug the stick into the server at the rack and boot from it. Install Debiant, then install a hypervisor or a web panel with the commands from its website.", app: "Locations", focus: server && { kind: "device", id: server.id } };
     case "domain": {
       const partner = (s.registrar && registrarById(s.registrar.id)?.name) ?? REGISTRARS[0].name;
       return {

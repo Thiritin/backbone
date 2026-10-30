@@ -1,5 +1,5 @@
 import {
-  Activity, AppWindow, Bug, LayoutGrid, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, AppWindow, FolderOpen, Bug, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { BillingApp } from "./billing/BillingApp";
@@ -40,7 +40,7 @@ export interface AppDef {
 
 // Dock order; a divider follows every 4th app.
 export const APPS: AppDef[] = [
-  { name: "Applications", icon: LayoutGrid, tile: "oklch(0.6 0.12 240)", about: "Lists every installed app so you can open it, keep it in the dock or put a link on the desktop.", body: ApplicationsApp },
+  { name: "Applications", icon: FolderOpen, tile: "oklch(0.6 0.12 240)", about: "Shows your installed apps, the desktop, your downloads and the USB stick, which you write an ISO to here.", body: ApplicationsApp },
   { name: "Locations", icon: Server, tile: "oklch(0.5 0.06 250)", about: "Shows your sites on a map, the racks inside them and every device front.",
     badge: (s) => s.devices.reduce((n, d) => n + deviceHealth(s, d.id).failed.length, 0) + s.network.requests.length + s.network.attacks.length },
   { name: "Shop", icon: ShoppingCart, tile: "oklch(0.6 0.15 40)", about: "Sells servers, switches and patch panels into your storage." },
@@ -74,4 +74,5 @@ export const appByName = (name: string): AppDef => APPS.find((a) => a.name === n
 
 
 // The app as the player sees it: Support is Email, or the installed desk, with its own name, mark and tile.
-export const appFor = (s: GameState, name: string): AppDef => (name === "Support" ? { ...appByName(name), ...supportApp(s) } : appByName(name));
+export const appFor = (s: GameState, name: string): AppDef =>
+  name === "Support" ? { ...appByName(name), ...supportApp(s) } : name === "Applications" ? { ...appByName(name), name: "Finder" } : appByName(name);

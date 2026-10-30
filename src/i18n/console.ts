@@ -7,6 +7,7 @@ export const CONSOLE_EN: Record<string, (p: Params) => string> = {
   "error.noBootDevice": () => "No bootable device",
   "error.noImage": () => "Download this operating system's ISO from its website first.",
   "error.stickIn": () => "The USB stick is already in this server.",
+  "error.stickAway": () => "Unplug the USB stick from the server first.",
   "error.stickOut": () => "The USB stick is not plugged in.",
   "ipmi.log.stickIn": () => "USB stick plugged in",
   "error.noOs": () => "Install an operating system on this machine first.",
