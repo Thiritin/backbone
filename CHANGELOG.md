@@ -4,6 +4,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Backups now go to a backup server: install Backula, Veeham Backup or Proxmocks Backup Server on a server or VM, and each cluster can back up only to software that reads it, so VMwhere and HyperVee need Veeham.
+- Auto-balancing now needs a hypervisor that balances: VMwhere sells Enterprise Plus and HyperVee sells SysCenter VMM per server a month, Proxmocks and OpenVeeZee never balance, and OpenStash balances for free.
+- OpenStash now needs the new Cloud orchestration training, an expensive skill that is also the only way to sell cloud computing.
+- The research tree is laid out in Operations, Infrastructure, Sales and Company rows, and every skill lists what it unlocks.
+- With order automation on, order emails get a quote at your own rate as soon as they arrive, and the VMwhere, Proxmocks and HyperVee consoles show memory used against allocated with alarms for over-allocated hosts, full disks and missing failover room.
+
 - Customers now notice a slow server only past what they expect from what they run, so a light overcommit goes unnoticed by backup and mirror customers while game server players complain early.
 - Every applicant on the Sponsor-Bored board is now a different person with their own project, and the board runs out of applicants once all of them have an open application or a running sponsorship.
 - A server can run several software at once, each with its own console on its own port, as long as none of them share a port.

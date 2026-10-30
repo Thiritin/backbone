@@ -3,7 +3,7 @@
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { LINE_NAME, offerPrice, setupFee, specText } from "./spec";
-import { applyStep, canAutomate, isStep, issueInvoice, ORDER_PAY_DAYS } from "./manual";
+import { applyStep, AUTOMATION, canAutomate, isStep, issueInvoice, ORDER_PAY_DAYS } from "./manual";
 import { PRODUCTS } from "../10-catalog/products";
 import { inUs } from "../20-world/datacenters";
 import type { Profile } from "../30-customers/customers";
@@ -83,7 +83,16 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   };
   s.tickets = [...s.tickets, t];
   r = editRequest(s, r.id, () => ({ ticketId: t.id, ...(!email && { form: true, status: "accepted" as const }) }));
-  if (!missingFor(s, r).length) events.push({ app: "Support", key: "event.order", params });
+  if (missingFor(s, r).length) return r;
+  // Automation quotes an email order at the line's own rate when there is room for it.
+  if (email && s.autoOrders && canAutomate(s) && targetFor(s, r)) {
+    r = editRequest(s, r.id, () => ({ quote: Math.round(offerPrice(s, need.product, spec, need.sla) * (1 - discount) * 100) / 100 }));
+    if (!applyStep(s, s.tickets.find((x) => x.id === t.id)!, "quote", AUTOMATION)) {
+      events.push({ app: "Support", key: "event.orderQuoted", params: { ...params, price: r.quote! } });
+      return r;
+    }
+  }
+  events.push({ app: "Support", key: "event.order", params });
   return r;
 }
 

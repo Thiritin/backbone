@@ -10,7 +10,7 @@ import { howToFactor, licenseCost, SLOW_PENALTY } from "../src/sim/85-products/p
 import { tick } from "../src/sim/88-tick/tick";
 import { moveControlPlane, provisionService, setBackup, setHa } from "../src/sim/90-actions/clusters";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
-import { hypervisor, panelVm, skipTo, withServer } from "./fixtures";
+import { hypervisor, named, panelServer, panelVm, skipTo, withServer } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { monthlyValue } from "../src/sim/40-support/tickets";
@@ -47,7 +47,7 @@ function setup(platform = "proxmocks") {
   const s = { ...withServer(newGame(1)), cash: 100_000 };
   const second = server(s, 2, 1), third = server(s, 3, 2);
   const cluster = hypervisor(s, ["dev3", second], "Cloud 1", platform);
-  const backup = hypervisor(s, [third], "Backup 1");
+  const backup = named(s, panelServer(s, third, "backula"), "Backup 1");
   const cus = addCustomer(s, "Ada Lang", "hobbyDev");
   return { s, cluster, second, third, backup, cus };
 }

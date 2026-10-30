@@ -46,11 +46,11 @@ export const licenseText = (sw: Software, year: number) => {
 const cp = (sw: Software) => `${+sw.controlPlane.vcpu.toFixed(2)} vCPU · ${+sw.controlPlane.ramGb.toFixed(2)} GB`;
 
 export const KIND_NAME: Record<SoftwareKind, string> = {
-  panel: "Hosting panel", cloud: "Hypervisor", game: "Game server panel", mail: "Mail server", dns: "DNS server", vpn: "VPN server", storage: "Storage server",
+  panel: "Hosting panel", cloud: "Hypervisor", game: "Game server panel", mail: "Mail server", dns: "DNS server", vpn: "VPN server", storage: "Storage server", backup: "Backup server",
 };
 // What a server or VM running the kind of software is called.
 export const HOST_NAME: Record<SoftwareKind, string> = {
-  panel: "Panel host", cloud: "Hypervisor", game: "Game panel host", mail: "Mail server", dns: "DNS server", vpn: "VPN server", storage: "Storage server",
+  panel: "Panel host", cloud: "Hypervisor", game: "Game panel host", mail: "Mail server", dns: "DNS server", vpn: "VPN server", storage: "Storage server", backup: "Backup server",
 };
 export const servesText = (kind: SoftwareKind) => SERVES[kind].filter((p) => !PRODUCTS[p].ha).map((p) => PRODUCT[p]).join(", ");
 

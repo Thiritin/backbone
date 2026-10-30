@@ -6,7 +6,7 @@ import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/pla
 import type { Resources } from "../../../../sim/10-catalog/products";
 import type { Look } from "../../../../sim/10-catalog/sites";
 import type { GameState } from "../../../../sim/50-state";
-import { hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
+import { backupTargets, hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { workloadUse } from "../../../../sim/60-infra/usage";
 import { familyOf, openVulns } from "../../../../sim/60-infra/vulns";
@@ -237,7 +237,7 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
 
 // The backup schedule and the host the backups go to; consoles show it where consoleFeatures offers backups.
 export function Backups({ game, c, title = <h4 className="cx-h">Backups</h4> }: { game: GameState; c: Cluster; title?: ReactNode }) {
-  const act = useStore((s) => s.act), others = game.clusters.filter((x) => x.id !== c.id), target = c.backup.targetId ?? others[0]?.id ?? null;
+  const act = useStore((s) => s.act), others = backupTargets(game, c), target = c.backup.targetId ?? others[0]?.id ?? null;
   return (
     <>
       {title}
@@ -248,11 +248,10 @@ export function Backups({ game, c, title = <h4 className="cx-h">Backups</h4> }: 
           </button>
         ))}
       </div>
-      {others.length > 0 && (
-        <div className="cx-tools">
-          {others.map((x) => <button key={x.id} className="cx-chip" aria-pressed={c.backup.targetId === x.id} onClick={() => act(setBackup, c.id, x.id, c.backup.every)}>{x.name}</button>)}
-        </div>
-      )}
+      <div className="cx-tools">
+        {others.length === 0 && <span className="cx-note">No compatible backup server</span>}
+        {others.map((x) => <button key={x.id} className="cx-chip" aria-pressed={c.backup.targetId === x.id} onClick={() => act(setBackup, c.id, x.id, c.backup.every)}>{x.name}</button>)}
+      </div>
     </>
   );
 }

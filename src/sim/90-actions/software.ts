@@ -53,6 +53,7 @@ export function joinableClusters(s: GameState, deviceId: string): Cluster[] {
 export function installBlock(s: GameState, machineId: string, softwareId: string, replacing = false): string | null {
   const sw = softwareById(softwareId), vm = !isServer(s, machineId);
   if (yearOf(s.hour) < sw.from) return "error.softwareNotYet";
+  if (sw.skill && !s.unlocks.includes(sw.skill)) return "error.missingSkill";
   if (vm && sw.kind === "cloud") return "error.nestedHypervisor";
   if (sw.kind === "mail") {
     if (!s.company.domain) return "error.needsDomain";
@@ -105,7 +106,7 @@ export function createSoftwareVm(s: GameState, clusterId: string, softwareId: st
 
 // economy.md, Security advisories, Updating: minutes the customers on a cluster are down while its software updates. A
 // hypervisor takes 2 hours per node, with every node down at once unless the software moves virtual machines live.
-export const UPDATE_MINUTES: Record<SoftwareKind, number> = { panel: 30, game: 30, mail: 15, cloud: 120, dns: 15, vpn: 15, storage: 30 };
+export const UPDATE_MINUTES: Record<SoftwareKind, number> = { panel: 30, game: 30, mail: 15, cloud: 120, dns: 15, vpn: 15, storage: 30, backup: 15 };
 
 export const updateDue = (s: GameState, c: Cluster): boolean =>
   !!familyOf(c) && !c.switching && (c.version < yearOf(s.hour) || openVulns(s, c.id).length > 0);

@@ -36,7 +36,7 @@ function order(s: GameState, need: typeof web | typeof vps = web) {
 function accepted(s: GameState, need: typeof web | typeof vps = web, price = 10, setup?: number) {
   const o = order(s, need);
   s.sales.requests = s.sales.requests.map((r) => (r.id === o.r.id ? { ...r, budget: 100 } : r));
-  const sent = quoteOrder(s, o.id, price, setup);
+  const sent: { ok: boolean; error?: string } = o.req().replyAt === null ? quoteOrder(s, o.id, price, setup) : { ok: true };
   if (!sent.ok) throw new Error(sent.error);
   for (let i = 0; i < 60 && !stepsDone(s, o.req()).quote; i++) tick(s);
   if (!stepsDone(s, o.req()).quote) throw new Error(`not accepted: ${o.req().status}`);
@@ -444,11 +444,22 @@ describe("quote first", () => {
     expect(s.autoOrders).toBe(false);
   });
 
-  it("leaves the order at the failed step when the chain cannot place it", () => {
+  it("quotes an email order at the line's rate with the switch on", () => {
     const s = readyGame(3);
     learnAutomation(s);
     setAutoOrders(s, true);
+    const o = order(s, web);
+    expect(o.req()).toMatchObject({ status: "quoted" });
+    expect(o.req().quote).toBeGreaterThan(0);
+    expect(o.req().thread.at(-1)).toMatchObject({ from: "you", by: "Automation" });
+    expect(o.tk().status).toBe("waiting");
+  });
+
+  it("leaves the order at the failed step when the chain cannot place it", () => {
+    const s = readyGame(3);
+    learnAutomation(s);
     const o = order(s, vps);
+    setAutoOrders(s, true);
     s.sales.requests = s.sales.requests.map((x) => (x.id === o.r.id ? { ...x, budget: 100, spec: { ...x.spec!, diskGb: 10_000_000 } } : x));
     done(s, quoteOrder(s, o.id, 20));
     for (let i = 0; i < 60 && !stepsDone(s, o.req()).quote; i++) tick(s);

@@ -1,0 +1,74 @@
+// What a hypervisor console's cluster summary and alarm list show: per node and in total the physical capacity, what the
+// workloads book of it and what they use right now, and the alarms those numbers raise.
+import type { GameState } from "../50-state";
+import { booked, controlPlanesOn, KEYS, type Cluster, type NodeState } from "./cluster";
+import { HOT_RAM } from "./ha";
+import { working } from "./status";
+import { nodeUsage } from "./usage";
+
+// Booked vCPUs per core a mixed cluster still runs at its peak (economy.md, Usage curves: mixing peaks near 0.5 load),
+// and the share of the usable disk past which a pool counts as nearly full. RAM warns from HOT_RAM, where balancing starts.
+export const CPU_RATIO = 2;
+export const DISK_FULL = 0.9;
+
+export type Severity = "warning" | "critical";
+export interface Alarm { severity: Severity; on: { kind: "cluster" | "host" | "vm"; id: string }; key: string; params: Record<string, string | number> }
+export interface Amount { capacity: number; allocated: number; used: number }
+export type Amounts = Record<(typeof KEYS)[number], Amount>;
+export interface HostSummary { deviceId: string; name: string; state: NodeState; up: boolean; vms: number; use: Amounts }
+export interface ClusterSummary { hosts: HostSummary[]; total: Amounts; alarms: Alarm[] }
+
+const zero = (): Amounts => ({ vcpu: { capacity: 0, allocated: 0, used: 0 }, ramGb: { capacity: 0, allocated: 0, used: 0 }, diskGb: { capacity: 0, allocated: 0, used: 0 } });
+const round = (x: number) => Math.round(x * 10) / 10;
+const pct = (a: number, b: number) => Math.round((a / b) * 100);
+
+// Allocated counts the control plane a node runs along with what its workloads book.
+function host(s: GameState, c: Cluster, deviceId: string, state: NodeState): HostSummary {
+  const d = s.devices.find((x) => x.id === deviceId);
+  const u = nodeUsage(s, deviceId), use = zero(), on = s.workloads.filter((w) => w.clusterId === c.id && w.deviceId === deviceId);
+  const alloc = controlPlanesOn(s, deviceId);
+  for (const w of on) { const b = booked(s, w); for (const k of KEYS) alloc[k] += b[k]; }
+  for (const k of KEYS) use[k] = { capacity: u.physical[k], allocated: alloc[k], used: u.used[k] };
+  return { deviceId, name: d ? d.hostname ?? d.label ?? d.name : deviceId, state, up: working(s, deviceId), vms: on.length, use };
+}
+
+function hostAlarms(h: HostSummary): Alarm[] {
+  const out: Alarm[] = [], on = { kind: "host" as const, id: h.deviceId }, { vcpu, ramGb, diskGb } = h.use, p = { host: h.name };
+  const add = (severity: Severity, key: string, params: Alarm["params"] = {}) => out.push({ severity, on, key, params: { ...p, ...params } });
+  if (!h.up && h.vms) add("critical", "alarm.hostDown", { count: h.vms });
+  else if ((h.state === "maintenance" || h.state === "draining") && h.vms) add("warning", "alarm.hostMaintenance", { count: h.vms, state: h.state });
+  if (!h.up) return out;
+  if (ramGb.used > ramGb.capacity + 1e-9) add("critical", "alarm.memoryFull", { used: round(ramGb.used), capacity: ramGb.capacity });
+  else if (ramGb.used > HOT_RAM * ramGb.capacity) add("warning", "alarm.memoryHigh", { percent: pct(ramGb.used, ramGb.capacity) });
+  if (ramGb.allocated > ramGb.capacity + 1e-9) add("warning", "alarm.memoryOverallocated", { allocated: round(ramGb.allocated), capacity: ramGb.capacity });
+  if (vcpu.used > vcpu.capacity + 1e-9) add("critical", "alarm.cpuContention", { used: round(vcpu.used), capacity: vcpu.capacity });
+  if (vcpu.allocated > CPU_RATIO * vcpu.capacity + 1e-9) add("warning", "alarm.cpuOvercommitted", { allocated: round(vcpu.allocated), capacity: vcpu.capacity, ratio: CPU_RATIO });
+  if (diskGb.used >= diskGb.capacity && diskGb.capacity > 0) add("critical", "alarm.diskFull", { percent: pct(diskGb.used, diskGb.capacity) });
+  else if (diskGb.used > DISK_FULL * diskGb.capacity) add("warning", "alarm.diskHigh", { percent: pct(diskGb.used, diskGb.capacity) });
+  return out;
+}
+
+// N+1: the working node with the most booked RAM fails, and the other active working nodes have less RAM free than it held.
+function failoverAlarm(c: Cluster, hosts: HostSummary[]): Alarm[] {
+  const up = hosts.filter((h) => h.up);
+  if (hosts.length < 2 || !up.length) return [];
+  const big = up.reduce((a, b) => (b.use.ramGb.allocated > a.use.ramGb.allocated ? b : a));
+  const free = up.filter((h) => h !== big && h.state === "active").reduce((n, h) => n + Math.max(0, h.use.ramGb.capacity - h.use.ramGb.allocated), 0);
+  return big.use.ramGb.allocated > free + 1e-9
+    ? [{ severity: "warning", on: { kind: "cluster", id: c.id }, key: "alarm.noFailover", params: { cluster: c.name, host: big.name, need: round(big.use.ramGb.allocated), free: round(free) } }]
+    : [];
+}
+
+export function clusterSummary(s: GameState, clusterId: string): ClusterSummary {
+  const c = s.clusters.find((x) => x.id === clusterId);
+  if (!c) return { hosts: [], total: zero(), alarms: [] };
+  const hosts = c.nodes.map((n) => host(s, c, n.deviceId, n.state)), total = zero();
+  for (const h of hosts) for (const k of KEYS) for (const f of ["capacity", "allocated", "used"] as const) total[k][f] += h.use[k][f];
+  const stuck: Alarm[] = s.workloads.filter((w) => w.clusterId === c.id && w.stuck)
+    .map((w) => ({ severity: "critical", on: { kind: "vm", id: w.id }, key: "alarm.vmStuck", params: { vm: w.hostname ?? w.id } }));
+  const alarms = [...hosts.flatMap(hostAlarms), ...stuck, ...failoverAlarm(c, hosts)];
+  return { hosts, total, alarms: alarms.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "critical" ? -1 : 1)) };
+}
+
+// How many alarms an inventory object carries: a host its own, a cluster all of its own, its hosts' and its VMs'.
+export const alarmCount = (sum: ClusterSummary, id?: string): number => (id ? sum.alarms.filter((a) => a.on.id === id).length : sum.alarms.length);

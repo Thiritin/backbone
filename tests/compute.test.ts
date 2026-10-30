@@ -181,6 +181,9 @@ describe("compute", () => {
     expect(err(provisionService(s, cus, "cloud", { label: "Cloud" }))).toBe("error.needsHaCluster");
     expect(lineOffered(s, "cloud")).toBe(false);
     ok(setHa(s, cluster, "failover", true));
+    // Cloud computing sells only from OpenStash.
+    expect(lineOffered(s, "cloud")).toBe(false);
+    s.clusters = s.clusters.map((c) => (c.id === cluster ? { ...c, platform: "openstash" } : c));
     ok(provisionService(s, cus, "cloud", { label: "Cloud" }));
     expect(lineOffered(s, "cloud")).toBe(true);
     const hyper = { ...withServer(newGame(2)) };

@@ -93,6 +93,7 @@ export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", si
   done(s, must(createPanelVm(s, clusterId, panel, size)), { panel });
 
 // A bare-metal panel host on a free mounted server with its panel already installed; returns the panel host id.
+export const named = (s: GameState, id: string, name: string): string => done(s, id, { name });
 export const panelServer = (s: GameState, deviceId: string, panel = "freepanel"): string => done(s, must(installPanel(s, bootedFor(s, deviceId, panel), panel)), { panel });
 
 // The company has learned Provisioning automation and switched on Place orders automatically.

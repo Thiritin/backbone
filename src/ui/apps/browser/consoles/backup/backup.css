@@ -1,0 +1,11 @@
+/* Backup consoles: a plain light admin page with a green accent. */
+.bk { --bg: #f6f7f5; --panel: #ffffff; --fg: #1d2420; --muted: #66706a; --line: #dde2de; --accent: #2f8f4e; --info: #2f8f4e; --font: "Inter", "Helvetica Neue", Arial, sans-serif; --r: 4px; }
+.bk-logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: var(--accent); }
+.bk-top { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.bk-top .cx-host { flex: 1; }
+.bk-nav { display: flex; gap: 4px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.bk-nav button { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border: 0; border-radius: var(--r); background: none; color: var(--muted); font: inherit; cursor: pointer; }
+.bk-nav button[aria-pressed="true"] { color: var(--accent); background: color-mix(in oklch, var(--accent) 10%, transparent); }
+.bk-main { flex: 1; overflow: auto; padding: 16px; }
+.bk-login { display: grid; place-items: center; }
+.bk-card { display: grid; gap: 12px; padding: 24px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); min-width: 280px; }

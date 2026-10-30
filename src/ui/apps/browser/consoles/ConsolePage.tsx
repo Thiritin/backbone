@@ -19,6 +19,7 @@ import { VmWhere } from "./vmwhere/VmWhere";
 import { Pterodaktyl } from "./pterodaktyl/Pterodaktyl";
 import { TCAdmen } from "./tcadmen/TCAdmen";
 import { AnyConnekt } from "./anyconnekt/AnyConnekt";
+import { BackupConsole } from "./backup/BackupConsole";
 import { CLI_ONLY, HostCli } from "./hostcli/HostCli";
 import { Mailpig } from "./mailpig/Mailpig";
 import { MinnIO } from "./minnio/MinnIO";
@@ -31,6 +32,7 @@ export const CONSOLES: Record<string, ComponentType<PanelProps>> = {
   cpanic: CPanic, pleskit: Pleskit, directadmen: DirectAdmen, freepanel: FreePanel, tcadmen: TCAdmen, multikraft: MultiKraft, pterodaktyl: Pterodaktyl,
   proxmocks: Proxmocks, vmwhere: VmWhere, hypervee: HyperVee, openveezee: OpenVeeZee, openstash: Horizont,
   powerdnz: PowerDnz, openveepeen: OpenVeePeeN, anyconnekt: AnyConnekt, ownclod: OwnClod, minnio: MinnIO, mailpig: Mailpig,
+  backula: BackupConsole, veeham: BackupConsole, proxmocksBackup: BackupConsole,
 };
 
 function Defaced() {

@@ -10,6 +10,7 @@ import { hypervisor, skipTo, withServer } from "./fixtures";
 function machine(os: ServerOsId, ...software: string[]): GameState {
   const s = withServer(newGame(1));
   skipTo(s, 2016);
+  s.unlocks = [...s.unlocks, "cloudOrchestration"];
   setMachine(s, "dev3", () => ({
     os: { id: os, version: "x", installedAt: 0 },
     software: software.map((id) => ({ id, version: "2016", installedAt: 0, doneAt: null })),
@@ -57,6 +58,8 @@ describe("software compatibility", () => {
     const s = withServer(newGame(1));
     skipTo(s, 2010);
     hypervisor(s, ["dev3"]);
+    expect(installBlock(s, "dev3", "openstash", true)).toBe("error.missingSkill");
+    s.unlocks = [...s.unlocks, "cloudOrchestration"];
     expect(installBlock(s, "dev3", "freepanel")).toBeNull();
     expect(installBlock(s, "dev3", "openstash")).toBe("error.oneHypervisor");
     expect(installBlock(s, "dev3", "openstash", true)).toBeNull();

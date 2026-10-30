@@ -52,7 +52,8 @@ export function consoleFeatures(softwareId: string, year: number): ConsoleFeatur
     create: !mail, delete: !mail, stop: !mail, start: !mail,
     migrate,
     resize: (panel && softwareId !== "freepanel") || cloud,
-    backups: ["cpanic", "pleskit", "directadmen", "vmwhere", "proxmocks", "pterodaktyl"].includes(softwareId),
+    // Every console with a backup server that reads it schedules its jobs there.
+    backups: !mail && sw.kind !== "backup",
     update: true,
     sitesOffline: panel || game,
     cleanUp: panel || game,
