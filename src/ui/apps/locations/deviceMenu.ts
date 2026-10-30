@@ -92,7 +92,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
     ] },
     ...(server && d.rackId && ui.move ? moveEntries(game, d, ui) : []),
     joinable.length > 0 && { label: "Join cluster", items: joinable.map((c) => ({ label: c.name, run: () => act(addNode, c.id, d.id) })) },
-    node && (node.state === "active" ? { label: "Cordon", run: () => act(cordon, d.id) } : node.state === "cordoned" && { label: "Uncordon", run: () => act(uncordon, d.id) }),
+    node && (node.state === "active" ? { label: "Cordon", run: () => act(cordon, d.id) } : (node.state === "cordoned" || node.state === "draining") && { label: "Uncordon", run: () => act(uncordon, d.id) }),
     node && !busy && { label: "Drain", run: () => act(drain, d.id) },
     node && !busy && techItem(game, d.id, "drain"),
     cluster && { label: `Open ${cluster.name}`, run: () => openApp("Products", { kind: "cluster", id: cluster.id }) },

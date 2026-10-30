@@ -192,6 +192,18 @@ describe("nodes", () => {
     ok(removeNode(s, "dev3"));
     ok(unmountDevice(s, "dev3"));
   });
+  it("cancels a drain with nowhere to go when the node is uncordoned", () => {
+    const { s, second, cus } = twoNodes();
+    ok(provisionService(s, cus, "vps", { label: "v0", spec: sizeSpec("vps", 0, yearOf(s.hour)), deviceId: "dev3" }));
+    ok(cordon(s, second));
+    ok(drain(s, "dev3"));
+    run(s, 2);
+    expect(s.clusters[0].nodes[0].state).toBe("draining");
+    ok(uncordon(s, "dev3"));
+    run(s, 2);
+    expect(s.clusters[0].nodes[0].state).toBe("active");
+    expect(workloadsOn(s, "dev3")).toHaveLength(1);
+  });
   it("drains onto a node that has no RAM left instead of leaving workloads behind", () => {
     const { s, cluster, second, cus } = twoNodes();
     ok(cordon(s, second));

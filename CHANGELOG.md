@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- A draining server can now be uncordoned, which stops a drain that has nowhere to move its workloads.
 - Mainboards in the Parts tab are sold per socket and biggest CPU, such as "Indel I3-40 Mainboard", and show their socket and the CPUs they take.
 - Clicking a reply option on a support ticket now sends that reply right away.
 - Storage servers now differ in drives: in 2005 a backup server holds about 1 TB on six 160 GB drives with half its bays empty, a storage server four 160 GB drives, and the archive server twelve 500 GB drives; the Value 1U ships with one 160 GB drive.
