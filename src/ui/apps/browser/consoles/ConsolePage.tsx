@@ -1,5 +1,5 @@
 import { Gamepad2, Globe, HardDrive, LogOut, ShieldCheck } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
 import { softwareById } from "../../../../sim/10-catalog/platforms";
 import type { GameState } from "../../../../sim/50-state";
@@ -9,7 +9,20 @@ import { consoleFeatures, consoleTitle, type ConsoleLook } from "../../../../sim
 import { useSessionState } from "../../../session";
 import { Mark } from "../../products/parts";
 import { Nodes, Objects, objectsLabel, Software, type Tab } from "./ConsoleBody";
+import { CPanic } from "./cpanic/CPanic";
+import { DirectAdmen } from "./directadmen/DirectAdmen";
+import { FreePanel } from "./freepanel/FreePanel";
+import { MultiKraft } from "./multikraft/MultiKraft";
+import type { PanelProps } from "./PanelBase";
+import { Pleskit } from "./pleskit/Pleskit";
+import { Pterodaktyl } from "./pterodaktyl/Pterodaktyl";
+import { TCAdmen } from "./tcadmen/TCAdmen";
 import "./consoles.css";
+
+// The products that draw their own console by era; any other software still wears one of the shared frames below.
+export const CONSOLES: Record<string, ComponentType<PanelProps>> = {
+  cpanic: CPanic, pleskit: Pleskit, directadmen: DirectAdmen, freepanel: FreePanel, tcadmen: TCAdmen, multikraft: MultiKraft, pterodaktyl: Pterodaktyl,
+};
 
 // The four page structures the eleven products share; the look supplies colours, type and shapes.
 type Frame = "top" | "side" | "tree" | "list";
@@ -126,6 +139,8 @@ export function ConsolePage({ game, hostname, host, cluster, defaced }: { game: 
   if (!cluster || !family) return null;
   if (defaced) return <Defaced />;
   const f = consoleFeatures(family, yearOf(game.hour)), look = f.look;
+  const Panel = CONSOLES[family], logout = () => setLogins(logins.filter((x) => x !== hostname));
+  if (Panel) return <Panel game={game} c={cluster} f={f} host={host} signedIn={logins.includes(hostname)} login={() => setLogins([...logins, hostname])} logout={logout} />;
   if (!logins.includes(hostname)) return <Login look={look} family={family} host={host} onLogin={() => setLogins([...logins, hostname])} />;
 
   const tabs: [Tab, string][] = [["objects", objectsLabel(f, cluster)], ...(f.cluster ? [["nodes", "Nodes"] as [Tab, string]] : []), ["software", "Software"]];
@@ -147,7 +162,7 @@ export function ConsolePage({ game, hostname, host, cluster, defaced }: { game: 
   );
   const Shell = FRAMES[FRAME[look]];
   return (
-    <Shell look={look} family={family} host={host} tabs={tabs} tab={shown} setTab={setTab} tree={tree} logout={() => setLogins(logins.filter((x) => x !== hostname))}>
+    <Shell look={look} family={family} host={host} tabs={tabs} tab={shown} setTab={setTab} tree={tree} logout={logout}>
       {shown === "objects" && <Objects game={game} c={cluster} f={f} node={node} />}
       {shown === "nodes" && <Nodes game={game} c={cluster} />}
       {shown === "software" && <Software game={game} c={cluster} f={f} />}

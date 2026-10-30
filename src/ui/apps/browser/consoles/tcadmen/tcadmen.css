@@ -1,0 +1,45 @@
+/* TCAdmen: grey and black forms with a server tree until 2016, then dark grey with a green accent. */
+.tc[data-era="early"] { --bg: #d6d6d6; --panel: #f4f4f4; --line: #8c8c8c; --accent: #3a3a3a; --info: #2a4f8a; --font: Tahoma, Verdana, sans-serif; --r: 0; font-size: 11.5px; }
+.tc[data-era="late"] { --bg: #23272b; --panel: #2d3237; --fg: #e3e6e8; --muted: #9aa3ab; --line: #3b4148; --accent: #4caf50; --accent-fg: #0d2410; --info: #6fb3ff; --ok: #4caf50; --bad: #ef5350; --hover: rgb(255 255 255 / 0.06); --font: "Segoe UI", Roboto, Arial, sans-serif; --r: 3px; }
+
+.tc-logo { font-size: 18px; font-weight: 700; }
+.tc-logo small { margin-left: 10px; font-size: 11px; font-weight: 400; opacity: 0.75; }
+.tc-top { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: #000; color: #fff; }
+.tc-top .cx-host { flex: 1; text-align: right; color: inherit; opacity: 0.7; }
+.tc-menu { display: flex; padding: 0 10px; }
+.tc-menu button { padding: 6px 14px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.tc-menu button:last-child { margin-left: auto; }
+.tc[data-era="early"] .tc-top .tc-logo { color: #e8e8e8; text-shadow: 1px 1px 0 #555; }
+.tc[data-era="early"] .tc-menu { background: linear-gradient(#6b6b6b, #3c3c3c); color: #fff; border-bottom: 1px solid #000; }
+.tc[data-era="early"] .tc-menu button[aria-pressed="true"] { background: linear-gradient(#f4f4f4, #cfcfcf); color: #000; }
+.tc[data-era="late"] .tc-top { background: #1a1d20; }
+.tc[data-era="late"] .tc-logo { color: var(--accent); }
+.tc[data-era="late"] .tc-logo small { color: var(--fg); }
+.tc[data-era="late"] .tc-menu { background: #1a1d20; border-bottom: 1px solid var(--line); }
+.tc[data-era="late"] .tc-menu button { padding: 10px 14px; border-bottom: 2px solid transparent; color: var(--muted); }
+.tc[data-era="late"] .tc-menu button[aria-pressed="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+
+.tc-body { display: flex; flex: 1; min-height: 0; }
+.tc-tree { width: 220px; flex: none; padding: 8px; overflow: auto; border-right: 1px solid var(--line); }
+.tc-tree ul { list-style: none; margin: 0; padding-left: 16px; }
+.tc-tree button { display: flex; align-items: center; gap: 5px; width: 100%; padding: 2px 4px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.tc-tree button:hover { text-decoration: underline; }
+.tc-tree button[aria-pressed="true"] { background: #0a246a; color: #fff; }
+.tc[data-era="early"] .tc-tree { background: #fff; }
+.tc[data-era="late"] .tc-tree { background: var(--panel); }
+.tc[data-era="late"] .tc-tree button { padding: 5px 6px; border-radius: var(--r); }
+.tc[data-era="late"] .tc-tree button[aria-pressed="true"] { background: rgb(76 175 80 / 0.18); color: var(--accent); }
+
+.tc-main { flex: 1; min-width: 0; padding: 12px 16px; overflow: auto; }
+.tc-main .cx-facts { margin-bottom: 12px; }
+.tc[data-era="early"] .cx-table th { background: linear-gradient(#4a4a4a, #1e1e1e); color: #fff; }
+.tc[data-era="early"] .cx-table tbody tr:nth-child(even) td { background: #e8e8e8; }
+.tc[data-era="early"] .cx-btn { background: linear-gradient(#fafafa, #d8d8d8); border-color: #707070; }
+.tc[data-era="early"] .cx-btn.primary { background: linear-gradient(#5a5a5a, #2a2a2a); color: #fff; }
+.tc[data-era="late"] .cx-table th { background: #262a2e; }
+
+.tc-login { align-items: center; justify-content: center; padding: 48px 16px; }
+.tc-card { display: flex; flex-direction: column; gap: 12px; width: min(340px, 100%); padding: 22px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+.tc-card .cx-btn { justify-content: center; }
+.tc-card .tc-logo small { display: block; margin: 2px 0 0; }
+.tc-login[data-era="early"] { background: #000; }

@@ -124,4 +124,12 @@
 .cx-defaced { min-height: 100%; padding: 64px 24px; background: #000; color: #2cff6a; font-family: "Courier New", ui-monospace, monospace; text-align: center; }
 .cx-defaced h1 { font-size: 30px; margin-bottom: 12px; text-shadow: 0 0 8px #2cff6a; }
 .cx-facts { margin-bottom: 12px; }
-.cx-h { margin: 16px 0 6px; font-size: 13px; font-weight: 650; }
+
+/* Panel blocks: actions as icon tiles */
+.cx-tiles { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.cx-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 120px; padding: 12px 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); color: var(--fg); font: inherit; font-size: 11.5px; text-align: center; cursor: pointer; }
+.cx-tile svg { color: var(--accent); }
+.cx-tile:hover { background: var(--hover); }
+.cx-tile.primary svg { color: var(--ok); }
+.cx-tile.danger { border-color: var(--bad); color: var(--bad); }
+.cx-tile.danger svg { color: var(--bad); }

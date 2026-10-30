@@ -1,0 +1,51 @@
+/* cPanic: x3 blues on grey in Verdana until 2014, then flat white with a blue bar. */
+.cp[data-era="early"] { --bg: #e6e9ee; --panel: #ffffff; --line: #b9c3d0; --accent: #1d4f91; --info: #1d4f91; --font: Verdana, Geneva, sans-serif; --r: 3px; --menu: #1d3f6e; --menu-fg: #dce6f4; font-size: 12px; }
+.cp[data-era="late"] { --bg: #ffffff; --panel: #ffffff; --line: #e1e5ea; --accent: #179bd7; --info: #179bd7; --font: "Open Sans", "Helvetica Neue", Arial, sans-serif; --r: 2px; --menu: #293a4a; --menu-fg: #e7edf3; }
+
+.cp-logo { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.cp-logo small { margin-left: 8px; font-size: 11px; font-weight: 400; letter-spacing: 0; opacity: 0.8; }
+.cp-top { display: flex; align-items: center; gap: 14px; padding: 10px 16px; }
+.cp-top .cx-host { flex: 1; color: inherit; opacity: 0.75; }
+.cp-out { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.cp[data-era="early"] .cp-top { background: linear-gradient(#2d68b4, #163f78); color: #fff; border-bottom: 3px solid #f58220; }
+.cp[data-era="late"] .cp-top { background: #fff; color: var(--menu); border-bottom: 1px solid var(--line); }
+.cp[data-era="late"] .cp-logo { color: #ff6c2c; }
+.cp[data-era="late"] .cp-logo small { color: var(--menu); }
+
+.cp-body { display: flex; flex: 1; min-height: 0; }
+.cp-menu { display: flex; flex-direction: column; gap: 10px; width: 210px; flex: none; padding: 12px 10px; background: var(--menu); color: var(--menu-fg); }
+.cp-find { display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: #fff; color: #555; border-radius: var(--r); }
+.cp-find input { flex: 1; min-width: 0; border: 0; padding: 2px 0; background: none; color: #222; }
+.cp-menu section { display: flex; flex-direction: column; }
+.cp-menu h3 { margin: 4px 0 4px; font-size: 11px; font-weight: 700; }
+.cp-menu button { padding: 4px 8px; border: 0; border-radius: var(--r); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.cp-menu button:hover { background: rgb(255 255 255 / 0.1); }
+.cp-menu button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.cp[data-era="early"] .cp-menu h3 { color: #fff; border-bottom: 1px solid rgb(255 255 255 / 0.25); padding-bottom: 2px; }
+.cp[data-era="early"] .cp-menu button { text-decoration: underline; }
+.cp[data-era="early"] .cp-menu button[aria-pressed="true"] { background: #f58220; text-decoration: none; }
+.cp[data-era="late"] .cp-menu { padding: 0; gap: 0; }
+.cp[data-era="late"] .cp-find { margin: 12px 10px; }
+.cp[data-era="late"] .cp-menu h3 { margin: 0; padding: 10px 14px 6px; color: #8fa3b5; font-size: 12px; font-weight: 600; }
+.cp[data-era="late"] .cp-menu button { padding: 8px 14px; border-radius: 0; border-left: 3px solid transparent; }
+.cp[data-era="late"] .cp-menu button[aria-pressed="true"] { background: rgb(255 255 255 / 0.08); border-left-color: var(--accent); }
+
+.cp-main { flex: 1; min-width: 0; padding: 16px 20px; overflow: auto; }
+.cp-main h1 { margin: 0 0 14px; font-size: 18px; color: var(--accent); }
+.cp-main h2 { margin: 18px 0 8px; font-size: 13px; }
+.cp[data-era="early"] .cp-main h2 { padding: 4px 8px; background: linear-gradient(#f4f6f9, #d9e0ea); border: 1px solid var(--line); }
+.cp[data-era="early"] .cx-table th { background: #d9e0ea; color: #1d3f6e; }
+.cp[data-era="late"] .cp-main h1 { color: var(--menu); font-weight: 400; font-size: 22px; }
+
+.cp[data-era="early"] .cx-tile { background: linear-gradient(#fff, #edf1f6); }
+.cp[data-era="late"] .cx-tile { flex-direction: row; justify-content: flex-start; width: 220px; padding: 10px 12px; border-color: transparent; text-align: left; }
+.cp[data-era="late"] .cx-tile svg { width: 22px; height: 22px; }
+
+.cp-login { align-items: center; justify-content: center; padding: 48px 16px; }
+.cp-card { display: flex; flex-direction: column; gap: 12px; width: min(360px, 100%); padding: 28px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+.cp-card .cx-btn { justify-content: center; padding: 8px; }
+.cp-login[data-era="early"] { background: linear-gradient(#163f78 0 160px, var(--bg) 160px); }
+.cp-login[data-era="early"] .cp-card { border-top: 4px solid #f58220; box-shadow: 0 6px 20px rgb(0 0 0 / 0.15); }
+.cp-login[data-era="early"] .cp-logo { color: var(--accent); }
+.cp-login[data-era="late"] .cp-card { border: 0; }
+.cp-login[data-era="late"] .cp-logo { color: #ff6c2c; text-align: center; }

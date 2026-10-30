@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Every hosting and game panel now looks like the product it is modelled on, and changes its look over the years.
 - Operating system images are downloaded from their websites, written to a USB stick and plugged into the server at the rack, or mounted on a virtual machine.
 - The desktop has its own sounds for starting up, minimizing windows, opening menus, notifications, failed actions and confirmed deletions, and each Pear OS version gives them its own voice.
 - A website you host for free as a sponsor shows your company logo in its footer while the sponsorship runs.

@@ -365,6 +365,18 @@ Each software with a web console gets its own component and stylesheet, modelled
 | MinnIO Console | 2016: dark, red, a bucket list | 2021: white, red, cards |
 | Mailpig | 2015: the dark Mailcow-style admin, pink accent, tabs (Mailboxes, Domains, Queue) | same |
 
+Built so far: the seven hosting and game panels (cPanic to Pterodaktyl). Each lives in `consoles/<id>/` and lays out the blocks of `consoles/PanelBase.tsx` (object rows, nodes, software facts and actions, the login form) in its own chrome; the `CONSOLES` map in `ConsolePage.tsx` routes a software to its component, and software without an entry still wears the shared frames. The look switches on January 1 of the late year in the table. The pages each panel shows:
+
+| Console | Pages | Layout |
+| --- | --- | --- |
+| cPanic | List Accounts, Cluster Status, Software and Updates | left menu with a Find box filtering it; software actions as icon tiles under a Server Information table |
+| Pleskit | Websites & Domains, Nodes, Tools & Settings | early: tools as an icon grid in boxes; late: two flat cards (server information, updates and server management) |
+| DirectAdmen | Home, Web spaces, Nodes | Home holds three columns (Server Manager links, Server Tools links, Server Info); late adds a search in the top bar that filters web spaces |
+| FreePanel | Web spaces, Nodes, Software and updates | category tree (Servers, Cluster, System) on the left |
+| TCAdmen | Game Servers, System Settings | a tree of game servers on the left filters the table to one server |
+| MultiKraft | Servers, Settings | early: a table with status dots, memory and CPU; late: one card per server |
+| Pterodaktyl | Servers, Settings | one card per server with CPU and memory meters; the top bar becomes a sidebar in the late look |
+
 ## 11. Economy
 
 Add to `docs/design/economy.md` under "Platforms and licenses":

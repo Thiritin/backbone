@@ -1,0 +1,71 @@
+import { Actions, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Row, type Tab } from "../PanelBase";
+import "./multikraft.css";
+
+// docs/design/software.md, section 10: dark grey under a brown header with status dot tables until 2018, then white, green and cards.
+const ERAS = erasFrom(2010, 2018);
+
+const Dot = ({ r }: { r: Row }) => <span className="mk-status"><i className={`mk-dot ${r.tone}`} />{r.state}</span>;
+
+export function MultiKraft(p: PanelProps) {
+  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f);
+  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
+  if (!p.signedIn) return (
+    <div className="cx mk mk-login" data-era={era}>
+      <LoginForm className="mk-card" onLogin={p.login} button="Login">
+        <div className="mk-logo">MultiKraft</div>
+        <div className="cx-host">{p.host}</div>
+      </LoginForm>
+    </div>
+  );
+  const menu: [Tab, string][] = [["objects", "Servers"], ["software", "Settings"]];
+  return (
+    <div className="cx mk" data-era={era}>
+      <header className="mk-top">
+        <span className="mk-logo">MultiKraft</span>
+        <nav>{menu.map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}</nav>
+        <span className="cx-host">{p.host}</span>
+        <button onClick={p.logout}>Logout</button>
+      </header>
+      <main className="mk-main">
+        {tab !== "software" && rows.length === 0 && <p className="cx-empty">Nothing here yet.</p>}
+        {tab !== "software" && rows.length > 0 && (era === "early"
+          ? (
+            <table className="cx-table">
+              <thead><tr><th>Server</th><th>Status</th><th>Memory</th><th>CPU</th><th /></tr></thead>
+              <tbody>
+                {rows.map((r) => (
+                  <RowLines key={r.id} r={r} span={5}>
+                    <td><b>{r.name}</b></td>
+                    <td><Dot r={r} /></td>
+                    <td><Bar use={r.ram} /><span className="cx-use num">{ramText(r)}</span></td>
+                    <td className="cx-use num">{cpuText(r)}</td>
+                    <td><Actions actions={r.actions} className="cx-acts" /></td>
+                  </RowLines>
+                ))}
+              </tbody>
+            </table>
+          )
+          : (
+            <div className="mk-cards">
+              {rows.map((r) => (
+                <article key={r.id} className="mk-server">
+                  <header><b>{r.name}</b><Dot r={r} /></header>
+                  <div><span className="cx-use">Memory</span><Bar use={r.ram} /><span className="cx-use num">{ramText(r)}</span></div>
+                  <div><span className="cx-use">CPU</span><Bar use={r.cpu} /><span className="cx-use num">{cpuText(r)}</span></div>
+                  <Actions actions={r.actions} className="cx-acts" />
+                  {r.panel}
+                </article>
+              ))}
+            </div>
+          ))}
+        {tab === "software" && (
+          <>
+            <Facts facts={sw.facts} />
+            <Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
+            {sw.panel}
+          </>
+        )}
+      </main>
+    </div>
+  );
+}

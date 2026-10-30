@@ -1,0 +1,235 @@
+// docs/design/software.md, section 10: what every console offers, as blocks each product lays out in its own chrome.
+import { ArrowRightLeft, CalendarClock, Circle, Maximize2, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { yearOf } from "../../../../sim/00-core/time";
+import { autoUpdates, softwareById } from "../../../../sim/10-catalog/platforms";
+import type { Resources } from "../../../../sim/10-catalog/products";
+import type { Look } from "../../../../sim/10-catalog/sites";
+import type { GameState } from "../../../../sim/50-state";
+import { hostOfVm, isOwnVm, vmById, workloadsOn, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
+import { deviceHealth } from "../../../../sim/60-infra/status";
+import { workloadUse } from "../../../../sim/60-infra/usage";
+import { familyOf, openVulns } from "../../../../sim/60-infra/vulns";
+import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
+import { deleteVm, removePanelHost, resizePanelVm } from "../../../../sim/90-actions/clusters";
+import { setSitesOffline } from "../../../../sim/90-actions/security";
+import { setAutoUpdate, uninstallSoftware, updateDue, updateSoftware } from "../../../../sim/90-actions/software";
+import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../../../sim/90-actions/vms";
+import { useStore } from "../../../store";
+import { disk, ram } from "../../hw";
+import { VM_STATE, vmLabel, vmState } from "../../products/parts";
+import { hoursText } from "../../vms/migrate";
+import { eraOf } from "../sites/era";
+
+export type Tab = "objects" | "nodes" | "software";
+
+// What ConsolePage hands a product console; the console draws its own login while signedIn is false.
+export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void }
+
+export const erasFrom = (early: number, late: number): { from: number; look: Look }[] => [{ from: early, look: "early" }, { from: late, look: "late" }];
+export const eraAt = (eras: { from: number; look: Look }[], game: GameState): Look => eraOf(eras, yearOf(game.hour));
+
+export function usePanelTab(f: ConsoleFeatures, first: Tab = "objects"): [Tab, (t: Tab) => void] {
+  const [tab, setTab] = useState<Tab>(first);
+  return [tab === "nodes" && !f.cluster ? "objects" : tab, setTab];
+}
+
+export interface PanelAction { id: string; label: string; run: () => void; tone?: "primary" | "danger" }
+
+const ICON: Record<string, LucideIcon> = {
+  update: RefreshCw, auto: CalendarClock, offline: PowerOff, resize: Maximize2, remove: Trash2, confirm: Trash2, cancel: X,
+  start: Play, stop: Square, restore: RotateCcw, migrate: ArrowRightLeft, console: Terminal, delete: Trash2,
+};
+export const ActionIcon = ({ id, size }: { id: string; size?: number }) => { const I = ICON[id] ?? Circle; return <I size={size} aria-hidden />; };
+
+// Actions as icon tiles: the glyph above its label.
+export function Tiles({ actions, className = "cx-tiles" }: { actions: PanelAction[]; className?: string }) {
+  return <div className={className}>{actions.map((a) => <button key={a.id} className={`cx-tile ${a.tone ?? ""}`} onClick={a.run}><ActionIcon id={a.id} size={28} /><span>{a.label}</span></button>)}</div>;
+}
+
+export function Actions({ actions, className = "cx-tools", children }: { actions: PanelAction[]; className?: string; children?: ReactNode }) {
+  return <div className={className}>{children}{actions.map((a) => <button key={a.id} className={`cx-btn ${a.tone ?? ""}`} onClick={a.run}>{a.label}</button>)}</div>;
+}
+
+export function LoginForm({ onLogin, button, className, children }: { onLogin: () => void; button: string; className?: string; children?: ReactNode }) {
+  return (
+    <form className={className} onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
+      {children}
+      <label className="cx-field">Username<input defaultValue="admin" autoComplete="off" /></label>
+      <label className="cx-field">Password<input type="password" defaultValue="correcthorse" autoComplete="off" /></label>
+      <button className="cx-btn primary" type="submit">{button}</button>
+    </form>
+  );
+}
+
+const pct = (used: number, of: number) => `${Math.min(100, of > 0 ? (used / of) * 100 : 0)}%`;
+export const Bar = ({ use: [used, of] }: { use: [number, number] }) => <span className="cx-bar"><i style={{ width: pct(used, of) }} /></span>;
+const num = (n: number) => `${+n.toFixed(2)}`;
+
+export function Resize({ game, host, done }: { game: GameState; host: Cluster; done: () => void }) {
+  const act = useStore((s) => s.act), vm = vmById(game, host.vm)!;
+  const [size, setSize] = useState<Resources>({ vcpu: vm.vcpu, ramGb: vm.ramGb, diskGb: vm.diskGb });
+  const field = (key: keyof Resources, label: string) => (
+    <label className="cx-field">{label}
+      <input type="number" min={1} value={size[key]} onChange={(e) => setSize({ ...size, [key]: Number(e.target.value) })} />
+    </label>
+  );
+  return (
+    <div className="cx-inline">
+      {field("vcpu", "vCPU")}{field("ramGb", "RAM, GB")}{field("diskGb", "Disk, GB")}
+      <button className="cx-btn primary" onClick={() => act(resizePanelVm, host.id, size).ok && done()}>Resize</button>
+      <button className="cx-btn" onClick={done}>Cancel</button>
+    </div>
+  );
+}
+
+// Targets with the hours they take; the player sees the hours before confirming.
+function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster; done: () => void }) {
+  const act = useStore((s) => s.act), hand = c.kind === "panel", [pick, setPick] = useState<string | null>(null);
+  const clusterName = (id: string) => game.clusters.find((x) => x.id === id)?.name ?? "";
+  const targets = hand
+    ? webspaceTargets(game, w.id).map((t) => ({ key: t.clusterId, label: `${t.panel} on ${t.name}`, hours: t.hours, run: () => act(migrateWebspace, w.id, t.clusterId) }))
+    : migrationTargets(game, w.id).map((t) => ({
+      key: t.to, hours: t.down, run: () => act(migrateWorkload, w.id, t.to),
+      label: t.clusterId === c.id ? t.name : `${t.name} · ${clusterName(t.clusterId)}`,
+    }));
+  const chosen = targets.find((t) => t.key === pick);
+  const summary = !chosen ? "" : hand ? `The migration takes ${hoursText(chosen.hours)} and the site stays online.`
+    : chosen.hours === 0 ? "The machine keeps running during the move." : `The machine is offline for ${hoursText(chosen.hours)}.`;
+  return (
+    <div className="cx-inline">
+      {targets.length === 0 && <span>No host can take it.</span>}
+      {targets.map((t) => <button key={t.key} className="cx-chip" aria-pressed={t.key === pick} onClick={() => setPick(t.key)}>{t.label}</button>)}
+      {chosen && <span className="cx-note">{summary}</span>}
+      {chosen && <button className="cx-btn primary" onClick={() => chosen.run().ok && done()}>Migrate</button>}
+      <button className="cx-btn" onClick={done}>Cancel</button>
+    </div>
+  );
+}
+
+export interface Row {
+  id: string; name: string; sub: string; node: string; state: string; tone: string;
+  cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; usage: string;
+  actions: PanelAction[]; panel: ReactNode;
+}
+
+// One row per web space, game server or VM; panel is the open migrate or resize form under it.
+export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: string | null = null): Row[] {
+  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" } | null>(null);
+  const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null);
+  return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
+    const st = vmState(game, w), [state, tone] = VM_STATE[st], u = workloadUse(game, w), host = hostOfVm(game, w.id);
+    const on = st === "running" || st === "down" || st === "frozen", site = game.services.find((v) => v.id === w.serviceId);
+    const d = game.devices.find((x) => x.id === w.deviceId), movable = (on || st === "stopped") && !w.migrating, own = cloud && isOwnVm(w);
+    const actions: (PanelAction | false)[] = [
+      f.start && st === "stopped" && { id: "start", label: "Start", run: () => act(startWorkload, w.id) },
+      f.stop && on && { id: "stop", label: "Stop", run: () => act(stopWorkload, w.id) },
+      st === "lost" && f.backups && { id: "restore", label: w.backupAt === null ? "Start empty" : "Restore", run: () => act(restoreWorkload, w.id) },
+      !!f.migrate && movable && { id: "migrate", label: "Migrate", run: () => setOpen({ id: w.id, kind: "migrate" }) },
+      f.resize && !!host && cloud && { id: "resize", label: "Resize", run: () => setOpen({ id: w.id, kind: "resize" }) },
+      own && { id: "console", label: "Console", run: () => openConsole(w.id) },
+      f.delete && own && !host && { id: "delete", label: "Delete", run: () => act(deleteVm, w.id) },
+    ];
+    const o = open?.id === w.id ? open.kind : null;
+    return {
+      id: w.id, state, tone,
+      name: web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name,
+      sub: host?.panel ? consoleTitle(host.panel) : "",
+      node: d ? d.hostname ?? d.label ?? d.name : "",
+      cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu],
+      usage: web ? `${disk(Math.round(u.diskGb))} of ${disk(w.diskGb)}` : `${num(u.vcpu)} of ${w.vcpu} vCPU, ${ram(+u.ramGb.toFixed(1))} of ${ram(w.ramGb)}`,
+      actions: actions.filter((a): a is PanelAction => !!a),
+      panel: o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : null,
+    };
+  });
+}
+
+export const cpuText = (r: Row) => `${num(r.cpu[0])} of ${r.cpu[1]} vCPU`;
+export const ramText = (r: Row) => `${ram(+r.ram[0].toFixed(1))} of ${ram(r.ram[1])}`;
+
+// The plain table most consoles show their objects in; name is the first column's heading.
+export function RowsTable({ rows, name, node = false, className = "cx-table" }: { rows: Row[]; name: string; node?: boolean; className?: string }) {
+  const span = node ? 5 : 4;
+  return (
+    <table className={className}>
+      <thead><tr><th>{name}</th>{node && <th>Node</th>}<th>Status</th><th>Usage</th><th /></tr></thead>
+      <tbody>
+        {rows.length === 0 && <tr><td colSpan={span} className="cx-empty">Nothing here yet.</td></tr>}
+        {rows.map((r) => (
+          <RowLines key={r.id} r={r} span={span}>
+            <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}</td>
+            {node && <td>{r.node}</td>}
+            <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td>
+            <td><Bar use={r.lead} /><span className="cx-use num">{r.usage}</span></td>
+            <td><Actions actions={r.actions} className="cx-acts" /></td>
+          </RowLines>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+// A table row that unfolds a second row with its open panel under it.
+export function RowLines({ r, span, children }: { r: Row; span: number; children: ReactNode }) {
+  return (
+    <>
+      <tr>{children}</tr>
+      {r.panel && <tr className="cx-open"><td colSpan={span}>{r.panel}</td></tr>}
+    </>
+  );
+}
+
+export function Nodes({ game, c, className = "cx-table" }: { game: GameState; c: Cluster; className?: string }) {
+  return (
+    <table className={className}>
+      <thead><tr><th>Node</th><th>State</th><th>Health</th><th>Workloads</th></tr></thead>
+      <tbody>
+        {c.nodes.map((n) => {
+          const d = game.devices.find((x) => x.id === n.deviceId);
+          return (
+            <tr key={n.deviceId}>
+              <td><b>{d?.hostname ?? d?.name}</b>{d?.label && <span className="cx-sub">{d.label}</span>}</td>
+              <td className="cx-cap">{n.state}</td>
+              <td className="cx-cap">{d ? deviceHealth(game, d.id).state : ""}</td>
+              <td className="num">{workloadsOn(game, n.deviceId).length}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+export interface Fact { label: string; value: string; num?: boolean }
+
+export function Facts({ facts, className = "cx-table cx-facts" }: { facts: Fact[]; className?: string }) {
+  return <table className={className}><tbody>{facts.map((x) => <tr key={x.label}><th>{x.label}</th><td className={x.num ? "num" : undefined}>{x.value}</td></tr>)}</tbody></table>;
+}
+
+// The software page: its facts, the actions it allows now, a note when nothing is due and the open resize form.
+export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { facts: Fact[]; actions: PanelAction[]; note: string | null; panel: ReactNode } {
+  const act = useStore((s) => s.act), [sizing, setSizing] = useState(false), [removing, setRemoving] = useState(false);
+  const family = familyOf(c)!, year = yearOf(game.hour), due = updateDue(game, c);
+  const auto = f.update && autoUpdates(softwareById(family), year), on = !!c.autoUpdate;
+  const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "", every = c.backup.every;
+  const facts: (Fact | false)[] = [
+    { label: "Software", value: consoleTitle(family) },
+    { label: "Version", value: String(c.version), num: true },
+    auto && { label: "Automatic updates", value: on ? "On" : "Off" },
+    { label: "Open vulnerabilities", value: String(openVulns(game, c.id).length), num: true },
+    f.backups && { label: "Backups", value: every[0].toUpperCase() + every.slice(1) },
+  ];
+  const actions: (PanelAction | false)[] = [
+    f.update && due && { id: "update", label: `Update to ${year}`, run: () => act(updateSoftware, c.id), tone: "primary" },
+    auto && { id: "auto", label: on ? "Turn off automatic updates" : "Turn on automatic updates", run: () => act(setAutoUpdate, c.id, !on) },
+    f.sitesOffline && c.kind === "panel" && { id: "offline", label: off ? "Bring sites online" : "Take sites offline", run: () => act(setSitesOffline, c.id, !off) },
+    f.resize && c.kind === "panel" && !!c.vm && { id: "resize", label: "Resize", run: () => setSizing(!sizing) },
+    f.delete && !removing && { id: "remove", label: "Remove host", run: () => setRemoving(true) },
+    removing && { id: "confirm", label: "Confirm remove", tone: "danger", run: () => (c.kind === "panel" ? act(removePanelHost, c.id) : act(uninstallSoftware, machine)) },
+    removing && { id: "cancel", label: "Cancel", run: () => setRemoving(false) },
+  ];
+  return {
+    facts: facts.filter((x): x is Fact => !!x), actions: actions.filter((a): a is PanelAction => !!a),
+    note: f.update && !due ? "Up to date" : null, panel: sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null,
+  };
+}
