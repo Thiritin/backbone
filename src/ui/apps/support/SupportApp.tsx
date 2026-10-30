@@ -323,6 +323,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
   const svc = game.services.find((v) => v.id === tk.serviceId);
   const p = subjectParams(game, tk);
   const sender = tk.notice && senderById(tk.notice.sender);
+  const openApp = useStore((s) => s.openApp);
   const K = kindOf(tk.kind);
   const monthly = c ? monthlyValue(game.services, c.id) : 0;
   const stray = tk.kind === "notice" && !tk.customerId;
@@ -363,6 +364,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
           <div>
             <div className="name"><Sender id={sender.id} /></div>
             <div className="sub">{tk.notice!.from}</div>
+            {tk.topic === "phishing" && <button className="sup-url" onClick={() => openApp("Browser", { kind: "url", id: tk.notice!.url })}>{tk.notice!.url}</button>}
           </div>
           <div className="happy">
             <div className="k">Customer</div>

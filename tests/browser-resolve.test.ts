@@ -8,6 +8,8 @@ import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { setSiteHost } from "../src/sim/90-actions/website";
 import { readyGame } from "./fixtures";
+import { createRng } from "../src/sim/00-core/rng";
+import { spawnNotice } from "../src/sim/40-support/notices";
 
 const web = (s: ReturnType<typeof readyGame>) => s.services.find((v) => v.product === "webHosting" && v.domain)!;
 
@@ -65,6 +67,15 @@ describe("browser resolver", () => {
     expect(resolve(s, "generic.com").page).toEqual({ kind: "notfound" });
     expect(resolve(s, VIDEO_URL).page).toEqual({ kind: "video" });
     expect(resolve(s, "youtub.com/watch?v=other").page).toEqual({ kind: "notfound" });
+  });
+
+  it("serves a reported phishing page until it is taken down", () => {
+    const s = readyGame(1);
+    const t = spawnNotice(s, null, true, createRng(3), "phishing");
+    expect(resolve(s, t.notice!.url).page).toEqual({ kind: "phishing", sender: "baenk" });
+    expect(resolve(s, `${t.notice!.url}x`).page.kind).not.toBe("phishing");
+    t.outcome = "takenDown";
+    expect(resolve(s, t.notice!.url).page.kind).not.toBe("phishing");
   });
 
   it("does not know other names", () => {

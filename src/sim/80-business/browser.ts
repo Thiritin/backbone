@@ -29,6 +29,7 @@ export type Page =
   | { kind: "ipmi"; deviceId: string }
   | { kind: "kvm"; deviceId: string }
   | { kind: "video" }
+  | { kind: "phishing"; sender: string }
   | { kind: "sponsorboard" }
   | { kind: "index" }
   | { kind: "software"; id: string }
@@ -112,6 +113,9 @@ export function resolve(s: GameState, raw: string): Resolved {
   const { host, path } = split(raw), url = `${host}${path}`;
   const out = (page: Page, load: Load = "fast"): Resolved => ({ url, host, path, page, load });
   const domain = companyDomain(s);
+  // A phishing page a notice reports stays up until the player takes it down.
+  const phish = s.tickets.filter((t) => t.topic === "phishing" && t.notice && split(t.notice.url).host === host && split(t.notice.url).path === path);
+  if (phish.length && !phish.some((t) => t.outcome === "takenDown" || t.outcome === "seized")) return out({ kind: "phishing", sender: phish[0].notice!.sender });
   if (host === domain || host === `www.${domain}`) {
     if (!s.marketing.launched) return out({ kind: "notfound" });
     const st = siteStatus(s);

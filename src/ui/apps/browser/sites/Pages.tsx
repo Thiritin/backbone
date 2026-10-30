@@ -4,6 +4,7 @@ import { t } from "../../../../i18n/en";
 import { VIDEO_ARTIST, VIDEO_REAL, VIDEO_TITLE } from "../../../../sim/80-business/browser";
 import type { GameState } from "../../../../sim/50-state";
 import { customerSite } from "../../../../sim/80-business/website";
+import { senderById } from "../../../../sim/40-support/notices";
 import "./pages.css";
 
 const hueOf = (name: string): number => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
@@ -50,6 +51,23 @@ export function VideoPage() {
           <button className="yt-like" aria-pressed={liked} onClick={() => setLiked(!liked)}>{liked ? "Liked" : "Like"}</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// The bank login a phishing notice reports; the form goes nowhere.
+export function PhishingPage({ sender }: { sender: string }) {
+  const bank = senderById(sender);
+  return (
+    <div className="bk">
+      <header className="bk-head"><i>/</i>{bank.name}</header>
+      <form className="bk-form" onSubmit={(e) => e.preventDefault()}>
+        <h1>Online-Banking</h1>
+        <label>Branch<input inputMode="numeric" /></label>
+        <label>Account<input inputMode="numeric" /></label>
+        <label>PIN<input type="password" /></label>
+        <button>Log in</button>
+      </form>
     </div>
   );
 }

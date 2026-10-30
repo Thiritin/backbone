@@ -21,7 +21,8 @@ import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/RegistrarSite";
-import { CannotReach, CustomerSite, HostPage, NotFound, VideoPage } from "./sites/Pages";
+import { CannotReach, CustomerSite, HostPage, NotFound, PhishingPage, VideoPage } from "./sites/Pages";
+import { senderById } from "../../../sim/40-support/notices";
 import { VendorSite } from "./sites/vendors/registry";
 import "./browser.css";
 
@@ -53,6 +54,7 @@ function titleOf(game: GameState, r: Resolved): string {
       return d ? kvmTitle(d) : r.host;
     }
     case "video": return VIDEO_TITLE;
+    case "phishing": return `${senderById(p.sender).name} Online-Banking`;
     case "sponsorboard": return BOARD_TITLE;
     case "index": return "Yahoy! Directory";
     case "software": return softwareById(p.id).name;
@@ -78,6 +80,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} />;
   else if (p.kind === "video") body = <VideoPage />;
+  else if (p.kind === "phishing") body = <PhishingPage sender={p.sender} />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
   else if (p.kind === "software" || p.kind === "os") body = <SoftwarePage game={game} kind={p.kind} id={p.id} path={r.path} go={go} />;

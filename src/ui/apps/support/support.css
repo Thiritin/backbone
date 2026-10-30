@@ -86,3 +86,4 @@
 .sup .inc-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px 24px; padding: 16px 20px; align-content: start; overflow: auto; }
 .sup .inc-facts dt { color: var(--text-3); }
 .sup .inc-facts .inc-customers { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.sup .cust .sup-url { display: block; border: 0; padding: 0; background: none; font: inherit; font-size: 12px; color: var(--accent); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
