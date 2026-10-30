@@ -68,7 +68,7 @@ describe("company website", () => {
     const old = JSON.parse(serialize(s));
     delete old.marketing.lines;
     expect(deserialize(JSON.stringify(old)).marketing.lines)
-      .toEqual(["webHosting", "vps", "gameServer"]);
+      .toEqual(["webHosting", "vps", "gameServer", "ssl"]);
 
     s.marketing = { ...s.marketing, lines: ["vps"] };
     expect(deserialize(serialize(s)).marketing.lines).toEqual(["vps"]);

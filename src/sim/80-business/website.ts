@@ -13,17 +13,17 @@ import type { SimEvent } from "../88-tick/tick";
 import { hasOrderForm, owns } from "./marketing";
 import { salesAddress } from "./mail";
 
-export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu"];
+export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu", "ssl"];
 
 export const listed = (s: GameState, p: Product): boolean => s.marketing.lines.includes(p);
 
 // The error key for why a line cannot go on the website, or null when it can.
 export const lineBlocker = (s: GameState, p: Product): string | null =>
-  lineOffered(s, p) ? null : noRoomError(s, p);
+  p === "ssl" ? (s.registrar ? null : "error.needsRegistrar") : lineOffered(s, p) ? null : noRoomError(s, p);
 
 // Saves from before the website list every line they could sell.
 export const fillLines = (s: GameState, saved: Product[] | undefined): GameState =>
-  saved ? s : { ...s, marketing: { ...s.marketing, lines: SITE_LINES.filter((p) => lineOffered(s, p)) } };
+  saved ? s : { ...s, marketing: { ...s.marketing, lines: SITE_LINES.filter((p) => !lineBlocker(s, p)) } };
 
 // What the website shows: each listed line, with its price from the line's smallest size at the player's rates once the
 // order form takes orders, and the order address while orders still come by email.

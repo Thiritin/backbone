@@ -43,7 +43,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   ],
   "Virtual machines": [type("Workloads and migrations", "failedOver", "failoverStuck")],
   Products: [type("Workloads and migrations", "migrated", "migrationFailed"), type("Backups", "backupFailed"), type("Installs", "installed", "switched")],
-  Customers: [type("Orders and sign-ups", "orderPlaced", "friendsJoined")],
+  Customers: [type("Orders and sign-ups", "orderPlaced", "certificateSold", "friendsJoined")],
   Billing: [type("Payments and dunning", "collected", "invoices", "suspended", "suspendedLeft"), type("Domains", "domainExpired", "domainExpiring")],
   Research: [type("Unlocks", "trainingDone")],
   Shop: [type("Used market", "used*")],

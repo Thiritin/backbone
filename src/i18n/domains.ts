@@ -4,6 +4,7 @@ type Params = Record<string, string | number>;
 export const DOMAINS_EN: Record<string, (p: Params) => string> = {
   "ledger.registrarSignup": (p) => `Signup at ${p.name}`,
   "ledger.registrar": (p) => `Partner fee at ${p.name}`,
+  "ledger.certificates": (p) => `${p.count} SSL certificate${Number(p.count) === 1 ? "" : "s"} at ${p.name}`,
   "ledger.domains": (p) => `${p.count} domain${Number(p.count) === 1 ? "" : "s"} at ${p.name}`,
   "ledger.companyMail": (p) => `Company email: ${p.name}, ${p.seats} seat${Number(p.seats) === 1 ? "" : "s"}`,
   "error.unknownRegistrar": () => "This registrar partner does not exist.",

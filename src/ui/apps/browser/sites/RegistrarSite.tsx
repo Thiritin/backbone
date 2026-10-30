@@ -2,7 +2,7 @@ import { useState, type CSSProperties } from "react";
 import { euro, euroCents } from "../../../../sim/00-core/money";
 import { registrarById, TIERS, type RegistrarId } from "../../../../sim/10-catalog/registrars";
 import { derivedDomain } from "../../../../sim/30-customers/domains";
-import { monthlyDomains, spinNames, TRANSFER_MINUTES, wholesale, yearlyAt } from "../../../../sim/30-customers/registrar";
+import { certificateCount, monthlyDomains, spinNames, TRANSFER_MINUTES, wholesale, yearlyAt } from "../../../../sim/30-customers/registrar";
 import { registering } from "../../../../sim/30-customers/registry";
 import type { GameState } from "../../../../sim/50-state";
 import { techsAt, OP_TASK } from "../../../../sim/47-staff/technicians";
@@ -63,6 +63,7 @@ export function RegistrarSite({ game, id }: { game: GameState; id: RegistrarId }
             <div key={i}><dt>{i === 0 ? "Any size" : `${TIERS[i].toLocaleString("en")}+ domains`}</dt><dd className="num">{own && tier === i ? <strong>{factor(f)}</strong> : factor(f)}</dd></div>
           ))}
           {r.tlds && Object.entries(r.tlds).map(([tld, f]) => <div key={tld}><dt>.{tld}</dt><dd className="num">{factor(f)}</dd></div>)}
+          <div><dt>SSL certificate</dt><dd className="num">{euro(r.ssl)} a year</dd></div>
         </dl>
         {own ? <span className="rg-pill">Under contract</span>
           : <button className="rg-btn" disabled={!!cur?.transfer} onClick={() => act(signRegistrar, id)}>{cur ? "Switch to this partner" : "Sign"}</button>}
@@ -73,8 +74,9 @@ export function RegistrarSite({ game, id }: { game: GameState; id: RegistrarId }
           <dl className="rg-specs">
             <div><dt>Tier</dt><dd className="num">{tier + 1} of {TIERS.length}</dd></div>
             <div><dt>Domains</dt><dd className="num">{count}</dd></div>
+            <div><dt>SSL certificates</dt><dd className="num">{certificateCount(game)}</dd></div>
             <div><dt>Next tier</dt><dd className="num">{next ? `At ${next.toLocaleString("en")} domains` : "None"}</dd></div>
-            <div><dt>Per month</dt><dd className="num">{euroCents(Math.max(r.minimum, monthlyDomains(game) + r.fee))}</dd></div>
+            <div><dt>Per month</dt><dd className="num">{euroCents(Math.max(r.minimum, monthlyDomains(game) + r.fee) + (certificateCount(game) * r.ssl) / 12)}</dd></div>
           </dl>
           {t && (
             <div className="rg-transfer">

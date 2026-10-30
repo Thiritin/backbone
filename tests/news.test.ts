@@ -55,7 +55,7 @@ describe("news", () => {
   it("mentions a product line the player could sell but has not listed, once", () => {
     const s = readyGame(7);
     s.hour = at(2008, 0, 0) - 1;
-    s.marketing.lines = s.marketing.lines.filter((p) => p !== "webHosting");
+    s.marketing.lines = [...s.marketing.lines.filter((p) => p !== "webHosting"), "ssl"];
     const first = tick(s).filter((e) => e.key === "event.news.line");
     expect(first).toHaveLength(1);
     expect(first[0].params.line).toBe("Web hosting");

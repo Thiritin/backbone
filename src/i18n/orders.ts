@@ -14,6 +14,8 @@ export const ORDERS_EN: Record<string, (p: Params) => string> = {
   "error.orderNotOffered": () => "You do not offer this product in this city.",
   "event.order.title": () => "New order",
   "event.order.text": (p) => `${p.name} orders ${p.spec}.`,
+  "event.certificateSold.title": () => "SSL certificate sold",
+  "event.certificateSold.text": (p) => `${p.name} ordered an SSL certificate for ${p.domain}.`,
   "event.orderPlaced.title": () => "New order",
   "event.orderPlaced.text": (p) => `${p.name} ordered through the order form at ${euroCents(Number(p.price))} a month: ${p.spec}.`,
   "event.orderFailed.title": () => "Setup failed",

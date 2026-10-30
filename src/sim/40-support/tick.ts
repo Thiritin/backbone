@@ -19,6 +19,7 @@ import { decideBreach } from "../60-infra/breach";
 import { serviceOnline } from "./status";
 import { outgoing, sendAction } from "./replies";
 import { overpricing, revertPrice } from "../30-customers/pricing";
+import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
 import { applyRetention, cancelReason, endDiscounts, FIX_CHECK, sendOffer, settleFix, type RetentionId } from "./retention";
 import {
   bump, cancelCustomer, createTicket, credit, expandable, GAMER_ABUSE_RATE, HOURS_PER_MONTH, HOW_TO, isFinal, KB_DEFLECT, KNOWLEDGE_BASE, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
@@ -71,8 +72,11 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
       const right = work.arg === rightTemplate(s, t);
       t.replies = [...t.replies, { hour: s.hour, template: work.arg, right, ...outgoing(s, t, c, `tpl.${work.arg}`), ...(work.by && { by: work.by }) }];
       t.updatedAt = s.hour;
-      if (right) t.status = "waiting";
-      else {
+      if (right) {
+        t.status = "waiting";
+        const hosting = t.kind === "howTo" && t.topic === "ssl" && s.services.find((v) => v.id === t.serviceId && v.endedAt === null);
+        if (hosting && offerCertificate(s, hosting, CERT_SHARE.asked)) events.push({ app: "Customers", key: "event.certificateSold", params: { name: c.name, domain: hosting.domain ?? hosting.label } });
+      } else {
         // A wrong answer brings a follow-up in the same thread with a fresh response time.
         bump(c, WRONG_ANSWER);
         Object.assign(t, { status: "open", unread: true, dueAt: replyDue(c, s.hour) });

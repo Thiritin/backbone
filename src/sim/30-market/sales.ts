@@ -20,6 +20,7 @@ import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { domainFor } from "../30-customers/domains";
+import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
@@ -205,7 +206,11 @@ export function fulfil(s: GameState, r: SalesRequest): ActionResult {
     ? provisionService(s, customerId, r.product, { label, spec: r.spec, sla: r.sla, price: r.quote! / 730, clusterId: target.clusterId, zone: target.zone })
     : { ok: false, error: noRoomError(s, r.product) };
   if (!placed.ok) Object.assign(s, before);
-  else if (r.kind !== "expansion") editRequest(s, r.id, () => ({ customerId }));
+  else if (r.kind !== "expansion") {
+    editRequest(s, r.id, () => ({ customerId }));
+    const v = r.product === "webHosting" && s.services.find((x) => x.id === placed.id);
+    if (v) offerCertificate(s, v, CERT_SHARE.order);
+  }
   return placed;
 }
 

@@ -23,7 +23,8 @@ export const BLURB: Record<Product, string> = {
   dedicated: "Rents you a whole physical server by the month.",
   colocation: "Houses your own servers in our racks with power and network.",
   gpu: "Rents you virtual servers with graphics cards for training and rendering.",
-  domain: "", ssl: "",
+  ssl: "Puts the padlock in your visitors' address bar with a certificate for your domain.",
+  domain: "",
 };
 
 export function CompanySite({ game, onAdmin }: { game: GameState; onAdmin: () => void }) {

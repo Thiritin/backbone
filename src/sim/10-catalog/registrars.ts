@@ -19,13 +19,15 @@ export interface Registrar {
   factors: Factors;
   // Factors that replace the tier's for a TLD.
   tlds?: Record<string, number>;
+  // What a resold SSL certificate costs a year.
+  ssl: number;
 }
 
 export const REGISTRARS: Registrar[] = [
-  { id: "nameCheep", name: "NameCheep", from: 2005, signup: 0, fee: 0, minimum: 0, factors: [1.5, 1.5, 1.5, 1.5] },
-  { id: "goDuddy", name: "GoDuddy Reseller", from: 2005, signup: 0, fee: 9, minimum: 0, factors: [1.3, 1.2, 1.15, 1.1] },
-  { id: "interNetY", name: "InterNetY", from: 2005, signup: 200, fee: 0, minimum: 50, factors: [1.15, 1.08, 1.05, 1.03], tlds: { de: 1 } },
-  { id: "openSrsly", name: "OpenSRSly", from: 2005, signup: 100, fee: 0, minimum: 0, factors: [1.25, 1.15, 1.08, 1.04] },
+  { id: "nameCheep", name: "NameCheep", from: 2005, signup: 0, fee: 0, minimum: 0, factors: [1.5, 1.5, 1.5, 1.5], ssl: 12 },
+  { id: "goDuddy", name: "GoDuddy Reseller", from: 2005, signup: 0, fee: 9, minimum: 0, factors: [1.3, 1.2, 1.15, 1.1], ssl: 10 },
+  { id: "interNetY", name: "InterNetY", from: 2005, signup: 200, fee: 0, minimum: 50, factors: [1.15, 1.08, 1.05, 1.03], tlds: { de: 1 }, ssl: 9 },
+  { id: "openSrsly", name: "OpenSRSly", from: 2005, signup: 100, fee: 0, minimum: 0, factors: [1.25, 1.15, 1.08, 1.04], ssl: 8 },
 ];
 
 export const registrarById = (id: string): Registrar | undefined => REGISTRARS.find((r) => r.id === id);

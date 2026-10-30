@@ -63,7 +63,7 @@ export function Rates({ game }: { game: GameState }) {
               </div>
               <div className="fin-card-b">
                 {UNITS[p].map((u) => <RateRow key={u} product={p} unit={u} mine={mine[u]} market={market[u] ?? 0} />)}
-                {SITE_LINES.includes(p) && <RateRow product={p} unit="setup" mine={mine.setup} market={marketSetup(p, year)} />}
+                {SITE_LINES.includes(p) && p !== "ssl" && <RateRow product={p} unit="setup" mine={mine.setup} market={marketSetup(p, year)} />}
                 <dl className="rate-from">
                   <div><dt>From</dt><dd className="num">{euroCents(offerPrice(game, p, smallest))} {per}</dd></div>
                   <div><dt>Market from</dt><dd className="num">{euroCents(specPrice(p, smallest, year))} {per}</dd></div>

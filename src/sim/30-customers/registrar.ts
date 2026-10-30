@@ -51,7 +51,10 @@ export function spinNames(input: string): string[] {
 // One twelfth of every domain's wholesale, the monthly domain total.
 export const monthlyDomains = (s: GameState): number => cents(s.domains.reduce((n, d) => n + wholesale(s, d.name), 0) / 12);
 
-// The ledger entries of a month start: the signup once, the fee or the unused part of the minimum, and the domains.
+// The certificates resold through the partner: every running SSL service.
+export const certificateCount = (s: GameState): number => s.services.filter((v) => v.product === "ssl" && v.endedAt === null).length;
+
+// The ledger entries of a month start: the signup once, the fee or the unused part of the minimum, the domains and the certificates.
 export function registrarBill(s: GameState): LedgerEntry[] {
   const r = s.registrar, def = r && registrarById(r.id);
   if (!r || !def) return [];
@@ -61,6 +64,8 @@ export function registrarBill(s: GameState): LedgerEntry[] {
   const fee = def.minimum > 0 ? Math.max(0, cents(def.minimum - domains)) : def.fee;
   if (fee > 0) entry("ledger.registrar", { name: def.name }, fee);
   if (domains > 0) entry("ledger.domains", { name: def.name, count: s.domains.length }, domains);
+  const certs = certificateCount(s);
+  if (certs > 0) entry("ledger.certificates", { name: def.name, count: certs }, cents((certs * def.ssl) / 12));
   return out;
 }
 

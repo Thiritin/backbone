@@ -13,11 +13,10 @@ import { SKILLS } from "../10-catalog/research";
 import { HOME_LINES } from "../20-world/datacenters";
 import { LINE_NAME } from "../30-market/spec";
 import type { GameState } from "../50-state";
-import { lineOffered } from "../60-infra/cluster";
 import { familyOf } from "../60-infra/vulns";
 import type { SimEvent } from "../88-tick/tick";
 import { MAIL_PROVIDERS } from "./mail";
-import { listed, SITE_LINES } from "./website";
+import { lineBlocker, listed, SITE_LINES } from "./website";
 
 type Params = Record<string, string | number>;
 export interface NewsDef { id: string; key: string; at: number; params: Params }
@@ -101,6 +100,6 @@ export function newsTick(s: GameState): SimEvent[] {
   const year = yearOf(s.hour), out = year > START_YEAR && s.hour === at(year) ? releases(s, year) : [];
   if (out.length) post(releaseDef(`release.${year}.${out.join("+")}`));
   // A line the player could sell but has not put on the website is mentioned once.
-  if (isMonthStart(s.hour)) for (const p of SITE_LINES) if (lineOffered(s, p) && !listed(s, p)) post(lineDef(p));
+  if (isMonthStart(s.hour)) for (const p of SITE_LINES) if (!lineBlocker(s, p) && !listed(s, p)) post(lineDef(p));
   return events;
 }

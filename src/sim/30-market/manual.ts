@@ -5,6 +5,7 @@ import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Service } from "../30-customers/customers";
 import { DOMAIN_FEE, domainOf, register, TRANSFER_FEE } from "../30-customers/registry";
+import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
 import { cancelCustomer, isFinal, replyDue, type Ticket } from "../40-support/tickets";
 import { DUE_DAYS, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
@@ -165,6 +166,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     });
     if (!done.ok) return { app: "Support", key: "event.stepFailed", params: { name: requestName(r), error: done.error ?? "error.noCapacity" } };
     s.services = s.services.map((v) => (v.id === done.id ? { ...v, prepaidUntil: s.hour + MONTH } : v));
+    if (r.product === "webHosting") offerCertificate(s, s.services.find((v) => v.id === done.id)!, CERT_SHARE.order);
     editRequest(s, r.id, () => ({ serviceId: done.id! }));
     setTicket(s, t.id, { serviceId: done.id!, updatedAt: s.hour });
     mailRequest(s, r.id, "order.live", by, { owned: r.owned ? 1 : 0 });
