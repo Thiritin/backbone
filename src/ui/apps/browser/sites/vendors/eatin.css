@@ -1,0 +1,30 @@
+.vs-etn { font: 11px/1.45 Arial, Helvetica, sans-serif; color: #333333; background: #ffffff; }
+.vs-etn header { display: flex; align-items: center; gap: 28px; padding: 10px 18px; background: linear-gradient(#1f69b3, #0b4a8b); color: #ffffff; }
+.vs-etn .vs-wm { display: flex; align-items: center; gap: 8px; font: 700 18px/1 Arial, sans-serif; letter-spacing: 0.08em; }
+.vs-etn .vs-wm svg path { fill: #ffffff; }
+.vs-etn nav { display: flex; gap: 14px; }
+.vs-etn nav a { color: #ffffff; text-decoration: none; font-weight: 700; }
+.vs-etn nav a[aria-current] { text-decoration: underline; }
+.vs-etn main { padding: 12px 18px; max-width: 840px; }
+.vs-etn .vs-hero { padding: 12px; background: #e7eff8; border: 1px solid #b8cde4; margin-bottom: 10px; }
+.vs-etn h1 { font-size: 15px; color: #0b4a8b; margin-bottom: 4px; }
+.vs-etn h2 { font-size: 12px; color: #0b4a8b; margin: 12px 0 4px; }
+.vs-etn .vs-cats { display: flex; gap: 10px; }
+.vs-etn .vs-cats a { color: #0b4a8b; font-weight: 700; }
+.vs-etn th { background: #0b4a8b; color: #ffffff; padding: 3px 6px; }
+.vs-etn td { padding: 3px 6px; border-bottom: 1px solid #e3e3e3; }
+.vs-etn footer { padding: 10px 18px 18px; font-size: 9px; color: #888888; }
+.vs-etn.late { font: 15px/1.55 "Helvetica Neue", Arial, sans-serif; }
+.vs-etn.late header { background: #ffffff; color: #005eb8; border-bottom: 1px solid #e3e3e3; padding: 16px 40px; }
+.vs-etn.late .vs-wm svg path { fill: #005eb8; }
+.vs-etn.late nav a { color: #333333; font-weight: 400; }
+.vs-etn.late nav a[aria-current] { color: #005eb8; text-decoration: none; }
+.vs-etn.late main { padding: 0 40px 32px; max-width: none; }
+.vs-etn.late .vs-hero { margin: 0 -40px 28px; padding: 64px 40px; background: #005eb8; color: #ffffff; border: 0; }
+.vs-etn.late .vs-hero h1 { color: #ffffff; font-size: 36px; font-weight: 300; }
+.vs-etn.late h1 { font-size: 28px; font-weight: 300; margin: 28px 0 12px; }
+.vs-etn.late .vs-cats a { display: block; padding: 18px 22px; background: #f2f6fa; text-decoration: none; }
+.vs-etn.late h2 { font-size: 20px; font-weight: 400; }
+.vs-etn.late th { background: none; color: #005eb8; border-bottom: 2px solid #005eb8; padding: 8px; }
+.vs-etn.late td { padding: 8px; }
+.vs-etn.late footer { padding: 20px 40px; background: #f2f6fa; font-size: 12px; }

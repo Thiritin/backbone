@@ -288,7 +288,7 @@ function requests(s: GameState, events: SimEvent[]) {
       const size = p.policy === "open" ? 1 : Math.min(1, peak / p.minMbps);
       if (rand(hashRng(s.seed, s.hour, 0x9ee7, xi, pi)) >= REQUEST_DAILY[p.policy] * size * (1 + n.goodwill)) return;
       reqs = [...reqs, { id: `peer${s.nextId++}`, peer: p.id, exchange: x, at: s.hour }];
-      events.push({ app: "Network", key: "event.peeringRequest", params: { network: p.name, exchange: exchangeById(x)!.name } });
+      events.push({ app: "Locations", key: "event.peeringRequest", params: { network: p.name, exchange: exchangeById(x)!.name } });
     });
   });
   s.network = { ...s.network, requests: reqs };
@@ -306,7 +306,7 @@ function attacks(s: GameState, events: SimEvent[]) {
     const mbps = Math.round(DDOS.mbps2005 * Math.pow(DDOS.growth, year - 2005) * (0.5 + rand(r)));
     const hours = DDOS.minHours + Math.floor(rand(r) * (DDOS.maxHours - DDOS.minHours + 1));
     list = [...list, { id: `ddos${s.nextId++}`, serviceId: v.id, locationId: loc.id, mbps, startedAt: s.hour, endsAt: s.hour + hours, blackholed: false }];
-    events.push({ app: "Network", key: "event.ddos", params: { service: v.label, location: loc.name, gbit: round2(mbps / 1000) } });
+    events.push({ app: "Locations", key: "event.ddos", params: { service: v.label, location: loc.name, gbit: round2(mbps / 1000) } });
     if (s.network.protection === "onDemand") {
       const fee = PROTECTIONS.onDemand.perIncident;
       s.cash = cents(s.cash - fee);
@@ -336,7 +336,7 @@ function saturation(s: GameState, r: Routing, events: SimEvent[]) {
     }
     for (const id of now.filter((x) => !s.network.saturated.includes(x))) {
       const loc = s.locations.find((l) => l.id === id)!;
-      if (loc.dc) events.push({ app: "Network", key: "event.saturated", params: { location: loc.name } });
+      if (loc.dc) events.push({ app: "Locations", key: "event.saturated", params: { location: loc.name } });
       else if (!s.homeLine.full) {
         s.homeLine = { ...s.homeLine, full: true };
         const line = homeLineById(s.homeLine.id);
@@ -351,7 +351,7 @@ export function networkTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   for (const u of s.network.uplinks) {
     for (const l of u.links) {
-      if (l.readyAt === s.hour) events.push({ app: "Network", key: "event.uplinkReady", params: { partner: carrierById(u.partner)?.name ?? exchangeById(u.partner)!.name, gbit: l.gbit } });
+      if (l.readyAt === s.hour) events.push({ app: "Locations", key: "event.uplinkReady", params: { partner: carrierById(u.partner)?.name ?? exchangeById(u.partner)!.name, gbit: l.gbit } });
     }
   }
   attacks(s, events);
@@ -376,7 +376,7 @@ export function networkTick(s: GameState): SimEvent[] {
     s.cash = cents(s.cash - total);
     s.ledger = [...s.ledger, ...bills];
     s.network = { ...s.network, dcTb: {}, goodwill: s.network.goodwill * (1 - GOODWILL_DECAY) };
-    if (total > 0) events.push({ app: "Network", key: "event.networkBills", params: { total } });
+    if (total > 0) events.push({ app: "Finance", key: "event.networkBills", params: { total } });
   }
   return events;
 }

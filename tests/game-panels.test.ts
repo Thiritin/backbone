@@ -42,8 +42,9 @@ const cluster = (s: GameState, id: string) => s.clusters.find((c) => c.id === id
 
 describe("game server panels", () => {
   it("are game software that sells game servers next to the hypervisors", () => {
-    expect(SOFTWARE.filter((x) => x.kind === "game").map((x) => [x.id, x.from, x.pricing, x.fee])).toEqual([
-      ["tcadmen", 2005, "server", 25], ["multikraft", 2010, "server", 20], ["pterodaktyl", 2016, "free", 0],
+    expect(SOFTWARE.filter((x) => x.kind === "game").map((x) => [x.id, x.from, x.licensing])).toEqual([
+      ["tcadmen", 2005, [{ from: 2005, kind: "server", fee: 25 }]], ["multikraft", 2010, [{ from: 2005, kind: "server", fee: 20 }]],
+      ["pterodaktyl", 2016, [{ from: 2005, kind: "free", fee: 0 }]],
     ]);
     expect(SERVES.game).toEqual(["gameServer"]);
     expect(SERVES.cloud).toContain("gameServer");

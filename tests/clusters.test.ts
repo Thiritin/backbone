@@ -158,14 +158,14 @@ describe("placement", () => {
   it("skips cordoned and broken nodes and takes the zone of the cluster it lands in", () => {
     const { s, second, cus } = twoNodes();
     ok(cordon(s, "dev3"));
-    const id = ok(provisionService(s, cus, "vps", { label: "ada.example", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
+    const id = ok(provisionService(s, cus, "vps", { label: "ada.com", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     expect(workloadsOf(s, id)[0].deviceId).toBe(second);
     expect(s.services.find((v) => v.id === id)!.zone).toBe("fra1");
     ok(setPower(s, second, false));
-    expect(err(provisionService(s, cus, "vps", { label: "two.example", spec: sizeSpec("vps", 0, yearOf(s.hour)) }))).toBe("error.noCapacity");
+    expect(err(provisionService(s, cus, "vps", { label: "two.com", spec: sizeSpec("vps", 0, yearOf(s.hour)) }))).toBe("error.noCapacity");
     ok(uncordon(s, "dev3"));
-    ok(provisionService(s, cus, "vps", { label: "two.example", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
-    expect(err(provisionService(s, cus, "vps", { label: "far.example", spec: sizeSpec("vps", 0, yearOf(s.hour)), zone: "ams1" }))).toBe("error.noCapacity");
+    ok(provisionService(s, cus, "vps", { label: "two.com", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
+    expect(err(provisionService(s, cus, "vps", { label: "far.com", spec: sizeSpec("vps", 0, yearOf(s.hour)), zone: "ams1" }))).toBe("error.noCapacity");
     expect(err(provisionService(s, cus, "cloud", { label: "cloud" }))).toBe("error.needsHaCluster");
   });
   it("places a plain contract once and leaves resold products unplaced", () => {
@@ -173,7 +173,7 @@ describe("placement", () => {
     const svc = addService(s, cus, "vps", "VPS", 0.01, "hour");
     ok(placeService(s, svc));
     expect(err(placeService(s, svc))).toBe("error.placed");
-    const domain = ok(provisionService(s, cus, "domain", { label: "ada.example" }));
+    const domain = ok(provisionService(s, cus, "domain", { label: "ada.com" }));
     expect(workloadsOf(s, domain)).toEqual([]);
     expect(s.services.find((v) => v.id === domain)).toMatchObject({ period: "year", price: 15, commitMonths: 12 });
   });

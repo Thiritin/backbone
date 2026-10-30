@@ -138,6 +138,7 @@ describe("USB installer", () => {
 
   it("reinstalls over software nobody uses, and keeps it when the OS is refused", () => {
     const s = readyGame(7), id = storage(s);
+    s.cash = 10000;
     ok(bootFromUsb(s, id));
     ok(installOs(s, id, "lunix"));
     for (let h = 0; h < 2; h++) tick(s);

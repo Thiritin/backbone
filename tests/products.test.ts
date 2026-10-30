@@ -56,12 +56,14 @@ const clusterById = (s: GameState, id: string) => s.clusters.find((c) => c.id ==
 describe("platforms and licenses", () => {
   it("bills each cluster's licenses at the start of the month by its pricing model", () => {
     const { s, cluster } = setup("vmwhere");
-    // Two G1 nodes with 2 cores each at €8 per core.
+    // VMwhere is bought once until 2024, then two G1 nodes with 2 cores each at €8 per core.
+    expect(licenseCost(s, clusterById(s, cluster))).toEqual({ panel: 0, platform: 0 });
+    skipTo(s, 2024);
     expect(licenseCost(s, clusterById(s, cluster))).toEqual({ panel: 0, platform: 32 });
-    s.hour = 743;
+    s.hour += 743;
     tick(s);
     expect(s.ledger.filter((l) => l.key === "ledger.license")).toEqual([
-      { hour: 744, category: "licenses", key: "ledger.license", params: { cluster: "Cloud 1", name: "VMwhere" }, amount: -32 },
+      { hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: "Cloud 1", name: "VMwhere" }, amount: -32 },
     ]);
   });
   it("holds the installed RAM on every platform", () => {

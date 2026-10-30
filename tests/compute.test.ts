@@ -25,7 +25,7 @@ import { mountDevice } from "./plugged";
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
 const err = (r: { ok: boolean; error?: string }) => r.error;
 const run = (s: GameState, hours: number) => Array.from({ length: hours }, () => tick(s)).flat();
-const web = (s: GameState, cus: string, i: number) => provisionService(s, cus, "webHosting", { label: `site${i}.example`, spec: sizeSpec("webHosting", 1, yearOf(s.hour)) });
+const web = (s: GameState, cus: string, i: number) => provisionService(s, cus, "webHosting", { label: `site${i}.com`, spec: sizeSpec("webHosting", 1, yearOf(s.hour)) });
 // Fills web spaces until one does not fit; returns how many did.
 const fill = (s: GameState, cus: string) => { let n = 0; while (web(s, cus, n).ok) n++; return n; };
 

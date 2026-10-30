@@ -14,6 +14,7 @@ import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
 import { fillMachines } from "./machines";
+import { heldLicenses } from "../85-products/products";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
 export const serialize = (state: GameState): string => JSON.stringify(state);
@@ -65,7 +66,7 @@ export function deserialize(raw: string): GameState {
   }));
   // Saves from before addresses get theirs.
   const fill = data.ips ? (x: GameState) => x : fillAddresses;
-  return fillMachines(dropGone(gone, fillRegistrar(fill(fillLaunch(fillDesign(fillLines(fillHostnames(upgradeCompute(fillDomains(fillSpecs({
+  const s = fillMachines(dropGone(gone, fillRegistrar(fill(fillLaunch(fillDesign(fillLines(fillHostnames(upgradeCompute(fillDomains(fillSpecs({
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
     waitlist: (data.waitlist ?? []).filter((w: { space: string }) => w.space !== "positions"),
@@ -99,6 +100,9 @@ export function deserialize(raw: string): GameState {
     clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map((w) => workloadDefaults({ ...w, media: (w.media as string) === "iso" ? "lunix" : w.media })), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
+  // Machines from before one-time licenses hold theirs for free, since the fee was never charged.
+  if (!data.licenses) s.licenses = heldLicenses(s);
+  return s;
 }
 
 // Devices whose model left the game (tower servers) are gone with everything that points at them: cables, lease entries,

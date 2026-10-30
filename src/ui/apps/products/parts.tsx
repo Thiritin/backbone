@@ -1,8 +1,9 @@
 import { AppWindow, Bird, Boxes, Container, Feather, Gamepad2, Gauge, Layers, Mail, PanelsTopLeft, Pickaxe, PiggyBank, Server, SquareTerminal, TriangleAlert, type LucideIcon } from "lucide-react";
 import { euroCents } from "../../../sim/00-core/money";
-import { formatClock, START_YEAR } from "../../../sim/00-core/time";
+import { formatClock, START_YEAR, yearOf } from "../../../sim/00-core/time";
 import { SERVES, softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
 import { PRODUCTS } from "../../../sim/10-catalog/products";
+import { licensingAt, type LicenseKind } from "../../../sim/10-catalog/server-os";
 import { PRODUCT } from "../support/labels";
 import type { GameState } from "../../../sim/50-state";
 import { controlPlaneUp, hostOfVm, lostDisk, workloadOnline, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
@@ -37,8 +38,11 @@ export function Mark({ id, size = 28 }: { id: string | null; size?: number }) {
   return <span className="prd-mark" style={{ background: color, width: size, height: size }}><Icon size={Math.round(size * 0.62)} /></span>;
 }
 
-const UNIT: Record<Software["pricing"], string> = { free: "", account: "per web space", server: "per server", core: "per core" };
-export const licenseText = (sw: Software) => (sw.pricing === "free" ? "Free" : `${euroCents(sw.fee)} ${UNIT[sw.pricing]}`);
+const UNIT: Record<LicenseKind, string> = { free: "", once: "per socket once", account: "per web space", server: "per server", core: "per core" };
+export const licenseText = (sw: Software, year: number) => {
+  const era = licensingAt(sw, year);
+  return era.kind === "free" ? "Free" : `${euroCents(era.fee)} ${UNIT[era.kind]}`;
+};
 const cp = (sw: Software) => `${+sw.controlPlane.vcpu.toFixed(2)} vCPU · ${+sw.controlPlane.ramGb.toFixed(2)} GB`;
 
 export const KIND_NAME: Record<SoftwareKind, string> = {
@@ -66,13 +70,14 @@ export function traits(sw: Software, compact?: boolean): string[] {
 
 // The competing software of one kind as cards; the chosen one is pressed.
 export function SoftwareCards({ kind, value, onPick, compact, blocked }: { kind: SoftwareKind; value: string | null; onPick: (id: string) => void; compact?: boolean; blocked?: (id: string) => boolean }) {
+  const year = useStore((s) => yearOf(s.game.hour));
   return (
     <div className="prd-cards" role="group" aria-label={KIND_NAME[kind]}>
       {softwareOf(kind).map((sw) => (
         <button key={sw.id} className="prd-card" aria-pressed={sw.id === value} aria-disabled={blocked?.(sw.id) || undefined} onClick={() => onPick(sw.id)}>
           <span className="prd-card-h"><Mark id={sw.id} size={24} /><span className="t">{sw.name}</span></span>
           <dl>
-            <div><dt>License</dt><dd className="num">{licenseText(sw)}</dd></div>
+            <div><dt>License</dt><dd className="num">{licenseText(sw, year)}</dd></div>
             <div><dt>Install</dt><dd className="num">{sw.installHours} h</dd></div>
             {kind === "mail" ? <div><dt>Needs</dt><dd className="num">{cp(sw)} · {sw.controlPlane.diskGb} GB</dd></div>
             : kind === "cloud" && <div><dt>Ballooning</dt><dd className="num">{sw.balloon === null ? "No" : sw.balloon <= sw.from ? "Yes" : `From ${sw.balloon}`}</dd></div>}

@@ -333,10 +333,10 @@ describe("registrar sites", () => {
 
   it("serves each registrar's site and bookmarks the one under contract", () => {
     const s = newGame(1);
-    expect(registrarUrl(s)).toBe("www.namecheep.example/");
-    expect(resolve(s, "goduddy.example").page).toEqual({ kind: "registrar", id: "goDuddy" });
+    expect(registrarUrl(s)).toBe("www.namecheep.com/");
+    expect(resolve(s, "goduddy.com").page).toEqual({ kind: "registrar", id: "goDuddy" });
     signRegistrar(s, "openSrsly");
-    expect(registrarUrl(s)).toBe("www.opensrsly.example/");
+    expect(registrarUrl(s)).toBe("www.opensrsly.com/");
     expect(resolve(s, registrarUrl(s)).page).toEqual({ kind: "registrar", id: "openSrsly" });
   });
 });

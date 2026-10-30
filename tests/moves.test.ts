@@ -114,7 +114,7 @@ describe("moves out of the basement", () => {
   it("adds the copy time to a web space's hand task into another zone", () => {
     const { s, a, b, place } = world();
     const home = panelVm(s, a), cus = customer(s);
-    ok(provisionService(s, cus, "webHosting", { label: "site.example", spec: sizeSpec("webHosting", 1, yearOf(s.hour)) }));
+    ok(provisionService(s, cus, "webHosting", { label: "site.com", spec: sizeSpec("webHosting", 1, yearOf(s.hour)) }));
     const twin = panelVm(s, a), far = panelVm(s, b);
     place();
     s.clusters = s.clusters.map((c) => (c.id === far ? { ...c, az: "fra2" } : c));

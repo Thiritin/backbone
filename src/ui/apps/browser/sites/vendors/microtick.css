@@ -1,0 +1,22 @@
+.vs-mtk { font: 11px/1.4 Verdana, Arial, sans-serif; color: #000000; background: #ffffff; }
+.vs-mtk header { display: flex; align-items: center; gap: 20px; padding: 6px 12px; background: #293a4f; color: #ffffff; }
+.vs-mtk .vs-wm { display: flex; align-items: center; gap: 6px; font: 700 16px/1 Verdana, sans-serif; }
+.vs-mtk nav { display: flex; gap: 12px; }
+.vs-mtk nav a { color: #ffffff; }
+.vs-mtk nav a[aria-current] { color: #ffcc00; }
+.vs-mtk main { padding: 10px 12px; max-width: 760px; }
+.vs-mtk h1 { font-size: 13px; margin-bottom: 4px; }
+.vs-mtk h2 { font-size: 12px; margin: 10px 0 4px; }
+.vs-mtk .vs-cats { display: flex; gap: 10px; margin-top: 6px; }
+.vs-mtk .vs-cats a { color: #0000cc; }
+.vs-mtk th { background: #dddddd; padding: 2px 4px; border: 1px solid #999999; }
+.vs-mtk td { padding: 2px 4px; border: 1px solid #cccccc; }
+.vs-mtk footer { padding: 8px 12px 16px; font-size: 10px; color: #666666; }
+.vs-mtk.late { font: 14px/1.5 "Helvetica Neue", Arial, sans-serif; }
+.vs-mtk.late header { background: #3e5c86; padding: 12px 32px; }
+.vs-mtk.late main { padding: 20px 32px; max-width: 900px; }
+.vs-mtk.late h1 { font-size: 22px; font-weight: 400; margin-bottom: 8px; }
+.vs-mtk.late h2 { font-size: 16px; font-weight: 400; }
+.vs-mtk.late th, .vs-mtk.late td { border: 0; border-bottom: 1px solid #dde3ea; padding: 6px; }
+.vs-mtk.late th { background: none; color: #3e5c86; }
+.vs-mtk.late footer { padding: 16px 32px; font-size: 12px; }

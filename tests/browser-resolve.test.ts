@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MANUFACTURERS } from "../src/sim/10-catalog/hardware";
 import { companyDomain, fqdn } from "../src/sim/30-customers/domains";
 import { privateIp } from "../src/sim/60-infra/addresses";
-import { defaultBookmarks, resolve, split, VENDORS, VIDEO_URL } from "../src/sim/80-business/browser";
+import { defaultBookmarks, resolve, split, vendorHost, VENDORS, VIDEO_URL } from "../src/sim/80-business/browser";
 import { newGame } from "../src/sim/50-state";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { setPower } from "../src/sim/90-actions/hardware";
@@ -20,8 +20,8 @@ function bare(s: ReturnType<typeof readyGame>) {
 
 describe("browser resolver", () => {
   it("splits an address into a lowercase host and a path", () => {
-    expect(split("HTTPS://WWW.Example.de/a/b?x=1#top")).toEqual({ host: "www.example.de", path: "/a/b?x=1" });
-    expect(split("example.de")).toEqual({ host: "example.de", path: "/" });
+    expect(split("HTTPS://WWW.Basement-Hosting.de/a/b?x=1#top")).toEqual({ host: "www.basement-hosting.de", path: "/a/b?x=1" });
+    expect(split("basement-hosting.de")).toEqual({ host: "basement-hosting.de", path: "/" });
   });
 
   it("resolves the company domain, with and without www, once the site is launched", () => {
@@ -58,13 +58,13 @@ describe("browser resolver", () => {
     expect(resolve(s, "10.99.99.99").page).toEqual({ kind: "notfound" });
   });
 
-  it("gives every manufacturer but the generic parts a vendor site and sends Downloads to the video", () => {
+  it("gives every manufacturer but the generic parts a vendor site and serves the video by address", () => {
     const s = readyGame(1);
     expect(VENDORS.length).toBe(MANUFACTURERS.length - 1);
-    for (const m of VENDORS) expect(resolve(s, `www.${m.id}.example`).page).toEqual({ kind: "vendor", maker: m.id });
-    expect(resolve(s, "generic.example").page).toEqual({ kind: "notfound" });
+    for (const m of VENDORS) expect(resolve(s, `www.${vendorHost(m.id)}`).page).toEqual({ kind: "vendor", maker: m.id });
+    expect(resolve(s, "generic.com").page).toEqual({ kind: "notfound" });
     expect(resolve(s, VIDEO_URL).page).toEqual({ kind: "video" });
-    expect(resolve(s, "youtub.example/watch?v=other").page).toEqual({ kind: "notfound" });
+    expect(resolve(s, "youtub.com/watch?v=other").page).toEqual({ kind: "notfound" });
   });
 
   it("does not know other names", () => {

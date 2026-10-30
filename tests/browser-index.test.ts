@@ -14,7 +14,7 @@ describe("browser index", () => {
   it("opens at home and lists the categories in order", () => {
     const s = newGame(1);
     expect(resolve(s, HOME_URL).page).toEqual({ kind: "index" });
-    expect(resolve(s, "yahoy.example").page).toEqual({ kind: "index" });
+    expect(resolve(s, "yahoy.com").page).toEqual({ kind: "index" });
     expect(siteIndex(s).map((c) => c.title)).toEqual([
       "Operating systems", "Virtualization", "Hosting panels", "Game panels", "DNS", "VPN", "Storage", "Mail",
       "Domain resellers", "Community", "Hardware", "Video",
@@ -35,8 +35,8 @@ describe("browser index", () => {
 
   it("resolves every software and OS host with and without www, and none before its year", () => {
     const s = newGame(1);
-    expect(resolve(s, "pterodaktyl.example").page).toEqual({ kind: "notfound" });
-    expect(resolve(s, "www.proxmocks.example/download").page).toEqual({ kind: "notfound" });
+    expect(resolve(s, "pterodaktyl.io").page).toEqual({ kind: "notfound" });
+    expect(resolve(s, "www.proxmocks.com/download").page).toEqual({ kind: "notfound" });
     skipTo(s, 2025);
     for (const sw of SOFTWARE) {
       expect(resolve(s, sw.site.host).page).toEqual({ kind: "software", id: sw.id });

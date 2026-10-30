@@ -13,11 +13,13 @@ Two operating systems. A software runs on one of them, or on both, following wha
 | Id | Name | Mocks | Versions (year the version exists from) | License |
 | --- | --- | --- | --- | --- |
 | `lunix` | Debiant GNU/Lunix | Debian | 3.1 Sarge (2005), 4 Etch (2007), 5 Lenny (2009), 6 Squeeze (2011), 7 Wheezy (2013), 8 Jessie (2015), 9 Stretch (2017), 10 Buster (2019), 11 Bullseye (2021), 12 Bookworm (2023) | Free |
-| `windoors` | Windoors Server | Windows Server | 2003 (2005), 2008 (2008), 2008 R2 (2010), 2012 (2012), 2012 R2 (2014), 2016 (2016), 2019 (2019), 2022 (2022), 2025 (2025) | 15 euros a month per machine (server or VM), billed with the other licenses |
+| `windoors` | Windoors Server | Windows Server | 2003 (2005), 2008 (2008), 2008 R2 (2010), 2012 (2012), 2012 R2 (2014), 2016 (2016), 2019 (2019), 2022 (2022), 2025 (2025) | 600 euros once per machine (server or VM) until 2015; from 2016, 4 euros a month per physical core of a server or per vCPU of a VM |
+
+A license has eras, `licensing: { from; kind: "once" | "core" | "server" | "account" | "free"; fee }[]` on each OS and each software, and `licensingAt(entry, year)` picks the one of the year. In a `once` era the license is bought when the install starts, as a ledger line ("Windoors Server 2003 license, node001"), and belongs to the machine: `s.licenses: { id; machineId; boughtAt }[]`. A reinstall on the same machine pays nothing, a new machine pays again, and a machine that is sold, scrapped or deleted loses its licenses at the next month's bill. Without the cash the install is refused with the Shop's cash error. A VM from a template, the App Suite's included, buys its OS license the same way. Old saves give every machine that holds Windoors or VMwhere its license for free. A `once` era adds nothing to the monthly `licenseCost`.
 
 An OS install takes the newest version that exists in the game year. Installed machines keep their version; there is no in-place upgrade (reinstall to upgrade). The version shows on the boot screen, the login screen, the machine's detail page and in `uname -a`.
 
-Catalog: `src/sim/10-catalog/server-os.ts` (the existing `os.ts` holds the Pear desktop releases and keeps its name) with `ServerOsId`, `SERVER_OS`, `serverOsAt(id, year)`, `serverOsById`, the Windoors monthly fee, the boot minutes and install hours of section 4.
+Catalog: `src/sim/10-catalog/server-os.ts` (the existing `os.ts` holds the Pear desktop releases and keeps its name) with `ServerOsId`, `SERVER_OS`, `serverOsAt(id, year)`, `serverOsById`, the license eras, the boot minutes and install hours of section 4.
 
 Install media. The USB stick (servers) and the ISO list (VMs, from the hypervisor console's Media menu and the VM console's title bar) hold the two operating systems and nothing else: "Debiant 8 netinst", "Windoors Server 2012 R2". `Workload.media` changes from `"iso"` to a `ServerOsId`; `deserialize` maps an old `"iso"` to `"lunix"`.
 
@@ -32,6 +34,7 @@ Install media. The USB stick (servers) and the ISO list (VMs, from the hyperviso
 | `exclusive?: "hypervisor"` | At most one hypervisor per machine, port or no port. |
 | `install: { kind: "apt" \| "script" \| "gui"; package?: string; commands: string[] }` | How it gets onto a machine, below. |
 | `site: Site` | The brand record its website and console draw from, section 8.3. |
+| `licensing: LicenseEra[]` | The license eras of section 1, replacing `pricing` and `fee`. Every software has one era with its old pricing and fee, except VMwhere: 600 euros once per CPU socket of the node until 2023, 8 euros a month per physical core from 2024. |
 
 The compatibility rule is one function, `conflict(a, b): string | null`, returning the `error.*` key of the reason (same port, two hypervisors), and `runsOn(sw, osId)`. `installBlock` calls both against everything already on the machine and keeps every reason it has today except "one control plane per machine", which this plan removes: a panel on a hypervisor node is legal when no port collides.
 
@@ -64,7 +67,7 @@ The compatibility rule is one function, `conflict(a, b): string | null`, returni
 `install.commands` is the exact list the website prints and the console accepts, in order. Proxmocks:
 
 ```
-echo "deb http://download.proxmocks.example/debiant stretch pve-no-subscription" > /etc/apt/sources.list.d/pve.list
+echo "deb http://download.proxmocks.com/debiant stretch pve-no-subscription" > /etc/apt/sources.list.d/pve.list
 apt-get update
 apt-get install -y proxmocks-ve
 ```
@@ -72,7 +75,7 @@ apt-get install -y proxmocks-ve
 cPanic:
 
 ```
-cd /home && curl -o latest -L https://securedownloads.cpanic.example/latest && sh latest
+cd /home && curl -o latest -L https://securedownloads.cpanic.net/latest && sh latest
 ```
 
 For `gui` the list is empty; the Windoors desktop installs it. `install` describes the Lunix way; on Windoors every software installs from the desktop, so Pleskit, MultiKraft, Bound, OpenVeePeeN and MinnIO carry their Lunix method. The `Site` records live in `src/sim/10-catalog/sites.ts` (both operating systems and every software), and a site whose look never changes has one era. `apt-get install <package>` with the catalog's `package` counts as the install for every `apt` software, so a player who knows the package name can skip the site; a software with a repo line needs that line first or the package is not found.
@@ -92,7 +95,7 @@ Software moves from the cluster to the machine. A machine is a `Device` or an ow
 
 `canInstall(s, machineId, softwareId)` in `90-actions/software.ts` gives the reasons in this order: another OS on the disk, a conflict with installed software, a server that is not free (`error.serverInUse` when it already hosts a cluster) or a VM that hosts one (`error.onePanel`), then an OS that is not up (`error.noOs`, `error.osNotUp`). A server still belongs to one cluster, so a panel on a Proxmocks node passes `conflict` and is still refused; a second control plane on one machine needs the cluster layer to hold two. The installer's erase empties `os` and `software`. VMs made in one click from a hypervisor console (`createPanelVm`, `createSoftwareVm`) start from a template with the software's first OS on the disk.
 
-Licenses. `licenseCost` adds 15 euros per machine with Windoors and the App Suite per cluster; its result keeps the `{ panel, platform }` shape the tests assert, with Windoors under `platform`. The monthly ledger has one line for all Windoors machines ("Windoors Server, 3 machines") and one per App Suite cluster ("VMwhere App Suite, Cloud 1"); a Windoors machine in no cluster is billed there too.
+Licenses. `licenseCost` adds the Windoors fee of a core era (4 euros per core or vCPU) and the App Suite per cluster; its result keeps the `{ panel, platform }` shape the tests assert, with Windoors under `platform`. The monthly ledger has one line for all Windoors machines ("Windoors Server, 3 machines") and one per App Suite cluster ("VMwhere App Suite, Cloud 1"); a Windoors machine in no cluster is billed there too.
 
 ## 4. The install pipeline
 
@@ -146,13 +149,13 @@ The machine's own console runs the same shell once logged in, so the Terminal an
 
 **Kept as built**: no signal, POST, the stuck prompt, the BIOS, the boot menu (its USB entry renamed to the stick's OS list: "USB: Debiant 8 netinst", "USB: Windoors Server 2012 R2"), Operating system not found, hung, the VM console's title bar (Media gains the two ISOs).
 
-**Lunix installer**: blue background, grey boxes with red title bars, white text, as the Debiant installer looks in every year. Tab and Enter move through the five screens of section 4.
+**Lunix installer**: blue background, grey boxes with red title bars, white text, as the Debiant installer looks in every year. Tab and Enter move through the five screens of section 4, after the installer boot menu (Install, Erase disk, Reboot) that also holds the bare-metal erase.
 
-**Lunix boot and login**: black, the kernel lines in white, a `Debiant GNU/Lunix 8 node001 tty1` banner and `node001 login:`. Any key logs in as root; the prompt runs the shell with the Terminal's line editing (shared, not forked). From Debiant 8 the boot shows green `[ OK ]` lines instead of plain ones.
+**Lunix boot and login**: black, the kernel lines in white, a `Debiant GNU/Lunix 8 node001 tty1` banner and `node001 login:`. Any key logs in as root; the prompt runs the shell with the Terminal's line editing (shared, not forked). From Debiant 8 the boot shows green `[ OK ]` lines instead of plain ones. The lines follow game time over the OS's boot minutes, so they run in real time at 1x and skipping time skips them. The login lasts until the machine boots again; `exit` returns to it.
 
 **Software install progress on Lunix**: apt's "Reading package lists, Unpacking, Setting up" lines; a script installer's stage lines ("Fetching, Installing packages, Configuring"); printed over the install hours.
 
-**Windoors Setup**, two eras. 2003: the blue text-mode first stage ("Setup is loading files"), then the silver GUI stage with the left-hand step list (Collecting information, Dynamic update, Preparing installation, Installing Windoors, Finalizing installation) and a minutes-remaining line. 2008 and later: the dark blue "Install Windoors" window with the logo, the edition list, "Where do you want to install Windoors?" and the "Installing Windoors" checklist with percentages. The era follows the version installed.
+**Windoors Setup**, two eras. 2003: the blue text-mode first stage ("Setup is loading files"), then the silver GUI stage with the left-hand step list (Collecting information, Dynamic update, Preparing installation, Installing Windoors, Finalizing installation) and a minutes-remaining line. 2008 and later: the dark blue "Install Windoors" window with the logo, the edition list, "Where do you want to install Windoors?" and the "Installing Windoors" checklist with percentages. The era follows the version installed. The 2003 partition list deletes with D (the bare-metal erase); the later window has Delete next to Next. Both reach the same erase confirmation as the Debiant partitioner.
 
 **Windoors boot and logon**, three eras. 2003: the black boot screen with the scrolling bar, "Welcome", the olive desktop. 2008 to 2012 R2: the green bar, the blue logon, the desktop. 2016 and later: the flat spinner, the flat logon and desktop. The desktop holds a taskbar with a Start button and the clock, and one window that opens on login: Server Manager.
 
@@ -166,13 +169,13 @@ The GUI that installs software on Windoors, modelled on the real one of each era
 - 2008 to 2012 R2: the Server Manager console with the tree on the left (Roles, Features, Diagnostics, Configuration, Storage) and the Add Roles Wizard (Before You Begin, Server Roles with the checkbox list, Confirmation, Progress, Results). HyperVee is a role; the others under "Programs and Features, Install a program from the network".
 - 2016 and later: the flat dashboard with the tiles ("Add roles and features", "Add other servers to manage") and the wizard with the left-hand step list.
 
-Installing calls `installSoftware`; the wizard's Progress page or the installer's bar shows the hours. Uninstall is the same wizard's remove path.
+Installing calls `installSoftware`; the wizard's Progress page shows the bar and the hours left. Server Manager lists what is installed or installing with a Remove button, which calls `uninstallSoftware`. Programs install in a wizard without the step list; the 2016 wizard lists roles and programs together. Logging off is in the Start menu.
 
 ## 8. The Browser
 
 ### 8.1 Toolbar, start page and home
 
-The toolbar gains a **home icon** left of the address bar. Home is the site index, `www.yahoy.example/dir/`. A new browser session's first tab opens there. The bookmarks bar keeps the company site once launched and the registrar under contract; the Sponsor-Bored and console bookmarks go away, since the index lists them.
+The toolbar gains a **home icon** left of the address bar. Home is the site index, `www.yahoy.com/dir/`. A new browser session's first tab opens there. The bookmarks bar keeps the company site once launched and the registrar under contract; the Sponsor-Bored and console bookmarks go away, since the index lists them.
 
 ### 8.2 The index
 
@@ -195,13 +198,13 @@ Categories, in this order, each site from the year it exists:
 10. **Community**: Sponsor-Bored.
 11. **Hardware**: every manufacturer site.
 12. **<Company name>**: the company site, and one row per console the company runs ("Proxmocks VE node001", "cPanic vm001"), each a live link; the row is grey with "down" when the host cannot be reached. This category replaces the console bookmarks.
-13. **Video**: youtub.example.
+13. **Video**: youtub.com.
 
 A software before its `from` year is absent and its address resolves to Not found. In the 2005 look a category opens at `/dir/<category>`, for example `/dir/virtualization`; the 2013 look shows every category at once. Every other path on the host shows the index.
 
 ### 8.3 Site records and eras
 
-Every software and OS has a `Site` record in its catalog entry: `host` (bare, `proxmocks.example`; the Browser accepts it with and without `www.`), `tagline`, `blurb` (two sentences), `features` (five to seven short lines), `eras: [{ from, look }]` with two entries. The Browser resolves the host to `{ kind: "software", id }` or `{ kind: "os", id }`. Pages: Home, Features, Pricing, Download (or Install), at `/`, `/features`, `/pricing`, `/download`, with a nav bar. Pricing shows the license as the catalog has it and the Windoors note where the software needs it. Download holds the commands in a `pre` block with a Copy button that puts them on the real clipboard; for `gui` software it says the software installs from the Windoors desktop. For software without a web console (section 10) it first says in one sentence what the server becomes after the install, such as a DNS server answering on port 53.
+Every software and OS has a `Site` record in its catalog entry: `host` (bare, `proxmocks.com`; the Browser accepts it with and without `www.`), `tagline`, `blurb` (two sentences), `features` (five to seven short lines), `eras: [{ from, look }]` with two entries. The Browser resolves the host to `{ kind: "software", id }` or `{ kind: "os", id }`. Pages: Home, Features, Pricing, Download (or Install), at `/`, `/features`, `/pricing`, `/download`, with a nav bar. Pricing shows the license as the catalog has it and the Windoors note where the software needs it. Download holds the commands in a `pre` block with a Copy button that puts them on the real clipboard; for `gui` software it says the software installs from the Windoors desktop. For software without a web console (section 10) it first says in one sentence what the server becomes after the install, such as a DNS server answering on port 53.
 
 Each site is its own component and stylesheet under `src/ui/apps/browser/sites/software/<id>.tsx` and `.css`; shared pieces (nav, pricing table, commands block) in `SoftwareSite.tsx`. A look is a colour set, a font stack, a header layout and a hero; no images, code-drawn marks only. One `eraOf(eras, year)` helper in `src/ui/apps/browser/sites/era.ts` shared by every site and console. Every software with a site record resolves from its `from` year; one without its own component yet renders a plain site from `SoftwareSite.tsx`, and a component is registered in `sites/software/registry.tsx`. An OS site's Download page lists its releases up to the game year.
 
@@ -235,6 +238,47 @@ Each site is its own component and stylesheet under `src/ui/apps/browser/sites/s
 
 Paid sites switch earlier; free ones keep a look longer.
 
+
+**Domains.** No address in the game uses a reserved example domain. Every host is a pun under a real-looking TLD, as company domains already are (`basement-hosting.de`): `.com` for paid and corporate products (`.net` where the real one lives there), `.org` for open-source projects, `.io` for projects from 2015 on, `.de` for German brands, `.cz` for Knut DNS, and a Macrosoft subdomain for HyperVee and Windoors. Install commands fetch from subdomains of the product's own domain. `www.` stays optional on every host.
+
+| Site | Host |
+| --- | --- |
+| Yahoy! index | yahoy.com (`/dir/`) |
+| Sponsor-Bored | sponsorbored.net |
+| YouTub | youtub.com |
+| Debiant | debiant.org |
+| Windoors Server | windoors.macrosoft.com |
+| HyperVee | hypervee.macrosoft.com |
+| cPanic | cpanic.com (downloads at cpanic.net) |
+| Pleskit | pleskit.com |
+| DirectAdmen | directadmen.com |
+| FreePanel | freepanel.org |
+| OpenVeeZee | openveezee.org |
+| OpenStash | openstash.org |
+| VMwhere | vmwhere.com |
+| Proxmocks | proxmocks.com |
+| TCAdmen | tcadmen.com |
+| MultiKraft | multikraft.com |
+| Pterodaktyl | pterodaktyl.io |
+| Bound | bound.org |
+| PowerDNZ | powerdnz.com |
+| Knut DNS | knut-dns.cz |
+| OpenVeePeeN | openveepeen.net |
+| Sysko AnyConnekt | anyconnekt.sysko.com |
+| WireGuarded | wireguarded.io |
+| vsFTPeed | vsftpeed.org |
+| OwnClod | ownclod.org |
+| MinnIO | minn.io |
+| Postfixit | postfixit.org |
+| Mailpig | mailpig.io |
+| NameCheep | namecheep.com |
+| GoDuddy Reseller | goduddy.com |
+| InterNetY | internety.de |
+| OpenSRSly | opensrsly.com |
+| Dwell, Hewlett-Packet, SuperMacro, Lenovoid, Sysko, Aristotle, Fortinope, Pablo Alto, Pandoot, MicroTick, Eatin | dwell.com, hewlett-packet.com, supermacro.com, lenovoid.com, sysko.com, aristotle.com, fortinope.com, pablo-alto.com, pandoot.com, microtick.com, eatin.com |
+| Junipurr | junipurr.net |
+| AVN | avn.de |
+
 ### 8.4 Domain reseller sites
 
 The four registrars share one component today. Each becomes its own component with two eras, keeping every action the page has (contract, buy, renew, transfer, prices) as shared building blocks laid out per site:
@@ -247,6 +291,33 @@ The four registrars share one component today. Each becomes its own component wi
 ### 8.5 Sponsor-Bored
 
 Built (`src/ui/apps/browser/sites/SponsorBoard.tsx`, `src/sim/80-business/sponsorboard.ts`). It gets two eras: 2005: a phpBB-style forum board, blue and white, a table of offers with avatars as coloured squares. 2014: a flat community-site look, white, blue, cards. It leaves the bookmarks bar and sits in the index under Community.
+
+### 8.6 Hardware sites
+
+Every manufacturer in the hardware catalog but the generic parts maker has its own site, one component and stylesheet per brand under `src/ui/apps/browser/sites/vendors/<id>.tsx` and `.css`, with shared pieces (nav, product table, news list, support text) in `VendorSite.tsx` and the brand list with each late look's first year in `vendors/registry.tsx`. Each wears two eras through `eraOf`: a colour set, a font stack, a header layout and a hero, no images, code-drawn marks. Pages, at `/`, `/products`, `/news` and `/support`:
+
+- **Home**: the hero, the product classes the brand builds, and its latest releases.
+- **Products**: what the Shop sells from the brand this month, one table per class, each model with the year it came out and its price.
+- **News**: the brand's releases so far, newest first, one line each with the month and year, the model and one sentence from a per-class template ("Dwell ships the Balanced 1U G1, a 1U server with 2 cores and 8 GB of RAM.").
+- **Support**: one paragraph and the support term the catalog gives the brand's models.
+
+A release is a server model, multi-node chassis or network or power device a brand sells, at the month it reaches the shop from that brand (the catalog year shifted by the brand's release offset). CPUs and spare parts carry no manufacturer with a site and are left out; the CPU makers appear in the server lines. When a release month arrives in play the News app posts one item per brand and month, from Heize online, with a link that opens the brand's News page in the Browser. Releases that exist when a game starts are not news.
+
+| Site | Early look (2005) | Late look (from) |
+| --- | --- | --- |
+| Dwell | blue gradient bar, white page, product-category boxes, Verdana | 2013: flat white, a full-width blue hero, a humanist sans |
+| Hewlett-Packet | dark blue bar with a boxed mark, dense product grid, Arial | 2013: white, the blue circle mark, large light headings |
+| SuperMacro | green and grey, dense bordered tables, Verdana | 2016: flat white, green hero, cards |
+| Lenovoid | white and grey, red wordmark, dark gradient hero, Arial | 2014: red header band, dark hero, bold type |
+| Sysko | corporate blue with product tabs and tiny type | 2015: white and teal, product tiles |
+| Junipurr | white with green rules, a serif wordmark, a product column | 2014: dark navy, green accents, flat |
+| Aristotle | navy header, cream page, Georgia italics | 2015: white, dark navy hero, flat tiles |
+| Fortinope | grey gradient header, red accents, Tahoma | 2014: white, red hero, cards with a red edge |
+| Pablo Alto | charcoal start-up page, orange accents, Trebuchet | 2015: white, a big orange hero |
+| Pandoot | navy and grey parts catalogue with bordered tables | 2016: white, blue cards |
+| AVN | white with a grey left nav in German, Impressum in the footer | 2014: red header band, the same left nav |
+| MicroTick | a bare dark blue bar over plain tables, Verdana | 2017: the same bones in a lighter blue |
+| Eatin | corporate blue gradient bar, Arial | 2015: white, a blue hero |
 
 ## 9. Hypervisor consoles, one VM manager
 
@@ -286,7 +357,8 @@ Each software with a web console gets its own component and stylesheet, modelled
 
 Add to `docs/design/economy.md` under "Platforms and licenses":
 
-- Windoors Server: 15 euros a month per machine that holds it, billed with the licenses. A game server on TCAdmen costs the TCAdmen 25 plus the Windoors 15 a month.
+- Windoors Server: 600 euros once per machine until 2015, paid when the OS install starts; from 2016, 4 euros a month per physical core of a server or per vCPU of a VM, billed with the licenses.
+- VMwhere: 600 euros once per CPU socket of the node until 2023, paid when the install starts; from 2024, 8 euros a month per physical core.
 - VMwhere App Suite: 25 euros a month per VMwhere cluster.
 - OS install hours (Lunix 1, Windoors 2) and boot minutes (Lunix 20, Windoors 40) add to every install's time to serve.
 - A panel on a hypervisor node is allowed when no port collides; the old "one control plane per server" rule is gone.
@@ -328,5 +400,5 @@ Order, two lanes at a time: A alone; B and D1; C and D2; E and G1; F and G2; the
 - No web server software is added; the compatibility examples use the DNS, VPN and panel software the catalog has.
 - The Windoors license is per machine and flat; no per-core tiers.
 - OS versions are install-time only; no in-place upgrades.
-- The index host is `yahoy.example`; the search box only filters.
+- The index host is `yahoy.com`; the search box only filters.
 - The per-software login looks on a booted server go away in favour of the OS's screens; VMwhere's DCUI stays.

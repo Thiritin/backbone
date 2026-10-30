@@ -3,3 +3,5 @@
 .news-item time { font-size: 12px; color: var(--text-2); }
 .news-item h3 { font-size: 15px; font-weight: 650; }
 .news-item p { color: var(--text-2); }
+.news-link { justify-self: start; border: 0; background: none; padding: 0; font: inherit; color: var(--accent); cursor: pointer; }
+.news-link:hover { text-decoration: underline; }

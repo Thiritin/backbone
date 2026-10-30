@@ -150,8 +150,8 @@ describe("activity log", () => {
   it("records the player's ticket, invoice and service actions by customer and service", () => {
     const s = newGame(47);
     const c = addCustomer(s, "Ada", "private");
-    const v = addService(s, c, "webHosting", "ada.example", 10 / 730, "hour");
-    const w = addService(s, c, "webHosting", "ada-shop.example", 10 / 730, "hour");
+    const v = addService(s, c, "webHosting", "ada.com", 10 / 730, "hour");
+    const w = addService(s, c, "webHosting", "ada-shop.com", 10 / 730, "hour");
     const t = createTicket(s, s.customers.find((x) => x.id === c)!, "howTo", v, "upload");
     expect(replyTicket(s, t.id, TEMPLATES.howTo[0]).ok).toBe(true);
     const inv = overdueInvoice(s, c, 8);

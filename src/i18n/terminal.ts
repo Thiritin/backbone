@@ -96,7 +96,7 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "term.apt.installs": (p) => `0 upgraded, ${p.n} newly installed, 0 to remove and 0 not upgraded.`,
   "term.apt.notInstalled": (p) => `Package '${p.pkg}' is not installed, so not removed`,
   "term.apt.removing": (p) => `Removing ${p.pkg} ...`,
-  "term.install.apt0": (p) => `Get:1 http://deb.debiant.example ${p.pkg} amd64 [48.2 MB]`,
+  "term.install.apt0": (p) => `Get:1 http://deb.debiant.org ${p.pkg} amd64 [48.2 MB]`,
   "term.install.apt1": (p) => `Unpacking ${p.pkg} ...`,
   "term.install.apt2": (p) => `Setting up ${p.pkg} ...`,
   "term.install.script": (p) => `Starting the ${p.name} installer ...`,

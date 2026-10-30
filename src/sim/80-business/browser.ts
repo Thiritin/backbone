@@ -1,6 +1,5 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
 import { yearOf } from "../00-core/time";
-import { MANUFACTURERS } from "../10-catalog/hardware";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { registrarById, registrarHost, REGISTRARS, type RegistrarId } from "../10-catalog/registrars";
 import { SERVER_OS, type ServerOsId } from "../10-catalog/server-os";
@@ -15,6 +14,7 @@ import { nodeUsage } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
 import { consoleCluster, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
+import { vendorHost, VENDORS } from "./vendors";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -38,18 +38,17 @@ export type Page =
 export interface Resolved { url: string; host: string; path: string; page: Page; load: Load }
 
 export const BOARD_TITLE = "Sponsor-Bored";
-export const VIDEO_URL = "youtub.example/watch?v=uptime";
+export const VIDEO_HOST = "youtub.com";
+export const VIDEO_URL = `${VIDEO_HOST}/watch?v=uptime`;
 export const VIDEO_TITLE = "Never Gonna Give You Uptime";
 export const VIDEO_ARTIST = "Rick Astley-Packet";
 export const VIDEO_REAL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
-// The brands with a site of their own: every manufacturer that sells machines or network gear.
-export const VENDORS = MANUFACTURERS.filter((m) => m.id !== "generic");
-export const vendorHost = (id: string): string => `${id}.example`;
+export { vendorHost, VENDORS } from "./vendors";
 
 export const BOARD_URL = `${BOARD_HOST}/`;
 // docs/design/software.md, 8.1: the home icon and a new browser session open the site index.
-export const INDEX_HOST = "yahoy.example";
+export const INDEX_HOST = "yahoy.com";
 export const HOME_URL = `www.${INDEX_HOST}/dir/`;
 export const companyUrl = (s: GameState): string => `www.${companyDomain(s)}/`;
 
@@ -130,12 +129,12 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (sw) return out({ kind: "software", id: sw.id });
   const os = SERVER_OS.find((x) => named(x.site.host));
   if (os) return out({ kind: "os", id: os.id });
-  const vendor = VENDORS.find((m) => host === vendorHost(m.id) || host === `www.${vendorHost(m.id)}`);
+  const vendor = VENDORS.find((m) => named(vendorHost(m.id)));
   if (vendor) return out({ kind: "vendor", maker: vendor.id });
-  if (host === BOARD_HOST || host === `www.${BOARD_HOST}`) return out({ kind: "sponsorboard" });
-  const registrar = REGISTRARS.find((r) => host === registrarHost(r) || host === `www.${registrarHost(r)}`);
+  if (named(BOARD_HOST)) return out({ kind: "sponsorboard" });
+  const registrar = REGISTRARS.find((r) => named(registrarHost(r)));
   if (registrar) return out({ kind: "registrar", id: registrar.id });
-  if (host === "youtub.example" || host === "www.youtub.example") {
+  if (named(VIDEO_HOST)) {
     return /[?&]v=uptime(&|$)/.test(path) ? out({ kind: "video" }) : out({ kind: "notfound" });
   }
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {

@@ -110,7 +110,7 @@ describe("RAID", () => {
     ok(setPower(s, id, true));
     s.hour += 1;
     hypervisor(s, [id], "Storage 1");
-    ok(provisionService(s, addCustomer(s, "Ada", "private"), "vps", { label: "ada.example", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
+    ok(provisionService(s, addCustomer(s, "Ada", "private"), "vps", { label: "ada.com", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     ok(setPower(s, id, false));
     s.hour = 7;
     ok(setRaid(s, id, "none"));

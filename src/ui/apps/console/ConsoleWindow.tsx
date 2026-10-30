@@ -29,7 +29,7 @@ export function ConsoleWindow({ deviceId, front }: { deviceId: string; front: bo
   const game = useStore((s) => s.game);
   const d = game.devices.find((x) => x.id === deviceId), vm = vmById(game, deviceId);
   const menus = useDeviceMenu(game, none, none);
-  if (vm && isOwnVm(vm)) return <VmConsole vm={vm} front={front} />;
+  if (vm && isOwnVm(vm)) return <VmConsole key={vm.id} game={game} vm={vm} front={front} />;
   if (!d) return null;
   const via = consoleVia(game, d.id), power = via ? powerOptions(game, d) : null;
   return (

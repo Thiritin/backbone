@@ -8,7 +8,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { MONTH, OFFER_HOURS, patchSponsorship, type BoardInfo } from "./community";
 import { addAwareness } from "./marketing";
 
-export const BOARD_HOST = "sponsorbored.example";
+export const BOARD_HOST = "sponsorbored.net";
 export const BOARD_PRODUCTS: Product[] = ["gameServer", "vps", "storage", "webHosting"];
 export const BOARD_MONTHS = [1, 3, 6, 12] as const;
 export const BOARD_SLOTS = [1, 2, 3, 4] as const;

@@ -7,7 +7,7 @@ import { workloadsOn } from "../../../sim/60-infra/cluster";
 import { capacityMbps, serviceMbps, type Routing } from "../../../sim/60-infra/network";
 import { routerMbps } from "../../../sim/60-infra/routers";
 import { farEnd, locationOf } from "../../../sim/60-infra/status";
-import { loadClass, mbps } from "./NetworkApp";
+import { loadClass, mbps } from "../locations/NetworkTab";
 
 interface Node { id: string; col: number; label: string; sub: string; expand?: string }
 interface Edge { from: string; to: string; load: number; speed: string }

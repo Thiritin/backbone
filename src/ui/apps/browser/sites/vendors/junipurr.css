@@ -1,0 +1,35 @@
+.vs-jnp { font: 11px/1.45 Verdana, Arial, sans-serif; color: #333333; background: #ffffff; }
+.vs-jnp header { display: flex; align-items: center; gap: 28px; padding: 10px 18px; border-bottom: 2px solid #84b135; }
+.vs-jnp .vs-wm { display: flex; align-items: center; gap: 6px; font: 700 20px/1 Georgia, serif; color: #1c4a2a; }
+.vs-jnp .vs-wm small { font: 700 9px/1 Verdana, sans-serif; letter-spacing: 0.2em; color: #84b135; }
+.vs-jnp nav { display: flex; gap: 14px; }
+.vs-jnp nav a { color: #1c4a2a; text-decoration: none; font-weight: 700; }
+.vs-jnp nav a[aria-current] { color: #84b135; }
+.vs-jnp main { padding: 12px 18px; max-width: 860px; }
+.vs-jnp .vs-hero { padding: 16px; background: #eef4e2; border-left: 6px solid #84b135; margin-bottom: 12px; }
+.vs-jnp h1 { font-size: 16px; color: #1c4a2a; }
+.vs-jnp h2 { font-size: 12px; color: #84b135; margin: 0 0 6px; }
+.vs-jnp .vs-body h2 { margin-top: 12px; }
+.vs-jnp .vs-cols { display: grid; grid-template-columns: 180px 1fr; gap: 18px; }
+.vs-jnp .vs-cats { background: #f4f4f4; padding: 6px 10px; }
+.vs-jnp .vs-cats a { display: block; padding: 3px 0; color: #1c4a2a; }
+.vs-jnp .vs-news li { padding: 3px 0; border-bottom: 1px solid #eeeeee; }
+.vs-jnp th { background: #1c4a2a; color: #ffffff; padding: 3px 6px; }
+.vs-jnp td { padding: 3px 6px; border-bottom: 1px solid #e5e5e5; }
+.vs-jnp footer { padding: 10px 18px 18px; font-size: 9px; color: #888888; }
+.vs-jnp.late { font: 15px/1.55 "Helvetica Neue", Arial, sans-serif; color: #e8edf2; background: #0c1f33; }
+.vs-jnp.late header { border-bottom: 1px solid #1f3a57; padding: 16px 40px; }
+.vs-jnp.late .vs-wm { color: #ffffff; font-family: "Helvetica Neue", Arial, sans-serif; }
+.vs-jnp.late nav a { color: #e8edf2; font-weight: 400; }
+.vs-jnp.late nav a[aria-current] { color: #84b135; }
+.vs-jnp.late main { padding: 32px 40px; max-width: 1000px; }
+.vs-jnp.late .vs-hero { background: none; border: 0; padding: 32px 0; }
+.vs-jnp.late h1 { color: #ffffff; font-size: 36px; font-weight: 300; margin-bottom: 12px; }
+.vs-jnp.late h2 { font-size: 18px; font-weight: 400; color: #84b135; }
+.vs-jnp.late .vs-cols { grid-template-columns: 260px 1fr; gap: 40px; }
+.vs-jnp.late .vs-cats { background: none; padding: 0; }
+.vs-jnp.late .vs-cats a { padding: 12px 16px; margin-bottom: 6px; background: #163250; color: #ffffff; text-decoration: none; }
+.vs-jnp.late .vs-news li { border-color: #1f3a57; padding: 8px 0; }
+.vs-jnp.late th { background: none; color: #84b135; border-bottom: 1px solid #84b135; padding: 8px; }
+.vs-jnp.late td { border-color: #1f3a57; padding: 8px; }
+.vs-jnp.late footer { padding: 20px 40px; font-size: 12px; color: #8094a8; }

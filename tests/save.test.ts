@@ -73,7 +73,7 @@ describe("save", () => {
     const v1 = {
       version: 1, seed: 4, hour: 900,
       customers: [{ id: "cus8", name: "Ada", profile: "private", since: 0, happiness: 70, habit: "prompt", churnedAt: null }],
-      services: [{ id: "svc9", customerId: "cus8", product: "domain", label: "ada.example", price: 12, period: "year", commitMonths: 0, startedAt: 0, endedAt: null }],
+      services: [{ id: "svc9", customerId: "cus8", product: "domain", label: "ada.com", price: 12, period: "year", commitMonths: 0, startedAt: 0, endedAt: null }],
       invoices: [{ id: "inv10", suspended: true }],
     };
     const s = deserialize(JSON.stringify(v1));

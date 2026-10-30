@@ -1,0 +1,10 @@
+/* docs/design/software.md, 8.6: what every manufacturer site shares; each site's own sheet sets its look. */
+.vs { min-height: 100%; }
+.vs a { cursor: pointer; }
+.vs table { width: 100%; border-collapse: collapse; }
+.vs th, .vs td { text-align: left; }
+.vs .num { text-align: right; font-variant-numeric: tabular-nums; }
+.vs-news { list-style: none; padding: 0; margin: 0; }
+.vs-news li { display: flex; gap: 12px; }
+.vs-news time { flex: none; width: 72px; }
+.vs-cats { list-style: none; padding: 0; margin: 0; }

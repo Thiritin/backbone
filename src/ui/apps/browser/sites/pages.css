@@ -6,15 +6,6 @@
 .cs-defaced { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; background: #000000; color: #33ff33; font-family: "Courier New", monospace; text-align: center; }
 .cs-defaced h1 { font-size: 30px; }
 
-.vs { min-height: 100%; background: #ffffff; color: #1b1d21; font: 15px/1.5 Inter, system-ui, sans-serif; }
-.vs-head { display: flex; align-items: center; padding: 18px 40px; border-bottom: 1px solid #e3e5e8; }
-.vs-head .logo-word { font-size: 20px; }
-.vs-main { max-width: 640px; padding: 72px 40px; }
-.vs-main h1 { font-size: 34px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
-.vs-main p { margin: 14px 0 28px; color: #4a4f57; font-size: 17px; }
-.vs-button { display: inline-block; padding: 9px 20px; border-radius: 6px; background: #1b1d21; color: #ffffff; font-weight: 600; text-decoration: none; }
-.vs-button:hover { background: #33373d; }
-
 .yt { min-height: 100%; background: #0f0f0f; color: #f1f1f1; font: 14px/1.4 Roboto, system-ui, sans-serif; }
 .yt-head { padding: 12px 24px; }
 .yt-logo { display: inline-flex; align-items: center; gap: 6px; font-size: 18px; font-weight: 700; letter-spacing: -0.04em; }

@@ -18,18 +18,22 @@ The console end is drawn today as a plain management jack. It becomes the blue V
 
 The screen is a state machine driven by the server's power and boot state in the simulation plus a little real-time pacing in the UI. The simulation only knows whole hours, and a boot takes one, so the POST key window cannot live in the simulation: it is a real-time window the console shows at the start of a boot. `consoleScreen` grows from one line into the screen's state and keeps serving the KVM page and the Terminal, which print its first line.
 
-| Server state | Screen |
+The screen follows `machineScreen` in `60-infra/oob.ts`; the row of soft keys under it shows only the keys the current screen takes.
+
+| Machine state | Screen |
 | --- | --- |
 | Off, no power, controller hung | Black, "No signal" |
-| Booting, first seconds | Vendor POST splash: logo, memory count, "Press Del to enter Setup, F11 for boot menu", RAID controller banner listing the drives and the array |
-| Booting, after the window | Text scroll of the operating system starting, or "Operating system not found" when the disks hold nothing |
+| POST | Vendor POST splash: logo, memory count, "Press Del to enter Setup, F11 for boot menu", RAID controller banner listing the drives and the array |
 | Stuck at the firmware prompt | "CMOS checksum error - Defaults loaded. Press F1 to continue, DEL to enter SETUP", waiting for a key |
 | In setup | The BIOS setup, blue on grey text, keyboard driven |
-| Boot menu | A list: the hard disk array, the USB stick, the network |
-| Installing | The installer, with the operating systems on the media, the erase confirmation and the progress screen |
-| Up, software installed | The software's login screen: a Debian `tty1` login for the panels, mail servers and OpenStash, VMwhere's grey and yellow direct console, HyperVee's Windows logon |
-| Up, nothing installed | "Operating system not found", retrying every boot |
-| Hung | The last screen, frozen, with a dead cursor |
+| Boot menu | A list: the hard disk array, one USB entry per operating system on the stick ("USB: Debiant 8 netinst", "USB: Windoors Server 2012 R2"), the network |
+| Booted from the stick or an ISO | The Debiant text-mode installer or Windoors Setup of the year, with the erase confirmation |
+| Installing the OS | The installer's progress: the Debiant bar, or Setup's percentages with its two restarts |
+| OS booting | Lunix kernel and init lines scrolling over the OS's boot minutes (green `[ OK ]` lines from Debiant 8), or the Windoors boot screen of the version's era |
+| Lunix up | The `tty1` banner and login; any key logs in as root and opens the shell, or VMwhere's grey and yellow direct console on a VMwhere host |
+| Windoors up | The logon of the version's era; Ctrl+Alt+Del opens the desktop with Server Manager |
+| Empty disk | "Operating system not found", retrying every boot |
+| Hung | The OS's login screen, frozen, with no cursor |
 
 POST shows for 8 real seconds after the server powers on, whatever the game speed; at 1× that is the first 8 game minutes of the one-hour boot. At Skip the boot is over before the splash is drawn, so a player who skips time misses the window, which is right. Pressing Del or F2 during the splash calls `enterSetup`; the simulation accepts the key during the whole boot hour (it cannot see seconds), the UI accepts it only while the splash is up. Missing the window means the server boots into what it has, and the way back is Reset, as the brief says. The 8 seconds and the splash are a calibration knob in one constant.
 
@@ -51,11 +55,11 @@ The BIOS's cursor and page are UI state in the session. Only "in setup" and ever
 
 ## Installing
 
-The player's USB stick is always plugged in and the VM's ISO is always at hand; both hold operating systems and nothing else (docs/design/software.md, sections 1 and 4). The stick holds both, Debiant GNU/Lunix and Windoors Server, and an ISO holds the one it is of. Booting from the media shows the installer with its operating systems, each with the version of the year and its install hours.
+The player's USB stick is always plugged in and the VM's ISO is always at hand; both hold operating systems and nothing else (docs/design/software.md, sections 1 and 4). The stick holds both, Debiant GNU/Lunix and Windoors Server, and an ISO holds the one it is of. The boot menu lists the stick once per operating system; the entry picked decides which installer starts, the Debiant text-mode installer or Windoors Setup (software.md, section 7).
 
-Picking an operating system leads to the target screen: the array as the BIOS configured it, its usable size, and what is on it. Three cases.
+Each installer reaches a target screen: the array as the BIOS configured it, its usable size, and what is on it (Debiant's "Partition disks", Setup's partition list). Three cases.
 
-1. **Empty disks.** "Install Debiant GNU/Lunix" with Install and Back.
+1. **Empty disks.** The install starts on confirmation (Debiant asks "Write the changes to disks?", Setup installs straight away).
 2. **Software installed, nothing running on it.** The screen names the software that will be erased. Confirming erases it and starts the OS install.
 3. **Software installed and in use.** The screen lists what dies: the cluster, its workloads by hostname, how many customers they belong to, and which have a backup. The player types the machine's hostname to confirm; a button is too easy for this one. Confirming marks the data lost exactly as a lost array does (`dataLost`, the loss report on the next tick, backups restorable where they exist, the same tickets and churn), drops the cluster and starts the OS install. This is the one place the game lets a player destroy customer data on purpose, and it should feel like it.
 
@@ -83,7 +87,7 @@ Tests, one seeded suite `tests/console.test.ts`: setup only while booting or stu
 
 ## UI
 
-`src/ui/apps/console/`: `Screen.tsx` (the state machine and the screens), `bios.tsx`, `installer.tsx`, `console.css` with the few looks (POST, BIOS, installer, Debian, DCUI, Windows), each a colour set and a font, no art. `ConsoleWindow.tsx` is the managed and KVM window; it keys on the device like a note window keys on its doc (`win.doc` today), so `openApp` gets a sibling that opens one window per machine, and the title bar's quick actions come from `consoleVia` and the existing `powerOptions`. The monitor path renders `Screen` inside the Locations app in place of `Inspector`. Keyboard goes to the screen while its window is front or the monitor is plugged in, through one `onKey` that the soft-key row calls too.
+`src/ui/apps/console/`: `Screen.tsx` (the state machine and the screens), `bios.tsx`, `installer.tsx`, `lunix.tsx`, `windoors.tsx`, `console.css` with the looks (POST, BIOS, the two installers, the Lunix tty, DCUI, the Windoors screens), each a colour set and a font, no art. `ConsoleWindow.tsx` is the managed and KVM window; it keys on the device like a note window keys on its doc (`win.doc` today), so `openApp` gets a sibling that opens one window per machine, and the title bar's quick actions come from `consoleVia` and the existing `powerOptions`. The monitor path renders `Screen` inside the Locations app in place of `Inspector`. Keyboard goes to the screen while its window is front or the monitor is plugged in, through one `onKey` that the soft-key row calls too.
 
 The console end's hit rectangle in `RackFront.tsx` exists for cabling; a click without a drag plugs the monitor in, a drag still pulls a cable. `mgmt.tsx` draws the server's end as the VGA trapezoid.
 
@@ -101,4 +105,4 @@ Each phase lands green with its tests and its changelog bullet. Phases 1 and 2 t
 
 ## Open points
 
-The POST window length and the install stage names want tuning against play; both are single constants. Whether the Boot page is worth having next to the boot menu is a question for the first playtest, and it is the first thing to cut. Game panels (TCAdmen and the others) and the mail servers share the Debian login look until anyone misses a distinct one. The Terminal's `console` command prints the screen's first line and takes no keys; a serial BIOS over it is a later lane if anyone asks.
+The POST window length and the install stage names want tuning against play; both are single constants. Whether the Boot page is worth having next to the boot menu is a question for the first playtest, and it is the first thing to cut. The Terminal's `console` command prints the screen's first line and takes no keys; a serial BIOS over it is a later lane if anyone asks.

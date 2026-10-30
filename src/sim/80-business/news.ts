@@ -17,6 +17,7 @@ import { familyOf } from "../60-infra/vulns";
 import type { SimEvent } from "../88-tick/tick";
 import { MAIL_PROVIDERS } from "./mail";
 import { lineBlocker, listed, SITE_LINES } from "./website";
+import { vendorHost, vendorReleases, VENDORS } from "./vendors";
 
 type Params = Record<string, string | number>;
 export interface NewsDef { id: string; key: string; at: number; params: Params }
@@ -65,6 +66,15 @@ export const NEWS: NewsDef[] = [
   ...PORT_SPEEDS.filter((p) => p.from > START_YEAR).map((p) => ({ id: `ports.${p.gbit}`, key: "event.news.ports", at: at(p.from), params: { gbit: p.gbit } })),
   // SSL certificates turn free (products.ts, marketRates).
   { id: "freeSsl", key: "event.news.freeSsl", at: at(2016), params: {} },
+  // A manufacturer's releases of one month in one item that links to the News page of its site (vendors.ts).
+  ...VENDORS.flatMap((v) => {
+    const by = new Map<number, string[]>();
+    for (const r of vendorReleases(v)) if (r.month > START_YEAR * 12) by.set(r.month, [...(by.get(r.month) ?? []), r.model.name]);
+    return [...by].map(([month, names]) => ({
+      id: `vendor.${v.id}.${month}`, key: "event.news.vendor", at: at(Math.floor(month / 12), month % 12),
+      params: { brand: v.name, names: names.join("|"), url: `www.${vendorHost(v.id)}/news` },
+    }));
+  }),
 ];
 
 const lineDef = (p: string): NewsDef => ({ id: `line.${p}`, key: "event.news.line", at: -1, params: { line: LINE_NAME[p as keyof typeof LINE_NAME] } });

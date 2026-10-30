@@ -233,8 +233,8 @@ describe("the Sponsor-Bored board", () => {
 
   it("is a site in the Browser from the start", () => {
     const s = newGame(1);
-    expect(resolve(s, "sponsorbored.example").page).toEqual({ kind: "sponsorboard" });
-    expect(resolve(s, "https://www.sponsorbored.example/").page).toEqual({ kind: "sponsorboard" });
+    expect(resolve(s, "sponsorbored.net").page).toEqual({ kind: "sponsorboard" });
+    expect(resolve(s, "https://www.sponsorbored.net/").page).toEqual({ kind: "sponsorboard" });
   });
 
   it("loads old saves without offers", () => {

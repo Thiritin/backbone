@@ -6,6 +6,7 @@ import "./news.css";
 
 export function NewsApp() {
   const game = useStore((s) => s.game);
+  const openApp = useStore((s) => s.openApp);
   const items = feed(game);
   return (
     <div className="news">
@@ -15,6 +16,7 @@ export function NewsApp() {
           <time>{formatClock(n.hour).slice(4, -8)}</time>
           <h3>{t(`${n.key}.title`, n.params)}</h3>
           <p>{t(`${n.key}.text`, n.params)}</p>
+          {typeof n.params.url === "string" && <button className="news-link" onClick={() => openApp("Browser", { kind: "url", id: String(n.params.url) })}>{String(n.params.url).split("/")[0]}</button>}
         </article>
       ))}
     </div>

@@ -32,7 +32,7 @@ const releaseIn = (year: number): Release => [...RELEASES].reverse().find((r) =>
 // A server runs the Lunix version it installed, or without one the release of the year it was bought; the desk the one
 // from the start of the game.
 export function releaseOf(s: GameState, host: string): Release {
-  const d = s.devices.find((x) => x.id === host), v = d?.os?.id === "lunix" ? Number(d.os.version) : NaN;
+  const d = s.devices.find((x) => x.id === host), m = d ?? s.workloads.find((w) => w.id === host), v = m?.os?.id === "lunix" ? Number(m.os.version) : NaN;
   return RELEASES.find((r) => Number(r.version) === v) ?? releaseIn(yearOf(d?.boughtAt ?? 0));
 }
 

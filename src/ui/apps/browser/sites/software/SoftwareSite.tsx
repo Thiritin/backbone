@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from "react";
 import { euroPrice } from "../../../../../sim/00-core/money";
 import { SOFTWARE, type Software } from "../../../../../sim/10-catalog/platforms";
-import { SERVER_OS, serverOsAt, serverOsById, type ServerOs, type ServerOsId } from "../../../../../sim/10-catalog/server-os";
+import { licensingAt, SERVER_OS, serverOsAt, serverOsById, type LicenseEra, type LicenseKind, type ServerOs, type ServerOsId } from "../../../../../sim/10-catalog/server-os";
+import { yearOf } from "../../../../../sim/00-core/time";
+import { useStore } from "../../../../store";
 import type { Look, Site } from "../../../../../sim/10-catalog/sites";
 import "./software.css";
 
@@ -40,14 +42,15 @@ export const Features = ({ p, className }: { p: Product; className?: string }) =
   <ul className={className}>{p.site.features.map((f) => <li key={f}>{f}</li>)}</ul>
 );
 
-const UNIT: Record<Software["pricing"], string> = { free: "", account: "per web space a month", server: "per server a month", core: "per physical core a month" };
-const windoorsFee = () => euroPrice(serverOsById("windoors").fee);
+const UNIT: Record<LicenseKind, string> = { free: "", once: "per CPU socket, paid once", account: "per web space a month", server: "per server a month", core: "per physical core a month" };
+const OS_UNIT: Record<LicenseKind, string> = { ...UNIT, once: "per machine, paid once", core: "per core or vCPU a month" };
+const price = (era: LicenseEra, unit: Record<LicenseKind, string>) => (era.kind === "free" ? "Free" : `${euroPrice(era.fee)} ${unit[era.kind]}`);
 
-// The license as the catalog has it, and the Windoors license where the software runs on nothing else.
+// The license of the game year as the catalog has it, and the Windoors license where the software runs on nothing else.
 export function Pricing({ p, className }: { p: Product; className?: string }) {
-  const rows: [string, string][] = p.os
-    ? [[p.os.name, p.os.fee ? `${euroPrice(p.os.fee)} per machine a month` : "Free"]]
-    : [[p.name, p.sw!.pricing === "free" ? "Free" : `${euroPrice(p.sw!.fee)} ${UNIT[p.sw!.pricing]}`]];
+  const year = useStore((s) => yearOf(s.game.hour));
+  const windoorsFee = () => price(licensingAt(serverOsById("windoors"), year), OS_UNIT);
+  const rows: [string, string][] = p.os ? [[p.os.name, price(licensingAt(p.os, year), OS_UNIT)]] : [[p.name, price(licensingAt(p.sw!, year), UNIT)]];
   const windoors = p.sw && p.sw.os.length === 1 && p.sw.os[0] === "windoors";
   return (
     <div className={className}>
@@ -55,7 +58,7 @@ export function Pricing({ p, className }: { p: Product; className?: string }) {
         <thead><tr><th>Edition</th><th>License</th></tr></thead>
         <tbody>{rows.map(([a, b]) => <tr key={a}><td>{a}</td><td className="num">{b}</td></tr>)}</tbody>
       </table>
-      {windoors && <p className="sws-note">{p.name} runs on Windoors Server, which costs {windoorsFee()} per machine a month on top.</p>}
+      {windoors && <p className="sws-note">{p.name} runs on Windoors Server, which costs {windoorsFee()} on top.</p>}
     </div>
   );
 }

@@ -16,13 +16,14 @@ import { Inspector } from "./Inspector";
 import { PlanButton, useMaintenance, Windows, windowsAtLocation } from "./Maintenance";
 import { menuOn } from "../../desktop/ContextMenu";
 import "./locations.css";
+import { NetworkTab, networkCount } from "./NetworkTab";
 import { Overview, Waitlist } from "./Overview";
 import { RackView, Upgrades } from "./RackView";
 import { Storage } from "./Storage";
 import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, Zone } from "./ui";
 import { REGIONS } from "../../../sim/20-world/datacenters";
 
-type Tab = "floor" | "cabling" | "storage" | "line";
+type Tab = "floor" | "cabling" | "storage" | "network" | "line";
 
 // view: null is the overview, "waitlist" the waitlist, otherwise a location id.
 export function LocationsApp() {
@@ -94,6 +95,8 @@ export function LocationsApp() {
                 <Cabling key={loc.id} game={game} loc={loc} />
               ) : tab === "storage" ? (
                 <div className="loc-scroll"><Storage game={game} loc={loc} onMounted={(r, d) => { go(loc.id, r); setDeviceId(d); }} /></div>
+              ) : tab === "network" ? (
+                <div className="loc-scroll"><NetworkTab key={loc.id} game={game} loc={loc} /></div>
               ) : tab === "line" ? (
                 <div className="loc-scroll"><HomeLinePanel game={game} /></div>
               ) : rack ? (
@@ -124,6 +127,7 @@ function LocationTabs({ game, locId, tab, onTab }: { game: GameState; locId: str
   const stored = storageStacks(game, loc.id).reduce((n, s) => n + s.ids.length, 0);
   const tabs: [Tab, string, number?][] = [
     ["floor", "Floor"], ["cabling", "Cabling"], ["storage", "Storage", stored],
+    ["network", "Network", networkCount(game, loc)],
     ...(loc.space === "basement" ? [["line", "Internet line"] as [Tab, string]] : []),
   ];
   return (
