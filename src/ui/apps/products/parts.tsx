@@ -112,13 +112,14 @@ export function Sparkline({ values, from, w = 240, h = 44 }: { values: number[];
   );
 }
 
-export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "down" | "frozen";
+export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "frozen";
 export const VM_STATE: Record<VmState, [string, string]> = {
-  running: ["Running", "ok"], frozen: ["Frozen", "bad"], stopped: ["Stopped", ""], lost: ["Lost disk", "bad"], restoring: ["Restoring", "accent"], migrating: ["Migrating", "accent"], down: ["Down", "bad"],
+  running: ["Running", "ok"], frozen: ["Frozen", "bad"], stopped: ["Stopped", ""], lost: ["Lost disk", "bad"], restoring: ["Restoring", "accent"], migrating: ["Migrating", "accent"], cloning: ["Cloning", "accent"], down: ["Down", "bad"],
 };
 export function vmState(game: GameState, w: Workload): VmState {
   if (lostDisk(game, w)) return "lost";
   if (w.migrating) return "migrating";
+  if (w.cloning && w.cloning > game.hour) return "cloning";
   if (w.busyUntil > game.hour) return game.lossReports.some((r) => r.items.some((i) => i.workloadId === w.id && i.restored)) ? "restoring" : "migrating";
   if (w.stopped) return "stopped";
   if (w.clusterId && w.deviceId && game.frozen.includes(w.deviceId)) return "frozen";

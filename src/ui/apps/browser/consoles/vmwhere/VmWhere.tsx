@@ -133,7 +133,7 @@ function ClusterSummaryView({ game, c, node, vms, pick }: { game: GameState; c: 
           {vms.map((v) => (
             <tr key={v.id} onClick={() => pick({ kind: "vm", id: v.id })}>
               <td><b>{v.name}</b>{v.sub && <span className="cx-sub">{v.sub}</span>}</td>
-              <td>{v.st === "stopped" ? "Powered Off" : v.st === "running" ? "Powered On" : v.state}</td>
+              <td>{v.w.template ? "Template" : v.st === "stopped" ? "Powered Off" : v.st === "running" ? "Powered On" : v.state}</td>
               <td><Status sev={worst(sum.alarms.filter((a) => a.on.id === v.id)) ?? (v.tone === "bad" ? "critical" : null)} /></td>
               <td>{v.node}</td><td className="num">{v.w.vcpu}</td><td className="num">{gb(v.w.ramGb)}</td><td className="num">{gb(v.use.ramGb)}</td>
               <td className="num">{gb(v.w.diskGb)}</td><td className="num">{gb(v.use.diskGb)}</td><td className="num">{Math.round(v.use.vcpu * MHZ)} MHz</td>
@@ -274,7 +274,7 @@ export function VmWhere(p: PanelProps) {
                     <button aria-pressed={node === d.id} onClick={() => pick({ kind: "node", id: d.id })}><i>▦</i>{d.hostname ?? d.name}<Badge alarms={alarms.filter((a) => a.on.id === d.id)} /></button>
                     <ul>
                       {vms.filter((v) => v.w.deviceId === d.id).map((v) => (
-                        <li key={v.id}><button aria-pressed={vm?.id === v.id} data-state={v.st} onClick={() => pick({ kind: "vm", id: v.id })}><i>{v.st === "running" ? "▶" : "▫"}</i>{v.name}<Badge alarms={alarms.filter((a) => a.on.id === v.id)} /></button></li>
+                        <li key={v.id}><button aria-pressed={vm?.id === v.id} data-state={v.w.template ? "template" : v.st} onClick={() => pick({ kind: "vm", id: v.id })}><i>{v.w.template ? "⧉" : v.st === "running" ? "▶" : "▫"}</i>{v.name}<Badge alarms={alarms.filter((a) => a.on.id === v.id)} /></button></li>
                       ))}
                     </ul>
                   </li>

@@ -10,9 +10,9 @@ import type { GameState } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
 import { privateIp } from "../../../../sim/60-infra/addresses";
-import { balances, datastoreFits, datastoreUp, deltaGb, hostOfVm, insideVm, isOwnVm, KEYS, nodeTakes, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
+import { balances, datastoreFits, datastoreUp, deltaGb, hostOfVm, insideVm, isOwnVm, KEYS, nodeTakes, withDatastore, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
 import { machineScreen } from "../../../../sim/60-infra/oob";
-import { deviceHealth } from "../../../../sim/60-infra/status";
+import { deviceHealth, working } from "../../../../sim/60-infra/status";
 import { nodeUsage, workloadUse } from "../../../../sim/60-infra/usage";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { setMedia } from "../../../../sim/90-actions/console";
@@ -22,6 +22,7 @@ import { joinableServers } from "../../../../sim/90-actions/software";
 import { buyAppSuite, cancelAppSuite, deployFromSuite } from "../../../../sim/90-actions/suite";
 import { rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload } from "../../../../sim/90-actions/vms";
 import { diskMoveDowntime, moveDisk } from "../../../../sim/90-actions/datastores";
+import { cloneHours, cloneTemplate, makeTemplate, makeVm } from "../../../../sim/90-actions/templates";
 import { useStore } from "../../../store";
 import { day, disk, ram } from "../../hw";
 import { bootLines } from "../../console/lunix";
@@ -32,7 +33,7 @@ import "./hypervisor.css";
 
 // Toolbar glyphs; the consoles draw no images.
 export const GLYPH: Record<string, string> = {
-  start: "▶", stop: "■", reset: "↻", restore: "⟲", recover: "⛑", migrate: "⇄", storage: "⛁", resize: "⤢", console: "▣", delete: "✕", create: "✚",
+  start: "▶", stop: "■", reset: "↻", restore: "⟲", recover: "⛑", migrate: "⇄", storage: "⛁", resize: "⤢", console: "▣", delete: "✕", create: "✚", template: "⧉", clone: "⎘", vm: "▢",
 };
 
 export interface Vm {
@@ -72,16 +73,20 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
   const [open, setOpen] = useState<{ id: string; kind: string } | null>(null), close = () => setOpen(null);
   const vms = game.workloads.filter((w) => w.clusterId === c.id).map((w): Vm => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], host = hostOfVm(game, w.id), own = isOwnVm(w), label = vmLabel(game, w);
-    const on = st === "running" || st === "down" || st === "frozen", rescue = rescueTargets(game, w.id);
+    const on = st === "running" || st === "down" || st === "frozen", rescue = rescueTargets(game, w.id), tpl = !!w.template;
+    const templating = own && !!c.platform && !!softwareById(c.platform).datastores;
     const toggle = (kind: string) => () => setOpen(open?.id === w.id && open.kind === kind ? null : { id: w.id, kind });
     const actions: (PanelAction | false)[] = [
-      f.start && st === "stopped" && { id: "start", label: "Start", run: () => act(startWorkload, w.id) },
+      f.start && st === "stopped" && !tpl && { id: "start", label: "Start", run: () => act(startWorkload, w.id) },
       f.stop && on && { id: "stop", label: "Shutdown", run: () => act(stopWorkload, w.id) },
       f.stop && on && own && { id: "reset", label: "Reset", run: () => { if (act(stopWorkload, w.id).ok) act(startWorkload, w.id); } },
       st === "lost" && { id: "restore", label: w.backupAt === null ? "Start empty" : "Restore", run: () => act(restoreWorkload, w.id) },
       rescue.length > 0 && { id: "recover", label: "Recover", run: toggle("recover") },
-      !!f.migrate && (on || st === "stopped") && !w.migrating && { id: "migrate", label: "Migrate", run: toggle("migrate") },
+      !!f.migrate && (on || st === "stopped") && !w.migrating && !tpl && { id: "migrate", label: "Migrate", run: toggle("migrate") },
       c.datastores.length > 0 && (on || st === "stopped") && !w.migrating && { id: "storage", label: "Move disk", run: toggle("storage") },
+      templating && st === "stopped" && !tpl && { id: "template", label: "Convert to Template", run: () => act(makeTemplate, w.id) },
+      tpl && { id: "clone", label: "Clone", run: toggle("clone") },
+      tpl && { id: "vm", label: "Convert to Virtual Machine", run: () => act(makeVm, w.id) },
       f.resize && own && { id: "resize", label: "Resize", run: toggle("resize") },
       own && { id: "console", label: "Console", run: () => openConsole(w.id) },
       f.delete && own && !insideVm(game, w.id).length && { id: "delete", label: "Delete", tone: "danger", run: toggle("delete") },
@@ -89,6 +94,7 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
     const kind = open?.id === w.id ? open.kind : null;
     const panel = kind === "migrate" ? <Migrate game={game} w={w} c={c} done={close} />
       : kind === "storage" ? <DiskMove game={game} w={w} c={c} done={close} />
+      : kind === "clone" ? <Clone game={game} w={w} c={c} done={close} />
       : kind === "resize" ? (host ? <Resize game={game} host={host} done={close} /> : <SizeForm w={w} done={close} />)
       : kind === "delete" ? (
         <div className="cx-inline">
@@ -140,6 +146,19 @@ function DiskMove({ game, w, c, done }: { game: GameState; w: Workload; c: Clust
           {x.name}{down(x.id) ? `, offline ${down(x.id)} h` : ""}
         </button>
       ))}
+      <button className="cx-btn" onClick={done}>Cancel</button>
+    </div>
+  );
+}
+
+// Where a template's clone goes: the host the scheduler picks or an active, working host with room, with the copy hours.
+function Clone({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster; done: () => void }) {
+  const act = useStore((s) => s.act), size = withDatastore(game, c, { vcpu: w.vcpu, ramGb: w.ramGb, diskGb: w.diskGb }), hours = cloneHours(game, w);
+  const hosts = c.nodes.filter((n) => n.state === "active" && working(game, n.deviceId)).map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter((d) => d && nodeTakes(game, d, size));
+  const to = [{ id: undefined, name: "Automatic" }, ...hosts.map((d) => ({ id: d.id, name: nodeName(game, d.id) }))];
+  return (
+    <div className="cx-inline">
+      {to.map((x) => <button key={x.id ?? "auto"} className="cx-chip" onClick={() => act(cloneTemplate, w.id, x.id).ok && done()}>{x.name}, {hours} h</button>)}
       <button className="cx-btn" onClick={done}>Cancel</button>
     </div>
   );
@@ -363,7 +382,7 @@ export function tasks(game: GameState, c: Cluster, vms: Vm[]): Task[] {
   const installs = game.clusters.filter((x) => x.switching && (x.id === c.id || (x.vm && ids.has(x.vm))));
   const out: Task[] = [
     ...installs.map((x) => ({ key: `sw-${x.id}`, at: x.switching!.doneAt, text: `Install ${softwareById(x.switching!.to).name} on ${x.name}`, status: "Running", tone: "accent" })),
-    ...vms.filter((v) => v.st === "migrating" || v.st === "restoring").map((v) => ({ key: v.id, at: v.w.migrating?.doneAt ?? v.w.busyUntil, text: `${v.state} ${v.name}`, status: "Running", tone: "accent" })),
+    ...vms.filter((v) => v.st === "migrating" || v.st === "restoring" || v.st === "cloning").map((v) => ({ key: v.id, at: v.w.migrating?.doneAt ?? v.w.busyUntil, text: `${v.state} ${v.name}`, status: "Running", tone: "accent" })),
     ...game.lossReports.filter((r) => nodes.has(r.deviceId)).map((r) => ({ key: r.id, at: r.hour, text: `${nodeName(game, r.deviceId)} lost its disks`, status: "Error", tone: "bad" })),
   ];
   return out.sort((a, b) => b.at - a.at).slice(0, 8);
