@@ -7,7 +7,7 @@ import { dateOf, hourOf } from "../sim/00-core/time";
 // Highest priority first: one batch of events plays only its top sound.
 export const SOUNDS = ["month", "warn", "level", "research", "money", "ticket"] as const;
 export type Sound = (typeof SOUNDS)[number];
-export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup";
+export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup" | "post";
 
 // How each Pear OS era voices the desktop sounds: glassy and long early on, flat and short in the middle years, soft and airy later.
 export interface Voice { wave: OscillatorType; len: number; lift: number; glass: number; air: number }
@@ -171,6 +171,10 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false,
         // Paper crumpling: a handful of short rustles.
         for (let i = 0; i < 6; i++) rattle(c, out, t + i * 0.045 + Math.random() * 0.02, 0.04, 1500 + Math.random() * 3500, 0.035);
         break;
+      case "post":
+        // The single PC speaker beep of a clean power-on self test.
+        tone(c, out, 1000, t, 0.12, 0.02, "square");
+        break;
       case "startup":
         // A wide major chord, the voice of the era the desktop runs.
         [174.6, 220, 261.6, 349.2, 523.3].forEach((hz, i) => note(c, out, voiceOf(era), hz, t + i * 0.008, 2, 0.03));
@@ -209,32 +213,48 @@ export function humOf(s: GameState, rackIds: string[]): Hum {
   return { level: Math.min(1, 0.3 + 0.1 * on.length), pitch: Math.round((rpm / FAN_RPM) * (1 + 0.15 * warm) * 100) / 100, hall: !!locationOf(s, on[0])?.dc };
 }
 
-const HUM_PEAK = 0.25, BLADES = [150, 151.3, 300];
-let hum: { gain: GainNode; muffle: BiquadFilterNode; band: BiquadFilterNode; tones: OscillatorNode[] } | null = null;
+const HUM_PEAK = 0.25, BED_GAIN = 10, BLADES = [150, 151.3, 300];
+let hum: { gain: GainNode; muffle: BiquadFilterNode; whine: GainNode; tones: OscillatorNode[]; rate: number; bed?: AudioBufferSourceNode } | null = null;
 
-// Built on first use and left running; at level 0 it costs a few idle nodes.
+// The loop between the decoder's silent padding at either end, which would otherwise gap on every pass.
+export function loopBounds(data: Float32Array, threshold = 1e-3): [number, number] {
+  let a = 0, b = data.length - 1;
+  while (a < b && Math.abs(data[a]) < threshold) a++;
+  while (b > a && Math.abs(data[b]) < threshold) b--;
+  return [a, b + 1];
+}
+
+// A recorded server room carries the bed; synthetic blade tones rise over it as fans strain. Built on first use and left running.
 function startHum(c: AudioContext) {
-  const len = c.sampleRate * 2, buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-  const noise = c.createBufferSource(), band = c.createBiquadFilter(), muffle = c.createBiquadFilter(), gain = c.createGain();
-  noise.buffer = buf;
-  noise.loop = true;
-  band.type = "bandpass";
-  band.Q.value = 0.6;
+  const muffle = c.createBiquadFilter(), gain = c.createGain(), whine = c.createGain();
   muffle.type = "lowpass";
   gain.gain.value = 0;
-  noise.connect(band).connect(muffle);
+  whine.gain.value = 0;
+  whine.connect(muffle);
   const tones = BLADES.map((hz, i) => {
     const o = c.createOscillator(), g = c.createGain();
     o.frequency.value = hz;
-    g.gain.value = i === 2 ? 0.015 : 0.03;
-    o.connect(g).connect(muffle);
+    g.gain.value = i === 2 ? 0.5 : 1;
+    o.connect(g).connect(whine);
     o.start();
     return o;
   });
   muffle.connect(gain).connect(c.destination);
-  noise.start();
-  return { gain, muffle, band, tones };
+  const h = { gain, muffle, whine, tones, rate: 1 } as NonNullable<typeof hum>;
+  void fetch(`${import.meta.env.BASE_URL}sounds/server-room.mp3`).then((r) => r.arrayBuffer()).then((b) => c.decodeAudioData(b)).then((buf) => {
+    const [from, to] = loopBounds(buf.getChannelData(0));
+    const src = c.createBufferSource(), g = c.createGain();
+    src.buffer = buf;
+    src.loop = true;
+    src.loopStart = from / buf.sampleRate;
+    src.loopEnd = to / buf.sampleRate;
+    src.playbackRate.value = h.rate;
+    g.gain.value = BED_GAIN;
+    src.connect(g).connect(muffle);
+    src.start(0, src.loopStart);
+    h.bed = src;
+  }).catch(() => {});
+  return h;
 }
 
 // Glides the fan bed toward a level (0 fades it out), fan speed and lowpass cutoff over about two seconds.
@@ -245,11 +265,19 @@ export function setHum(level: number, pitch: number, cutoff: number, hall: boole
     if (!hum && level <= 0) return;
     hum ??= startHum(c);
     const t = c.currentTime, deep = hall ? 0.6 : 1;
+    hum.rate = (hall ? 0.9 : 1) * (1 + (pitch - 1) * 0.3);
     hum.gain.gain.setTargetAtTime(level * HUM_PEAK, t, 0.6);
     hum.muffle.frequency.setTargetAtTime(cutoff, t, 0.6);
-    hum.band.frequency.setTargetAtTime(700 * pitch * deep, t, 1.5);
+    hum.whine.gain.setTargetAtTime(Math.min(1, (pitch - 1) / 0.4) * 0.03, t, 1.5);
+    hum.bed?.playbackRate.setTargetAtTime(hum.rate, t, 1.5);
     hum.tones.forEach((o, i) => o.frequency.setTargetAtTime(BLADES[i] * pitch * deep, t, 1.5));
   } catch {
     // Silence is fine.
   }
+}
+
+// Whether an action started a boot on any device, which the PC speaker answers with its beep.
+export function booted(before: GameState, after: GameState): boolean {
+  const was = new Map(before.devices.map((d) => [d.id, d.bootUntil]));
+  return after.devices.some((d) => d.bootUntil !== undefined && d.bootUntil !== was.get(d.id));
 }

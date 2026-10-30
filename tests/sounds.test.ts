@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { humOf, monthNet, pickSound, soundFor, voiceOf, WINDOW_MS } from "../src/ui/sounds";
+import { booted, humOf, loopBounds, monthNet, pickSound, soundFor, voiceOf, WINDOW_MS } from "../src/ui/sounds";
 import { OS_RELEASES } from "../src/sim/10-catalog/os";
 import { newGame } from "../src/sim/50-state";
 import { withServer } from "./fixtures";
+import { setPower } from "../src/sim/90-actions/hardware";
 import { hourOf } from "../src/sim/00-core/time";
 
 describe("sounds", () => {
@@ -46,5 +47,19 @@ describe("sounds", () => {
     const voices = OS_RELEASES.map((r) => JSON.stringify(voiceOf(r.id)));
     expect(new Set(voices).size).toBe(OS_RELEASES.length);
     expect(voiceOf("unknown")).toEqual(voiceOf(OS_RELEASES[0].id));
+  });
+
+  it("trims the silent padding from both ends of the server room loop", () => {
+    expect(loopBounds(new Float32Array([0, 0, 0.02, -0.03, 0.01, 0]))).toEqual([2, 5]);
+    expect(loopBounds(new Float32Array([0.5, 0.5]))).toEqual([0, 2]);
+  });
+
+  it("beeps only when an action starts a boot", () => {
+    const s = withServer(newGame(1)), off = structuredClone(s);
+    expect(setPower(off, "dev3", false).ok).toBe(true);
+    const on = structuredClone(off);
+    expect(setPower(on, "dev3", true).ok).toBe(true);
+    expect(booted(off, on)).toBe(true);
+    expect(booted(on, structuredClone(on))).toBe(false);
   });
 });

@@ -29,6 +29,8 @@ To check a run before submitting it, run `npx tsx scripts/replay.ts path/to/run.
 
 The world map uses coastlines, city coordinates and submarine cables from [Series of Tubes](https://github.com/fjaeckel/seriesoftubes), released under the MIT licence. Its coastlines are simplified from [Natural Earth](https://www.naturalearthdata.com), which is in the public domain. `scripts/import-world.mjs` turns them into `src/ui/map/world-data.ts`.
 
+The server room recording in `public/sounds/server-room.mp3` is the binaural server room recording 29072 by freesound_community on Pixabay, used under the Pixabay Content License.
+
 ## Licence
 
 Backbone is released under the [MIT licence](LICENSE).

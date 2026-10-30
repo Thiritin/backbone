@@ -1,4 +1,4 @@
-import { monthNet, pickSound, playSound, soundFor, WINDOW_MS, type Sound, type UiSound } from "./sounds";
+import { booted, monthNet, pickSound, playSound, soundFor, WINDOW_MS, type Sound, type UiSound } from "./sounds";
 import { useEffect } from "react";
 import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
@@ -223,8 +223,10 @@ export const useStore = create<Store>((set, get) => ({
     const name = actionName(fn);
     if (!name) console.error(`${fn.name || "An action"} is not in ACTIONS, so replays miss it.`);
     const r = name ? runAction(game, name, args) : fn(game, ...args);
-    if (r.ok) set({ game });
-    else {
+    if (r.ok) {
+      if (booted(get().game, game)) setTimeout(() => uiSound("post"), 1200);
+      set({ game });
+    } else {
       uiSound("error");
       lastBanner = Date.now();
       get().notify("Settings", t("action.failed.title"), t(r.error));
