@@ -1,3 +1,5 @@
+import { createElement } from "react";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { hourOf, yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
@@ -16,6 +18,8 @@ import { migrateWorkload, stopWorkload } from "../src/sim/90-actions/vms";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { bootedMachine, buyDevice, hypervisor, panelServer, readyGame, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
+import { Screen } from "../src/ui/apps/console/Screen";
+import { VmConsole } from "../src/ui/apps/console/VmConsole";
 
 const ok = (r: ActionResult) => { if (!r.ok) throw new Error(r.error); return r.id!; };
 const err = (r: ActionResult) => (r.ok ? "ok" : r.error);
@@ -79,6 +83,7 @@ describe("in-place OS upgrade", () => {
     expect(dev(s).software.length).toBe(software);
     expect(machineScreen(s, "dev3").kind).toBe("osInstall");
     expect(consoleScreen(s, dev(s)).key).toBe("term.console.osUpgrade");
+    expect(renderToString(createElement(Screen, { game: s, device: dev(s), via: "bmc" }))).toContain("Upgrade to Debiant GNU/Lunix 4");
     const w = s.workloads.find((x) => x.serviceId)!;
     expect(w.busyUntil).toBe(s.hour + hours);
     expect(s.downHours[w.serviceId]).toBeCloseTo(hours - (Math.ceil(hours) - 1), 9);
@@ -122,8 +127,11 @@ describe("in-place OS upgrade", () => {
     ok(setMedia(s, vm, "windoors@2008"));
     expect(err(upgradeOs(s, vm))).toBe("error.otherMedia");
     ok(setMedia(s, vm, "windoors@2008 R2"));
+    const busy = vmById(s, vm)!.busyUntil;
     ok(upgradeOs(s, vm));
-    expect(vmById(s, vm)).toMatchObject({ os: { version: "2008 R2", from: "2008" }, media: undefined });
+    expect(vmById(s, vm)).toMatchObject({ os: { version: "2008 R2", from: "2008" }, media: undefined, busyUntil: busy });
+    expect(machineScreen(s, vm).kind).toBe("osInstall");
+    expect(renderToString(createElement(VmConsole, { game: s, vm: vmById(s, vm)!, front: false }))).toContain("Upgrading Windoors Server 2008 R2");
     ok(stopWorkload(s, vm));
     expect(vmById(s, vm)!.os).toMatchObject({ version: "2008" });
   });

@@ -166,7 +166,8 @@ export function upgradeOs(s: GameState, machineId: string): ActionResult {
     if ((isDevice(at) ? stickOs(s, at.id) : at.media) !== imageOf(m.os.id, next.version)) return fail("error.otherMedia");
   }
   const hours = upgradeHours(s, machineId), done = nowHours(s) + serverOsById(m.os.id).installHours, from = m.os.version;
-  const ws = isDevice(m) ? workloadsOn(s, m.id) : [m], down = [...ws, ...ws.flatMap((w) => (isOwnVm(w) ? insideVm(s, w.id) : []))];
+  // What runs on the machine goes down with it; a VM's own console stays on and shows the upgrade.
+  const found = installCase(s, machineId), down = found.kind === "busy" ? [...found.workloads, ...found.lost] : [];
   const ids = new Set(down.map((w) => w.id)), services = new Set(down.filter((w) => !isOwnVm(w)).map((w) => w.serviceId));
   s.workloads = s.workloads.map((w) => (ids.has(w.id) ? { ...w, busyUntil: Math.max(w.busyUntil, s.hour + hours) } : w));
   // The hourly tick counts every whole hour a workload is busy; the rest is added here, as for a software update.
