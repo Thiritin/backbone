@@ -4,12 +4,13 @@ import type { Product, Profile } from "../30-customers/customers";
 
 // Values from docs/design/economy.md, section "Usage curves and overcommit": hour of day and the share of booked capacity in use.
 type Keys = [number, number][];
-export type CurveId = "game" | "shop" | "blog" | "news" | "business" | "backup" | "vpn" | "dev" | "enterprise";
+export type CurveId = "game" | "shop" | "blog" | "personal" | "news" | "business" | "backup" | "vpn" | "dev" | "enterprise";
 
 export const CURVES: Record<CurveId, { weekday: Keys; weekend: Keys }> = {
   game: { weekday: [[0, 0.15], [16, 0.15], [20, 0.45], [23, 0.3]], weekend: [[0, 0.6], [3, 0.2], [8, 0.2], [12, 0.9], [18, 1], [23, 0.9]] },
   shop: { weekday: [[0, 0.1], [6, 0.15], [9, 0.55], [13, 0.7], [17, 0.6], [20, 0.75], [22, 0.3], [23, 0.12]], weekend: [[0, 0.1], [10, 0.5], [15, 0.6], [20, 0.8], [22, 0.3]] },
   blog: { weekday: [[0, 0.15], [7, 0.3], [12, 0.45], [19, 0.6], [22, 0.5], [23, 0.2]], weekend: [[0, 0.2], [10, 0.4], [19, 0.55], [23, 0.2]] },
+  personal: { weekday: [[0, 0.02], [18, 0.05], [22, 0.03]], weekend: [[0, 0.03], [12, 0.06], [22, 0.03]] },
   news: { weekday: [[0, 0.1], [5, 0.3], [7, 0.9], [9, 0.7], [12, 0.6], [18, 0.5], [22, 0.3]], weekend: [[0, 0.1], [9, 0.7], [12, 0.5], [22, 0.25]] },
   business: { weekday: [[0, 0.05], [7, 0.2], [9, 0.6], [12, 0.5], [17, 0.5], [19, 0.15]], weekend: [[0, 0.1]] },
   backup: { weekday: [[0, 0.4], [1, 1], [5, 1], [7, 0.05]], weekend: [[0, 0.4], [1, 1], [5, 1], [7, 0.05]] },
@@ -22,7 +23,30 @@ const BY_PRODUCT: Partial<Record<Product, CurveId>> = { gameServer: "game", vpn:
 const BY_PROFILE: Record<Profile, CurveId> = {
   private: "blog", gamer: "game", hobbyDev: "dev", soleProp: "business", smallBiz: "business", agency: "news", office: "business", onlineShop: "shop", enterprise: "enterprise",
 };
-export const curveFor = (product: Product, profile: Profile): CurveId => BY_PRODUCT[product] ?? BY_PROFILE[profile];
+// Private individuals mostly keep a personal page; this share of them writes a blog people read.
+export const PRIVATE_BLOGS = 0.25;
+const BLOG_SALT = -5;
+export const curveFor = (product: Product, profile: Profile, seed: number, customerId: string): CurveId =>
+  BY_PRODUCT[product] ?? (profile === "private" && rand(hashRng(seed, idNum(customerId), BLOG_SALT)) >= PRIVATE_BLOGS ? "personal" : BY_PROFILE[profile]);
+
+// Each curve's load by day of the week, Sunday first, on top of its weekday or weekend keyframes.
+export const DAYS: Record<CurveId, number[]> = {
+  game: [1.05, 0.85, 0.85, 0.9, 0.95, 1.05, 1.1],
+  shop: [1.15, 1.1, 1, 0.95, 0.95, 0.9, 0.9],
+  blog: [1.1, 0.95, 1, 1, 1, 0.9, 0.95],
+  personal: [1, 1, 1, 1, 1, 1, 1],
+  news: [0.85, 1.15, 1.05, 1, 1, 0.95, 0.85],
+  business: [1, 1.1, 1.05, 1, 1, 0.85, 1],
+  backup: [1, 1, 1, 1, 1, 1, 1],
+  vpn: [1, 1.05, 1, 1, 1, 0.95, 1],
+  dev: [1.3, 0.9, 0.95, 1, 1, 0.95, 1.3],
+  enterprise: [1, 1.05, 1, 1, 1, 0.95, 1],
+};
+// How far a service's day strays from its curve, drawn per day from the seed: 0.3 is ±15%.
+export const DAY_SWING = 0.3;
+const DAY_SALT = -6;
+export const daySwing = (seed: number, id: string, hour: number): number =>
+  1 + DAY_SWING * (rand(hashRng(seed, idNum(id), Math.floor(hour / 24), DAY_SALT)) - 0.5);
 
 // Straight lines between keyframes; the last keyframe holds until midnight.
 function at(keys: Keys, h: number): number {
@@ -32,11 +56,11 @@ function at(keys: Keys, h: number): number {
   return next ? v0 + ((next[1] - v0) * (h - h0)) / (next[0] - h0) : v0;
 }
 
-// Load from 0 to 1 at a game hour. Fridays from 18:00 count as weekend for game servers and VPNs.
+// Load at a game hour, a share of booked that a busy day can push past 1. Fridays from 18:00 count as weekend for game servers and VPNs.
 export function curveLoad(id: CurveId, hour: number): number {
   const d = dateOf(hour), day = d.getUTCDay(), h = d.getUTCHours();
   const weekend = day === 0 || day === 6 || (day === 5 && h >= 18 && (id === "game" || id === "vpn"));
-  return at(CURVES[id][weekend ? "weekend" : "weekday"], h);
+  return at(CURVES[id][weekend ? "weekend" : "weekday"], h) * DAYS[id][day];
 }
 
 // economy.md, "Usage curves and overcommit": traffic, night jobs and growth.
@@ -75,10 +99,10 @@ export function nightJob(seed: number, customerId: string, hour: number): number
 
 // economy.md, "How the first build plays": share of performance a service can lose before its customer notices, by what it
 // runs. Each customer's own expectation scales it by 0.5 to 1.5.
-export const SLOW_TOLERANCE: Record<CurveId, number> = { game: 0.05, shop: 0.1, enterprise: 0.1, news: 0.15, vpn: 0.15, business: 0.2, blog: 0.25, dev: 0.35, backup: 0.6 };
+export const SLOW_TOLERANCE: Record<CurveId, number> = { game: 0.05, shop: 0.1, enterprise: 0.1, news: 0.15, vpn: 0.15, business: 0.2, blog: 0.25, personal: 0.4, dev: 0.35, backup: 0.6 };
 const TOLERANCE_SALT = -4;
 export const slowTolerance = (seed: number, product: Product, profile: Profile, customerId: string): number =>
-  SLOW_TOLERANCE[curveFor(product, profile)] * (0.5 + rand(hashRng(seed, idNum(customerId), TOLERANCE_SALT)));
+  SLOW_TOLERANCE[curveFor(product, profile, seed, customerId)] * (0.5 + rand(hashRng(seed, idNum(customerId), TOLERANCE_SALT)));
 
 // Disk and CPU grow at rates drawn separately: a big database and a busy shop are different customers.
 export function growthRate(seed: number, customerId: string, kind: "disk" | "cpu"): number {
@@ -87,11 +111,14 @@ export function growthRate(seed: number, customerId: string, kind: "disk" | "cpu
   return GROWTH[GROWTH.length - 1][1];
 }
 
-// A service's traffic this hour relative to its monthly average: the floor plus its activity (curve with ±20% jitter) plus
-// its night job, scaled so a week averages 1.
+// Share of its booked traffic a curve's services send; a personal page has few visitors.
+export const TRAFFIC_USE: Partial<Record<CurveId, number>> = { personal: 0.1 };
+
+// A service's traffic this hour relative to its monthly average: the floor plus its activity (curve with ±20% jitter and its
+// day's swing) plus its night job, scaled so a week averages its traffic use.
 export function trafficShape(seed: number, v: { id: string; product: Product; customerId: string }, profile: Profile, hour: number): number {
-  const id = curveFor(v.product, profile), floor = TRAFFIC_FLOOR[v.product] ?? 0;
-  const active = Math.min(1, curveLoad(id, hour) * (1 + 0.4 * (rand(hashRng(seed, idNum(v.id), hour)) - 0.5)));
+  const id = curveFor(v.product, profile, seed, v.customerId), floor = TRAFFIC_FLOOR[v.product] ?? 0;
+  const active = Math.min(1, curveLoad(id, hour) * daySwing(seed, v.id, hour) * (1 + 0.4 * (rand(hashRng(seed, idNum(v.id), hour)) - 0.5)));
   const mean = floor + (1 - floor) * weekAverage(id) + JOB_TRAFFIC / 24;
-  return (floor + (1 - floor) * active + JOB_TRAFFIC * nightJob(seed, v.customerId, hour)) / mean;
+  return ((TRAFFIC_USE[id] ?? 1) * (floor + (1 - floor) * active + JOB_TRAFFIC * nightJob(seed, v.customerId, hour))) / mean;
 }

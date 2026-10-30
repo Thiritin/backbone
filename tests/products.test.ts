@@ -127,9 +127,9 @@ describe("control planes", () => {
 
 describe("usage curves and overcommit", () => {
   it("follows the curves: game servers peak on Saturday evenings, business sites on weekday mornings", () => {
-    expect(curveLoad("game", SAT_20)).toBeCloseTo(0.96);
-    expect(curveLoad("game", TUE_10)).toBeCloseTo(0.15);
-    expect(curveLoad("business", TUE_10)).toBeCloseTo(0.6 - 0.1 / 3, 2);
+    expect(curveLoad("game", SAT_20)).toBeCloseTo(0.96 * 1.1);
+    expect(curveLoad("game", TUE_10)).toBeCloseTo(0.15 * 0.85);
+    expect(curveLoad("business", TUE_10)).toBeCloseTo((0.6 - 0.1 / 3) * 1.05, 2);
     expect(curveLoad("business", SAT_20)).toBeCloseTo(0.1);
   });
   it("lets a backup customer shrug off a slowdown a game server customer feels", () => {

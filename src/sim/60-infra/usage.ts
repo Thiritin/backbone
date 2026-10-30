@@ -2,7 +2,7 @@ import { chance, hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import { isOobPort, jacksOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
-import { BACKUP_CHANGED, BACKUP_HOUR, curveFor, curveLoad, growthRate, idNum, JOB_CPU, nightJob, weekMedian } from "../10-catalog/usage";
+import { BACKUP_CHANGED, BACKUP_HOUR, curveFor, curveLoad, daySwing, growthRate, idNum, JOB_CPU, nightJob, weekMedian } from "../10-catalog/usage";
 import type { Service } from "../30-customers/customers";
 import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { isSuspended } from "../45-billing/billing";
@@ -24,14 +24,14 @@ export function diskFill(s: GameState, w: Workload, hour: number): number {
 // How much more CPU a customer needs than in their first month, from their growth rate.
 const demand = (s: GameState, v: Service, hour: number) => 1 + growthRate(s.seed, v.customerId, "cpu") * yearsSince(v.startedAt, hour);
 
-// A workload's load at an hour: its customer's curve times their grown demand with ±20% jitter drawn from the seed, plus their
+// A workload's load at an hour: its customer's curve times its day's swing and their grown demand with ±20% jitter drawn from the seed, plus their
 // night job. Stopped, restoring and lost workloads idle.
 export function workloadLoad(s: GameState, w: Workload, hour: number): number {
   if (w.stopped || w.busyUntil > hour || lostDisk(s, w)) return 0;
   const v = s.services.find((x) => x.id === w.serviceId), c = v && s.customers.find((x) => x.id === v.customerId);
   if (!v || !c) return 0;
   const jitter = 1 + 0.4 * (rand(hashRng(s.seed, idNum(w.id), hour)) - 0.5);
-  return Math.min(1, curveLoad(curveFor(v.product, c.profile), hour) * demand(s, v, hour) * jitter + JOB_CPU * nightJob(s.seed, c.id, hour));
+  return Math.min(1, curveLoad(curveFor(v.product, c.profile, s.seed, c.id), hour) * daySwing(s.seed, w.id, hour) * demand(s, v, hour) * jitter + JOB_CPU * nightJob(s.seed, c.id, hour));
 }
 
 // The player's cluster backups this hour: each source node sends its workloads' changed data to the target's control plane.
@@ -256,7 +256,7 @@ export function usageTick(s: GameState): SimEvent[] {
     const w = v.endedAt === null && !isSuspended(s, v.customerId) ? s.workloads.find((x) => x.serviceId === v.id && x.clusterId && !x.stopped) : undefined;
     const profile = w && s.customers.find((x) => x.id === v.customerId && x.churnedAt === null)?.profile;
     if (!w || !profile) continue;
-    const fill = diskFill(s, w, s.hour), pegged = weekMedian(curveFor(v.product, profile)) * demand(s, v, s.hour) >= PEGGED;
+    const fill = diskFill(s, w, s.hour), pegged = weekMedian(curveFor(v.product, profile, s.seed, v.customerId)) * demand(s, v, s.hour) >= PEGGED;
     if (fill < ASK_FILL && !pegged) continue;
     if (!copied) { s.customers = s.customers.map((c) => ({ ...c })); copied = true; }
     const c = s.customers.find((x) => x.id === v.customerId)!;

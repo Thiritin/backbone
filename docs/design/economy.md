@@ -1418,19 +1418,23 @@ The link speed is the slowest link between the two nodes, shared by every migrat
 
 ## Usage curves and overcommit
 
-**Usage curves.** Each workload's load is a share of what it booked, from 0 to 1, read from its type's curve below. Values between keyframes are straight lines, and each workload adds ±20% hourly jitter drawn from the seed. Fridays from 18:00 count as weekend for game servers and VPNs.
+**Usage curves.** Each workload's load is a share of what it booked, from 0 to 1, read from its type's curve below. Values between keyframes are straight lines. Each day of the week then scales the curve by its weekday factor below, each service's day strays up to ±15% from it (drawn from the seed per day), and each workload adds ±20% hourly jitter drawn from the seed. Fridays from 18:00 count as weekend for game servers and VPNs.
 
 | Curve | Used by | Weekdays (hour → load) | Weekends (hour → load) | Week average |
 | --- | --- | --- | --- | --- |
 | Game server | Gamers | 0 → 0.15, 16 → 0.15, 20 → 0.45, 23 → 0.3 | 0 → 0.6, 3 → 0.2, 8 → 0.2, 12 → 0.9, 18 → 1.0, 23 → 0.9 | about 0.35 |
 | Online shop | Online shops | 0 → 0.1, 6 → 0.15, 9 → 0.55, 13 → 0.7, 17 → 0.6, 20 → 0.75, 22 → 0.3, 23 → 0.12 | 0 → 0.1, 10 → 0.5, 15 → 0.6, 20 → 0.8, 22 → 0.3 | about 0.4 |
-| Blog and personal site | Private individuals, hobby developers | 0 → 0.15, 7 → 0.3, 12 → 0.45, 19 → 0.6, 22 → 0.5, 23 → 0.2 | 0 → 0.2, 10 → 0.4, 19 → 0.55, 23 → 0.2 | about 0.35 |
+| Blog | A quarter of private individuals | 0 → 0.15, 7 → 0.3, 12 → 0.45, 19 → 0.6, 22 → 0.5, 23 → 0.2 | 0 → 0.2, 10 → 0.4, 19 → 0.55, 23 → 0.2 | about 0.35 |
 | News and magazine | Agencies' media clients | 0 → 0.1, 5 → 0.3, 7 → 0.9, 9 → 0.7, 12 → 0.6, 18 → 0.5, 22 → 0.3 | 0 → 0.1, 9 → 0.7, 12 → 0.5, 22 → 0.25 | about 0.45 |
 | Business site | Sole proprietors, small businesses, offices | 0 → 0.05, 7 → 0.2, 9 → 0.6, 12 → 0.5, 17 → 0.5, 19 → 0.15 | 0.1 all day | about 0.25 |
 | Backup and archive | Backup and archive storage | 0 → 0.4, 1 → 1.0, 5 → 1.0, 7 → 0.05 | Same as weekdays | about 0.25 |
 | VPN | VPN customers | 0 → 0.2, 8 → 0.3, 19 → 0.7, 23 → 0.4 | 0 → 0.4, 14 → 0.7, 22 → 0.7 | about 0.45 |
 | Developer VPS | Hobby developers, agencies | 0 → 0.1, 10 → 0.3, 18 → 0.3, 21 → 0.2 | 0.15 all day | about 0.2 |
 | Enterprise | Enterprises, dedicated servers | 0 → 0.3, 8 → 0.6, 18 → 0.6, 22 → 0.35 | 0.3 all day | about 0.45 |
+
+A personal page (the other three quarters of private individuals, unless they book a game server or VPN) runs 0 → 0.02, 18 → 0.05, 22 → 0.03 on weekdays and 0 → 0.03, 12 → 0.06, 22 → 0.03 on weekends, so it holds its resident memory and little else, and it sends a tenth of its booked traffic.
+
+**Weekday factors** (Sunday to Saturday): game servers 1.05, 0.85, 0.85, 0.9, 0.95, 1.05, 1.1; online shops 1.15, 1.1, 1, 0.95, 0.95, 0.9, 0.9; blogs 1.1, 0.95, 1, 1, 1, 0.9, 0.95; news 0.85, 1.15, 1.05, 1, 1, 0.95, 0.85; business sites 1, 1.1, 1.05, 1, 1, 0.85, 1; VPNs and enterprise 1, 1.05, 1, 1, 1, 0.95, 1; developer VPS 1.3, 0.9, 0.95, 1, 1, 0.95, 1.3; backups and personal pages 1 every day.
 
 **Surges.** Black Friday (the last Friday of November) and the two weeks before Christmas multiply online shops by 2× and 1.3×. A game's launch weekend multiplies its servers by 1.5×. Each news site has a 1% chance per day of breaking news, which multiplies it by 3× for 2 to 6 hours.
 

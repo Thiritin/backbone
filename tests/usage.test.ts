@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { growthRate, JOB_CPU, nightJob, trafficShape } from "../src/sim/10-catalog/usage";
+import { curveFor, growthRate, JOB_CPU, nightJob, TRAFFIC_USE, trafficShape } from "../src/sim/10-catalog/usage";
 import type { Product, Profile } from "../src/sim/30-customers/customers";
 import type { GameState } from "../src/sim/50-state";
 import { serviceMbps } from "../src/sim/60-infra/network";
@@ -82,8 +82,9 @@ describe("traffic follows activity", () => {
       const v = s.services.find((x) => x.id === id)!;
       let gb = 0;
       for (let h = 0; h < 730; h++) { s.hour = h; gb += (shape(s, id) * 3600) / 8000; }
-      expect(gb / v.spec.trafficGb).toBeGreaterThan(0.9);
-      expect(gb / v.spec.trafficGb).toBeLessThan(1.1);
+      const use = TRAFFIC_USE[curveFor(v.product, s.customers.find((c) => c.id === v.customerId)!.profile, s.seed, v.customerId)] ?? 1;
+      expect(gb / v.spec.trafficGb / use).toBeGreaterThan(0.9);
+      expect(gb / v.spec.trafficGb / use).toBeLessThan(1.1);
     }
   });
 });

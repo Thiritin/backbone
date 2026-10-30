@@ -139,7 +139,7 @@ describe("pegged workloads", () => {
     expect(pegged(s, w)).toBe(false);
     const saved = CURVES.game;
     try {
-      CURVES.game = { weekday: [[0, 1]], weekend: [[0, 1]] };
+      CURVES.game = { weekday: [[0, 2]], weekend: [[0, 2]] };
       expect(peggedHours(s, w)).toBeGreaterThan(12);
       expect(pegged(s, w)).toBe(true);
     } finally {
