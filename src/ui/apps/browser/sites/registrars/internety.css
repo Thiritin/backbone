@@ -1,6 +1,6 @@
 .rg-internety { --rg: #0050a0; font-family: Arial, Helvetica, sans-serif; color: #222222; background: #ffffff; }
-.rg-internety .wm { display: flex; align-items: center; gap: 6px; font-weight: 700; color: #0050a0; }
-.rg-internety .wm b { color: #e2001a; }
+.rg-internety .rg-wm { display: flex; align-items: center; gap: 6px; font-weight: 700; color: #0050a0; }
+.rg-internety .rg-wm b { color: #e2001a; }
 .rg-internety header { display: flex; align-items: baseline; gap: 12px; }
 .rg-internety .sub { color: #666666; }
 .rg-internety main { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
@@ -13,7 +13,7 @@
 .rg-internety footer span:last-child { margin-left: auto; }
 .rg-internety.early { font-size: 11px; line-height: 1.35; }
 .rg-internety.early header { padding: 10px 14px 6px; border-bottom: 3px solid #0050a0; }
-.rg-internety.early .wm { font-size: 22px; }
+.rg-internety.early .rg-wm { font-size: 22px; }
 .rg-internety.early main { padding: 10px 14px; max-width: 820px; }
 .rg-internety.early h2 { font-size: 12px; }
 .rg-internety.early .rg-table td, .rg-internety.early .rg-table th { padding: 2px 6px; }
@@ -22,8 +22,8 @@
 .rg-internety.early footer { padding: 6px 14px; font-size: 10px; }
 .rg-internety.late { font-size: 15px; line-height: 1.5; }
 .rg-internety.late header { padding: 18px 40px; background: #0050a0; }
-.rg-internety.late .wm, .rg-internety.late .sub { color: #ffffff; }
-.rg-internety.late .wm { font-size: 28px; }
+.rg-internety.late .rg-wm, .rg-internety.late .sub { color: #ffffff; }
+.rg-internety.late .rg-wm { font-size: 28px; }
 .rg-internety.late main { padding: 24px 40px; max-width: 1040px; gap: 20px 32px; }
 .rg-internety.late h2 { font-size: 18px; }
 .rg-internety.late .rg-search input { padding: 8px 10px; }

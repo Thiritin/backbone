@@ -1,9 +1,9 @@
 .rg-namecheep { --rg: #f26b1d; }
-.rg-namecheep .wm { display: flex; align-items: center; gap: 8px; color: #f26b1d; font-weight: 700; }
+.rg-namecheep .rg-wm { display: flex; align-items: center; gap: 8px; color: #f26b1d; font-weight: 700; }
 .rg-namecheep.early { font: 12px/1.5 Verdana, Geneva, sans-serif; color: #333333; background: #ffffff; }
 .rg-namecheep.early header { display: flex; align-items: flex-end; justify-content: space-between; padding: 14px 20px 8px; }
-.rg-namecheep.early .wm { font: 700 30px/1 Verdana, sans-serif; }
-.rg-namecheep.early .wm b { color: #555555; }
+.rg-namecheep.early .rg-wm { font: 700 30px/1 Verdana, sans-serif; }
+.rg-namecheep.early .rg-wm b { color: #555555; }
 .rg-namecheep.early .tag { color: #f26b1d; font-weight: 700; font-style: italic; }
 .rg-namecheep.early .stripe { height: 8px; background: linear-gradient(#ff9c4a, #f26b1d); border-bottom: 2px solid #c94f0c; }
 .rg-namecheep.early main { display: grid; gap: 14px; max-width: 780px; margin: 0 auto; padding: 16px 20px; }
@@ -18,8 +18,8 @@
 .rg-namecheep.early footer { padding: 10px 20px; border-top: 1px solid #dddddd; color: #888888; font-size: 10px; text-align: center; }
 .rg-namecheep.late { font: 15px/1.6 "Open Sans", "Segoe UI", Arial, sans-serif; color: #2b2f33; background: #f4f5f6; }
 .rg-namecheep.late header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 40px; background: #2b2f33; }
-.rg-namecheep.late .wm { font-size: 22px; }
-.rg-namecheep.late .wm b { color: #ffffff; font-weight: 600; }
+.rg-namecheep.late .rg-wm { font-size: 22px; }
+.rg-namecheep.late .rg-wm b { color: #ffffff; font-weight: 600; }
 .rg-namecheep.late .tag { color: #b8bec4; font-size: 13px; }
 .rg-namecheep.late .hero { padding: 48px 40px; background: #f26b1d; color: #ffffff; }
 .rg-namecheep.late .hero h2 { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 18px; }

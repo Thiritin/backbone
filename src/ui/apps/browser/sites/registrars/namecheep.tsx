@@ -11,7 +11,7 @@ const Mark = ({ size }: { size: number }) => (
 
 // NameCheep: the orange 2005 search page with a TLD price grid; from 2015 flat orange on dark grey with cards.
 export function NameCheep({ game, r, look, year }: RegistrarProps) {
-  const wm = <span className="wm"><Mark size={look === "late" ? 26 : 34} />Name<b>Cheep</b></span>;
+  const wm = <span className="rg-wm"><Mark size={look === "late" ? 26 : 34} />Name<b>Cheep</b></span>;
   if (look === "late") {
     return (
       <div className="rg rg-namecheep late">

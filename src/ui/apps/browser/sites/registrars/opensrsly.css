@@ -1,8 +1,8 @@
 .rg-opensrsly { --rg: #555555; }
-.rg-opensrsly .wm { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.rg-opensrsly .rg-wm { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 .rg-opensrsly.early { font: 13px/1.45 Georgia, "Times New Roman", serif; color: #222222; background: #ffffff; }
 .rg-opensrsly.early header { display: flex; align-items: center; gap: 14px; padding: 8px 16px; background: #e4e4e4; border-bottom: 1px solid #999999; color: #555555; }
-.rg-opensrsly.early .wm { font: 700 18px "Courier New", Courier, monospace; color: #333333; }
+.rg-opensrsly.early .rg-wm { font: 700 18px "Courier New", Courier, monospace; color: #333333; }
 .rg-opensrsly.early .cols { display: grid; grid-template-columns: 1fr 230px; gap: 18px; padding: 14px 16px; max-width: 900px; }
 .rg-opensrsly.early main { display: grid; gap: 14px; align-content: start; }
 .rg-opensrsly.early h1 { font-size: 20px; }
@@ -17,7 +17,7 @@
 .rg-opensrsly.early footer { padding: 8px 16px; border-top: 1px solid #cccccc; color: #888888; font-size: 11px; }
 .rg-opensrsly.late { --rg: #14b8a6; font: 15px/1.6 "Source Sans Pro", "Segoe UI", Arial, sans-serif; color: #1f2933; background: #ffffff; }
 .rg-opensrsly.late header { display: flex; align-items: center; gap: 14px; padding: 12px 28px; background: #111827; color: #ffffff; }
-.rg-opensrsly.late .wm .rg-mark { color: #14b8a6; }
+.rg-opensrsly.late .rg-wm .rg-mark { color: #14b8a6; }
 .rg-opensrsly.late .ver { padding: 1px 8px; border: 1px solid #14b8a6; border-radius: 10px; color: #5eead4; font-size: 12px; }
 .rg-opensrsly.late .docs { display: grid; grid-template-columns: 180px 1fr; min-height: 420px; }
 .rg-opensrsly.late nav { display: flex; flex-direction: column; padding: 18px 0; background: #f6f8fa; border-right: 1px solid #e4e7eb; }

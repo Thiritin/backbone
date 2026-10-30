@@ -1,10 +1,10 @@
 .rg-goduddy { --rg: #3a9b1c; }
-.rg-goduddy .wm { display: flex; align-items: center; gap: 8px; font-weight: 800; color: #7ad63a; }
-.rg-goduddy .wm small { margin-left: 4px; font-size: 0.5em; font-weight: 700; text-transform: uppercase; }
+.rg-goduddy .rg-wm { display: flex; align-items: center; gap: 8px; font-weight: 800; color: #7ad63a; }
+.rg-goduddy .rg-wm small { margin-left: 4px; font-size: 0.5em; font-weight: 700; text-transform: uppercase; }
 .rg-goduddy.early { font: 12px/1.45 Arial, Helvetica, sans-serif; color: #111111; background: #000000; }
 .rg-goduddy.early header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #000000; border-bottom: 4px solid #7ad63a; }
-.rg-goduddy.early .wm { font-size: 30px; font-style: italic; }
-.rg-goduddy.early .wm small { color: #ffffff; }
+.rg-goduddy.early .rg-wm { font-size: 30px; font-style: italic; }
+.rg-goduddy.early .rg-wm small { color: #ffffff; }
 .rg-goduddy.early .call { color: #ffee00; font-weight: 700; }
 .rg-goduddy.early .hero { padding: 12px 16px; background: linear-gradient(#5fc22a, #2f7d12); color: #ffffff; }
 .rg-goduddy.early .hero h1 { font-size: 24px; font-weight: 900; color: #ffee00; text-shadow: 2px 2px 0 #000000; }
@@ -18,9 +18,9 @@
 .rg-goduddy.early .rg-specs { grid-template-columns: 1fr 1fr; }
 .rg-goduddy.early footer { padding: 8px 16px; color: #7ad63a; font-size: 10px; }
 .rg-goduddy.late { font: 15px/1.6 "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: #1c1c1c; background: #ffffff; }
-.rg-goduddy.late .wm { font-size: 22px; color: #1c1c1c; }
-.rg-goduddy.late .wm .rg-mark { color: #1bdbaf; }
-.rg-goduddy.late .wm small { color: #6b6b6b; }
+.rg-goduddy.late .rg-wm { font-size: 22px; color: #1c1c1c; }
+.rg-goduddy.late .rg-wm .rg-mark { color: #1bdbaf; }
+.rg-goduddy.late .rg-wm small { color: #6b6b6b; }
 .rg-goduddy.late header { padding: 14px 40px; border-bottom: 1px solid #e5e5e5; }
 .rg-goduddy.late .hero { padding: 44px 40px; background: #f5f7f8; }
 .rg-goduddy.late .hero h2 { font-size: 28px; font-weight: 600; margin-bottom: 16px; }

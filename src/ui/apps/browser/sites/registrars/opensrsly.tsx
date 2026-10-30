@@ -15,7 +15,7 @@ const DOCS = [["lookup", "Lookup"], ["prices", "Prices"], ["contract", "Contract
 // OpenSRSly: the plain 2005 developer page with API notes and a login box; from 2016 a dark docs site with a teal accent.
 export function OpenSRSly({ game, r, look, year }: RegistrarProps) {
   const name = game.company.domain ?? derivedDomain(game), mine = own(game, r);
-  const wm = <span className="wm"><Mark size={22} />OpenSRSly</span>;
+  const wm = <span className="rg-wm"><Mark size={22} />OpenSRSly</span>;
   if (look === "late") {
     const code = (path: string) => <code>{path}</code>;
     return (

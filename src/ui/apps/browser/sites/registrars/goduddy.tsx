@@ -12,7 +12,7 @@ const Mark = ({ size }: { size: number }) => (
 
 // GoDuddy Reseller: the loud green and black 2005 page with three columns of offers; from 2016 white with a calmer grid.
 export function GoDuddy({ game, r, look, year }: RegistrarProps) {
-  const wm = <span className="wm"><Mark size={look === "late" ? 26 : 36} />GoDuddy<small>Reseller</small></span>;
+  const wm = <span className="rg-wm"><Mark size={look === "late" ? 26 : 36} />GoDuddy<small>Reseller</small></span>;
   if (look === "late") {
     return (
       <div className="rg rg-goduddy late">
