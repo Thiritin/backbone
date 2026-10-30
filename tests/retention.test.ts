@@ -369,3 +369,13 @@ describe("saves", () => {
     expect(deserialize(serialize(s)).tickets.find((x) => x.id === fix.t.id)!.work).toMatchObject({ arg: "fixcheck" });
   });
 });
+
+describe("cancellation ticket text", () => {
+  it("has a subject and a text for every cancel reason", async () => {
+    const { en } = await import("../src/i18n/en");
+    for (const reason of ["price", "outage", "slow", "other"]) {
+      expect(en[`ticket.cancellation.${reason}.subject`], reason).toBeDefined();
+      expect(en[`ticket.cancellation.${reason}.text`], reason).toBeDefined();
+    }
+  });
+});

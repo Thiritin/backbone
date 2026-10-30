@@ -352,6 +352,8 @@ export const en: Record<string, (p: Params) => string> = {
   "ticket.upgrade.full.text": () => "Uploads fail with \"No space left on device\" and visitors see error pages. We need more space today.",
   "ticket.cancellation.leave.subject": () => "Please cancel my contract",
   "ticket.cancellation.leave.text": () => "I have decided to move to another host. Please cancel everything at the end of the month.",
+  "ticket.cancellation.other.subject": () => "Please cancel my contract",
+  "ticket.cancellation.other.text": () => "I have decided to move to another host. Please cancel everything at the end of the month.",
   "ticket.cancellation.price.subject": () => "Please cancel my contract",
   "ticket.cancellation.price.text": () => "Your prices are more than I am willing to pay. Please cancel everything at the end of the month.",
   "ticket.cancellation.outage.subject": () => "Please cancel my contract",

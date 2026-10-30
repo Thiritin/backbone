@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Cancellation tickets for reasons other than price, outages or slowness now show a proper subject and message instead of a missing text.
 - The Add location screen can now filter datacenters by green power, certification, A+B feeds, UPS, exchange on site and cages, and sort them by clicking any column header.
 - The server boot menu now opens the moment you press F11 during startup, even while game time is paused.
 - Clicking a notification about a new ticket or order now brings Support to the front with that ticket open, and hardware notifications open the affected device.
