@@ -26,6 +26,10 @@ const cents = (v: number) => Math.round(v * 100) / 100;
 export const usedModels = (year: number): DeviceModel[] =>
   MODELS.filter((m) => m.price > 0 && m.kind !== "part" && m.kind !== "patch" && !m.chassis && usedSince(m) <= year - MIN_YEARS_ON_SALE);
 
+// A brand that releases the model later never has one to sell yet; end of sale does not stop used units.
+const sellers = (m: DeviceModel, month: number): string[] => brandsOf(m).filter((b) => brandFrom(m, b) <= month);
+const onSale = (s: GameState): DeviceModel[] => usedModels(yearOf(s.hour)).filter((m) => sellers(m, monthIndexOf(s.hour)).length);
+
 const sellerCity = (s: GameState, r: Rng): string =>
   rand(r) < LOCAL_CHANCE ? pick(r, s.locations).city : pick(r, CITIES).name;
 
@@ -45,9 +49,8 @@ function wearFor(r: Rng, m: DeviceModel, age: number, defect: Defect | null): nu
 interface Draft { channel: Channel; model?: DeviceModel; postedAt: number; expiresAt?: number; qty?: number; share?: number; city?: string }
 
 function listing(s: GameState, r: Rng, d: Draft): Listing {
-  const year = yearOf(s.hour), m = d.model ?? pick(r, usedModels(year));
-  // A brand that releases the model later never has one to sell yet; end of sale does not stop used units.
-  const brand = pick(r, brandsOf(m).filter((b) => brandFrom(m, b) <= monthIndexOf(s.hour)));
+  const year = yearOf(s.hour), m = d.model ?? pick(r, onSale(s));
+  const brand = pick(r, sellers(m, monthIndexOf(s.hour)));
   // The CPU maker comes from its own draw so the listing's other draws stay as they were.
   const makers = vendorsOf(m), vendor = makers.length ? pick(hashRng(s.seed, s.nextId, 1019), makers) : undefined;
   const age = Math.round(between(r, [1, Math.max(1, year - usedSince(m))]) * 10) / 10;
@@ -67,16 +70,16 @@ function listing(s: GameState, r: Rng, d: Draft): Listing {
 
 // A month's new listings: 2 to 6 per channel, posted over the month.
 export function monthListings(s: GameState): Listing[] {
-  if (!usedModels(yearOf(s.hour)).length) return [];
+  if (!onSale(s).length) return [];
   const r = hashRng(s.seed, s.hour, 1011);
   return (["ebuy", "board", "chat"] as Channel[]).flatMap((channel) =>
     Array.from({ length: int(r, PER_MONTH) }, () => listing(s, r, { channel, postedAt: s.hour + Math.floor(rand(r) * 27) * DAY + int(r, [8, 20]) })));
 }
 
 function yearly(s: GameState, kind: "lot" | "clearance"): Listing[] {
-  const r = hashRng(s.seed, s.hour, 1013), year = yearOf(s.hour);
+  const r = hashRng(s.seed, s.hour, 1013);
   if (kind === "lot") {
-    const servers = usedModels(year).filter((m) => m.server);
+    const servers = onSale(s).filter((m) => m.server);
     if (!servers.length) return [];
     return [listing(s, r, { channel: "board", model: pick(r, servers), qty: LOT_SIZE, share: LOT_SHARE, city: s.locations[0].city, postedAt: s.hour - EARLY_HOURS, expiresAt: s.hour + 14 * DAY })];
   }
