@@ -153,7 +153,7 @@ describe("migration offers", () => {
     expect(s.customers.find((c) => c.id === cus)!.happiness).toBe(who(s)(cus).happiness);
   });
 
-  it("is accepted by a private customer at once and runs, with the basement bonus once", () => {
+  it("is accepted by a private customer at once and resolves when the player moves it, with the basement bonus once", () => {
     const { s, second, place } = world();
     const cus = customer(s), id = vps(s, cus, "vm"), c = who(s)(cus);
     place();
@@ -161,7 +161,10 @@ describe("migration offers", () => {
     const t = ticketOf(s, ok(offerMigration(s, id, second)));
     s.hour = t.dueAt;
     const events = movesTick(s, who(s));
-    expect(events.map((e) => e.key)).toEqual(["event.moveAccepted", "event.moveDone"]);
+    expect(events.map((e) => e.key)).toEqual(["event.moveAccepted"]);
+    expect([t.status, workloadsOf(s, id)[0].deviceId]).toEqual(["waiting", "dev3"]);
+    ok(migrateWorkload(s, workloadsOf(s, id)[0].id, second));
+    expect(movesTick(s, who(s)).map((e) => e.key)).toEqual(["event.moveDone"]);
     expect([t.status, t.outcome, c.happiness]).toEqual(["resolved", "moved", 60 + BASEMENT_BONUS - RENUMBER_ANNOUNCED_PENALTY]);
     expect(workloadsOf(s, id)[0].deviceId).toBe(second);
     expect(s.services.find((v) => v.id === id)!.zone).toBe("fra2");
@@ -234,14 +237,13 @@ describe("migration offers", () => {
     expect(movesTick(s, who(s))).toEqual([]);
   });
 
-  it("costs the customer happiness when a move that runs by itself stays blocked for 48 hours", () => {
+  it("costs a customer with no particular time happiness when the player does not move it within 48 hours", () => {
     const { s, second, place } = world();
     const cus = customer(s), id = vps(s, cus, "vm"), c = who(s)(cus);
     place();
     c.happiness = 60;
     const t = ticketOf(s, ok(offerMigration(s, id, second)));
     s.hour = t.dueAt;
-    s.workloads = s.workloads.map((w) => (w.id === t.move!.workloadId ? { ...w, busyUntil: s.hour + 1000 } : w));
     movesTick(s, who(s));
     s.hour = t.move!.windowAt! + MISSED_AFTER_HOURS - 1;
     expect(movesTick(s, who(s))).toEqual([]);
@@ -257,6 +259,9 @@ describe("migration offers", () => {
     who(s)(cus).happiness = 90;
     const t = ticketOf(s, ok(offerMigration(s, id, second)));
     run(s, Math.ceil(t.dueAt - s.hour) + 2);
+    expect(ticketOf(s, t.id).status).toBe("waiting");
+    ok(migrateWorkload(s, workloadsOf(s, id)[0].id, second));
+    run(s, 1);
     expect(ticketOf(s, t.id).status).toBe("resolved");
     expect(ticketOf(s, t.id).outcome).toBe("moved");
     expect(workloadsOf(s, id)[0].clusterId).toBe(s.clusters.find((c) => c.name === "Remote")!.id);

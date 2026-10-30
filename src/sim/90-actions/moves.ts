@@ -8,7 +8,7 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { clusterOf } from "../60-infra/cluster";
 import type { ActionResult } from "./hardware";
-import { migrateWebspace, migrateWorkload, migrationTargets, webspaceTargets } from "./vms";
+import { migrationTargets, webspaceTargets } from "./vms";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -80,12 +80,6 @@ const movedByPlayer = (s: GameState, m: Move): boolean => {
   return !!w && (w.deviceId === m.to || w.clusterId === m.to || w.migrating?.clusterId === m.to);
 };
 
-const run = (s: GameState, m: Move): ActionResult => {
-  const w = s.workloads.find((x) => x.id === m.workloadId), c = w && s.clusters.find((x) => x.id === w.clusterId);
-  if (!w || !c) return fail("error.unknownWorkload");
-  return c.kind === "panel" ? migrateWebspace(s, w.id, m.to, true) : migrateWorkload(s, w.id, m.to, true);
-};
-
 // The move did not happen: the customer loses happiness and the ticket reopens.
 function missed(s: GameState, t: Ticket, c: Customer, v: Service, note: (key: string) => void, events: SimEvent[]): void {
   bump(c, -MISSED_PENALTY);
@@ -94,9 +88,8 @@ function missed(s: GameState, t: Ticket, c: Customer, v: Service, note: (key: st
   events.push({ app: "Support", key: "event.moveMissed", params: { name: c.name, service: v.label } });
 }
 
-// Hourly, before customers react to downtime: customers answer offers once their reply time is up. A customer who accepted
-// with no particular time (private) has the move run at once; one with a window (players, businesses) waits for the player to
-// move the service inside it. Tickets and customers are the tick's copies.
+// Hourly, before customers react to downtime: customers answer offers once their reply time is up, and an accepted move waits
+// for the player to make it. Tickets and customers are the tick's copies.
 export function movesTick(s: GameState, customer: (id: string) => Customer): SimEvent[] {
   const events: SimEvent[] = [];
   for (const t of s.tickets) {
@@ -121,23 +114,15 @@ export function movesTick(s: GameState, customer: (id: string) => Customer): Sim
       events.push({ app: "Support", key: "event.moveAccepted", params: { name: c.name, service: v.label } });
     }
     if (m.windowAt === null || s.hour < m.windowAt) continue;
+    // The player moves the service, by hand or with a technician: in the customer's window, or within two days for a
+    // customer with no particular time.
     const window = MOVE_WINDOW[segmentOf(c.profile, v.product)];
-    if (window) {
-      // The customer wants it done in their window: the player moves the service, in time or not.
-      if (s.hour === m.windowAt) events.push({ app: "Support", key: "event.moveWindow", params: { name: c.name, service: v.label, to: window.to } });
-      if (movedByPlayer(s, m)) {
-        if (toDatacenter(s, m)) bump(c, BASEMENT_BONUS);
-        Object.assign(t, { status: "resolved", outcome: "moved", updatedAt: s.hour, unread: true });
-        events.push({ app: "Support", key: "event.moveDone", params: { name: c.name, service: v.label, target: m.name } });
-      } else if (s.hour >= m.windowAt + window.to - window.from) missed(s, t, c, v, note, events);
-      continue;
-    }
-    const bonus = toDatacenter(s, m);
-    if (run(s, m).ok) {
-      if (bonus) bump(c, BASEMENT_BONUS);
+    if (window && s.hour === m.windowAt) events.push({ app: "Support", key: "event.moveWindow", params: { name: c.name, service: v.label, to: window.to } });
+    if (movedByPlayer(s, m)) {
+      if (toDatacenter(s, m)) bump(c, BASEMENT_BONUS);
       Object.assign(t, { status: "resolved", outcome: "moved", updatedAt: s.hour, unread: true });
       events.push({ app: "Support", key: "event.moveDone", params: { name: c.name, service: v.label, target: m.name } });
-    } else if (s.hour >= m.windowAt + MISSED_AFTER_HOURS) missed(s, t, c, v, note, events);
+    } else if (s.hour >= m.windowAt + (window ? window.to - window.from : MISSED_AFTER_HOURS)) missed(s, t, c, v, note, events);
   }
   return events;
 }
