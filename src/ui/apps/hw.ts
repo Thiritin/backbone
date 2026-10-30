@@ -82,6 +82,27 @@ export const partLabel = (p: Pick<Component, "kind" | "size" | "ff" | "vendor" |
   if (f) return `${familyName(f)} ${partSize(p)}`;
   return `${p.vendor ? `${VENDOR_NAME[p.vendor]} ` : ""}${p.gen ? `G${p.gen} ` : ""}${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}${clockLabel(p) ? `, ${clockLabel(p)}` : ""}`;
 };
+// The memory and drives of a server as spec rows: each family with its count and size, the sticks' type and speed, the drives' interface, speed and wear rating.
+type Fitted = Pick<Component, "kind" | "size" | "ff" | "vendor" | "gen" | "sku">;
+export function memoryDriveRows(parts: Fitted[]): [string, string][] {
+  const group = (kinds: string[]) => {
+    const found = parts.filter((p) => kinds.includes(p.kind));
+    return found.length ? { n: found.length, p: found[0], f: familyById(found[0].sku) } : undefined;
+  };
+  const ramPart = group(["ram"]), drive = group(["hdd", "ssd", "nvme"]);
+  const rows: [string, string][] = [];
+  if (ramPart) {
+    const f = ramPart.f;
+    rows.push(["Memory", `${ramPart.n} × ${partLabel(ramPart.p)}`]);
+    if (f && f.kind === "ram") rows.push(["Memory type", `${f.ddr}-${f.mts} ${f.stick}`]);
+  }
+  if (drive) {
+    const f = drive.f;
+    rows.push(["Drives", `${drive.n} × ${partLabel(drive.p)}`]);
+    if (f && f.kind !== "ram") rows.push(["Drive interface", `${f.iface}${f.rpm ? `, ${f.rpm.toLocaleString("en-GB")} rpm` : f.dwpd ? `, ${f.dwpd} DWPD` : ""}`], ["Drive speed", `${f.mbps} MB/s, ${f.iops.toLocaleString("en-GB")} IOPS`]);
+  }
+  return rows;
+}
 // A used part's age stays unknown (null) until a burn-in has looked at it.
 export const ageYears = (g: GameState, c: Component): number | null => (c.wear ? null : (g.hour - c.installedAt) / HOURS_PER_YEAR);
 export const isWorn = (g: GameState, c: Component) => { const a = ageYears(g, c); return a === null ? c.wear === "worn" : a >= COMPONENTS[c.kind].life; };

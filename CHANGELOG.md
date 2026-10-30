@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Used listings in the Shop now open a details page like the New tab, with the memory and drive makers, speeds and interfaces, and on eBuy a bid history that shows the opening bid, your raises and the other bidder's answers.
+- The details page of a new server in the Shop now names its memory and drives, with their type, speed and interface.
 - WHMCache is breached in May 2012, and ModemBill after 2010 and BoxBillin' from 2015 until its 2022 revival can be breached any month, which upsets every customer.
 - Cordon, drain and the new evacuate now act on one software installation from the hypervisor console or a server group in Marketing, Shop instead of the Locations menu; a drain moves only what can move live, and an evacuation moves everything now, cold where it has to.
 - Server groups in Marketing, Shop decide which panel hosts and hypervisor clusters the shop sells from and which ones take automatic orders; a new shop starts with one group per kind of software you run.

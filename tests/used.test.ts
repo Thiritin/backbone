@@ -142,6 +142,23 @@ describe("used listings", () => {
     expect(t.devices.some((d) => d.used)).toBe(false);
   });
 
+  it("keeps a history of the bids the player placed and the rival's answers", () => {
+    const s = game(), l = market(s, "ebuy");
+    expect(l.bids ?? []).toEqual([]);
+    expect(bidListing(s, l.id, l.rival! - 1, "loc1").ok).toBe(true);
+    const lost = s.used.find((x) => x.id === l.id)!.bids!;
+    expect(lost.map((b) => b.by)).toEqual(["you", "rival"]);
+    expect(lost[0].amount).toBe(l.rival! - 1);
+    expect(lost[1].amount).toBeGreaterThan(lost[0].amount);
+    expect(lost[1].amount).toBeLessThanOrEqual(l.rival!);
+    expect(bidListing(s, l.id, l.rival! + 500, "loc1").ok).toBe(true);
+    const won = s.used.find((x) => x.id === l.id)!.bids!;
+    expect(won.map((b) => b.by)).toEqual(["you", "rival", "you"]);
+    expect(won[2].amount).toBe(Math.max(l.price, l.rival!));
+    // The history survives a save.
+    expect(deserialize(serialize(s)).used.find((x) => x.id === l.id)!.bids).toEqual(won);
+  });
+
   it("sells on the board for more than the resale value, after a while", () => {
     const s = game(), id = idOf(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     const value = deviceValue(s, s.devices.find((d) => d.id === id)!), cash = s.cash, at = s.hour;

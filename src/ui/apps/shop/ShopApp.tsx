@@ -18,7 +18,7 @@ import { Isometric } from "../../art/Isometric";
 import { BrandLogo } from "../../art/logos";
 import { useFocus, useStore } from "../../store";
 import { socketOf } from "../../../sim/10-catalog/cpus";
-import { clockLabel, cores, disk, height, partLabel, partSize, portsText, ram, speed, threadsLabel } from "../hw";
+import { memoryDriveRows, clockLabel, cores, disk, height, partLabel, partSize, portsText, ram, speed, threadsLabel } from "../hw";
 import "./shop.css";
 
 const ICON: Record<string, typeof Server> = {
@@ -171,7 +171,7 @@ function useOffer({ model, brand, part, maker }: Item & { maker: Vendor | null }
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
     ...(s ? [["CPU", `${s.sockets} × ${VENDOR_NAME[vendor]} ${(cpu && skuById(cpu)?.name) ?? ""}`.trim()], ["Cores", cores(sum("cpu"))], ...(cpu && skuById(cpu) ? [["Threads", `${s.sockets * skuById(cpu)!.threads}`]] : []), ["Clock", clockLabel({ kind: "cpu", vendor, gen: model.gen, sku: cpu })], ["Mainboard", board?.name ?? ""], ["CPU sockets", board ? `${board.sockets} × ${board.socket}, up to ${cores(board.maxCores)} each` : ""], ["RAM", ram(s.ramGb)],
       ...(cards.length ? [["GPUs", `${cards.length} × ${cardOf(cards[0].size).name}`]] as [string, string][] : []),
-      ["Storage", `${disk(s.diskGb)} ${s.disk}`]] as [string, string][] : []),
+      ["Storage", `${disk(s.diskGb)} ${s.disk}`], ...memoryDriveRows(built)] as [string, string][] : []),
     ...(model.kind === "gateway" && model.price > 0 ? [["Routing", model.fullTable ? "Full table" : "Default route"], ...(model.fullTable ? [["BGP sessions", `${model.bgpSessions}`]] : [])] as [string, string][] : []),
     ...(node?.server ? [["Nodes", `${model.nodes!.count}`], ["Cores per node", cores(nodeCores)], ["RAM per node", ram(node.server.ramGb)], ["Storage per node", `${disk(node.server.diskGb)} ${node.server.disk}`],
       ["NICs per node", portsText(node)], ["PSUs", `${model.psus}`], ["Power", `${Math.round(wattsFactorOf(node, brand) * node.watts * model.nodes!.count)} W`]] as [string, string][] : []),

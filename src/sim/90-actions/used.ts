@@ -3,7 +3,7 @@ import { hashRng, rand } from "../00-core/rng";
 import { REFUND_HOURS, REFUND_SHARE } from "../10-catalog/burnin";
 import { isOfficeRouter, modelById } from "../10-catalog/hardware";
 import {
-  currentBid, onMarket, SELL_ASK, SELL_CAP, SELL_DAYS, SELL_FINAL, SELL_LISTED_DAYS, SELL_START, shipHours, type Listing,
+  currentBid, leading, onMarket, RIVAL_STEP, SELL_ASK, SELL_CAP, SELL_DAYS, SELL_FINAL, SELL_LISTED_DAYS, SELL_START, shipHours, type BidStep, type Listing,
 } from "../10-catalog/used";
 import type { GameState } from "../50-state";
 import { deviceValue, HOURS_PER_YEAR } from "../60-infra/status";
@@ -73,7 +73,12 @@ export function bidListing(s: GameState, listingId: string, max: number, locatio
   if (error) return fail(error);
   if (!Number.isFinite(max) || max < l.price || max <= (l.bid ?? 0) || (l.bid !== undefined && max <= currentBid(l))) return fail("error.bidTooLow");
   if (s.cash < max) return fail("error.noCash");
-  s.used = s.used.map((x) => (x.id === l.id ? { ...x, bid: Math.round(max), to: locationId } : x));
+  const next = { ...l, bid: Math.round(max), to: locationId };
+  // The history shows the player's raise and, when the rival's maximum is higher, the rival's answer just above it.
+  const steps: BidStep[] = leading(next)
+    ? [{ hour: s.hour, amount: currentBid(next), by: "you" }]
+    : [{ hour: s.hour, amount: next.bid, by: "you" }, { hour: s.hour, amount: Math.min(l.rival ?? 0, next.bid + Math.max(1, Math.round(next.bid * RIVAL_STEP))), by: "rival" }];
+  s.used = s.used.map((x) => (x.id === l.id ? { ...next, bids: [...(l.bids ?? []), ...steps] } : x));
   return { ok: true };
 }
 

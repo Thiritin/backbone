@@ -13,3 +13,9 @@
 .used-mine { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); }
 .used-mine-name { display: grid; gap: 1px; }
 .used-mine-name strong { font-weight: 650; font-size: 12.5px; }
+.used-history { display: grid; gap: 8px; max-width: 520px; }
+.used-history h3 { font-size: 12.5px; font-weight: 650; margin: 0; }
+.used-history table { border-collapse: collapse; font-size: 12.5px; }
+.used-history th { text-align: left; font-size: 11px; font-weight: 550; color: var(--text-3); padding: 4px 8px 4px 0; }
+.used-history td { padding: 6px 8px 6px 0; border-top: 0.5px solid var(--line); }
+.used-history th.num, .used-history td.num:last-child { text-align: right; padding-right: 0; }

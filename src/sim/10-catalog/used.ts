@@ -62,6 +62,8 @@ export const USED_EVENTS: { id: string; kind: "lot" | "clearance"; at: number }[
 
 // A listing on a channel. Market listings carry the hidden part ages (wear, in years, in the order of the model's parts) and,
 // on eBuy, the rival's maximum and the player's; the player's own listings carry the device they sell.
+// One step of an auction's history after the opening bid; the rival bids only against the player's maximum.
+export interface BidStep { hour: number; amount: number; by: "you" | "rival" }
 export interface Listing {
   id: string;
   channel: Channel;
@@ -84,6 +86,8 @@ export interface Listing {
   scam?: boolean;
   rival?: number;
   bid?: number;
+  // The bids since the opening one, oldest first; listings from older saves have none.
+  bids?: BidStep[];
   // Where a won auction ships.
   to?: string;
   // A paid chat deal waiting to arrive, or never arriving.
@@ -103,3 +107,6 @@ export const leading = (l: Listing): boolean => !!l.bid && l.bid > (l.rival ?? 0
 
 // Hours from purchase to the stockroom: a day from a seller in the same city, except on eBuy.
 export const shipHours = (l: Listing, city: string): number => (l.channel !== "ebuy" && l.city === city ? 24 : l.shipDays * 24);
+
+// The rival raises over the player's maximum by this share, at least 1.
+export const RIVAL_STEP = 0.03;

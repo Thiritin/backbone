@@ -1,4 +1,4 @@
-import { Gavel, ShoppingBag, Tag, X } from "lucide-react";
+import { ChevronLeft, Gavel, ShoppingBag, Tag, X } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { boardSpec, componentParts, genOf, isDriveKind, modelById, modelName, wattsFactorOf, type ComponentKind, type DeviceModel } from "../../../sim/10-catalog/hardware";
@@ -12,7 +12,7 @@ import { Isometric } from "../../art/Isometric";
 import { BrandLogo } from "../../art/logos";
 import { useSessionState } from "../../session";
 import { useStore } from "../../store";
-import { clockLabel, cores, day, disk, height, portsText, ram, speed } from "../hw";
+import { clockLabel, cores, day, disk, height, memoryDriveRows, portsText, ram, speed } from "../hw";
 import "./used.css";
 
 const DEFECT: Record<Defect, string> = { psu: "PSU 2 missing", drive: "1 drive reports errors", rails: "No rails" };
@@ -54,7 +54,27 @@ function Money({ value, onChange, label }: { value: number; onChange: (v: number
   );
 }
 
-function ListingCard({ game, l, to }: { game: GameState; l: Listing; to: string }) {
+// The facts of a listing: the unit's technical rows, then what the sale says.
+function listingRows(game: GameState, l: Listing, to: string, long: boolean): [string, string][] {
+  const m = modelById(l.model), city = game.locations.find((x) => x.id === to)!.city, auction = l.channel === "ebuy", vendor = listingVendor(l);
+  const tech = techRows(m, l.brand, vendor), get = (k: string) => tech.find(([x]) => x === k)?.[1] ?? "";
+  // The card's few facts, as the New card has them; the details page lists the rest.
+  const short: [string, string][] = m.server
+    ? [["CPU", `${get("Cores")} ${get("CPU")}, ${get("Clock")}`], ["Board", get("Mainboard")], ["RAM", get("RAM")], ["Storage", get("Storage")], ["PSUs", get("PSUs")]]
+    : tech.filter(([k]) => ["Ports", "Battery", "Outlets", "Throughput", "PSUs"].includes(k));
+  return [
+    ...(long ? [...tech, ...(m.server ? memoryDriveRows(componentParts(m, vendor)) : [])] : short),
+    ["Age", years(l.age)],
+    ...(long ? [["Seller", l.city]] as [string, string][] : []),
+    [auction ? "Ends" : "Listed for", days(l.expiresAt - game.hour)],
+    ["Shipping", days(shipHours(l, city))],
+    ...(l.defect ? [["Defect", DEFECT[l.defect]]] as [string, string][] : []),
+    ...(l.bid ? [["Your maximum", euro(l.bid)]] as [string, string][] : []),
+  ];
+}
+
+// Price, bid field and the buy or bid button of a listing.
+function ListingBuy({ game, l, to }: { game: GameState; l: Listing; to: string }) {
   const act = useStore((s) => s.act), notify = useStore((s) => s.notify);
   const m = modelById(l.model), city = game.locations.find((x) => x.id === to)!.city;
   const bid = currentBid(l), auction = l.channel === "ebuy";
@@ -66,42 +86,73 @@ function ListingCard({ game, l, to }: { game: GameState; l: Listing; to: string 
   const place = () => {
     if (act(bidListing, l.id, max, to).ok) notify("Shop", `Bid on ${name}`, `Maximum ${euro(max)}`);
   };
-  const vendor = listingVendor(l);
-  const rows: [string, string][] = [
-    ...techRows(m, l.brand, vendor),
-    ["Age", years(l.age)],
-    ["Seller", l.city],
-    [auction ? "Ends" : "Listed for", days(l.expiresAt - game.hour)],
-    ["Shipping", days(shipHours(l, city))],
-    ...(l.defect ? [["Defect", DEFECT[l.defect]]] as [string, string][] : []),
-    ...(l.bid ? [["Your maximum", euro(l.bid)]] as [string, string][] : []),
-  ];
+  return auction ? (
+    <>
+      <span className="used-price"><span className="shop-muted">Current bid</span><strong className="num">{euro(bid)}</strong></span>
+      <span className="grow" />
+      <Money value={max} onChange={setMax} label="Maximum bid" />
+      <button className="btn primary" disabled={!(max > bid) || max > game.cash} onClick={place}><Gavel />Bid</button>
+    </>
+  ) : (
+    <>
+      <strong className="num">{euro(l.price)}</strong>
+      <span className="grow" />
+      <button className="btn primary" disabled={l.price > game.cash} onClick={buy}><ShoppingBag />Buy</button>
+    </>
+  );
+}
+
+function ListingCard({ game, l, to, onOpen }: { game: GameState; l: Listing; to: string; onOpen: () => void }) {
+  const m = modelById(l.model);
+  const name = `${l.qty > 1 ? `${l.qty} × ` : ""}${modelName(m, l.brand)}`;
   return (
     <div className="shop-card">
-      <div className="shop-pic"><Isometric model={m} brand={l.brand} w={170} count={Math.min(l.qty, 4)} /></div>
+      <button className="shop-pic" aria-label="Details" onClick={onOpen}><Isometric model={m} brand={l.brand} w={170} count={Math.min(l.qty, 4)} /></button>
       <div className="shop-name">
-        <strong>{name}</strong>
+        <button className="shop-link" onClick={onOpen}>{name}</button>
         <span className="shop-maker"><BrandLogo brand={l.brand} size={14} />{l.brand}{l.bid && <span className={`pill ${leading(l) ? "ok" : "warn"}`}>{leading(l) ? "Leading" : "Outbid"}</span>}</span>
       </div>
       <dl className="shop-specs">
-        {rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{v}</dd></div>)}
+        {listingRows(game, l, to, false).map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{v}</dd></div>)}
       </dl>
-      <div className="shop-buy">
-        {auction ? (
-          <>
-            <span className="used-price"><span className="shop-muted">Current bid</span><strong className="num">{euro(bid)}</strong></span>
-            <span className="grow" />
-            <Money value={max} onChange={setMax} label="Maximum bid" />
-            <button className="btn primary" disabled={!(max > bid) || max > game.cash} onClick={place}><Gavel />Bid</button>
-          </>
-        ) : (
-          <>
-            <strong className="num">{euro(l.price)}</strong>
-            <span className="grow" />
-            <button className="btn primary" disabled={l.price > game.cash} onClick={buy}><ShoppingBag />Buy</button>
-          </>
-        )}
+      <div className="shop-buy"><ListingBuy game={game} l={l} to={to} /></div>
+    </div>
+  );
+}
+
+// The auction's bids: the opening bid, then the player's raises and the rival's answers.
+function BidHistory({ l }: { l: Listing }) {
+  const steps = [{ hour: l.postedAt, amount: l.price, by: "start" as const }, ...(l.bids ?? [])];
+  const who = { start: "Opening bid", you: "You", rival: "Another bidder" };
+  return (
+    <section className="used-history">
+      <h3>Bid history</h3>
+      <table>
+        <thead><tr><th>Bidder</th><th>Date</th><th className="num">Bid</th></tr></thead>
+        <tbody>{[...steps].reverse().map((b, i) => <tr key={i}><td>{who[b.by]}</td><td className="num">{day(b.hour)}</td><td className="num">{euro(b.amount)}</td></tr>)}</tbody>
+      </table>
+    </section>
+  );
+}
+
+// Every fact about one listing, with the buy controls and, on eBuy, the bid history.
+function ListingDetails({ game, l, to, onBack }: { game: GameState; l: Listing; to: string; onBack: () => void }) {
+  const m = modelById(l.model), name = `${l.qty > 1 ? `${l.qty} × ` : ""}${modelName(m, l.brand)}`;
+  return (
+    <div className="shop-detail">
+      <button className="btn ghost shop-back" onClick={onBack}><ChevronLeft />Back</button>
+      <div className="shop-detail-head">
+        <div className="shop-detail-pic"><Isometric model={m} brand={l.brand} w={200} count={Math.min(l.qty, 4)} /></div>
+        <div className="shop-detail-info">
+          <h2>{name}</h2>
+          <span className="shop-maker"><BrandLogo brand={l.brand} size={14} />{l.brand}{l.bid && <span className={`pill ${leading(l) ? "ok" : "warn"}`}>{leading(l) ? "Leading" : "Outbid"}</span>}</span>
+          <div className="shop-buy shop-detail-buy"><ListingBuy game={game} l={l} to={to} /></div>
+        </div>
       </div>
+      <dl className="shop-detail-specs">
+        {listingRows(game, l, to, true).map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{v}</dd></div>)}
+      </dl>
+      {l.channel === "ebuy" && <BidHistory l={l} />}
     </div>
   );
 }
@@ -132,6 +183,9 @@ export function Used({ channel, setChannel, keep }: { channel: Channel; setChann
   const shown = listed.filter((l) => !vendor || listingVendor(l) === vendor).sort((a, b) => a.expiresAt - b.expiresAt);
   const vendors = VENDORS.filter((v) => v === vendor || listed.some((l) => listingVendor(l) === v));
   const mine = game.used.filter((l) => l.channel === channel && l.device);
+  const [open, setOpen] = useSessionState<string | null>("shop.usedDetail", null);
+  const opened = open ? game.used.find((l) => l.id === open && !l.device && onMarket(game, l)) : undefined;
+  if (opened) return <div className="used"><ListingDetails game={game} l={opened} to={dest} onBack={() => setOpen(null)} /></div>;
   return (
     <div className="used">
       <div className="shop-bar used-bar">
@@ -156,7 +210,7 @@ export function Used({ channel, setChannel, keep }: { channel: Channel; setChann
         )}
       </div>
       <div className="shop-grid">
-        {shown.map((l) => <ListingCard key={l.id} game={game} l={l} to={dest} />)}
+        {shown.map((l) => <ListingCard key={l.id} game={game} l={l} to={dest} onOpen={() => setOpen(l.id)} />)}
         {!shown.length && <div className="shop-none">No listings</div>}
         {mine.length > 0 && (
           <section className="used-mine-list">
