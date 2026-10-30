@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, LifeBuoy, Search } from "lucide-react";
+import { ChartLine, ChevronDown, ChevronUp, LifeBuoy, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { euro, euroCents, euroPrice } from "../../../sim/00-core/money";
 import { activeServices } from "../../../sim/30-customers/customers";
@@ -11,6 +11,7 @@ import { monthYear, moodClass } from "../support/labels";
 import "../support/support.css";
 import "../billing/billing.css";
 import { CustomerPage, Mood, StatusChip, type Row, type Status, type Tab } from "./CustomerPage";
+import { TrendCharts } from "./TrendCharts";
 import "./customers.css";
 
 const FILTERS: { id: Status | "current"; label: string }[] = [
@@ -69,6 +70,7 @@ export function CustomersApp() {
   const [band, setBand] = useState("any");
   const [withTickets, setWithTickets] = useState(false);
   const [sort, setSort] = useState<{ key: Key; dir: number }>({ key: "name", dir: 1 });
+  const [charts, setCharts] = useState(false);
   const [sel, setSel] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("summary");
   const show = (id: string, t: Tab = "summary") => { setTab(t); setSel(id); };
@@ -107,6 +109,7 @@ export function CustomersApp() {
       <div className="cus-main">
         <div className="cus-bar">
           <label className="search"><Search /><input type="search" placeholder="Search" aria-label="Search customers" value={query} onChange={(e) => setQuery(e.target.value)} /></label>
+          <button className="btn cus-toggle" aria-pressed={charts} onClick={() => setCharts(!charts)}><ChartLine />History</button>
           <div className="seg" role="group" aria-label="Status">
             {FILTERS.map((f) => <button key={f.id} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</button>)}
           </div>
@@ -115,7 +118,7 @@ export function CustomersApp() {
           </div>
           <button className="btn cus-toggle" aria-pressed={withTickets} onClick={() => setWithTickets(!withTickets)}><LifeBuoy />Open tickets</button>
         </div>
-        <div className="cus-scroll">
+        {charts ? <div className="cus-scroll"><TrendCharts trend={game.trend} /></div> : <div className="cus-scroll">
           <table className="table">
             <thead>
               <tr>
@@ -144,7 +147,7 @@ export function CustomersApp() {
             </tbody>
           </table>
           {!list.length && <div className="sup-none">No customers</div>}
-        </div>
+        </div>}
       </div>
     </div>
   );

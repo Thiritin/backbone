@@ -2,6 +2,10 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here.
 
+## 2026-10-31
+
+- The Customers app has a History view with charts of how many customers you have and how happy they are on average, one reading per day.
+
 ## 2026-10-30
 
 - Parts can be swapped in a server that is switched on but unplugged without being asked to power it off first.

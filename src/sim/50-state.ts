@@ -37,6 +37,7 @@ import type { Registrar } from "./30-customers/registrar";
 import type { Listing } from "./10-catalog/used";
 import { firstHostNo } from "./30-customers/hostnames";
 import { newShop, type ShopState } from "./80-business/shop";
+import type { TrendPoint } from "./80-business/trend";
 
 // 3: GPU line servers carry their preset cards.
 export const SAVE_VERSION = 3;
@@ -265,6 +266,8 @@ export interface GameState {
   challenge: string | null;
   // Leaderboard scores (80-business/scores.ts): net worth at the end of 2007, the hour level 3 was reached and the summed hourly mean happiness.
   score: Score;
+  // A daily reading of customer count and mean happiness, oldest first (80-business/trend.ts).
+  trend: TrendPoint[];
   // The trade office registration (80-business/office.ts); null until the player registers, which installs the starter apps.
   registration: Registration | null;
 }
@@ -338,7 +341,7 @@ export const newGame = (seed: number): GameState => ({
   news: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
-  log: [], challenge: null, registration: null, score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 },
+  log: [], challenge: null, registration: null, score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
