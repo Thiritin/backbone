@@ -8,6 +8,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - A phishing notice links to the reported page, which opens in the browser and shows the fake bank login until you take it down.
 - The Products and Virtual machines apps are gone: you manage machines in the web console of their software, set prices under Pricing in Marketing, and read incident reports in Security.
 - Servers no longer appear in clusters in Locations, and a new hypervisor takes the name of its server.
+- Your racks now hum: fan noise fades in when you open a location or a rack, grows with every running server, spins up when a fan fails or the basement gets hot, and has its own Ambience slider in Settings.
 - A ticket moves from Open to Waiting on customer as soon as you send an answer, and comes back to Open if the customer replies.
 - Every hardware manufacturer has its own website with its products and a news page of its releases, and the News app reports new hardware from each brand with a link to its site.
 - The Browser no longer has a Downloads button.

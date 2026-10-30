@@ -70,6 +70,11 @@ export function SettingsApp() {
           <input type="range" className="settings-volume" aria-label="Volume" min={0} max={1} step={0.05} value={sound.volume} disabled={!sound.on}
             onChange={(e) => setSound({ volume: Number(e.target.value) })} onPointerUp={(e) => playSound("ticket", Number(e.currentTarget.value))} />
         </div>
+        <div className="settings-line settings-divide">
+          <span>Ambience</span>
+          <input type="range" className="settings-volume" aria-label="Ambience" min={0} max={1} step={0.05} value={sound.ambience} disabled={!sound.on}
+            onChange={(e) => setSound({ ambience: Number(e.target.value) })} />
+        </div>
       </div>
       <h2 ref={section}>Notifications</h2>
       <div className="settings-group" role="table" aria-label="Notifications">

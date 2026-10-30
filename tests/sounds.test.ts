@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { monthNet, pickSound, soundFor, WINDOW_MS } from "../src/ui/sounds";
+import { humOf, monthNet, pickSound, soundFor, WINDOW_MS } from "../src/ui/sounds";
+import { newGame } from "../src/sim/50-state";
+import { withServer } from "./fixtures";
 import { hourOf } from "../src/sim/00-core/time";
 
 describe("sounds", () => {
@@ -27,5 +29,15 @@ describe("sounds", () => {
     const feb = hourOf(new Date(Date.UTC(2005, 1, 1))), jan = hourOf(new Date(Date.UTC(2005, 0, 1)));
     const e = (hour: number, amount: number) => ({ hour, category: "x", key: "x", params: {}, amount });
     expect(monthNet([e(jan, 999), e(jan + 5, 300), e(feb, -100), e(feb + 1, -999)], feb)).toBe(200);
+  });
+
+  it("hums with powered rack devices, spins up for a failed fan and stops without power", () => {
+    const s = withServer(newGame(1)), base = humOf(s, ["rack2"]);
+    expect(base.level).toBeGreaterThan(0);
+    expect(humOf(s, ["other"]).level).toBe(0);
+    s.devices.find((d) => d.id === "dev3")!.components.find((c) => c.kind === "fan")!.failedAt = s.hour;
+    expect(humOf(s, ["rack2"]).pitch).toBeGreaterThan(base.pitch);
+    for (const d of s.devices) for (const c of d.components) if (c.kind === "psu") c.failedAt = s.hour;
+    expect(humOf(s, ["rack2"]).level).toBe(0);
   });
 });

@@ -1,4 +1,6 @@
-import type { LedgerEntry } from "../sim/50-state";
+import type { GameState, LedgerEntry } from "../sim/50-state";
+import { FAN_RPM, sensorsOf } from "../sim/60-infra/sensors";
+import { locationOf, powered } from "../sim/60-infra/status";
 import { ADVISORY_KEYS } from "../sim/60-infra/security";
 import { dateOf, hourOf } from "../sim/00-core/time";
 
@@ -139,5 +141,62 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false)
     }
   } catch {
     // A failed sound is not worth an error.
+  }
+}
+
+// The fan noise of powered devices in the given racks: level grows with their count, pitch with fan speed and inlet heat.
+export interface Hum { level: number; pitch: number; hall: boolean }
+
+export function humOf(s: GameState, rackIds: string[]): Hum {
+  const on = s.devices.filter((d) => d.on && d.rackId !== null && rackIds.includes(d.rackId) && powered(s, d.id));
+  if (!on.length) return { level: 0, pitch: 1, hall: false };
+  const sensors = on.map((d) => sensorsOf(s, d));
+  const rpm = Math.max(FAN_RPM, ...sensors.flatMap((x) => x.fans.map((f) => f.rpm)));
+  const warm = Math.min(1, Math.max(0, (Math.max(...sensors.map((x) => x.inletC)) - 22) / 10));
+  return { level: Math.min(1, 0.3 + 0.1 * on.length), pitch: Math.round((rpm / FAN_RPM) * (1 + 0.15 * warm) * 100) / 100, hall: !!locationOf(s, on[0])?.dc };
+}
+
+const HUM_PEAK = 0.25, BLADES = [150, 151.3, 300];
+let hum: { gain: GainNode; muffle: BiquadFilterNode; band: BiquadFilterNode; tones: OscillatorNode[] } | null = null;
+
+// Built on first use and left running; at level 0 it costs a few idle nodes.
+function startHum(c: AudioContext) {
+  const len = c.sampleRate * 2, buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  const noise = c.createBufferSource(), band = c.createBiquadFilter(), muffle = c.createBiquadFilter(), gain = c.createGain();
+  noise.buffer = buf;
+  noise.loop = true;
+  band.type = "bandpass";
+  band.Q.value = 0.6;
+  muffle.type = "lowpass";
+  gain.gain.value = 0;
+  noise.connect(band).connect(muffle);
+  const tones = BLADES.map((hz, i) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.frequency.value = hz;
+    g.gain.value = i === 2 ? 0.015 : 0.03;
+    o.connect(g).connect(muffle);
+    o.start();
+    return o;
+  });
+  muffle.connect(gain).connect(c.destination);
+  noise.start();
+  return { gain, muffle, band, tones };
+}
+
+// Glides the fan bed toward a level (0 fades it out), fan speed and lowpass cutoff over about two seconds.
+export function setHum(level: number, pitch: number, cutoff: number, hall: boolean): void {
+  const c = audio();
+  if (!c) return;
+  try {
+    if (!hum && level <= 0) return;
+    hum ??= startHum(c);
+    const t = c.currentTime, deep = hall ? 0.6 : 1;
+    hum.gain.gain.setTargetAtTime(level * HUM_PEAK, t, 0.6);
+    hum.muffle.frequency.setTargetAtTime(cutoff, t, 0.6);
+    hum.band.frequency.setTargetAtTime(700 * pitch * deep, t, 1.5);
+    hum.tones.forEach((o, i) => o.frequency.setTargetAtTime(BLADES[i] * pitch * deep, t, 1.5));
+  } catch {
+    // Silence is fine.
   }
 }

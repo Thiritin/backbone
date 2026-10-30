@@ -32,8 +32,8 @@ const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
 };
 
 export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: true, ...prefs[app] });
-export interface SoundPref { on: boolean; volume: number }
-const SOUND_DEFAULT: SoundPref = { on: true, volume: 0.6 };
+export interface SoundPref { on: boolean; volume: number; ambience: number }
+const SOUND_DEFAULT: SoundPref = { on: true, volume: 0.6, ambience: 0.5 };
 const PREFS_KEY = "backbone.prefs";
 export type Theme = "light" | "dark" | "auto";
 const THEME_KEY = "backbone.theme";

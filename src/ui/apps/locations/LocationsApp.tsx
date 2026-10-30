@@ -1,10 +1,11 @@
 import { Hourglass, Map as MapIcon, Plus } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useSessionState } from "../../session";
-import type { GameState } from "../../../sim/50-state";
+import type { GameState, Location, Rack } from "../../../sim/50-state";
 import { locationOf, storageStacks } from "../../../sim/60-infra/status";
 import { clusterOf } from "../../../sim/60-infra/cluster";
 import { Logo } from "../../art/logos";
+import { humOf, setHum } from "../../sounds";
 import { useFocus, useStore } from "../../store";
 import { readyIn } from "../hw";
 import { AddLocation } from "./AddLocation";
@@ -35,6 +36,7 @@ export function LocationsApp() {
   const [adding, setAdding] = useState(false);
   const loc = game.locations.find((l) => l.id === view);
   const rack = loc && game.racks.find((r) => r.id === rackId && r.locationId === loc.id);
+  useHum(game, loc, rack);
   const tab: Tab = picked === "line" && loc?.space !== "basement" ? "floor" : picked;
   const setOpenLoc = useStore((s) => s.setOpenLoc);
   const go = (v: string | null, r: string | null = null) => {
@@ -170,3 +172,23 @@ function LocationHead({ game, locId }: { game: GameState; locId: string }) {
   );
 }
 
+
+const onVisibility = (cb: () => void) => {
+  document.addEventListener("visibilitychange", cb);
+  return () => document.removeEventListener("visibilitychange", cb);
+};
+
+// Fans heard close up at a rack, from the doorway on a floor, and muffled while another window is in front.
+function useHum(game: GameState, loc: Location | undefined, rack: Rack | undefined) {
+  const { on, ambience } = useStore((s) => s.sound);
+  const front = useStore((s) => {
+    const open = s.windows.filter((w) => !w.minimized), me = open.find((w) => w.app === "Locations");
+    return !me ? 0 : me.z === Math.max(...open.map((w) => w.z)) ? 1 : 0.35;
+  });
+  const hidden = useSyncExternalStore(onVisibility, () => document.hidden);
+  const { level, pitch, hall } = humOf(game, rack ? [rack.id] : game.racks.filter((r) => r.locationId === loc?.id).map((r) => r.id));
+  const gain = on && !hidden ? level * ambience * front * (rack ? 1 : 0.5) : 0;
+  const cutoff = (rack ? 5000 : 1400) * (front < 1 ? 0.3 : 1);
+  useEffect(() => setHum(gain, pitch, cutoff, hall), [gain, pitch, cutoff, hall]);
+  useEffect(() => () => setHum(0, 1, 400, false), []);
+}
