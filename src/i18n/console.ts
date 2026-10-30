@@ -17,5 +17,9 @@ export const CONSOLE_EN: Record<string, (p: Params) => string> = {
   "error.hasAppSuite": () => "This cluster already has the App Suite.",
   "term.console.notFound": () => "Operating system not found",
   "term.console.osInstall": () => "Installing the system...",
+  "error.noInterfaces": () => "No network interfaces detected",
+  "error.noAutoconf": () => "Network autoconfiguration failed",
+  "error.noDownload": () => "The installer could not download the package.",
+  "term.console.osInstallFailed": () => "Failed to retrieve the base system installation files.",
   "term.console.logon": () => "Press Ctrl+Alt+Delete to log on",
 };

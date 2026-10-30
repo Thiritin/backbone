@@ -10,6 +10,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The company website grows with the web design into a site with a menu, a products page, an about page and a support page, with pictures of your racks and your support desk, and its newest look is a modern hosting company site.
 - Once you run the Knowledge base, its articles appear on the company website, and once you have enough customers a help desk shows common customer questions with your team's answers.
 - The server room hum is now a real recording of a server room, and a server answers its power button with a quiet beep as it starts.
+- Debiant now needs the network to install and apt needs it to fetch packages, while Windoors installs offline and shows on its taskbar that it has no network.
 - Every hypervisor console is modelled on the real product, with a page per VM and a creation wizard, and hypervisors that support clustering join servers from their console.
 - The VMwhere App Suite deploys a VM with its software in one step.
 - The DNS, VPN, storage and mail consoles look like the products they are modelled on, and servers without a web console show their status as command line output.

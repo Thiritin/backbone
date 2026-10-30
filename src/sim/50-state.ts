@@ -61,7 +61,10 @@ export interface Rack { id: string; model: RackModel; locationId: string; positi
 export interface MachineState {
   os: { id: ServerOsId; version: string; installedAt: number } | null;
   software: { id: string; version: string; installedAt: number; doneAt: number | null }[];
+  // An OS install the network dropped out of, shown on the console until a key is pressed (software.md, section 4.2).
+  installFailed?: NetFail;
 }
+export type NetFail = "noInterfaces" | "noLink";
 export interface Device extends MachineState { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
   components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
   // others are the further CPUs a swap of every socket replaces with the same spec.

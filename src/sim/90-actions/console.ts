@@ -6,13 +6,13 @@ import { modelById } from "../10-catalog/hardware";
 import type { Device, GameState } from "../50-state";
 import { clusterOf, dropCluster, hostOfVm, isOwnVm, setMachine, vmById, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
 import { SERVER_OS, serverOsAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
-import { stickOs } from "../60-infra/oob";
+import { machineNet, stickOs } from "../60-infra/oob";
 import { pushLog } from "../60-infra/power";
 import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
 import { buyLicenses, licenseDue, reportLoss } from "../85-products/products";
 import { leave } from "./clusters";
 import type { ActionResult } from "./hardware";
-import { uninstallSoftware } from "./software";
+import { installSoftware, uninstallSoftware } from "./software";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 // A machine is a server or one of the player's own VMs; a VM has no label, so its hostname is the vmNNN it got at birth.
@@ -120,6 +120,9 @@ export function installOs(s: GameState, machineId: string, osId: ServerOsId, con
   if (typeof m === "string") return fail(m);
   if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
   if ((isDevice(m) ? stickOs(s, m.id) : m.media) !== osId) return fail("error.otherMedia");
+  // The Debiant image is a netinst; Windoors Setup carries everything on its image.
+  const net = osId === "lunix" ? machineNet(s, machineId) : null;
+  if (net) return fail(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf");
   if (s.cash < licenseDue(s, machineId, osId, null)) return fail("error.noCash");
   const cleared = clear(s, m, confirm);
   if (!cleared.ok) return cleared;
@@ -129,6 +132,18 @@ export function installOs(s: GameState, machineId: string, osId: ServerOsId, con
   if (isDevice(m)) Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60 });
   else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
   return { ok: true };
+}
+
+// Any key on the failure an abandoned install left on the console.
+export function dismissInstallFail(s: GameState, machineId: string): ActionResult {
+  if (!vmById(s, machineId) && !s.devices.some((d) => d.id === machineId)) return fail("error.unknownDevice");
+  setMachine(s, machineId, () => ({ installFailed: undefined }));
+  return { ok: true };
+}
+
+// Software whose installer comes from its website: Server Manager, Add or Remove Programs, apt and the script lines.
+export function installFromSite(s: GameState, machineId: string, softwareId: string): ActionResult {
+  return machineNet(s, machineId) ? fail("error.noDownload") : installSoftware(s, machineId, softwareId);
 }
 
 // The installer's Erase disk: bare metal, or an empty VM, under the same confirmation as a reinstall.
