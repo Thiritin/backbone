@@ -1,0 +1,25 @@
+name: Discord changelog
+
+# Posts the CHANGELOG.md bullets a push to main adds to the #changelog channel.
+on:
+  push:
+    branches: [main]
+    paths: ["CHANGELOG.md"]
+
+concurrency: discord-changelog
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/discord-changelog.mjs --since "${{ github.event.before }}"
+        env:
+          DISCORD_CHANGELOG_WEBHOOK: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK }}
