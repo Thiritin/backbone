@@ -61,12 +61,13 @@ describe("support actions", () => {
     const { s, cus, svc } = one();
     const ids = Array.from({ length: 4 }, () => ticketOf(s, "howTo", "upload", cus, svc).id);
     ids.forEach((id) => expect(replyTicket(s, id, "ftp").ok).toBe(true));
+    expect(ids.map((id) => get(s, id).status)).toEqual(["waiting", "waiting", "waiting", "waiting"]);
     expect(s.playerBusyUntil).toBe(80);
     expect(get(s, ids[3]).work).toEqual({ op: "reply", arg: "ftp", doneAt: 80 });
     tick(s);
-    expect(ids.map((id) => get(s, id).status)).toEqual(["waiting", "waiting", "waiting", "open"]);
+    expect(ids.map((id) => get(s, id).replies.length)).toEqual([1, 1, 1, 0]);
     tick(s);
-    expect(get(s, ids[3]).status).toBe("waiting");
+    expect(get(s, ids[3])).toMatchObject({ status: "waiting", work: null });
   });
 
   it("resolves a right answer with +5", () => {

@@ -2,6 +2,24 @@
 
 .os-update .alert-icon { color: var(--accent); }
 
+/* Installing covers the whole screen in black, then hands over to the login. */
+.os-install {
+  position: fixed; inset: 0; z-index: 2100; display: grid; place-content: center; justify-items: center; gap: 14px;
+  background: black; color: white; text-align: center; outline: none;
+}
+.os-install strong { font-size: 16px; font-weight: 600; }
+.os-install > span { font-size: 12px; opacity: 0.6; }
+.os-progress { width: 220px; height: 6px; border-radius: 3px; background: oklch(1 0 0 / 0.2); overflow: hidden; }
+.os-progress span { display: block; height: 100%; background: white; transition: width 0.1s linear; }
+.os-login { display: grid; justify-items: center; gap: 16px; }
+.os-avatar { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: oklch(1 0 0 / 0.18); }
+.os-avatar svg { width: 44px; height: 44px; }
+.os-login input {
+  width: 180px; padding: 6px 12px; border: 1px solid oklch(1 0 0 / 0.3); border-radius: 14px;
+  background: oklch(1 0 0 / 0.12); color: white; font: inherit; font-size: 13px; text-align: center; outline: none;
+}
+.os-login input::placeholder { color: oklch(1 0 0 / 0.55); }
+
 /* Panthera (2003): pinstripes, gel buttons and lights, opaque menu bar. */
 
 :root[data-os="aqua"] {

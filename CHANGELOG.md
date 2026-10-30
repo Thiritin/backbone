@@ -6,10 +6,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - The Products and Virtual machines apps are gone: you manage machines in the web console of their software, set prices under Pricing in Marketing, and read incident reports in Security.
 - Servers no longer appear in clusters in Locations, and a new hypervisor takes the name of its server.
+- A ticket moves from Open to Waiting on customer as soon as you send an answer, and comes back to Open if the customer replies.
 - Every hardware manufacturer has its own website with its products and a news page of its releases, and the News app reports new hardware from each brand with a link to its site.
 - The Browser no longer has a Downloads button.
 - Each location now has a Network tab with its traffic, uplinks, addresses, attacks and the peers at its exchange; transit, exchange ports and links between locations appear there once Network operations is learned.
 - The Network app unlocks with the Network operations research and holds the map of all sites, DDoS protection and the RIPE registry.
+- Updating Pear OS installs on a full black screen with the clock stopped, then asks you to log in again.
 - Windoors Server and VMwhere are bought once per machine in the early years and licensed per core each month later on.
 - Servers and VMs boot through POST and the BIOS into a real operating system installer, then into a login and shell on Debiant or a desktop on Windoors.
 - Windoors machines install and remove software from Server Manager.
