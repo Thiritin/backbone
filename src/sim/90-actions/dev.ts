@@ -1,5 +1,6 @@
 // The dev menu (Terminal, sudo dev): raw state edits for testing. They skip the tick, so a date jump bills and ages nothing.
 import { hourOf } from "../00-core/time";
+import { SKILLS } from "../10-catalog/research";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
@@ -22,6 +23,13 @@ export function setDate(s: GameState, date: string, hour = 0): ActionResult {
 export function setMoney(s: GameState, amount: number): ActionResult {
   if (!Number.isFinite(amount)) return fail("error.devMoney");
   s.cash = Math.round(amount * 100) / 100;
+  return { ok: true };
+}
+
+// Learns every skill at once, whatever the year, and drops a training in progress.
+export function unlockAllResearch(s: GameState): ActionResult {
+  for (const k of SKILLS) if (!s.unlocks.includes(k.id)) s.unlocks.push(k.id);
+  s.training = null;
   return { ok: true };
 }
 

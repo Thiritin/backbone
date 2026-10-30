@@ -4,7 +4,8 @@ import { runLine } from "../src/sim/60-infra/terminal";
 import type { GameState } from "../src/sim/50-state";
 import { runAction } from "../src/sim/90-actions/index";
 import type { Call } from "../src/sim/90-actions/index";
-import { setDate, setKnowHow, setMoney } from "../src/sim/90-actions/dev";
+import { SKILLS } from "../src/sim/10-catalog/research";
+import { setDate, setKnowHow, setMoney, unlockAllResearch } from "../src/sim/90-actions/dev";
 import { readyGame } from "./fixtures";
 
 const fresh = (): GameState => structuredClone(readyGame(3));
@@ -60,6 +61,17 @@ describe("dev actions", () => {
     expect(setKnowHow(s, -1).ok).toBe(false);
     expect(setKnowHow(s, NaN).ok).toBe(false);
     expect(s.knowHow).toBe(120);
+  });
+
+  it("unlocks all research once and drops a training in progress", () => {
+    const s = fresh();
+    s.unlocks = ["monitoring"];
+    s.training = { id: "people", doneAt: s.hour + 100 };
+    expect(unlockAllResearch(s).ok).toBe(true);
+    expect([...s.unlocks].sort()).toEqual(SKILLS.map((k) => k.id).sort());
+    expect(s.training).toBeNull();
+    unlockAllResearch(s);
+    expect(s.unlocks.length).toBe(SKILLS.length);
   });
 
   it("can be replayed from the action log", () => {

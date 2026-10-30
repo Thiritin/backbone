@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { dateOf, formatClock } from "../../../sim/00-core/time";
-import { setDate, setKnowHow, setMoney } from "../../../sim/90-actions/dev";
+import { SKILLS } from "../../../sim/10-catalog/research";
+import { setDate, setKnowHow, setMoney, unlockAllResearch } from "../../../sim/90-actions/dev";
 import { useStore } from "../../store";
 import "./dev.css";
 
@@ -44,6 +45,12 @@ export function DevApp() {
         </div>
         <button className="btn primary" disabled={!points.trim()} onClick={applyPoints}>Set points</button>
         <span className="sub">Now {game.knowHow}.</span>
+      </div>
+      <div className="dev-row">
+        <label>Research</label>
+        <div className="dev-inputs" />
+        <button className="btn primary" onClick={() => act(unlockAllResearch)}>Unlock all research</button>
+        <span className="sub">{game.unlocks.length} of {SKILLS.length} learned.</span>
       </div>
     </div>
   );
