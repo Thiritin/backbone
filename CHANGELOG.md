@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Switching a product off on your website now stops Sponsor-Bored applications for it, and the press no longer writes about product lines you have not listed.
 - Every applicant on the Sponsor-Bored board is now a different person with their own project, and the board runs out of applicants once all of them have an open application or a running sponsorship.
 - Pasting several commands into a console or the Terminal runs them in order, apt prints its progress as the install runs, and the site index lists your consoles before you own a domain.
 - A tripped breaker now switches off every server in the rack, so the rack gets power back right away and you can boot the servers it has room for.

@@ -9,6 +9,7 @@ import { APPLICANTS, BOARD, boardGranted, boardTick, offerOpen, type SponsorOffe
 import { resolve } from "../src/sim/80-business/browser";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { acceptSponsorship, postOffer, withdrawOffer } from "../src/sim/90-actions/community";
+import { setLine } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame } from "./fixtures";
 
@@ -263,4 +264,16 @@ describe("the Sponsor-Bored board", () => {
     expect(back.sponsorOffers).toEqual(s.sponsorOffers);
     expect(back.sponsorships.filter((x) => x.board)).toEqual(s.sponsorships.filter((x) => x.board));
   }, 60_000);
+});
+
+describe("an unlisted line", () => {
+  it("gets no board applications and no news about it", () => {
+    const s = roomy(3), at = s.hour;
+    postOffer(s, offer);
+    expect(setLine(s, "gameServer", false)).toMatchObject({ ok: true });
+    runTo(s, at + 24 * 40);
+    expect(board(s)).toEqual([]);
+    expect(offerOpen(s, s.sponsorOffers[0])).toBe(false);
+    expect(s.news.some((e) => e.startsWith("line."))).toBe(false);
+  });
 });

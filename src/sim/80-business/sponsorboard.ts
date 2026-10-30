@@ -7,6 +7,7 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { MONTH, OFFER_HOURS, patchSponsorship, type BoardInfo } from "./community";
 import { addAwareness } from "./marketing";
+import { listed } from "./website";
 
 export const BOARD_HOST = "sponsorbored.net";
 export const BOARD_PRODUCTS: Product[] = ["gameServer", "vps", "storage", "webHosting"];
@@ -63,7 +64,8 @@ function apply(s: GameState, o: SponsorOffer, events: SimEvent[]): void {
   // Each name is one person, so nobody applies twice while an application or sponsorship of theirs is live.
   const busy = new Set(s.sponsorships.filter((x) => x.board && (x.status === "offered" || x.status === "running")).map((x) => x.board!.name));
   const free = APPLICANTS.flatMap((a) => a.names.filter((n) => !busy.has(n)).map((name) => ({ a, name })));
-  if (!free.length) return void patchOffer(s, o.id, (x) => ({ sent: x.sent + 1 }));
+  // Nobody applies for a line the website does not list.
+  if (!free.length || !listed(s, o.product)) return void patchOffer(s, o.id, (x) => ({ sent: x.sent + 1 }));
   const r = hashRng(s.seed, Number(o.id.slice(3)), 24, o.sent), { a, name } = free[Math.floor(rand(r) * free.length)];
   const audience = Math.round((a.audience[0] + rand(r) * (a.audience[1] - a.audience[0])) / 10) * 10 || 10;
   const board: BoardInfo = {
