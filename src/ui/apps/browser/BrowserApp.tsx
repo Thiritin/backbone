@@ -1,6 +1,6 @@
-import { ArrowLeft, ArrowRight, Download, House, Plus, RotateCw, Star, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, House, Plus, RotateCw, Star, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BOARD_TITLE, defaultBookmarks, HOME_URL, resolve, split, VIDEO_TITLE, VIDEO_URL, type Resolved } from "../../../sim/80-business/browser";
+import { BOARD_TITLE, defaultBookmarks, HOME_URL, resolve, split, VIDEO_TITLE, type Resolved } from "../../../sim/80-business/browser";
 import { customerSite } from "../../../sim/80-business/website";
 import { familyOf } from "../../../sim/60-infra/vulns";
 import { consoleTitle } from "../../../sim/80-business/consoles";
@@ -74,7 +74,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (r.load === "down") body = <CannotReach host={r.host} />;
   else if (p.kind === "company") body = <CompanySite game={game} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
-  else if (p.kind === "vendor") body = <VendorSite maker={p.maker} go={go} />;
+  else if (p.kind === "vendor") body = <VendorSite maker={p.maker} />;
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} />;
   else if (p.kind === "video") body = <VideoPage />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
@@ -163,7 +163,6 @@ export function BrowserApp() {
           <input aria-label="Address" value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} />
           <button type="button" className="br-star" aria-label="Bookmark" aria-pressed={marked} disabled={isDefault} onClick={toggleMark}><Star aria-hidden /></button>
         </form>
-        <button className="btn" onClick={() => go(VIDEO_URL)}><Download aria-hidden /> Downloads</button>
       </div>
       <div className="br-marks">
         {bookmarks.map((m) => (

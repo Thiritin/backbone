@@ -2,7 +2,7 @@ import { Play } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { t } from "../../../../i18n/en";
 import { manufacturerByName, MANUFACTURERS } from "../../../../sim/10-catalog/hardware";
-import { VIDEO_ARTIST, VIDEO_REAL, VIDEO_TITLE, VIDEO_URL } from "../../../../sim/80-business/browser";
+import { VIDEO_ARTIST, VIDEO_REAL, VIDEO_TITLE } from "../../../../sim/80-business/browser";
 import type { GameState } from "../../../../sim/50-state";
 import { customerSite } from "../../../../sim/80-business/website";
 import { Logo } from "../../../art/logos";
@@ -41,8 +41,8 @@ const KIND: Record<string, string> = {
   part: "Parts.",
 };
 
-// A one-page site per manufacturer; its Downloads link leads to the video.
-export function VendorSite({ maker, go }: { maker: string; go: (url: string) => void }) {
+// A one-page site per manufacturer.
+export function VendorSite({ maker }: { maker: string }) {
   const m = MANUFACTURERS.find((x) => x.id === maker) ?? manufacturerByName(maker);
   if (!m) return null;
   return (
@@ -53,7 +53,6 @@ export function VendorSite({ maker, go }: { maker: string; go: (url: string) => 
       <main className="vs-main">
         <h1>{KIND[m.kinds[0]]}</h1>
         <p>{m.name} builds for the data centre first and the brochure second.</p>
-        <a href={`#${m.id}-downloads`} className="vs-button" onClick={(e) => { e.preventDefault(); go(VIDEO_URL); }}>Downloads</a>
       </main>
     </div>
   );

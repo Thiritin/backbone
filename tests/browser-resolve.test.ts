@@ -58,7 +58,7 @@ describe("browser resolver", () => {
     expect(resolve(s, "10.99.99.99").page).toEqual({ kind: "notfound" });
   });
 
-  it("gives every manufacturer but the generic parts a vendor site and sends Downloads to the video", () => {
+  it("gives every manufacturer but the generic parts a vendor site and serves the video by address", () => {
     const s = readyGame(1);
     expect(VENDORS.length).toBe(MANUFACTURERS.length - 1);
     for (const m of VENDORS) expect(resolve(s, `www.${vendorHost(m.id)}`).page).toEqual({ kind: "vendor", maker: m.id });
