@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- A migration you offered a customer now keeps showing as offered while no host can take it, and a missed move shows a greyed out offer entry instead of the entry vanishing.
 - Virtual machines with an empty panel or game host installed can now be deleted from the hypervisor console, which removes the host with them.
 - OS image downloads now follow game time, so they finish sooner when you fast forward and wait while the game is paused.
 - The other eBuy bidders now raise their bids over the days of an auction, mostly near the end and never right after your bid, your bid history shows their bids and your automatic answers, and you get a notification when someone outbids you.

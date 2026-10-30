@@ -43,8 +43,8 @@ const targetLabel = (game: GameState, t: MoveTarget, from: string | null) =>
 export function offerEntries(game: GameState, w: Workload): MenuEntry[] {
   if (!w.serviceId) return [];
   const act = useStore.getState().act, serviceId = w.serviceId, targets = moveTargets(game, w.id);
-  if (!targets.length) return [];
   if (game.tickets.some((t) => t.kind === "migration" && t.serviceId === serviceId && t.status === "waiting")) return [{ label: "Migration offered", disabled: true }];
+  if (!targets.length) return game.tickets.some((t) => t.kind === "migration" && t.serviceId === serviceId) ? [{ label: "Offer migration, no host can take it now", disabled: true }] : [];
   return [{ label: "Offer migration", items: targets.map((t) => ({ label: targetLabel(game, t, w.clusterId), run: () => act(offerMigration, serviceId, t.to) })) }];
 }
 
