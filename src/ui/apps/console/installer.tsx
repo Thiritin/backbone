@@ -52,7 +52,7 @@ function useTarget(game: GameState, m: Machine) {
     </>
   );
   const run = (r: { ok: boolean; error?: string }) => { setNote(r.ok ? "" : t(r.error ?? "")); setTyped(""); };
-  const install = (os: ServerOsId) => run(act(installOs, m.id, os, busy ? typed : undefined));
+  const install = (os: ServerOsId) => { const r = act(installOs, m.id, os, busy ? typed : undefined); run(r); return r.ok; };
   const erase = () => run(act(eraseDisk, m.id, busy ? typed : undefined));
   const leave = () => (isDevice(m) ? act(reboot, m.id) : act(setMedia, m.id, null));
   const type = (key: string) => {
@@ -106,9 +106,9 @@ function useLunixSetup(game: GameState, m: Machine): Keyed {
     hostname: net
       ? { title: "Configure the network", err: true, body: <div>{t(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf")}</div>, rows: [{ label: "<Continue>", run: go("fetch") }] }
       : { title: "Configure the network", body: <div>Hostname: {hostOf(m)}</div>, rows: [{ label: "<Continue>", run: go("disks") }, back("language")] },
-    fetch: { title: "Retrieving packages", err: true, body: <div>{t("term.console.osInstallFailed")} Check your network connection.</div>, rows: [{ label: "<Abort installation>", run: tg.leave }] },
+    fetch: { title: "Retrieving packages", err: true, body: <div>{t("term.console.osInstallFailed")} Check your network connection.</div>, rows: [{ label: "<Abort installation>", run: () => { go("boot")(); tg.leave(); } }] },
     disks: { title: "Partition disks", body: <div>Partitioning method:</div>, rows: [{ label: `Guided - use entire disk (${tg.array})`, run: go("write") }, back("hostname")] },
-    write: { title: "Partition disks", body: <>{tg.what}<div>Write the changes to disks?</div></>, rows: [{ label: "<Yes>", run: () => tg.install("lunix") }, { label: "<No>", run: go("disks") }] },
+    write: { title: "Partition disks", body: <>{tg.what}<div>Write the changes to disks?</div></>, rows: [{ label: "<Yes>", run: () => tg.install("lunix") && setStep("boot") }, { label: "<No>", run: go("disks") }] },
     erase: { title: "Erase disk", body: tg.what, rows: [{ label: "<Erase>", run: tg.erase }, back("boot")] },
   };
   const page = pages[step], typing = (step === "write" || step === "erase") && tg.found.kind === "busy";
@@ -137,7 +137,8 @@ function useWindoorsSetup(game: GameState, m: Machine): Keyed {
   const [step, setStep] = useState<WinStep>("start");
   const tg = useTarget(game, m), version = serverOsAt("windoors", yearOf(game.hour)).version, era = winEra(version);
   const go = (to: WinStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
-  const install = () => (tg.found.kind === "empty" && !m.os ? tg.install("windoors") : go("install")());
+  const setup = () => tg.install("windoors") && setStep("start");
+  const install = () => (tg.found.kind === "empty" && !m.os ? setup() : go("install")());
   const del = tg.empty ? () => tg.setNote(t("error.noSoftware")) : go("delete");
   const part = tg.empty ? `Unpartitioned space   ${tg.array}` : `C:  Partition1 [NTFS]   ${tg.array}`;
   const suffix = era === 2 ? " (Desktop Experience)" : version.startsWith("2008") ? " (Full Installation)" : " (Server with a GUI)";
@@ -146,14 +147,14 @@ function useWindoorsSetup(game: GameState, m: Machine): Keyed {
     edition: { title: "", rows: [] },
     license: { title: "Windoors Licensing Agreement", body: <div>Press F8 to accept the agreement and continue Setup.</div>, rows: [], keys: { F8: go("where"), Escape: go("start") }, foot: "F8=I agree  ESC=I do not agree" },
     where: { title: "The following list shows the existing partitions and unpartitioned space on this computer.", rows: [{ label: part, run: install }], keys: { d: del, D: del, F3: tg.leave }, foot: "ENTER=Install  D=Delete Partition  F3=Quit" },
-    install: { title: "Setup will format the partition and erase it.", body: tg.what, rows: [], keys: { Enter: () => tg.install("windoors"), Escape: go("where") }, foot: "ENTER=Continue  ESC=Cancel" },
+    install: { title: "Setup will format the partition and erase it.", body: tg.what, rows: [], keys: { Enter: setup, Escape: go("where") }, foot: "ENTER=Continue  ESC=Cancel" },
     delete: { title: "Setup will delete the partition.", body: tg.what, rows: [], keys: { Enter: tg.erase, Escape: go("where") }, foot: "ENTER=Delete  ESC=Cancel" },
   } : {
     start: { title: `Windoors Server ${version}`, rows: [{ label: "Install now", run: go("edition") }] },
     edition: { title: "Select the operating system you want to install", rows: ["Standard", "Datacenter"].map((e) => ({ label: `Windoors Server ${version} ${e}${suffix}`, run: go("license") })) },
     license: { title: "License terms", rows: [{ label: "I accept the license terms", run: go("where") }, { label: "Back", run: go("edition") }] },
     where: { title: "Where do you want to install Windoors?", body: <div className="win-disk">Drive 0 {tg.empty ? "Unallocated Space" : "Partition 1"}<span>{tg.array}</span></div>, rows: [{ label: "Next", run: install }, { label: "Delete", dim: tg.empty, run: del }, { label: "Back", run: go("license") }] },
-    install: { title: "Windoors might be unable to boot", body: tg.what, rows: [{ label: "OK", run: () => tg.install("windoors") }, { label: "Cancel", run: go("where") }] },
+    install: { title: "Windoors might be unable to boot", body: tg.what, rows: [{ label: "OK", run: setup }, { label: "Cancel", run: go("where") }] },
     delete: { title: "Delete partition", body: tg.what, rows: [{ label: "OK", run: tg.erase }, { label: "Cancel", run: go("where") }] },
   };
   const page = pages[step], typing = (step === "install" || step === "delete") && tg.found.kind === "busy";
