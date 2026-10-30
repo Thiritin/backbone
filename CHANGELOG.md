@@ -4,6 +4,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Business, premium and large-budget customers now write order emails like everyone else and show their SLA on the ticket, and a customer who accepts your quote waits for you to create the account, send the invoice, register the domain and set the service up instead of being set up on their own.
+- Quote requests still waiting in an older save now show up as order emails in Support, and the separate Sales list there is gone.
+- The setup step now suggests the newest, most reliable host and lists hosts best first with their hardware year and downtime, and every automatic placement picks hosts in that same order.
 - Wikipedio and the Debiant download page now say that the default user name after installing Debiant GNU/Lunix is root.
 - Stopped VMs on a VMwhere cluster can become templates, which clone into ready VMs with the same size, operating system and software after a disk copy.
 - The used market opens again in saves where a listing had no maker, and it no longer offers models before their maker sells them.

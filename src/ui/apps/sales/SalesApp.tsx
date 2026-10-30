@@ -1,29 +1,18 @@
-import { Ban, Check, CircleCheck, CircleX, Hourglass, Inbox, Send, X } from "lucide-react";
-import { useState } from "react";
+import { Check, X } from "lucide-react";
 import { euroCents } from "../../../sim/00-core/money";
 import { SLAS } from "../../../sim/10-catalog/products";
-import { missingFor, requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
+import { requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
 import { profileStats } from "../../../sim/40-support/tickets";
-import type { GameState } from "../../../sim/50-state";
-import { decline, quote } from "../../../sim/90-actions/sales";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
 import { initials, patience, PRODUCT, stamp } from "../support/labels";
-import { PriceField } from "./PriceField";
 import { UpgradeCompose } from "../support/CustomOrder";
 import { specText } from "../../../sim/30-market/spec";
 import "../support/support.css";
 import "./sales.css";
 
-export type SalesBox = "open" | "waiting" | "unserved" | "won";
 export const OPEN = ["open", "countered", "refused"];
-export const SALES_BOXES: { id: SalesBox; label: string; icon: typeof Inbox; match: (s: GameState, r: SalesRequest) => boolean }[] = [
-  { id: "open", label: "Requests", icon: Inbox, match: (s, r) => OPEN.includes(r.status) && !missingFor(s, r).length },
-  { id: "waiting", label: "Awaiting reply", icon: Hourglass, match: (_, r) => r.status === "quoted" },
-  { id: "unserved", label: "Cannot serve", icon: Ban, match: (s, r) => r.status === "accepted" || (r.status === "open" && missingFor(s, r).length > 0) },
-  { id: "won", label: "Won", icon: CircleCheck, match: (_, r) => r.status === "won" },
-];
 export const STATUS: Record<SalesRequest["status"], string> = {
   open: "New", quoted: "Quoted", countered: "Counter-offer", refused: "Refused", accepted: "Waiting for setup", won: "Won", lost: "Lost", declined: "Declined",
 };
@@ -31,19 +20,10 @@ export const SLA_LABEL = { basic: "Basic", business: "Business", premium: "Premi
 
 export const need = (r: SalesRequest) => `${r.domain ? `${r.domain} · ` : ""}${specText(r.product, r.spec)} · ${r.city}${r.sla === "basic" ? "" : ` · ${SLA_LABEL[r.sla]} SLA`}`;
 
-export function Deadline({ r, hour }: { r: SalesRequest; hour: number }) {
-  if (!OPEN.includes(r.status)) return <span className="sla num">{stamp(r.createdAt)}</span>;
-  const left = r.deadline - hour;
-  return <span className={`sla ${left <= 12 ? "warn" : ""}`}><span className="num">{Math.max(0, left)}</span> h left</span>;
-}
-
 export function Card({ r }: { r: SalesRequest }) {
   const game = useStore((s) => s.game);
-  const act = useStore((s) => s.act);
-  const [price, setPrice] = useState(r.counter ?? r.quote ?? r.reference);
   const reqs = requirementsFor(game, r), missing = reqs.filter((x) => !x.ok);
   const sla = SLAS[r.sla];
-  const canQuote = OPEN.includes(r.status) && !missing.length;
   const customer = r.customerId ? game.customers.find((c) => c.id === r.customerId) : undefined;
   const expects = profileStats(r.profile);
 
@@ -84,17 +64,7 @@ export function Card({ r }: { r: SalesRequest }) {
         {r.status === "quoted" && <div className="event"><span>Awaiting reply</span></div>}
       </div>
 
-      {r.kind === "expansion" && r.spec ? <UpgradeCompose key={r.status} r={r} /> : canQuote && (
-        <div className="compose">
-          <PriceField value={price} reference={r.reference} onChange={setPrice} />
-          <div className="actions-row">
-            <button className="btn ghost" onClick={() => act(decline, r.id)}><CircleX />Decline</button>
-            <span className="grow" />
-            <span className="sales-total">Revenue <span className="num">{euroCents(price)}</span> a month</span>
-            <button className="btn primary" disabled={!(price > 0)} onClick={() => act(quote, r.id, price)}><Send />Send quote</button>
-          </div>
-        </div>
-      )}
+      {r.kind === "expansion" && r.spec && <UpgradeCompose key={r.status} r={r} />}
     </div>
   );
 }

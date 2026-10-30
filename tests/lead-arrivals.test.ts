@@ -26,7 +26,7 @@ describe("lead arrivals", () => {
       const s = readyGame(seed);
       for (let i = 0; i < 90 * 24; i++) tick(s);
       for (const r of s.sales.requests) {
-        if (r.kind !== "new" && r.kind !== "order") continue;
+        if (r.kind !== "order") continue;
         const h = dateOf(r.createdAt).getUTCHours();
         hours.add(h);
         if (BUSINESS.includes(r.profile)) business.push(h);

@@ -16,6 +16,7 @@ import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
 import { fillMachines } from "./machines";
+import { legacyLeads } from "./leads";
 import { heldLicenses } from "../85-products/products";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
@@ -108,6 +109,7 @@ export function deserialize(raw: string): GameState {
     clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map((w) => workloadDefaults({ ...w, media: (w.media as string) === "iso" ? "lunix" : w.media })), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
+  legacyLeads(s);
   // Machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.licenses) s.licenses = heldLicenses(s);
   s.media = data.media ?? base.media;

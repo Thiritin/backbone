@@ -1,3 +1,4 @@
+import { betterHost } from "../60-infra/routes";
 import { yearOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import { marketPrice, PRODUCTS, sizeSpec, type Resources, type Sla, type Spec } from "../10-catalog/products";
@@ -388,7 +389,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
   let w: Workload | null = null, az = "";
   if (spec.runsOn === "none") return { ok: true };
   if (spec.runsOn === "cluster") {
-    const candidates = s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)) && supports(x, v.product)).sort(gameFirst);
+    const candidates = s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)) && supports(x, v.product)).sort((a, b) => gameFirst(a, b) || betterHost(s)(a, b));
     // A cluster with the RAM for it wins; with none, the first cluster with the disk takes it past its RAM.
     for (const roomyOnly of [true, false]) {
       for (const c of candidates) {

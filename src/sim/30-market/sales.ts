@@ -6,14 +6,14 @@ import { arrivalWeight } from "../10-catalog/attention";
 import { CHOICE_TAU, NEVER_PAYS, ON_TIME } from "../10-catalog/economy";
 import { PRODUCTS, sizeSpec, SIZES } from "../10-catalog/products";
 import { yearOf } from "../00-core/time";
-import { inUs } from "../20-world/datacenters";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
 import { bump, expandable, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
+import { betterHost } from "../60-infra/routes";
 import { gameFirst, lineOffered, noRoomError, pickNode, serverTaken, supports, withDatastore, workloadsOf } from "../60-infra/cluster";
 import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
-import { addAwareness, discountFor } from "../80-business/marketing";
+import { addAwareness } from "../80-business/marketing";
 import { mailShare } from "../80-business/mail";
 import { listed, siteFactor } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
@@ -31,8 +31,8 @@ import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
 import { forSale, inStock, shopActive, soldOutVisit } from "../80-business/shop";
 import {
-  acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor, REQUEST_HOURS,
-  requestName, senderFor, share, values, type Need, type SalesMessage, type SalesRequest,
+  acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor,
+  requestName, share, values, type Need, type SalesMessage, type SalesRequest,
 } from "./market";
 
 const DAYS_PER_MONTH = 30.4;
@@ -78,34 +78,23 @@ export function addRequest(s: GameState, r: Omit<SalesRequest, "id" | "createdAt
 
 // The hidden budget: the price ratio to the reference accepted, drawn evenly from this range.
 export const BUDGET_RANGE: [number, number] = [1.08 * 0.9, 1.08 * 1.15];
-const budgetOf = (r: Rng): number => BUDGET_RANGE[0] + (BUDGET_RANGE[1] - BUDGET_RANGE[0]) * rand(r);
+export const budgetOf = (r: Rng): number => BUDGET_RANGE[0] + (BUDGET_RANGE[1] - BUDGET_RANGE[0]) * rand(r);
 
 // The spec of the request about to be added, with the addresses its customer needs: drawn with its id as the key, so it is
 // stable for a seed.
 export const nextSpec = (s: GameState, need: Need, profile: Profile) =>
   withAddressNeeds(s.seed, s.nextId, profile, need.product, specFor(s.seed, s.nextId, need.product, need.size, yearOf(s.hour)), yearOf(s.hour));
 
+// A sales lead writes in its own words, asks for its SLA and weighs your quote against its own budget; from there on it is an order
+// ticket in Support like any other, worked step by step.
 export function newLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour))): SalesRequest {
-  const who = senderFor(s.rng, profile, false, inUs(city));
-  const variant = Math.floor(rand(s.rng) * 2), spec = nextSpec(s, need, profile);
-  const req = addRequest(s, {
-    kind: "new", customerId: null, ...who, profile, city, product: need.product, spec, sla: need.sla, reference: referenceFor(s, profile, need.product, spec, need.sla),
-    discount: discountFor(s, profile), budget: budgetOf(s.rng), shady: false, serviceId: null, ticketId: null, deadline: s.hour + REQUEST_HOURS,
-  }, `sales.msg.${need.product}.${variant}`);
-  if (!missingFor(s, req).length) events.push({ app: "Support", key: "event.salesRequest", params: { name: requestName(req), spec: specText(req.product, spec) } });
-  return req;
+  return orderLead(s, profile, city, events, need, true, undefined, { budget: budgetOf(s.rng) });
 }
 
 // High volume, no questions, crypto: pays well and carries a hidden flag for abuse and legal follow-ups.
 export function shadyLead(s: GameState, city: string, events: SimEvent[]): SalesRequest {
-  const who = senderFor(s.rng, "hobbyDev", true), spec = sizeSpec("vps", SIZES.vps.length - 1, yearOf(s.hour));
-  const req = addRequest(s, {
-    kind: "new", customerId: null, ...who, profile: "hobbyDev", city, product: "vps", spec, sla: "basic",
-    reference: referenceFor(s, "hobbyDev", "vps", spec, "basic"), discount: 0, budget: 1.8, shady: true, serviceId: null, ticketId: null,
-    deadline: s.hour + REQUEST_HOURS,
-  }, "sales.msg.shady");
-  if (!missingFor(s, req).length) events.push({ app: "Support", key: "event.salesRequest", params: { name: requestName(req), spec: specText("vps", spec) } });
-  return req;
+  const spec = sizeSpec("vps", SIZES.vps.length - 1, yearOf(s.hour));
+  return orderLead(s, "hobbyDev", city, events, { product: "vps", size: SIZES.vps.length - 1, sla: "basic" }, true, spec, { budget: 1.8, shady: true, key: "sales.msg.shady" });
 }
 
 function newLeads(s: GameState, events: SimEvent[]): void {
@@ -176,7 +165,7 @@ export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product"
   if (spec.runsOn === "cluster") {
     // A cluster with the RAM for it wins; with none, the first cluster with the disk takes it past its RAM.
     const sold = r.shop ? forSale(s, r.product) : null;
-    const fit = [...s.clusters].sort(gameFirst).filter((x) => zones.includes(x.az) && supports(x, r.product) && (!sold || sold.has(x.id)));
+    const fit = [...s.clusters].sort((x, y) => gameFirst(x, y) || betterHost(s)(x, y)).filter((x) => zones.includes(x.az) && supports(x, r.product) && (!sold || sold.has(x.id)));
     const c = fit.find((x) => pickNode(s, x, withDatastore(s, x, size), null, x.placement, true)) ?? fit.find((x) => pickNode(s, x, withDatastore(s, x, size)));
     return c ? { clusterId: c.id, zone: c.az } : null;
   }
@@ -294,11 +283,7 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   }
   if (accepts) {
     say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
-    if (r.kind === "order") return acceptQuote(s, r, events);
-    if (setUp(s, r, events)) return;
-    loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
-    events.push({ app: "Support", key: "event.salesFailed", params: { name, spec, city: r.city } });
-    return;
+    return acceptQuote(s, r, events);
   }
   const mid = acceptMid(s, r), ratio = price / r.reference;
   if (r.attempts < 2 && ratio <= mid + NO_BUDGET_GAP && rand(s.rng) < COUNTER_CHANCE) {
@@ -316,15 +301,6 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
     editRequest(s, r.id, () => ({ status: "refused", replyAt: null, deadline: s.hour + RETRY_HOURS }));
     wake(s, r.id);
   } else loseRequest(s, r, "lost", "lost.price");
-}
-
-function setUp(s: GameState, r: SalesRequest, events: SimEvent[]): boolean {
-  const done = fulfil(s, r);
-  if (!done.ok) return false;
-  editRequest(s, r.id, () => ({ status: "won", replyAt: null, serviceId: done.id ?? r.serviceId }));
-  closeTicket(s, r);
-  events.push({ app: "Support", key: "event.salesWon", params: { name: requestName(r), spec: specText(r.product, r.spec), price: r.quote! } });
-  return true;
 }
 
 function expire(s: GameState): void {

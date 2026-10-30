@@ -11,7 +11,7 @@ import { DUE_DAYS, rollPayStep, type Invoice, type InvoiceLine } from "../45-bil
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
 import type { GameState } from "../50-state";
 import { bookable, nodeUsed, workloadsOf } from "../60-infra/cluster";
-import { routeError, routeOptions, routeTarget } from "../60-infra/routes";
+import { preferredRoute, routeError, routeTarget } from "../60-infra/routes";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { placeService, provisionService } from "../90-actions/clusters";
@@ -51,12 +51,9 @@ export const canAutomate = (s: GameState): boolean => s.unlocks.includes(AUTOMAT
 // The quote counts as accepted once the customer said yes or the order came through the form; an order past its account
 // from an older save counts too.
 export const quoteAccepted = (r: SalesRequest): boolean => r.status === "accepted" || !!r.customerId || !!r.invoiceId || !!r.serviceId;
-// The first host in the order's city with disk room, one with the RAM for it first like Automatic: the pick of staff and
-// of a setup nobody chose a host for.
-export function hostFor(s: GameState, r: SalesRequest): string | null {
-  const hosts = routeOptions(s, r.product, r.city, sizeOf(r.spec)).filter((c) => c.fits);
-  return (hosts.find((c) => c.free.ramGb >= sizeOf(r.spec).ramGb) ?? hosts[0])?.id ?? null;
-}
+// The best host of the order's city (routes.ts, preferredRoute): what the setup preselects, and the pick of staff, who
+// cannot ask.
+export const hostFor = (s: GameState, r: SalesRequest): string | null => preferredRoute(s, r.product, r.city, sizeOf(r.spec));
 
 // Which steps the order has behind it.
 export function stepsDone(s: GameState, r: SalesRequest): Record<OrderStep, boolean> {
@@ -137,7 +134,8 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     return null;
   }
   if (step === "account") {
-    const id = addCustomer(s, requestName(r), r.profile, habitFor(hashRng(s.seed, Number(r.id.slice(3)) || 0, 227), r.profile));
+    const id = addCustomer(s, requestName(r), r.profile, r.shady ? "prompt" : habitFor(hashRng(s.seed, Number(r.id.slice(3)) || 0, 227), r.profile));
+    if (r.shady) s.customers = s.customers.map((c) => (c.id === id ? { ...c, shady: true } : c));
     editRequest(s, r.id, () => ({ customerId: id }));
     setTicket(s, t.id, { customerId: id, updatedAt: s.hour });
     log(id);

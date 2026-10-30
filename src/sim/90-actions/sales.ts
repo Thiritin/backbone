@@ -1,24 +1,11 @@
 import { reprice } from "../30-customers/pricing";
 import type { GameState } from "../50-state";
-import { missingFor } from "../30-market/market";
-import { answerAt, editRequest, loseRequest, say } from "../30-market/sales";
+import { loseRequest } from "../30-market/sales";
 import { declineReason, mailRequest } from "../30-market/orders";
 import type { ActionResult } from "./hardware";
 import { logActivity } from "../47-staff/activity";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
-// Sends a monthly price for a request; the customer replies later.
-export function quote(s: GameState, requestId: string, monthly: number): ActionResult {
-  const r = s.sales.requests.find((x) => x.id === requestId);
-  if (!r || !["open", "countered", "refused"].includes(r.status)) return fail("error.unknownRequest");
-  if (!Number.isFinite(monthly) || monthly <= 0 || monthly > 100 * r.reference) return fail("error.quotePrice");
-  if (missingFor(s, r).length) return fail("error.requestMissing");
-  const price = Math.round(monthly * 100) / 100;
-  editRequest(s, r.id, (x) => ({ status: "quoted", quote: price, attempts: x.attempts + 1, replyAt: answerAt(s, x, price) }));
-  say(s, r.id, "you", "sales.you.quote", { price });
-  return { ok: true, id: r.id };
-}
-
 export function decline(s: GameState, requestId: string): ActionResult {
   const r = s.sales.requests.find((x) => x.id === requestId);
   if (!r || !["open", "countered", "refused"].includes(r.status)) return fail("error.unknownRequest");

@@ -50,19 +50,21 @@ function place(s: GameState, r: SalesRequest): ActionResult & { reason?: string;
 // email: the customer writes an order email and gets a quote first; otherwise the order form takes the spec at the player's
 // rates, which counts as the accepted quote. With automation switched on the form places it at once, otherwise it waits in
 // Support like an email order. A shop takes one unit of the line's stock.
-export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour)), email = emailFor(s), given?: Spec): SalesRequest {
-  const who = senderFor(s.rng, profile, false, inUs(city)), variant = Math.floor(rand(s.rng) * 2);
+// lead marks a sales lead: an email in its own words (key), with the budget it brings and the shady flag, owning no domain.
+export interface LeadTraits { budget: number; shady?: boolean; key?: string }
+export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour)), email = emailFor(s), given?: Spec, lead?: LeadTraits): SalesRequest {
+  const who = senderFor(s.rng, profile, !!lead?.shady, inUs(city)), variant = Math.floor(rand(s.rng) * 2);
   const key = s.nextId, spec = given ?? nextSpec(s, need, profile), reference = referenceFor(s, profile, need.product, spec, need.sla), discount = discountFor(s, profile);
   // One in three web customers already owns the domain they name.
-  const owned = email && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
+  const owned = !lead && email && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
   const shop = !email && shopActive(s);
   if (shop) takeStock(s, need.product);
   const price = email ? reference : offerPrice(s, need.product, spec, need.sla);
-  const budget = email ? ORDER_BUDGET[0] + (ORDER_BUDGET[1] - ORDER_BUDGET[0]) * rand(hashRng(s.seed, key, 263)) : 1;
+  const budget = lead ? lead.budget : email ? ORDER_BUDGET[0] + (ORDER_BUDGET[1] - ORDER_BUDGET[0]) * rand(hashRng(s.seed, key, 263)) : 1;
   let r = addRequest(s, {
-    kind: "order", customerId: null, ...who, profile, city, product: need.product, spec, sla: need.sla, reference, discount, budget, shady: false,
+    kind: "order", customerId: null, ...who, profile, city, product: need.product, spec, sla: need.sla, reference, discount, budget, shady: !!lead?.shady,
     serviceId: null, ticketId: null, deadline: s.hour + REQUEST_HOURS,
-  }, `order.msg.${need.product}.${variant}`);
+  }, lead ? lead.key ?? `sales.msg.${need.product}.${variant}` : `order.msg.${need.product}.${variant}`);
   r = editRequest(s, r.id, (x) => ({
     quote: Math.round(price * (1 - discount) * 100) / 100,
     ...(shop && { shop: true }),
@@ -96,7 +98,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   r = editRequest(s, r.id, () => ({ ticketId: t.id, ...(!email && { form: true, status: "accepted" as const }) }));
   if (missingFor(s, r).length) return r;
   // Automation quotes an email order at the line's own rate when there is room for it.
-  if (email && s.autoOrders && canAutomate(s) && targetFor(s, r)) {
+  if (email && !lead && s.autoOrders && canAutomate(s) && targetFor(s, r)) {
     r = editRequest(s, r.id, () => ({ quote: Math.round(offerPrice(s, need.product, spec, need.sla) * (1 - discount) * 100) / 100 }));
     if (!applyStep(s, s.tickets.find((x) => x.id === t.id)!, "quote", AUTOMATION)) {
       events.push({ app: "Support", key: "event.orderQuoted", params: { ...params, price: r.quote! } });
