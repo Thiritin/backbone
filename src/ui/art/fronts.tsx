@@ -178,6 +178,7 @@ function ServerFace(p: FrontProps) {
       )}
       <StatusLeds x={cx + panel - 26} y={h - 6} state={state} blink={blink} />
       {h >= 18 && <BrandMark brand={brand} x={cx + 4} y={h - 11} size={8} />}
+      <UsbPort cx={cx - (h >= 28 ? 13 : 10)} cy={h - 6} h={h} stick={p.stick} onUsb={p.onUsb} />
     </>
   );
 }
@@ -203,6 +204,7 @@ function NodeFace(p: FrontProps) {
         </g>
       ))}
       {name && <AssetTag x={3} y={h - strip / 2 - 1} text={name} h={Math.min(h, 16)} />}
+      <UsbPort cx={w - 34} cy={h - strip / 2 - 1} h={strip} stick={p.stick} onUsb={p.onUsb} />
       <StatusLeds x={w - 22} y={h - strip / 2 - 1} state={state} blink={blink} />
       <circle cx={w - 5} cy={h - strip / 2 - 1} r={Math.min(2.6, strip * 0.3)} fill="oklch(0.2 0.004 255)" stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.8" aria-label="Power button" />
     </>
@@ -218,7 +220,7 @@ function TwinFace(p: FrontProps) {
       <rect x="0" y="0.5" width={w} height={h - 1} rx="1.5" fill={st.ear} stroke="var(--metal-line)" />
       {[3, w - 9].map((x) => <rect key={x} x={x} y={h * 0.2} width="6" height={h * 0.6} rx="2" fill="none" stroke={st.trim} strokeWidth="0.8" aria-hidden="true" />)}
       {node && frontBays(model.nodes!.count, w, h).map((b, i) => (
-        <g key={i} transform={`translate(${b.x} ${b.y})`}><NodeFace {...p} model={node} name="" state={state} parts={undefined} w={b.w} h={b.h} /></g>
+        <g key={i} transform={`translate(${b.x} ${b.y})`}><NodeFace {...p} model={node} name="" state={state} parts={undefined} stick={false} onUsb={undefined} w={b.w} h={b.h} /></g>
       ))}
     </>
   );
@@ -244,6 +246,7 @@ function Caddies(p: FrontProps) {
       })}
       <Mark brand={brand} x={w - 31} h={h} />
       <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
+      <UsbPort cx={x1 - 10} cy={top / 2} h={h} stick={p.stick} onUsb={p.onUsb} />
     </>
   );
 }
@@ -405,16 +408,19 @@ export function Pdu({ w, h, name, model, state }: FrontProps) {
   );
 }
 
-// The front USB port left of the control panel, with the stick in it when it is plugged in.
-function UsbPort({ w, h, stick, onUsb }: FrontProps) {
-  const x = w - 23 - Math.max(44, h * 1.8), y = Math.min(h / 2, 9) - 1.6, label = stick ? "Unplug USB stick" : "Plug in USB stick";
+// A front USB port with its centre at (cx, cy): a light bezel on a dark plate so it reads on any face, the USB trident
+// beside it on faces of two units or more, and the stick in it when it is plugged in. Every face places its own.
+export function UsbPort({ cx, cy, h, stick, onUsb }: { cx: number; cy: number; h: number; stick?: boolean; onUsb?: () => void }) {
+  const x = cx - 4.5, y = cy - 2, label = stick ? "Unplug USB stick" : "Plug in USB stick", glyph = h >= 28;
   return (
     <>
-      <rect x={x} y={y} width="7" height="3.2" rx="0.4" fill="oklch(0.1 0.004 255)" stroke="oklch(0.45 0.005 255)" strokeWidth="0.4" aria-label="USB port" />
-      <rect x={x + 1.2} y={y + 0.8} width="4.6" height="0.9" fill="oklch(0.55 0.12 250)" aria-hidden="true" />
-      {stick && <><rect x={x - 1} y={y - 1.4} width="9" height="6" rx="0.8" fill="oklch(0.42 0.13 150)" stroke="oklch(0.25 0.05 150)" strokeWidth="0.4" /><circle cx={x + 6.6} cy={y + 3.2} r="0.6" fill={LED.act} /></>}
+      <rect x={x - 1.5} y={y - 1.5} width={glyph ? 17 : 12} height="7" rx="0.8" fill="oklch(0.12 0.004 255)" aria-hidden="true" />
+      <rect x={x} y={y} width="9" height="4" rx="0.5" fill="oklch(0.08 0.004 255)" stroke="oklch(0.72 0.01 255)" strokeWidth="0.6" aria-label="USB port" />
+      <rect x={x + 1.5} y={y + 1} width="6" height="1.2" fill="oklch(0.6 0.14 250)" aria-hidden="true" />
+      {glyph && <path d={`M${x + 11.5} ${cy + 1.6}V${cy - 1.8}M${x + 11.5} ${cy - 0.6}l1.6-1M${x + 11.5} ${cy + 0.6}l-1.6-1`} fill="none" stroke="oklch(0.72 0.01 255)" strokeWidth="0.5" strokeLinecap="round" aria-hidden="true" />}
+      {stick && <><rect x={x - 1} y={y - 1.5} width="11" height="7" rx="0.9" fill="oklch(0.42 0.13 150)" stroke="oklch(0.25 0.05 150)" strokeWidth="0.4" /><circle cx={x + 8.4} cy={y + 2} r="0.7" fill={LED.act} /></>}
       {onUsb && (
-        <rect className="svg-hit" x={x - 3} y={y - 3} width="13" height="9.2" fill="transparent" role="button" tabIndex={0} aria-label={label}
+        <rect className="svg-hit" x={x - 3} y={y - 3} width="15" height="10" fill="transparent" role="button" tabIndex={0} aria-label={label}
           onClick={(e) => { e.stopPropagation(); onUsb(); }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onUsb(); } }}><title>{label}</title></rect>
       )}
     </>
@@ -424,8 +430,7 @@ function UsbPort({ w, h, stick, onUsb }: FrontProps) {
 export function Front(p: FrontProps) {
   if (p.model.kind === "server") {
     const line = lineOf(p.model);
-    const face = line === "backup" || line === "archive" ? <Caddies {...p} /> : line?.startsWith("gpu") ? <Gpu {...p} /> : p.model.chassis ? <NodeFace {...p} /> : serverFront(p);
-    return <>{face}{!p.model.chassis && <UsbPort {...p} />}</>;
+    return line === "backup" || line === "archive" ? <Caddies {...p} /> : line?.startsWith("gpu") ? <Gpu {...p} /> : p.model.chassis ? <NodeFace {...p} /> : serverFront(p);
   }
   if (p.model.kind === "chassis") return <TwinFace {...p} />;
   if (p.model.kind === "switch" || p.model.kind === "firewall") return <SwitchRear {...p} />;

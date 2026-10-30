@@ -132,7 +132,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     const sel = b.it.id === selected;
     out.push(
       <g key={b.it.id} className="rack-dev" transform={`translate(${b.x} ${b.y})`} aria-label={b.it.name} aria-pressed={sel} {...press(() => onDevice(b.it.id))} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(b.it.id, e))}>
-        {back ? <Back {...b.it} w={b.w} h={b.h} /> : <Front {...b.it} w={b.w} h={b.h} />}
+        {back ? <Back {...b.it} w={b.w} h={b.h} /> : <Front {...b.it} w={b.w} h={b.h} onUsb={onUsb && (() => onUsb(b.it.id))} />}
         {sel && <rect x="-1" y="-1" width={b.w + 2} height={b.h + 2} rx="2" fill="none" stroke="var(--accent)" strokeWidth="1.5" pointerEvents="none" />}
       </g>,
     );
