@@ -73,6 +73,7 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "term.fs.root": () => "rm: it is dangerous to operate recursively on '/'",
   "term.ls.long": (p) => `${p.mode} ${p.links} ${p.user} ${p.user} ${left(p.size, 5)} ${p.date} ${p.name}`,
   "term.sudo.usage": () => "usage: sudo command",
+  "dev.open": () => "Opening the dev menu.",
   "term.apt.usage": () => "Usage: apt [options] command\nMost used commands:\n  list - list packages\n  update - update list of available packages\n  upgrade - upgrade the system by installing/upgrading packages",
   "term.apt.lock": () => "E: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)\nE: Unable to lock directory /var/lib/apt/lists/",
   "term.apt.hit": (p) => `Hit:1 http://ftp.debian.org/debian ${p.codename} InRelease\nReading package lists... Done`,

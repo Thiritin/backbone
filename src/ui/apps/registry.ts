@@ -1,9 +1,10 @@
 import {
-  Activity, AppWindow, LayoutGrid, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, AppWindow, Bug, LayoutGrid, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { BillingApp } from "./billing/BillingApp";
 import { BrowserApp } from "./browser/BrowserApp";
+import { DevApp } from "./dev/DevApp";
 import { FinanceApp } from "./finance/FinanceApp";
 import { MarketingApp } from "./marketing/MarketingApp";
 import { MarketApp } from "./market/MarketApp";
@@ -65,6 +66,7 @@ export const APPS: AppDef[] = [
     badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored)).length },
   { name: "Notes", icon: FileText, tile: "oklch(0.7 0.13 85)", about: "Edits the notes on your desktop.", hidden: true },
   { name: "News", icon: Newspaper, tile: "oklch(0.55 0.12 30)", about: "Lists the headlines about new software, hardware and market changes.", hidden: true, body: NewsApp },
+  { name: "Dev menu", icon: Bug, tile: "oklch(0.5 0.15 25)", about: "Sets the date, your money and your research points for testing.", hidden: true, body: DevApp },
   { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: "Sets your company name and logo, the theme and which apps may send notifications." },
 ];
 
