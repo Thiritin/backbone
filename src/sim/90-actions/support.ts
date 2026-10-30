@@ -55,6 +55,8 @@ export function replyTicket(s: GameState, id: string, template: string): ActionR
   if ("error" in f) return f.error;
   if (f.t.status !== "open") return fail("error.ticketNotOpen");
   if (!templatesOf(f.t).includes(template)) return fail("error.unknownTemplate");
+  // The ticket leaves the open queue once answered; a wrong answer reopens it when it lands.
+  Object.assign(f.t, { status: "waiting", updatedAt: s.hour });
   return queue(s, f.t, "reply", template);
 }
 

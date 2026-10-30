@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- A ticket moves from Open to Waiting on customer as soon as you send an answer, and comes back to Open if the customer replies.
 - Every hardware manufacturer has its own website with its products and a news page of its releases, and the News app reports new hardware from each brand with a link to its site.
 - The Browser no longer has a Downloads button.
 - Each location now has a Network tab with its traffic, uplinks, addresses, attacks and the peers at its exchange; transit, exchange ports and links between locations appear there once Network operations is learned.
