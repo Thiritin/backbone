@@ -3,6 +3,7 @@ import { t } from "../../../i18n/en";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { registrarById, REGISTRARS } from "../../../sim/10-catalog/registrars";
+import { shopById } from "../../../sim/10-catalog/shops";
 import type { Product } from "../../../sim/30-customers/customers";
 import { hasOrderForm, OWNED, owns, type SiteHost } from "../../../sim/80-business/marketing";
 import { generationOf, lineBlocker, listed, SITE_LINES, SITE_RENT, siteBuilt, siteRoom, siteStatus, type SiteStatus } from "../../../sim/80-business/website";
@@ -120,7 +121,7 @@ function Upgrades() {
     {owns(game, "website") && (
       <div className="mkt-row">
         <span className="mkt-label">Orders</span>
-        {hasOrderForm(game) ? <span className="mkt-grow">Order form</span> : <><span className="mkt-grow">Order form{upkeep("orderForm")}</span>{offer("orderForm")}</>}
+        {game.shop.variant ? <span className="mkt-grow">{shopById(game.shop.variant).name}</span> : hasOrderForm(game) ? <span className="mkt-grow">Order form</span> : <><span className="mkt-grow">Order form{upkeep("orderForm")}</span>{offer("orderForm")}</>}
       </div>
     )}
     {hasOrderForm(game) && (

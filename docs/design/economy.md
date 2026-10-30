@@ -2333,3 +2333,7 @@ The solo bot reaches level 5 in 2012.8 instead of 2012.9. Neither bot goes bankr
 - Should competitor scores stay fixed forever, or rise about 1 point a year so late-game players can't coast?
 - After 2026, do prices stay flat (as written) or keep their trend?
 - Bankruptcy as the lose condition is new; does it fit the game?
+
+## Shop systems
+
+Variants, licences, module prices, the custom script price of the hand-rolled form (€400 per software) and stock rules are in `shop.md`, section 2.3. The research "Shop systems" costs 60 know-how and 4 days. Shop licences are billed with marketing on the 1st.

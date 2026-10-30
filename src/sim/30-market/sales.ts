@@ -29,6 +29,7 @@ import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
 import { acceptQuote, resize, specParams } from "./manual";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
+import { inStock, shopActive, soldOutVisit } from "../80-business/shop";
 import {
   acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor, REQUEST_HOURS,
   requestName, senderFor, share, values, type Need, type SalesMessage, type SalesRequest,
@@ -126,7 +127,13 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       }
       // Email orders thin out while delivery is impaired, and businesses shy away from a freemail address.
       if (!form && mailShare(s, f.profile) < 1 && rand(s.rng) >= mailShare(s, f.profile)) continue;
-      orderLead(s, f.profile, f.city, events, need, !form);
+      // A shop sells only what is in stock; a sold-out visitor leaves no request.
+      const spec = form && shopActive(s) ? nextSpec(s, need, f.profile) : undefined;
+      if (spec && !inStock(s, { city: f.city, product: need.product, spec })) {
+        soldOutVisit(s, need.product);
+        continue;
+      }
+      orderLead(s, f.profile, f.city, events, need, !form, spec);
     }
   }
 }
@@ -218,6 +225,13 @@ export function loseRequest(s: GameState, r: SalesRequest, status: "lost" | "dec
   editRequest(s, r.id, () => ({ status, replyAt: null }));
   s.sales = { ...s.sales, lost: [...s.sales.lost, { hour: s.hour, name: requestName(r), product: r.product, spec: r.spec, reference: r.reference, reason, params }].slice(-LOST_KEPT) };
   closeTicket(s, r);
+}
+
+// A shop order that cannot be placed is cancelled and refunded; it counts as a sold-out visit, never as a lost sale.
+export function cancelShopOrder(s: GameState, r: SalesRequest): void {
+  editRequest(s, r.id, () => ({ status: "lost", replyAt: null }));
+  closeTicket(s, r);
+  soldOutVisit(s, r.product);
 }
 
 const closeTicket = (s: GameState, r: SalesRequest) => {
@@ -317,7 +331,8 @@ function expire(s: GameState): void {
     const accepted = r.status === "accepted";
     if (!(["open", "countered", "refused"].includes(r.status) || accepted) || s.hour < r.deadline || orderQueued(s, r)) continue;
     const missing = missingFor(s, r)[0];
-    if (r.status !== "open" && !accepted) loseRequest(s, r, "lost", "lost.price");
+    if (r.shop) cancelShopOrder(s, r);
+    else if (r.status !== "open" && !accepted) loseRequest(s, r, "lost", "lost.price");
     else if (missing) loseRequest(s, r, "lost", missing.key, missing.params);
     else loseRequest(s, r, "lost", "lost.expired");
   }

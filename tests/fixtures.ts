@@ -1,3 +1,4 @@
+import { MODULE_IDS } from "../src/sim/10-catalog/shops";
 import { hourOf } from "../src/sim/00-core/time";
 import { componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
@@ -100,6 +101,7 @@ export const panelServer = (s: GameState, deviceId: string, panel = "freepanel")
 export const automate = (s: GameState): GameState => {
   s.unlocks = [...new Set([...s.unlocks, "products", "provisioning"])];
   s.autoOrders = true;
+  s.shop = { ...s.shop, modules: Object.fromEntries(MODULE_IDS.map((m) => [m, 0])) };
   return s;
 };
 
