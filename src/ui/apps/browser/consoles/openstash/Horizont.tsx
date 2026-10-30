@@ -9,7 +9,7 @@ import { mountableImages } from "../../../../../sim/90-actions/media";
 import { useStore } from "../../../../store";
 import { bootLines } from "../../../console/lunix";
 import { Chart, Donut, niceMax } from "../Chart";
-import { ConsoleThumb, isoName, MediaMenu, NodeList, TaskLog, tasks, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
+import { AlarmList, ConsoleThumb, isoName, MediaMenu, NodeList, ResourceBars, summaryOf, TaskLog, tasks, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import "./horizont.css";
 
@@ -38,6 +38,7 @@ export function Overview({ game, c, vms }: { game: GameState; c: Cluster; vms: V
         <Donut label="RAM" used={used.ramGb} of={cap.ramGb} text={`Used ${used.ramGb}GB of ${cap.ramGb}GB`} />
         <Donut label="Volume Storage" used={used.diskGb} of={cap.diskGb} text={`Used ${used.diskGb}GB of ${cap.diskGb}GB`} />
       </div>
+      <AlarmList game={game} c={c} alarms={summaryOf(game, c, null).alarms} className="cx-table hz-table" />
       <h4 className="cx-h">Usage Summary</h4>
       <Facts facts={[
         { label: "Active Instances", value: String(vms.filter((v) => v.st === "running").length), num: true }, { label: "Active RAM", value: `${used.ramGb}GB`, num: true },
@@ -90,7 +91,7 @@ type Page = "overview" | "instances" | "images" | "keys" | "hypervisors" | "syst
 export function Horizont(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole), year = yearOf(game.hour);
   const [page, setPage] = useState<Page>("instances"), [launching, setLaunching] = useState(false);
-  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c);
+  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
     <div className="cx hz hz-login" data-era={era}>
       <LoginForm className="hz-card" onLogin={p.login} button="Connect">
@@ -178,7 +179,13 @@ export function Horizont(p: PanelProps) {
             </>
           )}
           {page === "keys" && (<><h1>Key Pairs</h1><table className="cx-table hz-table"><thead><tr><th>Key Pair Name</th><th>Fingerprint</th></tr></thead><tbody><tr><td colSpan={2} className="cx-empty">No items to display.</td></tr></tbody></table></>)}
-          {page === "hypervisors" && (<><h1>All Hypervisors</h1><NodeList game={game} c={c} f={f} className="cx-table hz-table" /></>)}
+          {page === "hypervisors" && (<>
+            <h1>All Hypervisors</h1>
+            <h4 className="cx-h">Hypervisor Summary</h4>
+            <ResourceBars use={health.use} labels={["VCPU Usage", "Memory Usage", "Local Disk Usage"]} />
+            <NodeList game={game} c={c} f={f} className="cx-table hz-table" />
+            {health.alarms.length > 0 && <><h4 className="cx-h">Alarms</h4><AlarmList game={game} c={c} alarms={health.alarms} className="cx-table hz-table" /></>}
+          </>)}
           {page === "system" && (
             <>
               <h1>System Information</h1>

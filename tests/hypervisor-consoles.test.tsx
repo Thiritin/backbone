@@ -87,7 +87,7 @@ describe("hypervisor consoles", () => {
       proxmocks: [(g, c, v) => <PmxSummary game={g} c={c} v={v} />, ["HA State", "Bootdisk size", "Network traffic", "Day (average)"]],
       vmwhere: [(g, _, v) => <><VswSummary game={g} v={v} era="late" /><VmMonitor game={g} v={v} /></>, ["VMwhere Tools", "MEMORY USAGE", "VM Hardware", "Performance Chart"]],
       hypervee: [(g, _, v) => <VmDetails game={g} v={v} generations />, ["Heartbeat", "Memory Demand", "Replication", "CPU Usage"]],
-      openveezee: [(g, c, v) => <><CtPage game={g} v={v} host="hv.example.com" /><HostPage game={g} id={c.nodes[0].deviceId} vms={[v]} open={() => {}} /></>, ["Start on boot", "Diskinodes", "Barrier", "Change settings", "OS templates"]],
+      openveezee: [(g, c, v) => <><CtPage game={g} v={v} host="hv.example.com" /><HostPage game={g} c={c} id={c.nodes[0].deviceId} vms={[v]} open={() => {}} /></>, ["Start on boot", "Diskinodes", "Barrier", "Change settings", "OS templates", "allocated of"]],
       openstash: [(g, c, v) => <><InstanceOverview game={g} v={v} flavor="m1.small" /><Overview game={g} c={c} vms={[v]} /></>, ["Security Groups", "Volumes Attached", "Limit Summary", "VCPU-Hours"]],
     };
     for (const [id, [page, marks]] of Object.entries(pages)) {

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- The OpenVeeZee Web Panel and OpenStash Horizont now show memory, CPU and disk used against allocated, and list the same alarms as the other hypervisor consoles.
 - Customers who accept a move now always wait for you to move their service, whether they named a time window or said any time, and a move you miss costs their happiness.
 - A migration you offered a customer now keeps showing as offered while no host can take it, and a missed move shows a greyed out offer entry instead of the entry vanishing.
 - Virtual machines with an empty panel or game host installed can now be deleted from the hypervisor console, which removes the host with them.
