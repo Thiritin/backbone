@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
 import { create } from "zustand";
 import type { ServerOsId } from "../sim/10-catalog/server-os";
+import { MS_PER_HOUR, nowHours } from "../sim/00-core/time";
 import { downloadImage, downloadMbps, IMAGE_MB } from "../sim/90-actions/media";
 import { useStore } from "./store";
 
-// ISO downloads run in real time at the line speed they started at; a page reload drops the ones still running.
-interface Download { start: number; secs: number }
+// ISO downloads run in game time at the line speed they started at; a page reload drops the ones still running.
+interface Download { start: number; hours: number }
 export const useDownloads = create<Partial<Record<ServerOsId, Download>>>(() => ({}));
 
 let timer: ReturnType<typeof setInterval> | undefined;
@@ -13,11 +13,11 @@ let timer: ReturnType<typeof setInterval> | undefined;
 export function startDownload(id: ServerOsId): void {
   const mbps = downloadMbps(useStore.getState().game);
   if (!mbps || useDownloads.getState()[id]) return;
-  useDownloads.setState({ [id]: { start: performance.now(), secs: (IMAGE_MB[id] * 8) / mbps } });
+  useDownloads.setState({ [id]: { start: nowHours(useStore.getState().game), hours: ((IMAGE_MB[id] * 8) / mbps) * 1000 / MS_PER_HOUR } });
   timer ??= setInterval(() => {
-    const now = performance.now(), all = useDownloads.getState();
+    const now = nowHours(useStore.getState().game), all = useDownloads.getState();
     for (const [osId, d] of Object.entries(all) as [ServerOsId, Download][]) {
-      if (!d || now - d.start < d.secs * 1000) continue;
+      if (!d || now - d.start < d.hours) continue;
       useDownloads.setState({ [osId]: undefined });
       useStore.getState().act(downloadImage, osId);
     }
@@ -28,14 +28,9 @@ export function startDownload(id: ServerOsId): void {
   }, 250);
 }
 
-// The share of the download done, from 0 to 1, refreshed while it runs.
+// The share of the download done, from 0 to 1, moving with game time.
 export function useProgress(id: ServerOsId): number | null {
   const d = useDownloads((s) => s[id]);
-  const [, tick] = useState(0);
-  useEffect(() => {
-    if (!d) return;
-    const t = setInterval(() => tick((n) => n + 1), 250);
-    return () => clearInterval(t);
-  }, [d]);
-  return d ? Math.min(1, (performance.now() - d.start) / (d.secs * 1000)) : null;
+  const now = useStore((s) => nowHours(s.game));
+  return d ? Math.min(1, (now - d.start) / d.hours) : null;
 }

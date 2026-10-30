@@ -11,7 +11,7 @@ import { serverOsById } from "../../../sim/10-catalog/server-os";
 import { registrarById } from "../../../sim/10-catalog/registrars";
 import { reduced } from "../../desktop/motion";
 import { menuOn } from "../../desktop/ContextMenu";
-import { yearOf } from "../../../sim/00-core/time";
+import { nowHours, yearOf } from "../../../sim/00-core/time";
 import { isoFile } from "./sites/software/SoftwareSite";
 import { useDownloads } from "../../downloads";
 import type { ServerOsId } from "../../../sim/10-catalog/server-os";
@@ -112,7 +112,7 @@ const showDownloads = () => useStore.getState().openApp("Applications", { kind: 
 function DownloadsButton({ game }: { game: GameState }) {
   const running = useDownloads(), year = yearOf(game.hour);
   const ids = (Object.keys(running) as ServerOsId[]).filter((id) => running[id]), first = ids[0] && running[ids[0]]!;
-  const done = (d: { start: number; secs: number }) => Math.floor(Math.min(1, (performance.now() - d.start) / (d.secs * 1000)) * 100);
+  const done = (d: { start: number; hours: number }) => Math.floor(Math.min(1, (nowHours(game) - d.start) / d.hours) * 100);
   return (
     <button className="btn icon ghost br-dl" aria-label="Downloads" onClick={menuOn(() => [
       ...ids.map((id) => ({ label: `${isoFile(id, year)}, ${done(running[id]!)}%`, disabled: true })),
@@ -122,7 +122,7 @@ function DownloadsButton({ game }: { game: GameState }) {
       { label: "Show in Finder", run: showDownloads },
     ])}>
       <CircleArrowDown aria-hidden />
-      {first && <span className="br-dl-bar"><i key={ids[0]} style={{ animationDuration: `${first.secs}s`, animationDelay: `${(first.start - performance.now()) / 1000}s` }} /></span>}
+      {first && <span className="br-dl-bar"><i key={ids[0]} style={{ width: `${done(first)}%` }} /></span>}
     </button>
   );
 }
