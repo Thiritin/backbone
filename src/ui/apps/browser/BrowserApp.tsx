@@ -11,10 +11,10 @@ import { serverOsById } from "../../../sim/10-catalog/server-os";
 import { registrarById } from "../../../sim/10-catalog/registrars";
 import { reduced } from "../../desktop/motion";
 import { menuOn } from "../../desktop/ContextMenu";
-import { nowHours, yearOf } from "../../../sim/00-core/time";
+import { nowHours } from "../../../sim/00-core/time";
 import { isoFile } from "./sites/software/SoftwareSite";
 import { useDownloads } from "../../downloads";
-import type { ServerOsId } from "../../../sim/10-catalog/server-os";
+import type { OsImage } from "../../../sim/10-catalog/server-os";
 import { useSessionState } from "../../session";
 import { useFocus, useStore } from "../../store";
 import { Favicon } from "./Favicon";
@@ -113,13 +113,13 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
 const showDownloads = () => useStore.getState().openApp("Applications", { kind: "folder", id: "downloads" });
 
 function DownloadsButton({ game }: { game: GameState }) {
-  const running = useDownloads(), year = yearOf(game.hour);
-  const ids = (Object.keys(running) as ServerOsId[]).filter((id) => running[id]), first = ids[0] && running[ids[0]]!;
+  const running = useDownloads();
+  const ids = (Object.keys(running) as OsImage[]).filter((id) => running[id]), first = ids[0] && running[ids[0]]!;
   const done = (d: { start: number; hours: number }) => Math.floor(Math.min(1, (nowHours(game) - d.start) / d.hours) * 100);
   return (
     <button className="btn icon ghost br-dl" aria-label="Downloads" onClick={menuOn(() => [
-      ...ids.map((id) => ({ label: `${isoFile(id, year)}, ${done(running[id]!)}%`, disabled: true })),
-      ...game.media.images.map((id) => ({ label: isoFile(id, year), run: showDownloads })),
+      ...ids.map((id) => ({ label: `${isoFile(id)}, ${done(running[id]!)}%`, disabled: true })),
+      ...game.media.images.map((id) => ({ label: isoFile(id), run: showDownloads })),
       !game.media.images.length && !ids.length && { label: "No downloads", disabled: true },
       null,
       { label: "Show in Finder", run: showDownloads },

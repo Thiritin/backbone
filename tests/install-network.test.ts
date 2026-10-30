@@ -8,7 +8,7 @@ import { tickMinute } from "../src/sim/88-tick/tick";
 import { bootFromUsb, dismissInstallFail, installFromSite, installOs, setMedia } from "../src/sim/90-actions/console";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { bootedMachine, readyGame, skipTo, withImage, withNetwork, withStick } from "./fixtures";
+import { bootedMachine, readyGame, skipTo, isoOf, withImage, withNetwork, withStick } from "./fixtures";
 
 const err = (r: object) => (r as { error?: string }).error;
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
@@ -58,7 +58,7 @@ describe("Debiant netinst", () => {
   it("follows the host's network in a VM", () => {
     const s = readyGame(7), made = createVm(s, clusterOf(s, "dev3")!.id, PANEL_VM_SIZE), vm = made.ok ? made.id! : "";
     withImage(s, "lunix");
-    expect(setMedia(s, vm, "lunix").ok).toBe(true);
+    expect(setMedia(s, vm, isoOf(s, "lunix")).ok).toBe(true);
     const cables = s.cables;
     s.cables = cables.filter((c) => c.a.device !== "dev3");
     expect(err(installOs(s, vm, "lunix"))).toBe("error.noAutoconf");

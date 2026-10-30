@@ -2,7 +2,7 @@
 import { nowHours } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { hasBmc, modelById } from "../10-catalog/hardware";
-import type { Device, GameState } from "../50-state";
+import type { Device, GameState, MachineState } from "../50-state";
 import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
@@ -70,10 +70,17 @@ export function losePower(s: GameState, d: Device): void {
   if (outcome) pushLog(d, s.hour, outcome);
 }
 
-// Power cut or reset during an install: an OS still installing leaves the disk empty, and so does a first software
-// install from the USB stick.
+// What a power cut leaves of an OS still installing: an empty disk, or after an in-place upgrade the release it came from.
+export const cutOs = (os: MachineState["os"], now: number): MachineState["os"] =>
+  !os || os.installedAt <= now ? os : os.from ? { id: os.id, version: os.from, installedAt: now } : null;
+
+// Power cut or reset during an install: an OS still installing leaves the disk empty, an upgrade rolls back, and a first
+// software install from the USB stick leaves nothing either.
 export function leaveUsb(s: GameState, d: Device): void {
-  if (d.os && d.os.installedAt > nowHours(s)) { d.os = null; pushLog(d, s.hour, "ipmi.log.installAborted"); }
+  if (d.os && d.os.installedAt > nowHours(s)) {
+    pushLog(d, s.hour, d.os.from ? "ipmi.log.upgradeAborted" : "ipmi.log.installAborted");
+    d.os = cutOs(d.os, nowHours(s));
+  }
   if (d.bootFrom !== "usb") return;
   const c = installingOn(s, d.id);
   if (c) { dropCluster(s, c.id); pushLog(d, s.hour, "ipmi.log.installAborted"); }

@@ -17,7 +17,7 @@ Two operating systems. A software runs on one of them, or on both, following wha
 
 A license has eras, `licensing: { from; kind: "once" | "core" | "server" | "account" | "free"; fee }[]` on each OS and each software, and `licensingAt(entry, year)` picks the one of the year. In a `once` era the license is bought when the install starts, as a ledger line ("Windoors Server 2003 license, node001"), and belongs to the machine: `s.licenses: { id; machineId; boughtAt }[]`. A reinstall on the same machine pays nothing, a new machine pays again, and a machine that is sold, scrapped or deleted loses its licenses at the next month's bill. Without the cash the install is refused with the Shop's cash error. A VM from a template, the App Suite's included, buys its OS license the same way. Old saves give every machine that holds Windoors or VMwhere its license for free. A `once` era adds nothing to the monthly `licenseCost`.
 
-An OS install takes the newest version that exists in the game year. Installed machines keep their version; there is no in-place upgrade (reinstall to upgrade). The version shows on the boot screen, the login screen, the machine's detail page and in `uname -a`.
+An OS install takes the version on its media, one image per release. Installed machines keep their version until the player upgrades them in place, one release at a time (section 4.4), or reinstalls. The version shows on the boot screen, the login screen, the machine's detail page and in `uname -a`.
 
 Catalog: `src/sim/10-catalog/server-os.ts` (the existing `os.ts` holds the Pear desktop releases and keeps its name) with `ServerOsId`, `SERVER_OS`, `serverOsAt(id, year)`, `serverOsById`, the license eras, the boot minutes and install hours of section 4.
 
@@ -129,13 +129,13 @@ Uninstall: Lunix `apt-get remove <package>` or the site's uninstall line; Windoo
 
 The installer media are real objects: ISO images the player downloads and one USB stick.
 
-- **Images.** `s.media.images` lists the operating systems whose ISO the player has downloaded, once each. The Download page of the Debiant and Windoors sites has a Download ISO button on every release the year allows; any of them adds the OS, since the installer always installs the newest version of the year. A download takes no game time, and Windoors needs no license to download (the license is paid at install).
-- **The stick.** `s.media.stick` holds the OS written on it and the server it is in. A download runs in real time at the player's own line (`downloadMbps`): the home line's download speed at home, 1 Gbit/s on site at a datacenter, and nothing while travelling, so Debiant's 180 MB take 90 seconds on DSL 16000. Downloaded ISOs sit in Finder's Downloads folder, and the browser's Downloads button opens it. Out of every server the stick is in the player's computer and shows in Finder's sidebar; Write to USB stick on an ISO's context menu, or dragging the ISO onto the stick, writes that OS (`stickHome`). The stick holds one OS at a time, and plugging it in or out plays the USB connect and disconnect sounds. The stick plugs in at the USB port on every server front in the rack's front view, or with the Plug in USB stick tile in the server's inspector. Where the player stands, or in the basement, it is in at once; at a datacenter the player is away from it is hand work of two minutes (`PLUG_HOURS`), with remote hands or a friend through the hand-work sheet, and the stick is in once it is done. Plugging into another server moves it. Unplug works where the player stands. The stick is never lost.
+- **Images.** `s.media.images` lists the ISO images the player has downloaded, one per release, as `OsImage` strings like `lunix@12`. The Download page of the Debiant and Windoors sites has a Download ISO button on every release the year allows, each with its own Downloading and Downloaded state, and the installer installs the release on the media. A download takes no game time, and Windoors needs no license to download (the license is paid at install).
+- **The stick.** `s.media.stick` holds the image written on it and the server it is in. A download runs in real time at the player's own line (`downloadMbps`): the home line's download speed at home, 1 Gbit/s on site at a datacenter, and nothing while travelling, so Debiant's 180 MB take 90 seconds on DSL 16000. Downloaded ISOs sit in Finder's Downloads folder, and the browser's Downloads button opens it. Out of every server the stick is in the player's computer and shows in Finder's sidebar; Write to USB stick on an ISO's context menu, or dragging the ISO onto the stick, writes that OS (`stickHome`). The stick holds one OS at a time, and plugging it in or out plays the USB connect and disconnect sounds. The stick plugs in at the USB port on every server front in the rack's front view, or with the Plug in USB stick tile in the server's inspector. Where the player stands, or in the basement, it is in at once; at a datacenter the player is away from it is hand work of two minutes (`PLUG_HOURS`), with remote hands or a friend through the hand-work sheet, and the stick is in once it is done. Plugging into another server moves it. Unplug works where the player stands. The stick is never lost.
 - **Boot.** The boot menu lists "USB: <OS> <version>" only while the stick is in that server and holds an OS, and `bootFromUsb` is refused with "No bootable device" otherwise. The BIOS main page shows the USB device or Not Present. A server that booted from the stick and loses it shows Operating system not found until it boots again. `installOs` on a server needs the stick to hold that OS.
 - **VMs.** The VM console's Media menu and the hypervisor consoles' Media menus list `mountableImages(s)`, the downloaded images; Eject stays. `setMedia` refuses an image that is not downloaded.
-- **New game and old saves.** No images, the stick empty and out. Machines that already have an OS keep it.
+- **New game and old saves.** No images, the stick empty and out. Machines that already have an OS keep it. A save from before versioned images held bare OS ids; `deserialize` reads each image, the stick and every VM's ISO as the newest release of the save's year (`asImage`).
 
-Actions in `90-actions/media.ts`: `downloadImage(osId)`, `writeStick(osId)`, `plugStick(deviceId, how?)`, `unplugStick()`. Tests: `tests/media.test.ts`; the console and install suites plug the stick through the `withStick` fixture.
+Actions in `90-actions/media.ts`: `downloadImage(image)`, `writeStick(image)`, `plugStick(deviceId, how?)`, `unplugStick()`. Tests: `tests/media.test.ts`; the console and install suites plug the stick through the `withStick` fixture.
 
 ### 4.2 Network during install
 
@@ -146,6 +146,18 @@ A server has network when its cables reach a router whose internet line is up, t
 - **Software.** Installers come from the sites, so `installFromSite(machineId, softwareId)` in `90-actions/console.ts` refuses with `error.noDownload` without network and otherwise calls `installSoftware`. Server Manager and Add or Remove Programs use it and show "The installer could not download the package." on the Progress page. Offline, `apt-get install` prints the fetch error for the software's repo host, or `deb.debiant.org` without a repo line, ending in "Unable to fetch some archives"; `apt-get update` fails to resolve the mirror and every repo the shell added; a script one-liner prints the resolve error of its `curl` or `wget`. Nothing installs.
 
 Tests: `tests/install-network.test.ts`; suites that install Lunix cable the server with the `withNetwork` fixture.
+
+### 4.4 In-place upgrade
+
+An installed OS upgrades to the next release once it is out (`upgradeTarget`), one release at a time, keeping its software.
+
+- **Debiant.** `apt full-upgrade` or `apt dist-upgrade` as root on the machine's shell names the next release and the downtime, asks `[Y/n]` and runs `upgradeOs`. Without network it fails like `apt update`. With no newer release it is the same as `apt upgrade`.
+- **Windoors.** Setup from the next release's media (the stick in that server, or the ISO on that VM) asks "Which type of installation do you want?" after the license terms when the disk holds the release before it. Upgrade shows the downtime and runs `upgradeOs`; Custom is the clean install.
+- **Downtime.** The machine is down for the OS's install hours and its boot, plus POST on a server (`upgradeHours`). The console shows the upgrade's progress and the KVM line reads "Upgrading the system...". Every workload still on the machine at that moment (web spaces on a panel server, VMs on a hypervisor node and what runs inside them) is busy for that time and the partial hour counts against its SLA, as for a software update. Workloads the player migrated off first stay up; nothing migrates by itself.
+- **Power loss.** A power cut or reset mid-upgrade, or stopping a VM, rolls the machine back to the release it came from (`cutOs`); an install from scratch still leaves an empty disk. A Debiant upgrade has its packages before it starts, so losing the network mid-upgrade does nothing.
+- **Licenses.** The upgrade costs nothing; the license held for the machine carries over.
+
+Action `upgradeOs(machineId)` in `90-actions/console.ts`. Tests: `tests/os-upgrade.test.ts`.
 
 ## 5. App installers on paid platforms
 
@@ -456,6 +468,6 @@ Order, two lanes at a time: A alone; B and D1; C and D2; E and G1; F and G2; the
 - "Move Sponsorboard" is read as: the board leaves the bookmarks bar and sits in the index next to the reseller sites. If the intent was a board under each reseller's site, that is a link on each reseller page.
 - No web server software is added; the compatibility examples use the DNS, VPN and panel software the catalog has.
 - The Windoors license is per machine and flat; no per-core tiers.
-- OS versions are install-time only; no in-place upgrades.
+- An OS upgrades in place one release at a time and takes the machine down for its install hours and a reboot; a live cluster migrates nothing by itself, so the player moves VMs off first.
 - The index host is `yahoy.com`; the search box only filters.
 - The per-software login looks on a booted server go away in favour of the OS's screens; VMwhere's DCUI stays.

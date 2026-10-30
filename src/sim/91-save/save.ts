@@ -1,6 +1,7 @@
 import { fillCpus, MODELS, modelById, RENAMED_MODELS } from "../10-catalog/hardware";
 import { leave } from "../90-actions/clusters";
 import { yearOf } from "../00-core/time";
+import { asImage } from "../10-catalog/server-os";
 import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, nextAz, seedDcs } from "../20-world/datacenters";
 import { fillAddresses } from "../60-infra/addresses";
 import { skillById, skillFor } from "../10-catalog/research";
@@ -102,12 +103,13 @@ export function deserialize(raw: string): GameState {
     staff: (data.staff ?? []).map(({ hours: _h, hoursFrom: _f, ...e }: Employee & { hours?: number; hoursFrom?: number }) => ({ ...e, location: e.location ?? null, team: e.team ?? "office", worked: e.worked ?? 0 })),
     techRules: { ...base.techRules, ...data.techRules },
     // upgradeCompute fills the cluster defaults.
-    clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map((w) => workloadDefaults({ ...w, media: (w.media as string) === "iso" ? "lunix" : w.media })), downHours: data.downHours ?? {},
+    clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map((w) => workloadDefaults({ ...w, media: w.media && asImage((w.media as string) === "iso" ? "lunix" : w.media, year) })), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
   // Machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.licenses) s.licenses = heldLicenses(s);
-  s.media = data.media ?? base.media;
+  const media = data.media ?? base.media;
+  s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
   return s;
 }
 

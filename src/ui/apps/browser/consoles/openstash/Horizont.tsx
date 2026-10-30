@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { yearOf } from "../../../../../sim/00-core/time";
 import type { Resources } from "../../../../../sim/10-catalog/products";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
@@ -72,7 +71,7 @@ export function InstanceOverview({ game, v, flavor }: { game: GameState; v: Vm; 
       <h4 className="cx-h">Security Groups</h4>
       <Facts facts={[{ label: "default", value: "ALLOW IPv4 to 0.0.0.0/0, ALLOW IPv4 from default" }]} />
       <h4 className="cx-h">Metadata</h4>
-      <Facts facts={[{ label: "Key Name", value: "None" }, { label: "Image Name", value: v.media ? isoName(v.media, yearOf(game.hour)) : v.own ? v.os : "-" }]} />
+      <Facts facts={[{ label: "Key Name", value: "None" }, { label: "Image Name", value: v.media ? isoName(v.media) : v.own ? v.os : "-" }]} />
       <h4 className="cx-h">Volumes Attached</h4>
       <Facts facts={[{ label: "Volume", value: "No volumes attached." }]} />
       <MediaMenu game={game} v={v} label="Rescue image" none="None" />
@@ -89,7 +88,7 @@ export function InstanceOverview({ game, v, flavor }: { game: GameState; v: Vm; 
 type Page = "overview" | "instances" | "images" | "keys" | "hypervisors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
 
 export function Horizont(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole), year = yearOf(game.hour);
+  const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
   const [page, setPage] = useState<Page>("instances"), [launching, setLaunching] = useState(false);
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
@@ -137,7 +136,7 @@ export function Horizont(p: PanelProps) {
                   {vms.map((v) => (
                     <tr key={v.id}>
                       <td><button className="hz-a" onClick={() => setPage({ vm: v.id, tab: "Overview" })}>{v.name}</button>{v.sub && <span className="cx-sub">{v.sub}</span>}</td>
-                      <td>{v.media ? isoName(v.media, year) : "-"}</td><td className="num">{v.ip}</td><td className="num">{flavorOf(v.w)}</td>
+                      <td>{v.media ? isoName(v.media) : "-"}</td><td className="num">{v.ip}</td><td className="num">{flavorOf(v.w)}</td>
                       <td><span className={`cx-state ${v.tone}`}>{v.tone === "bad" ? "Error" : "Active"}</span></td><td>{v.st === "stopped" ? "Shutdown" : v.state}</td>
                     </tr>
                   ))}
@@ -173,7 +172,7 @@ export function Horizont(p: PanelProps) {
                 <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>Format</th></tr></thead>
                 <tbody>
                   {mountableImages(game).length === 0 && <tr><td colSpan={4} className="cx-empty">No items to display.</td></tr>}
-                  {mountableImages(game).map((o) => <tr key={o.id}><td>{isoName(o.id, year)}</td><td>Image</td><td>Active</td><td>ISO</td></tr>)}
+                  {mountableImages(game).map((o) => <tr key={o}><td>{isoName(o)}</td><td>Image</td><td>Active</td><td>ISO</td></tr>)}
                 </tbody>
               </table>
             </>

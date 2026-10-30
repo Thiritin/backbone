@@ -4,7 +4,7 @@ import { nowHours } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import { DC_BANDWIDTH } from "../10-catalog/network";
 import { homeLineById } from "../20-world/datacenters";
-import { SERVER_OS, type ServerOs, type ServerOsId } from "../10-catalog/server-os";
+import { imageExists, type OsImage, type ServerOsId } from "../10-catalog/server-os";
 import type { GameState } from "../50-state";
 import { handJob, playerAt, present, type How } from "../60-infra/handwork";
 import { locationOf } from "../60-infra/status";
@@ -24,21 +24,21 @@ export function downloadMbps(s: GameState): number {
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
 // The images a VM's Media menu offers.
-export const mountableImages = (s: GameState): ServerOs[] => SERVER_OS.filter((o) => s.media.images.includes(o.id));
+export const mountableImages = (s: GameState): OsImage[] => s.media.images;
 
-export function downloadImage(s: GameState, osId: ServerOsId): ActionResult {
-  if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
-  if (!s.media.images.includes(osId)) s.media.images = [...s.media.images, osId];
+export function downloadImage(s: GameState, image: OsImage): ActionResult {
+  if (!imageExists(image)) return fail("error.unknownOs");
+  if (!s.media.images.includes(image)) s.media.images = [...s.media.images, image];
   return { ok: true };
 }
 
 // Out of every server and not on its way to one, the stick sits in the player's own computer.
 export const stickHome = (s: GameState): boolean => s.media.stick.in === null && !s.devices.some((d) => d.hands?.kind === "stick");
 
-export function writeStick(s: GameState, osId: ServerOsId): ActionResult {
-  if (!s.media.images.includes(osId)) return fail("error.noImage");
+export function writeStick(s: GameState, image: OsImage): ActionResult {
+  if (!s.media.images.includes(image)) return fail("error.noImage");
   if (!stickHome(s)) return fail("error.stickAway");
-  s.media.stick = { ...s.media.stick, os: osId };
+  s.media.stick = { ...s.media.stick, os: image };
   return { ok: true };
 }
 

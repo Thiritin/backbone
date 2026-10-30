@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { yearOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
 import { vmStats } from "../../../../../sim/60-infra/stats";
 import { nodeUsage } from "../../../../../sim/60-infra/usage";
@@ -18,13 +17,13 @@ type Page = "dashboard" | "servers" | "vservers" | "create" | "users" | "request
 const LABELS: Record<string, string> = { start: "Start", stop: "Stop", reset: "Restart", console: "Console", resize: "Change settings", delete: "Delete" };
 const ORDER = ["start", "stop", "reset", "reinstall", "console", "resize", "restore", "recover", "migrate", "delete"];
 const gb = (x: number) => `${+x.toFixed(2)} GB`;
-const template = (v: Vm, year: number) => (v.media ? isoName(v.media, year).replace(/\.iso$/, "") : v.own ? v.os : v.sub);
+const template = (v: Vm) => (v.media ? isoName(v.media).replace(/\.iso$/, "") : v.own ? v.os : v.sub);
 
 function Badge({ v }: { v: Vm }) {
   return <span className={`ovz-badge ${v.tone}`}>{v.st === "running" ? "running" : v.st === "stopped" ? "stopped" : v.state}</span>;
 }
 
-function VsTable({ vms, open, year }: { vms: Vm[]; open: (id: string) => void; year: number }) {
+function VsTable({ vms, open }: { vms: Vm[]; open: (id: string) => void }) {
   return (
     <table className="cx-table ovz-table">
       <thead><tr><th>ID</th><th>Hostname</th><th>IP address</th><th>OS template</th><th>Server</th><th>Status</th><th>RAM</th><th>Disk</th></tr></thead>
@@ -33,7 +32,7 @@ function VsTable({ vms, open, year }: { vms: Vm[]; open: (id: string) => void; y
         {vms.map((v) => (
           <tr key={v.id}>
             <td className="num"><button className="ovz-a" onClick={() => open(v.id)}>{ctid(v)}</button></td>
-            <td>{v.name}</td><td className="num">{v.ip}</td><td>{template(v, year)}</td><td>{v.node}</td><td><Badge v={v} /></td>
+            <td>{v.name}</td><td className="num">{v.ip}</td><td>{template(v)}</td><td>{v.node}</td><td><Badge v={v} /></td>
             <td className="num">{v.w.ramGb} GB</td><td className="num">{v.w.diskGb} GB</td>
           </tr>
         ))}
@@ -44,7 +43,7 @@ function VsTable({ vms, open, year }: { vms: Vm[]; open: (id: string) => void; y
 
 // A physical server: its CPU, memory and disk, the OS templates it holds and the virtual servers on it.
 export function HostPage({ game, c, id, vms, open, create }: { game: GameState; c: Cluster; id: string; vms: Vm[]; open: (id: string) => void; create?: () => void }) {
-  const d = game.devices.find((x) => x.id === id), year = yearOf(game.hour), mine = vms.filter((v) => v.w.deviceId === id), health = summaryOf(game, c, id);
+  const d = game.devices.find((x) => x.id === id), mine = vms.filter((v) => v.w.deviceId === id), health = summaryOf(game, c, id);
   return (
     <>
       <h2>Physical server {d?.hostname ?? d?.name}</h2>
@@ -57,12 +56,12 @@ export function HostPage({ game, c, id, vms, open, create }: { game: GameState; 
           <thead><tr><th>Name</th><th>Virtual servers</th></tr></thead>
           <tbody>
             {mountableImages(game).length === 0 && <tr><td colSpan={2} className="cx-empty">No OS templates</td></tr>}
-            {mountableImages(game).map((o) => <tr key={o.id}><td>{isoName(o.id, year).replace(/\.iso$/, "")}</td><td className="num">{mine.filter((v) => v.media === o.id).length}</td></tr>)}
+            {mountableImages(game).map((o) => <tr key={o}><td>{isoName(o).replace(/\.iso$/, "")}</td><td className="num">{mine.filter((v) => v.media === o).length}</td></tr>)}
           </tbody>
         </table>
       </fieldset>
       <fieldset className="ovz-box"><legend>Virtual servers</legend>
-        <VsTable vms={mine} open={open} year={year} />
+        <VsTable vms={mine} open={open} />
         {create && <div className="cx-tools"><button className="ovz-btn" onClick={create}>Create virtual server</button></div>}
       </fieldset>
     </>
@@ -71,10 +70,10 @@ export function HostPage({ game, c, id, vms, open, create }: { game: GameState; 
 
 // A container: its properties, its resources with the beancounters, and the bevelled action buttons.
 export function CtPage({ game, v, host }: { game: GameState; v: Vm; host: string }) {
-  const [reinstall, setReinstall] = useState(false), st = vmStats(game, v.id)!, now = st.now, w = v.w, year = yearOf(game.hour);
+  const [reinstall, setReinstall] = useState(false), st = vmStats(game, v.id)!, now = st.now, w = v.w;
   const domain = /^[\d.]+$/.test(host) ? "localdomain" : host.split(".").slice(1).join(".") || host, ns = v.ip ? v.ip.replace(/\.\d+$/, ".1") : "";
   const props: [string, string][] = [
-    ["ID", String(ctid(v))], ["Hostname", w.hostname ?? v.name], ["IP address", v.ip], ["OS template", template(v, year)], ["Server", v.node],
+    ["ID", String(ctid(v))], ["Hostname", w.hostname ?? v.name], ["IP address", v.ip], ["OS template", template(v)], ["Server", v.node],
     ["Status", v.state], ["Start on boot", "yes"], ["Nameserver", ns], ["Search domain", domain], ["User", "admin"],
   ];
   const half = Math.ceil(props.length / 2), pairs = props.slice(0, half).map((a, i) => [a, props[half + i]] as const);
@@ -114,7 +113,7 @@ export function CtPage({ game, v, host }: { game: GameState; v: Vm; host: string
 }
 
 export function OpenVeeZee(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, [page, setPage] = useState<Page>("dashboard"), year = yearOf(game.hour);
+  const era = eraAt(ERAS, p.game), { game, c, f } = p, [page, setPage] = useState<Page>("dashboard");
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
     <div className="cx ovz ovz-login" data-era={era}>
@@ -187,7 +186,7 @@ export function OpenVeeZee(p: PanelProps) {
           {page === "vservers" && (
             <>
               <h2>Virtual servers</h2>
-              <VsTable vms={vms} open={open} year={year} />
+              <VsTable vms={vms} open={open} />
               {toCreate && <div className="cx-tools"><button className="ovz-btn" onClick={toCreate}>Create virtual server</button></div>}
             </>
           )}

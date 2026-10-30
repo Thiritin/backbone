@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { nowHours, yearOf } from "../../../sim/00-core/time";
+import { nowHours } from "../../../sim/00-core/time";
 import { softwareById } from "../../../sim/10-catalog/platforms";
-import { serverOsAt, serverOsById, type ServerOsId } from "../../../sim/10-catalog/server-os";
+import { serverOsById, type ServerOsId } from "../../../sim/10-catalog/server-os";
 import type { Device, GameState, NetFail } from "../../../sim/50-state";
 import type { Workload } from "../../../sim/60-infra/cluster";
 import { machineNet } from "../../../sim/60-infra/oob";
 import { drivesOf, raidUsable } from "../../../sim/60-infra/status";
-import { eraseDisk, installCase, installOs, setMedia } from "../../../sim/90-actions/console";
+import { eraseDisk, installCase, installOs, setMedia, upgradeHours, upgradeOs, upgradeTarget } from "../../../sim/90-actions/console";
 import { reboot } from "../../../sim/90-actions/hardware";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
@@ -91,9 +91,9 @@ const LANGUAGES = ["English", "Deutsch", "Français", "Español", "Nederlands"];
 
 // The Debiant text-mode installer: the boot menu, language, hostname, the partitioner with its erase confirmation; the
 // install itself and the reboot follow from the simulation.
-function useLunixSetup(game: GameState, m: Machine): Keyed {
+function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
   const [step, setStep] = useState<LunixStep>("boot");
-  const tg = useTarget(game, m), version = serverOsAt("lunix", yearOf(game.hour)).version, net = machineNet(game, m.id);
+  const tg = useTarget(game, m), net = machineNet(game, m.id);
   const go = (to: LunixStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
   const back = (to: LunixStep): Row => ({ label: "<Go Back>", run: go(to) });
   const pages: Record<LunixStep, Page> = {
@@ -130,12 +130,15 @@ function Debiant({ title, body, note, err, children }: { title: string; body?: R
   );
 }
 
-type WinStep = "start" | "edition" | "license" | "where" | "install" | "delete";
+type WinStep = "start" | "edition" | "license" | "type" | "upgrade" | "where" | "install" | "delete";
 
-// Windoors Setup: the blue text-mode first stage of 2003, or the Install Windoors window of 2008 and later.
-function useWindoorsSetup(game: GameState, m: Machine): Keyed {
+// Windoors Setup: the blue text-mode first stage of 2003, or the Install Windoors window of 2008 and later. Media one
+// release ahead of the Windoors on the disks offers the in-place upgrade.
+function useWindoorsSetup(game: GameState, m: Machine, version: string): Keyed {
   const [step, setStep] = useState<WinStep>("start");
-  const tg = useTarget(game, m), version = serverOsAt("windoors", yearOf(game.hour)).version, era = winEra(version);
+  const tg = useTarget(game, m), era = winEra(version), act = useStore((s) => s.act);
+  const upgrade = m.os?.id === "windoors" && upgradeTarget(game, m.id)?.version === version;
+  const upgradeNow = () => { const r = act(upgradeOs, m.id); tg.setNote(r.ok ? "" : t(r.error ?? "")); if (r.ok) setStep("start"); };
   const go = (to: WinStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
   const setup = () => tg.install("windoors") && setStep("start");
   const install = () => (tg.found.kind === "empty" && !m.os ? setup() : go("install")());
@@ -145,6 +148,8 @@ function useWindoorsSetup(game: GameState, m: Machine): Keyed {
   const pages: Record<WinStep, Page> = era === 0 ? {
     start: { title: "Welcome to Setup.", body: <div>To set up Windoors now, press ENTER. To quit Setup, press F3.</div>, rows: [], keys: { Enter: go("license"), F3: tg.leave }, foot: "ENTER=Continue  F3=Quit" },
     edition: { title: "", rows: [] },
+    type: { title: "", rows: [] },
+    upgrade: { title: "", rows: [] },
     license: { title: "Windoors Licensing Agreement", body: <div>Press F8 to accept the agreement and continue Setup.</div>, rows: [], keys: { F8: go("where"), Escape: go("start") }, foot: "F8=I agree  ESC=I do not agree" },
     where: { title: "The following list shows the existing partitions and unpartitioned space on this computer.", rows: [{ label: part, run: install }], keys: { d: del, D: del, F3: tg.leave }, foot: "ENTER=Install  D=Delete Partition  F3=Quit" },
     install: { title: "Setup will format the partition and erase it.", body: tg.what, rows: [], keys: { Enter: setup, Escape: go("where") }, foot: "ENTER=Continue  ESC=Cancel" },
@@ -152,7 +157,9 @@ function useWindoorsSetup(game: GameState, m: Machine): Keyed {
   } : {
     start: { title: `Windoors Server ${version}`, rows: [{ label: "Install now", run: go("edition") }] },
     edition: { title: "Select the operating system you want to install", rows: ["Standard", "Datacenter"].map((e) => ({ label: `Windoors Server ${version} ${e}${suffix}`, run: go("license") })) },
-    license: { title: "License terms", rows: [{ label: "I accept the license terms", run: go("where") }, { label: "Back", run: go("edition") }] },
+    license: { title: "License terms", rows: [{ label: "I accept the license terms", run: go(upgrade ? "type" : "where") }, { label: "Back", run: go("edition") }] },
+    type: { title: "Which type of installation do you want?", rows: [{ label: "Upgrade: Keep files, settings and applications", run: go("upgrade") }, { label: "Custom: Install Windoors only (advanced)", run: go("where") }, { label: "Back", run: go("license") }] },
+    upgrade: { title: `Upgrade to Windoors Server ${version}`, body: <div>{t("term.apt.downtime", { minutes: upgrade ? Math.round(upgradeHours(game, m.id) * 60) : 0 })}</div>, rows: [{ label: "Upgrade", run: upgradeNow }, { label: "Back", run: go("type") }] },
     where: { title: "Where do you want to install Windoors?", body: <div className="win-disk">Drive 0 {tg.empty ? "Unallocated Space" : "Partition 1"}<span>{tg.array}</span></div>, rows: [{ label: "Next", run: install }, { label: "Delete", dim: tg.empty, run: del }, { label: "Back", run: go("license") }] },
     install: { title: "Windoors might be unable to boot", body: tg.what, rows: [{ label: "OK", run: setup }, { label: "Cancel", run: go("where") }] },
     delete: { title: "Delete partition", body: tg.what, rows: [{ label: "OK", run: tg.erase }, { label: "Cancel", run: go("where") }] },
@@ -188,9 +195,9 @@ function WinSetup({ era, title, note, children }: { era: 1 | 2; title: string; n
   );
 }
 
-// The installer the machine booted into: the stick's chosen OS on a server, the ISO's on a VM.
-export function useInstaller(game: GameState, m: Machine, os: ServerOsId): Keyed {
-  const lunix = useLunixSetup(game, m), windoors = useWindoorsSetup(game, m);
+// The installer the machine booted into: the stick's OS and version on a server, the ISO's on a VM.
+export function useInstaller(game: GameState, m: Machine, os: ServerOsId, version: string): Keyed {
+  const lunix = useLunixSetup(game, m, version), windoors = useWindoorsSetup(game, m, version);
   return os === "windoors" ? windoors : lunix;
 }
 
@@ -199,8 +206,9 @@ const WIN_STEPS = ["Copying Windoors files", "Getting files ready for installati
 const GUI_STEPS = ["Collecting information", "Dynamic Update", "Preparing installation", "Installing Windoors", "Finalizing installation"];
 
 // The install running over its hours: the Debiant progress bar, or Setup's percentages with its two reboots.
-export function OsInstalling({ game, m, os, progress }: { game: GameState; m: Machine; os: ServerOsId; progress: number }) {
-  const version = m.os?.version ?? serverOsAt(os, yearOf(game.hour)).version;
+export function OsInstalling({ m, os, progress }: { m: Machine; os: ServerOsId; progress: number }) {
+  const version = m.os?.version ?? "";
+  if (m.os?.from) return <OsUpgrading os={os} version={version} progress={progress} />;
   if (os === "lunix") {
     if (progress >= 0.95) return <Debiant title="Finish the installation" body={<div>Installation complete</div>} />;
     const stage = LUNIX_STAGES[Math.min(LUNIX_STAGES.length - 1, Math.floor((progress / 0.95) * LUNIX_STAGES.length))];
@@ -226,6 +234,20 @@ export function OsInstalling({ game, m, os, progress }: { game: GameState; m: Ma
   return (
     <WinSetup era={era} title="Installing Windoors...">
       <ul className="ws-check">{WIN_STEPS.map((x, i) => <li key={x} className={i === at ? "on" : i < at ? "done" : ""}>{x}{i === at && i === 1 ? ` (${pct(share)})` : ""}</li>)}</ul>
+    </WinSetup>
+  );
+}
+
+const LUNIX_UPGRADE = ["Unpacking the new release", "Setting up packages", "Removing obsolete packages", "Updating GRUB boot loader"];
+const WIN_UPGRADE = ["Copying files", "Installing features and drivers", "Configuring settings"];
+
+// An in-place upgrade running over its hours, software kept.
+function OsUpgrading({ os, version, progress }: { os: ServerOsId; version: string; progress: number }) {
+  const steps = os === "lunix" ? LUNIX_UPGRADE : WIN_UPGRADE, at = Math.min(steps.length - 1, Math.floor(progress * steps.length));
+  if (os === "lunix") return <Debiant title={`Upgrade to Debiant GNU/Lunix ${version}`} body={<><div>{steps[at]}...</div>{bar(progress)}<div>{pct(progress)}</div></>} />;
+  return (
+    <WinSetup era={winEra(version) === 2 ? 2 : 1} title={`Upgrading Windoors Server ${version}`}>
+      <ul className="ws-check">{steps.map((x, i) => <li key={x} className={i === at ? "on" : i < at ? "done" : ""}>{x}{i === at ? ` (${pct(progress)})` : ""}</li>)}</ul>
     </WinSetup>
   );
 }

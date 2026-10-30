@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { nowHours, yearOf } from "../../../sim/00-core/time";
 import { modelById } from "../../../sim/10-catalog/hardware";
-import { serverOsAt, serverOsById, type ServerOsId } from "../../../sim/10-catalog/server-os";
+import { imageParts, serverOsById, type OsImage } from "../../../sim/10-catalog/server-os";
 import type { Device, GameState } from "../../../sim/50-state";
 import { machineScreen, stickOs, type MachineScreen } from "../../../sim/60-infra/oob";
 import { drivesOf } from "../../../sim/60-infra/status";
@@ -23,9 +23,9 @@ const LABELS: Record<string, string> = {
   Backspace: "Bksp", ArrowLeft: "←", ArrowUp: "↑", ArrowDown: "↓", ArrowRight: "→", d: "D", CtrlAltDel: "Ctrl+Alt+Del",
 };
 const HANDLED = new Set([...Object.keys(LABELS)]);
-const stickName = (os: ServerOsId, year: number) => {
-  const v = serverOsAt(os, year).version;
-  return os === "lunix" ? `Debiant ${v} netinst` : `Windoors Server ${v}`;
+const stickName = (img: OsImage) => {
+  const { id, version } = imageParts(img);
+  return id === "lunix" ? `Debiant ${version} netinst` : `Windoors Server ${version}`;
 };
 
 function Post({ game, d }: { game: GameState; d: Device }) {
@@ -48,7 +48,7 @@ const UP = new Set<MachineScreen["kind"]>(["login", "desktop", "installing"]);
 
 // What a machine shows once its firmware is through: the installer on the media, the install, the OS booting, the Lunix
 // login and shell or the Windoors logon and desktop, or nothing to boot. Login lasts until the machine boots again.
-export function useOsScreen(game: GameState, m: Machine, active: boolean, stick: ServerOsId): { screen: MachineScreen; look: string; view: ReactNode; onKey: (k: string) => void; keys: string[] } {
+export function useOsScreen(game: GameState, m: Machine, active: boolean, stick: OsImage | null): { screen: MachineScreen; look: string; view: ReactNode; onKey: (k: string) => void; keys: string[] } {
   const token = isDevice(m) ? m.bootUntil ?? 0 : 0;
   const [login, setLogin] = useSessionState<number | null>(`console.${m.id}.login`, null);
   const bare = machineScreen(game, m.id), loggedIn = login === token && UP.has(bare.kind);
@@ -56,17 +56,18 @@ export function useOsScreen(game: GameState, m: Machine, active: boolean, stick:
   useEffect(() => { if (login !== null && !loggedIn) setLogin(null); }, [login, loggedIn]);
   const logIn = () => setLogin(token), logOut = () => setLogin(null);
   const version = m.os?.version ?? "", os = m.os?.id ?? "lunix";
-  const media = screen.kind === "bootMenu" ? (screen.media.length === 1 ? screen.media[0] : stick) : stick;
-  const installer = useInstaller(game, m, media);
+  const media = screen.kind === "bootMenu" ? screen.media[0] : stick;
+  const image = media ? imageParts(media) : { id: "lunix" as const, version: "" };
+  const installer = useInstaller(game, m, image.id, image.version);
   const lunix = useLunix(game, m, version, loggedIn, logIn, logOut, active);
   const windoors = useWindoors(game, m, version, loggedIn, logIn, logOut);
   const none = { onKey: () => {}, keys: [] as string[] };
   const act = useStore((s) => s.act);
   const win = (v: string) => (winEra(v) === 0 ? "wt" : "ws");
   switch (screen.kind) {
-    case "bootMenu": return { screen, look: media === "lunix" ? "deb" : win(serverOsAt("windoors", yearOf(game.hour)).version), ...installer };
+    case "bootMenu": return { screen, look: image.id === "lunix" ? "deb" : win(image.version), ...installer };
     case "osInstallFailed": return { screen, look: "deb", view: <NetFailed reason={screen.reason} />, onKey: () => act(dismissInstallFail, m.id), keys: ["Enter"] };
-    case "osInstall": return { screen, look: screen.os === "lunix" ? "deb" : screen.progress < 0.45 && winEra(version) === 0 ? "wt" : "win", view: <OsInstalling game={game} m={m} os={screen.os} progress={screen.progress} />, ...none };
+    case "osInstall": return { screen, look: screen.os === "lunix" ? "deb" : screen.progress < 0.45 && winEra(version) === 0 ? "wt" : "win", view: <OsInstalling m={m} os={screen.os} progress={screen.progress} />, ...none };
     case "booting": {
       const left = isDevice(m) ? (m.bootUntil ?? 0) - nowHours(game) : 0, share = 1 - left / (serverOsById(screen.os).bootMinutes / 60);
       return { screen, look: screen.os === "lunix" ? "lunix" : "win", view: screen.os === "lunix" ? <LunixBoot game={game} m={m} version={version} share={share} /> : <WindoorsBoot version={version} />, ...none };
@@ -108,10 +109,10 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   // F11 during POST asks for the boot menu once POST is through; it holds for that boot only.
   const [menuFor, setMenuFor] = useState<number | null>(null);
   const [pick, setPick] = useState(0);
-  const os = useOsScreen(game, d, active, usb ?? "lunix"), kind = os.screen.kind, year = yearOf(game.hour);
+  const os = useOsScreen(game, d, active, usb), kind = os.screen.kind;
   useEffect(() => { if (active) focusIn(box.current); }, [active, kind]);
   const menu = menuFor !== null && menuFor === d.bootUntil && kind !== "post" && kind !== "setup" && kind !== "dark";
-  const devices = ["Hard Disk", ...(usb ? [`USB: ${stickName(usb, year)}`] : []), "Network (PXE)"];
+  const devices = ["Hard Disk", ...(usb ? [`USB: ${stickName(usb)}`] : []), "Network (PXE)"];
   const dark = kind === "dark" || (via === "bmc" && d.bmcHung);
   const shown = dark ? "dark" : menu ? "menu" : kind === "setup" ? "bios" : kind;
   const onKey = (key: string) => {

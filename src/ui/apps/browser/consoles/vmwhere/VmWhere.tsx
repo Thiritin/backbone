@@ -62,7 +62,7 @@ export function VmSummary({ game, v, era }: { game: GameState; v: Vm; era: Look 
             <tr><th>Hard disk 1</th><td className="num">{w.diskGb} GB</td></tr>
             <tr><th>Datastore</th><td>{v.storage}</td></tr>
             <tr><th>Network adapter 1</th><td>VM Network ({v.st === "running" ? "connected" : "disconnected"})</td></tr>
-            <tr><th>CD/DVD drive 1</th><td>{v.media ? isoName(v.media, yearOf(game.hour)) : "Disconnected"}</td></tr>
+            <tr><th>CD/DVD drive 1</th><td>{v.media ? isoName(v.media) : "Disconnected"}</td></tr>
             <tr><th>Compatibility</th><td>{compat}</td></tr>
           </tbody></table>
         </section>

@@ -46,3 +46,23 @@ export const serverOsAt = (id: ServerOsId, year: number): ServerOsVersion => {
   const vs = serverOsById(id).versions;
   return [...vs].reverse().find((x) => x.from <= year) ?? vs[0];
 };
+
+// An ISO image or installed media: one version of one OS, as "lunix@12".
+export type OsImage = `${ServerOsId}@${string}`;
+export const imageOf = (id: ServerOsId, version: string): OsImage => `${id}@${version}`;
+export const imageParts = (img: OsImage): { id: ServerOsId; version: string } => {
+  const at = img.indexOf("@");
+  return { id: img.slice(0, at) as ServerOsId, version: img.slice(at + 1) };
+};
+export const imageName = (img: OsImage): string => { const { id, version } = imageParts(img); return `${serverOsById(id).name} ${version}`; };
+export const imageExists = (img: string): img is OsImage => {
+  const { id, version } = imageParts(img as OsImage);
+  return SERVER_OS.some((o) => o.id === id && o.versions.some((x) => x.version === version));
+};
+// Saves from before versioned images held the bare OS id, read as the newest version of the save's year.
+export const asImage = (x: string, year: number): OsImage => (x.includes("@") ? (x as OsImage) : imageOf(x as ServerOsId, serverOsAt(x as ServerOsId, year).version));
+// The release after the installed one, once it is out: an in-place upgrade goes one release at a time.
+export const nextVersion = (id: ServerOsId, version: string, year: number): ServerOsVersion | null => {
+  const vs = serverOsById(id).versions, next = vs[vs.findIndex((x) => x.version === version) + 1];
+  return vs.some((x) => x.version === version) && next && next.from <= year ? next : null;
+};

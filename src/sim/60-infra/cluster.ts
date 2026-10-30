@@ -6,7 +6,7 @@ import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, GameState, MachineState } from "../50-state";
-import type { ServerOsId } from "../10-catalog/server-os";
+import type { OsImage } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
 import type { VmSample } from "./stats";
 import { deviceVendor, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, working, burning } from "./status";
@@ -64,7 +64,7 @@ export interface Workload extends Resources, Partial<MachineState> {
   hostname?: string;
   // The installer ISO of an operating system loaded in one of the player's own VMs (90-actions/console.ts); the VM boots
   // the installer while it is in.
-  media?: ServerOsId;
+  media?: OsImage;
   migrating?: { clusterId: string; doneAt: number; announced?: true };
   // A pulled plug corrupted the data: it counts as lost until recovered (recoverDoneAt is the hour a recovery finishes) or
   // restored; noticed is set once the alert went out, recoverFailed once a recovery did not bring the data back.

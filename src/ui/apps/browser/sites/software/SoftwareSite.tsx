@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { euroPrice } from "../../../../../sim/00-core/money";
 import { SOFTWARE, type Software } from "../../../../../sim/10-catalog/platforms";
-import { licensingAt, SERVER_OS, serverOsAt, serverOsById, type LicenseEra, type LicenseKind, type ServerOs, type ServerOsId } from "../../../../../sim/10-catalog/server-os";
+import { imageOf, imageParts, licensingAt, SERVER_OS, serverOsById, type LicenseEra, type LicenseKind, type OsImage, type ServerOs, type ServerOsId } from "../../../../../sim/10-catalog/server-os";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { useStore } from "../../../../store";
 import { downloadMbps } from "../../../../../sim/90-actions/media";
@@ -66,9 +66,9 @@ export function Pricing({ p, className }: { p: Product; className?: string }) {
 }
 
 const IMAGE: Record<ServerOsId, (version: string) => string> = { lunix: (v) => `Debiant ${v} netinst`, windoors: (v) => `Windoors Server ${v}` };
-export const isoFile = (id: ServerOsId, year: number) => `${IMAGE[id](serverOsAt(id, year).version).toLowerCase().replaceAll(" ", "-")}.iso`;
+export const isoFile = (img: OsImage) => { const { id, version } = imageParts(img); return `${IMAGE[id](version).toLowerCase().replaceAll(" ", "-")}.iso`; };
 
-function IsoButton({ id, has }: { id: ServerOsId; has: boolean }) {
+function IsoButton({ id, has }: { id: OsImage; has: boolean }) {
   const p = useProgress(id), online = useStore((s) => downloadMbps(s.game) > 0);
   const label = has ? "Downloaded" : p !== null ? `Downloading ${Math.floor(p * 100)}%` : online ? "Download ISO" : "No internet connection";
   return <button type="button" className="sws-iso" disabled={has || p !== null || !online} onClick={() => startDownload(id)}>{label}</button>;
@@ -79,16 +79,16 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
   const [copied, setCopied] = useState(false);
   const media = useStore((s) => s.game.media);
   if (p.os) {
-    const id = p.os.id, out = p.os.versions.filter((v) => v.from <= year).reverse(), has = media.images.includes(id);
+    const id = p.os.id, out = p.os.versions.filter((v) => v.from <= year).reverse();
     return (
       <div className={className}>
-        <p>Download the ISO and write it to the USB stick in Finder to boot a server from it, or mount it in a virtual machine, to install {IMAGE[id](serverOsAt(id, year).version)}.</p>
+        <p>Download the ISO and write it to the USB stick in Finder to boot a server from it, or mount it in a virtual machine, to install {p.os.name}.</p>
         <table>
           <thead><tr><th>Release</th><th>Since</th><th /></tr></thead>
           <tbody>{out.map((v) => (
             <tr key={v.version}>
               <td>{p.os!.name} {v.version}{v.name && ` ${v.name}`}</td><td className="num">{v.from}</td>
-              <td><IsoButton id={id} has={has} /></td>
+              <td><IsoButton id={imageOf(id, v.version)} has={media.images.includes(imageOf(id, v.version))} /></td>
             </tr>
           ))}</tbody>
         </table>

@@ -5,7 +5,7 @@ import { formatClock, yearOf } from "../../../../sim/00-core/time";
 import { balancerIn, SOFTWARE, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import { HA_SKILL } from "../../../../sim/10-catalog/research";
-import { APP_SUITE_FEE, licensingAt, serverOsAt, serverOsById, type ServerOsId } from "../../../../sim/10-catalog/server-os";
+import { APP_SUITE_FEE, imageParts, licensingAt, serverOsById, type OsImage } from "../../../../sim/10-catalog/server-os";
 import type { GameState } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
@@ -38,7 +38,7 @@ export const GLYPH: Record<string, string> = {
 
 export interface Vm {
   w: Workload; id: string; name: string; sub: string; st: VmState; state: string; tone: string; own: boolean;
-  node: string; ip: string; os: string; media: ServerOsId | null; use: Resources; actions: PanelAction[]; panel: ReactNode;
+  node: string; ip: string; os: string; media: OsImage | null; use: Resources; actions: PanelAction[]; panel: ReactNode;
   // The datastore its disk is on, or Local.
   storage: string;
 }
@@ -46,7 +46,7 @@ export interface Vm {
 const num = (n: number) => `${+n.toFixed(2)}`;
 export const nodeName = (game: GameState, id: string | null) => { const d = game.devices.find((x) => x.id === id); return d ? d.hostname ?? d.label ?? d.name : ""; };
 export const osText = (w: Workload) => (w.os ? `${serverOsById(w.os.id).name} ${w.os.version}` : "None");
-export const isoName = (id: ServerOsId, year: number) => `${id}-${serverOsAt(id, year).version}.iso`.replace(/\s+/g, "-").toLowerCase();
+export const isoName = (img: OsImage) => `${img.replace("@", "-")}.iso`.replace(/\s+/g, "-").toLowerCase();
 
 // An own VM's size, changed through resizeVm.
 function SizeForm({ w, done }: { w: Workload; done: () => void }) {
@@ -121,13 +121,13 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
 }
 
 // The facts a VM page lists; each console picks and labels its own.
-export function vmFacts(game: GameState, v: Vm): Record<"status" | "node" | "ip" | "os" | "cpu" | "memory" | "disk" | "backup" | "media", Fact> {
+export function vmFacts(_game: GameState, v: Vm): Record<"status" | "node" | "ip" | "os" | "cpu" | "memory" | "disk" | "backup" | "media", Fact> {
   return {
     status: { label: "Status", value: v.state }, node: { label: "Node", value: v.node }, ip: { label: "IP address", value: v.ip || "None", num: true },
     os: { label: "Guest OS", value: v.own ? v.os : v.sub }, cpu: { label: "Processors", value: `${v.w.vcpu} vCPU`, num: true },
     memory: { label: "Memory", value: ram(+v.w.ramGb.toFixed(2)), num: true }, disk: { label: "Hard disk", value: disk(v.w.diskGb), num: true },
     backup: { label: "Last backup", value: v.w.backupAt === null ? "None" : day(v.w.backupAt), num: true },
-    media: { label: "CD/DVD drive", value: v.media ? isoName(v.media, yearOf(game.hour)) : "Empty", num: !!v.media },
+    media: { label: "CD/DVD drive", value: v.media ? isoName(v.media) : "Empty", num: !!v.media },
   };
 }
 
@@ -166,13 +166,13 @@ function Clone({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster;
 
 // The ISO loaded in an own VM, picked from the downloaded images.
 export function MediaMenu({ game, v, label = "Media", none = "No media", className = "cx-field" }: { game: GameState; v: Vm; label?: string; none?: string; className?: string }) {
-  const act = useStore((s) => s.act), year = yearOf(game.hour);
+  const act = useStore((s) => s.act);
   if (!v.own) return null;
   return (
     <label className={className}>{label}
-      <select value={v.media ?? ""} onChange={(e) => act(setMedia, v.id, (e.target.value || null) as ServerOsId | null)}>
+      <select value={v.media ?? ""} onChange={(e) => act(setMedia, v.id, (e.target.value || null) as OsImage | null)}>
         <option value="">{none}</option>
-        {mountableImages(game).map((o) => <option key={o.id} value={o.id}>{isoName(o.id, year)}</option>)}
+        {mountableImages(game).map((o) => <option key={o} value={o}>{isoName(o)}</option>)}
       </select>
     </label>
   );
@@ -184,7 +184,7 @@ export interface Step { id: string; label: string; body: ReactNode }
 // deploys with. create returns the new VM's id.
 export function useNewVm(game: GameState, c: Cluster) {
   const act = useStore((s) => s.act), [size, setSize] = useState<Resources>(PANEL_VM_SIZE);
-  const [iso, setIso] = useState<ServerOsId | "">(""), [suite, setSuite] = useState<string | null>(null);
+  const [iso, setIso] = useState<OsImage | "">(""), [suite, setSuite] = useState<string | null>(null);
   const create = (): string | null => {
     const r = suite ? act(deployFromSuite, c.id, size, suite) : act(createVm, c.id, size);
     if (!r.ok || !r.id) return null;
@@ -194,13 +194,13 @@ export function useNewVm(game: GameState, c: Cluster) {
   };
   const isoPick = (label = "ISO image", none = "Do not use any media") => (
     <label className="cx-field">{label}
-      <select value={iso} onChange={(e) => setIso(e.target.value as ServerOsId | "")}>
+      <select value={iso} onChange={(e) => setIso(e.target.value as OsImage | "")}>
         <option value="">{none}</option>
-        {mountableImages(game).map((o) => <option key={o.id} value={o.id}>{isoName(o.id, yearOf(game.hour))}</option>)}
+        {mountableImages(game).map((o) => <option key={o} value={o}>{isoName(o)}</option>)}
       </select>
     </label>
   );
-  return { size, setSize, iso, isoLabel: iso ? isoName(iso, yearOf(game.hour)) : null, isoPick, suite, setSuite, create };
+  return { size, setSize, iso, isoLabel: iso ? isoName(iso) : null, isoPick, suite, setSuite, create };
 }
 
 // A step wizard: the step list or tab row, the current step, Back, Next and the finish button on the last step.
@@ -421,7 +421,8 @@ export function ConsoleThumb({ game, v, className = "cx-thumb", label }: { game:
     : win ? (sc.kind === "login" ? "Press Ctrl+Alt+Delete to log on" : sc.kind === "desktop" ? "Windoors Server" : "Windoors Setup")
     : sc.kind === "login" ? `${osText(v.w)} ${host} tty1\n\n${host} login: _`
     : sc.kind === "booting" && v.w.os ? bootLines(game, v.w, v.w.os.version).slice(-8).map((l) => l.text).join("\n")
-    : sc.kind === "bootMenu" || sc.kind === "osInstall" ? `${v.media ? serverOsById(v.media).name : ""} installer`
+    : sc.kind === "osInstall" && v.w.os?.from ? `${serverOsById(sc.os).name} upgrade`
+    : sc.kind === "bootMenu" || sc.kind === "osInstall" ? `${v.media ? serverOsById(imageParts(v.media).id).name : ""} installer`
     : sc.kind === "notFound" ? "No bootable device." : "";
   return (
     <button className={className} data-look={win ? "windoors" : "text"} disabled={!v.own} onClick={() => openConsole(v.id)} aria-label={label ?? "Console"}>

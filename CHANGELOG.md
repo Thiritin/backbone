@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- The Debiant and Windoors sites now offer every release as its own download, and an install puts the release that is on the stick or ISO onto the machine.
+- Servers and VMs can upgrade their operating system in place to the next release, with `apt full-upgrade` on Debiant or Windoors Setup from the next release's media, and everything still running on the machine is offline until it finishes, so move VMs off first.
 - Stopped VMs on a VMwhere cluster can become templates, which clone into ready VMs with the same size, operating system and software after a disk copy.
 - VMs on a VMwhere cluster can keep up to three snapshots to revert to, which grow on their storage until you delete them.
 - New games start on Mom's DSL, a free private line with 6 Mbit/s down, 0.5 Mbit/s up and a dynamic address, so your first server can go online right away.

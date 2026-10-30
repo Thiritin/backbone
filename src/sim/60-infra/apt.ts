@@ -8,7 +8,7 @@ import type { GameState } from "../50-state";
 import { installBlock, uninstallSoftware, upgradable, upgradeServer } from "../90-actions/software";
 import { clustersOn, machineOf } from "./cluster";
 import { DESK, releaseOf, treeOf } from "./fs";
-import { installFromSite } from "../90-actions/console";
+import { installFromSite, upgradeHours, upgradeOs, upgradeTarget } from "../90-actions/console";
 import { machineNet, osUp } from "./oob";
 import { consoleSuffix } from "../80-business/consoles";
 import { fqdn } from "../30-customers/domains";
@@ -22,7 +22,7 @@ export function apt(s: GameState, host: string, args: string[], root: boolean): 
   const op = args.find((a) => !a.startsWith("-")), yes = args.some((a) => a === "-y" || a === "--yes" || a === "--assume-yes");
   const due = host === DESK ? [] : upgradable(s, host), r = releaseOf(s, host);
   if (!op) return { output: lines("term.apt.usage"), failed: true };
-  if ((op === "update" || op === "upgrade") && !root) return { output: lines("term.apt.lock"), failed: true };
+  if (["update", "upgrade", "full-upgrade", "dist-upgrade"].includes(op) && !root) return { output: lines("term.apt.lock"), failed: true };
   switch (op) {
     case "update":
       if (host !== DESK && machineNet(s, host)) return unresolved(s, host, r.codename);
@@ -36,6 +36,17 @@ export function apt(s: GameState, host: string, args: string[], root: boolean): 
       const plan = [...head, t("term.apt.will"), `  ${due.map((u) => u.pkg).join(" ")}`, t("term.apt.summary", { n: due.length }), ...(minutes ? [t("term.apt.downtime", { minutes })] : [])];
       if (!yes) return { output: plan, confirm: true };
       return { output: [...plan, ...due.map((u) => t("term.apt.setup", { pkg: u.pkg, to: u.to }))], action: [upgradeServer, host] };
+    }
+    case "full-upgrade":
+    case "dist-upgrade": {
+      // docs/design/software.md, section 4.4: the next release when one is out, else the same as upgrade.
+      const next = host === DESK ? null : upgradeTarget(s, host);
+      if (!next) return apt(s, host, args.map((a) => (a === op ? "upgrade" : a)), root);
+      if (machineNet(s, host)) return unresolved(s, host, r.codename);
+      const minutes = Math.round(upgradeHours(s, host) * 60), codename = next.name.toLowerCase();
+      const plan = [...lines("term.apt.reading"), t("term.apt.release", { version: next.version, codename }), t("term.apt.downtime", { minutes })];
+      if (!yes) return { output: plan, confirm: true };
+      return { output: [...plan, t("term.apt.setup", { pkg: "base-files", to: next.version })], action: [upgradeOs, host] };
     }
     case "install":
     case "remove": {

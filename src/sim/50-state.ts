@@ -2,7 +2,7 @@ import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
 import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { Vendor } from "./10-catalog/cpus";
-import type { ServerOsId } from "./10-catalog/server-os";
+import type { OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
 import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
@@ -57,9 +57,10 @@ export interface Rack { id: string; model: RackModel; locationId: string; positi
 // A gateway sits on its location's carrier panel: rackId null, panel = location id. A stored unit has store = its zone's location id;
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.
 // docs/design/software.md, section 3: what a server's or own VM's disk holds. os null is an empty disk; a software whose
-// doneAt is still ahead is installing.
+// doneAt is still ahead is installing. An OS whose installedAt is ahead is installing, or upgrading in place from the
+// version in from.
 export interface MachineState {
-  os: { id: ServerOsId; version: string; installedAt: number } | null;
+  os: { id: ServerOsId; version: string; installedAt: number; from?: string } | null;
   software: { id: string; version: string; installedAt: number; doneAt: number | null }[];
   // An OS install the network dropped out of, shown on the console until a key is pressed (software.md, section 4.2).
   installFailed?: NetFail;
@@ -139,8 +140,9 @@ export interface GameState {
   ledger: LedgerEntry[];
   // One-time licenses (docs/design/software.md, section 1): the OS or software id and the machine that holds it.
   licenses: { id: string; machineId: string; boughtAt: number }[];
-  // Operating system images downloaded from their sites and the one USB stick: the image written on it, the server it is in.
-  media: { images: ServerOsId[]; stick: { os: ServerOsId | null; in: string | null } };
+  // Operating system images downloaded from their sites, one per version, and the one USB stick: the image written on it,
+  // the server it is in.
+  media: { images: OsImage[]; stick: { os: OsImage | null; in: string | null } };
   leases: Lease[];
   // Power drawn since the last monthly bill, in euros.
   powerDue: number;

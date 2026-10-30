@@ -10,7 +10,7 @@ import { setMedia } from "../src/sim/90-actions/console";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { Screen } from "../src/ui/apps/console/Screen";
 import { VmConsole } from "../src/ui/apps/console/VmConsole";
-import { bootedMachine, hypervisor, skipTo, withServer, withImage, withStick } from "./fixtures";
+import { bootedMachine, hypervisor, skipTo, withServer, isoOf, withImage, withStick } from "./fixtures";
 
 // withServer: dev3 is a free server cabled to the desk's router. The console's login lives in the tab's session storage.
 const store = new Map<string, string>();
@@ -54,11 +54,12 @@ describe("the console screen by machine state", () => {
     const { s, d } = server(2005, null);
     withStick(s, d.id);
     d.bootFrom = "usb";
-    expect(machineScreen(s, d.id)).toEqual({ kind: "bootMenu", media: ["lunix"] });
+    expect(machineScreen(s, d.id)).toEqual({ kind: "bootMenu", media: [isoOf(s)] });
     expect(html(s, d)).toContain("Debiant GNU/Lunix 3.1 installer boot menu");
     withStick(s, d.id, "windoors");
     expect(html(s, d)).toContain("Welcome to Setup.");
     skipTo(s, 2012);
+    withStick(s, d.id, "windoors");
     expect(html(s, d)).toContain("Install now");
   });
 
@@ -128,7 +129,7 @@ describe("the console screen by machine state", () => {
     const vm = () => renderToString(createElement(VmConsole, { game: s, vm: vmById(s, w.id)!, front: false }));
     expect(vm()).toContain("Operating system not found");
     withImage(s, "windoors");
-    setMedia(s, w.id, "windoors");
+    setMedia(s, w.id, isoOf(s, "windoors"));
     expect(vm()).toContain("Install now");
     setMedia(s, w.id, null);
     bootedMachine(s, w.id, "lunix");

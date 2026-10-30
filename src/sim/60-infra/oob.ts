@@ -4,7 +4,7 @@ import { hashRng, rand } from "../00-core/rng";
 import { nowHours, yearOf } from "../00-core/time";
 import { hasBmc, isOobPort, modelById, OOB_PORT, oobPorts, type OobPort } from "../10-catalog/hardware";
 import { softwareById } from "../10-catalog/platforms";
-import { serverOsById, type ServerOsId } from "../10-catalog/server-os";
+import { serverOsById, type OsImage, type ServerOsId } from "../10-catalog/server-os";
 import type { Device, End, GameState, MachineState, NetFail } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { pullPlug, pushLog } from "./power";
@@ -97,7 +97,7 @@ export const firmwareHangs = (s: GameState, d: Device): boolean => isGear(d) && 
 // Lunix login is followed by the shell that runLine drives.
 export type MachineScreen =
   | { kind: "dark" | "post" | "stuck" | "setup" | "notFound" | "desktop" | "hung" }
-  | { kind: "bootMenu"; media: ServerOsId[] }
+  | { kind: "bootMenu"; media: OsImage[] }
   | { kind: "osInstall"; os: ServerOsId; progress: number }
   | { kind: "osInstallFailed"; reason: NetFail }
   | { kind: "booting" | "login"; os: ServerOsId }
@@ -106,7 +106,7 @@ export type MachineScreen =
 const share = (doneAt: number, hours: number, now: number) => Math.max(0, Math.min(1, 1 - (doneAt - now) / hours));
 
 // The OS the USB stick boots on this server: plugged in there and written.
-export const stickOs = (s: GameState, deviceId: string): ServerOsId | null => (s.media.stick.in === deviceId ? s.media.stick.os : null);
+export const stickOs = (s: GameState, deviceId: string): OsImage | null => (s.media.stick.in === deviceId ? s.media.stick.os : null);
 
 // The OS that is up on the disk: installing, installing software or at the login.
 function upScreen(s: GameState, m: MachineState, loggedIn: boolean): MachineScreen {
@@ -149,10 +149,11 @@ export function machineNet(s: GameState, machineId: string): NetFail | null {
   return vm.deviceId && !cabledOut(s, vm.deviceId) ? null : "noLink";
 }
 
-// A Lunix install whose network is gone is abandoned: the disk stays empty and the console shows why.
+// A Lunix install whose network is gone is abandoned: the disk stays empty and the console shows why. An upgrade has
+// fetched its packages before it starts.
 export function installNetTick(s: GameState): void {
   const now = nowHours(s);
-  const failing = (m: Partial<MachineState> & { id: string }) => m.os?.id === "lunix" && m.os.installedAt > now ? machineNet(s, m.id) : null;
+  const failing = (m: Partial<MachineState> & { id: string }) => m.os?.id === "lunix" && !m.os.from && m.os.installedAt > now ? machineNet(s, m.id) : null;
   const abandon = (why: NetFail) => ({ os: null, software: [], installFailed: why, bootUntil: undefined });
   if (s.devices.some((d) => failing(d))) s.devices = s.devices.map((d) => { const why = failing(d); return why ? { ...d, ...abandon(why) } : d; });
   if (s.workloads.some((w) => w.os && failing(w))) s.workloads = s.workloads.map((w) => { const why = w.os && failing(w); return why ? { ...w, ...abandon(why) } : w; });
@@ -173,7 +174,8 @@ const SCREEN_KEY: Record<MachineScreen["kind"], string> = {
 // The i18n key and params of the first line a device's console shows, for the Terminal's console command and the KVM page.
 export function consoleScreen(s: GameState, d: Device): { key: string; params: Record<string, string> } {
   const key = SCREEN_KEY[machineScreen(s, d.id).kind];
-  return { key: key === "term.console.login" && d.os?.id === "windoors" ? "term.console.logon" : key, params: { host: d.hostname ?? d.label ?? d.name } };
+  const shown = key === "term.console.login" && d.os?.id === "windoors" ? "term.console.logon" : key === "term.console.osInstall" && d.os?.from ? "term.console.osUpgrade" : key;
+  return { key: shown, params: { host: d.hostname ?? d.label ?? d.name } };
 }
 
 // A management device on the internet: a KVM on a data switch with no firewall on its way out, or a console server or OOB switch

@@ -1,7 +1,6 @@
 import { BookOpen, CircleArrowDown, CircleX, Disc3, FileText, LayoutGrid, Monitor, Usb } from "lucide-react";
 import { useEffect, useState, type CSSProperties, type DragEvent, type ReactNode } from "react";
-import { yearOf } from "../../sim/00-core/time";
-import type { ServerOsId } from "../../sim/10-catalog/server-os";
+import { imageParts, type OsImage } from "../../sim/10-catalog/server-os";
 import { addAppLink, setDocked } from "../../sim/90-actions/docs";
 import { IMAGE_MB, stickHome, writeStick } from "../../sim/90-actions/media";
 import { createPortal } from "react-dom";
@@ -31,15 +30,15 @@ export function ApplicationsApp() {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const [folder, setFolder] = useState<Folder>("apps");
   const [over, setOver] = useState(false);
-  const [copy, setCopy] = useState<ServerOsId | null>(null);
+  const [copy, setCopy] = useState<OsImage | null>(null);
   useFocus("Applications", (f) => setFolder(f.id as Folder));
-  const home = stickHome(game), at = home ? folder : folder === "usb" ? "apps" : folder, year = yearOf(game.hour);
-  const write = (id: ServerOsId) => { if (!copy) setCopy(id); };
+  const home = stickHome(game), at = home ? folder : folder === "usb" ? "apps" : folder;
+  const write = (id: OsImage) => { if (!copy) setCopy(id); };
   const drop = (e: DragEvent) => {
     e.preventDefault();
     setOver(false);
     const id = e.dataTransfer.getData(ISO);
-    if (id) write(id as ServerOsId);
+    if (id) write(id as OsImage);
   };
   const target = { onDragOver: (e: DragEvent) => { if (e.dataTransfer.types.includes(ISO)) { e.preventDefault(); setOver(true); } }, onDragLeave: () => setOver(false), onDrop: drop };
   const side = (id: Folder, Icon: typeof Monitor, label: string, extra = {}) => (
@@ -58,7 +57,7 @@ export function ApplicationsApp() {
           {side("usb", Usb, "USB stick", target)}
         </>}
       </nav>
-      {copy && <Copying key={copy} file={isoFile(copy, year)} size={IMAGE_MB[copy]} onStop={() => setCopy(null)} onDone={() => { setCopy(null); act(writeStick, copy); }} />}
+      {copy && <Copying key={copy} file={isoFile(copy)} size={IMAGE_MB[imageParts(copy).id]} onStop={() => setCopy(null)} onDone={() => { setCopy(null); act(writeStick, copy); }} />}
       <div className="app-grid" {...(at === "usb" ? target : {})}>
         {at === "apps" && APPS.filter((a) => !a.hidden && game.installed.includes(a.name)).map((a) => {
           const shown = appFor(game, a.name);
@@ -79,13 +78,13 @@ export function ApplicationsApp() {
           );
         })}
         {at === "downloads" && game.media.images.map((id) => (
-          <Item key={id} label={isoFile(id, year)} menu={() => [{ label: "Write to USB stick", disabled: !home, run: () => write(id) }]}
+          <Item key={id} label={isoFile(id)} menu={() => [{ label: "Write to USB stick", disabled: !home, run: () => write(id) }]}
             drag={(e) => { e.dataTransfer.setData(ISO, id); e.dataTransfer.effectAllowed = "copy"; }}>
             <span className="di-page"><Disc3 /></span>
           </Item>
         ))}
         {at === "usb" && game.media.stick.os && (
-          <Item label={isoFile(game.media.stick.os, year)}><span className="di-page"><Disc3 /></span></Item>
+          <Item label={isoFile(game.media.stick.os)}><span className="di-page"><Disc3 /></span></Item>
         )}
       </div>
     </div>

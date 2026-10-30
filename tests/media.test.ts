@@ -8,7 +8,7 @@ import { downloadImage, downloadMbps, mountableImages, plugStick, stickHome, unp
 import { clusterOf } from "../src/sim/60-infra/cluster";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { newGame } from "../src/sim/50-state";
-import { bootedMachine, readyGame } from "./fixtures";
+import { bootedMachine, isoOf, readyGame } from "./fixtures";
 
 // readyGame: dev3 is a server in the basement rack, cabled and up, with a hypervisor cluster on it.
 const dev = (s: ReturnType<typeof readyGame>, id = "dev3") => s.devices.find((d) => d.id === id)!;
@@ -21,20 +21,20 @@ describe("installation media", () => {
 
   it("downloads an image once", () => {
     const s = readyGame(7);
-    expect(err(downloadImage(s, "nope" as "lunix"))).toBe("error.unknownOs");
-    expect(err(downloadImage(s, "lunix"))).toBe("ok");
-    expect(err(downloadImage(s, "lunix"))).toBe("ok");
-    expect(s.media.images).toEqual(["lunix"]);
+    expect(err(downloadImage(s, "lunix@99"))).toBe("error.unknownOs");
+    expect(err(downloadImage(s, isoOf(s, "lunix")))).toBe("ok");
+    expect(err(downloadImage(s, isoOf(s, "lunix")))).toBe("ok");
+    expect(s.media.images).toEqual([isoOf(s)]);
   });
 
   it("writes the stick only from a downloaded image, one OS at a time", () => {
     const s = readyGame(7);
-    expect(err(writeStick(s, "lunix"))).toBe("error.noImage");
-    downloadImage(s, "lunix");
-    downloadImage(s, "windoors");
-    expect(err(writeStick(s, "lunix"))).toBe("ok");
-    expect(err(writeStick(s, "windoors"))).toBe("ok");
-    expect(s.media.stick.os).toBe("windoors");
+    expect(err(writeStick(s, isoOf(s, "lunix")))).toBe("error.noImage");
+    downloadImage(s, isoOf(s, "lunix"));
+    downloadImage(s, isoOf(s, "windoors"));
+    expect(err(writeStick(s, isoOf(s, "lunix")))).toBe("ok");
+    expect(err(writeStick(s, isoOf(s, "windoors")))).toBe("ok");
+    expect(s.media.stick.os).toBe(isoOf(s, "windoors"));
   });
 
   it("downloads at the speed of the line where the player is", () => {
@@ -48,14 +48,14 @@ describe("installation media", () => {
 
   it("writes the stick only while it is in the computer", () => {
     const s = readyGame(7);
-    downloadImage(s, "lunix");
+    downloadImage(s, isoOf(s, "lunix"));
     plugStick(s, "dev3");
     expect(stickHome(s)).toBe(false);
-    expect(err(writeStick(s, "lunix"))).toBe("error.stickAway");
+    expect(err(writeStick(s, isoOf(s, "lunix")))).toBe("error.stickAway");
     unplugStick(s);
-    expect(err(writeStick(s, "lunix"))).toBe("ok");
+    expect(err(writeStick(s, isoOf(s, "lunix")))).toBe("ok");
     dev(s).hands = { kind: "stick", doneAt: s.hour + 1 };
-    expect(err(writeStick(s, "lunix"))).toBe("error.stickAway");
+    expect(err(writeStick(s, isoOf(s, "lunix")))).toBe("error.stickAway");
   });
 
   it("plugs the stick in, moves it to a second server and unplugs it", () => {
@@ -78,11 +78,11 @@ describe("installation media", () => {
     plugStick(s, "dev3");
     expect(err(bootFromUsb(s, "dev3"))).toBe("error.noBootDevice");
     unplugStick(s);
-    downloadImage(s, "lunix");
-    writeStick(s, "lunix");
+    downloadImage(s, isoOf(s, "lunix"));
+    writeStick(s, isoOf(s, "lunix"));
     plugStick(s, "dev3");
     expect(err(bootFromUsb(s, "dev3"))).toBe("ok");
-    expect(machineScreen(s, "dev3")).toEqual({ kind: "bootMenu", media: ["lunix"] });
+    expect(machineScreen(s, "dev3")).toEqual({ kind: "bootMenu", media: [isoOf(s)] });
     expect(err(installOs(s, "dev3", "windoors"))).toBe("error.otherMedia");
     unplugStick(s);
     expect(machineScreen(s, "dev3").kind).toBe("notFound");
@@ -110,10 +110,10 @@ describe("installation media", () => {
   it("mounts only downloaded images in a VM", () => {
     const s = readyGame(7), made = createVm(s, clusterOf(s, "dev3")!.id, PANEL_VM_SIZE), vm = made.ok ? made.id! : "";
     expect(mountableImages(s)).toEqual([]);
-    expect(err(setMedia(s, vm, "lunix"))).toBe("error.noImage");
-    downloadImage(s, "lunix");
-    expect(mountableImages(s).map((o) => o.id)).toEqual(["lunix"]);
-    expect(err(setMedia(s, vm, "lunix"))).toBe("ok");
+    expect(err(setMedia(s, vm, isoOf(s)))).toBe("error.noImage");
+    downloadImage(s, isoOf(s, "lunix"));
+    expect(mountableImages(s)).toEqual([isoOf(s)]);
+    expect(err(setMedia(s, vm, isoOf(s)))).toBe("ok");
     expect(err(setMedia(s, vm, null))).toBe("ok");
   });
 

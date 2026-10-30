@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
 import { bayCount, boardSpec, jacksOf, modelById, modelName, wattsFactorOf, type DeviceModel } from "../../../sim/10-catalog/hardware";
-import { serverOsById } from "../../../sim/10-catalog/server-os";
+import { imageName } from "../../../sim/10-catalog/server-os";
 import type { Cable as CableT, Device, End, GameState } from "../../../sim/50-state";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, deviceVendor, deviceWatts, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, resaleValue, working } from "../../../sim/60-infra/status";
@@ -258,7 +258,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
           ["Network", portsText(model)],
           ["Power", model.idleWatts === Math.round(deviceWatts(device)) ? `${model.watts} W` : `${Math.round(model.idleWatts * wattsFactorOf(model, device.brand))}–${Math.round(deviceWatts(device))} W`],
           ...(model.height ? [["Height", height(model)]] as [string, string][] : []),
-          ...(model.server ? [["Front USB", stickIn ? (game.media.stick.os ? `${serverOsById(game.media.stick.os).name} stick` : "Blank stick") : "Empty"]] as [string, string][] : []),
+          ...(model.server ? [["Front USB", stickIn ? (game.media.stick.os ? `${imageName(game.media.stick.os)} stick` : "Blank stick") : "Empty"]] as [string, string][] : []),
           ...(device.price ? [["Paid", euro(device.price)]] as [string, string][] : []),
           ...(supportEnd(model) !== null ? [["End of support", `${supportEnd(model)}`]] as [string, string][] : []),
         ].map(([k, v]): [string, ReactNode] => [k, <span className="num">{v}</span>])} />

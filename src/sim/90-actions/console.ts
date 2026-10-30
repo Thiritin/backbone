@@ -4,9 +4,9 @@
 import { nowHours, yearOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import type { Device, GameState } from "../50-state";
-import { clustersOn, dropCluster, insideVm, isOwnVm, setMachine, vmById, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
-import { SERVER_OS, serverOsAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
-import { machineNet, stickOs } from "../60-infra/oob";
+import { clustersOn, dropCluster, insideVm, isOwnVm, machineOf, setMachine, vmById, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
+import { imageOf, imageParts, nextVersion, SERVER_OS, serverOsById, type OsImage, type ServerOsId, type ServerOsVersion } from "../10-catalog/server-os";
+import { machineNet, osUp, stickOs } from "../60-infra/oob";
 import { pushLog } from "../60-infra/power";
 import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
 import { buyLicenses, licenseDue, reportLoss } from "../85-products/products";
@@ -115,14 +115,15 @@ const atInstaller = (s: GameState, machineId: string): Machine | string => {
   return typeof d === "string" ? d : d.bootFrom !== "usb" ? "error.notFromUsb" : !stickOs(s, d.id) ? "error.noBootDevice" : d;
 };
 
-// The installer's Install: whatever the disks held goes first, then the OS installs for its install hours, the newest
-// version of the year. os.installedAt is the hour it is done; a server is held in its boot until then and boots from its
-// disk after, a VM ejects its ISO. The stick and an ISO each hold one OS.
+// The installer's Install: whatever the disks held goes first, then the OS installs for its install hours, the version
+// on the media. os.installedAt is the hour it is done; a server is held in its boot until then and boots from its disk
+// after, a VM ejects its ISO. The stick and an ISO each hold one version of one OS.
 export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string): ActionResult {
   const m = atInstaller(s, machineId);
   if (typeof m === "string") return fail(m);
   if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
-  if ((isDevice(m) ? stickOs(s, m.id) : m.media) !== osId) return fail("error.otherMedia");
+  const media = isDevice(m) ? stickOs(s, m.id) : m.media;
+  if (!media || imageParts(media).id !== osId) return fail("error.otherMedia");
   // The Debiant image is a netinst; Windoors Setup carries everything on its image.
   const net = osId === "lunix" ? machineNet(s, machineId) : null;
   if (net) return fail(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf");
@@ -130,10 +131,52 @@ export function installOs(s: GameState, machineId: string, osId: ServerOsId, con
   const cleared = clear(s, m, confirm);
   if (!cleared.ok) return cleared;
   const os = serverOsById(osId), done = nowHours(s) + os.installHours;
-  setMachine(s, machineId, () => ({ os: { id: osId, version: serverOsAt(osId, yearOf(s.hour)).version, installedAt: done }, software: [] }));
+  setMachine(s, machineId, () => ({ os: { id: osId, version: imageParts(media).version, installedAt: done }, software: [] }));
   buyLicenses(s, machineId, osId, null);
   if (isDevice(m)) Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60 });
   else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
+  return { ok: true };
+}
+
+// docs/design/software.md, section 4.4: the release an in-place upgrade takes the machine to, the next one once it is out.
+export const upgradeTarget = (s: GameState, machineId: string): ServerOsVersion | null => {
+  const os = machineOf(s, machineId)?.os;
+  return os && os.installedAt <= nowHours(s) ? nextVersion(os.id, os.version, yearOf(s.hour)) : null;
+};
+// Hours the machine is down for an upgrade: the OS's install hours and its boot, after POST on a server.
+export const upgradeHours = (s: GameState, machineId: string): number => {
+  const os = serverOsById(machineOf(s, machineId)!.os!.id);
+  return os.installHours + os.bootMinutes / 60 + (s.devices.some((d) => d.id === machineId) ? BOOT_HOURS : 0);
+};
+
+// Upgrades the machine's OS in place to the next release, keeping its software: Debiant from its running shell over the
+// network, Windoors from Setup on the next release's media. Everything still running on the machine is down for the
+// upgrade and counts it against its SLA; what was migrated off first stays up.
+export function upgradeOs(s: GameState, machineId: string): ActionResult {
+  const m = machineOf(s, machineId);
+  if (!m?.os) return fail(m ? "error.noSoftware" : "error.unknownDevice");
+  const next = upgradeTarget(s, machineId);
+  if (!next) return fail("error.noUpgrade");
+  if (m.os.id === "lunix") {
+    if (!osUp(s, machineId)) return fail("error.osNotUp");
+    if (machineNet(s, machineId)) return fail("error.noDownload");
+  } else {
+    const at = atInstaller(s, machineId);
+    if (typeof at === "string") return fail(at);
+    if ((isDevice(at) ? stickOs(s, at.id) : at.media) !== imageOf(m.os.id, next.version)) return fail("error.otherMedia");
+  }
+  const hours = upgradeHours(s, machineId), done = nowHours(s) + serverOsById(m.os.id).installHours, from = m.os.version;
+  const ws = isDevice(m) ? workloadsOn(s, m.id) : [m], down = [...ws, ...ws.flatMap((w) => (isOwnVm(w) ? insideVm(s, w.id) : []))];
+  const ids = new Set(down.map((w) => w.id)), services = new Set(down.filter((w) => !isOwnVm(w)).map((w) => w.serviceId));
+  s.workloads = s.workloads.map((w) => (ids.has(w.id) ? { ...w, busyUntil: Math.max(w.busyUntil, s.hour + hours) } : w));
+  // The hourly tick counts every whole hour a workload is busy; the rest is added here, as for a software update.
+  const rest = hours - (Math.ceil(hours) - 1);
+  for (const id of services) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + rest };
+  setMachine(s, machineId, (x) => ({ os: { ...x.os!, version: next.version, installedAt: done, from } }));
+  if (isDevice(m)) {
+    Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: nowHours(s) + hours });
+    pushLog(m, s.hour, "ipmi.log.upgrade");
+  } else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
   return { ok: true };
 }
 
@@ -161,7 +204,7 @@ export function eraseDisk(s: GameState, machineId: string, confirm?: string): Ac
 
 // The ISO of an OS in one of the player's own VMs: loaded, the VM boots its installer; ejected, or once the installer
 // starts, its own disk again. A VM has no BIOS and no boot menu, the media decides.
-export function setMedia(s: GameState, vmId: string, media: ServerOsId | null): ActionResult {
+export function setMedia(s: GameState, vmId: string, media: OsImage | null): ActionResult {
   const vm = vmById(s, vmId);
   if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
   if (media && !s.media.images.includes(media)) return fail("error.noImage");

@@ -12,7 +12,7 @@ import { addNode, createVm, deleteVm } from "../src/sim/90-actions/clusters";
 import { connect } from "../src/sim/90-actions/hardware";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { bootedMachine, buyDevice, hypervisor, panelServer, panelVm, skipTo, withServer } from "./fixtures";
+import { bootedMachine, buyDevice, isoOf, hypervisor, panelServer, panelVm, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = { ok: boolean; id?: string; error?: string };
@@ -120,7 +120,7 @@ describe("old saves", () => {
     expect(machineOf(old, third)).toMatchObject({ os: os("windoors", game), software: [{ id: "tcadmen", doneAt: null }] });
     const vm = old.clusters.find((c) => c.id === panel)!.vm!;
     expect(machineOf(old, vm)).toMatchObject({ os: os("lunix", panel), software: [{ id: "freepanel", doneAt: null }] });
-    expect(machineOf(old, empty)).toMatchObject({ os: null, software: [], media: "lunix" });
+    expect(machineOf(old, empty)).toMatchObject({ os: null, software: [], media: isoOf(old) });
     expect(machineOf(old, "dev4")).toMatchObject({ os: null, software: [] });
     // A current save keeps what it has.
     expect(machineOf(deserialize(serialize(old)), second)).toEqual(machineOf(old, second));

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
-import { yearOf } from "../../../sim/00-core/time";
-import { serverOsAt } from "../../../sim/10-catalog/server-os";
+import { imageName } from "../../../sim/10-catalog/server-os";
 import type { GameState } from "../../../sim/50-state";
 import type { Workload } from "../../../sim/60-infra/cluster";
 import { setMedia } from "../../../sim/90-actions/console";
@@ -16,12 +15,12 @@ import { focusIn, keyHandler, Keys, useOsScreen } from "./Screen";
 export function VmConsole({ game, vm: w, front }: { game: GameState; vm: Workload; front: boolean }) {
   const act = useStore((s) => s.act);
   const box = useRef<HTMLDivElement>(null);
-  const os = useOsScreen(game, w, front, w.media ?? "lunix");
+  const os = useOsScreen(game, w, front, w.media ?? null);
   useEffect(() => { if (front) focusIn(box.current); }, [front, w.id, os.screen.kind]);
   const st = vmState(game, w), on = st === "running" || st === "down" || st === "frozen";
-  const dark = !on || os.screen.kind === "dark", year = yearOf(game.hour);
+  const dark = !on || os.screen.kind === "dark";
   const media = () => [
-    ...mountableImages(game).map((o) => ({ label: `${o.name} ${serverOsAt(o.id, year).version}`, checked: w.media === o.id, run: () => act(setMedia, w.id, o.id) })),
+    ...mountableImages(game).map((o) => ({ label: imageName(o), checked: w.media === o, run: () => act(setMedia, w.id, o) })),
     null,
     { label: "Eject", disabled: !w.media, run: () => act(setMedia, w.id, null) },
   ];

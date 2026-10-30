@@ -13,7 +13,7 @@ import { installSoftware, softwareOn } from "../src/sim/90-actions/software";
 import { setPower, setRaid } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { nowHours } from "../src/sim/00-core/time";
-import { readyGame, withImage, withNetwork, withStick } from "./fixtures";
+import { readyGame, isoOf, withImage, withNetwork, withStick } from "./fixtures";
 
 // readyGame: dev3 is a G1 Dwell server in rack2, cabled and up.
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
@@ -208,9 +208,9 @@ describe("VM console", () => {
     ok(made);
     expect(err(installOs(s, vm, "lunix"))).toBe("error.noMedia");
     withImage(s, "lunix");
-    ok(setMedia(s, vm, "lunix"));
-    expect(vmById(s, vm)?.media).toBe("lunix");
-    expect(machineScreen(s, vm)).toEqual({ kind: "bootMenu", media: ["lunix"] });
+    ok(setMedia(s, vm, isoOf(s, "lunix")));
+    expect(vmById(s, vm)?.media).toBe(isoOf(s));
+    expect(machineScreen(s, vm)).toEqual({ kind: "bootMenu", media: [isoOf(s)] });
     expect(installCase(s, vm).kind).toBe("empty");
     expect(err(installOs(s, vm, "windoors"))).toBe("error.otherMedia");
     ok(installOs(s, vm, "lunix"));
@@ -221,14 +221,14 @@ describe("VM console", () => {
     expect(machineScreen(s, vm)).toEqual({ kind: "login", os: "lunix" });
     ok(stopWorkload(s, vm));
     withImage(s, "lunix");
-    ok(setMedia(s, vm, "lunix"));
+    ok(setMedia(s, vm, isoOf(s, "lunix")));
     expect(err(installOs(s, vm, "lunix"))).toBe("error.alreadyStopped");
   });
 
   it("needs the VM's hostname to erase a panel with customers on it, booked on the host", () => {
     const s = readyGame(7), vm = panelVm(s), w = vmById(s, vm)!, before = s.workloads.length, panel = hostOfVm(s, vm)!.id;
     withImage(s, "lunix");
-    ok(setMedia(s, vm, "lunix"));
+    ok(setMedia(s, vm, isoOf(s, "lunix")));
     expect(installCase(s, vm).kind).toBe("busy");
     expect(err(installOs(s, vm, "lunix"))).toBe("error.confirmHostname");
     expect(s.workloads).toHaveLength(before);
@@ -246,7 +246,7 @@ describe("VM console", () => {
   it("erases a VM to an empty disk", () => {
     const s = readyGame(7), vm = panelVm(s), w = vmById(s, vm)!;
     withImage(s, "lunix");
-    ok(setMedia(s, vm, "lunix"));
+    ok(setMedia(s, vm, isoOf(s, "lunix")));
     expect(err(eraseDisk(s, vm))).toBe("error.confirmHostname");
     ok(eraseDisk(s, vm, w.hostname));
     expect(hostOfVm(s, vm)).toBeUndefined();

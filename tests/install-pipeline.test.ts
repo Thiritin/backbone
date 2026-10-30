@@ -12,7 +12,7 @@ import { reboot } from "../src/sim/90-actions/hardware";
 import { plugStick, unplugStick } from "../src/sim/90-actions/media";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { newGame } from "../src/sim/50-state";
-import { readyGame, skipTo, withServer, withStick } from "./fixtures";
+import { isoOf, readyGame, skipTo, withServer, withStick } from "./fixtures";
 
 // withServer: dev3 is a free, cabled server with an empty disk.
 const err = (r: { ok: boolean; error?: string }) => r.error;
@@ -42,7 +42,7 @@ describe("install pipeline", () => {
     const s = withServer(newGame(4));
     withStick(s, "dev3");
     ok(bootFromUsb(s, "dev3"));
-    expect(machineScreen(s, "dev3")).toEqual({ kind: "bootMenu", media: ["lunix"] });
+    expect(machineScreen(s, "dev3")).toEqual({ kind: "bootMenu", media: [isoOf(s)] });
     ok(installOs(s, "dev3", "lunix"));
     expect(machineScreen(s, "dev3")).toEqual({ kind: "osInstall", os: "lunix", progress: 0 });
     expect(err(enterSetup(s, "dev3"))).toBe("error.notAtPost");

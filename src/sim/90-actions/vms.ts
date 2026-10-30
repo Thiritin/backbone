@@ -9,7 +9,7 @@ import {
 import { renumber, renumberError } from "../60-infra/addresses";
 import { handJob, type How } from "../60-infra/handwork";
 import { migrationHours } from "../60-infra/migration";
-import { RECOVER_HOURS } from "../60-infra/power";
+import { cutOs, RECOVER_HOURS } from "../60-infra/power";
 import { locationOf, working } from "../60-infra/status";
 import { freezeTick } from "../60-infra/usage";
 import {
@@ -35,8 +35,8 @@ export function stopWorkload(s: GameState, id: string): ActionResult {
   const found = clusterWorkload(s, id);
   if (!found) return fail("error.unknownWorkload");
   if (found.w.stopped) return fail("error.alreadyStopped");
-  // An OS still installing is lost with the power, as on a server.
-  const os = found.w.os && found.w.os.installedAt > nowHours(s) ? { os: null } : {};
+  // An OS still installing is lost with the power, and an upgrade rolls back, as on a server.
+  const os = found.w.os ? { os: cutOs(found.w.os, nowHours(s)) } : {};
   patch(s, id, { stopped: true, ...os });
   freezeTick(s);
   return { ok: true };
