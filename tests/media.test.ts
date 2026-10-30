@@ -39,7 +39,7 @@ describe("installation media", () => {
 
   it("downloads at the speed of the line where the player is", () => {
     const s = newGame(1);
-    expect(downloadMbps(s)).toBe(0);
+    expect(downloadMbps(s)).toBe(6);
     s.homeLine.id = "dsl-16";
     expect(downloadMbps(s)).toBe(16);
     s.player = { ...s.player, doing: "travel", until: s.hour + 5 };

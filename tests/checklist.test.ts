@@ -24,11 +24,11 @@ describe("checklist", () => {
   it("starts with nothing done", () => {
     const s = newGame(1);
     expect(s.checklist).toEqual([]);
-    expect(done(s)).toEqual([]);
+    expect(done(s)).toEqual(["internet"]);
   });
 
   it("detects a bought and mounted server, the line, a loan, the first and second online server and datacenter space", () => {
-    const s = { ...newGame(1), cash: 100_000 };
+    const s = { ...newGame(1), cash: 100_000, homeLine: { id: "", next: null } };
     ok(takeLoan(s, 10_000, 1));
     const [a, b] = [1, 2].map((slot) => {
       const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));

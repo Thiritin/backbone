@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MANUFACTURERS } from "../src/sim/10-catalog/hardware";
 import { companyDomain, fqdn } from "../src/sim/30-customers/domains";
 import { privateIp } from "../src/sim/60-infra/addresses";
-import { defaultBookmarks, displayHost, resolve, split, vendorHost, VENDORS, VIDEO_URL } from "../src/sim/80-business/browser";
+import { defaultBookmarks, displayHost, resolve, split, vendorHost, VENDORS, VIDEO_URL, WIKI_URL } from "../src/sim/80-business/browser";
 import { siteIndex } from "../src/sim/80-business/index";
 import { newGame } from "../src/sim/50-state";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
@@ -23,6 +23,13 @@ function bare(s: ReturnType<typeof readyGame>) {
 }
 
 describe("browser resolver", () => {
+  it("serves the encyclopedia and lists it in the index", () => {
+    const s = newGame(1);
+    expect(resolve(s, WIKI_URL)).toMatchObject({ page: { kind: "wiki" }, path: "/wiki/Main_Page", load: "fast" });
+    expect(resolve(s, "wikipedio.org/wiki/Uplink").page.kind).toBe("wiki");
+    expect(siteIndex(s).find((c) => c.title === "Community")!.rows.map((r) => r.url)).toContain(WIKI_URL);
+  });
+
   it("splits an address into a lowercase host and a path", () => {
     expect(split("HTTPS://WWW.Basement-Hosting.de/a/b?x=1#top")).toEqual({ host: "www.basement-hosting.de", path: "/a/b?x=1" });
     expect(split("basement-hosting.de")).toEqual({ host: "basement-hosting.de", path: "/" });

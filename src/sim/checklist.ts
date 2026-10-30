@@ -1,5 +1,5 @@
 import { modelById } from "./10-catalog/hardware";
-import { DEFAULT_HOME_LINE } from "./20-world/datacenters";
+import { DEFAULT_HOME_LINE, MOMS_DSL } from "./20-world/datacenters";
 import type { GameState } from "./50-state";
 import { isDrive, linkStatus, locationOf } from "./60-infra/status";
 import { lineActive } from "./60-infra/addresses";
@@ -24,7 +24,7 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   firstServer: (s) => onlineServers(s).length >= 1,
   setup: (s) => s.clusters.some((c) => c.platform || c.panel),
   secondServer: (s) => onlineServers(s).length >= 2,
-  homeLine: (s) => lineActive(s) && s.homeLine.id !== DEFAULT_HOME_LINE,
+  homeLine: (s) => lineActive(s) && s.homeLine.id !== DEFAULT_HOME_LINE && s.homeLine.id !== MOMS_DSL.id,
   firstCustomer: (s) => s.customers.some((c) => c.habit !== "friend"),
   ticket: (s) => s.tickets.some((t) => t.replies.length > 0),
   payment: (s) => s.invoices.some((i) => i.status === "paid"),

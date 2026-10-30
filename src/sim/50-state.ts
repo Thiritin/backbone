@@ -4,7 +4,7 @@ import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFa
 import type { Vendor } from "./10-catalog/cpus";
 import type { ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
-import { seedDcs } from "./20-world/datacenters";
+import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
 import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
@@ -170,7 +170,7 @@ export interface GameState {
   downSince: Record<string, number>;
   // Cluster nodes frozen because their RAM in use exceeds the installed RAM.
   frozen: string[];
-  // The basement's internet line (HOME_LINES id, "" before the first one), a switch to another line that goes live at hour at, and whether this line ran full.
+  // The basement's internet line (HOME_LINES or MOMS_DSL id, "" for none), a switch to another line that goes live at hour at, and whether this line ran full.
   homeLine: { id: string; next: { id: string; at: number } | null; full?: boolean };
   docs: Doc[];
   // Positions rented by competitors in each datacenter.
@@ -318,7 +318,7 @@ export const newGame = (seed: number): GameState => ({
   heldCustomers: [],
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
-  homeLine: { id: "", next: null },
+  homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
   staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
   marketing: newMarketing(), fairs: [], sponsorships: [], sponsorOffers: [],

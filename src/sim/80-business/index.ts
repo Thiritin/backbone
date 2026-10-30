@@ -6,7 +6,7 @@ import { registrarHost, REGISTRARS } from "../10-catalog/registrars";
 import { SERVER_OS } from "../10-catalog/server-os";
 import { companyDomain, fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
-import { BOARD_TITLE, BOARD_URL, companyUrl, displayHost, resolve, vendorHost, VENDORS, VIDEO_TITLE, VIDEO_URL } from "./browser";
+import { BOARD_TITLE, BOARD_URL, companyUrl, WIKI_TITLE, WIKI_URL, displayHost, resolve, vendorHost, VENDORS, VIDEO_TITLE, VIDEO_URL } from "./browser";
 import { privateIp } from "../60-infra/addresses";
 import { familyOf } from "../60-infra/vulns";
 import { consoleHost, consoleSuffix, consoleTitle } from "./consoles";
@@ -59,7 +59,7 @@ export function siteIndex(s: GameState): Category[] {
     { title: "Operating systems", rows: SERVER_OS.map((o) => row(o.name, `${displayHost(o.site.host)}/`, o.site.tagline)) },
     ...software,
     { title: "Domain resellers", rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, "Domain registration and reseller contracts")) },
-    { title: "Community", rows: [row(BOARD_TITLE, BOARD_URL, "Sponsorship offers from the hosting community")] },
+    { title: "Community", rows: [row(BOARD_TITLE, BOARD_URL, "Sponsorship offers from the hosting community"), row(WIKI_TITLE, WIKI_URL, "The free encyclopedia")] },
     { title: "Hardware", rows: VENDORS.map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => KIND_DESC[k]).join(", "))) },
     { title: s.company.name, rows: own },
     { title: "Video", rows: [row("YouTub", VIDEO_URL, VIDEO_TITLE)] },

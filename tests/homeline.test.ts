@@ -16,10 +16,12 @@ const run = (s: GameState, hours: number) => {
 };
 
 describe("home line", () => {
-  it("starts without a line, and every line costs money", () => {
+  it("starts on Mom's free DSL, and every line on offer costs money", () => {
     const s = newGame(1);
-    expect(s.homeLine).toEqual({ id: "", next: null });
-    expect(homeLineById(s.homeLine.id)).toMatchObject({ name: "No line", up: 0 });
+    expect(s.homeLine).toEqual({ id: "moms-dsl", next: null });
+    expect(homeLineById(s.homeLine.id)).toMatchObject({ name: "Mom's DSL", down: 6, up: 0.5, monthly: 0, staticIp: false });
+    expect(homeLineById("")).toMatchObject({ name: "No line", up: 0 });
+    expect(HOME_LINES.some((l) => l.id === "moms-dsl")).toBe(false);
     expect(homeLineById("dsl-16")).toMatchObject({ down: 16, up: 1, monthly: 45 });
     for (const l of HOME_LINES) expect(l.monthly).toBeGreaterThan(0);
   });
@@ -63,11 +65,13 @@ describe("home line", () => {
     expect(err(orderHomeLine(s, "dsl-16"))).toBe("ok");
     expect(s.homeLine).toEqual({ id: "dsl-16", next: null });
   });
-  it("cancels the first order before any line is live", () => {
+  it("cancels an order and keeps Mom's DSL, which cannot be ordered back", () => {
     const s = newGame(1);
     orderHomeLine(s, "dsl-16");
-    expect(err(orderHomeLine(s, ""))).toBe("ok");
-    expect(s.homeLine).toEqual({ id: "", next: null });
+    expect(err(orderHomeLine(s, "moms-dsl"))).toBe("ok");
+    expect(s.homeLine).toEqual({ id: "moms-dsl", next: null });
+    s.homeLine = { id: "dsl-16", next: null };
+    expect(err(orderHomeLine(s, "moms-dsl"))).toBe("error.unknownLine");
   });
 
   it("bills nothing before the first line", () => {

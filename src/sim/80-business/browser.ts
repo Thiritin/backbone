@@ -34,6 +34,7 @@ export type Page =
   | { kind: "sponsorboard" }
   | { kind: "index" }
   | { kind: "office" }
+  | { kind: "wiki" }
   | { kind: "software"; id: string }
   | { kind: "os"; id: ServerOsId }
   | { kind: "notfound" };
@@ -53,6 +54,10 @@ export const BOARD_URL = `${BOARD_HOST}/`;
 // docs/design/software.md, 8.1: the home icon and a new browser session open the site index.
 export const INDEX_HOST = "yahoy.com";
 export const HOME_URL = `www.${INDEX_HOST}/dir/`;
+// The encyclopedia whose articles explain the basics, such as installing a server and the home line.
+export const WIKI_HOST = "wikipedio.org";
+export const WIKI_TITLE = "Wikipedio";
+export const WIKI_URL = `www.${WIKI_HOST}/wiki/Main_Page`;
 // A site's host as links show it: a bare domain gets www., a host that already names a subdomain keeps it as it is.
 export function displayHost(host: string): string {
   const labels = host.split("."), suffix = /^(co|com|org|net)\.[a-z]{2}$/.test(labels.slice(-2).join(".")) ? 3 : 2;
@@ -139,6 +144,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   const named = (bare: string) => host === bare || host === `www.${bare}`;
   if (named(INDEX_HOST)) return out({ kind: "index" });
   if (named(OFFICE_HOST)) return out({ kind: "office" });
+  if (named(WIKI_HOST)) return out({ kind: "wiki" });
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
   if (sw) return out({ kind: "software", id: sw.id });

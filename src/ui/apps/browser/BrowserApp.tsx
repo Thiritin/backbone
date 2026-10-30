@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, CircleArrowDown, House, Plus, RotateCw, Star, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BOARD_TITLE, defaultBookmarks, HOME_URL, resolve, split, VIDEO_TITLE, type Resolved } from "../../../sim/80-business/browser";
+import { BOARD_TITLE, defaultBookmarks, HOME_URL, resolve, split, VIDEO_TITLE, WIKI_TITLE, type Resolved } from "../../../sim/80-business/browser";
 import { customerSite } from "../../../sim/80-business/website";
 import { familyOf } from "../../../sim/60-infra/vulns";
 import { consoleTitle } from "../../../sim/80-business/consoles";
@@ -25,6 +25,7 @@ import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
+import { WikiSite } from "./sites/wiki/WikiSite";
 import { OFFICE_TITLE } from "../../../sim/80-business/office";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
@@ -65,6 +66,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "sponsorboard": return BOARD_TITLE;
     case "index": return "Yahoy! Directory";
     case "office": return OFFICE_TITLE;
+    case "wiki": return WIKI_TITLE;
     case "software": return softwareById(p.id).name;
     case "os": return serverOsById(p.id).name;
     default: return "Not found";
@@ -91,6 +93,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "phishing") body = <PhishingPage sender={p.sender} />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
   else if (p.kind === "software" || p.kind === "os") body = <SoftwarePage game={game} kind={p.kind} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "console") body = <ConsolePage game={game} hostname={p.hostname} host={r.host} cluster={game.clusters.find((x) => x.id === p.clusterId)} defaced={p.defaced} />;

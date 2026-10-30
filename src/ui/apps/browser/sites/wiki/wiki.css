@@ -1,0 +1,19 @@
+/* A 2005 encyclopedia skin: pale blue backdrop, white article sheet, serif headings over a sans body. */
+.wk {
+  display: flex; gap: 16px; min-height: 100%; padding: 12px;
+  background: #f3f6fb; color: #202122;
+  font: 13px/1.6 "Trebuchet MS", Verdana, sans-serif;
+}
+.wk a { color: #0645ad; text-decoration: none; }
+.wk a:hover { text-decoration: underline; }
+.wk-side { width: 150px; flex: none; }
+.wk-side > a { display: flex; flex-direction: column; align-items: center; margin-bottom: 12px; color: #202122; }
+.wk-logo { font: 54px/1 Georgia, "Times New Roman", serif; }
+.wk-name { font: 15px Georgia, "Times New Roman", serif; letter-spacing: 0.06em; }
+.wk-side ul { margin: 0; padding: 6px 8px; list-style: none; background: #fff; border: 1px solid #aaa; font-size: 12px; }
+.wk-page { flex: 1; min-width: 0; padding: 12px 18px 24px; background: #fff; border: 1px solid #a7d7f9; }
+.wk-page h1 { margin: 0 0 2px; font: 26px Georgia, "Times New Roman", serif; border-bottom: 1px solid #aaa; }
+.wk-page h2 { margin: 18px 0 6px; font: 19px Georgia, "Times New Roman", serif; border-bottom: 1px solid #aaa; }
+.wk-from { margin-bottom: 10px; font-size: 11px; color: #54595d; }
+.wk-page kbd { padding: 0 4px; border: 1px solid #a2a9b1; border-radius: 2px; background: #f8f9fa; font: 12px monospace; }
+@media (max-width: 560px) { .wk { flex-direction: column; } .wk-side { width: auto; } }
