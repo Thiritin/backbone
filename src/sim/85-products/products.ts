@@ -1,5 +1,7 @@
-import { chance } from "../00-core/rng";
-import { dateOf, isMonthStart, nowHours, yearOf } from "../00-core/time";
+import { chance, hashRng } from "../00-core/rng";
+import { dateOf, hourOf, isMonthStart, monthIndexOf, nowHours, yearOf } from "../00-core/time";
+import { cpuModel, isFresh, skuOf, topBoost } from "../10-catalog/cpus";
+import { genOf, modelById } from "../10-catalog/hardware";
 import { isService, softwareById } from "../10-catalog/platforms";
 import { BACKUP_HOUR, slowTolerance } from "../10-catalog/usage";
 import { APP_SUITE_FEE, licensingAt, SERVER_OS, serverOsAt, serverOsById, type LicenseEra, type LicenseKind, type ServerOsId } from "../10-catalog/server-os";
@@ -12,9 +14,9 @@ import { exitsOf } from "../60-infra/network";
 import { bootHours } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
-import { installedCores, perCoreOf, raidUsable } from "../60-infra/status";
+import { deviceVendor, installedCores, perCoreOf, raidUsable } from "../60-infra/status";
 import { diskFill, nodeUsage } from "../60-infra/usage";
-import { addReview, starsFor } from "../80-business/marketing";
+import { addAwareness, addReview, announceReview, starsFor } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
 
 // Values from docs/design/economy.md, sections "Platforms and licenses" and "Data loss and backups".
@@ -240,16 +242,69 @@ export function workloadPerf(s: GameState, w: Workload, product: Product | undef
 function overload(s: GameState) {
   const perfs = new Map<string, number>();
   const perfOf = (id: string) => perfs.get(id) ?? perfs.set(id, nodeUsage(s, id).perf).get(id)!;
-  const services = new Map(s.services.map((v) => [v.id, v]));
+  const services = new Map(s.services.map((v) => [v.id, v])), slow = new Set<string>();
   for (const w of s.workloads) {
     const v = services.get(w.serviceId), perf = workloadPerf(s, w, v?.product, perfOf);
     if (perf >= 1) continue;
     const cus = v && customerCopy(s, v.customerId);
     if (!v || !cus) continue;
+    slow.add(v.id);
     // Customers notice only the slowdown past what they expect from what they run.
     const lost = 1 - perf - slowTolerance(s.seed, v.product, cus.profile, cus.id);
     if (lost > 0) slowed(s, cus, v.id, lost);
   }
+  if (slow.size) s.services = s.services.map((v) => (slow.has(v.id) ? { ...v, slowedAt: s.hour } : v));
+}
+
+// economy.md, Marketing and reviews: a fast game server and a smooth month.
+export const FAST_CLOCK = 0.9;
+export const FAST_HAPPY = 3;
+export const FAST_REVIEW_CHANCE = 0.1;
+export const FRESH_AWARENESS = 0.01;
+export const FRESH_AWARENESS_CAP = 0.05;
+export const SMOOTH_REVIEW_CHANCE = 0.05;
+// The boost clock of a node's CPUs: its part's, or its vendor generation's clock for a part without a name.
+export const nodeBoost = (d: Device): number => {
+  const c = d.components.find((x) => x.kind === "cpu");
+  if (!c) return 0;
+  const vendor = c.vendor ?? deviceVendor(d), gen = c.gen ?? genOf(modelById(d.model));
+  return skuOf({ ...c, vendor, gen })?.boost ?? cpuModel(vendor, gen)?.ghz ?? 0;
+};
+// The node a customer workload runs on.
+const nodeOf = (s: GameState, w: Workload): Device | undefined => {
+  const at = w.deviceId ?? vmOf(s, w)?.deviceId;
+  return at ? s.devices.find((d) => d.id === at) : undefined;
+};
+// At a month's start: gamers on a node whose CPU boosts within FAST_CLOCK of the fastest part on sale gain FAST_HAPPY and may
+// write a five-star review; a CPU still new raises awareness among gamers per node, up to the cap. Every service that ran the
+// whole month without a slowdown or an outage may earn a review of at least four stars. One review per customer and month.
+// The rolls come from the month's own stream, so they leave the game's draws alone.
+export function monthlyReviews(s: GameState, events: SimEvent[]): void {
+  const month = monthIndexOf(s.hour), year = yearOf(s.hour), top = topBoost(year), since = hourOf(new Date(Date.UTC(Math.floor((month - 1) / 12), (month - 1) % 12, 1)));
+  const reviewed = new Set<string>(), fresh = new Set<string>(), r = hashRng(s.seed, s.hour, 331);
+  const review = (cus: Customer, stars: number, reason: "fast" | "smooth", p: number) => {
+    if (reviewed.has(cus.id) || !chance(r, p)) return;
+    reviewed.add(cus.id);
+    announceReview(s, addReview(s, cus.id, stars, reason), events);
+  };
+  for (const v of s.services) {
+    if (v.endedAt !== null) continue;
+    const w = s.workloads.find((x) => x.serviceId === v.id), node = w && !w.stopped ? nodeOf(s, w) : undefined;
+    if (v.product === "gameServer" && node && nodeBoost(node) >= FAST_CLOCK * top) {
+      const cus = customerCopy(s, v.customerId);
+      if (!cus) continue;
+      bump(cus, FAST_HAPPY);
+      const c = node.components.find((x) => x.kind === "cpu");
+      const part = c && skuOf({ ...c, vendor: c.vendor ?? deviceVendor(node), gen: c.gen ?? genOf(modelById(node.model)) });
+      if (part && isFresh(part, month)) fresh.add(node.id);
+      review(cus, 5, "fast", FAST_REVIEW_CHANCE);
+    }
+    if (v.startedAt <= since && (v.slowedAt ?? -1) < since && !(v.id in s.downSince)) {
+      const cus = s.customers.find((x) => x.id === v.customerId);
+      if (cus) review(cus, Math.max(4, starsFor(cus.happiness, r)), "smooth", SMOOTH_REVIEW_CHANCE);
+    }
+  }
+  if (fresh.size) addAwareness(s, "gamer", Math.min(FRESH_AWARENESS_CAP, FRESH_AWARENESS * fresh.size));
 }
 
 // One line per paid software and cluster, one per App Suite, and one for every machine's Windoors together.
@@ -278,6 +333,9 @@ export function productsTick(s: GameState): SimEvent[] {
   reportLosses(s, events);
   runBackups(s, events);
   overload(s);
-  if (isMonthStart(s.hour)) billLicenses(s);
+  if (isMonthStart(s.hour)) {
+    monthlyReviews(s, events);
+    billLicenses(s);
+  }
   return events;
 }

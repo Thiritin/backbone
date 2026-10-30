@@ -150,7 +150,7 @@ describe("usage curves and overcommit", () => {
     expect(nodeUsage(s, "dev3", TUE_10).perf).toBe(1);
     const sat = nodeUsage(s, "dev3", SAT_20);
     expect(sat.used.vcpu).toBeGreaterThan(sat.physical.vcpu);
-    expect(sat.perf).toBeLessThan(0.6);
+    expect(sat.perf).toBeLessThan(0.7);
     const happiness = () => s.customers.find((c) => c.id === gamer)!.happiness;
     run(s, SAT_20);
     // An hour on the slowed node costs each customer on the node SLOW_PENALTY × the performance lost past their tolerance,

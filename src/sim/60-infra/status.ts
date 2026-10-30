@@ -1,6 +1,6 @@
 import { nowHours, yearOf } from "../00-core/time";
 import { wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
-import { cpuModel, skuOf, type Vendor } from "../10-catalog/cpus";
+import { cpuModel, skuOf, SMT_SHARE, type Vendor } from "../10-catalog/cpus";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
@@ -312,8 +312,13 @@ export const perCoreOf = (d: Device): number => {
   const vendor = c.vendor ?? deviceVendor(d), gen = c.gen ?? genOf(modelById(d.model));
   return skuOf({ ...c, vendor, gen })?.perCore ?? cpuModel(vendor, gen)?.perCore ?? 1;
 };
-// vCPU of the working CPUs: their cores at the speed of one core.
-export const installedVcpu = (d: Device): number => Math.round(installedCores(d) * perCoreOf(d) * 100) / 100;
+// Threads of the working CPUs; a part without a name counts its cores.
+export const installedThreads = (d: Device): number => d.components.reduce((n, c) => n + (c.kind === "cpu" && c.failedAt === null ? skuOf(c)?.threads ?? c.size ?? 0 : 0), 0);
+// vCPU of the working CPUs: their cores at the speed of one core, plus SMT_SHARE of a core for every second thread.
+export const installedVcpu = (d: Device): number => {
+  const cores = installedCores(d);
+  return Math.round((cores + (installedThreads(d) - cores) * SMT_SHARE) * perCoreOf(d) * 100) / 100;
+};
 
 // Usable GB of the array: all drives, half for mirrors, all but one or two for parity.
 export function raidUsable(d: Device): number {

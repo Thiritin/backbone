@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Processors with two threads per core now count 30% more vCPU, gamers on a server with one of the fastest clocks on sale grow happier each month and may leave five-star reviews, a brand-new fast processor makes you known among gamers, and any service that runs a whole month without a slowdown or outage can earn a good review.
 - Switching a product off on your website now stops Sponsor-Bored applications for it, and the press no longer writes about product lines you have not listed.
 - Servers in the shop now carry their maker's own model names and numbers, such as a PowerEdgy R620 or a ProLight DL360 Gen9, and each maker builds its own set of lines, with Gigabutt joining as the fifth server maker.
 - Every CPU socket now offers a range of named processors with cores, threads, base and boost clocks and power draw, the shop lets you pick the processor when you order a server, and new clock, four-socket, 24-bay storage and 8-card GPU lines join the catalog.
