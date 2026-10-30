@@ -146,13 +146,13 @@ The machine's own console runs the same shell once logged in, so the Terminal an
 
 **Kept as built**: no signal, POST, the stuck prompt, the BIOS, the boot menu (its USB entry renamed to the stick's OS list: "USB: Debiant 8 netinst", "USB: Windoors Server 2012 R2"), Operating system not found, hung, the VM console's title bar (Media gains the two ISOs).
 
-**Lunix installer**: blue background, grey boxes with red title bars, white text, as the Debiant installer looks in every year. Tab and Enter move through the five screens of section 4.
+**Lunix installer**: blue background, grey boxes with red title bars, white text, as the Debiant installer looks in every year. Tab and Enter move through the five screens of section 4, after the installer boot menu (Install, Erase disk, Reboot) that also holds the bare-metal erase.
 
-**Lunix boot and login**: black, the kernel lines in white, a `Debiant GNU/Lunix 8 node001 tty1` banner and `node001 login:`. Any key logs in as root; the prompt runs the shell with the Terminal's line editing (shared, not forked). From Debiant 8 the boot shows green `[ OK ]` lines instead of plain ones.
+**Lunix boot and login**: black, the kernel lines in white, a `Debiant GNU/Lunix 8 node001 tty1` banner and `node001 login:`. Any key logs in as root; the prompt runs the shell with the Terminal's line editing (shared, not forked). From Debiant 8 the boot shows green `[ OK ]` lines instead of plain ones. The lines follow game time over the OS's boot minutes, so they run in real time at 1x and skipping time skips them. The login lasts until the machine boots again; `exit` returns to it.
 
 **Software install progress on Lunix**: apt's "Reading package lists, Unpacking, Setting up" lines; a script installer's stage lines ("Fetching, Installing packages, Configuring"); printed over the install hours.
 
-**Windoors Setup**, two eras. 2003: the blue text-mode first stage ("Setup is loading files"), then the silver GUI stage with the left-hand step list (Collecting information, Dynamic update, Preparing installation, Installing Windoors, Finalizing installation) and a minutes-remaining line. 2008 and later: the dark blue "Install Windoors" window with the logo, the edition list, "Where do you want to install Windoors?" and the "Installing Windoors" checklist with percentages. The era follows the version installed.
+**Windoors Setup**, two eras. 2003: the blue text-mode first stage ("Setup is loading files"), then the silver GUI stage with the left-hand step list (Collecting information, Dynamic update, Preparing installation, Installing Windoors, Finalizing installation) and a minutes-remaining line. 2008 and later: the dark blue "Install Windoors" window with the logo, the edition list, "Where do you want to install Windoors?" and the "Installing Windoors" checklist with percentages. The era follows the version installed. The 2003 partition list deletes with D (the bare-metal erase); the later window has Delete next to Next. Both reach the same erase confirmation as the Debiant partitioner.
 
 **Windoors boot and logon**, three eras. 2003: the black boot screen with the scrolling bar, "Welcome", the olive desktop. 2008 to 2012 R2: the green bar, the blue logon, the desktop. 2016 and later: the flat spinner, the flat logon and desktop. The desktop holds a taskbar with a Start button and the clock, and one window that opens on login: Server Manager.
 
@@ -166,7 +166,7 @@ The GUI that installs software on Windoors, modelled on the real one of each era
 - 2008 to 2012 R2: the Server Manager console with the tree on the left (Roles, Features, Diagnostics, Configuration, Storage) and the Add Roles Wizard (Before You Begin, Server Roles with the checkbox list, Confirmation, Progress, Results). HyperVee is a role; the others under "Programs and Features, Install a program from the network".
 - 2016 and later: the flat dashboard with the tiles ("Add roles and features", "Add other servers to manage") and the wizard with the left-hand step list.
 
-Installing calls `installSoftware`; the wizard's Progress page or the installer's bar shows the hours. Uninstall is the same wizard's remove path.
+Installing calls `installSoftware`; the wizard's Progress page shows the bar and the hours left. Server Manager lists what is installed or installing with a Remove button, which calls `uninstallSoftware`. Programs install in a wizard without the step list; the 2016 wizard lists roles and programs together. Logging off is in the Start menu.
 
 ## 8. The Browser
 

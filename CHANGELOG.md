@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Servers and VMs boot through POST and the BIOS into a real operating system installer, then into a login and shell on Debiant or a desktop on Windoors.
+- Windoors machines install and remove software from Server Manager.
 - Clicking the VGA port on the back of a server in the device view now plugs in a monitor, just like in the rack.
 - A cluster named after the place it was built in now takes the name of the location its servers move to.
 - A draining server can now be uncordoned, which stops a drain that has nowhere to move its workloads.

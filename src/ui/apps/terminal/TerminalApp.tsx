@@ -1,16 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { t } from "../../../i18n/en";
-import { complete, DESK_PROMPT, hostOf, promptOf, runLine, watchStep, type Editing, type Session, type Watch } from "../../../sim/60-infra/terminal";
+import { DESK_PROMPT } from "../../../sim/60-infra/terminal";
 import { editFiles } from "../../../sim/90-actions/files";
-import { useSessionState } from "../../session";
 import { uiSound, useFocus, useStore } from "../../store";
+import { useShell, type Line, type Open } from "./shell";
 import "./terminal.css";
 
-interface Line { prompt?: string; text: string }
-// A file open in edit: the machine it is on, the text as last saved and the text being typed.
-interface Open extends Editing { host: string; saved: string }
-
-const MAX_LINES = 400;
 const SETUP_KEY = "backbone.shell";
 
 // The first Terminal ever opened installs zsh by itself: two typos and a fist on the desk, then completion.
@@ -32,31 +27,13 @@ const INTRO: { cmd: string; out: string[]; thump?: boolean }[] = [
 const setupDone = () => { try { return !!localStorage.getItem(SETUP_KEY); } catch { return true; } };
 
 export function TerminalApp() {
-  const game = useStore((s) => s.game);
-  const [lines, setLines] = useSessionState<Line[]>("terminal.lines", []);
-  const [session, setSession] = useSessionState<Session | null>("terminal.session", null);
-  const [history, setHistory] = useSessionState<string[]>("terminal.history", []);
-  const [watching, setWatching] = useSessionState<Watch[]>("terminal.watch", []);
-  const [draft, setDraft] = useSessionState("terminal.draft", "");
-  // The working directory, null for the home; the rest of a line waiting on a [Y/n] answer.
-  const [cwd, setCwd] = useSessionState<string | null>("terminal.cwd", null);
-  const [pending, setPending] = useSessionState<string | null>("terminal.confirm", null);
-  const [open, setOpen] = useSessionState<Open | null>("terminal.edit", null);
-  const recall = useRef(history.length);
+  const shell = useShell("terminal");
+  const { lines, setLines, draft, setDraft, open, setOpen } = shell;
   const screen = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const [ready, setReady] = useState(setupDone);
 
   useEffect(() => { if (screen.current) screen.current.scrollTop = screen.current.scrollHeight; }, [lines]);
-
-  // Recoveries and installs run in game time, so the screen prints their lines as the game moves on.
-  useEffect(() => {
-    const steps = watching.map((w) => watchStep(game, w));
-    if (steps.every((x, i) => x.next === watching[i])) return;
-    const out = steps.flatMap((x) => x.output.map((text) => ({ text })));
-    if (out.length) setLines([...lines, ...out].slice(-MAX_LINES));
-    setWatching(steps.flatMap((x) => (x.next ? [x.next] : [])));
-  }, [game, watching, lines, setLines, setWatching]);
 
   useEffect(() => {
     if (ready) return;
@@ -91,49 +68,15 @@ export function TerminalApp() {
     return () => { live = false; };
   }, [ready, setLines, setDraft]);
 
-  const tab = () => {
-    if (pending !== null) return;
-    const r = complete(useStore.getState().game, session, draft, cwd);
-    if (r.options.length) setLines([...lines, { prompt: promptOf(session, cwd), text: draft }, { text: r.options.join("  ") }].slice(-MAX_LINES));
-    setDraft(r.line);
-  };
-
-  const submit = (line = draft, from = session) => {
-    const asked = pending, dir = from === session ? cwd : null;
-    const shown: Line = { prompt: asked !== null ? t("term.apt.confirm") : promptOf(from, dir), text: line };
-    setDraft("");
-    if (asked !== null) {
-      setPending(null);
-      if (!/^\s*(y|yes)?\s*$/i.test(line)) { setLines([...lines, shown, { text: t("term.apt.abort") }].slice(-MAX_LINES)); return; }
-    }
-    const result = runLine(() => useStore.getState().game, (c) => useStore.getState().act(...c), from, dir, asked ?? line, history.length);
-    const output = result.output.map((text) => ({ text }));
-    setLines((result.clear ? output : [...lines, shown, ...output]).slice(-MAX_LINES));
-    setSession(result.session);
-    setCwd(result.cwd);
-    setPending(result.confirm);
-    if (result.edit) setOpen({ ...result.edit, host: hostOf(result.session), saved: result.edit.text });
-    if (result.watch.length) setWatching([...watching, ...result.watch]);
-    if (asked !== null) return;
-    if (line.trim()) setHistory([...history, line].slice(-100));
-    recall.current = line.trim() ? Math.min(history.length + 1, 100) : history.length;
-  };
-
   // Terminal on a server drops any open session and connects to it.
   const [target, setTarget] = useState<string | null>(null);
   useFocus("Terminal", (f) => { if (f.kind === "ssh") setTarget(f.id); });
   useEffect(() => {
     if (!ready || !target) return;
     setTarget(null);
-    setSession(null);
-    submit(`ssh ${target}`, null);
+    shell.setSession(null);
+    shell.submit(`ssh ${target}`, null);
   }, [ready, target]);
-
-  const walk = (step: number) => {
-    const at = Math.max(0, Math.min(history.length, recall.current + step));
-    recall.current = at;
-    setDraft(history[at] ?? "");
-  };
 
   if (open) return <Editor file={open} onChange={setOpen} onClose={() => { setOpen(null); setTimeout(() => input.current?.focus()); }} />;
 
@@ -144,17 +87,11 @@ export function TerminalApp() {
           <div key={i} className="tm-line">{l.prompt && <span className="tm-prompt">{l.prompt} </span>}{l.text}</div>
         ))}
         <div className="tm-row">
-          <span className="tm-prompt">{pending !== null ? t("term.apt.confirm") : promptOf(session, cwd)}</span>
+          <span className="tm-prompt">{shell.prompt}</span>
           <input
             ref={input} value={draft} aria-label="Command" autoFocus spellCheck={false} autoCapitalize="off" autoComplete="off" readOnly={!ready}
             onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (!ready) return;
-              if (e.key === "Tab") { e.preventDefault(); tab(); }
-              else if (e.key === "Enter") submit();
-              else if (e.key === "ArrowUp") { e.preventDefault(); walk(-1); }
-              else if (e.key === "ArrowDown") { e.preventDefault(); walk(1); }
-            }}
+            onKeyDown={(e) => { if (ready) shell.onKeyDown(e); }}
           />
         </div>
       </div>
@@ -163,7 +100,7 @@ export function TerminalApp() {
 }
 
 // edit: the whole window is the file. Ctrl+S saves, Ctrl+X or Escape closes, twice when there are unsaved changes.
-function Editor({ file, onChange, onClose }: { file: Open; onChange: (f: Open) => void; onClose: () => void }) {
+export function Editor({ file, onChange, onClose }: { file: Open; onChange: (f: Open) => void; onClose: () => void }) {
   const [status, setStatus] = useState<string | null>(null);
   const dirty = file.text !== file.saved;
   const save = () => {
