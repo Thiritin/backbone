@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Clicking a notification about a new ticket or order now brings Support to the front with that ticket open, and hardware notifications open the affected device.
 - Customer load now changes from day to day and follows the week: gamers play most on Saturdays, shops sell most on Sundays and news sites peak on Mondays.
 - Most private customers now keep a quiet personal page that uses little CPU and traffic beyond its memory, while some still run a busy blog.
 - Software installed from a server's shell now holds the shell until it finishes and prints a full installer log along the way.

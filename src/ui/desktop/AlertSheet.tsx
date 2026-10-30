@@ -75,7 +75,7 @@ export function AlertSheet({ alert }: { alert: Banner }) {
         <div className="alert-actions">
           <button className="btn" onClick={() => closeAlert(true)}>Continue</button>
           {ALERT_WIKI[key] && <button className="btn" onClick={() => { closeAlert(false); openApp("Browser", { kind: "url", id: wikiUrl(ALERT_WIKI[key]) }); }}>Wiki</button>}
-          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, focus(game, key) ?? (alert.target ? { kind: "device", id: alert.target } : undefined)); }}>Open {app}</button>
+          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, focus(game, key) ?? alert.focus); }}>Open {app}</button>
         </div>
       </div>
     </div>,

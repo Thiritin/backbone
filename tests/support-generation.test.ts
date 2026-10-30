@@ -44,6 +44,14 @@ describe("ticket generation", () => {
     expect(events.every((e) => e.key === "event.ticket" || e.key === "event.tickets")).toBe(true);
   });
 
+  it("names the ticket a single new-ticket notification is about", () => {
+    const s = newGame(3);
+    crowd(s, "private", 500);
+    const one = Array.from({ length: 48 }, () => tick(s)).flat().filter((e) => e.key === "event.ticket");
+    expect(one.length).toBeGreaterThan(0);
+    for (const e of one) expect(s.tickets.some((t) => t.id === e.params.ticketId)).toBe(true);
+  });
+
   it("creates nothing without customers", () => {
     const s = newGame(1);
     runTo(s, FEB_1);

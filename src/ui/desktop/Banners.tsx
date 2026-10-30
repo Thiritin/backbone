@@ -7,7 +7,7 @@ import { useStore, type Banner } from "../store";
 function Card({ b, time, dismiss, gear }: { b: Banner; time: string; dismiss: (id: number) => void; gear?: () => void }) {
   const openApp = useStore((s) => s.openApp);
   const app = appFor(useStore((s) => s.game), b.app);
-  const open = () => { openApp(b.app); dismiss(b.id); };
+  const open = () => { openApp(b.app, b.focus); dismiss(b.id); };
   return (
     <div className="banner" role="button" tabIndex={0} onClick={open} onKeyDown={(e) => e.key === "Enter" && open()}>
       <span className="b-icon" style={{ "--tile": app.tile } as CSSProperties}><app.icon /></span>

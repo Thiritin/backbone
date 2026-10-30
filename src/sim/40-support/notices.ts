@@ -223,7 +223,7 @@ export function opsTick(s: GameState): SimEvent[] {
   deadlines(s, r, events);
   const fresh = [...followUps(s, r), ...spawn(s, r)];
   for (const t of fresh) {
-    events.push({ app: "Support", key: "event.ticket", params: { ...subjectParams(s, t), name: senderById(t.notice!.sender).name, subject: `ticket.${t.kind}.${t.topic}.subject` } });
+    events.push({ app: "Support", key: "event.ticket", params: { ...subjectParams(s, t), ticketId: t.id, name: senderById(t.notice!.sender).name, subject: `ticket.${t.kind}.${t.topic}.subject` } });
   }
   return events;
 }

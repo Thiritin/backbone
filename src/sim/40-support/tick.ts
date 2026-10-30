@@ -217,5 +217,5 @@ export function supportTick(s: GameState): SimEvent[] {
   if (fresh.length > 1) return [...events, { app: "Support", key: "event.tickets", params: { count: fresh.length } }];
   if (!fresh.length) return events;
   const t = fresh[0], service = s.services.find((v) => v.id === t.serviceId);
-  return [...events, { app: "Support", key: "event.ticket", params: { name: customer(t.customerId).name, subject: `ticket.${t.kind}.${t.topic}.subject`, service: service?.label ?? "", hostname: serviceFqdn(s, service) } }];
+  return [...events, { app: "Support", key: "event.ticket", params: { ticketId: t.id, name: customer(t.customerId).name, subject: `ticket.${t.kind}.${t.topic}.subject`, service: service?.label ?? "", hostname: serviceFqdn(s, service) } }];
 }

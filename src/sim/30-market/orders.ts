@@ -101,11 +101,11 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   if (email && !lead && s.autoOrders && canAutomate(s) && targetFor(s, r)) {
     r = editRequest(s, r.id, () => ({ quote: Math.round(offerPrice(s, need.product, spec, need.sla) * (1 - discount) * 100) / 100 }));
     if (!applyStep(s, s.tickets.find((x) => x.id === t.id)!, "quote", AUTOMATION)) {
-      events.push({ app: "Support", key: "event.orderQuoted", params: { ...params, price: r.quote! } });
+      events.push({ app: "Support", key: "event.orderQuoted", params: { ...params, ticketId: t.id, price: r.quote! } });
       return r;
     }
   }
-  events.push({ app: "Support", key: "event.order", params });
+  events.push({ app: "Support", key: "event.order", params: { ...params, ticketId: t.id } });
   return r;
 }
 

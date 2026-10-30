@@ -20,7 +20,12 @@ export const SAVE_KEY = "backbone.save";
 // What another app asked a window to show; n changes on every request so repeating one still applies.
 export interface Focus { kind: string; id: string; n: number }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; console?: string; focus?: Focus }
-export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string; target?: string }
+export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string; focus?: Omit<Focus, "n"> }
+
+// What a notification opens its app on, read from the ids its event names.
+export const focusOf = (p: Record<string, string | number>): Omit<Focus, "n"> | undefined =>
+  p.ticketId !== undefined ? { kind: "ticket", id: String(p.ticketId) } :
+  p.deviceId !== undefined ? { kind: "device", id: String(p.deviceId) } : undefined;
 // Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
 // types holds the notification types switched off or on by id (notify-types.ts); a missing id is on.
 export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<string, boolean> }
@@ -76,7 +81,7 @@ interface Store {
   toggleZoom: (id: string) => void;
   place: (id: string, box: Partial<Pick<Win, "x" | "y" | "w" | "h">>) => void;
   // key is the sim event key that picks the sound.
-  notify: (app: string, title: string, text: string, key?: string) => void;
+  notify: (app: string, title: string, text: string, key?: string, focus?: Omit<Focus, "n">) => void;
   dismiss: (id: number) => void;
   forget: (id: number | null) => void;
   started: boolean;
@@ -219,9 +224,9 @@ export const useStore = create<Store>((set, get) => ({
     for (let i = 0, n = Math.round(hours * 60); i < n; i++) {
       for (const e of tickMinute(game)) {
         happened = true;
-        get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params), e.key);
+        get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params), e.key, focusOf(e.params));
         if (e.key === "event.trainingDone") set({ explain: String(e.params.id) });
-        if (isAlert(e.key) && !alert) alert = { id: ++bannerId, app: e.app, title: t(`${e.key}.title`, e.params), text: t(`${e.key}.text`, e.params), hour: game.hour, key: e.key, target: e.params.deviceId === undefined ? undefined : String(e.params.deviceId) };
+        if (isAlert(e.key) && !alert) alert = { id: ++bannerId, app: e.app, title: t(`${e.key}.title`, e.params), text: t(`${e.key}.text`, e.params), hour: game.hour, key: e.key, focus: focusOf(e.params) };
       }
       if (game.gameOver !== null || alert || (skip && happened)) break;
     }
@@ -299,7 +304,7 @@ export const useStore = create<Store>((set, get) => ({
     set({ sound });
     savePrefs(get().notifyPrefs, sound);
   },
-  notify: (app, title, text, key) => {
+  notify: (app, title, text, key, focus) => {
     const pref = prefOf(get().notifyPrefs, app);
     // Alerts show whatever the preferences say.
     if (!(key && isAlert(key)) && (!pref.allow || (key && pref.types?.[typeOf(app, key)] === false))) return;
@@ -317,7 +322,7 @@ export const useStore = create<Store>((set, get) => ({
       lastBanner = Date.now();
       uiSound("banner");
     }
-    const b = { id: ++bannerId, app, title, text, hour: get().game.hour, key };
+    const b = { id: ++bannerId, app, title, text, hour: get().game.hour, key, focus };
     set(({ banners, history, unseen }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
     setTimeout(() => get().dismiss(b.id), 6000);
   },
