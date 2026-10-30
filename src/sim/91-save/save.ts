@@ -1,4 +1,4 @@
-import { fillCpus, MODELS, modelById, RENAMED_MODELS } from "../10-catalog/hardware";
+import { brandsOf, fillCpus, MODELS, modelById, RENAMED_MODELS } from "../10-catalog/hardware";
 import { leave } from "../90-actions/clusters";
 import { yearOf } from "../00-core/time";
 import { asImage } from "../10-catalog/server-os";
@@ -17,6 +17,7 @@ import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
 import { fillMachines } from "./machines";
+import { legacyLeads } from "./leads";
 import { heldLicenses } from "../85-products/products";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
@@ -46,15 +47,17 @@ export function deserialize(raw: string): GameState {
   }
   // Older saves had one stockroom; its units go to the first location.
   const stored = (d: Device) => d.store !== undefined ? d.store : !d.rackId && !d.panel ? locations[0].id : null;
-  const known = (d: Device) => MODELS.some((m) => m.id === (RENAMED_MODELS[d.model] ?? d.model));
+  const known = (d: { model: string }) => MODELS.some((m) => m.id === (RENAMED_MODELS[d.model] ?? d.model));
   const gone = new Set((data.devices ?? []).filter((d) => !known(d)).map((d) => d.id));
   // Old devices get the components of their model, installed when they were bought.
+  // Saves from builds that could draw no maker hold units without a brand.
+  const maker = (model: string, brand: string | undefined) => brand ?? brandsOf(modelById(model))[0];
   const devices = (data.devices ?? base.devices).filter(known).map((d) => {
     const model = RENAMED_MODELS[d.model] ?? d.model;
     const defaults = deviceDefaults(model, d.boughtAt ?? 0);
     const sized = fillCpus(modelById(model), fillSizes(model, d.components ?? defaults.components));
     return {
-      ...defaults, ...d, model, components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
+      ...defaults, ...d, model, brand: maker(model, d.brand), components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
     };
   });
   const racks = (data.racks ?? base.racks).map((r) => ({ ...r, provided: r.provided ?? false, feedB: r.feedB ?? false, highDensity: r.highDensity ?? false, extraKw: r.extraKw ?? 0, extraKwAt: r.extraKwAt ?? null, flatKw: r.flatKw ?? 0, flatKwAt: r.flatKwAt ?? null }));
@@ -100,12 +103,14 @@ export function deserialize(raw: string): GameState {
     // Saves from before clusters keep their services unplaced, which leaves them online.
     sales: { ...base.sales, ...data.sales },
     shop: { ...base.shop, ...data.shop },
+    used: (data.used ?? base.used).filter(known).map((l) => ({ ...l, model: RENAMED_MODELS[l.model] ?? l.model, brand: maker(RENAMED_MODELS[l.model] ?? l.model, l.brand), ...(l.device && { device: { ...l.device, brand: maker(l.device.model, l.device.brand) } }) })),
     staff: (data.staff ?? []).map(({ hours: _h, hoursFrom: _f, ...e }: Employee & { hours?: number; hoursFrom?: number }) => ({ ...e, location: e.location ?? null, team: e.team ?? "office", worked: e.worked ?? 0 })),
     techRules: { ...base.techRules, ...data.techRules },
     // upgradeCompute fills the cluster defaults.
     clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map((w) => workloadDefaults({ ...w, media: w.media && asImage((w.media as string) === "iso" ? "lunix" : w.media, year) })), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
+  legacyLeads(s);
   // Machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.licenses) s.licenses = heldLicenses(s);
   const media = data.media ?? base.media;

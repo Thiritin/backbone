@@ -6,7 +6,15 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - The Debiant and Windoors sites now offer every release as its own download, and an install puts the release that is on the stick or ISO onto the machine.
 - Servers and VMs can upgrade their operating system in place to the next release, with `apt full-upgrade` on Debiant or Windoors Setup from the next release's media, and everything still running on the machine is offline until it finishes, so move VMs off first.
+- A server or VM that only runs its operating system now shows a little CPU and memory use while idle, and close to a full core while it installs software or boots.
+- Business, premium and large-budget customers now write order emails like everyone else and show their SLA on the ticket, and a customer who accepts your quote waits for you to create the account, send the invoice, register the domain and set the service up instead of being set up on their own.
+- Quote requests still waiting in an older save now show up as order emails in Support, and the separate Sales list there is gone.
+- The setup step now suggests the newest, most reliable host and lists hosts best first with their hardware year and downtime, and every automatic placement picks hosts in that same order.
+- Wikipedio and the Debiant download page now say that the default user name after installing Debiant GNU/Lunix is root.
 - Stopped VMs on a VMwhere cluster can become templates, which clone into ready VMs with the same size, operating system and software after a disk copy.
+- The used market opens again in saves where a listing had no maker, and it no longer offers models before their maker sells them.
+- Wikipedio grows into a guide to the game, with categories, a search box, a help page on starting a hosting company and new articles on racks, power supplies, RAID, IP addresses, domains, control panels, hypervisors, email blacklists and web hosting.
+- Guide steps and data loss alerts have a Wiki button that opens the article explaining them, and the search finds Wikipedio articles.
 - VMs on a VMwhere cluster can keep up to three snapshots to revert to, which grow on their storage until you delete them.
 - New games start on Mom's DSL, a free private line with 6 Mbit/s down, 0.5 Mbit/s up and a dynamic address, so your first server can go online right away.
 - The Browser has a new encyclopedia, Wikipedio, with articles on installing a server from a USB stick, uplinks and DSL lines.

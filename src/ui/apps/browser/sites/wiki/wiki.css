@@ -17,3 +17,17 @@
 .wk-from { margin-bottom: 10px; font-size: 11px; color: #54595d; }
 .wk-page kbd { padding: 0 4px; border: 1px solid #a2a9b1; border-radius: 2px; background: #f8f9fa; font: 12px monospace; }
 @media (max-width: 560px) { .wk { flex-direction: column; } .wk-side { width: auto; } }
+.wk a.new { color: #ba0000; }
+.wk-side ul + ul { margin-top: 10px; }
+.wk-search { display: flex; gap: 4px; margin-bottom: 10px; }
+.wk-search input { flex: 1; min-width: 0; padding: 2px 4px; border: 1px solid #a2a9b1; font: inherit; font-size: 12px; }
+.wk-search button { padding: 0 6px; border: 1px solid #a2a9b1; background: #f8f9fa; font: inherit; font-size: 12px; cursor: pointer; }
+.wk-info { float: right; clear: right; width: 220px; margin: 0 0 12px 16px; border: 1px solid #a2a9b1; background: #f8f9fa; border-collapse: collapse; font-size: 12px; }
+.wk-info caption { padding: 4px; font-weight: bold; font-size: 14px; }
+.wk-info th, .wk-info td { padding: 3px 6px; text-align: left; vertical-align: top; }
+.wk-info th { width: 45%; }
+.wk-page table.wk-table { border-collapse: collapse; margin: 8px 0; }
+.wk-table th, .wk-table td { padding: 3px 8px; border: 1px solid #a2a9b1; text-align: left; }
+.wk-table th { background: #eaecf0; }
+.wk-cat { clear: both; margin-top: 24px; padding: 4px 8px; border: 1px solid #a2a9b1; background: #f8f9fa; font-size: 12px; }
+@media (max-width: 560px) { .wk-info { float: none; width: auto; margin: 0 0 12px; } }

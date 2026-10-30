@@ -1,10 +1,11 @@
 // Where a new or growing service can go: automatic placement, a cluster, or one node of it. The Support order and
 // upgrade cards list these; a route is "auto", a cluster id or a node's device id.
+import { genOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { working } from "./status";
-import { bookable, clusterOf, clustersOf, controlPlaneUp, hasHosts, KEYS, noRoomError, nodeUsed, pickNode, supports, vmRoom, withDatastore, type Cluster } from "./cluster";
+import { bookable, clusterOf, clustersOf, controlPlaneUp, hasHosts, KEYS, noRoomError, nodeUsed, pickNode, supports, vmById, vmRoom, withDatastore, type Cluster } from "./cluster";
 
 // cap and used are what the target can book and has booked; free is the room left.
 export interface RouteNode { id: string; name: string; cap: Resources; used: Resources; free: Resources; fits: boolean }
@@ -30,6 +31,30 @@ export function routeOptions(s: GameState, product: Product, city: string, size:
     });
     return { id: c.id, name: c.name, az: c.az, cap: sumOf(nodes.map((n) => n.cap)), used: sumOf(nodes.map((n) => n.used)), free: sumOf(nodes.map((n) => n.free)), fits: nodes.some((n) => n.fits), nodes };
   });
+}
+
+// How good a host is for a new service: the newest hardware generation of its working nodes, then the fewest hours down
+// this month per service it carries. Every automatic placement and every preselection ranks hosts by this.
+export function hostQuality(s: GameState, c: Cluster): { gen: number; year: number; down: number } {
+  const machines = c.vm ? [vmById(s, c.vm)?.deviceId ?? ""] : c.nodes.filter((n) => n.state === "active").map((n) => n.deviceId);
+  const models = machines.flatMap((id) => { const d = s.devices.find((x) => x.id === id); return d ? [modelById(d.model)] : []; });
+  const gens = models.map(genOf);
+  const carried = s.workloads.filter((w) => w.clusterId === c.id && w.serviceId);
+  const down = carried.reduce((n, w) => n + (s.downHours[w.serviceId!] ?? 0), 0) / Math.max(1, carried.length);
+  return { gen: gens.length ? Math.max(...gens) : 0, year: models.length ? Math.max(...models.map((m) => m.from)) : 0, down };
+}
+export const betterHost = (s: GameState) => (a: Cluster, b: Cluster): number => {
+  const x = hostQuality(s, a), y = hostQuality(s, b);
+  return y.gen - x.gen || x.down - y.down;
+};
+
+// The host a setup is preselected on: the best of the city's hosts that can take the size now, or null. It only suggests;
+// the player confirms the setup.
+export function preferredRoute(s: GameState, product: Product, city: string, size: Resources): string | null {
+  const fit = routeOptions(s, product, city, size).filter((o) => o.fits);
+  const roomy = fit.filter((o) => o.free.ramGb >= size.ramGb);
+  const best = (roomy.length ? roomy : fit).map((o) => s.clusters.find((c) => c.id === o.id)!).sort(betterHost(s))[0];
+  return best?.id ?? null;
 }
 
 // The placement a route asks for: a cluster and optionally one node of it; null for automatic.

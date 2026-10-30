@@ -34,7 +34,6 @@ describe("orders by email", () => {
       const orders = s.tickets.filter((t) => t.kind === "order");
       expect(orders.length).toBeGreaterThan(0);
       expect(s.customers.length).toBe(3);
-      expect(s.sales.requests.filter((r) => r.kind === "new").every((r) => !isStandard(r.profile, r.sla))).toBe(true);
     }
   });
 

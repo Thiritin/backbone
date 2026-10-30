@@ -7,11 +7,11 @@ import type { Product } from "../../../sim/30-customers/customers";
 import { registryCost, registryOf } from "../../../sim/30-customers/registry";
 import { wholesale } from "../../../sim/30-customers/registrar";
 import { setupFee, sizeOf } from "../../../sim/30-market/spec";
-import { canAutomate, invoiceOf, stepsDone } from "../../../sim/30-market/manual";
+import { canAutomate, hostFor, invoiceOf, stepsDone } from "../../../sim/30-market/manual";
 import type { SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
 import type { GameState } from "../../../sim/50-state";
-import { routeOptions } from "../../../sim/60-infra/routes";
+import { betterHost, hostQuality, routeOptions } from "../../../sim/60-infra/routes";
 import { offerUpgrade, confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
 import { decline } from "../../../sim/90-actions/sales";
 import { closeTicket } from "../../../sim/90-actions/support";
@@ -89,15 +89,17 @@ export function RouteCards({ product, city, size, value, onChange, disabled, ser
   );
 }
 
-// The hosts of the city that can run the product, each with what is booked on it against what it holds. Automatic joins
-// them once the provisioning skill is learned.
+// The hosts of the city that can run the product, best first, each with its hardware and what is booked on it against what
+// it holds. The suggested one is preselected by the order; the player still sets the order up. Automatic joins them once the
+// provisioning skill is learned.
 function HostCards({ r, value, onChange, disabled }: { r: SalesRequest; value: string | null; onChange: (v: string) => void; disabled?: boolean }) {
   const game = useStore((s) => s.game);
-  const hosts = routeOptions(game, r.product, r.city, sizeOf(r.spec!));
+  const better = betterHost(game), suggested = hostFor(game, r);
+  const hosts = routeOptions(game, r.product, r.city, sizeOf(r.spec!)).sort((a, b) => Number(b.fits) - Number(a.fits) || better(game.clusters.find((c) => c.id === a.id)!, game.clusters.find((c) => c.id === b.id)!));
   const used = (h: (typeof hosts)[number], k: "ramGb" | "diskGb") => `${n(h.used[k])} of ${n(h.cap[k])} GB`;
   const card = (id: string, title: string, fits: boolean, rows: [string, string][]) => (
     <div key={id} className={`host${value === id ? " sel" : ""}${fits ? "" : " full"}`}>
-      <span className="host-t">{title}{!fits && <span className="pill">Full</span>}</span>
+      <span className="host-t">{title}{!fits && <span className="pill">Full</span>}{id === suggested && <span className="pill accent">Suggested</span>}</span>
       {rows.map(([k, v]) => <span key={k} className="host-r"><span>{k}</span><span className="num">{v}</span></span>)}
       <button className="btn" aria-pressed={value === id} disabled={disabled || !fits} onClick={() => onChange(id)}>{value === id ? "Selected" : "Select"}</button>
     </div>
@@ -105,7 +107,10 @@ function HostCards({ r, value, onChange, disabled }: { r: SalesRequest; value: s
   return (
     <div className="hosts" role="group" aria-label="Hosts">
       {canAutomate(game) && card("auto", "Automatic", hosts.some((h) => h.fits), [["Hosts", String(hosts.length)]])}
-      {hosts.map((h) => card(h.id, `${h.name} · ${h.az}`, h.fits, [["RAM booked", used(h, "ramGb")], ["Disk booked", used(h, "diskGb")]]))}
+      {hosts.map((h) => {
+        const q = hostQuality(game, game.clusters.find((c) => c.id === h.id)!);
+        return card(h.id, `${h.name} · ${h.az}`, h.fits, [["Hardware", q.year ? String(q.year) : "Unknown"], ["Down this month", `${n(q.down)} h`], ["RAM booked", used(h, "ramGb")], ["Disk booked", used(h, "diskGb")]]);
+      })}
     </div>
   );
 }
@@ -142,7 +147,7 @@ export function InvoicePill({ r }: { r: SalesRequest }) {
 export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
-  const [route, setRoute] = useState<string | null>(r.route ?? null);
+  const [route, setRoute] = useState<string | null>(() => r.route ?? hostFor(game, r));
   if (isFinal(tk)) return null;
   const done = stepsDone(game, r), locked = !!tk.work;
   const web = r.product === "webHosting" && !!r.domain;

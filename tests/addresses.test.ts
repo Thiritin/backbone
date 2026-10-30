@@ -111,7 +111,7 @@ describe("addresses", () => {
     const s = withServer(newGame(1));
     s.ips = { ...s.ips, blocks: [] };
     addressTick(s);
-    const r = { city: "Frankfurt", product: "webHosting" as const, sla: "basic" as const, profile: "onlineShop" as const, kind: "new" as const };
+    const r = { city: "Frankfurt", product: "webHosting" as const, sla: "basic" as const, profile: "onlineShop" as const, kind: "order" as const };
     // The business line has four addresses to give; a dynamic line has none, and IPv6 comes to home lines in 2013.
     expect(requirementsFor(s, { ...r, spec: { ...spec, ipv6: false } })).toContainEqual(expect.objectContaining({ key: "sales.need.ipv4", ok: true }));
     s.homeLine = { id: "dsl-16", next: null };

@@ -2,7 +2,8 @@
 // sets up a website in month 3 and runs €250 of search ads from month 6. Usage: npx tsx scripts/sales-flow.ts [seed] [months]
 import { startGame } from "../src/sim/90-actions/start";
 import { tick } from "../src/sim/88-tick/tick";
-import { quote } from "../src/sim/90-actions/sales";
+import { quoteOrder } from "../src/sim/90-actions/orders";
+import { orderOf } from "../src/sim/30-market/orders";
 import { missingFor } from "../src/sim/30-market/market";
 import { replyTicket } from "../src/sim/90-actions/support";
 import { rightTemplate, isFinal } from "../src/sim/40-support/tickets";
@@ -20,10 +21,9 @@ for (let m = 0; m < months; m++) {
   for (let h = 0; h < 730; h++) {
     tick(s);
     for (const t of s.tickets) if (!isFinal(t) && !t.work && !t.replies.length && rightTemplate(s, t)) replyTicket(s, t.id, rightTemplate(s, t));
-    for (const r of s.sales.requests) {
-      if (r.status !== "open" && r.status !== "countered") continue;
-      if (missingFor(s, r).length) continue;
-      quote(s, r.id, r.status === "countered" ? r.counter! : r.reference * 0.97);
+    for (const t of s.tickets) {
+      const r = t.kind === "order" && !isFinal(t) && !t.work ? orderOf(s, t) : undefined;
+      if (r && (r.status === "open" || r.status === "countered") && r.replyAt === null && !missingFor(s, r).length) quoteOrder(s, t.id, r.status === "countered" ? r.counter! : r.reference * 0.97);
     }
   }
   const from = m * 730;

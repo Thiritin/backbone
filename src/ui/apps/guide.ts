@@ -9,6 +9,12 @@ import type { TUTORIAL } from "../../sim/checklist";
 export type StepId = (typeof TUTORIAL)[number];
 export interface Step { title: string; text: string; app: string; focus?: { kind: string; id: string } }
 
+// The Wikipedio article that explains a step.
+export const STEP_WIKI: Partial<Record<StepId, string>> = {
+  mountServer: "Rack_unit", internet: "Digital_subscriber_line", setup: "Server_installation",
+  domain: "Domain_name", launch: "Web_hosting", email: "Email_blacklist",
+};
+
 const basement = (s: GameState) => s.locations.find((l) => l.space === "basement") ?? s.locations[0];
 const firstServer = (s: GameState) => s.devices.find((d) => modelById(d.model).kind === "server");
 

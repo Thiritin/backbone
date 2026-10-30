@@ -130,3 +130,16 @@ describe("retired tower servers", () => {
     tick(s);
   });
 });
+
+describe("used listings in old saves", () => {
+  it("get a maker when they were saved without one", () => {
+    const s = readyGame(7);
+    for (let h = 0; h < 24 * 31 && !s.used.length; h++) tick(s);
+    const old = JSON.parse(serialize(s));
+    delete old.used[0].brand;
+    delete old.devices[0].brand;
+    const loaded = deserialize(JSON.stringify(old));
+    expect(loaded.used.every((l) => typeof l.brand === "string")).toBe(true);
+    expect(loaded.devices.every((d) => typeof d.brand === "string")).toBe(true);
+  });
+});

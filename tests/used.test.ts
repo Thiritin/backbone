@@ -73,6 +73,14 @@ describe("used listings", () => {
     expect(startChallenge(challengeFor(2005, 1).id).used.length).toBeGreaterThan(0);
   });
 
+  it("only lists models a maker already sells", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const s = startGame(seed);
+      s.hour = hourOf(new Date(Date.UTC(2005, 1, 1)));
+      for (const l of monthListings(s)) expect(l.brand, l.model).toBeTypeOf("string");
+    }
+  });
+
   it("prices fixed asks and auctions within their bands of the preset price", () => {
     const s = game(3);
     let scam = false;
