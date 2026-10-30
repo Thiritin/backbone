@@ -1,19 +1,26 @@
 import { useState } from "react";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { serverOsById } from "../../../../../sim/10-catalog/server-os";
+import { euro } from "../../../../../sim/00-core/money";
+import { modelById } from "../../../../../sim/10-catalog/hardware";
+import { DATASTORE_FROM, DATASTORES_MAX, FC_HBA_PRICE, type DatastoreProtocol } from "../../../../../sim/10-catalog/platforms";
+import { attachDatastore, datastoreBlock, detachDatastore } from "../../../../../sim/90-actions/datastores";
+import { working } from "../../../../../sim/60-infra/status";
+import { useStore } from "../../../../store";
 import type { GameState } from "../../../../../sim/50-state";
 import { vmStats } from "../../../../../sim/60-infra/stats";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../../sim/60-infra/alarms";
-import type { Cluster, NodeState } from "../../../../../sim/60-infra/cluster";
+import { withDatastore, bookable, datastoreCapacity, datastoreGbit, datastoreUsed, nodeUsed, type Cluster, type NodeState } from "../../../../../sim/60-infra/cluster";
 import { Chart, niceMax } from "../Chart";
-import { AlarmList, ALL, AMOUNT, amountText, AppSuiteTile, CapacityBar, SEV_GLYPH, summaryOf, worst, ConsoleThumb, isoName, MediaMenu, NodeList, SizeFields, suiteSoftware, TaskLog, Toolbar, useNewVm, useVms, vmFacts, windoorsLicence, Wizard, type Sel, type Vm } from "../HypervisorBase";
+import { nodeName, AlarmList, ALL, AMOUNT, amountText, AppSuiteTile, CapacityBar, SEV_GLYPH, summaryOf, worst, ConsoleThumb, isoName, MediaMenu, NodeList, SizeFields, suiteSoftware, TaskLog, Toolbar, useNewVm, useVms, vmFacts, windoorsLicence, Wizard, type Sel, type Vm } from "../HypervisorBase";
 import { Actions, Backups, Bar, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import type { Look } from "../../../../../sim/10-catalog/sites";
+import type { Resources } from "../../../../../sim/10-catalog/products";
 import "./vmwhere.css";
 
 // docs/design/software.md, section 9: the grey and yellow fat client from 2005, the blue web client from 2015.
 const ERAS = erasFrom(2005, 2015);
-const LABELS = { start: "Power On", stop: "Shut Down Guest OS", reset: "Reset", migrate: "Migrate", resize: "Edit Settings", console: "Open Console", delete: "Delete from Disk", restore: "Restore", recover: "Recover" };
+const LABELS = { start: "Power On", stop: "Shut Down Guest OS", reset: "Reset", migrate: "Migrate", storage: "Migrate Storage", resize: "Edit Settings", console: "Open Console", delete: "Delete from Disk", restore: "Restore", recover: "Recover" };
 
 const MHZ = 2400;
 const gb = (x: number) => `${+x.toFixed(2)} GB`;
@@ -51,6 +58,7 @@ export function VmSummary({ game, v, era }: { game: GameState; v: Vm; era: Look 
             <tr><th>CPU</th><td className="num">{w.vcpu} CPU(s), {Math.round(now.cpu * w.vcpu * MHZ)} MHz used</td></tr>
             <tr><th>Memory</th><td className="num">{w.ramGb} GB, {gb(now.ram * w.ramGb)} memory active</td></tr>
             <tr><th>Hard disk 1</th><td className="num">{w.diskGb} GB</td></tr>
+            <tr><th>Datastore</th><td>{v.storage}</td></tr>
             <tr><th>Network adapter 1</th><td>VM Network ({v.st === "running" ? "connected" : "disconnected"})</td></tr>
             <tr><th>CD/DVD drive 1</th><td>{v.media ? isoName(v.media, yearOf(game.hour)) : "Disconnected"}</td></tr>
             <tr><th>Compatibility</th><td>{compat}</td></tr>
@@ -140,6 +148,61 @@ const Badge = ({ alarms }: { alarms: Alarm[] }) => {
   return sev ? <em className="vsw-badge" data-sev={sev}>{SEV_GLYPH[sev]} {alarms.length}</em> : null;
 };
 
+const PROTOCOL: Record<DatastoreProtocol, string> = { nfs: "NFS", iscsi: "iSCSI", fc: "Fibre Channel" };
+// Where a new VM of that size puts its disk.
+const storageFacts = (game: GameState, c: Cluster, size: Resources) => {
+  const x = c.datastores.find((v) => v.deviceId === withDatastore(game, c, size).datastore);
+  return x ? [{ label: "Datastore", value: nodeName(game, x.deviceId) }, { label: "Type", value: PROTOCOL[x.protocol] }] : [{ label: "Datastore", value: "datastore1" }, { label: "Type", value: "VMFS" }];
+};
+
+// The Datastores tab: each host's local disk, the shared datastores with their use, and the form that attaches a server as one.
+function Datastores({ game, c }: { game: GameState; c: Cluster }) {
+  const act = useStore((s) => s.act), year = yearOf(game.hour);
+  const free = game.devices.filter((d) => modelById(d.model).server && !datastoreBlock(game, c, d.id));
+  const protocols = (Object.keys(DATASTORE_FROM) as DatastoreProtocol[]).filter((x) => DATASTORE_FROM[x] <= year);
+  const [pick, setPick] = useState(""), [protocol, setProtocol] = useState<DatastoreProtocol>("nfs");
+  const server = free.some((d) => d.id === pick) ? pick : free[0]?.id ?? "";
+  return (
+    <>
+      <table className="cx-table">
+        <thead><tr><th>Name</th><th>Type</th><th>Speed</th><th>Used</th><th>Capacity</th><th>Status</th><th /></tr></thead>
+        <tbody>
+          {c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)).filter((d) => !!d).map((d) => (
+            <tr key={d.id}>
+              <td>datastore1 ({nodeName(game, d.id)})</td><td>VMFS</td><td>Local</td>
+              <td className="num">{gb(nodeUsed(game, d.id).diskGb)}</td><td className="num">{gb(bookable(game, d).diskGb)}</td>
+              <td>{working(game, d.id) ? "Normal" : "Inaccessible"}</td><td />
+            </tr>
+          ))}
+          {c.datastores.map((x) => (
+            <tr key={x.deviceId}>
+              <td>{nodeName(game, x.deviceId)}</td><td>{PROTOCOL[x.protocol]}</td><td className="num">{datastoreGbit(game, x)} Gbit/s</td>
+              <td className="num">{gb(datastoreUsed(game, x.deviceId))}</td><td className="num">{gb(datastoreCapacity(game, x.deviceId))}</td>
+              <td>{x.readyAt > game.hour ? "Mounting" : working(game, x.deviceId) ? "Normal" : "Inaccessible"}</td>
+              <td><button className="cx-btn" onClick={() => act(detachDatastore, c.id, x.deviceId)}>Unmount</button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {c.datastores.length < DATASTORES_MAX && free.length > 0 && (
+        <div className="cx-inline">
+          <label className="cx-field">Server
+            <select value={server} onChange={(e) => setPick(e.target.value)}>
+              {free.map((d) => <option key={d.id} value={d.id}>{nodeName(game, d.id)}</option>)}
+            </select>
+          </label>
+          <label className="cx-field">Protocol
+            <select value={protocol} onChange={(e) => setProtocol(e.target.value as DatastoreProtocol)}>
+              {protocols.map((x) => <option key={x} value={x}>{x === "fc" ? `${PROTOCOL.fc}, ${euro(FC_HBA_PRICE * c.nodes.length)}` : PROTOCOL[x]}</option>)}
+            </select>
+          </label>
+          <button className="cx-btn primary" onClick={() => act(attachDatastore, c.id, server, protocol)}>New Datastore</button>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function VmWhere(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, year = yearOf(game.hour);
   const [sel, setSel] = useState<Sel>(ALL), [tab, setTab] = useState("Summary");
@@ -203,7 +266,7 @@ export function VmWhere(p: PanelProps) {
             {vm && shown === "Monitor" && <VmMonitor game={game} v={vm} />}
             {vm && facts && shown === "Configure" && (
               <>
-                <Facts facts={[{ ...facts.cpu, label: "CPU" }, facts.memory, { ...facts.disk, label: "Hard disk 1" }, { ...facts.media, label: "CD/DVD drive 1" }, { label: "Network adapter 1", value: "VM Network" }, facts.backup]} />
+                <Facts facts={[{ ...facts.cpu, label: "CPU" }, facts.memory, { ...facts.disk, label: "Hard disk 1" }, { label: "Datastore", value: vm.storage }, { ...facts.media, label: "CD/DVD drive 1" }, { label: "Network adapter 1", value: "VM Network" }, facts.backup]} />
                 <MediaMenu game={game} v={vm} label="CD/DVD drive 1, datastore ISO file" none="Client device" />
               </>
             )}
@@ -223,7 +286,7 @@ export function VmWhere(p: PanelProps) {
               </>
             )}
             {!vm && shown === "Hosts" && <NodeList game={game} c={c} f={f} />}
-            {!vm && shown === "Datastores" && <Facts facts={nodes.map((d) => ({ label: `datastore1 (${d.hostname ?? d.name})`, value: "VMFS", num: true }))} />}
+            {!vm && shown === "Datastores" && <Datastores game={game} c={c} />}
             {!vm && shown === "Networks" && <Facts facts={[{ label: "VM Network", value: "vSwitch0" }, { label: "Management Network", value: "vSwitch0" }]} />}
           </main>
         </section>
@@ -251,7 +314,7 @@ export function VmWhere(p: PanelProps) {
               </table>
             ) }] : [{ id: "name", label: "Select a name and folder", body: <Facts facts={[{ label: "Location", value: c.name }]} /> }]),
             { id: "compute", label: "Select a compute resource", body: <Facts facts={[{ label: "Cluster", value: c.name }, { label: "Hosts", value: String(nodes.length), num: true }]} /> },
-            { id: "storage", label: "Select storage", body: <Facts facts={[{ label: "Datastore", value: "datastore1" }, { label: "Type", value: "VMFS" }]} /> },
+            { id: "storage", label: "Select storage", body: <Facts facts={storageFacts(game, c, nv.size)} /> },
             { id: "hardware", label: "Customize hardware", body: (
               <>
                 <SizeFields size={nv.size} set={nv.setSize} labels={["CPU", "Memory, GB", "New Hard disk, GB"]} />

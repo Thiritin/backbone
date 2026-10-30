@@ -10,7 +10,7 @@ import type { GameState } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
 import { privateIp } from "../../../../sim/60-infra/addresses";
-import { balances, hostOfVm, insideVm, isOwnVm, KEYS, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
+import { balances, datastoreFits, datastoreUp, hostOfVm, insideVm, isOwnVm, KEYS, nodeTakes, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
 import { machineScreen } from "../../../../sim/60-infra/oob";
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { nodeUsage, workloadUse } from "../../../../sim/60-infra/usage";
@@ -21,6 +21,7 @@ import { mountableImages } from "../../../../sim/90-actions/media";
 import { joinableServers } from "../../../../sim/90-actions/software";
 import { buyAppSuite, cancelAppSuite, deployFromSuite } from "../../../../sim/90-actions/suite";
 import { rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload } from "../../../../sim/90-actions/vms";
+import { diskMoveDowntime, moveDisk } from "../../../../sim/90-actions/datastores";
 import { useStore } from "../../../store";
 import { day, disk, ram } from "../../hw";
 import { bootLines } from "../../console/lunix";
@@ -31,16 +32,18 @@ import "./hypervisor.css";
 
 // Toolbar glyphs; the consoles draw no images.
 export const GLYPH: Record<string, string> = {
-  start: "▶", stop: "■", reset: "↻", restore: "⟲", recover: "⛑", migrate: "⇄", resize: "⤢", console: "▣", delete: "✕", create: "✚",
+  start: "▶", stop: "■", reset: "↻", restore: "⟲", recover: "⛑", migrate: "⇄", storage: "⛁", resize: "⤢", console: "▣", delete: "✕", create: "✚",
 };
 
 export interface Vm {
   w: Workload; id: string; name: string; sub: string; st: VmState; state: string; tone: string; own: boolean;
   node: string; ip: string; os: string; media: ServerOsId | null; use: Resources; actions: PanelAction[]; panel: ReactNode;
+  // The datastore its disk is on, or Local.
+  storage: string;
 }
 
 const num = (n: number) => `${+n.toFixed(2)}`;
-const nodeName = (game: GameState, id: string | null) => { const d = game.devices.find((x) => x.id === id); return d ? d.hostname ?? d.label ?? d.name : ""; };
+export const nodeName = (game: GameState, id: string | null) => { const d = game.devices.find((x) => x.id === id); return d ? d.hostname ?? d.label ?? d.name : ""; };
 export const osText = (w: Workload) => (w.os ? `${serverOsById(w.os.id).name} ${w.os.version}` : "None");
 export const isoName = (id: ServerOsId, year: number) => `${id}-${serverOsAt(id, year).version}.iso`.replace(/\s+/g, "-").toLowerCase();
 
@@ -78,12 +81,14 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
       st === "lost" && { id: "restore", label: w.backupAt === null ? "Start empty" : "Restore", run: () => act(restoreWorkload, w.id) },
       rescue.length > 0 && { id: "recover", label: "Recover", run: toggle("recover") },
       !!f.migrate && (on || st === "stopped") && !w.migrating && { id: "migrate", label: "Migrate", run: toggle("migrate") },
+      c.datastores.length > 0 && (on || st === "stopped") && !w.migrating && { id: "storage", label: "Move disk", run: toggle("storage") },
       f.resize && own && { id: "resize", label: "Resize", run: toggle("resize") },
       own && { id: "console", label: "Console", run: () => openConsole(w.id) },
       f.delete && own && !insideVm(game, w.id).length && { id: "delete", label: "Delete", tone: "danger", run: toggle("delete") },
     ];
     const kind = open?.id === w.id ? open.kind : null;
     const panel = kind === "migrate" ? <Migrate game={game} w={w} c={c} done={close} />
+      : kind === "storage" ? <DiskMove game={game} w={w} c={c} done={close} />
       : kind === "resize" ? (host ? <Resize game={game} host={host} done={close} /> : <SizeForm w={w} done={close} />)
       : kind === "delete" ? (
         <div className="cx-inline">
@@ -103,7 +108,7 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
     return {
       w, id: w.id, st, state, tone, own, name: host?.name ?? label.name, sub: own ? (host ? consoleTitle(host.panel ?? host.platform ?? "") : "") : label.service,
       node: nodeName(game, w.deviceId), ip: privateIp(game, w.id) ?? "", os: own ? osText(w) : "", media: w.media ?? null,
-      use: workloadUse(game, w), actions: actions.filter((a): a is PanelAction => !!a), panel,
+      use: workloadUse(game, w), actions: actions.filter((a): a is PanelAction => !!a), panel, storage: w.datastore ? nodeName(game, w.datastore) : "Local",
     };
   });
   return { vms, dialog: hand.dialog };
@@ -118,6 +123,26 @@ export function vmFacts(game: GameState, v: Vm): Record<"status" | "node" | "ip"
     backup: { label: "Last backup", value: v.w.backupAt === null ? "None" : day(v.w.backupAt), num: true },
     media: { label: "CD/DVD drive", value: v.media ? isoName(v.media, yearOf(game.hour)) : "Empty", num: !!v.media },
   };
+}
+
+// Where a VM's disk can move: its node and every working datastore of the cluster with room, each with the hours offline.
+function DiskMove({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster; done: () => void }) {
+  const act = useStore((s) => s.act), node = game.devices.find((d) => d.id === w.deviceId);
+  const to = [
+    ...(w.datastore && node && nodeTakes(game, node, { ...w, datastore: undefined }, w) ? [{ id: null, name: "Local" }] : []),
+    ...c.datastores.filter((x) => x.deviceId !== w.datastore && datastoreUp(game, x) && datastoreFits(game, x.deviceId, w.diskGb)).map((x) => ({ id: x.deviceId, name: nodeName(game, x.deviceId) })),
+  ];
+  const down = (id: string | null) => diskMoveDowntime(game, w.diskGb, c.datastores.filter((x) => x.deviceId === id || x.deviceId === w.datastore));
+  return (
+    <div className="cx-inline">
+      {to.map((x) => (
+        <button key={x.id ?? "local"} className="cx-chip" onClick={() => act(moveDisk, w.id, x.id).ok && done()}>
+          {x.name}{down(x.id) ? `, offline ${down(x.id)} h` : ""}
+        </button>
+      ))}
+      <button className="cx-btn" onClick={done}>Cancel</button>
+    </div>
+  );
 }
 
 // The ISO loaded in an own VM, picked from the downloaded images.
