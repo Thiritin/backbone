@@ -24,6 +24,8 @@ import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
 import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
+import { OfficeSite } from "./sites/office/OfficeSite";
+import { OFFICE_TITLE } from "../../../sim/80-business/office";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
 import { CannotReach, CustomerSite, HostPage, NotFound, PhishingPage, VideoPage } from "./sites/Pages";
@@ -62,6 +64,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "phishing": return `${senderById(p.sender).name} Online-Banking`;
     case "sponsorboard": return BOARD_TITLE;
     case "index": return "Yahoy! Directory";
+    case "office": return OFFICE_TITLE;
     case "software": return softwareById(p.id).name;
     case "os": return serverOsById(p.id).name;
     default: return "Not found";
@@ -87,6 +90,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "video") body = <VideoPage />;
   else if (p.kind === "phishing") body = <PhishingPage sender={p.sender} />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
+  else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
   else if (p.kind === "software" || p.kind === "os") body = <SoftwarePage game={game} kind={p.kind} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "console") body = <ConsolePage game={game} hostname={p.hostname} host={r.host} cluster={game.clusters.find((x) => x.id === p.clusterId)} defaced={p.defaced} />;
@@ -94,7 +98,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "kvm") body = <KvmPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "index", "software", "os"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "index", "office", "software", "os"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}

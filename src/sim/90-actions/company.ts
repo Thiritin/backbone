@@ -1,5 +1,7 @@
 import type { Company, GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import { STARTER_APPS } from "../10-catalog/store";
+import { LEGAL_FORMS, officeOpen, registerNumber } from "../80-business/office";
 
 // Logo marks by id; the UI draws each one as an icon on a tile in the chosen colour.
 export const COMPANY_LOGOS = ["server", "cloud", "zap", "globe", "rocket", "database", "cpu", "shield", "leaf", "mountain", "waves", "flame"];
@@ -20,5 +22,19 @@ export function setCompany(s: GameState, patch: Partial<Company>): ActionResult 
   if (patch.color !== undefined && !COMPANY_COLORS.includes(patch.color)) return { ok: false, error: "error.companyColor" };
   s.company = { ...s.company, ...patch, ...(name !== undefined && { name }), ...(tagline !== undefined && { tagline }) };
   if (!s.checklist.includes("company")) s.checklist = [...s.checklist, "company"];
+  return { ok: true };
+}
+
+// The trade office registers the company under its name during office hours and Pear One installs the starter apps.
+export function registerCompany(s: GameState, name: string, owner: string, form: string): ActionResult {
+  if (s.registration) return { ok: false, error: "error.registered" };
+  if (!officeOpen(s.hour)) return { ok: false, error: "error.officeClosed" };
+  if (!owner.trim()) return { ok: false, error: "error.ownerName" };
+  if (!(form in LEGAL_FORMS)) return { ok: false, error: "error.legalForm" };
+  const named = setCompany(s, { name });
+  if (!named.ok) return named;
+  s.checklist = s.checklist.filter((id) => id !== "company");
+  s.registration = { hour: s.hour, owner: owner.trim(), form, number: registerNumber(s.seed) };
+  s.installed = [...new Set([...s.installed, ...STARTER_APPS])];
   return { ok: true };
 }

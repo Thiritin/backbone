@@ -3,7 +3,7 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { CHECKS, checkDone } from "../src/sim/checklist";
 import { takeLoan } from "../src/sim/90-actions/billing";
 import { toggleCheck } from "../src/sim/90-actions/checklist";
-import { skipTo, bootedMachine } from "./fixtures";
+import { skipTo, bootedMachine, registered } from "./fixtures";
 import { addLocation, connect } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
@@ -77,7 +77,8 @@ describe("checklist", () => {
   });
 
   it("drops the removed Checklist app from an old save's dock", () => {
-    const raw = JSON.parse(serialize(newGame(1)));
+    const raw = JSON.parse(serialize(registered(newGame(1))));
+    delete raw.registration;
     raw.installed = [...raw.installed, "Checklist"];
     const s = deserialize(JSON.stringify(raw));
     expect(s.installed).not.toContain("Checklist");

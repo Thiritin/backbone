@@ -7,7 +7,7 @@ import { newGame } from "../src/sim/50-state";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { setSiteHost } from "../src/sim/90-actions/website";
-import { readyGame } from "./fixtures";
+import { readyGame, registered } from "./fixtures";
 import { createRng } from "../src/sim/00-core/rng";
 import { spawnNotice } from "../src/sim/40-support/notices";
 import { customerSite } from "../src/sim/80-business/website";
@@ -28,7 +28,7 @@ describe("browser resolver", () => {
   });
 
   it("resolves the company domain, with and without www, once the site is launched", () => {
-    const s = readyGame(1), d = companyDomain(s);
+    const s = registered(readyGame(1)), d = companyDomain(s);
     expect(resolve(s, d).page).toEqual({ kind: "company" });
     expect(resolve(s, `https://www.${d}/`)).toMatchObject({ page: { kind: "company" }, load: "fast" });
     expect(resolve(s, `${d}/admin`).page).toEqual({ kind: "company" });

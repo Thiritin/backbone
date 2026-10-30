@@ -1,5 +1,5 @@
 import { START_CASH } from "../src/sim/10-catalog/economy";
-import { WIDGETS } from "../src/sim/10-catalog/store";
+import { STARTER_APPS, WIDGETS } from "../src/sim/10-catalog/store";
 import { describe, expect, it } from "vitest";
 import { newGame, SAVE_VERSION } from "../src/sim/50-state";
 import { linkStatus } from "../src/sim/60-infra/status";
@@ -8,11 +8,12 @@ import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, moveRack } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { readyGame, registered } from "./fixtures";
+import { legacyRegistration } from "../src/sim/80-business/office";
 
 describe("tick", () => {
   it("emits a month event on the first hour of each month", () => {
-    const s = newGame(1);
+    const s = registered(newGame(1));
     const events = [];
     for (let h = 0; h < 24 * 31; h++) events.push(...tick(s));
     expect(events.map((e) => e.key)).toEqual(["event.monthStart", "event.bills"]);
@@ -59,7 +60,7 @@ describe("save", () => {
     const fresh = newGame(4);
     // An old save keeps the DSL line it started with, gets the line's address and lists no line it cannot deliver.
     expect(s).toEqual({
-      ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...fresh.installed, ...WIDGETS.map(([id]) => id)],
+      ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...STARTER_APPS, ...WIDGETS.map(([id]) => id)], registration: legacyRegistration(4),
       marketing: { ...fresh.marketing, lines: [] }, homeLine: { id: "dsl-16", next: null }, nextId: fresh.nextId + 1,
       ips: { ...fresh.ips, addresses: [expect.objectContaining({ v: 4, source: "line", holder: "gw:dsl-16", listed: true })] },
       // The company domain and the NameCheep contract come with the load.

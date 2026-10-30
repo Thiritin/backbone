@@ -40,6 +40,7 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
         </svg>
       );
     }
+    case "office": return <Tile fill="#1c3f8c"><path d="M8 3.2l4.6 2.3H3.4zM4.4 6.6h1.4v4.2H4.4zM7.3 6.6h1.4v4.2H7.3zM10.2 6.6h1.4v4.2h-1.4zM3.4 11.6h9.2v1.3H3.4z" fill="white" /></Tile>;
     case "sponsorboard": return <Tile fill="oklch(0.66 0.17 55)"><path d="M3.5 5h9v4.5h-4L6 12V9.5H3.5z" fill="white" /></Tile>;
     case "vendor": return <Logo provider={p.maker} size={16} />;
     case "index": return <Tile fill="#6b0fb3"><text x="8" y="12" textAnchor="middle" fontSize="11" fontWeight="900" fontStyle="italic" fill="white" fontFamily="Georgia, serif">Y!</text></Tile>;

@@ -15,7 +15,7 @@ import { launchSite, setLine } from "../src/sim/90-actions/website";
 import { CHECKS, checkDone, TUTORIAL } from "../src/sim/checklist";
 import { setCompany } from "../src/sim/90-actions/company";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { readyGame, registered } from "./fixtures";
 
 const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
 const toMonthStart = (s: GameState) => { do tick(s); while (!isMonthStart(s.hour)); };
@@ -221,14 +221,15 @@ describe("company domain", () => {
 });
 
 describe("tutorial", () => {
-  it("runs company, buyServer, mountServer, internet, setup, website, domain, launch, email, firstCustomer", () => {
-    expect(TUTORIAL).toEqual(["company", "buyServer", "mountServer", "internet", "setup", "website", "domain", "launch", "email", "firstCustomer"]);
+  it("runs register, company, buyServer, mountServer, internet, setup, website, domain, launch, email, firstCustomer", () => {
+    expect(TUTORIAL).toEqual(["register", "company", "buyServer", "mountServer", "internet", "setup", "website", "domain", "launch", "email", "firstCustomer"]);
   });
 
   it("starts with the Marketing app installed for free", () => {
-    const s = newGame(1);
+    const s = registered(newGame(1));
     expect(s.installed).toContain("Marketing");
     const raw = JSON.parse(serialize(s));
+    delete raw.registration;
     raw.installed = raw.installed.filter((id: string) => id !== "Marketing");
     expect(deserialize(JSON.stringify(raw)).installed).toContain("Marketing");
   });

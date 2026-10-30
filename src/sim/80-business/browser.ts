@@ -15,6 +15,7 @@ import { BOARD_HOST } from "./sponsorboard";
 import { consoleCluster, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
 import { vendorHost, VENDORS } from "./vendors";
+import { OFFICE_HOST, OFFICE_TITLE, OFFICE_URL } from "./office";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -32,6 +33,7 @@ export type Page =
   | { kind: "phishing"; sender: string }
   | { kind: "sponsorboard" }
   | { kind: "index" }
+  | { kind: "office" }
   | { kind: "software"; id: string }
   | { kind: "os"; id: ServerOsId }
   | { kind: "notfound" };
@@ -61,6 +63,7 @@ export function registrarUrl(s: GameState): string {
 
 // Bookmarks every game has: the company site once launched and the registrar. The index lists the rest.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
+  ...(s.registration ? [] : [{ title: OFFICE_TITLE, url: OFFICE_URL }]),
   ...(s.marketing.launched ? [{ title: s.company.name, url: companyUrl(s) }] : []),
   { title: ((s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0]).name, url: registrarUrl(s) },
 ];
@@ -128,6 +131,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   }
   const named = (bare: string) => host === bare || host === `www.${bare}`;
   if (named(INDEX_HOST)) return out({ kind: "index" });
+  if (named(OFFICE_HOST)) return out({ kind: "office" });
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
   if (sw) return out({ kind: "software", id: sw.id });

@@ -1,0 +1,53 @@
+/* A government portal from 2005 that was last updated in 2003: fixed 760 px tables, Verdana 11 px, bevelled grey controls. */
+.to {
+  min-height: 100%;
+  background: #e8e8e8;
+  color: #000;
+  font: 11px/1.4 Verdana, Geneva, Tahoma, sans-serif;
+  padding: 10px 0 24px;
+}
+.to a { color: #0000cc; text-decoration: underline; }
+.to a:visited { color: #551a8b; }
+.to-page { width: 760px; max-width: 100%; margin: 0 auto; background: #fff; border: 1px solid #7f7f7f; }
+.to-head {
+  display: flex; align-items: center; gap: 12px; padding: 8px 12px;
+  background: linear-gradient(#2a5cb8, #133a85); color: #fff; border-bottom: 3px solid #f2c200;
+}
+.to-title { font: bold 20px Georgia, "Times New Roman", serif; }
+.to-sub { font-size: 10px; color: #d6e0f5; }
+.to-crumbs { padding: 3px 8px; background: #d4dceb; border-bottom: 1px solid #9aa8c4; font-size: 10px; }
+.to-cols { display: flex; }
+.to-menu { width: 170px; flex: none; margin: 0; padding: 8px 0; list-style: none; background: #eeeeee; border-right: 1px solid #b4b4b4; }
+.to-menu li { padding: 2px 8px 2px 18px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='%23133a85'/%3E%3C/svg%3E") 8px 7px no-repeat; }
+.to-menu a[aria-current] { font-weight: bold; color: #000; text-decoration: none; }
+.to-main { flex: 1; min-width: 0; padding: 10px 14px 16px; }
+.to h1 { font-size: 14px; color: #133a85; margin: 0 0 10px; padding-bottom: 3px; border-bottom: 1px dotted #133a85; }
+.to h2 { font-size: 12px; color: #133a85; margin: 14px 0 6px; }
+.to p { margin: 0 0 8px; }
+.to-new span { color: #fff; background: #d40000; font-weight: bold; padding: 0 3px; }
+.to-closed { color: #c00000; font-weight: bold; }
+.to-construction { padding-left: 36px; min-height: 28px; background: repeating-linear-gradient(-45deg, #f2c200 0 6px, #111 6px 12px) 0 0 / 28px 28px no-repeat; }
+.to-hours { border-collapse: collapse; }
+.to-hours td { border: 1px solid #9aa8c4; padding: 2px 8px; }
+.to-hours tr:nth-child(odd) td { background: #eef2fa; }
+.to-form { border: 1px solid #9aa8c4; padding: 6px 10px 10px; margin: 0; }
+.to-form legend { font-weight: bold; color: #133a85; padding: 0 4px; }
+.to-form table { border-collapse: collapse; margin-bottom: 8px; }
+.to-form td { padding: 3px 8px 3px 0; vertical-align: middle; }
+.to-form b { color: #d40000; }
+.to input:not([type]), .to select {
+  font: 11px Verdana, Geneva, sans-serif; width: 240px; padding: 1px 2px; border: 2px inset #d4d0c8; background: #fff; color: #000; border-radius: 0;
+}
+.to-check { display: block; margin: 4px 0; }
+.to-req { font-size: 10px; }
+.to-buttons { display: flex; gap: 6px; }
+.to button {
+  font: 11px Verdana, Geneva, sans-serif; color: #000; background: #d4d0c8; padding: 2px 10px;
+  border: 2px outset #f0f0f0; border-radius: 0;
+}
+.to button:active { border-style: inset; }
+.to-foot {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; padding: 4px 8px;
+  border-top: 1px solid #9aa8c4; background: #d4dceb; font-size: 9px; color: #333;
+}
+.to-counter { font-family: "Courier New", monospace; background: #000; color: #3f3; padding: 0 4px; }

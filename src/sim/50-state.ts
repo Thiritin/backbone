@@ -4,7 +4,6 @@ import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFa
 import type { Vendor } from "./10-catalog/cpus";
 import type { ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
-import { STARTER_APPS } from "./10-catalog/store";
 import { seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
@@ -121,6 +120,7 @@ export interface HostFiles { since: number; paths: Record<string, string | boole
 export interface Doc { id: string; kind: "guide" | "note" | "app"; title: string; body: string; x: number; y: number }
 // domain is the company's own domain once registered; mail is its email service.
 export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string }
+export interface Registration { hour: number; owner: string; form: string; number: number }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
 
 export interface GameState {
@@ -258,6 +258,8 @@ export interface GameState {
   challenge: string | null;
   // Leaderboard scores (80-business/scores.ts): net worth at the end of 2007, the hour level 3 was reached and the summed hourly mean happiness.
   score: Score;
+  // The trade office registration (80-business/office.ts); null until the player registers, which installs the starter apps.
+  registration: Registration | null;
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -303,7 +305,7 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null }],
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
   cables: [],
-  ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false,
@@ -328,7 +330,7 @@ export const newGame = (seed: number): GameState => ({
   news: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
-  log: [], challenge: null, score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 },
+  log: [], challenge: null, registration: null, score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 },
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

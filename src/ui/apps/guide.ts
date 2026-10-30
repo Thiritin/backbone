@@ -2,6 +2,7 @@ import { modelById } from "../../sim/10-catalog/hardware";
 import { registrarById, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
+import { OFFICE_URL } from "../../sim/80-business/office";
 import type { GameState } from "../../sim/50-state";
 import type { TUTORIAL } from "../../sim/checklist";
 
@@ -16,6 +17,8 @@ export function stepOf(s: GameState, id: StepId): Step {
   const home = basement(s), server = firstServer(s);
   const mailApp = supportApp(s).name;
   switch (id) {
+    case "register":
+      return { title: t("guide.step.register"), text: "Register your company at the trade office in the Browser.", app: "Browser", focus: { kind: "url", id: OFFICE_URL } };
     case "company":
       return { title: t("guide.step.company"), text: "Choose the name, logo and colour of your company.", app: "Settings" };
     case "buyServer":

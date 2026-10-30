@@ -14,6 +14,8 @@ import { portPeers } from "../src/sim/60-infra/status";
 import { serverOsAt, type ServerOsId } from "../src/sim/10-catalog/server-os";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { yearOf } from "../src/sim/00-core/time";
+import { STARTER_APPS } from "../src/sim/10-catalog/store";
+import { legacyRegistration } from "../src/sim/80-business/office";
 
 // The cluster's install is finished, on its machines too.
 const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][number]>) => {
@@ -102,6 +104,13 @@ export const automate = (s: GameState): GameState => {
 
 // The basement server as the hypervisor cluster "Basement 1" with Proxmocks installed; returns the cluster id.
 export const basement = (s: GameState): string => hypervisor(s, [BASEMENT_SERVER], "Basement 1");
+
+// The company is registered at the trade office and has the starter apps, as every game before the office opened.
+export function registered(s: GameState): GameState {
+  s.registration = legacyRegistration(s.seed);
+  s.installed = [...new Set([...s.installed, ...STARTER_APPS])];
+  return s;
+}
 
 // A new company after the setup: Proxmocks on the starting basement server with a FreePanel VM, the friends moved in and every
 // line they sell on the website.

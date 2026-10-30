@@ -10,10 +10,11 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { stepOf } from "../src/ui/apps/guide";
 import { DESK_FEATURES, supportApp } from "../src/ui/apps/support/desk";
 import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, NotmailMark, OsTickitMark, PearMailMark, ZenduskMark } from "../src/ui/art/mailmarks";
+import { registered } from "./fixtures";
 
 const at = (y: number, m: number) => hourOf(new Date(Date.UTC(y, m - 1, 1)));
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
-const year = (y: number): GameState => ({ ...newGame(1), hour: at(y, 1), cash: 1_000_000 });
+const year = (y: number): GameState => registered({ ...newGame(1), hour: at(y, 1), cash: 1_000_000 });
 
 const agent = (n: number, role: Employee["role"] = "support"): Employee => ({
   id: `emp${n}`, name: `Agent ${n}`, role, skill: 1, talent: 1, salary: 0, hiredAt: 0, assignment: "queue", location: null,

@@ -6,14 +6,16 @@ import { knowHowPerMonth, tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { cancel, install } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { registered } from "./fixtures";
 
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
 const at = (y: number, m: number) => hourOf(new Date(Date.UTC(y, m - 1, 1)));
 
 describe("pear store", () => {
-  it("starts with the starter apps and no know-how", () => {
+  it("starts with the Browser, gets the starter apps with the registration and has no know-how", () => {
     const s = newGame(1);
-    expect(s.installed).toEqual(STARTER_APPS);
+    expect(s.installed).toEqual(["Browser"]);
+    expect([...registered(s).installed].sort()).toEqual([...STARTER_APPS].sort());
     expect(s.knowHow).toBe(0);
   });
 

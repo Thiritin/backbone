@@ -18,6 +18,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   ],
   Browser: [
     type("Domains", "registrarTier", "domainsTransferred"),
+    type("Trade office", "officeOpen"),
   ],
   Locations: [
     type("Planned maintenance", "maintenanceStart", "maintenanceEnd"),

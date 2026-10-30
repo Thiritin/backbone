@@ -10,6 +10,7 @@ import { financeTick } from "../46-finance/finance";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
 import { autoUpdateTick } from "../90-actions/software";
+import { officeOpen } from "../80-business/office";
 import { fairsTick } from "../80-business/fairs";
 import { communityTick } from "../80-business/sponsoring";
 import { marketingTick } from "../80-business/marketing";
@@ -232,6 +233,7 @@ export function tick(state: GameState): SimEvent[] {
     const line = homeLineById(next.id);
     events.push({ app: "Locations", key: "event.lineReady", params: { line: line.name, isp: line.isp } });
   }
+  if (!state.registration && officeOpen(state.hour) && !officeOpen(state.hour - 1)) events.push({ app: "Browser", key: "event.officeOpen", params: {} });
   if (state.training && state.training.doneAt <= state.hour) {
     const skill = skillById(state.training.id)!;
     state.unlocks = [...state.unlocks, skill.id];
