@@ -6,7 +6,8 @@ import { nodeUsage } from "../../../../../sim/60-infra/usage";
 import { mountableImages } from "../../../../../sim/90-actions/media";
 import { ram } from "../../../hw";
 import { Chart } from "../Chart";
-import { isoName, MediaMenu, SizeFields, TaskLog, useNewVm, useVms, type Vm } from "../HypervisorBase";
+import { AlarmList, isoName, MediaMenu, ResourceBars, SizeFields, summaryOf, TaskLog, useNewVm, useVms, type Vm } from "../HypervisorBase";
+import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { Actions, Backups, Bar, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelAction, type PanelProps } from "../PanelBase";
 import "./openveezee.css";
 
@@ -42,19 +43,15 @@ function VsTable({ vms, open, year }: { vms: Vm[]; open: (id: string) => void; y
 }
 
 // A physical server: its CPU, memory and disk, the OS templates it holds and the virtual servers on it.
-export function HostPage({ game, id, vms, open, create }: { game: GameState; id: string; vms: Vm[]; open: (id: string) => void; create?: () => void }) {
-  const d = game.devices.find((x) => x.id === id), u = nodeUsage(game, id), year = yearOf(game.hour), mine = vms.filter((v) => v.w.deviceId === id);
-  const rows: [string, [number, number], string][] = [
-    ["CPU", [u.used.vcpu, u.physical.vcpu], `${+u.used.vcpu.toFixed(2)} of ${u.physical.vcpu} cores`],
-    ["Memory", [u.used.ramGb, u.physical.ramGb], `${ram(+u.used.ramGb.toFixed(1))} of ${ram(u.physical.ramGb)}`],
-    ["Disk", [u.used.diskGb, u.physical.diskGb], `${Math.round(u.used.diskGb)} GB of ${u.physical.diskGb} GB`],
-  ];
+export function HostPage({ game, c, id, vms, open, create }: { game: GameState; c: Cluster; id: string; vms: Vm[]; open: (id: string) => void; create?: () => void }) {
+  const d = game.devices.find((x) => x.id === id), year = yearOf(game.hour), mine = vms.filter((v) => v.w.deviceId === id), health = summaryOf(game, c, id);
   return (
     <>
       <h2>Physical server {d?.hostname ?? d?.name}</h2>
       <fieldset className="ovz-box"><legend>Statistics</legend>
-        <div className="cx-hv-bars">{rows.map(([l, use, t]) => <span key={l} style={{ display: "contents" }}><span>{l}</span><Bar use={use} /><span className="num">{t}</span></span>)}</div>
+        <ResourceBars use={health.use} labels={["CPU", "Memory", "Disk"]} />
       </fieldset>
+      {health.alarms.length > 0 && <fieldset className="ovz-box"><legend>Alerts</legend><AlarmList game={game} c={c} alarms={health.alarms} className="cx-table ovz-table" /></fieldset>}
       <fieldset className="ovz-box"><legend>OS templates</legend>
         <table className="cx-table ovz-table">
           <thead><tr><th>Name</th><th>Virtual servers</th></tr></thead>
@@ -118,7 +115,7 @@ export function CtPage({ game, v, host }: { game: GameState; v: Vm; host: string
 
 export function OpenVeeZee(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, [page, setPage] = useState<Page>("dashboard"), year = yearOf(game.hour);
-  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c);
+  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
     <div className="cx ovz ovz-login" data-era={era}>
       <LoginForm className="ovz-card" onLogin={p.login} button="Log in">
@@ -159,6 +156,10 @@ export function OpenVeeZee(p: PanelProps) {
               ]} />
               <Actions actions={sw.actions} className="cx-tools ovz-acts">{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
               {sw.panel}
+              <fieldset className="ovz-box"><legend>Resources</legend>
+                <ResourceBars use={health.use} labels={["CPU", "Memory", "Disk"]} />
+              </fieldset>
+              {health.alarms.length > 0 && <fieldset className="ovz-box"><legend>Alerts</legend><AlarmList game={game} c={c} alarms={health.alarms} className="cx-table ovz-table" /></fieldset>}
               {f.backups && <Backups game={game} c={c} />}
             </>
           )}
@@ -182,7 +183,7 @@ export function OpenVeeZee(p: PanelProps) {
               </table>
             </>
           )}
-          {node && <HostPage game={game} id={node} vms={vms} open={open} create={toCreate} />}
+          {node && <HostPage game={game} c={c} id={node} vms={vms} open={open} create={toCreate} />}
           {page === "vservers" && (
             <>
               <h2>Virtual servers</h2>
