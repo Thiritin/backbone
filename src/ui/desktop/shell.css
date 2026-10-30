@@ -326,3 +326,11 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .app-grid-item { appearance: none; border: 0; background: none; color: inherit; font: inherit; display: grid; justify-items: center; gap: 6px; padding: 8px 4px; border-radius: 8px; font-size: 12px; text-align: center; }
 .app-grid-item:hover, .app-grid-item:focus-visible { background: oklch(0.5 0 0 / 0.12); }
 .side-item.drop { outline: 2px solid var(--accent); outline-offset: -2px; }
+.copy-win { position: fixed; left: 50%; top: 30%; width: 400px; height: auto; transform: translateX(-50%); z-index: 9000; }
+.copy-body { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px; padding: 14px 16px 16px; font-size: 12px; }
+.copy-body > svg.lucide { width: 36px; height: 36px; color: var(--accent-text); }
+.copy-body progress { width: 100%; height: 12px; margin: 6px 0 4px; accent-color: var(--accent); }
+.copy-sub { color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+.copy-stop { border: 0; background: none; padding: 0; color: var(--text-3); display: grid; }
+.copy-stop svg.lucide { width: 18px; height: 18px; }
+.copy-stop:hover { color: var(--text); }

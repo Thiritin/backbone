@@ -1,9 +1,10 @@
-import { BookOpen, CircleArrowDown, Disc3, FileText, LayoutGrid, Monitor, Usb } from "lucide-react";
-import { useState, type CSSProperties, type DragEvent, type ReactNode } from "react";
+import { BookOpen, CircleArrowDown, CircleX, Disc3, FileText, LayoutGrid, Monitor, Usb } from "lucide-react";
+import { useEffect, useState, type CSSProperties, type DragEvent, type ReactNode } from "react";
 import { yearOf } from "../../sim/00-core/time";
 import type { ServerOsId } from "../../sim/10-catalog/server-os";
 import { addAppLink, setDocked } from "../../sim/90-actions/docs";
 import { stickHome, writeStick } from "../../sim/90-actions/media";
+import { createPortal } from "react-dom";
 import { menuOn, type MenuEntry } from "../desktop/ContextMenu";
 import { useFocus, useStore } from "../store";
 import { isoFile } from "./browser/sites/software/SoftwareSite";
@@ -11,6 +12,9 @@ import { APPS, appFor } from "./registry";
 
 type Folder = "apps" | "desktop" | "downloads" | "usb";
 const ISO = "application/x-backbone-iso";
+// Image sizes in MB and the stick's write speed in MB/s, which set how long a copy takes.
+const SIZE: Record<ServerOsId, number> = { lunix: 180, windoors: 600 };
+const SPEED = 75;
 
 export function appMenu(app: string) {
   const { game, act, openApp } = useStore.getState();
@@ -28,9 +32,10 @@ export function ApplicationsApp() {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const [folder, setFolder] = useState<Folder>("apps");
   const [over, setOver] = useState(false);
+  const [copy, setCopy] = useState<ServerOsId | null>(null);
   useFocus("Applications", (f) => setFolder(f.id as Folder));
   const home = stickHome(game), at = home ? folder : folder === "usb" ? "apps" : folder, year = yearOf(game.hour);
-  const write = (id: ServerOsId) => act(writeStick, id);
+  const write = (id: ServerOsId) => { if (!copy) setCopy(id); };
   const drop = (e: DragEvent) => {
     e.preventDefault();
     setOver(false);
@@ -54,6 +59,7 @@ export function ApplicationsApp() {
           {side("usb", Usb, "USB stick", target)}
         </>}
       </nav>
+      {copy && <Copying key={copy} file={isoFile(copy, year)} size={SIZE[copy]} onStop={() => setCopy(null)} onDone={() => { setCopy(null); act(writeStick, copy); }} />}
       <div className="app-grid" {...(at === "usb" ? target : {})}>
         {at === "apps" && APPS.filter((a) => !a.hidden && game.installed.includes(a.name)).map((a) => {
           const shown = appFor(game, a.name);
@@ -84,6 +90,33 @@ export function ApplicationsApp() {
         )}
       </div>
     </div>
+  );
+}
+
+// The Copy window of the classic Finder; closing Finder stops the copy.
+function Copying({ file, size, onStop, onDone }: { file: string; size: number; onStop: () => void; onDone: () => void }) {
+  const [mb, setMb] = useState(0);
+  useEffect(() => {
+    const start = performance.now();
+    const t = setInterval(() => setMb(Math.min(size, ((performance.now() - start) / 1000) * SPEED)), 100);
+    return () => clearInterval(t);
+  }, [size]);
+  useEffect(() => { if (mb >= size) onDone(); }, [mb >= size]);
+  const left = Math.ceil((size - mb) / SPEED);
+  return createPortal(
+    <section className="window front copy-win" aria-label="Copy">
+      <div className="titlebar"><h1>Copy</h1></div>
+      <div className="copy-body">
+        <Disc3 aria-hidden />
+        <div>
+          <p>Copying “{file}” to “USB stick”</p>
+          <progress max={size} value={mb} />
+          <p className="copy-sub">{Math.floor(mb)} MB of {size} MB, about {left} {left === 1 ? "second" : "seconds"}</p>
+        </div>
+        <button className="copy-stop" aria-label="Stop" onClick={onStop}><CircleX aria-hidden /></button>
+      </div>
+    </section>,
+    document.querySelector(".desktop")!,
   );
 }
 
