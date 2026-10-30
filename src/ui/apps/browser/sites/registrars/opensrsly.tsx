@@ -42,7 +42,7 @@ export function OpenSRSly({ game, r, look, year }: RegistrarProps) {
       <div className="cols">
         <main>
           <h1>Domain reseller API</h1>
-          <pre>{`POST /api HTTP/1.0\n<action>LOOKUP</action>\n<domain>${name}</domain>\n\n200 OK\n<status>available</status>`}</pre>
+          <pre>{`POST /api HTTP/1.0\n<action>LOOKUP</action>\n<domain>${name}</domain>\n\n200 OK\n<status>${game.company.domain ? "taken" : "available"}</status>`}</pre>
           <section><DomainSearch game={game} r={r} title="Lookup" button="Submit" /></section>
           <section><TldPrices game={game} r={r} title="Price list" /></section>
           {mine && <section><Account game={game} r={r} /></section>}

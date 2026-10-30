@@ -25,7 +25,7 @@
 .rg-namecheep.late .hero { padding: 48px 40px; background: #f26b1d; color: #ffffff; }
 .rg-namecheep.late .hero h2 { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 18px; }
 .rg-namecheep.late .hero .rg-search { max-width: 640px; }
-.rg-namecheep.late .hero .rg-search input { padding: 14px 16px; border: 0; border-radius: 4px; font-size: 17px; }
+.rg-namecheep.late .hero .rg-search input { padding: 14px 16px; border: 0; border-radius: 4px; font-size: 17px; color: #2b2f33; }
 .rg-namecheep.late .hero .rg-search button { padding: 0 28px; border-radius: 4px; background: #2b2f33; }
 .rg-namecheep.late .hero .rg-table { max-width: 640px; background: #ffffff; color: #2b2f33; border-radius: 4px; }
 .rg-namecheep.late .hero .rg-note { color: #fff3ea; }
