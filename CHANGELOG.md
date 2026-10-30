@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-30
 
 - Holding Shift while scrolling over a rack now zooms in and out around the mouse pointer, and the zoom buttons above the rack are gone.
+- A new game now starts with an empty terminal, a single browser tab and the first-time shell setup again, and keeps only your sound settings.
 - Writing an ISO to the USB stick now takes a few seconds and shows a Copy window with a progress bar, which you can stop.
 - Applications is now Finder, with your apps, the desktop, your downloads and the USB stick, and you write an ISO to the stick by right-clicking it or dragging it onto the stick.
 - The browser has a Downloads button that lists your ISOs and opens them in Finder, and the USB stick plays its connect and disconnect sounds as you plug it in and out.

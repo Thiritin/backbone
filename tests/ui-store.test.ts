@@ -116,6 +116,28 @@ describe("reload", () => {
   });
 });
 
+describe("new game", () => {
+  it("clears every stored tab, shell and flag but the sound settings", () => {
+    const mem = (m: Map<string, string>) => ({ getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => m.set(k, v), clear: () => m.clear() });
+    const local = new Map([["backbone.shell", "1"], ["backbone.theme", "dark"], ["backbone.earlyAccessSeen", "1"]]);
+    const session = new Map([["backbone.ui.browser.tabs", "[]"], ["backbone.ui.terminal.history", "[\"ls\"]"]]);
+    vi.stubGlobal("localStorage", mem(local));
+    vi.stubGlobal("sessionStorage", mem(session));
+    try {
+      const s = useStore.getState;
+      s().setSound({ volume: 0.2 });
+      s().setNotifyPref("Finance", { allow: false });
+      s().startGame();
+      expect([...local.keys()].sort()).toEqual(["backbone.prefs", "backbone.save"]);
+      expect(JSON.parse(local.get("backbone.prefs")!)).toEqual({ notify: {}, sound: expect.objectContaining({ volume: 0.2 }) });
+      expect([...session.keys()].every((k) => k === "backbone.ui.windows" || k === "backbone.ui.speed")).toBe(true);
+      expect(s().notifyPrefs).toEqual({});
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
 describe("reload clock", () => {
   // Re-creates the store module the way a page reload does, over the given storages.
   async function reload(local: Map<string, string>, session: Map<string, string>) {

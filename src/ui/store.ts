@@ -140,6 +140,18 @@ function savePrefs(notify: Record<string, Partial<NotifyPref>>, sound: SoundPref
   }
 }
 
+// A new game starts from nothing stored but the sound settings.
+function wipeLocal(sound: SoundPref) {
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch {
+    // Storage blocked; nothing was kept.
+  }
+  savePrefs({}, sound);
+  return { notifyPrefs: {}, theme: loadTheme() };
+}
+
 // Sounds queued during one advance or action play together once it returns.
 export const uiSound = (kind: UiSound) => {
   const { sound: { on, volume }, game } = useStore.getState();
@@ -323,13 +335,13 @@ export const useStore = create<Store>((set, get) => ({
     }
   },
   startGame: () => {
-    set({ ...fresh(), game: newCompany(Date.now() >>> 0), started: true });
+    set({ ...fresh(), ...wipeLocal(get().sound), game: newCompany(Date.now() >>> 0), started: true });
     uiSound("startup");
     get().openApp("Getting started");
     get().save();
   },
   startChallenge: () => {
-    set({ ...fresh(), game: newChallenge(weeklyChallenge(new Date()).id), started: true });
+    set({ ...fresh(), ...wipeLocal(get().sound), game: newChallenge(weeklyChallenge(new Date()).id), started: true });
     uiSound("startup");
     get().openApp("Getting started");
     get().save();
