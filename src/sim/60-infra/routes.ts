@@ -4,7 +4,7 @@ import type { Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { working } from "./status";
-import { bookable, clusterOf, controlPlaneUp, hasHosts, KEYS, noRoomError, nodeUsed, pickNode, supports, vmRoom, type Cluster } from "./cluster";
+import { bookable, clusterOf, clustersOf, controlPlaneUp, hasHosts, KEYS, noRoomError, nodeUsed, pickNode, supports, vmRoom, type Cluster } from "./cluster";
 
 // cap and used are what the target can book and has booked; free is the room left.
 export interface RouteNode { id: string; name: string; cap: Resources; used: Resources; free: Resources; fits: boolean }
@@ -33,17 +33,18 @@ export function routeOptions(s: GameState, product: Product, city: string, size:
 }
 
 // The placement a route asks for: a cluster and optionally one node of it; null for automatic.
-export function routeTarget(s: GameState, route: string): { clusterId: string; deviceId: string | null } | null {
+// A server's route goes to its cluster that sells the product, or its hypervisor's without one.
+export function routeTarget(s: GameState, route: string, product?: Product): { clusterId: string; deviceId: string | null } | null {
   if (!route || route === "auto") return null;
   const c = s.clusters.find((x) => x.id === route);
   if (c) return { clusterId: c.id, deviceId: null };
-  const owner = clusterOf(s, route);
+  const owner = clustersOf(s, route).find((x) => product && supports(x, product)) ?? clusterOf(s, route);
   return owner ? { clusterId: owner.id, deviceId: route } : { clusterId: route, deviceId: null };
 }
 
 // Why a route cannot take the size now, or null: an unknown or foreign cluster, missing software, a control plane down, no disk.
 export function routeError(s: GameState, product: Product, city: string, size: Resources, route: string): string | null {
-  const target = routeTarget(s, route);
+  const target = routeTarget(s, route, product);
   if (!target) return null;
   const c = s.clusters.find((x) => x.id === target.clusterId);
   if (!c) return "error.unknownCluster";

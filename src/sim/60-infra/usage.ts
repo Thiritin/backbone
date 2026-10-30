@@ -8,7 +8,7 @@ import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { isSuspended } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { booked, clusterOf, controlPlaneUp, controlPlaneUse, hostOfVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
+import { booked, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
 import { installedRamGb, portPeers, raidUsable, working } from "./status";
 
@@ -57,9 +57,9 @@ const flowMbps = (s: GameState, id: string) => backupFlows(s).reduce((n, f) => n
 // What a workload uses of its booking at an hour; a panel VM uses what its panel and web spaces use.
 export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): Resources {
   if (isOwnVm(w)) {
-    const host = hostOfVm(s, w.id), u: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
-    if (!host || w.stopped || lostDisk(s, w)) return u;
-    const parts = [controlPlaneUse(host), ...s.workloads.filter((x) => x.clusterId === host.id).map((x) => workloadUse(s, x, hour))];
+    const hosts = hostsOfVm(s, w.id), u: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
+    if (!hosts.length || w.stopped || lostDisk(s, w)) return u;
+    const parts = [...hosts.map(controlPlaneUse), ...insideVm(s, w.id).map((x) => workloadUse(s, x, hour))];
     for (const p of parts) { u.vcpu += p.vcpu; u.ramGb += p.ramGb; u.diskGb += p.diskGb; }
     return u;
   }
@@ -77,11 +77,8 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   const d = s.devices.find((x) => x.id === deviceId), v = d && modelById(d.model).server;
   const used: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
   if (!d || !v) return { used, physical: { ...used }, perf: 1 };
-  const c = clusterOf(s, deviceId);
-  if (c && c.controlPlane === deviceId) {
-    const cp = controlPlaneUse(c);
-    used.vcpu += cp.vcpu; used.ramGb += cp.ramGb; used.diskGb += cp.diskGb;
-  }
+  const cp = controlPlanesOn(s, deviceId);
+  used.vcpu += cp.vcpu; used.ramGb += cp.ramGb; used.diskGb += cp.diskGb;
   for (const w of s.workloads) {
     if (w.deviceId !== deviceId || !w.clusterId) continue;
     const u = workloadUse(s, w, hour);
@@ -131,7 +128,7 @@ interface Sums { used: Resources; physical: Resources; gbit: number; mbps: numbe
 const linkedGbit = (s: GameState, d: Device) => portPeers(s, d.id).reduce((n, p, i) => n + (p ? modelById(d.model).ports[i].gbit : 0), 0);
 // A workload's share of its service's traffic; a panel VM carries its web spaces'.
 const workloadMbps = (s: GameState, w: Workload): number => {
-  if (isOwnVm(w)) { const host = hostOfVm(s, w.id); return host ? s.workloads.filter((x) => x.clusterId === host.id).reduce((n, x) => n + workloadMbps(s, x), 0) : 0; }
+  if (isOwnVm(w)) return insideVm(s, w.id).reduce((n, x) => n + workloadMbps(s, x), 0);
   const v = s.services.find((x) => x.id === w.serviceId);
   return v ? serviceMbps(s, v) / workloadsOf(s, v.id).length : 0;
 };

@@ -57,7 +57,7 @@ describe("browser index", () => {
   it("lists the company's consoles from its clusters, down when the host cannot be reached", () => {
     const s = readyGame(1), company = () => siteIndex(s).find((c) => c.title === s.company.name)!.rows.filter((r) => r.title !== s.company.name);
     expect(company().map((r) => r.url)).toEqual(consoleBookmarks(s).map((m) => m.url));
-    expect(company().map((r) => r.title.split(" ").at(-1))).toEqual(consoleBookmarks(s).map((m) => m.url.split(".")[0]));
+    expect(company().map((r) => r.title.split(" ").at(-1)!.split(":")[0])).toEqual(consoleBookmarks(s).map((m) => m.url.split(".")[0]));
     expect(consoleBookmarks(s).length).toBeGreaterThan(0);
     expect(company().every((r) => !r.down)).toBe(true);
     for (const d of s.devices.filter((x) => x.hostname)) expect(setPower(s, d.id, false).ok).toBe(true);
@@ -70,10 +70,10 @@ describe("browser index", () => {
     const rows = siteIndex(s).find((c) => c.title === s.company.name)!.rows.filter((r) => r.title !== s.company.name);
     expect(rows.length).toBeGreaterThan(0);
     for (const r of rows) {
-      expect(r.url).toMatch(/^\d+\.\d+\.\d+\.\d+$/);
+      expect(r.url).toMatch(/^\d+\.\d+\.\d+\.\d+(:\d+)?$/);
       const page = resolve(s, r.url).page;
       expect(page.kind).toBe("console");
-      if (page.kind === "console") expect(r.title.endsWith(` ${page.hostname}`)).toBe(true);
+      if (page.kind === "console") expect(r.title.split(" ").at(-1)!.split(":")[0]).toBe(page.hostname);
     }
   });
 });

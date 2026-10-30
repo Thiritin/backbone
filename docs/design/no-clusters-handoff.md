@@ -48,7 +48,7 @@ At the start of the game nothing is a cluster. A server runs its software, and t
 
 ## What was not touched
 
-The cluster model in the simulation is unchanged, because the hypervisor and VM work runs in parallel. Internally every installed software is still a `Cluster` (`src/sim/60-infra/cluster.ts`) with one node per server. These pieces still exist in the sim and in tests, but no longer have a UI:
+The cluster model in the simulation is unchanged, because the hypervisor and VM work runs in parallel. Internally every installed software is still a `Cluster` (`src/sim/60-infra/cluster.ts`) with one node per server. A server now belongs to one cluster per software it runs, so a panel next to a hypervisor is a second cluster on the same node (software.md, section 3). These pieces still exist in the sim and in tests, but no longer have a UI:
 
 - `addNode`, `joinableServers`, `joinableClusters`: joining servers into one cluster.
 - `setHa` and the `Ha` flags (live migration, balancing, failover), `ha.ts`.

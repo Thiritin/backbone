@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { softwareById } from "../src/sim/10-catalog/platforms";
-import { curveLoad } from "../src/sim/10-catalog/usage";
+import { curveLoad, slowTolerance } from "../src/sim/10-catalog/usage";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { newGame, type GameState } from "../src/sim/50-state";
@@ -132,6 +132,14 @@ describe("usage curves and overcommit", () => {
     expect(curveLoad("business", TUE_10)).toBeCloseTo(0.6 - 0.1 / 3, 2);
     expect(curveLoad("business", SAT_20)).toBeCloseTo(0.1);
   });
+  it("lets a backup customer shrug off a slowdown a game server customer feels", () => {
+    const ids = Array.from({ length: 50 }, (_, i) => `c${i}`);
+    const game = ids.map((id) => slowTolerance(7, "gameServer", "gamer", id)), backup = ids.map((id) => slowTolerance(7, "storage", "private", id));
+    expect(Math.max(...game)).toBeLessThan(0.08);
+    expect(Math.min(...backup)).toBeGreaterThan(0.3);
+    expect(new Set(game).size).toBe(50);
+  });
+
   it("slows a node of game servers on Saturday night and opens slow tickets, but not on a Tuesday", () => {
     const { s, cluster } = setup();
     const gamer = addCustomer(s, "Kai Frag", "gamer");
@@ -145,10 +153,11 @@ describe("usage curves and overcommit", () => {
     expect(sat.perf).toBeLessThan(0.6);
     const happiness = () => s.customers.find((c) => c.id === gamer)!.happiness;
     run(s, SAT_20);
-    // An hour on the slowed node costs each customer on the node SLOW_PENALTY × the performance lost, once per workload.
-    const before = happiness();
+    // An hour on the slowed node costs each customer on the node SLOW_PENALTY × the performance lost past their tolerance,
+    // once per workload.
+    const before = happiness(), tol = slowTolerance(s.seed, "gameServer", "gamer", gamer);
     run(s, 1);
-    expect(before - happiness()).toBeCloseTo(2 * SLOW_PENALTY * (1 - nodeUsage(s, "dev3").perf), 6);
+    expect(before - happiness()).toBeCloseTo(2 * SLOW_PENALTY * (1 - nodeUsage(s, "dev3").perf - tol), 6);
     run(s, 2);
     run(s, 168);
     expect(s.tickets.filter((t) => t.topic === "slow").length).toBeGreaterThan(0);

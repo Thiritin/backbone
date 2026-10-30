@@ -35,7 +35,7 @@ export const VIEW = { w: 880, h: 414 };
 // Where each zone and slot sits inside the chassis, by line: bays at the front, then the fan wall, the board with a band per
 // socket, and the power supplies and PCIe slots at the rear. Storage lines grow their bay grid, the GPU line its rear row.
 function layout(model: DeviceModel, slots: Slot[]) {
-  const v = model.server!, gpu = lineOf(model) === "gpu";
+  const v = model.server!, gpu = !!lineOf(model)?.startsWith("gpu");
   const at: Record<string, R> = {};
   const bays = slots.filter((s) => s.group === "bay").length;
   const rows = bays <= 10 ? bays : bays <= 12 ? 6 : 12, cols = Math.ceil(bays / rows);
@@ -89,7 +89,7 @@ interface Props {
 
 export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick }: Props) {
   const slots = chassisSlots(model, parts), { at, bayLen, boardX, rearLen, board } = layout(model, slots);
-  const tall = model.height >= 2, gpu = lineOf(model) === "gpu";
+  const tall = model.height >= 2, gpu = !!lineOf(model)?.startsWith("gpu");
   const boardPart = slots.find((s) => s.group === "board")?.part, boardWear = boardPart ? wear(boardPart) : "ok";
   const caps: [number, string][] = [[0, "Drive bays"], [boardX + 6, "CPUs and memory"], [L - rearLen + 6, gpu ? "GPU slots and power" : "PCIe slots and power"]];
 

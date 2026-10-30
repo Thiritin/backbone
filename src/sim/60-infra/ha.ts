@@ -1,7 +1,7 @@
 // High availability per hypervisor cluster (gdd.md, Compute): automatic failover and auto-balancing. Clustered panel hosts fail over too.
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { hostOfVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
+import { insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
 import { working } from "./status";
 import { nodeUsage } from "./usage";
 
@@ -17,7 +17,7 @@ const cluster = (s: GameState, id: string): Cluster => s.clusters.find((c) => c.
 
 // The services a VM carries: its own, or every web space in a panel VM.
 const servicesIn = (s: GameState, w: Workload): string[] =>
-  isOwnVm(w) ? s.workloads.filter((x) => x.clusterId === hostOfVm(s, w.id)?.id).map((x) => x.serviceId) : [w.serviceId];
+  isOwnVm(w) ? insideVm(s, w.id).map((x) => x.serviceId) : [w.serviceId];
 
 // Restarts the VMs of failed nodes on working nodes with room; the control plane moves first when its node failed. A VM
 // that fits nowhere stays down, and the player hears about it once.

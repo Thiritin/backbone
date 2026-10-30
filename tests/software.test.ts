@@ -9,7 +9,7 @@ import { addNode, createVm, deleteVm, provisionService } from "../src/sim/90-act
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect } from "../src/sim/90-actions/hardware";
 import { buyDevice, bootedMachine } from "./fixtures";
-import { createSoftwareVm, installSoftware, softwareOn, uninstallSoftware } from "../src/sim/90-actions/software";
+import { createSoftwareVm, installBlock, installSoftware, softwareOn, uninstallSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { hypervisor, readyGame, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
@@ -41,11 +41,11 @@ describe("software on machines", () => {
     expect(clusterOf(s, "dev3")).toMatchObject({ id: c, platform: "proxmocks", nodes: [{ deviceId: "dev3" }] });
   });
 
-  it("runs one hypervisor per machine, a panel next to one only in a VM, and no hypervisor in a VM", () => {
+  it("runs one hypervisor per machine, a panel next to one, and no hypervisor in a VM", () => {
     const { s } = twoServers();
     const c = hypervisor(s, ["dev3"]);
     expect(err(installSoftware(s, "dev3", "hypervee"))).toBe("error.wrongOs");
-    expect(err(installSoftware(s, "dev3", "freepanel"))).toBe("error.serverInUse");
+    expect(installBlock(s, "dev3", "freepanel")).toBeNull();
     const vm = bootedMachine(s, ok(createVm(s, c, VM)));
     expect(err(installSoftware(s, vm, "proxmocks"))).toBe("error.nestedHypervisor");
     ok(installSoftware(s, vm, "freepanel"));

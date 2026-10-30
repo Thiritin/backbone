@@ -22,7 +22,7 @@ export type BackupEvery = "off" | "daily" | "weekly";
 // High availability, per hypervisor cluster once researched: live migration, auto-balancing and automatic failover.
 export interface Ha { live: boolean; balance: boolean; failover: boolean }
 export const HA_OFF: Ha = { live: false, balance: false, failover: false };
-// Every server runs at most one control plane. A cluster is either a hypervisor cluster (kind "cloud": one or more servers
+// A server runs one control plane per installed software (software.md, section 3). A cluster is either a hypervisor cluster (kind "cloud": one or more servers
 // with the same hypervisor, hosting virtual machines) or a panel host (kind "panel": web hosting on one bare-metal server in
 // nodes, or inside the player's own virtual machine vm on a hypervisor cluster, with nodes empty). panel and platform hold
 // the installed software of the kind, null until installed; controlPlane is the node that runs it, null for a panel VM.
@@ -120,8 +120,13 @@ export function controlPlaneUse(c: Pick<Cluster, "panel" | "platform">): Resourc
 }
 // What a node holds for workloads: its capacity less the control plane it runs. Bars show booked against it.
 export function bookable(s: GameState, d: Device): Resources {
-  const c = clusterOf(s, d.id);
-  return minus(nodeCapacity(d, s), c && c.controlPlane === d.id ? controlPlaneUse(c) : ZERO);
+  return minus(nodeCapacity(d, s), controlPlanesOn(s, d.id));
+}
+// What the control planes of every cluster run on a server take together.
+export function controlPlanesOn(s: GameState, deviceId: string): Resources {
+  const sum = { ...ZERO };
+  for (const c of s.clusters) if (!c.vm && c.controlPlane === deviceId) { const u = controlPlaneUse(c); for (const k of KEYS) sum[k] += u[k]; }
+  return sum;
 }
 // Whether the resources fit the disk of a pool; CPU and RAM never refuse a booking.
 export const diskFits = (used: Resources, cap: Resources, r: Resources): boolean => used.diskGb + r.diskGb <= cap.diskGb + 1e-9;
@@ -141,25 +146,34 @@ export function vmOf(s: GameState, w: Workload): Workload | undefined {
 }
 // The server a workload runs on, through its panel VM for a web space in one.
 export const serverOf = (s: GameState, w: Workload): string | null => w.deviceId ?? vmOf(s, w)?.deviceId ?? null;
-export const hostOfVm =(s: GameState, vmId: string): Cluster | undefined => s.clusters.find((c) => c.vm === vmId);
+const RANK = (c: Cluster) => (c.kind === "cloud" ? 0 : c.kind === "panel" ? 1 : 2);
+export const hostOfVm = (s: GameState, vmId: string): Cluster | undefined => s.clusters.find((c) => c.vm === vmId);
+export const hostsOfVm = (s: GameState, vmId: string): Cluster[] => s.clusters.filter((c) => c.vm === vmId).sort((a, b) => RANK(a) - RANK(b));
+// The web spaces and service workloads inside one of the player's own VMs, across every software it runs.
+export const insideVm = (s: GameState, vmId: string): Workload[] => {
+  const ids = new Set(hostsOfVm(s, vmId).map((c) => c.id));
+  return s.workloads.filter((w) => !!w.clusterId && ids.has(w.clusterId));
+};
 export const isOwnVm = (w: Workload): boolean => !w.serviceId;
 // The server a panel host runs on: its bare-metal node or its VM's node.
 export const anchorOf = (s: GameState, c: Cluster): string | null => c.nodes[0]?.deviceId ?? vmById(s, c.vm)?.deviceId ?? null;
 
 // What a VM of that size holds for software: CPU and RAM at IN_VM of bare metal, less the panel.
 export const vmCap = (r: Resources, panel: Resources): Resources => minus({ vcpu: r.vcpu * IN_VM, ramGb: r.ramGb * IN_VM, diskGb: r.diskGb }, panel);
-// A panel VM's room: what it holds less the panel, and what its web spaces book. Only its disk limits the booking.
+// A panel VM's room: what it holds less every panel in it, and what their web spaces book. Only its disk limits the booking.
 export function vmRoom(s: GameState, c: Cluster): { cap: Resources; used: Resources } {
-  const vm = vmById(s, c.vm), used = { ...ZERO };
-  for (const w of s.workloads) if (w.clusterId === c.id) for (const k of KEYS) used[k] += w[k];
-  return { cap: vm ? vmCap(vm, controlPlaneUse(c)) : ZERO, used };
+  const vm = vmById(s, c.vm), used = { ...ZERO }, panels = { ...ZERO };
+  if (!vm) return { cap: ZERO, used };
+  for (const w of insideVm(s, vm.id)) for (const k of KEYS) used[k] += w[k];
+  for (const h of hostsOfVm(s, vm.id)) { const u = controlPlaneUse(h); for (const k of KEYS) panels[k] += u[k]; }
+  return { cap: vmCap(vm, panels), used };
 }
 
-// Whether a working node of the cluster has the disk for its control plane next to its workloads.
+// Whether a working node of the cluster has the disk for its control plane next to its workloads and the other control planes.
 export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d || !working(s, deviceId)) return false;
-  return diskFits(nodeUsed(s, deviceId), nodeCapacity(d), controlPlaneUse(c));
+  return diskFits(nodeUsed(s, deviceId), bookable(s, d), controlPlaneUse(c));
 }
 
 // Whether the cluster sells the product line: web hosting on a panel host, virtual machines on a hypervisor cluster, game
@@ -228,12 +242,18 @@ export function lostDisk(s: GameState, w: Workload): boolean {
 export const load = (used: Resources, cap: Resources) => Math.max(...KEYS.map((k) => (cap[k] ? used[k] / cap[k] : 1)));
 export const fits = (used: Resources, cap: Resources, r: Resources) => KEYS.every((k) => used[k] + r[k] <= cap[k] + 1e-9);
 
-export const clusterOf = (s: GameState, deviceId: string): Cluster | undefined => s.clusters.find((c) => c.nodes.some((n) => n.deviceId === deviceId));
+// Every cluster a server is a node of, one per software: the hypervisor first, then a hosting panel, then the rest.
+export const clustersOf = (s: GameState, deviceId: string): Cluster[] =>
+  s.clusters.filter((c) => c.nodes.some((n) => n.deviceId === deviceId)).sort((a, b) => RANK(a) - RANK(b));
+// The server's cluster of that kind; without one, its hypervisor cluster, or its first cluster when it runs no hypervisor.
+export const clusterOf = (s: GameState, deviceId: string, kind?: SoftwareKind): Cluster | undefined =>
+  clustersOf(s, deviceId).find((c) => !kind || c.kind === kind);
+// The clusters of a server or of one of the player's own VMs.
+export const clustersOn = (s: GameState, machineId: string): Cluster[] =>
+  s.devices.some((d) => d.id === machineId) ? clustersOf(s, machineId) : hostsOfVm(s, machineId);
 // The one-server cluster a server is still installing its first software into.
-export const installingOn = (s: GameState, deviceId: string): Cluster | undefined => {
-  const c = clusterOf(s, deviceId);
-  return c && c.switching && !c.panel && !c.platform ? c : undefined;
-};
+export const installingOn = (s: GameState, deviceId: string): Cluster | undefined =>
+  clustersOf(s, deviceId).find((c) => c.switching && !c.panel && !c.platform);
 
 // A server or one of the player's own VMs.
 export const machineOf = (s: GameState, id: string): Device | Workload | undefined => s.devices.find((d) => d.id === id) ?? vmById(s, id);

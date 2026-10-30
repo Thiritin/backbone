@@ -40,7 +40,7 @@ describe("Twin 2U catalog", () => {
   it("comes from SuperMacro from 2008 at 0.6 the price and 0.8 the power of a 1U per node", () => {
     const chassis = modelById("g2-twin"), node = modelById("g2-twin-node"), oneU = modelById("g2-compute");
     expect(chassis).toMatchObject({ kind: "chassis", height: 2, psus: 2, name: "Twin 2U G2", nodes: { model: "g2-twin-node", count: 4 } });
-    expect(brandsOf(chassis)).toEqual(["SuperMacro"]);
+    expect(brandsOf(chassis)).toEqual(["Dwell", "SuperMacro"]);
     expect(node).toMatchObject({ kind: "server", height: 0, chassis: "g2-twin", price: Math.round(oneU.price * 0.6), watts: Math.round(oneU.watts * 0.8) });
     expect(presetPrice(chassis, 2008, "Dwell")).toBe(4 * presetPrice(node, 2008, "Dwell"));
     expect(shopModels(2005).some((m) => m.id.includes("twin"))).toBe(false);

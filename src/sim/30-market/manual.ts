@@ -159,7 +159,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     register(s, r.domain!, customerId, !!r.owned);
   } else {
     const to = r.route ?? hostFor(s, r) ?? "";
-    const target = to === "auto" ? null : routeTarget(s, to), auto = to === "auto" ? targetFor(s, r) : null;
+    const target = to === "auto" ? null : routeTarget(s, to, r.product), auto = to === "auto" ? targetFor(s, r) : null;
     const done = provisionService(s, customerId, r.product, {
       label: r.domain ?? requestName(r), sla: r.sla, price: r.quote! / MONTH, spec: r.spec,
       clusterId: target?.clusterId ?? auto?.clusterId ?? null, deviceId: target?.deviceId ?? null, zone: auto?.zone ?? null,
@@ -250,7 +250,7 @@ export function resize(s: GameState, v: Service, spec: Spec, route: string, city
   const before = { workloads: s.workloads, services: s.services };
   s.workloads = s.workloads.filter((x) => x.serviceId !== v.id);
   s.services = s.services.map((x) => (x.id === v.id ? { ...x, spec } : x));
-  const error = routeError(s, v.product, city, size, route), target = routeTarget(s, route);
+  const error = routeError(s, v.product, city, size, route), target = routeTarget(s, route, v.product);
   const placed = error ? { ok: false, error } : placeService(s, v.id, target?.clusterId ?? null, target?.deviceId ?? null);
   if (!placed.ok) Object.assign(s, before);
   return placed.ok ? { ok: true } : placed;

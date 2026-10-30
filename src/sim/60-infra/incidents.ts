@@ -8,7 +8,7 @@ import { bump, createTicket, profileStats } from "../40-support/tickets";
 import type { Device, GameState, Location, Rack } from "../50-state";
 import { addReview, announceReview, starsFor, type ReviewReason } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
-import { hostOfVm, isOwnVm, pickNode, vmOf, type Workload } from "./cluster";
+import { insideVm, isOwnVm, pickNode, vmOf, type Workload } from "./cluster";
 import type { Incident } from "./ops";
 import { losePower } from "./power";
 import { bootHours, deviceWatts, HOURS_PER_YEAR, isPlugged, locationOf, psusOf } from "./status";
@@ -171,7 +171,7 @@ export function seize(s: GameState, deviceId: string, agency: string, r: Rng, ev
   const returnAt = s.hour + Math.round((lo + rand(r) * (hi - lo)) * HOURS_PER_MONTH);
   // A panel VM on the server takes its web spaces with it.
   const own = s.workloads.filter((w) => w.deviceId === d.id);
-  const workloads = own.flatMap((w) => (isOwnVm(w) ? s.workloads.filter((x) => x.clusterId === hostOfVm(s, w.id)?.id) : [w]));
+  const workloads = own.flatMap((w) => (isOwnVm(w) ? insideVm(s, w.id) : [w]));
   const hit = customersOf(s, workloads);
   s.devices = s.devices.filter((x) => x.id !== d.id);
   s.cables = s.cables.filter((c) => c.a.device !== d.id && c.b.device !== d.id);

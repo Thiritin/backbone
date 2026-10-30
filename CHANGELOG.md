@@ -5,7 +5,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-30
 
 - Switching a product off on your website now stops Sponsor-Bored applications for it, and the press no longer writes about product lines you have not listed.
+- Servers in the shop now carry their maker's own model names and numbers, such as a PowerEdgy R620 or a ProLight DL360 Gen9, and each maker builds its own set of lines, with Gigabutt joining as the fifth server maker.
+- Every CPU socket now offers a range of named processors with cores, threads, base and boost clocks and power draw, the shop lets you pick the processor when you order a server, and new clock, four-socket, 24-bay storage and 8-card GPU lines join the catalog.
+- Customers now notice a slow server only past what they expect from what they run, so a light overcommit goes unnoticed by backup and mirror customers while game server players complain early.
 - Every applicant on the Sponsor-Bored board is now a different person with their own project, and the board runs out of applicants once all of them have an open application or a running sponsorship.
+- A server can run several software at once, each with its own console on its own port, as long as none of them share a port.
 - Pasting several commands into a console or the Terminal runs them in order, apt prints its progress as the install runs, and the site index lists your consoles before you own a domain.
 - A tripped breaker now switches off every server in the rack, so the rack gets power back right away and you can boot the servers it has room for.
 - A new game now starts with only the Browser, and your other apps arrive once you register your company on the trade office website during its office hours.

@@ -1,7 +1,7 @@
 import { dateOf, yearOf } from "../00-core/time";
 import { autoUpdates, clustersIn, conflict, phpAt, runsOn, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
-import { anchorOf, clusterOf, dropCluster, hostOfVm, machineOf, workloadsOn, type Cluster } from "../60-infra/cluster";
+import { anchorOf, clustersOf, clustersOn, dropCluster, machineOf, workloadsOn, type Cluster } from "../60-infra/cluster";
 import { osUp } from "../60-infra/oob";
 import { locationOf } from "../60-infra/status";
 import { familyOf, openVulns } from "../60-infra/vulns";
@@ -10,19 +10,24 @@ import { createVm, freeServer, installHypervisor, installPanel, installPanelInVm
 import type { ActionResult } from "./hardware";
 import { buyLicenses, licenseDue } from "../85-products/products";
 
-// A machine is a server or one of the player's own VMs, with the software on its disk; VMs take no hypervisor. The
-// software is the control plane of the machine's cluster. doneAt is null once installed.
+// A machine is a server or one of the player's own VMs, with the software on its disk; VMs take no hypervisor. Each
+// software is the control plane of one of the machine's clusters. doneAt is null once installed.
 export interface Installed { id: string; doneAt: number | null; cluster?: Cluster }
 
 const isServer = (s: GameState, id: string) => s.devices.some((d) => d.id === id);
-const clusterOn = (s: GameState, id: string): Cluster | undefined => (isServer(s, id) ? clusterOf(s, id) : hostOfVm(s, id));
+const runs = (c: Cluster, id: string): boolean => [c.panel, c.platform, c.switching?.to].includes(id);
+// The machine's cluster of the software, or its first (the hypervisor on a server) without one.
+const clusterOn = (s: GameState, id: string, softwareId?: string): Cluster | undefined =>
+  clustersOn(s, id).find((c) => !softwareId || runs(c, softwareId));
 
 export function softwareOn(s: GameState, machineId: string): Installed[] {
-  const c = clusterOn(s, machineId);
-  return (machineOf(s, machineId)?.software ?? []).map((x) => ({ id: x.id, doneAt: x.doneAt !== null && x.doneAt > s.hour ? x.doneAt : null, cluster: c }));
+  return (machineOf(s, machineId)?.software ?? []).map((x) => ({ id: x.id, doneAt: x.doneAt !== null && x.doneAt > s.hour ? x.doneAt : null, cluster: clusterOn(s, machineId, x.id) }));
 }
 
 const joinsAt = (s: GameState, c: Cluster): boolean => c.kind === "cloud" || (!c.vm && clustersIn(softwareById(c.panel ?? ""), yearOf(s.hour)));
+
+// Whether nothing of the cluster runs on the server.
+const emptyOf = (s: GameState, c: Cluster, deviceId: string): boolean => !workloadsOn(s, deviceId).some((w) => w.clusterId === c.id);
 
 // Empty servers of the zone in other clusters on the same installed software, which addNode joins to this one. A panel
 // host takes them from the year its panel clusters.
@@ -30,15 +35,18 @@ export function joinableServers(s: GameState, clusterId: string): string[] {
   const c = s.clusters.find((x) => x.id === clusterId), id = c && (c.panel ?? c.platform);
   if (!c || !id || !joinsAt(s, c)) return [];
   return s.clusters.filter((x) => x.id !== c.id && x.kind === c.kind && x.az === c.az && (x.panel ?? x.platform) === id && !x.switching)
-    .flatMap((x) => x.nodes.map((n) => n.deviceId)).filter((d) => !workloadsOn(s, d).length);
+    .flatMap((x) => x.nodes.map((n) => n.deviceId).filter((d) => emptyOf(s, x, d)));
 }
 
-// The clusters an installed, empty server can join: the zone's other clusters on the same software.
+// The clusters an installed server can join with each of its software it runs nothing of: the zone's other clusters on it.
 export function joinableClusters(s: GameState, deviceId: string): Cluster[] {
-  const own = clusterOf(s, deviceId), d = s.devices.find((x) => x.id === deviceId), id = own && (own.panel ?? own.platform);
-  if (!own || !d || !id || own.switching || workloadsOn(s, deviceId).length) return [];
-  const az = locationOf(s, d)?.az;
-  return s.clusters.filter((c) => c.id !== own.id && c.kind === own.kind && c.az === az && (c.panel ?? c.platform) === id && joinsAt(s, c));
+  const d = s.devices.find((x) => x.id === deviceId), az = d && locationOf(s, d)?.az;
+  if (!d) return [];
+  return clustersOf(s, deviceId).flatMap((own) => {
+    const id = own.panel ?? own.platform;
+    if (!id || own.switching || !emptyOf(s, own, deviceId)) return [];
+    return s.clusters.filter((c) => c.id !== own.id && c.kind === own.kind && c.az === az && (c.panel ?? c.platform) === id && joinsAt(s, c));
+  });
 }
 
 // Why the software cannot go on the machine next to what it runs, or null; the installer erases the disk first.
@@ -54,8 +62,8 @@ export function installBlock(s: GameState, machineId: string, softwareId: string
   return canInstall(s, machineId, sw.id) ?? (s.cash < licenseDue(s, machineId, null, sw.id) ? "error.noCash" : null);
 }
 
-// Why the machine does not take the software: another OS, a conflict with what is installed, a server that is not free
-// or a VM that already hosts a cluster (one per machine), or an OS that is not up.
+// Why the machine does not take the software: another OS, a conflict with what is installed, a server that is rented
+// whole, burning in or already runs it, or an OS that is not up. Every other software gets a cluster of its own next to it.
 export function canInstall(s: GameState, machineId: string, softwareId: string): string | null {
   const sw = softwareById(softwareId), m = machineOf(s, machineId);
   if (!m) return "error.unknownDevice";
@@ -64,7 +72,7 @@ export function canInstall(s: GameState, machineId: string, softwareId: string):
     const why = conflict(sw, softwareById(x.id));
     if (why) return why;
   }
-  const taken = isServer(s, machineId) ? freeServer(s, s.devices.find((d) => d.id === machineId)) : hostOfVm(s, machineId) ? "error.onePanel" : null;
+  const taken = isServer(s, machineId) ? freeServer(s, s.devices.find((d) => d.id === machineId), sw.id) : null;
   if (taken) return taken;
   return osUp(s, machineId) ? null : m.os ? "error.osNotUp" : "error.noOs";
 }
@@ -139,14 +147,15 @@ export function autoUpdateTick(s: GameState): void {
   }
 }
 
-// Uninstalls the machine's software once nothing it serves runs on the machine; a VM stays, empty.
-export function uninstallSoftware(s: GameState, machineId: string): ActionResult {
-  const c = clusterOn(s, machineId);
+// Uninstalls one software of the machine (its hypervisor, or its first, unless named) once nothing it serves runs on the
+// machine; the machine's other software stays, and a VM stays, empty.
+export function uninstallSoftware(s: GameState, machineId: string, softwareId?: string): ActionResult {
+  const c = clusterOn(s, machineId, softwareId);
   if (!c) return { ok: false, error: "error.noSoftware" };
   const node = c.kind === "cloud" || (c.nodes.length > 1 && isServer(s, machineId));
-  const busy = node ? workloadsOn(s, machineId).length > 0 : s.workloads.some((w) => w.clusterId === c.id);
+  const busy = node ? !emptyOf(s, c, machineId) : s.workloads.some((w) => w.clusterId === c.id);
   if (busy) return { ok: false, error: "error.softwareInUse" };
-  if (node) return removeNode(s, machineId);
+  if (node) return removeNode(s, machineId, c.id);
   dropCluster(s, c.id);
   return { ok: true };
 }

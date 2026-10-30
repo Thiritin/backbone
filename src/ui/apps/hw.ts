@@ -2,7 +2,7 @@
 import { dateOf } from "../../sim/00-core/time";
 import { cardOf } from "../../sim/10-catalog/gpu";
 import { COMPONENTS, isOobPort, jacksOf, OOB_PORT, oobPorts, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
-import { cpuModel, socketOf, VENDOR_NAME } from "../../sim/10-catalog/cpus";
+import { cpuModel, skuOf, socketOf, VENDOR_NAME } from "../../sim/10-catalog/cpus";
 import type { Component, Device, End, GameState } from "../../sim/50-state";
 import { deviceHealth, HOURS_PER_YEAR, isPlugged, linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
 import { isMgmtDevice, oobUp } from "../../sim/60-infra/oob";
@@ -58,14 +58,26 @@ export const portLamps = (m: DeviceModel, peers: (End | null)[]): PortLamp[] => 
 
 export const devName = (d: Device) => d.label ?? d.name;
 export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: "Power supply", fan: "Fan", ram: "RAM stick", board: "Mainboard", cpu: "CPU", nic: "Network card", gpu: "GPU" };
-// A CPU's clock, "2.5 GHz"; empty for anything else or a CPU of unknown make.
-export const clockLabel = (p: Pick<Component, "kind" | "vendor" | "gen">): string => {
-  const c = p.kind === "cpu" && p.vendor && p.gen ? cpuModel(p.vendor, p.gen) : undefined;
+// A CPU's clock, "2.0 GHz, 2.8 GHz boost"; empty for anything else or a CPU of unknown make.
+export const clockLabel = (p: Pick<Component, "kind" | "vendor" | "gen" | "size" | "sku">): string => {
+  if (p.kind !== "cpu") return "";
+  const k = skuOf(p);
+  if (k) return k.boost > k.ghz ? `${k.ghz} GHz, ${k.boost} GHz boost` : `${k.ghz} GHz`;
+  const c = p.vendor && p.gen ? cpuModel(p.vendor, p.gen) : undefined;
   return c ? `${c.ghz} GHz` : "";
 };
-// A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"", "Indel G5 CPU 20 cores, 2.5 GHz", "AMB Mainboard".
-export const partLabel = (p: Pick<Component, "kind" | "size" | "ff" | "vendor" | "gen">): string =>
-  p.kind === "board" && p.vendor && p.gen && p.size !== undefined ? `${VENDOR_NAME[p.vendor]} ${socketOf(p.vendor, p.gen)}-${p.size} Mainboard` : `${p.vendor ? `${VENDOR_NAME[p.vendor]} ` : ""}${p.gen ? `G${p.gen} ` : ""}${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}${clockLabel(p) ? `, ${clockLabel(p)}` : ""}`;
+// Cores and threads of a CPU, "8c/16t".
+export const threadsLabel = (p: Pick<Component, "kind" | "vendor" | "gen" | "size" | "sku">): string => {
+  const k = p.kind === "cpu" ? skuOf(p) : undefined;
+  return k ? `${k.cores}c/${k.threads}t` : "";
+};
+// A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"", "Indel Xenon E5-2650, 8c/16t, 2.0 GHz, 2.8 GHz boost", "AMB Mainboard".
+export const partLabel = (p: Pick<Component, "kind" | "size" | "ff" | "vendor" | "gen" | "sku">): string => {
+  if (p.kind === "board" && p.vendor && p.gen && p.size !== undefined) return `${VENDOR_NAME[p.vendor]} ${socketOf(p.vendor, p.gen)}-${p.size} Mainboard`;
+  const k = p.kind === "cpu" ? skuOf(p) : undefined;
+  if (k) return `${VENDOR_NAME[k.vendor]} ${k.name}, ${threadsLabel(p)}, ${clockLabel(p)}`;
+  return `${p.vendor ? `${VENDOR_NAME[p.vendor]} ` : ""}${p.gen ? `G${p.gen} ` : ""}${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}${clockLabel(p) ? `, ${clockLabel(p)}` : ""}`;
+};
 // A used part's age stays unknown (null) until a burn-in has looked at it.
 export const ageYears = (g: GameState, c: Component): number | null => (c.wear ? null : (g.hour - c.installedAt) / HOURS_PER_YEAR);
 export const isWorn = (g: GameState, c: Component) => { const a = ageYears(g, c); return a === null ? c.wear === "worn" : a >= COMPONENTS[c.kind].life; };

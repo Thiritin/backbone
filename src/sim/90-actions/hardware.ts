@@ -1,6 +1,6 @@
 import { rand } from "../00-core/rng";
 import { monthIndexOf, yearOf } from "../00-core/time";
-import { boardVendor, brandOnSale, brandsOf, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { boardVendor, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
@@ -171,6 +171,8 @@ export interface CartLine {
   part?: PartSpec;
   // The CPU maker of a server's board and CPUs; the model's preset maker when left out.
   vendor?: Vendor;
+  // The CPU part in every socket (cpus.ts); the line's default when left out.
+  cpu?: string;
 }
 
 // Extra CPUs are the line's vendor and the chassis's generation.
@@ -182,14 +184,14 @@ const extraParts = (line: CartLine): PartSpec[] => {
 // The parts one unit of the line is built from.
 export const lineParts = (line: CartLine): PartSpec[] => {
   const m = modelById(line.model);
-  return [...componentParts(m, line.vendor), ...extraParts(line)];
+  return [...componentParts(m, line.vendor, line.cpu), ...extraParts(line)];
 };
 // What one unit costs in a year: the preset, or the preset minus its CPUs, RAM and drives, plus the extras, all at that year's
 // part prices; a part alone costs its part price.
 export function unitPrice(line: CartLine, year: number): number {
   const m = modelById(line.model);
   if (m.kind === "part") return partPrice(m.id.slice(5) as ComponentKind, line.part?.size, line.part?.ff, year, line.part);
-  return presetPrice(m, year, line.brand, line.vendor) + partsPrice(extraParts(line), year);
+  return presetPrice(m, year, line.brand, line.vendor, line.cpu) + partsPrice(extraParts(line), year);
 }
 
 function lineError(s: GameState, line: CartLine): string | null {
@@ -200,15 +202,16 @@ function lineError(s: GameState, line: CartLine): string | null {
   if (!brandOnSale(model, brand, monthIndexOf(s.hour))) return "error.notInShop";
   if (!Number.isInteger(qty) || qty < 1) return "error.badQuantity";
   if (line.vendor !== undefined && !vendorsOf(model).includes(line.vendor)) return "error.wrongVendor";
+  if (line.cpu !== undefined && !cpuOptions(model, line.vendor ?? vendorsOf(model)[0], yearOf(s.hour)).some((c) => c.id === line.cpu)) return "error.notInShop";
   const offers = partOffers(yearOf(s.hour));
-  if (line.part && (model.kind !== "part" || line.part.kind !== modelId.slice(5) || !offers.some((o) => samePart(o, line.part!)))) return "error.notInShop";
+  if (line.part && (model.kind !== "part" || line.part.kind !== modelId.slice(5) || !offers.some((o) => offersPart(o, line.part!)))) return "error.notInShop";
   if (!line.extras?.length) return null;
   if (model.kind !== "server") return "error.notBuildable";
   if (line.extras?.some((e) => !COMPONENT_KINDS.includes(e.kind) || !Number.isInteger(e.qty) || e.qty < 1)) return "error.badQuantity";
   if (line.extras?.some((e) => e.ff !== undefined && !FORMS.includes(e.ff as FormFactor))) return "error.wrongFormFactor";
   const error = chassisFits(model, lineParts(line));
   if (error) return error;
-  return extraParts(line).every((p) => offers.some((o) => samePart(o, p))) ? null : "error.notInShop";
+  return extraParts(line).every((p) => offers.some((o) => offersPart(o, p))) ? null : "error.notInShop";
 }
 const FORMS: FormFactor[] = ["3.5", "2.5", "nvme"];
 

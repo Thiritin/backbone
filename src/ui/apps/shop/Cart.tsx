@@ -2,7 +2,8 @@ import { Minus, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { modelById, type FormFactor } from "../../../sim/10-catalog/hardware";
+import { modelById, modelName, type FormFactor } from "../../../sim/10-catalog/hardware";
+import { skuById } from "../../../sim/10-catalog/cpus";
 import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
 import { leaseOffers } from "../../../sim/10-catalog/leasing";
 import { REGIONS } from "../../../sim/20-world/datacenters";
@@ -49,13 +50,13 @@ export function Cart() {
       <div className="shop-cart-h"><h3>Cart</h3><span className="grow" /><span className="num shop-muted">{units}</span></div>
       <div className="shop-cart-list">
         {cart.map((l) => {
-          const m = modelById(l.model), name = l.part ? partLabel(l.part) : m.name;
+          const m = modelById(l.model), name = l.part ? partLabel(l.part) : modelName(m, l.brand);
           const parts = [...(l.extras ?? []).map((e) => `${e.qty} × ${partLabel({ ...e, ff: e.ff as FormFactor | undefined })}`)];
           return (
-            <div key={`${l.model}|${l.brand}|${l.vendor}|${JSON.stringify([l.extras, l.part])}`} className="shop-line">
+            <div key={`${l.model}|${l.brand}|${l.vendor}|${l.cpu}|${JSON.stringify([l.extras, l.part])}`} className="shop-line">
               <Isometric model={m} brand={l.brand} w={56} />
               <div className="shop-line-name">
-                <strong>{name}</strong><span>{l.brand}{l.vendor && ` · ${VENDOR_NAME[l.vendor]}`}</span>
+                <strong>{name}</strong><span>{l.brand}{l.cpu ? ` · ${VENDOR_NAME[skuById(l.cpu)!.vendor]} ${skuById(l.cpu)!.name}` : l.vendor && ` · ${VENDOR_NAME[l.vendor]}`}</span>
               </div>
               <Stepper value={l.qty} min={1} onChange={(n) => setCartQty(l, n)} />
               <span className="num shop-line-total">{euro(unitPrice(l, year) * l.qty)}</span>

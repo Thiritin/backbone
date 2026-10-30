@@ -2,7 +2,7 @@
 import { isService, softwareById } from "../10-catalog/platforms";
 import { fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
-import { clusterOf, hostOfVm, isOwnVm, vmById, type Cluster } from "../60-infra/cluster";
+import { clustersOf, hostsOfVm, isOwnVm, vmById, type Cluster } from "../60-infra/cluster";
 import { familyOf } from "../60-infra/vulns";
 
 // One look per product; both mail servers share a plain mail admin and the game panels share a dark one.
@@ -60,12 +60,34 @@ export function consoleFeatures(softwareId: string, year: number): ConsoleFeatur
   };
 }
 
-// The cluster whose software answers at a hostname: a server's, or the player's own VM the panel runs in.
-export function consoleCluster(s: GameState, hostname: string): Cluster | null {
+// Every cluster whose software answers at a hostname, the hypervisor first and then the panel: a server's, or those in
+// the player's own VM.
+export function consoleClusters(s: GameState, hostname: string): Cluster[] {
   const d = s.devices.find((x) => x.hostname === hostname);
   const vm = d ? undefined : s.workloads.find((w) => w.hostname === hostname && isOwnVm(w));
-  const c = d ? clusterOf(s, d.id) : vm ? hostOfVm(s, vm.id) : undefined;
-  return c && familyOf(c) ? c : null;
+  return (d ? clustersOf(s, d.id) : vm ? hostsOfVm(s, vm.id) : []).filter((c) => familyOf(c));
+}
+
+// docs/design/software.md, 8.2: the port each console also answers on, next to the host's own address; Mailpig answers
+// on a path.
+const CONSOLE_AT: Record<string, string> = {
+  proxmocks: ":8006", cpanic: ":2087", pleskit: ":8443", directadmen: ":2222", freepanel: ":10000", tcadmen: ":8880", multikraft: ":8080",
+  pterodaktyl: ":8080", powerdnz: ":8081", openveepeen: ":943", minnio: ":9001", anyconnekt: ":443", mailpig: "/admin",
+};
+const atOf = (c: Cluster): string => CONSOLE_AT[familyOf(c) ?? ""] ?? "";
+
+// The console at a host's address: the one on the port when one is given, Mailpig on /admin, otherwise the first.
+export function consoleAt(s: GameState, hostname: string, port = "", path = "/"): Cluster | null {
+  const all = consoleClusters(s, hostname);
+  if (port) return all.find((c) => atOf(c) === port) ?? null;
+  return (/^\/admin(\/|$)/.test(path) ? all.find((c) => atOf(c) === "/admin") : undefined) ?? all[0] ?? null;
+}
+
+// What follows the host in a console's address (its port, its path, or nothing), or null when another console holds it.
+export function consoleSuffix(s: GameState, c: Cluster): string | null {
+  const host = consoleHost(s, c), at = atOf(c);
+  if (!host) return null;
+  return consoleAt(s, host, at.startsWith(":") ? at : "", at.startsWith("/") ? at : "/")?.id === c.id ? at : null;
 }
 
 export const isDefaced = (s: GameState, c: Cluster): boolean => s.security.hacked.includes(c.id);
@@ -77,11 +99,11 @@ export function consoleHost(s: GameState, c: Cluster): string | null {
   return s.devices.find((d) => d.id === id)?.hostname ?? null;
 }
 
-// One bookmark per console the company runs.
+// One bookmark per console the company runs, at its port.
 export function consoleBookmarks(s: GameState): { title: string; url: string }[] {
   if (!s.company.domain) return [];
   return s.clusters.flatMap((c) => {
-    const family = familyOf(c), host = family && consoleHost(s, c);
-    return family && host ? [{ title: `${consoleTitle(family)} ${c.name}`, url: fqdn(s, host) }] : [];
+    const family = familyOf(c), host = family && consoleHost(s, c), at = consoleSuffix(s, c);
+    return family && host && at !== null ? [{ title: `${consoleTitle(family)} ${c.name}${at}`, url: fqdn(s, host) + at }] : [];
   });
 }

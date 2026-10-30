@@ -3,7 +3,7 @@
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { isMonthStart, monthIndexOf, yearOf } from "../00-core/time";
 import { CITIES } from "../10-catalog/economy";
-import { brandFrom, brandsOf, COMPONENTS, componentParts, isDriveKind, MODELS, modelById, vendorsOf, type DeviceModel } from "../10-catalog/hardware";
+import { brandFrom, brandsOf, COMPONENTS, componentParts, isDriveKind, MODELS, modelById, modelName, vendorsOf, type DeviceModel } from "../10-catalog/hardware";
 import { presetPrice } from "../10-catalog/parts";
 import {
   ASK, AUCTION_START, channelName, CLEARANCE_SIZE, DEFECT_CHANCE, DEFECTS, EARLY_HOURS, EBUY_FEE, leading, LOCAL_CHANCE, LOT_SHARE, LOT_SIZE, MAX_AGE,
@@ -86,7 +86,7 @@ function yearly(s: GameState, kind: "lot" | "clearance"): Listing[] {
 }
 
 function closeAuction(s: GameState, l: Listing, events: SimEvent[]): void {
-  const name = modelById(l.model).name, price = Math.max(l.price, l.rival ?? 0);
+  const name = modelName(modelById(l.model), l.brand), price = Math.max(l.price, l.rival ?? 0);
   if (!leading(l)) {
     events.push({ app: "Shop", key: "event.usedOutbid", params: { model: name } });
     return;
@@ -127,7 +127,7 @@ export function usedTick(s: GameState): SimEvent[] {
     s.used = s.used.filter((l) => !done.includes(l));
     for (const l of done) {
       if (l.device) closeSale(s, l, events);
-      else if (l.dueAt !== undefined) events.push({ app: "Shop", key: "event.usedScam", params: { model: modelById(l.model).name, price: l.price, seller: channelName(l.channel) } });
+      else if (l.dueAt !== undefined) events.push({ app: "Shop", key: "event.usedScam", params: { model: modelName(modelById(l.model), l.brand), price: l.price, seller: channelName(l.channel) } });
       else if (l.channel === "ebuy" && l.bid) closeAuction(s, l, events);
     }
   }
