@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- The other eBuy bidders now raise their bids over the days of an auction, mostly near the end and never right after your bid, your bid history shows their bids and your automatic answers, and you get a notification when someone outbids you.
 - Used listings in the Shop now open a details page like the New tab, with the memory and drive makers, speeds and interfaces, and on eBuy a bid history that shows the opening bid, your raises and the other bidder's answers.
 - The details page of a new server in the Shop now names its memory and drives, with their type, speed and interface.
 - WHMCache is breached in May 2012, and ModemBill after 2010 and BoxBillin' from 2015 until its 2022 revival can be breached any month, which upsets every customer.

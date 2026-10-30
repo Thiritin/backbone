@@ -3,7 +3,7 @@ import { hourOf, yearOf } from "../src/sim/00-core/time";
 import { brandFrom, componentParts, modelById } from "../src/sim/10-catalog/hardware";
 import { challengeFor } from "../src/sim/10-catalog/challenges";
 import { presetPrice } from "../src/sim/10-catalog/parts";
-import { CLEARANCE_SIZE, EBUY_FEE, LOT_SIZE, onMarket, REP_EARLY, REP_LEAD, shipHours, USED_EVENTS, type Listing } from "../src/sim/10-catalog/used";
+import { bidHistory, CLEARANCE_SIZE, EBUY_FEE, leading, LOT_SIZE, onMarket, rivalBids, rivalNow, REP_EARLY, REP_LEAD, shipHours, USED_EVENTS, type Listing } from "../src/sim/10-catalog/used";
 import type { GameState } from "../src/sim/50-state";
 import { deviceValue, HOURS_PER_YEAR } from "../src/sim/60-infra/status";
 import { hardwarePremium } from "../src/sim/46-finance/finance";
@@ -142,21 +142,43 @@ describe("used listings", () => {
     expect(t.devices.some((d) => d.used)).toBe(false);
   });
 
-  it("keeps a history of the bids the player placed and the rival's answers", () => {
-    const s = game(), l = market(s, "ebuy");
-    expect(l.bids ?? []).toEqual([]);
-    expect(bidListing(s, l.id, l.rival! - 1, "loc1").ok).toBe(true);
-    const lost = s.used.find((x) => x.id === l.id)!.bids!;
-    expect(lost.map((b) => b.by)).toEqual(["you", "rival"]);
-    expect(lost[0].amount).toBe(l.rival! - 1);
-    expect(lost[1].amount).toBeGreaterThan(lost[0].amount);
-    expect(lost[1].amount).toBeLessThanOrEqual(l.rival!);
+  it("lets the other bidder climb to their maximum, mostly late in the auction", () => {
+    let late = 0, total = 0;
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const l = market(game(seed), "ebuy"), steps = rivalBids(l);
+      expect(steps.length).toBeGreaterThanOrEqual(2);
+      expect(steps.map((b) => b.amount)).toEqual([...steps.map((b) => b.amount)].sort((x, y) => x - y));
+      expect(steps[steps.length - 1].amount).toBe(l.rival);
+      expect(l.expiresAt - steps[steps.length - 1].hour).toBeLessThanOrEqual(5);
+      for (const b of steps) { total++; if (b.hour >= l.postedAt + 0.6 * (l.expiresAt - l.postedAt)) late++; }
+    }
+    expect(late / total).toBeGreaterThan(0.5);
+  });
+
+  it("answers the player's bid only after a reply time, and shows an automatic answer up to their maximum", () => {
+    const s = game(), l = market(s, "ebuy"), at = s.hour;
+    expect(rivalNow(l, at)).toBe(0);
     expect(bidListing(s, l.id, l.rival! + 500, "loc1").ok).toBe(true);
-    const won = s.used.find((x) => x.id === l.id)!.bids!;
-    expect(won.map((b) => b.by)).toEqual(["you", "rival", "you"]);
-    expect(won[2].amount).toBe(Math.max(l.price, l.rival!));
-    // The history survives a save.
-    expect(deserialize(serialize(s)).used.find((x) => x.id === l.id)!.bids).toEqual(won);
+    const mine = s.used.find((x) => x.id === l.id)!;
+    expect(mine.bids!.map((b) => b.by)).toEqual(["you"]);
+    // Nothing from the other side in the 8 hours after the bid, unless it is the last-minute bid.
+    for (const b of rivalBids(mine)) if (b.hour > at) expect(b.hour - at >= 8 || b.hour === mine.expiresAt - 1).toBe(true);
+    expect(leading(mine, mine.expiresAt)).toBe(true);
+    const rows = bidHistory(mine, mine.expiresAt);
+    expect(rows.some((r) => r.by === "auto")).toBe(true);
+    expect(rows.filter((r) => r.by === "you").length).toBe(1);
+    expect(deserialize(serialize(s)).used.find((x) => x.id === l.id)!.bids).toEqual(mine.bids);
+  });
+
+  it("notifies when someone outbids the player during the auction", () => {
+    const s = game(), l = market(s, "ebuy");
+    expect(bidListing(s, l.id, l.rival! - 1, "loc1").ok).toBe(true);
+    const keys = until(s, l.expiresAt).map((e) => e.key);
+    expect(keys).toContain("event.usedOutbidNow");
+    expect(keys.indexOf("event.usedOutbidNow")).toBeLessThan(keys.indexOf("event.usedOutbid"));
+    const t = game(), m = market(t, "ebuy");
+    expect(bidListing(t, m.id, m.rival! + 500, "loc1").ok).toBe(true);
+    expect(until(t, m.expiresAt).map((e) => e.key)).not.toContain("event.usedOutbidNow");
   });
 
   it("sells on the board for more than the resale value, after a while", () => {

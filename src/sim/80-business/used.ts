@@ -7,7 +7,7 @@ import { brandFrom, brandsOf, COMPONENTS, componentParts, isDriveKind, MODELS, m
 import { presetPrice } from "../10-catalog/parts";
 import {
   ASK, AUCTION_START, channelName, CLEARANCE_SIZE, DEFECT_CHANCE, DEFECTS, EARLY_HOURS, EBUY_FEE, leading, LOCAL_CHANCE, LOT_SHARE, LOT_SIZE, MAX_AGE,
-  MIN_YEARS_ON_SALE, PER_MONTH, REP_LEAD, RIVAL, SCAM_CHANCE, SHIP_DAYS, USED_EVENTS, usedSince, WEAR, type Channel, type Defect, type Listing,
+  MIN_YEARS_ON_SALE, PER_MONTH, REP_LEAD, RIVAL, rivalNow, SCAM_CHANCE, SHIP_DAYS, USED_EVENTS, usedSince, WEAR, type Channel, type Defect, type Listing,
 } from "../10-catalog/used";
 import type { GameState } from "../50-state";
 import { editRequest, newLead } from "../30-market/sales";
@@ -130,6 +130,10 @@ export function usedTick(s: GameState): SimEvent[] {
       else if (l.dueAt !== undefined) events.push({ app: "Shop", key: "event.usedScam", params: { model: modelName(modelById(l.model), l.brand), price: l.price, seller: channelName(l.channel) } });
       else if (l.channel === "ebuy" && l.bid) closeAuction(s, l, events);
     }
+  }
+  // The other bidder tops the player's maximum while the auction runs.
+  for (const l of s.used) {
+    if (l.channel === "ebuy" && l.bid && !l.device && leading(l, s.hour - 1) && !leading(l, s.hour)) events.push({ app: "Shop", key: "event.usedOutbidNow", params: { model: modelName(modelById(l.model), l.brand), price: rivalNow(l, s.hour) } });
   }
   if (isMonthStart(s.hour)) {
     s.used = [...s.used, ...monthListings(s)];

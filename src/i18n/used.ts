@@ -12,6 +12,8 @@ export const USED_EN: Record<string, (p: Params) => string> = {
   "event.usedWon.text": (p) => `You won the ${p.model} on eBuy for ${euro(Number(p.price))}. It ships to ${p.location}.`,
   "event.usedOutbid.title": () => "Auction lost",
   "event.usedOutbid.text": (p) => `Someone outbid you on the ${p.model} on eBuy.`,
+  "event.usedOutbidNow.title": () => "Outbid",
+  "event.usedOutbidNow.text": (p) => `Someone bid ${euro(Number(p.price))} on the ${p.model} on eBuy, above your maximum.`,
   "event.usedUnpaid.title": () => "Auction lost",
   "event.usedUnpaid.text": (p) => `You won the ${p.model} on eBuy but could not pay ${euro(Number(p.price))}, so it went to the next bidder.`,
   "event.usedSold.title": (p) => `${p.device} sold`,

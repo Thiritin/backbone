@@ -3,7 +3,7 @@ import { hashRng, rand } from "../00-core/rng";
 import { REFUND_HOURS, REFUND_SHARE } from "../10-catalog/burnin";
 import { isOfficeRouter, modelById } from "../10-catalog/hardware";
 import {
-  currentBid, leading, onMarket, RIVAL_STEP, SELL_ASK, SELL_CAP, SELL_DAYS, SELL_FINAL, SELL_LISTED_DAYS, SELL_START, shipHours, type BidStep, type Listing,
+  currentBid, onMarket, rivalNow, SELL_ASK, SELL_CAP, SELL_DAYS, SELL_FINAL, SELL_LISTED_DAYS, SELL_START, shipHours, type BidStep, type Listing,
 } from "../10-catalog/used";
 import type { GameState } from "../50-state";
 import { deviceValue, HOURS_PER_YEAR } from "../60-infra/status";
@@ -71,14 +71,11 @@ export function bidListing(s: GameState, listingId: string, max: number, locatio
   if (l.channel !== "ebuy") return fail("error.notAuction");
   const error = placeError(s, l, locationId);
   if (error) return fail(error);
-  if (!Number.isFinite(max) || max < l.price || max <= (l.bid ?? 0) || (l.bid !== undefined && max <= currentBid(l))) return fail("error.bidTooLow");
+  if (!Number.isFinite(max) || max < l.price || max <= (l.bid ?? 0) || (l.bid !== undefined && max <= currentBid(l, s.hour)) || max <= rivalNow(l, s.hour)) return fail("error.bidTooLow");
   if (s.cash < max) return fail("error.noCash");
-  const next = { ...l, bid: Math.round(max), to: locationId };
-  // The history shows the player's raise and, when the rival's maximum is higher, the rival's answer just above it.
-  const steps: BidStep[] = leading(next)
-    ? [{ hour: s.hour, amount: currentBid(next), by: "you" }]
-    : [{ hour: s.hour, amount: next.bid, by: "you" }, { hour: s.hour, amount: Math.min(l.rival ?? 0, next.bid + Math.max(1, Math.round(next.bid * RIVAL_STEP))), by: "rival" }];
-  s.used = s.used.map((x) => (x.id === l.id ? { ...next, bids: [...(l.bids ?? []), ...steps] } : x));
+  // The history keeps what the player stands at when they bid; the other bidder answers later (rivalBids).
+  const next = { ...l, bid: Math.round(max), to: locationId }, step: BidStep = { hour: s.hour, amount: currentBid(next, s.hour), max: next.bid, by: "you" };
+  s.used = s.used.map((x) => (x.id === l.id ? { ...next, bids: [...(l.bids ?? []).filter((b) => b.by === "you"), step] } : x));
   return { ok: true };
 }
 

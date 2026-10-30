@@ -4,7 +4,7 @@ import { euro } from "../../../sim/00-core/money";
 import { boardSpec, componentParts, genOf, isDriveKind, modelById, modelName, wattsFactorOf, type ComponentKind, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import { cardOf } from "../../../sim/10-catalog/gpu";
 import { defaultVendor, skuById, VENDOR_NAME, VENDORS, type Vendor } from "../../../sim/10-catalog/cpus";
-import { CHANNELS, channelName, currentBid, EBUY_FEE, leading, onMarket, SELL_ASK, SELL_START, shipHours, type Channel, type Defect, type Listing } from "../../../sim/10-catalog/used";
+import { CHANNELS, channelName, bidHistory, currentBid, EBUY_FEE, leading, onMarket, SELL_ASK, SELL_START, shipHours, type Channel, type Defect, type Listing } from "../../../sim/10-catalog/used";
 import type { GameState } from "../../../sim/50-state";
 import { deviceValue } from "../../../sim/60-infra/status";
 import { bidListing, buyListing, cancelListing, listForSale } from "../../../sim/90-actions/used";
@@ -77,7 +77,7 @@ function listingRows(game: GameState, l: Listing, to: string, long: boolean): [s
 function ListingBuy({ game, l, to }: { game: GameState; l: Listing; to: string }) {
   const act = useStore((s) => s.act), notify = useStore((s) => s.notify);
   const m = modelById(l.model), city = game.locations.find((x) => x.id === to)!.city;
-  const bid = currentBid(l), auction = l.channel === "ebuy";
+  const bid = currentBid(l, game.hour), auction = l.channel === "ebuy";
   const [max, setMax] = useState(Math.ceil((bid * 1.1) / 10) * 10);
   const name = `${l.qty > 1 ? `${l.qty} × ` : ""}${modelName(m, l.brand)}`;
   const buy = () => {
@@ -110,7 +110,7 @@ function ListingCard({ game, l, to, onOpen }: { game: GameState; l: Listing; to:
       <button className="shop-pic" aria-label="Details" onClick={onOpen}><Isometric model={m} brand={l.brand} w={170} count={Math.min(l.qty, 4)} /></button>
       <div className="shop-name">
         <button className="shop-link" onClick={onOpen}>{name}</button>
-        <span className="shop-maker"><BrandLogo brand={l.brand} size={14} />{l.brand}{l.bid && <span className={`pill ${leading(l) ? "ok" : "warn"}`}>{leading(l) ? "Leading" : "Outbid"}</span>}</span>
+        <span className="shop-maker"><BrandLogo brand={l.brand} size={14} />{l.brand}{l.bid && <span className={`pill ${leading(l, game.hour) ? "ok" : "warn"}`}>{leading(l, game.hour) ? "Leading" : "Outbid"}</span>}</span>
       </div>
       <dl className="shop-specs">
         {listingRows(game, l, to, false).map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{v}</dd></div>)}
@@ -120,16 +120,15 @@ function ListingCard({ game, l, to, onOpen }: { game: GameState; l: Listing; to:
   );
 }
 
-// The auction's bids: the opening bid, then the player's raises and the rival's answers.
-function BidHistory({ l }: { l: Listing }) {
-  const steps = [{ hour: l.postedAt, amount: l.price, by: "start" as const }, ...(l.bids ?? [])];
-  const who = { start: "Opening bid", you: "You", rival: "Another bidder" };
+// The auction's bids, newest first: the opening bid, the other bidder's, yours and your automatic answers up to your maximum.
+function BidHistory({ game, l }: { game: GameState; l: Listing }) {
+  const who = { start: "Opening bid", you: "You", auto: "You, automatic", rival: "Another bidder" };
   return (
     <section className="used-history">
       <h3>Bid history</h3>
       <table>
         <thead><tr><th>Bidder</th><th>Date</th><th className="num">Bid</th></tr></thead>
-        <tbody>{[...steps].reverse().map((b, i) => <tr key={i}><td>{who[b.by]}</td><td className="num">{day(b.hour)}</td><td className="num">{euro(b.amount)}</td></tr>)}</tbody>
+        <tbody>{[...bidHistory(l, game.hour)].reverse().map((b, i) => <tr key={i}><td>{who[b.by]}</td><td className="num">{day(b.hour)}, {String(b.hour % 24).padStart(2, "0")}:00</td><td className="num">{euro(b.amount)}</td></tr>)}</tbody>
       </table>
     </section>
   );
@@ -145,14 +144,14 @@ function ListingDetails({ game, l, to, onBack }: { game: GameState; l: Listing; 
         <div className="shop-detail-pic"><Isometric model={m} brand={l.brand} w={200} count={Math.min(l.qty, 4)} /></div>
         <div className="shop-detail-info">
           <h2>{name}</h2>
-          <span className="shop-maker"><BrandLogo brand={l.brand} size={14} />{l.brand}{l.bid && <span className={`pill ${leading(l) ? "ok" : "warn"}`}>{leading(l) ? "Leading" : "Outbid"}</span>}</span>
+          <span className="shop-maker"><BrandLogo brand={l.brand} size={14} />{l.brand}{l.bid && <span className={`pill ${leading(l, game.hour) ? "ok" : "warn"}`}>{leading(l, game.hour) ? "Leading" : "Outbid"}</span>}</span>
           <div className="shop-buy shop-detail-buy"><ListingBuy game={game} l={l} to={to} /></div>
         </div>
       </div>
       <dl className="shop-detail-specs">
         {listingRows(game, l, to, true).map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{v}</dd></div>)}
       </dl>
-      {l.channel === "ebuy" && <BidHistory l={l} />}
+      {l.channel === "ebuy" && <BidHistory game={game} l={l} />}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 // Used hardware market (economy.md, Hardware, power and failures, Used hardware): channels, price bands and the yearly events.
+import { hashRng, rand } from "../00-core/rng";
 import { hourOf, START_YEAR } from "../00-core/time";
 import type { Device, GameState } from "../50-state";
 import type { Vendor } from "./cpus";
@@ -63,7 +64,7 @@ export const USED_EVENTS: { id: string; kind: "lot" | "clearance"; at: number }[
 // A listing on a channel. Market listings carry the hidden part ages (wear, in years, in the order of the model's parts) and,
 // on eBuy, the rival's maximum and the player's; the player's own listings carry the device they sell.
 // One step of an auction's history after the opening bid; the rival bids only against the player's maximum.
-export interface BidStep { hour: number; amount: number; by: "you" | "rival" }
+export interface BidStep { hour: number; amount: number; max?: number; by: "you" | "rival" }
 export interface Listing {
   id: string;
   channel: Channel;
@@ -101,12 +102,56 @@ export interface Listing {
 // When the player sees a listing: board listings a day after posting, unless the board trusts them.
 export const shownAt = (s: GameState, l: Listing): number => (l.channel === "board" && s.usedRep < REP_EARLY ? l.postedAt + EARLY_HOURS : l.postedAt);
 export const onMarket = (s: GameState, l: Listing): boolean => !l.device && l.dueAt === undefined && s.hour >= shownAt(s, l) && s.hour < l.expiresAt;
-// What an auction stands at: the rival bids up to the player's maximum, or to their own.
-export const currentBid = (l: Listing): number => (l.bid ? Math.max(l.price, Math.min(l.bid, l.rival ?? 0)) : l.price);
-export const leading = (l: Listing): boolean => !!l.bid && l.bid > (l.rival ?? 0);
+
+// The rival raises over a bid by this share, at least 1.
+export const RIVAL_STEP = 0.03;
+const raise = (amount: number): number => Math.max(1, Math.round(amount * RIVAL_STEP));
+const BIDDERS: [number, number] = [3, 5];
+const REPLY_HOURS: [number, number] = [8, 36];
+export interface RivalBid { hour: number; amount: number }
+
+// The other bidder's bids, climbing from the start price to their maximum. Most come late in the auction and the last one in
+// its final hours; after the player's latest bid the next one waits at least a reply time (8 to 36 hours), a bid in the final
+// hours meeting the sniper at the end.
+export function rivalBids(l: Listing): RivalBid[] {
+  if (!l.rival || l.rival <= l.price) return [];
+  const r = hashRng(l.rival, l.postedAt, l.expiresAt, l.price, 1021);
+  const n = BIDDERS[0] + Math.floor(rand(r) * (BIDDERS[1] - BIDDERS[0] + 1)), span = Math.max(2, l.expiresAt - l.postedAt);
+  const ups = Array.from({ length: n }, () => rand(r)).sort((x, y) => x - y);
+  const reply = REPLY_HOURS[0] + Math.floor(rand(r) * (REPLY_HOURS[1] - REPLY_HOURS[0] + 1));
+  const mine = (l.bids ?? []).filter((b) => b.by === "you").map((b) => b.hour), since = mine.length ? Math.max(...mine) : -1;
+  const raw = ups.map((u, i): RivalBid => ({
+    hour: i === n - 1 ? l.expiresAt - 1 - Math.floor(rand(r) * 5) : Math.min(l.expiresAt - 1, l.postedAt + Math.floor(span * (0.1 + 0.9 * u ** 0.4))),
+    amount: Math.round(l.price + ((l.rival! - l.price) * (i + 1)) / n),
+  })).map((b, i, all) => (i === n - 1 ? { ...b, amount: l.rival!, hour: Math.max(b.hour, all[i - 1]?.hour ?? 0) } : b));
+  // A bid not yet made when the player bids waits for the reply time; bids that share an hour merge into the last.
+  const waited = raw.map((b) => (b.hour > since && since >= 0 ? { ...b, hour: Math.min(l.expiresAt - 1, Math.max(b.hour, since + reply)) } : b));
+  return waited.filter((b, i) => i === waited.length - 1 || waited[i + 1].hour !== b.hour);
+}
+// The other bidder's highest bid by this hour, 0 before the first.
+export const rivalNow = (l: Listing, hour: number): number => rivalBids(l).filter((b) => b.hour <= hour).reduce((m, b) => Math.max(m, b.amount), 0);
+// What an auction stands at. Without an hour it is the end: the other bidder's maximum against the player's.
+export const leading = (l: Listing, hour?: number): boolean => !!l.bid && l.bid > (hour === undefined ? l.rival ?? 0 : rivalNow(l, hour));
+export function currentBid(l: Listing, hour: number = l.expiresAt): number {
+  const r = rivalNow(l, hour), top = Math.max(l.price, r);
+  return l.bid && l.bid > r ? Math.min(l.bid, r ? r + raise(r) : l.price) : top;
+}
+
+export type BidRow = { hour: number; amount: number; by: "start" | "rival" | "you" | "auto" };
+// The bids so far, oldest first: the opening bid, the other bidder's, the player's and the player's automatic answers
+// (up to their maximum) to each of the other's bids made while they led.
+export function bidHistory(l: Listing, hour: number): BidRow[] {
+  const mine = (l.bids ?? []).filter((b) => b.by === "you" && b.hour <= hour);
+  const theirs = rivalBids(l).filter((b) => b.hour <= hour);
+  const auto = theirs.flatMap((b): BidRow[] => {
+    const bid = [...mine].reverse().find((x) => x.hour <= b.hour);
+    const max = bid ? bid.max ?? bid.amount : 0;
+    return bid && b.amount < max ? [{ hour: b.hour, amount: Math.min(max, b.amount + raise(b.amount)), by: "auto" }] : [];
+  });
+  const rows: BidRow[] = [{ hour: l.postedAt, amount: l.price, by: "start" }, ...theirs.map((b): BidRow => ({ ...b, by: "rival" })), ...mine.map((b): BidRow => ({ hour: b.hour, amount: b.amount, by: "you" })), ...auto];
+  const order = { start: 0, rival: 1, you: 2, auto: 3 };
+  return rows.map((r, i) => ({ r, i })).sort((x, y) => x.r.hour - y.r.hour || order[x.r.by] - order[y.r.by] || x.i - y.i).map((x) => x.r);
+}
 
 // Hours from purchase to the stockroom: a day from a seller in the same city, except on eBuy.
 export const shipHours = (l: Listing, city: string): number => (l.channel !== "ebuy" && l.city === city ? 24 : l.shipDays * 24);
-
-// The rival raises over the player's maximum by this share, at least 1.
-export const RIVAL_STEP = 0.03;
