@@ -365,7 +365,7 @@ Each software with a web console gets its own component and stylesheet, modelled
 | MinnIO Console | 2016: dark, red, a bucket list | 2021: white, red, cards |
 | Mailpig | 2015: the dark Mailcow-style admin, pink accent, tabs (Mailboxes, Domains, Queue) | same |
 
-Built so far: the seven hosting and game panels (cPanic to Pterodaktyl). Each lives in `consoles/<id>/` and lays out the blocks of `consoles/PanelBase.tsx` (object rows, nodes, software facts and actions, the login form) in its own chrome; the `CONSOLES` map in `ConsolePage.tsx` routes a software to its component, and software without an entry still wears the shared frames. The look switches on January 1 of the late year in the table. The pages each panel shows:
+Built so far: the seven hosting and game panels (cPanic to Pterodaktyl). Each lives in `consoles/<id>/` and lays out the blocks of `consoles/PanelBase.tsx` (object rows, nodes, software facts and actions, the backup schedule, the login form) in its own chrome; the `CONSOLES` map in `ConsolePage.tsx` routes a software to its component, and software without an entry still wears the shared frames. The look switches on January 1 of the late year in the table. The pages each panel shows:
 
 | Console | Pages | Layout |
 | --- | --- | --- |

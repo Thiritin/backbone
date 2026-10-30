@@ -1,6 +1,6 @@
 import { Folder, FolderOpen, Gamepad2 } from "lucide-react";
 import { useState } from "react";
-import { Actions, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import "./tcadmen.css";
 
 // docs/design/software.md, section 10: grey and black with a tree of game servers until 2016, then dark grey and green.
@@ -42,7 +42,7 @@ export function TCAdmen(p: PanelProps) {
             <>
               <Facts facts={sw.facts} />
               <Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
-              {sw.panel}
+              {sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}
             </>
           )}
         </main>

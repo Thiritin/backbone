@@ -1,5 +1,5 @@
 import { LogOut, Server, Settings, type LucideIcon } from "lucide-react";
-import { Actions, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Actions, Backups, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import "./pterodaktyl.css";
 
 // docs/design/software.md, section 10: dark blue server cards with meters under a top bar, flatter with a sidebar from 2021.
@@ -42,7 +42,7 @@ export function Pterodaktyl(p: PanelProps) {
           <section className="pt-box">
             <Facts facts={sw.facts} />
             <Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
-            {sw.panel}
+            {sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}
           </section>
         )}
       </main>

@@ -124,6 +124,7 @@
 .cx-defaced { min-height: 100%; padding: 64px 24px; background: #000; color: #2cff6a; font-family: "Courier New", ui-monospace, monospace; text-align: center; }
 .cx-defaced h1 { font-size: 30px; margin-bottom: 12px; text-shadow: 0 0 8px #2cff6a; }
 .cx-facts { margin-bottom: 12px; }
+.cx-h { margin: 16px 0 6px; font-size: 13px; font-weight: 650; }
 
 /* Panel blocks: actions as icon tiles */
 .cx-tiles { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }

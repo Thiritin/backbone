@@ -1,17 +1,17 @@
 // docs/design/software.md, section 10: what every console offers, as blocks each product lays out in its own chrome.
-import { ArrowRightLeft, CalendarClock, Circle, Maximize2, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
+import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
-import { autoUpdates, softwareById } from "../../../../sim/10-catalog/platforms";
+import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import type { Look } from "../../../../sim/10-catalog/sites";
 import type { GameState } from "../../../../sim/50-state";
-import { hostOfVm, isOwnVm, vmById, workloadsOn, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
+import { hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { workloadUse } from "../../../../sim/60-infra/usage";
 import { familyOf, openVulns } from "../../../../sim/60-infra/vulns";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
-import { deleteVm, removePanelHost, resizePanelVm } from "../../../../sim/90-actions/clusters";
+import { deleteVm, phpDue, removePanelHost, resizePanelVm, setBackup, upgradePhp } from "../../../../sim/90-actions/clusters";
 import { setSitesOffline } from "../../../../sim/90-actions/security";
 import { setAutoUpdate, uninstallSoftware, updateDue, updateSoftware } from "../../../../sim/90-actions/software";
 import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../../../sim/90-actions/vms";
@@ -37,7 +37,7 @@ export function usePanelTab(f: ConsoleFeatures, first: Tab = "objects"): [Tab, (
 export interface PanelAction { id: string; label: string; run: () => void; tone?: "primary" | "danger" }
 
 const ICON: Record<string, LucideIcon> = {
-  update: RefreshCw, auto: CalendarClock, offline: PowerOff, resize: Maximize2, remove: Trash2, confirm: Trash2, cancel: X,
+  update: RefreshCw, auto: CalendarClock, php: Code, offline: PowerOff, resize: Maximize2, remove: Trash2, confirm: Trash2, cancel: X,
   start: Play, stop: Square, restore: RotateCcw, migrate: ArrowRightLeft, console: Terminal, delete: Trash2,
 };
 export const ActionIcon = ({ id, size }: { id: string; size?: number }) => { const I = ICON[id] ?? Circle; return <I size={size} aria-hidden />; };
@@ -211,17 +211,18 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
   const act = useStore((s) => s.act), [sizing, setSizing] = useState(false), [removing, setRemoving] = useState(false);
   const family = familyOf(c)!, year = yearOf(game.hour), due = updateDue(game, c);
   const auto = f.update && autoUpdates(softwareById(family), year), on = !!c.autoUpdate;
-  const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "", every = c.backup.every;
+  const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "";
   const facts: (Fact | false)[] = [
     { label: "Software", value: consoleTitle(family) },
     { label: "Version", value: String(c.version), num: true },
     auto && { label: "Automatic updates", value: on ? "On" : "Off" },
     { label: "Open vulnerabilities", value: String(openVulns(game, c.id).length), num: true },
-    f.backups && { label: "Backups", value: every[0].toUpperCase() + every.slice(1) },
+    c.kind === "panel" && { label: "PHP", value: String(c.php), num: true },
   ];
   const actions: (PanelAction | false)[] = [
     f.update && due && { id: "update", label: `Update to ${year}`, run: () => act(updateSoftware, c.id), tone: "primary" },
     auto && { id: "auto", label: on ? "Turn off automatic updates" : "Turn on automatic updates", run: () => act(setAutoUpdate, c.id, !on) },
+    c.kind === "panel" && phpDue(game, c) && { id: "php", label: c.php === phpAt(year) ? "Patch PHP" : `Upgrade to PHP ${phpAt(year)}`, run: () => act(upgradePhp, c.id) },
     f.sitesOffline && c.kind === "panel" && { id: "offline", label: off ? "Bring sites online" : "Take sites offline", run: () => act(setSitesOffline, c.id, !off) },
     f.resize && c.kind === "panel" && !!c.vm && { id: "resize", label: "Resize", run: () => setSizing(!sizing) },
     f.delete && !removing && { id: "remove", label: "Remove host", run: () => setRemoving(true) },
@@ -232,4 +233,26 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
     facts: facts.filter((x): x is Fact => !!x), actions: actions.filter((a): a is PanelAction => !!a),
     note: f.update && !due ? "Up to date" : null, panel: sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null,
   };
+}
+
+// The backup schedule and the host the backups go to; consoles show it where consoleFeatures offers backups.
+export function Backups({ game, c, title = <h4 className="cx-h">Backups</h4> }: { game: GameState; c: Cluster; title?: ReactNode }) {
+  const act = useStore((s) => s.act), others = game.clusters.filter((x) => x.id !== c.id), target = c.backup.targetId ?? others[0]?.id ?? null;
+  return (
+    <>
+      {title}
+      <div className="cx-tools">
+        {(["off", "daily", "weekly"] as BackupEvery[]).map((e) => (
+          <button key={e} className="cx-chip" aria-pressed={c.backup.every === e} disabled={e !== "off" && !target} onClick={() => act(setBackup, c.id, target, e)}>
+            {e === "off" ? "Off" : e === "daily" ? "Daily" : "Weekly"}
+          </button>
+        ))}
+      </div>
+      {others.length > 0 && (
+        <div className="cx-tools">
+          {others.map((x) => <button key={x.id} className="cx-chip" aria-pressed={c.backup.targetId === x.id} onClick={() => act(setBackup, c.id, x.id, c.backup.every)}>{x.name}</button>)}
+        </div>
+      )}
+    </>
+  );
 }

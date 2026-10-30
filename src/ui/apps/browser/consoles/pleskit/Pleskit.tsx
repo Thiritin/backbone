@@ -1,6 +1,6 @@
 import { Globe, LogOut, Network, Wrench, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { Actions, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import "./pleskit.css";
 
 // docs/design/software.md, section 10: the 8.x icon grids until 2015, then white with a dark sidebar and flat cards.
@@ -38,10 +38,10 @@ export function Pleskit(p: PanelProps) {
           {tab === "objects" && card("Domains", <RowsTable rows={rows} name="Domain" />)}
           {tab === "nodes" && card("Nodes", <Nodes game={p.game} c={p.c} />)}
           {tab === "software" && (era === "early"
-            ? <>{card("Tools", <>{sw.note && <p className="cx-note">{sw.note}</p>}<Tiles actions={sw.actions} /></>)}{sw.panel}{card("Server information", <Facts facts={sw.facts} />)}</>
+            ? <>{card("Tools", <>{sw.note && <p className="cx-note">{sw.note}</p>}<Tiles actions={sw.actions} /></>)}{sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}{card("Server information", <Facts facts={sw.facts} />)}</>
             : <div className="pk-cards">
               {card("Server information", <Facts facts={sw.facts} />)}
-              {card("Updates and server management", <><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>)}
+              {card("Updates and server management", <><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}</>)}
             </div>)}
         </main>
       </div>

@@ -7,7 +7,7 @@ import { mailImpaired, seatsFor } from "../../../../sim/80-business/mail";
 import { createVm, PANEL_VM_SIZE } from "../../../../sim/90-actions/clusters";
 import { createSoftwareVm } from "../../../../sim/90-actions/software";
 import { useStore } from "../../../store";
-import { Actions, Facts, RowsTable, useRows, useSoftware } from "./PanelBase";
+import { Actions, Backups, Facts, RowsTable, useRows, useSoftware } from "./PanelBase";
 
 export { Nodes, type Tab } from "./PanelBase";
 
@@ -57,6 +57,7 @@ export function Software({ game, c, f }: Props) {
       <Facts facts={sw.facts} />
       <Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
       {sw.panel}
+      {f.backups && <Backups game={game} c={c} />}
     </>
   );
 }

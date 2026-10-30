@@ -41,9 +41,11 @@ describe("hosting and game panel consoles", () => {
     }
   });
 
-  it("lists the software facts and the update tools on the software page", () => {
+  it("lists the software facts, the update tools and the backup schedule on the software page", () => {
     const { html } = render("directadmen", 2005, true);
     expect(html).toContain("Open vulnerabilities");
     expect(html).toContain("Remove host");
+    expect(html).toContain("PHP");
+    expect(html).toContain("Weekly");
   });
 });

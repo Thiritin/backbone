@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useState } from "react";
-import { erasFrom, eraAt, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps } from "../PanelBase";
+import { Backups, erasFrom, eraAt, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps } from "../PanelBase";
 import "./directadmen.css";
 
 // docs/design/software.md, section 10: the enhanced skin's three link columns until 2018, then a dark bar, cards and a search.
@@ -55,7 +55,7 @@ export function DirectAdmen(p: PanelProps) {
                 <dl>{sw.facts.map((x) => <div key={x.label}><dt>{x.label}</dt><dd className={x.num ? "num" : undefined}>{x.value}</dd></div>)}</dl>
               </section>
             </div>
-            {sw.panel}
+            {sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}
           </>
         )}
       </main>

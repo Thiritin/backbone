@@ -1,6 +1,6 @@
 import { LogOut, Search } from "lucide-react";
 import { useState } from "react";
-import { erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import "./cpanic.css";
 
 // docs/design/software.md, section 10: the x3 manager until 2014, then the flat one with grouped sections.
@@ -54,7 +54,7 @@ export function CPanic(p: PanelProps) {
               <h2>Software</h2>
               {sw.note && <p className="cx-note">{sw.note}</p>}
               <Tiles actions={sw.actions} />
-              {sw.panel}
+              {sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}
             </>
           )}
         </main>

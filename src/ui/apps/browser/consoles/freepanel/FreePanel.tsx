@@ -1,5 +1,5 @@
 import { ChevronRight, Folder, LogOut } from "lucide-react";
-import { Actions, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import "./freepanel.css";
 
 // docs/design/software.md, section 10: a blue category tree with grey module tables until 2016, then white and flat.
@@ -43,7 +43,7 @@ export function FreePanel(p: PanelProps) {
           <>
             <Facts facts={sw.facts} />
             <Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
-            {sw.panel}
+            {sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}
           </>
         )}
       </main>

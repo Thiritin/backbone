@@ -1,4 +1,4 @@
-import { Actions, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Row, type Tab } from "../PanelBase";
+import { Actions, Backups, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Row, type Tab } from "../PanelBase";
 import "./multikraft.css";
 
 // docs/design/software.md, section 10: dark grey under a brown header with status dot tables until 2018, then white, green and cards.
@@ -62,7 +62,7 @@ export function MultiKraft(p: PanelProps) {
           <>
             <Facts facts={sw.facts} />
             <Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
-            {sw.panel}
+            {sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}
           </>
         )}
       </main>
