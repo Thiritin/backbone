@@ -1,5 +1,8 @@
 // The shop system: which variant takes orders, its modules and the stock per product line (docs/design/shop.md).
-import { yearOf } from "../00-core/time";
+import { hourOf, isMonthStart, yearOf } from "../00-core/time";
+import { hashRng, rand } from "../00-core/rng";
+import type { SimEvent } from "../88-tick/tick";
+import { bump } from "../40-support/tickets";
 import { PRODUCTS } from "../10-catalog/products";
 import { includes, shopById, WHM_PER_THOUSAND, WHM_TIERS, type ShopId } from "../10-catalog/shops";
 import { modelById } from "../10-catalog/hardware";
@@ -94,4 +97,23 @@ export function shopBills(s: GameState): { key: string; params: Record<string, s
     if (cut > 0) out.push({ key: "ledger.shopCut", params: { name }, amount: cut });
   }
   return out;
+}
+
+// A leak of the shop's customer data: WHMCache's in May 2012, and a monthly risk for a shop past its last update.
+export const SHOP_BREACH = { happiness: -15, monthly: 0.02 };
+export const WHM_BREACH_AT = hourOf(new Date(Date.UTC(2012, 4, 21)));
+const unpatched = (id: ShopId, year: number): boolean => (id === "modemBill" && year >= 2011) || (id === "boxBillin" && year >= 2015 && year < 2022);
+
+export function shopTick(s: GameState, events: SimEvent[]): void {
+  const id = s.shop.variant;
+  if (!id || !shopActive(s)) return;
+  const hit = (id === "whmCache" && s.hour === WHM_BREACH_AT) || (isMonthStart(s.hour) && unpatched(id, yearOf(s.hour)) && rand(hashRng(s.seed, s.hour, 271)) < SHOP_BREACH.monthly);
+  if (!hit) return;
+  s.customers = s.customers.map((c) => {
+    if (c.churnedAt !== null) return c;
+    const copy = { ...c };
+    bump(copy, SHOP_BREACH.happiness);
+    return copy;
+  });
+  events.push({ app: "Security", key: "event.shopBreach", params: { name: shopById(id).name } });
 }

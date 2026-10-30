@@ -4,7 +4,7 @@ import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { orderLead } from "../src/sim/30-market/orders";
 import type { GameState } from "../src/sim/50-state";
 import { hasOrderForm, owns } from "../src/sim/80-business/marketing";
-import { hasModule, inStock, shopBills, stockOf } from "../src/sim/80-business/shop";
+import { hasModule, inStock, shopBills, shopTick, stockOf, WHM_BREACH_AT } from "../src/sim/80-business/shop";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { addToGroup, buyModule, chooseShop, createGroup, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../src/sim/90-actions/shop";
 import { cordon, uncordon } from "../src/sim/90-actions/clusters";
@@ -153,5 +153,21 @@ describe("node actions", () => {
     expect(s.clusters.find((x) => x.id === c.id)!.nodes[0].state).toBe("active");
     expect(uncordon(s, dev, "cl-other").ok).toBe(true);
     expect(cordon(s, dev, "nope")).toMatchObject({ ok: false, error: "error.notNode" });
+  });
+});
+
+describe("shop era events", () => {
+  it("leak WHMCache's customer data in May 2012 and upset every customer", () => {
+    const s = withShop(13);
+    s.hour = WHM_BREACH_AT;
+    const before = s.customers.map((c) => c.happiness), events: Parameters<typeof shopTick>[1] = [];
+    shopTick(s, events);
+    expect(events).toMatchObject([{ app: "Security", key: "event.shopBreach", params: { name: "WHMCache" } }]);
+    s.customers.forEach((c, i) => expect(c.happiness).toBeLessThan(before[i]));
+    const blessta = withShop(14, "clientExit");
+    blessta.hour = WHM_BREACH_AT;
+    const none: typeof events = [];
+    shopTick(blessta, none);
+    expect(none).toEqual([]);
   });
 });

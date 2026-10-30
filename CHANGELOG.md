@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- WHMCache is breached in May 2012, and ModemBill after 2010 and BoxBillin' from 2015 until its 2022 revival can be breached any month, which upsets every customer.
 - Cordon, drain and the new evacuate now act on one software installation from the hypervisor console or a server group in Marketing, Shop instead of the Locations menu; a drain moves only what can move live, and an evacuation moves everything now, cold where it has to.
 - Server groups in Marketing, Shop decide which panel hosts and hypervisor clusters the shop sells from and which ones take automatic orders; a new shop starts with one group per kind of software you run.
 - Memory sticks and drives now come from makers such as Sumsang, Kingstown, Seagull, Western Digitail and Indel, each with its own prices, failure rates and spec sheet (DDR type and speed, interface, spindle speed or endurance, throughput), a board takes only sticks of its memory type, and the Parts tab is split into CPUs, Memory, Drives, Cards, Boards and Power and cooling.

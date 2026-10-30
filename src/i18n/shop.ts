@@ -25,6 +25,8 @@ export const SHOP_EN: Record<string, (p: Params) => string> = {
   "group.dns": () => "DNS",
   "group.vpn": () => "VPN",
   "group.storage": () => "Storage",
+  "event.shopBreach.title": () => "Shop system breached",
+  "event.shopBreach.text": (p) => `Attackers broke into ${p.name} and copied your customers' data. Every customer trusts you less.`,
   "ledger.shopSetup": (p) => `Shop system: ${p.name}`,
   "ledger.shopLicence": (p) => `Shop licence: ${p.name}`,
   "ledger.shopUpdates": (p) => `Shop updates: ${p.name}`,

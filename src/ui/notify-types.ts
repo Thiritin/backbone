@@ -34,7 +34,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Attacks and saturation", "ddos", "saturated"),
     type("Addresses", "addressListed"),
   ],
-  Security: [type("Advisories", "vuln.announced", "vuln.poc", "vuln.warning", "vuln.patch"), type("Compromises", "vuln.hacked", "oobHacked", "siteHacked", "siteLeft", "breachPress", "breachFine"), type("Open vulnerabilities", "vulnOpen", "vulnCritical")],
+  Security: [type("Advisories", "vuln.announced", "vuln.poc", "vuln.warning", "vuln.patch"), type("Compromises", "vuln.hacked", "oobHacked", "siteHacked", "siteLeft", "breachPress", "breachFine", "shopBreach"), type("Open vulnerabilities", "vulnOpen", "vulnCritical")],
   Marketing: [type("Reviews", "review"), type("Campaigns and bills", "fairDone", "fairMissed", "marketingBills", "platformDropped"), type("Community events", "sponsorDone", "sponsorFailed", "halfAccepted", "halfDeclined"), type("Sponsor board", "boardDropped", "boardDone"), type("Website", "siteBuilt")],
   Website: [type("Site", "siteDown")],
   Staff: [

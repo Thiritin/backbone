@@ -9,7 +9,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
 import { communityBatches } from "./community";
 import { fairBatches, fairGain } from "./fairs";
-import { shopActive, shopBills } from "./shop";
+import { shopActive, shopBills, shopTick } from "./shop";
 import { siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
 
 export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
@@ -218,6 +218,7 @@ export function marketingTick(s: GameState): SimEvent[] {
   rollReviews(s, events);
   siteBuiltEvent(s, events);
   siteDownEvent(s, events);
+  shopTick(s, events);
   if (!isMonthStart(s.hour)) return events;
   if (s.marketing.platform && PLATFORMS[s.marketing.platform].fee > 0 && !hasMarketingManager(s)) {
     events.push({ app: "Marketing", key: "event.platformDropped", params: { name: PLATFORMS[s.marketing.platform].name } });
