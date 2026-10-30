@@ -15,7 +15,7 @@ import { retentionOptions, type RetentionId } from "../../../sim/40-support/rete
 import { assignTicket, closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket, retainTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
-import { useFocus, useStore } from "../../store";
+import { uiSound, useFocus, useStore } from "../../store";
 import { useSessionState } from "../../session";
 import { More } from "../More";
 import { EmailSettings } from "../EmailSettings";
@@ -319,6 +319,11 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
 function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
+  const reply: typeof act = (fn, ...args) => {
+    const r = act(fn, ...args);
+    if (r.ok) uiSound("typing");
+    return r;
+  };
   const c = game.customers.find((x) => x.id === tk.customerId);
   const svc = game.services.find((v) => v.id === tk.serviceId);
   const p = subjectParams(game, tk);
@@ -432,7 +437,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
               <h3>Reply</h3>
               <div className="templates">
                 {shownTemplates(game, tk, gates.templates).map((id) => (
-                  <button key={id} className="tpl" disabled={locked} onClick={() => act(replyTicket, tk.id, id)}>
+                  <button key={id} className="tpl" disabled={locked} onClick={() => reply(replyTicket, tk.id, id)}>
                     <span className="t">{t(`template.${id}.title`)}</span>
                     {gates.templates && <span className="p">{t(`template.${id}.text`, { ...companyParams(game), ...p })}</span>}
                   </button>
@@ -447,7 +452,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
                 {retentionOptions(game, tk).map((o) => {
                   const v = game.services.find((x) => x.id === o.serviceId);
                   return (
-                    <button key={o.id} className="offer" disabled={locked} onClick={() => act(retainTicket, tk.id, o.id)}>
+                    <button key={o.id} className="offer" disabled={locked} onClick={() => reply(retainTicket, tk.id, o.id)}>
                       <span className="t">{OFFER_TITLE[o.id]}</span>
                       <span className="v num">{o.spec && v ? specText(v.product, o.spec) : o.target ?? (o.cost > 0 ? euroCents(o.cost) : "No cost")}</span>
                       <span className={`odds ${o.odds}`}>{ODDS_LABEL[o.odds]}</span>
@@ -459,7 +464,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
           )}
           <div className="actions-row">
             {actionsOf(tk).filter((a) => (a !== "revert" || tk.topic === "price") && (!stray || a === "reject")).map((a) => (
-              <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => act(resolveTicket, tk.id, a)}>
+              <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => reply(resolveTicket, tk.id, a)}>
                 {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}{a === "pay" && <span className="num">({euroCents(Number(p.ransom))})</span>}{a === "offerOnce" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updateOnce"))})</span>}{a === "offerManaged" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updates"))} a month)</span>}
               </button>
             ))}

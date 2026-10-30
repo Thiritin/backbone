@@ -7,7 +7,7 @@ import { dateOf, hourOf } from "../sim/00-core/time";
 // Highest priority first: one batch of events plays only its top sound.
 export const SOUNDS = ["month", "warn", "level", "research", "money", "ticket"] as const;
 export type Sound = (typeof SOUNDS)[number];
-export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup" | "post" | "plug" | "unplug";
+export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup" | "post" | "plug" | "unplug" | "typing";
 
 // How each Pear OS era voices the desktop sounds: glassy and long early on, flat and short in the middle years, soft and airy later.
 export interface Voice { wave: OscillatorType; len: number; lift: number; glass: number; air: number }
@@ -189,6 +189,11 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false,
         break;
       case "key":
         rattle(c, out, t, 0.05, 1800 + Math.random() * 1400, 0.018);
+        break;
+      case "typing":
+        // A short burst of uneven key presses with a word gap now and then.
+        for (let i = 0, at = t; i < 12; i++, at += 0.05 + Math.random() * 0.06 + (Math.random() < 0.15 ? 0.12 : 0))
+          rattle(c, out, at, 0.04, 1800 + Math.random() * 1400, 0.018);
         break;
       case "thump": {
         // A fist on the desk: a falling low tone under a dull knock.
