@@ -1013,7 +1013,7 @@ Without a spare kit in stock, a repair waits for a delivery first.
 | Fan | 6 years | 1% | 7% | €25 | Yes |
 | RAM stick | 12 years | 0.2% | 0.6% | €60 | No |
 | Mainboard | 12 years | 0.3% | 1% | €600 | No |
-| CPU | 15 years | 0.05% | 0.2% | €400 | No |
+| CPU | 7 years | 0.05% | 0.2% | €400 | No |
 | Network card | 10 years | 0.3% | 1% | €80 | No |
 
 A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare and sets the insurance premium; the shop sells parts at the prices of Part prices by year.

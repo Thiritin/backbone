@@ -43,7 +43,7 @@ export const COMPONENTS: Record<ComponentKind, { life: number; before: number; a
   fan: { life: 6, before: 0.01, after: 0.07, price: 25, hotSwap: "yes" },
   ram: { life: 12, before: 0.002, after: 0.006, price: 60, hotSwap: "no" },
   board: { life: 12, before: 0.003, after: 0.01, price: 600, hotSwap: "no" },
-  cpu: { life: 15, before: 0.0005, after: 0.002, price: 400, hotSwap: "no" },
+  cpu: { life: 7, before: 0.0005, after: 0.002, price: 400, hotSwap: "no" },
   nic: { life: 10, before: 0.003, after: 0.01, price: 80, hotSwap: "no" },
   gpu: { life: 5, before: 0.015, after: 0.08, price: 9000, hotSwap: "no" },
 };

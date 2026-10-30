@@ -64,7 +64,7 @@ describe("components and failure rates", () => {
     expect(failureChance(s, dev(s, "dev3"), hdd)).toBeCloseTo((0.08 * 2) / 8760, 12);
     // After 5 years only the drive is past its life; fans last 6.
     expect(deviceHealth(s, "dev3").worn.map((c) => c.kind)).toEqual(["hdd"]);
-    expect(COMPONENTS.cpu).toEqual({ life: 15, before: 0.0005, after: 0.002, price: 400, hotSwap: "no" });
+    expect(COMPONENTS.cpu).toEqual({ life: 7, before: 0.0005, after: 0.002, price: 400, hotSwap: "no" });
   });
   it("draws failures every hour and only notifies with monitoring", () => {
     const play = (monitoring: boolean) => {

@@ -110,3 +110,52 @@
 .shop-chip:hover { background: var(--hover); }
 .shop-chip[aria-pressed="true"] { background: var(--accent-soft); border-color: transparent; color: var(--accent-text); }
 .shop-chip .num { color: var(--text-3); font-size: 11px; }
+.shop-side-parent { position: relative; }
+.shop-side-parent .side-item { padding-right: 26px; }
+.shop-side-parent .side-item .side-count { margin-right: 0; }
+.shop-side-toggle { position: absolute; top: 4px; right: 2px; width: 20px; height: 20px; display: grid; place-items: center; border: 0; border-radius: 4px; background: none; color: var(--text-3); }
+.shop-side-toggle:hover { background: color-mix(in oklch, var(--text) 10%, transparent); }
+.shop-side-toggle svg.lucide { width: 13px; height: 13px; transition: transform 120ms; }
+.shop-side-toggle.open svg.lucide { transform: rotate(90deg); }
+.shop-side-parent .side-item.active + .shop-side-toggle { color: var(--accent-ink); }
+.shop-side button.shop-side-soft { height: 34px; margin: 6px 0 2px; font-weight: 600; border: 0.5px solid var(--line-strong); background: var(--field); }
+.shop-side button.shop-side-soft.active { border-color: transparent; }
+.shop-soft-tile { width: 20px; height: 20px; flex: none; display: grid; place-items: center; border-radius: 5px; background: linear-gradient(180deg, oklch(0.62 0.17 255), oklch(0.52 0.17 265)); }
+.shop-side .shop-soft-tile svg.lucide { width: 13px; height: 13px; color: white; }
+.shop-view button { padding: 0 7px; display: grid; place-items: center; }
+.shop-view svg.lucide { width: 14px; height: 14px; }
+.shop-list { flex: 1; min-width: 0; overflow: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; align-content: start; }
+.shop-row { border-bottom: 0.5px solid var(--line); }
+.shop-row-main { display: grid; grid-template-columns: 64px minmax(160px, 1.1fr) minmax(0, 2fr) auto; align-items: center; gap: 14px; padding: 8px 4px; }
+.shop-row-pic { height: 44px; display: grid; place-items: center; overflow: hidden; }
+.shop-row-name { display: grid; gap: 2px; min-width: 0; }
+.shop-row-name strong { font-weight: 650; font-size: 12.5px; }
+.shop-row-name span { color: var(--text-2); font-size: 12px; }
+.shop-row-specs { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; min-width: 0; }
+.shop-row-specs div { display: grid; }
+.shop-row-specs dt { font-size: 10.5px; font-weight: 550; color: var(--text-3); }
+.shop-row-specs dd { margin: 0; font-size: 12px; white-space: nowrap; }
+.shop-row-buy { display: grid; justify-items: end; gap: 6px; }
+.shop-row-buy .shop-vendor { margin: 0; }
+.shop-row-act { display: inline-flex; align-items: center; gap: 8px; }
+.shop-row-act strong { white-space: nowrap; min-width: 64px; text-align: right; }
+.shop-row .shop-build { border-top: 0; padding: 0 4px 12px 92px; max-width: 520px; }
+.shop-side { overflow-y: auto; }
+.shop-side > * { flex: none; }
+.shop-row-name .shop-maker { flex-wrap: wrap; row-gap: 2px; }
+.shop-link { border: 0; background: none; padding: 0; font: inherit; font-weight: 650; font-size: 12.5px; color: var(--text); text-align: left; cursor: pointer; }
+.shop-link:hover { text-decoration: underline; }
+.shop-pic, .shop-row-pic { border: 0; padding: 0; cursor: pointer; }
+.shop-row-pic { background: none; }
+.shop-detail { flex: 1; min-width: 0; overflow: auto; padding: 12px 24px 28px; display: flex; flex-direction: column; gap: 20px; }
+.shop-back { align-self: flex-start; margin-left: -8px; }
+.shop-detail-head { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+.shop-detail-pic { width: 300px; height: 180px; flex: none; overflow: hidden; display: grid; place-items: center; border-radius: 12px; background: var(--win-side); border: 0.5px solid var(--line); }
+.shop-detail-info { display: grid; gap: 10px; justify-items: start; }
+.shop-detail-info h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.shop-detail-info .shop-vendor { margin: 0; }
+.shop-detail-buy { flex-direction: column; align-items: flex-start; border-top: 0; padding: 0; gap: 10px; }
+.shop-detail-specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px 20px; margin: 0; padding: 16px 0; border-block: 0.5px solid var(--line); }
+.shop-detail-specs dt { font-size: 11px; font-weight: 550; color: var(--text-3); }
+.shop-detail-specs dd { margin: 0; font-size: 13px; }
+.shop-detail .shop-build { padding: 0; border-top: 0; max-width: 520px; }
