@@ -1,5 +1,5 @@
 import { supportEnd } from "../../../sim/10-catalog/lifecycle";
-import { Cable, Flame, Gauge, EthernetPort, Monitor, MonitorOff, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, Server as ServerIcon, SquareTerminal, Unplug, Wrench } from "lucide-react";
+import { Cable, Flame, Gauge, EthernetPort, Monitor, MonitorOff, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, SquareTerminal, Unplug, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
@@ -135,16 +135,13 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
   const via = server && device.rackId ? consoleVia(game, device.id) : null;
   const canBurn = device.on && !device.burnin && !device.maintenance && !device.rebuild && !serverTaken(game, device.id);
   const serverActs = (
-    <div>
-      <div className="loc-card-h"><h3><ServerIcon />Server</h3></div>
-      <div className="act-tiles">
-        <ActionTile icon={PackageOpen} label="Change parts" onClick={() => menus.lid(device)} />
-        {device.rackId && <ActionTile icon={Gauge} label="Quick burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, false)} />}
-        {device.rackId && <ActionTile icon={Flame} label="Full burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, true)} />}
-        {via && <ActionTile icon={Monitor} label={consoleName(game, device)} onClick={() => openConsole(device.id)} />}
-        {device.rackId && <ActionTile icon={SquareTerminal} label="Terminal" disabled={!device.on || !device.hostname} onClick={() => openApp("Terminal", { kind: "ssh", id: device.hostname! })} />}
-      </div>
-    </div>
+    <>
+      <ActionTile icon={PackageOpen} label="Change parts" onClick={() => menus.lid(device)} />
+      {device.rackId && <ActionTile icon={Gauge} label="Quick burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, false)} />}
+      {device.rackId && <ActionTile icon={Flame} label="Full burn-in" disabled={!canBurn} onClick={() => act(startBurnin, device.id, true)} />}
+      {via && <ActionTile icon={Monitor} label={consoleName(game, device)} onClick={() => openConsole(device.id)} />}
+      {device.rackId && <ActionTile icon={SquareTerminal} label="Terminal" disabled={!device.on || !device.hostname} onClick={() => openApp("Terminal", { kind: "ssh", id: device.hostname! })} />}
+    </>
   );
   const tabs = server ? ([
     ["actions", "Actions"], ["ports", "Ports"], !!device.lease && ["lease", "Lease"],
@@ -205,7 +202,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
 
       {isServerInRack(device)
         ? <PowerCard game={game} device={device} onOp={(op) => menus.op(device, op)} onFront={(op) => menus.front(device, op)}>{serverActs}</PowerCard>
-        : server && device.store && <div className="loc-card"><div className="act-groups">{serverActs}</div></div>}
+        : server && device.store && <div className="loc-card"><div className="act-tiles">{serverActs}</div></div>}
       <RemoteCard game={game} device={device} />
 
       {model.kind === "switch" && (

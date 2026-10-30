@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- A server's actions now sit in one row of tiles without section headings, and its remote access card only shows when a console is attached.
 - The welcome intro now says you start with 3,500 € of savings and an empty rack, matching the money you actually have.
 - Your computer now starts on an older Pear OS look, and each new Pear OS release offers a Software Update that restyles the desktop to match its era.
 - The New VM bar in a hypervisor console now also creates VMs with game server or mail software, not only web hosting panels.

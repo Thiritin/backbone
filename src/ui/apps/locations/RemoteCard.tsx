@@ -23,6 +23,7 @@ export function RemoteCard({ game, device }: { game: GameState; device: Device }
   if (!device.rackId || (!server && !gear && !mgmt)) return null;
   const link = (ip: string | null) => ip && <button className="loc-link num" onClick={() => openApp("Browser", { kind: "url", id: `http://${ip}/` })}>{ip}</button>;
   const via = consoleVia(game, device.id), holder = consoleHolder(game, device);
+  if (server && !via && !holder) return null;
   const rows: [string, ReactNode][] = [];
   if (server || gear) rows.push(["Console", via ? (via.kind === "bmc" ? BMC_NAME[device.brand] : nameOf(via.device)) : holder ? `${nameOf(holder)}, unreachable` : "None"]);
   if (server && holder && modelById(holder.model).kind === "kvm") rows.push(["KVM page", link(oobIp(game, holder.id))]);
