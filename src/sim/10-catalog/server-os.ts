@@ -8,8 +8,8 @@ export interface ServerOs {
   id: ServerOsId; name: string; versions: ServerOsVersion[];
   // Monthly euros per machine that holds it, billed with the licenses.
   fee: number;
-  // Game minutes from power on to the login, and game hours the installer runs.
-  bootMinutes: number; installHours: number;
+  // Game minutes from power on to the login and from a clean shutdown to power off, and game hours the installer runs.
+  bootMinutes: number; haltMinutes: number; installHours: number;
   site: Site;
 }
 
@@ -17,14 +17,14 @@ const v = (version: string, from: number, name = ""): ServerOsVersion => ({ vers
 
 export const SERVER_OS: ServerOs[] = [
   {
-    id: "lunix", name: "Debiant GNU/Lunix", fee: 0, bootMinutes: 20, installHours: 1, site: SITES.lunix,
+    id: "lunix", name: "Debiant GNU/Lunix", fee: 0, bootMinutes: 20, haltMinutes: 5, installHours: 1, site: SITES.lunix,
     versions: [
       v("3.1", 2005, "Sarge"), v("4", 2007, "Etch"), v("5", 2009, "Lenny"), v("6", 2011, "Squeeze"), v("7", 2013, "Wheezy"),
       v("8", 2015, "Jessie"), v("9", 2017, "Stretch"), v("10", 2019, "Buster"), v("11", 2021, "Bullseye"), v("12", 2023, "Bookworm"),
     ],
   },
   {
-    id: "windoors", name: "Windoors Server", fee: 15, bootMinutes: 40, installHours: 2, site: SITES.windoors,
+    id: "windoors", name: "Windoors Server", fee: 15, bootMinutes: 40, haltMinutes: 10, installHours: 2, site: SITES.windoors,
     versions: [
       v("2003", 2005), v("2008", 2008), v("2008 R2", 2010), v("2012", 2012), v("2012 R2", 2014), v("2016", 2016), v("2019", 2019),
       v("2022", 2022), v("2025", 2025),

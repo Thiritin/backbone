@@ -8,7 +8,7 @@ import { rebuildHours } from "../../../../sim/88-tick/tick";
 import { setRebuildRate } from "../../../../sim/90-actions/hardware";
 import { consoleName } from "../../console/ConsoleWindow";
 import { sensorsOf } from "../../../../sim/60-infra/sensors";
-import { booting } from "../../../../sim/60-infra/status";
+import { booting, halting } from "../../../../sim/60-infra/status";
 import { powerCycle, reset, setPower, shutdown } from "../../../../sim/90-actions/hardware";
 import { useSessionState } from "../../../session";
 import { useStore } from "../../../store";
@@ -63,7 +63,7 @@ function Brand({ brand, size = 22 }: { brand: string; size?: number }) {
 
 function PowerTab({ game, d }: { game: GameState; d: Device }) {
   const act = useStore((s) => s.act);
-  const state = !d.on ? "Off" : booting(game, d) ? "Booting" : "On";
+  const state = !d.on ? "Off" : booting(game, d) ? "Booting" : halting(d) ? "Shutting down" : "On";
   return (
     <>
       <dl className="bmc-facts">

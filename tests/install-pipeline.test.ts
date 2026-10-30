@@ -5,7 +5,7 @@ import type { GameState } from "../src/sim/50-state";
 import { clusterOf } from "../src/sim/60-infra/cluster";
 import { machineScreen } from "../src/sim/60-infra/oob";
 import { hardReboot } from "../src/sim/60-infra/power";
-import { BOOT_HOURS } from "../src/sim/60-infra/status";
+import { BOOT_HOURS, HALT_MINUTES } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { bootFromUsb, enterSetup, installOs } from "../src/sim/90-actions/console";
 import { reboot } from "../src/sim/90-actions/hardware";
@@ -75,8 +75,8 @@ describe("install pipeline", () => {
     const lunix = installed(), win = installed("windoors");
     ok(reboot(lunix, "dev3"));
     ok(reboot(win, "dev3"));
-    expect(dev(lunix).bootUntil).toBeCloseTo(nowHours(lunix) + BOOT_HOURS + 20 / 60);
-    expect(dev(win).bootUntil).toBeCloseTo(nowHours(win) + BOOT_HOURS + 40 / 60);
+    expect(dev(lunix).bootUntil).toBeCloseTo(nowHours(lunix) + (HALT_MINUTES + 5) / 60 + BOOT_HOURS + 20 / 60);
+    expect(dev(win).bootUntil).toBeCloseTo(nowHours(win) + (HALT_MINUTES + 10) / 60 + BOOT_HOURS + 40 / 60);
   });
 
   it("refuses software until the OS is up, and software the OS does not run", () => {

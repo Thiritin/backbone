@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DATACENTERS } from "../src/sim/20-world/datacenters";
 import type { GameState } from "../src/sim/50-state";
 import { powerTick } from "../src/sim/60-infra/power";
-import { deviceHealth, pluggedIn, psusOf, working } from "../src/sim/60-infra/status";
+import { deviceHealth, halting, pluggedIn, psusOf, working } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { atServer, reboot, remotePower } from "../src/sim/90-actions/hardware";
 import { readyGame } from "./fixtures";
@@ -43,12 +43,15 @@ describe("front buttons", () => {
     for (const r of seeds.slice(0, 20)) {
       const s = game(r);
       expect(atServer(s, "dev3", "power").ok).toBe(true);
+      expect(halting(dev3(s))).toBe(true);
+      tick(s);
       expect(dev3(s).on).toBe(false);
       expect(corrupted(s)).toHaveLength(0);
       expect(dev3(s).log.at(-1)?.key).toBe("ipmi.log.shutdown");
     }
     const s = game();
     atServer(s, "dev3", "power");
+    tick(s);
     expect(atServer(s, "dev3", "power").ok).toBe(true);
     expect(deviceHealth(s, "dev3").state).toBe("booting");
     run(s, 2);

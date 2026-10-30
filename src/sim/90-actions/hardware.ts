@@ -7,9 +7,9 @@ import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { bareChassisPrice, CHASSIS_FLOOR, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
 import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, connectError, drivesOf, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
+import { arrayLost, bootHours, connectError, drivesOf, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
-import { atFront, BMC_RESET_HOURS, bootUp, hardReboot, leaveUsb, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
+import { atFront, BMC_RESET_HOURS, bootUp, halt, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
 import { handJob, present, trip as drive, type HandJob, type How } from "../60-infra/handwork";
@@ -570,23 +570,27 @@ export function setPower(s: GameState, deviceId: string, on: boolean): ActionRes
 // A technician is on site at once, so the datacenter's hand work options do not apply.
 const onSite = (how: How | boolean) => how === true || how === "tech";
 
-// Stops the operating system cleanly: the workloads stop, no data is at risk, and the server is off. Needs a responsive OS.
+// Stops the operating system cleanly: the workloads stop, no data is at risk, and the server is off once the OS has halted.
+// Needs a responsive OS; a shutdown already under way counts as done.
 export function shutdown(s: GameState, deviceId: string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId && !d.panel) return fail("error.notMounted");
   if (!d.on) return fail("error.alreadyOff");
+  if (d.haltUntil !== undefined) return { ok: true };
   if (!working(s, deviceId)) return fail("error.unresponsive");
-  leaveUsb(s, d);
-  d.on = false;
-  pushLog(d, s.hour, "ipmi.log.shutdown");
+  halt(s, d);
   return { ok: true };
 }
 
-// A clean shutdown and a boot: nothing is cut, so nothing corrupts.
+// A clean shutdown and a boot right after the halt: nothing is cut, so nothing corrupts.
 export function reboot(s: GameState, deviceId: string): ActionResult {
   const r = shutdown(s, deviceId);
-  if (r.ok) bootUp(s, s.devices.find((x) => x.id === deviceId)!);
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!r.ok || d?.haltUntil === undefined) return r;
+  d.bootUntil = d.haltUntil + bootHours(s, d);
+  d.haltUntil = undefined;
+  pushLog(d, s.hour, "ipmi.log.powerOn");
   return r;
 }
 

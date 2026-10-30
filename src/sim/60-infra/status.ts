@@ -352,12 +352,12 @@ function failedDown(d: Device): boolean {
 }
 
 export function deviceHealth(s: GameState, deviceId: string): {
-  state: "ok" | "booting" | "setup" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "hung" | "stuck" | "locked" | "nopower" | "off"; failed: Component[]; worn: Component[];
+  state: "ok" | "booting" | "halting" | "setup" | "degraded" | "hot" | "rebuilding" | "maintenance" | "down" | "hung" | "stuck" | "locked" | "nopower" | "off"; failed: Component[]; worn: Component[];
 } {
   const d = s.devices.find((x) => x.id === deviceId)!;
   const failed = d.components.filter((c) => c.failedAt !== null);
   const worn = d.components.filter((c) => c.failedAt === null && s.hour - c.installedAt >= COMPONENTS[c.kind].life * HOURS_PER_YEAR);
-  const state = !d.on ? "off" : chassisOut(s, d) ? "down" : d.rackId && !pluggedIn(d) && !failedDown(d) ? "nopower" : booting(s, d) ? (d.setup ? "setup" : "booting") : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.hung ? "hung" : d.stuck ? "stuck" : d.locked ? "locked" : d.rebuild ? "rebuilding"
+  const state = !d.on ? "off" : chassisOut(s, d) ? "down" : d.rackId && !pluggedIn(d) && !failedDown(d) ? "nopower" : booting(s, d) ? (d.setup ? "setup" : "booting") : halting(d) ? "halting" : d.maintenance ? "maintenance" : failedDown(d) ? "down" : d.hung ? "hung" : d.stuck ? "stuck" : d.locked ? "locked" : d.rebuild ? "rebuilding"
     : failed.some((c) => c.kind === "fan") ? "hot" : failed.length ? "degraded" : "ok";
   return { state, failed, worn };
 }
@@ -369,11 +369,14 @@ export const booting = (s: GameState, d: Device) => d.on && (d.setup || (d.bootU
 // An installed OS adds its own boot to POST; an OS still installing (installedAt ahead) has nothing to boot yet.
 export const osBootHours = (s: GameState, d: Device): number => (d.os && d.os.installedAt <= nowHours(s) ? serverOsById(d.os.id).bootMinutes / 60 : 0);
 export const bootHours = (s: GameState, d: Device): number => BOOT_HOURS + osBootHours(s, d);
+export const HALT_MINUTES = 1;
+export const halting = (d: Device) => d.on && d.haltUntil !== undefined;
+export const haltHours = (s: GameState, d: Device): number => (HALT_MINUTES + (d.os && d.os.installedAt <= nowHours(s) ? serverOsById(d.os.id).haltMinutes : 0)) / 60;
 
 // A device works when it has power, is switched on, and no failure or power-off swap has taken it down.
 export function working(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
-  if (!d || !d.on || d.hung || d.stuck || d.locked || booting(s, d) || !powered(s, deviceId) || failedDown(d)) return false;
+  if (!d || !d.on || d.hung || d.stuck || d.locked || booting(s, d) || halting(d) || !powered(s, deviceId) || failedDown(d)) return false;
   const swap = d.maintenance && d.components.find((c) => c.id === d.maintenance!.componentId);
   return !(swap && !hotSwappable(d, swap));
 }

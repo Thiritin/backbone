@@ -67,7 +67,7 @@ export const isWorn = (g: GameState, c: Component) => { const a = ageYears(g, c)
 
 const DRIVE: ReadonlySet<ComponentKind> = new Set(["hdd", "ssd", "nvme"]);
 const WORSE: Lamp[] = ["ok", "warn", "bad"];
-const HEALTH_LAMP = { ok: "ok", degraded: "warn", hot: "warn", rebuilding: "warn", booting: "warn", setup: "warn", maintenance: "warn", down: "bad", hung: "bad", stuck: "bad", locked: "bad", nopower: "off", off: "off" } as const;
+const HEALTH_LAMP = { ok: "ok", degraded: "warn", hot: "warn", rebuilding: "warn", booting: "warn", halting: "warn", setup: "warn", maintenance: "warn", down: "bad", hung: "bad", stuck: "bad", locked: "bad", nopower: "off", off: "off" } as const;
 
 // Per-component lights: failed red, past its life amber, the drive being rebuilt blinking amber; all dark while the device is off.
 function partLamps(g: GameState, d: Device): Parts {
@@ -82,7 +82,7 @@ export function deviceLamps(g: GameState, id: string, m: DeviceModel) {
   const link: Lamp = isMgmtDevice(d) ? (oobUp(g, id) ? "ok" : "bad") : lampOf(linkStatus(g, id));
   const state: Lamp = h === "off" || h === "nopower" ? "off" : WORSE[Math.max(WORSE.indexOf(HEALTH_LAMP[h]), WORSE.indexOf(link))];
   const frozen = g.frozen.includes(id);
-  return { state: frozen ? "bad" as Lamp : state, blink: frozen || h === "rebuilding" || h === "booting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), lights: portLights(g, id, m), parts: partLamps(g, d) };
+  return { state: frozen ? "bad" as Lamp : state, blink: frozen || h === "rebuilding" || h === "booting" || h === "halting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), lights: portLights(g, id, m), parts: partLamps(g, d) };
 }
 
 // Every change to the game replaces the state object, so the links are worked out once per state for all devices.

@@ -218,6 +218,7 @@ describe("terminal", () => {
     const r = runCommand(s, session, "shutdown -h now");
     expect(r.session).toBeNull();
     expect(run(s, r.action!).ok).toBe(true);
+    tick(s);
     expect(dev(s, "dev3").on).toBe(false);
     expect(s.workloads.some((w) => w.corrupted)).toBe(false);
   });

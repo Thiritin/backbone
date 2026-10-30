@@ -40,6 +40,7 @@ describe("pulled power", () => {
       const s = at(r);
       expect(shutdown(s, "dev3").ok).toBe(true);
       expect(corrupted(s)).toHaveLength(0);
+      tick(s);
       expect(dev3(s).on).toBe(false);
     }
   });

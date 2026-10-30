@@ -7,6 +7,7 @@ import { visibleCandidates, type Task } from "../src/sim/47-staff/staff";
 import { nextSlot } from "../src/sim/47-staff/technicians";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { failComponents, tick, type SimEvent } from "../src/sim/88-tick/tick";
+import { halting } from "../src/sim/60-infra/status";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
@@ -117,7 +118,7 @@ describe("on-call duty", () => {
     run(s, last + 11 - s.hour);
     expect(dev(s, "dev4").on).toBe(true);
     run(s, 1);
-    expect(dev(s, "dev4").on).toBe(false);
+    expect(halting(dev(s, "dev4"))).toBe(true);
   });
 
   it("rotates weekly with the handover on Monday at 09:00 and shows the on-call slot", () => {

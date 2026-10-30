@@ -8,6 +8,7 @@ import { newGame, type GameState } from "../src/sim/50-state";
 import { workloadsOn } from "../src/sim/60-infra/cluster";
 import { phpNeeded, phpRefusal, phpTickets } from "../src/sim/60-infra/php";
 import { failComponents, tick, type SimEvent } from "../src/sim/88-tick/tick";
+import { halting } from "../src/sim/60-infra/status";
 import { howToFactor } from "../src/sim/85-products/products";
 import { provisionService, upgradePhp } from "../src/sim/90-actions/clusters";
 import { hypervisor, panelServer, withServer } from "./fixtures";
@@ -69,9 +70,9 @@ describe("technicians", () => {
     expect(err(queueOperation(s, "off", "dev4"))).toBe("error.alreadyQueued");
     expect(nextSlot(s, "loc1", "hardware")).toEqual({ name: s.staff[0].name, hour: MONDAY_9 + 2 });
     run(s, 1);
-    expect([dev(s, "dev3").on, dev(s, "dev4").on]).toEqual([false, true]);
+    expect([halting(dev(s, "dev3")), dev(s, "dev4").on]).toEqual([true, true]);
     run(s, 1);
-    expect(dev(s, "dev4").on).toBe(false);
+    expect([dev(s, "dev3").on, halting(dev(s, "dev4"))]).toEqual([false, true]);
     expect(s.techOps).toHaveLength(0);
     // Outside office hours the queue waits.
     s.hour = MONDAY_9 + 10;
@@ -142,7 +143,7 @@ describe("technicians", () => {
     ok(buyDevice(s, "part-ram", "Generic", 1, "loc1"));
     ok(queueOperation(s, "replace", "dev3", ram.id));
     run(s, 1);
-    expect(dev(s, "dev3").on).toBe(false);
+    expect(halting(dev(s, "dev3"))).toBe(true);
     expect(s.techOps.map((o) => o.kind)).toEqual(["replace", "on"]);
     run(s, 1);
     expect(dev(s, "dev3").maintenance).not.toBeNull();

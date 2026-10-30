@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- A clean shutdown now takes a few minutes while the operating system halts, and a reboot waits for that halt before it boots; holding the power button, pulling the plug or a hard power off still cuts the server at once.
 - The USB stick and the virtual machine's ISO now install an operating system, Debiant GNU/Lunix or Windoors Server, and software is installed afterwards from the machine's console or over ssh with the commands its website gives.
 - A VMwhere cluster can buy the App Suite for 25 euros a month, which deploys a virtual machine with its operating system and software in one step.
 - A location that has not opened yet is grayed out in the Locations app and its sidebar, with a countdown in days and then hours until it is ready.

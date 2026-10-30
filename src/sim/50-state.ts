@@ -70,6 +70,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   dataLost: number | null;
   // The hour a device switched on finishes booting.
   bootUntil?: number;
+  // The hour a clean shutdown switches the device off.
+  haltUntil?: number;
   // The operating system froze (hung) or the management controller did (bmcHung); log is the device's last 20 events.
   hung: boolean; bmcHung: boolean; log: { hour: number; key: string }[];
   // The chassis a multi-node server's node sits in; it mounts, moves and gets power with it.

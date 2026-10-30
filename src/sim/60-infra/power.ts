@@ -6,7 +6,7 @@ import type { Device, GameState } from "../50-state";
 import { dropCluster, hostOfVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
-import { bootHours, booting, deviceHealth, drivesOf, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, working } from "./status";
+import { bootHours, booting, haltHours, deviceHealth, drivesOf, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, working } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -86,6 +86,20 @@ export function pullPlug(s: GameState, d: Device): void {
   leaveUsb(s, d);
   d.on = false;
   d.setup = false;
+  d.haltUntil = undefined;
+}
+
+// A clean shutdown: the workloads stop at once and the device switches off once the OS has halted.
+export function halt(s: GameState, d: Device): void {
+  leaveUsb(s, d);
+  d.haltUntil = nowHours(s) + haltHours(s, d);
+  pushLog(d, s.hour, "ipmi.log.shutdown");
+}
+
+// Every minute: devices whose OS has halted switch off.
+export function haltTick(s: GameState): void {
+  if (!s.devices.some((d) => d.haltUntil !== undefined && d.haltUntil <= nowHours(s))) return;
+  s.devices = s.devices.map((d) => (d.haltUntil !== undefined && d.haltUntil <= nowHours(s) ? { ...d, on: false, haltUntil: undefined } : d));
 }
 
 export function bootUp(s: GameState, d: Device): void {
@@ -111,7 +125,7 @@ export type FrontOp = "power" | "hold" | "reset" | "pull" | "plug";
 // holding the button cuts the power, the reset button reboots it hard, and the cords leave or join the power strip.
 export function atFront(s: GameState, d: Device, op: FrontOp): void {
   if (op === "power" && !d.on) bootUp(s, d);
-  else if (op === "power") { if (working(s, d.id)) { leaveUsb(s, d); d.on = false; pushLog(d, s.hour, "ipmi.log.shutdown"); } }
+  else if (op === "power") { if (working(s, d.id)) halt(s, d); }
   else if (op === "hold") { if (d.on) pullPlug(s, d); }
   else if (op === "reset") { if (d.on) hardReboot(s, d, "ipmi.log.reset"); }
   else plugCords(s, d, op === "plug");
@@ -122,6 +136,7 @@ export function hardReboot(s: GameState, d: Device, key: "ipmi.log.reset" | "ipm
   const outcome = uncleanStop(s, d);
   d.hung = false;
   d.setup = false;
+  d.haltUntil = undefined;
   leaveUsb(s, d);
   rollStuck(s, d);
   d.bootUntil = nowHours(s) + bootHours(s, d);

@@ -4,7 +4,7 @@ import { hasBmc, MANUFACTURERS } from "../src/sim/10-catalog/hardware";
 import { DATACENTERS } from "../src/sim/20-world/datacenters";
 import { ipmiIp } from "../src/sim/60-infra/addresses";
 import { bmcHangChance, hangChance, powerTick } from "../src/sim/60-infra/power";
-import { deviceHealth, powered, working } from "../src/sim/60-infra/status";
+import { deviceHealth, halting, powered, working } from "../src/sim/60-infra/status";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { resolve } from "../src/sim/80-business/browser";
@@ -69,6 +69,9 @@ describe("power actions", () => {
     expect(dev3(s).on).toBe(true);
     dev3(s).hung = false;
     expect(shutdown(s, "dev3").ok).toBe(true);
+    expect(halting(dev3(s))).toBe(true);
+    expect(shutdown(s, "dev3").ok).toBe(true);
+    tick(s);
     expect(dev3(s).on).toBe(false);
     expect(shutdown(s, "dev3")).toEqual({ ok: false, error: "error.alreadyOff" });
     expect(dev3(s).log.map((e) => e.key)).toEqual(["ipmi.log.shutdown"]);
@@ -231,7 +234,7 @@ describe("technician hand work", () => {
     const s = withTech(game());
     expect(queueOperation(s, "off", "dev3").ok).toBe(true);
     run(s, 1);
-    expect(dev3(s).on).toBe(false);
+    expect(halting(dev3(s))).toBe(true);
     expect(dev3(s).log.at(-1)?.key).toBe("ipmi.log.shutdown");
   });
 });

@@ -104,7 +104,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
 }
 
 const POWER = {
-  ok: ["On", "ok"], booting: ["Booting", "warn"], setup: ["In BIOS setup", "warn"], degraded: ["Degraded", "warn"], hot: ["Running hot", "warn"], rebuilding: ["Rebuilding", "warn"],
+  ok: ["On", "ok"], booting: ["Booting", "warn"], halting: ["Shutting down", "warn"], setup: ["In BIOS setup", "warn"], degraded: ["Degraded", "warn"], hot: ["Running hot", "warn"], rebuilding: ["Rebuilding", "warn"],
   maintenance: ["Maintenance", "warn"], down: ["Down", "bad"], hung: ["Hung", "bad"], stuck: ["Stuck at boot", "bad"], locked: ["Locked out", "bad"], nopower: ["No power", "bad"], off: ["Off", ""],
 } as const;
 
