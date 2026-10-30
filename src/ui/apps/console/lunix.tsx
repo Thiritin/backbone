@@ -90,6 +90,7 @@ export function useLunix(game: GameState, m: Machine, version: string, loggedIn:
           ref={input} value={shell.draft} aria-label="Command" spellCheck={false} autoCapitalize="off" autoComplete="off"
           onChange={(e) => shell.setDraft(e.target.value)}
           onKeyDown={(e) => { e.stopPropagation(); shell.onKeyDown(e); }}
+          onPaste={(e) => { e.stopPropagation(); shell.onPaste(e); }}
         />
       </div>
     </div>

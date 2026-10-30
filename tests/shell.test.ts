@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { GameState } from "../src/sim/50-state";
 import { MAX_FILE, treeOf } from "../src/sim/60-infra/fs";
-import { parseLine } from "../src/sim/60-infra/shell";
+import { parseLine, splitPaste } from "../src/sim/60-infra/shell";
 import { complete, promptOf, runCommand, runLine, type Session } from "../src/sim/60-infra/terminal";
 import { addNote, editNote } from "../src/sim/90-actions/docs";
 import type { Call } from "../src/sim/90-actions/index";
@@ -149,5 +149,21 @@ describe("the desktop in ~/Desktop", () => {
   it("completes names with spaces escaped", () => {
     const s = fresh();
     expect(complete(s, null, "cat Desktop/Get").line).toBe("cat Desktop/Getting\\ started ");
+  });
+});
+
+describe("multi-line paste", () => {
+  it("runs every pasted line but the last in order and keeps the last typed", () => {
+    const r = splitPaste("", 0, 0, "apt-get install -y linux-image-openveezee\napt-get install -y vzctl\r\nreboot");
+    expect(r).toEqual({ run: ["apt-get install -y linux-image-openveezee", "apt-get install -y vzctl"], draft: "reboot" });
+    expect(splitPaste("echo ab", 5, 6, "x\ny")).toEqual({ run: ["echo x"], draft: "yb" });
+    expect(splitPaste("", 0, 0, "touch a\nls\n").draft).toBe("");
+  });
+
+  it("runs the pasted lines against the state the previous line left", () => {
+    const s = fresh();
+    const { run } = splitPaste("", 0, 0, "touch pasted.txt\nls\n");
+    const out = run.map((line) => text(s, line));
+    expect(out[1]).toContain("pasted.txt");
   });
 });

@@ -92,6 +92,7 @@ export function TerminalApp() {
             ref={input} value={draft} aria-label="Command" autoFocus spellCheck={false} autoCapitalize="off" autoComplete="off" readOnly={!ready}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (ready) shell.onKeyDown(e); }}
+            onPaste={(e) => { if (ready) shell.onPaste(e); }}
           />
         </div>
       </div>

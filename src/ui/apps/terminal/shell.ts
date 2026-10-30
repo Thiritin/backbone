@@ -1,4 +1,5 @@
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useEffect, useRef, type ClipboardEvent, type KeyboardEvent } from "react";
+import { splitPaste } from "../../../sim/60-infra/shell";
 import { t } from "../../../i18n/en";
 import { complete, hostOf, promptOf, runLine, watchStep, type Editing, type Session, type Watch } from "../../../sim/60-infra/terminal";
 import { useSessionState } from "../../session";
@@ -23,6 +24,8 @@ export function useShell(prefix: string, start: Session | null = null) {
   const [cwd, setCwd] = useSessionState<string | null>(`${prefix}.cwd`, null);
   const [pending, setPending] = useSessionState<string | null>(`${prefix}.confirm`, null);
   const [open, setOpen] = useSessionState<Open | null>(`${prefix}.edit`, null);
+  // Pasted lines still to run, one per render so each sees the state the last one left.
+  const [queue, setQueue] = useSessionState<string[]>(`${prefix}.queue`, []);
   const recall = useRef(history.length);
 
   useEffect(() => {
@@ -62,6 +65,24 @@ export function useShell(prefix: string, start: Session | null = null) {
     recall.current = line.trim() ? Math.min(history.length + 1, 100) : history.length;
   };
 
+  useEffect(() => {
+    if (!queue.length) return;
+    const kept = draft;
+    setQueue(queue.slice(1));
+    submit(queue[0]);
+    setDraft(kept);
+  }, [queue]);
+
+  const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData("text");
+    if (!/[\r\n]/.test(text)) return;
+    e.preventDefault();
+    const at = e.currentTarget;
+    const r = splitPaste(draft, at.selectionStart ?? draft.length, at.selectionEnd ?? draft.length, text);
+    setDraft(r.draft);
+    setQueue([...queue, ...r.run]);
+  };
+
   const walk = (step: number) => {
     const at = Math.max(0, Math.min(history.length, recall.current + step));
     recall.current = at;
@@ -79,5 +100,5 @@ export function useShell(prefix: string, start: Session | null = null) {
   const begin = (to: Session | null, shown: Line[]) => { setSession(to); setLines(shown); setCwd(null); setPending(null); setDraft(""); setOpen(null); };
 
   const prompt = pending !== null ? t("term.apt.confirm") : promptOf(session, cwd);
-  return { lines, setLines, session, setSession, draft, setDraft, open, setOpen, prompt, submit, onKeyDown, begin };
+  return { lines, setLines, session, setSession, draft, setDraft, open, setOpen, prompt, submit, onKeyDown, onPaste, begin };
 }
