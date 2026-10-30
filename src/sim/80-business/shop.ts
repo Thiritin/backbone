@@ -4,11 +4,14 @@ import { PRODUCTS } from "../10-catalog/products";
 import { includes, shopById, WHM_PER_THOUSAND, WHM_TIERS, type ShopId } from "../10-catalog/shops";
 import { modelById } from "../10-catalog/hardware";
 import type { Product } from "../30-customers/customers";
+import type { SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { targetFor } from "../30-market/sales";
 import type { SalesRequest } from "../30-market/market";
 
 export type Stock = number | "auto" | "off";
+// A server group: software installations of one kind (a panel host, a hypervisor cluster) the shop sells from.
+export interface ServerGroup { id: string; name: string; kind: SoftwareKind; members: string[]; sale: Product[]; deploy: boolean }
 export interface ShopState {
   variant: ShopId | null;
   // Owned licence instead of the lease, for variants that sell one.
@@ -20,9 +23,10 @@ export interface ShopState {
   stock: Partial<Record<Product, Stock>>;
   // Visitors this month who found the line sold out.
   soldOut: Partial<Record<Product, number>>;
+  groups: ServerGroup[];
 }
 
-export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, readyAt: 0, modules: {}, stock: {}, soldOut: {} });
+export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, readyAt: 0, modules: {}, stock: {}, soldOut: {}, groups: [] });
 
 export const shopActive = (s: GameState): boolean => s.shop.variant !== null && s.hour >= s.shop.readyAt;
 
@@ -47,8 +51,14 @@ export function moduleFor(s: GameState, product: Product, clusterId: string | nu
 // Whether the shop can sell this order now: the line is on, stock is left and a target has room.
 export function inStock(s: GameState, r: Pick<SalesRequest, "city" | "product" | "spec">): boolean {
   const n = stockOf(s, r.product);
-  return n !== "off" && n !== 0 && !!targetFor(s, r);
+  return n !== "off" && n !== 0 && !!targetFor(s, { ...r, shop: true });
 }
+
+export const groupOf = (s: GameState, clusterId: string): ServerGroup | undefined => s.shop.groups.find((g) => g.members.includes(clusterId));
+// Installations in a group that sells the line.
+export const forSale = (s: GameState, p: Product): Set<string> => new Set(s.shop.groups.filter((g) => g.sale.includes(p)).flatMap((g) => g.members));
+// Whether automatic provisioning may use this target: hardware targets always, software only in a deploy group.
+export const deployable = (s: GameState, clusterId: string | null): boolean => !clusterId || !s.shop.variant || !!groupOf(s, clusterId)?.deploy;
 
 export function takeStock(s: GameState, p: Product): void {
   const n = stockOf(s, p);

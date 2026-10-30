@@ -5,7 +5,9 @@ import { PRODUCTS } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { owns } from "../80-business/marketing";
-import { hasModule, newShop, type Stock } from "../80-business/shop";
+import { groupOf, hasModule, newShop, type ServerGroup, type Stock } from "../80-business/shop";
+import { SERVES, type SoftwareKind } from "../10-catalog/platforms";
+import { t } from "../../i18n/en";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -29,7 +31,7 @@ export function chooseShop(s: GameState, id: ShopId, own = false): ActionResult 
   if (s.cash < price) return fail("error.noCash");
   pay(s, price, "ledger.shopSetup", { name: v.name });
   s.marketing = { ...s.marketing, owned: s.marketing.owned.filter((c) => c !== "orderForm") };
-  s.shop = { ...newShop(), variant: id, owned: own, since: s.hour, readyAt: s.hour + SHOP_SETUP_HOURS };
+  s.shop = { ...newShop(), variant: id, owned: own, since: s.hour, readyAt: s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s) };
   return { ok: true, id };
 }
 
@@ -56,3 +58,51 @@ export function setStock(s: GameState, product: Product, stock: Stock): ActionRe
   s.shop = { ...s.shop, stock: { ...s.shop.stock, [product]: stock } };
   return { ok: true };
 }
+
+// A first shop gets one group per kind of software the company runs, selling everything it serves.
+function firstGroups(s: GameState): ServerGroup[] {
+  const kinds = [...new Set(s.clusters.map((c) => c.kind))].filter((k) => SERVES[k].length);
+  return kinds.map((kind) => ({ id: `grp${s.nextId++}`, name: t(`group.${kind}`), kind, members: s.clusters.filter((c) => c.kind === kind).map((c) => c.id), sale: [...SERVES[kind]], deploy: true }));
+}
+
+const editGroup = (s: GameState, id: string, f: (g: ServerGroup) => Partial<ServerGroup>): ActionResult => {
+  const g = s.shop.groups.find((x) => x.id === id);
+  if (!g) return fail("error.unknownGroup");
+  s.shop = { ...s.shop, groups: s.shop.groups.map((x) => (x.id === id ? { ...x, ...f(x) } : x)) };
+  return { ok: true, id };
+};
+
+export function createGroup(s: GameState, kind: SoftwareKind, name: string): ActionResult {
+  if (!s.shop.variant) return fail("error.needsShop");
+  if (!SERVES[kind]?.length) return fail("error.groupKind");
+  if (!name.trim()) return fail("error.groupName");
+  const id = `grp${s.nextId++}`;
+  s.shop = { ...s.shop, groups: [...s.shop.groups, { id, name: name.trim(), kind, members: [], sale: [], deploy: false }] };
+  return { ok: true, id };
+}
+
+export function deleteGroup(s: GameState, id: string): ActionResult {
+  if (!s.shop.groups.some((g) => g.id === id)) return fail("error.unknownGroup");
+  s.shop = { ...s.shop, groups: s.shop.groups.filter((g) => g.id !== id) };
+  return { ok: true };
+}
+
+// Adds a software installation (a panel host, a whole hypervisor cluster) of the group's kind.
+export function addToGroup(s: GameState, id: string, clusterId: string): ActionResult {
+  const c = s.clusters.find((x) => x.id === clusterId), g = s.shop.groups.find((x) => x.id === id);
+  if (!c) return fail("error.unknownCluster");
+  if (g && c.kind !== g.kind) return fail("error.groupKind");
+  if (groupOf(s, clusterId)) return fail("error.inGroup");
+  return editGroup(s, id, (x) => ({ members: [...x.members, clusterId] }));
+}
+
+export const removeFromGroup = (s: GameState, id: string, clusterId: string): ActionResult =>
+  editGroup(s, id, (x) => ({ members: x.members.filter((m) => m !== clusterId) }));
+
+export function setGroupSale(s: GameState, id: string, product: Product, on: boolean): ActionResult {
+  const g = s.shop.groups.find((x) => x.id === id);
+  if (g && !SERVES[g.kind].includes(product)) return fail("error.groupKind");
+  return editGroup(s, id, (x) => ({ sale: on ? [...new Set([...x.sale, product])] : x.sale.filter((p) => p !== product) }));
+}
+
+export const setGroupDeploy = (s: GameState, id: string, on: boolean): ActionResult => editGroup(s, id, () => ({ deploy: on }));

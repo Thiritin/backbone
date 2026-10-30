@@ -1,12 +1,13 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { CUSTOM_SCRIPT, HARDWARE_MODULES, includes, moduleName, shopById, SHOPS, type ShopId } from "../../../sim/10-catalog/shops";
 import type { Product } from "../../../sim/30-customers/customers";
 import type { GameState } from "../../../sim/50-state";
 import { owns } from "../../../sim/80-business/marketing";
-import { hasModule, shopActive, stockOf, type Stock } from "../../../sim/80-business/shop";
-import { buyModule, chooseShop, setStock } from "../../../sim/90-actions/shop";
+import { groupOf, hasModule, shopActive, stockOf, type Stock } from "../../../sim/80-business/shop";
+import { addToGroup, buyModule, chooseShop, createGroup, deleteGroup, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../../../sim/90-actions/shop";
+import { SERVES, type SoftwareKind } from "../../../sim/10-catalog/platforms";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
 import { PRODUCT } from "../support/labels";
@@ -42,6 +43,7 @@ export function Shop({ game }: { game: GameState }) {
     </div>
     {game.unlocks.includes("shops") && <Variants game={game} />}
     {(v || owns(game, "orderForm")) && <Modules game={game} />}
+    {v && <Groups game={game} />}
     {v && <StockList game={game} />}
   </>;
 }
@@ -125,6 +127,63 @@ function StockList({ game }: { game: GameState }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+const KIND: Partial<Record<SoftwareKind, string>> = { panel: "Web panels", cloud: "Hypervisors", game: "Game panels", dns: "DNS", vpn: "VPN", storage: "Storage" };
+
+// Server groups: which software installations the shop sells from and deploys to.
+function Groups({ game }: { game: GameState }) {
+  const act = useStore((s) => s.act);
+  const [kind, setKind] = useState<SoftwareKind>("panel");
+  const [name, setName] = useState("");
+  return (
+    <div className="mkt-list">
+      <div className="side-h">Server groups</div>
+      {game.shop.groups.map((g) => {
+        const free = game.clusters.filter((c) => c.kind === g.kind && !groupOf(game, c.id));
+        return (
+          <div key={g.id} className="mkt-list">
+            <div className="mkt-row">
+              <strong className="mkt-grow">{g.name}</strong>
+              <span className="mkt-sub">{KIND[g.kind]}</span>
+              <button className="btn" onClick={() => act(deleteGroup, g.id)}>Delete</button>
+            </div>
+            {g.members.map((id) => game.clusters.find((c) => c.id === id)).filter((c) => !!c).map((c) => (
+              <div key={c.id} className="mkt-row">
+                <span className="mkt-grow">{c.name}</span>
+                <button className="btn" onClick={() => act(removeFromGroup, g.id, c.id)}>Remove</button>
+              </div>
+            ))}
+            {free.length > 0 && (
+              <div className="mkt-row">
+                <select aria-label={`Add to ${g.name}`} value="" onChange={(e) => e.target.value && act(addToGroup, g.id, e.target.value)}>
+                  <option value="">Add software</option>
+                  {free.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
+            {SERVES[g.kind].map((p) => (
+              <label key={p} className="mkt-row">
+                <span className="mkt-grow">Sell {PRODUCT[p]}</span>
+                <input type="checkbox" role="switch" className="switch" aria-label={`Sell ${PRODUCT[p]} from ${g.name}`} checked={g.sale.includes(p)} onChange={(e) => act(setGroupSale, g.id, p, e.target.checked)} />
+              </label>
+            ))}
+            <label className="mkt-row">
+              <span className="mkt-grow">Deploy automatic orders</span>
+              <input type="checkbox" role="switch" className="switch" aria-label={`Deploy automatic orders to ${g.name}`} checked={g.deploy} onChange={(e) => act(setGroupDeploy, g.id, e.target.checked)} />
+            </label>
+          </div>
+        );
+      })}
+      <div className="mkt-row">
+        <select aria-label="Software kind" value={kind} onChange={(e) => setKind(e.target.value as SoftwareKind)}>
+          {Object.entries(KIND).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+        </select>
+        <input className="mkt-grow" aria-label="Group name" value={name} onChange={(e) => setName(e.target.value)} />
+        <button className="btn" disabled={!name.trim()} onClick={() => { act(createGroup, kind, name); setName(""); }}>New group</button>
+      </div>
     </div>
   );
 }

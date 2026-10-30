@@ -29,7 +29,7 @@ import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
 import { acceptQuote, resize, specParams } from "./manual";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
-import { inStock, shopActive, soldOutVisit } from "../80-business/shop";
+import { forSale, inStock, shopActive, soldOutVisit } from "../80-business/shop";
 import {
   acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor, REQUEST_HOURS,
   requestName, senderFor, share, values, type Need, type SalesMessage, type SalesRequest,
@@ -167,14 +167,16 @@ const labelFor = (r: SalesRequest): string => {
   return r.product === "webHosting" ? r.domain ?? `${base}.de` : `${base}-${r.product === "gameServer" ? "game" : r.product}`;
 };
 
-// The cluster or zone in the request's city where the service fits; null when nothing has room.
-export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "spec">): { clusterId: string | null; zone: string | null } | null {
+// The cluster or zone in the request's city where the service fits; null when nothing has room. A shop order only goes
+// to software in a server group that sells its line.
+export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "spec" | "shop">): { clusterId: string | null; zone: string | null } | null {
   // Only zones with the addresses the service needs.
   const zones = s.locations.filter((l) => l.city === r.city && addressesFit(s, l, r.product, r.spec)).map((l) => l.az);
   const spec = PRODUCTS[r.product], size = sizeOf(r.spec);
   if (spec.runsOn === "cluster") {
     // A cluster with the RAM for it wins; with none, the first cluster with the disk takes it past its RAM.
-    const fit = [...s.clusters].sort(gameFirst).filter((x) => zones.includes(x.az) && supports(x, r.product));
+    const sold = r.shop ? forSale(s, r.product) : null;
+    const fit = [...s.clusters].sort(gameFirst).filter((x) => zones.includes(x.az) && supports(x, r.product) && (!sold || sold.has(x.id)));
     const c = fit.find((x) => pickNode(s, x, size, null, x.placement, true)) ?? fit.find((x) => pickNode(s, x, size));
     return c ? { clusterId: c.id, zone: c.az } : null;
   }

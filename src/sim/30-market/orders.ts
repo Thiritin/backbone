@@ -16,7 +16,7 @@ import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "../90-actions/hardware";
 import { missingFor, needFor, referenceFor, REQUEST_HOURS, requestName, senderFor, type SalesRequest } from "./market";
 import { addRequest, cancelShopOrder, editRequest, fulfil, loseRequest, nextSpec, say, targetFor } from "./sales";
-import { hasModule, moduleFor, shopActive, takeStock } from "../80-business/shop";
+import { deployable, hasModule, moduleFor, shopActive, takeStock } from "../80-business/shop";
 import { companyParams, variant } from "../40-support/replies";
 
 // Without an order, the first one comes from a friend's recommendation within this many days of the friends joining.
@@ -71,7 +71,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   const params = { name: requestName(r), spec: specText(r.product, spec) };
   // The form places an order itself only through the module (or custom script) for the software it lands on.
   const auto = !email && s.autoOrders && canAutomate(s), target = auto && !missingFor(s, r).length ? targetFor(s, r) : null;
-  if (auto && (!target || hasModule(s, moduleFor(s, r.product, target.clusterId)))) {
+  if (auto && (!target || (hasModule(s, moduleFor(s, r.product, target.clusterId)) && deployable(s, target.clusterId)))) {
     const done = target ? place(s, r) : null;
     if (done?.ok) {
       formInvoice(s, r.id);

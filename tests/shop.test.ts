@@ -6,7 +6,7 @@ import type { GameState } from "../src/sim/50-state";
 import { hasOrderForm, owns } from "../src/sim/80-business/marketing";
 import { hasModule, inStock, shopBills, stockOf } from "../src/sim/80-business/shop";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { buyModule, chooseShop, setStock } from "../src/sim/90-actions/shop";
+import { addToGroup, buyModule, chooseShop, createGroup, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../src/sim/90-actions/shop";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, readyGame } from "./fixtures";
 
@@ -107,5 +107,37 @@ describe("shop systems", () => {
     const old = JSON.parse(serialize(readyGame(9)));
     delete old.shop;
     expect(deserialize(JSON.stringify(old)).shop.variant).toBeNull();
+  });
+});
+
+describe("server groups", () => {
+  it("start with the company's software, and decide what the shop sells and where it deploys", () => {
+    const s = automate(withShop(10));
+    const g = s.shop.groups.find((x) => x.kind === "panel")!;
+    expect(g.members).toEqual(s.clusters.filter((c) => c.kind === "panel").map((c) => c.id));
+    expect(g.sale).toEqual(["webHosting"]);
+    const first = orderLead(s, "private", "Frankfurt", [], web, false);
+    expect(s.sales.requests.find((x) => x.id === first.id)!.status).toBe("won");
+
+    expect(setGroupDeploy(s, g.id, false).ok).toBe(true);
+    const waiting = orderLead(s, "private", "Frankfurt", [], web, false);
+    expect(s.sales.requests.find((x) => x.id === waiting.id)!.status).toBe("accepted");
+
+    expect(setGroupSale(s, g.id, "webHosting", false).ok).toBe(true);
+    expect(inStock(s, first)).toBe(false);
+    expect(setGroupSale(s, g.id, "vps", true)).toMatchObject({ ok: false, error: "error.groupKind" });
+  });
+
+  it("hold each installation once and only of their kind", () => {
+    const s = withShop(11);
+    const panel = s.clusters.find((c) => c.kind === "panel")!, g = s.shop.groups.find((x) => x.members.includes(panel.id))!;
+    const id = (createGroup(s, "cloud", "Rack two") as { id: string }).id;
+    expect(addToGroup(s, id, panel.id)).toMatchObject({ ok: false, error: "error.groupKind" });
+    const other = (createGroup(s, "panel", "Second") as { id: string }).id;
+    expect(addToGroup(s, other, panel.id)).toMatchObject({ ok: false, error: "error.inGroup" });
+    expect(removeFromGroup(s, g.id, panel.id).ok).toBe(true);
+    expect(addToGroup(s, other, panel.id).ok).toBe(true);
+    const back = deserialize(serialize(s));
+    expect(back.shop.groups).toEqual(s.shop.groups);
   });
 });

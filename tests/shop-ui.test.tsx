@@ -24,5 +24,7 @@ describe("shop section", () => {
     expect(html).toContain("WHMCache");
     expect(html).toContain("Included");
     expect(html).toContain("Free capacity");
+    expect(html).toContain("Server groups");
+    expect(html).toContain("Deploy automatic orders");
   });
 });
