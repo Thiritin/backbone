@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- A server's /etc/os-release now names Debiant GNU/Lunix.
 - Staff now belong to teams, and the new Shifts planner sets each team's hours for every weekday, including night shifts, so several teams can cover the clock.
 - Salaries are paid for the hours each person actually worked that month, so a part-time team or a short month costs less.
 - The USB stick now stays in a server until the operating system finishes installing from it.

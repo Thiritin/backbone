@@ -83,8 +83,8 @@ function baseTree(s: GameState, host: string): Tree {
   const tree: Tree = { "/": true, "/etc": true, "/etc/apt": true, "/etc/apt/sources.list.d": true, "/var": true, "/var/log": true, "/tmp": true, "/home": true, [homeOf(host)]: true };
   tree["/etc/hostname"] = `${hostnameOf(s, host)}\n`;
   tree["/etc/os-release"] = [
-    `PRETTY_NAME="Debian GNU/Linux ${r.version} (${r.codename})"`, `NAME="Debian GNU/Linux"`, `VERSION_ID="${r.version}"`,
-    `VERSION="${r.version} (${r.codename})"`, "ID=debian", "",
+    `PRETTY_NAME="Debiant GNU/Lunix ${r.version} (${r.codename})"`, `NAME="Debiant GNU/Lunix"`, `VERSION_ID="${r.version}"`,
+    `VERSION="${r.version} (${r.codename})"`, "ID=debiant", "",
   ].join("\n");
   tree["/etc/apt/sources.list"] = `deb http://deb.debiant.org/debian ${r.codename} main\n`;
   tree["/var/log/syslog"] = (d?.log ?? []).map((e) => `${stamp(e.hour)} ${hostnameOf(s, host)} ${t(e.key)}\n`).join("");
