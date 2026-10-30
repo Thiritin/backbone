@@ -54,6 +54,7 @@ export function useShell(prefix: string, start: Session | null = null) {
     setSession(result.session);
     setCwd(result.cwd);
     setPending(result.confirm);
+    if (result.dev) useStore.getState().openApp("Dev menu");
     if (result.edit) setOpen({ ...result.edit, host: hostOf(result.session), saved: result.edit.text });
     if (result.watch.length) setWatching([...watching, ...result.watch]);
     if (asked !== null) return;

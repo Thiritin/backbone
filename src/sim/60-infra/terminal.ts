@@ -29,7 +29,7 @@ export interface Watch { workloadId?: string; host: string; install?: { machineI
 // cwd is the new working directory; failed stops a && chain; confirm asks [Y/n] before the command runs again with -y.
 export interface CommandResult {
   output: string[]; session?: Session | null; action?: Call; clear?: boolean; watch?: Watch;
-  cwd?: string; failed?: boolean; confirm?: boolean; edit?: Editing;
+  cwd?: string; failed?: boolean; confirm?: boolean; edit?: Editing; dev?: boolean;
 }
 // A file open in the editor: its absolute path, the name as typed and its text.
 export interface Editing { path: string; name: string; text: string }
@@ -340,6 +340,7 @@ function runWords(s: GameState, session: Session | null, cwd: string, words: str
   if (cmd === "clear") return { output: [], clear: true };
   if (cmd === "help") return { output: lines(session ? "term.help.remote" : "term.help.desk") };
   let root = !!session;
+  if (cmd === "sudo" && args.length === 1 && args[0] === "dev") return { output: lines("dev.open"), dev: true };
   if (cmd === "sudo") {
     if (!args.length) return { output: lines("term.sudo.usage"), failed: true };
     [cmd, ...args] = args;
@@ -368,12 +369,12 @@ export function runCommand(s: GameState, session: Session | null, line: string, 
   return seg ? runSegment(s, session, cwd ?? homeOf(hostOf(session)), seg, nonce) : { output: [] };
 }
 
-export interface LineResult { output: string[]; session: Session | null; cwd: string | null; watch: Watch[]; clear: boolean; confirm: string | null; edit: Editing | null }
+export interface LineResult { output: string[]; session: Session | null; cwd: string | null; watch: Watch[]; clear: boolean; confirm: string | null; edit: Editing | null; dev: boolean }
 
 // Runs every command of a line in turn, each on the state the one before left: act applies a command's action. A
 // command that asks to confirm ends the run, and confirm holds the rest of the line to run once the player agrees.
 export function runLine(get: () => GameState, act: (a: Call) => ActionResult, session: Session | null, cwd: string | null, line: string, nonce = 0): LineResult {
-  const res: LineResult = { output: [], session, cwd, watch: [], clear: false, confirm: null, edit: null };
+  const res: LineResult = { output: [], session, cwd, watch: [], clear: false, confirm: null, edit: null, dev: false };
   // A software's install line is matched whole before the shell splits it at its && and ;.
   const whole = session ? installScript(get(), session.deviceId, line) : undefined;
   for (const seg of whole ? [null] : parseLine(line)) {
@@ -389,6 +390,7 @@ export function runLine(get: () => GameState, act: (a: Call) => ActionResult, se
     if (r.cwd !== undefined) res.cwd = r.cwd === homeOf(hostOf(res.session)) ? null : r.cwd;
     if (r.watch) res.watch.push(r.watch);
     if (r.edit) { res.edit = r.edit; break; }
+    if (r.dev) { res.dev = true; break; }
     if (r.confirm && seg) { res.confirm = `${line.slice(seg.start, seg.end).trim()} -y${line.slice(seg.end)}`; break; }
     if (failed && seg?.then === "&&") break;
   }
