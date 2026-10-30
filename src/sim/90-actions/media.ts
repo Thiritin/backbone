@@ -1,5 +1,6 @@
 // Installation media (docs/design/software.md, section 4.1): the ISO images downloaded from the OS sites and the one USB
 // stick, written with one of them and plugged into one server at a time.
+import { nowHours } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import { DC_BANDWIDTH } from "../10-catalog/network";
 import { homeLineById } from "../20-world/datacenters";
@@ -41,12 +42,19 @@ export function writeStick(s: GameState, osId: ServerOsId): ActionResult {
   return { ok: true };
 }
 
+// The server the stick is in is installing an OS from it.
+const stickInstalling = (s: GameState): boolean => {
+  const os = s.devices.find((d) => d.id === s.media.stick.in)?.os;
+  return !!os && os.installedAt > nowHours(s);
+};
+
 // At the server the stick goes in at once; at a datacenter the player is away from, hand work brings it there.
 export function plugStick(s: GameState, deviceId: string, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (modelById(d.model).kind !== "server" || !d.rackId) return fail("error.notServer");
   if (s.media.stick.in === d.id) return fail("error.stickIn");
+  if (stickInstalling(s)) return fail("error.stickInstalling");
   const loc = locationOf(s, d);
   if (!loc?.dc || present(s, loc.id)) {
     s.media.stick = { ...s.media.stick, in: d.id };
@@ -66,6 +74,7 @@ export function unplugStick(s: GameState): ActionResult {
   if (!d) return fail("error.stickOut");
   const loc = locationOf(s, d);
   if (loc?.dc && !present(s, loc.id)) return fail("error.notThere");
+  if (stickInstalling(s)) return fail("error.stickInstalling");
   s.media.stick = { ...s.media.stick, in: null };
   return { ok: true };
 }

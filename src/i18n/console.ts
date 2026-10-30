@@ -9,6 +9,7 @@ export const CONSOLE_EN: Record<string, (p: Params) => string> = {
   "error.stickIn": () => "The USB stick is already in this server.",
   "error.stickAway": () => "Unplug the USB stick from the server first.",
   "error.stickOut": () => "The USB stick is not plugged in.",
+  "error.stickInstalling": () => "The server is installing from the USB stick.",
   "ipmi.log.stickIn": () => "USB stick plugged in",
   "error.noOs": () => "Install an operating system on this machine first.",
   "error.osNotUp": () => "The machine's operating system is not running.",
