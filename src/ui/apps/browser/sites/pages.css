@@ -80,3 +80,5 @@
 .bk-form label { display: grid; gap: 4px; font-size: 12px; color: #4a5068; }
 .bk-form input { padding: 7px 8px; border: 1px solid #b9c0d0; font: inherit; color: inherit; background: #ffffff; }
 .bk-form button { padding: 8px; border: 0; background: oklch(0.36 0.2 265); color: #ffffff; font: inherit; font-weight: 700; cursor: pointer; }
+.cs-sponsor { display: flex; align-items: center; gap: 8px; margin: 40px; padding-top: 16px; border-top: 1px solid #e3e3e3; font-size: 13px; color: #5f6368; }
+.cs-sponsor .cs-sponsor-mark { width: 22px; height: 22px; }

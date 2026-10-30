@@ -124,7 +124,8 @@ export function siteDownEvent(s: GameState, events: SimEvent[]): void {
 export type CustomerSiteStatus = "up" | "slow" | "defaced" | "down";
 
 // A web hosting customer's own site, from the customer's name and the profile; blurb is an i18n key.
-export function customerSite(s: GameState, serviceId: string): { title: string; blurb: string; status: CustomerSiteStatus } | null {
+// sponsored: a running sponsorship covers the site and its banner still hangs, so the company's logo shows on it.
+export function customerSite(s: GameState, serviceId: string): { title: string; blurb: string; status: CustomerSiteStatus; sponsored: boolean } | null {
   const v = s.services.find((x) => x.id === serviceId), cus = v && s.customers.find((c) => c.id === v.customerId);
   if (!v || !cus || v.product !== "webHosting") return null;
   const ws = workloadsOf(s, serviceId);
@@ -132,5 +133,6 @@ export function customerSite(s: GameState, serviceId: string): { title: string; 
   const status: CustomerSiteStatus = hacked || s.sites.defaced.includes(serviceId) ? "defaced"
     : v.endedAt !== null || !serviceOnline(s, serviceId) ? "down"
     : ws.some((w) => slowHost(s, w, s.clusters.find((c) => c.id === w.clusterId))) ? "slow" : "up";
-  return { title: cus.name, blurb: `site.blurb.${cus.profile}`, status };
+  const sponsored = s.sponsorships.some((x) => x.status === "running" && x.serviceIds.includes(serviceId) && !x.board?.dropped);
+  return { title: cus.name, blurb: `site.blurb.${cus.profile}`, status, sponsored };
 }

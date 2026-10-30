@@ -10,6 +10,7 @@ import { setSiteHost } from "../src/sim/90-actions/website";
 import { readyGame } from "./fixtures";
 import { createRng } from "../src/sim/00-core/rng";
 import { spawnNotice } from "../src/sim/40-support/notices";
+import { customerSite } from "../src/sim/80-business/website";
 
 const web = (s: ReturnType<typeof readyGame>) => s.services.find((v) => v.product === "webHosting" && v.domain)!;
 
@@ -76,6 +77,15 @@ describe("browser resolver", () => {
     expect(resolve(s, `${t.notice!.url}x`).page.kind).not.toBe("phishing");
     t.outcome = "takenDown";
     expect(resolve(s, t.notice!.url).page.kind).not.toBe("phishing");
+  });
+
+  it("shows the company's logo on a sponsored site while the sponsorship runs and its banner hangs", () => {
+    const s = readyGame(1), v = web(s);
+    expect(customerSite(s, v.id)!.sponsored).toBe(false);
+    s.sponsorships = [{ id: "sp1", event: "lan", ticketId: "tkt0", offeredAt: 0, status: "running", customerId: v.customerId, serviceIds: [v.id], startedAt: 0, endsAt: 99999, endedAt: null, down: {}, seen: {}, reward: null }];
+    expect(customerSite(s, v.id)!.sponsored).toBe(true);
+    s.sponsorships[0].status = "done";
+    expect(customerSite(s, v.id)!.sponsored).toBe(false);
   });
 
   it("does not know other names", () => {

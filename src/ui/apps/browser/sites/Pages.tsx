@@ -5,6 +5,7 @@ import { VIDEO_ARTIST, VIDEO_REAL, VIDEO_TITLE } from "../../../../sim/80-busine
 import type { GameState } from "../../../../sim/50-state";
 import { customerSite } from "../../../../sim/80-business/website";
 import { senderById } from "../../../../sim/40-support/notices";
+import { CompanyMark } from "../../company";
 import "./pages.css";
 
 const hueOf = (name: string): number => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
@@ -26,6 +27,7 @@ export function CustomerSite({ game, serviceId }: { game: GameState; serviceId: 
     <div className="cs" style={{ "--hue": hue } as CSSProperties}>
       <header className="cs-head"><h1>{site.title}</h1></header>
       <p className="cs-blurb">{t(site.blurb)}</p>
+      {site.sponsored && <footer className="cs-sponsor">Sponsored by <CompanyMark company={game.company} className="co-mark cs-sponsor-mark" />{game.company.name}</footer>}
     </div>
   );
 }
