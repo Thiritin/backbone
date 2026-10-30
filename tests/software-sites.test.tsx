@@ -5,6 +5,7 @@ import { IndexSite } from "../src/ui/apps/browser/sites/index/IndexSite";
 import { productOf, type SitePage } from "../src/ui/apps/browser/sites/software/SoftwareSite";
 import { SITE_VIEWS } from "../src/ui/apps/browser/sites/software/registry";
 import { readyGame, skipTo } from "./fixtures";
+import { licensingAt } from "../src/sim/10-catalog/server-os";
 
 const PAGES: SitePage[] = ["home", "features", "pricing", "download"];
 const ONE_LOOK = new Set(["wireguarded", "vsftpeed", "postfixit", "mailpig"]);
@@ -16,7 +17,7 @@ describe("software sites", () => {
       expect(p.site.eras.map((e) => e.look)).toEqual(ONE_LOOK.has(id) ? ["early"] : ["early", "late"]);
       for (const { look, from } of p.site.eras) for (const page of PAGES) {
         const html = renderToString(<View p={p} look={look} page={page} year={from} go={() => {}} />);
-        expect(html).toContain(page === "pricing" ? (p.sw?.pricing === "free" || p.os?.fee === 0 ? "Free" : "€") : "<nav");
+        expect(html).toContain(page === "pricing" ? (licensingAt((p.sw ?? p.os)!, 2005).kind === "free" ? "Free" : "€") : "<nav");
         if (page === "download" && p.sw?.install.kind !== "gui" && p.sw) expect(html).toContain(p.sw.install.commands[0].split(" ")[0]);
       }
     }

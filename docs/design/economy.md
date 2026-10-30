@@ -1490,7 +1490,7 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 
 ## Platforms and licenses
 
-Every server and every one of the player's own VMs runs an operating system, and software on it must run on that system and share no TCP port with the software already there; at most one hypervisor runs on a machine. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Service software runs the same way as a panel, on one bare-metal server or one of the player's VMs, and sells one line each: a game panel sells game servers, a DNS server DNS, a VPN server VPN and a storage server storage. Game servers also run on a hypervisor; DNS, VPN and storage need their own software. A DNS, VPN or storage service already on a hypervisor keeps running there. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years.
+Every server and every one of the player's own VMs runs an operating system, and software on it must run on that system and share no TCP port with the software already there; at most one hypervisor runs on a machine. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Service software runs the same way as a panel, on one bare-metal server or one of the player's VMs, and sells one line each: a game panel sells game servers, a DNS server DNS, a VPN server VPN and a storage server storage. Game servers also run on a hypervisor; DNS, VPN and storage need their own software. A DNS, VPN or storage service already on a hypervisor keeps running there. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years, except where a license lists a one-time price first.
 
 | Software | Kind | OS | License | Install | How-to tickets | Live migration | Control plane |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -1500,7 +1500,7 @@ Every server and every one of the player's own VMs runs an operating system, and
 | FreePanel | Panel | Lunix | Free | 2 h | ×1.5 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenVeeZee | Cloud | Lunix | Free | 3 h | ×1.4 | No | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenStash | Cloud | Lunix | Free | 8 h | ×1.3 | Yes | 2 vCPU, 2 GB, 20 GB |
-| VMwhere | Cloud | Lunix | €8 per physical core | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
+| VMwhere | Cloud | Lunix | €600 once per CPU socket, €8 per physical core from 2024 | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
 | Proxmocks | Cloud | Lunix | Free | 3 h | ×1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
 | HyperVee | Cloud | Windoors | €20 per node | 4 h | ×0.9 | No | 1 vCPU, 1 GB, 10 GB |
 | TCAdmen | Game | Windoors | €25 per server | 2 h | ×0.9 | No | 0.25 vCPU, 0.5 GB, 5 GB |
@@ -1519,10 +1519,10 @@ Every server and every one of the player's own VMs runs an operating system, and
 | Operating system | License | Install | Boot |
 | --- | --- | --- | --- |
 | Debiant GNU/Lunix | Free | 1 h | 20 min |
-| Windoors Server | €15 per machine | 2 h | 40 min |
+| Windoors Server | €600 once per machine, €4 per core or vCPU from 2016 | 2 h | 40 min |
 | VMwhere App Suite | €25 per VMwhere cluster | | |
 
-Windoors bills 15 euros a month for every server or VM that holds it, so a game server on TCAdmen costs the TCAdmen 25 plus the Windoors 15 a month. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
+Windoors Server and VMwhere are bought once per machine when the install starts, until Windoors moves to 4 euros a month per physical core of a server or per vCPU of a VM in 2016 and VMwhere to 8 euros a month per physical core in 2024. A reinstall on the same machine pays nothing; a new machine, a VM from a template included, pays again, and the install is refused without the cash. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
 
 **Split cores.** OpenVeeZee and Proxmocks give a guest a fraction of a core through containers and CPU limits, so a VM books exactly the vCPUs it sold. OpenStash, VMwhere and HyperVee give a VM whole vCPUs: a VM books its vCPUs rounded up and uses that much CPU at load. Web spaces, game servers, DNS zones, VPN gateways and storage volumes run as containers in their software and keep their fraction everywhere. A customer who scales a VPS below one core asks for tenths of a core (at least 0.2), so 0.75 of one core becomes 0.8.
 

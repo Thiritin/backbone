@@ -13,11 +13,13 @@ Two operating systems. A software runs on one of them, or on both, following wha
 | Id | Name | Mocks | Versions (year the version exists from) | License |
 | --- | --- | --- | --- | --- |
 | `lunix` | Debiant GNU/Lunix | Debian | 3.1 Sarge (2005), 4 Etch (2007), 5 Lenny (2009), 6 Squeeze (2011), 7 Wheezy (2013), 8 Jessie (2015), 9 Stretch (2017), 10 Buster (2019), 11 Bullseye (2021), 12 Bookworm (2023) | Free |
-| `windoors` | Windoors Server | Windows Server | 2003 (2005), 2008 (2008), 2008 R2 (2010), 2012 (2012), 2012 R2 (2014), 2016 (2016), 2019 (2019), 2022 (2022), 2025 (2025) | 15 euros a month per machine (server or VM), billed with the other licenses |
+| `windoors` | Windoors Server | Windows Server | 2003 (2005), 2008 (2008), 2008 R2 (2010), 2012 (2012), 2012 R2 (2014), 2016 (2016), 2019 (2019), 2022 (2022), 2025 (2025) | 600 euros once per machine (server or VM) until 2015; from 2016, 4 euros a month per physical core of a server or per vCPU of a VM |
+
+A license has eras, `licensing: { from; kind: "once" | "core" | "server" | "account" | "free"; fee }[]` on each OS and each software, and `licensingAt(entry, year)` picks the one of the year. In a `once` era the license is bought when the install starts, as a ledger line ("Windoors Server 2003 license, node001"), and belongs to the machine: `s.licenses: { id; machineId; boughtAt }[]`. A reinstall on the same machine pays nothing, a new machine pays again, and a machine that is sold, scrapped or deleted loses its licenses at the next month's bill. Without the cash the install is refused with the Shop's cash error. A VM from a template, the App Suite's included, buys its OS license the same way. Old saves give every machine that holds Windoors or VMwhere its license for free. A `once` era adds nothing to the monthly `licenseCost`.
 
 An OS install takes the newest version that exists in the game year. Installed machines keep their version; there is no in-place upgrade (reinstall to upgrade). The version shows on the boot screen, the login screen, the machine's detail page and in `uname -a`.
 
-Catalog: `src/sim/10-catalog/server-os.ts` (the existing `os.ts` holds the Pear desktop releases and keeps its name) with `ServerOsId`, `SERVER_OS`, `serverOsAt(id, year)`, `serverOsById`, the Windoors monthly fee, the boot minutes and install hours of section 4.
+Catalog: `src/sim/10-catalog/server-os.ts` (the existing `os.ts` holds the Pear desktop releases and keeps its name) with `ServerOsId`, `SERVER_OS`, `serverOsAt(id, year)`, `serverOsById`, the license eras, the boot minutes and install hours of section 4.
 
 Install media. The USB stick (servers) and the ISO list (VMs, from the hypervisor console's Media menu and the VM console's title bar) hold the two operating systems and nothing else: "Debiant 8 netinst", "Windoors Server 2012 R2". `Workload.media` changes from `"iso"` to a `ServerOsId`; `deserialize` maps an old `"iso"` to `"lunix"`.
 
@@ -32,6 +34,7 @@ Install media. The USB stick (servers) and the ISO list (VMs, from the hyperviso
 | `exclusive?: "hypervisor"` | At most one hypervisor per machine, port or no port. |
 | `install: { kind: "apt" \| "script" \| "gui"; package?: string; commands: string[] }` | How it gets onto a machine, below. |
 | `site: Site` | The brand record its website and console draw from, section 8.3. |
+| `licensing: LicenseEra[]` | The license eras of section 1, replacing `pricing` and `fee`. Every software has one era with its old pricing and fee, except VMwhere: 600 euros once per CPU socket of the node until 2023, 8 euros a month per physical core from 2024. |
 
 The compatibility rule is one function, `conflict(a, b): string | null`, returning the `error.*` key of the reason (same port, two hypervisors), and `runsOn(sw, osId)`. `installBlock` calls both against everything already on the machine and keeps every reason it has today except "one control plane per machine", which this plan removes: a panel on a hypervisor node is legal when no port collides.
 
@@ -92,7 +95,7 @@ Software moves from the cluster to the machine. A machine is a `Device` or an ow
 
 `canInstall(s, machineId, softwareId)` in `90-actions/software.ts` gives the reasons in this order: another OS on the disk, a conflict with installed software, a server that is not free (`error.serverInUse` when it already hosts a cluster) or a VM that hosts one (`error.onePanel`), then an OS that is not up (`error.noOs`, `error.osNotUp`). A server still belongs to one cluster, so a panel on a Proxmocks node passes `conflict` and is still refused; a second control plane on one machine needs the cluster layer to hold two. The installer's erase empties `os` and `software`. VMs made in one click from a hypervisor console (`createPanelVm`, `createSoftwareVm`) start from a template with the software's first OS on the disk.
 
-Licenses. `licenseCost` adds 15 euros per machine with Windoors and the App Suite per cluster; its result keeps the `{ panel, platform }` shape the tests assert, with Windoors under `platform`. The monthly ledger has one line for all Windoors machines ("Windoors Server, 3 machines") and one per App Suite cluster ("VMwhere App Suite, Cloud 1"); a Windoors machine in no cluster is billed there too.
+Licenses. `licenseCost` adds the Windoors fee of a core era (4 euros per core or vCPU) and the App Suite per cluster; its result keeps the `{ panel, platform }` shape the tests assert, with Windoors under `platform`. The monthly ledger has one line for all Windoors machines ("Windoors Server, 3 machines") and one per App Suite cluster ("VMwhere App Suite, Cloud 1"); a Windoors machine in no cluster is billed there too.
 
 ## 4. The install pipeline
 
@@ -286,7 +289,8 @@ Each software with a web console gets its own component and stylesheet, modelled
 
 Add to `docs/design/economy.md` under "Platforms and licenses":
 
-- Windoors Server: 15 euros a month per machine that holds it, billed with the licenses. A game server on TCAdmen costs the TCAdmen 25 plus the Windoors 15 a month.
+- Windoors Server: 600 euros once per machine until 2015, paid when the OS install starts; from 2016, 4 euros a month per physical core of a server or per vCPU of a VM, billed with the licenses.
+- VMwhere: 600 euros once per CPU socket of the node until 2023, paid when the install starts; from 2024, 8 euros a month per physical core.
 - VMwhere App Suite: 25 euros a month per VMwhere cluster.
 - OS install hours (Lunix 1, Windoors 2) and boot minutes (Lunix 20, Windoors 40) add to every install's time to serve.
 - A panel on a hypervisor node is allowed when no port collides; the old "one control plane per server" rule is gone.

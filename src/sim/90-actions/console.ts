@@ -8,7 +8,7 @@ import { clusterOf, dropCluster, hostOfVm, isOwnVm, setMachine, vmById, workload
 import { SERVER_OS, serverOsAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
 import { pushLog } from "../60-infra/power";
 import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
-import { reportLoss } from "../85-products/products";
+import { buyLicenses, licenseDue, reportLoss } from "../85-products/products";
 import { leave } from "./clusters";
 import type { ActionResult } from "./hardware";
 import { uninstallSoftware } from "./software";
@@ -118,10 +118,12 @@ export function installOs(s: GameState, machineId: string, osId: ServerOsId, con
   if (typeof m === "string") return fail(m);
   if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
   if (!isDevice(m) && m.media !== osId) return fail("error.otherMedia");
+  if (s.cash < licenseDue(s, machineId, osId, null)) return fail("error.noCash");
   const cleared = clear(s, m, confirm);
   if (!cleared.ok) return cleared;
   const os = serverOsById(osId), done = nowHours(s) + os.installHours;
   setMachine(s, machineId, () => ({ os: { id: osId, version: serverOsAt(osId, yearOf(s.hour)).version, installedAt: done }, software: [] }));
+  buyLicenses(s, machineId, osId, null);
   if (isDevice(m)) Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60 });
   else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
   return { ok: true };

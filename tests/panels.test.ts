@@ -53,6 +53,7 @@ describe("software years", () => {
     skipTo(s, 2008);
     ok(installSoftware(s, bootedMachine(s, "dev3"), "proxmocks"));
     const early = withServer(newGame(1));
+    early.cash = 10000;
     ok(installSoftware(early, bootedMachine(early, "dev3"), "vmwhere"));
     const old = withServer(newGame(1));
     hypervisor(old, ["dev3"], "Basement 1");

@@ -18,6 +18,7 @@ import { freeSlots, installedRamGb, locationOf, rackPower, working } from "../60
 import { addService } from "./customers";
 import { assignService } from "../60-infra/addresses";
 import type { ActionResult } from "./hardware";
+import { buyLicenses, licenseDue } from "../85-products/products";
 import { sizeOf } from "../30-market/spec";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -127,9 +128,13 @@ export function createPanelVm(s: GameState, clusterId: string, panelId: string, 
   if (sw.id !== panelId || sw.kind === "cloud") return fail("error.unknownSoftware");
   const bad = sizeError(size, sw.controlPlane);
   if (bad) return fail(bad);
+  if (s.cash < licenseDue(s, "", sw.os[0], sw.id)) return fail("error.noCash");
   const vm = createVm(s, clusterId, size);
-  if (vm.ok) templateOs(s, vm.id!, sw);
-  return vm.ok ? installPanelInVm(s, vm.id!, panelId) : vm;
+  if (!vm.ok) return vm;
+  templateOs(s, vm.id!, sw);
+  const done = installPanelInVm(s, vm.id!, panelId);
+  if (done.ok) buyLicenses(s, vm.id!, sw.os[0], sw.id);
+  return done;
 }
 
 const sizeError = (r: Resources, panel: Resources): string | null =>

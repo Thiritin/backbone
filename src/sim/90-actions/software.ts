@@ -8,6 +8,7 @@ import { familyOf, openVulns } from "../60-infra/vulns";
 import type { Resources } from "../10-catalog/products";
 import { createVm, freeServer, installHypervisor, installPanel, installPanelInVm, PANEL_VM_SIZE, phpDue, removeNode, templateOs, upgradeNodePhp } from "./clusters";
 import type { ActionResult } from "./hardware";
+import { buyLicenses, licenseDue } from "../85-products/products";
 
 // A machine is a server or one of the player's own VMs, with the software on its disk; VMs take no hypervisor. The
 // software is the control plane of the machine's cluster. doneAt is null once installed.
@@ -49,7 +50,8 @@ export function installBlock(s: GameState, machineId: string, softwareId: string
     if (!s.company.domain) return "error.needsDomain";
     if (s.clusters.some((c) => c.kind === "mail")) return "error.oneMailServer";
   }
-  return replacing ? null : canInstall(s, machineId, sw.id);
+  if (replacing) return null;
+  return canInstall(s, machineId, sw.id) ?? (s.cash < licenseDue(s, machineId, null, sw.id) ? "error.noCash" : null);
 }
 
 // Why the machine does not take the software: another OS, a conflict with what is installed, a server that is not free
@@ -74,6 +76,7 @@ export function installSoftware(s: GameState, machineId: string, softwareId: str
   const block = installBlock(s, machineId, sw.id);
   if (block) return { ok: false, error: block };
   const done = !isServer(s, machineId) ? installPanelInVm(s, machineId, sw.id) : sw.kind === "cloud" ? installHypervisor(s, machineId, sw.id) : installPanel(s, machineId, sw.id);
+  if (done.ok) buyLicenses(s, machineId, null, sw.id);
   if (done.ok && sw.kind === "mail") s.company = { ...s.company, mail: { kind: "self", software: sw.id as "postfixit" | "mailpig", clusterId: done.id! } };
   return done;
 }
@@ -82,11 +85,13 @@ export function installSoftware(s: GameState, machineId: string, softwareId: str
 export function createSoftwareVm(s: GameState, clusterId: string, softwareId: string, size: Resources = PANEL_VM_SIZE): ActionResult {
   const sw = SOFTWARE.find((x) => x.id === softwareId);
   if (!sw) return { ok: false, error: "error.unknownSoftware" };
+  if (s.cash < licenseDue(s, "", sw.os[0], sw.id)) return { ok: false, error: "error.noCash" };
   const vm = createVm(s, clusterId, size);
   if (!vm.ok) return vm;
   templateOs(s, vm.id!, sw);
   const done = installSoftware(s, vm.id!, softwareId);
   if (!done.ok) s.workloads = s.workloads.filter((w) => w.id !== vm.id);
+  else buyLicenses(s, vm.id!, sw.os[0], null);
   return done;
 }
 

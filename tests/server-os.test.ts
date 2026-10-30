@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hashRng } from "../src/sim/00-core/rng";
 import { isMonthStart, yearOf } from "../src/sim/00-core/time";
 import { SOFTWARE } from "../src/sim/10-catalog/platforms";
-import { APP_SUITE_FEE, SERVER_OS, serverOsAt, serverOsById } from "../src/sim/10-catalog/server-os";
+import { APP_SUITE_FEE, SERVER_OS, serverOsAt } from "../src/sim/10-catalog/server-os";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { machineOf } from "../src/sim/60-infra/cluster";
 import { seize } from "../src/sim/60-infra/incidents";
@@ -38,9 +38,9 @@ const monthEnd = (s: GameState) => {
 
 describe("server operating systems", () => {
   it("has Debiant and Windoors with their fees, boot minutes and install hours", () => {
-    expect(SERVER_OS.map((o) => [o.id, o.name, o.fee, o.bootMinutes, o.installHours])).toEqual([
-      ["lunix", "Debiant GNU/Lunix", 0, 20, 1],
-      ["windoors", "Windoors Server", 15, 40, 2],
+    expect(SERVER_OS.map((o) => [o.id, o.name, o.licensing, o.bootMinutes, o.installHours])).toEqual([
+      ["lunix", "Debiant GNU/Lunix", [{ from: 2005, kind: "free", fee: 0 }], 20, 1],
+      ["windoors", "Windoors Server", [{ from: 2005, kind: "once", fee: 600 }, { from: 2016, kind: "core", fee: 4 }], 40, 2],
     ]);
     expect(APP_SUITE_FEE).toBe(25);
     expect(SOFTWARE.every((sw) => sw.os.length > 0 && sw.site.host.endsWith(".example"))).toBe(true);
@@ -83,17 +83,19 @@ describe("server operating systems", () => {
     expect(s.ops.seized[0].device).toMatchObject({ id: second, software: [] });
   });
 
-  it("bills Windoors per machine and the App Suite per cluster with the licenses", () => {
+  it("bills Windoors per core from 2016 and the App Suite per cluster with the licenses", () => {
     const { s, second } = threeServers();
     const host = panelServer(s, "dev3", "tcadmen");
     const cloud = hypervisor(s, [second], undefined, "hypervee");
-    expect(licenseCost(s, s.clusters.find((c) => c.id === host)!)).toEqual({ panel: 25, platform: 15 });
-    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!)).toEqual({ panel: 0, platform: 20 + 15 });
+    skipTo(s, 2016);
+    // Two cores per server at 4 euros each.
+    expect(licenseCost(s, s.clusters.find((c) => c.id === host)!)).toEqual({ panel: 25, platform: 8 });
+    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!)).toEqual({ panel: 0, platform: 20 + 8 });
     s.clusters = s.clusters.map((c) => (c.id === cloud ? { ...c, appSuite: true } : c));
-    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!).platform).toBe(20 + 15 + 25);
+    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!).platform).toBe(20 + 8 + 25);
     monthEnd(s);
     expect(s.ledger.filter((l) => l.category === "licenses").map((l) => [l.key, l.amount])).toEqual([
-      ["ledger.license", -25], ["ledger.license", -20], ["ledger.appSuite", -25], ["ledger.windoors", -30],
+      ["ledger.license", -25], ["ledger.license", -20], ["ledger.appSuite", -25], ["ledger.windoors", -16],
     ]);
     expect(s.ledger.find((l) => l.key === "ledger.windoors")?.params).toEqual({ count: 2 });
   });
@@ -120,7 +122,6 @@ describe("old saves", () => {
     expect(machineOf(old, vm)).toMatchObject({ os: os("lunix", panel), software: [{ id: "freepanel", doneAt: null }] });
     expect(machineOf(old, empty)).toMatchObject({ os: null, software: [], media: "lunix" });
     expect(machineOf(old, "dev4")).toMatchObject({ os: null, software: [] });
-    expect(serverOsById("windoors").fee).toBe(15);
     // A current save keeps what it has.
     expect(machineOf(deserialize(serialize(old)), second)).toEqual(machineOf(old, second));
   });

@@ -1,12 +1,12 @@
 import { chance } from "../00-core/rng";
 import { dateOf, isMonthStart, nowHours, yearOf } from "../00-core/time";
-import { isService, softwareById, type Software } from "../10-catalog/platforms";
+import { isService, softwareById } from "../10-catalog/platforms";
 import { BACKUP_HOUR } from "../10-catalog/usage";
-import { APP_SUITE_FEE, serverOsById } from "../10-catalog/server-os";
+import { APP_SUITE_FEE, licensingAt, SERVER_OS, serverOsAt, serverOsById, type LicenseEra, type LicenseKind, type ServerOsId } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
-import type { Device, GameState, Location, MachineState } from "../50-state";
+import type { Device, GameState, Location } from "../50-state";
 import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
 import { bootHours } from "../60-infra/status";
@@ -53,24 +53,64 @@ export function moveGbit(s: GameState, a: string, b: string): number {
   return Math.min(Math.min(mbps(from), mbps(to)) / 1000, WAN_GB_PER_HOUR / LAN_GB_PER_HOUR);
 }
 
-function units(s: GameState, c: Cluster, sw: Software): number {
-  if (sw.pricing === "account") return s.workloads.filter((w) => w.clusterId === c.id && servedBy(s, w) === "panel").length;
-  if (sw.pricing === "server") return c.kind === "cloud" ? c.nodes.length : 1;
-  if (sw.pricing === "core") return c.nodes.reduce((n, x) => n + installedCores(s.devices.find((d) => d.id === x.deviceId)!), 0);
+function units(s: GameState, c: Cluster, kind: LicenseKind): number {
+  if (kind === "account") return s.workloads.filter((w) => w.clusterId === c.id && servedBy(s, w) === "panel").length;
+  if (kind === "server") return c.kind === "cloud" ? c.nodes.length : 1;
+  if (kind === "core") return c.nodes.reduce((n, x) => n + installedCores(s.devices.find((d) => d.id === x.deviceId)!), 0);
   return 0;
 }
 const softwareFee = (s: GameState, c: Cluster, id: string | null): number => {
   if (!id) return 0;
-  const sw = softwareById(id);
-  return Math.round(sw.fee * units(s, c, sw) * 100) / 100;
+  const era = licensingAt(softwareById(id), yearOf(s.hour));
+  return Math.round(era.fee * units(s, c, era.kind) * 100) / 100;
 };
-// The monthly OS license of every machine, a server or one of the player's own VMs.
-const osFee = (m: Partial<MachineState>): number => (m.os ? serverOsById(m.os.id).fee : 0);
+const isServer = (m: Device | Workload): m is Device => "components" in m;
+// The monthly OS license of a machine, a server or one of the player's own VMs: per physical core or per vCPU in a core era.
+const osFee = (s: GameState, m: Device | Workload): number => {
+  const era = m.os && licensingAt(serverOsById(m.os.id), yearOf(s.hour));
+  return era?.kind !== "core" ? 0 : era.fee * (isServer(m) ? installedCores(m) : m.vcpu);
+};
 const machinesOf = (s: GameState, c: Cluster) => (c.vm ? s.workloads.filter((w) => w.id === c.vm) : s.devices.filter((d) => c.nodes.some((n) => n.deviceId === d.id)));
+// docs/design/software.md, section 1: in a once era the OS or the software is bought when its install starts, per machine
+// for an OS and per CPU socket of a server for software, and the machine keeps the license for every later reinstall.
+type Licensed = { id: string; name: string; licensing: LicenseEra[] };
+const oncePrice = (s: GameState, machineId: string, x: Licensed, perSocket: boolean): number => {
+  const era = licensingAt(x, yearOf(s.hour));
+  if (era.kind !== "once" || s.licenses.some((l) => l.id === x.id && l.machineId === machineId)) return 0;
+  const d = perSocket ? s.devices.find((m) => m.id === machineId) : undefined;
+  return era.fee * (d ? d.components.filter((p) => p.kind === "cpu").length : 1);
+};
+const owed = (s: GameState, machineId: string, osId: ServerOsId | null, swId: string | null): [Licensed, number][] => [
+  ...(osId ? [[serverOsById(osId), oncePrice(s, machineId, serverOsById(osId), false)] as [Licensed, number]] : []),
+  ...(swId ? [[softwareById(swId), oncePrice(s, machineId, softwareById(swId), true)] as [Licensed, number]] : []),
+].filter(([, n]) => n > 0);
+
+// What installing the OS or the software on the machine costs at once; a machine that does not exist yet is a new VM.
+export const licenseDue = (s: GameState, machineId: string, osId: ServerOsId | null, swId: string | null): number =>
+  owed(s, machineId, osId, swId).reduce((n, [, x]) => n + x, 0);
+
+// Charges and records what licenseDue counts, one ledger line each.
+export function buyLicenses(s: GameState, machineId: string, osId: ServerOsId | null, swId: string | null): void {
+  const m = [...s.devices, ...s.workloads].find((x) => x.id === machineId);
+  const machine = m && ("components" in m ? m.hostname ?? m.label ?? m.name : m.hostname ?? m.id);
+  for (const [x, price] of owed(s, machineId, osId, swId)) {
+    const name = x.id === osId ? `${x.name} ${serverOsAt(osId, yearOf(s.hour)).version}` : x.name;
+    s.cash = Math.round((s.cash - price) * 100) / 100;
+    s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.licenseOnce", params: { name, machine: machine ?? machineId }, amount: -price }];
+    s.licenses = [...s.licenses, { id: x.id, machineId, boughtAt: s.hour }];
+  }
+}
+
+// Old saves: the licenses every machine holds, Windoors or VMwhere on it.
+export const heldLicenses = (s: GameState): GameState["licenses"] =>
+  [...s.devices, ...s.workloads].flatMap((m) => [m.os?.id, ...(m.software ?? []).map((x) => x.id)].filter((id): id is string => !!id)
+    .filter((id) => (SERVER_OS.find((o) => o.id === id) ?? softwareById(id)).licensing.some((e) => e.kind === "once"))
+    .map((id) => ({ id, machineId: m.id, boughtAt: s.hour })));
+
 // The monthly license bill of a cluster's panel and platform; the operating systems of its machines and the App Suite
 // count under platform.
 export function licenseCost(s: GameState, c: Cluster): { panel: number; platform: number } {
-  const extra = machinesOf(s, c).reduce((n, m) => n + osFee(m), 0) + (c.appSuite ? APP_SUITE_FEE : 0);
+  const extra = machinesOf(s, c).reduce((n, m) => n + osFee(s, m), 0) + (c.appSuite ? APP_SUITE_FEE : 0);
   return { panel: softwareFee(s, c, c.panel), platform: softwareFee(s, c, c.platform) + extra };
 }
 
@@ -218,7 +258,11 @@ function billLicenses(s: GameState) {
     ...(c.appSuite ? [line("ledger.appSuite", { cluster: c.name }, APP_SUITE_FEE)] : []),
   ]);
   const windoors = [...s.devices, ...s.workloads].filter((m) => m.os?.id === "windoors");
-  if (windoors.length) lines.push(line("ledger.windoors", { count: windoors.length }, windoors.length * serverOsById("windoors").fee));
+  const osTotal = Math.round(windoors.reduce((n, m) => n + osFee(s, m), 0) * 100) / 100;
+  if (osTotal > 0) lines.push(line("ledger.windoors", { count: windoors.length }, osTotal));
+  // ponytail: sold, scrapped and deleted machines lose their one-time licenses here, at the month's bill.
+  const held = new Set([...s.devices, ...s.workloads, ...s.ops.seized.map((x) => x.device)].map((m) => m.id));
+  s.licenses = s.licenses.filter((l) => held.has(l.machineId));
   if (!lines.length) return;
   s.cash = Math.round((s.cash + lines.reduce((n, l) => n + l.amount, 0)) * 100) / 100;
   s.ledger = [...s.ledger, ...lines];
