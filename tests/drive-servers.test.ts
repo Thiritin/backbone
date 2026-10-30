@@ -34,11 +34,22 @@ describe("driving servers to a datacenter", () => {
     expect(keys(s, lines)).toEqual(["ledger.drive"]);
     expect(servers.map((id) => locationOf(s, s.devices.find((d) => d.id === id)!)!.id)).toEqual([dc, dc]);
     expect(s.clusters.find((c) => c.id === cluster)!.az).toBe(s.locations.find((l) => l.id === dc)!.az);
+    expect(s.clusters.find((c) => c.id === cluster)!.name).toBe("Home");
     const work = s.player.until - hour - fare.hours;
     expect(work).toBeGreaterThanOrEqual(2 * MOVE_INSTALL_HOURS.min);
     expect(work).toBeLessThanOrEqual(2 * MOVE_INSTALL_HOURS.max);
     expect(s.player.at).toBe(dc);
     for (const id of servers) expect(s.devices.find((d) => d.id === id)!.maintenance!.doneAt).toBe(s.player.until);
+  });
+
+  it("renames a cluster named after the basement to the datacenter it moves to", () => {
+    const { s, dc } = world();
+    const own = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
+    ok(mountDevice(s, own, "rack2", 4));
+    const cluster = hypervisor(s, [own]);
+    expect(s.clusters.find((c) => c.id === cluster)!.name).toBe("Basement 1");
+    ok(moveServer(s, own, dc, "self"));
+    expect(s.clusters.find((c) => c.id === cluster)!.name).toBe(`${s.locations.find((l) => l.id === dc)!.name} 1`);
   });
 
   it("needs the player at the servers, the whole cluster and no burn-in", () => {

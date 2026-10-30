@@ -19,6 +19,7 @@ import { cardsFree, serverTaken, vmById } from "../60-infra/cluster";
 import { renumber, renumberError } from "../60-infra/addresses";
 import { plannedFor } from "../60-infra/maintenance";
 import { announceNow } from "./maintenance";
+import { freeName } from "./clusters";
 import { nodeName } from "../30-customers/hostnames";
 
 // error is an i18n key.
@@ -489,7 +490,12 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
       .sort((x, y) => Number(y.rackId === rack) - Number(x.rackId === rack));
     pool.some((x) => modelById(x.model).ports.some((_, port) => connect(s, mine, { device: x.id, port }).ok));
   }
-  s.clusters = s.clusters.map((c) => (hosted.has(c.id) ? { ...c, az: to.az } : c));
+  // A cluster still named after the location it leaves takes the new location's name.
+  for (const id of hosted) {
+    const c = s.clusters.find((x) => x.id === id)!, n = c.name.slice(from.name.length + 1);
+    const name = c.name.startsWith(`${from.name} `) && /^\d+$/.test(n) ? freeName(s, to.name) : c.name;
+    s.clusters = s.clusters.map((x) => (x.id === id ? { ...x, az: to.az, name } : x));
+  }
   s.services = s.services.map((v) => (ids.includes(v.id) ? { ...v, zone: to.az } : v));
   renumber(s, ids, from, to, (id) => told.has(id));
   if (price > 0) book(s, "moving", "ledger.moveServer", { device: name, location: to.name }, -price);

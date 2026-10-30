@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- A cluster named after the place it was built in now takes the name of the location its servers move to.
 - A draining server can now be uncordoned, which stops a drain that has nowhere to move its workloads.
 - Mainboards in the Parts tab are sold per socket and biggest CPU, such as "Indel I3-40 Mainboard", and show their socket and the CPUs they take.
 - Clicking a reply option on a support ticket now sends that reply right away.

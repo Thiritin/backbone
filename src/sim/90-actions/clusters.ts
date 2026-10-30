@@ -33,7 +33,7 @@ const blank = (s: GameState, id: string, name: string, az: string, kind: Softwar
 const PREFIX: Record<SoftwareKind, string> = { panel: "Web", cloud: "Cloud", game: "Game", mail: "Mail", dns: "DNS", vpn: "VPN", storage: "Storage" };
 
 // The next free name of the pattern, numbered from 1.
-const freeName = (s: GameState, base: string): string => {
+export const freeName = (s: GameState, base: string): string => {
   for (let i = 1; ; i++) if (!s.clusters.some((c) => c.name === `${base} ${i}`)) return `${base} ${i}`;
 };
 
