@@ -342,7 +342,7 @@ function reputation(s: GameState, events: SimEvent[]): void {
       const rep = Math.max(0, Math.min(100, a.rep - a.spam * REP.perThousand + (a.spam ? 0 : REP.recover)));
       const delisted = a.delistAt !== null && a.delistAt <= s.hour;
       const listed = dynamic || (!delisted && (rep < REP.listAt || (a.listed && rep < REP.clearAt)));
-      if (listed && !a.listed) events.push({ app: "Network", key: "event.addressListed", params: { ip: a.ip } });
+      if (listed && !a.listed) events.push({ app: "Locations", key: "event.addressListed", params: { ip: a.ip } });
       return { ...a, spam: 0, rep: delisted ? Math.max(rep, rep + REP.delist) : dynamic ? Math.min(rep, REP.dynamic) : rep, listed, delistAt: delisted ? null : a.delistAt };
     }),
   };

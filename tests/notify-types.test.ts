@@ -49,9 +49,9 @@ describe("notification types in the store", () => {
   afterEach(() => useStore.setState({ notifyPrefs: saved, banners: [], history: [] }));
 
   it("hides a notification of a type that is off and keeps the others", () => {
-    s().setNotifyPref("Network", { types: { [typeOf("Network", "event.networkBills")]: false } });
-    s().notify("Network", "bills", "x", "event.networkBills");
-    s().notify("Network", "uplink", "x", "event.uplinkReady");
+    s().setNotifyPref("Locations", { types: { [typeOf("Locations", "event.saturated")]: false } });
+    s().notify("Locations", "saturated", "x", "event.saturated");
+    s().notify("Locations", "uplink", "x", "event.uplinkReady");
     expect(s().history.map((b) => b.title)).toEqual(["uplink"]);
     expect(s().banners).toHaveLength(1);
   });

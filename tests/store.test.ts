@@ -83,8 +83,16 @@ describe("pear store", () => {
   it("installs free apps while in debt", () => {
     const s = newGame(5);
     s.cash = -500;
+    s.unlocks.push("network");
     expect(install(s, "Network")).toEqual({ ok: true });
     expect(s.cash).toBe(-500);
+  });
+
+  it("keeps the Network app until network operations is learned", () => {
+    const s = newGame(5);
+    expect(install(s, "Network")).toEqual({ ok: false, error: "error.needsResearch" });
+    s.unlocks.push("network");
+    expect(install(s, "Network")).toEqual({ ok: true });
   });
 
   it("raises prices 8% every year", () => {

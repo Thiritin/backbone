@@ -7,7 +7,7 @@ const is = (...names: string[]) => (key: string) =>
 const type = (label: string, ...names: string[]): NotifyType => ({ id: label.toLowerCase().replace(/[^a-z]+/g, "-"), label, match: is(...names) });
 
 const GROUPS: Record<string, NotifyType[]> = {
-  Finance: [type("Bills and tax", "bills", "monthStart", "tax", "taxLoss"), type("Cash and loans", "cashNegative", "bankrupt", "loanMissed", "loanCalled")],
+  Finance: [type("Bills and tax", "bills", "monthStart", "tax", "taxLoss", "networkBills"), type("Cash and loans", "cashNegative", "bankrupt", "loanMissed", "loanCalled")],
   Support: [
     type("Tickets", "ticket", "tickets", "stepFailed", "offerDeclined"),
     type("Migration offers", "moveAccepted", "moveDeclined", "moveDone", "moveMissed"),
@@ -15,12 +15,6 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Sponsoring requests", "sponsorRequest", "boardApplication"),
     type("Notices and legal", "seized", "breach"),
     type("Power", "gridDark", "gridCarried", "feedDark", "feedCarried"),
-  ],
-  Network: [
-    type("Uplinks and peering", "uplinkReady", "peeringRequest"),
-    type("Attacks and saturation", "ddos", "saturated"),
-    type("Addresses", "addressListed"),
-    type("Monthly bills", "networkBills"),
   ],
   Browser: [
     type("Domains", "registrarTier", "domainsTransferred"),
@@ -32,6 +26,9 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Internet line", "lineReady", "lineFull"),
     type("Burn-in and refunds", "burninQuick", "burninFull", "burninAborted", "usedRefund"),
     type("Hand work", "workDone"),
+    type("Uplinks and peering", "uplinkReady", "peeringRequest"),
+    type("Attacks and saturation", "ddos", "saturated"),
+    type("Addresses", "addressListed"),
   ],
   Security: [type("Advisories", "vuln.announced", "vuln.poc", "vuln.warning", "vuln.patch"), type("Compromises", "vuln.hacked", "oobHacked", "siteHacked", "siteLeft", "breachPress", "breachFine"), type("Open vulnerabilities", "vulnOpen", "vulnCritical")],
   Marketing: [type("Reviews", "review"), type("Campaigns and bills", "fairDone", "fairMissed", "marketingBills", "platformDropped"), type("Community events", "sponsorDone", "sponsorFailed", "halfAccepted", "halfDeclined"), type("Sponsor board", "boardDropped", "boardDone"), type("Website", "siteBuilt")],

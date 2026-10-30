@@ -43,10 +43,9 @@ export interface AppDef {
 export const APPS: AppDef[] = [
   { name: "Applications", icon: LayoutGrid, tile: "oklch(0.6 0.12 240)", about: "Lists every installed app so you can open it, keep it in the dock or put a link on the desktop.", body: ApplicationsApp },
   { name: "Locations", icon: Server, tile: "oklch(0.5 0.06 250)", about: "Shows your sites on a map, the racks inside them and every device front.",
-    badge: (s) => s.devices.reduce((n, d) => n + deviceHealth(s, d.id).failed.length, 0) },
+    badge: (s) => s.devices.reduce((n, d) => n + deviceHealth(s, d.id).failed.length, 0) + s.network.requests.length + s.network.attacks.length },
   { name: "Shop", icon: ShoppingCart, tile: "oklch(0.6 0.15 40)", about: "Sells servers, switches and patch panels into your storage." },
-  { name: "Network", icon: Network, tile: "oklch(0.58 0.12 210)", about: "Manages transit, peering and DDoS protection.", body: NetworkApp,
-    badge: (s) => s.network.requests.length + s.network.attacks.length },
+  { name: "Network", icon: Network, tile: "oklch(0.58 0.12 210)", about: "Shows every site on a map and manages DDoS protection, your AS number and address registry.", body: NetworkApp },
   { name: "Products", icon: Package, tile: "oklch(0.55 0.17 295)", about: "Defines your product lines, plans, licenses and clusters.", body: ProductsApp,
     badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored)).length },
   { name: "Virtual machines", icon: MonitorCog, tile: "oklch(0.5 0.12 200)", about: "Starts, stops, migrates and restores the workloads on your clusters.", body: VmApp },
