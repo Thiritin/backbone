@@ -1,0 +1,30 @@
+.vs-pan { font: 12px/1.5 "Trebuchet MS", Arial, sans-serif; color: #e6e6e6; background: #2d2d2d; }
+.vs-pan header { display: flex; align-items: center; gap: 28px; padding: 12px 22px; background: #1c1c1c; border-bottom: 2px solid #fa582d; }
+.vs-pan .vs-wm { display: flex; align-items: center; gap: 6px; font: 700 18px/1 "Trebuchet MS", sans-serif; color: #ffffff; }
+.vs-pan .vs-wm small { font-size: 11px; color: #fa582d; font-weight: 400; }
+.vs-pan nav { display: flex; gap: 16px; }
+.vs-pan nav a { color: #bbbbbb; text-decoration: none; }
+.vs-pan nav a[aria-current] { color: #fa582d; }
+.vs-pan main { padding: 16px 22px; max-width: 840px; }
+.vs-pan .vs-hero { padding: 16px; background: #3a3a3a; margin-bottom: 12px; }
+.vs-pan h1 { font-size: 18px; color: #ffffff; margin-bottom: 8px; }
+.vs-pan h2 { font-size: 13px; color: #fa582d; margin: 14px 0 6px; }
+.vs-pan .vs-cta { color: #fa582d; font-weight: 700; }
+.vs-pan .vs-cats { display: flex; gap: 10px; }
+.vs-pan .vs-cats a { color: #ffffff; }
+.vs-pan th { color: #fa582d; border-bottom: 1px solid #555555; padding: 4px 6px; }
+.vs-pan td { border-bottom: 1px solid #444444; padding: 4px 6px; }
+.vs-pan footer { padding: 10px 22px 20px; font-size: 10px; color: #888888; }
+.vs-pan.late { font: 15px/1.55 "Helvetica Neue", Arial, sans-serif; color: #333333; background: #ffffff; }
+.vs-pan.late header { background: #ffffff; border-bottom: 1px solid #e8e8e8; padding: 16px 40px; }
+.vs-pan.late .vs-wm { color: #333333; }
+.vs-pan.late nav a { color: #333333; }
+.vs-pan.late main { padding: 0 40px 32px; max-width: none; }
+.vs-pan.late .vs-hero { margin: 0 -40px 28px; padding: 72px 40px; background: #fa582d; }
+.vs-pan.late .vs-hero h1 { font-size: 40px; font-weight: 700; }
+.vs-pan.late h1 { color: #333333; font-size: 28px; margin: 28px 0 12px; }
+.vs-pan.late .vs-cta { display: inline-block; padding: 12px 24px; background: #ffffff; color: #fa582d; text-decoration: none; }
+.vs-pan.late .vs-cats a { display: block; padding: 18px 22px; background: #f4f4f4; color: #333333; text-decoration: none; font-weight: 600; }
+.vs-pan.late th { color: #333333; border-bottom: 2px solid #fa582d; padding: 8px; }
+.vs-pan.late td { border-color: #e8e8e8; padding: 8px; }
+.vs-pan.late footer { padding: 20px 40px; background: #1c1c1c; color: #999999; font-size: 12px; }

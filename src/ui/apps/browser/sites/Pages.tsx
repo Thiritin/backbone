@@ -1,11 +1,9 @@
 import { Play } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import { t } from "../../../../i18n/en";
-import { manufacturerByName, MANUFACTURERS } from "../../../../sim/10-catalog/hardware";
 import { VIDEO_ARTIST, VIDEO_REAL, VIDEO_TITLE } from "../../../../sim/80-business/browser";
 import type { GameState } from "../../../../sim/50-state";
 import { customerSite } from "../../../../sim/80-business/website";
-import { Logo } from "../../../art/logos";
 import "./pages.css";
 
 const hueOf = (name: string): number => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
@@ -27,33 +25,6 @@ export function CustomerSite({ game, serviceId }: { game: GameState; serviceId: 
     <div className="cs" style={{ "--hue": hue } as CSSProperties}>
       <header className="cs-head"><h1>{site.title}</h1></header>
       <p className="cs-blurb">{t(site.blurb)}</p>
-    </div>
-  );
-}
-
-const KIND: Record<string, string> = {
-  server: "Rack servers for rooms that are never quiet.",
-  switch: "Switches that keep every cable honest.",
-  firewall: "Firewalls that say no so you do not have to.",
-  gateway: "Gateways between your rack and the rest of the internet.",
-  patch: "Patch panels for people who label their cables.",
-  ups: "Power for the minutes between the grid and the generator.",
-  part: "Parts.",
-};
-
-// A one-page site per manufacturer.
-export function VendorSite({ maker }: { maker: string }) {
-  const m = MANUFACTURERS.find((x) => x.id === maker) ?? manufacturerByName(maker);
-  if (!m) return null;
-  return (
-    <div className="vs">
-      <header className="vs-head">
-        <Logo provider={m.id} size={36} word />
-      </header>
-      <main className="vs-main">
-        <h1>{KIND[m.kinds[0]]}</h1>
-        <p>{m.name} builds for the data centre first and the brochure second.</p>
-      </main>
     </div>
   );
 }

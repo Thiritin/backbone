@@ -1,0 +1,30 @@
+.vs-ftn { font: 11px/1.45 Tahoma, Verdana, sans-serif; color: #333333; background: #ffffff; }
+.vs-ftn header { display: flex; align-items: center; gap: 28px; padding: 10px 18px; background: linear-gradient(#5d5d5d, #2b2b2b); color: #ffffff; border-bottom: 3px solid #da291c; }
+.vs-ftn .vs-wm { display: flex; align-items: center; gap: 6px; font: 700 20px/1 Tahoma, sans-serif; }
+.vs-ftn .vs-wm b { color: #da291c; }
+.vs-ftn nav { display: flex; gap: 2px; }
+.vs-ftn nav a { padding: 3px 10px; color: #ffffff; text-decoration: none; }
+.vs-ftn nav a[aria-current] { background: #da291c; }
+.vs-ftn main { padding: 12px 18px; max-width: 860px; }
+.vs-ftn .vs-hero { padding: 12px; background: #f1f1f1; border: 1px solid #d0d0d0; margin-bottom: 10px; }
+.vs-ftn h1 { font-size: 16px; color: #da291c; margin-bottom: 4px; }
+.vs-ftn h2 { font-size: 12px; color: #2b2b2b; border-bottom: 2px solid #da291c; margin: 12px 0 6px; }
+.vs-ftn .vs-cats { display: flex; gap: 8px; }
+.vs-ftn .vs-cats a { display: block; padding: 6px 10px; background: #2b2b2b; color: #ffffff; text-decoration: none; }
+.vs-ftn th { background: #2b2b2b; color: #ffffff; padding: 3px 6px; }
+.vs-ftn td { padding: 3px 6px; border-bottom: 1px solid #e3e3e3; }
+.vs-ftn footer { padding: 10px 18px 18px; font-size: 9px; color: #888888; }
+.vs-ftn.late { font: 15px/1.55 "Helvetica Neue", Arial, sans-serif; }
+.vs-ftn.late header { background: #ffffff; color: #2b2b2b; border-bottom: 1px solid #e6e6e6; padding: 16px 40px; }
+.vs-ftn.late nav a { color: #2b2b2b; }
+.vs-ftn.late nav a[aria-current] { background: none; color: #da291c; }
+.vs-ftn.late main { padding: 0 40px 32px; max-width: none; }
+.vs-ftn.late .vs-hero { margin: 0 -40px 28px; padding: 56px 40px; background: #da291c; color: #ffffff; border: 0; }
+.vs-ftn.late .vs-hero h1 { color: #ffffff; font-size: 36px; font-weight: 300; }
+.vs-ftn.late h1 { font-size: 28px; font-weight: 300; color: #2b2b2b; margin: 28px 0 12px; }
+.vs-ftn.late .vs-cats { gap: 16px; }
+.vs-ftn.late .vs-cats a { padding: 20px 24px; background: #ffffff; color: #2b2b2b; box-shadow: 0 2px 8px rgb(0 0 0 / 0.12); border-top: 3px solid #da291c; }
+.vs-ftn.late h2 { border: 0; font-size: 20px; font-weight: 400; }
+.vs-ftn.late th { background: none; color: #2b2b2b; border-bottom: 2px solid #da291c; padding: 8px; }
+.vs-ftn.late td { padding: 8px; }
+.vs-ftn.late footer { padding: 20px 40px; background: #2b2b2b; color: #aaaaaa; font-size: 12px; }

@@ -23,6 +23,7 @@ import { SOFTWARE_EN } from "./software";
 import { REPLIES_EN } from "./replies";
 import { BURNIN_EN } from "./burnin";
 import { USED_EN } from "./used";
+import { VENDORS_EN } from "./vendors";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -53,6 +54,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...SITE_EN,
   ...DOMAINS_EN,
   ...NEWS_EN,
+  ...VENDORS_EN,
   ...USED_EN,
   ...BURNIN_EN,
   "event.monthStart.title": (p) => `${MONTHS[Number(p.month)]} ${p.year}`,

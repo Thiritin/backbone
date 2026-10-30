@@ -1,0 +1,34 @@
+.vs-ari { font: 13px/1.5 Georgia, "Times New Roman", serif; color: #1d2a3a; background: #f7f5ef; }
+.vs-ari header { display: flex; align-items: center; gap: 32px; padding: 14px 28px; background: #1d2a3a; color: #f7f5ef; }
+.vs-ari .vs-wm { display: flex; align-items: center; gap: 8px; font: 400 18px/1 Georgia, serif; letter-spacing: 0.25em; }
+.vs-ari .vs-wm svg path { stroke: #f7f5ef; fill: #f7f5ef; }
+.vs-ari nav { display: flex; gap: 18px; }
+.vs-ari nav a { color: #c9cfd8; text-decoration: none; }
+.vs-ari nav a[aria-current] { color: #ffffff; text-decoration: underline; }
+.vs-ari main { max-width: 720px; padding: 24px 28px; }
+.vs-ari .vs-hero { padding: 18px 0 20px; border-bottom: 1px solid #d8d2c2; margin-bottom: 16px; }
+.vs-ari h1 { font-size: 22px; font-weight: 400; font-style: italic; margin-bottom: 12px; }
+.vs-ari h2 { font-size: 15px; font-weight: 400; letter-spacing: 0.15em; text-transform: uppercase; margin: 18px 0 8px; }
+.vs-ari .vs-cta { color: #1d2a3a; }
+.vs-ari .vs-cats { display: flex; gap: 18px; }
+.vs-ari .vs-cats a { color: #1d2a3a; }
+.vs-ari .vs-news li { padding: 4px 0; }
+.vs-ari th { border-bottom: 1px solid #1d2a3a; padding: 4px 6px; font-weight: 400; font-style: italic; }
+.vs-ari td { padding: 4px 6px; border-bottom: 1px solid #e3ddcd; }
+.vs-ari footer { padding: 12px 28px 24px; font-size: 11px; color: #6c7684; }
+.vs-ari.late { font: 15px/1.55 "Helvetica Neue", Arial, sans-serif; background: #ffffff; color: #1b2a47; }
+.vs-ari.late header { background: #ffffff; color: #1b2a47; border-bottom: 1px solid #e6e8ec; padding: 16px 40px; }
+.vs-ari.late .vs-wm { font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: 0.12em; }
+.vs-ari.late .vs-wm svg path { stroke: #1b2a47; fill: #1b2a47; }
+.vs-ari.late nav a { color: #1b2a47; }
+.vs-ari.late nav a[aria-current] { color: #1b2a47; text-decoration: none; box-shadow: inset 0 -2px #1b2a47; }
+.vs-ari.late main { max-width: none; padding: 0 40px 32px; }
+.vs-ari.late .vs-hero { margin: 0 -40px 28px; padding: 64px 40px; background: #1b2a47; color: #ffffff; border: 0; }
+.vs-ari.late .vs-hero h1 { font-style: normal; font-size: 36px; font-weight: 300; }
+.vs-ari.late h1 { font-style: normal; font-size: 28px; font-weight: 300; margin: 28px 0 12px; }
+.vs-ari.late .vs-cta { display: inline-block; padding: 10px 22px; background: #ffffff; color: #1b2a47; text-decoration: none; font-weight: 600; }
+.vs-ari.late .vs-cats a { display: block; padding: 14px 18px; background: #f1f3f6; text-decoration: none; font-weight: 600; }
+.vs-ari.late h2 { letter-spacing: 0; text-transform: none; font-size: 20px; }
+.vs-ari.late th { font-style: normal; font-weight: 600; padding: 8px; }
+.vs-ari.late td { border-color: #e6e8ec; padding: 8px; }
+.vs-ari.late footer { padding: 20px 40px; background: #f1f3f6; }

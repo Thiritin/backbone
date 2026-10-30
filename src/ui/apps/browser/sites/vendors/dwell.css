@@ -1,0 +1,37 @@
+.vs-dwell { font: 11px/1.45 Verdana, Arial, sans-serif; color: #333333; background: #ffffff; }
+.vs-dwell header { display: flex; align-items: center; gap: 24px; padding: 8px 20px; background: linear-gradient(#2a6ebb, #0b4c94); color: #ffffff; }
+.vs-dwell .vs-wm { display: flex; align-items: center; gap: 8px; font: 700 20px/1 Arial, sans-serif; letter-spacing: 0.08em; }
+.vs-dwell .vs-wm svg circle { stroke: #ffffff; }
+.vs-dwell nav { display: flex; gap: 2px; }
+.vs-dwell nav a { padding: 4px 10px; color: #ffffff; text-decoration: none; font-weight: 700; border-radius: 4px 4px 0 0; }
+.vs-dwell nav a[aria-current] { background: #ffffff; color: #0b4c94; }
+.vs-dwell main { max-width: 860px; padding: 14px 20px; }
+.vs-dwell h1 { font-size: 17px; color: #0b4c94; margin-bottom: 8px; }
+.vs-dwell h2 { font-size: 13px; color: #0b4c94; margin: 14px 0 6px; }
+.vs-dwell .vs-hero p { margin-bottom: 8px; }
+.vs-dwell .vs-cta { display: inline-block; padding: 3px 12px; background: #f5a800; color: #000000; font-weight: 700; text-decoration: none; border: 1px solid #c88400; }
+.vs-dwell .vs-cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.vs-dwell .vs-cats a { display: block; padding: 22px 10px 8px; border: 1px solid #a9c3e3; border-radius: 6px; background: linear-gradient(#f2f7fd, #d8e6f6); color: #0b4c94; font-weight: 700; text-decoration: none; }
+.vs-dwell .vs-news li { padding: 3px 0; border-bottom: 1px dotted #c5c5c5; }
+.vs-dwell th { background: #dbe7f5; color: #0b4c94; padding: 3px 6px; }
+.vs-dwell td { padding: 3px 6px; border-bottom: 1px solid #e5e5e5; }
+.vs-dwell footer { padding: 10px 20px 20px; color: #777777; font-size: 10px; border-top: 1px solid #cccccc; }
+.vs-dwell.late { font: 15px/1.55 "Segoe UI", "Open Sans", Arial, sans-serif; color: #444444; }
+.vs-dwell.late header { background: #ffffff; color: #444444; border-bottom: 1px solid #e3e3e3; padding: 14px 40px; }
+.vs-dwell.late .vs-wm { color: #007db8; font-weight: 400; letter-spacing: 0.12em; }
+.vs-dwell.late .vs-wm svg circle { stroke: #007db8; }
+.vs-dwell.late nav a { color: #444444; font-weight: 400; }
+.vs-dwell.late nav a[aria-current] { background: none; color: #007db8; box-shadow: inset 0 -2px #007db8; border-radius: 0; }
+.vs-dwell.late main { max-width: none; padding: 0 0 24px; }
+.vs-dwell.late main > :not(.vs-hero) { margin-left: 40px; margin-right: 40px; }
+.vs-dwell.late .vs-hero { padding: 64px 40px; background: #007db8; color: #ffffff; margin-bottom: 24px; }
+.vs-dwell.late .vs-hero h1 { color: #ffffff; font-size: 40px; font-weight: 300; margin: 0 0 12px; }
+.vs-dwell.late h1 { font-size: 30px; font-weight: 300; color: #444444; margin: 24px 40px 12px; }
+.vs-dwell.late .vs-body { margin: 0 40px; }
+.vs-dwell.late h2 { color: #444444; font-weight: 400; font-size: 20px; }
+.vs-dwell.late .vs-cta { background: #ffffff; color: #007db8; border: 0; padding: 10px 22px; font-weight: 600; }
+.vs-dwell.late .vs-cats { grid-template-columns: repeat(4, 1fr); }
+.vs-dwell.late .vs-cats a { background: #f5f5f5; border: 0; border-radius: 0; color: #007db8; padding: 28px 16px; font-weight: 600; }
+.vs-dwell.late th { background: none; color: #444444; border-bottom: 2px solid #007db8; padding: 8px; }
+.vs-dwell.late td { padding: 8px; }
+.vs-dwell.late footer { padding: 20px 40px; font-size: 12px; background: #f5f5f5; border: 0; }

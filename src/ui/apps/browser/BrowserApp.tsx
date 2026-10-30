@@ -21,7 +21,8 @@ import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/RegistrarSite";
-import { CannotReach, CustomerSite, HostPage, NotFound, VendorSite, VideoPage } from "./sites/Pages";
+import { CannotReach, CustomerSite, HostPage, NotFound, VideoPage } from "./sites/Pages";
+import { VendorSite } from "./sites/vendors/registry";
 import "./browser.css";
 
 // Each navigation or reload bumps nav, which restarts the page load.
@@ -74,7 +75,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (r.load === "down") body = <CannotReach host={r.host} />;
   else if (p.kind === "company") body = <CompanySite game={game} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
-  else if (p.kind === "vendor") body = <VendorSite maker={p.maker} />;
+  else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} />;
   else if (p.kind === "video") body = <VideoPage />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;

@@ -1,0 +1,33 @@
+.vs-sysko { font: 10px/1.4 Arial, Helvetica, sans-serif; color: #333333; background: #ffffff; }
+.vs-sysko header { padding: 8px 16px 0; background: #ffffff; border-bottom: 4px solid #336699; }
+.vs-sysko .vs-wm { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font: 700 13px/1 Arial, sans-serif; color: #336699; letter-spacing: 0.06em; }
+.vs-sysko .vs-tabs { display: flex; gap: 2px; }
+.vs-sysko .vs-tabs a { padding: 4px 12px; background: #c5d5e6; color: #003366; text-decoration: none; font-weight: 700; border-radius: 3px 3px 0 0; }
+.vs-sysko .vs-tabs a[aria-current] { background: #336699; color: #ffffff; }
+.vs-sysko main { padding: 10px 16px; max-width: 880px; }
+.vs-sysko .vs-hero { padding: 14px; background: linear-gradient(90deg, #003366, #336699); color: #ffffff; margin-bottom: 10px; }
+.vs-sysko h1 { font-size: 15px; color: #336699; margin-bottom: 4px; }
+.vs-sysko .vs-hero h1 { color: #ffffff; }
+.vs-sysko h2 { font-size: 11px; color: #336699; border-bottom: 1px solid #336699; margin: 8px 0 4px; }
+.vs-sysko .vs-cols { display: grid; grid-template-columns: 200px 1fr; gap: 16px; }
+.vs-sysko .vs-cats a { display: block; padding: 2px 0; color: #003366; }
+.vs-sysko .vs-cats a::before { content: "› "; color: #cc0000; }
+.vs-sysko th { background: #e4ebf2; padding: 2px 4px; }
+.vs-sysko td { padding: 2px 4px; border-bottom: 1px solid #e4e4e4; }
+.vs-sysko footer { padding: 10px 16px 18px; font-size: 9px; color: #666666; border-top: 1px solid #cccccc; }
+.vs-sysko.late { font: 15px/1.6 "Helvetica Neue", Arial, sans-serif; color: #39393b; }
+.vs-sysko.late header { display: flex; align-items: center; gap: 32px; padding: 14px 40px; border-bottom: 1px solid #dfdfdf; }
+.vs-sysko.late .vs-wm { margin: 0; color: #049fd9; }
+.vs-sysko.late .vs-tabs a { background: none; color: #39393b; font-weight: 400; border-radius: 0; }
+.vs-sysko.late .vs-tabs a[aria-current] { color: #049fd9; }
+.vs-sysko.late main { padding: 0 40px 32px; max-width: none; }
+.vs-sysko.late .vs-hero { margin: 0 -40px 32px; padding: 60px 40px; background: #ffffff; color: #39393b; border-bottom: 1px solid #dfdfdf; }
+.vs-sysko.late .vs-hero h1 { color: #39393b; font-size: 38px; font-weight: 300; }
+.vs-sysko.late h1 { font-size: 30px; font-weight: 300; margin: 28px 0 14px; color: #39393b; }
+.vs-sysko.late h2 { font-size: 18px; color: #39393b; border: 0; font-weight: 400; }
+.vs-sysko.late .vs-cols { grid-template-columns: 280px 1fr; gap: 40px; }
+.vs-sysko.late .vs-cats a { padding: 12px 16px; margin-bottom: 6px; background: #00bceb; color: #ffffff; text-decoration: none; }
+.vs-sysko.late .vs-cats a::before { content: none; }
+.vs-sysko.late th { background: none; color: #049fd9; border-bottom: 2px solid #00bceb; padding: 8px; }
+.vs-sysko.late td { padding: 8px; }
+.vs-sysko.late footer { padding: 20px 40px; font-size: 12px; background: #39393b; color: #c6c7ca; }

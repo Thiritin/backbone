@@ -292,6 +292,33 @@ The four registrars share one component today. Each becomes its own component wi
 
 Built (`src/ui/apps/browser/sites/SponsorBoard.tsx`, `src/sim/80-business/sponsorboard.ts`). It gets two eras: 2005: a phpBB-style forum board, blue and white, a table of offers with avatars as coloured squares. 2014: a flat community-site look, white, blue, cards. It leaves the bookmarks bar and sits in the index under Community.
 
+### 8.6 Hardware sites
+
+Every manufacturer in the hardware catalog but the generic parts maker has its own site, one component and stylesheet per brand under `src/ui/apps/browser/sites/vendors/<id>.tsx` and `.css`, with shared pieces (nav, product table, news list, support text) in `VendorSite.tsx` and the brand list with each late look's first year in `vendors/registry.tsx`. Each wears two eras through `eraOf`: a colour set, a font stack, a header layout and a hero, no images, code-drawn marks. Pages, at `/`, `/products`, `/news` and `/support`:
+
+- **Home**: the hero, the product classes the brand builds, and its latest releases.
+- **Products**: what the Shop sells from the brand this month, one table per class, each model with the year it came out and its price.
+- **News**: the brand's releases so far, newest first, one line each with the month and year, the model and one sentence from a per-class template ("Dwell ships the Balanced 1U G1, a 1U server with 2 cores and 8 GB of RAM.").
+- **Support**: one paragraph and the support term the catalog gives the brand's models.
+
+A release is a server model, multi-node chassis or network or power device a brand sells, at the month it reaches the shop from that brand (the catalog year shifted by the brand's release offset). CPUs and spare parts carry no manufacturer with a site and are left out; the CPU makers appear in the server lines. When a release month arrives in play the News app posts one item per brand and month, from Heize online, with a link that opens the brand's News page in the Browser. Releases that exist when a game starts are not news.
+
+| Site | Early look (2005) | Late look (from) |
+| --- | --- | --- |
+| Dwell | blue gradient bar, white page, product-category boxes, Verdana | 2013: flat white, a full-width blue hero, a humanist sans |
+| Hewlett-Packet | dark blue bar with a boxed mark, dense product grid, Arial | 2013: white, the blue circle mark, large light headings |
+| SuperMacro | green and grey, dense bordered tables, Verdana | 2016: flat white, green hero, cards |
+| Lenovoid | white and grey, red wordmark, dark gradient hero, Arial | 2014: red header band, dark hero, bold type |
+| Sysko | corporate blue with product tabs and tiny type | 2015: white and teal, product tiles |
+| Junipurr | white with green rules, a serif wordmark, a product column | 2014: dark navy, green accents, flat |
+| Aristotle | navy header, cream page, Georgia italics | 2015: white, dark navy hero, flat tiles |
+| Fortinope | grey gradient header, red accents, Tahoma | 2014: white, red hero, cards with a red edge |
+| Pablo Alto | charcoal start-up page, orange accents, Trebuchet | 2015: white, a big orange hero |
+| Pandoot | navy and grey parts catalogue with bordered tables | 2016: white, blue cards |
+| AVN | white with a grey left nav in German, Impressum in the footer | 2014: red header band, the same left nav |
+| MicroTick | a bare dark blue bar over plain tables, Verdana | 2017: the same bones in a lighter blue |
+| Eatin | corporate blue gradient bar, Arial | 2015: white, a blue hero |
+
 ## 9. Hypervisor consoles, one VM manager
 
 The Virtual machines app leaves the registry and the dock; its detail view, migrate, restore and recover actions and its incident lines move into the hypervisor consoles. The console at the hypervisor node's address is the only place VMs are made, watched, resized, moved and deleted. Each hypervisor gets its own component and stylesheet under `src/ui/apps/browser/consoles/<id>/` with a layout, a VM list, a VM detail page, a creation wizard, a Media menu and a Console button (opening the existing VM console window), modelled on the product in two eras.

@@ -1,0 +1,28 @@
+.vs-pdt { font: 11px/1.45 Arial, Helvetica, sans-serif; color: #333333; background: #dfe3e8; }
+.vs-pdt header { display: flex; align-items: center; gap: 28px; padding: 10px 18px; background: #003a70; color: #ffffff; }
+.vs-pdt .vs-wm { display: flex; align-items: center; gap: 6px; font: 700 18px/1 Arial, sans-serif; letter-spacing: 0.1em; }
+.vs-pdt .vs-wm svg rect:first-child { fill: #ffffff; }
+.vs-pdt nav { display: flex; gap: 2px; }
+.vs-pdt nav a { padding: 3px 10px; color: #ffffff; text-decoration: none; background: #1d5590; }
+.vs-pdt nav a[aria-current] { background: #ffc20e; color: #003a70; }
+.vs-pdt main { margin: 10px 18px; padding: 12px; background: #ffffff; max-width: 840px; }
+.vs-pdt h1 { font-size: 15px; color: #003a70; margin-bottom: 4px; }
+.vs-pdt h2 { font-size: 12px; color: #ffffff; background: #6d7b8d; padding: 2px 6px; margin: 12px 0 4px; }
+.vs-pdt .vs-cats { display: flex; gap: 8px; margin-top: 8px; }
+.vs-pdt .vs-cats a { color: #003a70; font-weight: 700; }
+.vs-pdt th { background: #c9d1db; padding: 2px 6px; border: 1px solid #b0b8c2; }
+.vs-pdt td { padding: 2px 6px; border: 1px solid #d6dbe1; }
+.vs-pdt footer { padding: 4px 18px 18px; font-size: 9px; color: #555555; }
+.vs-pdt.late { font: 15px/1.55 "Helvetica Neue", Arial, sans-serif; background: #ffffff; }
+.vs-pdt.late header { padding: 16px 40px; }
+.vs-pdt.late nav a { background: none; }
+.vs-pdt.late nav a[aria-current] { background: none; color: #ffc20e; }
+.vs-pdt.late main { margin: 0; padding: 32px 40px; max-width: none; }
+.vs-pdt.late h1 { font-size: 30px; font-weight: 300; margin-bottom: 10px; }
+.vs-pdt.late .vs-hero { margin-bottom: 24px; }
+.vs-pdt.late .vs-cats { gap: 16px; }
+.vs-pdt.late .vs-cats a { display: block; padding: 22px 24px; border-radius: 8px; background: #eaf1f8; text-decoration: none; }
+.vs-pdt.late h2 { background: none; color: #003a70; font-size: 20px; font-weight: 400; padding: 0; margin-top: 24px; }
+.vs-pdt.late th, .vs-pdt.late td { border: 0; border-bottom: 1px solid #e3e7ec; padding: 8px; }
+.vs-pdt.late th { background: none; color: #003a70; }
+.vs-pdt.late footer { padding: 20px 40px; background: #003a70; color: #b7c6d8; font-size: 12px; }

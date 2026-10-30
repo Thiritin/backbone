@@ -1,6 +1,5 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
 import { yearOf } from "../00-core/time";
-import { MANUFACTURERS } from "../10-catalog/hardware";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { registrarById, registrarHost, REGISTRARS, type RegistrarId } from "../10-catalog/registrars";
 import { SERVER_OS, type ServerOsId } from "../10-catalog/server-os";
@@ -15,6 +14,7 @@ import { nodeUsage } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
 import { consoleCluster, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
+import { vendorHost, VENDORS } from "./vendors";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -44,11 +44,7 @@ export const VIDEO_TITLE = "Never Gonna Give You Uptime";
 export const VIDEO_ARTIST = "Rick Astley-Packet";
 export const VIDEO_REAL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
-// The brands with a site of their own: every manufacturer that sells machines or network gear.
-export const VENDORS = MANUFACTURERS.filter((m) => m.id !== "generic");
-// docs/design/software.md, 8.3: each brand under its pun, .de where the pun is German.
-const VENDOR_TLD: Record<string, string> = { avn: "de", junipurr: "net" };
-export const vendorHost = (id: string): string => `${id}.${VENDOR_TLD[id] ?? "com"}`;
+export { vendorHost, VENDORS } from "./vendors";
 
 export const BOARD_URL = `${BOARD_HOST}/`;
 // docs/design/software.md, 8.1: the home icon and a new browser session open the site index.

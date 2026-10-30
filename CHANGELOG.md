@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Every hardware manufacturer has its own website with its products and a news page of its releases, and the News app reports new hardware from each brand with a link to its site.
 - The Browser no longer has a Downloads button.
 - Windoors Server and VMwhere are bought once per machine in the early years and licensed per core each month later on.
 - Servers and VMs boot through POST and the BIOS into a real operating system installer, then into a login and shell on Debiant or a desktop on Windoors.
