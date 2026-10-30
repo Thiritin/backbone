@@ -6,6 +6,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - The USB stick and the virtual machine's ISO now install an operating system, Debiant GNU/Lunix or Windoors Server, and software is installed afterwards from the machine's console or over ssh with the commands its website gives.
 - A VMwhere cluster can buy the App Suite for 25 euros a month, which deploys a virtual machine with its operating system and software in one step.
+- A location that has not opened yet is grayed out in the Locations app and its sidebar, with a countdown in days and then hours until it is ready.
+- Messages about addresses now say IP address.
 - A new company starts without a website: build a free HTML site in Marketing under Channels in three days, buy a domain, pick rented or own hosting and launch it.
 - The site Admin page is gone; once the site is live, Marketing gains a Products section where SSL sits under web hosting as its add-on.
 - Datacenters now rent space as a rack, a cage or a private suite, and rack positions are gone; a location you rented as positions is now a cage.

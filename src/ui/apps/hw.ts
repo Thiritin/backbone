@@ -24,6 +24,11 @@ export const partSlot = (kind: ComponentKind, nth: number): string => (SLOT_NAME
 export const height = (m: DeviceModel) => (m.kind === "gateway" && m.height === 0 ? "Panel" : `${m.height}U`);
 export const watts = (w: number) => `${Math.round(w).toLocaleString("en-GB")} W`;
 export const day = (hour: number) => dateOf(hour).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+// Counts down in days while a day or more is left, then in hours.
+export const readyIn = (at: number, now: number) => {
+  const left = Math.max(1, Math.ceil(at - now)), days = Math.floor(left / 24);
+  return days ? `${days} ${days === 1 ? "day" : "days"}` : `${left} h`;
+};
 export const lampOf = (st: LinkStatus): Lamp => (!st.online ? "bad" : st.warning ? "warn" : "ok");
 export const CABLE_NAME = { copper: "copper", dac: "DAC", fiber: "fiber", rollover: "rollover" };
 

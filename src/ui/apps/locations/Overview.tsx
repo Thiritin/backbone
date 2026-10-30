@@ -4,7 +4,7 @@ import { euro } from "../../../sim/00-core/money";
 import type { ReactNode } from "react";
 import { Logo } from "../../art/logos";
 import { cityNamed, WorldMap, type Marker } from "../../map/WorldMap";
-import { day } from "../hw";
+import { day, readyIn } from "../hw";
 import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, PowerMeter, providerOf, spaceLabel, spaceSize, Zone } from "./ui";
 import { Hourglass } from "lucide-react";
 import { datacenterById, homeLineById } from "../../../sim/20-world/datacenters";
@@ -54,11 +54,11 @@ function LocationCard({ game, loc, onOpen }: { game: GameState; loc: Location; o
   const dc = dcOf(loc), power = locationPower(game, loc.id), used = loc.positions - freePositions(game, loc.id).length;
   const arriving = game.racks.filter((r) => r.locationId === loc.id && r.arriveAt !== null);
   return (
-    <div className="loc-card loc-site" onClick={onOpen}>
+    <div className={`loc-card loc-site${loc.readyAt > game.hour ? " loc-pending" : ""}`} onClick={onOpen}>
       <div className="loc-card-h">
         <h3><Logo provider={providerOf(loc)} size={18} /><button className="loc-link" onClick={onOpen}>{loc.name}</button><Zone loc={loc} /></h3>
         <span className="grow" />
-        {loc.readyAt > game.hour && <span className="pill">Ready <span className="num">{day(loc.readyAt)}</span></span>}
+        {loc.readyAt > game.hour && <span className="pill warn">Ready in <span className="num">{readyIn(loc.readyAt, game.hour)}</span></span>}
       </div>
       <Facts rows={[
         ["Space", spaceLabel(loc, game)],

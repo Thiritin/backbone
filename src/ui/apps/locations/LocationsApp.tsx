@@ -6,7 +6,7 @@ import { locationOf, storageStacks } from "../../../sim/60-infra/status";
 import { clusterOf } from "../../../sim/60-infra/cluster";
 import { Logo } from "../../art/logos";
 import { useFocus, useStore } from "../../store";
-import { day } from "../hw";
+import { readyIn } from "../hw";
 import { AddLocation } from "./AddLocation";
 import { Cabling } from "./Cabling";
 import { BookedMeters, Clusters } from "./Clusters";
@@ -55,8 +55,8 @@ export function LocationsApp() {
     go(l.id, d?.rackId ?? null);
     if (d) { setTab("floor"); setDeviceId(d.id); }
   });
-  const item = (key: string, active: boolean, label: ReactNode, onClick: () => void, count?: number) => (
-    <button key={key} className={`side-item${active ? " active" : ""}`} aria-pressed={active} onClick={onClick}>
+  const item = (key: string, active: boolean, label: ReactNode, onClick: () => void, count?: number, pending?: boolean) => (
+    <button key={key} className={`side-item${active ? " active" : ""}${pending ? " loc-pending" : ""}`} aria-pressed={active} onClick={onClick}>
       {label}{count ? <span className="side-count">{count}</span> : null}
     </button>
   );
@@ -70,7 +70,8 @@ export function LocationsApp() {
           <div key={r.id} className="fin-side" role="group" aria-label={r.name}>
             <div className="side-h">{r.name}</div>
             {game.locations.filter((l) => l.city === r.city).flatMap((l) => [
-              item(l.id, l.id === loc?.id && !rack, <><Logo provider={providerOf(l)} size={16} /><LocName loc={l} /></>, () => go(l.id)),
+              item(l.id, l.id === loc?.id && !rack, <><Logo provider={providerOf(l)} size={16} /><LocName loc={l} />
+                {l.readyAt > game.hour && <span className="side-count num">{readyIn(l.readyAt, game.hour)}</span>}</>, () => go(l.id), undefined, l.readyAt > game.hour),
               ...(l.id === loc?.id ? game.racks.filter((k) => k.locationId === l.id).map((k) =>
                 item(k.id, k.id === rack?.id, <span className="loc-side-rack">{k.name}</span>, () => go(l.id, k.id))) : []),
             ])}
@@ -88,7 +89,7 @@ export function LocationsApp() {
           <>
             {!rack && <LocationHead game={game} locId={loc.id} />}
             {!rack && <LocationTabs game={game} locId={loc.id} tab={tab} onTab={(t) => { setTab(t); setRackId(null); setDeviceId(null); }} />}
-            <div className="loc-body" role="tabpanel">
+            <div className={`loc-body${loc.readyAt > game.hour ? " loc-pending" : ""}`} role="tabpanel">
               {tab === "cabling" ? (
                 <Cabling key={loc.id} game={game} loc={loc} />
               ) : tab === "storage" ? (
@@ -153,7 +154,7 @@ function LocationHead({ game, locId }: { game: GameState; locId: string }) {
         <span className="loc-muted">{loc.city} · {spaceLabel(loc, game)}</span>
       </div>
       <span className="grow" />
-      {loc.readyAt > game.hour && <span className="pill">Ready <span className="num">{day(loc.readyAt)}</span></span>}
+      {loc.readyAt > game.hour && <span className="pill warn">Ready in <span className="num">{readyIn(loc.readyAt, game.hour)}</span></span>}
       {dc && <span className="pill">{feedsLabel(dc)}</span>}
       {dc && <span className="pill">{backupLabel(dc)}</span>}
       {dc?.green && <span className="pill">Green power</span>}

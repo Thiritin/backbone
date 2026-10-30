@@ -395,3 +395,6 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 
 .rack-dev.movable { cursor: grab; }
 .rack-dev.movable:active { cursor: grabbing; }
+
+/* A location that has not opened yet. */
+.loc-pending { filter: grayscale(1); opacity: 0.55; }

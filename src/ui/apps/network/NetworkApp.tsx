@@ -20,6 +20,7 @@ import {
 import { cityNamed, WorldMap, type Marker } from "../../map/WorldMap";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
+import { readyIn } from "../hw";
 import { AddressList, Ripe } from "./Addresses";
 import { Topology } from "./Topology";
 import "../shop/shop.css";
@@ -184,7 +185,7 @@ function UplinkCard({ game, u, carried }: { game: GameState; u: Uplink; carried:
       <ul className="net-links">
         {u.links.map((l) => (
           <li key={l.id}><span className="num">{l.gbit}G</span><span>{device(l.device)} port {l.port + 1}</span><span className="grow" />
-            {l.readyAt > game.hour ? <span className="pill">From {formatDay(l.readyAt)}</span> : <span className="pill ok">Up</span>}</li>
+            {l.readyAt > game.hour ? <span className="pill warn">Ready in {readyIn(l.readyAt, game.hour)}</span> : <span className="pill ok">Up</span>}</li>
         ))}
       </ul>
       <dl className="shop-specs">
@@ -281,7 +282,7 @@ function ZoneLinkCard({ game, loc, other }: { game: GameState; loc: Location; ot
       {links.map((zl) => (
         <div key={zl.id} className="mkt-row net-zl">
           <span className="num">{zl.kind === "fiber" ? "Dark fiber" : `${zl.gbit}G`}</span>
-          <span className="num">{zl.readyAt > game.hour ? `From ${formatDay(zl.readyAt)}` : mbps(zl.carried)}</span>
+          <span className="num">{zl.readyAt > game.hour ? `Ready in ${readyIn(zl.readyAt, game.hour)}` : mbps(zl.carried)}</span>
           <span className="num">{euro(zoneLinkMonthly(game, zl))} / month</span>
           <span className="grow" /><button className="btn" onClick={() => act(cancelZoneLink, zl.id)}>Cancel</button>
         </div>
