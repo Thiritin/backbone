@@ -8,7 +8,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import type { Call } from "../src/sim/90-actions/index";
 import { softwareOn } from "../src/sim/90-actions/software";
 import { installLog } from "../src/sim/60-infra/apt";
-import { fqdn } from "../src/sim/30-customers/domains";
+import { privateIp } from "../src/sim/60-infra/addresses";
 import { bootedMachine, hypervisor, skipTo, withServer } from "./fixtures";
 
 // withServer: dev3 is a free server cabled to the desk's router; booted here with an OS.
@@ -54,7 +54,8 @@ describe("installing software from the shell", () => {
       w = step.next;
     }
     expect(w).toBeNull();
-    expect(byHour).toEqual([[log[2]], [log[3], log[4]], [log[5], "Proxmocks installation complete.", `You can access your new installation at https://${fqdn(s, at.host)}/`, "Reboot now to finish the installation."]]);
+    expect(s.company.domain).toBeNull();
+    expect(byHour).toEqual([[log[2]], [log[3], log[4]], [log[5], "Proxmocks installation complete.", `You can access your new installation at https://${privateIp(s, "dev3")}/`, "Reboot now to finish the installation."]]);
     expect(clusterOf(s, "dev3")?.platform).toBe("proxmocks");
     expect(text(s, "dpkg -l", at)).toMatch(/ii {2}proxmocks-ve +2017 +amd64 +Proxmocks/);
   });
