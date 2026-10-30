@@ -6,7 +6,7 @@ Source text for the in-game introduction, opened from "First time here?" on the 
 
 Congratulations. You have just founded yet another hosting company, in a market that already has far too many of them.
 
-It is January 2005. You have €1,000 of savings, one server in your basement, a home internet line and an inbox. That will not get you far, so your first stop is the bank for a loan. Your goal is to keep your customers happy, grow from that basement into datacenters across Europe and, one day, into a datacenter of your own, while handling the dull side of running a business.
+It is January 2005. You have €3,500 of savings, an empty rack in your basement, a home internet line and an inbox. The savings buy your first server, and the bank lends you the money for the second. Your goal is to keep your customers happy, grow from that basement into datacenters across Europe and, one day, into a datacenter of your own, while handling the dull side of running a business.
 
 Your customers will not pay their invoices on time. Your software is pretty dumb. Nobody said running a business would be fun.
 
