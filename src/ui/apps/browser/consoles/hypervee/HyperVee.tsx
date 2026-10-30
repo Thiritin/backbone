@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { useStore } from "../../../../store";
-import { MediaMenu, NodeList, SizeFields, TaskLog, UsageBars, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
+import type { GameState } from "../../../../../sim/50-state";
+import { vmStats } from "../../../../../sim/60-infra/stats";
+import { Chart } from "../Chart";
+import { ConsoleThumb, MediaMenu, NodeList, SizeFields, TaskLog, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelAction, type PanelProps } from "../PanelBase";
 import "./hypervee.css";
 
@@ -17,6 +20,51 @@ function ActionsPane({ title, actions }: { title: string; actions: (PanelAction 
       <h4>{title}</h4>
       {actions.filter((a): a is PanelAction => !!a).map((a) => <button key={a.id} className={a.tone ?? ""} onClick={a.run}>{LABELS[a.id] ?? a.label}</button>)}
     </section>
+  );
+}
+
+const mb = (gb: number) => `${Math.round(gb * 1024)} MB`;
+const uptime = (h: number | null) => (h === null ? "00:00:00" : `${h >= 24 ? `${Math.floor(h / 24)}.` : ""}${String(h % 24).padStart(2, "0")}:00:00`);
+const TABS = ["Summary", "Memory", "Networking", "Replication"] as const;
+
+// The details pane under the VM list: the tabs Summary, Memory, Networking and Replication.
+export function VmDetails({ game, v, generations }: { game: GameState; v: Vm; generations: boolean }) {
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Summary"), st = vmStats(game, v.id)!, w = v.w, on = v.st === "running";
+  const row = (k: string, val: string) => <tr key={k}><th>{k}:</th><td>{val}</td></tr>;
+  return (
+    <>
+      {tab === "Summary" && (
+        <div className="hv-sum">
+          <ConsoleThumb game={game} v={v} className="cx-thumb hv-thumb" />
+          <table className="hv-kv"><tbody>
+            {row("Name", v.name)}
+            {generations && row("Generation", "1")}
+            {row("Uptime", uptime(st.uptimeHours))}
+            {row("Heartbeat", on && w.os ? "OK" : "No Contact")}
+            {row("Assigned Memory", on ? mb(w.ramGb) : "")}
+            {row("Memory Demand", on ? mb(st.now.ram * w.ramGb) : "")}
+            {row("Status", v.tone === "bad" ? v.state : "Operating normally")}
+            {row("IP Addresses", v.ip)}
+          </tbody></table>
+          <Chart className="hv-chart" kind="line" title="CPU Usage" now={`${Math.round(st.now.cpu * 100)} %`} values={st.ring.map((x) => x.cpu)} end={game.hour} />
+        </div>
+      )}
+      {tab === "Memory" && (
+        <div className="hv-sum">
+          <table className="hv-kv"><tbody>
+            {row("Startup Memory", mb(w.ramGb))}{row("Dynamic Memory", "Disabled")}
+            {row("Assigned Memory", on ? mb(w.ramGb) : "")}{row("Memory Demand", on ? mb(st.now.ram * w.ramGb) : "")}{row("Memory Status", on ? "OK" : "")}
+          </tbody></table>
+          <Chart className="hv-chart" kind="line" title="Memory Demand" now={on ? mb(st.now.ram * w.ramGb) : ""} values={st.ring.map((x) => x.ram)} end={game.hour} />
+        </div>
+      )}
+      {tab === "Networking" && (
+        <table className="cx-table"><thead><tr><th>Adapter</th><th>Connected To</th><th>IP Addresses</th><th>Status</th></tr></thead>
+          <tbody><tr><td>Network Adapter</td><td>External Network</td><td className="num">{v.ip}</td><td>{on ? "OK" : ""}</td></tr></tbody></table>
+      )}
+      {tab === "Replication" && <table className="hv-kv"><tbody>{row("Replication State", "Not enabled")}</tbody></table>}
+      <nav className="hv-dtabs">{TABS.map((x) => <button key={x} aria-pressed={x === tab} onClick={() => setTab(x)}>{x}</button>)}</nav>
+    </>
   );
 }
 
@@ -73,13 +121,7 @@ export function HyperVee(p: PanelProps) {
               </div>
               <h4 className="hv-h">{vm ? vm.name : "Details"}</h4>
               <div className="hv-details">
-                {vm && facts ? (
-                  <>
-                    {vm.panel}
-                    <Facts facts={[{ ...facts.status, label: "State" }, { ...facts.node, label: "Server" }, facts.ip, facts.os, facts.backup]} />
-                    <UsageBars v={vm} labels={["CPU Usage", "Assigned Memory", "Virtual Hard Disk"]} />
-                  </>
-                ) : <span className="cx-empty">No item selected.</span>}
+                {vm ? <>{vm.panel}<VmDetails game={game} v={vm} generations={generations} /></> : <span className="cx-empty">No item selected.</span>}
               </div>
             </>
           )}

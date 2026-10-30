@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
@@ -7,8 +8,17 @@ import { addNode, createVm } from "../src/sim/90-actions/clusters";
 import { connect } from "../src/sim/90-actions/hardware";
 import { joinableServers } from "../src/sim/90-actions/software";
 import { buyAppSuite } from "../src/sim/90-actions/suite";
+import { STATS_HOURS } from "../src/sim/60-infra/stats";
+import { tick } from "../src/sim/88-tick/tick";
 import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
-import { buyDevice, hypervisor, skipTo, withServer } from "./fixtures";
+import { useVms, type Vm } from "../src/ui/apps/browser/consoles/HypervisorBase";
+import { VmDetails } from "../src/ui/apps/browser/consoles/hypervee/HyperVee";
+import { InstanceOverview, Overview } from "../src/ui/apps/browser/consoles/openstash/Horizont";
+import { CtPage, HostPage } from "../src/ui/apps/browser/consoles/openveezee/OpenVeeZee";
+import { VmSummary as PmxSummary } from "../src/ui/apps/browser/consoles/proxmocks/Proxmocks";
+import { VmMonitor, VmSummary as VswSummary } from "../src/ui/apps/browser/consoles/vmwhere/VmWhere";
+import type { Cluster } from "../src/sim/60-infra/cluster";
+import { buyDevice, hypervisor, panelVm, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 // docs/design/software.md, section 9: the first year of each hypervisor console's early and late look, and its mark.
@@ -70,5 +80,27 @@ describe("hypervisor consoles", () => {
     expect(s.clusters.find((x) => x.id === c)!.nodes.map((n) => n.deviceId)).toEqual(["dev3", second]);
     const name = s.devices.find((d) => d.id === second)!.hostname!;
     expect(html(s, c, "proxmocks")).toContain(name);
+  });
+
+  it("draws a VM's page with its day of samples the way each product does", () => {
+    const pages: Record<string, [(g: GameState, c: Cluster, v: Vm) => ReactElement, string[]]> = {
+      proxmocks: [(g, c, v) => <PmxSummary game={g} c={c} v={v} />, ["HA State", "Bootdisk size", "Network traffic", "Day (average)"]],
+      vmwhere: [(g, _, v) => <><VswSummary game={g} v={v} era="late" /><VmMonitor game={g} v={v} /></>, ["VMwhere Tools", "MEMORY USAGE", "VM Hardware", "Performance Chart"]],
+      hypervee: [(g, _, v) => <VmDetails game={g} v={v} generations />, ["Heartbeat", "Memory Demand", "Replication", "CPU Usage"]],
+      openveezee: [(g, c, v) => <><CtPage game={g} v={v} host="hv.example.com" /><HostPage game={g} id={c.nodes[0].deviceId} vms={[v]} open={() => {}} /></>, ["Start on boot", "Diskinodes", "Barrier", "Change settings", "OS templates"]],
+      openstash: [(g, c, v) => <><InstanceOverview game={g} v={v} flavor="m1.small" /><Overview game={g} c={c} vms={[v]} /></>, ["Security Groups", "Volumes Attached", "Limit Summary", "VCPU-Hours"]],
+    };
+    for (const [id, [page, marks]] of Object.entries(pages)) {
+      const s = withServer(newGame(3));
+      skipTo(s, 2016);
+      s.cash = 1_000_000;
+      const c = hypervisor(s, ["dev3"], "Cloud 1", id);
+      panelVm(s, c);
+      for (let i = 0; i < STATS_HOURS; i++) tick(s);
+      const View = () => { const cl = s.clusters.find((x) => x.id === c)!, { vms } = useVms(s, cl, consoleFeatures(id, yearOf(s.hour))); return page(s, cl, vms[0]); };
+      const out = renderToString(<View />);
+      for (const m of marks) expect(out, `${id} ${m}`).toContain(m);
+      expect(out, id).toMatch(/<(polyline|rect) class="cx-chart-(line|bar)"/);
+    }
   });
 });

@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { yearOf } from "../../../../../sim/00-core/time";
 import type { Resources } from "../../../../../sim/10-catalog/products";
+import type { GameState } from "../../../../../sim/50-state";
+import type { Cluster } from "../../../../../sim/60-infra/cluster";
+import { vmStats } from "../../../../../sim/60-infra/stats";
+import { nodeUsage } from "../../../../../sim/60-infra/usage";
 import { mountableImages } from "../../../../../sim/90-actions/media";
 import { useStore } from "../../../../store";
-import { isoName, MediaMenu, NodeList, TaskLog, tasks, Toolbar, UsageBars, useNewVm, useVms, vmFacts, Wizard } from "../HypervisorBase";
+import { bootLines } from "../../../console/lunix";
+import { Chart, Donut, niceMax } from "../Chart";
+import { ConsoleThumb, isoName, MediaMenu, NodeList, TaskLog, tasks, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import "./horizont.css";
 
@@ -15,6 +21,70 @@ const FLAVORS: [string, Resources][] = [
 ];
 const same = (a: Resources, b: Resources) => a.vcpu === b.vcpu && a.ramGb === b.ramGb && a.diskGb === b.diskGb;
 const flavorOf = (r: Resources) => FLAVORS.find(([, x]) => same(x, r))?.[0] ?? `custom ${r.vcpu}/${r.ramGb}/${r.diskGb}`;
+const QUOTA_INSTANCES = 10;
+
+// The project Overview: the limit pies, then the day's usage summary and the usage per instance.
+export function Overview({ game, c, vms }: { game: GameState; c: Cluster; vms: Vm[] }) {
+  const cap = c.nodes.map((n) => nodeUsage(game, n.deviceId).physical).reduce((a, b) => ({ vcpu: a.vcpu + b.vcpu, ramGb: a.ramGb + b.ramGb, diskGb: a.diskGb + b.diskGb }), { vcpu: 0, ramGb: 0, diskGb: 0 });
+  const used = vms.reduce((n, v) => ({ vcpu: n.vcpu + v.w.vcpu, ramGb: n.ramGb + v.w.ramGb, diskGb: n.diskGb + v.w.diskGb }), { vcpu: 0, ramGb: 0, diskGb: 0 });
+  const rows = vms.map((v) => ({ v, st: vmStats(game, v.id)! })), sum = (f: (x: (typeof rows)[number]) => number) => Math.round(rows.reduce((n, x) => n + f(x), 0) * 100) / 100;
+  return (
+    <>
+      <h1>Overview</h1>
+      <h4 className="cx-h">Limit Summary</h4>
+      <div className="hz-pies">
+        <Donut label="Instances" used={vms.length} of={QUOTA_INSTANCES} text={`Used ${vms.length} of ${QUOTA_INSTANCES}`} />
+        <Donut label="VCPUs" used={used.vcpu} of={cap.vcpu} text={`Used ${used.vcpu} of ${cap.vcpu}`} />
+        <Donut label="RAM" used={used.ramGb} of={cap.ramGb} text={`Used ${used.ramGb}GB of ${cap.ramGb}GB`} />
+        <Donut label="Volume Storage" used={used.diskGb} of={cap.diskGb} text={`Used ${used.diskGb}GB of ${cap.diskGb}GB`} />
+      </div>
+      <h4 className="cx-h">Usage Summary</h4>
+      <Facts facts={[
+        { label: "Active Instances", value: String(vms.filter((v) => v.st === "running").length), num: true }, { label: "Active RAM", value: `${used.ramGb}GB`, num: true },
+        { label: "This Period's VCPU-Hours", value: String(sum((x) => x.st.totals.vcpuHours)), num: true },
+        { label: "This Period's GB-Hours", value: String(sum((x) => x.st.totals.diskGbHours)), num: true },
+        { label: "This Period's RAM-Hours", value: String(sum((x) => x.st.totals.ramGbHours * 1024)), num: true },
+      ]} />
+      <h4 className="cx-h">Usage</h4>
+      <table className="cx-table hz-table">
+        <thead><tr><th>Instance Name</th><th>VCPUs</th><th>Disk</th><th>RAM</th><th>Time since created</th></tr></thead>
+        <tbody>
+          {rows.length === 0 && <tr><td colSpan={5} className="cx-empty">No items to display.</td></tr>}
+          {rows.map(({ v, st }) => <tr key={v.id}><td>{v.name}</td><td className="num">{v.w.vcpu}</td><td className="num">{v.w.diskGb}GB</td><td className="num">{v.w.ramGb}GB</td><td className="num">{st.uptimeHours === null ? "-" : `${Math.floor(st.uptimeHours / 24)} days, ${st.uptimeHours % 24} hours`}</td></tr>)}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+// The instance Overview tab: info, specs, addresses, security groups, metadata, volumes and the day's usage.
+export function InstanceOverview({ game, v, flavor }: { game: GameState; v: Vm; flavor: string }) {
+  const facts = vmFacts(game, v), ring = vmStats(game, v.id)!.ring, net = ring.map((x) => x.netMbit), end = game.hour;
+  return (
+    <>
+      <h4 className="cx-h">Info</h4>
+      <Facts facts={[{ label: "Name", value: v.name }, { label: "ID", value: v.id, num: true }, facts.status, { label: "Availability Zone", value: "nova" }, { ...facts.node, label: "Host" }]} />
+      <h4 className="cx-h">Specs</h4>
+      <Facts facts={[{ label: "Flavor Name", value: flavor, num: true }, { label: "RAM", value: `${v.w.ramGb}GB`, num: true }, { label: "VCPUs", value: `${v.w.vcpu} VCPU`, num: true }, { label: "Disk", value: `${v.w.diskGb}GB`, num: true }]} />
+      <h4 className="cx-h">IP Addresses</h4>
+      <Facts facts={[{ label: "Private", value: v.ip || "-", num: true }]} />
+      <h4 className="cx-h">Security Groups</h4>
+      <Facts facts={[{ label: "default", value: "ALLOW IPv4 to 0.0.0.0/0, ALLOW IPv4 from default" }]} />
+      <h4 className="cx-h">Metadata</h4>
+      <Facts facts={[{ label: "Key Name", value: "None" }, { label: "Image Name", value: v.media ? isoName(v.media, yearOf(game.hour)) : v.own ? v.os : "-" }]} />
+      <h4 className="cx-h">Volumes Attached</h4>
+      <Facts facts={[{ label: "Volume", value: "No volumes attached." }]} />
+      <MediaMenu game={game} v={v} label="Rescue image" none="None" />
+      <div className="cx-charts">
+        <Chart className="hz-chart" kind="line" title="cpu_util" values={ring.map((x) => x.cpu)} end={end} />
+        <Chart className="hz-chart" kind="line" title="memory.usage" values={ring.map((x) => x.ram)} end={end} />
+        <Chart className="hz-chart" kind="line" title="network.incoming.bytes.rate" unit="Mbit/s" values={net} max={niceMax(net)} end={end} />
+        <Chart className="hz-chart" kind="line" title="disk.usage" values={ring.map((x) => x.disk)} end={end} />
+      </div>
+    </>
+  );
+}
+
 type Page = "overview" | "instances" | "images" | "keys" | "hypervisors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
 
 export function Horizont(p: PanelProps) {
@@ -36,7 +106,6 @@ export function Horizont(p: PanelProps) {
     ["Project", [["overview", "Overview"], ["instances", "Instances"], ["images", "Images"], ["keys", "Key Pairs"]]],
     ["Admin", [["hypervisors", "Hypervisors"], ["system", "System Information"]]],
   ];
-  const used = vms.reduce((n, v) => ({ vcpu: n.vcpu + v.w.vcpu, ramGb: n.ramGb + v.w.ramGb, diskGb: n.diskGb + v.w.diskGb }), { vcpu: 0, ramGb: 0, diskGb: 0 });
   return (
     <div className="cx cx-hv hz" data-era={era}>
       <header className="hz-top"><span className="hz-logo">openstash</span><span className="hz-proj">admin</span><span className="cx-host">{p.host}</span><button className="hz-out" onClick={p.logout}>Sign Out</button></header>
@@ -53,8 +122,7 @@ export function Horizont(p: PanelProps) {
         <main className="cx-hv-main hz-main">
           {page === "overview" && (
             <>
-              <h1>Overview</h1>
-              <Facts facts={[{ label: "Instances", value: String(vms.length), num: true }, { label: "VCPUs", value: String(used.vcpu), num: true }, { label: "RAM", value: `${used.ramGb} GB`, num: true }, { label: "Volume Storage", value: `${used.diskGb} GB`, num: true }]} />
+              <Overview game={game} c={c} vms={vms} />
               <TaskLog game={game} c={c} vms={vms} title="Recent Events" className="cx-tasks hz-tasks" />
             </>
           )}
@@ -81,20 +149,20 @@ export function Horizont(p: PanelProps) {
               <div className="cx-hv-head"><h1>{vm.name}</h1><Toolbar actions={vm.actions} className="cx-toolbar hz-tools" labels={{ start: "Start Instance", stop: "Shut Off Instance", reset: "Hard Reboot Instance", resize: "Resize Instance", migrate: "Live Migrate Instance", delete: "Delete Instance", console: "Console" }} /></div>
               {vm.panel}
               <nav className="cx-hv-tabs hz-tabs">{(["Overview", "Log", "Console"] as const).map((t) => <button key={t} aria-pressed={page.tab === t} onClick={() => setPage({ vm: vm.id, tab: t })}>{t}</button>)}</nav>
-              {page.tab === "Overview" && (
+              {page.tab === "Overview" && <InstanceOverview game={game} v={vm} flavor={flavorOf(vm.w)} />}
+              {page.tab === "Log" && (
                 <>
-                  <h4 className="cx-h">Info</h4>
-                  <Facts facts={[{ label: "Name", value: vm.name }, { label: "ID", value: vm.id, num: true }, facts.status, { label: "Availability Zone", value: "nova" }, { ...facts.node, label: "Host" }]} />
-                  <h4 className="cx-h">Specs</h4>
-                  <Facts facts={[{ label: "Flavor", value: flavorOf(vm.w), num: true }, facts.memory, { ...facts.cpu, label: "VCPUs" }, { ...facts.disk, label: "Disk" }]} />
-                  <h4 className="cx-h">IP Addresses</h4>
-                  <Facts facts={[{ ...facts.ip, label: "private" }]} />
-                  <UsageBars v={vm} />
-                  <MediaMenu game={game} v={vm} label="Rescue image" none="None" />
+                  <h4 className="cx-h">Instance Console Log</h4>
+                  <pre className="hz-log">{(vm.w.os && vm.w.os.id !== "windoors" && vm.st !== "stopped" ? bootLines(game, vm.w, vm.w.os.version).map((l) => l.text) : tasks(game, c, [vm]).map((x) => `${x.text}: ${x.status}`)).join("\n")}</pre>
                 </>
               )}
-              {page.tab === "Log" && <pre className="hz-log">{tasks(game, c, [vm]).map((t) => `${t.text}: ${t.status}`).join("\n") || `${vm.name}: ${vm.state}`}</pre>}
-              {page.tab === "Console" && <div className="hz-console"><button className="cx-btn primary" disabled={!vm.own} onClick={() => openConsole(vm.id)}>Open console</button></div>}
+              {page.tab === "Console" && (
+                <div className="hz-console">
+                  <h4 className="cx-h">Instance Console</h4>
+                  <ConsoleThumb game={game} v={vm} className="cx-thumb hz-thumb" />
+                  <button className="cx-btn primary" disabled={!vm.own} onClick={() => openConsole(vm.id)}>Open console</button>
+                </div>
+              )}
             </>
           )}
           {page === "images" && (

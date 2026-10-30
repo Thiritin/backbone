@@ -63,7 +63,7 @@ export interface Workload extends Resources, Partial<MachineState> {
   // A pulled plug corrupted the data: it counts as lost until recovered (recoverDoneAt is the hour a recovery finishes) or
   // restored; noticed is set once the alert went out, recoverFailed once a recovery did not bring the data back.
   corrupted?: boolean; noticed?: boolean; recoverDoneAt?: number; recoverFailed?: boolean;
-  // Own VMs only: the last STATS_HOURS hourly samples (stats.ts) and the hour the VM last came up.
+  // Own VMs only: the last STATS_HOURS hourly samples (stats.ts), missing until the first tick, and the hour the VM last came up.
   stats?: VmSample[]; upSince?: number;
 }
 
@@ -75,7 +75,7 @@ export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, ho
   ha: { ...HA_OFF, ...c.ha },
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
-export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...(w.serviceId ? {} : { stats: [] }), ...w }) as Workload;
+export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
 
 const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
 export const KEYS = ["vcpu", "ramGb", "diskGb"] as const;

@@ -48,3 +48,13 @@
 .hv-card > *:not(.hv-card-h) { margin: 0 14px; }
 .hv-card-h { padding: 6px 10px; font-weight: 600; border-bottom: 1px solid var(--line); }
 .hv-login[data-era="early"] .hv-card-h { background: linear-gradient(#e9f1fa, #c7d9ee); }
+
+/* The details pane: thumbnail, key and value pairs, the plain green line, and the tabs along its bottom edge. */
+.hv { --chart-line: #2a9d2a; --chart-grid: #e4e4e4; --chart-bg: #fff; }
+.hv-sum { display: grid; grid-template-columns: auto 1fr minmax(200px, 1fr); gap: 14px; align-items: start; }
+.hv-thumb { width: 150px; height: 100px; }
+.hv-kv { border-collapse: collapse; }
+.hv-kv th { padding: 1px 12px 1px 0; text-align: left; font-weight: 400; color: var(--muted); white-space: nowrap; }
+.hv-dtabs { display: flex; gap: 0; margin-top: 8px; border-top: 1px solid var(--line); }
+.hv-dtabs button { padding: 3px 12px; border: 1px solid var(--line); border-top: 0; margin-right: -1px; background: var(--bg); color: inherit; font: inherit; cursor: pointer; }
+.hv-dtabs button[aria-pressed="true"] { background: var(--panel); font-weight: 700; }

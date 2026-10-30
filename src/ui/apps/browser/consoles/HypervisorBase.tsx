@@ -9,6 +9,7 @@ import { APP_SUITE_FEE, licensingAt, serverOsAt, serverOsById, type ServerOsId }
 import type { GameState } from "../../../../sim/50-state";
 import { privateIp } from "../../../../sim/60-infra/addresses";
 import { hostOfVm, isOwnVm, workloadsOn, type Cluster, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
+import { machineScreen } from "../../../../sim/60-infra/oob";
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { nodeUsage, workloadUse } from "../../../../sim/60-infra/usage";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
@@ -20,6 +21,7 @@ import { buyAppSuite, cancelAppSuite, deployFromSuite } from "../../../../sim/90
 import { rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload } from "../../../../sim/90-actions/vms";
 import { useStore } from "../../../store";
 import { day, disk, ram } from "../../hw";
+import { bootLines } from "../../console/lunix";
 import { useHandWork } from "../../locations/HandSheet";
 import { VM_STATE, vmLabel, vmState, type VmState } from "../../products/parts";
 import { Bar, Migrate, Resize, type Fact, type PanelAction } from "./PanelBase";
@@ -104,13 +106,6 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
   });
   return { vms, dialog: hand.dialog };
 }
-
-export const cpuUse = (v: Vm): [number, number] => [v.use.vcpu, v.w.vcpu];
-export const ramUse = (v: Vm): [number, number] => [v.use.ramGb, v.w.ramGb];
-export const diskUse = (v: Vm): [number, number] => [v.use.diskGb, v.w.diskGb];
-export const cpuText = (v: Vm) => `${num(v.use.vcpu)} of ${v.w.vcpu} vCPU`;
-export const ramText = (v: Vm) => `${ram(+v.use.ramGb.toFixed(1))} of ${ram(v.w.ramGb)}`;
-export const diskText = (v: Vm) => `${disk(Math.round(v.use.diskGb))} of ${disk(v.w.diskGb)}`;
 
 // The facts a VM page lists; each console picks and labels its own.
 export function vmFacts(game: GameState, v: Vm): Record<"status" | "node" | "ip" | "os" | "cpu" | "memory" | "disk" | "backup" | "media", Fact> {
@@ -283,12 +278,25 @@ export function Toolbar({ actions, className = "cx-toolbar", labels = {} }: { ac
   return <div className={className}>{actions.map((a) => <button key={a.id} className={a.tone ?? ""} onClick={a.run}><i aria-hidden>{GLYPH[a.id] ?? "•"}</i>{labels[a.id] ?? a.label}</button>)}</div>;
 }
 
-// CPU, memory and disk of a VM as labelled bars.
-export function UsageBars({ v, labels = ["CPU", "Memory", "Disk"] }: { v: Vm; labels?: [string, string, string] }) {
-  const rows: [string, [number, number], string][] = [[labels[0], cpuUse(v), cpuText(v)], [labels[1], ramUse(v), ramText(v)], [labels[2], diskUse(v), diskText(v)]];
-  return <div className="cx-hv-bars">{rows.map(([l, u, t]) => <span key={l} style={{ display: "contents" }}><span>{l}</span><Bar use={u} /><span className="num">{t}</span></span>)}</div>;
-}
-
 // What a console has selected: the whole cluster, one node, one VM, or the new VM wizard.
 export type Sel = { kind: "all" } | { kind: "node"; id: string } | { kind: "vm"; id: string } | { kind: "new" };
 export const ALL: Sel = { kind: "all" };
+
+// The VM's screen shrunk to a thumbnail, as a summary page shows it; a click opens the console.
+export function ConsoleThumb({ game, v, className = "cx-thumb", label }: { game: GameState; v: Vm; className?: string; label?: string }) {
+  const openConsole = useStore((s) => s.openConsole), sc = machineScreen(game, v.id), host = v.w.hostname ?? v.name;
+  const os = "os" in sc ? sc.os : v.w.os?.id, win = os === "windoors" && sc.kind !== "dark";
+  const text = sc.kind === "dark" ? ""
+    : win ? (sc.kind === "login" ? "Press Ctrl+Alt+Delete to log on" : sc.kind === "desktop" ? "Windoors Server" : "Windoors Setup")
+    : sc.kind === "login" ? `${osText(v.w)} ${host} tty1\n\n${host} login: _`
+    : sc.kind === "booting" && v.w.os ? bootLines(game, v.w, v.w.os.version).slice(-8).map((l) => l.text).join("\n")
+    : sc.kind === "bootMenu" || sc.kind === "osInstall" ? `${v.media ? serverOsById(v.media).name : ""} installer`
+    : sc.kind === "notFound" ? "No bootable device." : "";
+  return (
+    <button className={className} data-look={win ? "windoors" : "text"} disabled={!v.own} onClick={() => openConsole(v.id)} aria-label={label ?? "Console"}>
+      {text}
+    </button>
+  );
+}
+
+export const percent = (x: number) => `${Math.round(x * 100)}%`;

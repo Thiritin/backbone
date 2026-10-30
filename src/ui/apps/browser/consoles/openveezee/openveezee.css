@@ -1,19 +1,33 @@
-/* OpenVeeZee Web Panel: a grey and blue PHP admin in Verdana with bevelled buttons; from 2016 the same pages under a dark top bar. */
+/* OpenVeeZee Web Panel: a green-banded PHP admin in Verdana with bevelled buttons; from 2016 the same pages under a dark top bar. */
 .ovz { --bg: #e8e8e8; --panel: #ffffff; --line: #999999; --fg: #000; --muted: #555; --accent: #336699; --accent-fg: #fff; --hover: #dde6ee; --r: 0; --font: Verdana, Geneva, sans-serif; font-size: 11px; }
 .ovz[data-era="late"] { --bg: #f2f2f2; --line: #bbbbbb; --accent: #2a6ebb; }
 
-.ovz-top { display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: var(--accent); color: #fff; }
-.ovz[data-era="late"] .ovz-top { background: #222; border-bottom: 3px solid var(--accent); }
-.ovz-top .cx-host { flex: 1; color: #dde; }
+.ovz { --band: #4f8a1e; --chart-line: #4f8a1e; --chart-grid: #d8d8d8; --chart-bg: #fff; }
+.ovz-top { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: linear-gradient(#6fae32, var(--band)); color: #fff; border-bottom: 1px solid #3a6814; }
+.ovz[data-era="late"] .ovz-top { background: #222; border-bottom: 3px solid var(--band); }
+.ovz-top .cx-host { flex: 1; color: #e6f0dc; }
+.ovz-user { font-weight: 700; }
+.ovz-out { padding: 0; border: 0; background: none; color: #fff; font: inherit; text-decoration: underline; cursor: pointer; }
 .ovz-logo { font-weight: 700; font-size: 14px; }
 .ovz-btn { padding: 2px 10px; border: 2px outset #ddd; background: #e4e4e4; color: #000; font: inherit; cursor: pointer; }
 .ovz-btn:active { border-style: inset; }
 
-.ovz-menu { display: flex; flex-direction: column; flex: none; width: 160px; padding: 10px 8px; gap: 4px; background: #d6dde5; border-right: 1px solid var(--line); }
+.ovz-menu { display: flex; flex-direction: column; flex: none; width: 170px; padding: 8px 0; gap: 0; background: #eef3e8; border-right: 1px solid var(--line); }
 .ovz[data-era="late"] .ovz-menu { background: #e4e4e4; }
-.ovz-menu button, .ovz-a { padding: 0; border: 0; background: none; color: #0033cc; font: inherit; text-align: left; text-decoration: underline; cursor: pointer; }
-.ovz-menu button[aria-pressed="true"] { color: #000; font-weight: 700; text-decoration: none; }
-.ovz-main h2 { margin: 0; font-size: 14px; color: var(--accent); }
+.ovz-menu button { display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 10px; border: 0; background: none; color: #000; font: inherit; text-align: left; cursor: pointer; }
+.ovz-menu button i { width: 16px; font-style: normal; color: var(--band); text-align: center; }
+.ovz-menu button.ovz-sub { padding-left: 32px; color: #0033cc; text-decoration: underline; }
+.ovz-menu button[aria-pressed="true"] { background: #d4e6c2; font-weight: 700; text-decoration: none; }
+.ovz-a { padding: 0; border: 0; background: none; color: #0033cc; font: inherit; text-align: left; text-decoration: underline; cursor: pointer; }
+.ovz-main h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; color: var(--band); }
+.ovz-badge { padding: 1px 6px; border: 1px solid; font-size: 10px; font-weight: 700; text-transform: uppercase; color: #555; background: #eee; }
+.ovz-badge.ok { color: #2d6a0e; background: #e3f2d6; }
+.ovz-badge.bad { color: #900; background: #f6dddd; }
+.ovz-badge.accent { color: #1f4f8f; background: #dde8f6; }
+.ovz-box { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 8px 10px; border: 1px solid var(--line); }
+.ovz-box legend { padding: 0 4px; font-weight: 700; color: var(--band); }
+.ovz-props th { width: 1%; white-space: nowrap; background: #eef3e8 !important; font-weight: 400; }
+.ovz-chart { border: 0; padding: 0; }
 .ovz-table { border: 1px solid var(--line); }
 .ovz-table th { background: #c8d4e0; color: #000; }
 .ovz-table tbody tr:nth-child(even) td, .ovz-table tbody tr:nth-child(even) th { background: #eef2f6; }

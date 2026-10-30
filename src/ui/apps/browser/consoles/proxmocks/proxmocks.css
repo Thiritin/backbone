@@ -41,3 +41,15 @@
 .pmx-card-h { padding: 6px 10px; font-weight: 700; border-bottom: 1px solid var(--line); }
 .pmx-login[data-era="early"] .pmx-card-h { background: linear-gradient(#dae7f6, #b8cfee); }
 .pmx-login[data-era="late"] .pmx-card-h { background: #fff; border-top: 3px solid var(--mark); }
+
+/* The VM Summary: the status box and the stacked graphs with green area fills on a grey grid. */
+.pmx { --chart-line: #4c9a2a; --chart-fill: rgb(115 185 75 / 0.55); --chart-grid: #d6d6d6; --chart-bg: #fff; }
+.pmx-panel { border: 1px solid var(--line); background: var(--panel); }
+.pmx-panel h4, .pmx-graph figcaption { margin: 0; padding: 4px 8px; font-size: 12px; font-weight: 700; border-bottom: 1px solid var(--line); }
+.pmx[data-era="early"] .pmx-panel h4, .pmx[data-era="early"] .pmx-graph figcaption { background: linear-gradient(#dae7f6, #b8cfee); }
+.pmx-status { border-collapse: collapse; margin: 4px 8px; }
+.pmx-status th { padding: 2px 16px 2px 0; text-align: left; font-weight: 400; color: var(--muted); }
+.pmx-status td { padding: 2px 0; }
+.pmx-range { display: flex; justify-content: flex-end; }
+.pmx-graph { padding: 0 0 6px; }
+.pmx-graph .cx-chart-body { padding: 8px 12px 18px 4px; }

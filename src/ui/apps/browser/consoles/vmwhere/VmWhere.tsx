@@ -1,17 +1,83 @@
 import { useState } from "react";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { serverOsById } from "../../../../../sim/10-catalog/server-os";
-import { useStore } from "../../../../store";
-import { ALL, AppSuiteTile, MediaMenu, NodeList, SizeFields, suiteSoftware, TaskLog, Toolbar, UsageBars, useNewVm, useVms, vmFacts, windoorsLicence, Wizard, type Sel } from "../HypervisorBase";
-import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
+import type { GameState } from "../../../../../sim/50-state";
+import { vmStats } from "../../../../../sim/60-infra/stats";
+import { Chart, niceMax } from "../Chart";
+import { ALL, AppSuiteTile, ConsoleThumb, isoName, MediaMenu, NodeList, SizeFields, suiteSoftware, TaskLog, Toolbar, useNewVm, useVms, vmFacts, windoorsLicence, Wizard, type Sel, type Vm } from "../HypervisorBase";
+import { Actions, Backups, Bar, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
+import type { Look } from "../../../../../sim/10-catalog/sites";
 import "./vmwhere.css";
 
 // docs/design/software.md, section 9: the grey and yellow fat client from 2005, the blue web client from 2015.
 const ERAS = erasFrom(2005, 2015);
 const LABELS = { start: "Power On", stop: "Shut Down Guest OS", reset: "Reset", migrate: "Migrate", resize: "Edit Settings", console: "Open Console", delete: "Delete from Disk", restore: "Restore", recover: "Recover" };
 
+const MHZ = 2400;
+const gb = (x: number) => `${+x.toFixed(2)} GB`;
+
+// The Summary tab: the console thumbnail beside the guest facts, the usage meters on the right, the hardware and notes portlets.
+export function VmSummary({ game, v, era }: { game: GameState; v: Vm; era: Look }) {
+  const now = vmStats(game, v.id)!.now, w = v.w, compat = era === "early" ? "VMwhere 3.0 and later (VM version 4)" : "vSphear 6.0 and later (VM version 11)";
+  const tools = v.own && w.os && v.st === "running" ? "Running, version current" : "Not running, not installed";
+  const meters: [string, string, [number, number]][] = [
+    ["CPU USAGE", `${Math.round(now.cpu * w.vcpu * MHZ)} MHz`, [now.cpu, 1]], ["MEMORY USAGE", gb(now.ram * w.ramGb), [now.ram, 1]], ["STORAGE USAGE", gb(now.disk * w.diskGb), [now.disk, 1]],
+  ];
+  return (
+    <>
+      <div className="vsw-summary">
+        <div className="vsw-thumbbox">
+          <ConsoleThumb game={game} v={v} className="cx-thumb vsw-thumb" />
+          {v.own && <span className="vsw-launch">{era === "early" ? "Open Console" : "Launch Web Console"}</span>}
+        </div>
+        <table className="vsw-facts"><tbody>
+          <tr><th>Guest OS</th><td>{v.own ? v.os : v.sub}</td></tr>
+          <tr><th>Compatibility</th><td>{compat}</td></tr>
+          <tr><th>VMwhere Tools</th><td>{tools}</td></tr>
+          <tr><th>DNS Name</th><td>{w.hostname ?? v.name}</td></tr>
+          <tr><th>IP Addresses</th><td className="num">{v.ip}</td></tr>
+          <tr><th>Host</th><td>{v.node}</td></tr>
+        </tbody></table>
+        <div className="vsw-meters">
+          {meters.map(([label, value, use]) => <div key={label}><small>{label}</small><b className="num">{value}</b><Bar use={use} /></div>)}
+        </div>
+      </div>
+      <div className="vsw-portlets">
+        <section className="vsw-portlet">
+          <h4>VM Hardware</h4>
+          <table><tbody>
+            <tr><th>CPU</th><td className="num">{w.vcpu} CPU(s), {Math.round(now.cpu * w.vcpu * MHZ)} MHz used</td></tr>
+            <tr><th>Memory</th><td className="num">{w.ramGb} GB, {gb(now.ram * w.ramGb)} memory active</td></tr>
+            <tr><th>Hard disk 1</th><td className="num">{w.diskGb} GB</td></tr>
+            <tr><th>Network adapter 1</th><td>VM Network ({v.st === "running" ? "connected" : "disconnected"})</td></tr>
+            <tr><th>CD/DVD drive 1</th><td>{v.media ? isoName(v.media, yearOf(game.hour)) : "Disconnected"}</td></tr>
+            <tr><th>Compatibility</th><td>{compat}</td></tr>
+          </tbody></table>
+        </section>
+        <section className="vsw-portlet"><h4>Notes</h4><p>{v.sub}</p></section>
+      </div>
+    </>
+  );
+}
+
+// Monitor, Performance, Overview: the day's CPU, memory, network and disk as blue lines.
+export function VmMonitor({ game, v }: { game: GameState; v: Vm }) {
+  const ring = vmStats(game, v.id)!.ring, w = v.w, end = game.hour, net = ring.map((x) => x.netMbit), mhz = ring.map((x) => x.cpu * w.vcpu * MHZ);
+  return (
+    <>
+      <h4 className="vsw-perf">Performance Chart, Overview <span>Period: Last day</span></h4>
+      <div className="cx-charts">
+        <Chart className="vsw-chart" kind="line" title="CPU (MHz)" unit="MHz" values={mhz} max={niceMax([w.vcpu * MHZ])} end={end} />
+        <Chart className="vsw-chart" kind="line" title="Memory (%)" values={ring.map((x) => x.ram)} end={end} />
+        <Chart className="vsw-chart" kind="line" title="Network (Mbps)" unit="Mbps" values={net} max={niceMax(net)} end={end} />
+        <Chart className="vsw-chart" kind="line" title="Disk (%)" values={ring.map((x) => x.disk)} end={end} />
+      </div>
+    </>
+  );
+}
+
 export function VmWhere(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole), year = yearOf(game.hour);
+  const era = eraAt(ERAS, p.game), { game, c, f } = p, year = yearOf(game.hour);
   const [sel, setSel] = useState<Sel>(ALL), [tab, setTab] = useState("Summary");
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c);
   if (!p.signedIn) return (
@@ -69,23 +135,8 @@ export function VmWhere(p: PanelProps) {
           <nav className="cx-hv-tabs vsw-tabs">{tabs.map((t) => <button key={t} aria-pressed={t === shown} onClick={() => setTab(t)}>{t}</button>)}</nav>
           <main className="cx-hv-main">
             {vm && vm.panel}
-            {vm && facts && shown === "Summary" && (
-              <div className="vsw-summary">
-                <button className="vsw-thumb" disabled={!vm.own} onClick={() => openConsole(vm.id)}>
-                  <span className="vsw-screen" data-on={vm.st === "running"} />
-                  {vm.own && <span>Launch Web Console</span>}
-                </button>
-                <div>
-                  <Facts facts={[{ ...facts.os, label: "Guest OS" }, { label: "VMwhere Tools", value: vm.own && vm.w.os && vm.st === "running" ? "Running, version current" : "Not running, not installed" }, facts.ip, { ...facts.node, label: "Host" }, facts.status]} />
-                </div>
-                <div className="vsw-tiles">
-                  <div><b>CPU</b><span className="num">{vm.w.vcpu} CPU(s)</span></div>
-                  <div><b>Memory</b><span className="num">{vm.w.ramGb} GB</span></div>
-                  <div><b>Storage</b><span className="num">{vm.w.diskGb} GB</span></div>
-                </div>
-              </div>
-            )}
-            {vm && shown === "Monitor" && <UsageBars v={vm} labels={["CPU", "Memory", "Storage"]} />}
+            {vm && facts && shown === "Summary" && <VmSummary game={game} v={vm} era={era} />}
+            {vm && shown === "Monitor" && <VmMonitor game={game} v={vm} />}
             {vm && facts && shown === "Configure" && (
               <>
                 <Facts facts={[{ ...facts.cpu, label: "CPU" }, facts.memory, { ...facts.disk, label: "Hard disk 1" }, { ...facts.media, label: "CD/DVD drive 1" }, { label: "Network adapter 1", value: "VM Network" }, facts.backup]} />

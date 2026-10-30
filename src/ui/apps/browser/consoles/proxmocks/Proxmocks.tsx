@@ -1,12 +1,48 @@
 import { useState } from "react";
+import type { GameState } from "../../../../../sim/50-state";
+import type { Cluster } from "../../../../../sim/60-infra/cluster";
+import { vmStats } from "../../../../../sim/60-infra/stats";
 import { useStore } from "../../../../store";
-import { ALL, MediaMenu, NodeList, osText, SizeFields, TaskLog, Toolbar, UsageBars, useNewVm, useVms, vmFacts, Wizard, type Sel, type Vm } from "../HypervisorBase";
+import { Chart, niceMax } from "../Chart";
+import { ALL, MediaMenu, NodeList, osText, SizeFields, TaskLog, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Sel, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import "./proxmocks.css";
 
 // docs/design/software.md, section 9: the grey ExtJS manager from 2008, the flat white one with the orange mark from 2015.
 const ERAS = erasFrom(2008, 2015);
 const vmid = (v: Vm) => 100 + Number(v.id.replace(/\D/g, "") || 0);
+const gib = (gb: number) => `${+gb.toFixed(2)} GiB`;
+
+// The Summary tab: the status box, then the graphs stacked under the timeframe pick.
+export function VmSummary({ game, c, v }: { game: GameState; c: Cluster; v: Vm }) {
+  const [range, setRange] = useState("day"), st = vmStats(game, v.id)!, ring = range === "hour" ? st.ring.slice(-1) : st.ring, slots = range === "hour" ? 1 : undefined;
+  const w = v.w, now = st.now, end = game.hour, net = ring.map((x) => x.netMbit);
+  return (
+    <>
+      <section className="pmx-panel">
+        <h4>Status</h4>
+        <table className="pmx-status"><tbody>
+          <tr><th>Status</th><td>{v.st === "stopped" ? "stopped" : v.st === "running" ? "running" : v.state}</td></tr>
+          <tr><th>HA State</th><td>{c.ha.failover ? "started" : "none"}</td></tr>
+          <tr><th>Node</th><td>{v.node}</td></tr>
+          <tr><th>CPU usage</th><td className="num">{(now.cpu * 100).toFixed(2)}% of {w.vcpu} CPU(s)</td></tr>
+          <tr><th>Memory usage</th><td className="num">{(now.ram * 100).toFixed(2)}% ({gib(now.ram * w.ramGb)} of {gib(w.ramGb)})</td></tr>
+          <tr><th>Bootdisk size</th><td className="num">{gib(w.diskGb)}</td></tr>
+          <tr><th>IPs</th><td className="num">{v.ip || "No network information"}</td></tr>
+        </tbody></table>
+      </section>
+      <div className="pmx-range">
+        <select value={range} onChange={(e) => setRange(e.target.value)} aria-label="Timeframe">
+          <option value="hour">Hour (average)</option><option value="day">Day (average)</option>
+        </select>
+      </div>
+      <Chart className="pmx-graph" kind="area" title="CPU usage" values={ring.map((x) => x.cpu)} end={end} slots={slots} />
+      <Chart className="pmx-graph" kind="area" title="Memory usage" unit="GiB" values={ring.map((x) => x.ram * w.ramGb)} max={niceMax([w.ramGb])} end={end} slots={slots} />
+      <Chart className="pmx-graph" kind="area" title="Network traffic" unit="Mbit/s" values={net} max={niceMax(net)} end={end} slots={slots} />
+      <Chart className="pmx-graph" kind="area" title="Disk usage" values={ring.map((x) => x.disk)} end={end} slots={slots} />
+    </>
+  );
+}
 
 export function Proxmocks(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
@@ -69,12 +105,7 @@ export function Proxmocks(p: PanelProps) {
             <nav className="pmx-tabs">{tabs.map((t) => <button key={t} aria-pressed={t === shown} onClick={() => setTab(t)}>{t}</button>)}</nav>
             <main className="cx-hv-main">
               {vm && vm.panel}
-              {vm && facts && shown === "Summary" && (
-                <>
-                  <Facts facts={[facts.status, facts.node, facts.ip, facts.os]} />
-                  <UsageBars v={vm} labels={["CPU usage", "Memory usage", "Bootdisk size"]} />
-                </>
-              )}
+              {vm && shown === "Summary" && <VmSummary game={game} c={c} v={vm} />}
               {vm && shown === "Console" && <div className="pmx-console"><button className="cx-btn primary" disabled={!vm.own} onClick={() => openConsole(vm.id)}>&gt;_ Console</button></div>}
               {vm && facts && shown === "Hardware" && (
                 <>

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Every VM and container page in a hypervisor console shows its usage over the last day and is laid out the way the real product shows it.
 - A price raise on a running service now takes effect from the next monthly invoice, so a customer who cancels over it pays the old price.
 - An upgrade offer now asks you to pick the individual server it grows on, starting with the one the service runs on now.
 - Sending a reply, an offer or an action on a support ticket now plays a short burst of keyboard typing.

@@ -46,7 +46,7 @@ describe("VM statistics", () => {
     const old = JSON.parse(serialize(s));
     for (const x of old.workloads) delete x.stats;
     const back = deserialize(JSON.stringify(old));
-    expect(back.workloads.find((x) => x.id === vm)!.stats).toEqual([]);
+    expect(back.workloads.find((x) => x.id === vm)!.stats).toBeUndefined();
     expect(vmStats(back, vm)!.ring).toEqual([]);
   });
 });
