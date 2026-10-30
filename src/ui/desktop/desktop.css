@@ -183,6 +183,8 @@ button { font: inherit; color: inherit; cursor: default; }
 .update-more { font-size: 11px; color: var(--text-3); margin-top: 6px; }
 .alert-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 .alert-actions .btn { justify-content: center; }
+.alert-actions a.btn { text-decoration: none; }
+.alert-actions.single { grid-template-columns: 1fr; margin-top: 0; }
 .alert.welcome { width: 300px; padding: 20px 20px 16px; }
 .alert.welcome .intro-pear { width: 40px; height: 40px; }
 .alert.welcome.setup { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; justify-items: stretch; padding: 20px; }

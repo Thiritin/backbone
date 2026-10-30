@@ -11,6 +11,7 @@ import { GameOver } from "./GameOver";
 import { SkillSheet } from "../apps/research/SkillSheet";
 import { MenuBar } from "./MenuBar";
 import { StartScreen } from "./StartScreen";
+import { EarlyAccess } from "./EarlyAccess";
 import { wallpaperSvg } from "./wallpaper";
 import { Widgets } from "./Widgets";
 import { AlertSheet } from "./AlertSheet";
@@ -45,6 +46,7 @@ export function Desktop() {
     <div className="desktop">
       <div className="wallpaper-host" dangerouslySetInnerHTML={{ __html: wallpaperSvg() }} />
       {started ? <Shell theme={theme} onTheme={() => setTheme(theme === "dark" ? "light" : "dark")} /> : <StartScreen />}
+      <EarlyAccess />
     </div>
   );
 }

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- The first time you open the game, a notice explains that Backbone is in early access and links to GitHub and Discord for feedback.
 - A server's actions now sit in one row of tiles without section headings, and its remote access card only shows when a console is attached.
 - A new Applications app lists every installed app; right-click any app there or in the dock to remove it from the dock, keep it in the dock, or put a link to it on the desktop.
 - SSL certificates can go on your website and are resold through your registrar partner: new web hosting customers add one to their order, and customers who ask for the padlock buy one after your SSL reply.
