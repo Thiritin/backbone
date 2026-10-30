@@ -22,7 +22,7 @@ function overdue(seed: number, profile: Profile = "enterprise") {
   // Billing rules run by themselves after the Automation research; staff carry them out before it (staff-time.test.ts).
   s.unlocks = ["people", "monitoring", "automation"];
   const c = addCustomer(s, "Initech", profile, "late");
-  const v = addService(s, c, "domain", "initech.example", 12, "year");
+  const v = addService(s, c, "domain", "initech.com", 12, "year");
   tick(s);
   Object.assign(s.invoices[0], { payStep: 4, payAt: null });
   bill(s, s.invoices[0].dueAt + DAY);

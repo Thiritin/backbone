@@ -12,8 +12,8 @@ function onPlatform(platform: string) {
   const s = { ...withServer(newGame(1)), cash: 100_000 };
   panelVm(s, hypervisor(s, ["dev3"], "Cloud", platform), "bound", { vcpu: 1, ramGb: 1, diskGb: 10 });
   const cus = addCustomer(s, "Ada Lang", "hobbyDev");
-  const vps = provisionService(s, cus, "vps", { label: "vps.example", spec: { ...sizeSpec("vps", 1, 2005), vcpu: 0.8 } });
-  const dns = provisionService(s, cus, "dns", { label: "dns.example" });
+  const vps = provisionService(s, cus, "vps", { label: "vps.com", spec: { ...sizeSpec("vps", 1, 2005), vcpu: 0.8 } });
+  const dns = provisionService(s, cus, "dns", { label: "dns.com" });
   if (!vps.ok || !dns.ok) throw new Error("not placed");
   return nodeUsed(s, "dev3").vcpu;
 }

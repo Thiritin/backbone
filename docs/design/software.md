@@ -67,7 +67,7 @@ The compatibility rule is one function, `conflict(a, b): string | null`, returni
 `install.commands` is the exact list the website prints and the console accepts, in order. Proxmocks:
 
 ```
-echo "deb http://download.proxmocks.example/debiant stretch pve-no-subscription" > /etc/apt/sources.list.d/pve.list
+echo "deb http://download.proxmocks.com/debiant stretch pve-no-subscription" > /etc/apt/sources.list.d/pve.list
 apt-get update
 apt-get install -y proxmocks-ve
 ```
@@ -75,7 +75,7 @@ apt-get install -y proxmocks-ve
 cPanic:
 
 ```
-cd /home && curl -o latest -L https://securedownloads.cpanic.example/latest && sh latest
+cd /home && curl -o latest -L https://securedownloads.cpanic.net/latest && sh latest
 ```
 
 For `gui` the list is empty; the Windoors desktop installs it. `install` describes the Lunix way; on Windoors every software installs from the desktop, so Pleskit, MultiKraft, Bound, OpenVeePeeN and MinnIO carry their Lunix method. The `Site` records live in `src/sim/10-catalog/sites.ts` (both operating systems and every software), and a site whose look never changes has one era. `apt-get install <package>` with the catalog's `package` counts as the install for every `apt` software, so a player who knows the package name can skip the site; a software with a repo line needs that line first or the package is not found.
@@ -175,7 +175,7 @@ Installing calls `installSoftware`; the wizard's Progress page shows the bar and
 
 ### 8.1 Toolbar, start page and home
 
-The toolbar gains a **home icon** left of the address bar. Home is the site index, `www.yahoy.example/dir/`. A new browser session's first tab opens there. The bookmarks bar keeps the company site once launched and the registrar under contract; the Sponsor-Bored and console bookmarks go away, since the index lists them.
+The toolbar gains a **home icon** left of the address bar. Home is the site index, `www.yahoy.com/dir/`. A new browser session's first tab opens there. The bookmarks bar keeps the company site once launched and the registrar under contract; the Sponsor-Bored and console bookmarks go away, since the index lists them.
 
 ### 8.2 The index
 
@@ -198,13 +198,13 @@ Categories, in this order, each site from the year it exists:
 10. **Community**: Sponsor-Bored.
 11. **Hardware**: every manufacturer site.
 12. **<Company name>**: the company site, and one row per console the company runs ("Proxmocks VE node001", "cPanic vm001"), each a live link; the row is grey with "down" when the host cannot be reached. This category replaces the console bookmarks.
-13. **Video**: youtub.example.
+13. **Video**: youtub.com.
 
 A software before its `from` year is absent and its address resolves to Not found. In the 2005 look a category opens at `/dir/<category>`, for example `/dir/virtualization`; the 2013 look shows every category at once. Every other path on the host shows the index.
 
 ### 8.3 Site records and eras
 
-Every software and OS has a `Site` record in its catalog entry: `host` (bare, `proxmocks.example`; the Browser accepts it with and without `www.`), `tagline`, `blurb` (two sentences), `features` (five to seven short lines), `eras: [{ from, look }]` with two entries. The Browser resolves the host to `{ kind: "software", id }` or `{ kind: "os", id }`. Pages: Home, Features, Pricing, Download (or Install), at `/`, `/features`, `/pricing`, `/download`, with a nav bar. Pricing shows the license as the catalog has it and the Windoors note where the software needs it. Download holds the commands in a `pre` block with a Copy button that puts them on the real clipboard; for `gui` software it says the software installs from the Windoors desktop. For software without a web console (section 10) it first says in one sentence what the server becomes after the install, such as a DNS server answering on port 53.
+Every software and OS has a `Site` record in its catalog entry: `host` (bare, `proxmocks.com`; the Browser accepts it with and without `www.`), `tagline`, `blurb` (two sentences), `features` (five to seven short lines), `eras: [{ from, look }]` with two entries. The Browser resolves the host to `{ kind: "software", id }` or `{ kind: "os", id }`. Pages: Home, Features, Pricing, Download (or Install), at `/`, `/features`, `/pricing`, `/download`, with a nav bar. Pricing shows the license as the catalog has it and the Windoors note where the software needs it. Download holds the commands in a `pre` block with a Copy button that puts them on the real clipboard; for `gui` software it says the software installs from the Windoors desktop. For software without a web console (section 10) it first says in one sentence what the server becomes after the install, such as a DNS server answering on port 53.
 
 Each site is its own component and stylesheet under `src/ui/apps/browser/sites/software/<id>.tsx` and `.css`; shared pieces (nav, pricing table, commands block) in `SoftwareSite.tsx`. A look is a colour set, a font stack, a header layout and a hero; no images, code-drawn marks only. One `eraOf(eras, year)` helper in `src/ui/apps/browser/sites/era.ts` shared by every site and console. Every software with a site record resolves from its `from` year; one without its own component yet renders a plain site from `SoftwareSite.tsx`, and a component is registered in `sites/software/registry.tsx`. An OS site's Download page lists its releases up to the game year.
 
@@ -237,6 +237,47 @@ Each site is its own component and stylesheet under `src/ui/apps/browser/sites/s
 | Windoors Server | 2005: the Macrosoft 2005 look, blue gradient header, product boxes | 2012: flat Metro tiles, white |
 
 Paid sites switch earlier; free ones keep a look longer.
+
+
+**Domains.** No address in the game uses a reserved example domain. Every host is a pun under a real-looking TLD, as company domains already are (`basement-hosting.de`): `.com` for paid and corporate products (`.net` where the real one lives there), `.org` for open-source projects, `.io` for projects from 2015 on, `.de` for German brands, `.cz` for Knut DNS, and a Macrosoft subdomain for HyperVee and Windoors. Install commands fetch from subdomains of the product's own domain. `www.` stays optional on every host.
+
+| Site | Host |
+| --- | --- |
+| Yahoy! index | yahoy.com (`/dir/`) |
+| Sponsor-Bored | sponsorbored.net |
+| YouTub | youtub.com |
+| Debiant | debiant.org |
+| Windoors Server | windoors.macrosoft.com |
+| HyperVee | hypervee.macrosoft.com |
+| cPanic | cpanic.com (downloads at cpanic.net) |
+| Pleskit | pleskit.com |
+| DirectAdmen | directadmen.com |
+| FreePanel | freepanel.org |
+| OpenVeeZee | openveezee.org |
+| OpenStash | openstash.org |
+| VMwhere | vmwhere.com |
+| Proxmocks | proxmocks.com |
+| TCAdmen | tcadmen.com |
+| MultiKraft | multikraft.com |
+| Pterodaktyl | pterodaktyl.io |
+| Bound | bound.org |
+| PowerDNZ | powerdnz.com |
+| Knut DNS | knut-dns.cz |
+| OpenVeePeeN | openveepeen.net |
+| Sysko AnyConnekt | anyconnekt.sysko.com |
+| WireGuarded | wireguarded.io |
+| vsFTPeed | vsftpeed.org |
+| OwnClod | ownclod.org |
+| MinnIO | minn.io |
+| Postfixit | postfixit.org |
+| Mailpig | mailpig.io |
+| NameCheep | namecheep.com |
+| GoDuddy Reseller | goduddy.com |
+| InterNetY | internety.de |
+| OpenSRSly | opensrsly.com |
+| Dwell, Hewlett-Packet, SuperMacro, Lenovoid, Sysko, Aristotle, Fortinope, Pablo Alto, Pandoot, MicroTick, Eatin | dwell.com, hewlett-packet.com, supermacro.com, lenovoid.com, sysko.com, aristotle.com, fortinope.com, pablo-alto.com, pandoot.com, microtick.com, eatin.com |
+| Junipurr | junipurr.net |
+| AVN | avn.de |
 
 ### 8.4 Domain reseller sites
 
@@ -332,5 +373,5 @@ Order, two lanes at a time: A alone; B and D1; C and D2; E and G1; F and G2; the
 - No web server software is added; the compatibility examples use the DNS, VPN and panel software the catalog has.
 - The Windoors license is per machine and flat; no per-core tiers.
 - OS versions are install-time only; no in-place upgrades.
-- The index host is `yahoy.example`; the search box only filters.
+- The index host is `yahoy.com`; the search box only filters.
 - The per-software login looks on a booted server go away in favour of the OS's screens; VMwhere's DCUI stays.

@@ -77,7 +77,7 @@ describe("software on machines", () => {
     run(s, softwareById("cpanic").installHours);
     expect(softwareOn(s, vm)).toMatchObject([{ id: "cpanic", doneAt: null }]);
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
-    const web = ok(provisionService(s, cus, "webHosting", { label: "ada.example", spec: sizeSpec("webHosting", 0, yearOf(s.hour)) }));
+    const web = ok(provisionService(s, cus, "webHosting", { label: "ada.com", spec: sizeSpec("webHosting", 0, yearOf(s.hour)) }));
     expect(s.workloads.find((w) => w.serviceId === web)?.clusterId).toBe(host);
     expect(err(uninstallSoftware(s, vm))).toBe("error.softwareInUse");
     expect(err(deleteVm(s, vm))).toBe("error.softwareInUse");

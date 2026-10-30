@@ -27,7 +27,7 @@ describe("service software", () => {
     expect(noRoomError(s, "dns")).toBe("error.needsDnsServer");
     expect(noRoomError(s, "vpn")).toBe("error.needsVpnServer");
     expect(noRoomError(s, "storage")).toBe("error.needsStorageServer");
-    expect(err(provisionService(s, addCustomer(s, "Ada Lang", "hobbyDev"), "dns", { label: "dns.example" }))).toBe("error.needsDnsServer");
+    expect(err(provisionService(s, addCustomer(s, "Ada Lang", "hobbyDev"), "dns", { label: "dns.com" }))).toBe("error.needsDnsServer");
   });
 
   it("places DNS zones on a DNS server VM", () => {
@@ -35,7 +35,7 @@ describe("service software", () => {
     const dns = s.clusters.find((c) => c.id === id)!;
     expect(dns).toMatchObject({ kind: "dns", name: "DNS 1", panel: "bound" });
     expect(supports(dns, "dns")).toBe(true);
-    const r = provisionService(s, addCustomer(s, "Ada Lang", "hobbyDev"), "dns", { label: "dns.example" });
+    const r = provisionService(s, addCustomer(s, "Ada Lang", "hobbyDev"), "dns", { label: "dns.com" });
     expect(r.ok).toBe(true);
     expect(s.workloads.find((w) => w.serviceId === idOf(r))?.clusterId).toBe(id);
   });

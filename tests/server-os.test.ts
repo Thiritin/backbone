@@ -43,7 +43,7 @@ describe("server operating systems", () => {
       ["windoors", "Windoors Server", [{ from: 2005, kind: "once", fee: 600 }, { from: 2016, kind: "core", fee: 4 }], 40, 2],
     ]);
     expect(APP_SUITE_FEE).toBe(25);
-    expect(SOFTWARE.every((sw) => sw.os.length > 0 && sw.site.host.endsWith(".example"))).toBe(true);
+    expect(SOFTWARE.every((sw) => sw.os.length > 0 && /^[a-z.-]+\.(com|org|net|io|de|cz)$/.test(sw.site.host))).toBe(true);
     const hosts = [...SOFTWARE.map((sw) => sw.site.host), ...SERVER_OS.map((o) => o.site.host)];
     expect(new Set(hosts).size).toBe(hosts.length);
   });

@@ -30,9 +30,9 @@ describe("pear store", () => {
   it("earns know-how from active contracts at each month start", () => {
     const s = newGame(3);
     const c = addCustomer(s, "Ada", "private");
-    addService(s, c, "webHosting", "ada.example", 0.01, "hour");
+    addService(s, c, "webHosting", "ada.com", 0.01, "hour");
     addService(s, c, "vps", "ada-vps", 0.02, "hour");
-    addService(s, c, "domain", "ada.example", 12, "year");
+    addService(s, c, "domain", "ada.com", 12, "year");
     expect(knowHowPerMonth(s)).toBeCloseTo(3.2);
     runTo(s, at(2005, 3));
     expect(s.knowHow).toBeCloseTo(6.4);

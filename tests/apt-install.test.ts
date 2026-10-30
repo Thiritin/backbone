@@ -49,7 +49,7 @@ describe("installing software from the shell", () => {
       w = step.next;
     }
     expect(w).toBeNull();
-    expect(shown).toEqual(["Get:1 http://deb.debiant.example proxmocks-ve amd64 [48.2 MB]", "Unpacking proxmocks-ve ...", "Setting up proxmocks-ve ...", "Proxmocks is installed."]);
+    expect(shown).toEqual(["Get:1 http://deb.debiant.org proxmocks-ve amd64 [48.2 MB]", "Unpacking proxmocks-ve ...", "Setting up proxmocks-ve ...", "Proxmocks is installed."]);
     expect(clusterOf(s, "dev3")?.platform).toBe("proxmocks");
     expect(text(s, "dpkg -l", at)).toMatch(/ii {2}proxmocks-ve +2017 +amd64 +Proxmocks/);
   });

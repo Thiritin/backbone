@@ -18,7 +18,7 @@ const at = (y: number, m: number, d: number) => hourOf(new Date(Date.UTC(y, m - 
 function withInvoice(payStep: number) {
   const s = withServer(newGame(3));
   const c = addCustomer(s, "Ada", "private");
-  addService(s, c, "domain", "ada.example", 12, "year");
+  addService(s, c, "domain", "ada.com", 12, "year");
   tick(s);
   s.invoices[0].payStep = payStep;
   s.invoices[0].payAt = null;
@@ -50,7 +50,7 @@ describe("invoices", () => {
   it("bills yearly services in advance at start and on each anniversary", () => {
     const s = withServer(newGame(2));
     runTo(s, 100);
-    addService(s, addCustomer(s, "Dee", "soleProp"), "ssl", "dee.example SSL", 30, "year");
+    addService(s, addCustomer(s, "Dee", "soleProp"), "ssl", "dee.com SSL", 30, "year");
     // Billing only, so support churn can't end the service during the year.
     const step = () => { s.hour++; billingTick(s); };
     step();
@@ -75,7 +75,7 @@ describe("payment habits", () => {
 
   it("pays an on-time invoice before the due date and books it", () => {
     const s = withServer(newGame(5));
-    addService(s, addCustomer(s, "Eve", "office", "prompt"), "domain", "eve.example", 12, "year");
+    addService(s, addCustomer(s, "Eve", "office", "prompt"), "domain", "eve.com", 12, "year");
     tick(s);
     const inv = s.invoices[0];
     inv.payStep = 0;
@@ -91,7 +91,7 @@ describe("payment habits", () => {
 describe("setup fees", () => {
   const setupInvoice = (payStep: number) => {
     const { s, inv } = withInvoice(payStep);
-    inv().lines.push({ serviceId: null, key: "invoice.line.setupFee", params: { label: "ada.example" }, amount: 5 });
+    inv().lines.push({ serviceId: null, key: "invoice.line.setupFee", params: { label: "ada.com" }, amount: 5 });
     inv().payAt = s.hour + 24;
     return { s, inv };
   };
@@ -239,8 +239,8 @@ describe("billing saves", () => {
   it("round-trips invoices and loans", () => {
     const s = withServer(newGame(11));
     const c = addCustomer(s, "Fay", "agency", "late");
-    addService(s, c, "webHosting", "fay.example", 0.02, "hour");
-    addService(s, c, "domain", "fay.example", 12, "year");
+    addService(s, c, "webHosting", "fay.com", 0.02, "hour");
+    addService(s, c, "domain", "fay.com", 12, "year");
     takeLoan(s, 5_000, 1);
     runTo(s, at(2005, 3, 1));
     expect(s.invoices.length).toBeGreaterThan(1);
