@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { MANUFACTURERS } from "../src/sim/10-catalog/hardware";
 import { companyDomain, fqdn } from "../src/sim/30-customers/domains";
 import { privateIp } from "../src/sim/60-infra/addresses";
-import { defaultBookmarks, resolve, split, vendorHost, VENDORS, VIDEO_URL } from "../src/sim/80-business/browser";
+import { defaultBookmarks, displayHost, resolve, split, vendorHost, VENDORS, VIDEO_URL } from "../src/sim/80-business/browser";
+import { siteIndex } from "../src/sim/80-business/index";
 import { newGame } from "../src/sim/50-state";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { setPower } from "../src/sim/90-actions/hardware";
@@ -116,5 +117,19 @@ describe("browser resolver", () => {
     s.company = { ...s.company, domain: null };
     expect(resolve(s, fqdn(s, node.hostname!)).page).toEqual({ kind: "notfound" });
     expect(resolve(newGame(3), "example.com").page).toEqual({ kind: "notfound" });
+  });
+
+  it("prefixes www. to a bare domain only, in the index and the bookmarks", () => {
+    expect(displayHost("macrosoft.com")).toBe("www.macrosoft.com");
+    expect(displayHost("basement-hosting.co.uk")).toBe("www.basement-hosting.co.uk");
+    expect(displayHost("windoors.macrosoft.com")).toBe("windoors.macrosoft.com");
+    expect(displayHost("anyconnekt.sysko.com")).toBe("anyconnekt.sysko.com");
+    const s = readyGame(1);
+    s.hour = 24 * 365 * 15;
+    const urls = siteIndex(s).flatMap((c) => c.rows.map((r) => r.url));
+    expect(urls).toContain("windoors.macrosoft.com/");
+    expect(urls).toContain("anyconnekt.sysko.com/");
+    expect(urls.filter((u) => /^www\.[^/]+\.[^/]+\.[^/]+\//.test(u) && !/\.co\.uk\//.test(u))).toEqual([]);
+    for (const u of [...urls, ...defaultBookmarks(s).map((b) => b.url)]) expect(resolve(s, u).page.kind).not.toBe("notfound");
   });
 });

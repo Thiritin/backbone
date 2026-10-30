@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { monthIndexOf, yearOf } from "../../../../../sim/00-core/time";
 import { MANUFACTURERS } from "../../../../../sim/10-catalog/hardware";
 import type { GameState } from "../../../../../sim/50-state";
+import { displayHost } from "../../../../../sim/80-business/browser";
 import { vendorHost } from "../../../../../sim/80-business/vendors";
 import { eraOf } from "../era";
 import { Aristotle } from "./aristotle";
@@ -41,5 +42,5 @@ export function VendorSite({ game, maker, path, go }: { game: GameState; maker: 
   if (!m || !site) return null;
   const year = yearOf(game.hour), View = site.view;
   const look = eraOf([{ from: 2005, look: "early" }, { from: site.late, look: "late" }], year);
-  return <View m={m} look={look} page={pageOf(path)} year={year} month={monthIndexOf(game.hour)} go={(to) => go(`www.${vendorHost(m.id)}${to}`)} />;
+  return <View m={m} look={look} page={pageOf(path)} year={year} month={monthIndexOf(game.hour)} go={(to) => go(`${displayHost(vendorHost(m.id))}${to}`)} />;
 }

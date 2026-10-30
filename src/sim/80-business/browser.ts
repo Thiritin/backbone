@@ -53,12 +53,17 @@ export const BOARD_URL = `${BOARD_HOST}/`;
 // docs/design/software.md, 8.1: the home icon and a new browser session open the site index.
 export const INDEX_HOST = "yahoy.com";
 export const HOME_URL = `www.${INDEX_HOST}/dir/`;
-export const companyUrl = (s: GameState): string => `www.${companyDomain(s)}/`;
+// A site's host as links show it: a bare domain gets www., a host that already names a subdomain keeps it as it is.
+export function displayHost(host: string): string {
+  const labels = host.split("."), suffix = /^(co|com|org|net)\.[a-z]{2}$/.test(labels.slice(-2).join(".")) ? 3 : 2;
+  return labels.length > suffix ? host : `www.${host}`;
+}
+export const companyUrl = (s: GameState): string => `${displayHost(companyDomain(s))}/`;
 
 // The registrar under contract, or the first one before any contract.
 export function registrarUrl(s: GameState): string {
   const r = (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
-  return `www.${registrarHost(r)}/`;
+  return `${displayHost(registrarHost(r))}/`;
 }
 
 // Bookmarks every game has: the company site once launched and the registrar. The index lists the rest.
