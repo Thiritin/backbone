@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import { checkDone, TUTORIAL } from "../../sim/checklist";
-import { stepOf } from "./guide";
+import { STEP_WIKI, stepOf } from "./guide";
+import { wikiUrl } from "./browser/sites/wiki/articles";
 import { useStore } from "../store";
 import "./customers/customers.css";
 import "./checklist/checklist.css";
@@ -25,6 +26,7 @@ export function GuideApp() {
                 <span className="cus-strong">{step.title}</span>
                 <span className="cus-dim">{step.text}</span>
               </div>
+              {STEP_WIKI[id] && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: wikiUrl(STEP_WIKI[id]!) })}>Wiki</button>}
               {!done && <button className="btn" onClick={() => openApp(step.app, step.focus)}>Open</button>}
             </li>
           );

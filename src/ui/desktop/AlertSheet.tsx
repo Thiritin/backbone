@@ -6,6 +6,7 @@ import type { GameState } from "../../sim/50-state";
 import { ALERT_KEYS } from "../../sim/alerts";
 import { advisoryNodes, ADVISORY_KEYS, vulnById, vulnerable } from "../../sim/60-infra/security";
 import { useStore, type Banner } from "../store";
+import { wikiUrl } from "../apps/browser/sites/wiki/articles";
 
 const SOURCE = ["Heize online", "Twister", "Bundesamt für Sicherheit in der Informationstechnick", "PHP project"];
 
@@ -37,6 +38,8 @@ function body(game: GameState, key: string): { rows: Row[]; source?: string } {
 // The ransom still waiting for a decision, newest first.
 const openBreach = (game: GameState) => game.breaches.filter((b) => b.decision === null).at(-1);
 
+// The Wikipedio article that explains an alert.
+const ALERT_WIKI: Record<string, string> = { "event.dataLoss": "RAID", "event.dataCorrupted": "RAID" };
 const LOAN_KEYS = ["event.cashNegative", "event.loanMissed", "event.loanCalled"];
 const focus = (game: GameState, key: string) =>
   LOAN_KEYS.includes(key) ? { kind: "tab", id: "loans" } :
@@ -71,6 +74,7 @@ export function AlertSheet({ alert }: { alert: Banner }) {
         )}
         <div className="alert-actions">
           <button className="btn" onClick={() => closeAlert(true)}>Continue</button>
+          {ALERT_WIKI[key] && <button className="btn" onClick={() => { closeAlert(false); openApp("Browser", { kind: "url", id: wikiUrl(ALERT_WIKI[key]) }); }}>Wiki</button>}
           <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, focus(game, key) ?? (alert.target ? { kind: "device", id: alert.target } : undefined)); }}>Open {app}</button>
         </div>
       </div>
