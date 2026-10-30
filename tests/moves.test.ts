@@ -168,7 +168,7 @@ describe("migration offers", () => {
     expect(t.move!.log.map((l) => l.key)).toEqual(["ticket.migration.acceptAny.text"]);
   });
 
-  it("is accepted by a business for the next weekday evening and runs then", () => {
+  it("is accepted by a business for the next weekday evening and waits for the player to move it", () => {
     const { s, second, place } = world();
     const cus = customer(s, "smallBiz"), id = vps(s, cus, "vm"), c = who(s)(cus);
     place();
@@ -179,12 +179,16 @@ describe("migration offers", () => {
     const start = t.move!.windowAt!;
     expect([dateOf(start).getUTCHours(), [0, 6].includes(dateOf(start).getUTCDay())]).toEqual([18, false]);
     expect(start).toBeGreaterThan(t.dueAt);
-    expect(t.status).toBe("waiting");
     s.hour = start - 1;
     expect(movesTick(s, who(s))).toEqual([]);
     s.hour = start;
+    expect(movesTick(s, who(s)).map((e) => e.key)).toEqual(["event.moveWindow"]);
+    s.hour = start + 1;
+    expect(movesTick(s, who(s))).toEqual([]);
+    expect([t.status, workloadsOf(s, id)[0].deviceId]).toEqual(["waiting", "dev3"]);
+    ok(migrateWorkload(s, workloadsOf(s, id)[0].id, second));
     expect(movesTick(s, who(s)).map((e) => e.key)).toEqual(["event.moveDone"]);
-    expect(t.status).toBe("resolved");
+    expect([t.status, t.outcome, c.happiness]).toEqual(["resolved", "moved", 60 + BASEMENT_BONUS - RENUMBER_ANNOUNCED_PENALTY]);
   });
 
   it("is declined below the happiness line", () => {
@@ -211,7 +215,7 @@ describe("migration offers", () => {
     expect(err(announceMigration(s, "dev3", second))).toBe("error.moveTarget");
   });
 
-  it("costs the customer happiness and reopens the ticket when the move did not run within 48 hours of the window", () => {
+  it("costs the customer happiness and reopens the ticket when the player did not move a window customer in time", () => {
     const { s, second, place } = world();
     const cus = customer(s, "smallBiz"), id = vps(s, cus, "vm"), c = who(s)(cus);
     place();
@@ -220,16 +224,30 @@ describe("migration offers", () => {
     s.hour = t.dueAt;
     movesTick(s, who(s));
     const start = t.move!.windowAt!;
-    // The VM is stuck in another job past the window.
-    s.workloads = s.workloads.map((w) => (w.id === t.move!.workloadId ? { ...w, busyUntil: start + 1000 } : w));
-    s.hour = start + MISSED_AFTER_HOURS - 1;
+    s.hour = start + 3;
     expect(movesTick(s, who(s))).toEqual([]);
     expect(t.status).toBe("waiting");
-    s.hour = start + MISSED_AFTER_HOURS;
+    s.hour = start + 4;
     expect(movesTick(s, who(s)).map((e) => e.key)).toEqual(["event.moveMissed"]);
     expect([t.status, c.happiness]).toEqual(["open", 60 - MISSED_PENALTY]);
     s.hour += 1;
     expect(movesTick(s, who(s))).toEqual([]);
+  });
+
+  it("costs the customer happiness when a move that runs by itself stays blocked for 48 hours", () => {
+    const { s, second, place } = world();
+    const cus = customer(s), id = vps(s, cus, "vm"), c = who(s)(cus);
+    place();
+    c.happiness = 60;
+    const t = ticketOf(s, ok(offerMigration(s, id, second)));
+    s.hour = t.dueAt;
+    s.workloads = s.workloads.map((w) => (w.id === t.move!.workloadId ? { ...w, busyUntil: s.hour + 1000 } : w));
+    movesTick(s, who(s));
+    s.hour = t.move!.windowAt! + MISSED_AFTER_HOURS - 1;
+    expect(movesTick(s, who(s))).toEqual([]);
+    s.hour += 1;
+    expect(movesTick(s, who(s)).map((e) => e.key)).toEqual(["event.moveMissed"]);
+    expect([t.status, c.happiness]).toEqual(["open", 60 - MISSED_PENALTY]);
   });
 
   it("runs end to end through the tick", () => {

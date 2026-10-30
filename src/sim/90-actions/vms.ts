@@ -103,7 +103,7 @@ export function migrateWorkload(s: GameState, id: string, toId: string, announce
   const { w, c } = found, vmHost = s.clusters.find((x) => x.id === toId && x.vm), to = vmHost ?? clusterOf(s, toId, c.kind) ?? clusterOf(s, toId);
   const d = s.devices.find((x) => x.id === toId);
   if (!to || (!vmHost && !d)) return fail("error.notNode");
-  if (c.kind === "panel" && to.id !== c.id) return migrateWebspace(s, id, to.id);
+  if (c.kind === "panel" && to.id !== c.id) return migrateWebspace(s, id, to.id, announced);
   if (w.deviceId === toId || w.clusterId === vmHost?.id) return fail("error.sameHost");
   if (lostDisk(s, w)) return fail("error.lostDisk");
   if (w.busyUntil > s.hour || w.migrating) return fail("error.workloadBusy");
@@ -116,6 +116,7 @@ export function migrateWorkload(s: GameState, id: string, toId: string, announce
     if (to.nodes.find((n) => n.deviceId === toId)?.state !== "active" || !working(s, toId)) return fail("error.nodeDown");
     if (!nodeTakes(s, d!, w)) return fail("error.nodeFull");
   }
+  announced ||= agreed(s, w.serviceId);
   const gbit = moveGbit(s, c.az, to.az);
   if (!gbit) return fail("error.noZoneLink");
   const [fromLoc, toLoc] = [c.az, to.az].map((az) => s.locations.find((l) => l.az === az)), ids = w.serviceId ? [w.serviceId] : [];
@@ -130,6 +131,10 @@ export function migrateWorkload(s: GameState, id: string, toId: string, announce
   freezeTick(s);
   return { ok: true };
 }
+
+// A customer who accepted a move announced it: moving their service is not a surprise.
+const agreed = (s: GameState, serviceId: string | null): boolean =>
+  !!serviceId && s.tickets.some((t) => t.kind === "migration" && t.serviceId === serviceId && t.status === "waiting" && t.move?.windowAt != null);
 
 // Why the web space cannot move to the panel host, or null.
 export function webspaceBlock(s: GameState, w: Workload, c: Cluster, to: Cluster): string | null {
@@ -164,6 +169,7 @@ export function migrateWebspace(s: GameState, workloadId: string, toClusterId: s
   if (c.kind !== "panel" || !w.serviceId) return fail("error.notWebspace");
   const bad = webspaceBlock(s, w, c, to);
   if (bad) return fail(bad);
+  announced ||= agreed(s, w.serviceId);
   patch(s, w.id, { migrating: { clusterId: to.id, doneAt: s.hour + migrationHours(s, w, to), ...(announced && { announced: true as const }) } });
   return { ok: true };
 }

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Customers who accept a move in a time window (gamers at night, shops on weekday evenings) now wait for you to move their service in that window instead of having it moved automatically, while customers who accept any time still get it moved at once.
 - A migration you offered a customer now keeps showing as offered while no host can take it, and a missed move shows a greyed out offer entry instead of the entry vanishing.
 - Virtual machines with an empty panel or game host installed can now be deleted from the hypervisor console, which removes the host with them.
 - OS image downloads now follow game time, so they finish sooner when you fast forward and wait while the game is paused.

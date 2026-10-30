@@ -10,7 +10,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   Finance: [type("Bills and tax", "bills", "monthStart", "tax", "taxLoss", "networkBills"), type("Cash and loans", "cashNegative", "bankrupt", "loanMissed", "loanCalled")],
   Support: [
     type("Tickets", "ticket", "tickets", "stepFailed", "offerDeclined"),
-    type("Migration offers", "moveAccepted", "moveDeclined", "moveDone", "moveMissed"),
+    type("Migration offers", "moveAccepted", "moveDeclined", "moveWindow", "moveDone", "moveMissed"),
     type("Orders and sales", "order", "orderAccepted", "orderQuoted", "orderFailed", "orderPaid", "sales*"),
     type("Sponsoring requests", "sponsorRequest", "boardApplication"),
     type("Notices and legal", "seized", "breach"),

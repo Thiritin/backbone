@@ -20,8 +20,8 @@ export interface Work { op: "reply" | "resolve" | "escalate"; arg: string; doneA
 // real is hidden from the player. followAt is the hour the next, angrier step arrives.
 export interface Notice { sender: string; from: string; url: string; video: string | null; real: boolean; round: number; followAt: number | null }
 // A move offered to the customer: the workload, the target the migrate actions take and its name. windowAt is the hour the
-// accepted move starts (null until the customer answers); log holds the customer's answers.
-export interface Move { workloadId: string; to: string; name: string; windowAt: number | null; log: { hour: number; key: string; params: Record<string, number> }[] }
+// accepted move starts (null until the customer answers); from is the cluster it ran on when offered; log holds the customer's answers.
+export interface Move { workloadId: string; to: string; name: string; from?: string; windowAt: number | null; log: { hour: number; key: string; params: Record<string, number> }[] }
 export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];

@@ -17,6 +17,8 @@ export const MOVES_EN: Record<string, (p: Params) => string> = {
   "event.moveAccepted.text": (p) => `${p.name} agreed to the move of ${p.service}.`,
   "event.moveDeclined.title": () => "Move declined",
   "event.moveDeclined.text": (p) => `${p.name} turned down the move of ${p.service}.`,
+  "event.moveWindow.title": () => "Move window open",
+  "event.moveWindow.text": (p) => `${p.name} expects ${p.service} to be moved until ${clock(p.to)}.`,
   "event.moveDone.title": () => "Service moved",
   "event.moveDone.text": (p) => `${p.service} of ${p.name} moved to ${p.target}.`,
   "event.moveMissed.title": () => "Move missed",

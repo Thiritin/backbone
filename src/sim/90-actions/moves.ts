@@ -49,7 +49,7 @@ export function offerMigration(s: GameState, serviceId: string, to: string, agre
   const t = createTicket(s, c, "migration", v.id, "offer");
   t.status = "waiting";
   t.unread = false;
-  t.move = { workloadId: w.id, to, name: target.name, windowAt: null, log: [] };
+  t.move = { workloadId: w.id, to, name: target.name, windowAt: null, log: [], from: w.clusterId ?? undefined };
   if (agreed) accept(s, t, c, v);
   return { ok: true, id: t.id };
 }
@@ -68,10 +68,16 @@ export function announceMigration(s: GameState, hostId: string, to: string): Act
 
 // A move from the basement into a datacenter is a better place for the service.
 const toDatacenter = (s: GameState, m: Move): boolean => {
-  const w = s.workloads.find((x) => x.id === m.workloadId), from = s.clusters.find((c) => c.id === w?.clusterId);
+  const w = s.workloads.find((x) => x.id === m.workloadId), from = s.clusters.find((c) => c.id === (m.from ?? w?.clusterId));
   const target = s.clusters.find((c) => c.id === m.to) ?? clusterOf(s, m.to);
   const loc = (az?: string) => s.locations.find((l) => l.az === az);
   return !!from && !!target && !loc(from.az)?.dc && !!loc(target.az)?.dc;
+};
+
+// The player moved the service to the target, or started the move to it.
+const movedByPlayer = (s: GameState, m: Move): boolean => {
+  const w = s.workloads.find((x) => x.id === m.workloadId);
+  return !!w && (w.deviceId === m.to || w.clusterId === m.to || w.migrating?.clusterId === m.to);
 };
 
 const run = (s: GameState, m: Move): ActionResult => {
@@ -80,8 +86,17 @@ const run = (s: GameState, m: Move): ActionResult => {
   return c.kind === "panel" ? migrateWebspace(s, w.id, m.to, true) : migrateWorkload(s, w.id, m.to, true);
 };
 
-// Hourly, before customers react to downtime: customers answer offers once their reply time is up and accepted moves run
-// from their window on. Tickets and customers are the tick's copies.
+// The move did not happen: the customer loses happiness and the ticket reopens.
+function missed(s: GameState, t: Ticket, c: Customer, v: Service, note: (key: string) => void, events: SimEvent[]): void {
+  bump(c, -MISSED_PENALTY);
+  note("ticket.migration.missed.text");
+  Object.assign(t, { status: "open", updatedAt: s.hour, unread: true });
+  events.push({ app: "Support", key: "event.moveMissed", params: { name: c.name, service: v.label } });
+}
+
+// Hourly, before customers react to downtime: customers answer offers once their reply time is up. A customer who accepted
+// with no particular time (private) has the move run at once; one with a window (players, businesses) waits for the player to
+// move the service inside it. Tickets and customers are the tick's copies.
 export function movesTick(s: GameState, customer: (id: string) => Customer): SimEvent[] {
   const events: SimEvent[] = [];
   for (const t of s.tickets) {
@@ -106,17 +121,23 @@ export function movesTick(s: GameState, customer: (id: string) => Customer): Sim
       events.push({ app: "Support", key: "event.moveAccepted", params: { name: c.name, service: v.label } });
     }
     if (m.windowAt === null || s.hour < m.windowAt) continue;
+    const window = MOVE_WINDOW[segmentOf(c.profile, v.product)];
+    if (window) {
+      // The customer wants it done in their window: the player moves the service, in time or not.
+      if (s.hour === m.windowAt) events.push({ app: "Support", key: "event.moveWindow", params: { name: c.name, service: v.label, to: window.to } });
+      if (movedByPlayer(s, m)) {
+        if (toDatacenter(s, m)) bump(c, BASEMENT_BONUS);
+        Object.assign(t, { status: "resolved", outcome: "moved", updatedAt: s.hour, unread: true });
+        events.push({ app: "Support", key: "event.moveDone", params: { name: c.name, service: v.label, target: m.name } });
+      } else if (s.hour >= m.windowAt + window.to - window.from) missed(s, t, c, v, note, events);
+      continue;
+    }
     const bonus = toDatacenter(s, m);
     if (run(s, m).ok) {
       if (bonus) bump(c, BASEMENT_BONUS);
       Object.assign(t, { status: "resolved", outcome: "moved", updatedAt: s.hour, unread: true });
       events.push({ app: "Support", key: "event.moveDone", params: { name: c.name, service: v.label, target: m.name } });
-    } else if (s.hour >= m.windowAt + MISSED_AFTER_HOURS) {
-      bump(c, -MISSED_PENALTY);
-      note("ticket.migration.missed.text");
-      Object.assign(t, { status: "open", updatedAt: s.hour, unread: true });
-      events.push({ app: "Support", key: "event.moveMissed", params: { name: c.name, service: v.label } });
-    }
+    } else if (s.hour >= m.windowAt + MISSED_AFTER_HOURS) missed(s, t, c, v, note, events);
   }
   return events;
 }
