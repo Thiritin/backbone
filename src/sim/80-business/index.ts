@@ -22,6 +22,7 @@ const SOFTWARE_CATEGORIES: [string, string[]][] = [
   ["VPN", ["openveepeen", "anyconnekt", "wireguarded"]],
   ["Storage", ["vsftpeed", "ownclod", "minnio"]],
   ["Mail", ["postfixit", "mailpig"]],
+  ["Backup", ["backula", "veeham", "proxmocksBackup"]],
 ];
 
 const KIND_DESC: Record<DeviceKind, string> = {

@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { bayCount, bayTakes, componentParts, MODELS, modelById, presetCores, type FormFactor } from "../src/sim/10-catalog/hardware";
 import { OVERCOMMIT } from "../src/sim/10-catalog/products";
 import { device, deviceDefaults, newGame, type GameState } from "../src/sim/50-state";
-import { installedCores, installedRamGb, perCoreOf, raidUsable } from "../src/sim/60-infra/status";
+import { installedCores, installedRamGb, installedThreads, perCoreOf, raidUsable } from "../src/sim/60-infra/status";
+import { SMT_SHARE } from "../src/sim/10-catalog/cpus";
 import { nodeCapacity } from "../src/sim/60-infra/cluster";
 import { freezeTick, nodeUsage } from "../src/sim/60-infra/usage";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -68,7 +69,7 @@ describe("capacity from parts", () => {
       expect(installedCores(d), m.id).toBe(presetCores(m));
       expect(installedRamGb(d), m.id).toBe(v.ramGb);
       expect(raidUsable(d), m.id).toBe(factor * (v.diskGb / v.drives));
-      const vcpu = Math.round(presetCores(m) * perCoreOf(d) * 100) / 100;
+      const vcpu = Math.round((presetCores(m) + (installedThreads(d) - presetCores(m)) * SMT_SHARE) * perCoreOf(d) * 100) / 100;
       expect(nodeCapacity(d), m.id).toEqual({ vcpu, ramGb: v.ramGb, diskGb: raidUsable(d) * OVERCOMMIT.disk });
       expect(nodeUsage(s, id).physical, m.id).toEqual({ vcpu, ramGb: v.ramGb, diskGb: raidUsable(d) });
     }

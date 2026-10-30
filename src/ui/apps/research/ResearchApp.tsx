@@ -1,6 +1,6 @@
 import { BookOpen, Check, Hourglass, Lock, Play, Store } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { SKILLS, skillById, type Skill } from "../../../sim/10-catalog/research";
+import { SKILLS, skillById, TRACKS, type Skill } from "../../../sim/10-catalog/research";
 import { storeItem } from "../../../sim/10-catalog/store";
 import type { GameState } from "../../../sim/50-state";
 import { knowHowPerMonth } from "../../../sim/88-tick/tick";
@@ -9,18 +9,16 @@ import { useFocus, useStore } from "../../store";
 import { Tile } from "../shop/Software";
 import "./research.css";
 
-const W = 210, H = 76, COL = 64, ROW = 18, PAD = 24, HEAD = 26;
-const TIERS = [...new Set(SKILLS.map((k) => k.tier))];
-const ROWS = Math.max(...TIERS.map((t) => SKILLS.filter((k) => k.tier === t).length));
-
-// Columns by tier, each centred on the tallest column.
-const POS: Record<string, { x: number; y: number }> = Object.fromEntries(TIERS.flatMap((t, c) => {
-  const col = SKILLS.filter((k) => k.tier === t);
-  const top = ((ROWS - col.length) * (H + ROW)) / 2;
-  return col.map((k, r) => [k.id, { x: PAD + c * (W + COL), y: PAD + HEAD + top + r * (H + ROW) }]);
-}));
-const WIDTH = PAD * 2 + TIERS.length * W + (TIERS.length - 1) * COL;
-const HEIGHT = PAD * 2 + HEAD + ROWS * H + (ROWS - 1) * ROW;
+const W = 210, H = 76, COL = 64, ROW = 18, PAD = 24, HEAD = 26, LANE = 110, GAP = 22;
+const TIERS = [...new Set(SKILLS.map((k) => k.tier))].sort((a, b) => a - b);
+const inCell = (track: string, tier: number) => SKILLS.filter((k) => k.track === track && k.tier === tier);
+// Each track is a row as tall as its fullest tier; skills sit in their tier's column.
+const LANES = TRACKS.map((t) => ({ ...t, rows: Math.max(1, ...TIERS.map((tier) => inCell(t.id, tier).length)) }));
+const laneTop = (i: number) => PAD + HEAD + LANES.slice(0, i).reduce((n, l) => n + l.rows * (H + ROW) - ROW + GAP, 0);
+const POS: Record<string, { x: number; y: number }> = Object.fromEntries(LANES.flatMap((l, i) => TIERS.flatMap((tier, c) =>
+  inCell(l.id, tier).map((k, r) => [k.id, { x: PAD + LANE + c * (W + COL), y: laneTop(i) + r * (H + ROW) }]))));
+const WIDTH = PAD * 2 + LANE + TIERS.length * W + (TIERS.length - 1) * COL;
+const HEIGHT = laneTop(LANES.length) - GAP + PAD;
 
 type State = "learned" | "training" | "open" | "locked";
 const stateOf = (g: GameState, k: Skill): State =>
@@ -75,10 +73,13 @@ function Panel({ k, g }: { k: Skill; g: GameState }) {
       <h2>{k.name}</h2>
       <p>{k.about}</p>
       <dl className="rs-facts">{facts.map(([dt, dd]) => <div key={dt}><dt>{dt}</dt><dd>{dd}</dd></div>)}</dl>
-      {k.opens.length > 0 && (
+      {(k.opens.length > 0 || k.grants) && (
         <section>
           <h3>Unlocks</h3>
-          <ul className="rs-opens">{k.opens.map((id) => <li key={id}><Tile item={storeItem(id)!} size={24} />{storeItem(id)!.name}</li>)}</ul>
+          <ul className="rs-opens">
+            {k.opens.map((id) => <li key={id}><Tile item={storeItem(id)!} size={24} />{storeItem(id)!.name}</li>)}
+            {k.grants?.map((g) => <li key={g}><span className="rs-grant"><Check /></span>{g}</li>)}
+          </ul>
         </section>
       )}
       {state === "training" && (
@@ -112,7 +113,8 @@ export function ResearchApp() {
       </header>
       <div className="rs-tree">
         <div className="rs-canvas" style={{ width: WIDTH, height: HEIGHT }}>
-          {TIERS.map((t, c) => <span key={t} className="rs-tier" style={{ left: PAD + c * (W + COL), top: PAD, width: W }}>Tier {t}</span>)}
+          {TIERS.map((t, c) => <span key={t} className="rs-tier" style={{ left: PAD + LANE + c * (W + COL), top: PAD, width: W }}>Tier {t}</span>)}
+          {LANES.map((l, i) => <span key={l.id} className="rs-track" style={{ left: PAD, top: laneTop(i), width: LANE - 16, height: l.rows * (H + ROW) - ROW }}>{l.name}</span>)}
           <Links g={game} />
           {SKILLS.map((k) => <Node key={k.id} k={k} g={game} selected={sel === k.id} onSelect={() => setSel(k.id)} />)}
         </div>

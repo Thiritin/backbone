@@ -6,5 +6,6 @@ export const SOFTWARE_EN: Record<string, (p: Params) => string> = {
   "error.wrongOs": () => "This software does not run on this machine's operating system.",
   "ledger.windoors": (p) => `Windoors Server, ${p.count} ${p.count === 1 ? "machine" : "machines"}`,
   "ledger.licenseOnce": (p) => `${p.name} license, ${p.machine}`,
+  "ledger.balancer": (p) => `${p.name}, ${p.cluster}`,
   "ledger.appSuite": (p) => `VMwhere App Suite, ${p.cluster}`,
 };

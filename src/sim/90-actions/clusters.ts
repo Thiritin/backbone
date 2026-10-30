@@ -4,7 +4,7 @@ import { marketPrice, PRODUCTS, sizeSpec, type Resources, type Sla, type Spec } 
 import type { Product } from "../30-customers/customers";
 import { vmName } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
-import { balloons, clustersIn, conflict, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
+import { balancerIn, balloons, clustersIn, conflict, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
 import { serverOsAt } from "../10-catalog/server-os";
 import { freezeTick } from "../60-infra/usage";
@@ -12,7 +12,7 @@ import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
   anchorOf, clusterOf, clustersOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, hostsOfVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
-  setMachine, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
+  backsUpCluster, balances, setMachine, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
 import { burning, freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
@@ -31,7 +31,7 @@ const blank = (s: GameState, id: string, name: string, az: string, kind: Softwar
   backup: { targetId: null, every: "off" }, php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
 });
 // The name a cluster in one of the player's VMs gets, by the kind of its software.
-const PREFIX: Record<SoftwareKind, string> = { panel: "Web", cloud: "Cloud", game: "Game", mail: "Mail", dns: "DNS", vpn: "VPN", storage: "Storage" };
+const PREFIX: Record<SoftwareKind, string> = { panel: "Web", cloud: "Cloud", game: "Game", mail: "Mail", dns: "DNS", vpn: "VPN", storage: "Storage", backup: "Backup" };
 
 // The next free name of the pattern, numbered from 1.
 export const freeName = (s: GameState, base: string): string => {
@@ -204,10 +204,12 @@ export function moveControlPlane(s: GameState, clusterId: string, deviceId: stri
   return { ok: true };
 }
 
-// Backups of every workload in the cluster to another cluster, daily or weekly at night.
+// Backups of every workload in the cluster, daily or weekly at night, to a cluster whose backup software reads it.
 export function setBackup(s: GameState, clusterId: string, targetId: string | null, every: BackupEvery): ActionResult {
-  if (!s.clusters.some((c) => c.id === clusterId)) return fail("error.unknownCluster");
-  if (targetId !== null && (targetId === clusterId || !s.clusters.some((c) => c.id === targetId))) return fail("error.backupTarget");
+  const c = s.clusters.find((x) => x.id === clusterId), t = s.clusters.find((x) => x.id === targetId);
+  if (!c) return fail("error.unknownCluster");
+  if (targetId !== null && (!t || t.id === c.id || t.kind !== "backup")) return fail("error.backupTarget");
+  if (t && !backsUpCluster(s, c, t)) return fail("error.backupIncompatible");
   if (every !== "off" && targetId === null) return fail("error.backupTarget");
   update(s, clusterId, (c) => ({ ...c, backup: { targetId, every } }));
   return { ok: true };
@@ -320,8 +322,19 @@ export function setHa(s: GameState, clusterId: string, feature: keyof Ha, on: bo
   if (!s.unlocks.includes(HA_SKILL)) return fail("error.missingSkill");
   if (on && feature === "live" && c.platform && !softwareById(c.platform).live) return fail("error.noLiveMigration");
   if (on && feature === "balance" && !c.ha.live) return fail("error.needsLiveMigration");
+  if (on && feature === "balance" && !balances(s, c)) return fail("error.needsBalancer");
   const ha = { ...c.ha, [feature]: on, ...(feature === "live" && !on ? { balance: false } : {}) };
   update(s, c.id, (x) => ({ ...x, ha }));
+  return { ok: true };
+}
+
+// Buys or cancels the balancer edition of a hypervisor cluster; cancelling turns auto-balancing off.
+export function setBalancer(s: GameState, clusterId: string, on: boolean): ActionResult {
+  const c = s.clusters.find((x) => x.id === clusterId);
+  if (!c) return fail("error.unknownCluster");
+  const b = c.platform ? balancerIn(softwareById(c.platform), yearOf(s.hour)) : null;
+  if (!b || b.fee === 0) return fail("error.noBalancer");
+  update(s, c.id, (x) => ({ ...x, balancer: on, ...(!on && { ha: { ...x.ha, balance: false } }) }));
   return { ok: true };
 }
 

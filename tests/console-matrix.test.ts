@@ -34,10 +34,12 @@ describe("console feature matrix", () => {
     expect(at("openstash", 2009).migrate).toBeNull();
   });
 
-  it("leaves FreePanel without resize and backups, and HyperVee and Horizont without backups", () => {
-    expect(at("freepanel", 2026)).toMatchObject({ resize: false, backups: false });
+  it("leaves FreePanel without resize and gives every console but mail and backup ones backups", () => {
+    expect(at("freepanel", 2026)).toMatchObject({ resize: false, backups: true });
+    expect(at("postfixit", 2026).backups).toBe(false);
+    expect(at("backula", 2026).backups).toBe(false);
     for (const id of ["cpanic", "pleskit", "directadmen"]) expect(at(id, 2026)).toMatchObject({ resize: true, backups: true });
-    for (const id of ["openstash", "hypervee"]) expect(at(id, 2026)).toMatchObject({ resize: true, backups: false });
+    for (const id of ["openstash", "hypervee"]) expect(at(id, 2026)).toMatchObject({ resize: true, backups: true });
     for (const id of ["vmwhere", "proxmocks"]) expect(at(id, 2026)).toMatchObject({ resize: true, backups: true });
   });
 
@@ -57,7 +59,7 @@ describe("console feature matrix", () => {
 
   it("restores game servers only on Pterodaktyl and gives mail no object actions", () => {
     expect(at("pterodaktyl", 2026).backups).toBe(true);
-    expect(at("tcadmen", 2026).backups).toBe(false);
+    expect(at("tcadmen", 2026).backups).toBe(true);
     expect(at("multikraft", 2026).look).toBe("game");
     expect(at("postfixit", 2026)).toMatchObject({ look: "mail", stop: false, create: false, migrate: null, update: true });
   });

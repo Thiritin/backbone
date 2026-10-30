@@ -68,3 +68,12 @@
 .cx-thumb { display: flex; flex-direction: column; justify-content: flex-start; width: 160px; height: 110px; padding: 6px; overflow: hidden; border: 1px solid var(--line); background: #000; color: #bbb; font: 7px/1.25 "Courier New", monospace; text-align: left; white-space: pre; cursor: pointer; }
 .cx-thumb[data-look="windoors"] { background: #0b4f8a; color: #fff; align-items: center; justify-content: center; font-family: inherit; font-size: 9px; }
 .cx-thumb:disabled { cursor: default; }
+
+/* Cluster summaries: allocated (light) behind used, and alarm severities. */
+.cx-cap-bar { position: relative; }
+.cx-cap-bar i { position: absolute; left: 0; top: 0; }
+.cx-cap-bar .cx-cap-alloc { background: color-mix(in oklab, var(--accent) 35%, transparent); }
+.cx-cap-bar[data-over] .cx-cap-alloc { background: color-mix(in oklab, var(--bad) 45%, transparent); }
+.cx-sev[data-sev="warning"] { color: #d39b00; }
+.cx-sev[data-sev="critical"] { color: var(--bad); }
+.cx-state.warn { background: color-mix(in oklab, #d39b00 18%, transparent); color: #a87a00; }

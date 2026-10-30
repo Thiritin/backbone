@@ -4,7 +4,7 @@ import { useStore } from "../../../../store";
 import type { GameState } from "../../../../../sim/50-state";
 import { vmStats } from "../../../../../sim/60-infra/stats";
 import { Chart } from "../Chart";
-import { ConsoleThumb, MediaMenu, NodeList, SizeFields, TaskLog, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
+import { AlarmList, ConsoleThumb, MediaMenu, NodeList, ResourceBars, SizeFields, summaryOf, TaskLog, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelAction, type PanelProps } from "../PanelBase";
 import "./hypervee.css";
 
@@ -86,7 +86,7 @@ export function HyperVee(p: PanelProps) {
   const list = vms.filter((v) => page.kind !== "list" || !page.node || v.w.deviceId === page.node);
   const generations = yearOf(game.hour) >= 2012;
   const finish = () => { const id = nv.create(); if (id) { setSelId(id); setPage({ kind: "list", node: null }); } };
-  const facts = vm && vmFacts(game, vm);
+  const facts = vm && vmFacts(game, vm), health = summaryOf(game, c, page.kind === "list" ? page.node : null), cluster = summaryOf(game, c, null);
   const vmActions = vm ? vm.actions.map((a) => (a.id === "resize" ? { ...a, run: () => setPage({ kind: "settings", id: vm.id }) } : a)) : [];
   return (
     <div className="cx cx-hv hv" data-era={era}>
@@ -119,6 +119,11 @@ export function HyperVee(p: PanelProps) {
                   </tbody>
                 </table>
               </div>
+              <h4 className="hv-h">Resources</h4>
+              <div className="hv-details">
+                <ResourceBars use={health.use} labels={["Processors", "Memory", "Storage"]} />
+                <AlarmList game={game} c={c} alarms={health.alarms} className="cx-table hv-events" />
+              </div>
               <h4 className="hv-h">{vm ? vm.name : "Details"}</h4>
               <div className="hv-details">
                 {vm ? <>{vm.panel}<VmDetails game={game} v={vm} generations={generations} /></> : <span className="cx-empty">No item selected.</span>}
@@ -136,7 +141,13 @@ export function HyperVee(p: PanelProps) {
               </div>
             </>
           )}
-          {page.kind === "cluster" && (<><h4 className="hv-h">Nodes</h4><div className="hv-details"><NodeList game={game} c={c} f={f} /></div></>)}
+          {page.kind === "cluster" && (
+            <>
+              <h4 className="hv-h">Nodes</h4><div className="hv-details"><NodeList game={game} c={c} f={f} /></div>
+              <h4 className="hv-h">Cluster Events ({cluster.alarms.length})</h4>
+              <div className="hv-details"><ResourceBars use={cluster.use} labels={["Processors", "Memory", "Storage"]} /><AlarmList game={game} c={c} alarms={cluster.alarms} className="cx-table hv-events" /></div>
+            </>
+          )}
           {page.kind === "settings" && vm && facts && (
             <div className="hv-settings">
               <h4 className="hv-h">Settings for {vm.name}</h4>

@@ -1,6 +1,6 @@
 // CPU makers per generation (economy.md, Prices over time, CPU vendors): two x86 makers that swap the lead and an ARM maker
 // from 2020. Anchors: Opteron 2005, Xeon 5500 2009, EPYC 2017, Ampere Altra 2020.
-import { GENERATIONS } from "./economy";
+import { GENERATIONS, generationAt } from "./economy";
 
 export type Vendor = "indel" | "amb" | "ampear";
 export const VENDORS: Vendor[] = ["indel", "amb", "ampear"];
@@ -116,3 +116,11 @@ export function defaultSku(vendor: Vendor, gen: number, cores: number, fast = fa
 // The part behind a CPU: its own, or the nearest of its vendor and generation for parts from before parts had names.
 export const skuOf = (p: { sku?: string; vendor?: Vendor; gen?: number; size?: number }): CpuSku | undefined =>
   (p.sku && skuById(p.sku)) || (p.vendor && p.gen && p.size !== undefined ? defaultSku(p.vendor, p.gen, p.size) : undefined);
+
+// A second thread on a core is worth this share of the core in vCPU.
+export const SMT_SHARE = 0.3;
+// The highest boost clock among the parts on sale in a year: the current generation's and the one before.
+export const topBoost = (year: number): number => Math.max(0, ...CPU_SKUS.filter((c) => c.from <= year && c.gen >= generationAt(year)).map((c) => c.boost));
+// How many months a part counts as new after its launch (January of its year).
+export const FRESH_MONTHS = 6;
+export const isFresh = (c: CpuSku, monthIndex: number): boolean => monthIndex - c.from * 12 < FRESH_MONTHS;

@@ -60,4 +60,10 @@ export const OPS: Record<string, (p: Params) => string> = {
   "review.dataLoss.bad": () => "They lost every file we had. Keep your own backups.",
   "review.dataLoss.ok": () => "They lost our data but paid us back. Mixed feelings.",
   "review.dataLoss.good": () => "Data gone, but they made it right.",
+  "review.fast.bad": () => "Fast box, slow support.",
+  "review.fast.ok": () => "The server is quick, the rest is average.",
+  "review.fast.good": () => "Tick rate never dropped once. Best game server we have rented.",
+  "review.smooth.bad": () => "It ran, but every other contact with them was a pain.",
+  "review.smooth.ok": () => "No complaints about uptime. Nothing special otherwise.",
+  "review.smooth.good": () => "A whole month without a hiccup. Exactly what hosting should be.",
 };

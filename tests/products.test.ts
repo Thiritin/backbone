@@ -10,7 +10,7 @@ import { howToFactor, licenseCost, SLOW_PENALTY } from "../src/sim/85-products/p
 import { tick } from "../src/sim/88-tick/tick";
 import { moveControlPlane, provisionService, setBackup, setHa } from "../src/sim/90-actions/clusters";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
-import { hypervisor, panelVm, skipTo, withServer } from "./fixtures";
+import { hypervisor, named, panelServer, panelVm, skipTo, withServer } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { monthlyValue } from "../src/sim/40-support/tickets";
@@ -47,7 +47,7 @@ function setup(platform = "proxmocks") {
   const s = { ...withServer(newGame(1)), cash: 100_000 };
   const second = server(s, 2, 1), third = server(s, 3, 2);
   const cluster = hypervisor(s, ["dev3", second], "Cloud 1", platform);
-  const backup = hypervisor(s, [third], "Backup 1");
+  const backup = named(s, panelServer(s, third, "backula"), "Backup 1");
   const cus = addCustomer(s, "Ada Lang", "hobbyDev");
   return { s, cluster, second, third, backup, cus };
 }
@@ -150,7 +150,7 @@ describe("usage curves and overcommit", () => {
     expect(nodeUsage(s, "dev3", TUE_10).perf).toBe(1);
     const sat = nodeUsage(s, "dev3", SAT_20);
     expect(sat.used.vcpu).toBeGreaterThan(sat.physical.vcpu);
-    expect(sat.perf).toBeLessThan(0.6);
+    expect(sat.perf).toBeLessThan(0.7);
     const happiness = () => s.customers.find((c) => c.id === gamer)!.happiness;
     run(s, SAT_20);
     // An hour on the slowed node costs each customer on the node SLOW_PENALTY × the performance lost past their tolerance,
