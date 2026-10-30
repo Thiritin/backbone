@@ -1,4 +1,4 @@
-import { Gauge, Plug, Truck, Zap, ZoomIn, ZoomOut } from "lucide-react";
+import { Gauge, Plug, Truck, Zap } from "lucide-react";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
@@ -65,7 +65,7 @@ const ZOOMS = [1, 1.5, 2, 3];
 // Wheel delta per zoom step; a trackpad pinch sends many small ctrl+wheel events.
 const WHEEL_STEP = 40;
 
-// Ctrl or Cmd with the wheel (or a pinch) over the rack zooms around the pointer; the rack column then scrolls.
+// Shift, Ctrl or Cmd with the wheel (or a pinch) over the rack zooms around the pointer; the rack column then scrolls.
 function useRackZoom() {
   const [zoom, setZoom] = useState(1);
   const ref = useRef<HTMLDivElement>(null), anchor = useRef<{ x: number; y: number } | null>(null), acc = useRef(0), cur = useRef(1), base = useRef(0);
@@ -87,9 +87,10 @@ function useRackZoom() {
     const el = ref.current;
     if (!el) return;
     const wheel = (e: WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return;
+      if (!e.ctrlKey && !e.metaKey && !e.shiftKey) return;
       e.preventDefault();
-      acc.current += e.deltaY;
+      // macOS turns a shifted vertical wheel into a horizontal one.
+      acc.current += e.deltaY || e.deltaX;
       if (Math.abs(acc.current) < WHEEL_STEP) return;
       const r = el.getBoundingClientRect();
       step(acc.current < 0 ? 1 : -1, { x: e.clientX - r.left, y: e.clientY - r.top });
@@ -126,7 +127,7 @@ function useRackZoom() {
       el.removeEventListener("click", click, true);
     };
   }, [step]);
-  return { zoom, ref, step, width: zoom > 1 ? base.current : undefined };
+  return { zoom, ref, width: zoom > 1 ? base.current : undefined };
 }
 
 export function RackView({ game, rack, device, onDevice, onMoved }: { game: GameState; rack: Rack; device: string | null; onDevice: (id: string | null) => void; onMoved: (locId: string | null) => void }) {
@@ -139,7 +140,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   const [selling, setSelling] = useState(false);
   const [hot, setHot] = useState<string | null>(null);
   const main = useRef<HTMLDivElement>(null);
-  const { zoom, ref: rackRef, step, width: rackWidth } = useRackZoom();
+  const { zoom, ref: rackRef, width: rackWidth } = useRackZoom();
   const items = rackItems(game, rack.id), units = rackUnits(rack), power = rackPower(game, rack.id);
   const used = items.reduce((n, it) => n + it.model.height, 0);
   const nodes = game.devices.filter((d) => d.rackId === rack.id && clusterOf(game, d.id));
@@ -175,10 +176,6 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
       <div className="loc-rack">
         <div className="loc-rack-h">
           <h2>{rack.name}</h2>
-          <div className="seg" role="group" aria-label="Zoom">
-            <button aria-label="Zoom out" disabled={zoom === ZOOMS[0]} onClick={() => step(-1)}><ZoomOut /></button>
-            <button aria-label="Zoom in" disabled={zoom === ZOOMS.at(-1)} onClick={() => step(1)}><ZoomIn /></button>
-          </div>
           <div className="seg" role="group" aria-label="Side">
             <button aria-pressed={side === "front"} onClick={() => setSide("front")}>Front</button>
             <button aria-pressed={side === "back"} onClick={() => setSide("back")}>Back</button>
