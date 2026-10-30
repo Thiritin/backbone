@@ -12,7 +12,7 @@ import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
   anchorOf, clusterOf, clustersOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, hostsOfVm, insideVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
-  backsUpCluster, balances, setMachine, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
+  backsUpCluster, balances, datastoreFits, isDatastore, setMachine, withDatastore, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
 import { burning, freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
@@ -28,7 +28,7 @@ export const PANEL_VM_SIZE: Resources = { vcpu: 2, ramGb: 2, diskGb: 50 };
 export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
 const blank = (s: GameState, id: string, name: string, az: string, kind: SoftwareKind): Cluster => ({
-  id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null, appSuite: false,
+  id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null, appSuite: false, datastores: [],
   backup: { targetId: null, every: "off" }, php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
 });
 // The name a cluster in one of the player's VMs gets, by the kind of its software.
@@ -45,7 +45,7 @@ export const freeServer = (s: GameState, d: GameState["devices"][number] | undef
   if (!d) return "error.unknownDevice";
   if (!modelById(d.model).server) return "error.notServer";
   if (!d.rackId) return "error.notMounted";
-  const taken = s.workloads.some((w) => w.deviceId === d.id && !w.clusterId) || burning(s, d);
+  const taken = s.workloads.some((w) => w.deviceId === d.id && !w.clusterId) || burning(s, d) || isDatastore(s, d.id);
   if (taken || clustersOf(s, d.id).some((c) => runs(c, softwareId))) return "error.serverInUse";
   const sw = softwareId ? softwareById(softwareId) : undefined;
   return (sw && d.software.map((x) => conflict(sw, softwareById(x.id))).find((x) => x)) || null;
@@ -95,9 +95,9 @@ export function createVm(s: GameState, clusterId: string, size: Resources): Acti
   if (c.kind !== "cloud" || (!c.platform && c.switching?.kind !== "cloud")) return fail("error.needsPlatform");
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
   if (KEYS.some((k) => !Number.isFinite(size[k]) || size[k] < PANEL_VM_MIN[k])) return fail("error.vmSize");
-  const node = pickNode(s, c, size);
+  const disk = withDatastore(s, c, size), node = pickNode(s, c, disk);
   if (!node) return fail("error.noCapacity");
-  const vm = workload(s, "", { ...size, clusterId: c.id, deviceId: node, os: null, software: [] });
+  const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, os: null, software: [] });
   s.workloads = [...s.workloads, vm];
   return { ok: true, id: vm.id };
 }
@@ -157,7 +157,7 @@ export function resizePanelVm(s: GameState, hostId: string, size: Resources): Ac
   const inside = vmRoom(s, c).used, cap = vmCap(size, panel);
   if (inside.diskGb > cap.diskGb + 1e-9) return fail("error.vmTooSmall");
   const d = vm.deviceId ? s.devices.find((x) => x.id === vm.deviceId) : undefined;
-  if (d && !nodeTakes(s, d, size, vm)) return fail("error.nodeFull");
+  if ((d && !nodeTakes(s, d, { ...size, datastore: vm.datastore }, vm)) || (vm.datastore && !datastoreFits(s, vm.datastore, size.diskGb - vm.diskGb))) return fail("error.nodeFull");
   s.workloads = s.workloads.map((w) => (w.id === vm.id ? { ...w, ...size } : w));
   freezeTick(s);
   return { ok: true };
@@ -175,7 +175,7 @@ export function resizeVm(s: GameState, vmId: string, size: Resources): ActionRes
   const bad = sizeError(size, { vcpu: 0, ramGb: 0, diskGb: 0 });
   if (bad) return fail(bad);
   const d = vm.deviceId ? s.devices.find((x) => x.id === vm.deviceId) : undefined;
-  if (d && !nodeTakes(s, d, size, vm)) return fail("error.nodeFull");
+  if ((d && !nodeTakes(s, d, { ...size, datastore: vm.datastore }, vm)) || (vm.datastore && !datastoreFits(s, vm.datastore, size.diskGb - vm.diskGb))) return fail("error.nodeFull");
   const c = s.clusters.find((x) => x.id === vm.clusterId);
   const live = !!c?.platform && balloons(softwareById(c.platform), yearOf(s.hour)) && size.ramGb >= vm.ramGb && size.vcpu === vm.vcpu && size.diskGb === vm.diskGb;
   const busyUntil = live || vm.stopped ? vm.busyUntil : Math.max(vm.busyUntil, s.hour + RESIZE_MINUTES / 60);
@@ -386,8 +386,9 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     // A cluster with the RAM for it wins; with none, the first cluster with the disk takes it past its RAM.
     for (const roomyOnly of [true, false]) {
       for (const c of candidates) {
-        const node = controlPlaneUp(s, c) ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, size, null, c.placement, roomyOnly) : null;
-        if (node) { w = workload(s, v.id, { ...size, clusterId: c.id, deviceId: c.vm ? null : node }); az = c.az; break; }
+        const disk = withDatastore(s, c, size);
+        const node = controlPlaneUp(s, c) ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, disk, null, c.placement, roomyOnly) : null;
+        if (node) { w = workload(s, v.id, { ...disk, clusterId: c.id, deviceId: c.vm ? null : node }); az = c.az; break; }
       }
       if (w) break;
     }

@@ -10,7 +10,7 @@ import { inUs } from "../20-world/datacenters";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
 import { bump, expandable, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
-import { gameFirst, lineOffered, noRoomError, pickNode, serverTaken, supports, workloadsOf } from "../60-infra/cluster";
+import { gameFirst, lineOffered, noRoomError, pickNode, serverTaken, supports, withDatastore, workloadsOf } from "../60-infra/cluster";
 import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
 import { addAwareness, discountFor } from "../80-business/marketing";
@@ -177,7 +177,7 @@ export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product"
     // A cluster with the RAM for it wins; with none, the first cluster with the disk takes it past its RAM.
     const sold = r.shop ? forSale(s, r.product) : null;
     const fit = [...s.clusters].sort(gameFirst).filter((x) => zones.includes(x.az) && supports(x, r.product) && (!sold || sold.has(x.id)));
-    const c = fit.find((x) => pickNode(s, x, size, null, x.placement, true)) ?? fit.find((x) => pickNode(s, x, size));
+    const c = fit.find((x) => pickNode(s, x, withDatastore(s, x, size), null, x.placement, true)) ?? fit.find((x) => pickNode(s, x, withDatastore(s, x, size)));
     return c ? { clusterId: c.id, zone: c.az } : null;
   }
   if (spec.runsOn === "server") {

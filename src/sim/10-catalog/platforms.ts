@@ -37,6 +37,9 @@ export interface Software {
   // The edition or add-on that spreads VMs over the nodes by load, in euros per node a month (0 when included) from its
   // year; null when the hypervisor never balances.
   balancer?: { name: string; fee: number; from: number };
+  // Shared datastores (economy.md, Datastores): VMs move live only off a datastore until the shared-nothing year, and
+  // failover restarts only VMs on one.
+  datastores?: { sharedNothing: number };
   // Backup software: the source software whose clusters it backs up, each from that year.
   backs?: Record<string, number>;
   // The skill the team needs before it can install the software.
@@ -98,7 +101,7 @@ const CATALOG: Omit<Software, MachineFields>[] = [
   { id: "freepanel", kind: "panel", name: "FreePanel", console: "FreePanel", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1.5, live: true, split: true, balloon: null, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 2, from: 2005, migration: { same: null, other: null }, cluster: 2009, autoUpdate: null },
   { id: "openveezee", kind: "cloud", name: "OpenVeeZee", console: "OpenVeeZee Web Panel", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1.4, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.1, ramGb: 0.1, diskGb: 2 }, installHours: 3, from: 2005, migration: { same: 2005, other: null }, cluster: null, autoUpdate: null },
   { id: "openstash", kind: "cloud", name: "OpenStash", console: "OpenStash Horizont", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1.3, live: true, split: false, balloon: null, controlPlane: { vcpu: 2, ramGb: 2, diskGb: 20 }, installHours: 8, from: 2010, migration: { same: 2010, other: null }, cluster: 2010, autoUpdate: null, balancer: { name: "Watchman", fee: 0, from: 2010 }, skill: "cloudOrchestration" },
-  { id: "vmwhere", kind: "cloud", name: "VMwhere", console: "VMwhere vSphear", licensing: [{ from: 2005, kind: "once", fee: 600 }, { from: 2024, kind: "core", fee: 8 }], tickets: 0.7, live: true, split: false, balloon: 2005, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 10 }, installHours: 5, from: 2005, migration: { same: 2005, other: null }, cluster: 2005, autoUpdate: 2020, balancer: { name: "Enterprise Plus", fee: 45, from: 2006 } },
+  { id: "vmwhere", kind: "cloud", name: "VMwhere", console: "VMwhere vSphear", licensing: [{ from: 2005, kind: "once", fee: 600 }, { from: 2024, kind: "core", fee: 8 }], tickets: 0.7, live: true, split: false, balloon: 2005, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 10 }, installHours: 5, from: 2005, migration: { same: 2005, other: null }, cluster: 2005, autoUpdate: 2020, balancer: { name: "Enterprise Plus", fee: 45, from: 2006 }, datastores: { sharedNothing: 2012 } },
   { id: "proxmocks", kind: "cloud", name: "Proxmocks", console: "Proxmocks VE", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1, live: true, split: true, balloon: 2005, controlPlane: { vcpu: 0.25, ramGb: 0.25, diskGb: 5 }, installHours: 3, from: 2008, migration: { same: 2008, other: null }, cluster: 2008, autoUpdate: null },
   { id: "hypervee", kind: "cloud", name: "HyperVee", console: "HyperVee Manager", licensing: [{ from: 2005, kind: "server", fee: 20 }], tickets: 0.9, live: false, split: false, balloon: 2012, controlPlane: { vcpu: 1, ramGb: 1, diskGb: 10 }, installHours: 4, from: 2008, migration: { same: 2008, other: null }, cluster: 2012, autoUpdate: 2012, balancer: { name: "SysCenter VMM", fee: 30, from: 2012 } },
   // Game server panels: containers for game servers on a server or VM; a license per game is not modelled yet.
@@ -153,6 +156,16 @@ export const clustersIn = (sw: Software, year: number): boolean => sw.cluster !=
 // Whether backup software reads clusters running the source software in that year.
 export const backsUp = (target: Software, source: string | null, year: number): boolean => !!source && (target.backs?.[source] ?? Infinity) <= year;
 // The balancer the software offers in that year, or null.
+// economy.md, Datastores: the protocols from their year, up to four datastores per cluster ready an hour after attaching,
+// and Fibre Channel's host adapter per cluster node and link speed by year.
+export type DatastoreProtocol = "nfs" | "iscsi" | "fc";
+export const DATASTORE_FROM: Record<DatastoreProtocol, number> = { nfs: 2005, iscsi: 2006, fc: 2005 };
+export const DATASTORES_MAX = 4;
+export const DATASTORE_ATTACH_HOURS = 1;
+export const FC_HBA_PRICE = 700;
+export const fcGbit = (year: number): number => (year >= 2011 ? 16 : year >= 2008 ? 8 : 4);
+// From this year a disk moves between datastores with its VM running (Storage vMotion).
+export const LIVE_DISK_MOVE = 2007;
 export const balancerIn = (sw: Software, year: number): Software["balancer"] | null => (sw.balancer && year >= sw.balancer.from ? sw.balancer : null);
 export const balloons = (sw: Software, year: number): boolean => sw.balloon !== null && year >= sw.balloon;
 // Why a and b cannot share a machine, as an error key, or null.

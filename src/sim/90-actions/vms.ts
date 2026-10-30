@@ -4,7 +4,7 @@ import type { Resources } from "../10-catalog/products";
 import { bump } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import {
-  bookable, clusterOf, controlPlaneUp, insideVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
+  bookable, clusterOf, controlPlaneUp, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
 } from "../60-infra/cluster";
 import { renumber, renumberError } from "../60-infra/addresses";
 import { handJob, type How } from "../60-infra/handwork";
@@ -55,14 +55,14 @@ export function startWorkload(s: GameState, id: string): ActionResult {
 
 // Hours a workload is offline while it moves over a link. economy.md, Workloads and migration: virtual machines move live
 // when their cluster has live migration on and the hypervisor can do it (between zones only over 10 Gbit/s or more, never
-// off a failed node, and to a node toId of another CPU vendor only in compatibility mode); web spaces are back within a
-// minute inside a zone.
+// off a failed node, to a node toId of another CPU vendor only in compatibility mode, and on VMwhere before 2012 only with
+// the disk on a datastore of the cluster toId is in); web spaces are back within a minute inside a zone.
 export function migrationDowntime(s: GameState, w: Workload, gbit: number, otherZone: boolean, toId?: string): number {
   const c = s.clusters.find((x) => x.id === w.clusterId);
   const vm = isOwnVm(w) || c?.kind === "cloud" || (!!c && isService(c.kind));
   const from = s.devices.find((d) => d.id === w.deviceId), to = s.devices.find((d) => d.id === toId);
   const live = !!c?.platform && softwareById(c.platform).live && c.ha.live && !!from && working(s, from.id) && (!otherZone || gbit >= LIVE_ZONE_GBIT)
-    && (!to || liveBetween(s, from, to));
+    && (!to || liveBetween(s, from, to)) && diskMovesLive(s, c, w, toId);
   if (live || (!otherZone && !vm)) return 0;
   return Math.max(1, Math.ceil((w.diskGb + w.ramGb) / (gbit * LAN_GB_PER_HOUR)));
 }
@@ -123,7 +123,8 @@ export function migrateWorkload(s: GameState, id: string, toId: string, announce
   const noAddress = fromLoc && toLoc && renumberError(s, ids, fromLoc, toLoc);
   if (noAddress) return fail(noAddress);
   const down = migrationDowntime(s, w, gbit, c.az !== to.az, vmHost ? undefined : toId);
-  patch(s, id, { deviceId: vmHost ? null : toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + down, stuck: undefined });
+  // A disk leaving its cluster's datastores lands on the new node.
+  patch(s, id, { deviceId: vmHost ? null : toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + down, stuck: undefined, ...(to.id !== c.id && { datastore: undefined }) });
   if (c.az !== to.az) {
     s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
     if (fromLoc && toLoc) renumber(s, ids, fromLoc, toLoc, () => announced);
@@ -259,7 +260,7 @@ export function rescueWorkload(s: GameState, id: string, toId: string, how: How 
   if ("error" in job) return fail(job.error);
   if (s.cash < job.cost) return fail("error.noCash");
   const down = migrationDowntime(s, w, moveGbit(s, c.az, to.az), c.az !== to.az, toId);
-  patch(s, id, { deviceId: toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + job.commit() + down, stuck: undefined, stopped: false });
+  patch(s, id, { deviceId: toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + job.commit() + down, stuck: undefined, stopped: false, datastore: undefined });
   if (c.az !== to.az) s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
   freezeTick(s);
   return { ok: true };

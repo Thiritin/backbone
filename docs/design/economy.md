@@ -1699,6 +1699,27 @@ A panel VM is one of the player's own VMs on a hypervisor cluster with a panel i
 - **Cloud servers** need a hypervisor cluster with failover on.
 - **The Virtual machines and Network apps** cost nothing in the Pear Store. Virtual machines installs once a hypervisor is installed or installing; Network is available from the start, and buying transit and peering in it needs Network operations.
 
+### Datastores
+
+A datastore is a server attached to a VMwhere cluster as shared storage for VM disks. Values live in `src/sim/10-catalog/platforms.ts`.
+
+| Value | Amount |
+| --- | --- |
+| Eligible server | Any server with drives in the cluster's zone that belongs to no cluster and runs no software |
+| Capacity | Usable RAID disk times the disk overcommit (2x), as on a node |
+| NFS | From 2005, free, at the server's fastest port speed |
+| iSCSI | From 2006, free, at the server's fastest port speed |
+| Fibre Channel | From 2005, €700 per cluster node once at attach for the host adapters, 4 Gbit, 8 from 2008, 16 from 2011 |
+| Datastores per cluster | Up to 4 |
+| Attach time | 1 hour |
+
+- **Placement.** A new VM's disk goes on the cluster's first working datastore with room; otherwise on its node, which then books the disk. A VM that moves to another cluster takes its disk to its new node.
+- **Live migration.** Before 2012 a VMwhere VM moves live only with its disk on a datastore of its cluster and to a node of the same cluster; a VM with its disk on its node moves cold. From 2012 every VMwhere VM moves live. Other hypervisors keep their rules.
+- **Failover.** On VMwhere only VMs with their disk on a working datastore restart on another node; a VM with its disk on the dead node stays down until the node works again, in every year.
+- **Moving a disk** between its node and a datastore, or between datastores, takes the VM offline before 2007 for disk ÷ (Gbit × 450 GB per hour), at least one hour, at the slower datastore's speed; from 2007 it moves with no downtime.
+- **Failure.** A datastore server that stops working takes every VM on it down. A datastore that loses its data loses every disk on it.
+- **Detaching** needs the datastore empty.
+
 ## PHP versions
 
 Each version becomes available on 1 January after its release, rounded so the start of the game has 4.4:

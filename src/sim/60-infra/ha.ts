@@ -1,7 +1,8 @@
 // High availability per hypervisor cluster (gdd.md, Compute): automatic failover and auto-balancing. Clustered panel hosts fail over too.
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { balances, insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
+import { softwareById } from "../10-catalog/platforms";
+import { balances, datastoreOn, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
 import { working } from "./status";
 import { nodeUsage } from "./usage";
 
@@ -20,13 +21,15 @@ const servicesIn = (s: GameState, w: Workload): string[] =>
   isOwnVm(w) ? insideVm(s, w.id).map((x) => x.serviceId) : [w.serviceId];
 
 // Restarts the VMs of failed nodes on working nodes with room; the control plane moves first when its node failed. A VM
-// that fits nowhere stays down, and the player hears about it once.
+// that fits nowhere stays down, and the player hears about it once. On a hypervisor with datastores only a VM whose disk is
+// on a working datastore restarts; one with its disk on the dead node waits for the node.
 function failover(s: GameState, c: Cluster, events: SimEvent[]) {
   const dead = new Set(c.nodes.filter((n) => !working(s, n.deviceId)).map((n) => n.deviceId));
   if (!dead.size) return;
   if (c.controlPlane && dead.has(c.controlPlane)) moveControlPlaneOff(s, c.id, c.controlPlane);
   let moved = 0, stuck = 0;
-  for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !lostDisk(s, x))) {
+  const shared = (w: Workload) => !(c.platform && softwareById(c.platform).datastores) || (datastoreOn(c, w) && working(s, w.datastore!));
+  for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !lostDisk(s, x) && shared(x))) {
     const to = pickNode(s, cluster(s, c.id), w, w.deviceId, "spread");
     if (!to) {
       if (!w.stuck) stuck++;
@@ -58,7 +61,7 @@ function balance(s: GameState, c: Cluster) {
       .sort((a, b) => a.ramGb - b.ramGb);
     for (const w of vms) {
       const to = pickNode(s, cluster(s, c.id), w, n.deviceId, "spread");
-      if (!to || runsHot(s, to) || !liveBetween(s, s.devices.find((d) => d.id === n.deviceId)!, s.devices.find((d) => d.id === to)!)) continue;
+      if (!to || runsHot(s, to) || !liveBetween(s, s.devices.find((d) => d.id === n.deviceId)!, s.devices.find((d) => d.id === to)!) || !diskMovesLive(s, c, w, to)) continue;
       patch(s, w.id, { deviceId: to, placedAt: s.hour });
       break;
     }

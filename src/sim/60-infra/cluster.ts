@@ -1,7 +1,7 @@
 import { modelById } from "../10-catalog/hardware";
 import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
-import { backsUp, balancerIn, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { backsUp, balancerIn, fcGbit, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
@@ -45,7 +45,11 @@ export interface Cluster {
   // Whether the cluster pays for its hypervisor's balancer edition (Software.balancer).
   balancer?: boolean;
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
+  // Servers attached as shared storage (economy.md, Datastores); VM disks on one stay off their node.
+  datastores: Datastore[];
 }
+// A datastore takes disks from readyAt on.
+export interface Datastore { deviceId: string; protocol: DatastoreProtocol; readyAt: number }
 // One workload runs one service: on a hypervisor node or bare-metal panel server (clusterId and deviceId), inside a panel
 // VM (clusterId of the panel host, no deviceId), on a whole server (deviceId only), or in rack units for colocation (rackId,
 // slot, units, watts). The player's own panel VMs have no service. Resources are booked at placement; placedAt is the hour
@@ -67,12 +71,14 @@ export interface Workload extends Resources, Partial<MachineState> {
   corrupted?: boolean; noticed?: boolean; recoverDoneAt?: number; recoverFailed?: boolean;
   // Own VMs only: the last STATS_HOURS hourly samples (stats.ts), missing until the first tick, and the hour the VM last came up.
   stats?: VmSample[]; upSince?: number;
+  // The datastore of its cluster its disk is on; missing for a disk on its node.
+  datastore?: string;
 }
 
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.
 // Software of a save from before versions runs its install year, or two years before the save while no install date is known.
 export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, hour = 0): Cluster => ({
-  panel: null, platform: null, vm: null, switching: null, appSuite: false, backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
+  panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
   version: c.switching ? yearOf(c.switching.doneAt) : Math.max(START_YEAR, yearOf(hour) - 2), updatedAt: c.switching?.doneAt ?? hour, ...c,
   ha: { ...HA_OFF, ...c.ha },
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
@@ -99,12 +105,41 @@ export const cardsOn = (d: Device): number => d.components.filter((c) => c.kind 
 export const cardsFree = (s: GameState, d: Device): number =>
   cardsOn(d) - s.workloads.reduce((n, w) => n + (w.deviceId === d.id && w.clusterId ? w.gpus ?? 0 : 0), 0);
 
-// What the workloads on a server book; web spaces inside a panel VM count in the VM's booking.
+// What the workloads on a server book; web spaces inside a panel VM count in the VM's booking, a disk on a datastore on the datastore.
 export function nodeUsed(s: GameState, deviceId: string): Resources {
   const used = { ...ZERO };
-  for (const w of s.workloads) if (w.deviceId === deviceId && w.clusterId) { const b = booked(s, w); for (const k of KEYS) used[k] += b[k]; }
+  for (const w of s.workloads) if (w.deviceId === deviceId && w.clusterId) { const b = booked(s, w); for (const k of KEYS) used[k] += w.datastore && k === "diskGb" ? 0 : b[k]; }
   return used;
 }
+
+type Disk = Resources & { datastore?: string };
+export const datastoreOn = (c: Cluster, r: Disk): boolean => !!r.datastore && c.datastores.some((x) => x.deviceId === r.datastore);
+// What a VM books on a node of the cluster: none of its disk while that is on one of the cluster's datastores.
+const onNode = (c: Cluster | undefined, r: Disk): Resources => (c && datastoreOn(c, r) ? { ...r, diskGb: 0 } : r);
+export const isDatastore = (s: GameState, deviceId: string): boolean => s.clusters.some((c) => c.datastores.some((x) => x.deviceId === deviceId));
+export const datastoreUsed = (s: GameState, deviceId: string): number => s.workloads.reduce((n, w) => n + (w.datastore === deviceId ? w.diskGb : 0), 0);
+export const datastoreCapacity = (s: GameState, deviceId: string): number => {
+  const d = s.devices.find((x) => x.id === deviceId);
+  return d ? nodeCapacity(d).diskGb : 0;
+};
+export const datastoreUp = (s: GameState, x: Datastore): boolean => x.readyAt <= s.hour && working(s, x.deviceId);
+export const datastoreFits = (s: GameState, deviceId: string, diskGb: number): boolean => datastoreUsed(s, deviceId) + diskGb <= datastoreCapacity(s, deviceId) + 1e-9;
+// Fibre Channel runs at its year's speed, NFS and iSCSI at the server's fastest port.
+export const datastoreGbit = (s: GameState, x: Datastore): number => {
+  const d = s.devices.find((v) => v.id === x.deviceId);
+  return x.protocol === "fc" ? fcGbit(yearOf(s.hour)) : d ? Math.max(...modelById(d.model).ports.map((p) => p.gbit)) : 0;
+};
+// A new VM's disk goes on the cluster's first working datastore with room, otherwise on its node.
+export const withDatastore = <R extends Resources>(s: GameState, c: Cluster, r: R): R & { datastore?: string } => {
+  const x = c.datastores.find((v) => datastoreUp(s, v) && datastoreFits(s, v.deviceId, r.diskGb));
+  return x ? { ...r, datastore: x.deviceId } : r;
+};
+// Before its hypervisor's shared-nothing year a VM with datastores moves live only with its disk on one of the cluster's
+// datastores, to a node of the same cluster.
+export const diskMovesLive = (s: GameState, c: Cluster, w: Workload, toId?: string): boolean => {
+  const ds = c.platform ? softwareById(c.platform).datastores : undefined;
+  return !ds || yearOf(s.hour) >= ds.sharedNothing || (datastoreOn(c, w) && !!toId && c.nodes.some((n) => n.deviceId === toId));
+};
 // Lines that share a guest per node rather than run one each, so they keep their fraction of a core everywhere.
 const SHARED: Product[] = ["webHosting", "dns", "vpn"];
 // What a workload books: on software that does not split cores a VM takes whole vCPUs.
@@ -134,9 +169,9 @@ export function controlPlanesOn(s: GameState, deviceId: string): Resources {
 export const diskFits = (used: Resources, cap: Resources, r: Resources): boolean => used.diskGb + r.diskGb <= cap.diskGb + 1e-9;
 // Whether a node can take r more once freed is released. Disk is the only limit, besides RAM within the installed RAM while
 // the cluster's Memory reservation is on, and an ARM node never takes what needs x86.
-export function nodeTakes(s: GameState, d: Device, r: Resources, freed: Resources = ZERO): boolean {
-  if (r.arch === "x86" && modelById(d.model).server?.arch === "arm") return false;
-  const cap = bookable(s, d), used = minus(nodeUsed(s, d.id), freed);
+export function nodeTakes(s: GameState, d: Device, disk: Disk, freed: Disk = ZERO): boolean {
+  if (disk.arch === "x86" && modelById(d.model).server?.arch === "arm") return false;
+  const c = clusterOf(s, d.id), r = onNode(c, disk), cap = bookable(s, d), used = minus(nodeUsed(s, d.id), onNode(c, freed));
   return diskFits(used, cap, r) && !(clusterOf(s, d.id)?.ramGuard && used.ramGb + r.ramGb > cap.ramGb + 1e-9);
 }
 
@@ -243,13 +278,13 @@ export const gameFirst = (a: Cluster, b: Cluster): number => Number(isService(b.
 // The kind of software that serves a workload: the panel of a panel host, otherwise the hypervisor.
 export const servedBy = (s: GameState, w: Workload): SoftwareKind => s.clusters.find((c) => c.id === w.clusterId)?.kind ?? "cloud";
 
-// A workload lost its disk when its server's data was lost after the workload was placed there; a web space in a panel VM
-// loses it with the VM.
+// A workload lost its disk when the data of its server, or of the datastore its disk is on, was lost after the workload was
+// placed there; a web space in a panel VM loses it with the VM.
 export function lostDisk(s: GameState, w: Workload): boolean {
   const vm = vmOf(s, w);
   if (vm) return lostDisk(s, vm);
   if (w.corrupted) return true;
-  const d = w.deviceId ? s.devices.find((x) => x.id === w.deviceId) : undefined;
+  const at = w.datastore ?? w.deviceId, d = at ? s.devices.find((x) => x.id === at) : undefined;
   return !!d && d.dataLost !== null && d.dataLost >= w.placedAt;
 }
 
@@ -297,7 +332,7 @@ export const workloadsOf = (s: GameState, serviceId: string): Workload[] => s.wo
 export const workloadsOn = (s: GameState, deviceId: string): Workload[] => s.workloads.filter((w) => w.deviceId === deviceId);
 // A server taken by a cluster or rented whole as a dedicated server.
 export const serverTaken = (s: GameState, deviceId: string): boolean =>
-  !!clusterOf(s, deviceId) || s.workloads.some((w) => w.deviceId === deviceId) || s.devices.some((d) => d.id === deviceId && burning(s, d));
+  !!clusterOf(s, deviceId) || isDatastore(s, deviceId) || s.workloads.some((w) => w.deviceId === deviceId) || s.devices.some((d) => d.id === deviceId && burning(s, d));
 
 // The scheduler: active, working nodes with the disk for it. Booking CPU and RAM past a node never refuses a placement, but
 // a node whose installed RAM it still fits wins (pack picks the busiest of them, spread the idlest); with none, the node
@@ -305,7 +340,7 @@ export const serverTaken = (s: GameState, deviceId: string): boolean =>
 // Ties keep node order. A panel VM is its one node: it returns the VM's id while the VM runs and has the disk (and, with
 // roomyOnly, the RAM).
 export function pickNode(
-  s: GameState, cluster: Cluster, r: Resources, skip: string | null = null, placement: Placement = cluster.placement, roomyOnly = false,
+  s: GameState, cluster: Cluster, r: Disk, skip: string | null = null, placement: Placement = cluster.placement, roomyOnly = false,
 ): string | null {
   if (cluster.vm) {
     const vm = vmById(s, cluster.vm), room = vmRoom(s, cluster);
@@ -329,7 +364,7 @@ export function pickNode(
 export const movesLive = (s: GameState, c: Cluster, w: Workload, fromId: string, toId: string): boolean => {
   if (!(c.kind === "cloud" || isService(c.kind) || isOwnVm(w))) return true;
   const from = s.devices.find((d) => d.id === fromId), to = s.devices.find((d) => d.id === toId);
-  return !!c.platform && softwareById(c.platform).live && c.ha.live && !!from && !!to && liveBetween(s, from, to);
+  return !!c.platform && softwareById(c.platform).live && c.ha.live && !!from && !!to && liveBetween(s, from, to) && diskMovesLive(s, c, w, toId);
 };
 
 // Moves every workload it can live off a draining node; an emptied node goes into maintenance. Returns the workloads left.
@@ -375,7 +410,7 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   if (c && w.deviceId && s.frozen.includes(w.deviceId)) return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);
-    return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online;
+    return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online && (!w.datastore || working(s, w.datastore));
   }
   const rack = s.racks.find((r) => r.id === w.rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);

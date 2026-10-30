@@ -11,6 +11,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Switches and firewalls now come from their makers in the makers' own numbering, such as a Sysko Catalust 2960X-48TS, a Junipurr EX4300-48T, an Aristotle 7050SX3 or a Fortinope FortiGoat 600E, and five makers join: Nettgear, Ubiquitea and D-Lunk for small switches, Netgoat and SoPhosphate for firewalls, with APCee and Vertivo for UPS units.
 - Every year now sells an 8, a 24 and a 48 port copper switch and a firewall under 1000 euro, each maker keeps its own years on sale and support, and firewalls list their inspection throughput and session count.
 - The OpenVeeZee Web Panel and OpenStash Horizont now show memory, CPU and disk used against allocated, and list the same alarms as the other hypervisor consoles.
+- VMwhere clusters can now attach up to four servers with drives as shared datastores over NFS, iSCSI or Fibre Channel; until 2012 only virtual machines on a datastore move live, failover restarts only those, and a disk can move between its node and a datastore.
 - Customers who accept a move now always wait for you to move their service, whether they named a time window or said any time, and a move you miss costs their happiness.
 - A migration you offered a customer now keeps showing as offered while no host can take it, and a missed move shows a greyed out offer entry instead of the entry vanishing.
 - Virtual machines with an empty panel or game host installed can now be deleted from the hypervisor console, which removes the host with them.

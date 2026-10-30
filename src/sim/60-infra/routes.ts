@@ -4,7 +4,7 @@ import type { Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { working } from "./status";
-import { bookable, clusterOf, clustersOf, controlPlaneUp, hasHosts, KEYS, noRoomError, nodeUsed, pickNode, supports, vmRoom, type Cluster } from "./cluster";
+import { bookable, clusterOf, clustersOf, controlPlaneUp, hasHosts, KEYS, noRoomError, nodeUsed, pickNode, supports, vmRoom, withDatastore, type Cluster } from "./cluster";
 
 // cap and used are what the target can book and has booked; free is the room left.
 export interface RouteNode { id: string; name: string; cap: Resources; used: Resources; free: Resources; fits: boolean }
@@ -26,7 +26,7 @@ export function routeOptions(s: GameState, product: Product, city: string, size:
     }
     const nodes = c.nodes.filter((n) => n.state === "active" && working(s, n.deviceId)).map((n): RouteNode => {
       const d = s.devices.find((x) => x.id === n.deviceId)!;
-      return { id: d.id, name: d.label ?? d.name, ...room(bookable(s, d), nodeUsed(s, d.id)), fits: up && !!pickNode(s, only(c, d.id), size) };
+      return { id: d.id, name: d.label ?? d.name, ...room(bookable(s, d), nodeUsed(s, d.id)), fits: up && !!pickNode(s, only(c, d.id), withDatastore(s, c, size)) };
     });
     return { id: c.id, name: c.name, az: c.az, cap: sumOf(nodes.map((n) => n.cap)), used: sumOf(nodes.map((n) => n.used)), free: sumOf(nodes.map((n) => n.free)), fits: nodes.some((n) => n.fits), nodes };
   });
@@ -51,5 +51,5 @@ export function routeError(s: GameState, product: Product, city: string, size: R
   if (!s.locations.some((l) => l.city === city && l.az === c.az)) return "error.routeElsewhere";
   if (!supports(c, product)) return noRoomError(s, product, c.id);
   if (!controlPlaneUp(s, c)) return "error.controlPlaneDown";
-  return pickNode(s, target.deviceId ? only(c, target.deviceId) : c, size) ? null : "error.noCapacity";
+  return pickNode(s, target.deviceId ? only(c, target.deviceId) : c, withDatastore(s, c, size)) ? null : "error.noCapacity";
 }
