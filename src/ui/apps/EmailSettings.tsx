@@ -25,7 +25,7 @@ export function EmailSettings({ onClose }: { onClose: () => void }) {
   useDismiss(ref, onClose);
   const m = game.company.mail, year = yearOf(game.hour), seats = seatsFor(game), host = game.clusters.find((c) => c.kind === "mail");
   const options: Option[] = [
-    { id: "free", name: FREEMAIL, note: "Free", on: m.kind === "free", off: false, pick: () => act(cancelMail), mark: NOTMAIL },
+    { id: "free", name: FREEMAIL, note: "Free. Looks unprofessional to business customers.", on: m.kind === "free", off: false, pick: () => act(cancelMail), mark: NOTMAIL },
     ...MAIL_PROVIDERS.map((p): Option => ({
       id: p.id, name: p.name, on: m.kind === "external" && m.provider === p.id, off: year < p.from || !game.company.domain, pick: () => act(bookMail, p.id), mark: MAIL[p.id],
       note: year < p.from ? `Available from ${p.from}` : !game.company.domain ? "You need a domain" : `${euro(p.price(year))} per seat, ${euro(seats * p.price(year))} per month`,

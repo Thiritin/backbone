@@ -9,6 +9,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - A new Applications app lists every installed app; right-click any app there or in the dock to remove it from the dock, keep it in the dock, or put a link to it on the desktop.
 - SSL certificates can go on your website and are resold through your registrar partner: new web hosting customers add one to their order, and customers who ask for the padlock buy one after your SSL reply.
 - The welcome intro now says you start with 3,500 € of savings and an empty rack, matching the money you actually have.
+- Email settings now warn that a free Notmail address looks unprofessional to business customers.
 - The Email app now takes on the look and logo of your mail provider or support desk, with the logo shown in a bar above the inbox.
 - Email settings open as a small sheet over the app, where you pick Notmail, a hosted provider or your own mail server from one list.
 - Your computer now starts on an older Pear OS look, and each new Pear OS release offers a Software Update that restyles the desktop to match its era.
