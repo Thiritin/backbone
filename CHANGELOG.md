@@ -74,6 +74,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - A cluster named after the place it was built in now takes the name of the location its servers move to.
 - Phones and tablets now see a screen explaining that Backbone is a desktop game, with a link to the Discord.
 - A draining server can now be uncordoned, which stops a drain that has nowhere to move its workloads.
+- Used listings now show the technical details of the server, such as CPU, cores, clock, mainboard, RAM, drives and power supplies, like the New tab does.
 - Mainboards in the Parts tab are sold per socket and biggest CPU, such as "Indel I3-40 Mainboard", and show their socket and the CPUs they take.
 - Clicking a reply option on a support ticket now sends that reply right away.
 - Storage servers now differ in drives: in 2005 a backup server holds about 1 TB on six 160 GB drives with half its bays empty, a storage server four 160 GB drives, and the archive server twelve 500 GB drives; the Value 1U ships with one 160 GB drive.

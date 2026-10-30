@@ -1,7 +1,8 @@
 import { Gavel, ShoppingBag, Tag, X } from "lucide-react";
 import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
-import { modelById } from "../../../sim/10-catalog/hardware";
+import { boardSpec, componentParts, genOf, isDriveKind, modelById, wattsFactorOf, type ComponentKind, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { cardOf } from "../../../sim/10-catalog/gpu";
 import { defaultVendor, VENDOR_NAME, VENDORS, type Vendor } from "../../../sim/10-catalog/cpus";
 import { CHANNELS, channelName, currentBid, EBUY_FEE, leading, onMarket, SELL_ASK, SELL_START, shipHours, type Channel, type Defect, type Listing } from "../../../sim/10-catalog/used";
 import type { GameState } from "../../../sim/50-state";
@@ -11,7 +12,7 @@ import { Isometric } from "../../art/Isometric";
 import { BrandLogo } from "../../art/logos";
 import { useSessionState } from "../../session";
 import { useStore } from "../../store";
-import { day } from "../hw";
+import { clockLabel, cores, day, disk, height, portsText, ram, speed } from "../hw";
 import "./used.css";
 
 const DEFECT: Record<Defect, string> = { psu: "PSU 2 missing", drive: "1 drive reports errors", rails: "No rails" };
@@ -22,6 +23,25 @@ const listingVendor = (l: Listing): Vendor | undefined => {
   const m = modelById(l.model);
   return m.server ? l.vendor ?? defaultVendor(m.server.arch) : undefined;
 };
+
+// The technical facts of one unit as the New tab lists them, from the parts it was built with.
+function techRows(m: DeviceModel, brand: string, vendor: Vendor | undefined): [string, string][] {
+  const parts = componentParts(m, vendor), sum = (f: (k: ComponentKind) => boolean) => parts.filter((p) => f(p.kind)).reduce((n, p) => n + (p.size ?? 0), 0);
+  const s = m.server, board = s && vendor ? boardSpec(m, vendor) : undefined, drives = parts.filter((p) => isDriveKind(p.kind)), cards = parts.filter((p) => p.kind === "gpu");
+  return [
+    ["Height", height(m)],
+    ...(m.throughputGbit ? [["Throughput", speed(m.throughputGbit)]] as [string, string][] : []),
+    ...(s && vendor ? [
+      ["CPU", VENDOR_NAME[vendor]], ["Cores", cores(sum((k) => k === "cpu"))], ["Clock", clockLabel({ kind: "cpu", vendor, gen: genOf(m) })],
+      ["Mainboard", board?.name ?? ""], ["RAM", ram(sum((k) => k === "ram"))],
+      ...(cards.length ? [["GPUs", `${cards.length} × ${cardOf(cards[0].size).name}`]] as [string, string][] : []),
+      ["Storage", drives.length ? `${disk(sum(isDriveKind))} in ${drives.length} ${drives.length === 1 ? "drive" : "drives"}, ${s.disk}` : "None"],
+    ] as [string, string][] : []),
+    ...(m.kind === "gateway" ? [["Routing", m.fullTable ? "Full table" : "Default route"]] as [string, string][] : []),
+    ...(m.batteryWh ? [["Battery", `${m.batteryWh} Wh`]] as [string, string][] : m.outlets ? [["Outlets", `${m.outlets}`]] as [string, string][] : m.ports.length ? [[s ? "NICs" : "Ports", portsText(m)]] as [string, string][] : []),
+    ...(m.watts ? [["PSUs", `${m.psus}`], ["Power", `${Math.round(wattsFactorOf(m, brand) * m.watts)} W`]] as [string, string][] : []),
+  ].filter(([, v]) => v !== "") as [string, string][];
+}
 
 function Money({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
   return (
@@ -46,7 +66,7 @@ function ListingCard({ game, l, to }: { game: GameState; l: Listing; to: string 
   };
   const vendor = listingVendor(l);
   const rows: [string, string][] = [
-    ...(vendor ? [["CPU", VENDOR_NAME[vendor]]] as [string, string][] : []),
+    ...techRows(m, l.brand, vendor),
     ["Age", years(l.age)],
     ["Seller", l.city],
     [auction ? "Ends" : "Listed for", days(l.expiresAt - game.hour)],
