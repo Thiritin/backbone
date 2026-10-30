@@ -6,7 +6,7 @@ import type { Device, GameState } from "../50-state";
 import { dropCluster, hostOfVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
-import { bootHours, booting, haltHours, deviceHealth, drivesOf, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, working } from "./status";
+import { bootHours, booting, haltHours, deviceHealth, drivesOf, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, working } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -100,6 +100,22 @@ export function halt(s: GameState, d: Device): void {
 export function haltTick(s: GameState): void {
   if (!s.devices.some((d) => d.haltUntil !== undefined && d.haltUntil <= nowHours(s))) return;
   s.devices = s.devices.map((d) => (d.haltUntil !== undefined && d.haltUntil <= nowHours(s) ? { ...d, on: false, haltUntil: undefined } : d));
+}
+
+// Every minute: a rack over its limit trips its breaker, every server in it loses power and stays off, and the breaker
+// resets once the servers no longer draw. Network gear comes back by itself.
+export function tripTick(s: GameState): SimEvent[] {
+  const isServer = (d: Device) => d.on && modelById(d.model).kind === "server";
+  const tripped = s.racks.filter((r) => s.devices.some((d) => d.rackId === r.id && isServer(d)) && rackPower(s, r.id).tripped);
+  if (!tripped.length) return [];
+  const ids = new Set(tripped.map((r) => r.id));
+  s.devices = s.devices.map((d) => {
+    if (!isServer(d) || !d.rackId || !ids.has(d.rackId)) return d;
+    const n = { ...d };
+    pullPlug(s, n);
+    return n;
+  });
+  return tripped.map((r) => ({ app: "Locations", key: "event.breakerTripped", params: { rack: r.name } }));
 }
 
 export function bootUp(s: GameState, d: Device): void {

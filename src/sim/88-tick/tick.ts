@@ -22,7 +22,7 @@ import { domainsTick } from "../30-customers/registry";
 import { registrarTick } from "../30-customers/registrar";
 import { mailTick } from "../80-business/mail";
 import { computeTick } from "../60-infra/cluster";
-import { haltTick, powerTick, pushLog } from "../60-infra/power";
+import { haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
 import { installNetTick } from "../60-infra/oob";
 import { haTick } from "../60-infra/ha";
 import { migrationTick } from "../60-infra/migration";
@@ -200,7 +200,7 @@ export function tick(state: GameState): SimEvent[] {
   state.minute = 0;
   haltTick(state);
   installNetTick(state);
-  const events: SimEvent[] = [];
+  const events: SimEvent[] = tripTick(state);
   // The store shallow-copies the state before ticking, so arrays and their items are replaced rather than changed.
   if (state.racks.some((r) => r.arriveAt !== null && r.arriveAt <= state.hour)) {
     state.racks = state.racks.map((r) => {
@@ -329,5 +329,6 @@ export function tickMinute(state: GameState): SimEvent[] {
   state.minute++;
   haltTick(state);
   installNetTick(state);
-  return workTick(state);
+  const tripped = tripTick(state);
+  return [...tripped, ...workTick(state)];
 }

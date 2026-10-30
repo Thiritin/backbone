@@ -9,6 +9,8 @@ export const REMOTE_EN: Record<string, (p: Params) => string> = {
   "ipmi.log.firmware": () => "Firmware updated",
   "event.serverStuck.title": () => "Boot stuck",
   "event.serverStuck.text": (p) => `${p.device} stopped at the firmware prompt and waits for someone to continue the boot.`,
+  "event.breakerTripped.title": () => "Breaker tripped",
+  "event.breakerTripped.text": (p) => `${p.rack} drew more than its power limit. Every server in it lost power and is switched off.`,
   "event.oobHacked.title": () => "Management access taken over",
   "event.oobHacked.text": (p) => `Someone got into ${p.device} through an old firmware and cut ${p.count} ${p.count === 1 ? "device" : "devices"} behind it.`,
   "ledger.atxAdapter": (p) => `ATX power adapter for ${p.device}`,
