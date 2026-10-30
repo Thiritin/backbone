@@ -6,7 +6,7 @@ export function Postfixit(props: SiteProps) {
   const { p, page, year } = props;
   return (
     <div className="sw sw-postfixit">
-      <table className="top"><tbody><tr><td><h1>The Postfixit Home Page</h1></td><td className="mirror">Mirror: postfixit.example</td></tr></tbody></table>
+      <table className="top"><tbody><tr><td><h1>The Postfixit Home Page</h1></td><td className="mirror">Mirror: postfixit.org</td></tr></tbody></table>
       <Nav {...props} labels={{ home: "Overview", pricing: "License" }} />
       {page === "home" && (
         <>
