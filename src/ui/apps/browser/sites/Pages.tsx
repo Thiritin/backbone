@@ -93,12 +93,11 @@ export function NotFound({ host }: { host: string }) {
   );
 }
 
-export function CannotReach({ host, onAdmin }: { host: string; onAdmin?: () => void }) {
+export function CannotReach({ host }: { host: string }) {
   return (
     <div className="br-error">
       <h1>Cannot reach this site</h1>
       <p>{host} took too long to respond.</p>
-      {onAdmin && <button className="btn" onClick={onAdmin}>Admin</button>}
     </div>
   );
 }

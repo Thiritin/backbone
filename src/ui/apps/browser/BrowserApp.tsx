@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Download, Plus, RotateCw, Star, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { adminUrl, BOARD_TITLE, companyUrl, defaultBookmarks, resolve, split, VIDEO_TITLE, VIDEO_URL, type Resolved } from "../../../sim/80-business/browser";
+import { BOARD_TITLE, companyUrl, defaultBookmarks, resolve, split, VIDEO_TITLE, VIDEO_URL, type Resolved } from "../../../sim/80-business/browser";
 import { customerSite } from "../../../sim/80-business/website";
 import { familyOf } from "../../../sim/60-infra/vulns";
 import { consoleTitle } from "../../../sim/80-business/consoles";
@@ -14,7 +14,6 @@ import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
 import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
-import { AdminPage } from "./sites/AdminPage";
 import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
 import { RegistrarSite } from "./sites/RegistrarSite";
@@ -32,7 +31,6 @@ function titleOf(game: GameState, r: Resolved): string {
   const p = r.page;
   switch (p.kind) {
     case "company": return game.company.name;
-    case "admin": return "Admin";
     case "customer": return customerSite(game, p.serviceId)?.title ?? r.host;
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
     case "registrar": return registrarById(p.id)?.name ?? r.host;
@@ -63,13 +61,11 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
     const id = setTimeout(() => setWaiting(false), LOAD_MS);
     return () => clearTimeout(id);
   }, [waiting]);
-  const p = r.page, own = p.kind === "company" || p.kind === "admin";
-  const admin = () => go(adminUrl(game));
+  const p = r.page;
   let body;
   if (waiting) body = null;
-  else if (r.load === "down") body = <CannotReach host={r.host} onAdmin={own ? admin : undefined} />;
-  else if (p.kind === "company") body = <CompanySite game={game} onAdmin={admin} />;
-  else if (p.kind === "admin") body = <AdminPage onSite={() => go(companyUrl(game))} />;
+  else if (r.load === "down") body = <CannotReach host={r.host} />;
+  else if (p.kind === "company") body = <CompanySite game={game} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
   else if (p.kind === "vendor") body = <VendorSite maker={p.maker} go={go} />;
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} />;

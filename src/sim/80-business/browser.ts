@@ -18,7 +18,6 @@ export type Load = "fast" | "slow" | "down";
 
 export type Page =
   | { kind: "company" }
-  | { kind: "admin" }
   | { kind: "customer"; serviceId: string }
   | { kind: "vendor"; maker: string }
   | { kind: "registrar"; id: RegistrarId }
@@ -43,7 +42,6 @@ export const VENDORS = MANUFACTURERS.filter((m) => m.id !== "generic");
 export const vendorHost = (id: string): string => `${id}.example`;
 
 export const BOARD_URL = `${BOARD_HOST}/`;
-export const adminUrl = (s: GameState): string => `www.${companyDomain(s)}/admin`;
 export const companyUrl = (s: GameState): string => `www.${companyDomain(s)}/`;
 
 // The registrar under contract, or the first one before any contract.
@@ -54,8 +52,7 @@ export function registrarUrl(s: GameState): string {
 
 // Bookmarks every game has, the registrar, and a console for each management software the company runs.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
-  { title: s.company.name, url: companyUrl(s) },
-  { title: "Admin", url: adminUrl(s) },
+  ...(s.marketing.launched ? [{ title: s.company.name, url: companyUrl(s) }] : []),
   { title: BOARD_TITLE, url: BOARD_URL },
   { title: ((s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0]).name, url: registrarUrl(s) },
   ...consoleBookmarks(s),
@@ -110,7 +107,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   const out = (page: Page, load: Load = "fast"): Resolved => ({ url, host, path, page, load });
   const domain = companyDomain(s);
   if (host === domain || host === `www.${domain}`) {
-    if (path.replace(/\/$/, "") === "/admin") return out({ kind: "admin" });
+    if (!s.marketing.launched) return out({ kind: "notfound" });
     const st = siteStatus(s);
     return out({ kind: "company" }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
   }

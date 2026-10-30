@@ -17,13 +17,27 @@ export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", 
 
 export const listed = (s: GameState, p: Product): boolean => s.marketing.lines.includes(p);
 
-// The error key for why a line cannot go on the website, or null when it can.
-export const lineBlocker = (s: GameState, p: Product): string | null =>
-  p === "ssl" ? (s.registrar ? null : "error.needsRegistrar") : lineOffered(s, p) ? null : noRoomError(s, p);
+// The error key for why a line cannot go on the website, or null when it can. SSL is an add-on for web hosting customers.
+export function lineBlocker(s: GameState, p: Product): string | null {
+  if (p !== "ssl") return lineOffered(s, p) ? null : noRoomError(s, p);
+  if (!s.registrar) return "error.needsRegistrar";
+  return listed(s, "webHosting") ? null : "error.needsWebHostingLine";
+}
+
+// The first site is hand-written HTML: free, and ready three days after the player starts it.
+export const SITE_BUILD_HOURS = 72;
+export const siteBuilt = (s: GameState): boolean => s.marketing.siteReady !== null && s.hour >= s.marketing.siteReady;
+
+// Saves from before the build step count a site as launched once it had a domain and listed lines.
+export const fillLaunch = (s: GameState, saved: boolean | undefined): GameState =>
+  saved !== undefined || !s.company.domain || !s.marketing.lines.length ? s : { ...s, marketing: { ...s.marketing, siteReady: 0, launched: true } };
 
 // Saves from before the website list every line they could sell.
-export const fillLines = (s: GameState, saved: Product[] | undefined): GameState =>
-  saved ? s : { ...s, marketing: { ...s.marketing, lines: SITE_LINES.filter((p) => !lineBlocker(s, p)) } };
+export function fillLines(s: GameState, saved: Product[] | undefined): GameState {
+  if (saved) return s;
+  const base = { ...s, marketing: { ...s.marketing, lines: SITE_LINES.filter((p) => p !== "ssl" && !lineBlocker(s, p)) } };
+  return lineBlocker(base, "ssl") ? base : { ...base, marketing: { ...base.marketing, lines: [...base.marketing.lines, "ssl"] } };
+}
 
 // What the website shows: each listed line, with its price from the line's smallest size at the player's rates once the
 // order form takes orders, and the order address while orders still come by email.
@@ -38,7 +52,7 @@ export const SITE_RENT = 9.9;
 export const SITE_LOAD = { vcpu: 0.25, ramGb: 0.5, diskGb: 2 };
 const SLOW_RAM = 0.9;
 
-export const siteHostingCost = (s: GameState): number => (owns(s, "website") && s.marketing.siteHost.kind === "rented" ? SITE_RENT : 0);
+export const siteHostingCost = (s: GameState): number => (s.marketing.launched && s.marketing.siteHost.kind === "rented" ? SITE_RENT : 0);
 
 // The site is a virtual workload on its host: it books nothing in the node, so workloadsOf and billing stay as they are.
 function siteWorkload(c: Cluster): Workload {
@@ -92,10 +106,15 @@ export const siteFactor = (s: GameState): number => STATUS_FACTOR[siteStatus(s)]
 export const fillDesign = (s: GameState, saved: number | undefined): GameState =>
   saved !== undefined || !owns(s, "website") ? s : { ...s, marketing: { ...s.marketing, designYear: generationOf(yearOf(s.hour)) } };
 
+// Hourly: tells the player when the first site is written.
+export function siteBuiltEvent(s: GameState, events: SimEvent[]): void {
+  if (s.marketing.siteReady === s.hour && !s.marketing.launched) events.push({ app: "Marketing", key: "event.siteBuilt", params: {} });
+}
+
 // Hourly: tells the player once when an own host takes the site down.
 export function siteDownEvent(s: GameState, events: SimEvent[]): void {
   const host = s.marketing.siteHost;
-  if (host.kind === "rented") return;
+  if (host.kind === "rented" || !s.marketing.launched) return;
   const down = siteStatus(s) === "down";
   if (down === s.marketing.siteOutage) return;
   s.marketing = { ...s.marketing, siteOutage: down };

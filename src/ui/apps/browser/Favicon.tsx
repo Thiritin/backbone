@@ -21,15 +21,13 @@ const Tile = ({ fill, children }: { fill: string; children: ReactNode }) => (
   </svg>
 );
 
-// A 16 px mark per kind of page: the company colour for its site and Admin, a letter for a customer, the brand's mark for a vendor.
+// A 16 px mark per kind of page: the company colour for its site, a letter for a customer, the brand's mark for a vendor.
 export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
   if (r.load === "down") return <Tile fill={GREY}><path d="M5 5l6 6M11 5l-6 6" stroke="white" strokeWidth="1.6" strokeLinecap="round" /></Tile>;
   const p = r.page;
   switch (p.kind) {
     case "company":
       return <Tile fill={game.company.color}><circle cx="8" cy="8" r="3.6" fill="none" stroke="white" strokeWidth="1.2" /><path d="M4.4 8h7.2M8 4.4c-2 2-2 5.2 0 7.2M8 4.4c2 2 2 5.2 0 7.2" fill="none" stroke="white" strokeWidth="1" /></Tile>;
-    case "admin":
-      return <Tile fill={game.company.color}><path d="M4 5.5h8M4 8h8M4 10.5h8" stroke="white" strokeWidth="1.4" strokeLinecap="round" /><circle cx="6" cy="5.5" r="1.3" fill="white" /><circle cx="10" cy="8" r="1.3" fill="white" /><circle cx="7" cy="10.5" r="1.3" fill="white" /></Tile>;
     case "customer": {
       const title = customerSite(game, p.serviceId)?.title ?? "?";
       return (

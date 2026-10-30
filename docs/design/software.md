@@ -168,7 +168,7 @@ Installing calls `installSoftware`; the wizard's Progress page or the installer'
 
 ### 8.1 Toolbar, start page and home
 
-The toolbar gains a **home icon** left of the address bar. Home is the site index, `www.yahoy.example/dir/`. A new browser session's first tab opens there. The bookmarks bar keeps the company site, Admin and the registrar under contract; the Sponsor-Bored and console bookmarks go away, since the index lists them.
+The toolbar gains a **home icon** left of the address bar. Home is the site index, `www.yahoy.example/dir/`. A new browser session's first tab opens there. The bookmarks bar keeps the company site once launched and the registrar under contract; the Sponsor-Bored and console bookmarks go away, since the index lists them.
 
 ### 8.2 The index
 
@@ -190,7 +190,7 @@ Categories, in this order, each site from the year it exists:
 9. **Domain resellers**: NameCheep, GoDuddy Reseller, InterNetY, OpenSRSly.
 10. **Community**: Sponsor-Bored.
 11. **Hardware**: every manufacturer site.
-12. **<Company name>**: the company site, Admin, and one row per console the company runs ("Proxmocks VE node001", "cPanic vm001"), each a live link; the row is grey with "down" when the host cannot be reached. This category replaces the console bookmarks.
+12. **<Company name>**: the company site, and one row per console the company runs ("Proxmocks VE node001", "cPanic vm001"), each a live link; the row is grey with "down" when the host cannot be reached. This category replaces the console bookmarks.
 13. **Video**: youtub.example.
 
 A software before its `from` year is absent and its address resolves to Not found.

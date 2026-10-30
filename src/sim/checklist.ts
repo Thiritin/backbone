@@ -3,7 +3,7 @@ import { DEFAULT_HOME_LINE } from "./20-world/datacenters";
 import type { GameState } from "./50-state";
 import { isDrive, linkStatus, locationOf } from "./60-infra/status";
 import { lineActive } from "./60-infra/addresses";
-import { owns } from "./80-business/marketing";
+import { siteBuilt } from "./80-business/website";
 
 const onlineServers = (s: GameState) =>
   s.devices.filter((d) => modelById(d.model).kind === "server" && linkStatus(s, d.id).online);
@@ -16,7 +16,8 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   mountServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server" && d.rackId && d.on),
   internet: (s) => lineActive(s),
   domain: (s) => !!s.registrar && !!s.company.domain,
-  website: (s) => owns(s, "website") && s.marketing.lines.length > 0,
+  website: siteBuilt,
+  launch: (s) => s.marketing.launched && s.marketing.lines.length > 0,
   email: (s) => s.company.mail.kind !== "free",
   loan: (s) => booked(s, "ledger.loanTaken"),
   firstServer: (s) => onlineServers(s).length >= 1,
@@ -45,4 +46,4 @@ export const tracked = (id: string): boolean => id in CHECKS;
 export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) || s.checklist.includes(id);
 
 // The Getting started tutorial: each step is a checklist goal, done in this order. company is ticked by any change in Settings under Company.
-export const TUTORIAL = ["company", "buyServer", "mountServer", "internet", "setup", "domain", "website", "email", "firstCustomer"] as const;
+export const TUTORIAL = ["company", "buyServer", "mountServer", "internet", "setup", "website", "domain", "launch", "email", "firstCustomer"] as const;

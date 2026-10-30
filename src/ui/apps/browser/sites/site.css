@@ -92,5 +92,4 @@
 :root[data-theme="dark"] .site.g2021 .site-link, :root[data-theme="dark"] .site.g2025 .site-link { color: #7cb0ff; }
 .site-name { display: flex; flex-direction: column; min-width: 0; }
 .site-tagline { margin-top: 2px; font-size: 16px; font-weight: 400; font-style: normal; line-height: 1.3; opacity: 0.85; }
-.site-admin { position: absolute; top: 10px; right: 12px; z-index: 2; padding: 3px 11px; border: 0; border-radius: 12px; background: #000000b3; color: #ffffff; font: 600 12px system-ui, sans-serif; cursor: pointer; }
 .site-admin:hover { background: #000000e6; }

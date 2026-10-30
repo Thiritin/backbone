@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MANUFACTURERS } from "../src/sim/10-catalog/hardware";
 import { companyDomain, fqdn } from "../src/sim/30-customers/domains";
 import { privateIp } from "../src/sim/60-infra/addresses";
-import { adminUrl, defaultBookmarks, resolve, split, VENDORS, VIDEO_URL } from "../src/sim/80-business/browser";
+import { defaultBookmarks, resolve, split, VENDORS, VIDEO_URL } from "../src/sim/80-business/browser";
 import { newGame } from "../src/sim/50-state";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { setPower } from "../src/sim/90-actions/hardware";
@@ -24,12 +24,15 @@ describe("browser resolver", () => {
     expect(split("example.de")).toEqual({ host: "example.de", path: "/" });
   });
 
-  it("resolves the company domain, with and without www, and its admin page", () => {
+  it("resolves the company domain, with and without www, once the site is launched", () => {
     const s = readyGame(1), d = companyDomain(s);
     expect(resolve(s, d).page).toEqual({ kind: "company" });
     expect(resolve(s, `https://www.${d}/`)).toMatchObject({ page: { kind: "company" }, load: "fast" });
-    expect(resolve(s, adminUrl(s)).page).toEqual({ kind: "admin" });
-    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["company", "admin", "sponsorboard", "registrar", "console", "console"]);
+    expect(resolve(s, `${d}/admin`).page).toEqual({ kind: "company" });
+    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["company", "sponsorboard", "registrar", "console", "console"]);
+    s.marketing.launched = false;
+    expect(resolve(s, d).page).toEqual({ kind: "notfound" });
+    expect(defaultBookmarks(s).map((m) => m.title)).not.toContain(s.company.name);
   });
 
   it("resolves every customer domain to its site", () => {
@@ -85,7 +88,6 @@ describe("browser resolver", () => {
     expect(resolve(s, companyDomain(s)).load).toBe("fast");
     expect(setPower(s, s.devices.find((x) => x.hostname)!.id, false).ok).toBe(true);
     expect(resolve(s, companyDomain(s)).load).toBe("down");
-    expect(resolve(s, adminUrl(s))).toMatchObject({ page: { kind: "admin" }, load: "fast" });
   });
 
   it("has no company hostnames before a domain is registered", () => {

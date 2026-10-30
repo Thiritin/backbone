@@ -88,13 +88,14 @@ export function readyGame(seed: number): GameState {
   return withCompany(fillLines(s, undefined));
 }
 
-// The company has signed with NameCheep, owns its derived domain and books Hosted Exchange for the owner, which a game needs
+// The company has signed with NameCheep, owns its derived domain with the website online on it and books Hosted Exchange for the owner, which a game needs
 // before it can go online; suites that are not about domains or email start from it.
 export function withCompany(s: GameState): GameState {
   s.registrar = { id: "nameCheep", since: 0, tier: 0, billed: true, transfer: null };
   const name = derivedDomain(s);
   s.company = { ...s.company, domain: name, mail: { kind: "external", provider: "hostedExchange", seats: 1 } };
   register(s, name, null, false);
+  s.marketing = { ...s.marketing, siteReady: 0, launched: true };
   return s;
 }
 

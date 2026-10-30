@@ -1,12 +1,8 @@
-import { Eye, Globe, HeartHandshake, Megaphone, Presentation, Star, Waypoints } from "lucide-react";
+import { Eye, HeartHandshake, Megaphone, Package, Presentation, Star, Waypoints } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { euro, euroCents } from "../../../sim/00-core/money";
+import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import type { Profile } from "../../../sim/30-customers/customers";
-import { registrarById } from "../../../sim/10-catalog/registrars";
-import { registrarUrl } from "../../../sim/80-business/browser";
-import { wholesale } from "../../../sim/30-customers/registrar";
-import { registryOf } from "../../../sim/30-customers/registry";
 import { isAvailable } from "../../../sim/10-catalog/research";
 import {
   BUDGETS, CAMPAIGNS, costPerLead, DISCOUNTS, leadsThisMonth, monthlyMarketingCost, OWNED, owns, PLATFORMS, PROFILE_IDS, reach, reviewScore,
@@ -24,8 +20,9 @@ import { formatDay } from "../billing/BillingApp";
 import "../shop/shop.css";
 import "../billing/billing.css";
 import "./marketing.css";
+import { Products, SiteCard } from "./Website";
 
-type Section = "domain" | "channels" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
+type Section = "channels" | "products" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
 
 export const AUDIENCE: Record<Profile, string> = {
   private: "Private users", gamer: "Gamers", hobbyDev: "Developers", soleProp: "Sole traders", smallBiz: "Small businesses",
@@ -34,8 +31,6 @@ export const AUDIENCE: Record<Profile, string> = {
 
 const OWNED_INFO: { id: OwnedChannel | "email"; name: string; text: string }[] = [
   { id: "email", name: "Email", text: "Customers find you through friends and order by writing to your inbox." },
-  { id: "website", name: "Web design", text: "Redesigns your website so search engines find it, which brings in a steady trickle of requests." },
-  { id: "orderForm", name: "Order form", text: "Lets customers order standard products on their own." },
   { id: "searchAds", name: "Goggle Ads", text: "Sends people searching for hosting to your website." },
   { id: "aiAds", name: "AI ads", text: "Targets better than search ads and converts more visitors." },
 ];
@@ -50,16 +45,16 @@ const leads = (n: number) => (n < 10 ? n.toFixed(1) : String(Math.round(n)));
 
 export function MarketingApp() {
   const game = useStore((s) => s.game);
-  // Domain is always open, Reviews and Community open with Marketing basics, the rest with Marketing campaigns.
+  // Channels is always open, Products once the site is online, Reviews and Community with Marketing basics, the rest with Marketing campaigns.
   const full = isAvailable("Marketing", game.unlocks), basics = game.unlocks.includes("marketingBasics");
-  const open = (id: Section) => full || id === "domain" || (basics && (id === "reviews" || id === "community"));
+  const open = (id: Section) => id === "channels" || (id === "products" ? game.marketing.launched : full || (basics && (id === "reviews" || id === "community")));
   const [picked, setSection] = useState<Section | null>(null);
-  const section = picked && open(picked) ? picked : full ? "channels" : "domain";
-  useFocus("Marketing", (f) => { if (f.kind === "page" && f.id === "domain") setSection("domain"); });
+  const section = picked && open(picked) ? picked : "channels";
+  useFocus("Marketing", (f) => { if (f.kind === "page") setSection(f.id as Section); });
   const total = leadsThisMonth(game).reduce((n, b) => n + b.count, 0);
   const items: [Section, string, ReactNode, number | null][] = [
-    ["domain", "Domain", <Globe />, null],
     ["channels", "Channels", <Waypoints />, null],
+    ["products", "Products", <Package />, game.marketing.lines.length || null],
     ["campaigns", "Campaigns", <Megaphone />, game.marketing.campaigns.length || null],
     ["awareness", "Awareness", <Eye />, null],
     ["reviews", "Reviews", <Star />, game.marketing.reviews.length || null],
@@ -84,8 +79,8 @@ export function MarketingApp() {
           <div><dt>Review score</dt><dd className="num">{reviewScore(game).toFixed(1)}</dd></div>
         </dl>}
         <div className="fin-scroll">
-          {section === "domain" && <div className="mkt-list"><CompanyDomain /></div>}
           {section === "channels" && <Channels />}
+          {section === "products" && <Products />}
           {section === "campaigns" && <Campaigns />}
           {section === "awareness" && <Awareness />}
           {section === "reviews" && <Reviews />}
@@ -97,33 +92,14 @@ export function MarketingApp() {
   );
 }
 
-// The company domain, bought on a registrar site in the Browser.
-function CompanyDomain() {
-  const game = useStore((s) => s.game);
-  const openApp = useStore((s) => s.openApp);
-  const domain = game.company.domain, partner = game.registrar && registrarById(game.registrar.id);
-  const open = () => openApp("Browser", { kind: "url", id: registrarUrl(game) });
-  if (!domain) return <button className="btn primary" onClick={open}>Find a domain</button>;
-  return (
-    <>
-      <dl className="fin-facts">
-        <div><dt>Domain</dt><dd className="num">{domain}</dd></div>
-        <div><dt>Registry</dt><dd>{registryOf(domain).name}</dd></div>
-        <div><dt>Registrar</dt><dd>{partner?.name}</dd></div>
-        <div><dt>Per year</dt><dd className="num">{euroCents(wholesale(game, domain))}</dd></div>
-      </dl>
-      <button className="btn" onClick={open}>Open {partner?.name}</button>
-    </>
-  );
-}
-
 function Channels() {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
-  const year = yearOf(game.hour);
-  return (
-    <div className="shop-grid">
-      {OWNED_INFO.map(({ id, name, text }) => {
+  const year = yearOf(game.hour), full = isAvailable("Marketing", game.unlocks);
+  return <>
+    <div className="mkt-list"><SiteCard /></div>
+    <div className="shop-grid mkt-flat">
+      {OWNED_INFO.filter(({ id }) => full || id === "email").map(({ id, name, text }) => {
         const def = id === "email" ? null : OWNED[id];
         const active = id === "email" || owns(game, id);
         let state: ReactNode;
@@ -143,7 +119,7 @@ function Channels() {
         );
       })}
     </div>
-  );
+  </>;
 }
 
 function Campaigns() {

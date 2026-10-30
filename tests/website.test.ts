@@ -30,9 +30,9 @@ describe("company website", () => {
     expect(setLine(ready, "webHosting", true).ok).toBe(true);
     expect(setLine(ready, "webHosting", true).ok).toBe(true);
     expect(ready.marketing.lines).toEqual(["webHosting"]);
-    expect(checkDone(ready, "website")).toBe(false);
-    ready.marketing = { ...ready.marketing, owned: ["website"] };
-    expect(checkDone(ready, "website")).toBe(true);
+    expect(checkDone(ready, "launch")).toBe(true);
+    ready.marketing = { ...ready.marketing, launched: false };
+    expect(checkDone(ready, "launch")).toBe(false);
   });
 
   it("brings no leads for unlisted lines", () => {

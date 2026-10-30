@@ -37,3 +37,12 @@
 .mkt-review-head .grow { flex: 1; }
 .mkt-review-head .num { color: var(--text-3); font-size: 11.5px; }
 .mkt-review-list p { margin: 4px 0 0; color: var(--text-2); }
+
+.mkt-row.mkt-end { justify-content: flex-end; }
+.mkt-grow { flex: 1; min-width: 0; line-height: 24px; }
+.mkt-value { line-height: 24px; }
+.mkt-sub { display: block; font-size: 11px; line-height: 16px; color: var(--text-3); margin-top: 2px; }
+.mkt-line { padding: 6px 14px; }
+.mkt-line + .mkt-line, div + div > .mkt-line:first-child { border-top: 0.5px solid var(--line); }
+.mkt-line.mkt-addon { padding-left: 34px; }
+.mkt-line-row { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }

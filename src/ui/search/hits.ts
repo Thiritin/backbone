@@ -4,7 +4,7 @@ import { subjectParams } from "../../sim/40-support/notices";
 import type { GameState } from "../../sim/50-state";
 import { isOwnVm } from "../../sim/60-infra/cluster";
 import { privateIp, publicV4 } from "../../sim/60-infra/addresses";
-import { adminUrl, companyUrl, resolve } from "../../sim/80-business/browser";
+import { companyUrl, resolve } from "../../sim/80-business/browser";
 import { registrarHost, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { APPS, appFor } from "../apps/registry";
 import { vmLabel } from "../apps/products/parts";
@@ -71,7 +71,6 @@ function collect(s: GameState): Hit[] {
     if (resolve(s, url).page.kind !== "notfound") add({ group: "Sites and consoles", title, sub, keys: [title, url], app: "Browser", target: { kind: "url", id: url } });
   };
   site(companyUrl(s).replace(/\/$/, ""), companyUrl(s), s.company.name);
-  site("Admin", adminUrl(s));
   for (const r of REGISTRARS) site(r.name, `www.${registrarHost(r)}/`, "Domains");
   for (const v of s.services) if (v.domain && v.endedAt === null) site(v.domain, v.domain, customers.get(v.customerId)?.name);
   for (const d of s.devices) if (d.hostname) site(fqdn(s, d.hostname), fqdn(s, d.hostname), d.label ?? d.name);

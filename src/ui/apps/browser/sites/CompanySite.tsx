@@ -27,7 +27,7 @@ export const BLURB: Record<Product, string> = {
   domain: "",
 };
 
-export function CompanySite({ game, onAdmin }: { game: GameState; onAdmin: () => void }) {
+export function CompanySite({ game }: { game: GameState }) {
   const { lines, email } = siteContent(game);
   const domain = companyDomain(game), city = game.locations[0]?.city ?? "Frankfurt";
   return (
@@ -39,7 +39,6 @@ export function CompanySite({ game, onAdmin }: { game: GameState; onAdmin: () =>
           {game.company.tagline && <p className="site-tagline">{game.company.tagline}</p>}
         </div>
       </header>
-      <button className="site-admin" onClick={onAdmin}>Admin</button>
       <p className="site-pitch">Web hosting and servers from {city}. Our machines run day and night, and so do we.</p>
       <h2>Products</h2>
       {lines.length ? (

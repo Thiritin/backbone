@@ -36,12 +36,13 @@ The steps run in this order, with the 2005 prices from the game.
 | Mount and power it | Locations | Nothing; the rack and the router are already there | Instant |
 | Add internet | Locations, Internet line | DSL 16000, €45 a month, 1 Mbit/s up, no fixed address. DSL 16000 Business, €59 a month, fixed addresses. SDSL 2048, €129 a month, 2 Mbit/s up, fixed addresses | 7 days; 14 days for the business line and the SDSL |
 | Install software | Locations, the server's Add Software tile | FreePanel and the OpenVeeZee hypervisor are free. Pleskit is €12 a server, DirectAdmen €4 a server and cPanic €0.40 an account | 2 hours for FreePanel; 3 hours for OpenVeeZee, which then hosts a FreePanel VM |
+| Build the website | Marketing, Channels | Free | 3 days |
 | Register your domain | Network, Domains | NameCheep has no signup fee and no monthly fee; a .de domain costs €18 a year, booked as €1.50 a month | Instant |
-| List a product | Browser, Admin page | Web design €400 once and €15 a month, plus €9.90 a month for the site Strateaux hosts | Instant |
+| Launch it and list a product | Marketing, Channels and Products | €9.90 a month for the site Strateaux hosts, or nothing on an own panel host | Instant |
 | Set up company email | Email app | Hosted Exchange by Ionose, €10 a month for the one seat | Instant |
 | Win your first customer | Support | Nothing | Days |
 
-The server and the web design leave €600 of the €3,500. The fixed bills that follow are €95.40 a month with the business line (€59 line, €15 web design, €9.90 site, €10 email, €1.50 domain) or €81.40 with the DSL 16000 line, plus electricity at the household price.
+The server leaves €1,000 of the €3,500. The fixed bills that follow are €80.40 a month with the business line (€59 line, €9.90 site, €10 email, €1.50 domain) or €66.40 with the DSL 16000 line, plus electricity at the household price.
 
 The three friends (Jonas, Mira and Tobi) sign up for web hosting at €6 a month once the first panel host is ready and the internet reaches it. They bring in €18 a month and always pay.
 

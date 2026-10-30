@@ -3,7 +3,6 @@ import { registrarById, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
 import type { GameState } from "../../sim/50-state";
-import { adminUrl, registrarUrl } from "../../sim/80-business/browser";
 import type { TUTORIAL } from "../../sim/checklist";
 
 export type StepId = (typeof TUTORIAL)[number];
@@ -31,12 +30,14 @@ export function stepOf(s: GameState, id: StepId): Step {
       const partner = (s.registrar && registrarById(s.registrar.id)?.name) ?? REGISTRARS[0].name;
       return {
         title: t("guide.step.domain"),
-        text: `Search for your company domain on the ${partner} site in the Browser and buy it.`,
-        app: "Browser", focus: { kind: "url", id: registrarUrl(s) },
+        text: `Buy a domain for your company at ${partner} in the Browser.`,
+        app: "Browser",
       };
     }
     case "website":
-      return { title: t("guide.step.website"), text: "Build your website and list your first product from the Admin page in the Browser.", app: "Browser", focus: { kind: "url", id: adminUrl(s) } };
+      return { title: t("guide.step.website"), text: "Build your first website in Marketing under Channels.", app: "Marketing", focus: { kind: "page", id: "channels" } };
+    case "launch":
+      return { title: t("guide.step.launch"), text: "Choose where your website runs, launch it in Marketing and list your first product under Products.", app: "Marketing", focus: { kind: "page", id: "channels" } };
     case "email":
       return { title: t("guide.step.email"), text: `Choose an email provider in ${mailApp}.`, app: "Support", focus: { kind: "mailSetup", id: "" } };
     case "firstCustomer":

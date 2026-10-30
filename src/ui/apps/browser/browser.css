@@ -28,9 +28,6 @@
 .br-mark:hover { background: var(--hover); color: var(--text); }
 .br-mark span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
-.web-view { flex: 1; overflow: auto; background: var(--win); }
-.web-view.paper { background: #ffffff; }
-.web-load { height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 40% 100%; background-repeat: no-repeat; animation: web-load 1.4s linear infinite; }
 @keyframes web-load { from { background-position: -40% 0; } to { background-position: 140% 0; } }
 @media (prefers-reduced-motion: reduce) { .web-load { animation: none; background-size: 100% 100%; } }
 
@@ -38,15 +35,3 @@
 .br-error h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
 .br-error p { color: var(--text-2); margin-bottom: 16px; }
 
-.adm { max-width: 960px; margin: 0 auto; padding: 24px 28px 40px; }
-.adm-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.adm-head h1 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
-.adm-grid { columns: 300px 2; column-gap: 14px; }
-.adm-card { break-inside: avoid; margin-bottom: 14px; padding: 12px 14px; border-radius: var(--r-card, 10px); background: var(--field); border: 0.5px solid var(--line); }
-.adm-card h2 { margin-bottom: 8px; font-size: 12.5px; font-weight: 650; }
-.adm-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
-.adm-field .field { width: 100%; }
-.web-line { padding: 4px 0; }
-.web-line-row { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }
-.web-why { font-size: 11px; color: var(--text-3); margin-top: 2px; }
-.web-host .seg { margin-top: 6px; }

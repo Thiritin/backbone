@@ -9,7 +9,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
 import { communityBatches } from "./community";
 import { fairBatches, fairGain } from "./fairs";
-import { siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
+import { siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
 
 export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
 
@@ -66,6 +66,9 @@ export interface Marketing {
   lines: Product[];
   // Whether orders still arrive by email.
   emailOrders: boolean;
+  // The hour the hand-written first site is ready, null before the player starts it, and whether it is online.
+  siteReady: number | null;
+  launched: boolean;
   // Where the company site runs, the generation of its design and whether the current outage has been announced.
   siteHost: SiteHost;
   designYear: number;
@@ -78,7 +81,7 @@ const AWARENESS_DECAY = 0.02;
 const REVIEW_HOURS = 2 * 8760;
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false,
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false,
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 
@@ -211,6 +214,7 @@ function invite(s: GameState, events: SimEvent[]): void {
 export function marketingTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   rollReviews(s, events);
+  siteBuiltEvent(s, events);
   siteDownEvent(s, events);
   if (!isMonthStart(s.hour)) return events;
   if (s.marketing.platform && PLATFORMS[s.marketing.platform].fee > 0 && !hasMarketingManager(s)) {
