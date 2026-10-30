@@ -18,6 +18,7 @@ import { WhatsNew } from "./WhatsNew";
 import { ContextMenuHost } from "./ContextMenu";
 import { Searchlight } from "../search/Searchlight";
 import { UpdateSheet } from "./UpdateSheet";
+import { OsUpdateSheet } from "./OsUpdateSheet";
 import { watchUpdates } from "../update";
 import type { ChangelogDay } from "../changelog";
 
@@ -37,6 +38,8 @@ export function Desktop() {
     return () => dark.removeEventListener("change", follow);
   }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  const os = useStore((s) => s.game.os);
+  useEffect(() => { document.documentElement.dataset.os = os; }, [os]);
 
   return (
     <div className="desktop">
@@ -110,6 +113,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       {news && <WhatsNew changes={news} />}
       {alert && <AlertSheet alert={alert} />}
       {gameOver !== null && <GameOver hour={gameOver} />}
+      {gameOver === null && <OsUpdateSheet />}
       {update && <UpdateSheet changes={update} onLater={() => { dismissed.current = Date.now(); setUpdate(null); }} />}
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
       <ContextMenuHost />

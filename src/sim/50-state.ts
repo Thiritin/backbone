@@ -170,6 +170,8 @@ export interface GameState {
   checklist: string[];
   // The changelog entries (date|text) the player has been shown.
   seenChanges: string[];
+  // Pear OS release the desktop runs; it sets the look of the shell.
+  os: string;
   company: Company;
   // Finance: loss carried to the next tax year, insurance policies, the hour cash went below zero and the hour of bankruptcy.
   taxLoss: number;
@@ -282,7 +284,7 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null }],
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
   cables: [],
-  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], kbReads: {}, checklist: [], seenChanges: [],
+  ledger: [], leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: [...STARTER_APPS], kbReads: {}, checklist: [], seenChanges: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false,

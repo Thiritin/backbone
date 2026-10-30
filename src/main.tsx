@@ -9,6 +9,7 @@ import "@fontsource/jetbrains-mono/500.css";
 import "@fontsource/jetbrains-mono/600.css";
 import "./ui/desktop/shell.css";
 import "./ui/desktop/desktop.css";
+import "./ui/desktop/os.css";
 import { Desktop } from "./ui/desktop/Desktop";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><Desktop /></StrictMode>);

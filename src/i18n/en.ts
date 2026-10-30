@@ -391,6 +391,7 @@ export const en: Record<string, (p: Params) => string> = {
   "outcome.unsuspended": () => "Services back online with a payment extension",
   "outcome.kept": () => "Services stay suspended",
   "doc.guide": () => "Getting started",
+  "os.current": () => "Pear OS is up to date",
   "doc.untitled": () => "Untitled",
   "guide.step.company": () => "Name your company",
   "guide.step.buyServer": () => "Buy a server",
