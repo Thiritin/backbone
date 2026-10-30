@@ -3,6 +3,7 @@ import { dateOf } from "../../sim/00-core/time";
 import { cardOf } from "../../sim/10-catalog/gpu";
 import { COMPONENTS, isOobPort, jacksOf, OOB_PORT, oobPorts, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
 import { cpuModel, skuOf, socketOf, VENDOR_NAME } from "../../sim/10-catalog/cpus";
+import { familyById, familyName } from "../../sim/10-catalog/families";
 import type { Component, Device, End, GameState } from "../../sim/50-state";
 import { deviceHealth, HOURS_PER_YEAR, isPlugged, linkStatus, portPeers, type LinkStatus } from "../../sim/60-infra/status";
 import { isMgmtDevice, oobUp } from "../../sim/60-infra/oob";
@@ -16,8 +17,8 @@ export const disk = (gb: number) => (gb >= 1000 ? `${+(gb / 1000).toFixed(1)} TB
 export const cores = (n: number) => `${n} ${n === 1 ? "core" : "cores"}`;
 const FF_LABEL = { "3.5": '3.5"', "2.5": '2.5"', nvme: "NVMe" } as const;
 // Size of a sized part ("16 GB", "4 TB, 3.5\"", "32 cores"), or a dash for parts without one.
-export const partSize = (c: Pick<Component, "kind" | "size" | "ff">): string =>
-  c.size === undefined ? "-" : c.kind === "board" ? `CPUs up to ${cores(c.size)}` : c.kind === "ram" ? ram(c.size) : c.kind === "cpu" ? cores(c.size) : c.kind === "gpu" ? cardOf(c.size).name : `${disk(c.size)}${c.ff ? `, ${FF_LABEL[c.ff]}` : ""}`;
+export const partSize = (c: Pick<Component, "kind" | "size" | "ff" | "sku">): string =>
+  c.size === undefined ? "-" : c.kind === "board" ? `CPUs up to ${cores(c.size)}` : c.kind === "ram" ? ram(c.size) : c.kind === "cpu" ? cores(c.size) : c.kind === "gpu" ? cardOf(c.size, c.sku).name : `${disk(c.size)}${c.ff ? `, ${FF_LABEL[c.ff]}` : ""}`;
 const SLOT_NAME: Partial<Record<ComponentKind, string>> = { hdd: "Bay", ssd: "Bay", nvme: "Bay", ram: "DIMM", cpu: "Socket", psu: "PSU bay", fan: "Fan", gpu: "PCIe slot" };
 // Slot a part sits in: the nth of its kind, or its fixed place on the board.
 export const partSlot = (kind: ComponentKind, nth: number): string => (SLOT_NAME[kind] ? `${SLOT_NAME[kind]} ${nth}` : "Onboard");
@@ -76,6 +77,9 @@ export const partLabel = (p: Pick<Component, "kind" | "size" | "ff" | "vendor" |
   if (p.kind === "board" && p.vendor && p.gen && p.size !== undefined) return `${VENDOR_NAME[p.vendor]} ${socketOf(p.vendor, p.gen)}-${p.size} Mainboard`;
   const k = p.kind === "cpu" ? skuOf(p) : undefined;
   if (k) return `${VENDOR_NAME[k.vendor]} ${k.name}, ${threadsLabel(p)}, ${clockLabel(p)}`;
+  // A stick or drive with a maker: "Sumsang DDR4-2933 RDIMM 32 GB", "Seagull Exos 4 TB, 3.5\"".
+  const f = familyById(p.sku);
+  if (f) return `${familyName(f)} ${partSize(p)}`;
   return `${p.vendor ? `${VENDOR_NAME[p.vendor]} ` : ""}${p.gen ? `G${p.gen} ` : ""}${PART_NAME[p.kind]}${p.size === undefined ? "" : ` ${partSize(p)}`}${clockLabel(p) ? `, ${clockLabel(p)}` : ""}`;
 };
 // A used part's age stays unknown (null) until a burn-in has looked at it.

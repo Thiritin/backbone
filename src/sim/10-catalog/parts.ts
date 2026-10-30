@@ -4,6 +4,7 @@ import { erodedPrice } from "./lifecycle";
 import { cardOf, gpuPrice } from "./gpu";
 import { componentParts, manufacturerByName, modelById, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "./hardware";
 import { cpuModel, skuById, type Vendor } from "./cpus";
+import { familyById, familyPrice } from "./families";
 
 type Keyframes = [year: number, price: number][];
 
@@ -32,9 +33,14 @@ const SOLD_FROM: Partial<Record<ComponentKind, number>> = { ssd: 2009, nvme: 201
 export const partSold = (kind: ComponentKind, year: number): boolean => year >= (SOLD_FROM[kind] ?? 0);
 
 // A part of unknown size counts as one unit (1 GB, 1 GB of HDD, 1 core). The price is a whole euro; a CPU's follows its part's
-// price factor, or its vendor's generation factor for a part without a name (cpus.ts).
-export const partPrice = (kind: ComponentKind, size: number | undefined, _ff: FormFactor | undefined, year: number, cpu?: Pick<PartSpec, "vendor" | "gen" | "sku">): number =>
-  Math.round(rawPrice(kind, size ?? 1, year) * (kind === "cpu" ? (cpu?.sku && skuById(cpu.sku)?.price) || (cpu?.vendor && cpu.gen ? cpuModel(cpu.vendor, cpu.gen)?.price ?? 1 : 1) : 1));
+// price factor, or its vendor's generation factor for a part without a name (cpus.ts); a stick or drive with a maker follows
+// its family's factor (families.ts); a card is priced by its line (gpu.ts).
+export function partPrice(kind: ComponentKind, size: number | undefined, _ff: FormFactor | undefined, year: number, part?: Pick<PartSpec, "vendor" | "gen" | "sku">): number {
+  if (kind === "gpu") return Math.round(gpuPrice(cardOf(size, part?.sku), year));
+  const family = familyById(part?.sku);
+  const factor = kind === "cpu" ? (part?.sku && skuById(part.sku)?.price) || (part?.vendor && part.gen ? cpuModel(part.vendor, part.gen)?.price ?? 1 : 1) : family ? familyPrice(family) : 1;
+  return Math.round(rawPrice(kind, size ?? 1, year) * factor);
+}
 function rawPrice(kind: ComponentKind, n: number, year: number): number {
   switch (kind) {
     case "ram": return n * lerp(RAM, year);

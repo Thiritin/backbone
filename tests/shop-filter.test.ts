@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PART_MAKERS } from "../src/sim/10-catalog/families";
 import { brandFrom, brandsOf, brandWatts, modelById, partOffers, shopModels, vendorsOf } from "../src/sim/10-catalog/hardware";
 import { unitPrice } from "../src/sim/90-actions/hardware";
 import { CLASS_TREE, classOf, CORES, inClass, makerOf, MAKERS, matchesFilter, NO_FILTER, RAMS, sortItems, type Sort } from "../src/ui/apps/shop/filter";
@@ -80,8 +81,9 @@ describe("shop classes", () => {
     for (const p of partOffers(2014)) {
       const make = makerOf("Generic", p);
       if (p.kind === "cpu" || p.kind === "board") expect(["Indel", "AMB"]).toContain(make);
-      if (p.kind === "gpu") expect(make).toBe("nVidea");
-      if (p.kind === "ram") expect(make).toBeNull();
+      if (p.kind === "gpu") expect(["nVidea", "AMB"]).toContain(make);
+      if (p.kind === "ram" || p.kind === "hdd" || p.kind === "ssd" || p.kind === "nvme") expect(PART_MAKERS.map((m) => m.name)).toContain(make);
+      if (p.kind === "psu" || p.kind === "fan" || p.kind === "nic") expect(make).toBeNull();
       expect(make).not.toBe("Generic");
     }
     expect(MAKERS).not.toContain("Generic");

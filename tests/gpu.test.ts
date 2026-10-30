@@ -69,8 +69,8 @@ describe("GPU cards", () => {
 
   it("sells the newest card and the one before in the Parts tab", () => {
     expect(cardAt(2006)).toBeNull();
-    expect(gpuOffers(2017).map((c) => c.year)).toEqual([2014, 2017]);
-    expect(partOffers(2023).filter((p) => p.kind === "gpu").map((p) => p.size)).toEqual([2020, 2023]);
+    expect(gpuOffers(2017).map((c) => c.id)).toEqual(["tezla-k80", "tezla-v100", "instinkt-mi25"]);
+    expect(new Set(partOffers(2023).filter((p) => p.kind === "gpu").map((p) => p.sku))).toEqual(new Set(["a10", "l40s", "tezla-a100", "tezla-h100", "instinkt-mi210", "instinkt-mi300x"]));
     expect(partOffers(2006).some((p) => p.kind === "gpu")).toBe(false);
   });
 });
@@ -113,9 +113,9 @@ describe("GPU fit rules", () => {
 
 describe("GPU servers", () => {
   it("ships the GPU line from 2011 with four of the generation's card", () => {
-    expect(componentParts(modelById("g3-gpu")).filter((p) => p.kind === "gpu")).toEqual(Array(4).fill({ kind: "gpu", size: 2010 }));
-    expect(componentParts(modelById("g5-gpu")).filter((p) => p.kind === "gpu")).toEqual(Array(4).fill({ kind: "gpu", size: 2017 }));
-    expect(componentParts(modelById("g7-gpu")).filter((p) => p.kind === "gpu")).toEqual(Array(4).fill({ kind: "gpu", size: 2023 }));
+    expect(componentParts(modelById("g3-gpu")).filter((p) => p.kind === "gpu")).toEqual(Array(4).fill({ kind: "gpu", size: 2010, sku: "tezla-m2050" }));
+    expect(componentParts(modelById("g5-gpu")).filter((p) => p.kind === "gpu")).toEqual(Array(4).fill({ kind: "gpu", size: 2017, sku: "tezla-v100" }));
+    expect(componentParts(modelById("g7-gpu")).filter((p) => p.kind === "gpu")).toEqual(Array(4).fill({ kind: "gpu", size: 2023, sku: "tezla-h100" }));
     expect(() => modelById("g2-gpu")).toThrow();
   });
 

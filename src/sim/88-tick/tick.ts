@@ -35,6 +35,7 @@ import { securityTick } from "../60-infra/security";
 import { usageTick } from "../60-infra/usage";
 import { productsTick } from "../85-products/products";
 import { COMPONENTS, manufacturerByName, modelById, specOf } from "../10-catalog/hardware";
+import { familyById, familyFailure } from "../10-catalog/families";
 import { lessorName } from "../10-catalog/leasing";
 import { BURNIN_BONUS_HOURS, BURNIN_FACTOR } from "../10-catalog/burnin";
 import { burninTick } from "../60-infra/burnin";
@@ -119,7 +120,7 @@ export const rebuildHours = (d: Device): number => {
   return (driveGb(d) * 1000 * DRIVE_USED_SHARE) / REBUILD_MBPS[d.rebuildRate] / 3600;
 };
 
-// Each component of a running device fails at its yearly rate for its age, × the manufacturer's factor, × 2 while a fan is out,
+// Each component of a running device fails at its yearly rate for its age, × the manufacturer's factor, × its part maker's, × 2 while a fan is out,
 // × 1.2 once the device is out of support, × 0.9 for a year after a passed full burn-in.
 export function failureChance(s: GameState, d: Device, c: Component): number {
   const spec = COMPONENTS[c.kind];
@@ -127,7 +128,8 @@ export function failureChance(s: GameState, d: Device, c: Component): number {
   const hot = d.components.some((x) => x.kind === "fan" && x.failedAt !== null) ? 2 : 1;
   const old = unsupported(d.model, s.hour) ? FAILURE_FACTOR : 1;
   const burned = d.burnedInAt !== null && s.hour - d.burnedInAt < BURNIN_BONUS_HOURS ? BURNIN_FACTOR : 1;
-  return (yearly * (manufacturerByName(d.brand)?.failureFactor ?? 1) * hot * old * burned) / HOURS_PER_YEAR;
+  const family = familyById(c.sku);
+  return (yearly * (manufacturerByName(d.brand)?.failureFactor ?? 1) * (family ? familyFailure(family) : 1) * hot * old * burned) / HOURS_PER_YEAR;
 }
 
 // Records failed components on a device: a drive failure the array can't survive loses its data and stops any rebuild.
