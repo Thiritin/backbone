@@ -12,6 +12,7 @@
 .rg-namecheep.early .find { padding: 16px 24px; background: #fff6ee; text-align: center; }
 .rg-namecheep.early .find h2 { margin: 0 0 10px; background: none; font-size: 18px; }
 .rg-namecheep.early .find .rg-search { margin: 0 auto; }
+.rg-namecheep.early .find .rg-table, .rg-namecheep.early .find .rg-note { text-align: left; }
 .rg-namecheep.early .rg-search input { border: 2px solid #f26b1d; }
 .rg-namecheep.early .rg-tld-grid li { border-color: #f7b98a; background: #fffaf5; }
 .rg-namecheep.early .rg-tld-grid b { color: #f26b1d; }

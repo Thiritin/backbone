@@ -13,7 +13,7 @@ const Mark = ({ size }: { size: number }) => (
 export function InterNetY({ game, r, look, year }: RegistrarProps) {
   return (
     <div className={`rg rg-internety ${look}`}>
-      <header><span className="rg-wm"><Mark size={look === "late" ? 30 : 24} />InterNet<b>Y</b></span><span className="sub">Domain-Reseller</span></header>
+      <header><span className="rg-wm"><Mark size={look === "late" ? 30 : 24} /><span>InterNet<b>Y</b></span></span><span className="sub">Domain-Reseller</span></header>
       <main>
         <div className="left">
           <section><DomainSearch game={game} r={r} title="Domain check" button="Check" /></section>
