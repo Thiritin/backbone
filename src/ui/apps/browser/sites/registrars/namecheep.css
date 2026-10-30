@@ -1,0 +1,36 @@
+.rg-namecheep { --rg: #f26b1d; }
+.rg-namecheep .wm { display: flex; align-items: center; gap: 8px; color: #f26b1d; font-weight: 700; }
+.rg-namecheep.early { font: 12px/1.5 Verdana, Geneva, sans-serif; color: #333333; background: #ffffff; }
+.rg-namecheep.early header { display: flex; align-items: flex-end; justify-content: space-between; padding: 14px 20px 8px; }
+.rg-namecheep.early .wm { font: 700 30px/1 Verdana, sans-serif; }
+.rg-namecheep.early .wm b { color: #555555; }
+.rg-namecheep.early .tag { color: #f26b1d; font-weight: 700; font-style: italic; }
+.rg-namecheep.early .stripe { height: 8px; background: linear-gradient(#ff9c4a, #f26b1d); border-bottom: 2px solid #c94f0c; }
+.rg-namecheep.early main { display: grid; gap: 14px; max-width: 780px; margin: 0 auto; padding: 16px 20px; }
+.rg-namecheep.early .box { padding: 10px 14px; border: 1px solid #f7b98a; background: #ffffff; }
+.rg-namecheep.early .box h2 { margin: -10px -14px 10px; padding: 4px 14px; background: #fde7d4; color: #c94f0c; font-size: 13px; }
+.rg-namecheep.early .find { padding: 16px 24px; background: #fff6ee; text-align: center; }
+.rg-namecheep.early .find h2 { margin: 0 0 10px; background: none; font-size: 18px; }
+.rg-namecheep.early .find .rg-search { margin: 0 auto; }
+.rg-namecheep.early .rg-search input { border: 2px solid #f26b1d; }
+.rg-namecheep.early .rg-tld-grid li { border-color: #f7b98a; background: #fffaf5; }
+.rg-namecheep.early .rg-tld-grid b { color: #f26b1d; }
+.rg-namecheep.early footer { padding: 10px 20px; border-top: 1px solid #dddddd; color: #888888; font-size: 10px; text-align: center; }
+.rg-namecheep.late { font: 15px/1.6 "Open Sans", "Segoe UI", Arial, sans-serif; color: #2b2f33; background: #f4f5f6; }
+.rg-namecheep.late header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 40px; background: #2b2f33; }
+.rg-namecheep.late .wm { font-size: 22px; }
+.rg-namecheep.late .wm b { color: #ffffff; font-weight: 600; }
+.rg-namecheep.late .tag { color: #b8bec4; font-size: 13px; }
+.rg-namecheep.late .hero { padding: 48px 40px; background: #f26b1d; color: #ffffff; }
+.rg-namecheep.late .hero h2 { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 18px; }
+.rg-namecheep.late .hero .rg-search { max-width: 640px; }
+.rg-namecheep.late .hero .rg-search input { padding: 14px 16px; border: 0; border-radius: 4px; font-size: 17px; }
+.rg-namecheep.late .hero .rg-search button { padding: 0 28px; border-radius: 4px; background: #2b2f33; }
+.rg-namecheep.late .hero .rg-table { max-width: 640px; background: #ffffff; color: #2b2f33; border-radius: 4px; }
+.rg-namecheep.late .hero .rg-note { color: #fff3ea; }
+.rg-namecheep.late main { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 28px 40px; }
+.rg-namecheep.late .card { padding: 20px 22px; border-radius: 6px; background: #ffffff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.08); }
+.rg-namecheep.late .card.wide { grid-column: 1 / -1; }
+.rg-namecheep.late .rg-btn { border-radius: 4px; }
+.rg-namecheep.late footer { padding: 18px 40px; background: #2b2f33; color: #b8bec4; font-size: 13px; }
+@media (max-width: 560px) { .rg-namecheep.late header, .rg-namecheep.late .hero, .rg-namecheep.late main, .rg-namecheep.late footer { padding-left: 16px; padding-right: 16px; } }

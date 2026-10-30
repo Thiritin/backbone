@@ -1,0 +1,61 @@
+/* Sponsor-Bored: a phpBB-style board until 2014, a flat community site after. */
+.sb { min-height: 100%; }
+.sb-head { display: flex; align-items: center; gap: 12px; }
+.sb-logo { display: block; font-weight: 800; }
+.sb-logo i { font-style: normal; opacity: 0.7; }
+.sb-main { display: grid; }
+.sb-field { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.sb-label { flex: 0 0 72px; font-weight: 700; }
+.sb-seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.sb-seg button, .sb-button { font: inherit; cursor: pointer; }
+.sb-button:disabled { opacity: 0.45; cursor: default; }
+.sb-row { display: flex; align-items: center; gap: 12px 16px; }
+.sb-who { flex: 1; min-width: 0; }
+.sb-meta { display: flex; flex-wrap: wrap; gap: 0 14px; }
+.sb-acts { display: flex; gap: 6px; flex: none; }
+.sb-num { font-variant-numeric: tabular-nums; }
+.sb-av { flex: none; width: 32px; height: 32px; }
+.sb-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; }
+
+.sb.early { padding: 10px; background: #e5e5e5; color: #000000; font: 11px/1.4 Verdana, Arial, Helvetica, sans-serif; }
+.sb.early .sb-head { padding: 8px 10px; background: #ffffff; border: 1px solid #a9b8c2; color: #006699; }
+.sb.early .sb-logo { font: 700 26px/1.1 "Trebuchet MS", Verdana, sans-serif; color: #006699; }
+.sb.early .sb-sub { color: #000000; font-weight: 700; }
+.sb.early .sb-crumb { margin: 8px 0 4px; color: #006699; font-weight: 700; text-decoration: underline; }
+.sb.early .sb-main { gap: 8px; }
+.sb.early .sb-card { background: #ffffff; border: 1px solid #a9b8c2; }
+.sb.early .sb-card h2 { padding: 4px 8px; background: linear-gradient(#3a7fb0, #1b5a8a); border-bottom: 1px solid #ffffff; color: #ffc34f; font-size: 11px; font-weight: 700; text-align: left; }
+.sb.early .sb-card > :not(h2):not(.sb-row) { margin: 6px 8px; }
+.sb.early .sb-row { padding: 5px 8px; background: #efefef; border-top: 1px solid #ffffff; }
+.sb.early .sb-row:nth-of-type(even) { background: #dee3e7; }
+.sb.early .sb-row strong { color: #006699; }
+.sb.early .sb-meta, .sb.early .sb-none { color: #444444; font-size: 10px; }
+.sb.early .sb-av { width: 28px; height: 28px; border: 1px solid #000000; }
+.sb.early .sb-label { color: #000000; font-weight: 700; }
+.sb.early .sb-field { padding: 3px 6px; background: #efefef; }
+.sb.early .sb-seg button, .sb.early .sb-button { padding: 1px 8px; border: 2px outset #d1d7dc; background: #fafafa; color: #000000; font-size: 11px; }
+.sb.early .sb-seg button[aria-pressed="true"] { border-style: inset; background: #d1d7dc; font-weight: 700; }
+.sb.early .sb-button { font-weight: 700; }
+.sb.early .sb-button.ghost { font-weight: 400; }
+.sb.early .sb-card > .sb-button { margin: 4px 8px 8px; }
+.sb.early .sb-foot { margin-top: 10px; color: #444444; font-size: 10px; }
+.sb.early .sb-counter b { padding: 0 4px; background: #000000; color: #33ff33; font: 700 12px "Courier New", monospace; letter-spacing: 2px; }
+
+.sb.late { background: #f5f8fc; color: #1d2733; font: 14px/1.5 "Helvetica Neue", "Segoe UI", Arial, sans-serif; }
+.sb.late .sb-head { padding: 16px 32px; background: #ffffff; border-bottom: 1px solid #e1e8f0; color: #1e6fd9; }
+.sb.late .sb-logo { font-size: 22px; letter-spacing: -0.02em; color: #1d2733; }
+.sb.late .sb-sub { color: #6b7a8c; font-size: 13px; }
+.sb.late .sb-main { gap: 16px; max-width: 760px; margin: 0 auto; padding: 24px 32px 16px; }
+.sb.late .sb-card { padding: 16px 18px; border: 1px solid #e1e8f0; border-radius: 8px; background: #ffffff; }
+.sb.late .sb-card h2 { margin-bottom: 10px; font-size: 15px; font-weight: 700; }
+.sb.late .sb-row { padding: 10px 0; border-top: 1px solid #eef2f7; }
+.sb.late .sb-row:first-of-type { border-top: 0; }
+.sb.late .sb-meta, .sb.late .sb-none, .sb.late .sb-label { color: #6b7a8c; }
+.sb.late .sb-av { border-radius: 50%; }
+.sb.late .sb-seg button { height: 28px; padding: 0 12px; border: 1px solid #d3deea; border-radius: 6px; background: #ffffff; color: #1d2733; }
+.sb.late .sb-seg button[aria-pressed="true"] { border-color: #1e6fd9; background: #1e6fd9; color: #ffffff; }
+.sb.late .sb-button { height: 30px; padding: 0 16px; border: 0; border-radius: 6px; background: #1e6fd9; color: #ffffff; font-weight: 600; }
+.sb.late .sb-button.ghost { background: #e8f0fb; color: #1d2733; }
+.sb.late .sb-card > .sb-button { margin-top: 6px; }
+.sb.late .sb-foot { padding: 8px 32px 24px; color: #6b7a8c; font-size: 12px; }
+@media (max-width: 560px) { .sb-row { flex-wrap: wrap; } .sb.late .sb-head, .sb.late .sb-main { padding-left: 16px; padding-right: 16px; } }

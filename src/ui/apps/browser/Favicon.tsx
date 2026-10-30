@@ -7,7 +7,7 @@ import { familyOf } from "../../../sim/60-infra/vulns";
 import { consoleLook } from "../../../sim/80-business/consoles";
 import { BRAND } from "../products/parts";
 import { BMC_LOOK } from "./ipmi/IpmiPage";
-import { REGISTRAR_HUE } from "./sites/RegistrarSite";
+import { REGISTRAR_HUE } from "./sites/registrars/RegistrarPage";
 import { SiteMark } from "./sites/software/marks";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import { serverOsById } from "../../../sim/10-catalog/server-os";

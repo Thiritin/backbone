@@ -20,7 +20,7 @@ import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { SoftwarePage } from "./sites/software/registry";
-import { RegistrarSite } from "./sites/RegistrarSite";
+import { RegistrarSite } from "./sites/registrars";
 import { CannotReach, CustomerSite, HostPage, NotFound, PhishingPage, VideoPage } from "./sites/Pages";
 import { senderById } from "../../../sim/40-support/notices";
 import { VendorSite } from "./sites/vendors/registry";

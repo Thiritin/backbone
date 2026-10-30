@@ -281,7 +281,7 @@ Paid sites switch earlier; free ones keep a look longer.
 
 ### 8.4 Domain reseller sites
 
-The four registrars share one component today. Each becomes its own component with two eras, keeping every action the page has (contract, buy, renew, transfer, prices) as shared building blocks laid out per site:
+Built: each registrar is its own component under `src/ui/apps/browser/sites/registrars/<id>.tsx` with its stylesheet, two eras each from `REGISTRAR_ERAS`; the actions (domain search and buy, TLD prices, contract, account with transfer and renewal dates) are shared blocks in `RegistrarPage.tsx` that each site lays out its own way:
 
 - NameCheep: 2005: orange and white, a domain search box front and centre, a grid of TLD prices, Verdana. 2015: flat orange and dark grey, big search, cards, Open Sans.
 - GoDuddy Reseller: 2005: loud green and black, three columns of offers, "Reseller plans" boxes, a hero with too much text. 2016: white, green buttons, a calmer grid.
@@ -290,7 +290,7 @@ The four registrars share one component today. Each becomes its own component wi
 
 ### 8.5 Sponsor-Bored
 
-Built (`src/ui/apps/browser/sites/SponsorBoard.tsx`, `src/sim/80-business/sponsorboard.ts`). It gets two eras: 2005: a phpBB-style forum board, blue and white, a table of offers with avatars as coloured squares. 2014: a flat community-site look, white, blue, cards. It leaves the bookmarks bar and sits in the index under Community.
+Built (`src/ui/apps/browser/sites/SponsorBoard.tsx`, `src/sim/80-business/sponsorboard.ts`). Two eras, styled in `sponsorboard.css`: 2005: a phpBB-style forum board, blue and white, Verdana, bevelled buttons, avatars as coloured squares and a visitor counter in the footer. 2014: a flat community-site look, white, blue, cards, round avatars. It leaves the bookmarks bar and sits in the index under Community.
 
 ### 8.6 Hardware sites
 

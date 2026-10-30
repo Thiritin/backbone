@@ -11,11 +11,15 @@ import { AUDIENCE } from "../../marketing/MarketingApp";
 import { formatDay } from "../../billing/BillingApp";
 import { PRODUCT } from "../../support/labels";
 import { useStore } from "../../../store";
-import "./pages.css";
+import { eraOf } from "./era";
+import "./sponsorboard.css";
 
 const AD: Record<Ad, string> = { banner: "Banner on the site", signature: "Forum signature", stage: "Mention on stage" };
 const monthsText = (n: number) => (n === 1 ? "1 month" : `${n} months`);
 const daysText = (h: number) => (h === 24 ? "1 day" : `${h / 24} days`);
+const ERAS = [{ from: 2005, look: "early" as const }, { from: 2014, look: "late" as const }];
+// A member's avatar: a square in a colour of their own.
+const Avatar = ({ name }: { name: string }) => <i className="sb-av" style={{ background: `hsl(${[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)} 55% 55%)` }} aria-hidden />;
 
 function Seg<T extends string | number>({ label, value, options, onChange }: { label: string; value: T; options: { id: T; text: string }[]; onChange: (v: T) => void }) {
   return (
@@ -36,15 +40,19 @@ export function SponsorBoard({ game }: { game: GameState }) {
   const [months, setMonths] = useState<number>(3);
   const [slots, setSlots] = useState<number>(1);
   const [free, setFree] = useState(true);
-  const year = yearOf(game.hour);
+  const year = yearOf(game.hour), look = eraOf(ERAS, year);
   const sizes = SIZES[product].map((_, i) => ({ id: i, text: specText(product, sizeSpec(product, i, year)) }));
   const offers = game.sponsorOffers.filter((o) => offerOpen(game, o));
   const applicants = game.sponsorships.filter((x) => x.board && x.status === "offered");
   const running = game.sponsorships.filter((x) => x.board && x.status === "running");
   const requests = game.sponsorships.filter((x) => !x.board && x.status === "offered");
   return (
-    <div className="sb">
-      <header className="sb-head"><span className="sb-logo">Sponsor<i>-</i>Bored</span><span>Servers wanted, logos welcome.</span></header>
+    <div className={`sb ${look}`}>
+      <header className="sb-head">
+        <svg className="sb-mark" width="40" height="40" viewBox="0 0 24 24" aria-hidden><path d="M2 3h20v13H9l-5 5v-5H2z" fill="currentColor" /><path d="M6 8h12M6 11h8" stroke="#ffffff" strokeWidth="1.6" /></svg>
+        <div><span className="sb-logo">Sponsor<i>-</i>Bored</span><span className="sb-sub">Servers wanted, logos welcome.</span></div>
+      </header>
+      {look === "early" && <div className="sb-crumb">Sponsor-Bored Forum Index</div>}
       <main className="sb-main">
         <section className="sb-card">
           <h2>Requests</h2>
@@ -52,6 +60,7 @@ export function SponsorBoard({ game }: { game: GameState }) {
             const ev = eventOf(x);
             return (
               <div key={x.id} className="sb-row">
+                <Avatar name={ev.name} />
                 <div className="sb-who">
                   <strong>{ev.name}</strong>
                   <div className="sb-meta"><span>{ev.audience.map((p) => AUDIENCE[p]).join(", ")}</span><span className="sb-num">{ev.people.toLocaleString("en-US")} people</span><span>{ev.kind === "tech" ? "Know-how" : "Mention at the event"}</span></div>
@@ -95,6 +104,7 @@ export function SponsorBoard({ game }: { game: GameState }) {
             const b = x.board!, offer = game.sponsorOffers.find((o) => o.id === b.offerId)!;
             return (
               <div key={x.id} className="sb-row">
+                <Avatar name={b.name} />
                 <div className="sb-who">
                   <strong>{b.name}</strong>
                   <div className="sb-meta"><span>{AUDIENCE[b.profile]}</span><span className="sb-num">{b.audience.toLocaleString("en-US")} people</span><span>{AD[b.ad]}</span></div>
@@ -113,6 +123,7 @@ export function SponsorBoard({ game }: { game: GameState }) {
             const b = x.board!;
             return (
               <div key={x.id} className="sb-row">
+                <Avatar name={b.name} />
                 <div className="sb-who">
                   <strong>{b.name}</strong>
                   <div className="sb-meta"><span>{AUDIENCE[b.profile]}</span><span>{AD[b.ad]}</span></div>
@@ -123,6 +134,12 @@ export function SponsorBoard({ game }: { game: GameState }) {
           }) : <p className="sb-none">Nothing running.</p>}
         </section>
       </main>
+      <footer className="sb-foot">
+        {look === "early" ? <>
+          <span>Powered by phpBored © 2001, {year} phpBored Group</span>
+          <span className="sb-counter">Visitors <b>{String(4711 + Math.floor(game.hour / 5)).padStart(7, "0")}</b></span>
+        </> : <span>© {year} Sponsor-Bored</span>}
+      </footer>
     </div>
   );
 }
