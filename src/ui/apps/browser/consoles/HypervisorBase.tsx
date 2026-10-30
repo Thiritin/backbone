@@ -1,20 +1,22 @@
 // docs/design/software.md, section 9: what every hypervisor console offers, as blocks each product lays out its own way.
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { euroCents } from "../../../../sim/00-core/money";
 import { formatClock, yearOf } from "../../../../sim/00-core/time";
-import { SOFTWARE, softwareById } from "../../../../sim/10-catalog/platforms";
+import { balancerIn, SOFTWARE, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import { HA_SKILL } from "../../../../sim/10-catalog/research";
 import { APP_SUITE_FEE, licensingAt, serverOsAt, serverOsById, type ServerOsId } from "../../../../sim/10-catalog/server-os";
 import type { GameState } from "../../../../sim/50-state";
+import { t } from "../../../../i18n/en";
+import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
 import { privateIp } from "../../../../sim/60-infra/addresses";
-import { hostOfVm, isOwnVm, workloadsOn, type Cluster, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
+import { balances, hostOfVm, isOwnVm, KEYS, workloadsOn, type Cluster, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
 import { machineScreen } from "../../../../sim/60-infra/oob";
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { nodeUsage, workloadUse } from "../../../../sim/60-infra/usage";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { setMedia } from "../../../../sim/90-actions/console";
-import { addNode, createVm, deleteVm, PANEL_VM_SIZE, removeNode, resizeVm, setHa } from "../../../../sim/90-actions/clusters";
+import { addNode, createVm, deleteVm, PANEL_VM_SIZE, removeNode, resizeVm, setBalancer, setHa } from "../../../../sim/90-actions/clusters";
 import { mountableImages } from "../../../../sim/90-actions/media";
 import { joinableServers } from "../../../../sim/90-actions/software";
 import { buyAppSuite, cancelAppSuite, deployFromSuite } from "../../../../sim/90-actions/suite";
@@ -200,6 +202,20 @@ export function AppSuiteTile({ c, className = "cx-suite" }: { c: Cluster; classN
   );
 }
 
+// The paid balancer edition of the cluster's hypervisor: bought and cancelled per cluster, billed per node.
+export function BalancerTile({ game, c, className = "cx-suite" }: { game: GameState; c: Cluster; className?: string }) {
+  const act = useStore((s) => s.act), b = c.platform ? balancerIn(softwareById(c.platform), yearOf(game.hour)) : null;
+  if (!b || b.fee === 0) return null;
+  return (
+    <div className={className}>
+      <b>{b.name}</b>
+      <span className="num">{euroCents(b.fee)} per node a month</span>
+      <span>{c.balancer ? "Active" : "Not purchased"}</span>
+      <button className={c.balancer ? "cx-btn" : "cx-btn primary"} onClick={() => act(setBalancer, c.id, !c.balancer)}>{c.balancer ? "Cancel subscription" : "Buy"}</button>
+    </div>
+  );
+}
+
 // The nodes with their usage; where the hypervisor clusters this year, Add node, Remove node and the HA flags.
 export function NodeList({ game, c, f, className = "cx-table" }: { game: GameState; c: Cluster; f: ConsoleFeatures; className?: string }) {
   const act = useStore((s) => s.act), join = f.cluster ? joinableServers(game, c.id) : [], [adding, setAdding] = useState(false);
@@ -235,11 +251,67 @@ export function NodeList({ game, c, f, className = "cx-table" }: { game: GameSta
       {ha && (
         <div className="cx-tools cx-ha">
           {flags.map(([k, label]) => (
-            <label key={k} className="cx-check"><input type="checkbox" checked={c.ha[k]} onChange={(e) => act(setHa, c.id, k, e.target.checked)} />{label}</label>
+            <label key={k} className="cx-check"><input type="checkbox" checked={c.ha[k]} disabled={k === "balance" && !c.ha.balance && !balances(game, c)} onChange={(e) => act(setHa, c.id, k, e.target.checked)} />{label}</label>
           ))}
         </div>
       )}
+      {ha && <BalancerTile game={game} c={c} />}
     </>
+  );
+}
+
+// Cluster summaries (sim/60-infra/alarms.ts): capacity lines, alarm severities and the alarm table every console styles its own way.
+export const AMOUNT: Record<keyof Amounts, (x: number) => string> = { vcpu: (x) => `${num(x)} vCPU`, ramGb: (x) => ram(+x.toFixed(1)), diskGb: (x) => disk(+x.toFixed(1)) };
+export const amountText = (k: keyof Amounts, a: Amount) => `${AMOUNT[k](a.allocated)} allocated of ${AMOUNT[k](a.capacity)}, ${AMOUNT[k](a.used)} used`;
+export const worst = (alarms: Alarm[]): Severity | null => (alarms.some((a) => a.severity === "critical") ? "critical" : alarms.length ? "warning" : null);
+export const SEV_GLYPH: Record<Severity, string> = { warning: "▲", critical: "◆" };
+const width = (x: number, of: number) => `${Math.min(100, of > 0 ? (x / of) * 100 : 0)}%`;
+
+// One bar per resource: what is allocated behind what is used, red once allocation passes capacity.
+export function CapacityBar({ a }: { a: Amount }) {
+  return (
+    <span className="cx-bar cx-cap-bar" data-over={a.allocated > a.capacity + 1e-9 || undefined}>
+      <i className="cx-cap-alloc" style={{ width: width(a.allocated, a.capacity) }} /><i style={{ width: width(a.used, a.capacity) }} />
+    </span>
+  );
+}
+
+// The summary of a cluster, or of one of its hosts with the alarms on it and its VMs.
+export function summaryOf(game: GameState, c: Cluster, node: string | null) {
+  const sum = clusterSummary(game, c.id), host = node ? sum.hosts.find((h) => h.deviceId === node) : undefined;
+  const on = new Set(game.workloads.filter((w) => w.deviceId === node).map((w) => w.id));
+  return { sum, use: host?.use ?? sum.total, alarms: node ? sum.alarms.filter((a) => a.on.id === node || on.has(a.on.id)) : sum.alarms };
+}
+
+export function ResourceBars({ use, labels = ["CPU", "Memory", "Storage"], className = "cx-hv-bars" }: { use: Amounts; labels?: string[]; className?: string }) {
+  return (
+    <div className={className}>
+      {KEYS.map((k, i) => <Fragment key={k}><span>{labels[i]}</span><CapacityBar a={use[k]} /><span className="num">{amountText(k, use[k])}</span></Fragment>)}
+    </div>
+  );
+}
+
+export function alarmObject(game: GameState, c: Cluster, a: Alarm): string {
+  if (a.on.kind === "cluster") return c.name;
+  if (a.on.kind === "host") return nodeName(game, a.on.id);
+  const w = game.workloads.find((x) => x.id === a.on.id);
+  return w ? vmLabel(game, w).name : a.on.id;
+}
+
+export function AlarmList({ game, c, alarms, className = "cx-table cx-alarms" }: { game: GameState; c: Cluster; alarms: Alarm[]; className?: string }) {
+  if (!alarms.length) return null;
+  return (
+    <table className={className}>
+      <thead><tr><th>Severity</th><th>Object</th><th>Alarm</th></tr></thead>
+      <tbody>
+        {alarms.map((a, i) => (
+          <tr key={i} data-sev={a.severity}>
+            <td><span className="cx-sev" data-sev={a.severity}>{SEV_GLYPH[a.severity]}</span> {a.severity === "critical" ? "Critical" : "Warning"}</td>
+            <td>{alarmObject(game, c, a)}</td><td>{t(a.key, a.params)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 

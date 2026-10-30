@@ -2,14 +2,14 @@ import { chance, hashRng } from "../00-core/rng";
 import { dateOf, hourOf, isMonthStart, monthIndexOf, nowHours, yearOf } from "../00-core/time";
 import { cpuModel, isFresh, skuOf, topBoost } from "../10-catalog/cpus";
 import { genOf, modelById } from "../10-catalog/hardware";
-import { isService, softwareById } from "../10-catalog/platforms";
+import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { BACKUP_HOUR, slowTolerance } from "../10-catalog/usage";
 import { APP_SUITE_FEE, licensingAt, SERVER_OS, serverOsAt, serverOsById, type LicenseEra, type LicenseKind, type ServerOsId } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
 import type { Device, GameState, Location } from "../50-state";
-import { controlPlaneUp, insideVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
+import { backsUpCluster, controlPlaneUp, insideVm, isOwnVm, lostDisk, servedBy, vmOf, vmRoom, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
 import { bootHours } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
@@ -111,8 +111,12 @@ export const heldLicenses = (s: GameState): GameState["licenses"] =>
 
 // The monthly license bill of a cluster's panel and platform; the operating systems of its machines and the App Suite
 // count under platform.
+// A bought balancer edition is billed per node.
+export const balancerFee = (s: GameState, c: Cluster): number =>
+  (c.balancer && c.platform ? balancerIn(softwareById(c.platform), yearOf(s.hour))?.fee ?? 0 : 0) * c.nodes.length;
+
 export function licenseCost(s: GameState, c: Cluster): { panel: number; platform: number } {
-  const extra = machinesOf(s, c).reduce((n, m) => n + osFee(s, m), 0) + (c.appSuite ? APP_SUITE_FEE : 0);
+  const extra = machinesOf(s, c).reduce((n, m) => n + osFee(s, m), 0) + (c.appSuite ? APP_SUITE_FEE : 0) + balancerFee(s, c);
   return { panel: softwareFee(s, c, c.panel), platform: softwareFee(s, c, c.platform) + extra };
 }
 
@@ -134,7 +138,8 @@ export function backupPool(s: GameState, targetId: string): { need: number; room
   const target = s.clusters.find((c) => c.id === targetId);
   const sources = new Set(s.clusters.filter((c) => c.backup.targetId === targetId && c.backup.every !== "off").map((c) => c.id));
   const need = s.workloads.filter((w) => w.clusterId && sources.has(w.clusterId)).reduce((n, w) => n + w.diskGb * diskFill(s, w, s.hour) * BACKUP_POOL, 0);
-  const room = (target?.nodes ?? []).reduce((n, x) => {
+  const vm = target?.vm ? vmRoom(s, target) : null;
+  const room = vm ? vm.cap.diskGb - vm.used.diskGb : (target?.nodes ?? []).reduce((n, x) => {
     const d = s.devices.find((y) => y.id === x.deviceId);
     return d ? n + raidUsable(d) - nodeUsage(s, d.id).used.diskGb : n;
   }, 0);
@@ -219,7 +224,7 @@ function runBackups(s: GameState, events: SimEvent[]) {
     const target = s.clusters.find((x) => x.id === c.backup.targetId);
     if (c.backup.every === "off" || !target || (c.backup.every === "weekly" && d.getUTCDay() !== 0)) continue;
     const pool = backupPool(s, target.id);
-    if (!controlPlaneUp(s, target) || pool.need > pool.room) {
+    if (!backsUpCluster(s, c, target) || !controlPlaneUp(s, target) || pool.need > pool.room) {
       events.push({ app: "Locations", key: "event.backupFailed", params: { cluster: c.name, target: target.name } });
       continue;
     }
@@ -313,6 +318,7 @@ function billLicenses(s: GameState) {
   const lines = s.clusters.flatMap((c) => [
     ...[c.panel, c.platform].filter((id) => softwareFee(s, c, id) > 0).map((id) => line("ledger.license", { cluster: c.name, name: softwareById(id!).name }, softwareFee(s, c, id))),
     ...(c.appSuite ? [line("ledger.appSuite", { cluster: c.name }, APP_SUITE_FEE)] : []),
+    ...(balancerFee(s, c) > 0 ? [line("ledger.balancer", { cluster: c.name, name: balancerIn(softwareById(c.platform!), yearOf(s.hour))!.name }, balancerFee(s, c))] : []),
   ]);
   const windoors = [...s.devices, ...s.workloads].filter((m) => m.os?.id === "windoors");
   const osTotal = Math.round(windoors.reduce((n, m) => n + osFee(s, m), 0) * 100) / 100;

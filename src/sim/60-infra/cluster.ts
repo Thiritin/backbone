@@ -1,7 +1,7 @@
 import { modelById } from "../10-catalog/hardware";
 import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
-import { IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
+import { backsUp, balancerIn, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { isSuspended } from "../45-billing/billing";
@@ -42,6 +42,8 @@ export interface Cluster {
   autoUpdate?: boolean;
   // Whether a VMwhere cluster pays for the App Suite (APP_SUITE_FEE).
   appSuite: boolean;
+  // Whether the cluster pays for its hypervisor's balancer edition (Software.balancer).
+  balancer?: boolean;
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
 }
 // One workload runs one service: on a hypervisor node or bare-metal panel server (clusterId and deviceId), inside a panel
@@ -181,8 +183,21 @@ export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): bo
 // high availability only with automatic failover on.
 export function supports(c: Cluster, p: Product): boolean {
   if (!kindsServing(p).includes(c.kind) || !(c.kind === "cloud" ? c.platform : c.panel)) return false;
+  // Cloud computing needs an orchestration platform.
+  if (p === "cloud" && c.platform !== "openstash") return false;
   return !PRODUCTS[p].ha || c.ha.failover;
 }
+// Whether the cluster's hypervisor balances VMs now: an included balancer, or a paid edition the cluster bought.
+export const balances = (s: GameState, c: Cluster): boolean => {
+  const b = c.platform ? balancerIn(softwareById(c.platform), yearOf(s.hour)) : null;
+  return !!b && (b.fee === 0 || !!c.balancer);
+};
+
+// Whether the target cluster runs backup software that reads the source cluster's software this year.
+export const backsUpCluster = (s: GameState, source: Cluster, target: Cluster): boolean =>
+  target.kind === "backup" && !!target.panel && !target.switching && backsUp(softwareById(target.panel), source.panel ?? source.platform, yearOf(s.hour));
+// The clusters the source can back up to.
+export const backupTargets = (s: GameState, source: Cluster): Cluster[] => s.clusters.filter((t) => t.id !== source.id && backsUpCluster(s, source, t));
 export const hasHosts = (c: Cluster): boolean => c.nodes.length > 0 || !!c.vm;
 // Whether the internet reaches a cluster: its panel VM or one of its servers has a public address.
 export const clusterReachable = (s: GameState, c: Cluster): boolean =>

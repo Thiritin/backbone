@@ -106,7 +106,7 @@ Web hosting runs on panel hosts and virtual machines run on hypervisor clusters.
 ### Now available
 
 - **Automatic** placement picks a host for you when you set up an order.
-- **Place orders automatically** in Settings runs accepted orders from account to setup by itself.
+- **Place orders automatically** in Settings quotes order emails at your rates and runs accepted orders from account to setup by itself.
 
 ### Setup without picking a host
 
@@ -116,7 +116,7 @@ Setting up an order now offers **Automatic** next to your hosts. The game picks 
 
 Settings has a new **Place orders automatically** switch. With it on, an order form order is invoiced and set up the moment it arrives, and an order by email runs from the customer account to the setup the moment the customer accepts your quote.
 
-Quotes are still yours to send. A step that cannot run, such as a setup with no room, waits in the inbox for you.
+An order email gets a quote at your own rate for the line, as long as a host in its city has room for it. An order with no room waits for you to quote it by hand. A step that cannot run, such as a setup with no room, waits in the inbox for you too.
 
 ## High availability
 
@@ -135,6 +135,26 @@ Your team now knows how to treat a hypervisor cluster as one big machine. Each c
 Failover only helps when the other servers have room. A cluster packed to the brim restarts what fits and leaves the rest down until the broken server is back, and you hear about every machine it could not place.
 
 Auto-balancing needs live migration, and live migration needs a hypervisor that can do it. HyperVee cannot.
+
+### Balancing is an edition
+
+Auto-balancing also needs a hypervisor that balances. VMwhere does it with its Enterprise Plus edition and HyperVee with SysCenter VMM, each billed per server a month. Proxmocks and OpenVeeZee never balance. OpenStash balances with Watchman for free, once your team has learned cloud orchestration.
+
+## Cloud orchestration
+
+### Now available
+
+- **OpenStash** installs on your servers.
+- **Cloud computing** can be sold from an OpenStash cluster with automatic failover.
+- **Watchman** balances virtual machines across an OpenStash cluster at no extra cost.
+
+### Free software, expensive knowledge
+
+OpenStash costs nothing to download and a great deal to understand. Your team now runs its many services: identity, images, networks, volumes and the scheduler that places every machine. Customers start and stop their own virtual machines and pay by the hour.
+
+### What it needs
+
+Cloud computing needs a whole OpenStash cluster with automatic failover on. Other hypervisors keep selling virtual servers, but only OpenStash sells cloud computing.
 
 ## GPU computing
 

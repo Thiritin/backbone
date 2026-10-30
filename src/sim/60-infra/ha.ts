@@ -1,7 +1,7 @@
 // High availability per hypervisor cluster (gdd.md, Compute): automatic failover and auto-balancing. Clustered panel hosts fail over too.
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
+import { balances, insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
 import { working } from "./status";
 import { nodeUsage } from "./usage";
 
@@ -73,7 +73,7 @@ export function haTick(s: GameState): SimEvent[] {
   for (const id of s.clusters.filter((c) => c.kind === "cloud" && c.platform).map((c) => c.id)) {
     if (cluster(s, id).ha.failover) failover(s, cluster(s, id), events);
     const c = cluster(s, id);
-    if (c.ha.balance && c.ha.live) balance(s, c);
+    if (c.ha.balance && c.ha.live && balances(s, c)) balance(s, c);
   }
   // A clustered panel host restarts the web spaces of a failed server on the others without any research.
   for (const c of s.clusters.filter((x) => x.kind === "panel" && x.nodes.length > 1)) failover(s, c, events);

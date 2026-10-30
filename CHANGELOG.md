@@ -5,6 +5,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-30
 
 - Processors with two threads per core now count 30% more vCPU, gamers on a server with one of the fastest clocks on sale grow happier each month and may leave five-star reviews, a brand-new fast processor makes you known among gamers, and any service that runs a whole month without a slowdown or outage can earn a good review.
+- Backups now go to a backup server: install Backula, Veeham Backup or Proxmocks Backup Server on a server or VM, and each cluster can back up only to software that reads it, so VMwhere and HyperVee need Veeham.
+- Auto-balancing now needs a hypervisor that balances: VMwhere sells Enterprise Plus and HyperVee sells SysCenter VMM per server a month, Proxmocks and OpenVeeZee never balance, and OpenStash balances for free.
+- OpenStash now needs the new Cloud orchestration training, an expensive skill that is also the only way to sell cloud computing.
+- The research tree is laid out in Operations, Infrastructure, Sales and Company rows, and every skill lists what it unlocks.
+- With order automation on, order emails get a quote at your own rate as soon as they arrive, and the VMwhere, Proxmocks and HyperVee consoles show memory used against allocated with alarms for over-allocated hosts, full disks and missing failover room.
 - Switching a product off on your website now stops Sponsor-Bored applications for it, and the press no longer writes about product lines you have not listed.
 - Servers in the shop now carry their maker's own model names and numbers, such as a PowerEdgy R620 or a ProLight DL360 Gen9, and each maker builds its own set of lines, with Gigabutt joining as the fifth server maker.
 - Every CPU socket now offers a range of named processors with cores, threads, base and boost clocks and power draw, the shop lets you pick the processor when you order a server, and new clock, four-socket, 24-bay storage and 8-card GPU lines join the catalog.

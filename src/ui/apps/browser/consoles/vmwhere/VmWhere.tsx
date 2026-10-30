@@ -3,8 +3,10 @@ import { yearOf } from "../../../../../sim/00-core/time";
 import { serverOsById } from "../../../../../sim/10-catalog/server-os";
 import type { GameState } from "../../../../../sim/50-state";
 import { vmStats } from "../../../../../sim/60-infra/stats";
+import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../../sim/60-infra/alarms";
+import type { Cluster, NodeState } from "../../../../../sim/60-infra/cluster";
 import { Chart, niceMax } from "../Chart";
-import { ALL, AppSuiteTile, ConsoleThumb, isoName, MediaMenu, NodeList, SizeFields, suiteSoftware, TaskLog, Toolbar, useNewVm, useVms, vmFacts, windoorsLicence, Wizard, type Sel, type Vm } from "../HypervisorBase";
+import { AlarmList, ALL, AMOUNT, amountText, AppSuiteTile, CapacityBar, SEV_GLYPH, summaryOf, worst, ConsoleThumb, isoName, MediaMenu, NodeList, SizeFields, suiteSoftware, TaskLog, Toolbar, useNewVm, useVms, vmFacts, windoorsLicence, Wizard, type Sel, type Vm } from "../HypervisorBase";
 import { Actions, Backups, Bar, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import type { Look } from "../../../../../sim/10-catalog/sites";
 import "./vmwhere.css";
@@ -76,6 +78,68 @@ export function VmMonitor({ game, v }: { game: GameState; v: Vm }) {
   );
 }
 
+const HOST_STATE: Record<NodeState, string> = { active: "Connected", cordoned: "Connected, cordoned", draining: "Entering Maintenance Mode", maintenance: "Maintenance Mode" };
+const STATUS: Record<Severity, [string, string]> = { critical: ["Alert", "bad"], warning: ["Warning", "warn"] };
+const Status = ({ sev }: { sev: Severity | null }) => <span className={`cx-state ${sev ? STATUS[sev][1] : "ok"}`}>{sev ? STATUS[sev][0] : "Normal"}</span>;
+const Use = ({ k, a }: { k: keyof Amounts; a: Amount }) => (
+  <td><CapacityBar a={a} /><span className="cx-use num">{AMOUNT[k](a.allocated)} / {AMOUNT[k](a.capacity)}, {AMOUNT[k](a.used)} used</span></td>
+);
+
+// The cluster or host Summary tab: capacity like vSphere's resource meters, the host table, triggered alarms and every VM.
+function ClusterSummaryView({ game, c, node, vms, pick }: { game: GameState; c: Cluster; node: string | null; vms: Vm[]; pick: (s: Sel) => void }) {
+  const { sum, use, alarms } = summaryOf(game, c, node);
+  const rows: [string, keyof Amounts][] = [["CPU", "vcpu"], ["MEMORY", "ramGb"], ["STORAGE", "diskGb"]];
+  return (
+    <>
+      <div className="vsw-portlets">
+        <section className="vsw-portlet">
+          <h4>{node ? "Host Resources" : "Cluster Resources"}</h4>
+          <div className="vsw-meters vsw-cap">
+            {rows.map(([label, k]) => <div key={k}><small>{label}</small><b className="num">{amountText(k, use[k])}</b><CapacityBar a={use[k]} /></div>)}
+          </div>
+        </section>
+        <section className="vsw-portlet">
+          <h4>Triggered Alarms ({alarms.length})</h4>
+          <AlarmList game={game} c={c} alarms={alarms} className="cx-table vsw-alarms" />
+        </section>
+      </div>
+      {!node && (
+        <table className="cx-table">
+          <thead><tr><th>Host</th><th>State</th><th>Status</th><th>CPU</th><th>Memory</th><th>Storage</th><th>VMs</th></tr></thead>
+          <tbody>
+            {sum.hosts.map((h) => (
+              <tr key={h.deviceId} onClick={() => pick({ kind: "node", id: h.deviceId })}>
+                <td><b>{h.name}</b></td><td>{h.up ? HOST_STATE[h.state] : "Not Responding"}</td>
+                <td><Status sev={worst(sum.alarms.filter((a) => a.on.id === h.deviceId))} /></td>
+                <Use k="vcpu" a={h.use.vcpu} /><Use k="ramGb" a={h.use.ramGb} /><Use k="diskGb" a={h.use.diskGb} /><td className="num">{h.vms}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <table className="cx-table">
+        <thead><tr><th>Name</th><th>State</th><th>Status</th><th>Host</th><th>CPUs</th><th>Memory</th><th>Host Mem</th><th>Provisioned Space</th><th>Used Space</th><th>Host CPU</th></tr></thead>
+        <tbody>
+          {vms.map((v) => (
+            <tr key={v.id} onClick={() => pick({ kind: "vm", id: v.id })}>
+              <td><b>{v.name}</b>{v.sub && <span className="cx-sub">{v.sub}</span>}</td>
+              <td>{v.st === "stopped" ? "Powered Off" : v.st === "running" ? "Powered On" : v.state}</td>
+              <td><Status sev={worst(sum.alarms.filter((a) => a.on.id === v.id)) ?? (v.tone === "bad" ? "critical" : null)} /></td>
+              <td>{v.node}</td><td className="num">{v.w.vcpu}</td><td className="num">{gb(v.w.ramGb)}</td><td className="num">{gb(v.use.ramGb)}</td>
+              <td className="num">{gb(v.w.diskGb)}</td><td className="num">{gb(v.use.diskGb)}</td><td className="num">{Math.round(v.use.vcpu * MHZ)} MHz</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+const Badge = ({ alarms }: { alarms: Alarm[] }) => {
+  const sev = worst(alarms);
+  return sev ? <em className="vsw-badge" data-sev={sev}>{SEV_GLYPH[sev]} {alarms.length}</em> : null;
+};
+
 export function VmWhere(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, year = yearOf(game.hour);
   const [sel, setSel] = useState<Sel>(ALL), [tab, setTab] = useState("Summary");
@@ -95,7 +159,7 @@ export function VmWhere(p: PanelProps) {
   const shown = tabs.includes(tab) ? tab : "Summary", facts = vm && vmFacts(game, vm);
   const app = nv.suite ? suiteSoftware(year).find((x) => x.id === nv.suite) : undefined, appOs = app && serverOsById(app.os[0]);
   const finish = () => { const id = nv.create(); if (id) pick({ kind: "vm", id }); };
-  const list = vms.filter((v) => !node || v.w.deviceId === node);
+  const list = vms.filter((v) => !node || v.w.deviceId === node), alarms = clusterSummary(game, c.id).alarms;
   return (
     <div className="cx cx-hv vsw" data-era={era}>
       <header className="vsw-top">
@@ -114,14 +178,14 @@ export function VmWhere(p: PanelProps) {
         <aside className="cx-hv-tree vsw-tree">
           <div className="vsw-tree-h">Hosts and Clusters</div>
           <ul>
-            <li><button aria-pressed={sel.kind === "all"} onClick={() => pick(ALL)}><i>▥</i>{c.name}</button>
+            <li><button aria-pressed={sel.kind === "all"} onClick={() => pick(ALL)}><i>▥</i>{c.name}<Badge alarms={alarms} /></button>
               <ul>
                 {nodes.map((d) => (
                   <li key={d.id}>
-                    <button aria-pressed={node === d.id} onClick={() => pick({ kind: "node", id: d.id })}><i>▦</i>{d.hostname ?? d.name}</button>
+                    <button aria-pressed={node === d.id} onClick={() => pick({ kind: "node", id: d.id })}><i>▦</i>{d.hostname ?? d.name}<Badge alarms={alarms.filter((a) => a.on.id === d.id)} /></button>
                     <ul>
                       {vms.filter((v) => v.w.deviceId === d.id).map((v) => (
-                        <li key={v.id}><button aria-pressed={vm?.id === v.id} data-state={v.st} onClick={() => pick({ kind: "vm", id: v.id })}><i>{v.st === "running" ? "▶" : "▫"}</i>{v.name}</button></li>
+                        <li key={v.id}><button aria-pressed={vm?.id === v.id} data-state={v.st} onClick={() => pick({ kind: "vm", id: v.id })}><i>{v.st === "running" ? "▶" : "▫"}</i>{v.name}<Badge alarms={alarms.filter((a) => a.on.id === v.id)} /></button></li>
                       ))}
                     </ul>
                   </li>
@@ -146,19 +210,7 @@ export function VmWhere(p: PanelProps) {
             {!vm && shown === "Summary" && (
               <>
                 {!node && <AppSuiteTile c={c} className="cx-suite vsw-suite" />}
-                <table className="cx-table">
-                  <thead><tr><th>Name</th><th>State</th><th>Status</th><th>Host</th><th>Provisioned Space</th><th>Host CPU</th></tr></thead>
-                  <tbody>
-                    {list.map((v) => (
-                      <tr key={v.id} onClick={() => pick({ kind: "vm", id: v.id })}>
-                        <td><b>{v.name}</b>{v.sub && <span className="cx-sub">{v.sub}</span>}</td>
-                        <td>{v.st === "stopped" ? "Powered Off" : v.st === "running" ? "Powered On" : v.state}</td>
-                        <td><span className={`cx-state ${v.tone}`}>{v.tone === "bad" ? "Alert" : "Normal"}</span></td>
-                        <td>{v.node}</td><td className="num">{v.w.diskGb} GB</td><td className="num">{+v.use.vcpu.toFixed(2)} vCPU</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <ClusterSummaryView game={game} c={c} node={node} vms={list} pick={pick} />
               </>
             )}
             {!vm && shown === "Monitor" && <NodeList game={game} c={{ ...c, nodes: c.nodes.filter((n) => !node || n.deviceId === node) }} f={{ ...f, cluster: false }} />}

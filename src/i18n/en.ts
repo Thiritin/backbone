@@ -24,6 +24,7 @@ import { REPLIES_EN } from "./replies";
 import { BURNIN_EN } from "./burnin";
 import { USED_EN } from "./used";
 import { VENDORS_EN } from "./vendors";
+import { ALARMS_EN } from "./alarms";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -57,6 +58,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...VENDORS_EN,
   ...USED_EN,
   ...BURNIN_EN,
+  ...ALARMS_EN,
   "event.monthStart.title": (p) => `${MONTHS[Number(p.month)]} ${p.year}`,
   "event.monthStart.text": () => "A new month has started.",
   "save.loaded.title": () => "Game loaded",
@@ -656,6 +658,8 @@ export const en: Record<string, (p: Params) => string> = {
   "event.migrationFailed.text": (p) => `The migration of ${p.service} to ${p.cluster} did not run.`,
   "error.noLiveMigration": () => "This hypervisor cannot move running virtual machines.",
   "error.needsLiveMigration": () => "Auto-balancing needs live migration.",
+  "error.needsBalancer": () => "This hypervisor balances VMs only with its balancer edition.",
+  "error.noBalancer": () => "This hypervisor has no balancer edition to buy.",
   "event.backupFailed.title": () => "Backup failed",
   "event.backupFailed.text": (p) => `The backup of ${p.cluster} to ${p.target} did not run.`,
   "error.unknownSoftware": () => "This software is not on the market.",
@@ -677,7 +681,8 @@ export const en: Record<string, (p: Params) => string> = {
   "error.sameHost": () => "It already runs on this server.",
   "error.nodeDown": () => "This server is not ready to take workloads.",
   "error.nodeFull": () => "This server has no room for it.",
-  "error.backupTarget": () => "Pick another cluster as the backup target.",
+  "error.backupIncompatible": () => "This backup software cannot back up this cluster.",
+  "error.backupTarget": () => "Pick a backup server as the backup target.",
   "error.controlPlaneDown": () => "The cluster's control plane is down.",
   "error.unknownWorkload": () => "This workload no longer exists.",
   "error.alreadyStopped": () => "It is already stopped.",

@@ -4,7 +4,7 @@ import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { vmStats } from "../../../../../sim/60-infra/stats";
 import { useStore } from "../../../../store";
 import { Chart, niceMax } from "../Chart";
-import { ALL, MediaMenu, NodeList, osText, SizeFields, TaskLog, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Sel, type Vm } from "../HypervisorBase";
+import { AlarmList, ALL, MediaMenu, NodeList, osText, ResourceBars, summaryOf, SizeFields, TaskLog, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Sel, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import "./proxmocks.css";
 
@@ -66,7 +66,7 @@ export function Proxmocks(p: PanelProps) {
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
   const title = vm ? `Virtual Machine ${vmid(vm)} (${vm.name}) on node '${vm.node}'` : node ? `Node '${nodes.find((d) => d.id === node)?.hostname ?? ""}'` : "Datacenter";
   const finish = () => { const id = nv.create(); if (id) pick({ kind: "vm", id }); };
-  const facts = vm && vmFacts(game, vm);
+  const facts = vm && vmFacts(game, vm), health = summaryOf(game, c, node);
   return (
     <div className="cx cx-hv pmx" data-era={era}>
       <header className="pmx-top">
@@ -117,6 +117,11 @@ export function Proxmocks(p: PanelProps) {
               {vm && facts && shown === "Backup" && <Facts facts={[facts.backup]} />}
               {!vm && shown === "Summary" && (
                 <>
+                  <section className="pmx-panel">
+                    <h4>{node ? "Status" : "Health"}</h4>
+                    <ResourceBars use={health.use} labels={["CPU", "Memory", "Storage"]} className="cx-hv-bars pmx-res" />
+                    <AlarmList game={game} c={c} alarms={health.alarms} className="cx-table pmx-alarms" />
+                  </section>
                   <NodeList game={game} c={c} f={{ ...f, cluster: false }} className="cx-table" />
                   <table className="cx-table">
                     <thead><tr><th>ID</th><th>Name</th><th>Node</th><th>Status</th><th>CPU</th><th>Memory</th></tr></thead>

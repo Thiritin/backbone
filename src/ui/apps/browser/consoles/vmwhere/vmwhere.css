@@ -61,3 +61,8 @@
 .vsw-login[data-era="early"] .vsw-card { border-top: 4px solid var(--mark); background: linear-gradient(#fdfdfb, #e9e5dd); }
 .vsw-login[data-era="late"] { background: linear-gradient(135deg, #1b3d5f, #0079b8); }
 .vsw-login[data-era="late"] .vsw-card { border: 0; border-radius: 4px; }
+.vsw-badge { margin-left: 6px; font-style: normal; font-size: 10px; color: #d39b00; }
+.vsw-badge[data-sev="critical"] { color: #c62828; }
+.vsw-cap { padding: 6px 10px; }
+.vsw-portlet .vsw-alarms { border: 0; }
+.vsw-content .cx-table + .cx-table, .vsw-portlets + .cx-table { margin-top: 12px; }
