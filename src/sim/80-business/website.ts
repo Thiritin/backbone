@@ -6,6 +6,7 @@ import { offerPrice } from "../30-market/spec";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { serviceOnline } from "../40-support/status";
+import { HOW_TO, KNOWLEDGE_BASE } from "../40-support/tickets";
 import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { hostPerf } from "../60-infra/php";
 import { nodeUsage } from "../60-infra/usage";
@@ -45,6 +46,19 @@ export const siteContent = (s: GameState): { lines: { product: Product; from: nu
   lines: SITE_LINES.filter((p) => listed(s, p)).map((p) => ({ product: p, from: hasOrderForm(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null })),
   email: s.marketing.emailOrders ? salesAddress(s) : null,
 });
+
+// The site grows with the company: the hand-written page is one page, the web design adds the menu, the Knowledge base
+// app adds its articles and enough customers fill a help desk with questions and answers.
+export type SitePage = "home" | "products" | "kb" | "helpdesk" | "about" | "support";
+export const HELPDESK_CUSTOMERS = 25;
+export function sitePages(s: GameState): SitePage[] {
+  if (!owns(s, "website")) return ["home"];
+  const kb = s.installed.includes(KNOWLEDGE_BASE), desk = s.customers.filter((c) => c.churnedAt === null).length >= HELPDESK_CUSTOMERS;
+  return ["home", "products", ...(kb ? ["kb" as const] : []), ...(desk ? ["helpdesk" as const] : []), "about", "support"];
+}
+// The articles the Knowledge base answers, with how often customers read each.
+export const kbArticles = (s: GameState): { topic: string; reads: number }[] =>
+  Object.keys(HOW_TO).filter((t) => HOW_TO[t].basic).map((topic) => ({ topic, reads: s.kbReads[topic] ?? 0 }));
 
 // The company site is rented from Strateaux at a flat price (economy.md, "Market and leads") or runs on an own panel host.
 export const SITE_RENT = 9.9;

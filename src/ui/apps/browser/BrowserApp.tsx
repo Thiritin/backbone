@@ -75,7 +75,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   let body;
   if (waiting) body = null;
   else if (r.load === "down") body = <CannotReach host={r.host} />;
-  else if (p.kind === "company") body = <CompanySite game={game} />;
+  else if (p.kind === "company") body = <CompanySite game={game} path={r.path} go={go} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
   else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} />;

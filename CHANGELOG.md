@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- The company website grows with the web design into a site with a menu, a products page, an about page and a support page, with pictures of your racks and your support desk, and its newest look is a modern hosting company site.
+- Once you run the Knowledge base, its articles appear on the company website, and once you have enough customers a help desk shows common customer questions with your team's answers.
 - The server room hum is now a real recording of a server room, and a server answers its power button with a quiet beep as it starts.
 - Every hosting and game panel now looks like the product it is modelled on, and changes its look over the years.
 - Operating system images are downloaded from their websites, written to a USB stick and plugged into the server at the rack, or mounted on a virtual machine.
