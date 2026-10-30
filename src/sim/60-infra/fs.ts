@@ -29,10 +29,11 @@ const RELEASES: Release[] = [
 ];
 const releaseIn = (year: number): Release => [...RELEASES].reverse().find((r) => r.year <= year) ?? RELEASES[0];
 
-// A server runs the release of the year it was bought; the desk the one from the start of the game.
+// A server runs the Lunix version it installed, or without one the release of the year it was bought; the desk the one
+// from the start of the game.
 export function releaseOf(s: GameState, host: string): Release {
-  const d = s.devices.find((x) => x.id === host);
-  return releaseIn(yearOf(d?.boughtAt ?? 0));
+  const d = s.devices.find((x) => x.id === host), v = d?.os?.id === "lunix" ? Number(d.os.version) : NaN;
+  return RELEASES.find((r) => Number(r.version) === v) ?? releaseIn(yearOf(d?.boughtAt ?? 0));
 }
 
 export const userOf = (host: string) => (host === DESK ? "you" : "root");
@@ -79,7 +80,7 @@ const stamp = (hour: number) => dateOf(hour).toISOString().slice(0, 16).replace(
 
 function baseTree(s: GameState, host: string): Tree {
   const r = releaseOf(s, host), d = s.devices.find((x) => x.id === host);
-  const tree: Tree = { "/": true, "/etc": true, "/etc/apt": true, "/var": true, "/var/log": true, "/tmp": true, "/home": true, [homeOf(host)]: true };
+  const tree: Tree = { "/": true, "/etc": true, "/etc/apt": true, "/etc/apt/sources.list.d": true, "/var": true, "/var/log": true, "/tmp": true, "/home": true, [homeOf(host)]: true };
   tree["/etc/hostname"] = `${hostnameOf(s, host)}\n`;
   tree["/etc/os-release"] = [
     `PRETTY_NAME="Debian GNU/Linux ${r.version} (${r.codename})"`, `NAME="Debian GNU/Linux"`, `VERSION_ID="${r.version}"`,

@@ -1,3 +1,4 @@
+import { nowHours } from "../00-core/time";
 import { isService, softwareById } from "../10-catalog/platforms";
 import type { Resources } from "../10-catalog/products";
 import { bump } from "../40-support/tickets";
@@ -34,7 +35,9 @@ export function stopWorkload(s: GameState, id: string): ActionResult {
   const found = clusterWorkload(s, id);
   if (!found) return fail("error.unknownWorkload");
   if (found.w.stopped) return fail("error.alreadyStopped");
-  patch(s, id, { stopped: true });
+  // An OS still installing is lost with the power, as on a server.
+  const os = found.w.os && found.w.os.installedAt > nowHours(s) ? { os: null } : {};
+  patch(s, id, { stopped: true, ...os });
   freezeTick(s);
   return { ok: true };
 }

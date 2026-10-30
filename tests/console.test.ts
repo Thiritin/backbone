@@ -2,16 +2,17 @@ import { describe, expect, it } from "vitest";
 import { modelById } from "../src/sim/10-catalog/hardware";
 import { device, type GameState } from "../src/sim/50-state";
 import { clusterOf, hostOfVm, vmById, workloadsOn } from "../src/sim/60-infra/cluster";
-import { consoleScreen } from "../src/sim/60-infra/oob";
+import { consoleScreen, machineScreen } from "../src/sim/60-infra/oob";
 import { hardReboot, powerTick } from "../src/sim/60-infra/power";
 import { BOOT_HOURS, booting, deviceHealth, working } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
-import { bootFromUsb, enterSetup, eraseDisk, exitSetup, installCase, installFromIso, installFromUsb, setMedia } from "../src/sim/90-actions/console";
+import { bootFromUsb, enterSetup, eraseDisk, exitSetup, installCase, installOs, setMedia } from "../src/sim/90-actions/console";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { stopWorkload } from "../src/sim/90-actions/vms";
-import { softwareOn } from "../src/sim/90-actions/software";
+import { installSoftware, softwareOn } from "../src/sim/90-actions/software";
 import { setPower, setRaid } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { nowHours } from "../src/sim/00-core/time";
 import { readyGame } from "./fixtures";
 
 // readyGame: dev3 is a G1 Dwell server in rack2, cabled and up.
@@ -35,14 +36,14 @@ describe("BIOS setup", () => {
     ok(enterSetup(s, d.id));
     expect(d.setup).toBe(true);
     expect(deviceHealth(s, d.id).state).toBe("setup");
-    expect(consoleScreen(d, "setup").key).toBe("term.console.setup");
+    expect(consoleScreen(s, d).key).toBe("term.console.setup");
     hour(s, 3);
     expect(booting(s, dev(s, "dev3"))).toBe(true);
     expect(working(s, "dev3")).toBe(false);
     ok(exitSetup(s, "dev3"));
     expect(dev(s, "dev3").setup).toBe(false);
-    expect(dev(s, "dev3").bootUntil).toBe(s.hour + BOOT_HOURS);
-    minutes(s, 2);
+    expect(dev(s, "dev3").bootUntil).toBeCloseTo(s.hour + BOOT_HOURS + 20 / 60);
+    minutes(s, 22);
     expect(working(s, "dev3")).toBe(false);
     minutes(s, 2);
     expect(working(s, "dev3")).toBe(true);
@@ -96,55 +97,60 @@ describe("BIOS setup", () => {
 
 describe("USB installer", () => {
   const host = (d: { hostname?: string; label: string | null; name: string }) => d.hostname ?? d.label ?? d.name;
-  const installed = (s: GameState, id: string) => { ok(bootFromUsb(s, id)); ok(installFromUsb(s, id, "vmwhere")); for (let h = 0; h < 6; h++) tick(s); };
 
-  it("installs from the stick and reboots the server off it when done", () => {
+  it("installs an OS from the stick and boots the server from its disk when done", () => {
     const s = readyGame(7), id = storage(s), d = dev(s, id);
-    expect(err(installFromUsb(s, id, "vmwhere"))).toBe("error.notFromUsb");
+    expect(err(installOs(s, id, "lunix"))).toBe("error.notFromUsb");
     ok(bootFromUsb(s, id));
-    expect(consoleScreen(d, "ok").key).toBe("term.console.installer");
+    expect(consoleScreen(s, d).key).toBe("term.console.installer");
     expect(installCase(s, id).kind).toBe("empty");
-    ok(installFromUsb(s, id, "vmwhere"));
-    expect(softwareOn(s, id)[0]).toMatchObject({ id: "vmwhere" });
-    expect(softwareOn(s, id)[0].doneAt).not.toBeNull();
-    for (let h = 0; h < 6; h++) tick(s);
-    expect(softwareOn(s, id)[0].doneAt).toBeNull();
-    expect(dev(s, id).bootFrom).toBe("disk");
-    expect(dev(s, id).bootUntil).toBe(5 + BOOT_HOURS);
+    const at = nowHours(s);
+    ok(installOs(s, id, "lunix"));
+    expect(d.os).toMatchObject({ id: "lunix", version: "3.1", installedAt: at + 1 });
+    expect(d.bootFrom).toBe("disk");
+    expect(d.bootUntil).toBeCloseTo(at + 1 + BOOT_HOURS + 20 / 60);
+    expect(machineScreen(s, id).kind).toBe("osInstall");
+    for (let h = 0; h < 2; h++) tick(s);
+    expect(machineScreen(s, id)).toEqual({ kind: "login", os: "lunix" });
   });
 
-  it("boots for the full three minutes after a reset late in the hour", () => {
+  it("boots for POST and the OS's boot minutes after a reset late in the hour", () => {
     const s = readyGame(7), d = dev(s, "dev3");
-    minutes(s, 40);
+    minutes(s, 30);
     hardReboot(s, d, "ipmi.log.reset");
     expect(booting(s, d)).toBe(true);
-    minutes(s, 2);
+    minutes(s, 22);
     expect(booting(s, d)).toBe(true);
     minutes(s, 2);
     expect(booting(s, d)).toBe(false);
   });
 
-  it("aborts a first install on a reset or a pulled plug, leaving the disks empty", () => {
+  it("aborts an OS install on a reset, leaving the disk empty", () => {
     const s = readyGame(7), id = storage(s), d = dev(s, id);
     ok(bootFromUsb(s, id));
-    ok(installFromUsb(s, id, "vmwhere"));
+    ok(installOs(s, id, "lunix"));
     hardReboot(s, d, "ipmi.log.reset");
-    expect(clusterOf(s, id)).toBeUndefined();
+    expect(d.os).toBeNull();
     expect(d.bootFrom).toBe("disk");
     expect(d.log.at(-2)?.key).toBe("ipmi.log.installAborted");
-    expect(err(installFromUsb(s, id, "vmwhere"))).toBe("error.notFromUsb");
+    expect(err(installOs(s, id, "lunix"))).toBe("error.notFromUsb");
   });
 
-  it("replaces software nobody uses, and puts it back when the new one is refused", () => {
+  it("reinstalls over software nobody uses, and keeps it when the OS is refused", () => {
     const s = readyGame(7), id = storage(s);
-    installed(s, id);
+    ok(bootFromUsb(s, id));
+    ok(installOs(s, id, "lunix"));
+    for (let h = 0; h < 2; h++) tick(s);
+    ok(installSoftware(s, id, "vmwhere"));
+    for (let h = 0; h < 6; h++) tick(s);
     expect(installCase(s, id).kind).toBe("idle");
     ok(bootFromUsb(s, id));
-    expect(err(installFromUsb(s, id, "nope"))).toBe("error.unknownSoftware");
+    expect(err(installOs(s, id, "nope" as "lunix"))).toBe("error.unknownOs");
     expect(softwareOn(s, id)[0]).toMatchObject({ id: "vmwhere", doneAt: null });
-    ok(installFromUsb(s, id, "freepanel"));
-    expect(softwareOn(s, id)[0]).toMatchObject({ id: "freepanel" });
-    expect(s.clusters.filter((c) => c.nodes.some((n) => n.deviceId === id))).toHaveLength(1);
+    ok(installOs(s, id, "windoors"));
+    expect(dev(s, id).os).toMatchObject({ id: "windoors" });
+    expect(softwareOn(s, id)).toHaveLength(0);
+    expect(clusterOf(s, id)).toBeUndefined();
   });
 
   it("needs the hostname typed to erase software with customers on it, and loses their data", () => {
@@ -152,18 +158,18 @@ describe("USB installer", () => {
     expect(installCase(s, "dev3").kind).toBe("busy");
     ok(bootFromUsb(s, "dev3"));
     expect(working(s, "dev3")).toBe(true);
-    expect(err(installFromUsb(s, "dev3", "vmwhere"))).toBe("error.confirmHostname");
-    expect(err(installFromUsb(s, "dev3", "vmwhere", "wrong"))).toBe("error.confirmHostname");
+    expect(err(installOs(s, "dev3", "lunix"))).toBe("error.confirmHostname");
+    expect(err(installOs(s, "dev3", "lunix", "wrong"))).toBe("error.confirmHostname");
     expect(s.workloads).toHaveLength(before);
-    ok(installFromUsb(s, "dev3", "vmwhere", host(d)));
+    ok(installOs(s, "dev3", "lunix", host(d)));
     expect(workloadsOn(s, "dev3")).toHaveLength(0);
     expect(s.lossReports).toHaveLength(1);
     expect(s.lossReports[0].items.length).toBeGreaterThan(0);
     expect(s.services.filter((v) => v.endedAt === null)).toHaveLength(0);
     expect(s.tickets.some((t) => t.kind === "refund")).toBe(true);
-    expect(s.clusters).toHaveLength(1);
-    expect(softwareOn(s, "dev3")[0]).toMatchObject({ id: "vmwhere" });
-    expect(softwareOn(s, "dev3")[0].doneAt).not.toBeNull();
+    expect(s.clusters).toHaveLength(0);
+    expect(softwareOn(s, "dev3")).toHaveLength(0);
+    expect(machineScreen(s, "dev3").kind).toBe("osInstall");
   });
 
   it("erases to bare metal under the same confirmation", () => {
@@ -173,6 +179,7 @@ describe("USB installer", () => {
     ok(eraseDisk(s, "dev3", host(d)));
     expect(clusterOf(s, "dev3")).toBeUndefined();
     expect(s.workloads).toHaveLength(0);
+    expect(d.os).toBeNull();
     expect(err(eraseDisk(s, "dev3"))).toBe("error.noSoftware");
     expect(d.bootFrom).toBe("usb");
     expect(dev(deserialize(serialize(s)), "dev3").bootFrom).toBe("usb");
@@ -186,38 +193,40 @@ describe("VM console", () => {
   const basement = (s: GameState) => clusterOf(s, "dev3")!;
   const panelVm = (s: GameState) => s.clusters.find((c) => c.vm)!.vm!;
 
-  it("boots the installer from the ISO and ejects it once the install is done", () => {
+  it("installs the OS of the loaded ISO and ejects it as the install starts", () => {
     const s = readyGame(7), made = createVm(s, basement(s).id, PANEL_VM_SIZE), vm = made.ok ? made.id! : "";
     ok(made);
-    expect(err(installFromIso(s, vm, "cpanic"))).toBe("error.noMedia");
+    expect(err(installOs(s, vm, "lunix"))).toBe("error.noMedia");
     ok(setMedia(s, vm, "lunix"));
     expect(vmById(s, vm)?.media).toBe("lunix");
+    expect(machineScreen(s, vm)).toEqual({ kind: "bootMenu", media: ["lunix"] });
     expect(installCase(s, vm).kind).toBe("empty");
-    ok(installFromIso(s, vm, "cpanic"));
-    expect(hostOfVm(s, vm)?.switching?.to).toBe("cpanic");
-    expect(vmById(deserialize(serialize(s)), vm)?.media).toBe("lunix");
-    for (let h = 0; h < 4; h++) tick(s);
-    expect(hostOfVm(s, vm)?.panel).toBe("cpanic");
+    expect(err(installOs(s, vm, "windoors"))).toBe("error.otherMedia");
+    ok(installOs(s, vm, "lunix"));
     expect(vmById(s, vm)?.media).toBeUndefined();
+    expect(machineScreen(s, vm).kind).toBe("osInstall");
+    expect(vmById(deserialize(serialize(s)), vm)?.os).toMatchObject({ id: "lunix" });
+    tick(s);
+    expect(machineScreen(s, vm)).toEqual({ kind: "login", os: "lunix" });
     ok(stopWorkload(s, vm));
     ok(setMedia(s, vm, "lunix"));
-    expect(err(installFromIso(s, vm, "cpanic"))).toBe("error.alreadyStopped");
+    expect(err(installOs(s, vm, "lunix"))).toBe("error.alreadyStopped");
   });
 
   it("needs the VM's hostname to erase a panel with customers on it, booked on the host", () => {
-    const s = readyGame(7), vm = panelVm(s), w = vmById(s, vm)!, before = s.workloads.length;
+    const s = readyGame(7), vm = panelVm(s), w = vmById(s, vm)!, before = s.workloads.length, panel = hostOfVm(s, vm)!.id;
     ok(setMedia(s, vm, "lunix"));
     expect(installCase(s, vm).kind).toBe("busy");
-    expect(err(installFromIso(s, vm, "cpanic"))).toBe("error.confirmHostname");
+    expect(err(installOs(s, vm, "lunix"))).toBe("error.confirmHostname");
     expect(s.workloads).toHaveLength(before);
-    expect(err(installFromIso(s, vm, "nope", w.hostname))).toBe("error.unknownSoftware");
+    expect(err(installOs(s, vm, "nope" as "lunix", w.hostname))).toBe("error.unknownOs");
     expect(s.workloads).toHaveLength(before);
     expect(hostOfVm(s, vm)?.panel).toBe("freepanel");
-    ok(installFromIso(s, vm, "cpanic", w.hostname));
-    expect(s.workloads.filter((x) => x.clusterId === hostOfVm(s, vm)?.id)).toHaveLength(0);
+    ok(installOs(s, vm, "lunix", w.hostname));
+    expect(s.workloads.filter((x) => x.clusterId === panel)).toHaveLength(0);
     expect(s.lossReports[0]).toMatchObject({ deviceId: "dev3" });
     expect(s.services.filter((v) => v.endedAt === null)).toHaveLength(0);
-    expect(hostOfVm(s, vm)?.switching?.to).toBe("cpanic");
+    expect(hostOfVm(s, vm)).toBeUndefined();
     expect(vmById(s, vm)).toBeDefined();
   });
 
@@ -227,6 +236,7 @@ describe("VM console", () => {
     expect(err(eraseDisk(s, vm))).toBe("error.confirmHostname");
     ok(eraseDisk(s, vm, w.hostname));
     expect(hostOfVm(s, vm)).toBeUndefined();
+    expect(vmById(s, vm)?.os).toBeNull();
     expect(err(eraseDisk(s, vm))).toBe("error.noSoftware");
     ok(setMedia(s, vm, null));
     expect(vmById(s, vm)?.media).toBeUndefined();

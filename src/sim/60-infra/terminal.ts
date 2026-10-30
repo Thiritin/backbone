@@ -4,7 +4,7 @@ import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import { BMC_NAME, modelById } from "../10-catalog/hardware";
-import { consoleScreen, consoleVia } from "./oob";
+import { consoleScreen, consoleVia, osUp } from "./oob";
 import { JITTER } from "../10-catalog/network";
 import { fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
@@ -13,18 +13,19 @@ import { recover } from "../90-actions/vms";
 import { privateIp, publicV4, publicV6, ipmiIp } from "./addresses";
 import { serverOf, vmOf, workloadOnline, type Workload } from "./cluster";
 import { latency } from "./network";
-import { deviceHealth, hopDown, pathTo, powered, working, type Hop } from "./status";
+import { hopDown, pathTo, powered, working, type Hop } from "./status";
 import { nodeUsage, workloadUse } from "./usage";
 import { RECOVER_HOURS } from "./power";
 import { reboot, shutdown, type ActionResult } from "../90-actions/hardware";
-import { apt } from "./apt";
+import { apt, dpkg, installScript, installStep } from "./apt";
 import { DESK, homeOf, shortPath } from "./fs";
 import { completePath, FILE_COMMANDS, fileCommand, parseLine, redirect, type Segment } from "./shell";
 
 // An open ssh session on a server; null at the desk.
 export interface Session { host: string; deviceId: string }
-// A recovery the screen reports on once it is done.
-export interface Watch { workloadId: string; host: string }
+// A recovery the screen reports on once it is done, or an install whose progress lines it prints as they come due; step
+// is how many it printed.
+export interface Watch { workloadId?: string; host: string; install?: { machineId: string; softwareId: string; step: number } }
 // cwd is the new working directory; failed stops a && chain; confirm asks [Y/n] before the command runs again with -y.
 export interface CommandResult {
   output: string[]; session?: Session | null; action?: Call; clear?: boolean; watch?: Watch;
@@ -164,6 +165,10 @@ function ssh(s: GameState, args: string[]): CommandResult {
   if (tg.kind === "bmc") return pathTo(s, deskRouter(s) ?? "", tg.deviceId) && answers(s, tg) ? { output: lines("term.ssh.refused", { host: arg }) } : timeout;
   if (!reach(s, tg)) return timeout;
   if (tg.kind === "workload") return { output: lines("term.ssh.denied", { host: tg.name }) };
+  // No sshd on Windoors; a machine whose OS is not up does not answer at all.
+  const os = osUp(s, tg.deviceId);
+  if (!os) return timeout;
+  if (os === "windoors") return { output: lines("term.ssh.refused", { host: arg }) };
   return { output: lines("term.ssh.welcome", { host: tg.name }), session: { host: tg.name, deviceId: tg.deviceId } };
 }
 
@@ -174,10 +179,13 @@ function consoleCommand(s: GameState, arg: string | undefined): string[] {
   if (!d) return lines("term.console.resolve", { host: arg });
   const via = consoleVia(s, d.id);
   if (!via) return lines("term.console.none", { host: arg });
-  const screen = consoleScreen(d, deviceHealth(s, d.id).state);
+  const screen = consoleScreen(s, d);
   const through = via.kind === "bmc" ? BMC_NAME[d.brand] ?? "BMC" : via.device.label ?? via.device.name;
   return [...lines("term.console.open", { host: d.label ?? d.name, via: through }), ...lines(screen.key, screen.params)];
 }
+
+// The host of the URL a curl or wget line fetches.
+const urlHost = (args: string[]) => /^\w+:\/\/([^/]+)/.exec(args.find((a) => a.includes("://")) ?? "")?.[1] ?? args.at(-1) ?? "";
 
 // Remote shell ---------------------------------------------------------------------------------------------------------
 
@@ -284,6 +292,13 @@ function recoverCommand(s: GameState, { deviceId }: Session, arg: string | undef
   return { output: [t("term.recover.start", p), t("term.recover.eta", { ...p, minutes: RECOVER_HOURS * 60 })], action: [recover, w.id], watch: { workloadId: w.id, host: arg } };
 }
 
+// The lines a watch prints on this refresh and the watch to keep, null once it is over.
+export function watchStep(s: GameState, watch: Watch): { output: string[]; next: Watch | null } {
+  if (watch.install) return installStep(s, watch);
+  const r = recoveryReport(s, watch);
+  return r ? { output: r, next: null } : { output: [], next: watch };
+}
+
 // The lines for a recovery that has finished, or null while it is still under way.
 export function recoveryReport(s: GameState, watch: Watch): string[] | null {
   const w = s.workloads.find((x) => x.id === watch.workloadId);
@@ -293,7 +308,7 @@ export function recoveryReport(s: GameState, watch: Watch): string[] | null {
 
 const SHARED = [...FILE_COMMANDS, "apt", "apt-get", "help", "clear"];
 const DESK_COMMANDS = ["ssh", "ping", "traceroute", "host", "console", "sudo", ...SHARED];
-const REMOTE_COMMANDS = ["uptime", "df", "free", "top", "shutdown", "reboot", "recover", "exit", ...SHARED];
+const REMOTE_COMMANDS = ["uptime", "df", "free", "top", "shutdown", "reboot", "recover", "exit", "dpkg", "curl", "wget", "sh", ...SHARED];
 const PATH_COMMANDS = ["cd", "ls", "cat", "edit", "touch", "mkdir", "rm", "rmdir", "mv", "cp"];
 
 // Tab on a line: the first word completes to a command, a word after a file command to a path, other words to a host
@@ -331,8 +346,12 @@ function runWords(s: GameState, session: Session | null, cwd: string, words: str
     root = true;
   }
   if (session) {
-    if (!working(s, session.deviceId)) return { output: lines("term.ssh.lost", { host: session.host }), session: null };
-    if (["uptime", "df", "free", "top", "shutdown", "reboot", "recover", "exit"].includes(cmd)) return remote(s, session, cmd, args);
+    const server = s.devices.some((d) => d.id === session.deviceId);
+    if (!osUp(s, session.deviceId) || (server && !working(s, session.deviceId))) return { output: lines("term.ssh.lost", { host: session.host }), session: null };
+    if (cmd === "exit" || (server && ["uptime", "df", "free", "top", "shutdown", "reboot", "recover"].includes(cmd))) return remote(s, session, cmd, args);
+    if (cmd === "dpkg") return dpkg(s, session.deviceId, args);
+    if (cmd === "curl" || cmd === "wget") return { output: lines(`term.${cmd}.resolve`, { host: urlHost(args) }), failed: true };
+    if (cmd === "sh") return { output: lines("term.sh.open", { file: args[0] ?? "" }), failed: true };
   } else if (cmd === "ssh") return ssh(s, args);
   else if (cmd === "ping") return { output: ping(s, args[0], nonce) };
   else if (cmd === "traceroute") return { output: traceroute(s, args[0], nonce) };
@@ -355,8 +374,10 @@ export interface LineResult { output: string[]; session: Session | null; cwd: st
 // command that asks to confirm ends the run, and confirm holds the rest of the line to run once the player agrees.
 export function runLine(get: () => GameState, act: (a: Call) => ActionResult, session: Session | null, cwd: string | null, line: string, nonce = 0): LineResult {
   const res: LineResult = { output: [], session, cwd, watch: [], clear: false, confirm: null, edit: null };
-  for (const seg of parseLine(line)) {
-    const r = runSegment(get(), res.session, res.cwd ?? homeOf(hostOf(res.session)), seg, nonce);
+  // A software's install line is matched whole before the shell splits it at its && and ;.
+  const whole = session ? installScript(get(), session.deviceId, line) : undefined;
+  for (const seg of whole ? [null] : parseLine(line)) {
+    const r = seg ? runSegment(get(), res.session, res.cwd ?? homeOf(hostOf(res.session)), seg, nonce) : whole!;
     if (r.clear) { res.output = []; res.clear = true; }
     res.output.push(...r.output);
     let failed = !!r.failed;
@@ -368,8 +389,8 @@ export function runLine(get: () => GameState, act: (a: Call) => ActionResult, se
     if (r.cwd !== undefined) res.cwd = r.cwd === homeOf(hostOf(res.session)) ? null : r.cwd;
     if (r.watch) res.watch.push(r.watch);
     if (r.edit) { res.edit = r.edit; break; }
-    if (r.confirm) { res.confirm = `${line.slice(seg.start, seg.end).trim()} -y${line.slice(seg.end)}`; break; }
-    if (failed && seg.then === "&&") break;
+    if (r.confirm && seg) { res.confirm = `${line.slice(seg.start, seg.end).trim()} -y${line.slice(seg.end)}`; break; }
+    if (failed && seg?.then === "&&") break;
   }
   return res;
 }

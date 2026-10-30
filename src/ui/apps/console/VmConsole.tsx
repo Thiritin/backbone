@@ -1,6 +1,6 @@
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import { yearOf } from "../../../sim/00-core/time";
-import { hostOfVm, type Workload } from "../../../sim/60-infra/cluster";
+import type { Workload } from "../../../sim/60-infra/cluster";
 import { setMedia } from "../../../sim/90-actions/console";
 import { startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
 import { useStore } from "../../store";
@@ -19,8 +19,8 @@ export function VmConsole({ vm: w, front }: { vm: Workload; front: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => { if (front) box.current?.focus({ preventScroll: true }); }, [front, w.id]);
   const installer = useInstaller(game, w);
-  const st = vmState(game, w), on = st === "running" || st === "down" || st === "frozen", host = hostOfVm(game, w.id);
-  const phase = !on ? "dark" : w.media ? "installer" : host?.panel ? "debian" : "nodisk";
+  const st = vmState(game, w), on = st === "running" || st === "down" || st === "frozen";
+  const phase = !on ? "dark" : w.media ? "installer" : w.os ? "debian" : "nodisk";
   const name = w.hostname ?? vmLabel(game, w).name;
   const onKey = (key: string) => { if (phase === "installer") installer.onKey(key); };
   const keydown = (e: KeyboardEvent) => { if (HANDLED.has(e.key) || e.key.length === 1) { e.preventDefault(); e.stopPropagation(); onKey(e.key); } };

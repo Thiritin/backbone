@@ -5,7 +5,7 @@ import { noRoomError, supports } from "../src/sim/60-infra/cluster";
 import { createVm, PANEL_VM_SIZE, provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { installBlock, installSoftware } from "../src/sim/90-actions/software";
-import { hypervisor, panelVm, readyGame, skipTo, withServer } from "./fixtures";
+import { hypervisor, panelVm, readyGame, skipTo, withServer, bootedMachine } from "./fixtures";
 
 const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
 const idOf = (r: { ok: boolean; id?: string }) => (r.ok ? r.id! : "");
@@ -41,22 +41,22 @@ describe("service software", () => {
   });
 
   it("installs service software in a VM or on a free server, one per machine", () => {
-    const s = readyGame(1), vm = idOf(createVm(s, cloudOf(s).id, PANEL_VM_SIZE));
+    const s = readyGame(1), vm = bootedMachine(s, idOf(createVm(s, cloudOf(s).id, PANEL_VM_SIZE)));
     expect(installBlock(s, vm, "openveepeen")).toBeNull();
     expect(installBlock(s, vm, "minnio")).toBe("error.softwareNotYet");
     expect(installSoftware(s, vm, "openveepeen").ok).toBe(true);
-    expect(installBlock(s, vm, "bound")).toBeNull();
+    expect(installBlock(s, vm, "bound")).toBe("error.onePanel");
 
     const bare = withServer(newGame(2));
-    expect(installSoftware(bare, "dev3", "vsftpeed").ok).toBe(true);
+    expect(installSoftware(bare, bootedMachine(bare, "dev3"), "vsftpeed").ok).toBe(true);
     expect(bare.clusters[0]).toMatchObject({ kind: "storage", nodes: [{ deviceId: "dev3" }] });
-    expect(installBlock(bare, "dev3", "vmwhere")).toBeNull();
+    expect(installBlock(bare, "dev3", "vmwhere")).toBe("error.serverInUse");
   });
 
   it("opens newer software in its year", () => {
     const s = withServer(newGame(3));
     hypervisor(s, ["dev3"]);
-    const vm = idOf(createVm(s, s.clusters[0].id, PANEL_VM_SIZE));
+    const vm = bootedMachine(s, idOf(createVm(s, s.clusters[0].id, PANEL_VM_SIZE)));
     expect(installBlock(s, vm, "wireguarded")).toBe("error.softwareNotYet");
     skipTo(s, 2018);
     expect(installBlock(s, vm, "wireguarded")).toBeNull();

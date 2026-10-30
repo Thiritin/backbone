@@ -1,17 +1,17 @@
 // The server's own screen (docs/design/console.md): the BIOS setup a key during POST or at the firmware prompt opens,
 // and the installer on the USB stick the boot menu starts. While a server sits in setup its boot waits, so its workloads
 // stay down.
-import { nowHours } from "../00-core/time";
+import { nowHours, yearOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import type { Device, GameState } from "../50-state";
 import { clusterOf, dropCluster, hostOfVm, isOwnVm, setMachine, vmById, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
-import type { ServerOsId } from "../10-catalog/server-os";
+import { SERVER_OS, serverOsAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
 import { pushLog } from "../60-infra/power";
-import { BOOT_HOURS, booting, powered } from "../60-infra/status";
+import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
 import { reportLoss } from "../85-products/products";
 import { leave } from "./clusters";
 import type { ActionResult } from "./hardware";
-import { installSoftware, uninstallSoftware } from "./software";
+import { uninstallSoftware } from "./software";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 // A machine is a server or one of the player's own VMs; a VM has no label, so its hostname is the vmNNN it got at birth.
@@ -33,7 +33,7 @@ export function enterSetup(s: GameState, deviceId: string): ActionResult {
   const d = server(s, deviceId);
   if (typeof d === "string") return fail(d);
   if (d.setup) return { ok: true };
-  if (!booting(s, d) && !d.stuck) return fail("error.notAtPost");
+  if ((!booting(s, d) && !d.stuck) || (d.os && d.os.installedAt > nowHours(s))) return fail("error.notAtPost");
   d.setup = true;
   d.stuck = false;
   pushLog(d, s.hour, "ipmi.log.setup");
@@ -46,13 +46,12 @@ export function exitSetup(s: GameState, deviceId: string): ActionResult {
   if (!d) return fail("error.unknownDevice");
   if (!d.setup) return fail("error.notInSetup");
   d.setup = false;
-  d.bootUntil = nowHours(s) + BOOT_HOURS;
+  d.bootUntil = nowHours(s) + bootHours(s, d);
   pushLog(d, s.hour, "ipmi.log.setupLeft");
   return { ok: true };
 }
 
-// The boot menu's USB entry: the stick always holds the installer with the whole catalog on it. The operating system on
-// the disks is not running while the server is booted from the stick, so this is also the one way to erase it.
+// The boot menu's USB entry: the stick holds the installers of both operating systems. The operating system on the disks is not running while the server is booted from the stick, so this is also the one way to erase it.
 export function bootFromUsb(s: GameState, deviceId: string): ActionResult {
   const d = server(s, deviceId);
   if (typeof d === "string") return fail(d);
@@ -103,9 +102,6 @@ function clear(s: GameState, m: Machine, confirm: string | undefined): ActionRes
   return { ok: true };
 }
 
-const snapshot = (s: GameState, m: Machine) => ({ clusters: s.clusters, workloads: s.workloads, services: s.services, company: s.company, security: s.security, lossReports: s.lossReports, tickets: s.tickets, customers: s.customers, nextId: s.nextId, device: isDevice(m) ? { dataLost: m.dataLost, log: m.log, os: m.os, software: m.software } : null });
-const restore = (s: GameState, m: Machine, snap: ReturnType<typeof snapshot>) => { const { device, ...rest } = snap; Object.assign(s, rest); if (device) Object.assign(m, device); };
-
 // The machine booted into its installer: a server from the stick, a VM from the ISO, or why not.
 const atInstaller = (s: GameState, machineId: string): Machine | string => {
   const vm = vmById(s, machineId);
@@ -114,31 +110,35 @@ const atInstaller = (s: GameState, machineId: string): Machine | string => {
   return typeof d === "string" ? d : d.bootFrom !== "usb" ? "error.notFromUsb" : d;
 };
 
-// The installer's Install: whatever the disks held goes first, then the software installs as from the catalog. What the
-// erase took is put back when the install is refused.
-function installOn(s: GameState, machineId: string, softwareId: string, confirm?: string): ActionResult {
+// The installer's Install: whatever the disks held goes first, then the OS installs for its install hours, the newest
+// version of the year. os.installedAt is the hour it is done; a server is held in its boot until then and boots from its
+// disk after, a VM ejects its ISO. The stick holds both operating systems, an ISO the one it is of.
+export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string): ActionResult {
   const m = atInstaller(s, machineId);
   if (typeof m === "string") return fail(m);
-  const snap = snapshot(s, m), cleared = clear(s, m, confirm);
+  if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
+  if (!isDevice(m) && m.media !== osId) return fail("error.otherMedia");
+  const cleared = clear(s, m, confirm);
   if (!cleared.ok) return cleared;
-  setMachine(s, machineId, () => ({ os: null, software: [] }));
-  const r = installSoftware(s, machineId, softwareId);
-  if (!r.ok) restore(s, m, snap);
-  return r;
+  const os = serverOsById(osId), done = nowHours(s) + os.installHours;
+  setMachine(s, machineId, () => ({ os: { id: osId, version: serverOsAt(osId, yearOf(s.hour)).version, installedAt: done }, software: [] }));
+  if (isDevice(m)) Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60 });
+  else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
+  return { ok: true };
 }
-export const installFromUsb = (s: GameState, deviceId: string, softwareId: string, confirm?: string): ActionResult => installOn(s, deviceId, softwareId, confirm);
-export const installFromIso = (s: GameState, vmId: string, softwareId: string, confirm?: string): ActionResult => installOn(s, vmId, softwareId, confirm);
 
 // The installer's Erase disk: bare metal, or an empty VM, under the same confirmation as a reinstall.
 export function eraseDisk(s: GameState, machineId: string, confirm?: string): ActionResult {
   const m = atInstaller(s, machineId);
   if (typeof m === "string") return fail(m);
-  if (installCase(s, machineId).kind === "empty") return fail("error.noSoftware");
-  return clear(s, m, confirm);
+  if (installCase(s, machineId).kind === "empty" && !m.os) return fail("error.noSoftware");
+  const cleared = clear(s, m, confirm);
+  if (cleared.ok) setMachine(s, machineId, () => ({ os: null, software: [] }));
+  return cleared;
 }
 
-// The ISO in one of the player's own VMs: loaded, the VM boots the installer; ejected or once an install finishes, its own
-// disk again. A VM has no BIOS and no boot menu, the media decides.
+// The ISO of an OS in one of the player's own VMs: loaded, the VM boots its installer; ejected, or once the installer
+// starts, its own disk again. A VM has no BIOS and no boot menu, the media decides.
 export function setMedia(s: GameState, vmId: string, media: ServerOsId | null): ActionResult {
   const vm = vmById(s, vmId);
   if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");

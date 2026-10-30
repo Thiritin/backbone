@@ -89,9 +89,9 @@ export function fileCommand(s: GameState, host: string, cwd: string, cmd: string
     case "whoami": return { output: [userOf(host)] };
     case "hostname": return { output: [hostnameOf(s, host)] };
     case "uname": {
-      if (!flags.has("a")) return { output: ["Linux"] };
-      const k = releaseOf(s, host).kernel;
-      return { output: [`Linux ${hostnameOf(s, host)} ${k}-amd64 #1 SMP Debian ${k} x86_64 GNU/Linux`] };
+      if (!flags.has("a")) return { output: ["Lunix"] };
+      const r = releaseOf(s, host);
+      return { output: [`Lunix ${hostnameOf(s, host)} ${r.kernel}-amd64 #1 SMP Debiant ${r.kernel} (${r.year}) x86_64 GNU/Lunix ${r.version} (${r.codename})`] };
     }
     case "date": {
       const d = when(s.hour);

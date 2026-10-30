@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { t } from "../../../i18n/en";
-import { complete, DESK_PROMPT, hostOf, promptOf, recoveryReport, runLine, type Editing, type Session, type Watch } from "../../../sim/60-infra/terminal";
+import { complete, DESK_PROMPT, hostOf, promptOf, runLine, watchStep, type Editing, type Session, type Watch } from "../../../sim/60-infra/terminal";
 import { editFiles } from "../../../sim/90-actions/files";
 import { useSessionState } from "../../session";
 import { uiSound, useFocus, useStore } from "../../store";
@@ -49,12 +49,13 @@ export function TerminalApp() {
 
   useEffect(() => { if (screen.current) screen.current.scrollTop = screen.current.scrollHeight; }, [lines]);
 
-  // A recovery finishes in game time, so the screen reports it when the game has moved on.
+  // Recoveries and installs run in game time, so the screen prints their lines as the game moves on.
   useEffect(() => {
-    const done = watching.map((w) => ({ w, report: recoveryReport(game, w) })).filter((x) => x.report);
-    if (!done.length) return;
-    setLines([...lines, ...done.flatMap((x) => x.report!.map((text) => ({ text })))].slice(-MAX_LINES));
-    setWatching(watching.filter((w) => !done.some((x) => x.w === w)));
+    const steps = watching.map((w) => watchStep(game, w));
+    if (steps.every((x, i) => x.next === watching[i])) return;
+    const out = steps.flatMap((x) => x.output.map((text) => ({ text })));
+    if (out.length) setLines([...lines, ...out].slice(-MAX_LINES));
+    setWatching(steps.flatMap((x) => (x.next ? [x.next] : [])));
   }, [game, watching, lines, setLines, setWatching]);
 
   useEffect(() => {

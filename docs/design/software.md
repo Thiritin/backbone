@@ -90,7 +90,7 @@ Software moves from the cluster to the machine. A machine is a `Device` or an ow
 
 `Cluster` keeps `platform`, `panel` and `vm` as the derived control plane the rest of the sim reads (billing, products, migration, tickets, consoles). `installSoftware` writes the machine's list and still creates the cluster or panel host through the existing `installHypervisor`, `installPanel`, `installPanelInVm` underneath; `uninstallSoftware` the reverse through `dropCluster`, `leave`. The cluster layer is also where `createPanelVm`, `createSoftwareVm`, the test fixtures and the save migration create clusters directly, so the machine's list is written in the cluster layer itself (added in `installOnServer` and `installPanelInVm`, removed in `dropCluster` and `leave`, kept across `addNode`, cleared when a server is seized), not only in `installSoftware`.
 
-Until the OS installer lands, a machine with `os: null` that gets software takes the first OS the software runs on (Windoors for HyperVee and TCAdmen, Lunix for the rest); `canInstall(s, machineId, softwareId)` in `90-actions/software.ts` is where the OS check goes. The installer's erase empties `os` and `software`. A server still belongs to one cluster, so `installSoftware` on a server that already hosts one is refused with `error.serverInUse`, and a VM that hosts one with `error.onePanel`, even where `installBlock` passes; a second control plane on one machine needs the cluster layer to hold two.
+`canInstall(s, machineId, softwareId)` in `90-actions/software.ts` gives the reasons in this order: another OS on the disk, a conflict with installed software, a server that is not free (`error.serverInUse` when it already hosts a cluster) or a VM that hosts one (`error.onePanel`), then an OS that is not up (`error.noOs`, `error.osNotUp`). A server still belongs to one cluster, so a panel on a Proxmocks node passes `conflict` and is still refused; a second control plane on one machine needs the cluster layer to hold two. The installer's erase empties `os` and `software`. VMs made in one click from a hypervisor console (`createPanelVm`, `createSoftwareVm`) start from a template with the software's first OS on the disk.
 
 Licenses. `licenseCost` adds 15 euros per machine with Windoors and the App Suite per cluster; its result keeps the `{ panel, platform }` shape the tests assert, with Windoors under `platform`. The monthly ledger has one line for all Windoors machines ("Windoors Server, 3 machines") and one per App Suite cluster ("VMwhere App Suite, Cloud 1"); a Windoors machine in no cluster is billed there too.
 
@@ -100,7 +100,7 @@ Every machine goes through the same states; the console shows them.
 
 1. **Empty disk.** A server shows POST and then "Operating system not found"; a VM has no BIOS and goes straight there. Both exist today.
 2. **Boot from media.** Server: F11 in POST, the USB stick, or the BIOS boot order (exists). VM: the Media menu mounts an ISO and the VM boots from it on the next start (exists as `setMedia`; the ISO becomes one of two).
-3. **OS installer.** The existing `installer.tsx` stops listing software and becomes two installers. Lunix: the Debiant text-mode installer, five screens (language, hostname, partition disks with the erase confirmation the current installer already has for a busy target, installing with a progress bar, reboot). Windoors: Setup (edition, license terms, "Where do you want to install", copying files with a percentage, two reboots). `installOs(machineId, osId)` replaces `installCase`'s software pick: refused unless the machine booted from media that holds that OS; sets `os` and runs the install hours by holding `bootUntil`; a reset mid-install leaves `os` null. The erase and busy-target rules stay as they are.
+3. **OS installer.** The existing `installer.tsx` stops listing software and becomes two installers. Lunix: the Debiant text-mode installer, five screens (language, hostname, partition disks with the erase confirmation the current installer already has for a busy target, installing with a progress bar, reboot). Windoors: Setup (edition, license terms, "Where do you want to install", copying files with a percentage, two reboots). `installOs(machineId, osId, confirm?)` replaces the installer's software pick: refused unless the machine booted from media that holds that OS (a server from the stick after `bootFromUsb`, a VM with that ISO in `media`); sets `os` with `installedAt` at the hour the install is done and holds `bootUntil` until the first boot after it; a reset, a pulled plug or a stopped VM mid-install leaves `os` null. The erase and busy-target rules of `installCase` stay as they are. A server boots from its disk once the install starts, a VM ejects its ISO.
 4. **First boot.** Lunix boots to `tty1` login (any key logs in as root; the hostname is the machine's). Windoors boots to the logon screen, then the desktop.
 5. **Install software.** Lunix: type the commands from the software's site into the console or over `ssh` from the Terminal. Windoors: Server Manager on the desktop. `installSoftware(machineId, softwareId)` is refused unless the machine is booted with an OS the software runs on and nothing conflicts; it then runs for `installHours` and the console shows the method's progress text.
 6. **Done.** The software's console comes alive at the machine's address in the Browser. For a hypervisor the cluster exists from `doneAt`, for a panel the panel host, as `switching.doneAt` works today.
@@ -109,14 +109,16 @@ Timings at 1× (one game minute a real second):
 
 | Step | Game time | What the player sees |
 | --- | --- | --- |
-| POST (servers) | 8 minutes | the existing splash and key window |
+| POST (servers) | 3 minutes | the existing splash and key window |
 | Lunix boot | 20 minutes | 20 seconds of kernel and service lines |
 | Windoors boot | 40 minutes | logo and bar, then the logon |
 | Lunix install | 1 hour | the installer's progress bar |
 | Windoors install | 2 hours | Setup's percentage, two reboots |
 | Software install | `installHours` from the catalog | apt lines, script stage lines, a Windoors progress bar |
 
-Skipping time skips the screens; at 1× they run in real time. Boot screens are UI pacing driven by `bootUntil`; the install hours are simulation.
+Skipping time skips the screens; at 1× they run in real time. Boot screens are UI pacing driven by `bootUntil`; the install hours are simulation. POST is `BOOT_MINUTES` (3) and every boot of a machine with an installed OS adds the OS's boot minutes to `bootUntil` (`bootHours` in `60-infra/status.ts`).
+
+`machineScreen(s, machineId, loggedIn?)` in `60-infra/oob.ts` is the state machine the console renders: `dark`, `post`, `stuck`, `setup`, `bootMenu` (with the operating systems on the media), `notFound`, `osInstall` (os, progress), `booting` (os, the last boot minutes of `bootUntil`), `login` (os), `desktop` (Windoors once `loggedIn`), `installing` (software, progress) and `hung`. `consoleScreen` derives its first line from it.
 
 Uninstall: Lunix `apt-get remove <package>` or the site's uninstall line; Windoors from Server Manager. Refused while the software is a control plane with workloads, with today's reason.
 
@@ -124,7 +126,7 @@ Uninstall: Lunix `apt-get remove <package>` or the site's uninstall line; Windoo
 
 VMwhere sells the **VMwhere App Suite** (mocks the vSphere Marketplace and OVF appliances): 25 euros a month per cluster, bought from a tile in the vSphear console. With it, the New Virtual Machine wizard gains a "Deploy from App Suite" creation type listing every software the game year allows on either OS: pick one and the VM is created, the OS installed and the software installed in one step, without a console, in the software's `installHours` plus one hour. The Windoors license still applies and the wizard's summary says so. Without the suite, VMwhere VMs install like every other. No other hypervisor gets one-click installs.
 
-`buyAppSuite(clusterId)`, `cancelAppSuite(clusterId)`, `deployFromSuite(clusterId, size, softwareId)`. `Cluster.appSuite: boolean`, default false.
+`buyAppSuite(clusterId)`, `cancelAppSuite(clusterId)`, `deployFromSuite(clusterId, size, softwareId)` in `90-actions/suite.ts`. `Cluster.appSuite: boolean`, default false. The deployed VM gets the software's first OS from the start and the software's install finishes `SUITE_OS_HOURS` (1) after its own install hours.
 
 ## 6. Terminal and SSH
 
@@ -133,6 +135,8 @@ VMwhere sells the **VMwhere App Suite** (mocks the vSphere Marketplace and OVF a
 - `apt-get install <package>` and `apt install <package>`: known, compatible and (where the catalog has a repo line) with the repo added: the install starts and apt's progress lines print over the install hours the way `top` refreshes today. Unknown: today's "Unable to locate package". Incompatible: the conflict reason.
 - `echo ... > /etc/apt/sources.list.d/<x>.list` lines, `wget`, `curl` and `sh` lines and the `cd ... && curl ... && sh` one-liner are matched whole (after whitespace normalisation) against the catalog's `commands`. A `script` software installs when its line runs.
 - `apt-get remove <package>` uninstalls; `dpkg -l` lists installed software with versions; `uname -a` prints the OS and version.
+- A repo line counts once its file in `/etc/apt/sources.list.d/` holds the line's `deb` entry, so it is the shell's own `echo ... >` that adds it. Packages a site installs before its own (`linux-image-openveezee`, `pdnz-backend-sqlite3`) set up at once and change nothing. A script line is matched whole before the shell splits the line at `&&`; a lone `curl`, `wget` or `sh` that matches nothing fails the way the real tool does.
+- An install the Terminal started prints three progress lines (`INSTALL_STEPS`) at a quarter, half and three quarters of its install hours, then a done line, through `watchStep`.
 
 The machine's own console runs the same shell once logged in, so the Terminal and the console are two doors to one session. `src/sim/60-infra/apt.ts` grows into this; the shell stays in `shell.ts`; `runLine` is exposed per machine so the console screen can call it.
 

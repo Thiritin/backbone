@@ -5,6 +5,7 @@ import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
+import { serverOsById } from "../10-catalog/server-os";
 import type { Component, Device, End, GameState, Location, SpaceKind } from "../50-state";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
@@ -365,6 +366,9 @@ export const BOOT_MINUTES = 3;
 export const BOOT_HOURS = BOOT_MINUTES / 60;
 // A server in its BIOS setup never finishes booting.
 export const booting = (s: GameState, d: Device) => d.on && (d.setup || (d.bootUntil ?? 0) > nowHours(s));
+// An installed OS adds its own boot to POST; an OS still installing (installedAt ahead) has nothing to boot yet.
+export const osBootHours = (s: GameState, d: Device): number => (d.os && d.os.installedAt <= nowHours(s) ? serverOsById(d.os.id).bootMinutes / 60 : 0);
+export const bootHours = (s: GameState, d: Device): number => BOOT_HOURS + osBootHours(s, d);
 
 // A device works when it has power, is switched on, and no failure or power-off swap has taken it down.
 export function working(s: GameState, deviceId: string): boolean {

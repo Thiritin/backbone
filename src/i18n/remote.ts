@@ -41,7 +41,7 @@ export const REMOTE_EN: Record<string, (p: Params) => string> = {
   "ipmi.log.usbBoot": () => "Booted from USB",
   "ipmi.log.installAborted": () => "Install aborted, disks empty",
   "ipmi.log.erased": () => "Disks erased",
-  "error.notFromUsb": () => "Boot the server from the USB stick to install software.",
+  "error.notFromUsb": () => "Boot the server from the USB stick to install an operating system.",
   "error.confirmHostname": () => "Type the server's hostname to confirm.",
   "error.noMedia": () => "Load the installer ISO in the virtual machine first.",
 };

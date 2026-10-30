@@ -12,7 +12,7 @@ import { addNode, createVm, deleteVm } from "../src/sim/90-actions/clusters";
 import { connect } from "../src/sim/90-actions/hardware";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, hypervisor, panelServer, panelVm, skipTo, withServer } from "./fixtures";
+import { bootedMachine, buyDevice, hypervisor, panelServer, panelVm, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = { ok: boolean; id?: string; error?: string };
@@ -58,9 +58,9 @@ describe("server operating systems", () => {
     expect(serverOsAt("windoors", 2000).version).toBe("2003");
   });
 
-  it("gives an empty machine the first OS its software runs on, and writes its software list in the cluster layer", () => {
+  it("writes the software list of a machine with an OS in the cluster layer", () => {
     const { s, second, third } = threeServers();
-    ok(installSoftware(s, "dev3", "tcadmen"));
+    ok(installSoftware(s, bootedMachine(s, "dev3", "windoors"), "tcadmen"));
     expect(machineOf(s, "dev3")).toMatchObject({
       os: { id: "windoors", version: "2008 R2", installedAt: s.hour },
       software: [{ id: "tcadmen", version: "2010", installedAt: s.hour, doneAt: s.hour + 2 }],
@@ -71,7 +71,7 @@ describe("server operating systems", () => {
     expect(machineOf(s, third)).toMatchObject({ os: { id: "lunix" }, software: [{ id: "proxmocks" }] });
     const vm = ok(createVm(s, cloud, VM));
     expect(machineOf(s, vm)).toMatchObject({ os: null, software: [] });
-    ok(installSoftware(s, vm, "cpanic"));
+    ok(installSoftware(s, bootedMachine(s, vm), "cpanic"));
     expect(machineOf(s, vm)).toMatchObject({ os: { id: "lunix" }, software: [{ id: "cpanic" }] });
     ok(uninstallSoftware(s, vm));
     expect(machineOf(s, vm)).toMatchObject({ os: { id: "lunix" }, software: [] });

@@ -13,7 +13,7 @@ import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, type ActionResult } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, bootedMachine } from "./fixtures";
 import { cleanUp } from "../src/sim/90-actions/security";
 import { installSoftware, updateSoftware } from "../src/sim/90-actions/software";
 import { hire, queueOperation, setTechRules } from "../src/sim/90-actions/staff";
@@ -193,7 +193,7 @@ describe("updating software", () => {
 
   it("takes the mail host through the same update without customers", () => {
     const s = withCompany(start());
-    ok(installSoftware(s, "dev3", "postfixit"));
+    ok(installSoftware(s, bootedMachine(s, "dev3"), "postfixit"));
     s.clusters = s.clusters.map((c) => ({ ...c, switching: null, panel: "postfixit", version: 2004 }));
     ok(updateSoftware(s, s.clusters[0].id));
     expect(s.clusters[0].version).toBe(2005);
@@ -303,7 +303,7 @@ describe("technicians", () => {
 
 describe("old saves", () => {
   it("get the install year from an install in progress, and two years before the save otherwise", () => {
-    const s = start(), a = host(s), id = second(s), b = ok(installSoftware(s, id, "freepanel"));
+    const s = start(), a = host(s), id = second(s), b = ok(installSoftware(s, bootedMachine(s, id), "freepanel"));
     s.hour = year(2012) + 24 * 60;
     patch(s, b, { switching: { kind: "panel", to: "freepanel", doneAt: s.hour + 5 } });
     const data = JSON.parse(serialize(s));
@@ -318,7 +318,7 @@ describe("old saves", () => {
   it("stamp the install year on new installs", () => {
     const s = start();
     s.hour = year(2012);
-    const id = ok(installSoftware(s, "dev3", "freepanel"));
+    const id = ok(installSoftware(s, bootedMachine(s, "dev3"), "freepanel"));
     expect(cluster(s, id)).toMatchObject({ version: 2012, updatedAt: s.hour });
   });
 });

@@ -53,11 +53,11 @@ describe("software compatibility", () => {
     expect(installBlock(machine("windoors", "hypervee"), "dev3", "tcadmen")).toBeNull();
   });
 
-  it("accepts a panel on a Proxmocks node, and the installer that erases the disk takes anything", () => {
+  it("refuses a panel on a Proxmocks node as a second cluster, and the installer that erases the disk takes anything", () => {
     const s = withServer(newGame(1));
     skipTo(s, 2010);
     hypervisor(s, ["dev3"]);
-    expect(installBlock(s, "dev3", "freepanel")).toBeNull();
+    expect(installBlock(s, "dev3", "freepanel")).toBe("error.serverInUse");
     expect(installBlock(s, "dev3", "openstash")).toBe("error.oneHypervisor");
     expect(installBlock(s, "dev3", "openstash", true)).toBeNull();
     expect(installBlock(s, "dev3", "hypervee", true)).toBeNull();

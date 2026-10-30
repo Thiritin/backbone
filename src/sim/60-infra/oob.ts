@@ -1,12 +1,15 @@
 // GDD, Racks, hardware and cabling (Remote access) and Network and DDoS (Out-of-band management). Numbers in economy.md,
 // Hardware, power and failures.
 import { hashRng, rand } from "../00-core/rng";
-import { yearOf } from "../00-core/time";
+import { nowHours, yearOf } from "../00-core/time";
 import { hasBmc, isOobPort, modelById, OOB_PORT, oobPorts, type OobPort } from "../10-catalog/hardware";
-import type { Device, End, GameState } from "../50-state";
+import { softwareById } from "../10-catalog/platforms";
+import { SERVER_OS, serverOsById, type ServerOsId } from "../10-catalog/server-os";
+import type { Device, End, GameState, MachineState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { pullPlug, pushLog } from "./power";
-import { peerOf, powered, routeOut, working } from "./status";
+import { machineOf, vmById } from "./cluster";
+import { booting, deviceHealth, osBootHours, peerOf, powered, routeOut, working } from "./status";
 import { affects, exposureDays, instanceRisk, rank, vulnsFor, type OpenVuln } from "./vulns";
 
 export const CONTINUE_HOURS = 2 / 60;
@@ -88,12 +91,65 @@ export function lockoutRoll(s: GameState, d: Device): void {
 // New firmware hangs a switch or router with FIRMWARE_HANG.
 export const firmwareHangs = (s: GameState, d: Device): boolean => isGear(d) && rand(hashRng(s.seed, s.hour, num(d.id), 44)) < FIRMWARE_HANG;
 
-// The i18n key and params of what a device's console shows.
-export function consoleScreen(d: Device, state: string): { key: string; params: Record<string, string> } {
-  const host = d.hostname ?? d.label ?? d.name;
-  const key = !d.on || state === "nopower" ? "term.console.dark" : d.setup ? "term.console.setup" : d.stuck && state !== "booting" ? "term.console.stuck"
-    : state === "hung" ? "term.console.hung" : state === "booting" ? "term.console.booting" : d.bootFrom === "usb" ? "term.console.installer" : "term.console.login";
-  return { key, params: { host } };
+// docs/design/software.md, sections 4 and 7: what a machine's screen shows, from the power to the shell. post and booting
+// split the boot: the OS's own boot minutes are its end. bootMenu is the installer the media starts, with the operating
+// systems it holds. login covers both OSes until someone logs in: loggedIn turns a Windoors logon into its desktop, while a
+// Lunix login is followed by the shell that runLine drives.
+export type MachineScreen =
+  | { kind: "dark" | "post" | "stuck" | "setup" | "notFound" | "desktop" | "hung" }
+  | { kind: "bootMenu"; media: ServerOsId[] }
+  | { kind: "osInstall"; os: ServerOsId; progress: number }
+  | { kind: "booting" | "login"; os: ServerOsId }
+  | { kind: "installing"; software: string; progress: number };
+
+const share = (doneAt: number, hours: number, now: number) => Math.max(0, Math.min(1, 1 - (doneAt - now) / hours));
+
+// The OS that is up on the disk: installing, installing software or at the login.
+function upScreen(s: GameState, m: MachineState, loggedIn: boolean): MachineScreen {
+  const now = nowHours(s);
+  if (!m.os) return { kind: "notFound" };
+  const sw = m.software.find((x) => x.doneAt !== null && x.doneAt > now);
+  if (sw) return { kind: "installing", software: sw.id, progress: share(sw.doneAt!, softwareById(sw.id).installHours, now) };
+  return loggedIn && m.os.id === "windoors" ? { kind: "desktop" } : { kind: "login", os: m.os.id };
+}
+
+export function machineScreen(s: GameState, machineId: string, loggedIn = false): MachineScreen {
+  const now = nowHours(s), vm = vmById(s, machineId);
+  if (vm) {
+    const os = vm.os ?? null;
+    if (vm.stopped || !vm.deviceId || !working(s, vm.deviceId)) return { kind: "dark" };
+    if (os && os.installedAt > now) return { kind: "osInstall", os: os.id, progress: share(os.installedAt, serverOsById(os.id).installHours, now) };
+    if (vm.media) return { kind: "bootMenu", media: [vm.media] };
+    return upScreen(s, { os, software: vm.software ?? [] }, loggedIn);
+  }
+  const d = byId(s, machineId);
+  if (!d) return { kind: "dark" };
+  const state = deviceHealth(s, d.id).state;
+  if (!d.on || state === "nopower") return { kind: "dark" };
+  if (d.setup) return { kind: "setup" };
+  if (d.os && d.os.installedAt > now) return { kind: "osInstall", os: d.os.id, progress: share(d.os.installedAt, serverOsById(d.os.id).installHours, now) };
+  if (d.stuck && state !== "booting") return { kind: "stuck" };
+  if (state === "hung") return { kind: "hung" };
+  if (booting(s, d)) return d.os && d.bootFrom === "disk" && (d.bootUntil ?? 0) - now <= osBootHours(s, d) ? { kind: "booting", os: d.os.id } : { kind: "post" };
+  if (d.bootFrom === "usb") return { kind: "bootMenu", media: SERVER_OS.map((o) => o.id) };
+  return upScreen(s, d, loggedIn);
+}
+
+// The OS on the machine answers on the network: booted, not installing an OS, not hung.
+export const osUp = (s: GameState, machineId: string): ServerOsId | null => {
+  const x = machineScreen(s, machineId);
+  return x.kind === "login" || x.kind === "installing" ? machineOf(s, machineId)!.os!.id : null;
+};
+
+const SCREEN_KEY: Record<MachineScreen["kind"], string> = {
+  dark: "term.console.dark", post: "term.console.booting", stuck: "term.console.stuck", setup: "term.console.setup", bootMenu: "term.console.installer",
+  notFound: "term.console.notFound", osInstall: "term.console.osInstall", booting: "term.console.booting", login: "term.console.login",
+  desktop: "term.console.login", installing: "term.console.login", hung: "term.console.hung",
+};
+
+// The i18n key and params of the first line a device's console shows, for the Terminal's console command and the KVM page.
+export function consoleScreen(s: GameState, d: Device): { key: string; params: Record<string, string> } {
+  return { key: SCREEN_KEY[machineScreen(s, d.id).kind], params: { host: d.hostname ?? d.label ?? d.name } };
 }
 
 // A management device on the internet: a KVM on a data switch with no firewall on its way out, or a console server or OOB switch

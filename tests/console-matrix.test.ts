@@ -4,7 +4,7 @@ import { consoleBookmarks, consoleFeatures } from "../src/sim/80-business/consol
 import { resolve } from "../src/sim/80-business/browser";
 import type { GameState } from "../src/sim/50-state";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, bootedMachine } from "./fixtures";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { readyGame, panelServer } from "./fixtures";
@@ -71,7 +71,7 @@ function lab() {
   expect(mountDevice(s, dev, "rack2", 2)).toMatchObject({ ok: true });
   expect(connect(s, { device: dev, port: 0 }, { device: "dev4", port: 1 }).ok).toBe(true);
   const barePanel = panelServer(s, dev, "pleskit");
-  const mailVm = must(createVm(s, s.clusters[0].id, PANEL_VM_SIZE));
+  const mailVm = bootedMachine(s, must(createVm(s, s.clusters[0].id, PANEL_VM_SIZE)));
   expect(installSoftware(s, mailVm, "postfixit").ok).toBe(true);
   s.clusters = s.clusters.map((c) => (c.vm === mailVm ? { ...c, panel: "postfixit", switching: null } : c));
   return { s, bare: dev, barePanel, mailVm };

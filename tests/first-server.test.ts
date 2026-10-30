@@ -9,7 +9,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { createPanelVm, installPanel } from "../src/sim/90-actions/clusters";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { connect, mountDevice, orderHomeLine, setPlugged } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, bootedMachine } from "./fixtures";
 import { startGame } from "../src/sim/90-actions/start";
 import { checkDone } from "../src/sim/checklist";
 import { skipTo } from "./fixtures";
@@ -65,7 +65,7 @@ describe("first server", () => {
     const s = startGame(3);
     skipTo(s, 2010);
     const srv = firstServer(s);
-    const c = ok(installSoftware(s, srv, "proxmocks"));
+    const c = ok(installSoftware(s, bootedMachine(s, srv), "proxmocks"));
     ok(createPanelVm(s, c, "freepanel"));
     run(s, 24 * 7);
     expect(friends(s)).toHaveLength(3);

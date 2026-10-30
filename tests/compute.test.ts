@@ -15,7 +15,7 @@ import {
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, bootedMachine } from "./fixtures";
 import { migrateWorkload } from "../src/sim/90-actions/vms";
 import { startGame } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -78,7 +78,7 @@ describe("compute", () => {
   it("sets the basement up as a hypervisor with a panel VM: the panel follows the hypervisor, then the friends move in", () => {
     const s = withServer(startGame(1));
     skipTo(s, 2010);
-    const cluster = ok(installSoftware(s, "dev3", "proxmocks"));
+    const cluster = ok(installSoftware(s, bootedMachine(s, "dev3"), "proxmocks"));
     const host = ok(createPanelVm(s, cluster, "freepanel"));
     const hours = softwareById("proxmocks").installHours + softwareById("freepanel").installHours;
     run(s, hours - 1);

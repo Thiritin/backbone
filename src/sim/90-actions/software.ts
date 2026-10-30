@@ -2,9 +2,11 @@ import { dateOf, yearOf } from "../00-core/time";
 import { autoUpdates, clustersIn, conflict, phpAt, runsOn, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { anchorOf, clusterOf, dropCluster, hostOfVm, machineOf, workloadsOn, type Cluster } from "../60-infra/cluster";
+import { osUp } from "../60-infra/oob";
 import { locationOf } from "../60-infra/status";
 import { familyOf, openVulns } from "../60-infra/vulns";
-import { createVm, installHypervisor, installPanel, installPanelInVm, PANEL_VM_SIZE, phpDue, removeNode, upgradeNodePhp } from "./clusters";
+import type { Resources } from "../10-catalog/products";
+import { createVm, freeServer, installHypervisor, installPanel, installPanelInVm, PANEL_VM_SIZE, phpDue, removeNode, templateOs, upgradeNodePhp } from "./clusters";
 import type { ActionResult } from "./hardware";
 
 // A machine is a server or one of the player's own VMs, with the software on its disk; VMs take no hypervisor. The
@@ -50,15 +52,19 @@ export function installBlock(s: GameState, machineId: string, softwareId: string
   return replacing ? null : canInstall(s, machineId, sw.id);
 }
 
-// Why the machine's disk does not take the software: another OS, or a conflict with what is installed.
+// Why the machine does not take the software: another OS, a conflict with what is installed, a server that is not free
+// or a VM that already hosts a cluster (one per machine), or an OS that is not up.
 export function canInstall(s: GameState, machineId: string, softwareId: string): string | null {
   const sw = softwareById(softwareId), m = machineOf(s, machineId);
-  if (m?.os && !runsOn(sw, m.os.id)) return "error.wrongOs";
-  for (const x of m?.software ?? []) {
+  if (!m) return "error.unknownDevice";
+  if (m.os && !runsOn(sw, m.os.id)) return "error.wrongOs";
+  for (const x of m.software ?? []) {
     const why = conflict(sw, softwareById(x.id));
     if (why) return why;
   }
-  return null;
+  const taken = isServer(s, machineId) ? freeServer(s, s.devices.find((d) => d.id === machineId)) : hostOfVm(s, machineId) ? "error.onePanel" : null;
+  if (taken) return taken;
+  return osUp(s, machineId) ? null : m.os ? "error.osNotUp" : "error.noOs";
 }
 
 // Installs catalog software on a server or one of the player's VMs; it runs after its install hours.
@@ -72,10 +78,13 @@ export function installSoftware(s: GameState, machineId: string, softwareId: str
   return done;
 }
 
-// A new VM on a hypervisor cluster with catalog software in it; returns the new host's id.
-export function createSoftwareVm(s: GameState, clusterId: string, softwareId: string): ActionResult {
-  const vm = createVm(s, clusterId, PANEL_VM_SIZE);
+// A new VM on a hypervisor cluster from a template with the software's OS, the software installing; returns the new host's id.
+export function createSoftwareVm(s: GameState, clusterId: string, softwareId: string, size: Resources = PANEL_VM_SIZE): ActionResult {
+  const sw = SOFTWARE.find((x) => x.id === softwareId);
+  if (!sw) return { ok: false, error: "error.unknownSoftware" };
+  const vm = createVm(s, clusterId, size);
   if (!vm.ok) return vm;
+  templateOs(s, vm.id!, sw);
   const done = installSoftware(s, vm.id!, softwareId);
   if (!done.ok) s.workloads = s.workloads.filter((w) => w.id !== vm.id);
   return done;

@@ -10,6 +10,9 @@ import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
 import { setMachine } from "../src/sim/60-infra/cluster";
+import { serverOsAt, type ServerOsId } from "../src/sim/10-catalog/server-os";
+import { softwareById } from "../src/sim/10-catalog/platforms";
+import { yearOf } from "../src/sim/00-core/time";
 
 // The cluster's install is finished, on its machines too.
 const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][number]>) => {
@@ -29,6 +32,13 @@ const must = (r: { ok: boolean; id?: string; error?: string }): string => {
 export const skipTo = (s: GameState, year: number): void => { s.hour += hourOf(new Date(Date.UTC(year, 0, 1))); };
 
 export const BASEMENT_SERVER = "dev3";
+
+// The machine has the OS installed and booted, as the installer leaves it; returns the machine id.
+export function bootedMachine(s: GameState, id: string, os: ServerOsId = "lunix"): string {
+  setMachine(s, id, () => ({ os: { id: os, version: serverOsAt(os, yearOf(s.hour)).version, installedAt: s.hour } }));
+  return id;
+}
+const bootedFor = (s: GameState, id: string, softwareId: string) => bootedMachine(s, id, softwareById(softwareId).os[0]);
 
 // A running workload on every server without one, so it draws its rated power instead of the idle power.
 export const runServers = (s: GameState): void => {
@@ -53,7 +63,7 @@ export function withServer(s: GameState): GameState {
 
 // The servers with the hypervisor already installed, joined into one cluster under the name; returns the cluster id.
 export function hypervisor(s: GameState, deviceIds: string[], name?: string, platform = "proxmocks"): string {
-  const [id] = deviceIds.map((d) => done(s, must(installHypervisor(s, d, platform)), { platform }));
+  const [id] = deviceIds.map((d) => done(s, must(installHypervisor(s, bootedFor(s, d, platform), platform)), { platform }));
   for (const d of deviceIds.slice(1)) must({ ...addNode(s, id, d), id });
   return name ? done(s, id, { name }) : id;
 }
@@ -68,7 +78,7 @@ export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", si
   done(s, must(createPanelVm(s, clusterId, panel, size)), { panel });
 
 // A bare-metal panel host on a free mounted server with its panel already installed; returns the panel host id.
-export const panelServer = (s: GameState, deviceId: string, panel = "freepanel"): string => done(s, must(installPanel(s, deviceId, panel)), { panel });
+export const panelServer = (s: GameState, deviceId: string, panel = "freepanel"): string => done(s, must(installPanel(s, bootedFor(s, deviceId, panel), panel)), { panel });
 
 // The company has learned Provisioning automation and switched on Place orders automatically.
 export const automate = (s: GameState): GameState => {

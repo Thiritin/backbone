@@ -73,7 +73,7 @@ export function Screen({ game, device: d, via, active = true }: { game: GameStat
   useEffect(() => { if (boot) setMenu(false); }, [boot]);
   const state = deviceHealth(game, d.id).state, sw = softwareOn(game, d.id)[0];
   const phase: Phase = !d.on || state === "nopower" || (via === "bmc" && d.bmcHung) ? "dark" : d.setup ? "bios" : d.stuck && !boot ? "stuck" : boot ? "post" : d.bootFrom === "usb" ? "installer" : menu ? "menu" : "os";
-  const look: Look | Phase = phase === "os" ? (sw && sw.doneAt === null ? lookOf(sw.id) : "nodisk") : phase;
+  const look: Look | Phase = phase === "os" ? (sw && sw.doneAt === null ? lookOf(sw.id) : d.os ? (d.os.id === "windoors" ? "windows" : "debian") : "nodisk") : phase;
   const onKey = (key: string) => {
     if (phase === "post") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") setMenu(true); }
     else if (phase === "stuck") { if (key === "F1") act(continueBoot, d.id); else if (key === "Delete" || key === "F2") act(enterSetup, d.id); }

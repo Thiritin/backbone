@@ -3,7 +3,6 @@ import { t } from "../../../../i18n/en";
 import { modelById } from "../../../../sim/10-catalog/hardware";
 import type { Device, GameState } from "../../../../sim/50-state";
 import { consoleScreen, kvmPower, targetsOf } from "../../../../sim/60-infra/oob";
-import { deviceHealth } from "../../../../sim/60-infra/status";
 import { remotePower, reset } from "../../../../sim/90-actions/hardware";
 import { continueBoot, recoverGear } from "../../../../sim/90-actions/remote";
 import { useStore } from "../../../store";
@@ -16,7 +15,7 @@ export const kvmTitle = (d: Device): string => `${modelById(d.model).name} ${d.l
 // One device behind the KVM or console server: its state, the power buttons the KVM can press, and the console's last line.
 function Target({ game, d }: { game: GameState; d: Device }) {
   const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole);
-  const state = deviceHealth(game, d.id).state, screen = consoleScreen(d, state), server = modelById(d.model).kind === "server";
+  const screen = consoleScreen(game, d), server = modelById(d.model).kind === "server";
   const power = server && !!kvmPower(game, d);
   return (
     <section className="kvm-target">

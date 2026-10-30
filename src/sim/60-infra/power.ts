@@ -6,7 +6,7 @@ import type { Device, GameState } from "../50-state";
 import { dropCluster, hostOfVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
-import { BOOT_HOURS, booting, deviceHealth, drivesOf, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, working } from "./status";
+import { bootHours, booting, deviceHealth, drivesOf, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, working } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -70,8 +70,10 @@ export function losePower(s: GameState, d: Device): void {
   if (outcome) pushLog(d, s.hour, outcome);
 }
 
-// Power cut or reset while booted from the USB stick: a first install still running is gone and the disks are empty.
+// Power cut or reset during an install: an OS still installing leaves the disk empty, and so does a first software
+// install from the USB stick.
 export function leaveUsb(s: GameState, d: Device): void {
+  if (d.os && d.os.installedAt > nowHours(s)) { d.os = null; pushLog(d, s.hour, "ipmi.log.installAborted"); }
   if (d.bootFrom !== "usb") return;
   const c = installingOn(s, d.id);
   if (c) { dropCluster(s, c.id); pushLog(d, s.hour, "ipmi.log.installAborted"); }
@@ -87,7 +89,7 @@ export function pullPlug(s: GameState, d: Device): void {
 }
 
 export function bootUp(s: GameState, d: Device): void {
-  d.bootUntil = nowHours(s) + BOOT_HOURS;
+  d.bootUntil = nowHours(s) + bootHours(s, d);
   d.on = true;
   pushLog(d, s.hour, "ipmi.log.powerOn");
 }
@@ -100,7 +102,7 @@ export function plugCords(s: GameState, d: Device, plugged: boolean, ids = psusO
   // The roll reads the server as it ran, so it comes before the cords move.
   if (d.on && before && !after) losePower(s, d);
   d.components = components;
-  if (d.on && !before && after) d.bootUntil = nowHours(s) + BOOT_HOURS;
+  if (d.on && !before && after) d.bootUntil = nowHours(s) + bootHours(s, d);
 }
 
 export type FrontOp = "power" | "hold" | "reset" | "pull" | "plug";
@@ -122,7 +124,7 @@ export function hardReboot(s: GameState, d: Device, key: "ipmi.log.reset" | "ipm
   d.setup = false;
   leaveUsb(s, d);
   rollStuck(s, d);
-  d.bootUntil = nowHours(s) + BOOT_HOURS;
+  d.bootUntil = nowHours(s) + bootHours(s, d);
   pushLog(d, s.hour, key);
   if (outcome) pushLog(d, s.hour, outcome);
 }

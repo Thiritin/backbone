@@ -11,7 +11,7 @@ import { hire } from "../src/sim/90-actions/staff";
 import { setEmailOrders } from "../src/sim/90-actions/website";
 import { CHECKS } from "../src/sim/checklist";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { bootedMachine, readyGame } from "./fixtures";
 import { err, idOf, run, toMonthStart, mailLedger, selfHosted } from "./company-mail.helpers";
 
 describe("external providers", () => {
@@ -59,7 +59,7 @@ describe("external providers", () => {
 describe("the mail software", () => {
   it("installs like a panel in a VM, free of charge, once the company has a domain", () => {
     const s = readyGame(3);
-    const vm = idOf(createVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, { vcpu: 1, ramGb: 2, diskGb: 40 }));
+    const vm = bootedMachine(s, idOf(createVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, { vcpu: 1, ramGb: 2, diskGb: 40 })));
     s.company = { ...s.company, domain: null };
     expect(installBlock(s, vm, "postfixit")).toBe("error.needsDomain");
     s.company = { ...s.company, domain: "mine.de" };
@@ -81,7 +81,7 @@ describe("the mail software", () => {
     const vm2 = idOf(createVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, { vcpu: 1, ramGb: 2, diskGb: 40 }));
     expect(installBlock(s, vm2, "postfixit")).toBe("error.oneMailServer");
     const mine = s.clusters.find((c) => c.kind === "mail")!.vm!;
-    expect(installBlock(s, mine, "freepanel")).toBeNull();
+    expect(installBlock(s, mine, "freepanel")).toBe("error.onePanel");
   });
 
   it("is on sale from its year and installs Mailpig from 2015", () => {

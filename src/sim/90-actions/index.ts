@@ -33,6 +33,7 @@ import * as software from "./software";
 import * as staff from "./staff";
 import * as start from "./start";
 import * as store from "./store";
+import * as suite from "./suite";
 import * as support from "./support";
 import * as travel from "./travel";
 import * as used from "./used";
@@ -45,7 +46,7 @@ export type Call = [Action, ...unknown[]];
 export type { LogEntry };
 export const LOG_CAP = 50_000;
 
-const modules = [addresses, billing, burnin, changes, checklist, clusters, community, company, console_, cpus, customers, docs, files, finance, hardware, mail, maintenance, market, marketing, moves, network, os, orders, rates, registrar, remote, routers, sales, security, software, staff, start, store, support, travel, used, vms, website];
+const modules = [addresses, billing, burnin, changes, checklist, clusters, community, company, console_, cpus, customers, docs, files, finance, hardware, mail, maintenance, market, marketing, moves, network, os, orders, rates, registrar, remote, routers, sales, security, software, staff, start, store, suite, support, travel, used, vms, website];
 // Every exported function of 90-actions by its name, so a replay can call the actions a run logged.
 export const ACTIONS: Record<string, Action> = Object.fromEntries(modules.flatMap((m) => Object.entries(m).filter(([, f]) => typeof f === "function"))) as Record<string, Action>;
 const NAMES = new Map<unknown, string>(Object.entries(ACTIONS).map(([k, f]) => [f, k]));

@@ -11,7 +11,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { hostOfVm, isOwnVm, pickNode, vmOf, type Workload } from "./cluster";
 import type { Incident } from "./ops";
 import { losePower } from "./power";
-import { BOOT_HOURS, deviceWatts, HOURS_PER_YEAR, isPlugged, locationOf, psusOf } from "./status";
+import { bootHours, deviceWatts, HOURS_PER_YEAR, isPlugged, locationOf, psusOf } from "./status";
 
 export const GRID = {
   // Outages a year: the household line in the basement fails more often than a datacenter's utility feed.
@@ -81,7 +81,7 @@ export const upsMinutes = (s: GameState, locId: string): number => upsOf(s.devic
 function cutPower(s: GameState, devices: Device[], dark: number): void {
   for (const d of devices.filter((x) => x.on)) {
     losePower(s, d);
-    d.bootUntil = s.hour + dark / 60 + BOOT_HOURS;
+    d.bootUntil = s.hour + dark / 60 + bootHours(s, d);
   }
 }
 

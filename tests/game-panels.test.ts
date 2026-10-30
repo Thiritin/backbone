@@ -13,7 +13,7 @@ import { type SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, type ActionResult } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, bootedMachine } from "./fixtures";
 import { cleanUp } from "../src/sim/90-actions/security";
 import { installSoftware, softwareOn, updateSoftware } from "../src/sim/90-actions/software";
 import { hypervisor, panelServer, skipTo, withServer } from "./fixtures";
@@ -52,11 +52,11 @@ describe("game server panels", () => {
   it("install from their year only, one per machine", () => {
     const { s } = start(2010);
     expect(err(installSoftware(s, "dev3", "pterodaktyl"))).toBe("error.softwareNotYet");
-    ok(installSoftware(s, "dev3", "multikraft"));
+    ok(installSoftware(s, bootedMachine(s, "dev3"), "multikraft"));
     expect(softwareOn(s, "dev3")[0]).toMatchObject({ id: "multikraft", cluster: { kind: "game" } });
     expect(err(installSoftware(s, "dev3", "tcadmen"))).toBe("error.wrongOs");
     const { s: late } = start(2016);
-    ok(installSoftware(late, "dev3", "pterodaktyl"));
+    ok(installSoftware(late, bootedMachine(late, "dev3"), "pterodaktyl"));
   });
 
   it("take a game server order before a cloud cluster when they have room", () => {

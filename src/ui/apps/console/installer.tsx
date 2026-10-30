@@ -1,29 +1,27 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { nowHours, yearOf } from "../../../sim/00-core/time";
-import { SOFTWARE, softwareById, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
+import { yearOf } from "../../../sim/00-core/time";
+import { softwareById } from "../../../sim/10-catalog/platforms";
+import { SERVER_OS, serverOsAt, type ServerOs } from "../../../sim/10-catalog/server-os";
 import type { Device, GameState } from "../../../sim/50-state";
-import { hostOfVm, installingOn, type Workload } from "../../../sim/60-infra/cluster";
+import type { Workload } from "../../../sim/60-infra/cluster";
 import { drivesOf, raidUsable } from "../../../sim/60-infra/status";
-import { eraseDisk, installCase, installFromIso, installFromUsb, setMedia } from "../../../sim/90-actions/console";
+import { eraseDisk, installCase, installOs, setMedia } from "../../../sim/90-actions/console";
 import { reboot } from "../../../sim/90-actions/hardware";
-import { installBlock } from "../../../sim/90-actions/software";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { disk } from "../hw";
-import { KIND_NAME, licenseText, vmLabel } from "../products/parts";
+import { vmLabel } from "../products/parts";
 
-const KINDS: SoftwareKind[] = ["cloud", "panel", "game", "mail"];
-const STAGES = ["Partitioning disks", "Installing the base system", "Installing software", "Configuring the system", "Finishing the installation"];
 type Machine = Device | Workload;
 const isDevice = (m: Machine): m is Device => "components" in m;
 const hostOf = (m: Machine) => (isDevice(m) ? m.hostname ?? m.label ?? m.name : m.hostname ?? m.id);
 
 interface Row { label: string; dim?: boolean; run?: () => void }
-type Step = { kind: "menu" } | { kind: "target"; sw: Software | null };
+type Step = { kind: "menu" } | { kind: "target"; sw: ServerOs | null };
 
-// The installer on the USB stick or the ISO: the catalog, the target screen with its three cases, and the progress screen
-// while the install runs. Keys come from the screen.
+// The installer on the USB stick or the ISO: the operating systems it holds and the target screen with its three cases.
+// Keys come from the screen.
 export function useInstaller(game: GameState, d: Machine): { view: ReactNode; onKey: (key: string) => void } {
   const act = useStore((s) => s.act);
   const [step, setStep] = useState<Step>({ kind: "menu" });
@@ -31,24 +29,20 @@ export function useInstaller(game: GameState, d: Machine): { view: ReactNode; on
   const [typed, setTyped] = useState("");
   const [note, setNote] = useState("");
   const year = yearOf(game.hour), found = installCase(game, d.id), drives = isDevice(d) ? drivesOf(d) : [];
-  const vmHost = isDevice(d) ? undefined : hostOfVm(game, d.id);
-  const running = isDevice(d) ? installingOn(game, d.id) : vmHost?.switching && !vmHost.panel ? vmHost : undefined;
   const back = () => { setStep({ kind: "menu" }); setRow(0); setTyped(""); setNote(""); };
   const run = (r: { ok: boolean; error?: string }) => { if (r.ok) back(); else setNote(t(r.error ?? "")); };
   const array = isDevice(d) ? `${drives.length} x ${disk(drives[0]?.size ?? 0)}${d.raid === "none" ? "" : ` RAID ${d.raid}`}, ${disk(raidUsable(d))} usable` : `${disk(d.diskGb)} virtual disk`;
 
   let rows: Row[], body: ReactNode;
   if (step.kind === "menu") {
-    const items = KINDS.flatMap((kind) => SOFTWARE.filter((sw) => sw.kind === kind && sw.from <= year).map((sw): Row => {
-      const block = installBlock(game, d.id, sw.id, true);
-      return { label: `${sw.name}  (${KIND_NAME[kind]}, ${licenseText(sw)}, ${sw.installHours} h)`, dim: !!block, run: () => { if (block) setNote(t(block)); else { setStep({ kind: "target", sw }); setRow(0); setNote(""); } } };
-    }));
+    const items = SERVER_OS.filter((os) => isDevice(d) || d.media === os.id).map((sw): Row => (
+      { label: `${sw.name} ${serverOsAt(sw.id, year).version}  (${sw.installHours} h)`, run: () => { setStep({ kind: "target", sw }); setRow(0); setNote(""); } }
+    ));
     rows = [...items, { label: "Erase disk", dim: found.kind === "empty", run: () => { if (found.kind === "empty") setNote(t("error.noSoftware")); else { setStep({ kind: "target", sw: null }); setRow(0); setNote(""); } } }, isDevice(d) ? { label: "Reboot", run: () => act(reboot, d.id) } : { label: "Eject and reboot", run: () => act(setMedia, d.id, null) }];
-    body = <div className="inst-box"><div className="inst-t">Select software to install</div>{rows.map((r, i) => <div key={r.label} className={`inst-row${i === row ? " on" : ""}${r.dim ? " dim" : ""}`}>{r.label}</div>)}</div>;
+    body = <div className="inst-box"><div className="inst-t">Select an operating system to install</div>{rows.map((r, i) => <div key={r.label} className={`inst-row${i === row ? " on" : ""}${r.dim ? " dim" : ""}`}>{r.label}</div>)}</div>;
   } else {
     const sw = step.sw, verb = sw ? `Install ${sw.name}` : "Erase disk", busy = found.kind === "busy";
-    const install = isDevice(d) ? installFromUsb : installFromIso;
-    const go = () => run(sw ? act(install, d.id, sw.id, busy ? typed : undefined) : act(eraseDisk, d.id, busy ? typed : undefined));
+    const go = () => run(sw ? act(installOs, d.id, sw.id, busy ? typed : undefined) : act(eraseDisk, d.id, busy ? typed : undefined));
     rows = [{ label: busy ? (sw ? "Erase and install" : "Erase") : (sw ? "Install" : "Erase"), run: go }, { label: "Back", run: back }];
     const had = found.kind === "empty" ? null : softwareById(found.cluster.panel ?? found.cluster.platform ?? found.cluster.switching?.to ?? "").name;
     const dies = found.kind === "busy" ? [...new Set([...found.workloads, ...found.lost])] : [];
@@ -70,21 +64,8 @@ export function useInstaller(game: GameState, d: Machine): { view: ReactNode; on
       </div>
     );
   }
-  if (running) {
-    const sw = softwareById(running.switching!.to), done = Math.max(0, Math.min(1, 1 - (running.switching!.doneAt - nowHours(game)) / sw.installHours));
-    const stage = Math.min(STAGES.length - 1, Math.floor(done * STAGES.length));
-    body = (
-      <div className="inst-box">
-        <div className="inst-t">Installing {sw.name}</div>
-        <div>{STAGES[stage]}</div>
-        <div className="inst-bar"><span style={{ width: `${Math.round(done * 100)}%` }} /></div>
-        <div>{Math.round(done * 100)}%</div>
-      </div>
-    );
-  }
   const at = Math.min(row, rows.length - 1);
   const onKey = (key: string) => {
-    if (running) return;
     if (key === "ArrowUp") setRow(Math.max(0, at - 1));
     else if (key === "ArrowDown") setRow(Math.min(rows.length - 1, at + 1));
     else if (key === "Enter") rows[at].run?.();

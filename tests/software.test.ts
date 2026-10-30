@@ -8,7 +8,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { addNode, createVm, deleteVm, provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, bootedMachine } from "./fixtures";
 import { createSoftwareVm, installSoftware, softwareOn, uninstallSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { hypervisor, readyGame, skipTo, withServer } from "./fixtures";
@@ -34,7 +34,7 @@ describe("software on machines", () => {
   it("installs a hypervisor on a server after its install hours", () => {
     const { s } = twoServers();
     const hours = softwareById("proxmocks").installHours;
-    const c = ok(installSoftware(s, "dev3", "proxmocks"));
+    const c = ok(installSoftware(s, bootedMachine(s, "dev3"), "proxmocks"));
     expect(softwareOn(s, "dev3")).toMatchObject([{ id: "proxmocks", doneAt: s.hour + hours }]);
     run(s, hours);
     expect(softwareOn(s, "dev3")).toMatchObject([{ id: "proxmocks", doneAt: null }]);
@@ -46,7 +46,7 @@ describe("software on machines", () => {
     const c = hypervisor(s, ["dev3"]);
     expect(err(installSoftware(s, "dev3", "hypervee"))).toBe("error.wrongOs");
     expect(err(installSoftware(s, "dev3", "freepanel"))).toBe("error.serverInUse");
-    const vm = ok(createVm(s, c, VM));
+    const vm = bootedMachine(s, ok(createVm(s, c, VM)));
     expect(err(installSoftware(s, vm, "proxmocks"))).toBe("error.nestedHypervisor");
     ok(installSoftware(s, vm, "freepanel"));
     expect(err(installSoftware(s, vm, "cpanic"))).toBe("error.portTaken");
@@ -73,7 +73,7 @@ describe("software on machines", () => {
     expect(softwareOn(s, vm)).toEqual([]);
     run(s, 24);
     expect(vmById(s, vm)).toBeDefined();
-    const host = ok(installSoftware(s, vm, "cpanic"));
+    const host = ok(installSoftware(s, bootedMachine(s, vm), "cpanic"));
     run(s, softwareById("cpanic").installHours);
     expect(softwareOn(s, vm)).toMatchObject([{ id: "cpanic", doneAt: null }]);
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
@@ -111,14 +111,14 @@ describe("software on machines", () => {
 
   it("loads a save with the software on its machines and drops a cluster with nothing installed", () => {
     const { s, second } = twoServers();
-    const c = hypervisor(s, ["dev3"]), vm = ok(createVm(s, c, VM));
+    const c = hypervisor(s, ["dev3"]), vm = bootedMachine(s, ok(createVm(s, c, VM)));
     ok(installSoftware(s, vm, "freepanel"));
     s.clusters = [...s.clusters, { ...s.clusters[0], id: "clu999", name: "Empty", nodes: [{ deviceId: second, state: "active" }], controlPlane: second, platform: null, switching: null }];
     const back = deserialize(serialize(s));
     expect(softwareOn(back, "dev3")).toMatchObject([{ id: "proxmocks" }]);
     expect(softwareOn(back, vm)).toMatchObject([{ id: "freepanel" }]);
     expect(clusterOf(back, second)).toBeUndefined();
-    ok(installSoftware(back, second, "proxmocks"));
+    ok(installSoftware(back, bootedMachine(back, second), "proxmocks"));
   });
 
   it("creates a VM with game or mail software on a hypervisor, and leaves no VM when the software is refused", () => {

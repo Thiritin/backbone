@@ -38,22 +38,21 @@ const freeName = (s: GameState, base: string): string => {
 };
 
 // A server must be mounted and free of clusters and customers to take software.
-const freeServer = (s: GameState, d: GameState["devices"][number] | undefined): string | null => {
+export const freeServer = (s: GameState, d: GameState["devices"][number] | undefined): string | null => {
   if (!d) return "error.unknownDevice";
   if (!modelById(d.model).server) return "error.notServer";
   if (!d.rackId) return "error.notMounted";
   return serverTaken(s, d.id) ? "error.serverInUse" : null;
 };
 
-// The software joins the machine's list, installing until doneAt. Until the OS installer exists, a machine without an OS
-// takes the first one the software runs on.
+// The software joins the machine's list, installing until doneAt.
 function addSoftware(s: GameState, machineId: string, sw: Software, doneAt: number): void {
-  const year = yearOf(s.hour);
-  setMachine(s, machineId, (m) => ({
-    os: m.os ?? { id: sw.os[0], version: serverOsAt(sw.os[0], year).version, installedAt: s.hour },
-    software: [...m.software, { id: sw.id, version: String(year), installedAt: s.hour, doneAt }],
-  }));
+  setMachine(s, machineId, (m) => ({ software: [...m.software, { id: sw.id, version: String(yearOf(s.hour)), installedAt: s.hour, doneAt }] }));
 }
+
+// A VM made from a template: the OS is on its disk and booted from the start.
+export const templateOs = (s: GameState, vmId: string, sw: Software): void =>
+  setMachine(s, vmId, () => ({ os: { id: sw.os[0], version: serverOsAt(sw.os[0], yearOf(s.hour)).version, installedAt: s.hour } }));
 
 // Installs software on a free server as a new one-server cluster whose control plane is busy for the install hours.
 function installOnServer(s: GameState, deviceId: string, sw: Software, name: (label: string, loc: string) => string): ActionResult {
@@ -129,6 +128,7 @@ export function createPanelVm(s: GameState, clusterId: string, panelId: string, 
   const bad = sizeError(size, sw.controlPlane);
   if (bad) return fail(bad);
   const vm = createVm(s, clusterId, size);
+  if (vm.ok) templateOs(s, vm.id!, sw);
   return vm.ok ? installPanelInVm(s, vm.id!, panelId) : vm;
 }
 
