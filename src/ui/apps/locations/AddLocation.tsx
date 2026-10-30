@@ -1,4 +1,4 @@
-import { Leaf, ShieldCheck } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Leaf, ShieldCheck } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { DATACENTERS, inUs, LEAD_DAYS, SPACE_SIZES, spacePrice, type Datacenter } from "../../../sim/20-world/datacenters";
@@ -16,6 +16,27 @@ type Area = "eu" | "us";
 const AREAS: [Area, string, Bounds][] = [["eu", "Europe", { west: -1, south: 45, east: 17, north: 53 }], ["us", "North America", { west: -122, south: 28, east: -72, north: 46 }]];
 const KINDS: [Rented, string][] = [["share", "Rack"], ["cage", "Cage"], ["suite", "Suite"]];
 
+// Filters narrow the list, each one a requirement a datacenter either meets or not.
+type Filter = "green" | "certified" | "ab" | "backup" | "exchange" | "cages";
+const FILTERS: [Filter, string, (d: Datacenter) => boolean][] = [
+  ["green", "Green", (d) => d.green], ["certified", "Certified", (d) => d.certified], ["ab", "A+B feeds", (d) => d.feeds === "ab"],
+  ["backup", "UPS", (d) => d.backup !== "none"], ["exchange", "Exchange on site", (d) => !!d.exchange?.onSite], ["cages", "Cages", (d) => d.cages],
+];
+// Sort keys; `first` is the direction a first click takes, the better end of the column.
+type SortKey = "name" | "space" | "carriers" | "exchange" | "power" | "kw" | "price" | "cross" | "hands";
+type Dir = "asc" | "desc";
+const SORTS: Record<SortKey, { first: Dir; value: (game: GameState, d: Datacenter) => number | string }> = {
+  name: { first: "asc", value: (_, d) => d.name },
+  space: { first: "desc", value: (g, d) => dcAvailability(g, d.id).freeEighths },
+  carriers: { first: "desc", value: (_, d) => d.carriers },
+  exchange: { first: "desc", value: (_, d) => (d.exchange ? (d.exchange.onSite ? 2 : 1) : 0) },
+  power: { first: "desc", value: (_, d) => (d.feeds === "ab" ? 3 : 0) + (d.backup === "ups+generator" ? 2 : d.backup === "ups" ? 1 : 0) },
+  kw: { first: "desc", value: (_, d) => d.kwPerPosition },
+  price: { first: "asc", value: (_, d) => d.positionPrice },
+  cross: { first: "asc", value: (_, d) => d.crossConnect },
+  hands: { first: "asc", value: (_, d) => d.remoteHands.perHour },
+};
+
 // A badge for a property; `off` marks the weaker side of the comparison.
 const B = ({ children, off }: { children: ReactNode; off?: boolean }) => <span className={`loc-badge${off ? " off" : ""}`}>{children}</span>;
 const Icon = ({ label, children }: { label: string; children: ReactNode }) => <span className="loc-icon" role="img" title={label} aria-label={label}>{children}</span>;
@@ -23,6 +44,8 @@ const Icon = ({ label, children }: { label: string; children: ReactNode }) => <s
 export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded: (id: string) => void }) {
   const act = useStore((s) => s.act), game = useStore((s) => s.game), notify = useStore((s) => s.notify);
   const [hideFull, setHideFull] = useState(false);
+  const [filters, setFilters] = useState<Filter[]>([]);
+  const [sort, setSort] = useState<{ key: SortKey; dir: Dir } | null>(null);
   const [area, setArea] = useState<Area>("eu");
   const [city, setCity] = useState<string | null>(null);
   const [hot, setHot] = useState<string | null>(null);
@@ -30,7 +53,19 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
   const [kind, setKind] = useState<Rented>("share");
   const [size, setSize] = useState(1);
   const cities = CITIES.filter((c) => inUs(c) === (area === "us"));
-  const rows = DATACENTERS.filter((d) => (city ? d.city === city : cities.includes(d.city)) && (!hideFull || dcAvailability(game, d.id).freeEighths > 0));
+  const matching = DATACENTERS.filter((d) => (city ? d.city === city : cities.includes(d.city)) && (!hideFull || dcAvailability(game, d.id).freeEighths > 0) && FILTERS.every(([f,, test]) => !filters.includes(f) || test(d)));
+  const rows = sort ? [...matching].sort((a, b) => {
+    const x = SORTS[sort.key].value(game, a), y = SORTS[sort.key].value(game, b);
+    const c = typeof x === "string" ? x.localeCompare(y as string) : (x as number) - (y as number);
+    return sort.dir === "asc" ? c : -c;
+  }) : matching;
+  // Clicking a column sorts it by its better end first, then reverses, then returns to the catalog order.
+  const sortBy = (key: SortKey) => setSort(!sort || sort.key !== key ? { key, dir: SORTS[key].first } : sort.dir === SORTS[key].first ? { key, dir: sort.dir === "asc" ? "desc" : "asc" } : null);
+  const Th = ({ k, className, children }: { k: SortKey; className?: string; children: ReactNode }) => (
+    <th className={className} aria-sort={sort?.key === k ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
+      <button className="loc-sort" onClick={() => sortBy(k)}>{children}{sort?.key === k && (sort.dir === "asc" ? <ArrowUp /> : <ArrowDown />)}</button>
+    </th>
+  );
   const dc = DATACENTERS.find((d) => d.id === dcId && rows.includes(d)) ?? null;
   const k: Rented = kind === "cage" && dc && !dc.cages ? "share" : kind;
   const n = SPACE_SIZES[k].includes(size) ? size : SPACE_SIZES[k][0];
@@ -53,13 +88,21 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
           {AREAS.map(([id, label]) => <button key={id} aria-pressed={area === id} onClick={() => { setArea(id); setCity(null); }}>{label}</button>)}
         </div>
         <span className="grow" />
-        <button className="btn ghost" aria-pressed={hideFull} onClick={() => setHideFull(!hideFull)}>Hide full</button>
         <div className="loc-cities">
           <div className="seg" role="group" aria-label="City">
             <button aria-pressed={!city} onClick={() => setCity(null)}>All</button>
             {cities.map((c) => <button key={c} aria-pressed={city === c} onClick={() => setCity(c)}>{c}</button>)}
           </div>
         </div>
+      </div>
+      <div className="loc-filters" role="group" aria-label="Filter">
+        <span className="loc-k">Filter</span>
+        <button className="loc-chip" aria-pressed={hideFull} onClick={() => setHideFull(!hideFull)}>{hideFull && <Check />}Hide full</button>
+        {FILTERS.map(([f, label]) => {
+          const on = filters.includes(f);
+          return <button key={f} className="loc-chip" aria-pressed={on} onClick={() => setFilters(on ? filters.filter((x) => x !== f) : [...filters, f])}>{on && <Check />}{label}</button>;
+        })}
+        {(filters.length > 0 || hideFull || sort) && <button className="loc-chip reset" onClick={() => { setFilters([]); setHideFull(false); setSort(null); }}>Reset</button>}
       </div>
       <WorldMap key={area} className="wm-add" initial={AREAS.find((a) => a[0] === area)![2]} markers={markers(city, hot)} onMarkerClick={(c) => setCity(c === city ? null : c)} onCityClick={(c) => setCity(CITIES.includes(c.name) && c.name !== city ? c.name : null)}>
         {city && (
@@ -72,12 +115,13 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
       <div className="loc-dcs">
         <table className="table">
           <thead>
-            <tr><th>Datacenter</th><th>Space</th><th>Carriers</th><th>Exchange</th><th>Power</th><th className="r">kW</th><th className="r">Position</th><th className="r">Cross-connect</th><th>Remote hands</th><th>Other</th></tr>
+            <tr><Th k="name">Datacenter</Th><Th k="space">Space</Th><Th k="carriers">Carriers</Th><Th k="exchange">Exchange</Th><Th k="power">Power</Th><Th k="kw" className="r">kW</Th><Th k="price" className="r">Position</Th><Th k="cross" className="r">Cross-connect</Th><Th k="hands">Remote hands</Th><th>Other</th></tr>
           </thead>
           <tbody>
             {rows.map((d) => <DcRow key={d.id} game={game} dc={d} selected={d === dc} onPick={() => setDc(d.id)} onHover={(on) => setHot(on ? d.city : null)} />)}
           </tbody>
         </table>
+        {rows.length === 0 && <p className="loc-muted loc-none">No datacenter matches</p>}
       </div>
       <div className="loc-sheet-foot">
         {dc ? <>
