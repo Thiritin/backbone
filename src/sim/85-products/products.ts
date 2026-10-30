@@ -7,7 +7,7 @@ import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
 import type { Device, GameState, Location } from "../50-state";
-import { controlPlaneUp, hostOfVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
+import { controlPlaneUp, insideVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
 import { bootHours } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
@@ -186,7 +186,7 @@ function reportLosses(s: GameState, events: SimEvent[]) {
     if (d.dataLost === null || s.lossReports.some((r) => r.deviceId === d.id && r.hour === d.dataLost)) continue;
     // A lost panel VM loses every web space in it, with the VM's backup.
     const lost = s.workloads.filter((w) => w.deviceId === d.id && lostDisk(s, w))
-      .flatMap((w) => (isOwnVm(w) ? s.workloads.filter((x) => x.clusterId === hostOfVm(s, w.id)?.id) : [w]));
+      .flatMap((w) => (isOwnVm(w) ? insideVm(s, w.id) : [w]));
     if (lost.length) reportLoss(s, d, lost, d.dataLost, events);
   }
 }

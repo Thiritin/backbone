@@ -4,17 +4,17 @@ import { marketPrice, PRODUCTS, sizeSpec, type Resources, type Sla, type Spec } 
 import type { Product } from "../30-customers/customers";
 import { vmName } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
-import { balloons, clustersIn, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
+import { balloons, clustersIn, conflict, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
 import { serverOsAt } from "../10-catalog/server-os";
 import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
-  anchorOf, clusterOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
+  anchorOf, clusterOf, clustersOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, hostsOfVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
   setMachine, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
-import { freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
+import { burning, freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
 import { assignService } from "../60-infra/addresses";
 import type { ActionResult } from "./hardware";
@@ -38,13 +38,18 @@ export const freeName = (s: GameState, base: string): string => {
   for (let i = 1; ; i++) if (!s.clusters.some((c) => c.name === `${base} ${i}`)) return `${base} ${i}`;
 };
 
-// A server must be mounted and free of clusters and customers to take software.
-export const freeServer = (s: GameState, d: GameState["devices"][number] | undefined): string | null => {
+// A server takes software when it is mounted, not rented whole or burning in, and none of its software runs it or shares
+// a port with it.
+export const freeServer = (s: GameState, d: GameState["devices"][number] | undefined, softwareId?: string): string | null => {
   if (!d) return "error.unknownDevice";
   if (!modelById(d.model).server) return "error.notServer";
   if (!d.rackId) return "error.notMounted";
-  return serverTaken(s, d.id) ? "error.serverInUse" : null;
+  const taken = s.workloads.some((w) => w.deviceId === d.id && !w.clusterId) || burning(s, d);
+  if (taken || clustersOf(s, d.id).some((c) => runs(c, softwareId))) return "error.serverInUse";
+  const sw = softwareId ? softwareById(softwareId) : undefined;
+  return (sw && d.software.map((x) => conflict(sw, softwareById(x.id))).find((x) => x)) || null;
 };
+const runs = (c: Cluster, softwareId?: string): boolean => !!softwareId && [c.panel, c.platform, c.switching?.to].includes(softwareId);
 
 // The software joins the machine's list, installing until doneAt.
 function addSoftware(s: GameState, machineId: string, sw: Software, doneAt: number): void {
@@ -57,7 +62,7 @@ export const templateOs = (s: GameState, vmId: string, sw: Software): void =>
 
 // Installs software on a free server as a new one-server cluster whose control plane is busy for the install hours.
 function installOnServer(s: GameState, deviceId: string, sw: Software, name: (label: string, loc: string) => string): ActionResult {
-  const d = s.devices.find((x) => x.id === deviceId), bad = freeServer(s, d);
+  const d = s.devices.find((x) => x.id === deviceId), bad = freeServer(s, d, sw.id);
   if (bad) return fail(bad);
   const loc = locationOf(s, d!)!, id = `clu${s.nextId++}`, slot = sw.kind === "cloud" ? "platform" : "panel";
   const c: Cluster = { ...blank(s, id, name(d!.label ?? d!.name, loc.name), loc.az, sw.kind), nodes: [{ deviceId, state: "active" }], controlPlane: deviceId };
@@ -111,7 +116,7 @@ export function installPanelInVm(s: GameState, vmId: string, panelId: string): A
   const vm = vmById(s, vmId), sw = softwareById(panelId);
   if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
   if (sw.id !== panelId || sw.kind === "cloud") return fail("error.unknownSoftware");
-  if (hostOfVm(s, vm.id)) return fail("error.onePanel");
+  if (hostsOfVm(s, vm.id).some((h) => runs(h, panelId))) return fail("error.onePanel");
   const c = s.clusters.find((x) => x.id === vm.clusterId);
   if (!c) return fail("error.unknownCluster");
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
@@ -221,12 +226,12 @@ export function addNode(s: GameState, clusterId: string, deviceId: string): Acti
   if (panel && (c.vm || !id || !clustersIn(softwareById(id), yearOf(s.hour)))) return fail("error.panelHostOneServer");
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
-  const own = clusterOf(s, d.id);
+  const mine = clustersOf(s, d.id), own = mine.find((x) => x.id === c.id) ?? mine.find((x) => x.kind === c.kind && runs(x, id ?? undefined)) ?? clusterOf(s, d.id, c.kind);
   if (own?.id === c.id) return fail("error.alreadyNode");
   if (!own || own.kind !== c.kind || !(own.panel ?? own.platform) || own.switching) return fail(panel ? "error.noPanel" : "error.noHypervisor");
   if (locationOf(s, d)?.az !== c.az) return fail("error.otherZone");
   if ((own.panel ?? own.platform) !== id) return fail(panel ? "error.otherPanel" : "error.otherHypervisor");
-  if (workloadsOn(s, d.id).length) return fail("error.nodeNotEmpty");
+  if (workloadsOn(s, d.id).some((w) => w.clusterId === own.id)) return fail("error.nodeNotEmpty");
   const kept = d.software;
   leave(s, own.id, d.id);
   d.software = kept;
@@ -264,12 +269,13 @@ export function upgradeNodePhp(s: GameState, deviceId: string): ActionResult {
   return { ok: true };
 }
 
-// A node leaves its cluster once nothing runs on it, uninstalling its software; a panel host keeps at least one.
-export function removeNode(s: GameState, deviceId: string): ActionResult {
-  const c = clusterOf(s, deviceId);
+// A node leaves its cluster (the hypervisor's unless named) once nothing of it runs on it, uninstalling its software; a
+// panel host keeps at least one.
+export function removeNode(s: GameState, deviceId: string, clusterId?: string): ActionResult {
+  const c = clusterId ? clustersOf(s, deviceId).find((x) => x.id === clusterId) : clusterOf(s, deviceId);
   if (!c) return fail("error.notNode");
   if ((c.kind === "panel" || isService(c.kind)) && c.nodes.length < 2) return fail("error.panelHostOneServer");
-  if (workloadsOn(s, deviceId).length) return fail("error.nodeNotEmpty");
+  if (workloadsOn(s, deviceId).some((w) => w.clusterId === c.id)) return fail("error.nodeNotEmpty");
   leave(s, c.id, deviceId);
   return { ok: true };
 }

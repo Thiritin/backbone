@@ -9,7 +9,7 @@ import { ABUSE_HIT, BOUNCE_CHANCE, IPV6_FROM, IPV6_MONTHLY, LINE_EXTRA_V4, LIR_F
 import type { Product } from "../30-customers/customers";
 import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry, Location } from "../50-state";
-import { hostOfVm, isOwnVm, vmById, type Workload } from "./cluster";
+import { isOwnVm, vmById, type Workload } from "./cluster";
 import { locationOf } from "./status";
 import type { SimEvent } from "../88-tick/tick";
 
@@ -264,7 +264,7 @@ function stillHeld(s: GameState, a: Address): boolean {
 function serverAddresses(s: GameState): void {
   const machines = [
     ...s.devices.filter((d) => isServer(s, d.id)).map((d) => d.id),
-    ...s.clusters.map((c) => c.vm).filter((id): id is string => !!id && !!vmById(s, id) && !!hostOfVm(s, id)),
+    ...new Set(s.clusters.map((c) => c.vm).filter((id): id is string => !!id && !!vmById(s, id))),
   ];
   for (const id of machines) {
     const loc = machineLocation(s, id);

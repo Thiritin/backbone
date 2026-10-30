@@ -40,17 +40,18 @@ describe("service software", () => {
     expect(s.workloads.find((w) => w.serviceId === idOf(r))?.clusterId).toBe(id);
   });
 
-  it("installs service software in a VM or on a free server, one per machine", () => {
+  it("installs service software in a VM or on a server, several per machine", () => {
     const s = readyGame(1), vm = bootedMachine(s, idOf(createVm(s, cloudOf(s).id, PANEL_VM_SIZE)));
     expect(installBlock(s, vm, "openveepeen")).toBeNull();
     expect(installBlock(s, vm, "minnio")).toBe("error.softwareNotYet");
     expect(installSoftware(s, vm, "openveepeen").ok).toBe(true);
-    expect(installBlock(s, vm, "bound")).toBe("error.onePanel");
+    expect(installBlock(s, vm, "bound")).toBeNull();
 
     const bare = withServer(newGame(2));
     expect(installSoftware(bare, bootedMachine(bare, "dev3"), "vsftpeed").ok).toBe(true);
     expect(bare.clusters[0]).toMatchObject({ kind: "storage", nodes: [{ deviceId: "dev3" }] });
-    expect(installBlock(bare, "dev3", "vmwhere")).toBe("error.serverInUse");
+    expect(installBlock(bare, "dev3", "openveepeen")).toBeNull();
+    expect(installBlock(bare, "dev3", "vsftpeed")).toBe("error.portTaken");
   });
 
   it("opens newer software in its year", () => {

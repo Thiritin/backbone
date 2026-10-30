@@ -1,6 +1,6 @@
 // docs/design/software.md, section 9: the usage history a hypervisor console graphs on a VM's page.
 import type { GameState } from "../50-state";
-import { hostOfVm, isOwnVm, lostDisk, vmById, type Workload } from "./cluster";
+import { insideVm, isOwnVm, lostDisk, vmById, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
 import { workloadUse } from "./usage";
 
@@ -14,8 +14,7 @@ const up = (s: GameState, w: Workload) => !w.stopped && !!w.deviceId && !lostDis
 // An own VM's traffic is that of the web spaces its panel hosts; a customer workload's is its service's.
 function netMbit(s: GameState, w: Workload): number {
   if (!up(s, w)) return 0;
-  const host = isOwnVm(w) ? hostOfVm(s, w.id) : undefined;
-  const ids = isOwnVm(w) ? s.workloads.filter((x) => host && x.clusterId === host.id).map((x) => x.serviceId) : [w.serviceId];
+  const ids = isOwnVm(w) ? insideVm(s, w.id).map((x) => x.serviceId) : [w.serviceId];
   return s.services.filter((v) => ids.includes(v.id)).reduce((n, v) => n + serviceMbps(s, v), 0);
 }
 

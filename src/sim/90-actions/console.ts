@@ -4,7 +4,7 @@
 import { nowHours, yearOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import type { Device, GameState } from "../50-state";
-import { clusterOf, dropCluster, hostOfVm, isOwnVm, setMachine, vmById, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
+import { clustersOn, dropCluster, insideVm, isOwnVm, setMachine, vmById, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
 import { SERVER_OS, serverOsAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
 import { machineNet, stickOs } from "../60-infra/oob";
 import { pushLog } from "../60-infra/power";
@@ -70,10 +70,10 @@ export function bootFromUsb(s: GameState, deviceId: string): ActionResult {
 export type InstallCase = { kind: "empty" } | { kind: "idle"; cluster: Cluster } | { kind: "busy"; cluster: Cluster; workloads: Workload[]; lost: Workload[] };
 export function installCase(s: GameState, machineId: string): InstallCase {
   const vm = !s.devices.some((d) => d.id === machineId);
-  const cluster = vm ? hostOfVm(s, machineId) : clusterOf(s, machineId);
+  const cluster = clustersOn(s, machineId)[0];
   if (!cluster) return { kind: "empty" };
   const workloads = vm ? [] : workloadsOn(s, machineId);
-  const lost = vm ? s.workloads.filter((w) => w.clusterId === cluster.id) : workloads.flatMap((w) => (isOwnVm(w) ? s.workloads.filter((x) => x.clusterId === hostOfVm(s, w.id)?.id) : [w]));
+  const lost = vm ? insideVm(s, machineId) : workloads.flatMap((w) => (isOwnVm(w) ? insideVm(s, w.id) : [w]));
   if (!workloads.length && !lost.length) return { kind: "idle", cluster };
   return { kind: "busy", cluster, workloads, lost };
 }
@@ -81,7 +81,7 @@ export function installCase(s: GameState, machineId: string): InstallCase {
 // Erasing a machine with customers on it loses their data the way a dead array does: the same loss report, refund tickets
 // and reputation hit. Their services end with it, since nothing is left to restore to. A VM's loss is booked on its host.
 // ponytail: no restore from backup onto the reinstalled machine; add when a player asks for it.
-function wipe(s: GameState, m: Machine, c: Cluster, ws: Workload[], lost: Workload[]): void {
+function wipe(s: GameState, m: Machine, ws: Workload[], lost: Workload[]): void {
   const d = isDevice(m) ? m : s.devices.find((x) => x.id === m.deviceId);
   if (isDevice(m)) m.dataLost = s.hour;
   if (d) reportLoss(s, d, lost, s.hour, []);
@@ -89,7 +89,7 @@ function wipe(s: GameState, m: Machine, c: Cluster, ws: Workload[], lost: Worklo
   for (const nested of s.clusters.filter((x) => x.vm && gone.has(x.vm))) dropCluster(s, nested.id);
   s.workloads = s.workloads.filter((w) => !gone.has(w.id));
   s.services = s.services.map((v) => (services.has(v.id) && v.endedAt === null ? { ...v, endedAt: s.hour } : v));
-  if (isDevice(m) && c.nodes.length > 1) leave(s, c.id, m.id); else dropCluster(s, c.id);
+  for (const c of clustersOn(s, m.id)) if (isDevice(m) && c.nodes.length > 1) leave(s, c.id, m.id); else dropCluster(s, c.id);
   if (isDevice(m)) pushLog(m, s.hour, "ipmi.log.erased");
 }
 
@@ -98,9 +98,12 @@ function wipe(s: GameState, m: Machine, c: Cluster, ws: Workload[], lost: Worklo
 function clear(s: GameState, m: Machine, confirm: string | undefined): ActionResult {
   const c = installCase(s, m.id);
   if (c.kind === "empty") return { ok: true };
-  if (c.kind === "idle") return uninstallSoftware(s, m.id);
+  if (c.kind === "idle") {
+    for (const x of clustersOn(s, m.id)) { const r = uninstallSoftware(s, m.id, x.panel ?? x.platform ?? x.switching?.to); if (!r.ok) return r; }
+    return { ok: true };
+  }
   if (confirm !== hostOf(m)) return fail("error.confirmHostname");
-  wipe(s, m, c.cluster, c.workloads, c.lost);
+  wipe(s, m, c.workloads, c.lost);
   return { ok: true };
 }
 
