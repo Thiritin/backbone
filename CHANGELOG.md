@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-30
 
 - Mainboards in the Parts tab are sold per socket and biggest CPU, such as "Indel I3-40 Mainboard", and show their socket and the CPUs they take.
+- Clicking a reply option on a support ticket now sends that reply right away.
 - Storage servers now differ in drives: in 2005 a backup server holds about 1 TB on six 160 GB drives with half its bays empty, a storage server four 160 GB drives, and the archive server twelve 500 GB drives; the Value 1U ships with one 160 GB drive.
 - Each server maker now sells its own lines instead of all makers selling the same servers: Dwell the balanced, 2 PSU, memory, storage, archive and GPU lines, Hewlett-Packet the new Large-memory 2U line, SuperMacro the new Value 1U with one CPU, the compute-dense, backup and Twin lines, and Lenovoid the ARM line.
 - Servers in the Shop list their exact mainboard, with its socket and the biggest CPU it takes, and a board refuses a CPU with more cores than that.

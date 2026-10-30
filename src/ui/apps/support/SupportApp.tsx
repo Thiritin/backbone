@@ -1,5 +1,5 @@
-import { AlarmClock, BadgeCheck, ChartColumn, Check, CircleCheck, CircleX, Handshake, Hourglass, Inbox, Layers, Mails, Search, Send, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
-import { useState, type CSSProperties } from "react";
+import { AlarmClock, BadgeCheck, ChartColumn, Check, CircleCheck, CircleX, Handshake, Hourglass, Inbox, Layers, Mails, Search, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
+import type { CSSProperties } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import { updatePrice } from "../../../sim/10-catalog/apps";
 import { deskHas, deskOf, type DeskFeature } from "../../../sim/10-catalog/desks";
@@ -319,7 +319,6 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
 function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
-  const [tpl, setTpl] = useState<string | null>(null);
   const c = game.customers.find((x) => x.id === tk.customerId);
   const svc = game.services.find((v) => v.id === tk.serviceId);
   const p = subjectParams(game, tk);
@@ -429,13 +428,12 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
           {tk.status === "open" && templatesOf(tk).length > 0 && (
             <>
               <h3>Reply</h3>
-              <div className="templates" role="radiogroup" aria-label="Reply template">
+              <div className="templates">
                 {shownTemplates(game, tk, gates.templates).map((id) => (
-                  <label key={id} className="tpl">
-                    <input type="radio" name={`tpl-${tk.id}`} checked={tpl === id} disabled={locked} onChange={() => setTpl(id)} />
+                  <button key={id} className="tpl" disabled={locked} onClick={() => act(replyTicket, tk.id, id)}>
                     <span className="t">{t(`template.${id}.title`)}</span>
                     {gates.templates && <span className="p">{t(`template.${id}.text`, { ...companyParams(game), ...p })}</span>}
-                  </label>
+                  </button>
                 ))}
               </div>
             </>
@@ -468,9 +466,6 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
             {tk.kind === "sponsor" && <button className="btn primary" disabled={locked} onClick={() => act(acceptSponsorship, tk.id)}><Check />Accept</button>}
             {!stray && tk.kind !== "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? "Ignore" : "Close"}</button>}
             {tk.status === "waiting" && tk.kind !== "migration" && !tk.work && <button className="btn primary" disabled={locked} onClick={() => act(resolveTicket, tk.id)}><CircleCheck />Resolve</button>}
-            {tk.status === "open" && templatesOf(tk).length > 0 && (
-              <button className="btn primary" disabled={locked || !tpl} onClick={() => act(replyTicket, tk.id, tpl!)}><Send />Send reply</button>
-            )}
           </div>
         </div>
       )}
