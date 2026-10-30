@@ -13,6 +13,8 @@ import { reduced } from "../../desktop/motion";
 import { menuOn } from "../../desktop/ContextMenu";
 import { yearOf } from "../../../sim/00-core/time";
 import { isoFile } from "./sites/software/SoftwareSite";
+import { useDownloads } from "../../downloads";
+import type { ServerOsId } from "../../../sim/10-catalog/server-os";
 import { useSessionState } from "../../session";
 import { useFocus, useStore } from "../../store";
 import { Favicon } from "./Favicon";
@@ -103,6 +105,24 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
 
 const showDownloads = () => useStore.getState().openApp("Applications", { kind: "folder", id: "downloads" });
 
+function DownloadsButton({ game }: { game: GameState }) {
+  const running = useDownloads(), year = yearOf(game.hour);
+  const ids = (Object.keys(running) as ServerOsId[]).filter((id) => running[id]), first = ids[0] && running[ids[0]]!;
+  const done = (d: { start: number; secs: number }) => Math.floor(Math.min(1, (performance.now() - d.start) / (d.secs * 1000)) * 100);
+  return (
+    <button className="btn icon ghost br-dl" aria-label="Downloads" onClick={menuOn(() => [
+      ...ids.map((id) => ({ label: `${isoFile(id, year)}, ${done(running[id]!)}%`, disabled: true })),
+      ...game.media.images.map((id) => ({ label: isoFile(id, year), run: showDownloads })),
+      !game.media.images.length && !ids.length && { label: "No downloads", disabled: true },
+      null,
+      { label: "Show in Finder", run: showDownloads },
+    ])}>
+      <CircleArrowDown aria-hidden />
+      {first && <span className="br-dl-bar"><i key={ids[0]} style={{ animationDuration: `${first.secs}s`, animationDelay: `${(first.start - performance.now()) / 1000}s` }} /></span>}
+    </button>
+  );
+}
+
 export function BrowserApp() {
   const game = useStore((s) => s.game);
   const [tabs, setTabs] = useSessionState<Tab[]>("browser.tabs", [{ id: 1, history: [HOME_URL], at: 0, nav: 0 }]);
@@ -172,12 +192,7 @@ export function BrowserApp() {
           <input aria-label="Address" value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} />
           <button type="button" className="br-star" aria-label="Bookmark" aria-pressed={marked} disabled={isDefault} onClick={toggleMark}><Star aria-hidden /></button>
         </form>
-        <button className="btn icon ghost" aria-label="Downloads" onClick={menuOn(() => [
-          ...game.media.images.map((id) => ({ label: isoFile(id, yearOf(game.hour)), run: showDownloads })),
-          !game.media.images.length && { label: "No downloads", disabled: true },
-          null,
-          { label: "Show in Finder", run: showDownloads },
-        ])}><CircleArrowDown aria-hidden /></button>
+        <DownloadsButton game={game} />
       </div>
       <div className="br-marks">
         {bookmarks.map((m) => (

@@ -1,13 +1,24 @@
 // Installation media (docs/design/software.md, section 4.1): the ISO images downloaded from the OS sites and the one USB
 // stick, written with one of them and plugged into one server at a time.
 import { modelById } from "../10-catalog/hardware";
+import { DC_BANDWIDTH } from "../10-catalog/network";
+import { homeLineById } from "../20-world/datacenters";
 import { SERVER_OS, type ServerOs, type ServerOsId } from "../10-catalog/server-os";
 import type { GameState } from "../50-state";
-import { handJob, present, type How } from "../60-infra/handwork";
+import { handJob, playerAt, present, type How } from "../60-infra/handwork";
 import { locationOf } from "../60-infra/status";
 import type { ActionResult } from "./hardware";
 
 export const PLUG_HOURS = 2 / 60;
+// Image sizes in MB.
+export const IMAGE_MB: Record<ServerOsId, number> = { lunix: 180, windoors: 600 };
+
+// The player's own download speed in Mbit/s: the home line at home, the datacenter's network on site, nothing on the road.
+export function downloadMbps(s: GameState): number {
+  const loc = playerAt(s);
+  if (!present(s, loc.id)) return 0;
+  return loc.dc ? DC_BANDWIDTH.mbps : homeLineById(s.homeLine.id).down;
+}
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 

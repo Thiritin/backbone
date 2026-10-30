@@ -40,3 +40,7 @@
 .br-error h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
 .br-error p { color: var(--text-2); margin-bottom: 16px; }
 
+.br-dl { position: relative; }
+.br-dl-bar { position: absolute; left: 5px; right: 5px; bottom: 2px; height: 2px; border-radius: 1px; background: var(--line-strong); overflow: hidden; }
+.br-dl-bar i { display: block; height: 100%; background: var(--accent); animation: br-dl linear forwards; }
+@keyframes br-dl { from { width: 0; } to { width: 100%; } }

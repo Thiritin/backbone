@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-30
 
+- Downloading an ISO now takes as long as your internet line needs, so DSL 16000 at home is slow and a datacenter is fast, and the browser shows the progress.
 - Holding Shift while scrolling over a rack now zooms in and out around the mouse pointer, and the zoom buttons above the rack are gone.
 - A new game now starts with an empty terminal, a single browser tab and the first-time shell setup again, and keeps only your sound settings.
 - Writing an ISO to the USB stick now takes a few seconds and shows a Copy window with a progress bar, which you can stop.

@@ -4,7 +4,7 @@ import { consoleScreen, machineScreen } from "../src/sim/60-infra/oob";
 import { powerTick } from "../src/sim/60-infra/power";
 import { bootFromUsb, installOs, setMedia } from "../src/sim/90-actions/console";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
-import { downloadImage, mountableImages, plugStick, stickHome, unplugStick, writeStick } from "../src/sim/90-actions/media";
+import { downloadImage, downloadMbps, mountableImages, plugStick, stickHome, unplugStick, writeStick } from "../src/sim/90-actions/media";
 import { clusterOf } from "../src/sim/60-infra/cluster";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { newGame } from "../src/sim/50-state";
@@ -35,6 +35,15 @@ describe("installation media", () => {
     expect(err(writeStick(s, "lunix"))).toBe("ok");
     expect(err(writeStick(s, "windoors"))).toBe("ok");
     expect(s.media.stick.os).toBe("windoors");
+  });
+
+  it("downloads at the speed of the line where the player is", () => {
+    const s = newGame(1);
+    expect(downloadMbps(s)).toBe(0);
+    s.homeLine.id = "dsl-16";
+    expect(downloadMbps(s)).toBe(16);
+    s.player = { ...s.player, doing: "travel", until: s.hour + 5 };
+    expect(downloadMbps(s)).toBe(0);
   });
 
   it("writes the stick only while it is in the computer", () => {

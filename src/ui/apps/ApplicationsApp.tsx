@@ -3,7 +3,7 @@ import { useEffect, useState, type CSSProperties, type DragEvent, type ReactNode
 import { yearOf } from "../../sim/00-core/time";
 import type { ServerOsId } from "../../sim/10-catalog/server-os";
 import { addAppLink, setDocked } from "../../sim/90-actions/docs";
-import { stickHome, writeStick } from "../../sim/90-actions/media";
+import { IMAGE_MB, stickHome, writeStick } from "../../sim/90-actions/media";
 import { createPortal } from "react-dom";
 import { menuOn, type MenuEntry } from "../desktop/ContextMenu";
 import { useFocus, useStore } from "../store";
@@ -12,8 +12,7 @@ import { APPS, appFor } from "./registry";
 
 type Folder = "apps" | "desktop" | "downloads" | "usb";
 const ISO = "application/x-backbone-iso";
-// Image sizes in MB and the stick's write speed in MB/s, which set how long a copy takes.
-const SIZE: Record<ServerOsId, number> = { lunix: 180, windoors: 600 };
+// The stick's write speed in MB/s.
 const SPEED = 75;
 
 export function appMenu(app: string) {
@@ -59,7 +58,7 @@ export function ApplicationsApp() {
           {side("usb", Usb, "USB stick", target)}
         </>}
       </nav>
-      {copy && <Copying key={copy} file={isoFile(copy, year)} size={SIZE[copy]} onStop={() => setCopy(null)} onDone={() => { setCopy(null); act(writeStick, copy); }} />}
+      {copy && <Copying key={copy} file={isoFile(copy, year)} size={IMAGE_MB[copy]} onStop={() => setCopy(null)} onDone={() => { setCopy(null); act(writeStick, copy); }} />}
       <div className="app-grid" {...(at === "usb" ? target : {})}>
         {at === "apps" && APPS.filter((a) => !a.hidden && game.installed.includes(a.name)).map((a) => {
           const shown = appFor(game, a.name);
