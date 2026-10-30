@@ -25,6 +25,9 @@
 .shop-bar { height: 44px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 10px; border-bottom: 0.5px solid var(--line); background: var(--win-bar); }
 .shop-bar .btn[aria-pressed="true"] { background: color-mix(in oklch, var(--text) 8%, transparent); color: var(--text); }
 .shop-count { margin-left: 2px; color: var(--text-3); }
+.shop-count[data-full] { min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); text-align: center; animation: shop-bump 0.4s ease-out; }
+@keyframes shop-bump { 30% { transform: scale(1.5); } }
+@media (prefers-reduced-motion: reduce) { .shop-count[data-full] { animation: none; } }
 .shop-body { flex: 1; min-height: 0; display: flex; }
 .shop-muted { color: var(--text-3); }
 .shop-cart { width: 380px; flex: none; display: flex; flex-direction: column; border-left: 0.5px solid var(--line); background: var(--win); overflow: auto; }

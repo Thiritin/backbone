@@ -123,7 +123,7 @@ export function ShopApp() {
               <button aria-pressed={view === "list"} aria-label="List" title="List" onClick={() => setView("list")}><List /></button>
             </div>
           )}
-          <button className="btn ghost" aria-pressed={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingCart />Cart<span className="num shop-count">{inCart}</span></button>
+          <button className="btn ghost" aria-pressed={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingCart />Cart<span key={inCart} className="num shop-count" data-full={inCart > 0 || undefined}>{inCart}</span></button>
         </div>
         {market === "new" && !software && !opened_ && <ShopFilter items={scoped} filter={filter} set={setFilter} clear={clearFilter} sort={sort} setSort={setSort} />}
         <div className="shop-body">
