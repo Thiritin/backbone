@@ -217,6 +217,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.noSecondPsu": () => "This device has no free power supply bay.",
   "error.noSlot": () => "The chassis has no free slot for this part.",
   "error.wrongFormFactor": () => "This drive does not fit the bays of the chassis.",
+  "error.wrongRam": () => "This memory type does not fit the mainboard.",
   "error.tooMuchRam": () => "The chassis takes no more memory.",
   "error.wrongVendor": () => "This part does not fit the board's socket.",
   "error.cpuTooBig": () => "This CPU has more cores than the board takes.",

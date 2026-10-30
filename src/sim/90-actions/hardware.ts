@@ -167,7 +167,7 @@ export function sellRack(s: GameState, rackId: string): ActionResult {
 // extras are parts added to each unit. part is the size of a spare from the Parts tab.
 export interface CartLine {
   model: string; brand: string; qty: number;
-  extras?: { kind: ComponentKind; size?: number; ff?: string; qty: number }[];
+  extras?: { kind: ComponentKind; size?: number; ff?: string; sku?: string; qty: number }[];
   part?: PartSpec;
   // The CPU maker of a server's board and CPUs; the model's preset maker when left out.
   vendor?: Vendor;
@@ -179,7 +179,7 @@ export interface CartLine {
 const extraParts = (line: CartLine): PartSpec[] => {
   const m = modelById(line.model), cpu = { vendor: boardVendor(m, componentParts(m, line.vendor)), gen: genOf(m) };
   return (line.extras ?? []).flatMap((e) => Array.from({ length: e.qty }, (): PartSpec =>
-    ({ kind: e.kind, ...(e.size !== undefined ? { size: e.size } : {}), ...(e.ff ? { ff: e.ff as FormFactor } : {}), ...(e.kind === "cpu" ? cpu : {}) })));
+    ({ kind: e.kind, ...(e.size !== undefined ? { size: e.size } : {}), ...(e.ff ? { ff: e.ff as FormFactor } : {}), ...(e.sku ? { sku: e.sku } : {}), ...(e.kind === "cpu" ? cpu : {}) })));
 };
 // The parts one unit of the line is built from.
 export const lineParts = (line: CartLine): PartSpec[] => {

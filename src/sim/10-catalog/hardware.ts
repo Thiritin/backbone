@@ -1,6 +1,7 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
-import { GENERATIONS, generationAt } from "./economy";
+import { GENERATIONS } from "./economy";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
+import { DDR_BY_GEN, defaultFamily, familiesOn, familyById, familySizes, isRamFamily, PART_MAKERS } from "./families";
 import { cpuModel, cpuSkus, cpuWatts, defaultSku, defaultVendor, genOfYear, skuById, skuOf, socketCores, socketOf, VENDOR_ARCH, VENDOR_NAME, VENDORS, vendorsAt, type Vendor } from "./cpus";
 
 // A chassis holds the nodes of a multi-node server with their shared power supplies and fans; the nodes are servers.
@@ -80,12 +81,15 @@ export function componentParts(m: DeviceModel, vendor?: Vendor, sku?: string): P
     const v = m.server, maker = vendor ?? vendorsOf(m)[0] ?? defaultVendor(v.arch), gen = genOf(m);
     const part = (sku && skuById(sku)) || presetSku(m, maker);
     const cpu = (): PartSpec => ({ kind: "cpu", size: part?.cores ?? socketCores(v.cores / v.sockets, maker, gen), vendor: maker, gen, ...(part ? { sku: part.id } : {}) });
+    // Drives and sticks come from the first family of the year that sells the size (families.ts), cards from the Tezla line.
+    const drive = defaultFamily(DRIVE_KIND[v.disk], m.from, v.diskGb / v.drives, presetFf(v)), stick = defaultFamily("ram", m.from, v.ramGb / v.ramSticks, undefined, DDR_BY_GEN[gen - 1]), card = cardAt(m.from);
+    const named = (parts: PartSpec[], f?: { id: string }): PartSpec[] => (f ? parts.map((p) => ({ ...p, sku: f.id })) : parts);
     return [
       // A node runs on its chassis's power supplies and fans.
-      ...n(DRIVE_KIND[v.disk], v.drives, () => v.diskGb / v.drives, presetFf(v)), ...(m.chassis ? [] : [...n("psu", m.psus), ...n("fan", 4)]),
-      ...n("ram", v.ramSticks, () => v.ramGb / v.ramSticks), { kind: "board", vendor: maker, gen, size: boardSpec(m, maker)?.maxCores }, ...Array.from({ length: v.sockets }, cpu), ...n("nic", 1),
+      ...named(n(DRIVE_KIND[v.disk], v.drives, () => v.diskGb / v.drives, presetFf(v)), drive), ...(m.chassis ? [] : [...n("psu", m.psus), ...n("fan", 4)]),
+      ...named(n("ram", v.ramSticks, () => v.ramGb / v.ramSticks), stick), { kind: "board", vendor: maker, gen, size: boardSpec(m, maker)?.maxCores }, ...Array.from({ length: v.sockets }, cpu), ...n("nic", 1),
       // A GPU line ships with the newest card of its generation; a part names its card by launch year.
-      ...n("gpu", v.gpus, () => cardAt(m.from)?.year ?? 0),
+      ...named(n("gpu", v.gpus, () => card?.year ?? 0), card ?? undefined),
     ];
   }
   if (m.kind === "switch" || m.kind === "firewall") return [...n("psu", m.psus), ...n("fan", 2), ...n("board", 1)];
@@ -155,8 +159,11 @@ export function fits(m: DeviceModel, parts: PartSpec[]): string | null {
   if (count("cpu") > (v?.sockets ?? 0) || count("ram") > (v?.dimmSlots ?? 0) || count("psu") > slotsOf(m, "psu")
     || count("fan") > fans || count("board") > boards || count("nic") > (v ? 1 : 0)) return "error.noSlot";
   const cards = parts.filter((p) => p.kind === "gpu");
-  if (cards.length > gpuSlots(m) || (m.height < 4 && cards.some((p) => cardOf(p.size).wide))) return "error.noSlot";
+  if (cards.length > gpuSlots(m) || (m.height < 4 && cards.some((p) => cardOf(p.size, p.sku).wide))) return "error.noSlot";
   if (v && parts.filter((p) => p.kind === "ram").reduce((n, p) => n + (p.size ?? 0), 0) > v.maxRamGb) return "error.tooMuchRam";
+  // A stick with a maker names its DDR type, which must be the board's; a stick without one fits any board.
+  const ddr = DDR_BY_GEN[genOf(m) - 1];
+  if (v && parts.some((p) => { const f = p.kind === "ram" ? familyById(p.sku) : undefined; return f && isRamFamily(f) && f.ddr !== ddr; })) return "error.wrongRam";
   const cpus = v ? cpuError(m, v.arch, parts) : null;
   if (cpus) return cpus;
   const drives = parts.filter((p) => isDriveKind(p.kind)).map((p) => driveFf(m, p));
@@ -603,13 +610,6 @@ export const brandOnSale = (m: DeviceModel, brand: string, month: number): boole
 export const shopModels = (year: number): DeviceModel[] =>
   MODELS.filter((m) => m.price > 0 && !m.chassis && brandsOf(m).some((b) => brandFrom(m, b) < (year + 1) * 12 && (brandUntil(m, b) ?? year) >= year));
 
-// NVMe drive size per generation in GB; NVMe-capable bays come with G4, so the drives do too.
-const NVME_GB = [0, 0, 0, 1000, 2000, 8000, 15000];
-// HDD sizes on sale in GB with their first and last year, on top of the sizes the presets ship with.
-const HDD_SIZES: [gb: number, from: number, until: number][] = [
-  [80, 2005, 2008], [160, 2005, 2009], [500, 2005, 2014], [1000, 2008, 2018],
-  [2000, 2010, 2022], [3000, 2012, 2022], [4000, 2014, 2030], [6000, 2015, 2030], [8000, 2017, 2030], [10000, 2018, 2030], [12000, 2019, 2030],
-];
 export const samePart = (a: PartSpec, b: PartSpec): boolean => a.kind === b.kind && a.size === b.size && a.ff === b.ff && a.vendor === b.vendor && a.gen === b.gen && a.sku === b.sku;
 // Whether an offer covers a wanted part: the same part, or the same size of a CPU wanted without a name.
 export const offersPart = (offer: PartSpec, want: PartSpec): boolean => samePart(offer, want) || (want.sku === undefined && samePart({ ...offer, sku: undefined }, want));
@@ -621,10 +621,9 @@ export function partOffers(year: number): PartSpec[] {
     componentParts(m, v).forEach(add);
     for (const c of cpuSkus(v, genOf(m), year)) add({ kind: "cpu", size: c.cores, vendor: v, gen: c.gen, sku: c.id });
   }
-  const g = generationAt(year);
-  for (const [gb, from, until] of HDD_SIZES) if (year >= from && year <= until) for (const ff of year >= 2008 && gb <= 2000 ? (["3.5", "2.5"] as const) : (["3.5"] as const)) add({ kind: "hdd", size: gb, ff });
-  for (const i of [g - 1, g]) if (NVME_GB[i]) add({ kind: "nvme", size: NVME_GB[i], ff: "nvme" });
-  for (const c of gpuOffers(year)) add({ kind: "gpu", size: c.year });
-  const maker = (p: PartSpec) => (p.vendor ? VENDORS.indexOf(p.vendor) : -1);
+  // Every size of every memory and drive family on sale, and the cards of every line.
+  for (const kind of ["ram", "hdd", "ssd", "nvme"] as const) for (const f of familiesOn(kind, year)) for (const gb of familySizes(f, year)) add({ kind, size: gb, ...(isRamFamily(f) ? {} : { ff: f.ff }), sku: f.id });
+  for (const c of gpuOffers(year)) add({ kind: "gpu", size: c.year, sku: c.id });
+  const maker = (p: PartSpec) => (p.vendor ? VENDORS.indexOf(p.vendor) : p.sku ? PART_MAKERS.findIndex((m) => p.sku!.startsWith(`${m.id}-`)) : -1);
   return out.sort((a, b) => COMPONENT_KINDS.indexOf(a.kind) - COMPONENT_KINDS.indexOf(b.kind) || maker(a) - maker(b) || (a.size ?? 0) - (b.size ?? 0));
 }

@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-30
 
 - Server groups in Marketing, Shop decide which panel hosts and hypervisor clusters the shop sells from and which ones take automatic orders; a new shop starts with one group per kind of software you run.
+- Memory sticks and drives now come from makers such as Sumsang, Kingstown, Seagull, Western Digitail and Indel, each with its own prices, failure rates and spec sheet (DDR type and speed, interface, spindle speed or endurance, throughput), a board takes only sticks of its memory type, and the Parts tab is split into CPUs, Memory, Drives, Cards, Boards and Power and cooling.
+- The Cards shelf sells nVidea's small T4, A10 and L40S and AMB's Radeon Instinkt line next to the Tezlas.
 - The new Shop systems research lets you replace the order form with ModemBill, ClientExit, WHMCache, Blessta, HostBull, Ubersmyth, OrderBocks or BoxBillin', each with its own price and modules, and set the stock of every product line in Marketing, Shop, so a sold-out line turns visitors away without lost sales.
 - The hand-rolled order form now places orders by itself only on software it has a custom script for, which you buy in Marketing, Shop.
 - Processors with two threads per core now count 30% more vCPU, gamers on a server with one of the fastest clocks on sale grow happier each month and may leave five-star reviews, a brand-new fast processor makes you known among gamers, and any service that runs a whole month without a slowdown or outage can earn a good review.

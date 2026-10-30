@@ -10,7 +10,8 @@ import { lineParts, unitPrice, type CartLine } from "../../../sim/90-actions/har
 import { Cart, Stepper } from "./Cart";
 import { Software } from "./Software";
 import { ShopFilter, useFilter } from "./FilterBar";
-import { CLASS_TREE, classOf, inClass, makerOf, MAKERS, matchesFilter, sortItems, type Sort } from "./filter";
+import { CLASS_TREE, classOf, inClass, makerOf, MAKERS, matchesFilter, partClass, sortItems, type Sort } from "./filter";
+import { familyById, isRamFamily } from "../../../sim/10-catalog/families";
 import { onMarket, type Channel } from "../../../sim/10-catalog/used";
 import { Used } from "./Used";
 import { Isometric } from "../../art/Isometric";
@@ -28,6 +29,13 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const releaseLabel = (month: number) => `${MONTHS[month % 12]} ${Math.floor(month / 12)}`;
 
 const SWAP = { raid: "In RAID", dual: "With two", yes: "Yes", no: "No" };
+// The spec sheet of a stick or drive with a maker: its type and speed, or its interface, class and throughput.
+function familyRows(part: PartSpec): [string, string][] {
+  const f = familyById(part.sku);
+  if (!f) return [];
+  if (isRamFamily(f)) return [["Type", `${f.ddr}-${f.mts}`], ["Stick", f.stick]];
+  return [["Interface", f.iface], f.rpm ? ["Spindle", `${f.rpm.toLocaleString("en-GB")} rpm`] : ["Endurance", `${f.dwpd} DWPD`], ["Read", `${f.mbps.toLocaleString("en-GB")} MB/s`], ["IOPS", f.iops.toLocaleString("en-GB")]];
+}
 
 // A device model from a manufacturer, or a sized part; make is who the sidebar files it under.
 interface Item { model: DeviceModel; brand: string; make: string | null; cls: string; part?: PartSpec }
@@ -35,7 +43,7 @@ interface Item { model: DeviceModel; brand: string; make: string | null; cls: st
 // Every model comes from each manufacturer that builds its kind; parts are sold sized.
 const items = (year: number, month: number): Item[] => [
   ...shopModels(year).filter((m) => m.kind !== "part").flatMap((model) => brandsOf(model).filter((brand) => brandOnSale(model, brand, month)).map((brand) => ({ model, brand, make: brand, cls: classOf(model) }))),
-  ...partOffers(year).map((part) => ({ model: modelById(`part-${part.kind}`), brand: "Generic", make: makerOf("Generic", part), cls: "Parts", part })),
+  ...partOffers(year).map((part) => ({ model: modelById(`part-${part.kind}`), brand: "Generic", make: makerOf("Generic", part), cls: partClass(part.kind), part })),
 ];
 const itemKey = (it: Item) => `${it.model.id}|${it.brand}|${it.part?.size ?? ""}|${it.part?.ff ?? ""}|${it.part?.vendor ?? ""}|${it.part?.gen ?? ""}|${it.part?.sku ?? ""}`;
 
@@ -157,7 +165,7 @@ function useOffer({ model, brand, part, maker }: Item & { maker: Vendor | null }
   const built = lineParts(line);
   const cards = built.filter((p) => p.kind === "gpu");
   const sum = (kind: string) => built.filter((p) => p.kind === kind).reduce((n, p) => n + (p.size ?? 0), 0);
-  const rows: [string, string][] = spec ? [...(part!.size !== undefined && part!.kind !== "gpu" ? [["Size", partSize(part!)]] as [string, string][] : []), ...(part!.kind === "cpu" && part!.vendor && part!.gen ? [...(threadsLabel(part!) ? [["Threads", threadsLabel(part!)]] : []), ["Clock", clockLabel(part!)], ["Socket", socketOf(part!.vendor, part!.gen) ?? ""]] as [string, string][] : []), ...(part!.kind === "board" && part!.vendor && part!.gen ? [["Socket", socketOf(part!.vendor, part!.gen) ?? ""], ["Takes CPUs up to", cores(part!.size ?? 0)], ["Generation", `G${part!.gen}`]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
+  const rows: [string, string][] = spec ? [...(part!.size !== undefined && part!.kind !== "gpu" ? [["Size", partSize(part!)]] as [string, string][] : []), ...(part!.kind === "cpu" && part!.vendor && part!.gen ? [...(threadsLabel(part!) ? [["Threads", threadsLabel(part!)]] : []), ["Clock", clockLabel(part!)], ["Socket", socketOf(part!.vendor, part!.gen) ?? ""]] as [string, string][] : []), ...familyRows(part!), ...(part!.kind === "board" && part!.vendor && part!.gen ? [["Socket", socketOf(part!.vendor, part!.gen) ?? ""], ["Takes CPUs up to", cores(part!.size ?? 0)], ["Generation", `G${part!.gen}`]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
     ["Height", height(model)],
     ...(!part && model.price > 0 ? [["Release", releaseLabel(brandFrom(model, brand))]] as [string, string][] : []),
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),

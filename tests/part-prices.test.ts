@@ -85,9 +85,9 @@ describe("part prices by year", () => {
     if (!bought.ok) throw new Error(bought.error);
     const id = bought.id!;
     const d = s.devices.find((x) => x.id === id)!;
-    expect(d.price).toBe(partPrice("ram", offer.size, offer.ff, 2023));
+    expect(d.price).toBe(partPrice("ram", offer.size, offer.ff, 2023, offer));
     s.hour = hourOf(new Date(Date.UTC(2026, 5, 1)));
-    const value = resaleValue(s, partPrice("ram", offer.size, offer.ff, 2026), d.boughtAt);
+    const value = resaleValue(s, partPrice("ram", offer.size, offer.ff, 2026, offer), d.boughtAt);
     expect(deviceValue(s, d)).toBe(value);
     expect(value).toBeGreaterThan(resaleValue(s, d.price, d.boughtAt));
     const cash = s.cash;

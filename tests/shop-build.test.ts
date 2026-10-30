@@ -90,22 +90,22 @@ describe("presets with extras", () => {
 describe("Parts tab", () => {
   it("sells the sizes of the current generation and the one before", () => {
     const sizes = (year: number, kind: string) => partOffers(year).filter((p) => p.kind === kind).map((p) => p.size);
-    expect(sizes(2005, "ram")).toEqual([2]);
-    expect(sizes(2012, "ram")).toEqual(expect.arrayContaining([4, 8]));
-    expect(sizes(2012, "ram")).not.toContain(2);
+    expect([...new Set(sizes(2005, "ram"))]).toEqual([1, 2]);
+    expect(sizes(2012, "ram")).toEqual(expect.arrayContaining([4, 8, 16, 32]));
+    expect(sizes(2012, "ram")).not.toContain(1);
     expect(sizes(2024, "ram").filter((x) => x !== undefined)).toEqual(expect.arrayContaining([32, 64]));
     expect(partOffers(2012).filter((p) => p.kind === "cpu").map((p) => p.size)).toEqual(expect.arrayContaining([6]));
     for (const kind of ["psu", "fan", "nic"]) expect(partOffers(2005).filter((p) => p.kind === kind)).toHaveLength(1);
     expect(partOffers(2005).filter((p) => p.kind === "board").map((p) => p.vendor)).toEqual(["indel", "amb"]);
     // NVMe bays come with G4, and so do the drives.
     expect(partOffers(2012).some((p) => p.kind === "nvme")).toBe(false);
-    expect(partOffers(2015).filter((p) => p.kind === "nvme").map((p) => p.size)).toEqual([1000]);
+    expect(partOffers(2015).filter((p) => p.kind === "nvme").map((p) => p.size)).toEqual([400, 800, 1600, 2000]);
     expect(shopModels(2015).filter((m) => m.server).length).toBeGreaterThan(0);
   });
 
   it("sells small HDDs while they were common and big ones when they arrive", () => {
     const hdd = (year: number) => partOffers(year).filter((p) => p.kind === "hdd" && p.ff === "3.5").map((p) => p.size);
-    expect(hdd(2005)).toEqual(expect.arrayContaining([80, 160, 500]));
+    expect(hdd(2005)).toEqual(expect.arrayContaining([160, 250, 500]));
     expect(hdd(2005)).not.toContain(1000);
     expect(hdd(2012)).not.toContain(160);
     expect(hdd(2020)).toEqual(expect.arrayContaining([4000, 12000]));

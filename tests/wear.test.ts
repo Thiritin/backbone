@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { familyById, familyFailure } from "../src/sim/10-catalog/families";
 import { yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { COMPONENTS, componentKinds, modelById } from "../src/sim/10-catalog/hardware";
@@ -54,14 +55,16 @@ describe("components and failure rates", () => {
   it("uses the rate before and after the life expectancy, the manufacturer factor and double while hot", () => {
     const s = rich();
     const d = dev(s, "dev3");
-    const hdd = comp(s, "dev3", "hdd");
-    expect(failureChance(s, d, hdd)).toBeCloseTo(0.015 / 8760, 12);
+    // The preset's Seagull drive fails 1.2 times as often as the kind's rate (families.ts).
+    const hdd = comp(s, "dev3", "hdd"), f = familyFailure(familyById(hdd.sku)!);
+    expect(f).toBe(1.2);
+    expect(failureChance(s, d, hdd)).toBeCloseTo((0.015 * f) / 8760, 12);
     s.hour = 5 * 8760;
-    expect(failureChance(s, d, hdd)).toBeCloseTo(0.08 / 8760, 12);
-    expect(failureChance(s, { ...d, brand: "SuperMacro" }, hdd)).toBeCloseTo((0.08 * 1.3) / 8760, 12);
+    expect(failureChance(s, d, hdd)).toBeCloseTo((0.08 * f) / 8760, 12);
+    expect(failureChance(s, { ...d, brand: "SuperMacro" }, hdd)).toBeCloseTo((0.08 * 1.3 * f) / 8760, 12);
     fail(s, "dev3", comp(s, "dev3", "fan").id);
     expect(deviceHealth(s, "dev3").state).toBe("hot");
-    expect(failureChance(s, dev(s, "dev3"), hdd)).toBeCloseTo((0.08 * 2) / 8760, 12);
+    expect(failureChance(s, dev(s, "dev3"), hdd)).toBeCloseTo((0.08 * 2 * f) / 8760, 12);
     // After 5 years only the drive is past its life; fans last 6.
     expect(deviceHealth(s, "dev3").worn.map((c) => c.kind)).toEqual(["hdd"]);
     expect(COMPONENTS.cpu).toEqual({ life: 7, before: 0.0005, after: 0.002, price: 400, hotSwap: "no" });
