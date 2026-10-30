@@ -106,12 +106,12 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   const box = useRef<HTMLDivElement>(null);
   const bios = useBios(game, d);
   const usb = stickOs(game, d.id);
-  // F11 during POST asks for the boot menu once POST is through; it holds for that boot only.
+  // F11 during POST opens the boot menu at once, so it works with the clock stopped; it holds for that boot only.
   const [menuFor, setMenuFor] = useState<number | null>(null);
   const [pick, setPick] = useState(0);
   const os = useOsScreen(game, d, active, usb), kind = os.screen.kind;
   useEffect(() => { if (active) focusIn(box.current); }, [active, kind]);
-  const menu = menuFor !== null && menuFor === d.bootUntil && kind !== "post" && kind !== "setup" && kind !== "dark";
+  const menu = menuFor !== null && menuFor === d.bootUntil && kind !== "setup" && kind !== "dark";
   const devices = ["Hard Disk", ...(usb ? [`USB: ${stickName(usb)}`] : []), "Network (PXE)"];
   const dark = kind === "dark" || (via === "bmc" && d.bmcHung);
   const shown = dark ? "dark" : menu ? "menu" : kind === "setup" ? "bios" : kind;
