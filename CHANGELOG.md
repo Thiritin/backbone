@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-31
 
+- Picking the USB stick in the boot menu now starts its installer right away instead of dropping back to the POST screen.
+- A new company starts with fewer apps in the dock, and Finance, Customers, Marketing, Security and Research arrive with an email from Pear once you need them, while Staff and Market are offered in the Pear Store.
 - Düsseldorf has a fourth datacenter, myLoch DUS, the cheapest rack space in town with power billed by the kWh or as a flat rate.
 - Every update is now named after its date, such as Version 2026.10.31.
 - The main menu buttons are now readable in light mode.
@@ -18,9 +20,6 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - A new game names your starting basement in the language you play in.
 - The Browser start page and address bar only show a hardware brand once its first model has been released.
 - The Customers app has a History view with charts of how many customers you have and how happy they are on average, one reading per day, and hovering a chart shows the date and value.
-
-## 2026-10-31
-
 - The Getting started step after registering no longer asks you to name your company again, only to pick its logo and colour.
 - Update notes are now headed by a version named after the release date.
 - The website now appears as a channel card next to email, with a Manage button that opens its settings.
