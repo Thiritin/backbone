@@ -111,10 +111,10 @@ describe("the mail software", () => {
 });
 
 describe("email orders", () => {
-  it("start on free Notmail without a domain and keep arriving", () => {
+  it("start on free GMix without a domain and keep arriving", () => {
     const s = newGame(1);
     expect(s.company.mail).toEqual({ kind: "free" });
-    expect(salesAddress(s)).toBe("basement-hosting@notmail.com");
+    expect(salesAddress(s)).toBe("basement-hosting@gmix.com");
     let n = 0;
     for (const seed of [1, 2, 3]) {
       const g = readyGame(seed);
@@ -161,7 +161,7 @@ describe("email orders", () => {
     expect(siteContent(s).email).toBe(`sales@${s.company.domain}`);
     s.company = { ...s.company, mail: { kind: "free" } };
     expect(siteContent(s).email).toBe(salesAddress(s));
-    expect(siteContent(s).email).toMatch(/@notmail\.com$/);
+    expect(siteContent(s).email).toMatch(/@gmix\.com$/);
   });
 });
 

@@ -105,8 +105,9 @@ export type MachineScreen =
 
 const share = (doneAt: number, hours: number, now: number) => Math.max(0, Math.min(1, 1 - (doneAt - now) / hours));
 
-// The OS the USB stick boots on this server: plugged in there and written.
-export const stickOs = (s: GameState, deviceId: string): OsImage | null => (s.media.stick.in === deviceId ? s.media.stick.os : null);
+// The OS the USB stick boots on this server: plugged in there and written, or else the image mounted through its controller.
+export const stickOs = (s: GameState, deviceId: string): OsImage | null =>
+  (s.media.stick.in === deviceId ? s.media.stick.os : null) ?? s.devices.find((d) => d.id === deviceId)?.virtualMedia ?? null;
 
 // The OS that is up on the disk: installing, installing software or at the login.
 function upScreen(s: GameState, m: MachineState, loggedIn: boolean): MachineScreen {

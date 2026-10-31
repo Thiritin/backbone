@@ -11,7 +11,7 @@ import { backupTargets, hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { workloadUse } from "../../../../sim/60-infra/usage";
 import { familyOf, openVulns } from "../../../../sim/60-infra/vulns";
-import { accountUse, levelOf } from "../../../../sim/80-business/readouts";
+import { accountUse, evcWarning, levelOf } from "../../../../sim/80-business/readouts";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { deleteVm, phpDue, removePanelHost, resizePanelVm, setBackup, upgradePhp } from "../../../../sim/90-actions/clusters";
 import { setSitesOffline } from "../../../../sim/90-actions/security";
@@ -25,10 +25,12 @@ import { useHolds } from "./Holds";
 import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
 
-export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo";
+export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
-export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void }
+export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void;
+  // The address inside the console, which opens the create form or the packages screen.
+  path?: string }
 
 export const erasFrom = (early: number, late: number): { from: number; look: Look }[] => [{ from: early, look: "early" }, { from: late, look: "late" }];
 export const eraAt = (eras: { from: number; look: Look }[], game: GameState): Look => eraOf(eras, yearOf(game.hour));
@@ -92,18 +94,20 @@ export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c:
   const act = useStore((s) => s.act), hand = c.kind === "panel", [pick, setPick] = useState<string | null>(null);
   const clusterName = (id: string) => game.clusters.find((x) => x.id === id)?.name ?? "";
   const targets = hand
-    ? webspaceTargets(game, w.id).map((x) => ({ key: x.clusterId, label: t("browser-consoles-2.webspaceTarget", { panel: x.panel, name: x.name }), hours: x.hours, run: () => act(migrateWebspace, w.id, x.clusterId) }))
+    ? webspaceTargets(game, w.id).map((x) => ({ key: x.clusterId, label: t("browser-consoles-2.webspaceTarget", { panel: x.panel, name: x.name }), hours: x.hours, evc: false, run: () => act(migrateWebspace, w.id, x.clusterId) }))
     : migrationTargets(game, w.id).map((x) => ({
       key: x.to, hours: x.down, run: () => act(migrateWorkload, w.id, x.to),
       label: x.clusterId === c.id ? x.name : `${x.name} · ${clusterName(x.clusterId)}`,
+      evc: evcWarning(game, w, x.to),
     }));
-  const chosen = targets.find((t) => t.key === pick);
+  const chosen = targets.find((t) => t.key === pick), evc = chosen?.evc;
   const summary = !chosen ? "" : hand ? t("browser-consoles-2.migrationOnline", { hours: hoursText(chosen.hours) })
     : chosen.hours === 0 ? t("browser-consoles-2.machineKeepsRunning") : t("browser-consoles-2.machineOffline", { hours: hoursText(chosen.hours) });
   return (
     <div className="cx-inline">
       {targets.length === 0 && <span>{t("browser-consoles-2.noHost")}</span>}
       {targets.map((t) => <button key={t.key} className="cx-chip" aria-pressed={t.key === pick} onClick={() => setPick(t.key)}>{t.label}</button>)}
+      {evc && <span className="cx-note bad">{t(`readouts.evc.warning.${c.platform === "proxmocks" || c.platform === "openstash" ? c.platform : "vmwhere"}`)}</span>}
       {chosen && <span className="cx-note">{summary}</span>}
       {chosen && <button className="cx-btn primary" onClick={() => chosen.run().ok && done()}>{t("browser-consoles-2.migrate")}</button>}
       <button className="cx-btn" onClick={done}>{t("browser-consoles-2.cancel")}</button>
@@ -112,7 +116,7 @@ export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c:
 }
 
 export interface Row {
-  id: string; name: string; sub: string; node: string; state: string; tone: string;
+  id: string; name: string; sub: string; pkg?: string; user?: string; node: string; state: string; tone: string;
   cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; traffic: [number, number]; mail: number; usage: string;
   actions: PanelAction[]; panel: ReactNode;
 }
@@ -137,9 +141,9 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
     ];
     const o = open?.id === w.id ? open.kind : null, hold = holds(w);
     return {
-      id: w.id, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone,
+      id: w.id, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, pkg: site?.pkg, user: site?.username,
       name: web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name,
-      sub: host?.panel ? consoleTitle(host.panel) : "",
+      sub: [host?.panel ? consoleTitle(host.panel) : "", !web && site?.pkg].filter(Boolean).join(" · "),
       node: d ? d.hostname ?? d.label ?? d.name : "",
       cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu], traffic: uses.get(w.id)?.traffic ?? [0, 0], mail: uses.get(w.id)?.mailboxes ?? 0,
       usage: web ? t("browser-consoles-2.of", { used: disk(Math.round(u.diskGb)), total: disk(w.diskGb) }) : t("browser-consoles-2.usageVm", { cpu: num(u.vcpu), vcpu: w.vcpu, ram: ram(+u.ramGb.toFixed(1)), ramTotal: ram(w.ramGb) }),
@@ -154,16 +158,17 @@ export const cpuText = (r: Row) => t("browser-consoles-2.ofVcpu", { used: num(r.
 export const ramText = (r: Row) => t("browser-consoles-2.of", { used: ram(+r.ram[0].toFixed(1)), total: ram(r.ram[1]) });
 
 // The plain table most consoles show their objects in; name is the first column's heading.
-export function RowsTable({ rows, name, node = false, className = "cx-table", extra }: { rows: Row[]; name: string; node?: boolean; className?: string; extra?: (r: Row) => ReactNode }) {
-  const span = node ? 5 : 4;
+export function RowsTable({ rows, name, node = false, className = "cx-table", extra, cols = [] }: { rows: Row[]; name: string; node?: boolean; className?: string; extra?: (r: Row) => ReactNode; cols?: ("user" | "pkg")[] }) {
+  const span = (node ? 5 : 4) + cols.length;
   return (
     <table className={className}>
-      <thead><tr><th>{name}</th>{node && <th>{t("browser-consoles-2.node")}</th>}<th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.usage")}</th><th /></tr></thead>
+      <thead><tr><th>{name}</th>{cols.map((k) => <th key={k}>{t(k === "user" ? "pkg.username" : "pkg.package")}</th>)}{node && <th>{t("browser-consoles-2.node")}</th>}<th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.usage")}</th><th /></tr></thead>
       <tbody>
         {rows.length === 0 && <tr><td colSpan={span} className="cx-empty">{t("browser-consoles-2.nothingHere")}</td></tr>}
         {rows.map((r) => (
           <RowLines key={r.id} r={r} span={span}>
             <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}</td>
+            {cols.map((k) => <td key={k}>{k === "user" ? r.user : r.pkg}</td>)}
             {node && <td>{r.node}</td>}
             <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td>
             <td><Bar use={r.lead} /><span className="cx-use num">{r.usage}</span>{r.traffic[1] > 0 && <><Bar use={r.traffic} /><span className="cx-use num">{trafficText(r)}</span></>}</td>

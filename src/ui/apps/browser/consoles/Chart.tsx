@@ -13,13 +13,15 @@ export function niceMax(values: number[], floor = 1): number {
 }
 
 // values are oldest first and end at hour end; slots is the width of the time axis in samples.
-export function Chart({ values, max = 1, kind, title, now, unit = "%", end, slots = STATS_HOURS, className = "" }: {
-  values: number[]; max?: number; kind: ChartKind; title?: string; now?: string; unit?: string; end?: number; slots?: number; className?: string;
+export function Chart({ values, max = 1, kind, title, now, unit = "%", end, slots = STATS_HOURS, ticks: labels, className = "" }: {
+  values: number[]; max?: number; kind: ChartKind; title?: string; now?: string; unit?: string; end?: number; slots?: number; ticks?: string[]; className?: string;
 }) {
   const pts = values.length === 1 ? [values[0], values[0]] : values, n = Math.max(slots, pts.length), step = 100 / Math.max(1, n - 1);
   const x = (i: number) => (n - pts.length + i) * step, line = pts.map((v, i) => `${x(i).toFixed(2)},${top(v, max).toFixed(2)}`).join(" ");
   const scale = (v: number) => (unit === "%" ? `${Math.round(v * 100)}%` : `${+v.toFixed(1)}`);
-  const ticks = end === undefined ? [] : [18, 12, 6, 0].map((back) => ({ at: (n - 1 - back) * step, h: dateOf(end - back).getUTCHours() }));
+  // Custom labels run evenly from the left edge to the right; otherwise the hours of the 24-hour ring.
+  const ticks = labels ? labels.map((text, i) => ({ at: (i / Math.max(1, labels.length - 1)) * 100, text }))
+    : end === undefined ? [] : [18, 12, 6, 0].map((back) => ({ at: (n - 1 - back) * step, text: `${String(dateOf(end - back).getUTCHours()).padStart(2, "0")}:00` }));
   const bar = kind === "bars" ? (100 / n) * 0.7 : 0;
   return (
     <figure className={`cx-chart ${className}`} data-kind={kind}>
@@ -33,7 +35,7 @@ export function Chart({ values, max = 1, kind, title, now, unit = "%", end, slot
             {kind === "area" && values.length > 0 && <polygon className="cx-chart-fill" points={`${x(0)},100 ${line} ${x(pts.length - 1)},100`} />}
             {kind !== "bars" && values.length > 0 && <polyline className="cx-chart-line" points={line} />}
           </svg>
-          <div className="cx-chart-x">{ticks.map((t) => <span key={t.at} className="num" style={{ left: `${t.at}%` }}>{`${String(t.h).padStart(2, "0")}:00`}</span>)}</div>
+          <div className="cx-chart-x">{ticks.map((t) => <span key={t.at} className="num" style={{ left: `${t.at}%` }}>{t.text}</span>)}</div>
         </div>
       </div>
     </figure>
