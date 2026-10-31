@@ -289,6 +289,7 @@ export default {
   "apps.about.Dev menu": () => "Fija la fecha, tu dinero y tus puntos de investigación para hacer pruebas.",
   "apps.about.Settings": () => "Define el nombre y el logotipo de tu empresa, el tema y qué apps pueden enviar notificaciones.",
   "apps.about.Weather": () => "Muestra el tiempo en tus sedes y te permite conducir hasta ellas.",
+  "apps.about.Chat": () => "Abre el chat de la comunidad de Backbone, donde puedes hablar con otros jugadores y con el desarrollador.",
   "weather.sky.sun": () => "Soleado",
   "weather.sky.partly": () => "Parcialmente nublado",
   "weather.sky.cloud": () => "Nublado",

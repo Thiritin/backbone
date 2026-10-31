@@ -61,7 +61,7 @@ describe("save", () => {
     // An old save keeps the DSL line it started with and lists no line it cannot deliver; the new basement's router waits in
     // storage, so the line has no address yet.
     expect(s).toEqual({
-      ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...STARTER_APPS, ...WIDGETS.map(([id]) => id)], registration: legacyRegistration(4),
+      ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)], registration: legacyRegistration(4),
       marketing: { ...fresh.marketing, lines: [] }, homeLine: { id: "dsl-16", next: null },
       // The company domain and the NameCheep contract come with the load.
       registrar: { id: "nameCheep", since: 5000, tier: 0, billed: true, transfer: null }, company: { ...fresh.company, domain: "basement-hosting.de" },

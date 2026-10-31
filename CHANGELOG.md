@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-31
 
+- A new Chat app in the dock opens the Backbone Discord and changes from ICU to Skipe to Diskord as the years pass; you can remove it from the dock like any other app.
 - Picking the USB stick in the boot menu now starts its installer right away instead of dropping back to the POST screen.
 - A new company starts with fewer apps in the dock, and Finance, Customers, Marketing, Security and Research arrive with an email from Pear once you need them, while Staff and Market are offered in the Pear Store.
 - Düsseldorf has a fourth datacenter, myLoch DUS, the cheapest rack space in town with power billed by the kWh or as a flat rate.

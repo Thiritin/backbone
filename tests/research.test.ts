@@ -73,7 +73,7 @@ describe("research", () => {
     raw.installed = ["Locations", "Unlocks", "Sales"];
     const old = deserialize(JSON.stringify(raw));
     expect(old.training).toBeNull();
-    expect(old.installed).toEqual(["Locations", "Research", "Browser", "Marketing", "Security", "Applications"]);
+    expect(old.installed).toEqual(["Locations", "Research", "Browser", "Chat", "Marketing", "Security", "Applications"]);
     expect([...old.unlocks].sort()).toEqual(["market", "marketing", "marketingBasics", "monitoring", "people", "products"]);
     expect(skillFor("Market")!.id).toBe("market");
   });

@@ -14,7 +14,7 @@ const MONDAY_8 = 56;
 describe("trade office", () => {
   it("starts with only the Browser and the trade office bookmarked", () => {
     const s = newGame(1);
-    expect(s.installed).toEqual(["Browser"]);
+    expect(s.installed).toEqual(["Browser", "Chat"]);
     expect(s.registration).toBeNull();
     expect(resolve(s, "www.trade-office.gov/eservice/").page.kind).toBe("office");
   });
