@@ -286,6 +286,8 @@ export interface GameState {
   trend: TrendPoint[];
   // The trade office registration (80-business/office.ts); null until the player registers, which installs the starter apps.
   registration: Registration | null;
+  // Apps that arrived by their trigger (80-business/walk.ts), installed or offered once.
+  arrived: string[];
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -360,7 +362,7 @@ export const newGame = (seed: number): GameState => ({
   news: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
-  log: [], challenge: null, registration: null, score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
+  log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
