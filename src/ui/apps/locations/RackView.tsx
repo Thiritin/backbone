@@ -24,6 +24,7 @@ import { More } from "../More";
 import { dcOf, Facts, positionsLabel, PowerMeter, Sheet, useDismiss } from "./ui";
 import { BookedMeters } from "./Clusters";
 import { clusterOf } from "../../../sim/60-infra/cluster";
+import { rackAlarms } from "../../../sim/60-infra/alarms";
 import { present } from "../../../sim/60-infra/handwork";
 import { useSessionState } from "../../session";
 import { useHandWork } from "./HandSheet";
@@ -203,6 +204,10 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
             </div>
             <div className="loc-card">
               <div className="loc-card-h"><h3><Plug />{t("locations-2.power")}</h3><span className="grow" /><PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.tripped} /></div>
+              {rack.feedB && (["a", "b"] as const).map((f) => (
+                <div key={f} className="loc-row"><span className="loc-k">{t("locations-1.feed", { feed: f.toUpperCase() })}</span><span className="grow" /><PowerMeter watts={power[f]} limit={power.limitWatts} tripped={power[f] > power.limitWatts} /></div>
+              ))}
+              {rackAlarms(game, rack.id).map((a) => <div key={a.key + (a.params.feed ?? "")} className={`loc-row loc-alarm ${a.severity}`}>{t(a.key, a.params)}</div>)}
             </div>
             {nodes.length > 0 && (
               <div className="loc-card">
