@@ -10,6 +10,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { cmsOf } from "./apps";
 import type { Cluster } from "./cluster";
 import type { HostBans } from "./bans";
+import { transferTick, type Transfer } from "./transfers";
 
 export interface WebPanel {
   phpPool: Record<string, string[]>; // panel host id -> legacy PHP versions kept installed besides Cluster.php
@@ -18,6 +19,7 @@ export interface WebPanel {
   ssl: Ssl;
   bans: Record<string, HostBans>; // Pleskit host id -> its Fail2ban jail
   appBack: Record<string, { appVersion: number; appUpdatedAt: number }>; // site id -> the release before a Toolkit update
+  transfers: Record<string, Transfer>; // web hosting service id -> the move of its site from another host
   appBroken: Record<string, number>; // site id -> the hour the site a Toolkit update broke runs normally again
 }
 
@@ -27,13 +29,13 @@ export interface SslLog { hour: number; serviceId: string; ok: boolean }
 export interface Ssl { auto: string[]; expires: Record<string, number>; expired: string[]; log: SslLog[] }
 export const newSsl = (): Ssl => ({ auto: [], expires: {}, expired: [], log: [] });
 
-export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {}, appBack: {}, appBroken: {} });
+export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {}, appBack: {}, appBroken: {}, transfers: {} });
 
 // A save keeps what it has per sub-record, so a save from an earlier milestone still gets the later sub-fields.
 export const mergeWebPanel = (base: WebPanel, data: Partial<WebPanel> | undefined): WebPanel => ({
   phpPool: { ...base.phpPool, ...data?.phpPool }, phpOf: { ...base.phpOf, ...data?.phpOf }, phpBroken: { ...base.phpBroken, ...data?.phpBroken },
   ssl: { ...base.ssl, ...data?.ssl }, bans: { ...base.bans, ...data?.bans },
-  appBack: { ...base.appBack, ...data?.appBack }, appBroken: { ...base.appBroken, ...data?.appBroken },
+  appBack: { ...base.appBack, ...data?.appBack }, appBroken: { ...base.appBroken, ...data?.appBroken }, transfers: { ...base.transfers, ...data?.transfers },
 });
 
 export const POOL_MAX = 2;
@@ -203,6 +205,7 @@ function updateBrokenTick(s: GameState): void {
 }
 
 export function webpanelTick(s: GameState): SimEvent[] {
+  transferTick(s);
   if (s.hour % 24 !== 0) return [];
   const hosts = new Set(s.clusters.filter((c) => c.kind === "panel").map((c) => c.id));
   const stale = Object.keys(s.webpanel.phpPool).filter((id) => !hosts.has(id));

@@ -2,6 +2,7 @@
 // expiry into lost sales and the monthly happiness drift. Decisions are recorded in docs/design/economy.md, "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
+import { transferHost } from "../60-infra/transfers";
 import { arrivalWeight } from "../10-catalog/attention";
 import { CHOICE_TAU, NEVER_PAYS, ON_TIME } from "../10-catalog/economy";
 import { PRODUCTS, sizeSpec, SIZES } from "../10-catalog/products";
@@ -72,8 +73,11 @@ export function say(s: GameState, id: string, from: SalesMessage["from"], key: s
 export function addRequest(s: GameState, r: Omit<SalesRequest, "id" | "createdAt" | "status" | "quote" | "counter" | "replyAt" | "attempts" | "thread">, key: string): SalesRequest {
   const req: SalesRequest = { ...r, id: `req${s.nextId++}`, createdAt: s.hour, status: "open", quote: null, counter: null, replyAt: null, attempts: 0, thread: [] };
   if (req.product === "webHosting") req.domain = s.services.find((v) => v.id === req.serviceId)?.domain ?? domainFor(s, requestName(req), req.profile, req.city, Number(req.id.slice(3)));
+  const from = transferHost(s, req);
+  if (from) req.spec = { ...req.spec, transferFrom: from };
   const params = { spec: specText(req.product, req.spec), ...specParams(req.spec), city: req.city, sla: req.sla, name: req.contact, domain: req.domain ?? "" };
   req.thread = [msg(s, "customer", key, params)];
+  if (from) req.thread.push(msg(s, "customer", "sales.msg.transfer", { host: from }));
   if (req.discount > 0) req.thread.push(msg(s, "customer", "sales.msg.discount", { discount: Math.round(req.discount * 100) }));
   s.sales = { ...s.sales, requests: [...s.sales.requests, req] };
   return req;

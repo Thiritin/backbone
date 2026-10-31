@@ -5,6 +5,7 @@ import { accountsOf, AUTOSSL_WINDOW_DAYS, autoSslOn, isCpanic, logRenewal, phpCo
 import { hashRng, rand } from "../00-core/rng";
 import { cmsOf, hasBackup, updateSite } from "../60-infra/apps";
 import { bump, createTicket, isFinal } from "../40-support/tickets";
+import { transferHours, transferMinutes } from "../60-infra/transfers";
 import { FAIL2BAN_FROM, isPleskit, newHostBans, setBans } from "../60-infra/bans";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -185,5 +186,19 @@ export function rollbackSite(s: GameState, serviceId: string): ActionResult {
   s.webpanel = { ...s.webpanel, appBroken, appBack };
   s.customers = s.customers.map((x) => { if (x.id !== v.customerId) return x; const n = { ...x }; bump(n, back ? 5 : -10); return n; });
   s.tickets = s.tickets.map((t) => (t.serviceId === serviceId && t.topic === "updateBroke" && !isFinal(t) ? { ...t, status: "resolved", updatedAt: s.hour } : t));
+  return { ok: true };
+}
+
+// WHM Transfer Tool: the player copies a flagged account from its old host; a failed move is run again the same way.
+export function startTransfer(s: GameState, hostId: string, serviceId: string): ActionResult {
+  const c = s.clusters.find((x) => x.id === hostId);
+  if (!isCpanic(c)) return fail("error.notCpanic");
+  const v = accountsOf(s, hostId).find((x) => x.id === serviceId);
+  if (!v?.spec.transferFrom) return fail("error.noTransfer");
+  const old = s.webpanel.transfers[serviceId];
+  if (old && old.status !== "failed") return fail("error.transferStarted");
+  s.playerBusyUntil = Math.max(s.playerBusyUntil, s.hour * 60) + transferMinutes(v.spec.diskGb);
+  s.webpanel = { ...s.webpanel, transfers: { ...s.webpanel.transfers, [serviceId]: { from: v.spec.transferFrom, startedAt: s.hour, doneAt: s.hour + transferHours(v.spec.diskGb), status: "running" } } };
+  s.tickets = s.tickets.map((t) => (t.serviceId === serviceId && t.topic === "transferFailed" && !isFinal(t) ? { ...t, status: "resolved", updatedAt: s.hour } : t));
   return { ok: true };
 }

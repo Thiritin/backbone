@@ -540,6 +540,8 @@ d is the agency discount from a campaign, e is 1.15 for an existing customer and
 
 **Market research.** A market study reveals one profile in the Market app for good; it is a one-time payment booked as marketing. Studies cost €800 for a low-budget profile, €2,000 for a medium one and €4,000 for a high one, €20,400 for all nine (decision). The Demand section counts a city's buyers of a product as the city's new customers × each profile's mix × that profile's product weight, your part as the expected requests from the lead flows above (leads × product weight × your choice share × conversion), and splits the remainder over the competitors by their softmax among themselves. Code: `src/sim/30-market/research.ts`.
 
+**Transfers.** From 2008, about 30% of new web hosting orders come from another host and name it in their first message. On a cPanic host the Transfer Tool copies such an account: it takes the player 15 minutes plus 5 minutes per 10 GB and runs one hour per 20 GB, at least one. A transfer that ends within 24 hours of the account's start gives the customer +3 happiness. It fails with 5%, or 15% when the host's PHP is newer than the site's app runs on; a failure opens a ticket and the player runs the transfer again.
+
 **Measured flow.** `npx tsx scripts/sales-flow.ts [seed] [months]` runs the real tick with a bot that quotes 3% under the reference, answers tickets, sets up a website in month 3 and runs €250 of search ads from month 6. Seed 1 gets 6 to 9 requests a month in the basement, 16 to 26 with the website and ads, and fills the basement server at about 26 customers, after which most deals are lost for capacity until you buy hardware.
 
 ## Happiness and churn
