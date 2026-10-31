@@ -7,7 +7,7 @@ import { skuById } from "../../../sim/10-catalog/cpus";
 import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
 import { leaseOffers } from "../../../sim/10-catalog/leasing";
 import { REGIONS } from "../../../sim/20-world/datacenters";
-import { buyCart, cardOnly, deliveryWait, PREPAY_HOURS, unitPrice, type Payment } from "../../../sim/90-actions/hardware";
+import { buyCart, cardOnly, deliveryWait, INVOICE_AFTER, paidOrders, PREPAY_HOURS, unitPrice, type Payment } from "../../../sim/90-actions/hardware";
 import { bankOf, cardReady, cardSpent } from "../../../sim/46-finance/bank";
 import { TRANSFER_HOURS } from "../../../sim/10-catalog/banks";
 import { Isometric } from "../../art/Isometric";
@@ -44,7 +44,7 @@ export function Cart() {
   const offer = offers.find((o) => o.id === pay);
   const best = Math.min(...offers.map((o) => o.total));
   const checkout = () => {
-    const payment: Payment = offer ? { kind: "lease", offerId: offer.id } : { kind: pay === "card" ? "card" : "prepay" };
+    const payment: Payment = offer ? { kind: "lease", offerId: offer.id } : { kind: pay === "card" || pay === "invoice" ? pay : "prepay" };
     const r = act(buyCart, cart, payment, dest.id);
     if (!r.ok) return;
     clearCart();
@@ -90,6 +90,9 @@ export function Cart() {
         <div className="shop-pay" role="radiogroup" aria-label={t("shop.payment")}>
           {!onlyCard && <button role="radio" aria-checked={pay === "prepay"} className="shop-offer" onClick={() => setPay("prepay")}>
             <strong>{t("bank.shop.prepay")}</strong><span className="grow" /><span className="num">{euro(total)}</span>
+          </button>}
+          {!onlyCard && paidOrders(game) >= INVOICE_AFTER && <button role="radio" aria-checked={pay === "invoice"} className="shop-offer" onClick={() => setPay("invoice")}>
+            <strong>{t("bank.shop.invoice")}</strong><span className="grow" /><span className="num">{euro(total)}</span>
           </button>}
           <button role="radio" aria-checked={pay === "card"} className="shop-offer" disabled={!card} onClick={() => setPay("card")}>
             <strong>{t("bank.shop.card")}</strong><span className="grow" /><span className="num">{euro(total)}</span>

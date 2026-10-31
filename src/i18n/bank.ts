@@ -1,6 +1,10 @@
 import { euro, euroCents } from "../sim/00-core/money";
+import { dateOf } from "../sim/00-core/time";
+import { LOCALE } from "./lang";
 
 type Params = Record<string, string | number>;
+const day = (hour: string | number) => dateOf(Number(hour)).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
+const money = (p: Params) => euroCents(Number(p.amount));
 
 // Bank and payables text the sim writes: ledger lines, emails, errors; spread into en.
 export const BANK_EN: Record<string, (p: Params) => string> = {
@@ -8,7 +12,7 @@ export const BANK_EN: Record<string, (p: Params) => string> = {
   "bank.tanList.no": (p) => `TAN list no. ${p.n}`,
   "ledger.bankFee": (p) => `Account fee, ${p.bank}`,
   "ledger.overdraftInterest": (p) => `Overdraft interest, ${p.bank}`,
-  "ledger.transfer": (p) => `Transfer to ${p.name}: ${p.reference}`,
+  "ledger.transferOut": (p) => `Transfer to ${p.name}: ${p.reference}`,
   "error.unknownBank": () => "This bank does not open accounts yet.",
   "error.noBank": () => "The company has no bank account yet.",
   "error.payeeName": () => "Enter the payee's name.",
@@ -24,6 +28,26 @@ export const BANK_EN: Record<string, (p: Params) => string> = {
   "error.noOrder": () => "This standing order does not exist.",
   "ticket.mail.bankOrderFailed.subject": () => "Standing order not executed",
   "ticket.mail.bankOrderFailed.text": (p) => `${p.bank} could not execute your standing order of ${euroCents(Number(p.amount))} to ${p.name}.`,
+  "error.shopUnpaid": () => "The shop has an unpaid invoice.",
+  "error.noInvoice": () => "The shop does not offer an invoice yet.",
+  "ticket.mail.invoice.subject": (p) => `Invoice ${p.number}`,
+  "ticket.mail.invoice.text": (p) => `Please find attached our invoice ${p.number} over ${money(p)}, due on ${day(p.due)}. Please transfer the amount to ${p.iban ? `IBAN ${p.iban}` : `account ${p.account}, bank code ${p.code}`} with the invoice number as reference.`,
+  "ticket.mail.debit.subject": (p) => `Invoice ${p.number}`,
+  "ticket.mail.debit.text": (p) => `Please find attached our invoice ${p.number} over ${money(p)}. We have debited the amount from your account.`,
+  "ticket.mail.consequence.throttle.subject": (p) => `Reminder: invoice ${p.number}`,
+  "ticket.mail.consequence.throttle.text": (p) => `Invoice ${p.number} over ${money(p)} is overdue. We have reduced the speed of your line until it is paid.`,
+  "ticket.mail.consequence.cut.subject": (p) => `Line disconnected: invoice ${p.number}`,
+  "ticket.mail.consequence.cut.text": (p) => `Invoice ${p.number} over ${money(p)} is still unpaid. We have disconnected your line until it is paid.`,
+  "ticket.mail.consequence.dark.subject": (p) => `Power cut: invoice ${p.number}`,
+  "ticket.mail.consequence.dark.text": (p) => `Invoice ${p.number} over ${money(p)} is still unpaid. We have cut the power until it is paid.`,
+  "ticket.mail.consequence.licence.subject": (p) => `Subscriptions paused: invoice ${p.number}`,
+  "ticket.mail.consequence.licence.text": (p) => `Invoice ${p.number} over ${money(p)} is overdue. Your Pear subscriptions are paused until it is paid.`,
+  "ticket.mail.consequence.domains.subject": (p) => `Domains suspended: invoice ${p.number}`,
+  "ticket.mail.consequence.domains.text": (p) => `Invoice ${p.number} over ${money(p)} is overdue. We have suspended your domains until it is paid.`,
+  "ticket.mail.consequence.noShip.subject": (p) => `Reminder: invoice ${p.number}`,
+  "ticket.mail.consequence.noShip.text": (p) => `Invoice ${p.number} over ${money(p)} is overdue. We will ship your next order once it is paid.`,
+  "ticket.mail.consequence.card.subject": (p) => `Card blocked: invoice ${p.number}`,
+  "ticket.mail.consequence.card.text": (p) => `Your card bill ${p.number} over ${money(p)} is overdue. We have blocked your credit card until it is paid.`,
   "ledger.cardFee": (p) => `Credit card fee, ${p.bank}`,
   "error.hasCard": () => "The account already has a credit card.",
   "error.noOverdraft": () => "This bank offers no overdraft.",

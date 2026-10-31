@@ -1,4 +1,5 @@
 import { addressBills, addressTick } from "../60-infra/addresses";
+import { billSuppliers, invoicing, payablesTick } from "../46-finance/payables";
 import { netsvcTick } from "../60-infra/netsvc";
 import { binomial, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
@@ -293,12 +294,14 @@ export function tick(state: GameState): SimEvent[] {
       if (item && item.monthly > 0) bills.push(subscriptionEntry(state, item));
     }
     if (power > 0) bills.unshift({ hour: state.hour, category: "power", key: "ledger.power", params: {}, amount: -power });
+    const dc = state.locations.find((l) => l.dc);
+    const direct = invoicing(state) ? billSuppliers(state, bills, { upstream: line.isp, datacenter: dc && datacenterById(dc.dc!).name }) : bills;
     const rent = bills.filter((b) => b.category === "rent").reduce((sum, b) => sum - b.amount, 0);
     const leasing = bills.filter((b) => b.category === "leasing").reduce((sum, b) => sum - b.amount, 0);
     const subscriptions = cents(bills.filter((b) => b.category === "subscriptions").reduce((sum, b) => sum - b.amount, 0));
-    state.cash = cents(state.cash - power - rent - leasing - subscriptions);
+    state.cash = cents(state.cash + direct.reduce((n, b) => n + b.amount, 0));
     state.powerDue = 0;
-    state.ledger = [...state.ledger, ...bills];
+    state.ledger = [...state.ledger, ...direct];
     if (bills.length) events.push({ app: "Finance", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
@@ -328,6 +331,7 @@ export function tick(state: GameState): SimEvent[] {
   abandonTickets(state);
   events.push(...financeTick(state));
   events.push(...bankTick(state));
+  payablesTick(state);
   events.push(...staffTick(state));
   events.push(...techTick(state));
   events.push(...autoUpdateTick(state));

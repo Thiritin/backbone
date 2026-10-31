@@ -1,4 +1,5 @@
 // docs/design/plans/billing-by-hand.md, 9b: the company's bank account. Cash stays s.cash, the account's balance.
+import { arrived, bookPayment, cardBlocked, invoice, payableFor } from "./payables";
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, nowMinutes, yearOf } from "../00-core/time";
@@ -11,7 +12,7 @@ import type { SimEvent } from "../88-tick/tick";
 export interface Card { appliedAt: number; readyAt: number; limit: number; spent: LedgerEntry[]; feeAt: number }
 export interface StandingOrder { id: string; name: string; account: string; amount: number; reference: string; day: number }
 // A transfer the player sent; the money left at hour and reaches the payee at arriveAt.
-export interface Outgoing { id: string; hour: number; arriveAt: number; name: string; account: string; amount: number; reference: string; payableId?: string }
+export interface Outgoing { id: string; hour: number; arriveAt: number; name: string; account: string; amount: number; reference: string; payableId?: string; arrived?: true }
 // What the transfer form holds; account is an IBAN, or an account number with its bank code before IBAN.
 export interface Draft { name: string; account: string; code?: string; amount: number; reference: string; payableId?: string }
 // A transfer waiting for its TAN: the list position asked for (iTAN), the code texted (mTAN) and the minute the text arrives.
@@ -127,10 +128,15 @@ export function useTan(s: GameState, index: number): void {
 }
 
 // The money leaves now and reaches the payee after the bank's transfer time.
-export function send(s: GameState, d: Draft, category = "transfers", key = "ledger.transfer"): Outgoing {
-  const out: Outgoing = { id: `out${s.nextId++}`, hour: s.hour, arriveAt: s.hour + TRANSFER_HOURS[bankOf(s)!.speed], name: d.name, account: d.account, amount: d.amount, reference: d.reference, ...(d.payableId && { payableId: d.payableId }) };
-  s.cash = cents(s.cash - d.amount);
-  s.ledger = [...s.ledger, { hour: s.hour, category, key, params: { name: d.name, reference: d.reference }, amount: -d.amount }];
+// A transfer that pays a supplier's invoice books the invoice's lines; any other books as a transfer.
+export function send(s: GameState, d: Draft, category = "transfers", key = "ledger.transferOut"): Outgoing {
+  const p = payableFor(s, d.account, d.reference, d.payableId);
+  const out: Outgoing = { id: `out${s.nextId++}`, hour: s.hour, arriveAt: s.hour + TRANSFER_HOURS[bankOf(s)!.speed], name: d.name, account: d.account, amount: d.amount, reference: d.reference, ...(p && { payableId: p.id }) };
+  if (p) bookPayment(s, p, d.amount);
+  else {
+    s.cash = cents(s.cash - d.amount);
+    s.ledger = [...s.ledger, { hour: s.hour, category, key, params: { name: d.name, reference: d.reference }, amount: -d.amount }];
+  }
   s.bank = { ...s.bank!, outgoing: [...s.bank!.outgoing, out] };
   return out;
 }
@@ -150,7 +156,7 @@ export function monthlyIncome(s: GameState): number {
 }
 // A limit from account history: the bank's factor times the monthly income, in hundreds, at least the floor.
 export const limitFor = (s: GameState, factor: number, floor: number): number => Math.max(floor, Math.floor((monthlyIncome(s) * factor) / 100) * 100);
-export const cardReady = (s: GameState): boolean => !!s.bank?.card && s.hour >= s.bank.card.readyAt;
+export const cardReady = (s: GameState): boolean => !!s.bank?.card && s.hour >= s.bank.card.readyAt && !cardBlocked(s);
 export const cardSpent = (s: GameState): number => -(s.bank?.card?.spent ?? []).reduce((n, e) => n + e.amount, 0);
 
 // Hourly: the account fee and overdraft interest at each month start, interest on a negative balance, card and overdraft decisions.
@@ -163,6 +169,10 @@ export function bankTick(s: GameState): SimEvent[] {
     s.ledger = [...s.ledger, { hour: s.hour, category, key, params, amount }];
   };
   if (!b.welcomed) welcome(s);
+  if (b.outgoing.some((o) => !o.arrived && o.arriveAt <= s.hour)) {
+    s.bank = { ...s.bank!, outgoing: s.bank!.outgoing.map((o) => (o.arrived || o.arriveAt > s.hour ? o : { ...o, arrived: true as const })) };
+    for (const o of b.outgoing) if (!o.arrived && o.arriveAt <= s.hour && o.payableId) arrived(s, o.payableId);
+  }
   let next: BankAccount = { ...s.bank!, interest: s.cash < 0 && bank.overdraft ? b.interest - (s.cash * bank.overdraft) / HOURS_PER_YEAR : b.interest };
   const card = next.card;
   if (card && s.hour === card.readyAt) deliverMail(s, bank.name, "bankCard", { bank: bank.name, limit: card.limit });
@@ -185,9 +195,12 @@ export function bankTick(s: GameState): SimEvent[] {
     }
   }
   if (isMonthStart(s.hour)) {
-    // The card bill debits what the card paid last month.
-    for (const e of next.card?.spent ?? []) book(e.category, e.key, e.params, e.amount);
-    if (next.card?.spent.length) next = { ...next, card: { ...next.card, spent: [] } };
+    // The card bill is an invoice from the bank for what the card paid last month.
+    if (next.card?.spent.length) {
+      s.bank = next;
+      invoice(s, "card", bank.name, next.card.spent);
+      next = { ...s.bank!, card: { ...next.card, spent: [] } };
+    }
     if (bank.monthly > 0) book("fees", "ledger.bankFee", { bank: bank.name }, -bank.monthly);
     if (next.interest >= 0.01) book("fees", "ledger.overdraftInterest", { bank: bank.name }, -cents(next.interest));
     next = { ...next, interest: 0 };

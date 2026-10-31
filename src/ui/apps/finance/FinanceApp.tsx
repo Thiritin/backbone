@@ -1,4 +1,6 @@
 import { CalendarDays, ChartColumn, Landmark, Layers, LayoutGrid, ShieldCheck, Table } from "lucide-react";
+import { Payables } from "./Payables";
+import { Receipt } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
@@ -29,12 +31,13 @@ const compact = (v: number) => {
   return a >= 1000 ? `${sign}${Number((a / 1000).toFixed(a >= 10_000 ? 0 : 1))}k €` : `${sign}${Math.round(a)} €`;
 };
 
-type View = "overview" | "pnl" | "cash" | "tax" | "loans" | "statement";
+type View = "overview" | "pnl" | "cash" | "tax" | "payables" | "loans" | "statement";
 const VIEWS: { id: View; label: string; icon: typeof Layers }[] = [
   { id: "overview", label: t("misc.overview"), icon: LayoutGrid },
   { id: "pnl", label: t("misc.profitAndLoss"), icon: Table },
   { id: "cash", label: t("misc.cashFlow"), icon: ChartColumn },
   { id: "tax", label: t("misc.taxAndInsurance"), icon: ShieldCheck },
+  { id: "payables", label: t("bank.pay.title"), icon: Receipt },
   { id: "loans", label: t("misc.loans"), icon: Landmark },
 ];
 
@@ -103,6 +106,7 @@ export function FinanceApp() {
         {view === "overview" && <Overview game={game} />}
         {view === "pnl" && <ProfitLoss game={game} />}
         {view === "loans" && <BankApp />}
+        {view === "payables" && <Payables game={game} />}
         {view === "cash" && <CashFlowView game={game} />}
         {view === "tax" && <TaxInsurance game={game} />}
         {view === "statement" && (

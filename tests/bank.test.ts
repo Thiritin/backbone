@@ -4,6 +4,7 @@ import { iban, openAccount, type Draft } from "../src/sim/46-finance/bank";
 import { buyCart, deliveryWait, PREPAY_HOURS, type CartLine } from "../src/sim/90-actions/hardware";
 import { applyCard, applyOverdraft, deleteStandingOrder, startStandingOrder } from "../src/sim/90-actions/bank";
 import { withServer } from "./fixtures";
+import { lineCut, lineFactor, supplierAccount, supplierCode, type Payable } from "../src/sim/46-finance/payables";
 import { resolve } from "../src/sim/80-business/browser";
 import { tickMinute } from "../src/sim/88-tick/tick";
 import { cancelTransfer, confirmTransfer, setTanMethod, startTransfer } from "../src/sim/90-actions/bank";
@@ -163,10 +164,9 @@ describe("card and overdraft", () => {
     expect(buyCart(s, CART, { kind: "prepay" }, "loc1").ok).toBe(true);
     expect(s.devices.at(-1)!.arriveAt).toBe(s.hour + wait + PREPAY_HOURS + 24);
     expect(s.cash).toBeLessThan(cash);
-    const afterPrepay = s.cash;
     run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
     expect(s.bank!.card!.spent).toEqual([]);
-    expect(s.cash).toBeLessThan(afterPrepay - 1000);
+    expect(s.payables.find((p) => p.supplier === "card")).toMatchObject({ amount: 2500, paidAt: null });
   });
 
   it("takes only a card for SuperMacro", () => {
@@ -200,5 +200,64 @@ describe("standing orders", () => {
     run(s, hourOf(new Date(Date.UTC(2005, 2, 5, 1))) - s.hour);
     expect(s.tickets.some((t) => t.topic === "bankOrderFailed")).toBe(true);
     expect(deleteStandingOrder(s, id.ok ? id.id! : "").ok).toBe(true);
+  });
+});
+
+const FEB = hourOf(new Date(Date.UTC(2005, 1, 1)));
+// Pays a payable on the bank's site the way the Pay button fills the form, with the asked iTAN.
+const pay = (s: GameState, p: Payable) => {
+  expect(startTransfer(s, { name: p.name, account: supplierAccount(p.supplier), code: supplierCode, amount: p.amount, reference: p.number }).ok).toBe(true);
+  return confirmTransfer(s, s.bank!.tans.codes[s.bank!.pending!.index!]);
+};
+
+describe("payables", () => {
+  it("turns the month's line and power bills into invoices by email and settles one paid on time", () => {
+    const s = banked();
+    run(s, FEB - s.hour);
+    const line = s.payables.find((p) => p.supplier === "upstream")!;
+    expect(line).toMatchObject({ name: "Deutsche Telekomm", amount: 59, paidAt: null, dueAt: FEB + 14 * 24 });
+    expect(s.payables.some((p) => p.supplier === "power")).toBe(true);
+    expect(s.ledger.some((e) => e.key === "ledger.homeLine")).toBe(false);
+    expect(s.tickets.some((t) => t.topic === "invoice" && t.mail!.params.number === line.number)).toBe(true);
+    const cash = s.cash;
+    expect(pay(s, line).ok).toBe(true);
+    expect(s.cash).toBe(cash - 59);
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.homeLine", amount: -59 });
+    run(s, 24);
+    expect(s.payables.find((p) => p.id === line.id)!.paidAt).toBe(s.hour);
+  });
+
+  it("throttles and then cuts an unpaid line, and powers it back once paid", () => {
+    const s = banked();
+    run(s, FEB - s.hour);
+    const line = s.payables.find((p) => p.supplier === "upstream")!;
+    run(s, 14 * 24 + 7 * 24 + 1);
+    expect(lineFactor(s)).toBeLessThan(1);
+    expect(lineCut(s)).toBe(false);
+    run(s, 7 * 24);
+    expect(lineCut(s)).toBe(true);
+    expect(s.tickets.some((t) => t.topic === "consequence.cut")).toBe(true);
+    pay(s, s.payables.find((p) => p.id === line.id)!);
+    run(s, 25);
+    expect(lineCut(s)).toBe(false);
+  });
+
+  it("cuts the basement's power thirty days past due", () => {
+    const s = banked();
+    run(s, FEB - s.hour);
+    const power = s.payables.find((p) => p.supplier === "power")!;
+    run(s, power.dueAt + 30 * 24 - s.hour);
+    expect(s.ops.dark.loc1).toBeGreaterThan(s.hour);
+  });
+
+  it("invoices hardware after three paid orders and ships nothing while that invoice is overdue", () => {
+    const s = banked();
+    expect(buyCart(s, CART, { kind: "invoice" }, "loc1")).toEqual({ ok: false, error: "error.noInvoice" });
+    for (let i = 0; i < 3; i++) { buyCart(s, [{ model: "sw-8", brand: "Sysko", qty: 1 }], { kind: "prepay" }, "loc1"); run(s, 1); }
+    expect(buyCart(s, CART, { kind: "invoice" }, "loc1").ok).toBe(true);
+    const bill = s.payables.find((p) => p.supplier === "hardware")!;
+    expect(bill.name).toBe("Alternatte");
+    run(s, bill.dueAt + 1 - s.hour);
+    expect(buyCart(s, CART, { kind: "prepay" }, "loc1")).toEqual({ ok: false, error: "error.shopUnpaid" });
   });
 });

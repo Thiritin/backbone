@@ -39,6 +39,7 @@ import type { Listing } from "./10-catalog/used";
 import { firstHostNo } from "./30-customers/hostnames";
 import { newShop, type ShopState } from "./80-business/shop";
 import type { BankAccount } from "./46-finance/bank";
+import type { Payable } from "./46-finance/payables";
 import type { TrendPoint } from "./80-business/trend";
 
 // 3: GPU line servers carry their preset cards.
@@ -291,6 +292,10 @@ export interface GameState {
   arrived: string[];
   // The company's bank account (46-finance/bank.ts); null until the registration opens it.
   bank: BankAccount | null;
+  // Supplier invoices to pay by transfer (46-finance/payables.ts).
+  payables: Payable[];
+  // Bought software modules by id; "hbci" lets Books talk to the bank.
+  modules: string[];
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -367,6 +372,8 @@ export const newGame = (seed: number): GameState => ({
   used: [], usedRep: 0,
   log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
   bank: null,
+  payables: [],
+  modules: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
