@@ -6,6 +6,7 @@ import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
 import { useReadoutPages } from "../Readouts";
 import { CustomBuild } from "./CustomBuild";
+import { Messages } from "./Messages";
 import { UserLevel } from "./UserLevel";
 import "./directadmen.css";
 
@@ -31,7 +32,7 @@ export function DirectAdmen(p: PanelProps) {
     </div>
   );
   const shown = rows.filter((r) => r.name.toLowerCase().includes(q.toLowerCase()));
-  const crumb = tab === "objects" ? t("browser-consoles-2.webSpaces") : tab === "nodes" ? t("browser-consoles-2.nodes") : tab === "create" ? t("pkg.daCreate") : tab === "packages" ? t("pkg.daPackages") : tab === "custombuild" ? t("web.da.customBuild") : pages.find((g) => g.id === tab)?.label ?? null;
+  const crumb = tab === "objects" ? t("browser-consoles-2.webSpaces") : tab === "nodes" ? t("browser-consoles-2.nodes") : tab === "create" ? t("pkg.daCreate") : tab === "packages" ? t("pkg.daPackages") : tab === "custombuild" ? t("web.da.customBuild") : tab === "messages" ? t("web.msg.menu") : pages.find((g) => g.id === tab)?.label ?? null;
   return (
     <div className="cx da" data-era={era}>
       <header className="da-top">
@@ -49,6 +50,7 @@ export function DirectAdmen(p: PanelProps) {
         <nav className="da-crumb"><button className="da-link" onClick={() => setTab("software")}>{t("browser-consoles-2.home")}</button>{crumb && <> » {crumb}</>}</nav>
         {level === "user" ? <UserLevel game={p.game} c={p.c} rows={rows} /> : <>
         {tab === "custombuild" && <CustomBuild game={p.game} c={p.c} late={era === "late"} />}
+        {tab === "messages" && <Messages game={p.game} c={p.c} late={era === "late"} />}
         {tab === "objects" && <RowsTable rows={shown} name={t("browser-consoles-2.domain")} />}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
         {tab === "create" && <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} className="cx-form da-form" />}
@@ -63,6 +65,7 @@ export function DirectAdmen(p: PanelProps) {
                 <button className="da-link" onClick={() => setTab("create")}>{t("pkg.daCreate")}</button>
                 <button className="da-link" onClick={() => setTab("packages")}>{t("pkg.daPackages")}</button>
                 <button className="da-link" onClick={() => setTab("custombuild")}>{t("web.da.customBuild")}</button>
+                <button className="da-link" onClick={() => setTab("messages")}>{t("web.msg.menu")}</button>
                 {p.f.cluster && <button className="da-link" onClick={() => setTab("nodes")}>{t("browser-consoles-2.nodes")}</button>}
                 {pages.map((g) => <button key={g.id} className="da-link" onClick={() => setTab(g.id)}>{g.label}</button>)}
               </section>

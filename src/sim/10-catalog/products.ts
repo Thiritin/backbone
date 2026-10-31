@@ -12,7 +12,9 @@ export interface Resources { vcpu: number; ramGb: number; diskGb: number; gpus?:
 // ipv4 counts the dedicated IPv4 addresses ordered and ipv6 asks for an IPv6 address (60-infra/addresses.ts).
 export interface Spec extends Resources { trafficGb: number; mailboxes: number; zones?: number; users?: number; units?: number; watts?: number; ipv4?: number; ipv6?: boolean;
   // Web hosting: the app the customer runs, its release year and the hour it was last updated (apps.ts), and whether the customer pays for updates.
-  app?: App; appVersion?: number; appUpdatedAt?: number; managedUpdates?: boolean }
+  app?: App; appVersion?: number; appUpdatedAt?: number; managedUpdates?: boolean;
+  // Web hosting only: the host the customer's site still runs on and expects moved (webpanel.ts, Transfers).
+  transferFrom?: string }
 // cluster: a workload on a cluster node; server: a whole server; rack: units and power in a datacenter rack; none: resold.
 export type RunsOn = "cluster" | "server" | "rack" | "none";
 export interface ProductSpec { runsOn: RunsOn; period: "hour" | "year"; commitMonths: number; ha?: boolean }
