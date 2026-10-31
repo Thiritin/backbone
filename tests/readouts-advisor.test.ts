@@ -34,7 +34,7 @@ describe("Pleskit Advisor", () => {
   it("caps vulnerability penalties and keeps the score between 0 and 100", () => {
     const { s, c } = host(2024);
     c.version = 2005;
-    c.php = 2005;
+    c.php = "4.3";
     s.security.offline.push(c.id);
     const r = advisorChecks(s, c);
     expect(r.checks.filter((x) => x.kind.startsWith("vuln")).reduce((n, x) => n + x.penalty, 0)).toBeLessThanOrEqual(40);
