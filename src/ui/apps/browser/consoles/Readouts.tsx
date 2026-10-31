@@ -10,6 +10,7 @@ import { licensingAt } from "../../../../sim/10-catalog/server-os";
 import { licenseCost } from "../../../../sim/85-products/products";
 import { yearOf } from "../../../../sim/00-core/time";
 import { LOG_SOURCES, logLines, panelTasks, type LogSource } from "../../../../sim/80-business/readouts";
+import { LicenceTiers } from "./HostSettings";
 import type { Tab } from "./PanelBase";
 
 export interface ReadoutPage { id: Tab; label: string; body: ReactNode }
@@ -49,9 +50,6 @@ export function LogPage({ game, c, only }: { game: GameState; c: Cluster; only?:
   );
 }
 
-// Tier, account cap and expiry belong here once the panel host sim provides them.
-const LicenceExtra = (_: { c: Cluster }) => null;
-
 export function LicencePage({ game, c }: { game: GameState; c: Cluster }) {
   const cost = licenseCost(game, c), year = yearOf(game.hour);
   const accounts = game.workloads.filter((w) => w.clusterId === c.id).length;
@@ -74,7 +72,7 @@ export function LicencePage({ game, c }: { game: GameState; c: Cluster }) {
           })}
         </tbody>
       </table>
-      <LicenceExtra c={c} />
+      <LicenceTiers game={game} c={c} />
     </div>
   );
 }
