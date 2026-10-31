@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - The game is now available in German, French, Spanish, Italian and Portuguese, and you can switch the language from the menu bar.
 - Prices, numbers and dates follow the format of the language you play in.
+- The Browser start page and address bar only show a hardware brand once its first model has been released.
 - The Customers app has a History view with charts of how many customers you have and how happy they are on average, one reading per day, and hovering a chart shows the date and value.
 
 ## 2026-10-30

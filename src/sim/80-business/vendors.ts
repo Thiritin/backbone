@@ -3,6 +3,8 @@ import { brandFrom, brandsOf, jacksOf, MANUFACTURERS, MODELS, modelName, type De
 
 // The brands with a site of their own: every manufacturer that sells machines or network gear.
 export const VENDORS = MANUFACTURERS.filter((m) => m.id !== "generic");
+// A brand's site exists from the month its first model is released.
+export const vendorLive = (maker: Manufacturer, month: number): boolean => vendorReleases(maker, month).length > 0;
 // docs/design/software.md, 8.3: each brand under its pun, .de where the pun is German.
 const VENDOR_TLD: Record<string, string> = { avn: "de", junipurr: "net" };
 export const vendorHost = (id: string): string => `${id}.${VENDOR_TLD[id] ?? "com"}`;
