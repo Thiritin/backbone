@@ -1,10 +1,10 @@
 .mk-bar-top { padding: 14px 16px 2px; }
 .mk-bar-top .seg { flex-wrap: wrap; }
-.mk-bars { display: grid; gap: 6px; padding: 10px 14px 12px; border-top: 0.5px solid var(--line); }
+.mk-bars { display: grid; gap: 6px; padding: 10px 14px 12px; border-top: var(--ar-bw) solid var(--line); }
 .mk-bar .mk-label { width: 84px; flex: none; font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mk-bar .num { width: 36px; text-align: right; }
 .mk-muted .mkt-track > span { background: color-mix(in oklch, var(--text) 32%, transparent); }
-.mk-tag { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 11px; background: color-mix(in oklch, var(--text) 6%, transparent); color: var(--text-2); font-size: 12px; }
+.mk-tag { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: var(--ar-chip); background: color-mix(in oklch, var(--text) 6%, transparent); color: var(--text-2); font-size: 12px; }
 .mk-tag .num { color: var(--text-3); }
 .mk-needs { margin: 0; padding: 0 0 0 16px; display: grid; gap: 2px; font-size: 12px; line-height: 20px; color: var(--text-2); }
 .mk-hidden .mkt-head strong { color: var(--text-2); }
@@ -15,3 +15,7 @@
 .mk-hidden .shop-specs { flex: 1; }
 .mk-top { align-items: start; }
 .mk-wide { grid-column: 1 / -1; }
+
+/* Panthera and Leapard: tags are shaded capsules with a 1px border. */
+:root[data-os="aqua"] .mk-tag,
+:root[data-os="leopard"] .mk-tag { border: 1px solid var(--line-strong); background: linear-gradient(var(--field), color-mix(in oklch, var(--field), var(--text) 6%)); }
