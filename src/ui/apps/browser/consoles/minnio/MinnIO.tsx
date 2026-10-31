@@ -5,6 +5,7 @@ import { Actions, Bar, erasFrom, eraAt, Facts, LoginForm, usePanelTab, useRows, 
 import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { hash } from "../services";
+import { StorageUsage } from "../ServiceReadouts";
 import { BucketPage } from "./BucketPage";
 import { Drives } from "./Drives";
 import "./minnio.css";
@@ -46,6 +47,7 @@ export function MinnIO(p: PanelProps) {
             </section>
           ))}
         </div>}
+        {tab === "objects" && <StorageUsage game={p.game} c={p.c} />}
         {tab === "objects" && <BucketPage game={p.game} c={p.c} />}
         {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {tab === "software" && <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}<Drives game={p.game} c={p.c} /></>}
