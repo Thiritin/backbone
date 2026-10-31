@@ -15,6 +15,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The Browser start page and address bar only show a hardware brand once its first model has been released.
 - The Customers app has a History view with charts of how many customers you have and how happy they are on average, one reading per day, and hovering a chart shows the date and value.
 
+## 2026-10-31
+
+- Update notes are now headed by a version named after the release date.
+- The website now appears as a channel card next to email, with a Manage button that opens its settings.
+
 ## 2026-10-30
 
 - Parts can be swapped in a server that is switched on but unplugged without being asked to power it off first.

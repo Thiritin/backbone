@@ -101,10 +101,18 @@ export function MarketingApp() {
 function Channels() {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
+  const [managing, setManaging] = useState(false);
   const year = yearOf(game.hour), full = isAvailable("Marketing", game.unlocks);
-  return <>
+  if (managing) return <>
+    <div className="mkt-list"><button className="btn" onClick={() => setManaging(false)}>Back</button></div>
     <div className="mkt-list"><SiteCard /></div>
+  </>;
+  return <>
     <div className="shop-grid mkt-flat">
+      <div className="shop-card">
+        <div className="shop-name"><strong>Website</strong><span>Your company site where visitors browse products and order.</span></div>
+        <div className="shop-buy"><span className="grow" />{game.marketing.launched && <span className="pill ok">Active</span>}<button className="btn" onClick={() => setManaging(true)}>Manage</button></div>
+      </div>
       {OWNED_INFO.filter(({ id }) => full || id === "email").map(({ id, name, text }) => {
         const def = id === "email" ? null : OWNED[id];
         const active = id === "email" || owns(game, id);
