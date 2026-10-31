@@ -1,12 +1,11 @@
-// Posts CHANGELOG.md bullets to the Discord #changelog channel via webhook, headed by the release version.
+// Publishes CHANGELOG.md bullets: one GitHub release per day (tag 2026.10.31) and a post to the Discord #changelog channel.
 // node scripts/discord-changelog.mjs --all          every day, oldest first
-// node scripts/discord-changelog.mjs --since <rev>  only bullets added after <rev> (a release tag)
-// --version <v> adds a version heading, --notes <file> writes the GitHub release body, --dry skips Discord.
-import { readFileSync, writeFileSync } from 'node:fs';
+// node scripts/discord-changelog.mjs --since <rev>  only bullets added after <rev>
+// --dry prints nothing to Discord and creates no release.
+import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 const args = process.argv.slice(2);
-const opt = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
 const dry = args.includes('--dry');
 const webhook = process.env.DISCORD_CHANGELOG_WEBHOOK;
 if (!webhook && !dry) throw new Error('DISCORD_CHANGELOG_WEBHOOK missing');
@@ -21,32 +20,47 @@ function parse(text) {
   return days;
 }
 
-const rev = opt('--since');
-let days = parse(readFileSync('CHANGELOG.md', 'utf8'));
-if (rev !== undefined) {
-  // No base (the first release) posts everything.
-  let old = '';
-  if (rev) try { old = execFileSync('git', ['show', `${rev}:CHANGELOG.md`], { encoding: 'utf8' }); } catch {}
-  const seen = new Set(parse(old).flatMap((d) => d.bullets));
+const rev = args[args.indexOf('--since') + 1];
+const all = parse(readFileSync('CHANGELOG.md', 'utf8'));
+let days = all;
+let announced = new Set();
+if (args.includes('--since')) {
+  // An unknown base (new branch, force push) would repost everything, so post nothing.
+  let old;
+  try { old = execFileSync('git', ['show', `${rev}:CHANGELOG.md`], { encoding: 'utf8' }); } catch {
+    console.log(`No CHANGELOG.md at ${rev}, nothing posted`);
+    process.exit(0);
+  }
+  const before = parse(old);
+  const seen = new Set(before.flatMap((d) => d.bullets));
+  // A day that already had bullets was announced, so its header is not sent again.
+  announced = new Set(before.filter((d) => d.bullets.length).map((d) => d.date));
   days = days.map((d) => ({ ...d, bullets: d.bullets.filter((b) => !seen.has(b)) }));
 } else if (!args.includes('--all')) {
   throw new Error('Pass --all or --since <rev>');
 }
 days = days.filter((d) => d.bullets.length).reverse();
-if (!days.length) { console.error('No new changelog bullets since the last release'); process.exit(1); }
 
-const version = opt('--version');
-const notes = [...days].reverse().map((d) => `## ${d.date}\n${d.bullets.join('\n')}`).join('\n\n');
-if (opt('--notes')) writeFileSync(opt('--notes'), notes + '\n');
+const version = (day) => day.date.replaceAll('-', '.');
 
-function chunks(day, head = '') {
+function chunks(day) {
   const out = [];
-  let cur = `${head}## ${day.date}`;
+  let cur = announced.has(day.date) ? '' : `## Version ${version(day)}`;
   for (const b of day.bullets) {
     if (cur.length + b.length + 1 > LIMIT) { out.push(cur); cur = ''; }
     cur += (cur ? '\n' : '') + b;
   }
   return [...out, cur];
+}
+
+// One release per day: created with the day's first bullets, its notes rewritten as more land.
+function release(day) {
+  const tag = version(day);
+  const notes = all.find((d) => d.date === day.date).bullets.join('\n');
+  let exists = true;
+  try { execFileSync('gh', ['release', 'view', tag], { stdio: 'ignore' }); } catch { exists = false; }
+  const cmd = exists ? ['edit', tag] : ['create', tag, '--target', process.env.GITHUB_SHA ?? 'main', '--title', tag];
+  execFileSync('gh', ['release', ...cmd, '--notes', notes], { stdio: 'inherit' });
 }
 
 async function post(content) {
@@ -67,6 +81,9 @@ async function post(content) {
 }
 
 if (!dry) {
-  for (const [i, day] of days.entries()) for (const c of chunks(day, i === 0 && version ? `# Version ${version}\n` : '')) await post(c);
+  for (const day of days) {
+    release(day);
+    for (const c of chunks(day)) await post(c);
+  }
 }
-console.log(`${dry ? 'Prepared' : 'Posted'} ${days.reduce((n, d) => n + d.bullets.length, 0)} bullets over ${days.length} days`);
+console.log(`${dry ? 'Would post' : 'Posted'} ${days.reduce((n, d) => n + d.bullets.length, 0)} bullets over ${days.length} days`);
