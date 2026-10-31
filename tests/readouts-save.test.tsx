@@ -17,6 +17,7 @@ describe("task page on the web panels", () => {
       const View = CONSOLES[id];
       const html = renderToString(<View game={g} c={c} f={consoleFeatures(id, yearOf(g.hour))} host="panel.example.com" signedIn login={() => {}} logout={() => {}} />);
       expect(html).toContain("Task log");
+      expect(html).toContain("Logs");
     }
   });
 });
