@@ -7,6 +7,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { losePower } from "../src/sim/60-infra/power";
 import { linkStatus } from "../src/sim/60-infra/status";
 import { switchIp } from "../src/sim/60-infra/switches";
+import { resolve } from "../src/sim/80-business/browser";
 import { setPortGroup } from "../src/sim/90-actions/hardware";
 import { recoverGear, updateFirmware } from "../src/sim/90-actions/remote";
 import { saveSwitchConfig, setPortVlan } from "../src/sim/90-actions/switches";
@@ -100,6 +101,17 @@ describe("VLANs on a managed switch", () => {
     while (dev(s, "dev4").hands) tick(s);
     expect(dev(s, "dev4").locked).toBe(false);
     expect(dev(s, "dev4").vlans).toEqual({});
+  });
+});
+
+describe("the switch web interface", () => {
+  it("answers on the maker's factory address while the switch works", () => {
+    const s = game();
+    s.devices.push(device("dev92", "hp-1800-8g", "Hewlett-Packet", "rack2", 21, null, "hp-sw", 150));
+    expect(resolve(s, "192.168.1.254").page).toEqual({ kind: "switch", deviceId: "dev4" });
+    expect(resolve(s, "192.168.2.10").page).toEqual({ kind: "switch", deviceId: "dev92" });
+    must(setPortVlan(s, "dev4", 7, { untagged: 20, tagged: [] }));
+    expect(resolve(s, "192.168.1.254").load).toBe("down");
   });
 });
 
