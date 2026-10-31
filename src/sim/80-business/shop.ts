@@ -4,6 +4,7 @@ import { hashRng, rand } from "../00-core/rng";
 import type { SimEvent } from "../88-tick/tick";
 import { bump } from "../40-support/tickets";
 import { PRODUCTS } from "../10-catalog/products";
+import type { Cycle } from "../10-catalog/cycles";
 import { includes, shopById, WHM_PER_THOUSAND, WHM_TIERS, type ShopId } from "../10-catalog/shops";
 import { modelById } from "../10-catalog/hardware";
 import type { Product } from "../30-customers/customers";
@@ -27,9 +28,11 @@ export interface ShopState {
   // Visitors this month who found the line sold out.
   soldOut: Partial<Record<Product, number>>;
   groups: ServerGroup[];
+  // Discount off N times the monthly price per cycle for lines sold through configurable options; the market's where unset.
+  optionDiscount: Partial<Record<Cycle, number>>;
 }
 
-export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, readyAt: 0, modules: {}, stock: {}, soldOut: {}, groups: [] });
+export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, readyAt: 0, modules: {}, stock: {}, soldOut: {}, groups: [], optionDiscount: {} });
 
 export const shopActive = (s: GameState): boolean => s.shop.variant !== null && s.hour >= s.shop.readyAt;
 // A real shop system takes orders from stock and server groups; the hand-rolled form sells from everything.

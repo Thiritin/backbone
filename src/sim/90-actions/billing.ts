@@ -1,5 +1,5 @@
 import {
-  annuity, AUTO_COLLECT_DAYS, issue, owed, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
+  annuity, renewTerms, AUTO_COLLECT_DAYS, issue, owed, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
 } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -29,7 +29,10 @@ export function matchTransfer(s: GameState, transferId: string, invoiceId: strin
   s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId, matchedAt: s.hour } : x));
   const rest = cents(owed(inv) - tr.amount);
   if (rest > 0 && !settle) inv.received = cents((inv.received ?? 0) + tr.amount);
-  else Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
+  else {
+    Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
+    renewTerms(s, inv);
+  }
   if (rest < 0) s.customers = s.customers.map((c) => (c.id === inv.customerId ? { ...c, credit: cents(c.credit - rest) } : c));
   log(s, inv, "matchTransfer");
   return { ok: true };

@@ -18,6 +18,7 @@ const withForm = (seed: number) => {
   s.cash = 1e6;
   setUpChannel(s, "website");
   chooseShop(s, "handRolled");
+  s.shop.optionDiscount = { annual: -3 };
   return automate(s);
 };
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };

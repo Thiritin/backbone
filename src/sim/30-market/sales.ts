@@ -22,6 +22,7 @@ import { addCustomer } from "../90-actions/customers";
 import { hiddenTraits } from "../45-billing/fraud";
 import { domainFor } from "../30-customers/domains";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
+import { shopPriceLevel } from "./cycles";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
@@ -105,7 +106,7 @@ function newLeads(s: GameState, events: SimEvent[]): void {
     for (let i = 0; i < n; i++) {
       // An order the form takes weighs the setup fee too.
       const need = needFor(s.rng, f.profile, yearOf(s.hour)), form = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${form}`;
-      if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, form ? setupPremium(s, need.product) : 0));
+      if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, form ? setupPremium(s, need.product) : 0, form ? shopPriceLevel(s, f.profile, need.product) : undefined));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads only write about lines on the website, which needs a control plane that sells them.
       if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;

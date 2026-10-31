@@ -474,6 +474,7 @@ describe("quote first", () => {
     s.cash = 1e6;
     setUpChannel(s, "website");
     chooseShop(s, "handRolled");
+    s.shop.optionDiscount = { annual: -3 };
     const customers = s.customers.length, r = orderLead(s, "private", "Frankfurt", [], web, false);
     const req = () => s.sales.requests.find((x) => x.id === r.id)!;
     expect(req()).toMatchObject({ form: true, status: "accepted", serviceId: null });
