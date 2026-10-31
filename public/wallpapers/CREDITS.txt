@@ -1,4 +1,4 @@
-Desktop wallpapers, one per Pear OS release. All come from Wikimedia Commons, resized to 1920px wide and re-encoded.
+Desktop wallpapers, one per Pear OS release. All come from Wikimedia Commons, resized to 2880px wide and saved as WebP.
 
 aqua.jpg (Panthera)
   "China silk-crystalblue" by Party Fabrics, CC BY-SA 2.0, cropped to remove the watermark.
