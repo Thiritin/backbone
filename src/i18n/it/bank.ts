@@ -64,7 +64,7 @@ export default {
   "ticket.mail.bankOverdraft.subject": () => "Il suo scoperto",
   "ticket.mail.bankOverdraft.text": (p) => `${p.bank} ha fissato il suo fido di scoperto a ${euro(Number(p.limit))} con un interesse del ${p.rate} % annuo.`,
   "ticket.mail.bankWelcome.subject": (p) => `Il suo conto presso ${p.bank}`,
-  "ticket.mail.bankWelcome.text": (p) => `Benvenuto in ${p.bank}. Il suo conto aziendale ${p.number} è aperto. Il suo PIN per l'home banking è ${p.pin}. Può accedere su ${p.url}.`,
+  "ticket.mail.bankWelcome.text": (p) => `Benvenuto in ${p.bank}. Il suo conto aziendale è aperto.\n\nNumero di conto: ${p.number}\nPIN dell'home banking: ${p.pin}\nAccesso: ${p.url}`,
   "ticket.mail.bankMtan.subject": () => "La sua mTAN",
   "ticket.mail.bankMtan.text": (p) => `La mTAN per il suo bonifico di ${euroCents(Number(p.amount))} a ${p.name} è ${p.code}.`,
   "ticket.mail.bankTanList.subject": (p) => `Lista TAN n. ${p.n}`,

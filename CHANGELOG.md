@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Order emails are now signed with the customer's postal address, and Create customer opens Books with the email beside the form, where a click on a line fills the field you are in.
 - Quotes are now documents in Books that you drag onto the order ticket, an accepted quote converts to the first invoice that you send and match like any other, and the Lexwear module Helpdesk link does the quote, account and invoice from the ticket.
+- The bank's welcome email now lists your account number, PIN and login address on their own lines.
 - Lexwear now sells modules for Books on lexwear.de: Monthly run, Match by reference and Automatic reminders take over the back office once you enter the licence key from Lexwear's email.
 - Bookkeepers can now be trained to send draft invoices and match incoming payments, including odd amounts, and a second bookkeeper gets through twice as much.
 - The hand-rolled order form is now a shop you buy once for 900 euro with no monthly fee, and it takes orders right away.
