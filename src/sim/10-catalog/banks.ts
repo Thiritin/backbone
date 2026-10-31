@@ -11,7 +11,10 @@ export interface Bank {
   // The bank code printed next to the account number before IBAN.
   code: string;
   from: number;
-  monthly: number;
+  // The account fee a month by legal form; null where the bank opens no account for that form.
+  monthly: { sole: number; partnership: number; limited: number | null };
+  // A fee per booking on a partnership's or limited company's account, on top of the monthly fee.
+  booking?: number;
   speed: TransferSpeed;
   // TAN methods by the year they arrive; label names the method on the bank's site.
   tans: { method: TanMethod; from: number; label: string }[];
@@ -28,31 +31,31 @@ export interface Bank {
 }
 
 export const BANKS: Bank[] = [
-  { id: "sparklasse", name: "Sparklasse", host: "sparklasse.de", code: "50050201", from: 2005, monthly: 8, speed: "nextDay",
+  { id: "sparklasse", name: "Sparklasse", host: "sparklasse.de", code: "50050201", from: 2005, monthly: { sole: 8, partnership: 12, limited: 16 }, booking: 0.3, speed: "nextDay",
     tans: [{ method: "itan", from: 2005, label: "itan" }, { method: "mtan", from: 2009, label: "mtan" }, { method: "push", from: 2014, label: "push" }],
     card: { yearly: 30, factor: 1.5 }, overdraft: 0.11, loans: { factor: 1, min: 2_500 }, hbci: false, api: null,
     skin: { bar: "oklch(0.6 0.2 30)", accent: "oklch(0.55 0.2 30)", bg: "oklch(0.98 0.01 60)", frame: "branch" } },
-  { id: "volksbunk", name: "Volksbunk", host: "volksbunk.de", code: "50190000", from: 2005, monthly: 6, speed: "nextDay",
+  { id: "volksbunk", name: "Volksbunk", host: "volksbunk.de", code: "50190000", from: 2005, monthly: { sole: 6, partnership: 9, limited: 12 }, booking: 0.25, speed: "nextDay",
     tans: [{ method: "itan", from: 2005, label: "itan" }, { method: "push", from: 2007, label: "reader" }],
     card: { yearly: 25, factor: 1 }, overdraft: 0.1, loans: { factor: 1, min: 2_500 }, hbci: false, api: null,
     skin: { bar: "oklch(0.42 0.15 260)", accent: "oklch(0.68 0.17 55)", bg: "oklch(0.97 0.01 250)", frame: "frames" } },
-  { id: "deutscheBunk", name: "Deutsche Bunk", host: "deutsche-bunk.de", code: "50070010", from: 2005, monthly: 12, speed: "sameDay",
+  { id: "deutscheBunk", name: "Deutsche Bunk", host: "deutsche-bunk.de", code: "50070010", from: 2005, monthly: { sole: 12, partnership: 18, limited: 24 }, booking: 0.15, speed: "sameDay",
     tans: [{ method: "itan", from: 2005, label: "itan" }, { method: "push", from: 2012, label: "photo" }],
     card: { yearly: 60, factor: 2 }, overdraft: 0.13, loans: { factor: 1.5, min: 50_000 }, hbci: false, api: null,
     skin: { bar: "oklch(0.35 0.12 255)", accent: "oklch(0.45 0.14 255)", bg: "oklch(0.99 0 0)", frame: "corporate" } },
-  { id: "postbunk", name: "Postbunk", host: "postbunk.de", code: "10010010", from: 2005, monthly: 4, speed: "nextDay",
+  { id: "postbunk", name: "Postbunk", host: "postbunk.de", code: "10010010", from: 2005, monthly: { sole: 4, partnership: 6, limited: 8 }, booking: 0.4, speed: "nextDay",
     tans: [{ method: "itan", from: 2005, label: "itan" }, { method: "mtan", from: 2008, label: "mtan" }],
     card: { yearly: 20, factor: 1 }, overdraft: 0.12, loans: { factor: 0.5, min: 2_500 }, hbci: false, api: null,
     skin: { bar: "oklch(0.86 0.17 95)", accent: "oklch(0.45 0.1 255)", bg: "oklch(0.99 0.02 95)", frame: "plain" } },
-  { id: "netbunk", name: "netbunk", host: "netbunk.de", code: "50010060", from: 2005, monthly: 0, speed: "nextDay",
+  { id: "netbunk", name: "netbunk", host: "netbunk.de", code: "50010060", from: 2005, monthly: { sole: 0, partnership: 5, limited: null }, speed: "nextDay",
     tans: [{ method: "itan", from: 2005, label: "itan" }, { method: "mtan", from: 2008, label: "mtan" }],
     card: { yearly: 20, freeFirstYear: true, factor: 1 }, overdraft: 0.09, loans: { factor: 0, min: 0 }, hbci: true, api: null,
     skin: { bar: "oklch(0.5 0.13 150)", accent: "oklch(0.45 0.13 150)", bg: "oklch(0.98 0.01 150)", frame: "web" } },
-  { id: "fidorr", name: "Fidorr", host: "fidorr.de", code: "70022200", from: 2009, monthly: 0, speed: "instant",
+  { id: "fidorr", name: "Fidorr", host: "fidorr.de", code: "70022200", from: 2009, monthly: { sole: 0, partnership: 6, limited: 12 }, speed: "instant",
     tans: [{ method: "mtan", from: 2009, label: "mtan" }],
     card: { yearly: 0, factor: 1 }, overdraft: 0.14, loans: { factor: 0.5, min: 2_500 }, hbci: false, api: 2013,
     skin: { bar: "oklch(0.3 0.03 280)", accent: "oklch(0.65 0.2 340)", bg: "oklch(0.98 0.005 280)", frame: "startup" } },
-  { id: "quonto", name: "Quonto", host: "quonto.eu", code: "16220000", from: 2016, monthly: 9, speed: "instant",
+  { id: "quonto", name: "Quonto", host: "quonto.eu", code: "16220000", from: 2016, monthly: { sole: 9, partnership: 15, limited: 25 }, speed: "instant",
     tans: [{ method: "app", from: 2016, label: "app" }],
     card: { yearly: 0, factor: 1 }, overdraft: null, loans: { factor: 0, min: 0 }, hbci: false, api: 2016,
     skin: { bar: "oklch(0.25 0.02 260)", accent: "oklch(0.6 0.15 280)", bg: "oklch(0.99 0 0)", frame: "fintech" } },
@@ -64,6 +67,9 @@ export const DEFAULT_BANK: BankId = "sparklasse";
 
 export const bankById = (id: string): Bank | undefined => BANKS.find((b) => b.id === id);
 export const banksOpen = (year: number): Bank[] => BANKS.filter((b) => b.from <= year);
+export const monthlyFee = (b: Bank, form: string): number | null => b.monthly[form as keyof Bank["monthly"]] ?? null;
+// Bookings cost extra on business accounts only.
+export const bookingFee = (b: Bank, form: string): number => (form === "sole" ? 0 : b.booking ?? 0);
 // The TAN methods a bank offers in a year, newest last.
 export const tanMethods = (b: Bank, year: number) => b.tans.filter((x) => x.from <= year);
 // From 2008 transfers name an IBAN, before an account number and bank code.
