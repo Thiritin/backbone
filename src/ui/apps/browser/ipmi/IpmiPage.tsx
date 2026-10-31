@@ -5,6 +5,8 @@ import { t } from "../../../../i18n/en";
 import type { Device, GameState, RebuildRate } from "../../../../sim/50-state";
 import { drivesOf, raidUsable } from "../../../../sim/60-infra/status";
 import { rebuildHours } from "../../../../sim/88-tick/tick";
+import { mountVirtualMedia, mountableImages } from "../../../../sim/90-actions/media";
+import { isoName } from "../consoles/HypervisorBase";
 import { setRebuildRate } from "../../../../sim/90-actions/hardware";
 import { consoleName } from "../../console/ConsoleWindow";
 import { sensorRows } from "../../../../sim/80-business/readouts";
@@ -27,8 +29,8 @@ export const BMC_LOOK: Record<string, { look: BmcLook; frame: "top" | "side"; co
 const FALLBACK = BMC_LOOK.SuperMacro;
 export const bmcTitle = (brand: string): string => (brand === "SuperMacro" ? "SuperMacro IPMI" : BMC_NAME[brand] ?? "IPMI");
 
-type Tab = "power" | "storage" | "sensors" | "log";
-const TABS: [Tab, string][] = [["power", t("misc1.ipmi.power")], ["storage", t("misc1.ipmi.storage")], ["sensors", t("misc1.ipmi.sensors")], ["log", t("misc1.ipmi.eventLog")]];
+type Tab = "power" | "storage" | "sensors" | "media" | "log";
+const TABS: [Tab, string][] = [["power", t("misc1.ipmi.power")], ["storage", t("misc1.ipmi.storage")], ["sensors", t("misc1.ipmi.sensors")], ["media", t("readouts.media.title")], ["log", t("misc1.ipmi.eventLog")]];
 const RATES: [RebuildRate, string][] = [["low", t("misc1.ipmi.low")], ["medium", t("misc1.ipmi.medium")], ["high", t("misc1.ipmi.high")]];
 
 // The array as the BIOS set it up, with the rebuild rate the controller can change while the server runs.
@@ -103,6 +105,28 @@ function SensorsTab({ game, d }: { game: GameState; d: Device }) {
   );
 }
 
+// The images the controller can present to the server as a virtual drive.
+function MediaTab({ game, d }: { game: GameState; d: Device }) {
+  const act = useStore((s) => s.act), images = mountableImages(game);
+  return (
+    <table className="bmc-table">
+      <thead><tr><th>{t("readouts.media.image")}</th><th>{t("misc1.ipmi.reading")}</th><th /></tr></thead>
+      <tbody>
+        {images.length === 0 && <tr><td colSpan={3} className="bmc-empty">{t("readouts.media.none")}</td></tr>}
+        {images.map((im) => {
+          const mounted = d.virtualMedia === im;
+          return (
+            <tr key={im}>
+              <td>{isoName(im)}</td><td>{mounted ? t("readouts.media.mounted") : ""}</td>
+              <td><button className="cx-btn" onClick={() => act(mountVirtualMedia, d.id, mounted ? null : im)}>{mounted ? t("readouts.media.eject") : t("readouts.media.mount")}</button></td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 function LogTab({ d }: { d: Device }) {
   return (
     <table className="bmc-table">
@@ -138,7 +162,7 @@ export function IpmiPage({ game, deviceId, host }: { game: GameState; deviceId: 
   if (!d) return null;
   const key = `ipmi:${d.id}`, look = BMC_LOOK[d.brand] ?? FALLBACK;
   if (!logins.includes(key)) return <Login brand={d.brand} host={host} onLogin={() => setLogins([...logins, key])} />;
-  const body: ReactNode = tab === "power" ? <PowerTab game={game} d={d} /> : tab === "storage" ? <StorageTab game={game} d={d} /> : tab === "sensors" ? <SensorsTab game={game} d={d} /> : <LogTab d={d} />;
+  const body: ReactNode = tab === "power" ? <PowerTab game={game} d={d} /> : tab === "storage" ? <StorageTab game={game} d={d} /> : tab === "sensors" ? <SensorsTab game={game} d={d} /> : tab === "media" ? <MediaTab game={game} d={d} /> : <LogTab d={d} />;
   const tabs = TABS.map(([id, label]) => <button key={id} className="cx-tab" aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>);
   const logout = <>
     <button className="cx-btn ghost" onClick={() => openConsole(d.id)}><Monitor aria-hidden />{consoleName(game, d).replace(/^\S+ /, "")}</button>

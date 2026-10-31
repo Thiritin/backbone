@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { yearOf } from "../../../../../sim/00-core/time";
+import { dateOf, yearOf } from "../../../../../sim/00-core/time";
+import { SNAPSHOTS_MAX } from "../../../../../sim/10-catalog/platforms";
+import { deleteSnapshot, revertSnapshot, takeSnapshot } from "../../../../../sim/90-actions/snapshots";
 import { t } from "../../../../../i18n/en";
 import { useStore } from "../../../../store";
 import type { GameState } from "../../../../../sim/50-state";
@@ -28,6 +30,34 @@ function ActionsPane({ title, actions }: { title: string; actions: (PanelAction 
 }
 
 const integrationText = (game: GameState, c: Cluster, v: Vm) => { const x = integrationServices(game, c, v.w); return x.version === "off" ? "" : x.version === "update" ? t("readouts.is.update") : String(x.guest); };
+// The automatic checkpoint name: the VM's name and the time it was taken.
+const checkpointName = (name: string, at: number) => {
+  const d = dateOf(at), p = (n: number) => String(n).padStart(2, "0");
+  return `${name} - (${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} - ${p(d.getUTCHours())}:00:00)`;
+};
+
+// The Checkpoints pane under the VM list and in the VM's settings: take, apply and delete.
+function Checkpoints({ v }: { v: Vm }) {
+  const act = useStore((s) => s.act), list = v.w.snapshots ?? [];
+  return (
+    <>
+      <table className="cx-table">
+        <thead><tr><th>{t("browser-consoles-1.name")}</th><th /></tr></thead>
+        <tbody>
+          {list.length === 0 && <tr><td colSpan={2} className="cx-empty">{t("readouts.checkpoints.none")}</td></tr>}
+          {list.map((x) => (
+            <tr key={x.id}>
+              <td>{checkpointName(v.name, x.at)}</td>
+              <td><button className="cx-btn" onClick={() => act(revertSnapshot, v.id, x.id)}>{t("readouts.checkpoints.apply")}</button>{" "}<button className="cx-btn" onClick={() => act(deleteSnapshot, v.id, x.id)}>{t("readouts.checkpoints.delete")}</button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {list.length < SNAPSHOTS_MAX && <div className="cx-inline"><button className="cx-btn primary" onClick={() => act(takeSnapshot, v.id)}>{t("readouts.checkpoints.create")}</button></div>}
+    </>
+  );
+}
+
 const mb = (gb: number) => `${Math.round(gb * 1024)} MB`;
 const uptime = (h: number | null) => (h === null ? "00:00:00" : `${h >= 24 ? `${Math.floor(h / 24)}.` : ""}${String(h % 24).padStart(2, "0")}:00:00`);
 const TABS = ["Summary", "Memory", "Networking", "Replication"] as const;
@@ -134,6 +164,7 @@ export function HyperVee(p: PanelProps) {
               <div className="hv-details">
                 {vm ? <>{vm.panel}<VmDetails game={game} v={vm} generations={generations} /></> : <span className="cx-empty">{t("browser-consoles-1.hvNoItem")}</span>}
               </div>
+              {vm?.w.deviceId && <><h4 className="hv-h">{t("readouts.checkpoints.title")}</h4><div className="hv-details"><Checkpoints v={vm} /></div></>}
             </>
           )}
           {page.kind === "server" && (
@@ -180,7 +211,7 @@ export function HyperVee(p: PanelProps) {
                   {part === "Network Adapter" && <Facts facts={[{ label: t("browser-consoles-1.hvVirtualSwitch"), value: t("browser-consoles-1.hvExternalNetwork") }]} />}
                   {part === "Name" && <Facts facts={[{ label: t("browser-consoles-1.name"), value: vm.name }]} />}
                   {part === "Integration Services" && <table className="cx-table"><tbody>{integrationServices(game, c, vm.w).services.map((x) => <tr key={x.key}><td>{t(`readouts.is.${x.key}`)}</td><td>{t(`readouts.is.${x.state}`)}</td></tr>)}</tbody></table>}
-                  {part === "Checkpoints" && <Facts facts={[{ label: t("browser-consoles-1.lastBackup"), value: facts.backup.value }]} />}
+                  {part === "Checkpoints" && <><Facts facts={[{ label: t("browser-consoles-1.lastBackup"), value: facts.backup.value }]} />{vm.w.deviceId && <Checkpoints v={vm} />}</>}
                 </div>
               </div>
               <div className="cx-tools"><button className="cx-btn primary" onClick={() => setPage({ kind: "list", node: null })}>{t("browser-consoles-1.ok")}</button></div>
