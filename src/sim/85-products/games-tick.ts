@@ -1,7 +1,8 @@
 // game-servers plan 3.3 to 3.6: the hourly crashes, restarts and release waves of every game server.
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
-import { modById, releaseHour, releasedAt, titleById } from "../10-catalog/games";
+import { yearOf } from "../00-core/time";
+import { fadeDrain, modById, releaseHour, releasedAt, titleById } from "../10-catalog/games";
 import { idNum } from "../10-catalog/usage";
 import { bump, createTicket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
@@ -44,6 +45,7 @@ export function gamesTick(s: GameState): void {
     const p = g.crashedAt === null ? playersOf(s, g.serviceId) : null;
     if (p && p.players >= p.slots) g = { ...g, seenFull: s.hour };
     gameWave(s, g, c);
+    bump(c, -fadeDrain(t, yearOf(s.hour)) / 24);
     return g;
   });
 }

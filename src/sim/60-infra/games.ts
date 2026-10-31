@@ -1,6 +1,6 @@
 // game-servers plan 3.1 and 3.2: the game behind a game server service, its players and full-at-peak mark.
 import { yearOf } from "../00-core/time";
-import { GAME_UNIT, latestRelease, modById, pickTitle, releasedAt, slotsFor, titleById } from "../10-catalog/games";
+import { GAME_UNIT, NEVER, latestRelease, modById, pickTitle, releasedAt, slotsFor, titleById } from "../10-catalog/games";
 import { idNum } from "../10-catalog/usage";
 import type { GameState } from "../50-state";
 import { workloadsOf } from "./cluster";
@@ -74,4 +74,11 @@ export const fullBoost = (s: GameState, customerId: string): number => (fullServ
 // An accepted upgrade of a slot server grows its slots with the RAM, in steps of four.
 export function growSlots(s: GameState, serviceId: string, ratio: number): void {
   s.gameServers = s.gameServers.map((g) => (g.serviceId === serviceId && g.slots !== null ? { ...g, slots: Math.min(32, Math.ceil((g.slots * ratio) / 4) * 4) } : g));
+}
+
+// The Titles summary: how many live servers play each title and whether the title has faded.
+export function titleCounts(s: GameState): { title: string; count: number; faded: boolean }[] {
+  const year = yearOf(s.hour), n = new Map<string, number>();
+  for (const g of s.gameServers) if (s.services.some((v) => v.id === g.serviceId && v.endedAt === null)) n.set(g.title, (n.get(g.title) ?? 0) + 1);
+  return [...n].map(([title, count]) => ({ title, count, faded: year > (titleById(title)?.fade ?? NEVER) })).sort((a, b) => b.count - a.count);
 }

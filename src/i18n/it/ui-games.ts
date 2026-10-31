@@ -35,4 +35,9 @@ export default {
   "error.modNotInstalled": () => "Questa mod non è installata.",
   "ticket.howTo.gameVersion.subject": () => "È uscita una nuova versione del mio gioco",
   "ticket.howTo.gameVersion.text": (p) => `È uscita una nuova versione del gioco. Come aggiorno ${p.hostname || p.service || 'il mio server'} senza perdere le impostazioni?`,
+  "error.unknownTitle": () => "Gioco sconosciuto.",
+  "error.titleChange": () => "Non si può passare a questo gioco.",
+  "games.faded": () => "Superato",
+  "games.titles": () => "Giochi",
+  "games.titleCount": (p) => `${p.title}: ${p.count}`,
 } satisfies Dict;
