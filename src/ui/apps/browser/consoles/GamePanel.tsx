@@ -1,11 +1,11 @@
 import { t } from "../../../../i18n/en";
 
 // What a game server row shows next to its name: the title and the players online out of its slots.
-export interface GameRow { title: string; faded: boolean; players: { players: number; slots: number } | null; crashed: boolean }
+export interface GameRow { title: string; faded: boolean; players: { players: number; slots: number } | null; crashed: boolean; offline: boolean; ports: number[] }
 
 export function GameLine({ g }: { g?: GameRow }) {
   if (!g) return null;
-  return <span className="cx-sub">{[g.title, g.players && t("games.players", g.players), g.faded && t("games.faded"), g.crashed && t("games.crashed")].filter(Boolean).join(" · ")}</span>;
+  return <span className="cx-sub">{[g.title, g.players && t("games.players", g.players), g.faded && t("games.faded"), g.crashed && t("games.crashed"), g.offline && t("games.daemonOffline"), g.ports.length > 0 && t("games.ports", { ports: g.ports.join(", ") })].filter(Boolean).join(" · ")}</span>;
 }
 
 // How many of the listed servers play each title.

@@ -40,4 +40,9 @@ export default {
   "games.faded": () => "Dépassé",
   "games.titles": () => "Jeux",
   "games.titleCount": (p) => `${p.title} : ${p.count}`,
+  "error.noAllocation": () => "Ce nœud n'a plus d'allocation de port libre.",
+  "error.allocationRemove": () => "Cette allocation ne peut pas être retirée.",
+  "error.noDaemon": () => "Ce nœud n'a pas de démon.",
+  "games.daemonOffline": () => "Démon du nœud hors ligne",
+  "games.ports": (p) => `Ports ${p.ports}`,
 } satisfies Dict;

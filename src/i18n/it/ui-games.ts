@@ -40,4 +40,9 @@ export default {
   "games.faded": () => "Superato",
   "games.titles": () => "Giochi",
   "games.titleCount": (p) => `${p.title}: ${p.count}`,
+  "error.noAllocation": () => "Questo nodo non ha allocazioni di porta libere.",
+  "error.allocationRemove": () => "Questa allocazione non può essere rimossa.",
+  "error.noDaemon": () => "Questo nodo non ha un daemon.",
+  "games.daemonOffline": () => "Daemon del nodo offline",
+  "games.ports": (p) => `Porte ${p.ports}`,
 } satisfies Dict;

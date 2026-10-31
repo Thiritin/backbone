@@ -22,6 +22,7 @@ import { fillHostnames } from "../30-customers/hostnames";
 import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
+import { fillDaemons } from "../60-infra/daemons";
 import { fillGames } from "../60-infra/games";
 import { fillMachines } from "./machines";
 import { legacyLeads } from "./leads";
@@ -132,6 +133,7 @@ export function deserialize(raw: string): GameState {
   // Saves from before banks hold their account at Sparklasse; the next hour brings its welcome email and TAN list.
   if (data.bank === undefined) s.bank = legacyBank(s);
   fillGames(s);
+  fillDaemons(s);
   shelveRouter(s);
   // Machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.licenses) s.licenses = heldLicenses(s);

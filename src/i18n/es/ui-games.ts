@@ -40,4 +40,9 @@ export default {
   "games.faded": () => "Desfasado",
   "games.titles": () => "Juegos",
   "games.titleCount": (p) => `${p.title}: ${p.count}`,
+  "error.noAllocation": () => "Este nodo no tiene asignaciones de puerto libres.",
+  "error.allocationRemove": () => "Esta asignación no se puede quitar.",
+  "error.noDaemon": () => "Este nodo no tiene demonio.",
+  "games.daemonOffline": () => "Demonio del nodo sin conexión",
+  "games.ports": (p) => `Puertos ${p.ports}`,
 } satisfies Dict;

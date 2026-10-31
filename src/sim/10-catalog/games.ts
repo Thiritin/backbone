@@ -38,6 +38,9 @@ export const GAME_TITLES: GameTitle[] = [
   title("pallworld", 2024, NEVER, 1.5, [0.12, 0.12, 0.08], [2024]),
 ];
 
+// Titles that need a query port besides the game port.
+export const needsQuery = (g: GameTitle): boolean => ["rost", "fiveem", "arkaic"].includes(g.id);
+
 export const titleById = (id: string): GameTitle | undefined => GAME_TITLES.find((x) => x.id === id);
 
 // What a panel sells: slots (TCAdmen), RAM (MultiKraft) or RAM and a CPU limit (Pterodaktyl). Anything else is no game panel.

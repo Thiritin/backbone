@@ -5,6 +5,7 @@ import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Pause, Play, Po
 import { useMemo, useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
 import { GAME_UNIT, NEVER, titleById } from "../../../../sim/10-catalog/games";
+import { daemonOffline } from "../../../../sim/60-infra/daemons";
 import { gameCrashed, gameOf, playersOf } from "../../../../sim/60-infra/games";
 import { GameLine, TitlesSummary, type GameRow } from "./GamePanel";
 import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
@@ -125,7 +126,7 @@ const PLAN_LABEL: Record<string, string> = { cpanic: "pkg.changeCpanic", directa
 function gameRow(game: GameState, c: Cluster, serviceId: string): GameRow | undefined {
   if (!c.panel || !GAME_UNIT[c.panel] || game.services.find((v) => v.id === serviceId)?.product !== "gameServer") return undefined;
   const g = gameOf(game, serviceId);
-  return { title: g ? t(`games.title.${g.title}`) : t("games.unknown"), faded: !!g && yearOf(game.hour) > (titleById(g.title)?.fade ?? NEVER), players: playersOf(game, serviceId), crashed: gameCrashed(game, serviceId) };
+  return { title: g ? t(`games.title.${g.title}`) : t("games.unknown"), faded: !!g && yearOf(game.hour) > (titleById(g.title)?.fade ?? NEVER), players: playersOf(game, serviceId), crashed: gameCrashed(game, serviceId), offline: daemonOffline(game, serviceId), ports: g?.ports ?? [] };
 }
 
 export interface Row {

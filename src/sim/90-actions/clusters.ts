@@ -1,3 +1,4 @@
+import { allocationFree } from "../60-infra/daemons";
 import { createGameServer } from "../60-infra/games";
 import { betterHost } from "../60-infra/routes";
 import { keepPhp } from "../60-infra/webpanel";
@@ -403,6 +404,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
         const disk = withDatastore(s, c, size);
         const room = withinOversell(s, c, disk), why = licenceBlock(s, c);
         if (why) { blocked = why; continue; }
+        if (v.product === "gameServer" && !allocationFree(s, c)) { blocked = "error.noAllocation"; continue; }
         if (!room) capped = true;
         const node = controlPlaneUp(s, c) && room ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, disk, null, c.placement, roomyOnly) : null;
         if (node) { w = workload(s, v.id, { ...disk, clusterId: c.id, deviceId: c.vm ? null : node }); az = c.az; break; }
@@ -463,6 +465,10 @@ export function provisionService(s: GameState, customerId: string, product: Prod
     Object.assign(s, { services: s.services.filter((v) => v.id !== id), nextId });
     return placed;
   }
-  if (product === "gameServer") createGameServer(s, id, order.title);
+  const noPort = product === "gameServer" ? createGameServer(s, id, order.title) : null;
+  if (noPort) {
+    Object.assign(s, { services: s.services.filter((v) => v.id !== id), workloads: s.workloads.filter((w) => w.serviceId !== id), nextId });
+    return fail(noPort);
+  }
   return { ok: true, id };
 }

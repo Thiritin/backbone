@@ -40,4 +40,9 @@ export default {
   "games.faded": () => "Ausgelaufen",
   "games.titles": () => "Spiele",
   "games.titleCount": (p) => `${p.title}: ${p.count}`,
+  "error.noAllocation": () => "Auf diesem Node ist keine Port-Zuweisung frei.",
+  "error.allocationRemove": () => "Diese Zuweisung kann nicht entfernt werden.",
+  "error.noDaemon": () => "Dieser Node hat keinen Daemon.",
+  "games.daemonOffline": () => "Node-Daemon offline",
+  "games.ports": (p) => `Ports ${p.ports}`,
 } satisfies Dict;
