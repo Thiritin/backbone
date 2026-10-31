@@ -26,8 +26,10 @@ import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
+import { LexwearSite } from "./sites/lexwear/LexwearSite";
 import { WikiSite } from "./sites/wiki/WikiSite";
 import { OFFICE_TITLE } from "../../../sim/80-business/office";
+import { LEXWEAR } from "../../../sim/80-business/lexwear";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
 import { SupplierSite } from "./sites/bank/SupplierSite";
@@ -73,6 +75,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "sponsorboard": return BOARD_TITLE;
     case "index": return "Yahoy! Directory";
     case "office": return OFFICE_TITLE;
+    case "lexwear": return LEXWEAR;
     case "wiki": return WIKI_TITLE;
     case "shop": return game.company.name;
     case "software": return softwareById(p.id).name;
@@ -103,6 +106,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "phishing") body = <PhishingPage sender={p.sender} />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "lexwear") body = <LexwearSite game={game} path={r.path} go={go} />;
   else if (p.kind === "shop") body = <PortalSite game={game} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;

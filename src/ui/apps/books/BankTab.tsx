@@ -31,7 +31,7 @@ export function BankTab() {
 
   return (
     <>
-      <div className="fin-toolbar"><Locked label={t("books.matchByReference")} /></div>
+      <div className="fin-toolbar"><Locked id="match-by-reference" label={t("books.matchByReference")} /></div>
       <div className="books-bank">
         <section>
           <h3>{t("books.transfers")}</h3>
