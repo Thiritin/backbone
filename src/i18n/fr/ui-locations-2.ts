@@ -49,6 +49,7 @@ export default {
   "locations-2.carriers": () => "Opérateurs",
   "locations-2.exchange": () => "Point d'échange",
   "locations-2.power": () => "Alimentation électrique",
+  "locations-2.temperature": () => "Température",
   "locations-2.inTransit": () => "En transit",
   "locations-2.pwOn": () => "Allumer",
   "locations-2.pwShutdown": () => "Éteindre",
