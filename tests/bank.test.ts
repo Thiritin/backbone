@@ -16,10 +16,10 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 // Hour 0 is Saturday 1 January 2005, 00:00; Monday 08:00 is hour 56.
 const MONDAY_8 = 56;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
-export const opened = (seed = 1, bank: Parameters<typeof registerCompany>[4] = "sparklasse"): GameState => {
+export const opened = (seed = 1, bank: Parameters<typeof registerCompany>[4] = "sparklasse", form = "sole"): GameState => {
   const s = newGame(seed);
   s.hour = MONDAY_8;
-  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", bank).ok).toBe(true);
+  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", form, bank).ok).toBe(true);
   tick(s);
   return s;
 };
@@ -49,6 +49,36 @@ describe("bank account", () => {
     run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
     expect(s.ledger.filter((e) => e.key === "ledger.bankFee")).toEqual([expect.objectContaining({ amount: -12, category: "fees" })]);
     expect(s.cash).toBeLessThanOrEqual(cash - 12);
+  });
+
+  it("charges a limited company the dearer fee and every booking of the month before", () => {
+    const s = opened(1, "sparklasse", "limited"), feb = hourOf(new Date(Date.UTC(2005, 1, 1)));
+    for (let i = 0; i < 3; i++) s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
+    run(s, feb - s.hour);
+    const bookings = s.ledger.filter((e) => e.hour < feb && e.amount !== 0 && e.category !== "fees").length;
+    expect(bookings).toBeGreaterThanOrEqual(3);
+    expect(s.ledger.filter((e) => e.hour === feb && e.category === "fees")).toEqual([
+      expect.objectContaining({ key: "ledger.bankFee", amount: -16 }),
+      expect.objectContaining({ key: "ledger.bookingFee", amount: -Math.round(bookings * 30) / 100, params: { bank: "Sparklasse", count: bookings } }),
+    ]);
+  });
+
+  it("charges a sole trader no booking fees", () => {
+    const s = opened(1, "sparklasse");
+    s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
+    run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
+    expect(s.ledger.filter((e) => e.category === "fees").map((e) => [e.key, e.amount])).toEqual([["ledger.bankFee", -8]]);
+  });
+
+  it("opens no netbunk account for a limited company and charges a partnership its flat fee", () => {
+    const s = newGame(1);
+    s.hour = MONDAY_8;
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "limited", "netbunk")).toEqual({ ok: false, error: "error.bankForm" });
+    expect(s.registration).toBeNull();
+    const p = opened(1, "netbunk", "partnership");
+    p.ledger = [...p.ledger, { hour: p.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
+    run(p, hourOf(new Date(Date.UTC(2005, 1, 1))) - p.hour);
+    expect(p.ledger.filter((e) => e.category === "fees").map((e) => [e.key, e.amount])).toEqual([["ledger.bankFee", -5]]);
   });
 
   it("gives an old save an account at Sparklasse that keeps paying its fee", () => {
