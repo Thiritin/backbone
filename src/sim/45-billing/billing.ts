@@ -1,4 +1,5 @@
 import { chance, hashRng, rand, type Rng } from "../00-core/rng";
+import { bankById } from "../10-catalog/banks";
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import type { Budget } from "../10-catalog/economy";
 import { CYCLE_MONTHS } from "../10-catalog/cycles";
@@ -309,11 +310,13 @@ export function baseRate(year: number): number {
 export const loanRate = (s: GameState): number => baseRate(yearOf(s.hour)) + RISK_PREMIUM[metrics(s).level.level - 1] / 100;
 export const debt = (s: GameState): number => cents(s.loans.reduce((sum, l) => sum + l.balance, 0));
 
-// The higher of the level's minimum and 12x the average monthly gross profit of the last 6 months, less current debt.
+// The higher of the level's minimum and 12x the average monthly gross profit of the last 6 months, times the bank's factor,
+// less current debt.
 export function loanAvailable(s: GameState): number {
   const since = s.hour - 6 * MONTH_HOURS;
   const profit = s.ledger.filter((e) => e.hour > since && e.category !== "loans").reduce((sum, e) => sum + e.amount, 0) / 6;
-  return Math.max(0, Math.max(MIN_LIMIT[metrics(s).level.level - 1], 12 * profit) - debt(s));
+  const factor = (s.bank && bankById(s.bank.id)?.loans.factor) ?? 1;
+  return Math.max(0, Math.max(MIN_LIMIT[metrics(s).level.level - 1], 12 * profit) * factor - debt(s));
 }
 
 export function annuity(amount: number, rate: number, months: number): number {

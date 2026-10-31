@@ -4,6 +4,8 @@ import { dateOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
 import { LEGAL_FORMS, OFFICE_HOST, OFFICE_URL, officeOpen } from "../../../../../sim/80-business/office";
 import { registerCompany } from "../../../../../sim/90-actions/company";
+import { banksOpen, DEFAULT_BANK, type BankId } from "../../../../../sim/10-catalog/banks";
+import { yearOf } from "../../../../../sim/00-core/time";
 import { useStore } from "../../../../store";
 import "./office.css";
 
@@ -40,8 +42,9 @@ function Register({ game }: { game: GameState }) {
   const [name, setName] = useState(game.company.name);
   const [owner, setOwner] = useState("");
   const [form, setForm] = useState("sole");
+  const [bank, setBank] = useState<BankId>(DEFAULT_BANK);
   return (
-    <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, form); }}>
+    <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, form, bank); }}>
       <fieldset>
         <legend>{t("browser-sites-1.of.application")}</legend>
         <table>
@@ -63,6 +66,14 @@ function Register({ game }: { game: GameState }) {
               </td>
             </tr>
             <tr>
+              <td><label htmlFor="to-bank">{t("bank.office.bank")} <b>*</b></label></td>
+              <td>
+                <select id="to-bank" value={bank} onChange={(e) => setBank(e.target.value as BankId)}>
+                  {banksOpen(yearOf(game.hour)).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </td>
+            </tr>
+            <tr>
               <td><label htmlFor="to-activity">{t("browser-sites-1.of.activity")} <b>*</b></label></td>
               <td>
                 <select id="to-activity" defaultValue="hosting">
@@ -76,7 +87,7 @@ function Register({ game }: { game: GameState }) {
         <p className="to-req"><b>*</b> {t("browser-sites-1.of.required")}</p>
         <div className="to-buttons">
           <button type="submit">{t("browser-sites-1.of.submit")}</button>
-          <button type="reset" onClick={() => { setName(""); setOwner(""); setForm("sole"); }}>{t("browser-sites-1.of.reset")}</button>
+          <button type="reset" onClick={() => { setName(""); setOwner(""); setForm("sole"); setBank(DEFAULT_BANK); }}>{t("browser-sites-1.of.reset")}</button>
         </div>
       </fieldset>
     </form>

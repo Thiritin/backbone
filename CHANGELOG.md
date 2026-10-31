@@ -2,8 +2,14 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
+## 2026-11-01
+
+- Datacenter providers now announce your own IP block under your AS number for a one-off setup fee, so you no longer need your own BGP router for it.
+
 ## 2026-10-31
 
+- You now choose a bank when you register the company and run the business account on its website, confirming every transfer with a TAN from your TAN list, a text message or the bank's app, and you can apply there for a credit card, an overdraft and standing orders.
+- Your line, power, datacenter, Pear and registrar bills now arrive as invoices by email that you pay by transfer before they are due, or that a supplier debits by itself once you set up a direct debit on its website, and an invoice left unpaid slows or cuts your line, switches the power off, pauses subscriptions or suspends domains.
 - Billing is now Books, the Lexwear Office bookkeeping program, where you see each customer's postal address and send every month's invoices yourself as PDF.
 - Customers now pay by bank transfer, and you match each payment to its invoice in Books, including short amounts, overpayments and transfers with an unclear reference.
 - Rented space now runs on a contract with the provider: cancelling gives one, three or six months of notice to the end of a month, the rent stays at the agreed price, and a location that still holds hardware at the end date keeps its contract one more month.
