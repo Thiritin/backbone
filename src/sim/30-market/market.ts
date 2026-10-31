@@ -44,6 +44,8 @@ export interface SalesRequest {
   cycle?: Cycle;
   // Taken by a shop system rather than the hand-rolled form; a shop order that cannot be placed is cancelled, never lost.
   shop?: boolean;
+  // The shop product a form order buys; its server group and package decide where the service goes.
+  productId?: string;
   // The one-time fee the manual quote's invoice carries; the line's rate where unset.
   setup?: number;
 }
