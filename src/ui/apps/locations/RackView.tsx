@@ -412,11 +412,11 @@ export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
   );
 }
 
-// Mounting as hand work: one unit can also go to a technician, a stack goes in one job.
+// Mounting as hand work: a unit or a whole stack goes in one job.
 export const mountTask = (st: { ids: string[]; model: string; brand: string }, rackId: string, n: number, from: number): HandTask => ({
   title: t("locations-2.mountName", { name: `${st.brand} ${modelById(st.model).name}` }),
   deviceId: st.ids[0],
   ...(n === 1
     ? { action: mountDevice, args: [st.ids[0], rackId, from], tech: { kind: "mount" as const, componentId: rackId, slot: from } }
-    : { action: mountStack, args: [st.model, st.brand, rackId, n, from] }),
+    : { action: mountStack, args: [st.model, st.brand, rackId, n, from], tech: { kind: "mount" as const, componentId: rackId, slot: from, count: n } }),
 });

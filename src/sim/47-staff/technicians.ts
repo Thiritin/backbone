@@ -9,7 +9,7 @@ import { HOURS_PER_YEAR, hotKind, hotSwappable, locationOf, spotOf, working as d
 import type { SimEvent } from "../88-tick/tick";
 import { drain, upgradeNodePhp } from "../90-actions/clusters";
 import { updateDue, updateSoftware } from "../90-actions/software";
-import { installPart, mountDevice, removePart, replaceComponent, replaceSpares, reset, resetBmc, setPower, shutdown, spareFits, unmountDevice, type ActionResult } from "../90-actions/hardware";
+import { installPart, mountDevice, mountStack, removePart, replaceComponent, replaceSpares, reset, resetBmc, setPower, shutdown, spareFits, unmountDevice, type ActionResult } from "../90-actions/hardware";
 import { migrateWebspace, recover } from "../90-actions/vms";
 import { continueBoot, recoverGear } from "../90-actions/remote";
 import { callOut, onCallAt, onCallPayroll, respond, restUntil } from "./oncall";
@@ -18,8 +18,8 @@ import { atFair, onShift, working, type Employee, type Task } from "./staff";
 export type OpKind = "replace" | "off" | "on" | "drain" | "php" | "migrate" | "part" | "domains" | "update" | "reset" | "bmcreset" | "recover" | "boot" | "gear" | "mount" | "unmount";
 // One operation on one device; componentId is set for a replace and for taking a part out, partId for putting a spare in,
 // auto when a rule queued it; an update carries the cluster id in componentId. A migrate runs at the device the web space sits on and carries the web space and the panel
-// host it moves to. A mount carries the rack in componentId and its position in slot.
-export interface TechOp { id: string; kind: OpKind; deviceId: string; componentId: string | null; queuedAt: number; auto: boolean; target?: { workloadId: string; clusterId: string }; partId?: string | null; slot?: number }
+// host it moves to. A mount carries the rack in componentId and its position in slot; a stack of count stored units like deviceId mounts upward from there.
+export interface TechOp { id: string; kind: OpKind; deviceId: string; componentId: string | null; queuedAt: number; auto: boolean; target?: { workloadId: string; clusterId: string }; partId?: string | null; slot?: number; count?: number }
 // failed: replace failed parts when a spare is in storage. worn: replace parts past their life that swap while running.
 // blackhole: the on-call technician blackholes an attack that saturates their location's links.
 // updates: update software with an open high or critical vulnerability.
@@ -154,6 +154,7 @@ function perform(s: GameState, o: TechOp): ActionResult | "off" {
   if (o.kind === "bmcreset") return resetBmc(s, d.id, true);
   if (o.kind === "boot") return continueBoot(s, d.id, true);
   if (o.kind === "gear") return recoverGear(s, d.id, true);
+  if (o.kind === "mount" && o.count) return mountStack(s, d.model, d.brand, o.componentId ?? "", o.count, o.slot, true);
   if (o.kind === "mount") return mountDevice(s, d.id, o.componentId ?? "", o.slot ?? 0, true);
   if (o.kind === "unmount") return unmountDevice(s, d.id, true);
   if (o.kind === "recover") return o.componentId ? recover(s, o.componentId) : { ok: false, error: "error.unknownWorkload" };
@@ -195,7 +196,7 @@ function work(s: GameState, e: Employee, events: SimEvent[], taken: Set<string>,
   }
   taken.add(o.deviceId);
   // Actions change devices and the ledger in place; the tick works on copies.
-  s.devices = s.devices.map((d) => (d.id === o.deviceId ? { ...d } : d));
+  s.devices = s.devices.map((d) => (d.id === o.deviceId || (o.count && d.store) ? { ...d } : d));
   s.ledger = [...s.ledger];
   const d = s.devices.find((x) => x.id === o.deviceId)!, device = d.label ?? d.name;
   const part = d.components.find((c) => c.id === o.componentId)?.kind ?? s.devices.find((x) => x.id === o.partId)?.model.slice(5) ?? "";
