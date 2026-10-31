@@ -1,5 +1,5 @@
 import { t } from "../../../../../i18n/en";
-import { Globe, ListChecks, LogOut, Network, Package, ShieldBan, UserPlus, Wrench, type LucideIcon } from "lucide-react";
+import { Blocks, Globe, ListChecks, LogOut, Network, Package, ShieldBan, UserPlus, Wrench, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
@@ -7,6 +7,7 @@ import { PackagesScreen, ProvisionForm } from "../PackageForms";
 import { useReadoutPages } from "../Readouts";
 import { Advisor } from "./Advisor";
 import { Fail2Ban } from "./Fail2Ban";
+import { Toolkit } from "./Toolkit";
 import { SubscriptionList } from "./SubscriptionList";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { FAIL2BAN_FROM } from "../../../../../sim/60-infra/bans";
@@ -28,6 +29,7 @@ export function Pleskit(p: PanelProps) {
   );
   const nav: [Tab, string, LucideIcon][] = [
     ["objects", t("browser-consoles-2.websitesDomains"), Globe], ["create", t("pkg.pkAdd"), UserPlus], ["packages", t("pkg.pkPlans"), Package], ...(p.f.cluster ? [["nodes", t("browser-consoles-2.nodes"), Network] as [Tab, string, LucideIcon]] : []), ["software", t("browser-consoles-2.toolsSettings"), Wrench],
+    ["toolkit", era === "late" ? t("web.tk.menu") : t("web.tk.apps"), Blocks] as [Tab, string, LucideIcon],
     ...(yearOf(p.game.hour) >= FAIL2BAN_FROM + 1 ? [["fail2ban", t("web.ban.menu"), ShieldBan] as [Tab, string, LucideIcon]] : []),
     ...pages.map((g) => [g.id, g.label, ListChecks] as [Tab, string, LucideIcon]),
   ];
@@ -51,6 +53,7 @@ export function Pleskit(p: PanelProps) {
           {tab === "create" && card(t("pkg.pkAdd"), <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} sections={{ order: t("pkg.order"), account: t("pkg.account"), plan: t("pkg.settings") }} />)}
           {tab === "packages" && card(t("pkg.pkPlans"), <PackagesScreen game={p.game} c={p.c} />)}
           {tab === "nodes" && card(t("browser-consoles-2.nodes"), <Nodes game={p.game} c={p.c} />)}
+          {tab === "toolkit" && card(era === "late" ? t("web.tk.menu") : t("web.tk.apps"), <Toolkit game={p.game} c={p.c} late={era === "late"} />)}
           {tab === "fail2ban" && card(t("web.ban.menu"), <Fail2Ban game={p.game} c={p.c} />)}
           {pages.map((g) => tab === g.id && card(g.label, g.body))}
           {tab === "software" && (era === "early"
