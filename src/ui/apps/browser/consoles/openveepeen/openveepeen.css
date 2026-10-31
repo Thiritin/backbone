@@ -34,3 +34,5 @@
 
 .ov-certs { margin-bottom: 16px; }
 .ov-certs h2 { font-size: 14px; margin: 0 0 6px; }
+.ov-gw { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.ov-gw[data-soon="true"] { color: #b26a00; }

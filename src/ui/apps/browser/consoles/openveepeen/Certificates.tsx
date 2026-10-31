@@ -1,8 +1,8 @@
 import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
 import { dateOf } from "../../../../../sim/00-core/time";
-import { certsOf, vpnOf, vpnOnCluster } from "../../../../../sim/60-infra/netsvc-vpn";
-import { reissueCert, revokeCert } from "../../../../../sim/90-actions/netsvc-vpn";
+import { CERT_WARN_DAYS, certsOf, vpnOf, vpnOnCluster } from "../../../../../sim/60-infra/netsvc-vpn";
+import { reissueCert, renewCert, revokeCert } from "../../../../../sim/90-actions/netsvc-vpn";
 import type { PanelProps } from "../PanelBase";
 import { useStore } from "../../../../store";
 
@@ -15,6 +15,7 @@ export function Certificates({ game, c, era }: { game: PanelProps["game"]; c: Pa
     return (
       <section key={v.id} className="ov-certs">
         <h2>{v.label}</h2>
+        <p className="ov-gw" data-soon={x.serverExpiresAt - game.hour < CERT_WARN_DAYS * 24}>{t("netsvc.gatewayCert")}: {x.serverExpiresAt <= game.hour ? t("netsvc.certExpired") : expiry} <button onClick={() => act(renewCert, v.id)}>{t("netsvc.regenerate")}</button></p>
         <table className="cx-table">
           <thead><tr><th>{t("netsvc.certUser")}</th><th>{t("netsvc.certState")}</th><th>{t("netsvc.certExpiry")}</th><th>{t("netsvc.certSerial")}</th><th /></tr></thead>
           <tbody>{certsOf(game, v).map((k) => (

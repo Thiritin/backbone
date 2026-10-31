@@ -76,4 +76,13 @@ export default {
   "event.vpnIntrusion.text": (p) => `${p.customer}: se usó el certificado perdido de ${p.user} para entrar.`,
   "ticket.howTo.certLost.subject": () => "Hemos perdido un portátil",
   "ticket.howTo.certLost.text": () => "Uno de nuestros portátiles ha desaparecido. Bloquea el acceso VPN de la persona que lo tenía.",
+  "ledger.vpnCertFee": (p) => `Tarifa de certificado de ${p.service}`,
+  "error.noAutoEnroll": () => "Esta pasarela no puede renovar su certificado por sí sola.",
+  "event.vpnCertSoon.title": () => "El certificado VPN caduca pronto",
+  "event.vpnCertSoon.text": (p) => `El certificado de la pasarela de ${p.service} de ${p.customer} caduca en 30 días.`,
+  "netsvc.gatewayCert": () => "Certificado de la pasarela",
+  "netsvc.regenerate": () => "Regenerar certificado",
+  "netsvc.enrollCert": () => "Inscribir",
+  "netsvc.autoEnroll": () => "Inscripción automática (SCEP)",
+  "netsvc.certExpired": () => "Caducado",
 } satisfies Dict;

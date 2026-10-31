@@ -10,11 +10,29 @@ export interface VpnState { serverIssuedAt: number; serverExpiresAt: number; rev
 export interface Cert { index: number; cn: string; serial: string; revoked: boolean }
 
 export const CERT_DAYS = 365;
+export const CERT_WARN_DAYS = 30;
+export const AUTO_ENROLL_DAYS = 7;
+export const CERT_FEE = 12;
 export const LOST_REVOKE_HOURS = 72;
 export const INTRUSION_LOSS = 20;
 const LOST_BASE = 0.015, LOST_CAP = 0.2;
 
 export const vpnServices = (s: GameState): Service[] => s.services.filter((v) => v.product === "vpn" && v.endedAt === null);
+
+const clusterOf = (s: GameState, v: Service) => s.clusters.find((c) => s.workloads.some((w) => w.serviceId === v.id && w.clusterId === c.id));
+// Only the paid product can enroll its gateway certificate with a CA.
+export const isAnyconnekt = (s: GameState, v: Service): boolean => clusterOf(s, v)?.panel === "anyconnekt";
+
+// Issues a new gateway certificate for a year; AnyConnekt pays the CA fee for it.
+export function enroll(s: GameState, v: Service): void {
+  const x = vpnOf(s, v);
+  if (isAnyconnekt(s, v)) {
+    s.cash = Math.round((s.cash - CERT_FEE) * 100) / 100;
+    s.ledger.push({ hour: s.hour, category: "fees", key: "ledger.vpnCertFee", params: { service: v.label }, amount: -CERT_FEE });
+  }
+  putVpn(s, v, { ...x, serverIssuedAt: s.hour, serverExpiresAt: s.hour + CERT_DAYS * 24 });
+  if (s.netsvc.broken[v.id]?.cause === "cert") { const broken = { ...s.netsvc.broken }; delete broken[v.id]; s.netsvc = { ...s.netsvc, broken }; }
+}
 
 // The VPN services running on a gateway cluster.
 export const vpnOnCluster = (s: GameState, clusterId: string): Service[] => vpnServices(s).filter((v) => s.workloads.some((w) => w.serviceId === v.id && w.clusterId === clusterId));
@@ -38,7 +56,10 @@ export function vpnTick(s: GameState): SimEvent[] {
   for (const v of vpnServices(s)) {
     const cust = s.customers.find((c) => c.id === v.customerId), users = v.spec.users ?? 0;
     if (!cust || cust.churnedAt !== null || users === 0) continue;
-    const x = vpnOf(s, v);
+    let x = vpnOf(s, v);
+    if (x.autoEnroll && isAnyconnekt(s, v) && s.hour >= x.serverExpiresAt - AUTO_ENROLL_DAYS * 24) { enroll(s, v); x = vpnOf(s, v); }
+    if (s.hour === x.serverExpiresAt - CERT_WARN_DAYS * 24) events.push({ app: "Support", key: "event.vpnCertSoon", params: { customer: cust.name, service: v.label } });
+    if (s.hour >= x.serverExpiresAt && !s.netsvc.broken[v.id]) s.netsvc = { ...s.netsvc, broken: { ...s.netsvc.broken, [v.id]: { cause: "cert", since: s.hour } } };
     if (x.lost !== null && x.lostAt !== null && s.hour - x.lostAt >= LOST_REVOKE_HOURS) {
       s.customers = s.customers.map((c) => { if (c.id !== cust.id) return c; const n = { ...c }; bump(n, -INTRUSION_LOSS); return n; });
       putVpn(s, v, { ...x, lost: null, lostAt: null });

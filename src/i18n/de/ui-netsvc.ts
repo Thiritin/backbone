@@ -76,4 +76,13 @@ export default {
   "event.vpnIntrusion.text": (p) => `${p.customer}: Mit dem verlorenen Zertifikat von ${p.user} wurde Zugang erlangt.`,
   "ticket.howTo.certLost.subject": () => "Ein Laptop ist verloren gegangen",
   "ticket.howTo.certLost.text": () => "Eines unserer Laptops ist weg. Bitte sperrt den VPN-Zugang der Person, die es hatte.",
+  "ledger.vpnCertFee": (p) => `Zertifikatsgebühr für ${p.service}`,
+  "error.noAutoEnroll": () => "Dieses Gateway kann sein Zertifikat nicht selbst erneuern.",
+  "event.vpnCertSoon.title": () => "VPN-Zertifikat läuft bald ab",
+  "event.vpnCertSoon.text": (p) => `Das Gateway-Zertifikat von ${p.service} für ${p.customer} läuft in 30 Tagen ab.`,
+  "netsvc.gatewayCert": () => "Gateway-Zertifikat",
+  "netsvc.regenerate": () => "Zertifikat neu erzeugen",
+  "netsvc.enrollCert": () => "Registrieren",
+  "netsvc.autoEnroll": () => "Automatisch registrieren (SCEP)",
+  "netsvc.certExpired": () => "Abgelaufen",
 } satisfies Dict;

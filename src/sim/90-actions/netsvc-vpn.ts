@@ -1,6 +1,6 @@
 import { bump, isFinal } from "../40-support/tickets";
 import type { GameState } from "../50-state";
-import { certsOf, putVpn, vpnOf, vpnServices } from "../60-infra/netsvc-vpn";
+import { CERT_FEE, certsOf, enroll, isAnyconnekt, putVpn, vpnOf, vpnServices } from "../60-infra/netsvc-vpn";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -29,5 +29,23 @@ export function reissueCert(s: GameState, serviceId: string, index: number): Act
   if (!x.revoked.includes(index)) return fail("error.badCert");
   putVpn(s, v, { ...x, revoked: x.revoked.filter((i) => i !== index) });
   happier(s, v.customerId, -1);
+  return { ok: true };
+}
+
+// Replaces the gateway certificate. OpenVeePeeN regenerates it for free; AnyConnekt enrolls with a CA for a fee.
+export function renewCert(s: GameState, serviceId: string): ActionResult {
+  const v = vpnServices(s).find((x) => x.id === serviceId);
+  if (!v) return fail("error.unknownService");
+  if (isAnyconnekt(s, v) && s.cash < CERT_FEE) return fail("error.noCash");
+  enroll(s, v);
+  return { ok: true };
+}
+
+// Switches automatic renewal, a feature of AnyConnekt only.
+export function setAutoEnroll(s: GameState, serviceId: string, on: boolean): ActionResult {
+  const v = vpnServices(s).find((x) => x.id === serviceId);
+  if (!v) return fail("error.unknownService");
+  if (!isAnyconnekt(s, v)) return fail("error.noAutoEnroll");
+  putVpn(s, v, { ...vpnOf(s, v), autoEnroll: on });
   return { ok: true };
 }

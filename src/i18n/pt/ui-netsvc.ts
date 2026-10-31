@@ -76,4 +76,13 @@ export default {
   "event.vpnIntrusion.text": (p) => `${p.customer}: o certificado perdido de ${p.user} foi usado para entrar.`,
   "ticket.howTo.certLost.subject": () => "Perdemos um portátil",
   "ticket.howTo.certLost.text": () => "Um dos nossos portáteis desapareceu. Bloqueie o acesso VPN da pessoa que o tinha.",
+  "ledger.vpnCertFee": (p) => `Taxa de certificado de ${p.service}`,
+  "error.noAutoEnroll": () => "Este gateway não consegue renovar sozinho o seu certificado.",
+  "event.vpnCertSoon.title": () => "O certificado VPN expira em breve",
+  "event.vpnCertSoon.text": (p) => `O certificado do gateway de ${p.service} de ${p.customer} expira em 30 dias.`,
+  "netsvc.gatewayCert": () => "Certificado do gateway",
+  "netsvc.regenerate": () => "Regenerar certificado",
+  "netsvc.enrollCert": () => "Inscrever",
+  "netsvc.autoEnroll": () => "Inscrição automática (SCEP)",
+  "netsvc.certExpired": () => "Expirado",
 } satisfies Dict;

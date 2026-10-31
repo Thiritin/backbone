@@ -76,4 +76,13 @@ export default {
   "event.vpnIntrusion.text": (p) => `${p.customer}: the lost certificate of ${p.user} was used to get in.`,
   "ticket.howTo.certLost.subject": () => "A laptop was lost",
   "ticket.howTo.certLost.text": () => "One of our laptops is gone. Please block the VPN access of the person who had it.",
+  "ledger.vpnCertFee": (p) => `Certificate fee for ${p.service}`,
+  "error.noAutoEnroll": () => "This gateway cannot renew its certificate by itself.",
+  "event.vpnCertSoon.title": () => "VPN certificate expires soon",
+  "event.vpnCertSoon.text": (p) => `The gateway certificate of ${p.service} for ${p.customer} expires in 30 days.`,
+  "netsvc.gatewayCert": () => "Gateway certificate",
+  "netsvc.regenerate": () => "Regenerate certificate",
+  "netsvc.enrollCert": () => "Enroll",
+  "netsvc.autoEnroll": () => "Auto-enroll (SCEP)",
+  "netsvc.certExpired": () => "Expired",
 } satisfies Dict;
