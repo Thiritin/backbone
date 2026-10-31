@@ -71,8 +71,9 @@ export interface MachineState {
 }
 export type NetFail = "noInterfaces" | "noLink";
 // A managed switch port's VLANs: the one its untagged frames belong to and the ones it carries tagged. A port without an entry is untagged in VLAN 1.
-export interface PortVlan { untagged: number; tagged: number[] }
-export interface SwitchConfig { groups: number[][]; vlans: Record<number, PortVlan> }
+// all carries every customer network tagged (60-infra/private.ts).
+export interface PortVlan { untagged: number; tagged: number[]; all?: true }
+export interface SwitchConfig { groups: number[][]; vlans: Record<number, PortVlan>; routed?: number[] }
 export interface Device extends MachineState { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
   components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
   // others are the further CPUs a swap of every socket replaces with the same spec.
@@ -98,6 +99,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   setup: boolean; bootFrom: "disk" | "usb";
   // A managed switch's running configuration is groups and vlans; saved is what it loads when it boots.
   vlans?: Record<number, PortVlan>; saved?: SwitchConfig;
+  // The VLANs a layer 3 switch routes between, each with an interface on the switch.
+  routed?: number[];
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
   part?: PartSpec;
   // nodeNNN, set on servers.
@@ -117,8 +120,11 @@ export interface Device extends MachineState { id: string; model: string; brand:
 // hour a lease runs out) and its port shares, each pointing at an address on the network.
 export interface RouterLan {
   cidr: string; gateway: string; pool: [string, string]; leaseHours: number;
+  // Remote access: the desk reaches the network behind an own datacenter router over its VPN.
+  vpn?: boolean;
   reservations: { mac: string; ip: string }[]; leases: { mac: string; ip: string; until: number; name: string }[]; shares: PortShare[];
 }
+export interface PrivateNet { customerId: string; vlan: number; since: number }
 export interface PortShare { ip: string; kind: "web" | "exposed" }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
@@ -189,6 +195,8 @@ export interface GameState {
   shop: ShopState;
   // Customers whose services the player holds offline.
   heldCustomers: string[];
+  // Customer private networks, each a VLAN on the player's switches (60-infra/private.ts).
+  privateNets: PrivateNet[];
   // Panel hosts: services the player holds offline one by one, with the reason shown in the consoles.
   heldServices: Record<string, HoldReason>;
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
@@ -356,6 +364,7 @@ export const newGame = (seed: number): GameState => ({
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
+  privateNets: [],
   heldServices: {},
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },

@@ -24,6 +24,8 @@ import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
 import { FritzOz } from "./mgmt/FritzOz";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
 import { SwitchPage, switchTitle } from "./mgmt/Switch";
+import { RouterPage, routerTitle } from "./mgmt/Router";
+import { isOwnRouter } from "../../../sim/60-infra/routers";
 import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
@@ -64,7 +66,10 @@ function titleOf(game: GameState, r: Resolved): string {
       const d = game.devices.find((x) => x.id === p.deviceId);
       return d ? kvmTitle(d) : r.host;
     }
-    case "router": return "Fritz!OZ";
+    case "router": {
+      const d = game.devices.find((x) => x.id === p.deviceId);
+      return d && isOwnRouter(d) ? routerTitle(d) : "Fritz!OZ";
+    }
     case "switch": {
       const d = game.devices.find((x) => x.id === p.deviceId);
       return d ? switchTitle(d) : r.host;
@@ -107,7 +112,10 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "console") body = <ConsolePage game={game} hostname={p.hostname} host={r.host} cluster={game.clusters.find((x) => x.id === p.clusterId)} defaced={p.defaced} />;
   else if (p.kind === "ipmi") body = <IpmiPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "kvm") body = <KvmPage game={game} deviceId={p.deviceId} host={r.host} />;
-  else if (p.kind === "router") body = <FritzOz game={game} deviceId={p.deviceId} host={r.host} />;
+  else if (p.kind === "router") {
+    const d = game.devices.find((x) => x.id === p.deviceId);
+    body = d && isOwnRouter(d) ? <RouterPage game={game} deviceId={p.deviceId} host={r.host} /> : <FritzOz game={game} deviceId={p.deviceId} host={r.host} />;
+  }
   else if (p.kind === "switch") body = <SwitchPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;

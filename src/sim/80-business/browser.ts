@@ -175,7 +175,8 @@ export function resolve(s: GameState, raw: string): Resolved {
     const at = holderOf(s, name);
     if (at && !deskReaches(s, at.deviceId, at.iface)) return out({ kind: "notfound" }, "down");
     const d = at && s.devices.find((x) => x.id === at.deviceId);
-    if (d && at.iface === "router") return out({ kind: "router", deviceId: d.id });
+    // An own router answers on its uplink address too.
+    if (d && (at.iface === "router" || modelById(d.model).kind === "gateway")) return out({ kind: "router", deviceId: d.id });
     // The management controller answers on standby power, so a switched-off server still has its page; a hung one answers nothing.
     if (d && at.iface === "bmc") return out({ kind: "ipmi", deviceId: d.id }, powered(s, d.id) && !d.bmcHung ? "fast" : "down");
     if (d && isMgmtDevice(d)) return out({ kind: "kvm", deviceId: d.id }, oobUp(s, d.id) ? "fast" : "down");
