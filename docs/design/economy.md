@@ -737,12 +737,26 @@ Resolving the ticket adds the usual +5 happiness on top. Handling an appeal take
 
 **Billing rules.** The rules in the Reminders tab of Books send the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
 
+**Lexwear modules.** Lexwear sells add-on modules for Books on lexwear.de, each a one-time licence in 2005 euros. The licence key arrives by email a minute after the purchase and turns the module on in Books. Lexwear's newsletter offers each module once, when its count is first reached.
+
+| Module | Price | Does | Newsletter when |
+| --- | --- | --- | --- |
+| Helpdesk link | €149 | Create quote button on order tickets | 3 domains registered for customers |
+| Monthly run | €99 | Sends every draft invoice on the 1st at 09:00 | 10 customers |
+| Match by reference | €129 | Books each transfer whose reference names an open invoice and whose amount is exact | 10 transfers matched |
+| Automatic reminders | €99 | Sends the reminder, dunning and final notices on their due day under the billing rules | First suspension |
+| HBCI online banking | €79 | Pulls the bank statement and pays payables | Never |
+
+The billing rules say what is sent; bookkeepers and accountants carry them out in their work hours, the Automation research runs all of them, and Automatic reminders runs the notices up to the final one while suspensions and collections stay with staff or the research. Bookkeepers also send drafts and match transfers, writing off a shortfall below €1, before any reminder in the same hour; a second bookkeeper doubles the rate.
+
 **Time per action.** Every employee action takes time from their workday, so one employee can't carry the whole company. Staff divide these times by their speed (0.5 plus skill/100, so skill 50 takes the times as listed); bots work at twice the speed. The code keeps them in `ACTION_MINUTES` (src/sim/47-staff/activity.ts), and ticket times in `MINUTES` (the ticket table above).
 
 | Action | Who | Time |
 | --- | --- | --- |
 | Answer or resolve a ticket | Support agent | Ticket handling time above |
 | Check an invoice, before every billing action | Bookkeeper or accountant | 6 min |
+| Send a draft invoice | Bookkeeper | 5 min |
+| Match a bank transfer to its invoice | Bookkeeper | 3 min |
 | Send a payment reminder | Bookkeeper | 15 min |
 | Send a dunning notice | Accountant | 30 min |
 | Send a final notice | Accountant | 30 min |
@@ -1685,7 +1699,7 @@ A raise request left unanswered for 30 days counts as refused. Salaries are bill
 | Role | Task types |
 | --- | --- |
 | Support agent | How-to, billing, outage, upgrade, cancellation, abuse, suspension appeal |
-| Bookkeeper | Payment reminders |
+| Bookkeeper | Payment reminders, sending invoices, matching payments |
 | Accountant | Dunning notices, final notices |
 | Marketing manager | Campaigns, review platforms, trade fairs |
 
