@@ -7,6 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Changelog bullet
+        run: |
+          base=origin/${{ github.base_ref }}
+          git diff --quiet "$base"...HEAD -- src || git diff "$base"...HEAD -- CHANGELOG.md | grep -q '^+- ' || { echo '::error::Add a bullet to CHANGELOG.md'; exit 1; }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
