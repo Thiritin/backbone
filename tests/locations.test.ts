@@ -28,9 +28,9 @@ const handoffOf = (s: GameState, locationId: string) => s.devices.find((d) => d.
 
 describe("datacenter catalog", () => {
   it("matches the economy.md table", () => {
-    expect(DATACENTERS).toHaveLength(39);
-    expect(new Set(DATACENTERS.map((d) => d.id)).size).toBe(39);
-    expect(PROVIDERS.map((p) => p.id)).toEqual(["equinox", "interaction", "mainqubes", "hetzler", "tellyhouse", "globalsnitch", "docklands", "ironmolehill", "data5", "ntd", "spree", "arubaba", "nextlair", "greenchz", "skyblink", "borisnet", "digitalreality", "corespite", "telex"]);
+    expect(DATACENTERS).toHaveLength(40);
+    expect(new Set(DATACENTERS.map((d) => d.id)).size).toBe(40);
+    expect(PROVIDERS.map((p) => p.id)).toEqual(["equinox", "interaction", "mainqubes", "hetzler", "tellyhouse", "globalsnitch", "docklands", "ironmolehill", "data5", "ntd", "spree", "arubaba", "nextlair", "greenchz", "skyblink", "borisnet", "digitalreality", "corespite", "telex", "myloch"]);
     for (const dc of DATACENTERS) expect(PROVIDERS.some((p) => p.id === dc.provider)).toBe(true);
     // Kerkrade and Falkenstein are one-datacenter towns.
     for (const c of CITIES) expect(DATACENTERS.filter((d) => d.city === c.name).length).toBeGreaterThanOrEqual(["Kerkrade", "Falkenstein"].includes(c.name) ? 1 : 2);
@@ -124,6 +124,7 @@ describe("racks", () => {
     expect(err(sellRack(s, "rack2"))).toBe("error.rackNotEmpty");
     ok(unmountDevice(s, "dev3"));
     ok(unmountDevice(s, "dev4"));
+    ok(unmountDevice(s, "dev5"));
     s.hour = 730;
     ok(sellRack(s, "rack2"));
     expect(s.cash).toBe(280);
@@ -203,14 +204,14 @@ describe("breakers", () => {
     ok(buyDevice(s, "g1-compute", "Dwell", 11, "loc1"));
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 10));
     runServers(s);
-    expect(rackPower(s, "rack2")).toEqual({ watts: 2758, a: 2758, b: 0, limitWatts: 3000, tripped: false });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 2768, a: 2768, b: 0, limitWatts: 3000, tripped: false });
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 1));
     runServers(s);
-    expect(rackPower(s, "rack2")).toEqual({ watts: 3008, a: 3008, b: 0, limitWatts: 3000, tripped: true });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 3018, a: 3018, b: 0, limitWatts: 3000, tripped: true });
     expect(linkStatus(s, "dev3").online).toBe(false);
-    expect(linkStatus(s, "dev5").online).toBe(true);
-    // Only the home router still draws power.
-    expect(powerPerHour(s)).toBeCloseTo(0.01 * 0.09 * 1.6, 10);
+    // The router on the rack's shelf goes dark with it.
+    expect(linkStatus(s, "dev5").online).toBe(false);
+    expect(powerPerHour(s)).toBe(0);
     s.workloads = [];
     ok(unmountDevice(s, "dev8"));
     expect(linkStatus(s, "dev3").online).toBe(true);

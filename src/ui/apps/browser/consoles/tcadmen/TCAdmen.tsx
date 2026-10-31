@@ -2,6 +2,7 @@ import { t } from "../../../../../i18n/en";
 import { Folder, FolderOpen, Gamepad2 } from "lucide-react";
 import { useState } from "react";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { useReadoutPages } from "../Readouts";
 import "./tcadmen.css";
 
 // docs/design/software.md, section 10: grey and black with a tree of game servers until 2016, then dark grey and green.
@@ -9,7 +10,7 @@ const ERAS = erasFrom(2005, 2016);
 
 export function TCAdmen(p: PanelProps) {
   const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [pick, setPick] = useState<string | null>(null);
-  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
+  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx tc tc-login" data-era={era}>
       <LoginForm className="tc-card" onLogin={p.login} button={t("browser-consoles-2.login")}>
@@ -18,7 +19,7 @@ export function TCAdmen(p: PanelProps) {
       </LoginForm>
     </div>
   );
-  const menu: [Tab, string][] = [["objects", t("browser-consoles-2.gameServers")], ...(p.f.cluster ? [["nodes", t("browser-consoles-2.nodes")] as [Tab, string]] : []), ["software", t("browser-consoles-2.systemSettings")]];
+  const menu: [Tab, string][] = [["objects", t("browser-consoles-2.gameServers")], ...(p.f.cluster ? [["nodes", t("browser-consoles-2.nodes")] as [Tab, string]] : []), ["software", t("browser-consoles-2.systemSettings")], ...pages.map((g) => [g.id, g.label] as [Tab, string])];
   const shown = rows.filter((r) => !pick || r.id === pick);
   const open = (id: string | null) => { setPick(id); setTab("objects"); };
   return (
@@ -39,6 +40,7 @@ export function TCAdmen(p: PanelProps) {
         <main className="tc-main">
           {tab === "objects" && <RowsTable rows={shown} name={t("browser-consoles-2.gameServer")} />}
           {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
+          {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
           {tab === "software" && (
             <>
               <Facts facts={sw.facts} />

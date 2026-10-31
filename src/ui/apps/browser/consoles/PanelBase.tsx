@@ -25,7 +25,7 @@ import { useHolds } from "./Holds";
 import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
 
-export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence";
+export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
 export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void }
@@ -154,7 +154,7 @@ export const cpuText = (r: Row) => t("browser-consoles-2.ofVcpu", { used: num(r.
 export const ramText = (r: Row) => t("browser-consoles-2.of", { used: ram(+r.ram[0].toFixed(1)), total: ram(r.ram[1]) });
 
 // The plain table most consoles show their objects in; name is the first column's heading.
-export function RowsTable({ rows, name, node = false, className = "cx-table" }: { rows: Row[]; name: string; node?: boolean; className?: string }) {
+export function RowsTable({ rows, name, node = false, className = "cx-table", extra }: { rows: Row[]; name: string; node?: boolean; className?: string; extra?: (r: Row) => ReactNode }) {
   const span = node ? 5 : 4;
   return (
     <table className={className}>
@@ -167,7 +167,7 @@ export function RowsTable({ rows, name, node = false, className = "cx-table" }: 
             {node && <td>{r.node}</td>}
             <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td>
             <td><Bar use={r.lead} /><span className="cx-use num">{r.usage}</span>{r.traffic[1] > 0 && <><Bar use={r.traffic} /><span className="cx-use num">{trafficText(r)}</span></>}</td>
-            <td><Actions actions={r.actions} className="cx-acts" /></td>
+            <td><Actions actions={r.actions} className="cx-acts" />{extra?.(r)}</td>
           </RowLines>
         ))}
       </tbody>

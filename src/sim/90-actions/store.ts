@@ -3,6 +3,7 @@ import { isAvailable, skillById } from "../10-catalog/research";
 import { DESKS, deskReady } from "../10-catalog/desks";
 import { monthlyCharge, storeItem, subscriptionEntry } from "../10-catalog/store";
 import type { GameState } from "../50-state";
+import { arrive, lockedInStore } from "../80-business/walk";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -47,5 +48,11 @@ export function install(s: GameState, id: string): ActionResult {
 export function cancel(s: GameState, id: string): ActionResult {
   if (!storeItem(id) || !s.installed.includes(id)) return fail("error.notInstalled");
   s.installed = s.installed.filter((x) => x !== id);
+  return { ok: true };
+}
+
+// The Pear Store shelves are open: an item locked by research brings the Research app.
+export function browseStore(s: GameState): ActionResult {
+  if (s.registration && lockedInStore(s)) arrive(s, "Research");
   return { ok: true };
 }

@@ -29,17 +29,22 @@ function firstServer(s: GameState): string {
   ok(mountDevice(s, srv, "rack2", 1));
   expect(linkStatus(s, srv).online).toBe(false);
   for (const c of s.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(setPlugged(s, srv, c.id, true));
+  expect(checkDone(s, "mountRouter")).toBe(false);
+  ok(mountDevice(s, "dev5", "rack2", 24));
   ok(connect(s, { device: srv, port: 0 }, { device: "dev5", port: 0 }));
+  expect(linkStatus(s, srv).online).toBe(false);
+  ok(connect(s, { device: "dev5", port: 4 }, { device: "dev6", port: 0 }));
+  expect(checkDone(s, "mountRouter")).toBe(true);
   run(s, 1);
   expect(linkStatus(s, srv).online).toBe(true);
   return srv;
 }
 
 describe("first server", () => {
-  it("starts with an empty basement rack and the home router", () => {
+  it("starts with an empty basement rack, the line jack and the flat's router in storage", () => {
     const s = startGame(1);
     expect(s.cash).toBe(START_CASH);
-    expect(s.devices.map((d) => modelById(d.model).kind)).toEqual(["gateway"]);
+    expect(s.devices.map((d) => [modelById(d.model).kind, d.store, d.panel])).toEqual([["gateway", "loc1", null], ["jack", null, "loc1"]]);
     expect(s.racks.map((r) => r.locationId)).toEqual(["loc1"]);
     expect(s.cables).toEqual([]);
     expect(s.customers).toEqual([]);
