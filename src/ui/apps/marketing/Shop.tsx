@@ -1,18 +1,14 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { t } from "../../../i18n/en";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { HARDWARE_MODULES, includes, moduleName, shopById, SHOPS, type ShopId } from "../../../sim/10-catalog/shops";
-import type { Product } from "../../../sim/30-customers/customers";
 import type { GameState } from "../../../sim/50-state";
-import { groupOf, hasModule, shopActive, stockOf, type Stock } from "../../../sim/80-business/shop";
-import { addToGroup, buyModule, chooseShop, createGroup, deleteGroup, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../../../sim/90-actions/shop";
-import { SERVES, type SoftwareKind } from "../../../sim/10-catalog/platforms";
+import { companyDomain } from "../../../sim/30-customers/domains";
+import { hasModule, shopActive } from "../../../sim/80-business/shop";
+import { buyModule, chooseShop } from "../../../sim/90-actions/shop";
 import { useStore } from "../../store";
-import { NodeActions } from "../browser/consoles/HypervisorBase";
-import type { NodeState } from "../../../sim/60-infra/cluster";
 import { formatDay } from "../billing/format";
-import { PRODUCT } from "../support/labels";
 
 const ABOUT: Record<ShopId, string> = {
   handRolled: t("marketing.aboutHandRolled"),
@@ -35,19 +31,19 @@ const price = (id: ShopId): string => {
 };
 
 export function Shop({ game }: { game: GameState }) {
-  const v = game.shop.variant && shopById(game.shop.variant), real = v && v.id !== "handRolled";
+  const openApp = useStore((s) => s.openApp);
+  const v = game.shop.variant && shopById(game.shop.variant);
   return <>
     <div className="mkt-list">
       <div className="mkt-row">
         <span className="mkt-label">{t("marketing.orders")}</span>
         <span className="mkt-grow">{v ? (v.id === "handRolled" ? t("marketing.handRolledOrderForm") : v.name) : t("marketing.email")}</span>
         {v && (shopActive(game) ? <span className="pill ok">{t("marketing.takingOrders")}</span> : <span className="pill">{t("marketing.readyDay", { day: formatDay(game.shop.readyAt) })}</span>)}
+        {shopActive(game) && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: `portal.${companyDomain(game)}/admin` })}>{t("shop-admin.openAdmin")}</button>}
       </div>
     </div>
     <Variants game={game} />
     {v && <Modules game={game} />}
-    {real && <Groups game={game} />}
-    {real && <StockList game={game} />}
   </>;
 }
 
@@ -104,99 +100,6 @@ function Modules({ game }: { game: GameState }) {
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function StockList({ game }: { game: GameState }) {
-  const act = useStore((s) => s.act);
-  const v = shopById(game.shop.variant!);
-  const pick = (p: Product, value: string) => act(setStock, p, (value === "auto" || value === "off" ? value : Math.max(0, Math.floor(Number(value) || 0))) as Stock);
-  return (
-    <div className="mkt-list">
-      <div className="side-h">{t("marketing.stock")}</div>
-      {game.marketing.lines.map((p) => {
-        const n = stockOf(game, p), soldOut = game.shop.soldOut[p] ?? 0;
-        return (
-          <div key={p} className="mkt-row">
-            <span className="mkt-label">{PRODUCT[p]}</span>
-            <span className="mkt-grow">{soldOut > 0 && <span className="mkt-sub">{t("marketing.soldOutThisMonth", { n: soldOut })}</span>}</span>
-            <div className="seg" role="group" aria-label={t("marketing.stockOf", { product: PRODUCT[p] })}>
-              <button aria-pressed={n === "off"} onClick={() => pick(p, "off")}>{t("marketing.off")}</button>
-              {v.autoStock && <button aria-pressed={n === "auto"} onClick={() => pick(p, "auto")}>{t("marketing.freeCapacity")}</button>}
-              <button aria-pressed={typeof n === "number"} onClick={() => typeof n !== "number" && pick(p, "10")}>{t("marketing.units")}</button>
-            </div>
-            {typeof n === "number" && <input className="num" type="number" min={0} step={1} style={{ width: "5em" }} aria-label={t("marketing.unitsOf", { product: PRODUCT[p] })} value={n} onChange={(e) => pick(p, e.target.value)} />}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-const NODE_STATE: Record<NodeState, string> = { active: t("marketing.nodeActive"), cordoned: t("marketing.nodeCordoned"), draining: t("marketing.nodeDraining"), maintenance: t("marketing.nodeMaintenance") };
-const KIND: Partial<Record<SoftwareKind, string>> = { panel: t("marketing.kindPanel"), cloud: t("marketing.kindCloud"), game: t("marketing.kindGame"), dns: t("marketing.kindDns"), vpn: t("marketing.kindVpn"), storage: t("marketing.kindStorage") };
-
-// Server groups: which software installations the shop sells from and deploys to.
-function Groups({ game }: { game: GameState }) {
-  const act = useStore((s) => s.act);
-  const [kind, setKind] = useState<SoftwareKind>("panel");
-  const [name, setName] = useState("");
-  return (
-    <div className="mkt-list">
-      <div className="side-h">{t("marketing.serverGroups")}</div>
-      {game.shop.groups.map((g) => {
-        const free = game.clusters.filter((c) => c.kind === g.kind && !groupOf(game, c.id));
-        return (
-          <div key={g.id} className="mkt-list">
-            <div className="mkt-row">
-              <strong className="mkt-grow">{g.name}</strong>
-              <span className="mkt-sub">{KIND[g.kind]}</span>
-              <button className="btn" onClick={() => act(deleteGroup, g.id)}>{t("marketing.delete")}</button>
-            </div>
-            {g.members.map((id) => game.clusters.find((c) => c.id === id)).filter((c) => !!c).map((c) => (
-              <div key={c.id} className="mkt-list">
-                <div className="mkt-row">
-                  <span className="mkt-grow">{c.name}</span>
-                  <button className="btn" onClick={() => act(removeFromGroup, g.id, c.id)}>{t("marketing.remove")}</button>
-                </div>
-                {c.nodes.map((n) => (
-                  <div key={n.deviceId} className="mkt-row">
-                    <span className="mkt-grow mkt-sub">{game.devices.find((d) => d.id === n.deviceId)?.label ?? game.devices.find((d) => d.id === n.deviceId)?.name}</span>
-                    <span className="pill">{NODE_STATE[n.state]}</span>
-                    <NodeActions c={c} n={n} className="btn" />
-                  </div>
-                ))}
-              </div>
-            ))}
-            {free.length > 0 && (
-              <div className="mkt-row">
-                <select aria-label={t("marketing.addTo", { group: g.name })} value="" onChange={(e) => e.target.value && act(addToGroup, g.id, e.target.value)}>
-                  <option value="">{t("marketing.addSoftware")}</option>
-                  {free.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-            )}
-            {SERVES[g.kind].map((p) => (
-              <label key={p} className="mkt-row">
-                <span className="mkt-grow">{t("marketing.sell", { product: PRODUCT[p] })}</span>
-                <input type="checkbox" role="switch" className="switch" aria-label={t("marketing.sellFrom", { product: PRODUCT[p], group: g.name })} checked={g.sale.includes(p)} onChange={(e) => act(setGroupSale, g.id, p, e.target.checked)} />
-              </label>
-            ))}
-            <label className="mkt-row">
-              <span className="mkt-grow">{t("marketing.deployOrders")}</span>
-              <input type="checkbox" role="switch" className="switch" aria-label={t("marketing.deployOrdersTo", { group: g.name })} checked={g.deploy} onChange={(e) => act(setGroupDeploy, g.id, e.target.checked)} />
-            </label>
-          </div>
-        );
-      })}
-      <div className="mkt-row">
-        <select aria-label={t("marketing.softwareKind")} value={kind} onChange={(e) => setKind(e.target.value as SoftwareKind)}>
-          {Object.entries(KIND).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-        </select>
-        <input className="mkt-grow" aria-label={t("marketing.groupName")} value={name} onChange={(e) => setName(e.target.value)} />
-        <button className="btn" disabled={!name.trim()} onClick={() => { act(createGroup, kind, name); setName(""); }}>{t("marketing.newGroup")}</button>
-      </div>
     </div>
   );
 }
