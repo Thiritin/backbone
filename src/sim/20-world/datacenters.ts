@@ -208,6 +208,8 @@ export const homeLineById = (id: string): HomeLine => (id === MOMS_DSL.id ? MOMS
 type RentedSpace = Exclude<SpaceKind, "basement">;
 export const SPACE_SIZES: Record<RentedSpace, number[]> = { share: [8, 4, 2, 1], cage: [4, 8, 16], suite: [20, 40] };
 export const LEAD_DAYS: Record<RentedSpace, number> = { share: 2, cage: 30, suite: 90 };
+// Months of notice to the end of a month before a rented space is handed back.
+export const NOTICE_MONTHS: Record<RentedSpace, number> = { share: 1, cage: 3, suite: 6 };
 // Shares, cages and suites cost a multiple of one position, by size; a share of size n is 1/n of a rack.
 const MULTIPLIERS: Record<RentedSpace, Record<number, number>> = { share: { 8: 0.2, 4: 0.35, 2: 0.6, 1: 1.1 }, cage: { 4: 3.4, 8: 6.4, 16: 12 }, suite: { 20: 15, 40: 28 } };
 
