@@ -39,6 +39,8 @@ export interface Cluster {
   ramGuard?: boolean;
   // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
   oversell?: number | null;
+  // The update channel; missing is Release (channel.ts).
+  channel?: "stable" | "release" | "edge";
   // The edition of a licensed panel: trialUntil is the end of the free trial until a tier is chosen, lapsedAt the hour an unpaid licence expired. Missing is the top tier without expiry.
   licence?: { tier: string; trialUntil: number | null; lapsedAt: number | null };
   // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.

@@ -4,6 +4,7 @@ import { cpuModel, isFresh, skuOf, topBoost } from "../10-catalog/cpus";
 import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { BACKUP_HOUR, slowTolerance } from "../10-catalog/usage";
+import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
 import { tierOf } from "../60-infra/licence";
 import { TRIAL_DAYS, LAPSE_GRACE_DAYS, topTier } from "../10-catalog/licence-tiers";
 import { APP_SUITE_FEE, licensingAt, SERVER_OS, serverOsAt, serverOsById, type LicenseEra, type LicenseKind, type ServerOsId } from "../10-catalog/server-os";
@@ -150,8 +151,8 @@ export function howToFactor(s: GameState, customerId: string): number {
   const services = new Set(s.services.filter((v) => v.customerId === customerId && v.endedAt === null).map((v) => v.id));
   const factors = s.workloads.filter((w) => w.clusterId && services.has(w.serviceId)).map((w) => {
     const c = s.clusters.find((x) => x.id === w.clusterId)!;
-    const kind = servedBy(s, w);
-    return kind === "panel" ? tickets(c.panel) * phpTickets(s, c) : tickets(isService(kind) ? c.panel : c.platform);
+    const kind = servedBy(s, w), edge = channelOf(c) === "edge" ? EDGE_HOWTO : 1;
+    return edge * (kind === "panel" ? tickets(c.panel) * phpTickets(s, c) : tickets(isService(kind) ? c.panel : c.platform));
   });
   return factors.length ? factors.reduce((a, b) => a + b, 0) / factors.length : 1;
 }
@@ -196,7 +197,7 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
     const { kind, to } = c.switching, fresh = !(kind === "cloud" ? c.platform : c.panel);
     // A licensed panel starts on a free trial of its top tier.
     const licence = kind === "panel" && topTier(to) ? { tier: topTier(to)!.id, trialUntil: s.hour + TRIAL_DAYS * 24, lapsedAt: null } : undefined;
-    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to } : { panel: to, licence }) } : x));
+    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to } : { panel: to, licence }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
     events.push({ app: "Locations", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
     const d = fresh ? s.devices.find((x) => x.id === c.controlPlane) : undefined;
     if (d?.bootFrom === "usb") Object.assign(d, { bootFrom: "disk", bootUntil: nowHours(s) + bootHours(s, d) });

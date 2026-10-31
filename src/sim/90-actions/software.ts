@@ -1,5 +1,7 @@
 import { dateOf, yearOf } from "../00-core/time";
+import { BREAK_HOURS, channelOf, targetYear, updateBreaks } from "../60-infra/channel";
 import { licenceExpired } from "../60-infra/licence";
+import type { SimEvent } from "../88-tick/tick";
 import { autoUpdates, clustersIn, conflict, phpAt, runsOn, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { anchorOf, clustersOf, clustersOn, dropCluster, machineOf, workloadsOn, type Cluster } from "../60-infra/cluster";
@@ -110,7 +112,7 @@ export function createSoftwareVm(s: GameState, clusterId: string, softwareId: st
 export const UPDATE_MINUTES: Record<SoftwareKind, number> = { panel: 30, game: 30, mail: 15, cloud: 120, dns: 15, vpn: 15, storage: 30, backup: 15 };
 
 export const updateDue = (s: GameState, c: Cluster): boolean =>
-  !!familyOf(c) && !c.switching && (c.version < yearOf(s.hour) || openVulns(s, c.id).length > 0);
+  !!familyOf(c) && !c.switching && (c.version < targetYear(channelOf(c), s.hour) || openVulns(s, c.id).length > 0);
 
 // Updates the cluster's software to this year's release, which closes every vulnerability patched so far. The workloads it
 // takes down are busy for the update and count the time against their SLA.
@@ -122,12 +124,16 @@ export function updateSoftware(s: GameState, clusterId: string): ActionResult {
   const sw = softwareById(family), hours = UPDATE_MINUTES[sw.kind] / 60;
   const live = sw.kind === "cloud" && sw.live && c.nodes.length > 1;
   const down = live ? [] : s.workloads.filter((w) => w.clusterId === c.id);
-  const ids = new Set(down.map((w) => w.id)), services = new Set(down.map((w) => w.serviceId).filter(Boolean));
-  s.workloads = s.workloads.map((w) => (ids.has(w.id) ? { ...w, busyUntil: Math.max(w.busyUntil, s.hour + hours) } : w));
+  // A broken update keeps every workload of the cluster down a few hours longer; the outage tickets come from the support tick.
+  const broke = updateBreaks(s, c), lost = (live ? 0 : hours) + (broke ? BREAK_HOURS[channelOf(c)] : 0);
+  const all = broke ? s.workloads.filter((w) => w.clusterId === c.id) : down;
+  const hit = new Set(all.map((w) => w.id));
+  const hitServices = new Set(all.map((w) => w.serviceId).filter(Boolean));
+  s.workloads = s.workloads.map((w) => (hit.has(w.id) ? { ...w, busyUntil: Math.max(w.busyUntil, s.hour + lost) } : w));
   // The hourly tick counts every whole hour a workload is busy; the rest is added here, as for a migration cutover.
-  const rest = hours - (Math.ceil(hours) - 1);
-  for (const id of services) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + rest };
-  s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, version: yearOf(s.hour), updatedAt: s.hour } : x));
+  const rest = lost - (Math.ceil(lost) - 1);
+  for (const id of hitServices) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + rest };
+  s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, version: Math.max(x.version, targetYear(channelOf(c), s.hour)), updatedAt: s.hour } : x));
   return { ok: true };
 }
 
@@ -143,11 +149,15 @@ export function setAutoUpdate(s: GameState, clusterId: string, on: boolean): Act
 // The hour of the night, game time, when clusters with automatic updates run a due update.
 export const AUTO_UPDATE_HOUR = 3;
 
-export function autoUpdateTick(s: GameState): void {
-  if (dateOf(s.hour).getUTCHours() !== AUTO_UPDATE_HOUR) return;
+export function autoUpdateTick(s: GameState): SimEvent[] {
+  const events: SimEvent[] = [];
+  if (dateOf(s.hour).getUTCHours() !== AUTO_UPDATE_HOUR) return events;
   for (const c of s.clusters) {
-    if (c.autoUpdate && updateDue(s, c) && autoUpdates(softwareById(familyOf(c)!), yearOf(s.hour))) updateSoftware(s, c.id);
+    if (!c.autoUpdate || !updateDue(s, c) || !autoUpdates(softwareById(familyOf(c)!), yearOf(s.hour))) continue;
+    const broke = updateBreaks(s, c);
+    if (updateSoftware(s, c.id).ok && broke) events.push({ app: "Locations", key: "event.updateBroke", params: { cluster: c.name } });
   }
+  return events;
 }
 
 // Uninstalls one software of the machine (its hypervisor, or its first, unless named) once nothing it serves runs on the

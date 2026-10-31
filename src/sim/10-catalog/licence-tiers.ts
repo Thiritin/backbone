@@ -3,12 +3,12 @@ import type { LicenseKind } from "./server-os";
 // economy.md, Platforms and licenses: the editions of a panel. The top tier keeps the fee the software has always cost.
 export interface LicenceTier { id: string; name: string; cap: number | null; fee: number; kind: LicenseKind }
 
-const t = (id: string, name: string, cap: number | null, fee: number, kind: LicenseKind = "server"): LicenceTier => ({ id, name, cap, fee, kind });
+const tier = (id: string, name: string, cap: number | null, fee: number, kind: LicenseKind = "server"): LicenceTier => ({ id, name, cap, fee, kind });
 
 export const TIERS: Record<string, LicenceTier[]> = {
-  cpanic: [t("solo", "Solo", 1, 2), t("admin", "Admin", 5, 4), t("pro", "Pro", 30, 10), t("premier", "Premier", null, 0.4, "account")],
-  pleskit: [t("webAdmin", "Web Admin", 10, 5), t("webPro", "Web Pro", 30, 8), t("webHost", "Web Host", null, 12)],
-  directadmen: [t("personal", "Personal", 1, 1), t("lite", "Lite", 10, 2), t("standard", "Standard", null, 4)],
+  cpanic: [tier("solo", "Solo", 1, 2), tier("admin", "Admin", 5, 4), tier("pro", "Pro", 30, 10), tier("premier", "Premier", null, 0.4, "account")],
+  pleskit: [tier("webAdmin", "Web Admin", 10, 5), tier("webPro", "Web Pro", 30, 8), tier("webHost", "Web Host", null, 12)],
+  directadmen: [tier("personal", "Personal", 1, 1), tier("lite", "Lite", 10, 2), tier("standard", "Standard", null, 4)],
 };
 
 export const tiersOf = (softwareId: string | null): LicenceTier[] => (softwareId ? TIERS[softwareId] ?? [] : []);
