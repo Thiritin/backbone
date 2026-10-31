@@ -31,3 +31,8 @@
 
 .ov-login { align-items: center; justify-content: center; padding: 48px 16px; background: var(--side); }
 .ov-login .ov-card { display: flex; flex-direction: column; gap: 12px; width: min(340px, 100%); border-top: 4px solid var(--accent); }
+
+.ov-certs { margin-bottom: 16px; }
+.ov-certs h2 { font-size: 14px; margin: 0 0 6px; }
+.ov-gw { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.ov-gw[data-soon="true"] { color: #b26a00; }

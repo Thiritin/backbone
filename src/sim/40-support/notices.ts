@@ -8,6 +8,7 @@ import { breachOf, decideBreach } from "../60-infra/breach";
 import { gridTick, maybeReview, returnSeized, seize } from "../60-infra/incidents";
 import type { SimEvent } from "../88-tick/tick";
 import { maintParams } from "../60-infra/maintenance";
+import { askedIp } from "../60-infra/netsvc-dns";
 import { sponsorParams } from "../80-business/community";
 import { bump, cancelCustomer, credit, HOURS_PER_MONTH, monthlyValue, type Notice, type Ticket } from "./tickets";
 
@@ -207,7 +208,7 @@ const breachParams = (s: GameState, t: Ticket) => {
 };
 
 export const subjectParams = (s: GameState, t: Ticket): Record<string, string | number> => ({
-  service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", video: t.notice?.video ?? "",
+  service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", ip: t.topic === "dnsChange" ? askedIp(s, t.id) : "", video: t.notice?.video ?? "",
   target: t.move?.name ?? "", round: t.notice?.round ?? 1, sender: t.notice ? senderById(t.notice.sender).name : "",
   ...(t.kind === "extortion" && breachParams(s, t)),
   ...(t.maint && maintParams(t.maint)),
