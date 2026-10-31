@@ -40,7 +40,8 @@ export function Desktop() {
   }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   const os = useStore((s) => s.game.os);
-  useEffect(() => { document.documentElement.dataset.os = os; }, [os]);
+  // The main menu shows the 2018 desktop behind it.
+  useEffect(() => { document.documentElement.dataset.os = started ? os : "yosemite"; }, [os, started]);
 
   return (
     <div className="desktop">

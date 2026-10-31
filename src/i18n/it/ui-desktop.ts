@@ -102,6 +102,8 @@ export default {
   "desktop.menu.mainMenu": () => "Menu principale",
   "desktop.start.news": () => "Novità",
   "desktop.start.settings": () => "Impostazioni",
+  "desktop.start.back": () => "Indietro",
+  "desktop.start.new": () => "Nuovo",
   "desktop.start.continue": () => "Continua",
   "desktop.menu.delete": () => "Elimina progressi…",
   "desktop.menu.window": () => "Finestra",

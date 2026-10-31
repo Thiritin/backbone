@@ -1,13 +1,11 @@
 .menu {
   position: absolute; inset: 0; overflow: hidden; color: white; font-size: 15px;
-  display: grid; grid-template-columns: 1fr minmax(300px, 380px); grid-template-rows: auto 1fr; gap: 0 48px; padding: 40px 56px;
-  background: oklch(0.14 0.03 255);
+  display: grid; grid-template-columns: 1fr minmax(300px, 380px); grid-template-rows: auto 1fr; gap: 0 48px; padding: 40px 56px 96px;
 }
 .menu::before {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background:
-    linear-gradient(90deg, oklch(0.1 0.03 255 / 0.75) 0%, oklch(0.1 0.03 255 / 0.15) 50%, oklch(0.1 0.03 255 / 0.6) 100%),
-    linear-gradient(0deg, oklch(0.08 0.03 255 / 0.6), transparent 40%);
+    linear-gradient(90deg, oklch(0.1 0.03 255 / 0.7) 0%, oklch(0.1 0.03 255 / 0.1) 55%, oklch(0.1 0.03 255 / 0.5) 100%);
 }
 .menu > :not(.mbd) { position: relative; z-index: 2; }
 .menu-title { grid-column: 1; display: flex; align-items: center; gap: 16px; font-size: 44px; font-weight: 700; letter-spacing: -0.03em; }
@@ -23,12 +21,23 @@
   border-radius: 14px; background: var(--banner); color: var(--text); box-shadow: var(--shadow-win); backdrop-filter: blur(30px) saturate(1.6);
 }
 .menu-news h2 { font-size: 13px; font-weight: 700; margin: 0; }
-.menu-news .update-changes { flex: 1; min-height: 0; max-height: none; margin: 0; }
-.menu-news .update-changes h3 { font-size: 13px; margin-top: 14px; }
-.menu-news .update-changes li { font-size: 13px; margin: 4px 0; }
-.menu-board { list-style: none; display: grid; gap: 4px; margin: 0; padding: 0 0 10px; border-bottom: 0.5px solid var(--line); font-size: 12px; color: var(--text-2); }
-.menu-board li { display: flex; align-items: center; gap: 8px; }
-.menu-board .num { margin-left: auto; }
+.menu-versions { flex: 1; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 6px; }
+.menu-versions details { border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 0.5px var(--line); }
+.menu-versions summary { display: flex; align-items: center; gap: 8px; padding: 9px 12px; font-weight: 600; font-size: 13px; cursor: pointer; list-style: none; }
+.menu-versions summary::-webkit-details-marker { display: none; }
+.menu-versions summary::before { content: ""; width: 6px; height: 6px; border-right: 1.5px solid var(--text-3); border-bottom: 1.5px solid var(--text-3); transform: rotate(-45deg); transition: transform 0.12s; }
+.menu-versions details[open] summary::before { transform: rotate(45deg); }
+.menu-versions small { margin-left: auto; font-weight: 400; color: var(--text-3); }
+.menu-versions small + .menu-new { margin-left: 0; }
+.menu-new { padding: 1px 7px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 600; }
+.menu-versions ul { margin: 0; padding: 0 14px 10px 28px; }
+.menu-versions li { font-size: 13px; color: var(--text-2); margin: 4px 0; }
+.menu-page {
+  grid-column: 1; grid-row: 2; align-self: center; display: grid; gap: 10px; width: min(460px, 100%); padding: 16px 18px; border-radius: 14px;
+  background: var(--banner); color: var(--text); box-shadow: var(--shadow-win); backdrop-filter: blur(30px) saturate(1.6);
+}
+.menu-page h2 { font-size: 15px; font-weight: 700; margin: 0; }
+.menu-page .btn.ghost { justify-self: start; }
 .start-swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 @media (max-width: 900px) {
   .menu { grid-template-columns: 1fr; padding: 24px; }
@@ -36,26 +45,15 @@
   .menu-bars { width: 100%; }
 }
 
-/* Backdrop: a 2012 desktop with a terminal and a traffic monitor. */
-.mbd { position: absolute; inset: 0; background: radial-gradient(120% 90% at 70% 20%, oklch(0.5 0.14 235), oklch(0.2 0.08 250) 70%); }
-.mbd-win { position: absolute; border-radius: 6px 6px 0 0; overflow: hidden; background: oklch(0.12 0.01 255); box-shadow: 0 0 0 1px oklch(1 0 0 / 0.25), 0 20px 50px oklch(0 0 0 / 0.5); }
-.mbd-title { height: 26px; padding: 5px 10px; font-size: 12px; color: oklch(0.2 0 0); background: linear-gradient(180deg, oklch(0.9 0.04 235), oklch(0.72 0.07 235)); }
-.mbd-term { left: 9%; top: 14%; width: 46%; height: 52%; }
-.mbd-term pre { margin: 0; padding: 10px 12px; font: 13px/1.45 ui-monospace, Menlo, monospace; color: oklch(0.85 0.15 145); white-space: pre-wrap; word-break: break-all; }
-.mbd-caret { display: inline-block; width: 8px; height: 14px; margin-left: 2px; vertical-align: -2px; background: currentColor; animation: mbd-blink 1s steps(1) infinite; }
-.mbd-mon { right: 8%; top: 30%; width: 38%; height: 44%; background: oklch(0.96 0.005 255); }
-.mbd-chart { display: flex; align-items: flex-end; gap: 4px; height: calc(100% - 66px); margin: 12px; }
-.mbd-chart i { flex: 1; height: 100%; background: linear-gradient(180deg, oklch(0.65 0.17 150), oklch(0.5 0.15 150)); transform-origin: bottom; animation: mbd-bar ease-in-out infinite alternate; }
-.mbd-stats { display: flex; justify-content: space-around; padding: 6px; font-size: 12px; color: oklch(0.35 0 0); }
-.mbd-cursor {
-  position: absolute; left: 20%; top: 30%; width: 14px; height: 20px; background: white; clip-path: polygon(0 0, 0 100%, 30% 75%, 50% 100%, 65% 92%, 45% 68%, 100% 68%);
-  filter: drop-shadow(0 1px 1px black); animation: mbd-cursor 14s ease-in-out infinite;
-}
-.mbd-task { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; display: flex; align-items: center; gap: 6px; padding: 0 8px; background: linear-gradient(180deg, oklch(0.45 0.06 240 / 0.9), oklch(0.22 0.05 245 / 0.95)); box-shadow: 0 -1px 0 oklch(1 0 0 / 0.3); }
-.mbd-orb { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, oklch(0.85 0.1 235), oklch(0.45 0.18 255)); box-shadow: 0 0 0 1px oklch(1 0 0 / 0.4); }
-.mbd-tab { padding: 5px 14px; border-radius: 3px; font-size: 12px; background: oklch(1 0 0 / 0.14); box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.25); }
-.mbd-clock { margin-left: auto; font-size: 12px; opacity: 0.85; }
+/* Backdrop: the 2018 desktop, drawn with the shell classes. */
+.mbd { position: absolute; inset: 0; pointer-events: none; }
+.mbd .menubar, .mbd .dock { position: absolute; }
+.mbd .window { position: absolute; }
+.mbd-term { background: oklch(0.16 0.01 255); }
+.mbd-term pre { margin: 0; padding: 10px 12px; font: 12.5px/1.5 ui-monospace, Menlo, monospace; color: oklch(0.85 0.15 145); white-space: pre-wrap; word-break: break-all; }
+.mbd-caret { display: inline-block; width: 7px; height: 13px; margin-left: 2px; vertical-align: -2px; background: currentColor; animation: mbd-blink 1s steps(1) infinite; }
+.mbd-chart { display: flex; align-items: flex-end; gap: 4px; padding: 16px; }
+.mbd-chart i { flex: 1; height: 100%; border-radius: 2px 2px 0 0; background: var(--accent); transform-origin: bottom; animation: mbd-bar ease-in-out infinite alternate; }
 @keyframes mbd-blink { 50% { opacity: 0; } }
 @keyframes mbd-bar { from { transform: scaleY(0.15); } to { transform: scaleY(1); } }
-@keyframes mbd-cursor { 0%, 100% { transform: translate(0, 0); } 30% { transform: translate(420px, 120px); } 55% { transform: translate(780px, 60px); } 80% { transform: translate(200px, 260px); } }
-@media (prefers-reduced-motion: reduce) { .mbd-chart i, .mbd-cursor, .mbd-caret { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .mbd-chart i, .mbd-caret { animation: none; } }

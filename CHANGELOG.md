@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-31
 
+- The main menu now shows each version of the changelog as a collapsible entry and marks the versions you have not read yet as new.
+- Settings on the main menu is now its own page with language and theme, and the menu background shows the game desktop as it looks in 2018.
 - The game now opens on a proper main menu with a looping 2012 desktop behind it, the version history on the right and your options in a column at the bottom left.
 - The language switcher moved into Settings, and importing progress is only possible from the main menu, which you can reach from the Backbone menu.
 - The game is now available in German, French, Spanish, Italian and Portuguese, and you can switch the language from the menu bar.
