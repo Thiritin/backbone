@@ -1,4 +1,5 @@
 import { addressBills, addressTick } from "../60-infra/addresses";
+import { netsvcTick } from "../60-infra/netsvc";
 import { binomial, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
@@ -299,6 +300,7 @@ export function tick(state: GameState): SimEvent[] {
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
   events.push(...addressTick(state));
+  events.push(...netsvcTick(state));
   events.push(...opsTick(state));
   events.push(...freezeTick(state));
   events.push(...haTick(state));

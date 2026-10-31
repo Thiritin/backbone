@@ -22,7 +22,7 @@ import { VM_STATE, vmLabel, vmState } from "../../products/parts";
 import { hoursText } from "../../vms/migrate";
 import { eraOf } from "../sites/era";
 
-export type Tab = "objects" | "nodes" | "software";
+export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
 export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void }
