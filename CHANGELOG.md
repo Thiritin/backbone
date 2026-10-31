@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-10-31
 
 - Every update is now named after its date, such as Version 2026.10.31.
+- The main menu buttons are now readable in light mode.
 - The main menu now has sounds: a soft tick when you move over an option, a chime when you choose one and a falling tone when you go back.
 - The main menu now shows each version of the changelog as a collapsible entry and marks the versions you have not read yet as new.
 - Settings on the main menu is now its own page with language and theme, and the menu background shows the game desktop as it looks in 2018.
