@@ -3,8 +3,8 @@
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 
-// Per mail address: the deferred queue, the happiness lost to the current listing and the hours of past listings.
-export interface MailState { deferred: number; hit: number; listings: number[] }
+// Per mail address: the deferred queue, the happiness lost to the current listing and the hours of past listings and when the queue was last deleted.
+export interface MailState { deferred: number; hit: number; listings: number[]; deletedAt?: number }
 
 export interface NetSvc {
   mail: Record<string, MailState>; // by address id
