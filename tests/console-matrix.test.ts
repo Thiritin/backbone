@@ -20,12 +20,11 @@ describe("console feature matrix", () => {
     }
   });
 
-  it("migrates panels from the year their tool imports from another panel", () => {
-    expect(at("cpanic", 2011).migrate).toBeNull();
-    expect(at("cpanic", 2012).migrate).toBe("hand");
-    expect(at("pleskit", 2014).migrate).toBeNull();
-    expect(at("pleskit", 2015).migrate).toBe("hand");
-    for (const id of ["directadmen", "freepanel"]) expect(at(id, 2026).migrate).toBeNull();
+  it("migrates panels from the year their tool imports from the same or another panel", () => {
+    expect(at("cpanic", 2004).migrate).toBeNull();
+    expect(at("cpanic", 2005).migrate).toBe("hand");
+    expect(at("pleskit", 2005).migrate).toBe("hand");
+    expect(at("freepanel", 2026).migrate).toBeNull();
   });
 
   it("migrates hypervisors live, except HyperVee and OpenVeeZee, which move cold", () => {

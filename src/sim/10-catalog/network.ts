@@ -105,7 +105,7 @@ export const REQUEST_DAYS = 30;
 export const DECLINE_COOLDOWN_HOURS = 90 * 24;
 
 // economy.md, DDoS attacks.
-export const DDOS = { gamerMonthly: 0.02, otherMonthly: 0.002, mbps2005: 500, growth: 1.25, minHours: 1, maxHours: 6, detectShare: 10 / 60 } as const;
+export const DDOS = { gamerMonthly: 0.02, otherMonthly: 0.002, mbps2005: 500, growth: 1.25, minHours: 1, maxHours: 6, detectShare: 10 / 60, burst: 0.5 } as const;
 export type Protection = "none" | "onDemand" | "alwaysOn";
 export const PROTECTIONS: Record<Exclude<Protection, "none">, { name: string; monthly: number; perIncident: number }> = {
   onDemand: { name: "Scrubba Dub On Demand", monthly: 50, perIncident: 250 },
