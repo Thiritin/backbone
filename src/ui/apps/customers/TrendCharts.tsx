@@ -2,10 +2,11 @@ import { useId, useState } from "react";
 import { dateOf } from "../../../sim/00-core/time";
 import type { TrendPoint } from "../../../sim/80-business/trend";
 import { monthYear } from "../support/labels";
+import { LOCALE } from "../../../i18n/lang";
 
 const day = (hour: number): string => {
   const d = dateOf(hour);
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  return d.toLocaleDateString(LOCALE, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 };
 
 const W = 520, H = 150, PAD = { l: 36, r: 8, t: 8, b: 20 };

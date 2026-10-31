@@ -24,6 +24,7 @@ import "../shop/shop.css";
 import "../billing/billing.css";
 import "../marketing/marketing.css";
 import "../network/network.css";
+import { LOCALE } from "../../../i18n/lang";
 
 export const mbps = (v: number): string => (v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)} Gbit/s` : `${v >= 10 ? Math.round(v) : v.toFixed(v >= 1 ? 1 : 2)} Mbit/s`);
 const pct = (v: number) => `${Math.round(v * 100)}%`;
@@ -298,7 +299,7 @@ function PeerFacts({ p }: { p: Peer }) {
   return (
     <dl className="shop-specs">
       <div><dt>Type</dt><dd>{KIND[p.kind]}</dd></div>
-      <div><dt>Prefixes</dt><dd className="num">{p.prefixes.toLocaleString("en")}</dd></div>
+      <div><dt>Prefixes</dt><dd className="num">{p.prefixes.toLocaleString(LOCALE)}</dd></div>
       <div><dt>Traffic share</dt><dd className="num">{p.share < 0.01 ? "<1%" : pct(p.share)}</dd></div>
       <div><dt>Policy</dt><dd>{POLICY[p.policy]}</dd></div>
       <div><dt>Wants</dt><dd className="num">{p.minMbps ? mbps(p.minMbps) : "Any"}</dd></div>

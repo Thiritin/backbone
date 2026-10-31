@@ -1,5 +1,6 @@
-const EUR = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 });
-const EUR_CENTS = new Intl.NumberFormat("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+import { LOCALE } from "../../i18n/lang";
+const EUR = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 });
+const EUR_CENTS = new Intl.NumberFormat(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export const euro = (v: number): string => `${EUR.format(v)} €`;
 export const euroCents = (v: number): string => `${EUR_CENTS.format(v)} €`;

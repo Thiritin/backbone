@@ -13,6 +13,7 @@ import { formatDay } from "../billing/BillingApp";
 import "../billing/billing.css";
 import "../shop/shop.css";
 import "./finance.css";
+import { LOCALE } from "../../../i18n/lang";
 
 const CATEGORY: Record<string, string> = {
   payments: "Customer payments", setup: "Setup fees", sales: "Hardware sales", hardware: "Hardware", rent: "Rent", power: "Power", transit: "Transit", salaries: "Salaries",
@@ -21,8 +22,8 @@ const CATEGORY: Record<string, string> = {
 const categoryLabel = (c: string) => CATEGORY[c] ?? c.charAt(0).toUpperCase() + c.slice(1);
 const REVENUE = ["payments", "setup", "sales"];
 const monthKey = (hour: number) => dateOf(hour).toISOString().slice(0, 7);
-const monthLabel = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
-const monthShort = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
+const monthLabel = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString(LOCALE, { month: "long", year: "numeric", timeZone: "UTC" });
+const monthShort = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString(LOCALE, { month: "short", timeZone: "UTC" });
 const compact = (v: number) => {
   const a = Math.abs(v), sign = v < 0 ? "-" : "";
   return a >= 1000 ? `${sign}${Number((a / 1000).toFixed(a >= 10_000 ? 0 : 1))}k €` : `${sign}${Math.round(a)} €`;

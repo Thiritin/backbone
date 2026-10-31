@@ -12,5 +12,6 @@ import "./ui/desktop/desktop.css";
 import "./ui/desktop/os.css";
 import { Desktop } from "./ui/desktop/Desktop";
 import { MobileGate, isMobile } from "./ui/desktop/MobileGate";
+import { loadLang } from "./i18n/lang";
 
-createRoot(document.getElementById("root")!).render(<StrictMode>{isMobile ? <MobileGate /> : <Desktop />}</StrictMode>);
+loadLang().then(() => createRoot(document.getElementById("root")!).render(<StrictMode>{isMobile ? <MobileGate /> : <Desktop />}</StrictMode>));

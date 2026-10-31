@@ -6,6 +6,7 @@ import { metrics } from "../../sim/metrics";
 import { appByName } from "../apps/registry";
 import { useBoard } from "../leaderboard";
 import { useStore } from "../store";
+import { LOCALE } from "../../i18n/lang";
 
 function Widget({ app, icon, label, children }: { app: string; icon: ReactNode; label: string; children: ReactNode }) {
   const openApp = useStore((s) => s.openApp);
@@ -17,7 +18,7 @@ function Widget({ app, icon, label, children }: { app: string; icon: ReactNode; 
   );
 }
 
-const fmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleDateString("en-GB", { timeZone: "UTC", ...o });
+const fmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleDateString(LOCALE, { timeZone: "UTC", ...o });
 
 export function Widgets() {
   const game = useStore((s) => s.game);

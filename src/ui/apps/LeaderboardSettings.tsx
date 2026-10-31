@@ -6,10 +6,11 @@ import { SCORE_END, scores, type Scores } from "../../sim/80-business/scores";
 import { runFile, runFileName, type Entry } from "../../sim/92-run/run";
 import { BUILD_ID, twistLabel, useBoard } from "../leaderboard";
 import { useStore } from "../store";
+import { LOCALE } from "../../i18n/lang";
 
 const BY: [keyof Scores, string][] = [["netWorth", "Net worth"], ["level3", "Level 3"], ["happiness", "Happiness"]];
 const MINE: [keyof Scores, string][] = [["netWorth", "Net worth at the end of 2007"], ["level3", "Level 3 reached"], ["happiness", "Mean happiness"]];
-const day = (hour: number) => dateOf(hour).toLocaleDateString("en-GB", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" });
+const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" });
 const show = (k: keyof Scores, v: number | null) =>
   v === null ? (k === "happiness" ? "None" : "Not reached") : k === "netWorth" ? euro(v) : k === "level3" ? day(v) : `${v} of 100`;
 

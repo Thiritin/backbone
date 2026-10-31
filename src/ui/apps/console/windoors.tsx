@@ -10,6 +10,7 @@ import { installFromSite } from "../../../sim/90-actions/console";
 import { installBlock, softwareOn, uninstallSoftware } from "../../../sim/90-actions/software";
 import { useStore } from "../../store";
 import { hostOf, hoursLeft, isDevice, winEra, type Keyed, type Machine } from "./installer";
+import { LOCALE } from "../../../i18n/lang";
 
 type Era = 0 | 1 | 2;
 const clock = (game: GameState) => `${String(dateOf(game.hour).getUTCHours()).padStart(2, "0")}:${String(game.minute).padStart(2, "0")}`;
@@ -34,7 +35,7 @@ export function useWindoors(game: GameState, m: Machine, version: string, logged
   const d = dateOf(game.hour);
   const view = (
     <div className="wl" data-era={era}>
-      {era === 2 && <div className="wl-clock">{clock(game)}<small>{d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</small></div>}
+      {era === 2 && <div className="wl-clock">{clock(game)}<small>{d.toLocaleDateString(LOCALE, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</small></div>}
       <div className="wl-box">
         {era !== 2 && <div className="wl-h">{`Windoors Server ${version}`}</div>}
         {pass === null

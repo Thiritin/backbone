@@ -10,6 +10,7 @@ import { isMgmtDevice, oobUp } from "../../sim/60-infra/oob";
 import { portLinks, type PortLink } from "../../sim/60-infra/usage";
 import type { Lamp, PartLamp, Parts, PortLamp, PortLight } from "../art/fronts";
 import { oobLabel } from "../art/mgmt";
+import { LOCALE } from "../../i18n/lang";
 
 export const speed = (g: number) => (g >= 1000 ? `${+(g / 1000).toFixed(1)}T` : g >= 1 ? `${g}G` : `${g * 1000}M`);
 export const ram = (gb: number) => (gb >= 1024 ? `${+(gb / 1024).toFixed(1)} TB` : `${gb} GB`);
@@ -23,8 +24,8 @@ const SLOT_NAME: Partial<Record<ComponentKind, string>> = { hdd: "Bay", ssd: "Ba
 // Slot a part sits in: the nth of its kind, or its fixed place on the board.
 export const partSlot = (kind: ComponentKind, nth: number): string => (SLOT_NAME[kind] ? `${SLOT_NAME[kind]} ${nth}` : "Onboard");
 export const height = (m: DeviceModel) => (m.kind === "gateway" && m.height === 0 ? "Panel" : `${m.height}U`);
-export const watts = (w: number) => `${Math.round(w).toLocaleString("en-GB")} W`;
-export const day = (hour: number) => dateOf(hour).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+export const watts = (w: number) => `${Math.round(w).toLocaleString(LOCALE)} W`;
+export const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 // Counts down in days while a day or more is left, then in hours.
 export const readyIn = (at: number, now: number) => {
   const left = Math.max(1, Math.ceil(at - now)), days = Math.floor(left / 24);
@@ -99,7 +100,7 @@ export function memoryDriveRows(parts: Fitted[]): [string, string][] {
   if (drive) {
     const f = drive.f;
     rows.push(["Drives", `${drive.n} × ${partLabel(drive.p)}`]);
-    if (f && f.kind !== "ram") rows.push(["Drive interface", `${f.iface}${f.rpm ? `, ${f.rpm.toLocaleString("en-GB")} rpm` : f.dwpd ? `, ${f.dwpd} DWPD` : ""}`], ["Drive speed", `${f.mbps} MB/s, ${f.iops.toLocaleString("en-GB")} IOPS`]);
+    if (f && f.kind !== "ram") rows.push(["Drive interface", `${f.iface}${f.rpm ? `, ${f.rpm.toLocaleString(LOCALE)} rpm` : f.dwpd ? `, ${f.dwpd} DWPD` : ""}`], ["Drive speed", `${f.mbps} MB/s, ${f.iops.toLocaleString(LOCALE)} IOPS`]);
   }
   return rows;
 }

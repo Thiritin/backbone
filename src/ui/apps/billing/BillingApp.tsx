@@ -16,9 +16,10 @@ import { More } from "../More";
 import { useFocus, useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
 import "./billing.css";
+import { LOCALE } from "../../../i18n/lang";
 
 export const formatDay = (hour: number) =>
-  dateOf(hour).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  dateOf(hour).toLocaleDateString(LOCALE, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 export const sameMonth = (a: number, b: number) => {
   const x = dateOf(a), y = dateOf(b);

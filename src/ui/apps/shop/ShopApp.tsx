@@ -20,6 +20,7 @@ import { useFocus, useStore } from "../../store";
 import { socketOf } from "../../../sim/10-catalog/cpus";
 import { memoryDriveRows, clockLabel, cores, disk, height, partLabel, partSize, portsText, ram, speed, threadsLabel } from "../hw";
 import "./shop.css";
+import { LOCALE } from "../../../i18n/lang";
 
 const ICON: Record<string, typeof Server> = {
   Servers: Server, Switches: Network, Routers: Router, Security: Shield, "Patch panels": Cable, "Remote access": MonitorCog, Power: BatteryCharging, Parts: HardDrive,
@@ -34,7 +35,7 @@ function familyRows(part: PartSpec): [string, string][] {
   const f = familyById(part.sku);
   if (!f) return [];
   if (isRamFamily(f)) return [["Type", `${f.ddr}-${f.mts}`], ["Stick", f.stick]];
-  return [["Interface", f.iface], f.rpm ? ["Spindle", `${f.rpm.toLocaleString("en-GB")} rpm`] : ["Endurance", `${f.dwpd} DWPD`], ["Read", `${f.mbps.toLocaleString("en-GB")} MB/s`], ["IOPS", f.iops.toLocaleString("en-GB")]];
+  return [["Interface", f.iface], f.rpm ? ["Spindle", `${f.rpm.toLocaleString(LOCALE)} rpm`] : ["Endurance", `${f.dwpd} DWPD`], ["Read", `${f.mbps.toLocaleString(LOCALE)} MB/s`], ["IOPS", f.iops.toLocaleString(LOCALE)]];
 }
 
 // A device model from a manufacturer, or a sized part; make is who the sidebar files it under.
@@ -170,7 +171,7 @@ function useOffer({ model, brand, part, maker }: Item & { maker: Vendor | null }
     ...(!part && model.price > 0 ? [["Release", releaseLabel(brandFrom(model, brand))]] as [string, string][] : []),
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
     ...(model.ipsGbit ? [["IPS throughput", speed(model.ipsGbit)]] as [string, string][] : []),
-    ...(model.sessions ? [["Sessions", model.sessions.toLocaleString("en-GB")]] as [string, string][] : []),
+    ...(model.sessions ? [["Sessions", model.sessions.toLocaleString(LOCALE)]] as [string, string][] : []),
     ...(s ? [["CPU", `${s.sockets} × ${VENDOR_NAME[vendor]} ${(cpu && skuById(cpu)?.name) ?? ""}`.trim()], ["Cores", cores(sum("cpu"))], ...(cpu && skuById(cpu) ? [["Threads", `${s.sockets * skuById(cpu)!.threads}`]] : []), ["Clock", clockLabel({ kind: "cpu", vendor, gen: model.gen, sku: cpu })], ["Mainboard", board?.name ?? ""], ["CPU sockets", board ? `${board.sockets} × ${board.socket}, up to ${cores(board.maxCores)} each` : ""], ["RAM", ram(s.ramGb)],
       ...(cards.length ? [["GPUs", `${cards.length} × ${cardOf(cards[0].size).name}`]] as [string, string][] : []),
       ["Storage", `${disk(s.diskGb)} ${s.disk}`], ...memoryDriveRows(built)] as [string, string][] : []),

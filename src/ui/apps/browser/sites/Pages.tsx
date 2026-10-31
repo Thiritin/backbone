@@ -7,6 +7,7 @@ import { customerSite } from "../../../../sim/80-business/website";
 import { senderById } from "../../../../sim/40-support/notices";
 import { CompanyMark } from "../../company";
 import "./pages.css";
+import { LOCALE } from "../../../../i18n/lang";
 
 const hueOf = (name: string): number => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
 
@@ -49,7 +50,7 @@ export function VideoPage() {
         <h1>{VIDEO_TITLE}</h1>
         <div className="yt-meta">
           <span className="yt-artist"><i>R</i>{VIDEO_ARTIST}</span>
-          <span className="num">{VIEWS.toLocaleString("en-US")} views</span>
+          <span className="num">{VIEWS.toLocaleString(LOCALE)} views</span>
           <button className="yt-like" aria-pressed={liked} onClick={() => setLiked(!liked)}>{liked ? "Liked" : "Like"}</button>
         </div>
       </div>

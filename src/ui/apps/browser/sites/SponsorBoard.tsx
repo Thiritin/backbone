@@ -13,6 +13,7 @@ import { PRODUCT } from "../../support/labels";
 import { useStore } from "../../../store";
 import { eraOf } from "./era";
 import "./sponsorboard.css";
+import { LOCALE } from "../../../../i18n/lang";
 
 const AD: Record<Ad, string> = { banner: "Banner on the site", signature: "Forum signature", stage: "Mention on stage" };
 const monthsText = (n: number) => (n === 1 ? "1 month" : `${n} months`);
@@ -63,7 +64,7 @@ export function SponsorBoard({ game }: { game: GameState }) {
                 <Avatar name={ev.name} />
                 <div className="sb-who">
                   <strong>{ev.name}</strong>
-                  <div className="sb-meta"><span>{ev.audience.map((p) => AUDIENCE[p]).join(", ")}</span><span className="sb-num">{ev.people.toLocaleString("en-US")} people</span><span>{ev.kind === "tech" ? "Know-how" : "Mention at the event"}</span></div>
+                  <div className="sb-meta"><span>{ev.audience.map((p) => AUDIENCE[p]).join(", ")}</span><span className="sb-num">{ev.people.toLocaleString(LOCALE)} people</span><span>{ev.kind === "tech" ? "Know-how" : "Mention at the event"}</span></div>
                   <div className="sb-meta"><span>{ev.count} × {specText(ev.product, sizeSpec(ev.product, ev.size, year))}</span><span>{daysText(ev.hours)}</span><span className="sb-num">until {formatDay(x.offeredAt + OFFER_HOURS)}</span></div>
                 </div>
                 <div className="sb-acts">
@@ -107,7 +108,7 @@ export function SponsorBoard({ game }: { game: GameState }) {
                 <Avatar name={b.name} />
                 <div className="sb-who">
                   <strong>{b.name}</strong>
-                  <div className="sb-meta"><span>{AUDIENCE[b.profile]}</span><span className="sb-num">{b.audience.toLocaleString("en-US")} people</span><span>{AD[b.ad]}</span></div>
+                  <div className="sb-meta"><span>{AUDIENCE[b.profile]}</span><span className="sb-num">{b.audience.toLocaleString(LOCALE)} people</span><span>{AD[b.ad]}</span></div>
                 </div>
                 <div className="sb-acts">
                   <button className="sb-button ghost" onClick={() => act(declineSponsorship, x.ticketId)}>Decline</button>

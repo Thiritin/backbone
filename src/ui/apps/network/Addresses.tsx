@@ -11,6 +11,7 @@ import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
 import { devName } from "../hw";
 import { vmLabel } from "../products/parts";
+import { LOCALE } from "../../../i18n/lang";
 
 const SOURCE: Record<AddressSource, string> = { line: "Home line", lineExtra: "Home line extra", provider: "Provider", lir: "Own block" };
 const COUNTS = [1, 4, 16];
@@ -141,7 +142,7 @@ export function Ripe({ game }: { game: GameState }) {
           <dl className="shop-specs">
             <div><dt>Sign-up</dt><dd className="num">{euro(LIR_FEES.signup)}</dd></div>
             <div><dt>Per year</dt><dd className="num">{euro(LIR_FEES.yearly)}</dd></div>
-            <div><dt>First block</dt><dd className="num">{free ? `/${free.prefix}, ${free.size.toLocaleString("en")} addresses` : "None"}</dd></div>
+            <div><dt>First block</dt><dd className="num">{free ? `/${free.prefix}, ${free.size.toLocaleString(LOCALE)} addresses` : "None"}</dd></div>
           </dl>
           <div className="shop-buy"><span className="grow" /><button className="btn primary" onClick={() => act(joinLir)}>Join</button></div>
         </div>
@@ -167,7 +168,7 @@ export function Ripe({ game }: { game: GameState }) {
           {game.ips.blocks.map((b) => (
             <tr key={b.id}>
               <td className="num">{b.prefix}</td>
-              <td className="num r">{b.size.toLocaleString("en")}</td>
+              <td className="num r">{b.size.toLocaleString(LOCALE)}</td>
               <td className="num r">{game.ips.addresses.filter((a) => a.blockId === b.id && a.holder).length}</td>
               <td>
                 <div className="seg" role="group" aria-label="Announced from">

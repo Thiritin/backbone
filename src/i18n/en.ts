@@ -26,10 +26,13 @@ import { BURNIN_EN } from "./burnin";
 import { USED_EN } from "./used";
 import { VENDORS_EN } from "./vendors";
 import { ALARMS_EN } from "./alarms";
+import { active, LOCALE, type Dict } from "./lang";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 type Params = Record<string, string | number>;
+// UI text, one file per area: src/i18n/ui-<area>.ts.
+const UI = Object.values(import.meta.glob<{ default: Dict }>("./ui-*.ts", { eager: true })).map((m) => m.default);
 const COMPONENT_LABELS: Record<string, string> = {
   hdd: "hard drive", ssd: "SSD", nvme: "NVMe drive", psu: "power supply", fan: "fan", ram: "RAM stick", board: "mainboard", cpu: "CPU", nic: "network card",
 };
@@ -41,6 +44,7 @@ const thing = (p: Params) => `${p.web ? "web space" : "virtual machine"}${p.coun
 const units = (n: string | number) => `${n} ${Number(n) === 1 ? "unit" : "units"}`;
 
 export const en: Record<string, (p: Params) => string> = {
+  ...Object.assign({}, ...UI),
   ...SALES_EN,
   ...ADDRESSES_EN,
   ...IPMI_EN,
@@ -82,7 +86,7 @@ export const en: Record<string, (p: Params) => string> = {
   "ledger.subscription": (p) => `Pear One subscription: ${p.name}`,
   "ledger.subscriptionSeats": (p) => `Pear One subscription: ${p.name}, ${p.seats} ${Number(p.seats) === 1 ? "seat" : "seats"}`,
   "ledger.fcAdapters": (p) => `Fibre Channel host adapters for ${p.cluster}: ${p.count} ${Number(p.count) === 1 ? "node" : "nodes"}`,
-  "ledger.chadUsage": (p) => `ChadGPT usage: ${Number(p.attempts).toLocaleString("en-GB")} replies, ${(Number(p.tokens) / 1e6).toFixed(1)}M tokens`,
+  "ledger.chadUsage": (p) => `ChadGPT usage: ${Number(p.attempts).toLocaleString(LOCALE)} replies, ${(Number(p.tokens) / 1e6).toFixed(1)}M tokens`,
   "error.unknownStoreItem": () => "The Pear Store does not sell this.",
   "error.unknownSkill": () => "There is no such training.",
   "error.researched": () => "Your company already knows this.",
@@ -716,4 +720,4 @@ export const en: Record<string, (p: Params) => string> = {
   "error.backupUnavailable": () => "The backup cluster is unreachable.",
 };
 
-export const t = (key: string, params: Params = {}): string => en[key]?.(params) ?? key;
+export const t = (key: string, params: Params = {}): string => (active[key] ?? en[key])?.(params) ?? key;

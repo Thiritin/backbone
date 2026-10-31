@@ -25,6 +25,7 @@ import { formatDay } from "../billing/BillingApp";
 import { initials } from "../support/labels";
 import "../shop/shop.css";
 import "./staff.css";
+import { LOCALE } from "../../../i18n/lang";
 
 const ROLE: Record<Role, { one: string; many: string }> = {
   support: { one: "Support agent", many: "Support agents" },
@@ -175,7 +176,7 @@ function ChadUsageFacts({ game }: { game: GameState }) {
       <h3>Usage this month</h3>
       <dl className="st-facts">
         <div><dt>Price</dt><dd className="num">{euroCents(pricePerMTokens(year))} / 1M tokens</dd></div>
-        <div><dt>Replies</dt><dd className="num">{u.attempts.toLocaleString("en-GB")}</dd></div>
+        <div><dt>Replies</dt><dd className="num">{u.attempts.toLocaleString(LOCALE)}</dd></div>
         <div><dt>Tokens</dt><dd className="num">{(u.tokens / 1e6).toFixed(1)}M</dd></div>
         <div><dt>Cost</dt><dd className="num">{euro(u.cost)}</dd></div>
         <div><dt>Per solved ticket</dt><dd className="num">{u.solved ? euroCents(u.cost / u.solved) : "None"}</dd></div>

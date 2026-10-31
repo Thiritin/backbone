@@ -9,9 +9,10 @@ import { cancelOperation, setOnCall, setTechLocation, setTechRules } from "../..
 import { useStore } from "../../store";
 import { devName } from "../hw";
 import { opLabel } from "../locations/TechButton";
+import { LOCALE } from "../../../i18n/lang";
 
 const RULES: [keyof TechRules, string][] = [["failed", "Replace failed parts"], ["worn", "Replace worn parts"], ["blackhole", "Blackhole attacks"], ["updates", "Update vulnerable software"], ["recover", "Recover corrupted data"]];
-const WEEK_OF = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
+const WEEK_OF = new Intl.DateTimeFormat(LOCALE, { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
 
 // A technician's location, the operations queued there, the location's on-call rotation and the rules all technicians follow.
 export function TechPanel({ game, e }: { game: GameState; e: Employee }) {

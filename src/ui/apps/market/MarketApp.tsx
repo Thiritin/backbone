@@ -19,11 +19,12 @@ import "../billing/billing.css";
 import "../marketing/marketing.css";
 import "./market.css";
 import { noticesOutages } from "../customers/notice";
+import { LOCALE } from "../../../i18n/lang";
 
 type Section = "demand" | "profiles" | "lost" | "competitors";
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
-const perMonth = (n: number) => (n < 10 ? n.toFixed(1) : Math.round(n).toLocaleString("en"));
+const perMonth = (n: number) => (n < 10 ? n.toFixed(1) : Math.round(n).toLocaleString(LOCALE));
 const SLA_LABEL = { basic: "Basic", business: "Business", premium: "Premium" } as const;
 const LOWER = { basic: "basic", business: "basic", premium: "business" } as const;
 const PLAN_SIZE = { low: "Smallest plan", medium: "Second plan", high: "Largest plan" } as const;

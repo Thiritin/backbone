@@ -25,7 +25,7 @@ button { font: inherit; color: inherit; cursor: default; }
 .rz-ne { top: 0; right: 0; cursor: nesw-resize; } .rz-sw { bottom: 0; left: 0; cursor: nesw-resize; }
 .rz-nw { top: 0; left: 0; cursor: nwse-resize; } .rz-se { bottom: 0; right: 0; cursor: nwse-resize; }
 
-.menubar button.mb-item { border: 0; background: none; }
+.menubar button.mb-item, .menubar select.mb-item { border: 0; background: none; color: inherit; font: inherit; }
 .menubar .mb-item svg.lucide { width: 15px; height: 15px; }
 .menubar .mb-cash { font-weight: 600; }
 .mb-menu { position: relative; }

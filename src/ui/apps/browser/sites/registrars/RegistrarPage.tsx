@@ -11,6 +11,7 @@ import { companyDomainError, orderCompanyDomain, queueTransfer, signRegistrar, t
 import { useStore } from "../../../../store";
 import { formatDay } from "../../../billing/BillingApp";
 import "./registrars.css";
+import { LOCALE } from "../../../../../i18n/lang";
 
 export const REGISTRAR_HUE: Record<RegistrarId, number> = { nameCheep: 45, goDuddy: 150, interNetY: 250, openSrsly: 300 };
 
@@ -102,7 +103,7 @@ export function Program({ game, r, title = "Reseller program", sign = "Sign" }: 
         <div><dt>Signup</dt><dd className="num">{r.signup ? euro(r.signup) : "None"}</dd></div>
         <div><dt>Per month</dt><dd className="num">{r.minimum ? `${euro(r.minimum)} minimum` : r.fee ? euro(r.fee) : "None"}</dd></div>
         {r.factors.map((f, i) => (
-          <div key={i}><dt>{i === 0 ? "Any size" : `${TIERS[i].toLocaleString("en")}+ domains`}</dt><dd className="num">{mine && tier === i ? <strong>{factor(f)}</strong> : factor(f)}</dd></div>
+          <div key={i}><dt>{i === 0 ? "Any size" : `${TIERS[i].toLocaleString(LOCALE)}+ domains`}</dt><dd className="num">{mine && tier === i ? <strong>{factor(f)}</strong> : factor(f)}</dd></div>
         ))}
         {r.tlds && Object.entries(r.tlds).map(([tld, f]) => <div key={tld}><dt>.{tld}</dt><dd className="num">{factor(f)}</dd></div>)}
         <div><dt>SSL certificate</dt><dd className="num">{euro(r.ssl)} a year</dd></div>
@@ -126,7 +127,7 @@ export function Account({ game, r, title = "Your account" }: { game: GameState; 
         <div><dt>Tier</dt><dd className="num">{tier + 1} of {TIERS.length}</dd></div>
         <div><dt>Domains</dt><dd className="num">{count}</dd></div>
         <div><dt>SSL certificates</dt><dd className="num">{certificateCount(game)}</dd></div>
-        <div><dt>Next tier</dt><dd className="num">{next ? `At ${next.toLocaleString("en")} domains` : "None"}</dd></div>
+        <div><dt>Next tier</dt><dd className="num">{next ? `At ${next.toLocaleString(LOCALE)} domains` : "None"}</dd></div>
         <div><dt>Per month</dt><dd className="num">{euroCents(Math.max(r.minimum, monthlyDomains(game) + r.fee) + (certificateCount(game) * r.ssl) / 12)}</dd></div>
       </dl>
       {t && (

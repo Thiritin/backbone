@@ -15,6 +15,7 @@ import { CompanyMark } from "../apps/company";
 import { appFor } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
 import { BUILD_ID } from "../leaderboard";
+import { LANGS, lang, setLang, type Lang } from "../../i18n/lang";
 
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
@@ -93,6 +94,9 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
         <Bell />
         {unseen > 0 && <span key={unseen} className="count plop">{unseen > 99 ? "99+" : unseen}</span>}
       </button>
+      <select className="mb-item mb-lang" aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+        {Object.entries(LANGS).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+      </select>
       <button className="mb-item" aria-label="Toggle dark mode" onClick={onTheme}>{theme === "dark" ? <Sun /> : <Moon />}</button>
       <input ref={file} type="file" accept="application/json,.json" hidden onChange={async (e) => {
         const f = e.target.files?.[0];
