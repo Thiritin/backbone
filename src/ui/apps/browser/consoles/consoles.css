@@ -90,6 +90,14 @@
 .cx-tile.primary svg { color: var(--ok); }
 .cx-tile.danger { border-color: var(--bad); color: var(--bad); }
 .cx-tile.danger svg { color: var(--bad); }
+
+.cx-form { display: flex; flex-direction: column; gap: 10px; max-width: 460px; }
+.cx-form select, .cx-form input { width: 100%; }
+.cx-group { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); }
+.cx-group legend { padding: 0 6px; font-weight: 600; font-size: 12px; }
+.cx-summary { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; font-size: 12px; }
+.cx-summary dt { color: var(--muted); }
+.cx-summary dd { margin: 0; }
 .cx-log { margin: 8px 0 0; padding: 8px 10px; max-height: 360px; overflow: auto; border: 1px solid var(--line); border-radius: 4px; font: 11.5px/1.5 var(--mono, monospace); white-space: pre-wrap; word-break: break-all; }
 
 /* Shared classes follow the web of the game year. Vendor sheets use :root[data-era] selectors to outrank these :where() rules. */

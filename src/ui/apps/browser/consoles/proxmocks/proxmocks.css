@@ -71,3 +71,8 @@
 :root[data-era="tahoe"] .pmx .pmx-panel { overflow: hidden; border-radius: 18px; }
 :root[data-era="yosemite"] .pmx .pmx-logo b { color: var(--mark); }
 :root[data-era="tahoe"] .pmx .pmx-card-h { background: transparent; border-top: 0; }
+
+.pmx-plans { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 6px; padding: 4px 8px; border: 0; background: none; text-align: left; font: inherit; cursor: pointer; }
+.pmx-plans[aria-pressed="true"] { background: #cbe0f7; }
+.pmx-plans i { font-style: normal; }
+.pmx-order { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
