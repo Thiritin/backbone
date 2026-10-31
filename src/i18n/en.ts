@@ -26,6 +26,7 @@ import { BURNIN_EN } from "./burnin";
 import { USED_EN } from "./used";
 import { VENDORS_EN } from "./vendors";
 import { ALARMS_EN } from "./alarms";
+import { IFACE_EN } from "./iface";
 import { active, LOCALE, type Dict } from "./lang";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -49,6 +50,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...ADDRESSES_EN,
   ...IPMI_EN,
   ...TERMINAL_EN,
+  ...IFACE_EN,
   ...REMOTE_EN,
   ...CONSOLE_EN,
   ...SECURITY_EN,
