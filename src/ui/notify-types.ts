@@ -1,10 +1,12 @@
+import { t } from "../i18n/en";
 // Notification types: groups of event keys inside an app that Settings can switch on and off one by one.
 export interface NotifyType { id: string; label: string; match: (key: string) => boolean }
 
 // Names are event keys without the "event." prefix; a trailing * matches every key that starts with the name.
 const is = (...names: string[]) => (key: string) =>
   names.some((n) => (n.endsWith("*") ? key.startsWith(`event.${n.slice(0, -1)}`) : key === `event.${n}`));
-const type = (label: string, ...names: string[]): NotifyType => ({ id: label.toLowerCase().replace(/[^a-z]+/g, "-"), label, match: is(...names) });
+const key = (label: string) => `core.notify.${label.replace(/[^A-Za-z]+/g, " ").trim().replace(/ (\w)/g, (_, c: string) => c.toUpperCase()).replace(/^./, (c) => c.toLowerCase())}`;
+const type = (label: string, ...names: string[]): NotifyType => ({ id: label.toLowerCase().replace(/[^a-z]+/g, "-"), label: t(key(label)), match: is(...names) });
 
 const GROUPS: Record<string, NotifyType[]> = {
   Finance: [type("Bills and tax", "bills", "monthStart", "tax", "taxLoss", "networkBills"), type("Cash and loans", "cashNegative", "bankrupt", "loanMissed", "loanCalled")],
@@ -49,7 +51,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu", "news.models", "news.shape", "news.vendor"), type("Software", "news.software", "news.autoUpdate", "news.feature", "news.desk", "news.training", "news.release"), type("Internet", "news.ipv6*", "news.ripe*", "news.homeLines", "news.ports"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*", "news.freeSsl")],
 };
 
-const OTHER: NotifyType = { id: "other", label: "Other", match: () => true };
+const OTHER: NotifyType = { id: "other", label: t("core.notify.other"), match: () => true };
 
 // Every app's groups, closed by Other for the keys no group claims.
 export const NOTIFY_TYPES: Record<string, NotifyType[]> = Object.fromEntries(Object.entries(GROUPS).map(([app, groups]) => [app, [...groups, OTHER]]));

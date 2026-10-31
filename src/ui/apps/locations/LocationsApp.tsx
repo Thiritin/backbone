@@ -1,5 +1,6 @@
 import { Hourglass, Map as MapIcon, Plus } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
 import type { GameState, Location, Rack } from "../../../sim/50-state";
 import { locationOf, storageStacks } from "../../../sim/60-infra/status";
@@ -66,9 +67,9 @@ export function LocationsApp() {
 
   return (
     <div className="loc">
-      <nav className="sidebar fin-side" aria-label="Locations">
-        {item("overview", view === null, <><MapIcon />Overview</>, () => go(null))}
-        {game.waitlist.length > 0 && item("waitlist", view === "waitlist", <><Hourglass />Waitlist</>, () => go("waitlist"), game.waitlist.length)}
+      <nav className="sidebar fin-side" aria-label={t("locations-1.locations")}>
+        {item("overview", view === null, <><MapIcon />{t("locations-1.overview")}</>, () => go(null))}
+        {game.waitlist.length > 0 && item("waitlist", view === "waitlist", <><Hourglass />{t("locations-1.waitlist")}</>, () => go("waitlist"), game.waitlist.length)}
         {REGIONS.filter((r) => game.locations.some((l) => l.city === r.city)).map((r) => (
           <div key={r.id} className="fin-side" role="group" aria-label={r.name}>
             <div className="side-h">{r.name}</div>
@@ -81,7 +82,7 @@ export function LocationsApp() {
           </div>
         ))}
         <span className="grow" />
-        {item("add", false, <><Plus />Add location</>, () => setAdding(true))}
+        {item("add", false, <><Plus />{t("locations-1.addLocation")}</>, () => setAdding(true))}
       </nav>
       <div className="loc-main">
         {view === "waitlist" ? (
@@ -128,12 +129,12 @@ function LocationTabs({ game, locId, tab, onTab }: { game: GameState; locId: str
   const loc = game.locations.find((l) => l.id === locId)!;
   const stored = storageStacks(game, loc.id).reduce((n, s) => n + s.ids.length, 0);
   const tabs: [Tab, string, number?][] = [
-    ["floor", "Floor"], ["cabling", "Cabling"], ["storage", "Storage", stored],
-    ["network", "Network", networkCount(game, loc)],
-    ...(loc.space === "basement" ? [["line", "Internet line"] as [Tab, string]] : []),
+    ["floor", t("locations-1.floor")], ["cabling", t("locations-1.cabling")], ["storage", t("locations-1.storage"), stored],
+    ["network", t("locations-1.network"), networkCount(game, loc)],
+    ...(loc.space === "basement" ? [["line", t("locations-1.internetLine")] as [Tab, string]] : []),
   ];
   return (
-    <div className="tabs loc-tabs" role="tablist" aria-label="Location">
+    <div className="tabs loc-tabs" role="tablist" aria-label={t("locations-1.location")}>
       {tabs.map(([id, label, count]) => (
         <button key={id} role="tab" aria-selected={tab === id} onClick={() => onTab(id)}>
           {label}{count ? <span className="tab-count num">{count}</span> : null}
@@ -150,17 +151,17 @@ function LocationHead({ game, locId }: { game: GameState; locId: string }) {
   const mnt = useMaintenance(), target = { kind: "location", id: loc.id } as const, windows = windowsAtLocation(game, loc.id);
   return (
     <header className="loc-top">
-    <div className="loc-head" onContextMenu={menuOn(() => [{ label: "Plan maintenance…", run: () => mnt.plan(target) }])}>
+    <div className="loc-head" onContextMenu={menuOn(() => [{ label: t("locations-1.planMaintenance"), run: () => mnt.plan(target) }])}>
       <Logo provider={providerOf(loc)} size={28} />
       <div className="loc-head-name">
         <h2>{loc.name}<Zone loc={loc} /></h2>
         <span className="loc-muted">{loc.city} · {spaceLabel(loc, game)}</span>
       </div>
       <span className="grow" />
-      {loc.readyAt > game.hour && <span className="pill warn">Ready in <span className="num">{readyIn(loc.readyAt, game.hour)}</span></span>}
+      {loc.readyAt > game.hour && <span className="pill warn">{t("locations-1.readyIn")} <span className="num">{readyIn(loc.readyAt, game.hour)}</span></span>}
       {dc && <span className="pill">{feedsLabel(dc)}</span>}
       {dc && <span className="pill">{backupLabel(dc)}</span>}
-      {dc?.green && <span className="pill">Green power</span>}
+      {dc?.green && <span className="pill">{t("locations-1.greenPower")}</span>}
       {dc && <span className="pill">{exchangeLabel(dc)}</span>}
       <PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} />
       <PlanButton target={target} plan={(t) => mnt.plan(t)} />

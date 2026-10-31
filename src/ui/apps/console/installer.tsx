@@ -33,21 +33,21 @@ function useTarget(game: GameState, m: Machine) {
   const [typed, setTyped] = useState("");
   const [note, setNote] = useState("");
   const found = installCase(game, m.id), busy = found.kind === "busy", drives = isDevice(m) ? drivesOf(m) : [];
-  const array = isDevice(m) ? `${drives.length} x ${disk(drives[0]?.size ?? 0)}${m.raid === "none" ? "" : ` RAID ${m.raid}`}, ${disk(raidUsable(m))}` : `${disk(m.diskGb)} virtual disk`;
+  const array = isDevice(m) ? `${drives.length} x ${disk(drives[0]?.size ?? 0)}${m.raid === "none" ? "" : ` RAID ${m.raid}`}, ${disk(raidUsable(m))}` : t("console.virtualDisk", { size: disk(m.diskGb) });
   const had = found.kind === "empty" ? null : softwareById(found.cluster.panel ?? found.cluster.platform ?? found.cluster.switching?.to ?? "").name;
   const dies = found.kind === "busy" ? [...new Set([...found.workloads, ...found.lost])] : [];
   const customers = found.kind === "busy" ? new Set(found.lost.map((w) => game.services.find((v) => v.id === w.serviceId)?.customerId).filter(Boolean)).size : 0;
   const backed = found.kind === "busy" ? found.lost.filter((w) => w.backupAt !== null).length : 0;
   const what = (
     <>
-      {found.kind === "empty" && !m.os && <div>The disks are empty.</div>}
-      {found.kind === "empty" && m.os && <div>The disks hold {serverOsById(m.os.id).name} {m.os.version}. It will be erased.</div>}
-      {found.kind === "idle" && <div>The disks hold {had} ({found.cluster.name}). It will be erased.</div>}
+      {found.kind === "empty" && !m.os && <div>{t("console.disksEmpty")}</div>}
+      {found.kind === "empty" && m.os && <div>{t("console.disksHoldOs", { os: serverOsById(m.os.id).name, version: m.os.version })}</div>}
+      {found.kind === "idle" && <div>{t("console.disksHoldSoftware", { name: had ?? "", cluster: found.cluster.name })}</div>}
       {busy && <>
-        <div>{found.cluster.name} runs {had} and will be erased with everything on it:</div>
+        <div>{t("console.clusterRuns", { cluster: found.cluster.name, name: had ?? "" })}</div>
         <ul>{dies.map((w) => <li key={w.id}>{w.hostname ?? vmLabel(game, w).name}</li>)}</ul>
-        <div>{customers} {customers === 1 ? "customer" : "customers"}, {backed} with a backup.</div>
-        <div>Type {hostOf(m)} to confirm: <b>{typed}</b>_</div>
+        <div>{t("console.customers", { n: customers, backed })}</div>
+        <div>{t("console.typeToConfirm", { host: hostOf(m) })} <b>{typed}</b>_</div>
       </>}
     </>
   );
@@ -95,21 +95,21 @@ function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
   const [step, setStep] = useState<LunixStep>("boot");
   const tg = useTarget(game, m), net = machineNet(game, m.id);
   const go = (to: LunixStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
-  const back = (to: LunixStep): Row => ({ label: "<Go Back>", run: go(to) });
+  const back = (to: LunixStep): Row => ({ label: t("console.goBack"), run: go(to) });
   const pages: Record<LunixStep, Page> = {
-    boot: { title: `Debiant GNU/Lunix ${version} installer boot menu`, rows: [
-      { label: "Install", run: go("language") },
-      { label: "Erase disk", dim: tg.empty, run: tg.empty ? () => tg.setNote(t("error.noSoftware")) : go("erase") },
-      { label: isDevice(m) ? "Reboot" : "Eject and reboot", run: tg.leave },
+    boot: { title: t("console.debBoot", { version }), rows: [
+      { label: t("console.install"), run: go("language") },
+      { label: t("console.eraseDisk"), dim: tg.empty, run: tg.empty ? () => tg.setNote(t("error.noSoftware")) : go("erase") },
+      { label: isDevice(m) ? t("console.reboot") : t("console.ejectReboot"), run: tg.leave },
     ] },
-    language: { title: "Select a language", rows: [...LANGUAGES.map((l) => ({ label: l, run: go("hostname") })), back("boot")] },
+    language: { title: t("console.selectLanguage"), rows: [...LANGUAGES.map((l) => ({ label: l, run: go("hostname") })), back("boot")] },
     hostname: net
-      ? { title: "Configure the network", err: true, body: <div>{t(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf")}</div>, rows: [{ label: "<Continue>", run: go("fetch") }] }
-      : { title: "Configure the network", body: <div>Hostname: {hostOf(m)}</div>, rows: [{ label: "<Continue>", run: go("disks") }, back("language")] },
-    fetch: { title: "Retrieving packages", err: true, body: <div>{t("term.console.osInstallFailed")} Check your network connection.</div>, rows: [{ label: "<Abort installation>", run: () => { go("boot")(); tg.leave(); } }] },
-    disks: { title: "Partition disks", body: <div>Partitioning method:</div>, rows: [{ label: `Guided - use entire disk (${tg.array})`, run: go("write") }, back("hostname")] },
-    write: { title: "Partition disks", body: <>{tg.what}<div>Write the changes to disks?</div></>, rows: [{ label: "<Yes>", run: () => tg.install("lunix") && setStep("boot") }, { label: "<No>", run: go("disks") }] },
-    erase: { title: "Erase disk", body: tg.what, rows: [{ label: "<Erase>", run: tg.erase }, back("boot")] },
+      ? { title: t("console.configureNetwork"), err: true, body: <div>{t(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf")}</div>, rows: [{ label: t("console.continue"), run: go("fetch") }] }
+      : { title: t("console.configureNetwork"), body: <div>{t("console.hostname", { host: hostOf(m) })}</div>, rows: [{ label: t("console.continue"), run: go("disks") }, back("language")] },
+    fetch: { title: t("console.retrievingPackages"), err: true, body: <div>{t("term.console.osInstallFailed")} {t("console.checkNetwork")}</div>, rows: [{ label: t("console.abort"), run: () => { go("boot")(); tg.leave(); } }] },
+    disks: { title: t("console.partitionDisks"), body: <div>{t("console.partitioningMethod")}</div>, rows: [{ label: t("console.guided", { array: tg.array }), run: go("write") }, back("hostname")] },
+    write: { title: t("console.partitionDisks"), body: <>{tg.what}<div>{t("console.writeChanges")}</div></>, rows: [{ label: t("console.yes"), run: () => tg.install("lunix") && setStep("boot") }, { label: t("console.no"), run: go("disks") }] },
+    erase: { title: t("console.eraseDisk"), body: tg.what, rows: [{ label: t("console.erase"), run: tg.erase }, back("boot")] },
   };
   const page = pages[step], typing = (step === "write" || step === "erase") && tg.found.kind === "busy";
   const pager = usePager({ ...page, keys: { Escape: go("boot") } }, (k) => typing && tg.type(k));
@@ -125,7 +125,7 @@ function Debiant({ title, body, note, err, children }: { title: string; body?: R
         <div className="deb-body">{body}{children}</div>
       </div>
       {note && <div className="inst-note">{note}</div>}
-      <div className="deb-f">&lt;Tab&gt; moves; &lt;Enter&gt; activates buttons</div>
+      <div className="deb-f">{t("console.debFoot")}</div>
     </div>
   );
 }
@@ -143,26 +143,26 @@ function useWindoorsSetup(game: GameState, m: Machine, version: string): Keyed {
   const setup = () => tg.install("windoors") && setStep("start");
   const install = () => (tg.found.kind === "empty" && !m.os ? setup() : go("install")());
   const del = tg.empty ? () => tg.setNote(t("error.noSoftware")) : go("delete");
-  const part = tg.empty ? `Unpartitioned space   ${tg.array}` : `C:  Partition1 [NTFS]   ${tg.array}`;
-  const suffix = era === 2 ? " (Desktop Experience)" : version.startsWith("2008") ? " (Full Installation)" : " (Server with a GUI)";
+  const part = tg.empty ? t("console.winUnpartitioned", { array: tg.array }) : `C:  Partition1 [NTFS]   ${tg.array}`;
+  const suffix = era === 2 ? t("console.winDesktopExperience") : version.startsWith("2008") ? t("console.winFullInstallation") : t("console.winServerGui");
   const pages: Record<WinStep, Page> = era === 0 ? {
-    start: { title: "Welcome to Setup.", body: <div>To set up Windoors now, press ENTER. To quit Setup, press F3.</div>, rows: [], keys: { Enter: go("license"), F3: tg.leave }, foot: "ENTER=Continue  F3=Quit" },
+    start: { title: t("console.winWelcome"), body: <div>{t("console.winWelcomeBody")}</div>, rows: [], keys: { Enter: go("license"), F3: tg.leave }, foot: t("console.winWelcomeFoot") },
     edition: { title: "", rows: [] },
     type: { title: "", rows: [] },
     upgrade: { title: "", rows: [] },
-    license: { title: "Windoors Licensing Agreement", body: <div>Press F8 to accept the agreement and continue Setup.</div>, rows: [], keys: { F8: go("where"), Escape: go("start") }, foot: "F8=I agree  ESC=I do not agree" },
-    where: { title: "The following list shows the existing partitions and unpartitioned space on this computer.", rows: [{ label: part, run: install }], keys: { d: del, D: del, F3: tg.leave }, foot: "ENTER=Install  D=Delete Partition  F3=Quit" },
-    install: { title: "Setup will format the partition and erase it.", body: tg.what, rows: [], keys: { Enter: setup, Escape: go("where") }, foot: "ENTER=Continue  ESC=Cancel" },
-    delete: { title: "Setup will delete the partition.", body: tg.what, rows: [], keys: { Enter: tg.erase, Escape: go("where") }, foot: "ENTER=Delete  ESC=Cancel" },
+    license: { title: t("console.winLicenseTitle"), body: <div>{t("console.winLicenseBody")}</div>, rows: [], keys: { F8: go("where"), Escape: go("start") }, foot: t("console.winLicenseFoot") },
+    where: { title: t("console.winPartitions"), rows: [{ label: part, run: install }], keys: { d: del, D: del, F3: tg.leave }, foot: t("console.winWhereFoot") },
+    install: { title: t("console.winFormat"), body: tg.what, rows: [], keys: { Enter: setup, Escape: go("where") }, foot: t("console.winFormatFoot") },
+    delete: { title: t("console.winDeletePartition"), body: tg.what, rows: [], keys: { Enter: tg.erase, Escape: go("where") }, foot: t("console.winDeleteFoot") },
   } : {
-    start: { title: `Windoors Server ${version}`, rows: [{ label: "Install now", run: go("edition") }] },
-    edition: { title: "Select the operating system you want to install", rows: ["Standard", "Datacenter"].map((e) => ({ label: `Windoors Server ${version} ${e}${suffix}`, run: go("license") })) },
-    license: { title: "License terms", rows: [{ label: "I accept the license terms", run: go(upgrade ? "type" : "where") }, { label: "Back", run: go("edition") }] },
-    type: { title: "Which type of installation do you want?", rows: [{ label: "Upgrade: Keep files, settings and applications", run: go("upgrade") }, { label: "Custom: Install Windoors only (advanced)", run: go("where") }, { label: "Back", run: go("license") }] },
-    upgrade: { title: `Upgrade to Windoors Server ${version}`, body: <div>{t("term.apt.downtime", { minutes: upgrade ? Math.round(upgradeHours(game, m.id) * 60) : 0 })}</div>, rows: [{ label: "Upgrade", run: upgradeNow }, { label: "Back", run: go("type") }] },
-    where: { title: "Where do you want to install Windoors?", body: <div className="win-disk">Drive 0 {tg.empty ? "Unallocated Space" : "Partition 1"}<span>{tg.array}</span></div>, rows: [{ label: "Next", run: install }, { label: "Delete", dim: tg.empty, run: del }, { label: "Back", run: go("license") }] },
-    install: { title: "Windoors might be unable to boot", body: tg.what, rows: [{ label: "OK", run: setup }, { label: "Cancel", run: go("where") }] },
-    delete: { title: "Delete partition", body: tg.what, rows: [{ label: "OK", run: tg.erase }, { label: "Cancel", run: go("where") }] },
+    start: { title: `Windoors Server ${version}`, rows: [{ label: t("console.winInstallNow"), run: go("edition") }] },
+    edition: { title: t("console.winSelectOs"), rows: ["Standard", "Datacenter"].map((e) => ({ label: `Windoors Server ${version} ${e}${suffix}`, run: go("license") })) },
+    license: { title: t("console.winLicenseTerms"), rows: [{ label: t("console.winAccept"), run: go(upgrade ? "type" : "where") }, { label: t("console.back"), run: go("edition") }] },
+    type: { title: t("console.winInstallType"), rows: [{ label: t("console.winTypeUpgrade"), run: go("upgrade") }, { label: t("console.winTypeCustom"), run: go("where") }, { label: t("console.back"), run: go("license") }] },
+    upgrade: { title: t("console.winUpgradeTo", { version }), body: <div>{t("term.apt.downtime", { minutes: upgrade ? Math.round(upgradeHours(game, m.id) * 60) : 0 })}</div>, rows: [{ label: t("console.upgrade"), run: upgradeNow }, { label: t("console.back"), run: go("type") }] },
+    where: { title: t("console.winWhere"), body: <div className="win-disk">{t("console.winDrive", { space: tg.empty ? t("console.winUnallocated") : t("console.winPartition1") })}<span>{tg.array}</span></div>, rows: [{ label: t("console.next"), run: install }, { label: t("console.delete"), dim: tg.empty, run: del }, { label: t("console.back"), run: go("license") }] },
+    install: { title: t("console.winUnableBoot"), body: tg.what, rows: [{ label: t("console.ok"), run: setup }, { label: t("console.cancel"), run: go("where") }] },
+    delete: { title: t("console.winDeleteTitle"), body: tg.what, rows: [{ label: t("console.ok"), run: tg.erase }, { label: t("console.cancel"), run: go("where") }] },
   };
   const page = pages[step], typing = (step === "install" || step === "delete") && tg.found.kind === "busy";
   const pager = usePager(page, (k) => typing && tg.type(k));
@@ -176,7 +176,7 @@ function useWindoorsSetup(game: GameState, m: Machine, version: string): Keyed {
 function WinText({ version, foot, note, children }: { version: string; foot: string; note?: string; children: ReactNode }) {
   return (
     <div className="wt">
-      <div className="wt-h">Windoors Server {version} Setup</div>
+      <div className="wt-h">{t("console.winSetupTitle", { version })}</div>
       <div className="wt-body">{children}</div>
       {note && <div className="inst-note">{note}</div>}
       <div className="wt-f">{foot}</div>
@@ -188,7 +188,7 @@ function WinSetup({ era, title, note, children }: { era: 1 | 2; title: string; n
   return (
     <div className="ws" data-era={era}>
       <div className="ws-win">
-        <div className="ws-bar">Install Windoors</div>
+        <div className="ws-bar">{t("console.winInstallWindow")}</div>
         <div className="ws-body"><div className="ws-t">{title}</div>{children}{note && <div className="ws-note">{note}</div>}</div>
       </div>
     </div>
@@ -201,52 +201,52 @@ export function useInstaller(game: GameState, m: Machine, os: ServerOsId, versio
   return os === "windoors" ? windoors : lunix;
 }
 
-const LUNIX_STAGES = ["Installing the base system", "Configuring apt", "Select and install software", "Installing GRUB boot loader"];
-const WIN_STEPS = ["Copying Windoors files", "Getting files ready for installation", "Installing features", "Installing updates", "Finishing up"];
-const GUI_STEPS = ["Collecting information", "Dynamic Update", "Preparing installation", "Installing Windoors", "Finalizing installation"];
+const LUNIX_STAGES = [t("console.lxStage1"), t("console.lxStage2"), t("console.lxStage3"), t("console.lxStage4")];
+const WIN_STEPS = [t("console.winStep1"), t("console.winStep2"), t("console.winStep3"), t("console.winStep4"), t("console.winStep5")];
+const GUI_STEPS = [t("console.guiStep1"), t("console.guiStep2"), t("console.guiStep3"), t("console.guiStep4"), t("console.guiStep5")];
 
 // The install running over its hours: the Debiant progress bar, or Setup's percentages with its two reboots.
 export function OsInstalling({ m, os, progress }: { m: Machine; os: ServerOsId; progress: number }) {
   const version = m.os?.version ?? "";
   if (m.os?.from) return <OsUpgrading os={os} version={version} progress={progress} />;
   if (os === "lunix") {
-    if (progress >= 0.95) return <Debiant title="Finish the installation" body={<div>Installation complete</div>} />;
+    if (progress >= 0.95) return <Debiant title={t("console.finishInstall")} body={<div>{t("console.installComplete")}</div>} />;
     const stage = LUNIX_STAGES[Math.min(LUNIX_STAGES.length - 1, Math.floor((progress / 0.95) * LUNIX_STAGES.length))];
-    return <Debiant title="Install the system" body={<><div>{stage}...</div>{bar(progress / 0.95)}<div>{pct(progress / 0.95)}</div></>} />;
+    return <Debiant title={t("console.installSystem")} body={<><div>{stage}...</div>{bar(progress / 0.95)}<div>{pct(progress / 0.95)}</div></>} />;
   }
   const era = winEra(version);
   const restarting = (progress >= 0.45 && progress < 0.5) || progress >= 0.95;
-  if (restarting) return <div className="wb" data-era={era}><div className="wb-logo">Windoors</div><div>{era === 0 ? "Setup is restarting" : "Windoors needs to restart to continue"}</div></div>;
+  if (restarting) return <div className="wb" data-era={era}><div className="wb-logo">Windoors</div><div>{era === 0 ? t("console.winRestartingOld") : t("console.winRestarting")}</div></div>;
   if (era === 0 && progress < 0.45) {
-    return <WinText version={version} foot="" note=""><div className="wt-title">Please wait while Setup copies files to the Windoors installation folders.</div><div className="wt-copy">Setup is copying files... {pct(progress / 0.45)}{bar(progress / 0.45)}</div></WinText>;
+    return <WinText version={version} foot="" note=""><div className="wt-title">{t("console.winCopyWait")}</div><div className="wt-copy">{t("console.winCopying")} {pct(progress / 0.45)}{bar(progress / 0.45)}</div></WinText>;
   }
   if (era === 0) {
     const left = Math.max(1, Math.round((1 - progress) * serverOsById(os).installHours * 60)), at = 3 + Math.floor(((progress - 0.5) / 0.45) * 2);
     return (
       <div className="wg">
         <ul className="wg-steps">{GUI_STEPS.map((x, i) => <li key={x} className={i === at ? "on" : i < at ? "done" : ""}>{x}</li>)}</ul>
-        <div className="wg-left">Setup will complete in approximately: {left} minutes</div>
-        <div className="wg-main">Installing Windoors{bar((progress - 0.5) / 0.45)}</div>
+        <div className="wg-left">{t("console.winCompleteIn", { n: left })}</div>
+        <div className="wg-main">{t("console.winInstalling")}{bar((progress - 0.5) / 0.45)}</div>
       </div>
     );
   }
   const share = progress < 0.45 ? progress / 0.45 : (progress - 0.5) / 0.45, at = progress < 0.45 ? Math.min(1, Math.floor(share * 2)) : 2 + Math.min(2, Math.floor(share * 3));
   return (
-    <WinSetup era={era} title="Installing Windoors...">
+    <WinSetup era={era} title={t("console.winInstallingDots")}>
       <ul className="ws-check">{WIN_STEPS.map((x, i) => <li key={x} className={i === at ? "on" : i < at ? "done" : ""}>{x}{i === at && i === 1 ? ` (${pct(share)})` : ""}</li>)}</ul>
     </WinSetup>
   );
 }
 
-const LUNIX_UPGRADE = ["Unpacking the new release", "Setting up packages", "Removing obsolete packages", "Updating GRUB boot loader"];
-const WIN_UPGRADE = ["Copying files", "Installing features and drivers", "Configuring settings"];
+const LUNIX_UPGRADE = [t("console.upLx1"), t("console.upLx2"), t("console.upLx3"), t("console.upLx4")];
+const WIN_UPGRADE = [t("console.upWin1"), t("console.upWin2"), t("console.upWin3")];
 
 // An in-place upgrade running over its hours, software kept.
 function OsUpgrading({ os, version, progress }: { os: ServerOsId; version: string; progress: number }) {
   const steps = os === "lunix" ? LUNIX_UPGRADE : WIN_UPGRADE, at = Math.min(steps.length - 1, Math.floor(progress * steps.length));
-  if (os === "lunix") return <Debiant title={`Upgrade to Debiant GNU/Lunix ${version}`} body={<><div>{steps[at]}...</div>{bar(progress)}<div>{pct(progress)}</div></>} />;
+  if (os === "lunix") return <Debiant title={t("console.upgradeDeb", { version })} body={<><div>{steps[at]}...</div>{bar(progress)}<div>{pct(progress)}</div></>} />;
   return (
-    <WinSetup era={winEra(version) === 2 ? 2 : 1} title={`Upgrading Windoors Server ${version}`}>
+    <WinSetup era={winEra(version) === 2 ? 2 : 1} title={t("console.upgradingWin", { version })}>
       <ul className="ws-check">{steps.map((x, i) => <li key={x} className={i === at ? "on" : i < at ? "done" : ""}>{x}{i === at ? ` (${pct(progress)})` : ""}</li>)}</ul>
     </WinSetup>
   );
@@ -255,8 +255,8 @@ function OsUpgrading({ os, version, progress }: { os: ServerOsId; version: strin
 // An install the network dropped out of; any key goes on to the empty disk.
 export function NetFailed({ reason }: { reason: NetFail }) {
   return (
-    <Debiant title="Retrieving packages" err body={<><div>{t(reason === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf")}</div><div>{t("term.console.osInstallFailed")} Check your network connection.</div></>}>
-      <Rows rows={[{ label: "<Continue>" }]} at={0} pick={() => {}} />
+    <Debiant title={t("console.retrievingPackages")} err body={<><div>{t(reason === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf")}</div><div>{t("term.console.osInstallFailed")} {t("console.checkNetwork")}</div></>}>
+      <Rows rows={[{ label: t("console.continue") }]} at={0} pick={() => {}} />
     </Debiant>
   );
 }

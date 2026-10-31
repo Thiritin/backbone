@@ -14,11 +14,11 @@ import "./sales.css";
 
 export const OPEN = ["open", "countered", "refused"];
 export const STATUS: Record<SalesRequest["status"], string> = {
-  open: "New", quoted: "Quoted", countered: "Counter-offer", refused: "Refused", accepted: "Waiting for setup", won: "Won", lost: "Lost", declined: "Declined",
+  open: t("misc2.statusOpen"), quoted: t("misc2.statusQuoted"), countered: t("misc2.statusCountered"), refused: t("misc2.statusRefused"), accepted: t("misc2.statusAccepted"), won: t("misc2.statusWon"), lost: t("misc2.statusLost"), declined: t("misc2.statusDeclined"),
 };
-export const SLA_LABEL = { basic: "Basic", business: "Business", premium: "Premium" } as const;
+export const SLA_LABEL = { basic: t("misc2.slaBasic"), business: t("misc2.slaBusiness"), premium: t("misc2.slaPremium") } as const;
 
-export const need = (r: SalesRequest) => `${r.domain ? `${r.domain} · ` : ""}${specText(r.product, r.spec)} · ${r.city}${r.sla === "basic" ? "" : ` · ${SLA_LABEL[r.sla]} SLA`}`;
+export const need = (r: SalesRequest) => t("misc2.needLine", { domain: r.domain ?? "", spec: specText(r.product, r.spec), city: r.city, sla: r.sla === "basic" ? "" : SLA_LABEL[r.sla] });
 
 export function Card({ r }: { r: SalesRequest }) {
   const game = useStore((s) => s.game);
@@ -30,12 +30,12 @@ export function Card({ r }: { r: SalesRequest }) {
   return (
     <div className={`sup-detail${missing.length && OPEN.includes(r.status) ? " greyed" : ""}`}>
       <div className="d-head">
-        <div className="top"><h2>{specText(r.product, r.spec)}{r.kind === "expansion" && " upgrade"}</h2><span className="id num">#{r.id.slice(3)}</span></div>
+        <div className="top"><h2>{specText(r.product, r.spec)}{r.kind === "expansion" && ` ${t("misc2.upgrade")}`}</h2><span className="id num">#{r.id.slice(3)}</span></div>
         <div className="facts">
           <span className="type">{PRODUCT[r.product]}</span>
           <span>{r.city}</span>
-          <span>{SLA_LABEL[r.sla]} SLA · <span className="num">{(sla.uptime * 100).toFixed(sla.uptime >= 0.999 ? 2 : 1)}%</span> · <span className="num">{sla.responseHours}</span> h response</span>
-          <span>Reply within {patience(expects.reply)}</span>
+          <span className="num">{t("misc2.slaFacts", { sla: SLA_LABEL[r.sla], uptime: (sla.uptime * 100).toFixed(sla.uptime >= 0.999 ? 2 : 1), hours: sla.responseHours })}</span>
+          <span>{t("misc2.replyWithin", { time: patience(expects.reply) })}</span>
           <span className="pill">{STATUS[r.status]}</span>
         </div>
       </div>
@@ -44,24 +44,24 @@ export function Card({ r }: { r: SalesRequest }) {
         <div className="logo">{initials(requestName(r))}</div>
         <div>
           <div className="name">{customer ? <CustomerLink id={customer.id} name={customer.name} /> : requestName(r)}</div>
-          <div className="sub">{r.company ? `${r.contact} · ` : ""}Received <span className="num">{stamp(r.createdAt)}</span></div>
+          <div className="sub">{r.company ? `${r.contact} · ` : ""}<span className="num">{t("misc2.received", { when: stamp(r.createdAt) })}</span></div>
         </div>
       </div>
 
       <ul className="sales-reqs">
         {reqs.map((x) => (
-          <li key={x.key} className={x.ok ? "ok" : "bad"}>{x.ok ? <Check aria-label="Met" /> : <X aria-label="Missing" />}{t(x.key.replace("sales.need.", "sales.req."), x.params)}</li>
+          <li key={x.key} className={x.ok ? "ok" : "bad"}>{x.ok ? <Check aria-label={t("misc2.met")} /> : <X aria-label={t("misc2.missing")} />}{t(x.key.replace("sales.need.", "sales.req."), x.params)}</li>
         ))}
       </ul>
 
       <div className="thread">
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
-            <div className="from">{m.from === "you" ? m.by ?? "You" : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
+            <div className="from">{m.from === "you" ? m.by ?? t("misc2.you") : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
             <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}</p>
           </div>
         ))}
-        {r.status === "quoted" && <div className="event"><span>Awaiting reply</span></div>}
+        {r.status === "quoted" && <div className="event"><span>{t("misc2.awaitingReply")}</span></div>}
       </div>
 
       {r.kind === "expansion" && r.spec && <UpgradeCompose key={r.status} r={r} />}
@@ -74,9 +74,9 @@ export function LostSales() {
   const lost = [...game.sales.lost].reverse();
   return (
     <div className="sales-lost">
-      <div className="sup-list-h"><h2>Lost sales</h2></div>
+      <div className="sup-list-h"><h2>{t("misc2.lostSales")}</h2></div>
       <table className="table">
-        <thead><tr><th>Date</th><th>Customer</th><th>Request</th><th className="num">Market price</th><th>Reason</th></tr></thead>
+        <thead><tr><th>{t("misc2.date")}</th><th>{t("misc2.customer")}</th><th>{t("misc2.request")}</th><th className="num">{t("misc2.marketPrice")}</th><th>{t("misc2.reason")}</th></tr></thead>
         <tbody>
           {lost.map((l, i) => (
             <tr key={i}>
@@ -89,7 +89,7 @@ export function LostSales() {
           ))}
         </tbody>
       </table>
-      {!lost.length && <div className="sup-none">No lost sales</div>}
+      {!lost.length && <div className="sup-none">{t("misc2.noLostSales")}</div>}
     </div>
   );
 }

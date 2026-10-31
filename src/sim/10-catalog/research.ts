@@ -1,4 +1,5 @@
 // Values from docs/design/economy.md, section "Know-how and unlock costs". Each skill is a training the company takes once.
+import { textFields } from "../00-core/text";
 export type Track = "ops" | "infra" | "sales" | "company";
 export interface Skill {
   id: string;
@@ -17,7 +18,7 @@ export interface Skill {
   grants?: string[];
 }
 
-export const SKILLS: Skill[] = [
+export const SKILLS: Skill[] = textFields("sim.skill", [
   { id: "monitoring", track: "ops", name: "Monitoring", about: "Your team learns to watch the hardware and the queues, so failures and waiting work announce themselves.", tier: 1, knowHow: 50, days: 5, needs: [], opens: ["Nagiosaurus"] },
   { id: "memoryReservation", track: "ops", name: "Memory reservation", about: "Your team learns to keep each server's booked memory within the memory it has, so a busy hour cannot freeze it.", tier: 2, knowHow: 100, days: 5, needs: ["monitoring"], opens: [], grants: ["Memory reservation per cluster"] },
   { id: "automation", track: "ops", name: "Automation", about: "Your company learns to hand routine tickets and reminders to bots that never sleep and never quite understand.", tier: 3, knowHow: 1500, days: 21, needs: ["people", "monitoring"], opens: ["chadGpt", "clipsy"] },
@@ -33,7 +34,7 @@ export const SKILLS: Skill[] = [
   { id: "people", track: "company", name: "Employee management", about: "You learn to hire, pay and organise people without losing track of who does what.", tier: 1, knowHow: 100, days: 10, needs: [], opens: ["Staff"] },
   { id: "marketingBasics", track: "company", name: "Marketing basics", about: "You learn who your customers are, what they write about you and how sponsoring events wins them over.", tier: 1, knowHow: 50, days: 5, needs: [], opens: [] },
   { id: "marketing", track: "company", name: "Marketing campaigns", about: "Your staff learns to run campaigns, track awareness and book stands at trade fairs.", tier: 2, knowHow: 300, days: 14, needs: ["marketingBasics", "people"], opens: ["Marketing"] },
-];
+], ["name", "about"]);
 // The rows of the research tree, top to bottom.
 export const TRACKS: { id: Track; name: string }[] = [
   { id: "ops", name: "Operations" }, { id: "infra", name: "Infrastructure" }, { id: "sales", name: "Sales" }, { id: "company", name: "Company" },

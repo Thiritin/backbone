@@ -12,16 +12,17 @@ import { formatDay } from "../billing/BillingApp";
 import { devName } from "../hw";
 import { vmLabel } from "../products/parts";
 import { LOCALE } from "../../../i18n/lang";
+import { t } from "../../../i18n/en";
 
-const SOURCE: Record<AddressSource, string> = { line: "Home line", lineExtra: "Home line extra", provider: "Provider", lir: "Own block" };
+const SOURCE: Record<AddressSource, string> = { line: t("misc.srcLine"), lineExtra: t("misc.srcLineExtra"), provider: t("misc.srcProvider"), lir: t("misc.srcLir") };
 const COUNTS = [1, 4, 16];
 
 // Where the company can get more addresses for a location: from the provider in a datacenter, on a static line at home.
 const canBuy = (game: GameState, loc: Location) => !!loc.dc || (lineActive(game) && !dynamicLine(game));
 
 export function holderName(game: GameState, holder: string | null): string {
-  if (!holder) return "Free";
-  if (holder.startsWith("gw:")) return "Router";
+  if (!holder) return t("misc.free");
+  if (holder.startsWith("gw:")) return t("misc.router");
   const d = game.devices.find((x) => x.id === holder);
   if (d) return devName(d);
   const w = game.workloads.find((x) => x.id === holder);
@@ -31,10 +32,10 @@ export function holderName(game: GameState, holder: string | null): string {
 }
 
 function RepCell({ a }: { a: Address }) {
-  if (a.v === 6) return <span className="loc-muted">None</span>;
+  if (a.v === 6) return <span className="loc-muted">{t("misc.none")}</span>;
   return <>
     <span className="num">{Math.round(a.rep)}</span>
-    {a.listed && <span className={`pill ${a.delistAt !== null ? "warn" : "bad"}`}>{a.delistAt !== null ? "Delisting" : "Listed"}</span>}
+    {a.listed && <span className={`pill ${a.delistAt !== null ? "warn" : "bad"}`}>{a.delistAt !== null ? t("misc.delisting") : t("misc.listed")}</span>}
   </>;
 }
 
@@ -48,30 +49,30 @@ export function AddressRows({ game, id }: { game: GameState; id: string }) {
   // Datacenter servers keep their address; VMs and basement servers can give theirs back.
   const fixed = !!loc.dc && game.devices.some((d) => d.id === id);
   return <>
-    <div><dt>Private IP</dt><dd className="num">{privateIp(game, id) ?? "None"}</dd></div>
+    <div><dt>{t("misc.privateIp")}</dt><dd className="num">{privateIp(game, id) ?? t("misc.none")}</dd></div>
     {mgmt && (
       <div>
-        <dt>Management</dt>
+        <dt>{t("misc.management")}</dt>
         <dd><button className="loc-link num" onClick={() => openApp("Browser", { kind: "url", id: `http://${mgmt}/` })}>{mgmt}</button></dd>
       </div>
     )}
     <div>
-      <dt>Public IPv4</dt>
+      <dt>{t("misc.publicIpv4")}</dt>
       <dd>
         {own.length ? own.map((a) => (
           <span key={a.id} className="net-addr">
             <span className="num">{a.ip}</span>
-            {!fixed && <button className="btn ghost" onClick={() => act(assignAddress, a.id, null)}>Unassign</button>}
+            {!fixed && <button className="btn ghost" onClick={() => act(assignAddress, a.id, null)}>{t("misc.unassign")}</button>}
           </span>
-        )) : v4 ? <><span className="num">{v4.ip}</span><span className="pill">Shared</span></> : "None"}
-        {canBuy(game, loc) && <button className="btn" onClick={() => act(addAddress, id, 4)}>Add</button>}
+        )) : v4 ? <><span className="num">{v4.ip}</span><span className="pill">{t("misc.shared")}</span></> : t("misc.none")}
+        {canBuy(game, loc) && <button className="btn" onClick={() => act(addAddress, id, 4)}>{t("misc.add")}</button>}
       </dd>
     </div>
     <div>
       <dt>IPv6</dt>
       <dd>
-        {v6 ? <span className="num">{v6}</span> : "None"}
-        {!v6 && v6Offered(game, loc) && <button className="btn" onClick={() => act(addAddress, id, 6)}>Add</button>}
+        {v6 ? <span className="num">{v6}</span> : t("misc.none")}
+        {!v6 && v6Offered(game, loc) && <button className="btn" onClick={() => act(addAddress, id, 6)}>{t("misc.add")}</button>}
       </dd>
     </div>
   </>;
@@ -89,24 +90,24 @@ export function AddressList({ game, loc }: { game: GameState; loc: Location }) {
     <div className="net-addrs">
       <dl className="fin-facts">
         <div><dt>IPv4</dt><dd className="num">{list.filter((a) => a.v === 4).length}</dd></div>
-        <div><dt>Free IPv4</dt><dd className="num">{freeV4(game, loc.id)}</dd></div>
-        <div><dt>IPv6</dt><dd>{v6Offered(game, loc) ? "Available" : "Not available"}</dd></div>
-        <div><dt>Listed</dt><dd className="num">{list.filter((a) => a.listed).length}</dd></div>
+        <div><dt>{t("misc.freeIpv4")}</dt><dd className="num">{freeV4(game, loc.id)}</dd></div>
+        <div><dt>IPv6</dt><dd>{v6Offered(game, loc) ? t("misc.available") : t("misc.notAvailable")}</dd></div>
+        <div><dt>{t("misc.listed")}</dt><dd className="num">{list.filter((a) => a.listed).length}</dd></div>
       </dl>
       {buy && (
         <div className="net-buy">
-          <div className="seg" role="group" aria-label="Count">
+          <div className="seg" role="group" aria-label={t("misc.count")}>
             {COUNTS.map((n) => <button key={n} aria-pressed={count === n} onClick={() => setCount(n)}>{n}</button>)}
           </div>
-          <span className="num">{euroCents(price)} per IPv4 per month</span>
+          <span className="num">{t("misc.perIpv4Month", { price: euroCents(price) })}</span>
           <span className="grow" />
-          <button className="btn primary" onClick={() => act(buyAddresses, loc.id, 4, count)}>Buy IPv4</button>
-          {loc.dc && v6Offered(game, loc) && <button className="btn" onClick={() => act(buyAddresses, loc.id, 6, count)}>Buy IPv6</button>}
+          <button className="btn primary" onClick={() => act(buyAddresses, loc.id, 4, count)}>{t("misc.buyIpv4")}</button>
+          {loc.dc && v6Offered(game, loc) && <button className="btn" onClick={() => act(buyAddresses, loc.id, 6, count)}>{t("misc.buyIpv6")}</button>}
         </div>
       )}
       {list.length ? (
         <table className="table fin-table">
-          <thead><tr><th>Address</th><th>Assigned to</th><th>Source</th><th>Reputation</th><th /></tr></thead>
+          <thead><tr><th>{t("misc.address")}</th><th>{t("misc.assignedTo")}</th><th>{t("misc.source")}</th><th>{t("misc.reputation")}</th><th /></tr></thead>
           <tbody>
             {list.map((a) => (
               <tr key={a.id}>
@@ -116,15 +117,15 @@ export function AddressList({ game, loc }: { game: GameState; loc: Location }) {
                 <td><RepCell a={a} /></td>
                 <td className="r">
                   {a.listed && a.delistAt === null && !(a.source === "line" && dynamicLine(game)) &&
-                    <button className="btn" onClick={() => act(requestDelist, a.id)}>Delist</button>}
+                    <button className="btn" onClick={() => act(requestDelist, a.id)}>{t("misc.delist")}</button>}
                   {!a.holder && (a.source === "provider" || a.source === "lineExtra") &&
-                    <button className="btn" onClick={() => act(releaseAddress, a.id)}>Release</button>}
+                    <button className="btn" onClick={() => act(releaseAddress, a.id)}>{t("misc.release")}</button>}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      ) : <p className="loc-muted">No public addresses in this zone.</p>}
+      ) : <p className="loc-muted">{t("misc.noPublicAddresses")}</p>}
     </div>
   );
 }
@@ -138,13 +139,13 @@ export function Ripe({ game }: { game: GameState }) {
     return (
       <div className="shop-grid net-top">
         <div className="shop-card">
-          <div className="shop-name"><strong>RIPE NCC membership</strong><span>Members get an AS number and their own address blocks to announce from a datacenter.</span></div>
+          <div className="shop-name"><strong>{t("misc.ripeMembership")}</strong><span>{t("misc.ripeText")}</span></div>
           <dl className="shop-specs">
-            <div><dt>Sign-up</dt><dd className="num">{euro(LIR_FEES.signup)}</dd></div>
-            <div><dt>Per year</dt><dd className="num">{euro(LIR_FEES.yearly)}</dd></div>
-            <div><dt>First block</dt><dd className="num">{free ? `/${free.prefix}, ${free.size.toLocaleString(LOCALE)} addresses` : "None"}</dd></div>
+            <div><dt>{t("misc.signUp")}</dt><dd className="num">{euro(LIR_FEES.signup)}</dd></div>
+            <div><dt>{t("misc.perYear2")}</dt><dd className="num">{euro(LIR_FEES.yearly)}</dd></div>
+            <div><dt>{t("misc.firstBlock")}</dt><dd className="num">{free ? t("misc.blockSize", { prefix: free.prefix, size: free.size.toLocaleString(LOCALE) }) : t("misc.none")}</dd></div>
           </dl>
-          <div className="shop-buy"><span className="grow" /><button className="btn primary" onClick={() => act(joinLir)}>Join</button></div>
+          <div className="shop-buy"><span className="grow" /><button className="btn primary" onClick={() => act(joinLir)}>{t("misc.join")}</button></div>
         </div>
       </div>
     );
@@ -152,18 +153,18 @@ export function Ripe({ game }: { game: GameState }) {
   return (
     <div className="net-addrs">
       <dl className="fin-facts">
-        <div><dt>AS number</dt><dd className="num">AS{lir.asn}</dd></div>
-        <div><dt>Member since</dt><dd className="num">{formatDay(lir.since)}</dd></div>
-        <div><dt>Per year</dt><dd className="num">{euro(LIR_FEES.yearly)}</dd></div>
+        <div><dt>{t("misc.asNumber")}</dt><dd className="num">AS{lir.asn}</dd></div>
+        <div><dt>{t("misc.memberSince")}</dt><dd className="num">{formatDay(lir.since)}</dd></div>
+        <div><dt>{t("misc.perYear2")}</dt><dd className="num">{euro(LIR_FEES.yearly)}</dd></div>
       </dl>
       <div className="net-buy">
-        <span>One /24 on the transfer market</span>
+        <span>{t("misc.transferMarket")}</span>
         <span className="num">{euro(256 * transferPrice(year))}</span>
         <span className="grow" />
-        <button className="btn primary" onClick={() => act(buyBlock)}>Buy /24</button>
+        <button className="btn primary" onClick={() => act(buyBlock)}>{t("misc.buy24")}</button>
       </div>
       <table className="table fin-table">
-        <thead><tr><th>Block</th><th className="r">Addresses</th><th className="r">In use</th><th>Announced from</th></tr></thead>
+        <thead><tr><th>{t("misc.block")}</th><th className="r">{t("misc.addresses")}</th><th className="r">{t("misc.inUse")}</th><th>{t("misc.announcedFrom")}</th></tr></thead>
         <tbody>
           {game.ips.blocks.map((b) => (
             <tr key={b.id}>
@@ -171,7 +172,7 @@ export function Ripe({ game }: { game: GameState }) {
               <td className="num r">{b.size.toLocaleString(LOCALE)}</td>
               <td className="num r">{game.ips.addresses.filter((a) => a.blockId === b.id && a.holder).length}</td>
               <td>
-                <div className="seg" role="group" aria-label="Announced from">
+                <div className="seg" role="group" aria-label={t("misc.announcedFrom")}>
                   {dcs.map((l) => <button key={l.id} aria-pressed={b.locationId === l.id} onClick={() => b.locationId !== l.id && act(announceBlock, b.id, l.id)}>{l.az}</button>)}
                 </div>
               </td>

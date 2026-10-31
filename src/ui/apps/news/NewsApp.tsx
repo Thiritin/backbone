@@ -10,7 +10,7 @@ export function NewsApp() {
   const items = feed(game);
   return (
     <div className="news">
-      {items.length === 0 && <p className="notif-empty">There is no news yet.</p>}
+      {items.length === 0 && <p className="notif-empty">{t("misc2.noNews")}</p>}
       {items.map((n) => (
         <article className="news-item" key={`${n.key}-${n.hour}-${JSON.stringify(n.params)}`}>
           <time>{formatClock(n.hour).slice(4, -8)}</time>

@@ -1,0 +1,27 @@
+import type { Dict } from "../lang";
+
+export default {
+  "ledger.siteHosting": () => "Alojamiento del sitio web: Strateaux",
+  "ledger.redesign": () => "Rediseño del sitio web",
+  "error.designCurrent": () => "El sitio web ya tiene el diseño actual.",
+  "error.siteHostPanel": () => "Solo un host con panel de alojamiento web puede ejecutar el sitio web.",
+  "error.siteHostNoRoom": () => "Este host no tiene espacio para el sitio web.",
+  "error.siteStarted": () => "El sitio web ya se está construyendo.",
+  "error.siteNotBuilt": () => "Construye primero el sitio web.",
+  "error.siteLaunched": () => "El sitio web ya está en línea.",
+  "error.needsLaunch": () => "Lanza primero el sitio web.",
+  "error.needsWebHostingLine": () => "Ofrece primero alojamiento web.",
+  "event.siteBuilt.title": () => "El sitio web está listo",
+  "event.siteBuilt.text": () => "Tu primer sitio web está escrito y puede salir en línea en cuanto la empresa tenga un dominio.",
+  "event.siteDown.title": () => "El sitio web está caído",
+  "event.siteDown.text": (p) => `Tu sitio web en ${p.host} ya no responde, y los visitantes no pueden pedir hasta que vuelva.`,
+  "site.blurb.private": () => "Fotos de vacaciones, un libro de visitas y un contador de visitas que lleva años sin moverse.",
+  "site.blurb.gamer": () => "La página del clan con la lista de miembros, los resultados de las partidas y la dirección del servidor de juegos.",
+  "site.blurb.hobbyDev": () => "Un portafolio de proyectos personales, casi todos descritos como casi terminados.",
+  "site.blurb.soleProp": () => "Servicios, horarios y un formulario de contacto para un negocio de una sola persona.",
+  "site.blurb.smallBiz": () => "Una lista de precios, un mapa y el horario de la tienda de la esquina.",
+  "site.blurb.agency": () => "Casos de éxito, un muro de logotipos de clientes y un botón que dice Let's talk.",
+  "site.blurb.office": () => "Horario de consulta, solicitudes de cita y un aviso de privacidad.",
+  "site.blurb.onlineShop": () => "Un catálogo de productos con carrito de la compra y pago.",
+  "site.blurb.enterprise": () => "Notas de prensa, una página para inversores y una sección de empleo con una foto de archivo de un apretón de manos.",
+} satisfies Dict;

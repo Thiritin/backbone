@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ChangelogDay } from "../changelog";
@@ -21,10 +22,10 @@ export function WhatsNew({ changes }: { changes: ChangelogDay[] }) {
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
       <div className="alert welcome whats-new" role="dialog" aria-modal="true" aria-labelledby="news-title">
         <PearMark />
-        <h2 id="news-title">Pear OS update</h2>
+        <h2 id="news-title">{t("desktop.news.title")}</h2>
         <ChangeList changes={changes} />
         <div className="alert-actions">
-          <button className="btn primary" autoFocus onClick={closeNews}>Done</button>
+          <button className="btn primary" autoFocus onClick={closeNews}>{t("desktop.done")}</button>
         </div>
       </div>
     </div>,

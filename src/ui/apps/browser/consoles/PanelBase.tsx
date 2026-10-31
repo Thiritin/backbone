@@ -1,4 +1,5 @@
 // docs/design/software.md, section 10: what every console offers, as blocks each product lays out in its own chrome.
+import { t } from "../../../../i18n/en";
 import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
@@ -55,8 +56,8 @@ export function LoginForm({ onLogin, button, className, children }: { onLogin: (
   return (
     <form className={className} onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
       {children}
-      <label className="cx-field">Username<input defaultValue="admin" autoComplete="off" /></label>
-      <label className="cx-field">Password<input type="password" defaultValue="correcthorse" autoComplete="off" /></label>
+      <label className="cx-field">{t("browser-consoles-2.username")}<input defaultValue="admin" autoComplete="off" /></label>
+      <label className="cx-field">{t("browser-consoles-2.password")}<input type="password" defaultValue="correcthorse" autoComplete="off" /></label>
       <button className="cx-btn primary" type="submit">{button}</button>
     </form>
   );
@@ -76,9 +77,9 @@ export function Resize({ game, host, done }: { game: GameState; host: Cluster; d
   );
   return (
     <div className="cx-inline">
-      {field("vcpu", "vCPU")}{field("ramGb", "RAM, GB")}{field("diskGb", "Disk, GB")}
-      <button className="cx-btn primary" onClick={() => act(resizePanelVm, host.id, size).ok && done()}>Resize</button>
-      <button className="cx-btn" onClick={done}>Cancel</button>
+      {field("vcpu", "vCPU")}{field("ramGb", t("browser-consoles-2.ramGb"))}{field("diskGb", t("browser-consoles-2.diskGb"))}
+      <button className="cx-btn primary" onClick={() => act(resizePanelVm, host.id, size).ok && done()}>{t("browser-consoles-2.resize")}</button>
+      <button className="cx-btn" onClick={done}>{t("browser-consoles-2.cancel")}</button>
     </div>
   );
 }
@@ -88,21 +89,21 @@ export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c:
   const act = useStore((s) => s.act), hand = c.kind === "panel", [pick, setPick] = useState<string | null>(null);
   const clusterName = (id: string) => game.clusters.find((x) => x.id === id)?.name ?? "";
   const targets = hand
-    ? webspaceTargets(game, w.id).map((t) => ({ key: t.clusterId, label: `${t.panel} on ${t.name}`, hours: t.hours, run: () => act(migrateWebspace, w.id, t.clusterId) }))
-    : migrationTargets(game, w.id).map((t) => ({
-      key: t.to, hours: t.down, run: () => act(migrateWorkload, w.id, t.to),
-      label: t.clusterId === c.id ? t.name : `${t.name} · ${clusterName(t.clusterId)}`,
+    ? webspaceTargets(game, w.id).map((x) => ({ key: x.clusterId, label: t("browser-consoles-2.webspaceTarget", { panel: x.panel, name: x.name }), hours: x.hours, run: () => act(migrateWebspace, w.id, x.clusterId) }))
+    : migrationTargets(game, w.id).map((x) => ({
+      key: x.to, hours: x.down, run: () => act(migrateWorkload, w.id, x.to),
+      label: x.clusterId === c.id ? x.name : `${x.name} · ${clusterName(x.clusterId)}`,
     }));
   const chosen = targets.find((t) => t.key === pick);
-  const summary = !chosen ? "" : hand ? `The migration takes ${hoursText(chosen.hours)} and the site stays online.`
-    : chosen.hours === 0 ? "The machine keeps running during the move." : `The machine is offline for ${hoursText(chosen.hours)}.`;
+  const summary = !chosen ? "" : hand ? t("browser-consoles-2.migrationOnline", { hours: hoursText(chosen.hours) })
+    : chosen.hours === 0 ? t("browser-consoles-2.machineKeepsRunning") : t("browser-consoles-2.machineOffline", { hours: hoursText(chosen.hours) });
   return (
     <div className="cx-inline">
-      {targets.length === 0 && <span>No host can take it.</span>}
+      {targets.length === 0 && <span>{t("browser-consoles-2.noHost")}</span>}
       {targets.map((t) => <button key={t.key} className="cx-chip" aria-pressed={t.key === pick} onClick={() => setPick(t.key)}>{t.label}</button>)}
       {chosen && <span className="cx-note">{summary}</span>}
-      {chosen && <button className="cx-btn primary" onClick={() => chosen.run().ok && done()}>Migrate</button>}
-      <button className="cx-btn" onClick={done}>Cancel</button>
+      {chosen && <button className="cx-btn primary" onClick={() => chosen.run().ok && done()}>{t("browser-consoles-2.migrate")}</button>}
+      <button className="cx-btn" onClick={done}>{t("browser-consoles-2.cancel")}</button>
     </div>
   );
 }
@@ -122,13 +123,13 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
     const on = st === "running" || st === "down" || st === "frozen", site = game.services.find((v) => v.id === w.serviceId);
     const d = game.devices.find((x) => x.id === w.deviceId), movable = (on || st === "stopped") && !w.migrating, own = cloud && isOwnVm(w);
     const actions: (PanelAction | false)[] = [
-      f.start && st === "stopped" && { id: "start", label: "Start", run: () => act(startWorkload, w.id) },
-      f.stop && on && { id: "stop", label: "Stop", run: () => act(stopWorkload, w.id) },
-      st === "lost" && f.backups && { id: "restore", label: w.backupAt === null ? "Start empty" : "Restore", run: () => act(restoreWorkload, w.id) },
-      !!f.migrate && movable && { id: "migrate", label: "Migrate", run: () => setOpen({ id: w.id, kind: "migrate" }) },
-      f.resize && !!host && cloud && { id: "resize", label: "Resize", run: () => setOpen({ id: w.id, kind: "resize" }) },
-      own && { id: "console", label: "Console", run: () => openConsole(w.id) },
-      f.delete && own && !host && { id: "delete", label: "Delete", run: () => act(deleteVm, w.id) },
+      f.start && st === "stopped" && { id: "start", label: t("browser-consoles-2.start"), run: () => act(startWorkload, w.id) },
+      f.stop && on && { id: "stop", label: t("browser-consoles-2.stop"), run: () => act(stopWorkload, w.id) },
+      st === "lost" && f.backups && { id: "restore", label: w.backupAt === null ? t("browser-consoles-2.startEmpty") : t("browser-consoles-2.restore"), run: () => act(restoreWorkload, w.id) },
+      !!f.migrate && movable && { id: "migrate", label: t("browser-consoles-2.migrate"), run: () => setOpen({ id: w.id, kind: "migrate" }) },
+      f.resize && !!host && cloud && { id: "resize", label: t("browser-consoles-2.resize"), run: () => setOpen({ id: w.id, kind: "resize" }) },
+      own && { id: "console", label: t("browser-consoles-2.console"), run: () => openConsole(w.id) },
+      f.delete && own && !host && { id: "delete", label: t("browser-consoles-2.delete"), run: () => act(deleteVm, w.id) },
     ];
     const o = open?.id === w.id ? open.kind : null;
     return {
@@ -137,24 +138,24 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
       sub: host?.panel ? consoleTitle(host.panel) : "",
       node: d ? d.hostname ?? d.label ?? d.name : "",
       cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu],
-      usage: web ? `${disk(Math.round(u.diskGb))} of ${disk(w.diskGb)}` : `${num(u.vcpu)} of ${w.vcpu} vCPU, ${ram(+u.ramGb.toFixed(1))} of ${ram(w.ramGb)}`,
+      usage: web ? t("browser-consoles-2.of", { used: disk(Math.round(u.diskGb)), total: disk(w.diskGb) }) : t("browser-consoles-2.usageVm", { cpu: num(u.vcpu), vcpu: w.vcpu, ram: ram(+u.ramGb.toFixed(1)), ramTotal: ram(w.ramGb) }),
       actions: actions.filter((a): a is PanelAction => !!a),
       panel: o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : null,
     };
   });
 }
 
-export const cpuText = (r: Row) => `${num(r.cpu[0])} of ${r.cpu[1]} vCPU`;
-export const ramText = (r: Row) => `${ram(+r.ram[0].toFixed(1))} of ${ram(r.ram[1])}`;
+export const cpuText = (r: Row) => t("browser-consoles-2.ofVcpu", { used: num(r.cpu[0]), total: r.cpu[1] });
+export const ramText = (r: Row) => t("browser-consoles-2.of", { used: ram(+r.ram[0].toFixed(1)), total: ram(r.ram[1]) });
 
 // The plain table most consoles show their objects in; name is the first column's heading.
 export function RowsTable({ rows, name, node = false, className = "cx-table" }: { rows: Row[]; name: string; node?: boolean; className?: string }) {
   const span = node ? 5 : 4;
   return (
     <table className={className}>
-      <thead><tr><th>{name}</th>{node && <th>Node</th>}<th>Status</th><th>Usage</th><th /></tr></thead>
+      <thead><tr><th>{name}</th>{node && <th>{t("browser-consoles-2.node")}</th>}<th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.usage")}</th><th /></tr></thead>
       <tbody>
-        {rows.length === 0 && <tr><td colSpan={span} className="cx-empty">Nothing here yet.</td></tr>}
+        {rows.length === 0 && <tr><td colSpan={span} className="cx-empty">{t("browser-consoles-2.nothingHere")}</td></tr>}
         {rows.map((r) => (
           <RowLines key={r.id} r={r} span={span}>
             <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}</td>
@@ -182,7 +183,7 @@ export function RowLines({ r, span, children }: { r: Row; span: number; children
 export function Nodes({ game, c, className = "cx-table" }: { game: GameState; c: Cluster; className?: string }) {
   return (
     <table className={className}>
-      <thead><tr><th>Node</th><th>State</th><th>Health</th><th>Workloads</th></tr></thead>
+      <thead><tr><th>{t("browser-consoles-2.node")}</th><th>{t("browser-consoles-2.state")}</th><th>{t("browser-consoles-2.health")}</th><th>{t("browser-consoles-2.workloads")}</th></tr></thead>
       <tbody>
         {c.nodes.map((n) => {
           const d = game.devices.find((x) => x.id === n.deviceId);
@@ -213,30 +214,30 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
   const auto = f.update && autoUpdates(softwareById(family), year), on = !!c.autoUpdate;
   const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "";
   const facts: (Fact | false)[] = [
-    { label: "Software", value: consoleTitle(family) },
-    { label: "Version", value: String(c.version), num: true },
-    auto && { label: "Automatic updates", value: on ? "On" : "Off" },
-    { label: "Open vulnerabilities", value: String(openVulns(game, c.id).length), num: true },
+    { label: t("browser-consoles-2.software"), value: consoleTitle(family) },
+    { label: t("browser-consoles-2.version"), value: String(c.version), num: true },
+    auto && { label: t("browser-consoles-2.autoUpdates"), value: on ? t("browser-consoles-2.on") : t("browser-consoles-2.off") },
+    { label: t("browser-consoles-2.openVulns"), value: String(openVulns(game, c.id).length), num: true },
     c.kind === "panel" && { label: "PHP", value: String(c.php), num: true },
   ];
   const actions: (PanelAction | false)[] = [
-    f.update && due && { id: "update", label: `Update to ${year}`, run: () => act(updateSoftware, c.id), tone: "primary" },
-    auto && { id: "auto", label: on ? "Turn off automatic updates" : "Turn on automatic updates", run: () => act(setAutoUpdate, c.id, !on) },
-    c.kind === "panel" && phpDue(game, c) && { id: "php", label: c.php === phpAt(year) ? "Patch PHP" : `Upgrade to PHP ${phpAt(year)}`, run: () => act(upgradePhp, c.id) },
-    f.sitesOffline && c.kind === "panel" && { id: "offline", label: off ? "Bring sites online" : "Take sites offline", run: () => act(setSitesOffline, c.id, !off) },
-    f.resize && c.kind === "panel" && !!c.vm && { id: "resize", label: "Resize", run: () => setSizing(!sizing) },
-    f.delete && !removing && { id: "remove", label: "Remove host", run: () => setRemoving(true) },
-    removing && { id: "confirm", label: "Confirm remove", tone: "danger", run: () => (c.kind === "panel" ? act(removePanelHost, c.id) : act(uninstallSoftware, machine)) },
-    removing && { id: "cancel", label: "Cancel", run: () => setRemoving(false) },
+    f.update && due && { id: "update", label: t("browser-consoles-2.updateTo", { year }), run: () => act(updateSoftware, c.id), tone: "primary" },
+    auto && { id: "auto", label: on ? t("browser-consoles-2.autoOff") : t("browser-consoles-2.autoOn"), run: () => act(setAutoUpdate, c.id, !on) },
+    c.kind === "panel" && phpDue(game, c) && { id: "php", label: c.php === phpAt(year) ? t("browser-consoles-2.patchPhp") : t("browser-consoles-2.upgradePhp", { version: phpAt(year) }), run: () => act(upgradePhp, c.id) },
+    f.sitesOffline && c.kind === "panel" && { id: "offline", label: off ? t("browser-consoles-2.sitesOnline") : t("browser-consoles-2.sitesOffline"), run: () => act(setSitesOffline, c.id, !off) },
+    f.resize && c.kind === "panel" && !!c.vm && { id: "resize", label: t("browser-consoles-2.resize"), run: () => setSizing(!sizing) },
+    f.delete && !removing && { id: "remove", label: t("browser-consoles-2.removeHost"), run: () => setRemoving(true) },
+    removing && { id: "confirm", label: t("browser-consoles-2.confirmRemove"), tone: "danger", run: () => (c.kind === "panel" ? act(removePanelHost, c.id) : act(uninstallSoftware, machine)) },
+    removing && { id: "cancel", label: t("browser-consoles-2.cancel"), run: () => setRemoving(false) },
   ];
   return {
     facts: facts.filter((x): x is Fact => !!x), actions: actions.filter((a): a is PanelAction => !!a),
-    note: f.update && !due ? "Up to date" : null, panel: sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null,
+    note: f.update && !due ? t("browser-consoles-2.upToDate") : null, panel: sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null,
   };
 }
 
 // The backup schedule and the host the backups go to; consoles show it where consoleFeatures offers backups.
-export function Backups({ game, c, title = <h4 className="cx-h">Backups</h4> }: { game: GameState; c: Cluster; title?: ReactNode }) {
+export function Backups({ game, c, title = <h4 className="cx-h">{t("browser-consoles-2.backups")}</h4> }: { game: GameState; c: Cluster; title?: ReactNode }) {
   const act = useStore((s) => s.act), others = backupTargets(game, c), target = c.backup.targetId ?? others[0]?.id ?? null;
   return (
     <>
@@ -244,12 +245,12 @@ export function Backups({ game, c, title = <h4 className="cx-h">Backups</h4> }: 
       <div className="cx-tools">
         {(["off", "daily", "weekly"] as BackupEvery[]).map((e) => (
           <button key={e} className="cx-chip" aria-pressed={c.backup.every === e} disabled={e !== "off" && !target} onClick={() => act(setBackup, c.id, target, e)}>
-            {e === "off" ? "Off" : e === "daily" ? "Daily" : "Weekly"}
+            {e === "off" ? t("browser-consoles-2.off") : e === "daily" ? t("browser-consoles-2.daily") : t("browser-consoles-2.weekly")}
           </button>
         ))}
       </div>
       <div className="cx-tools">
-        {others.length === 0 && <span className="cx-note">No compatible backup server</span>}
+        {others.length === 0 && <span className="cx-note">{t("browser-consoles-2.noBackupServer")}</span>}
         {others.map((x) => <button key={x.id} className="cx-chip" aria-pressed={c.backup.targetId === x.id} onClick={() => act(setBackup, c.id, x.id, c.backup.every)}>{x.name}</button>)}
       </div>
     </>

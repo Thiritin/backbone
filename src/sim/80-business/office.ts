@@ -1,3 +1,4 @@
+import { textRecord } from "../00-core/text";
 import { dateOf } from "../00-core/time";
 import type { Registration } from "../50-state";
 
@@ -7,7 +8,7 @@ export const OFFICE_TITLE = "Trade Office Online";
 export const OFFICE_URL = `www.${OFFICE_HOST}/eservice/`;
 export const OFFICE_OPEN = 8;
 export const OFFICE_CLOSE = 16;
-export const LEGAL_FORMS: Record<string, string> = { sole: "Sole trader", partnership: "Partnership", limited: "Limited company" };
+export const LEGAL_FORMS: Record<string, string> = textRecord("sim.legal", { sole: "", partnership: "", limited: "" });
 
 // Monday to Friday, 08:00 to 16:00.
 export function officeOpen(hour: number): boolean {

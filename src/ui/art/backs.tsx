@@ -1,6 +1,7 @@
 // Rear panels, power supplies and the place of every port on either side, so cables can be drawn to them.
 // Switches and firewalls mount reversed, as in real racks: their port face looks to the rack back, where the
 // server NICs are, and their power supplies and fans look to the rack front.
+import { t } from "../../i18n/en";
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import { BrandMark } from "./logos";
 import { isMgmtModel, MgmtBack, OobJacks, oobSpots } from "./mgmt";
@@ -97,7 +98,7 @@ export function Cord({ x, y, mm, x0 }: { x: number; y: number; mm: number; x0: n
 function C14({ x, y, w, h }: Spot) {
   const c = w * 0.18;
   return (
-    <g aria-label="Power inlet">
+    <g aria-label={t("art.powerInlet")}>
       <path d={`M${x} ${y}h${w}v${h - c}l${-c} ${c}h${-(w - 2 * c)}l${-c} ${-c}z`} fill="oklch(0.08 0.003 255)" stroke="oklch(0.45 0.006 255)" strokeWidth="0.6" />
       {[0.28, 0.72].map((f) => <rect key={f} x={x + w * f - w * 0.035} y={y + h * 0.28} width={w * 0.07} height={h * 0.3} fill="oklch(0.75 0.05 85)" />)}
       <rect x={x + w / 2 - w * 0.035} y={y + h * 0.5} width={w * 0.07} height={h * 0.3} fill="oklch(0.75 0.05 85)" />
@@ -112,7 +113,7 @@ export function Psus({ model, w, h, on, lamps }: { model: DeviceModel; w: number
       {psuBoxes(model, w, h).map((b, k) => {
         const g = b.inlet.x + b.inlet.w + 3, r = Math.min(b.h * 0.36, (b.x + b.w - g - 6) / 2);
         return (
-          <g key={k} aria-label={`PSU ${k + 1}`}>
+          <g key={k} aria-label={t("art.psu", { n: k + 1 })}>
             <rect x={b.x} y={b.y} width={b.w} height={b.h} rx="1" fill="oklch(0.26 0.005 255)" stroke="var(--metal-line)" strokeWidth="0.6" />
             <C14 {...b.inlet} />
             {r > 2 && <circle cx={g + r} cy={b.y + b.h / 2} r={r} fill="url(#bb-hex)" />}
@@ -135,7 +136,7 @@ function Fans({ x, w, h, lamps, on }: { x: number; w: number; h: number; lamps: 
       {lamps.map((l, k) => {
         const cx = x + step * (k + 0.5);
         return (
-          <g key={k} aria-label={`Fan ${k + 1}`}>
+          <g key={k} aria-label={t("art.fan", { n: k + 1 })}>
             <circle cx={cx} cy={h / 2} r={r} fill="oklch(0.16 0.004 255)" stroke="var(--metal-line)" strokeWidth="0.6" />
             <circle cx={cx} cy={h / 2} r={r * 0.3} fill="oklch(0.3 0.005 255)" />
             <circle cx={cx + r * 0.8} cy={h / 2 - r * 0.8} r="1" {...(on ? partLed(l, LED.ok) : { fill: LED.off })} />
@@ -156,7 +157,7 @@ export function SwitchRear(p: FrontProps) {
       <Psus model={model} w={w} h={h} on={state !== "off"} lamps={p.parts?.psus} />
       <rect x={x1} y="3" width={fw} height={h - 6} rx="1" fill="url(#bb-perf)" opacity="0.35" />
       {fans.length > 0 && <Fans x={x1} w={fw} h={h} lamps={fans} on={state !== "off"} />}
-      <circle cx={x1 + fw + 10} cy={h / 2} r={Math.min(2.4, h * 0.12)} fill="oklch(0.62 0.03 85)" stroke="oklch(0.35 0.01 85)" strokeWidth="0.5" aria-label="Ground" />
+      <circle cx={x1 + fw + 10} cy={h / 2} r={Math.min(2.4, h * 0.12)} fill="oklch(0.62 0.03 85)" stroke="oklch(0.35 0.01 85)" strokeWidth="0.5" aria-label={t("art.ground")} />
       <LedPanel {...p} x={x1 + fw + 20} x2={w - 22 - (name ? tw(name, fsz(Math.min(h, 24)) * 0.9) + 4 : 0)} />
       <AssetTag x={w - 14} y={h / 2} text={name} h={h} anchor="end" />
     </>
@@ -170,7 +171,7 @@ function LedPanel({ model, name, h, lights = [], state, x, x2 }: FrontProps & { 
   const fs = Math.min(numSize(h), cw / 1.3), lw = Math.min(3.2, cw * 0.5), lh = Math.min(2, h * 0.09);
   const width = cols * cw + Math.floor((cols - 1) / 6) * gap + 4;
   return (
-    <g aria-label="Port lights">
+    <g aria-label={t("art.portLights")}>
       <rect x={x} y="2" width={width} height={h - 4} rx="1" fill="oklch(0.14 0.004 255)" />
       <g fontFamily={MONO} fontSize={fs} fill={NUM} textAnchor="middle" aria-hidden="true">
         {model.ports.map((_, i) => {
@@ -195,7 +196,7 @@ function PortFace(p: FrontProps) {
       <rect x="0" y="0.5" width={w} height={h - 1} rx="1.5" fill="oklch(0.24 0.006 255)" stroke="var(--metal-line)" />
       <AssetTag x={6} y={h / 2} text={name} h={h} />
       {model.kind === "firewall"
-        ? <rect x={switchX0(model, name, h)} y={h / 2 - Math.min(10, h * 0.42) * 0.45} width={Math.min(10, h * 0.42) * 0.9} height={Math.min(10, h * 0.42) * 0.8} rx="0.6" fill="oklch(0.5 0.09 230)" aria-label="Console port" />
+        ? <rect x={switchX0(model, name, h)} y={h / 2 - Math.min(10, h * 0.42) * 0.45} width={Math.min(10, h * 0.42) * 0.9} height={Math.min(10, h * 0.42) * 0.8} rx="0.6" fill="oklch(0.5 0.09 230)" aria-label={t("art.consolePort")} />
         : <OobJacks model={model} name={name} w={w} h={h} />}
       <SwitchPorts at={at} ports={ports} lights={p.lights} name={name} groups={p.groups} />
       <PortNums model={model} spots={at} h={h} below={(i) => !at.get(i)!.top} />

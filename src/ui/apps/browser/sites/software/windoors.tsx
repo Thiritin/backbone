@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Link, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./windoors.css";
@@ -11,15 +12,15 @@ export function Windoors(props: SiteProps) {
       <header>
         <span className="corp"><SiteMark id="windoors" name={p.name} size={18} /> Macrosoft</span>
         <span className="sw-wm">Windoors Server</span>
-        <Nav {...props} className="sw-tabs" labels={{ home: "Overview", download: "Evaluate" }} />
+        <Nav {...props} className="sw-tabs" labels={{ home: t("browser-sites-2.navOverview"), download: t("browser-sites-2.navEvaluate") }} />
       </header>
       {tiles ? (
         <main className="metro">
           <h1>{p.site.tagline}</h1>
           <div className="grid">
             <Link to="features" go={go} className="tile t1">{p.site.features[0]}</Link>
-            <Link to="pricing" go={go} className="tile t2">Pricing and licensing</Link>
-            <Link to="download" go={go} className="tile t3">Get the installation media</Link>
+            <Link to="pricing" go={go} className="tile t2">{t("browser-sites-2.winPricing")}</Link>
+            <Link to="download" go={go} className="tile t3">{t("browser-sites-2.winMedia")}</Link>
             <span className="tile t4">{p.site.blurb}</span>
           </div>
         </main>
@@ -30,7 +31,7 @@ export function Windoors(props: SiteProps) {
           <Body {...props} />
         </main>
       )}
-      <footer>© {year} Macrosoft Corporation. All rights reserved. Terms of Use. Trademarks. Privacy Statement.</footer>
+      <footer>{t("browser-sites-2.winFooter", { year })}</footer>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import type { GameState, Location, Rack } from "../../../sim/50-state";
 import { rackPower } from "../../../sim/60-infra/status";
 import { buyRack } from "../../../sim/90-actions/hardware";
 import { DeviceSvg, LED } from "../../art/fronts";
+import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { day, deviceLamps, devName } from "../hw";
 import { PowerMeter, useDismiss } from "./ui";
@@ -16,7 +17,7 @@ export const rackUnits = (r: Rack) => simRackUnits(r.model);
 export function Floor({ game, loc, onRack }: { game: GameState; loc: Location; onRack: (id: string) => void }) {
   const at = new Map(game.racks.filter((r) => r.locationId === loc.id).map((r) => [r.position, r]));
   return (
-    <div className="loc-floor" aria-label="Floor">
+    <div className="loc-floor" aria-label={t("locations-1.floor")}>
       {Array.from({ length: loc.positions }, (_, i) => i + 1).map((p) => {
         const r = at.get(p);
         return r ? <RackTile key={p} game={game} rack={r} onOpen={() => onRack(r.id)} /> : <FreeTile key={p} loc={loc} position={p} onBought={onRack} />;
@@ -39,12 +40,12 @@ function RackTile({ game, rack, onOpen }: { game: GameState; rack: Rack; onOpen:
         })}
       </svg>
       <strong>{rack.name}</strong>
-      {rack.provided && <span className="pill">Provided</span>}
+      {rack.provided && <span className="pill">{t("locations-1.provided")}</span>}
       <span className="num loc-tile-sub">{used} / {units} U</span>
       {rack.arriveAt !== null
-        ? <span className="pill"><Truck />Arrives <span className="num">{day(rack.arriveAt)}</span></span>
+        ? <span className="pill"><Truck />{t("locations-1.arrives")} <span className="num">{day(rack.arriveAt)}</span></span>
         : <PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.tripped} />}
-      {power.tripped && <span className="pill bad">Tripped</span>}
+      {power.tripped && <span className="pill bad">{t("locations-1.tripped")}</span>}
     </button>
   );
 }
@@ -57,19 +58,19 @@ function FreeTile({ loc, position, onBought }: { loc: Location; position: number
   const models = RACK_MODELS.filter((m) => loc.space !== "basement" || m.units <= BASEMENT.maxUnits);
   return (
     <div className="loc-tile-wrap" ref={ref}>
-      <button className="loc-tile free" aria-expanded={open} aria-label={`Position ${position} free`} onClick={() => setOpen(!open)}>
+      <button className="loc-tile free" aria-expanded={open} aria-label={t("locations-1.positionFree", { n: position })} onClick={() => setOpen(!open)}>
         <span className="loc-tile-pos num">{position}</span>
         <Plus />
-        <span className="loc-tile-sub">Free</span>
+        <span className="loc-tile-sub">{t("locations-1.free")}</span>
       </button>
       {open && (
-        <div className="loc-pop" role="dialog" aria-label={`Buy a rack for position ${position}`}>
+        <div className="loc-pop" role="dialog" aria-label={t("locations-1.buyRackFor", { n: position })}>
           {models.map((m) => (
             <div key={m.id} className="loc-pop-row">
               <strong className="num">{m.units}U</strong>
               <span className="grow" />
               <span className="num">{euro(m.price)}</span>
-              <button className="btn primary" onClick={() => { const r = act(buyRack, loc.id, m.id, position); if (r.ok) { setOpen(false); if (r.id) onBought(r.id); } }}>Buy</button>
+              <button className="btn primary" onClick={() => { const r = act(buyRack, loc.id, m.id, position); if (r.ok) { setOpen(false); if (r.id) onBought(r.id); } }}>{t("locations-1.buy")}</button>
             </div>
           ))}
         </div>
@@ -82,7 +83,7 @@ export function CarrierPanel({ game, loc, selected, onDevice }: { game: GameStat
   const gws = game.devices.filter((d) => d.panel === loc.id);
   return (
     <div className="loc-card">
-      <div className="loc-card-h"><h3>Carrier panel</h3></div>
+      <div className="loc-card-h"><h3>{t("locations-1.carrierPanel")}</h3></div>
       <div className="loc-panel">
         {gws.map((d) => {
           const m = modelById(d.model);

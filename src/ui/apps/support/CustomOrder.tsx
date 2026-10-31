@@ -1,5 +1,6 @@
 import { Check, CircleX, Globe, Rocket, Send, UserPlus } from "lucide-react";
 import { useId, useState } from "react";
+import { t } from "../../../i18n/en";
 import { euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import type { Resources } from "../../../sim/10-catalog/products";
@@ -24,7 +25,7 @@ const gb = (x: number) => `${n(x)} GB`;
 
 const free = (r: Resources) => `${n(r.vcpu)} vCPU · ${gb(r.ramGb)} RAM · ${gb(r.diskGb)} disk free`;
 
-const LOAD: [string, "vcpu" | "ramGb" | "diskGb", string][] = [["CPU", "vcpu", "vCPU"], ["RAM", "ramGb", "GB"], ["Storage", "diskGb", "GB"]];
+const LOAD: [string, "vcpu" | "ramGb" | "diskGb", string][] = [["CPU", "vcpu", "vCPU"], ["RAM", "ramGb", "GB"], [t("support.storage"), "diskGb", "GB"]];
 const tone = (x: number) => (x >= 0.9 ? "bad" : x >= 0.7 ? "warn" : "ok");
 
 // What a target has booked now and once the service lands on it.
@@ -37,7 +38,7 @@ function Load({ title, cap, used, size }: { title: string; cap: Resources; used:
         return (
           <div key={k} className="res">
             <span className="res-k">{label}</span>
-            <span className="res-bar" role="img" aria-label={`${label} ${Math.round(before * 100)}% now, ${Math.round(after * 100)}% after`}>
+            <span className="res-bar" role="img" aria-label={t("support.loadBar", { label, before: Math.round(before * 100), after: Math.round(after * 100) })}>
               <i className={`after ${tone(after)}`} style={{ width: `${Math.min(100, after * 100)}%` }} />
               <i className="before" style={{ width: `${Math.min(100, before * 100)}%` }} />
             </span>
@@ -75,11 +76,11 @@ export function RouteCards({ product, city, size, value, onChange, disabled, ser
   const used = old && target && holds ? { vcpu: target.used.vcpu - old.vcpu, ramGb: target.used.ramGb - old.ramGb, diskGb: target.used.diskGb - old.diskGb } : target?.used;
   return (
     <>
-      <div className="routes" role="radiogroup" aria-label="Server">
+      <div className="routes" role="radiogroup" aria-label={t("support.server")}>
         {list.map((x) => (
           <label key={x.id} className={`route${x.fits ? "" : " full"}`}>
             <input type="radio" name={name} checked={value === x.id} disabled={disabled} onChange={() => onChange(x.id)} />
-            <span className="route-t">{x.title}{!x.fits && <span className="pill">Full</span>}</span>
+            <span className="route-t">{x.title}{!x.fits && <span className="pill">{t("support.full")}</span>}</span>
             <span className="route-s num">{free(x.free)}</span>
           </label>
         ))}
@@ -96,20 +97,20 @@ function HostCards({ r, value, onChange, disabled }: { r: SalesRequest; value: s
   const game = useStore((s) => s.game);
   const better = betterHost(game), suggested = hostFor(game, r);
   const hosts = routeOptions(game, r.product, r.city, sizeOf(r.spec!)).sort((a, b) => Number(b.fits) - Number(a.fits) || better(game.clusters.find((c) => c.id === a.id)!, game.clusters.find((c) => c.id === b.id)!));
-  const used = (h: (typeof hosts)[number], k: "ramGb" | "diskGb") => `${n(h.used[k])} of ${n(h.cap[k])} GB`;
+  const used = (h: (typeof hosts)[number], k: "ramGb" | "diskGb") => t("support.ofGb", { a: n(h.used[k]), b: n(h.cap[k]) });
   const card = (id: string, title: string, fits: boolean, rows: [string, string][]) => (
     <div key={id} className={`host${value === id ? " sel" : ""}${fits ? "" : " full"}`}>
-      <span className="host-t">{title}{!fits && <span className="pill">Full</span>}{id === suggested && <span className="pill accent">Suggested</span>}</span>
+      <span className="host-t">{title}{!fits && <span className="pill">{t("support.full")}</span>}{id === suggested && <span className="pill accent">{t("support.suggested")}</span>}</span>
       {rows.map(([k, v]) => <span key={k} className="host-r"><span>{k}</span><span className="num">{v}</span></span>)}
-      <button className="btn" aria-pressed={value === id} disabled={disabled || !fits} onClick={() => onChange(id)}>{value === id ? "Selected" : "Select"}</button>
+      <button className="btn" aria-pressed={value === id} disabled={disabled || !fits} onClick={() => onChange(id)}>{value === id ? t("support.selected") : t("support.select")}</button>
     </div>
   );
   return (
-    <div className="hosts" role="group" aria-label="Hosts">
-      {canAutomate(game) && card("auto", "Automatic", hosts.some((h) => h.fits), [["Hosts", String(hosts.length)]])}
+    <div className="hosts" role="group" aria-label={t("support.hosts")}>
+      {canAutomate(game) && card("auto", t("support.automatic"), hosts.some((h) => h.fits), [[t("support.hosts"), String(hosts.length)]])}
       {hosts.map((h) => {
         const q = hostQuality(game, game.clusters.find((c) => c.id === h.id)!);
-        return card(h.id, `${h.name} · ${h.az}`, h.fits, [["Hardware", q.year ? String(q.year) : "Unknown"], ["Down this month", `${n(q.down)} h`], ["RAM booked", used(h, "ramGb")], ["Disk booked", used(h, "diskGb")]]);
+        return card(h.id, `${h.name} · ${h.az}`, h.fits, [[t("support.hardware"), q.year ? String(q.year) : t("support.unknown")], [t("support.downThisMonth"), `${n(q.down)} h`], [t("support.ramBooked"), used(h, "ramGb")], [t("support.diskBooked"), used(h, "diskGb")]]);
       })}
     </div>
   );
@@ -124,15 +125,15 @@ function QuoteFields({ tk, r, locked }: { tk: Ticket; r: SalesRequest; locked: b
   return (
     <div className="step-row">
       <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} />
-      <PriceField value={setup} reference={fee} onChange={setSetup} disabled={locked} label="Setup fee" />
-      <button className="btn primary" disabled={locked || !(price > 0) || !(setup >= 0)} onClick={() => act(quoteOrder, tk.id, price, setup)}><Send />Send quote</button>
+      <PriceField value={setup} reference={fee} onChange={setSetup} disabled={locked} label={t("support.setupFee")} />
+      <button className="btn primary" disabled={locked || !(price > 0) || !(setup >= 0)} onClick={() => act(quoteOrder, tk.id, price, setup)}><Send />{t("support.sendQuote")}</button>
     </div>
   );
 }
 
-const PROVISION: Partial<Record<Product, string>> = { webHosting: "Provision web hosting", vps: "Provision VPS", gameServer: "Provision game server" };
+const PROVISION: Partial<Record<Product, string>> = { webHosting: t("support.provisionWeb"), vps: t("support.provisionVps"), gameServer: t("support.provisionGame") };
 const INVOICE: Record<string, { label: string; pill: string }> = {
-  open: { label: "Open", pill: "accent" }, overdue: { label: "Overdue", pill: "warn" }, paid: { label: "Paid", pill: "ok" }, writtenOff: { label: "Written off", pill: "" },
+  open: { label: t("support.invoice.open"), pill: "accent" }, overdue: { label: t("support.invoice.overdue"), pill: "warn" }, paid: { label: t("support.invoice.paid"), pill: "ok" }, writtenOff: { label: t("support.invoice.writtenOff"), pill: "" },
 };
 
 export function InvoicePill({ r }: { r: SalesRequest }) {
@@ -140,7 +141,7 @@ export function InvoicePill({ r }: { r: SalesRequest }) {
   const inv = invoiceOf(game, r);
   if (!inv) return null;
   const st = INVOICE[inv.status];
-  return <span className={`pill ${st.pill}`}>Invoice <span className="num">{inv.number}</span> · {st.label}</span>;
+  return <span className={`pill ${st.pill}`}>{t("support.invoicePill", { number: inv.number, status: st.label })}</span>;
 }
 
 // The steps of a custom order, each with its button once the step before it is done. Order form orders start accepted.
@@ -154,10 +155,10 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const current = !done.quote ? "quote" : !done.account ? "account" : !done.invoice ? "invoice" : !done.domain ? "domain" : !done.provision ? "provision" : null;
   const cost = web ? (game.registrar ? wholesale(game, r.domain!) : registryCost(r.domain!, yearOf(game.hour))) : 0;
   const waiting = r.replyAt !== null;
-  const quoteValue = done.quote ? `${euroCents(r.quote ?? 0)} a month` : waiting ? "Sent" : r.status === "countered" ? `Counter ${euroCents(r.counter ?? 0)} a month` : r.status === "refused" ? "Refused" : "Not sent";
+  const quoteValue = done.quote ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : waiting ? t("support.sent") : r.status === "countered" ? t("support.counter", { price: euroCents(r.counter ?? 0) }) : r.status === "refused" ? t("support.refused") : t("support.notSent");
   const row = (id: string, label: string, value: string, body?: React.ReactNode) => (
     <li key={id} className={`step${done[id as keyof typeof done] ? " done" : id === current ? " now" : ""}`}>
-      <span className="step-i">{done[id as keyof typeof done] ? <Check aria-label="Done" /> : null}</span>
+      <span className="step-i">{done[id as keyof typeof done] ? <Check aria-label={t("support.done")} /> : null}</span>
       <span className="step-k">{label}</span>
       <span className="step-v">{value}</span>
       {id === current && body && <div className="step-body">{body}</div>}
@@ -166,21 +167,21 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   return (
     <div className="compose custom-steps">
       <ol className="steps">
-        {!r.form && row("quote", "Quote", quoteValue, !waiting && <QuoteFields key={r.attempts} tk={tk} r={r} locked={locked} />)}
-        {row("account", "Customer account", done.account ? "Created" : "None",
-          <button className="btn primary" disabled={locked} onClick={() => act(createAccount, tk.id)}><UserPlus />Create customer account</button>)}
-        {row("invoice", "Order confirmation", done.invoice ? `${euroCents(r.quote ?? 0)} a month` : "Not sent",
-          <button className="btn primary" disabled={locked} onClick={() => act(confirmOrder, tk.id)}><Send />Confirm order and send invoice</button>)}
-        {web && row("domain", r.owned ? "Domain transfer" : "Domain", done.domain ? "Registered" : `${r.domain} · ${registryOf(r.domain!).name} · ${euroCents(cost)} a year`,
-          <button className="btn primary" disabled={locked} onClick={() => act(registerOrderDomain, tk.id)}><Globe />{r.owned ? "Transfer domain" : "Register domain"}</button>)}
-        {row("provision", "Setup", done.provision ? "Live" : "Not set up",
+        {!r.form && row("quote", t("support.quote"), quoteValue, !waiting && <QuoteFields key={r.attempts} tk={tk} r={r} locked={locked} />)}
+        {row("account", t("support.customerAccount"), done.account ? t("support.created") : t("support.none"),
+          <button className="btn primary" disabled={locked} onClick={() => act(createAccount, tk.id)}><UserPlus />{t("support.createAccount")}</button>)}
+        {row("invoice", t("support.orderConfirmation"), done.invoice ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : t("support.notSent"),
+          <button className="btn primary" disabled={locked} onClick={() => act(confirmOrder, tk.id)}><Send />{t("support.confirmOrder")}</button>)}
+        {web && row("domain", r.owned ? t("support.domainTransfer") : t("support.domain"), done.domain ? t("support.registered") : t("support.domainLine", { domain: r.domain!, registry: registryOf(r.domain!).name, price: euroCents(cost) }),
+          <button className="btn primary" disabled={locked} onClick={() => act(registerOrderDomain, tk.id)}><Globe />{r.owned ? t("support.transferDomain") : t("support.registerDomain")}</button>)}
+        {row("provision", t("support.setup"), done.provision ? t("support.live") : t("support.notSetUp"),
           <div className="step-col">
             <HostCards r={r} value={route} onChange={setRoute} disabled={locked} />
             <button className="btn primary" disabled={locked || !route} onClick={() => act(provisionOrder, tk.id, route!)}><Rocket />{PROVISION[r.product]}</button>
           </div>)}
       </ol>
       <div className="actions-row">
-        <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><CircleX />Decline</button>
+        <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><CircleX />{t("support.decline")}</button>
       </div>
     </div>
   );
@@ -196,26 +197,26 @@ export function UpgradeCompose({ r }: { r: SalesRequest }) {
   if (!v?.spec || !r.spec) return null;
   const current = v.price * 730, open = ["open", "countered", "refused"].includes(r.status), locked = r.status === "quoted";
   const rows: [string, number, number, string][] = r.product === "webHosting"
-    ? [["Space", v.spec.diskGb, r.spec.diskGb, "GB"], ["Traffic", v.spec.trafficGb, r.spec.trafficGb, "GB"], ["Mailboxes", v.spec.mailboxes, r.spec.mailboxes, ""]]
-    : [["vCPU", v.spec.vcpu, r.spec.vcpu, ""], ["RAM", v.spec.ramGb, r.spec.ramGb, "GB"], ["Disk", v.spec.diskGb, r.spec.diskGb, "GB"]];
+    ? [[t("support.space"), v.spec.diskGb, r.spec.diskGb, "GB"], [t("support.traffic"), v.spec.trafficGb, r.spec.trafficGb, "GB"], [t("support.mailboxes"), v.spec.mailboxes, r.spec.mailboxes, ""]]
+    : [["vCPU", v.spec.vcpu, r.spec.vcpu, ""], ["RAM", v.spec.ramGb, r.spec.ramGb, "GB"], [t("support.disk"), v.spec.diskGb, r.spec.diskGb, "GB"]];
   return (
     <>
       <table className="table upgrade-table">
-        <thead><tr><th>Resource</th><th className="r">Now</th><th className="r">Requested</th></tr></thead>
+        <thead><tr><th>{t("support.resource")}</th><th className="r">{t("support.now")}</th><th className="r">{t("support.requested")}</th></tr></thead>
         <tbody>
           {rows.map(([k, a, b, u]) => <tr key={k}><td>{k}</td><td className="r num">{n(a)} {u}</td><td className="r num">{n(b)} {u}</td></tr>)}
-          <tr><td>Monthly price</td><td className="r num">{euroCents(current)}</td><td className="r num">{euroCents(price)}</td></tr>
+          <tr><td>{t("support.monthlyPrice")}</td><td className="r num">{euroCents(current)}</td><td className="r num">{euroCents(price)}</td></tr>
         </tbody>
       </table>
       {(open || locked) && (
         <div className="compose custom-steps">
-          <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} label="New monthly price" />
-          <span className="sales-total">Difference <span className="num">{price >= current ? "+" : ""}{euroCents(price - current)}</span> a month</span>
+          <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} label={t("support.newMonthlyPrice")} />
+          <span className="sales-total">{t("support.difference", { amount: `${price >= current ? "+" : ""}${euroCents(price - current)}` })}</span>
           <RouteCards product={r.product} city={r.city} size={sizeOf(r.spec)} value={route} onChange={setRoute} disabled={locked} serviceId={r.serviceId ?? undefined} />
           <div className="actions-row">
-            <button className="btn ghost" disabled={locked} onClick={() => act(decline, r.id)}><CircleX />Decline</button>
+            <button className="btn ghost" disabled={locked} onClick={() => act(decline, r.id)}><CircleX />{t("support.decline")}</button>
             <span className="grow" />
-            <button className="btn primary" disabled={locked || !(price > 0) || !route} onClick={() => act(offerUpgrade, r.id, price, route)}><Send />Send offer</button>
+            <button className="btn primary" disabled={locked || !(price > 0) || !route} onClick={() => act(offerUpgrade, r.id, price, route)}><Send />{t("support.sendOffer")}</button>
           </div>
         </div>
       )}

@@ -3,6 +3,7 @@ import { dateOf } from "../../../sim/00-core/time";
 import type { TrendPoint } from "../../../sim/80-business/trend";
 import { monthYear } from "../support/labels";
 import { LOCALE } from "../../../i18n/lang";
+import { t } from "../../../i18n/en";
 
 const day = (hour: number): string => {
   const d = dateOf(hour);
@@ -65,12 +66,12 @@ function Series({ title, now, points, max, fixed, decimals = 0 }: { title: strin
 }
 
 export function TrendCharts({ trend }: { trend: TrendPoint[] }) {
-  if (!trend.length) return <div className="sup-none">No history yet</div>;
+  if (!trend.length) return <div className="sup-none">{t("misc.noHistoryYet")}</div>;
   const last = trend[trend.length - 1];
   return (
     <div className="cus-charts">
-      <Series title="Customers" now={`${last.customers}`} points={trend.map((p) => ({ hour: p.hour, v: p.customers }))} max={Math.max(...trend.map((p) => p.customers))} />
-      <Series title="Average happiness" now={last.customers ? last.happiness.toFixed(1) : "none"} points={trend.filter((p) => p.customers).map((p) => ({ hour: p.hour, v: p.happiness }))} max={100} fixed decimals={1} />
+      <Series title={t("misc.customers")} now={`${last.customers}`} points={trend.map((p) => ({ hour: p.hour, v: p.customers }))} max={Math.max(...trend.map((p) => p.customers))} />
+      <Series title={t("misc.averageHappiness")} now={last.customers ? last.happiness.toFixed(1) : t("misc.noneLower")} points={trend.filter((p) => p.customers).map((p) => ({ hour: p.hour, v: p.happiness }))} max={100} fixed decimals={1} />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Commands, Link, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./pterodaktyl.css";
@@ -11,7 +12,7 @@ export function Pterodaktyl(props: SiteProps) {
       <div className="sw sw-pterodaktyl late">
         <header>{wm}<span className="ver">v1.{year - 2020}</span></header>
         <div className="cols">
-          <aside><h3>Getting started</h3><Nav {...props} labels={{ home: "Introduction", download: "Installation" }} /></aside>
+          <aside><h3>{t("browser-sites-2.gettingStarted")}</h3><Nav {...props} labels={{ home: t("browser-sites-2.navIntroduction"), download: t("browser-sites-2.navInstallation") }} /></aside>
           <main>{page === "home" && <h1>{p.site.tagline}</h1>}<Body {...props} /></main>
         </div>
       </div>
@@ -25,7 +26,7 @@ export function Pterodaktyl(props: SiteProps) {
           <h1>{p.site.tagline}</h1>
           <p>{p.site.blurb}</p>
           <Commands p={p} year={year} />
-          <Link to="features" go={go} className="sws-cta">Read the features</Link>
+          <Link to="features" go={go} className="sws-cta">{t("browser-sites-2.pteroRead")}</Link>
         </div>
       ) : <main><Body {...props} /></main>}
     </div>

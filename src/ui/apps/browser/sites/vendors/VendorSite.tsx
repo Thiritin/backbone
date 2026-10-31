@@ -4,6 +4,7 @@ import { euro } from "../../../../../sim/00-core/money";
 import { brandOnSale, priceOf, type DeviceKind, type Manufacturer } from "../../../../../sim/10-catalog/hardware";
 import type { Look } from "../../../../../sim/10-catalog/sites";
 import { vendorReleases, type Release } from "../../../../../sim/80-business/vendors";
+import { LOCALE } from "../../../../../i18n/lang";
 import "./vendors.css";
 
 // docs/design/software.md, 8.6: the pieces every manufacturer site lays out in its own look.
@@ -15,7 +16,7 @@ export const pageOf = (path: string): VendorPage => PAGES.find((x) => x === path
 const pathOf = (page: VendorPage) => (page === "home" ? "/" : `/${page}`);
 
 export function Nav({ page, go, className, labels }: Pick<VendorProps, "page" | "go"> & { className?: string; labels?: Partial<Record<VendorPage, string>> }) {
-  const name: Record<VendorPage, string> = { home: "Home", products: "Products", news: "News", support: "Support", ...labels };
+  const name: Record<VendorPage, string> = { home: t("browser-sites-2.navHome"), products: t("browser-sites-2.vProducts"), news: t("browser-sites-2.vNews"), support: t("browser-sites-2.vSupport"), ...labels };
   return (
     <nav className={className}>
       {PAGES.map((x) => (
@@ -30,10 +31,9 @@ export const Link = ({ to, go, className, children }: { to: VendorPage; go: Vend
 );
 
 const CLASS: Record<string, string> = {
-  server: "Servers", chassis: "Multi-node chassis", switch: "Switches", firewall: "Firewalls", gateway: "Routers", patch: "Patch panels", ups: "UPS", pdu: "Power distribution",
+  server: t("browser-sites-2.clsServer"), chassis: t("browser-sites-2.clsChassis"), switch: t("browser-sites-2.clsSwitch"), firewall: t("browser-sites-2.clsFirewall"), gateway: t("browser-sites-2.clsGateway"), patch: t("browser-sites-2.clsPatch"), ups: "UPS", pdu: t("browser-sites-2.clsPdu"),
 };
-const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-export const monthLabel = (month: number) => `${MONTH[month % 12]} ${Math.floor(month / 12)}`;
+export const monthLabel = (month: number) => `${new Date(2000, month % 12, 1).toLocaleString(LOCALE, { month: "short" })} ${Math.floor(month / 12)}`;
 const classOf = (r: Release): DeviceKind => (r.model.server ? "server" : r.model.kind);
 
 // The product classes this brand builds, in catalog order.
@@ -49,7 +49,7 @@ export function Products({ m, month, className }: { m: Manufacturer; month: numb
         <section key={k}>
           <h2>{CLASS[k]}</h2>
           <table>
-            <thead><tr><th>Model</th><th className="num">Released</th><th className="num">Price</th></tr></thead>
+            <thead><tr><th>{t("browser-sites-2.model")}</th><th className="num">{t("browser-sites-2.released")}</th><th className="num">{t("browser-sites-2.price")}</th></tr></thead>
             <tbody>
               {sold.filter((r) => classOf(r) === k).map((r) => (
                 <tr key={r.model.id}><td>{r.model.name}</td><td className="num">{Math.floor(r.month / 12)}</td><td className="num">{euro(priceOf(r.model, m.name))}</td></tr>
@@ -58,7 +58,7 @@ export function Products({ m, month, className }: { m: Manufacturer; month: numb
           </table>
         </section>
       ))}
-      {kinds.length === 0 && <p>{m.name} has no products on sale.</p>}
+      {kinds.length === 0 && <p>{t("browser-sites-2.noProducts", { name: m.name })}</p>}
     </div>
   );
 }
@@ -78,8 +78,8 @@ export function Support({ m, className }: { m: Manufacturer; className?: string 
   const years = Math.max(0, ...vendorReleases(m).map((r) => r.model.supportYears));
   return (
     <div className={className}>
-      <p>{m.name} support answers by phone and by mail around the clock.</p>
-      <p className="vs-warranty">{years > 0 ? `Every ${m.name} product gets spare parts and repairs for ${years} years after its last year on sale.` : `${m.name} products stay on sale and need no service contract.`}</p>
+      <p>{t("browser-sites-2.supportText", { name: m.name })}</p>
+      <p className="vs-warranty">{years > 0 ? t("browser-sites-2.warranty", { name: m.name, years }) : t("browser-sites-2.noContract", { name: m.name })}</p>
     </div>
   );
 }
@@ -93,4 +93,4 @@ export function Body(props: VendorProps & { className?: string }) {
   return null;
 }
 
-export const TITLE: Record<VendorPage, string> = { home: "", products: "Products", news: "News", support: "Support" };
+export const TITLE: Record<VendorPage, string> = { home: "", products: t("browser-sites-2.vProducts"), news: t("browser-sites-2.vNews"), support: t("browser-sites-2.vSupport") };

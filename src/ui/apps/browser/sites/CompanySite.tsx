@@ -20,7 +20,9 @@ const ICON: Record<Product, LucideIcon> = {
   webHosting: Globe, vps: Server, gameServer: Gamepad2, dns: Network, vpn: Lock, storage: HardDrive, cloud: Cloud,
   dedicated: Cpu, colocation: Building2, gpu: Zap, ssl: ShieldCheck, domain: Globe,
 };
-const LABEL: Record<SitePage, string> = { home: "Home", products: "Products", kb: "Knowledge base", helpdesk: "Help desk", about: "About us", support: "Support" };
+const LABEL: Record<SitePage, string> = {
+  home: t("browser-sites-1.co.nav.home"), products: t("browser-sites-1.co.nav.products"), kb: t("browser-sites-1.co.nav.kb"), helpdesk: t("browser-sites-1.co.nav.helpdesk"), about: t("browser-sites-1.co.nav.about"), support: t("browser-sites-1.co.nav.support"),
+};
 
 type Go = (path: string) => void;
 const A = ({ to, go, className, children }: { to: string; go: Go; className?: string; children: ReactNode }) => (
@@ -44,7 +46,7 @@ export function CompanySite({ game, path, go }: { game: GameState; path: string;
         {pages.length > 1 && (
           <nav className="site-nav">
             {pages.filter((p) => p !== "home" && p !== "support").map((p) => <A key={p} to={`/${p}`} go={to} className={p === page ? "on" : undefined}>{LABEL[p]}</A>)}
-            <A to="/support" go={to} className="site-button">Support</A>
+            <A to="/support" go={to} className="site-button">{LABEL.support}</A>
           </nav>
         )}
       </header>
@@ -56,7 +58,7 @@ export function CompanySite({ game, path, go }: { game: GameState; path: string;
       {page === "support" && <Support game={game} pages={pages} go={to} />}
       <footer className="site-foot">
         {pages.length > 1 && <nav>{pages.map((p) => <A key={p} to={p === "home" ? "/" : `/${p}`} go={to}>{LABEL[p]}</A>)}</nav>}
-        <span>Contact: <span className="site-link">{salesAddress(game)}</span></span>
+        <span>{t("browser-sites-1.co.contact")} <span className="site-link">{salesAddress(game)}</span></span>
         <span>&copy; {yearOf(game.hour)} {game.company.name}</span>
         {owns(game, "website") && game.marketing.designYear === 2005 && <span className="site-counter">{String(1000 + Math.floor(game.hour / 24) * 3).padStart(6, "0")}</span>}
       </footer>
@@ -67,7 +69,7 @@ export function CompanySite({ game, path, go }: { game: GameState; path: string;
 
 function ProductCards({ game, full }: { game: GameState; full?: boolean }) {
   const { lines } = siteContent(game);
-  if (!lines.length) return <p className="site-empty">This page is under construction.</p>;
+  if (!lines.length) return <p className="site-empty">{t("browser-sites-1.co.underConstruction")}</p>;
   const designed = owns(game, "website");
   return (
     <div className={`site-products${full ? " full" : ""}`}>
@@ -81,8 +83,8 @@ function ProductCards({ game, full }: { game: GameState; full?: boolean }) {
             {full && <ul className="site-checks">{FEATURES[p].map((f) => <li key={f}><Check size={14} />{f}</li>)}</ul>}
             {from !== null && (
               <div className="site-order">
-                <span>from <b className="num">{euroCents(from)}</b> {PRODUCTS[p].period === "year" ? "a year" : "a month"}</span>
-                <span className="site-button">Order</span>
+                <span>{t(PRODUCTS[p].period === "year" ? "browser-sites-1.co.fromYear" : "browser-sites-1.co.fromMonth", { price: euroCents(from) })}</span>
+                <span className="site-button">{t("browser-sites-1.co.order")}</span>
               </div>
             )}
           </section>
@@ -95,7 +97,7 @@ function ProductCards({ game, full }: { game: GameState; full?: boolean }) {
 function Home({ game, go }: { game: GameState; go: Go }) {
   const { lines, email } = siteContent(game), city = game.locations[0]?.city ?? "Frankfurt";
   const designed = owns(game, "website");
-  const pitch = `Web hosting and servers from ${city}.`, sub = "Our machines run day and night, and so do we.";
+  const pitch = t("browser-sites-1.co.pitch", { city }), sub = t("browser-sites-1.co.sub");
   return (
     <>
       {designed ? (
@@ -104,33 +106,33 @@ function Home({ game, go }: { game: GameState; go: Go }) {
             <p className="site-pitch">{pitch}</p>
             <p className="site-sub">{sub}</p>
             <div className="site-ctas">
-              <A to="/products" go={go} className="site-button">See products</A>
-              <A to="/support" go={go} className="site-button ghost">Get support</A>
+              <A to="/products" go={go} className="site-button">{t("browser-sites-1.co.seeProducts")}</A>
+              <A to="/support" go={go} className="site-button ghost">{t("browser-sites-1.co.getSupport")}</A>
             </div>
           </div>
           <RackArt />
         </section>
       ) : <p className="site-pitch">{pitch} {sub}</p>}
-      <h2>Products</h2>
+      <h2>{LABEL.products}</h2>
       <ProductCards game={game} />
       {designed && (
         <section className="site-band">
           <AisleArt />
           <div>
-            <h2>Our own racks in {city}</h2>
-            <p>Every server runs on hardware we bought, built and look after ourselves. When something breaks, a person from our team is on the way.</p>
+            <h2>{t("browser-sites-1.co.ownRacks", { city })}</h2>
+            <p>{t("browser-sites-1.co.ownRacksText")}</p>
             <ul className="site-checks">
-              <li><Check size={14} />Monitored around the clock</li>
-              <li><Check size={14} />Backups on separate disks</li>
-              <li><Check size={14} />Support from the people who run the machines</li>
+              <li><Check size={14} />{t("browser-sites-1.co.check1")}</li>
+              <li><Check size={14} />{t("browser-sites-1.co.check2")}</li>
+              <li><Check size={14} />{t("browser-sites-1.co.check3")}</li>
             </ul>
           </div>
         </section>
       )}
       {email && lines.length > 0 && (
         <>
-          <h2>Contact us</h2>
-          <p className="site-contact">Tell us what you need and we will send you an offer: <span className="site-link">{email}</span></p>
+          <h2>{t("browser-sites-1.co.contactUs")}</h2>
+          <p className="site-contact">{t("browser-sites-1.co.offer")} <span className="site-link">{email}</span></p>
         </>
       )}
     </>
@@ -140,7 +142,7 @@ function Home({ game, go }: { game: GameState; go: Go }) {
 function Products({ game }: { game: GameState }) {
   return (
     <>
-      <PageHead title="Products" lead="Choose the plan that fits your project. You can move to a larger one at any time." />
+      <PageHead title={LABEL.products} lead={t("browser-sites-1.co.productsLead")} />
       <ProductCards game={game} full />
     </>
   );
@@ -155,20 +157,20 @@ function Kb({ game, topic, go }: { game: GameState; topic?: string; go: Go }) {
   if (article) {
     return (
       <article className="site-article">
-        <A to="/kb" go={go} className="site-link">Knowledge base</A>
+        <A to="/kb" go={go} className="site-link">{LABEL.kb}</A>
         <h2>{t(`ticket.howTo.${article.topic}.subject`, {})}</h2>
         <ol>{KB_STEPS[article.topic]?.(companyDomain(game)).map((s) => <li key={s}>{s}</li>)}</ol>
-        <p className="site-muted">Read {article.reads} times</p>
+        <p className="site-muted">{t("browser-sites-1.co.readTimes", { n: article.reads })}</p>
       </article>
     );
   }
   return (
     <>
-      <PageHead title="Knowledge base" lead="Find answers to the questions our customers ask most." />
+      <PageHead title={LABEL.kb} lead={t("browser-sites-1.co.kbLead")} />
       <div className="site-list">
         {articles.map((a) => (
           <A key={a.topic} to={`/kb/${a.topic}`} go={go} className="site-row">
-            <BookOpen size={18} /><span>{t(`ticket.howTo.${a.topic}.subject`, {})}</span><small className="num">{a.reads} reads</small>
+            <BookOpen size={18} /><span>{t(`ticket.howTo.${a.topic}.subject`, {})}</span><small className="num">{t("browser-sites-1.co.reads", { n: a.reads })}</small>
           </A>
         ))}
       </div>
@@ -180,17 +182,17 @@ function HelpDesk({ game }: { game: GameState }) {
   const threads = THREADS.filter((x) => game.marketing.lines.includes(x.product));
   return (
     <>
-      <PageHead title="Help desk" lead="Read what other customers asked and how our support team answered." />
+      <PageHead title={LABEL.helpdesk} lead={t("browser-sites-1.co.helpLead")} />
       <div className="site-list">
         {threads.map((x) => (
           <details key={x.title} className="site-thread">
             <summary>
               <MessagesSquare size={18} />
-              <span><b>{x.title}</b><small>{PRODUCT[x.product]} &middot; {x.author} &middot; {x.replies} replies</small></span>
-              {x.solved && <span className="site-tag"><CircleCheck size={12} />Solved</span>}
+              <span><b>{x.title}</b><small>{PRODUCT[x.product]} &middot; {x.author} &middot; {t("browser-sites-1.co.replies", { n: x.replies })}</small></span>
+              {x.solved && <span className="site-tag"><CircleCheck size={12} />{t("browser-sites-1.co.solved")}</span>}
             </summary>
             <p>{x.question}</p>
-            <p className="site-answer"><b>{game.company.name} support:</b> {x.answer}</p>
+            <p className="site-answer"><b>{t("browser-sites-1.co.supportSays", { name: game.company.name })}</b> {x.answer}</p>
           </details>
         ))}
       </div>
@@ -201,18 +203,18 @@ function HelpDesk({ game }: { game: GameState }) {
 function About({ game }: { game: GameState }) {
   const city = game.locations[0]?.city ?? "Frankfurt";
   const stats: [string, number][] = [
-    ["Customers", game.customers.filter((c) => c.churnedAt === null).length],
-    ["Machines", game.devices.length],
-    ["Locations", game.locations.length],
-    ["Team", 1 + game.staff.length],
+    [t("browser-sites-1.co.statCustomers"), game.customers.filter((c) => c.churnedAt === null).length],
+    [t("browser-sites-1.co.statMachines"), game.devices.length],
+    [t("browser-sites-1.co.statLocations"), game.locations.length],
+    [t("browser-sites-1.co.statTeam"), 1 + game.staff.length],
   ];
   return (
     <>
-      <PageHead title="About us" lead={`We started in ${START_YEAR} with one server in a basement in ${city}.`} />
+      <PageHead title={LABEL.about} lead={t("browser-sites-1.co.aboutLead", { year: START_YEAR, city })} />
       <section className="site-band">
         <DeskArt />
         <div>
-          <p>Today {game.company.name} runs web hosting and servers for customers from small clubs to growing companies. We still build every machine ourselves and answer every ticket from our own office.</p>
+          <p>{t("browser-sites-1.co.aboutText", { name: game.company.name })}</p>
           <dl className="site-stats">{stats.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{v}</dd></div>)}</dl>
         </div>
       </section>
@@ -224,11 +226,11 @@ function Support({ game, pages, go }: { game: GameState; pages: SitePage[]; go: 
   const address = game.company.mail.kind === "free" ? salesAddress(game) : `support@${companyDomain(game)}`;
   return (
     <>
-      <PageHead title="Support" lead="Our team answers every request, usually on the same day." />
+      <PageHead title={LABEL.support} lead={t("browser-sites-1.co.supportLead")} />
       <div className="site-products">
-        <section className="site-product"><span className="site-icon"><Mail size={20} /></span><h3>Write to us</h3><p>Send your question with your customer number to <span className="site-link">{address}</span>.</p></section>
-        {pages.includes("kb") && <A to="/kb" go={go} className="site-product"><span className="site-icon"><BookOpen size={20} /></span><h3>Knowledge base</h3><p>Follow our step-by-step guides for the most common tasks.</p></A>}
-        {pages.includes("helpdesk") && <A to="/helpdesk" go={go} className="site-product"><span className="site-icon"><LifeBuoy size={20} /></span><h3>Help desk</h3><p>Browse questions from other customers and our answers.</p></A>}
+        <section className="site-product"><span className="site-icon"><Mail size={20} /></span><h3>{t("browser-sites-1.co.writeToUs")}</h3><p>{t("browser-sites-1.co.writeText")} <span className="site-link">{address}</span></p></section>
+        {pages.includes("kb") && <A to="/kb" go={go} className="site-product"><span className="site-icon"><BookOpen size={20} /></span><h3>{LABEL.kb}</h3><p>{t("browser-sites-1.co.kbCard")}</p></A>}
+        {pages.includes("helpdesk") && <A to="/helpdesk" go={go} className="site-product"><span className="site-icon"><LifeBuoy size={20} /></span><h3>{LABEL.helpdesk}</h3><p>{t("browser-sites-1.co.helpCard")}</p></A>}
       </div>
     </>
   );

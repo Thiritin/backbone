@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { en } from "../src/i18n/en";
-import { LANGS, type Dict } from "../src/i18n/lang";
+import { en, t } from "../src/i18n/en";
+import { LANGS, loadLang, type Dict } from "../src/i18n/lang";
 
 const packs = import.meta.glob<{ default: Dict }>("../src/i18n/*/*.ts", { eager: true });
 const params = (f: (p: never) => string) => new Set(String(f).match(/\bp\.\w+/g) ?? []);
@@ -25,4 +25,11 @@ describe("translations", () => {
       expect(broken.map(([k]) => k)).toEqual([]);
     });
   }
+});
+
+it("switches the language t() reads", async () => {
+  await loadLang("de");
+  expect(t("event.review.title")).toBe("Neue Bewertung");
+  await loadLang("en");
+  expect(t("event.review.title")).toBe(en["event.review.title"]({}));
 });

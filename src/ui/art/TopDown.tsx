@@ -1,4 +1,5 @@
 // A server chassis seen from above with its front on the left. The lid slides off to the right and every slot is a button.
+import { t } from "../../i18n/en";
 import type { KeyboardEvent, ReactNode } from "react";
 import { bayCount, FAN_SLOTS, type ComponentKind, type DeviceModel, type FormFactor } from "../../sim/10-catalog/hardware";
 import type { Component } from "../../sim/50-state";
@@ -14,7 +15,10 @@ export interface Slot { id: string; group: Group; index: number; ff?: FormFactor
 export const GROUP_KINDS: Record<Group, ComponentKind[]> = {
   cpu: ["cpu"], ram: ["ram"], bay: ["hdd", "ssd", "nvme"], pcie: ["nic"], psu: ["psu"], fan: ["fan"], board: ["board"],
 };
-export const GROUP_NAME: Record<Group, string> = { cpu: "CPU sockets", ram: "DIMM slots", bay: "Drive bays", pcie: "PCIe slots", psu: "Power supply bays", fan: "Fans", board: "Mainboard" };
+export const GROUP_NAME: Record<Group, string> = {
+  get cpu() { return t("art.group.cpu"); }, get ram() { return t("art.group.ram"); }, get bay() { return t("art.group.bay"); }, get pcie() { return t("art.group.pcie"); },
+  get psu() { return t("art.group.psu"); }, get fan() { return t("art.group.fan"); }, get board() { return t("art.group.board"); },
+};
 
 // Every slot of a chassis in group order; the first slots of a group hold its parts.
 export function chassisSlots(model: DeviceModel, parts: Component[]): Slot[] {
@@ -91,7 +95,7 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
   const slots = chassisSlots(model, parts), { at, bayLen, boardX, rearLen, board } = layout(model, slots);
   const tall = model.height >= 2, gpu = !!lineOf(model)?.startsWith("gpu");
   const boardPart = slots.find((s) => s.group === "board")?.part, boardWear = boardPart ? wear(boardPart) : "ok";
-  const caps: [number, string][] = [[0, "Drive bays"], [boardX + 6, "CPUs and memory"], [L - rearLen + 6, gpu ? "GPU slots and power" : "PCIe slots and power"]];
+  const caps: [number, string][] = [[0, t("art.cap.bays")], [boardX + 6, t("art.cap.cpuRam")], [L - rearLen + 6, gpu ? t("art.cap.gpu") : t("art.cap.pcie")]];
 
   const slot = (s: Slot, label: string, body: ReactNode, pad = 2) => {
     const r = at[s.id], w = s.part ? wear(s.part) : null;
@@ -111,16 +115,16 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
     const w = s.part ? wear(s.part) : "ok";
     return w === "ok" ? { stroke: s.part ? "oklch(0.1 0.004 255)" : CAVITY_LINE, strokeDasharray: s.part ? undefined : "3 2" } : { stroke: LED[w], strokeWidth: 1.6 };
   };
-  const label = (s: Slot, noun: string) => `${noun} ${s.index + 1}, ${s.part ? partSize(s.part) === "-" ? "filled" : partSize(s.part) : "empty"}`;
+  const label = (s: Slot, noun: string) => t("art.slotState", { noun, n: s.index + 1, state: s.part ? partSize(s.part) === "-" ? t("art.filled") : partSize(s.part) : t("art.empty") });
 
   return (
-    <svg className="lid-view" viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} role="group" aria-label={`${model.name}, top view`} onClick={() => onPick(null)}>
+    <svg className="lid-view" viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} role="group" aria-label={t("art.topView", { name: model.name })} onClick={() => onPick(null)}>
       <Defs />
       <defs>
         <pattern id="lid-pins" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill={CAVITY} /><circle cx="2" cy="2" r="0.9" fill={GOLD} opacity="0.7" /></pattern>
         <pattern id="lid-fins" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill={ALU} /><rect width="1.6" height="4" fill="oklch(0.55 0.01 255)" /></pattern>
       </defs>
-      {caps.map(([x, t]) => <text key={t} className="lid-cap" x={X0 + x} y={Y0 - 10}>{t}</text>)}
+      {caps.map(([x, c]) => <text key={c} className="lid-cap" x={X0 + x} y={Y0 - 10}>{c}</text>)}
       <text className="lid-cap dim" x={X0} y={Y0 + W + 20}>Front</text>
       <text className="lid-cap dim" x={X0 + L} y={Y0 + W + 20} textAnchor="end">Rear</text>
 
@@ -132,7 +136,7 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
 
         {slots.filter((s) => s.group === "bay").map((s) => {
           const r = at[s.id], c = s.part, nv = c?.kind === "nvme", dim = c ? (nv ? "oklch(0.34 0.07 262)" : c.kind === "ssd" ? "oklch(0.5 0.04 255)" : ALU) : CAVITY;
-          return slot(s, label(s, "Bay"), (
+          return slot(s, label(s, t("art.slot.bay")), (
             <>
               <rect {...box(r)} rx="1.5" fill={dim} {...stroke(s)} />
               {c && <rect x={r.x + 3} y={r.y + r.h / 2 - 4} width={r.w - 14} height="8" rx="1" fill={nv ? CHIP : "oklch(0.93 0.005 255)"} />}
@@ -143,7 +147,7 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
 
         {slots.filter((s) => s.group === "fan").map((s) => {
           const r = at[s.id];
-          return slot(s, label(s, "Fan"), (
+          return slot(s, label(s, t("art.slot.fan")), (
             <>
               <rect {...box(r)} rx="2" fill={s.part ? "oklch(0.22 0.006 255)" : CAVITY} {...stroke(s)} />
               {s.part && Array.from({ length: 6 }, (_, i) => <line key={i} x1={r.x + 3} x2={r.x + r.w - 3} y1={r.y + 8 + i * ((r.h - 16) / 5)} y2={r.y + 8 + i * ((r.h - 16) / 5)} stroke="oklch(0.42 0.008 255)" strokeWidth="1.4" />)}
@@ -151,10 +155,10 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
           ));
         })}
 
-        <g className="lid-slot board" role="button" tabIndex={open ? 0 : -1} aria-label="Mainboard" aria-pressed={sel === "board0"}
+        <g className="lid-slot board" role="button" tabIndex={open ? 0 : -1} aria-label={t("art.mainboard")} aria-pressed={sel === "board0"}
           onClick={(e) => { e.stopPropagation(); onPick(sel === "board0" ? null : "board0"); }}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(sel === "board0" ? null : "board0"); } }}>
-          <title>Mainboard</title>
+          <title>{t("art.mainboard")}</title>
           <rect {...box(board)} rx="3" fill={PCB} stroke={boardWear === "ok" ? TRACE : LED[boardWear]} strokeWidth="1.4" />
           {Array.from({ length: model.server!.sockets }, (_, j) => (
             <g key={j} stroke={TRACE} strokeWidth="1" opacity="0.7">
@@ -168,7 +172,7 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
 
         {slots.filter((s) => s.group === "cpu").map((s) => {
           const r = at[s.id];
-          return slot(s, label(s, "CPU socket"), (
+          return slot(s, label(s, t("art.slot.cpu")), (
             <>
               {tall && <rect x={r.x + 3} y={r.y + 3} width={r.w} height={r.h} rx="2" fill="oklch(0.1 0.004 255)" opacity="0.5" />}
               <rect {...box(r)} rx="2" fill="url(#lid-pins)" {...stroke(s)} />
@@ -186,7 +190,7 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
 
         {slots.filter((s) => s.group === "ram").map((s) => {
           const r = at[s.id], c = s.part, chips = Math.max(3, Math.floor(r.h / 22));
-          return slot(s, label(s, "DIMM"), (
+          return slot(s, label(s, t("art.slot.ram")), (
             <>
               <rect {...box(r)} rx="1" fill={c ? "oklch(0.3 0.03 255)" : CAVITY} {...stroke(s)} />
               {c && Array.from({ length: chips }, (_, i) => <rect key={i} x={r.x + 1.5} y={r.y + 8 + i * ((r.h - 22) / (chips - 1))} width={Math.max(2, r.w - 3)} height="10" fill={CHIP} />)}
@@ -198,7 +202,7 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
 
         {slots.filter((s) => s.group === "psu").map((s) => {
           const r = at[s.id];
-          return slot(s, label(s, "Power supply bay"), (
+          return slot(s, label(s, t("art.slot.psu")), (
             <>
               <rect {...box(r)} rx="2" fill={s.part ? "url(#bb-perf)" : CAVITY} {...stroke(s)} />
               {s.part && <><circle cx={r.x + 24} cy={r.y + r.h / 2} r="16" fill="url(#bb-hex)" stroke="oklch(0.1 0.004 255)" /><rect x={r.x + r.w - 30} y={r.y + r.h / 2 - 8} width="18" height="16" rx="1.5" fill={INK} /></>}
@@ -208,7 +212,7 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
 
         {slots.filter((s) => s.group === "pcie").map((s) => {
           const r = at[s.id], c = s.part;
-          return slot(s, label(s, gpu ? "GPU slot" : "PCIe slot"), (
+          return slot(s, label(s, gpu ? t("art.slot.gpu") : t("art.slot.pcie")), (
             <>
               <rect {...box(r)} rx="2" fill={c ? PCB : CAVITY} {...stroke(s)} />
               {!c && <rect x={r.x + 8} y={r.y + r.h / 2 - 2} width={r.w * 0.45} height="4" fill={CAVITY_LINE} />}

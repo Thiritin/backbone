@@ -45,7 +45,7 @@ export interface Vm {
 
 const num = (n: number) => `${+n.toFixed(2)}`;
 export const nodeName = (game: GameState, id: string | null) => { const d = game.devices.find((x) => x.id === id); return d ? d.hostname ?? d.label ?? d.name : ""; };
-export const osText = (w: Workload) => (w.os ? `${serverOsById(w.os.id).name} ${w.os.version}` : "None");
+export const osText = (w: Workload) => (w.os ? `${serverOsById(w.os.id).name} ${w.os.version}` : t("browser-consoles-1.none"));
 export const isoName = (img: OsImage) => `${img.replace("@", "-")}.iso`.replace(/\s+/g, "-").toLowerCase();
 
 // An own VM's size, changed through resizeVm.
@@ -54,13 +54,13 @@ function SizeForm({ w, done }: { w: Workload; done: () => void }) {
   return (
     <div className="cx-inline">
       <SizeFields size={size} set={setSize} />
-      <button className="cx-btn primary" onClick={() => act(resizeVm, w.id, size).ok && done()}>Resize</button>
-      <button className="cx-btn" onClick={done}>Cancel</button>
+      <button className="cx-btn primary" onClick={() => act(resizeVm, w.id, size).ok && done()}>{t("browser-consoles-1.resize")}</button>
+      <button className="cx-btn" onClick={done}>{t("browser-consoles-1.cancel")}</button>
     </div>
   );
 }
 
-export function SizeFields({ size, set, labels = ["vCPU", "Memory, GB", "Disk, GB"], only }: { size: Resources; set: (r: Resources) => void; labels?: [string, string, string]; only?: keyof Resources }) {
+export function SizeFields({ size, set, labels = [t("browser-consoles-1.vcpu"), t("browser-consoles-1.memoryGb"), t("browser-consoles-1.diskGb")], only }: { size: Resources; set: (r: Resources) => void; labels?: [string, string, string]; only?: keyof Resources }) {
   const keys: (keyof Resources)[] = ["vcpu", "ramGb", "diskGb"];
   return <>{keys.map((k, i) => (!only || only === k) && (
     <label key={k} className="cx-field">{labels[i]}<input type="number" min={1} value={size[k]} onChange={(e) => set({ ...size, [k]: Number(e.target.value) })} /></label>
@@ -77,19 +77,19 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
     const templating = own && !!c.platform && !!softwareById(c.platform).datastores;
     const toggle = (kind: string) => () => setOpen(open?.id === w.id && open.kind === kind ? null : { id: w.id, kind });
     const actions: (PanelAction | false)[] = [
-      f.start && st === "stopped" && !tpl && { id: "start", label: "Start", run: () => act(startWorkload, w.id) },
-      f.stop && on && { id: "stop", label: "Shutdown", run: () => act(stopWorkload, w.id) },
-      f.stop && on && own && { id: "reset", label: "Reset", run: () => { if (act(stopWorkload, w.id).ok) act(startWorkload, w.id); } },
-      st === "lost" && { id: "restore", label: w.backupAt === null ? "Start empty" : "Restore", run: () => act(restoreWorkload, w.id) },
-      rescue.length > 0 && { id: "recover", label: "Recover", run: toggle("recover") },
-      !!f.migrate && (on || st === "stopped") && !w.migrating && !tpl && { id: "migrate", label: "Migrate", run: toggle("migrate") },
-      c.datastores.length > 0 && (on || st === "stopped") && !w.migrating && { id: "storage", label: "Move disk", run: toggle("storage") },
-      templating && st === "stopped" && !tpl && { id: "template", label: "Convert to Template", run: () => act(makeTemplate, w.id) },
-      tpl && { id: "clone", label: "Clone", run: toggle("clone") },
-      tpl && { id: "vm", label: "Convert to Virtual Machine", run: () => act(makeVm, w.id) },
-      f.resize && own && { id: "resize", label: "Resize", run: toggle("resize") },
-      own && { id: "console", label: "Console", run: () => openConsole(w.id) },
-      f.delete && own && !insideVm(game, w.id).length && { id: "delete", label: "Delete", tone: "danger", run: toggle("delete") },
+      f.start && st === "stopped" && !tpl && { id: "start", label: t("browser-consoles-1.hvStart"), run: () => act(startWorkload, w.id) },
+      f.stop && on && { id: "stop", label: t("browser-consoles-1.vmShutdown"), run: () => act(stopWorkload, w.id) },
+      f.stop && on && own && { id: "reset", label: t("browser-consoles-1.hvReset"), run: () => { if (act(stopWorkload, w.id).ok) act(startWorkload, w.id); } },
+      st === "lost" && { id: "restore", label: w.backupAt === null ? t("browser-consoles-1.startEmpty") : t("browser-consoles-1.hvRestore"), run: () => act(restoreWorkload, w.id) },
+      rescue.length > 0 && { id: "recover", label: t("browser-consoles-1.hvRecover"), run: toggle("recover") },
+      !!f.migrate && (on || st === "stopped") && !w.migrating && !tpl && { id: "migrate", label: t("browser-consoles-1.migrate"), run: toggle("migrate") },
+      c.datastores.length > 0 && (on || st === "stopped") && !w.migrating && { id: "storage", label: t("browser-consoles-1.moveDisk"), run: toggle("storage") },
+      templating && st === "stopped" && !tpl && { id: "template", label: t("browser-consoles-1.convertToTemplate"), run: () => act(makeTemplate, w.id) },
+      tpl && { id: "clone", label: t("browser-consoles-1.clone"), run: toggle("clone") },
+      tpl && { id: "vm", label: t("browser-consoles-1.convertToVm"), run: () => act(makeVm, w.id) },
+      f.resize && own && { id: "resize", label: t("browser-consoles-1.resize"), run: toggle("resize") },
+      own && { id: "console", label: t("browser-consoles-1.console"), run: () => openConsole(w.id) },
+      f.delete && own && !insideVm(game, w.id).length && { id: "delete", label: t("browser-consoles-1.delete"), tone: "danger", run: toggle("delete") },
     ];
     const kind = open?.id === w.id ? open.kind : null;
     const panel = kind === "migrate" ? <Migrate game={game} w={w} c={c} done={close} />
@@ -98,23 +98,23 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
       : kind === "resize" ? (host ? <Resize game={game} host={host} done={close} /> : <SizeForm w={w} done={close} />)
       : kind === "delete" ? (
         <div className="cx-inline">
-          <button className="cx-btn danger" onClick={() => act(deleteVm, w.id).ok && close()}>Delete {label.name}</button>
-          <button className="cx-btn" onClick={close}>Cancel</button>
+          <button className="cx-btn danger" onClick={() => act(deleteVm, w.id).ok && close()}>{t("browser-consoles-1.deleteName", { name: label.name })}</button>
+          <button className="cx-btn" onClick={close}>{t("browser-consoles-1.cancel")}</button>
         </div>
       ) : kind === "recover" ? (
         <div className="cx-inline">
-          {rescue.map((t) => (
-            <button key={t.to} className="cx-chip" onClick={() => { hand.start(game, { title: `Recover ${label.name} to ${t.name}`, deviceId: w.deviceId!, action: rescueWorkload, args: [w.id, t.to] }); close(); }}>
-              {t.name}, offline {t.down} h
+          {rescue.map((r) => (
+            <button key={r.to} className="cx-chip" onClick={() => { hand.start(game, { title: t("browser-consoles-1.recoverTo", { name: label.name, to: r.name }), deviceId: w.deviceId!, action: rescueWorkload, args: [w.id, r.to] }); close(); }}>
+              {t("browser-consoles-1.nameOffline", { name: r.name, h: r.down })}
             </button>
           ))}
-          <button className="cx-btn" onClick={close}>Cancel</button>
+          <button className="cx-btn" onClick={close}>{t("browser-consoles-1.cancel")}</button>
         </div>
       ) : null;
     return {
       w, id: w.id, st, state, tone, own, name: host?.name ?? label.name, sub: own ? (host ? consoleTitle(host.panel ?? host.platform ?? "") : "") : label.service,
       node: nodeName(game, w.deviceId), ip: privateIp(game, w.id) ?? "", os: own ? osText(w) : "", media: w.media ?? null,
-      use: workloadUse(game, w), actions: actions.filter((a): a is PanelAction => !!a), panel, storage: w.datastore ? nodeName(game, w.datastore) : "Local",
+      use: workloadUse(game, w), actions: actions.filter((a): a is PanelAction => !!a), panel, storage: w.datastore ? nodeName(game, w.datastore) : t("browser-consoles-1.local"),
     };
   });
   return { vms, dialog: hand.dialog };
@@ -123,11 +123,11 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
 // The facts a VM page lists; each console picks and labels its own.
 export function vmFacts(_game: GameState, v: Vm): Record<"status" | "node" | "ip" | "os" | "cpu" | "memory" | "disk" | "backup" | "media", Fact> {
   return {
-    status: { label: "Status", value: v.state }, node: { label: "Node", value: v.node }, ip: { label: "IP address", value: v.ip || "None", num: true },
-    os: { label: "Guest OS", value: v.own ? v.os : v.sub }, cpu: { label: "Processors", value: `${v.w.vcpu} vCPU`, num: true },
-    memory: { label: "Memory", value: ram(+v.w.ramGb.toFixed(2)), num: true }, disk: { label: "Hard disk", value: disk(v.w.diskGb), num: true },
-    backup: { label: "Last backup", value: v.w.backupAt === null ? "None" : day(v.w.backupAt), num: true },
-    media: { label: "CD/DVD drive", value: v.media ? isoName(v.media) : "Empty", num: !!v.media },
+    status: { label: t("browser-consoles-1.status"), value: v.state }, node: { label: t("browser-consoles-1.node"), value: v.node }, ip: { label: t("browser-consoles-1.ipAddress"), value: v.ip || t("browser-consoles-1.none"), num: true },
+    os: { label: t("browser-consoles-1.guestOs"), value: v.own ? v.os : v.sub }, cpu: { label: t("browser-consoles-1.hvProcessors"), value: `${v.w.vcpu} vCPU`, num: true },
+    memory: { label: t("browser-consoles-1.memory"), value: ram(+v.w.ramGb.toFixed(2)), num: true }, disk: { label: t("browser-consoles-1.hardDisk"), value: disk(v.w.diskGb), num: true },
+    backup: { label: t("browser-consoles-1.lastBackup"), value: v.w.backupAt === null ? t("browser-consoles-1.none") : day(v.w.backupAt), num: true },
+    media: { label: t("browser-consoles-1.cdDvdDrive"), value: v.media ? isoName(v.media) : t("browser-consoles-1.empty"), num: !!v.media },
   };
 }
 
@@ -135,7 +135,7 @@ export function vmFacts(_game: GameState, v: Vm): Record<"status" | "node" | "ip
 function DiskMove({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster; done: () => void }) {
   const act = useStore((s) => s.act), node = game.devices.find((d) => d.id === w.deviceId), size = w.diskGb + deltaGb(w);
   const to = [
-    ...(w.datastore && node && nodeTakes(game, node, { ...w, diskGb: size, datastore: undefined }, w) ? [{ id: null, name: "Local" }] : []),
+    ...(w.datastore && node && nodeTakes(game, node, { ...w, diskGb: size, datastore: undefined }, w) ? [{ id: null, name: t("browser-consoles-1.local") }] : []),
     ...c.datastores.filter((x) => x.deviceId !== w.datastore && datastoreUp(game, x) && datastoreFits(game, x.deviceId, size)).map((x) => ({ id: x.deviceId, name: nodeName(game, x.deviceId) })),
   ];
   const down = (id: string | null) => diskMoveDowntime(game, size, c.datastores.filter((x) => x.deviceId === id || x.deviceId === w.datastore));
@@ -143,10 +143,10 @@ function DiskMove({ game, w, c, done }: { game: GameState; w: Workload; c: Clust
     <div className="cx-inline">
       {to.map((x) => (
         <button key={x.id ?? "local"} className="cx-chip" onClick={() => act(moveDisk, w.id, x.id).ok && done()}>
-          {x.name}{down(x.id) ? `, offline ${down(x.id)} h` : ""}
+          {down(x.id) ? t("browser-consoles-1.nameOffline", { name: x.name, h: down(x.id) }) : x.name}
         </button>
       ))}
-      <button className="cx-btn" onClick={done}>Cancel</button>
+      <button className="cx-btn" onClick={done}>{t("browser-consoles-1.cancel")}</button>
     </div>
   );
 }
@@ -155,17 +155,17 @@ function DiskMove({ game, w, c, done }: { game: GameState; w: Workload; c: Clust
 function Clone({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster; done: () => void }) {
   const act = useStore((s) => s.act), size = withDatastore(game, c, { vcpu: w.vcpu, ramGb: w.ramGb, diskGb: w.diskGb }), hours = cloneHours(game, w);
   const hosts = c.nodes.filter((n) => n.state === "active" && working(game, n.deviceId)).map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter((d) => d && nodeTakes(game, d, size));
-  const to = [{ id: undefined, name: "Automatic" }, ...hosts.map((d) => ({ id: d.id, name: nodeName(game, d.id) }))];
+  const to = [{ id: undefined, name: t("browser-consoles-1.automatic") }, ...hosts.map((d) => ({ id: d.id, name: nodeName(game, d.id) }))];
   return (
     <div className="cx-inline">
-      {to.map((x) => <button key={x.id ?? "auto"} className="cx-chip" onClick={() => act(cloneTemplate, w.id, x.id).ok && done()}>{x.name}, {hours} h</button>)}
-      <button className="cx-btn" onClick={done}>Cancel</button>
+      {to.map((x) => <button key={x.id ?? "auto"} className="cx-chip" onClick={() => act(cloneTemplate, w.id, x.id).ok && done()}>{t("browser-consoles-1.nameHours", { name: x.name, h: hours })}</button>)}
+      <button className="cx-btn" onClick={done}>{t("browser-consoles-1.cancel")}</button>
     </div>
   );
 }
 
 // The ISO loaded in an own VM, picked from the downloaded images.
-export function MediaMenu({ game, v, label = "Media", none = "No media", className = "cx-field" }: { game: GameState; v: Vm; label?: string; none?: string; className?: string }) {
+export function MediaMenu({ game, v, label = t("browser-consoles-1.media"), none = t("browser-consoles-1.noMedia"), className = "cx-field" }: { game: GameState; v: Vm; label?: string; none?: string; className?: string }) {
   const act = useStore((s) => s.act);
   if (!v.own) return null;
   return (
@@ -192,7 +192,7 @@ export function useNewVm(game: GameState, c: Cluster) {
     if (iso) act(setMedia, r.id, iso);
     return r.id;
   };
-  const isoPick = (label = "ISO image", none = "Do not use any media") => (
+  const isoPick = (label = t("browser-consoles-1.isoImage"), none = t("browser-consoles-1.noMediaUse")) => (
     <label className="cx-field">{label}
       <select value={iso} onChange={(e) => setIso(e.target.value as OsImage | "")}>
         <option value="">{none}</option>
@@ -218,9 +218,9 @@ export function Wizard({ title, steps, finish, onFinish, onCancel, numbered = fa
         <div className="cx-wiz-page"><h3>{step.label}</h3>{step.body}</div>
       </div>
       <div className="cx-wiz-foot">
-        <button className="cx-btn" onClick={onCancel}>Cancel</button>
-        <button className="cx-btn" disabled={at === 0} onClick={() => setAt(at - 1)}>Back</button>
-        {last ? <button className="cx-btn primary" onClick={onFinish}>{finish}</button> : <button className="cx-btn primary" onClick={() => setAt(at + 1)}>Next</button>}
+        <button className="cx-btn" onClick={onCancel}>{t("browser-consoles-1.cancel")}</button>
+        <button className="cx-btn" disabled={at === 0} onClick={() => setAt(at - 1)}>{t("browser-consoles-1.back")}</button>
+        {last ? <button className="cx-btn primary" onClick={onFinish}>{finish}</button> : <button className="cx-btn primary" onClick={() => setAt(at + 1)}>{t("browser-consoles-1.next")}</button>}
       </div>
     </div>
   );
@@ -228,7 +228,7 @@ export function Wizard({ title, steps, finish, onFinish, onCancel, numbered = fa
 
 // The software the App Suite deploys this year: everything that is not a hypervisor, with the OS it comes on.
 export const suiteSoftware = (year: number) => SOFTWARE.filter((x) => x.kind !== "cloud" && x.from <= year);
-export const windoorsLicence = (year: number) => { const e = licensingAt(serverOsById("windoors"), year); return `${euroCents(e.fee)} ${e.kind === "core" ? "per core" : "per socket once"}`; };
+export const windoorsLicence = (year: number) => { const e = licensingAt(serverOsById("windoors"), year); return t(e.kind === "core" ? "browser-consoles-1.feePerCore" : "browser-consoles-1.feePerSocketOnce", { fee: euroCents(e.fee) }); };
 
 // The App Suite tile: bought and cancelled per cluster, with its monthly fee.
 export function AppSuiteTile({ c, className = "cx-suite" }: { c: Cluster; className?: string }) {
@@ -236,12 +236,12 @@ export function AppSuiteTile({ c, className = "cx-suite" }: { c: Cluster; classN
   if (c.platform !== "vmwhere") return null;
   return (
     <div className={className}>
-      <b>VMwhere App Suite</b>
-      <span className="num">{euroCents(APP_SUITE_FEE)} per month</span>
-      <span>{c.appSuite ? "Active" : "Not purchased"}</span>
+      <b>{t("browser-consoles-1.appSuite")}</b>
+      <span className="num">{t("browser-consoles-1.feePerMonth", { fee: euroCents(APP_SUITE_FEE) })}</span>
+      <span>{c.appSuite ? t("browser-consoles-1.active") : t("browser-consoles-1.notPurchased")}</span>
       {c.appSuite
-        ? <button className="cx-btn" onClick={() => act(cancelAppSuite, c.id)}>Cancel subscription</button>
-        : <button className="cx-btn primary" onClick={() => act(buyAppSuite, c.id)}>Buy</button>}
+        ? <button className="cx-btn" onClick={() => act(cancelAppSuite, c.id)}>{t("browser-consoles-1.cancelSubscription")}</button>
+        : <button className="cx-btn primary" onClick={() => act(buyAppSuite, c.id)}>{t("browser-consoles-1.buy")}</button>}
     </div>
   );
 }
@@ -253,9 +253,9 @@ export function BalancerTile({ game, c, className = "cx-suite" }: { game: GameSt
   return (
     <div className={className}>
       <b>{b.name}</b>
-      <span className="num">{euroCents(b.fee)} per node a month</span>
-      <span>{c.balancer ? "Active" : "Not purchased"}</span>
-      <button className={c.balancer ? "cx-btn" : "cx-btn primary"} onClick={() => act(setBalancer, c.id, !c.balancer)}>{c.balancer ? "Cancel subscription" : "Buy"}</button>
+      <span className="num">{t("browser-consoles-1.feePerNodeMonth", { fee: euroCents(b.fee) })}</span>
+      <span>{c.balancer ? t("browser-consoles-1.active") : t("browser-consoles-1.notPurchased")}</span>
+      <button className={c.balancer ? "cx-btn" : "cx-btn primary"} onClick={() => act(setBalancer, c.id, !c.balancer)}>{c.balancer ? t("browser-consoles-1.cancelSubscription") : t("browser-consoles-1.buy")}</button>
     </div>
   );
 }
@@ -265,10 +265,10 @@ export function NodeActions({ c, n, className }: { c: Cluster; n: ClusterNode; c
   const act = useStore((s) => s.act);
   return <>
     {n.state === "active"
-      ? <button className={className} onClick={() => act(cordon, n.deviceId, c.id)}>Cordon</button>
-      : <button className={className} onClick={() => act(uncordon, n.deviceId, c.id)}>Uncordon</button>}
-    {(n.state === "active" || n.state === "cordoned") && <button className={className} onClick={() => act(drain, n.deviceId, c.id)}>Drain</button>}
-    {n.state !== "maintenance" && <button className={className} onClick={() => act(evacuate, n.deviceId, c.id)}>Evacuate</button>}
+      ? <button className={className} onClick={() => act(cordon, n.deviceId, c.id)}>{t("browser-consoles-1.cordon")}</button>
+      : <button className={className} onClick={() => act(uncordon, n.deviceId, c.id)}>{t("browser-consoles-1.uncordon")}</button>}
+    {(n.state === "active" || n.state === "cordoned") && <button className={className} onClick={() => act(drain, n.deviceId, c.id)}>{t("browser-consoles-1.drain")}</button>}
+    {n.state !== "maintenance" && <button className={className} onClick={() => act(evacuate, n.deviceId, c.id)}>{t("browser-consoles-1.evacuate")}</button>}
   </>;
 }
 
@@ -276,24 +276,24 @@ export function NodeActions({ c, n, className }: { c: Cluster; n: ClusterNode; c
 export function NodeList({ game, c, f, className = "cx-table" }: { game: GameState; c: Cluster; f: ConsoleFeatures; className?: string }) {
   const act = useStore((s) => s.act), join = f.cluster ? joinableServers(game, c.id) : [], [adding, setAdding] = useState(false);
   const ha = f.cluster && game.unlocks.includes(HA_SKILL);
-  const flags: [keyof Ha, string][] = [["live", "Live migration"], ["balance", "Load balancing"], ["failover", "Failover"]];
+  const flags: [keyof Ha, string][] = [["live", t("browser-consoles-1.liveMigration")], ["balance", t("browser-consoles-1.loadBalancing")], ["failover", t("browser-consoles-1.failover")]];
   return (
     <>
       <table className={className}>
-        <thead><tr><th>Node</th><th>Status</th><th>CPU</th><th>Memory</th><th>VMs</th><th /></tr></thead>
+        <thead><tr><th>{t("browser-consoles-1.node")}</th><th>{t("browser-consoles-1.status")}</th><th>{t("browser-consoles-1.cpu")}</th><th>{t("browser-consoles-1.memory")}</th><th>{t("browser-consoles-1.vms")}</th><th /></tr></thead>
         <tbody>
           {c.nodes.map((n) => {
             const u = nodeUsage(game, n.deviceId), vms = workloadsOn(game, n.deviceId).length;
             return (
               <tr key={n.deviceId}>
                 <td><b>{nodeName(game, n.deviceId)}</b></td>
-                <td className="cx-cap">{n.state === "active" ? deviceHealth(game, n.deviceId).state : n.state}</td>
-                <td><Bar use={[u.used.vcpu, u.physical.vcpu]} /><span className="cx-use num">{num(u.used.vcpu)} of {u.physical.vcpu}</span></td>
-                <td><Bar use={[u.used.ramGb, u.physical.ramGb]} /><span className="cx-use num">{ram(+u.used.ramGb.toFixed(1))} of {ram(u.physical.ramGb)}</span></td>
+                <td className="cx-cap">{t(`browser-consoles-1.state_${n.state === "active" ? deviceHealth(game, n.deviceId).state : n.state}`)}</td>
+                <td><Bar use={[u.used.vcpu, u.physical.vcpu]} /><span className="cx-use num">{t("browser-consoles-1.xOfY", { a: num(u.used.vcpu), b: u.physical.vcpu })}</span></td>
+                <td><Bar use={[u.used.ramGb, u.physical.ramGb]} /><span className="cx-use num">{t("browser-consoles-1.xOfY", { a: ram(+u.used.ramGb.toFixed(1)), b: ram(u.physical.ramGb) })}</span></td>
                 <td className="num">{vms}</td>
                 <td>
                   <NodeActions c={c} n={n} className="cx-btn" />
-                  {f.cluster && c.nodes.length > 1 && vms === 0 && <button className="cx-btn" onClick={() => act(removeNode, n.deviceId)}>Remove node</button>}
+                  {f.cluster && c.nodes.length > 1 && vms === 0 && <button className="cx-btn" onClick={() => act(removeNode, n.deviceId)}>{t("browser-consoles-1.removeNode")}</button>}
                 </td>
               </tr>
             );
@@ -302,8 +302,8 @@ export function NodeList({ game, c, f, className = "cx-table" }: { game: GameSta
       </table>
       {f.cluster && (
         <div className="cx-tools">
-          <button className="cx-btn primary" aria-pressed={adding} onClick={() => setAdding(!adding)}>Add node</button>
-          {adding && join.length === 0 && <span className="cx-note">No servers</span>}
+          <button className="cx-btn primary" aria-pressed={adding} onClick={() => setAdding(!adding)}>{t("browser-consoles-1.addNode")}</button>
+          {adding && join.length === 0 && <span className="cx-note">{t("browser-consoles-1.noServers")}</span>}
           {adding && join.map((d) => <button key={d} className="cx-chip" onClick={() => act(addNode, c.id, d).ok && setAdding(false)}>{nodeName(game, d)}</button>)}
         </div>
       )}
@@ -321,7 +321,7 @@ export function NodeList({ game, c, f, className = "cx-table" }: { game: GameSta
 
 // Cluster summaries (sim/60-infra/alarms.ts): capacity lines, alarm severities and the alarm table every console styles its own way.
 export const AMOUNT: Record<keyof Amounts, (x: number) => string> = { vcpu: (x) => `${num(x)} vCPU`, ramGb: (x) => ram(+x.toFixed(1)), diskGb: (x) => disk(+x.toFixed(1)) };
-export const amountText = (k: keyof Amounts, a: Amount) => `${AMOUNT[k](a.allocated)} allocated of ${AMOUNT[k](a.capacity)}, ${AMOUNT[k](a.used)} used`;
+export const amountText = (k: keyof Amounts, a: Amount) => t("browser-consoles-1.amountText", { allocated: AMOUNT[k](a.allocated), capacity: AMOUNT[k](a.capacity), used: AMOUNT[k](a.used) });
 export const worst = (alarms: Alarm[]): Severity | null => (alarms.some((a) => a.severity === "critical") ? "critical" : alarms.length ? "warning" : null);
 export const SEV_GLYPH: Record<Severity, string> = { warning: "▲", critical: "◆" };
 const width = (x: number, of: number) => `${Math.min(100, of > 0 ? (x / of) * 100 : 0)}%`;
@@ -342,7 +342,7 @@ export function summaryOf(game: GameState, c: Cluster, node: string | null) {
   return { sum, use: host?.use ?? sum.total, alarms: node ? sum.alarms.filter((a) => a.on.id === node || on.has(a.on.id)) : sum.alarms };
 }
 
-export function ResourceBars({ use, labels = ["CPU", "Memory", "Storage"], className = "cx-hv-bars" }: { use: Amounts; labels?: string[]; className?: string }) {
+export function ResourceBars({ use, labels = [t("browser-consoles-1.cpu"), t("browser-consoles-1.memory"), t("browser-consoles-1.hvStorage")], className = "cx-hv-bars" }: { use: Amounts; labels?: string[]; className?: string }) {
   return (
     <div className={className}>
       {KEYS.map((k, i) => <Fragment key={k}><span>{labels[i]}</span><CapacityBar a={use[k]} /><span className="num">{amountText(k, use[k])}</span></Fragment>)}
@@ -361,11 +361,11 @@ export function AlarmList({ game, c, alarms, className = "cx-table cx-alarms" }:
   if (!alarms.length) return null;
   return (
     <table className={className}>
-      <thead><tr><th>Severity</th><th>Object</th><th>Alarm</th></tr></thead>
+      <thead><tr><th>{t("browser-consoles-1.severity")}</th><th>{t("browser-consoles-1.object")}</th><th>{t("browser-consoles-1.alarm")}</th></tr></thead>
       <tbody>
         {alarms.map((a, i) => (
           <tr key={i} data-sev={a.severity}>
-            <td><span className="cx-sev" data-sev={a.severity}>{SEV_GLYPH[a.severity]}</span> {a.severity === "critical" ? "Critical" : "Warning"}</td>
+            <td><span className="cx-sev" data-sev={a.severity}>{SEV_GLYPH[a.severity]}</span> {a.severity === "critical" ? t("browser-consoles-1.critical") : t("browser-consoles-1.warning")}</td>
             <td>{alarmObject(game, c, a)}</td><td>{t(a.key, a.params)}</td>
           </tr>
         ))}
@@ -381,9 +381,9 @@ export function tasks(game: GameState, c: Cluster, vms: Vm[]): Task[] {
   const nodes = new Set(c.nodes.map((n) => n.deviceId)), ids = new Set(vms.map((v) => v.id));
   const installs = game.clusters.filter((x) => x.switching && (x.id === c.id || (x.vm && ids.has(x.vm))));
   const out: Task[] = [
-    ...installs.map((x) => ({ key: `sw-${x.id}`, at: x.switching!.doneAt, text: `Install ${softwareById(x.switching!.to).name} on ${x.name}`, status: "Running", tone: "accent" })),
-    ...vms.filter((v) => v.st === "migrating" || v.st === "restoring" || v.st === "cloning").map((v) => ({ key: v.id, at: v.w.migrating?.doneAt ?? v.w.busyUntil, text: `${v.state} ${v.name}`, status: "Running", tone: "accent" })),
-    ...game.lossReports.filter((r) => nodes.has(r.deviceId)).map((r) => ({ key: r.id, at: r.hour, text: `${nodeName(game, r.deviceId)} lost its disks`, status: "Error", tone: "bad" })),
+    ...installs.map((x) => ({ key: `sw-${x.id}`, at: x.switching!.doneAt, text: t("browser-consoles-1.taskInstall", { software: softwareById(x.switching!.to).name, name: x.name }), status: t("browser-consoles-1.running"), tone: "accent" })),
+    ...vms.filter((v) => v.st === "migrating" || v.st === "restoring" || v.st === "cloning").map((v) => ({ key: v.id, at: v.w.migrating?.doneAt ?? v.w.busyUntil, text: `${v.state} ${v.name}`, status: t("browser-consoles-1.running"), tone: "accent" })),
+    ...game.lossReports.filter((r) => nodes.has(r.deviceId)).map((r) => ({ key: r.id, at: r.hour, text: t("browser-consoles-1.taskLostDisks", { name: nodeName(game, r.deviceId) }), status: t("browser-consoles-1.error"), tone: "bad" })),
   ];
   return out.sort((a, b) => b.at - a.at).slice(0, 8);
 }
@@ -394,10 +394,10 @@ export function TaskLog({ game, c, vms, title, className = "cx-tasks" }: { game:
     <section className={className}>
       <h4>{title}</h4>
       <table>
-        <thead><tr><th>Time</th><th>Task</th><th>Status</th></tr></thead>
+        <thead><tr><th>{t("browser-consoles-1.time")}</th><th>{t("browser-consoles-1.task")}</th><th>{t("browser-consoles-1.status")}</th></tr></thead>
         <tbody>
-          {list.length === 0 && <tr><td colSpan={3} className="cx-empty">No tasks</td></tr>}
-          {list.map((t) => <tr key={t.key}><td className="num">{formatClock(t.at)}</td><td>{t.text}</td><td><span className={`cx-state ${t.tone}`}>{t.status}</span></td></tr>)}
+          {list.length === 0 && <tr><td colSpan={3} className="cx-empty">{t("browser-consoles-1.noTasks")}</td></tr>}
+          {list.map((x) => <tr key={x.key}><td className="num">{formatClock(x.at)}</td><td>{x.text}</td><td><span className={`cx-state ${x.tone}`}>{x.status}</span></td></tr>)}
         </tbody>
       </table>
     </section>
@@ -425,7 +425,7 @@ export function ConsoleThumb({ game, v, className = "cx-thumb", label }: { game:
     : sc.kind === "bootMenu" || sc.kind === "osInstall" ? `${v.media ? serverOsById(imageParts(v.media).id).name : ""} installer`
     : sc.kind === "notFound" ? "No bootable device." : "";
   return (
-    <button className={className} data-look={win ? "windoors" : "text"} disabled={!v.own} onClick={() => openConsole(v.id)} aria-label={label ?? "Console"}>
+    <button className={className} data-look={win ? "windoors" : "text"} disabled={!v.own} onClick={() => openConsole(v.id)} aria-label={label ?? t("browser-consoles-1.console")}>
       {text}
     </button>
   );

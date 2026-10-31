@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { t } from "../../../i18n/en";
 import { stickOs } from "../../../sim/60-infra/oob";
 import { useState } from "react";
 import { dateOf } from "../../../sim/00-core/time";
@@ -45,16 +46,16 @@ export function useBios(game: GameState, d: Device): { view: ReactNode; onKey: (
       { label: "USB Device", value: stickOs(game, d.id) ? "USB Flash Disk" : "Not Present" },
     ],
     [
-      { label: "RAID Level", value: LEVELS.find(([v]) => v === d.raid)?.[1] ?? d.raid, help: "Enter cycles through the levels the drives allow. A new level deletes the array.", run: pickLevel },
-      { label: "Rebuild Rate", value: RATES.find(([v]) => v === d.rebuildRate)?.[1] ?? d.rebuildRate, help: "A fast rebuild slows the server, a slow one leaves it exposed for longer.", run: () => act(setRebuildRate, d.id, next(RATES.map(([v]) => v), d.rebuildRate)) },
+      { label: "RAID Level", value: LEVELS.find(([v]) => v === d.raid)?.[1] ?? d.raid, help: t("console.biosHelpRaid"), run: pickLevel },
+      { label: "Rebuild Rate", value: RATES.find(([v]) => v === d.rebuildRate)?.[1] ?? d.rebuildRate, help: t("console.biosHelpRebuild"), run: () => act(setRebuildRate, d.id, next(RATES.map(([v]) => v), d.rebuildRate)) },
       { label: "Usable Capacity", value: disk(raidUsable(d)) },
-      { label: "Survives", value: d.raid === "10" ? "1 drive per mirror pair" : tol ? `${tol} ${tol === 1 ? "drive" : "drives"}` : "No drive failure" },
+      { label: "Survives", value: d.raid === "10" ? t("console.biosSurvivesMirror") : tol ? t("console.biosSurvivesDrives", { n: tol }) : t("console.biosSurvivesNone") },
       ...drives.map((c, i) => ({ label: `Drive ${i + 1}`, value: `${disk(c.size ?? 0)}${c.failedAt !== null ? " FAILED" : rb?.componentId === c.id ? " REBUILDING" : ""}` })),
       ...(rb ? [{ label: "Rebuild", value: `${Math.floor(done * 100)}%` }] : []),
     ],
     [
-      { label: "Save Changes and Exit", help: "Every change is already written. The server boots on.", run: () => act(exitSetup, d.id) },
-      { label: "Discard Changes and Exit", help: "The server boots on.", run: () => act(exitSetup, d.id) },
+      { label: "Save Changes and Exit", help: t("console.biosHelpSave"), run: () => act(exitSetup, d.id) },
+      { label: "Discard Changes and Exit", help: t("console.biosHelpDiscard"), run: () => act(exitSetup, d.id) },
     ],
   ];
   const cur = rows[page], at = Math.min(row, cur.length - 1);
@@ -90,9 +91,9 @@ export function useBios(game: GameState, d: Device): { view: ReactNode; onKey: (
       </div>
       {confirm !== null && (
         <div className="bios-dlg">
-          <div>Delete the array and all data on it?</div>
-          <div>{LEVELS.find(([v]) => v === d.raid)?.[1]} to {LEVELS.find(([v]) => v === confirm)?.[1]}</div>
-          <div>[Enter] Yes&nbsp;&nbsp;&nbsp;[Esc] No</div>
+          <div>{t("console.biosDelete")}</div>
+          <div>{t("console.biosLevelChange", { from: LEVELS.find(([v]) => v === d.raid)?.[1] ?? "", to: LEVELS.find(([v]) => v === confirm)?.[1] ?? "" })}</div>
+          <div>{t("console.biosYesNo")}</div>
         </div>
       )}
     </div>

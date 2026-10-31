@@ -11,34 +11,35 @@ import { portLinks, type PortLink } from "../../sim/60-infra/usage";
 import type { Lamp, PartLamp, Parts, PortLamp, PortLight } from "../art/fronts";
 import { oobLabel } from "../art/mgmt";
 import { LOCALE } from "../../i18n/lang";
+import { t } from "../../i18n/en";
 
 export const speed = (g: number) => (g >= 1000 ? `${+(g / 1000).toFixed(1)}T` : g >= 1 ? `${g}G` : `${g * 1000}M`);
 export const ram = (gb: number) => (gb >= 1024 ? `${+(gb / 1024).toFixed(1)} TB` : `${gb} GB`);
 export const disk = (gb: number) => (gb >= 1000 ? `${+(gb / 1000).toFixed(1)} TB` : `${gb} GB`);
-export const cores = (n: number) => `${n} ${n === 1 ? "core" : "cores"}`;
+export const cores = (n: number) => t("apps.hw.cores", { n });
 const FF_LABEL = { "3.5": '3.5"', "2.5": '2.5"', nvme: "NVMe" } as const;
 // Size of a sized part ("16 GB", "4 TB, 3.5\"", "32 cores"), or a dash for parts without one.
 export const partSize = (c: Pick<Component, "kind" | "size" | "ff" | "sku">): string =>
-  c.size === undefined ? "-" : c.kind === "board" ? `CPUs up to ${cores(c.size)}` : c.kind === "ram" ? ram(c.size) : c.kind === "cpu" ? cores(c.size) : c.kind === "gpu" ? cardOf(c.size, c.sku).name : `${disk(c.size)}${c.ff ? `, ${FF_LABEL[c.ff]}` : ""}`;
-const SLOT_NAME: Partial<Record<ComponentKind, string>> = { hdd: "Bay", ssd: "Bay", nvme: "Bay", ram: "DIMM", cpu: "Socket", psu: "PSU bay", fan: "Fan", gpu: "PCIe slot" };
+  c.size === undefined ? "-" : c.kind === "board" ? t("apps.hw.cpusUpTo", { cores: cores(c.size) }) : c.kind === "ram" ? ram(c.size) : c.kind === "cpu" ? cores(c.size) : c.kind === "gpu" ? cardOf(c.size, c.sku).name : `${disk(c.size)}${c.ff ? `, ${FF_LABEL[c.ff]}` : ""}`;
+const SLOT_NAME: Partial<Record<ComponentKind, string>> = { hdd: t("apps.hw.slot.bay"), ssd: t("apps.hw.slot.bay"), nvme: t("apps.hw.slot.bay"), ram: t("apps.hw.slot.dimm"), cpu: t("apps.hw.slot.socket"), psu: t("apps.hw.slot.psu"), fan: t("apps.hw.slot.fan"), gpu: t("apps.hw.slot.pcie") };
 // Slot a part sits in: the nth of its kind, or its fixed place on the board.
-export const partSlot = (kind: ComponentKind, nth: number): string => (SLOT_NAME[kind] ? `${SLOT_NAME[kind]} ${nth}` : "Onboard");
-export const height = (m: DeviceModel) => (m.kind === "gateway" && m.height === 0 ? "Panel" : `${m.height}U`);
+export const partSlot = (kind: ComponentKind, nth: number): string => (SLOT_NAME[kind] ? t("apps.hw.slot", { kind: SLOT_NAME[kind]!, n: nth }) : t("apps.hw.onboard"));
+export const height = (m: DeviceModel) => (m.kind === "gateway" && m.height === 0 ? t("apps.hw.panel") : `${m.height}U`);
 export const watts = (w: number) => `${Math.round(w).toLocaleString(LOCALE)} W`;
 export const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 // Counts down in days while a day or more is left, then in hours.
 export const readyIn = (at: number, now: number) => {
   const left = Math.max(1, Math.ceil(at - now)), days = Math.floor(left / 24);
-  return days ? `${days} ${days === 1 ? "day" : "days"}` : `${left} h`;
+  return days ? t("apps.hw.days", { n: days }) : `${left} h`;
 };
 export const lampOf = (st: LinkStatus): Lamp => (!st.online ? "bad" : st.warning ? "warn" : "ok");
-export const CABLE_NAME = { copper: "copper", dac: "DAC", fiber: "fiber", rollover: "rollover" };
+export const CABLE_NAME = { copper: t("apps.hw.cable.copper"), dac: "DAC", fiber: t("apps.hw.cable.fiber"), rollover: t("apps.hw.cable.rollover") };
 
 export function portsText(m: DeviceModel): string {
-  if (m.kind === "patch") return `${jacksOf(m)} jacks`;
+  if (m.kind === "patch") return t("apps.hw.jacks", { n: jacksOf(m) });
   if (m.kind === "kvm" || m.kind === "console" || m.kind === "oob") {
     const n = (k: string) => oobPorts(m).filter((p) => p === k).length;
-    return m.kind === "oob" ? `${n("net")} × 1G` : `${n(m.kind === "kvm" ? "kvm" : "serial")} × ${m.kind === "kvm" ? "KVM" : "serial"}, 1 × 1G`;
+    return m.kind === "oob" ? `${n("net")} × 1G` : t(m.kind === "kvm" ? "apps.hw.portsKvm" : "apps.hw.portsSerial", { n: n(m.kind === "kvm" ? "kvm" : "serial") });
   }
   const runs: { p: PortSpec; n: number }[] = [];
   for (const p of m.ports) {
@@ -50,21 +51,21 @@ export function portsText(m: DeviceModel): string {
 }
 
 export function portName(m: DeviceModel, i: number): string {
-  if (isOobPort(i)) { const l = oobLabel(m, i); return /^\d+$/.test(l) ? `${oobPorts(m)[i - OOB_PORT] === "kvm" ? "KVM" : "Serial"} ${l}` : l; }
+  if (isOobPort(i)) { const l = oobLabel(m, i); return /^\d+$/.test(l) ? t("apps.hw.oobPort", { kind: oobPorts(m)[i - OOB_PORT] === "kvm" ? t("apps.hw.kvm") : t("apps.hw.serial"), label: l }) : l; }
   if (m.kind === "server") return `eth${i}`;
-  if (m.kind === "patch") return i < jacksOf(m) ? `Top ${i + 1}` : `Bottom ${i - jacksOf(m) + 1}`;
-  return `${m.ports[i].media === "sfp" && m.ports.some((p) => p.media === "rj45") ? "SFP" : "Port"} ${i + 1}`;
+  if (m.kind === "patch") return i < jacksOf(m) ? t("apps.hw.portTop", { n: i + 1 }) : t("apps.hw.portBottom", { n: i - jacksOf(m) + 1 });
+  return t(m.ports[i].media === "sfp" && m.ports.some((p) => p.media === "rj45") ? "apps.hw.portSfp" : "apps.hw.port", { n: i + 1 });
 }
 
 export const portLamps = (m: DeviceModel, peers: (End | null)[]): PortLamp[] => peers.map((p, i) => (p ? (m.ports[i].media === "sfp" ? "fiber" : "ok") : "off"));
 
 export const devName = (d: Device) => d.label ?? d.name;
-export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: "Power supply", fan: "Fan", ram: "RAM stick", board: "Mainboard", cpu: "CPU", nic: "Network card", gpu: "GPU" };
+export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: t("apps.hw.part.psu"), fan: t("apps.hw.part.fan"), ram: t("apps.hw.part.ram"), board: t("apps.hw.part.board"), cpu: "CPU", nic: t("apps.hw.part.nic"), gpu: "GPU" };
 // A CPU's clock, "2.0 GHz, 2.8 GHz boost"; empty for anything else or a CPU of unknown make.
 export const clockLabel = (p: Pick<Component, "kind" | "vendor" | "gen" | "size" | "sku">): string => {
   if (p.kind !== "cpu") return "";
   const k = skuOf(p);
-  if (k) return k.boost > k.ghz ? `${k.ghz} GHz, ${k.boost} GHz boost` : `${k.ghz} GHz`;
+  if (k) return k.boost > k.ghz ? t("apps.hw.boost", { ghz: k.ghz, boost: k.boost }) : `${k.ghz} GHz`;
   const c = p.vendor && p.gen ? cpuModel(p.vendor, p.gen) : undefined;
   return c ? `${c.ghz} GHz` : "";
 };
@@ -75,7 +76,7 @@ export const threadsLabel = (p: Pick<Component, "kind" | "vendor" | "gen" | "siz
 };
 // A sized part by name: "RAM stick 16 GB", "HDD 4 TB, 3.5\"", "Indel Xenon E5-2650, 8c/16t, 2.0 GHz, 2.8 GHz boost", "AMB Mainboard".
 export const partLabel = (p: Pick<Component, "kind" | "size" | "ff" | "vendor" | "gen" | "sku">): string => {
-  if (p.kind === "board" && p.vendor && p.gen && p.size !== undefined) return `${VENDOR_NAME[p.vendor]} ${socketOf(p.vendor, p.gen)}-${p.size} Mainboard`;
+  if (p.kind === "board" && p.vendor && p.gen && p.size !== undefined) return t("apps.hw.mainboard", { name: `${VENDOR_NAME[p.vendor]} ${socketOf(p.vendor, p.gen)}-${p.size}` });
   const k = p.kind === "cpu" ? skuOf(p) : undefined;
   if (k) return `${VENDOR_NAME[k.vendor]} ${k.name}, ${threadsLabel(p)}, ${clockLabel(p)}`;
   // A stick or drive with a maker: "Sumsang DDR4-2933 RDIMM 32 GB", "Seagull Exos 4 TB, 3.5\"".
@@ -94,13 +95,13 @@ export function memoryDriveRows(parts: Fitted[]): [string, string][] {
   const rows: [string, string][] = [];
   if (ramPart) {
     const f = ramPart.f;
-    rows.push(["Memory", `${ramPart.n} × ${partLabel(ramPart.p)}`]);
-    if (f && f.kind === "ram") rows.push(["Memory type", `${f.ddr}-${f.mts} ${f.stick}`]);
+    rows.push([t("apps.hw.memory"), `${ramPart.n} × ${partLabel(ramPart.p)}`]);
+    if (f && f.kind === "ram") rows.push([t("apps.hw.memoryType"), `${f.ddr}-${f.mts} ${f.stick}`]);
   }
   if (drive) {
     const f = drive.f;
-    rows.push(["Drives", `${drive.n} × ${partLabel(drive.p)}`]);
-    if (f && f.kind !== "ram") rows.push(["Drive interface", `${f.iface}${f.rpm ? `, ${f.rpm.toLocaleString(LOCALE)} rpm` : f.dwpd ? `, ${f.dwpd} DWPD` : ""}`], ["Drive speed", `${f.mbps} MB/s, ${f.iops.toLocaleString(LOCALE)} IOPS`]);
+    rows.push([t("apps.hw.drives"), `${drive.n} × ${partLabel(drive.p)}`]);
+    if (f && f.kind !== "ram") rows.push([t("apps.hw.driveInterface"), `${f.iface}${f.rpm ? `, ${f.rpm.toLocaleString(LOCALE)} rpm` : f.dwpd ? `, ${f.dwpd} DWPD` : ""}`], [t("apps.hw.driveSpeed"), `${f.mbps} MB/s, ${f.iops.toLocaleString(LOCALE)} IOPS`]);
   }
   return rows;
 }

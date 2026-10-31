@@ -5,6 +5,7 @@ import { SKILLS } from "../../../sim/10-catalog/research";
 import { setDate, setKnowHow, setMoney, unlockAllResearch } from "../../../sim/90-actions/dev";
 import { useStore } from "../../store";
 import "./dev.css";
+import { t } from "../../../i18n/en";
 
 // The dev menu from `sudo dev` in the Terminal: raw edits of the date, cash and research points for testing.
 export function DevApp() {
@@ -22,35 +23,35 @@ export function DevApp() {
   return (
     <div className="dev">
       <div className="dev-row">
-        <label htmlFor="dev-date">Date</label>
+        <label htmlFor="dev-date">{t("misc2.devDate")}</label>
         <div className="dev-inputs">
           <input id="dev-date" className="field" type="date" min="2005-01-01" value={date} onChange={(e) => setDay(e.target.value)} onKeyDown={enter(applyDate)} />
-          <input className="field dev-hour" type="number" min={0} max={23} aria-label="Hour" value={hour} onChange={(e) => setHour(Math.max(0, Math.min(23, Math.round(Number(e.target.value)))))} onKeyDown={enter(applyDate)} />
+          <input className="field dev-hour" type="number" min={0} max={23} aria-label={t("misc2.devHour")} value={hour} onChange={(e) => setHour(Math.max(0, Math.min(23, Math.round(Number(e.target.value)))))} onKeyDown={enter(applyDate)} />
         </div>
-        <button className="btn primary" disabled={!date} onClick={applyDate}>Set date</button>
-        <span className="sub">Now {formatClock(game.hour, game.minute)}. The jump skips the ticks in between.</span>
+        <button className="btn primary" disabled={!date} onClick={applyDate}>{t("misc2.devSetDate")}</button>
+        <span className="sub">{t("misc2.devDateNow", { now: formatClock(game.hour, game.minute) })}</span>
       </div>
       <div className="dev-row">
-        <label htmlFor="dev-cash">Money (€)</label>
+        <label htmlFor="dev-cash">{t("misc2.devMoney")}</label>
         <div className="dev-inputs">
           <input id="dev-cash" className="field" type="number" step="any" value={cash} onChange={(e) => setCash(e.target.value)} onKeyDown={enter(applyCash)} />
         </div>
-        <button className="btn primary" disabled={!cash.trim()} onClick={applyCash}>Set money</button>
-        <span className="sub">Now {euroCents(game.cash)}.</span>
+        <button className="btn primary" disabled={!cash.trim()} onClick={applyCash}>{t("misc2.devSetMoney")}</button>
+        <span className="sub">{t("misc2.devNow", { value: euroCents(game.cash) })}</span>
       </div>
       <div className="dev-row">
-        <label htmlFor="dev-points">Research points</label>
+        <label htmlFor="dev-points">{t("misc2.devPoints")}</label>
         <div className="dev-inputs">
           <input id="dev-points" className="field" type="number" min={0} step={1} value={points} onChange={(e) => setPoints(e.target.value)} onKeyDown={enter(applyPoints)} />
         </div>
-        <button className="btn primary" disabled={!points.trim()} onClick={applyPoints}>Set points</button>
-        <span className="sub">Now {game.knowHow}.</span>
+        <button className="btn primary" disabled={!points.trim()} onClick={applyPoints}>{t("misc2.devSetPoints")}</button>
+        <span className="sub">{t("misc2.devNow", { value: game.knowHow })}</span>
       </div>
       <div className="dev-row">
-        <label>Research</label>
+        <label>{t("misc2.devResearch")}</label>
         <div className="dev-inputs" />
-        <button className="btn primary" onClick={() => act(unlockAllResearch)}>Unlock all research</button>
-        <span className="sub">{game.unlocks.length} of {SKILLS.length} learned.</span>
+        <button className="btn primary" onClick={() => act(unlockAllResearch)}>{t("misc2.devUnlockAll")}</button>
+        <span className="sub">{t("misc2.devLearned", { n: game.unlocks.length, total: SKILLS.length })}</span>
       </div>
     </div>
   );

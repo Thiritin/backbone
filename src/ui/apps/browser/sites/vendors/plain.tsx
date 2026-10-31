@@ -1,16 +1,17 @@
+import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
 import { Body, classesOf, Link, Nav, News, TITLE, type VendorProps } from "./VendorSite";
 import "./plain.css";
 
 // One plain layout for the smaller makers: the wordmark in the maker's colour, a pitch and the product classes.
 const PITCH: Record<string, [early: string, late: string]> = {
-  nettgear: ["Business switches without the business price.", "The network your small business runs on."],
-  ubiquitea: ["Enterprise networking at a fraction of the cost.", "Rethinking IT."],
-  "d-lunk": ["Building networks for people.", "Connect to more."],
-  netgoat: ["Open source firewalls, factory built.", "pfSinse Plus on hardware we stand behind."],
-  sophosphate: ["Security made simple.", "Cybersecurity evolved."],
-  apcee: ["Legendary reliability.", "Certainty in a connected world."],
-  vertivo: ["Power and cooling for the critical.", "Architects of continuity."],
+  nettgear: [t("browser-sites-2.pitchNettgearEarly"), t("browser-sites-2.pitchNettgearLate")],
+  ubiquitea: [t("browser-sites-2.pitchUbiquiteaEarly"), t("browser-sites-2.pitchUbiquiteaLate")],
+  "d-lunk": [t("browser-sites-2.pitchDlunkEarly"), t("browser-sites-2.pitchDlunkLate")],
+  netgoat: [t("browser-sites-2.pitchNetgoatEarly"), t("browser-sites-2.pitchNetgoatLate")],
+  sophosphate: [t("browser-sites-2.pitchSophosphateEarly"), t("browser-sites-2.pitchSophosphateLate")],
+  apcee: [t("browser-sites-2.pitchApceeEarly"), t("browser-sites-2.pitchApceeLate")],
+  vertivo: [t("browser-sites-2.pitchVertivoEarly"), t("browser-sites-2.pitchVertivoLate")],
 };
 export function Plain(props: VendorProps) {
   const { m, look, page, go, month, year } = props;
@@ -25,10 +26,10 @@ export function Plain(props: VendorProps) {
         <main>
           <section className="vs-hero">
             <h1>{look === "early" ? early : late}</h1>
-            <Link to="products" go={go} className="vs-cta">Products</Link>
+            <Link to="products" go={go} className="vs-cta">{t("browser-sites-2.vProducts")}</Link>
           </section>
           <ul className="vs-cats">{classesOf(m).map((c) => <li key={c}><Link to="products" go={go}>{c}</Link></li>)}</ul>
-          <h2>News</h2>
+          <h2>{t("browser-sites-2.vNews")}</h2>
           <News m={m} month={month} limit={4} />
         </main>
       ) : (

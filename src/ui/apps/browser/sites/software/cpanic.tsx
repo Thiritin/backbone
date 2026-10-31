@@ -1,8 +1,9 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Link, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./cpanic.css";
 
-const ICONS = ["Email Accounts", "File Manager", "Databases", "Domains", "Backups", "Statistics", "Security", "Software"];
+const ICONS = [t("browser-sites-1.cp.icon0"), t("browser-sites-1.cp.icon1"), t("browser-sites-1.cp.icon2"), t("browser-sites-1.cp.icon3"), t("browser-sites-1.cp.icon4"), t("browser-sites-1.cp.icon5"), t("browser-sites-1.cp.icon6"), t("browser-sites-1.cp.icon7")];
 
 // cPanic: the dark blue 2005 site with the grey side nav; from 2014 a flat hero with a code-drawn panel screenshot.
 export function Cpanic(props: SiteProps) {
@@ -11,13 +12,13 @@ export function Cpanic(props: SiteProps) {
   if (look === "late") {
     return (
       <div className="sw sw-cpanic late">
-        <header>{wm}<Nav {...props} /><Link to="pricing" go={go} className="buy">Buy Now</Link></header>
+        <header>{wm}<Nav {...props} /><Link to="pricing" go={go} className="buy">{t("browser-sites-1.cp.buy")}</Link></header>
         {page === "home" ? (
           <div className="hero">
             <div>
               <h1>{p.site.tagline}</h1>
               <p>{p.site.blurb}</p>
-              <Link to="download" go={go} className="sws-cta">Try it free</Link>
+              <Link to="download" go={go} className="sws-cta">{t("browser-sites-1.cp.try")}</Link>
             </div>
             <div className="shot" aria-hidden>
               <div className="bar" />
@@ -26,18 +27,18 @@ export function Cpanic(props: SiteProps) {
           </div>
         ) : null}
         <main><Body {...props} /></main>
-        <footer>© {year} cPanic, L.L.C. All rights reserved.</footer>
+        <footer>{t("browser-sites-1.cp.footerLate", { year })}</footer>
       </div>
     );
   }
   return (
     <div className="sw sw-cpanic early">
-      <header>{wm}<span className="tag">{p.site.tagline}!</span></header>
+      <header>{wm}<span className="tag">{t("browser-sites-1.cp.tag", { tagline: p.site.tagline })}</span></header>
       <div className="cols">
-        <Nav {...props} className="side" labels={{ download: "Install cPanic", pricing: "Licensing" }} />
-        <main><h1>{page === "home" ? "Welcome to cPanic!" : p.name}</h1><Body {...props} /></main>
+        <Nav {...props} className="side" labels={{ download: t("browser-sites-1.cp.install"), pricing: t("browser-sites-1.cp.licensing") }} />
+        <main><h1>{page === "home" ? t("browser-sites-1.cp.welcome") : p.name}</h1><Body {...props} /></main>
       </div>
-      <footer>Copyright © 2000-{year} cPanic Inc. All Rights Reserved.</footer>
+      <footer>{t("browser-sites-1.cp.footerEarly", { year })}</footer>
     </div>
   );
 }

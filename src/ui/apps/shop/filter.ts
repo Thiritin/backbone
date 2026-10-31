@@ -5,6 +5,10 @@ import { familyById, PART_MAKERS, partMaker } from "../../../sim/10-catalog/fami
 import { cardById } from "../../../sim/10-catalog/gpu";
 import type { ComponentKind } from "../../../sim/10-catalog/hardware";
 import { lineOf } from "../../art/fronts";
+import { t } from "../../../i18n/en";
+
+export const classLabel = (c: string) => t(`shop.class.${c}`);
+export const rowLabel = (k: string) => t(`shop.row.${k}`);
 
 const LINE_NAME: Record<string, string> = {
   compute: "Balanced", "compute-2psu": "Balanced", value: "Balanced", micro: "Clock", dense: "Compute dense", memory: "Memory optimized", bigmem: "Memory optimized", quad: "Four socket",
@@ -52,7 +56,7 @@ export const matchesFilter = (m: DeviceModel, f: Filter, part?: PartSpec): boole
 };
 
 export type Sort = "default" | "priceLow" | "priceHigh" | "newest" | "power";
-export const SORTS: [Sort, string][] = [["default", "Default"], ["priceLow", "Price low to high"], ["priceHigh", "Price high to low"], ["newest", "Newest"], ["power", "Lowest power"]];
+export const SORTS: Sort[] = ["default", "priceLow", "priceHigh", "newest", "power"];
 
 // Orders a copy of the list; ties keep the list's order, and a model without a power rating sorts last by power.
 export function sortItems<T extends { model: DeviceModel; brand: string; part?: PartSpec }>(items: T[], sort: Sort, year: number): T[] {

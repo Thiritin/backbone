@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { registrarHost } from "../../../../../sim/10-catalog/registrars";
 import { Account, DomainSearch, own, Program, TldPrices, type RegistrarProps } from "./RegistrarPage";
 import "./goduddy.css";
@@ -12,35 +13,35 @@ const Mark = ({ size }: { size: number }) => (
 
 // GoDuddy Reseller: the loud green and black 2005 page with three columns of offers; from 2016 white with a calmer grid.
 export function GoDuddy({ game, r, look, year }: RegistrarProps) {
-  const wm = <span className="rg-wm"><Mark size={look === "late" ? 26 : 36} />GoDuddy<small>Reseller</small></span>;
+  const wm = <span className="rg-wm"><Mark size={look === "late" ? 26 : 36} />GoDuddy<small>{t("browser-sites-1.gd.reseller")}</small></span>;
   if (look === "late") {
     return (
       <div className="rg rg-goduddy late">
         <header>{wm}</header>
-        <section className="hero"><DomainSearch game={game} r={r} title="Start your domain business" /></section>
+        <section className="hero"><DomainSearch game={game} r={r} title={t("browser-sites-1.gd.start")} /></section>
         <main>
-          <section><Program game={game} r={r} title="Reseller plan" /></section>
-          <section><TldPrices game={game} r={r} title="Domain prices" /></section>
+          <section><Program game={game} r={r} title={t("browser-sites-1.gd.plan")} /></section>
+          <section><TldPrices game={game} r={r} title={t("browser-sites-1.gd.prices")} /></section>
           {own(game, r) && <section className="wide"><Account game={game} r={r} /></section>}
         </main>
-        <footer>Copyright © 1999-{year} GoDuddy Operating Company, LLC. {registrarHost(r)}</footer>
+        <footer>{t("browser-sites-1.gd.copyrightLate", { year })} {registrarHost(r)}</footer>
       </div>
     );
   }
   return (
     <div className="rg rg-goduddy early">
-      <header>{wm}<span className="call">24/7 SALES &amp; SUPPORT!</span></header>
+      <header>{wm}<span className="call">{t("browser-sites-1.gd.call")}</span></header>
       <section className="hero">
-        <h1>Become a domain reseller TODAY!</h1>
-        <p>Sell domain names under YOUR OWN brand and keep the profit! Set up in minutes! Bulk discounts at 100, 500 and 5,000 domains! SSL certificates for your customers! The world's No. 1 domain reseller program!*</p>
+        <h1>{t("browser-sites-1.gd.h1")}</h1>
+        <p>{t("browser-sites-1.gd.pitch")}</p>
       </section>
       <main>
-        <section className="col"><DomainSearch game={game} r={r} title="Domain search" button="GO!" /></section>
-        <section className="col"><Program game={game} r={r} title="Reseller plans" sign="Sign up now!" /></section>
-        <section className="col"><TldPrices game={game} r={r} title="Hot prices!" /></section>
+        <section className="col"><DomainSearch game={game} r={r} title={t("browser-sites-1.gd.search")} button={t("browser-sites-1.gd.go")} /></section>
+        <section className="col"><Program game={game} r={r} title={t("browser-sites-1.gd.plans")} sign={t("browser-sites-1.gd.signUp")} /></section>
+        <section className="col"><TldPrices game={game} r={r} title={t("browser-sites-1.gd.hot")} /></section>
       </main>
       {own(game, r) && <section className="acct"><Account game={game} r={r} /></section>}
-      <footer>*Not all claims verified. Copyright © 1999-{year} {registrarHost(r)}</footer>
+      <footer>{t("browser-sites-1.gd.copyrightEarly", { year })} {registrarHost(r)}</footer>
     </div>
   );
 }

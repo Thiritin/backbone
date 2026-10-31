@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Features, Link, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./ownclod.css";
@@ -13,12 +14,12 @@ export function OwnClod(props: SiteProps) {
           <div className="hero">
             <h1>{p.site.tagline}</h1>
             <p>{p.site.blurb}</p>
-            <div className="btns"><Link to="download" go={go} className="btn">Download Server</Link><Link to="features" go={go} className="btn ghost">See the features</Link></div>
+            <div className="btns"><Link to="download" go={go} className="btn">{t("browser-sites-1.oc.download")}</Link><Link to="features" go={go} className="btn ghost">{t("browser-sites-1.oc.see")}</Link></div>
           </div>
           {look === "late" ? <Features p={p} className="cards" /> : <main><Features p={p} /></main>}
         </>
       ) : <main><Body {...props} /></main>}
-      <footer>© {year} OwnClod, Inc.</footer>
+      <footer>{t("browser-sites-1.oc.footer", { year })}</footer>
     </div>
   );
 }

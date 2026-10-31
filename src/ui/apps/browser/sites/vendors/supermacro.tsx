@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
 import { Body, classesOf, Link, Nav, News, TITLE, type VendorProps } from "./VendorSite";
 import "./supermacro.css";
@@ -9,14 +10,14 @@ export function SuperMacro(props: VendorProps) {
     <div className={`vs vs-smc ${look}`}>
       <header>
         <span className="vs-wm"><Logo provider="supermacro" size={24} /><b>Super</b>Macro</span>
-        <span className="vs-slogan">{look === "early" ? "We Keep IT Greenish" : "Building Block Solutions"}</span>
+        <span className="vs-slogan">{look === "early" ? t("browser-sites-2.smcEarly") : t("browser-sites-2.smcLate")}</span>
       </header>
       <Nav page={page} go={go} className="vs-bar" />
       {page === "home" ? (
         <main>
-          {look === "late" && <section className="vs-hero"><h1>Server building blocks, first to market.</h1><Link to="products" go={go} className="vs-cta">See every system</Link></section>}
+          {look === "late" && <section className="vs-hero"><h1>{t("browser-sites-2.smcTitle")}</h1><Link to="products" go={go} className="vs-cta">{t("browser-sites-2.smcSee")}</Link></section>}
           <table className="vs-lines">
-            <thead><tr><th>Product line</th><th>Latest news</th></tr></thead>
+            <thead><tr><th>{t("browser-sites-2.smcLine")}</th><th>{t("browser-sites-2.smcLatest")}</th></tr></thead>
             <tbody>
               <tr>
                 <td><ul className="vs-cats">{classesOf(m).map((c) => <li key={c}><Link to="products" go={go}>{c}</Link></li>)}</ul></td>
@@ -28,7 +29,7 @@ export function SuperMacro(props: VendorProps) {
       ) : (
         <main><h1>{TITLE[page]}</h1><Body {...props} className="vs-body" /></main>
       )}
-      <footer>Copyright © 1993-{year} SuperMacro Computer, Inc. All rights reserved.</footer>
+      <footer>{t("browser-sites-2.smcFooter", { year })}</footer>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
 import { Body, classesOf, Link, Nav, News, TITLE, type VendorProps } from "./VendorSite";
 import "./fortinope.css";
@@ -14,17 +15,17 @@ export function Fortinope(props: VendorProps) {
       {page === "home" ? (
         <main>
           <section className="vs-hero">
-            <h1>{look === "early" ? "Unified Threat Mismanagement, solved." : "Security fabric for the whole rack."}</h1>
-            <p>Every packet asks permission. Most of the time the answer is nope.</p>
+            <h1>{look === "early" ? t("browser-sites-2.ftnEarly") : t("browser-sites-2.ftnLate")}</h1>
+            <p>{t("browser-sites-2.ftnText")}</p>
           </section>
           <ul className="vs-cats">{classesOf(m).map((c) => <li key={c}><Link to="products" go={go}>{c}</Link></li>)}</ul>
-          <h2>Threat news</h2>
+          <h2>{t("browser-sites-2.ftnNews")}</h2>
           <News m={m} month={month} limit={4} />
         </main>
       ) : (
         <main><h1>{TITLE[page]}</h1><Body {...props} className="vs-body" /></main>
       )}
-      <footer>Copyright © 2000-{year} Fortinope, Inc. All rights reserved.</footer>
+      <footer>{t("browser-sites-2.ftnFooter", { year })}</footer>
     </div>
   );
 }

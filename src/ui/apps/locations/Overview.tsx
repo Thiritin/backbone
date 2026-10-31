@@ -9,6 +9,7 @@ import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, Pow
 import { Hourglass } from "lucide-react";
 import { datacenterById, homeLineById } from "../../../sim/20-world/datacenters";
 import { addLocation, leaveWaitlist } from "../../../sim/90-actions/hardware";
+import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 
 export function Overview({ game, onOpen }: { game: GameState; onOpen: (id: string) => void }) {
@@ -29,7 +30,7 @@ export function Waitlist({ game, onOpen }: { game: GameState; onOpen: (id: strin
   const act = useStore((s) => s.act);
   return (
     <div className="loc-card loc-wait">
-      <div className="loc-card-h"><h3><Hourglass />Waitlist</h3><span className="grow" /><span className="num loc-muted">{game.waitlist.length}</span></div>
+      <div className="loc-card-h"><h3><Hourglass />{t("locations-2.waitlist")}</h3><span className="grow" /><span className="num loc-muted">{game.waitlist.length}</span></div>
       {game.waitlist.map((w) => {
         const dc = datacenterById(w.dc);
         return (
@@ -39,10 +40,10 @@ export function Waitlist({ game, onOpen }: { game: GameState; onOpen: (id: strin
             <span>{spaceSize(w.space, w.size)}</span>
             <span className="grow" />
             {w.heldUntil !== null
-              ? <span className="loc-held">Held until <span className="num">{day(w.heldUntil)}</span></span>
-              : <span className="loc-muted">Waiting since <span className="num">{day(w.since)}</span></span>}
-            {w.heldUntil !== null && <button className="btn primary" onClick={() => { const r = act(addLocation, w.dc, w.space, w.size); if (r.ok && r.id) onOpen(r.id); }}>Rent</button>}
-            <button className="btn" onClick={() => act(leaveWaitlist, w.id)}>Leave</button>
+              ? <span className="loc-held">{t("locations-2.heldUntil", { day: day(w.heldUntil) })}</span>
+              : <span className="loc-muted">{t("locations-2.waitingSince", { day: day(w.since) })}</span>}
+            {w.heldUntil !== null && <button className="btn primary" onClick={() => { const r = act(addLocation, w.dc, w.space, w.size); if (r.ok && r.id) onOpen(r.id); }}>{t("locations-2.rent")}</button>}
+            <button className="btn" onClick={() => act(leaveWaitlist, w.id)}>{t("locations-2.leave")}</button>
           </div>
         );
       })}
@@ -58,19 +59,19 @@ function LocationCard({ game, loc, onOpen }: { game: GameState; loc: Location; o
       <div className="loc-card-h">
         <h3><Logo provider={providerOf(loc)} size={18} /><button className="loc-link" onClick={onOpen}>{loc.name}</button><Zone loc={loc} /></h3>
         <span className="grow" />
-        {loc.readyAt > game.hour && <span className="pill warn">Ready in <span className="num">{readyIn(loc.readyAt, game.hour)}</span></span>}
+        {loc.readyAt > game.hour && <span className="pill warn">{t("locations-2.readyIn", { time: readyIn(loc.readyAt, game.hour) })}</span>}
       </div>
       <Facts rows={[
-        ["Space", spaceLabel(loc, game)],
-        ...(loc.space === "share" ? [] : [["Positions", <span className="num">{used} / {loc.positions}</span>] as [string, ReactNode]]),
-        ["Rent", loc.dc ? <span className="num">{euro(locationRent(game, loc))} / month</span> : "None"],
-        ["Power protection", dc ? `${feedsLabel(dc)}, ${backupLabel(dc)}` : "None"],
-        ["Green power", dc?.green ? "Yes" : "No"],
-        ["Carriers", dc ? <span className="num">{dc.carriers}</span> : `${homeLineById(game.homeLine.id).isp} ${homeLineById(game.homeLine.id).name}`],
-        ["Exchange", exchangeLabel(dc)],
+        [t("locations-2.space"), spaceLabel(loc, game)],
+        ...(loc.space === "share" ? [] : [[t("locations-2.positions"), <span className="num">{used} / {loc.positions}</span>] as [string, ReactNode]]),
+        [t("locations-2.rentLabel"), loc.dc ? <span className="num">{t("locations-2.perMonth", { amount: euro(locationRent(game, loc)) })}</span> : t("locations-2.none")],
+        [t("locations-2.powerProtection"), dc ? `${feedsLabel(dc)}, ${backupLabel(dc)}` : t("locations-2.none")],
+        [t("locations-2.greenPower"), dc?.green ? t("locations-2.yes") : t("locations-2.no")],
+        [t("locations-2.carriers"), dc ? <span className="num">{dc.carriers}</span> : `${homeLineById(game.homeLine.id).isp} ${homeLineById(game.homeLine.id).name}`],
+        [t("locations-2.exchange"), exchangeLabel(dc)],
       ]} />
-      <div className="loc-row"><span className="loc-k">Power</span><PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} /></div>
-      {arriving.map((r) => <div key={r.id} className="loc-row"><span className="loc-k">In transit</span>{r.name}<span className="grow" /><span className="num">{day(r.arriveAt!)}</span></div>)}
+      <div className="loc-row"><span className="loc-k">{t("locations-2.power")}</span><PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} /></div>
+      {arriving.map((r) => <div key={r.id} className="loc-row"><span className="loc-k">{t("locations-2.inTransit")}</span>{r.name}<span className="grow" /><span className="num">{day(r.arriveAt!)}</span></div>)}
     </div>
   );
 }

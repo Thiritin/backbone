@@ -1,3 +1,4 @@
+import { t } from "../../../i18n/en";
 import { BMC_NAME, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState } from "../../../sim/50-state";
 import { isOwnVm, vmById } from "../../../sim/60-infra/cluster";
@@ -14,11 +15,11 @@ import { vmLabel } from "../products/parts";
 const CONSOLE_NAME: Record<string, string> = { Dwell: "iDRAQ Virtual Console", "Hewlett-Packet": "iLOL Remote Console", SuperMacro: "SuperMacro iKVM", Lenovoid: "XClarify Remote Control", Gigabutt: "MegaRAQ Remote Console" };
 export const consoleName = (game: GameState, d: Device): string => {
   const via = consoleVia(game, d.id);
-  return via?.kind === "bmc" ? CONSOLE_NAME[d.brand] ?? `${BMC_NAME[d.brand] ?? "IPMI"} console` : via ? modelById(via.device.model).name : "Console";
+  return via?.kind === "bmc" ? CONSOLE_NAME[d.brand] ?? t("console.bmcConsole", { name: BMC_NAME[d.brand] ?? "IPMI" }) : via ? modelById(via.device.model).name : t("console.console");
 };
 export const consoleTitle = (game: GameState, id: string): string => {
   const d = game.devices.find((x) => x.id === id), vm = vmById(game, id);
-  return d ? `${consoleName(game, d)}: ${devName(d)}` : vm ? `Console: ${vm.hostname ?? vmLabel(game, vm).name}` : "Console";
+  return d ? `${consoleName(game, d)}: ${devName(d)}` : vm ? t("console.vmTitle", { name: vm.hostname ?? vmLabel(game, vm).name }) : t("console.console");
 };
 
 const none = () => {};
@@ -36,12 +37,12 @@ export function ConsoleWindow({ deviceId, front }: { deviceId: string; front: bo
     <div className="con">
       <div className="con-bar">
         <b>{devName(d)}</b>
-        <span className="muted">{via ? consoleName(game, d) : "No way in"}</span>
+        <span className="muted">{via ? consoleName(game, d) : t("console.noWayIn")}</span>
         <span className="grow" />
         {power?.options.map((o) => <button key={o.op} disabled={o.disabled} onClick={() => menus.op(d, o.op)}>{o.label}</button>)}
       </div>
       <div className="con-body">
-        {via ? <Screen game={game} device={d} via={via.kind === "bmc" ? "bmc" : "kvm"} active={front} /> : <div className="scr" data-look="dark"><span className="scr-osd">No signal</span></div>}
+        {via ? <Screen game={game} device={d} via={via.kind === "bmc" ? "bmc" : "kvm"} active={front} /> : <div className="scr" data-look="dark"><span className="scr-osd">{t("console.noSignal")}</span></div>}
       </div>
       {menus.dialog}
     </div>

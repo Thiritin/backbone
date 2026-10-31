@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
 import { Body, classesOf, Link, Nav, News, TITLE, type VendorProps } from "./VendorSite";
 import "./lenovoid.css";
@@ -14,18 +15,18 @@ export function Lenovoid(props: VendorProps) {
       {page === "home" ? (
         <main>
           <section className="vs-hero">
-            <h1>{look === "early" ? "Thinking, rebooted." : "For those who do, and redo."}</h1>
-            <p>Lenovoid ThinkSystemic servers carry the engineering of the business laptops people trust.</p>
-            <Link to="products" go={go} className="vs-cta">Explore servers</Link>
+            <h1>{look === "early" ? t("browser-sites-2.lnvEarly") : t("browser-sites-2.lnvLate")}</h1>
+            <p>{t("browser-sites-2.lnvText")}</p>
+            <Link to="products" go={go} className="vs-cta">{t("browser-sites-2.lnvExplore")}</Link>
           </section>
           <ul className="vs-cats">{classesOf(m).map((c) => <li key={c}><Link to="products" go={go}>{c}</Link></li>)}</ul>
-          <h2>Newsroom</h2>
+          <h2>{t("browser-sites-2.lnvNews")}</h2>
           <News m={m} month={month} limit={4} />
         </main>
       ) : (
         <main><h1>{TITLE[page]}</h1><Body {...props} className="vs-body" /></main>
       )}
-      <footer>© {year} Lenovoid. All rights reserved.</footer>
+      <footer>{t("browser-sites-2.lnvFooter", { year })}</footer>
     </div>
   );
 }

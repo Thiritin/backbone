@@ -8,6 +8,7 @@ import { attachDatastore, datastoreBlock, detachDatastore } from "../../../../..
 import { deleteSnapshot, revertSnapshot, takeSnapshot } from "../../../../../sim/90-actions/snapshots";
 import { day } from "../../../hw";
 import { working } from "../../../../../sim/60-infra/status";
+import { t } from "../../../../../i18n/en";
 import { useStore } from "../../../../store";
 import type { GameState } from "../../../../../sim/50-state";
 import { vmStats } from "../../../../../sim/60-infra/stats";
@@ -254,7 +255,7 @@ export function VmWhere(p: PanelProps) {
       <header className="vsw-top">
         <span className="vsw-brand">VMwhere <b>vSphear</b>{era === "early" ? " Client" : ""}</span>
         <span className="cx-host">{p.host}</span>
-        <button className="vsw-link" onClick={p.logout}>Log Out</button>
+        <button className="vsw-link" onClick={p.logout}>{t("browser-consoles-2.logOutCap")}</button>
       </header>
       {era === "early" && (
         <div className="vsw-menu"><span>File</span><span>Edit</span><span>View</span><span>Inventory</span><span>Administration</span><span>Help</span></div>

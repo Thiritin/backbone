@@ -1,0 +1,27 @@
+import type { Dict } from "../lang";
+
+export default {
+  "error.unknownOs": () => "Dieses Betriebssystem gibt es nicht.",
+  "error.otherMedia": () => "Auf dem Installationsmedium liegt ein anderes Betriebssystem.",
+  "error.noBootDevice": () => "No bootable device",
+  "error.noImage": () => "Lade zuerst die ISO dieses Betriebssystems von dessen Website herunter.",
+  "error.stickIn": () => "Der USB-Stick steckt bereits in diesem Server.",
+  "error.stickAway": () => "Ziehe zuerst den USB-Stick aus dem Server.",
+  "error.stickOut": () => "Der USB-Stick ist nicht eingesteckt.",
+  "error.stickInstalling": () => "Der Server installiert gerade vom USB-Stick.",
+  "ipmi.log.stickIn": () => "USB-Stick eingesteckt",
+  "error.noOs": () => "Installiere zuerst ein Betriebssystem auf dieser Maschine.",
+  "error.osNotUp": () => "Das Betriebssystem der Maschine läuft nicht.",
+  "error.noUpgrade": () => "Für dieses Betriebssystem ist noch keine neuere Version erschienen.",
+  "error.notVmwhere": () => "Die App Suite wird für VMwhere-Cluster verkauft.",
+  "error.noAppSuite": () => "Dieser Cluster hat keine App Suite.",
+  "error.hasAppSuite": () => "Dieser Cluster hat bereits die App Suite.",
+  "term.console.notFound": () => "Operating system not found",
+  "term.console.osInstall": () => "Installing the system...",
+  "term.console.osUpgrade": () => "Upgrading the system...",
+  "error.noInterfaces": () => "No network interfaces detected",
+  "error.noAutoconf": () => "Network autoconfiguration failed",
+  "error.noDownload": () => "Der Installer konnte das Paket nicht herunterladen.",
+  "term.console.osInstallFailed": () => "Failed to retrieve the base system installation files.",
+  "term.console.logon": () => "Press Ctrl+Alt+Delete to log on",
+} satisfies Dict;

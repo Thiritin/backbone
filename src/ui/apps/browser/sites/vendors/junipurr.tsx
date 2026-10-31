@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
 import { Body, classesOf, Link, Nav, News, TITLE, type VendorProps } from "./VendorSite";
 import "./junipurr.css";
@@ -13,16 +14,16 @@ export function Junipurr(props: VendorProps) {
       </header>
       {page === "home" ? (
         <main>
-          <section className="vs-hero"><h1>{look === "early" ? "Routers that carry the carriers" : "Engineering simplicity, one purr at a time"}</h1></section>
+          <section className="vs-hero"><h1>{look === "early" ? t("browser-sites-2.jnpEarly") : t("browser-sites-2.jnpLate")}</h1></section>
           <div className="vs-cols">
             <ul className="vs-cats">{classesOf(m).map((c) => <li key={c}><Link to="products" go={go}>{c}</Link></li>)}</ul>
-            <div><h2>Press releases</h2><News m={m} month={month} limit={5} /></div>
+            <div><h2>{t("browser-sites-2.pressReleases")}</h2><News m={m} month={month} limit={5} /></div>
           </div>
         </main>
       ) : (
         <main><h1>{TITLE[page]}</h1><Body {...props} className="vs-body" /></main>
       )}
-      <footer>Copyright © 1999-{year} Junipurr Networks, Inc. All rights reserved.</footer>
+      <footer>{t("browser-sites-2.jnpFooter", { year })}</footer>
     </div>
   );
 }

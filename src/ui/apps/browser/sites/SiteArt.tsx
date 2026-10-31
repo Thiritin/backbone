@@ -1,3 +1,4 @@
+import { t } from "../../../../i18n/en";
 // Code-drawn pictures for the company website, tinted with the brand colour through --brand.
 const BRAND = "var(--brand)";
 const range = (n: number) => Array.from({ length: n }, (_, i) => i);
@@ -5,7 +6,7 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
 // A rack cabinet full of servers with blinking status lights.
 export function RackArt() {
   return (
-    <svg className="site-art" viewBox="0 0 320 300" role="img" aria-label="Server rack">
+    <svg className="site-art" viewBox="0 0 320 300" role="img" aria-label={t("browser-sites-1.art.rack")}>
       <ellipse cx="160" cy="288" rx="130" ry="10" fill="#00000026" />
       <rect x="70" y="10" width="180" height="276" rx="8" fill="#1b2433" />
       <rect x="82" y="22" width="156" height="252" rx="3" fill="#0d131d" />
@@ -27,7 +28,7 @@ export function AisleArt() {
   // Rack row i spans depth d(i) to d(i + 1); depth 1 is the picture edge, 0 the vanishing point at (200, 120).
   const d = (i: number) => 1 - i / 7, x = (k: number, side: number) => 200 + side * (50 + 150 * k), top = (k: number) => 120 - 110 * k, bot = (k: number) => 120 + 140 * k;
   return (
-    <svg className="site-art site-photo" viewBox="0 0 400 260" role="img" aria-label="Datacenter aisle" preserveAspectRatio="xMidYMid slice">
+    <svg className="site-art site-photo" viewBox="0 0 400 260" role="img" aria-label={t("browser-sites-1.art.aisle")} preserveAspectRatio="xMidYMid slice">
       <rect width="400" height="260" fill="#0b1120" />
       <polygon points="150,120 250,120 400,260 0,260" fill="#1f2a3f" />
       {range(7).map((i) => <line key={i} x1={x(d(i), -1)} y1={bot(d(i))} x2={x(d(i), 1)} y2={bot(d(i))} stroke="#2c3a55" />)}
@@ -56,7 +57,7 @@ export function AisleArt() {
 // A support desk: a monitor with an open ticket, a headset and a mug.
 export function DeskArt() {
   return (
-    <svg className="site-art site-photo" viewBox="0 0 400 260" role="img" aria-label="Support desk" preserveAspectRatio="xMidYMid slice">
+    <svg className="site-art site-photo" viewBox="0 0 400 260" role="img" aria-label={t("browser-sites-1.art.desk")} preserveAspectRatio="xMidYMid slice">
       <rect width="400" height="260" fill="#e9eef7" />
       <rect x="0" y="0" width="400" height="190" fill="#f3f6fc" />
       <rect x="290" y="30" width="80" height="100" rx="4" fill="#ffffff" stroke="#d5dceb" />

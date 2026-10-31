@@ -1,5 +1,7 @@
 // GDD, Specs: every order, request and service names its own resources, drawn from the size its customer's profile
 // starts from. Numbers in economy.md, Custom orders and Per-resource pricing.
+import { t } from "../../i18n/en";
+import { textRecord } from "../00-core/text";
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { cores, marketPrice, marketSetup, SIZES, sizeSpec, specPrice, type Resources, type Sla, type Spec } from "../10-catalog/products";
@@ -8,10 +10,10 @@ import { x86Share } from "../10-catalog/cpus";
 import type { GameState } from "../50-state";
 
 // What each line is called in requests, emails and lists.
-export const LINE_NAME: Record<Product, string> = {
+export const LINE_NAME: Record<Product, string> = textRecord("sim.line", {
   webHosting: "Web hosting", vps: "VPS", gameServer: "Game server", dns: "DNS hosting", vpn: "VPN", storage: "Storage",
   cloud: "Cloud server", dedicated: "Dedicated server", colocation: "Colocation", domain: "Domain", ssl: "SSL certificate", gpu: "GPU server",
-};
+});
 // Lines whose customers scale their size; the others take it as it is.
 const SCALED: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn"];
 
@@ -78,15 +80,15 @@ const num = (n: number) => `${+n.toFixed(n < 1 ? 2 : 1)}`;
 export function specText(product: Product, spec: Spec): string {
   const gb = (n: number) => `${num(n)} GB`;
   const parts: string[] =
-    product === "webHosting" ? [gb(spec.diskGb), `${spec.mailboxes} ${spec.mailboxes === 1 ? "mailbox" : "mailboxes"}`]
+    product === "webHosting" ? [gb(spec.diskGb), t("sim.spec.mailboxes", { n: spec.mailboxes })]
       : product === "vps" || product === "gameServer" || product === "cloud" ? [`${num(spec.vcpu)} vCPU`, gb(spec.ramGb), gb(spec.diskGb)]
-        : product === "gpu" ? [`${spec.gpus ?? 0} ${spec.gpus === 1 ? "GPU" : "GPUs"}`, `${num(spec.vcpu)} vCPU`, gb(spec.ramGb), gb(spec.diskGb)]
+        : product === "gpu" ? [t("sim.spec.gpus", { n: spec.gpus ?? 0 }), `${num(spec.vcpu)} vCPU`, gb(spec.ramGb), gb(spec.diskGb)]
         : product === "storage" ? [gb(spec.diskGb)]
-          : product === "dedicated" ? [`${gb(spec.ramGb)} RAM`]
+          : product === "dedicated" ? [t("sim.spec.ram", { size: gb(spec.ramGb) })]
             : product === "colocation" ? [`${spec.units ?? 0}U`, `${spec.watts ?? 0} W`]
-              : product === "dns" ? [`${spec.zones ?? 0} ${spec.zones === 1 ? "zone" : "zones"}`]
-                : product === "vpn" ? [`${spec.users ?? 0} ${spec.users === 1 ? "user" : "users"}`]
+              : product === "dns" ? [t("sim.spec.zones", { n: spec.zones ?? 0 })]
+                : product === "vpn" ? [t("sim.spec.users", { n: spec.users ?? 0 })]
               : [];
-  const addresses = [...(spec.ipv4 ? [`${spec.ipv4} dedicated IPv4`] : []), ...(spec.ipv6 ? ["IPv6"] : [])];
+  const addresses = [...(spec.ipv4 ? [t("sim.spec.ipv4", { n: spec.ipv4 })] : []), ...(spec.ipv6 ? ["IPv6"] : [])];
   return [LINE_NAME[product], ...parts, ...(spec.arch ? [spec.arch] : []), ...addresses].join(", ");
 }

@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { registrarHost } from "../../../../../sim/10-catalog/registrars";
 import { Account, DomainSearch, own, Program, TldPrices, type RegistrarProps } from "./RegistrarPage";
 import "./namecheep.css";
@@ -15,11 +16,11 @@ export function NameCheep({ game, r, look, year }: RegistrarProps) {
   if (look === "late") {
     return (
       <div className="rg rg-namecheep late">
-        <header>{wm}<span className="tag">Domains, hosting and SSL for less</span></header>
-        <section className="hero"><DomainSearch game={game} r={r} title="Find your perfect domain" /></section>
+        <header>{wm}<span className="tag">{t("browser-sites-1.nc.tagLate")}</span></header>
+        <section className="hero"><DomainSearch game={game} r={r} title={t("browser-sites-1.nc.find")} /></section>
         <main>
-          <section className="card"><TldPrices game={game} r={r} title="Domain prices" columns={2} /></section>
-          <section className="card"><Program game={game} r={r} title="Reseller program" /></section>
+          <section className="card"><TldPrices game={game} r={r} title={t("browser-sites-1.nc.prices")} columns={2} /></section>
+          <section className="card"><Program game={game} r={r} title={t("browser-sites-1.nc.program")} /></section>
           {own(game, r) && <section className="card wide"><Account game={game} r={r} /></section>}
         </main>
         <footer>© {year} {registrarHost(r)}</footer>
@@ -28,15 +29,15 @@ export function NameCheep({ game, r, look, year }: RegistrarProps) {
   }
   return (
     <div className="rg rg-namecheep early">
-      <header>{wm}<span className="tag">Cheap domain names!</span></header>
+      <header>{wm}<span className="tag">{t("browser-sites-1.nc.tagEarly")}</span></header>
       <div className="stripe" />
       <main>
-        <section className="box find"><DomainSearch game={game} r={r} title="Search for a domain name" button="Go!" /></section>
-        <section className="box"><TldPrices game={game} r={r} title="Our low prices" grid /></section>
-        <section className="box"><Program game={game} r={r} title="Become a reseller" sign="Sign up" /></section>
+        <section className="box find"><DomainSearch game={game} r={r} title={t("browser-sites-1.nc.search")} button={t("browser-sites-1.nc.go")} /></section>
+        <section className="box"><TldPrices game={game} r={r} title={t("browser-sites-1.nc.low")} grid /></section>
+        <section className="box"><Program game={game} r={r} title={t("browser-sites-1.nc.become")} sign={t("browser-sites-1.nc.signUp")} /></section>
         {own(game, r) && <section className="box"><Account game={game} r={r} /></section>}
       </main>
-      <footer>Copyright © 2000-{year} {registrarHost(r)}. All rights reserved.</footer>
+      <footer>{t("browser-sites-1.nc.copyright", { year, host: registrarHost(r) })}</footer>
     </div>
   );
 }

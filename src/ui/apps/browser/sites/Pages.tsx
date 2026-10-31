@@ -19,8 +19,8 @@ export function CustomerSite({ game, serviceId }: { game: GameState; serviceId: 
   if (site.status === "defaced") {
     return (
       <div className="cs cs-defaced">
-        <h1>Hacked by xX_Pwn3r_Xx</h1>
-        <p>Greetings to everyone with a weak password.</p>
+        <h1>{t("browser-sites-1.pg.hacked")}</h1>
+        <p>{t("browser-sites-1.pg.greetings")}</p>
       </div>
     );
   }
@@ -28,7 +28,7 @@ export function CustomerSite({ game, serviceId }: { game: GameState; serviceId: 
     <div className="cs" style={{ "--hue": hue } as CSSProperties}>
       <header className="cs-head"><h1>{site.title}</h1></header>
       <p className="cs-blurb">{t(site.blurb)}</p>
-      {site.sponsored && <footer className="cs-sponsor">Sponsored by <CompanyMark company={game.company} className="co-mark cs-sponsor-mark" />{game.company.name}</footer>}
+      {site.sponsored && <footer className="cs-sponsor">{t("browser-sites-1.pg.sponsored")} <CompanyMark company={game.company} className="co-mark cs-sponsor-mark" />{game.company.name}</footer>}
     </div>
   );
 }
@@ -44,14 +44,14 @@ export function VideoPage() {
         <span className="yt-logo"><i><Play aria-hidden /></i>YouTub</span>
       </header>
       <div className="yt-body">
-        <button className="yt-player" aria-label="Play" onClick={() => window.open(VIDEO_REAL, "_blank", "noopener,noreferrer")}>
+        <button className="yt-player" aria-label={t("browser-sites-1.pg.play")} onClick={() => window.open(VIDEO_REAL, "_blank", "noopener,noreferrer")}>
           <span className="yt-play"><Play aria-hidden fill="currentColor" /></span>
         </button>
         <h1>{VIDEO_TITLE}</h1>
         <div className="yt-meta">
           <span className="yt-artist"><i>R</i>{VIDEO_ARTIST}</span>
-          <span className="num">{VIEWS.toLocaleString(LOCALE)} views</span>
-          <button className="yt-like" aria-pressed={liked} onClick={() => setLiked(!liked)}>{liked ? "Liked" : "Like"}</button>
+          <span className="num">{t("browser-sites-1.pg.views", { n: VIEWS.toLocaleString(LOCALE) })}</span>
+          <button className="yt-like" aria-pressed={liked} onClick={() => setLiked(!liked)}>{liked ? t("browser-sites-1.pg.liked") : t("browser-sites-1.pg.like")}</button>
         </div>
       </div>
     </div>
@@ -65,11 +65,11 @@ export function PhishingPage({ sender }: { sender: string }) {
     <div className="bk">
       <header className="bk-head"><i>/</i>{bank.name}</header>
       <form className="bk-form" onSubmit={(e) => e.preventDefault()}>
-        <h1>Online-Banking</h1>
-        <label>Branch<input inputMode="numeric" /></label>
-        <label>Account<input inputMode="numeric" /></label>
-        <label>PIN<input type="password" /></label>
-        <button>Log in</button>
+        <h1>{t("browser-sites-1.pg.banking")}</h1>
+        <label>{t("browser-sites-1.pg.branch")}<input inputMode="numeric" /></label>
+        <label>{t("browser-sites-1.pg.account")}<input inputMode="numeric" /></label>
+        <label>{t("browser-sites-1.pg.pin")}<input type="password" /></label>
+        <button>{t("browser-sites-1.pg.login")}</button>
       </form>
     </div>
   );
@@ -78,8 +78,8 @@ export function PhishingPage({ sender }: { sender: string }) {
 export function NotFound({ host }: { host: string }) {
   return (
     <div className="br-error">
-      <h1>Not found</h1>
-      <p>The address {host} does not lead to a page.</p>
+      <h1>{t("browser-sites-1.pg.notFound")}</h1>
+      <p>{t("browser-sites-1.pg.notFoundText", { host })}</p>
     </div>
   );
 }
@@ -87,8 +87,8 @@ export function NotFound({ host }: { host: string }) {
 export function CannotReach({ host }: { host: string }) {
   return (
     <div className="br-error">
-      <h1>Cannot reach this site</h1>
-      <p>{host} took too long to respond.</p>
+      <h1>{t("browser-sites-1.pg.cannotReach")}</h1>
+      <p>{t("browser-sites-1.pg.timeout", { host })}</p>
     </div>
   );
 }
@@ -96,7 +96,7 @@ export function CannotReach({ host }: { host: string }) {
 export function HostPage({ host, children }: { host: string; children?: ReactNode }) {
   return (
     <div className="br-error">
-      <h1>This host serves no web page</h1>
+      <h1>{t("browser-sites-1.pg.noPage")}</h1>
       <p>{host}</p>
       {children}
     </div>

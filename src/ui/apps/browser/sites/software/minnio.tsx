@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Features, Link, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./minnio.css";
@@ -11,13 +12,13 @@ export function MinnIO(props: SiteProps) {
       {page === "home" ? (
         <>
           <div className="hero">
-            <div><h1>{p.site.tagline}</h1><p>{p.site.blurb}</p><Link to="download" go={go} className="btn">Download</Link></div>
+            <div><h1>{p.site.tagline}</h1><p>{p.site.blurb}</p><Link to="download" go={go} className="btn">{t("browser-sites-1.mi.download")}</Link></div>
             {look === "early" && <pre className="term">{"$ ./minnio server /data\nAPI: http://10.0.0.5:9000\nConsole: http://10.0.0.5:9001\n\nStatus: 1 Online, 0 Offline."}</pre>}
           </div>
           <Features p={p} className="cards" />
         </>
       ) : <main><Body {...props} /></main>}
-      <footer>© {year} MinnIO, Inc.</footer>
+      <footer>{t("browser-sites-1.mi.footer", { year })}</footer>
     </div>
   );
 }

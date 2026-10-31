@@ -5,6 +5,7 @@ import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { vmStats } from "../../../../../sim/60-infra/stats";
 import { nodeUsage } from "../../../../../sim/60-infra/usage";
 import { mountableImages } from "../../../../../sim/90-actions/media";
+import { t } from "../../../../../i18n/en";
 import { useStore } from "../../../../store";
 import { bootLines } from "../../../console/lunix";
 import { Chart, Donut, niceMax } from "../Chart";
@@ -19,7 +20,7 @@ const FLAVORS: [string, Resources][] = [
   ["m1.large", { vcpu: 4, ramGb: 8, diskGb: 80 }], ["m1.xlarge", { vcpu: 8, ramGb: 16, diskGb: 160 }],
 ];
 const same = (a: Resources, b: Resources) => a.vcpu === b.vcpu && a.ramGb === b.ramGb && a.diskGb === b.diskGb;
-const flavorOf = (r: Resources) => FLAVORS.find(([, x]) => same(x, r))?.[0] ?? `custom ${r.vcpu}/${r.ramGb}/${r.diskGb}`;
+const flavorOf = (r: Resources) => FLAVORS.find(([, x]) => same(x, r))?.[0] ?? t("browser-consoles-1.hzCustomFlavor", { spec: `${r.vcpu}/${r.ramGb}/${r.diskGb}` });
 const QUOTA_INSTANCES = 10;
 
 // The project Overview: the limit pies, then the day's usage summary and the usage per instance.
@@ -29,28 +30,28 @@ export function Overview({ game, c, vms }: { game: GameState; c: Cluster; vms: V
   const rows = vms.map((v) => ({ v, st: vmStats(game, v.id)! })), sum = (f: (x: (typeof rows)[number]) => number) => Math.round(rows.reduce((n, x) => n + f(x), 0) * 100) / 100;
   return (
     <>
-      <h1>Overview</h1>
-      <h4 className="cx-h">Limit Summary</h4>
+      <h1>{t("browser-consoles-1.hzOverview")}</h1>
+      <h4 className="cx-h">{t("browser-consoles-1.hzLimitSummary")}</h4>
       <div className="hz-pies">
-        <Donut label="Instances" used={vms.length} of={QUOTA_INSTANCES} text={`Used ${vms.length} of ${QUOTA_INSTANCES}`} />
-        <Donut label="VCPUs" used={used.vcpu} of={cap.vcpu} text={`Used ${used.vcpu} of ${cap.vcpu}`} />
-        <Donut label="RAM" used={used.ramGb} of={cap.ramGb} text={`Used ${used.ramGb}GB of ${cap.ramGb}GB`} />
-        <Donut label="Volume Storage" used={used.diskGb} of={cap.diskGb} text={`Used ${used.diskGb}GB of ${cap.diskGb}GB`} />
+        <Donut label={t("browser-consoles-1.hzInstances")} used={vms.length} of={QUOTA_INSTANCES} text={t("browser-consoles-1.hzUsedOf", { a: vms.length, b: QUOTA_INSTANCES })} />
+        <Donut label={t("browser-consoles-1.hzVcpus")} used={used.vcpu} of={cap.vcpu} text={t("browser-consoles-1.hzUsedOf", { a: used.vcpu, b: cap.vcpu })} />
+        <Donut label={t("browser-consoles-1.hzRam")} used={used.ramGb} of={cap.ramGb} text={t("browser-consoles-1.hzUsedOf", { a: `${used.ramGb}GB`, b: `${cap.ramGb}GB` })} />
+        <Donut label={t("browser-consoles-1.hzVolumeStorage")} used={used.diskGb} of={cap.diskGb} text={t("browser-consoles-1.hzUsedOf", { a: `${used.diskGb}GB`, b: `${cap.diskGb}GB` })} />
       </div>
       <AlarmList game={game} c={c} alarms={summaryOf(game, c, null).alarms} className="cx-table hz-table" />
-      <h4 className="cx-h">Usage Summary</h4>
+      <h4 className="cx-h">{t("browser-consoles-1.hzUsageSummary")}</h4>
       <Facts facts={[
-        { label: "Active Instances", value: String(vms.filter((v) => v.st === "running").length), num: true }, { label: "Active RAM", value: `${used.ramGb}GB`, num: true },
-        { label: "This Period's VCPU-Hours", value: String(sum((x) => x.st.totals.vcpuHours)), num: true },
-        { label: "This Period's GB-Hours", value: String(sum((x) => x.st.totals.diskGbHours)), num: true },
-        { label: "This Period's RAM-Hours", value: String(sum((x) => x.st.totals.ramGbHours * 1024)), num: true },
+        { label: t("browser-consoles-1.hzActiveInstances"), value: String(vms.filter((v) => v.st === "running").length), num: true }, { label: t("browser-consoles-1.hzActiveRam"), value: `${used.ramGb}GB`, num: true },
+        { label: t("browser-consoles-1.hzVcpuHours"), value: String(sum((x) => x.st.totals.vcpuHours)), num: true },
+        { label: t("browser-consoles-1.hzGbHours"), value: String(sum((x) => x.st.totals.diskGbHours)), num: true },
+        { label: t("browser-consoles-1.hzRamHours"), value: String(sum((x) => x.st.totals.ramGbHours * 1024)), num: true },
       ]} />
-      <h4 className="cx-h">Usage</h4>
+      <h4 className="cx-h">{t("browser-consoles-1.hzUsage")}</h4>
       <table className="cx-table hz-table">
-        <thead><tr><th>Instance Name</th><th>VCPUs</th><th>Disk</th><th>RAM</th><th>Time since created</th></tr></thead>
+        <thead><tr><th>{t("browser-consoles-1.hzInstanceName")}</th><th>{t("browser-consoles-1.hzVcpus")}</th><th>{t("browser-consoles-1.hzDisk")}</th><th>{t("browser-consoles-1.hzRam")}</th><th>{t("browser-consoles-1.hzTimeSinceCreated")}</th></tr></thead>
         <tbody>
-          {rows.length === 0 && <tr><td colSpan={5} className="cx-empty">No items to display.</td></tr>}
-          {rows.map(({ v, st }) => <tr key={v.id}><td>{v.name}</td><td className="num">{v.w.vcpu}</td><td className="num">{v.w.diskGb}GB</td><td className="num">{v.w.ramGb}GB</td><td className="num">{st.uptimeHours === null ? "-" : `${Math.floor(st.uptimeHours / 24)} days, ${st.uptimeHours % 24} hours`}</td></tr>)}
+          {rows.length === 0 && <tr><td colSpan={5} className="cx-empty">{t("browser-consoles-1.hzNoItems")}</td></tr>}
+          {rows.map(({ v, st }) => <tr key={v.id}><td>{v.name}</td><td className="num">{v.w.vcpu}</td><td className="num">{v.w.diskGb}GB</td><td className="num">{v.w.ramGb}GB</td><td className="num">{st.uptimeHours === null ? "-" : t("browser-consoles-1.hzDaysHours", { d: Math.floor(st.uptimeHours / 24), h: st.uptimeHours % 24 })}</td></tr>)}
         </tbody>
       </table>
     </>
@@ -62,19 +63,19 @@ export function InstanceOverview({ game, v, flavor }: { game: GameState; v: Vm; 
   const facts = vmFacts(game, v), ring = vmStats(game, v.id)!.ring, net = ring.map((x) => x.netMbit), end = game.hour;
   return (
     <>
-      <h4 className="cx-h">Info</h4>
-      <Facts facts={[{ label: "Name", value: v.name }, { label: "ID", value: v.id, num: true }, facts.status, { label: "Availability Zone", value: "nova" }, { ...facts.node, label: "Host" }]} />
-      <h4 className="cx-h">Specs</h4>
-      <Facts facts={[{ label: "Flavor Name", value: flavor, num: true }, { label: "RAM", value: `${v.w.ramGb}GB`, num: true }, { label: "VCPUs", value: `${v.w.vcpu} VCPU`, num: true }, { label: "Disk", value: `${v.w.diskGb}GB`, num: true }]} />
-      <h4 className="cx-h">IP Addresses</h4>
-      <Facts facts={[{ label: "Private", value: v.ip || "-", num: true }]} />
-      <h4 className="cx-h">Security Groups</h4>
+      <h4 className="cx-h">{t("browser-consoles-1.hzInfo")}</h4>
+      <Facts facts={[{ label: t("browser-consoles-1.name"), value: v.name }, { label: "ID", value: v.id, num: true }, facts.status, { label: t("browser-consoles-1.hzAvailabilityZone"), value: "nova" }, { ...facts.node, label: t("browser-consoles-1.hzHost") }]} />
+      <h4 className="cx-h">{t("browser-consoles-1.hzSpecs")}</h4>
+      <Facts facts={[{ label: t("browser-consoles-1.hzFlavorName"), value: flavor, num: true }, { label: t("browser-consoles-1.hzRam"), value: `${v.w.ramGb}GB`, num: true }, { label: t("browser-consoles-1.hzVcpus"), value: `${v.w.vcpu} VCPU`, num: true }, { label: t("browser-consoles-1.hzDisk"), value: `${v.w.diskGb}GB`, num: true }]} />
+      <h4 className="cx-h">{t("browser-consoles-1.hvIpAddresses")}</h4>
+      <Facts facts={[{ label: t("browser-consoles-1.hzPrivate"), value: v.ip || "-", num: true }]} />
+      <h4 className="cx-h">{t("browser-consoles-1.hzSecurityGroups")}</h4>
       <Facts facts={[{ label: "default", value: "ALLOW IPv4 to 0.0.0.0/0, ALLOW IPv4 from default" }]} />
-      <h4 className="cx-h">Metadata</h4>
-      <Facts facts={[{ label: "Key Name", value: "None" }, { label: "Image Name", value: v.media ? isoName(v.media) : v.own ? v.os : "-" }]} />
-      <h4 className="cx-h">Volumes Attached</h4>
-      <Facts facts={[{ label: "Volume", value: "No volumes attached." }]} />
-      <MediaMenu game={game} v={v} label="Rescue image" none="None" />
+      <h4 className="cx-h">{t("browser-consoles-1.hzMetadata")}</h4>
+      <Facts facts={[{ label: t("browser-consoles-1.hzKeyName"), value: t("browser-consoles-1.none") }, { label: t("browser-consoles-1.hzImageName"), value: v.media ? isoName(v.media) : v.own ? v.os : "-" }]} />
+      <h4 className="cx-h">{t("browser-consoles-1.hzVolumesAttached")}</h4>
+      <Facts facts={[{ label: t("browser-consoles-1.hzVolume"), value: t("browser-consoles-1.hzNoVolumes") }]} />
+      <MediaMenu game={game} v={v} label={t("browser-consoles-1.hzRescueImage")} none={t("browser-consoles-1.none")} />
       <div className="cx-charts">
         <Chart className="hz-chart" kind="line" title="cpu_util" values={ring.map((x) => x.cpu)} end={end} />
         <Chart className="hz-chart" kind="line" title="memory.usage" values={ring.map((x) => x.ram)} end={end} />
@@ -86,6 +87,7 @@ export function InstanceOverview({ game, v, flavor }: { game: GameState; v: Vm; 
 }
 
 type Page = "overview" | "instances" | "images" | "keys" | "hypervisors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
+const TAB_LABELS = { Overview: () => t("browser-consoles-1.hzOverview"), Log: () => t("browser-consoles-1.hzLog"), Console: () => t("browser-consoles-1.console") };
 
 export function Horizont(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
@@ -93,28 +95,28 @@ export function Horizont(p: PanelProps) {
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
     <div className="cx hz hz-login" data-era={era}>
-      <LoginForm className="hz-card" onLogin={p.login} button="Connect">
+      <LoginForm className="hz-card" onLogin={p.login} button={t("browser-consoles-1.hvConnectBtn")}>
         <div className="hz-logo">openstash</div>
         <div className="cx-host">{p.host}</div>
-        <label className="cx-field">Domain<input defaultValue="default" autoComplete="off" /></label>
+        <label className="cx-field">{t("browser-consoles-1.domain")}<input defaultValue="default" autoComplete="off" /></label>
       </LoginForm>
     </div>
   );
   const vm = typeof page === "object" ? vms.find((v) => v.id === page.vm) : undefined, facts = vm && vmFacts(game, vm);
   const finish = () => { const id = nv.create(); if (id) { setLaunching(false); setPage({ vm: id, tab: "Overview" }); } };
-  const nav: [string, [Page, string][]][] = [
-    ["Project", [["overview", "Overview"], ["instances", "Instances"], ["images", "Images"], ["keys", "Key Pairs"]]],
-    ["Admin", [["hypervisors", "Hypervisors"], ["system", "System Information"]]],
+  const nav: [string, string, [Page, string][]][] = [
+    ["Project", t("browser-consoles-1.hzProject"), [["overview", t("browser-consoles-1.hzOverview")], ["instances", t("browser-consoles-1.hzInstances")], ["images", t("browser-consoles-1.hzImages")], ["keys", t("browser-consoles-1.hzKeyPairs")]]],
+    ["Admin", t("browser-consoles-1.hzAdmin"), [["hypervisors", t("browser-consoles-1.hzHypervisors")], ["system", t("browser-consoles-1.hzSystemInfo")]]],
   ];
   return (
     <div className="cx cx-hv hz" data-era={era}>
-      <header className="hz-top"><span className="hz-logo">openstash</span><span className="hz-proj">admin</span><span className="cx-host">{p.host}</span><button className="hz-out" onClick={p.logout}>Sign Out</button></header>
+      <header className="hz-top"><span className="hz-logo">openstash</span><span className="hz-proj">admin</span><span className="cx-host">{p.host}</span><button className="hz-out" onClick={p.logout}>{t("browser-consoles-1.hzSignOut")}</button></header>
       <div className="cx-hv-body">
         <nav className="hz-side">
-          {nav.map(([group, items]) => (
+          {nav.map(([group, groupLabel, items]) => (
             <section key={group}>
-              <h3>{group}</h3>
-              {group === "Project" && <h4>Compute</h4>}
+              <h3>{groupLabel}</h3>
+              {group === "Project" && <h4>{t("browser-consoles-1.hzCompute")}</h4>}
               {items.map(([id, label]) => <button key={label} aria-pressed={page === id || (id === "instances" && !!vm)} onClick={() => setPage(id)}>{label}</button>)}
             </section>
           ))}
@@ -123,21 +125,21 @@ export function Horizont(p: PanelProps) {
           {page === "overview" && (
             <>
               <Overview game={game} c={c} vms={vms} />
-              <TaskLog game={game} c={c} vms={vms} title="Recent Events" className="cx-tasks hz-tasks" />
+              <TaskLog game={game} c={c} vms={vms} title={t("browser-consoles-1.hzRecentEvents")} className="cx-tasks hz-tasks" />
             </>
           )}
           {page === "instances" && (
             <>
-              <div className="cx-hv-head"><h1>Instances</h1>{f.create && <button className="cx-btn primary" onClick={() => setLaunching(true)}>Launch Instance</button>}</div>
+              <div className="cx-hv-head"><h1>{t("browser-consoles-1.hzInstances")}</h1>{f.create && <button className="cx-btn primary" onClick={() => setLaunching(true)}>{t("browser-consoles-1.hzLaunchInstance")}</button>}</div>
               <table className="cx-table hz-table">
-                <thead><tr><th>Instance Name</th><th>Image Name</th><th>IP Address</th><th>Flavor</th><th>Status</th><th>Power State</th></tr></thead>
+                <thead><tr><th>{t("browser-consoles-1.hzInstanceName")}</th><th>{t("browser-consoles-1.hzImageName")}</th><th>{t("browser-consoles-1.ipAddress")}</th><th>{t("browser-consoles-1.hzFlavor")}</th><th>{t("browser-consoles-1.status")}</th><th>{t("browser-consoles-1.hzPowerState")}</th></tr></thead>
                 <tbody>
-                  {vms.length === 0 && <tr><td colSpan={6} className="cx-empty">No items to display.</td></tr>}
+                  {vms.length === 0 && <tr><td colSpan={6} className="cx-empty">{t("browser-consoles-1.hzNoItems")}</td></tr>}
                   {vms.map((v) => (
                     <tr key={v.id}>
                       <td><button className="hz-a" onClick={() => setPage({ vm: v.id, tab: "Overview" })}>{v.name}</button>{v.sub && <span className="cx-sub">{v.sub}</span>}</td>
                       <td>{v.media ? isoName(v.media) : "-"}</td><td className="num">{v.ip}</td><td className="num">{flavorOf(v.w)}</td>
-                      <td><span className={`cx-state ${v.tone}`}>{v.tone === "bad" ? "Error" : "Active"}</span></td><td>{v.st === "stopped" ? "Shutdown" : v.state}</td>
+                      <td><span className={`cx-state ${v.tone}`}>{v.tone === "bad" ? t("browser-consoles-1.error") : t("browser-consoles-1.active")}</span></td><td>{v.st === "stopped" ? t("browser-consoles-1.hzShutdown") : v.state}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -146,48 +148,48 @@ export function Horizont(p: PanelProps) {
           )}
           {vm && facts && typeof page === "object" && (
             <>
-              <div className="cx-hv-head"><h1>{vm.name}</h1><Toolbar actions={vm.actions} className="cx-toolbar hz-tools" labels={{ start: "Start Instance", stop: "Shut Off Instance", reset: "Hard Reboot Instance", resize: "Resize Instance", migrate: "Live Migrate Instance", delete: "Delete Instance", console: "Console" }} /></div>
+              <div className="cx-hv-head"><h1>{vm.name}</h1><Toolbar actions={vm.actions} className="cx-toolbar hz-tools" labels={{ start: t("browser-consoles-1.hzStartInstance"), stop: t("browser-consoles-1.hzShutOffInstance"), reset: t("browser-consoles-1.hzHardReboot"), resize: t("browser-consoles-1.hzResizeInstance"), migrate: t("browser-consoles-1.hzLiveMigrate"), delete: t("browser-consoles-1.hzDeleteInstance"), console: t("browser-consoles-1.console") }} /></div>
               {vm.panel}
-              <nav className="cx-hv-tabs hz-tabs">{(["Overview", "Log", "Console"] as const).map((t) => <button key={t} aria-pressed={page.tab === t} onClick={() => setPage({ vm: vm.id, tab: t })}>{t}</button>)}</nav>
+              <nav className="cx-hv-tabs hz-tabs">{(["Overview", "Log", "Console"] as const).map((x) => <button key={x} aria-pressed={page.tab === x} onClick={() => setPage({ vm: vm.id, tab: x })}>{TAB_LABELS[x]()}</button>)}</nav>
               {page.tab === "Overview" && <InstanceOverview game={game} v={vm} flavor={flavorOf(vm.w)} />}
               {page.tab === "Log" && (
                 <>
-                  <h4 className="cx-h">Instance Console Log</h4>
+                  <h4 className="cx-h">{t("browser-consoles-1.hzConsoleLog")}</h4>
                   <pre className="hz-log">{(vm.w.os && vm.w.os.id !== "windoors" && vm.st !== "stopped" ? bootLines(game, vm.w, vm.w.os.version).map((l) => l.text) : tasks(game, c, [vm]).map((x) => `${x.text}: ${x.status}`)).join("\n")}</pre>
                 </>
               )}
               {page.tab === "Console" && (
                 <div className="hz-console">
-                  <h4 className="cx-h">Instance Console</h4>
+                  <h4 className="cx-h">{t("browser-consoles-1.hzInstanceConsole")}</h4>
                   <ConsoleThumb game={game} v={vm} className="cx-thumb hz-thumb" />
-                  <button className="cx-btn primary" disabled={!vm.own} onClick={() => openConsole(vm.id)}>Open console</button>
+                  <button className="cx-btn primary" disabled={!vm.own} onClick={() => openConsole(vm.id)}>{t("browser-consoles-1.hzOpenConsole")}</button>
                 </div>
               )}
             </>
           )}
           {page === "images" && (
             <>
-              <h1>Images</h1>
+              <h1>{t("browser-consoles-1.hzImages")}</h1>
               <table className="cx-table hz-table">
-                <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>Format</th></tr></thead>
+                <thead><tr><th>{t("browser-consoles-1.name")}</th><th>{t("browser-consoles-1.hzType")}</th><th>{t("browser-consoles-1.status")}</th><th>{t("browser-consoles-1.hzFormat")}</th></tr></thead>
                 <tbody>
-                  {mountableImages(game).length === 0 && <tr><td colSpan={4} className="cx-empty">No items to display.</td></tr>}
-                  {mountableImages(game).map((o) => <tr key={o}><td>{isoName(o)}</td><td>Image</td><td>Active</td><td>ISO</td></tr>)}
+                  {mountableImages(game).length === 0 && <tr><td colSpan={4} className="cx-empty">{t("browser-consoles-1.hzNoItems")}</td></tr>}
+                  {mountableImages(game).map((o) => <tr key={o}><td>{isoName(o)}</td><td>{t("browser-consoles-1.hzImage")}</td><td>{t("browser-consoles-1.active")}</td><td>ISO</td></tr>)}
                 </tbody>
               </table>
             </>
           )}
-          {page === "keys" && (<><h1>Key Pairs</h1><table className="cx-table hz-table"><thead><tr><th>Key Pair Name</th><th>Fingerprint</th></tr></thead><tbody><tr><td colSpan={2} className="cx-empty">No items to display.</td></tr></tbody></table></>)}
+          {page === "keys" && (<><h1>{t("browser-consoles-1.hzKeyPairs")}</h1><table className="cx-table hz-table"><thead><tr><th>{t("browser-consoles-1.hzKeyPairName")}</th><th>{t("browser-consoles-1.hzFingerprint")}</th></tr></thead><tbody><tr><td colSpan={2} className="cx-empty">{t("browser-consoles-1.hzNoItems")}</td></tr></tbody></table></>)}
           {page === "hypervisors" && (<>
-            <h1>All Hypervisors</h1>
-            <h4 className="cx-h">Hypervisor Summary</h4>
-            <ResourceBars use={health.use} labels={["VCPU Usage", "Memory Usage", "Local Disk Usage"]} />
+            <h1>{t("browser-consoles-1.hzAllHypervisors")}</h1>
+            <h4 className="cx-h">{t("browser-consoles-1.hzHypervisorSummary")}</h4>
+            <ResourceBars use={health.use} labels={[t("browser-consoles-1.hzVcpuUsage"), t("browser-consoles-1.hzMemoryUsage"), t("browser-consoles-1.hzLocalDiskUsage")]} />
             <NodeList game={game} c={c} f={f} className="cx-table hz-table" />
-            {health.alarms.length > 0 && <><h4 className="cx-h">Alarms</h4><AlarmList game={game} c={c} alarms={health.alarms} className="cx-table hz-table" /></>}
+            {health.alarms.length > 0 && <><h4 className="cx-h">{t("browser-consoles-1.hzAlarms")}</h4><AlarmList game={game} c={c} alarms={health.alarms} className="cx-table hz-table" /></>}
           </>)}
           {page === "system" && (
             <>
-              <h1>System Information</h1>
+              <h1>{t("browser-consoles-1.hzSystemInfo")}</h1>
               <Facts facts={sw.facts} />
               <Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
               {sw.panel}
@@ -198,12 +200,12 @@ export function Horizont(p: PanelProps) {
       </div>
       {launching && (
         <div className="cx-wiz-back">
-          <Wizard title="Launch Instance" className="hz-wiz" finish="Launch Instance" onCancel={() => setLaunching(false)} onFinish={finish} steps={[
-            { id: "details", label: "Details", body: <Facts facts={[{ label: "Project", value: "admin" }, { label: "Availability Zone", value: "nova" }, { label: "Count", value: "1", num: true }]} /> },
-            { id: "source", label: "Source", body: nv.isoPick("Image", "None") },
-            { id: "flavor", label: "Flavor", body: (
+          <Wizard title={t("browser-consoles-1.hzLaunchInstance")} className="hz-wiz" finish={t("browser-consoles-1.hzLaunchInstance")} onCancel={() => setLaunching(false)} onFinish={finish} steps={[
+            { id: "details", label: t("browser-consoles-1.hzDetails"), body: <Facts facts={[{ label: t("browser-consoles-1.hzProject"), value: "admin" }, { label: t("browser-consoles-1.hzAvailabilityZone"), value: "nova" }, { label: t("browser-consoles-1.hzCount"), value: "1", num: true }]} /> },
+            { id: "source", label: t("browser-consoles-1.hzSource"), body: nv.isoPick(t("browser-consoles-1.hzImage"), t("browser-consoles-1.none")) },
+            { id: "flavor", label: t("browser-consoles-1.hzFlavor"), body: (
               <table className="cx-table hz-table">
-                <thead><tr><th /><th>Name</th><th>VCPUs</th><th>RAM</th><th>Root Disk</th></tr></thead>
+                <thead><tr><th /><th>{t("browser-consoles-1.name")}</th><th>{t("browser-consoles-1.hzVcpus")}</th><th>{t("browser-consoles-1.hzRam")}</th><th>{t("browser-consoles-1.hzRootDisk")}</th></tr></thead>
                 <tbody>
                   {FLAVORS.map(([name, r]) => (
                     <tr key={name} onClick={() => nv.setSize(r)}>
@@ -213,7 +215,7 @@ export function Horizont(p: PanelProps) {
                 </tbody>
               </table>
             ) },
-            { id: "net", label: "Networks", body: <Facts facts={[{ label: "Network", value: "private" }, { label: "Subnet", value: "private-subnet" }]} /> },
+            { id: "net", label: t("browser-consoles-1.hzNetworks"), body: <Facts facts={[{ label: t("browser-consoles-1.hvNetwork"), value: "private" }, { label: t("browser-consoles-1.hzSubnet"), value: "private-subnet" }]} /> },
           ]} />
         </div>
       )}

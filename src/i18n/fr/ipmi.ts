@@ -1,0 +1,42 @@
+import type { Dict } from "../lang";
+
+const FAILED: Record<string, string> = {
+  hdd: "Disque dur en panne", ssd: "SSD en panne", nvme: "Disque NVMe en panne", psu: "Alimentation en panne", fan: "Ventilateur en panne",
+  ram: "Barrette de RAM en panne", board: "Carte mère en panne", cpu: "Processeur en panne", nic: "Carte réseau en panne",
+};
+
+export default {
+  "ipmi.log.powerOn": () => "Mise sous tension",
+  "ipmi.log.shutdown": () => "Arrêt propre",
+  "ipmi.log.pulled": () => "Alimentation perdue",
+  "ipmi.log.reset": () => "Réinitialisation forcée",
+  "ipmi.log.cycle": () => "Cycle d'alimentation",
+  "ipmi.log.resync": () => "Resynchronisation de la grappe lancée",
+  "ipmi.log.corrupted": () => "Données corrompues après un arrêt brutal",
+  "ipmi.log.recovered": () => "Données récupérées",
+  "ipmi.log.hung": () => "Le système d'exploitation ne répond plus",
+  "ipmi.log.bmcHung": () => "Le contrôleur d'administration ne répond plus",
+  "ipmi.log.bmcReset": () => "Contrôleur d'administration réinitialisé",
+  ...Object.fromEntries(Object.entries(FAILED).map(([kind, text]) => [`ipmi.log.failed.${kind}`, () => text])),
+  "event.serverHung.title": () => "Serveur figé",
+  "event.serverHung.text": (p) => `${p.device} ne répond plus. Ses charges de travail sont à l'arrêt jusqu'à sa réinitialisation.`,
+  "event.bmcHung.title": () => "Contrôleur d'administration figé",
+  "event.bmcHung.text": (p) => `Le contrôleur d'administration de ${p.device} ne répond plus.`,
+  "event.dataCorrupted.title": () => "Données corrompues",
+  "event.dataCorrupted.text": (p) => `${p.device} a perdu le courant en fonctionnement. ${p.count} ${Number(p.count) <= 1 ? "charge de travail doit" : "charges de travail doivent"} être récupérée${Number(p.count) <= 1 ? "" : "s"}.`,
+  "event.recovered.title": () => "Charge de travail récupérée",
+  "event.recovered.text": (p) => `Une charge de travail de ${p.device} fonctionne de nouveau.`,
+  "error.alreadyOff": () => "Le serveur est déjà éteint.",
+  "error.unresponsive": () => "Le serveur ne répond pas.",
+  "error.noBmc": () => "Ce serveur n'a pas de contrôleur d'administration.",
+  "error.bmcHung": () => "Le contrôleur d'administration ne répond pas.",
+  "error.bmcFine": () => "Le contrôleur d'administration répond.",
+  "error.notHung": () => "Le serveur n'est pas figé.",
+  "error.notCorrupted": () => "Les données ne sont pas corrompues.",
+  "error.needsRestore": () => "La récupération a échoué. Restaure depuis la sauvegarde.",
+  "error.pduInstalled": () => "Cette baie a déjà une PDU commutable.",
+  "error.handsBusy": () => "Quelqu'un est déjà en route vers ce serveur.",
+  "error.unplugged": () => "Les cordons d'alimentation sont déjà débranchés.",
+  "error.plugged": () => "Les cordons d'alimentation sont déjà branchés.",
+  "error.recovering": () => "Une récupération est déjà en cours.",
+} satisfies Dict;

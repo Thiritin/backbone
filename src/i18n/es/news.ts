@@ -1,0 +1,59 @@
+import type { Dict, Params } from "../lang";
+
+const list = (v: string | number) => { const a = String(v).split("|"); return a.length < 2 ? a[0] : `${a.slice(0, -1).join(", ")} y ${a[a.length - 1]}`; };
+const FEATURE: Record<string, string> = {
+  cluster: "funciona como un único clúster en varios servidores",
+  balloon: "recupera la RAM de los invitados con ballooning, así que una máquina virtual gana RAM mientras se ejecuta",
+  importSame: "importa espacios web de otro servidor que lo use",
+  importOther: "importa espacios web de otros paneles de hosting",
+};
+const kind = (p: Params) => (p.kind === "panel" ? "del panel de hosting" : p.kind === "game" ? "del panel de servidores de juegos" : "de la plataforma cloud");
+
+export default {
+  "event.news.software.title": (p) => `${p.name} ya está disponible`,
+  "event.news.software.text": (p) => `Heize online informa del lanzamiento ${kind(p)} ${p.name}, que ya se puede instalar en tus servidores.`,
+  "event.news.autoUpdate.title": (p) => `${p.name} se actualiza solo`,
+  "event.news.autoUpdate.text": (p) => `Heize online informa de que ${p.name} ya puede instalar sus actualizaciones automáticamente por la noche.`,
+  "event.news.generation.title": (p) => `Servidores G${p.gen} en la tienda`,
+  "event.news.generation.text": (p) => `Heize online informa de que la generación G${p.gen} trae ${p.cores} núcleos y ${p.ramGb} GB de RAM por servidor estándar, con ${p.disk} de almacenamiento.`,
+  "event.news.endOfSale.title": (p) => `${p.name} retirado del mercado`,
+  "event.news.endOfSale.text": (p) => `Heize online informa de que ${p.name} ha salido de la tienda y el soporte del modelo termina en ${p.supportEnd}.`,
+  "event.news.mail.title": (p) => `${p.name} abre su correo para empresas`,
+  "event.news.mail.text": (p) => `Handelsblah informa de que ${p.name} ya vende buzones alojados a empresas por ${p.price} euros al mes por puesto.`,
+  "event.news.ipv6Dc.title": () => "IPv6 en los centros de datos",
+  "event.news.ipv6Dc.text": () => "Golem.dy informa de que los centros de datos ya reparten direcciones IPv6, de las que todavía no se ha agotado ni una.",
+  "event.news.ipv6Home.title": () => "IPv6 en las líneas domésticas",
+  "event.news.ipv6Home.text": () => "Golem.dy informa de que las líneas domésticas ya llevan IPv6, así que la reconexión nocturna tiene una dirección más que cambiar.",
+  "event.news.ripeLast.title": () => "RIPE reparte su último /8",
+  "event.news.ripeLast.text": () => "Golem.dy informa de que RIPE está en su último /8 y los nuevos miembros reciben ahora un /22 en lugar de un /21.",
+  "event.news.ripeOut.title": () => "Reserva IPv4 agotada",
+  "event.news.ripeOut.text": () => "Golem.dy informa de que RIPE no tiene ya direcciones IPv4 libres y los nuevos miembros entran en una lista de espera para un /24.",
+  "event.news.gpu.title": (p) => `${p.name} lanzada`,
+  "event.news.gpu.text": (p) => `Heize online informa de que ${p.name} sale a un precio de catálogo de ${p.price} euros y consume ${p.watts} vatios por ello.`,
+  "event.news.gpuDemand.title": (p) => (p.year === 2017 ? "El deep learning necesita GPU" : "La IA generativa necesita GPU"),
+  "event.news.gpuDemand.text": (p) => (p.year === 2017
+    ? "Handelsblah informa de que el deep learning hace que los equipos busquen servidores GPU de alquiler, y agencias y desarrolladores se los piden ahora a los hosters."
+    : "Handelsblah informa de que la IA generativa tiene a las empresas haciendo cola por servidores GPU de alquiler, y los hosters con tarjetas libres pueden poner su precio."),
+  "event.news.design.title": (p) => `Diseño web de ${p.year}`,
+  "event.news.design.text": (p) => `Handelsblah informa de que los visitantes esperan ahora el aspecto de ${p.year} en todos los sitios web, y los diseños más antiguos pierden visitas.`,
+  "event.news.line.title": (p) => `${p.line} podría venderse`,
+  "event.news.line.text": (p) => `Handelsblah informa de que hoy puedes ofrecer ${p.line} y no lo has puesto en tu sitio web.`,
+  "event.news.models.title": () => "Hardware nuevo en la tienda",
+  "event.news.models.text": (p) => `Heize online informa de que la tienda ya vende ${list(p.names)}.`,
+  "event.news.shape.title": (p) => `Servidores ${p.name} en la tienda`,
+  "event.news.shape.text": (p) => `Heize online informa de que la tienda ya vende servidores ${p.name}.`,
+  "event.news.feature.title": (p) => `Actualización de ${p.name}`,
+  "event.news.feature.text": (p) => `Heize online informa de que la nueva versión de ${p.name} ${FEATURE[p.feature] ?? p.feature}.`,
+  "event.news.desk.title": (p) => `${p.name} ya está disponible`,
+  "event.news.desk.text": (p) => `Heize online informa de que el sistema de soporte ${p.name} ya ha salido y se puede contratar en la Pear Store.`,
+  "event.news.training.title": (p) => `Formación en ${p.name}`,
+  "event.news.training.text": (p) => `Heize online informa de que ya se ofrece una formación en ${p.name} y tu equipo puede cursarla en Investigación.`,
+  "event.news.release.title": (p) => `Versiones de software de ${p.year}`,
+  "event.news.release.text": (p) => `Heize online informa de que las versiones de ${p.year} de ${list(p.names)} ya han salido y se pueden instalar en tus servidores.`,
+  "event.news.homeLines.title": () => "Nuevas líneas domésticas",
+  "event.news.homeLines.text": (p) => `Golem.dy informa de que ya se puede contratar ${list(p.names)} para casa.`,
+  "event.news.ports.title": (p) => `Puertos de ${p.gbit} Gbit/s`,
+  "event.news.ports.text": (p) => `Golem.dy informa de que los operadores y los puntos de intercambio de internet ya venden puertos de ${p.gbit} Gbit/s.`,
+  "event.news.freeSsl.title": () => "Certificados SSL gratis",
+  "event.news.freeSsl.text": () => "Handelsblah informa de que Let's Encryptly ya emite certificados SSL gratis y los clientes ya no esperan pagar por uno.",
+} satisfies Dict;

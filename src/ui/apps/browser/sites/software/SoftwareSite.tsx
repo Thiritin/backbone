@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { useState, type ReactNode } from "react";
 import { euroPrice } from "../../../../../sim/00-core/money";
 import { SOFTWARE, type Software } from "../../../../../sim/10-catalog/platforms";
@@ -26,7 +27,7 @@ const pathOf = (page: SitePage) => (page === "home" ? "/" : `/${page}`);
 const gui = (p: Product) => p.sw?.install.kind === "gui";
 
 export function Nav({ p, page, go, className, labels }: Pick<SiteProps, "p" | "page" | "go"> & { className?: string; labels?: Partial<Record<SitePage, string>> }) {
-  const name: Record<SitePage, string> = { home: "Home", features: "Features", pricing: "Pricing", download: gui(p) ? "Install" : "Download", ...labels };
+  const name: Record<SitePage, string> = { home: t("browser-sites-2.navHome"), features: t("browser-sites-2.navFeatures"), pricing: t("browser-sites-2.navPricing"), download: gui(p) ? t("browser-sites-2.navInstall") : t("browser-sites-2.navDownload"), ...labels };
   return (
     <nav className={className}>
       {PAGES.map((x) => (
@@ -44,9 +45,9 @@ export const Features = ({ p, className }: { p: Product; className?: string }) =
   <ul className={className}>{p.site.features.map((f) => <li key={f}>{f}</li>)}</ul>
 );
 
-const UNIT: Record<LicenseKind, string> = { free: "", once: "per CPU socket, paid once", account: "per web space a month", server: "per server a month", core: "per physical core a month" };
-const OS_UNIT: Record<LicenseKind, string> = { ...UNIT, once: "per machine, paid once", core: "per core or vCPU a month" };
-const price = (era: LicenseEra, unit: Record<LicenseKind, string>) => (era.kind === "free" ? "Free" : `${euroPrice(era.fee)} ${unit[era.kind]}`);
+const UNIT: Record<LicenseKind, string> = { free: "", once: "priceOnce", account: "priceAccount", server: "priceServer", core: "priceCore" };
+const OS_UNIT: Record<LicenseKind, string> = { ...UNIT, once: "priceOsOnce", core: "priceOsCore" };
+const price = (era: LicenseEra, unit: Record<LicenseKind, string>) => (era.kind === "free" ? t("browser-sites-2.free") : t(`browser-sites-2.${unit[era.kind]}`, { fee: euroPrice(era.fee) }));
 
 // The license of the game year as the catalog has it, and the Windoors license where the software runs on nothing else.
 export function Pricing({ p, className }: { p: Product; className?: string }) {
@@ -57,10 +58,10 @@ export function Pricing({ p, className }: { p: Product; className?: string }) {
   return (
     <div className={className}>
       <table>
-        <thead><tr><th>Edition</th><th>License</th></tr></thead>
+        <thead><tr><th>{t("browser-sites-2.edition")}</th><th>{t("browser-sites-2.license")}</th></tr></thead>
         <tbody>{rows.map(([a, b]) => <tr key={a}><td>{a}</td><td className="num">{b}</td></tr>)}</tbody>
       </table>
-      {windoors && <p className="sws-note">{p.name} runs on Windoors Server, which costs {windoorsFee()} on top.</p>}
+      {windoors && <p className="sws-note">{t("browser-sites-2.runsOnWindoors", { name: p.name, fee: windoorsFee() })}</p>}
     </div>
   );
 }
@@ -70,7 +71,7 @@ export const isoFile = (img: OsImage) => { const { id, version } = imageParts(im
 
 function IsoButton({ id, has }: { id: OsImage; has: boolean }) {
   const p = useProgress(id), online = useStore((s) => downloadMbps(s.game) > 0);
-  const label = has ? "Downloaded" : p !== null ? `Downloading ${Math.floor(p * 100)}%` : online ? "Download ISO" : "No internet connection";
+  const label = has ? t("browser-sites-2.downloaded") : p !== null ? t("browser-sites-2.downloading", { pct: Math.floor(p * 100) }) : online ? t("browser-sites-2.downloadIso") : t("browser-sites-2.noInternet");
   return <button type="button" className="sws-iso" disabled={has || p !== null || !online} onClick={() => startDownload(id)}>{label}</button>;
 }
 
@@ -82,9 +83,9 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
     const id = p.os.id, out = p.os.versions.filter((v) => v.from <= year).reverse();
     return (
       <div className={className}>
-        <p>Download the ISO and write it to the USB stick in Finder to boot a server from it, or mount it in a virtual machine, to install {p.os.name}.</p>
+        <p>{t("browser-sites-2.isoHelp", { name: p.os.name })}</p>
         <table>
-          <thead><tr><th>Release</th><th>Since</th><th /></tr></thead>
+          <thead><tr><th>{t("browser-sites-2.release")}</th><th>{t("browser-sites-2.since")}</th><th /></tr></thead>
           <tbody>{out.map((v) => (
             <tr key={v.version}>
               <td>{p.os!.name} {v.version}{v.name && ` ${v.name}`}</td><td className="num">{v.from}</td>
@@ -92,11 +93,11 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
             </tr>
           ))}</tbody>
         </table>
-        {id === "lunix" && <p>The default user name after installation is <code>root</code>.</p>}
+        {id === "lunix" && <p>{t("browser-sites-2.defaultUser")}</p>}
       </div>
     );
   }
-  if (gui(p)) return <div className={className}><p>{p.name} installs from the Windoors Server desktop.</p></div>;
+  if (gui(p)) return <div className={className}><p>{t("browser-sites-2.installsFromDesktop", { name: p.name })}</p></div>;
   const text = p.sw!.install.commands.join("\n");
   // The clipboard API needs a secure page and permission; a selected textarea copies where it is refused.
   const copy = async () => {
@@ -117,7 +118,7 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
     <div className={className}>
       <div className="sws-cmd">
         <pre>{text}</pre>
-        <button type="button" onClick={copy}>{copied ? "Copied" : "Copy"}</button>
+        <button type="button" onClick={copy}>{copied ? t("browser-sites-2.copied") : t("browser-sites-2.copy")}</button>
       </div>
     </div>
   );
@@ -125,14 +126,14 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
 
 // The page body below a site's own header and hero.
 export function Body({ p, page, year, go, className }: SiteProps & { className?: string }) {
-  if (page === "features") return <section className={className}><h2>Features</h2><Features p={p} /></section>;
-  if (page === "pricing") return <section className={className}><h2>Pricing</h2><Pricing p={p} /></section>;
-  if (page === "download") return <section className={className}><h2>{gui(p) ? "Install" : "Download"}</h2><Commands p={p} year={year} /></section>;
+  if (page === "features") return <section className={className}><h2>{t("browser-sites-2.navFeatures")}</h2><Features p={p} /></section>;
+  if (page === "pricing") return <section className={className}><h2>{t("browser-sites-2.navPricing")}</h2><Pricing p={p} /></section>;
+  if (page === "download") return <section className={className}><h2>{gui(p) ? t("browser-sites-2.navInstall") : t("browser-sites-2.navDownload")}</h2><Commands p={p} year={year} /></section>;
   return (
     <section className={className}>
       <p>{p.site.blurb}</p>
       <Features p={p} />
-      <Link to="download" go={go} className="sws-cta">{gui(p) ? "Install" : "Download"}</Link>
+      <Link to="download" go={go} className="sws-cta">{gui(p) ? t("browser-sites-2.navInstall") : t("browser-sites-2.navDownload")}</Link>
     </section>
   );
 }

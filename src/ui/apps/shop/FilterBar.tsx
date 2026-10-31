@@ -1,6 +1,7 @@
 import { useSessionState } from "../../session";
 import type { DeviceModel, PartSpec } from "../../../sim/10-catalog/hardware";
 import { VENDOR_NAME, VENDORS, type Vendor } from "../../../sim/10-catalog/cpus";
+import { t } from "../../../i18n/en";
 import { ram } from "../hw";
 import { CORES, DISKS, FORMS, isSet, matchesFilter, NO_FILTER, RAMS, SORTS, type Filter, type Sort } from "./filter";
 
@@ -28,7 +29,7 @@ export function ShopFilter({ items, filter, set, clear, sort, setSort }: { sort:
       <span className="shop-filter-h">{label}</span>
       <select value={String(filter[key] ?? "")} onChange={(e) => set({ [key]: options.find((o) => String(o ?? "") === e.target.value) ?? any })}>
         {[any, ...options.filter((o) => o !== any)].map((o) => (
-          <option key={String(o)} value={String(o ?? "")}>{o === any ? "Any" : text(o!)} ({left({ [key]: o })})</option>
+          <option key={String(o)} value={String(o ?? "")}>{o === any ? t("shop.any") : text(o!)} ({left({ [key]: o })})</option>
         ))}
       </select>
     </label>
@@ -37,18 +38,18 @@ export function ShopFilter({ items, filter, set, clear, sort, setSort }: { sort:
   return (
     <div className="shop-filter">
       <label className="shop-filter-row">
-        <span className="shop-filter-h">Sort</span>
+        <span className="shop-filter-h">{t("shop.sortBy")}</span>
         <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-          {SORTS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+          {SORTS.map((k) => <option key={k} value={k}>{t(`shop.sort.${k}`)}</option>)}
         </select>
       </label>
-      {pick("form", "Form factor", FORMS, String, null)}
-      {pick("cores", "Min cores", CORES, String, 0)}
-      {pick("ram", "Min RAM", RAMS, ram, 0)}
-      {pick("disk", "Disk", DISKS, String, null)}
+      {pick("form", t("shop.formFactor"), FORMS, String, null)}
+      {pick("cores", t("shop.minCores"), CORES, String, 0)}
+      {pick("ram", t("shop.minRam"), RAMS, ram, 0)}
+      {pick("disk", t("shop.disk"), DISKS, String, null)}
       {vendors.length > 0 && (
-        <div className="shop-filter-row" role="group" aria-label="Vendor">
-          <span className="shop-filter-h">Vendor</span>
+        <div className="shop-filter-row" role="group" aria-label={t("shop.vendor")}>
+          <span className="shop-filter-h">{t("shop.vendor")}</span>
           {vendors.map((v) => (
             <button key={v} className="shop-chip" aria-pressed={filter.vendor === v} onClick={() => set({ vendor: filter.vendor === v ? null : v })}>
               {VENDOR_NAME[v]} <span className="num">{left({ vendor: v })}</span>
@@ -56,7 +57,7 @@ export function ShopFilter({ items, filter, set, clear, sort, setSort }: { sort:
           ))}
         </div>
       )}
-      {isSet(filter) && <button className="shop-chip" onClick={clear}>Clear</button>}
+      {isSet(filter) && <button className="shop-chip" onClick={clear}>{t("shop.clear")}</button>}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { Bell, Cloud, CloudRain, CloudSnow, CloudSun, Moon, Pause, Play, SkipForward, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
@@ -48,16 +49,16 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   // The front window's menu: what the app offers, then the window controls.
   const appMenu = (w: Win): [string, () => void][] => [
-    ...(w.app === "Support" ? [["Change provider…", () => openApp("Support", { kind: "mailSetup", id: "" })]] as [string, () => void][] : []),
-    ...(w.app !== "Settings" ? [["Settings…", () => openApp("Settings")]] as [string, () => void][] : []),
-    ["Minimize", () => minimize(w.id)],
-    ["Close", () => close(w.id)],
+    ...(w.app === "Support" ? [[t("desktop.menu.changeProvider"), () => openApp("Support", { kind: "mailSetup", id: "" })]] as [string, () => void][] : []),
+    ...(w.app !== "Settings" ? [[t("desktop.menu.settings"), () => openApp("Settings")]] as [string, () => void][] : []),
+    [t("desktop.minimize"), () => minimize(w.id)],
+    [t("desktop.close"), () => close(w.id)],
   ];
 
-  const item = (label: string, items: [string, () => void][], face: ReactNode = label, cls = "") => (
+  const item = (id: string, label: string, items: [string, () => void][], face: ReactNode = label, cls = "") => (
     <div className="mb-menu" onPointerDown={(e) => e.stopPropagation()}>
-      <button className={`mb-item ${cls}`} aria-label={label} aria-expanded={menu === label} onClick={() => { if (menu !== label) uiSound("menu"); setMenu(menu === label ? null : label); }}>{face}</button>
-      {menu === label && items.length > 0 && (
+      <button className={`mb-item ${cls}`} aria-label={label} aria-expanded={menu === id} onClick={() => { if (menu !== id) uiSound("menu"); setMenu(menu === id ? null : id); }}>{face}</button>
+      {menu === id && items.length > 0 && (
         <div className="mb-drop" role="menu">
           {items.map(([l, fn], i) => <button key={i} role="menuitem" onClick={() => { fn(); setMenu(null); }}>{l}</button>)}
         </div>
@@ -67,18 +68,18 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      {item("Backbone", [["Introduction…", () => setIntro(true)], ["Backbone on GitHub", () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], ["Backbone on Discord", () => window.open("https://discord.gg/e8nTAV8Yk7", "_blank", "noopener")], ["Report an issue", () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], ["New note", () => newNote()], ...(guideGone ? [["Restore Getting started", () => act(restoreGuide)] as [string, () => void]] : []), ["What's new", () => openNews(EMBEDDED)], ["Export save…", exportSave], ["Import save…", () => file.current?.click()], ["Delete progress…", () => setConfirm(true)]], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
-      {front ? item(appName(front), appMenu(front), appName(front), "mb-app") : <span className="mb-item mb-app">Backbone</span>}
-      {item("Window", windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : w.console ? ["Console", () => openConsole(w.console!)] : [appName(w), () => openApp(w.app)]) as [string, () => void]))}
+      {item("backbone", "Backbone", [[t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open("https://discord.gg/e8nTAV8Yk7", "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), exportSave], [t("desktop.menu.import"), () => file.current?.click()], [t("desktop.menu.delete"), () => setConfirm(true)]], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
+      {front ? item("app", appName(front), appMenu(front), appName(front), "mb-app") : <span className="mb-item mb-app">Backbone</span>}
+      {item("window", t("desktop.menu.window"), windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : w.console ? [t("desktop.menu.console"), () => openConsole(w.console!)] : [appName(w), () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
-      {item("Location", game.locations.flatMap((l) => {
+      {item("location", t("desktop.menu.location"), game.locations.flatMap((l) => {
         const d = l.id !== here.id && drive(game, l.id);
-        return d ? [[`${l.name}, ${d.hours} h, ${euro(d.fee)}`, () => act(travelTo, l.id)] as [string, () => void]] : [];
+        return d ? [[t("desktop.menu.drive", { place: l.name, hours: d.hours, fee: euro(d.fee) }), () => act(travelTo, l.id)] as [string, () => void]] : [];
       }), <span className="mb-place"><Weather city={here.city} hour={game.hour} />{here.name}</span>)}
       <span className="mb-sep" />
-      <div className="speed" role="group" aria-label="Game speed">
+      <div className="speed" role="group" aria-label={t("desktop.menu.speed")}>
         {SPEEDS.map((s: Speed, i) => {
-          const label = s === SKIP ? "Skip to next event" : s ? `${s}× speed` : "Pause";
+          const label = s === SKIP ? t("desktop.menu.skip") : s ? t("desktop.menu.speedN", { n: s }) : t("desktop.menu.pause");
           return (
             <button key={s} aria-pressed={speed === s} aria-label={label} title={label} onClick={() => setSpeed(s)}>
               {s === SKIP ? <SkipForward className="skip" /> : s ? <span className="arrows">{Array.from({ length: i }, (_, k) => <Play key={k} />)}</span> : <Pause />}
@@ -90,14 +91,14 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       <span className="mb-item num">{formatClock(game.hour, game.minute)}</span>
       <span className="mb-sep" />
       <span className="mb-item mb-cash num">{euro(game.cash)}</span>
-      <button className="mb-item mb-badge" aria-label={unseen ? `Notifications, ${unseen} new` : "Notifications"} onClick={onBell}>
+      <button className="mb-item mb-badge" aria-label={unseen ? t("desktop.notif.unseen", { n: unseen }) : t("desktop.notif.title")} onClick={onBell}>
         <Bell />
         {unseen > 0 && <span key={unseen} className="count plop">{unseen > 99 ? "99+" : unseen}</span>}
       </button>
-      <select className="mb-item mb-lang" aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+      <select className="mb-item mb-lang" aria-label={t("desktop.menu.language")} value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
         {Object.entries(LANGS).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
       </select>
-      <button className="mb-item" aria-label="Toggle dark mode" onClick={onTheme}>{theme === "dark" ? <Sun /> : <Moon />}</button>
+      <button className="mb-item" aria-label={t("desktop.menu.darkMode")} onClick={onTheme}>{theme === "dark" ? <Sun /> : <Moon />}</button>
       <input ref={file} type="file" accept="application/json,.json" hidden onChange={async (e) => {
         const f = e.target.files?.[0];
         e.target.value = "";
@@ -106,9 +107,9 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       {intro && <Intro onClose={() => setIntro(false)} />}
       {confirm && (
         <Confirm
-          title="Delete all progress?"
-          text="Your company and its save are removed from this browser. Export a save first to keep a copy."
-          action="Delete"
+          title={t("desktop.menu.deleteTitle")}
+          text={t("desktop.menu.deleteText")}
+          action={t("desktop.menu.deleteAction")}
           onCancel={() => setConfirm(false)}
           onConfirm={() => { setConfirm(false); deleteProgress(); }}
         />

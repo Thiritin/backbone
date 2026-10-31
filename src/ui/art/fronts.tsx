@@ -1,4 +1,5 @@
 // Code-drawn device fronts, ported from docs/design/mockups/shell.js. Sizes are px; u is one rack unit.
+import { t } from "../../i18n/en";
 import type { ReactNode } from "react";
 import { bayCount, isOobPort, jacksOf, modelById as nodeModel, oobPortOf, type DeviceModel } from "../../sim/10-catalog/hardware";
 import { isMgmtModel, MgmtFront, oobLabel } from "./mgmt";
@@ -171,10 +172,10 @@ function ServerFace(p: FrontProps) {
       <rect x={x0 + per * bw + 3} y="2.5" width={Math.max(0, cx - x0 - per * bw - 6)} height={h - 5} rx="1" fill={st.vent} opacity="0.8" />
       <rect x={cx} y="2" width={panel} height={h - 4} rx="1" fill="oklch(0.14 0.004 255)" />
       <AssetTag x={cx + 3} y={Math.min(h / 2, 7)} text={name} h={h} />
-      <circle cx={cx + panel - 8} cy={h - 6} r={Math.min(3, h * 0.14)} fill="oklch(0.2 0.004 255)" stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.9" aria-label="Power button" />
+      <circle cx={cx + panel - 8} cy={h - 6} r={Math.min(3, h * 0.14)} fill="oklch(0.2 0.004 255)" stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.9" aria-label={t("art.powerButton")} />
       {p.onPower && (
-        <circle className="svg-hit" cx={cx + panel - 8} cy={h - 6} r={Math.min(8, h * 0.3)} fill="transparent" role="button" tabIndex={0} aria-label={state === "off" ? "Power on" : "Shut down"}
-          onClick={p.onPower} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); p.onPower!(); } }}><title>{state === "off" ? "Power on" : "Shut down"}</title></circle>
+        <circle className="svg-hit" cx={cx + panel - 8} cy={h - 6} r={Math.min(8, h * 0.3)} fill="transparent" role="button" tabIndex={0} aria-label={state === "off" ? t("art.powerOn") : t("art.shutDown")}
+          onClick={p.onPower} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); p.onPower!(); } }}><title>{state === "off" ? t("art.powerOn") : t("art.shutDown")}</title></circle>
       )}
       <StatusLeds x={cx + panel - 26} y={h - 6} state={state} blink={blink} />
       {h >= 18 && <BrandMark brand={brand} x={cx + 4} y={h - 11} size={8} />}
@@ -206,7 +207,7 @@ function NodeFace(p: FrontProps) {
       {name && <AssetTag x={3} y={h - strip / 2 - 1} text={name} h={Math.min(h, 16)} />}
       <UsbPort cx={w - 34} cy={h - strip / 2 - 1} h={strip} stick={p.stick} onUsb={p.onUsb} />
       <StatusLeds x={w - 22} y={h - strip / 2 - 1} state={state} blink={blink} />
-      <circle cx={w - 5} cy={h - strip / 2 - 1} r={Math.min(2.6, strip * 0.3)} fill="oklch(0.2 0.004 255)" stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.8" aria-label="Power button" />
+      <circle cx={w - 5} cy={h - strip / 2 - 1} r={Math.min(2.6, strip * 0.3)} fill="oklch(0.2 0.004 255)" stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.8" aria-label={t("art.powerButton")} />
     </>
   );
 }
@@ -411,11 +412,11 @@ export function Pdu({ w, h, name, model, state }: FrontProps) {
 // A front USB port with its centre at (cx, cy): a light bezel on a dark plate so it reads on any face, the USB trident
 // beside it on faces of two units or more, and the stick in it when it is plugged in. Every face places its own.
 export function UsbPort({ cx, cy, h, stick, onUsb }: { cx: number; cy: number; h: number; stick?: boolean; onUsb?: () => void }) {
-  const x = cx - 4.5, y = cy - 2, label = stick ? "Unplug USB stick" : "Plug in USB stick", glyph = h >= 28;
+  const x = cx - 4.5, y = cy - 2, label = stick ? t("art.unplugUsb") : t("art.plugInUsb"), glyph = h >= 28;
   return (
     <>
       <rect x={x - 1.5} y={y - 1.5} width={glyph ? 17 : 12} height="7" rx="0.8" fill="oklch(0.12 0.004 255)" aria-hidden="true" />
-      <rect x={x} y={y} width="9" height="4" rx="0.5" fill="oklch(0.08 0.004 255)" stroke="oklch(0.72 0.01 255)" strokeWidth="0.6" aria-label="USB port" />
+      <rect x={x} y={y} width="9" height="4" rx="0.5" fill="oklch(0.08 0.004 255)" stroke="oklch(0.72 0.01 255)" strokeWidth="0.6" aria-label={t("art.usbPort")} />
       <rect x={x + 1.5} y={y + 1} width="6" height="1.2" fill="oklch(0.6 0.14 250)" aria-hidden="true" />
       {glyph && <path d={`M${x + 11.5} ${cy + 1.6}V${cy - 1.8}M${x + 11.5} ${cy - 0.6}l1.6-1M${x + 11.5} ${cy + 0.6}l-1.6-1`} fill="none" stroke="oklch(0.72 0.01 255)" strokeWidth="0.5" strokeLinecap="round" aria-hidden="true" />}
       {stick && <><rect x={x - 1} y={y - 1.5} width="11" height="7" rx="0.9" fill="oklch(0.42 0.13 150)" stroke="oklch(0.25 0.05 150)" strokeWidth="0.4" /><circle cx={x + 8.4} cy={y + 2} r="0.7" fill={LED.act} /></>}
@@ -452,15 +453,15 @@ export function DeviceSvg({ w, u, back, plugs, onInlet, onConsole, ...p }: Omit<
       {back ? <Back {...p} w={w} h={h} /> : <Front {...p} w={w} h={h} />}
       {inlets.map((c, k) => plugs?.[k] && <Cord key={`c${k}`} x={c.x} y={c.y} mm={c.mm} x0={c.x - 30 * c.mm} />)}
       {onInlet && inlets.map((c, k) => {
-        const label = `${plugs?.[k] ? "Unplug" : "Plug in"} power supply ${k + 1}`;
+        const label = t(plugs?.[k] ? "art.unplugPsu" : "art.plugInPsu", { n: k + 1 });
         return (
           <rect key={`i${k}`} className="rack-port rack-inlet" role="button" tabIndex={0} aria-label={label} x={c.x - 15 * c.mm - 1} y={c.y - 11 * c.mm - 1} width={30 * c.mm + 2} height={22 * c.mm + 2} rx="1"
             onClick={() => onInlet(k)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onInlet(k); } }}><title>{label}</title></rect>
         );
       })}
       {vga && onConsole && (
-        <rect className="rack-port rack-vga" role="button" tabIndex={0} aria-label="Plug in monitor" x={vga.x - 1} y={vga.y - 1} width={vga.w + 2} height={vga.h + 2} rx="1"
-          onClick={onConsole} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onConsole(); } }}><title>Plug in monitor</title></rect>
+        <rect className="rack-port rack-vga" role="button" tabIndex={0} aria-label={t("art.plugInMonitor")} x={vga.x - 1} y={vga.y - 1} width={vga.w + 2} height={vga.h + 2} rx="1"
+          onClick={onConsole} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onConsole(); } }}><title>{t("art.plugInMonitor")}</title></rect>
       )}
     </svg>
   );

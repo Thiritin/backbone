@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
 import { Body, classesOf, Link, Nav, News, TITLE, type VendorProps } from "./VendorSite";
 import "./eatin.css";
@@ -14,17 +15,17 @@ export function Eatin(props: VendorProps) {
       {page === "home" ? (
         <main>
           <section className="vs-hero">
-            <h1>{look === "early" ? "Powering business worldwide, one outage at a time." : "Power that keeps its promises."}</h1>
-            <p>UPS systems and power distribution for the minutes between the grid and the generator.</p>
+            <h1>{look === "early" ? t("browser-sites-2.eatEarly") : t("browser-sites-2.eatLate")}</h1>
+            <p>{t("browser-sites-2.eatText")}</p>
           </section>
           <ul className="vs-cats">{classesOf(m).map((c) => <li key={c}><Link to="products" go={go}>{c}</Link></li>)}</ul>
-          <h2>News releases</h2>
+          <h2>{t("browser-sites-2.eatNews")}</h2>
           <News m={m} month={month} limit={4} />
         </main>
       ) : (
         <main><h1>{TITLE[page]}</h1><Body {...props} className="vs-body" /></main>
       )}
-      <footer>© {year} Eatin. All rights reserved.</footer>
+      <footer>{t("browser-sites-2.eatFooter", { year })}</footer>
     </div>
   );
 }

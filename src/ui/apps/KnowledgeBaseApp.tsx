@@ -7,7 +7,7 @@ export function KnowledgeBaseApp() {
   return (
     <div style={{ padding: 16, overflow: "auto" }}>
       <table className="table">
-        <thead><tr><th>Article</th><th className="r">Reads</th></tr></thead>
+        <thead><tr><th>{t("apps.kb.article")}</th><th className="r">{t("apps.kb.reads")}</th></tr></thead>
         <tbody>
           {kbArticles(game).map(({ topic, reads }) => (
             <tr key={topic}><td>{t(`ticket.howTo.${topic}.subject`, {})}</td><td className="r num">{reads}</td></tr>

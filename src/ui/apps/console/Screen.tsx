@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { t } from "../../../i18n/en";
 import { nowHours, yearOf } from "../../../sim/00-core/time";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { imageParts, serverOsById, type OsImage } from "../../../sim/10-catalog/server-os";
@@ -84,7 +85,7 @@ export function useOsScreen(game: GameState, m: Machine, active: boolean, stick:
 // The soft keys a screen takes, and the keyboard while the screen has focus; a shell's own input keeps its keys.
 export function Keys({ keys, onKey, focus }: { keys: string[]; onKey: (k: string) => void; focus: () => void }) {
   return (
-    <div className="scr-keys" role="group" aria-label="Keys">
+    <div className="scr-keys" role="group" aria-label={t("console.keys")}>
       {[...new Set(keys)].filter((k) => k !== "Backspace").map((k) => <button key={k} onClick={() => { onKey(k); focus(); }}>{LABELS[k] ?? k}</button>)}
     </div>
   );
@@ -131,8 +132,8 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   const look = shown === "bios" || shown === "menu" || shown === "dark" || shown === "post" || shown === "stuck" ? shown : os.look;
   return (
     <div className={`scr-wrap ${via}`}>
-      <div ref={box} className="scr" data-look={look} data-hung={kind === "hung" || undefined} tabIndex={0} role="application" aria-label="Server screen" onKeyDown={keyHandler(onKey)}>
-        {shown === "dark" && <span className="scr-osd">No signal</span>}
+      <div ref={box} className="scr" data-look={look} data-hung={kind === "hung" || undefined} tabIndex={0} role="application" aria-label={t("console.serverScreen")} onKeyDown={keyHandler(onKey)}>
+        {shown === "dark" && <span className="scr-osd">{t("console.noSignal")}</span>}
         {shown === "post" && <Post game={game} d={d} />}
         {shown === "stuck" && <pre>{"CMOS checksum error - Defaults loaded\nPress F1 to continue, DEL to enter SETUP"}</pre>}
         {shown === "bios" && bios.view}

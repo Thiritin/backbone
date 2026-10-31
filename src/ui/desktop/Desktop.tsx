@@ -141,10 +141,11 @@ function AwayLock() {
   }, [away, advance]);
   if (!away) return null;
   const { until, doing } = game.player, place = playerAt(game).name;
+  const label = t(doing === "travel" ? "desktop.awayTravel" : "desktop.awayWork", { place });
   return (
-    <div ref={ref} className="away-lock" role="alertdialog" aria-label={doing === "travel" ? `Driving to ${place}` : `Working at ${place}`} tabIndex={-1}>
-      <strong>{doing === "travel" ? `Driving to ${place}` : `Working at ${place}`}</strong>
-      <span className="num">Until {formatClock(Math.floor(until), Math.round((until % 1) * 60))}</span>
+    <div ref={ref} className="away-lock" role="alertdialog" aria-label={label} tabIndex={-1}>
+      <strong>{label}</strong>
+      <span className="num">{t("desktop.awayUntil", { time: formatClock(Math.floor(until), Math.round((until % 1) * 60)) })}</span>
     </div>
   );
 }

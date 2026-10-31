@@ -1,5 +1,6 @@
 import { ChevronRight, Folder, LogOut } from "lucide-react";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { t } from "../../../../../i18n/en";
 import "./freepanel.css";
 
 // docs/design/software.md, section 10: a blue category tree with grey module tables until 2016, then white and flat.
@@ -10,16 +11,16 @@ export function FreePanel(p: PanelProps) {
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx fp fp-login" data-era={era}>
-      <LoginForm className="fp-card" onLogin={p.login} button="Sign in">
+      <LoginForm className="fp-card" onLogin={p.login} button={t("browser-consoles-1.signIn")}>
         <div className="fp-logo">FreePanel</div>
         <div className="cx-host">{p.host}</div>
       </LoginForm>
     </div>
   );
   const tree: [string, [Tab, string][]][] = [
-    ["Servers", [["objects", "Web spaces"]]],
-    ...(p.f.cluster ? [["Cluster", [["nodes", "Nodes"]]] as [string, [Tab, string][]]] : []),
-    ["System", [["software", "Software and updates"]]],
+    [t("browser-consoles-1.fpServers"), [["objects", t("browser-consoles-1.fpWebSpaces")]]],
+    ...(p.f.cluster ? [[t("browser-consoles-1.fpCluster"), [["nodes", t("browser-consoles-1.fpNodes")]]] as [string, [Tab, string][]]] : []),
+    [t("browser-consoles-1.fpSystem"), [["software", t("browser-consoles-1.fpSoftwareUpdates")]]],
   ];
   const title = tree.flatMap(([, items]) => items).find(([id]) => id === tab)?.[1];
   return (
@@ -33,11 +34,11 @@ export function FreePanel(p: PanelProps) {
             {items.map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}><ChevronRight size={12} aria-hidden />{label}</button>)}
           </section>
         ))}
-        <button className="fp-out" onClick={p.logout}><LogOut size={13} aria-hidden />Logout</button>
+        <button className="fp-out" onClick={p.logout}><LogOut size={13} aria-hidden />{t("browser-consoles-1.logout")}</button>
       </aside>
       <main className="fp-main">
         <h1>{title}</h1>
-        {tab === "objects" && <RowsTable rows={rows} name="Domain" />}
+        {tab === "objects" && <RowsTable rows={rows} name={t("browser-consoles-1.domain")} />}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
         {tab === "software" && (
           <>

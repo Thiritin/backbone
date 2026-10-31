@@ -14,7 +14,7 @@ import { useStore } from "../../store";
 import { formatDay } from "../billing/BillingApp";
 import { PRODUCT } from "../support/labels";
 
-const STATUS: Record<SiteStatus, [string, string]> = { up: ["Online", "ok"], slow: ["Slow", "warn"], down: ["Down", "bad"] };
+const STATUS: Record<SiteStatus, [string, string]> = { up: [t("marketing.statusUp"), "ok"], slow: [t("marketing.statusSlow"), "warn"], down: [t("marketing.statusDown"), "bad"] };
 const sameHost = (a: SiteHost | null, b: SiteHost) => a?.kind === b.kind && (a.kind === "rented" || a.clusterId === (b as { clusterId: string }).clusterId);
 
 // Rented web space at Strateaux or one of the company's own web panel hosts with room for the site.
@@ -22,13 +22,13 @@ function HostPicker({ value, pick }: { value: SiteHost | null; pick: (h: SiteHos
   const game = useStore((s) => s.game);
   const panels = game.clusters.filter((c) => c.kind === "panel" && c.panel);
   return (
-    <div className="seg wrap" role="group" aria-label="Hosting">
-      <button aria-pressed={value?.kind === "rented"} onClick={() => pick({ kind: "rented" })}>Rent at Strateaux</button>
+    <div className="seg wrap" role="group" aria-label={t("marketing.hosting")}>
+      <button aria-pressed={value?.kind === "rented"} onClick={() => pick({ kind: "rented" })}>{t("marketing.rentAtStrateaux")}</button>
       {panels.map((c) => {
         const h: SiteHost = { kind: "own", clusterId: c.id }, on = sameHost(value, h);
         return <button key={c.id} aria-pressed={on} disabled={!on && !siteRoom(game, c).fits} onClick={() => pick(h)}>{c.name}</button>;
       })}
-      {!panels.length && <button disabled>Own web panel</button>}
+      {!panels.length && <button disabled>{t("marketing.ownWebPanel")}</button>}
     </div>
   );
 }
@@ -42,7 +42,7 @@ function Tagline() {
   useEffect(() => setDraft(value), [value]);
   const commit = () => { if (draft.trim() !== value && !act(setCompany, { tagline: draft }).ok) setDraft(value); };
   return (
-    <input className="field mkt-grow" aria-label="Tagline" maxLength={TAGLINE_MAX} value={draft} spellCheck={false} onChange={(e) => setDraft(e.target.value)} onBlur={commit}
+    <input className="field mkt-grow" aria-label={t("marketing.tagline")} maxLength={TAGLINE_MAX} value={draft} spellCheck={false} onChange={(e) => setDraft(e.target.value)} onBlur={commit}
       onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
   );
 }
@@ -55,46 +55,46 @@ export function SiteCard() {
   const m = game.marketing, domain = game.company.domain, built = siteBuilt(game);
   const registrar = (game.registrar && registrarById(game.registrar.id)?.name) ?? REGISTRARS[0].name;
   const [statusLabel, statusTone] = STATUS[siteStatus(game)];
-  const rent = <span className="mkt-sub"><span className="num">{euroCents(SITE_RENT)}</span> a month</span>;
+  const rent = <span className="mkt-sub">{t("marketing.priceMonth", { price: euroCents(SITE_RENT) })}</span>;
 
   let pill;
   if (m.launched) pill = <span className={`pill ${statusTone}`}>{statusLabel}</span>;
-  else if (built) pill = <span className="pill accent">Ready</span>;
-  else if (m.siteReady !== null) pill = <span className="pill">Building</span>;
-  else pill = <span className="pill">None</span>;
+  else if (built) pill = <span className="pill accent">{t("marketing.ready")}</span>;
+  else if (m.siteReady !== null) pill = <span className="pill">{t("marketing.building")}</span>;
+  else pill = <span className="pill">{t("marketing.none")}</span>;
 
   return (
     <div className="shop-card mkt-campaign">
-      <div className="mkt-head"><strong>Website</strong>{pill}</div>
+      <div className="mkt-head"><strong>{t("marketing.website")}</strong>{pill}</div>
       {m.siteReady === null && (
         <div className="mkt-row">
-          <span className="mkt-grow">Write a simple HTML website for the company. It costs nothing and takes three days.</span>
-          <button className="btn primary" onClick={() => act(buildSite)}>Build</button>
+          <span className="mkt-grow">{t("marketing.siteIntro")}</span>
+          <button className="btn primary" onClick={() => act(buildSite)}>{t("marketing.build")}</button>
         </div>
       )}
       {m.siteReady !== null && !built && (
-        <div className="mkt-row"><span className="mkt-label">Ready on</span><span className="mkt-value">{formatDay(m.siteReady)}</span></div>
+        <div className="mkt-row"><span className="mkt-label">{t("marketing.readyOn")}</span><span className="mkt-value">{formatDay(m.siteReady)}</span></div>
       )}
       {built && !m.launched && <>
         <div className="mkt-row">
-          <span className="mkt-label">Domain</span>
-          <span className="mkt-value">{domain ? <span className="num">{domain}</span> : `Buy a domain for your company at ${registrar}.`}</span>
+          <span className="mkt-label">{t("marketing.domain")}</span>
+          <span className="mkt-value">{domain ? <span className="num">{domain}</span> : t("marketing.buyDomain", { registrar })}</span>
         </div>
         <div className="mkt-row">
-          <span className="mkt-label">Hosting</span>
+          <span className="mkt-label">{t("marketing.hosting")}</span>
           <div className="mkt-grow"><HostPicker value={host} pick={setHost} />{host?.kind === "rented" && rent}</div>
         </div>
         <div className="mkt-row mkt-end">
-          <button className="btn primary" disabled={!domain || !host} onClick={() => host && act(launchSite, host)}>Launch</button>
+          <button className="btn primary" disabled={!domain || !host} onClick={() => host && act(launchSite, host)}>{t("marketing.launch")}</button>
         </div>
       </>}
       {m.launched && <>
-        <div className="mkt-row"><span className="mkt-label">Domain</span><span className="mkt-value num">{domain}</span></div>
+        <div className="mkt-row"><span className="mkt-label">{t("marketing.domain")}</span><span className="mkt-value num">{domain}</span></div>
         <div className="mkt-row">
-          <span className="mkt-label">Hosting</span>
+          <span className="mkt-label">{t("marketing.hosting")}</span>
           <div className="mkt-grow"><HostPicker value={m.siteHost} pick={(h) => act(setSiteHost, h)} />{m.siteHost.kind === "rented" && rent}</div>
         </div>
-        <div className="mkt-row"><span className="mkt-label">Tagline</span><Tagline /></div>
+        <div className="mkt-row"><span className="mkt-label">{t("marketing.tagline")}</span><Tagline /></div>
         <Upgrades />
       </>}
     </div>
@@ -107,28 +107,28 @@ function Upgrades() {
   const act = useStore((s) => s.act);
   const current = game.marketing.designYear >= generationOf(yearOf(game.hour));
   const offer = (id: "website" | "orderForm") => (
-    <button className="btn" disabled={game.cash < OWNED[id].setup} onClick={() => act(setUpChannel, id)}>Set up <span className="num">{euro(OWNED[id].setup)}</span></button>
+    <button className="btn" disabled={game.cash < OWNED[id].setup} onClick={() => act(setUpChannel, id)}>{t("marketing.setUp")} <span className="num">{euro(OWNED[id].setup)}</span></button>
   );
-  const upkeep = (id: "website" | "orderForm") => <span className="mkt-sub"><span className="num">{euro(OWNED[id].upkeep)}</span> a month</span>;
+  const upkeep = (id: "website" | "orderForm") => <span className="mkt-sub">{t("marketing.priceMonth", { price: euro(OWNED[id].upkeep) })}</span>;
   return <>
     <div className="mkt-row">
-      <span className="mkt-label">Design</span>
+      <span className="mkt-label">{t("marketing.design")}</span>
       {owns(game, "website") ? <>
         <span className="mkt-grow num">{game.marketing.designYear}</span>
-        <button className="btn" disabled={current || game.cash < OWNED.website.setup} onClick={() => act(redesign)}>Redesign <span className="num">{euro(OWNED.website.setup)}</span></button>
-      </> : <><span className="mkt-grow">Web design{upkeep("website")}</span>{offer("website")}</>}
+        <button className="btn" disabled={current || game.cash < OWNED.website.setup} onClick={() => act(redesign)}>{t("marketing.redesign")} <span className="num">{euro(OWNED.website.setup)}</span></button>
+      </> : <><span className="mkt-grow">{t("marketing.webDesign")}{upkeep("website")}</span>{offer("website")}</>}
     </div>
     {owns(game, "website") && (
       <div className="mkt-row">
-        <span className="mkt-label">Orders</span>
-        {game.shop.variant ? <span className="mkt-grow">{shopById(game.shop.variant).name}</span> : hasOrderForm(game) ? <span className="mkt-grow">Order form</span> : <><span className="mkt-grow">Order form{upkeep("orderForm")}</span>{offer("orderForm")}</>}
+        <span className="mkt-label">{t("marketing.orders")}</span>
+        {game.shop.variant ? <span className="mkt-grow">{shopById(game.shop.variant).name}</span> : hasOrderForm(game) ? <span className="mkt-grow">{t("marketing.orderForm")}</span> : <><span className="mkt-grow">{t("marketing.orderForm")}{upkeep("orderForm")}</span>{offer("orderForm")}</>}
       </div>
     )}
     {hasOrderForm(game) && (
       <label className="mkt-row">
-        <span className="mkt-label">Email</span>
-        <span className="mkt-grow">Take orders by email</span>
-        <input type="checkbox" role="switch" className="switch" aria-label="Take orders by email" checked={game.marketing.emailOrders}
+        <span className="mkt-label">{t("marketing.email")}</span>
+        <span className="mkt-grow">{t("marketing.emailOrders")}</span>
+        <input type="checkbox" role="switch" className="switch" aria-label={t("marketing.emailOrders")} checked={game.marketing.emailOrders}
           onChange={(e) => act(setEmailOrders, e.target.checked)} />
       </label>
     )}
@@ -143,7 +143,7 @@ function LineRow({ p, addon = false }: { p: Product; addon?: boolean }) {
     <div className={`mkt-line${addon ? " mkt-addon" : ""}`}>
       <label className="mkt-line-row">
         <span>{PRODUCT[p]}</span>
-        <input type="checkbox" role="switch" className="switch" aria-label={`List ${PRODUCT[p]}`} checked={on} disabled={!on && !!why}
+        <input type="checkbox" role="switch" className="switch" aria-label={t("marketing.listProduct", { product: PRODUCT[p] })} checked={on} disabled={!on && !!why}
           onChange={(e) => act(setLine, p, e.target.checked)} />
       </label>
       {!on && why && <p className="mkt-sub">{t(why)}</p>}

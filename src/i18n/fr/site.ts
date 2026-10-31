@@ -1,0 +1,27 @@
+import type { Dict } from "../lang";
+
+export default {
+  "ledger.siteHosting": () => "Hébergement du site web : Strateaux",
+  "ledger.redesign": () => "Refonte du site web",
+  "error.designCurrent": () => "Le site web a déjà le design actuel.",
+  "error.siteHostPanel": () => "Seul un hôte avec panneau d'hébergement web peut faire tourner le site web.",
+  "error.siteHostNoRoom": () => "Cet hôte n'a pas de place pour le site web.",
+  "error.siteStarted": () => "Le site web est déjà en construction.",
+  "error.siteNotBuilt": () => "Construis d'abord le site web.",
+  "error.siteLaunched": () => "Le site web est déjà en ligne.",
+  "error.needsLaunch": () => "Lance d'abord le site web.",
+  "error.needsWebHostingLine": () => "Propose d'abord de l'hébergement web.",
+  "event.siteBuilt.title": () => "Le site web est prêt",
+  "event.siteBuilt.text": () => "Ton premier site web est écrit et peut passer en ligne dès que l'entreprise a un nom de domaine.",
+  "event.siteDown.title": () => "Le site web est en panne",
+  "event.siteDown.text": (p) => `Ton site web sur ${p.host} ne répond plus, et les visiteurs ne peuvent plus commander tant qu'il n'est pas de retour.`,
+  "site.blurb.private": () => "Des photos de vacances, un livre d'or et un compteur de visites qui n'a pas bougé depuis des années.",
+  "site.blurb.gamer": () => "La page du clan avec la liste des membres, les résultats des matchs et l'adresse du serveur de jeu.",
+  "site.blurb.hobbyDev": () => "Un portfolio de projets perso, presque tous décrits comme bientôt terminés.",
+  "site.blurb.soleProp": () => "Des services, des horaires d'ouverture et un formulaire de contact pour une entreprise d'une seule personne.",
+  "site.blurb.smallBiz": () => "Une liste de prix, un plan et les horaires du commerce du coin.",
+  "site.blurb.agency": () => "Des études de cas, un mur de logos de clients et un bouton qui dit Let's talk.",
+  "site.blurb.office": () => "Des horaires de consultation, des demandes de rendez-vous et une politique de confidentialité.",
+  "site.blurb.onlineShop": () => "Un catalogue de produits avec un panier et une page de paiement.",
+  "site.blurb.enterprise": () => "Des communiqués de presse, une page investisseurs et une rubrique carrières avec une photo de banque d'images d'une poignée de main.",
+} satisfies Dict;

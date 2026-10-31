@@ -1,0 +1,27 @@
+import type { Dict } from "../lang";
+
+export default {
+  "ledger.siteHosting": () => "Website-Hosting: Strateaux",
+  "ledger.redesign": () => "Website-Relaunch",
+  "error.designCurrent": () => "Die Website hat bereits das aktuelle Design.",
+  "error.siteHostPanel": () => "Nur ein Webhosting-Panel-Host kann die Website betreiben.",
+  "error.siteHostNoRoom": () => "Dieser Host hat keinen Platz für die Website.",
+  "error.siteStarted": () => "Die Website wird bereits gebaut.",
+  "error.siteNotBuilt": () => "Bau zuerst die Website.",
+  "error.siteLaunched": () => "Die Website ist bereits online.",
+  "error.needsLaunch": () => "Starte zuerst die Website.",
+  "error.needsWebHostingLine": () => "Biete zuerst Webhosting an.",
+  "event.siteBuilt.title": () => "Website ist fertig",
+  "event.siteBuilt.text": () => "Deine erste Website ist geschrieben und kann online gehen, sobald das Unternehmen eine Domain hat.",
+  "event.siteDown.title": () => "Website ist down",
+  "event.siteDown.text": (p) => `Deine Website auf ${p.host} antwortet nicht mehr, und Besucher können nicht bestellen, bis sie wieder läuft.`,
+  "site.blurb.private": () => "Urlaubsfotos, ein Gästebuch und ein Besucherzähler, der sich seit Jahren nicht bewegt hat.",
+  "site.blurb.gamer": () => "Die Clan-Seite mit Mitgliederliste, Matchergebnissen und der Adresse des Gameservers.",
+  "site.blurb.hobbyDev": () => "Ein Portfolio an Nebenprojekten, fast alle als beinahe fertig beschrieben.",
+  "site.blurb.soleProp": () => "Leistungen, Öffnungszeiten und ein Kontaktformular für den Ein-Personen-Betrieb.",
+  "site.blurb.smallBiz": () => "Eine Preisliste, eine Karte und die Öffnungszeiten des Ladens um die Ecke.",
+  "site.blurb.agency": () => "Fallstudien, eine Wand voller Kundenlogos und ein Button mit der Aufschrift Let's talk.",
+  "site.blurb.office": () => "Sprechzeiten, Terminanfragen und eine Datenschutzerklärung.",
+  "site.blurb.onlineShop": () => "Ein Produktkatalog mit Warenkorb und Kasse.",
+  "site.blurb.enterprise": () => "Pressemitteilungen, eine Investorenseite und ein Karrierebereich mit einem Stockfoto von einem Handschlag.",
+} satisfies Dict;

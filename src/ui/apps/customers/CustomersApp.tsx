@@ -6,6 +6,7 @@ import { isFinal, serviceMonthly } from "../../../sim/40-support/tickets";
 import { invoiceTotal, isUnpaid } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { t } from "../../../i18n/en";
 import { useFocus, useStore } from "../../store";
 import { monthYear, moodClass } from "../support/labels";
 import "../support/support.css";
@@ -15,20 +16,20 @@ import { TrendCharts } from "./TrendCharts";
 import "./customers.css";
 
 const FILTERS: { id: Status | "current"; label: string }[] = [
-  { id: "current", label: "Current" }, { id: "active", label: "Active" }, { id: "overdue", label: "Overdue" }, { id: "suspended", label: "Suspended" }, { id: "churned", label: "Churned" },
+  { id: "current", label: t("misc.current") }, { id: "active", label: t("misc.active") }, { id: "overdue", label: t("misc.overdue") }, { id: "suspended", label: t("misc.suspended") }, { id: "churned", label: t("misc.churned") },
 ];
 const BANDS = [
-  { id: "any", label: "Any mood", match: () => true },
-  { id: "ok", label: "Happy", match: (h: number) => moodClass(h) === "ok" },
-  { id: "warn", label: "Neutral", match: (h: number) => moodClass(h) === "warn" },
-  { id: "bad", label: "Unhappy", match: (h: number) => moodClass(h) === "bad" },
+  { id: "any", label: t("misc.anyMood"), match: () => true },
+  { id: "ok", label: t("misc.happy"), match: (h: number) => moodClass(h) === "ok" },
+  { id: "warn", label: t("misc.neutral"), match: (h: number) => moodClass(h) === "warn" },
+  { id: "bad", label: t("misc.unhappy"), match: (h: number) => moodClass(h) === "bad" },
 ];
 
 type Key = "name" | "status" | "happiness" | "services" | "monthly" | "lifetime" | "balance" | "since";
 const COLUMNS: { key: Key; label: string; num?: boolean }[] = [
-  { key: "name", label: "Name" }, { key: "status", label: "Status" }, { key: "happiness", label: "Happiness" },
-  { key: "services", label: "Services", num: true }, { key: "monthly", label: "Monthly", num: true }, { key: "lifetime", label: "Lifetime", num: true },
-  { key: "balance", label: "Balance", num: true }, { key: "since", label: "Since", num: true },
+  { key: "name", label: t("misc.name") }, { key: "status", label: t("misc.status") }, { key: "happiness", label: t("misc.happiness") },
+  { key: "services", label: t("misc.services"), num: true }, { key: "monthly", label: t("misc.monthly"), num: true }, { key: "lifetime", label: t("misc.lifetime"), num: true },
+  { key: "balance", label: t("misc.balance"), num: true }, { key: "since", label: t("misc.sinceLabel"), num: true },
 ];
 const ORDER: Status[] = ["active", "overdue", "suspended", "churned"];
 const value = (r: Row, k: Key): number | string =>
@@ -75,11 +76,11 @@ export function CustomersApp() {
   const [tab, setTab] = useState<Tab>("summary");
   const show = (id: string, t: Tab = "summary") => { setTab(t); setSel(id); };
   const menu = (id: string) => (): MenuEntry[] => [
-    { label: "Open", run: () => show(id) },
+    { label: t("misc.open"), run: () => show(id) },
     null,
-    { label: "Show services", run: () => show(id, "services") },
-    { label: "Show invoices", run: () => show(id, "invoices") },
-    { label: "Show tickets", run: () => show(id, "tickets") },
+    { label: t("misc.showServices"), run: () => show(id, "services") },
+    { label: t("misc.showInvoices"), run: () => show(id, "invoices") },
+    { label: t("misc.showTickets"), run: () => show(id, "tickets") },
   ];
   const all = useMemo(() => rows(game), [game]);
   useFocus("Customers", (f) => {
@@ -108,15 +109,15 @@ export function CustomersApp() {
     <div className="cus">
       <div className="cus-main">
         <div className="cus-bar">
-          <label className="search"><Search /><input type="search" placeholder="Search" aria-label="Search customers" value={query} onChange={(e) => setQuery(e.target.value)} /></label>
-          <button className="btn cus-toggle" aria-pressed={charts} onClick={() => setCharts(!charts)}><ChartLine />History</button>
-          <div className="seg" role="group" aria-label="Status">
+          <label className="search"><Search /><input type="search" placeholder={t("misc.search")} aria-label={t("misc.searchCustomers")} value={query} onChange={(e) => setQuery(e.target.value)} /></label>
+          <button className="btn cus-toggle" aria-pressed={charts} onClick={() => setCharts(!charts)}><ChartLine />{t("misc.history")}</button>
+          <div className="seg" role="group" aria-label={t("misc.status")}>
             {FILTERS.map((f) => <button key={f.id} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</button>)}
           </div>
-          <div className="seg" role="group" aria-label="Happiness">
+          <div className="seg" role="group" aria-label={t("misc.happiness")}>
             {BANDS.map((b) => <button key={b.id} aria-pressed={band === b.id} onClick={() => setBand(b.id)}>{b.label}</button>)}
           </div>
-          <button className="btn cus-toggle" aria-pressed={withTickets} onClick={() => setWithTickets(!withTickets)}><LifeBuoy />Open tickets</button>
+          <button className="btn cus-toggle" aria-pressed={withTickets} onClick={() => setWithTickets(!withTickets)}><LifeBuoy />{t("misc.openTickets")}</button>
         </div>
         {charts ? <div className="cus-scroll"><TrendCharts trend={game.trend} /></div> : <div className="cus-scroll">
           <table className="table">
@@ -146,7 +147,7 @@ export function CustomersApp() {
               ))}
             </tbody>
           </table>
-          {!list.length && <div className="sup-none">No customers</div>}
+          {!list.length && <div className="sup-none">{t("misc.noCustomers")}</div>}
         </div>}
       </div>
     </div>

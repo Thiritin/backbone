@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { t } from "../../../../../i18n/en";
 import { euro, euroCents } from "../../../../../sim/00-core/money";
 import { registrarById, TIERS, type Registrar, type RegistrarId } from "../../../../../sim/10-catalog/registrars";
 import type { Look } from "../../../../../sim/10-catalog/sites";
@@ -31,7 +32,7 @@ const tierOf = (game: GameState, r: Registrar) => (own(game, r) ? game.registrar
 const Head = ({ title }: { title?: ReactNode }) => (title ? <h2>{title}</h2> : null);
 
 // The domain search with its name spinner; Buy orders the company domain.
-export function DomainSearch({ game, r, title, button = "Search" }: { game: GameState; r: Registrar; title?: ReactNode; button?: string }) {
+export function DomainSearch({ game, r, title, button = t("browser-sites-1.rg.search") }: { game: GameState; r: Registrar; title?: ReactNode; button?: string }) {
   const act = useStore((s) => s.act);
   const [query, setQuery] = useState(() => derivedDomain(game));
   const [shown, setShown] = useState(query);
@@ -41,12 +42,12 @@ export function DomainSearch({ game, r, title, button = "Search" }: { game: Game
     <div className="rg-find">
       <Head title={title} />
       <form className="rg-search" onSubmit={(e) => { e.preventDefault(); setShown(query); }}>
-        <input aria-label="Domain name" spellCheck={false} autoCapitalize="off" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input aria-label={t("browser-sites-1.rg.domainName")} spellCheck={false} autoCapitalize="off" value={query} onChange={(e) => setQuery(e.target.value)} />
         <button type="submit">{button}</button>
       </form>
       {names.length > 0 && (
         <table className="rg-table">
-          <thead><tr><th>Domain</th><th className="r">Per year</th><th /></tr></thead>
+          <thead><tr><th>{t("browser-sites-1.rg.domain")}</th><th className="r">{t("browser-sites-1.rg.perYear")}</th><th /></tr></thead>
           <tbody>
             {names.map((n) => {
               const free = !companyDomainError(game, n);
@@ -54,15 +55,15 @@ export function DomainSearch({ game, r, title, button = "Search" }: { game: Game
                 <tr key={n}>
                   <td>{n}</td>
                   <td className="r num">{free ? euroCents(yearlyAt(game, r, tier, n)) : ""}</td>
-                  <td className="r">{!free ? <span className="rg-taken">{n === game.company.domain ? "Yours" : "Taken"}</span>
-                    : !game.company.domain && <button className="rg-btn" onClick={() => act(orderCompanyDomain, r.id, n)}>Buy</button>}</td>
+                  <td className="r">{!free ? <span className="rg-taken">{n === game.company.domain ? t("browser-sites-1.rg.yours") : t("browser-sites-1.rg.taken")}</span>
+                    : !game.company.domain && <button className="rg-btn" onClick={() => act(orderCompanyDomain, r.id, n)}>{t("browser-sites-1.rg.buy")}</button>}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       )}
-      {names.length > 0 && !cur && r.signup > 0 && !game.company.domain && <p className="rg-note">Buying a domain here signs the reseller contract for a {euro(r.signup)} signup fee.</p>}
+      {names.length > 0 && !cur && r.signup > 0 && !game.company.domain && <p className="rg-note">{t("browser-sites-1.rg.signupNote", { fee: euro(r.signup) })}</p>}
     </div>
   );
 }
@@ -70,11 +71,11 @@ export function DomainSearch({ game, r, title, button = "Search" }: { game: Game
 // What a year of each TLD costs at this registrar, split into columns.
 export function TldPrices({ game, r, title, columns = 1, grid }: { game: GameState; r: Registrar; title?: ReactNode; columns?: number; grid?: boolean }) {
   const tier = tierOf(game, r), tlds = Object.keys(REGISTRIES), per = Math.ceil(tlds.length / columns);
-  const price = (t: string) => euroCents(yearlyAt(game, r, tier, `x.${t}`));
+  const price = (tld: string) => euroCents(yearlyAt(game, r, tier, `x.${tld}`));
   if (grid) return (
     <div className="rg-tlds">
       <Head title={title} />
-      <ul className="rg-tld-grid">{tlds.map((t) => <li key={t}><b>.{t}</b><span className="num">{price(t)}</span></li>)}</ul>
+      <ul className="rg-tld-grid">{tlds.map((tld) => <li key={tld}><b>.{tld}</b><span className="num">{price(tld)}</span></li>)}</ul>
     </div>
   );
   return (
@@ -83,8 +84,8 @@ export function TldPrices({ game, r, title, columns = 1, grid }: { game: GameSta
       <div className="rg-tld-cols">
         {Array.from({ length: columns }, (_, c) => (
           <table key={c} className="rg-table">
-            <thead><tr><th>TLD</th><th className="r">Per year</th></tr></thead>
-            <tbody>{tlds.slice(c * per, (c + 1) * per).map((t) => <tr key={t}><td>.{t}</td><td className="r num">{price(t)}</td></tr>)}</tbody>
+            <thead><tr><th>{t("browser-sites-1.rg.tld")}</th><th className="r">{t("browser-sites-1.rg.perYear")}</th></tr></thead>
+            <tbody>{tlds.slice(c * per, (c + 1) * per).map((tld) => <tr key={tld}><td>.{tld}</td><td className="r num">{price(tld)}</td></tr>)}</tbody>
           </table>
         ))}
       </div>
@@ -93,65 +94,65 @@ export function TldPrices({ game, r, title, columns = 1, grid }: { game: GameSta
 }
 
 // The reseller contract: its terms and the button that signs it or switches to it.
-export function Program({ game, r, title = "Reseller program", sign = "Sign" }: { game: GameState; r: Registrar; title?: ReactNode; sign?: string }) {
+export function Program({ game, r, title = t("browser-sites-1.rg.program"), sign = t("browser-sites-1.rg.sign") }: { game: GameState; r: Registrar; title?: ReactNode; sign?: string }) {
   const act = useStore((s) => s.act);
   const cur = game.registrar, mine = own(game, r), tier = tierOf(game, r);
   return (
     <div className="rg-program">
       <Head title={title} />
       <dl className="rg-specs">
-        <div><dt>Signup</dt><dd className="num">{r.signup ? euro(r.signup) : "None"}</dd></div>
-        <div><dt>Per month</dt><dd className="num">{r.minimum ? `${euro(r.minimum)} minimum` : r.fee ? euro(r.fee) : "None"}</dd></div>
+        <div><dt>{t("browser-sites-1.rg.signup")}</dt><dd className="num">{r.signup ? euro(r.signup) : t("browser-sites-1.rg.none")}</dd></div>
+        <div><dt>{t("browser-sites-1.rg.perMonth")}</dt><dd className="num">{r.minimum ? t("browser-sites-1.rg.minimum", { amount: euro(r.minimum) }) : r.fee ? euro(r.fee) : t("browser-sites-1.rg.none")}</dd></div>
         {r.factors.map((f, i) => (
-          <div key={i}><dt>{i === 0 ? "Any size" : `${TIERS[i].toLocaleString(LOCALE)}+ domains`}</dt><dd className="num">{mine && tier === i ? <strong>{factor(f)}</strong> : factor(f)}</dd></div>
+          <div key={i}><dt>{i === 0 ? t("browser-sites-1.rg.anySize") : t("browser-sites-1.rg.nDomainsPlus", { n: TIERS[i].toLocaleString(LOCALE) })}</dt><dd className="num">{mine && tier === i ? <strong>{factor(f)}</strong> : factor(f)}</dd></div>
         ))}
         {r.tlds && Object.entries(r.tlds).map(([tld, f]) => <div key={tld}><dt>.{tld}</dt><dd className="num">{factor(f)}</dd></div>)}
-        <div><dt>SSL certificate</dt><dd className="num">{euro(r.ssl)} a year</dd></div>
+        <div><dt>{t("browser-sites-1.rg.ssl")}</dt><dd className="num">{t("browser-sites-1.rg.aYear", { price: euro(r.ssl) })}</dd></div>
       </dl>
-      {mine ? <span className="rg-pill">Under contract</span>
-        : <button className="rg-btn" disabled={!!cur?.transfer} onClick={() => act(signRegistrar, r.id)}>{cur ? "Switch to this partner" : sign}</button>}
+      {mine ? <span className="rg-pill">{t("browser-sites-1.rg.underContract")}</span>
+        : <button className="rg-btn" disabled={!!cur?.transfer} onClick={() => act(signRegistrar, r.id)}>{cur ? t("browser-sites-1.rg.switch") : sign}</button>}
     </div>
   );
 }
 
 // The account under contract: tier, monthly bill, a pending transfer and every domain with its renewal date.
-export function Account({ game, r, title = "Your account" }: { game: GameState; r: Registrar; title?: ReactNode }) {
+export function Account({ game, r, title = t("browser-sites-1.rg.account") }: { game: GameState; r: Registrar; title?: ReactNode }) {
   const act = useStore((s) => s.act);
   if (!own(game, r)) return null;
   const tier = game.registrar!.tier, count = game.domains.length, next = TIERS.find((at) => at > count);
-  const t = game.registrar!.transfer, hands = techsAt(game, game.locations[0].id, OP_TASK.domains).length > 0;
+  const tr = game.registrar!.transfer, hands = techsAt(game, game.locations[0].id, OP_TASK.domains).length > 0;
   return (
     <div className="rg-account">
       <Head title={title} />
       <dl className="rg-specs">
-        <div><dt>Tier</dt><dd className="num">{tier + 1} of {TIERS.length}</dd></div>
-        <div><dt>Domains</dt><dd className="num">{count}</dd></div>
-        <div><dt>SSL certificates</dt><dd className="num">{certificateCount(game)}</dd></div>
-        <div><dt>Next tier</dt><dd className="num">{next ? `At ${next.toLocaleString(LOCALE)} domains` : "None"}</dd></div>
-        <div><dt>Per month</dt><dd className="num">{euroCents(Math.max(r.minimum, monthlyDomains(game) + r.fee) + (certificateCount(game) * r.ssl) / 12)}</dd></div>
+        <div><dt>{t("browser-sites-1.rg.tier")}</dt><dd className="num">{t("browser-sites-1.rg.tierOf", { n: tier + 1, total: TIERS.length })}</dd></div>
+        <div><dt>{t("browser-sites-1.rg.domains")}</dt><dd className="num">{count}</dd></div>
+        <div><dt>{t("browser-sites-1.rg.sslCerts")}</dt><dd className="num">{certificateCount(game)}</dd></div>
+        <div><dt>{t("browser-sites-1.rg.nextTier")}</dt><dd className="num">{next ? t("browser-sites-1.rg.atDomains", { n: next.toLocaleString(LOCALE) }) : t("browser-sites-1.rg.none")}</dd></div>
+        <div><dt>{t("browser-sites-1.rg.perMonth")}</dt><dd className="num">{euroCents(Math.max(r.minimum, monthlyDomains(game) + r.fee) + (certificateCount(game) * r.ssl) / 12)}</dd></div>
       </dl>
-      {t && (
+      {tr && (
         <div className="rg-transfer">
-          <span>{t.doneAt === null ? `${t.domains} domains to move from ${registrarById(t.from)!.name}` : `Moving ${t.domains} domains until ${formatDay(t.doneAt)}`}</span>
-          {t.doneAt === null && (
+          <span>{tr.doneAt === null ? t("browser-sites-1.rg.toMove", { n: tr.domains, from: registrarById(tr.from)!.name }) : t("browser-sites-1.rg.moving", { n: tr.domains, date: formatDay(tr.doneAt) })}</span>
+          {tr.doneAt === null && (
             <>
-              <span className="num">{t.domains * TRANSFER_MINUTES} min</span>
-              <button className="rg-btn ghost" disabled={!hands} onClick={() => act(queueTransfer)}>Hand to technician</button>
-              <button className="rg-btn" onClick={() => act(transferDomains)}>Move domains</button>
+              <span className="num">{t("browser-sites-1.rg.minutes", { n: tr.domains * TRANSFER_MINUTES })}</span>
+              <button className="rg-btn ghost" disabled={!hands} onClick={() => act(queueTransfer)}>{t("browser-sites-1.rg.handOff")}</button>
+              <button className="rg-btn" onClick={() => act(transferDomains)}>{t("browser-sites-1.rg.moveDomains")}</button>
             </>
           )}
         </div>
       )}
       {count > 0 && (
         <table className="rg-table">
-          <thead><tr><th>Domain</th><th>Customer</th><th className="r">Per year</th><th>Expires</th></tr></thead>
+          <thead><tr><th>{t("browser-sites-1.rg.domain")}</th><th>{t("browser-sites-1.rg.customer")}</th><th className="r">{t("browser-sites-1.rg.perYear")}</th><th>{t("browser-sites-1.rg.expires")}</th></tr></thead>
           <tbody>
             {[...game.domains].sort((a, b) => a.name.localeCompare(b.name)).map((d) => (
               <tr key={d.name}>
                 <td>{d.name}</td>
                 <td>{d.customerId ? game.customers.find((c) => c.id === d.customerId)?.name ?? "" : game.company.name}</td>
                 <td className="r num">{euroCents(wholesale(game, d.name))}</td>
-                <td className="num">{registering(game, d) ? "Registering" : formatDay(d.expiresAt)}</td>
+                <td className="num">{registering(game, d) ? t("browser-sites-1.rg.registering") : formatDay(d.expiresAt)}</td>
               </tr>
             ))}
           </tbody>

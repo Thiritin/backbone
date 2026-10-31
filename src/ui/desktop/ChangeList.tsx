@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import type { ChangelogDay } from "../changelog";
 
 interface Props { changes: ChangelogDay[]; max?: number }
@@ -13,13 +14,13 @@ export function ChangeList({ changes, max = Infinity }: Props) {
     <div className="update-changes">
       {shown.map((d) => (
         <section key={d.date}>
-          <h3>{d.version ? `Version ${d.version}` : d.date}</h3>
+          <h3>{d.version ? t("desktop.changes.version", { version: d.version }) : d.date}</h3>
           <ul>
             {d.items.map((i) => <li key={i}>{i}</li>)}
           </ul>
         </section>
       ))}
-      {total > max && <p className="update-more">{total - max} more changes</p>}
+      {total > max && <p className="update-more">{t("desktop.changes.more", { n: total - max })}</p>}
     </div>
   );
 }

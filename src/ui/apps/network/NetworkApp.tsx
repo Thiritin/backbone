@@ -8,6 +8,7 @@ import { monthlyNetworkCost, route } from "../../../sim/60-infra/network";
 import { addressBills } from "../../../sim/60-infra/addresses";
 import { setProtection } from "../../../sim/90-actions/network";
 import { cityNamed, WorldMap, type Marker } from "../../map/WorldMap";
+import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { mbps } from "../locations/NetworkTab";
 import { Ripe } from "./Addresses";
@@ -31,18 +32,18 @@ export function NetworkApp() {
 
   return (
     <div className="fin">
-      <nav className="sidebar fin-side" aria-label="Sections">
-        {item("map", <MapIcon />, "Map")}
-        {item("ddos", <ShieldAlert />, "DDoS protection")}
+      <nav className="sidebar fin-side" aria-label={t("misc.sections")}>
+        {item("map", <MapIcon />, t("misc.map"))}
+        {item("ddos", <ShieldAlert />, t("misc.ddosProtection"))}
         {item("ripe", <Landmark />, "RIPE")}
       </nav>
       <div className="fin-main">
         <dl className="fin-totals">
-          <div><dt>Network per month</dt><dd className="num">{euro(monthlyNetworkCost(game) || 0)}</dd></div>
-          <div><dt>Addresses</dt><dd className="num">{euro(-addressBills(game).reduce((n, b) => n + b.amount, 0) || 0)}</dd></div>
-          <div><dt>Traffic now</dt><dd className="num">{mbps(now)}</dd></div>
-          <div><dt>Dropped now</dt><dd className={`num${dropped > 0 ? " net-bad" : ""}`}>{mbps(dropped)}</dd></div>
-          <div><dt>AS number</dt><dd className="num">{game.network.asn ? `AS${game.network.asn}` : "None"}</dd></div>
+          <div><dt>{t("misc.networkPerMonth")}</dt><dd className="num">{euro(monthlyNetworkCost(game) || 0)}</dd></div>
+          <div><dt>{t("misc.addresses")}</dt><dd className="num">{euro(-addressBills(game).reduce((n, b) => n + b.amount, 0) || 0)}</dd></div>
+          <div><dt>{t("misc.trafficNow")}</dt><dd className="num">{mbps(now)}</dd></div>
+          <div><dt>{t("misc.droppedNow")}</dt><dd className={`num${dropped > 0 ? " net-bad" : ""}`}>{mbps(dropped)}</dd></div>
+          <div><dt>{t("misc.asNumber")}</dt><dd className="num">{game.network.asn ? `AS${game.network.asn}` : t("misc.none")}</dd></div>
         </dl>
         <div className="fin-scroll">
           {page === "map" && <NetworkMap game={game} />}
@@ -64,9 +65,9 @@ function NetworkMap({ game }: { game: GameState }) {
 
 
 const PROTECTION_INFO: Record<Protection, { name: string; text: string }> = {
-  none: { name: "No protection", text: "Attacks hit your links at full strength." },
-  onDemand: { name: PROTECTIONS.onDemand.name, text: "Filters an attack once it is detected, about ten minutes in." },
-  alwaysOn: { name: PROTECTIONS.alwaysOn.name, text: "Filters all traffic all the time." },
+  none: { name: t("misc.protNone"), text: t("misc.protNoneText") },
+  onDemand: { name: PROTECTIONS.onDemand.name, text: t("misc.protOnDemandText") },
+  alwaysOn: { name: PROTECTIONS.alwaysOn.name, text: t("misc.protAlwaysOnText") },
 };
 
 function Ddos({ game }: { game: GameState }) {
@@ -81,11 +82,11 @@ function Ddos({ game }: { game: GameState }) {
             <div key={p} className="shop-card">
               <div className="shop-name"><strong>{PROTECTION_INFO[p].name}</strong><span>{PROTECTION_INFO[p].text}</span></div>
               <dl className="shop-specs">
-                <div><dt>Per month</dt><dd className="num">{euro(def?.monthly ?? 0)}</dd></div>
-                <div><dt>Per attack</dt><dd className="num">{euro(def?.perIncident ?? 0)}</dd></div>
+                <div><dt>{t("misc.perMonth2")}</dt><dd className="num">{euro(def?.monthly ?? 0)}</dd></div>
+                <div><dt>{t("misc.perAttack")}</dt><dd className="num">{euro(def?.perIncident ?? 0)}</dd></div>
               </dl>
               <div className="shop-buy"><span className="grow" />
-                {n.protection === p ? <span className="pill ok">Active</span> : <button className="btn" onClick={() => act(setProtection, p)}>Switch</button>}</div>
+                {n.protection === p ? <span className="pill ok">{t("misc.active")}</span> : <button className="btn" onClick={() => act(setProtection, p)}>{t("misc.switch")}</button>}</div>
             </div>
           );
         })}

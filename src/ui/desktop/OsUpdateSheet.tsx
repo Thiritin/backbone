@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { Download, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -30,11 +31,11 @@ export function OsUpdateSheet() {
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
       <div className="alert os-update" role="alertdialog" aria-modal="true" aria-labelledby="os-title" aria-describedby="os-text">
         <span className="alert-icon"><Download /></span>
-        <h2 id="os-title">Software Update</h2>
-        <p id="os-text">Pear OS {next.version} {next.name} is available for your computer.</p>
+        <h2 id="os-title">{t("desktop.os.title")}</h2>
+        <p id="os-text">{t("desktop.os.available", { version: next.version, name: next.name })}</p>
         <div className="alert-actions">
-          <button className="btn" onClick={() => setLater(next.id)}>Later</button>
-          <button className="btn primary" autoFocus onClick={start}>Update</button>
+          <button className="btn" onClick={() => setLater(next.id)}>{t("desktop.later")}</button>
+          <button className="btn primary" autoFocus onClick={start}>{t("desktop.os.update")}</button>
         </div>
       </div>
     </div>,
@@ -57,17 +58,17 @@ function Install({ release, host, onDone }: { release: OsRelease; host: Element;
   }, []);
   useEffect(() => { if (done && act(updateOs).ok) uiSound("startup"); }, [done, act]);
   return createPortal(
-    <div ref={ref} className="os-install" role="alertdialog" aria-label={`Installing Pear OS ${release.version}`} tabIndex={-1}>
+    <div ref={ref} className="os-install" role="alertdialog" aria-label={t("desktop.os.installingLabel", { version: release.version })} tabIndex={-1}>
       {done ? (
         <form className="os-login" onSubmit={(e) => { e.preventDefault(); onDone(); }}>
           <span className="os-avatar"><User /></span>
-          <input type="password" aria-label="Password" placeholder="Password" autoFocus />
+          <input type="password" aria-label={t("desktop.os.password")} placeholder={t("desktop.os.password")} autoFocus />
         </form>
       ) : (
         <>
-          <strong>Installing Pear OS {release.version} {release.name}</strong>
+          <strong>{t("desktop.os.installing", { version: release.version, name: release.name })}</strong>
           <div className="os-progress"><span style={{ width: `${progress * 100}%` }} /></div>
-          <span>Please do not turn off your computer.</span>
+          <span>{t("desktop.os.wait")}</span>
         </>
       )}
     </div>,

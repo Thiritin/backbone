@@ -7,12 +7,13 @@ import { workloadsOn } from "../../../sim/60-infra/cluster";
 import { capacityMbps, serviceMbps, type Routing } from "../../../sim/60-infra/network";
 import { routerMbps } from "../../../sim/60-infra/routers";
 import { farEnd, locationOf } from "../../../sim/60-infra/status";
+import { t } from "../../../i18n/en";
 import { loadClass, mbps } from "../locations/NetworkTab";
 
 interface Node { id: string; col: number; label: string; sub: string; expand?: string }
 interface Edge { from: string; to: string; load: number; speed: string }
 
-const COLS = ["Carriers and exchanges", "Uplinks", "Routers", "Switches", "Servers"];
+const COLS = [t("misc.colCarriers"), t("misc.colUplinks"), t("misc.colRouters"), t("misc.colSwitches"), t("misc.colServers")];
 const COLLAPSE = 6;
 const W = 136, H = 34, GAP_X = 72, GAP_Y = 10;
 
@@ -31,15 +32,15 @@ export function Topology({ game, loc, routing }: { game: GameState; loc: Locatio
   // The panel gateway carries the home line or the datacenter's bandwidth.
   if (panel) {
     const cap = loc.dc ? DC_BANDWIDTH.mbps : Math.min(homeLineById(game.homeLine.id).up, routerMbps(game, loc)), key = loc.dc ? `dc:${loc.id}` : "home";
-    add({ id: "p:own", col: 0, label: loc.dc ? "Datacenter" : homeLineById(game.homeLine.id).isp, sub: loc.dc ? "Bandwidth" : "Home line" });
-    add({ id: "u:own", col: 1, label: loc.dc ? "Datacenter bandwidth" : homeLineById(game.homeLine.id).name, sub: mbps(cap) });
+    add({ id: "p:own", col: 0, label: loc.dc ? t("misc.datacenter") : homeLineById(game.homeLine.id).isp, sub: loc.dc ? t("misc.bandwidth") : t("misc.srcLine") });
+    add({ id: "u:own", col: 1, label: loc.dc ? t("misc.datacenterBandwidth") : homeLineById(game.homeLine.id).name, sub: mbps(cap) });
     edges.push({ from: "p:own", to: "u:own", load: (used[key] ?? 0) / cap, speed: mbps(used[key] ?? 0) });
     edges.push({ from: "u:own", to: `r:${panel.id}`, load: (used[key] ?? 0) / cap, speed: mbps(cap) });
   }
   for (const u of game.network.uplinks.filter((x) => x.locationId === loc.id)) {
     const partner = carrierById(u.partner)?.name ?? exchangeById(u.partner)?.name ?? u.partner, cap = capacityMbps(u), load = cap ? (used[u.id] ?? 0) / cap : 0;
-    add({ id: `p:${u.partner}`, col: 0, label: partner, sub: u.kind === "transit" ? "Carrier" : "Exchange" });
-    add({ id: `u:${u.id}`, col: 1, label: `${partner} ${u.kind === "transit" ? "transit" : "ports"}`, sub: mbps(cap) });
+    add({ id: `p:${u.partner}`, col: 0, label: partner, sub: u.kind === "transit" ? t("misc.carrier") : t("misc.exchange") });
+    add({ id: `u:${u.id}`, col: 1, label: t(u.kind === "transit" ? "misc.partnerTransit" : "misc.partnerPorts", { partner }), sub: mbps(cap) });
     edges.push({ from: `p:${u.partner}`, to: `u:${u.id}`, load, speed: mbps(used[u.id] ?? 0) });
     for (const l of u.links) edges.push({ from: `u:${u.id}`, to: `r:${l.device}`, load, speed: `${l.gbit}G` });
   }
@@ -55,17 +56,17 @@ export function Topology({ game, loc, routing }: { game: GameState; loc: Locatio
     for (const sw of peers(r.id, "switch")) {
       const servers = peers(sw.end.device, "server");
       const total = servers.reduce((n, s) => n + traffic(s.end.device), 0);
-      add({ id: `s:${sw.end.device}`, col: 3, label: name(sw.end.device), sub: `${servers.length} server${servers.length === 1 ? "" : "s"}` });
+      add({ id: `s:${sw.end.device}`, col: 3, label: name(sw.end.device), sub: t("misc.nServers", { n: servers.length }) });
       edges.push({ from: `r:${r.id}`, to: `s:${sw.end.device}`, load: total / (sw.gbit * 1000), speed: `${sw.gbit}G` });
       if (servers.length > COLLAPSE && !open.includes(sw.end.device)) {
-        add({ id: `n:${sw.end.device}`, col: 4, label: `${servers.length} servers`, sub: mbps(total), expand: sw.end.device });
+        add({ id: `n:${sw.end.device}`, col: 4, label: t("misc.nServers", { n: servers.length }), sub: mbps(total), expand: sw.end.device });
         edges.push({ from: `s:${sw.end.device}`, to: `n:${sw.end.device}`, load: 0, speed: "" });
         continue;
       }
       for (const sv of servers) {
-        const t = traffic(sv.end.device);
-        add({ id: `v:${sv.end.device}`, col: 4, label: name(sv.end.device), sub: mbps(t) });
-        edges.push({ from: `s:${sw.end.device}`, to: `v:${sv.end.device}`, load: t / (sv.gbit * 1000), speed: `${sv.gbit}G` });
+        const tr = traffic(sv.end.device);
+        add({ id: `v:${sv.end.device}`, col: 4, label: name(sv.end.device), sub: mbps(tr) });
+        edges.push({ from: `s:${sw.end.device}`, to: `v:${sv.end.device}`, load: tr / (sv.gbit * 1000), speed: `${sv.gbit}G` });
       }
     }
   }
@@ -80,7 +81,7 @@ export function Topology({ game, loc, routing }: { game: GameState; loc: Locatio
 
   return (
     <div className="net-topo">
-      <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} role="img" aria-label="Network topology">
+      <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} role="img" aria-label={t("misc.networkTopology")}>
         {COLS.map((c, i) => <text key={c} x={i * (W + GAP_X)} y="12" className="net-col">{c}</text>)}
         {edges.map((e) => {
           const a = pos.get(e.from), b = pos.get(e.to);

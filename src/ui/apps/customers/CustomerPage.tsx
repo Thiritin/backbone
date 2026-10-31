@@ -29,15 +29,15 @@ export type Status = "active" | "overdue" | "suspended" | "churned";
 export interface Row { c: Customer; status: Status; services: number; monthly: number; lifetime: number; balance: number; invoices: number; tickets: number; labels: string }
 
 export const STATUSES: Record<Status, { label: string; pill: string }> = {
-  active: { label: "Active", pill: "" },
-  overdue: { label: "Overdue", pill: "warn" },
-  suspended: { label: "Suspended", pill: "bad" },
-  churned: { label: "Churned", pill: "" },
+  active: { label: t("misc.active"), pill: "" },
+  overdue: { label: t("misc.overdue"), pill: "warn" },
+  suspended: { label: t("misc.suspended"), pill: "bad" },
+  churned: { label: t("misc.churned"), pill: "" },
 };
 const INVOICE: Record<InvoiceStatus, { label: string; pill: string }> = {
-  open: { label: "Open", pill: "accent" }, overdue: { label: "Overdue", pill: "warn" }, paid: { label: "Paid", pill: "" }, writtenOff: { label: "Written off", pill: "" },
+  open: { label: t("misc.open"), pill: "accent" }, overdue: { label: t("misc.overdue"), pill: "warn" }, paid: { label: t("misc.paid"), pill: "" }, writtenOff: { label: t("misc.writtenOff"), pill: "" },
 };
-const SLA = { basic: "Basic", business: "Business", premium: "Premium" } as const;
+const SLA = { basic: t("misc.slaBasic"), business: t("misc.slaBusiness"), premium: t("misc.slaPremium") } as const;
 const PERSON: Profile[] = ["private", "gamer", "hobbyDev"];
 const RECENT = 5;
 
@@ -57,7 +57,7 @@ function Trend({ c }: { c: Customer }) {
   if (points.length < 2) return null;
   const w = 120, h = 24, step = w / (points.length - 1);
   return (
-    <svg className="cus-trend" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-label="Happiness trend" role="img">
+    <svg className="cus-trend" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-label={t("misc.happinessTrend")} role="img">
       <polyline points={points.map((p, i) => `${i * step},${h - 2 - (p / 100) * (h - 4)}`).join(" ")} />
     </svg>
   );
@@ -71,13 +71,13 @@ function email(c: Customer, services: Service[]): string {
   return `${local || "info"}@${domain}`;
 }
 
-const price = (v: Service) => (v.period === "hour" ? `${euroPrice(serviceMonthly(v))} a month` : `${euroCents(v.price)} a year`);
-const location = (s: GameState, v: Service) => zoneOf(s, v)?.name ?? "None";
-const serviceStatus = (v: Service, r: Row) => (v.endedAt !== null ? <span className="pill">Ended</span> : r.status === "suspended" ? <span className="pill bad">Suspended</span> : <span className="pill">Active</span>);
+const price = (v: Service) => (v.period === "hour" ? t("misc.perMonth", { price: euroPrice(serviceMonthly(v)) }) : t("misc.perYear", { price: euroCents(v.price) }));
+const location = (s: GameState, v: Service) => zoneOf(s, v)?.name ?? t("misc.none");
+const serviceStatus = (v: Service, r: Row) => (v.endedAt !== null ? <span className="pill">{t("misc.ended")}</span> : r.status === "suspended" ? <span className="pill bad">{t("misc.suspended")}</span> : <span className="pill">{t("misc.active")}</span>);
 const InvoicePill = ({ i }: { i: Invoice }) => (
   <span className="fin-pills">
     <span className={`pill ${INVOICE[i.status].pill}`}>{INVOICE[i.status].label}</span>
-    {i.suspended && isUnpaid(i) && <span className="pill">Suspended</span>}
+    {i.suspended && isUnpaid(i) && <span className="pill">{t("misc.suspended")}</span>}
   </span>
 );
 
@@ -101,7 +101,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   const serviceMenu = (v: Service) => (): MenuEntry[] => {
     const w = v.endedAt === null ? game.workloads.find((x) => x.serviceId === v.id) : undefined;
     return [
-      v.endedAt === null && v.period === "hour" && { label: "Change price", run: () => { setTab("services"); setPricing(v.id); } },
+      v.endedAt === null && v.period === "hour" && { label: t("misc.changePrice"), run: () => { setTab("services"); setPricing(v.id); } },
       null,
       ...(w ? workloadActions(game, w) : []),
       null,
@@ -110,19 +110,19 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   };
   const held = game.heldCustomers.includes(c.id);
   const customerMenu = (): MenuEntry[] => [
-    { label: "Credit...", run: () => setCrediting(true) },
-    { label: held ? "Unsuspend" : "Suspend", run: () => act(suspendCustomer, c.id, !held) },
+    { label: t("misc.creditEllipsis"), run: () => setCrediting(true) },
+    { label: held ? t("misc.unsuspend") : t("misc.suspend"), run: () => act(suspendCustomer, c.id, !held) },
   ];
   const domainMenu = (name: string) => (): MenuEntry[] => [
-    c.churnedAt === null && { label: "Renew", run: () => act(renewDomain, name) },
-    { label: "Open in Billing", run: () => openApp("Billing", { kind: "domain", id: name }) },
+    c.churnedAt === null && { label: t("misc.renew"), run: () => act(renewDomain, name) },
+    { label: t("misc.openInBilling"), run: () => openApp("Billing", { kind: "domain", id: name }) },
   ];
   const tabs: [Tab, string, number?][] = [
-    ["summary", "Summary"],
-    ["services", "Services", services.filter((v) => v.endedAt === null).length],
-    ["invoices", "Invoices", invoices.filter(isUnpaid).length],
-    ["tickets", "Tickets", tickets.filter((tk) => !isFinal(tk)).length],
-    ["activity", "Activity"],
+    ["summary", t("misc.summary")],
+    ["services", t("misc.services"), services.filter((v) => v.endedAt === null).length],
+    ["invoices", t("misc.invoices"), invoices.filter(isUnpaid).length],
+    ["tickets", t("misc.tickets"), tickets.filter((tk) => !isFinal(tk)).length],
+    ["activity", t("misc.activity")],
   ];
 
   const invoiceRows = (list: Invoice[]) => list.map((i) => (
@@ -145,30 +145,30 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
       </tr>
     );
   });
-  const invoiceHead = <thead><tr><th>Number</th><th>Issued</th><th>Due</th><th className="r">Total</th><th className="r">Status</th></tr></thead>;
-  const ticketHead = <thead><tr><th>Subject</th><th>Type</th><th>Opened</th><th className="r">Status</th></tr></thead>;
+  const invoiceHead = <thead><tr><th>{t("misc.number")}</th><th>{t("misc.issued")}</th><th>{t("misc.due")}</th><th className="r">{t("misc.total")}</th><th className="r">{t("misc.status")}</th></tr></thead>;
+  const ticketHead = <thead><tr><th>{t("misc.subject")}</th><th>{t("misc.type")}</th><th>{t("misc.opened")}</th><th className="r">{t("misc.status")}</th></tr></thead>;
 
   return (
     <div className="cus-page" onContextMenu={c.churnedAt === null ? menuOn(customerMenu) : undefined}>
       <header className="cus-page-head">
-        <button className="btn ghost cus-back" onClick={onBack}><ChevronLeft />Customers</button>
+        <button className="btn ghost cus-back" onClick={onBack}><ChevronLeft />{t("misc.customers")}</button>
         <div className="cus-head">
           <div className="logo">{initials(c.name)}</div>
           <div className="grow">
             <h2>{c.name}</h2>
-            <div className="cus-sub">{c.churnedAt === null ? <>Since <span className="num">{monthYear(c.since)}</span></> : <>Left <span className="num">{monthYear(c.churnedAt)}</span></>}</div>
+            <div className="cus-sub">{c.churnedAt === null ? <>{t("misc.sinceLabel")} <span className="num">{monthYear(c.since)}</span></> : <>{t("misc.left")} <span className="num">{monthYear(c.churnedAt)}</span></>}</div>
           </div>
           <StatusChip s={r.status} />
         </div>
       </header>
       {crediting && c.churnedAt === null && <CreditSheet customerId={c.id} onClose={() => setCrediting(false)} />}
       <dl className="fin-totals cus-totals">
-        <div><dt>Monthly value</dt><dd className="num">{euroPrice(r.monthly)}</dd></div>
-        <div><dt>Open balance</dt><dd className="num">{euroCents(r.balance)}</dd></div>
-        <div><dt>Customer since</dt><dd className="num">{monthYear(c.since)}</dd></div>
-        <div><dt>Happiness</dt><dd><Mood c={c} /></dd></div>
+        <div><dt>{t("misc.monthlyValue")}</dt><dd className="num">{euroPrice(r.monthly)}</dd></div>
+        <div><dt>{t("misc.openBalance")}</dt><dd className="num">{euroCents(r.balance)}</dd></div>
+        <div><dt>{t("misc.customerSince")}</dt><dd className="num">{monthYear(c.since)}</dd></div>
+        <div><dt>{t("misc.happiness")}</dt><dd><Mood c={c} /></dd></div>
       </dl>
-      <div className="tabs" role="tablist" aria-label="Customer">
+      <div className="tabs" role="tablist" aria-label={t("misc.customer")}>
         {tabs.map(([id, label, count]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>
             {label}{count ? <span className="tab-count num">{count}</span> : null}
@@ -181,31 +181,31 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
           <div className="cus-summary">
             <div className="cus-col">
               <section className="fin-card">
-                <h3 className="fin-card-h"><Contact />Contact</h3>
+                <h3 className="fin-card-h"><Contact />{t("misc.contact")}</h3>
                 <dl className="fin-rows">
-                  <div><dt>Name</dt><dd>{c.name}</dd></div>
-                  <div><dt>Email</dt><dd className="num">{email(c, services)}</dd></div>
-                  <div><dt>Customer since</dt><dd className="num">{formatDay(c.since)}</dd></div>
-                  {c.churnedAt !== null && <div><dt>Left</dt><dd className="num">{formatDay(c.churnedAt)}</dd></div>}
+                  <div><dt>{t("misc.name")}</dt><dd>{c.name}</dd></div>
+                  <div><dt>{t("misc.email")}</dt><dd className="num">{email(c, services)}</dd></div>
+                  <div><dt>{t("misc.customerSince")}</dt><dd className="num">{formatDay(c.since)}</dd></div>
+                  {c.churnedAt !== null && <div><dt>{t("misc.left")}</dt><dd className="num">{formatDay(c.churnedAt)}</dd></div>}
                 </dl>
               </section>
               <section className="fin-card">
-                <h3 className="fin-card-h"><FileText />Figures</h3>
+                <h3 className="fin-card-h"><FileText />{t("misc.figures")}</h3>
                 <dl className="fin-rows">
-                  <div><dt>Happiness</dt><dd className="cus-happy"><Trend c={c} /><Mood c={c} /></dd></div>
-                  <div><dt>Lifetime spend</dt><dd className="num">{euroCents(r.lifetime)}</dd></div>
-                  <div><dt>Open balance</dt><dd className="num">{euroCents(r.balance)}</dd></div>
-                  <div><dt>Monthly value</dt><dd className="num">{euroPrice(r.monthly)}</dd></div>
-                  <div><dt>Active services</dt><dd className="num">{r.services}</dd></div>
-                  <div><dt>Open tickets</dt><dd className="num">{r.tickets}</dd></div>
-                  <div><dt>Invoices</dt><dd className="num">{r.invoices}</dd></div>
-                  <div><dt>Reply within</dt><dd>{patience(profileStats(c.profile).reply)}</dd></div>
+                  <div><dt>{t("misc.happiness")}</dt><dd className="cus-happy"><Trend c={c} /><Mood c={c} /></dd></div>
+                  <div><dt>{t("misc.lifetimeSpend")}</dt><dd className="num">{euroCents(r.lifetime)}</dd></div>
+                  <div><dt>{t("misc.openBalance")}</dt><dd className="num">{euroCents(r.balance)}</dd></div>
+                  <div><dt>{t("misc.monthlyValue")}</dt><dd className="num">{euroPrice(r.monthly)}</dd></div>
+                  <div><dt>{t("misc.activeServices")}</dt><dd className="num">{r.services}</dd></div>
+                  <div><dt>{t("misc.openTickets")}</dt><dd className="num">{r.tickets}</dd></div>
+                  <div><dt>{t("misc.invoices")}</dt><dd className="num">{r.invoices}</dd></div>
+                  <div><dt>{t("misc.replyWithin")}</dt><dd>{patience(profileStats(c.profile).reply)}</dd></div>
                 </dl>
               </section>
             </div>
             <div className="cus-col">
               <section className="fin-card">
-                <h3 className="fin-card-h"><Server />Services</h3>
+                <h3 className="fin-card-h"><Server />{t("misc.services")}</h3>
                 <table className="table cus-table">
                   <tbody>
                     {services.filter((v) => v.endedAt === null).map((v) => (
@@ -218,11 +218,11 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                     ))}
                   </tbody>
                 </table>
-                {!r.services && <div className="fin-none">No services</div>}
+                {!r.services && <div className="fin-none">{t("misc.noServices")}</div>}
               </section>
               {domains.length > 0 && (
                 <section className="fin-card">
-                  <h3 className="fin-card-h"><Globe />Domains</h3>
+                  <h3 className="fin-card-h"><Globe />{t("misc.domains")}</h3>
                   <table className="table cus-table">
                     <tbody>
                       {domains.map((d) => (
@@ -230,7 +230,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                           <td className="cus-subject"><span className="cus-strong">{d.name}</span></td>
                           <td className="cus-dim">{registryOf(d.name).name}</td>
                           <td className="r num">{formatDay(d.expiresAt)}</td>
-                          <td className="r">{game.hour >= d.expiresAt ? <span className="pill bad">Expired</span> : <span className="pill">Active</span>}</td>
+                          <td className="r">{game.hour >= d.expiresAt ? <span className="pill bad">{t("misc.expired")}</span> : <span className="pill">{t("misc.active")}</span>}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -238,14 +238,14 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                 </section>
               )}
               <section className="fin-card">
-                <h3 className="fin-card-h"><Receipt />Recent invoices</h3>
+                <h3 className="fin-card-h"><Receipt />{t("misc.recentInvoices")}</h3>
                 <table className="table cus-table">{invoiceHead}<tbody>{invoiceRows(invoices.slice(0, RECENT))}</tbody></table>
-                {!invoices.length && <div className="fin-none">No invoices</div>}
+                {!invoices.length && <div className="fin-none">{t("misc.noInvoices")}</div>}
               </section>
               <section className="fin-card">
-                <h3 className="fin-card-h"><LifeBuoy />Recent tickets</h3>
+                <h3 className="fin-card-h"><LifeBuoy />{t("misc.recentTickets")}</h3>
                 <table className="table cus-table">{ticketHead}<tbody>{ticketRows(tickets.slice(0, RECENT))}</tbody></table>
-                {!tickets.length && <div className="fin-none">No tickets</div>}
+                {!tickets.length && <div className="fin-none">{t("misc.noTickets")}</div>}
               </section>
             </div>
           </div>
@@ -259,17 +259,17 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                   <h3 className="fin-card-h"><span className="cus-title">{v.label}</span>{serviceStatus(v, r)}<More label={v.label} entries={serviceMenu(v)} /></h3>
                   <div className="fin-card-b">
                     <dl className="fin-rows">
-                      <div><dt>Product</dt><dd>{PRODUCT[v.product]}</dd></div>
-                      {v.hostname && <div><dt>Hostname</dt><dd className="num">{fqdn(game, v.hostname)}</dd></div>}
-                      {v.domain && <div><dt>Domain</dt><dd>{v.domain}</dd></div>}
-                      <div><dt>Resources</dt><dd className="num">{specText(v.product, v.spec)}</dd></div>
-                      <div><dt>Price</dt><dd className="num">{price(v)}</dd></div>
-                      <div><dt>Billing</dt><dd>{v.period === "hour" ? "Monthly" : "Yearly"}</dd></div>
-                      <div><dt>SLA</dt><dd>{SLA[v.sla]}</dd></div>
-                      <div><dt>Term</dt><dd className="num">{v.commitMonths ? `${v.commitMonths} month${v.commitMonths === 1 ? "" : "s"}` : "None"}</dd></div>
-                      <div><dt>Location</dt><dd>{location(game, v)}</dd></div>
-                      <div><dt>Started</dt><dd className="num">{formatDay(v.startedAt)}</dd></div>
-                      {v.endedAt !== null && <div><dt>Ended</dt><dd className="num">{formatDay(v.endedAt)}</dd></div>}
+                      <div><dt>{t("misc.product")}</dt><dd>{PRODUCT[v.product]}</dd></div>
+                      {v.hostname && <div><dt>{t("misc.hostname")}</dt><dd className="num">{fqdn(game, v.hostname)}</dd></div>}
+                      {v.domain && <div><dt>{t("misc.domain")}</dt><dd>{v.domain}</dd></div>}
+                      <div><dt>{t("misc.resources")}</dt><dd className="num">{specText(v.product, v.spec)}</dd></div>
+                      <div><dt>{t("misc.price")}</dt><dd className="num">{price(v)}</dd></div>
+                      <div><dt>{t("misc.billing")}</dt><dd>{v.period === "hour" ? t("misc.monthly") : t("misc.yearly")}</dd></div>
+                      <div><dt>{t("misc.sla")}</dt><dd>{SLA[v.sla]}</dd></div>
+                      <div><dt>{t("misc.term")}</dt><dd className="num">{v.commitMonths ? t("misc.nMonths", { n: v.commitMonths }) : t("misc.none")}</dd></div>
+                      <div><dt>{t("misc.location")}</dt><dd>{location(game, v)}</dd></div>
+                      <div><dt>{t("misc.started")}</dt><dd className="num">{formatDay(v.startedAt)}</dd></div>
+                      {v.endedAt !== null && <div><dt>{t("misc.ended")}</dt><dd className="num">{formatDay(v.endedAt)}</dd></div>}
                     </dl>
                     {pricing === v.id && v.endedAt === null && <ChangePrice v={v} profile={c.profile} onClose={() => setPricing(null)} />}
                   </div>
@@ -277,33 +277,33 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                 </section>
               ))}
             </div>
-            {!services.length && <div className="fin-none">No services</div>}
+            {!services.length && <div className="fin-none">{t("misc.noServices")}</div>}
           </>
         )}
 
         {tab === "invoices" && (
           <section className="fin-card">
             <table className="table fin-table cus-table">{invoiceHead}<tbody>{invoiceRows(invoices)}</tbody></table>
-            {!invoices.length && <div className="fin-none">No invoices</div>}
+            {!invoices.length && <div className="fin-none">{t("misc.noInvoices")}</div>}
           </section>
         )}
 
         {tab === "tickets" && (
           <section className="fin-card">
             <table className="table fin-table cus-table">{ticketHead}<tbody>{ticketRows(tickets)}</tbody></table>
-            {!tickets.length && <div className="fin-none">No tickets</div>}
+            {!tickets.length && <div className="fin-none">{t("misc.noTickets")}</div>}
           </section>
         )}
 
         {tab === "activity" && (
           <section className="fin-card">
-            <h3 className="fin-card-h"><ListChecks />Work log</h3>
+            <h3 className="fin-card-h"><ListChecks />{t("misc.workLog")}</h3>
             <ActivityLog customerId={c.id} />
           </section>
         )}
         {tab === "activity" && (
           <section className="fin-card">
-            <h3 className="fin-card-h"><History />History</h3>
+            <h3 className="fin-card-h"><History />{t("misc.history")}</h3>
             <Timeline invoices={invoices} tickets={tickets} subject={subject} />
           </section>
         )}
@@ -315,11 +315,11 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
 function Timeline({ invoices, tickets, subject }: { invoices: Invoice[]; tickets: GameState["tickets"]; subject: (tk: GameState["tickets"][number]) => string }) {
   const openApp = useStore((s) => s.openApp);
   const items = [
-    ...invoices.map((i) => ({ at: i.issuedAt, what: `Invoice ${i.number} issued`, value: <span className="num">{euroCents(invoiceTotal(i))}</span>, open: () => openApp("Billing", { kind: "invoice", id: i.id }) })),
-    ...invoices.filter((i) => i.paidAt !== null).map((i) => ({ at: i.paidAt!, what: `Invoice ${i.number} paid`, value: <span className="num">{euroCents(invoiceTotal(i))}</span>, open: () => openApp("Billing", { kind: "invoice", id: i.id }) })),
-    ...tickets.map((tk) => ({ at: tk.createdAt, what: `Ticket opened: ${subject(tk)}`, value: <span className="pill">{statusOf(tk)}</span>, open: () => openApp("Support", { kind: "ticket", id: tk.id }) })),
+    ...invoices.map((i) => ({ at: i.issuedAt, what: t("misc.invoiceIssued", { number: i.number }), value: <span className="num">{euroCents(invoiceTotal(i))}</span>, open: () => openApp("Billing", { kind: "invoice", id: i.id }) })),
+    ...invoices.filter((i) => i.paidAt !== null).map((i) => ({ at: i.paidAt!, what: t("misc.invoicePaid", { number: i.number }), value: <span className="num">{euroCents(invoiceTotal(i))}</span>, open: () => openApp("Billing", { kind: "invoice", id: i.id }) })),
+    ...tickets.map((tk) => ({ at: tk.createdAt, what: t("misc.ticketOpened", { subject: subject(tk) }), value: <span className="pill">{statusOf(tk)}</span>, open: () => openApp("Support", { kind: "ticket", id: tk.id }) })),
   ].sort((a, b) => b.at - a.at);
-  if (!items.length) return <div className="fin-none">No activity</div>;
+  if (!items.length) return <div className="fin-none">{t("misc.noActivity")}</div>;
   return (
     <table className="table fin-table cus-table">
       <tbody>
@@ -343,15 +343,15 @@ function CreditSheet({ customerId, onClose }: { customerId: string; onClose: () 
   return (
     <div className="cus-price cus-credit">
       <div className="price-field">
-        <label className="price-label" htmlFor={id}>Credit amount</label>
+        <label className="price-label" htmlFor={id}>{t("misc.creditAmount")}</label>
         <span className="price-input">
           <input id={id} type="number" min={0} step={0.01} autoFocus value={text} onChange={(e) => setText(e.target.value)} />
           <span aria-hidden>€</span>
         </span>
       </div>
       <div className="fin-actions">
-        <button className="btn ghost" onClick={onClose}>Cancel</button>
-        <button className="btn primary" disabled={!(amount > 0)} onClick={save}>Credit</button>
+        <button className="btn ghost" onClick={onClose}>{t("misc.cancel")}</button>
+        <button className="btn primary" disabled={!(amount > 0)} onClick={save}>{t("misc.credit")}</button>
       </div>
     </div>
   );
@@ -364,10 +364,10 @@ function ChangePrice({ v, profile, onClose }: { v: Service; profile: Profile; on
   const save = () => { if (act(changePrice, v.id, monthly).ok) onClose(); };
   return (
     <div className="cus-price">
-      <PriceField value={monthly} reference={referenceFor(game, profile, v.product, v.spec, v.sla)} onChange={setMonthly} label="New monthly price" />
+      <PriceField value={monthly} reference={referenceFor(game, profile, v.product, v.spec, v.sla)} onChange={setMonthly} label={t("misc.newMonthlyPrice")} />
       <div className="fin-actions">
-        <button className="btn ghost" onClick={onClose}>Cancel</button>
-        <button className="btn primary" disabled={!(monthly > 0)} onClick={save}>Save price</button>
+        <button className="btn ghost" onClick={onClose}>{t("misc.cancel")}</button>
+        <button className="btn primary" disabled={!(monthly > 0)} onClick={save}>{t("misc.savePrice")}</button>
       </div>
     </div>
   );

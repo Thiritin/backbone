@@ -16,8 +16,8 @@ import "./finance.css";
 import { LOCALE } from "../../../i18n/lang";
 
 const CATEGORY: Record<string, string> = {
-  payments: "Customer payments", setup: "Setup fees", sales: "Hardware sales", hardware: "Hardware", rent: "Rent", power: "Power", transit: "Transit", salaries: "Salaries",
-  leasing: "Leasing", maintenance: "Remote hands", moving: "Moving", insurance: "Insurance", loans: "Loans", tax: "Tax", subscriptions: "Pear One", ai: "ChadGPT usage", marketing: "Marketing", fees: "Ransoms and fines",
+  payments: t("misc.catPayments"), setup: t("misc.catSetup"), sales: t("misc.catSales"), hardware: t("misc.catHardware"), rent: t("misc.catRent"), power: t("misc.catPower"), transit: t("misc.catTransit"), salaries: t("misc.catSalaries"),
+  leasing: t("misc.catLeasing"), maintenance: t("misc.catMaintenance"), moving: t("misc.catMoving"), insurance: t("misc.catInsurance"), loans: t("misc.catLoans"), tax: t("misc.catTax"), subscriptions: t("misc.catSubscriptions"), ai: t("misc.catAi"), marketing: t("misc.catMarketing"), fees: t("misc.catFees"),
 };
 const categoryLabel = (c: string) => CATEGORY[c] ?? c.charAt(0).toUpperCase() + c.slice(1);
 const REVENUE = ["payments", "setup", "sales"];
@@ -31,11 +31,11 @@ const compact = (v: number) => {
 
 type View = "overview" | "pnl" | "cash" | "tax" | "loans" | "statement";
 const VIEWS: { id: View; label: string; icon: typeof Layers }[] = [
-  { id: "overview", label: "Overview", icon: LayoutGrid },
-  { id: "pnl", label: "Profit and loss", icon: Table },
-  { id: "cash", label: "Cash flow", icon: ChartColumn },
-  { id: "tax", label: "Tax and insurance", icon: ShieldCheck },
-  { id: "loans", label: "Loans", icon: Landmark },
+  { id: "overview", label: t("misc.overview"), icon: LayoutGrid },
+  { id: "pnl", label: t("misc.profitAndLoss"), icon: Table },
+  { id: "cash", label: t("misc.cashFlow"), icon: ChartColumn },
+  { id: "tax", label: t("misc.taxAndInsurance"), icon: ShieldCheck },
+  { id: "loans", label: t("misc.loans"), icon: Landmark },
 ];
 
 interface MonthFlow { key: string; inflow: number; outflow: number; end: number }
@@ -77,16 +77,16 @@ export function FinanceApp() {
 
   return (
     <div className="fin">
-      <aside className="sidebar fin-side" aria-label="Finance">
-        <div className="side-h">Finance</div>
+      <aside className="sidebar fin-side" aria-label={t("misc.finance")}>
+        <div className="side-h">{t("misc.finance")}</div>
         {VIEWS.map(({ id, label, icon: Icon }) => (
           <button key={id} className={`side-item${view === id ? " active" : ""}`} aria-pressed={view === id} onClick={() => setView(id)}>
             <Icon />{label}
           </button>
         ))}
-        <div className="side-h">Statement</div>
+        <div className="side-h">{t("misc.statement")}</div>
         <button className={`side-item${view === "statement" && !month ? " active" : ""}`} aria-pressed={view === "statement" && !month} onClick={() => statement(null)}>
-          <Layers />All months<span className="side-count">{rows.length}</span>
+          <Layers />{t("misc.allMonths")}<span className="side-count">{rows.length}</span>
         </button>
         {months.map((m) => (
           <button key={m} className={`side-item${view === "statement" && month === m ? " active" : ""}`} aria-pressed={view === "statement" && month === m} onClick={() => statement(m)}>
@@ -96,7 +96,7 @@ export function FinanceApp() {
       </aside>
       <div className="fin-main">
         <div className="fin-toolbar">
-          <h2>{view === "statement" ? "Account" : VIEWS.find((v) => v.id === view)!.label}</h2>
+          <h2>{view === "statement" ? t("misc.account") : VIEWS.find((v) => v.id === view)!.label}</h2>
           <span className="grow" />
           <span className="num">{euroCents(game.cash)}</span>
         </div>
@@ -108,10 +108,10 @@ export function FinanceApp() {
         {view === "statement" && (
           <div className="fin-scroll">
             {shown.length === 0 ? (
-              <div className="fin-empty"><Landmark />No bookings</div>
+              <div className="fin-empty"><Landmark />{t("misc.noBookings")}</div>
             ) : (
               <table className="table">
-                <thead><tr><th>Date</th><th>Category</th><th>Text</th><th className="r">Amount</th><th className="r">Balance</th></tr></thead>
+                <thead><tr><th>{t("misc.date")}</th><th>{t("misc.category")}</th><th>{t("misc.text")}</th><th className="r">{t("misc.amount")}</th><th className="r">{t("misc.balance")}</th></tr></thead>
                 <tbody>
                   {shown.map(({ e, i, balance }) => (
                     <tr key={i}>
@@ -132,7 +132,7 @@ export function FinanceApp() {
   );
 }
 
-export const runwayLabel = (months: number) => (Number.isFinite(months) ? `${months.toFixed(1)} months` : "∞");
+export const runwayLabel = (months: number) => (Number.isFinite(months) ? t("misc.nMonthsDecimal", { n: months.toFixed(1) }) : "∞");
 
 function Overview({ game }: { game: GameState }) {
   const start = monthStartOf(game.hour);
@@ -142,12 +142,12 @@ function Overview({ game }: { game: GameState }) {
   return (
     <div className="fin-scroll">
       <dl className="fin-totals fin-cards">
-        <div><dt>Cash</dt><dd className="num">{euroCents(game.cash)}</dd></div>
+        <div><dt>{t("misc.cash")}</dt><dd className="num">{euroCents(game.cash)}</dd></div>
         <div><dt>MRR</dt><dd className="num">{euroCents(metrics(game).mrr)}</dd></div>
-        <div><dt>Profit {monthLabel(monthKey(prev))}</dt><dd className={`num${lastMonth < 0 ? " fin-neg" : ""}`}>{euroCents(lastMonth)}</dd></div>
-        <div><dt>Runway</dt><dd className="num">{runway}</dd></div>
+        <div><dt>{t("misc.profitIn", { month: monthLabel(monthKey(prev)) })}</dt><dd className={`num${lastMonth < 0 ? " fin-neg" : ""}`}>{euroCents(lastMonth)}</dd></div>
+        <div><dt>{t("misc.runway")}</dt><dd className="num">{runway}</dd></div>
       </dl>
-      <h3 className="fin-h">Last 12 months</h3>
+      <h3 className="fin-h">{t("misc.last12Months")}</h3>
       <CashChart flows={cashFlow(game, 12)} />
     </div>
   );
@@ -187,24 +187,24 @@ function ProfitLoss({ game }: { game: GameState }) {
   return (
     <>
       <div className="fin-bar">
-        <div className="seg" role="group" aria-label="Year">
+        <div className="seg" role="group" aria-label={t("misc.year")}>
           {years.map((y) => <button key={y} aria-pressed={year === y} onClick={() => setYear(y)}>{y}</button>)}
         </div>
       </div>
       <div className="fin-scroll">
         <table className="table fin-pnl">
-          <thead><tr><th />{keys.map((k) => <th key={k} className="r">{monthShort(k)}</th>)}<th className="r">Total</th></tr></thead>
+          <thead><tr><th />{keys.map((k) => <th key={k} className="r">{monthShort(k)}</th>)}<th className="r">{t("misc.total")}</th></tr></thead>
           <tbody>
-            {section("Revenue")}
+            {section(t("misc.revenue"))}
             {revenue.map((c) => line(categoryLabel(c), sums.get(c)!))}
-            {line("Total revenue", total(revenue), "fin-total")}
-            {section("Costs")}
-            {costs.map((c) => line(c === "loans" ? "Interest and fees" : categoryLabel(c), sums.get(c)!))}
-            {line("Total costs", total(costs), "fin-total")}
-            {section("Result")}
-            {line("Profit before tax", before, "fin-total", true)}
-            {line("Tax", tax)}
-            {line("Net profit", net, "fin-total", true)}
+            {line(t("misc.totalRevenue"), total(revenue), "fin-total")}
+            {section(t("misc.costs"))}
+            {costs.map((c) => line(c === "loans" ? t("misc.interestAndFees") : categoryLabel(c), sums.get(c)!))}
+            {line(t("misc.totalCosts"), total(costs), "fin-total")}
+            {section(t("misc.result"))}
+            {line(t("misc.profitBeforeTax"), before, "fin-total", true)}
+            {line(t("misc.tax"), tax)}
+            {line(t("misc.netProfit"), net, "fin-total", true)}
           </tbody>
         </table>
       </div>
@@ -218,14 +218,14 @@ function CashFlowView({ game }: { game: GameState }) {
   return (
     <>
       <div className="fin-bar">
-        <div className="seg" role="group" aria-label="Range">
-          {[12, 24].map((n) => <button key={n} aria-pressed={count === n} onClick={() => setCount(n)}>{n} months</button>)}
+        <div className="seg" role="group" aria-label={t("misc.range")}>
+          {[12, 24].map((n) => <button key={n} aria-pressed={count === n} onClick={() => setCount(n)}>{t("misc.nMonths", { n })}</button>)}
         </div>
       </div>
       <div className="fin-scroll">
         <CashChart flows={flows} />
         <table className="table">
-          <thead><tr><th>Month</th><th className="r">In</th><th className="r">Out</th><th className="r">Net</th><th className="r">Cash at month end</th></tr></thead>
+          <thead><tr><th>{t("misc.month")}</th><th className="r">{t("misc.in")}</th><th className="r">{t("misc.out")}</th><th className="r">{t("misc.net")}</th><th className="r">{t("misc.cashAtMonthEnd")}</th></tr></thead>
           <tbody>
             {[...flows].reverse().map((f) => (
               <tr key={f.key}>
@@ -293,12 +293,12 @@ function CashChart({ flows }: { flows: MonthFlow[] }) {
     <figure className="fin-chart">
       <figcaption className="fin-legend">
         <strong>{monthLabel(shown.key)}</strong>
-        <span><i className="fin-key in" />In <b className="num">{euro(shown.inflow)}</b></span>
-        <span><i className="fin-key out" />Out <b className="num">{euro(shown.outflow ? -shown.outflow : 0)}</b></span>
-        <span><i className="fin-key cash" />Cash at month end <b className="num">{euro(shown.end)}</b></span>
+        <span><i className="fin-key in" />{t("misc.in")} <b className="num">{euro(shown.inflow)}</b></span>
+        <span><i className="fin-key out" />{t("misc.out")} <b className="num">{euro(shown.outflow ? -shown.outflow : 0)}</b></span>
+        <span><i className="fin-key cash" />{t("misc.cashAtMonthEnd")} <b className="num">{euro(shown.end)}</b></span>
       </figcaption>
       <div ref={box}>
-        <svg width={width} height={H} role="img" aria-label="Money in and out per month, and the cash balance at each month's end" onMouseLeave={() => setHover(null)}>
+        <svg width={width} height={H} role="img" aria-label={t("misc.cashChartLabel")} onMouseLeave={() => setHover(null)}>
           {hover !== null && <rect x={PAD.l + slot * hover} y={0} width={slot} height={FLOW_H + GAP + CASH_H} className="fin-hover" />}
           {grid(flow)}
           {grid(cash)}
@@ -327,50 +327,50 @@ function TaxInsurance({ game }: { game: GameState }) {
   const paid = game.ledger.filter((e) => e.category === "tax").at(-1);
   return (
     <div className="fin-scroll">
-      <h3 className="fin-h">Corporate tax</h3>
+      <h3 className="fin-h">{t("misc.corporateTax")}</h3>
       <div className="shop-grid fin-grid-cards">
         <div className="shop-card">
           <div className="shop-name">
-            <strong>Tax for {tax.year}</strong>
-            <span>Due {formatDay(tax.dueAt)}</span>
+            <strong>{t("misc.taxFor", { year: tax.year })}</strong>
+            <span>{t("misc.dueOn", { date: formatDay(tax.dueAt) })}</span>
           </div>
           <dl className="shop-specs">
-            <div><dt>Profit {tax.year}</dt><dd className={`num${tax.profit < 0 ? " fin-neg" : ""}`}>{euroCents(tax.profit)}</dd></div>
-            <div><dt>Losses carried forward</dt><dd className="num">{euroCents(game.taxLoss)}</dd></div>
-            <div><dt>Tax rate</dt><dd className="num">30%</dd></div>
-            <div><dt>Estimated tax</dt><dd className="num">{euroCents(tax.tax)}</dd></div>
+            <div><dt>{t("misc.profitIn", { month: tax.year })}</dt><dd className={`num${tax.profit < 0 ? " fin-neg" : ""}`}>{euroCents(tax.profit)}</dd></div>
+            <div><dt>{t("misc.lossesCarried")}</dt><dd className="num">{euroCents(game.taxLoss)}</dd></div>
+            <div><dt>{t("misc.taxRate")}</dt><dd className="num">30%</dd></div>
+            <div><dt>{t("misc.estimatedTax")}</dt><dd className="num">{euroCents(tax.tax)}</dd></div>
           </dl>
         </div>
         {paid && (
           <div className="shop-card">
             <div className="shop-name">
-              <strong>Tax for {paid.params.year}</strong>
-              <span>Paid {formatDay(paid.hour)}</span>
+              <strong>{t("misc.taxFor", { year: paid.params.year })}</strong>
+              <span>{t("misc.paidOn", { date: formatDay(paid.hour) })}</span>
             </div>
             <dl className="shop-specs">
-              <div><dt>Amount</dt><dd className="num">{euroCents(-paid.amount)}</dd></div>
+              <div><dt>{t("misc.amount")}</dt><dd className="num">{euroCents(-paid.amount)}</dd></div>
             </dl>
           </div>
         )}
       </div>
-      <h3 className="fin-h">Insurance</h3>
+      <h3 className="fin-h">{t("misc.insurance")}</h3>
       <div className="shop-grid fin-grid-cards">
         <div className="shop-card">
           <div className="shop-name">
-            <strong>Hardware insurance</strong>
-            <span>The policy pays the spare part and the remote hands when a component fails before the end of its life expectancy.</span>
+            <strong>{t("misc.hardwareInsurance")}</strong>
+            <span>{t("misc.hardwareInsuranceText")}</span>
           </div>
           <dl className="shop-specs">
-            <div><dt>Monthly premium</dt><dd className="num">{euroCents(premium)}</dd></div>
-            <div><dt>Insured since</dt><dd>{policy ? formatDay(policy.since) : "Not insured"}</dd></div>
-            <div><dt>Claims paid</dt><dd className="num">{claims.length}</dd></div>
-            <div><dt>Paid out</dt><dd className="num">{euroCents(claims.reduce((sum, e) => sum + e.amount, 0))}</dd></div>
+            <div><dt>{t("misc.monthlyPremium")}</dt><dd className="num">{euroCents(premium)}</dd></div>
+            <div><dt>{t("misc.insuredSince")}</dt><dd>{policy ? formatDay(policy.since) : t("misc.notInsured")}</dd></div>
+            <div><dt>{t("misc.claimsPaid")}</dt><dd className="num">{claims.length}</dd></div>
+            <div><dt>{t("misc.paidOut")}</dt><dd className="num">{euroCents(claims.reduce((sum, e) => sum + e.amount, 0))}</dd></div>
           </dl>
           <div className="shop-buy">
             <span className="grow" />
             {policy
-              ? <button className="btn" onClick={() => act(cancelInsurance)}>Cancel</button>
-              : <button className="btn primary" disabled={game.cash < premium} onClick={() => act(buyInsurance)}>Buy</button>}
+              ? <button className="btn" onClick={() => act(cancelInsurance)}>{t("misc.cancel")}</button>
+              : <button className="btn primary" disabled={game.cash < premium} onClick={() => act(buyInsurance)}>{t("misc.buy")}</button>}
           </div>
         </div>
       </div>

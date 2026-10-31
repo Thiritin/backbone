@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { Gavel } from "lucide-react";
 import { useRef } from "react";
 import { euroCents } from "../../sim/00-core/money";
@@ -11,11 +12,11 @@ export function GameOver({ hour }: { hour: number }) {
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
       <div className="alert game-over" role="alertdialog" aria-modal="true" aria-labelledby="game-over-title">
         <span className="alert-icon"><Gavel /></span>
-        <h2 id="game-over-title">{game.company.name} is bankrupt</h2>
-        <p>The company became insolvent on {formatDay(hour)} with a balance of <span className="num">{euroCents(game.cash)}</span>.</p>
+        <h2 id="game-over-title">{t("desktop.over.title", { company: game.company.name })}</h2>
+        <p>{t("desktop.over.text", { day: formatDay(hour), cash: euroCents(game.cash) })}</p>
         <div className="alert-actions">
-          <button className="btn" onClick={() => file.current?.click()}>Load export</button>
-          <button className="btn primary" autoFocus onClick={startGame}>New game</button>
+          <button className="btn" onClick={() => file.current?.click()}>{t("desktop.over.load")}</button>
+          <button className="btn primary" autoFocus onClick={startGame}>{t("desktop.newGame")}</button>
         </div>
         <input ref={file} type="file" accept="application/json,.json" hidden onChange={async (e) => {
           const f = e.target.files?.[0];

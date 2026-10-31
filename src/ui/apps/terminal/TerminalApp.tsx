@@ -21,7 +21,7 @@ const INTRO: { cmd: string; out: string[]; thump?: boolean }[] = [
     ],
   },
   { cmd: "chsh -s /bin/zsh", out: [] },
-  { cmd: "echo 'autoload -U compinit; compinit' >> ~/.zshrc", out: ["You can now complete server names with Tab, for example after ssh."] },
+  { cmd: "echo 'autoload -U compinit; compinit' >> ~/.zshrc", out: [t("misc1.terminal.tabHint")] },
 ];
 
 const setupDone = () => { try { return !!localStorage.getItem(SETUP_KEY); } catch { return true; } };
@@ -89,7 +89,7 @@ export function TerminalApp() {
         <div className="tm-row">
           <span className="tm-prompt">{shell.prompt}</span>
           <input
-            ref={input} value={draft} aria-label="Command" autoFocus spellCheck={false} autoCapitalize="off" autoComplete="off" readOnly={!ready}
+            ref={input} value={draft} aria-label={t("misc1.terminal.command")} autoFocus spellCheck={false} autoCapitalize="off" autoComplete="off" readOnly={!ready}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (ready) shell.onKeyDown(e); }}
             onPaste={(e) => { if (ready) shell.onPaste(e); }}
@@ -107,15 +107,15 @@ export function Editor({ file, onChange, onClose }: { file: Open; onChange: (f: 
   const save = () => {
     const r = useStore.getState().act(editFiles, file.host, [["write", file.path, file.text]]);
     if (r.ok) onChange({ ...file, saved: file.text });
-    setStatus(r.ok ? "Saved" : t(r.error));
+    setStatus(r.ok ? t("misc1.terminal.saved") : t(r.error));
   };
   const close = () => {
-    if (dirty && status !== "Unsaved changes") setStatus("Unsaved changes");
+    if (dirty && status !== t("misc1.terminal.unsaved")) setStatus(t("misc1.terminal.unsaved"));
     else onClose();
   };
   return (
     <div className="tm tm-edit">
-      <div className="tm-bar"><span>edit</span><span>{file.name}{dirty ? " *" : ""}</span></div>
+      <div className="tm-bar"><span>{t("misc1.terminal.edit")}</span><span>{file.name}{dirty ? " *" : ""}</span></div>
       <textarea
         value={file.text} aria-label={file.name} autoFocus spellCheck={false} autoCapitalize="off" autoComplete="off"
         onChange={(e) => { onChange({ ...file, text: e.target.value }); setStatus(null); }}
@@ -125,7 +125,7 @@ export function Editor({ file, onChange, onClose }: { file: Open; onChange: (f: 
           else if ((e.ctrlKey && key === "x") || e.key === "Escape") { e.preventDefault(); close(); }
         }}
       />
-      <div className="tm-bar"><span>{status ?? ""}</span><span>^S Save   ^X Exit</span></div>
+      <div className="tm-bar"><span>{status ?? ""}</span><span>{t("misc1.terminal.keys")}</span></div>
     </div>
   );
 }

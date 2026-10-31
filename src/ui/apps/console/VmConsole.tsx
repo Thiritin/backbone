@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { t } from "../../../i18n/en";
 import { imageName } from "../../../sim/10-catalog/server-os";
 import type { GameState } from "../../../sim/50-state";
 import type { Workload } from "../../../sim/60-infra/cluster";
@@ -22,21 +23,21 @@ export function VmConsole({ game, vm: w, front }: { game: GameState; vm: Workloa
   const media = () => [
     ...mountableImages(game).map((o) => ({ label: imageName(o), checked: w.media === o, run: () => act(setMedia, w.id, o) })),
     null,
-    { label: "Eject", disabled: !w.media, run: () => act(setMedia, w.id, null) },
+    { label: t("console.eject"), disabled: !w.media, run: () => act(setMedia, w.id, null) },
   ];
   return (
     <div className="con">
       <div className="con-bar">
         <b>{w.hostname ?? vmLabel(game, w).name}</b>
-        <span className="muted">Virtual console</span>
+        <span className="muted">{t("console.virtualConsole")}</span>
         <span className="grow" />
-        <button onClick={menuOn(media)}>Media</button>
-        {st === "stopped" ? <button onClick={() => act(startWorkload, w.id)}>Power on</button> : <button disabled={!on} onClick={() => act(stopWorkload, w.id)}>Shut down</button>}
+        <button onClick={menuOn(media)}>{t("console.media")}</button>
+        {st === "stopped" ? <button onClick={() => act(startWorkload, w.id)}>{t("console.powerOn")}</button> : <button disabled={!on} onClick={() => act(stopWorkload, w.id)}>{t("console.shutDown")}</button>}
       </div>
       <div className="con-body">
         <div className="scr-wrap vm">
-          <div ref={box} className="scr" data-look={dark ? "dark" : os.look} tabIndex={0} role="application" aria-label="Virtual machine screen" onKeyDown={keyHandler(dark ? () => {} : os.onKey)}>
-            {dark ? <span className="scr-osd">No signal</span> : os.view}
+          <div ref={box} className="scr" data-look={dark ? "dark" : os.look} tabIndex={0} role="application" aria-label={t("console.vmScreen")} onKeyDown={keyHandler(dark ? () => {} : os.onKey)}>
+            {dark ? <span className="scr-osd">{t("console.noSignal")}</span> : os.view}
           </div>
           <Keys keys={dark ? [] : os.keys} onKey={os.onKey} focus={() => focusIn(box.current)} />
         </div>

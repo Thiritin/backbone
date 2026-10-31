@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { t } from "../i18n/en";
 import { euro } from "../sim/00-core/money";
 import type { Twist } from "../sim/10-catalog/challenges";
 import { datacenterById, homeLineById } from "../sim/20-world/datacenters";
@@ -23,5 +24,5 @@ export function useBoard(challenge: string | null): Board | null {
   return b && b.netWorth.length + b.level3.length + b.happiness.length > 0 ? b : null;
 }
 
-export const twistLabel = (t: Twist): string =>
-  t.kind === "line" ? `Home line ${homeLineById(t.line).name}` : t.kind === "dc" ? `Free space only at ${datacenterById(t.dc).name}` : `Starting cash ${euro(t.cash)}`;
+export const twistLabel = (w: Twist): string =>
+  w.kind === "line" ? t("core.twistLine", { name: homeLineById(w.line).name }) : w.kind === "dc" ? t("core.twistDc", { name: datacenterById(w.dc).name }) : t("core.twistCash", { cash: euro(w.cash) });

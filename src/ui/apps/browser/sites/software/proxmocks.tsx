@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Link, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./proxmocks.css";
@@ -14,8 +15,8 @@ export function Proxmocks(props: SiteProps) {
           <>
             <div className="hero"><h1>{p.site.tagline}</h1><p>{p.site.blurb}</p></div>
             <div className="blocks">
-              <Link to="download" go={go} className="block"><b>Install on Debiant</b><span>Add the repository and install the packages.</span></Link>
-              <Link to="pricing" go={go} className="block"><b>Subscriptions</b><span>Get the enterprise repository and support.</span></Link>
+              <Link to="download" go={go} className="block"><b>{t("browser-sites-2.proxInstallTitle")}</b><span>{t("browser-sites-2.proxInstallText")}</span></Link>
+              <Link to="pricing" go={go} className="block"><b>{t("browser-sites-2.proxSubsTitle")}</b><span>{t("browser-sites-2.proxSubsText")}</span></Link>
             </div>
           </>
         ) : <main><Body {...props} /></main>}
@@ -30,10 +31,10 @@ export function Proxmocks(props: SiteProps) {
         <aside>
           <h3>Proxmocks VE</h3>
           <Nav {...props} />
-          <h3>Community</h3>
-          <p>Forum<br />Mailing lists<br />Bugtracker<br />Wiki</p>
+          <h3>{t("browser-sites-2.community")}</h3>
+          <p>{t("browser-sites-2.proxForum")}<br />{t("browser-sites-2.proxLists")}<br />{t("browser-sites-2.proxBugs")}<br />Wiki</p>
         </aside>
-        <main><h1>Proxmocks Virtual Environment</h1><Body {...props} /></main>
+        <main><h1>{t("browser-sites-2.proxTitle")}</h1><Body {...props} /></main>
       </div>
     </div>
   );

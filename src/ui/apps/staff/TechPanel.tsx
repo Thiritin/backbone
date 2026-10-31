@@ -10,8 +10,9 @@ import { useStore } from "../../store";
 import { devName } from "../hw";
 import { opLabel } from "../locations/TechButton";
 import { LOCALE } from "../../../i18n/lang";
+import { t } from "../../../i18n/en";
 
-const RULES: [keyof TechRules, string][] = [["failed", "Replace failed parts"], ["worn", "Replace worn parts"], ["blackhole", "Blackhole attacks"], ["updates", "Update vulnerable software"], ["recover", "Recover corrupted data"]];
+const RULES: [keyof TechRules, string][] = [["failed", t("misc.ruleFailed")], ["worn", t("misc.ruleWorn")], ["blackhole", t("misc.ruleBlackhole")], ["updates", t("misc.ruleUpdates")], ["recover", t("misc.ruleRecover")]];
 const WEEK_OF = new Intl.DateTimeFormat(LOCALE, { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
 
 // A technician's location, the operations queued there, the location's on-call rotation and the rules all technicians follow.
@@ -22,41 +23,41 @@ export function TechPanel({ game, e }: { game: GameState; e: Employee }) {
   const now = e.location ? onCallAt(game, e.location, game.hour) : undefined;
   return (
     <>
-      <h3>Location</h3>
-      <div className="seg" role="group" aria-label="Location">
+      <h3>{t("misc.location")}</h3>
+      <div className="seg" role="group" aria-label={t("misc.location")}>
         {game.locations.map((l) => (
           <button key={l.id} aria-pressed={e.location === l.id} onClick={() => act(setTechLocation, e.id, l.id)}><MapPin />{l.name}</button>
         ))}
       </div>
-      <h3>Queue</h3>
+      <h3>{t("misc.queue")}</h3>
       <div className="st-ops">
-        {!queue.length && <div className="st-op st-none">The queue is empty.</div>}
+        {!queue.length && <div className="st-op st-none">{t("misc.queueEmpty")}</div>}
         {queue.map((o) => {
           const d = game.devices.find((x) => x.id === o.deviceId);
           return (
             <div key={o.id} className="st-op">
               <span>{opLabel(game, o)}</span>
               <span className="st-cost">{d ? devName(d) : ""}</span>
-              {o.auto && <span className="pill">Rule</span>}
+              {o.auto && <span className="pill">{t("misc.rule")}</span>}
               <span className="grow" />
-              <button className="btn" onClick={() => act(cancelOperation, o.id)}>Cancel</button>
+              <button className="btn" onClick={() => act(cancelOperation, o.id)}>{t("misc.cancel")}</button>
             </div>
           );
         })}
       </div>
-      <h3>On call</h3>
+      <h3>{t("misc.onCall")}</h3>
       <div className="st-ops">
-        {!crew.length && <div className="st-op st-none">No technician here is trained on part swaps.</div>}
+        {!crew.length && <div className="st-op st-none">{t("misc.noTechTrained")}</div>}
         {crew.map((x) => {
           const p = game.onCall.month[x.id], calls = p?.callOuts ?? 0;
           return (
             <div key={x.id} className="st-op">
               <span>{x.name}</span>
-              {now?.id === x.id && <span className="pill accent">On call</span>}
+              {now?.id === x.id && <span className="pill accent">{t("misc.onCall")}</span>}
               <span className="grow" />
-              <span className="st-cost num">{calls} {calls === 1 ? "call-out" : "call-outs"}</span>
+              <span className="st-cost num">{t("misc.nCallOuts", { n: calls })}</span>
               <span className="st-cost num">{euroCents((p?.allowance ?? 0) + (p?.callPay ?? 0))}</span>
-              <input type="checkbox" role="switch" className="switch" aria-label={`${x.name} on call`} checked={game.onCall.roster.includes(x.id)}
+              <input type="checkbox" role="switch" className="switch" aria-label={t("misc.nameOnCall", { name: x.name })} checked={game.onCall.roster.includes(x.id)}
                 onChange={(ev) => act(setOnCall, x.id, ev.target.checked)} />
             </div>
           );
@@ -68,7 +69,7 @@ export function TechPanel({ game, e }: { game: GameState; e: Employee }) {
             const at = handover(game.hour, k);
             return (
               <div key={k} className="st-op">
-                <span>{k ? WEEK_OF.format(dateOf(at)) : "This week"}</span>
+                <span>{k ? WEEK_OF.format(dateOf(at)) : t("misc.thisWeek")}</span>
                 <span className="grow" />
                 <span>{onCallAt(game, e.location!, at)?.name}</span>
               </div>
@@ -76,7 +77,7 @@ export function TechPanel({ game, e }: { game: GameState; e: Employee }) {
           })}
         </div>
       )}
-      <h3>Rules</h3>
+      <h3>{t("misc.rules")}</h3>
       <div className="st-ops">
         {RULES.map(([k, label]) => (
           <div key={k} className="st-op">

@@ -34,23 +34,45 @@ import "./mail-styles.css";
 
 type TicketBox = "open" | "overdue" | "waiting" | "escalated" | "done";
 const BOXES: { id: TicketBox; label: string; icon: typeof Inbox; match: (t: Ticket, hour: number) => boolean }[] = [
-  { id: "open", label: "Open", icon: Inbox, match: (t) => t.status === "open" },
-  { id: "overdue", label: "Overdue", icon: AlarmClock, match: (t, hour) => t.status === "open" && hour > t.dueAt },
-  { id: "waiting", label: "Waiting on customer", icon: Hourglass, match: (t) => t.status === "waiting" },
-  { id: "escalated", label: "Escalated", icon: Wrench, match: (t) => t.status === "escalated" },
-  { id: "done", label: "Closed", icon: CircleCheck, match: isFinal },
+  { id: "open", label: t("support.box.open"), icon: Inbox, match: (t) => t.status === "open" },
+  { id: "overdue", label: t("support.box.overdue"), icon: AlarmClock, match: (t, hour) => t.status === "open" && hour > t.dueAt },
+  { id: "waiting", label: t("support.status.waiting"), icon: Hourglass, match: (t) => t.status === "waiting" },
+  { id: "escalated", label: t("support.status.escalated"), icon: Wrench, match: (t) => t.status === "escalated" },
+  { id: "done", label: t("support.box.closed"), icon: CircleCheck, match: isFinal },
 ];
 const ACTION_LABEL: Record<TicketAction, string> = {
-  credit: "Credit 10%", cancel: "Process cancellation", unsuspend: `Unsuspend with ${EXTENSION_DAYS}-day extension`, keep: "Keep suspended",
-  forward: "Forward to customer", takedown: `Take down for ${TAKEDOWN_HOURS} h`, reject: "Reject", comply: "Comply", object: "Object", refund: "Refund one month", revert: "Revert price",
-  pay: "Pay ransom", refuse: "Refuse", accept: "Accept order", offerOnce: "Offer one-off update", offerManaged: "Offer managed updates", free: "Update for free", clean: "Clean up site", noBackup: "No backup",
+  credit: t("support.action.credit"),
+  cancel: t("support.action.cancel"),
+  unsuspend: t("support.action.unsuspend", { days: EXTENSION_DAYS }),
+  keep: t("support.action.keep"),
+  forward: t("support.action.forward"),
+  takedown: t("support.action.takedown", { h: TAKEDOWN_HOURS }),
+  reject: t("support.action.reject"),
+  comply: t("support.action.comply"),
+  object: t("support.action.object"),
+  refund: t("support.action.refund"),
+  revert: t("support.action.revert"),
+  pay: t("support.action.pay"),
+  refuse: t("support.action.refuse"),
+  accept: t("support.action.accept"),
+  offerOnce: t("support.action.offerOnce"),
+  offerManaged: t("support.action.offerManaged"),
+  free: t("support.action.free"),
+  clean: t("support.action.clean"),
+  noBackup: t("support.action.noBackup"),
 };
 const OFFER_TITLE: Record<RetentionId, string> = {
-  half: "50% off the next month", free: "One month free", d3: "20% off for 3 months", d6: "20% off for 6 months", d12: "20% off for 12 months",
-  upgrade: "Free upgrade", fix: "Apology and fix", move: "Move to a better server",
+  half: t("support.offer.half"),
+  free: t("support.offer.free"),
+  d3: t("support.offer.d3"),
+  d6: t("support.offer.d6"),
+  d12: t("support.offer.d12"),
+  upgrade: t("support.offer.upgrade"),
+  fix: t("support.offer.fix"),
+  move: t("support.offer.move"),
 };
-const ODDS_LABEL = { unlikely: "Unlikely", even: "Even", likely: "Likely" } as const;
-const actionLabel = (tk: Ticket, a: TicketAction) => (tk.kind === "refund" && a === "reject" ? "Refuse" : ACTION_LABEL[a]);
+const ODDS_LABEL = { unlikely: t("support.odds.unlikely"), even: t("support.odds.even"), likely: t("support.odds.likely") } as const;
+const actionLabel = (tk: Ticket, a: TicketAction) => (tk.kind === "refund" && a === "reject" ? t("support.action.refuse") : ACTION_LABEL[a]);
 
 // Read, escalate and close for a ticket, and the customer or request behind it.
 function ticketMenu(game: GameState, tk: Ticket): MenuEntry[] {
@@ -59,12 +81,12 @@ function ticketMenu(game: GameState, tk: Ticket): MenuEntry[] {
   const request = tk.kind === "upgrade" ? game.sales.requests.find((r) => r.ticketId === tk.id) : undefined;
   const customer = game.customers.find((c) => c.id === tk.customerId);
   return [
-    tk.unread && { label: "Mark as read", run: () => act(readTicket, tk.id) },
-    canEscalate(tk.kind) && tk.status === "open" && { label: "Escalate", disabled: locked, run: () => act(escalateTicket, tk.id) },
-    !isFinal(tk) && { label: tk.kind === "order" || tk.kind === "sponsor" ? "Decline" : tk.notice ? "Ignore" : "Close", disabled: locked, run: () => act(closeTicket, tk.id) },
+    tk.unread && { label: t("support.markRead"), run: () => act(readTicket, tk.id) },
+    canEscalate(tk.kind) && tk.status === "open" && { label: t("support.escalate"), disabled: locked, run: () => act(escalateTicket, tk.id) },
+    !isFinal(tk) && { label: tk.kind === "order" || tk.kind === "sponsor" ? t("support.decline") : tk.notice ? t("support.ignore") : t("support.close"), disabled: locked, run: () => act(closeTicket, tk.id) },
     null,
-    customer && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: customer.id }) },
-    request && { label: "Open request", run: () => openApp("Support", { kind: "request", id: request.id }) },
+    customer && { label: t("support.openCustomer"), run: () => openApp("Customers", { kind: "customer", id: customer.id }) },
+    request && { label: t("support.openRequest"), run: () => openApp("Support", { kind: "request", id: request.id }) },
   ];
 }
 
@@ -74,7 +96,7 @@ const subjectOf = (s: GameState, tk: Ticket) => t(`ticket.${tk.kind}.${tk.topic}
 
 function Sender({ id }: { id: string }) {
   const x = senderById(id);
-  return <span>{x.name}{x.agency && <BadgeCheck className="verified" aria-label="Verified sender" />}</span>;
+  return <span>{x.name}{x.agency && <BadgeCheck className="verified" aria-label={t("support.verifiedSender")} />}</span>;
 }
 
 function Sla({ tk, hour }: { tk: Ticket; hour: number }) {
@@ -82,7 +104,7 @@ function Sla({ tk, hour }: { tk: Ticket; hour: number }) {
   const left = tk.dueAt - hour;
   const cls = left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : "";
   if (!tk.notice && left >= 0) return <span className={`sla ${cls} num`}>{due(tk.dueAt, hour)}</span>;
-  return <span className={`sla ${cls}`}><span className="num">{span(left)}</span> {left < 0 ? "over" : "left"}</span>;
+  return <span className={`sla ${cls}`}><span className="num">{span(left)}</span> {left < 0 ? t("support.over") : t("support.left")}</span>;
 }
 
 type Box = "all" | TicketBox | "lost" | "incidents" | "reports";
@@ -132,7 +154,7 @@ export function SupportApp() {
   const order = current?.kind === "order" ? orderOf(game, current) : undefined;
   const upgrade = current?.kind === "upgrade" ? game.sales.requests.find((r) => r.ticketId === current.id) : undefined;
   const busy = game.playerBusyUntil > game.hour * 60;
-  const title = !desk ? "Inbox" : box === "all" ? "All" : BOXES.find((b) => b.id === box)?.label;
+  const title = !desk ? t("support.inbox") : box === "all" ? t("support.all") : BOXES.find((b) => b.id === box)?.label;
 
   const open = (tk: Ticket) => {
     setSel(tk.id);
@@ -166,22 +188,22 @@ export function SupportApp() {
       <header className="sup-brand">
         <span className="sup-logo" style={{ "--tile": tile } as CSSProperties}><Logo /></span>
         <strong>{brand}</strong>
-        <button className="btn sup-settings" onClick={() => setSetup(true)}>Settings</button>
+        <button className="btn sup-settings" onClick={() => setSetup(true)}>{t("support.settings")}</button>
       </header>
       {setup && <EmailSettings onClose={() => setSetup(false)} />}
       {desk && <aside className="sidebar sup-side">
-        <div className="side-h">Inbox</div>
-        {side("all", "All", Mails, itemsIn(game, "all").length)}
+        <div className="side-h">{t("support.inbox")}</div>
+        {side("all", t("support.all"), Mails, itemsIn(game, "all").length)}
         {BOXES.map((b) => side(b.id, b.label, b.icon, game.tickets.filter((tk) => b.match(tk, game.hour)).length))}
-        {side("lost", "Lost sales", TrendingDown, game.sales.lost.length)}
+        {side("lost", t("support.lostSales"), TrendingDown, game.sales.lost.length)}
         {has("filters") && <>
-          <div className="side-h">Type</div>
-          {typeItem(null, "All types", Layers)}
+          <div className="side-h">{t("support.type")}</div>
+          {typeItem(null, t("support.allTypes"), Layers)}
           {KINDS.map((k) => typeItem(k.id, k.label, k.icon))}
         </>}
-        <div className="side-h">Reports</div>
-        {side("incidents", "Incidents", TriangleAlert, game.ops.incidents.length)}
-        {has("reports") && side("reports", "Tickets", ChartColumn, game.tickets.length)}
+        <div className="side-h">{t("support.reports")}</div>
+        {side("incidents", t("support.incidents"), TriangleAlert, game.ops.incidents.length)}
+        {has("reports") && side("reports", t("support.tickets"), ChartColumn, game.tickets.length)}
       </aside>}
 
       {box === "incidents" ? <Incidents /> : box === "lost" ? <LostSales /> : box === "reports" ? <Reports /> : <>
@@ -190,19 +212,19 @@ export function SupportApp() {
         <div className="sup-list-h">
           <h2>{title}{kind && ` · ${kindOf(kind).label}`}</h2>
           {!desk && <span className="sup-unread num">{inBox.filter((it) => it.tk.unread).length}</span>}
-          {busy && <span className="sup-busy">Busy until <span className="num">{stamp(game.playerBusyUntil / 60)}</span></span>}
+          {busy && <span className="sup-busy">{t("support.busyUntil", { time: stamp(game.playerBusyUntil / 60) })}</span>}
         </div>
         {has("search") && (
-          <label className="sup-search"><Search aria-hidden /><input type="search" aria-label="Search" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} /></label>
+          <label className="sup-search"><Search aria-hidden /><input type="search" aria-label={t("support.search")} placeholder={t("support.search")} value={query} onChange={(e) => setQuery(e.target.value)} /></label>
         )}
         {list.map((it) => <TicketRow key={it.id} tk={it.tk} active={it.id === sel} timers={gates.slaTimers} onOpen={open} />)}
-        {!list.length && <div className="sup-none">No emails</div>}
+        {!list.length && <div className="sup-none">{t("support.noEmails")}</div>}
       </div>
 
       {upgrade ? <Card key={upgrade.id} r={upgrade} />
         : current && order ? <OrderThread key={current.id} tk={current} r={order} gates={gates} />
         : current ? <Thread key={current.id} tk={current} gates={gates} />
-        : <div className="sup-detail sup-none">No email selected</div>}
+        : <div className="sup-detail sup-none">{t("support.noEmailSelected")}</div>}
       </>}
     </div>
   );
@@ -215,10 +237,10 @@ function TicketRow({ tk, active, timers, onOpen }: { tk: Ticket; active: boolean
   const K = kindOf(tk.kind);
   return (
     <button role="listitem" className={`tk${active ? " active" : ""}${tk.unread ? " unread" : ""}`} onClick={() => onOpen(tk)} onContextMenu={menuOn(() => ticketMenu(game, tk))}>
-      <span className="who">{tk.unread && <i className="dot" aria-label="Unread" />}{tk.notice ? <Sender id={tk.notice.sender} /> : <span>{order ? requestName(order) : tk.kind === "sponsor" ? subjectParams(game, tk).event : c?.name}</span>}</span>
+      <span className="who">{tk.unread && <i className="dot" aria-label={t("support.unread")} />}{tk.notice ? <Sender id={tk.notice.sender} /> : <span>{order ? requestName(order) : tk.kind === "sponsor" ? subjectParams(game, tk).event : c?.name}</span>}</span>
       {timers ? <Sla tk={tk} hour={game.hour} /> : <span className="sla num">{stamp(tk.status === "open" ? tk.createdAt : tk.updatedAt)}</span>}
       <span className="subj">{order ? need(order) : subjectOf(game, tk)}</span>
-      <span className="meta"><span className="type" style={{ "--k": KINDS.findIndex((x) => x.id === tk.kind) } as CSSProperties}><K.icon />{K.label}</span>{tk.work && <span className="pill accent">Queued</span>}</span>
+      <span className="meta"><span className="type" style={{ "--k": KINDS.findIndex((x) => x.id === tk.kind) } as CSSProperties}><K.icon />{K.label}</span>{tk.work && <span className="pill accent">{t("support.queued")}</span>}</span>
     </button>
   );
 }
@@ -239,10 +261,10 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
           <span className="type"><K.icon />{K.label}</span>
           {r.domain && <span>{r.domain}</span>}
           <span>{r.city}</span>
-          <span>{SLA_LABEL[r.sla]} SLA · <span className="num">{(SLAS[r.sla].uptime * 100).toFixed(SLAS[r.sla].uptime >= 0.999 ? 2 : 1)}%</span> · <span className="num">{SLAS[r.sla].responseHours}</span> h response</span>
+          <span>{t("support.slaLine", { sla: SLA_LABEL[r.sla], uptime: (SLAS[r.sla].uptime * 100).toFixed(SLAS[r.sla].uptime >= 0.999 ? 2 : 1), h: SLAS[r.sla].responseHours })}</span>
           <InvoicePill r={r} />
           {tk.status === "open" && gates.slaTimers
-            ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer /><span><span className="num">{Math.max(0, left)} h</span> to respond</span></span>
+            ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer /><span>{t("support.toRespond", { h: Math.max(0, left) })}</span></span>
             : <span className="pill">{statusOf(tk)}</span>}
         </div>
       </div>
@@ -251,14 +273,14 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
         <div className="logo">{initials(requestName(r))}</div>
         <div>
           <div className="name">{customer ? <CustomerLink id={customer.id} name={customer.name} /> : requestName(r)}</div>
-          <div className="sub">{r.company ? `${r.contact} · ` : ""}Received <span className="num">{stamp(tk.createdAt)}</span></div>
+          <div className="sub">{r.company ? `${r.contact} · ` : ""}{t("support.received", { time: stamp(tk.createdAt) })}</div>
         </div>
       </div>
 
       {!isFinal(tk) && (
         <ul className="sales-reqs">
           {reqs.map((x) => (
-            <li key={x.key} className={x.ok ? "ok" : "bad"}>{x.ok ? <Check aria-label="Met" /> : <X aria-label="Missing" />}{t(x.key.replace("sales.need.", "sales.req."), x.params)}</li>
+            <li key={x.key} className={x.ok ? "ok" : "bad"}>{x.ok ? <Check aria-label={t("support.met")} /> : <X aria-label={t("support.missing")} />}{t(x.key.replace("sales.need.", "sales.req."), x.params)}</li>
           ))}
         </ul>
       )}
@@ -266,21 +288,21 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
       <div className="thread">
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
-            <div className="from">{m.from === "you" ? m.by ?? "You" : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
+            <div className="from">{m.from === "you" ? m.by ?? t("support.you") : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
             <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}</p>
           </div>
         ))}
-        {tk.work && <div className="event"><span>Queued until <span className="num">{stamp(tk.work.doneAt / 60)}</span></span></div>}
+        {tk.work && <div className="event"><span>{t("support.queuedUntil", { time: stamp(tk.work.doneAt / 60) })}</span></div>}
         {isFinal(tk) && <div className="event"><span>{t(`outcome.${tk.outcome ?? "closed"}`)} · <span className="num">{stamp(tk.updatedAt)}</span></span></div>}
       </div>
 
       {r.spec ? <CustomCompose tk={tk} r={r} /> : !isFinal(tk) && (
         <div className="compose">
           <div className="actions-row">
-            <button className="btn ghost" disabled={locked} onClick={() => act(resolveTicket, tk.id, "reject")}><CircleX />Decline</button>
+            <button className="btn ghost" disabled={locked} onClick={() => act(resolveTicket, tk.id, "reject")}><CircleX />{t("support.decline")}</button>
             <span className="grow" />
-            <span className="sales-total">Revenue <span className="num">{euroCents(r.quote ?? r.reference)}</span> a month</span>
-            <button className="btn primary" disabled={locked || missing.length > 0} onClick={() => act(resolveTicket, tk.id, "accept")}><Check />Accept order</button>
+            <span className="sales-total">{t("support.revenue", { amount: euroCents(r.quote ?? r.reference) })}</span>
+            <button className="btn primary" disabled={locked || missing.length > 0} onClick={() => act(resolveTicket, tk.id, "accept")}><Check />{t("support.action.accept")}</button>
           </div>
         </div>
       )}
@@ -313,21 +335,21 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
   const body = (
     <div className="sup-detail">
       <div className="d-head">
-        <div className="top"><h2>{t(`ticket.${tk.kind}.${tk.topic}.subject`, p)}</h2><span className="id num">#{tk.id.slice(3)}</span><More label={`ticket ${tk.id.slice(3)}`} entries={() => ticketMenu(game, tk)} /></div>
+        <div className="top"><h2>{t(`ticket.${tk.kind}.${tk.topic}.subject`, p)}</h2><span className="id num">#{tk.id.slice(3)}</span><More label={t("support.ticketNo", { n: tk.id.slice(3) })} entries={() => ticketMenu(game, tk)} /></div>
         <div className="facts">
           <span className="type"><K.icon />{K.label}</span>
-          <span>Opened <span className="num">{stamp(tk.createdAt)}</span></span>
+          <span>{t("support.opened", { time: stamp(tk.createdAt) })}</span>
           {tk.status === "open" && gates.slaTimers
             ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer />{tk.notice || left < 0
-                ? <span><span className="num">{span(left)}</span> {left < 0 ? "overdue" : "to respond"}</span>
-                : <span>Due <span className="num">{due(tk.dueAt, game.hour)}</span></span>}</span>
+                ? <span>{t(left < 0 ? "support.overdueBy" : "support.toRespondIn", { span: span(left) })}</span>
+                : <span>{t("support.due", { time: due(tk.dueAt, game.hour) })}</span>}</span>
             : <span className="pill">{statusOf(tk)}</span>}
         </div>
         {gates.assign && agents.length > 0 && !isFinal(tk) && (
           <div className="facts">
-            <span>Assign</span>
-            <span className="seg wrap" role="group" aria-label="Assign">
-              {[{ id: null, name: "Nobody" }, ...agents].map((a) => (
+            <span>{t("support.assign")}</span>
+            <span className="seg wrap" role="group" aria-label={t("support.assign")}>
+              {[{ id: null, name: t("support.nobody") }, ...agents].map((a) => (
                 <button key={a.id ?? "none"} aria-pressed={tk.assignee === a.id} onClick={() => act(assignTicket, tk.id, a.id)}>{a.name}</button>
               ))}
             </span>
@@ -344,8 +366,8 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
             {tk.topic === "phishing" && <button className="sup-url" onClick={() => openApp("Browser", { kind: "url", id: tk.notice!.url })}>{tk.notice!.url}</button>}
           </div>
           <div className="happy">
-            <div className="k">Customer</div>
-            <div>{c ? <CustomerLink id={c.id} name={c.name} /> : "None"}</div>
+            <div className="k">{t("support.customer")}</div>
+            <div>{c ? <CustomerLink id={c.id} name={c.name} /> : t("support.none")}</div>
           </div>
         </div>
       ) : c && !gates.customerSidebar && (
@@ -354,11 +376,11 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
         <div>
           <div className="name"><CustomerLink id={c.id} name={c.name} /></div>
           <div className="sub">
-            {svc ? svc.label : services.length === 1 ? services[0].label : `${services.length} services`} · <span className="num">{euroPrice(monthly)}</span> a month · since <span className="num">{monthYear(c.since)}</span>
+            {t("support.custLine", { what: svc ? svc.label : services.length === 1 ? services[0].label : t("support.nServices", { n: services.length }), price: euroPrice(monthly), since: monthYear(c.since) })}
           </div>
         </div>
         <div className="happy">
-          <div className="k">Happiness <span className="num">{Math.round(c.happiness)}</span> of <span className="num">100</span></div>
+          <div className="k">{t("support.happiness", { n: Math.round(c.happiness) })}</div>
           <div className="bar"><i className={moodClass(c.happiness)} style={{ width: `${c.happiness}%` }} /></div>
         </div>
       </div>
@@ -366,13 +388,13 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
 
       <div className="thread">
         <div className={sent ? "msg you" : "msg"}>
-          <div className="from">{sender ? sender.name : sent ? "You" : tk.kind === "sponsor" ? p.event : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
+          <div className="from">{sender ? sender.name : sent ? t("support.you") : tk.kind === "sponsor" ? p.event : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
         </div>
         {tk.replies.map((r, i) => (
           <div key={i} className="thread-pair">
             <div className="msg you">
-              <div className="from">{r.by ?? "You"} · <span className="num">{stamp(r.hour)}</span></div>
+              <div className="from">{r.by ?? t("support.you")} · <span className="num">{stamp(r.hour)}</span></div>
               <p>{r.key ? t(r.key, r.params) : t(`template.${r.template}.text`, companyParams(game))}</p>
             </div>
             {!r.right && (
@@ -389,14 +411,14 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
             <p>{t(m.key, m.params)}</p>
           </div>
         ))}
-        {tk.move?.windowAt != null && tk.status === "waiting" && <div className="event"><span>Move at <span className="num">{stamp(tk.move.windowAt)}</span></span></div>}
+        {tk.move?.windowAt != null && tk.status === "waiting" && <div className="event"><span>{t("support.moveAt", { time: stamp(tk.move.windowAt) })}</span></div>}
         {tk.outcome === "withdrawn" && (
           <div className="msg">
             <div className="from">{c?.name} · <span className="num">{stamp(tk.updatedAt)}</span></div>
             <p>{t("ticket.withdrawn.text")}</p>
           </div>
         )}
-        {tk.work && <div className="event"><span>Queued until <span className="num">{stamp(tk.work.doneAt / 60)}</span></span></div>}
+        {tk.work && <div className="event"><span>{t("support.queuedUntil", { time: stamp(tk.work.doneAt / 60) })}</span></div>}
         {(tk.status === "escalated" || isFinal(tk)) && (
           <div className="event"><span>{t(`outcome.${tk.outcome ?? (tk.status === "closed" ? "closed" : tk.status === "escalated" ? "escalated" : "resolved")}`)} · <span className="num">{stamp(tk.updatedAt)}</span></span></div>
         )}
@@ -406,7 +428,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
         <div className="compose">
           {tk.status === "open" && templatesOf(tk).length > 0 && (
             <>
-              <h3>Reply</h3>
+              <h3>{t("support.reply")}</h3>
               <div className="templates">
                 {shownTemplates(game, tk, gates.templates).map((id) => (
                   <button key={id} className="tpl" disabled={locked} onClick={() => reply(replyTicket, tk.id, id)}>
@@ -419,14 +441,14 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
           )}
           {tk.kind === "cancellation" && tk.status === "open" && (
             <>
-              <h3>Retention offers</h3>
+              <h3>{t("support.retentionOffers")}</h3>
               <div className="offers">
                 {retentionOptions(game, tk).map((o) => {
                   const v = game.services.find((x) => x.id === o.serviceId);
                   return (
                     <button key={o.id} className="offer" disabled={locked} onClick={() => reply(retainTicket, tk.id, o.id)}>
                       <span className="t">{OFFER_TITLE[o.id]}</span>
-                      <span className="v num">{o.spec && v ? specText(v.product, o.spec) : o.target ?? (o.cost > 0 ? euroCents(o.cost) : "No cost")}</span>
+                      <span className="v num">{o.spec && v ? specText(v.product, o.spec) : o.target ?? (o.cost > 0 ? euroCents(o.cost) : t("support.noCost"))}</span>
                       <span className={`odds ${o.odds}`}>{ODDS_LABEL[o.odds]}</span>
                     </button>
                   );
@@ -437,14 +459,14 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
           <div className="actions-row">
             {actionsOf(tk).filter((a) => (a !== "revert" || tk.topic === "price") && (!stray || a === "reject")).map((a) => (
               <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => reply(resolveTicket, tk.id, a)}>
-                {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}{a === "pay" && <span className="num">({euroCents(Number(p.ransom))})</span>}{a === "offerOnce" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updateOnce"))})</span>}{a === "offerManaged" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updates"))} a month)</span>}
+                {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}{a === "pay" && <span className="num">({euroCents(Number(p.ransom))})</span>}{a === "offerOnce" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updateOnce"))})</span>}{a === "offerManaged" && <span className="num">({t("support.perMonth", { price: euroCents(updatePrice(game.rates.webHosting, "updates")) })})</span>}
               </button>
             ))}
             <span className="grow" />
-            {tk.kind === "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(declineSponsorship, tk.id)}><CircleX />Decline</button>}
-            {tk.kind === "sponsor" && <button className="btn primary" disabled={locked} onClick={() => act(acceptSponsorship, tk.id)}><Check />Accept</button>}
-            {!stray && tk.kind !== "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? "Ignore" : "Close"}</button>}
-            {tk.status === "waiting" && tk.kind !== "migration" && !tk.work && <button className="btn primary" disabled={locked} onClick={() => act(resolveTicket, tk.id)}><CircleCheck />Resolve</button>}
+            {tk.kind === "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(declineSponsorship, tk.id)}><CircleX />{t("support.decline")}</button>}
+            {tk.kind === "sponsor" && <button className="btn primary" disabled={locked} onClick={() => act(acceptSponsorship, tk.id)}><Check />{t("support.accept")}</button>}
+            {!stray && tk.kind !== "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? t("support.ignore") : t("support.close")}</button>}
+            {tk.status === "waiting" && tk.kind !== "migration" && !tk.work && <button className="btn primary" disabled={locked} onClick={() => act(resolveTicket, tk.id)}><CircleCheck />{t("support.resolve")}</button>}
           </div>
         </div>
       )}

@@ -20,17 +20,17 @@ function Target({ game, d }: { game: GameState; d: Device }) {
   return (
     <section className="kvm-target">
       <dl className="bmc-facts">
-        <div><dt>{server ? "Server" : "Device"}</dt><dd>{nameOf(d)}</dd></div>
-        <div><dt>Power</dt><dd className={`bmc-state ${d.on ? "on" : "off"}`}>{d.on ? "On" : "Off"}</dd></div>
+        <div><dt>{server ? t("misc1.ipmi.server") : t("misc1.ipmi.device")}</dt><dd>{nameOf(d)}</dd></div>
+        <div><dt>{t("misc1.ipmi.power")}</dt><dd className={`bmc-state ${d.on ? "on" : "off"}`}>{d.on ? t("misc1.ipmi.on") : t("misc1.ipmi.off")}</dd></div>
       </dl>
       <pre className="kvm-screen">{t(screen.key, screen.params)}</pre>
       <div className="bmc-actions">
-        {server && <button className="cx-btn" onClick={() => openConsole(d.id)}>Open console</button>}
-        {power && <button className="cx-btn primary" disabled={d.on} onClick={() => act(remotePower, d.id, true)}>Power on</button>}
-        {power && <button className="cx-btn" disabled={!d.on} onClick={() => act(remotePower, d.id, false)}>Power off</button>}
-        {power && <button className="cx-btn" disabled={!d.on} onClick={() => act(reset, d.id)}>Reset</button>}
-        {d.stuck && d.on && <button className="cx-btn" onClick={() => act(continueBoot, d.id)}>Continue boot</button>}
-        {!server && (d.hung || d.locked) && <button className="cx-btn" onClick={() => act(recoverGear, d.id)}>Recover over console</button>}
+        {server && <button className="cx-btn" onClick={() => openConsole(d.id)}>{t("misc1.ipmi.openConsole")}</button>}
+        {power && <button className="cx-btn primary" disabled={d.on} onClick={() => act(remotePower, d.id, true)}>{t("misc1.ipmi.powerOn")}</button>}
+        {power && <button className="cx-btn" disabled={!d.on} onClick={() => act(remotePower, d.id, false)}>{t("misc1.ipmi.powerOff")}</button>}
+        {power && <button className="cx-btn" disabled={!d.on} onClick={() => act(reset, d.id)}>{t("misc1.ipmi.reset")}</button>}
+        {d.stuck && d.on && <button className="cx-btn" onClick={() => act(continueBoot, d.id)}>{t("misc1.ipmi.continueBoot")}</button>}
+        {!server && (d.hung || d.locked) && <button className="cx-btn" onClick={() => act(recoverGear, d.id)}>{t("misc1.ipmi.recover")}</button>}
       </div>
     </section>
   );
@@ -49,7 +49,7 @@ export function KvmPage({ game, deviceId, host }: { game: GameState; deviceId: s
       </header>
       <main className="cx-main">
         {targets.map((x) => <Target key={x.id} game={game} d={x} />)}
-        {!targets.length && <p className="bmc-empty">No devices</p>}
+        {!targets.length && <p className="bmc-empty">{t("misc1.ipmi.noDevices")}</p>}
       </main>
     </div>
   );

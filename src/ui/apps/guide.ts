@@ -24,32 +24,32 @@ export function stepOf(s: GameState, id: StepId): Step {
   const mailApp = supportApp(s).name;
   switch (id) {
     case "register":
-      return { title: t("guide.step.register"), text: "Register your company at the trade office in the Browser.", app: "Browser", focus: { kind: "url", id: OFFICE_URL } };
+      return { title: t("guide.step.register"), text: t("apps.guide.step.register"), app: "Browser", focus: { kind: "url", id: OFFICE_URL } };
     case "company":
-      return { title: t("guide.step.company"), text: "Choose the name, logo and colour of your company.", app: "Settings" };
+      return { title: t("guide.step.company"), text: t("apps.guide.step.company"), app: "Settings" };
     case "buyServer":
-      return { title: t("guide.step.buyServer"), text: "Buy your first server in the Shop.", app: "Shop" };
+      return { title: t("guide.step.buyServer"), text: t("apps.guide.step.buyServer"), app: "Shop" };
     case "mountServer":
-      return { title: t("guide.step.mountServer"), text: "Mount it in a rack, cable it to the router and power it on in Locations.", app: "Locations", focus: home && { kind: "location", id: home.id } };
+      return { title: t("guide.step.mountServer"), text: t("apps.guide.step.mountServer"), app: "Locations", focus: home && { kind: "location", id: home.id } };
     case "internet":
-      return { title: t("guide.step.internet"), text: "Order an internet line in Locations under Internet line.", app: "Locations", focus: { kind: "line", id: "home" } };
+      return { title: t("guide.step.internet"), text: t("apps.guide.step.internet"), app: "Locations", focus: { kind: "line", id: "home" } };
     case "setup":
-      return { title: t("guide.step.setup"), text: "Download Debiant from its website, write the ISO to the USB stick in Finder, plug the stick into the server at the rack and boot from it. Install Debiant, then install a hypervisor or a web panel with the commands from its website.", app: "Locations", focus: server && { kind: "device", id: server.id } };
+      return { title: t("guide.step.setup"), text: t("apps.guide.step.setup"), app: "Locations", focus: server && { kind: "device", id: server.id } };
     case "domain": {
       const partner = (s.registrar && registrarById(s.registrar.id)?.name) ?? REGISTRARS[0].name;
       return {
         title: t("guide.step.domain"),
-        text: `Buy a domain for your company at ${partner} in the Browser.`,
+        text: t("apps.guide.step.domain", { partner }),
         app: "Browser",
       };
     }
     case "website":
-      return { title: t("guide.step.website"), text: "Build your first website in Marketing under Channels.", app: "Marketing", focus: { kind: "page", id: "channels" } };
+      return { title: t("guide.step.website"), text: t("apps.guide.step.website"), app: "Marketing", focus: { kind: "page", id: "channels" } };
     case "launch":
-      return { title: t("guide.step.launch"), text: "Choose where your website runs, launch it in Marketing and list your first product under Products.", app: "Marketing", focus: { kind: "page", id: "channels" } };
+      return { title: t("guide.step.launch"), text: t("apps.guide.step.launch"), app: "Marketing", focus: { kind: "page", id: "channels" } };
     case "email":
-      return { title: t("guide.step.email"), text: `Choose an email provider in ${mailApp}.`, app: "Support", focus: { kind: "mailSetup", id: "" } };
+      return { title: t("guide.step.email"), text: t("apps.guide.step.email", { app: mailApp }), app: "Support", focus: { kind: "mailSetup", id: "" } };
     case "firstCustomer":
-      return { title: t("guide.step.firstCustomer"), text: `Answer your first customer in ${mailApp}.`, app: "Support" };
+      return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: mailApp }), app: "Support" };
   }
 }

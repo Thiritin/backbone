@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
 import { HOME_URL, INDEX_HOST, resolve } from "../../../../../sim/80-business/browser";
@@ -15,7 +16,7 @@ function Row({ r, go, game, fav }: { r: IndexRow; go: (url: string) => void; gam
     <li className={r.down ? "down" : undefined}>
       {fav && <Favicon game={game} r={resolve(game, r.url)} />}
       <a href={`#${r.url}`} onClick={(e) => { e.preventDefault(); go(r.url); }}>{r.title}</a>
-      <span className="yx-desc">{r.down ? "down" : r.desc}</span>
+      <span className="yx-desc">{r.down ? t("browser-sites-1.ix.down") : r.desc}</span>
     </li>
   );
 }
@@ -29,8 +30,8 @@ export function IndexSite({ game, path, go }: { game: GameState; path: string; g
   const open = !needle && look === "early" ? all.find((c) => `/dir/${slug(c.title)}` === path.replace(/\/$/, "")) : undefined;
   const search = (
     <form className="yx-search" role="search" onSubmit={(e) => e.preventDefault()}>
-      <input aria-label="Search the directory" value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false} />
-      <button className="yx-go">Search</button>
+      <input aria-label={t("browser-sites-1.ix.searchLabel")} value={q} onChange={(e) => setQ(e.target.value)} spellCheck={false} />
+      <button className="yx-go">{t("browser-sites-1.ix.search")}</button>
     </form>
   );
   const mark = <a className="yx-mark" href={`#${HOME_URL}`} onClick={(e) => { e.preventDefault(); setQ(""); go(HOME_URL); }}>Yahoy!</a>;
@@ -54,14 +55,14 @@ export function IndexSite({ game, path, go }: { game: GameState; path: string; g
       <header>{mark}{search}</header>
       {open ? (
         <section className="yx-cat">
-          <p className="yx-crumb"><a href={`#${HOME_URL}`} onClick={(e) => { e.preventDefault(); go(HOME_URL); }}>Home</a> &gt; {open.title}</p>
+          <p className="yx-crumb"><a href={`#${HOME_URL}`} onClick={(e) => { e.preventDefault(); go(HOME_URL); }}>{t("browser-sites-1.ix.home")}</a> &gt; {open.title}</p>
           <h2>{open.title}</h2>
           <ul>{open.rows.map((r) => <Row key={r.url} r={r} go={go} game={game} />)}</ul>
         </section>
       ) : needle ? (
         <section className="yx-cat">
           {cats.map((c) => <div key={c.title}><h2>{c.title}</h2><ul>{c.rows.map((r) => <Row key={r.url} r={r} go={go} game={game} />)}</ul></div>)}
-          {!cats.length && <p>No sites match.</p>}
+          {!cats.length && <p>{t("browser-sites-1.ix.noMatch")}</p>}
         </section>
       ) : (
         <ul className="yx-dir">
@@ -72,7 +73,7 @@ export function IndexSite({ game, path, go }: { game: GameState; path: string; g
           ))}
         </ul>
       )}
-      <footer>Copyright {yearOf(game.hour)} Yahoy! Inc. All rights reserved.</footer>
+      <footer>{t("browser-sites-1.ix.copyright", { year: yearOf(game.hour) })}</footer>
     </div>
   );
 }

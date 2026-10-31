@@ -2,6 +2,7 @@ import { Cat, Cloud, Cpu, Database, Flame, Globe, Leaf, Mountain, Rocket, Server
 import { useId, type CSSProperties } from "react";
 import type { Company } from "../../sim/50-state";
 import { COMPANY_COLORS, COMPANY_LOGOS, NAME_MAX } from "../../sim/90-actions/company";
+import { t } from "../../i18n/en";
 
 // Animal and appliance marks lucide does not ship, drawn on the same 24 grid and stroke.
 const Wolf = createLucideIcon("wolf", [
@@ -40,22 +41,22 @@ export function CompanyFields({ company, onChange, onCommit }: Props) {
   const id = useId();
   return (
     <div className="co-fields">
-      <label className="co-label" htmlFor={`${id}n`}>Company name</label>
+      <label className="co-label" htmlFor={`${id}n`}>{t("apps.company.name")}</label>
       <input id={`${id}n`} className="field" maxLength={NAME_MAX} value={company.name} spellCheck={false}
         onChange={(e) => onChange({ name: e.target.value })} onBlur={onCommit}
         onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
-      <span className="co-label" id={`${id}l`}>Logo</span>
+      <span className="co-label" id={`${id}l`}>{t("apps.company.logo")}</span>
       <div className="co-logos" role="group" aria-labelledby={`${id}l`}>
         {COMPANY_LOGOS.map((l) => (
-          <button key={l} aria-label={l[0].toUpperCase() + l.slice(1)} aria-pressed={company.logo === l} onClick={() => onChange({ logo: l })}>
+          <button key={l} aria-label={t(`apps.company.logo.${l}`)} aria-pressed={company.logo === l} onClick={() => onChange({ logo: l })}>
             <CompanyMark company={{ ...company, logo: l }} />
           </button>
         ))}
       </div>
-      <span className="co-label" id={`${id}c`}>Colour</span>
+      <span className="co-label" id={`${id}c`}>{t("apps.company.colour")}</span>
       <div className="co-colors" role="group" aria-labelledby={`${id}c`}>
         {COMPANY_COLORS.map((c, i) => (
-          <button key={c} aria-label={`Colour ${i + 1}`} aria-pressed={company.color === c} style={tile(c)} onClick={() => onChange({ color: c })} />
+          <button key={c} aria-label={t("apps.company.colourN", { n: i + 1 })} aria-pressed={company.color === c} style={tile(c)} onClick={() => onChange({ color: c })} />
         ))}
       </div>
     </div>

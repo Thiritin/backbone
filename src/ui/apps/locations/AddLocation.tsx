@@ -7,20 +7,21 @@ import { dcAvailability, fits } from "../../../sim/60-infra/status";
 import { addLocation, joinWaitlist } from "../../../sim/90-actions/hardware";
 import { Logo } from "../../art/logos";
 import { cityNamed, WorldMap, type Bounds, type Marker } from "../../map/WorldMap";
+import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { positionsLabel, shareLabel, shareUnits, Sheet, spaceSize } from "./ui";
 
 type Rented = Exclude<SpaceKind, "basement">;
 const CITIES = [...new Set(DATACENTERS.map((d) => d.city))];
 type Area = "eu" | "us";
-const AREAS: [Area, string, Bounds][] = [["eu", "Europe", { west: -1, south: 45, east: 17, north: 53 }], ["us", "North America", { west: -122, south: 28, east: -72, north: 46 }]];
-const KINDS: [Rented, string][] = [["share", "Rack"], ["cage", "Cage"], ["suite", "Suite"]];
+const AREAS: [Area, string, Bounds][] = [["eu", t("locations-1.europe"), { west: -1, south: 45, east: 17, north: 53 }], ["us", t("locations-1.northAmerica"), { west: -122, south: 28, east: -72, north: 46 }]];
+const KINDS: [Rented, string][] = [["share", t("locations-1.rack")], ["cage", t("locations-1.cage")], ["suite", t("locations-1.suite")]];
 
 // Filters narrow the list, each one a requirement a datacenter either meets or not.
 type Filter = "green" | "certified" | "ab" | "backup" | "exchange" | "cages";
 const FILTERS: [Filter, string, (d: Datacenter) => boolean][] = [
-  ["green", "Green", (d) => d.green], ["certified", "Certified", (d) => d.certified], ["ab", "A+B feeds", (d) => d.feeds === "ab"],
-  ["backup", "UPS", (d) => d.backup !== "none"], ["exchange", "Exchange on site", (d) => !!d.exchange?.onSite], ["cages", "Cages", (d) => d.cages],
+  ["green", t("locations-1.fGreen"), (d) => d.green], ["certified", t("locations-1.fCertified"), (d) => d.certified], ["ab", t("locations-1.fAb"), (d) => d.feeds === "ab"],
+  ["backup", t("locations-1.fUps"), (d) => d.backup !== "none"], ["exchange", t("locations-1.fExchange"), (d) => !!d.exchange?.onSite], ["cages", t("locations-1.fCages"), (d) => d.cages],
 ];
 // Sort keys; `first` is the direction a first click takes, the better end of the column.
 type SortKey = "name" | "space" | "carriers" | "exchange" | "power" | "kw" | "price" | "cross" | "hands";
@@ -74,7 +75,7 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
   const add = () => {
     if (!dc) return;
     if (!open(n)) {
-      if (act(joinWaitlist, dc.id, k, n).ok) { notify("Locations", "Joined waitlist", `${dc.name}, ${spaceSize(k, n)}`); onClose(); }
+      if (act(joinWaitlist, dc.id, k, n).ok) { notify("Locations", t("locations-1.joinedWaitlist"), `${dc.name}, ${spaceSize(k, n)}`); onClose(); }
       return;
     }
     const r = act(addLocation, dc.id, k, n);
@@ -82,27 +83,27 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
   };
 
   return (
-    <Sheet title="Add location" onClose={onClose} wide>
+    <Sheet title={t("locations-1.addLocation")} onClose={onClose} wide>
       <div className="loc-sheet-bar">
-        <div className="seg" role="group" aria-label="Area">
+        <div className="seg" role="group" aria-label={t("locations-1.area")}>
           {AREAS.map(([id, label]) => <button key={id} aria-pressed={area === id} onClick={() => { setArea(id); setCity(null); }}>{label}</button>)}
         </div>
         <span className="grow" />
         <div className="loc-cities">
-          <div className="seg" role="group" aria-label="City">
-            <button aria-pressed={!city} onClick={() => setCity(null)}>All</button>
+          <div className="seg" role="group" aria-label={t("locations-1.city")}>
+            <button aria-pressed={!city} onClick={() => setCity(null)}>{t("locations-1.all")}</button>
             {cities.map((c) => <button key={c} aria-pressed={city === c} onClick={() => setCity(c)}>{c}</button>)}
           </div>
         </div>
       </div>
-      <div className="loc-filters" role="group" aria-label="Filter">
-        <span className="loc-k">Filter</span>
-        <button className="loc-chip" aria-pressed={hideFull} onClick={() => setHideFull(!hideFull)}>{hideFull && <Check />}Hide full</button>
+      <div className="loc-filters" role="group" aria-label={t("locations-1.filter")}>
+        <span className="loc-k">{t("locations-1.filter")}</span>
+        <button className="loc-chip" aria-pressed={hideFull} onClick={() => setHideFull(!hideFull)}>{hideFull && <Check />}{t("locations-1.hideFull")}</button>
         {FILTERS.map(([f, label]) => {
           const on = filters.includes(f);
           return <button key={f} className="loc-chip" aria-pressed={on} onClick={() => setFilters(on ? filters.filter((x) => x !== f) : [...filters, f])}>{on && <Check />}{label}</button>;
         })}
-        {(filters.length > 0 || hideFull || sort) && <button className="loc-chip reset" onClick={() => { setFilters([]); setHideFull(false); setSort(null); }}>Reset</button>}
+        {(filters.length > 0 || hideFull || sort) && <button className="loc-chip reset" onClick={() => { setFilters([]); setHideFull(false); setSort(null); }}>{t("locations-1.reset")}</button>}
       </div>
       <WorldMap key={area} className="wm-add" initial={AREAS.find((a) => a[0] === area)![2]} markers={markers(city, hot)} onMarkerClick={(c) => setCity(c === city ? null : c)} onCityClick={(c) => setCity(CITIES.includes(c.name) && c.name !== city ? c.name : null)}>
         {city && (
@@ -115,35 +116,35 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
       <div className="loc-dcs">
         <table className="table">
           <thead>
-            <tr><Th k="name">Datacenter</Th><Th k="space">Space</Th><Th k="carriers">Carriers</Th><Th k="exchange">Exchange</Th><Th k="power">Power</Th><Th k="kw" className="r">kW</Th><Th k="price" className="r">Position</Th><Th k="cross" className="r">Cross-connect</Th><Th k="hands">Remote hands</Th><th>Other</th></tr>
+            <tr><Th k="name">{t("locations-1.datacenter")}</Th><Th k="space">{t("locations-1.space")}</Th><Th k="carriers">{t("locations-1.carriers")}</Th><Th k="exchange">{t("locations-1.exchange")}</Th><Th k="power">{t("locations-1.power")}</Th><Th k="kw" className="r">kW</Th><Th k="price" className="r">{t("locations-1.position")}</Th><Th k="cross" className="r">{t("locations-1.crossConnect")}</Th><Th k="hands">{t("locations-1.remoteHands")}</Th><th>{t("locations-1.other")}</th></tr>
           </thead>
           <tbody>
             {rows.map((d) => <DcRow key={d.id} game={game} dc={d} selected={d === dc} onPick={() => setDc(d.id)} onHover={(on) => setHot(on ? d.city : null)} />)}
           </tbody>
         </table>
-        {rows.length === 0 && <p className="loc-muted loc-none">No datacenter matches</p>}
+        {rows.length === 0 && <p className="loc-muted loc-none">{t("locations-1.noMatch")}</p>}
       </div>
       <div className="loc-sheet-foot">
         {dc ? <>
           <span className="logo-cell"><Logo provider={dc.provider} size={18} />{dc.name}</span>
-          <div className="seg" role="group" aria-label="Space">
+          <div className="seg" role="group" aria-label={t("locations-1.space")}>
             {KINDS.map(([id, label]) => <button key={id} aria-pressed={k === id} disabled={id === "cage" && !dc.cages} onClick={() => setKind(id)}>{label}</button>)}
           </div>
-          <div className="seg" role="group" aria-label="Size">
+          <div className="seg" role="group" aria-label={t("locations-1.size")}>
             {SPACE_SIZES[k].map((s) => (
               <button key={s} className={open(s) ? "" : "unfit"} aria-pressed={n === s} aria-label={k === "share" ? shareLabel(s) : positionsLabel(s)} onClick={() => setSize(s)}>
-                <span className="num">{k !== "share" ? s : s === 1 ? "Full" : `1/${s}`}</span>
+                <span className="num">{k !== "share" ? s : s === 1 ? t("locations-1.full") : `1/${s}`}</span>
               </button>
             ))}
           </div>
           <span className="grow" />
           {k === "share" && <>
-            <span className="loc-k">Rack</span><strong className="num">{shareUnits(n)}U · {+(dc.kwPerPosition / n).toFixed(2)} kW</strong>
+            <span className="loc-k">{t("locations-1.rack")}</span><strong className="num">{shareUnits(n)}U · {+(dc.kwPerPosition / n).toFixed(2)} kW</strong>
           </>}
-          <span className="loc-k">Per month</span><strong className="num">{euro(spacePrice(dc, k, n))}</strong>
-          <span className="loc-k">Lead time</span><strong className="num">{LEAD_DAYS[k]} days</strong>
-          <button className="btn primary" onClick={add}>{open(n) ? "Add location" : "Join waitlist"}</button>
-        </> : <span className="loc-muted">No datacenter selected</span>}
+          <span className="loc-k">{t("locations-1.perMonth")}</span><strong className="num">{euro(spacePrice(dc, k, n))}</strong>
+          <span className="loc-k">{t("locations-1.leadTime")}</span><strong className="num">{t("locations-1.nDays", { n: LEAD_DAYS[k] })}</strong>
+          <button className="btn primary" onClick={add}>{open(n) ? t("locations-1.addLocation") : t("locations-1.joinWaitlist")}</button>
+        </> : <span className="loc-muted">{t("locations-1.noneSelected")}</span>}
       </div>
     </Sheet>
   );
@@ -158,11 +159,11 @@ const markers = (city: string | null, hot: string | null): Marker[] => CITIES.fl
 // Free space as a value and a bar of competitors, the player (rented and held) and free positions.
 function Availability({ game, dc }: { game: GameState; dc: Datacenter }) {
   const a = dcAvailability(game, dc.id), pct = (n: number) => `${(100 * n) / a.capacity}%`;
-  const text = a.free > 0 ? `${a.free} free` : a.freeEighths > 0 ? `${a.freeEighths}/8 rack free` : "Full";
+  const text = a.free > 0 ? t("locations-1.nFree", { n: a.free }) : a.freeEighths > 0 ? t("locations-1.eighthsFree", { n: a.freeEighths }) : t("locations-1.full");
   return (
     <span className="loc-avail">
       <span className={`num${a.freeEighths ? "" : " loc-full"}`}>{text}</span>
-      <span className="loc-avail-bar" role="img" aria-label={`${a.others} rented by others, ${a.mine + a.held} yours, ${a.free} free of ${a.capacity}`}>
+      <span className="loc-avail-bar" role="img" aria-label={t("locations-1.availAria", { others: a.others, mine: a.mine + a.held, free: a.free, capacity: a.capacity })}>
         <span className="others" style={{ width: pct(a.others) }} />
         <span className="mine" style={{ width: pct(a.mine + a.held) }} />
       </span>
@@ -177,13 +178,13 @@ function DcRow({ game, dc, selected, onPick, onHover }: { game: GameState; dc: D
       <td><button className="logo-cell loc-link" onClick={onPick}><Logo provider={dc.provider} size={18} /><span>{dc.name}<span className="loc-city">{dc.city}</span></span></button></td>
       <td><Availability game={game} dc={dc} /></td>
       <td><B off={dc.carriers < 5}><span className="num">{dc.carriers}</span></B></td>
-      <td>{ex ? <B off={!ex.onSite}>{ex.name} {ex.onSite ? "on site" : "by cross-connect"}</B> : <B off>None</B>}</td>
-      <td><span className="loc-badges"><B off={dc.feeds === "single"}>{dc.feeds === "ab" ? "A+B" : "Single"}</B><B off={dc.backup === "none"}>{dc.backup === "ups+generator" ? "UPS + gen" : dc.backup === "ups" ? "UPS" : "No UPS"}</B></span></td>
+      <td>{ex ? <B off={!ex.onSite}>{ex.onSite ? t("locations-1.exOnSite", { name: ex.name }) : t("locations-1.exCross", { name: ex.name })}</B> : <B off>{t("locations-1.none")}</B>}</td>
+      <td><span className="loc-badges"><B off={dc.feeds === "single"}>{dc.feeds === "ab" ? "A+B" : t("locations-1.single")}</B><B off={dc.backup === "none"}>{dc.backup === "ups+generator" ? "UPS + gen" : dc.backup === "ups" ? "UPS" : t("locations-1.noUps")}</B></span></td>
       <td className="r num">{dc.kwPerPosition}</td>
       <td className="r num">{euro(dc.positionPrice)}</td>
       <td className="r num">{euro(dc.crossConnect)}</td>
       <td><span className="num">{euro(dc.remoteHands.perHour)}/h, {dc.remoteHands.responseHours} h</span></td>
-      <td><span className="loc-badges">{dc.green && <Icon label="Green power"><Leaf /></Icon>}{dc.certified && <Icon label="Certified"><ShieldCheck /></Icon>}{dc.cages ? <B>Cages</B> : <B off>No cages</B>}</span></td>
+      <td><span className="loc-badges">{dc.green && <Icon label={t("locations-1.greenPower")}><Leaf /></Icon>}{dc.certified && <Icon label={t("locations-1.fCertified")}><ShieldCheck /></Icon>}{dc.cages ? <B>{t("locations-1.fCages")}</B> : <B off>{t("locations-1.noCages")}</B>}</span></td>
     </tr>
   );
 }

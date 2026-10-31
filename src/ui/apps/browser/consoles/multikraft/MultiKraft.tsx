@@ -1,4 +1,5 @@
 import { Actions, Backups, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Row, type Tab } from "../PanelBase";
+import { t } from "../../../../../i18n/en";
 import "./multikraft.css";
 
 // docs/design/software.md, section 10: dark grey under a brown header with status dot tables until 2018, then white, green and cards.
@@ -11,27 +12,27 @@ export function MultiKraft(p: PanelProps) {
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx mk mk-login" data-era={era}>
-      <LoginForm className="mk-card" onLogin={p.login} button="Login">
+      <LoginForm className="mk-card" onLogin={p.login} button={t("browser-consoles-1.login")}>
         <div className="mk-logo">MultiKraft</div>
         <div className="cx-host">{p.host}</div>
       </LoginForm>
     </div>
   );
-  const menu: [Tab, string][] = [["objects", "Servers"], ["software", "Settings"]];
+  const menu: [Tab, string][] = [["objects", t("browser-consoles-1.mkServers")], ["software", t("browser-consoles-1.settings")]];
   return (
     <div className="cx mk" data-era={era}>
       <header className="mk-top">
         <span className="mk-logo">MultiKraft</span>
         <nav>{menu.map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}</nav>
         <span className="cx-host">{p.host}</span>
-        <button onClick={p.logout}>Logout</button>
+        <button onClick={p.logout}>{t("browser-consoles-1.logout")}</button>
       </header>
       <main className="mk-main">
-        {tab !== "software" && rows.length === 0 && <p className="cx-empty">Nothing here yet.</p>}
+        {tab !== "software" && rows.length === 0 && <p className="cx-empty">{t("browser-consoles-1.nothingYet")}</p>}
         {tab !== "software" && rows.length > 0 && (era === "early"
           ? (
             <table className="cx-table">
-              <thead><tr><th>Server</th><th>Status</th><th>Memory</th><th>CPU</th><th /></tr></thead>
+              <thead><tr><th>{t("browser-consoles-1.mkServer")}</th><th>{t("browser-consoles-1.status")}</th><th>{t("browser-consoles-1.memory")}</th><th>{t("browser-consoles-1.cpu")}</th><th /></tr></thead>
               <tbody>
                 {rows.map((r) => (
                   <RowLines key={r.id} r={r} span={5}>
@@ -50,8 +51,8 @@ export function MultiKraft(p: PanelProps) {
               {rows.map((r) => (
                 <article key={r.id} className="mk-server">
                   <header><b>{r.name}</b><Dot r={r} /></header>
-                  <div><span className="cx-use">Memory</span><Bar use={r.ram} /><span className="cx-use num">{ramText(r)}</span></div>
-                  <div><span className="cx-use">CPU</span><Bar use={r.cpu} /><span className="cx-use num">{cpuText(r)}</span></div>
+                  <div><span className="cx-use">{t("browser-consoles-1.memory")}</span><Bar use={r.ram} /><span className="cx-use num">{ramText(r)}</span></div>
+                  <div><span className="cx-use">{t("browser-consoles-1.cpu")}</span><Bar use={r.cpu} /><span className="cx-use num">{cpuText(r)}</span></div>
                   <Actions actions={r.actions} className="cx-acts" />
                   {r.panel}
                 </article>

@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./powerdnz.css";
@@ -9,16 +10,16 @@ export function PowerDNZ(props: SiteProps) {
   if (look === "late") {
     return (
       <div className="sw sw-powerdnz late">
-        <header>{mark}<span className="ver">Documentation, version 4.{year - 2016}</span></header>
+        <header>{mark}<span className="ver">{t("browser-sites-2.powerdnzDocs", { version: `4.${year - 2016}` })}</span></header>
         <div className="docs">
           <aside>
-            <h3>Getting started</h3>
-            <Nav {...props} labels={{ home: "Overview", download: "Installing" }} />
-            <h3>Reference</h3>
-            <p>Backends<br />HTTP API<br />DNSSEC<br />Settings</p>
+            <h3>{t("browser-sites-2.gettingStarted")}</h3>
+            <Nav {...props} labels={{ home: t("browser-sites-2.navOverview"), download: t("browser-sites-2.navInstalling") }} />
+            <h3>{t("browser-sites-2.reference")}</h3>
+            <p>{t("browser-sites-2.powerdnzRef1")}<br />{t("browser-sites-2.powerdnzRef2")}<br />DNSSEC<br />{t("browser-sites-2.powerdnzRef3")}</p>
           </aside>
           <main>
-            <div className="crumbs">Docs / {page === "home" ? "Overview" : page[0].toUpperCase() + page.slice(1)}</div>
+            <div className="crumbs">{t("browser-sites-2.powerdnzCrumb", { page: page === "home" ? t("browser-sites-2.navOverview") : t(`browser-sites-2.page_${page}`) })}</div>
             {page === "home" && <h1>{p.site.tagline}</h1>}
             <Body {...props} />
           </main>
@@ -30,10 +31,10 @@ export function PowerDNZ(props: SiteProps) {
     <div className="sw sw-powerdnz early">
       <header>{mark}<span className="tag">{p.site.tagline}</span></header>
       <div className="cols">
-        <aside><Nav {...props} /><p className="news"><b>News</b><br />PowerDNZ 2.{year - 2004} is released with a faster database backend.</p></aside>
+        <aside><Nav {...props} /><p className="news"><b>{t("browser-sites-2.news")}</b><br />{t("browser-sites-2.powerdnzNews", { version: `2.${year - 2004}` })}</p></aside>
         <main><Body {...props} /></main>
       </div>
-      <footer>© {year} The PowerDNZ community</footer>
+      <footer>{t("browser-sites-2.powerdnzFooter", { year })}</footer>
     </div>
   );
 }

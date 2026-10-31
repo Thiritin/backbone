@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { Bot, Check, GitPullRequest } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
@@ -128,15 +129,15 @@ export function Intro({ onClose, pages = PAGES, art }: { onClose: () => void; pa
           <div className="intro-body">{page.blocks.map((b, i) => <BlockView key={i} b={b} />)}</div>
         </div>
         <footer className="intro-foot">
-          <button className="btn ghost" onClick={onClose}>Close</button>
+          <button className="btn ghost" onClick={onClose}>{t("desktop.close")}</button>
           <div className="intro-dots">
             {pages.map((p, i) => (
               <button key={i} aria-label={p.title} aria-current={i === n ? "step" : undefined} onClick={() => go(i)} />
             ))}
           </div>
           <div className="intro-nav">
-            <button className="btn" disabled={n === 0} onClick={() => go(n - 1)}>Back</button>
-            <button ref={next} className="btn primary" onClick={() => (n === last ? onClose() : go(n + 1))}>{n === last ? "Done" : "Next"}</button>
+            <button className="btn" disabled={n === 0} onClick={() => go(n - 1)}>{t("desktop.back")}</button>
+            <button ref={next} className="btn primary" onClick={() => (n === last ? onClose() : go(n + 1))}>{n === last ? t("desktop.done") : t("desktop.next")}</button>
           </div>
         </footer>
       </div>

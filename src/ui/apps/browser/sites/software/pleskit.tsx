@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Features, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./pleskit.css";
@@ -18,14 +19,14 @@ export function Pleskit(props: SiteProps) {
           <main>{page === "home" && <h1>{p.site.tagline}</h1>}<Body {...props} /></main>
           {look === "early" && (
             <aside>
-              <h3>News</h3>
-              <p><b>{year}-03-01</b> Pleskit {year - 1997}.0 is out now with a new skin.</p>
-              <p><b>{year}-01-15</b> Pleskit for Windoors Server gets the extensions catalog.</p>
+              <h3>{t("browser-sites-1.pk.news")}</h3>
+              <p><b>{year}-03-01</b> {t("browser-sites-1.pk.news1", { version: `${year - 1997}.0` })}</p>
+              <p><b>{year}-01-15</b> {t("browser-sites-1.pk.news2")}</p>
             </aside>
           )}
         </div>
       )}
-      <footer>© {year} Pleskit International GmbH</footer>
+      <footer>{t("browser-sites-1.pk.footer", { year })}</footer>
     </div>
   );
 }

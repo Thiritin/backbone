@@ -4,6 +4,7 @@ import type { GameState } from "../../../../sim/50-state";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { familyOf } from "../../../../sim/60-infra/vulns";
 import { consoleFeatures } from "../../../../sim/80-business/consoles";
+import { t } from "../../../../i18n/en";
 import { useSessionState } from "../../../session";
 import { CPanic } from "./cpanic/CPanic";
 import { DirectAdmen } from "./directadmen/DirectAdmen";
@@ -38,8 +39,8 @@ export const CONSOLES: Record<string, ComponentType<PanelProps>> = {
 function Defaced() {
   return (
     <div className="cx-defaced">
-      <h1>Hacked by xX_Pwn3r_Xx</h1>
-      <p>Greetings to everyone with a weak password.</p>
+      <h1>{t("browser-consoles-1.defacedTitle")}</h1>
+      <p>{t("browser-consoles-1.defacedBody")}</p>
     </div>
   );
 }

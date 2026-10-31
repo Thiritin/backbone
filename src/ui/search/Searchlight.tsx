@@ -1,7 +1,8 @@
 import { Search } from "lucide-react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../store";
-import { search, type Hit } from "./hits";
+import { t } from "../../i18n/en";
+import { groupLabel, search, type Hit } from "./hits";
 import "./searchlight.css";
 
 // Ctrl+K and Cmd+K open the field once Searchlight is installed; Escape or a click outside closes it.
@@ -44,17 +45,17 @@ export function Searchlight() {
 
   return (
     <div className="sl-backdrop" onPointerDown={() => setOpen(false)}>
-      <div className="sl" role="dialog" aria-label="Searchlight" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="sl" role="dialog" aria-label={t("misc1.search.title")} onPointerDown={(e) => e.stopPropagation()}>
         <label className="sl-field">
           <Search />
-          <input autoFocus role="combobox" aria-label="Search" aria-expanded={hits.length > 0} aria-controls="sl-list" aria-activedescendant={hits.length ? `sl-${at}` : undefined}
+          <input autoFocus role="combobox" aria-label={t("misc1.search.search")} aria-expanded={hits.length > 0} aria-controls="sl-list" aria-activedescendant={hits.length ? `sl-${at}` : undefined}
             value={query} spellCheck={false} autoComplete="off" onChange={(e) => { setQuery(e.target.value); setAt(0); }} onKeyDown={onKey} />
         </label>
         {hits.length > 0 && (
           <div className="sl-list" id="sl-list" role="listbox" ref={list}>
             {hits.map((h, i) => (
               <Fragment key={`${h.group}:${h.id}`}>
-                {h.group !== hits[i - 1]?.group && <div className="sl-group" role="presentation">{h.group}</div>}
+                {h.group !== hits[i - 1]?.group && <div className="sl-group" role="presentation">{groupLabel(h.group)}</div>}
                 <div id={`sl-${i}`} role="option" aria-selected={i === at} className="sl-hit" onPointerMove={() => at !== i && setAt(i)} onClick={() => go(h)}>
                   <span className="sl-title">{h.title}</span>
                   {h.sub && <span className="sl-sub">{h.sub}</span>}

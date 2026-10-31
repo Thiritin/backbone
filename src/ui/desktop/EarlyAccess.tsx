@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { FlaskConical } from "lucide-react";
 import { useState } from "react";
 
@@ -16,14 +17,14 @@ export function EarlyAccess() {
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
       <div className="alert" role="alertdialog" aria-modal="true" aria-labelledby="ea-title" aria-describedby="ea-text">
         <span className="alert-icon"><FlaskConical /></span>
-        <h2 id="ea-title">Early access</h2>
-        <p id="ea-text">Backbone is in early access and not finished yet. Expect bugs, missing features and balance changes. Share your feedback on GitHub or Discord.</p>
+        <h2 id="ea-title">{t("desktop.early.title")}</h2>
+        <p id="ea-text">{t("desktop.early.text")}</p>
         <div className="alert-actions">
           <a className="btn" href="https://github.com/Thiritin/backbone/issues" target="_blank" rel="noopener">GitHub</a>
           <a className="btn" href="https://discord.gg/e8nTAV8Yk7" target="_blank" rel="noopener">Discord</a>
         </div>
         <div className="alert-actions single">
-          <button className="btn primary" autoFocus onClick={close}>Continue</button>
+          <button className="btn primary" autoFocus onClick={close}>{t("desktop.continue")}</button>
         </div>
       </div>
     </div>

@@ -20,7 +20,7 @@ function stored(): Lang {
 export let lang: Lang = stored();
 export let LOCALE = LOCALES[lang];
 // Entries of the active language; missing ones fall back to English.
-export let active: Dict = {};
+export const active: Dict = {};
 
 const packs = import.meta.glob<{ default: Dict }>(["./*/*.ts"]);
 
@@ -29,7 +29,8 @@ export async function loadLang(l: Lang = lang): Promise<void> {
   LOCALE = LOCALES[l];
   const files = Object.entries(packs).filter(([path]) => path.startsWith(`./${l}/`));
   const mods = await Promise.all(files.map(([, load]) => load()));
-  active = Object.assign({}, ...mods.map((m) => m.default));
+  for (const k of Object.keys(active)) delete active[k];
+  Object.assign(active, ...mods.map((m) => m.default));
   if (typeof document !== "undefined") document.documentElement.lang = l;
 }
 

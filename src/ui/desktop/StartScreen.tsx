@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { Network } from "lucide-react";
 import { useRef, useState } from "react";
 import { euro } from "../../sim/00-core/money";
@@ -17,9 +18,9 @@ export function StartScreen() {
       <span className="start-logo"><Network /></span>
       <h1>Backbone</h1>
       <div className="start-actions">
-        <button className="btn primary" autoFocus onClick={startGame}>New game</button>
-        <button className="btn" onClick={startChallenge}>Weekly challenge</button>
-        <button className="btn" onClick={() => file.current?.click()}>Import save</button>
+        <button className="btn primary" autoFocus onClick={startGame}>{t("desktop.newGame")}</button>
+        <button className="btn" onClick={startChallenge}>{t("desktop.start.weekly")}</button>
+        <button className="btn" onClick={() => file.current?.click()}>{t("desktop.start.import")}</button>
       </div>
       <div className="start-challenge">
         <span>{week.id} · {twistLabel(week.twist)}</span>
@@ -29,7 +30,7 @@ export function StartScreen() {
           ))}
         </ol>}
       </div>
-      <button className="start-intro" onClick={() => setIntro(true)}>First time here?</button>
+      <button className="start-intro" onClick={() => setIntro(true)}>{t("desktop.start.intro")}</button>
       {intro && <Intro onClose={() => setIntro(false)} />}
       <input ref={file} type="file" accept="application/json,.json" hidden onChange={async (e) => {
         const f = e.target.files?.[0];

@@ -1,0 +1,42 @@
+import type { Dict } from "../lang";
+
+const FAILED: Record<string, string> = {
+  hdd: "Disco rigido guasto", ssd: "SSD guasto", nvme: "Unità NVMe guasta", psu: "Alimentatore guasto", fan: "Ventola guasta",
+  ram: "Modulo RAM guasto", board: "Scheda madre guasta", cpu: "CPU guasta", nic: "Scheda di rete guasta",
+};
+
+export default {
+  "ipmi.log.powerOn": () => "Acceso",
+  "ipmi.log.shutdown": () => "Spegnimento regolare",
+  "ipmi.log.pulled": () => "Corrente persa",
+  "ipmi.log.reset": () => "Reset forzato",
+  "ipmi.log.cycle": () => "Ciclo di alimentazione",
+  "ipmi.log.resync": () => "Risincronizzazione dell'array avviata",
+  "ipmi.log.corrupted": () => "Dati corrotti dopo un arresto improvviso",
+  "ipmi.log.recovered": () => "Dati ripristinati",
+  "ipmi.log.hung": () => "Il sistema operativo ha smesso di rispondere",
+  "ipmi.log.bmcHung": () => "Il controller di gestione ha smesso di rispondere",
+  "ipmi.log.bmcReset": () => "Controller di gestione riavviato",
+  ...Object.fromEntries(Object.entries(FAILED).map(([kind, text]) => [`ipmi.log.failed.${kind}`, () => text])),
+  "event.serverHung.title": () => "Server bloccato",
+  "event.serverHung.text": (p) => `${p.device} ha smesso di rispondere. I suoi workload sono fermi finché non viene riavviato.`,
+  "event.bmcHung.title": () => "Controller di gestione bloccato",
+  "event.bmcHung.text": (p) => `Il controller di gestione di ${p.device} ha smesso di rispondere.`,
+  "event.dataCorrupted.title": () => "Dati corrotti",
+  "event.dataCorrupted.text": (p) => `${p.device} è rimasto senza corrente durante il funzionamento. ${p.count} ${Number(p.count) === 1 ? "workload deve" : "workload devono"} essere ripristinat${Number(p.count) === 1 ? "o" : "i"}.`,
+  "event.recovered.title": () => "Workload ripristinato",
+  "event.recovered.text": (p) => `Un workload su ${p.device} è di nuovo in funzione.`,
+  "error.alreadyOff": () => "Il server è già spento.",
+  "error.unresponsive": () => "Il server non risponde.",
+  "error.noBmc": () => "Questo server non ha un controller di gestione.",
+  "error.bmcHung": () => "Il controller di gestione non risponde.",
+  "error.bmcFine": () => "Il controller di gestione risponde.",
+  "error.notHung": () => "Il server non è bloccato.",
+  "error.notCorrupted": () => "I dati non sono corrotti.",
+  "error.needsRestore": () => "Il ripristino non è riuscito. Ripristina dal backup.",
+  "error.pduInstalled": () => "Questo rack ha già una PDU commutata.",
+  "error.handsBusy": () => "Qualcuno è già in viaggio verso questo server.",
+  "error.unplugged": () => "I cavi di alimentazione sono già staccati.",
+  "error.plugged": () => "I cavi di alimentazione sono già inseriti.",
+  "error.recovering": () => "Un ripristino è già in corso.",
+} satisfies Dict;

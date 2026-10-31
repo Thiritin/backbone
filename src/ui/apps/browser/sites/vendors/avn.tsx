@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
 import { Body, classesOf, Link, Nav, News, TITLE, type VendorProps } from "./VendorSite";
 import "./avn.css";
@@ -12,8 +13,8 @@ export function Avn(props: VendorProps) {
         <Nav page={page} go={go} className="vs-side" labels={{ home: "Startseite", products: "Produkte", news: "Presse", support: "Service" }} />
         {page === "home" ? (
           <main>
-            <h1>Fritz!Bocks: the home router of a nation</h1>
-            <p>DSL, telephone and wireless in one red and silver box.</p>
+            <h1>{t("browser-sites-2.avnTitle")}</h1>
+            <p>{t("browser-sites-2.avnText")}</p>
             <ul className="vs-cats">{classesOf(m).map((c) => <li key={c}><Link to="products" go={go}>{c}</Link></li>)}</ul>
             <h2>Presse</h2>
             <News m={m} month={month} limit={4} />

@@ -27,17 +27,17 @@ export const sameMonth = (a: number, b: number) => {
 };
 
 const STATUS: Record<InvoiceStatus, { label: string; pill: string }> = {
-  open: { label: "Open", pill: "accent" },
-  overdue: { label: "Overdue", pill: "warn" },
-  paid: { label: "Paid", pill: "" },
-  writtenOff: { label: "Written off", pill: "" },
+  open: { label: t("misc1.billing.open"), pill: "accent" },
+  overdue: { label: t("misc1.billing.overdue"), pill: "warn" },
+  paid: { label: t("misc1.billing.paid"), pill: "" },
+  writtenOff: { label: t("misc1.billing.writtenOff"), pill: "" },
 };
 const FILTERS: { id: InvoiceStatus | "all"; label: string; icon: ReactNode }[] = [
-  { id: "all", label: "All invoices", icon: <Files /> },
-  { id: "open", label: "Open", icon: <CircleDot /> },
-  { id: "overdue", label: "Overdue", icon: <OctagonAlert /> },
-  { id: "paid", label: "Paid", icon: <CircleCheck /> },
-  { id: "writtenOff", label: "Written off", icon: <Ban /> },
+  { id: "all", label: t("misc1.billing.allInvoices"), icon: <Files /> },
+  { id: "open", label: STATUS.open.label, icon: <CircleDot /> },
+  { id: "overdue", label: STATUS.overdue.label, icon: <OctagonAlert /> },
+  { id: "paid", label: STATUS.paid.label, icon: <CircleCheck /> },
+  { id: "writtenOff", label: STATUS.writtenOff.label, icon: <Ban /> },
 ];
 
 const sum = (list: Invoice[]) => list.reduce((s, i) => s + invoiceTotal(i), 0);
@@ -59,16 +59,16 @@ export function BillingApp() {
   const invoice = game.invoices.find((i) => i.id === selected);
   const menu = (i: Invoice) => () => invoiceMenu(i, game.hour, setWriting);
   const totals: [string, number][] = [
-    ["Open", sum(game.invoices.filter((i) => i.status === "open"))],
-    ["Overdue", sum(game.invoices.filter((i) => i.status === "overdue"))],
-    ["Paid this month", sum(game.invoices.filter((i) => i.paidAt !== null && i.status === "paid" && sameMonth(i.paidAt, game.hour)))],
-    ["Owed by active customers", freeRiding(game).owed],
+    [t("misc1.billing.open"), sum(game.invoices.filter((i) => i.status === "open"))],
+    [t("misc1.billing.overdue"), sum(game.invoices.filter((i) => i.status === "overdue"))],
+    [t("misc1.billing.paidThisMonth"), sum(game.invoices.filter((i) => i.paidAt !== null && i.status === "paid" && sameMonth(i.paidAt, game.hour)))],
+    [t("misc1.billing.owed"), freeRiding(game).owed],
   ];
 
   return (
     <div className="fin">
-      <nav className="sidebar fin-side" aria-label="Status">
-        <div className="side-h">Invoices</div>
+      <nav className="sidebar fin-side" aria-label={t("misc1.billing.status")}>
+        <div className="side-h">{t("misc1.billing.invoices")}</div>
         {FILTERS.map((f) => (
           <button key={f.id} className={`side-item${filter === f.id ? " active" : ""}`} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
             {f.icon}{f.label}
@@ -76,11 +76,11 @@ export function BillingApp() {
           </button>
         ))}
         <button className={`side-item fin-auto-item${filter === "automation" ? " active" : ""}`} aria-pressed={filter === "automation"} onClick={() => setFilter("automation")}>
-          {auto ? <><Workflow />Automation</> : <><ListChecks />Rules</>}
+          {auto ? <><Workflow />{t("misc1.billing.automation")}</> : <><ListChecks />{t("misc1.billing.rules")}</>}
         </button>
-        <div className="side-h">Customers</div>
+        <div className="side-h">{t("misc1.billing.customers")}</div>
         <button className={`side-item${filter === "domains" ? " active" : ""}`} aria-pressed={filter === "domains"} onClick={() => setFilter("domains")}>
-          <Globe />Domains<span className="side-count">{game.domains.filter((d) => d.customerId).length}</span>
+          <Globe />{t("misc1.billing.domains")}<span className="side-count">{game.domains.filter((d) => d.customerId).length}</span>
         </button>
       </nav>
       {filter === "automation" && <Automation />}
@@ -91,11 +91,11 @@ export function BillingApp() {
         </dl>
         <div className="fin-scroll">
           {shown.length === 0 ? (
-            <div className="fin-empty"><Receipt />No invoices</div>
+            <div className="fin-empty"><Receipt />{t("misc1.billing.noInvoices")}</div>
           ) : (
             <table className="table fin-table">
               <thead>
-                <tr><th>Number</th><th>Customer</th><th className="r">Amount</th><th>Issued</th><th>Due</th><th>Status</th><th className="r">Reminders</th></tr>
+                <tr><th>{t("misc1.billing.number")}</th><th>{t("misc1.billing.customer")}</th><th className="r">{t("misc1.billing.amount")}</th><th>{t("misc1.billing.issued")}</th><th>{t("misc1.billing.due")}</th><th>{t("misc1.billing.statusCol")}</th><th className="r">{t("misc1.billing.reminders")}</th></tr>
               </thead>
               <tbody>
                 {shown.map((i) => (
@@ -121,14 +121,14 @@ export function BillingApp() {
   );
 }
 
-const reminder = (step: number) => STEPS[step].key === "collections" ? "Hand to collections" : `Send ${t(`invoice.step.${STEPS[step].key}`).toLowerCase()}`;
+const reminder = (step: number) => STEPS[step].key === "collections" ? t("misc1.billing.toCollections") : t("misc1.billing.sendStep", { step: t(`invoice.step.${STEPS[step].key}`).toLowerCase() });
 
 function domainMenu(name: string, c: Customer | undefined, gone: boolean): MenuEntry[] {
   const { act, openApp } = useStore.getState();
   return [
-    !gone && { label: "Renew", run: () => act(renewDomain, name) },
+    !gone && { label: t("misc1.billing.renew"), run: () => act(renewDomain, name) },
     null,
-    c && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: c.id }) },
+    c && { label: t("misc1.billing.openCustomer"), run: () => openApp("Customers", { kind: "customer", id: c.id }) },
   ];
 }
 
@@ -138,17 +138,17 @@ function invoiceMenu(inv: Invoice, hour: number, onWriteOff: (i: Invoice) => voi
   const step = dueStep(inv, hour), unpaid = inv.status === "open" || inv.status === "overdue";
   return [
     unpaid && step !== null && { label: reminder(step), run: () => act(sendReminder, inv.id) },
-    unpaid && inv.status === "overdue" && { label: inv.suspended ? "Resume services" : "Suspend services", run: () => act(suspendServices, inv.id, !inv.suspended) },
-    unpaid && { label: "Write off...", run: () => onWriteOff(inv) },
+    unpaid && inv.status === "overdue" && { label: inv.suspended ? t("misc1.billing.resume") : t("misc1.billing.suspend"), run: () => act(suspendServices, inv.id, !inv.suspended) },
+    unpaid && { label: t("misc1.billing.writeOffMenu"), run: () => onWriteOff(inv) },
     null,
-    { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: inv.customerId }) },
+    { label: t("misc1.billing.openCustomer"), run: () => openApp("Customers", { kind: "customer", id: inv.customerId }) },
   ];
 }
 
 function WriteOff({ inv, customer, onClose }: { inv: Invoice; customer: string; onClose: () => void }) {
   const act = useStore((s) => s.act);
   return (
-    <Confirm title={`Write off invoice ${inv.number}?`} text={`${customer} will not be asked to pay ${euroCents(invoiceTotal(inv))}.`} action="Write off"
+    <Confirm title={t("misc1.billing.writeOffTitle", { number: inv.number })} text={t("misc1.billing.writeOffText", { customer, amount: euroCents(invoiceTotal(inv)) })} action={t("misc1.billing.writeOff")}
       onCancel={onClose} onConfirm={() => { act(writeOff, inv.id); onClose(); }} />
   );
 }
@@ -162,10 +162,10 @@ function Domains() {
   return (
     <div className="fin-main">
       <div className="fin-scroll">
-        {list.length === 0 ? <div className="fin-empty"><Globe />No domains</div> : (
+        {list.length === 0 ? <div className="fin-empty"><Globe />{t("misc1.billing.noDomains")}</div> : (
           <table className="table fin-table">
             <thead>
-              <tr><th>Domain</th><th>Customer</th><th>Registry</th><th>Expires</th><th className="r">Cost a year</th><th className="r">Fee a year</th><th>Status</th><th /></tr>
+              <tr><th>{t("misc1.billing.domain")}</th><th>{t("misc1.billing.customer")}</th><th>{t("misc1.billing.registry")}</th><th>{t("misc1.billing.expires")}</th><th className="r">{t("misc1.billing.costYear")}</th><th className="r">{t("misc1.billing.feeYear")}</th><th>{t("misc1.billing.statusCol")}</th><th /></tr>
             </thead>
             <tbody>
               {list.map((d) => {
@@ -178,7 +178,7 @@ function Domains() {
                     <td className="num">{formatDay(d.expiresAt)}</td>
                     <td className="r num">{euroCents(registryCost(d.name, year))}</td>
                     <td className="r num">{euroCents(DOMAIN_FEE)}</td>
-                    <td>{gone ? <span className="pill">Customer left</span> : left <= 0 ? <span className="pill bad">Expired</span> : left <= 30 * 24 ? <span className="pill warn">Expires soon</span> : <span className="pill">Active</span>}</td>
+                    <td>{gone ? <span className="pill">{t("misc1.billing.customerLeft")}</span> : left <= 0 ? <span className="pill bad">{t("misc1.billing.expired")}</span> : left <= 30 * 24 ? <span className="pill warn">{t("misc1.billing.expiresSoon")}</span> : <span className="pill">{t("misc1.billing.active")}</span>}</td>
                     <td className="r"><More label={d.name} entries={() => domainMenu(d.name, c, gone)} /></td>
                   </tr>
                 );
@@ -196,7 +196,7 @@ function DaysRule<D extends number>({ label, days, value, onChange }: { label: s
     <div className="settings-line">
       <span>{label}</span>
       <div className="seg" role="group" aria-label={label}>
-        {days.map((d) => <button key={d} aria-pressed={value === d} onClick={() => onChange(d)}>{d ? `${d} days` : "Off"}</button>)}
+        {days.map((d) => <button key={d} aria-pressed={value === d} onClick={() => onChange(d)}>{d ? t("misc1.billing.nDays", { n: d }) : t("misc1.billing.off")}</button>)}
       </div>
     </div>
   );
@@ -213,26 +213,26 @@ function Automation() {
   return (
     <div className="fin-main">
       <div className="settings fin-auto">
-        <h2>{auto ? "Automation" : "Rules"}</h2>
+        <h2>{auto ? t("misc1.billing.automation") : t("misc1.billing.rules")}</h2>
         {!auto && (
           <div className="settings-group">
             <div className="settings-line">
-              <span>Carried out by</span>
+              <span>{t("misc1.billing.carriedOutBy")}</span>
               {clerks.length ? <span className="fin-auto-by">{clerks.join(", ")}</span> : (
-                <span className="fin-auto-by">Bookkeepers or accountants · {game.installed.includes("Staff")
-                  ? <button className="link" onClick={() => openApp("Staff", { kind: "market", id: "bookkeeper" })}>Hire in Staff</button>
-                  : <button className="link" onClick={() => openApp("Shop", { kind: "software", id: "Staff" })}>Get Staff</button>}</span>
+                <span className="fin-auto-by">{t("misc1.billing.clerkRoles")} · {game.installed.includes("Staff")
+                  ? <button className="link" onClick={() => openApp("Staff", { kind: "market", id: "bookkeeper" })}>{t("misc1.billing.hireStaff")}</button>
+                  : <button className="link" onClick={() => openApp("Shop", { kind: "software", id: "Staff" })}>{t("misc1.billing.getStaff")}</button>}</span>
               )}
             </div>
           </div>
         )}
         <div className="settings-group">
           <div className="settings-line">
-            <span>Send reminders</span>
-            <input type="checkbox" role="switch" className="switch" aria-label="Send reminders" checked={rules.autoRemind} onChange={(e) => set({ autoRemind: e.target.checked })} />
+            <span>{t("misc1.billing.sendReminders")}</span>
+            <input type="checkbox" role="switch" className="switch" aria-label={t("misc1.billing.sendReminders")} checked={rules.autoRemind} onChange={(e) => set({ autoRemind: e.target.checked })} />
           </div>
-          <DaysRule label="Suspend services after" days={AUTO_SUSPEND_DAYS} value={rules.autoSuspendDays} onChange={(d) => set({ autoSuspendDays: d })} />
-          <DaysRule label="Send to collections after" days={AUTO_COLLECT_DAYS} value={rules.autoCollectDays} onChange={(d) => set({ autoCollectDays: d })} />
+          <DaysRule label={t("misc1.billing.suspendAfter")} days={AUTO_SUSPEND_DAYS} value={rules.autoSuspendDays} onChange={(d) => set({ autoSuspendDays: d })} />
+          <DaysRule label={t("misc1.billing.collectAfter")} days={AUTO_COLLECT_DAYS} value={rules.autoCollectDays} onChange={(d) => set({ autoCollectDays: d })} />
         </div>
       </div>
     </div>
@@ -244,7 +244,7 @@ function StatusPill({ inv }: { inv: Invoice }) {
   return (
     <span className="fin-pills">
       <span className={`pill ${st.pill}`}>{st.label}</span>
-      {inv.suspended && inv.status === "overdue" && <span className="pill">Suspended</span>}
+      {inv.suspended && inv.status === "overdue" && <span className="pill">{t("misc1.billing.suspended")}</span>}
     </span>
   );
 }
@@ -254,35 +254,35 @@ function Detail({ inv, customer, hour, menu }: { inv: Invoice; customer: string;
   const step = dueStep(inv, hour);
   const unpaid = inv.status === "open" || inv.status === "overdue";
   const facts: [string, ReactNode][] = [
-    ["Customer", <CustomerLink id={inv.customerId} name={customer} />],
-    ["Issued", formatDay(inv.issuedAt)],
-    ["Due", formatDay(inv.dueAt)],
-    ...(inv.paidAt !== null ? [["Paid", formatDay(inv.paidAt)] as [string, string]] : []),
-    ...(inv.suspended && inv.suspendedAt !== null ? [["Suspended", formatDay(inv.suspendedAt)] as [string, string]] : []),
+    [t("misc1.billing.customer"), <CustomerLink id={inv.customerId} name={customer} />],
+    [t("misc1.billing.issued"), formatDay(inv.issuedAt)],
+    [t("misc1.billing.due"), formatDay(inv.dueAt)],
+    ...(inv.paidAt !== null ? [[t("misc1.billing.paid"), formatDay(inv.paidAt)] as [string, string]] : []),
+    ...(inv.suspended && inv.suspendedAt !== null ? [[t("misc1.billing.suspended"), formatDay(inv.suspendedAt)] as [string, string]] : []),
   ];
 
   return (
-    <aside className="fin-detail" aria-label={`Invoice ${inv.number}`}>
+    <aside className="fin-detail" aria-label={t("misc1.billing.invoice", { number: inv.number })}>
       <div className="fin-detail-h">
         <h2 className="num">{inv.number}</h2>
         <StatusPill inv={inv} />
-        <More label={`invoice ${inv.number}`} entries={menu} />
+        <More label={t("misc1.billing.invoiceLower", { number: inv.number })} entries={menu} />
       </div>
       <dl className="fin-facts">
-        {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={k === "Customer" ? "" : "num"}>{v}</dd></div>)}
+        {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={k === t("misc1.billing.customer") ? "" : "num"}>{v}</dd></div>)}
       </dl>
       <section className="fin-card">
-        <h3 className="fin-card-h">Lines</h3>
+        <h3 className="fin-card-h">{t("misc1.billing.lines")}</h3>
         <table className="table fin-lines">
           <tbody>
             {inv.lines.map((l, n) => <tr key={n}><td>{t(l.key, l.params)}</td><td className="r num">{euroCents(l.amount)}</td></tr>)}
-            <tr className="fin-sum"><td>Total</td><td className="r num">{euroCents(invoiceTotal(inv))}</td></tr>
+            <tr className="fin-sum"><td>{t("misc1.billing.total")}</td><td className="r num">{euroCents(invoiceTotal(inv))}</td></tr>
           </tbody>
         </table>
       </section>
       {inv.reminders.length > 0 && (
         <section className="fin-card">
-          <h3 className="fin-card-h">Reminders</h3>
+          <h3 className="fin-card-h">{t("misc1.billing.reminders")}</h3>
           <dl className="fin-rows">
             {inv.reminders.map((h, n) => <div key={n}><dt>{t(`invoice.step.${STEPS[n].key}`)}</dt><dd className="num">{formatDay(h)}</dd></div>)}
           </dl>

@@ -8,13 +8,14 @@ import { pegged, workloadUse } from "../../../sim/60-infra/usage";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
 import { announceEntries, migrateEntries, offerEntries, rescueEntries } from "../vms/migrate";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { More } from "../More";
 import { useHandWork, type HandTask } from "./HandSheet";
 import { consoleEntry, VM_STATE, vmLabel, vmState } from "../products/parts";
 
 type Sort = "vcpu" | "ramGb" | "diskGb";
-const SORTS: [Sort, string][] = [["vcpu", "CPU"], ["ramGb", "RAM"], ["diskGb", "Disk"]];
+const SORTS: [Sort, string][] = [["vcpu", t("locations-2.sort.cpu")], ["ramGb", t("locations-2.sort.ram")], ["diskGb", t("locations-2.sort.disk")]];
 const num = (n: number) => `${+n.toFixed(n < 1 ? 2 : n < 10 ? 1 : 0)}`;
 const HOT = 0.9;
 
@@ -22,7 +23,7 @@ const HOT = 0.9;
 function Gauge({ icon, used, max, unit, label, fixed }: { icon: ReactNode; used: number; max: number; unit: string; label: string; fixed?: boolean }) {
   const share = max ? used / max : 0;
   return (
-    <span className={`wl-gauge${share >= HOT && !fixed ? " hot" : ""}`} aria-label={`${label} ${num(used)} of ${num(max)} ${unit}`}>
+    <span className={`wl-gauge${share >= HOT && !fixed ? " hot" : ""}`} aria-label={t("locations-2.gaugeLabel", { label, used: num(used), max: num(max), unit })}>
       {icon}
       <span className="wl-gauge-bar"><span style={{ width: `${Math.min(100, share * 100)}%` }} /></span>
       <span className="num">{num(used)}/{num(max)} {unit}</span>
@@ -42,11 +43,11 @@ export function NodeWorkloads({ game, deviceId }: { game: GameState; deviceId: s
   return (
     <>
       <div className="loc-card-h loc-sub">
-        <h3>Workloads</h3>
+        <h3>{t("locations-2.workloads")}</h3>
         <span className="num loc-muted">{loads.length + (cpId ? 1 : 0)}</span>
         <span className="grow" />
-        {announceEntries(game, deviceId).length > 0 && <More label="workloads" entries={() => announceEntries(game, deviceId)} />}
-        <div className="seg" role="group" aria-label="Sort by">
+        {announceEntries(game, deviceId).length > 0 && <More label={t("locations-2.workloadsLower")} entries={() => announceEntries(game, deviceId)} />}
+        <div className="seg" role="group" aria-label={t("locations-2.sortBy")}>
           {SORTS.map(([k, label]) => <button key={k} aria-pressed={sort === k} onClick={() => setSort(k)}>{label}</button>)}
         </div>
       </div>
@@ -61,14 +62,14 @@ function ControlPlaneRow({ name, u, web }: { name: string; u: Resources; web: Me
   return (
     <div className="wl-row">
       <div className="wl-line">
-        <span className="wl-name">Control plane</span>
+        <span className="wl-name">{t("locations-2.controlPlane")}</span>
         <span className="loc-muted wl-service">{name}</span>
-        {web && <button className="btn ghost icon" aria-label={`Open ${name}`} title={`Open ${name}`} onClick={web.run}><Globe /></button>}
+        {web && <button className="btn ghost icon" aria-label={t("locations-2.openName", { name })} title={t("locations-2.openName", { name })} onClick={web.run}><Globe /></button>}
       </div>
       <div className="wl-gauges">
-        <Gauge icon={<Cpu />} label="CPU" used={u.vcpu} max={u.vcpu} unit="vCPU" fixed />
-        <Gauge icon={<MemoryStick />} label="RAM" used={u.ramGb} max={u.ramGb} unit="GB" fixed />
-        <Gauge icon={<HardDrive />} label="Disk" used={u.diskGb} max={u.diskGb} unit="GB" fixed />
+        <Gauge icon={<Cpu />} label={t("locations-2.sort.cpu")} used={u.vcpu} max={u.vcpu} unit="vCPU" fixed />
+        <Gauge icon={<MemoryStick />} label={t("locations-2.sort.ram")} used={u.ramGb} max={u.ramGb} unit="GB" fixed />
+        <Gauge icon={<HardDrive />} label={t("locations-2.sort.disk")} used={u.diskGb} max={u.diskGb} unit="GB" fixed />
       </div>
     </div>
   );
@@ -86,14 +87,14 @@ function WorkloadRow({ game, w, u }: { game: GameState; w: Workload; u: Resource
         <span className="wl-name">{name}</span>
         <span className="loc-muted wl-service">{service}</span>
         <span className="grow" />
-        {hot && <span className="pill warn">Pegged</span>}
+        {hot && <span className="pill warn">{t("locations-2.pegged")}</span>}
         {st !== "running" && <span className={`pill ${tone}`}>{label}</span>}
         <More label={service} entries={entries} />
       </div>
       <div className="wl-gauges">
-        <Gauge icon={<Cpu />} label="CPU" used={u.vcpu} max={w.vcpu} unit="vCPU" />
-        <Gauge icon={<MemoryStick />} label="RAM" used={u.ramGb} max={w.ramGb} unit="GB" />
-        <Gauge icon={<HardDrive />} label="Disk" used={u.diskGb} max={w.diskGb} unit="GB" />
+        <Gauge icon={<Cpu />} label={t("locations-2.sort.cpu")} used={u.vcpu} max={w.vcpu} unit="vCPU" />
+        <Gauge icon={<MemoryStick />} label={t("locations-2.sort.ram")} used={u.ramGb} max={w.ramGb} unit="GB" />
+        <Gauge icon={<HardDrive />} label={t("locations-2.sort.disk")} used={u.diskGb} max={w.diskGb} unit="GB" />
       </div>
       {hand.dialog}
     </div>
@@ -108,12 +109,12 @@ export function workloadMenu(game: GameState, w: Workload, start: (game: GameSta
   const customer = game.services.find((v) => v.id === w.serviceId)?.customerId;
   return [
     ...rescue,
-    ...(web ? migrateEntries(game, w) : rescue.length ? [] : [{ label: "Migrate to", disabled: !targets.length, items: targets.map((t) => ({ label: `${t.name}${t.down ? `, offline ${t.down} h` : ""}`, run: () => act(migrateWorkload, w.id, t.to) })) }]),
+    ...(web ? migrateEntries(game, w) : rescue.length ? [] : [{ label: t("locations-2.migrateTo"), disabled: !targets.length, items: targets.map((x) => ({ label: x.down ? t("locations-2.targetOffline", { name: x.name, h: x.down }) : x.name, run: () => act(migrateWorkload, w.id, x.to) })) }]),
     ...offerEntries(game, w),
-    w.stopped ? { label: "Start", run: () => act(startWorkload, w.id) } : { label: "Stop", run: () => act(stopWorkload, w.id) },
+    w.stopped ? { label: t("locations-2.start"), run: () => act(startWorkload, w.id) } : { label: t("locations-2.stop"), run: () => act(stopWorkload, w.id) },
     null,
     consoleEntry(game, w.clusterId),
-    !!customer && { label: "Open customer", run: () => openApp("Customers", { kind: "customer", id: customer }) },
+    !!customer && { label: t("locations-2.openCustomer"), run: () => openApp("Customers", { kind: "customer", id: customer }) },
   ];
 }
 

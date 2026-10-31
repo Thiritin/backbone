@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Body, classesOf, Link, Nav, News, TITLE, type VendorProps } from "./VendorSite";
 import "./hewlett-packet.css";
 
@@ -18,16 +19,16 @@ export function HewlettPacket(props: VendorProps) {
       <header>
         <Mark late={late} />
         {!late && <span className="vs-loc">United States-English</span>}
-        <Nav page={page} go={go} labels={{ products: late ? "Products" : "Products & Services", support: late ? "Support" : "Support & Drivers" }} />
+        <Nav page={page} go={go} labels={{ products: late ? t("browser-sites-2.vProducts") : t("browser-sites-2.hpProducts"), support: late ? t("browser-sites-2.vSupport") : t("browser-sites-2.hpSupport") }} />
       </header>
       {page === "home" ? (
         <main>
-          <h1>{late ? "Make it happen, then make it run." : "Hewlett-Packet ProLiantly servers"}</h1>
-          <p className="vs-lead">Industry-standard servers and the people who keep them running.</p>
+          <h1>{late ? t("browser-sites-2.hpLate") : t("browser-sites-2.hpEarly")}</h1>
+          <p className="vs-lead">{t("browser-sites-2.hpLead")}</p>
           <div className="vs-grid">
             <ul className="vs-cats">{classesOf(m).map((c) => <li key={c}><Link to="products" go={go}>{c}</Link></li>)}</ul>
             <div>
-              <h2>Press releases</h2>
+              <h2>{t("browser-sites-2.pressReleases")}</h2>
               <News m={m} month={month} limit={late ? 3 : 6} />
             </div>
           </div>
@@ -35,7 +36,7 @@ export function HewlettPacket(props: VendorProps) {
       ) : (
         <main><h1>{TITLE[page]}</h1><Body {...props} className="vs-body" /></main>
       )}
-      <footer>Privacy statement | Using this site means you accept its terms | © {year} Hewlett-Packet Development Company, L.P.</footer>
+      <footer>{t("browser-sites-2.hpFooter", { year })}</footer>
     </div>
   );
 }

@@ -1,0 +1,59 @@
+import type { Dict, Params } from "../lang";
+
+const list = (v: string | number) => { const a = String(v).split("|"); return a.length < 2 ? a[0] : `${a.slice(0, -1).join(", ")} e ${a[a.length - 1]}`; };
+const FEATURE: Record<string, string> = {
+  cluster: "funziona come un unico cluster su più server",
+  balloon: "recupera la RAM degli ospiti con il ballooning, così una macchina virtuale aumenta la sua RAM mentre è in esecuzione",
+  importSame: "importa gli spazi web da un altro server che lo usa",
+  importOther: "importa gli spazi web da altri pannelli di hosting",
+};
+const kind = (p: Params) => (p.kind === "panel" ? "del pannello di hosting" : p.kind === "game" ? "del pannello per game server" : "della piattaforma cloud");
+
+export default {
+  "event.news.software.title": (p) => `${p.name} è uscito`,
+  "event.news.software.text": (p) => `Heize online riferisce l'uscita ${kind(p)} ${p.name}, che si può installare sui tuoi server.`,
+  "event.news.autoUpdate.title": (p) => `${p.name} si aggiorna da solo`,
+  "event.news.autoUpdate.text": (p) => `Heize online riferisce che ${p.name} ora può installare i propri aggiornamenti automaticamente di notte.`,
+  "event.news.generation.title": (p) => `Server G${p.gen} nello shop`,
+  "event.news.generation.text": (p) => `Heize online riferisce che la generazione G${p.gen} porta ${p.cores} core e ${p.ramGb} GB di RAM per server standard, con ${p.disk} di storage.`,
+  "event.news.endOfSale.title": (p) => `${p.name} fuori commercio`,
+  "event.news.endOfSale.text": (p) => `Heize online riferisce che ${p.name} ha lasciato lo shop e che il supporto del modello termina nel ${p.supportEnd}.`,
+  "event.news.mail.title": (p) => `${p.name} apre alla posta aziendale`,
+  "event.news.mail.text": (p) => `Handelsblah riferisce che ${p.name} ora vende caselle di posta in hosting alle aziende a ${p.price} euro al mese per postazione.`,
+  "event.news.ipv6Dc.title": () => "IPv6 nei data center",
+  "event.news.ipv6Dc.text": () => "Golem.dy riferisce che i data center ora assegnano indirizzi IPv6, di cui nessuno è ancora rimasto a secco.",
+  "event.news.ipv6Home.title": () => "IPv6 sulle linee domestiche",
+  "event.news.ipv6Home.text": () => "Golem.dy riferisce che le linee domestiche ora portano l'IPv6, quindi la riconnessione notturna ha un indirizzo in più da cambiare.",
+  "event.news.ripeLast.title": () => "RIPE assegna il suo ultimo /8",
+  "event.news.ripeLast.text": () => "Golem.dy riferisce che RIPE è arrivato al suo ultimo /8 e i nuovi membri ora ricevono un /22 invece di un /21.",
+  "event.news.ripeOut.title": () => "Pool IPv4 esaurito",
+  "event.news.ripeOut.text": () => "Golem.dy riferisce che RIPE non ha più indirizzi IPv4 liberi e i nuovi membri finiscono in lista d'attesa per un /24.",
+  "event.news.gpu.title": (p) => `${p.name} lanciata`,
+  "event.news.gpu.text": (p) => `Heize online riferisce che ${p.name} esce a ${p.price} euro di listino e assorbe ${p.watts} watt per questo.`,
+  "event.news.gpuDemand.title": (p) => (p.year === 2017 ? "Il deep learning ha bisogno di GPU" : "L'IA generativa ha bisogno di GPU"),
+  "event.news.gpuDemand.text": (p) => (p.year === 2017
+    ? "Handelsblah riferisce che il deep learning spinge i team a cercare server GPU in affitto, e agenzie e sviluppatori ora li chiedono agli hoster."
+    : "Handelsblah riferisce che l'IA generativa mette le aziende in coda per server GPU in affitto, e gli hoster con schede libere possono fare il loro prezzo."),
+  "event.news.design.title": (p) => `Web design del ${p.year}`,
+  "event.news.design.text": (p) => `Handelsblah riferisce che i visitatori ora si aspettano da ogni sito web lo stile del ${p.year}, e i design più vecchi perdono richieste.`,
+  "event.news.line.title": (p) => `${p.line} potrebbe vendere`,
+  "event.news.line.text": (p) => `Handelsblah riferisce che oggi puoi consegnare ${p.line} ma non l'hai messo sul tuo sito web.`,
+  "event.news.models.title": () => "Nuovo hardware nello shop",
+  "event.news.models.text": (p) => `Heize online riferisce che lo shop ora vende ${list(p.names)}.`,
+  "event.news.shape.title": (p) => `Server ${p.name} nello shop`,
+  "event.news.shape.text": (p) => `Heize online riferisce che lo shop ora vende server ${p.name}.`,
+  "event.news.feature.title": (p) => `Aggiornamento di ${p.name}`,
+  "event.news.feature.text": (p) => `Heize online riferisce che la nuova versione di ${p.name} ${FEATURE[p.feature] ?? p.feature}.`,
+  "event.news.desk.title": (p) => `${p.name} è uscito`,
+  "event.news.desk.text": (p) => `Heize online riferisce che l'help desk ${p.name} è uscito e ci si può abbonare nel Pear Store.`,
+  "event.news.training.title": (p) => `Corso su ${p.name} disponibile`,
+  "event.news.training.text": (p) => `Heize online riferisce che ora è disponibile un corso su ${p.name}, che il tuo team può seguire in Ricerca.`,
+  "event.news.release.title": (p) => `Versioni software del ${p.year}`,
+  "event.news.release.text": (p) => `Heize online riferisce che le versioni ${p.year} di ${list(p.names)} sono uscite e si possono installare sui tuoi server.`,
+  "event.news.homeLines.title": () => "Nuove linee domestiche",
+  "event.news.homeLines.text": (p) => `Golem.dy riferisce che ${list(p.names)} ora si possono ordinare per casa.`,
+  "event.news.ports.title": (p) => `Porte da ${p.gbit} Gbit/s`,
+  "event.news.ports.text": (p) => `Golem.dy riferisce che carrier e internet exchange ora vendono porte da ${p.gbit} Gbit/s.`,
+  "event.news.freeSsl.title": () => "Certificati SSL gratuiti",
+  "event.news.freeSsl.text": () => "Handelsblah riferisce che Let's Encryptly ora emette certificati SSL gratis e i clienti non si aspettano più di pagarne uno.",
+} satisfies Dict;

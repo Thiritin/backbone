@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
 import { Body, classesOf, Link, Nav, News, TITLE, type VendorProps } from "./VendorSite";
 import "./pablo-alto.css";
@@ -14,17 +15,17 @@ export function PabloAlto(props: VendorProps) {
       {page === "home" ? (
         <main>
           <section className="vs-hero">
-            <h1>{look === "early" ? "The firewall that knows which app is talking." : "Prevent the breach. Paint the perimeter."}</h1>
-            <Link to="products" go={go} className="vs-cta">See the firewalls</Link>
+            <h1>{look === "early" ? t("browser-sites-2.panEarly") : t("browser-sites-2.panLate")}</h1>
+            <Link to="products" go={go} className="vs-cta">{t("browser-sites-2.panSee")}</Link>
           </section>
           <ul className="vs-cats">{classesOf(m).map((c) => <li key={c}><Link to="products" go={go}>{c}</Link></li>)}</ul>
-          <h2>Press</h2>
+          <h2>{t("browser-sites-2.panPress")}</h2>
           <News m={m} month={month} limit={4} />
         </main>
       ) : (
         <main><h1>{TITLE[page]}</h1><Body {...props} className="vs-body" /></main>
       )}
-      <footer>© {year} Pablo Alto Networks. All rights reserved.</footer>
+      <footer>{t("browser-sites-2.panFooter", { year })}</footer>
     </div>
   );
 }

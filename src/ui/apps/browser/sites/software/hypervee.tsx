@@ -1,26 +1,27 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./hypervee.css";
 
-const CRUMB = { home: "Overview", features: "What's New", pricing: "Licensing", download: "Installing" } as const;
+const CRUMB = { home: t("browser-sites-1.hv.overview"), features: t("browser-sites-1.hv.new"), pricing: t("browser-sites-1.hv.licensing"), download: t("browser-sites-1.hv.installing") } as const;
 
 // HyperVee: the dense 2008 library page with breadcrumbs; from 2016 the flat docs page with a left tree.
 export function HyperVee(props: SiteProps) {
   const { p, look, page, year } = props;
   return (
     <div className={`sw sw-hypervee ${look}`}>
-      <header><span className="corp"><SiteMark id="hypervee" name={p.name} size={18} /> Macrosoft {look === "early" ? "TechNot" : "Docs"}</span></header>
+      <header><span className="corp"><SiteMark id="hypervee" name={p.name} size={18} /> {t(look === "early" ? "browser-sites-1.hv.corpEarly" : "browser-sites-1.hv.corpLate")}</span></header>
       <div className="cols">
         <aside>
-          {look === "late" && <p className="tree">Windoors Server<br />&nbsp;&nbsp;Virtualization<br />&nbsp;&nbsp;&nbsp;&nbsp;HyperVee</p>}
+          {look === "late" && <p className="tree">Windoors Server<br />&nbsp;&nbsp;{t("browser-sites-1.hv.virt")}<br />&nbsp;&nbsp;&nbsp;&nbsp;HyperVee</p>}
           <Nav {...props} labels={CRUMB} />
         </aside>
         <main>
-          <p className="crumb">Library &gt; Windoors Server &gt; Virtualization &gt; HyperVee &gt; {CRUMB[page]}</p>
-          <h1>HyperVee {CRUMB[page]}</h1>
-          {page === "home" && <p><b>{p.site.tagline}.</b> Applies to: Windoors Server 2008 and later.</p>}
+          <p className="crumb">{t("browser-sites-1.hv.crumb", { page: CRUMB[page] })}</p>
+          <h1>{t("browser-sites-1.hv.title", { page: CRUMB[page] })}</h1>
+          {page === "home" && <p><b>{t("browser-sites-1.hv.tag", { tagline: p.site.tagline })}</b> {t("browser-sites-1.hv.applies")}</p>}
           <Body {...props} />
-          <p className="foot">© {year} Macrosoft. All rights reserved. Was this page helpful? Yes No</p>
+          <p className="foot">{t("browser-sites-1.hv.foot", { year })}</p>
         </main>
       </div>
     </div>

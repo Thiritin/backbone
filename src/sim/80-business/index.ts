@@ -1,6 +1,6 @@
 // docs/design/software.md, 8.2: the site index at the browser's home, by game year. Pure; the browser draws it.
+import { t } from "../../i18n/en";
 import { yearOf } from "../00-core/time";
-import type { DeviceKind } from "../10-catalog/hardware";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { registrarHost, REGISTRARS } from "../10-catalog/registrars";
 import { SERVER_OS } from "../10-catalog/server-os";
@@ -15,20 +15,15 @@ export interface IndexRow { title: string; url: string; desc: string; down: bool
 export interface Category { title: string; rows: IndexRow[] }
 
 const SOFTWARE_CATEGORIES: [string, string[]][] = [
-  ["Virtualization", ["openveezee", "openstash", "vmwhere", "proxmocks", "hypervee"]],
-  ["Hosting panels", ["cpanic", "pleskit", "directadmen", "freepanel"]],
-  ["Game panels", ["tcadmen", "multikraft", "pterodaktyl"]],
-  ["DNS", ["bound", "powerdnz", "knut"]],
-  ["VPN", ["openveepeen", "anyconnekt", "wireguarded"]],
-  ["Storage", ["vsftpeed", "ownclod", "minnio"]],
-  ["Mail", ["postfixit", "mailpig"]],
-  ["Backup", ["backula", "veeham", "proxmocksBackup"]],
+  ["virtualization", ["openveezee", "openstash", "vmwhere", "proxmocks", "hypervee"]],
+  ["panels", ["cpanic", "pleskit", "directadmen", "freepanel"]],
+  ["gamePanels", ["tcadmen", "multikraft", "pterodaktyl"]],
+  ["dns", ["bound", "powerdnz", "knut"]],
+  ["vpn", ["openveepeen", "anyconnekt", "wireguarded"]],
+  ["storage", ["vsftpeed", "ownclod", "minnio"]],
+  ["mail", ["postfixit", "mailpig"]],
+  ["backup", ["backula", "veeham", "proxmocksBackup"]],
 ];
-
-const KIND_DESC: Record<DeviceKind, string> = {
-  server: "Servers", chassis: "Chassis", switch: "Switches", firewall: "Firewalls", gateway: "Gateways", patch: "Patch panels", ups: "Power",
-  pdu: "Power strips", part: "Parts", kvm: "KVM switches", console: "Rack consoles", oob: "Console servers",
-};
 
 const row = (title: string, url: string, desc: string, down = false): IndexRow => ({ title, url, desc, down });
 
@@ -47,7 +42,7 @@ function consoleRows(s: GameState): IndexRow[] {
 export function siteIndex(s: GameState): Category[] {
   const year = yearOf(s.hour);
   const software = SOFTWARE_CATEGORIES.map(([title, ids]): Category => ({
-    title,
+    title: t(`sim.index.cat.${title}`),
     rows: ids.flatMap((id) => SOFTWARE.filter((x) => x.id === id && x.from <= year)).map((x) => row(x.name, `${displayHost(x.site.host)}/`, x.site.tagline)),
   }));
   // The company site once launched and one row per console the company runs, down when the host cannot be reached.
@@ -56,12 +51,12 @@ export function siteIndex(s: GameState): Category[] {
     ...consoleRows(s),
   ].map((r) => ({ ...r, down: resolve(s, r.url).load === "down" }));
   return [
-    { title: "Operating systems", rows: SERVER_OS.map((o) => row(o.name, `${displayHost(o.site.host)}/`, o.site.tagline)) },
+    { title: t("sim.index.cat.os"), rows: SERVER_OS.map((o) => row(o.name, `${displayHost(o.site.host)}/`, o.site.tagline)) },
     ...software,
-    { title: "Domain resellers", rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, "Domain registration and reseller contracts")) },
-    { title: "Community", rows: [row(BOARD_TITLE, BOARD_URL, "Sponsorship offers from the hosting community"), row(WIKI_TITLE, WIKI_URL, "The free encyclopedia")] },
-    { title: "Hardware", rows: VENDORS.map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => KIND_DESC[k]).join(", "))) },
+    { title: t("sim.index.cat.resellers"), rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, t("sim.index.resellers"))) },
+    { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(WIKI_TITLE, WIKI_URL, t("sim.index.wiki"))] },
+    { title: t("sim.index.cat.hardware"), rows: VENDORS.map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => t(`sim.index.kind.${k}`)).join(", "))) },
     { title: s.company.name, rows: own },
-    { title: "Video", rows: [row("YouTub", VIDEO_URL, VIDEO_TITLE)] },
+    { title: t("sim.index.cat.video"), rows: [row("YouTub", VIDEO_URL, VIDEO_TITLE)] },
   ].filter((c) => c.rows.length > 0);
 }

@@ -89,13 +89,13 @@ function HandPopover({ task, x, y, onClose }: { task: HandTask; x: number; y: nu
   return createPortal(
     <div ref={ref} className="hand-pop" role="dialog" aria-label={task.title} style={at ?? { visibility: "hidden" }}>
       <strong>{task.title}</strong>
-      <p>{"cost" in trial ? <>Remote hands at {loc.name} will do this for <span className="num">{euro(trial.cost)}</span>, starting in <span className="num">{w.hands.wait} h</span>.</> : tr(trial.error)}</p>
-      {slot && t && <button className="hand-pop-alt" onClick={() => { if (act(queueOperation, t.kind, device.id, t.componentId ?? null, t.partId ?? null).ok) onClose(); }}>Technician {slot.name.split(" ")[0]}, {slotTime(game.hour, slot.hour)}</button>}
-      {fare && <button className="hand-pop-alt" onClick={() => go("self")}>Drive it yourself, <span className="num">{fare.hours} h</span>, <span className="num">{euro(fare.fee)}</span></button>}
-      {w.friend && w.friend.left > 0 && <button className="hand-pop-alt" onClick={() => go("friend")}>Send a friend for <span className="num">{euro(w.friend.fee)}</span>, {w.friend.left} of {FAVOURS_PER_YEAR} left</button>}
+      <p>{"cost" in trial ? tr("locations-1.remoteHandsQuote", { loc: loc.name, cost: euro(trial.cost), wait: w.hands.wait }) : tr(trial.error)}</p>
+      {slot && t && <button className="hand-pop-alt" onClick={() => { if (act(queueOperation, t.kind, device.id, t.componentId ?? null, t.partId ?? null).ok) onClose(); }}>{tr("locations-1.technician", { name: slot.name.split(" ")[0], time: slotTime(game.hour, slot.hour) })}</button>}
+      {fare && <button className="hand-pop-alt" onClick={() => go("self")}>{tr("locations-1.driveYourself", { hours: fare.hours, fee: euro(fare.fee) })}</button>}
+      {w.friend && w.friend.left > 0 && <button className="hand-pop-alt" onClick={() => go("friend")}>{tr("locations-1.sendFriend", { fee: euro(w.friend.fee), left: w.friend.left, total: FAVOURS_PER_YEAR })}</button>}
       <div className="hand-pop-actions">
-        <button className="btn" onClick={onClose}>Decline</button>
-        <button className="btn primary" disabled={!("cost" in trial)} onClick={() => go("hands")}>Accept</button>
+        <button className="btn" onClick={onClose}>{tr("locations-1.decline")}</button>
+        <button className="btn primary" disabled={!("cost" in trial)} onClick={() => go("hands")}>{tr("locations-1.accept")}</button>
       </div>
     </div>,
     document.querySelector(".desktop") ?? document.body,

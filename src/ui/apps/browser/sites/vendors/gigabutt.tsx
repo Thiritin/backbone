@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
 import { Body, classesOf, Link, Nav, News, TITLE, type VendorProps } from "./VendorSite";
 import "./gigabutt.css";
@@ -14,18 +15,18 @@ export function Gigabutt(props: VendorProps) {
       {page === "home" ? (
         <main>
           <section className="vs-hero">
-            <h1>{look === "early" ? "Upgrade your life. Rack it." : "Built for the cloud you run yourself."}</h1>
-            <p>Gigabutt rack servers ship with the newest sockets first and more memory slots than the big brands.</p>
-            <Link to="products" go={go} className="vs-cta">All servers</Link>
+            <h1>{look === "early" ? t("browser-sites-2.gbtEarly") : t("browser-sites-2.gbtLate")}</h1>
+            <p>{t("browser-sites-2.gbtText")}</p>
+            <Link to="products" go={go} className="vs-cta">{t("browser-sites-2.gbtAll")}</Link>
           </section>
           <ul className="vs-cats">{classesOf(m).map((c) => <li key={c}><Link to="products" go={go}>{c}</Link></li>)}</ul>
-          <h2>News</h2>
+          <h2>{t("browser-sites-2.vNews")}</h2>
           <News m={m} month={month} limit={4} />
         </main>
       ) : (
         <main><h1>{TITLE[page]}</h1><Body {...props} className="vs-body" /></main>
       )}
-      <footer>© {year} Gigabutt Technology Co., Ltd.</footer>
+      <footer>{t("browser-sites-2.gbtFooter", { year })}</footer>
     </div>
   );
 }

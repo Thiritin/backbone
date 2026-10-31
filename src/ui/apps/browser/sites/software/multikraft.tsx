@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Features, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./multikraft.css";
@@ -15,7 +16,7 @@ export function MultiKraft(props: SiteProps) {
           <Features p={p} className={look === "late" ? "cards" : "blocks"} />
         </main>
       ) : <main><Body {...props} /></main>}
-      <footer>© {year} MultiKraft Ltd.</footer>
+      <footer>{t("browser-sites-1.mk.footer", { year })}</footer>
     </div>
   );
 }

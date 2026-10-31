@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Globe, LogOut, Network, Wrench, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
@@ -11,14 +12,14 @@ export function Pleskit(p: PanelProps) {
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx pk pk-login" data-era={era}>
-      <LoginForm className="pk-card" onLogin={p.login} button="Log in">
+      <LoginForm className="pk-card" onLogin={p.login} button={t("browser-consoles-2.logIn")}>
         <div className="pk-logo">pleskit</div>
         <div className="cx-host">{p.host}</div>
       </LoginForm>
     </div>
   );
   const nav: [Tab, string, LucideIcon][] = [
-    ["objects", "Websites & Domains", Globe], ...(p.f.cluster ? [["nodes", "Nodes", Network] as [Tab, string, LucideIcon]] : []), ["software", "Tools & Settings", Wrench],
+    ["objects", t("browser-consoles-2.websitesDomains"), Globe], ...(p.f.cluster ? [["nodes", t("browser-consoles-2.nodes"), Network] as [Tab, string, LucideIcon]] : []), ["software", t("browser-consoles-2.toolsSettings"), Wrench],
   ];
   const card = (title: string, body: ReactNode) => <section className="pk-box"><h2>{title}</h2>{body}</section>;
   return (
@@ -26,22 +27,22 @@ export function Pleskit(p: PanelProps) {
       <header className="pk-top">
         <span className="pk-logo">pleskit</span>
         <span className="cx-host">{p.host}</span>
-        <button className="pk-out" onClick={p.logout}><LogOut size={14} aria-hidden />Log out</button>
+        <button className="pk-out" onClick={p.logout}><LogOut size={14} aria-hidden />{t("browser-consoles-2.logOut")}</button>
       </header>
       <div className="pk-body">
         <aside className="pk-side">
-          {era === "early" && <h3>General</h3>}
+          {era === "early" && <h3>{t("browser-consoles-2.general")}</h3>}
           {nav.map(([id, label, Icon]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}><Icon size={16} aria-hidden />{label}</button>)}
         </aside>
         <main className="pk-main">
           <h1>{nav.find(([id]) => id === tab)?.[1]}</h1>
-          {tab === "objects" && card("Domains", <RowsTable rows={rows} name="Domain" />)}
-          {tab === "nodes" && card("Nodes", <Nodes game={p.game} c={p.c} />)}
+          {tab === "objects" && card(t("browser-consoles-2.domains"), <RowsTable rows={rows} name={t("browser-consoles-2.domain")} />)}
+          {tab === "nodes" && card(t("browser-consoles-2.nodes"), <Nodes game={p.game} c={p.c} />)}
           {tab === "software" && (era === "early"
-            ? <>{card("Tools", <>{sw.note && <p className="cx-note">{sw.note}</p>}<Tiles actions={sw.actions} /></>)}{sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}{card("Server information", <Facts facts={sw.facts} />)}</>
+            ? <>{card(t("browser-consoles-2.tools"), <>{sw.note && <p className="cx-note">{sw.note}</p>}<Tiles actions={sw.actions} /></>)}{sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}{card(t("browser-consoles-2.serverInformation"), <Facts facts={sw.facts} />)}</>
             : <div className="pk-cards">
-              {card("Server information", <Facts facts={sw.facts} />)}
-              {card("Updates and server management", <><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}</>)}
+              {card(t("browser-consoles-2.serverInformation"), <Facts facts={sw.facts} />)}
+              {card(t("browser-consoles-2.updatesManagement"), <><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}</>)}
             </div>)}
         </main>
       </div>

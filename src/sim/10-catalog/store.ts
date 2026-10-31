@@ -1,4 +1,5 @@
 import type { Product } from "../30-customers/customers";
+import { textFields } from "../00-core/text";
 import { START_YEAR, yearOf } from "../00-core/time";
 import type { GameState, LedgerEntry } from "../50-state";
 import { DESKS, seats } from "./desks";
@@ -32,6 +33,7 @@ export const STORE: StoreItem[] = [
   { id: "clipsy", kind: "bot", name: "Clipsy Reminders", monthly: 100 },
   ...DESKS.map((d): StoreItem => ({ id: d.id, kind: "desk", name: d.name, monthly: d.monthly, perSeat: true })),
 ];
+textFields("sim.store", STORE.filter((i) => i.id.startsWith("widget") || i.id === "Knowledge base"), ["name"]);
 
 export const storeItem = (id: string): StoreItem | undefined => STORE.find((i) => i.id === id);
 

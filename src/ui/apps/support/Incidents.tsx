@@ -1,14 +1,15 @@
 import { useState } from "react";
 import type { Incident, IncidentCause } from "../../../sim/60-infra/ops";
+import { t } from "../../../i18n/en";
 import { duration } from "../../../i18n/en-ops";
 import { useStore } from "../../store";
 import { CustomerLink } from "../customers/CustomersApp";
 import { day } from "../hw";
 import { stamp } from "./labels";
 
-const CAUSE: Record<IncidentCause, string> = { grid: "Grid outage", generator: "Generator failure", feed: "Feed failure", seizure: "Server seized" };
+const CAUSE: Record<IncidentCause, string> = { grid: t("support.cause.grid"), generator: t("support.cause.generator"), feed: t("support.cause.feed"), seizure: t("support.cause.seizure") };
 
-const impact = (i: Incident) => (i.cause === "seizure" ? `Until ${day(i.returnAt!)}` : i.dark ? `${duration(i.dark)} dark` : "No downtime");
+const impact = (i: Incident) => (i.cause === "seizure" ? t("support.until", { day: day(i.returnAt!) }) : i.dark ? t("support.dark", { d: duration(i.dark) }) : t("support.noDowntime"));
 
 export function Incidents() {
   const game = useStore((s) => s.game);
@@ -20,7 +21,7 @@ export function Incidents() {
   return (
     <>
       <div className="sup-list" role="list">
-        <div className="sup-list-h"><h2>Incidents</h2></div>
+        <div className="sup-list-h"><h2>{t("support.incidents")}</h2></div>
         {list.map((i) => (
           <button key={i.id} role="listitem" className={`tk${i.id === sel ? " active" : ""}`} onClick={() => setSel(i.id)}>
             <span className="who"><span>{CAUSE[i.cause]}</span></span>
@@ -28,39 +29,39 @@ export function Incidents() {
             <span className="subj">{where(i)} · {impact(i)}</span>
           </button>
         ))}
-        {!list.length && <div className="sup-none">No incidents</div>}
+        {!list.length && <div className="sup-none">{t("support.noIncidents")}</div>}
       </div>
 
       {current ? (
         <div className="sup-detail">
           <div className="d-head">
             <div className="top"><h2>{CAUSE[current.cause]} · {where(current)}</h2><span className="id num">#{current.id.slice(3)}</span></div>
-            <div className="facts"><span>Started <span className="num">{stamp(current.hour)}</span></span></div>
+            <div className="facts"><span>{t("support.started", { time: stamp(current.hour) })}</span></div>
           </div>
           <dl className="inc-facts">
             {current.cause === "seizure" ? (
               <>
-                <dt>Agency</dt><dd>{current.agency}</dd>
-                <dt>Returns</dt><dd className="num">{day(current.returnAt!)}</dd>
+                <dt>{t("support.agency")}</dt><dd>{current.agency}</dd>
+                <dt>{t("support.returns")}</dt><dd className="num">{day(current.returnAt!)}</dd>
               </>
             ) : (
               <>
-                <dt>Grid down</dt><dd className="num">{duration(current.minutes)}</dd>
-                <dt>Servers without power</dt><dd className="num">{current.dark ? duration(current.dark) : "None"}</dd>
+                <dt>{t("support.gridDown")}</dt><dd className="num">{duration(current.minutes)}</dd>
+                <dt>{t("support.noPower")}</dt><dd className="num">{current.dark ? duration(current.dark) : t("support.none")}</dd>
               </>
             )}
-            <dt>Devices</dt><dd>{current.devices.join(", ") || "None"}</dd>
-            <dt>Customers</dt>
+            <dt>{t("support.devices")}</dt><dd>{current.devices.join(", ") || t("support.none")}</dd>
+            <dt>{t("support.customers")}</dt>
             <dd className="inc-customers">
               {current.customers.map((id) => {
                 const c = game.customers.find((x) => x.id === id);
                 return c && <CustomerLink key={id} id={id} name={c.name} />;
               })}
-              {!current.customers.length && "None"}
+              {!current.customers.length && t("support.none")}
             </dd>
           </dl>
         </div>
-      ) : <div className="sup-detail sup-none">No incident selected</div>}
+      ) : <div className="sup-detail sup-none">{t("support.noIncidentSelected")}</div>}
     </>
   );
 }

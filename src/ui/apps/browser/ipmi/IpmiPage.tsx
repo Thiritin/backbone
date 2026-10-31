@@ -28,8 +28,8 @@ const FALLBACK = BMC_LOOK.SuperMacro;
 export const bmcTitle = (brand: string): string => (brand === "SuperMacro" ? "SuperMacro IPMI" : BMC_NAME[brand] ?? "IPMI");
 
 type Tab = "power" | "storage" | "sensors" | "log";
-const TABS: [Tab, string][] = [["power", "Power"], ["storage", "Storage"], ["sensors", "Sensors"], ["log", "Event log"]];
-const RATES: [RebuildRate, string][] = [["low", "Low"], ["medium", "Medium"], ["high", "High"]];
+const TABS: [Tab, string][] = [["power", t("misc1.ipmi.power")], ["storage", t("misc1.ipmi.storage")], ["sensors", t("misc1.ipmi.sensors")], ["log", t("misc1.ipmi.eventLog")]];
+const RATES: [RebuildRate, string][] = [["low", t("misc1.ipmi.low")], ["medium", t("misc1.ipmi.medium")], ["high", t("misc1.ipmi.high")]];
 
 // The array as the BIOS set it up, with the rebuild rate the controller can change while the server runs.
 function StorageTab({ game, d }: { game: GameState; d: Device }) {
@@ -38,18 +38,18 @@ function StorageTab({ game, d }: { game: GameState; d: Device }) {
   return (
     <>
       <dl className="bmc-facts">
-        <div><dt>RAID level</dt><dd>{d.raid === "none" ? "None" : `RAID ${d.raid}`}</dd></div>
-        <div><dt>Drives</dt><dd className="num">{drivesOf(d).length}</dd></div>
-        <div><dt>Usable</dt><dd className="num">{raidUsable(d)} GB</dd></div>
-        {rb && <div><dt>Rebuild</dt><dd className="num">{Math.floor(done * 100)}%</dd></div>}
+        <div><dt>{t("misc1.ipmi.raidLevel")}</dt><dd>{d.raid === "none" ? t("misc1.ipmi.none") : `RAID ${d.raid}`}</dd></div>
+        <div><dt>{t("misc1.ipmi.drives")}</dt><dd className="num">{drivesOf(d).length}</dd></div>
+        <div><dt>{t("misc1.ipmi.usable")}</dt><dd className="num">{raidUsable(d)} GB</dd></div>
+        {rb && <div><dt>{t("misc1.ipmi.rebuild")}</dt><dd className="num">{Math.floor(done * 100)}%</dd></div>}
       </dl>
       <div className="bmc-actions">
-        {RATES.map(([v, l]) => <button key={v} className={`cx-btn${d.rebuildRate === v ? " primary" : ""}`} aria-pressed={d.rebuildRate === v} onClick={() => act(setRebuildRate, d.id, v)}>Rebuild rate {l}</button>)}
+        {RATES.map(([v, l]) => <button key={v} className={`cx-btn${d.rebuildRate === v ? " primary" : ""}`} aria-pressed={d.rebuildRate === v} onClick={() => act(setRebuildRate, d.id, v)}>{t("misc1.ipmi.rebuildRate", { rate: l })}</button>)}
       </div>
     </>
   );
 }
-const SIGN_IN: Record<BmcLook, string> = { idraq: "Log in", ilol: "Sign in", ipmi: "Login", xclarify: "Connect" };
+const SIGN_IN: Record<BmcLook, string> = { idraq: t("misc1.ipmi.logIn"), ilol: t("misc1.ipmi.signIn"), ipmi: t("misc1.ipmi.login"), xclarify: t("misc1.ipmi.connect") };
 
 function Brand({ brand, size = 22 }: { brand: string; size?: number }) {
   const look = BMC_LOOK[brand] ?? FALLBACK;
@@ -63,34 +63,34 @@ function Brand({ brand, size = 22 }: { brand: string; size?: number }) {
 
 function PowerTab({ game, d }: { game: GameState; d: Device }) {
   const act = useStore((s) => s.act);
-  const state = !d.on ? "Off" : booting(game, d) ? "Booting" : halting(d) ? "Shutting down" : "On";
+  const state = !d.on ? t("misc1.ipmi.off") : booting(game, d) ? t("misc1.ipmi.booting") : halting(d) ? t("misc1.ipmi.shuttingDown") : t("misc1.ipmi.on");
   return (
     <>
       <dl className="bmc-facts">
-        <div><dt>Server</dt><dd>{d.hostname ?? d.label ?? d.name}</dd></div>
-        <div><dt>Power</dt><dd className={`bmc-state ${d.on ? "on" : "off"}`}>{state}</dd></div>
+        <div><dt>{t("misc1.ipmi.server")}</dt><dd>{d.hostname ?? d.label ?? d.name}</dd></div>
+        <div><dt>{t("misc1.ipmi.power")}</dt><dd className={`bmc-state ${d.on ? "on" : "off"}`}>{state}</dd></div>
       </dl>
       <div className="bmc-actions">
-        <button className="cx-btn primary" disabled={d.on} onClick={() => act(setPower, d.id, true)}>Power on</button>
-        <button className="cx-btn" disabled={!d.on} onClick={() => act(shutdown, d.id)}>Graceful shutdown</button>
-        <button className="cx-btn" disabled={!d.on} onClick={() => act(reset, d.id)}>Reset</button>
-        <button className="cx-btn" disabled={!d.on} onClick={() => act(powerCycle, d.id)}>Power cycle</button>
+        <button className="cx-btn primary" disabled={d.on} onClick={() => act(setPower, d.id, true)}>{t("misc1.ipmi.powerOn")}</button>
+        <button className="cx-btn" disabled={!d.on} onClick={() => act(shutdown, d.id)}>{t("misc1.ipmi.gracefulShutdown")}</button>
+        <button className="cx-btn" disabled={!d.on} onClick={() => act(reset, d.id)}>{t("misc1.ipmi.reset")}</button>
+        <button className="cx-btn" disabled={!d.on} onClick={() => act(powerCycle, d.id)}>{t("misc1.ipmi.powerCycle")}</button>
       </div>
     </>
   );
 }
 
-const PSU_STATE = { ok: "OK", failed: "Failed", unplugged: "No input" } as const;
+const PSU_STATE = { ok: t("misc1.ipmi.ok"), failed: t("misc1.ipmi.failed"), unplugged: t("misc1.ipmi.noInput") } as const;
 
 function SensorsTab({ game, d }: { game: GameState; d: Device }) {
   const s = sensorsOf(game, d);
   return (
     <table className="bmc-table">
-      <thead><tr><th>Sensor</th><th>Reading</th></tr></thead>
+      <thead><tr><th>{t("misc1.ipmi.sensor")}</th><th>{t("misc1.ipmi.reading")}</th></tr></thead>
       <tbody>
-        <tr><td>Inlet temperature</td><td className="num">{s.inletC.toFixed(1)} °C</td></tr>
-        {s.fans.map((f, i) => <tr key={f.id}><td>Fan {i + 1}</td><td className={`num${f.rpm === 0 ? " bad" : ""}`}>{f.rpm} RPM</td></tr>)}
-        {s.psus.map((p, i) => <tr key={p.id}><td>Power supply {i + 1}</td><td className={p.state === "ok" ? "" : "bad"}>{PSU_STATE[p.state]}</td></tr>)}
+        <tr><td>{t("misc1.ipmi.inlet")}</td><td className="num">{s.inletC.toFixed(1)} °C</td></tr>
+        {s.fans.map((f, i) => <tr key={f.id}><td>{t("misc1.ipmi.fan", { n: i + 1 })}</td><td className={`num${f.rpm === 0 ? " bad" : ""}`}>{f.rpm} RPM</td></tr>)}
+        {s.psus.map((p, i) => <tr key={p.id}><td>{t("misc1.ipmi.psu", { n: i + 1 })}</td><td className={p.state === "ok" ? "" : "bad"}>{PSU_STATE[p.state]}</td></tr>)}
       </tbody>
     </table>
   );
@@ -99,10 +99,10 @@ function SensorsTab({ game, d }: { game: GameState; d: Device }) {
 function LogTab({ d }: { d: Device }) {
   return (
     <table className="bmc-table">
-      <thead><tr><th>Time</th><th>Event</th></tr></thead>
+      <thead><tr><th>{t("misc1.ipmi.time")}</th><th>{t("misc1.ipmi.event")}</th></tr></thead>
       <tbody>
         {[...d.log].reverse().map((e, i) => <tr key={i}><td className="num">{stamp(e.hour)}</td><td>{t(e.key)}</td></tr>)}
-        {!d.log.length && <tr><td colSpan={2} className="bmc-empty">No entries</td></tr>}
+        {!d.log.length && <tr><td colSpan={2} className="bmc-empty">{t("misc1.ipmi.noEntries")}</td></tr>}
       </tbody>
     </table>
   );
@@ -115,8 +115,8 @@ function Login({ brand, host, onLogin }: { brand: string; host: string; onLogin:
       <form className="cx-card" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
         <Brand brand={brand} size={32} />
         <div className="cx-host">{host}</div>
-        <label className="cx-field">Username<input defaultValue="root" autoComplete="off" /></label>
-        <label className="cx-field">Password<input type="password" defaultValue="calvin" autoComplete="off" /></label>
+        <label className="cx-field">{t("misc1.ipmi.username")}<input defaultValue="root" autoComplete="off" /></label>
+        <label className="cx-field">{t("misc1.ipmi.password")}<input type="password" defaultValue="calvin" autoComplete="off" /></label>
         <button className="cx-btn primary" type="submit">{SIGN_IN[look.look]}</button>
       </form>
     </div>
@@ -135,7 +135,7 @@ export function IpmiPage({ game, deviceId, host }: { game: GameState; deviceId: 
   const tabs = TABS.map(([id, label]) => <button key={id} className="cx-tab" aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>);
   const logout = <>
     <button className="cx-btn ghost" onClick={() => openConsole(d.id)}><Monitor aria-hidden />{consoleName(game, d).replace(/^\S+ /, "")}</button>
-    <button className="cx-btn ghost" onClick={() => setLogins(logins.filter((x) => x !== key))}><LogOut aria-hidden />Log out</button>
+    <button className="cx-btn ghost" onClick={() => setLogins(logins.filter((x) => x !== key))}><LogOut aria-hidden />{t("misc1.ipmi.logOut")}</button>
   </>;
   return look.frame === "top" ? (
     <div className="cx" data-look={look.look} data-frame="top">

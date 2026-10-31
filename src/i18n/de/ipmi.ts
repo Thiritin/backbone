@@ -1,0 +1,42 @@
+import type { Dict } from "../lang";
+
+const FAILED: Record<string, string> = {
+  hdd: "Festplatte ausgefallen", ssd: "SSD ausgefallen", nvme: "NVMe-Laufwerk ausgefallen", psu: "Netzteil ausgefallen", fan: "Lüfter ausgefallen",
+  ram: "RAM-Riegel ausgefallen", board: "Mainboard ausgefallen", cpu: "CPU ausgefallen", nic: "Netzwerkkarte ausgefallen",
+};
+
+export default {
+  "ipmi.log.powerOn": () => "Eingeschaltet",
+  "ipmi.log.shutdown": () => "Ordnungsgemäß heruntergefahren",
+  "ipmi.log.pulled": () => "Strom verloren",
+  "ipmi.log.reset": () => "Hard-Reset",
+  "ipmi.log.cycle": () => "Aus- und wieder eingeschaltet",
+  "ipmi.log.resync": () => "Array-Resync gestartet",
+  "ipmi.log.corrupted": () => "Daten nach unsauberem Stopp beschädigt",
+  "ipmi.log.recovered": () => "Daten wiederhergestellt",
+  "ipmi.log.hung": () => "Betriebssystem reagiert nicht mehr",
+  "ipmi.log.bmcHung": () => "Management-Controller reagiert nicht mehr",
+  "ipmi.log.bmcReset": () => "Management-Controller zurückgesetzt",
+  ...Object.fromEntries(Object.entries(FAILED).map(([kind, text]) => [`ipmi.log.failed.${kind}`, () => text])),
+  "event.serverHung.title": () => "Server hängt",
+  "event.serverHung.text": (p) => `${p.device} reagiert nicht mehr. Seine Workloads sind offline, bis es zurückgesetzt wird.`,
+  "event.bmcHung.title": () => "Management-Controller hängt",
+  "event.bmcHung.text": (p) => `Der Management-Controller von ${p.device} reagiert nicht mehr.`,
+  "event.dataCorrupted.title": () => "Daten beschädigt",
+  "event.dataCorrupted.text": (p) => `${p.device} hat im Betrieb den Strom verloren. ${p.count} ${Number(p.count) === 1 ? "Workload muss" : "Workloads müssen"} wiederhergestellt werden.`,
+  "event.recovered.title": () => "Workload wiederhergestellt",
+  "event.recovered.text": (p) => `Ein Workload auf ${p.device} läuft wieder.`,
+  "error.alreadyOff": () => "Der Server ist bereits aus.",
+  "error.unresponsive": () => "Der Server antwortet nicht.",
+  "error.noBmc": () => "Dieser Server hat keinen Management-Controller.",
+  "error.bmcHung": () => "Der Management-Controller antwortet nicht.",
+  "error.bmcFine": () => "Der Management-Controller antwortet.",
+  "error.notHung": () => "Der Server hängt nicht.",
+  "error.notCorrupted": () => "Die Daten sind nicht beschädigt.",
+  "error.needsRestore": () => "Die Wiederherstellung ist fehlgeschlagen. Spiele sie aus dem Backup ein.",
+  "error.pduInstalled": () => "Dieses Rack hat bereits eine schaltbare PDU.",
+  "error.handsBusy": () => "Jemand ist bereits auf dem Weg zu diesem Server.",
+  "error.unplugged": () => "Die Netzkabel sind bereits abgezogen.",
+  "error.plugged": () => "Die Netzkabel sind bereits eingesteckt.",
+  "error.recovering": () => "Eine Wiederherstellung läuft bereits.",
+} satisfies Dict;

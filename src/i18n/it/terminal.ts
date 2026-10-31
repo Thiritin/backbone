@@ -1,0 +1,50 @@
+import type { Dict } from "../lang";
+
+const SHELL_HELP = [
+    "ls, cd, pwd        elencare le cartelle e spostarsi tra loro",
+    "cat <file>         stampare un file",
+    "edit <file>        aprire un file nell'editor",
+    "echo text > file   scrivere testo in un file, >> aggiunge",
+    "touch, mkdir       creare un file o una cartella",
+    "rm, rmdir, mv, cp  eliminare, spostare o copiare file",
+    "clear              svuotare lo schermo",
+];
+
+export default {
+  "term.help.desk": () => [
+    "ssh <host>         aprire una sessione su un server",
+    "ping <host>        inviare quattro richieste echo",
+    "traceroute <host>  elencare gli hop fino a un host",
+    "host <name>        mostrare l'indirizzo di un nome",
+    ...SHELL_HELP,
+    "console <device>   aprire la console di un server, switch o router",
+  ].join("\n"),
+  "term.help.remote": () => [
+    "uptime             mostrare da quanto è acceso il server",
+    "df -h              mostrare l'uso del disco",
+    "free -m            mostrare l'uso della memoria",
+    "top                mostrare i processi più attivi",
+    "shutdown -h now    spegnere il server",
+    "reboot             riavviare il server",
+    "recover <host>     riparare un servizio dopo un crash",
+    "apt update         aggiornare gli elenchi dei pacchetti",
+    "apt upgrade        installare gli aggiornamenti disponibili",
+    ...SHELL_HELP,
+    "exit               chiudere la sessione",
+  ].join("\n"),
+  "dev.open": () => "Apertura del menu sviluppatore.",
+  "term.apt.downtime": (p) => `I servizi di questo server resteranno offline per circa ${p.minutes} minuti.`,
+  "term.install.script": (p) => `Avvio dell'installer di ${p.name} ...`,
+  "term.install.done": (p) => `Installazione di ${p.name} completata.`,
+  "term.install.reach": (p) => `Puoi accedere alla tua nuova installazione su ${p.url}`,
+  "term.install.reboot": () => "Riavvia ora per completare l'installazione.",
+  "term.recover.usage": () => "uso: recover <hostname del servizio>",
+  "term.recover.none": (p) => `recover: ${p.name}: nessun servizio con questo nome su questo host`,
+  "term.recover.clean": (p) => `recover: ${p.name}: il filesystem è pulito`,
+  "term.recover.running": (p) => `recover: ${p.name}: riparazione già in corso`,
+  "term.recover.restore": (p) => `recover: ${p.name}: irrecuperabile, ripristina un backup`,
+  "term.recover.start": (p) => `recover: ${p.name}: riparazione del filesystem`,
+  "term.recover.eta": (p) => `recover: ${p.name}: tempo stimato ${p.minutes} ${Number(p.minutes) === 1 ? "minuto" : "minuti"}`,
+  "term.recover.done": (p) => `recover: ${p.name}: dati recuperati, servizio avviato`,
+  "term.recover.failed": (p) => `recover: ${p.name}: riparazione non riuscita, ripristina un backup`,
+} satisfies Dict;

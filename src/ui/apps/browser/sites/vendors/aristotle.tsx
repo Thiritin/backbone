@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
 import { Body, classesOf, Link, Nav, News, TITLE, type VendorProps } from "./VendorSite";
 import "./aristotle.css";
@@ -14,17 +15,17 @@ export function Aristotle(props: VendorProps) {
       {page === "home" ? (
         <main>
           <section className="vs-hero">
-            <h1>{look === "early" ? "The whole network is greater than the sum of its ports." : "Cloud networking, reasoned from first principles."}</h1>
-            <Link to="products" go={go} className="vs-cta">Switches</Link>
+            <h1>{look === "early" ? t("browser-sites-2.ariEarly") : t("browser-sites-2.ariLate")}</h1>
+            <Link to="products" go={go} className="vs-cta">{t("browser-sites-2.ariSwitches")}</Link>
           </section>
           <ul className="vs-cats">{classesOf(m).map((c) => <li key={c}><Link to="products" go={go}>{c}</Link></li>)}</ul>
-          <h2>News</h2>
+          <h2>{t("browser-sites-2.vNews")}</h2>
           <News m={m} month={month} limit={4} />
         </main>
       ) : (
         <main><h1>{TITLE[page]}</h1><Body {...props} className="vs-body" /></main>
       )}
-      <footer>© {year} Aristotle Networks, Inc.</footer>
+      <footer>{t("browser-sites-2.ariFooter", { year })}</footer>
     </div>
   );
 }

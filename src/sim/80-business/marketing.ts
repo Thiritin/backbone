@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 // Values from docs/design/economy.md, "Marketing and reviews"; numbers marked as decisions are recorded there.
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { isMonthStart, yearOf } from "../00-core/time";
@@ -47,7 +48,7 @@ export const WEBSITE_LEADS = 4;
 export type PlatformId = "free" | "provenExpat" | "trustPylon";
 // fee: euros per month; invite: share of customers with happiness 60 or more asked for a review each month; trust: bonus T.
 export const PLATFORMS: Record<PlatformId, { name: string; fee: number; invite: number; trust: number }> = {
-  free: { name: "Free listing", fee: 0, invite: 0, trust: 2 },
+  free: { get name() { return t("sim.platform.free.name"); }, fee: 0, invite: 0, trust: 2 },
   provenExpat: { name: "ProvenExpat", fee: 49, invite: 0.01, trust: 4 },
   trustPylon: { name: "TrustPylon", fee: 199, invite: 0.02, trust: 6 },
 };

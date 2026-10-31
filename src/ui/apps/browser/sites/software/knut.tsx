@@ -1,8 +1,9 @@
+import { t } from "../../../../../i18n/en";
 import { Commands, Features, Body, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./knut.css";
 
-const GETS = "After the install, the server answers DNS on port 53 for the zones in its configuration file.";
+const GETS = t("browser-sites-1.kn.gets");
 
 // Knut DNS: a sober centred column with a red rule; 2020 adds a hero and feature cards.
 export function KnutDns(props: SiteProps) {
@@ -14,10 +15,10 @@ export function KnutDns(props: SiteProps) {
       <main>
         {look === "early" && page === "home" && <h1>{p.site.tagline}</h1>}
         {page === "download"
-          ? <section><h2>Download</h2><p>{GETS}</p><Commands p={p} year={year} /></section>
+          ? <section><h2>{t("browser-sites-1.kn.download")}</h2><p>{GETS}</p><Commands p={p} year={year} /></section>
           : look === "late" && page === "home" ? <Features p={p} className="cards" /> : <Body {...props} />}
       </main>
-      <footer>Knut DNS {look === "late" ? 3 : 1}.{year % 10} · © {year} Knut DNS Labs</footer>
+      <footer>{t("browser-sites-1.kn.footer", { version: `${look === "late" ? 3 : 1}.${year % 10}`, year })}</footer>
     </div>
   );
 }

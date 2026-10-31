@@ -13,6 +13,7 @@ import { rank, type Rankable } from "./rank";
 
 export const GROUPS = ["Apps", "Customers", "Services", "Machines", "Tickets", "Sites and consoles", "Locations", "Settings"] as const;
 export type Group = (typeof GROUPS)[number];
+export const groupLabel = (g: Group) => t(`misc1.search.group.${g}`);
 
 export interface Hit extends Rankable {
   group: Group; id: string; title: string; sub?: string;
@@ -70,7 +71,7 @@ function collect(s: GameState): Hit[] {
     if (resolve(s, url).page.kind !== "notfound") add({ group: "Sites and consoles", title, sub, keys: [title, url], app: "Browser", target: { kind: "url", id: url } });
   };
   site(companyUrl(s).replace(/\/$/, ""), companyUrl(s), s.company.name);
-  for (const r of REGISTRARS) site(r.name, `www.${registrarHost(r)}/`, "Domains");
+  for (const r of REGISTRARS) site(r.name, `www.${registrarHost(r)}/`, t("misc1.search.domains"));
   for (const a of ARTICLES) site(a.title, wikiUrl(a.slug), WIKI_TITLE);
   for (const v of s.services) if (v.domain && v.endedAt === null) site(v.domain, v.domain, customers.get(v.customerId)?.name);
   for (const d of s.devices) if (d.hostname) site(fqdn(s, d.hostname), fqdn(s, d.hostname), d.label ?? d.name);
@@ -79,7 +80,8 @@ function collect(s: GameState): Hit[] {
   for (const l of s.locations) add({ group: "Locations", id: l.id, title: l.name, sub: l.city, keys: [l.name, l.city], app: "Locations", target: { kind: "location", id: l.id } });
 
   for (const name of SETTINGS_SECTIONS) {
-    add({ group: "Settings", title: name, keys: [name], app: "Settings", target: name === "Notifications" ? { kind: "notifications", id: "" } : { kind: "section", id: name } });
+    const label = t(`misc1.search.section.${name}`);
+    add({ group: "Settings", id: name, title: label, keys: [...new Set([label, name])], app: "Settings", target: name === "Notifications" ? { kind: "notifications", id: "" } : { kind: "section", id: name } });
   }
   return hits;
 }

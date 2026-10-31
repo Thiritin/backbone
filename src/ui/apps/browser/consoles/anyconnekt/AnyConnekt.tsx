@@ -1,6 +1,7 @@
 import { Home, LogOut, Settings, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { t } from "../../../../../i18n/en";
 import { tenants } from "../services";
 import "./anyconnekt.css";
 
@@ -13,11 +14,11 @@ export function AnyConnekt(p: PanelProps) {
   const logo = <span className="sy-logo"><i aria-hidden>{"|||.|||."}</i>SYSKO <b>AnyConnekt</b></span>;
   if (!p.signedIn) return (
     <div className="cx sy sy-login" data-era={era}>
-      <LoginForm className="sy-card" onLogin={p.login} button="Login">{logo}<div className="cx-host">{p.host}</div></LoginForm>
+      <LoginForm className="sy-card" onLogin={p.login} button={t("browser-consoles-1.login")}>{logo}<div className="cx-host">{p.host}</div></LoginForm>
     </div>
   );
-  const sessions = ts.reduce((n, t) => n + (t.running ? t.users : 0), 0);
-  const nav: [Tab, string, LucideIcon][] = [["objects", "Home", Home], ["software", "Configuration", Settings]];
+  const sessions = ts.reduce((n, x) => n + (x.running ? x.users : 0), 0);
+  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-1.acHome"), Home], ["software", t("browser-consoles-1.acConfiguration"), Settings]];
   const box = (title: string, body: ReactNode) => <section className="sy-box"><h2>{title}</h2>{body}</section>;
   return (
     <div className="cx sy" data-era={era}>
@@ -25,21 +26,21 @@ export function AnyConnekt(p: PanelProps) {
         {logo}
         <nav>{nav.map(([id, label, Icon]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}><Icon size={era === "early" ? 22 : 15} aria-hidden />{label}</button>)}</nav>
         <span className="cx-host">{p.host}</span>
-        <button className="sy-out" onClick={p.logout}><LogOut size={14} aria-hidden />Logout</button>
+        <button className="sy-out" onClick={p.logout}><LogOut size={14} aria-hidden />{t("browser-consoles-1.logout")}</button>
       </header>
       <main className="sy-main">
         {tab === "objects" && <>
-          {box("Device Information", <Facts facts={[{ label: "Software", value: `AnyConnekt ${p.c.version}`, num: true }, { label: "VPN sessions", value: String(sessions), num: true }, { label: "Gateways", value: String(rows.length), num: true }]} />)}
-          {box("VPN Gateways", (
+          {box(t("browser-consoles-1.acDeviceInfo"), <Facts facts={[{ label: t("browser-consoles-1.software"), value: `AnyConnekt ${p.c.version}`, num: true }, { label: t("browser-consoles-1.acVpnSessions"), value: String(sessions), num: true }, { label: t("browser-consoles-1.acGateways"), value: String(rows.length), num: true }]} />)}
+          {box(t("browser-consoles-1.acVpnGateways"), (
             <table className="cx-table">
-              <thead><tr><th>Gateway</th><th>Account</th><th>Licensed users</th><th>Status</th><th /></tr></thead>
+              <thead><tr><th>{t("browser-consoles-1.acGateway")}</th><th>{t("browser-consoles-1.account")}</th><th>{t("browser-consoles-1.acLicensedUsers")}</th><th>{t("browser-consoles-1.status")}</th><th /></tr></thead>
               <tbody>
-                {rows.length === 0 && <tr><td colSpan={5} className="cx-empty">Nothing here yet.</td></tr>}
+                {rows.length === 0 && <tr><td colSpan={5} className="cx-empty">{t("browser-consoles-1.nothingYet")}</td></tr>}
                 {rows.map((r) => {
-                  const t = ts.find((x) => x.id === r.id);
+                  const tn = ts.find((x) => x.id === r.id);
                   return (
                     <RowLines key={r.id} r={r} span={5}>
-                      <td><b>{r.name}</b></td><td>{t?.customer}</td><td className="num">{t?.users}</td>
+                      <td><b>{r.name}</b></td><td>{tn?.customer}</td><td className="num">{tn?.users}</td>
                       <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td><td><Actions actions={r.actions} className="cx-acts" /></td>
                     </RowLines>
                   );
@@ -48,7 +49,7 @@ export function AnyConnekt(p: PanelProps) {
             </table>
           ))}
         </>}
-        {tab === "software" && box("Software Updates", <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>)}
+        {tab === "software" && box(t("browser-consoles-1.softwareUpdates"), <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>)}
       </main>
     </div>
   );

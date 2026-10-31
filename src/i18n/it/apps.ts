@@ -1,0 +1,24 @@
+import type { Dict } from "../lang";
+
+export default {
+  "ticket.howTo.hacked.subject": () => "Il mio sito web mostra lo slogan di qualcun altro",
+  "ticket.howTo.hacked.text": (p) => `${p.domain || "Il mio sito web"} mostra un teschio e un messaggio in inglese stentato al posto della mia home page. Puoi sistemarlo?`,
+  "ticket.howTo.update.subject": () => "Aiuto per aggiornare il mio sito web",
+  "ticket.howTo.update.text": () => "Hai scritto che il software dietro il mio sito web ha bisogno di un aggiornamento. Non ho idea di come si faccia. Puoi occupartene tu?",
+  "event.siteHacked.title": () => "Sito di un cliente deturpato",
+  "event.siteHacked.text": (p) => `Il sito ${p.site} di ${p.customer} è stato deturpato tramite una falla in ${p.software}. Manda spam finché non viene ripulito.`,
+  "event.siteLeft.title": () => "Cliente perso",
+  "event.siteLeft.text": (p) => `${p.customer} ha disdetto dopo che ${p.site} è stato deturpato per la terza volta in un anno.`,
+  "event.offerDeclined.title": () => "Offerta rifiutata",
+  "event.offerDeclined.text": (p) => `${p.name} ha rifiutato l'offerta.`,
+  "outcome.cleaned": () => "Sito ripulito",
+  "outcome.noBackup": () => "Nessun backup, il cliente ricostruisce il sito",
+  "outcome.updated": () => "Software aggiornato",
+  "outcome.updateSold": () => "Aggiornamento venduto",
+  "outcome.managedSold": () => "Aggiornamenti gestiti venduti",
+  "ledger.appUpdate": (p) => `Aggiornamento di ${p.site}`,
+  "error.notDefaced": () => "Questo sito non è deturpato.",
+  "error.noBackup": () => "Questo sito non ha un backup da ripristinare.",
+  "error.unknownVulnerability": () => "Questa vulnerabilità non è nota.",
+  "error.nobodyToNotify": () => "Nessun cliente da avvisare.",
+} satisfies Dict;

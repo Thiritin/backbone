@@ -1,5 +1,6 @@
 // Management ports and management devices: a server's console end, a switch or router's MGMT and CONSOLE jacks, and the
 // KVMs, console servers and OOB switch, whose every port is on the back.
+import { t } from "../../i18n/en";
 import { OOB_PORT, oobPorts, type DeviceModel, type OobPort } from "../../sim/10-catalog/hardware";
 import type { Spot } from "./backs";
 import { AssetTag, fsz, LED, numBand, numSize, switchX0, type FrontProps } from "./fronts";
@@ -50,7 +51,7 @@ export function OobJacks({ model, name, w, h }: { model: DeviceModel; name: stri
   const kinds = oobPorts(model), spots = oobSpots(model, name, w, h), fs = numSize(Math.min(h, 40));
   const below = (s: Spot) => s.y > h / 2;
   return (
-    <g aria-label="Management ports">
+    <g aria-label={t("art.managementPorts")}>
       {[...spots].map(([port, s]) => {
         const kind = kinds[port - OOB_PORT], vga = kind === "console" && model.kind === "server";
         return (

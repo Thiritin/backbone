@@ -5,26 +5,26 @@ import { BASEMENT, datacenterById, SHARE_RACKS, type Datacenter } from "../../..
 import type { GameState, Location } from "../../../sim/50-state";
 import { rackPower } from "../../../sim/60-infra/status";
 import type { Usage } from "../../../sim/60-infra/usage";
+import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 
 export const dcOf = (l: Location): Datacenter | null => (l.dc ? datacenterById(l.dc) : null);
 export const providerOf = (l: Location) => dcOf(l)?.provider ?? null;
-const plural = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
 export const Zone = ({ loc }: { loc: Location }) => <span className="loc-az num">{loc.az}</span>;
 export const LocName = ({ loc }: { loc: Location }) => <span className="loc-name">{loc.name}<Zone loc={loc} /></span>;
-export const positionsLabel = (n: number) => plural(n, "position");
-export const SPACE_NAME = { basement: "Basement", share: "Rack", cage: "Cage", suite: "Private suite" };
+export const positionsLabel = (n: number) => t("locations-2.nPositions", { n });
+export const SPACE_NAME = { basement: t("locations-2.space.basement"), share: t("locations-2.space.share"), cage: t("locations-2.space.cage"), suite: t("locations-2.space.suite") };
 // A share of size n is 1/n of a rack.
-export const shareLabel = (n: number) => (n === 1 ? "Full rack" : `1/${n} rack`);
+export const shareLabel = (n: number) => (n === 1 ? t("locations-2.fullRack") : t("locations-2.shareRack", { n }));
 // A rented space and its size, as offered: "1/4 rack", "Cage, 8 positions".
 export const spaceSize = (space: Exclude<Location["space"], "basement">, size: number) =>
-  space === "share" ? shareLabel(size) : `${SPACE_NAME[space]}, ${positionsLabel(size)}`;
+  space === "share" ? shareLabel(size) : t("locations-2.spaceSize", { space: SPACE_NAME[space], positions: positionsLabel(size) });
 export const shareUnits = (n: number) => SHARE_RACKS.find((m) => m.size === n)?.units ?? 0;
 const shareOf = (g: GameState, l: Location) => SHARE_RACKS.find((m) => g.racks.some((r) => r.locationId === l.id && r.model === m.id));
 export function spaceLabel(l: Location, g?: GameState) {
-  if (l.space === "basement") return "Basement";
-  if (l.space === "share") { const m = g && shareOf(g, l); return m ? `${shareLabel(m.size)} · ${m.units}U` : SPACE_NAME.share; }
-  return `${SPACE_NAME[l.space]}, ${positionsLabel(l.positions)}`;
+  if (l.space === "basement") return SPACE_NAME.basement;
+  if (l.space === "share") { const m = g && shareOf(g, l); return m ? t("locations-2.shareUnits", { share: shareLabel(m.size), units: m.units }) : SPACE_NAME.share; }
+  return t("locations-2.spaceSize", { space: SPACE_NAME[l.space], positions: positionsLabel(l.positions) });
 }
 
 export function locationPower(g: GameState, locId: string) {
@@ -34,9 +34,9 @@ export function locationPower(g: GameState, locId: string) {
   return { watts: racks.reduce((n, p) => n + p.watts, 0), limit, tripped: racks.some((p) => p.tripped) };
 }
 
-export const exchangeLabel = (dc: Datacenter | null) => (!dc?.exchange ? "None" : `${dc.exchange.name} ${dc.exchange.onSite ? "on site" : "by cross-connect"}`);
-export const feedsLabel = (dc: Datacenter | null) => (dc?.feeds === "ab" ? "A+B feeds" : "Single feed");
-export const backupLabel = (dc: Datacenter | null) => (dc?.backup === "ups+generator" ? "UPS and generator" : dc?.backup === "ups" ? "UPS" : "No backup");
+export const exchangeLabel = (dc: Datacenter | null) => (!dc?.exchange ? t("locations-2.none") : t("locations-2.exchangeAt", { name: dc.exchange.name, onSite: dc.exchange.onSite ? 1 : 0 }));
+export const feedsLabel = (dc: Datacenter | null) => (dc?.feeds === "ab" ? t("locations-2.feedsAb") : t("locations-2.feedSingle"));
+export const backupLabel = (dc: Datacenter | null) => (dc?.backup === "ups+generator" ? t("locations-2.backupUpsGen") : dc?.backup === "ups" ? t("locations-2.backupUps") : t("locations-2.noBackup"));
 
 export function useDismiss(ref: RefObject<HTMLElement | null>, onClose: () => void) {
   useEffect(() => {
@@ -54,7 +54,7 @@ export function Sheet({ title, onClose, children, wide }: { title: string; onClo
   return createPortal(
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
       <div ref={ref} className={`loc-sheet${wide ? " wide" : ""}`} role="dialog" aria-modal="true" aria-label={title}>
-        <div className="loc-sheet-h"><h2>{title}</h2><span className="grow" /><button className="btn ghost icon" aria-label="Close" onClick={onClose}><X /></button></div>
+        <div className="loc-sheet-h"><h2>{title}</h2><span className="grow" /><button className="btn ghost icon" aria-label={t("locations-2.close")} onClick={onClose}><X /></button></div>
         {children}
       </div>
     </div>,
@@ -81,7 +81,7 @@ export function LedBar({ value }: { value: number }) {
   );
 }
 
-const USAGE_ROWS: [string, keyof Usage][] = [["CPU", "cpu"], ["Memory", "ram"], ["Storage", "disk"], ["Network", "net"]];
+const USAGE_ROWS: [string, keyof Usage][] = [[t("locations-2.usage.cpu"), "cpu"], [t("locations-2.usage.ram"), "ram"], [t("locations-2.usage.disk"), "disk"], [t("locations-2.usage.net"), "net"]];
 export function UsageBars({ usage, only, wide }: { usage: Usage; only?: (keyof Usage)[]; wide?: boolean }) {
   return (
     <div className={`usage${wide ? " wide" : ""}`}>

@@ -24,6 +24,7 @@ import "../shop/shop.css";
 import "../billing/billing.css";
 import "../marketing/marketing.css";
 import "../network/network.css";
+import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 
 export const mbps = (v: number): string => (v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)} Gbit/s` : `${v >= 10 ? Math.round(v) : v.toFixed(v >= 1 ? 1 : 2)} Mbit/s`);
@@ -54,10 +55,10 @@ export function NetworkTab({ game, loc }: { game: GameState; loc: Location }) {
   return (
     <>
       <div className="net-head">
-        <span className="num net-now">{mbps(z?.carried ?? 0)} of {mbps(z?.demand ?? 0)}</span>
+        <span className="num net-now">{t("locations-2.carriedOf", { carried: mbps(z?.carried ?? 0), demand: mbps(z?.demand ?? 0) })}</span>
         <span className="grow" />
-        <div className="seg" role="group" aria-label="View">
-          {views.map((v) => <button key={v} aria-pressed={shown === v} onClick={() => setView(v)}>{v[0].toUpperCase() + v.slice(1)}</button>)}
+        <div className="seg" role="group" aria-label={t("locations-2.netView")}>
+          {views.map((v) => <button key={v} aria-pressed={shown === v} onClick={() => setView(v)}>{t(`locations-2.netView.${v}`)}</button>)}
         </div>
       </div>
       <TrafficChart points={game.network.history[loc.id] ?? []} />
@@ -75,18 +76,18 @@ function Attacks({ game, loc }: { game: GameState; loc: Location }) {
   if (!attacks.length) return null;
   return (
     <>
-      <h3 className="mkt-h">Attacks</h3>
+      <h3 className="mkt-h">{t("locations-2.attacks")}</h3>
       <div className="shop-grid mkt-flat">
         {attacks.map((a) => (
           <div key={a.id} className="shop-card">
             <div className="mkt-head"><strong>{game.services.find((x) => x.id === a.serviceId)?.label ?? a.serviceId}</strong>
-              {a.blackholed ? <span className="pill">Blackholed</span> : <span className="pill net-pill-bad">Under attack</span>}</div>
+              {a.blackholed ? <span className="pill">{t("locations-2.blackholed")}</span> : <span className="pill net-pill-bad">{t("locations-2.underAttack")}</span>}</div>
             <dl className="shop-specs">
-              <div><dt>Size</dt><dd className="num">{mbps(a.mbps)}</dd></div>
-              <div><dt>Ends</dt><dd className="num">{formatDay(a.endsAt)}</dd></div>
+              <div><dt>{t("locations-2.size")}</dt><dd className="num">{mbps(a.mbps)}</dd></div>
+              <div><dt>{t("locations-2.ends")}</dt><dd className="num">{formatDay(a.endsAt)}</dd></div>
             </dl>
             <div className="shop-buy"><span className="grow" />
-              <button className={`btn${a.blackholed ? "" : " primary"}`} onClick={() => act(setBlackhole, a.id, !a.blackholed)}>{a.blackholed ? "Lift blackhole" : "Blackhole"}</button></div>
+              <button className={`btn${a.blackholed ? "" : " primary"}`} onClick={() => act(setBlackhole, a.id, !a.blackholed)}>{a.blackholed ? t("locations-2.liftBlackhole") : t("locations-2.blackhole")}</button></div>
           </div>
         ))}
       </div>
@@ -100,8 +101,8 @@ function TrafficChart({ points }: { points: [number, number][] }) {
   const x = (i: number) => (points.length > 1 ? (i / (points.length - 1)) * W : 0), y = (v: number) => H - (v / max) * (H - 8);
   const line = (k: 0 | 1) => points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[k]).toFixed(1)}`).join("");
   return (
-    <figure className="net-chart" aria-label="Traffic over the last week">
-      <div className="net-legend"><span className="net-key carried" />Carried<span className="net-key demand" />Demand<span className="grow" /><span className="num">Peak {mbps(max)}</span></div>
+    <figure className="net-chart" aria-label={t("locations-2.trafficWeek")}>
+      <div className="net-legend"><span className="net-key carried" />{t("locations-2.carried")}<span className="net-key demand" />{t("locations-2.demand")}<span className="grow" /><span className="num">{t("locations-2.peak", { value: mbps(max) })}</span></div>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img">
         <line x1="0" x2={W} y1={y(max)} y2={y(max)} className="net-grid" />
         <line x1="0" x2={W} y1={y(max / 2)} y2={y(max / 2)} className="net-grid" />
@@ -124,11 +125,11 @@ function Uplinks({ game, loc, routing }: { game: GameState; loc: Location; routi
     return (
       <div className="shop-grid mkt-flat">
         <div className="shop-card">
-          <div className="mkt-head"><strong>{line.isp} {line.name}</strong><span className="pill">Home line</span></div>
+          <div className="mkt-head"><strong>{line.isp} {line.name}</strong><span className="pill">{t("locations-2.homeLine")}</span></div>
           <dl className="shop-specs">
-            <div><dt>Upload</dt><dd className="num">{mbps(Math.min(line.up, routerMbps(game, loc)))}</dd></div>
-            <div><dt>In use</dt><dd className="num">{mbps(used.home ?? 0)}</dd></div>
-            <div><dt>Peak, 7 days</dt><dd className="num">{mbps(homePeak(game))}</dd></div>
+            <div><dt>{t("locations-2.upload")}</dt><dd className="num">{mbps(Math.min(line.up, routerMbps(game, loc)))}</dd></div>
+            <div><dt>{t("locations-2.inUse")}</dt><dd className="num">{mbps(used.home ?? 0)}</dd></div>
+            <div><dt>{t("locations-2.peak7")}</dt><dd className="num">{mbps(homePeak(game))}</dd></div>
           </dl>
           <Meter load={homePeak(game) / line.up} />
         </div>
@@ -140,19 +141,19 @@ function Uplinks({ game, loc, routing }: { game: GameState; loc: Location; routi
     <>
       <div className="shop-grid mkt-flat">
         <div className="shop-card">
-          <div className="mkt-head"><strong>{dc.name}</strong><span className="pill">Bandwidth</span></div>
+          <div className="mkt-head"><strong>{dc.name}</strong><span className="pill">{t("locations-2.bandwidth")}</span></div>
           <dl className="shop-specs">
-            <div><dt>Capacity</dt><dd className="num">1 Gbit/s</dd></div>
-            <div><dt>In use</dt><dd className="num">{mbps(used[`dc:${loc.id}`] ?? 0)}</dd></div>
-            <div><dt>Price</dt><dd className="num">{euroCents(dcPerTb(year))} / TB</dd></div>
-            <div><dt>This month</dt><dd className="num">{(game.network.dcTb[loc.id] ?? 0).toFixed(2)} TB</dd></div>
+            <div><dt>{t("locations-2.capacity")}</dt><dd className="num">1 Gbit/s</dd></div>
+            <div><dt>{t("locations-2.inUse")}</dt><dd className="num">{mbps(used[`dc:${loc.id}`] ?? 0)}</dd></div>
+            <div><dt>{t("locations-2.price")}</dt><dd className="num">{t("locations-2.perTb", { amount: euroCents(dcPerTb(year)) })}</dd></div>
+            <div><dt>{t("locations-2.thisMonth")}</dt><dd className="num">{(game.network.dcTb[loc.id] ?? 0).toFixed(2)} TB</dd></div>
           </dl>
           <Meter load={(used[`dc:${loc.id}`] ?? 0) / 1000} />
         </div>
         {uplinks.map((u) => <UplinkCard key={u.id} game={game} u={u} carried={used[u.id] ?? 0} />)}
       </div>
       {game.unlocks.includes("network") && <>
-        <h3 className="mkt-h">Transit</h3>
+        <h3 className="mkt-h">{t("locations-2.transit")}</h3>
         <div className="shop-grid mkt-flat">
           {carriersAt(dc).map((c) => <TransitOrder key={c.id} game={game} loc={loc} carrier={c.id} />)}
         </div>
@@ -175,25 +176,25 @@ function UplinkCard({ game, u, carried }: { game: GameState; u: Uplink; carried:
   const device = (id: string) => { const d = game.devices.find((x) => x.id === id); return d?.label ?? d?.name ?? id; };
   return (
     <div className="shop-card">
-      <div className="mkt-head"><strong>{partnerName(u)}</strong><span className="pill">{u.kind === "transit" ? "Transit" : "Exchange"}</span></div>
+      <div className="mkt-head"><strong>{partnerName(u)}</strong><span className="pill">{u.kind === "transit" ? t("locations-2.transit") : t("locations-2.exchange")}</span></div>
       <ul className="net-links">
         {u.links.map((l) => (
-          <li key={l.id}><span className="num">{l.gbit}G</span><span>{device(l.device)} port {l.port + 1}</span><span className="grow" />
-            {l.readyAt > game.hour ? <span className="pill warn">Ready in {readyIn(l.readyAt, game.hour)}</span> : <span className="pill ok">Up</span>}</li>
+          <li key={l.id}><span className="num">{l.gbit}G</span><span>{t("locations-2.devicePort", { device: device(l.device), port: l.port + 1 })}</span><span className="grow" />
+            {l.readyAt > game.hour ? <span className="pill warn">{t("locations-2.readyIn", { time: readyIn(l.readyAt, game.hour) })}</span> : <span className="pill ok">{t("locations-2.up")}</span>}</li>
         ))}
       </ul>
       <dl className="shop-specs">
-        <div><dt>In use</dt><dd className="num">{mbps(carried)}</dd></div>
-        {u.kind === "transit" && <div><dt>95th / commit</dt><dd className="num">{mbps(p95(u.samples))} / {mbps(cap * u.commit)}</dd></div>}
-        <div><dt>Per month</dt><dd className="num">{euro(monthly)}</dd></div>
+        <div><dt>{t("locations-2.inUse")}</dt><dd className="num">{mbps(carried)}</dd></div>
+        {u.kind === "transit" && <div><dt>{t("locations-2.p95Commit")}</dt><dd className="num">{mbps(p95(u.samples))} / {mbps(cap * u.commit)}</dd></div>}
+        <div><dt>{t("locations-2.perMonthHead")}</dt><dd className="num">{euro(monthly)}</dd></div>
       </dl>
       <Meter load={cap ? carried / cap : 0} />
       <div className="shop-buy">
-        <div className="seg" role="group" aria-label="Add link">
+        <div className="seg" role="group" aria-label={t("locations-2.addLink")}>
           {speedsIn(year).map((g) => <button key={g} className="num" onClick={() => act(addUplinkLink, u.id, g)}>+{g}G</button>)}
         </div>
         <span className="grow" />
-        <button className="btn" onClick={() => act(cancelUplink, u.id)}>Cancel</button>
+        <button className="btn" onClick={() => act(cancelUplink, u.id)}>{t("locations-2.cancel")}</button>
       </div>
     </div>
   );
@@ -209,13 +210,13 @@ function TransitOrder({ game, loc, carrier }: { game: GameState; loc: Location; 
   const price = transitPerMbps(c, year) * (1 - discount) * (1 - 0.1 * game.network.goodwill);
   return (
     <div className="shop-card">
-      <div className="shop-name"><strong>{c.name}</strong><span>{euroCents(price)} per Mbit/s</span></div>
-      <div className="mkt-row"><span className="mkt-label">Port</span>
-        <div className="seg" role="group" aria-label="Port speed">{speeds.map((g) => <button key={g} className="num" aria-pressed={gbit === g} onClick={() => setGbit(g)}>{g}G</button>)}</div></div>
-      <div className="mkt-row"><span className="mkt-label">Commit</span>
-        <div className="seg" role="group" aria-label="Commit">{COMMITS.map((x) => <button key={x.share} className="num" aria-pressed={commit === x.share} onClick={() => setCommit(x.share)}>{pct(x.share)}</button>)}</div></div>
-      <div className="shop-buy"><span className="num">From {euro(gbit * 1000 * commit * price)} / month</span><span className="grow" />
-        <button className="btn primary" onClick={() => act(orderTransit, loc.id, carrier, gbit, commit)}>Order</button></div>
+      <div className="shop-name"><strong>{c.name}</strong><span>{t("locations-2.perMbit", { amount: euroCents(price) })}</span></div>
+      <div className="mkt-row"><span className="mkt-label">{t("locations-2.port")}</span>
+        <div className="seg" role="group" aria-label={t("locations-2.portSpeed")}>{speeds.map((g) => <button key={g} className="num" aria-pressed={gbit === g} onClick={() => setGbit(g)}>{g}G</button>)}</div></div>
+      <div className="mkt-row"><span className="mkt-label">{t("locations-2.commit")}</span>
+        <div className="seg" role="group" aria-label={t("locations-2.commit")}>{COMMITS.map((x) => <button key={x.share} className="num" aria-pressed={commit === x.share} onClick={() => setCommit(x.share)}>{pct(x.share)}</button>)}</div></div>
+      <div className="shop-buy"><span className="num">{t("locations-2.fromPerMonth", { amount: euro(gbit * 1000 * commit * price) })}</span><span className="grow" />
+        <button className="btn primary" onClick={() => act(orderTransit, loc.id, carrier, gbit, commit)}>{t("locations-2.order")}</button></div>
     </div>
   );
 }
@@ -228,21 +229,21 @@ function ExchangeOrder({ game, loc }: { game: GameState; loc: Location }) {
   if (!x) return null;
   const member = game.network.memberships.includes(x.id);
   let action: ReactNode;
-  if (!game.network.asn) action = <button className="btn" disabled={game.cash < ASN_FEE} onClick={() => act(registerAsn)}>Register AS number for {euro(ASN_FEE)}</button>;
-  else if (!member) action = <button className="btn primary" disabled={game.cash < EXCHANGE_FEES.setup} onClick={() => act(joinExchange, x.id)}>Join for {euro(EXCHANGE_FEES.setup)}</button>;
-  else action = <button className="btn primary" onClick={() => act(orderExchangePort, loc.id, gbit)}>Order port</button>;
+  if (!game.network.asn) action = <button className="btn" disabled={game.cash < ASN_FEE} onClick={() => act(registerAsn)}>{t("locations-2.registerAsn", { fee: euro(ASN_FEE) })}</button>;
+  else if (!member) action = <button className="btn primary" disabled={game.cash < EXCHANGE_FEES.setup} onClick={() => act(joinExchange, x.id)}>{t("locations-2.joinFor", { fee: euro(EXCHANGE_FEES.setup) })}</button>;
+  else action = <button className="btn primary" onClick={() => act(orderExchangePort, loc.id, gbit)}>{t("locations-2.orderPort")}</button>;
   return (
     <>
-      <h3 className="mkt-h">Exchange</h3>
+      <h3 className="mkt-h">{t("locations-2.exchange")}</h3>
       <div className="shop-grid mkt-flat">
         <div className="shop-card">
-          <div className="shop-name"><strong>{x.name}</strong><span>{datacenterById(loc.dc!).exchange!.onSite ? "On site" : "By cross-connect"}</span></div>
+          <div className="shop-name"><strong>{x.name}</strong><span>{datacenterById(loc.dc!).exchange!.onSite ? t("locations-2.onSite") : t("locations-2.byCrossConnect")}</span></div>
           <dl className="shop-specs">
-            <div><dt>Membership</dt><dd className="num">{euro(EXCHANGE_FEES.yearly)} / year</dd></div>
-            <div><dt>Port</dt><dd className="num">{euro(exchangePortPrice(gbit, year))} / month</dd></div>
+            <div><dt>{t("locations-2.membership")}</dt><dd className="num">{t("locations-2.perYear", { amount: euro(EXCHANGE_FEES.yearly) })}</dd></div>
+            <div><dt>{t("locations-2.port")}</dt><dd className="num">{t("locations-2.perMonth", { amount: euro(exchangePortPrice(gbit, year)) })}</dd></div>
           </dl>
-          {member && <div className="mkt-row"><span className="mkt-label">Port</span>
-            <div className="seg" role="group" aria-label="Port speed">{speeds.map((g) => <button key={g} className="num" aria-pressed={gbit === g} onClick={() => setGbit(g)}>{g}G</button>)}</div></div>}
+          {member && <div className="mkt-row"><span className="mkt-label">{t("locations-2.port")}</span>
+            <div className="seg" role="group" aria-label={t("locations-2.portSpeed")}>{speeds.map((g) => <button key={g} className="num" aria-pressed={gbit === g} onClick={() => setGbit(g)}>{g}G</button>)}</div></div>}
           <div className="shop-buy"><span className="grow" />{action}</div>
         </div>
       </div>
@@ -255,7 +256,7 @@ function ZoneLinks({ game, loc }: { game: GameState; loc: Location }) {
   if (!others.length) return null;
   return (
     <>
-      <h3 className="mkt-h">Links to other zones</h3>
+      <h3 className="mkt-h">{t("locations-2.zoneLinks")}</h3>
       <div className="shop-grid mkt-flat">{others.map((o) => <ZoneLinkCard key={o.id} game={game} loc={loc} other={o} />)}</div>
     </>
   );
@@ -268,42 +269,42 @@ function ZoneLinkCard({ game, loc, other }: { game: GameState; loc: Location; ot
   const links = game.network.zoneLinks.filter((z) => (z.a === loc.id && z.b === other.id) || (z.b === loc.id && z.a === other.id));
   const options: { kind: ZoneLinkKind; gbit: number; label: string }[] = [
     ...speedsIn(year).map((g) => ({ kind: "wave" as const, gbit: g, label: `${g}G` })),
-    ...(same ? [{ kind: "fiber" as const, gbit: FIBER_GBIT, label: "Dark fiber" }] : []),
+    ...(same ? [{ kind: "fiber" as const, gbit: FIBER_GBIT, label: t("locations-2.darkFiber") }] : []),
   ];
   return (
     <div className="shop-card">
-      <div className="shop-name"><strong>{other.az} {other.name}</strong><span>{same ? "Same region" : overseas ? "Overseas" : "Other region"}</span></div>
+      <div className="shop-name"><strong>{other.az} {other.name}</strong><span>{same ? t("locations-2.sameRegion") : overseas ? t("locations-2.overseas") : t("locations-2.otherRegion")}</span></div>
       {links.map((zl) => (
         <div key={zl.id} className="mkt-row net-zl">
-          <span className="num">{zl.kind === "fiber" ? "Dark fiber" : `${zl.gbit}G`}</span>
-          <span className="num">{zl.readyAt > game.hour ? `Ready in ${readyIn(zl.readyAt, game.hour)}` : mbps(zl.carried)}</span>
-          <span className="num">{euro(zoneLinkMonthly(game, zl))} / month</span>
-          <span className="grow" /><button className="btn" onClick={() => act(cancelZoneLink, zl.id)}>Cancel</button>
+          <span className="num">{zl.kind === "fiber" ? t("locations-2.darkFiber") : `${zl.gbit}G`}</span>
+          <span className="num">{zl.readyAt > game.hour ? t("locations-2.readyIn", { time: readyIn(zl.readyAt, game.hour) }) : mbps(zl.carried)}</span>
+          <span className="num">{t("locations-2.perMonth", { amount: euro(zoneLinkMonthly(game, zl)) })}</span>
+          <span className="grow" /><button className="btn" onClick={() => act(cancelZoneLink, zl.id)}>{t("locations-2.cancel")}</button>
         </div>
       ))}
-      <div className="mkt-row"><span className="mkt-label">Link</span>
-        <div className="seg" role="group" aria-label="Link">{options.map((o) => (
+      <div className="mkt-row"><span className="mkt-label">{t("locations-2.link")}</span>
+        <div className="seg" role="group" aria-label={t("locations-2.link")}>{options.map((o) => (
           <button key={o.label} className="num" aria-pressed={choice.kind === o.kind && choice.gbit === o.gbit} onClick={() => setChoice(o)}>{o.label}</button>
         ))}</div></div>
-      <div className="shop-buy"><span className="num">{euro(zoneLinkPrice(choice.kind, choice.gbit, same, year, overseas))} / month</span><span className="grow" />
-        <button className="btn primary" onClick={() => act(orderZoneLink, loc.id, other.id, choice.kind, choice.gbit)}>Order</button></div>
+      <div className="shop-buy"><span className="num">{t("locations-2.perMonth", { amount: euro(zoneLinkPrice(choice.kind, choice.gbit, same, year, overseas)) })}</span><span className="grow" />
+        <button className="btn primary" onClick={() => act(orderZoneLink, loc.id, other.id, choice.kind, choice.gbit)}>{t("locations-2.order")}</button></div>
     </div>
   );
 }
 
 
-const POLICY: Record<Peer["policy"], string> = { routeServer: "Route servers", open: "Open", selective: "Selective", restrictive: "Restrictive" };
-const KIND: Record<Peer["kind"], string> = { eyeball: "Access network", content: "Content", cdn: "CDN", carrier: "Carrier", hoster: "Hoster", hobby: "Hobby network" };
+const POLICY = (p: Peer["policy"]): string => t(`locations-2.policy.${p}`);
+const KIND = (k: Peer["kind"]): string => t(`locations-2.peerKind.${k}`);
 
 function PeerFacts({ p }: { p: Peer }) {
   return (
     <dl className="shop-specs">
-      <div><dt>Type</dt><dd>{KIND[p.kind]}</dd></div>
-      <div><dt>Prefixes</dt><dd className="num">{p.prefixes.toLocaleString(LOCALE)}</dd></div>
-      <div><dt>Traffic share</dt><dd className="num">{p.share < 0.01 ? "<1%" : pct(p.share)}</dd></div>
-      <div><dt>Policy</dt><dd>{POLICY[p.policy]}</dd></div>
-      <div><dt>Wants</dt><dd className="num">{p.minMbps ? mbps(p.minMbps) : "Any"}</dd></div>
-      <div><dt>Exchanges</dt><dd>{p.exchanges.length > 4 ? "All" : p.exchanges.map((x) => exchangeById(x)!.name).join(", ")}</dd></div>
+      <div><dt>{t("locations-2.type")}</dt><dd>{KIND(p.kind)}</dd></div>
+      <div><dt>{t("locations-2.prefixes")}</dt><dd className="num">{p.prefixes.toLocaleString(LOCALE)}</dd></div>
+      <div><dt>{t("locations-2.trafficShare")}</dt><dd className="num">{p.share < 0.01 ? "<1%" : pct(p.share)}</dd></div>
+      <div><dt>{t("locations-2.policy")}</dt><dd>{POLICY(p.policy)}</dd></div>
+      <div><dt>{t("locations-2.wants")}</dt><dd className="num">{p.minMbps ? mbps(p.minMbps) : t("locations-2.any")}</dd></div>
+      <div><dt>{t("locations-2.exchanges")}</dt><dd>{p.exchanges.length > 4 ? t("locations-2.all") : p.exchanges.map((x) => exchangeById(x)!.name).join(", ")}</dd></div>
     </dl>
   );
 }
@@ -315,7 +316,7 @@ function Peering({ game, exchange }: { game: GameState; exchange: string }) {
   const askable = PEERS.filter((p) => p.policy !== "routeServer" && p.exchanges.includes(exchange));
   return (
     <>
-      <h3 className="mkt-h">Requests</h3>
+      <h3 className="mkt-h">{t("locations-2.requests")}</h3>
       {requests.length ? (
         <div className="shop-grid mkt-flat">
           {requests.map((r) => {
@@ -325,26 +326,26 @@ function Peering({ game, exchange }: { game: GameState; exchange: string }) {
                 <div className="mkt-head"><strong>{p.name}</strong></div>
                 <PeerFacts p={p} />
                 <div className="shop-buy"><span className="num">{formatDay(r.at)}</span><span className="grow" />
-                  <button className="btn" onClick={() => act(rejectPeering, r.id)}>Reject</button>
-                  <button className="btn primary" onClick={() => act(acceptPeering, r.id)}>Accept</button></div>
+                  <button className="btn" onClick={() => act(rejectPeering, r.id)}>{t("locations-2.reject")}</button>
+                  <button className="btn primary" onClick={() => act(acceptPeering, r.id)}>{t("locations-2.accept")}</button></div>
               </div>
             );
           })}
         </div>
-      ) : <p className="mkt-none">No requests</p>}
-      <h3 className="mkt-h">Networks at {exchangeById(exchange)!.name}</h3>
+      ) : <p className="mkt-none">{t("locations-2.noRequests")}</p>}
+      <h3 className="mkt-h">{t("locations-2.networksAt", { name: exchangeById(exchange)!.name })}</h3>
       <div className="shop-grid mkt-flat">
         {askable.map((p) => {
           const session = n.sessions.find((x) => x.peer === p.id && x.exchange === exchange);
           let state: ReactNode;
-          if (session) state = <span className="pill ok">Peering</span>;
-          else if (coolingDown(game, p.id)) state = <span className="pill">Declined</span>;
-          else state = <button className="btn primary" onClick={() => act(requestPeering, p.id, exchange)}>Ask</button>;
+          if (session) state = <span className="pill ok">{t("locations-2.peering")}</span>;
+          else if (coolingDown(game, p.id)) state = <span className="pill">{t("locations-2.declined")}</span>;
+          else state = <button className="btn primary" onClick={() => act(requestPeering, p.id, exchange)}>{t("locations-2.ask")}</button>;
           return (
             <div key={p.id} className="shop-card">
               <div className="mkt-head"><strong>{p.name}</strong></div>
               <PeerFacts p={p} />
-              <div className="shop-buy"><span className="num">{session ? "" : `${pct(acceptChance(game, p))} chance`}</span><span className="grow" />{state}</div>
+              <div className="shop-buy"><span className="num">{session ? "" : t("locations-2.chance", { pct: pct(acceptChance(game, p)) })}</span><span className="grow" />{state}</div>
             </div>
           );
         })}

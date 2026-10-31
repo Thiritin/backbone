@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { OOB_PORT, oobPorts, type DeviceModel } from "../../sim/10-catalog/hardware";
 import type { End } from "../../sim/50-state";
@@ -91,7 +92,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     if (!at.has(n)) {
       const k = n;
       out.push(
-        <g key={`e${k}`} className="rack-free" aria-label={`U${k} free`} {...press((el) => onFree(k, el))}>
+        <g key={`e${k}`} className="rack-free" aria-label={t("art.rackFree", { n: k })} {...press((el) => onFree(k, el))}>
           <text x={pad - 8} y={y + u / 2 + fs * 0.35} textAnchor="end" fontFamily={MONO} fontSize={fs} fill={DIM}>{k}</text>
           <rect x={pad} y={y + 0.5} width={w} height={u - 1} rx="1" fill="oklch(0.2 0.006 255)" stroke="oklch(0.27 0.006 255)" strokeWidth="0.6" />
           {[pad + 6, pad + w - 6].map((cx) => <circle key={cx} cx={cx} cy={y + u / 2} r="1.6" fill="oklch(0.3 0.006 255)" />)}
@@ -226,7 +227,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
   const cords: ReactNode[] = [];
   for (const { it, y: py, h } of placed.values()) {
     psuInlets(it.model, side, w, h).forEach((p, k) => {
-      if (it.plugs?.[k]) cords.push(<g key={`${it.id}p${k}`} aria-label={`${it.name} power cord ${k + 1}`}><Cord x={pad + p.x} y={top + py + p.y} mm={p.mm} x0={pad - 4} /></g>);
+      if (it.plugs?.[k]) cords.push(<g key={`${it.id}p${k}`} aria-label={t("art.powerCord", { name: it.name, n: k + 1 })}><Cord x={pad + p.x} y={top + py + p.y} mm={p.mm} x0={pad - 4} /></g>);
     });
   }
 
@@ -290,7 +291,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
 
   if (onPlug) for (const { it, y: py, h } of placed.values()) {
     psuInlets(it.model, side, w, h).forEach((p, k) => {
-      const bw = 30 * p.mm, bh = 22 * p.mm, label = `${it.plugs?.[k] ? "Unplug" : "Plug in"} power supply ${k + 1}`;
+      const bw = 30 * p.mm, bh = 22 * p.mm, label = t(it.plugs?.[k] ? "art.unplugPsu" : "art.plugInPsu", { n: k + 1 });
       hits.push(
         <rect key={`${it.id}i${k}`} className="rack-port rack-inlet" role="button" tabIndex={0} aria-label={label} x={pad + p.x - bw / 2 - 1} y={top + py + p.y - bh / 2 - 1} width={bw + 2} height={bh + 2} rx="1"
           onClick={() => onPlug(it.id, k)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPlug(it.id, k); } }}><title>{label}</title></rect>,
@@ -299,7 +300,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
   }
 
   return (
-    <svg ref={svg} className={`device-svg rack-svg${drag ? " dragging" : ""}`} width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="group" aria-label={back ? "Rack back" : "Rack front"}>
+    <svg ref={svg} className={`device-svg rack-svg${drag ? " dragging" : ""}`} width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="group" aria-label={back ? t("art.rackBack") : t("art.rackFront")}>
       <Defs />
       {boxes.map(({ r, x, y: by, bw, bh }) => (
         <g key={r.id} className="rack-remote" aria-label={r.title}>
@@ -325,7 +326,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
         <rect x={pad - 6} y="-2" width="5" height={y + 4} rx="1" fill="var(--metal-2)" />
         <rect x={rail} y="-2" width="5" height={y + 4} rx="1" fill="var(--metal-2)" />
         {back && (
-          <g aria-label="Cable channel">
+          <g aria-label={t("art.cableChannel")}>
             <rect x={rail + 8} y="-2" width={channel - 10} height={y + 4} rx="2" fill="oklch(0.11 0.004 255)" />
             {Array.from({ length: units }, (_, k) => [rail + 8, rail + channel - 5].map((x) => <rect key={`${k}-${x}`} x={x} y={k * u + 3} width="3" height={u - 6} rx="1" fill="var(--metal-2)" />))}
           </g>

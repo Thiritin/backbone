@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { TriangleAlert } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -21,7 +22,7 @@ export function Confirm({ title, text, action, onCancel, onConfirm }: Props) {
         <h2 id="alert-title">{title}</h2>
         <p id="alert-text">{text}</p>
         <div className="alert-actions">
-          <button ref={cancel} className="btn" onClick={onCancel}>Cancel</button>
+          <button ref={cancel} className="btn" onClick={onCancel}>{t("desktop.cancel")}</button>
           <button className="btn danger-fill" onClick={() => { uiSound("trash"); onConfirm(); }}>{action}</button>
         </div>
       </div>

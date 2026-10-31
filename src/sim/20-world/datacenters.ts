@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 // Values come from docs/design/economy.md (Datacenters and space).
 import { hashRng, rand } from "../00-core/rng";
 import { businessPowerPrice } from "../10-catalog/economy";
@@ -195,7 +196,7 @@ export const HOME_LINES: HomeLine[] = [
 ];
 export const DEFAULT_HOME_LINE = "dsl-16";
 // The basement before its first line goes live.
-export const NO_LINE: HomeLine = { id: "", isp: "", name: "No line", down: 0, up: 0, monthly: 0, from: 2005, installDays: 0, staticIp: false };
+export const NO_LINE: HomeLine = { id: "", isp: "", get name() { return t("sim.line.none"); }, down: 0, up: 0, monthly: 0, from: 2005, installDays: 0, staticIp: false };
 // The private line at Mom's that a new game starts on. Mom pays for it, so it never shows up on the ledger, and it cannot be ordered back.
 export const MOMS_DSL: HomeLine = { id: "moms-dsl", isp: "Deutsche Telekomm", name: "Mom's DSL", down: 6, up: 0.5, monthly: 0, from: 2005, installDays: 0, staticIp: false };
 export const homeLineById = (id: string): HomeLine => (id === MOMS_DSL.id ? MOMS_DSL : HOME_LINES.find((l) => l.id === id) ?? NO_LINE);

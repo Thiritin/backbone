@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { ShieldAlert, TriangleAlert } from "lucide-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -19,18 +20,18 @@ function body(game: GameState, key: string): { rows: Row[]; source?: string } {
     return {
       source: SOURCE[ADVISORY_KEYS.indexOf(key)],
       rows: [
-        ["Affected nodes", String(advisoryNodes(game).filter((n) => vulnerable(game, n)).length)],
-        ["Compromised", String(game.security.hacked.length)],
+        [t("desktop.alert.affectedNodes"), String(advisoryNodes(game).filter((n) => vulnerable(game, n)).length)],
+        [t("desktop.alert.compromised"), String(game.security.hacked.length)],
       ],
     };
   }
-  if (key === "event.cashNegative") return { rows: [["Balance", euroCents(game.cash)]] };
+  if (key === "event.cashNegative") return { rows: [[t("desktop.alert.balance"), euroCents(game.cash)]] };
   if (key === "event.loanMissed" || key === "event.loanCalled") {
-    return { rows: [["Open loans", euroCents(game.loans.reduce((n, l) => n + l.balance, 0))]] };
+    return { rows: [[t("desktop.alert.openLoans"), euroCents(game.loans.reduce((n, l) => n + l.balance, 0))]] };
   }
   if (key === "event.breach") {
     const b = openBreach(game);
-    return { rows: b ? [["Host", game.clusters.find((c) => c.id === b.hostId)?.name ?? ""], ["Demand", euroCents(b.ransom)]] : [] };
+    return { rows: b ? [[t("desktop.alert.host"), game.clusters.find((c) => c.id === b.hostId)?.name ?? ""], [t("desktop.alert.demand"), euroCents(b.ransom)]] : [] };
   }
   return { rows: [] };
 }
@@ -73,9 +74,9 @@ export function AlertSheet({ alert }: { alert: Banner }) {
           </dl>
         )}
         <div className="alert-actions">
-          <button className="btn" onClick={() => closeAlert(true)}>Continue</button>
-          {ALERT_WIKI[key] && <button className="btn" onClick={() => { closeAlert(false); openApp("Browser", { kind: "url", id: wikiUrl(ALERT_WIKI[key]) }); }}>Wiki</button>}
-          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, focus(game, key) ?? alert.focus); }}>Open {app}</button>
+          <button className="btn" onClick={() => closeAlert(true)}>{t("desktop.continue")}</button>
+          {ALERT_WIKI[key] && <button className="btn" onClick={() => { closeAlert(false); openApp("Browser", { kind: "url", id: wikiUrl(ALERT_WIKI[key]) }); }}>{t("desktop.alert.wiki")}</button>}
+          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, focus(game, key) ?? alert.focus); }}>{t("desktop.alert.open", { app })}</button>
         </div>
       </div>
     </div>,

@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { BookOpen, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { CSSProperties, PointerEvent as RPointerEvent } from "react";
@@ -31,7 +32,7 @@ export function DesktopIcons() {
     const context = (e: MouseEvent) => {
       if (!(e.target as Element).closest(".wallpaper-host")) return;
       e.preventDefault();
-      openMenu(e.clientX, e.clientY, [{ label: "New note", run: () => newNote({ x: e.clientX - ICON_W / 2, y: e.clientY - 32 }) }]);
+      openMenu(e.clientX, e.clientY, [{ label: t("desktop.icon.newNote"), run: () => newNote({ x: e.clientX - ICON_W / 2, y: e.clientY - 32 }) }]);
     };
     window.addEventListener("pointerdown", clear);
     window.addEventListener("contextmenu", context);
@@ -100,13 +101,13 @@ export function DesktopIcons() {
             onPointerDown={(e) => grab(e, d)}
             onDoubleClick={() => openDoc(d.id)}
             onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && openDoc(d.id)}
-            onContextMenu={menuOn(() => [{ label: "Open", run: () => openDoc(d.id) }, d.kind !== "app" && { label: "Rename", run: () => setRenaming(d.id) }, null, { label: "Move to Trash", run: () => setTrash(d) }])}
+            onContextMenu={menuOn(() => [{ label: t("desktop.icon.open"), run: () => openDoc(d.id) }, d.kind !== "app" && { label: t("desktop.icon.rename"), run: () => setRenaming(d.id) }, null, { label: t("desktop.icon.trash"), run: () => setTrash(d) }])}
           >
             {app ? <span className="dock-tile" style={{ "--tile": app.tile } as CSSProperties}><Icon /></span> : <span className={`di-page di-${d.kind}`}><Icon /></span>}
             {renaming === d.id ? (
               <input
                 className="di-rename"
-                aria-label="Title"
+                aria-label={t("desktop.icon.title")}
                 defaultValue={d.title}
                 maxLength={80}
                 autoFocus
@@ -125,9 +126,9 @@ export function DesktopIcons() {
       })}
       {trash && (
         <Confirm
-          title={`Move “${trash.title}” to the Trash?`}
-          text={trash.kind === "guide" ? "The guide is removed from the desktop." : trash.kind === "app" ? "The link is removed from the desktop." : "The note and its text are deleted."}
-          action="Move to Trash"
+          title={t("desktop.icon.trashTitle", { title: trash.title })}
+          text={t(trash.kind === "guide" ? "desktop.icon.trashGuide" : trash.kind === "app" ? "desktop.icon.trashApp" : "desktop.icon.trashNote")}
+          action={t("desktop.icon.trash")}
           onCancel={() => setTrash(null)}
           onConfirm={() => remove(trash)}
         />

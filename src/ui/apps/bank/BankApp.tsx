@@ -9,9 +9,10 @@ import { More } from "../More";
 import { formatDay } from "../billing/BillingApp";
 import "../shop/shop.css";
 import "./bank.css";
+import { t } from "../../../i18n/en";
 
 const pct = (r: number) => `${(r * 100).toFixed(2)}%`;
-const term = (y: number) => `${y} ${y === 1 ? "year" : "years"}`;
+const term = (y: number) => t("misc2.year", { n: y });
 
 export function BankApp() {
   const game = useStore((s) => s.game);
@@ -26,23 +27,23 @@ export function BankApp() {
     <div className="shop">
       <div className="shop-main">
         <div className="shop-bar">
-          <div className="seg" role="group" aria-label="Term">
+          <div className="seg" role="group" aria-label={t("misc2.term")}>
             {LOAN_YEARS.map((y) => <button key={y} aria-pressed={years === y} onClick={() => setYears(y)}>{term(y)}</button>)}
           </div>
           <span className="grow" />
-          <span className="bank-limit">Available <strong className="num">{euro(blocked ? 0 : limit)}</strong></span>
+          <span className="bank-limit">{t("misc2.available", { amount: euro(blocked ? 0 : limit) })}</span>
         </div>
         <div className="bank-scroll">
           {game.loans.length > 0 && <>
-            <h3 className="bank-h">Your loans</h3>
+            <h3 className="bank-h">{t("misc2.yourLoans")}</h3>
             <div className="shop-grid">{game.loans.map((l) => <LoanCard key={l.id} loan={l} />)}</div>
           </>}
-          <h3 className="bank-h">Offers</h3>
+          <h3 className="bank-h">{t("misc2.offers")}</h3>
           <div className="shop-grid">
             {amounts.map((a) => <Offer key={a} amount={a} rate={rate} years={years} />)}
             {!amounts.length && (
               <div className="shop-none">
-                {blocked ? `The bank lends again from ${formatDay(game.loansBlockedUntil)}.` : "Your loans use the whole limit."}
+                {blocked ? t("misc2.lendsAgain", { date: formatDay(game.loansBlockedUntil) }) : t("misc2.limitUsed")}
               </div>
             )}
           </div>
@@ -62,14 +63,14 @@ function Offer({ amount, rate, years }: { amount: number; rate: number; years: n
         <span>{term(years)}</span>
       </div>
       <dl className="shop-specs">
-        <div><dt>Interest rate</dt><dd className="num">{pct(rate)}</dd></div>
-        <div><dt>Monthly instalment</dt><dd className="num">{euroCents(payment)}</dd></div>
-        <div><dt>Total interest</dt><dd className="num">{euroCents(payment * years * 12 - amount)}</dd></div>
-        <div><dt>Instalments</dt><dd className="num">{years * 12}</dd></div>
+        <div><dt>{t("misc2.interestRate")}</dt><dd className="num">{pct(rate)}</dd></div>
+        <div><dt>{t("misc2.instalment")}</dt><dd className="num">{euroCents(payment)}</dd></div>
+        <div><dt>{t("misc2.totalInterest")}</dt><dd className="num">{euroCents(payment * years * 12 - amount)}</dd></div>
+        <div><dt>{t("misc2.instalments")}</dt><dd className="num">{years * 12}</dd></div>
       </dl>
       <div className="shop-buy">
         <span className="grow" />
-        <button className="btn primary" onClick={() => act(takeLoan, amount, years)}><HandCoins />Take loan</button>
+        <button className="btn primary" onClick={() => act(takeLoan, amount, years)}><HandCoins />{t("misc2.takeLoan")}</button>
       </div>
     </div>
   );
@@ -77,22 +78,22 @@ function Offer({ amount, rate, years }: { amount: number; rate: number; years: n
 
 function LoanCard({ loan }: { loan: Loan }) {
   const act = useStore((s) => s.act);
-  const menu = () => [{ label: "Repay", run: () => act(repayLoan, loan.id) }];
+  const menu = () => [{ label: t("misc2.repay"), run: () => act(repayLoan, loan.id) }];
   return (
     <div className="shop-card" onContextMenu={menuOn(menu)}>
       <div className="shop-name">
         <strong className="num bank-amount">{euro(loan.amount)}</strong>
-        <span>Taken {formatDay(loan.takenAt)}</span>
+        <span>{t("misc2.taken", { date: formatDay(loan.takenAt) })}</span>
       </div>
       <dl className="shop-specs">
-        <div><dt>Remaining</dt><dd className="num">{euroCents(loan.balance)}</dd></div>
-        <div><dt>Monthly instalment</dt><dd className="num">{euroCents(loan.payment)}</dd></div>
-        <div><dt>Instalments left</dt><dd className="num">{loan.left}</dd></div>
-        <div><dt>Interest rate</dt><dd className="num">{pct(loan.rate)}</dd></div>
+        <div><dt>{t("misc2.remaining")}</dt><dd className="num">{euroCents(loan.balance)}</dd></div>
+        <div><dt>{t("misc2.instalment")}</dt><dd className="num">{euroCents(loan.payment)}</dd></div>
+        <div><dt>{t("misc2.instalmentsLeft")}</dt><dd className="num">{loan.left}</dd></div>
+        <div><dt>{t("misc2.interestRate")}</dt><dd className="num">{pct(loan.rate)}</dd></div>
       </dl>
       <div className="shop-buy">
         <span className="grow" />
-        <More label={`loan of ${euro(loan.amount)}`} entries={menu} />
+        <More label={t("misc2.loanOf", { amount: euro(loan.amount) })} entries={menu} />
       </div>
     </div>
   );

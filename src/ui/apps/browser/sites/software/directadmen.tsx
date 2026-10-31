@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Commands, Features, Nav, Pricing, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./directadmen.css";
@@ -9,23 +10,23 @@ export function DirectAdmen(props: SiteProps) {
     return (
       <div className="sw sw-directadmen late">
         <header><span className="sw-wm"><SiteMark id="directadmen" name={p.name} size={26} /> DirectAdmen</span><Nav {...props} /></header>
-        <div className="hero"><h1>{p.site.tagline}.</h1><p>{p.site.blurb}</p></div>
-        <section><h2>Features</h2><Features p={p} className="grid" /></section>
-        <section><h2>Pricing</h2><Pricing p={p} /></section>
-        <section><h2>Install</h2><Commands p={p} year={year} /></section>
-        <footer>© {year} JBMC Softwhere</footer>
+        <div className="hero"><h1>{t("browser-sites-1.da.tagLate", { tagline: p.site.tagline })}</h1><p>{p.site.blurb}</p></div>
+        <section><h2>{t("browser-sites-1.da.features")}</h2><Features p={p} className="grid" /></section>
+        <section><h2>{t("browser-sites-1.da.pricing")}</h2><Pricing p={p} /></section>
+        <section><h2>{t("browser-sites-1.da.install")}</h2><Commands p={p} year={year} /></section>
+        <footer>{t("browser-sites-1.da.footer", { year })}</footer>
       </div>
     );
   }
   return (
     <div className="sw sw-directadmen early">
-      <h1><SiteMark id="directadmen" name={p.name} size={20} /> DirectAdmen Web Control Panel</h1>
+      <h1><SiteMark id="directadmen" name={p.name} size={20} /> {t("browser-sites-1.da.title")}</h1>
       <Nav {...props} className="links" />
       <hr />
-      {props.page === "home" && <p><i>{p.site.tagline}!</i></p>}
+      {props.page === "home" && <p><i>{t("browser-sites-1.da.tagEarly", { tagline: p.site.tagline })}</i></p>}
       <Body {...props} />
       <hr />
-      <p className="upd">Page last updated: June 12, 2003</p>
+      <p className="upd">{t("browser-sites-1.da.updated")}</p>
     </div>
   );
 }

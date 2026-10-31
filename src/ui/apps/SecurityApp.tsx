@@ -31,9 +31,9 @@ export const advisoryOf = (game: GameState) => {
 // Taking a panel host's sites offline, back online, or cleaning them up after a breach.
 export function sitesMenu(game: GameState, host: Cluster): MenuEntry[] {
   const act = useStore.getState().act, sec = game.security;
-  if (sec.hacked.includes(host.id)) return [{ label: "Clean up sites", run: () => act(cleanUp, host.id) }];
+  if (sec.hacked.includes(host.id)) return [{ label: t("apps.security.sitesCleanUp"), run: () => act(cleanUp, host.id) }];
   const off = sec.offline.includes(host.id);
-  return [{ label: off ? "Bring sites online" : "Take sites offline", run: () => act(setSitesOffline, host.id, !off) }];
+  return [{ label: off ? t("apps.security.sitesOnline") : t("apps.security.sitesOffline"), run: () => act(setSitesOffline, host.id, !off) }];
 }
 
 function NodeRow({ game, n }: { game: GameState; n: Cluster }) {
@@ -42,8 +42,8 @@ function NodeRow({ game, n }: { game: GameState; n: Cluster }) {
   const hacked = sec.hacked.includes(n.id), offline = sec.offline.includes(n.id);
   const open = vulnerable(game, n);
   const patch = open && patchOut(game) && phpDue(game, n);
-  const menu = (): MenuEntry[] => [...sitesMenu(game, n), patch && { label: "Patch PHP", run: () => act(upgradePhp, n.id) }];
-  const [state, tone] = hacked ? ["Compromised", "bad"] : offline ? ["Offline", "warn"] : open ? ["Online", "accent"] : ["Online", "ok"];
+  const menu = (): MenuEntry[] => [...sitesMenu(game, n), patch && { label: t("apps.security.patchPhp"), run: () => act(upgradePhp, n.id) }];
+  const [state, tone] = hacked ? [t("apps.compromised"), "bad"] : offline ? [t("apps.offline"), "warn"] : open ? [t("apps.online"), "accent"] : [t("apps.online"), "ok"];
   return (
     <tr onContextMenu={menuOn(menu)}>
       <td>{n.name}</td>
@@ -51,11 +51,11 @@ function NodeRow({ game, n }: { game: GameState; n: Cluster }) {
       <td className="num">{n.php}</td>
       <td className="r num">{webOn(game, n.id).length}</td>
       <td><span className={`pill ${tone}`}>{state}</span></td>
-      <td><span className={`pill ${open ? "warn" : "ok"}`}>{open ? "Unpatched" : "Patched"}</span></td>
+      <td><span className={`pill ${open ? "warn" : "ok"}`}>{open ? t("apps.unpatched") : t("apps.patched")}</span></td>
       <td className="r">
         <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
-          {hacked && <button className="btn" onClick={() => act(cleanUp, n.id)}>Clean up</button>}
-          {open && <button className="btn" disabled={!patchOut(game) || !phpDue(game, n)} onClick={() => act(upgradePhp, n.id)}>Patch</button>}
+          {hacked && <button className="btn" onClick={() => act(cleanUp, n.id)}>{t("apps.cleanUp")}</button>}
+          {open && <button className="btn" disabled={!patchOut(game) || !phpDue(game, n)} onClick={() => act(upgradePhp, n.id)}>{t("apps.patch")}</button>}
           {open && patchOut(game) && at && <TechButton game={game} deviceId={at} kind="php" />}
           <More label={n.name} entries={menu} />
         </span>
@@ -71,14 +71,14 @@ function Compromised({ game, skip }: { game: GameState; skip: Cluster[] }) {
   if (!hosts.length) return null;
   return (
     <table className="table">
-      <thead><tr><th>Compromised host</th><th>Server</th><th /></tr></thead>
+      <thead><tr><th>{t("apps.security.compromisedHost")}</th><th>{t("apps.server")}</th><th /></tr></thead>
       <tbody>{hosts.map((c) => {
         const d = game.devices.find((x) => x.id === anchorOf(game, c));
         return (
-          <tr key={c.id} onContextMenu={menuOn(() => [{ label: "Clean up", run: () => act(cleanUp, c.id) }])}>
+          <tr key={c.id} onContextMenu={menuOn(() => [{ label: t("apps.cleanUp"), run: () => act(cleanUp, c.id) }])}>
             <td>{c.name}</td>
             <td>{d && devName(d)}</td>
-            <td className="r"><button className="btn" onClick={() => act(cleanUp, c.id)}>Clean up</button></td>
+            <td className="r"><button className="btn" onClick={() => act(cleanUp, c.id)}>{t("apps.cleanUp")}</button></td>
           </tr>
         );
       })}</tbody>
@@ -87,21 +87,21 @@ function Compromised({ game, skip }: { game: GameState; skip: Cluster[] }) {
 }
 
 const outcomeOf = (b: Breach): string =>
-  b.decision === null ? "Open" : !b.sold ? "Data kept" : b.fine === null ? "Sold, fine pending" : b.fine === 0 ? "Sold, no fine" : `Sold, fined ${euro(b.fine)}`;
+  b.decision === null ? t("apps.security.outcomeOpen") : !b.sold ? t("apps.security.outcomeKept") : b.fine === null ? t("apps.security.outcomePending") : b.fine === 0 ? t("apps.security.outcomeNoFine") : t("apps.security.outcomeFined", { amount: euro(b.fine) });
 
 function Breaches({ game }: { game: GameState }) {
   return (
     <section className="fin-card" style={{ margin: 14 }}>
-      <h3 className="fin-card-h">Breaches</h3>
+      <h3 className="fin-card-h">{t("apps.security.breaches")}</h3>
       <table className="table">
-        <thead><tr><th>Date</th><th>Host</th><th className="r">Ransom</th><th>Decision</th><th>Outcome</th></tr></thead>
+        <thead><tr><th>{t("apps.date")}</th><th>{t("apps.host")}</th><th className="r">{t("apps.security.ransom")}</th><th>{t("apps.security.decision")}</th><th>{t("apps.security.outcome")}</th></tr></thead>
         <tbody>
           {[...game.breaches].reverse().map((b) => (
             <tr key={b.ticketId}>
               <td className="num">{formatClock(b.hour)}</td>
               <td>{game.clusters.find((c) => c.id === b.hostId)?.name ?? b.hostId}</td>
               <td className="r num">{euro(b.ransom)}</td>
-              <td>{b.decision === null ? "Undecided" : b.decision === "pay" ? "Paid" : "Refused"}</td>
+              <td>{b.decision === null ? t("apps.security.undecided") : b.decision === "pay" ? t("apps.security.paid") : t("apps.security.refused")}</td>
               <td>{outcomeOf(b)}</td>
             </tr>
           ))}
@@ -112,24 +112,24 @@ function Breaches({ game }: { game: GameState }) {
 }
 
 // The software with an open high or critical vulnerability and its update, shown without Monitoring.
-const SEVERITY: Record<Severity, [tone: string, name: string]> = { low: ["accent", "Low"], high: ["warn", "High"], critical: ["bad", "Critical"] };
+const SEVERITY: Record<Severity, [tone: string, name: string]> = { low: ["accent", t("apps.severity.low")], high: ["warn", t("apps.severity.high")], critical: ["bad", t("apps.severity.critical")] };
 
 const SoftwareCard = ({ game, cardRef }: { game: GameState; cardRef: React.RefObject<HTMLElement | null> }) => {
   const act = useStore((s) => s.act), rows = urgentSoftware(game);
   return (
     <section ref={cardRef} className="fin-card" style={{ margin: 14 }}>
-      <h3 className="fin-card-h">Software</h3>
-      {rows.length === 0 ? <div className="fin-card-b">No open vulnerabilities</div> : (
+      <h3 className="fin-card-h">{t("apps.software")}</h3>
+      {rows.length === 0 ? <div className="fin-card-b">{t("apps.security.noVulns")}</div> : (
         <table className="table">
-          <thead><tr><th>Software</th><th>Host</th><th>Severity</th><th className="r">Exposed</th><th /></tr></thead>
+          <thead><tr><th>{t("apps.software")}</th><th>{t("apps.host")}</th><th>{t("apps.severity")}</th><th className="r">{t("apps.exposed")}</th><th /></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.clusterId}>
                 <td>{r.software}</td>
                 <td>{r.host}</td>
                 <td><span className={`pill ${SEVERITY[r.worst][0]}`}>{SEVERITY[r.worst][1]}</span></td>
-                <td className="r num">{r.days} d</td>
-                <td className="r"><button className="btn" onClick={() => act(updateSoftware, r.clusterId)}>Update</button></td>
+                <td className="r num">{t("apps.days", { n: r.days })}</td>
+                <td className="r"><button className="btn" onClick={() => act(updateSoftware, r.clusterId)}>{t("apps.update")}</button></td>
               </tr>
             ))}
           </tbody>
@@ -145,9 +145,9 @@ function ManagementCard({ game }: { game: GameState }) {
   if (!rows.length) return null;
   return (
     <section className="fin-card" style={{ margin: 14 }}>
-      <h3 className="fin-card-h">Management access</h3>
+      <h3 className="fin-card-h">{t("apps.security.management")}</h3>
       <table className="table">
-        <thead><tr><th>Device</th><th>Model</th><th>Firmware</th><th>Severity</th><th className="r">Exposed</th><th /></tr></thead>
+        <thead><tr><th>{t("apps.device")}</th><th>{t("apps.model")}</th><th>{t("apps.security.firmware")}</th><th>{t("apps.severity")}</th><th className="r">{t("apps.exposed")}</th><th /></tr></thead>
         <tbody>
           {rows.map((d) => {
             const top = firmwareVulns(game, d)[0];
@@ -156,9 +156,9 @@ function ManagementCard({ game }: { game: GameState }) {
                 <td>{devName(d)}</td>
                 <td>{modelById(d.model).name}</td>
                 <td className="num">{d.fw?.version}</td>
-                <td>{top ? <span className={`pill ${SEVERITY[top.severity][0]}`}>{SEVERITY[top.severity][1]}</span> : <span className="pill ok">Patched</span>}</td>
-                <td className="r num">{top ? `${top.days} d` : ""}</td>
-                <td className="r"><button className="btn" disabled={!firmwareDue(game, d)} onClick={() => act(updateFirmware, d.id)}>Update firmware</button></td>
+                <td>{top ? <span className={`pill ${SEVERITY[top.severity][0]}`}>{SEVERITY[top.severity][1]}</span> : <span className="pill ok">{t("apps.patched")}</span>}</td>
+                <td className="r num">{top ? t("apps.days", { n: top.days }) : ""}</td>
+                <td className="r"><button className="btn" disabled={!firmwareDue(game, d)} onClick={() => act(updateFirmware, d.id)}>{t("apps.security.updateFirmware")}</button></td>
               </tr>
             );
           })}
@@ -183,10 +183,10 @@ export function SecurityApp() {
     <div className="fin">
       <div className="fin-main">
         <div className="vm-tools">
-          <div className="seg" role="group" aria-label="View">
-            <button aria-pressed={view === "advisories"} onClick={() => setTab("advisories")}>Advisories</button>
-            <button aria-pressed={view === "incidents"} onClick={() => setTab("incidents")}>Incidents{open > 0 && <> <span className="num">{open}</span></>}</button>
-            {monitored && <button aria-pressed={view === "monitoring"} onClick={() => setTab("monitoring")}>Monitoring</button>}
+          <div className="seg" role="group" aria-label={t("apps.security.view")}>
+            <button aria-pressed={view === "advisories"} onClick={() => setTab("advisories")}>{t("apps.security.advisories")}</button>
+            <button aria-pressed={view === "incidents"} onClick={() => setTab("incidents")}>{t("apps.security.incidents")}{open > 0 && <> <span className="num">{open}</span></>}</button>
+            {monitored && <button aria-pressed={view === "monitoring"} onClick={() => setTab("monitoring")}>{t("apps.security.monitoring")}</button>}
           </div>
         </div>
         {view === "monitoring" && <div className="fin-scroll"><MonitoringTab game={game} /></div>}
@@ -196,16 +196,16 @@ export function SecurityApp() {
             <b>{a.title}</b>
             <span className="pill">PHP <span className="num">{a.versions}</span></span>
             <span className="grow" />
-            <span>Patch <span className="num">{a.patchAt}</span></span>
+            <span>{t("apps.security.patchAt")} <span className="num">{a.patchAt}</span></span>
           </div>
         )}
         {view === "advisories" && <div className="fin-scroll">
           <Compromised game={game} skip={nodes} />
           <SoftwareCard game={game} cardRef={card} />
           <ManagementCard game={game} />
-          {nodes.length === 0 ? !game.breaches.length && <div className="fin-empty"><ShieldCheck />No affected panel hosts</div> : (
+          {nodes.length === 0 ? !game.breaches.length && <div className="fin-empty"><ShieldCheck />{t("apps.security.noHosts")}</div> : (
             <table className="table">
-              <thead><tr><th>Panel host</th><th>Server</th><th>PHP</th><th className="r">Sites</th><th>Sites state</th><th>Patch</th><th /></tr></thead>
+              <thead><tr><th>{t("apps.security.panelHost")}</th><th>{t("apps.server")}</th><th>PHP</th><th className="r">{t("apps.sites")}</th><th>{t("apps.security.sitesState")}</th><th>{t("apps.patch")}</th><th /></tr></thead>
               <tbody>{nodes.map((n) => <NodeRow key={n.id} game={game} n={n} />)}</tbody>
             </table>
           )}

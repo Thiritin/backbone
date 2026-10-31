@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { yearOf } from "../../../../../sim/00-core/time";
+import { t } from "../../../../../i18n/en";
 import { useStore } from "../../../../store";
 import type { GameState } from "../../../../../sim/50-state";
 import { vmStats } from "../../../../../sim/60-infra/stats";
@@ -10,9 +11,10 @@ import "./hypervee.css";
 
 // docs/design/software.md, section 9: the glossy MMC from 2008, the same MMC with flat chrome from 2012.
 const ERAS = erasFrom(2008, 2012);
-const LABELS: Record<string, string> = { start: "Start", stop: "Shut Down...", reset: "Reset", restore: "Restore", recover: "Recover", migrate: "Move...", resize: "Settings...", console: "Connect...", delete: "Delete..." };
+const LABELS: Record<string, string> = { start: t("browser-consoles-1.hvStart"), stop: t("browser-consoles-1.hvShutDown"), reset: t("browser-consoles-1.hvReset"), restore: t("browser-consoles-1.hvRestore"), recover: t("browser-consoles-1.hvRecover"), migrate: t("browser-consoles-1.hvMove"), resize: t("browser-consoles-1.hvSettingsDots"), console: t("browser-consoles-1.hvConnect"), delete: t("browser-consoles-1.hvDelete") };
 type Page = { kind: "list"; node: string | null } | { kind: "cluster" } | { kind: "settings"; id: string } | { kind: "new" } | { kind: "server" };
 const SETTINGS = ["BIOS", "Memory", "Processor", "DVD Drive", "Network Adapter", "Name", "Checkpoints"] as const;
+const SETTING_LABELS: Record<(typeof SETTINGS)[number], string> = { BIOS: t("browser-consoles-1.hvBios"), Memory: t("browser-consoles-1.memory"), Processor: t("browser-consoles-1.hvProcessor"), "DVD Drive": t("browser-consoles-1.hvDvdDrive"), "Network Adapter": t("browser-consoles-1.hvNetworkAdapter"), Name: t("browser-consoles-1.name"), Checkpoints: t("browser-consoles-1.hvCheckpoints") };
 
 function ActionsPane({ title, actions }: { title: string; actions: (PanelAction | false)[] }) {
   return (
@@ -26,6 +28,7 @@ function ActionsPane({ title, actions }: { title: string; actions: (PanelAction 
 const mb = (gb: number) => `${Math.round(gb * 1024)} MB`;
 const uptime = (h: number | null) => (h === null ? "00:00:00" : `${h >= 24 ? `${Math.floor(h / 24)}.` : ""}${String(h % 24).padStart(2, "0")}:00:00`);
 const TABS = ["Summary", "Memory", "Networking", "Replication"] as const;
+const TAB_LABELS: Record<(typeof TABS)[number], string> = { Summary: t("browser-consoles-1.hvSummary"), Memory: t("browser-consoles-1.memory"), Networking: t("browser-consoles-1.hvNetworking"), Replication: t("browser-consoles-1.hvReplication") };
 
 // The details pane under the VM list: the tabs Summary, Memory, Networking and Replication.
 export function VmDetails({ game, v, generations }: { game: GameState; v: Vm; generations: boolean }) {
@@ -37,33 +40,33 @@ export function VmDetails({ game, v, generations }: { game: GameState; v: Vm; ge
         <div className="hv-sum">
           <ConsoleThumb game={game} v={v} className="cx-thumb hv-thumb" />
           <table className="hv-kv"><tbody>
-            {row("Name", v.name)}
-            {generations && row("Generation", "1")}
-            {row("Uptime", uptime(st.uptimeHours))}
-            {row("Heartbeat", on && w.os ? "OK" : "No Contact")}
-            {row("Assigned Memory", on ? mb(w.ramGb) : "")}
-            {row("Memory Demand", on ? mb(st.now.ram * w.ramGb) : "")}
-            {row("Status", v.tone === "bad" ? v.state : "Operating normally")}
-            {row("IP Addresses", v.ip)}
+            {row(t("browser-consoles-1.name"), v.name)}
+            {generations && row(t("browser-consoles-1.hvGeneration"), "1")}
+            {row(t("browser-consoles-1.hvUptime"), uptime(st.uptimeHours))}
+            {row(t("browser-consoles-1.hvHeartbeat"), on && w.os ? t("browser-consoles-1.ok") : t("browser-consoles-1.hvNoContact"))}
+            {row(t("browser-consoles-1.hvAssignedMemory"), on ? mb(w.ramGb) : "")}
+            {row(t("browser-consoles-1.hvMemoryDemand"), on ? mb(st.now.ram * w.ramGb) : "")}
+            {row(t("browser-consoles-1.status"), v.tone === "bad" ? v.state : t("browser-consoles-1.hvOperatingNormally"))}
+            {row(t("browser-consoles-1.hvIpAddresses"), v.ip)}
           </tbody></table>
-          <Chart className="hv-chart" kind="line" title="CPU Usage" now={`${Math.round(st.now.cpu * 100)} %`} values={st.ring.map((x) => x.cpu)} end={game.hour} />
+          <Chart className="hv-chart" kind="line" title={t("browser-consoles-1.hvCpuUsage")} now={`${Math.round(st.now.cpu * 100)} %`} values={st.ring.map((x) => x.cpu)} end={game.hour} />
         </div>
       )}
       {tab === "Memory" && (
         <div className="hv-sum">
           <table className="hv-kv"><tbody>
-            {row("Startup Memory", mb(w.ramGb))}{row("Dynamic Memory", "Disabled")}
-            {row("Assigned Memory", on ? mb(w.ramGb) : "")}{row("Memory Demand", on ? mb(st.now.ram * w.ramGb) : "")}{row("Memory Status", on ? "OK" : "")}
+            {row(t("browser-consoles-1.hvStartupMemory"), mb(w.ramGb))}{row(t("browser-consoles-1.hvDynamicMemory"), t("browser-consoles-1.hvDisabled"))}
+            {row(t("browser-consoles-1.hvAssignedMemory"), on ? mb(w.ramGb) : "")}{row(t("browser-consoles-1.hvMemoryDemand"), on ? mb(st.now.ram * w.ramGb) : "")}{row(t("browser-consoles-1.hvMemoryStatus"), on ? t("browser-consoles-1.ok") : "")}
           </tbody></table>
-          <Chart className="hv-chart" kind="line" title="Memory Demand" now={on ? mb(st.now.ram * w.ramGb) : ""} values={st.ring.map((x) => x.ram)} end={game.hour} />
+          <Chart className="hv-chart" kind="line" title={t("browser-consoles-1.hvMemoryDemand")} now={on ? mb(st.now.ram * w.ramGb) : ""} values={st.ring.map((x) => x.ram)} end={game.hour} />
         </div>
       )}
       {tab === "Networking" && (
-        <table className="cx-table"><thead><tr><th>Adapter</th><th>Connected To</th><th>IP Addresses</th><th>Status</th></tr></thead>
-          <tbody><tr><td>Network Adapter</td><td>External Network</td><td className="num">{v.ip}</td><td>{on ? "OK" : ""}</td></tr></tbody></table>
+        <table className="cx-table"><thead><tr><th>{t("browser-consoles-1.hvAdapter")}</th><th>{t("browser-consoles-1.hvConnectedTo")}</th><th>{t("browser-consoles-1.hvIpAddresses")}</th><th>{t("browser-consoles-1.status")}</th></tr></thead>
+          <tbody><tr><td>{t("browser-consoles-1.hvNetworkAdapter")}</td><td>{t("browser-consoles-1.hvExternalNetwork")}</td><td className="num">{v.ip}</td><td>{on ? t("browser-consoles-1.ok") : ""}</td></tr></tbody></table>
       )}
-      {tab === "Replication" && <table className="hv-kv"><tbody>{row("Replication State", "Not enabled")}</tbody></table>}
-      <nav className="hv-dtabs">{TABS.map((x) => <button key={x} aria-pressed={x === tab} onClick={() => setTab(x)}>{x}</button>)}</nav>
+      {tab === "Replication" && <table className="hv-kv"><tbody>{row(t("browser-consoles-1.hvReplicationState"), t("browser-consoles-1.hvNotEnabled"))}</tbody></table>}
+      <nav className="hv-dtabs">{TABS.map((x) => <button key={x} aria-pressed={x === tab} onClick={() => setTab(x)}>{TAB_LABELS[x]}</button>)}</nav>
     </>
   );
 }
@@ -75,8 +78,8 @@ export function HyperVee(p: PanelProps) {
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c);
   if (!p.signedIn) return (
     <div className="cx hv hv-login" data-era={era}>
-      <LoginForm className="hv-card" onLogin={p.login} button="Connect">
-        <div className="hv-card-h">Connect to Server</div>
+      <LoginForm className="hv-card" onLogin={p.login} button={t("browser-consoles-1.hvConnectBtn")}>
+        <div className="hv-card-h">{t("browser-consoles-1.hvConnectToServer")}</div>
         <div className="cx-host">{p.host}</div>
       </LoginForm>
     </div>
@@ -90,49 +93,49 @@ export function HyperVee(p: PanelProps) {
   const vmActions = vm ? vm.actions.map((a) => (a.id === "resize" ? { ...a, run: () => setPage({ kind: "settings", id: vm.id }) } : a)) : [];
   return (
     <div className="cx cx-hv hv" data-era={era}>
-      <header className="hv-top"><span className="hv-title">HyperVee Manager</span><span className="cx-host">{p.host}</span><button className="hv-out" onClick={p.logout}>Disconnect</button></header>
-      <div className="hv-menu"><span>File</span><span>Action</span><span>View</span><span>Help</span></div>
+      <header className="hv-top"><span className="hv-title">{t("browser-consoles-1.hvManager")}</span><span className="cx-host">{p.host}</span><button className="hv-out" onClick={p.logout}>{t("browser-consoles-1.hvDisconnect")}</button></header>
+      <div className="hv-menu"><span>{t("browser-consoles-1.hvFile")}</span><span>{t("browser-consoles-1.hvAction")}</span><span>{t("browser-consoles-1.hvView")}</span><span>{t("browser-consoles-1.hvHelp")}</span></div>
       <div className="cx-hv-body">
         <aside className="cx-hv-tree hv-tree">
           <ul>
-            <li><button aria-pressed={page.kind === "list" && !page.node} onClick={() => setPage({ kind: "list", node: null })}><i>⧉</i>HyperVee Manager</button>
+            <li><button aria-pressed={page.kind === "list" && !page.node} onClick={() => setPage({ kind: "list", node: null })}><i>⧉</i>{t("browser-consoles-1.hvManager")}</button>
               <ul>{nodes.map((d) => <li key={d.id}><button aria-pressed={page.kind === "list" && page.node === d.id} onClick={() => setPage({ kind: "list", node: d.id })}><i>▦</i>{(d.hostname ?? d.name).toUpperCase()}</button></li>)}</ul>
             </li>
-            {f.cluster && <li><button aria-pressed={page.kind === "cluster"} onClick={() => setPage({ kind: "cluster" })}><i>⛁</i>Failover Cluster Manager</button></li>}
+            {f.cluster && <li><button aria-pressed={page.kind === "cluster"} onClick={() => setPage({ kind: "cluster" })}><i>⛁</i>{t("browser-consoles-1.hvFailoverClusterManager")}</button></li>}
           </ul>
         </aside>
         <main className="hv-mid">
           {page.kind === "list" && (
             <>
-              <h4 className="hv-h">Virtual Machines</h4>
+              <h4 className="hv-h">{t("browser-consoles-1.hvVirtualMachines")}</h4>
               <div className="hv-list">
                 <table className="cx-table">
-                  <thead><tr><th>Name</th><th>State</th><th>CPU Usage</th><th>Assigned Memory</th><th>Status</th></tr></thead>
+                  <thead><tr><th>{t("browser-consoles-1.name")}</th><th>{t("browser-consoles-1.hvState")}</th><th>{t("browser-consoles-1.hvCpuUsage")}</th><th>{t("browser-consoles-1.hvAssignedMemory")}</th><th>{t("browser-consoles-1.status")}</th></tr></thead>
                   <tbody>
-                    {list.length === 0 && <tr><td colSpan={5} className="cx-empty">No virtual machines were found on this server.</td></tr>}
+                    {list.length === 0 && <tr><td colSpan={5} className="cx-empty">{t("browser-consoles-1.hvNoVms")}</td></tr>}
                     {list.map((v) => (
                       <tr key={v.id} aria-selected={v.id === selId} onClick={() => setSelId(v.id)}>
-                        <td>{v.name}</td><td>{v.st === "stopped" ? "Off" : v.state}</td><td className="num">{Math.round((v.use.vcpu / Math.max(1, v.w.vcpu)) * 100)} %</td>
+                        <td>{v.name}</td><td>{v.st === "stopped" ? t("browser-consoles-1.hvOff") : v.state}</td><td className="num">{Math.round((v.use.vcpu / Math.max(1, v.w.vcpu)) * 100)} %</td>
                         <td className="num">{v.st === "stopped" ? "" : `${Math.round(v.w.ramGb * 1024)} MB`}</td><td>{v.sub}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <h4 className="hv-h">Resources</h4>
+              <h4 className="hv-h">{t("browser-consoles-1.hvResources")}</h4>
               <div className="hv-details">
-                <ResourceBars use={health.use} labels={["Processors", "Memory", "Storage"]} />
+                <ResourceBars use={health.use} labels={[t("browser-consoles-1.hvProcessors"), t("browser-consoles-1.memory"), t("browser-consoles-1.hvStorage")]} />
                 <AlarmList game={game} c={c} alarms={health.alarms} className="cx-table hv-events" />
               </div>
-              <h4 className="hv-h">{vm ? vm.name : "Details"}</h4>
+              <h4 className="hv-h">{vm ? vm.name : t("browser-consoles-1.hvDetails")}</h4>
               <div className="hv-details">
-                {vm ? <>{vm.panel}<VmDetails game={game} v={vm} generations={generations} /></> : <span className="cx-empty">No item selected.</span>}
+                {vm ? <>{vm.panel}<VmDetails game={game} v={vm} generations={generations} /></> : <span className="cx-empty">{t("browser-consoles-1.hvNoItem")}</span>}
               </div>
             </>
           )}
           {page.kind === "server" && (
             <>
-              <h4 className="hv-h">HyperVee Settings</h4>
+              <h4 className="hv-h">{t("browser-consoles-1.hvSettings")}</h4>
               <div className="hv-details">
                 <Facts facts={sw.facts} />
                 <Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
@@ -143,69 +146,69 @@ export function HyperVee(p: PanelProps) {
           )}
           {page.kind === "cluster" && (
             <>
-              <h4 className="hv-h">Nodes</h4><div className="hv-details"><NodeList game={game} c={c} f={f} /></div>
-              <h4 className="hv-h">Cluster Events ({cluster.alarms.length})</h4>
-              <div className="hv-details"><ResourceBars use={cluster.use} labels={["Processors", "Memory", "Storage"]} /><AlarmList game={game} c={c} alarms={cluster.alarms} className="cx-table hv-events" /></div>
+              <h4 className="hv-h">{t("browser-consoles-1.hvNodes")}</h4><div className="hv-details"><NodeList game={game} c={c} f={f} /></div>
+              <h4 className="hv-h">{t("browser-consoles-1.hvClusterEvents", { n: cluster.alarms.length })}</h4>
+              <div className="hv-details"><ResourceBars use={cluster.use} labels={[t("browser-consoles-1.hvProcessors"), t("browser-consoles-1.memory"), t("browser-consoles-1.hvStorage")]} /><AlarmList game={game} c={c} alarms={cluster.alarms} className="cx-table hv-events" /></div>
             </>
           )}
           {page.kind === "settings" && vm && facts && (
             <div className="hv-settings">
-              <h4 className="hv-h">Settings for {vm.name}</h4>
+              <h4 className="hv-h">{t("browser-consoles-1.hvSettingsFor", { name: vm.name })}</h4>
               <div className="hv-settings-body">
                 <ul className="hv-parts">
-                  <li className="hv-group">Hardware</li>
-                  {SETTINGS.slice(0, 5).map((x) => <li key={x}><button aria-pressed={part === x} onClick={() => setPart(x)}>{x}</button></li>)}
-                  <li className="hv-group">Management</li>
-                  {SETTINGS.slice(5).map((x) => <li key={x}><button aria-pressed={part === x} onClick={() => setPart(x)}>{x}</button></li>)}
+                  <li className="hv-group">{t("browser-consoles-1.hvHardware")}</li>
+                  {SETTINGS.slice(0, 5).map((x) => <li key={x}><button aria-pressed={part === x} onClick={() => setPart(x)}>{SETTING_LABELS[x]}</button></li>)}
+                  <li className="hv-group">{t("browser-consoles-1.hvManagement")}</li>
+                  {SETTINGS.slice(5).map((x) => <li key={x}><button aria-pressed={part === x} onClick={() => setPart(x)}>{SETTING_LABELS[x]}</button></li>)}
                 </ul>
                 <div className="hv-form">
-                  <b>{part}</b>
-                  {part === "BIOS" && <Facts facts={[{ label: "Startup order", value: vm.media ? "CD, IDE, Network" : "IDE, CD, Network" }]} />}
+                  <b>{SETTING_LABELS[part]}</b>
+                  {part === "BIOS" && <Facts facts={[{ label: t("browser-consoles-1.hvStartupOrder"), value: vm.media ? t("browser-consoles-1.hvOrderCd") : t("browser-consoles-1.hvOrderIde") }]} />}
                   {(part === "Memory" || part === "Processor") && vm.panel}
-                  {part === "Memory" && <Facts facts={[{ label: "Startup RAM", value: `${Math.round(vm.w.ramGb * 1024)} MB`, num: true }]} />}
-                  {part === "Processor" && <Facts facts={[{ label: "Number of virtual processors", value: String(vm.w.vcpu), num: true }]} />}
-                  {(part === "Memory" || part === "Processor") && vm.actions.some((a) => a.id === "resize") && !vm.panel && <button className="cx-btn" onClick={vm.actions.find((a) => a.id === "resize")!.run}>Change</button>}
+                  {part === "Memory" && <Facts facts={[{ label: t("browser-consoles-1.hvStartupRam"), value: `${Math.round(vm.w.ramGb * 1024)} MB`, num: true }]} />}
+                  {part === "Processor" && <Facts facts={[{ label: t("browser-consoles-1.hvVirtualProcessors"), value: String(vm.w.vcpu), num: true }]} />}
+                  {(part === "Memory" || part === "Processor") && vm.actions.some((a) => a.id === "resize") && !vm.panel && <button className="cx-btn" onClick={vm.actions.find((a) => a.id === "resize")!.run}>{t("browser-consoles-1.hvChange")}</button>}
                   {part === "DVD Drive" && (
                     <>
-                      <Facts facts={[{ label: "Controller", value: "IDE Controller 1" }, { ...facts.media, label: "Image file" }]} />
-                      <MediaMenu game={game} v={vm} label="Image file" none="None" />
+                      <Facts facts={[{ label: t("browser-consoles-1.hvController"), value: t("browser-consoles-1.hvIdeController") }, { ...facts.media, label: t("browser-consoles-1.hvImageFile") }]} />
+                      <MediaMenu game={game} v={vm} label={t("browser-consoles-1.hvImageFile")} none={t("browser-consoles-1.none")} />
                     </>
                   )}
-                  {part === "Network Adapter" && <Facts facts={[{ label: "Virtual switch", value: "External Network" }]} />}
-                  {part === "Name" && <Facts facts={[{ label: "Name", value: vm.name }]} />}
-                  {part === "Checkpoints" && <Facts facts={[{ label: "Last backup", value: facts.backup.value }]} />}
+                  {part === "Network Adapter" && <Facts facts={[{ label: t("browser-consoles-1.hvVirtualSwitch"), value: t("browser-consoles-1.hvExternalNetwork") }]} />}
+                  {part === "Name" && <Facts facts={[{ label: t("browser-consoles-1.name"), value: vm.name }]} />}
+                  {part === "Checkpoints" && <Facts facts={[{ label: t("browser-consoles-1.lastBackup"), value: facts.backup.value }]} />}
                 </div>
               </div>
-              <div className="cx-tools"><button className="cx-btn primary" onClick={() => setPage({ kind: "list", node: null })}>OK</button></div>
+              <div className="cx-tools"><button className="cx-btn primary" onClick={() => setPage({ kind: "list", node: null })}>{t("browser-consoles-1.ok")}</button></div>
             </div>
           )}
         </main>
         <aside className="hv-side">
-          <ActionsPane title={page.kind === "list" && page.node ? (nodes.find((d) => d.id === page.node)?.hostname ?? "").toUpperCase() : "HyperVee Manager"} actions={[
-            f.create && { id: "create", label: "New, Virtual Machine...", run: () => setPage({ kind: "new" }) },
-            { id: "settings", label: "HyperVee Settings...", run: () => setPage({ kind: "server" }) },
+          <ActionsPane title={page.kind === "list" && page.node ? (nodes.find((d) => d.id === page.node)?.hostname ?? "").toUpperCase() : t("browser-consoles-1.hvManager")} actions={[
+            f.create && { id: "create", label: t("browser-consoles-1.hvNewVm"), run: () => setPage({ kind: "new" }) },
+            { id: "settings", label: t("browser-consoles-1.hvSettingsDots2"), run: () => setPage({ kind: "server" }) },
           ]} />
-          {vm && <ActionsPane title={vm.name} actions={[...vmActions.filter((a) => a.id !== "console"), vm.own && { id: "console", label: "Connect...", run: () => openConsole(vm.id) }]} />}
+          {vm && <ActionsPane title={vm.name} actions={[...vmActions.filter((a) => a.id !== "console"), vm.own && { id: "console", label: t("browser-consoles-1.hvConnect"), run: () => openConsole(vm.id) }]} />}
         </aside>
       </div>
-      <TaskLog game={game} c={c} vms={vms} title="Recent Tasks" className="cx-tasks hv-tasks" />
+      <TaskLog game={game} c={c} vms={vms} title={t("browser-consoles-1.hvRecentTasks")} className="cx-tasks hv-tasks" />
       {page.kind === "new" && (
         <div className="cx-wiz-back">
-          <Wizard title="New Virtual Machine Wizard" className="hv-wiz" finish="Finish" onCancel={() => setPage({ kind: "list", node: null })} onFinish={finish} steps={[
-            { id: "name", label: "Specify Name and Location", body: <Facts facts={[{ label: "Location", value: "C:\\ProgramData\\HyperVee\\" }]} /> },
-            ...(generations ? [{ id: "gen", label: "Specify Generation", body: (
+          <Wizard title={t("browser-consoles-1.hvNewVmWizard")} className="hv-wiz" finish={t("browser-consoles-1.hvFinish")} onCancel={() => setPage({ kind: "list", node: null })} onFinish={finish} steps={[
+            { id: "name", label: t("browser-consoles-1.hvSpecifyName"), body: <Facts facts={[{ label: t("browser-consoles-1.hvLocation"), value: "C:\\ProgramData\\HyperVee\\" }]} /> },
+            ...(generations ? [{ id: "gen", label: t("browser-consoles-1.hvSpecifyGeneration"), body: (
               <div className="hv-radios">
-                {[1, 2].map((g) => <label key={g} className="cx-check"><input type="radio" name="hv-gen" checked={gen === g} onChange={() => setGen(g)} />Generation {g}</label>)}
+                {[1, 2].map((g) => <label key={g} className="cx-check"><input type="radio" name="hv-gen" checked={gen === g} onChange={() => setGen(g)} />{t("browser-consoles-1.hvGenerationN", { n: g })}</label>)}
               </div>
             ) }] : []),
-            { id: "memory", label: "Assign Memory", body: <SizeFields size={nv.size} set={nv.setSize} only="ramGb" labels={["", "Startup memory, GB", ""]} /> },
-            { id: "net", label: "Configure Networking", body: <Facts facts={[{ label: "Connection", value: "External Network" }]} /> },
-            { id: "vhd", label: "Connect Virtual Hard Disk", body: <SizeFields size={nv.size} set={nv.setSize} only="diskGb" labels={["", "", "Size, GB"]} /> },
-            { id: "install", label: "Installation Options", body: nv.isoPick("Install an operating system from a bootable image file", "Install an operating system later") },
-            { id: "summary", label: "Summary", body: <Facts facts={[
-              ...(generations ? [{ label: "Generation", value: `Generation ${gen}` }] : []),
-              { label: "Memory", value: `${Math.round(nv.size.ramGb * 1024)} MB`, num: true }, { label: "Network", value: "External Network" },
-              { label: "Hard Disk", value: `${nv.size.diskGb} GB`, num: true }, { label: "Operating System", value: nv.isoLabel ?? "Will be installed at a later time", num: !!nv.isoLabel },
+            { id: "memory", label: t("browser-consoles-1.hvAssignMemory"), body: <SizeFields size={nv.size} set={nv.setSize} only="ramGb" labels={["", t("browser-consoles-1.hvStartupMemoryGb"), ""]} /> },
+            { id: "net", label: t("browser-consoles-1.hvConfigureNetworking"), body: <Facts facts={[{ label: t("browser-consoles-1.hvConnection"), value: t("browser-consoles-1.hvExternalNetwork") }]} /> },
+            { id: "vhd", label: t("browser-consoles-1.hvConnectVhd"), body: <SizeFields size={nv.size} set={nv.setSize} only="diskGb" labels={["", "", t("browser-consoles-1.hvSizeGb")]} /> },
+            { id: "install", label: t("browser-consoles-1.hvInstallOptions"), body: nv.isoPick(t("browser-consoles-1.hvInstallNow"), t("browser-consoles-1.hvInstallLater")) },
+            { id: "summary", label: t("browser-consoles-1.hvSummary"), body: <Facts facts={[
+              ...(generations ? [{ label: t("browser-consoles-1.hvGeneration"), value: t("browser-consoles-1.hvGenerationN", { n: gen }) }] : []),
+              { label: t("browser-consoles-1.memory"), value: `${Math.round(nv.size.ramGb * 1024)} MB`, num: true }, { label: t("browser-consoles-1.hvNetwork"), value: t("browser-consoles-1.hvExternalNetwork") },
+              { label: t("browser-consoles-1.hvHardDisk"), value: `${nv.size.diskGb} GB`, num: true }, { label: t("browser-consoles-1.hvOperatingSystem"), value: nv.isoLabel ?? t("browser-consoles-1.hvInstalledLater"), num: !!nv.isoLabel },
             ]} /> },
           ]} />
         </div>

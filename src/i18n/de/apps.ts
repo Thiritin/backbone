@@ -1,0 +1,24 @@
+import type { Dict } from "../lang";
+
+export default {
+  "ticket.howTo.hacked.subject": () => "Meine Website zeigt den Spruch von jemand anderem",
+  "ticket.howTo.hacked.text": (p) => `${p.domain || "Meine Website"} zeigt einen Totenkopf und eine Nachricht in holprigem Englisch, wo vorher meine Startseite war. Kannst du das beheben?`,
+  "ticket.howTo.update.subject": () => "Hilfe beim Aktualisieren meiner Website",
+  "ticket.howTo.update.text": () => "Du hast geschrieben, dass die Software hinter meiner Website ein Update braucht. Ich habe keine Ahnung, wie das geht. Kannst du das für mich übernehmen?",
+  "event.siteHacked.title": () => "Kundenwebsite verunstaltet",
+  "event.siteHacked.text": (p) => `Die Website ${p.site} von ${p.customer} wurde über eine Lücke in ${p.software} verunstaltet. Sie verschickt Spam, bis sie bereinigt ist.`,
+  "event.siteLeft.title": () => "Kunde gegangen",
+  "event.siteLeft.text": (p) => `${p.customer} hat gekündigt, nachdem ${p.site} innerhalb eines Jahres zum dritten Mal verunstaltet wurde.`,
+  "event.offerDeclined.title": () => "Angebot abgelehnt",
+  "event.offerDeclined.text": (p) => `${p.name} hat das Angebot abgelehnt.`,
+  "outcome.cleaned": () => "Website bereinigt",
+  "outcome.noBackup": () => "Kein Backup, der Kunde baut die Website neu auf",
+  "outcome.updated": () => "Software aktualisiert",
+  "outcome.updateSold": () => "Update verkauft",
+  "outcome.managedSold": () => "Managed Updates verkauft",
+  "ledger.appUpdate": (p) => `Update von ${p.site}`,
+  "error.notDefaced": () => "Diese Website ist nicht verunstaltet.",
+  "error.noBackup": () => "Für diese Website gibt es kein Backup zum Wiederherstellen.",
+  "error.unknownVulnerability": () => "Diese Schwachstelle ist nicht bekannt.",
+  "error.nobodyToNotify": () => "Es gibt keine Kunden zu benachrichtigen.",
+} satisfies Dict;

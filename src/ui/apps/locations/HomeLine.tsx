@@ -6,6 +6,7 @@ import type { GameState } from "../../../sim/50-state";
 import { homePeak } from "../../../sim/60-infra/network";
 import { orderHomeLine } from "../../../sim/90-actions/hardware";
 import { BrandLogo } from "../../art/logos";
+import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { day } from "../hw";
 
@@ -24,32 +25,32 @@ export function HomeLinePanel({ game }: { game: GameState }) {
         <span><BrandLogo brand={l.isp} size={14} />{l.isp}</span>
       </div>
       <dl className="loc-line-specs">
-        <div><dt>Download</dt><dd className="num">{speed(l.down)}</dd></div>
-        <div><dt>Upload</dt><dd className="num">{speed(l.up)}</dd></div>
-        <div><dt>Addresses</dt><dd className="num">{l.staticIp ? `${STATIC_LINE_ADDRESSES} static` : "1 dynamic"}</dd></div>
-        <div><dt>Reconnect</dt><dd className="num">{l.staticIp ? "None" : `Daily ${String(RECONNECT_HOUR).padStart(2, "0")}:00`}</dd></div>
-        <div><dt>Installation</dt><dd className="num">{l.installDays} days</dd></div>
+        <div><dt>{t("locations-1.download")}</dt><dd className="num">{speed(l.down)}</dd></div>
+        <div><dt>{t("locations-1.upload")}</dt><dd className="num">{speed(l.up)}</dd></div>
+        <div><dt>{t("locations-1.addresses")}</dt><dd className="num">{l.staticIp ? t("locations-1.nStatic", { n: STATIC_LINE_ADDRESSES }) : t("locations-1.oneDynamic")}</dd></div>
+        <div><dt>{t("locations-1.reconnect")}</dt><dd className="num">{l.staticIp ? t("locations-1.none") : t("locations-1.daily", { time: `${String(RECONNECT_HOUR).padStart(2, "0")}:00` })}</dd></div>
+        <div><dt>{t("locations-1.installation")}</dt><dd className="num">{t("locations-1.nDays", { n: l.installDays })}</dd></div>
       </dl>
       <div className="loc-line-foot">
-        <strong className="num">{euro(l.monthly)} / month</strong>
+        <strong className="num">{t("locations-1.pricePerMonth", { price: euro(l.monthly) })}</strong>
         <span className="grow" />
-        {l.id === id ? <span className="pill ok">Active</span>
+        {l.id === id ? <span className="pill ok">{t("locations-1.lineActive")}</span>
           : l.id === next?.id ? <>
-            <span className="pill">Connects <span className="num">{day(next.at)}</span></span>
-            <button className="btn" onClick={() => act(orderHomeLine, id)}>Cancel</button>
+            <span className="pill">{t("locations-1.connects")} <span className="num">{day(next.at)}</span></span>
+            <button className="btn" onClick={() => act(orderHomeLine, id)}>{t("locations-1.cancel")}</button>
           </>
-          : <button className="btn primary" onClick={() => act(orderHomeLine, l.id)}>Order</button>}
+          : <button className="btn primary" onClick={() => act(orderHomeLine, l.id)}>{t("locations-1.order")}</button>}
       </div>
     </div>
   );
   return (
     <div className="loc-card" id="home-line">
       <div className="loc-card-h">
-        <h3>Internet line</h3>
+        <h3>{t("locations-1.internetLine")}</h3>
         <span className="grow" />
-        {current.id ? <span className="loc-muted">{current.isp} {current.name}, <span className="num">{speed(current.down)}</span> down, <span className="num">{speed(current.up)}</span> up</span>
-          : <span className="pill bad">No line</span>}
-        {current.id && <span className={`pill${peak > current.up ? " bad" : peak > 0.8 * current.up ? " warn" : ""}`}>Peak upload <span className="num">{peak.toFixed(peak >= 10 ? 0 : 1)} Mbit/s</span></span>}
+        {current.id ? <span className="loc-muted">{t("locations-1.lineSummary", { isp: current.isp, name: current.name, down: speed(current.down), up: speed(current.up) })}</span>
+          : <span className="pill bad">{t("locations-1.noLine")}</span>}
+        {current.id && <span className={`pill${peak > current.up ? " bad" : peak > 0.8 * current.up ? " warn" : ""}`}>{t("locations-1.peakUpload")} <span className="num">{peak.toFixed(peak >= 10 ? 0 : 1)} Mbit/s</span></span>}
       </div>
       <div className="loc-lines">{offers.map(card)}</div>
     </div>

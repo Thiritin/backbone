@@ -10,7 +10,7 @@ import { lineParts, unitPrice, type CartLine } from "../../../sim/90-actions/har
 import { Cart, Stepper } from "./Cart";
 import { Software } from "./Software";
 import { ShopFilter, useFilter } from "./FilterBar";
-import { CLASS_TREE, classOf, inClass, makerOf, MAKERS, matchesFilter, partClass, sortItems, type Sort } from "./filter";
+import { CLASS_TREE, classLabel, classOf, inClass, makerOf, MAKERS, matchesFilter, partClass, rowLabel, sortItems, type Sort } from "./filter";
 import { familyById, isRamFamily } from "../../../sim/10-catalog/families";
 import { onMarket, type Channel } from "../../../sim/10-catalog/used";
 import { Used } from "./Used";
@@ -21,15 +21,14 @@ import { socketOf } from "../../../sim/10-catalog/cpus";
 import { memoryDriveRows, clockLabel, cores, disk, height, partLabel, partSize, portsText, ram, speed, threadsLabel } from "../hw";
 import "./shop.css";
 import { LOCALE } from "../../../i18n/lang";
+import { t } from "../../../i18n/en";
 
 const ICON: Record<string, typeof Server> = {
   Servers: Server, Switches: Network, Routers: Router, Security: Shield, "Patch panels": Cable, "Remote access": MonitorCog, Power: BatteryCharging, Parts: HardDrive,
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const releaseLabel = (month: number) => `${MONTHS[month % 12]} ${Math.floor(month / 12)}`;
+const releaseLabel = (month: number) => t("shop.release", { month: month % 12, year: Math.floor(month / 12) });
 
-const SWAP = { raid: "In RAID", dual: "With two", yes: "Yes", no: "No" };
 // The spec sheet of a stick or drive with a maker: its type and speed, or its interface, class and throughput.
 function familyRows(part: PartSpec): [string, string][] {
   const f = familyById(part.sku);
@@ -77,7 +76,7 @@ export function ShopApp() {
   const pickMaker = (m: string) => { setMaker(maker === m ? null : m); if (software) setCls(null); };
   const classItem = (c: string, Icon: typeof Server | null) => (
     <button key={c} className={`side-item${Icon ? "" : " shop-side-sub"}${cls === c ? " active" : ""}`} aria-pressed={cls === c} onClick={() => setCls(cls === c ? null : c)}>
-      {Icon && <Icon />}{c}<span className="side-count">{count((r) => inClass(c, r.cls) && (!maker || r.make === maker))}</span>
+      {Icon && <Icon />}{classLabel(c)}<span className="side-count">{count((r) => inClass(c, r.cls) && (!maker || r.make === maker))}</span>
     </button>
   );
   const parentItem = (p: string, kids: string[]) => {
@@ -87,7 +86,7 @@ export function ShopApp() {
     return [
       <div key={p} className="shop-side-parent">
         {classItem(p, ICON[p])}
-        <button className={`shop-side-toggle${open ? " open" : ""}`} aria-label={open ? `Collapse ${p}` : `Expand ${p}`} aria-expanded={open} onClick={() => toggle(p)}><ChevronRight /></button>
+        <button className={`shop-side-toggle${open ? " open" : ""}`} aria-label={t(open ? "shop.collapse" : "shop.expand", { name: classLabel(p) })} aria-expanded={open} onClick={() => toggle(p)}><ChevronRight /></button>
       </div>,
       ...(open ? shownKids.map((c) => classItem(c, null)) : []),
     ];
@@ -96,47 +95,47 @@ export function ShopApp() {
   return (
     <div className="shop">
       <aside className="sidebar shop-side">
-        <button className={`side-item${!maker && !cls ? " active" : ""}`} aria-pressed={!maker && !cls} onClick={() => { setMaker(null); setCls(null); }}><Store />All<span className="side-count">{rows.length}</span></button>
+        <button className={`side-item${!maker && !cls ? " active" : ""}`} aria-pressed={!maker && !cls} onClick={() => { setMaker(null); setCls(null); }}><Store />{t("shop.all")}<span className="side-count">{rows.length}</span></button>
         {market === "new" && (
           <button className={`side-item shop-side-soft${software ? " active" : ""}`} aria-pressed={software} onClick={() => { setMaker(null); setCls(software ? null : "Software"); }}>
-            <span className="shop-soft-tile"><AppWindow /></span>Software
+            <span className="shop-soft-tile"><AppWindow /></span>{t("shop.software")}
           </button>
         )}
-        <div className="side-h">Manufacturer</div>
+        <div className="side-h">{t("shop.manufacturer")}</div>
         {MAKERS.filter((m) => rows.some((r) => r.make === m)).map((m) => (
           <button key={m} className={`side-item${maker === m ? " active" : ""}`} aria-pressed={maker === m} onClick={() => pickMaker(m)}>
             <BrandLogo brand={m} size={16} />{m}<span className="side-count">{count((r) => r.make === m && (software || inClass(cls, r.cls)))}</span>
           </button>
         ))}
-        <div className="side-h">Class</div>
+        <div className="side-h">{t("shop.class")}</div>
         {CLASS_TREE.filter(([p]) => rows.some((r) => inClass(p, r.cls))).flatMap(([p, kids]) => parentItem(p, kids))}
       </aside>
       <div className="shop-main">
         <div className="shop-bar">
-          <div className="seg" role="group" aria-label="Market">
-            <button aria-pressed={market === "new"} onClick={() => setMarket("new")}>New</button>
-            <button aria-pressed={market === "used"} onClick={() => { setMarket("used"); if (software) setCls(null); }}>Used</button>
+          <div className="seg" role="group" aria-label={t("shop.market")}>
+            <button aria-pressed={market === "new"} onClick={() => setMarket("new")}>{t("shop.new")}</button>
+            <button aria-pressed={market === "used"} onClick={() => { setMarket("used"); if (software) setCls(null); }}>{t("shop.used")}</button>
           </div>
           <span className="grow" />
           {market === "new" && !software && !opened_ && (
-            <div className="seg shop-view" role="group" aria-label="View">
-              <button aria-pressed={view === "grid"} aria-label="Grid" title="Grid" onClick={() => setView("grid")}><LayoutGrid /></button>
-              <button aria-pressed={view === "list"} aria-label="List" title="List" onClick={() => setView("list")}><List /></button>
+            <div className="seg shop-view" role="group" aria-label={t("shop.view")}>
+              <button aria-pressed={view === "grid"} aria-label={t("shop.grid")} title={t("shop.grid")} onClick={() => setView("grid")}><LayoutGrid /></button>
+              <button aria-pressed={view === "list"} aria-label={t("shop.list")} title={t("shop.list")} onClick={() => setView("list")}><List /></button>
             </div>
           )}
-          <button className="btn ghost" aria-pressed={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingCart />Cart<span key={inCart} className="num shop-count" data-full={inCart > 0 || undefined}>{inCart}</span></button>
+          <button className="btn ghost" aria-pressed={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingCart />{t("shop.cart")}<span key={inCart} className="num shop-count" data-full={inCart > 0 || undefined}>{inCart}</span></button>
         </div>
         {market === "new" && !software && !opened_ && <ShopFilter items={scoped} filter={filter} set={setFilter} clear={clearFilter} sort={sort} setSort={setSort} />}
         <div className="shop-body">
           {market === "used" ? <Used channel={channel} setChannel={setChannel} keep={(l) => keep({ make: l.brand, cls: classOf(modelById(l.model)) })} /> : software ? <Software /> : opened_ ? <Details {...opened_} maker={filter.vendor} onBack={() => setDetail(null)} /> : view === "list" ? (
             <div className="shop-list">
               {shown.map((it) => <Row key={itemKey(it)} {...it} maker={filter.vendor} onOpen={() => setDetail(itemKey(it))} />)}
-              {!shown.length && <div className="shop-none">No models</div>}
+              {!shown.length && <div className="shop-none">{t("shop.noModels")}</div>}
             </div>
           ) : (
             <div className="shop-grid">
               {shown.map((it) => <Card key={itemKey(it)} {...it} maker={filter.vendor} onOpen={() => setDetail(itemKey(it))} />)}
-              {!shown.length && <div className="shop-none">No models</div>}
+              {!shown.length && <div className="shop-none">{t("shop.noModels")}</div>}
             </div>
           )}
           {cartOpen && <Cart />}
@@ -166,16 +165,16 @@ function useOffer({ model, brand, part, maker }: Item & { maker: Vendor | null }
   const built = lineParts(line);
   const cards = built.filter((p) => p.kind === "gpu");
   const sum = (kind: string) => built.filter((p) => p.kind === kind).reduce((n, p) => n + (p.size ?? 0), 0);
-  const rows: [string, string][] = spec ? [...(part!.size !== undefined && part!.kind !== "gpu" ? [["Size", partSize(part!)]] as [string, string][] : []), ...(part!.kind === "cpu" && part!.vendor && part!.gen ? [...(threadsLabel(part!) ? [["Threads", threadsLabel(part!)]] : []), ["Clock", clockLabel(part!)], ["Socket", socketOf(part!.vendor, part!.gen) ?? ""]] as [string, string][] : []), ...familyRows(part!), ...(part!.kind === "board" && part!.vendor && part!.gen ? [["Socket", socketOf(part!.vendor, part!.gen) ?? ""], ["Takes CPUs up to", cores(part!.size ?? 0)], ["Generation", `G${part!.gen}`]] as [string, string][] : []), ["Life", `${spec.life} years`], ["Swap while running", SWAP[spec.hotSwap]], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
+  const rows: [string, string][] = spec ? [...(part!.size !== undefined && part!.kind !== "gpu" ? [["Size", partSize(part!)]] as [string, string][] : []), ...(part!.kind === "cpu" && part!.vendor && part!.gen ? [...(threadsLabel(part!) ? [["Threads", threadsLabel(part!)]] : []), ["Clock", clockLabel(part!)], ["Socket", socketOf(part!.vendor, part!.gen) ?? ""]] as [string, string][] : []), ...familyRows(part!), ...(part!.kind === "board" && part!.vendor && part!.gen ? [["Socket", socketOf(part!.vendor, part!.gen) ?? ""], ["Takes CPUs up to", cores(part!.size ?? 0)], ["Generation", `G${part!.gen}`]] as [string, string][] : []), ["Life", t("shop.years", { n: spec.life })], ["Swap while running", t(`shop.swap.${spec.hotSwap}`)], ...(part!.kind === "gpu" ? [["Power", `${cardOf(part!.size).watts} W`]] as [string, string][] : [])] : [
     ["Height", height(model)],
     ...(!part && model.price > 0 ? [["Release", releaseLabel(brandFrom(model, brand))]] as [string, string][] : []),
     ...(model.throughputGbit ? [["Throughput", speed(model.throughputGbit)]] as [string, string][] : []),
     ...(model.ipsGbit ? [["IPS throughput", speed(model.ipsGbit)]] as [string, string][] : []),
     ...(model.sessions ? [["Sessions", model.sessions.toLocaleString(LOCALE)]] as [string, string][] : []),
-    ...(s ? [["CPU", `${s.sockets} × ${VENDOR_NAME[vendor]} ${(cpu && skuById(cpu)?.name) ?? ""}`.trim()], ["Cores", cores(sum("cpu"))], ...(cpu && skuById(cpu) ? [["Threads", `${s.sockets * skuById(cpu)!.threads}`]] : []), ["Clock", clockLabel({ kind: "cpu", vendor, gen: model.gen, sku: cpu })], ["Mainboard", board?.name ?? ""], ["CPU sockets", board ? `${board.sockets} × ${board.socket}, up to ${cores(board.maxCores)} each` : ""], ["RAM", ram(s.ramGb)],
+    ...(s ? [["CPU", `${s.sockets} × ${VENDOR_NAME[vendor]} ${(cpu && skuById(cpu)?.name) ?? ""}`.trim()], ["Cores", cores(sum("cpu"))], ...(cpu && skuById(cpu) ? [["Threads", `${s.sockets * skuById(cpu)!.threads}`]] : []), ["Clock", clockLabel({ kind: "cpu", vendor, gen: model.gen, sku: cpu })], ["Mainboard", board?.name ?? ""], ["CPU sockets", board ? t("shop.socketsValue", { n: board.sockets, socket: board.socket, cores: cores(board.maxCores) }) : ""], ["RAM", ram(s.ramGb)],
       ...(cards.length ? [["GPUs", `${cards.length} × ${cardOf(cards[0].size).name}`]] as [string, string][] : []),
       ["Storage", `${disk(s.diskGb)} ${s.disk}`], ...memoryDriveRows(built)] as [string, string][] : []),
-    ...(model.kind === "gateway" && model.price > 0 ? [["Routing", model.fullTable ? "Full table" : "Default route"], ...(model.fullTable ? [["BGP sessions", `${model.bgpSessions}`]] : [])] as [string, string][] : []),
+    ...(model.kind === "gateway" && model.price > 0 ? [["Routing", model.fullTable ? t("shop.routingFull") : t("shop.routingDefault")], ...(model.fullTable ? [["BGP sessions", `${model.bgpSessions}`]] : [])] as [string, string][] : []),
     ...(node?.server ? [["Nodes", `${model.nodes!.count}`], ["Cores per node", cores(nodeCores)], ["RAM per node", ram(node.server.ramGb)], ["Storage per node", `${disk(node.server.diskGb)} ${node.server.disk}`],
       ["NICs per node", portsText(node)], ["PSUs", `${model.psus}`], ["Power", `${Math.round(wattsFactorOf(node, brand) * node.watts * model.nodes!.count)} W`]] as [string, string][] : []),
     ...(model.batteryWh ? [["Battery", `${model.batteryWh} Wh`]] as [string, string][] : model.outlets ? [["Outlets", `${model.outlets}`]] as [string, string][] : node ? [] : [[model.kind === "patch" ? "Jacks" : model.kind === "server" ? "NICs" : "Ports", portsText(model)]] as [string, string][]),
@@ -190,12 +189,12 @@ function useOffer({ model, brand, part, maker }: Item & { maker: Vendor | null }
   const vendorSeg = (makers.length > 1 || options.length > 1) && (
     <div className="shop-config">
       {makers.length > 1 && (
-        <div className="seg shop-vendor" role="group" aria-label="CPU vendor">
+        <div className="seg shop-vendor" role="group" aria-label={t("shop.cpuVendor")}>
           {makers.map((v) => <button key={v} aria-pressed={vendor === v} onClick={() => setVendor(v)}>{VENDOR_NAME[v]}</button>)}
         </div>
       )}
       {options.length > 1 && (
-        <select className="shop-cpu" aria-label="CPU" value={cpu ?? ""} onChange={(e) => setPicked({ ...picked, [vendor]: e.target.value })}>
+        <select className="shop-cpu" aria-label={t("shop.cpu")} value={cpu ?? ""} onChange={(e) => setPicked({ ...picked, [vendor]: e.target.value })}>
           {options.map((c) => <option key={c.id} value={c.id}>{c.name}, {c.cores}c/{c.threads}t, {c.boost} GHz</option>)}
         </select>
       )}
@@ -205,7 +204,7 @@ function useOffer({ model, brand, part, maker }: Item & { maker: Vendor | null }
 }
 
 const Maker = ({ make, cls }: { make: string | null; cls: string }) => (
-  <span className="shop-maker">{make && <><BrandLogo brand={make} size={14} />{make}</>}<span className="pill">{cls}</span></span>
+  <span className="shop-maker">{make && <><BrandLogo brand={make} size={14} />{make}</>}<span className="pill">{classLabel(cls)}</span></span>
 );
 
 function Row(props: Item & { maker: Vendor | null; onOpen: () => void }) {
@@ -214,21 +213,21 @@ function Row(props: Item & { maker: Vendor | null; onOpen: () => void }) {
   return (
     <div className="shop-row">
       <div className="shop-row-main">
-        <button className="shop-row-pic" aria-label="Details" onClick={onOpen}><Isometric model={model} brand={brand} w={64} /></button>
+        <button className="shop-row-pic" aria-label={t("shop.details")} onClick={onOpen}><Isometric model={model} brand={brand} w={64} /></button>
         <div className="shop-row-name">
           <button className="shop-link" onClick={onOpen}>{part ? partLabel(part) : modelName(model, brand)}</button>
           <Maker make={make} cls={cls} />
         </div>
         <dl className="shop-row-specs">
-          {summary.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{v}</dd></div>)}
+          {summary.map(([k, v]) => <div key={k}><dt>{rowLabel(k)}</dt><dd className="num">{v}</dd></div>)}
         </dl>
         <div className="shop-row-buy">
           {vendorSeg}
           <span className="shop-row-act">
-            <button className="btn icon" aria-label="Details" title="Details" onClick={onOpen}><Info /></button>
+            <button className="btn icon" aria-label={t("shop.details")} title={t("shop.details")} onClick={onOpen}><Info /></button>
             <strong className="num">{euro(unitPrice(line, year) * qty)}</strong>
             <Stepper value={qty} onChange={setQty} min={1} />
-            <button className="btn primary" onClick={buy}><ShoppingCart />Add</button>
+            <button className="btn primary" onClick={buy}><ShoppingCart />{t("shop.add")}</button>
           </span>
         </div>
       </div>
@@ -241,20 +240,20 @@ function Card(props: Item & { maker: Vendor | null; onOpen: () => void }) {
   const { summary, line, year, qty, setQty, vendorSeg, buy } = useOffer(props);
   return (
     <div className="shop-card">
-      <button className="shop-pic" aria-label="Details" onClick={onOpen}><Isometric model={model} brand={brand} w={170} /></button>
+      <button className="shop-pic" aria-label={t("shop.details")} onClick={onOpen}><Isometric model={model} brand={brand} w={170} /></button>
       <div className="shop-name">
         <button className="shop-link" onClick={onOpen}>{part ? partLabel(part) : modelName(model, brand)}</button>
         <Maker make={make} cls={cls} />
       </div>
       {vendorSeg}
       <dl className="shop-specs">
-        {summary.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{v}</dd></div>)}
+        {summary.map(([k, v]) => <div key={k}><dt>{rowLabel(k)}</dt><dd className="num">{v}</dd></div>)}
       </dl>
       <div className="shop-buy">
         <strong className="num">{euro(unitPrice(line, year) * qty)}</strong>
         <span className="grow" />
         <Stepper value={qty} onChange={setQty} min={1} />
-        <button className="btn primary" onClick={buy}><ShoppingCart />Add to cart</button>
+        <button className="btn primary" onClick={buy}><ShoppingCart />{t("shop.addToCart")}</button>
       </div>
     </div>
   );
@@ -266,7 +265,7 @@ function Details({ onBack, ...props }: Item & { maker: Vendor | null; onBack: ()
   const { rows, line, year, qty, setQty, vendorSeg, buy } = useOffer(props);
   return (
     <div className="shop-detail">
-      <button className="btn ghost shop-back" onClick={onBack}><ChevronLeft />Back</button>
+      <button className="btn ghost shop-back" onClick={onBack}><ChevronLeft />{t("shop.back")}</button>
       <div className="shop-detail-head">
         <div className="shop-detail-pic"><Isometric model={model} brand={brand} w={200} /></div>
         <div className="shop-detail-info">
@@ -276,12 +275,12 @@ function Details({ onBack, ...props }: Item & { maker: Vendor | null; onBack: ()
           <div className="shop-buy shop-detail-buy">
             <strong className="num">{euro(unitPrice(line, year) * qty)}</strong>
             <Stepper value={qty} onChange={setQty} min={1} />
-            <button className="btn primary" onClick={buy}><ShoppingCart />Add to cart</button>
+            <button className="btn primary" onClick={buy}><ShoppingCart />{t("shop.addToCart")}</button>
           </div>
         </div>
       </div>
       <dl className="shop-detail-specs">
-        {rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{v}</dd></div>)}
+        {rows.map(([k, v]) => <div key={k}><dt>{rowLabel(k)}</dt><dd className="num">{v}</dd></div>)}
       </dl>
     </div>
   );

@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { registrarHost } from "../../../../../sim/10-catalog/registrars";
 import { Account, DomainSearch, own, Program, TldPrices, type RegistrarProps } from "./RegistrarPage";
 import "./internety.css";
@@ -13,16 +14,16 @@ const Mark = ({ size }: { size: number }) => (
 export function InterNetY({ game, r, look, year }: RegistrarProps) {
   return (
     <div className={`rg rg-internety ${look}`}>
-      <header><span className="rg-wm"><Mark size={look === "late" ? 30 : 24} /><span>InterNet<b>Y</b></span></span><span className="sub">Domain-Reseller</span></header>
+      <header><span className="rg-wm"><Mark size={look === "late" ? 30 : 24} /><span>InterNet<b>Y</b></span></span><span className="sub">{t("browser-sites-1.in.sub")}</span></header>
       <main>
         <div className="left">
-          <section><DomainSearch game={game} r={r} title="Domain check" button="Check" /></section>
-          <section><Program game={game} r={r} title="Reseller terms" /></section>
+          <section><DomainSearch game={game} r={r} title={t("browser-sites-1.in.check")} button={t("browser-sites-1.in.checkButton")} /></section>
+          <section><Program game={game} r={r} title={t("browser-sites-1.in.terms")} /></section>
         </div>
-        <section className="right"><TldPrices game={game} r={r} title="Price list" columns={2} /></section>
+        <section className="right"><TldPrices game={game} r={r} title={t("browser-sites-1.in.prices")} columns={2} /></section>
         {own(game, r) && <section className="wide"><Account game={game} r={r} /></section>}
       </main>
-      <footer><span>Impressum</span><span>AGB</span><span>Datenschutz</span><span>© {year} InterNetY GmbH, {registrarHost(r)}</span></footer>
+      <footer><span>{t("browser-sites-1.in.imprint")}</span><span>{t("browser-sites-1.in.terms2")}</span><span>{t("browser-sites-1.in.privacy")}</span><span>{t("browser-sites-1.in.copyright", { year })} {registrarHost(r)}</span></footer>
     </div>
   );
 }

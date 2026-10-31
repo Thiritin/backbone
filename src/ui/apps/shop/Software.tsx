@@ -5,53 +5,31 @@ import { euroCents } from "../../../sim/00-core/money";
 import { pricePerMTokens } from "../../../sim/47-staff/chad";
 import { yearOf } from "../../../sim/00-core/time";
 import { isAvailable, skillFor } from "../../../sim/10-catalog/research";
-import { deskById, deskReady, seats, type DeskFeature } from "../../../sim/10-catalog/desks";
+import { deskById, deskReady, seats } from "../../../sim/10-catalog/desks";
 import { storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
 import { cancel, install } from "../../../sim/90-actions/store";
 import { Confirm } from "../../desktop/Confirm";
 import { PearMark } from "../../desktop/Intro";
 import { appByName } from "../registry";
 import { DESK } from "../support/desk";
+import { rowLabel } from "./filter";
 import { useStore } from "../../store";
+import { t } from "../../../i18n/en";
 
-const UPGRADES: Record<string, { icon: LucideIcon; tile: string; about: string }> = {
-  searchlight: { icon: Search, tile: "oklch(0.55 0.16 255)", about: "Finds apps, customers, machines, tickets and sites from one field." },
-  widgetCalendar: { icon: CalendarDays, tile: "oklch(0.6 0.2 25)", about: "Shows today's date on your desktop." },
-  widgetTickets: { icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: "Shows your open tickets on your desktop." },
-  widgetCash: { icon: Wallet, tile: "oklch(0.55 0.13 175)", about: "Shows your cash on your desktop." },
-  widgetRevenue: { icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: "Shows your monthly revenue on your desktop." },
-  widgetCustomers: { icon: Users, tile: "oklch(0.52 0.17 268)", about: "Shows your customer count on your desktop." },
-  widgetLevel: { icon: Trophy, tile: "oklch(0.72 0.15 95)", about: "Shows your company level and the way to the next one on your desktop." },
-  chadGpt: { icon: Bot, tile: "oklch(0.55 0.16 300)", about: "Answers how-to and billing tickets day and night, with confidence." },
-  clipsy: { icon: Paperclip, tile: "oklch(0.6 0.14 220)", about: "Sends payment reminders day and night, with enthusiasm." },
+const UPGRADES: Record<string, { icon: LucideIcon; tile: string }> = {
+  searchlight: { icon: Search, tile: "oklch(0.55 0.16 255)" },
+  widgetCalendar: { icon: CalendarDays, tile: "oklch(0.6 0.2 25)" },
+  widgetTickets: { icon: LifeBuoy, tile: "oklch(0.62 0.19 35)" },
+  widgetCash: { icon: Wallet, tile: "oklch(0.55 0.13 175)" },
+  widgetRevenue: { icon: ChartLine, tile: "oklch(0.55 0.13 175)" },
+  widgetCustomers: { icon: Users, tile: "oklch(0.52 0.17 268)" },
+  widgetLevel: { icon: Trophy, tile: "oklch(0.72 0.15 95)" },
+  chadGpt: { icon: Bot, tile: "oklch(0.55 0.16 300)" },
+  clipsy: { icon: Paperclip, tile: "oklch(0.6 0.14 220)" },
 };
 
-const FEATURE: Record<DeskFeature, string> = {
-  filters: "Filter by kind", search: "Search", assign: "Assign to agents", templates: "Reply templates", slaTimers: "Response timers", customerSidebar: "Customer sidebar", reports: "Reports",
-};
-const DESK_ABOUT: Record<string, string> = {
-  ostickit: "Groups tickets by kind in plain grey tables, free and open source since 2005.",
-  zendusk: "Adds search, assignment, reply templates, response timers, a customer sidebar and reports.",
-  freshdusk: "Adds search, assignment, reply templates and response timers on teal cards.",
-  freescoot: "Adds search and assignment to a free, light list.",
-};
-
-const INCLUDES: Record<string, string[]> = {
-  Network: ["Transit and peering", "DDoS protection", "Topology view"],
-  Staff: ["Job market", "Hiring and salaries", "Task assignment"],
-  Marketing: ["Campaigns", "Reviews", "Review platforms"],
-  Nagiosaurus: ["Versions of installed software", "Open vulnerabilities by severity", "Days exposed"],
-  "Knowledge base": ["Articles for basic setup questions", "Fewer how-to tickets", "Reads per article"],
-  Market: ["Demand by product", "Customer requirements", "Lost-sale reports"],
-  searchlight: ["Opens with Ctrl+K or Cmd+K", "Apps, customers and machines", "Tickets, sites and settings"],
-  widgetCalendar: ["Weekday, date and year"],
-  widgetTickets: ["Open ticket count", "Opens Support"],
-  widgetCash: ["Cash balance", "Opens Finance"],
-  widgetRevenue: ["Monthly recurring revenue", "Opens Finance"],
-  widgetCustomers: ["Customer count", "Opens Customers"],
-  widgetLevel: ["Company level", "Progress to the next level", "Opens Finance"],
-  chadGpt: ["How-to tickets", "Billing tickets", "Works around the clock"],
-  clipsy: ["Payment reminders", "Works around the clock"],
+const INCLUDES: Record<string, number> = {
+  Network: 3, Staff: 3, Marketing: 3, Nagiosaurus: 3, "Knowledge base": 3, Market: 3, searchlight: 3, widgetCalendar: 1, widgetTickets: 2, widgetCash: 2, widgetRevenue: 2, widgetCustomers: 2, widgetLevel: 3, chadGpt: 3, clipsy: 2,
 };
 
 const SHELVES: [string, string[]][] = [
@@ -62,7 +40,7 @@ const SHELVES: [string, string[]][] = [
   ["Upgrades", ["searchlight", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],
 ];
 
-export const artOf = (item: StoreItem) => (item.kind === "app" ? appByName(item.id) : item.kind === "desk" ? { icon: DESK[item.id].icon, tile: DESK[item.id].tile, about: DESK_ABOUT[item.id] } : UPGRADES[item.id]);
+export const artOf = (item: StoreItem) => (item.kind === "app" ? appByName(item.id) : item.kind === "desk" ? { icon: DESK[item.id].icon, tile: DESK[item.id].tile, about: t(`shop.deskAbout.${item.id}`) } : { ...UPGRADES[item.id], about: t(`shop.upgrade.${item.id}`) });
 
 export function Tile({ item, size }: { item: StoreItem; size: number }) {
   const art = artOf(item);
@@ -73,11 +51,11 @@ function Action({ item, big }: { item: StoreItem; big?: boolean }) {
   const { game, act, openApp } = useStore();
   const cls = `ps-get${big ? " big" : ""}`;
   const skill = skillFor(item.id);
-  if (skill && !isAvailable(item.id, game.unlocks)) return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Research", { kind: "skill", id: skill.id }); }}>Needs {skill.name}</button>;
-  if (item.kind === "desk" && !game.installed.includes(item.id) && !deskReady(game, item.id)) return <button className={cls} disabled>From {deskById(item.id)!.from}</button>;
-  if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act(install, item.id); }}>Get</button>;
-  if (item.kind !== "app") return <span className="ps-owned"><Check />Installed</span>;
-  return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id === "Nagiosaurus" ? "Security" : item.id); }}>Open</button>;
+  if (skill && !isAvailable(item.id, game.unlocks)) return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Research", { kind: "skill", id: skill.id }); }}>{t("shop.needs", { skill: skill.name })}</button>;
+  if (item.kind === "desk" && !game.installed.includes(item.id) && !deskReady(game, item.id)) return <button className={cls} disabled>{t("shop.from", { from: deskById(item.id)!.from })}</button>;
+  if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act(install, item.id); }}>{t("shop.get")}</button>;
+  if (item.kind !== "app") return <span className="ps-owned"><Check />{t("shop.installed")}</span>;
+  return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id === "Nagiosaurus" ? "Security" : item.id); }}>{t("shop.open")}</button>;
 }
 
 // The app unlocked most recently that is not installed yet; then any item on the shelves.
@@ -91,7 +69,7 @@ function featuredId(installed: string[], learned: string[]): string {
 export function Software() {
   const game = useStore((s) => s.game);
   const [open, setOpen] = useSessionState<string | null>("software.sel", null);
-  const price = (item: StoreItem) => (item.monthly ? `${euroCents(subscriptionPrice(item, yearOf(game.hour)))} / month${item.perSeat ? " per seat" : ""}${item.id === "chadGpt" ? ` + ${euroCents(pricePerMTokens(yearOf(game.hour)))} / 1M tokens` : ""}` : "Free");
+  const price = (item: StoreItem) => (item.monthly ? `${t("shop.priceMonthly", { price: euroCents(subscriptionPrice(item, yearOf(game.hour))), seat: item.perSeat ? 1 : 0 })}${item.id === "chadGpt" ? ` + ${t("shop.priceTokens", { price: euroCents(pricePerMTokens(yearOf(game.hour))) })}` : ""}` : t("shop.free"));
   const detail = open && storeItem(open);
   if (detail) return <Detail item={detail} price={price(detail)} back={() => setOpen(null)} />;
 
@@ -101,8 +79,8 @@ export function Software() {
       <section className="ps-hero">
         <div className="ps-hero-copy">
           <span className="ps-brand"><PearMark />Pear Store</span>
-          <h2>Unlock the future today.</h2>
-          <p>Great upgrades to your operating system that make your life easier.</p>
+          <h2>{t("shop.heroTitle")}</h2>
+          <p>{t("shop.heroText")}</p>
         </div>
         <div className="ps-feature" role="button" tabIndex={0} onClick={() => setOpen(featured.id)} onKeyDown={(e) => e.key === "Enter" && setOpen(featured.id)}>
           <Tile item={featured} size={88} />
@@ -113,7 +91,7 @@ export function Software() {
       </section>
       {SHELVES.map(([title, ids]) => (
         <section key={title} className="ps-shelf">
-          <h3>{title}</h3>
+          <h3>{t(`shop.shelf.${title}`)}</h3>
           <div className="ps-rows">
             {ids.map((id) => {
               const item = storeItem(id)!;
@@ -143,12 +121,12 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
   const facts: [string, string][] = [
     ["Subscription", price],
     ...(item.perSeat ? [["Seats", String(seats(game))] as [string, string]] : []),
-    ["Skill", skillFor(item.id)?.name ?? "None"],
-    ["Status", has ? "Installed" : item.kind === "desk" && !deskReady(game, item.id) ? "Not on sale yet" : !isAvailable(item.id, game.unlocks) ? "Not learned" : "Available"],
+    ["Skill", skillFor(item.id)?.name ?? t("shop.skillNone")],
+    ["Status", has ? t("shop.installed") : item.kind === "desk" && !deskReady(game, item.id) ? t("shop.status.notOnSale") : !isAvailable(item.id, game.unlocks) ? t("shop.status.notLearned") : t("shop.status.available")],
   ];
   return (
     <div className="ps">
-      <button className="btn ghost ps-back" onClick={back}><ChevronLeft />Software</button>
+      <button className="btn ghost ps-back" onClick={back}><ChevronLeft />{t("shop.software")}</button>
       <header className="ps-detail-head">
         <Tile item={item} size={112} />
         <div>
@@ -156,18 +134,18 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
           <p>{artOf(item).about}</p>
           <div className="ps-detail-actions">
             <Action item={item} big />
-            {has && <button className="btn" onClick={() => setCancelling(true)}>Cancel subscription</button>}
+            {has && <button className="btn" onClick={() => setCancelling(true)}>{t("shop.cancelSubscription")}</button>}
           </div>
         </div>
       </header>
       <dl className="ps-facts">
-        {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={k === "Subscription" ? "num" : undefined}>{v}</dd></div>)}
-        {cancelling && <Confirm title={`Cancel ${item.name}?`} action="Cancel subscription" onCancel={() => setCancelling(false)}
-          onConfirm={() => { setCancelling(false); act(cancel, item.id); }} text={`The subscription for ${item.name} ends today.`} />}
+        {facts.map(([k, v]) => <div key={k}><dt>{rowLabel(k)}</dt><dd className={k === "Subscription" ? "num" : undefined}>{v}</dd></div>)}
+        {cancelling && <Confirm title={t("shop.cancelTitle", { name: item.name })} action={t("shop.cancelSubscription")} onCancel={() => setCancelling(false)}
+          onConfirm={() => { setCancelling(false); act(cancel, item.id); }} text={t("shop.cancelText", { name: item.name })} />}
       </dl>
       <section className="ps-shelf">
-        <h3>Includes</h3>
-        <ul className="ps-includes">{(item.kind === "desk" ? deskById(item.id)!.features.map((f) => FEATURE[f]) : INCLUDES[item.id]).map((f) => <li key={f}><Check />{f}</li>)}</ul>
+        <h3>{t("shop.includes")}</h3>
+        <ul className="ps-includes">{(item.kind === "desk" ? deskById(item.id)!.features.map((f) => t(`shop.feature.${f}`)) : Array.from({ length: INCLUDES[item.id] }, (_, i) => t(`shop.inc.${item.id}.${i}`))).map((f) => <li key={f}><Check />{f}</li>)}</ul>
       </section>
     </div>
   );

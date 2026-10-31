@@ -1,0 +1,27 @@
+import type { Dict } from "../lang";
+
+export default {
+  "ledger.siteHosting": () => "Hosting del sito web: Strateaux",
+  "ledger.redesign": () => "Restyling del sito web",
+  "error.designCurrent": () => "Il sito web ha già il design attuale.",
+  "error.siteHostPanel": () => "Solo un host con pannello di web hosting può ospitare il sito web.",
+  "error.siteHostNoRoom": () => "Questo host non ha spazio per il sito web.",
+  "error.siteStarted": () => "Il sito web è già in costruzione.",
+  "error.siteNotBuilt": () => "Costruisci prima il sito web.",
+  "error.siteLaunched": () => "Il sito web è già online.",
+  "error.needsLaunch": () => "Lancia prima il sito web.",
+  "error.needsWebHostingLine": () => "Offri prima il web hosting.",
+  "event.siteBuilt.title": () => "Il sito web è pronto",
+  "event.siteBuilt.text": () => "Il tuo primo sito web è scritto e può andare online appena l'azienda ha un dominio.",
+  "event.siteDown.title": () => "Il sito web è giù",
+  "event.siteDown.text": (p) => `Il tuo sito web su ${p.host} non risponde più, e i visitatori non possono ordinare finché non torna.`,
+  "site.blurb.private": () => "Foto delle vacanze, un guestbook e un contatore di visite fermo da anni.",
+  "site.blurb.gamer": () => "La pagina del clan con l'elenco dei membri, i risultati delle partite e l'indirizzo del server di gioco.",
+  "site.blurb.hobbyDev": () => "Un portfolio di progetti personali, quasi tutti descritti come quasi finiti.",
+  "site.blurb.soleProp": () => "Servizi, orari di apertura e un modulo di contatto per un'attività di una sola persona.",
+  "site.blurb.smallBiz": () => "Un listino prezzi, una mappa e gli orari del negozio all'angolo.",
+  "site.blurb.agency": () => "Casi di studio, un muro di loghi di clienti e un pulsante con scritto Let's talk.",
+  "site.blurb.office": () => "Orari di ricevimento, richieste di appuntamento e un'informativa sulla privacy.",
+  "site.blurb.onlineShop": () => "Un catalogo prodotti con carrello e cassa.",
+  "site.blurb.enterprise": () => "Comunicati stampa, una pagina per gli investitori e una sezione lavora con noi con una foto stock di una stretta di mano.",
+} satisfies Dict;

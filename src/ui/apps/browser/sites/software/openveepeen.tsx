@@ -1,3 +1,4 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Features, Link, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./openveepeen.css";
@@ -9,14 +10,14 @@ export function OpenVeePeeN(props: SiteProps) {
   if (look === "late") {
     return (
       <div className="sw sw-openveepeen late">
-        <header>{mark}<Nav {...props} /><Link to="download" go={go} className="try">Get Access Server</Link></header>
+        <header>{mark}<Nav {...props} /><Link to="download" go={go} className="try">{t("browser-sites-1.ov.access")}</Link></header>
         {page === "home" ? (
           <>
             <div className="hero"><h1>{p.site.tagline}</h1><p>{p.site.blurb}</p></div>
             <Features p={p} className="cards" />
           </>
         ) : <main><Body {...props} /></main>}
-        <footer>© {year} OpenVeePeeN Inc.</footer>
+        <footer>{t("browser-sites-1.ov.footer", { year })}</footer>
       </div>
     );
   }
@@ -28,7 +29,7 @@ export function OpenVeePeeN(props: SiteProps) {
         <Body {...props} />
         {page === "home" && (
           <table className="files">
-            <thead><tr><th>File</th><th>Released</th></tr></thead>
+            <thead><tr><th>{t("browser-sites-1.ov.file")}</th><th>{t("browser-sites-1.ov.released")}</th></tr></thead>
             <tbody>
               <tr><td>openveepeen-2.0.{year - 2000}.tar.gz</td><td className="num">{year}-04-08</td></tr>
               <tr><td>openveepeen-2.0.{year - 2000}-install.exe</td><td className="num">{year}-04-08</td></tr>

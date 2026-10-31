@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { useLayoutEffect, useRef } from "react";
 import type { CSSProperties, PointerEvent as RPointerEvent } from "react";
 import { appFor } from "../apps/registry";
@@ -79,9 +80,9 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
         }}
       >
         <div className="lights" onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
-          <button aria-label="Close" onClick={() => animateClose(ref.current!).then(() => close(win.id))}>{Glyph.close}</button>
-          <button aria-label="Minimize" onClick={() => minimize(win.id)}>{Glyph.min}</button>
-          <button aria-label="Zoom" onClick={() => toggleZoom(win.id)}>{win.zoomed ? Glyph.exit : Glyph.enter}</button>
+          <button aria-label={t("desktop.close")} onClick={() => animateClose(ref.current!).then(() => close(win.id))}>{Glyph.close}</button>
+          <button aria-label={t("desktop.minimize")} onClick={() => minimize(win.id)}>{Glyph.min}</button>
+          <button aria-label={t("desktop.zoom")} onClick={() => toggleZoom(win.id)}>{win.zoomed ? Glyph.exit : Glyph.enter}</button>
         </div>
         <h1>{win.doc ? <NoteTitle id={win.doc} /> : title}</h1>
       </div>

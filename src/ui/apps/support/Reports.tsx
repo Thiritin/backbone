@@ -1,9 +1,10 @@
 import { dateOf } from "../../../sim/00-core/time";
+import { t } from "../../../i18n/en";
+import { LOCALE } from "../../../i18n/lang";
 import { isFinal } from "../../../sim/40-support/tickets";
 import { useStore } from "../../store";
 import { KINDS } from "./labels";
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SHOWN = 12;
 
 export function Reports() {
@@ -21,9 +22,9 @@ export function Reports() {
   return (
     <div className="sup-reports">
       <section>
-        <h2>Tickets per kind</h2>
+        <h2>{t("support.ticketsPerKind")}</h2>
         <table>
-          <thead><tr><th>Kind</th><th /><th className="r">Total</th><th className="r">Open</th></tr></thead>
+          <thead><tr><th>{t("support.kind")}</th><th /><th className="r">{t("support.total")}</th><th className="r">{t("support.open")}</th></tr></thead>
           <tbody>
             {kinds.map((k) => (
               <tr key={k.id}>
@@ -37,13 +38,13 @@ export function Reports() {
         </table>
       </section>
       <section>
-        <h2>Tickets per month</h2>
-        <div className="months" role="img" aria-label="Tickets per month">
+        <h2>{t("support.ticketsPerMonth")}</h2>
+        <div className="months" role="img" aria-label={t("support.ticketsPerMonth")}>
           {months.map((m) => (
             <div key={`${m.year}-${m.month}`} className="m">
               <span className="num">{m.count}</span>
               <i style={{ height: `${(m.count / peak) * 100}%` }} />
-              <span>{MONTHS[m.month]}</span>
+              <span>{new Date(Date.UTC(m.year, m.month, 1)).toLocaleDateString(LOCALE, { month: "short", timeZone: "UTC" })}</span>
             </div>
           ))}
         </div>

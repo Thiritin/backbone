@@ -8,6 +8,7 @@ import { research } from "../../../sim/90-actions/store";
 import { useFocus, useStore } from "../../store";
 import { Tile } from "../shop/Software";
 import "./research.css";
+import { t } from "../../../i18n/en";
 
 const W = 210, H = 76, COL = 64, ROW = 18, PAD = 24, HEAD = 26, LANE = 110, GAP = 22;
 const TIERS = [...new Set(SKILLS.map((k) => k.tier))].sort((a, b) => a - b);
@@ -34,13 +35,13 @@ function Node({ k, g, selected, onSelect }: { k: Skill; g: GameState; selected: 
   return (
     <button className={`rs-node ${state}`} aria-pressed={selected} style={{ left: POS[k.id].x, top: POS[k.id].y, width: W, height: H }} onClick={onSelect}>
       <span className="rs-node-name"><span className="rs-mark"><Icon /></span>{k.name}</span>
-      {state === "learned" && <span className="rs-node-sub">Learned</span>}
+      {state === "learned" && <span className="rs-node-sub">{t("misc2.learned")}</span>}
       {state === "training" && <>
-        <span className="rs-node-sub"><span className="num">{daysLeft(g)}</span> days left</span>
+        <span className="rs-node-sub num">{t("misc2.daysLeft", { n: daysLeft(g) })}</span>
         <span className="rs-bar"><i style={{ width: `${progress(g) * 100}%` }} /></span>
       </>}
-      {state === "open" && <span className="rs-node-sub"><span className="num">{k.knowHow}</span> know-how, <span className="num">{k.days}</span> days</span>}
-      {state === "locked" && <span className="rs-node-sub">Needs {missing.length > 1 ? `${missing.length} skills` : skillById(missing[0])!.name}</span>}
+      {state === "open" && <span className="rs-node-sub num">{t("misc2.knowHowDays", { knowHow: k.knowHow, days: k.days })}</span>}
+      {state === "locked" && <span className="rs-node-sub">{missing.length > 1 ? t("misc2.needsSkills", { n: missing.length }) : t("misc2.needsSkill", { name: skillById(missing[0])!.name })}</span>}
     </button>
   );
 }
@@ -63,11 +64,11 @@ function Panel({ k, g }: { k: Skill; g: GameState }) {
   const next = SKILLS.filter((s) => s.needs.includes(k.id));
   const canStart = state === "open" && !g.training && g.knowHow >= k.knowHow;
   const facts: [string, ReactNode][] = [
-    ["Cost", <><span className="num">{k.knowHow}</span> know-how</>],
-    ["Training", <><span className="num">{k.days}</span> days</>],
-    ["Needs", k.needs.map((n) => skillById(n)!.name).join(", ") || "None"],
+    [t("misc2.cost"), <span className="num">{t("misc2.costValue", { n: k.knowHow })}</span>],
+    [t("misc2.training"), <span className="num">{t("misc2.trainingValue", { n: k.days })}</span>],
+    [t("misc2.needs"), k.needs.map((n) => skillById(n)!.name).join(", ") || t("misc2.none")],
   ];
-  if (next.length) facts.push(["Leads to", next.map((s) => s.name).join(", ")]);
+  if (next.length) facts.push([t("misc2.leadsTo"), next.map((s) => s.name).join(", ")]);
   return (
     <aside className="rs-panel">
       <h2>{k.name}</h2>
@@ -75,7 +76,7 @@ function Panel({ k, g }: { k: Skill; g: GameState }) {
       <dl className="rs-facts">{facts.map(([dt, dd]) => <div key={dt}><dt>{dt}</dt><dd>{dd}</dd></div>)}</dl>
       {(k.opens.length > 0 || k.grants) && (
         <section>
-          <h3>Unlocks</h3>
+          <h3>{t("misc2.unlocks")}</h3>
           <ul className="rs-opens">
             {k.opens.map((id) => <li key={id}><Tile item={storeItem(id)!} size={24} />{storeItem(id)!.name}</li>)}
             {k.grants?.map((g) => <li key={g}><span className="rs-grant"><Check /></span>{g}</li>)}
@@ -85,16 +86,16 @@ function Panel({ k, g }: { k: Skill; g: GameState }) {
       {state === "training" && (
         <div className="rs-progress">
           <span className="rs-bar"><i style={{ width: `${progress(g) * 100}%` }} /></span>
-          <span><span className="num">{daysLeft(g)}</span> days left</span>
+          <span className="num">{t("misc2.daysLeft", { n: daysLeft(g) })}</span>
         </div>
       )}
       <div className="rs-actions">
         {state === "learned" ? <>
-          <button className="btn" onClick={() => setExplain(k.id)}><BookOpen />How it works</button>
+          <button className="btn" onClick={() => setExplain(k.id)}><BookOpen />{t("misc2.howItWorks")}</button>
           {k.opens.length > 0 && (g.installed.includes(k.opens[0])
-            ? <button className="btn" onClick={() => openApp(k.opens[0])}>Open {storeItem(k.opens[0])!.name}</button>
+            ? <button className="btn" onClick={() => openApp(k.opens[0])}>{t("misc2.openApp", { name: storeItem(k.opens[0])!.name })}</button>
             : <button className="btn" onClick={() => openApp("Shop", { kind: "software", id: "" })}><Store />Pear Store</button>)}
-        </> : state !== "training" && <button className="btn primary" disabled={!canStart} onClick={() => act(research, k.id)}>Start training</button>}
+        </> : state !== "training" && <button className="btn primary" disabled={!canStart} onClick={() => act(research, k.id)}>{t("misc2.startTraining")}</button>}
       </div>
     </aside>
   );
@@ -107,13 +108,13 @@ export function ResearchApp() {
   return (
     <div className="rs">
       <header className="rs-head">
-        <div><span>Know-how</span><strong className="num">{Math.floor(game.knowHow)}</strong></div>
-        <div><span>Per month</span><strong className="num">{knowHowPerMonth(game).toFixed(1)}</strong></div>
-        {game.training && <div><span>In training</span><strong className="rs-head-name">{skillById(game.training.id)!.name}</strong></div>}
+        <div><span>{t("misc2.knowHow")}</span><strong className="num">{Math.floor(game.knowHow)}</strong></div>
+        <div><span>{t("misc2.perMonth")}</span><strong className="num">{knowHowPerMonth(game).toFixed(1)}</strong></div>
+        {game.training && <div><span>{t("misc2.inTraining")}</span><strong className="rs-head-name">{skillById(game.training.id)!.name}</strong></div>}
       </header>
       <div className="rs-tree">
         <div className="rs-canvas" style={{ width: WIDTH, height: HEIGHT }}>
-          {TIERS.map((t, c) => <span key={t} className="rs-tier" style={{ left: PAD + LANE + c * (W + COL), top: PAD, width: W }}>Tier {t}</span>)}
+          {TIERS.map((tier, c) => <span key={tier} className="rs-tier" style={{ left: PAD + LANE + c * (W + COL), top: PAD, width: W }}>{t("misc2.tier", { n: tier })}</span>)}
           {LANES.map((l, i) => <span key={l.id} className="rs-track" style={{ left: PAD, top: laneTop(i), width: LANE - 16, height: l.rows * (H + ROW) - ROW }}>{l.name}</span>)}
           <Links g={game} />
           {SKILLS.map((k) => <Node key={k.id} k={k} g={game} selected={sel === k.id} onSelect={() => setSel(k.id)} />)}

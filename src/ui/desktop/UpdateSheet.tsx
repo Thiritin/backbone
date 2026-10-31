@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { RefreshCw } from "lucide-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -20,12 +21,12 @@ export function UpdateSheet({ changes, onLater }: Props) {
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
       <div className="alert" role="alertdialog" aria-modal="true" aria-labelledby="update-title" aria-describedby="update-text">
         <span className="alert-icon"><RefreshCw /></span>
-        <h2 id="update-title">Update available</h2>
-        <p id="update-text">A newer version of the game is online. Reload to use it; your game and open windows are kept.</p>
+        <h2 id="update-title">{t("desktop.update.title")}</h2>
+        <p id="update-text">{t("desktop.update.text")}</p>
         <ChangeList changes={changes} max={MAX_ITEMS} />
         <div className="alert-actions">
-          <button className="btn" onClick={onLater}>Later</button>
-          <button className="btn primary" autoFocus onClick={() => window.location.reload()}>Reload</button>
+          <button className="btn" onClick={onLater}>{t("desktop.later")}</button>
+          <button className="btn primary" autoFocus onClick={() => window.location.reload()}>{t("desktop.update.reload")}</button>
         </div>
       </div>
     </div>,

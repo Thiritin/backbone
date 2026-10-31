@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { t } from "../../../../../i18n/en";
 import { dateOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
 import { LEGAL_FORMS, OFFICE_HOST, OFFICE_URL, officeOpen } from "../../../../../sim/80-business/office";
@@ -6,7 +7,7 @@ import { registerCompany } from "../../../../../sim/90-actions/company";
 import { useStore } from "../../../../store";
 import "./office.css";
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS = [t("browser-sites-1.of.day0"), t("browser-sites-1.of.day1"), t("browser-sites-1.of.day2"), t("browser-sites-1.of.day3"), t("browser-sites-1.of.day4"), t("browser-sites-1.of.day5"), t("browser-sites-1.of.day6")];
 const pad = (n: number) => String(n).padStart(2, "0");
 const stamp = (hour: number) => {
   const d = dateOf(hour);
@@ -15,20 +16,20 @@ const stamp = (hour: number) => {
 const clock = (hour: number, minute: number) => `${DAYS[dateOf(hour).getUTCDay()]}, ${stamp(hour)}, ${pad(dateOf(hour).getUTCHours())}:${pad(minute)}`;
 
 const MENU = [
-  ["Home", "/"],
-  ["eService: Trade registration", "/eservice/"],
-  ["Forms (PDF)", "/forms/"],
-  ["Fees", "/fees/"],
-  ["Directions", "/directions/"],
-  ["Contact", "/contact/"],
+  [t("browser-sites-1.of.menuHome"), "/"],
+  [t("browser-sites-1.of.eservice"), "/eservice/"],
+  [t("browser-sites-1.of.menuForms"), "/forms/"],
+  [t("browser-sites-1.of.menuFees"), "/fees/"],
+  [t("browser-sites-1.of.menuDirections"), "/directions/"],
+  [t("browser-sites-1.of.menuContact"), "/contact/"],
 ];
 
 function Hours() {
   return (
     <table className="to-hours">
       <tbody>
-        <tr><td>Monday to Friday</td><td>08:00 to 16:00</td></tr>
-        <tr><td>Saturday, Sunday and public holidays</td><td>closed</td></tr>
+        <tr><td>{t("browser-sites-1.of.weekdays")}</td><td>{t("browser-sites-1.of.weekdayHours")}</td></tr>
+        <tr><td>{t("browser-sites-1.of.weekend")}</td><td>{t("browser-sites-1.of.closed")}</td></tr>
       </tbody>
     </table>
   );
@@ -42,19 +43,19 @@ function Register({ game }: { game: GameState }) {
   return (
     <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, form); }}>
       <fieldset>
-        <legend>Application for trade registration (Form GA-1)</legend>
+        <legend>{t("browser-sites-1.of.application")}</legend>
         <table>
           <tbody>
             <tr>
-              <td><label htmlFor="to-name">Name of the business <b>*</b></label></td>
+              <td><label htmlFor="to-name">{t("browser-sites-1.of.businessName")} <b>*</b></label></td>
               <td><input id="to-name" value={name} maxLength={32} required onChange={(e) => setName(e.target.value)} /></td>
             </tr>
             <tr>
-              <td><label htmlFor="to-owner">Owner (surname, first name) <b>*</b></label></td>
+              <td><label htmlFor="to-owner">{t("browser-sites-1.of.ownerField")} <b>*</b></label></td>
               <td><input id="to-owner" value={owner} required onChange={(e) => setOwner(e.target.value)} /></td>
             </tr>
             <tr>
-              <td><label htmlFor="to-form">Legal form <b>*</b></label></td>
+              <td><label htmlFor="to-form">{t("browser-sites-1.of.legalForm")} <b>*</b></label></td>
               <td>
                 <select id="to-form" value={form} onChange={(e) => setForm(e.target.value)}>
                   {Object.entries(LEGAL_FORMS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
@@ -62,20 +63,20 @@ function Register({ game }: { game: GameState }) {
               </td>
             </tr>
             <tr>
-              <td><label htmlFor="to-activity">Business activity <b>*</b></label></td>
+              <td><label htmlFor="to-activity">{t("browser-sites-1.of.activity")} <b>*</b></label></td>
               <td>
                 <select id="to-activity" defaultValue="hosting">
-                  <option value="hosting">Provision of internet services (hosting)</option>
+                  <option value="hosting">{t("browser-sites-1.of.hosting")}</option>
                 </select>
               </td>
             </tr>
           </tbody>
         </table>
-        <label className="to-check"><input type="checkbox" required /> I declare that the above information is true and complete. <b>*</b></label>
-        <p className="to-req"><b>*</b> Required field</p>
+        <label className="to-check"><input type="checkbox" required /> {t("browser-sites-1.of.declare")} <b>*</b></label>
+        <p className="to-req"><b>*</b> {t("browser-sites-1.of.required")}</p>
         <div className="to-buttons">
-          <button type="submit">Submit application</button>
-          <button type="reset" onClick={() => { setName(""); setOwner(""); setForm("sole"); }}>Reset</button>
+          <button type="submit">{t("browser-sites-1.of.submit")}</button>
+          <button type="reset" onClick={() => { setName(""); setOwner(""); setForm("sole"); }}>{t("browser-sites-1.of.reset")}</button>
         </div>
       </fieldset>
     </form>
@@ -86,14 +87,14 @@ function Extract({ game }: { game: GameState }) {
   const r = game.registration!;
   return (
     <fieldset className="to-form">
-      <legend>Extract from the trade register</legend>
+      <legend>{t("browser-sites-1.of.extract")}</legend>
       <table>
         <tbody>
-          <tr><td>Register number</td><td>GA {r.number}</td></tr>
-          <tr><td>Name of the business</td><td>{game.company.name}</td></tr>
-          {r.owner && <tr><td>Owner</td><td>{r.owner}</td></tr>}
-          <tr><td>Legal form</td><td>{LEGAL_FORMS[r.form]}</td></tr>
-          <tr><td>Registered on</td><td>{stamp(r.hour)}</td></tr>
+          <tr><td>{t("browser-sites-1.of.regNumber")}</td><td>GA {r.number}</td></tr>
+          <tr><td>{t("browser-sites-1.of.businessName")}</td><td>{game.company.name}</td></tr>
+          {r.owner && <tr><td>{t("browser-sites-1.of.owner")}</td><td>{r.owner}</td></tr>}
+          <tr><td>{t("browser-sites-1.of.legalForm")}</td><td>{LEGAL_FORMS[r.form]}</td></tr>
+          <tr><td>{t("browser-sites-1.of.registeredOn")}</td><td>{stamp(r.hour)}</td></tr>
         </tbody>
       </table>
     </fieldset>
@@ -104,10 +105,10 @@ function Body({ game, path, go }: { game: GameState; path: string; go: (url: str
   if (path === "/" || path === "") {
     return (
       <>
-        <h1>Welcome to Trade Office Online</h1>
-        <p>You can now register your business online with the trade office. Please use the eService during our office hours.</p>
-        <p className="to-new"><span>NEW!</span> <a href={`#${OFFICE_URL}`} onClick={(e) => { e.preventDefault(); go(OFFICE_URL); }}>Trade registration is now available online</a> (14.03.2003)</p>
-        <h2>Office hours</h2>
+        <h1>{t("browser-sites-1.of.welcome")}</h1>
+        <p>{t("browser-sites-1.of.welcomeText")}</p>
+        <p className="to-new"><span>{t("browser-sites-1.of.new")}</span> <a href={`#${OFFICE_URL}`} onClick={(e) => { e.preventDefault(); go(OFFICE_URL); }}>{t("browser-sites-1.of.newText")}</a> (14.03.2003)</p>
+        <h2>{t("browser-sites-1.of.hours")}</h2>
         <Hours />
       </>
     );
@@ -115,24 +116,24 @@ function Body({ game, path, go }: { game: GameState; path: string; go: (url: str
   if (path.replace(/\/$/, "") !== "/eservice") {
     return (
       <>
-        <h1>Under construction</h1>
-        <p className="to-construction">This page is currently under construction. Please visit us again soon.</p>
+        <h1>{t("browser-sites-1.of.construction")}</h1>
+        <p className="to-construction">{t("browser-sites-1.of.constructionText")}</p>
       </>
     );
   }
-  if (game.registration) return <><h1>eService: Trade registration</h1><Extract game={game} /></>;
+  if (game.registration) return <><h1>{t("browser-sites-1.of.eservice")}</h1><Extract game={game} /></>;
   if (!officeOpen(game.hour)) {
     return (
       <>
-        <h1>eService: Trade registration</h1>
-        <p className="to-closed">The online service is closed.</p>
-        <p>Server time: {clock(game.hour, game.minute)}</p>
-        <h2>Office hours</h2>
+        <h1>{t("browser-sites-1.of.eservice")}</h1>
+        <p className="to-closed">{t("browser-sites-1.of.serviceClosed")}</p>
+        <p>{t("browser-sites-1.of.serverTime", { time: clock(game.hour, game.minute) })}</p>
+        <h2>{t("browser-sites-1.of.hours")}</h2>
         <Hours />
       </>
     );
   }
-  return <><h1>eService: Trade registration</h1><Register game={game} /></>;
+  return <><h1>{t("browser-sites-1.of.eservice")}</h1><Register game={game} /></>;
 }
 
 // docs/design/tutorial.md: a 2005 government page that registers the company during office hours.
@@ -146,11 +147,11 @@ export function OfficeSite({ game, path, go }: { game: GameState; path: string; 
             <path d="M22 12l-8 6h16zM15 19h3v10h-3zM20.5 19h3v10h-3zM26 19h3v10h-3zM13 30h18v3H13z" fill="#111" />
           </svg>
           <div>
-            <div className="to-title">Trade Office Online</div>
-            <div className="to-sub">The official eGovernment portal of the trade office</div>
+            <div className="to-title">{t("browser-sites-1.of.title")}</div>
+            <div className="to-sub">{t("browser-sites-1.of.subtitle")}</div>
           </div>
         </div>
-        <div className="to-crumbs">You are here: <a href={`#www.${OFFICE_HOST}/`} onClick={(e) => { e.preventDefault(); go(`www.${OFFICE_HOST}/`); }}>Home</a>{path !== "/" && <> &gt; {MENU.find(([, p]) => p === path)?.[0] ?? "Page"}</>}</div>
+        <div className="to-crumbs">{t("browser-sites-1.of.here")} <a href={`#www.${OFFICE_HOST}/`} onClick={(e) => { e.preventDefault(); go(`www.${OFFICE_HOST}/`); }}>{t("browser-sites-1.of.menuHome")}</a>{path !== "/" && <> &gt; {MENU.find(([, p]) => p === path)?.[0] ?? t("browser-sites-1.of.page")}</>}</div>
         <div className="to-cols">
           <ul className="to-menu">
             {MENU.map(([label, p]) => (
@@ -160,9 +161,9 @@ export function OfficeSite({ game, path, go }: { game: GameState; path: string; 
           <div className="to-main"><Body game={game} path={path} go={go} /></div>
         </div>
         <div className="to-foot">
-          <span className="to-counter">Visitors: 004213</span>
-          <span>Last updated: 14.03.2003</span>
-          <span>Best viewed with Internet Exploder 6 at 1024x768</span>
+          <span className="to-counter">{t("browser-sites-1.of.visitors")}</span>
+          <span>{t("browser-sites-1.of.updated")}</span>
+          <span>{t("browser-sites-1.of.bestViewed")}</span>
         </div>
       </div>
     </div>

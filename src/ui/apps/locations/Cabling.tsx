@@ -6,6 +6,7 @@ import type { Device, End, GameState, Location } from "../../../sim/50-state";
 import { connectError, portPeers } from "../../../sim/60-infra/status";
 import { connect, disconnect } from "../../../sim/90-actions/hardware";
 import { cableColor, LED } from "../../art/fronts";
+import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { CABLE_NAME, devName, portName, speed } from "../hw";
 
@@ -25,9 +26,9 @@ function layout(g: GameState, loc: Location) {
   const kind = (d: Device) => modelById(d.model).kind;
   const net = (d: Device) => !d.panel && kind(d) !== "server";
   const cols: { title: string; groups: { head?: string; ds: Device[] }[] }[] = [
-    { title: "Carrier panel", groups: [{ ds: devs.filter((d) => d.panel) }] },
-    { title: "Network", groups: [{ ds: devs.filter(net).sort((a, b) => Number(kind(a) === "patch") - Number(kind(b) === "patch") || b.slot - a.slot) }] },
-    { title: "Servers", groups: racks.map((r) => ({ head: r.name, ds: devs.filter((d) => d.rackId === r.id && kind(d) === "server").sort((a, b) => b.slot - a.slot) })) },
+    { title: t("locations-1.carrierPanel"), groups: [{ ds: devs.filter((d) => d.panel) }] },
+    { title: t("locations-1.network"), groups: [{ ds: devs.filter(net).sort((a, b) => Number(kind(a) === "patch") - Number(kind(b) === "patch") || b.slot - a.slot) }] },
+    { title: t("locations-1.servers"), groups: racks.map((r) => ({ head: r.name, ds: devs.filter((d) => d.rackId === r.id && kind(d) === "server").sort((a, b) => b.slot - a.slot) })) },
   ].map((c) => ({ ...c, groups: c.groups.filter((gr) => gr.ds.length) })).filter((c) => c.groups.length);
   const nodes: Node[] = [], spots = new Map<string, Spot>(), heads: { text: string; x: number; y: number }[] = [];
   cols.forEach((c, ci) => {
@@ -40,7 +41,7 @@ function layout(g: GameState, loc: Location) {
         const m = modelById(d.model), rack = d.rackId ? rackOf.get(d.rackId) : undefined;
         m.ports.forEach((_, p) => spots.set(key({ device: d.id, port: p }), { x, y: y + HEAD + p * PITCH + PITCH / 2, left: x, right: x + NODE_W }));
         const h = HEAD + m.ports.length * PITCH + 6;
-        nodes.push({ d, m, x, y, h, sub: rack ? `${rack.name} · U${d.slot}` : "Carrier panel" });
+        nodes.push({ d, m, x, y, h, sub: rack ? `${rack.name} · U${d.slot}` : t("locations-1.carrierPanel") });
         y += h + GAP_Y;
       }
     }
@@ -141,10 +142,10 @@ export function Cabling({ game, loc }: { game: GameState; loc: Location }) {
           <span className="num">{name(chosen.a)}</span>
           <span className={`loc-cab-kind ${chosen.kind}`}>{CABLE_NAME[chosen.kind]}</span>
           <span className="num">{name(chosen.b)}</span>
-          <button className="btn danger" onClick={() => { act(disconnect, chosen.id); setSel(null); }}><Unplug />Disconnect</button>
+          <button className="btn danger" onClick={() => { act(disconnect, chosen.id); setSel(null); }}><Unplug />{t("locations-1.disconnect")}</button>
         </div>
       )}
-      <svg ref={svg} className="loc-cab" role="application" aria-label="Cabling" onPointerDown={down} onPointerMove={move} onPointerUp={up}
+      <svg ref={svg} className="loc-cab" role="application" aria-label={t("locations-1.cabling")} onPointerDown={down} onPointerMove={move} onPointerUp={up}
         onPointerOver={(e) => hover(e, true)} onPointerOut={(e) => hover(e, false)} onWheel={(e) => { pan.current = { x: pan.current.x - e.deltaX, y: pan.current.y - e.deltaY }; plane.current!.setAttribute("transform", `translate(${pan.current.x} ${pan.current.y})`); }}>
         <g ref={plane}>
           <g className="loc-cab-hits">

@@ -16,6 +16,7 @@ import { isoFile } from "./sites/software/SoftwareSite";
 import { useDownloads } from "../../downloads";
 import type { OsImage } from "../../../sim/10-catalog/server-os";
 import { useSessionState } from "../../session";
+import { t } from "../../../i18n/en";
 import { useFocus, useStore } from "../../store";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
@@ -41,7 +42,7 @@ interface Mark { title: string; url: string }
 const LOAD_MS = 2000;
 
 function titleOf(game: GameState, r: Resolved): string {
-  if (r.load === "down") return "Cannot reach";
+  if (r.load === "down") return t("misc1.browser.cannotReach");
   const p = r.page;
   switch (p.kind) {
     case "company": return game.company.name;
@@ -62,14 +63,14 @@ function titleOf(game: GameState, r: Resolved): string {
       return d ? kvmTitle(d) : r.host;
     }
     case "video": return VIDEO_TITLE;
-    case "phishing": return `${senderById(p.sender).name} Online-Banking`;
+    case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(p.sender).name });
     case "sponsorboard": return BOARD_TITLE;
     case "index": return "Yahoy! Directory";
     case "office": return OFFICE_TITLE;
     case "wiki": return WIKI_TITLE;
     case "software": return softwareById(p.id).name;
     case "os": return serverOsById(p.id).name;
-    default: return "Not found";
+    default: return t("misc1.browser.notFound");
   }
 }
 
@@ -117,12 +118,12 @@ function DownloadsButton({ game }: { game: GameState }) {
   const ids = (Object.keys(running) as OsImage[]).filter((id) => running[id]), first = ids[0] && running[ids[0]]!;
   const done = (d: { start: number; hours: number }) => Math.floor(Math.min(1, (nowHours(game) - d.start) / d.hours) * 100);
   return (
-    <button className="btn icon ghost br-dl" aria-label="Downloads" onClick={menuOn(() => [
+    <button className="btn icon ghost br-dl" aria-label={t("misc1.browser.downloads")} onClick={menuOn(() => [
       ...ids.map((id) => ({ label: `${isoFile(id)}, ${done(running[id]!)}%`, disabled: true })),
       ...game.media.images.map((id) => ({ label: isoFile(id), run: showDownloads })),
-      !game.media.images.length && !ids.length && { label: "No downloads", disabled: true },
+      !game.media.images.length && !ids.length && { label: t("misc1.browser.noDownloads"), disabled: true },
       null,
-      { label: "Show in Finder", run: showDownloads },
+      { label: t("misc1.browser.showInFinder"), run: showDownloads },
     ])}>
       <CircleArrowDown aria-hidden />
       {first && <span className="br-dl-bar"><i key={ids[0]} style={{ width: `${done(first)}%` }} /></span>}
@@ -183,21 +184,21 @@ export function BrowserApp() {
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setActive(x.id)}>
               <Favicon game={game} r={rx} />
               <span className="br-tab-title">{titleOf(game, rx)}</span>
-              {tabs.length > 1 && <button className="br-tab-x" aria-label="Close tab" onClick={(e) => { e.stopPropagation(); close(x.id); }}><X aria-hidden /></button>}
+              {tabs.length > 1 && <button className="br-tab-x" aria-label={t("misc1.browser.closeTab")} onClick={(e) => { e.stopPropagation(); close(x.id); }}><X aria-hidden /></button>}
             </div>
           );
         })}
-        <button className="br-new" aria-label="New tab" onClick={() => open(HOME_URL)}><Plus aria-hidden /></button>
+        <button className="br-new" aria-label={t("misc1.browser.newTab")} onClick={() => open(HOME_URL)}><Plus aria-hidden /></button>
       </div>
       <div className="br-bar">
-        <button className="btn icon ghost" aria-label="Back" disabled={tab.at === 0} onClick={() => step(-1)}><ArrowLeft aria-hidden /></button>
-        <button className="btn icon ghost" aria-label="Forward" disabled={tab.at >= tab.history.length - 1} onClick={() => step(1)}><ArrowRight aria-hidden /></button>
-        <button className="btn icon ghost" aria-label="Reload" onClick={reload}><RotateCw aria-hidden /></button>
-        <button className="btn icon ghost" aria-label="Home" onClick={() => go(HOME_URL)}><House aria-hidden /></button>
+        <button className="btn icon ghost" aria-label={t("misc1.browser.back")} disabled={tab.at === 0} onClick={() => step(-1)}><ArrowLeft aria-hidden /></button>
+        <button className="btn icon ghost" aria-label={t("misc1.browser.forward")} disabled={tab.at >= tab.history.length - 1} onClick={() => step(1)}><ArrowRight aria-hidden /></button>
+        <button className="btn icon ghost" aria-label={t("misc1.browser.reload")} onClick={reload}><RotateCw aria-hidden /></button>
+        <button className="btn icon ghost" aria-label={t("misc1.browser.home")} onClick={() => go(HOME_URL)}><House aria-hidden /></button>
         <form className="br-addr" onSubmit={(e) => { e.preventDefault(); if (addr.trim()) go(addr); }}>
           <Favicon game={game} r={r} />
-          <input aria-label="Address" value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} />
-          <button type="button" className="br-star" aria-label="Bookmark" aria-pressed={marked} disabled={isDefault} onClick={toggleMark}><Star aria-hidden /></button>
+          <input aria-label={t("misc1.browser.address")} value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} />
+          <button type="button" className="br-star" aria-label={t("misc1.browser.bookmark")} aria-pressed={marked} disabled={isDefault} onClick={toggleMark}><Star aria-hidden /></button>
         </form>
         <DownloadsButton game={game} />
       </div>

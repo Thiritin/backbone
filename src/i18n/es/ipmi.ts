@@ -1,0 +1,42 @@
+import type { Dict } from "../lang";
+
+const FAILED: Record<string, string> = {
+  hdd: "Disco duro averiado", ssd: "SSD averiado", nvme: "Unidad NVMe averiada", psu: "Fuente de alimentación averiada", fan: "Ventilador averiado",
+  ram: "Módulo de RAM averiado", board: "Placa base averiada", cpu: "CPU averiada", nic: "Tarjeta de red averiada",
+};
+
+export default {
+  "ipmi.log.powerOn": () => "Encendido",
+  "ipmi.log.shutdown": () => "Apagado ordenado",
+  "ipmi.log.pulled": () => "Corriente perdida",
+  "ipmi.log.reset": () => "Reinicio forzado",
+  "ipmi.log.cycle": () => "Ciclo de energía",
+  "ipmi.log.resync": () => "Resincronización del array iniciada",
+  "ipmi.log.corrupted": () => "Datos corruptos tras una parada brusca",
+  "ipmi.log.recovered": () => "Datos recuperados",
+  "ipmi.log.hung": () => "El sistema operativo ha dejado de responder",
+  "ipmi.log.bmcHung": () => "El controlador de gestión ha dejado de responder",
+  "ipmi.log.bmcReset": () => "Controlador de gestión reiniciado",
+  ...Object.fromEntries(Object.entries(FAILED).map(([kind, text]) => [`ipmi.log.failed.${kind}`, () => text])),
+  "event.serverHung.title": () => "Servidor colgado",
+  "event.serverHung.text": (p) => `${p.device} ha dejado de responder. Sus cargas de trabajo están caídas hasta que se reinicie.`,
+  "event.bmcHung.title": () => "Controlador de gestión colgado",
+  "event.bmcHung.text": (p) => `El controlador de gestión de ${p.device} ha dejado de responder.`,
+  "event.dataCorrupted.title": () => "Datos corruptos",
+  "event.dataCorrupted.text": (p) => `${p.device} se quedó sin corriente en pleno funcionamiento. ${p.count} ${Number(p.count) === 1 ? "carga de trabajo debe" : "cargas de trabajo deben"} recuperarse.`,
+  "event.recovered.title": () => "Carga de trabajo recuperada",
+  "event.recovered.text": (p) => `Una carga de trabajo de ${p.device} vuelve a funcionar.`,
+  "error.alreadyOff": () => "El servidor ya está apagado.",
+  "error.unresponsive": () => "El servidor no responde.",
+  "error.noBmc": () => "Este servidor no tiene controlador de gestión.",
+  "error.bmcHung": () => "El controlador de gestión no responde.",
+  "error.bmcFine": () => "El controlador de gestión responde.",
+  "error.notHung": () => "El servidor no está colgado.",
+  "error.notCorrupted": () => "Los datos no están corruptos.",
+  "error.needsRestore": () => "La recuperación ha fallado. Restáurala desde la copia de seguridad.",
+  "error.pduInstalled": () => "Este rack ya tiene una PDU conmutada.",
+  "error.handsBusy": () => "Ya hay alguien de camino a este servidor.",
+  "error.unplugged": () => "Los cables de alimentación ya están desenchufados.",
+  "error.plugged": () => "Los cables de alimentación ya están enchufados.",
+  "error.recovering": () => "Ya hay una recuperación en curso.",
+} satisfies Dict;

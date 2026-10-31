@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { t } from "../../../i18n/en";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { CUSTOM_SCRIPT, HARDWARE_MODULES, includes, moduleName, shopById, SHOPS, type ShopId } from "../../../sim/10-catalog/shops";
@@ -15,22 +16,22 @@ import { formatDay } from "../billing/BillingApp";
 import { PRODUCT } from "../support/labels";
 
 const ABOUT: Record<ShopId, string> = {
-  modemBill: "Sells web hosting on cPanic and Pleskit for a single payment.",
-  clientExit: "Sells panel hosting cheaply and adds other software through third-party modules.",
-  whmCache: "Connects to every web panel and, from 2008, every game panel.",
-  blessta: "Comes with its source code and connects to the common web panels.",
-  hostBull: "Connects to every panel, hypervisor and service software out of the box.",
-  ubersmyth: "Sets up dedicated servers and colocation by itself.",
-  orderBocks: "Costs nothing upfront and keeps a share of what its customers pay.",
-  boxBillin: "Costs nothing, and your team integrates each community module itself.",
+  modemBill: t("marketing.aboutModemBill"),
+  clientExit: t("marketing.aboutClientExit"),
+  whmCache: t("marketing.aboutWhmCache"),
+  blessta: t("marketing.aboutBlessta"),
+  hostBull: t("marketing.aboutHostBull"),
+  ubersmyth: t("marketing.aboutUbersmyth"),
+  orderBocks: t("marketing.aboutOrderBocks"),
+  boxBillin: t("marketing.aboutBoxBillin"),
 };
-const HARDWARE_NAME: Record<(typeof HARDWARE_MODULES)[number], string> = { registrar: "Domains", ssl: "Certificates", dedicated: "Dedicated servers", colo: "Colocation" };
+const HARDWARE_NAME: Record<(typeof HARDWARE_MODULES)[number], string> = { registrar: t("marketing.hwDomains"), ssl: t("marketing.hwCertificates"), dedicated: t("marketing.hwDedicated"), colo: t("marketing.hwColo") };
 
 const price = (id: ShopId): string => {
   const v = shopById(id);
-  if (v.cut) return `${Math.round(v.cut * 100)}% of revenue`;
-  const parts = [v.setup > 0 && `${euro(v.setup)} once`, v.monthly > 0 && `${euro(v.monthly)} / month${v.perServer ? ` or ${euro(v.perServer)} per server` : ""}`, v.yearly > 0 && `${euro(v.yearly)} / year`];
-  return parts.filter(Boolean).join(", ") || "Free";
+  if (v.cut) return t("marketing.priceCut", { pct: Math.round(v.cut * 100) });
+  const parts = [v.setup > 0 && t("marketing.priceOnce", { price: euro(v.setup) }), v.monthly > 0 && (v.perServer ? t("marketing.priceMonthlyPerServer", { price: euro(v.monthly), perServer: euro(v.perServer) }) : t("marketing.slashMonth", { price: euro(v.monthly) })), v.yearly > 0 && t("marketing.priceYearly", { price: euro(v.yearly) })];
+  return parts.filter(Boolean).join(", ") || t("marketing.free");
 };
 
 export function Shop({ game }: { game: GameState }) {
@@ -38,9 +39,9 @@ export function Shop({ game }: { game: GameState }) {
   return <>
     <div className="mkt-list">
       <div className="mkt-row">
-        <span className="mkt-label">Orders</span>
-        <span className="mkt-grow">{v ? v.name : owns(game, "orderForm") ? "Hand-rolled order form" : "Email"}</span>
-        {v && (shopActive(game) ? <span className="pill ok">Taking orders</span> : <span className="pill">Ready {formatDay(game.shop.readyAt)}</span>)}
+        <span className="mkt-label">{t("marketing.orders")}</span>
+        <span className="mkt-grow">{v ? v.name : owns(game, "orderForm") ? t("marketing.handRolledOrderForm") : t("marketing.email")}</span>
+        {v && (shopActive(game) ? <span className="pill ok">{t("marketing.takingOrders")}</span> : <span className="pill">{t("marketing.readyDay", { day: formatDay(game.shop.readyAt) })}</span>)}
       </div>
     </div>
     {game.unlocks.includes("shops") && <Variants game={game} />}
@@ -58,18 +59,18 @@ function Variants({ game }: { game: GameState }) {
       {SHOPS.filter((v) => year >= v.from).map((v) => {
         const used = game.shop.variant === v.id, sold = v.until === undefined || year <= v.until;
         let state: ReactNode;
-        if (used) state = <span className="pill ok">In use</span>;
-        else if (!sold) state = <span className="pill">Discontinued</span>;
+        if (used) state = <span className="pill ok">{t("marketing.inUse")}</span>;
+        else if (!sold) state = <span className="pill">{t("marketing.discontinued")}</span>;
         else state = <>
-          {v.own && <button className="btn" disabled={game.cash < v.own.price} onClick={() => act(chooseShop, v.id, true)}>Buy <span className="num">{euro(v.own.price)}</span></button>}
-          <button className="btn primary" disabled={game.cash < v.setup} onClick={() => act(chooseShop, v.id)}>{v.own ? "Lease" : "Choose"}</button>
+          {v.own && <button className="btn" disabled={game.cash < v.own.price} onClick={() => act(chooseShop, v.id, true)}>{t("marketing.buy")} <span className="num">{euro(v.own.price)}</span></button>}
+          <button className="btn primary" disabled={game.cash < v.setup} onClick={() => act(chooseShop, v.id)}>{v.own ? t("marketing.lease") : t("marketing.choose")}</button>
         </>;
         return (
           <div key={v.id} className="shop-card">
             <div className="shop-name"><strong>{v.name}</strong><span>{ABOUT[v.id]}</span></div>
             <dl className="shop-specs">
-              <div><dt>Price</dt><dd className="num">{price(v.id)}</dd></div>
-              <div><dt>Modules</dt><dd className="num">{v.extra === null ? "Included only" : v.extra === 0 ? "Free" : `${euro(v.extra)} each`}</dd></div>
+              <div><dt>{t("marketing.price")}</dt><dd className="num">{price(v.id)}</dd></div>
+              <div><dt>{t("marketing.modules")}</dt><dd className="num">{v.extra === null ? t("marketing.includedOnly") : v.extra === 0 ? t("marketing.free") : t("marketing.priceEach", { price: euro(v.extra) })}</dd></div>
             </dl>
             <div className="shop-buy"><span className="grow" />{state}</div>
           </div>
@@ -87,15 +88,15 @@ function Modules({ game }: { game: GameState }) {
   const cost = v ? v.extra : CUSTOM_SCRIPT;
   return (
     <div className="mkt-list">
-      <div className="side-h">{v ? "Modules" : "Custom scripts"}</div>
+      <div className="side-h">{v ? t("marketing.modules") : t("marketing.customScripts")}</div>
       {[...software, ...HARDWARE_MODULES].map((m) => {
         const bought = game.shop.modules[m];
         let state: ReactNode;
-        if (v && includes(v, m, year)) state = <span className="pill ok">Included</span>;
-        else if (hasModule(game, m)) state = <span className="pill ok">Installed</span>;
-        else if (bought !== undefined) state = <span className="pill">Ready {formatDay(bought)}</span>;
-        else if (cost === null) state = <span className="pill">Not available</span>;
-        else state = <button className="btn" disabled={game.cash < cost} onClick={() => act(buyModule, m)}>{cost ? <>Buy <span className="num">{euro(cost)}</span></> : "Integrate"}</button>;
+        if (v && includes(v, m, year)) state = <span className="pill ok">{t("marketing.included")}</span>;
+        else if (hasModule(game, m)) state = <span className="pill ok">{t("marketing.installed")}</span>;
+        else if (bought !== undefined) state = <span className="pill">{t("marketing.readyDay", { day: formatDay(bought) })}</span>;
+        else if (cost === null) state = <span className="pill">{t("marketing.notAvailable")}</span>;
+        else state = <button className="btn" disabled={game.cash < cost} onClick={() => act(buyModule, m)}>{cost ? <>{t("marketing.buy")} <span className="num">{euro(cost)}</span></> : t("marketing.integrate")}</button>;
         return (
           <div key={m} className="mkt-row">
             <span className="mkt-grow">{(HARDWARE_NAME as Record<string, string>)[m] ?? moduleName(m)}</span>
@@ -113,19 +114,19 @@ function StockList({ game }: { game: GameState }) {
   const pick = (p: Product, value: string) => act(setStock, p, (value === "auto" || value === "off" ? value : Math.max(0, Math.floor(Number(value) || 0))) as Stock);
   return (
     <div className="mkt-list">
-      <div className="side-h">Stock</div>
+      <div className="side-h">{t("marketing.stock")}</div>
       {game.marketing.lines.map((p) => {
         const n = stockOf(game, p), soldOut = game.shop.soldOut[p] ?? 0;
         return (
           <div key={p} className="mkt-row">
             <span className="mkt-label">{PRODUCT[p]}</span>
-            <span className="mkt-grow">{soldOut > 0 && <span className="mkt-sub"><span className="num">{soldOut}</span> sold out this month</span>}</span>
-            <div className="seg" role="group" aria-label={`Stock of ${PRODUCT[p]}`}>
-              <button aria-pressed={n === "off"} onClick={() => pick(p, "off")}>Off</button>
-              {v.autoStock && <button aria-pressed={n === "auto"} onClick={() => pick(p, "auto")}>Free capacity</button>}
-              <button aria-pressed={typeof n === "number"} onClick={() => typeof n !== "number" && pick(p, "10")}>Units</button>
+            <span className="mkt-grow">{soldOut > 0 && <span className="mkt-sub">{t("marketing.soldOutThisMonth", { n: soldOut })}</span>}</span>
+            <div className="seg" role="group" aria-label={t("marketing.stockOf", { product: PRODUCT[p] })}>
+              <button aria-pressed={n === "off"} onClick={() => pick(p, "off")}>{t("marketing.off")}</button>
+              {v.autoStock && <button aria-pressed={n === "auto"} onClick={() => pick(p, "auto")}>{t("marketing.freeCapacity")}</button>}
+              <button aria-pressed={typeof n === "number"} onClick={() => typeof n !== "number" && pick(p, "10")}>{t("marketing.units")}</button>
             </div>
-            {typeof n === "number" && <input className="num" type="number" min={0} step={1} style={{ width: "5em" }} aria-label={`Units of ${PRODUCT[p]}`} value={n} onChange={(e) => pick(p, e.target.value)} />}
+            {typeof n === "number" && <input className="num" type="number" min={0} step={1} style={{ width: "5em" }} aria-label={t("marketing.unitsOf", { product: PRODUCT[p] })} value={n} onChange={(e) => pick(p, e.target.value)} />}
           </div>
         );
       })}
@@ -133,8 +134,8 @@ function StockList({ game }: { game: GameState }) {
   );
 }
 
-const NODE_STATE: Record<NodeState, string> = { active: "Active", cordoned: "Cordoned", draining: "Draining", maintenance: "Maintenance" };
-const KIND: Partial<Record<SoftwareKind, string>> = { panel: "Web panels", cloud: "Hypervisors", game: "Game panels", dns: "DNS", vpn: "VPN", storage: "Storage" };
+const NODE_STATE: Record<NodeState, string> = { active: t("marketing.nodeActive"), cordoned: t("marketing.nodeCordoned"), draining: t("marketing.nodeDraining"), maintenance: t("marketing.nodeMaintenance") };
+const KIND: Partial<Record<SoftwareKind, string>> = { panel: t("marketing.kindPanel"), cloud: t("marketing.kindCloud"), game: t("marketing.kindGame"), dns: t("marketing.kindDns"), vpn: t("marketing.kindVpn"), storage: t("marketing.kindStorage") };
 
 // Server groups: which software installations the shop sells from and deploys to.
 function Groups({ game }: { game: GameState }) {
@@ -143,7 +144,7 @@ function Groups({ game }: { game: GameState }) {
   const [name, setName] = useState("");
   return (
     <div className="mkt-list">
-      <div className="side-h">Server groups</div>
+      <div className="side-h">{t("marketing.serverGroups")}</div>
       {game.shop.groups.map((g) => {
         const free = game.clusters.filter((c) => c.kind === g.kind && !groupOf(game, c.id));
         return (
@@ -151,13 +152,13 @@ function Groups({ game }: { game: GameState }) {
             <div className="mkt-row">
               <strong className="mkt-grow">{g.name}</strong>
               <span className="mkt-sub">{KIND[g.kind]}</span>
-              <button className="btn" onClick={() => act(deleteGroup, g.id)}>Delete</button>
+              <button className="btn" onClick={() => act(deleteGroup, g.id)}>{t("marketing.delete")}</button>
             </div>
             {g.members.map((id) => game.clusters.find((c) => c.id === id)).filter((c) => !!c).map((c) => (
               <div key={c.id} className="mkt-list">
                 <div className="mkt-row">
                   <span className="mkt-grow">{c.name}</span>
-                  <button className="btn" onClick={() => act(removeFromGroup, g.id, c.id)}>Remove</button>
+                  <button className="btn" onClick={() => act(removeFromGroup, g.id, c.id)}>{t("marketing.remove")}</button>
                 </div>
                 {c.nodes.map((n) => (
                   <div key={n.deviceId} className="mkt-row">
@@ -170,31 +171,31 @@ function Groups({ game }: { game: GameState }) {
             ))}
             {free.length > 0 && (
               <div className="mkt-row">
-                <select aria-label={`Add to ${g.name}`} value="" onChange={(e) => e.target.value && act(addToGroup, g.id, e.target.value)}>
-                  <option value="">Add software</option>
+                <select aria-label={t("marketing.addTo", { group: g.name })} value="" onChange={(e) => e.target.value && act(addToGroup, g.id, e.target.value)}>
+                  <option value="">{t("marketing.addSoftware")}</option>
                   {free.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
             )}
             {SERVES[g.kind].map((p) => (
               <label key={p} className="mkt-row">
-                <span className="mkt-grow">Sell {PRODUCT[p]}</span>
-                <input type="checkbox" role="switch" className="switch" aria-label={`Sell ${PRODUCT[p]} from ${g.name}`} checked={g.sale.includes(p)} onChange={(e) => act(setGroupSale, g.id, p, e.target.checked)} />
+                <span className="mkt-grow">{t("marketing.sell", { product: PRODUCT[p] })}</span>
+                <input type="checkbox" role="switch" className="switch" aria-label={t("marketing.sellFrom", { product: PRODUCT[p], group: g.name })} checked={g.sale.includes(p)} onChange={(e) => act(setGroupSale, g.id, p, e.target.checked)} />
               </label>
             ))}
             <label className="mkt-row">
-              <span className="mkt-grow">Deploy automatic orders</span>
-              <input type="checkbox" role="switch" className="switch" aria-label={`Deploy automatic orders to ${g.name}`} checked={g.deploy} onChange={(e) => act(setGroupDeploy, g.id, e.target.checked)} />
+              <span className="mkt-grow">{t("marketing.deployOrders")}</span>
+              <input type="checkbox" role="switch" className="switch" aria-label={t("marketing.deployOrdersTo", { group: g.name })} checked={g.deploy} onChange={(e) => act(setGroupDeploy, g.id, e.target.checked)} />
             </label>
           </div>
         );
       })}
       <div className="mkt-row">
-        <select aria-label="Software kind" value={kind} onChange={(e) => setKind(e.target.value as SoftwareKind)}>
+        <select aria-label={t("marketing.softwareKind")} value={kind} onChange={(e) => setKind(e.target.value as SoftwareKind)}>
           {Object.entries(KIND).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
         </select>
-        <input className="mkt-grow" aria-label="Group name" value={name} onChange={(e) => setName(e.target.value)} />
-        <button className="btn" disabled={!name.trim()} onClick={() => { act(createGroup, kind, name); setName(""); }}>New group</button>
+        <input className="mkt-grow" aria-label={t("marketing.groupName")} value={name} onChange={(e) => setName(e.target.value)} />
+        <button className="btn" disabled={!name.trim()} onClick={() => { act(createGroup, kind, name); setName(""); }}>{t("marketing.newGroup")}</button>
       </div>
     </div>
   );

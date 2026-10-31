@@ -1,29 +1,30 @@
+import { t } from "../../../../../i18n/en";
 import { Body, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./openveezee.css";
 
-const TITLE = { home: "Main Page", features: "Features", pricing: "License", download: "Download" } as const;
+const TITLE = { home: t("browser-sites-1.oz.main"), features: t("browser-sites-1.oz.features"), pricing: t("browser-sites-1.oz.license"), download: t("browser-sites-1.oz.download") } as const;
 
 // OpenVeeZee: a project wiki with a grey sidebar; 2016 adds a blue header band.
 export function OpenVeeZee(props: SiteProps) {
   const { p, look, page, year } = props;
   return (
     <div className={`sw sw-openveezee ${look}`}>
-      {look === "late" && <div className="band"><SiteMark id="openveezee" name={p.name} size={22} /> OpenVeeZee Wiki</div>}
+      {look === "late" && <div className="band"><SiteMark id="openveezee" name={p.name} size={22} /> {t("browser-sites-1.oz.wiki")}</div>}
       <div className="wiki">
         <aside>
           <div className="sw-logo"><SiteMark id="openveezee" name={p.name} size={64} /><span>OpenVeeZee</span></div>
-          <h3>Navigation</h3>
-          <Nav {...props} labels={{ home: "Main Page", pricing: "License" }} />
-          <h3>Toolbox</h3>
-          <p>What links here<br />Printable version</p>
+          <h3>{t("browser-sites-1.oz.nav")}</h3>
+          <Nav {...props} labels={{ home: TITLE.home, pricing: TITLE.pricing }} />
+          <h3>{t("browser-sites-1.oz.toolbox")}</h3>
+          <p>{t("browser-sites-1.oz.links")}<br />{t("browser-sites-1.oz.print")}</p>
         </aside>
         <main>
-          <div className="sw-tabs"><span className="on">Page</span><span>Discussion</span><span>View source</span><span>History</span></div>
+          <div className="sw-tabs"><span className="on">{t("browser-sites-1.oz.page")}</span><span>{t("browser-sites-1.oz.discussion")}</span><span>{t("browser-sites-1.oz.source")}</span><span>{t("browser-sites-1.oz.history")}</span></div>
           <h1>{TITLE[page]}</h1>
-          {page === "home" && <p className="lead"><b>{p.site.tagline}.</b></p>}
+          {page === "home" && <p className="lead"><b>{t("browser-sites-1.oz.tag", { tagline: p.site.tagline })}</b></p>}
           <Body {...props} />
-          <p className="mod">This page was last modified on 14 March {year}. Content is available under the GNU Free Documentation License.</p>
+          <p className="mod">{t("browser-sites-1.oz.modified", { year })}</p>
         </main>
       </div>
     </div>
