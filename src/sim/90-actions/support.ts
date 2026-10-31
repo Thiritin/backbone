@@ -108,7 +108,7 @@ export function closeTicket(s: GameState, id: string): ActionResult {
     else Object.assign(f.t, { status: "closed", outcome: "ignored", updatedAt: s.hour, unread: false });
     return { ok: true, id };
   }
-  if (f.t.kind === "migration" || f.t.kind === "maintenance") {
+  if (f.t.kind === "migration" || f.t.kind === "maintenance" || f.t.kind === "pear") {
     Object.assign(f.t, { status: "closed", updatedAt: s.hour, unread: false });
     return { ok: true, id };
   }

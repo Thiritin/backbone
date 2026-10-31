@@ -26,6 +26,7 @@ describe("app links and dock", () => {
   it("gives old saves the Applications app and a full dock", () => {
     const raw = JSON.parse(serialize(registered(newGame(1))));
     delete raw.registration;
+    delete raw.arrived;
     raw.installed = raw.installed.filter((id: string) => id !== "Applications");
     delete raw.undocked;
     const s = deserialize(JSON.stringify(raw));

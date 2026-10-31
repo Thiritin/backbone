@@ -41,6 +41,9 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   secondCity: (s) => new Set(rented(s).map((l) => l.city)).size >= 2,
   cage: (s) => s.locations.some((l) => l.space === "cage" || l.space === "suite"),
   research: (s) => s.unlocks.length > 0,
+  patch: (s) => s.security.patched.length > 0,
+  hire: (s) => s.staff.some((e) => !e.bot),
+  study: (s) => s.marketing.studies.length > 0,
   suite: (s) => s.locations.some((l) => l.space === "suite"),
 };
 
@@ -49,3 +52,10 @@ export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) 
 
 // The Getting started tutorial: each step is a checklist goal, done in this order. company is ticked by any change in Settings under Company.
 export const TUTORIAL = ["register", "company", "buyServer", "mountServer", "mountRouter", "internet", "setup", "website", "domain", "launch", "email", "firstCustomer"] as const;
+
+// The steps after the tutorial belong to apps that arrive later (80-business/walk.ts); each shows once its app is installed.
+export const GUIDE = [...TUTORIAL, "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
+const AFTER: Partial<Record<(typeof GUIDE)[number], string>> = {
+  website: "Marketing", launch: "Marketing", loan: "Finance", tenCustomers: "Customers", research: "Research", patch: "Security", hire: "Staff", study: "Market",
+};
+export const guideSteps = (s: GameState) => GUIDE.filter((id) => !AFTER[id] || s.installed.includes(AFTER[id]!));
