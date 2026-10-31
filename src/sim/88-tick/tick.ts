@@ -38,6 +38,7 @@ import { freezeTick } from "../60-infra/usage";
 import { statsTick } from "../60-infra/stats";
 import { networkTick } from "../60-infra/network";
 import { appsTick } from "../60-infra/apps";
+import { bansTick } from "../60-infra/bans";
 import { webpanelTick } from "../60-infra/webpanel";
 import { gamesTick } from "../60-infra/games";
 import { securityTick } from "../60-infra/security";
@@ -344,6 +345,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...securityTick(state));
   events.push(...appsTick(state));
   events.push(...webpanelTick(state));
+  bansTick(state);
   events.push(...supportTick(state));
   abandonTickets(state);
   events.push(...financeTick(state));
