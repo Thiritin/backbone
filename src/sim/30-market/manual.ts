@@ -23,6 +23,7 @@ import { answerAt, editRequest, habitFor, loseRequest, targetFor } from "./sales
 import { mailDelay } from "../80-business/mail";
 import type { Spec } from "../10-catalog/products";
 import { AUTOMATION_SKILL } from "../10-catalog/research";
+import { failsReview, hiddenTraits, REVIEW_MINUTES, reviewing } from "../45-billing/fraud";
 
 export type OrderStep = "quote" | "account" | "invoice" | "domain" | "provision";
 export const ORDER_STEPS: OrderStep[] = ["quote", "account", "invoice", "domain", "provision"];
@@ -30,7 +31,8 @@ export const isStep = (x: string): x is OrderStep => (ORDER_STEPS as string[]).i
 const STEP_MINUTES: Record<OrderStep, number> = {
   quote: ACTION_MINUTES.orderQuote, account: ACTION_MINUTES.orderAccount, invoice: ACTION_MINUTES.orderInvoice, domain: ACTION_MINUTES.orderDomain, provision: ACTION_MINUTES.orderProvision,
 };
-export const stepMinutes = (step: OrderStep): number => STEP_MINUTES[step];
+export const stepMinutes = (step: OrderStep, s?: GameState, r?: SalesRequest): number =>
+  STEP_MINUTES[step] + (step === "account" && s && r && reviewing(s, r.product) ? REVIEW_MINUTES : 0);
 // A customer who pays an order on time does so within this many days, eager to get started.
 export const ORDER_PAY_DAYS = 3;
 const DAY = 24, MONTH = 730;
@@ -100,7 +102,7 @@ export function staffOrderStep(s: GameState, t: Ticket, legacyError: string | nu
   // The quote stays the player's.
   return step && step !== "quote" && !stepError(s, t, step) ? step : null;
 }
-export const orderMinutes = (s: GameState, t: Ticket, arg: string, legacy: number): number => (isStep(arg) && orderOf(s, t) ? stepMinutes(arg) : legacy);
+export const orderMinutes = (s: GameState, t: Ticket, arg: string, legacy: number): number => (isStep(arg) && orderOf(s, t) ? stepMinutes(arg, s, orderOf(s, t)) : legacy);
 
 // A new invoice outside the monthly run, paid by the customer's habit; an order is paid within ORDER_PAY_DAYS when on time.
 export function issueInvoice(s: GameState, customerId: string, lines: InvoiceLine[], payDays = DUE_DAYS - 1): Invoice {
@@ -124,7 +126,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
   const error = r && stepError(s, t, step, r.route);
   if (!r || error) return r ? { app: "Support", key: "event.stepFailed", params: { name: requestName(r), error: error! } } : null;
   // Queuing logs the work; only the account step had no customer to log it on yet.
-  const log = (customerId: string) => logActivity(s, { customerId, serviceId: t.serviceId, by: by ?? null, key: "activity.resolve", params: { kind: "order", arg: step }, minutes: by === AUTOMATION ? 0 : stepMinutes(step) });
+  const log = (customerId: string) => logActivity(s, { customerId, serviceId: t.serviceId, by: by ?? null, key: "activity.resolve", params: { kind: "order", arg: step }, minutes: by === AUTOMATION ? 0 : stepMinutes(step, s, r) });
   if (step === "quote") {
     const at = answerAt(s, r, r.quote!);
     // The request outlasts the customer's answer.
@@ -134,8 +136,13 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     return null;
   }
   if (step === "account") {
-    const id = addCustomer(s, requestName(r), r.profile, r.shady ? "prompt" : habitFor(hashRng(s.seed, Number(r.id.slice(3)) || 0, 227), r.profile));
-    if (r.shady) s.customers = s.customers.map((c) => (c.id === id ? { ...c, shady: true } : c));
+    if (failsReview(s, r)) {
+      setTicket(s, t.id, { status: "closed", outcome: "declined", updatedAt: s.hour });
+      loseRequest(s, r, "declined", "lost.declined");
+      return { app: "Support", key: "event.orderDeclined", params: { name: requestName(r) } };
+    }
+    const id = addCustomer(s, requestName(r), r.profile, r.shady || r.fraud ? "prompt" : habitFor(hashRng(s.seed, Number(r.id.slice(3)) || 0, 227), r.profile));
+    if (r.shady || r.fraud) s.customers = s.customers.map((c) => (c.id === id ? { ...c, ...hiddenTraits(s, r) } : c));
     editRequest(s, r.id, () => ({ customerId: id }));
     setTicket(s, t.id, { customerId: id, updatedAt: s.hour });
     log(id);
@@ -196,7 +203,7 @@ export function acceptQuote(s: GameState, r: SalesRequest, events: SimEvent[]): 
   if (!r.ticketId) return;
   setTicket(s, r.ticketId, { status: "open", unread: true, dueAt: due, updatedAt: s.hour });
   events.push({ app: "Support", key: "event.orderAccepted", params: { name: requestName(r) } });
-  if (!s.autoOrders || !canAutomate(s)) return;
+  if (!s.autoOrders || !canAutomate(s) || reviewing(s, r.product)) return;
   editRequest(s, r.id, () => ({ route: "auto" }));
   for (const step of ORDER_STEPS.slice(1)) {
     const t = s.tickets.find((x) => x.id === r.ticketId)!;

@@ -14,4 +14,6 @@ export default {
   "alarm.diskHigh": (p) => `L'uso del datastore su ${p.host} è al ${p.percent}%.`,
   "alarm.vmStuck": (p) => `La macchina virtuale ${p.vm} non ha potuto essere riavviata su un altro host.`,
   "alarm.noFailover": (p) => `Risorse insufficienti per il failover di ${p.host}: ${p.need} GB di memoria allocati, ${p.free} GB liberi sugli altri host.`,
+  "alarm.feedHigh": (p) => `La linea ${p.feed} di ${p.rack} è al ${p.percent}% del suo limite.`,
+  "alarm.noFeedFailover": (p) => `Potenza insufficiente per il failover di ${p.rack}: le linee A e B assorbono insieme il ${p.percent}% del limite di una sola linea.`,
 } satisfies Dict;

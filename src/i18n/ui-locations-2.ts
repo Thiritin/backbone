@@ -303,6 +303,8 @@ export default {
   "locations-2.techOp.recover": () => "Recover",
   "locations-2.techOp.boot": () => "Continue boot",
   "locations-2.techOp.gear": () => "Recover",
+  "locations-2.techOp.mount": () => "Mount",
+  "locations-2.techOp.unmount": () => "Unmount",
   "locations-2.queued": () => "Queued",
   "locations-2.techSlot": (p) => `${p.name}${Number(p.onCall) ? " (on call)" : ""}, ${p.time}`,
   "locations-2.cancelQueued": (p) => `Cancel queued ${String(p.what).toLowerCase()}`,

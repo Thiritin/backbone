@@ -1,8 +1,11 @@
 name: Release
 
-# Run by hand. Tags the date as the version (2026.10.31, then 2026.10.31.2), publishes a GitHub release with the
-# CHANGELOG.md bullets added since the last release, and posts the same notes to the #changelog channel.
-on: workflow_dispatch
+# A push to main that adds CHANGELOG.md bullets creates or updates that day's GitHub release (the date is the version,
+# for example 2026.10.31) and posts the new bullets to the #changelog channel.
+on:
+  push:
+    branches: [main]
+    paths: ["CHANGELOG.md"]
 
 concurrency: release
 
@@ -11,8 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,19 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - id: v
-        run: |
-          prev=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // empty')
-          base=$(date -u +%Y.%m.%d)
-          v=$base
-          n=1
-          while git rev-parse -q --verify "refs/tags/$v" >/dev/null; do
-            n=$((n + 1)); v="$base.$n"
-          done
-          echo "prev=$prev" >> "$GITHUB_OUTPUT"
-          echo "version=$v" >> "$GITHUB_OUTPUT"
-      - run: node scripts/discord-changelog.mjs --since "${{ steps.v.outputs.prev }}" --version "${{ steps.v.outputs.version }}" --notes notes.md --dry
-      - run: gh release create "${{ steps.v.outputs.version }}" --target "$GITHUB_SHA" --title "${{ steps.v.outputs.version }}" --notes-file notes.md
-      - run: node scripts/discord-changelog.mjs --since "${{ steps.v.outputs.prev }}" --version "${{ steps.v.outputs.version }}"
+      - run: node scripts/discord-changelog.mjs --since "${{ github.event.before }}"
         env:
+          GH_TOKEN: ${{ github.token }}
           DISCORD_CHANGELOG_WEBHOOK: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK }}

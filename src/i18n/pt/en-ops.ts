@@ -53,6 +53,8 @@ export default {
   "event.coolingFailed.text": (p) => `A refrigeração em ${p.location} falhou durante ${duration(Number(p.minutes))}.`,
   "event.overheated.title": () => "Servidores sobreaquecidos",
   "event.overheated.text": (p) => `${Number(p.count) === 1 ? "1 servidor" : `${p.count} servidores`} em ${p.location} ${Number(p.count) === 1 ? "desligou-se" : "desligaram-se"} por causa do calor.`,
+  "event.feedCascade.title": () => "Falha de alimentação",
+  "event.feedCascade.text": (p) => `A alimentação ${p.feed} de ${p.rack} falhou e a outra alimentação não aguentou toda a carga e disparou. Todos os seus servidores ficaram sem energia durante ${duration(Number(p.minutes))}.`,
   "event.seized.title": () => "Servidor apreendido",
   "event.seized.text": (p) => `${p.agency} levou ${p.device} de ${p.location}.`,
   "event.seizedBack.title": () => "Servidor devolvido",

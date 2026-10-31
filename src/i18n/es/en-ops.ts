@@ -53,6 +53,8 @@ export default {
   "event.coolingFailed.text": (p) => `La refrigeración de ${p.location} falló durante ${duration(Number(p.minutes))}.`,
   "event.overheated.title": () => "Servidores sobrecalentados",
   "event.overheated.text": (p) => `${Number(p.count) === 1 ? "1 servidor" : `${p.count} servidores`} de ${p.location} se ${Number(p.count) === 1 ? "apagó" : "apagaron"} por el calor.`,
+  "event.feedCascade.title": () => "Fallo de acometida",
+  "event.feedCascade.text": (p) => `La acometida ${p.feed} de ${p.rack} falló y la otra acometida no soportó toda la carga y saltó. Todos sus servidores se quedaron ${duration(Number(p.minutes))} sin electricidad.`,
   "event.seized.title": () => "Servidor confiscado",
   "event.seized.text": (p) => `${p.agency} se llevó ${p.device} de ${p.location}.`,
   "event.seizedBack.title": () => "Servidor devuelto",

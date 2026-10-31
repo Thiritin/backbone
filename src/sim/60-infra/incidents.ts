@@ -11,7 +11,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { insideVm, isOwnVm, moveControlPlaneOff, pickNode, vmOf, type Workload } from "./cluster";
 import type { Incident } from "./ops";
 import { losePower } from "./power";
-import { bootHours, deviceWatts, HOURS_PER_YEAR, isPlugged, locationOf, psusOf } from "./status";
+import { bootHours, deviceWatts, dualFed, HOURS_PER_YEAR, locationOf, rackPower } from "./status";
 
 export const GRID = {
   // Outages a year: the household line in the basement fails more often than a datacenter's utility feed.
@@ -122,14 +122,15 @@ export function gridOutage(s: GameState, loc: Location, minutes: number, r: Rng,
   return inc;
 }
 
-// One feed of a rack fails. Servers with a live supply on each feed of a dual-fed rack stay up, single-supply servers
-// hang on feed A, and the rack's own UPS carries what it can.
+// One feed of a rack fails. Dual-fed servers move their whole load to the other feed, single-supply servers hang on feed A,
+// and the rack's own UPS carries what it can. A surviving feed that cannot carry the moved load trips and the rack goes dark.
 export function feedFailure(s: GameState, rack: Rack, feed: "A" | "B", minutes: number, r: Rng, events: SimEvent[]): Incident {
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
   const inRack = s.devices.filter((d) => d.rackId === rack.id);
-  const dual = (d: Device) => rack.feedB && psusOf(d).filter((c) => isPlugged(c) && c.failedAt === null).length >= 2;
   const dark = Math.max(0, Math.round(minutes - upsOf(inRack)));
-  const here = dark && feed === "A" ? inRack.filter((d) => d.on && !dual(d) && !modelById(d.model).batteryWh) : [];
+  const p = rackPower(s, rack.id);
+  const cascade = !!dark && rack.feedB && (feed === "A" ? 2 * p.b : p.a + p.b) > p.limitWatts;
+  const here = dark && (feed === "A" || cascade) ? inRack.filter((d) => d.on && (cascade || !dualFed(rack, d)) && !modelById(d.model).batteryWh) : [];
   const ids = new Set(here.map((d) => d.id));
   const workloads = s.workloads.filter((w) => onDevices(s, w, ids));
   cutPower(s, here, dark);
@@ -137,7 +138,7 @@ export function feedFailure(s: GameState, rack: Rack, feed: "A" | "B", minutes: 
     hour: s.hour, cause: "feed", locationId: loc.id, minutes, dark: here.length ? dark : 0, devices: here.map((d) => d.label ?? d.name),
     customers: customersOf(s, workloads).map((c) => c.id), agency: null, returnAt: null,
   });
-  events.push({ app: "Support", key: here.length ? "event.feedDark" : "event.feedCarried", params: { rack: rack.name, feed, minutes: here.length ? dark : minutes } });
+  events.push({ app: "Support", key: cascade ? "event.feedCascade" : here.length ? "event.feedDark" : "event.feedCarried", params: { rack: rack.name, feed, minutes: here.length ? dark : minutes } });
   outageFallout(s, workloads, dark, r, events);
   return inc;
 }

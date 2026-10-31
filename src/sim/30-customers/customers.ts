@@ -10,6 +10,8 @@ export interface Customer { id: string; name: string; profile: Profile; since: n
   credit: number;
   // A customer who draws abuse reports and legal requests; never shown to the player. Set on customers won from a shady request.
   shady?: boolean;
+  // A fraudster's order: the hour the stolen payment is charged back. Never shown to the player.
+  chargebackAt?: number;
   // The organiser of a sponsored event: churned from the start so no customer count, mail or churn roll sees them, while their free services run.
   sponsor?: true }
 // price is per hour for period "hour" (invoiced monthly in arrears) and per year for period "year" (invoiced in advance).

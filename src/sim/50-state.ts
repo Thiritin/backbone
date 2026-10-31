@@ -53,7 +53,9 @@ export type RackModel = "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-1
 // arriveAt is the hour a moving rack arrives; null when it is in place. A moving rack already holds its target location and position.
 export interface Rack { id: string; model: RackModel; locationId: string; position: number; name: string; arriveAt: number | null; price: number; boughtAt: number; provided: boolean; feedB: boolean; highDensity: boolean; extraKw: number; extraKwAt: { kw: number; at: number } | null;
   // A flat-rate power contract's kW, 0 for metered, and a change booked for a later hour.
-  flatKw: number; flatKwAt: { kw: number; at: number } | null }
+  flatKw: number; flatKwAt: { kw: number; at: number } | null;
+  // The hour each feed went above its continuous load, null while below.
+  overSince: { a: number | null; b: number | null } }
 // slot is the lowest unit the device occupies, counted from 1 at the bottom.
 // A gateway sits on its location's carrier panel: rackId null, panel = location id. A stored unit has store = its zone's location id;
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.
@@ -70,7 +72,7 @@ export type NetFail = "noInterfaces" | "noLink";
 export interface Device extends MachineState { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
   components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
   // others are the further CPUs a swap of every socket replaces with the same spec.
-  rebuild: { componentId: string; doneAt: number } | null; maintenance: { componentId: string; partId: string; doneAt: number; spec?: PartSpec; others?: string[] } | null;
+  rebuild: { componentId: string; doneAt: number } | null; maintenance: { componentId: string; partId: string; doneAt: number; spec?: PartSpec; others?: string[]; mount?: true } | null;
   // The hour the device's data was lost, if it ever was.
   dataLost: number | null;
   // The hour a device switched on finishes booting.
@@ -161,6 +163,10 @@ export interface GameState {
   billingRules: BillingRules;
   // Whether accepted orders run from account to setup by themselves (needs the provisioning skill).
   autoOrders: boolean;
+  // Whether server orders wait for a review by hand (45-billing/fraud.ts).
+  reviewOrders: boolean;
+  // How many monthly checks in a row the payment provider found too many chargebacks: 1 warned, 2 higher fees.
+  chargebackStrikes: number;
   // The shop system that takes orders, its modules and stock (docs/design/shop.md).
   shop: ShopState;
   // Customers whose services the player holds offline.
@@ -314,13 +320,13 @@ export const device = (id: string, model: string, brand: string, rackId: string 
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: START_CASH, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
-  racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null }],
+  racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
   cables: [],
   ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
-  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false,
+  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],

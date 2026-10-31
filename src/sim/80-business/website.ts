@@ -132,7 +132,7 @@ export function siteDownEvent(s: GameState, events: SimEvent[]): void {
   const down = siteStatus(s) === "down";
   if (down === s.marketing.siteOutage) return;
   s.marketing = { ...s.marketing, siteOutage: down };
-  if (down) events.push({ app: "Website", key: "event.siteDown", params: { host: s.clusters.find((c) => c.id === host.clusterId)?.name ?? "" } });
+  if (down) events.push({ app: "Browser", key: "event.siteDown", params: { host: s.clusters.find((c) => c.id === host.clusterId)?.name ?? "" } });
 }
 
 export type CustomerSiteStatus = "up" | "slow" | "defaced" | "down";

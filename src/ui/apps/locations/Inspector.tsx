@@ -77,7 +77,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     maintain: () => mnt.plan({ kind: "device", id: d.id }),
     move: (to) => hand.start(game, { title: t("locations-1.moveDeviceTo", { name: devName(d), to: game.locations.find((l) => l.id === to)?.name ?? "" }), deviceId: d.id, at: to, action: moveServer, args: [d.id, to] }),
     rename: () => onRename(d.id),
-    unmount: () => { if (act(unmountDevice, d.id).ok) onSelect(null); },
+    unmount: () => hand.start(game, { title: t("locations-1.labelDevice", { label: t("locations-1.unmount"), name: devName(d) }), deviceId: d.id, action: unmountDevice, args: [d.id], tech: { kind: "unmount" }, onDone: () => onSelect(null) }),
     sell: () => setSelling(d),
   });
   const cables = selling ? game.cables.filter((c) => c.a.device === selling.id || c.b.device === selling.id).length : 0;

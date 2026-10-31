@@ -53,6 +53,8 @@ export default {
   "event.coolingFailed.text": (p) => `Die Kühlung in ${p.location} ist für ${duration(Number(p.minutes))} ausgefallen.`,
   "event.overheated.title": () => "Server überhitzt",
   "event.overheated.text": (p) => `${Number(p.count) === 1 ? "1 Server" : `${p.count} Server`} in ${p.location} ${Number(p.count) === 1 ? "hat" : "haben"} sich wegen Hitze abgeschaltet.`,
+  "event.feedCascade.title": () => "Ausfall einer Einspeisung",
+  "event.feedCascade.text": (p) => `Einspeisung ${p.feed} von ${p.rack} ist ausgefallen, und die andere Einspeisung hat unter der ganzen Last ausgelöst. Alle Server darin waren ${duration(Number(p.minutes))} ohne Strom.`,
   "event.seized.title": () => "Server beschlagnahmt",
   "event.seized.text": (p) => `${p.agency} hat ${p.device} aus ${p.location} mitgenommen.`,
   "event.seizedBack.title": () => "Server zurückgegeben",

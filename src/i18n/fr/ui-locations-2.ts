@@ -303,6 +303,8 @@ export default {
   "locations-2.techOp.recover": () => "Récupérer",
   "locations-2.techOp.boot": () => "Poursuivre le démarrage",
   "locations-2.techOp.gear": () => "Récupérer",
+  "locations-2.techOp.mount": () => "Monter",
+  "locations-2.techOp.unmount": () => "Démonter",
   "locations-2.queued": () => "En file d'attente",
   "locations-2.techSlot": (p) => `${p.name}${Number(p.onCall) ? " (d'astreinte)" : ""}, ${p.time}`,
   "locations-2.cancelQueued": (p) => `Annuler l'action en attente : ${p.what}`,

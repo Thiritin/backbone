@@ -3,6 +3,7 @@ import { binomial, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
+import { fraudTick } from "../45-billing/fraud";
 import { opsTick } from "../40-support/notices";
 import { supportTick, workTick } from "../40-support/tick";
 import { abandonTickets } from "../40-support/abandon";
@@ -309,6 +310,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...usageTick(state));
   statsTick(state);
   events.push(...billingTick(state));
+  events.push(...fraudTick(state));
   events.push(...ordersTick(state));
   events.push(...domainsTick(state));
   events.push(...registrarTick(state));

@@ -176,6 +176,8 @@ export const SHARE_RACKS: { id: RackModel; units: number; size: number }[] = [
 export const rackUnits = (model: RackModel): number => [...RACK_MODELS, ...SHARE_RACKS].find((m) => m.id === model)!.units;
 
 export const BASEMENT = { positions: 1, maxUnits: 24, kw: 3 } as const;
+// A circuit carries 80% of its limit continuously; a draw above that for three hours trips its breaker.
+export const CONTINUOUS = { share: 0.8, hours: 3 } as const;
 export const HOUSEHOLD_FACTOR = 1.6;
 
 // Internet lines the basement can get, in Mbit/s and euros a month (docs/design/economy.md, Home line).

@@ -53,6 +53,8 @@ export default {
   "event.coolingFailed.text": (p) => `Il raffreddamento a ${p.location} si è guastato per ${duration(Number(p.minutes))}.`,
   "event.overheated.title": () => "Server surriscaldati",
   "event.overheated.text": (p) => `${Number(p.count) === 1 ? "1 server" : `${p.count} server`} a ${p.location} si ${Number(p.count) === 1 ? "è spento" : "sono spenti"} per il calore.`,
+  "event.feedCascade.title": () => "Guasto a una linea di alimentazione",
+  "event.feedCascade.text": (p) => `La linea ${p.feed} di ${p.rack} è andata in guasto e l'altra linea non ha retto tutto il carico ed è scattata. Tutti i suoi server sono rimasti senza corrente per ${duration(Number(p.minutes))}.`,
   "event.seized.title": () => "Server sequestrato",
   "event.seized.text": (p) => `${p.agency} ha portato via ${p.device} da ${p.location}.`,
   "event.seizedBack.title": () => "Server restituito",

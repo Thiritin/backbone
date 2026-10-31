@@ -1,5 +1,5 @@
 import {
-  Activity, AppWindow, FolderOpen, Bug, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, FolderOpen, Bug, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { t } from "../../i18n/en";
@@ -22,7 +22,6 @@ import type { MarkProps } from "../art/mailmarks";
 import { ResearchApp } from "./research/ResearchApp";
 import { StaffApp } from "./staff/StaffApp";
 import { TerminalApp } from "./terminal/TerminalApp";
-import { WebsiteApp } from "./website/WebsiteApp";
 import { isFinal } from "../../sim/40-support/tickets";
 import { isUnpaid } from "../../sim/45-billing/billing";
 import { deviceHealth } from "../../sim/60-infra/status";
@@ -46,7 +45,6 @@ export const APPS: AppDef[] = [
   { name: "Shop", icon: ShoppingCart, tile: "oklch(0.6 0.15 40)", about: t("apps.about.Shop") },
   { name: "Network", icon: Network, tile: "oklch(0.58 0.12 210)", about: t("apps.about.Network"), body: NetworkApp },
   { name: "Terminal", icon: SquareTerminal, tile: "oklch(0.3 0.01 255)", about: t("apps.about.Terminal"), body: TerminalApp },
-  { name: "Website", icon: AppWindow, tile: "oklch(0.6 0.13 230)", about: t("apps.about.Website"), body: WebsiteApp },
   { name: "Browser", icon: Compass, tile: "oklch(0.56 0.15 250)", about: t("apps.about.Browser"), body: BrowserApp },
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: t("apps.about.Customers"), body: CustomersApp },
   { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: t("apps.about.Support"), body: SupportApp,

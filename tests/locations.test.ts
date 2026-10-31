@@ -94,14 +94,14 @@ describe("racks", () => {
     const s = rich(10_000);
     const id = ok(addLocation(freeFloor(s), "interaction-fra", "cage", 4));
     const r = ok(buyRack(s, id, "rack-42", 2));
-    expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null });
+    expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } });
     expect(s.cash).toBe(9200);
     expect(s.ledger.at(-1)).toMatchObject({ category: "hardware", key: "ledger.hardware", params: { model: "42U rack", device: "fra2-rack-01" }, amount: -800 });
     expect(freePositions(s, id)).toEqual([1, 3, 4]);
     // Devices in a location that is not ready have no power.
     const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, id));
     ok(mountDevice(s, srv, r, 1));
-    expect(rackPower(s, r)).toEqual({ watts: 100, limitWatts: 6000, tripped: false });
+    expect(rackPower(s, r)).toEqual({ watts: 100, a: 100, b: 0, limitWatts: 6000, tripped: false });
     ok(connect(s, { device: srv, port: 0 }, { device: handoffOf(s, id), port: 0 }));
     expect(linkStatus(s, srv).online).toBe(false);
     s.hour = 720;
@@ -169,7 +169,7 @@ describe("moveRack", () => {
     expect(linkStatus(s, "dev3").online).toBe(false);
     ok(connect(s, { device: "dev4", port: 7 }, { device: handoffOf(s, fr5), port: 0 }));
     expect(linkStatus(s, "dev3")).toEqual({ online: true, gbit: 1, warning: null });
-    expect(rackPower(s, "rack2")).toEqual({ watts: 108, limitWatts: 8000, tripped: false });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 108, a: 108, b: 0, limitWatts: 8000, tripped: false });
   });
   it("takes three days and €1,200 to another city", () => {
     const s = rich(10_000);
@@ -203,10 +203,10 @@ describe("breakers", () => {
     ok(buyDevice(s, "g1-compute", "Dwell", 11, "loc1"));
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 10));
     runServers(s);
-    expect(rackPower(s, "rack2")).toEqual({ watts: 2758, limitWatts: 3000, tripped: false });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 2758, a: 2758, b: 0, limitWatts: 3000, tripped: false });
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 1));
     runServers(s);
-    expect(rackPower(s, "rack2")).toEqual({ watts: 3008, limitWatts: 3000, tripped: true });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 3008, a: 3008, b: 0, limitWatts: 3000, tripped: true });
     expect(linkStatus(s, "dev3").online).toBe(false);
     expect(linkStatus(s, "dev5").online).toBe(true);
     // Only the home router still draws power.
@@ -222,7 +222,7 @@ describe("breakers", () => {
     ok(buyDevice(s, "g1-compute", "Dwell", 17, id));
     ok(mountStack(s, "g1-compute", "Dwell", r, 16));
     runServers(s);
-    expect(rackPower(s, r)).toEqual({ watts: 4000, limitWatts: 4000, tripped: false });
+    expect(rackPower(s, r)).toEqual({ watts: 4000, a: 4000, b: 0, limitWatts: 4000, tripped: false });
     ok(mountStack(s, "g1-compute", "Dwell", r, 1));
     runServers(s);
     expect(rackPower(s, r).tripped).toBe(true);
@@ -281,7 +281,7 @@ describe("rack shares", () => {
     expect(srv.name).toBe("fra2-srv-01");
     ok(connect(s, { device: srv.id, port: 0 }, { device: handoffOf(s, id), port: 0 }));
     runServers(s);
-    expect(rackPower(s, r)).toEqual({ watts: 500, limitWatts: 500, tripped: false });
+    expect(rackPower(s, r)).toEqual({ watts: 500, a: 500, b: 0, limitWatts: 500, tripped: false });
     expect(linkStatus(s, srv.id).online).toBe(true);
     ok(mountStack(s, "g1-compute", "Dwell", r, 1));
     runServers(s);

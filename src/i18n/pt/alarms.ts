@@ -14,4 +14,6 @@ export default {
   "alarm.diskHigh": (p) => `A utilização do datastore em ${p.host} está nos ${p.percent} %.`,
   "alarm.vmStuck": (p) => `A máquina virtual ${p.vm} não pôde ser reiniciada noutro host.`,
   "alarm.noFailover": (p) => `Recursos insuficientes para o failover de ${p.host}: ${p.need} GB de memória atribuídos, ${p.free} GB livres nos outros hosts.`,
+  "alarm.feedHigh": (p) => `A alimentação ${p.feed} de ${p.rack} está a ${p.percent}% do seu limite.`,
+  "alarm.noFeedFailover": (p) => `Potência insuficiente para o failover de ${p.rack}: as alimentações A e B consomem juntas ${p.percent}% do limite de uma alimentação.`,
 } satisfies Dict;

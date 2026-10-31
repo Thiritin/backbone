@@ -2,11 +2,12 @@
 import { nowHours } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { hasBmc, modelById } from "../10-catalog/hardware";
+import { CONTINUOUS } from "../20-world/datacenters";
 import type { Device, GameState, MachineState } from "../50-state";
 import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
-import { bootHours, booting, haltHours, deviceHealth, drivesOf, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, working } from "./status";
+import { bootHours, booting, haltHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, working } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -109,20 +110,40 @@ export function haltTick(s: GameState): void {
   s.devices = s.devices.map((d) => (d.haltUntil !== undefined && d.haltUntil <= nowHours(s) ? { ...d, on: false, haltUntil: undefined } : d));
 }
 
-// Every minute: a rack over its limit trips its breaker, every server in it loses power and stays off, and the breaker
-// resets once the servers no longer draw. Network gear comes back by itself.
+// Every minute: a feed above its limit trips at once, one above its continuous load after CONTINUOUS.hours. Servers on the
+// tripped feed lose power and stay off; dual-fed servers move to the other feed, which trips too if it cannot carry them.
+// The breaker resets once the servers no longer draw. Network gear comes back by itself.
 export function tripTick(s: GameState): SimEvent[] {
   const isServer = (d: Device) => d.on && modelById(d.model).kind === "server";
-  const tripped = s.racks.filter((r) => s.devices.some((d) => d.rackId === r.id && isServer(d)) && rackPower(s, r.id).tripped);
-  if (!tripped.length) return [];
-  const ids = new Set(tripped.map((r) => r.id));
-  s.devices = s.devices.map((d) => {
-    if (!isServer(d) || !d.rackId || !ids.has(d.rackId)) return d;
+  const now = nowHours(s), events: SimEvent[] = [], out = new Set<string>();
+  let changed = false;
+  const racks = s.racks.map((r) => {
+    const servers = s.devices.filter((d) => d.rackId === r.id && isServer(d));
+    const p = servers.length ? rackPower(s, r.id) : null;
+    const since = (load: number, at: number | null) => (p && load > CONTINUOUS.share * p.limitWatts ? at ?? now : null);
+    const overSince = { a: since(p?.a ?? 0, r.overSince.a), b: since(p?.b ?? 0, r.overSince.b) };
+    const trips = (load: number, at: number | null) => !!p && (load > p.limitWatts || (at !== null && now - at >= CONTINUOUS.hours));
+    const feed = trips(p?.a ?? 0, overSince.a) ? "A" : trips(p?.b ?? 0, overSince.b) ? "B" : null;
+    if (feed && p) {
+      // Feed B carries only the dual-fed halves, feed A everything else.
+      const all = !r.feedB || (feed === "A" ? 2 * p.b : p.a + p.b) > p.limitWatts;
+      for (const d of servers) if (all || (feed === "A" && !dualFed(r, d))) out.add(d.id);
+      events.push(all ? { app: "Locations", key: "event.breakerTripped", params: { rack: r.name } } : { app: "Locations", key: "event.feedTripped", params: { rack: r.name, feed } });
+      if (all || feed === "A") overSince.a = null;
+      if (all || feed === "B") overSince.b = null;
+    }
+    if (overSince.a === r.overSince.a && overSince.b === r.overSince.b) return r;
+    changed = true;
+    return { ...r, overSince };
+  });
+  if (changed) s.racks = racks;
+  if (out.size) s.devices = s.devices.map((d) => {
+    if (!out.has(d.id)) return d;
     const n = { ...d };
     pullPlug(s, n);
     return n;
   });
-  return tripped.map((r) => ({ app: "Locations", key: "event.breakerTripped", params: { rack: r.name } }));
+  return events;
 }
 
 export function bootUp(s: GameState, d: Device): void {

@@ -1,4 +1,5 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
+import { hourOf } from "../00-core/time";
 import { GENERATIONS } from "./economy";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
 import { DDR_BY_GEN, defaultFamily, familiesOn, familyById, familySizes, isRamFamily, PART_MAKERS } from "./families";
@@ -295,6 +296,18 @@ export const MANUFACTURERS: Manufacturer[] = [
 export const brandsFor = (kind: DeviceKind): string[] => MANUFACTURERS.filter((m) => m.kinds.includes(kind)).map((m) => m.name);
 // Hours from an order to the stockroom: 3 days in 2005 falling in a straight line to 1 day in 2015.
 export const deliveryHours = (year: number): number => Math.round(72 - 48 * Math.min(1, Math.max(0, (year - 2005) / 10)));
+// Supply shocks stretch delivery for the part families they hit: rising from the first date to the peak factor at the second,
+// holding until the third, back to normal at the fourth (economy.md, Buying and selling).
+const at = (y: number, m: number) => hourOf(new Date(Date.UTC(y, m - 1)));
+export const SUPPLY_SHOCKS: { hit: string[]; peak: number; dates: [number, number, number, number] }[] = [
+  { hit: ["hdd"], peak: 4, dates: [at(2011, 10), at(2011, 11), at(2012, 2), at(2012, 7)] },
+  { hit: ["server", "chassis", "switch", "firewall", "gateway", "nic"], peak: 6, dates: [at(2021, 3), at(2021, 9), at(2022, 7), at(2023, 1)] },
+  { hit: ["ram", "ssd", "nvme"], peak: 5, dates: [at(2025, 1), at(2025, 10), at(2026, 10), at(2027, 1)] },
+];
+const ease = (t: number) => { const c = Math.min(1, Math.max(0, t)); return c * c * (3 - 2 * c); };
+// How many times longer a delivery of this kind or part kind takes at the hour.
+export const leadFactor = (family: string, hour: number): number => Math.max(1, ...SUPPLY_SHOCKS.filter((x) => x.hit.includes(family)).map(({ peak, dates: [a, b, c, d] }) =>
+  1 + (peak - 1) * Math.min(ease((hour - a) / (b - a)), 1 - ease((hour - c) / (d - c)))));
 // The manufacturers that sell this model.
 export const brandsOf = (m: DeviceModel): string[] => (m.brand ? [m.brand] : m.brands ?? brandsFor(m.kind));
 export const SERVER_BRANDS = brandsFor("server");

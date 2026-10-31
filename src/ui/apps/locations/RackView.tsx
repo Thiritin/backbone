@@ -24,9 +24,10 @@ import { More } from "../More";
 import { dcOf, Facts, positionsLabel, PowerMeter, Sheet, useDismiss } from "./ui";
 import { BookedMeters } from "./Clusters";
 import { clusterOf } from "../../../sim/60-infra/cluster";
+import { rackAlarms } from "../../../sim/60-infra/alarms";
 import { present } from "../../../sim/60-infra/handwork";
 import { useSessionState } from "../../session";
-import { useHandWork } from "./HandSheet";
+import { useHandWork, type HandTask } from "./HandSheet";
 
 export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
@@ -203,6 +204,10 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
             </div>
             <div className="loc-card">
               <div className="loc-card-h"><h3><Plug />{t("locations-2.power")}</h3><span className="grow" /><PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.tripped} /></div>
+              {rack.feedB && (["a", "b"] as const).map((f) => (
+                <div key={f} className="loc-row"><span className="loc-k">{t("locations-1.feed", { feed: f.toUpperCase() })}</span><span className="grow" /><PowerMeter watts={power[f]} limit={power.limitWatts} tripped={power[f] > power.limitWatts} /></div>
+              ))}
+              {rackAlarms(game, rack.id).map((a) => <div key={a.key + (a.params.feed ?? "")} className={`loc-row loc-alarm ${a.severity}`}>{t(a.key, a.params)}</div>)}
             </div>
             {nodes.length > 0 && (
               <div className="loc-card">
@@ -214,7 +219,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
           </>
         )}
       </div>
-      {mount && <MountPop game={game} rack={rack} {...mount} onClose={() => setMount(null)} onMounted={(id) => { setMount(null); onDevice(id); }} />}
+      {mount && <MountPop game={game} rack={rack} {...mount} onClose={() => setMount(null)} onMount={(task) => { setMount(null); hand.start(game, { ...task, onDone: () => onDevice(task.deviceId) }); }} />}
       {moving && <MoveRack game={game} rack={rack} onClose={() => setMoving(false)} onMoved={(id) => { setMoving(false); onMoved(id); }} />}
       {movingServers && <MoveServers game={game} rack={rack} onClose={() => setMovingServers(false)} onMove={(ids, to) => { setMovingServers(false); hand.start(game, { title: t("locations-2.moveServersTitle", { n: ids.length, to: to.name }), deviceId: ids[0], at: to.id, action: moveServer, args: [ids, to.id] }); }} />}
       {dialog}
@@ -226,7 +231,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
 }
 
 // Stored units that fit the clicked free range; a stack fills the top of the range, each unit on top of the last.
-function MountPop({ game, rack, unit, top, left, onClose, onMounted }: { game: GameState; rack: Rack; unit: number; top: number; left: number; onClose: () => void; onMounted: (id: string) => void }) {
+function MountPop({ game, rack, unit, top, left, onClose, onMount }: { game: GameState; rack: Rack; unit: number; top: number; left: number; onClose: () => void; onMount: (task: HandTask) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, onClose);
   const rows = storageStacks(game, rack.locationId).filter((st) => { const h = modelById(st.model).height; return h > 0 && mountFrom(game, rack.id, h, 1, unit) !== undefined; });
@@ -235,23 +240,18 @@ function MountPop({ game, rack, unit, top, left, onClose, onMounted }: { game: G
     <div className="loc-shop" ref={ref} style={{ top, left }} role="dialog" aria-label={t("locations-2.mountAt", { where })}>
       <div className="loc-shop-h"><h3>{where}</h3></div>
       <div className="loc-shop-list">
-        {rows.map((st) => <MountRow key={`${st.model}|${st.brand}`} game={game} rack={rack} st={st} unit={unit} onMounted={onMounted} />)}
+        {rows.map((st) => <MountRow key={`${st.model}|${st.brand}`} game={game} rack={rack} st={st} unit={unit} onMount={onMount} />)}
         {!rows.length && <div className="loc-shop-none">{t("locations-2.noStoredFits")}</div>}
       </div>
     </div>
   );
 }
 
-function MountRow({ game, rack, st, unit, onMounted }: { game: GameState; rack: Rack; st: ReturnType<typeof storageStacks>[number]; unit: number; onMounted: (id: string) => void }) {
-  const act = useStore((s) => s.act);
+function MountRow({ game, rack, st, unit, onMount }: { game: GameState; rack: Rack; st: ReturnType<typeof storageStacks>[number]; unit: number; onMount: (task: HandTask) => void }) {
   const m = modelById(st.model), max = mountMax(game, rack.id, m.height, st.ids.length, unit);
   const [count, setCount] = useState(1);
   const n = Math.min(count, max), from = mountFrom(game, rack.id, m.height, n, unit) ?? unit;
-  const mount = () => {
-    const id = st.ids[0];
-    const r = (n === 1 ? act(mountDevice, id, rack.id, from) : act(mountStack, st.model, st.brand, rack.id, n, from));
-    if (r.ok) onMounted(id);
-  };
+  const mount = () => onMount(mountTask(st, rack.id, n, from));
   return (
     <div className="loc-shop-row">
       <Isometric model={m} brand={st.brand} w={64} />
@@ -411,3 +411,12 @@ export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
     </div>
   );
 }
+
+// Mounting as hand work: one unit can also go to a technician, a stack goes in one job.
+export const mountTask = (st: { ids: string[]; model: string; brand: string }, rackId: string, n: number, from: number): HandTask => ({
+  title: t("locations-2.mountName", { name: `${st.brand} ${modelById(st.model).name}` }),
+  deviceId: st.ids[0],
+  ...(n === 1
+    ? { action: mountDevice, args: [st.ids[0], rackId, from], tech: { kind: "mount" as const, componentId: rackId, slot: from } }
+    : { action: mountStack, args: [st.model, st.brand, rackId, n, from] }),
+});
