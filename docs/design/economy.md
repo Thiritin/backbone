@@ -1835,6 +1835,18 @@ A cluster has up to 4 backup jobs. Each job copies a set of its workloads (all b
 | Target not reachable | the run fails with reason unreachable |
 | Restore | uses the newest point, so the age penalty in Data loss and backups is unchanged |
 
+Restore tests, offsite copies and alerts:
+
+| Value | Amount |
+| --- | --- |
+| Bad point | 1% of new points are bad, drawn from the game seed; a point that took the internet path to an offsite repository is bad with 3% |
+| Restore test | reads the point back at the restore speed (volume size divided by the link) and leaves the workload running; the point then shows as verified or bad |
+| Restoring an untested bad point | takes the full restore time, then the workload comes back empty and the customer takes the no-backup hit |
+| Tested bad point | is no backup: the restore reads the point before it |
+| Offsite copy | Sundays three hours after the job's hour; the newest point goes to a backup cluster in another zone at 45 GB per hour; both repositories hold it |
+| Failure alert | one per job per day, only when the job sends notifications |
+| Backup elsewhere | a backup survives its repository cluster losing every server only through an offsite copy |
+
 A save from before jobs turns its single schedule into one job named Backup and gives each backed-up workload one point.
 
 ### Templates

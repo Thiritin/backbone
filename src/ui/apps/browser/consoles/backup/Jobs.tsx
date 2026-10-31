@@ -2,8 +2,8 @@ import { useState } from "react";
 import { dateOf, formatClock, hourOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
 import { backupTargets, type Cluster, type Workload } from "../../../../../sim/60-infra/cluster";
-import { KEEP_MAX, MAX_JOBS, nextRun, pointsOf, type BackupJob } from "../../../../../sim/60-infra/backups";
-import { backupNow, deleteJob, pruneNow, removePoint, runJobNow, saveJob, type JobDraft } from "../../../../../sim/90-actions/backups";
+import { KEEP_MAX, MAX_JOBS, nextRun, pointsOf, type BackupJob, type RestorePoint } from "../../../../../sim/60-infra/backups";
+import { backupNow, deleteJob, pruneNow, removePoint, runJobNow, saveJob, testRestore, type JobDraft } from "../../../../../sim/90-actions/backups";
 import { restoreWorkload } from "../../../../../sim/90-actions/vms";
 import { lostDisk } from "../../../../../sim/60-infra/cluster";
 import { LOCALE } from "../../../../../i18n/lang";
@@ -23,7 +23,7 @@ function JobEditor({ game, c, job, skin, done }: { game: GameState; c: Cluster; 
   const act = useStore((s) => s.act), targets = backupTargets(game, c), vms = game.workloads.filter((w) => w.clusterId === c.id && !w.template);
   const [d, setD] = useState<JobDraft & { keep: { last: number; weekly: number } }>({
     id: job?.id, name: job?.name ?? t("bk.defaultName"), targetId: job?.targetId ?? targets[0]?.id, every: job?.every ?? "daily", hour: job?.hour ?? 2,
-    workloadIds: job?.workloadIds ?? null, keep: job?.keep ?? { last: 3, weekly: 0 }, notify: job?.notify ?? true,
+    workloadIds: job?.workloadIds ?? null, keep: job?.keep ?? { last: 3, weekly: 0 }, notify: job?.notify ?? true, offsiteId: job?.offsiteId ?? null,
   });
   const num = (v: string, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number(v) || lo));
   const some = d.workloadIds !== null && d.workloadIds !== undefined;
@@ -38,6 +38,8 @@ function JobEditor({ game, c, job, skin, done }: { game: GameState; c: Cluster; 
       {some && <div className="bk-pick">{vms.map((w) => <label key={w.id}><input type="checkbox" checked={d.workloadIds!.includes(w.id)} onChange={() => toggle(w.id)} />{w.hostname ?? w.id}</label>)}</div>}
       <label className="cx-field">{t(`bk.keep.${skin}`)}<input type="number" min={1} max={KEEP_MAX.last} value={d.keep.last} onChange={(e) => setD({ ...d, keep: { ...d.keep, last: num(e.target.value, 1, KEEP_MAX.last) } })} /></label>
       <label className="cx-field">{t("bk.keepWeekly")}<input type="number" min={0} max={KEEP_MAX.weekly} value={d.keep.weekly} onChange={(e) => setD({ ...d, keep: { ...d.keep, weekly: num(e.target.value, 0, KEEP_MAX.weekly) } })} /></label>
+      <label className="cx-field">{t("bk.offsite")}<select value={d.offsiteId ?? ""} onChange={(e) => setD({ ...d, offsiteId: e.target.value || null })}><option value="">{t("bk.none")}</option>{targets.filter((x) => x.id !== d.targetId).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+      <label className="cx-field"><span><input type="checkbox" checked={!!d.notify} onChange={(e) => setD({ ...d, notify: e.target.checked })} /> {t("bk.notify")}</span></label>
       <div className="cx-tools"><button className="cx-btn primary" type="submit" disabled={!d.targetId}>{t("bk.save")}</button><button className="cx-btn" type="button" onClick={done}>{t("bk.cancel")}</button></div>
     </form>
   );
@@ -53,7 +55,7 @@ export function JobsPanel({ game, source, target, skin }: { game: GameState; sou
       {source && <div className="cx-tools"><button className="cx-btn primary" disabled={!can} onClick={() => setEdit({ c: source })}>{t("bk.add")}</button></div>}
       {rows.length === 0 ? <p className="cx-empty">{t("browser-consoles-1.bkNoJobs")}</p> : (
         <table className="cx-table bk-jobs">
-          <thead><tr><th>{t("bk.name")}</th>{!source && <th>{t("bk.source")}</th>}<th>{t("bk.storage")}</th><th>{t("bk.schedule")}</th><th>{t("bk.objects")}</th><th>{t("bk.retention")}</th><th>{t("bk.lastResult")}</th><th>{t("bk.nextRun")}</th><th /></tr></thead>
+          <thead><tr><th>{t("bk.name")}</th>{!source && <th>{t("bk.source")}</th>}<th>{t("bk.storage")}</th><th>{t("bk.schedule")}</th><th>{t("bk.objects")}</th><th>{t("bk.retention")}</th><th>{t("bk.offsite")}</th><th>{t("bk.lastResult")}</th><th>{t("bk.nextRun")}</th><th /></tr></thead>
           <tbody>
             {rows.map(({ c, j }) => (
               <tr key={j.id}>
@@ -62,6 +64,7 @@ export function JobsPanel({ game, source, target, skin }: { game: GameState; sou
                 <td>{j.every === "daily" ? t("bk.dailyAt", { time: hh(j.hour) }) : t("bk.weeklyAt", { time: hh(j.hour) })}</td>
                 <td className="num">{j.workloadIds ? j.workloadIds.length : t("bk.selAll")}</td>
                 <td className="num">{t("bk.retentionValue", { last: j.keep.last, weekly: j.keep.weekly })}</td>
+                <td>{game.clusters.find((x) => x.id === j.offsiteId)?.name ?? t("bk.none")}</td>
                 <td><span className={`cx-state ${j.lastOk === false ? "bad" : j.lastOk ? "ok" : ""}`}>{result(j)}</span></td>
                 <td className="num">{formatClock(nextRun(j, game.hour))}</td>
                 <td className="cx-tools">
@@ -80,6 +83,14 @@ export function JobsPanel({ game, source, target, skin }: { game: GameState; sou
   );
 }
 
+const status = (p: RestorePoint) => p.testDoneAt !== undefined ? t("bk.testing") : p.verified ? (p.bad ? t("bk.bad") : t("bk.verified")) : t("bk.untested");
+
+// The restore test button of a point, which reads it back from its repository.
+function TestButton({ w, p }: { w: Workload; p: RestorePoint }) {
+  const act = useStore((s) => s.act);
+  return <button className="cx-btn" disabled={p.verified || p.testDoneAt !== undefined} onClick={() => act(testRestore, w.id, p.at, p.offsite)}>{t("bk.testRestore")}</button>;
+}
+
 // The restore points of one workload, newest first, with Restore for a lost one, Remove and Backup now.
 export function PointsPanel({ game, c, w }: { game: GameState; c: Cluster; w: Workload }) {
   const act = useStore((s) => s.act), pts = [...pointsOf(w)].sort((a, b) => b.at - a.at), covered = c.jobs.some((j) => !j.workloadIds || j.workloadIds.includes(w.id));
@@ -91,12 +102,13 @@ export function PointsPanel({ game, c, w }: { game: GameState; c: Cluster; w: Wo
       </div>
       {pts.length === 0 ? <p className="cx-empty">{t("bk.noPoints")}</p> : (
         <table className="cx-table">
-          <thead><tr><th>{t("bk.date")}</th><th>{t("bk.job")}</th><th>{t("bk.size")}</th><th /></tr></thead>
+          <thead><tr><th>{t("bk.date")}</th><th>{t("bk.job")}</th><th>{t("bk.offsite")}</th><th>{t("bk.size")}</th><th>{t("bk.lastResult")}</th><th /></tr></thead>
           <tbody>
             {pts.map((p) => (
               <tr key={`${p.jobId}-${p.at}`}>
-                <td className="num">{formatClock(p.at)}</td><td>{c.jobs.find((j) => j.id === p.jobId)?.name}</td><td className="num">{disk(Math.round(p.gb * 10) / 10)}</td>
-                <td><button className="cx-btn" onClick={() => act(removePoint, w.id, p.at, p.jobId)}>{t("bk.remove")}</button></td>
+                <td className="num">{formatClock(p.at)}</td><td>{c.jobs.find((j) => j.id === p.jobId)?.name}</td><td>{p.offsite ? game.clusters.find((x) => x.id === c.jobs.find((j) => j.id === p.jobId)?.offsiteId)?.name : t("bk.none")}</td><td className="num">{disk(Math.round(p.gb * 10) / 10)}</td>
+                <td>{status(p)}</td>
+                <td className="cx-tools"><TestButton w={w} p={p} /><button className="cx-btn" onClick={() => act(removePoint, w.id, p.at, p.jobId)}>{t("bk.remove")}</button></td>
               </tr>
             ))}
           </tbody>
@@ -128,7 +140,7 @@ export function Calendar({ game, target }: { game: GameState; target: Cluster })
       {pick !== null && (
         <ul className="bk-side">
           {byDay(pick).length === 0 && <li className="cx-empty">{t("bk.noPoints")}</li>}
-          {byDay(pick).map(({ w, p }) => <li key={`${w.id}-${p.jobId}-${p.at}`}>{formatClock(p.at)} {w.hostname ?? w.id} {disk(Math.round(p.gb * 10) / 10)}</li>)}
+          {byDay(pick).map(({ w, p }) => <li key={`${w.id}-${p.jobId}-${p.at}-${p.offsite}`}>{formatClock(p.at)} {w.hostname ?? w.id} {disk(Math.round(p.gb * 10) / 10)} {status(p)} <TestButton w={w} p={p} /></li>)}
         </ul>
       )}
     </div>

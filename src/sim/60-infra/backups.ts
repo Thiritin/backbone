@@ -1,11 +1,13 @@
 // Backup jobs and restore points (economy.md, "Backup jobs and restore points").
+import { chance, hashRng } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
-import { BACKUP_CHANGED, BACKUP_HOUR } from "../10-catalog/usage";
+import { BACKUP_CHANGED, BACKUP_HOUR, idNum } from "../10-catalog/usage";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { backsUpCluster, controlPlaneUp, lostDisk, vmRoom, type Cluster, type Workload } from "./cluster";
 import { nodeUsage, diskFill } from "./usage";
 import { raidUsable } from "./status";
+import { LAN_GB_PER_HOUR, WAN_GB_PER_HOUR } from "../85-products/products";
 
 export interface Keep { last: number; weekly: number }
 export interface BackupJob {
@@ -13,8 +15,13 @@ export interface BackupJob {
   // null covers every workload of the cluster.
   workloadIds: string[] | null; keep: Keep; offsiteId: string | null; notify: boolean;
   lastRun: number | null; lastOk: boolean | null; lastReason?: "full" | "unreachable";
+  // The hour the last failure alert went out.
+  lastAlert?: number;
 }
-export interface RestorePoint { at: number; gb: number; jobId: string; verified: boolean; bad: boolean; offsite: boolean }
+// bad is decided when the point is written and shows once a restore test verified it; an offsite copy is its own point,
+// readyAt the hour its transfer is done; testDoneAt the hour a running restore test ends.
+export interface RestorePoint { at: number; gb: number; jobId: string; verified: boolean; bad: boolean; offsite: boolean; readyAt?: number; testDoneAt?: number }
+export const BAD_POINT = 0.01, BAD_OFFSITE = 0.03;
 
 export const KEEP_DEFAULT: Keep = { last: 3, weekly: 0 };
 export const KEEP_MAX: Keep = { last: 14, weekly: 8 };
@@ -23,20 +30,46 @@ export const MAX_JOBS = 4;
 export const pointsOf = (w: Workload): RestorePoint[] => w.points ?? [];
 export const jobById = (s: GameState, id: string): BackupJob | undefined => s.clusters.flatMap((c) => c.jobs).find((j) => j.id === id);
 
-// The newest point stamps the workload's last backup.
-export const syncBackupAt = (w: Workload): Workload => ({ ...w, backupAt: pointsOf(w).reduce<number | null>((n, p) => (n === null || p.at > n ? p.at : n), null) });
+// A point a restore test showed to be bad is no backup.
+const usable = (p: RestorePoint): boolean => !(p.verified && p.bad);
+const newest = (a: RestorePoint[]) => a.reduce<RestorePoint | null>((n, p) => (!n || p.at > n.at ? p : n), null);
 
-// The cluster that holds a workload's newest copy, or else its first job's target.
+// The newest usable point stamps the workload's last backup.
+export const syncBackupAt = (w: Workload): Workload => ({ ...w, backupAt: newest(pointsOf(w).filter(usable))?.at ?? null });
+
+const repoOf = (s: GameState, c: Cluster, p: RestorePoint): Cluster | undefined => {
+  const j = c.jobs.find((x) => x.id === p.jobId);
+  return s.clusters.find((x) => x.id === (p.offsite ? j?.offsiteId : j?.targetId));
+};
+
+// Whether a copy survives: some good point sits in a repository cluster that still has a server or panel VM.
+export function holdsCopy(s: GameState, w: Workload): boolean {
+  const c = s.clusters.find((x) => x.id === w.clusterId), pts = pointsOf(w).filter(usable);
+  if (!c || !pts.length) return true;
+  return pts.some((p) => { const r = repoOf(s, c, p); return !r || r.nodes.length > 0 || !!r.vm; });
+}
+
+// The point a restore reads: the newest one in a reachable repository that no test showed to be bad, a primary copy before an offsite one.
+export function usablePoint(s: GameState, c: Cluster, w: Workload): RestorePoint | null {
+  const ok = pointsOf(w).filter((p) => usable(p) && (p.readyAt ?? 0) <= s.hour), up = (p: RestorePoint) => { const r = repoOf(s, c, p); return !!r && controlPlaneUp(s, r); };
+  return newest(ok.filter((p) => !p.offsite && up(p))) ?? newest(ok.filter((p) => p.offsite && up(p))) ?? newest(ok.filter((p) => !p.offsite));
+}
+
+// The cluster that holds the point a restore reads, or else the first job's target.
 export function backupTarget(s: GameState, c: Cluster, w: Workload): Cluster | undefined {
-  const last = pointsOf(w).reduce<RestorePoint | null>((n, p) => (!n || p.at > n.at ? p : n), null);
-  const id = (last && c.jobs.find((j) => j.id === last.jobId)?.targetId) ?? c.jobs[0]?.targetId;
-  return s.clusters.find((x) => x.id === id);
+  const p = usablePoint(s, c, w);
+  return (p && repoOf(s, c, p)) ?? s.clusters.find((x) => x.id === c.jobs[0]?.targetId);
+}
+
+// Hours a workload's copy takes over the link between its cluster and a repository.
+export function linkHours(c: Cluster, target: Cluster | undefined, gb: number): number {
+  return Math.max(1, Math.ceil(gb / (target && target.az === c.az ? LAN_GB_PER_HOUR : WAN_GB_PER_HOUR)));
 }
 
 // Disk the repository of a cluster holds: every point whose job writes there.
 export function repoUsed(s: GameState, targetId: string): number {
   const jobs = new Map(s.clusters.flatMap((c) => c.jobs).map((j) => [j.id, j]));
-  return s.workloads.reduce((n, w) => n + pointsOf(w).reduce((m, p) => m + (jobs.get(p.jobId)?.targetId === targetId ? p.gb : 0), 0), 0);
+  return s.workloads.reduce((n, w) => n + pointsOf(w).reduce((m, p) => m + ((p.offsite ? jobs.get(p.jobId)?.offsiteId : jobs.get(p.jobId)?.targetId) === targetId ? p.gb : 0), 0), 0);
 }
 
 export function repoRoom(s: GameState, target: Cluster): number {
@@ -49,51 +82,92 @@ export function repoRoom(s: GameState, target: Cluster): number {
 
 export const inJob = (j: BackupJob, w: Workload): boolean => !j.workloadIds || j.workloadIds.includes(w.id);
 
-// Keeps the newest keep.last points and one per week for keep.weekly weeks; the oldest kept point becomes the full copy.
+// Keeps the newest keep.last points and one per week for keep.weekly weeks, for the primary copies and the offsite ones apart;
+// the oldest kept point of each becomes the full copy.
 export function pruneJob(s: GameState, w: Workload, j: BackupJob): Workload {
-  const mine = pointsOf(w).filter((p) => p.jobId === j.id).sort((a, b) => b.at - a.at);
-  const keep = new Set(mine.slice(0, j.keep.last));
-  const weeks = new Set<number>();
-  for (const p of mine.slice(j.keep.last)) {
-    const wk = Math.floor(p.at / 168);
-    if (weeks.size < j.keep.weekly && !weeks.has(wk)) { weeks.add(wk); keep.add(p); }
+  let points = pointsOf(w);
+  for (const off of [false, true]) {
+    const mine = points.filter((p) => p.jobId === j.id && p.offsite === off).sort((a, b) => b.at - a.at);
+    const keep = new Set(mine.slice(0, j.keep.last)), weeks = new Set<number>();
+    for (const p of mine.slice(j.keep.last)) {
+      const wk = Math.floor(p.at / 168);
+      if (weeks.size < j.keep.weekly && !weeks.has(wk)) { weeks.add(wk); keep.add(p); }
+    }
+    const oldest = mine.filter((p) => keep.has(p)).at(-1);
+    points = points.filter((p) => p.jobId !== j.id || p.offsite !== off || keep.has(p))
+      .map((p) => (p === oldest ? { ...p, gb: Math.max(p.gb, w.diskGb * diskFill(s, w, p.at)) } : p));
   }
-  const kept = mine.filter((p) => keep.has(p));
-  const oldest = kept.at(-1);
-  const points = pointsOf(w).filter((p) => p.jobId !== j.id || keep.has(p))
-    .map((p) => (p === oldest ? { ...p, gb: Math.max(p.gb, w.diskGb * diskFill(s, w, p.at)) } : p));
   return syncBackupAt({ ...w, points });
+}
+
+type Why = "full" | "unreachable" | null;
+
+// Records a run's result on the job; a failure raises one alert a day.
+function settle(s: GameState, c: Cluster, job: BackupJob, why: Why, events: SimEvent[]): void {
+  const j = s.clusters.find((x) => x.id === c.id)?.jobs.find((y) => y.id === job.id) ?? job;
+  const alert = why !== null && j.notify && (j.lastAlert === undefined || s.hour - j.lastAlert >= 24);
+  s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, jobs: x.jobs.map((y) => (y.id === j.id ? { ...y, lastRun: s.hour, lastOk: why === null, lastReason: why ?? undefined, ...(alert && { lastAlert: s.hour }) } : y)) } : x));
+  if (alert) events.push({ app: "Locations", key: "event.backupFailed", params: { cluster: c.name, target: s.clusters.find((x) => x.id === j.targetId)?.name ?? "" } });
 }
 
 // One run of a job: a point per workload; stops at a full repository.
 export function runJob(s: GameState, c: Cluster, j: BackupJob, events: SimEvent[], only?: string): void {
   const target = s.clusters.find((x) => x.id === j.targetId);
-  let reason: "full" | "unreachable" | null = null;
-  if (!target || !backsUpCluster(s, c, target) || !controlPlaneUp(s, target)) reason = "unreachable";
+  let why: Why = null;
+  if (!target || !backsUpCluster(s, c, target) || !controlPlaneUp(s, target)) why = "unreachable";
   else {
     let used = repoUsed(s, target.id);
     const room = repoRoom(s, target);
     s.workloads = s.workloads.map((w) => {
-      if (reason || w.clusterId !== c.id || (only && w.id !== only) || !inJob(j, w) || lostDisk(s, w) || w.busyUntil > s.hour) return w;
-      const full = w.diskGb * diskFill(s, w, s.hour), first = !pointsOf(w).some((p) => p.jobId === j.id);
+      if (why || w.clusterId !== c.id || (only && w.id !== only) || !inJob(j, w) || lostDisk(s, w) || w.busyUntil > s.hour) return w;
+      const full = w.diskGb * diskFill(s, w, s.hour), first = !pointsOf(w).some((p) => p.jobId === j.id && !p.offsite);
       const gb = first ? full : full * BACKUP_CHANGED;
-      if (used + gb > room) { reason = "full"; return w; }
+      if (used + gb > room) { why = "full"; return w; }
       used += gb;
-      return pruneJob(s, { ...w, points: [...pointsOf(w), { at: s.hour, gb, jobId: j.id, verified: false, bad: false, offsite: false }] }, j);
+      const bad = chance(hashRng(s.seed, idNum(w.id), s.hour), BAD_POINT);
+      return pruneJob(s, { ...w, points: [...pointsOf(w), { at: s.hour, gb, jobId: j.id, verified: false, bad, offsite: false }] }, j);
     });
   }
-  const ok = reason === null;
-  s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, jobs: x.jobs.map((y) => (y.id === j.id ? { ...y, lastRun: s.hour, lastOk: ok, lastReason: reason ?? undefined } : y)) } : x));
-  if (!ok) events.push({ app: "Locations", key: "event.backupFailed", params: { cluster: c.name, target: target?.name ?? "" } });
+  settle(s, c, j, why, events);
 }
 
-// Hourly: every job whose hour has come runs (weekly ones on Sundays).
+// Copies each workload's newest point to the job's offsite repository over the internet.
+function copyOffsite(s: GameState, c: Cluster, j: BackupJob, events: SimEvent[]): void {
+  const off = s.clusters.find((x) => x.id === j.offsiteId);
+  let why: Why = null;
+  if (!off || !backsUpCluster(s, c, off) || !controlPlaneUp(s, off)) why = "unreachable";
+  else {
+    let used = repoUsed(s, off.id);
+    const room = repoRoom(s, off);
+    s.workloads = s.workloads.map((w) => {
+      if (why || w.clusterId !== c.id || !inJob(j, w)) return w;
+      const mine = pointsOf(w).filter((p) => p.jobId === j.id), p = newest(mine.filter((x) => !x.offsite));
+      if (!p || mine.some((x) => x.offsite && x.at === p.at)) return w;
+      const gb = mine.some((x) => x.offsite) ? p.gb : Math.max(p.gb, w.diskGb * diskFill(s, w, p.at));
+      if (used + gb > room) { why = "full"; return w; }
+      used += gb;
+      const bad = p.bad || chance(hashRng(s.seed, idNum(w.id), p.at, 1), BAD_OFFSITE);
+      return pruneJob(s, { ...w, points: [...pointsOf(w), { ...p, gb, bad, verified: false, offsite: true, readyAt: s.hour + Math.ceil(gb / WAN_GB_PER_HOUR), testDoneAt: undefined }] }, j);
+    });
+  }
+  if (why) settle(s, c, j, why, events);
+}
+
+// A finished restore test shows whether the point was good.
+function finishTests(s: GameState): void {
+  const done = (p: RestorePoint) => p.testDoneAt !== undefined && p.testDoneAt <= s.hour;
+  if (!s.workloads.some((w) => w.points?.some(done))) return;
+  s.workloads = s.workloads.map((w) => (w.points?.some(done) ? syncBackupAt({ ...w, points: w.points.map((p) => (done(p) ? { ...p, testDoneAt: undefined, verified: true } : p)) }) : w));
+}
+
+// Hourly: every job whose hour has come runs (weekly ones on Sundays), offsite copies go out three hours later on Sundays.
 export function runBackups(s: GameState, events: SimEvent[]): void {
-  const d = dateOf(s.hour);
+  finishTests(s);
+  const d = dateOf(s.hour), e = dateOf(s.hour - 3);
   for (const c of s.clusters) {
     for (const j of c.jobs) {
-      if (j.hour !== d.getUTCHours() || (j.every === "weekly" && d.getUTCDay() !== 0)) continue;
-      runJob(s, c, j, events);
+      if (j.hour === d.getUTCHours() && (j.every === "daily" || d.getUTCDay() === 0)) runJob(s, c, j, events);
+      if (j.offsiteId && j.hour === e.getUTCHours() && e.getUTCDay() === 0) copyOffsite(s, c, j, events);
     }
   }
 }

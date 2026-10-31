@@ -32,7 +32,10 @@ describe("backup job screens", () => {
     expect(renderToString(<JobsPanel game={s} source={c} skin="proxmocks" />)).toContain("Nightly");
     expect(renderToString(<JobsPanel game={s} target={t} skin="backula" />)).toContain(c.name);
     const w = s.workloads.find((x) => x.clusterId === src && x.points?.length)!;
-    expect(renderToString(<PointsPanel game={s} c={c} w={w} />)).toContain("Nightly");
+    const pts = renderToString(<PointsPanel game={s} c={c} w={w} />);
+    expect(pts).toContain("Nightly");
+    expect(pts).toContain("Test restore");
+    expect(pts).toContain("Not tested");
     expect(renderToString(<Calendar game={s} target={t} />)).toContain('data-has="true"');
     const View = CONSOLES.backula;
     expect(renderToString(<View game={s} c={t} f={consoleFeatures("backula", yearOf(s.hour))} host="b.example.com" signedIn login={() => {}} logout={() => {}} />)).toContain("Nightly");
