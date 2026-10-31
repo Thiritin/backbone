@@ -10,7 +10,7 @@ import type { GameState } from "../../../../../sim/50-state";
 import { techsAt, OP_TASK } from "../../../../../sim/47-staff/technicians";
 import { companyDomainError, orderCompanyDomain, queueTransfer, signRegistrar, transferDomains } from "../../../../../sim/90-actions/registrar";
 import { useStore } from "../../../../store";
-import { formatDay } from "../../../billing/BillingApp";
+import { formatDay } from "../../../billing/format";
 import "./registrars.css";
 import { LOCALE } from "../../../../../i18n/lang";
 

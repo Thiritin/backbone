@@ -64,10 +64,10 @@ export function domainsTick(s: GameState): SimEvent[] {
   for (const d of s.domains) {
     if (!d.customerId || !active.has(d.customerId)) continue;
     const left = d.expiresAt - s.hour;
-    if (left <= EXPIRY_NOTICE_DAYS * DAY && left > (EXPIRY_NOTICE_DAYS - 1) * DAY) events.push({ app: "Billing", key: "event.domainExpiring", params: { domain: d.name, days: EXPIRY_NOTICE_DAYS } });
+    if (left <= EXPIRY_NOTICE_DAYS * DAY && left > (EXPIRY_NOTICE_DAYS - 1) * DAY) events.push({ app: "Books", key: "event.domainExpiring", params: { domain: d.name, days: EXPIRY_NOTICE_DAYS } });
     if (!d.lapsed && s.hour >= d.expiresAt) {
       lapsed = true;
-      events.push({ app: "Billing", key: "event.domainExpired", params: { domain: d.name } });
+      events.push({ app: "Books", key: "event.domainExpired", params: { domain: d.name } });
     }
   }
   if (lapsed) s.domains = s.domains.map((d) => (!d.lapsed && s.hour >= d.expiresAt && d.customerId !== null && active.has(d.customerId) ? { ...d, lapsed: true } : d));

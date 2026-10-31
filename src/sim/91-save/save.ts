@@ -14,6 +14,7 @@ import { device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, ty
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
+import { homeAddress } from "../30-customers/addresses";
 import { fillHostnames } from "../30-customers/hostnames";
 import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
@@ -104,10 +105,11 @@ export function deserialize(raw: string): GameState {
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.
     // The Sales app moved into Support and the Checklist into Getting started, so their ids are dropped; saves from before the Website app get it in the dock.
-    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id)).filter((id) => id !== "Sales" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", ...(data.registration === null || data.arrived ? [] : ["Marketing", "Security", "Applications"])])] : [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
+    // Billing became Books.
+    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id === "Billing" ? "Books" : id)).filter((id) => id !== "Sales" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", ...(data.registration === null || data.arrived ? [] : ["Marketing", "Security", "Applications"])])] : [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
-    customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [], credit: c.credit ?? 0 })),
+    customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [], credit: c.credit ?? 0, address: c.address ?? homeAddress({ seed: base.seed, locations }, Number(c.id.slice(3)) || 0, c.name, c.profile) })),
     tickets: (data.tickets ?? []).map((t) => ({ ...t, assignee: t.assignee ?? null })),
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, sla: v.sla ?? "basic" })),
     // Saves from before clusters keep their services unplaced, which leaves them online.

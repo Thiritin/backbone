@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-31
 
+- Billing is now Books, the Lexwear Office bookkeeping program, where you see each customer's postal address and send every month's invoices yourself as PDF.
+- Customers now pay by bank transfer, and you match each payment to its invoice in Books, including short amounts, overpayments and transfers with an unclear reference.
 - Rented space now runs on a contract with the provider: cancelling gives one, three or six months of notice to the end of a month, the rent stays at the agreed price, and a location that still holds hardware at the end date keeps its contract one more month.
 - The free email provider every new company starts on is now called GMix, with a new logo.
 - Picking the USB stick in the boot menu now starts its installer right away instead of dropping back to the POST screen.

@@ -12,7 +12,7 @@ import { SERVES, type SoftwareKind } from "../../../sim/10-catalog/platforms";
 import { useStore } from "../../store";
 import { NodeActions } from "../browser/consoles/HypervisorBase";
 import type { NodeState } from "../../../sim/60-infra/cluster";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import { PRODUCT } from "../support/labels";
 
 const ABOUT: Record<ShopId, string> = {

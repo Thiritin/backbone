@@ -9,7 +9,7 @@ import { metrics } from "../../../sim/metrics";
 import { t } from "../../../i18n/en";
 import { useStore, useFocus } from "../../store";
 import { BankApp } from "../bank/BankApp";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import "../billing/billing.css";
 import "../shop/shop.css";
 import "./finance.css";

@@ -111,6 +111,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     () => "Il y a deux factures parce que la consommation est facturée à la fin de chaque mois pour le mois précédent. Les deux sont correctes, et rien n'a été débité deux fois.",
     () => "Un paiement correspond à la facture en cours, l'autre à la consommation du mois dernier, que nous facturons à terme échu. Ton compte est en ordre.",
   ],
+  "tpl.foundPayment": [
+    () => "Nous avons trouvé ton virement et l'avons imputé à la facture. Tu peux ignorer le rappel.",
+    () => "Merci, ton paiement est bien arrivé et la facture est réglée. Le rappel est parti avant que nous l'ayons comptabilisé.",
+    () => "Ton virement est maintenant imputé à la facture. Plus rien n'est ouvert, le rappel ne s'applique donc plus.",
+  ],
   "tpl.resend": [
     () => "Nous t'avons envoyé une copie de la facture. Dis-nous si elle n'arrive pas.",
     () => "Une copie de la facture est en route vers ton adresse de contact.",

@@ -2,7 +2,7 @@ import type { GameState } from "../50-state";
 
 // economy.md, Time per action. Ticket work takes MINUTES from 40-support/tickets.ts; staff divide both by their speed.
 export const ACTION_MINUTES = {
-  checkInvoice: 6, reminder: 15, dunning: 30, final: 30, collections: 30, suspend: 60, unsuspend: 15,
+  checkInvoice: 6, sendInvoice: 5, matchTransfer: 3, reminder: 15, dunning: 30, final: 30, collections: 30, suspend: 60, unsuspend: 15,
   // Minutes of a marketing manager's workday each task needs for its full effect; campaigns come first.
   campaigns: 180, reviews: 60,
   // A technician does one operation per work hour.

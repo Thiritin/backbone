@@ -1,6 +1,7 @@
 // The market: who looks for a host each month, how many of them pick you, and what they ask for.
 // Values and decisions are in docs/design/economy.md, "Market and leads", "Customer choice" and "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
+import { CITY_TLD } from "../30-customers/domains";
 import { yearOf } from "../00-core/time";
 import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
 import { gpuDemand, GPU_SHARE } from "../10-catalog/gpu";
@@ -271,5 +272,7 @@ export function senderFor(r: Rng, profile: Profile, shady = false, us = false): 
   };
   return { contact, company: company[profile] };
 }
+
+export const personName = (r: Rng, city: string): string => senderFor(r, "private", false, CITY_TLD[city]?.tld === "com").contact;
 
 export const requestName = (r: Pick<SalesRequest, "contact" | "company">): string => r.company ?? r.contact;

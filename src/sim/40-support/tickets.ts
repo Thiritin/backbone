@@ -90,7 +90,7 @@ export const TOPICS: Record<TicketKind, string[]> = {
 };
 export const TEMPLATES: Record<TicketKind, string[]> = {
   outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "ssl", "ssh", "panel", "addon", "php", "askDetails"],
-  billing: ["explain", "resend", "extension", "newPrice", "askDetails"], upgrade: [], cancellation: [], abuse: ["warn", "askDetails"],
+  billing: ["explain", "resend", "extension", "newPrice", "foundPayment", "askDetails"], upgrade: [], cancellation: [], abuse: ["warn", "askDetails"],
   appeal: ["awaitPayment", "askDetails"], notice: [], legal: [], refund: [], order: [], extortion: [], migration: [], maintenance: [], sponsor: [], pear: [],
 };
 export const ACTIONS: Record<TicketKind, TicketAction[]> = {
@@ -117,7 +117,7 @@ export function shownTemplates(s: GameState, t: Ticket, all: boolean): string[] 
 }
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
 const RIGHT: Record<string, string> = {
-  suspended: "resend", upload: "ftp", email: "mail", phone: "mail", dns: "dns", ssl: "ssl", ssh: "ssh", panel: "panel", addon: "addon", php: "php", charge: "explain", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer", more: "offer",
+  suspended: "resend", upload: "ftp", email: "mail", phone: "mail", dns: "dns", ssl: "ssl", ssh: "ssh", panel: "panel", addon: "addon", php: "php", charge: "explain", alreadyPaid: "foundPayment", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer", more: "offer",
   spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment", bounce: "mail", mailFull: "offer", quotaFull: "offer", dnsChange: "dns", certLost: "offer", bucketPublic: "offer", linkExpired: "offer",
 };
 

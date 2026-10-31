@@ -111,6 +111,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     () => "Há duas faturas porque a utilização é faturada no fim de cada mês, referente ao mês anterior. Ambas estão corretas, e nada foi cobrado duas vezes.",
     () => "Um pagamento é a fatura atual, o outro a utilização do mês passado, que faturamos a posteriori. A tua conta está em ordem.",
   ],
+  "tpl.foundPayment": [
+    () => "Encontrámos a tua transferência e lançámo-la na fatura. Podes ignorar o lembrete.",
+    () => "Obrigado, o teu pagamento chegou e a fatura está paga. O lembrete saiu antes de o lançarmos.",
+    () => "A tua transferência já está lançada na fatura. Não há nada em aberto, por isso o lembrete já não se aplica.",
+  ],
   "tpl.resend": [
     () => "Enviámos-te uma cópia da fatura. Diz-nos se não chegar.",
     () => "Uma cópia da fatura está a caminho do teu endereço de contacto.",

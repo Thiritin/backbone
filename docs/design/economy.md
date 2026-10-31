@@ -735,7 +735,7 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 
 Resolving the ticket adds the usual +5 happiness on top. Handling an appeal takes 15 minutes.
 
-**Billing rules.** The Automation entry in the Billing app sends the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
+**Billing rules.** The rules in the Reminders tab of Books send the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
 
 **Time per action.** Every employee action takes time from their workday, so one employee can't carry the whole company. Staff divide these times by their speed (0.5 plus skill/100, so skill 50 takes the times as listed); bots work at twice the speed. The code keeps them in `ACTION_MINUTES` (src/sim/47-staff/activity.ts), and ticket times in `MINUTES` (the ticket table above).
 
@@ -965,7 +965,7 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 
 | Module | App | Base per month | Plus | Needs |
 | --- | --- | --- | --- | --- |
-| Starter | Locations, Shop, Customers, Support (shown as Email), Billing (manual), Finance (account statement), Bank, Research, Settings, Pear Store | Free | | Start |
+| Starter | Locations, Shop, Customers, Support (shown as Email), Books (manual), Finance (account statement), Bank, Research, Settings, Pear Store | Free | | Start |
 | Monitoring | Monitoring | €10 | €0.50 per monitored device | Monitoring skill |
 | Nagiosaurus | Monitoring tab in Security | €15 | | Monitoring skill |
 | Virtual machines | Virtual machines | Free | | A hypervisor installed |

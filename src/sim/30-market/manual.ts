@@ -151,7 +151,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
       loseRequest(s, r, "declined", "lost.declined");
       return { app: "Support", key: "event.orderDeclined", params: { name: requestName(r) } };
     }
-    const id = addCustomer(s, requestName(r), r.profile, r.shady || r.fraud ? "prompt" : habitFor(hashRng(s.seed, Number(r.id.slice(3)) || 0, 227), r.profile));
+    const id = addCustomer(s, requestName(r), r.profile, r.shady || r.fraud ? "prompt" : habitFor(hashRng(s.seed, Number(r.id.slice(3)) || 0, 227), r.profile), r);
     if (r.shady || r.fraud) s.customers = s.customers.map((c) => (c.id === id ? { ...c, ...hiddenTraits(s, r) } : c));
     editRequest(s, r.id, () => ({ customerId: id }));
     setTicket(s, t.id, { customerId: id, updatedAt: s.hour });

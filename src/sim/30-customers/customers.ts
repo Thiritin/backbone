@@ -1,4 +1,5 @@
 import type { Resources, Sla, Spec } from "../10-catalog/products";
+import type { Address } from "./addresses";
 
 export type Profile = "private" | "gamer" | "hobbyDev" | "soleProp" | "smallBiz" | "agency" | "office" | "onlineShop" | "enterprise";
 export type Product = "webHosting" | "domain" | "ssl" | "dns" | "gameServer" | "vps" | "vpn" | "dedicated" | "storage" | "cloud" | "colocation" | "gpu";
@@ -8,6 +9,8 @@ export type PaymentHabit = "prompt" | "late" | "bad" | "friend";
 export interface Customer { id: string; name: string; profile: Profile; since: number; happiness: number; habit: PaymentHabit; churnedAt: number | null; history: number[];
   // The balance of credit notes the next invoice takes off.
   credit: number;
+  // Postal address from the order, printed on invoices.
+  address: Address;
   // A customer who draws abuse reports and legal requests; never shown to the player. Set on customers won from a shady request.
   shady?: boolean;
   // A fraudster's order: the hour the stolen payment is charged back. Never shown to the player.
