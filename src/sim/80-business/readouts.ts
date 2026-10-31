@@ -3,7 +3,13 @@ import { softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { Cluster, Workload } from "../60-infra/cluster";
 import { serviceMbps } from "../60-infra/network";
-import { workloadLoad, workloadUse } from "../60-infra/usage";
+import { diskFill, workloadLoad, workloadUse } from "../60-infra/usage";
+import { ascii, companyDomain } from "../30-customers/domains";
+import { controlPlaneUp, liveBetween, workloadOnline } from "../60-infra/cluster";
+import { sensorsOf } from "../60-infra/sensors";
+import { deviceWatts } from "../60-infra/status";
+import { modelById } from "../10-catalog/hardware";
+import type { Device } from "../50-state";
 import { hashRng, rand } from "../00-core/rng";
 import { familyOf, openVulns } from "../60-infra/vulns";
 import { autoUpdates } from "../10-catalog/platforms";
@@ -132,4 +138,88 @@ export function advisorChecks(s: GameState, c: Cluster): { score: number; checks
   if (family && autoUpdates(softwareById(family), yearOf(s.hour)) && !c.autoUpdate) checks.push({ kind: "auto", penalty: 5, count: 1 });
   if (s.security.offline.includes(c.id)) checks.push({ kind: "offline", penalty: 5, count: 1 });
   return { score: Math.max(0, Math.min(100, 100 - checks.reduce((n, x) => n + x.penalty, 0))), checks };
+}
+
+// Infrastructure readouts (plan 3.13 to 3.16): all derived from the seed and the hour, so a render never changes.
+export const QUERIES_PER_ZONE_HOUR = 90, STORAGE_DAYS = 30, SERIES_HOURS = 24;
+export type SeriesKind = "queries" | "mbit" | "storage";
+
+// Oldest first and ending now: queries and Mbit/s hourly, storage fill in GB once a day.
+export function seriesOf(s: GameState, ws: Workload[], kind: SeriesKind, points: number = kind === "storage" ? STORAGE_DAYS : SERIES_HOURS): number[] {
+  const step = kind === "storage" ? 24 : 1;
+  return Array.from({ length: points }, (_, i) => {
+    const h = s.hour - (points - 1 - i) * step;
+    return ws.reduce((n, w) => {
+      const v = s.services.find((x) => x.id === w.serviceId);
+      if (kind === "storage") return n + diskFill(s, w, h) * w.diskGb;
+      if (!v || !workloadOnline(s, w)) return n;
+      if (kind === "mbit") return n + serviceMbps(s, v, h);
+      return n + (v.spec.zones ?? 0) * QUERIES_PER_ZONE_HOUR * workloadLoad(s, w, h) * Math.pow(1.2, h / 8760);
+    }, 0);
+  });
+}
+
+export type MailCheck = "pass" | "missing" | "unchecked";
+export const DKIM_FROM = 2007, DMARC_FROM = 2012;
+
+// Pass when the company runs a working name server and mail server for the domain; Missing without a name server; Not checked when the zone is hosted elsewhere.
+export function mailChecks(s: GameState, domain: string): { spf: MailCheck; dkim: MailCheck; dmarc: MailCheck } {
+  const dns = s.clusters.filter((c) => c.kind === "dns"), mailUp = s.clusters.some((c) => c.kind === "mail" && controlPlaneUp(s, c));
+  const base: MailCheck = domain !== companyDomain(s) ? "unchecked" : !dns.length ? "missing" : !mailUp || !dns.some((c) => controlPlaneUp(s, c)) ? "unchecked" : "pass";
+  const year = yearOf(s.hour), era = (from: number): MailCheck => (base === "pass" && year < from ? "missing" : base);
+  return { spf: base, dkim: era(DKIM_FROM), dmarc: era(DMARC_FROM) };
+}
+
+export interface VpnSession { workloadId: string; user: string; realIp: string; vpnIp: string; since: number; rxMb: number; txMb: number }
+
+// Per tenant: users x min(1, load x 1.2) sessions, each with a seeded address and a connected-since hour; nothing while the workload is down.
+export function vpnSessions(s: GameState, c: Cluster, hour: number = s.hour): VpnSession[] {
+  return s.workloads.filter((w) => w.clusterId === c.id).flatMap((w) => {
+    const v = s.services.find((x) => x.id === w.serviceId), cu = v && s.customers.find((x) => x.id === v.customerId);
+    if (!v || !cu || !workloadOnline(s, w)) return [];
+    const n = Math.round((v.spec.users ?? 0) * Math.min(1, workloadLoad(s, w, hour) * 1.2)), mbit = serviceMbps(s, v, hour) / Math.max(1, n);
+    const stem = ascii(cu.name.split(" ")[0]).toLowerCase() || "user";
+    return Array.from({ length: n }, (_, i) => {
+      const r = hashRng(s.seed, idNumber(w.id), i + 1), hours = 1 + Math.floor(rand(r) * 23), a = Math.floor(rand(r) * 1e9);
+      return { workloadId: w.id, user: `${stem}${i + 1}`, realIp: `${1 + (a % 222)}.${(a >> 8) % 256}.${(a >> 16) % 256}.${1 + (a >> 4) % 254}`, vpnIp: `10.8.${idNumber(w.id) % 256}.${i + 2}`, since: hour - hours, rxMb: Math.round(mbit * hours * 360), txMb: Math.round(mbit * hours * 90) };
+    });
+  });
+}
+
+// Hypervisor readouts (plan 3.12): two existing years and two device vendors, shown as warnings.
+export type IntegrationState = "off" | "ok" | "update";
+export const INTEGRATION_SERVICES = ["shutdown", "time", "exchange", "heartbeat", "backup"] as const;
+
+// The guest's Integration Services are as old as its OS install; a guest older than the host needs an update, and a stopped VM runs none.
+export function integrationServices(s: GameState, c: Cluster, w: Workload): { host: number; guest: number; version: IntegrationState; services: { key: (typeof INTEGRATION_SERVICES)[number]; state: IntegrationState }[] } {
+  const guest = yearOf(w.os?.installedAt ?? w.placedAt), host = c.version, off = !workloadOnline(s, w) || w.stopped;
+  const old = guest < host, state = (key: string): IntegrationState => (off ? "off" : old && key === "backup" ? "update" : "ok");
+  return { host, guest, version: off ? "off" : old ? "update" : "ok", services: INTEGRATION_SERVICES.map((key) => ({ key, state: state(key) })) };
+}
+
+// Moving to this server cannot happen live: the boards are of different vendors and the clusters are not both in compatibility mode.
+export function evcWarning(s: GameState, w: Workload, toDeviceId: string): boolean {
+  const from = s.devices.find((d) => d.id === w.deviceId), to = s.devices.find((d) => d.id === toDeviceId);
+  return !!from && !!to && !liveBetween(s, from, to);
+}
+
+// IPMI sensors (plan 3.17): thresholds are display constants, the readings come from sensorsOf and deviceWatts.
+export const INLET_WARN_C = 35, INLET_CRIT_C = 42, FAN_WARN_RPM = 4000, PSU_HEADROOM = 1.5;
+export type SensorStatus = "ok" | "warning" | "critical";
+export const inletStatus = (c: number): SensorStatus => (c >= INLET_CRIT_C ? "critical" : c >= INLET_WARN_C ? "warning" : "ok");
+export const fanStatus = (rpm: number): SensorStatus => (rpm <= 0 ? "critical" : rpm < FAN_WARN_RPM ? "warning" : "ok");
+const PSU_STATUS = { ok: "ok", unplugged: "warning", failed: "critical" } as const;
+
+export interface SensorRow { kind: "inlet" | "fan" | "psu" | "power" | "load"; n: number; value: number | null; psu?: "ok" | "failed" | "unplugged"; status: SensorStatus; lower: number | null; upper: number | null }
+
+// A powered-off server reports no fan or draw alarms; each supply is rated PSU_HEADROOM times the model's base draw, and the load is shared over the working ones.
+export function sensorRows(s: GameState, d: Device): SensorRow[] {
+  const x = sensorsOf(s, d), watts = d.on ? Math.round(deviceWatts(d)) : 0, working = Math.max(1, x.psus.filter((p) => p.state === "ok").length);
+  return [
+    { kind: "inlet", n: 1, value: x.inletC, status: inletStatus(x.inletC), lower: null, upper: INLET_WARN_C },
+    ...x.fans.map((f, i): SensorRow => ({ kind: "fan", n: i + 1, value: f.rpm, status: d.on ? fanStatus(f.rpm) : "ok", lower: FAN_WARN_RPM, upper: null })),
+    ...x.psus.map((p, i): SensorRow => ({ kind: "psu", n: i + 1, value: null, psu: p.state, status: PSU_STATUS[p.state], lower: null, upper: null })),
+    { kind: "power", n: 1, value: watts, status: "ok", lower: null, upper: null },
+    { kind: "load", n: 1, value: Math.round((watts / (modelById(d.model).watts * PSU_HEADROOM * working)) * 100), status: "ok", lower: null, upper: null },
+  ];
 }

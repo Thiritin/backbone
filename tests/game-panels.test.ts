@@ -15,6 +15,7 @@ import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, type ActionResult } from "../src/sim/90-actions/hardware";
 import { buyDevice, bootedMachine } from "./fixtures";
 import { cleanUp } from "../src/sim/90-actions/security";
+import { addPackage, copyPackages } from "../src/sim/90-actions/packages";
 import { installSoftware, softwareOn, updateSoftware } from "../src/sim/90-actions/software";
 import { hypervisor, panelServer, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
@@ -72,6 +73,16 @@ describe("game server panels", () => {
     expect(targetFor(s, want)?.clusterId).toBe(cloud);
     ok(order(s, cus, "second"));
     expect(s.workloads.filter((w) => w.serviceId).map((w) => w.clusterId)).toEqual([game, cloud]);
+  });
+
+  it("keep game server packages on the panel and on a hypervisor, and refuse web hosting ones", () => {
+    const { s, two } = start(2016), cloud = hypervisor(s, ["dev3"], "Cloud 1"), game = panelServer(s, two, "tcadmen");
+    const def = { name: "Small", product: "gameServer" as const, spec: SPEC };
+    ok(addPackage(s, game, def));
+    ok(addPackage(s, cloud, def));
+    expect(err(addPackage(s, game, { ...def, name: "Web", product: "webHosting" }))).toBe("error.packageProduct");
+    expect(cluster(s, game).packages).toHaveLength(1);
+    expect(ok(copyPackages(s, game, cloud))).toBe("0");
   });
 
   it("sell game servers but no web hosting", () => {

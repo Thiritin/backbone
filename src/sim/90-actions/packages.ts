@@ -1,7 +1,7 @@
 import type { Spec } from "../10-catalog/products";
 import { SERVES } from "../10-catalog/platforms";
-import { clustersOf, workloadsOf, type Cluster } from "../60-infra/cluster";
-import { PACKAGE_LIMIT, PACKAGE_NAME, packageNamed, packagesOf, type PackageDef } from "../80-business/packages";
+import { type Cluster } from "../60-infra/cluster";
+import { PACKAGE_LIMIT, PACKAGE_NAME, packageNamed, packageUse, packagesOf, type PackageDef } from "../80-business/packages";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
@@ -36,7 +36,7 @@ export function editPackage(s: GameState, clusterId: string, name: string, spec:
 export function deletePackage(s: GameState, clusterId: string, name: string): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId), p = c && packageNamed(c, name);
   if (!c || !p) return fail(c ? "error.packageMissing" : "error.unknownCluster");
-  const inUse = s.services.some((v) => !v.endedAt && v.pkg?.toLowerCase() === p.name.toLowerCase() && workloadsOf(s, v.id).some((w) => clustersOf(s, w.deviceId ?? "").some((x) => x.id === c.id)));
+  const inUse = packageUse(s, c, p.name) > 0;
   if (inUse) return fail("error.packageInUse");
   c.packages = packagesOf(c).filter((x) => x !== p);
   return { ok: true, id: p.name };

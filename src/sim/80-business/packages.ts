@@ -1,7 +1,8 @@
 import { SIZES, marketPrice, sizeSpec, type Resources, type Sla, type Spec } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { sizeOf } from "../30-market/spec";
-import type { Cluster } from "../60-infra/cluster";
+import { clustersOf, workloadsOf, type Cluster } from "../60-infra/cluster";
+import { SERVES } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 
 // A named spec saved on a software installation. Only vcpu, ramGb and diskGb are booked; trafficGb and mailboxes are shown and carried.
@@ -56,3 +57,9 @@ export function suggestedUsername(s: GameState, domain: string, year: number): s
     if (!usernameError(s, n, year)) return n;
   }
 }
+
+// The products a package can be made for on an installation.
+export const packageProducts = (c: Cluster): Product[] => SERVES[c.kind].filter((p) => p === "webHosting" || p === "vps" || p === "gameServer");
+// How many active services on the installation carry the package.
+export const packageUse = (s: GameState, c: Cluster, name: string): number =>
+  s.services.filter((v) => !v.endedAt && v.pkg?.toLowerCase() === name.toLowerCase() && workloadsOf(s, v.id).some((w) => clustersOf(s, w.deviceId ?? "").some((x) => x.id === c.id))).length;
