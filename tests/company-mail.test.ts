@@ -149,7 +149,8 @@ describe("email orders", () => {
 
   it("can be switched on with free mail", () => {
     const s = readyGame(6);
-    s.marketing.owned = ["website", "orderForm"];
+    s.marketing.owned = ["website"];
+    s.shop = { ...s.shop, variant: "handRolled", readyAt: 0 };
     s.company = { ...s.company, mail: { kind: "free" } };
     expect(setEmailOrders(s, false).ok).toBe(true);
     expect(setEmailOrders(s, true).ok).toBe(true);
