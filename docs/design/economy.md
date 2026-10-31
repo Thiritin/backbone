@@ -141,7 +141,8 @@ Backup and archive servers use HDDs whatever the generation's disk type. Archive
 | 2005 | 200 | not sold | not sold | 500 | 200 |
 | 2008 | 40 | 12 (sold from 2009) | not sold | 200 | 120 |
 | 2010 | 45 | 3.0 | not sold | 100 | 90 |
-| 2012 | 11 | 1.5 | not sold | 60 (flood spike) | 70 |
+| 2011 | 28 | 2.25 | not sold | 80 | 80 |
+| 2012 | 11 | 1.5 | not sold | 120 (flood spike) | 70 |
 | 2013 | 8 | 1.0 | not sold | 50 | 65 |
 | 2014 | 14 | 0.70 | 1.2 | 42 | 60 |
 | 2016 | 8 | 0.40 | 0.65 | 40 | 50 |
@@ -153,7 +154,7 @@ Backup and archive servers use HDDs whatever the generation's disk type. Archive
 | 2027 | 30 | 0.35 | 0.38 | 15 | 28 |
 | 2028 | 15 | 0.20 | 0.22 | 14 | 27 |
 
-Anchors: John C. McCallum's memory price history (DRAM about US$100 to 150 per GB in 2005 for consumer DDR2, about $4 to 5 in 2013 and 2016, the 2017 to 2018 shortage that roughly doubled module prices, about $3 in 2020, the 2023 trough); the 2025 to 2026 AI-driven shortage (DDR5 about $17 per GB in October 2026 after a rise of 200% to 400%, TrendForce; Bernstein expects a further rise in 2027 and a fall in 2028); Backblaze's drive cost per GB ($0.11 in 2009, 0.033 in 2017, 0.0144 in 2022); SSD retail (about $3 per GB in 2010, 0.30 in 2016, 0.11 in 2020, 0.06 at the mid-2023 bottom, 0.09 in 2024, doubled by late 2025). The CPU column is the least anchored.
+Anchors: John C. McCallum's memory price history (DRAM about US$100 to 150 per GB in 2005 for consumer DDR2, about $4 to 5 in 2013 and 2016, the 2017 to 2018 shortage that roughly doubled module prices, about $3 in 2020, the 2023 trough); the 2025 to 2026 AI-driven shortage (DDR5 about $17 per GB in October 2026 after a rise of 200% to 400%, TrendForce; Bernstein expects a further rise in 2027 and a fall in 2028); Backblaze's drive cost per GB ($0.11 in 2009, 0.033 in 2017, 0.0144 in 2022), and its report that the October 2011 Thailand flood roughly doubled drive prices for months and kept them about 1.5 times higher through 2012; SSD retail (about $3 per GB in 2010, 0.30 in 2016, 0.11 in 2020, 0.06 at the mid-2023 bottom, 0.09 in 2024, doubled by late 2025). The CPU column is the least anchored.
 
 Fixed parts: a power supply costs €150 in 2005, falling in a straight line to €90 in 2015 and flat after; a fan €25; a mainboard €600 falling to €400 by 2015; a network card €80 falling to €40 by 2015, times 4 for 10G and faster cards until 2017 and times 2 from 2017.
 
@@ -981,7 +982,15 @@ A G1 server costs about €26 a month in power in 2005; a G7 costs €89 in 2026
 
 Only devices that are switched on and have a plugged-in, working power supply count as W. Plugging and unplugging a supply is free; a device that gets power from its first supply boots for 1 hour.
 
-**Buying and selling.** Hardware arrives 72 hours after ordering in 2005, falling in a straight line to 24 hours in 2015 and staying there (`deliveryHours`). Until it arrives a unit is in transit and cannot be mounted, sold or shipped; the Cart shows the wait as "Arrives in 3 days". A company that owns no server yet gets its orders at once, so the first server is in the stockroom the moment it is bought (the starter rule). Spares taken out of a device go to storage at once. Bought hardware goes to storage, and mounting it into a rack is instant and free. Resale value falls in a straight line from 100% to 80% of the price over the first month, then in a straight line to 20% over the next 24 months, and stays at 20%. Racks sell the same way; spare parts sell at the current part price. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
+**Buying and selling.** Hardware arrives 72 hours after ordering in 2005, falling in a straight line to 24 hours in 2015 and staying there (`deliveryHours`). Supply shocks stretch that wait for the kinds and parts they hit (`SUPPLY_SHOCKS`, `leadFactor`): the factor rises along an S-curve from the start date to its peak, holds, and eases back to 1 by the end date. A server or chassis counts as every part it is built from, so a server with HDDs waits for the flood and every server waits for the memory crunch. A cart ships as one delivery after its slowest line, and the Cart shows that wait; leasing waits the same. Used listings ship from their sellers and keep their own shipping time.
+
+| Shock | Hits | Rises from | Peak from | Peak until | Normal by | Peak factor | Peak wait |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Thailand flood | HDDs, servers with HDDs | Oct 2011 | Nov 2011 | Feb 2012 | Jul 2012 | 4 | about 7 days |
+| Chip shortage | Servers, chassis, switches, firewalls, routers, NICs | Mar 2021 | Sep 2021 | Jul 2022 | Jan 2023 | 6 | 6 days |
+| AI memory crunch | RAM, SSDs, NVMe drives, every server | Jan 2025 | Oct 2025 | Oct 2026 | Jan 2027 | 5 | 5 days |
+
+Anchors: the flood took out about a quarter of world HDD output and drive lead times stretched from days to weeks into early 2012; in the chip shortage, server and switch lead times went from 4 to 8 weeks to 6 to 12 months; in the 2025 to 2026 AI crunch, DRAM and enterprise SSD makers put buyers on allocation with lead times of months. Real waits of months would stop a game month (12 real hours at 1x) dead, so the peaks are 4 to 6 times the normal wait, which turns a one-day delivery into most of a game week. Until it arrives a unit is in transit and cannot be mounted, sold or shipped; the Cart shows the wait as "Arrives in 3 days". A company that owns no server yet gets its orders at once, so the first server is in the stockroom the moment it is bought (the starter rule). Spares taken out of a device go to storage at once. Bought hardware goes to storage, and mounting it into a rack is instant and free. Resale value falls in a straight line from 100% to 80% of the price over the first month, then in a straight line to 20% over the next 24 months, and stays at 20%. Racks sell the same way; spare parts sell at the current part price. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
 
 **Failures.** Each device has a base annual failure rate (AFR), raised in its first 3 months and again after 3 years of age:
 
@@ -1231,9 +1240,13 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 one
 | VPN | 300 | 14,000 |
 | Colocation | 500 | 23,000 |
 
-**Daily curve.** Traffic follows each customer type's usage curve with its jitter, on top of a product's floor, plus the customer's night job (see Usage curves and overcommit), scaled so a week averages to the monthly figure. The 95th percentile in Mbit/s is about GB per month ÷ 164.
+**Daily curve.** Traffic follows each customer type's usage curve with its jitter, on top of a product's floor, plus the customer's night job (see Usage curves and overcommit), scaled so a week averages to the monthly figure. The 95th percentile of its hourly averages in Mbit/s is about GB per month ÷ 164. Transit bills on 5-minute readings, which also catch the bursts inside an hour, so a single service bills higher than that (see Transit billing).
 
-**Transit billing.** Each hourly tick records one sample per port. The bill uses the 95th percentile of the last 30 days (the top 5% of hours are dropped) and never charges less than 20% of the port.
+**Transit billing.** Carriers bill the 95th percentile of 5-minute readings over the last 30 days and never charge less than 20% of the port. The game does not simulate every 5 minutes: each hourly tick records one reading per port that stands in for the hour's twelve.
+
+- **Burst.** Each service's 5-minute traffic swings around its hourly average by a coefficient of variation: game servers 1, storage 0.8, VPN and colocation 0.3, everything else 0.5, and a DDoS 0.5. A zone's burst is the square root of the summed (Mbit/s × burst)² over its total Mbit/s, so many customers smooth each other out and a few bursty ones do not.
+- **Reading.** The hour's reading is its carried Mbit/s times a lognormal factor with mean 1 and the zone's burst as its spread, capped at the port's capacity. The factor's quantile steps by the golden ratio every hour from a seeded start per location, so 30 days of readings cover the whole spread evenly.
+- **Accuracy.** Against true 5-minute sampling, the 95th of these hourly readings lands within about 2% on average (up to 9% in a single month for three game servers alone). Compared with billing the hourly averages, the bill rises about 1% for 200 web hosting customers, 13% to 18% for a mixed early customer base or one colocation customer, 27% for five storage customers and 58% for three game servers alone.
 
 **Uplinks.** Carriers and exchanges sell ports at 1G from 2005, 10G from 2008, 100G from 2014 and 400G from 2021.
 
