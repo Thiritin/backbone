@@ -30,3 +30,6 @@
 .sy-login { align-items: center; justify-content: center; padding: 48px 16px; }
 .sy[data-era="early"].sy-login { background: linear-gradient(#5d87bd, #22508f); }
 .sy-card { display: flex; flex-direction: column; gap: 12px; width: min(340px, 100%); padding: 24px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+
+.sy-gw { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.sy-gw[data-soon="true"] { color: #b26a00; }

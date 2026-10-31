@@ -12,7 +12,8 @@ import type { GameState, LedgerEntry, Location } from "../50-state";
 import { isOwnVm, vmById, type Workload } from "./cluster";
 import { isSuspended } from "../45-billing/billing";
 import { bounceFactor, listingTick, mailQueueTick } from "./netsvc-mail";
-import { locationOf } from "./status";
+import { jacked, locationOf } from "./status";
+import { mountedRouter } from "./routers";
 import type { SimEvent } from "../88-tick/tick";
 
 // line: comes with the home line; lineExtra: bought on a business line; provider: rented in a datacenter; lir: from an own block.
@@ -235,7 +236,7 @@ export const mailAddress = (s: GameState, clusterId: string): Address | undefine
 // The home line's addresses: the router's, dynamic and listed on dynamic lines, plus four more on a static line.
 function syncLine(s: GameState): void {
   const loc = homeLoc(s), line = lineActive(s) ? homeLineById(s.homeLine.id) : null;
-  const gw = loc && s.devices.find((d) => d.panel === loc.id && modelById(d.model).kind === "gateway");
+  const router = loc && mountedRouter(s, loc.id), gw = router && jacked(s, router.id);
   const want = line && gw ? `gw:${line.id}` : null;
   const ofLine = (a: Address) => (a.source === "line" || a.source === "lineExtra") && a.v === 4;
   const current = s.ips.addresses.filter(ofLine);

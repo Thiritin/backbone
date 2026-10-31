@@ -3,7 +3,7 @@
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
-import { BMC_NAME, modelById } from "../10-catalog/hardware";
+import { BMC_NAME } from "../10-catalog/hardware";
 import { consoleScreen, consoleVia, osUp } from "./oob";
 import { JITTER } from "../10-catalog/network";
 import { fqdn } from "../30-customers/domains";
@@ -14,6 +14,7 @@ import { privateIp, publicV4, publicV6, ipmiIp } from "./addresses";
 import { isOwnVm, serverOf, vmOf, workloadOnline, type Workload } from "./cluster";
 import { latency } from "./network";
 import { hopDown, pathTo, powered, working, type Hop } from "./status";
+import { mountedRouter } from "./routers";
 import { nodeUsage, workloadUse } from "./usage";
 import { RECOVER_HOURS } from "./power";
 import { reboot, shutdown, type ActionResult } from "../90-actions/hardware";
@@ -45,10 +46,10 @@ export function promptOf(session: Session | null, cwd: string | null = null): st
 // What a name or address points at: a server, a workload (a VM or a customer service) or a server's management controller.
 interface Target { label: string; ip: string; kind: "server" | "workload" | "bmc"; deviceId: string; name: string; workload?: Workload }
 
-// The basement router the desk is plugged into.
+// The basement router the desk reaches over Wi-Fi.
 export const deskRouter = (s: GameState): string | undefined => {
   const home = s.locations.find((l) => !l.dc);
-  return s.devices.find((d) => modelById(d.model).kind === "gateway" && d.panel === home?.id)?.id;
+  return home && mountedRouter(s, home.id)?.id;
 };
 
 const addressOf = (s: GameState, id: string): string => {

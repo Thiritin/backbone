@@ -8,6 +8,8 @@ import { AlarmList, ALL, MediaMenu, NodeList, osText, ResourceBars, summaryOf, S
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import "./proxmocks.css";
 import { t } from "../../../../../i18n/en";
+import { parseCreate } from "../../../../../sim/80-business/consoles";
+import { PackagesScreen } from "../PackageForms";
 
 // docs/design/software.md, section 9: the grey ExtJS manager from 2008, the flat white one with the orange mark from 2015.
 const ERAS = erasFrom(2008, 2015);
@@ -47,9 +49,9 @@ export function VmSummary({ game, c, v }: { game: GameState; c: Cluster; v: Vm }
 
 export function Proxmocks(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
-  const [sel, setSel] = useState<Sel>(ALL), [tab, setTab] = useState("Summary");
+  const open = parseCreate("proxmocks", p.path), [sel, setSel] = useState<Sel>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "plans" } : ALL), [tab, setTab] = useState("Summary");
   const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Console: t("browser-consoles-2.console"), Hardware: t("browser-consoles-2.hardware"), Options: t("browser-consoles-2.options"), Backup: t("browser-consoles-2.backup"), Updates: t("browser-consoles-2.updates"), Cluster: t("browser-consoles-2.cluster") };
-  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c);
+  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, open?.screen === "create" ? open.order : undefined);
   if (!p.signedIn) return (
     <div className="cx pmx pmx-login" data-era={era}>
       <LoginForm className="pmx-card" onLogin={p.login} button={t("browser-consoles-2.login")}>
@@ -66,8 +68,8 @@ export function Proxmocks(p: PanelProps) {
     : node ? ["Summary", "Updates"] : ["Summary", ...(f.cluster ? ["Cluster"] : []), ...(f.backups ? ["Backup"] : [])];
   const shown = tabs.includes(tab) ? tab : "Summary";
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
-  const title = vm ? t("browser-consoles-2.vmTitle", { id: vmid(vm), name: vm.name, node: vm.node }) : node ? t("browser-consoles-2.nodeTitle", { name: nodes.find((d) => d.id === node)?.hostname ?? "" }) : t("browser-consoles-2.datacenter");
-  const finish = () => { const id = nv.create(); if (id) pick({ kind: "vm", id }); };
+  const title = sel.kind === "plans" ? t("pkg.pmxPlans") : vm ? t("browser-consoles-2.vmTitle", { id: vmid(vm), name: vm.name, node: vm.node }) : node ? t("browser-consoles-2.nodeTitle", { name: nodes.find((d) => d.id === node)?.hostname ?? "" }) : t("browser-consoles-2.datacenter");
+  const finish = () => { if (nv.ordered) { if (nv.submit()) setSel(ALL); return; } const id = nv.create(); if (id) pick({ kind: "vm", id }); };
   const facts = vm && vmFacts(game, vm), health = summaryOf(game, c, node);
   return (
     <div className="cx cx-hv pmx" data-era={era}>
@@ -97,6 +99,7 @@ export function Proxmocks(p: PanelProps) {
               </ul>
             </li>
           </ul>
+          <button className="pmx-plans" aria-pressed={sel.kind === "plans"} onClick={() => pick({ kind: "plans" })}><i>▤</i>{t("pkg.pmxPlans")}</button>
         </aside>
         <section className="pmx-content">
           <div className="pmx-bar">
@@ -104,8 +107,9 @@ export function Proxmocks(p: PanelProps) {
             {vm && <Toolbar actions={vm.actions} className="cx-toolbar pmx-tools" />}
           </div>
           <div className="pmx-pane">
-            <nav className="pmx-tabs">{tabs.map((tb) => <button key={tb} aria-pressed={tb === shown} onClick={() => setTab(tb)}>{tabNames[tb]}</button>)}</nav>
+            <nav className="pmx-tabs" hidden={sel.kind === "plans"}>{tabs.map((tb) => <button key={tb} aria-pressed={tb === shown} onClick={() => setTab(tb)}>{tabNames[tb]}</button>)}</nav>
             <main className="cx-hv-main">
+              {sel.kind === "plans" && <PackagesScreen game={game} c={c} />}
               {vm && vm.panel}
               {vm && shown === "Summary" && <VmSummary game={game} c={c} v={vm} />}
               {vm && shown === "Console" && <div className="pmx-console"><button className="cx-btn primary" disabled={!vm.own} onClick={() => openConsole(vm.id)}>&gt;_ {t("browser-consoles-2.console")}</button></div>}
@@ -117,7 +121,7 @@ export function Proxmocks(p: PanelProps) {
               )}
               {vm && shown === "Options" && <Facts facts={[{ label: t("browser-consoles-2.name"), value: vm.name }, { label: t("browser-consoles-2.osType"), value: vm.own ? osText(vm.w) : vm.sub }, { label: t("browser-consoles-2.bootOrder"), value: vm.media ? "ide2, scsi0" : "scsi0" }]} />}
               {vm && facts && shown === "Backup" && <Facts facts={[facts.backup]} />}
-              {!vm && shown === "Summary" && (
+              {!vm && sel.kind !== "plans" && shown === "Summary" && (
                 <>
                   <section className="pmx-panel">
                     <h4>{node ? t("browser-consoles-2.status") : t("browser-consoles-2.health")}</h4>
@@ -154,7 +158,7 @@ export function Proxmocks(p: PanelProps) {
       {sel.kind === "new" && (
         <div className="cx-wiz-back">
           <Wizard title={t("browser-consoles-2.createVm")} numbered className="cx-wiz-tabs pmx-wiz" finish={t("browser-consoles-2.finish")} onCancel={() => setSel(ALL)} onFinish={finish} steps={[
-            { id: "general", label: t("browser-consoles-2.general"), body: <Facts facts={[{ label: t("browser-consoles-2.node"), value: nodes.length === 1 ? nodes[0].hostname ?? nodes[0].name : t("browser-consoles-2.any") }, { label: t("browser-consoles-2.resourcePool"), value: c.name }]} /> },
+            { id: "general", label: t("browser-consoles-2.general"), body: <><div className="pmx-order">{nv.orderFields}</div><Facts facts={[{ label: t("browser-consoles-2.node"), value: nodes.length === 1 ? nodes[0].hostname ?? nodes[0].name : t("browser-consoles-2.any") }, { label: t("browser-consoles-2.resourcePool"), value: c.name }]} /></> },
             { id: "os", label: t("browser-consoles-2.os"), body: nv.isoPick(t("browser-consoles-2.isoImage")) },
             { id: "disk", label: t("browser-consoles-2.hardDisk"), body: <SizeFields size={nv.size} set={nv.setSize} only="diskGb" labels={["", "", t("browser-consoles-2.diskSizeGib")]} /> },
             { id: "cpu", label: "CPU", body: <SizeFields size={nv.size} set={nv.setSize} only="vcpu" labels={[t("browser-consoles-2.cores"), "", ""]} /> },

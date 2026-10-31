@@ -1,27 +1,35 @@
 import { t } from "../../../../../i18n/en";
+import { useState } from "react";
 import { Cloud, Folder, LogOut } from "lucide-react";
 import { disk } from "../../../hw";
 import { Actions, Bar, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { useReadoutPages } from "../Readouts";
+import { Shares } from "./Shares";
+import { Users } from "./Users";
 import "./ownclod.css";
 
 // docs/design/software.md, section 10: white with a blue top bar and a file list until 2016, then a dark blue bar and cards.
 const ERAS = erasFrom(2010, 2016);
 
 export function OwnClod(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f);
-  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
+  const era = eraAt(ERAS, p.game), [panelTab, setTab] = usePanelTab(p.f), [view, setView] = useState<"shares" | "users" | null>(null), tab: Tab | "shares" | "users" = view ?? panelTab;
+  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   const logo = <span className="oc-logo"><Cloud size={22} aria-hidden />ownClod</span>;
   if (!p.signedIn) return (
     <div className="cx oc oc-login" data-era={era}>
       <LoginForm className="oc-card" onLogin={p.login} button={t("browser-consoles-2.logIn")}>{logo}<div className="cx-host">{p.host}</div></LoginForm>
     </div>
   );
-  const nav: [Tab, string][] = [["objects", t("browser-consoles-2.files")], ["software", t("browser-consoles-2.admin")]];
+  const nav: [Tab, string][] = [["objects", t("browser-consoles-2.files")], ["software", t("browser-consoles-2.admin")], ...pages.map((g) => [g.id, g.label] as [Tab, string])];
   return (
     <div className="cx oc" data-era={era}>
       <header className="oc-top">
         {logo}
-        <nav>{nav.map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}</nav>
+        <nav>
+          {nav.map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => { setView(null); setTab(id); }}>{label}</button>)}
+          <button aria-pressed={tab === "shares"} onClick={() => setView("shares")}>{t("netsvc.sharedByLink")}</button>
+          <button aria-pressed={tab === "users"} onClick={() => setView("users")}>{t("netsvc.users")}</button>
+        </nav>
         <span className="cx-host">{p.host}</span>
         <button className="oc-out" onClick={p.logout}><LogOut size={14} aria-hidden />{t("browser-consoles-2.logOut")}</button>
       </header>
@@ -51,6 +59,9 @@ export function OwnClod(p: PanelProps) {
               </section>
             ))}
           </div>)}
+        {tab === "shares" && <Shares game={p.game} c={p.c} />}
+        {tab === "users" && <Users game={p.game} c={p.c} />}
+        {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {tab === "software" && <section className="oc-admin"><h2>{t("browser-consoles-2.updates")}</h2><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</section>}
       </main>
     </div>
