@@ -17,6 +17,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - A new game names your starting basement in the language you play in.
 - The Browser start page and address bar only show a hardware brand once its first model has been released.
 - The Customers app has a History view with charts of how many customers you have and how happy they are on average, one reading per day, and hovering a chart shows the date and value.
+- Billing is now Books, the Lexwear Office bookkeeping program, where you see each customer's postal address and send every month's invoices yourself as PDF.
+- Customers now pay by bank transfer, and you match each payment to its invoice in Books, including short amounts, overpayments and transfers with an unclear reference.
 
 ## 2026-10-31
 
