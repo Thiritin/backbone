@@ -117,6 +117,7 @@ export default {
   "apps.hw.driveSpeed": () => "Vitesse des disques",
 
   "apps.finder.open": () => "Ouvrir",
+  "apps.finder.newWindow": () => "Nouvelle fenêtre",
   "apps.finder.removeFromDock": () => "Retirer du Dock",
   "apps.finder.keepInDock": () => "Garder dans le Dock",
   "apps.finder.addToDesktop": () => "Ajouter au bureau",

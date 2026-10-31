@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-31
 
+- Dragging a window to a screen edge now shows a preview and tiles it to half the screen, to a quarter near a corner, or to the full screen at the top, and dragging it away restores its size.
+- Closing the last browser tab closes the browser window, and the dock menu can open a second browser window with its own tabs.
 - The free email provider every new company starts on is now called GMix, with a new logo.
 - Picking the USB stick in the boot menu now starts its installer right away instead of dropping back to the POST screen.
 - A new company starts with fewer apps in the dock, and Finance, Customers, Marketing, Security and Research arrive with an email from Pear once you need them, while Staff and Market are offered in the Pear Store.

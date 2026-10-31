@@ -17,7 +17,7 @@ import { useDownloads } from "../../downloads";
 import type { OsImage } from "../../../sim/10-catalog/server-os";
 import { useSessionState } from "../../session";
 import { t } from "../../../i18n/en";
-import { useFocus, useStore } from "../../store";
+import { useFocus, useStore, useWin } from "../../store";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
 import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
@@ -133,8 +133,9 @@ function DownloadsButton({ game }: { game: GameState }) {
 
 export function BrowserApp() {
   const game = useStore((s) => s.game);
-  const [tabs, setTabs] = useSessionState<Tab[]>("browser.tabs", [{ id: 1, history: [HOME_URL], at: 0, nav: 0 }]);
-  const [active, setActive] = useSessionState<number>("browser.active", tabs[0]?.id ?? 1);
+  const win = useWin();
+  const [tabs, setTabs] = useSessionState<Tab[]>(`browser.tabs.${win.id}`, [{ id: 1, history: [HOME_URL], at: 0, nav: 0 }]);
+  const [active, setActive] = useSessionState<number>(`browser.active.${win.id}`, tabs[0]?.id ?? 1);
   const [marks, setMarks] = useSessionState<Mark[]>("browser.marks", []);
   const tab = tabs.find((x) => x.id === active) ?? tabs[0];
   const url = tab.history[tab.at];
@@ -155,7 +156,7 @@ export function BrowserApp() {
     setActive(id);
   };
   const close = (id: number) => {
-    if (tabs.length < 2) return;
+    if (tabs.length < 2) return win.close();
     const rest = tabs.filter((x) => x.id !== id);
     setTabs(rest);
     if (id === active) setActive(rest[Math.max(0, tabs.findIndex((x) => x.id === id) - 1)].id);
@@ -184,7 +185,7 @@ export function BrowserApp() {
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setActive(x.id)}>
               <Favicon game={game} r={rx} />
               <span className="br-tab-title">{titleOf(game, rx)}</span>
-              {tabs.length > 1 && <button className="br-tab-x" aria-label={t("misc1.browser.closeTab")} onClick={(e) => { e.stopPropagation(); close(x.id); }}><X aria-hidden /></button>}
+              <button className="br-tab-x" aria-label={t("misc1.browser.closeTab")} onClick={(e) => { e.stopPropagation(); close(x.id); }}><X aria-hidden /></button>
             </div>
           );
         })}
