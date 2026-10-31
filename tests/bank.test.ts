@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { iban } from "../src/sim/46-finance/bank";
+import { iban, type Draft } from "../src/sim/46-finance/bank";
+import { resolve } from "../src/sim/80-business/browser";
+import { tickMinute } from "../src/sim/88-tick/tick";
+import { cancelTransfer, confirmTransfer, setTanMethod, startTransfer } from "../src/sim/90-actions/bank";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { registerCompany } from "../src/sim/90-actions/company";
@@ -57,5 +60,69 @@ describe("bank account", () => {
 
   it("computes valid German IBANs", () => {
     expect(iban("37040044", "532013000")).toBe("DE89370400440532013000");
+  });
+});
+
+const payee: Draft = { name: "Hans Wurst", account: "1234567", code: "37040044", amount: 49.9, reference: "Rechnung 17" };
+
+describe("bank site and TANs", () => {
+  it("serves the bank's site in the Browser", () => {
+    const s = opened();
+    expect(resolve(s, "www.sparklasse.de/banking/transfer").page).toEqual({ kind: "bank", id: "sparklasse" });
+    expect(resolve(s, "quonto.eu").page.kind).toBe("notfound");
+  });
+
+  it("asks for a numbered iTAN, refuses a wrong one and sends with the right one", () => {
+    const s = opened();
+    expect(startTransfer(s, payee).ok).toBe(true);
+    const index = s.bank!.pending!.index!;
+    expect(confirmTransfer(s, "000000")).toEqual({ ok: false, error: "error.wrongTan" });
+    const cash = s.cash;
+    expect(confirmTransfer(s, s.bank!.tans.codes[index]).ok).toBe(true);
+    expect(s.cash).toBeCloseTo(cash - 49.9, 2);
+    expect(s.bank!.tans.used).toEqual([index]);
+    expect(s.bank!.outgoing[0]).toMatchObject({ name: "Hans Wurst", arriveAt: s.hour + 24 });
+    expect(s.docs.find((d) => d.id === "tans")!.body).toContain(`${String(index + 1).padStart(3, "0")}  ------`);
+    // A used TAN is never asked for again.
+    startTransfer(s, payee);
+    expect(s.bank!.pending!.index).not.toBe(index);
+  });
+
+  it("locks online banking for a day after three wrong TANs", () => {
+    const s = opened();
+    startTransfer(s, payee);
+    confirmTransfer(s, "1");
+    confirmTransfer(s, "2");
+    expect(confirmTransfer(s, "3")).toEqual({ ok: false, error: "error.bankLocked" });
+    expect(s.bank!.pending).toBeNull();
+    expect(startTransfer(s, payee)).toEqual({ ok: false, error: "error.bankLocked" });
+    run(s, 24);
+    expect(startTransfer(s, payee).ok).toBe(true);
+  });
+
+  it("texts the mTAN a minute later and takes a confirm click for pushTAN", () => {
+    const s = opened(1, "sparklasse");
+    s.hour = hourOf(new Date(Date.UTC(2010, 2, 1, 9)));
+    expect(setTanMethod(s, "mtan").ok).toBe(true);
+    expect(s.docs.some((d) => d.id === "tans")).toBe(false);
+    const sepa = { ...payee, account: "DE89 3704 0044 0532 0130 00", code: undefined };
+    expect(startTransfer(s, sepa).ok).toBe(true);
+    expect(s.tickets.some((t) => t.topic === "bankMtan")).toBe(false);
+    tickMinute(s);
+    const mail = s.tickets.find((t) => t.topic === "bankMtan")!;
+    expect(confirmTransfer(s, String(mail.mail!.params.code)).ok).toBe(true);
+    expect(setTanMethod(s, "push")).toEqual({ ok: false, error: "error.tanMethod" });
+    s.hour = hourOf(new Date(Date.UTC(2014, 2, 1, 9)));
+    setTanMethod(s, "push");
+    startTransfer(s, sepa);
+    expect(confirmTransfer(s).ok).toBe(true);
+    expect(cancelTransfer(s).ok).toBe(false);
+  });
+
+  it("refuses an account number after IBAN and a payee without a name", () => {
+    const s = opened();
+    expect(startTransfer(s, { ...payee, name: " " })).toEqual({ ok: false, error: "error.payeeName" });
+    s.hour = hourOf(new Date(Date.UTC(2008, 2, 1)));
+    expect(startTransfer(s, payee)).toEqual({ ok: false, error: "error.payeeAccount" });
   });
 });

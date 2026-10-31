@@ -17,7 +17,7 @@ import { LOCALE } from "../../../i18n/lang";
 
 const CATEGORY: Record<string, string> = {
   payments: t("misc.catPayments"), setup: t("misc.catSetup"), sales: t("misc.catSales"), hardware: t("misc.catHardware"), rent: t("misc.catRent"), power: t("misc.catPower"), transit: t("misc.catTransit"), salaries: t("misc.catSalaries"),
-  leasing: t("misc.catLeasing"), maintenance: t("misc.catMaintenance"), moving: t("misc.catMoving"), insurance: t("misc.catInsurance"), loans: t("misc.catLoans"), tax: t("misc.catTax"), subscriptions: t("misc.catSubscriptions"), ai: t("misc.catAi"), marketing: t("misc.catMarketing"), fees: t("misc.catFees"),
+  leasing: t("misc.catLeasing"), maintenance: t("misc.catMaintenance"), moving: t("misc.catMoving"), insurance: t("misc.catInsurance"), loans: t("misc.catLoans"), tax: t("misc.catTax"), subscriptions: t("misc.catSubscriptions"), ai: t("misc.catAi"), marketing: t("misc.catMarketing"), fees: t("misc.catFees"), transfers: t("bank.catTransfers"),
 };
 const categoryLabel = (c: string) => CATEGORY[c] ?? c.charAt(0).toUpperCase() + c.slice(1);
 const REVENUE = ["payments", "setup", "sales"];

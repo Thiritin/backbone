@@ -16,6 +16,7 @@ import { consoleAt, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
 import { OFFICE_HOST, OFFICE_TITLE, OFFICE_URL } from "./office";
+import { bankById, BANKS, type BankId } from "../10-catalog/banks";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -25,6 +26,7 @@ export type Page =
   | { kind: "customer"; serviceId: string }
   | { kind: "vendor"; maker: string }
   | { kind: "registrar"; id: RegistrarId }
+  | { kind: "bank"; id: BankId }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean }
   | { kind: "ipmi"; deviceId: string }
@@ -71,9 +73,12 @@ export function registrarUrl(s: GameState): string {
   return `${displayHost(registrarHost(r))}/`;
 }
 
-// Bookmarks every game has: the company site once launched and the registrar. The index lists the rest.
+export const bankUrl = (id: BankId): string => `www.${bankById(id)!.host}/`;
+
+// Bookmarks every game has: the company site once launched, the bank and the registrar. The index lists the rest.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
   ...(s.registration ? [] : [{ title: OFFICE_TITLE, url: OFFICE_URL }]),
+  ...(s.bank ? [{ title: bankById(s.bank.id)!.name, url: bankUrl(s.bank.id) }] : []),
   ...(s.marketing.launched ? [{ title: s.company.name, url: companyUrl(s) }] : []),
   { title: ((s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0]).name, url: registrarUrl(s) },
 ];
@@ -153,6 +158,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   const vendor = VENDORS.find((m) => named(vendorHost(m.id)) && vendorLive(m, monthIndexOf(s.hour)));
   if (vendor) return out({ kind: "vendor", maker: vendor.id });
   if (named(BOARD_HOST)) return out({ kind: "sponsorboard" });
+  const bank = BANKS.find((b) => named(b.host) && b.from <= year);
+  if (bank) return out({ kind: "bank", id: bank.id });
   const registrar = REGISTRARS.find((r) => named(registrarHost(r)));
   if (registrar) return out({ kind: "registrar", id: registrar.id });
   if (named(VIDEO_HOST)) {
