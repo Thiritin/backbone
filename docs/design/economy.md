@@ -2298,6 +2298,18 @@ The loan limit is the higher of the level's minimum and 12× the average monthly
 
 **Bankruptcy.** When cash stays below zero for 30 days and no loan is available that covers the deficit, the company is insolvent and the game ends.
 
+**Account fees.** A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. netbunk, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys netbunk out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
+
+| Bank | Sole trader | Partnership | Limited company | Per booking (partnership, limited) |
+| --- | --- | --- | --- | --- |
+| Sparklasse | €8 | €12 | €16 | €0.30 |
+| Volksbunk | €6 | €9 | €12 | €0.25 |
+| Deutsche Bunk | €12 | €18 | €24 | €0.15 |
+| Postbunk | €4 | €6 | €8 | €0.40 |
+| netbunk | €0 | €5 | no account | none |
+| Fidorr | €0 | €6 | €12 | none |
+| Quonto | €9 | €15 | €25 | none |
+
 **SLA insurance.** The monthly premium is 2% of the recurring revenue from customers with an SLA, times an uptime factor: 1.0 at 99.95% or better over 90 days, 1.5 at 99.9% or better, and 2.5 below that. A missed SLA owes the customer 10% of their monthly fee per 0.1% of uptime below the promise, up to the full fee. The insurer pays those credits for three claims, then blocks the company for a year.
 
 **Tax.** Prices are without VAT, and VAT is not simulated. Corporate tax takes 30% of each year's profit in April of the following year, and losses carry forward to later years. Taxable profit is the year's ledger without loan principal; instalments count only their interest, and hardware is a cost in the year it is bought.

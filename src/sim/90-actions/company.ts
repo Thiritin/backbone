@@ -2,7 +2,7 @@ import type { Company, GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 import { STARTER_APPS } from "../10-catalog/store";
 import { LEGAL_FORMS, officeOpen, registerNumber } from "../80-business/office";
-import { banksOpen, DEFAULT_BANK, type BankId } from "../10-catalog/banks";
+import { banksOpen, DEFAULT_BANK, monthlyFee, type BankId } from "../10-catalog/banks";
 import { openAccount } from "../46-finance/bank";
 import { yearOf } from "../00-core/time";
 
@@ -35,7 +35,9 @@ export function registerCompany(s: GameState, name: string, owner: string, form:
   if (!officeOpen(s.hour)) return { ok: false, error: "error.officeClosed" };
   if (!owner.trim()) return { ok: false, error: "error.ownerName" };
   if (!(form in LEGAL_FORMS)) return { ok: false, error: "error.legalForm" };
-  if (!banksOpen(yearOf(s.hour)).some((b) => b.id === bank)) return { ok: false, error: "error.unknownBank" };
+  const chosen = banksOpen(yearOf(s.hour)).find((b) => b.id === bank);
+  if (!chosen) return { ok: false, error: "error.unknownBank" };
+  if (monthlyFee(chosen, form) === null) return { ok: false, error: "error.bankForm" };
   const named = setCompany(s, { name });
   if (!named.ok) return named;
   s.checklist = s.checklist.filter((id) => id !== "company");

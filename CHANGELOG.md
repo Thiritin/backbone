@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - The weather app fills its whole window again and lists all your locations.
+- Bank account fees now depend on your legal form: a limited company pays more, branch banks charge partnerships and limited companies for every booking, and netbunk opens no account for a limited company.
 - Datacenter providers now announce your own IP block under your AS number for a one-off setup fee, so you no longer need your own BGP router for it.
 
 ## 2026-10-31
