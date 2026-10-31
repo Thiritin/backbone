@@ -2,7 +2,7 @@
 import { nowMinutes, yearOf } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { tanMethods, type TanMethod } from "../10-catalog/banks";
-import { bankOf, ibanEra, LOCK_HOURS, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft } from "../46-finance/bank";
+import { APPROVAL_HOURS, bankOf, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft } from "../46-finance/bank";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
@@ -60,5 +60,24 @@ export function setTanMethod(s: GameState, method: TanMethod): ActionResult {
   s.bank = { ...s.bank, tan: method, pending: null };
   if (method === "itan") placeTanList(s);
   else s.docs = s.docs.filter((d) => d.id !== "tans");
+  return { ok: true };
+}
+
+// The bank decides on a card after a few days, with a limit from the account's income.
+export function applyCard(s: GameState): ActionResult {
+  const bank = bankOf(s);
+  if (!bank || !s.bank) return fail("error.noBank");
+  if (s.bank.card) return fail("error.hasCard");
+  const readyAt = s.hour + APPROVAL_HOURS;
+  s.bank = { ...s.bank, card: { appliedAt: s.hour, readyAt, limit: limitFor(s, bank.card.factor, MIN_CARD_LIMIT), spent: [], feeAt: readyAt } };
+  return { ok: true };
+}
+
+export function applyOverdraft(s: GameState): ActionResult {
+  const bank = bankOf(s);
+  if (!bank || !s.bank) return fail("error.noBank");
+  if (bank.overdraft === null) return fail("error.noOverdraft");
+  if (s.bank.overdraftAt !== null) return fail("error.applied");
+  s.bank = { ...s.bank, overdraftAt: s.hour + APPROVAL_HOURS };
   return { ok: true };
 }

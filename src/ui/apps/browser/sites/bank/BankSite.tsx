@@ -5,9 +5,9 @@ import { euro, euroCents } from "../../../../../sim/00-core/money";
 import { dateOf, yearOf } from "../../../../../sim/00-core/time";
 import { bankById, tanMethods, type Bank, type BankId, type TanMethod } from "../../../../../sim/10-catalog/banks";
 import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate } from "../../../../../sim/45-billing/billing";
-import { groupIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft } from "../../../../../sim/46-finance/bank";
+import { cardSpent, groupIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft } from "../../../../../sim/46-finance/bank";
 import type { GameState } from "../../../../../sim/50-state";
-import { cancelTransfer, confirmTransfer, setTanMethod, startTransfer } from "../../../../../sim/90-actions/bank";
+import { applyCard, applyOverdraft, cancelTransfer, confirmTransfer, setTanMethod, startTransfer } from "../../../../../sim/90-actions/bank";
 import { takeLoan } from "../../../../../sim/90-actions/billing";
 import { readSession, writeSession } from "../../../../session";
 import { useStore } from "../../../../store";
@@ -16,7 +16,7 @@ import "./bank-site.css";
 type Go = (url: string) => void;
 const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 const pct = (r: number) => `${(r * 100).toLocaleString(LOCALE, { maximumFractionDigits: 2 })} %`;
-const VIEWS = ["statement", "transfer", "loans", "service"] as const;
+const VIEWS = ["statement", "transfer", "card", "overdraft", "loans", "service"] as const;
 type View = (typeof VIEWS)[number];
 
 // One frame for every bank: the skin swaps colours and logo, the account's TAN method sets the transfer's last step.
@@ -48,6 +48,8 @@ export function BankSite({ game, id, path, go }: { game: GameState; id: BankId; 
           {!own ? <Login game={game} bank={bank} onIn={() => { setLogin(true); go(`${home}/banking/statement`); }} />
             : view === "statement" ? <Statement game={game} />
             : view === "transfer" ? <Transfer key={path} game={game} bank={bank} prefill={query} go={go} />
+            : view === "card" ? <CardView game={game} bank={bank} />
+            : view === "overdraft" ? <Overdraft game={game} bank={bank} />
             : view === "loans" ? <Loans game={game} />
             : <Service game={game} bank={bank} />}
         </main>
@@ -235,6 +237,42 @@ function Service({ game, bank }: { game: GameState; bank: Bank }) {
           </select>
         </label>
       </form>
+    </Box>
+  );
+}
+
+function CardView({ game, bank }: { game: GameState; bank: Bank }) {
+  const act = useStore((s) => s.act), card = game.bank!.card;
+  return (
+    <Box title={t("bank.site.nav.card")}>
+      <table className="bks-table">
+        <tbody>
+          <tr><td>{t("bank.site.cardFee")}</td><td className="r num">{euro(bank.card.yearly)}</td></tr>
+          {card && game.hour < card.readyAt && <tr><td>{t("bank.site.appliedOn")}</td><td className="r num">{day(card.appliedAt)}</td></tr>}
+          {card && game.hour >= card.readyAt && <>
+            <tr><td>{t("bank.site.limit")}</td><td className="r num">{euro(card.limit)}</td></tr>
+            <tr><td>{t("bank.site.cardSpent")}</td><td className="r num">{euroCents(cardSpent(game))}</td></tr>
+            <tr><td>{t("bank.site.available")}</td><td className="r num">{euroCents(card.limit - cardSpent(game))}</td></tr>
+          </>}
+        </tbody>
+      </table>
+      {!card && <button className="bks-btn primary" onClick={() => act(applyCard)}>{t("bank.site.apply")}</button>}
+    </Box>
+  );
+}
+
+function Overdraft({ game, bank }: { game: GameState; bank: Bank }) {
+  const act = useStore((s) => s.act), b = game.bank!;
+  return (
+    <Box title={t("bank.site.nav.overdraft")}>
+      <table className="bks-table">
+        <tbody>
+          <tr><td>{t("bank.site.overdraftRate")}</td><td className="r num">{bank.overdraft === null ? "–" : pct(bank.overdraft)}</td></tr>
+          <tr><td>{t("bank.site.limit")}</td><td className="r num">{euro(b.overdraft)}</td></tr>
+          {b.overdraftAt !== null && <tr><td>{t("bank.site.decidedOn")}</td><td className="r num">{day(b.overdraftAt)}</td></tr>}
+        </tbody>
+      </table>
+      {bank.overdraft !== null && b.overdraftAt === null && <button className="bks-btn primary" onClick={() => act(applyOverdraft)}>{b.overdraft ? t("bank.site.reapply") : t("bank.site.apply")}</button>}
     </Box>
   );
 }

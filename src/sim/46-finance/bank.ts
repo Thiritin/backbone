@@ -142,6 +142,16 @@ export function tanTick(s: GameState): void {
   deliverMail(s, bankOf(s)!.name, "bankMtan", { bank: bankOf(s)!.name, code: p.code!, amount: p.draft.amount, name: p.draft.name });
 }
 
+// The average monthly income of the last six months, from the ledger.
+export function monthlyIncome(s: GameState): number {
+  const since = Math.max(s.bank?.opened ?? 0, s.hour - 6 * 730), months = Math.max(1, (s.hour - since) / 730);
+  return s.ledger.filter((e) => e.hour >= since && e.amount > 0 && e.category !== "loans").reduce((n, e) => n + e.amount, 0) / months;
+}
+// A limit from account history: the bank's factor times the monthly income, in hundreds, at least the floor.
+export const limitFor = (s: GameState, factor: number, floor: number): number => Math.max(floor, Math.floor((monthlyIncome(s) * factor) / 100) * 100);
+export const cardReady = (s: GameState): boolean => !!s.bank?.card && s.hour >= s.bank.card.readyAt;
+export const cardSpent = (s: GameState): number => -(s.bank?.card?.spent ?? []).reduce((n, e) => n + e.amount, 0);
+
 // Hourly: the account fee and overdraft interest at each month start, interest on a negative balance, card and overdraft decisions.
 export function bankTick(s: GameState): SimEvent[] {
   const b = s.bank, bank = bankOf(s);
@@ -153,7 +163,21 @@ export function bankTick(s: GameState): SimEvent[] {
   };
   if (!b.welcomed) welcome(s);
   let next: BankAccount = { ...s.bank!, interest: s.cash < 0 && bank.overdraft ? b.interest - (s.cash * bank.overdraft) / HOURS_PER_YEAR : b.interest };
+  const card = next.card;
+  if (card && s.hour === card.readyAt) deliverMail(s, bank.name, "bankCard", { bank: bank.name, limit: card.limit });
+  if (card && s.hour >= card.feeAt) {
+    const free = bank.card.freeFirstYear && card.feeAt === card.readyAt;
+    if (bank.card.yearly > 0 && !free) book("fees", "ledger.cardFee", { bank: bank.name }, -bank.card.yearly);
+    next = { ...next, card: { ...card, feeAt: card.feeAt + HOURS_PER_YEAR } };
+  }
+  if (next.overdraftAt !== null && s.hour >= next.overdraftAt) {
+    next = { ...next, overdraft: limitFor(s, 1, MIN_OVERDRAFT), overdraftAt: null };
+    deliverMail(s, bank.name, "bankOverdraft", { bank: bank.name, limit: next.overdraft, rate: Math.round(bank.overdraft! * 1000) / 10 });
+  }
   if (isMonthStart(s.hour)) {
+    // The card bill debits what the card paid last month.
+    for (const e of next.card?.spent ?? []) book(e.category, e.key, e.params, e.amount);
+    if (next.card?.spent.length) next = { ...next, card: { ...next.card, spent: [] } };
     if (bank.monthly > 0) book("fees", "ledger.bankFee", { bank: bank.name }, -bank.monthly);
     if (next.interest >= 0.01) book("fees", "ledger.overdraftInterest", { bank: bank.name }, -cents(next.interest));
     next = { ...next, interest: 0 };

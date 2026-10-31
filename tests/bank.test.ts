@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { iban, type Draft } from "../src/sim/46-finance/bank";
+import { iban, openAccount, type Draft } from "../src/sim/46-finance/bank";
+import { buyCart, deliveryWait, PREPAY_HOURS, type CartLine } from "../src/sim/90-actions/hardware";
+import { applyCard, applyOverdraft } from "../src/sim/90-actions/bank";
+import { withServer } from "./fixtures";
 import { resolve } from "../src/sim/80-business/browser";
 import { tickMinute } from "../src/sim/88-tick/tick";
 import { cancelTransfer, confirmTransfer, setTanMethod, startTransfer } from "../src/sim/90-actions/bank";
@@ -124,5 +127,62 @@ describe("bank site and TANs", () => {
     expect(startTransfer(s, { ...payee, name: " " })).toEqual({ ok: false, error: "error.payeeName" });
     s.hour = hourOf(new Date(Date.UTC(2008, 2, 1)));
     expect(startTransfer(s, payee)).toEqual({ ok: false, error: "error.payeeAccount" });
+  });
+});
+
+// A company with a server (so orders take shipping time), an account at Sparklasse and some income on it.
+const banked = (): GameState => {
+  const s = withServer(newGame(2));
+  s.bank = { ...openAccount(s, "sparklasse"), welcomed: true };
+  s.ledger = [{ hour: 0, category: "payments", key: "ledger.payment", params: {}, amount: 3000 }];
+  s.cash = 20_000;
+  return s;
+};
+const CART: CartLine[] = [{ model: "g1-compute", brand: "Dwell", qty: 1 }];
+
+describe("card and overdraft", () => {
+  it("approves a card after three days with a limit from the account's income", () => {
+    const s = banked();
+    expect(applyCard(s).ok).toBe(true);
+    expect(buyCart(s, CART, { kind: "card" }, "loc1")).toEqual({ ok: false, error: "error.noCard" });
+    run(s, 72);
+    expect(s.bank!.card!.limit).toBe(4500);
+    expect(s.tickets.some((t) => t.topic === "bankCard")).toBe(true);
+    expect(s.ledger.some((e) => e.key === "ledger.cardFee" && e.amount === -30)).toBe(true);
+  });
+
+  it("ships a card order now and debits it with the card bill; prepay waits for the transfer", () => {
+    const s = banked();
+    applyCard(s);
+    run(s, 72);
+    const cash = s.cash, wait = deliveryWait(s, CART);
+    expect(buyCart(s, CART, { kind: "card" }, "loc1").ok).toBe(true);
+    expect(s.cash).toBe(cash);
+    const byCard = s.devices.at(-1)!;
+    expect(byCard.arriveAt).toBe(s.hour + wait);
+    expect(buyCart(s, CART, { kind: "prepay" }, "loc1").ok).toBe(true);
+    expect(s.devices.at(-1)!.arriveAt).toBe(s.hour + wait + PREPAY_HOURS + 24);
+    expect(s.cash).toBeLessThan(cash);
+    const afterPrepay = s.cash;
+    run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
+    expect(s.bank!.card!.spent).toEqual([]);
+    expect(s.cash).toBeLessThan(afterPrepay - 1000);
+  });
+
+  it("takes only a card for SuperMacro", () => {
+    const s = banked();
+    expect(buyCart(s, [{ model: "g1-compute", brand: "SuperMacro", qty: 1 }], { kind: "prepay" }, "loc1")).toEqual({ ok: false, error: "error.cardOnly" });
+  });
+
+  it("keeps a company inside its overdraft solvent and charges interest", () => {
+    const s = banked();
+    expect(applyOverdraft(s).ok).toBe(true);
+    run(s, 72);
+    expect(s.bank!.overdraft).toBe(3000);
+    s.cash = -1000;
+    run(s, 24 * 20);
+    expect(s.brokeSince).toBeNull();
+    run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
+    expect(s.ledger.find((e) => e.key === "ledger.overdraftInterest")!.amount).toBeLessThan(0);
   });
 });

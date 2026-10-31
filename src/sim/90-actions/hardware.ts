@@ -1,6 +1,8 @@
 import { rand } from "../00-core/rng";
+import { bankOf, cardReady, cardSpent, spendable } from "../46-finance/bank";
+import { TRANSFER_HOURS } from "../10-catalog/banks";
 import { monthIndexOf, yearOf } from "../00-core/time";
-import { boardVendor, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, leadFactor, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { boardVendor, manufacturerByName, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, leadFactor, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
@@ -238,15 +240,19 @@ export function stock(s: GameState, line: CartLine, lease: string | null, store:
   });
 }
 
+export const PREPAY_HOURS = 24;
 const lineTotal = (s: GameState, line: CartLine) => unitPrice(line, yearOf(s.hour)) * line.qty;
 const families = (line: CartLine): string[] => { const m = modelById(line.model); return m.kind === "part" ? [m.id.slice(5)] : [m.kind, ...lineParts(line).map((p) => p.kind)]; };
 // An order ships whole after its slowest line, except while the company owns no server: the first purchases arrive at once.
 export const deliveryWait = (s: GameState, lines: CartLine[]): number => (s.devices.some((d) => modelById(d.model).kind === "server")
   ? Math.round(deliveryHours(yearOf(s.hour)) * Math.max(1, ...lines.flatMap(families).map((f) => leadFactor(f, s.hour)))) : 0);
 
-function buyLine(s: GameState, line: CartLine, locationId: string, wait: number): string {
+// A card purchase books nothing yet: the card bill at the month start debits it.
+function buyLine(s: GameState, line: CartLine, locationId: string, wait: number, card = false): string {
   const ids = stock(s, line, null, locationId, wait);
-  book(s, "hardware", "ledger.hardware", { model: modelById(line.model).name, qty: line.qty }, -lineTotal(s, line));
+  const entry = { hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: modelById(line.model).name, qty: line.qty }, amount: -lineTotal(s, line) };
+  if (card) s.bank = { ...s.bank!, card: { ...s.bank!.card!, spent: [...s.bank!.card!.spent, entry] } };
+  else book(s, entry.category, entry.key, entry.params, entry.amount);
   return ids[0];
 }
 
@@ -264,17 +270,31 @@ export function buyDevice(s: GameState, modelId: string, brand: string, qty: num
   return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s, [line])) };
 }
 
-// Pays in cash or leases the whole cart; the lease offer must be one leaseOffers makes for the cart total right now.
-export function buyCart(s: GameState, lines: CartLine[], payment: { kind: "cash" } | { kind: "lease"; offerId: string }, locationId: string): ActionResult {
+export type Payment = { kind: "cash" } | { kind: "prepay" } | { kind: "card" } | { kind: "lease"; offerId: string };
+// A shop abroad takes only a card for the cart.
+export const cardOnly = (lines: CartLine[]): boolean => lines.some((l) => manufacturerByName(l.brand)?.cardOnly);
+
+// Pays now, by prepaid transfer (ships once the money arrives), by card, or leases the whole cart; the lease offer must be one
+// leaseOffers makes for the cart total right now.
+export function buyCart(s: GameState, lines: CartLine[], payment: Payment, locationId: string): ActionResult {
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   if (!lines.length) return fail("error.emptyCart");
   const error = lines.map((l) => lineError(s, l) ?? officeError(s, l.model, locationId)).find((e) => e);
   if (error) return fail(error);
   const total = lines.reduce((sum, l) => sum + lineTotal(s, l), 0);
-  if (payment.kind === "cash") {
-    if (s.cash < total) return fail("error.noCash");
+  if (cardOnly(lines) && (payment.kind === "cash" || payment.kind === "prepay")) return fail("error.cardOnly");
+  if (payment.kind === "card") {
+    if (!cardReady(s)) return fail("error.noCard");
+    if (cardSpent(s) + total > s.bank!.card!.limit) return fail("error.cardLimit");
     const wait = deliveryWait(s, lines);
-    return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait))[0] };
+    return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait, true))[0] };
+  }
+  if (payment.kind === "cash" || payment.kind === "prepay") {
+    if (spendable(s) < total) return fail("error.noCash");
+    const wait = deliveryWait(s, lines);
+    // A prepaid order ships the day after the transfer reaches the shop.
+    const paid = payment.kind === "prepay" && wait ? PREPAY_HOURS + TRANSFER_HOURS[bankOf(s)?.speed ?? "nextDay"] : 0;
+    return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait + paid))[0] };
   }
   const offer = leaseOffers(s, total).find((o) => o.id === payment.offerId);
   if (!offer) return fail("error.offerExpired");
