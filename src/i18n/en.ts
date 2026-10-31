@@ -130,6 +130,8 @@ export const en: Record<string, (p: Params) => string> = {
   "error.speedMismatch": () => "Both ports must run at the same speed.",
   "error.notServer": () => "Only servers have a bond mode.",
   "error.notSwitch": () => "Only switches have port groups.",
+  "error.unmanaged": () => "Unmanaged switches have no settings.",
+  "error.vlanRange": () => "VLAN IDs run from 1 to 4094.",
   "error.groupSize": () => "A port group holds 2 to 8 ports.",
   "ledger.lease": (p) => `${p.lessor}, payment ${p.paid} of ${p.months}`,
   "ledger.leaseBuyout": (p) => `${p.lessor}, buyout`,

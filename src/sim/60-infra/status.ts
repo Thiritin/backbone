@@ -6,6 +6,7 @@ import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
 import { serverOsById } from "../10-catalog/server-os";
+import { egress, ingress, MGMT_VLAN } from "./switches";
 import type { Component, Device, End, GameState, Location, NetFail, Rack, SpaceKind } from "../50-state";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
@@ -49,25 +50,39 @@ const lineUp = (s: GameState, gatewayId: string): boolean => {
   return !loc || !!loc.dc || !!s.homeLine.id;
 };
 
-function reachesGateway(s: GameState, start: End, origin: string, minGbit: number): boolean {
+// A frame leaves the server untagged; managed switches forward it only between ports of its VLAN (switches.ts), and a
+// gateway takes it only untagged.
+function reachesGateway(s: GameState, start: End, origin: string, minGbit: number, tag0: number | null = null): boolean {
   const seen = new Set([origin]);
-  const queue = [start];
+  const queue: { at: End; tag: number | null }[] = [{ at: start, tag: tag0 }];
   while (queue.length) {
-    const at = queue.shift()!;
+    const { at, tag } = queue.shift()!;
     const model = modelOf(s, at.device);
     if (!working(s, at.device)) continue;
-    if (model.kind === "gateway") return lineUp(s, at.device);
+    if (model.kind === "gateway") { if (tag === null) return lineUp(s, at.device); continue; }
     if (model.kind === "firewall" && model.throughputGbit! < minGbit) continue;
-    const key = model.kind === "patch" ? `${at.device}:${at.port}` : at.device;
-    if (model.kind === "server" || seen.has(key)) continue;
+    const sw = model.managed ? s.devices.find((x) => x.id === at.device)! : null;
+    const vlan = sw ? ingress(sw, at.port, tag) : tag;
+    const key = `${model.kind === "patch" ? `${at.device}:${at.port}` : at.device}:${vlan}`;
+    if (model.kind === "server" || vlan === undefined || seen.has(key)) continue;
     seen.add(key);
     const exits = model.kind === "patch" ? [bridged(s, at)] : model.ports.map((_, i) => i);
     for (const port of exits) {
+      const out = sw ? egress(sw, port, vlan!) : vlan;
       const peer = peerOf(s, { device: at.device, port });
-      if (peer && !isOobPort(peer.port)) queue.push(peer);
+      if (out !== undefined && peer && !isOobPort(peer.port)) queue.push({ at: peer, tag: out });
     }
   }
   return false;
+}
+
+// Whether a managed switch's management interface, in MGMT_VLAN, reaches the location's gateway: the way the player's desk reaches it.
+export function mgmtReachesGateway(s: GameState, d: Device): boolean {
+  if (!working(s, d.id)) return false;
+  return modelById(d.model).ports.some((_, port) => {
+    const tag = egress(d, port, MGMT_VLAN), peer = peerOf(s, { device: d.id, port });
+    return tag !== undefined && !!peer && !isOobPort(peer.port) && reachesGateway(s, peer, d.id, 0, tag);
+  });
 }
 
 // The fastest firewall cap on any path to a gateway: Infinity without a firewall on the way, null without a path.

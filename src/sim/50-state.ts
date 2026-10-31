@@ -1,6 +1,6 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
-import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
+import { componentParts, hasFirmware, isManaged, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { Vendor } from "./10-catalog/cpus";
 import type { OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
@@ -69,6 +69,9 @@ export interface MachineState {
   installFailed?: NetFail;
 }
 export type NetFail = "noInterfaces" | "noLink";
+// A managed switch port's VLANs: the one its untagged frames belong to and the ones it carries tagged. A port without an entry is untagged in VLAN 1.
+export interface PortVlan { untagged: number; tagged: number[] }
+export interface SwitchConfig { groups: number[][]; vlans: Record<number, PortVlan> }
 export interface Device extends MachineState { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
   components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
   // others are the further CPUs a swap of every socket replaces with the same spec.
@@ -92,6 +95,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   // The server sits in its BIOS setup (90-actions/console.ts): the boot waits until the player leaves it. bootFrom is what
   // this boot came from: the USB stick shows the installer in place of the operating system.
   setup: boolean; bootFrom: "disk" | "usb";
+  // A managed switch's running configuration is groups and vlans; saved is what it loads when it boots.
+  vlans?: Record<number, PortVlan>; saved?: SwitchConfig;
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
   part?: PartSpec;
   // nodeNNN, set on servers.
@@ -293,6 +298,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
     rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null,
     hung: false, bmcHung: false, log: [] as { hour: number; key: string }[], os: null as MachineState["os"], software: [] as MachineState["software"],
     stuck: false, locked: false, setup: false, bootFrom: "disk" as const, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
+    ...(isManaged(modelById(modelId)) ? { vlans: {} as Record<number, PortVlan>, saved: { groups: [], vlans: {} } as SwitchConfig } : {}),
   };
 }
 
