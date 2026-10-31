@@ -19,6 +19,7 @@ import { listed, siteFactor } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
+import { hiddenTraits } from "../45-billing/fraud";
 import { domainFor } from "../30-customers/domains";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
@@ -196,8 +197,8 @@ export function fulfil(s: GameState, r: SalesRequest): ActionResult {
     }
   }
   if (!customerId) {
-    customerId = addCustomer(s, requestName(r), r.profile, r.shady ? "prompt" : habitFor(s.rng, r.profile));
-    if (r.shady) s.customers = s.customers.map((c) => (c.id === customerId ? { ...c, shady: true } : c));
+    customerId = addCustomer(s, requestName(r), r.profile, r.shady || r.fraud ? "prompt" : habitFor(s.rng, r.profile));
+    if (r.shady || r.fraud) s.customers = s.customers.map((c) => (c.id === customerId ? { ...c, ...hiddenTraits(s, r) } : c));
   }
   const target = targetFor(s, r);
   const placed: ActionResult = target

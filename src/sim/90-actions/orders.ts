@@ -19,7 +19,7 @@ function step(s: GameState, ticketId: string, which: OrderStep, route?: string):
   const error = stepError(s, f.t, which, route);
   if (error) return fail(error);
   if (route) editRequest(s, orderOf(s, f.t)!.id, () => ({ route }));
-  return queue(s, f.t, "resolve", which, stepMinutes(which));
+  return queue(s, f.t, "resolve", which, stepMinutes(which, s, orderOf(s, f.t)));
 }
 
 export const createAccount = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "account");
@@ -47,6 +47,12 @@ export const confirmOrder = (s: GameState, ticketId: string): ActionResult => st
 export function setAutoOrders(s: GameState, on: boolean): ActionResult {
   if (on && !canAutomate(s)) return fail("error.needsAutomation");
   s.autoOrders = on;
+  return { ok: true };
+}
+
+// Switches the review by hand of server orders (45-billing/fraud.ts).
+export function setReviewOrders(s: GameState, on: boolean): ActionResult {
+  s.reviewOrders = on;
   return { ok: true };
 }
 
