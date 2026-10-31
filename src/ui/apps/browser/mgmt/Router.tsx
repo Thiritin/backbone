@@ -1,5 +1,5 @@
-// docs/design/lan.md, Management interfaces in the Browser: an own router's web interface in the switch pages' frame,
-// themed per maker as WebFigg and J-Webb.
+// docs/design/lan.md, Management interfaces in the Browser: an own router's web interface in the switch pages' frame and
+// its maker's theme.
 import { useState } from "react";
 import { t } from "../../../../i18n/en";
 import { modelById } from "../../../../sim/10-catalog/hardware";
@@ -9,15 +9,10 @@ import { linkStatus } from "../../../../sim/60-infra/status";
 import { setOwnRouterLan, setRemoteAccess } from "../../../../sim/90-actions/routers";
 import { useStore } from "../../../store";
 import { devName } from "../../hw";
-import { MgmtShell } from "./Switch";
+import { lookOf, MgmtShell } from "./Switch";
 import "../consoles/consoles.css";
 import "./switch.css";
 
-const LOOKS: Record<string, { look: string; title: string; frame: "side" | "top" }> = {
-  MicroTick: { look: "webfigg", title: "WebFigg", frame: "side" },
-  Junipurr: { look: "jwebb", title: "J-Webb", frame: "top" },
-};
-const lookOf = (d: Device) => LOOKS[d.brand] ?? { look: "plain", title: modelById(d.model).name, frame: "top" as const };
 export const routerTitle = (d: Device): string => `${lookOf(d).title} ${devName(d)}`;
 
 type Tab = "system" | "dhcp" | "vpn";

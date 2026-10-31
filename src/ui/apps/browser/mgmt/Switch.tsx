@@ -14,13 +14,15 @@ import { devName, portName, speed } from "../../hw";
 import "../consoles/consoles.css";
 import "./switch.css";
 
-// Each maker's web interface; other makers show the plain one under the model's name.
+// Each maker's web interface, for its switches and routers; other makers show the plain one under the model's name.
 const LOOKS: Record<string, { look: string; title: string; frame: "side" | "top" }> = {
   Sysko: { look: "sysko", title: "Sysko Device Mangler", frame: "side" },
   "Hewlett-Packet": { look: "proswerve", title: "ProSwerve", frame: "top" },
   Nettgear: { look: "prosafe", title: "ProSafe-ish", frame: "side" },
+  MicroTick: { look: "webfigg", title: "WebFigg", frame: "side" },
+  Junipurr: { look: "jwebb", title: "J-Webb", frame: "top" },
 };
-const lookOf = (d: Device) => LOOKS[d.brand] ?? { look: "plain", title: modelById(d.model).name, frame: "top" as const };
+export const lookOf = (d: Device) => LOOKS[d.brand] ?? { look: "plain", title: modelById(d.model).name, frame: "top" as const };
 export const switchTitle = (d: Device): string => `${lookOf(d).title} ${devName(d)}`;
 
 const TABS = ["system", "ports", "groups", "vlans", "routing", "save"] as const;

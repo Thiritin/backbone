@@ -16,5 +16,6 @@
 .sw-facts dd { margin: 0; }
 .sw .cx-table input { width: 100%; min-width: 60px; }
 .sw .cx-table input.sw-vlan { width: 72px; }
+.sw .cx-table input[type="checkbox"] { width: auto; min-width: 0; }
 .sw-ports .cx-chip { min-width: 34px; }
 .sw .cx-state.warn { background: color-mix(in oklab, #c27c00 16%, transparent); color: #9a6200; }
