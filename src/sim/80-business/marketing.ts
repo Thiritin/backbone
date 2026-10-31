@@ -15,11 +15,10 @@ import { siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus 
 
 export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
 
-export type OwnedChannel = "website" | "orderForm" | "searchAds" | "aiAds";
+export type OwnedChannel = "website" | "searchAds" | "aiAds";
 // Setup and monthly upkeep in euros; email is always on and free.
 export const OWNED: Record<OwnedChannel, { setup: number; upkeep: number; needs: OwnedChannel | null; fromYear: number }> = {
   website: { setup: 400, upkeep: 15, needs: null, fromYear: 2005 },
-  orderForm: { setup: 900, upkeep: 10, needs: "website", fromYear: 2005 },
   searchAds: { setup: 50, upkeep: 0, needs: "website", fromYear: 2005 },
   aiAds: { setup: 1500, upkeep: 0, needs: "website", fromYear: 2023 },
 };
@@ -88,7 +87,7 @@ export const newMarketing = (): Marketing => ({
 });
 
 export const owns = (s: GameState, c: OwnedChannel): boolean => s.marketing.owned.includes(c);
-export const hasOrderForm = (s: GameState): boolean => owns(s, "orderForm") || shopActive(s);
+export const hasOrderForm = (s: GameState): boolean => shopActive(s);
 export const costPerLead = (channel: CampaignChannel, p: Profile, year: number): number => priceAt(CAMPAIGNS[channel].cost[p] ?? 0, 0.6, year);
 export const reach = (channel: CampaignChannel): Profile[] => PROFILE_IDS.filter((p) => CAMPAIGNS[channel].cost[p]);
 export const awareness = (s: GameState, p: Profile): number => s.marketing.awareness[p];

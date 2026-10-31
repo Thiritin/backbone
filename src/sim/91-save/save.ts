@@ -1,3 +1,4 @@
+import { fillShop } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
 import { freeSlots } from "../60-infra/status";
 import { leave } from "../90-actions/clusters";
@@ -5,6 +6,7 @@ import { yearOf } from "../00-core/time";
 import { asImage } from "../10-catalog/server-os";
 import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, LEAD_DAYS, nextAz, seedDcs, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import { fillAddresses } from "../60-infra/addresses";
+import { mergeWebPanel } from "../60-infra/webpanel";
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { WALK } from "../80-business/walk";
@@ -102,6 +104,7 @@ export function deserialize(raw: string): GameState {
     registration: data.registration === undefined ? legacyRegistration(base.seed) : data.registration,
     ips: { ...base.ips, ...data.ips },
     netsvc: { ...base.netsvc, ...data.netsvc },
+    webpanel: mergeWebPanel(base.webpanel, data.webpanel),
     marketing: { ...base.marketing, ...data.marketing, awareness: { ...base.marketing.awareness, ...data.marketing?.awareness } },
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.
@@ -124,6 +127,7 @@ export function deserialize(raw: string): GameState {
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
   legacyLeads(s);
+  fillShop(s, data.marketing?.owned);
   // Saves from before banks hold their account at Sparklasse; the next hour brings its welcome email and TAN list.
   if (data.bank === undefined) s.bank = legacyBank(s);
   shelveRouter(s);
