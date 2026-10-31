@@ -2,8 +2,8 @@
 import { arrived, bookPayment, cardBlocked, invoice, open, payableFor, supplierAccount, supplierIban } from "./payables";
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
-import { dateOf, isMonthStart, nowMinutes, yearOf } from "../00-core/time";
-import { bankById, DEFAULT_BANK, IBAN_YEAR, tanMethods, TRANSFER_HOURS, type Bank, type BankId, type TanMethod } from "../10-catalog/banks";
+import { dateOf, isMonthStart, monthIndexOf, nowMinutes, yearOf } from "../00-core/time";
+import { bankById, bookingFee, DEFAULT_BANK, IBAN_YEAR, monthlyFee, tanMethods, TRANSFER_HOURS, type Bank, type BankId, type TanMethod } from "../10-catalog/banks";
 import { deliverMail } from "../40-support/tickets";
 import type { Doc, GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -180,6 +180,17 @@ export const limitFor = (s: GameState, factor: number, floor: number): number =>
 export const cardReady = (s: GameState): boolean => !!s.bank?.card && s.hour >= s.bank.card.readyAt && !cardBlocked(s);
 export const cardSpent = (s: GameState): number => -(s.bank?.card?.spent ?? []).reduce((n, e) => n + e.amount, 0);
 
+// Every ledger line of the month moved the account, except the bank's own fees.
+function bookingsIn(s: GameState, month: number): number {
+  let n = 0;
+  for (let i = s.ledger.length - 1; i >= 0; i--) {
+    const e = s.ledger[i], m = monthIndexOf(e.hour);
+    if (m < month) break;
+    if (m === month && e.amount !== 0 && e.category !== "fees") n++;
+  }
+  return n;
+}
+
 // Hourly: the account fee and overdraft interest at each month start, interest on a negative balance, card and overdraft decisions.
 export function bankTick(s: GameState): SimEvent[] {
   const b = s.bank, bank = bankOf(s);
@@ -222,7 +233,10 @@ export function bankTick(s: GameState): SimEvent[] {
       invoice(s, "card", bank.name, next.card.spent);
       next = { ...s.bank!, card: { ...next.card, spent: [] } };
     }
-    if (bank.monthly > 0) book("fees", "ledger.bankFee", { bank: bank.name }, -bank.monthly);
+    const form = s.registration?.form ?? "sole", fee = monthlyFee(bank, form) ?? 0, perBooking = bookingFee(bank, form);
+    if (fee > 0) book("fees", "ledger.bankFee", { bank: bank.name }, -fee);
+    const count = perBooking > 0 ? bookingsIn(s, monthIndexOf(s.hour) - 1) : 0;
+    if (count > 0) book("fees", "ledger.bookingFee", { bank: bank.name, count }, -cents(count * perBooking));
     if (next.interest >= 0.01) book("fees", "ledger.overdraftInterest", { bank: bank.name }, -cents(next.interest));
     next = { ...next, interest: 0 };
   }

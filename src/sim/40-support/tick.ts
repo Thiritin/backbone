@@ -1,4 +1,5 @@
 import { chance, rand } from "../00-core/rng";
+import { refundUnused, termRoll } from "./terms";
 import { isMonthStart, nowMinutes } from "../00-core/time";
 import { counts } from "../00-core/workhours";
 import { noticed, segmentOf } from "../10-catalog/attention";
@@ -155,7 +156,7 @@ function outages(s: GameState, customer: (id: string) => Customer): void {
 }
 
 // economy.md, Happiness and churn: a cancellation left open is processed at the next monthly billing date.
-// ponytail: every customer rolls monthly churn; yearly contracts rolling 12x at renewal needs billing's renewal dates.
+// A customer inside a paid term does not roll until the month the term ends, when one roll covers all its months.
 function monthly(s: GameState): void {
   for (const c of s.customers) if (c.churnedAt === null) c.history = [...c.history, c.happiness].slice(-HISTORY_MONTHS);
   overpricing(s);
@@ -163,13 +164,14 @@ function monthly(s: GameState): void {
   for (const t of s.tickets) {
     if (t.kind !== "cancellation" || isFinal(t) || t.createdAt >= s.hour || t.work?.arg === FIX_CHECK) continue;
     const c = s.customers.find((x) => x.id === t.customerId)!;
+    refundUnused(s, c);
     cancelCustomer(s, c);
     Object.assign(t, { status: "closed", updatedAt: s.hour, outcome: "cancelled", work: null });
   }
   for (const c of s.customers) {
     if (c.churnedAt !== null) continue;
-    const p = profileStats(c.profile);
-    const cancels = c.happiness < 15 || chance(s.rng, p.churn + 0.5 * Math.max(0, (50 - c.happiness) / 50));
+    const p = profileStats(c.profile), term = termRoll(s, c.id);
+    const cancels = !(term.committed && c.happiness >= 15) && (c.happiness < 15 || chance(s.rng, Math.min(0.9, p.churn * term.months) + 0.5 * Math.max(0, (50 - c.happiness) / 50)));
     if (cancels && !s.tickets.some((t) => t.customerId === c.id && t.kind === "cancellation" && !isFinal(t))) createTicket(s, c, "cancellation", null).topic = cancelReason(s, c);
     else if (chance(s.rng, UPGRADE_CHANCE[p.budget] * fullBoost(s, c.id))) {
       const grow = activeServices(s.services, c.id).filter(expandable), full = fullServer(s, c.id);

@@ -1,0 +1,32 @@
+/* A 2005 business software vendor: fixed 760 px page, red brand bar, Verdana 11 px, boxed products with a buy button. */
+.lx { min-height: 100%; background: #dcdcdc; color: #222; font: 11px/1.45 Verdana, Geneva, Tahoma, sans-serif; padding: 12px 0 24px; }
+.lx a { color: #b0001e; }
+.lx-page { width: 760px; max-width: 100%; margin: 0 auto; background: #fff; border: 1px solid #a0a0a0; }
+.lx-head { display: flex; align-items: baseline; gap: 14px; padding: 12px 16px 10px; background: linear-gradient(#e2122f, #a8001a); color: #fff; }
+.lx-logo { font: 26px/1 Arial, Helvetica, sans-serif; letter-spacing: -1px; }
+.lx-logo b { font-weight: 900; }
+.lx-tag { font-size: 11px; color: #ffd9de; }
+.lx-nav { display: flex; gap: 1px; background: #8a8a8a; border-bottom: 1px solid #666; }
+.lx-nav a { padding: 4px 14px; background: linear-gradient(#f4f4f4, #d6d6d6); color: #333; text-decoration: none; font-weight: bold; }
+.lx-nav a[aria-current] { background: #fff; color: #b0001e; }
+.lx-main { padding: 12px 16px 18px; }
+.lx h1 { font: bold 15px Arial, Helvetica, sans-serif; color: #b0001e; margin: 0 0 8px; }
+.lx h2 { font-size: 12px; margin: 0 0 3px; }
+.lx p { margin: 0 0 8px; }
+.lx-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; }
+.lx-list li { display: flex; gap: 12px; padding: 8px; border: 1px solid #ccc; background: linear-gradient(#fff, #f3f3f3); }
+.lx-item { flex: 1; min-width: 0; }
+.lx-row { display: flex; align-items: center; gap: 12px; }
+.lx-amount { font-weight: bold; font-size: 13px; color: #222; }
+.lx-box { --lx-hue: 0; flex: none; width: 56px; height: 72px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px;
+  background: linear-gradient(#fff 0 45%, oklch(0.55 0.15 var(--lx-hue)) 45%); border: 1px solid #999; border-left: 6px solid #c8102e;
+  box-shadow: 2px 2px 0 #bbb; font: bold 7px/1.1 Arial, sans-serif; color: #c8102e; overflow: hidden; }
+.lx-box.big { width: 110px; height: 140px; font-size: 10px; padding: 8px; }
+.lx-box-name { color: #fff; overflow-wrap: anywhere; hyphens: auto; }
+.lx-product { display: flex; gap: 18px; align-items: flex-start; }
+.lx-price { border-collapse: collapse; margin: 6px 0 10px; }
+.lx-price th { text-align: left; padding: 3px 12px 3px 0; color: #555; }
+.lx-buy { font: bold 11px Verdana, sans-serif; color: #fff; background: linear-gradient(#f0263f, #b0001e); border: 1px solid #7a0014; border-radius: 3px; padding: 3px 14px; cursor: pointer; }
+.lx-buy:active { background: #8c0018; }
+.lx-state { font-weight: bold; color: #2f7d1a; }
+.lx-foot { padding: 6px 16px; border-top: 1px solid #ddd; color: #777; font-size: 10px; }
