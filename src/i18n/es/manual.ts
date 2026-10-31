@@ -7,7 +7,7 @@ const mailboxes = (n: string | number) => `${n} ${Number(n) === 1 ? "buzón" : "
 const web = (p: Params) => `${gb(p.disk)} de espacio, ${gb(p.traffic)} de tráfico al mes y ${mailboxes(p.mail)}`;
 const box = (p: Params) => `${p.cpu} vCPU, ${gb(p.ram)} de RAM y ${gb(p.disk)} de disco`;
 const cards = (p: Params) => `${p.gpu} GPU`;
-const domain = (p: Params) => (Number(p.owned) ? `Ya tengo ${p.domain} y me gustaría trasladarlo contigo.` : `Por favor, registra también ${p.domain} para mí.`);
+const domain = (p: Params) => (Number(p.owned) ? `Ya tengo ${p.domain} y me gustaría trasladarlo contigo.${p.auth ? ` El código de autorización es ${p.auth}.` : ""}` : `Por favor, registra también ${p.domain} para mí.`);
 const more = (p: Params) => (p.product === "webHosting"
   ? `de ${gb(p.disk0)} a ${gb(p.disk1)} de espacio, de ${gb(p.traffic0)} a ${gb(p.traffic1)} de tráfico y de ${p.mail0} a ${mailboxes(p.mail1)}`
   : and([

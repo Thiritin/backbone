@@ -72,10 +72,10 @@ export function displayHost(host: string): string {
 export const companyUrl = (s: GameState): string => `${displayHost(companyDomain(s))}/`;
 
 // The registrar under contract, or the first one before any contract.
-export function registrarUrl(s: GameState): string {
-  const r = (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
-  return `${displayHost(registrarHost(r))}/`;
-}
+export const partnerOf = (s: GameState) => (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
+export const registrarUrl = (s: GameState): string => `${displayHost(registrarHost(partnerOf(s)))}/`;
+// The partner's form that registers or transfers an order's domain.
+export const registrarFormUrl = (s: GameState, ticketId: string, transfer: boolean): string => `${registrarUrl(s)}${transfer ? "transfer" : "register"}?order=${ticketId}`;
 
 export const bankUrl = (id: BankId): string => `www.${bankById(id)!.host}/`;
 

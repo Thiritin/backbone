@@ -12,7 +12,7 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { orderOf } from "../src/sim/30-market/orders";
 import { addRequest } from "../src/sim/30-market/sales";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { mailed, readyGame } from "./fixtures";
+import { mailed, owner, readyGame } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const step = (s: GameState, res: { ok: boolean; error?: string }) => {
@@ -42,7 +42,7 @@ describe("sales leads", () => {
     step(s, confirmOrder(s, t.id));
     expect(req(s, r.id).invoiceId).toBeTruthy();
     expect(s.services).toHaveLength(services);
-    step(s, registerOrderDomain(s, t.id));
+    step(s, registerOrderDomain(s, t.id, ...owner(s, t.id)));
     step(s, provisionOrder(s, t.id, hostFor(s, req(s, r.id))!));
     const v = s.services.find((x) => x.id === req(s, r.id).serviceId)!;
     expect(v).toMatchObject({ product: "webHosting", sla: "business", customerId: req(s, r.id).customerId });

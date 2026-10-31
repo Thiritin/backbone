@@ -8,7 +8,8 @@ import type { Product } from "../../../sim/30-customers/customers";
 import { registryCost, registryOf } from "../../../sim/30-customers/registry";
 import { wholesale } from "../../../sim/30-customers/registrar";
 import { sizeOf } from "../../../sim/30-market/spec";
-import { canAutomate, hostFor, invoiceOf, stepsDone } from "../../../sim/30-market/manual";
+import { canAutomate, hostFor, invoiceOf, shopRegisters, stepsDone } from "../../../sim/30-market/manual";
+import { registrarFormUrl } from "../../../sim/80-business/browser";
 import type { SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
 import type { InvoiceStatus } from "../../../sim/45-billing/billing";
@@ -192,7 +193,7 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
         {row("invoice", t("support.orderConfirmation"), done.invoice ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : invoiceOf(game, r) ? t("orderSteps.status.draft") : t("support.notSent"),
           <button className="btn primary" disabled={locked} onClick={() => { const res = act(invoiceOrder, tk.id); if (res.ok) openApp("Books", { kind: "invoice", id: res.id! }); }}><Receipt />{t("orderSteps.openInvoice")}</button>)}
         {web && row("domain", r.owned ? t("support.domainTransfer") : t("support.domain"), done.domain ? t("support.registered") : t("support.domainLine", { domain: r.domain!, registry: registryOf(r.domain!).name, price: euroCents(cost) }),
-          <button className="btn primary" disabled={locked} onClick={() => act(registerOrderDomain, tk.id)}><Globe />{r.owned ? t("support.transferDomain") : t("support.registerDomain")}</button>)}
+          <button className="btn primary" disabled={locked} onClick={() => (shopRegisters(game, r) ? act(registerOrderDomain, tk.id) : openApp("Browser", { kind: "url", id: registrarFormUrl(game, tk.id, !!r.owned) }))}><Globe />{r.owned ? t("support.transferDomain") : t("support.registerDomain")}</button>)}
         {row("provision", t("support.setup"), done.provision ? t("support.live") : t("support.notSetUp"),
           <div className="step-col">
             <HostCards r={r} value={route} onChange={setRoute} disabled={locked} />
