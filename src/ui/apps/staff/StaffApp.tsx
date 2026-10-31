@@ -37,7 +37,7 @@ const ROLE: Record<Role, { one: string; many: string }> = {
 };
 const TASK: Record<Task, string> = {
   howTo: t("misc.taskHowTo"), billing: t("misc.taskBilling"), outage: t("misc.taskOutage"), upgrade: t("misc.taskUpgrade"), cancellation: t("misc.taskCancellation"), abuse: t("misc.taskAbuse"), appeal: t("misc.taskAppeal"), order: t("misc.taskOrder"), notice: t("misc.taskNotice"), legal: t("misc.taskLegal"), refund: t("misc.taskRefund"), extortion: t("misc.taskExtortion"), migration: t("misc.taskMigration"), maintenance: t("misc.taskMaintenance"),
-  sponsor: t("misc.taskSponsor"), mail: "", reminder: t("misc.taskReminder"), dunning: t("misc.taskDunning"), final: t("misc.taskFinal"), suspend: t("misc.taskSuspend"),
+  sponsor: t("misc.taskSponsor"), mail: "", reminder: t("misc.taskReminder"), invoices: t("vendor-sites.taskInvoices"), transfers: t("vendor-sites.taskTransfers"), dunning: t("misc.taskDunning"), final: t("misc.taskFinal"), suspend: t("misc.taskSuspend"),
   campaigns: t("misc.taskCampaigns"), reviews: t("misc.taskReviews"), fairs: t("misc.taskFairs"),
   hardware: t("misc.taskHardware"), servers: t("misc.taskServers"), panels: t("misc.taskPanels"),
 };
