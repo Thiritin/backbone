@@ -181,4 +181,5 @@ export default {
   "readouts.ipmi.mounted": () => "Virtual media mounted",
   "readouts.ipmi.ejected": () => "Virtual media ejected",
   "error.noController": () => "The server has no reachable management controller.",
+  "error.noVirtualMedia": () => "No virtual media is mounted.",
 } satisfies Dict;

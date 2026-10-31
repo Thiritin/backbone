@@ -181,4 +181,5 @@ export default {
   "readouts.ipmi.mounted": () => "Supporto virtuale montato",
   "readouts.ipmi.ejected": () => "Supporto virtuale espulso",
   "error.noController": () => "Il server non ha un controller di gestione raggiungibile.",
+  "error.noVirtualMedia": () => "Nessun supporto virtuale è montato.",
 } satisfies Dict;

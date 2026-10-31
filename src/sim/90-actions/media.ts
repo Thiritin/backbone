@@ -54,7 +54,7 @@ const stickInstalling = (s: GameState): boolean => {
 export function plugStick(s: GameState, deviceId: string, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
-  if (modelById(d.model).kind !== "server" || !d.rackId) return fail("error.notServer");
+  if (modelById(d.model).kind !== "server" || !d.rackId) return fail("error.noController");
   if (s.media.stick.in === d.id) return fail("error.stickIn");
   if (stickInstalling(s)) return fail("error.stickInstalling");
   const loc = locationOf(s, d);
@@ -86,10 +86,9 @@ export function unplugStick(s: GameState): ActionResult {
 export function mountVirtualMedia(s: GameState, deviceId: string, image: OsImage | null): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
-  if (modelById(d.model).kind !== "server") return fail("error.notServer");
   if (consoleVia(s, d.id)?.kind !== "bmc") return fail("error.noController");
   if (image === null) {
-    if (!d.virtualMedia) return fail("error.noMedia");
+    if (!d.virtualMedia) return fail("error.noVirtualMedia");
     delete d.virtualMedia;
     pushLog(d, s.hour, "readouts.ipmi.ejected");
     return { ok: true };

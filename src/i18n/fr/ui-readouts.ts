@@ -181,4 +181,5 @@ export default {
   "readouts.ipmi.mounted": () => "Média virtuel monté",
   "readouts.ipmi.ejected": () => "Média virtuel éjecté",
   "error.noController": () => "Le serveur n'a pas de contrôleur de gestion joignable.",
+  "error.noVirtualMedia": () => "Aucun média virtuel n'est monté.",
 } satisfies Dict;

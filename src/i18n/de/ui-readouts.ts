@@ -181,4 +181,5 @@ export default {
   "readouts.ipmi.mounted": () => "Virtuelles Medium eingebunden",
   "readouts.ipmi.ejected": () => "Virtuelles Medium ausgeworfen",
   "error.noController": () => "Der Server hat keinen erreichbaren Verwaltungscontroller.",
+  "error.noVirtualMedia": () => "Es ist kein virtuelles Medium eingebunden.",
 } satisfies Dict;
