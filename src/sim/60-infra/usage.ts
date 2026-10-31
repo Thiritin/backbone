@@ -12,6 +12,7 @@ import { booked, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, h
 import { serviceMbps } from "./network";
 import { machineScreen } from "./oob";
 import { installedRamGb, portPeers, raidUsable, working } from "./status";
+import { THERMAL, throttled } from "./thermal";
 
 // economy.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
 const RAM_BASE = 0.6;
@@ -100,7 +101,8 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   const physical = { vcpu: nodeVcpu(s, d), ramGb: installedRamGb(d), diskGb: raidUsable(d) };
   const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
   const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
-  return { used, physical, perf: Math.min(cpu, disk) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) };
+  const heat = throttled(s, d) ? THERMAL.throttlePerf : 1;
+  return { used, physical, perf: Math.min(cpu, disk) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) * heat };
 }
 
 // A working cluster node whose RAM in use exceeds its installed RAM freezes: every workload on it is down until it fits again.

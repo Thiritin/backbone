@@ -16,7 +16,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Orders and sales", "order", "orderAccepted", "orderQuoted", "orderFailed", "orderDeclined", "orderPaid", "sales*"),
     type("Sponsoring requests", "sponsorRequest", "boardApplication"),
     type("Notices and legal", "seized", "breach"),
-    type("Power", "gridDark", "gridCarried", "feedDark", "feedCarried", "feedCascade"),
+    type("Power", "gridDark", "gridCarried", "feedDark", "feedCarried", "feedCascade", "coolingFailed", "overheated"),
   ],
   Browser: [
     type("Domains", "registrarTier", "domainsTransferred"),

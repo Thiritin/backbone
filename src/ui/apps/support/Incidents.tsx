@@ -7,7 +7,7 @@ import { CustomerLink } from "../customers/CustomersApp";
 import { day } from "../hw";
 import { stamp } from "./labels";
 
-const CAUSE: Record<IncidentCause, string> = { grid: t("support.cause.grid"), generator: t("support.cause.generator"), feed: t("support.cause.feed"), seizure: t("support.cause.seizure") };
+const CAUSE: Record<IncidentCause, string> = { grid: t("support.cause.grid"), generator: t("support.cause.generator"), feed: t("support.cause.feed"), heat: t("support.cause.heat"), seizure: t("support.cause.seizure") };
 
 const impact = (i: Incident) => (i.cause === "seizure" ? t("support.until", { day: day(i.returnAt!) }) : i.dark ? t("support.dark", { d: duration(i.dark) }) : t("support.noDowntime"));
 

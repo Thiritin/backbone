@@ -14,6 +14,7 @@ export const ALERT_KEYS: Record<string, string> = {
   "event.ddos": "Locations",
   "event.gridDark": "Locations",
   "event.feedDark": "Locations",
+  "event.overheated": "Locations",
   "event.feedCascade": "Locations",
   "event.vulnCritical": "Security",
   "event.breach": "Support",

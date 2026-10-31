@@ -1039,11 +1039,10 @@ Here a is the age in years, and the chance of failing in any game hour is AFR ÷
 | Access or core switch | 2% | Everything wired only to it goes offline |
 | Edge router | 1.5% | Its uplinks go down; traffic spills to other exits if there are any |
 | UPS | 3% | The next grid outage takes the room down |
-| Cooling unit | 5% | The room overheats; servers start failing at 4× their rate after 2 hours |
 
 Without a spare kit in stock, a repair waits for a delivery first.
 
-**Components.** Each component's chance of failing in a year depends on whether it is past its life expectancy, and is multiplied by the manufacturer's failure factor and by 2 while the device runs hot from a failed fan. The chance per game hour is the yearly rate ÷ 8,760.
+**Components.** Each component's chance of failing in a year depends on whether it is past its life expectancy, and is multiplied by the manufacturer's failure factor and by 1 + the device's hot hours ÷ 100 (see Cooling and overheating). The chance per game hour is the yearly rate ÷ 8,760.
 
 | Component | Life expectancy | Yearly failure rate before | After | Part price | Swap while running |
 | --- | --- | --- | --- | --- | --- |
@@ -1058,6 +1057,22 @@ Without a spare kit in stock, a repair waits for a delivery first.
 | Network card | 10 years | 0.3% | 1% | €80 | No |
 
 A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare and sets the insurance premium; the shop sells parts at the prices of Part prices by year.
+
+**Cooling and overheating.** Each location keeps a room temperature: 22 °C in a datacenter hall, and in the basement 22 + 5 · cos((month − 6.5) · π / 6), from 17 in January to 27 in July. A server's inlet adds up to 3 °C as its rack nears its power limit and 6 °C behind a failed fan. On top of that the room carries heat H, which the sim steps every game minute (60 steps when an hour is ticked at once):
+
+```math
+\frac{dH}{dt} = \frac{0.5}{m}\,\big(P - C - s \cdot H\big) \quad \text{°C per minute}, \qquad H \ge 0
+```
+
+P is the kW the location's racks draw and m the room's mass: its positions in a hall, 4 in the basement. A hall's cooling C is 1.2 × the kW limits of its racks, so it never falls short while it works, and it sheds s = 0.02 kW per position and degree through the building. The basement has no cooling unit: it sheds C = 3 kW at its normal temperature and s = 0.2 kW more per degree, so a basement drawing 4.5 kW on its extra circuit settles 7.5 °C warmer. A hall's cooling fails 0.3 times a year per location for a log-normal duration (median 40 minutes, σ 1, 5 minutes to 8 hours); C is then 0. A full 3.3 kW position climbs 1.6 °C a minute and reaches 45 °C after about 14 minutes, a 0.3 kW position 0.15 °C a minute.
+
+| Inlet | Effect |
+| --- | --- |
+| 35 °C or more | The server throttles to 60% of its performance, which slows the customer apps on it (see Usage curves), and every hour counts as a hot hour |
+| 45 °C or more | The server shuts itself off with the same corruption roll as a pulled plug |
+| Below 30 °C after a shutdown | The server switches itself on and boots; the minutes it was off are recorded as an Overheating incident with the usual refund requests and reviews |
+
+Each hot hour adds 1% of a component's rate for good: 100 hot hours double every component's failure rate in the device.
 
 **Chassis slots.** Each server line has a fixed number of DIMM slots, drive bays, PCIe slots and power supply bays. Sockets are 2 (1 for ARM, backup and archive). The DIMM column interpolates between the generations given: G1 and G2 share the G1 value, G3 and G4 the G3 value, G5 and G6 the G5 value.
 

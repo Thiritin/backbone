@@ -5,6 +5,7 @@ export default {
   "support.cause.generator": () => "Notstromaggregat ausgefallen",
   "support.cause.feed": () => "Zuleitung ausgefallen",
   "support.cause.seizure": () => "Server beschlagnahmt",
+  "support.cause.heat": () => "Überhitzung",
   "support.until": (p) => `Bis ${p.day}`,
   "support.dark": (p) => `${p.d} dunkel`,
   "support.noDowntime": () => "Kein Ausfall",

@@ -5,6 +5,7 @@ export default {
   "support.cause.generator": () => "Panne du groupe électrogène",
   "support.cause.feed": () => "Panne d'arrivée électrique",
   "support.cause.seizure": () => "Serveur saisi",
+  "support.cause.heat": () => "Surchauffe",
   "support.until": (p) => `Jusqu'au ${p.day}`,
   "support.dark": (p) => `${p.d} dans le noir`,
   "support.noDowntime": () => "Aucune panne",

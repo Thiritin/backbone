@@ -41,6 +41,7 @@ import { familyById, familyFailure } from "../10-catalog/families";
 import { lessorName } from "../10-catalog/leasing";
 import { BURNIN_BONUS_HOURS, BURNIN_FACTOR } from "../10-catalog/burnin";
 import { burninTick } from "../60-infra/burnin";
+import { THERMAL, thermalTick, throttled } from "../60-infra/thermal";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
 import { KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
@@ -123,12 +124,12 @@ export const rebuildHours = (d: Device): number => {
   return (driveGb(d) * 1000 * DRIVE_USED_SHARE) / REBUILD_MBPS[d.rebuildRate] / 3600;
 };
 
-// Each component of a running device fails at its yearly rate for its age, × the manufacturer's factor, × its part maker's, × 2 while a fan is out,
-// × 1.2 once the device is out of support, × 0.9 for a year after a passed full burn-in.
+// Each component of a running device fails at its yearly rate for its age, × the manufacturer's factor, × its part maker's,
+// × 1 + its hot hours ÷ THERMAL.wearHours, × 1.2 once the device is out of support, × 0.9 for a year after a passed full burn-in.
 export function failureChance(s: GameState, d: Device, c: Component): number {
   const spec = COMPONENTS[c.kind];
   const yearly = modelById(d.model).failYearly ?? (s.hour - c.installedAt < spec.life * HOURS_PER_YEAR ? spec.before : spec.after);
-  const hot = d.components.some((x) => x.kind === "fan" && x.failedAt !== null) ? 2 : 1;
+  const hot = 1 + (d.hotHours ?? 0) / THERMAL.wearHours;
   const old = unsupported(d.model, s.hour) ? FAILURE_FACTOR : 1;
   const burned = d.burnedInAt !== null && s.hour - d.burnedInAt < BURNIN_BONUS_HOURS ? BURNIN_FACTOR : 1;
   const family = familyById(c.sku);
@@ -158,6 +159,7 @@ export function failComponents(s: GameState, d: Device, ids: string[], events: S
 function wear(s: GameState, events: SimEvent[]) {
   s.devices = s.devices.map((d) => {
     if (!d.components.length || !d.on || !powered(s, d.id)) return d;
+    if (throttled(s, d)) d = { ...d, hotHours: (d.hotHours ?? 0) + 1 };
     const broke = d.components.filter((c) => c.failedAt === null && rand(s.rng) < failureChance(s, d, c));
     return broke.length ? failComponents(s, d, broke.map((c) => c.id), events) : d;
   });
@@ -201,11 +203,12 @@ export const knowHowPerMonth = (s: GameState): number =>
 
 export function tick(state: GameState): SimEvent[] {
   state.powerDue += powerPerHour(state);
+  const minutes = 60 - state.minute;
   state.hour++;
   state.minute = 0;
   haltTick(state);
   installNetTick(state);
-  const events: SimEvent[] = tripTick(state);
+  const events: SimEvent[] = [...tripTick(state), ...thermalTick(state, minutes)];
   // The store shallow-copies the state before ticking, so arrays and their items are replaced rather than changed.
   if (state.racks.some((r) => r.arriveAt !== null && r.arriveAt <= state.hour)) {
     state.racks = state.racks.map((r) => {
@@ -338,5 +341,5 @@ export function tickMinute(state: GameState): SimEvent[] {
   haltTick(state);
   installNetTick(state);
   const tripped = tripTick(state);
-  return [...tripped, ...workTick(state)];
+  return [...tripped, ...thermalTick(state), ...workTick(state)];
 }
