@@ -208,6 +208,7 @@ export default {
   "ledger.chargeback": (p) => `Estorno de ${p.customer}`,
   "ledger.chargebackFee": (p) => `Taxa de estorno de ${p.customer}`,
   "ledger.chargebackProgram": () => "Taxa de monitoramento da PayPail",
+  "ledger.screening": (p) => `Filtragem de pedidos MaxMined, ${p.count} ${Number(p.count) === 1 ? "verificação" : "verificações"}`,
   "event.chargeback.title": () => "Estorno",
   "event.chargeback.text": (p) => `A PayPail estornou ${euroCents(Number(p.amount))} de ${p.customer}, com a taxa de estorno incluída.`,
   "event.chargebackWarning.title": () => "Aviso da PayPail",

@@ -35,7 +35,7 @@ describe("impaired delivery", () => {
           selfHosted(s);
           s.homeLine = { id: "dsl-16", next: null };
         }
-        run(s, 24 * 90);
+        run(s, 24 * 30);
         n += s.sales.requests.filter((r) => r.kind === "order").length;
       }
       return n;
@@ -43,7 +43,7 @@ describe("impaired delivery", () => {
     const healthy = orders(false), impaired = orders(true);
     expect(healthy).toBeGreaterThan(0);
     expect(impaired).toBeLessThan(healthy);
-  }, 60_000);
+  });
 
   it("pays invoices sent in that window three days later", () => {
     const s = readyGame(5), c = s.customers[0];

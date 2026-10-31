@@ -19,48 +19,127 @@
   background: oklch(1 0 0 / 0.12); color: white; font: inherit; font-size: 13px; text-align: center; outline: none;
 }
 .os-login input::placeholder { color: oklch(1 0 0 / 0.55); }
+.os-login input:focus-visible { outline: 2px solid oklch(1 0 0 / 0.7); outline-offset: 2px; }
+@keyframes os-pole { to { background-position: 20px 0; } }
+@media (prefers-reduced-motion: reduce) { .os-progress span, .w-bar > span, .copy-body progress::-webkit-progress-value { animation: none !important; } }
 
-/* Panthera (2003): pinstripes, gel buttons and lights, opaque menu bar. */
+/* Shared by Panthera, Leapard, Yosemighty and Tahoo: text fields and pop-up buttons. Looks come from each release's tokens. */
+
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) :is(.field:not(.web-view *), .search:not(.web-view *) input, textarea:not(.note-body, .web-view *), .update-changes) {
+  border: var(--bw) solid var(--ctl-line); background: var(--field); box-shadow: var(--inset);
+}
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) :is(.field:not(.web-view *, textarea), .search:not(.web-view *) input) { border-radius: var(--r-field); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) :is(textarea:not(.note-body, .web-view *), .update-changes) { border-radius: var(--r-area, var(--r-field)); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) .search:not(.web-view *) input { border-radius: 999px; }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) :is(.field:not(.web-view *), .search:not(.web-view *) input, textarea:not(.note-body, .web-view *), select:not(.mb-item, .web-view *)):focus-visible {
+  outline: 3px solid var(--glow); outline-offset: 0; box-shadow: 0 0 0 1px var(--accent);
+}
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) select:not(.mb-item, .web-view *) {
+  appearance: none; -webkit-appearance: none; min-height: 22px; padding-inline: 8px 26px; border: var(--bw) solid var(--ctl-line); border-radius: var(--r-ctl); color: var(--text);
+  background: var(--chev) no-repeat right 6px center / 10px 14px, var(--cap) no-repeat right / 20px 100%, var(--face);
+  box-shadow: 0 1px 1px oklch(0 0 0 / 0.1);
+}
+
+/* Shared by Panthera, Leapard and Yosemighty: menus, push buttons, joined segments, lists. */
+
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) :is(.mb-drop, .ctx) { padding: 4px 0; }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) :is(.mb-drop button, .ctx button) { border-radius: 0; }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) :is(.mb-drop button:hover, .ctx button.on) { background: var(--hl); color: var(--on-ink); text-shadow: var(--on-shadow); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .ctx-sep { height: 1px; margin: 4px 0; background: var(--ctl-line); opacity: 0.5; }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .btn:not(.web-view *):not(.ghost) { background: var(--face); border-color: var(--ctl-line); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .btn:not(.web-view *):not(.ghost):hover:not(:disabled) { filter: brightness(0.96); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .btn:not(.web-view *).primary {
+  background: var(--face-on); border-color: var(--on-line); color: var(--on-ink); text-shadow: var(--on-shadow);
+}
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .seg:not(.web-view *) { padding: 0; gap: 0; border-radius: var(--r-ctl); background: none; box-shadow: 0 1px 1px oklch(0 0 0 / 0.12); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .seg:not(.web-view *) button,
+:root:is([data-os="leopard"], [data-os="yosemite"]) .tabs:not(.web-view *) button {
+  height: 22px; padding: 0 12px; border: var(--bw) solid var(--ctl-line); border-left-width: 0; border-radius: 0; background: var(--face); color: var(--text); font-weight: 400;
+}
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .seg:not(.web-view *) button:first-child,
+:root:is([data-os="leopard"], [data-os="yosemite"]) .tabs:not(.web-view *) button:first-child { border-left-width: var(--bw); border-radius: var(--r-ctl) 0 0 var(--r-ctl); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .seg:not(.web-view *) button:last-child,
+:root:is([data-os="leopard"], [data-os="yosemite"]) .tabs:not(.web-view *) button:last-child { border-radius: 0 var(--r-ctl) var(--r-ctl) 0; }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .seg:not(.web-view *) button:only-child { border-radius: var(--r-ctl); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .seg.wrap:not(.web-view *) { gap: 4px; box-shadow: none; }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .seg.wrap:not(.web-view *) button { border-left-width: var(--bw); border-radius: var(--r-ctl); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .seg:not(.web-view *) button[aria-pressed="true"],
+:root:is([data-os="leopard"], [data-os="yosemite"]) .tabs:not(.web-view *) button[aria-selected="true"] {
+  background: var(--face-on); color: var(--on-ink); text-shadow: var(--on-shadow); box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.2);
+}
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .seg:not(.web-view *) button:disabled { opacity: 0.45; }
+:root:is([data-os="leopard"], [data-os="yosemite"]) .tabs:not(.web-view *) { justify-content: safe center; overflow-x: auto; scrollbar-width: none; gap: 0; padding: 7px 16px; background: var(--win-bar); border-bottom: var(--bw) solid var(--ctl-line); }
+:root:is([data-os="leopard"], [data-os="yosemite"]) .tabs:not(.web-view *) button { margin: 0; flex: none; white-space: nowrap; }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .side-item:not(.web-view *) { height: 24px; border-radius: 0; }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .side-item:not(.web-view *).active { background: var(--hl); color: var(--on-ink); text-shadow: var(--on-shadow); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .table:not(.web-view *) tr:hover td { background: color-mix(in oklch, var(--hl-flat) 10%, transparent); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .table:not(.web-view *) :is(tr.sel, tr[aria-selected="true"]) td,
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .table:not(.web-view *) :is(tr.sel, tr[aria-selected="true"]):hover td { background: var(--hl); color: var(--on-ink); text-shadow: var(--on-shadow); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) :is(.alert, .intro) { border-radius: var(--r-sheet); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) :is(.banner, .widget, .notif-center, .hand-pop, .menu-news, .menu-page) { border-radius: var(--r-pop); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .notif-center .banner { border-radius: calc(var(--r-pop) - 1px); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .notif-empty { border-radius: var(--r-pop); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) :is(.settings-group, .pick, .app-grid-item) { border-radius: var(--r-pop); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .settings-group { box-shadow: inset 0 0 0 var(--bw) var(--ctl-line); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .b-close { border: var(--bw) solid var(--ctl-line); box-shadow: 0 1px 2px oklch(0 0 0 / 0.35); }
+
+/* Panthera (2003): pinstripes, gel buttons and lights, opaque everything but the dock shelf. */
 
 :root[data-os="aqua"] {
   --font-ui: "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif;
   --r-win: 6px;
   --r-ctl: 11px;
+  --r-pop: 4px;
+  --r-sheet: 6px 6px 0 0;
+  --r-field: 0;
+  --bw: 1px;
   --stripe: oklch(0.93 0.004 250);
   --bar-top: oklch(0.97 0.003 250);
   --bar-bottom: oklch(0.86 0.006 250);
   --gel: oklch(0.6 0.16 245);
   --menubar: oklch(0.98 0.003 250);
+  --banner: oklch(0.99 0.003 250);
+  --ctl-line: oklch(0 0 0 / 0.4);
+  --face: linear-gradient(color-mix(in oklch, var(--field), white 30%), var(--field) 50%, color-mix(in oklch, var(--field), black 8%) 51%, var(--field));
+  --face-on: linear-gradient(color-mix(in oklch, var(--gel), white 55%), color-mix(in oklch, var(--gel), white 20%) 50%, var(--gel) 51%, color-mix(in oklch, var(--gel), white 35%));
+  --cap: linear-gradient(color-mix(in oklch, var(--gel), white 50%), var(--gel) 50%, color-mix(in oklch, var(--gel), black 12%) 51%, color-mix(in oklch, var(--gel), white 30%));
+  --hl: linear-gradient(color-mix(in oklch, var(--gel), white 30%), color-mix(in oklch, var(--gel), black 8%));
+  --hl-flat: var(--gel);
+  --bar-fill: linear-gradient(-45deg, color-mix(in oklch, var(--gel), white 45%) 25%, var(--gel) 25% 50%, color-mix(in oklch, var(--gel), white 45%) 50% 75%, var(--gel) 75%) 0 0 / 20px 20px;
+  --on-ink: white;
+  --on-line: color-mix(in oklch, var(--gel), black 30%);
+  --on-shadow: 0 -1px 0 oklch(0 0 0 / 0.25);
+  --inset: inset 0 1px 3px oklch(0 0 0 / 0.3);
+  --glow: color-mix(in oklch, var(--gel), transparent 45%);
+  --row-alt: color-mix(in oklch, var(--gel) 7%, var(--win));
+  --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 5.5 5 2.5l3 3M2 8.5l3 3 3-3'/%3E%3C/svg%3E");
 }
 :root[data-os="aqua"][data-theme="dark"] {
   --stripe: oklch(0.21 0.01 258);
   --bar-top: oklch(0.36 0.01 258);
   --bar-bottom: oklch(0.25 0.01 258);
   --menubar: oklch(0.24 0.01 258);
+  --banner: oklch(0.27 0.01 258);
+  --ctl-line: oklch(1 0 0 / 0.28);
 }
 :root[data-os="aqua"] .menubar {
   background: linear-gradient(var(--menubar), color-mix(in oklch, var(--menubar), black 6%));
   backdrop-filter: none; -webkit-backdrop-filter: none;
   box-shadow: 0 1px 3px oklch(0 0 0 / 0.3);
 }
+:root[data-os="aqua"] .menubar .mb-item:hover { background: var(--hl); color: var(--on-ink); border-radius: 0; }
 :root[data-os="aqua"] .titlebar {
   background: repeating-linear-gradient(var(--bar-top) 0 2px, var(--stripe) 2px 4px);
   border-bottom-color: var(--line-strong);
 }
-:root[data-os="aqua"] .sidebar { background: repeating-linear-gradient(var(--win-side) 0 2px, var(--stripe) 2px 4px); }
+:root[data-os="aqua"] .sidebar:not(.web-view *) { background: repeating-linear-gradient(var(--win-side) 0 2px, var(--stripe) 2px 4px); }
 :root[data-os="aqua"] .lights > *,
 :root[data-os="leopard"] .lights > * {
   border-color: oklch(0 0 0 / 0.35);
   background-image: radial-gradient(circle at 50% 28%, oklch(1 0 0 / 0.85) 0 18%, transparent 46%), radial-gradient(circle at 50% 90%, oklch(1 0 0 / 0.45), transparent 60%);
 }
-:root[data-os="aqua"] .btn { background: linear-gradient(oklch(1 0 0), var(--field) 50%, color-mix(in oklch, var(--field), black 8%) 51%, var(--field)); border-color: oklch(0 0 0 / 0.3); }
-:root[data-os="aqua"] .btn.primary,
-:root[data-os="leopard"] .btn.primary {
-  background: linear-gradient(color-mix(in oklch, var(--gel), white 55%), color-mix(in oklch, var(--gel), white 20%) 50%, var(--gel) 51%, color-mix(in oklch, var(--gel), white 35%));
-  border-color: color-mix(in oklch, var(--gel), black 30%); color: white; text-shadow: 0 -1px 0 oklch(0 0 0 / 0.25);
-}
-:root[data-os="aqua"] .btn.danger-fill,
-:root[data-os="leopard"] .btn.danger-fill {
+:root[data-os="aqua"] .btn:not(.web-view *).danger-fill,
+:root[data-os="leopard"] .btn:not(.web-view *).danger-fill {
   background: linear-gradient(color-mix(in oklch, var(--bad), white 55%), color-mix(in oklch, var(--bad), white 20%) 50%, var(--bad) 51%, color-mix(in oklch, var(--bad), white 35%));
   border-color: color-mix(in oklch, var(--bad), black 30%); color: white; text-shadow: 0 -1px 0 oklch(0 0 0 / 0.25);
 }
@@ -73,7 +152,6 @@
 :root[data-os="leopard"] .dock-tile {
   background: radial-gradient(ellipse 80% 45% at 50% 18%, oklch(1 0 0 / 0.55), transparent 70%), linear-gradient(180deg, color-mix(in oklch, var(--tile) 70%, white), var(--tile));
 }
-:root[data-os="aqua"] .alert { border-radius: 6px; background: var(--win); backdrop-filter: none; -webkit-backdrop-filter: none; }
 :root[data-os="aqua"] .dock-app .dot {
   width: 0; height: 0; border-radius: 0; background: none;
   border: 4px solid transparent; border-top: 0; border-bottom: 5px solid oklch(0.2 0 0 / 0.85);
@@ -81,21 +159,116 @@
 :root[data-os="aqua"] .window,
 :root[data-os="leopard"] .window { border-radius: var(--r-win) var(--r-win) 0 0; }
 
-/* Leapard (2007): unified graphite title bars, glass dock shelf. */
+/* Menus: opaque white, square, 1px dark border, blue gel highlight. */
+:root[data-os="aqua"] :is(.mb-drop, .ctx) {
+  border-radius: 0; background: var(--win); border: 1px solid var(--ctl-line); box-shadow: 2px 4px 8px oklch(0 0 0 / 0.35);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+:root[data-os="aqua"] .ctx button { height: 22px; }
+
+/* Banners, widgets, popovers and sheets: opaque bordered boxes with a soft shadow. */
+:root[data-os="aqua"] :is(.banner, .widget, .notif-center, .hand-pop, .alert, .intro, .menu-news, .menu-page) {
+  border: 1px solid var(--ctl-line); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 3px 10px oklch(0 0 0 / 0.3);
+}
+:root[data-os="aqua"] :is(.alert, .intro) { background: repeating-linear-gradient(var(--win-side) 0 2px, var(--stripe) 2px 4px); box-shadow: 0 10px 28px -4px oklch(0 0 0 / 0.5); }
+:root[data-os="aqua"] .notif-center .banner { border-width: 1px; box-shadow: none; }
+:root[data-os="aqua"] .intro-foot { background: linear-gradient(var(--bar-top), var(--bar-bottom)); border-top-color: var(--ctl-line); }
+
+/* Gel checkbox in place of a toggle. */
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .switch:not(.web-view *) {
+  width: 16px; height: 16px; border-radius: 3px; border: var(--bw) solid var(--ctl-line); background: var(--face);
+}
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .switch:not(.web-view *)::before {
+  top: 1px; left: 4px; width: 4px; height: 8px; border-radius: 0; background: none; box-shadow: none;
+  border: solid var(--on-ink); border-width: 0 2px 2px 0; rotate: 45deg; opacity: 0; transition: none;
+}
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .switch:not(.web-view *):checked { background: var(--face-on); border-color: var(--on-line); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .switch:not(.web-view *):checked::before { translate: none; opacity: 1; }
+
+/* Joined capsule segments, gel tabs, gel list selection. */
+:root[data-os="aqua"] .speed { padding: 0; gap: 0; border: 1px solid var(--ctl-line); border-radius: var(--r-ctl); background: var(--face); overflow: hidden; }
+:root[data-os="aqua"] .speed button { border-radius: 0; height: 18px; }
+:root[data-os="aqua"] .speed button[aria-pressed="true"] { background: var(--face-on); color: var(--on-ink); }
+:root[data-os="aqua"] .tabs:not(.web-view *) { gap: 2px; padding: 6px 12px 0; background: var(--win-side); border-bottom: 1px solid var(--ctl-line); }
+:root[data-os="aqua"] .tabs:not(.web-view *) button {
+  margin: 0 0 -1px; padding: 3px 14px; border: 1px solid var(--ctl-line); border-bottom-color: transparent; border-radius: 6px 6px 0 0; background: var(--face); font-weight: 400;
+}
+:root[data-os="aqua"] .tabs:not(.web-view *) button[aria-selected="true"] { background: var(--face-on); color: var(--on-ink); text-shadow: var(--on-shadow); border-bottom-color: var(--on-line); }
+:root[data-os="aqua"] .pill:not(.web-view *) { border: 1px solid color-mix(in oklch, currentColor 35%, transparent); background-image: linear-gradient(oklch(1 0 0 / 0.5), transparent 65%); }
+:root:is([data-os="aqua"], [data-os="leopard"]) .table:not(.web-view *) th {
+  background: linear-gradient(var(--field), color-mix(in oklch, var(--field), black 8%)); color: var(--text); font-weight: 500;
+  border-right: 1px solid var(--ctl-line); border-bottom: 1px solid var(--ctl-line);
+}
+:root:is([data-os="aqua"], [data-os="leopard"]) .table:not(.web-view *) tr:nth-child(even) td { background: var(--row-alt); }
+:root:is([data-os="aqua"], [data-os="leopard"]) .table:not(.web-view *) tr:nth-child(even):hover td { background: color-mix(in oklch, var(--hl-flat) 10%, var(--row-alt)); }
+:root:is([data-os="aqua"], [data-os="leopard"]) .table:not(.web-view *) :is(tr.sel, tr[aria-selected="true"]):nth-child(n) td { background: var(--hl); }
+
+/* Progress: blue gel bar in an inset track, barber-pole in Panthera. */
+:root:is([data-os="aqua"], [data-os="leopard"]) :is(.w-bar, .copy-body progress) { border: 1px solid var(--ctl-line); background: color-mix(in oklch, var(--field), black 8%); box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.25); }
+:root:is([data-os="aqua"], [data-os="leopard"]) .w-bar { height: 10px; border-radius: 5px; }
+:root:is([data-os="aqua"], [data-os="leopard"]) .w-bar > span { border-radius: 4px; background: var(--bar-fill); }
+:root:is([data-os="aqua"], [data-os="leopard"]) .copy-body progress { appearance: none; -webkit-appearance: none; height: 12px; border-radius: 6px; overflow: hidden; }
+:root:is([data-os="aqua"], [data-os="leopard"]) .copy-body progress::-webkit-progress-bar { background: none; }
+:root:is([data-os="aqua"], [data-os="leopard"]) .copy-body progress::-webkit-progress-value { border-radius: 5px; background: var(--bar-fill); }
+:root[data-os="aqua"] .w-bar > span { animation: os-pole 0.6s linear infinite; }
+:root[data-os="aqua"] .copy-body progress::-webkit-progress-value { animation: os-pole 0.6s linear infinite; }
+
+/* Scrollbars: blue gel thumbs in a grey track. */
+:root:is([data-os="aqua"], [data-os="leopard"]) ::-webkit-scrollbar { width: 15px; height: 15px; }
+:root:is([data-os="aqua"], [data-os="leopard"]) ::-webkit-scrollbar-track { background: color-mix(in oklch, var(--win), var(--text) 8%); }
+:root:is([data-os="aqua"], [data-os="leopard"]) ::-webkit-scrollbar-thumb {
+  border: 1px solid color-mix(in oklch, var(--gel), black 35%); border-radius: 8px; background-clip: border-box;
+  background-color: var(--gel);
+}
+:root:is([data-os="aqua"], [data-os="leopard"]) ::-webkit-scrollbar-thumb:vertical { background-image: linear-gradient(90deg, color-mix(in oklch, var(--gel), white 50%), var(--gel) 50%, color-mix(in oklch, var(--gel), white 30%)); }
+:root:is([data-os="aqua"], [data-os="leopard"]) ::-webkit-scrollbar-thumb:horizontal { background-image: linear-gradient(color-mix(in oklch, var(--gel), white 50%), var(--gel) 50%, color-mix(in oklch, var(--gel), white 30%)); }
+
+/* Installer: pinstripe screen, barber-pole bar, square password field. */
+:root[data-os="aqua"] .os-install { background: repeating-linear-gradient(var(--win-side) 0 2px, var(--stripe) 2px 4px); color: var(--text); }
+:root[data-os="aqua"] .os-progress { width: 260px; height: 14px; border: 1px solid var(--ctl-line); border-radius: 7px; background: color-mix(in oklch, var(--field), black 8%); box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.25); }
+:root[data-os="aqua"] .os-progress span {
+  background: linear-gradient(-45deg, color-mix(in oklch, var(--gel), white 45%) 25%, var(--gel) 25% 50%, color-mix(in oklch, var(--gel), white 45%) 50% 75%, var(--gel) 75%) 0 0 / 20px 20px;
+  animation: os-pole 0.6s linear infinite;
+}
+:root[data-os="aqua"] .os-avatar { border: 1px solid var(--ctl-line); border-radius: 6px; background: var(--face); color: var(--text); }
+:root[data-os="aqua"] .os-login input { border: 1px solid var(--ctl-line); border-radius: 0; background: var(--field); color: var(--text); box-shadow: var(--inset); }
+:root[data-os="aqua"] .os-login input::placeholder { color: var(--text-3); }
+:root[data-os="aqua"] .os-login input:focus-visible { outline: 3px solid var(--glow); outline-offset: 0; }
+
+/* Leapard (2007): unified graphite title bars, glass dock shelf, dark HUD popovers. */
 
 :root[data-os="leopard"] {
   --font-ui: "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif;
   --r-win: 5px;
   --r-ctl: 11px;
+  --r-pop: 6px;
+  --r-sheet: 5px;
+  --r-field: 0;
+  --bw: 1px;
   --bar-top: oklch(0.88 0.004 250);
   --bar-bottom: oklch(0.7 0.006 250);
   --gel: oklch(0.58 0.15 248);
   --menubar: oklch(0.98 0.003 250 / 0.82);
+  --ctl-line: oklch(0 0 0 / 0.35);
+  --face: linear-gradient(var(--field), color-mix(in oklch, var(--field), black 7%));
+  --face-on: linear-gradient(color-mix(in oklch, var(--gel), white 30%), var(--gel) 50%, color-mix(in oklch, var(--gel), white 8%));
+  --cap: linear-gradient(color-mix(in oklch, var(--gel), white 35%), var(--gel));
+  --hl: linear-gradient(color-mix(in oklch, var(--gel), white 22%), color-mix(in oklch, var(--gel), black 12%));
+  --hl-flat: var(--gel);
+  --bar-fill: linear-gradient(color-mix(in oklch, var(--gel), white 45%), var(--gel) 55%, color-mix(in oklch, var(--gel), white 15%));
+  --on-ink: white;
+  --on-line: color-mix(in oklch, var(--gel), black 30%);
+  --on-shadow: 0 -1px 0 oklch(0 0 0 / 0.25);
+  --inset: inset 0 1px 2px oklch(0 0 0 / 0.28);
+  --glow: color-mix(in oklch, var(--gel), transparent 40%);
+  --row-alt: color-mix(in oklch, var(--gel) 6%, var(--win));
+  --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 5.5 5 2.5l3 3M2 8.5l3 3 3-3'/%3E%3C/svg%3E");
 }
 :root[data-os="leopard"][data-theme="dark"] {
   --bar-top: oklch(0.38 0.008 258);
   --bar-bottom: oklch(0.26 0.008 258);
   --menubar: oklch(0.24 0.01 258 / 0.82);
+  --ctl-line: oklch(1 0 0 / 0.26);
 }
 :root[data-os="leopard"] .titlebar {
   background: linear-gradient(var(--bar-top), var(--bar-bottom));
@@ -103,9 +276,10 @@
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.35);
 }
 :root[data-os="leopard"] .menubar { background: linear-gradient(var(--menubar), color-mix(in oklch, var(--menubar), black 8%)); }
-:root[data-os="leopard"] .sidebar { background: oklch(0.93 0.015 245); }
-:root[data-os="leopard"][data-theme="dark"] .sidebar { background: oklch(0.22 0.015 250); }
-:root[data-os="leopard"] .btn { background: linear-gradient(var(--field), color-mix(in oklch, var(--field), black 7%)); border-color: oklch(0 0 0 / 0.28); }
+:root[data-os="leopard"] .menubar .mb-item:hover { background: var(--hl); color: var(--on-ink); border-radius: 0; }
+:root[data-os="leopard"] .sidebar:not(.web-view *) { background: oklch(0.93 0.015 245); }
+:root[data-os="leopard"][data-theme="dark"] .sidebar:not(.web-view *) { background: oklch(0.22 0.015 250); }
+:root[data-os="leopard"] .side-h { text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.03em; }
 :root[data-os="leopard"] .dock {
   border-radius: 4px 4px 0 0; bottom: 0; padding-bottom: 10px;
   background: linear-gradient(oklch(1 0 0 / 0.18), oklch(0.85 0.01 250 / 0.55) 60%, oklch(0.6 0.01 250 / 0.7));
@@ -113,33 +287,143 @@
 }
 :root[data-os="leopard"] .dock-app .dot { background: oklch(0.8 0.12 230); box-shadow: 0 0 5px 1px oklch(0.8 0.14 230); }
 
+/* Close buttons sit on the dark HUD banners. */
+:root[data-os="leopard"] .b-close { border-color: oklch(1 0 0 / 0.35); box-shadow: 0 1px 3px oklch(0 0 0 / 0.5); }
+
+/* Menus: 92% white with 4px bottom corners, blue gradient highlight. */
+:root[data-os="leopard"] :is(.mb-drop, .ctx) {
+  border-radius: 0 0 4px 4px; background: color-mix(in oklch, var(--win), transparent 8%); border: 0.5px solid var(--ctl-line);
+  box-shadow: 0 8px 16px -4px oklch(0 0 0 / 0.45);
+}
+
+/* Banners, widgets and popovers: dark translucent HUD with white text. */
+:root[data-os="leopard"] :is(.banner, .notif-center, .widget, .hand-pop) {
+  --banner: oklch(0.2 0.004 250 / 0.78);
+  --text: oklch(0.97 0 0); --text-2: oklch(0.84 0.004 250); --text-3: oklch(0.72 0.005 250);
+  --line: oklch(1 0 0 / 0.16); --line-strong: oklch(1 0 0 / 0.28);
+  --field: oklch(1 0 0 / 0.1); --hover: oklch(1 0 0 / 0.16);
+  --accent: oklch(0.78 0.12 250); --accent-text: oklch(0.82 0.1 250); --accent-soft: oklch(1 0 0 / 0.12);
+  color: var(--text); border: 1px solid oklch(1 0 0 / 0.25);
+  box-shadow: 0 6px 20px oklch(0 0 0 / 0.5), inset 0 1px 0 oklch(1 0 0 / 0.2);
+}
+:root[data-os="leopard"] .notif-center .banner { border-width: 0; box-shadow: none; }
+:root[data-os="leopard"] .hand-pop .btn:not(.web-view *):not(.ghost) { background: linear-gradient(oklch(1 0 0 / 0.24), oklch(1 0 0 / 0.08)); border-color: oklch(1 0 0 / 0.3); color: white; }
+:root[data-os="leopard"] .hand-pop .btn:not(.web-view *).primary { background: var(--face-on); }
+
+/* Sheets: soft grey window with a large shadow. */
+:root[data-os="leopard"] :is(.alert, .intro) {
+  background: linear-gradient(var(--win), color-mix(in oklch, var(--win), var(--bar-bottom) 14%)); border: 0.5px solid var(--ctl-line);
+  backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 14px 40px -6px oklch(0 0 0 / 0.55);
+}
+:root[data-os="leopard"] .intro-foot { background: linear-gradient(var(--bar-top), var(--bar-bottom)); border-top-color: var(--ctl-line); }
+
+:root[data-os="leopard"] .speed { padding: 0; gap: 0; border: 1px solid var(--ctl-line); border-radius: var(--r-ctl); background: var(--face); overflow: hidden; }
+:root[data-os="leopard"] .speed button { border-radius: 0; height: 18px; }
+:root[data-os="leopard"] .speed button[aria-pressed="true"] { background: var(--face-on); color: var(--on-ink); }
+:root[data-os="leopard"] .pill:not(.web-view *) { border: 1px solid color-mix(in oklch, currentColor 30%, transparent); background-image: linear-gradient(oklch(1 0 0 / 0.4), transparent 65%); }
+
+/* Installer: deep blue space screen, framed user tile, soft blue bar. */
+:root[data-os="leopard"] .os-install { background: radial-gradient(ellipse at 50% 35%, oklch(0.42 0.12 275), oklch(0.12 0.06 275) 72%); }
+:root[data-os="leopard"] .os-progress { width: 240px; height: 10px; border: 1px solid oklch(1 0 0 / 0.35); border-radius: 5px; background: oklch(0 0 0 / 0.4); box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.5); }
+:root[data-os="leopard"] .os-progress span { background: linear-gradient(color-mix(in oklch, var(--gel), white 45%), var(--gel) 55%, color-mix(in oklch, var(--gel), white 15%)); }
+:root[data-os="leopard"] .os-avatar { border: 3px solid oklch(1 0 0 / 0.85); border-radius: 8px; box-shadow: 0 6px 18px oklch(0 0 0 / 0.5); }
+:root[data-os="leopard"] .os-login input { border: 1px solid oklch(0 0 0 / 0.4); border-radius: 4px; background: oklch(1 0 0 / 0.92); color: oklch(0.22 0.02 258); box-shadow: var(--inset); }
+:root[data-os="leopard"] .os-login input::placeholder { color: oklch(0.5 0.01 258); }
+
 /* Yosemighty (2014): flat, vibrant and square-ish. */
 
 :root[data-os="yosemite"] {
   --font-ui: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --r-win: 5px;
   --r-ctl: 4px;
+  --r-pop: 5px;
+  --r-sheet: 6px;
+  --r-field: 3px;
+  --bw: 0.5px;
+  --gel: var(--accent);
+  --banner: oklch(0.985 0.005 250 / 0.72);
+  --ctl-line: oklch(0 0 0 / 0.28);
+  --face: linear-gradient(var(--field), color-mix(in oklch, var(--field), black 4%));
+  --face-on: var(--accent);
+  --cap: none;
+  --hl: var(--accent);
+  --hl-flat: var(--accent);
+  --on-ink: var(--accent-ink);
+  --on-line: color-mix(in oklch, var(--accent), black 20%);
+  --on-shadow: none;
+  --inset: none;
+  --glow: color-mix(in oklch, var(--accent), transparent 55%);
+  --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14' fill='none' stroke='%23555' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 5.5 5 2.5l3 3M2 8.5l3 3 3-3'/%3E%3C/svg%3E");
+}
+:root[data-os="yosemite"][data-theme="dark"] {
+  --banner: oklch(0.25 0.012 258 / 0.72);
+  --ctl-line: oklch(1 0 0 / 0.24);
+  --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14' fill='none' stroke='%23ccc' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 5.5 5 2.5l3 3M2 8.5l3 3 3-3'/%3E%3C/svg%3E");
 }
 :root[data-os="yosemite"] .titlebar { background: color-mix(in oklch, var(--win-bar), transparent 10%); }
 :root[data-os="yosemite"] .lights > * { border-color: oklch(0 0 0 / 0.1); }
-:root[data-os="yosemite"] .btn { box-shadow: none; }
+:root[data-os="yosemite"] .menubar .mb-item:hover { border-radius: 0; background: color-mix(in oklch, var(--menubar-text) 14%, transparent); }
+:root[data-os="yosemite"] .btn:not(.web-view *) { box-shadow: none; }
+:root[data-os="yosemite"] .b-close { box-shadow: none; }
+:root[data-os="yosemite"] .btn:not(.web-view *).danger-fill { background: var(--bad); border-color: transparent; color: white; }
 :root[data-os="yosemite"] .dock { border-radius: 4px 4px 0 0; bottom: 0; padding-bottom: 8px; }
 :root[data-os="yosemite"] .dock-tile { border-radius: 50%; background: var(--tile); box-shadow: 0 1px 3px oklch(0 0 0 / 0.3); }
-:root[data-os="yosemite"] .alert { border-radius: 6px; }
+
+/* Menus, banners, popovers: frosted with a thin border and 5px corners. */
+:root[data-os="yosemite"] :is(.mb-drop, .ctx) {
+  border-radius: var(--r-pop); border: 0.5px solid var(--ctl-line);
+  background: color-mix(in oklch, var(--win), transparent 18%);
+  backdrop-filter: blur(20px) saturate(1.8); -webkit-backdrop-filter: blur(20px) saturate(1.8);
+}
+:root[data-os="yosemite"] :is(.banner, .widget, .notif-center, .hand-pop, .alert, .intro, .menu-news, .menu-page) {
+  border: 0.5px solid var(--ctl-line);
+  backdrop-filter: blur(20px) saturate(1.8); -webkit-backdrop-filter: blur(20px) saturate(1.8);
+}
+:root[data-os="yosemite"] .intro { background: color-mix(in oklch, var(--win), transparent 6%); }
+:root[data-os="yosemite"] .notif-center .banner { border-width: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
+:root[data-os="yosemite"] .sidebar:not(.web-view *) { border-right-width: 0.5px; background: color-mix(in oklch, var(--win-side), transparent 12%); }
+:root[data-os="yosemite"] .speed { border-radius: 4px; padding: 1px; }
+:root[data-os="yosemite"] .speed button { border-radius: 3px; }
+:root[data-os="yosemite"] .pill:not(.web-view *) { border-radius: 3px; }
+:root[data-os="yosemite"] ::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--text-3) 70%, transparent); border-width: 2px; }
+
+/* Installer: flat dark screen, hairline bar, round user picture. */
+:root[data-os="yosemite"] .os-install { background: linear-gradient(oklch(0.34 0.07 250), oklch(0.18 0.05 258)); }
+:root[data-os="yosemite"] .os-progress { width: 240px; height: 4px; border-radius: 2px; background: oklch(1 0 0 / 0.25); }
+:root[data-os="yosemite"] .os-avatar { border: 2px solid oklch(1 0 0 / 0.85); }
+:root[data-os="yosemite"] .os-login input { border: 0.5px solid oklch(1 0 0 / 0.45); border-radius: 999px; background: oklch(1 0 0 / 0.16); }
 
 /* Tahoo (2025): liquid glass with rounder corners and specular edges. */
 
 :root[data-os="tahoe"] {
   --r-win: 18px;
   --r-ctl: 999px;
+  --r-pop: 24px;
+  --r-sheet: 26px;
+  --r-field: 999px;
+  --r-area: 14px;
+  --bw: 0.5px;
   --dock: oklch(1 0 0 / 0.16);
+  --banner: oklch(0.985 0.005 250 / 0.58);
+  --spec: inset 0 1px 0 oklch(1 0 0 / 0.5), inset 0 0 0 0.5px oklch(1 0 0 / 0.28);
+  --ctl-line: var(--line-strong);
+  --face: var(--field);
+  --cap: none;
+  --inset: var(--spec), 0 1px 2px oklch(0 0 0 / 0.06);
+  --glow: color-mix(in oklch, var(--accent), transparent 60%);
+  --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14' fill='none' stroke='%23555' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 5.5 5 2.5l3 3M2 8.5l3 3 3-3'/%3E%3C/svg%3E");
 }
-:root[data-os="tahoe"][data-theme="dark"] { --dock: oklch(0.3 0.01 258 / 0.25); }
+:root[data-os="tahoe"][data-theme="dark"] {
+  --dock: oklch(0.3 0.01 258 / 0.25);
+  --banner: oklch(0.25 0.012 258 / 0.5);
+  --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14' fill='none' stroke='%23ddd' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 5.5 5 2.5l3 3M2 8.5l3 3 3-3'/%3E%3C/svg%3E");
+}
 :root[data-os="tahoe"] .menubar {
   background: linear-gradient(oklch(1 0 0 / 0.3), transparent); border-bottom-color: transparent;
   backdrop-filter: none; -webkit-backdrop-filter: none;
 }
 :root[data-os="tahoe"][data-theme="dark"] .menubar { background: linear-gradient(oklch(0 0 0 / 0.35), transparent); }
+:root[data-os="tahoe"] .menubar .mb-item:hover { border-radius: var(--r-ctl); }
 :root[data-os="tahoe"] .titlebar { background: var(--win); border-bottom-color: transparent; }
 :root[data-os="tahoe"] .dock {
   border-radius: 28px;
@@ -147,5 +431,85 @@
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.7), inset 0 -1px 0 oklch(1 0 0 / 0.25), inset 0 0 0 0.5px oklch(1 0 0 / 0.35), 0 12px 32px -12px oklch(0 0 0 / 0.45);
 }
 :root[data-os="tahoe"] .dock-tile { border-radius: 14px; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5), inset 0 0 0 0.5px oklch(1 0 0 / 0.3), 0 2px 6px -1px oklch(0 0 0 / 0.3); }
-:root[data-os="tahoe"] .btn { box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.45), 0 1px 3px oklch(0 0 0 / 0.08); }
-:root[data-os="tahoe"] .alert { border-radius: 26px; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5), var(--shadow-win); }
+:root[data-os="tahoe"] .dock-app .tip { border-radius: 999px; padding: 3px 11px; box-shadow: var(--spec), var(--shadow-pop); backdrop-filter: blur(18px) saturate(1.8); -webkit-backdrop-filter: blur(18px) saturate(1.8); }
+:root[data-os="tahoe"] .btn:not(.web-view *):not(.ghost) { box-shadow: var(--spec), 0 1px 3px oklch(0 0 0 / 0.08); }
+
+/* Menus: 16px glass with a capsule highlight inset by 4px. */
+:root[data-os="tahoe"] :is(.mb-drop, .ctx) {
+  padding: 4px; border-radius: 16px; background: color-mix(in oklch, var(--win), transparent 35%);
+  backdrop-filter: blur(18px) saturate(1.8); -webkit-backdrop-filter: blur(18px) saturate(1.8);
+  box-shadow: var(--spec), var(--shadow-pop);
+}
+:root[data-os="tahoe"] :is(.mb-drop button, .ctx button) { border-radius: var(--r-ctl); }
+:root[data-os="tahoe"] .ctx-sep { margin: 5px 12px; }
+
+/* Banners, widgets, popovers and sheets: glass with a specular top edge. */
+:root[data-os="tahoe"] :is(.banner, .widget, .notif-center, .hand-pop, .menu-news, .menu-page) {
+  border-radius: var(--r-pop); box-shadow: var(--spec), var(--shadow-pop);
+  backdrop-filter: blur(18px) saturate(1.8); -webkit-backdrop-filter: blur(18px) saturate(1.8);
+}
+:root[data-os="tahoe"] .notif-center { border-color: oklch(1 0 0 / 0.2); }
+:root[data-os="tahoe"] .notif-center .banner { border-radius: 16px; box-shadow: var(--spec); backdrop-filter: none; -webkit-backdrop-filter: none; }
+:root[data-os="tahoe"] .notif-empty { border-radius: 16px; }
+:root[data-os="tahoe"] :is(.settings-group, .pick, .app-grid-item) { border-radius: 16px; }
+:root[data-os="tahoe"] .settings-group { box-shadow: var(--spec); }
+:root[data-os="tahoe"] .b-close { box-shadow: var(--spec), var(--shadow-pop); }
+:root[data-os="tahoe"] .alert { border-radius: var(--r-sheet); box-shadow: var(--spec), var(--shadow-win); }
+:root[data-os="tahoe"] .intro { border-radius: var(--r-sheet); box-shadow: var(--spec), var(--shadow-win); }
+
+/* Glossy capsule toggle. */
+:root[data-os="tahoe"] .switch:not(.web-view *) { width: 40px; height: 24px; border-radius: 999px; box-shadow: inset 0 1px 3px oklch(0 0 0 / 0.2), inset 0 -1px 0 oklch(1 0 0 / 0.25); }
+:root[data-os="tahoe"] .switch:not(.web-view *)::before {
+  top: 2px; left: 2px; width: 28px; height: 20px; border-radius: 999px;
+  background: linear-gradient(white, oklch(0.94 0.005 250)); box-shadow: inset 0 1px 0 white, 0 2px 5px oklch(0 0 0 / 0.3);
+}
+:root[data-os="tahoe"] .switch:not(.web-view *):checked::before { translate: 8px 0; }
+
+/* Capsule segments with a glass thumb, glass tabs, capsule list rows. */
+:root[data-os="tahoe"] .seg:not(.web-view *) { padding: 3px; border-radius: 999px; box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.1); }
+:root[data-os="tahoe"] .seg:not(.web-view *) button { height: 26px; padding: 0 14px; border-radius: 999px; transition: background 160ms; }
+:root[data-os="tahoe"] .seg:not(.web-view *) button[aria-pressed="true"],
+:root[data-os="tahoe"] .tabs:not(.web-view *) button[aria-selected="true"] {
+  background: color-mix(in oklch, var(--field), transparent 15%); box-shadow: var(--spec), 0 1px 4px oklch(0 0 0 / 0.18);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+:root[data-os="tahoe"] .tabs:not(.web-view *) { gap: 4px; padding: 6px 12px; border-bottom-color: transparent; overflow-x: auto; scrollbar-width: none; }
+:root[data-os="tahoe"] .tabs:not(.web-view *) button { margin: 0; flex: none; white-space: nowrap; padding: 0 14px; height: 26px; border-bottom: 0; border-radius: 999px; }
+:root[data-os="tahoe"] .tabs:not(.web-view *) button[aria-selected="true"] { background: color-mix(in oklch, var(--accent) 16%, var(--field)); }
+:root[data-os="tahoe"] .speed { border-radius: 999px; padding: 2px 3px; }
+:root[data-os="tahoe"] .speed button { border-radius: 999px; }
+:root[data-os="tahoe"] .speed button[aria-pressed="true"] { box-shadow: var(--spec); }
+:root[data-os="tahoe"] .pill:not(.web-view *) { box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5), inset 0 0 0 0.5px color-mix(in oklch, currentColor 20%, transparent); }
+
+/* Sidebars float inside the window as their own glass panel. */
+:root[data-os="tahoe"] .sidebar:not(.web-view *) {
+  margin: 8px 0 8px 8px; border: 0; border-radius: 22px; background: color-mix(in oklch, var(--win-side), transparent 30%);
+  box-shadow: var(--spec), 0 4px 16px -6px oklch(0 0 0 / 0.25);
+  backdrop-filter: blur(18px) saturate(1.8); -webkit-backdrop-filter: blur(18px) saturate(1.8);
+}
+:root[data-os="tahoe"] .side-item:not(.web-view *) { height: 30px; border-radius: 999px; padding: 0 12px; }
+:root[data-os="tahoe"] .side-item:not(.web-view *).active { background: color-mix(in oklch, var(--accent) 18%, transparent); color: var(--text); box-shadow: var(--spec); }
+:root[data-os="tahoe"] .side-item:not(.web-view *).active svg.lucide { color: var(--accent-text); }
+:root[data-os="tahoe"] .side-item:not(.web-view *).active .side-count { color: var(--text-2); }
+:root[data-os="tahoe"] .table:not(.web-view *) th { background: color-mix(in oklch, var(--win), transparent 25%); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+:root[data-os="tahoe"] .table:not(.web-view *) td { border-bottom-color: color-mix(in oklch, var(--line), transparent 50%); }
+:root[data-os="tahoe"] .table:not(.web-view *) tr:hover td:first-child, :root[data-os="tahoe"] .table:not(.web-view *) :is(tr.sel, tr[aria-selected="true"]) td:first-child { border-radius: 999px 0 0 999px; }
+:root[data-os="tahoe"] .table:not(.web-view *) tr:hover td:last-child, :root[data-os="tahoe"] .table:not(.web-view *) :is(tr.sel, tr[aria-selected="true"]) td:last-child { border-radius: 0 999px 999px 0; }
+:root[data-os="tahoe"] ::-webkit-scrollbar { width: 12px; height: 12px; }
+:root[data-os="tahoe"] ::-webkit-scrollbar-thumb { border-radius: 999px; }
+
+/* Installer: colourful gradient screen with glass bar, avatar and password field. */
+:root[data-os="tahoe"] .os-install {
+  background:
+    radial-gradient(at 18% 22%, oklch(0.7 0.16 300), transparent 58%),
+    radial-gradient(at 82% 28%, oklch(0.75 0.14 220), transparent 58%),
+    radial-gradient(at 50% 92%, oklch(0.72 0.17 20), transparent 55%),
+    oklch(0.22 0.05 270);
+}
+:root[data-os="tahoe"] .os-progress { width: 240px; height: 8px; border-radius: 999px; background: oklch(1 0 0 / 0.22); box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.2), 0 0 0 0.5px oklch(1 0 0 / 0.3); }
+:root[data-os="tahoe"] .os-progress span { border-radius: 999px; box-shadow: inset 0 1px 0 white; }
+:root[data-os="tahoe"] .os-avatar { background: oklch(1 0 0 / 0.22); box-shadow: var(--spec), 0 8px 24px -8px oklch(0 0 0 / 0.5); backdrop-filter: blur(18px) saturate(1.8); -webkit-backdrop-filter: blur(18px) saturate(1.8); }
+:root[data-os="tahoe"] .os-login input {
+  border: 0; border-radius: 999px; background: oklch(1 0 0 / 0.2); box-shadow: var(--spec);
+  backdrop-filter: blur(18px) saturate(1.8); -webkit-backdrop-filter: blur(18px) saturate(1.8);
+}

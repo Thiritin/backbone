@@ -4,11 +4,11 @@
 .fin-side { display: flex; flex-direction: column; gap: 1px; }
 .fin-side button.side-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; }
 .fin-side button.side-item:hover { background: var(--hover); }
-.fin-side button.side-item.active { background: var(--accent); color: var(--accent-ink); }
+.fin-side button.side-item.active { background: var(--ar-sel, var(--accent)); color: var(--ar-sel-ink, var(--accent-ink)); }
 
 .fin-auto-item { margin-top: 12px; }
 .fin-auto .settings-line { min-height: 44px; }
-.fin-auto .settings-line + .settings-line { border-top: 0.5px solid var(--line); }
+.fin-auto .settings-line + .settings-line { border-top: var(--ar-bw) solid var(--line); }
 .fin-auto-by { color: var(--text-2); text-align: right; }
 .fin-table .link { color: inherit; }
 .fin-table .link:hover { color: var(--accent-text); }
@@ -18,13 +18,13 @@
 .fin-empty { height: 100%; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--text-3); }
 .fin-empty svg.lucide { width: 28px; height: 28px; }
 
-.fin-totals { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 0; border-bottom: 0.5px solid var(--line); flex: none; }
+.fin-totals { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 0; border-bottom: var(--ar-bw) solid var(--line); flex: none; }
 .fin-totals > div { padding: 12px 16px; }
-.fin-totals > div + div { border-left: 0.5px solid var(--line); }
+.fin-totals > div + div { border-left: var(--ar-bw) solid var(--line); }
 .fin-totals dt { font-size: 11.5px; font-weight: 550; color: var(--text-3); }
 .fin-totals dd { margin: 2px 0 0; font-size: 17px; font-weight: 650; }
 
-.fin-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0.5px solid var(--line); flex: none; }
+.fin-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: var(--ar-bw) solid var(--line); flex: none; }
 .fin-toolbar h2 { font-size: 13px; font-weight: 650; }
 
 .fin-table tbody tr { cursor: pointer; }
@@ -33,15 +33,15 @@
 .fin-pills { display: inline-flex; gap: 4px; }
 .fin-text { max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
 
-.fin-detail { width: 300px; flex: none; overflow: auto; display: grid; gap: 14px; align-content: start; padding: 16px 16px 20px; border-left: 0.5px solid var(--line); background: var(--win-side); }
+.fin-detail { width: 300px; flex: none; overflow: auto; display: grid; gap: 14px; align-content: start; padding: 16px 16px 20px; border-left: var(--ar-bw) solid var(--line); background: var(--win-side); }
 .fin-detail-h { display: flex; align-items: center; gap: 10px; }
 .fin-detail-h h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; margin-right: auto; }
 .fin-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin: 0; }
 .fin-facts dt { font-size: 11.5px; font-weight: 550; color: var(--text-3); }
 .fin-facts dd { margin: 1px 0 0; font-weight: 550; }
 
-.fin-card { border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); min-width: 0; overflow: hidden; }
-.fin-card-h { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 12.5px; font-weight: 650; border-bottom: 0.5px solid var(--line); }
+.fin-card { border: var(--ar-bw) solid var(--line-strong); border-radius: var(--ar-card); background: var(--field); min-width: 0; overflow: hidden; }
+.fin-card-h { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 12.5px; font-weight: 650; border-bottom: var(--ar-bw) solid var(--line); }
 .fin-card-h svg.lucide { width: 16px; height: 16px; color: var(--text-2); }
 .fin-card-b { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 12px 14px; }
 .fin-card-b > .btn { justify-self: start; }
@@ -59,3 +59,23 @@
 
 .fin-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .fin-actions .btn svg.lucide, .fin-card-b .btn svg.lucide { width: 16px; height: 16px; }
+
+.fin-card { box-shadow: var(--ar-lift); }
+.fin-card-h, .fin-toolbar, .fin-totals { background-image: var(--ar-head); }
+
+/* Panthera: pinstriped inspector and underlined links on hover. */
+:root[data-os="aqua"] .fin-detail { background: repeating-linear-gradient(var(--win-side) 0 2px, color-mix(in oklch, var(--win-side), var(--text) 5%) 2px 4px); }
+:root[data-os="aqua"] .fin-table .link:hover { text-decoration: underline; }
+
+/* Leapard: blue-grey inspector. */
+:root[data-os="leopard"] .fin-detail { background: color-mix(in oklch, var(--win-side), var(--accent) 6%); }
+
+/* Yosemighty: frosted inspector. */
+:root[data-os="yosemite"] .fin-detail { background: color-mix(in oklch, var(--win-side), transparent 15%); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+
+/* Tahoo: the inspector floats as its own rounded glass panel. */
+:root[data-os="tahoe"] .fin-detail {
+  margin: 8px 8px 8px 0; border: var(--ar-bw) solid var(--line); border-radius: var(--ar-card); box-shadow: var(--ar-lift);
+  background: color-mix(in oklch, var(--win-side), transparent 25%); backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8);
+}
+:root[data-os="tahoe"] .fin-card { background: color-mix(in oklch, var(--field), transparent 30%); }
