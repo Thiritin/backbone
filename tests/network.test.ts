@@ -6,7 +6,7 @@ import { datacenterById } from "../src/sim/20-world/datacenters";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { blackholed, monthlyNetworkCost, networkBills, networkTick, p95, route, serviceMbps, transitBill, zoneDemand } from "../src/sim/60-infra/network";
+import { blackholed, burstFactor, capacityMbps, monthlyNetworkCost, networkBills, networkTick, p95, route, serviceMbps, transitBill, zoneDemand, zoneTraffic } from "../src/sim/60-infra/network";
 import { addressBills, addressTick } from "../src/sim/60-infra/addresses";
 import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
@@ -149,6 +149,38 @@ describe("95th percentile billing", () => {
     expect(transitBill(s, s.network.uplinks[0]).mbps).toBe(300);
     s.network = { ...s.network, uplinks: [{ ...u, samples: Array(720).fill(50) }] };
     expect(transitBill(s, s.network.uplinks[0])).toEqual({ mbps: 200, amount: Math.round(200 * price * 100) / 100 });
+  });
+
+  it("samples each hour as one 5-minute reading, so bursts count and many customers smooth them out", () => {
+    const factors = (burst: number) => Array.from({ length: 720 }, (_, h) => burstFactor(1, "loc1", h, burst));
+    expect(factors(0).every((f) => f === 1)).toBe(true);
+    const f = factors(0.5), sigma = Math.sqrt(Math.log(1.25));
+    expect(f.reduce((a, b) => a + b, 0) / f.length).toBeCloseTo(1, 1);
+    expect(p95(f) / Math.exp(sigma * 1.645 - sigma ** 2 / 2)).toBeCloseTo(1, 1);
+    expect(factors(0.5)).toEqual(f);
+
+    const { s, loc } = datacenter();
+    ok(orderTransit(s, loc, "tellya", 1, 0.2));
+    ready(s);
+    s.network = { ...s.network, protection: "alwaysOn" };
+    const az = s.locations.find((l) => l.id === loc)!.az;
+    service(s, az, "gameServer");
+    expect(zoneTraffic(s).burst[loc]).toBeCloseTo(1, 6);
+    service(s, az, "gameServer");
+    const few = zoneTraffic(s).burst[loc];
+    for (let i = 0; i < 30; i++) service(s, az, "gameServer");
+    expect(zoneTraffic(s).burst[loc]).toBeLessThan(few / 2);
+
+    s.services = s.services.slice(0, 2);
+    const hourly: number[] = [];
+    for (let i = 0; i < 720; i++) {
+      s.hour++;
+      hourly.push(route(s).zones[loc].exits[s.network.uplinks[0].id]);
+      networkTick(s);
+    }
+    const u = s.network.uplinks[0];
+    expect(p95(u.samples)).toBeGreaterThan(p95(hourly) * 1.2);
+    expect(Math.max(...u.samples)).toBeLessThanOrEqual(capacityMbps(u));
   });
 
   it("bills transit, ports, cross-connects and memberships at the month start", () => {

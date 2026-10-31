@@ -66,6 +66,8 @@ export function curveLoad(id: CurveId, hour: number): number {
 // economy.md, "Usage curves and overcommit": traffic, night jobs and growth.
 // Share of a service's traffic that flows whatever its load; game servers send ticks to every connected player all night.
 export const TRAFFIC_FLOOR: Partial<Record<Product, number>> = { gameServer: 0.5, vpn: 0.2, dedicated: 0.2, colocation: 0.3 };
+// How much a service's 5-minute traffic swings around its hourly average (coefficient of variation).
+export const TRAFFIC_BURST: Partial<Record<Product, number>> & { other: number } = { gameServer: 1, storage: 0.8, vpn: 0.3, colocation: 0.3, other: 0.5 };
 // A customer's own night job (backups, batch runs) adds this much load for an hour and ships this many hours of average traffic.
 export const JOB_CPU = 0.3;
 export const JOB_TRAFFIC = 2;
