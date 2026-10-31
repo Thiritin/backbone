@@ -36,5 +36,9 @@ export default {
   "error.needsBgpRouter": () => "Serve un router con tabella di routing completa in questa sede.",
   "error.basementOnly": () => "Solo il seminterrato accetta questo router.",
   "error.noRouter": () => "Qui non è montato nessun router.",
+  "error.badPool": () => "L'intervallo DHCP non è adatto alla rete.",
+  "error.badAddress": () => "Inserisci un indirizzo IPv4 privato.",
+  "error.portShared": () => "La porta 80 è già condivisa con un altro dispositivo.",
+  "error.noAddress": () => "Questo dispositivo non ha un indirizzo nella rete del router.",
   "error.notOfficeRouter": () => "Solo un router da piccolo ufficio sostituisce quello del seminterrato.",
 } satisfies Dict;

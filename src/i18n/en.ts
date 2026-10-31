@@ -437,6 +437,8 @@ export const en: Record<string, (p: Params) => string> = {
   "guide.step.buyServer": () => "Buy a server",
   "guide.step.mountServer": () => "Mount and power it",
   "guide.step.mountRouter": () => "Mount the router",
+  "guide.step.findAddress": () => "Find the server's address",
+  "guide.step.shareWeb": () => "Share the web port",
   "guide.step.internet": () => "Add internet",
   "guide.step.setup": () => "Install software",
   "guide.step.domain": () => "Buy your domain",

@@ -36,5 +36,9 @@ export default {
   "error.needsBgpRouter": () => "Necesita un router con tabla de rutas completa en esta ubicación.",
   "error.basementOnly": () => "Solo el sótano admite este router.",
   "error.noRouter": () => "Aquí no hay ningún router montado.",
+  "error.badPool": () => "El rango DHCP no encaja en la red.",
+  "error.badAddress": () => "Introduce una dirección IPv4 privada.",
+  "error.portShared": () => "El puerto 80 ya está compartido con otro dispositivo.",
+  "error.noAddress": () => "Este dispositivo no tiene dirección en la red del router.",
   "error.notOfficeRouter": () => "Solo un router de oficina pequeña sustituye al del sótano.",
 } satisfies Dict;

@@ -7,7 +7,7 @@ import { requirementsFor } from "../src/sim/30-market/market";
 import { specText } from "../src/sim/30-market/spec";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { device, newGame, type GameState } from "../src/sim/50-state";
-import { addressBills, addressesOf, addressTick, addSpam, mailAddress, privateIp, publicV4, sharedAddress } from "../src/sim/60-infra/addresses";
+import { addressBills, addressesOf, addressTick, addSpam, mailAddress, publicV4, sharedAddress, machineAddress } from "../src/sim/60-infra/addresses";
 import { lineOffered } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
 import { addAddress, announceBlock, assignAddress, buyAddresses, joinLir, releaseAddress, requestDelist } from "../src/sim/90-actions/addresses";
@@ -46,11 +46,11 @@ describe("addresses", () => {
   it("gives every server a private address and a public IPv4: the line's shared one at home, its own in a datacenter", () => {
     const s = withServer(newGame(1));
     addressTick(s);
-    expect(privateIp(s, BASEMENT_SERVER)).toMatch(/^192\.168\.1\.\d+$/);
+    expect(machineAddress(s, BASEMENT_SERVER)).toMatch(/^192\.168\.1\.\d+$/);
     expect(publicV4(s, BASEMENT_SERVER)).toEqual({ ip: sharedAddress(s)!.ip, shared: true });
     const { srv } = datacenter(s);
     addressTick(s);
-    expect(privateIp(s, srv)).toMatch(/^10\.2\.0\.\d+$/);
+    expect(machineAddress(s, srv)).toMatch(/^10\.2\.0\.\d+$/);
     expect(publicV4(s, srv)).toMatchObject({ shared: false });
     expect(addressesOf(s, srv)).toMatchObject([{ v: 4, source: "provider" }]);
   });

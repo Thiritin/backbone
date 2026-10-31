@@ -7,6 +7,7 @@ import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, ho
 import { CITY_TLD } from "../30-customers/domains";
 import { serverOsById } from "../10-catalog/server-os";
 import type { Component, Device, End, GameState, Location, NetFail, Rack, SpaceKind } from "../50-state";
+import { gatewayOf } from "./lan";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
 
@@ -92,7 +93,8 @@ function computeLinkStatus(s: GameState, deviceId: string): LinkStatus {
       const cap = f && gatewayCap(s, f.end, deviceId);
       return f && cap !== null ? [{ ...f, gbit: Math.min(f.gbit, cap, own) }] : [];
     });
-  if (!up.length) return { online: false, gbit: 0, warning: null };
+  // A server also needs an address from the router whose network it is on (lan.md, The derived layer).
+  if (!up.length || (modelById(d.model).kind === "server" && !gatewayOf(s, d.id))) return { online: false, gbit: 0, warning: null };
   const fastest = Math.max(...up.map((f) => f.gbit));
   if (d.bond !== "balance" || up.length === 1) return { online: true, gbit: fastest, warning: null };
   const sw = s.devices.find((x) => x.id === up[0].end.device)!;
@@ -272,10 +274,10 @@ function computeRackPower(s: GameState, rackId: string): RackPower {
 // Link and rack power results memoised for one sweep. Only for code that reads the infrastructure and never changes it.
 // a and b are the draw on each feed; limitWatts is the limit of one feed.
 type RackPower = { watts: number; a: number; b: number; limitWatts: number; tripped: boolean };
-let memo: { s: GameState; link: Map<string, LinkStatus>; power: Map<string, RackPower> } | null = null;
+let memo: { s: GameState; link: Map<string, LinkStatus>; power: Map<string, RackPower>; other: Map<string, unknown> } | null = null;
 export function readOnlySweep<T>(s: GameState, fn: () => T): T {
   if (memo) return fn();
-  memo = { s, link: new Map(), power: new Map() };
+  memo = { s, link: new Map(), power: new Map(), other: new Map() };
   try { return fn(); } finally { memo = null; }
 }
 const memoised = <V>(s: GameState, key: string, pick: (m: NonNullable<typeof memo>) => Map<string, V>, compute: () => V): V => {
@@ -287,6 +289,8 @@ const memoised = <V>(s: GameState, key: string, pick: (m: NonNullable<typeof mem
   map.set(key, v);
   return v;
 };
+// Any other derived value memoised for the sweep under its key.
+export const sweepMemo = <V>(s: GameState, key: string, compute: () => V): V => memoised(s, key, (m) => m.other as Map<string, V>, compute);
 // docs/design/software.md, section 4.2: why a server's cables give it no internet, null when they do. Unlike linkStatus it
 // leaves the server's own state out, since an installer runs while the server still counts as booting.
 export function cabledOut(s: GameState, deviceId: string): NetFail | null {

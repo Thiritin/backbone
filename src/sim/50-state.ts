@@ -1,6 +1,6 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
-import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
+import { componentParts, hasFirmware, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { Vendor } from "./10-catalog/cpus";
 import type { OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
@@ -104,7 +104,18 @@ export interface Device extends MachineState { id: string; model: string; brand:
   refund?: { until: number; amount: number } | null;
   // thermal.ts: the game minute the server shut itself off from heat, and the hours it ran throttling hot.
   overheatedAt?: number; hotHours?: number;
+  // A small-office router's home network (docs/design/lan.md); a datacenter handoff stores only once it hands out leases.
+  lan?: RouterLan;
 }
+// A router's range, DHCP pool and lease time, the addresses it always gives the same device, its live leases (until is the
+// hour a lease runs out) and its port shares, each pointing at an address on the network.
+export interface RouterLan {
+  cidr: string; gateway: string; pool: [string, string]; leaseHours: number;
+  reservations: { mac: string; ip: string }[]; leases: { mac: string; ip: string; until: number; name: string }[]; shares: PortShare[];
+}
+export interface PortShare { ip: string; kind: "web" | "exposed" }
+export const homeLan = (): RouterLan =>
+  ({ cidr: "192.168.178.0/24", gateway: "192.168.178.1", pool: ["192.168.178.20", "192.168.178.200"], leaseHours: 240, reservations: [], leases: [], shares: [] });
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
 // A waitlist entry gets heldUntil once its space is free; the space is then reserved until that hour.
@@ -293,6 +304,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
     rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null,
     hung: false, bmcHung: false, log: [] as { hour: number; key: string }[], os: null as MachineState["os"], software: [] as MachineState["software"],
     stuck: false, locked: false, setup: false, bootFrom: "disk" as const, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
+    ...(isOfficeRouter(modelById(modelId)) ? { lan: homeLan() } : {}),
   };
 }
 

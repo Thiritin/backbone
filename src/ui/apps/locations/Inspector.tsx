@@ -3,9 +3,10 @@ import { Cable, Flame, Gauge, EthernetPort, Monitor, MonitorOff, FileSignature, 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
-import { bayCount, boardSpec, jacksOf, modelById, modelName, wattsFactorOf, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { bayCount, boardSpec, isOfficeRouter, jacksOf, modelById, modelName, wattsFactorOf, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import { imageName } from "../../../sim/10-catalog/server-os";
 import type { Cable as CableT, Device, End, GameState } from "../../../sim/50-state";
+import { FRITZ_HOST, macOf, routerPassword } from "../../../sim/60-infra/lan";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, deviceVendor, deviceWatts, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
@@ -303,8 +304,19 @@ function Status({ game, device }: { game: GameState; device: Device }) {
       )}
       {model.kind === "server" && <div><dt>{t("locations-1.role")}</dt><dd>{role}</dd></div>}
       {model.kind === "server" && device.rackId && <AddressRows game={game} id={device.id} />}
+      {isOfficeRouter(model) && <RouterLabel game={game} device={device} />}
     </dl>
   );
+}
+
+// The sticker under a Fritz!Bocks: its MAC address, the address of its web interface and the password.
+function RouterLabel({ game, device }: { game: GameState; device: Device }) {
+  const openApp = useStore((s) => s.openApp);
+  return <>
+    <div><dt>{t("browser-consoles-2.fritz.mac")}</dt><dd className="num">{macOf(game, device.id)}</dd></div>
+    <div><dt>Fritz!OZ</dt><dd><button className="loc-link num" onClick={() => openApp("Browser", { kind: "url", id: `${FRITZ_HOST}/` })}>{FRITZ_HOST}</button></dd></div>
+    <div><dt>{t("misc1.ipmi.password")}</dt><dd className="num">{routerPassword(game, device.id)}</dd></div>
+  </>;
 }
 
 function LeaseCard({ game, leaseId }: { game: GameState; leaseId: string }) {

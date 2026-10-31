@@ -231,6 +231,8 @@ export default {
   "apps.guide.step.buyServer": () => "Kaufe deinen ersten Server im Shop.",
   "apps.guide.step.mountServer": () => "Baue ihn in ein Rack ein und schalte ihn unter Standorte ein.",
   "apps.guide.step.mountRouter": () => "Baue die Fritz!Bocks aus dem Lager ins Rack ein, verbinde ihren DSL-Anschluss mit der Anschlussdose und den Server mit einem ihrer LAN-Anschlüsse unter Standorte.",
+  "apps.guide.step.findAddress": () => "Melde dich auf fritz.bocks mit dem Kennwort vom Etikett des Routers an und suche den Server unter Heimnetz, Netzwerkgeräte.",
+  "apps.guide.step.shareWeb": () => "Gib in Fritz!OZ unter Internet, Freigaben den Webserver-Port für den Server frei.",
   "apps.guide.step.internet": () => "Bestelle eine Internetleitung unter Standorte bei Internetleitung.",
   "apps.guide.step.setup": () => "Lade Debiant von der Website herunter, schreibe das ISO im Finder auf den USB-Stick, stecke den Stick am Rack in den Server und boote davon. Installiere Debiant und dann einen Hypervisor oder ein Webpanel mit den Befehlen von der Website.",
   "apps.guide.step.domain": (p) => `Kaufe im Browser bei ${p.partner} eine Domain für deine Firma.`,

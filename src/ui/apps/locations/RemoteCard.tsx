@@ -4,7 +4,7 @@ import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { BMC_NAME, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState } from "../../../sim/50-state";
-import { oobIp } from "../../../sim/60-infra/addresses";
+import { addressOf } from "../../../sim/60-infra/lan";
 import {
   ATX_PRICE, consoleHolder, consoleVia, exposed, firmwareDue, isGear, isMgmtDevice, mgmtVia, MODEM_FROM, oobUp, remoteFix, UPLINK_MONTHLY,
 } from "../../../sim/60-infra/oob";
@@ -27,10 +27,10 @@ export function RemoteCard({ game, device }: { game: GameState; device: Device }
   if (server && !via && !holder) return null;
   const rows: [string, ReactNode][] = [];
   if (server || gear) rows.push([t("locations-2.console"), via ? (via.kind === "bmc" ? BMC_NAME[device.brand] : nameOf(via.device)) : holder ? t("locations-2.unreachable", { name: nameOf(holder) }) : t("locations-2.none")]);
-  if (server && holder && modelById(holder.model).kind === "kvm") rows.push([t("locations-2.kvmPage"), link(oobIp(game, holder.id))]);
+  if (server && holder && modelById(holder.model).kind === "kvm") rows.push([t("locations-2.kvmPage"), link(addressOf(game, holder.id))]);
   if (gear) { const sw = mgmtVia(game, device.id); rows.push([t("locations-2.mgmt"), sw ? nameOf(sw) : t("locations-2.none")]); }
   if (mgmt) {
-    rows.push([t("locations-2.address"), link(oobIp(game, device.id))], [t("locations-2.reachable"), oobUp(game, device.id) ? t("locations-2.yes") : t("locations-2.no")], [t("locations-2.internet"), exposed(game, device) ? t("locations-2.exposed") : t("locations-2.private")]);
+    rows.push([t("locations-2.address"), link(addressOf(game, device.id))], [t("locations-2.reachable"), oobUp(game, device.id) ? t("locations-2.yes") : t("locations-2.no")], [t("locations-2.internet"), exposed(game, device) ? t("locations-2.exposed") : t("locations-2.private")]);
   }
   if (device.fw) rows.push([t("locations-2.firmware"), `${device.fw.version}`]);
   const kvm = server && holder && modelById(holder.model).kind === "kvm" && !modelById(holder.model).atx && !device.atx;

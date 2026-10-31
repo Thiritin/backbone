@@ -3,6 +3,7 @@ import { DEFAULT_HOME_LINE, MOMS_DSL } from "./20-world/datacenters";
 import type { GameState } from "./50-state";
 import { isDrive, jacked, linkStatus, locationOf } from "./60-infra/status";
 import { lineActive } from "./60-infra/addresses";
+import { clusterReachable, hasHosts } from "./60-infra/cluster";
 import { siteBuilt } from "./80-business/website";
 
 const onlineServers = (s: GameState) =>
@@ -24,6 +25,8 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   loan: (s) => booked(s, "ledger.loanTaken"),
   firstServer: (s) => onlineServers(s).length >= 1,
   setup: (s) => s.clusters.some((c) => c.platform || c.panel),
+  // The web host has a Web server share on the basement router, or an address of its own.
+  shareWeb: (s) => s.clusters.some((c) => (c.platform || c.panel) && hasHosts(c) && clusterReachable(s, c)),
   secondServer: (s) => onlineServers(s).length >= 2,
   homeLine: (s) => lineActive(s) && s.homeLine.id !== DEFAULT_HOME_LINE && s.homeLine.id !== MOMS_DSL.id,
   firstCustomer: (s) => s.customers.some((c) => c.habit !== "friend"),
@@ -48,4 +51,4 @@ export const tracked = (id: string): boolean => id in CHECKS;
 export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) || s.checklist.includes(id);
 
 // The Getting started tutorial: each step is a checklist goal, done in this order. company is ticked by any change in Settings under Company.
-export const TUTORIAL = ["register", "company", "buyServer", "mountServer", "mountRouter", "internet", "setup", "website", "domain", "launch", "email", "firstCustomer"] as const;
+export const TUTORIAL = ["register", "company", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"] as const;

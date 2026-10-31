@@ -32,6 +32,7 @@ import { maintenanceTick } from "../60-infra/maintenance";
 import { freezeTick } from "../60-infra/usage";
 import { statsTick } from "../60-infra/stats";
 import { networkTick } from "../60-infra/network";
+import { leaseTick } from "../60-infra/lan";
 import { appsTick } from "../60-infra/apps";
 import { securityTick } from "../60-infra/security";
 import { usageTick } from "../60-infra/usage";
@@ -315,6 +316,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...domainsTick(state));
   events.push(...registrarTick(state));
   mailTick(state);
+  leaseTick(state);
   events.push(...networkTick(state));
   events.push(...securityTick(state));
   events.push(...appsTick(state));

@@ -21,6 +21,7 @@ import { useFocus, useStore } from "../../store";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
 import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
+import { FritzOz } from "./mgmt/FritzOz";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
 import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
@@ -62,6 +63,7 @@ function titleOf(game: GameState, r: Resolved): string {
       const d = game.devices.find((x) => x.id === p.deviceId);
       return d ? kvmTitle(d) : r.host;
     }
+    case "router": return "Fritz!OZ";
     case "video": return VIDEO_TITLE;
     case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(p.sender).name });
     case "sponsorboard": return BOARD_TITLE;
@@ -100,6 +102,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "console") body = <ConsolePage game={game} hostname={p.hostname} host={r.host} cluster={game.clusters.find((x) => x.id === p.clusterId)} defaced={p.defaced} />;
   else if (p.kind === "ipmi") body = <IpmiPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "kvm") body = <KvmPage game={game} deviceId={p.deviceId} host={r.host} />;
+  else if (p.kind === "router") body = <FritzOz game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
   const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "index", "office", "software", "os"].includes(p.kind);
