@@ -1,5 +1,5 @@
 import { t } from "../../i18n/en";
-import type { ChangelogDay } from "../changelog";
+import { versionLabel, type ChangelogDay } from "../changelog";
 
 interface Props { changes: ChangelogDay[]; max?: number }
 
@@ -14,7 +14,7 @@ export function ChangeList({ changes, max = Infinity }: Props) {
     <div className="update-changes">
       {shown.map((d) => (
         <section key={d.date}>
-          <h3>{d.version ? t("desktop.changes.version", { version: d.version }) : d.date}</h3>
+          <h3>{t("desktop.changes.version", { version: versionLabel(d.date) })}</h3>
           <ul>
             {d.items.map((i) => <li key={i}>{i}</li>)}
           </ul>

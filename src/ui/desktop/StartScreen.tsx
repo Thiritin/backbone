@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { useRef, useState } from "react";
 import { weeklyChallenge } from "../../sim/10-catalog/challenges";
 import { LANGS, lang, setLang, type Lang } from "../../i18n/lang";
+import { versionLabel } from "../changelog";
 import { EMBEDDED } from "../embedded";
 import { twistLabel } from "../leaderboard";
 import { isNew, loadSeen, markRead, saveSeen } from "../news-seen";
@@ -28,7 +29,7 @@ function News() {
           return (
             <details key={d.date} onToggle={(e) => e.currentTarget.open && read(d.version ?? 0)}>
               <summary>
-                <span>{t("desktop.changes.version", { version: d.version ?? 0 })}</span>
+                <span>{t("desktop.changes.version", { version: versionLabel(d.date) })}</span>
                 <small>{d.date}</small>
                 {fresh && <b className="menu-new">{t("desktop.start.new")}</b>}
               </summary>

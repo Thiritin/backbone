@@ -1,11 +1,15 @@
-// Posts CHANGELOG.md bullets to the Discord #changelog channel via webhook.
+// Posts CHANGELOG.md bullets to the Discord #changelog channel via webhook, headed by the release version.
 // node scripts/discord-changelog.mjs --all          every day, oldest first
-// node scripts/discord-changelog.mjs --since <rev>  only bullets added after <rev>
-import { readFileSync } from 'node:fs';
+// node scripts/discord-changelog.mjs --since <rev>  only bullets added after <rev> (a release tag)
+// --version <v> adds a version heading, --notes <file> writes the GitHub release body, --dry skips Discord.
+import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
+const args = process.argv.slice(2);
+const opt = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
+const dry = args.includes('--dry');
 const webhook = process.env.DISCORD_CHANGELOG_WEBHOOK;
-if (!webhook) throw new Error('DISCORD_CHANGELOG_WEBHOOK missing');
+if (!webhook && !dry) throw new Error('DISCORD_CHANGELOG_WEBHOOK missing');
 const LIMIT = 2000;
 
 function parse(text) {
@@ -17,25 +21,27 @@ function parse(text) {
   return days;
 }
 
-const [mode, rev] = process.argv.slice(2);
+const rev = opt('--since');
 let days = parse(readFileSync('CHANGELOG.md', 'utf8'));
-if (mode === '--since') {
-  // An unknown base (new branch, force push) would repost everything, so post nothing.
-  let old;
-  try { old = execFileSync('git', ['show', `${rev}:CHANGELOG.md`], { encoding: 'utf8' }); } catch {
-    console.log(`No CHANGELOG.md at ${rev}, nothing posted`);
-    process.exit(0);
-  }
+if (rev !== undefined) {
+  // No base (the first release) posts everything.
+  let old = '';
+  if (rev) try { old = execFileSync('git', ['show', `${rev}:CHANGELOG.md`], { encoding: 'utf8' }); } catch {}
   const seen = new Set(parse(old).flatMap((d) => d.bullets));
   days = days.map((d) => ({ ...d, bullets: d.bullets.filter((b) => !seen.has(b)) }));
-} else if (mode !== '--all') {
+} else if (!args.includes('--all')) {
   throw new Error('Pass --all or --since <rev>');
 }
 days = days.filter((d) => d.bullets.length).reverse();
+if (!days.length) { console.error('No new changelog bullets since the last release'); process.exit(1); }
 
-function chunks(day) {
+const version = opt('--version');
+const notes = [...days].reverse().map((d) => `## ${d.date}\n${d.bullets.join('\n')}`).join('\n\n');
+if (opt('--notes')) writeFileSync(opt('--notes'), notes + '\n');
+
+function chunks(day, head = '') {
   const out = [];
-  let cur = `## ${day.date}`;
+  let cur = `${head}## ${day.date}`;
   for (const b of day.bullets) {
     if (cur.length + b.length + 1 > LIMIT) { out.push(cur); cur = ''; }
     cur += (cur ? '\n' : '') + b;
@@ -60,5 +66,7 @@ async function post(content) {
   }
 }
 
-for (const day of days) for (const c of chunks(day)) await post(c);
-console.log(`Posted ${days.reduce((n, d) => n + d.bullets.length, 0)} bullets over ${days.length} days`);
+if (!dry) {
+  for (const [i, day] of days.entries()) for (const c of chunks(day, i === 0 && version ? `# Version ${version}\n` : '')) await post(c);
+}
+console.log(`${dry ? 'Prepared' : 'Posted'} ${days.reduce((n, d) => n + d.bullets.length, 0)} bullets over ${days.length} days`);

@@ -1,6 +1,6 @@
 // CHANGELOG.md is newest first: a "## YYYY-MM-DD" heading per day and one "- " bullet per change. The build embeds the
 // parsed list; the update sheet shows the bullets a newer build has that this one does not.
-// version counts the days from the oldest, so a new day never renumbers the ones before it.
+// version is the date as a number (20261031), so the ids sort by age and match the release tag 2026.10.31.
 export interface ChangelogDay { date: string; items: string[]; version?: number }
 
 export const changeKeys = (days: ChangelogDay[]): string[] => days.flatMap((d) => d.items.map((i) => `${d.date}|${i}`));
@@ -13,8 +13,10 @@ export function parseChangelog(text: string): ChangelogDay[] {
     if (head) days.push({ date: head[1], items: [] });
     else if (line.startsWith("- ") && days.length > 0) days[days.length - 1].items.push(line.slice(2).trim());
   }
-  return days.map((d, i) => ({ ...d, version: days.length - i }));
+  return days.map((d) => ({ ...d, version: Number(d.date.replaceAll("-", "")) }));
 }
+
+export const versionLabel = (date: string): string => date.replaceAll("-", ".");
 
 // The bullets in the served changelog that the key list does not hold, newest first, grouped by day.
 export function unseenChanges(seen: string[], served: ChangelogDay[]): ChangelogDay[] {

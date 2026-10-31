@@ -22,7 +22,7 @@ describe("update offer", () => {
 describe("changelog", () => {
   it("parses days and bullets newest first and ignores other lines", () => {
     const days = parseChangelog("# Changelog\n\nIntro text.\n\n## 2026-10-29\n\n- First change.\n- Second change.\n\n## 2026-10-28\n- Older change.\n");
-    expect(days).toEqual([{ date: "2026-10-29", items: ["First change.", "Second change."], version: 2 }, { date: "2026-10-28", items: ["Older change."], version: 1 }]);
+    expect(days).toEqual([{ date: "2026-10-29", items: ["First change.", "Second change."], version: 20261029 }, { date: "2026-10-28", items: ["Older change."], version: 20261028 }]);
   });
 
   it("lists only the bullets the running build lacks", () => {
