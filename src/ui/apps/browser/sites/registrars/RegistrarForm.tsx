@@ -17,18 +17,19 @@ type Field = keyof Address;
 const FIELDS: Field[] = ["contact", "company", "street", "zip", "city", "email"];
 const EMPTY: Address = { contact: "", company: "", street: "", zip: "", city: "", email: "" };
 
-// The orders whose domain waits for this form: new domains on the register page, owned ones on the transfer page.
-function domainChoices(game: GameState, transfer: boolean) {
+// The orders whose domain waits for this form: new domains on the register page, owned ones on the transfer page. The
+// order the page was opened for stays listed once its domain is done.
+function domainChoices(game: GameState, transfer: boolean, keep: string) {
   return orderChoices(game, ["webHosting"]).filter((o) => {
     const q = game.sales.requests.find((x) => x.id === o.requestId)!;
-    return o.next === "domain" && !!q.owned === transfer && !shopRegisters(game, q);
+    return (o.next === "domain" || o.ticketId === keep) && !!q.owned === transfer && !shopRegisters(game, q);
   }).map((o) => ({ ...o, error: stepError(game, game.tickets.find((x) => x.id === o.ticketId)!, "domain") }));
 }
 
 // The partner's registration or transfer form. A click on a line of the customer record beside it fills the focused owner
 // field, the postcode line fills postcode and city, and the focus moves on to the next empty field, as in New customer in Books.
 export function RegistrarForm({ game, r, transfer, ticketId }: { game: GameState; r: Registrar; transfer: boolean; ticketId: string }) {
-  const act = useStore((s) => s.act), choices = domainChoices(game, transfer);
+  const act = useStore((s) => s.act), choices = domainChoices(game, transfer, ticketId);
   const [ticket, setTicket] = useState(choices.some((o) => o.ticketId === ticketId) ? ticketId : choices.length === 1 ? choices[0].ticketId : "");
   const [form, setForm] = useState<Address>(EMPTY), [focus, setFocus] = useState<Field>("contact");
   const [ns, setNs] = useState(() => [`ns1.${companyDomain(game)}`, `ns2.${companyDomain(game)}`]);
