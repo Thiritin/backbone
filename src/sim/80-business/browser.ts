@@ -16,6 +16,7 @@ import { BOARD_HOST } from "./sponsorboard";
 import { consoleAt, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
+import { shopActive } from "./shop";
 import { OFFICE_HOST, OFFICE_TITLE, OFFICE_URL } from "./office";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
 
@@ -39,6 +40,7 @@ export type Page =
   | { kind: "index" }
   | { kind: "office" }
   | { kind: "wiki" }
+  | { kind: "shop" }
   | { kind: "software"; id: string }
   | { kind: "os"; id: ServerOsId }
   | { kind: "notfound" };
@@ -135,6 +137,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   const { host, path } = split(raw), url = `${host}${path}`;
   const out = (page: Page, load: Load = "fast"): Resolved => ({ url, host, path, page, load });
   const domain = companyDomain(s);
+  const shopLoad = (): Load => { const st = siteStatus(s); return st === "up" ? "fast" : st === "slow" ? "slow" : "down"; };
   // A phishing page a notice reports stays up until the player takes it down.
   const phish = s.tickets.filter((t) => t.topic === "phishing" && t.notice && split(t.notice.url).host === host && split(t.notice.url).path === path);
   if (phish.length && !phish.some((t) => t.outcome === "takenDown" || t.outcome === "seized")) return out({ kind: "phishing", sender: phish[0].notice!.sender });
@@ -143,6 +146,7 @@ export function resolve(s: GameState, raw: string): Resolved {
     const st = siteStatus(s);
     return out({ kind: "company" }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
   }
+  if (host === `portal.${domain}`) return shopActive(s) ? out({ kind: "shop" }, shopLoad()) : out({ kind: "notfound" });
   const site = s.services.find((v) => !!v.domain && (v.domain === host || `www.${v.domain}` === host));
   if (site) {
     const c = customerSite(s, site.id);

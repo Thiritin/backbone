@@ -35,6 +35,7 @@ import { BankSite } from "./sites/bank/BankSite";
 import { bankById } from "../../../sim/10-catalog/banks";
 import { CannotReach, CustomerSite, HostPage, NotFound, PhishingPage, VideoPage } from "./sites/Pages";
 import { senderById } from "../../../sim/40-support/notices";
+import { PortalSite } from "./sites/portal/PortalSite";
 import { VendorSite } from "./sites/vendors/registry";
 import "./browser.css";
 
@@ -73,6 +74,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "index": return "Yahoy! Directory";
     case "office": return OFFICE_TITLE;
     case "wiki": return WIKI_TITLE;
+    case "shop": return game.company.name;
     case "software": return softwareById(p.id).name;
     case "os": return serverOsById(p.id).name;
     default: return t("misc1.browser.notFound");
@@ -101,6 +103,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "phishing") body = <PhishingPage sender={p.sender} />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "shop") body = <PortalSite game={game} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
   else if (p.kind === "software" || p.kind === "os") body = <SoftwarePage game={game} kind={p.kind} id={p.id} path={r.path} go={go} />;
@@ -109,7 +112,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "kvm") body = <KvmPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "bank", "supplier", "index", "office", "software", "os"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}

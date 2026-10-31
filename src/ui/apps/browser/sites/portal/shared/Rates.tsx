@@ -1,19 +1,18 @@
-import { Tags } from "lucide-react";
 import { useEffect, useState } from "react";
-import { t } from "../../../i18n/en";
-import { euroCents } from "../../../sim/00-core/money";
-import { yearOf } from "../../../sim/00-core/time";
-import { marketRates, marketSetup, PRODUCTS, sizeSpec, specPrice, UNITS, type Unit } from "../../../sim/10-catalog/products";
-import type { Product } from "../../../sim/30-customers/customers";
-import { offerPrice } from "../../../sim/30-market/spec";
-import type { GameState } from "../../../sim/50-state";
-import { SITE_LINES } from "../../../sim/80-business/website";
-import { resetRates, setRate } from "../../../sim/90-actions/rates";
-import { useStore } from "../../store";
-import { marketSide } from "../sales/PriceField";
-import { PRODUCT } from "../support/labels";
-import "../products/products.css";
-import "../sales/sales.css";
+import { t } from "../../../../../../i18n/en";
+import { euroCents } from "../../../../../../sim/00-core/money";
+import { yearOf } from "../../../../../../sim/00-core/time";
+import { marketRates, marketSetup, PRODUCTS, sizeSpec, specPrice, UNITS, type Unit } from "../../../../../../sim/10-catalog/products";
+import type { Product } from "../../../../../../sim/30-customers/customers";
+import { offerPrice } from "../../../../../../sim/30-market/spec";
+import type { GameState } from "../../../../../../sim/50-state";
+import { SITE_LINES } from "../../../../../../sim/80-business/website";
+import { resetRates, setRate } from "../../../../../../sim/90-actions/rates";
+import { useStore } from "../../../../../store";
+import { marketSide } from "../../../../sales/PriceField";
+import { PRODUCT } from "../../../../support/labels";
+import "../../../../products/products.css";
+import "../../../../sales/sales.css";
 
 const LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "gpu", "dedicated", "colocation", "domain", "ssl"];
 const UNIT: Record<Unit | "setup", string> = {
@@ -51,7 +50,6 @@ export function Rates({ game }: { game: GameState }) {
   const act = useStore((s) => s.act), year = yearOf(game.hour);
   return (
     <div className="prd-pad">
-      <div className="prd-title"><Tags /><h2>{t("marketing.pricing")}</h2></div>
       <div className="rate-cards">
         {LINES.map((p) => {
           const mine = game.rates[p] ?? {}, market = marketRates(p, year), smallest = sizeSpec(p, 0, year);
