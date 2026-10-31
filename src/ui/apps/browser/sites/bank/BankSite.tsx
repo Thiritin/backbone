@@ -3,7 +3,8 @@ import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
 import { euro, euroCents } from "../../../../../sim/00-core/money";
 import { dateOf, yearOf } from "../../../../../sim/00-core/time";
-import { bankById, tanMethods, type Bank, type BankId, type TanMethod } from "../../../../../sim/10-catalog/banks";
+import { bankById, bookingFee, monthlyFee, tanMethods, type Bank, type BankId, type TanMethod } from "../../../../../sim/10-catalog/banks";
+import { LEGAL_FORMS } from "../../../../../sim/80-business/office";
 import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate } from "../../../../../sim/45-billing/billing";
 import { cardSpent, groupIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft } from "../../../../../sim/46-finance/bank";
 import type { GameState } from "../../../../../sim/50-state";
@@ -86,7 +87,15 @@ function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn
       <Box title={t("bank.site.conditions")}>
         <table className="bks-table">
           <tbody>
-            <tr><td>{t("bank.site.monthly")}</td><td className="r">{euroCents(bank.monthly)}</td></tr>
+            {Object.entries(LEGAL_FORMS).map(([form, label]) => {
+              const fee = monthlyFee(bank, form), booking = bookingFee(bank, form);
+              return (
+                <tr key={form}>
+                  <td>{t("bank.site.monthly", { form: label })}</td>
+                  <td className="r">{fee === null ? "–" : booking ? t("bank.site.plusBooking", { fee: euroCents(fee), booking: euroCents(booking) }) : euroCents(fee)}</td>
+                </tr>
+              );
+            })}
             <tr><td>{t("bank.site.transferTime")}</td><td className="r">{t(`bank.speed.${bank.speed}`)}</td></tr>
             <tr><td>{t("bank.site.tan")}</td><td className="r">{tanMethods(bank, yearOf(game.hour)).map((m) => t(`bank.tan.${m.label}`)).join(", ")}</td></tr>
             <tr><td>{t("bank.site.cardFee")}</td><td className="r">{euro(bank.card.yearly)}</td></tr>

@@ -39,7 +39,7 @@ const OWNED_INFO: { id: OwnedChannel | "email"; name: string; text: string }[] =
 const CAMPAIGN_INFO: Record<CampaignChannel, string> = {
   search: "Goggle Ads", ai: t("marketing.aiAds"), gaming: t("marketing.campGaming"), coldCall: t("marketing.campColdCall"), agency: t("marketing.campAgency"),
 };
-const CHANNEL_NAME: Record<OwnedChannel, string> = { website: t("marketing.webDesign"), orderForm: t("marketing.orderForm"), searchAds: "Goggle Ads", aiAds: t("marketing.aiAds") };
+const CHANNEL_NAME: Record<OwnedChannel, string> = { website: t("marketing.webDesign"), searchAds: "Goggle Ads", aiAds: t("marketing.aiAds") };
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 const leads = (n: number) => (n < 10 ? n.toFixed(1) : String(Math.round(n)));

@@ -4,6 +4,7 @@ import { STARTER_APPS } from "../10-catalog/store";
 import { LEGAL_FORMS, OFFICE_ACCOUNT, OFFICE_CODE, officeOpen, REGISTRATION_FEE, registerNumber } from "../80-business/office";
 import { iban, ibanEra, send, spendable, type Draft } from "../46-finance/bank";
 import { t } from "../../i18n/en";
+import { bankById, monthlyFee } from "../10-catalog/banks";
 import { startTransfer } from "./bank";
 
 // Logo marks by id; the UI draws each one as an icon on a tile in the chosen colour.
@@ -36,6 +37,7 @@ export function registrationError(s: GameState, name: string, owner: string, for
   if (!owner.trim()) return "error.ownerName";
   if (!(form in LEGAL_FORMS)) return "error.legalForm";
   if (!s.bank) return "error.noBank";
+  if (monthlyFee(bankById(s.bank.id)!, form) === null) return "error.bankForm";
   if (REGISTRATION_FEE > spendable(s)) return "error.noCash";
   return null;
 }
@@ -56,7 +58,7 @@ export function applyForRegistration(s: GameState, name: string, owner: string, 
 export function registerCompany(s: GameState, name: string, owner: string, form: string): ActionResult {
   const error = registrationError(s, name, owner, form);
   if (error) return { ok: false, error };
-  send(s, officeDraft(s, name), "fees");
+  send(s, officeDraft(s, name));
   setCompany(s, { name });
   s.checklist = s.checklist.filter((id) => id !== "company");
   s.registration = { hour: s.hour, owner: owner.trim(), form, number: registerNumber(s.seed) };

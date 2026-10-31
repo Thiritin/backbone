@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { chooseShop } from "../src/sim/90-actions/shop";
 import { t } from "../src/i18n/en";
 import { yearOf } from "../src/sim/00-core/time";
 import { marketRates, marketSetup, sizeSpec, specPrice, TRAFFIC_SHARE } from "../src/sim/10-catalog/products";
@@ -16,7 +17,8 @@ const withForm = (seed: number) => {
   const s = readyGame(seed);
   s.cash = 1e6;
   setUpChannel(s, "website");
-  setUpChannel(s, "orderForm");
+  chooseShop(s, "handRolled");
+  s.shop.optionDiscount = { annual: -3 };
   return automate(s);
 };
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
