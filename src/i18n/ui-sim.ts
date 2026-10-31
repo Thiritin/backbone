@@ -57,6 +57,8 @@ export default {
   "sim.skill.shops.about": () => "You learn to run an order and provisioning system that sells from stock and hands orders to your servers.",
   "sim.skill.provisioning.name": () => "Provisioning automation",
   "sim.skill.provisioning.about": () => "Your team learns to quote order emails at your rates, place new orders on a fitting server without anyone picking the host, and run an accepted order from account to setup by itself.",
+  "sim.skill.fraudScreening.name": () => "Fraud screening",
+  "sim.skill.fraudScreening.about": () => "You learn to have MaxMined score every order as it arrives and turn away the ones that look like stolen cards, for a small fee per check.",
   "sim.skill.knowledgeBase.name": () => "Documentation",
   "sim.skill.knowledgeBase.about": () => "Your team learns to write the answers to common questions down, so customers find them before they write in.",
   "sim.skill.market.name": () => "Market research",

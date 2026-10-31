@@ -208,6 +208,7 @@ export default {
   "ledger.chargeback": (p) => `Chargeback di ${p.customer}`,
   "ledger.chargebackFee": (p) => `Commissione di chargeback per ${p.customer}`,
   "ledger.chargebackProgram": () => "Commissione di monitoraggio PayPail",
+  "ledger.screening": (p) => `Filtro ordini MaxMined, ${p.count} ${Number(p.count) === 1 ? "controllo" : "controlli"}`,
   "event.chargeback.title": () => "Chargeback",
   "event.chargeback.text": (p) => `PayPail ha stornato ${euroCents(Number(p.amount))} per ${p.customer}, commissione di chargeback inclusa.`,
   "event.chargebackWarning.title": () => "Avviso di PayPail",
