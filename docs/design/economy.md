@@ -1827,6 +1827,10 @@ A VM of a Proxmocks cluster (from the year of its cluster support) can replicate
 
 A cluster of three or more Proxmocks nodes can build a Ceph pool with `setCeph` (size 2 or 3). Its capacity is the usable disk of all nodes divided by the size, and it must hold the disks of the cluster's VMs. Every node down costs one copy: at one copy the pool is read-only (mutating actions refuse with `error.cephReadOnly`). VMs on the pool fail over like VMs on a datastore, also when the dead node lost its data. After a node returns the pool rebalances for `diskUsed / (Gbit * LAN_GB_PER_HOUR)` hours, with a warning alarm.
 
+### Per-VM firewall
+
+An own VM on a Proxmocks cluster can switch its firewall on and tick the port macros it lets through (web, ssh, mail, db, rdp); every other port is dropped. A host in that VM serves its own ports (a panel serves web, a mail host serves mail): blocking one takes the service offline until the macro is ticked again. When the firewall closes a port the host's software listens on but does not serve (SSH, for instance), the hourly and daily compromise chances are halved (`FIREWALL_RISK`). A VM without a firewall behaves as before. The firewall costs no money.
+
 ### Snapshots
 
 A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VMs, its installed OS and software. Values live in `src/sim/10-catalog/platforms.ts`.

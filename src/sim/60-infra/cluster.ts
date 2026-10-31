@@ -17,6 +17,7 @@ import { coverage } from "./maintenance";
 import type { PackageDef } from "../80-business/packages";
 import type { BackupJob, RestorePoint } from "./backups";
 import type { Ceph, Replica } from "./replica";
+import { firewallBlocks, type Firewall } from "./exposure";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
@@ -81,6 +82,8 @@ export interface Workload extends Resources, Partial<MachineState> {
   points?: RestorePoint[];
   // A copy of the disk on a second node of the cluster, refreshed on a schedule (replica.ts).
   replica?: Replica | null;
+  // Own VMs only: the port macros the VM lets through (exposure.ts); missing or null is no firewall.
+  firewall?: Firewall | null;
   // The sold size when a package booked less; the service uses the sold size times its load.
   promised?: Resources;
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
@@ -459,7 +462,7 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching) return false;
   if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;
-  if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm); }
+  if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm) && !firewallBlocks(s, c); }
   if (c && w.deviceId && s.frozen.includes(w.deviceId)) return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);

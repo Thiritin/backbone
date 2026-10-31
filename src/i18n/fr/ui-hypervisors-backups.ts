@@ -97,4 +97,12 @@ export default {
   "error.cephFull": () => "Le pool est trop petit pour ces disques.",
   "error.cephReadOnly": () => "Il ne reste qu'une copie dans le pool Ceph, il est en lecture seule.",
   "alarm.cephRebalancing": (p) => `Ceph sur ${p.cluster} rééquilibre ses copies.`,
+  "pmx.firewall": () => "Pare-feu",
+  "pmx.options": () => "Options",
+  "pmx.inputPolicy": () => "Politique d'entrée",
+  "pmx.enableFirewall": () => "Activer le pare-feu",
+  "pmx.disableFirewall": () => "Désactiver le pare-feu",
+  "pmx.action": () => "Action",
+  "pmx.macro": () => "Macro",
+  "error.noFirewall": () => "Seule une VM d'un cluster Proxmocks a un pare-feu.",
 } satisfies Dict;

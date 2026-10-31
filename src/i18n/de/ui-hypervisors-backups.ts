@@ -97,4 +97,12 @@ export default {
   "error.cephFull": () => "Der Pool ist für diese Platten zu klein.",
   "error.cephReadOnly": () => "Im Ceph-Pool ist nur noch eine Kopie übrig, er ist schreibgeschützt.",
   "alarm.cephRebalancing": (p) => `Ceph auf ${p.cluster} gleicht seine Kopien neu ab.`,
+  "pmx.firewall": () => "Firewall",
+  "pmx.options": () => "Optionen",
+  "pmx.inputPolicy": () => "Eingangsrichtlinie",
+  "pmx.enableFirewall": () => "Firewall aktivieren",
+  "pmx.disableFirewall": () => "Firewall deaktivieren",
+  "pmx.action": () => "Aktion",
+  "pmx.macro": () => "Makro",
+  "error.noFirewall": () => "Nur eine VM in einem Proxmocks-Cluster hat eine Firewall.",
 } satisfies Dict;

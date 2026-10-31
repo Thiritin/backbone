@@ -97,4 +97,12 @@ export default {
   "error.cephFull": () => "O pool é demasiado pequeno para estes discos.",
   "error.cephReadOnly": () => "O pool Ceph tem apenas uma cópia e está só de leitura.",
   "alarm.cephRebalancing": (p) => `O Ceph em ${p.cluster} está a reequilibrar as cópias.`,
+  "pmx.firewall": () => "Firewall",
+  "pmx.options": () => "Opções",
+  "pmx.inputPolicy": () => "Política de entrada",
+  "pmx.enableFirewall": () => "Ativar firewall",
+  "pmx.disableFirewall": () => "Desativar firewall",
+  "pmx.action": () => "Ação",
+  "pmx.macro": () => "Macro",
+  "error.noFirewall": () => "Apenas uma VM de um cluster Proxmocks tem firewall.",
 } satisfies Dict;

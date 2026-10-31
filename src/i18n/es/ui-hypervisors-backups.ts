@@ -97,4 +97,12 @@ export default {
   "error.cephFull": () => "El pool es demasiado pequeño para estos discos.",
   "error.cephReadOnly": () => "Al pool de Ceph le queda una copia y es de solo lectura.",
   "alarm.cephRebalancing": (p) => `Ceph en ${p.cluster} está reequilibrando sus copias.`,
+  "pmx.firewall": () => "Cortafuegos",
+  "pmx.options": () => "Opciones",
+  "pmx.inputPolicy": () => "Política de entrada",
+  "pmx.enableFirewall": () => "Activar cortafuegos",
+  "pmx.disableFirewall": () => "Desactivar cortafuegos",
+  "pmx.action": () => "Acción",
+  "pmx.macro": () => "Macro",
+  "error.noFirewall": () => "Solo una VM de un clúster Proxmocks tiene cortafuegos.",
 } satisfies Dict;
