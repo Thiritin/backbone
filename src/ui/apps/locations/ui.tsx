@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { BASEMENT, datacenterById, SHARE_RACKS, type Datacenter } from "../../../sim/20-world/datacenters";
+import { BASEMENT, CONTINUOUS, datacenterById, SHARE_RACKS, type Datacenter } from "../../../sim/20-world/datacenters";
 import type { GameState, Location } from "../../../sim/50-state";
 import { rackPower } from "../../../sim/60-infra/status";
 import type { Usage } from "../../../sim/60-infra/usage";
@@ -99,8 +99,8 @@ export function UsageBars({ usage, only, wide }: { usage: Usage; only?: (keyof U
 export function PowerMeter({ watts, limit, tripped }: { watts: number; limit: number; tripped?: boolean }) {
   const f = limit ? Math.min(1, watts / limit) : 0;
   return (
-    <span className={`loc-meter${tripped ? " tripped" : ""}`}>
-      <span className="loc-meter-bar"><span style={{ width: `${f * 100}%` }} /></span>
+    <span className={`loc-meter${tripped ? " tripped" : f > CONTINUOUS.share ? " over" : ""}`}>
+      <span className="loc-meter-bar"><span style={{ width: `${f * 100}%` }} /><i style={{ left: `${CONTINUOUS.share * 100}%` }} /></span>
       <span className="num">{Math.round(watts).toLocaleString(LOCALE)} / {Math.round(limit).toLocaleString(LOCALE)} W</span>
     </span>
   );

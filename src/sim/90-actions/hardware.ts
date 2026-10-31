@@ -69,7 +69,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
   if (shareRack) {
     const rackName = nextName(`${prefix(s, loc.id)}-rack`, s.racks.map((r) => r.name));
-    s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null });
+    s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } });
   }
   return { ok: true, id: loc.id };
 }
@@ -123,7 +123,7 @@ export function buyRack(s: GameState, locationId: string, model: RackModel, posi
   if (error) return fail(error);
   if (s.cash < spec.price) return fail("error.noCash");
   const name = nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
-  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null };
+  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null, overSince: { a: null, b: null } };
   s.racks.push(rack);
   book(s, "hardware", "ledger.hardware", { model: `${spec.units}U rack`, device: name }, -spec.price);
   return { ok: true, id: rack.id };
@@ -149,7 +149,7 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
   // Feeds belong to rented positions, so the basement has none.
   if (!to.dc) Object.assign(rack, { feedB: false, highDensity: false });
   // The power contract belongs to the position too; the new one starts on its site's default.
-  if (to.id !== from.id) Object.assign(rack, { flatKw: flatDefault(s, to.id), flatKwAt: null });
+  if (to.id !== from.id) Object.assign(rack, { flatKw: flatDefault(s, to.id), flatKwAt: null, overSince: { a: null, b: null } });
   book(s, "moving", "ledger.move", { rack: rack.name, location: to.name }, -move.price);
   return { ok: true, id: rack.id };
 }

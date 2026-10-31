@@ -49,6 +49,8 @@ export default {
   "event.feedDark.text": (p) => `Einspeisung ${p.feed} von ${p.rack} ist ausgefallen, und die Server waren ${duration(Number(p.minutes))} ohne Strom.`,
   "event.feedCarried.title": () => "Ausfall einer Einspeisung",
   "event.feedCarried.text": (p) => `${p.rack} blieb während eines ${duration(Number(p.minutes))} langen Ausfalls von Einspeisung ${p.feed} online.`,
+  "event.feedCascade.title": () => "Ausfall einer Einspeisung",
+  "event.feedCascade.text": (p) => `Einspeisung ${p.feed} von ${p.rack} ist ausgefallen, und die andere Einspeisung hat unter der ganzen Last ausgelöst. Alle Server darin waren ${duration(Number(p.minutes))} ohne Strom.`,
   "event.seized.title": () => "Server beschlagnahmt",
   "event.seized.text": (p) => `${p.agency} hat ${p.device} aus ${p.location} mitgenommen.`,
   "event.seizedBack.title": () => "Server zurückgegeben",

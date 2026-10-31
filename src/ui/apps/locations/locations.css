@@ -29,7 +29,11 @@ svg.logo-mark { flex: none; }
 .loc-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px 16px; padding: 12px 14px; margin: 0; }
 .loc-meter { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); white-space: nowrap; }
 .loc-meter-bar { width: 72px; height: 5px; border-radius: 3px; background: color-mix(in oklch, var(--text) 10%, transparent); overflow: hidden; }
+.loc-meter-bar { position: relative; }
 .loc-meter-bar > span { display: block; height: 100%; background: var(--accent); }
+.loc-meter-bar > i { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--text-2); }
+.loc-alarm { font-size: 12px; color: var(--warn-text); }
+.loc-alarm.critical { color: var(--bad-text); }
 .loc-meter.tripped .loc-meter-bar > span { background: var(--bad); }
 .loc-meter.tripped .num { color: var(--bad-text); }
 .loc-meter.over .loc-meter-bar > span { background: var(--warn); }

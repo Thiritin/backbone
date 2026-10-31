@@ -14,4 +14,6 @@ export default {
   "alarm.diskHigh": (p) => `Die Datastore-Auslastung auf ${p.host} liegt bei ${p.percent} %.`,
   "alarm.vmStuck": (p) => `Die virtuelle Maschine ${p.vm} konnte nicht auf einem anderen Host neu gestartet werden.`,
   "alarm.noFailover": (p) => `Zu wenig Ressourcen für das Failover von ${p.host}: ${p.need} GB Arbeitsspeicher vergeben, ${p.free} GB frei auf den anderen Hosts.`,
+  "alarm.feedHigh": (p) => `Einspeisung ${p.feed} von ${p.rack} liegt bei ${p.percent}% ihres Limits.`,
+  "alarm.noFeedFailover": (p) => `Zu wenig Leistung für das Failover von ${p.rack}: Einspeisung A und B ziehen zusammen ${p.percent}% des Limits einer Einspeisung.`,
 } satisfies Dict;

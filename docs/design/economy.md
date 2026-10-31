@@ -1150,9 +1150,11 @@ Used devices are never insured, cannot be leased and resell from the price paid 
 | Feed | Effect | Price |
 | --- | --- | --- |
 | Feed A | Included with every position, at the datacenter's kW per position | In the rent |
-| Feed B | Second feed; servers with two power supplies survive a feed failure. The load must fit one feed for that to hold | 40% of the position price per month |
+| Feed B | Second feed at the same limit as A; servers with two power supplies split their draw over both and survive a feed failure while A and B together fit one feed's limit | 40% of the position price per month |
 | High-density feed | Doubles the position's kW limit | 60% of the position price per month |
 | Basement circuit | One extra household circuit, +3 kW | €400 once |
+
+**Breakers.** Every feed, the basement circuit included, carries 80% of its limit continuously, as the electrical code rates a breaker for loads that run three hours or more. A feed above its limit trips at once; a feed above 80% of it trips after three hours there. Servers that hang on the tripped feed alone switch off and stay off. Single-supply servers, network gear and customer equipment hang on feed A. A dual-fed server draws half its power from each feed, so when a feed fails or trips its whole draw moves to the other one; when that exceeds one feed's limit, the other feed trips as well and every server in the rack goes dark for the outage. Customer colocation is only placed in a rack while its whole draw stays under 80% of one feed.
 
 **Monitoring.** Without monitoring, failures only show as lights on the device fronts. Monitoring is a tier 1 skill in Research.
 

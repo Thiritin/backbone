@@ -49,6 +49,8 @@ export default {
   "event.feedDark.text": (p) => `A alimentação ${p.feed} de ${p.rack} falhou e os seus servidores ficaram sem energia durante ${duration(Number(p.minutes))}.`,
   "event.feedCarried.title": () => "Falha de alimentação",
   "event.feedCarried.text": (p) => `${p.rack} manteve-se online durante uma falha de ${duration(Number(p.minutes))} da alimentação ${p.feed}.`,
+  "event.feedCascade.title": () => "Falha de alimentação",
+  "event.feedCascade.text": (p) => `A alimentação ${p.feed} de ${p.rack} falhou e a outra alimentação não aguentou toda a carga e disparou. Todos os seus servidores ficaram sem energia durante ${duration(Number(p.minutes))}.`,
   "event.seized.title": () => "Servidor apreendido",
   "event.seized.text": (p) => `${p.agency} levou ${p.device} de ${p.location}.`,
   "event.seizedBack.title": () => "Servidor devolvido",
