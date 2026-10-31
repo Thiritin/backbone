@@ -4,6 +4,7 @@
 .sw ul { margin: 0; }
 .sw table { border-collapse: collapse; }
 .sw th, .sw td { padding: 6px 14px 6px 0; text-align: left; vertical-align: top; }
+.sw tr:has(.sws-iso) > td { vertical-align: middle; }
 .sw .num { font-variant-numeric: tabular-nums; }
 .sws-note { margin-top: 10px; }
 .sws-cmd { position: relative; max-width: 760px; }

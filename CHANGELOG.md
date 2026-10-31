@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-31
 
+- Vendor and software websites now show their logos centred and complete in every era, and the ISO download buttons line up with their release rows.
 - Rented space now runs on a contract with the provider: cancelling gives one, three or six months of notice to the end of a month, the rent stays at the agreed price, and a location that still holds hardware at the end date keeps its contract one more month.
 - The free email provider every new company starts on is now called GMix, with a new logo.
 - Picking the USB stick in the boot menu now starts its installer right away instead of dropping back to the POST screen.
