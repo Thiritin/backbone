@@ -1,12 +1,58 @@
+/* Era tokens shared by every app: radii, hairline width, selection fill, lift and well shadows follow the installed Pear OS. */
+:root {
+  --ar-card: 10px; --ar-pane: 8px; --ar-sheet: 12px; --ar-chip: 12px; --ar-field: 7px; --ar-bw: 0.5px;
+  --ar-lift: none; --ar-head: none; --ar-bar: none;
+  --ar-well: 0 0 0 0 transparent; --ar-glow: 0 0 0 0 transparent;
+}
+
+/* Panthera (2003): square-cornered boxes, 1px borders, pinstriped panels, blue gel selection, glossy barber-pole bars. */
+:root[data-os="aqua"] {
+  --ar-card: 5px; --ar-pane: 3px; --ar-sheet: 6px; --ar-chip: 11px; --ar-field: 2px; --ar-bw: 1px;
+  --ar-sel: linear-gradient(color-mix(in oklch, var(--gel), white 40%), var(--gel) 50%, color-mix(in oklch, var(--gel), black 10%) 51%, color-mix(in oklch, var(--gel), white 20%));
+  --ar-sel-ink: white;
+  --ar-head: linear-gradient(color-mix(in oklch, var(--bar-top), var(--win) 45%), color-mix(in oklch, var(--bar-bottom), var(--win) 55%));
+  --ar-lift: 0 1px 2px oklch(0 0 0 / 0.2);
+  --ar-well: inset 0 1px 2px oklch(0 0 0 / 0.3);
+  --ar-glow: 0 0 0 3px oklch(0.72 0.13 245 / 0.55);
+  --ar-bar: linear-gradient(oklch(1 0 0 / 0.5), oklch(1 0 0 / 0.08) 50%, oklch(0 0 0 / 0.1) 51%, oklch(1 0 0 / 0.15)), repeating-linear-gradient(-45deg, oklch(1 0 0 / 0.28) 0 5px, transparent 5px 10px);
+}
+
+/* Leapard (2007): 1px borders, unified grey headers, softer gel, plain gloss on bars. */
+:root[data-os="leopard"] {
+  --ar-card: 6px; --ar-pane: 4px; --ar-sheet: 6px; --ar-chip: 11px; --ar-field: 3px; --ar-bw: 1px;
+  --ar-sel: linear-gradient(color-mix(in oklch, var(--gel), white 30%), var(--gel));
+  --ar-sel-ink: white;
+  --ar-head: linear-gradient(color-mix(in oklch, var(--bar-top), var(--win) 55%), color-mix(in oklch, var(--bar-bottom), var(--win) 70%));
+  --ar-lift: 0 1px 3px oklch(0 0 0 / 0.18);
+  --ar-well: inset 0 1px 2px oklch(0 0 0 / 0.22);
+  --ar-glow: 0 0 0 3px oklch(0.72 0.12 248 / 0.5);
+  --ar-bar: linear-gradient(oklch(1 0 0 / 0.35), oklch(1 0 0 / 0.05) 55%, oklch(0 0 0 / 0.06));
+}
+
+/* Yosemighty (2014): flat boxes with thin borders, 4 to 6px corners and a thin blue focus ring. */
+:root[data-os="yosemite"] {
+  --ar-card: 5px; --ar-pane: 4px; --ar-sheet: 6px; --ar-chip: 4px; --ar-field: 3px; --ar-bw: 0.5px;
+  --ar-glow: 0 0 0 2px oklch(0.7 0.13 250 / 0.5);
+}
+
+/* Tahoo (2025): large radii, capsule fields, specular glass edges. */
+:root[data-os="tahoe"] {
+  --ar-card: 20px; --ar-pane: 14px; --ar-sheet: 26px; --ar-chip: 999px; --ar-field: 999px; --ar-bw: 0.5px;
+  --ar-lift: inset 0 1px 0 oklch(1 0 0 / 0.55), 0 8px 24px -14px oklch(0 0 0 / 0.35);
+  --ar-glow: 0 0 0 3px color-mix(in oklch, var(--accent) 35%, transparent);
+  --ar-bar: linear-gradient(oklch(1 0 0 / 0.35), transparent);
+}
+:root[data-os="tahoe"][data-theme="dark"] { --ar-lift: inset 0 1px 0 oklch(1 0 0 / 0.14), 0 8px 24px -14px oklch(0 0 0 / 0.6); }
+
 .shop { flex: 1; min-width: 0; display: flex; }
 .shop-side { display: flex; flex-direction: column; gap: 1px; }
 .shop-side button.side-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; }
 .shop-side button.side-item:hover { background: var(--hover); }
 .shop-side button.shop-side-sub { padding-left: 24px; font-size: 12.5px; }
-.shop-side button.side-item.active { background: var(--accent); color: var(--accent-ink); }
+.shop-side button.side-item.active { background: var(--ar-sel, var(--accent)); color: var(--ar-sel-ink, var(--accent-ink)); }
 .shop-grid { flex: 1; min-width: 0; overflow: auto; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; align-content: start; }
-.shop-card { display: flex; flex-direction: column; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); min-width: 0; }
-.shop-pic { position: relative; height: 128px; display: grid; place-items: center; background: var(--win-side); border-radius: 10px 10px 0 0; border-bottom: 0.5px solid var(--line); }
+.shop-card { display: flex; flex-direction: column; border: var(--ar-bw) solid var(--line-strong); border-radius: var(--ar-card); background: var(--field); min-width: 0; }
+.shop-pic { position: relative; height: 128px; display: grid; place-items: center; background: var(--win-side); border-radius: var(--ar-card) var(--ar-card) 0 0; border-bottom: var(--ar-bw) solid var(--line); }
 .shop-name { display: grid; gap: 1px; padding: 10px 14px 0; }
 .shop-name strong { font-weight: 650; font-size: 12.5px; }
 .shop-name span { color: var(--text-2); font-size: 12px; }
@@ -14,7 +60,7 @@
 .shop-specs dt { font-size: 11px; font-weight: 550; color: var(--text-3); }
 .shop-specs dd { margin: 0; font-size: 12px; }
 .shop-vendor { align-self: flex-start; margin: 10px 14px 0; }
-.shop-buy { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; border-top: 0.5px solid var(--line); }
+.shop-buy { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; border-top: var(--ar-bw) solid var(--line); }
 .shop .grow { flex: 1; }
 .shop-qty { display: inline-flex; align-items: center; gap: 2px; }
 .shop-qty .btn { width: 24px; height: 24px; }
@@ -22,7 +68,7 @@
 .shop-qty .num { min-width: 22px; text-align: center; }
 .shop-none { color: var(--text-3); padding: 8px; }
 .shop-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.shop-bar { height: 44px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 10px; border-bottom: 0.5px solid var(--line); background: var(--win-bar); }
+.shop-bar { height: 44px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 10px; border-bottom: var(--ar-bw) solid var(--line); background: var(--win-bar); }
 .shop-bar .btn[aria-pressed="true"] { background: color-mix(in oklch, var(--text) 8%, transparent); color: var(--text); }
 .shop-count { margin-left: 2px; color: var(--text-3); }
 .shop-count[data-full] { min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); text-align: center; animation: shop-bump 0.4s ease-out; }
@@ -30,18 +76,18 @@
 @media (prefers-reduced-motion: reduce) { .shop-count[data-full] { animation: none; } }
 .shop-body { flex: 1; min-height: 0; display: flex; }
 .shop-muted { color: var(--text-3); }
-.shop-cart { width: 380px; flex: none; display: flex; flex-direction: column; border-left: 0.5px solid var(--line); background: var(--win); overflow: auto; }
+.shop-cart { width: 380px; flex: none; display: flex; flex-direction: column; border-left: var(--ar-bw) solid var(--line); background: var(--win); overflow: auto; }
 .shop-cart-h { display: flex; align-items: center; padding: 12px 16px 8px; }
 .shop-cart-h h3 { font-size: 12.5px; font-weight: 650; }
-.shop-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 8px 8px 16px; border-top: 0.5px solid var(--line); }
+.shop-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 8px 8px 16px; border-top: var(--ar-bw) solid var(--line); }
 .shop-line-parts { flex: 1 0 100%; padding-left: 64px; font-size: 11.5px; color: var(--text-2); }
 .shop-line-name { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .shop-line-name strong { font-weight: 600; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shop-line-name span { font-size: 11.5px; color: var(--text-2); }
 .shop-line-total { min-width: 62px; text-align: right; }
-.shop-cart-total { display: flex; align-items: center; padding: 10px 16px; border-top: 0.5px solid var(--line-strong); font-weight: 600; }
+.shop-cart-total { display: flex; align-items: center; padding: 10px 16px; border-top: var(--ar-bw) solid var(--line-strong); font-weight: 600; }
 .shop-pay { display: grid; gap: 6px; padding: 4px 12px 12px; }
-.shop-offer { display: grid; gap: 4px; padding: 8px 10px; border-radius: 8px; border: 0.5px solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.shop-offer { display: grid; gap: 4px; padding: 8px 10px; border-radius: var(--ar-pane); border: var(--ar-bw) solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: left; cursor: pointer; }
 .shop-offer:first-child { display: flex; align-items: center; }
 .shop-offer:hover { background: var(--hover); }
 .shop-offer[aria-checked="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
@@ -55,7 +101,7 @@
 
 .shop-pic .shop-customize { position: absolute; top: 8px; right: 8px; }
 .shop-buy strong { white-space: nowrap; }
-.shop-build { display: grid; gap: 6px; padding: 10px 14px 12px; border-top: 0.5px solid var(--line); }
+.shop-build { display: grid; gap: 6px; padding: 10px 14px 12px; border-top: var(--ar-bw) solid var(--line); }
 .shop-build .seg { justify-self: start; margin-bottom: 4px; }
 .shop-extra { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; font-size: 12px; }
 .shop-maker { display: inline-flex; align-items: center; gap: 6px; }
@@ -67,18 +113,18 @@
   box-shadow: inset 0 0 0 0.5px oklch(1 0 0 / 0.25), 0 1px 3px oklch(0 0 0 / 0.2);
 }
 .ps-tile svg.lucide { width: calc(var(--size) * 0.5); height: calc(var(--size) * 0.5); stroke-width: 1.9; }
-.ps-hero { display: grid; grid-template-columns: 1fr 260px; gap: 24px; align-items: center; padding: 28px 28px 28px 32px; border-radius: 14px; background: oklch(0.2 0.02 260); color: oklch(0.97 0 0); }
+.ps-hero { display: grid; grid-template-columns: 1fr 260px; gap: 24px; align-items: center; padding: 28px 28px 28px 32px; border-radius: calc(var(--ar-sheet) + 2px); background: oklch(0.2 0.02 260); color: oklch(0.97 0 0); }
 .ps-brand { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: oklch(0.8 0.01 260); }
 .ps-brand .intro-pear { width: 16px; height: 16px; color: inherit; }
 .ps-hero h2 { margin: 10px 0 6px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
 .ps-hero p { margin: 0; max-width: 34ch; color: oklch(0.82 0.01 260); line-height: 1.4; }
-.ps-feature { display: grid; justify-items: center; text-align: center; gap: 6px; padding: 18px 16px 16px; border-radius: 12px; background: oklch(1 0 0 / 0.07); cursor: default; }
+.ps-feature { display: grid; justify-items: center; text-align: center; gap: 6px; padding: 18px 16px 16px; border-radius: calc(var(--ar-card) + 2px); background: oklch(1 0 0 / 0.07); cursor: default; }
 .ps-feature:hover { background: oklch(1 0 0 / 0.1); }
 .ps-feature-name { margin-top: 6px; font-size: 15px; font-weight: 650; }
 .ps-feature-sub { font-size: 12px; color: oklch(0.8 0.01 260); line-height: 1.35; margin-bottom: 6px; }
 .ps-shelf h3 { margin: 0 0 6px; font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
 .ps-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); column-gap: 24px; }
-.ps-row { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border-bottom: 0.5px solid var(--line); border-radius: 8px; cursor: default; min-width: 0; }
+.ps-row { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border-bottom: var(--ar-bw) solid var(--line); border-radius: var(--ar-pane); cursor: default; min-width: 0; }
 .ps-row:hover { background: var(--hover); }
 .ps-row-text { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .ps-row-text strong { font-weight: 600; }
@@ -97,19 +143,19 @@
 .ps-detail-head h2 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
 .ps-detail-head p { margin: 4px 0 12px; color: var(--text-2); max-width: 48ch; }
 .ps-detail-actions { display: flex; gap: 8px; align-items: center; }
-.ps-facts { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border-block: 0.5px solid var(--line); }
+.ps-facts { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border-block: var(--ar-bw) solid var(--line); }
 .ps-facts div { padding: 12px 16px; display: grid; gap: 3px; }
-.ps-facts div + div { border-left: 0.5px solid var(--line); }
+.ps-facts div + div { border-left: var(--ar-bw) solid var(--line); }
 .ps-facts dt { font-size: 11px; font-weight: 600; color: var(--text-3); }
 .ps-facts dd { margin: 0; font-size: 14px; font-weight: 550; }
 .ps-includes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .ps-includes li { display: flex; align-items: center; gap: 8px; }
 .ps-includes svg.lucide { width: 15px; height: 15px; color: var(--accent-text); }
-.shop-filter { flex: none; display: flex; align-items: center; gap: 16px; overflow-x: auto; padding: 8px 16px; border-bottom: 0.5px solid var(--line); }
+.shop-filter { flex: none; display: flex; align-items: center; gap: 16px; overflow-x: auto; padding: 8px 16px; border-bottom: var(--ar-bw) solid var(--line); }
 .shop-filter-row { display: flex; align-items: center; gap: 6px; }
-.shop-filter select { height: 24px; padding: 0 6px; border: 0.5px solid var(--line-strong); border-radius: 6px; background: var(--field); font-size: 12px; }
+.shop-filter select { height: 24px; padding: 0 6px; border: var(--ar-bw) solid var(--line-strong); border-radius: var(--r-ctl); background: var(--field); font-size: 12px; }
 .shop-filter-h { white-space: nowrap; font-size: 11px; font-weight: 550; color: var(--text-3); margin-right: 2px; }
-.shop-chip { height: 24px; padding: 0 10px; border-radius: 12px; border: 0.5px solid var(--line-strong); background: var(--field); color: var(--text-2); font: inherit; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+.shop-chip { height: 24px; padding: 0 10px; border-radius: var(--ar-chip); border: var(--ar-bw) solid var(--line-strong); background: var(--field); color: var(--text-2); font: inherit; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
 .shop-chip:hover { background: var(--hover); }
 .shop-chip[aria-pressed="true"] { background: var(--accent-soft); border-color: transparent; color: var(--accent-text); }
 .shop-chip .num { color: var(--text-3); font-size: 11px; }
@@ -121,14 +167,14 @@
 .shop-side-toggle svg.lucide { width: 13px; height: 13px; transition: transform 120ms; }
 .shop-side-toggle.open svg.lucide { transform: rotate(90deg); }
 .shop-side-parent .side-item.active + .shop-side-toggle { color: var(--accent-ink); }
-.shop-side button.shop-side-soft { height: 34px; margin: 6px 0 2px; font-weight: 600; border: 0.5px solid var(--line-strong); background: var(--field); }
+.shop-side button.shop-side-soft { height: 34px; margin: 6px 0 2px; font-weight: 600; border: var(--ar-bw) solid var(--line-strong); background: var(--field); }
 .shop-side button.shop-side-soft.active { border-color: transparent; }
 .shop-soft-tile { width: 20px; height: 20px; flex: none; display: grid; place-items: center; border-radius: 5px; background: linear-gradient(180deg, oklch(0.62 0.17 255), oklch(0.52 0.17 265)); }
 .shop-side .shop-soft-tile svg.lucide { width: 13px; height: 13px; color: white; }
 .shop-view button { padding: 0 7px; display: grid; place-items: center; }
 .shop-view svg.lucide { width: 14px; height: 14px; }
 .shop-list { flex: 1; min-width: 0; overflow: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; align-content: start; }
-.shop-row { border-bottom: 0.5px solid var(--line); }
+.shop-row { border-bottom: var(--ar-bw) solid var(--line); }
 .shop-row-main { display: grid; grid-template-columns: 64px minmax(160px, 1.1fr) minmax(0, 2fr) auto; align-items: center; gap: 14px; padding: 8px 4px; }
 .shop-row-pic { height: 44px; display: grid; place-items: center; overflow: hidden; }
 .shop-row-name { display: grid; gap: 2px; min-width: 0; }
@@ -153,12 +199,12 @@
 .shop-detail { flex: 1; min-width: 0; overflow: auto; padding: 12px 24px 28px; display: flex; flex-direction: column; gap: 20px; }
 .shop-back { align-self: flex-start; margin-left: -8px; }
 .shop-detail-head { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
-.shop-detail-pic { width: 300px; height: 180px; flex: none; overflow: hidden; display: grid; place-items: center; border-radius: 12px; background: var(--win-side); border: 0.5px solid var(--line); }
+.shop-detail-pic { width: 300px; height: 180px; flex: none; overflow: hidden; display: grid; place-items: center; border-radius: calc(var(--ar-card) + 2px); background: var(--win-side); border: var(--ar-bw) solid var(--line); }
 .shop-detail-info { display: grid; gap: 10px; justify-items: start; }
 .shop-detail-info h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
 .shop-detail-info .shop-vendor { margin: 0; }
 .shop-detail-buy { flex-direction: column; align-items: flex-start; border-top: 0; padding: 0; gap: 10px; }
-.shop-detail-specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px 20px; margin: 0; padding: 16px 0; border-block: 0.5px solid var(--line); }
+.shop-detail-specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px 20px; margin: 0; padding: 16px 0; border-block: var(--ar-bw) solid var(--line); }
 .shop-detail-specs dt { font-size: 11px; font-weight: 550; color: var(--text-3); }
 .shop-detail-specs dd { margin: 0; font-size: 13px; }
 .shop-detail .shop-build { padding: 0; border-top: 0; max-width: 520px; }
@@ -166,3 +212,48 @@
 .shop-config .shop-vendor { margin: 0; }
 .shop-row-buy .shop-config, .shop-detail-info .shop-config { margin: 0; }
 .shop-cpu { max-width: 260px; font-size: 12px; }
+
+.shop-card, .shop-detail-pic, .shop-offer { box-shadow: var(--ar-lift); }
+.shop-bar, .shop-card .shop-buy { background-image: var(--ar-head); }
+.shop-filter select { box-shadow: var(--ar-well); }
+
+/* Panthera: pinstriped picture wells, glossy tiles, gel Get capsules and a brushed blue store hero. */
+:root[data-os="aqua"] .shop-pic { background: repeating-linear-gradient(var(--win-side) 0 2px, color-mix(in oklch, var(--win-side), var(--text) 5%) 2px 4px); }
+:root[data-os="aqua"] .shop-chip[aria-pressed="true"],
+:root[data-os="leopard"] .shop-chip[aria-pressed="true"] { background: var(--ar-sel); border-color: color-mix(in oklch, var(--gel), black 30%); color: white; }
+:root[data-os="aqua"] .ps-hero { background: linear-gradient(oklch(0.6 0.13 245), oklch(0.4 0.14 250)); box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.45), var(--ar-lift); }
+:root[data-os="aqua"] .ps-feature { background: oklch(1 0 0 / 0.14); border: 1px solid oklch(1 0 0 / 0.3); }
+:root[data-os="aqua"] .ps-tile,
+:root[data-os="leopard"] .ps-tile {
+  border-radius: 18%;
+  background: radial-gradient(ellipse 80% 45% at 50% 18%, oklch(1 0 0 / 0.55), transparent 70%), linear-gradient(180deg, color-mix(in oklch, var(--tile) 70%, white), var(--tile));
+}
+:root[data-os="aqua"] .ps-get,
+:root[data-os="leopard"] .ps-get {
+  border: 1px solid oklch(0 0 0 / 0.3); border-radius: var(--r-ctl); font-weight: 500; color: var(--text);
+  background: linear-gradient(oklch(1 0 0), var(--field) 50%, color-mix(in oklch, var(--field), black 8%) 51%, var(--field));
+}
+:root[data-os="aqua"] .ps-get.primary,
+:root[data-os="leopard"] .ps-get.primary { background: var(--ar-sel); border-color: color-mix(in oklch, var(--gel), black 30%); color: white; text-shadow: 0 -1px 0 oklch(0 0 0 / 0.25); }
+:root[data-os="aqua"] .ps-hero .ps-get:not(.primary),
+:root[data-os="leopard"] .ps-hero .ps-get:not(.primary) { background: oklch(1 0 0 / 0.2); border-color: oklch(1 0 0 / 0.5); color: white; text-shadow: none; }
+:root[data-os="aqua"] .ps-get:hover,
+:root[data-os="leopard"] .ps-get:hover { filter: brightness(0.95); }
+
+/* Leapard: graphite store hero with a reflection edge, glass tiles. */
+:root[data-os="leopard"] .ps-hero { background: linear-gradient(oklch(0.4 0.01 255), oklch(0.2 0.01 255)); box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.3), var(--ar-lift); }
+:root[data-os="leopard"] .ps-feature { background: oklch(1 0 0 / 0.1); border: 1px solid oklch(1 0 0 / 0.18); }
+
+/* Yosemighty: flat colour hero, circular tiles, 4px Get buttons. */
+:root[data-os="yosemite"] .ps-hero { background: oklch(0.5 0.17 255); }
+:root[data-os="yosemite"] .ps-feature { background: oklch(1 0 0 / 0.12); }
+:root[data-os="yosemite"] .ps-tile { border-radius: 50%; box-shadow: 0 1px 3px oklch(0 0 0 / 0.3); }
+:root[data-os="yosemite"] .ps-get,
+:root[data-os="yosemite"] .ps-get.big { border-radius: var(--r-ctl); }
+
+/* Tahoo: gradient glass hero, floating glass cart panel. */
+:root[data-os="tahoe"] .ps-hero { background: linear-gradient(135deg, oklch(0.5 0.17 290), oklch(0.52 0.15 230)); box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4); }
+:root[data-os="tahoe"] .ps-feature { background: oklch(1 0 0 / 0.16); box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.35); }
+:root[data-os="tahoe"] .ps-tile { border-radius: 28%; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4), 0 2px 6px oklch(0 0 0 / 0.2); }
+:root[data-os="tahoe"] .shop-cart { margin: 8px 8px 8px 0; border: var(--ar-bw) solid var(--line); border-radius: var(--ar-card); box-shadow: var(--ar-lift); background: color-mix(in oklch, var(--win), transparent 25%); backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8); }
+:root[data-os="tahoe"] .shop-offer { border-radius: var(--ar-pane); }
