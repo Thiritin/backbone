@@ -45,7 +45,7 @@ export function BankSite({ game, id, path, go }: { game: GameState; id: BankId; 
             : <a href="#" aria-current onClick={(e) => e.preventDefault()}>{t("bank.site.nav.login")}</a>}
         </nav>
         <main className="bks-main">
-          {!own ? <Login game={game} bank={bank} onIn={() => { setLogin(true); go(`${home}/banking/statement`); }} />
+          {!own ? <Login game={game} bank={bank} onIn={() => { setLogin(true); if (!path.startsWith("/banking/")) go(`${home}/banking/statement`); }} />
             : view === "statement" ? <Statement game={game} />
             : view === "transfer" ? <Transfer key={path} game={game} bank={bank} prefill={query} go={go} />
             : view === "orders" ? <Orders key={path} game={game} bank={bank} go={go} />
