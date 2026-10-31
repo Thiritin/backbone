@@ -3,7 +3,7 @@ import {
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { t } from "../../i18n/en";
-import { BillingApp } from "./billing/BillingApp";
+import { BooksApp, drafts, late, unmatched } from "./books/BooksApp";
 import { BrowserApp } from "./browser/BrowserApp";
 import { DevApp } from "./dev/DevApp";
 import { FinanceApp } from "./finance/FinanceApp";
@@ -24,7 +24,6 @@ import { StaffApp } from "./staff/StaffApp";
 import { WeatherApp } from "./weather/WeatherApp";
 import { TerminalApp } from "./terminal/TerminalApp";
 import { isFinal } from "../../sim/40-support/tickets";
-import { isUnpaid } from "../../sim/45-billing/billing";
 import { deviceHealth } from "../../sim/60-infra/status";
 
 export interface AppDef {
@@ -32,6 +31,8 @@ export interface AppDef {
   icon: ComponentType<MarkProps>;
   tile: string;
   about: string;
+  // The window title, when it differs from the dock name.
+  title?: string;
   hidden?: boolean;
   body?: ComponentType;
   // The red count on the dock tile.
@@ -50,8 +51,8 @@ export const APPS: AppDef[] = [
   { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: t("apps.about.Customers"), body: CustomersApp },
   { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: t("apps.about.Support"), body: SupportApp,
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length },
-  { name: "Billing", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: t("apps.about.Billing"), body: BillingApp,
-    badge: (s) => s.invoices.filter(isUnpaid).length },
+  { name: "Books", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: t("apps.about.Books"), body: BooksApp, title: t("books.title"),
+    badge: (s) => drafts(s) + unmatched(s) + late(s) },
   { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: t("apps.about.Finance"), body: FinanceApp },
   { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: t("apps.about.Staff"), body: StaffApp },
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: t("apps.about.Marketing"), body: MarketingApp },

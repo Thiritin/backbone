@@ -98,7 +98,7 @@ describe("billing rules", () => {
     bill(s, inv().dueAt + 14 * DAY - 1);
     expect(isSuspended(s, customer().id)).toBe(false);
     s.hour++;
-    expect(billingTick(s)).toEqual([{ app: "Billing", key: "event.suspended", params: { customer: "Ada", invoice: inv().number } }]);
+    expect(billingTick(s)).toEqual([{ app: "Books", key: "event.suspended", params: { customer: "Ada", invoice: inv().number } }]);
     expect(inv()).toMatchObject({ suspended: true, suspendedAt: s.hour });
     expect(customer().happiness).toBe(55);
     // A suspension the player lifts stays lifted.

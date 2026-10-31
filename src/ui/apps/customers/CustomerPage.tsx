@@ -18,7 +18,7 @@ import { workloadActions } from "../vms/migrate";
 import { consoleEntry } from "../products/parts";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import { PriceField } from "../sales/PriceField";
 import { ActivityLog } from "./ActivityLog";
 import { registryOf } from "../../../sim/30-customers/registry";
@@ -96,7 +96,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   const domains = game.domains.filter((d) => d.customerId === c.id);
   const tickets = game.tickets.filter((tk) => tk.customerId === c.id).sort((a, b) => b.createdAt - a.createdAt);
   const subject = (tk: (typeof tickets)[number]) => t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(game, tk));
-  const openInvoice = (id: string) => openApp("Billing", { kind: "invoice", id });
+  const openInvoice = (id: string) => openApp("Books", { kind: "invoice", id });
   const openTicket = (id: string) => openApp("Support", { kind: "ticket", id });
   const serviceMenu = (v: Service) => (): MenuEntry[] => {
     const w = v.endedAt === null ? game.workloads.find((x) => x.serviceId === v.id) : undefined;
@@ -115,7 +115,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   ];
   const domainMenu = (name: string) => (): MenuEntry[] => [
     c.churnedAt === null && { label: t("misc.renew"), run: () => act(renewDomain, name) },
-    { label: t("misc.openInBilling"), run: () => openApp("Billing", { kind: "domain", id: name }) },
+    { label: t("misc.openInBooks"), run: () => openApp("Books", { kind: "customer", id: c.id }) },
   ];
   const tabs: [Tab, string, number?][] = [
     ["summary", t("misc.summary")],
@@ -226,7 +226,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                   <table className="table cus-table">
                     <tbody>
                       {domains.map((d) => (
-                        <tr key={d.name} onClick={() => openApp("Billing", { kind: "domain", id: d.name })} onContextMenu={menuOn(domainMenu(d.name))}>
+                        <tr key={d.name} onClick={() => openApp("Books", { kind: "customer", id: c.id })} onContextMenu={menuOn(domainMenu(d.name))}>
                           <td className="cus-subject"><span className="cus-strong">{d.name}</span></td>
                           <td className="cus-dim">{registryOf(d.name).name}</td>
                           <td className="r num">{formatDay(d.expiresAt)}</td>

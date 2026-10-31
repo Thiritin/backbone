@@ -48,7 +48,7 @@ describe("auto collections", () => {
     bill(s, inv().dueAt + 60 * DAY - 1);
     expect(inv().status).toBe("overdue");
     s.hour++;
-    expect(billingTick(s)).toEqual([{ app: "Billing", key: "event.collected", params: { customer: "Initech", invoice: inv().number } }]);
+    expect(billingTick(s)).toEqual([{ app: "Books", key: "event.collected", params: { customer: "Initech", invoice: inv().number } }]);
     expect(inv().status).toBe("writtenOff");
     expect(inv().reminders).toHaveLength(4);
     expect(customer().churnedAt).toBe(s.hour);
@@ -112,7 +112,7 @@ describe("suspension appeals", () => {
     bill(s, inv().extendedUntil! - 1);
     expect(isSuspended(s, customer().id)).toBe(false);
     s.hour++;
-    expect(billingTick(s)).toEqual([{ app: "Billing", key: "event.suspended", params: { customer: "Initech", invoice: inv().number } }]);
+    expect(billingTick(s)).toEqual([{ app: "Books", key: "event.suspended", params: { customer: "Initech", invoice: inv().number } }]);
     expect(serviceOnline(s, v)).toBe(false);
     // The second suspension of the same invoice brings a billing ticket, and the rule acts only once per extension.
     expect(s.tickets.filter((t) => t.kind === "appeal")).toHaveLength(1);

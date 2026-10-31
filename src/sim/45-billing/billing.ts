@@ -261,12 +261,12 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
     automated(s, inv, STEPS[i].key);
   }
   if (inv.status === "writtenOff") {
-    if (c) events.push({ app: "Billing", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
+    if (c) events.push({ app: "Books", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
     return;
   }
   const at = auto ? ruleSuspendsAt(s, inv) : null;
   if (at !== null && c?.churnedAt === null && s.hour >= at) {
-    if (suspend(s, inv)) events.push({ app: "Billing", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
+    if (suspend(s, inv)) events.push({ app: "Books", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
     automated(s, inv, "suspend");
   }
   if (!inv.suspended || inv.suspendedAt === null || inv.payAt !== null || !c || pendingTransfer(s, inv)) return;
@@ -275,7 +275,7 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
   const high = profileStats(c.profile).budget === "high";
   if (c.habit === "bad" && since === SUSPEND_CHURN_DAYS * DAY && chance(s.rng, SUSPEND_CHURN_CHANCE)) {
     toCollections(s, inv);
-    events.push({ app: "Billing", key: "event.suspendedLeft", params: { customer: c.name, invoice: inv.number } });
+    events.push({ app: "Books", key: "event.suspendedLeft", params: { customer: c.name, invoice: inv.number } });
   } else if (chance(s.rng, high ? SUSPENDED_PAY_ODDS_HIGH : SUSPENDED_PAY_ODDS[c.habit])) inv.payAt = s.hour + 1;
 }
 
@@ -412,7 +412,7 @@ export function billingTick(s: GameState): SimEvent[] {
   if (changed || issued.length) s.invoices = [...invoices, ...issued];
   if (arrived.length) s.transfers = [...s.transfers, ...arrived];
   if (monthStart && issued.length) {
-    events.push({ app: "Billing", key: "event.invoices", params: { count: issued.length, total: cents(issued.reduce((sum, i) => sum + invoiceTotal(i), 0)) } });
+    events.push({ app: "Books", key: "event.invoices", params: { count: issued.length, total: cents(issued.reduce((sum, i) => sum + invoiceTotal(i), 0)) } });
   }
 
   if (monthStart && s.loans.length) {

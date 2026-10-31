@@ -6,7 +6,7 @@ import { repayLoan, takeLoan } from "../../../sim/90-actions/billing";
 import { menuOn } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { More } from "../More";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import "../shop/shop.css";
 import "./bank.css";
 import { t } from "../../../i18n/en";

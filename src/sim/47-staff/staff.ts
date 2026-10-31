@@ -290,8 +290,8 @@ function chaseInvoices(s: GameState, clerks: Employee[], events: SimEvent[]): Bo
       const copy = { ...inv }, c = s.customers.find((x) => x.id === inv.customerId);
       s.invoices = s.invoices.map((x) => (x.id === inv.id ? copy : x));
       if (step !== "suspend") sendStep(s, copy, step);
-      else if (suspend(s, copy) && c) events.push({ app: "Billing", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
-      if (copy.status === "writtenOff" && c) events.push({ app: "Billing", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
+      else if (suspend(s, copy) && c) events.push({ app: "Books", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
+      if (copy.status === "writtenOff" && c) events.push({ app: "Books", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
       const share = took / (ACTION_MINUTES.checkInvoice + ACTION_MINUTES[key]);
       const log = (k: string, minutes: number) => logActivity(s, { customerId: inv.customerId, serviceId: null, by: e.name, key: `activity.${k}`, params: { invoice: inv.number }, minutes: minutes * share });
       log("checkInvoice", ACTION_MINUTES.checkInvoice);
