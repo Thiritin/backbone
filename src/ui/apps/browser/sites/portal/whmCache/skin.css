@@ -7,20 +7,20 @@
 .whm-menu a { text-decoration: none; padding: 2px 6px; }
 .whm-menu a.on { font-weight: 700; }
 .whm-main { flex: 1; min-width: 0; padding: 14px; }
-/* WHMCS 3 and 4: light grey header, blue links, boxed tables */
+/* WHMCache 3 and 4: light grey header, blue links, boxed tables */
 .whm-early { font-family: Tahoma, Verdana, sans-serif; font-size: 12px; }
 .whm-early .whm-head { background: #e8e8e8; border-bottom: 1px solid #b5b5b5; }
 .whm-early a { color: #1a4d80; }
 .whm-early .whm-nav { background: #f4f4f4; border-right: 1px solid #ccc; }
 .whm-early .pt-table { border: 1px solid #9a9a9a; }
 .whm-early .pt-table th { background: #dcdcdc; }
-/* WHMCS 5 and 6: Blend admin */
+/* WHMCache 5 and 6: Blend admin */
 .whm-mid .whm-head { background: linear-gradient(#2a5a8f, #1b4372); color: #fff; }
 .whm-mid .whm-head a { color: #fff; }
 .whm-mid a { color: #1b66b4; }
 .whm-mid .whm-nav { background: #eef3f8; border-right: 1px solid #c6d4e3; }
 .whm-mid .pt-table th { background: #e3ebf3; }
-/* WHMCS 8: flat admin with left navigation */
+/* WHMCache 8: flat admin with left navigation */
 .whm-late .whm-head { background: #fff; border-bottom: 1px solid #e3e6ea; }
 .whm-late a { color: #337ab7; }
 .whm-late .whm-nav { background: #2c3e50; }

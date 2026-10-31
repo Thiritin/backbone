@@ -6,7 +6,7 @@ import type { SkinProps } from "../skins";
 import "../portal.css";
 import "./skin.css";
 
-// Menus of the WHMCS admin and the screens under each.
+// Menus of the WHMCache admin and the screens under each.
 const MENUS: [string, ScreenName[]][] = [
   ["shop-admin.menuClients", ["clients"]],
   ["shop-admin.menuOrders", ["orders"]],
@@ -14,7 +14,7 @@ const MENUS: [string, ScreenName[]][] = [
   ["shop-admin.menuSetup", ["products", "options", "servers"]],
 ];
 
-// WHMCS 3 and 4 until 2011, Blend and the Six theme until 2019, then the flat admin.
+// WHMCache 3 and 4 until 2011, Blend and the Six theme until 2019, then the flat admin.
 export const eraOf = (hour: number): "early" | "mid" | "late" => (yearOf(hour) <= 2011 ? "early" : yearOf(hour) <= 2019 ? "mid" : "late");
 
 export function WhmCacheAdmin({ game, route, open }: SkinProps) {
