@@ -1,7 +1,7 @@
 // docs/design/software.md, section 10: what every console offers, as blocks each product lays out in its own chrome.
 import { ChangePackage, planChoices } from "./PackageForms";
 import { t } from "../../../../i18n/en";
-import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
+import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Pause, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
 import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
@@ -22,6 +22,8 @@ import { useStore } from "../../../store";
 import { disk, ram } from "../../hw";
 import { VM_STATE, vmLabel, vmState } from "../../products/parts";
 import { hoursText } from "../../vms/migrate";
+import { useHolds } from "./Holds";
+import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
 
 export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "packages" | "create";
@@ -43,7 +45,7 @@ export interface PanelAction { id: string; label: string; run: () => void; tone?
 
 const ICON: Record<string, LucideIcon> = {
   update: RefreshCw, auto: CalendarClock, php: Code, offline: PowerOff, resize: Maximize2, remove: Trash2, confirm: Trash2, cancel: X,
-  start: Play, stop: Square, restore: RotateCcw, migrate: ArrowRightLeft, console: Terminal, delete: Trash2,
+  hold: Pause, unhold: Play, terminate: Trash2, start: Play, stop: Square, restore: RotateCcw, migrate: ArrowRightLeft, console: Terminal, delete: Trash2,
 };
 export const ActionIcon = ({ id, size }: { id: string; size?: number }) => { const I = ICON[id] ?? Circle; return <I size={size} aria-hidden />; };
 
@@ -125,7 +127,7 @@ export interface Row {
 export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: string | null = null): Row[] {
   const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" | "plan" } | null>(null);
   const uses = useMemo(() => new Map(c.kind === "panel" ? game.workloads.filter((w) => w.clusterId === c.id).map((w) => [w.id, accountUse(game, w)] as const) : []), [game.hour, game.workloads.length, c.id, c.kind]); // eslint-disable-line react-hooks/exhaustive-deps
-  const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null);
+  const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null), holds = useHolds(game, c, f);
   return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], u = workloadUse(game, w), host = hostOfVm(game, w.id);
     const on = st === "running" || st === "down" || st === "frozen", site = game.services.find((v) => v.id === w.serviceId);
@@ -140,16 +142,16 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
       own && { id: "console", label: t("browser-consoles-2.console"), run: () => openConsole(w.id) },
       f.delete && own && !host && { id: "delete", label: t("browser-consoles-2.delete"), run: () => act(deleteVm, w.id) },
     ];
-    const o = open?.id === w.id ? open.kind : null;
+    const o = open?.id === w.id ? open.kind : null, hold = holds(w);
     return {
-      id: w.id, state, tone, pkg: site?.pkg, user: site?.username,
+      id: w.id, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, pkg: site?.pkg, user: site?.username,
       name: web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name,
       sub: [host?.panel ? consoleTitle(host.panel) : "", !web && site?.pkg].filter(Boolean).join(" · "),
       node: d ? d.hostname ?? d.label ?? d.name : "",
       cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu], traffic: uses.get(w.id)?.traffic ?? [0, 0], mail: uses.get(w.id)?.mailboxes ?? 0,
       usage: web ? t("browser-consoles-2.of", { used: disk(Math.round(u.diskGb)), total: disk(w.diskGb) }) : t("browser-consoles-2.usageVm", { cpu: num(u.vcpu), vcpu: w.vcpu, ram: ram(+u.ramGb.toFixed(1)), ramTotal: ram(w.ramGb) }),
-      actions: actions.filter((a): a is PanelAction => !!a),
-      panel: o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "plan" && site ? <ChangePackage game={game} c={c} serviceId={site.id} label={t(PLAN_LABEL[f.look] ?? "pkg.changePlan")} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : null,
+      actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])],
+      panel: o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "plan" && site ? <ChangePackage game={game} c={c} serviceId={site.id} label={t(PLAN_LABEL[f.look] ?? "pkg.changePlan")} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : hold?.panel ?? null,
     };
   });
 }
@@ -243,7 +245,7 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
   ];
   return {
     facts: facts.filter((x): x is Fact => !!x), actions: actions.filter((a): a is PanelAction => !!a),
-    note: f.update && !due ? t("browser-consoles-2.upToDate") : null, panel: sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null,
+    note: f.update && !due ? t("browser-consoles-2.upToDate") : null, panel: <>{sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null}<HostSettings game={game} c={c} /></>,
   };
 }
 
