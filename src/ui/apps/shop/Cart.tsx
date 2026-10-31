@@ -34,7 +34,7 @@ export function Cart() {
   const openLoc = useStore((s) => s.openLoc);
   const [to, setTo] = useState<string | null>(null);
   const dest = game.locations.find((l) => l.id === (to ?? openLoc)) ?? game.locations[0];
-  const wait = deliveryWait(game), year = yearOf(game.hour), total = cart.reduce((n, l) => n + unitPrice(l, year) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
+  const wait = deliveryWait(game, cart), year = yearOf(game.hour), total = cart.reduce((n, l) => n + unitPrice(l, year) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
   const offers = total ? leaseOffers(game, total) : [];
   const offer = offers.find((o) => o.id === pay);
   const best = Math.min(...offers.map((o) => o.total));
