@@ -5,6 +5,7 @@ import type { GameState } from "../50-state";
 import type { Cluster } from "./cluster";
 import { contention } from "./oversell";
 import { customerWorkloads, liveServices } from "./status";
+import { phpOldestInUse, phpRunning } from "./webpanel";
 
 // economy.md, PHP versions.
 export const PHP_TICKETS = 0.05;
@@ -20,8 +21,10 @@ export const hostPerf = (s: GameState, c: Cluster | undefined): number =>
   (c && ((c.kind === "panel" && s.hour <= c.phpUntil) || s.security.hacked.includes(c.id)) ? PHP_SLOW : 1) * contention(s, c);
 
 export const phpLag = (s: GameState, c: Cluster): number => phpBehind(c.php, yearOf(s.hour));
+// How far behind the oldest version a host still runs an account on is.
+export const phpUseLag = (s: GameState, c: Cluster): number => phpBehind(phpOldestInUse(s, c), yearOf(s.hour));
 // How-to tickets rise 5% per version behind, up to 30%.
-export const phpTickets = (s: GameState, c: Cluster): number => 1 + PHP_TICKETS * Math.min(PHP_TICKETS_CAP, phpLag(s, c));
+export const phpTickets = (s: GameState, c: Cluster): number => 1 + PHP_TICKETS * Math.min(PHP_TICKETS_CAP, phpUseLag(s, c));
 // The oldest version still supported in a year.
 export const phpSupported = (year: number): string => PHP[Math.max(0, PHP.findIndex((p) => p.version === phpAt(year)) - PHP_EOL + 1)].version;
 
@@ -31,7 +34,7 @@ export function phpAbuse(s: GameState, customerId: string): number {
   if (!services.size) return 1;
   const old = customerWorkloads(s, customerId).some((w) => {
     const c = w.clusterId && services.has(w.serviceId) ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
-    return c?.kind === "panel" && phpLag(s, c) >= PHP_EOL;
+    return c?.kind === "panel" && phpBehind(phpRunning(s, c, w.serviceId), yearOf(s.hour)) >= PHP_EOL;
   });
   return old ? PHP_ABUSE : 1;
 }
