@@ -737,12 +737,26 @@ Resolving the ticket adds the usual +5 happiness on top. Handling an appeal take
 
 **Billing rules.** The rules in the Reminders tab of Books send the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
 
+**Lexwear modules.** Lexwear sells add-on modules for Books on lexwear.de, each a one-time licence in 2005 euros. The licence key arrives by email a minute after the purchase and turns the module on in Books. Lexwear's newsletter offers each module once, when its count is first reached.
+
+| Module | Price | Does | Newsletter when |
+| --- | --- | --- | --- |
+| Helpdesk link | €149 | Create quote button on order tickets | 3 domains registered for customers |
+| Monthly run | €99 | Sends every draft invoice on the 1st at 09:00 | 10 customers |
+| Match by reference | €129 | Books each transfer whose reference names an open invoice and whose amount is exact | 10 transfers matched |
+| Automatic reminders | €99 | Sends the reminder, dunning and final notices on their due day under the billing rules | First suspension |
+| HBCI online banking | €79 | Pulls the bank statement and pays payables | Never |
+
+The billing rules say what is sent; bookkeepers and accountants carry them out in their work hours, the Automation research runs all of them, and Automatic reminders runs the notices up to the final one while suspensions and collections stay with staff or the research. Bookkeepers also send drafts and match transfers, writing off a shortfall below €1, before any reminder in the same hour; a second bookkeeper doubles the rate.
+
 **Time per action.** Every employee action takes time from their workday, so one employee can't carry the whole company. Staff divide these times by their speed (0.5 plus skill/100, so skill 50 takes the times as listed); bots work at twice the speed. The code keeps them in `ACTION_MINUTES` (src/sim/47-staff/activity.ts), and ticket times in `MINUTES` (the ticket table above).
 
 | Action | Who | Time |
 | --- | --- | --- |
 | Answer or resolve a ticket | Support agent | Ticket handling time above |
 | Check an invoice, before every billing action | Bookkeeper or accountant | 6 min |
+| Send a draft invoice | Bookkeeper | 5 min |
+| Match a bank transfer to its invoice | Bookkeeper | 3 min |
 | Send a payment reminder | Bookkeeper | 15 min |
 | Send a dunning notice | Accountant | 30 min |
 | Send a final notice | Accountant | 30 min |
@@ -1699,7 +1713,7 @@ A raise request left unanswered for 30 days counts as refused. Salaries are bill
 | Role | Task types |
 | --- | --- |
 | Support agent | How-to, billing, outage, upgrade, cancellation, abuse, suspension appeal |
-| Bookkeeper | Payment reminders |
+| Bookkeeper | Payment reminders, sending invoices, matching payments |
 | Accountant | Dunning notices, final notices |
 | Marketing manager | Campaigns, review platforms, trade fairs |
 
@@ -2298,6 +2312,18 @@ The loan limit is the higher of the level's minimum and 12× the average monthly
 
 **Bankruptcy.** When cash stays below zero for 30 days and no loan is available that covers the deficit, the company is insolvent and the game ends.
 
+**Account fees.** A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. netbunk, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys netbunk out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
+
+| Bank | Sole trader | Partnership | Limited company | Per booking (partnership, limited) |
+| --- | --- | --- | --- | --- |
+| Sparklasse | €8 | €12 | €16 | €0.30 |
+| Volksbunk | €6 | €9 | €12 | €0.25 |
+| Deutsche Bunk | €12 | €18 | €24 | €0.15 |
+| Postbunk | €4 | €6 | €8 | €0.40 |
+| netbunk | €0 | €5 | no account | none |
+| Fidorr | €0 | €6 | €12 | none |
+| Quonto | €9 | €15 | €25 | none |
+
 **SLA insurance.** The monthly premium is 2% of the recurring revenue from customers with an SLA, times an uptime factor: 1.0 at 99.95% or better over 90 days, 1.5 at 99.9% or better, and 2.5 below that. A missed SLA owes the customer 10% of their monthly fee per 0.1% of uptime below the promise, up to the full fee. The insurer pays those credits for three claims, then blocks the company for a year.
 
 **Tax.** Prices are without VAT, and VAT is not simulated. Corporate tax takes 30% of each year's profit in April of the following year, and losses carry forward to later years. Taxable profit is the year's ledger without loan principal; instalments count only their interest, and hardware is a cost in the year it is bought.
@@ -2481,3 +2507,24 @@ The solo bot reaches level 5 in 2012.8 instead of 2012.9. Neither bot goes bankr
 ## Shop systems
 
 Variants, licences, module prices, the custom script price of the hand-rolled form (€400 per software) and stock rules are in `shop.md`, section 2.3. The research "Shop systems" costs 60 know-how and 4 days. Shop licences are billed with marketing on the 1st.
+
+### Billing cycles
+
+A shop sells its products for a month, a quarter, a year or two years. A longer cycle is billed in advance at N times the monthly price less the cycle's discount. The hand-rolled form sells monthly and annual, ModemBill adds quarterly, OrderBocks adds biennial and the other systems sell all four.
+
+| Cycle | Months | Market discount |
+| --- | --- | --- |
+| Monthly | 1 | 0% |
+| Quarterly | 3 | 3% |
+| Annual | 12 | 10% |
+| Biennial | 24 | 15% |
+
+A form order draws its cycle from the profile's base shares (`CYCLE_SHARE` in `cycles.ts`: a private customer takes monthly 78%, quarterly 10%, annual 11%, biennial 1%; an enterprise 20, 10, 50, 20). Each offered non-monthly cycle's weight is its base share times `exp(8 * (d - m))`, where `d` is the discount the player sets and `m` the market discount; the weights are normalised over the offered cycles. Ten points above the market's discount multiplies a share by 2.2, ten below by 0.45. Cycles the player has not priced use the market discount.
+
+Lead conversion for form orders reads the advertised price level: the line's rate against the market for its middle size, times the weighted cycle price against the same weighting at market discounts. A changed rate or discount reaches new leads at once, where the sold-services index follows only after sales.
+
+A customer inside a paid term skips the monthly churn roll unless happiness is below 15. In the month before the term ends the customer rolls once with `min(0.9, N * base) + 0.5 * max(0, (50 - H) / 50)`, where `base` is the profile's monthly churn and `N` the term months. A customer who leaves inside a paid term, with no invoice open, gets the unused whole months back as a ledger entry.
+
+A renewal invoice for the next term goes out at the month start before a term ends, at the service's current price. Paying it extends the term by N months. A prepaid service has no monthly arrears lines.
+
+The balance model takes the annual share of form orders as a revenue discount.

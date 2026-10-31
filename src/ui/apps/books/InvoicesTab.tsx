@@ -23,7 +23,7 @@ export function InvoicesTab({ focus }: { focus: string | null }) {
   const name = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
   return (
     <>
-      <div className="fin-toolbar"><Locked label={t("books.monthlyRun")} /></div>
+      <div className="fin-toolbar"><Locked id="monthly-run" label={t("books.monthlyRun")} /></div>
       <div className="books-split">
         <div className="fin-scroll">
           {list.length === 0 ? <div className="fin-empty"><Receipt />{t("books.noInvoices")}</div> : (

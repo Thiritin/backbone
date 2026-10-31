@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { chooseShop } from "../src/sim/90-actions/shop";
 import { orderLead } from "../src/sim/30-market/orders";
 import { setupFee, specText } from "../src/sim/30-market/spec";
 import { hostFor, invoiceOf, nextStep, stepsDone } from "../src/sim/30-market/manual";
@@ -68,7 +69,7 @@ describe("custom orders", () => {
     // The order form's order waits for the steps like an email order, with the website's price as the accepted quote.
     s.cash = 1e6;
     setUpChannel(s, "website");
-    setUpChannel(s, "orderForm");
+    chooseShop(s, "handRolled");
     const placed = orderLead(s, "private", "Frankfurt", [], web, false);
     expect(placed.ticketId).not.toBeNull();
     expect(s.sales.requests.find((x) => x.id === placed.id)!).toMatchObject({ status: "accepted", form: true });
@@ -472,7 +473,8 @@ describe("quote first", () => {
     const s = readyGame(1);
     s.cash = 1e6;
     setUpChannel(s, "website");
-    setUpChannel(s, "orderForm");
+    chooseShop(s, "handRolled");
+    s.shop.optionDiscount = { annual: -3 };
     const customers = s.customers.length, r = orderLead(s, "private", "Frankfurt", [], web, false);
     const req = () => s.sales.requests.find((x) => x.id === r.id)!;
     expect(req()).toMatchObject({ form: true, status: "accepted", serviceId: null });

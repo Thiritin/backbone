@@ -36,6 +36,8 @@ import { startGame } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 import { OWNED, owns } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
+import { chooseShop } from "../src/sim/90-actions/shop";
+import { HAND_ROLLED } from "../src/sim/10-catalog/shops";
 import { bookMail } from "../src/sim/90-actions/mail";
 import { registerCompanyDomain, signRegistrar } from "../src/sim/90-actions/registrar";
 import { derivedDomain } from "../src/sim/30-customers/domains";
@@ -159,8 +161,9 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   const learn = () => {
     const next = ["products", "marketingBasics"].find((id) => !s.unlocks.includes(id));
     if (next && !s.training) research(s, next);
-    for (const c of ["website", "orderForm"] as const) if (!owns(s, c) && !needServer && s.cash >= OWNED[c].setup + 2000) setUpChannel(s, c);
-    for (const k of ["products", "orderForm"]) if (!(k in reached) && (s.unlocks.includes(k) || owns(s, k as "orderForm"))) reached[k] = Math.round((10 * s.hour) / MONTH) / 10;
+    if (!owns(s, "website") && !needServer && s.cash >= OWNED.website.setup + 2000) setUpChannel(s, "website");
+    if (owns(s, "website") && !s.shop.variant && !needServer && s.cash >= HAND_ROLLED.setup + 2000) chooseShop(s, "handRolled");
+    for (const k of ["products", "orderForm"]) if (!(k in reached) && (k === "orderForm" ? !!s.shop.variant : s.unlocks.includes(k))) reached[k] = Math.round((10 * s.hour) / MONTH) / 10;
   };
   // The cheapest line with more upload this year, once the basement's evening peak reaches 90% of the line.
   const upgradeLine = () => {

@@ -6,11 +6,42 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Order emails are now signed with the customer's postal address, and Create customer opens Books with the email beside the form, where a click on a line fills the field you are in.
 - Quotes are now documents in Books that you drag onto the order ticket, an accepted quote converts to the first invoice that you send and match like any other, and the Lexwear module Helpdesk link does the quote, account and invoice from the ticket.
+- Lexwear now sells modules for Books on lexwear.de: Monthly run, Match by reference and Automatic reminders take over the back office once you enter the licence key from Lexwear's email.
+- Bookkeepers can now be trained to send draft invoices and match incoming payments, including odd amounts, and a second bookkeeper gets through twice as much.
+- The hand-rolled order form is now a shop you buy once for 900 euro with no monthly fee, and it takes orders right away.
+- Panel hosts can keep up to two older PHP versions next to the newest, and you install them and pick one per domain in EasyApachy and Custom Build.
+- Game servers now run a named game such as Counter-Strife or Blockcraft, and the game panels sell them by slots or by RAM.
+- The weather app fills its whole window again and lists all your locations.
+- Bank account fees now depend on your legal form: a limited company pays more, branch banks charge partnerships and limited companies for every booking, and netbunk opens no account for a limited company.
 - Datacenter providers now announce your own IP block under your AS number for a one-off setup fee, so you no longer need your own BGP router for it.
 - Register domain and Transfer domain on an order now open your registrar's website, where you fill the owner from the customer record with a click and enter the auth code from the order email, while a shop system with the registrar module still registers its own orders.
 
 ## 2026-10-31
 
+- MinnIO keeps real buckets that you set to private, read only or public, and customers sometimes ask you to open one.
+- PowerDNZ, Mailpig and the VPN consoles show statistics, mail authentication results and connected users.
+- The VPN consoles list a certificate for every VPN user, and you can revoke and reissue them when a customer loses a laptop.
+- Games with many customers now run faster.
+- Each hypervisor console has its own package screen, such as VM Classes, Hardware Profiles, Plans and Flavors.
+- PowerDNZ lists real zones where you edit records, and a wrong address for a customer's site takes it offline until you fix it.
+- DirectAdmen, Pleskit, FreePanel, MultiKraft and Pterodaktyl now have a packages screen and a create form for new orders.
+- Every game and infrastructure console now has Task log, Logs and Licence pages, and cPanic has a Service Manager.
+- Every hosting and game panel account can now be suspended, unsuspended and terminated from the console itself.
+- A shady customer's spam can get your mail server blacklisted, which costs every mail customer happiness until it is delisted.
+- You now manage packages and create customer accounts in the consoles instead of the Support order screen.
+- The whole desktop, every app and the web now follow the era of your Pear OS release, and Settings has a wallpaper picker and Credits.
+- You can learn Fraud screening in Research and turn on MaxMined to screen every new order.
+- Account lists show disk and bandwidth bars that turn amber at 80 percent and red at 95 percent of the limit.
+- Software installations hold up to 12 named packages, each sized for one product.
+- The basement router now stands on a shelf in the rack and only passes traffic while its DSL port is cabled to the line jack.
+- Mailpig has a working mail queue, and a broken service now causes an outage for its customers.
+- A technician can now mount a whole stack of stored units at once.
+- The cPanic, Pleskit, DirectAdmen and FreePanel consoles have a Task log page that lists installs, updates, moves and backups in progress.
+- Each Pear OS release now looks like the Mac of its year and comes with its own wallpaper.
+- Rooms now heat up with the racks in them, and a cooling failure can overheat a datacenter hall.
+- The Website app is gone, and you open your company site in the Browser.
+- Some new orders are paid with a stolen card or PayPail account, which leads to chargebacks.
+- Mounting bought hardware in a datacenter rack now takes time and costs money for the work.
 - You now choose a bank when you register the company and run the business account on its website, confirming every transfer with a TAN from your TAN list, a text message or the bank's app, and you can apply there for a credit card, an overdraft and standing orders.
 - Your line, power, datacenter, Pear and registrar bills now arrive as invoices by email that you pay by transfer before they are due, or that a supplier debits by itself once you set up a direct debit on its website, and an invoice left unpaid slows or cuts your line, switches the power off, pauses subscriptions or suspends domains.
 - Billing is now Books, the Lexwear Office bookkeeping program, where you see each customer's postal address and send every month's invoices yourself as PDF.

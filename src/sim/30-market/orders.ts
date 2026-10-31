@@ -2,6 +2,8 @@
 // Numbers in economy.md, Orders by email.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
+import { CYCLE_MONTHS } from "../10-catalog/cycles";
+import { drawCycle, startTerm, termLine, termPrice } from "./cycles";
 import { LINE_NAME, offerPrice, setupFee, specText } from "./spec";
 import { applyStep, AUTOMATION, canAutomate, isStep, issueInvoice, ORDER_PAY_DAYS } from "./manual";
 import { PRODUCTS, type Spec } from "../10-catalog/products";
@@ -17,7 +19,7 @@ import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "../90-actions/hardware";
 import { missingFor, needFor, referenceFor, REQUEST_HOURS, requestName, senderFor, type SalesRequest } from "./market";
 import { addRequest, cancelShopOrder, editRequest, fulfil, loseRequest, nextSpec, say, targetFor } from "./sales";
-import { deployable, hasModule, moduleFor, shopActive, takeStock } from "../80-business/shop";
+import { deployable, hasModule, moduleFor, shopStocked, takeStock } from "../80-business/shop";
 import { companyParams, variant } from "../40-support/replies";
 import { failsScreen, reviewing, rollFraud, screening } from "../45-billing/fraud";
 
@@ -59,20 +61,22 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   const key = s.nextId, spec = given ?? nextSpec(s, need, profile), reference = referenceFor(s, profile, need.product, spec, need.sla), discount = discountFor(s, profile);
   // One in three web customers already owns the domain they name.
   const owned = !lead && email && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
-  const shop = !email && shopActive(s);
+  const shop = !email && shopStocked(s);
   const fraud = !lead && rollFraud(s, key, need.product, yearOf(s.hour), email);
   const screened = !lead && screening(s);
   if (screened) s.screenChecks++;
   const declined = screened && failsScreen(s, key, fraud);
   if (shop && !declined) takeStock(s, need.product);
   const price = email ? reference : offerPrice(s, need.product, spec, need.sla);
+  const cycle = email ? "monthly" : drawCycle(s, profile, need.product, rand(hashRng(s.seed, key, 281))), months = CYCLE_MONTHS[cycle];
   const budget = lead ? lead.budget : email ? ORDER_BUDGET[0] + (ORDER_BUDGET[1] - ORDER_BUDGET[0]) * rand(hashRng(s.seed, key, 263)) : 1;
   let r = addRequest(s, {
     kind: "order", customerId: null, ...who, profile, city, product: need.product, spec, sla: need.sla, reference, discount, budget, shady: !!lead?.shady, ...(fraud && { fraud }),
     serviceId: null, ticketId: null, deadline: s.hour + REQUEST_HOURS,
   }, lead ? lead.key ?? `sales.msg.${need.product}.${variant}` : `order.msg.${need.product}.${variant}`);
   r = editRequest(s, r.id, (x) => ({
-    quote: Math.round(price * (1 - discount) * 100) / 100,
+    quote: Math.round((termPrice(s, price * (1 - discount), cycle) / months) * 100) / 100,
+    ...(months > 1 && { cycle }),
     ...(shop && { shop: true }),
     ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0, ...(owned && { auth: authCode(s.seed, x.id) }) } })) }),
   }));
@@ -119,15 +123,15 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   return r;
 }
 
-// The order form bills at once: the line's setup fee and the first month, which the monthly run then skips.
+// The order form bills at once: the line's setup fee and the first term, which the monthly run then skips.
 function formInvoice(s: GameState, id: string): void {
   const r = s.sales.requests.find((x) => x.id === id)!, label = s.services.find((v) => v.id === r.serviceId)?.label ?? requestName(r), fee = setupFee(s, r.product);
   const lines: InvoiceLine[] = [
     ...(fee > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: fee }] : []),
-    { serviceId: null, key: "invoice.line.firstMonth", params: { label }, amount: r.quote! },
+    termLine(r, label),
   ];
   issueInvoice(s, r.customerId!, lines, ORDER_PAY_DAYS - 1);
-  s.services = s.services.map((v) => (v.id === r.serviceId ? { ...v, prepaidUntil: s.hour + 730 } : v));
+  s.services = s.services.map((v) => (v.id === r.serviceId ? startTerm(s, v, r.cycle) : v));
 }
 
 export function firstOrder(s: GameState, events: SimEvent[]): void {

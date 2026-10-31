@@ -1,4 +1,5 @@
 import type { Resources, Sla, Spec } from "../10-catalog/products";
+import type { Cycle } from "../10-catalog/cycles";
 import type { Address } from "./addresses";
 
 export type Profile = "private" | "gamer" | "hobbyDev" | "soleProp" | "smallBiz" | "agency" | "office" | "onlineShop" | "enterprise";
@@ -41,6 +42,10 @@ export interface Service { id: string; customerId: string; product: Product; lab
   viaShop?: boolean;
   // The hour up to which an email order's first invoice paid it.
   prepaidUntil?: number;
+  // A multi-month billing cycle: the hour the paid term ends, its cycle, and the term end the churn roll already ran for.
+  termEnd?: number;
+  cycle?: Cycle;
+  rolledAt?: number;
   // A retention discount: the hourly price from before it and the month starts left until the price returns.
   discount?: { was: number; months: number } }
 export const activeServices = (services: Service[], customerId: string): Service[] => services.filter((v) => v.customerId === customerId && v.endedAt === null);
