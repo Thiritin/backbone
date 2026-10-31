@@ -6,6 +6,7 @@ import { HOT_RAM } from "./ha";
 import { rackPower, working } from "./status";
 import { CONTINUOUS } from "../20-world/datacenters";
 import { nodeUsage } from "./usage";
+import { cephRebalancing } from "./replica";
 
 // Booked vCPUs per core a mixed cluster still runs at its peak (economy.md, Usage curves: mixing peaks near 0.5 load),
 // and the share of the usable disk past which a pool counts as nearly full. RAM warns from HOT_RAM, where balancing starts.
@@ -67,7 +68,8 @@ export function clusterSummary(s: GameState, clusterId: string): ClusterSummary 
   for (const h of hosts) for (const k of KEYS) for (const f of ["capacity", "allocated", "used"] as const) total[k][f] += h.use[k][f];
   const stuck: Alarm[] = s.workloads.filter((w) => w.clusterId === c.id && w.stuck)
     .map((w) => ({ severity: "critical", on: { kind: "vm", id: w.id }, key: "alarm.vmStuck", params: { vm: w.hostname ?? w.id } }));
-  const alarms = [...hosts.flatMap(hostAlarms), ...stuck, ...failoverAlarm(c, hosts)];
+  const ceph: Alarm[] = cephRebalancing(s, c) ? [{ severity: "warning", on: { kind: "cluster", id: c.id }, key: "alarm.cephRebalancing", params: { cluster: c.name } }] : [];
+  const alarms = [...hosts.flatMap(hostAlarms), ...stuck, ...failoverAlarm(c, hosts), ...ceph];
   return { hosts, total, alarms: alarms.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "critical" ? -1 : 1)) };
 }
 

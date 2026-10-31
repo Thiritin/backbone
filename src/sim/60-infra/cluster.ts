@@ -16,6 +16,8 @@ import { hasPublicAddress, sellsFrom } from "./addresses";
 import { coverage } from "./maintenance";
 import type { PackageDef } from "../80-business/packages";
 import type { BackupJob, RestorePoint } from "./backups";
+import type { Ceph, Replica } from "./replica";
+import { firewallBlocks, type Firewall } from "./exposure";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
@@ -40,6 +42,10 @@ export interface Cluster {
   // Backup jobs, up to MAX_JOBS (backups.ts).
   jobs: BackupJob[];
   ramGuard?: boolean;
+  // A free server that casts one extra vote in a Proxmocks cluster (quorum.ts); missing is none.
+  qdevice?: string | null;
+  // A Proxmocks shared storage pool built from the node disks (replica.ts); missing is none.
+  ceph?: Ceph;
   // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
   oversell?: number | null;
   // The update channel; missing is Release (channel.ts).
@@ -74,6 +80,10 @@ export interface Workload extends Resources, Partial<MachineState> {
   stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
   // Restore points the backup jobs wrote; backupAt is the newest one's hour.
   points?: RestorePoint[];
+  // A copy of the disk on a second node of the cluster, refreshed on a schedule (replica.ts).
+  replica?: Replica | null;
+  // Own VMs only: the port macros the VM lets through (exposure.ts); missing or null is no firewall.
+  firewall?: Firewall | null;
   // The sold size when a package booked less; the service uses the sold size times its load.
   promised?: Resources;
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
@@ -142,7 +152,10 @@ export const cardsFree = (s: GameState, d: Device): number =>
 // What the workloads on a server book; web spaces inside a panel VM count in the VM's booking, a disk on a datastore on the datastore.
 export function nodeUsed(s: GameState, deviceId: string): Resources {
   const used = { ...ZERO };
-  for (const w of s.workloads) if (w.deviceId === deviceId && w.clusterId) { const b = booked(s, w); for (const k of KEYS) used[k] += w.datastore && k === "diskGb" ? 0 : b[k]; }
+  for (const w of s.workloads) {
+    if (w.replica?.toNode === deviceId) used.diskGb += w.diskGb;
+    if (w.deviceId === deviceId && w.clusterId) { const b = booked(s, w); for (const k of KEYS) used[k] += w.datastore && k === "diskGb" ? 0 : b[k]; }
+  }
   return used;
 }
 
@@ -150,7 +163,7 @@ type Disk = Resources & { datastore?: string };
 export const datastoreOn = (c: Cluster, r: Disk): boolean => !!r.datastore && c.datastores.some((x) => x.deviceId === r.datastore);
 // What a VM books on a node of the cluster: none of its disk while that is on one of the cluster's datastores.
 const onNode = (c: Cluster | undefined, r: Disk): Resources => (c && datastoreOn(c, r) ? { ...r, diskGb: 0 } : r);
-export const isDatastore = (s: GameState, deviceId: string): boolean => s.clusters.some((c) => c.datastores.some((x) => x.deviceId === deviceId));
+export const isDatastore = (s: GameState, deviceId: string): boolean => s.clusters.some((c) => c.datastores.some((x) => x.deviceId === deviceId) || c.qdevice === deviceId);
 export const datastoreUsed = (s: GameState, deviceId: string): number => s.workloads.reduce((n, w) => n + (w.datastore === deviceId ? w.diskGb + deltaGb(w) : 0), 0);
 export const datastoreCapacity = (s: GameState, deviceId: string): number => {
   const d = s.devices.find((x) => x.id === deviceId);
@@ -449,7 +462,7 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching) return false;
   if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;
-  if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm); }
+  if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm) && !firewallBlocks(s, c); }
   if (c && w.deviceId && s.frozen.includes(w.deviceId)) return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);

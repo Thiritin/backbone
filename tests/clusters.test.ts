@@ -157,6 +157,7 @@ describe("placement", () => {
   });
   it("skips cordoned and broken nodes and takes the zone of the cluster it lands in", () => {
     const { s, second, cus } = twoNodes();
+    s.clusters = s.clusters.map((x) => ({ ...x, qdevice: "dev4" }));
     ok(cordon(s, "dev3"));
     const id = ok(provisionService(s, cus, "vps", { label: "ada.com", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
     expect(workloadsOf(s, id)[0].deviceId).toBe(second);
