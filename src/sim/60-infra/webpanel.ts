@@ -9,12 +9,14 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { cmsOf } from "./apps";
 import type { Cluster } from "./cluster";
+import type { HostBans } from "./bans";
 
 export interface WebPanel {
   phpPool: Record<string, string[]>; // panel host id -> legacy PHP versions kept installed besides Cluster.php
   phpOf: Record<string, string>; // web hosting service id -> the PHP version it runs; missing means the host's newest
   phpBroken: Record<string, string>; // web hosting service id -> the version it broke on
   ssl: Ssl;
+  bans: Record<string, HostBans>; // Pleskit host id -> its Fail2ban jail
 }
 
 // economy.md, SSL certificates and AutoSSL: auto lists the cPanic hosts with AutoSSL on, expires the hour each domain's
@@ -23,12 +25,12 @@ export interface SslLog { hour: number; serviceId: string; ok: boolean }
 export interface Ssl { auto: string[]; expires: Record<string, number>; expired: string[]; log: SslLog[] }
 export const newSsl = (): Ssl => ({ auto: [], expires: {}, expired: [], log: [] });
 
-export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl() });
+export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {} });
 
 // A save keeps what it has per sub-record, so a save from an earlier milestone still gets the later sub-fields.
 export const mergeWebPanel = (base: WebPanel, data: Partial<WebPanel> | undefined): WebPanel => ({
   phpPool: { ...base.phpPool, ...data?.phpPool }, phpOf: { ...base.phpOf, ...data?.phpOf }, phpBroken: { ...base.phpBroken, ...data?.phpBroken },
-  ssl: { ...base.ssl, ...data?.ssl },
+  ssl: { ...base.ssl, ...data?.ssl }, bans: { ...base.bans, ...data?.bans },
 });
 
 export const POOL_MAX = 2;
