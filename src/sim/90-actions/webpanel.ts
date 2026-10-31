@@ -1,7 +1,7 @@
 import { yearOf } from "../00-core/time";
 import { PHP } from "../10-catalog/platforms";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
-import { accountsOf, phpCompat, phpInstalled, phpOlder, POOL_MAX, poolOf } from "../60-infra/webpanel";
+import { accountsOf, AUTOSSL_WINDOW_DAYS, autoSslOn, isCpanic, logRenewal, phpCompat, phpInstalled, phpOlder, POOL_MAX, poolOf, renewNow } from "../60-infra/webpanel";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
@@ -36,5 +36,47 @@ export function setAccountPhp(s: GameState, serviceId: string, version: string):
   if (!phpInstalled(s, c).includes(version)) return fail("error.phpNotInstalled");
   s.webpanel = { ...s.webpanel, phpOf: { ...s.webpanel.phpOf, [serviceId]: version } };
   phpCompat(s);
+  return { ok: true };
+}
+
+// A rebuild of the host's web software: its sites run slower for an hour.
+export function rebuildHost(s: GameState, hostId: string): ActionResult {
+  const c = panelHost(s, hostId);
+  if ("ok" in c) return c;
+  s.clusters = s.clusters.map((x) => (x.id === hostId ? { ...x, phpUntil: s.hour + PHP_UPGRADE_HOURS } : x));
+  return { ok: true };
+}
+
+const CHECK_MINUTES = 5;
+const busy = (s: GameState) => { s.playerBusyUntil = Math.max(s.playerBusyUntil, s.hour * 60) + CHECK_MINUTES; };
+
+// AutoSSL is a cPanic feature; the other panels renew by hand.
+export function setAutoSsl(s: GameState, hostId: string, on: boolean): ActionResult {
+  const c = s.clusters.find((x) => x.id === hostId);
+  if (!c || !isCpanic(c)) return fail("error.notCpanic");
+  const auto = s.webpanel.ssl.auto.filter((id) => id !== hostId);
+  s.webpanel = { ...s.webpanel, ssl: { ...s.webpanel.ssl, auto: on ? [...auto, hostId] : auto } };
+  return { ok: true };
+}
+
+// The player gives one domain a fresh certificate; any panel offers it.
+export function renewCertificate(s: GameState, serviceId: string): ActionResult {
+  const host = s.workloads.find((w) => w.serviceId === serviceId)?.clusterId, c = s.clusters.find((x) => x.id === host);
+  if (!c || c.kind !== "panel" || s.webpanel.ssl.expires[serviceId] === undefined) return fail("error.unknownService");
+  busy(s);
+  renewNow(s, serviceId);
+  return { ok: true };
+}
+
+// The WHM button: every certificate due within 30 days, or already expired, is renewed now.
+export function runAutoSslCheck(s: GameState, hostId: string): ActionResult {
+  const c = s.clusters.find((x) => x.id === hostId);
+  if (!c || !isCpanic(c)) return fail("error.notCpanic");
+  if (!autoSslOn(s, hostId)) return fail("error.autoSslOff");
+  busy(s);
+  const x = s.webpanel.ssl;
+  for (const v of accountsOf(s, hostId)) {
+    if (x.expires[v.id] !== undefined && x.expires[v.id] - s.hour <= AUTOSSL_WINDOW_DAYS * 24) { logRenewal(s, v.id, true); renewNow(s, v.id); }
+  }
   return { ok: true };
 }

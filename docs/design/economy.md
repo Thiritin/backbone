@@ -1641,6 +1641,20 @@ Anchors: cPanel could copy accounts between servers with WHM's "Copy an account"
 
 **Migration offers.** The player can ask a customer to agree to a move (gdd.md, Support, Migration offers). The customer answers when their reply time is up: below happiness 40 they decline, otherwise they accept and name a window from the segment of Noticing outages. Players want the first 02:00 to 06:00 after the answer, businesses the next weekday from 18:00 to 22:00 (never the day of the answer), private customers any time, so their move runs at once. The accepted move runs at the first hour of the window as the move above, with its downtime. A customer whose service moves from the basement into a datacenter gains 5 happiness. A move that has not run within 48 hours of the window's start costs 10 happiness and reopens the ticket. The numbers are `DECLINE_BELOW`, `BASEMENT_BONUS`, `MISSED_PENALTY` and `MISSED_AFTER_HOURS` in `src/sim/90-actions/moves.ts`, the windows `MOVE_WINDOW` in `src/sim/10-catalog/attention.ts`.
 
+### SSL certificates and AutoSSL
+
+From 2016 every web space on a panel host has a certificate of its own that lives 90 days; a domain with a certificate bought through the registrar is not affected. The first expiry of each domain is spread over the first 90 days. A certificate that runs out slows the site until it is renewed.
+
+| Effect | Value |
+| --- | --- |
+| AutoSSL (cPanic hosts only, switched on by the player) | Renews in the last 30 days; each daily attempt fails with 3% and is retried the next day |
+| Without AutoSSL, the customer renews on the last day | High skill 60%, medium 30%, low 5% |
+| Expiry | The site is slowed every day, the customer loses 12 happiness once and 60% open a ticket |
+| Renewing by hand (any panel) | 5 minutes of the player's time; ends the incident and gives +5 happiness if a ticket was open |
+| Check now (cPanic with AutoSSL on) | 5 minutes of the player's time; renews every certificate due within 30 days |
+
+AutoSSL is what makes the per-web-space cPanic licence worth its price: a host of 200 web spaces sees about 800 renewals a year, and most of them lapse without it.
+
 ## Staff: salaries, skill growth and quitting
 
 A junior support agent hired in 2005 costs the company about €2,600 a month. A senior asks about 37% more, which is less than the gap in work rate, so juniors win only if they stay.
