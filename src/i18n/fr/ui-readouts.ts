@@ -21,4 +21,5 @@ export default {
   "readouts.task.backup": (p) => `Sauvegarde de ${p.name}`,
   "readouts.task.lostDisks": (p) => `${p.name} a perdu ses disques`,
   "readouts.serverStatus": () => "État du serveur",
+  "readouts.trafficOf": (p) => `${p.used} sur ${p.total} Go de trafic`,
 } satisfies Dict;
