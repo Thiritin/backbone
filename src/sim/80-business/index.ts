@@ -1,6 +1,7 @@
 // docs/design/software.md, 8.2: the site index at the browser's home, by game year. Pure; the browser draws it.
 import { t } from "../../i18n/en";
 import { monthIndexOf, yearOf } from "../00-core/time";
+import { BANKS } from "../10-catalog/banks";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { registrarHost, REGISTRARS } from "../10-catalog/registrars";
 import { SERVER_OS } from "../10-catalog/server-os";
@@ -54,6 +55,7 @@ export function siteIndex(s: GameState): Category[] {
     { title: t("sim.index.cat.os"), rows: SERVER_OS.map((o) => row(o.name, `${displayHost(o.site.host)}/`, o.site.tagline)) },
     ...software,
     { title: t("sim.index.cat.resellers"), rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, t("sim.index.resellers"))) },
+    { title: t("sim.index.cat.banks"), rows: BANKS.filter((b) => b.from <= year).map((b) => row(b.name, `${displayHost(b.host)}/`, t("sim.index.banks"))) },
     { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(WIKI_TITLE, WIKI_URL, t("sim.index.wiki"))] },
     { title: t("sim.index.cat.hardware"), rows: VENDORS.filter((m) => vendorLive(m, monthIndexOf(s.hour))).map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => t(`sim.index.kind.${k}`)).join(", "))) },
     { title: s.company.name, rows: own },

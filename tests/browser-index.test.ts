@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BANKS } from "../src/sim/10-catalog/banks";
 import { SOFTWARE } from "../src/sim/10-catalog/platforms";
 import { SERVER_OS } from "../src/sim/10-catalog/server-os";
 import { newGame } from "../src/sim/50-state";
@@ -17,11 +18,19 @@ describe("browser index", () => {
     expect(resolve(s, "yahoy.com").page).toEqual({ kind: "index" });
     expect(siteIndex(s).map((c) => c.title)).toEqual([
       "Operating systems", "Virtualization", "Hosting panels", "Game panels", "DNS", "VPN", "Storage", "Mail", "Backup",
-      "Domain resellers", "Community", "Hardware", "Video",
+      "Domain resellers", "Banks", "Community", "Hardware", "Video",
     ]);
     const ready = readyGame(1);
     expect(siteIndex(ready).map((c) => c.title).slice(-3)).toEqual(["Hardware", ready.company.name, "Video"]);
     expect(titles(s, "Operating systems")).toEqual(["Debiant GNU/Lunix", "Windoors Server"]);
+  });
+
+  it("lists every bank from the year it opens, each resolving to its site", () => {
+    const s = newGame(1);
+    expect(titles(s, "Banks")).toEqual(BANKS.filter((b) => b.from <= 2005).map((b) => b.name));
+    for (const r of siteIndex(s).find((c) => c.title === "Banks")!.rows) expect(resolve(s, r.url).page.kind).toBe("bank");
+    skipTo(s, 2026);
+    expect(titles(s, "Banks")).toEqual(BANKS.map((b) => b.name));
   });
 
   it("lists a software from the year it exists", () => {
