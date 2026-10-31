@@ -86,3 +86,11 @@
 :root[data-era="tahoe"] .bmc-facts, :root[data-era="tahoe"] .kvm-target { padding: 16px 20px; border: 1px solid color-mix(in srgb, var(--line) 60%, transparent); border-radius: 22px; background: color-mix(in srgb, var(--panel) 62%, transparent); -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.75), 0 8px 28px rgb(0 0 0 / 0.07); }
 :root[data-era="tahoe"] .bmc-table { border-collapse: separate; border-spacing: 0; border-color: color-mix(in srgb, var(--line) 60%, transparent); border-radius: 18px; overflow: hidden; background: color-mix(in srgb, var(--panel) 62%, transparent); -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); }
 :root[data-era="tahoe"] .cx[data-look="ipmi"] .cx-btn, :root[data-era="tahoe"] .cx[data-look="ipmi"] .cx-tabs, :root[data-era="tahoe"] .cx-login[data-look="ipmi"] .cx-card { background: color-mix(in srgb, var(--panel) 65%, transparent); }
+
+/* Each brand marks a sensor outside its range in its own warning colour. */
+.cx[data-look="idraq"] { --sensor-warn: #e0a100; --sensor-crit: #c8102e; }
+.cx[data-look="ilol"] { --sensor-warn: #ff8300; --sensor-crit: #d9001b; }
+.cx[data-look="ipmi"] { --sensor-warn: #cc6600; --sensor-crit: #ff0000; }
+.cx[data-look="xclarify"] { --sensor-warn: #e2231a; --sensor-crit: #a00000; }
+.bmc-table tr[data-status="warning"] td { color: var(--sensor-warn, var(--bad)); font-weight: 600; }
+.bmc-table tr[data-status="critical"] td { color: var(--sensor-crit, var(--bad)); font-weight: 700; }

@@ -4,6 +4,8 @@ import { companyDomain } from "../../../../../sim/30-customers/domains";
 import { Actions, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import { hash, mailboxes } from "../services";
 import { useReadoutPages } from "../Readouts";
+import { checkLabel, checkTone } from "../ServiceReadouts";
+import { mailChecks } from "../../../../../sim/80-business/readouts";
 import { Blacklist, Relays } from "./Blacklist";
 import { CustomerQuotas, mb } from "./Quotas";
 import { defaultQuotaMb } from "../../../../../sim/60-infra/netsvc-quota";
@@ -36,8 +38,8 @@ export function Mailpig(p: PanelProps) {
             <tbody>{boxes.map((b) => <tr key={b}><td><b>{b}</b></td><td className="num">{mb(defaultQuotaMb("mailbox", yearOf(p.game.hour)))}</td><td className="num">{hash(`${b}m`) % 4000}</td><td><span className="cx-state ok">{t("browser-consoles-1.yes")}</span></td></tr>)}</tbody>
           </table></>}
           {tab === "Domains" && <table className="cx-table">
-            <thead><tr><th>{t("browser-consoles-1.domain")}</th><th>{t("browser-consoles-1.mpMailboxes")}</th><th>{t("browser-consoles-1.mpAliases")}</th><th>{t("browser-consoles-1.mpActive")}</th></tr></thead>
-            <tbody><tr><td><b>{domain}</b></td><td className="num">{boxes.length}</td><td className="num">2</td><td><span className="cx-state ok">{t("browser-consoles-1.yes")}</span></td></tr></tbody>
+            <thead><tr><th>{t("browser-consoles-1.domain")}</th><th>{t("browser-consoles-1.mpMailboxes")}</th><th>{t("browser-consoles-1.mpAliases")}</th><th>{t("readouts.mail.spf")}</th><th>{t("readouts.mail.dkim")}</th><th>{t("readouts.mail.dmarc")}</th><th>{t("browser-consoles-1.mpActive")}</th></tr></thead>
+            <tbody><tr><td><b>{domain}</b></td><td className="num">{boxes.length}</td><td className="num">2</td>{(["spf", "dkim", "dmarc"] as const).map((k) => { const v = mailChecks(p.game, domain)[k]; return <td key={k}><span className={`cx-state ${checkTone(v)}`}>{checkLabel(v)}</span></td>; })}<td><span className="cx-state ok">{t("browser-consoles-1.yes")}</span></td></tr></tbody>
           </table>}
           {tab === "Domains" && <Relays game={p.game} clusterId={p.c.id} />}
           {tab === "Queue" && <MailQueue game={p.game} clusterId={p.c.id} />}

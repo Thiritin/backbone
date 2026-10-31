@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { Resources } from "../../../../../sim/10-catalog/products";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { vmStats } from "../../../../../sim/60-infra/stats";
@@ -11,16 +10,11 @@ import { bootLines } from "../../../console/lunix";
 import { Chart, Donut, niceMax } from "../Chart";
 import { AlarmList, ConsoleThumb, isoName, MediaMenu, NodeList, ResourceBars, summaryOf, TaskLog, tasks, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
+import { flavorCounts, FLAVORS, flavorOf, same } from "./flavors";
 import "./horizont.css";
 
 // docs/design/software.md, section 9: the purple dashboard from 2010, the dark-sidebar one with the red mark from 2016.
 const ERAS = erasFrom(2010, 2016);
-const FLAVORS: [string, Resources][] = [
-  ["m1.tiny", { vcpu: 1, ramGb: 1, diskGb: 10 }], ["m1.small", { vcpu: 1, ramGb: 2, diskGb: 20 }], ["m1.medium", { vcpu: 2, ramGb: 4, diskGb: 40 }],
-  ["m1.large", { vcpu: 4, ramGb: 8, diskGb: 80 }], ["m1.xlarge", { vcpu: 8, ramGb: 16, diskGb: 160 }],
-];
-const same = (a: Resources, b: Resources) => a.vcpu === b.vcpu && a.ramGb === b.ramGb && a.diskGb === b.diskGb;
-const flavorOf = (r: Resources) => FLAVORS.find(([, x]) => same(x, r))?.[0] ?? t("browser-consoles-1.hzCustomFlavor", { spec: `${r.vcpu}/${r.ramGb}/${r.diskGb}` });
 const QUOTA_INSTANCES = 10;
 
 // The project Overview: the limit pies, then the day's usage summary and the usage per instance.
@@ -86,7 +80,7 @@ export function InstanceOverview({ game, v, flavor }: { game: GameState; v: Vm; 
   );
 }
 
-type Page = "overview" | "instances" | "images" | "keys" | "hypervisors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
+type Page = "overview" | "instances" | "images" | "keys" | "hypervisors" | "flavors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
 const TAB_LABELS = { Overview: () => t("browser-consoles-1.hzOverview"), Log: () => t("browser-consoles-1.hzLog"), Console: () => t("browser-consoles-1.console") };
 
 export function Horizont(p: PanelProps) {
@@ -106,7 +100,7 @@ export function Horizont(p: PanelProps) {
   const finish = () => { const id = nv.create(); if (id) { setLaunching(false); setPage({ vm: id, tab: "Overview" }); } };
   const nav: [string, string, [Page, string][]][] = [
     ["Project", t("browser-consoles-1.hzProject"), [["overview", t("browser-consoles-1.hzOverview")], ["instances", t("browser-consoles-1.hzInstances")], ["images", t("browser-consoles-1.hzImages")], ["keys", t("browser-consoles-1.hzKeyPairs")]]],
-    ["Admin", t("browser-consoles-1.hzAdmin"), [["hypervisors", t("browser-consoles-1.hzHypervisors")], ["system", t("browser-consoles-1.hzSystemInfo")]]],
+    ["Admin", t("browser-consoles-1.hzAdmin"), [["hypervisors", t("browser-consoles-1.hzHypervisors")], ["flavors", t("readouts.flavors")], ["system", t("browser-consoles-1.hzSystemInfo")]]],
   ];
   return (
     <div className="cx cx-hv hz" data-era={era}>
@@ -186,6 +180,16 @@ export function Horizont(p: PanelProps) {
             <ResourceBars use={health.use} labels={[t("browser-consoles-1.hzVcpuUsage"), t("browser-consoles-1.hzMemoryUsage"), t("browser-consoles-1.hzLocalDiskUsage")]} />
             <NodeList game={game} c={c} f={f} className="cx-table hz-table" />
             {health.alarms.length > 0 && <><h4 className="cx-h">{t("browser-consoles-1.hzAlarms")}</h4><AlarmList game={game} c={c} alarms={health.alarms} className="cx-table hz-table" /></>}
+          </>)}
+          {page === "flavors" && (<>
+            <h1>{t("readouts.flavors")}</h1>
+            <table className="cx-table hz-table">
+              <thead><tr><th>{t("browser-consoles-1.name")}</th><th>{t("browser-consoles-1.hzVcpus")}</th><th>{t("browser-consoles-1.hzRam")}</th><th>{t("browser-consoles-1.hzRootDisk")}</th><th>{t("readouts.instances")}</th></tr></thead>
+              <tbody>
+                {flavorCounts(vms.map((v) => v.w)).map(({ name, r, n }) => <tr key={name}><td>{name}</td><td className="num">{r.vcpu}</td><td className="num">{r.ramGb} GB</td><td className="num">{r.diskGb} GB</td><td className="num">{n}</td></tr>)}
+                <tr><td>{t("readouts.customFlavor")}</td><td /><td /><td /><td className="num">{vms.filter((v) => !FLAVORS.some(([, r]) => same(r, v.w))).length}</td></tr>
+              </tbody>
+            </table>
           </>)}
           {page === "system" && (
             <>
