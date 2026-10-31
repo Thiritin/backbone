@@ -70,7 +70,7 @@ export default {
   "browser-sites-1.thread.0.question": () => "Depuis hier soir, ma boutique n'affiche qu'une page blanche. Je n'ai rien changé de mon côté.",
   "browser-sites-1.thread.0.answer": () => "Le logiciel de ta boutique est plus ancien que la version de PHP du serveur. Remets l'ancienne version de PHP dans le panneau de contrôle sous Paramètres, puis mets la boutique à jour quand tu auras le temps.",
   "browser-sites-1.thread.1.title": () => "Mes e-mails atterrissent dans les spams",
-  "browser-sites-1.thread.1.question": () => "Tout ce que j'envoie à mes clients avec Notmail finit dans leur dossier spam.",
+  "browser-sites-1.thread.1.question": () => "Tout ce que j'envoie à mes clients avec GMix finit dans leur dossier spam.",
   "browser-sites-1.thread.1.answer": () => "Envoie via notre serveur sortant avec ton identifiant plutôt que via le serveur de ton fournisseur d'accès. Ainsi, le destinataire voit que l'e-mail vient bien de ton domaine.",
   "browser-sites-1.thread.2.title": () => "Comment restaurer les fichiers d'hier ?",
   "browser-sites-1.thread.2.question": () => "J'ai supprimé le mauvais dossier. Existe-t-il une sauvegarde ?",

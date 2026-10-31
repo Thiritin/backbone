@@ -70,7 +70,7 @@ export default {
   "browser-sites-1.thread.0.question": () => "Seit gestern Nacht zeigt mein Shop nur noch eine weiße Seite. Auf meiner Seite hat sich nichts geändert.",
   "browser-sites-1.thread.0.answer": () => "Deine Shop-Software ist älter als die PHP-Version auf dem Server. Stelle die PHP-Version im Kundenmenü unter Einstellungen zurück und aktualisiere den Shop, wenn du Zeit hast.",
   "browser-sites-1.thread.1.title": () => "Meine E-Mails landen im Spam",
-  "browser-sites-1.thread.1.question": () => "Alles, was ich mit Notmail an Kunden schicke, landet in deren Spam-Ordner.",
+  "browser-sites-1.thread.1.question": () => "Alles, was ich mit GMix an Kunden schicke, landet in deren Spam-Ordner.",
   "browser-sites-1.thread.1.answer": () => "Sende über unseren Postausgangsserver mit deinen Zugangsdaten statt über den Server deines Internetanbieters. So sieht die Empfängerseite, dass die E-Mail wirklich von deiner Domain kommt.",
   "browser-sites-1.thread.2.title": () => "Wie stelle ich Dateien von gestern wieder her?",
   "browser-sites-1.thread.2.question": () => "Ich habe den falschen Ordner gelöscht. Gibt es ein Backup?",
