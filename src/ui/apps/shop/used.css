@@ -5,17 +5,27 @@
 .used-rep strong { color: var(--text); font-weight: 650; }
 .used-price { display: grid; gap: 1px; }
 .used-price .shop-muted { font-size: 11px; font-weight: 550; }
-.used-input { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; border-radius: 7px; border: 0.5px solid var(--line-strong); background: var(--field); color: var(--text-2); }
+.used-input { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; border-radius: var(--r-field, 7px); border: var(--ar-bw) solid var(--line-strong); background: var(--field); color: var(--text-2); }
 .used-input:focus-within { border-color: var(--accent); }
 .used-input input { width: 64px; border: 0; background: transparent; color: var(--text); font: inherit; font-variant-numeric: tabular-nums; text-align: right; outline: none; }
 .used-mine-list { grid-column: 1 / -1; display: grid; gap: 6px; margin-top: 8px; }
 .used-mine-list h3 { font-size: 12.5px; font-weight: 650; margin: 0 0 2px; }
-.used-mine { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 0.5px solid var(--line-strong); border-radius: 10px; background: var(--field); }
+.used-mine { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: var(--ar-bw) solid var(--line-strong); border-radius: var(--ar-card); background: var(--field); }
 .used-mine-name { display: grid; gap: 1px; }
 .used-mine-name strong { font-weight: 650; font-size: 12.5px; }
 .used-history { display: grid; gap: 8px; max-width: 520px; }
 .used-history h3 { font-size: 12.5px; font-weight: 650; margin: 0; }
 .used-history table { border-collapse: collapse; font-size: 12.5px; }
 .used-history th { text-align: left; font-size: 11px; font-weight: 550; color: var(--text-3); padding: 4px 8px 4px 0; }
-.used-history td { padding: 6px 8px 6px 0; border-top: 0.5px solid var(--line); }
+.used-history td { padding: 6px 8px 6px 0; border-top: var(--ar-bw) solid var(--line); }
 .used-history th.num, .used-history td.num:last-child { text-align: right; padding-right: 0; }
+
+.used-input { box-shadow: var(--ar-well); }
+.used-input:focus-within { box-shadow: var(--ar-well), var(--ar-glow); }
+.used-mine { box-shadow: var(--ar-lift); }
+
+/* Panthera: square price fields with a blue focus glow. */
+:root[data-os="aqua"] .used-input:focus-within { border-color: oklch(0.6 0.12 245); }
+
+/* Tahoo: glass listing rows. */
+:root[data-os="tahoe"] .used-mine { background: color-mix(in oklch, var(--field), transparent 30%); }

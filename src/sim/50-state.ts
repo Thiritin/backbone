@@ -7,7 +7,7 @@ import { yearOf } from "./00-core/time";
 import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
-import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
+import type { BillingRules, HoldReason, Invoice, Loan } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
 import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
@@ -32,6 +32,7 @@ import type { Rates } from "./10-catalog/products";
 import type { Domain } from "./30-customers/registry";
 import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 import { newIps, type Ips } from "./60-infra/addresses";
+import { newNetSvc, type NetSvc } from "./60-infra/netsvc";
 import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
 import type { Listing } from "./10-catalog/used";
@@ -165,12 +166,17 @@ export interface GameState {
   autoOrders: boolean;
   // Whether server orders wait for a review by hand (45-billing/fraud.ts).
   reviewOrders: boolean;
+  // Whether MaxMined screens standard orders (needs the fraudScreening skill), and the checks billed next month start.
+  screenOrders: boolean;
+  screenChecks: number;
   // How many monthly checks in a row the payment provider found too many chargebacks: 1 warned, 2 higher fees.
   chargebackStrikes: number;
   // The shop system that takes orders, its modules and stock (docs/design/shop.md).
   shop: ShopState;
   // Customers whose services the player holds offline.
   heldCustomers: string[];
+  // Panel hosts: services the player holds offline one by one, with the reason shown in the consoles.
+  heldServices: Record<string, HoldReason>;
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
   tickets: Ticket[];
   playerBusyUntil: number;
@@ -259,6 +265,8 @@ export interface GameState {
   chadUsage: ChadUsage;
   // Public addresses, the LIR membership and its blocks (60-infra/addresses.ts).
   ips: Ips;
+  // Mail queues and broken DNS, certificates and storage sets of the infrastructure consoles (60-infra/netsvc.ts).
+  netsvc: NetSvc;
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
@@ -327,9 +335,10 @@ export const newGame = (seed: number): GameState => ({
   ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
-  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, chargebackStrikes: 0,
+  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
+  heldServices: {},
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
   homeLine: { id: MOMS_DSL.id, next: null },
@@ -347,6 +356,7 @@ export const newGame = (seed: number): GameState => ({
   registrar: null,
   chadUsage: newChadUsage(),
   ips: newIps(),
+  netsvc: newNetSvc(),
   news: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,

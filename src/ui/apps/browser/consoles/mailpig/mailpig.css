@@ -18,3 +18,5 @@
 
 .mp-login { align-items: center; justify-content: center; padding: 48px 16px; }
 .mp-card { display: flex; flex-direction: column; gap: 12px; width: min(340px, 100%); padding: 26px; background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: var(--r); }
+.mp-queue-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.mp-queue-bar b { flex: 1; }

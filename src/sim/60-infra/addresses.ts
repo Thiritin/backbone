@@ -10,6 +10,7 @@ import type { Product } from "../30-customers/customers";
 import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry, Location } from "../50-state";
 import { isOwnVm, vmById, type Workload } from "./cluster";
+import { bounceFactor, mailQueueTick } from "./netsvc-mail";
 import { jacked, locationOf } from "./status";
 import { mountedRouter } from "./routers";
 import type { SimEvent } from "../88-tick/tick";
@@ -352,11 +353,13 @@ function reputation(s: GameState, events: SimEvent[]): void {
 // Mail customers behind a listed address write in when their mail bounces.
 function bounces(s: GameState): void {
   for (const c of s.clusters.filter((x) => x.kind === "panel")) {
-    if (!mailAddress(s, c.id)?.listed) continue;
+    const addr = mailAddress(s, c.id);
+    if (!addr?.listed) continue;
+    const chance = BOUNCE_CHANCE * bounceFactor(s, addr.id);
     const ids = new Set(s.workloads.filter((w) => w.clusterId === c.id && w.serviceId).map((w) => w.serviceId));
     for (const v of s.services.filter((x) => ids.has(x.id) && x.endedAt === null && x.spec.mailboxes > 0)) {
       const cust = s.customers.find((x) => x.id === v.customerId);
-      if (!cust || cust.churnedAt !== null || rand(hashRng(s.seed, s.hour, Number(v.id.replace(/\D/g, "")), 263)) >= BOUNCE_CHANCE) continue;
+      if (!cust || cust.churnedAt !== null || rand(hashRng(s.seed, s.hour, Number(v.id.replace(/\D/g, "")), 263)) >= chance) continue;
       if (s.tickets.some((t) => t.customerId === cust.id && t.topic === "bounce" && !isFinal(t))) continue;
       createTicket(s, cust, "howTo", v.id, "bounce");
     }
@@ -373,6 +376,7 @@ export function addressTick(s: GameState): SimEvent[] {
   if (s.hour % 24 === RECONNECT_HOUR && dynamicLine(s)) reconnect(s);
   if (s.hour % 24 === 0) {
     reputation(s, events);
+    mailQueueTick(s);
     bounces(s);
   }
   return events;

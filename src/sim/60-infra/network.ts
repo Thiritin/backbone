@@ -12,7 +12,7 @@ import { datacenterById, homeLineById, inUs } from "../20-world/datacenters";
 import type { Service } from "../30-customers/customers";
 import { bump, createTicket, OUTAGE_WRITE_CHANCE, profileStats, slowed } from "../40-support/tickets";
 import { attention, segmentOf } from "../10-catalog/attention";
-import { isSuspended } from "../45-billing/billing";
+import { serviceHeld } from "../45-billing/billing";
 import type { GameState, LedgerEntry, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { addressBills } from "./addresses";
@@ -67,7 +67,7 @@ export function serviceMbps(s: GameState, v: Service, hour: number = s.hour): nu
 }
 
 export const zoneOf = (s: GameState, v: Service): Location | undefined => (v.zone ? s.locations.find((l) => l.az === v.zone) : undefined);
-const running = (s: GameState, v: Service) => v.endedAt === null && !isSuspended(s, v.customerId) && workloadsOf(s, v.id).length > 0;
+const running = (s: GameState, v: Service) => v.endedAt === null && !serviceHeld(s, v) && workloadsOf(s, v.id).length > 0;
 
 // The attack's Mbit/s that reaches your links: always-on filters it, on-demand after the detection delay, a blackhole drops it.
 export function attackMbps(s: GameState, a: Attack): number {
@@ -311,7 +311,7 @@ function requests(s: GameState, events: SimEvent[]) {
   s.network = { ...s.network, requests: reqs };
 }
 
-function attacks(s: GameState, events: SimEvent[]) {
+export function attacks(s: GameState, events: SimEvent[]) {
   const year = yearOf(s.hour);
   let list = s.network.attacks.filter((a) => a.endsAt > s.hour);
   s.services.forEach((v, i) => {

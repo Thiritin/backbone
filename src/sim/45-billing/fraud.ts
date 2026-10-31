@@ -1,6 +1,7 @@
 // GDD, Fraud and chargebacks. Numbers in economy.md, Fraud and chargebacks.
 import { hashRng, rand } from "../00-core/rng";
-import { isMonthStart } from "../00-core/time";
+import { isMonthStart, yearOf } from "../00-core/time";
+import { priceAt } from "../10-catalog/economy";
 import type { Customer, Product } from "../30-customers/customers";
 import type { SalesRequest } from "../30-market/market";
 import { cancelCustomer } from "../40-support/tickets";
@@ -40,6 +41,16 @@ export const reviewing = (s: GameState, product: Product): boolean => s.reviewOr
 export const failsReview = (s: GameState, r: SalesRequest): boolean =>
   reviewing(s, r.product) && rand(hashRng(s.seed, Number(r.id.slice(3)) || 0, 313)) < (r.fraud ? REVIEW_CATCH : REVIEW_FALSE);
 
+// Order screening by MaxMined scores each standard order as it arrives; manual review only sees the orders it lets through.
+export const SCREENING_SKILL = "fraudScreening";
+export const SCREEN_CATCH = 0.8;
+export const SCREEN_FALSE = 0.01;
+// Per check, billed on the first of the month: €0.08 in 2026 with m = 2 (about €0.15 in 2008).
+export const screenFee = (year: number): number => priceAt(0.08, 2, year);
+export const screening = (s: GameState): boolean => s.screenOrders && s.unlocks.includes(SCREENING_SKILL);
+export const failsScreen = (s: GameState, key: number, fraud: boolean): boolean =>
+  rand(hashRng(s.seed, key, 317)) < (fraud ? SCREEN_CATCH : SCREEN_FALSE);
+
 // The payment provider, PayPail.
 export const CHARGEBACK_FEE = 15;
 export const WATCHED_FEE = 25;
@@ -71,6 +82,12 @@ export function fraudTick(s: GameState): SimEvent[] {
   }
   if (booked.length) s.ledger = [...s.ledger, ...booked];
   if (!isMonthStart(s.hour)) return events;
+  if (s.screenChecks > 0) {
+    const fee = cents(s.screenChecks * screenFee(yearOf(s.hour)));
+    s.cash = cents(s.cash - fee);
+    s.ledger = [...s.ledger, { hour: s.hour, category: "fees", key: "ledger.screening", params: { count: s.screenChecks }, amount: -fee }];
+    s.screenChecks = 0;
+  }
   const since = s.hour - PROVIDER.days * DAY;
   let backs = 0, payments = 0;
   for (const e of s.ledger) {

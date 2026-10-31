@@ -31,3 +31,38 @@
 .wk-table th { background: #eaecf0; }
 .wk-cat { clear: both; margin-top: 24px; padding: 4px 8px; border: 1px solid #a2a9b1; background: #f8f9fa; font-size: 12px; }
 @media (max-width: 560px) { .wk-info { float: none; width: auto; margin: 0 0 12px; } }
+
+/* The encyclopedia by web era; the 2005 skin above is the aqua era. Colours stay fixed in both themes. */
+:root[data-era="leopard"] .wk { background: linear-gradient(#f4f4f4, #ffffff 160px); }
+:root[data-era="leopard"] .wk-page { border-color: #a7d7f9; box-shadow: 0 1px 4px #00000026; }
+:root[data-era="leopard"] .wk-side ul { background: transparent; border: 0; border-top: 1px solid #cccccc; }
+:root[data-era="leopard"] .wk-search input { border-radius: 4px; box-shadow: inset 0 1px 2px #00000026; }
+:root[data-era="leopard"] .wk-search button { border-radius: 4px; background: linear-gradient(#ffffff, #e2e5e9); }
+
+:root[data-era="yosemite"] .wk { padding: 0; gap: 0; background: #f6f6f6; font: 14px/1.6 "Helvetica Neue", Helvetica, Arial, sans-serif; }
+:root[data-era="yosemite"] .wk-side { width: 176px; padding: 12px 12px 12px 16px; }
+:root[data-era="yosemite"] .wk-side ul { padding: 0; background: none; border: 0; font-size: 13px; }
+:root[data-era="yosemite"] .wk-page { padding: 20px 32px 32px; border: 0; border-left: 1px solid #a7d7f9; margin-top: 56px; }
+:root[data-era="yosemite"] .wk-page h1 { font: 28px "Linux Libertine", Georgia, "Times New Roman", serif; border-bottom: 1px solid #a2a9b1; }
+:root[data-era="yosemite"] .wk-page h2 { font: 22px "Linux Libertine", Georgia, "Times New Roman", serif; border-bottom: 1px solid #a2a9b1; }
+:root[data-era="yosemite"] .wk-search input, :root[data-era="yosemite"] .wk-search button { border-radius: 2px; }
+
+:root[data-era="bigsur"] .wk { padding: 0; gap: 8px; background: #ffffff; font: 14px/1.65 Inter, system-ui, sans-serif; color: #202122; }
+:root[data-era="bigsur"] .wk-side { width: 190px; padding: 20px 8px 20px 20px; }
+:root[data-era="bigsur"] .wk-side ul { padding: 0; background: none; border: 0; font-size: 13px; }
+:root[data-era="bigsur"] .wk-page { max-width: 880px; padding: 24px 32px 40px; border: 0; }
+:root[data-era="bigsur"] .wk-page h1 { font: 30px Georgia, "Times New Roman", serif; border-bottom: 1px solid #c8ccd1; }
+:root[data-era="bigsur"] .wk-page h2 { font: 22px Georgia, "Times New Roman", serif; border-bottom: 1px solid #c8ccd1; }
+:root[data-era="bigsur"] .wk-search input, :root[data-era="bigsur"] .wk-search button { padding: 5px 8px; border-radius: 6px; }
+:root[data-era="bigsur"] .wk-info { border-radius: 6px; }
+
+:root[data-era="tahoe"] .wk { padding: 16px; gap: 16px; font-family: Inter, system-ui, sans-serif; background: radial-gradient(circle at 10% 0%, #d9e6ff, transparent 45%), radial-gradient(circle at 90% 40%, #f0ddff, transparent 50%), #f5f6fb; }
+:root[data-era="tahoe"] .wk-side { width: 190px; padding: 14px; border: 1px solid #ffffff99; border-radius: 22px; background: #ffffff73; align-self: flex-start; backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8); box-shadow: inset 0 1px 0 #ffffffcc; }
+:root[data-era="tahoe"] .wk-side ul { padding: 0; background: none; border: 0; }
+:root[data-era="tahoe"] .wk-page { padding: 24px 32px 36px; border: 1px solid #ffffff99; border-radius: 26px; background: #ffffffb3; backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8); box-shadow: inset 0 1px 0 #ffffffcc, 0 18px 40px -22px #1a1f3659; }
+:root[data-era="tahoe"] .wk-page h1 { font: 30px Georgia, "Times New Roman", serif; border-bottom-color: #00000026; }
+:root[data-era="tahoe"] .wk-page h2 { font: 22px Georgia, "Times New Roman", serif; border-bottom-color: #00000026; }
+:root[data-era="tahoe"] .wk-search input { padding: 6px 12px; border: 0; border-radius: 999px; background: #ffffffb3; box-shadow: inset 0 1px 2px #1a1f3626; }
+:root[data-era="tahoe"] .wk-search button { padding: 0 12px; border: 0; border-radius: 999px; background: #ffffffb3; box-shadow: inset 0 1px 0 #ffffffcc, 0 1px 3px #00000026; }
+:root[data-era="tahoe"] .wk-info, :root[data-era="tahoe"] .wk-cat { border-radius: 14px; }
+@media (max-width: 560px) { :root[data-era="tahoe"] .wk-side { width: auto; align-self: auto; } :root[data-era="yosemite"] .wk-page { margin-top: 0; } }
