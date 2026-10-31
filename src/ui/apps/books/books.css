@@ -55,6 +55,7 @@
 .books-pick { display: flex; align-items: center; gap: 8px; }
 .books-drag { cursor: grab; }
 .books-quote-edit { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
 .books-top { display: flex; align-items: center; flex: none; }
 .books-top .books-bar { flex: 1; min-width: 0; }
 .books-register-open { margin-right: 16px; }
