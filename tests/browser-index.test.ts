@@ -76,4 +76,14 @@ describe("browser index", () => {
       if (page.kind === "console") expect(r.title.split(" ").at(-1)!.split(":")[0]).toBe(page.hostname);
     }
   });
+
+  it("lists a hardware brand only from the month its first model is released", () => {
+    const s = newGame(1);
+    expect(titles(s, "Hardware")).toContain("Dwell");
+    expect(titles(s, "Hardware")).not.toContain("Lenovoid");
+    expect(resolve(s, "lenovoid.com").page).toEqual({ kind: "notfound" });
+    skipTo(s, 2020);
+    expect(titles(s, "Hardware")).toContain("Lenovoid");
+    expect(resolve(s, "lenovoid.com").page).toEqual({ kind: "vendor", maker: "lenovoid" });
+  });
 });

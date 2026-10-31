@@ -8,7 +8,7 @@ import { newGame } from "../src/sim/50-state";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { setSiteHost } from "../src/sim/90-actions/website";
-import { readyGame, registered } from "./fixtures";
+import { readyGame, registered, skipTo } from "./fixtures";
 import { createRng } from "../src/sim/00-core/rng";
 import { spawnNotice } from "../src/sim/40-support/notices";
 import { customerSite } from "../src/sim/80-business/website";
@@ -71,6 +71,7 @@ describe("browser resolver", () => {
 
   it("gives every manufacturer but the generic parts a vendor site and serves the video by address", () => {
     const s = readyGame(1);
+    skipTo(s, 2040);
     expect(VENDORS.length).toBe(MANUFACTURERS.length - 1);
     for (const m of VENDORS) expect(resolve(s, `www.${vendorHost(m.id)}`).page).toEqual({ kind: "vendor", maker: m.id });
     expect(resolve(s, "generic.com").page).toEqual({ kind: "notfound" });
