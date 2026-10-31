@@ -1,6 +1,9 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { Pause, Play, SkipForward } from "lucide-react";
 import { APPS } from "../apps/registry";
+import { t } from "../../i18n/en";
+import { lang } from "../../i18n/lang";
+import { euro } from "../../sim/00-core/money";
 
 const PROMPT = "root@web01:~# ";
 // Each command is typed, then its output appears at once a moment later.
@@ -29,12 +32,12 @@ const terminalAt = (tick: number): string => {
 };
 
 const VMS = [
-  { name: "vm-0412", customer: "Bäckerei Hoffmann", cpu: 34, ram: 52 },
-  { name: "vm-0398", customer: "Nordlicht Webdesign", cpu: 71, ram: 64 },
-  { name: "vm-0377", customer: "Müller & Söhne GmbH", cpu: 18, ram: 40 },
-  { name: "vm-0365", customer: "Pixelgarten", cpu: 88, ram: 79 },
-  { name: "vm-0351", customer: "Café Lindenhof", cpu: 12, ram: 27 },
-  { name: "vm-0340", customer: "Studio Waldmeister", cpu: 46, ram: 58 },
+  { name: "vm-0412", customer: "desktop.start.vm1", cpu: 34, ram: 52 },
+  { name: "vm-0398", customer: "desktop.start.vm2", cpu: 71, ram: 64 },
+  { name: "vm-0377", customer: "desktop.start.vm3", cpu: 18, ram: 40 },
+  { name: "vm-0365", customer: "desktop.start.vm4", cpu: 88, ram: 79 },
+  { name: "vm-0351", customer: "desktop.start.vm5", cpu: 12, ram: 27 },
+  { name: "vm-0340", customer: "desktop.start.vm6", cpu: 46, ram: 58 },
 ];
 const DOCK = APPS.filter((a) => !a.hidden && a.name !== "Settings").slice(0, 10);
 
@@ -51,24 +54,24 @@ export function MenuBackdrop() {
     <div className="mbd" aria-hidden="true" inert>
       <header className="menubar">
         <span className="mb-item mb-app">Backbone</span>
-        <span className="mb-item">Window</span>
+        <span className="mb-item">{t("desktop.menu.window")}</span>
         <span className="mb-spacer" />
         <div className="speed"><button><Pause /></button><button aria-pressed="true"><span className="arrows"><Play /></span></button><button><span className="arrows"><Play /><Play /></span></button><button><SkipForward className="skip" /></button></div>
         <span className="mb-sep" />
-        <span className="mb-item num">Wed, 14 Feb 2018 · 14:02</span>
+        <span className="mb-item num">{new Date(Date.UTC(2018, 1, 14)).toLocaleDateString(lang, { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })} · 14:02</span>
         <span className="mb-sep" />
-        <span className="mb-item mb-cash num">€ 1,284,300</span>
+        <span className="mb-item mb-cash num">{euro(1_284_300)}</span>
       </header>
       <section className="window" style={{ left: "6%", top: 150, width: "46%", height: 300, zIndex: 1 }}>
         <div className="titlebar"><div className="lights"><button /><button /><button /></div><h1>Terminal</h1></div>
         <div className="win-body mbd-term"><pre>{lines.join("\n")}<i className="mbd-caret" /></pre></div>
       </section>
       <section className="window front" style={{ left: "34%", top: 290, width: "min(440px, 34%)", height: 310, zIndex: 2 }}>
-        <div className="titlebar"><div className="lights"><button /><button /><button /></div><h1>Virtual machines</h1></div>
+        <div className="titlebar"><div className="lights"><button /><button /><button /></div><h1>{t("desktop.start.vms")}</h1></div>
         <div className="win-body mbd-vms">
           {VMS.map((v, i) => (
             <div key={v.name} className="mbd-vm">
-              <span className="mbd-vm-name"><strong>{v.customer}</strong><small>{v.name}</small></span>
+              <span className="mbd-vm-name"><strong>{t(v.customer)}</strong><small>{v.name}</small></span>
               <span className="mbd-meter"><i style={{ "--w": `${v.cpu}%`, animationDelay: `${-i * 0.9}s` } as CSSProperties} /></span>
               <span className="mbd-meter"><i style={{ "--w": `${v.ram}%`, animationDelay: `${-i * 1.3}s` } as CSSProperties} /></span>
             </div>
