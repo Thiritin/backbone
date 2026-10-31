@@ -7,7 +7,7 @@ import {
   type Peer, type Protection, type ZoneLinkKind,
 } from "../10-catalog/network";
 import { TRAFFIC_GROWTH } from "../10-catalog/products";
-import { trafficShape } from "../10-catalog/usage";
+import { idNum, TRAFFIC_BURST, trafficShape } from "../10-catalog/usage";
 import { datacenterById, homeLineById, inUs } from "../20-world/datacenters";
 import type { Service } from "../30-customers/customers";
 import { bump, createTicket, OUTAGE_WRITE_CHANCE, profileStats, slowed } from "../40-support/tickets";
@@ -24,7 +24,7 @@ import { working, type Hop } from "./status";
 // A link takes one router port; it carries traffic from readyAt on, while its router works.
 export interface UplinkLink { id: string; gbit: number; device: string; port: number; readyAt: number }
 // A contract with one carrier (transit) or one exchange's ports in one zone. commit is the share of capacity always billed;
-// samples are the Mbit/s carried in each of the last 30 days of hours.
+// samples are one 5-minute reading of the Mbit/s carried in each of the last 30 days of hours (see burstFactor).
 export interface Uplink { id: string; locationId: string; kind: "transit" | "exchange"; partner: string; commit: number; links: UplinkLink[]; samples: number[] }
 export interface ZoneLink { id: string; a: string; b: string; kind: ZoneLinkKind; gbit: number; readyAt: number; carried: number }
 export interface PeeringRequest { id: string; peer: string; exchange: string; at: number }
@@ -76,15 +76,32 @@ export function attackMbps(s: GameState, a: Attack): number {
   return a.mbps;
 }
 
-// Mbit/s each location sends this hour, attacks included.
-export function zoneDemand(s: GameState): Record<string, number> {
-  const out: Record<string, number> = {};
+// Mbit/s each location sends this hour, attacks included, and its burst: how much its 5-minute traffic swings around that.
+// Independent senders add up their variance, so many customers smooth each other out.
+export function zoneTraffic(s: GameState): { demand: Record<string, number>; burst: Record<string, number> } {
+  const demand: Record<string, number> = {}, variance: Record<string, number> = {};
+  const add = (id: string, mbps: number, cv: number) => {
+    demand[id] = (demand[id] ?? 0) + mbps;
+    variance[id] = (variance[id] ?? 0) + (mbps * cv) ** 2;
+  };
   for (const v of s.services) {
     const loc = zoneOf(s, v);
-    if (loc && running(s, v)) out[loc.id] = (out[loc.id] ?? 0) + serviceMbps(s, v);
+    if (loc && running(s, v)) add(loc.id, serviceMbps(s, v), TRAFFIC_BURST[v.product] ?? TRAFFIC_BURST.other);
   }
-  for (const a of s.network.attacks) out[a.locationId] = (out[a.locationId] ?? 0) + attackMbps(s, a);
-  return out;
+  for (const a of s.network.attacks) add(a.locationId, attackMbps(s, a), DDOS.burst);
+  const burst = Object.fromEntries(Object.keys(demand).map((id) => [id, demand[id] > 0 ? Math.sqrt(variance[id]) / demand[id] : 0]));
+  return { demand, burst };
+}
+export const zoneDemand = (s: GameState): Record<string, number> => zoneTraffic(s).demand;
+
+const PHI = (Math.sqrt(5) - 1) / 2;
+// One 5-minute sample standing in for the hour: a lognormal draw with the zone's burst, at a quantile that steps by the
+// golden ratio each hour so 30 days of hours cover the spread evenly. Its 95th percentile matches 5-minute billing.
+export function burstFactor(seed: number, locationId: string, hour: number, burst: number): number {
+  if (burst <= 0) return 1;
+  const u = (rand(hashRng(seed, idNum(locationId))) + hour * PHI) % 1;
+  const z = 4.91 * (u ** 0.14 - (1 - u) ** 0.14), s2 = Math.log(1 + burst * burst);
+  return Math.exp(Math.sqrt(s2) * z - s2 / 2);
 }
 
 export const linkUp = (s: GameState, l: UplinkLink): boolean => l.readyAt <= s.hour && working(s, l.device);
@@ -138,12 +155,12 @@ function fill(exits: Exit[], amount: number): number {
   return left;
 }
 
-export interface ZoneRoute { demand: number; carried: number; dropped: number; exits: Record<string, number> }
+export interface ZoneRoute { demand: number; carried: number; dropped: number; burst: number; exits: Record<string, number> }
 export interface Routing { zones: Record<string, ZoneRoute>; links: Record<string, number> }
 
 // Routes this hour's traffic: each zone through its own exits, then overflow over links to other zones' spare capacity.
 export function route(s: GameState): Routing {
-  const demand = zoneDemand(s);
+  const { demand, burst } = zoneTraffic(s);
   const exits: Record<string, Exit[]> = {}, left: Record<string, number> = {};
   for (const loc of s.locations) {
     exits[loc.id] = exitsOf(s, loc);
@@ -163,7 +180,7 @@ export function route(s: GameState): Routing {
   const zones: Record<string, ZoneRoute> = {};
   for (const loc of s.locations) {
     const d = demand[loc.id] ?? 0, dropped = Math.max(0, left[loc.id]);
-    zones[loc.id] = { demand: d, carried: d - dropped, dropped, exits: Object.fromEntries(exits[loc.id].map((e) => [e.id, e.used])) };
+    zones[loc.id] = { demand: d, carried: d - dropped, dropped, burst: burst[loc.id] ?? 0, exits: Object.fromEntries(exits[loc.id].map((e) => [e.id, e.used])) };
   }
   return { zones, links };
 }
@@ -365,7 +382,11 @@ export function networkTick(s: GameState): SimEvent[] {
   }
   s.network = {
     ...n, history, dcTb,
-    uplinks: n.uplinks.map((u) => ({ ...u, samples: [...u.samples, round2(r.zones[u.locationId]?.exits[u.id] ?? 0)].slice(-SAMPLE_HOURS) })),
+    uplinks: n.uplinks.map((u) => {
+      const z = r.zones[u.locationId], used = z?.exits[u.id] ?? 0;
+      const sample = used > 0 ? Math.min(uplinkMbps(s, u), used * burstFactor(s.seed, u.locationId, s.hour, z.burst)) : 0;
+      return { ...u, samples: [...u.samples, round2(sample)].slice(-SAMPLE_HOURS) };
+    }),
     zoneLinks: n.zoneLinks.map((z) => ({ ...z, carried: round2(r.links[z.id] ?? 0) })),
   };
   saturation(s, r, events);

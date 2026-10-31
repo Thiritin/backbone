@@ -1,6 +1,6 @@
 import { rand } from "../00-core/rng";
 import { monthIndexOf, yearOf } from "../00-core/time";
-import { boardVendor, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { boardVendor, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, leadFactor, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
@@ -239,8 +239,10 @@ export function stock(s: GameState, line: CartLine, lease: string | null, store:
 }
 
 const lineTotal = (s: GameState, line: CartLine) => unitPrice(line, yearOf(s.hour)) * line.qty;
-// Orders wait for delivery, except while the company owns no server: the first purchases arrive at once.
-export const deliveryWait = (s: GameState): number => (s.devices.some((d) => modelById(d.model).kind === "server") ? deliveryHours(yearOf(s.hour)) : 0);
+const families = (line: CartLine): string[] => { const m = modelById(line.model); return m.kind === "part" ? [m.id.slice(5)] : [m.kind, ...lineParts(line).map((p) => p.kind)]; };
+// An order ships whole after its slowest line, except while the company owns no server: the first purchases arrive at once.
+export const deliveryWait = (s: GameState, lines: CartLine[]): number => (s.devices.some((d) => modelById(d.model).kind === "server")
+  ? Math.round(deliveryHours(yearOf(s.hour)) * Math.max(1, ...lines.flatMap(families).map((f) => leadFactor(f, s.hour)))) : 0);
 
 function buyLine(s: GameState, line: CartLine, locationId: string, wait: number): string {
   const ids = stock(s, line, null, locationId, wait);
@@ -259,7 +261,7 @@ export function buyDevice(s: GameState, modelId: string, brand: string, qty: num
   const error = lineError(s, line) ?? officeError(s, modelId, locationId);
   if (error) return fail(error);
   if (s.cash < lineTotal(s, line)) return fail("error.noCash");
-  return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s)) };
+  return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s, [line])) };
 }
 
 // Pays in cash or leases the whole cart; the lease offer must be one leaseOffers makes for the cart total right now.
@@ -271,12 +273,12 @@ export function buyCart(s: GameState, lines: CartLine[], payment: { kind: "cash"
   const total = lines.reduce((sum, l) => sum + lineTotal(s, l), 0);
   if (payment.kind === "cash") {
     if (s.cash < total) return fail("error.noCash");
-    const wait = deliveryWait(s);
+    const wait = deliveryWait(s, lines);
     return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait))[0] };
   }
   const offer = leaseOffers(s, total).find((o) => o.id === payment.offerId);
   if (!offer) return fail("error.offerExpired");
-  const wait = deliveryWait(s);
+  const wait = deliveryWait(s, lines);
   const lease = { id: newId(s, "lease"), lessor: offer.lessor, monthly: offer.monthly, months: offer.months, startedAt: s.hour, paid: 0, devices: [] as string[] };
   lease.devices = lines.flatMap((l) => stock(s, l, lease.id, locationId, wait));
   s.leases = [...s.leases, lease];
