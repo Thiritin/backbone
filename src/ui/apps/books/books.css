@@ -38,3 +38,11 @@
 .books-customer { flex: 1; min-width: 0; overflow: auto; padding: 16px; display: grid; gap: 14px; align-content: start; }
 .books-customer h2 { font-size: 15px; font-weight: 650; margin: 0; }
 .books-address { font-style: normal; line-height: 1.4; padding: 10px 14px; border: var(--ar-bw) solid var(--line-strong); background: var(--field); width: max-content; }
+
+.books-top { display: flex; align-items: center; flex: none; }
+.books-top .books-bar { flex: 1; min-width: 0; }
+.books-register-open { margin-right: 16px; }
+.books-register { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: var(--ar-bw) solid var(--line); flex: none; }
+.books-register input { width: 24ch; letter-spacing: 0.04em; }
+.books-registered { color: var(--good-text, var(--good, #2a7)); }
+.books-locked { opacity: 0.5; }

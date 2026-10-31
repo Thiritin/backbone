@@ -2,6 +2,7 @@ import { chance, hashRng, rand, type Rng } from "../00-core/rng";
 import { bankById } from "../10-catalog/banks";
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import type { Budget } from "../10-catalog/economy";
+import { hasModule } from "../10-catalog/modules";
 import { CYCLE_MONTHS } from "../10-catalog/cycles";
 import { SLAS } from "../10-catalog/products";
 import type { PaymentHabit, Profile, Service } from "../30-customers/customers";
@@ -145,6 +146,19 @@ function transferFor(s: GameState, inv: Invoice): Transfer {
   return { id: `trf${s.nextId++}`, hour: s.hour, from, reference, params, amount, invoiceId: null, matchedAt: null, forInvoice: inv.id };
 }
 
+// Books a transfer against an unpaid invoice. A smaller amount is a partial payment unless settle writes the difference off;
+// a larger one pays the invoice and leaves the rest as the customer's credit.
+export function bookTransfer(s: GameState, tr: Transfer, inv: Invoice, settle: boolean): void {
+  s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId: inv.id, matchedAt: s.hour } : x));
+  const rest = cents(owed(inv) - tr.amount);
+  if (rest > 0 && !settle) inv.received = cents((inv.received ?? 0) + tr.amount);
+  else {
+    Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
+    renewTerms(s, inv);
+  }
+  if (rest < 0) s.customers = s.customers.map((c) => (c.id === inv.customerId ? { ...c, credit: cents(c.credit - rest) } : c));
+}
+
 // Index into STEPS of the dunning step that is due now, or null.
 export function dueStep(inv: Invoice, hour: number): number | null {
   const i = inv.reminders.length;
@@ -256,17 +270,25 @@ export function ruleSuspendsAt(s: GameState, inv: Invoice): number | null {
   return inv.extendedUntil !== null && inv.suspendedAt < inv.extendedUntil ? inv.extendedUntil : null;
 }
 
-const automated = (s: GameState, inv: Invoice, key: string) =>
-  logActivity(s, { customerId: inv.customerId, serviceId: null, by: "Automation", key: `activity.${key}`, params: { invoice: inv.number }, minutes: 0 });
+// The dunning step that runs by itself now: every rule after the Automation research, and the notices up to the final one
+// with the Automatic reminders module. Staff carry out the rest.
+export function autoStep(s: GameState, inv: Invoice): number | null {
+  const i = ruleStep(s, inv);
+  if (i === null) return null;
+  return rulesAutomated(s) || (STEPS[i].key !== "collections" && hasModule(s, "auto-reminders")) ? i : null;
+}
+
+const automated = (s: GameState, inv: Invoice, key: string, by = "Automation") =>
+  logActivity(s, { customerId: inv.customerId, serviceId: null, by, key: `activity.${key}`, params: { invoice: inv.number }, minutes: 0 });
 
 // Automated billing rules and suspended customers, once per hour for each unpaid invoice the caller owns.
 function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
   const c = s.customers.find((x) => x.id === inv.customerId);
   const auto = rulesAutomated(s);
-  const i = auto ? ruleStep(s, inv) : null;
+  const i = autoStep(s, inv);
   if (i !== null) {
     sendStep(s, inv, i);
-    automated(s, inv, STEPS[i].key);
+    automated(s, inv, STEPS[i].key, auto ? "Automation" : "Lexwear");
   }
   if (inv.status === "writtenOff") {
     if (c) events.push({ app: "Books", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
@@ -288,7 +310,7 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
 }
 
 const needsChase = (s: GameState, inv: Invoice): boolean =>
-  isUnpaid(inv) && (inv.suspended || (rulesAutomated(s) && (ruleStep(s, inv) !== null || ruleSuspendsAt(s, inv) !== null)));
+  isUnpaid(inv) && (inv.suspended || autoStep(s, inv) !== null || (rulesAutomated(s) && ruleSuspendsAt(s, inv) !== null));
 
 // Bank: economy.md, Bank, insurance and tax.
 const BASE_RATE: [number, number][] = [[2005, 4], [2009, 2.5], [2015, 1], [2021, 1], [2023, 4.5], [2026, 4]];

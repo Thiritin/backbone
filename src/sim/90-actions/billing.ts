@@ -1,5 +1,5 @@
 import {
-  annuity, renewTerms, AUTO_COLLECT_DAYS, issue, owed, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
+  annuity, AUTO_COLLECT_DAYS, bookTransfer, issue, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
 } from "../45-billing/billing";
 import { bankById } from "../10-catalog/banks";
 import type { GameState } from "../50-state";
@@ -20,21 +20,13 @@ export function sendInvoice(s: GameState, invoiceId: string): ActionResult {
   return { ok: true };
 }
 
-// Books a bank transfer against an invoice. A smaller amount is a partial payment unless settle writes the difference off;
-// a larger one pays the invoice and leaves the rest as the customer's credit.
+// Books a bank transfer against an invoice; settle writes off what a smaller amount leaves open.
 export function matchTransfer(s: GameState, transferId: string, invoiceId: string, settle = false): ActionResult {
   const tr = s.transfers.find((x) => x.id === transferId && x.invoiceId === null);
   if (!tr) return fail("error.transferMatched");
   const inv = unpaidInvoice(s, invoiceId);
   if (!inv) return fail("error.invoiceSettled");
-  s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId, matchedAt: s.hour } : x));
-  const rest = cents(owed(inv) - tr.amount);
-  if (rest > 0 && !settle) inv.received = cents((inv.received ?? 0) + tr.amount);
-  else {
-    Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
-    renewTerms(s, inv);
-  }
-  if (rest < 0) s.customers = s.customers.map((c) => (c.id === inv.customerId ? { ...c, credit: cents(c.credit - rest) } : c));
+  bookTransfer(s, tr, inv, settle);
   log(s, inv, "matchTransfer");
   return { ok: true };
 }

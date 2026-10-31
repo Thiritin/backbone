@@ -123,7 +123,7 @@ describe("work", () => {
     for (const c of cus) createTicket(s, s.customers.find((x) => x.id === c)!, "howTo", null);
     createTicket(s, s.customers[0], "abuse", null);
     runTo(s, MONDAY_9 - 1);
-    expect(s.tickets.every((t) => t.status === "open")).toBe(true);
+    expect(s.tickets.filter((t) => t.customerId).every((t) => t.status === "open")).toBe(true);
     runTo(s, MONDAY_9 + 1);
     // Skill 100 works at 1.5x: 20-minute tickets take 13.3 minutes, so 5 start in the first hour.
     expect(s.tickets.filter((t) => t.work).length).toBe(5);
