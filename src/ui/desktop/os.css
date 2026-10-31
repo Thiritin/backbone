@@ -74,13 +74,19 @@
   background: radial-gradient(ellipse 80% 45% at 50% 18%, oklch(1 0 0 / 0.55), transparent 70%), linear-gradient(180deg, color-mix(in oklch, var(--tile) 70%, white), var(--tile));
 }
 :root[data-os="aqua"] .alert { border-radius: 6px; background: var(--win); backdrop-filter: none; -webkit-backdrop-filter: none; }
+:root[data-os="aqua"] .dock-app .dot {
+  width: 0; height: 0; border-radius: 0; background: none;
+  border: 4px solid transparent; border-top: 0; border-bottom: 5px solid oklch(0.2 0 0 / 0.85);
+}
+:root[data-os="aqua"] .window,
+:root[data-os="leopard"] .window { border-radius: var(--r-win) var(--r-win) 0 0; }
 
 /* Leapard (2007): unified graphite title bars, glass dock shelf. */
 
 :root[data-os="leopard"] {
   --font-ui: "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif;
   --r-win: 5px;
-  --r-ctl: 5px;
+  --r-ctl: 11px;
   --bar-top: oklch(0.88 0.004 250);
   --bar-bottom: oklch(0.7 0.006 250);
   --gel: oklch(0.58 0.15 248);
@@ -97,6 +103,8 @@
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.35);
 }
 :root[data-os="leopard"] .menubar { background: linear-gradient(var(--menubar), color-mix(in oklch, var(--menubar), black 8%)); }
+:root[data-os="leopard"] .sidebar { background: oklch(0.93 0.015 245); }
+:root[data-os="leopard"][data-theme="dark"] .sidebar { background: oklch(0.22 0.015 250); }
 :root[data-os="leopard"] .btn { background: linear-gradient(var(--field), color-mix(in oklch, var(--field), black 7%)); border-color: oklch(0 0 0 / 0.28); }
 :root[data-os="leopard"] .dock {
   border-radius: 4px 4px 0 0; bottom: 0; padding-bottom: 10px;
@@ -127,7 +135,11 @@
   --dock: oklch(1 0 0 / 0.16);
 }
 :root[data-os="tahoe"][data-theme="dark"] { --dock: oklch(0.3 0.01 258 / 0.25); }
-:root[data-os="tahoe"] .menubar { border-bottom-color: transparent; }
+:root[data-os="tahoe"] .menubar {
+  background: linear-gradient(oklch(1 0 0 / 0.3), transparent); border-bottom-color: transparent;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+:root[data-os="tahoe"][data-theme="dark"] .menubar { background: linear-gradient(oklch(0 0 0 / 0.35), transparent); }
 :root[data-os="tahoe"] .titlebar { background: var(--win); border-bottom-color: transparent; }
 :root[data-os="tahoe"] .dock {
   border-radius: 28px;
