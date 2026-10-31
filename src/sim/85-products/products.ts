@@ -14,7 +14,7 @@ import { bump, createTicket, slowed } from "../40-support/tickets";
 import type { Device, GameState, Location } from "../50-state";
 import { backsUpCluster, controlPlaneUp, insideVm, isOwnVm, lostDisk, servedBy, vmOf, vmRoom, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
-import { bootHours } from "../60-infra/status";
+import { bootHours, customerWorkloads, liveServices } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
 import { deviceVendor, installedCores, perCoreOf, raidUsable } from "../60-infra/status";
@@ -148,8 +148,8 @@ const tickets = (id: string | null) => (id ? softwareById(id).tickets : 1);
 // The how-to ticket rate factor of a customer: the average over their cluster workloads of the software serving each,
 // with web spaces on an old PHP a little higher.
 export function howToFactor(s: GameState, customerId: string): number {
-  const services = new Set(s.services.filter((v) => v.customerId === customerId && v.endedAt === null).map((v) => v.id));
-  const factors = s.workloads.filter((w) => w.clusterId && services.has(w.serviceId)).map((w) => {
+  const services = new Set(liveServices(s, customerId).map((v) => v.id));
+  const factors = customerWorkloads(s, customerId).filter((w) => w.clusterId && services.has(w.serviceId)).map((w) => {
     const c = s.clusters.find((x) => x.id === w.clusterId)!;
     const kind = servedBy(s, w), edge = channelOf(c) === "edge" ? EDGE_HOWTO : 1;
     return edge * (kind === "panel" ? tickets(c.panel) * phpTickets(s, c) : tickets(isService(kind) ? c.panel : c.platform));

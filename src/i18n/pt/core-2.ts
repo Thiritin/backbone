@@ -169,6 +169,7 @@ export default {
   "guide.step.company": () => "Dá um nome à tua empresa",
   "guide.step.buyServer": () => "Compra um servidor",
   "guide.step.mountServer": () => "Monta-o e liga-o",
+  "guide.step.mountRouter": () => "Monta o roteador",
   "guide.step.internet": () => "Adiciona internet",
   "guide.step.setup": () => "Instala o software",
   "guide.step.domain": () => "Compra o teu domínio",

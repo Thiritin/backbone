@@ -71,6 +71,7 @@ describe("power feeds", () => {
     const events: SimEvent[] = [];
     const inc = feedFailure(s, rack(s), "A", 60, createRng(1), events);
     expect(events[0].key).toBe("event.feedDark");
-    expect(inc.devices).toEqual([dev(s, "dev4").name]);
+    // The switch and the router have one supply each, on feed A.
+    expect(inc.devices).toEqual([dev(s, "dev4").name, dev(s, "dev5").name]);
   });
 });

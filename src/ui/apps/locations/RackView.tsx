@@ -41,7 +41,7 @@ function rackLinks(g: GameState, rackId: string): RackLink[] {
   return g.cables.flatMap((c) => [[c.a, c.b], [c.b, c.a]].flatMap(([end, peer]) => (dev.get(end.device)?.rackId === rackId ? [{ id: c.id, end, peer, color: cableColor(c) }] : [])));
 }
 
-const KIND_LABEL: Record<DeviceKind, string> = { server: t("locations-2.kind.server"), switch: t("locations-2.kind.switch"), firewall: t("locations-2.kind.firewall"), gateway: t("locations-2.kind.gateway"), patch: t("locations-2.kind.patch"), ups: t("locations-2.kind.ups"), pdu: t("locations-2.kind.pdu"), part: t("locations-2.kind.part"), kvm: t("locations-2.kind.kvm"), console: t("locations-2.kind.console"), oob: t("locations-2.kind.oob"), chassis: t("locations-2.kind.chassis") };
+const KIND_LABEL: Record<DeviceKind, string> = { server: t("locations-2.kind.server"), switch: t("locations-2.kind.switch"), firewall: t("locations-2.kind.firewall"), gateway: t("locations-2.kind.gateway"), patch: t("locations-2.kind.patch"), ups: t("locations-2.kind.ups"), pdu: t("locations-2.kind.pdu"), part: t("locations-2.kind.part"), kvm: t("locations-2.kind.kvm"), console: t("locations-2.kind.console"), oob: t("locations-2.kind.oob"), chassis: t("locations-2.kind.chassis"), jack: t("locations-2.kind.jack") };
 
 // Devices outside the rack that it is cabled to, plus the location's carrier panel and patch panels to cable to.
 function rackRemotes(g: GameState, rack: Rack): RackRemote[] {
@@ -49,7 +49,7 @@ function rackRemotes(g: GameState, rack: Rack): RackRemote[] {
   const ids = new Set(g.devices.filter((d) => d.rackId === rack.id).map((d) => d.id));
   const cabled = new Set(g.cables.flatMap((c) => (ids.has(c.a.device) ? [c.b.device] : ids.has(c.b.device) ? [c.a.device] : [])));
   const kind = (d: Device) => modelById(d.model).kind;
-  return g.devices.filter((d) => !ids.has(d.id) && (cabled.has(d.id) || (here.includes(d) && (kind(d) === "gateway" || kind(d) === "patch")))).map((d) => {
+  return g.devices.filter((d) => !ids.has(d.id) && (cabled.has(d.id) || (here.includes(d) && (kind(d) === "gateway" || kind(d) === "patch" || kind(d) === "jack")))).map((d) => {
     const m = modelById(d.model), same = here.filter((x) => kind(x) === m.kind).sort((x, y) => x.name.localeCompare(y.name));
     const other = g.racks.find((r) => r.id === d.rackId);
     return {
