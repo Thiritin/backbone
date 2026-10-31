@@ -1,8 +1,7 @@
 import { t } from "../../i18n/en";
 import { Bell, Cloud, CloudRain, CloudSnow, CloudSun, Moon, Pause, Play, SkipForward, Sun } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { serialize } from "../../sim/91-save/save";
 import { Confirm } from "./Confirm";
 import { Intro } from "./Intro";
 import { newNote } from "./DesktopIcons";
@@ -16,19 +15,18 @@ import { CompanyMark } from "../apps/company";
 import { appFor, appTitle } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
 import { BUILD_ID } from "../leaderboard";
-import { LANGS, lang, setLang, type Lang } from "../../i18n/lang";
+import { exportSave } from "../export-save";
 
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
 export function MenuBar({ theme, onTheme, onBell }: Props) {
-  const { game, speed, setSpeed, windows, openApp, openConsole, openDoc, act, unseen, importSave, openNews, deleteProgress, minimize, close } = useStore();
+  const { game, speed, setSpeed, windows, openApp, openConsole, openDoc, act, unseen, toMenu, openNews, deleteProgress, minimize, close } = useStore();
   const guideGone = !game.docs.some((d) => d.kind === "guide");
   const docTitle = (id: string) => game.docs.find((d) => d.id === id)?.title ?? "";
   const appName = (w: Win) => (w.console ? t("desktop.menu.console") : appTitle(appFor(game, w.app)));
   const [menu, setMenu] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [intro, setIntro] = useState(false);
-  const file = useRef<HTMLInputElement>(null);
   const here = playerAt(game);
   const front = [...windows].filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];
 
@@ -38,14 +36,6 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
     window.addEventListener("pointerdown", close);
     return () => window.removeEventListener("pointerdown", close);
   }, [menu]);
-
-  const exportSave = () => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([serialize(game)], { type: "application/json" }));
-    a.download = `backbone-${dateOf(game.hour).toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
 
   // The front window's menu: what the app offers, then the window controls.
   const appMenu = (w: Win): [string, () => void][] => [
@@ -68,7 +58,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      {item("backbone", "Backbone", [[t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open("https://discord.gg/e8nTAV8Yk7", "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), exportSave], [t("desktop.menu.import"), () => file.current?.click()], [t("desktop.menu.delete"), () => setConfirm(true)]], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
+      {item("backbone", "Backbone", [[t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open("https://discord.gg/e8nTAV8Yk7", "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)]], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
       {front ? item("app", appName(front), appMenu(front), appName(front), "mb-app") : <span className="mb-item mb-app">Backbone</span>}
       {item("window", t("desktop.menu.window"), windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : w.console ? [t("desktop.menu.console"), () => openConsole(w.console!)] : [appName(w), () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
@@ -95,15 +85,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
         <Bell />
         {unseen > 0 && <span key={unseen} className="count plop">{unseen > 99 ? "99+" : unseen}</span>}
       </button>
-      <select className="mb-item mb-lang" aria-label={t("desktop.menu.language")} value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
-        {Object.entries(LANGS).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-      </select>
       <button className="mb-item" aria-label={t("desktop.menu.darkMode")} onClick={onTheme}>{theme === "dark" ? <Sun /> : <Moon />}</button>
-      <input ref={file} type="file" accept="application/json,.json" hidden onChange={async (e) => {
-        const f = e.target.files?.[0];
-        e.target.value = "";
-        if (f) importSave(await f.text());
-      }} />
       {intro && <Intro onClose={() => setIntro(false)} />}
       {confirm && (
         <Confirm

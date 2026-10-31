@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-31
 
+- The game now opens on a proper main menu with a looping 2012 desktop behind it, the version history on the right and your options in a column at the bottom left.
+- The language switcher moved into Settings, and importing progress is only possible from the main menu, which you can reach from the Backbone menu.
 - The game is now available in German, French, Spanish, Italian and Portuguese, and you can switch the language from the menu bar.
 - Prices, numbers and dates follow the format of the language you play in.
 - A new game names your starting basement in the language you play in.

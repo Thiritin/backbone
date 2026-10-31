@@ -85,6 +85,10 @@ interface Store {
   dismiss: (id: number) => void;
   forget: (id: number | null) => void;
   started: boolean;
+  // A game is loaded and the main menu can return to it.
+  canContinue: boolean;
+  toMenu: () => void;
+  continueGame: () => void;
   unseen: number;
   clearUnseen: () => void;
   save: () => void;
@@ -203,7 +207,8 @@ export const useStore = create<Store>((set, get) => ({
   closeAlert: (resume) => set(({ resume: speed }) => (resume ? { alert: null, speed } : { alert: null })),
   explain: null,
   setExplain: (explain) => set({ explain }),
-  started: initial.loaded,
+  started: false,
+  canContinue: initial.loaded,
   unseen: 0,
   cart: [],
 
@@ -331,6 +336,11 @@ export const useStore = create<Store>((set, get) => ({
   forget: (id) => set(({ banners, history }) => ({ banners: banners.filter((b) => id !== null && b.id !== id), history: id === null ? [] : history.filter((b) => b.id !== id) })),
 
   clearUnseen: () => set({ unseen: 0 }),
+  toMenu: () => {
+    get().save();
+    set({ started: false, canContinue: true });
+  },
+  continueGame: () => set({ started: true }),
   save: () => {
     if (!get().started) return;
     try {
@@ -369,7 +379,7 @@ export const useStore = create<Store>((set, get) => ({
     } catch {
       // Nothing stored to remove.
     }
-    set({ ...fresh(), game: newCompany(Date.now() >>> 0), started: false });
+    set({ ...fresh(), game: newCompany(Date.now() >>> 0), started: false, canContinue: false });
   },
 }));
 // Without the focus another app asked for, so a reload keeps what the window shows now.

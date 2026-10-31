@@ -48,7 +48,7 @@ export default {
   "desktop.dock.restore": (p) => `${p.name} wiederherstellen`,
 
   "desktop.start.weekly": () => "Wochen-Challenge",
-  "desktop.start.import": () => "Spielstand importieren",
+  "desktop.start.import": () => "Fortschritt importieren",
   "desktop.start.intro": () => "Zum ersten Mal hier?",
 
   "desktop.notif.title": () => "Mitteilungen",
@@ -97,8 +97,12 @@ export default {
   "desktop.menu.report": () => "Problem melden",
   "desktop.menu.restoreGuide": () => "Erste Schritte wiederherstellen",
   "desktop.menu.whatsNew": () => "Neuigkeiten",
-  "desktop.menu.export": () => "Spielstand exportieren …",
-  "desktop.menu.import": () => "Spielstand importieren …",
+  "desktop.menu.export": () => "Fortschritt exportieren …",
+  "desktop.menu.import": () => "Fortschritt importieren …",
+  "desktop.menu.mainMenu": () => "Hauptmenü",
+  "desktop.start.news": () => "Neuigkeiten",
+  "desktop.start.settings": () => "Einstellungen",
+  "desktop.start.continue": () => "Fortsetzen",
   "desktop.menu.delete": () => "Fortschritt löschen …",
   "desktop.menu.window": () => "Fenster",
   "desktop.menu.console": () => "Konsole",

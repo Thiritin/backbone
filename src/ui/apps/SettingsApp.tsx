@@ -10,6 +10,8 @@ import { LeaderboardSettings } from "./LeaderboardSettings";
 import { NOTIFY_TYPES } from "../notify-types";
 import { prefOf, useFocus, useStore, type Theme } from "../store";
 import { playSound } from "../sounds";
+import { exportSave } from "../export-save";
+import { LANGS, lang, setLang, type Lang } from "../../i18n/lang";
 
 const THEMES: [Theme, string][] = [["light", t("apps.settings.light")], ["dark", t("apps.settings.dark")], ["auto", t("apps.settings.auto")]];
 
@@ -119,6 +121,19 @@ export function SettingsApp() {
             </div>
           );
         })}
+      </div>
+      <h2 data-section="Game">{t("apps.settings.game")}</h2>
+      <div className="settings-group">
+        <div className="settings-line">
+          <span>{t("apps.settings.export")}</span>
+          <button className="btn" onClick={() => exportSave(game)}>{t("apps.settings.export")}</button>
+        </div>
+        <div className="settings-line">
+          <span>{t("desktop.menu.language")}</span>
+          <select aria-label={t("desktop.menu.language")} value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+            {Object.entries(LANGS).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </select>
+        </div>
       </div>
       <LeaderboardSettings />
     </div>

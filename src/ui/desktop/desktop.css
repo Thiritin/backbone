@@ -207,21 +207,6 @@ button { font: inherit; color: inherit; cursor: default; }
 .btn.danger-fill { background: var(--bad); color: white; border-color: transparent; }
 .btn.danger-fill:hover { background: color-mix(in oklch, var(--bad) 88%, black); }
 
-.start { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 16px; }
-.start-logo {
-  color: white; width: 96px; height: 96px; border-radius: 22px; display: grid; place-items: center;
-  background: linear-gradient(180deg, oklch(0.62 0.17 255), oklch(0.48 0.19 260)); box-shadow: 0 12px 40px -8px oklch(0 0 0 / 0.6);
-}
-.start-logo svg.lucide { width: 52px; height: 52px; }
-.start h1 { color: white; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
-.start-actions { display: flex; gap: 10px; margin-top: 8px; }
-.start-actions .btn { height: 34px; padding: 0 18px; font-size: 14px; }
-.start-challenge { display: grid; justify-items: center; gap: 6px; font-size: 13px; color: oklch(1 0 0 / 0.75); }
-.start-challenge ol { list-style: none; display: grid; gap: 3px; min-width: 240px; padding: 8px 12px; border-radius: 10px; background: oklch(0 0 0 / 0.4); backdrop-filter: blur(8px); }
-.start-challenge li { display: flex; align-items: center; gap: 8px; color: white; }
-.start-challenge li .num { margin-left: auto; color: oklch(1 0 0 / 0.75); }
-.start-swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
-
 .desktop-icons { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 .desktop-icon { position: absolute; width: 92px; display: grid; justify-items: center; align-content: start; gap: 4px; color: white; pointer-events: auto; user-select: none; touch-action: none; }
 .desktop-icon:focus-visible { outline: none; }

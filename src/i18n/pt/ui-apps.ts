@@ -136,6 +136,8 @@ export default {
   "apps.settings.company": () => "Empresa",
   "apps.settings.orders": () => "Pedidos",
   "apps.settings.autoOrders": () => "Fazer pedidos automaticamente",
+  "apps.settings.game": () => "Jogo",
+  "apps.settings.export": () => "Exportar progresso",
   "apps.settings.appearance": () => "Aparência",
   "apps.settings.theme": () => "Tema",
   "apps.settings.light": () => "Claro",

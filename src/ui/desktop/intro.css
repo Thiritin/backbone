@@ -48,8 +48,6 @@
 .intro-nav { justify-self: end; display: flex; gap: 8px; }
 .intro-nav .btn { min-width: 72px; justify-content: center; }
 
-.start-intro { margin-top: 4px; border: none; background: none; padding: 2px 4px; border-radius: 4px; color: oklch(1 0 0 / 0.7); font-size: 13px; cursor: pointer; }
-.start-intro:hover { color: white; text-decoration: underline; }
 
 @media (prefers-reduced-motion: reduce) {
   .intro, .intro-page { animation: none; }
