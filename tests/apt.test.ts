@@ -16,7 +16,7 @@ const text = (s: GameState, line: string, session: Session | null = null) => run
 function outdated() {
   const s = withServer(newGame(1)), id = panelServer(s, "dev3");
   s.hour = year(2010);
-  s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, version: 2005, updatedAt: 0 } : c));
+  s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, version: 2005, updatedAt: 0, channel: "edge" } : c));
   const at: Session = { host: s.devices.find((d) => d.id === "dev3")!.hostname!, deviceId: "dev3" };
   return { s, id, at };
 }

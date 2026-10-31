@@ -3,6 +3,7 @@ import { yearOf } from "../00-core/time";
 import { PHP, phpAt, phpBehind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { Cluster } from "./cluster";
+import { contention } from "./oversell";
 
 // economy.md, PHP versions.
 export const PHP_TICKETS = 0.05;
@@ -15,7 +16,7 @@ export const PHP_UPGRADE_HOURS = 1;
 
 // A panel host's sites run slower right after a PHP upgrade; any compromised host runs slower while spam loads it.
 export const hostPerf = (s: GameState, c: Cluster | undefined): number =>
-  c && ((c.kind === "panel" && s.hour <= c.phpUntil) || s.security.hacked.includes(c.id)) ? PHP_SLOW : 1;
+  (c && ((c.kind === "panel" && s.hour <= c.phpUntil) || s.security.hacked.includes(c.id)) ? PHP_SLOW : 1) * contention(s, c);
 
 export const phpLag = (s: GameState, c: Cluster): number => phpBehind(c.php, yearOf(s.hour));
 // How-to tickets rise 5% per version behind, up to 30%.

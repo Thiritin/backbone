@@ -325,7 +325,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...financeTick(state));
   events.push(...staffTick(state));
   events.push(...techTick(state));
-  autoUpdateTick(state);
+  events.push(...autoUpdateTick(state));
   events.push(...fairsTick(state));
   events.push(...marketingTick(state));
   events.push(...newsTick(state));
