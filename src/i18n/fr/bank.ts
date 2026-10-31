@@ -64,7 +64,7 @@ export default {
   "ticket.mail.bankOverdraft.subject": () => "Votre découvert",
   "ticket.mail.bankOverdraft.text": (p) => `${p.bank} a fixé votre découvert autorisé à ${euro(Number(p.limit))} avec un taux d'intérêt de ${p.rate} % par an.`,
   "ticket.mail.bankWelcome.subject": (p) => `Votre compte chez ${p.bank}`,
-  "ticket.mail.bankWelcome.text": (p) => `Bienvenue chez ${p.bank}. Votre compte professionnel ${p.number} est ouvert. Votre code PIN pour la banque en ligne est ${p.pin}. Vous pouvez vous connecter sur ${p.url}.`,
+  "ticket.mail.bankWelcome.text": (p) => `Bienvenue chez ${p.bank}. Votre compte professionnel est ouvert.\n\nNuméro de compte : ${p.number}\nCode PIN de la banque en ligne : ${p.pin}\nConnexion : ${p.url}`,
   "ticket.mail.bankMtan.subject": () => "Votre mTAN",
   "ticket.mail.bankMtan.text": (p) => `La mTAN de votre virement de ${euroCents(Number(p.amount))} à ${p.name} est ${p.code}.`,
   "ticket.mail.bankTanList.subject": (p) => `Liste TAN n° ${p.n}`,
