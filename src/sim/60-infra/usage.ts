@@ -10,7 +10,7 @@ import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { booked, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
-import { modLoad } from "./games";
+import { modById } from "../10-catalog/games";
 import { machineScreen } from "./oob";
 import { installedRamGb, portPeers, raidUsable, working } from "./status";
 import { THERMAL, throttled } from "./thermal";
@@ -71,6 +71,9 @@ function osUse(s: GameState, id: string, cpus: number, ramGb: number, hour: numb
   const r = rand(hashRng(s.seed, idNum(id), hour));
   return { vcpu: Math.min(cpus, busy ? 0.6 + 0.4 * r : 0.02 + 0.06 * r), ramGb: Math.min(ramGb * (busy ? 0.4 : 0.15), busy ? 1 : 0.5) * (0.9 + 0.2 * r), diskGb: 0 };
 }
+
+// What a game server's mods multiply its resource use by.
+const modLoad = (s: GameState, serviceId: string): number => (s.gameServers.find((g) => g.serviceId === serviceId)?.mods ?? []).reduce((n, id) => n * (modById(id)?.load ?? 1), 1);
 
 // What a workload uses of its booking at an hour; a panel VM uses what its panel and web spaces use.
 export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): Resources {
