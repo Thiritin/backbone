@@ -2,7 +2,7 @@ import { MonitorCog } from "lucide-react";
 import type { ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { BMC_NAME, modelById } from "../../../sim/10-catalog/hardware";
+import { BMC_NAME, modelById, oobPorts } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState } from "../../../sim/50-state";
 import { oobIp } from "../../../sim/60-infra/addresses";
 import {
@@ -21,7 +21,7 @@ export function RemoteCard({ game, device }: { game: GameState; device: Device }
   const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const hand = useHandWork();
   const m = modelById(device.model), server = m.kind === "server", gear = isGear(device), mgmt = isMgmtDevice(device);
-  if (!device.rackId || (!server && !gear && !mgmt)) return null;
+  if (!device.rackId || (!server && !gear && !mgmt) || (gear && !oobPorts(m).length)) return null;
   const link = (ip: string | null) => ip && <button className="loc-link num" onClick={() => openApp("Browser", { kind: "url", id: `http://${ip}/` })}>{ip}</button>;
   const via = consoleVia(game, device.id), holder = consoleHolder(game, device);
   if (server && !via && !holder) return null;
