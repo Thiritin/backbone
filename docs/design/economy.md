@@ -1229,9 +1229,13 @@ Traffic per customer grows 20% a year, about 46× from 2005 to 2026. In 2005 one
 | VPN | 300 | 14,000 |
 | Colocation | 500 | 23,000 |
 
-**Daily curve.** Traffic follows each customer type's usage curve with its jitter, on top of a product's floor, plus the customer's night job (see Usage curves and overcommit), scaled so a week averages to the monthly figure. The 95th percentile in Mbit/s is about GB per month ÷ 164.
+**Daily curve.** Traffic follows each customer type's usage curve with its jitter, on top of a product's floor, plus the customer's night job (see Usage curves and overcommit), scaled so a week averages to the monthly figure. The 95th percentile of its hourly averages in Mbit/s is about GB per month ÷ 164. Transit bills on 5-minute readings, which also catch the bursts inside an hour, so a single service bills higher than that (see Transit billing).
 
-**Transit billing.** Each hourly tick records one sample per port. The bill uses the 95th percentile of the last 30 days (the top 5% of hours are dropped) and never charges less than 20% of the port.
+**Transit billing.** Carriers bill the 95th percentile of 5-minute readings over the last 30 days and never charge less than 20% of the port. The game does not simulate every 5 minutes: each hourly tick records one reading per port that stands in for the hour's twelve.
+
+- **Burst.** Each service's 5-minute traffic swings around its hourly average by a coefficient of variation: game servers 1, storage 0.8, VPN and colocation 0.3, everything else 0.5, and a DDoS 0.5. A zone's burst is the square root of the summed (Mbit/s × burst)² over its total Mbit/s, so many customers smooth each other out and a few bursty ones do not.
+- **Reading.** The hour's reading is its carried Mbit/s times a lognormal factor with mean 1 and the zone's burst as its spread, capped at the port's capacity. The factor's quantile steps by the golden ratio every hour from a seeded start per location, so 30 days of readings cover the whole spread evenly.
+- **Accuracy.** Against true 5-minute sampling, the 95th of these hourly readings lands within about 2% on average (up to 9% in a single month for three game servers alone). Compared with billing the hourly averages, the bill rises about 1% for 200 web hosting customers, 13% to 18% for a mixed early customer base or one colocation customer, 27% for five storage customers and 58% for three game servers alone.
 
 **Uplinks.** Carriers and exchanges sell ports at 1G from 2005, 10G from 2008, 100G from 2014 and 400G from 2021.
 
