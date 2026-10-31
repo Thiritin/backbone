@@ -8,7 +8,7 @@ import { bump, createTicket, profileStats } from "../40-support/tickets";
 import type { Device, GameState, Location, Rack } from "../50-state";
 import { addReview, announceReview, starsFor, type ReviewReason } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
-import { insideVm, isOwnVm, pickNode, vmOf, type Workload } from "./cluster";
+import { insideVm, isOwnVm, moveControlPlaneOff, pickNode, vmOf, type Workload } from "./cluster";
 import type { Incident } from "./ops";
 import { losePower } from "./power";
 import { bootHours, deviceWatts, HOURS_PER_YEAR, isPlugged, locationOf, psusOf } from "./status";
@@ -161,8 +161,8 @@ export function gridTick(s: GameState): SimEvent[] {
   return events;
 }
 
-// The agency takes the server with every disk in it. Each workload restarts on another node of its cluster if one has
-// room: from its backup if it has one, otherwise empty. Customers lose their data without a backup.
+// The agency takes the server with every disk in it. The control plane moves to another node, and each workload restarts
+// on another node of its cluster if one has room (a full node would freeze): from its backup if it has one, otherwise empty. Customers lose their data without a backup.
 export function seize(s: GameState, deviceId: string, agency: string, r: Rng, events: SimEvent[]): Incident | null {
   const d = s.devices.find((x) => x.id === deviceId);
   const loc = d && locationOf(s, d);
@@ -175,13 +175,14 @@ export function seize(s: GameState, deviceId: string, agency: string, r: Rng, ev
   const hit = customersOf(s, workloads);
   s.devices = s.devices.filter((x) => x.id !== d.id);
   s.cables = s.cables.filter((c) => c.a.device !== d.id && c.b.device !== d.id);
+  for (const c of s.clusters) if (c.controlPlane === d.id) moveControlPlaneOff(s, c.id, d.id);
   s.clusters = s.clusters.map((c) => (c.nodes.some((n) => n.deviceId === d.id) ? { ...c, nodes: c.nodes.filter((n) => n.deviceId !== d.id) } : c));
   s.ops = { ...s.ops, seized: [...s.ops.seized, { device: { ...d, rackId: null, slot: 0, panel: null, store: null, software: [] }, locationId: loc.id, at: s.hour, returnAt, agency }] };
   const lost = new Set<string>();
   for (const w of workloads) if (!hasBackupElsewhere(s, (vmOf(s, w) ?? w).id)) lost.add(w.serviceId);
   for (const w of own) {
     const cluster = w.clusterId ? s.clusters.find((c) => c.id === w.clusterId) : undefined;
-    const to = cluster && pickNode(s, cluster, w);
+    const to = cluster && pickNode(s, cluster, w, null, cluster.placement, true);
     if (to) s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, deviceId: to, placedAt: s.hour } : x));
   }
   for (const c of hit) {

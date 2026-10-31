@@ -18,6 +18,8 @@ import { connect, setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { migrateWorkload, restoreWorkload, startWorkload, stopWorkload } from "../src/sim/90-actions/vms";
+import { seize } from "../src/sim/60-infra/incidents";
+import { hashRng } from "../src/sim/00-core/rng";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 // A big 2005 game server, so two of them fill most of an 8 GB node.
@@ -109,6 +111,19 @@ describe("control planes", () => {
     expect(err(provisionService(s, cus, "vps", { label: "Box", clusterId: cluster }))).toBe("error.controlPlaneDown");
     ok(moveControlPlane(s, cluster, second));
     ok(provisionService(s, cus, "vps", { label: "Box", clusterId: cluster }));
+  });
+  it("moves the control plane off a seized server and leaves VMs the survivor has no room for", () => {
+    const { s, cluster, second } = setup();
+    const gamer = addCustomer(s, "Gus Gamer", "gamer");
+    const place = (deviceId: string) => ok(provisionService(s, gamer, "gameServer", { label: "Frag", spec: FRAG, clusterId: cluster, deviceId }));
+    place("dev3");
+    place("dev3");
+    place(second);
+    seize(s, "dev3", "Europoll", hashRng(1), []);
+    expect(clusterById(s, cluster).controlPlane).toBe(second);
+    expect(controlPlaneUp(s, clusterById(s, cluster))).toBe(true);
+    expect(s.workloads.filter((w) => w.deviceId === second)).toHaveLength(1);
+    expect(s.workloads.filter((w) => w.deviceId === "dev3")).toHaveLength(2);
   });
   it("fills platform, control plane and backup defaults into saves from before them", () => {
     const { s, cluster, cus } = setup();
