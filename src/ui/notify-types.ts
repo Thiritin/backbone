@@ -26,7 +26,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   Locations: [
     type("Planned maintenance", "maintenanceStart", "maintenanceEnd"),
     type("Hardware failures", "componentFailed", "dataLoss", "dataCorrupted", "recovered", "serverHung", "serverStuck", "breakerTripped", "feedTripped", "bmcHung", "nodeFrozen", "nodeThawed"),
-    type("Deliveries and moves", "rackArrived", "stockArrived", "drained", "spaceHeld", "holdExpired", "seizedBack"),
+    type("Deliveries and moves", "rackArrived", "stockArrived", "drained", "spaceHeld", "holdExpired", "seizedBack", "contractEnded", "contractRolled"),
     type("Internet line", "lineReady", "lineFull"),
     type("Burn-in and refunds", "burninQuick", "burninFull", "burninAborted", "usedRefund"),
     type("Hand work", "workDone"),
