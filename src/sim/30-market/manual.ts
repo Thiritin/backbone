@@ -3,7 +3,7 @@
 // and set up the service. Numbers in economy.md, Custom orders.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
-import type { Service } from "../30-customers/customers";
+import type { Product, Service } from "../30-customers/customers";
 import { DOMAIN_FEE, domainOf, register, TRANSFER_FEE } from "../30-customers/registry";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
 import { cancelCustomer, isFinal, replyDue, type Ticket } from "../40-support/tickets";
@@ -21,7 +21,8 @@ import { missingFor, requestName, REQUEST_HOURS, type SalesRequest } from "./mar
 import { mailRequest, orderOf } from "./orders";
 import { answerAt, editRequest, habitFor, loseRequest, targetFor } from "./sales";
 import { mailDelay } from "../80-business/mail";
-import type { Spec } from "../10-catalog/products";
+import { belowFloor, bookingFor, covers, packageNamed, suggestedUsername, type PackageDef } from "../80-business/packages";
+import type { Sla, Spec } from "../10-catalog/products";
 import { AUTOMATION_SKILL } from "../10-catalog/research";
 import { failsReview, hiddenTraits, REVIEW_MINUTES, reviewing } from "../45-billing/fraud";
 
@@ -31,8 +32,17 @@ export const isStep = (x: string): x is OrderStep => (ORDER_STEPS as string[]).i
 const STEP_MINUTES: Record<OrderStep, number> = {
   quote: ACTION_MINUTES.orderQuote, account: ACTION_MINUTES.orderAccount, invoice: ACTION_MINUTES.orderInvoice, domain: ACTION_MINUTES.orderDomain, provision: ACTION_MINUTES.orderProvision,
 };
-export const stepMinutes = (step: OrderStep, s?: GameState, r?: SalesRequest): number =>
-  STEP_MINUTES[step] + (step === "account" && s && r && reviewing(s, r.product) ? REVIEW_MINUTES : 0);
+// The package an order provisions from on the host it goes to, or undefined for a custom spec, an automatic route or a missing package.
+export function packageFor(s: GameState, r: SalesRequest, route?: string): PackageDef | undefined {
+  const to = route ?? r.route ?? hostFor(s, r), target = r.pkg && to && to !== "auto" ? routeTarget(s, to, r.product) : null;
+  const c = target && s.clusters.find((x) => x.id === target.clusterId);
+  return c && r.pkg ? packageNamed(c, r.pkg) : undefined;
+}
+export const stepMinutes = (step: OrderStep, s?: GameState, r?: SalesRequest): number => {
+  const pkg = step === "provision" && s && r ? packageFor(s, r) : undefined;
+  if (pkg && covers(pkg, r!.spec)) return ACTION_MINUTES.orderProvisionPackage;
+  return STEP_MINUTES[step] + (step === "account" && s && r && reviewing(s, r.product) ? REVIEW_MINUTES : 0);
+};
 // A customer who pays an order on time does so within this many days, eager to get started.
 export const ORDER_PAY_DAYS = 3;
 const DAY = 24, MONTH = 730;
@@ -141,7 +151,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
       loseRequest(s, r, "declined", "lost.declined");
       return { app: "Support", key: "event.orderDeclined", params: { name: requestName(r) } };
     }
-    const id = addCustomer(s, requestName(r), r.profile, r.shady || r.fraud ? "prompt" : habitFor(hashRng(s.seed, Number(r.id.slice(3)) || 0, 227), r.profile));
+    const id = addCustomer(s, requestName(r), r.profile, r.shady || r.fraud ? "prompt" : habitFor(hashRng(s.seed, Number(r.id.slice(3)) || 0, 227), r.profile), r);
     if (r.shady || r.fraud) s.customers = s.customers.map((c) => (c.id === id ? { ...c, ...hiddenTraits(s, r) } : c));
     editRequest(s, r.id, () => ({ customerId: id }));
     setTicket(s, t.id, { customerId: id, updatedAt: s.hour });
@@ -165,8 +175,10 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
   } else {
     const to = r.route ?? hostFor(s, r) ?? "";
     const target = to === "auto" ? null : routeTarget(s, to, r.product), auto = to === "auto" ? targetFor(s, r) : null;
+    const pkg = packageFor(s, r), booking = pkg && !belowFloor(pkg, r.spec) ? bookingFor(pkg, r.spec) : null;
     const done = provisionService(s, customerId, r.product, {
       label: r.domain ?? requestName(r), sla: r.sla, price: r.quote! / MONTH, spec: r.spec,
+      ...(booking && { pkg: { name: pkg!.name, ...booking } }), ...(r.username && r.product === "webHosting" && { username: r.username }),
       clusterId: target?.clusterId ?? auto?.clusterId ?? null, deviceId: target?.deviceId ?? null, zone: auto?.zone ?? null,
     });
     if (!done.ok) return { app: "Support", key: "event.stepFailed", params: { name: requestName(r), error: done.error ?? "error.noCapacity" } };
@@ -247,16 +259,43 @@ export function resize(s: GameState, v: Service, spec: Spec, route: string, city
   if (route === "auto" && d) {
     const cap = bookable(s, d), used = nodeUsed(s, d.id);
     if ((["ramGb", "diskGb"] as const).every((k) => used[k] - w[k] + size[k] <= cap[k] + 1e-9)) {
-      s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, ...size } : x));
-      s.services = s.services.map((x) => (x.id === v.id ? { ...x, spec } : x));
+      s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, ...size, promised: undefined } : x));
+      s.services = s.services.map((x) => (x.id === v.id ? { ...x, spec, pkgBook: undefined } : x));
       return { ok: true };
     }
   }
   const before = { workloads: s.workloads, services: s.services };
   s.workloads = s.workloads.filter((x) => x.serviceId !== v.id);
-  s.services = s.services.map((x) => (x.id === v.id ? { ...x, spec } : x));
+  s.services = s.services.map((x) => (x.id === v.id ? { ...x, spec, pkgBook: undefined } : x));
   const error = routeError(s, v.product, city, size, route), target = routeTarget(s, route, v.product);
   const placed = error ? { ok: false, error } : placeService(s, v.id, target?.clusterId ?? null, target?.deviceId ?? null);
   if (!placed.ok) Object.assign(s, before);
   return placed.ok ? { ok: true } : placed;
+}
+
+export interface OrderChoice {
+  ticketId: string; requestId: string; name: string; domain?: string;
+  product: Product; spec: Spec; sla: Sla; city: string; quote: number | null;
+  // The invoice is paid; the player may still provision before.
+  paid: boolean;
+  // The step the order waits at.
+  next: OrderStep | null;
+  // Why the provision step cannot run now, an i18n key.
+  error: string | null;
+  suggestedUsername?: string;
+}
+
+// The open orders of the products whose quote the customer accepted and that have no service yet, for a create form to take.
+export function orderChoices(s: GameState, products: Product[]): OrderChoice[] {
+  const out: OrderChoice[] = [];
+  for (const t of s.tickets) {
+    const r = orderOf(s, t);
+    if (!r || isFinal(t) || !LIVE.includes(r.status) || r.serviceId || !products.includes(r.product) || !quoteAccepted(r)) continue;
+    out.push({
+      ticketId: t.id, requestId: r.id, name: requestName(r), ...(r.domain && { domain: r.domain }), product: r.product, spec: r.spec, sla: r.sla, city: r.city,
+      quote: r.quote ?? null, paid: invoiceOf(s, r)?.status === "paid", next: nextStep(s, r), error: stepError(s, t, "provision"),
+      ...(r.product === "webHosting" && r.domain && { suggestedUsername: suggestedUsername(s, r.domain, yearOf(s.hour)) }),
+    });
+  }
+  return out;
 }

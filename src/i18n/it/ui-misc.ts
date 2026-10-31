@@ -209,7 +209,7 @@ export default {
   "misc.onCall": () => "Reperibile",
   "misc.open": () => "Aperto",
   "misc.openBalance": () => "Saldo aperto",
-  "misc.openInBilling": () => "Apri in Fatturazione",
+  "misc.openInBooks": () => "Apri in Contabilità",
   "misc.openTickets": () => "Ticket aperti",
   "misc.opened": () => "Aperto il",
   "misc.out": () => "Uscita",

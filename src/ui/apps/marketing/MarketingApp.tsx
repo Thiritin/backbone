@@ -16,7 +16,7 @@ import { metrics } from "../../../sim/metrics";
 import { PRODUCT } from "../support/labels";
 import { t } from "../../../i18n/en";
 import { useFocus, useStore } from "../../store";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import "../shop/shop.css";
 import "../billing/billing.css";
 import "./marketing.css";

@@ -1,0 +1,40 @@
+.books { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--win); }
+.books-bar { padding: 0 16px; flex: none; }
+.books-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.books-none { padding: 12px 16px; color: var(--text-3); }
+
+.books-split { flex: 1; min-height: 0; display: flex; }
+.books-split > .fin-scroll { flex: 1 1 55%; }
+.books-preview { flex: 1 1 45%; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px; border-left: var(--ar-bw) solid var(--line); container-type: size; }
+/* A4, 210 by 297, as large as the pane allows; type scales with the page width. */
+.books-a4 { width: min(100cqw - 28px, (100cqh - 64px) * 210 / 297); aspect-ratio: 210 / 297; background: #fff; color: #222; box-shadow: 0 1px 4px rgb(0 0 0 / 0.25); padding: 7% 8%;
+  display: flex; flex-direction: column; gap: 4%; font-size: max(7px, 3.2cqw); container-type: inline-size; overflow: hidden; }
+.books-a4 h2 { font-size: 1.6em; font-weight: 700; margin: 0; }
+.books-a4 .books-from { margin: 0.3em 0 0; font-size: 0.8em; color: #666; }
+.books-a4 address { font-style: normal; line-height: 1.35; }
+.books-a4 table { width: 100%; border-collapse: collapse; }
+.books-a4 th { text-align: left; font-weight: 600; border-bottom: 1px solid #999; padding: 0.3em 0; }
+.books-a4 td { padding: 0.3em 0; border-bottom: 1px solid #ddd; }
+.books-a4 .r { text-align: right; }
+.books-a4 .books-total td { font-weight: 700; border-bottom: 0; }
+.books-a4 footer { margin-top: auto; display: flex; align-items: center; gap: 0.6em; }
+
+.books-bank { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 12px 16px; overflow: auto; }
+.books-bank h3 { font-size: 13px; font-weight: 650; margin: 0 0 6px; }
+.books-differs { display: flex; align-items: center; gap: 10px; margin: 0 16px 14px; padding: 8px 12px; border: var(--ar-bw) solid var(--bad, #c33); border-radius: 6px; color: var(--bad-text, var(--bad, #c33)); flex: none; }
+.books-differs span { margin-right: auto; }
+
+.books-rules { margin: 16px; }
+.books .fin-table td .pill { margin-left: 6px; }
+
+.books-customers { flex: 1; min-height: 0; display: flex; }
+.books-list { width: 260px; flex: none; overflow: auto; display: flex; flex-direction: column; gap: 1px; }
+.books-item { width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: none; font: inherit; color: var(--text); text-align: left; display: flex; align-items: flex-start; gap: 8px; }
+.books-item:hover { background: var(--hover); }
+.books-item.active { background: var(--ar-sel, var(--accent)); color: var(--ar-sel-ink, var(--accent-ink)); }
+.books-li { flex: 1; min-width: 0; display: grid; }
+.books-li small, .books-list small { opacity: 0.75; font-size: 11.5px; }
+.books-li small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.books-customer { flex: 1; min-width: 0; overflow: auto; padding: 16px; display: grid; gap: 14px; align-content: start; }
+.books-customer h2 { font-size: 15px; font-weight: 650; margin: 0; }
+.books-address { font-style: normal; line-height: 1.4; padding: 10px 14px; border: var(--ar-bw) solid var(--line-strong); background: var(--field); width: max-content; }

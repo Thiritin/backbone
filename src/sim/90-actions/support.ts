@@ -121,7 +121,7 @@ export function closeTicket(s: GameState, id: string): ActionResult {
     sendAction(s, f.t, c, "cancel");
     cancelCustomer(s, c);
     f.t.outcome = "cancelled";
-  } else if (f.t.status === "open") bump(c, -10);
+  } else if (f.t.status === "open") bump(c, f.t.topic === "bucketPublic" ? -2 : -10);
   Object.assign(f.t, { status: "closed", updatedAt: s.hour, unread: false });
   return { ok: true, id };
 }

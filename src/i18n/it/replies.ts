@@ -113,6 +113,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     () => "Ci sono due fatture perché i consumi vengono fatturati a fine mese per il mese precedente. Sono entrambe corrette, e nulla è stato addebitato due volte.",
     () => "Un pagamento è la fattura attuale, l'altro i consumi del mese scorso, che fatturiamo in via posticipata. Il tuo conto è in ordine.",
   ],
+  "tpl.foundPayment": [
+    () => "Abbiamo trovato il tuo bonifico e lo abbiamo registrato sulla fattura. Puoi ignorare il sollecito.",
+    () => "Grazie, il pagamento è arrivato e la fattura è saldata. Il sollecito è partito prima che lo registrassimo.",
+    () => "Il tuo bonifico ora è registrato sulla fattura. Non resta nulla di aperto, quindi il sollecito non vale più.",
+  ],
   "tpl.resend": [
     () => "Ti abbiamo mandato una copia della fattura. Facci sapere se non arriva.",
     () => "Una copia della fattura è in arrivo al tuo indirizzo di contatto.",

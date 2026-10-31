@@ -657,6 +657,9 @@ Private customers and hobbyists use their sites in the evening and forgive a wee
 
 **Planned maintenance.** An outage on a machine covered by a window the customer was told about at least 24 hours ahead costs no happiness, writes no outage ticket and adds no hours down to the month, so it earns no SLA credit. Work that runs past the window counts as a normal outage from the window's end, noticed from that hour on. A window announced less than 24 hours ahead keeps half of every penalty: half the happiness loss, half the chance of a ticket and half the hours down. Online shops ask to move a window that touches a weekday between 08:00 and 20:00, and gamers decline a window that starts on a Friday or Saturday night (17:00 to 09:00); neither is covered by it until the window is moved, so their outages cost the full penalties. Moving a window is free and starts the 24 hours of notice again.
 
+
+Shared links without an expiry that are older than 90 days leak with a monthly chance of 0.015 (0.003 with a password) and cost the customer 20 happiness. The expiry policy of 7, 30 or 90 days trades these leaks for extension tickets.
+
 ## Tickets and work rates
 
 A low-skill customer creates about 0.3 tickets a month, so one average support agent keeps about 1,400 of them answered. Every job in the game, from tickets to cabling, is a task with a handling time, and staff work through tasks at a rate set by their skill.
@@ -714,6 +717,9 @@ Staff work 8 hours a day, Monday to Friday, with 30 days of holiday and about 10
 
 **AI support bot.** It works 24 hours a day at 10× the rate of a skill-50 agent, is right 85% of the time, never improves, and only takes how-to and billing questions. It costs €1,500 per month when it unlocks.
 
+
+Bucket requests: each month a storage service raises a request to make a bucket public with probability 0.06. Approving gives the customer +3 happiness, declining by closing the ticket costs 2, and closing a public bucket again costs 1. A public bucket has a 0.04 monthly chance of exposing its files, which costs 25 happiness. Shared links: OwnClod customers hand out about half a link per user each month; an expired link has a 0.10 chance of a request to extend it.
+
 ## Billing and payment habits
 
 Invoices are due 14 days after they go out. Most customers pay on time, and the rest only pay once the matching dunning step is sent. A step the player never sends means that money never arrives while the service keeps running.
@@ -740,7 +746,7 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 
 Resolving the ticket adds the usual +5 happiness on top. Handling an appeal takes 15 minutes.
 
-**Billing rules.** The Automation entry in the Billing app sends the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
+**Billing rules.** The rules in the Reminders tab of Books send the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
 
 **Time per action.** Every employee action takes time from their workday, so one employee can't carry the whole company. Staff divide these times by their speed (0.5 plus skill/100, so skill 50 takes the times as listed); bots work at twice the speed. The code keeps them in `ACTION_MINUTES` (src/sim/47-staff/activity.ts), and ticket times in `MINUTES` (the ticket table above).
 
@@ -970,7 +976,7 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 
 | Module | App | Base per month | Plus | Needs |
 | --- | --- | --- | --- | --- |
-| Starter | Locations, Shop, Customers, Support (shown as Email), Billing (manual), Finance (account statement), Bank, Research, Settings, Pear Store | Free | | Start |
+| Starter | Locations, Shop, Customers, Support (shown as Email), Books (manual), Finance (account statement), Bank, Research, Settings, Pear Store | Free | | Start |
 | Monitoring | Monitoring | €10 | €0.50 per monitored device | Monitoring skill |
 | Nagiosaurus | Monitoring tab in Security | €15 | | Monitoring skill |
 | Virtual machines | Virtual machines | Free | | A hypervisor installed |
@@ -1263,6 +1269,11 @@ Prices follow the same yearly multipliers as other hardware (see [Prices over ti
 
 An outage reaches the servers for the minutes the UPS and the site can't bridge, rounded up to whole hours of downtime. Customers hit by an hour or more ask for a refund with a 10% chance at low budget, 15% at medium and 30% at high budget (decision).
 
+
+### Erasure sets
+
+The drives of a MinnIO cluster form sets of up to 16. Parity 2 or 4 is how many drives of a set can fail; the data shards leave `(n - parity) / n` of the disk, so EC:2 on 8 drives is 75% and EC:4 is 50%. One to parity failed drives mean a degraded set: the storage customers are marked slow, and after 72 hours without a replacement each loses 1 happiness a day. More failed drives than the parity take the set offline until a drive is back. A replaced drive heals at 40 GB per hour.
+
 ## Notices and legal requests
 
 Rates per active customer per month (decisions):
@@ -1494,6 +1505,8 @@ The link speed is the slowest link between the two nodes, shared by every migrat
 **Private networks.** A private network costs the customer €5 a month as an add-on (m = 1) and costs you nothing to run.
 
 ## Usage curves and overcommit
+
+**Packages.** A software installation holds up to 12 named packages (`80-business/packages.ts`). The provision step of an order takes 8 minutes (`orderProvisionPackage`) with a package that covers the ordered vCPU, RAM and disk, and 15 minutes with a custom spec or a smaller package. A package may book as little as 25% of the sold vCPU and 50% of the sold RAM and disk; below that the step fails. A smaller package books less than was sold, and the service keeps using the sold size times its load, so the node slows through the usual contention. Web hosting usernames have 8 characters before 2012 and 16 from 2012, start with a lowercase letter and are unique among services.
 
 **Usage curves.** Each workload's load is a share of what it booked, from 0 to 1, read from its type's curve below. Values between keyframes are straight lines. Each day of the week then scales the curve by its weekday factor below, each service's day strays up to ±15% from it (drawn from the seed per day), and each workload adds ±20% hourly jitter drawn from the seed. Fridays from 18:00 count as weekend for game servers and VPNs.
 

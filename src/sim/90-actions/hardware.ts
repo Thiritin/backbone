@@ -1,11 +1,11 @@
 import { rand } from "../00-core/rng";
-import { monthIndexOf, yearOf } from "../00-core/time";
+import { hourOf, dateOf, monthIndexOf, yearOf } from "../00-core/time";
 import { boardVendor, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, leadFactor, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
-import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
@@ -64,6 +64,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   const positions = space === "share" ? 1 : size;
   const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };
   s.locations.push(loc);
+  s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly: spacePrice(dc, space, size), endsAt: null });
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
@@ -92,18 +93,50 @@ export function leaveWaitlist(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
-export function closeLocation(s: GameState, locationId: string): ActionResult {
+// Why a location cannot be handed back right now, or null when it is empty.
+function closeError(s: GameState, locationId: string): string | null {
   const loc = s.locations.find((l) => l.id === locationId);
-  if (!loc) return fail("error.unknownLocation");
-  if (loc.space === "basement") return fail("error.cannotClose");
-  if (s.devices.some((d) => d.store === locationId || d.transitTo === locationId)) return fail("error.storageNotEmpty");
+  if (!loc) return "error.unknownLocation";
+  if (loc.space === "basement") return "error.cannotClose";
+  if (s.devices.some((d) => d.store === locationId || d.transitTo === locationId)) return "error.storageNotEmpty";
   const racks = s.racks.filter((r) => r.locationId === locationId);
-  if (racks.some((r) => !r.provided || s.devices.some((d) => d.rackId === r.id))) return fail("error.locationNotEmpty");
+  if (racks.some((r) => !r.provided || s.devices.some((d) => d.rackId === r.id))) return "error.locationNotEmpty";
+  return null;
+}
+
+// Hour the notice period ends: midnight of the first day after `months` whole months from now.
+export function noticeEnd(hour: number, months: number): number {
+  const d = dateOf(hour);
+  return hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + months + 1, 1)));
+}
+
+export function cancelContract(s: GameState, contractId: string): ActionResult {
+  const c = s.contracts.find((x) => x.id === contractId);
+  if (!c) return fail("error.unknownContract");
+  if (c.endsAt !== null) return fail("error.alreadyCancelled");
+  const why = closeError(s, c.locationId);
+  if (why) return fail(why);
+  c.endsAt = noticeEnd(s.hour, NOTICE_MONTHS[c.space]);
+  return { ok: true };
+}
+
+export function revokeCancel(s: GameState, contractId: string): ActionResult {
+  const c = s.contracts.find((x) => x.id === contractId);
+  if (!c) return fail("error.unknownContract");
+  if (c.endsAt === null) return fail("error.notCancelled");
+  c.endsAt = null;
+  return { ok: true };
+}
+
+export function closeLocation(s: GameState, locationId: string): ActionResult {
+  const why = closeError(s, locationId);
+  if (why) return fail(why);
   s.racks = s.racks.filter((r) => r.locationId !== locationId);
   const panel = new Set(s.devices.filter((d) => d.panel === locationId).map((d) => d.id));
   unplug(s, panel);
   s.devices = s.devices.filter((d) => !panel.has(d.id));
   s.locations = s.locations.filter((l) => l.id !== locationId);
+  s.contracts = s.contracts.filter((c) => c.locationId !== locationId);
   return { ok: true };
 }
 

@@ -7,6 +7,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { setBillingRules, suspendServices } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { sendDrafts } from "./fixtures";
 
 const DAY = 24;
 // Billing only, so support churn and tickets don't move happiness.
@@ -20,6 +21,7 @@ function overdue(seed: number, habit: PaymentHabit = "prompt") {
   const c = addCustomer(s, "Ada", "private", habit);
   const v = addService(s, c, "domain", "ada.com", 12, "year");
   tick(s);
+  sendDrafts(s);
   Object.assign(s.invoices[0], { payStep: 4, payAt: null });
   bill(s, s.invoices[0].dueAt + DAY);
   return { s, c, v, inv: () => s.invoices[0], customer: () => s.customers.find((x) => x.id === c)! };
@@ -96,7 +98,7 @@ describe("billing rules", () => {
     bill(s, inv().dueAt + 14 * DAY - 1);
     expect(isSuspended(s, customer().id)).toBe(false);
     s.hour++;
-    expect(billingTick(s)).toEqual([{ app: "Billing", key: "event.suspended", params: { customer: "Ada", invoice: inv().number } }]);
+    expect(billingTick(s)).toEqual([{ app: "Books", key: "event.suspended", params: { customer: "Ada", invoice: inv().number } }]);
     expect(inv()).toMatchObject({ suspended: true, suspendedAt: s.hour });
     expect(customer().happiness).toBe(55);
     // A suspension the player lifts stays lifted.

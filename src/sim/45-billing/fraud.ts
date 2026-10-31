@@ -78,7 +78,7 @@ export function fraudTick(s: GameState): SimEvent[] {
     const fee = s.chargebackStrikes >= 2 ? WATCHED_FEE : CHARGEBACK_FEE;
     book("payments", "ledger.chargeback", { customer: c.name }, -paid);
     book("fees", "ledger.chargebackFee", { customer: c.name }, -fee);
-    events.push({ app: "Billing", key: "event.chargeback", params: { customer: c.name, amount: cents(paid + fee) } });
+    events.push({ app: "Books", key: "event.chargeback", params: { customer: c.name, amount: cents(paid + fee) } });
   }
   if (booked.length) s.ledger = [...s.ledger, ...booked];
   if (!isMonthStart(s.hour)) return events;
@@ -101,11 +101,11 @@ export function fraudTick(s: GameState): SimEvent[] {
   }
   s.chargebackStrikes = Math.min(2, s.chargebackStrikes + 1);
   if (s.chargebackStrikes === 1) {
-    events.push({ app: "Billing", key: "event.chargebackWarning", params: { count: backs } });
+    events.push({ app: "Books", key: "event.chargebackWarning", params: { count: backs } });
   } else {
     s.cash = cents(s.cash - PROVIDER.monthlyFee);
     s.ledger = [...s.ledger, { hour: s.hour, category: "fees", key: "ledger.chargebackProgram", params: {}, amount: -PROVIDER.monthlyFee }];
-    events.push({ app: "Billing", key: "event.chargebackFees", params: { fee: PROVIDER.monthlyFee, chargeback: WATCHED_FEE } });
+    events.push({ app: "Books", key: "event.chargebackFees", params: { fee: PROVIDER.monthlyFee, chargeback: WATCHED_FEE } });
   }
   return events;
 }

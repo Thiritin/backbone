@@ -210,7 +210,7 @@ export default {
   "misc.onCall": () => "Bereitschaft",
   "misc.open": () => "Offen",
   "misc.openBalance": () => "Offener Betrag",
-  "misc.openInBilling": () => "In der Abrechnung öffnen",
+  "misc.openInBooks": () => "In der Buchhaltung öffnen",
   "misc.openTickets": () => "Offene Tickets",
   "misc.opened": () => "Geöffnet",
   "misc.out": () => "Aus",

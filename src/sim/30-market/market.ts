@@ -1,6 +1,7 @@
 // The market: who looks for a host each month, how many of them pick you, and what they ask for.
 // Values and decisions are in docs/design/economy.md, "Market and leads", "Customer choice" and "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
+import { CITY_TLD } from "../30-customers/domains";
 import { yearOf } from "../00-core/time";
 import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
 import { gpuDemand, GPU_SHARE } from "../10-catalog/gpu";
@@ -34,6 +35,8 @@ export interface SalesRequest {
   // An email order: whether the customer owns the domain already, its first invoice and the route chosen for its setup
   // ("auto", a cluster id or a node's device id).
   owned?: boolean; invoiceId?: string; route?: string;
+  // The package name and web hosting username the provision step uses.
+  pkg?: string; username?: string;
   // Placed through the order form: the website's prices are the quote and ordering is the acceptance.
   form?: boolean;
   // Taken by a shop system rather than the hand-rolled form; a shop order that cannot be placed is cancelled, never lost.
@@ -269,5 +272,7 @@ export function senderFor(r: Rng, profile: Profile, shady = false, us = false): 
   };
   return { contact, company: company[profile] };
 }
+
+export const personName = (r: Rng, city: string): string => senderFor(r, "private", false, CITY_TLD[city]?.tld === "com").contact;
 
 export const requestName = (r: Pick<SalesRequest, "contact" | "company">): string => r.company ?? r.contact;

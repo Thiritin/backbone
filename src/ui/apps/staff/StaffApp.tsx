@@ -21,7 +21,7 @@ import { runwayLabel } from "../finance/FinanceApp";
 import { Facts, Sheet } from "../locations/ui";
 import { TechPanel } from "./TechPanel";
 import { Shifts } from "./Shifts";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import { initials } from "../support/labels";
 import "../shop/shop.css";
 import "./staff.css";
