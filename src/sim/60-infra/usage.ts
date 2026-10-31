@@ -10,6 +10,7 @@ import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { booked, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
+import { modLoad } from "./games";
 import { machineScreen } from "./oob";
 import { installedRamGb, portPeers, raidUsable, working } from "./status";
 import { THERMAL, throttled } from "./thermal";
@@ -80,9 +81,9 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
     for (const p of parts) { u.vcpu += p.vcpu; u.ramGb += p.ramGb; u.diskGb += p.diskGb; }
     return u;
   }
-  const load = workloadLoad(s, w, hour), lost = lostDisk(s, w);
+  const load = workloadLoad(s, w, hour), lost = lostDisk(s, w), mods = modLoad(s, w.serviceId), busy = Math.min(1, load * mods);
   const grow = (k: "vcpu" | "ramGb" | "diskGb") => (w.promised && w[k] > 0 ? w.promised[k] / w[k] : 1);
-  return { vcpu: booked(s, w).vcpu * grow("vcpu") * load, ramGb: w.stopped || lost ? 0 : w.ramGb * grow("ramGb") * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * grow("diskGb") * diskFill(s, w, hour) };
+  return { vcpu: booked(s, w).vcpu * grow("vcpu") * load * mods, ramGb: w.stopped || lost ? 0 : w.ramGb * grow("ramGb") * (RAM_BASE + (1 - RAM_BASE) * busy), diskGb: lost ? 0 : w.diskGb * grow("diskGb") * diskFill(s, w, hour) };
 }
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by

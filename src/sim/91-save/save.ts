@@ -19,6 +19,7 @@ import { fillHostnames } from "../30-customers/hostnames";
 import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
+import { fillGames } from "../60-infra/games";
 import { fillMachines } from "./machines";
 import { legacyLeads } from "./leads";
 import { heldLicenses } from "../85-products/products";
@@ -123,6 +124,7 @@ export function deserialize(raw: string): GameState {
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
   legacyLeads(s);
+  fillGames(s);
   shelveRouter(s);
   // Machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.licenses) s.licenses = heldLicenses(s);
