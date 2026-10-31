@@ -25,6 +25,7 @@ import { newSites, type Sites } from "./60-infra/apps";
 import type { Breach } from "./60-infra/breach";
 import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
+import { seedRivals, type Rival, type ShareEntry } from "./30-market/rivals";
 import type { FairBooking } from "./80-business/fairs";
 import type { Sponsorship } from "./80-business/community";
 import type { SponsorOffer } from "./80-business/sponsorboard";
@@ -301,6 +302,8 @@ export interface GameState {
   webpanel: WebPanel;
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
+  competitors: Rival[];
+  shareLog: ShareEntry[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
   nextNode: number;
   nextVm: number;
@@ -405,6 +408,8 @@ export const newGame = (seed: number): GameState => ({
   netsvc: newNetSvc(),
   webpanel: newWebPanel(),
   news: [],
+  competitors: seedRivals(seed),
+  shareLog: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
   log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],

@@ -60,6 +60,7 @@ import type { Component, Device, GameState, LedgerEntry } from "../50-state";
 import { scoreTick } from "../80-business/scores";
 import { trendTick } from "../80-business/trend";
 import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered, readOnlySweep } from "../60-infra/status";
+import { rivalsTick } from "../30-market/rivals-tick";
 
 export interface SimEvent {
   app: string;
@@ -283,6 +284,7 @@ export function tick(state: GameState): SimEvent[] {
   if (state.waitlist.length) updateHolds(state, events);
   contractsEnd(state, events);
   if (monthStart) competitorsTake(state);
+  if (monthStart) events.push(...rivalsTick(state));
   if (monthStart) {
     const d = dateOf(state.hour);
     events.push({ app: "Finance", key: "event.monthStart", params: { month: d.getUTCMonth(), year: d.getUTCFullYear() } });

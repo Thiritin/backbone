@@ -17,6 +17,7 @@ import { t } from "../../i18n/en";
 import { familyOf } from "../60-infra/vulns";
 import type { SimEvent } from "../88-tick/tick";
 import { MAIL_PROVIDERS } from "./mail";
+import { rivalNews } from "../30-market/rivals";
 import { vendorHost, vendorReleases, VENDORS } from "./vendors";
 
 type Params = Record<string, string | number>;
@@ -98,7 +99,7 @@ export const appParams = (app: string): Params => ({ app: t(`apps.name.${app}`) 
 export function feed(s: GameState): { hour: number; key: string; params: Params }[] {
   return s.news.flatMap((e) => {
     const [id, hour] = e.split("@"), d = id.startsWith("line.") ? lineDef(id.slice(5)) : id.startsWith("release.") ? releaseDef(id)
-      : id.startsWith("app.") ? { id, key: "event.news.app", at: -1, params: appParams(id.slice(4)) } : NEWS.find((x) => x.id === id);
+      : id.startsWith("rival.") ? rivalNews(s, id) : id.startsWith("app.") ? { id, key: "event.news.app", at: -1, params: appParams(id.slice(4)) } : NEWS.find((x) => x.id === id);
     return d ? [{ hour: Number(hour), key: d.key, params: d.params }] : [];
   }).sort((a, b) => b.hour - a.hour);
 }

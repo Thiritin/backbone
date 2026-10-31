@@ -3,7 +3,7 @@
 import { binomial, createRng, rand, type Rng } from "../00-core/rng";
 import { WORK_SHARE, type Patience } from "../00-core/workhours";
 import {
-  BASEMENT_SLOTS, BUDGET_SIZE, businessPowerPrice, CHOICE_TAU, CITIES, COMPETITORS, generationAt,
+  BASEMENT_SLOTS, BUDGET_SIZE, businessPowerPrice, CHOICE_TAU, CITIES, generationAt,
   leadCapShare, LEVELS, MARKET_GROWTH, monthlySalary, NEVER_PAYS, ON_TIME, PAYMENT_MINUTES, PROFILES,
   REPAIR_HOURS, SEARCH_AD_COST, SERVER_AFR, STAFF_HOURS_PER_MONTH, START_CASH,
   TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vpsPlanGb,
@@ -31,6 +31,8 @@ import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
 import { marketPrice, marketSetup, type Spec } from "../10-catalog/products";
 import { EMAIL_SHARE } from "../30-market/orders";
+import { driftRival, seedRivals } from "../30-market/rivals";
+import { hourOf } from "../00-core/time";
 import { CHARGEBACK_FEE, fraudShare, TRANSFER_FACTOR } from "../45-billing/fraud";
 import { factorFor, REGISTRARS, tierFor } from "../10-catalog/registrars";
 import { DOMAIN_FEE, registryCost } from "../30-customers/registry";
@@ -159,6 +161,7 @@ function grow(w: Worker, month: number): void {
 
 export function run(bot: Bot, seed: number, years = 15): RunResult {
   const rng = createRng(seed);
+  let field = seedRivals(seed);
   const cohorts: Cohort[][] = PROFILES.map(() => PRODUCTS.map(() => ({ n: 0, H: 70 })));
   cohorts[0][0] = { n: 3, H: 85 };
   // The first server, bought from the starting savings in January.
@@ -185,6 +188,8 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const year = 2005 + Math.floor(month / 12);
     const yf = 2005 + month / 12;
     const gen = generationAt(year);
+    // The rivals drift as in the game (30-market/rivals.ts); the game rolls its first month in February 2005.
+    if (month > 0) field = field.map((r, i) => driftRival(r, i, seed, hourOf(new Date(Date.UTC(2005, month, 1)))).rival);
 
     // Scores (Customer choice).
     const vpsServers = servers.length;
@@ -201,7 +206,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const U = (p: Profile, pr: Product, locPenalty: number) =>
       p.wP * (P[pr] - locPenalty) + p.wR * R[pr] + p.wC * C - p.lambda * 100 * (bot.priceFactor - 1);
     // ponytail: the cohort model keeps the four archetypes in every segment; specialists and product lines live in the real market (30-market).
-    const rivals = (p: Profile, _pr: Product) => COMPETITORS.filter((c) => c.priceFactor <= p.cap && !c.targets);
+    const rivals = (p: Profile, _pr: Product) => field.filter((c) => c.priceFactor <= p.cap && !c.targets);
     const best = (p: Profile, pr: Product) => Math.max(...rivals(p, pr)
       .map((c) => p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (c.priceFactor - 1)));
     const share = (p: Profile, pr: Product) => {
@@ -233,7 +238,11 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
         const leads = Math.min(organic + referrals, cap) + (paid + site) * (1 - SPILL_SHARE);
         book_("organic", organic); book_("referrals", referrals); book_("paid", paid); book_("website", site); book_("leads", leads); book_("cap", cap);
         book_("city" + c, leads);
-        PRODUCTS.forEach((pr, k) => { newCustomers[i][k] += binomial(rng, Math.round(leads * wants(p, pr)), share(p, pr)); });
+        PRODUCTS.forEach((pr, k) => {
+          const n = Math.round(leads * wants(p, pr)), won = binomial(rng, n, share(p, pr));
+          newCustomers[i][k] += won;
+          book_("asked", n); book_("won", won);
+        });
       });
     }
     // Awareness (Marketing and reviews): paid leads, the website, the review score, the free listing's trust and happy customers.
