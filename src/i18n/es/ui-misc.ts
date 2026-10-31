@@ -209,7 +209,7 @@ export default {
   "misc.onCall": () => "De guardia",
   "misc.open": () => "Abierto",
   "misc.openBalance": () => "Saldo pendiente",
-  "misc.openInBilling": () => "Abrir en Facturación",
+  "misc.openInBooks": () => "Abrir en Contabilidad",
   "misc.openTickets": () => "Tickets abiertos",
   "misc.opened": () => "Abierto el",
   "misc.out": () => "Salida",

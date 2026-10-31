@@ -30,7 +30,7 @@ export type Page =
   | { kind: "bank"; id: BankId }
   | { kind: "supplier"; name: string }
   | { kind: "host"; hostname: string }
-  | { kind: "console"; hostname: string; clusterId: string; defaced: boolean }
+  | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
   | { kind: "ipmi"; deviceId: string }
   | { kind: "kvm"; deviceId: string }
   | { kind: "video" }
@@ -128,7 +128,7 @@ function machineOf(s: GameState, key: string, byIp: boolean): { hostname: string
 function machinePage(s: GameState, m: { hostname: string; load: Load }, port: string, path: string): Pick<Resolved, "page" | "load"> {
   const c = consoleAt(s, m.hostname, port, path);
   if (!c && port) return { page: { kind: "notfound" }, load: "fast" };
-  return { page: c ? { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c) } : { kind: "host", hostname: m.hostname }, load: m.load };
+  return { page: c ? { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c), path } : { kind: "host", hostname: m.hostname }, load: m.load };
 }
 
 export function resolve(s: GameState, raw: string): Resolved {

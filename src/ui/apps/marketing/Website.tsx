@@ -11,7 +11,7 @@ import { setCompany, TAGLINE_MAX } from "../../../sim/90-actions/company";
 import { setUpChannel } from "../../../sim/90-actions/marketing";
 import { buildSite, launchSite, redesign, setEmailOrders, setLine, setSiteHost } from "../../../sim/90-actions/website";
 import { useStore } from "../../store";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import { PRODUCT } from "../support/labels";
 
 const STATUS: Record<SiteStatus, [string, string]> = { up: [t("marketing.statusUp"), "ok"], slow: [t("marketing.statusSlow"), "warn"], down: [t("marketing.statusDown"), "bad"] };

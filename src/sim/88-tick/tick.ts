@@ -15,6 +15,7 @@ import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
 import { autoUpdateTick } from "../90-actions/software";
 import { snapshotTick } from "../90-actions/snapshots";
+import { closeLocation, noticeEnd } from "../90-actions/hardware";
 import { officeOpen } from "../80-business/office";
 import { fairsTick } from "../80-business/fairs";
 import { communityTick } from "../80-business/sponsoring";
@@ -62,6 +63,17 @@ export interface SimEvent {
 }
 
 const cents = (v: number) => Math.round(v * 100) / 100;
+
+// A cancelled contract closes its location when the notice period ends. A location still holding hardware rolls one more month.
+function contractsEnd(state: GameState, events: SimEvent[]): void {
+  for (const c of state.contracts) {
+    if (c.endsAt === null || c.endsAt > state.hour) continue;
+    const loc = state.locations.find((l) => l.id === c.locationId);
+    if (closeLocation(state, c.locationId).ok) { events.push({ app: "Locations", key: "event.contractEnded", params: { location: loc?.name ?? "" } }); continue; }
+    c.endsAt = noticeEnd(state.hour, 0);
+    events.push({ app: "Locations", key: "event.contractRolled", params: { location: loc?.name ?? "" } });
+  }
+}
 
 // Drops the lease and makes its devices owned.
 export function endLease(s: GameState, leaseId: string) {
@@ -264,6 +276,7 @@ export function tick(state: GameState): SimEvent[] {
     competitorsCancel(state);
   }
   if (state.waitlist.length) updateHolds(state, events);
+  contractsEnd(state, events);
   if (monthStart) competitorsTake(state);
   if (monthStart) {
     const d = dateOf(state.hour);

@@ -1,5 +1,5 @@
 import {
-  annuity, AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
+  annuity, AUTO_COLLECT_DAYS, issue, owed, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
 } from "../45-billing/billing";
 import { bankById } from "../10-catalog/banks";
 import type { GameState } from "../50-state";
@@ -10,6 +10,31 @@ const fail = (error: string): ActionResult => ({ ok: false, error });
 const unpaidInvoice = (s: GameState, id: string) => s.invoices.find((i) => i.id === id && isUnpaid(i));
 const log = (s: GameState, inv: Invoice, key: keyof typeof ACTION_MINUTES | "writeOff") =>
   logActivity(s, { customerId: inv.customerId, serviceId: null, by: null, key: `activity.${key}`, params: { invoice: inv.number }, minutes: key === "writeOff" ? 0 : ACTION_MINUTES[key] });
+
+// Emails a draft invoice as PDF.
+export function sendInvoice(s: GameState, invoiceId: string): ActionResult {
+  const inv = s.invoices.find((x) => x.id === invoiceId && x.status === "draft");
+  if (!inv) return fail("error.invoiceSent");
+  issue(s, inv);
+  log(s, inv, "sendInvoice");
+  return { ok: true };
+}
+
+// Books a bank transfer against an invoice. A smaller amount is a partial payment unless settle writes the difference off;
+// a larger one pays the invoice and leaves the rest as the customer's credit.
+export function matchTransfer(s: GameState, transferId: string, invoiceId: string, settle = false): ActionResult {
+  const tr = s.transfers.find((x) => x.id === transferId && x.invoiceId === null);
+  if (!tr) return fail("error.transferMatched");
+  const inv = unpaidInvoice(s, invoiceId);
+  if (!inv) return fail("error.invoiceSettled");
+  s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId, matchedAt: s.hour } : x));
+  const rest = cents(owed(inv) - tr.amount);
+  if (rest > 0 && !settle) inv.received = cents((inv.received ?? 0) + tr.amount);
+  else Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
+  if (rest < 0) s.customers = s.customers.map((c) => (c.id === inv.customerId ? { ...c, credit: cents(c.credit - rest) } : c));
+  log(s, inv, "matchTransfer");
+  return { ok: true };
+}
 
 // Sends whichever dunning step is due; the last one hands the debt to collections and the customer leaves.
 export function sendReminder(s: GameState, invoiceId: string): ActionResult {

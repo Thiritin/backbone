@@ -197,7 +197,7 @@ export function fulfil(s: GameState, r: SalesRequest): ActionResult {
     }
   }
   if (!customerId) {
-    customerId = addCustomer(s, requestName(r), r.profile, r.shady || r.fraud ? "prompt" : habitFor(s.rng, r.profile));
+    customerId = addCustomer(s, requestName(r), r.profile, r.shady || r.fraud ? "prompt" : habitFor(s.rng, r.profile), r);
     if (r.shady || r.fraud) s.customers = s.customers.map((c) => (c.id === customerId ? { ...c, ...hiddenTraits(s, r) } : c));
   }
   const target = targetFor(s, r);

@@ -1,4 +1,5 @@
-import type { Sla, Spec } from "../10-catalog/products";
+import type { Resources, Sla, Spec } from "../10-catalog/products";
+import type { Address } from "./addresses";
 
 export type Profile = "private" | "gamer" | "hobbyDev" | "soleProp" | "smallBiz" | "agency" | "office" | "onlineShop" | "enterprise";
 export type Product = "webHosting" | "domain" | "ssl" | "dns" | "gameServer" | "vps" | "vpn" | "dedicated" | "storage" | "cloud" | "colocation" | "gpu";
@@ -8,6 +9,8 @@ export type PaymentHabit = "prompt" | "late" | "bad" | "friend";
 export interface Customer { id: string; name: string; profile: Profile; since: number; happiness: number; habit: PaymentHabit; churnedAt: number | null; history: number[];
   // The balance of credit notes the next invoice takes off.
   credit: number;
+  // Postal address from the order, printed on invoices.
+  address: Address;
   // A customer who draws abuse reports and legal requests; never shown to the player. Set on customers won from a shady request.
   shady?: boolean;
   // A fraudster's order: the hour the stolen payment is charged back. Never shown to the player.
@@ -18,6 +21,12 @@ export interface Customer { id: string; name: string; profile: Profile; since: n
 // spec is what the customer ordered and the service books; its workloads point back at it by serviceId.
 export interface Service { id: string; customerId: string; product: Product; label: string; price: number; period: "hour" | "year"; commitMonths: number; startedAt: number; endedAt: number | null; zone: string | null;
   spec: Spec; sla: Sla;
+  // The package the service was provisioned from; absent reads as Custom.
+  pkg?: string;
+  // What the package booked when it is not the sold size; a restore books the same.
+  pkgBook?: Resources;
+  // Web hosting only: the account's login name.
+  username?: string;
   // The last hour the service ran slowed; a month without one earns a review.
   slowedAt?: number;
   // Hourly price from before the first of a run of raises; unset once the price is back at or below it.

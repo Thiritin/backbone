@@ -519,7 +519,8 @@ export function locationRent(s: GameState, loc: Location): number {
   if (!loc.dc) return 0;
   const dc = datacenterById(loc.dc);
   const extra = s.racks.filter((r) => r.locationId === loc.id).reduce((sum, r) => sum + (r.extraKw / EXTRA_STEP_KW) * extraStepPrice(dc), 0);
-  return spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc)) + extra;
+  const contract = s.contracts.find((c) => c.locationId === loc.id);
+  return (contract?.monthly ?? spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc))) + extra;
 }
 
 // How a rack in this location can bill power: flat-rate contracts are offered on own racks in cages and suites.

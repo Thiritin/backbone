@@ -39,3 +39,4 @@
 .hz { --chart-line: var(--accent); --chart-grid: #e6e6e6; --chart-bg: #fff; }
 .hz-pies { display: flex; flex-wrap: wrap; gap: 24px; }
 .hz-pies figcaption { font-weight: 700; }
+.hz-order { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }

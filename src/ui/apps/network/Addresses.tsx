@@ -8,7 +8,7 @@ import {
 } from "../../../sim/60-infra/addresses";
 import { addAddress, announceBlock, assignAddress, buyAddresses, buyBlock, joinLir, releaseAddress, requestDelist } from "../../../sim/90-actions/addresses";
 import { useStore } from "../../store";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import { devName } from "../hw";
 import { vmLabel } from "../products/parts";
 import { LOCALE } from "../../../i18n/lang";

@@ -735,7 +735,7 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 
 Resolving the ticket adds the usual +5 happiness on top. Handling an appeal takes 15 minutes.
 
-**Billing rules.** The Automation entry in the Billing app sends the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
+**Billing rules.** The rules in the Reminders tab of Books send the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
 
 **Time per action.** Every employee action takes time from their workday, so one employee can't carry the whole company. Staff divide these times by their speed (0.5 plus skill/100, so skill 50 takes the times as listed); bots work at twice the speed. The code keeps them in `ACTION_MINUTES` (src/sim/47-staff/activity.ts), and ticket times in `MINUTES` (the ticket table above).
 
@@ -965,7 +965,7 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 
 | Module | App | Base per month | Plus | Needs |
 | --- | --- | --- | --- | --- |
-| Starter | Locations, Shop, Customers, Support (shown as Email), Billing (manual), Finance (account statement), Bank, Research, Settings, Pear Store | Free | | Start |
+| Starter | Locations, Shop, Customers, Support (shown as Email), Books (manual), Finance (account statement), Bank, Research, Settings, Pear Store | Free | | Start |
 | Monitoring | Monitoring | €10 | €0.50 per monitored device | Monitoring skill |
 | Nagiosaurus | Monitoring tab in Security | €15 | | Monitoring skill |
 | Virtual machines | Virtual machines | Free | | A hypervisor installed |
@@ -1494,6 +1494,8 @@ The link speed is the slowest link between the two nodes, shared by every migrat
 **Private networks.** A private network costs the customer €5 a month as an add-on (m = 1) and costs you nothing to run.
 
 ## Usage curves and overcommit
+
+**Packages.** A software installation holds up to 12 named packages (`80-business/packages.ts`). The provision step of an order takes 8 minutes (`orderProvisionPackage`) with a package that covers the ordered vCPU, RAM and disk, and 15 minutes with a custom spec or a smaller package. A package may book as little as 25% of the sold vCPU and 50% of the sold RAM and disk; below that the step fails. A smaller package books less than was sold, and the service keeps using the sold size times its load, so the node slows through the usual contention. Web hosting usernames have 8 characters before 2012 and 16 from 2012, start with a lowercase letter and are unique among services.
 
 **Usage curves.** Each workload's load is a share of what it booked, from 0 to 1, read from its type's curve below. Values between keyframes are straight lines. Each day of the week then scales the curve by its weekday factor below, each service's day strays up to ±15% from it (drawn from the seed per day), and each workload adds ±20% hourly jitter drawn from the seed. Fridays from 18:00 count as weekend for game servers and VPNs.
 

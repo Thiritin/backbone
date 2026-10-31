@@ -1,3 +1,4 @@
+import { sendInvoice } from "../src/sim/90-actions/billing";
 import { MODULE_IDS } from "../src/sim/10-catalog/shops";
 import { hourOf } from "../src/sim/00-core/time";
 import { componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
@@ -170,3 +171,8 @@ export const buyCart = landing(buyCartReal);
 
 // Clears competitors out of every datacenter, so any space fits.
 export const freeFloor = (s: GameState): GameState => { s.dcs = Object.fromEntries(Object.keys(s.dcs).map((id) => [id, { others: 0 }])); return s; };
+
+// Sends every draft invoice as the player does in Books; the payments then settle them as if matched on arrival (books.test.ts covers matching).
+export const sendDrafts = (s: GameState) => {
+  for (const i of s.invoices) if (i.status === "draft" && sendInvoice(s, i.id).ok) delete i.bank;
+};
