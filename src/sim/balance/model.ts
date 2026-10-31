@@ -29,6 +29,7 @@ import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
 import { marketPrice, marketSetup, type Spec } from "../10-catalog/products";
 import { EMAIL_SHARE } from "../30-market/orders";
+import { CHARGEBACK_FEE, fraudShare, TRANSFER_FACTOR } from "../45-billing/fraud";
 import { factorFor, REGISTRARS, tierFor } from "../10-catalog/registrars";
 import { DOMAIN_FEE, registryCost } from "../30-customers/registry";
 import { providerById } from "../80-business/mail";
@@ -396,6 +397,9 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       // The bot places every order on acceptance, as a company with automatic orders would; the quote and setup steps done by
       // hand are the happiness harness's. The order form bills its standard orders the market's setup fee once; big budgets and email orders pay none.
       if (website && p.budget !== "high") collectedShare += newCustomers[i][k] * (1 - EMAIL_SHARE) * marketSetup(LIVE[pr], year) * ON_TIME[p.budget];
+      // A fraudulent signup takes back about two months of payments and costs the chargeback fee.
+      const paidBy = website ? 1 - EMAIL_SHARE * (1 - TRANSFER_FACTOR) : TRANSFER_FACTOR;
+      collectedShare -= newCustomers[i][k] * fraudShare(LIVE[pr], year) * paidBy * (2 * priceOf(p, pr, year) * bot.priceFactor + CHARGEBACK_FEE);
     }));
     const inBasement = servers.filter((s) => s.basement);
     const inDc = servers.filter((s) => !s.basement);
