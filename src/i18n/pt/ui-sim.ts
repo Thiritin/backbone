@@ -56,6 +56,8 @@ export default {
   "sim.skill.shops.about": () => "Aprendes a gerir um sistema de encomendas e provisionamento que vende a partir do stock e passa os pedidos aos teus servidores.",
   "sim.skill.provisioning.name": () => "Automação do provisionamento",
   "sim.skill.provisioning.about": () => "A tua equipa aprende a orçamentar os e-mails de encomenda às tuas tarifas, a colocar as novas encomendas num servidor adequado sem que ninguém escolha o anfitrião e a levar uma encomenda aceite da conta até à ativação por si só.",
+  "sim.skill.fraudScreening.name": () => "Deteção de fraude",
+  "sim.skill.fraudScreening.about": () => "Aprendes a fazer a MaxMined avaliar cada encomenda à chegada e a recusar as que parecem pagas com cartões roubados, por uma pequena taxa por verificação.",
   "sim.skill.knowledgeBase.name": () => "Documentação",
   "sim.skill.knowledgeBase.about": () => "A tua equipa aprende a escrever as respostas às perguntas mais comuns, para que os clientes as encontrem antes de escreverem.",
   "sim.skill.market.name": () => "Pesquisa de mercado",

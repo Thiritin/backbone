@@ -137,6 +137,7 @@ export default {
   "apps.settings.orders": () => "Pedidos",
   "apps.settings.autoOrders": () => "Hacer pedidos automáticamente",
   "apps.settings.reviewOrders": () => "Revisar a mano los pedidos de servidores",
+  "apps.settings.screenOrders": () => "Filtrar los pedidos con MaxMined",
   "apps.settings.game": () => "Juego",
   "apps.settings.export": () => "Exportar progreso",
   "apps.settings.appearance": () => "Apariencia",

@@ -133,6 +133,18 @@ Settings has a new **Place orders automatically** switch. With it on, an order f
 
 An order email gets a quote at your own rate for the line, as long as a host in its city has room for it. An order with no room waits for you to quote it by hand. A step that cannot run, such as a setup with no room, waits in the inbox for you too.
 
+## Fraud screening
+
+### Now available
+
+- **Screen orders with MaxMined** in Settings sends every new order to a scoring service before it reaches you.
+
+### Scores instead of staff
+
+MaxMined scores each order the moment it arrives, by email, form or shop. It declines most orders paid with stolen cards and turns away a few honest customers too. Declined orders show up as lost sales. It needs no staff time and order automation keeps running.
+
+Every check costs a few cents, billed on the first of the month. With Review server orders by hand on as well, your staff only review the server orders MaxMined let through.
+
 ## High availability
 
 ### Now available

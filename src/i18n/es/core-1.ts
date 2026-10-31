@@ -208,6 +208,7 @@ export default {
   "ledger.chargeback": (p) => `Contracargo de ${p.customer}`,
   "ledger.chargebackFee": (p) => `Comisión de contracargo de ${p.customer}`,
   "ledger.chargebackProgram": () => "Comisión de supervisión de PayPail",
+  "ledger.screening": (p) => `Filtrado de pedidos MaxMined, ${p.count} ${Number(p.count) === 1 ? "comprobación" : "comprobaciones"}`,
   "event.chargeback.title": () => "Contracargo",
   "event.chargeback.text": (p) => `PayPail retiró ${euroCents(Number(p.amount))} por ${p.customer}, comisión de contracargo incluida.`,
   "event.chargebackWarning.title": () => "Aviso de PayPail",

@@ -18,7 +18,7 @@ import { missingFor, needFor, referenceFor, REQUEST_HOURS, requestName, senderFo
 import { addRequest, cancelShopOrder, editRequest, fulfil, loseRequest, nextSpec, say, targetFor } from "./sales";
 import { deployable, hasModule, moduleFor, shopActive, takeStock } from "../80-business/shop";
 import { companyParams, variant } from "../40-support/replies";
-import { reviewing, rollFraud } from "../45-billing/fraud";
+import { failsScreen, reviewing, rollFraud, screening } from "../45-billing/fraud";
 
 // Without an order, the first one comes from a friend's recommendation within this many days of the friends joining.
 export const FIRST_ORDER_DAYS = 14;
@@ -60,7 +60,10 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   const owned = !lead && email && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
   const shop = !email && shopActive(s);
   const fraud = !lead && rollFraud(s, key, need.product, yearOf(s.hour), email);
-  if (shop) takeStock(s, need.product);
+  const screened = !lead && screening(s);
+  if (screened) s.screenChecks++;
+  const declined = screened && failsScreen(s, key, fraud);
+  if (shop && !declined) takeStock(s, need.product);
   const price = email ? reference : offerPrice(s, need.product, spec, need.sla);
   const budget = lead ? lead.budget : email ? ORDER_BUDGET[0] + (ORDER_BUDGET[1] - ORDER_BUDGET[0]) * rand(hashRng(s.seed, key, 263)) : 1;
   let r = addRequest(s, {
@@ -72,6 +75,10 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     ...(shop && { shop: true }),
     ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0 } })) }),
   }));
+  if (declined) {
+    loseRequest(s, r, "declined", "lost.declined");
+    return r;
+  }
   const params = { name: requestName(r), spec: specText(r.product, spec) };
   // The form places an order itself only through the module (or custom script) for the software it lands on.
   const auto = !email && s.autoOrders && canAutomate(s) && !reviewing(s, need.product), target = auto && !missingFor(s, r).length ? targetFor(s, r) : null;
