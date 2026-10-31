@@ -1,6 +1,6 @@
 // economy.md, "Backup jobs and restore points": scheduled copies of a cluster's workloads to a backup cluster.
 import { backsUpCluster } from "../60-infra/cluster";
-import { KEEP_MAX, MAX_JOBS, newJob, pruneJob, runJob, syncBackupAt, type BackupJob } from "../60-infra/backups";
+import { jobById, KEEP_MAX, MAX_JOBS, newJob, pruneJob, runJob, syncBackupAt, type BackupJob } from "../60-infra/backups";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
@@ -61,5 +61,24 @@ export function pruneNow(s: GameState, clusterId: string, jobId: string): Action
   const j = s.clusters.find((x) => x.id === clusterId)?.jobs.find((x) => x.id === jobId);
   if (!j) return fail("error.unknownJob");
   s.workloads = s.workloads.map((w) => pruneJob(s, w, j));
+  return { ok: true };
+}
+
+// Runs the first job that covers a workload for that workload alone.
+export function backupNow(s: GameState, workloadId: string): ActionResult {
+  const w = s.workloads.find((x) => x.id === workloadId), c = s.clusters.find((x) => x.id === w?.clusterId);
+  const j = c?.jobs.find((x) => !x.workloadIds || x.workloadIds.includes(workloadId));
+  if (!c || !j) return fail("error.unknownJob");
+  runJob(s, c, j, [], workloadId);
+  return { ok: true };
+}
+
+// Deletes one restore point.
+export function removePoint(s: GameState, workloadId: string, at: number, jobId: string): ActionResult {
+  const w = s.workloads.find((x) => x.id === workloadId);
+  const p = w?.points?.find((x) => x.at === at && x.jobId === jobId);
+  if (!w || !p) return fail("error.unknownPoint");
+  const j = jobById(s, jobId), left = syncBackupAt({ ...w, points: w.points!.filter((y) => y !== p) });
+  s.workloads = s.workloads.map((x) => (x.id === w.id ? (j ? pruneJob(s, left, j) : left) : x));
   return { ok: true };
 }

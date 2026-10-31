@@ -66,7 +66,7 @@ export function pruneJob(s: GameState, w: Workload, j: BackupJob): Workload {
 }
 
 // One run of a job: a point per workload; stops at a full repository.
-export function runJob(s: GameState, c: Cluster, j: BackupJob, events: SimEvent[]): void {
+export function runJob(s: GameState, c: Cluster, j: BackupJob, events: SimEvent[], only?: string): void {
   const target = s.clusters.find((x) => x.id === j.targetId);
   let reason: "full" | "unreachable" | null = null;
   if (!target || !backsUpCluster(s, c, target) || !controlPlaneUp(s, target)) reason = "unreachable";
@@ -74,7 +74,7 @@ export function runJob(s: GameState, c: Cluster, j: BackupJob, events: SimEvent[
     let used = repoUsed(s, target.id);
     const room = repoRoom(s, target);
     s.workloads = s.workloads.map((w) => {
-      if (reason || w.clusterId !== c.id || !inJob(j, w) || lostDisk(s, w) || w.busyUntil > s.hour) return w;
+      if (reason || w.clusterId !== c.id || (only && w.id !== only) || !inJob(j, w) || lostDisk(s, w) || w.busyUntil > s.hour) return w;
       const full = w.diskGb * diskFill(s, w, s.hour), first = !pointsOf(w).some((p) => p.jobId === j.id);
       const gb = first ? full : full * BACKUP_CHANGED;
       if (used + gb > room) { reason = "full"; return w; }
@@ -119,4 +119,13 @@ export function fillBackups(s: GameState): GameState {
     return { ...w, points: [{ at: w.backupAt, gb: w.diskGb * diskFill(s, w, w.backupAt), jobId, verified: false, bad: false, offsite: false }] };
   });
   return s;
+}
+
+// The hour a job runs next, counting the current hour once it has not run in it yet.
+export function nextRun(j: BackupJob, from: number): number {
+  for (let h = from; h < from + 24 * 8; h++) {
+    const d = dateOf(h);
+    if (d.getUTCHours() === j.hour && (j.every === "daily" || d.getUTCDay() === 0)) return h;
+  }
+  return from;
 }
