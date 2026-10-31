@@ -23,6 +23,7 @@ export const ACTIVITY_EN: Record<string, (p: Params) => string> = {
   "activity.resolve": (p) => RESOLVED[p.arg] ?? `Resolved ${ticket(p)}`,
   "activity.checkInvoice": (p) => `Checked invoice ${p.invoice}`,
   "activity.reminder": (p) => `Sent a payment reminder for invoice ${p.invoice}`,
+  "activity.sendInvoice": (p) => `Sent invoice ${p.invoice} as PDF`,
   "activity.dunning": (p) => `Sent a dunning notice for invoice ${p.invoice}`,
   "activity.final": (p) => `Sent a final notice for invoice ${p.invoice}`,
   "activity.collections": (p) => `Handed invoice ${p.invoice} to collections`,

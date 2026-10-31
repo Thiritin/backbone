@@ -35,7 +35,7 @@ export const STATUSES: Record<Status, { label: string; pill: string }> = {
   churned: { label: t("misc.churned"), pill: "" },
 };
 const INVOICE: Record<InvoiceStatus, { label: string; pill: string }> = {
-  open: { label: t("misc.open"), pill: "accent" }, overdue: { label: t("misc.overdue"), pill: "warn" }, paid: { label: t("misc.paid"), pill: "" }, writtenOff: { label: t("misc.writtenOff"), pill: "" },
+  draft: { label: t("books.status.draft"), pill: "" }, open: { label: t("misc.open"), pill: "accent" }, overdue: { label: t("misc.overdue"), pill: "warn" }, paid: { label: t("misc.paid"), pill: "" }, writtenOff: { label: t("misc.writtenOff"), pill: "" },
 };
 const SLA = { basic: t("misc.slaBasic"), business: t("misc.slaBusiness"), premium: t("misc.slaPremium") } as const;
 const PERSON: Profile[] = ["private", "gamer", "hobbyDev"];

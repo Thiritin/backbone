@@ -1,5 +1,5 @@
 import {
-  annuity, AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
+  annuity, AUTO_COLLECT_DAYS, issue, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
 } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -9,6 +9,15 @@ const fail = (error: string): ActionResult => ({ ok: false, error });
 const unpaidInvoice = (s: GameState, id: string) => s.invoices.find((i) => i.id === id && isUnpaid(i));
 const log = (s: GameState, inv: Invoice, key: keyof typeof ACTION_MINUTES | "writeOff") =>
   logActivity(s, { customerId: inv.customerId, serviceId: null, by: null, key: `activity.${key}`, params: { invoice: inv.number }, minutes: key === "writeOff" ? 0 : ACTION_MINUTES[key] });
+
+// Emails a draft invoice as PDF.
+export function sendInvoice(s: GameState, invoiceId: string): ActionResult {
+  const inv = s.invoices.find((x) => x.id === invoiceId && x.status === "draft");
+  if (!inv) return fail("error.invoiceSent");
+  issue(s, inv);
+  log(s, inv, "sendInvoice");
+  return { ok: true };
+}
 
 // Sends whichever dunning step is due; the last one hands the debt to collections and the customer leaves.
 export function sendReminder(s: GameState, invoiceId: string): ActionResult {

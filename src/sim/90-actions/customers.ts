@@ -2,20 +2,13 @@ import type { GameState } from "../50-state";
 import type { Customer, Product, Profile, PaymentHabit } from "../30-customers/customers";
 import { sizeSpec, type Sla, type Spec } from "../10-catalog/products";
 import { yearOf } from "../00-core/time";
-import { hashRng } from "../00-core/rng";
 import { drawApp } from "../10-catalog/apps";
 import { webDomain } from "../30-customers/domains";
-import { addressFor, legacyAddress } from "../30-customers/addresses";
-import { personName } from "../30-market/market";
+import { addressFor, homeAddress } from "../30-customers/addresses";
 import { serviceHostname } from "../30-customers/hostnames";
 import { isSuspended, SUSPEND_HAPPINESS } from "../45-billing/billing";
 import { bump, createTicket, profileStats } from "../40-support/tickets";
 import type { ActionResult } from "./hardware";
-
-export const homeAddress = (s: Pick<GameState, "seed" | "locations">, key: number, name: string, profile: Profile) => {
-  const city = s.locations[0]?.city ?? "Frankfurt";
-  return legacyAddress(s.seed, key, name, profile, personName(hashRng(s.seed, key, 242), city), city);
-};
 
 // who is the order's sender; without one the address is drawn for the company's home city.
 export function addCustomer(s: GameState, name: string, profile: Profile, habit: PaymentHabit = "prompt", who?: { contact: string; company: string | null; city: string }): string {

@@ -1,5 +1,7 @@
 // Postal addresses of customers, printed on invoices and used as domain owner data. Drawn per country of the customer's city.
 import { hashRng, rand, type Rng } from "../00-core/rng";
+import type { GameState } from "../50-state";
+import { personName } from "../30-market/market";
 import type { Profile } from "./customers";
 import { ascii, CITY_TLD } from "./domains";
 
@@ -61,3 +63,9 @@ export function addressFor(seed: number, key: number, contact: string, company: 
 // Saves from before addresses: the name is the contact of a private customer and the company of any other.
 export const legacyAddress = (seed: number, key: number, name: string, profile: Profile, contact: string, city: string): Address =>
   PERSONAL.includes(profile) ? addressFor(seed, key, name, null, city) : addressFor(seed, key, contact, name, city);
+
+// Without an order: the company's home city, and for a business a contact drawn for it.
+export const homeAddress = (s: Pick<GameState, "seed" | "locations">, key: number, name: string, profile: Profile) => {
+  const city = s.locations[0]?.city ?? "Frankfurt";
+  return legacyAddress(s.seed, key, name, profile, personName(hashRng(s.seed, key, 242), city), city);
+};

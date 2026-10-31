@@ -9,7 +9,7 @@ import { setBillingRules, suspendServices } from "../src/sim/90-actions/billing"
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { withServer } from "./fixtures";
+import { sendDrafts, withServer } from "./fixtures";
 
 const DAY = 24;
 const bill = (s: GameState, hour: number) => { while (s.hour < hour) { s.hour++; billingTick(s); } };
@@ -24,6 +24,7 @@ function overdue(seed: number, profile: Profile = "enterprise") {
   const c = addCustomer(s, "Initech", profile, "late");
   const v = addService(s, c, "domain", "initech.com", 12, "year");
   tick(s);
+  sendDrafts(s);
   Object.assign(s.invoices[0], { payStep: 4, payAt: null });
   bill(s, s.invoices[0].dueAt + DAY);
   return { s, c, v, inv: () => s.invoices[0], customer: () => s.customers.find((x) => x.id === c)! };

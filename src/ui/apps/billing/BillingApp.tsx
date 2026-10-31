@@ -27,6 +27,7 @@ export const sameMonth = (a: number, b: number) => {
 };
 
 const STATUS: Record<InvoiceStatus, { label: string; pill: string }> = {
+  draft: { label: t("books.status.draft"), pill: "" },
   open: { label: t("misc1.billing.open"), pill: "accent" },
   overdue: { label: t("misc1.billing.overdue"), pill: "warn" },
   paid: { label: t("misc1.billing.paid"), pill: "" },

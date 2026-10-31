@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { newGame } from "../src/sim/50-state";
-import { addCustomer } from "../src/sim/90-actions/customers";
+import { DUE_DAYS, billingTick } from "../src/sim/45-billing/billing";
+import { tick } from "../src/sim/88-tick/tick";
+import { sendInvoice } from "../src/sim/90-actions/billing";
+import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
 
@@ -32,5 +35,35 @@ describe("customer addresses", () => {
     expect(a.company).toBe("Bäckerei Krause");
     expect(a.contact).toMatch(/\w+ \w+/);
     expect(deserialize(JSON.stringify(raw)).customers[0].address).toEqual(a);
+  });
+});
+
+describe("draft invoices", () => {
+  const drafted = () => {
+    const s = withServer(newGame(9));
+    const c = addCustomer(s, "Müller Webdesign", "agency", "prompt");
+    addService(s, c, "domain", "mueller.de", 12, "year");
+    tick(s);
+    return { s, inv: () => s.invoices[0] };
+  };
+
+  it("are issued each run and never pay while unsent", () => {
+    const { s, inv } = drafted();
+    expect(inv()).toMatchObject({ status: "draft", payAt: null });
+    const cash = s.cash;
+    while (s.hour < 90 * 24) { s.hour++; billingTick(s); }
+    expect(inv().status).toBe("draft");
+    expect(inv().reminders).toEqual([]);
+    expect(s.cash).toBe(cash);
+  });
+
+  it("are due 14 days after they are sent and roll when the money comes", () => {
+    const { s, inv } = drafted();
+    s.hour += 50;
+    expect(sendInvoice(s, inv().id)).toEqual({ ok: true });
+    expect(inv()).toMatchObject({ status: "open", issuedAt: s.hour, dueAt: s.hour + DUE_DAYS * 24 });
+    expect(inv().payAt).toBeGreaterThan(s.hour);
+    expect(s.activity.at(-1)).toMatchObject({ key: "activity.sendInvoice", params: { invoice: inv().number } });
+    expect(sendInvoice(s, inv().id)).toEqual({ ok: false, error: "error.invoiceSent" });
   });
 });

@@ -136,7 +136,7 @@ describe("email orders", () => {
     expect(mailShare(s, "smallBiz")).toBe(1);
     const orders = (free: boolean) => {
       let n = 0;
-      for (const seed of [1, 2, 3]) {
+      for (const seed of [1, 2, 3, 4]) {
         const g = readyGame(seed);
         if (free) g.company = { ...g.company, mail: { kind: "free" } };
         run(g, 24 * 60);

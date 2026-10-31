@@ -22,6 +22,7 @@ export default {
   "activity.resolve": (p) => RESOLVED[p.arg] ?? `Resuelto el ${ticket(p)}`,
   "activity.checkInvoice": (p) => `Revisada la factura ${p.invoice}`,
   "activity.reminder": (p) => `Enviado un recordatorio de pago de la factura ${p.invoice}`,
+  "activity.sendInvoice": (p) => `Enviada la factura ${p.invoice} en PDF`,
   "activity.dunning": (p) => `Enviada una reclamación de pago de la factura ${p.invoice}`,
   "activity.final": (p) => `Enviado el aviso final de la factura ${p.invoice}`,
   "activity.collections": (p) => `Factura ${p.invoice} pasada a cobros`,

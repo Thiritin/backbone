@@ -10,7 +10,8 @@ import { metrics } from "../metrics";
 import { logActivity } from "../47-staff/activity";
 import { mailDelay } from "../80-business/mail";
 
-export type InvoiceStatus = "open" | "overdue" | "paid" | "writtenOff";
+// A draft waits in Books until it is sent; it is not due and never pays.
+export type InvoiceStatus = "draft" | "open" | "overdue" | "paid" | "writtenOff";
 // key and params are an i18n line text; serviceId is null for fees.
 export interface InvoiceLine { serviceId: string | null; key: string; params: Record<string, string | number>; amount: number }
 export interface Invoice {
@@ -89,6 +90,15 @@ export function rollPayStep(r: Rng, habit: PaymentHabit): number {
     x -= odds[i];
   }
   return odds.length - 1;
+}
+
+// Sends a draft the caller owns: it is issued now, due in DUE_DAYS, and the customer's habit decides when the money comes.
+export function issue(s: GameState, inv: Invoice, payDays = DUE_DAYS - 1): void {
+  const payStep = rollPayStep(s.rng, s.customers.find((c) => c.id === inv.customerId)?.habit ?? "prompt");
+  Object.assign(inv, {
+    status: "open", issuedAt: s.hour, dueAt: s.hour + DUE_DAYS * DAY, payStep,
+    payAt: payStep === 0 ? s.hour + DAY + Math.floor(rand(s.rng) * payDays * DAY) + mailDelay(s) : null,
+  });
 }
 
 // A moved customer pays 1 to 5 days after the step.
@@ -344,11 +354,10 @@ export function billingTick(s: GameState): SimEvent[] {
       ls.push({ serviceId: null, key: "invoice.line.credit", params: {}, amount: -take });
       s.customers = s.customers.map((c) => (c === owner ? { ...c, credit: cents(c.credit - take) } : c));
     }
-    const payStep = rollPayStep(s.rng, s.customers.find((c) => c.id === customerId)?.habit ?? "prompt");
     issued.push({
       id: `inv${s.nextId++}`, number: `${yearOf(s.hour)}-${String(invoices.length + issued.length + 1).padStart(4, "0")}`,
-      customerId, lines: ls, issuedAt: s.hour, dueAt: s.hour + DUE_DAYS * DAY, status: "open", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null,
-      payStep, payAt: payStep === 0 ? s.hour + DAY + Math.floor(rand(s.rng) * (DUE_DAYS - 1) * DAY) + mailDelay(s) : null, paidAt: null,
+      customerId, lines: ls, issuedAt: s.hour, dueAt: s.hour, status: "draft", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null,
+      payStep: 0, payAt: null, paidAt: null,
     });
   }
   if (changed || issued.length) s.invoices = [...invoices, ...issued];

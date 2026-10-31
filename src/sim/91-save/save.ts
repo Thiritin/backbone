@@ -12,7 +12,7 @@ import { deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Devic
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
-import { homeAddress } from "../90-actions/customers";
+import { homeAddress } from "../30-customers/addresses";
 import { fillHostnames } from "../30-customers/hostnames";
 import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
