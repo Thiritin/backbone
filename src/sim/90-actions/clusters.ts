@@ -1,3 +1,4 @@
+import { createGameServer } from "../60-infra/games";
 import { betterHost } from "../60-infra/routes";
 import { keepPhp } from "../60-infra/webpanel";
 import { yearOf } from "../00-core/time";
@@ -438,7 +439,9 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
 // spec defaults to the line's smallest size this year.
 export interface Order { label: string; zone?: string | null; clusterId?: string | null; sla?: Sla; price?: number; spec?: Spec; deviceId?: string | null;
   // A package the order books: its name, what it books and the sold size when that is more. username is web hosting's login.
-  pkg?: { name: string; book: Resources; promised?: Resources }; username?: string }
+  pkg?: { name: string; book: Resources; promised?: Resources }; username?: string;
+  // Game servers: the title, when the buyer names one.
+  title?: string }
 
 // Signs a contract with the catalog's terms and places it; nothing is recorded when it can't be placed.
 // price is per hour for hourly products and per year for yearly ones; it defaults to the market reference.
@@ -460,5 +463,6 @@ export function provisionService(s: GameState, customerId: string, product: Prod
     Object.assign(s, { services: s.services.filter((v) => v.id !== id), nextId });
     return placed;
   }
+  if (product === "gameServer") createGameServer(s, id, order.title);
   return { ok: true, id };
 }

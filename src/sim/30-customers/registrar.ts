@@ -1,5 +1,6 @@
 // GDD, Domain registration: the registrar partner under contract bills the registry cost of every domain under management
 // monthly, at a factor that falls with the number of domains. Numbers in economy.md, Sales and quotes (Domains).
+import { invoice, invoicing } from "../46-finance/payables";
 import { dateOf, isMonthStart } from "../00-core/time";
 import { factorFor, icannFee, registrarById, tierFor, type Registrar as Partner, type RegistrarId } from "../10-catalog/registrars";
 import type { GameState, LedgerEntry } from "../50-state";
@@ -85,6 +86,10 @@ export function registrarTick(s: GameState): SimEvent[] {
   s.domains = s.domains.map((d) => (d.customerId === null && d.expiresAt - s.hour < MONTH ? { ...d, expiresAt: d.expiresAt + YEAR } : d));
   const bill = registrarBill(s), total = cents(bill.reduce((n, e) => n - e.amount, 0));
   s.registrar = { ...s.registrar!, billed: true };
+  if (invoicing(s)) {
+    if (bill.length) invoice(s, "registrar", registrarById(r.id)!.name, bill);
+    return events;
+  }
   s.cash = cents(s.cash - total);
   s.ledger = [...s.ledger, ...bill];
   return events;

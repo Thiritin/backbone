@@ -1,3 +1,4 @@
+import { GameLine } from "../GamePanel";
 import { Actions, Backups, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Row, type Tab } from "../PanelBase";
 import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
@@ -41,7 +42,7 @@ export function MultiKraft(p: PanelProps) {
               <tbody>
                 {rows.map((r) => (
                   <RowLines key={r.id} r={r} span={5}>
-                    <td><b>{r.name}</b></td>
+                    <td><b>{r.name}</b><GameLine g={r.game} /></td>
                     <td><Dot r={r} /></td>
                     <td><Bar use={r.ram} /><span className="cx-use num">{ramText(r)}</span></td>
                     <td className="cx-use num">{cpuText(r)}</td>
@@ -56,6 +57,7 @@ export function MultiKraft(p: PanelProps) {
               {rows.map((r) => (
                 <article key={r.id} className="mk-server">
                   <header><b>{r.name}</b><Dot r={r} /></header>
+                  <GameLine g={r.game} />
                   <div><span className="cx-use">{t("browser-consoles-1.memory")}</span><Bar use={r.ram} /><span className="cx-use num">{ramText(r)}</span></div>
                   <div><span className="cx-use">{t("browser-consoles-1.cpu")}</span><Bar use={r.cpu} /><span className="cx-use num">{cpuText(r)}</span></div>
                   <Actions actions={r.actions} className="cx-acts" />

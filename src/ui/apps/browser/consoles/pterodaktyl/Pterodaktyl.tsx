@@ -1,6 +1,7 @@
 import { FileText } from "lucide-react";
 import { t } from "../../../../../i18n/en";
 import { LogOut, Package, Plus, Server, Settings, type LucideIcon } from "lucide-react";
+import { GameLine } from "../GamePanel";
 import { Actions, Backups, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
@@ -37,7 +38,7 @@ export function Pterodaktyl(p: PanelProps) {
         {tab === "objects" && rows.map((r) => (
           <article key={r.id} className="pt-server">
             <span className={`pt-led ${r.tone}`} />
-            <div className="pt-name"><b>{r.name}</b><span className="cx-sub">{r.node}</span></div>
+            <div className="pt-name"><b>{r.name}</b><span className="cx-sub">{r.node}</span><GameLine g={r.game} /></div>
             <div className="pt-meter"><span className="cx-use">{t("browser-consoles-2.cpu")}</span><Bar use={r.cpu} /><span className="cx-use num">{cpuText(r)}</span></div>
             <div className="pt-meter"><span className="cx-use">{t("browser-consoles-2.memory")}</span><Bar use={r.ram} /><span className="cx-use num">{ramText(r)}</span></div>
             <span className={`cx-state ${r.tone}`}>{r.state}</span>
