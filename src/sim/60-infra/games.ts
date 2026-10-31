@@ -56,5 +56,5 @@ export const fullBoost = (s: GameState, customerId: string): number => (fullServ
 
 // An accepted upgrade of a slot server grows its slots with the RAM, in steps of four.
 export function growSlots(s: GameState, serviceId: string, ratio: number): void {
-  s.gameServers = s.gameServers.map((g) => (g.serviceId === serviceId && g.slots !== null ? { ...g, slots: Math.ceil((g.slots * ratio) / 4) * 4 } : g));
+  s.gameServers = s.gameServers.map((g) => (g.serviceId === serviceId && g.slots !== null ? { ...g, slots: Math.min(32, Math.ceil((g.slots * ratio) / 4) * 4) } : g));
 }
