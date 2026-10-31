@@ -1,5 +1,7 @@
 import { Actions, Backups, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Row, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
+import { parseCreate } from "../../../../../sim/80-business/consoles";
+import { PackagesScreen, ProvisionForm } from "../PackageForms";
 import "./multikraft.css";
 
 // docs/design/software.md, section 10: dark grey under a brown header with status dot tables until 2018, then white, green and cards.
@@ -8,7 +10,7 @@ const ERAS = erasFrom(2010, 2018);
 const Dot = ({ r }: { r: Row }) => <span className="mk-status"><i className={`mk-dot ${r.tone}`} />{r.state}</span>;
 
 export function MultiKraft(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f);
+  const era = eraAt(ERAS, p.game), open = parseCreate("multikraft", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects");
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx mk mk-login" data-era={era}>
@@ -18,7 +20,7 @@ export function MultiKraft(p: PanelProps) {
       </LoginForm>
     </div>
   );
-  const menu: [Tab, string][] = [["objects", t("browser-consoles-1.mkServers")], ["software", t("browser-consoles-1.settings")]];
+  const menu: [Tab, string][] = [["objects", t("browser-consoles-1.mkServers")], ["create", t("pkg.mkCreate")], ["packages", t("pkg.mkPlans")], ["software", t("browser-consoles-1.settings")]];
   return (
     <div className="cx mk" data-era={era}>
       <header className="mk-top">
@@ -28,8 +30,10 @@ export function MultiKraft(p: PanelProps) {
         <button onClick={p.logout}>{t("browser-consoles-1.logout")}</button>
       </header>
       <main className="mk-main">
-        {tab !== "software" && rows.length === 0 && <p className="cx-empty">{t("browser-consoles-1.nothingYet")}</p>}
-        {tab !== "software" && rows.length > 0 && (era === "early"
+        {tab === "create" && <ProvisionForm game={p.game} c={p.c} products={["gameServer"]} order={open?.screen === "create" ? open.order : undefined} />}
+        {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
+        {tab === "objects" && rows.length === 0 && <p className="cx-empty">{t("browser-consoles-1.nothingYet")}</p>}
+        {tab === "objects" && rows.length > 0 && (era === "early"
           ? (
             <table className="cx-table">
               <thead><tr><th>{t("browser-consoles-1.mkServer")}</th><th>{t("browser-consoles-1.status")}</th><th>{t("browser-consoles-1.memory")}</th><th>{t("browser-consoles-1.cpu")}</th><th /></tr></thead>
