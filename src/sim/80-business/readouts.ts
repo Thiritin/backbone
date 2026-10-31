@@ -3,7 +3,9 @@ import { softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { Cluster, Workload } from "../60-infra/cluster";
 import { serviceMbps } from "../60-infra/network";
-import { workloadUse } from "../60-infra/usage";
+import { workloadLoad, workloadUse } from "../60-infra/usage";
+import { hashRng, rand } from "../00-core/rng";
+import { openVulns } from "../60-infra/vulns";
 
 export const TASK_WINDOW_HOURS = 336;
 export const TASK_MAX = 12;
@@ -60,3 +62,49 @@ export function accountUse(s: GameState, w: Workload): AccountUse {
   const worst = Math.max(disk[1] > 0 ? disk[0] / disk[1] : 0, traffic[1] > 0 ? traffic[0] / traffic[1] : 0);
   return { disk, traffic, mailboxes: v?.spec.mailboxes ?? 0, level: levelOf(worst, 1) };
 }
+
+export type LogSource = "access" | "error" | "auth" | "mail" | "system";
+export const LOG_SOURCES: LogSource[] = ["access", "error", "auth", "mail", "system"];
+export interface LogLine { hour: number; key: string; params: Record<string, string | number> }
+export const LOG_WINDOW_HOURS = 168, LOG_BASE_HOURS = 24;
+
+const ip = (n: number) => `${1 + (n % 223)}.${(n >> 8) % 256}.${(n >> 16) % 256}.${(n >> 4) % 254 + 1}`;
+const PATHS = ["/", "/index.html", "/style.css", "/about", "/img/logo.png", "/contact"];
+
+// The lines of one log of a panel host, newest first. Event lines come from the state at the hour of the event and stay
+// while it is in the window; baseline lines are drawn from the seed so the same save always reads the same.
+export function logLines(s: GameState, c: Cluster, source: LogSource, limit: number, now: number = s.hour): LogLine[] {
+  const out: LogLine[] = [], from = now - LOG_WINDOW_HOURS, inside = (h: number) => h >= from && h <= now;
+  const add = (hour: number, key: string, params: Record<string, string | number> = {}) => { if (inside(hour)) out.push({ hour, key, params }); };
+  const ws = s.workloads.filter((w) => w.clusterId === c.id), nodes = new Set(c.nodes.map((n) => n.deviceId));
+  const devices = s.devices.filter((d) => nodes.has(d.id)), dname = (d: (typeof devices)[number]) => d.hostname ?? d.label ?? d.name;
+  const domain = (id: string | null) => s.services.find((v) => v.id === id)?.domain ?? c.name;
+  const seed = Number(c.id.replace(/\D/g, "")) || 0;
+  const base = (tag: number, f: (h: number, r: ReturnType<typeof hashRng>) => void) => { for (let h = Math.max(from, now - LOG_BASE_HOURS); h <= now; h++) f(h, hashRng(s.seed, seed, h, tag)); };
+  const tickets = s.tickets.filter((t) => t.notice && ws.some((w) => w.serviceId === t.serviceId));
+  if (source === "access") {
+    for (const w of ws) base(idNumber(w.id) + 1, (h, r) => {
+      const n = Math.round(workloadLoad(s, w, h) * 3);
+      for (let i = 0; i < n; i++) add(h, "access", { ip: ip(Math.floor(rand(r) * 1e9)), path: PATHS[Math.floor(rand(r) * PATHS.length)], status: 200, size: 200 + Math.floor(rand(r) * 9000), domain: domain(w.serviceId) });
+    });
+    for (const t of tickets) add(t.createdAt - 1, "access", { ip: ip(t.createdAt * 7919), path: new URL(t.notice!.url).pathname, status: 200, size: 4096, domain: domain(t.serviceId) });
+    for (const w of ws) { const until = s.ops.takedowns[w.serviceId ?? ""] ?? 0; if (until) for (let h = Math.max(from, until - 24); h <= Math.min(now, until); h++) add(h, "access", { ip: ip(h * 31), path: "/", status: 503, size: 0, domain: domain(w.serviceId) }); }
+  } else if (source === "error") {
+    for (const i of s.ops.incidents) for (const d of devices) if (i.devices.includes(d.id)) { add(i.hour, "error.power", { name: dname(d) }); add(i.hour + Math.ceil(i.minutes / 60), "error.restart", { name: dname(d) }); }
+    for (const r of s.lossReports) if (nodes.has(r.deviceId)) add(r.hour, "error.disks", { name: dname(devices.find((d) => d.id === r.deviceId)!) });
+    for (const w of ws) if (w.serviceId) { const at = s.services.find((v) => v.id === w.serviceId)?.slowedAt; if (at !== undefined) add(at, "error.busy", { domain: domain(w.serviceId) }); }
+    for (const v of openVulns(s, c.id, now)) add(Math.max(v.disclosedAt, from), "error.vuln", { id: v.id, family: v.family });
+  } else if (source === "auth") {
+    base(2, (h, r) => { if (rand(r) < 0.35) add(h, "auth.fail", { ip: ip(Math.floor(rand(r) * 1e9)), user: ["root", "admin", "test", "ubuntu"][Math.floor(rand(r) * 4)] }); });
+    const breaches = s.breaches.filter((b) => b.hostId === c.id);
+    for (const b of breaches) add(b.hour, "auth.ok", { ip: ip(b.hour * 104729) });
+    if (s.security.hacked.includes(c.id) && breaches.length) for (let h = Math.max(from, breaches[breaches.length - 1].hour + 12); h <= now; h += 12) add(h, "auth.ok", { ip: ip(h * 104729) });
+  } else if (source === "mail") {
+    for (const t of tickets.filter((x) => x.topic === "spam")) for (let k = 1; k <= 6; k++) add(t.createdAt - k, "mail.sent", { domain: domain(t.serviceId), count: 120 + ((t.createdAt * k) % 400) });
+  } else {
+    for (const d of devices) for (const e of d.log) add(e.hour, "system.device", { name: dname(d), event: e.key });
+    if (c.updatedAt) add(c.updatedAt, "system.update", { name: c.name });
+  }
+  return out.sort((a, b) => b.hour - a.hour).slice(0, limit);
+}
+const idNumber = (id: string) => Number(id.replace(/\D/g, "")) || 0;
