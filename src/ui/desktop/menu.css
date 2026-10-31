@@ -52,8 +52,14 @@
 .mbd-term { background: oklch(0.16 0.01 255); }
 .mbd-term pre { margin: 0; padding: 10px 12px; font: 12.5px/1.5 ui-monospace, Menlo, monospace; color: oklch(0.85 0.15 145); white-space: pre-wrap; word-break: break-all; }
 .mbd-caret { display: inline-block; width: 7px; height: 13px; margin-left: 2px; vertical-align: -2px; background: currentColor; animation: mbd-blink 1s steps(1) infinite; }
-.mbd-chart { display: flex; align-items: flex-end; gap: 4px; padding: 16px; }
-.mbd-chart i { flex: 1; height: 100%; border-radius: 2px 2px 0 0; background: var(--accent); transform-origin: bottom; animation: mbd-bar ease-in-out infinite alternate; }
+.mbd-vms { display: grid; align-content: start; padding: 6px 14px; }
+.mbd-vm { display: grid; grid-template-columns: minmax(0, 1fr) 64px 64px; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 0.5px solid var(--line); }
+.mbd-vm:last-child { border-bottom: none; }
+.mbd-vm-name { display: grid; font-size: 12.5px; }
+.mbd-vm-name strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mbd-vm-name small { font-size: 11px; color: var(--text-3); }
+.mbd-meter { height: 6px; border-radius: 3px; background: color-mix(in oklch, var(--text) 10%, transparent); overflow: hidden; }
+.mbd-meter i { display: block; height: 100%; width: var(--w); border-radius: 3px; background: var(--accent); animation: mbd-load 5s ease-in-out infinite alternate; }
 @keyframes mbd-blink { 50% { opacity: 0; } }
-@keyframes mbd-bar { from { transform: scaleY(0.15); } to { transform: scaleY(1); } }
-@media (prefers-reduced-motion: reduce) { .mbd-chart i, .mbd-caret { animation: none; } }
+@keyframes mbd-load { from { transform: scaleX(0.75); transform-origin: left; } to { transform: scaleX(1.12); transform-origin: left; } }
+@media (prefers-reduced-motion: reduce) { .mbd-meter i, .mbd-caret { animation: none; } }
