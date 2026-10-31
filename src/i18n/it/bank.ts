@@ -30,6 +30,7 @@ export default {
   "ledger.standingOrder": (p) => `Ordine permanente a ${p.name}: ${p.reference}`,
   "error.orderDay": () => "Scegli un giorno da 1 a 28.",
   "error.noOrder": () => "Questo ordine permanente non esiste.",
+  "error.noPayee": () => 'Questo beneficiario non esiste.',
   "ticket.mail.bankOrderFailed.subject": () => "Ordine permanente non eseguito",
   "ticket.mail.bankOrderFailed.text": (p) => `${p.bank} non ha potuto eseguire il suo ordine permanente di ${euroCents(Number(p.amount))} a ${p.name}.`,
   "error.shopUnpaid": () => "Il negozio ha una fattura non pagata.",
