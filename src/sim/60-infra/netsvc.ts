@@ -3,15 +3,16 @@
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 
-// Per mail address: the deferred queue, the happiness lost to the current listing and the hours of past listings and when the queue was last deleted.
-export interface MailState { deferred: number; hit: number; listings: number[]; deletedAt?: number }
+// Per mail address: the deferred queue, the happiness lost to the current listing, the hours of past listings, when the current listing began and when the queue was last deleted.
+export interface MailState { deferred: number; hit: number; listings: number[]; deletedAt?: number; since?: number }
 
 export interface NetSvc {
   mail: Record<string, MailState>; // by address id
+  relay: Record<string, string>; // panel cluster id -> mail cluster id
   broken: Record<string, { cause: "dns" | "cert" | "storage"; since: number }>; // by service id
 }
 
-export const newNetSvc = (): NetSvc => ({ mail: {}, broken: {} });
+export const newNetSvc = (): NetSvc => ({ mail: {}, relay: {}, broken: {} });
 
 // A service whose DNS, certificate or storage set is broken is offline for its customer; `serviceOnline` reads this.
 export const netsvcBroken = (s: GameState, serviceId: string): boolean => serviceId in s.netsvc.broken;
