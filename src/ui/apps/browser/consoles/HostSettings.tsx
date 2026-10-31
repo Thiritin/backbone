@@ -7,6 +7,8 @@ import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { bookedOn, oversellRatio, oversold, physicalOf } from "../../../../sim/60-infra/oversell";
 import { workloadUse } from "../../../../sim/60-infra/usage";
 import { familyOf } from "../../../../sim/60-infra/vulns";
+import { CHANNELS, channelOf } from "../../../../sim/60-infra/channel";
+import { setChannel } from "../../../../sim/90-actions/software";
 import { setOversell } from "../../../../sim/90-actions/oversell";
 import { tiersOf } from "../../../../sim/10-catalog/licence-tiers";
 import { accountsOn, licenceExpired, tierOf } from "../../../../sim/60-infra/licence";
@@ -48,6 +50,19 @@ export function Oversell({ game, c }: { game: GameState; c: Cluster }) {
   );
 }
 
+// The release channel the host updates from.
+export function ChannelPicker({ c }: { c: Cluster }) {
+  const act = useStore((s) => s.act), now = channelOf(c);
+  return (
+    <>
+      <h4 className="cx-h">{t("host.channel")}</h4>
+      <div className="cx-tools">
+        {CHANNELS.map((x) => <button key={x} className="cx-chip" aria-pressed={x === now} onClick={() => act(setChannel, c.id, x)}>{t(`host.channel.${x}`)}</button>)}
+      </div>
+    </>
+  );
+}
+
 // The red notice a console shows while new accounts are refused.
 export const LicenceBanner = ({ game, c }: { game: GameState; c: Cluster }) =>
   tiersOf(c.panel).length > 0 && licenceExpired(game, c) ? <p className="cx-banner bad" role="alert">{t("error.licenceExpired")}</p> : null;
@@ -75,5 +90,5 @@ export function LicenceTiers({ game, c }: { game: GameState; c: Cluster }) {
 
 // What the software page of a panel or game host adds under its actions.
 export function HostSettings({ game, c }: { game: GameState; c: Cluster }) {
-  return oversold(c) ? <div className="cx-host-settings"><LicenceBanner game={game} c={c} /><Oversell game={game} c={c} /></div> : null;
+  return oversold(c) ? <div className="cx-host-settings"><LicenceBanner game={game} c={c} />{c.kind === "panel" && <ChannelPicker c={c} />}<Oversell game={game} c={c} /></div> : null;
 }

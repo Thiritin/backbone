@@ -60,4 +60,8 @@ export default {
   "host.trialUntil": (p) => `L'essai se termine ${p.date}`,
   "host.perMonth": (p) => `${p.fee} par mois`,
   "host.perAccount": (p) => `${p.fee} par compte`,
+  "host.channel": () => "Canal de mise à jour",
+  "host.channel.stable": () => "Stable",
+  "host.channel.release": () => "Release",
+  "host.channel.edge": () => "Edge",
 } satisfies Dict;

@@ -1,5 +1,5 @@
 import { dateOf, yearOf } from "../00-core/time";
-import { BREAK_HOURS, channelOf, targetYear, updateBreaks } from "../60-infra/channel";
+import { BREAK_HOURS, CHANNELS, channelOf, type Channel, targetYear, updateBreaks } from "../60-infra/channel";
 import { licenceExpired } from "../60-infra/licence";
 import type { SimEvent } from "../88-tick/tick";
 import { autoUpdates, clustersIn, conflict, phpAt, runsOn, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
@@ -144,6 +144,15 @@ export function setAutoUpdate(s: GameState, clusterId: string, on: boolean): Act
   if (!autoUpdates(softwareById(family), yearOf(s.hour))) return { ok: false, error: "error.noAutoUpdate" };
   s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, autoUpdate: on } : x));
   return { ok: true };
+}
+
+// Picks the release channel the cluster's software updates from; the next update follows it.
+export function setChannel(s: GameState, clusterId: string, channel: Channel): ActionResult {
+  const c = s.clusters.find((x) => x.id === clusterId);
+  if (!c || !familyOf(c)) return { ok: false, error: c ? "error.noSoftware" : "error.unknownCluster" };
+  if (!CHANNELS.includes(channel)) return { ok: false, error: "error.noSoftware" };
+  s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, channel } : x));
+  return { ok: true, id: clusterId };
 }
 
 // The hour of the night, game time, when clusters with automatic updates run a due update.
