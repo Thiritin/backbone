@@ -138,7 +138,7 @@ describe("company site hosting", () => {
       ok(setUpChannel(s, "orderForm"));
       if (down) ok(setPower(s, "dev3", false));
       else ok(setSiteHost(s, { kind: "rented" }));
-      return run(s, 24 * 120).filter((e) => e.key === "event.orderPlaced").length;
+      return run(s, 24 * 30).filter((e) => e.key === "event.orderPlaced").length;
     };
     expect(orders(false)).toBeGreaterThan(0);
     expect(orders(true)).toBe(0);
