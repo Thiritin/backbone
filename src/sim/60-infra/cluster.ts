@@ -10,7 +10,7 @@ import type { Device, GameState, MachineState } from "../50-state";
 import type { OsImage } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
 import type { VmSample } from "./stats";
-import { deviceVendor, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
+import { deviceVendor, drivesOf, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
 import { coverage } from "./maintenance";
@@ -109,8 +109,16 @@ const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcp
 // What a node holds: the vCPU of its physical cores and its installed RAM, and the disk it books up to (usable RAID times
 // OVERCOMMIT.disk); with s, the vCPU its cluster's compatibility mode leaves. Booking CPU and RAM past the physical amounts is
 // always allowed; it costs performance and freezes (usage.ts).
+// MinnIO erasure sets: parity drives hold no data, never more than half the set.
+export const effParity = (parity: number, n: number): number => Math.min(parity, Math.floor(n / 2));
+function ecFactor(s: GameState, d: Device): number {
+  const c = s.clusters.find((x) => x.nodes.some((n) => n.deviceId === d.id));
+  if (!c || (c.panel ?? c.platform) !== "minnio") return 1;
+  const set = Math.min(16, c.nodes.reduce((n, x) => n + drivesOf(s.devices.find((y) => y.id === x.deviceId) ?? d).length, 0));
+  return set ? (set - effParity(s.netsvc.ec[c.id] ?? 2, set)) / set : 1;
+}
 export function nodeCapacity(d: Device, s?: GameState): Resources {
-  return modelById(d.model).server ? { vcpu: s ? nodeVcpu(s, d) : installedVcpu(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
+  return modelById(d.model).server ? { vcpu: s ? nodeVcpu(s, d) : installedVcpu(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk * (s ? ecFactor(s, d) : 1) } : ZERO;
 }
 export const nodeVcpu = (s: GameState, d: Device): number => (clusterOf(s, d.id)?.compat ? Math.round(installedVcpu(d) * COMPAT_VCPU * 100) / 100 : installedVcpu(d));
 // Whether a VM moves live between two servers: their boards share a vendor, or both clusters run compatibility mode.

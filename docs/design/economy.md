@@ -646,6 +646,9 @@ Private customers and hobbyists use their sites in the evening and forgive a wee
 
 **Planned maintenance.** An outage on a machine covered by a window the customer was told about at least 24 hours ahead costs no happiness, writes no outage ticket and adds no hours down to the month, so it earns no SLA credit. Work that runs past the window counts as a normal outage from the window's end, noticed from that hour on. A window announced less than 24 hours ahead keeps half of every penalty: half the happiness loss, half the chance of a ticket and half the hours down. Online shops ask to move a window that touches a weekday between 08:00 and 20:00, and gamers decline a window that starts on a Friday or Saturday night (17:00 to 09:00); neither is covered by it until the window is moved, so their outages cost the full penalties. Moving a window is free and starts the 24 hours of notice again.
 
+
+Shared links without an expiry that are older than 90 days leak with a monthly chance of 0.015 (0.003 with a password) and cost the customer 20 happiness. The expiry policy of 7, 30 or 90 days trades these leaks for extension tickets.
+
 ## Tickets and work rates
 
 A low-skill customer creates about 0.3 tickets a month, so one average support agent keeps about 1,400 of them answered. Every job in the game, from tickets to cabling, is a task with a handling time, and staff work through tasks at a rate set by their skill.
@@ -702,6 +705,9 @@ Staff work 8 hours a day, Monday to Friday, with 30 days of holiday and about 10
 | Sign a transit contract | Network engineer | 1 day |
 
 **AI support bot.** It works 24 hours a day at 10× the rate of a skill-50 agent, is right 85% of the time, never improves, and only takes how-to and billing questions. It costs €1,500 per month when it unlocks.
+
+
+Bucket requests: each month a storage service raises a request to make a bucket public with probability 0.06. Approving gives the customer +3 happiness, declining by closing the ticket costs 2, and closing a public bucket again costs 1. A public bucket has a 0.04 monthly chance of exposing its files, which costs 25 happiness. Shared links: OwnClod customers hand out about half a link per user each month; an expired link has a 0.10 chance of a request to extend it.
 
 ## Billing and payment habits
 
@@ -1251,6 +1257,11 @@ A UPS runs for its battery capacity divided by the load:
 Prices follow the same yearly multipliers as other hardware (see [Prices over time](#prices-over-time)).
 
 An outage reaches the servers for the minutes the UPS and the site can't bridge, rounded up to whole hours of downtime. Customers hit by an hour or more ask for a refund with a 10% chance at low budget, 15% at medium and 30% at high budget (decision).
+
+
+### Erasure sets
+
+The drives of a MinnIO cluster form sets of up to 16. Parity 2 or 4 is how many drives of a set can fail; the data shards leave `(n - parity) / n` of the disk, so EC:2 on 8 drives is 75% and EC:4 is 50%. One to parity failed drives mean a degraded set: the storage customers are marked slow, and after 72 hours without a replacement each loses 1 happiness a day. More failed drives than the parity take the set offline until a drive is back. A replaced drive heals at 40 GB per hour.
 
 ## Notices and legal requests
 

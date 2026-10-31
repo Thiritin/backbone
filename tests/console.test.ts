@@ -116,6 +116,15 @@ describe("USB installer", () => {
     expect(machineScreen(s, id)).toEqual({ kind: "login", os: "lunix" });
   });
 
+  it("starts the installer as soon as the stick is picked during POST", () => {
+    const s = readyGame(7), d = dev(s, "dev3");
+    withStick(s, "dev3");
+    hardReboot(s, d, "ipmi.log.reset");
+    expect(machineScreen(s, "dev3").kind).toBe("post");
+    ok(bootFromUsb(s, "dev3"));
+    expect(machineScreen(s, "dev3").kind).toBe("bootMenu");
+  });
+
   it("boots for POST and the OS's boot minutes after a reset late in the hour", () => {
     const s = readyGame(7), d = dev(s, "dev3");
     minutes(s, 30);
