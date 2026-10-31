@@ -4,7 +4,7 @@ import { GPU_SKILL } from "../10-catalog/research";
 import { backsUp, balancerIn, fcGbit, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
-import { isSuspended } from "../45-billing/billing";
+import { serviceHeld } from "../45-billing/billing";
 import type { Device, GameState, MachineState } from "../50-state";
 import type { OsImage } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
@@ -36,6 +36,8 @@ export interface Cluster {
   switching: { kind: SoftwareKind; to: string; doneAt: number } | null;
   backup: { targetId: string | null; every: BackupEvery };
   ramGuard?: boolean;
+  // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
+  oversell?: number | null;
   // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.
   compat?: boolean;
   // Whether the software updates itself at AUTO_UPDATE_HOUR when an update is due (software.ts).
@@ -447,7 +449,7 @@ export function computeTick(s: GameState): SimEvent[] {
     }
   }
   const ids = [...new Set(s.workloads.filter((w) => !isOwnVm(w)).map((w) => w.serviceId))];
-  const down = readOnlySweep(s, () => ids.filter((id) => !workloadsUp(s, id) && !isSuspended(s, s.services.find((v) => v.id === id)!.customerId)));
+  const down = readOnlySweep(s, () => ids.filter((id) => !workloadsUp(s, id) && !serviceHeld(s, s.services.find((v) => v.id === id)!)));
   // Hours inside an announced maintenance window are no downtime for the SLA; a late announcement counts half.
   const hours = (id: string) => coverage(s, s.services.find((v) => v.id === id)!)?.factor ?? 1;
   if (down.length) s.downHours = { ...s.downHours, ...Object.fromEntries(down.map((id) => [id, (s.downHours[id] ?? 0) + hours(id)])) };
