@@ -219,3 +219,4 @@
 .pk[data-era="early"] .cx-bar i { background: linear-gradient(#f9b25e, #e07b10); }
 .ovz[data-era="early"] .cx-bar { height: 10px; border-color: #777; background: #f6f6f6; box-shadow: none; }
 .ovz[data-era="early"] .cx-bar i { background: var(--accent); }
+.cx-note.bad { color: var(--bad); }

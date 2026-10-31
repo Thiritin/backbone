@@ -3,7 +3,9 @@ import { yearOf } from "../../../../../sim/00-core/time";
 import { t } from "../../../../../i18n/en";
 import { useStore } from "../../../../store";
 import type { GameState } from "../../../../../sim/50-state";
+import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { vmStats } from "../../../../../sim/60-infra/stats";
+import { integrationServices } from "../../../../../sim/80-business/readouts";
 import { Chart } from "../Chart";
 import { AlarmList, ConsoleThumb, MediaMenu, NodeList, ResourceBars, SizeFields, summaryOf, TaskLog, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelAction, type PanelProps } from "../PanelBase";
@@ -13,8 +15,8 @@ import "./hypervee.css";
 const ERAS = erasFrom(2008, 2012);
 const LABELS: Record<string, string> = { start: t("browser-consoles-1.hvStart"), stop: t("browser-consoles-1.hvShutDown"), reset: t("browser-consoles-1.hvReset"), restore: t("browser-consoles-1.hvRestore"), recover: t("browser-consoles-1.hvRecover"), migrate: t("browser-consoles-1.hvMove"), resize: t("browser-consoles-1.hvSettingsDots"), console: t("browser-consoles-1.hvConnect"), delete: t("browser-consoles-1.hvDelete") };
 type Page = { kind: "list"; node: string | null } | { kind: "cluster" } | { kind: "settings"; id: string } | { kind: "new" } | { kind: "server" };
-const SETTINGS = ["BIOS", "Memory", "Processor", "DVD Drive", "Network Adapter", "Name", "Checkpoints"] as const;
-const SETTING_LABELS: Record<(typeof SETTINGS)[number], string> = { BIOS: t("browser-consoles-1.hvBios"), Memory: t("browser-consoles-1.memory"), Processor: t("browser-consoles-1.hvProcessor"), "DVD Drive": t("browser-consoles-1.hvDvdDrive"), "Network Adapter": t("browser-consoles-1.hvNetworkAdapter"), Name: t("browser-consoles-1.name"), Checkpoints: t("browser-consoles-1.hvCheckpoints") };
+const SETTINGS = ["BIOS", "Memory", "Processor", "DVD Drive", "Network Adapter", "Name", "Checkpoints", "Integration Services"] as const;
+const SETTING_LABELS: Record<(typeof SETTINGS)[number], string> = { BIOS: t("browser-consoles-1.hvBios"), Memory: t("browser-consoles-1.memory"), Processor: t("browser-consoles-1.hvProcessor"), "DVD Drive": t("browser-consoles-1.hvDvdDrive"), "Network Adapter": t("browser-consoles-1.hvNetworkAdapter"), Name: t("browser-consoles-1.name"), Checkpoints: t("browser-consoles-1.hvCheckpoints"), "Integration Services": t("readouts.is.title") };
 
 function ActionsPane({ title, actions }: { title: string; actions: (PanelAction | false)[] }) {
   return (
@@ -25,6 +27,7 @@ function ActionsPane({ title, actions }: { title: string; actions: (PanelAction 
   );
 }
 
+const integrationText = (game: GameState, c: Cluster, v: Vm) => { const x = integrationServices(game, c, v.w); return x.version === "off" ? "" : x.version === "update" ? t("readouts.is.update") : String(x.guest); };
 const mb = (gb: number) => `${Math.round(gb * 1024)} MB`;
 const uptime = (h: number | null) => (h === null ? "00:00:00" : `${h >= 24 ? `${Math.floor(h / 24)}.` : ""}${String(h % 24).padStart(2, "0")}:00:00`);
 const TABS = ["Summary", "Memory", "Networking", "Replication"] as const;
@@ -110,13 +113,13 @@ export function HyperVee(p: PanelProps) {
               <h4 className="hv-h">{t("browser-consoles-1.hvVirtualMachines")}</h4>
               <div className="hv-list">
                 <table className="cx-table">
-                  <thead><tr><th>{t("browser-consoles-1.name")}</th><th>{t("browser-consoles-1.hvState")}</th><th>{t("browser-consoles-1.hvCpuUsage")}</th><th>{t("browser-consoles-1.hvAssignedMemory")}</th><th>{t("browser-consoles-1.status")}</th></tr></thead>
+                  <thead><tr><th>{t("browser-consoles-1.name")}</th><th>{t("browser-consoles-1.hvState")}</th><th>{t("browser-consoles-1.hvCpuUsage")}</th><th>{t("browser-consoles-1.hvAssignedMemory")}</th><th>{t("browser-consoles-1.status")}</th><th>{t("readouts.is.version")}</th></tr></thead>
                   <tbody>
-                    {list.length === 0 && <tr><td colSpan={5} className="cx-empty">{t("browser-consoles-1.hvNoVms")}</td></tr>}
+                    {list.length === 0 && <tr><td colSpan={6} className="cx-empty">{t("browser-consoles-1.hvNoVms")}</td></tr>}
                     {list.map((v) => (
                       <tr key={v.id} aria-selected={v.id === selId} onClick={() => setSelId(v.id)}>
                         <td>{v.name}</td><td>{v.st === "stopped" ? t("browser-consoles-1.hvOff") : v.state}</td><td className="num">{Math.round((v.use.vcpu / Math.max(1, v.w.vcpu)) * 100)} %</td>
-                        <td className="num">{v.st === "stopped" ? "" : `${Math.round(v.w.ramGb * 1024)} MB`}</td><td>{v.sub}</td>
+                        <td className="num">{v.st === "stopped" ? "" : `${Math.round(v.w.ramGb * 1024)} MB`}</td><td>{v.sub}</td><td>{integrationText(game, c, v)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -176,6 +179,7 @@ export function HyperVee(p: PanelProps) {
                   )}
                   {part === "Network Adapter" && <Facts facts={[{ label: t("browser-consoles-1.hvVirtualSwitch"), value: t("browser-consoles-1.hvExternalNetwork") }]} />}
                   {part === "Name" && <Facts facts={[{ label: t("browser-consoles-1.name"), value: vm.name }]} />}
+                  {part === "Integration Services" && <table className="cx-table"><tbody>{integrationServices(game, c, vm.w).services.map((x) => <tr key={x.key}><td>{t(`readouts.is.${x.key}`)}</td><td>{t(`readouts.is.${x.state}`)}</td></tr>)}</tbody></table>}
                   {part === "Checkpoints" && <Facts facts={[{ label: t("browser-consoles-1.lastBackup"), value: facts.backup.value }]} />}
                 </div>
               </div>

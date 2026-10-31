@@ -11,7 +11,7 @@ import { backupTargets, hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { workloadUse } from "../../../../sim/60-infra/usage";
 import { familyOf, openVulns } from "../../../../sim/60-infra/vulns";
-import { accountUse, levelOf } from "../../../../sim/80-business/readouts";
+import { accountUse, evcWarning, levelOf } from "../../../../sim/80-business/readouts";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { deleteVm, phpDue, removePanelHost, resizePanelVm, setBackup, upgradePhp } from "../../../../sim/90-actions/clusters";
 import { setSitesOffline } from "../../../../sim/90-actions/security";
@@ -92,18 +92,20 @@ export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c:
   const act = useStore((s) => s.act), hand = c.kind === "panel", [pick, setPick] = useState<string | null>(null);
   const clusterName = (id: string) => game.clusters.find((x) => x.id === id)?.name ?? "";
   const targets = hand
-    ? webspaceTargets(game, w.id).map((x) => ({ key: x.clusterId, label: t("browser-consoles-2.webspaceTarget", { panel: x.panel, name: x.name }), hours: x.hours, run: () => act(migrateWebspace, w.id, x.clusterId) }))
+    ? webspaceTargets(game, w.id).map((x) => ({ key: x.clusterId, label: t("browser-consoles-2.webspaceTarget", { panel: x.panel, name: x.name }), hours: x.hours, evc: false, run: () => act(migrateWebspace, w.id, x.clusterId) }))
     : migrationTargets(game, w.id).map((x) => ({
       key: x.to, hours: x.down, run: () => act(migrateWorkload, w.id, x.to),
       label: x.clusterId === c.id ? x.name : `${x.name} · ${clusterName(x.clusterId)}`,
+      evc: evcWarning(game, w, x.to),
     }));
-  const chosen = targets.find((t) => t.key === pick);
+  const chosen = targets.find((t) => t.key === pick), evc = chosen?.evc;
   const summary = !chosen ? "" : hand ? t("browser-consoles-2.migrationOnline", { hours: hoursText(chosen.hours) })
     : chosen.hours === 0 ? t("browser-consoles-2.machineKeepsRunning") : t("browser-consoles-2.machineOffline", { hours: hoursText(chosen.hours) });
   return (
     <div className="cx-inline">
       {targets.length === 0 && <span>{t("browser-consoles-2.noHost")}</span>}
       {targets.map((t) => <button key={t.key} className="cx-chip" aria-pressed={t.key === pick} onClick={() => setPick(t.key)}>{t.label}</button>)}
+      {evc && <span className="cx-note bad">{t(`readouts.evc.warning.${c.platform === "proxmocks" || c.platform === "openstash" ? c.platform : "vmwhere"}`)}</span>}
       {chosen && <span className="cx-note">{summary}</span>}
       {chosen && <button className="cx-btn primary" onClick={() => chosen.run().ok && done()}>{t("browser-consoles-2.migrate")}</button>}
       <button className="cx-btn" onClick={done}>{t("browser-consoles-2.cancel")}</button>

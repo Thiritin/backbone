@@ -5,7 +5,7 @@ import type { Cluster, Workload } from "../60-infra/cluster";
 import { serviceMbps } from "../60-infra/network";
 import { diskFill, workloadLoad, workloadUse } from "../60-infra/usage";
 import { ascii, companyDomain } from "../30-customers/domains";
-import { controlPlaneUp, workloadOnline } from "../60-infra/cluster";
+import { controlPlaneUp, liveBetween, workloadOnline } from "../60-infra/cluster";
 import { hashRng, rand } from "../00-core/rng";
 import { familyOf, openVulns } from "../60-infra/vulns";
 import { autoUpdates } from "../10-catalog/platforms";
@@ -180,4 +180,21 @@ export function vpnSessions(s: GameState, c: Cluster, hour: number = s.hour): Vp
       return { workloadId: w.id, user: `${stem}${i + 1}`, realIp: `${1 + (a % 222)}.${(a >> 8) % 256}.${(a >> 16) % 256}.${1 + (a >> 4) % 254}`, vpnIp: `10.8.${idNumber(w.id) % 256}.${i + 2}`, since: hour - hours, rxMb: Math.round(mbit * hours * 360), txMb: Math.round(mbit * hours * 90) };
     });
   });
+}
+
+// Hypervisor readouts (plan 3.12): two existing years and two device vendors, shown as warnings.
+export type IntegrationState = "off" | "ok" | "update";
+export const INTEGRATION_SERVICES = ["shutdown", "time", "exchange", "heartbeat", "backup"] as const;
+
+// The guest's Integration Services are as old as its OS install; a guest older than the host needs an update, and a stopped VM runs none.
+export function integrationServices(s: GameState, c: Cluster, w: Workload): { host: number; guest: number; version: IntegrationState; services: { key: (typeof INTEGRATION_SERVICES)[number]; state: IntegrationState }[] } {
+  const guest = yearOf(w.os?.installedAt ?? w.placedAt), host = c.version, off = !workloadOnline(s, w) || w.stopped;
+  const old = guest < host, state = (key: string): IntegrationState => (off ? "off" : old && key === "backup" ? "update" : "ok");
+  return { host, guest, version: off ? "off" : old ? "update" : "ok", services: INTEGRATION_SERVICES.map((key) => ({ key, state: state(key) })) };
+}
+
+// Moving to this server cannot happen live: the boards are of different vendors and the clusters are not both in compatibility mode.
+export function evcWarning(s: GameState, w: Workload, toDeviceId: string): boolean {
+  const from = s.devices.find((d) => d.id === w.deviceId), to = s.devices.find((d) => d.id === toDeviceId);
+  return !!from && !!to && !liveBetween(s, from, to);
 }
