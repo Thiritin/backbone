@@ -9,6 +9,7 @@ import { opsTick } from "../40-support/notices";
 import { supportTick, workTick } from "../40-support/tick";
 import { abandonTickets } from "../40-support/abandon";
 import { financeTick } from "../46-finance/finance";
+import { bankTick, tanTick } from "../46-finance/bank";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
 import { autoUpdateTick } from "../90-actions/software";
@@ -208,6 +209,7 @@ export function tick(state: GameState): SimEvent[] {
   const minutes = 60 - state.minute;
   state.hour++;
   state.minute = 0;
+  tanTick(state);
   haltTick(state);
   installNetTick(state);
   const events: SimEvent[] = [...tripTick(state), ...thermalTick(state, minutes)];
@@ -324,6 +326,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...supportTick(state));
   abandonTickets(state);
   events.push(...financeTick(state));
+  events.push(...bankTick(state));
   events.push(...staffTick(state));
   events.push(...techTick(state));
   events.push(...autoUpdateTick(state));
@@ -344,5 +347,6 @@ export function tickMinute(state: GameState): SimEvent[] {
   haltTick(state);
   installNetTick(state);
   const tripped = tripTick(state);
+  tanTick(state);
   return [...tripped, ...thermalTick(state), ...workTick(state)];
 }

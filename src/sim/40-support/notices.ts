@@ -212,6 +212,7 @@ export const subjectParams = (s: GameState, t: Ticket): Record<string, string | 
   ...(t.kind === "extortion" && breachParams(s, t)),
   ...(t.maint && maintParams(t.maint)),
   ...(t.kind === "sponsor" && sponsorParams(s, t)),
+  ...t.mail?.params,
 });
 
 // Hourly, before the infrastructure and support ticks: grid outages, returned servers, notices, deadlines and seizures.
