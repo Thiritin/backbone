@@ -1,0 +1,24 @@
+import type { Dict } from "../lang";
+
+export default {
+  "readouts.start": () => "Début",
+  "readouts.finish": () => "Fin",
+  "readouts.task": () => "Tâche",
+  "readouts.status": () => "Statut",
+  "readouts.noTasks": () => "Aucune tâche",
+  "readouts.running": () => "En cours",
+  "readouts.done": () => "Terminé",
+  "readouts.error": () => "Erreur",
+  "readouts.tasks": () => "Journal des tâches",
+  "readouts.task.install": (p) => `Installer ${p.software} sur ${p.name}`,
+  "readouts.task.update": (p) => `Mettre à jour ${p.software}`,
+  "readouts.task.php": () => "Recompilation de PHP",
+  "readouts.task.move": (p) => `Déplacer ${p.name}`,
+  "readouts.task.clone": (p) => `Cloner ${p.name}`,
+  "readouts.task.recover": (p) => `Récupérer ${p.name}`,
+  "readouts.task.restore": (p) => `Restaurer ${p.name}`,
+  "readouts.task.created": (p) => `Compte ${p.name} créé`,
+  "readouts.task.backup": (p) => `Sauvegarde de ${p.name}`,
+  "readouts.task.lostDisks": (p) => `${p.name} a perdu ses disques`,
+  "readouts.serverStatus": () => "État du serveur",
+} satisfies Dict;
