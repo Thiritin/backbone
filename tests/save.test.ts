@@ -16,7 +16,7 @@ describe("tick", () => {
     const s = registered(newGame(1));
     const events = [];
     for (let h = 0; h < 24 * 31; h++) events.push(...tick(s));
-    expect(events.filter((e) => e.app !== "News").map((e) => e.key)).toEqual(["event.monthStart", "event.bills"]);
+    expect(events.filter((e) => e.app !== "News").map((e) => e.key)).toEqual(["event.monthStart"]);
     expect(events.find((e) => e.app === "Finance")).toEqual({ app: "Finance", key: "event.monthStart", params: { month: 1, year: 2005 } });
   });
 });
@@ -42,7 +42,7 @@ describe("save", () => {
     expect(repaired.cash).toBe(START_CASH);
     expect(repaired.rng.s).toBe(4);
     expect(repaired.version).toBe(SAVE_VERSION);
-    expect(repaired.devices.map((d) => d.model)).toEqual(["home-router"]);
+    expect(repaired.devices.map((d) => d.model)).toEqual(["home-router", "line-jack"]);
   });
   it("replaces the infrastructure of a version 1 save and keeps seed, rng, hour, cash and ledger", () => {
     const ledger = [{ hour: 10, category: "rent", key: "ledger.rent", params: { rack: "fra2-rack-01" }, amount: -2520 }];
@@ -58,16 +58,16 @@ describe("save", () => {
     };
     const s = deserialize(JSON.stringify(v1));
     const fresh = newGame(4);
-    // An old save keeps the DSL line it started with, gets the line's address and lists no line it cannot deliver.
+    // An old save keeps the DSL line it started with and lists no line it cannot deliver; the new basement's router waits in
+    // storage, so the line has no address yet.
     expect(s).toEqual({
       ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...STARTER_APPS, ...WIDGETS.map(([id]) => id)], registration: legacyRegistration(4),
-      marketing: { ...fresh.marketing, lines: [] }, homeLine: { id: "dsl-16", next: null }, nextId: fresh.nextId + 1,
-      ips: { ...fresh.ips, addresses: [expect.objectContaining({ v: 4, source: "line", holder: "gw:dsl-16", listed: true })] },
+      marketing: { ...fresh.marketing, lines: [] }, homeLine: { id: "dsl-16", next: null },
       // The company domain and the NameCheep contract come with the load.
       registrar: { id: "nameCheep", since: 5000, tier: 0, billed: true, transfer: null }, company: { ...fresh.company, domain: "basement-hosting.de" },
       domains: [expect.objectContaining({ name: "basement-hosting.de", customerId: null })],
     });
-    expect(s.devices.map((d) => d.model)).toEqual(["home-router"]);
+    expect(s.devices.map((d) => d.model)).toEqual(["home-router", "line-jack"]);
     tick(s);
   });
   it("fills customer, billing and support fields in a version 1 save and a version 2 save without them", () => {

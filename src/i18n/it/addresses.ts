@@ -35,6 +35,6 @@ export default {
   "error.needsInternet": () => "Internet non raggiunge ancora questo host.",
   "error.needsBgpRouter": () => "Serve un router con tabella di routing completa in questa sede.",
   "error.basementOnly": () => "Solo il seminterrato accetta questo router.",
-  "error.panelRouter": () => "Questo router sostituisce quello del seminterrato e non va in un rack.",
+  "error.noRouter": () => "Qui non è montato nessun router.",
   "error.notOfficeRouter": () => "Solo un router da piccolo ufficio sostituisce quello del seminterrato.",
 } satisfies Dict;

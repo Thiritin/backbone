@@ -35,6 +35,6 @@ export default {
   "error.needsInternet": () => "Internet aún no llega a este host.",
   "error.needsBgpRouter": () => "Necesita un router con tabla de rutas completa en esta ubicación.",
   "error.basementOnly": () => "Solo el sótano admite este router.",
-  "error.panelRouter": () => "Este router sustituye al del sótano y no va en un rack.",
+  "error.noRouter": () => "Aquí no hay ningún router montado.",
   "error.notOfficeRouter": () => "Solo un router de oficina pequeña sustituye al del sótano.",
 } satisfies Dict;

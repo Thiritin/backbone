@@ -63,7 +63,7 @@ describe("Twin 2U purchase and mounting", () => {
     }
     expect(freeSlots(s, "rack2", 1)).not.toContain(3);
     expect(freeSlots(s, "rack2", 1)).not.toContain(4);
-    expect(rackPower(s, "rack2").watts).toBeCloseTo(108 + 4 * modelById("g2-twin-node").idleWatts * wattsFactorOf(modelById("g2-twin-node"), "SuperMacro"));
+    expect(rackPower(s, "rack2").watts).toBeCloseTo(118 + 4 * modelById("g2-twin-node").idleWatts * wattsFactorOf(modelById("g2-twin-node"), "SuperMacro"));
   });
 
   it("moves, unmounts, ships and sells as one unit", () => {
@@ -91,7 +91,7 @@ describe("shared power supplies and fans", () => {
     fail(s, id, "psu", 2);
     expect(nodes.some((n) => working(s, n))).toBe(false);
     expect(nodes.map((n) => deviceHealth(s, n).state)).toEqual(["down", "down", "down", "down"]);
-    expect(rackPower(s, "rack2").watts).toBe(108);
+    expect(rackPower(s, "rack2").watts).toBe(118);
   });
 
   it("downs all four nodes when a fan of the shared wall fails", () => {

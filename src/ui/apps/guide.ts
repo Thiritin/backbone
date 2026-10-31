@@ -1,4 +1,5 @@
-import { modelById } from "../../sim/10-catalog/hardware";
+import { isOfficeRouter, modelById } from "../../sim/10-catalog/hardware";
+import { locationOf } from "../../sim/60-infra/status";
 import { registrarById, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
@@ -31,6 +32,10 @@ export function stepOf(s: GameState, id: StepId): Step {
       return { title: t("guide.step.buyServer"), text: t("apps.guide.step.buyServer"), app: "Shop" };
     case "mountServer":
       return { title: t("guide.step.mountServer"), text: t("apps.guide.step.mountServer"), app: "Locations", focus: home && { kind: "location", id: home.id } };
+    case "mountRouter": {
+      const router = s.devices.find((d) => isOfficeRouter(modelById(d.model)) && ((d.store ?? locationOf(s, d)?.id) === home?.id));
+      return { title: t("guide.step.mountRouter"), text: t("apps.guide.step.mountRouter"), app: "Locations", focus: router ? { kind: "device", id: router.id } : home && { kind: "location", id: home.id } };
+    }
     case "internet":
       return { title: t("guide.step.internet"), text: t("apps.guide.step.internet"), app: "Locations", focus: { kind: "line", id: "home" } };
     case "setup":

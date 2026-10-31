@@ -23,7 +23,7 @@ The game opens paused on Saturday 1 January 2005 at 00:00. The Welcome sheet ask
 
 - **Menu bar:** paused, the date and €3,500 cash.
 - **Dock:** only the Browser. The [tutorial](tutorial.md) has the player register the company at the trade office, which opens at 08:00 on Monday 3 January, and the registration fills the dock with the starter apps. Finance, Customers, Marketing and the rest arrive later, each when its problem does, as the tutorial lists.
-- **Locations window, open on the basement:** an empty 24U rack with the home router beside it. The router has four ports. There is no server and no internet line.
+- **Locations window, open on the basement:** an empty 24U rack, a line jack on the carrier panel and the flat's Fritz!Bocks 5050 in storage. The router has four LAN ports and a DSL port. There is no server and no internet line.
 - **Desktop:** the "Getting started" document.
 
 ## Getting started
@@ -33,7 +33,8 @@ The steps run in this order, with the 2005 prices from the game.
 | Step | Where | What it costs | How long it takes |
 | --- | --- | --- | --- |
 | Buy a server | Shop | Dwell Balanced 1U G1, €2,500 (2 cores, 8 GB RAM, 500 GB disk, 250 W) | The first server arrives at once; later ones take 3 days |
-| Mount and power it | Locations | Nothing; the rack and the router are already there | Instant |
+| Mount and power it | Locations | Nothing; the rack is already there | Instant |
+| Mount the router | Locations | Nothing; the Fritz!Bocks 5050 waits in storage and goes on a shelf in the rack, its DSL port cabled to the line jack | Instant |
 | Add internet | Locations, Internet line | DSL 16000, €45 a month, 1 Mbit/s up, no fixed address. DSL 16000 Business, €59 a month, fixed addresses. SDSL 2048, €129 a month, 2 Mbit/s up, fixed addresses | 7 days; 14 days for the business line and the SDSL |
 | Install software | Locations, the server's Add Software tile | FreePanel and the OpenVeeZee hypervisor are free. Pleskit is €12 a server, DirectAdmen €4 a server and cPanic €0.40 an account | 2 hours for FreePanel; 3 hours for OpenVeeZee, which then hosts a FreePanel VM |
 | Build the website | Marketing, Channels | Free | 3 days |
@@ -53,7 +54,7 @@ The player buys and sets up everything on the first day, then waits for the line
 | Real time at 1× | Game date | What happens | Player does | Teaches |
 | --- | --- | --- | --- | --- |
 | 0:00 | 1 Jan | The game opens paused on the basement | Names the company, presses play | Desktop, time controls |
-| 0:00 | 1 Jan | The server stands in the rack, cabled to the router and powered on; cash is €1,000 | Buys, mounts and cables the Dwell server | Shop, racks, ports |
+| 0:00 | 1 Jan | The server and the router stand in the rack, the server cabled to the router, the router to the line jack, and powered on; cash is €1,000 | Buys, mounts and cables the Dwell server, mounts the router from storage | Shop, racks, ports |
 | 0:00 | 1 Jan | The line is ordered and the panel installs in 2 hours | Orders the line, installs FreePanel | Lines, software |
 | 0:00 | 1 Jan | The domain, web design and company email are in place; cash is €600 | Signs NameCheep, registers the domain, buys the web design, lists web hosting, books email | Registrar, website, mail |
 | 0:14 | 15 Jan | The business line goes live and the friends move onto the panel host | Opens Customers | Customers arrive once the host is reachable |

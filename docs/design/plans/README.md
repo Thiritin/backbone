@@ -2,7 +2,7 @@
 
 Eight lane plans cover the features in `docs/design/panel-features.md`. This page lists the lanes, the order they can be built in, the files several lanes edit, and the decisions that are the user's.
 
-Billing, quotes, bank matching, the first-hour walk, vendor sites and payment methods are a separate set of lanes in [billing-by-hand](billing-by-hand.md).
+Billing, quotes, bank matching, the first-hour walk, vendor sites and payment methods are a separate set of lanes in [billing-by-hand](billing-by-hand.md). Provider websites, colocation contracts with notice periods and the customer portal per provider are in [colo-portals](colo-portals.md).
 
 ## Lanes
 

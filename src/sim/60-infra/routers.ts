@@ -1,10 +1,14 @@
 // GDD, Network and DDoS (Routers). A router's throughput caps what passes through it; only a full-table router can run an own AS.
-import { modelById } from "../10-catalog/hardware";
-import type { GameState, Location } from "../50-state";
+import { isOfficeRouter, modelById } from "../10-catalog/hardware";
+import type { Device, GameState, Location } from "../50-state";
 import { locationOf, working } from "./status";
 
 const routersAt = (s: GameState, locationId: string) =>
   s.devices.filter((d) => modelById(d.model).kind === "gateway" && locationOf(s, d)?.id === locationId);
+
+// The small-office router mounted at a location, if there is one.
+export const mountedRouter = (s: GameState, locationId: string): Device | undefined =>
+  s.devices.find((x) => !!x.rackId && isOfficeRouter(modelById(x.model)) && locationOf(s, x)?.id === locationId);
 
 // Whether a router that holds a full BGP table is up at this location.
 export const fullTableAt = (s: GameState, locationId: string): boolean =>
