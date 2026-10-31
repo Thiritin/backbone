@@ -143,8 +143,8 @@ function grant(s: GameState, p: Plan, id: RetentionId): void {
     bump(c, KEPT_BUMP);
   } else if (id === "upgrade" && p.upgrade) {
     const { v, w, spec } = p.upgrade;
-    s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, ...sizeOf(spec) } : x));
-    s.services = s.services.map((x) => (x.id === v.id ? { ...x, spec } : x));
+    s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, ...sizeOf(spec), promised: undefined } : x));
+    s.services = s.services.map((x) => (x.id === v.id ? { ...x, spec, pkgBook: undefined } : x));
     bump(c, KEPT_BUMP);
   } else if (id === "move" && p.move) {
     offerMigration(s, p.move.v.id, p.move.target.to, true);

@@ -9,24 +9,49 @@ import { SCREENING_SKILL } from "../45-billing/fraud";
 import type { GameState } from "../50-state";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "./hardware";
+import { routeTarget } from "../60-infra/routes";
+import { yearOf } from "../00-core/time";
+import { belowFloor, packageNamed, usernameError } from "../80-business/packages";
 import { find, queue } from "./support";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const validPrice = (monthly: number, reference: number) => Number.isFinite(monthly) && monthly > 0 && monthly <= 100 * Math.max(1, reference);
 
-function step(s: GameState, ticketId: string, which: OrderStep, route?: string): ActionResult {
+function step(s: GameState, ticketId: string, which: OrderStep, route?: string, extra: Partial<Pick<SalesRequest, "pkg" | "username">> = {}): ActionResult {
   const f = find(s, ticketId);
   if ("error" in f) return f.error;
   const error = stepError(s, f.t, which, route);
   if (error) return fail(error);
-  if (route) editRequest(s, orderOf(s, f.t)!.id, () => ({ route }));
+  if (route) editRequest(s, orderOf(s, f.t)!.id, () => ({ route, ...extra }));
   return queue(s, f.t, "resolve", which, stepMinutes(which, s, orderOf(s, f.t)));
 }
 
 export const createAccount = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "account");
 export const registerOrderDomain = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "domain");
 // Sets the order up on a cluster or panel host of the city; "auto" lets the game pick and needs the provisioning skill.
-export const provisionOrder = (s: GameState, ticketId: string, clusterId: string): ActionResult => step(s, ticketId, "provision", clusterId);
+// opts picks a package of the host to book and, for web hosting, the account's username.
+export function provisionOrder(s: GameState, ticketId: string, route: string, opts?: { package?: string; username?: string }): ActionResult {
+  if (!opts?.package && !opts?.username) return step(s, ticketId, "provision", route);
+  const f = find(s, ticketId);
+  if ("error" in f) return f.error;
+  const error = stepError(s, f.t, "provision", route);
+  if (error) return fail(error);
+  const r = orderOf(s, f.t)!, extra: Partial<Pick<SalesRequest, "pkg" | "username">> = {};
+  if (opts.package) {
+    const target = route === "auto" ? null : routeTarget(s, route, r.product), c = target && s.clusters.find((x) => x.id === target.clusterId);
+    const pkg = c ? packageNamed(c, opts.package) : undefined;
+    if (!pkg) return fail("error.packageMissing");
+    if (pkg.product !== r.product) return fail("error.packageProduct");
+    if (belowFloor(pkg, r.spec)) return fail("error.packageTooSmall");
+    extra.pkg = pkg.name;
+  }
+  if (opts.username) {
+    const bad = r.product !== "webHosting" ? "error.username" : usernameError(s, opts.username, yearOf(s.hour));
+    if (bad) return fail(bad);
+    extra.username = opts.username;
+  }
+  return step(s, ticketId, "provision", route, extra);
+}
 
 // Sends the customer a monthly price and a setup fee (the line's rate where omitted); they answer within their reply time.
 export function quoteOrder(s: GameState, ticketId: string, monthly: number, setup?: number): ActionResult {
