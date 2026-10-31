@@ -2,6 +2,10 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
+## 2026-11-01
+
+- Datacenter providers now announce your own IP block under your AS number for a one-off setup fee, so you no longer need your own BGP router for it.
+
 ## 2026-10-31
 
 - You now choose a bank when you register the company and run the business account on its website, confirming every transfer with a TAN from your TAN list, a text message or the bank's app, and you can apply there for a credit card, an overdraft and standing orders.
