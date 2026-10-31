@@ -54,6 +54,7 @@ export default {
   "marketing.emailOrders": () => "Prendre les commandes par e-mail",
   "marketing.listProduct": (p) => `Proposer ${p.product}`,
 
+  "marketing.aboutHandRolled": () => "Prend les commandes avec un formulaire fait maison, contre un paiement unique. Chaque logiciel a besoin de son propre script.",
   "marketing.aboutModemBill": () => "Vend de l'hébergement web sur cPanic et Pleskit contre un paiement unique.",
   "marketing.aboutClientExit": () => "Vend de l'hébergement de panel à bas prix et ajoute d'autres logiciels via des modules tiers.",
   "marketing.aboutWhmCache": () => "Se connecte à tous les panels web et, dès 2008, à tous les panels de jeux.",

@@ -54,6 +54,7 @@ export default {
   "marketing.emailOrders": () => "Recibir pedidos por correo",
   "marketing.listProduct": (p) => `Ofrecer ${p.product}`,
 
+  "marketing.aboutHandRolled": () => "Recibe pedidos con un formulario hecho por ti, por un único pago. Cada software necesita su propio script.",
   "marketing.aboutModemBill": () => "Vende alojamiento web en cPanic y Pleskit por un único pago.",
   "marketing.aboutClientExit": () => "Vende alojamiento con panel a bajo precio y añade otro software mediante módulos de terceros.",
   "marketing.aboutWhmCache": () => "Se conecta a todos los paneles web y, desde 2008, a todos los paneles de juegos.",
