@@ -6,9 +6,9 @@ import { CYCLE_MONTHS } from "../10-catalog/cycles";
 import { drawCycle, startTerm, termLine, termPrice } from "./cycles";
 import { LINE_NAME, offerPrice, setupFee, specText } from "./spec";
 import { applyStep, AUTOMATION, canAutomate, isStep, issueInvoice, ORDER_PAY_DAYS } from "./manual";
-import { PRODUCTS, type Spec } from "../10-catalog/products";
+import { marketPrice, PRODUCTS, type Spec } from "../10-catalog/products";
 import { inUs } from "../20-world/datacenters";
-import type { Profile } from "../30-customers/customers";
+import type { Product, Profile } from "../30-customers/customers";
 import { profileStats, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { InvoiceLine } from "../45-billing/billing";
@@ -18,7 +18,7 @@ import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "../90-actions/hardware";
 import { missingFor, needFor, referenceFor, REQUEST_HOURS, requestName, senderFor, type SalesRequest } from "./market";
 import { addRequest, cancelShopOrder, editRequest, fulfil, loseRequest, nextSpec, say, targetFor } from "./sales";
-import { deployable, hasModule, moduleFor, shopStocked, takeStock, type ShopProduct } from "../80-business/shop";
+import { deployable, hasModule, moduleFor, shopActive, shopStocked, takeStock, type ShopProduct } from "../80-business/shop";
 import { productCycles, takeProductStock } from "../80-business/portal";
 import { companyParams, variant } from "../40-support/replies";
 import { failsScreen, reviewing, rollFraud, screening } from "../45-billing/fraud";
@@ -114,7 +114,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   if (missingFor(s, r).length) return r;
   // Automation quotes an email order at the line's own rate when there is room for it.
   if (email && !lead && s.autoOrders && canAutomate(s) && targetFor(s, r)) {
-    r = editRequest(s, r.id, () => ({ quote: Math.round(offerPrice(s, need.product, spec, need.sla) * (1 - discount) * 100) / 100 }));
+    r = editRequest(s, r.id, () => ({ quote: Math.round(emailRate(s, need.product, spec, need.sla) * (1 - discount) * 100) / 100 }));
     if (!applyStep(s, s.tickets.find((x) => x.id === t.id)!, "quote", AUTOMATION)) {
       events.push({ app: "Support", key: "event.orderQuoted", params: { ...params, ticketId: t.id, price: r.quote! } });
       return r;
@@ -123,6 +123,10 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   events.push({ app: "Support", key: "event.order", params: { ...params, ticketId: t.id } });
   return r;
 }
+
+// The monthly rate an email order is quoted: the configurable option rates with a shop, the market's before one.
+export const emailRate = (s: GameState, product: Product, spec: Spec, sla: SalesRequest["sla"]): number =>
+  shopActive(s) ? offerPrice(s, product, spec, sla) : marketPrice(product, spec, yearOf(s.hour), sla);
 
 // The order form bills at once: the line's setup fee and the first term, which the monthly run then skips.
 function formInvoice(s: GameState, id: string): void {
