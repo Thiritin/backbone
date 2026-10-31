@@ -257,6 +257,7 @@ export default {
   "apps.name.Security": () => "Segurança",
   "apps.name.Notes": () => "Notas",
   "apps.name.News": () => "Notícias",
+  "apps.name.Calendar": () => "Calendário",
   "apps.name.Dev menu": () => "Menu dev",
   "apps.name.Settings": () => "Definições",
   "apps.about.Applications": () => "Mostra as tuas apps instaladas, o ambiente de trabalho, as tuas transferências e a pen USB onde gravas uma ISO a partir daqui.",
@@ -280,6 +281,9 @@ export default {
   "apps.about.Security": () => "Lista os nós afetados por uma vulnerabilidade de PHP, põe os seus sites offline, corrige-os e limpa-os, e guarda os relatórios de incidente sobre dados perdidos.",
   "apps.about.Notes": () => "Edita as notas do teu ambiente de trabalho.",
   "apps.about.News": () => "Lista os títulos sobre novo software, hardware e mudanças do mercado.",
+  "apps.about.Calendar": () => "Mostra num calendário mensal as datas dos lançamentos anunciados e de outras notícias.",
+  "calendar.prev": () => "Mês anterior",
+  "calendar.next": () => "Mês seguinte",
   "apps.about.Dev menu": () => "Define a data, o teu dinheiro e os teus pontos de pesquisa para testes.",
   "apps.about.Settings": () => "Define o nome e o logótipo da empresa, o tema e que apps podem enviar notificações.",
 } satisfies Dict;

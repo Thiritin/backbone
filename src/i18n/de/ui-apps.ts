@@ -257,6 +257,7 @@ export default {
   "apps.name.Security": () => "Sicherheit",
   "apps.name.Notes": () => "Notizen",
   "apps.name.News": () => "Nachrichten",
+  "apps.name.Calendar": () => "Kalender",
   "apps.name.Dev menu": () => "Dev-Menü",
   "apps.name.Settings": () => "Einstellungen",
   "apps.about.Applications": () => "Zeigt deine installierten Apps, den Schreibtisch, deine Downloads und den USB-Stick, auf den du hier ein ISO schreibst.",
@@ -280,6 +281,9 @@ export default {
   "apps.about.Security": () => "Listet die Nodes auf, die eine PHP-Schwachstelle betrifft, nimmt ihre Websites offline, patcht und bereinigt sie und verwahrt die Vorfallberichte über verlorene Daten.",
   "apps.about.Notes": () => "Bearbeitet die Notizen auf deinem Schreibtisch.",
   "apps.about.News": () => "Listet die Schlagzeilen zu neuer Software, Hardware und Marktveränderungen auf.",
+  "apps.about.Calendar": () => "Zeigt die Termine angekündigter Veröffentlichungen und anderer Nachrichten in einem Monatskalender.",
+  "calendar.prev": () => "Vorheriger Monat",
+  "calendar.next": () => "Nächster Monat",
   "apps.about.Dev menu": () => "Setzt zum Testen das Datum, dein Geld und deine Forschungspunkte.",
   "apps.about.Settings": () => "Legt Firmennamen und Logo, das Design und die Apps fest, die Mitteilungen senden dürfen.",
 } satisfies Dict;

@@ -1,5 +1,5 @@
 // Things that become available are announced by the News app on the day they do (gdd.md, The desktop, News).
-import { hourOf, START_YEAR, yearOf } from "../00-core/time";
+import { dateOf, hourOf, START_YEAR, yearOf } from "../00-core/time";
 import { IPV6_FROM } from "../10-catalog/addresses";
 import { DESKS } from "../10-catalog/desks";
 import { GENERATIONS } from "../10-catalog/economy";
@@ -110,4 +110,14 @@ export function newsTick(s: GameState): SimEvent[] {
   const year = yearOf(s.hour), out = year > START_YEAR && s.hour === at(year) ? releases(s, year) : [];
   if (out.length) post(releaseDef(`release.${year}.${out.join("+")}`));
   return events;
+}
+
+// The published announcements grouped by UTC day, as "YYYY-MM-DD".
+export function feedByDay(s: GameState): Map<string, ReturnType<typeof feed>> {
+  const days = new Map<string, ReturnType<typeof feed>>();
+  for (const n of feed(s)) {
+    const k = dateOf(n.hour).toISOString().slice(0, 10);
+    days.set(k, [...(days.get(k) ?? []), n]);
+  }
+  return days;
 }

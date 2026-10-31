@@ -257,6 +257,7 @@ export default {
   "apps.name.Security": () => "Security",
   "apps.name.Notes": () => "Notes",
   "apps.name.News": () => "News",
+  "apps.name.Calendar": () => "Calendar",
   "apps.name.Dev menu": () => "Dev menu",
   "apps.name.Settings": () => "Settings",
   "apps.about.Applications": () => "Shows your installed apps, the desktop, your downloads and the USB stick, which you write an ISO to here.",
@@ -280,6 +281,9 @@ export default {
   "apps.about.Security": () => "Lists the nodes a PHP vulnerability affects and takes their sites offline, patches and cleans them up, and keeps the incident reports of lost data.",
   "apps.about.Notes": () => "Edits the notes on your desktop.",
   "apps.about.News": () => "Lists the headlines about new software, hardware and market changes.",
+  "apps.about.Calendar": () => "Shows the dates of announced releases and other news on a monthly calendar.",
+  "calendar.prev": () => "Previous month",
+  "calendar.next": () => "Next month",
   "apps.about.Dev menu": () => "Sets the date, your money and your research points for testing.",
   "apps.about.Settings": () => "Sets your company name and logo, the theme and which apps may send notifications.",
 } satisfies Dict;
