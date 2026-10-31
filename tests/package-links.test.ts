@@ -33,7 +33,8 @@ describe("console addresses", () => {
   it("offers a create form only for the consoles that have one", () => {
     expect(createFormFor("cpanic", "webHosting")).toBe(true);
     expect(createFormFor("cpanic", "vps")).toBe(false);
-    expect(createFormFor("pleskit", "webHosting")).toBe(false);
+    expect(createFormFor("pleskit", "webHosting")).toBe(true);
+    expect(createFormFor("pleskit", "gameServer")).toBe(false);
     expect(createFormFor(null, "webHosting")).toBe(false);
   });
 

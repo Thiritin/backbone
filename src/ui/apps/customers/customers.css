@@ -94,3 +94,9 @@
 :root[data-os="tahoe"] .cus-chart { background: color-mix(in oklch, var(--field), transparent 30%); }
 :root[data-os="tahoe"] .cus-mood .bar,
 :root[data-os="tahoe"] .cus-mood .bar i { border-radius: 999px; }
+
+.cus-new { display: flex; flex-direction: column; gap: 14px; max-width: 480px; padding: 16px; }
+.cus-new fieldset { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 10px 14px 14px; border: 1px solid var(--line); border-radius: var(--r); }
+.cus-new legend { padding: 0 6px; font-weight: 600; }
+.cus-new .field { display: flex; flex-direction: column; gap: 4px; }
+.cus-new input, .cus-new select { width: 100%; }
