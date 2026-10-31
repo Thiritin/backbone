@@ -17,6 +17,8 @@ export interface WebPanel {
   phpBroken: Record<string, string>; // web hosting service id -> the version it broke on
   ssl: Ssl;
   bans: Record<string, HostBans>; // Pleskit host id -> its Fail2ban jail
+  appBack: Record<string, { appVersion: number; appUpdatedAt: number }>; // site id -> the release before a Toolkit update
+  appBroken: Record<string, number>; // site id -> the hour the site a Toolkit update broke runs normally again
 }
 
 // economy.md, SSL certificates and AutoSSL: auto lists the cPanic hosts with AutoSSL on, expires the hour each domain's
@@ -25,12 +27,13 @@ export interface SslLog { hour: number; serviceId: string; ok: boolean }
 export interface Ssl { auto: string[]; expires: Record<string, number>; expired: string[]; log: SslLog[] }
 export const newSsl = (): Ssl => ({ auto: [], expires: {}, expired: [], log: [] });
 
-export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {} });
+export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {}, appBack: {}, appBroken: {} });
 
 // A save keeps what it has per sub-record, so a save from an earlier milestone still gets the later sub-fields.
 export const mergeWebPanel = (base: WebPanel, data: Partial<WebPanel> | undefined): WebPanel => ({
   phpPool: { ...base.phpPool, ...data?.phpPool }, phpOf: { ...base.phpOf, ...data?.phpOf }, phpBroken: { ...base.phpBroken, ...data?.phpBroken },
   ssl: { ...base.ssl, ...data?.ssl }, bans: { ...base.bans, ...data?.bans },
+  appBack: { ...base.appBack, ...data?.appBack }, appBroken: { ...base.appBroken, ...data?.appBroken },
 });
 
 export const POOL_MAX = 2;
@@ -191,6 +194,14 @@ export function sslTick(s: GameState): void {
   }
 }
 
+// Daily: a site a Toolkit update broke runs slowed until its hour; ended sites drop out.
+function updateBrokenTick(s: GameState): void {
+  const live = new Set(s.services.filter((v) => v.endedAt === null).map((v) => v.id));
+  const entries = Object.entries(s.webpanel.appBroken), slow = new Set(entries.filter(([id, until]) => live.has(id) && until > s.hour).map(([id]) => id));
+  if (slow.size !== entries.length) s.webpanel = { ...s.webpanel, appBroken: Object.fromEntries(entries.filter(([id]) => slow.has(id))) };
+  if (slow.size) s.services = s.services.map((v) => (slow.has(v.id) ? { ...v, slowedAt: s.hour } : v));
+}
+
 export function webpanelTick(s: GameState): SimEvent[] {
   if (s.hour % 24 !== 0) return [];
   const hosts = new Set(s.clusters.filter((c) => c.kind === "panel").map((c) => c.id));
@@ -198,5 +209,6 @@ export function webpanelTick(s: GameState): SimEvent[] {
   if (stale.length) s.webpanel = { ...s.webpanel, phpPool: Object.fromEntries(Object.entries(s.webpanel.phpPool).filter(([id]) => hosts.has(id))) };
   phpCompat(s);
   sslTick(s);
+  updateBrokenTick(s);
   return [];
 }
