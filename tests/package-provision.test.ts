@@ -7,7 +7,7 @@ import { workloadUse } from "../src/sim/60-infra/usage";
 import { tick } from "../src/sim/88-tick/tick";
 import { suggestedUsername, type PackageDef } from "../src/sim/80-business/packages";
 import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
-import { addPackage } from "../src/sim/90-actions/packages";
+import { addPackage, changePackage } from "../src/sim/90-actions/packages";
 import { readyGame } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
@@ -111,5 +111,45 @@ describe("provision from a package", () => {
     expect(c).toMatchObject({ ticketId: r.ticketId, error: "error.needsAccount", paid: false });
     expect(JSON.stringify(c)).not.toContain("shady");
     expect(orderChoices(s, ["vps"]).some((x) => x.requestId === r.id)).toBe(false);
+  });
+});
+
+describe("change package", () => {
+  const sold = (seed: number, first?: string) => {
+    const m = make(seed);
+    addPackage(m.s, m.host, pkg(m.req().spec, "Big", () => 2));
+    addPackage(m.s, m.host, pkg(m.req().spec, "Lean", (k) => (k === 1 ? 0.5 : 1)));
+    must(provisionOrder(m.s, m.id, m.host, first ? { package: first } : undefined));
+    const v = () => m.s.services.find((x) => x.id === m.req().serviceId)!, w = () => m.s.workloads.find((x) => x.serviceId === v().id)!;
+    return { ...m, v, w };
+  };
+
+  it("books the new package in place and keeps the sold spec", () => {
+    const { s, v, w } = sold(61);
+    const spec = { ...v().spec };
+    expect(changePackage(s, v().id, "big").ok).toBe(true);
+    expect([v().pkg, w().ramGb, w().promised]).toEqual(["Big", spec.ramGb * 2, undefined]);
+    expect(v().spec).toEqual(spec);
+    expect(s.activity.at(-1)).toMatchObject({ key: "activity.changePackage", minutes: 60 });
+  });
+
+  it("sets promised for a smaller package and clears it again", () => {
+    const { s, req, v, w } = sold(62);
+    changePackage(s, v().id, "Lean");
+    expect(w().promised).toMatchObject({ ramGb: req().spec.ramGb });
+    expect(w().ramGb).toBe(req().spec.ramGb * 0.5);
+    changePackage(s, v().id, "Big");
+    expect(w().promised).toBeUndefined();
+  });
+
+  it("refuses a missing package, one below the floor and a full node", () => {
+    const { s, req, host, v, w } = sold(63);
+    expect(changePackage(s, v().id, "Nope")).toEqual({ ok: false, error: "error.packageMissing" });
+    addPackage(s, host, pkg(req().spec, "Tiny", () => 0.1));
+    expect(changePackage(s, v().id, "Tiny")).toEqual({ ok: false, error: "error.packageTooSmall" });
+    addPackage(s, host, pkg(req().spec, "Huge", () => 10000));
+    const before = w().ramGb;
+    expect(changePackage(s, v().id, "Huge")).toEqual({ ok: false, error: "error.noCapacity" });
+    expect(w().ramGb).toBe(before);
   });
 });

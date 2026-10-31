@@ -12,7 +12,7 @@ import { consoleFeatures, createFormFor, createLink } from "../src/sim/80-busine
 import { tick } from "../src/sim/88-tick/tick";
 import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
 import { addPackage } from "../src/sim/90-actions/packages";
-import { ProvisionForm } from "../src/ui/apps/browser/consoles/PackageForms";
+import { ChangePackage, planChoices, ProvisionForm } from "../src/ui/apps/browser/consoles/PackageForms";
 import { accountChoices, NewCustomer } from "../src/ui/apps/customers/NewCustomer";
 import { panelVm, readyGame } from "./fixtures";
 
@@ -115,6 +115,44 @@ describe("create account form", () => {
     const html = console_(s, s.clusters.find((x) => x.id === host)!, "/?plans=1");
     expect(html).toContain("VM Plans");
     expect(html).toContain("Tiny");
+  });
+
+  it.each([
+    ["vmwhere", "/ui/app/vm-classes", "pkg.vswClasses", "/ui/app/vm/new"],
+    ["hypervee", "/library/hardware-profiles", "pkg.hvProfiles", "/vm/new"],
+    ["openveezee", "/plans", "pkg.ovzPlans", "/virtual-servers/create"],
+    ["openstash", "/admin/flavors", "pkg.hzFlavors", "/project/instances/launch"],
+  ])("draws the %s package screen and the Order field on its create form", (platform, plans, key, create) => {
+    const { s, id, req, host } = order(51, true, "vps");
+    const c = s.clusters.find((x) => x.id === host)!;
+    c.platform = platform;
+    addPackage(s, host, { name: "Tiny", product: "vps", spec: req().spec });
+    expect(createFormFor(familyOf(c), "vps")).toBe(true);
+    expect(createLink(s, host, id)).toContain(`${create}?order=${id}`);
+    const list = console_(s, c, plans);
+    expect(list).toContain(t(key));
+    expect(list).toContain("Tiny");
+    const html = console_(s, c, `${create}?order=${id}`);
+    expect(html).toContain(`<option value="${id}" selected="">`);
+    expect(console_(s, c, create)).not.toContain(`<option value="${id}" selected="">`);
+  });
+
+  it("lists the built-in Horizont flavors as public rows and names a stored flavor", () => {
+    const { s, req, host } = order(52, true, "vps");
+    const c = s.clusters.find((x) => x.id === host)!;
+    c.platform = "openstash";
+    addPackage(s, host, { name: "Odd", product: "vps", spec: { ...req().spec, vcpu: 3, ramGb: 6, diskGb: 33 } });
+    const html = console_(s, c, "/admin/flavors");
+    for (const f of ["m1.tiny", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "Odd"]) expect(html).toContain(f);
+  });
+
+  it("offers the change package form for a running account", () => {
+    const { s, id, req, host } = order(53, true);
+    addPackage(s, host, { name: "Big", product: "webHosting", spec: { ...req().spec, vcpu: req().spec.vcpu * 2 } });
+    must(provisionOrder(s, id, host));
+    const c = s.clusters.find((x) => x.id === host)!, sid = req().serviceId!;
+    expect(planChoices(s, c, sid).map((p) => p.name)).toEqual(["Big"]);
+    expect(renderToString(<ChangePackage game={s} c={c} serviceId={sid} done={() => {}} />)).toContain(t("pkg.changePlan"));
   });
 
   it("draws the TCAdmen service defaults and Add Service form", () => {

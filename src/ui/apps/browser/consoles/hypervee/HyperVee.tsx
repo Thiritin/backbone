@@ -11,12 +11,14 @@ import { integrationServices } from "../../../../../sim/80-business/readouts";
 import { Chart } from "../Chart";
 import { AlarmList, ConsoleThumb, MediaMenu, NodeList, ResourceBars, SizeFields, summaryOf, TaskLog, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelAction, type PanelProps } from "../PanelBase";
+import { parseCreate } from "../../../../../sim/80-business/consoles";
+import { PackagesScreen } from "../PackageForms";
 import "./hypervee.css";
 
 // docs/design/software.md, section 9: the glossy MMC from 2008, the same MMC with flat chrome from 2012.
 const ERAS = erasFrom(2008, 2012);
 const LABELS: Record<string, string> = { start: t("browser-consoles-1.hvStart"), stop: t("browser-consoles-1.hvShutDown"), reset: t("browser-consoles-1.hvReset"), restore: t("browser-consoles-1.hvRestore"), recover: t("browser-consoles-1.hvRecover"), migrate: t("browser-consoles-1.hvMove"), resize: t("browser-consoles-1.hvSettingsDots"), console: t("browser-consoles-1.hvConnect"), delete: t("browser-consoles-1.hvDelete") };
-type Page = { kind: "list"; node: string | null } | { kind: "cluster" } | { kind: "settings"; id: string } | { kind: "new" } | { kind: "server" };
+type Page = { kind: "list"; node: string | null } | { kind: "cluster" } | { kind: "settings"; id: string } | { kind: "new" } | { kind: "server" } | { kind: "profiles" };
 const SETTINGS = ["BIOS", "Memory", "Processor", "DVD Drive", "Network Adapter", "Name", "Checkpoints", "Integration Services"] as const;
 const SETTING_LABELS: Record<(typeof SETTINGS)[number], string> = { BIOS: t("browser-consoles-1.hvBios"), Memory: t("browser-consoles-1.memory"), Processor: t("browser-consoles-1.hvProcessor"), "DVD Drive": t("browser-consoles-1.hvDvdDrive"), "Network Adapter": t("browser-consoles-1.hvNetworkAdapter"), Name: t("browser-consoles-1.name"), Checkpoints: t("browser-consoles-1.hvCheckpoints"), "Integration Services": t("readouts.is.title") };
 
@@ -106,9 +108,10 @@ export function VmDetails({ game, v, generations }: { game: GameState; v: Vm; ge
 
 export function HyperVee(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
-  const [page, setPage] = useState<Page>({ kind: "list", node: null }), [selId, setSelId] = useState<string | null>(null);
+  const open = parseCreate("hypervee", p.path);
+  const [page, setPage] = useState<Page>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "profiles" } : { kind: "list", node: null }), [selId, setSelId] = useState<string | null>(null);
   const [part, setPart] = useState<(typeof SETTINGS)[number]>("Memory"), [gen, setGen] = useState(1);
-  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c);
+  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, open?.screen === "create" ? open.order : undefined);
   if (!p.signedIn) return (
     <div className="cx hv hv-login" data-era={era}>
       <LoginForm className="hv-card" onLogin={p.login} button={t("browser-consoles-1.hvConnectBtn")}>
@@ -121,7 +124,7 @@ export function HyperVee(p: PanelProps) {
   const vm: Vm | undefined = vms.find((v) => v.id === (page.kind === "settings" ? page.id : selId));
   const list = vms.filter((v) => page.kind !== "list" || !page.node || v.w.deviceId === page.node);
   const generations = yearOf(game.hour) >= 2012;
-  const finish = () => { const id = nv.create(); if (id) { setSelId(id); setPage({ kind: "list", node: null }); } };
+  const finish = () => { if (nv.ordered) { if (nv.submit()) setPage({ kind: "list", node: null }); return; } const id = nv.create(); if (id) { setSelId(id); setPage({ kind: "list", node: null }); } };
   const facts = vm && vmFacts(game, vm), health = summaryOf(game, c, page.kind === "list" ? page.node : null), cluster = summaryOf(game, c, null);
   const vmActions = vm ? vm.actions.map((a) => (a.id === "resize" ? { ...a, run: () => setPage({ kind: "settings", id: vm.id }) } : a)) : [];
   return (
@@ -134,6 +137,7 @@ export function HyperVee(p: PanelProps) {
             <li><button aria-pressed={page.kind === "list" && !page.node} onClick={() => setPage({ kind: "list", node: null })}><i>⧉</i>{t("browser-consoles-1.hvManager")}</button>
               <ul>{nodes.map((d) => <li key={d.id}><button aria-pressed={page.kind === "list" && page.node === d.id} onClick={() => setPage({ kind: "list", node: d.id })}><i>▦</i>{(d.hostname ?? d.name).toUpperCase()}</button></li>)}</ul>
             </li>
+            <li><button aria-pressed={page.kind === "profiles"} onClick={() => setPage({ kind: "profiles" })}><i>▤</i>{t("pkg.hvProfiles")}</button></li>
             {f.cluster && <li><button aria-pressed={page.kind === "cluster"} onClick={() => setPage({ kind: "cluster" })}><i>⛁</i>{t("browser-consoles-1.hvFailoverClusterManager")}</button></li>}
           </ul>
         </aside>
@@ -165,6 +169,12 @@ export function HyperVee(p: PanelProps) {
                 {vm ? <>{vm.panel}<VmDetails game={game} v={vm} generations={generations} /></> : <span className="cx-empty">{t("browser-consoles-1.hvNoItem")}</span>}
               </div>
               {vm?.w.deviceId && <><h4 className="hv-h">{t("readouts.checkpoints.title")}</h4><div className="hv-details"><Checkpoints v={vm} /></div></>}
+            </>
+          )}
+          {page.kind === "profiles" && (
+            <>
+              <h4 className="hv-h">{t("pkg.hvProfiles")}</h4>
+              <div className="hv-details"><PackagesScreen game={game} c={c} /></div>
             </>
           )}
           {page.kind === "server" && (
@@ -230,7 +240,7 @@ export function HyperVee(p: PanelProps) {
       {page.kind === "new" && (
         <div className="cx-wiz-back">
           <Wizard title={t("browser-consoles-1.hvNewVmWizard")} className="hv-wiz" finish={t("browser-consoles-1.hvFinish")} onCancel={() => setPage({ kind: "list", node: null })} onFinish={finish} steps={[
-            { id: "name", label: t("browser-consoles-1.hvSpecifyName"), body: <Facts facts={[{ label: t("browser-consoles-1.hvLocation"), value: "C:\\ProgramData\\HyperVee\\" }]} /> },
+            { id: "name", label: t("browser-consoles-1.hvSpecifyName"), body: <><div className="hv-order">{nv.orderFields}</div><Facts facts={[{ label: t("browser-consoles-1.hvLocation"), value: "C:\\ProgramData\\HyperVee\\" }]} /></> },
             ...(generations ? [{ id: "gen", label: t("browser-consoles-1.hvSpecifyGeneration"), body: (
               <div className="hv-radios">
                 {[1, 2].map((g) => <label key={g} className="cx-check"><input type="radio" name="hv-gen" checked={gen === g} onChange={() => setGen(g)} />{t("browser-consoles-1.hvGenerationN", { n: g })}</label>)}

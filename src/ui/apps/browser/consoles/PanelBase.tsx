@@ -1,4 +1,5 @@
 // docs/design/software.md, section 10: what every console offers, as blocks each product lays out in its own chrome.
+import { ChangePackage, planChoices } from "./PackageForms";
 import { t } from "../../../../i18n/en";
 import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Pause, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
@@ -115,6 +116,9 @@ export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c:
   );
 }
 
+// Each console names the switch of an account's package in its own words.
+const PLAN_LABEL: Record<string, string> = { cpanic: "pkg.changeCpanic", directadmin: "pkg.changeDa" };
+
 export interface Row {
   id: string; name: string; sub: string; pkg?: string; user?: string; node: string; state: string; tone: string;
   cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; traffic: [number, number]; mail: number; usage: string;
@@ -123,7 +127,7 @@ export interface Row {
 
 // One row per web space, game server or VM; panel is the open migrate or resize form under it.
 export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: string | null = null): Row[] {
-  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" } | null>(null);
+  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" | "plan" } | null>(null);
   const uses = useMemo(() => new Map(c.kind === "panel" ? game.workloads.filter((w) => w.clusterId === c.id).map((w) => [w.id, accountUse(game, w)] as const) : []), [game.hour, game.workloads.length, c.id, c.kind]); // eslint-disable-line react-hooks/exhaustive-deps
   const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null), holds = useHolds(game, c, f);
   return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
@@ -136,6 +140,7 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
       st === "lost" && f.backups && { id: "restore", label: w.backupAt === null ? t("browser-consoles-2.startEmpty") : t("browser-consoles-2.restore"), run: () => act(restoreWorkload, w.id) },
       !!f.migrate && movable && { id: "migrate", label: t("browser-consoles-2.migrate"), run: () => setOpen({ id: w.id, kind: "migrate" }) },
       f.resize && !!host && cloud && { id: "resize", label: t("browser-consoles-2.resize"), run: () => setOpen({ id: w.id, kind: "resize" }) },
+      !!site && planChoices(game, c, site.id).length > 0 && { id: "plan", label: t(PLAN_LABEL[f.look] ?? "pkg.changePlan"), run: () => setOpen({ id: w.id, kind: "plan" }) },
       own && { id: "console", label: t("browser-consoles-2.console"), run: () => openConsole(w.id) },
       f.delete && own && !host && { id: "delete", label: t("browser-consoles-2.delete"), run: () => act(deleteVm, w.id) },
     ];
@@ -148,7 +153,7 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
       cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu], traffic: uses.get(w.id)?.traffic ?? [0, 0], mail: uses.get(w.id)?.mailboxes ?? 0,
       usage: web ? t("browser-consoles-2.of", { used: disk(Math.round(u.diskGb)), total: disk(w.diskGb) }) : t("browser-consoles-2.usageVm", { cpu: num(u.vcpu), vcpu: w.vcpu, ram: ram(+u.ramGb.toFixed(1)), ramTotal: ram(w.ramGb) }),
       actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])],
-      panel: o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : hold?.panel ?? null,
+      panel: o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "plan" && site ? <ChangePackage game={game} c={c} serviceId={site.id} label={t(PLAN_LABEL[f.look] ?? "pkg.changePlan")} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : hold?.panel ?? null,
     };
   });
 }

@@ -30,7 +30,7 @@ import { bootLines } from "../../console/lunix";
 import { useHandWork } from "../../locations/HandSheet";
 import { VM_STATE, vmLabel, vmState, type VmState } from "../../products/parts";
 import { Bar, Migrate, Resize, type Fact, type PanelAction } from "./PanelBase";
-import { HYPERVISOR_ORDERS, hostChoices, OrderPicker, PlanSelect } from "./PackageForms";
+import { ChangePackage, HYPERVISOR_ORDERS, hostChoices, OrderPicker, planChoices, PlanSelect } from "./PackageForms";
 import { orderChoices } from "../../../../sim/30-market/manual";
 import { provisionOrder } from "../../../../sim/90-actions/orders";
 import "./hypervisor.css";
@@ -91,12 +91,14 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
       templating && st === "stopped" && !tpl && { id: "template", label: t("browser-consoles-1.convertToTemplate"), run: () => act(makeTemplate, w.id) },
       tpl && { id: "clone", label: t("browser-consoles-1.clone"), run: toggle("clone") },
       tpl && { id: "vm", label: t("browser-consoles-1.convertToVm"), run: () => act(makeVm, w.id) },
+      planChoices(game, c, w.serviceId).length > 0 && { id: "plan", label: t("pkg.changePlan"), run: toggle("plan") },
       f.resize && own && { id: "resize", label: t("browser-consoles-1.resize"), run: toggle("resize") },
       own && { id: "console", label: t("browser-consoles-1.console"), run: () => openConsole(w.id) },
       f.delete && own && !insideVm(game, w.id).length && { id: "delete", label: t("browser-consoles-1.delete"), tone: "danger", run: toggle("delete") },
     ];
     const kind = open?.id === w.id ? open.kind : null, hold = holds(w);
     const panel = kind === "migrate" ? <Migrate game={game} w={w} c={c} done={close} />
+      : kind === "plan" && w.serviceId ? <ChangePackage game={game} c={c} serviceId={w.serviceId} done={close} />
       : kind === "storage" ? <DiskMove game={game} w={w} c={c} done={close} />
       : kind === "clone" ? <Clone game={game} w={w} c={c} done={close} />
       : kind === "resize" ? (host ? <Resize game={game} host={host} done={close} /> : <SizeForm w={w} done={close} />)
