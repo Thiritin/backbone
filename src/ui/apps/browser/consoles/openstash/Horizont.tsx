@@ -12,6 +12,7 @@ import { AlarmList, ConsoleThumb, isoName, MediaMenu, NodeList, ResourceBars, su
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import { flavorCounts, FLAVORS, flavorOf, same } from "./flavors";
 import "./horizont.css";
+import { noAutofill } from "../../../../no-autofill";
 
 // docs/design/software.md, section 9: the purple dashboard from 2010, the dark-sidebar one with the red mark from 2016.
 const ERAS = erasFrom(2010, 2016);
@@ -92,7 +93,7 @@ export function Horizont(p: PanelProps) {
       <LoginForm className="hz-card" onLogin={p.login} button={t("browser-consoles-1.hvConnectBtn")}>
         <div className="hz-logo">openstash</div>
         <div className="cx-host">{p.host}</div>
-        <label className="cx-field">{t("browser-consoles-1.domain")}<input defaultValue="default" autoComplete="off" /></label>
+        <label className="cx-field">{t("browser-consoles-1.domain")}<input defaultValue="default" {...noAutofill} /></label>
       </LoginForm>
     </div>
   );

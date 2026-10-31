@@ -24,6 +24,7 @@ import { hoursText } from "../../vms/migrate";
 import { useHolds } from "./Holds";
 import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
+import { noAutofill } from "../../../no-autofill";
 
 export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create";
 
@@ -61,8 +62,8 @@ export function LoginForm({ onLogin, button, className, children }: { onLogin: (
   return (
     <form className={className} onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
       {children}
-      <label className="cx-field">{t("browser-consoles-2.username")}<input defaultValue="admin" autoComplete="off" /></label>
-      <label className="cx-field">{t("browser-consoles-2.password")}<input type="password" defaultValue="correcthorse" autoComplete="off" /></label>
+      <label className="cx-field">{t("browser-consoles-2.username")}<input defaultValue="admin" {...noAutofill} /></label>
+      <label className="cx-field">{t("browser-consoles-2.password")}<input type="password" defaultValue="correcthorse" {...noAutofill} /></label>
       <button className="cx-btn primary" type="submit">{button}</button>
     </form>
   );
