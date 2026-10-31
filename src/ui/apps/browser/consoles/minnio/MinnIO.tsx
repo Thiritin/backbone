@@ -5,6 +5,8 @@ import { Actions, Bar, erasFrom, eraAt, Facts, LoginForm, usePanelTab, useRows, 
 import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { hash } from "../services";
+import { BucketPage } from "./BucketPage";
+import { Drives } from "./Drives";
 import "./minnio.css";
 
 // docs/design/software.md, section 10: dark with red and a bucket list until 2021, then white with red and bucket cards.
@@ -44,8 +46,9 @@ export function MinnIO(p: PanelProps) {
             </section>
           ))}
         </div>}
+        {tab === "objects" && <BucketPage game={p.game} c={p.c} />}
         {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
-        {tab === "software" && <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>}
+        {tab === "software" && <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}<Drives game={p.game} c={p.c} /></>}
       </main>
     </div>
   );
