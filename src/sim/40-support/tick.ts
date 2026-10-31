@@ -4,7 +4,7 @@ import { counts } from "../00-core/workhours";
 import { noticed, segmentOf } from "../10-catalog/attention";
 import { activeServices, type Customer } from "../30-customers/customers";
 import { serviceFqdn } from "../30-customers/hostnames";
-import { grantExtension, isSuspended, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
+import { grantExtension, serviceHeld, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { takenDown } from "../60-infra/ops";
@@ -110,12 +110,18 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
   }
 }
 
+// A customer whose live services are all held draws no abuse.
+const allHeld = (s: GameState, customerId: string): boolean => {
+  const mine = s.services.filter((v) => v.customerId === customerId && v.endedAt === null);
+  return mine.length > 0 && mine.every((v) => serviceHeld(s, v));
+};
+
 function spawnHourly(s: GameState): void {
   for (const c of s.customers) {
     if (c.churnedAt !== null) continue;
     const { skill } = profileStats(c.profile);
     for (const kind of ["howTo", "billing", "abuse"] as const) {
-      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) * tenureFactor(s, c) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1) * (kind === "abuse" ? phpAbuse(s, c.id) : 1);
+      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) * tenureFactor(s, c) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1) * (kind === "abuse" ? phpAbuse(s, c.id) * (allHeld(s, c.id) ? 0 : 1) : 1);
       if (!chance(s.rng, rate / HOURS_PER_MONTH)) continue;
       if (kind !== "howTo") { createTicket(s, c, kind); continue; }
       const ask = pickHowTo(s, c);
@@ -130,7 +136,7 @@ function spawnHourly(s: GameState): void {
 // An outage hurts only once the customer noticed it (10-catalog/attention.ts), in hours that count on their clock; they may
 // write in in the hour they notice.
 function outages(s: GameState, customer: (id: string) => Customer): void {
-  const down = readOnlySweep(s, () => s.services.filter((v) => v.endedAt === null && !serviceOnline(s, v.id) && !isSuspended(s, v.customerId) && !takenDown(s, v.id)));
+  const down = readOnlySweep(s, () => s.services.filter((v) => v.endedAt === null && !serviceOnline(s, v.id) && !serviceHeld(s, v) && !takenDown(s, v.id)));
   const since: Record<string, number> = {};
   for (const v of down) {
     since[v.id] = s.downSince[v.id] ?? s.hour;
