@@ -4,6 +4,8 @@ import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, nowMinutes, yearOf } from "../00-core/time";
 import { bankById, DEFAULT_BANK, IBAN_YEAR, tanMethods, TRANSFER_HOURS, type Bank, type BankId, type TanMethod } from "../10-catalog/banks";
+import { challengeById } from "../10-catalog/challenges";
+import { START_CASH } from "../10-catalog/economy";
 import { deliverMail } from "../40-support/tickets";
 import type { Doc, GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -14,7 +16,8 @@ export interface StandingOrder { id: string; name: string; account: string; amou
 // A transfer the player sent; the money left at hour and reaches the payee at arriveAt.
 export interface Outgoing { id: string; hour: number; arriveAt: number; name: string; account: string; amount: number; reference: string; payableId?: string; arrived?: true }
 // What the transfer form holds; account is an IBAN, or an account number with its bank code before IBAN.
-export interface Draft { name: string; account: string; code?: string; amount: number; reference: string; payableId?: string }
+// registration: the trade office application this transfer pays the fee for.
+export interface Draft { name: string; account: string; code?: string; amount: number; reference: string; payableId?: string; registration?: { name: string; owner: string; form: string } }
 // A transfer waiting for its TAN: the list position asked for (iTAN), the code texted (mTAN) and the minute the text arrives.
 // day is set when the TAN confirms a standing order for that day of the month instead of a transfer.
 export interface Pending { draft: Draft; index: number | null; code: string | null; sendAt: number | null; day?: number }
@@ -102,14 +105,31 @@ export function placeTanList(s: GameState): void {
 }
 
 // The bank's welcome email carries the account number and PIN; the TAN list goes on the desktop.
-function welcome(s: GameState): void {
+export function welcome(s: GameState): void {
   const bank = bankOf(s)!;
   s.bank = { ...s.bank!, welcomed: true };
   deliverMail(s, bank.name, "bankWelcome", { bank: bank.name, number: s.bank.number, pin: s.bank.pin, url: `www.${bank.host}` });
   placeTanList(s);
 }
 
-// Old saves bank at Sparklasse, registered or not; a game that has not registered opens its account at registration.
+// The account opens with the player's savings, sent from the personal account; Books lists them as an incoming transfer
+// that needs no invoice.
+// A cash challenge starts with smaller savings.
+export function savingsOf(s: GameState): number {
+  const twist = s.challenge ? challengeById(s.challenge)?.twist : undefined;
+  return twist?.kind === "cash" ? twist.cash : START_CASH;
+}
+
+export function openWithSavings(s: GameState, id: BankId): void {
+  const savings = savingsOf(s);
+  s.bank = openAccount(s, id);
+  welcome(s);
+  s.cash = cents(s.cash + savings);
+  s.ledger = [...s.ledger, { hour: s.hour, category: "capital", key: "ledger.savings", params: {}, amount: savings }];
+  s.transfers = [...s.transfers, { id: `trf${s.nextId++}`, hour: s.hour, from: t("bank.savings.from"), reference: "bank.savings", params: {}, amount: savings, invoiceId: null, matchedAt: s.hour, forInvoice: "" }];
+}
+
+// Old registered saves bank at Sparklasse; a game that has not registered opens its account on a bank's site.
 export const legacyBank = (s: GameState): BankAccount | null => (s.registration ? openAccount({ ...s, hour: s.registration.hour }, DEFAULT_BANK) : null);
 
 // The next unused TAN on the list, picked from the seed and how many are used.
@@ -173,7 +193,7 @@ export function tanTick(s: GameState): void {
 // The average monthly income of the last six months, from the ledger.
 export function monthlyIncome(s: GameState): number {
   const since = Math.max(s.bank?.opened ?? 0, s.hour - 6 * 730), months = Math.max(1, (s.hour - since) / 730);
-  return s.ledger.filter((e) => e.hour >= since && e.amount > 0 && e.category !== "loans").reduce((n, e) => n + e.amount, 0) / months;
+  return s.ledger.filter((e) => e.hour >= since && e.amount > 0 && e.category !== "loans" && e.category !== "capital").reduce((n, e) => n + e.amount, 0) / months;
 }
 // A limit from account history: the bank's factor times the monthly income, in hundreds, at least the floor.
 export const limitFor = (s: GameState, factor: number, floor: number): number => Math.max(floor, Math.floor((monthlyIncome(s) * factor) / 100) * 100);

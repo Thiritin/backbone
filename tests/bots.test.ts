@@ -1,10 +1,11 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { skillFor } from "../src/sim/10-catalog/research";
 import { storeItem, subscriptionPrice } from "../src/sim/10-catalog/store";
 import { createTicket } from "../src/sim/40-support/tickets";
 import type { Invoice } from "../src/sim/45-billing/billing";
 import { activeBots, BOT_RIGHT, isWorkHour } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { cancel, install } from "../src/sim/90-actions/store";

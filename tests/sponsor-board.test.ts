@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
 import { marketPrice, sizeSpec } from "../src/sim/10-catalog/products";
 import { opsTick } from "../src/sim/40-support/notices";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { MONTH, type Sponsorship } from "../src/sim/80-business/community";
 import { leadsThisMonth } from "../src/sim/80-business/marketing";
 import { APPLICANTS, BOARD, boardGranted, boardTick, offerOpen, type SponsorOffer } from "../src/sim/80-business/sponsorboard";
@@ -11,7 +11,7 @@ import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { acceptSponsorship, postOffer, withdrawOffer } from "../src/sim/90-actions/community";
 import { setLine } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { readyGame, newGame } from "./fixtures";
 
 const runTo = (s: GameState, hour: number, events: SimEvent[] = []) => { while (s.hour < hour) events.push(...tick(s)); };
 const offer = { product: "gameServer", size: 0, months: 1, slots: 2, free: true } as const;

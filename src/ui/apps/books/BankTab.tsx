@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { isUnpaid, owed } from "../../../sim/45-billing/billing";
 import { matchTransfer } from "../../../sim/90-actions/billing";
@@ -39,8 +39,7 @@ export function BankTab() {
             <thead><tr><th>{t("books.col.date")}</th><th>{t("books.col.from")}</th><th>{t("books.col.reference")}</th><th className="r">{t("books.col.amount")}</th></tr></thead>
             <tbody>
               {transfers.map((x) => (
-                <tr key={x.id} className={x.id === transfer ? "sel" : ""} tabIndex={0} onClick={() => pick(x.id === transfer ? null : x.id, invoice)}
-                  onKeyDown={(e) => e.key === "Enter" && pick(x.id, invoice)}>
+                <tr key={x.id} className={x.id === transfer ? "sel" : ""} {...(x.matchedAt === null && { tabIndex: 0, onClick: () => pick(x.id === transfer ? null : x.id, invoice), onKeyDown: (e: KeyboardEvent) => e.key === "Enter" && pick(x.id, invoice) })}>
                   <td className="num">{formatDay(x.hour)}</td>
                   <td>{x.from}</td>
                   <td>{t(x.reference, x.params)}</td>

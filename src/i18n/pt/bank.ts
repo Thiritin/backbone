@@ -9,6 +9,15 @@ const money = (p: Params) => euroCents(Number(p.amount));
 
 export default {
   "doc.tans": () => "Lista TAN",
+  "guide.step.bank": () => "Abrir uma conta bancária",
+  "ledger.savings": () => "Transferência da tua conta pessoal: Poupanças",
+  "bank.savings": () => "Poupanças",
+  "bank.savings.from": () => "Conta pessoal",
+  "bank.office.payee": () => "Repartição de comércio",
+  "bank.office.reference": (p) => `Registo de atividade ${p.name}`,
+  "error.hasBank": () => "A empresa já tem uma conta bancária.",
+  "sim.index.cat.banks": () => "Bancos",
+  "sim.index.bank": () => "Contas empresariais e banca online",
   "bank.tanList.no": (p) => `Lista TAN n.º ${p.n}`,
   "ledger.bankFee": (p) => `Comissão de manutenção, ${p.bank}`,
   "ledger.overdraftInterest": (p) => `Juros do descoberto, ${p.bank}`,

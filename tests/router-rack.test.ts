@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { device, newGame, type GameState } from "../src/sim/50-state";
+import { device, type GameState } from "../src/sim/50-state";
 import { linkStatus } from "../src/sim/60-infra/status";
 import { addLocation, connect, moveRack, unmountDevice } from "../src/sim/90-actions/hardware";
 import { installRouter } from "../src/sim/90-actions/routers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, freeFloor, skipTo, withServer } from "./fixtures";
+import { buyDevice, freeFloor, skipTo, withServer, newGame } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);

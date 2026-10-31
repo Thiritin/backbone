@@ -2,9 +2,8 @@ import { START_CASH } from "../src/sim/10-catalog/economy";
 import { describe, expect, it, vi } from "vitest";
 import { prefOf, useStore, type Win } from "../src/ui/store";
 import { readSession } from "../src/ui/session";
-import { newGame } from "../src/sim/50-state";
 import { serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { readyGame, newGame } from "./fixtures";
 import { metrics } from "../src/sim/metrics";
 
 describe("notification settings", () => {

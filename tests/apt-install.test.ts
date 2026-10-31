@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { softwareById } from "../src/sim/10-catalog/platforms";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { clusterOf, vmById } from "../src/sim/60-infra/cluster";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { runLine, watchStep, type Session, type Watch } from "../src/sim/60-infra/terminal";
@@ -9,7 +9,7 @@ import type { Call } from "../src/sim/90-actions/index";
 import { softwareOn } from "../src/sim/90-actions/software";
 import { installLog } from "../src/sim/60-infra/apt";
 import { privateIp } from "../src/sim/60-infra/addresses";
-import { bootedMachine, hypervisor, skipTo, withServer } from "./fixtures";
+import { bootedMachine, hypervisor, skipTo, withServer, newGame } from "./fixtures";
 
 // withServer: dev3 is a free server cabled to the desk's router; booted here with an OS.
 const act = (s: GameState) => ([fn, ...args]: Call) => fn(s, ...args);

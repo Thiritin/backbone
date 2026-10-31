@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { cores, sizeSpec } from "../src/sim/10-catalog/products";
 import { specFor } from "../src/sim/30-market/spec";
-import { newGame } from "../src/sim/50-state";
 import { nodeUsed } from "../src/sim/60-infra/cluster";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { hypervisor, panelVm, withServer } from "./fixtures";
+import { hypervisor, panelVm, withServer, newGame } from "./fixtures";
 
 // A VPS of 0.8 vCPU on the basement server under the platform, and a DNS service of 0.05 vCPU in a DNS server VM next to it.
 function onPlatform(platform: string) {

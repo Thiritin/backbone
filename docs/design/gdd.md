@@ -758,7 +758,7 @@ A legal request shows a verified mark next to the agency's name and a countdown 
 
 Every contract is invoiced monthly for the hours it ran, domains and certificates yearly, and some customers don't pay. Chasing them is a manual job until bookkeepers and accountants take it over.
 
-**Starting money.** A new game starts with €3,500 of savings, enough for the first server and a little more, so the first loan from the bank pays for the second server. A level-1 company can borrow up to €10,000 from day one.
+**Starting money.** A new game starts with no cash and €3,500 of savings, which arrive as the first booking when the player opens the bank account, enough for the first server and a little more, so the first loan from the bank pays for the second server. A level-1 company can borrow up to €10,000 from day one.
 
 **Invoices and dunning.** Invoices go out automatically on the first of each month. Some customers pay late and a few never pay. When a dunning step is due, a button appears in the Billing app, and clicking it sends the notice (starting values, to tune):
 

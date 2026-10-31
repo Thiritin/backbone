@@ -14,7 +14,7 @@ import "../billing/billing.css";
 import "./books.css";
 
 export const drafts = (s: GameState) => s.invoices.filter((i) => i.status === "draft").length;
-export const unmatched = (s: GameState) => s.transfers.filter((x) => x.invoiceId === null).length;
+export const unmatched = (s: GameState) => s.transfers.filter((x) => x.matchedAt === null).length;
 export const late = (s: GameState) => s.invoices.filter((i) => i.status === "overdue").length;
 
 // Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id.

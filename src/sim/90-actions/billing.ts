@@ -23,7 +23,7 @@ export function sendInvoice(s: GameState, invoiceId: string): ActionResult {
 // Books a bank transfer against an invoice. A smaller amount is a partial payment unless settle writes the difference off;
 // a larger one pays the invoice and leaves the rest as the customer's credit.
 export function matchTransfer(s: GameState, transferId: string, invoiceId: string, settle = false): ActionResult {
-  const tr = s.transfers.find((x) => x.id === transferId && x.invoiceId === null);
+  const tr = s.transfers.find((x) => x.id === transferId && x.matchedAt === null);
   if (!tr) return fail("error.transferMatched");
   const inv = unpaidInvoice(s, invoiceId);
   if (!inv) return fail("error.invoiceSettled");

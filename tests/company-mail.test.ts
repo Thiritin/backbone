@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { MAIL_PROVIDERS, mailDelay, mailImpaired, mailShare, providerById, salesAddress, seatsFor } from "../src/sim/80-business/mail";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
-import { newGame } from "../src/sim/50-state";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { bookMail, cancelMail, selectMailServer } from "../src/sim/90-actions/mail";
 import { signRegistrar, registerCompanyDomain } from "../src/sim/90-actions/registrar";
@@ -11,7 +10,7 @@ import { hire } from "../src/sim/90-actions/staff";
 import { setEmailOrders } from "../src/sim/90-actions/website";
 import { CHECKS } from "../src/sim/checklist";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { bootedMachine, readyGame } from "./fixtures";
+import { bootedMachine, readyGame, newGame } from "./fixtures";
 import { err, idOf, run, toMonthStart, mailLedger, selfHosted } from "./company-mail.helpers";
 
 describe("external providers", () => {

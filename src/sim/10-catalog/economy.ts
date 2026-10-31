@@ -181,4 +181,5 @@ export const LEVELS = [
 export const PACING_YEAR: Record<number, number> = { 2: 2005, 3: 2007, 4: 2010, 5: 2013, 6: 2018 };
 
 export const TAX_RATE = 0.3;
+// The savings the player transfers into the business account when it opens.
 export const START_CASH = 3500;

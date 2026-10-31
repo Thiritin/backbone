@@ -1,5 +1,6 @@
+import { openBankAccount } from "../src/sim/90-actions/bank";
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
-import { newGame } from "../src/sim/50-state";
 import { STARTER_APPS } from "../src/sim/10-catalog/store";
 import { officeOpen } from "../src/sim/80-business/office";
 import { resolve } from "../src/sim/80-business/browser";
@@ -38,6 +39,8 @@ describe("trade office", () => {
   it("registers the company, installs the starter apps and ticks the guide step", () => {
     const s = newGame(1);
     s.hour = MONDAY_8;
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole")).toEqual({ ok: false, error: "error.noBank" });
+    expect(openBankAccount(s, "sparklasse").ok).toBe(true);
     expect(registerCompany(s, "Basement Hosting", " ", "sole")).toEqual({ ok: false, error: "error.ownerName" });
     expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "limited").ok).toBe(true);
     expect(s.company.name).toBe("Basement Hosting");
