@@ -21,11 +21,12 @@ describe("support at scale", () => {
           "abuse": 1,
           "billing": 2,
           "howTo": 57,
+          "mail": 1,
           "notice": 1,
           "order": 5,
           "outage": 18,
         },
-        "last": "tkt1028",
+        "last": "tkt1029",
       }
     `);
 

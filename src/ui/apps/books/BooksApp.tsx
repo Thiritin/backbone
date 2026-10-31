@@ -12,6 +12,7 @@ import { QuotesTab } from "./QuotesTab";
 import { NEW } from "./NewCustomer";
 import { PayablesTab } from "./PayablesTab";
 import { RemindersTab } from "./RemindersTab";
+import { Register } from "./Register";
 import "../billing/billing.css";
 import "./books.css";
 
@@ -33,7 +34,9 @@ export function BooksApp() {
   const game = useStore((s) => s.game);
   const [tab, setTab] = useSessionState("books.tab", "invoices");
   const [focus, setFocus] = useSessionState<string | null>("books.focus", null);
+  const [register, setRegister] = useSessionState("books.register", false);
   useFocus("Books", (f) => {
+    if (f.kind === "register") return setRegister(true);
     const to = f.kind === "invoice" ? (game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices")
       : f.kind === "customer" || f.kind === "newCustomer" ? "customers" : f.kind === "quote" ? "quotes" : null;
     if (!to) return;
@@ -44,6 +47,7 @@ export function BooksApp() {
   const Body = current.body;
   return (
     <div className="books">
+      <div className="books-top">
       <div className="books-bar tabs" role="tablist" aria-label={t("books.title")}>
         {TABS.map((x) => {
           const n = x.count(game);
@@ -54,6 +58,9 @@ export function BooksApp() {
           );
         })}
       </div>
+      <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>
+      </div>
+      {register && <Register onClose={() => setRegister(false)} />}
       <div className="books-body" role="tabpanel">
         <Body key={`${current.id}:${focus}`} focus={focus} />
       </div>

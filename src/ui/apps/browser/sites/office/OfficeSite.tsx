@@ -4,7 +4,7 @@ import { dateOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
 import { LEGAL_FORMS, OFFICE_HOST, OFFICE_URL, officeOpen } from "../../../../../sim/80-business/office";
 import { registerCompany } from "../../../../../sim/90-actions/company";
-import { banksOpen, DEFAULT_BANK, type BankId } from "../../../../../sim/10-catalog/banks";
+import { banksOpen, DEFAULT_BANK, monthlyFee, type BankId } from "../../../../../sim/10-catalog/banks";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { useStore } from "../../../../store";
 import "./office.css";
@@ -69,7 +69,7 @@ function Register({ game }: { game: GameState }) {
               <td><label htmlFor="to-bank">{t("bank.office.bank")} <b>*</b></label></td>
               <td>
                 <select id="to-bank" value={bank} onChange={(e) => setBank(e.target.value as BankId)}>
-                  {banksOpen(yearOf(game.hour)).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  {banksOpen(yearOf(game.hour)).map((b) => <option key={b.id} value={b.id} disabled={monthlyFee(b, form) === null}>{b.name}</option>)}
                 </select>
               </td>
             </tr>

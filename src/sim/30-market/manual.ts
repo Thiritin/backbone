@@ -16,6 +16,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { placeService, provisionService } from "../90-actions/clusters";
 import type { ActionResult } from "../90-actions/hardware";
+import { startTerm, termLine } from "./cycles";
 import { setupFee, sizeOf } from "./spec";
 import { missingFor, requestName, REQUEST_HOURS, type SalesRequest } from "./market";
 import { mailRequest, orderOf } from "./orders";
@@ -141,7 +142,7 @@ export function firstLines(s: GameState, r: SalesRequest, monthly = r.quote ?? 0
   const label = r.domain ?? requestName(r);
   const lines: InvoiceLine[] = [
     ...(setup > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: setup }] : []),
-    { serviceId: null, key: "invoice.line.firstMonth", params: { label }, amount: monthly },
+    termLine({ cycle: r.cycle, quote: monthly }, label),
   ];
   if (needsDomain(r)) lines.push({ serviceId: null, key: r.owned ? "invoice.line.domainTransfer" : "invoice.line.domain", params: { domain: r.domain! }, amount: r.owned ? TRANSFER_FEE : DOMAIN_FEE });
   return lines;
@@ -206,7 +207,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
       clusterId: target?.clusterId ?? auto?.clusterId ?? null, deviceId: target?.deviceId ?? null, zone: auto?.zone ?? null,
     });
     if (!done.ok) return { app: "Support", key: "event.stepFailed", params: { name: requestName(r), error: done.error ?? "error.noCapacity" } };
-    s.services = s.services.map((v) => (v.id === done.id ? { ...v, prepaidUntil: s.hour + MONTH } : v));
+    s.services = s.services.map((v) => (v.id === done.id ? startTerm(s, v, r.cycle) : v));
     if (r.product === "webHosting") offerCertificate(s, s.services.find((v) => v.id === done.id)!, CERT_SHARE.order);
     editRequest(s, r.id, () => ({ serviceId: done.id! }));
     setTicket(s, t.id, { serviceId: done.id!, updatedAt: s.hour });

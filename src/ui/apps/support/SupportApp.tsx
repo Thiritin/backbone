@@ -28,6 +28,7 @@ import { supportApp } from "./desk";
 import { CustomCompose, InvoicePill } from "./CustomOrder";
 import { specText } from "../../../sim/30-market/spec";
 import { OFFERS } from "../../../sim/80-business/walk";
+import { LICENCE, lexwearUrl, NEWSLETTER } from "../../../sim/80-business/lexwear";
 import { due, initials, KINDS, kindOf, monthYear, moodClass, span, stamp, statusOf } from "./labels";
 import { SLAS } from "../../../sim/10-catalog/products";
 import { Card, LostSales, need, SLA_LABEL } from "../sales/SalesApp";
@@ -119,7 +120,8 @@ interface Item { id: string; due: number; tk: Ticket }
 
 function itemsIn(game: GameState, box: Box): Item[] {
   const tickets = (f: (tk: Ticket) => boolean): Item[] => game.tickets.filter(f).map((tk) => ({ id: tk.id, due: tk.dueAt, tk }));
-  if (box === "all") return tickets((tk) => !isFinal(tk));
+  // Company emails arrive closed and stay in the inbox like any email.
+  if (box === "all") return tickets((tk) => !isFinal(tk) || tk.kind === "mail");
   const tb = BOXES.find((b) => b.id === box);
   return tb ? tickets((tk) => tb.match(tk, game.hour)) : [];
 }
@@ -392,6 +394,8 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
         <div className={sent ? "msg you" : "msg"}>
           <div className="from">{sender ? sender.name : sent ? t("support.you") : tk.kind === "sponsor" ? p.event : tk.mail ? tk.mail.from : tk.kind === "pear" ? t("walk.from") : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
+          {tk.topic === LICENCE && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
+          {tk.topic === NEWSLETTER && <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: lexwearUrl(String(tk.mail!.params.module)) })}>{t("vendor-sites.viewModule")}</button></p>}
         </div>
         {tk.replies.map((r, i) => (
           <div key={i} className="thread-pair">
