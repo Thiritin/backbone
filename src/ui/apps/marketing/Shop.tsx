@@ -2,10 +2,9 @@ import { useState, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { CUSTOM_SCRIPT, HARDWARE_MODULES, includes, moduleName, shopById, SHOPS, type ShopId } from "../../../sim/10-catalog/shops";
+import { HARDWARE_MODULES, includes, moduleName, shopById, SHOPS, type ShopId } from "../../../sim/10-catalog/shops";
 import type { Product } from "../../../sim/30-customers/customers";
 import type { GameState } from "../../../sim/50-state";
-import { owns } from "../../../sim/80-business/marketing";
 import { groupOf, hasModule, shopActive, stockOf, type Stock } from "../../../sim/80-business/shop";
 import { addToGroup, buyModule, chooseShop, createGroup, deleteGroup, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../../../sim/90-actions/shop";
 import { SERVES, type SoftwareKind } from "../../../sim/10-catalog/platforms";
@@ -16,6 +15,7 @@ import { formatDay } from "../billing/format";
 import { PRODUCT } from "../support/labels";
 
 const ABOUT: Record<ShopId, string> = {
+  handRolled: t("marketing.aboutHandRolled"),
   modemBill: t("marketing.aboutModemBill"),
   clientExit: t("marketing.aboutClientExit"),
   whmCache: t("marketing.aboutWhmCache"),
@@ -35,19 +35,19 @@ const price = (id: ShopId): string => {
 };
 
 export function Shop({ game }: { game: GameState }) {
-  const v = game.shop.variant && shopById(game.shop.variant);
+  const v = game.shop.variant && shopById(game.shop.variant), real = v && v.id !== "handRolled";
   return <>
     <div className="mkt-list">
       <div className="mkt-row">
         <span className="mkt-label">{t("marketing.orders")}</span>
-        <span className="mkt-grow">{v ? v.name : owns(game, "orderForm") ? t("marketing.handRolledOrderForm") : t("marketing.email")}</span>
+        <span className="mkt-grow">{v ? (v.id === "handRolled" ? t("marketing.handRolledOrderForm") : v.name) : t("marketing.email")}</span>
         {v && (shopActive(game) ? <span className="pill ok">{t("marketing.takingOrders")}</span> : <span className="pill">{t("marketing.readyDay", { day: formatDay(game.shop.readyAt) })}</span>)}
       </div>
     </div>
-    {game.unlocks.includes("shops") && <Variants game={game} />}
-    {(v || owns(game, "orderForm")) && <Modules game={game} />}
-    {v && <Groups game={game} />}
-    {v && <StockList game={game} />}
+    <Variants game={game} />
+    {v && <Modules game={game} />}
+    {real && <Groups game={game} />}
+    {real && <StockList game={game} />}
   </>;
 }
 
@@ -56,7 +56,7 @@ function Variants({ game }: { game: GameState }) {
   const year = yearOf(game.hour);
   return (
     <div className="shop-grid mkt-flat">
-      {SHOPS.filter((v) => year >= v.from).map((v) => {
+      {SHOPS.filter((v) => year >= v.from && (v.id === "handRolled" || game.unlocks.includes("shops"))).map((v) => {
         const used = game.shop.variant === v.id, sold = v.until === undefined || year <= v.until;
         let state: ReactNode;
         if (used) state = <span className="pill ok">{t("marketing.inUse")}</span>;
@@ -85,10 +85,10 @@ function Modules({ game }: { game: GameState }) {
   const act = useStore((s) => s.act);
   const v = game.shop.variant && shopById(game.shop.variant), year = yearOf(game.hour);
   const software = [...new Set(game.clusters.map((c) => c.panel ?? c.platform).filter((x): x is string => !!x))];
-  const cost = v ? v.extra : CUSTOM_SCRIPT;
+  const cost = v ? v.extra : null;
   return (
     <div className="mkt-list">
-      <div className="side-h">{v ? t("marketing.modules") : t("marketing.customScripts")}</div>
+      <div className="side-h">{v && v.id !== "handRolled" ? t("marketing.modules") : t("marketing.customScripts")}</div>
       {[...software, ...HARDWARE_MODULES].map((m) => {
         const bought = game.shop.modules[m];
         let state: ReactNode;

@@ -1,3 +1,4 @@
+import { fillShop } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
 import { freeSlots } from "../60-infra/status";
 import { leave } from "../90-actions/clusters";
@@ -127,6 +128,7 @@ export function deserialize(raw: string): GameState {
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
   legacyLeads(s);
+  fillShop(s, data.marketing?.owned);
   // Saves from before banks hold their account at Sparklasse; the next hour brings its welcome email and TAN list.
   if (data.bank === undefined) s.bank = legacyBank(s);
   fillGames(s);

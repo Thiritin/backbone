@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The weather app fills its whole window again and lists all your locations.
 - Datacenter providers now announce your own IP block under your AS number for a one-off setup fee, so you no longer need your own BGP router for it.
 
 ## 2026-10-31
