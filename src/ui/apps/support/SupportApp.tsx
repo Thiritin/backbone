@@ -8,6 +8,7 @@ import { senderById, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-suppo
 import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
 import { requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
 import { orderOf } from "../../../sim/30-market/orders";
+import { addressLines, mailedAddress } from "../../../sim/30-customers/addresses";
 import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
 import { acceptSponsorship, declineSponsorship } from "../../../sim/90-actions/community";
@@ -291,6 +292,7 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
             <div className="from">{m.from === "you" ? m.by ?? t("support.you") : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
             <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}</p>
+            {i === 0 && r.kind === "order" && <address className="mail-sig">{addressLines(mailedAddress(game.seed, r)).map((l) => <div key={l}>{l}</div>)}</address>}
           </div>
         ))}
         {tk.work && <div className="event"><span>{t("support.queuedUntil", { time: stamp(tk.work.doneAt / 60) })}</span></div>}

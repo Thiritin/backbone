@@ -12,7 +12,7 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { orderOf } from "../src/sim/30-market/orders";
 import { addRequest } from "../src/sim/30-market/sales";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { readyGame } from "./fixtures";
+import { mailed, readyGame } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const step = (s: GameState, res: { ok: boolean; error?: string }) => {
@@ -38,7 +38,7 @@ describe("sales leads", () => {
     expect(req(s, r.id)).toMatchObject({ customerId: null, serviceId: null });
     expect(req(s, r.id).invoiceId).toBeUndefined();
     expect(s.services).toHaveLength(services);
-    step(s, createAccount(s, t.id));
+    step(s, createAccount(s, t.id, mailed(s, t.id)));
     step(s, confirmOrder(s, t.id));
     expect(req(s, r.id).invoiceId).toBeTruthy();
     expect(s.services).toHaveLength(services);
@@ -57,7 +57,7 @@ describe("sales leads", () => {
     step(s, quoteOrder(s, r.ticketId!, r.reference * 1.5));
     for (let i = 0; i < 40 && !stepsDone(s, req(s, r.id)).quote; i++) tick(s);
     if (!stepsDone(s, req(s, r.id)).quote) return expect(req(s, r.id).status).toBe("refused");
-    step(s, createAccount(s, r.ticketId!));
+    step(s, createAccount(s, r.ticketId!, mailed(s, r.ticketId!)));
     expect(s.customers.find((c) => c.id === req(s, r.id).customerId)!.shady).toBe(true);
   });
 });

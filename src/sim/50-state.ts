@@ -7,6 +7,7 @@ import { yearOf } from "./00-core/time";
 import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
+import type { Quote } from "./30-market/quotes";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
@@ -163,6 +164,10 @@ export interface GameState {
   invoices: Invoice[];
   // Bank transfers from customers, matched to invoices by hand in Books.
   transfers: Transfer[];
+  // Quotes written in Books for order tickets.
+  quotes: Quote[];
+  // Lexwear modules the company owns, by id.
+  modules: string[];
   // Hour up to which each yearly service is invoiced.
   yearlyBilledUntil: Record<string, number>;
   loans: Loan[];
@@ -345,6 +350,8 @@ export const newGame = (seed: number): GameState => ({
   ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
+  quotes: [],
+  modules: [],
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
