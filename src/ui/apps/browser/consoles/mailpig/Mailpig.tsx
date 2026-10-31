@@ -3,6 +3,7 @@ import { useState } from "react";
 import { companyDomain } from "../../../../../sim/30-customers/domains";
 import { Actions, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import { hash, mailboxes } from "../services";
+import { MailQueue } from "./MailQueue";
 import { t } from "../../../../../i18n/en";
 import "./mailpig.css";
 
@@ -33,7 +34,7 @@ export function Mailpig(p: PanelProps) {
             <thead><tr><th>{t("browser-consoles-1.domain")}</th><th>{t("browser-consoles-1.mpMailboxes")}</th><th>{t("browser-consoles-1.mpAliases")}</th><th>{t("browser-consoles-1.mpActive")}</th></tr></thead>
             <tbody><tr><td><b>{domain}</b></td><td className="num">{boxes.length}</td><td className="num">2</td><td><span className="cx-state ok">{t("browser-consoles-1.yes")}</span></td></tr></tbody>
           </table>}
-          {tab === "Queue" && <p className="cx-empty">{t("browser-consoles-1.mpQueueEmpty")}</p>}
+          {tab === "Queue" && <MailQueue game={p.game} clusterId={p.c.id} />}
           {tab === "Configuration" && <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>}
         </section>
       </main>

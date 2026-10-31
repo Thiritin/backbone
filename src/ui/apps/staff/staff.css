@@ -1,18 +1,18 @@
 .st { flex: 1; min-width: 0; display: grid; grid-template-columns: 210px 340px minmax(0, 1fr); }
 .st:has(.shop-main), .st:has(.st-empty) { grid-template-columns: 210px minmax(0, 1fr); }
 .st button.side-item, .st button.st-row { width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; }
-.st-side button.side-item.active { background: var(--accent); color: var(--accent-ink); }
+.st-side button.side-item.active { background: var(--ar-sel, var(--accent)); color: var(--ar-sel-ink, var(--accent-ink)); }
 .st-side button.side-item:hover:not(.active) { background: var(--hover); }
 .st-empty { display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--text-2); }
 
-.st .logo { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; flex: none; background: color-mix(in oklch, var(--text) 55%, var(--accent)); color: var(--win); font-weight: 700; font-size: 12px; }
+.st .logo { width: 34px; height: 34px; border-radius: var(--ar-pane); display: grid; place-items: center; flex: none; background: color-mix(in oklch, var(--text) 55%, var(--accent)); color: var(--win); font-weight: 700; font-size: 12px; }
 .st .logo.big { width: 40px; height: 40px; font-size: 13px; }
 
-.st-list { border-right: 0.5px solid var(--line); overflow: auto; padding: 8px; display: grid; gap: 2px; align-content: start; }
+.st-list { border-right: var(--ar-bw) solid var(--line); overflow: auto; padding: 8px; display: grid; gap: 2px; align-content: start; }
 .st-list-h { display: flex; align-items: center; gap: 8px; padding: 6px 6px 8px; }
 .st-list-h h2 { font-size: 13px; font-weight: 650; }
 .st-payroll { margin-left: auto; color: var(--text-3); font-size: 12px; }
-.st .st-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding: 9px 10px; border-radius: 8px; }
+.st .st-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding: 9px 10px; border-radius: var(--ar-pane); }
 .st .st-row:hover { background: var(--hover); }
 .st .st-row.active { background: var(--accent-soft); }
 .st-row .who { display: grid; min-width: 0; }
@@ -32,7 +32,7 @@
 .st-bar i { display: block; height: 100%; background: var(--accent); }
 
 .st-detail { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-.st .d-head { padding: 16px 20px 14px; border-bottom: 0.5px solid var(--line); display: grid; gap: 14px; }
+.st .d-head { padding: 16px 20px 14px; border-bottom: var(--ar-bw) solid var(--line); display: grid; gap: 14px; }
 .st .d-head .top { display: flex; align-items: center; gap: 12px; }
 .st .d-head h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
 .st .grow { flex: 1; }
@@ -50,7 +50,7 @@
 .st-cost { color: var(--text-2); font-size: 12px; }
 
 .st-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
-.st-card { display: grid; gap: 3px; align-content: start; padding: 10px 12px; border-radius: 9px; border: 0.5px solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.st-card { display: grid; gap: 3px; align-content: start; padding: 10px 12px; border-radius: calc(var(--ar-pane) + 1px); border: var(--ar-bw) solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: left; cursor: pointer; }
 .st-card:hover:not(:disabled) { border-color: var(--accent); }
 .st-card .t { font-weight: 600; }
 .st-card .p { color: var(--text-2); font-size: 12px; }
@@ -61,7 +61,7 @@
 .st-card:disabled { cursor: default; }
 .st-card .st-bar { width: 100%; margin: 4px 0 0; }
 
-.st-raise { display: flex; align-items: center; gap: 8px; padding: 10px 12px 10px 14px; border-radius: 10px; border: 0.5px solid var(--line-strong); background: var(--win-side); margin-bottom: 6px; }
+.st-raise { display: flex; align-items: center; gap: 8px; padding: 10px 12px 10px 14px; border-radius: var(--ar-card); border: var(--ar-bw) solid var(--line-strong); background: var(--win-side); margin-bottom: 6px; }
 .st-raise > div { display: grid; gap: 1px; }
 .st-raise span { color: var(--text-2); font-size: 12px; }
 
@@ -70,9 +70,9 @@
 .st-coming { color: var(--text-2); font-size: 12px; padding-right: 6px; }
 .st .shop-bar .btn .num { margin-left: 2px; }
 
-.st-ops { border-radius: 10px; border: 0.5px solid var(--line-strong); background: var(--win-side); }
+.st-ops { border-radius: var(--ar-card); border: var(--ar-bw) solid var(--line-strong); background: var(--win-side); }
 .st-op { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 12px; }
-.st-op + .st-op { border-top: 0.5px solid var(--line); }
+.st-op + .st-op { border-top: var(--ar-bw) solid var(--line); }
 .st-none { color: var(--text-2); }
 .st .shop-bar { height: auto; min-height: 44px; flex-wrap: wrap; row-gap: 6px; padding-block: 6px; }
 
@@ -86,7 +86,7 @@
 .st-cover i { font-style: normal; height: 20px; border-radius: 3px; display: grid; place-items: center; font-variant-numeric: tabular-nums;
   background: color-mix(in oklch, var(--text) 6%, transparent); color: var(--text-3); }
 .st-cover i.on { background: color-mix(in oklch, var(--accent) 30%, transparent); color: var(--text); }
-.st-team { border: 0.5px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; }
+.st-team { border: var(--ar-bw) solid var(--line); border-radius: var(--ar-card); padding: 12px 14px; display: grid; gap: 8px; }
 .st-team-h { display: flex; align-items: center; gap: 10px; }
 .st-team-h h3 { margin: 0; }
 .st-days { display: grid; gap: 4px; }
@@ -94,3 +94,34 @@
 .st-day > span:first-child { width: 34px; color: var(--text-2); }
 .st-add { display: flex; gap: 8px; }
 .st-add .field { width: 220px; }
+
+.st-ops, .st-team, .st-raise { box-shadow: var(--ar-lift); }
+.st .d-head { background-image: var(--ar-head); }
+.st-tasks i, .st-bar { box-shadow: var(--ar-well); }
+.st-tasks i b, .st-bar i { background-image: var(--ar-bar); }
+
+/* Panthera and Leapard: the selected staff row is a blue gel bar with white text. */
+:root[data-os="aqua"] .st .st-row.active,
+:root[data-os="leopard"] .st .st-row.active { background: var(--ar-sel); color: var(--ar-sel-ink); }
+:root[data-os="aqua"] .st-row.active :is(.sub, .st-skill),
+:root[data-os="leopard"] .st-row.active :is(.sub, .st-skill) { color: inherit; opacity: 0.85; }
+
+/* Task segments stay readable on the solid selection. */
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .st-row.active .st-tasks i { background: oklch(1 0 0 / 0.3); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .st-row.active .st-tasks i.planned { background: oklch(1 0 0 / 0.5); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"]) .st-row.active .st-tasks i b { background: white; }
+:root[data-os="aqua"] .st-tasks i,
+:root[data-os="aqua"] .st-bar,
+:root[data-os="leopard"] .st-tasks i,
+:root[data-os="leopard"] .st-bar { border-radius: 999px; }
+:root[data-os="aqua"] .st-cover i { border-radius: 0; }
+
+/* Yosemighty: flat blue selection. */
+:root[data-os="yosemite"] .st .st-row.active { background: var(--accent); color: var(--accent-ink); }
+:root[data-os="yosemite"] .st-row.active :is(.sub, .st-skill) { color: inherit; opacity: 0.85; }
+
+/* Tahoo: the staff list floats as a glass panel with capsule bars. */
+:root[data-os="tahoe"] .st-list { margin: 8px 0 8px 8px; border: var(--ar-bw) solid var(--line); border-radius: var(--ar-card); box-shadow: var(--ar-lift); background: color-mix(in oklch, var(--win-side), transparent 25%); backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8); }
+:root[data-os="tahoe"] .st-tasks i,
+:root[data-os="tahoe"] .st-bar { border-radius: 999px; }
+:root[data-os="tahoe"] .st-ops, :root[data-os="tahoe"] .st-raise { background: color-mix(in oklch, var(--field), transparent 30%); }

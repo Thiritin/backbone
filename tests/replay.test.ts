@@ -11,7 +11,7 @@ import { setCompany } from "../src/sim/90-actions/company";
 import { buyDevice, connect, mountDevice, orderHomeLine, setPlugged } from "../src/sim/90-actions/hardware";
 import { startChallenge } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buildLeaderboard, replay, runFile, runFileName, verify, type Verified } from "../src/sim/92-run/run";
+import { buildLeaderboard, mismatches, replay, runFile, runFileName, verify, type Verified } from "../src/sim/92-run/run";
 import { POWER_ACTION } from "../src/ui/apps/locations/power";
 import { useStore } from "../src/ui/store";
 
@@ -104,11 +104,12 @@ describe("replay", () => {
     expect(scores(end).netWorth).not.toBeNull();
     const run = runFile(end, "test");
     expect(run.claimed).toEqual(scores(end));
-    const { verified, errors } = verify(run);
-    expect(errors).toEqual([]);
+    // The claim only feeds the comparison, so one replay of an edited claim also shows the honest one passes.
+    const { verified, errors } = verify({ ...run, claimed: { ...run.claimed, netWorth: run.claimed.netWorth! + 500 } });
+    expect(errors).toHaveLength(1);
+    expect(mismatches(run.claimed, verified.scores)).toEqual([]);
     expect(verified.company.name).toBe("Kellerkind Hosting");
     expect(verified.ghost.length).toBeGreaterThan(100);
-    expect(verify({ ...run, claimed: { ...run.claimed, netWorth: run.claimed.netWorth! + 500 } }).errors).toHaveLength(1);
     expect(() => replay({ ...run, seed: run.seed + 1 })).toThrow();
     expect(() => replay({ ...run, actions: [{ ...run.actions[0], name: "noSuchAction" }] })).toThrow();
     expect(runFileName(end)).toBe(`kellerkind-hosting-${end.seed}.run.json`);

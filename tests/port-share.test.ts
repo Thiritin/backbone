@@ -37,7 +37,7 @@ describe("port shares on the basement router", () => {
     s.devices.push(device("dev9", "g2-compute", "Dwell", "rack2", 4, null, "fra1-srv-02", 0));
     s.cables.push({ id: "cab-9", a: { device: "dev9", port: 0 }, b: { device: "dev4", port: 3 }, kind: "copper", color: null });
     expect(setPortShare(s, "dev5", "dev3", "web").ok).toBe(true);
-    expect(setPortShare(s, "dev5", "dev9", "exposed").error).toBe("error.portShared");
+    expect(setPortShare(s, "dev5", "dev9", "exposed")).toEqual({ ok: false, error: "error.portShared" });
     expect(setPortShare(s, "dev5", "dev3", "exposed").ok).toBe(true);
     expect(shareOf(s, "dev3")!.kind).toBe("exposed");
   });
@@ -45,7 +45,7 @@ describe("port shares on the basement router", () => {
   it("need an address on the router's network", () => {
     const s = dynamic();
     s.cables = s.cables.filter((c) => c.a.device !== "dev3");
-    expect(setPortShare(s, "dev5", "dev3", "web").error).toBe("error.noAddress");
+    expect(setPortShare(s, "dev5", "dev3", "web")).toEqual({ ok: false, error: "error.noAddress" });
   });
 
   it("stop reaching the server when the network moves to another range", () => {

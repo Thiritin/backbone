@@ -101,14 +101,12 @@ describe("email orders", () => {
 });
 
 describe("sim text", () => {
-  it("names no old package in events, request threads or lost sales", () => {
-    for (const seed of [1, 2, 3]) {
-      const s = withForm(seed);
-      const said = texts(s, run(s, 90));
-      expect(orders(s).length).toBeGreaterThan(0);
-      expect(said.filter((x) => OLD_NAMES.some((n) => x.includes(n)))).toEqual([]);
-    }
-  }, 20000);
+  it.each([1, 2, 3])("names no old package in events, request threads or lost sales, seed %i", (seed) => {
+    const s = withForm(seed);
+    const said = texts(s, run(s, 90));
+    expect(orders(s).length).toBeGreaterThan(0);
+    expect(said.filter((x) => OLD_NAMES.some((n) => x.includes(n)))).toEqual([]);
+  });
 });
 
 describe("saves from before specs", () => {

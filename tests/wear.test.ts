@@ -75,10 +75,11 @@ describe("components and failure rates", () => {
       const s = rich();
       ok(unmountDevice(s, "dev3"));
       const first = ok(buyDevice(s, "g1-archive", "Dwell", 5, "loc1"));
-      s.devices = s.devices.map((d) => ({ ...d, components: d.components.map((c) => ({ ...c, installedAt: -10 * 8760 })) }));
+      // A hot history makes failures ten times likelier.
+      s.devices = s.devices.map((d) => ({ ...d, hotHours: 900, components: d.components.map((c) => ({ ...c, installedAt: -10 * 8760 })) }));
       for (let i = 0; i < 5; i++) ok(mountDevice(s, `dev${Number(first.slice(3)) + i}`, "rack2", 1 + 4 * i));
       if (monitoring) s.unlocks = ["monitoring"];
-      const events = run(s, 8000);
+      const events = run(s, 1000);
       return { failed: s.devices.flatMap((d) => d.components.filter((c) => c.failedAt !== null)).length, events: events.filter((e) => e.key === "event.componentFailed").length };
     };
     const quiet = play(false), loud = play(true);

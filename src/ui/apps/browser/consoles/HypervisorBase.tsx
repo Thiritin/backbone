@@ -23,6 +23,7 @@ import { buyAppSuite, cancelAppSuite, deployFromSuite } from "../../../../sim/90
 import { rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload } from "../../../../sim/90-actions/vms";
 import { diskMoveDowntime, moveDisk } from "../../../../sim/90-actions/datastores";
 import { cloneHours, cloneTemplate, makeTemplate, makeVm } from "../../../../sim/90-actions/templates";
+import { useHolds } from "./Holds";
 import { useStore } from "../../../store";
 import { day, disk, ram } from "../../hw";
 import { bootLines } from "../../console/lunix";
@@ -33,7 +34,7 @@ import "./hypervisor.css";
 
 // Toolbar glyphs; the consoles draw no images.
 export const GLYPH: Record<string, string> = {
-  start: "▶", stop: "■", reset: "↻", restore: "⟲", recover: "⛑", migrate: "⇄", storage: "⛁", resize: "⤢", console: "▣", delete: "✕", create: "✚", template: "⧉", clone: "⎘", vm: "▢",
+  hold: "⏸", unhold: "▶", terminate: "✕", start: "▶", stop: "■", reset: "↻", restore: "⟲", recover: "⛑", migrate: "⇄", storage: "⛁", resize: "⤢", console: "▣", delete: "✕", create: "✚", template: "⧉", clone: "⎘", vm: "▢",
 };
 
 export interface Vm {
@@ -69,7 +70,7 @@ export function SizeFields({ size, set, labels = [t("browser-consoles-1.vcpu"), 
 
 // Every VM of the cluster with the actions its state allows; panel is the open form under it, dialog the hand work popover.
 export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: Vm[]; dialog: ReactNode } {
-  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), hand = useHandWork();
+  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), hand = useHandWork(), holds = useHolds(game, c, f);
   const [open, setOpen] = useState<{ id: string; kind: string } | null>(null), close = () => setOpen(null);
   const vms = game.workloads.filter((w) => w.clusterId === c.id).map((w): Vm => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], host = hostOfVm(game, w.id), own = isOwnVm(w), label = vmLabel(game, w);
@@ -91,7 +92,7 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
       own && { id: "console", label: t("browser-consoles-1.console"), run: () => openConsole(w.id) },
       f.delete && own && !insideVm(game, w.id).length && { id: "delete", label: t("browser-consoles-1.delete"), tone: "danger", run: toggle("delete") },
     ];
-    const kind = open?.id === w.id ? open.kind : null;
+    const kind = open?.id === w.id ? open.kind : null, hold = holds(w);
     const panel = kind === "migrate" ? <Migrate game={game} w={w} c={c} done={close} />
       : kind === "storage" ? <DiskMove game={game} w={w} c={c} done={close} />
       : kind === "clone" ? <Clone game={game} w={w} c={c} done={close} />
@@ -110,11 +111,11 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
           ))}
           <button className="cx-btn" onClick={close}>{t("browser-consoles-1.cancel")}</button>
         </div>
-      ) : null;
+      ) : hold?.panel ?? null;
     return {
-      w, id: w.id, st, state, tone, own, name: host?.name ?? label.name, sub: own ? (host ? consoleTitle(host.panel ?? host.platform ?? "") : "") : label.service,
+      w, id: w.id, st, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, own, name: host?.name ?? label.name, sub: own ? (host ? consoleTitle(host.panel ?? host.platform ?? "") : "") : label.service,
       node: nodeName(game, w.deviceId), ip: machineAddress(game, w.id) ?? "", os: own ? osText(w) : "", media: w.media ?? null,
-      use: workloadUse(game, w), actions: actions.filter((a): a is PanelAction => !!a), panel, storage: w.datastore ? nodeName(game, w.datastore) : t("browser-consoles-1.local"),
+      use: workloadUse(game, w), actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])], panel, storage: w.datastore ? nodeName(game, w.datastore) : t("browser-consoles-1.local"),
     };
   });
   return { vms, dialog: hand.dialog };

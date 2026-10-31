@@ -179,15 +179,41 @@
 .wg-main { grid-row: 1 / 3; grid-column: 2; padding: 30px; display: grid; gap: 10px; align-content: center; }
 
 .scr-keys { display: flex; flex-wrap: wrap; gap: 4px; }
-.scr-keys button { min-width: 38px; padding: 3px 8px; border: 0.5px solid var(--line); border-radius: 5px; background: var(--panel); color: var(--text); font: 11.5px var(--font-num); cursor: pointer; }
+.scr-keys button { min-width: 38px; padding: 3px 8px; border: var(--ar-bw) solid var(--line); border-radius: var(--r-ctl); background: var(--panel, var(--win-bar)); color: var(--text); font: 11.5px var(--font-num); cursor: pointer; }
 .scr-keys button:hover { background: var(--hover); }
 
 /* The console window: the way in and the controller's own power keys above the screen. */
 .con { display: grid; grid-template-rows: auto 1fr; height: 100%; width: 100%; }
-.con-bar { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-bottom: 0.5px solid var(--line); background: var(--panel); min-height: 36px; }
+.con-bar { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-bottom: var(--ar-bw) solid var(--line); background: var(--panel, var(--win-bar)); min-height: 36px; }
 .con-bar b { font-size: 12.5px; }
 .con-bar .grow { flex: 1; }
 .con-bar .muted { color: var(--text-2); font-size: 12px; }
-.con-bar button { padding: 3px 9px; border: 0.5px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); font: 12px var(--font); cursor: pointer; }
+.con-bar button { padding: 3px 9px; border: var(--ar-bw) solid var(--line); border-radius: var(--r-ctl); background: var(--bg, var(--field)); color: var(--text); font: 12px var(--font, var(--font-ui)); cursor: pointer; }
 .con-bar button:disabled { opacity: 0.45; cursor: default; }
 .con-body { padding: 12px; overflow: auto; display: grid; align-content: start; }
+
+.con-bar { background-image: var(--ar-head); }
+
+/* Panthera: the screen sits in a grey plastic bezel and the keys are gel push buttons. */
+:root[data-os="aqua"] .scr { border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 6px color-mix(in oklch, var(--win-side), var(--text) 14%), 0 0 0 7px var(--line-strong); }
+:root[data-os="aqua"] .scr:focus-visible { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 6px color-mix(in oklch, var(--win-side), var(--text) 14%), var(--ar-glow); }
+:root[data-os="aqua"] :is(.scr-keys button, .con-bar button),
+:root[data-os="leopard"] :is(.scr-keys button, .con-bar button) {
+  border: 1px solid oklch(0 0 0 / 0.3); color: var(--text);
+  background: linear-gradient(oklch(1 0 0), var(--field) 50%, color-mix(in oklch, var(--field), black 8%) 51%, var(--field));
+}
+:root[data-os="aqua"] :is(.scr-keys button, .con-bar button):hover:not(:disabled),
+:root[data-os="leopard"] :is(.scr-keys button, .con-bar button):hover:not(:disabled) { filter: brightness(0.95); }
+
+/* Leapard: the screen sits in a graphite bezel. */
+:root[data-os="leopard"] .scr { border-radius: 6px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 5px oklch(0.3 0.005 255), 0 0 0 6px oklch(0 0 0 / 0.6); }
+:root[data-os="leopard"] .scr:focus-visible { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 5px oklch(0.3 0.005 255), var(--ar-glow); }
+
+/* Yosemighty: a thin flat bezel and 4px keys. */
+:root[data-os="yosemite"] .scr { border-radius: 3px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 0.5px oklch(0 0 0 / 0.5); }
+:root[data-os="yosemite"] .scr:focus-visible { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 0.5px oklch(0 0 0 / 0.5), 0 0 0 2px var(--accent); }
+
+/* Tahoo: a rounded glass display with a specular edge. */
+:root[data-os="tahoe"] .scr { border-radius: 18px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12), inset 0 1px 0 rgb(255 255 255 / 0.25), 0 10px 28px -12px oklch(0 0 0 / 0.55); }
+:root[data-os="tahoe"] .scr:focus-visible { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12), 0 0 0 2px var(--accent); }
+:root[data-os="tahoe"] :is(.scr-keys button, .con-bar button) { box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5); }

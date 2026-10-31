@@ -1,6 +1,6 @@
 .sw-tile {
   display: grid; justify-items: center; align-content: start; gap: 6px; min-height: 104px; padding: 12px 8px;
-  border-radius: 10px; border: 0.5px solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: center; cursor: pointer;
+  border-radius: var(--ar-card); border: var(--ar-bw) solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: center; cursor: pointer;
 }
 .sw-tile:hover { border-color: var(--accent); }
 .sw-tile .t { font-weight: 600; font-size: 12.5px; }
@@ -11,3 +11,10 @@
 .sw-tile.act-tile svg { color: var(--text-2); }
 .sw-tile.act-tile:hover:not(:disabled) svg { color: var(--accent); }
 .sw-tile:disabled { opacity: 0.45; cursor: default; border-color: var(--line-strong); }
+
+/* Panthera and Leapard: software tiles are lightly shaded boxes. */
+:root[data-os="aqua"] .sw-tile:not(:disabled),
+:root[data-os="leopard"] .sw-tile:not(:disabled) { background: linear-gradient(var(--field), color-mix(in oklch, var(--field), var(--text) 4%)); box-shadow: var(--ar-lift); }
+
+/* Tahoo: glass software tiles. */
+:root[data-os="tahoe"] .sw-tile:not(:disabled) { background: color-mix(in oklch, var(--field), transparent 30%); box-shadow: var(--ar-lift); }

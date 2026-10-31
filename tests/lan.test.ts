@@ -78,9 +78,9 @@ describe("DHCP on the basement router", () => {
 
   it("moves the network to the new range and refuses public or broken settings", () => {
     const s = readyGame(3);
-    expect(setRouterLan(s, "dev5", "8.8.8.1", 20, 200).error).toBe("error.badAddress");
-    expect(setRouterLan(s, "dev5", "192.168.1.1", 1, 10).error).toBe("error.badPool");
-    expect(setRouterLan(s, "dev5", "192.168.1.1", 50, 20).error).toBe("error.badPool");
+    expect(setRouterLan(s, "dev5", "8.8.8.1", 20, 200)).toEqual({ ok: false, error: "error.badAddress" });
+    expect(setRouterLan(s, "dev5", "192.168.1.1", 1, 10)).toEqual({ ok: false, error: "error.badPool" });
+    expect(setRouterLan(s, "dev5", "192.168.1.1", 50, 20)).toEqual({ ok: false, error: "error.badPool" });
     expect(setRouterLan(s, "dev5", "10.0.0.1", 100, 150).ok).toBe(true);
     expect(addressOf(s, "dev3")).toBe("10.0.0.101");
   });
