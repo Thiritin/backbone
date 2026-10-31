@@ -311,7 +311,7 @@ function requests(s: GameState, events: SimEvent[]) {
   s.network = { ...s.network, requests: reqs };
 }
 
-function attacks(s: GameState, events: SimEvent[]) {
+export function attacks(s: GameState, events: SimEvent[]) {
   const year = yearOf(s.hour);
   let list = s.network.attacks.filter((a) => a.endsAt > s.hour);
   s.services.forEach((v, i) => {
