@@ -52,7 +52,7 @@
 .happy .bar i.warn { background: var(--warn); }
 .happy .bar i.bad { background: var(--bad); }
 
-.sup .thread { flex: 1; overflow: auto; padding: 16px 20px; display: grid; gap: 12px; align-content: start; }
+.sup .thread { flex: 1; overflow: auto; padding: 16px 20px; display: grid; grid-auto-rows: max-content; gap: 12px; align-content: start; }
 .sup .thread-pair { display: grid; gap: 12px; }
 .sup .msg { max-width: 560px; padding: 11px 14px; border-radius: 12px; background: var(--win-side); border: var(--ar-bw) solid var(--line); }
 .sup .msg.you { justify-self: end; background: var(--accent-soft); border-color: transparent; }

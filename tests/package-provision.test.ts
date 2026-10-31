@@ -8,7 +8,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { suggestedUsername, type PackageDef } from "../src/sim/80-business/packages";
 import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
 import { addPackage, changePackage } from "../src/sim/90-actions/packages";
-import { readyGame } from "./fixtures";
+import { mailed, readyGame } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const must = (r: { ok: boolean; error?: string }) => { if (!r.ok) throw new Error(r.error); run(s0, 1); };
@@ -22,7 +22,7 @@ function ready(seed: number) {
   quoteOrder(s, id, 10);
   for (let i = 0; i < 60 && !s.sales.requests.find((x) => x.id === r.id)!.customerId && s.sales.requests.find((x) => x.id === r.id)!.status !== "accepted"; i++) tick(s);
   const req = () => s.sales.requests.find((x) => x.id === r.id)!;
-  must(createAccount(s, id));
+  must(createAccount(s, id, mailed(s, id)));
   must(confirmOrder(s, id));
   s.invoices = s.invoices.map((i) => (i.id === invoiceOf(s, req())!.id ? { ...i, payStep: 0, payAt: s.hour } : i));
   run(s, 1);
