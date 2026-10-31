@@ -23,7 +23,9 @@ function Series({ title, now, points, max, fixed, decimals = 0 }: { title: strin
   const y = (v: number) => PAD.t + (1 - v / top) * (H - PAD.t - PAD.b);
   const line = points.map((p) => `${x(p.hour).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
   const at = (e: React.MouseEvent<SVGSVGElement>) => {
-    const box = e.currentTarget.getBoundingClientRect(), hour = first + (((e.clientX - box.left) / box.width) * W - PAD.l) / (W - PAD.l - PAD.r) * span;
+    const m = e.currentTarget.getScreenCTM();
+    if (!m) return;
+    const hour = first + ((new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse()).x - PAD.l) / (W - PAD.l - PAD.r)) * span;
     setHover(points.reduce((best, p, i) => (Math.abs(p.hour - hour) < Math.abs(points[best].hour - hour) ? i : best), 0));
   };
   const h = hover === null ? null : points[hover];

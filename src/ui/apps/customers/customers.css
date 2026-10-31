@@ -55,7 +55,7 @@
 .cus-charts { display: grid; gap: 14px; padding: 16px; align-content: start; }
 .cus-chart { margin: 0; padding: 10px 12px; border: 0.5px solid var(--line); border-radius: 8px; background: var(--win); }
 .cus-chart figcaption { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
-.cus-chart svg { display: block; width: 100%; height: auto; max-height: 220px; }
+.cus-chart svg { display: block; width: 100%; height: auto; }
 .cus-chart text { font-size: 10px; fill: var(--text-3); }
 .cus-chart .grid { stroke: var(--line); stroke-width: 0.5; }
 .cus-chart .line { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; }
