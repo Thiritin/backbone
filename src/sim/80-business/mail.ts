@@ -1,4 +1,4 @@
-// GDD, Company email: the company starts on free Notmail and can move to an external provider or a mail server of its own.
+// GDD, Company email: the company starts on free GMix and can move to an external provider or a mail server of its own.
 // Numbers in economy.md, Company email.
 import { isMonthStart, yearOf } from "../00-core/time";
 import type { GameState, LedgerEntry } from "../50-state";
@@ -22,11 +22,11 @@ export const MAIL_PROVIDERS: MailProvider[] = [
   { id: "goggleWorkspace", name: "Goggle Workspace", from: 2007, price: (y) => (y >= 2020 ? 5 : 4) },
   { id: "lookout365", name: "Lookout 365", from: 2011, price: (y) => (y >= 2022 ? 6 : 5) },
 ];
-export const FREEMAIL = "Notmail";
+export const FREEMAIL = "GMix";
 
-// The address customers write to: a free Notmail box until the company has mail under its own domain.
+// The address customers write to: a free GMix box until the company has mail under its own domain.
 export const salesAddress = (s: GameState): string =>
-  s.company.mail.kind === "free" ? `${ascii(s.company.name) || "hosting"}@notmail.com` : `sales@${companyDomain(s)}`;
+  s.company.mail.kind === "free" ? `${ascii(s.company.name) || "hosting"}@gmix.com` : `sales@${companyDomain(s)}`;
 
 export const providerById = (id: string): MailProvider | undefined => MAIL_PROVIDERS.find((p) => p.id === id);
 
@@ -57,7 +57,7 @@ export function mailImpaired(s: GameState): boolean {
 export const FREEMAIL_BUSINESS_SHARE = 0.5;
 const PERSONS: Profile[] = ["private", "gamer", "hobbyDev"];
 
-// What reaches the company by email: half while delivery is impaired, and half of the businesses while it uses Notmail.
+// What reaches the company by email: half while delivery is impaired, and half of the businesses while it uses GMix.
 export const mailShare = (s: GameState, profile: Profile = "private"): number =>
   (mailImpaired(s) ? IMPAIRED_SHARE : 1) * (s.company.mail.kind === "free" && !PERSONS.includes(profile) ? FREEMAIL_BUSINESS_SHARE : 1);
 

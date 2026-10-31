@@ -70,7 +70,7 @@ export default {
   "browser-sites-1.thread.0.question": () => "Desde ontem à noite a minha loja só mostra uma página branca. Do meu lado não mudou nada.",
   "browser-sites-1.thread.0.answer": () => "O software da tua loja é mais antigo do que a versão do PHP no servidor. Volta à versão anterior do PHP no painel de controlo, em Definições, e atualiza a loja quando tiveres tempo.",
   "browser-sites-1.thread.1.title": () => "Os meus e-mails vão parar ao spam",
-  "browser-sites-1.thread.1.question": () => "Tudo o que envio aos clientes com o Notmail acaba na pasta de spam deles.",
+  "browser-sites-1.thread.1.question": () => "Tudo o que envio aos clientes com o GMix acaba na pasta de spam deles.",
   "browser-sites-1.thread.1.answer": () => "Envia pelo nosso servidor de saída com o teu acesso, em vez do servidor do teu fornecedor de internet. Assim o destinatário vê que o e-mail vem mesmo do teu domínio.",
   "browser-sites-1.thread.2.title": () => "Como restauro os ficheiros de ontem?",
   "browser-sites-1.thread.2.question": () => "Apaguei a pasta errada. Existe um backup?",

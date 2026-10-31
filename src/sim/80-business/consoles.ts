@@ -124,15 +124,19 @@ export function consoleBookmarks(s: GameState): { title: string; url: string }[]
 
 // The real-looking address of each console's create-account form, imitating the product it is named after.
 export const CREATE_PATH: Record<string, string> = {
-  cpanic: "/scripts/wwwacct", directadmin: "/CMD_ACCOUNT_USER", pleskit: "/admin/subscription/create", freepanel: "/virtual-server/domain_form.cgi",
+  cpanic: "/scripts/wwwacct", directadmen: "/CMD_ACCOUNT_USER", pleskit: "/admin/subscription/create", freepanel: "/virtual-server/domain_form.cgi",
   tcadmen: "/Services/Create", multikraft: "/servers/create", pterodaktyl: "/admin/servers/new", proxmocks: "/?create=vm", vmwhere: "/ui/app/vm/new",
   hypervee: "/vm/new", openveezee: "/virtual-servers/create", openstash: "/project/instances/launch",
 };
-export const PACKAGES_PATH: Record<string, string> = { cpanic: "/scripts/addpkg", tcadmen: "/Services/Defaults", proxmocks: "/?plans=1" };
+export const PACKAGES_PATH: Record<string, string> = {
+  cpanic: "/scripts/addpkg", tcadmen: "/Services/Defaults", proxmocks: "/?plans=1", directadmen: "/CMD_PACKAGES_USER", pleskit: "/admin/service-plan/list",
+  freepanel: "/virtual-server/edit_plan.cgi", multikraft: "/plans", pterodaktyl: "/admin/nests",
+};
 
 // The products each console has a create form for; a console gains its entry in the milestone that draws its form.
 const CREATE_FORMS: Record<string, Product[]> = {
   cpanic: ["webHosting"], proxmocks: ["vps", "gameServer", "cloud"], tcadmen: ["gameServer"],
+  directadmen: ["webHosting"], pleskit: ["webHosting"], freepanel: ["webHosting"], multikraft: ["gameServer"], pterodaktyl: ["gameServer"],
 };
 export const createFormFor = (family: string | null, product: Product): boolean => !!family && !!CREATE_FORMS[family]?.includes(product);
 

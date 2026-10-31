@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Billing is now Books, the Lexwear Office bookkeeping program, where you see each customer's postal address and send every month's invoices yourself as PDF.
 - Customers now pay by bank transfer, and you match each payment to its invoice in Books, including short amounts, overpayments and transfers with an unclear reference.
+- The free email provider every new company starts on is now called GMix, with a new logo.
 - Picking the USB stick in the boot menu now starts its installer right away instead of dropping back to the POST screen.
 - A new company starts with fewer apps in the dock, and Finance, Customers, Marketing, Security and Research arrive with an email from Pear once you need them, while Staff and Market are offered in the Pear Store.
 - Düsseldorf has a fourth datacenter, myLoch DUS, the cheapest rack space in town with power billed by the kWh or as a flat rate.

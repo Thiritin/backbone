@@ -93,6 +93,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   // The server sits in its BIOS setup (90-actions/console.ts): the boot waits until the player leaves it. bootFrom is what
   // this boot came from: the USB stick shows the installer in place of the operating system.
   setup: boolean; bootFrom: "disk" | "usb";
+  // The image mounted through the management controller (90-actions/media.ts); it boots like the USB stick without a visit.
+  virtualMedia?: OsImage;
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
   part?: PartSpec;
   // nodeNNN, set on servers.

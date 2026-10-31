@@ -83,7 +83,7 @@ describe("create account form", () => {
 
   it("links from Support only for a console with a form", () => {
     const { s, id, host } = order(35, true);
-    expect(createFormFor(familyOf(s.clusters.find((x) => x.id === host)!), "webHosting")).toBe(false);
+    expect(createFormFor(familyOf(s.clusters.find((x) => x.id === host)!), "vps")).toBe(false);
     const cp = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "cpanic");
     expect(createFormFor(familyOf(s.clusters.find((x) => x.id === cp)!), "webHosting")).toBe(true);
     expect(createLink(s, cp, id)).toContain(`/scripts/wwwacct?order=${id}`);
@@ -126,6 +126,25 @@ describe("create account form", () => {
     const add = console_(s, c, "/Services/Create");
     expect(add).toContain(t("pkg.order"));
     expect(add).toContain(t("pkg.custom"));
+  });
+
+  it.each([
+    ["directadmen", "webHosting", "/CMD_PACKAGES_USER", "/CMD_ACCOUNT_USER"],
+    ["pleskit", "webHosting", "/admin/service-plan/list", "/admin/subscription/create"],
+    ["freepanel", "webHosting", "/virtual-server/edit_plan.cgi", "/virtual-server/domain_form.cgi"],
+    ["multikraft", "gameServer", "/plans", "/servers/create"],
+    ["pterodaktyl", "gameServer", "/admin/nests", "/admin/servers/new"],
+  ] as const)("draws the %s packages screen and create form", (panel, product, plans, create) => {
+    const { s, id, req } = order(46, true, product === "gameServer" ? "vps" : "webHosting");
+    const host = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, panel);
+    const c = s.clusters.find((x) => x.id === host)!;
+    addPackage(s, host, { name: "Plan42", product, spec: req().spec });
+    expect(console_(s, c, plans)).toContain("Plan42");
+    expect(createFormFor(panel, product)).toBe(true);
+    expect(createLink(s, host, id)).toContain(`${create}?order=${id}`);
+    const html = console_(s, c, `${create}?order=${id}`);
+    expect(html).toContain(t("pkg.order"));
+    expect(html).toContain(t("pkg.custom"));
   });
 
   it("lists accepted orders without an account in New customer and creates the account like the action", () => {
