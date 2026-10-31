@@ -210,6 +210,7 @@ export default {
   "ledger.chargeback": (p) => `Rétrofacturation de ${p.customer}`,
   "ledger.chargebackFee": (p) => `Frais de rétrofacturation pour ${p.customer}`,
   "ledger.chargebackProgram": () => "Frais de surveillance PayPail",
+  "ledger.screening": (p) => `Filtrage MaxMined des commandes, ${p.count} ${Number(p.count) === 1 ? "vérification" : "vérifications"}`,
   "event.chargeback.title": () => "Rétrofacturation",
   "event.chargeback.text": (p) => `PayPail a repris ${euroCents(Number(p.amount))} pour ${p.customer}, frais de rétrofacturation compris.`,
   "event.chargebackWarning.title": () => "Avertissement de PayPail",

@@ -210,6 +210,7 @@ export default {
   "ledger.chargeback": (p) => `Rückbuchung von ${p.customer}`,
   "ledger.chargebackFee": (p) => `Rückbuchungsgebühr für ${p.customer}`,
   "ledger.chargebackProgram": () => "PayPail-Überwachungsgebühr",
+  "ledger.screening": (p) => `MaxMined-Bestellprüfung, ${p.count} ${Number(p.count) === 1 ? "Prüfung" : "Prüfungen"}`,
   "event.chargeback.title": () => "Rückbuchung",
   "event.chargeback.text": (p) => `PayPail hat für ${p.customer} ${euroCents(Number(p.amount))} samt Rückbuchungsgebühr zurückgeholt.`,
   "event.chargebackWarning.title": () => "Warnung von PayPail",

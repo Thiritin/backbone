@@ -268,6 +268,7 @@ export const en: Record<string, (p: Params) => string> = {
   "ledger.chargeback": (p) => `Chargeback from ${p.customer}`,
   "ledger.chargebackFee": (p) => `Chargeback fee for ${p.customer}`,
   "ledger.chargebackProgram": () => "PayPail monitoring fee",
+  "ledger.screening": (p) => `MaxMined order screening, ${p.count} ${Number(p.count) === 1 ? "check" : "checks"}`,
   "event.chargeback.title": () => "Chargeback",
   "event.chargeback.text": (p) => `PayPail took back ${euroCents(Number(p.amount))} for ${p.customer}, including the chargeback fee.`,
   "event.chargebackWarning.title": () => "PayPail warning",

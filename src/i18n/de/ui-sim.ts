@@ -56,6 +56,8 @@ export default {
   "sim.skill.shops.about": () => "Du lernst, ein Bestell- und Bereitstellungssystem zu betreiben, das aus dem Lagerbestand verkauft und Bestellungen an deine Server übergibt.",
   "sim.skill.provisioning.name": () => "Provisionierungs-Automatisierung",
   "sim.skill.provisioning.about": () => "Dein Team lernt, Bestell-E-Mails zu deinen Tarifen anzubieten, neue Bestellungen auf einem passenden Server unterzubringen, ohne dass jemand den Host aussucht, und eine angenommene Bestellung vom Konto bis zur Einrichtung selbstständig durchzuziehen.",
+  "sim.skill.fraudScreening.name": () => "Betrugsprüfung",
+  "sim.skill.fraudScreening.about": () => "Du lernst, jede Bestellung beim Eingang von MaxMined bewerten zu lassen und die abzulehnen, die nach gestohlenen Karten aussehen, gegen eine kleine Gebühr pro Prüfung.",
   "sim.skill.knowledgeBase.name": () => "Dokumentation",
   "sim.skill.knowledgeBase.about": () => "Dein Team lernt, die Antworten auf häufige Fragen aufzuschreiben, damit Kunden sie finden, bevor sie sich melden.",
   "sim.skill.market.name": () => "Marktforschung",

@@ -1,4 +1,5 @@
 import { addressBills, addressTick } from "../60-infra/addresses";
+import { netsvcTick } from "../60-infra/netsvc";
 import { binomial, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
@@ -50,7 +51,7 @@ import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOU
 import type { Component, Device, GameState, LedgerEntry } from "../50-state";
 import { scoreTick } from "../80-business/scores";
 import { trendTick } from "../80-business/trend";
-import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
+import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered, readOnlySweep } from "../60-infra/status";
 
 export interface SimEvent {
   app: string;
@@ -71,7 +72,7 @@ export function endLease(s: GameState, leaseId: string) {
 export function powerPerHour(s: GameState): number {
   const price = businessPowerPrice(yearOf(s.hour));
   const busy = busyDevices(s), flat = new Set(s.racks.filter((r) => r.flatKw).map((r) => r.id));
-  return s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id)).reduce((sum, d) => {
+  return readOnlySweep(s, () => s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id))).reduce((sum, d) => {
     const loc = locationOf(s, d)!;
     return sum + (drawWatts(d, busy) / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
   }, 0);
@@ -159,12 +160,13 @@ export function failComponents(s: GameState, d: Device, ids: string[], events: S
 }
 
 function wear(s: GameState, events: SimEvent[]) {
-  s.devices = s.devices.map((d) => {
+  // powered() reads the devices from before this sweep, so its rack power can be memoised.
+  s.devices = readOnlySweep(s, () => s.devices.map((d) => {
     if (!d.components.length || !d.on || !powered(s, d.id)) return d;
     if (throttled(s, d)) d = { ...d, hotHours: (d.hotHours ?? 0) + 1 };
     const broke = d.components.filter((c) => c.failedAt === null && rand(s.rng) < failureChance(s, d, c));
     return broke.length ? failComponents(s, d, broke.map((c) => c.id), events) : d;
-  });
+  }));
 }
 
 // Finished swaps put a new component in; a drive in an array that survived starts a rebuild. Finished rebuilds end.
@@ -300,6 +302,7 @@ export function tick(state: GameState): SimEvent[] {
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
   events.push(...addressTick(state));
+  events.push(...netsvcTick(state));
   events.push(...opsTick(state));
   events.push(...freezeTick(state));
   events.push(...haTick(state));
@@ -325,7 +328,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...financeTick(state));
   events.push(...staffTick(state));
   events.push(...techTick(state));
-  autoUpdateTick(state);
+  events.push(...autoUpdateTick(state));
   events.push(...fairsTick(state));
   events.push(...marketingTick(state));
   events.push(...newsTick(state));

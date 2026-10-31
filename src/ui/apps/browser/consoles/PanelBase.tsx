@@ -1,7 +1,7 @@
 // docs/design/software.md, section 10: what every console offers, as blocks each product lays out in its own chrome.
 import { t } from "../../../../i18n/en";
 import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
 import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
@@ -11,6 +11,7 @@ import { backupTargets, hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { workloadUse } from "../../../../sim/60-infra/usage";
 import { familyOf, openVulns } from "../../../../sim/60-infra/vulns";
+import { accountUse, levelOf } from "../../../../sim/80-business/readouts";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { deleteVm, phpDue, removePanelHost, resizePanelVm, setBackup, upgradePhp } from "../../../../sim/90-actions/clusters";
 import { setSitesOffline } from "../../../../sim/90-actions/security";
@@ -22,7 +23,7 @@ import { VM_STATE, vmLabel, vmState } from "../../products/parts";
 import { hoursText } from "../../vms/migrate";
 import { eraOf } from "../sites/era";
 
-export type Tab = "objects" | "nodes" | "software";
+export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
 export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void }
@@ -64,7 +65,7 @@ export function LoginForm({ onLogin, button, className, children }: { onLogin: (
 }
 
 const pct = (used: number, of: number) => `${Math.min(100, of > 0 ? (used / of) * 100 : 0)}%`;
-export const Bar = ({ use: [used, of] }: { use: [number, number] }) => <span className="cx-bar"><i style={{ width: pct(used, of) }} /></span>;
+export const Bar = ({ use: [used, of] }: { use: [number, number] }) => <span className="cx-bar" data-level={levelOf(used, of)}><i style={{ width: pct(used, of) }} /></span>;
 const num = (n: number) => `${+n.toFixed(2)}`;
 
 export function Resize({ game, host, done }: { game: GameState; host: Cluster; done: () => void }) {
@@ -110,13 +111,14 @@ export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c:
 
 export interface Row {
   id: string; name: string; sub: string; node: string; state: string; tone: string;
-  cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; usage: string;
+  cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; traffic: [number, number]; mail: number; usage: string;
   actions: PanelAction[]; panel: ReactNode;
 }
 
 // One row per web space, game server or VM; panel is the open migrate or resize form under it.
 export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: string | null = null): Row[] {
   const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" } | null>(null);
+  const uses = useMemo(() => new Map(c.kind === "panel" ? game.workloads.filter((w) => w.clusterId === c.id).map((w) => [w.id, accountUse(game, w)] as const) : []), [game.hour, game.workloads.length, c.id, c.kind]); // eslint-disable-line react-hooks/exhaustive-deps
   const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null);
   return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], u = workloadUse(game, w), host = hostOfVm(game, w.id);
@@ -137,7 +139,7 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
       name: web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name,
       sub: host?.panel ? consoleTitle(host.panel) : "",
       node: d ? d.hostname ?? d.label ?? d.name : "",
-      cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu],
+      cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu], traffic: uses.get(w.id)?.traffic ?? [0, 0], mail: uses.get(w.id)?.mailboxes ?? 0,
       usage: web ? t("browser-consoles-2.of", { used: disk(Math.round(u.diskGb)), total: disk(w.diskGb) }) : t("browser-consoles-2.usageVm", { cpu: num(u.vcpu), vcpu: w.vcpu, ram: ram(+u.ramGb.toFixed(1)), ramTotal: ram(w.ramGb) }),
       actions: actions.filter((a): a is PanelAction => !!a),
       panel: o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : null,
@@ -145,6 +147,7 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
   });
 }
 
+export const trafficText = (r: Row) => t("readouts.trafficOf", { used: num(r.traffic[0]), total: num(r.traffic[1]) });
 export const cpuText = (r: Row) => t("browser-consoles-2.ofVcpu", { used: num(r.cpu[0]), total: r.cpu[1] });
 export const ramText = (r: Row) => t("browser-consoles-2.of", { used: ram(+r.ram[0].toFixed(1)), total: ram(r.ram[1]) });
 
@@ -161,7 +164,7 @@ export function RowsTable({ rows, name, node = false, className = "cx-table" }: 
             <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}</td>
             {node && <td>{r.node}</td>}
             <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td>
-            <td><Bar use={r.lead} /><span className="cx-use num">{r.usage}</span></td>
+            <td><Bar use={r.lead} /><span className="cx-use num">{r.usage}</span>{r.traffic[1] > 0 && <><Bar use={r.traffic} /><span className="cx-use num">{trafficText(r)}</span></>}</td>
             <td><Actions actions={r.actions} className="cx-acts" /></td>
           </RowLines>
         ))}
