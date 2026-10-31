@@ -68,6 +68,7 @@ describe("research", () => {
     const raw = JSON.parse(serialize(newGame(14)));
     delete raw.training;
     delete raw.registration;
+    delete raw.arrived;
     raw.unlocks = ["Market", "monitoring"];
     raw.installed = ["Locations", "Unlocks", "Sales"];
     const old = deserialize(JSON.stringify(raw));

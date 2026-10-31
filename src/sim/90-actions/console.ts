@@ -60,6 +60,8 @@ export function bootFromUsb(s: GameState, deviceId: string): ActionResult {
   if (!stickOs(s, d.id)) return fail("error.noBootDevice");
   d.bootFrom = "usb";
   d.stuck = false;
+  // Picking a boot device ends POST.
+  d.bootUntil = Math.min(d.bootUntil ?? 0, nowHours(s));
   pushLog(d, s.hour, "ipmi.log.usbBoot");
   return { ok: true };
 }

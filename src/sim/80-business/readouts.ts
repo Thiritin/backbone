@@ -5,7 +5,11 @@ import type { Cluster, Workload } from "../60-infra/cluster";
 import { serviceMbps } from "../60-infra/network";
 import { workloadLoad, workloadUse } from "../60-infra/usage";
 import { hashRng, rand } from "../00-core/rng";
-import { openVulns } from "../60-infra/vulns";
+import { familyOf, openVulns } from "../60-infra/vulns";
+import { autoUpdates } from "../10-catalog/platforms";
+import { yearOf } from "../00-core/time";
+import { phpDue } from "../90-actions/clusters";
+import { updateDue } from "../90-actions/software";
 
 export const TASK_WINDOW_HOURS = 336;
 export const TASK_MAX = 12;
@@ -108,3 +112,24 @@ export function logLines(s: GameState, c: Cluster, source: LogSource, limit: num
   return out.sort((a, b) => b.hour - a.hour).slice(0, limit);
 }
 const idNumber = (id: string) => Number(id.replace(/\D/g, "")) || 0;
+
+export type AdvisorKind = "vulnCritical" | "vulnHigh" | "vulnLow" | "update" | "php" | "backup" | "auto" | "offline";
+export interface AdvisorCheck { kind: AdvisorKind; penalty: number; count: number }
+export const VULN_PENALTY = { critical: 15, high: 8, low: 3 } as const, VULN_PENALTY_MAX = 40;
+
+// The Advisor card: every finding with its penalty, and the score they leave from 100.
+export function advisorChecks(s: GameState, c: Cluster): { score: number; checks: AdvisorCheck[] } {
+  const checks: AdvisorCheck[] = [], open = openVulns(s, c.id), family = familyOf(c);
+  let vuln = 0;
+  for (const sev of ["critical", "high", "low"] as const) {
+    const count = open.filter((v) => v.severity === sev).length, penalty = Math.min(VULN_PENALTY_MAX - vuln, count * VULN_PENALTY[sev]);
+    vuln += penalty;
+    if (count) checks.push({ kind: sev === "critical" ? "vulnCritical" : sev === "high" ? "vulnHigh" : "vulnLow", penalty, count });
+  }
+  if (updateDue(s, c)) checks.push({ kind: "update", penalty: 10, count: 1 });
+  if (phpDue(s, c)) checks.push({ kind: "php", penalty: 10, count: 1 });
+  if (c.backup.every === "off") checks.push({ kind: "backup", penalty: 15, count: 1 });
+  if (family && autoUpdates(softwareById(family), yearOf(s.hour)) && !c.autoUpdate) checks.push({ kind: "auto", penalty: 5, count: 1 });
+  if (s.security.offline.includes(c.id)) checks.push({ kind: "offline", penalty: 5, count: 1 });
+  return { score: Math.max(0, Math.min(100, 100 - checks.reduce((n, x) => n + x.penalty, 0))), checks };
+}

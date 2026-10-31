@@ -10,7 +10,7 @@ import type { Device, GameState, MachineState } from "../50-state";
 import type { OsImage } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
 import type { VmSample } from "./stats";
-import { deviceVendor, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, working, burning } from "./status";
+import { deviceVendor, drivesOf, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
 import { coverage } from "./maintenance";
@@ -114,8 +114,16 @@ const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcp
 // What a node holds: the vCPU of its physical cores and its installed RAM, and the disk it books up to (usable RAID times
 // OVERCOMMIT.disk); with s, the vCPU its cluster's compatibility mode leaves. Booking CPU and RAM past the physical amounts is
 // always allowed; it costs performance and freezes (usage.ts).
+// MinnIO erasure sets: parity drives hold no data, never more than half the set.
+export const effParity = (parity: number, n: number): number => Math.min(parity, Math.floor(n / 2));
+function ecFactor(s: GameState, d: Device): number {
+  const c = s.clusters.find((x) => x.nodes.some((n) => n.deviceId === d.id));
+  if (!c || (c.panel ?? c.platform) !== "minnio") return 1;
+  const set = Math.min(16, c.nodes.reduce((n, x) => n + drivesOf(s.devices.find((y) => y.id === x.deviceId) ?? d).length, 0));
+  return set ? (set - effParity(s.netsvc.ec[c.id] ?? 2, set)) / set : 1;
+}
 export function nodeCapacity(d: Device, s?: GameState): Resources {
-  return modelById(d.model).server ? { vcpu: s ? nodeVcpu(s, d) : installedVcpu(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
+  return modelById(d.model).server ? { vcpu: s ? nodeVcpu(s, d) : installedVcpu(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk * (s ? ecFactor(s, d) : 1) } : ZERO;
 }
 export const nodeVcpu = (s: GameState, d: Device): number => (clusterOf(s, d.id)?.compat ? Math.round(installedVcpu(d) * COMPAT_VCPU * 100) / 100 : installedVcpu(d));
 // Whether a VM moves live between two servers: their boards share a vendor, or both clusters run compatibility mode.
@@ -353,7 +361,10 @@ export function dropCluster(s: GameState, id: string) {
   if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };
   s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };
 }
-export const workloadsOf = (s: GameState, serviceId: string): Workload[] => s.workloads.filter((w) => w.serviceId === serviceId);
+export const workloadsOf = (s: GameState, serviceId: string): Workload[] => {
+  const by = sweepGroups(s, "workloads", () => s.workloads, (w) => w.serviceId);
+  return by ? by.get(serviceId) ?? [] : s.workloads.filter((w) => w.serviceId === serviceId);
+};
 export const workloadsOn = (s: GameState, deviceId: string): Workload[] => s.workloads.filter((w) => w.deviceId === deviceId);
 // A server taken by a cluster or rented whole as a dedicated server.
 export const serverTaken = (s: GameState, deviceId: string): boolean =>
@@ -460,7 +471,7 @@ export function computeTick(s: GameState): SimEvent[] {
     }
   }
   const ids = [...new Set(s.workloads.filter((w) => !isOwnVm(w)).map((w) => w.serviceId))];
-  const down = readOnlySweep(s, () => ids.filter((id) => !workloadsUp(s, id) && !serviceHeld(s, s.services.find((v) => v.id === id)!)));
+  const down = readOnlySweep(s, () => ids.filter((id) => !workloadsUp(s, id) && !serviceHeld(s, serviceById(s, id)!)));
   // Hours inside an announced maintenance window are no downtime for the SLA; a late announcement counts half.
   const hours = (id: string) => coverage(s, s.services.find((v) => v.id === id)!)?.factor ?? 1;
   if (down.length) s.downHours = { ...s.downHours, ...Object.fromEntries(down.map((id) => [id, (s.downHours[id] ?? 0) + hours(id)])) };

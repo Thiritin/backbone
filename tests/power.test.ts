@@ -117,12 +117,12 @@ describe("power plugs", () => {
 describe("idle draw", () => {
   it("draws idle watts for a server with no running workload and rated watts once one runs", () => {
     const s = rich();
-    expect(rackPower(s, "rack2").watts).toBe(100 + 8);
+    expect(rackPower(s, "rack2").watts).toBe(100 + 8 + 10);
     const idle = powerPerHour(s);
     runServers(s);
-    expect(rackPower(s, "rack2").watts).toBe(250 + 8);
+    expect(rackPower(s, "rack2").watts).toBe(250 + 8 + 10);
     expect(powerPerHour(s)).toBeGreaterThan(idle);
     s.workloads = s.workloads.map((w) => ({ ...w, stopped: true }));
-    expect(rackPower(s, "rack2").watts).toBe(100 + 8);
+    expect(rackPower(s, "rack2").watts).toBe(100 + 8 + 10);
   });
 });

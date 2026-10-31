@@ -10,6 +10,7 @@ import { licensingAt } from "../../../../sim/10-catalog/server-os";
 import { licenseCost } from "../../../../sim/85-products/products";
 import { yearOf } from "../../../../sim/00-core/time";
 import { LOG_SOURCES, logLines, panelTasks, type LogSource } from "../../../../sim/80-business/readouts";
+import { LicenceTiers } from "./HostSettings";
 import type { Tab } from "./PanelBase";
 
 export interface ReadoutPage { id: Tab; label: string; body: ReactNode }
@@ -38,19 +39,16 @@ export function TaskPage({ game, c }: { game: GameState; c: Cluster }) {
 
 const LOG_LIMIT = 60;
 
-export function LogPage({ game, c }: { game: GameState; c: Cluster }) {
-  const [source, setSource] = useState<LogSource>("access");
+export function LogPage({ game, c, only }: { game: GameState; c: Cluster; only?: LogSource }) {
+  const [pick, setSource] = useState<LogSource>("access"), source = only ?? pick;
   const list = logLines(game, c, source, LOG_LIMIT);
   return (
     <div className="cx-readout">
-      <div className="cx-tools">{LOG_SOURCES.map((x) => <button key={x} className={`cx-btn ${x === source ? "primary" : ""}`} onClick={() => setSource(x)}>{t(`readouts.log.${x}`)}</button>)}</div>
+      {!only && <div className="cx-tools">{LOG_SOURCES.map((x) => <button key={x} className={`cx-btn ${x === source ? "primary" : ""}`} onClick={() => setSource(x)}>{t(`readouts.log.${x}`)}</button>)}</div>}
       <pre className="cx-log">{list.length === 0 ? t("readouts.noLines") : list.map((x) => `${formatClock(x.hour)} ${t(`readouts.line.${x.key}`, { ...x.params, ...(x.key === "system.device" ? { event: t(String(x.params.event)) } : {}) })}`).join("\n")}</pre>
     </div>
   );
 }
-
-// Tier, account cap and expiry belong here once the panel host sim provides them.
-const LicenceExtra = (_: { c: Cluster }) => null;
 
 export function LicencePage({ game, c }: { game: GameState; c: Cluster }) {
   const cost = licenseCost(game, c), year = yearOf(game.hour);
@@ -74,7 +72,7 @@ export function LicencePage({ game, c }: { game: GameState; c: Cluster }) {
           })}
         </tbody>
       </table>
-      <LicenceExtra c={c} />
+      <LicenceTiers game={game} c={c} />
     </div>
   );
 }

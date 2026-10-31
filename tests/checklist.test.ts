@@ -1,3 +1,4 @@
+import { routerOnLine } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { CHECKS, checkDone } from "../src/sim/checklist";
@@ -36,14 +37,15 @@ describe("checklist", () => {
       return srv;
     });
     expect(done(s)).toEqual(["buyServer", "mountServer", "loan"]);
+    routerOnLine(s);
     ok(connect(s, { device: a, port: 0 }, { device: "dev5", port: 0 }));
-    expect(done(s)).toEqual(["buyServer", "mountServer", "loan"]);
+    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "loan"]);
     s.homeLine = { id: "dsl-16", next: null };
-    expect(done(s)).toEqual(["buyServer", "mountServer", "internet", "loan", "firstServer"]);
+    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "internet", "loan", "firstServer"]);
     ok(connect(s, { device: b, port: 0 }, { device: "dev5", port: 1 }));
-    expect(done(s)).toEqual(["buyServer", "mountServer", "internet", "loan", "firstServer", "secondServer"]);
+    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "internet", "loan", "firstServer", "secondServer"]);
     ok(addLocation(s, "interaction-fra", "share", 1));
-    expect(done(s)).toEqual(["buyServer", "mountServer", "internet", "loan", "firstServer", "secondServer", "datacenter"]);
+    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "internet", "loan", "firstServer", "secondServer", "datacenter"]);
   });
 
   it("detects a datacenter cluster that sells", () => {

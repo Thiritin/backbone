@@ -8,7 +8,7 @@ import { grantExtension, serviceHeld, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPIN
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { takenDown } from "../60-infra/ops";
-import { readOnlySweep } from "../60-infra/status";
+import { liveServices, readOnlySweep } from "../60-infra/status";
 import { coverage } from "../60-infra/maintenance";
 import { applyNoticeWork } from "./notices";
 import { applyOrderWork } from "../30-market/orders";
@@ -112,7 +112,7 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
 
 // A customer whose live services are all held draws no abuse.
 const allHeld = (s: GameState, customerId: string): boolean => {
-  const mine = s.services.filter((v) => v.customerId === customerId && v.endedAt === null);
+  const mine = liveServices(s, customerId);
   return mine.length > 0 && mine.every((v) => serviceHeld(s, v));
 };
 
@@ -207,7 +207,7 @@ export function supportTick(s: GameState): SimEvent[] {
     // The customer does not wait on a notice or legal request about them, nor on an order before their account exists.
     // An order waiting on payment stays open until paid.
     if (t.work?.arg === FIX_CHECK) continue;
-    if (t.notice || t.kind === "migration" || t.kind === "sponsor" || (t.kind === "order" && (!t.customerId || t.status !== "open"))) continue;
+    if (t.notice || t.kind === "migration" || t.kind === "sponsor" || t.kind === "pear" || (t.kind === "order" && (!t.customerId || t.status !== "open"))) continue;
     if (t.status === "waiting" && s.hour - t.updatedAt >= WAITING_CLOSE_HOURS) resolve(s, t, c);
     else if (t.status === "escalated" && (!t.serviceId || serviceOnline(s, t.serviceId))) resolve(s, t, c);
     else if (t.status === "open" && c.churnedAt === null && s.hour > t.dueAt) {
@@ -216,7 +216,7 @@ export function supportTick(s: GameState): SimEvent[] {
     }
   }
   outages(s, customer);
-  spawnHourly(s);
+  readOnlySweep(s, () => spawnHourly(s));
   if (isMonthStart(s.hour)) monthly(s);
 
   const fresh = s.tickets.filter((t) => !before.has(t.id));
