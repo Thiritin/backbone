@@ -33,6 +33,8 @@ function shortGame(): GameState {
   play(24 * 6);
   ok(store().act(mountDevice, srv, "rack2", 1));
   for (const c of store().game.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(store().act(setPlugged, srv, c.id, true));
+  ok(store().act(mountDevice, "dev5", "rack2", 24));
+  ok(store().act(connect, { device: "dev5", port: 4 }, { device: "dev6", port: 0 }));
   ok(store().act(connect, { device: srv, port: 0 }, { device: "dev5", port: 0 }));
   ok(store().act(orderHomeLine, "dsl-16"));
   play(24 * 9);
@@ -46,7 +48,7 @@ describe("action log", () => {
     const s = shortGame();
     const psus = s.log.filter((e) => e.name === "setPlugged").length;
     expect(psus).toBeGreaterThan(0);
-    expect(s.log.map((e) => e.name)).toEqual(["setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "connect", "orderHomeLine", "installPanel"]);
+    expect(s.log.map((e) => e.name)).toEqual(["setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "mountDevice", "connect", "connect", "orderHomeLine", "installPanel"]);
     expect(s.log[1]).toEqual({ hour: 0, minute: 0, name: "buyDevice", args: ["g1-compute", "Dwell", 1, "loc1"] });
     expect(store().act(mountDevice, "nope", "rack2", 1).ok).toBe(false);
     expect(store().game.log).toHaveLength(s.log.length);

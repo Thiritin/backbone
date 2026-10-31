@@ -6,6 +6,7 @@ import { euro } from "../../../sim/00-core/money";
 import { deviceValue, freeSlots, mountFrom, mountMax, storageStacks, travelCost } from "../../../sim/60-infra/status";
 import { mountDevice, mountStack, sellDevice, shipStock } from "../../../sim/90-actions/hardware";
 import { installRouter } from "../../../sim/90-actions/routers";
+import { mountedRouter } from "../../../sim/60-infra/routers";
 import { Isometric } from "../../art/Isometric";
 import { RackFront } from "../../art/RackFront";
 import { t } from "../../../i18n/en";
@@ -131,7 +132,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
   const [listing, setListing] = useState(false);
   // Leased units can't be sold, so Sell takes the first paid-off unit of the stack.
   const m = modelById(stack.model), units = game.devices.filter((d) => stack.ids.includes(d.id)), first = units.find((d) => !d.lease) ?? units[0];
-  const rackable = m.height > 0 || m.kind === "pdu" || m.kind === "kvm", office = isOfficeRouter(m), install = () => act(installRouter, units[0].id);
+  const rackable = m.height > 0 || m.kind === "pdu" || m.kind === "kvm", office = isOfficeRouter(m) && !!units[0].store && !!mountedRouter(game, units[0].store), install = () => act(installRouter, units[0].id);
   const entries = (): MenuEntry[] => [
     rackable && { label: t("locations-2.mountMenu"), run: () => setMounting(true) },
     office && { label: t("locations-2.install"), run: install },

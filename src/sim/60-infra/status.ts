@@ -1,5 +1,5 @@
 import { nowHours, yearOf } from "../00-core/time";
-import { wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
+import { wanPort, wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
 import { cpuModel, skuOf, SMT_SHARE, type Vendor } from "../10-catalog/cpus";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
@@ -43,11 +43,12 @@ export function farEnd(s: GameState, from: End): { end: End; gbit: number } | nu
 
 // Servers never forward traffic; switches and firewalls forward between all ports, patch panels between a jack's front and back.
 // Firewalls slower than minGbit block the path.
-// A basement gateway carries traffic only while a home line is live.
-const lineUp = (s: GameState, gatewayId: string): boolean => {
-  const loc = s.locations.find((l) => l.id === s.devices.find((d) => d.id === gatewayId)?.panel);
-  return !loc || !!loc.dc || !!s.homeLine.id;
+// A router with a DSL port carries traffic only while that port reaches the line jack and a home line is live.
+export const jacked = (s: GameState, gatewayId: string): boolean => {
+  const wan = wanPort(modelOf(s, gatewayId)), jack = wan >= 0 && farEnd(s, { device: gatewayId, port: wan });
+  return !!jack && kindOf(s, jack.end.device) === "jack";
 };
+const lineUp = (s: GameState, gatewayId: string): boolean => wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && !!s.homeLine.id);
 
 function reachesGateway(s: GameState, start: End, origin: string, minGbit: number): boolean {
   const seen = new Set([origin]);

@@ -77,7 +77,7 @@ describe("buyCart", () => {
     const offer = leaseOffers(s, 5060)[1];
     s.hour = 744;
     expect(err(buyCart(s, CART, { kind: "lease", offerId: offer.id }, "loc1"))).toBe("error.offerExpired");
-    expect(s.devices).toHaveLength(3);
+    expect(s.devices).toHaveLength(4);
   });
 });
 

@@ -27,7 +27,7 @@ export type ActionResult = { ok: true; id?: string } | { ok: false; error: strin
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const newId = (s: GameState, prefix: string) => `${prefix}${s.nextId++}`;
-const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", pdu: "pdu", part: "part", kvm: "kvm", console: "con", oob: "oob", chassis: "twin" } as const;
+const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", pdu: "pdu", part: "part", kvm: "kvm", console: "con", oob: "oob", chassis: "twin", jack: "line" } as const;
 const roleOf = (modelId: string) => ROLE[modelById(modelId).kind];
 const cents = (v: number) => Math.round(v * 100) / 100;
 
@@ -143,6 +143,10 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
   if (to.az !== from.az && (s.workloads.some((w) => w.rackId === rackId) || s.devices.some((d) => d.rackId === rackId && serverTaken(s, d.id)))) return fail("error.rackInUse");
   const move = moveCost(s, rackId, toLocationId);
   if (s.cash < move.price) return fail("error.noCash");
+  // A small-office router stays behind in the basement's storage.
+  const left = s.devices.filter((d) => d.rackId === rackId && to.dc && isOfficeRouter(modelById(d.model)));
+  for (const d of left) Object.assign(d, { rackId: null, slot: 0, store: from.id });
+  unplug(s, new Set(left.map((d) => d.id)));
   const inside = new Set(s.devices.filter((d) => d.rackId === rackId).map((d) => d.id));
   unplug(s, inside, (id) => inside.has(id));
   Object.assign(rack, { locationId: toLocationId, position, arriveAt: s.hour + move.hours });
@@ -307,7 +311,6 @@ function mountError(s: GameState, d: Device, rackId: string, slot: number): stri
   if (d.transitTo) return "error.inTransit";
   if (!d.store) return "error.alreadyMounted";
   if (modelById(d.model).kind === "part") return "error.notMountable";
-  if (isOfficeRouter(modelById(d.model))) return "error.panelRouter";
   const spot = spotOf(s, rackId);
   if (!spot) return "error.unknownRack";
   if (spot.moving) return "error.rackMoving";
@@ -345,7 +348,6 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   if (rack.moving) return fail("error.rackMoving");
   if (modelById(modelId).kind === "part") return fail("error.notMountable");
   if (modelById(modelId).chassis) return fail("error.inChassis");
-  if (isOfficeRouter(modelById(modelId))) return fail("error.panelRouter");
   if (modelById(modelId).kind === "pdu" && (count > 1 || hasPdu(s, rackId))) return fail("error.pduInstalled");
   const same = (d: Device) => d.model === modelId && d.brand === brand;
   const stored = s.devices.filter((d) => same(d) && d.store === rack.locationId);

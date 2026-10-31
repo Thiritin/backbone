@@ -133,8 +133,8 @@ describe("the basement router", () => {
     const mid = ok(buyDevice(s, "fb-7390", "AVN", 1, "loc1"));
     expect(dev(s, mid)).toMatchObject({ store: "loc1", panel: null });
     ok(installRouter(s, mid));
-    expect(dev(s, mid)).toMatchObject({ store: null, panel: "loc1", name: "fra1-gw-01" });
-    expect(s.devices.some((d) => d.model === "home-router")).toBe(false);
+    expect(dev(s, mid)).toMatchObject({ store: null, rackId: "rack2", slot: 23, name: "fra1-gw-01" });
+    expect(dev(s, "dev5")).toMatchObject({ store: "loc1", rackId: null });
     expect(homeUp(s)).toBe(300);
     s.homeLine = { id: "vdsl-50", next: null };
     expect(homeUp(s)).toBe(10);
@@ -144,7 +144,7 @@ describe("the basement router", () => {
     ok(installRouter(s, fast));
     expect(homeUp(s)).toBe(1000);
     // The 7390 goes back into storage and can be sold.
-    expect(dev(s, mid)).toMatchObject({ store: "loc1", panel: null, name: expect.stringMatching(/^fra1-gw-/) });
+    expect(dev(s, mid)).toMatchObject({ store: "loc1", rackId: null, name: expect.stringMatching(/^fra1-gw-/) });
     expect(sellDevice(s, mid).ok).toBe(true);
   });
 
@@ -159,15 +159,17 @@ describe("the basement router", () => {
     expect(linkStatus(s, "dev3").online).toBe(true);
   });
 
-  it("only goes on the basement's carrier panel", () => {
+  it("only goes in the basement, on a shelf of its rack", () => {
     const s = { ...readyGame(1), cash: 1e6 };
     s.hour = jan(2018);
     const loc = ok(addLocation(s, "hetzler-park", "suite", 20));
     expect(err(buyDevice(s, "fb-7590", "AVN", 1, loc))).toBe("error.basementOnly");
     const fast = ok(buyDevice(s, "fb-7590", "AVN", 1, "loc1"));
     expect(isOfficeRouter(modelById("fb-7590"))).toBe(true);
-    expect(err(mountDevice(s, fast, "rack2", 5))).toBe("error.panelRouter");
     expect(err(installRouter(s, "dev3"))).toBe("error.alreadyMounted");
+    const spare = ok(buyDevice(s, "fb-7590", "AVN", 1, "loc1"));
+    ok(mountDevice(s, spare, "rack2", 5));
+    expect(dev(s, spare)).toMatchObject({ rackId: "rack2", slot: 5 });
     ok(installRouter(s, fast));
     expect(err(installRouter(s, fast))).toBe("error.alreadyMounted");
     const sw = ok(buyDevice(s, "sw-48y", "Sysko", 1, "loc1"));

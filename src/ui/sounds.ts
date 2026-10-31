@@ -1,3 +1,4 @@
+import { isOfficeRouter, modelById } from "../sim/10-catalog/hardware";
 import type { GameState, LedgerEntry } from "../sim/50-state";
 import { FAN_RPM, sensorsOf } from "../sim/60-infra/sensors";
 import { locationOf, powered } from "../sim/60-infra/status";
@@ -234,7 +235,8 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false,
 export interface Hum { level: number; pitch: number; hall: boolean }
 
 export function humOf(s: GameState, rackIds: string[]): Hum {
-  const on = s.devices.filter((d) => d.on && d.rackId !== null && rackIds.includes(d.rackId) && powered(s, d.id));
+  // A small-office router on its shelf has no fan.
+  const on = s.devices.filter((d) => d.on && d.rackId !== null && rackIds.includes(d.rackId) && powered(s, d.id) && !isOfficeRouter(modelById(d.model)));
   if (!on.length) return { level: 0, pitch: 1, hall: false };
   const sensors = on.map((d) => sensorsOf(s, d));
   const rpm = Math.max(FAN_RPM, ...sensors.flatMap((x) => x.fans.map((f) => f.rpm)));
