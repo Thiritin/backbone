@@ -7,7 +7,7 @@ import { dateOf, hourOf } from "../sim/00-core/time";
 // Highest priority first: one batch of events plays only its top sound.
 export const SOUNDS = ["month", "warn", "level", "research", "money", "ticket"] as const;
 export type Sound = (typeof SOUNDS)[number];
-export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup" | "post" | "plug" | "unplug" | "typing";
+export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup" | "post" | "plug" | "unplug" | "typing" | "hover" | "select" | "back";
 
 // How each Pear OS era voices the desktop sounds: glassy and long early on, flat and short in the middle years, soft and airy later.
 export interface Voice { wave: OscillatorType; len: number; lift: number; glass: number; air: number }
@@ -155,6 +155,17 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false,
         break;
       case "minimize":
         sweep(c, out, 2400, 500, t, 0.25 * voiceOf(era).len, 0.05);
+        break;
+      case "hover":
+        tone(c, out, 1900, t, 0.04, 0.012, "triangle");
+        break;
+      case "select":
+        tone(c, out, 660, t, 0.12, 0.04, "triangle");
+        tone(c, out, 990, t + 0.07, 0.2, 0.04, "triangle");
+        break;
+      case "back":
+        tone(c, out, 880, t, 0.1, 0.035, "triangle");
+        tone(c, out, 587, t + 0.06, 0.16, 0.035, "triangle");
         break;
       case "menu":
         note(c, out, voiceOf(era), 2600, t, 0.02, 0.008);
