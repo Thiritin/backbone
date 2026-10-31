@@ -165,6 +165,9 @@ export interface GameState {
   autoOrders: boolean;
   // Whether server orders wait for a review by hand (45-billing/fraud.ts).
   reviewOrders: boolean;
+  // Whether MaxMined screens standard orders (needs the fraudScreening skill), and the checks billed next month start.
+  screenOrders: boolean;
+  screenChecks: number;
   // How many monthly checks in a row the payment provider found too many chargebacks: 1 warned, 2 higher fees.
   chargebackStrikes: number;
   // The shop system that takes orders, its modules and stock (docs/design/shop.md).
@@ -326,7 +329,7 @@ export const newGame = (seed: number): GameState => ({
   ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
-  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, chargebackStrikes: 0,
+  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],

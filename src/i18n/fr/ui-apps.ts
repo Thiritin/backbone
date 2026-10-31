@@ -137,6 +137,7 @@ export default {
   "apps.settings.orders": () => "Commandes",
   "apps.settings.autoOrders": () => "Passer les commandes automatiquement",
   "apps.settings.reviewOrders": () => "Vérifier à la main les commandes de serveurs",
+  "apps.settings.screenOrders": () => "Filtrer les commandes avec MaxMined",
   "apps.settings.game": () => "Jeu",
   "apps.settings.export": () => "Exporter la progression",
   "apps.settings.appearance": () => "Apparence",

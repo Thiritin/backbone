@@ -5,6 +5,7 @@ import { canAutomate, issueInvoice, resize, stepError, stepMinutes, type OrderSt
 import { orderOf } from "../30-market/orders";
 import { answerAt, editRequest, say } from "../30-market/sales";
 import { isFinal } from "../40-support/tickets";
+import { SCREENING_SKILL } from "../45-billing/fraud";
 import type { GameState } from "../50-state";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "./hardware";
@@ -53,6 +54,12 @@ export function setAutoOrders(s: GameState, on: boolean): ActionResult {
 // Switches the review by hand of server orders (45-billing/fraud.ts).
 export function setReviewOrders(s: GameState, on: boolean): ActionResult {
   s.reviewOrders = on;
+  return { ok: true };
+}
+
+export function setScreenOrders(s: GameState, on: boolean): ActionResult {
+  if (on && !s.unlocks.includes(SCREENING_SKILL)) return fail("error.needsResearch");
+  s.screenOrders = on;
   return { ok: true };
 }
 
