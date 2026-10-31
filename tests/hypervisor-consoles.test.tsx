@@ -104,3 +104,11 @@ describe("hypervisor consoles", () => {
     }
   });
 });
+
+describe("panel migrate availability", () => {
+  it("offers Migrate from the same-panel import year", () => {
+    expect(consoleFeatures("pleskit", 2006).migrate).toBe("hand");
+    expect(consoleFeatures("directadmen", 2009).migrate).toBeNull();
+    expect(consoleFeatures("directadmen", 2010).migrate).toBe("hand");
+  });
+});
