@@ -29,6 +29,20 @@ export function startTransfer(s: GameState, draft: Draft): ActionResult {
   return { ok: true };
 }
 
+// A standing order needs a TAN like a transfer and then runs on its day every month (days 1 to 28).
+export function startStandingOrder(s: GameState, draft: Draft, day: number): ActionResult {
+  if (!Number.isInteger(day) || day < 1 || day > 28) return fail("error.orderDay");
+  const r = startTransfer(s, draft);
+  if (r.ok) s.bank = { ...s.bank!, pending: { ...s.bank!.pending!, day } };
+  return r;
+}
+
+export function deleteStandingOrder(s: GameState, id: string): ActionResult {
+  if (!s.bank?.standingOrders.some((o) => o.id === id)) return fail("error.noOrder");
+  s.bank = { ...s.bank, standingOrders: s.bank.standingOrders.filter((o) => o.id !== id) };
+  return { ok: true };
+}
+
 export function cancelTransfer(s: GameState): ActionResult {
   if (!s.bank?.pending) return fail("error.noTransfer");
   s.bank = { ...s.bank, pending: null };
@@ -49,6 +63,11 @@ export function confirmTransfer(s: GameState, tan = ""): ActionResult {
   if (p.draft.amount > spendable(s)) return fail("error.noCash");
   s.bank = { ...b, wrong: 0, pending: null };
   if (b.tan === "itan") useTan(s, p.index!);
+  if (p.day !== undefined) {
+    const id = `so${s.nextId++}`, d = p.draft;
+    s.bank = { ...s.bank, standingOrders: [...s.bank.standingOrders, { id, name: d.name, account: d.account, amount: d.amount, reference: d.reference, day: p.day }] };
+    return { ok: true, id };
+  }
   return { ok: true, id: send(s, p.draft).id };
 }
 

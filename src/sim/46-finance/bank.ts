@@ -1,7 +1,7 @@
 // docs/design/plans/billing-by-hand.md, 9b: the company's bank account. Cash stays s.cash, the account's balance.
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
-import { isMonthStart, nowMinutes, yearOf } from "../00-core/time";
+import { dateOf, isMonthStart, nowMinutes, yearOf } from "../00-core/time";
 import { bankById, DEFAULT_BANK, IBAN_YEAR, tanMethods, TRANSFER_HOURS, type Bank, type BankId, type TanMethod } from "../10-catalog/banks";
 import { deliverMail } from "../40-support/tickets";
 import type { Doc, GameState, LedgerEntry } from "../50-state";
@@ -15,7 +15,8 @@ export interface Outgoing { id: string; hour: number; arriveAt: number; name: st
 // What the transfer form holds; account is an IBAN, or an account number with its bank code before IBAN.
 export interface Draft { name: string; account: string; code?: string; amount: number; reference: string; payableId?: string }
 // A transfer waiting for its TAN: the list position asked for (iTAN), the code texted (mTAN) and the minute the text arrives.
-export interface Pending { draft: Draft; index: number | null; code: string | null; sendAt: number | null }
+// day is set when the TAN confirms a standing order for that day of the month instead of a transfer.
+export interface Pending { draft: Draft; index: number | null; code: string | null; sendAt: number | null; day?: number }
 export interface BankAccount {
   id: BankId; number: string; pin: string; opened: number; tan: TanMethod;
   card: Card | null;
@@ -173,6 +174,15 @@ export function bankTick(s: GameState): SimEvent[] {
   if (next.overdraftAt !== null && s.hour >= next.overdraftAt) {
     next = { ...next, overdraft: limitFor(s, 1, MIN_OVERDRAFT), overdraftAt: null };
     deliverMail(s, bank.name, "bankOverdraft", { bank: bank.name, limit: next.overdraft, rate: Math.round(bank.overdraft! * 1000) / 10 });
+  }
+  const date = dateOf(s.hour);
+  if (date.getUTCHours() === 0) {
+    for (const o of next.standingOrders.filter((x) => x.day === date.getUTCDate())) {
+      s.bank = next;
+      if (o.amount > spendable(s)) deliverMail(s, bank.name, "bankOrderFailed", { bank: bank.name, name: o.name, amount: o.amount });
+      else send(s, { name: o.name, account: o.account, amount: o.amount, reference: o.reference }, "transfers", "ledger.standingOrder");
+      next = { ...s.bank!, interest: next.interest };
+    }
   }
   if (isMonthStart(s.hour)) {
     // The card bill debits what the card paid last month.

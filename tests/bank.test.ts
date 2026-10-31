@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { iban, openAccount, type Draft } from "../src/sim/46-finance/bank";
 import { buyCart, deliveryWait, PREPAY_HOURS, type CartLine } from "../src/sim/90-actions/hardware";
-import { applyCard, applyOverdraft } from "../src/sim/90-actions/bank";
+import { applyCard, applyOverdraft, deleteStandingOrder, startStandingOrder } from "../src/sim/90-actions/bank";
 import { withServer } from "./fixtures";
 import { resolve } from "../src/sim/80-business/browser";
 import { tickMinute } from "../src/sim/88-tick/tick";
@@ -184,5 +184,21 @@ describe("card and overdraft", () => {
     expect(s.brokeSince).toBeNull();
     run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
     expect(s.ledger.find((e) => e.key === "ledger.overdraftInterest")!.amount).toBeLessThan(0);
+  });
+});
+
+describe("standing orders", () => {
+  it("needs a TAN and then pays on its day every month", () => {
+    const s = opened();
+    expect(startStandingOrder(s, payee, 29)).toEqual({ ok: false, error: "error.orderDay" });
+    expect(startStandingOrder(s, { ...payee, amount: 100 }, 5).ok).toBe(true);
+    const id = confirmTransfer(s, s.bank!.tans.codes[s.bank!.pending!.index!]);
+    expect(s.bank!.standingOrders).toEqual([expect.objectContaining({ day: 5, amount: 100 })]);
+    run(s, hourOf(new Date(Date.UTC(2005, 1, 5, 1))) - s.hour);
+    expect(s.ledger.filter((e) => e.key === "ledger.standingOrder").map((e) => [new Date(Date.UTC(2005, 0, 1) + e.hour * 3600e3).getUTCDate(), e.amount])).toEqual([[5, -100], [5, -100]]);
+    s.cash = 50;
+    run(s, hourOf(new Date(Date.UTC(2005, 2, 5, 1))) - s.hour);
+    expect(s.tickets.some((t) => t.topic === "bankOrderFailed")).toBe(true);
+    expect(deleteStandingOrder(s, id.ok ? id.id! : "").ok).toBe(true);
   });
 });

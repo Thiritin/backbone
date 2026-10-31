@@ -7,7 +7,7 @@ import { bankById, tanMethods, type Bank, type BankId, type TanMethod } from "..
 import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate } from "../../../../../sim/45-billing/billing";
 import { cardSpent, groupIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft } from "../../../../../sim/46-finance/bank";
 import type { GameState } from "../../../../../sim/50-state";
-import { applyCard, applyOverdraft, cancelTransfer, confirmTransfer, setTanMethod, startTransfer } from "../../../../../sim/90-actions/bank";
+import { applyCard, applyOverdraft, cancelTransfer, confirmTransfer, deleteStandingOrder, setTanMethod, startStandingOrder, startTransfer } from "../../../../../sim/90-actions/bank";
 import { takeLoan } from "../../../../../sim/90-actions/billing";
 import { readSession, writeSession } from "../../../../session";
 import { useStore } from "../../../../store";
@@ -16,7 +16,7 @@ import "./bank-site.css";
 type Go = (url: string) => void;
 const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 const pct = (r: number) => `${(r * 100).toLocaleString(LOCALE, { maximumFractionDigits: 2 })} %`;
-const VIEWS = ["statement", "transfer", "card", "overdraft", "loans", "service"] as const;
+const VIEWS = ["statement", "transfer", "orders", "card", "overdraft", "loans", "service"] as const;
 type View = (typeof VIEWS)[number];
 
 // One frame for every bank: the skin swaps colours and logo, the account's TAN method sets the transfer's last step.
@@ -48,6 +48,7 @@ export function BankSite({ game, id, path, go }: { game: GameState; id: BankId; 
           {!own ? <Login game={game} bank={bank} onIn={() => { setLogin(true); go(`${home}/banking/statement`); }} />
             : view === "statement" ? <Statement game={game} />
             : view === "transfer" ? <Transfer key={path} game={game} bank={bank} prefill={query} go={go} />
+            : view === "orders" ? <Orders key={path} game={game} bank={bank} go={go} />
             : view === "card" ? <CardView game={game} bank={bank} />
             : view === "overdraft" ? <Overdraft game={game} bank={bank} />
             : view === "loans" ? <Loans game={game} />
@@ -128,7 +129,7 @@ function Statement({ game }: { game: GameState }) {
   );
 }
 
-function Transfer({ game, bank, prefill, go }: { game: GameState; bank: Bank; prefill: URLSearchParams; go: Go }) {
+function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank: Bank; prefill: URLSearchParams; go: Go; standing?: boolean }) {
   const act = useStore((s) => s.act);
   const b = game.bank!, iban = ibanEra(game);
   const [name, setName] = useState(prefill.get("name") ?? "");
@@ -137,13 +138,15 @@ function Transfer({ game, bank, prefill, go }: { game: GameState; bank: Bank; pr
   const [amount, setAmount] = useState(prefill.get("amount") ?? "");
   const [reference, setReference] = useState(prefill.get("reference") ?? "");
   const [tan, setTan] = useState("");
+  const [orderDay, setOrderDay] = useState("1");
+  const title = t(standing ? "bank.site.newOrder" : "bank.site.nav.transfer"), again = `www.${bank.host}/banking/${standing ? "orders" : "transfer"}`;
   const [sent, setSent] = useState(false);
-  if (game.hour < b.lockedUntil) return <Box title={t("bank.site.nav.transfer")}><p className="bks-error">{t("bank.site.locked", { date: day(b.lockedUntil) })}</p></Box>;
+  if (game.hour < b.lockedUntil) return <Box title={title}><p className="bks-error">{t("bank.site.locked", { date: day(b.lockedUntil) })}</p></Box>;
   if (sent && !b.pending) {
     return (
-      <Box title={t("bank.site.nav.transfer")}>
-        <p className="bks-ok">{t("bank.site.sent")}</p>
-        <button className="bks-btn" onClick={() => go(`www.${bank.host}/banking/transfer`)}>{t("bank.site.newTransfer")}</button>
+      <Box title={title}>
+        <p className="bks-ok">{t(standing ? "bank.site.orderSaved" : "bank.site.sent")}</p>
+        <button className="bks-btn" onClick={() => go(again)}>{t(standing ? "bank.site.newOrder" : "bank.site.newTransfer")}</button>
       </Box>
     );
   }
@@ -157,6 +160,7 @@ function Transfer({ game, bank, prefill, go }: { game: GameState; bank: Bank; pr
             <tr><td>{iban ? t("bank.site.iban") : t("bank.site.payeeAccount")}</td><td className="num">{iban ? groupIban(d.account) : `${d.account} / ${d.code}`}</td></tr>
             <tr><td>{t("bank.site.amount")}</td><td className="num">{euroCents(d.amount)}</td></tr>
             <tr><td>{t("bank.site.reference")}</td><td>{d.reference}</td></tr>
+            {p.day !== undefined && <tr><td>{t("bank.site.orderDay")}</td><td className="num">{p.day}</td></tr>}
           </tbody>
         </table>
         <form className="bks-form" onSubmit={(e) => { e.preventDefault(); if (act(confirmTransfer, tan).ok) setSent(true); setTan(""); }}>
@@ -173,8 +177,8 @@ function Transfer({ game, bank, prefill, go }: { game: GameState; bank: Bank; pr
   }
   const draft = (): Draft => ({ name, account, ...(iban ? {} : { code }), amount: Number(amount.replace(",", ".")), reference, ...(prefill.get("payable") && { payableId: prefill.get("payable")! }) });
   return (
-    <Box title={t("bank.site.nav.transfer")}>
-      <form className="bks-form" onSubmit={(e) => { e.preventDefault(); act(startTransfer, draft()); }}>
+    <Box title={title}>
+      <form className="bks-form" onSubmit={(e) => { e.preventDefault(); if (standing) act(startStandingOrder, draft(), Number(orderDay)); else act(startTransfer, draft()); }}>
         <label>{t("bank.site.payee")}<input value={name} onChange={(e) => setName(e.target.value)} /></label>
         {iban
           ? <label>{t("bank.site.iban")}<input className="num" value={account} onChange={(e) => setAccount(e.target.value)} /></label>
@@ -184,6 +188,7 @@ function Transfer({ game, bank, prefill, go }: { game: GameState; bank: Bank; pr
           </>}
         <label>{t("bank.site.amount")}<input inputMode="decimal" className="num" value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
         <label>{t("bank.site.reference")}<input value={reference} maxLength={140} onChange={(e) => setReference(e.target.value)} /></label>
+        {standing && <label>{t("bank.site.orderDay")}<input type="number" min={1} max={28} className="num" value={orderDay} onChange={(e) => setOrderDay(e.target.value)} /></label>}
         <button className="bks-btn primary">{t("bank.site.next")}</button>
       </form>
     </Box>
@@ -274,5 +279,25 @@ function Overdraft({ game, bank }: { game: GameState; bank: Bank }) {
       </table>
       {bank.overdraft !== null && b.overdraftAt === null && <button className="bks-btn primary" onClick={() => act(applyOverdraft)}>{b.overdraft ? t("bank.site.reapply") : t("bank.site.apply")}</button>}
     </Box>
+  );
+}
+
+function Orders({ game, bank, go }: { game: GameState; bank: Bank; go: Go }) {
+  const act = useStore((s) => s.act), orders = game.bank!.standingOrders;
+  return (
+    <>
+      <table className="bks-table bks-rows">
+        <thead><tr><th>{t("bank.site.payee")}</th><th>{t("bank.site.reference")}</th><th className="r">{t("bank.site.orderDay")}</th><th className="r">{t("bank.site.amount")}</th><th /></tr></thead>
+        <tbody>
+          {orders.map((o) => (
+            <tr key={o.id}><td>{o.name}</td><td>{o.reference}</td><td className="r num">{o.day}</td><td className="r num">{euroCents(o.amount)}</td>
+              <td className="r"><button className="bks-btn" onClick={() => act(deleteStandingOrder, o.id)}>{t("bank.site.delete")}</button></td></tr>
+          ))}
+          {!orders.length && <tr><td colSpan={5}>{t("bank.site.noOrders")}</td></tr>}
+        </tbody>
+      </table>
+      <br />
+      <Transfer game={game} bank={bank} prefill={new URLSearchParams()} go={go} standing />
+    </>
   );
 }
