@@ -4,6 +4,7 @@ import { nowMinutes } from "../00-core/time";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import type { Service } from "./customers";
+import { sweepGroups } from "../60-infra/status";
 
 // transfer marks a domain the customer owned before; lapsed is set once it expired without a renewal. The company's own domain has no customer.
 // readyAt is the game minute the registry answers; saves from before it have none and count as ready.
@@ -49,7 +50,11 @@ export function extend(s: GameState, name: string): void {
 }
 
 // A web site is unreachable while the domain it runs on has expired.
-export const domainDown = (s: GameState, v: Service): boolean => !!v.domain && (s.domains ?? []).some((d) => d.name === v.domain && s.hour >= d.expiresAt);
+export const domainDown = (s: GameState, v: Service): boolean => {
+  if (!v.domain) return false;
+  const expired = sweepGroups(s, "expiredDomains", () => (s.domains ?? []).filter((d) => s.hour >= d.expiresAt), (d) => d.name);
+  return expired ? expired.has(v.domain) : (s.domains ?? []).some((d) => d.name === v.domain && s.hour >= d.expiresAt);
+};
 
 // Daily: a reminder a month before a domain of an active customer expires, and a notice when it lapses.
 export function domainsTick(s: GameState): SimEvent[] {

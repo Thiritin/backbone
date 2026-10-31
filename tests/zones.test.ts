@@ -150,7 +150,7 @@ describe("closeLocation and saves", () => {
     const loaded = deserialize(JSON.stringify(raw));
     expect(loaded.locations.map((l) => l.az)).toEqual(["fra1", "fra2", "lon1"]);
     expect(loaded.devices.find((d) => d.id === stored)).toMatchObject({ store: "loc1", transitTo: null, arriveAt: null });
-    expect(loaded.devices.filter((d) => d.store === null).map((d) => d.id)).toEqual(["dev3", "dev4", "dev5", s.devices.find((d) => d.panel === fr5)!.id, s.devices.find((d) => d.panel === lon)!.id]);
+    expect(loaded.devices.filter((d) => d.store === null).map((d) => d.id)).toEqual(["dev3", "dev4", "dev5", "dev6", s.devices.find((d) => d.panel === fr5)!.id, s.devices.find((d) => d.panel === lon)!.id]);
     expect(deserialize(serialize(s))).toEqual(s);
   });
 });

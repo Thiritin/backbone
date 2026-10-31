@@ -1,6 +1,7 @@
 // What the DNS, VPN, storage and mail software holds, read from the customers' services on a cluster.
 import { ascii, companyDomain } from "../../../../sim/30-customers/domains";
 import type { GameState } from "../../../../sim/50-state";
+import { dnsZones } from "../../../../sim/60-infra/netsvc-dns";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { vmState } from "../../products/parts";
 
@@ -9,9 +10,7 @@ export interface Tenant { id: string; hostname: string; customer: string; zones:
 export function tenants(game: GameState, c: Cluster): Tenant[] {
   return game.workloads.filter((w) => w.clusterId === c.id).map((w) => {
     const v = game.services.find((x) => x.id === w.serviceId), cu = v && game.customers.find((x) => x.id === v.customerId);
-    const domain = cu && game.services.find((x) => x.customerId === cu.id && x.domain)?.domain;
-    const stem = domain ? domain.slice(0, domain.lastIndexOf(".")) : ascii(cu?.name ?? "") || "zone", tld = domain ? domain.slice(domain.lastIndexOf(".") + 1) : "com";
-    const zones = Array.from({ length: v?.spec.zones ?? 0 }, (_, i) => `${stem}${i ? i + 1 : ""}.${tld}`);
+    const zones = dnsZones(game, v);
     return { id: w.id, hostname: w.hostname ?? w.id, customer: cu?.name ?? "", zones, users: v?.spec.users ?? 0, diskGb: w.diskGb, running: vmState(game, w) === "running" };
   });
 }

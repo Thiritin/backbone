@@ -56,6 +56,10 @@
 .pmx-res { padding: 6px 8px; }
 .pmx-alarms { border: 0; border-top: 1px solid var(--line); }
 
+.pmx-plans { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 6px; padding: 4px 8px; border: 0; background: none; text-align: left; font: inherit; cursor: pointer; }
+.pmx-plans[aria-pressed="true"] { background: #cbe0f7; }
+.pmx-plans i { font-style: normal; }
+.pmx-order { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 /* :root[data-era] selectors outrank the shared era rules. */
 :root[data-era="leopard"] .pmx :is(.pmx-create, .pmx-out) { border-radius: 999px; }
 :root[data-era="leopard"] .pmx .pmx-card { overflow: hidden; border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); }

@@ -26,7 +26,7 @@ import { useHolds } from "./Holds";
 import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
 
-export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "packages" | "create";
+export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
 export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void;
@@ -161,21 +161,21 @@ export const cpuText = (r: Row) => t("browser-consoles-2.ofVcpu", { used: num(r.
 export const ramText = (r: Row) => t("browser-consoles-2.of", { used: ram(+r.ram[0].toFixed(1)), total: ram(r.ram[1]) });
 
 // The plain table most consoles show their objects in; name is the first column's heading.
-export function RowsTable({ rows, name, node = false, className = "cx-table", extra = [] }: { rows: Row[]; name: string; node?: boolean; className?: string; extra?: ("user" | "pkg")[] }) {
-  const span = (node ? 5 : 4) + extra.length;
+export function RowsTable({ rows, name, node = false, className = "cx-table", extra, cols = [] }: { rows: Row[]; name: string; node?: boolean; className?: string; extra?: (r: Row) => ReactNode; cols?: ("user" | "pkg")[] }) {
+  const span = (node ? 5 : 4) + cols.length;
   return (
     <table className={className}>
-      <thead><tr><th>{name}</th>{extra.map((k) => <th key={k}>{t(k === "user" ? "pkg.username" : "pkg.package")}</th>)}{node && <th>{t("browser-consoles-2.node")}</th>}<th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.usage")}</th><th /></tr></thead>
+      <thead><tr><th>{name}</th>{cols.map((k) => <th key={k}>{t(k === "user" ? "pkg.username" : "pkg.package")}</th>)}{node && <th>{t("browser-consoles-2.node")}</th>}<th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.usage")}</th><th /></tr></thead>
       <tbody>
         {rows.length === 0 && <tr><td colSpan={span} className="cx-empty">{t("browser-consoles-2.nothingHere")}</td></tr>}
         {rows.map((r) => (
           <RowLines key={r.id} r={r} span={span}>
             <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}</td>
-            {extra.map((k) => <td key={k}>{k === "user" ? r.user : r.pkg}</td>)}
+            {cols.map((k) => <td key={k}>{k === "user" ? r.user : r.pkg}</td>)}
             {node && <td>{r.node}</td>}
             <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td>
             <td><Bar use={r.lead} /><span className="cx-use num">{r.usage}</span>{r.traffic[1] > 0 && <><Bar use={r.traffic} /><span className="cx-use num">{trafficText(r)}</span></>}</td>
-            <td><Actions actions={r.actions} className="cx-acts" /></td>
+            <td><Actions actions={r.actions} className="cx-acts" />{extra?.(r)}</td>
           </RowLines>
         ))}
       </tbody>

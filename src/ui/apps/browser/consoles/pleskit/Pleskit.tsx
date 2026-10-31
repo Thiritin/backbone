@@ -5,6 +5,7 @@ import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, 
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
 import { useReadoutPages } from "../Readouts";
+import { Advisor } from "./Advisor";
 import "./pleskit.css";
 
 // docs/design/software.md, section 10: the 8.x icon grids until 2015, then white with a dark sidebar and flat cards.
@@ -40,6 +41,7 @@ export function Pleskit(p: PanelProps) {
         </aside>
         <main className="pk-main">
           <h1>{nav.find(([id]) => id === tab)?.[1]}</h1>
+          {tab === "objects" && era === "late" && <Advisor game={p.game} c={p.c} onFix={() => setTab("software")} />}
           {tab === "objects" && card(t("browser-consoles-2.domains"), <RowsTable rows={rows} name={t("browser-consoles-2.domain")} />)}
           {tab === "create" && card(t("pkg.pkAdd"), <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} sections={{ order: t("pkg.order"), account: t("pkg.account"), plan: t("pkg.settings") }} />)}
           {tab === "packages" && card(t("pkg.pkPlans"), <PackagesScreen game={p.game} c={p.c} />)}

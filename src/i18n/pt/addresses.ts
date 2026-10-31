@@ -35,6 +35,6 @@ export default {
   "error.needsInternet": () => "A internet ainda não chega a este anfitrião.",
   "error.needsBgpRouter": () => "Precisa de um roteador com tabela de rotas completa neste local.",
   "error.basementOnly": () => "Só o porão aceita este roteador.",
-  "error.panelRouter": () => "Este roteador substitui o do porão e não vai para um rack.",
+  "error.noRouter": () => "Não há roteador montado aqui.",
   "error.notOfficeRouter": () => "Só um roteador de pequeno escritório substitui o do porão.",
 } satisfies Dict;

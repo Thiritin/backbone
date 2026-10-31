@@ -1,4 +1,5 @@
 import { Actions, Backups, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Row, type Tab } from "../PanelBase";
+import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
@@ -11,7 +12,7 @@ const Dot = ({ r }: { r: Row }) => <span className="mk-status"><i className={`mk
 
 export function MultiKraft(p: PanelProps) {
   const era = eraAt(ERAS, p.game), open = parseCreate("multikraft", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects");
-  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
+  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx mk mk-login" data-era={era}>
       <LoginForm className="mk-card" onLogin={p.login} button={t("browser-consoles-1.login")}>
@@ -20,7 +21,7 @@ export function MultiKraft(p: PanelProps) {
       </LoginForm>
     </div>
   );
-  const menu: [Tab, string][] = [["objects", t("browser-consoles-1.mkServers")], ["create", t("pkg.mkCreate")], ["packages", t("pkg.mkPlans")], ["software", t("browser-consoles-1.settings")]];
+  const menu: [Tab, string][] = [["objects", t("browser-consoles-1.mkServers")], ["create", t("pkg.mkCreate")], ["packages", t("pkg.mkPlans")], ["software", t("browser-consoles-1.settings")], ...pages.map((g) => [g.id, g.label] as [Tab, string])];
   return (
     <div className="cx mk" data-era={era}>
       <header className="mk-top">
@@ -63,6 +64,7 @@ export function MultiKraft(p: PanelProps) {
               ))}
             </div>
           ))}
+        {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {tab === "software" && (
           <>
             <Facts facts={sw.facts} />

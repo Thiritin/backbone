@@ -1,8 +1,10 @@
+import { FileText } from "lucide-react";
 import { t } from "../../../../../i18n/en";
 import { LogOut, Package, Plus, Server, Settings, type LucideIcon } from "lucide-react";
 import { Actions, Backups, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
+import { useReadoutPages } from "../Readouts";
 import "./pterodaktyl.css";
 
 // docs/design/software.md, section 10: dark blue server cards with meters under a top bar, flatter with a sidebar from 2021.
@@ -10,7 +12,7 @@ const ERAS = erasFrom(2016, 2021);
 
 export function Pterodaktyl(p: PanelProps) {
   const era = eraAt(ERAS, p.game), open = parseCreate("pterodaktyl", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects");
-  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
+  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx pt pt-login" data-era={era}>
       <LoginForm className="pt-card" onLogin={p.login} button={t("browser-consoles-2.login")}>
@@ -19,7 +21,7 @@ export function Pterodaktyl(p: PanelProps) {
       </LoginForm>
     </div>
   );
-  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-2.servers"), Server], ["create", t("pkg.ptCreate"), Plus], ["packages", t("pkg.ptNests"), Package], ["software", t("browser-consoles-2.settings"), Settings]];
+  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-2.servers"), Server], ["create", t("pkg.ptCreate"), Plus], ["packages", t("pkg.ptNests"), Package], ["software", t("browser-consoles-2.settings"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [Tab, string, LucideIcon])];
   return (
     <div className="cx pt" data-era={era}>
       <header className="pt-nav">
@@ -43,6 +45,7 @@ export function Pterodaktyl(p: PanelProps) {
             {r.panel && <div className="pt-open">{r.panel}</div>}
           </article>
         ))}
+        {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {tab === "software" && (
           <section className="pt-box">
             <Facts facts={sw.facts} />

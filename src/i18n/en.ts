@@ -437,6 +437,7 @@ export const en: Record<string, (p: Params) => string> = {
   "guide.step.company": () => "Style your company",
   "guide.step.buyServer": () => "Buy a server",
   "guide.step.mountServer": () => "Mount and power it",
+  "guide.step.mountRouter": () => "Mount the router",
   "guide.step.internet": () => "Add internet",
   "guide.step.setup": () => "Install software",
   "guide.step.domain": () => "Buy your domain",

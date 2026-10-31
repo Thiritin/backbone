@@ -36,6 +36,12 @@ const must = (r: { ok: boolean; id?: string; error?: string }): string => {
 export const skipTo = (s: GameState, year: number): void => { s.hour += hourOf(new Date(Date.UTC(year, 0, 1))); };
 
 export const BASEMENT_SERVER = "dev3";
+// The flat's router (dev5) on the basement rack's top shelf with its DSL port on the line jack (dev6).
+export function routerOnLine(s: GameState, slot = 23): GameState {
+  Object.assign(s.devices.find((d) => d.id === "dev5")!, { store: null, rackId: "rack2", slot });
+  s.cables.push({ id: "cab-line", a: { device: "dev6", port: 0 }, b: { device: "dev5", port: 4 }, kind: "copper", color: null });
+  return s;
+}
 
 // The machine has the OS installed and booted, as the installer leaves it; returns the machine id.
 export function bootedMachine(s: GameState, id: string, os: ServerOsId = "lunix"): string {
@@ -72,6 +78,7 @@ export function withServer(s: GameState): GameState {
   s.ips = { ...s.ips, blocks: [{ id: "blk-test", prefix: "185.1.0.0/24", size: 256, locationId: "loc1", boughtAt: 0 }] };
   s.devices.unshift(device("dev3", "g1-compute", "Dwell", "rack2", 1, null, "fra1-srv-01", 2500), device("dev4", "sw-8", "Sysko", "rack2", 24, null, "fra1-sw-01", 60));
   s.devices[0].hostname = nodeName(s);
+  routerOnLine(s);
   s.cables.push(
     { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper", color: null },
     { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper", color: null },
