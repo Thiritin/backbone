@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lexwear Office mockup</title>
+<style>
+  :root { --bg:#4a6fa5; --win:#ececec; --stripe:#e4e4e4; --line:#b9b9b9; --sel:#3875d7; --text:#111; --muted:#666; --ok:#2e8b3a; --warn:#c7791a; --bad:#b4302a; --lock:#999; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:13px/1.4 "Lucida Grande","Helvetica Neue",Arial,sans-serif; color:var(--text); background:radial-gradient(circle at 30% 20%, #7fa6d8, #2f4f7f 70%); min-height:100vh; display:flex; flex-wrap:wrap; gap:24px; padding:24px 16px; align-items:flex-start; }
+  .win { width:100%; max-width:900px; background:var(--win); border-radius:6px; box-shadow:0 18px 40px rgba(0,0,0,.45); overflow:hidden; }
+  .title { height:22px; background:linear-gradient(#e8e8e8,#cfcfcf); border-bottom:1px solid #999; display:flex; align-items:center; position:relative; font-size:12px; justify-content:center; color:#333; }
+  .lights { position:absolute; left:8px; top:4px; display:flex; gap:6px; }
+  .lights i { width:12px; height:12px; border-radius:50%; display:block; border:1px solid rgba(0,0,0,.35); }
+  .lights i:nth-child(1){background:#ff5f57}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+  .toolbar { display:flex; gap:4px; padding:8px 10px; background:linear-gradient(#f4f4f4,#d8d8d8); border-bottom:1px solid #9a9a9a; align-items:flex-end; }
+  .tab { padding:6px 14px 4px; border:1px solid #8a8a8a; border-bottom:none; border-radius:5px 5px 0 0; background:linear-gradient(#fdfdfd,#d9d9d9); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:92px; font-size:12px; }
+  .tab .ico { width:28px; height:28px; border-radius:6px; background:linear-gradient(#9cc3f2,#3b7bd8); border:1px solid #2b5ea8; }
+  .tab.active { background:#fff; font-weight:bold; }
+  .tab .n { font-size:11px; color:var(--bad); font-weight:bold; }
+  .spacer{flex:1}
+  .status { font-size:11px; color:#444; padding-bottom:6px; }
+  .pane { display:none; height:520px; }
+  .pane.active { display:flex; }
+  .list { width:280px; border-right:1px solid var(--line); overflow:auto; background:#fff; }
+  .row { padding:6px 10px; border-bottom:1px solid #eee; cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
+  .row:nth-child(even){background:#f3f7fd}
+  .row.sel { background:var(--sel); color:#fff; }
+  .row .sub { color:var(--muted); font-size:11px; display:block; }
+  .row.sel .sub { color:#dbe7ff; }
+  .detail { flex:1; padding:14px 16px; overflow:auto; background:repeating-linear-gradient(#f6f6f6 0 2px, var(--stripe) 2px 4px); }
+  h3 { margin:0 0 10px; font-size:14px; }
+  .bar { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  button { font:inherit; font-size:12px; padding:3px 12px; border-radius:11px; border:1px solid #777; background:linear-gradient(#fff,#d6d6d6); cursor:pointer; }
+  button.primary { background:linear-gradient(#7fb0f5,#2f6fd6); color:#fff; border-color:#1f4f9c; }
+  button:disabled { color:var(--lock); background:#e6e6e6; cursor:not-allowed; border-color:#bbb; }
+  .lock { font-size:11px; color:var(--lock); margin-left:-4px; }
+  table { border-collapse:collapse; width:100%; background:#fff; font-size:12px; }
+  th { text-align:left; background:linear-gradient(#f3f3f3,#dcdcdc); border-bottom:1px solid #999; padding:4px 8px; font-weight:normal; }
+  td { padding:5px 8px; border-bottom:1px solid #eee; }
+  tr.sel td { background:var(--sel); color:#fff; }
+  tr.pick { cursor:pointer; }
+  .tag { padding:1px 7px; border-radius:9px; font-size:11px; color:#fff; background:#888; }
+  .tag.draft{background:#888}.tag.sent{background:#3b7bd8}.tag.paid{background:var(--ok)}.tag.overdue{background:var(--bad)}.tag.matched{background:var(--ok)}.tag.open{background:var(--warn)}
+  .split { display:flex; gap:14px; }
+  .email { width:300px; background:#fff; border:1px solid var(--line); padding:10px; font-size:12px; }
+  .email .hdr { color:var(--muted); border-bottom:1px solid #eee; padding-bottom:6px; margin-bottom:8px; }
+  .email .l { padding:2px 4px; border-radius:3px; cursor:pointer; }
+  .email .l:hover { background:#fff3b0; }
+  .email .l.used { color:var(--muted); text-decoration:line-through; cursor:default; background:none; }
+  form { flex:1; display:grid; grid-template-columns:110px 1fr; gap:6px 10px; align-content:start; }
+  label { text-align:right; color:#333; padding-top:3px; }
+  input, select { font:inherit; font-size:12px; padding:3px 6px; border:1px solid #9a9a9a; border-radius:3px; background:#fff; }
+  input:focus { outline:2px solid #7fb0f5; }
+  input.need { background:#fff8dc; }
+  .actions { grid-column:2; display:flex; gap:8px; margin-top:8px; }
+  .inv { background:#fff; border:1px solid var(--line); padding:18px 22px; width:420px; font-size:12px; box-shadow:0 2px 6px rgba(0,0,0,.15); }
+  .inv h4 { margin:0 0 2px; font-size:16px; }
+  .inv .addr { white-space:pre-line; margin:10px 0 14px; }
+  .inv table td:last-child, .inv table th:last-child { text-align:right; }
+  .msg { padding:6px 10px; border-radius:4px; background:#fff; border:1px solid var(--line); margin-top:10px; min-height:30px; }
+  .msg.bad { border-color:var(--bad); color:var(--bad); }
+  .msg.ok { border-color:var(--ok); color:var(--ok); }
+  .notes { flex:1; min-width:300px; background:rgba(255,255,255,.93); border-radius:6px; padding:16px 18px; font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,.3); }
+  .notes h2 { margin:0 0 8px; font-size:15px; }
+  .notes h4 { margin:14px 0 4px; font-size:13px; }
+  .notes p { margin:4px 0; }
+  .notes .unlock { color:#2f6fd6; }
+  .empty { color:var(--muted); padding:20px; }
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="title"><div class="lights"><i></i><i></i><i></i></div>Lexwear Office 2005 · Basement Hosting</div>
+  <div class="toolbar">
+    <div class="tab active" data-t="customers"><div class="ico"></div>Customers<span class="n" id="n-cust">1 new</span></div>
+    <div class="tab" data-t="invoices"><div class="ico" style="background:linear-gradient(#f5d58a,#d89a2f);border-color:#a66f1c"></div>Invoices<span class="n" id="n-inv"></span></div>
+    <div class="tab" data-t="bank"><div class="ico" style="background:linear-gradient(#a7e39d,#3f9b3a);border-color:#2d7329"></div>Bank<span class="n" id="n-bank"></span></div>
+    <div class="tab" data-t="reminders"><div class="ico" style="background:linear-gradient(#f3a09a,#c9392f);border-color:#8e2721"></div>Reminders<span class="n" id="n-rem"></span></div>
+    <div class="spacer"></div>
+    <div class="status">Tue, 4 Oct 2005 · Cash 2,340.00 €</div>
+  </div>
+
+  <!-- Customers -->
+  <div class="pane active" id="customers">
+    <div class="list" id="cust-list"></div>
+    <div class="detail" id="cust-detail"></div>
+  </div>
+
+  <!-- Invoices -->
+  <div class="pane" id="invoices">
+    <div class="detail" style="flex:1">
+      <div class="bar">
+        <button id="btn-run" disabled>Monthly run</button><span class="lock">Pear Store · 4 €/month</span>
+        <span class="spacer"></span>
+        <span id="inv-count" style="color:var(--muted);font-size:12px"></span>
+      </div>
+      <div class="split">
+        <div style="flex:1"><table id="inv-table"><thead><tr><th>No.</th><th>Customer</th><th>Period</th><th>Amount</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+        <div id="inv-preview"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bank -->
+  <div class="pane" id="bank">
+    <div class="detail" style="flex:1">
+      <div class="bar">
+        <button disabled>Match by reference</button><span class="lock">Pear Store · 3 €/month</span>
+      </div>
+      <div class="split">
+        <div style="flex:1"><h3>Incoming transfers</h3><table id="tx-table"><thead><tr><th>Date</th><th>From</th><th>Reference</th><th>Amount</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div style="flex:1"><h3>Open invoices</h3><table id="open-table"><thead><tr><th>No.</th><th>Customer</th><th>Amount</th><th>Due</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="msg" id="bank-msg">Select a transfer, then the invoice it pays.</div>
+    </div>
+  </div>
+
+  <!-- Reminders -->
+  <div class="pane" id="reminders">
+    <div class="detail" style="flex:1">
+      <div class="bar">
+        <button disabled>Automatic reminders</button><span class="lock">Pear Store · 3 €/month</span>
+      </div>
+      <table id="rem-table"><thead><tr><th>No.</th><th>Customer</th><th>Amount</th><th>Days late</th><th>Level</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="msg" id="rem-msg"></div>
+    </div>
+  </div>
+</div>
+
+<aside class="notes">
+  <h2>How the mockup works</h2>
+  <p>This is the only billing app at game start. Everything in it is done by hand, and every greyed button is a Pear Store feature that takes one of those hand steps away.</p>
+  <h4>Customers</h4>
+  <p>An accepted order lands here as a new entry with the order email beside an empty form. Click a line in the email to put it into the focused field. Save creates the customer and a draft invoice. The product and the server stay in Locations, so this screen only holds who pays and where the invoice goes.</p>
+  <p class="unlock">Later: the shop order form fills this in itself.</p>
+  <h4>Invoices</h4>
+  <p>Every customer gets a draft each month. Open it, check the lines, click Send as PDF. The invoice goes out by email and is due in 14 days.</p>
+  <p class="unlock">Later: Monthly run sends every draft at once.</p>
+  <h4>Bank</h4>
+  <p>Payments arrive as transfers. Pick a transfer, then the invoice it pays. Amounts that differ or references that are missing have to be judged by the player.</p>
+  <p class="unlock">Later: Match by reference books the clean ones itself.</p>
+  <h4>Reminders</h4>
+  <p>Invoices past due appear here. Each click sends the next reminder level, and the third level suspends the services.</p>
+  <p class="unlock">Later: Automatic reminders run the levels on schedule.</p>
+</aside>
+
+<script>
+const S = {
+  customers: [
+    { id:'c1', name:'Müller Webdesign', contact:'Anja Müller', street:'Lange Reihe 23', zip:'20099', city:'Hamburg', email:'anja@mueller-webdesign.de', product:'Webhosting S', price:9.90, since:'Jun 2005' },
+    { id:'c2', name:'Stadtbäckerei Krause', contact:'Jörg Krause', street:'Venloer Str. 118', zip:'50823', city:'Köln', email:'info@baeckerei-krause.de', product:'Webhosting M', price:19.90, since:'Aug 2005' },
+    { id:'c3', name:'Lichtblick Fotografie', contact:'Sven Hartig', street:'Kaiserstr. 4', zip:'60311', city:'Frankfurt', email:'sven@lichtblick-foto.de', product:'Webhosting S', price:9.90, since:'Sep 2005' },
+  ],
+  pending: [
+    { id:'p1', subject:'Order: Webhosting M', from:'renner@renner-it.de', lines:['Tobias Renner','Renner IT','Sonnenstr. 14','80331 München','renner@renner-it.de','I would like Webhosting M with PHP and one MySQL database. Please send the invoice by email.'] },
+  ],
+  invoices: [
+    { no:'2005-031', cust:'c1', period:'Oct 2005', amount:9.90, status:'draft' },
+    { no:'2005-032', cust:'c2', period:'Oct 2005', amount:19.90, status:'draft' },
+    { no:'2005-027', cust:'c3', period:'Sep 2005', amount:9.90, status:'sent', due:'20 Sep 2005', late:14, level:0 },
+    { no:'2005-028', cust:'c2', period:'Sep 2005', amount:19.90, status:'sent', due:'2 Oct 2005', late:2, level:0 },
+    { no:'2005-025', cust:'c1', period:'Sep 2005', amount:9.90, status:'paid' },
+  ],
+  tx: [
+    { id:'t1', date:'3 Oct', from:'Stadtbäckerei Krause', ref:'Rechnung 2005-028', amount:19.90, matched:false },
+    { id:'t2', date:'4 Oct', from:'S. Hartig', ref:'Hosting', amount:9.00, matched:false },
+  ],
+  selCust:'p1', selTx:null, form:{}, focus:null,
+};
+const eur = n => n.toFixed(2).replace('.',',') + ' €';
+const cust = id => S.customers.find(c=>c.id===id);
+const $ = s => document.querySelector(s);
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab,.pane').forEach(e=>e.classList.remove('active'));
+  t.classList.add('active'); $('#'+t.dataset.t).classList.add('active'); render();
+});
+
+function render(){ renderCustomers(); renderInvoices(); renderBank(); renderReminders(); badges(); }
+
+function badges(){
+  $('#n-cust').textContent = S.pending.length ? S.pending.length+' new' : '';
+  const d = S.invoices.filter(i=>i.status==='draft').length; $('#n-inv').textContent = d ? d+' drafts' : '';
+  const u = S.tx.filter(t=>!t.matched).length; $('#n-bank').textContent = u ? u+' open' : '';
+  const o = S.invoices.filter(i=>i.status==='sent'&&i.late>0).length; $('#n-rem').textContent = o ? o+' late' : '';
+}
+
+function renderCustomers(){
+  const l = $('#cust-list'); l.innerHTML='';
+  S.pending.forEach(p=>{ const r=document.createElement('div'); r.className='row'+(S.selCust===p.id?' sel':''); r.innerHTML=`<span>New order<span class="sub">${p.from}</span></span><span class="tag open">new</span>`; r.onclick=()=>{S.selCust=p.id;S.form={};render();}; l.appendChild(r); });
+  S.customers.forEach(c=>{ const r=document.createElement('div'); r.className='row'+(S.selCust===c.id?' sel':''); r.innerHTML=`<span>${c.name}<span class="sub">${c.city} · ${c.product}</span></span><span class="sub">${c.since}</span>`; r.onclick=()=>{S.selCust=c.id;render();}; l.appendChild(r); });
+  const d = $('#cust-detail');
+  const p = S.pending.find(p=>p.id===S.selCust);
+  if (p) return renderNewCustomer(d,p);
+  const c = cust(S.selCust); if(!c){ d.innerHTML='<div class="empty">No customer selected.</div>'; return; }
+  const open = S.invoices.filter(i=>i.cust===c.id&&i.status!=='paid');
+  d.innerHTML = `<h3>${c.name}</h3><div style="white-space:pre-line;background:#fff;border:1px solid var(--line);padding:10px;width:320px">${c.contact}\n${c.street}\n${c.zip} ${c.city}\n${c.email}</div>
+  <p style="margin-top:12px">${c.product} · ${eur(c.price)} per month · customer since ${c.since}</p>
+  <p>${open.length} open invoice${open.length===1?'':'s'}.</p>`;
+}
+
+const FIELDS = [['contact','Contact'],['name','Company'],['street','Street'],['zip','Postcode'],['city','City'],['email','Email']];
+function renderNewCustomer(d,p){
+  d.innerHTML = `<h3>New customer from order</h3><div class="split">
+    <div class="email"><div class="hdr">From: ${p.from}<br>Subject: ${p.subject}</div>${p.lines.map((l,i)=>`<div class="l" data-i="${i}">${l}</div>`).join('')}</div>
+    <form onsubmit="return false">
+      ${FIELDS.map(([k,lab])=>`<label>${lab}</label><input id="f-${k}" data-k="${k}" class="${S.form[k]?'':'need'}" value="${S.form[k]||''}">`).join('')}
+      <label>Product</label><select><option>Webhosting M · 19,90 €</option><option>Webhosting S · 9,90 €</option></select>
+      <div class="actions"><button class="primary" id="save">Save customer</button><button id="skip">Decline order</button></div>
+    </form></div>
+    <div class="msg">Click a field, then click the matching line in the email.</div>`;
+  d.querySelectorAll('input').forEach(i=>{ i.onfocus=()=>S.focus=i.dataset.k; i.oninput=()=>{S.form[i.dataset.k]=i.value; i.classList.toggle('need',!i.value);} });
+  d.querySelectorAll('.email .l').forEach(el=>el.onclick=()=>{
+    if(!S.focus) { S.focus='contact'; }
+    const text = el.textContent; const k=S.focus;
+    if (k==='zip' && /^\d{5} /.test(text)) { S.form.zip=text.slice(0,5); S.form.city=text.slice(6); }
+    else if (k==='city' && /^\d{5} /.test(text)) { S.form.zip=text.slice(0,5); S.form.city=text.slice(6); }
+    else S.form[k]=text;
+    const order = FIELDS.map(f=>f[0]); const next = order.find(f=>!S.form[f]); S.focus=next||null;
+    render(); if(next){ const n=$('#f-'+next); n&&n.focus(); }
+  });
+  if (S.focus) { const n=$('#f-'+S.focus); n&&n.focus(); }
+  $('#save').onclick=()=>{
+    const miss = FIELDS.filter(([k])=>!S.form[k]);
+    if (miss.length){ d.querySelector('.msg').textContent='Missing: '+miss.map(m=>m[1]).join(', ')+'.'; d.querySelector('.msg').className='msg bad'; return; }
+    const c = { id:'c'+(S.customers.length+1), ...S.form, product:'Webhosting M', price:19.90, since:'Oct 2005' };
+    S.customers.push(c); S.pending=S.pending.filter(x=>x!==p);
+    S.invoices.unshift({ no:'2005-033', cust:c.id, period:'Oct 2005', amount:19.90, status:'draft' });
+    S.selCust=c.id; S.form={}; S.focus=null; render();
+  };
+  $('#skip').onclick=()=>{ S.pending=S.pending.filter(x=>x!==p); S.selCust='c1'; render(); };
+}
+
+let selInv=null;
+function renderInvoices(){
+  const tb = $('#inv-table tbody'); tb.innerHTML='';
+  S.invoices.forEach(i=>{ const c=cust(i.cust); const tr=document.createElement('tr'); tr.className='pick'+(selInv===i.no?' sel':'');
+    const st = i.status==='sent'&&i.late>0?'overdue':i.status;
+    tr.innerHTML=`<td>${i.no}</td><td>${c.name}</td><td>${i.period}</td><td>${eur(i.amount)}</td><td><span class="tag ${st}">${st}</span></td>`;
+    tr.onclick=()=>{selInv=i.no;renderInvoices();}; tb.appendChild(tr); });
+  $('#inv-count').textContent = S.invoices.filter(i=>i.status==='draft').length+' drafts to send';
+  const pv=$('#inv-preview'); const i=S.invoices.find(x=>x.no===selInv);
+  if(!i){ pv.innerHTML='<div class="empty">Select an invoice.</div>'; return; }
+  const c=cust(i.cust);
+  pv.innerHTML=`<div class="inv"><h4>Invoice ${i.no}</h4><div style="color:var(--muted)">Basement Hosting · Kellerstr. 1 · 10115 Berlin</div>
+    <div class="addr">${c.name}\n${c.contact}\n${c.street}\n${c.zip} ${c.city}</div>
+    <table><thead><tr><th>Item</th><th>Period</th><th>Amount</th></tr></thead><tbody><tr><td>${c.product}</td><td>${i.period}</td><td>${eur(i.amount)}</td></tr><tr><td colspan="2"><b>Total</b></td><td><b>${eur(i.amount)}</b></td></tr></tbody></table>
+    <div class="bar" style="margin-top:14px">${i.status==='draft'?'<button class="primary" id="send">Send as PDF</button>':`<span class="tag ${i.status==='sent'&&i.late>0?'overdue':i.status}">${i.status}</span>${i.due?' · due '+i.due:''}`}</div></div>`;
+  const b=$('#send'); if(b) b.onclick=()=>{ i.status='sent'; i.due='18 Oct 2005'; i.late=0; i.level=0; render(); };
+}
+
+function renderBank(){
+  const tb=$('#tx-table tbody'); tb.innerHTML='';
+  S.tx.forEach(t=>{ const tr=document.createElement('tr'); tr.className=(t.matched?'':'pick')+(S.selTx===t.id?' sel':'');
+    tr.innerHTML=`<td>${t.date}</td><td>${t.from}</td><td>${t.ref}</td><td>${eur(t.amount)}</td><td>${t.matched?'<span class="tag matched">booked</span>':''}</td>`;
+    if(!t.matched) tr.onclick=()=>{S.selTx=t.id; $('#bank-msg').className='msg'; $('#bank-msg').textContent='Now pick the invoice this transfer pays.'; renderBank();}; tb.appendChild(tr); });
+  const ob=$('#open-table tbody'); ob.innerHTML='';
+  S.invoices.filter(i=>i.status==='sent').forEach(i=>{ const c=cust(i.cust); const tr=document.createElement('tr'); tr.className='pick';
+    tr.innerHTML=`<td>${i.no}</td><td>${c.name}</td><td>${eur(i.amount)}</td><td>${i.due}</td>`;
+    tr.onclick=()=>match(i); ob.appendChild(tr); });
+}
+function match(i){
+  const t=S.tx.find(x=>x.id===S.selTx); const m=$('#bank-msg');
+  if(!t){ m.className='msg bad'; m.textContent='Select a transfer first.'; return; }
+  if(Math.abs(t.amount-i.amount)>0.005){
+    m.className='msg bad'; m.innerHTML=`Amount differs: transfer ${eur(t.amount)}, invoice ${eur(i.amount)}. <button id="partial">Book as partial payment</button>`;
+    $('#partial').onclick=()=>{ i.amount=Math.round((i.amount-t.amount)*100)/100; t.matched=true; S.selTx=null; m.className='msg ok'; m.textContent=`Booked. ${eur(i.amount)} still open on ${i.no}.`; render(); };
+    return;
+  }
+  i.status='paid'; t.matched=true; S.selTx=null; m.className='msg ok'; m.textContent=`${i.no} paid.`; render();
+}
+
+function renderReminders(){
+  const tb=$('#rem-table tbody'); tb.innerHTML='';
+  const late=S.invoices.filter(i=>i.status==='sent'&&i.late>0);
+  if(!late.length){ tb.innerHTML='<tr><td colspan="6" class="empty">Nothing overdue.</td></tr>'; return; }
+  const LV=['none','1st reminder','2nd reminder','suspended'];
+  late.forEach(i=>{ const c=cust(i.cust); const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i.no}</td><td>${c.name}</td><td>${eur(i.amount)}</td><td>${i.late}</td><td>${LV[i.level]}</td><td>${i.level<3?`<button data-no="${i.no}">${i.level<2?'Send reminder':'Suspend services'}</button>`:''}</td>`;
+    tr.querySelector('button')?.addEventListener('click',()=>{ i.level++; $('#rem-msg').className='msg ok'; $('#rem-msg').textContent=`${i.no}: ${LV[i.level]} sent to ${c.email}.`; render(); });
+    tb.appendChild(tr); });
+}
+render();
+</script>
+</body>
+</html>

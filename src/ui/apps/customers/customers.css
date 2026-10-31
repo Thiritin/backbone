@@ -1,6 +1,6 @@
 .cus { flex: 1; min-width: 0; display: flex; }
 .cus-main { flex: 1; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-.cus-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 0.5px solid var(--line); }
+.cus-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: var(--ar-bw) solid var(--line); }
 .cus-bar .search input { width: 160px; }
 .cus-toggle[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
 .cus-sort { border: 0; background: none; padding: 0; font: inherit; color: inherit; display: inline-flex; align-items: center; gap: 2px; cursor: pointer; }
@@ -25,7 +25,7 @@
 .cus-head .grow { flex: 1; min-width: 0; }
 .cus-head h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
 .cus-sub, .cus-dim { color: var(--text-2); font-size: 12px; }
-.cus-totals { border-top: 0.5px solid var(--line); }
+.cus-totals { border-top: var(--ar-bw) solid var(--line); }
 
 .cus-body { flex: 1; min-height: 0; overflow: auto; padding: 16px; display: grid; gap: 14px; align-content: start; background: var(--win-side); }
 .cus-summary { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 14px; align-items: start; }
@@ -48,12 +48,12 @@
 .cus-price { display: grid; gap: 10px; }
 .cus-activity { list-style: none; margin: 0; padding: 4px 14px 8px; background: var(--hover); max-height: 220px; overflow-y: auto; }
 .cus-activity li { display: grid; grid-template-columns: auto 1fr auto 48px; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 12px; }
-.cus-activity li + li { border-top: 0.5px solid var(--line); }
+.cus-activity li + li { border-top: var(--ar-bw) solid var(--line); }
 .cus-activity .num:last-child { text-align: right; }
 .cus-credit { margin: 12px 16px 0; max-width: 320px; }
 
 .cus-charts { display: grid; gap: 14px; padding: 16px; align-content: start; }
-.cus-chart { margin: 0; padding: 10px 12px; border: 0.5px solid var(--line); border-radius: 8px; background: var(--win); }
+.cus-chart { margin: 0; padding: 10px 12px; border: var(--ar-bw) solid var(--line); border-radius: var(--ar-pane); background: var(--win); }
 .cus-chart figcaption { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
 .cus-chart svg { display: block; width: 100%; height: auto; }
 .cus-chart text { font-size: 10px; fill: var(--text-3); }
@@ -62,3 +62,30 @@
 .cus-chart svg { cursor: crosshair; }
 .cus-chart .cross { stroke: var(--text-3); stroke-width: 0.5; stroke-dasharray: 3 3; }
 .cus-chart .dot { fill: var(--accent); stroke: var(--win); stroke-width: 1.5; }
+
+.cus-chart { box-shadow: var(--ar-lift); }
+.cus-bar, .cus-page-head { background-image: var(--ar-head); }
+.cus-mood .bar { box-shadow: var(--ar-well); }
+.cus-mood .bar i { background-image: var(--ar-bar); }
+
+/* Panthera: capsule gel level bars over a pinstriped list. */
+:root[data-os="aqua"] .cus-mood .bar,
+:root[data-os="aqua"] .cus-mood .bar i,
+:root[data-os="leopard"] .cus-mood .bar,
+:root[data-os="leopard"] .cus-mood .bar i { border-radius: 999px; }
+:root[data-os="aqua"] .cus-mood .bar { height: 8px; width: 72px; border: 1px solid oklch(0 0 0 / 0.25); }
+:root[data-os="aqua"] .cus-toggle[aria-pressed="true"],
+:root[data-os="leopard"] .cus-toggle[aria-pressed="true"] { background: var(--ar-sel); border-color: color-mix(in oklch, var(--gel), black 30%); color: white; }
+:root[data-os="aqua"] .cus-body { background: repeating-linear-gradient(var(--win-side) 0 2px, color-mix(in oklch, var(--win-side), var(--text) 4%) 2px 4px); }
+:root[data-os="aqua"] .cus-chart .line { stroke-width: 1; }
+
+/* Leapard: a softly shaded chart card and capsule bars. */
+:root[data-os="leopard"] .cus-chart { background: linear-gradient(var(--field), color-mix(in oklch, var(--field), var(--text) 3%)); }
+
+/* Yosemighty: flat thin chart strokes. */
+:root[data-os="yosemite"] .cus-chart .line { stroke-width: 1.25; }
+
+/* Tahoo: glass chart cards and capsule bars. */
+:root[data-os="tahoe"] .cus-chart { background: color-mix(in oklch, var(--field), transparent 30%); }
+:root[data-os="tahoe"] .cus-mood .bar,
+:root[data-os="tahoe"] .cus-mood .bar i { border-radius: 999px; }

@@ -16,7 +16,8 @@ describe("task page on the web panels", () => {
       const c = g.clusters.find((x) => x.id === c0)!;
       const View = CONSOLES[id];
       const html = renderToString(<View game={g} c={c} f={consoleFeatures(id, yearOf(g.hour))} host="panel.example.com" signedIn login={() => {}} logout={() => {}} />);
-      expect(html).toContain("Task log");
+      expect(html).toContain(id === "freepanel" ? "FreePanel Actions Log" : "Task log");
+      expect(html).toContain(id === "freepanel" ? "System Logs" : "Logs");
     }
   });
 });

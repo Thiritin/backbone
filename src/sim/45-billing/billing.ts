@@ -2,13 +2,14 @@ import { chance, rand, type Rng } from "../00-core/rng";
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import type { Budget } from "../10-catalog/economy";
 import { SLAS } from "../10-catalog/products";
-import type { PaymentHabit } from "../30-customers/customers";
+import type { PaymentHabit, Service } from "../30-customers/customers";
 import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { metrics } from "../metrics";
 import { logActivity } from "../47-staff/activity";
 import { mailDelay } from "../80-business/mail";
+import { sweepGroups } from "../60-infra/status";
 
 export type InvoiceStatus = "open" | "overdue" | "paid" | "writtenOff";
 // key and params are an i18n line text; serviceId is null for fees.
@@ -104,8 +105,22 @@ export function dueStep(inv: Invoice, hour: number): number | null {
   return hour >= inv.dueAt + STEPS[i].days * DAY ? i : null;
 }
 
-export const isSuspended = (s: GameState, customerId: string): boolean =>
-  s.heldCustomers.includes(customerId) || s.invoices.some((i) => i.customerId === customerId && i.suspended && isUnpaid(i));
+export const isSuspended = (s: GameState, customerId: string): boolean => {
+  if (s.heldCustomers.includes(customerId)) return true;
+  const suspended = sweepGroups(s, "suspended", () => s.invoices.filter((i) => i.suspended && isUnpaid(i)), (i) => i.customerId);
+  return suspended ? suspended.has(customerId) : s.invoices.some((i) => i.customerId === customerId && i.suspended && isUnpaid(i));
+};
+
+export type HoldReason = "payment" | "abuse" | "manual";
+
+// A service is held when it was suspended on its own or its customer is suspended.
+export const serviceHeld = (s: GameState, v: Service): boolean => !!s.heldServices[v.id] || isSuspended(s, v.customerId);
+
+export function holdReason(s: GameState, v: Service): HoldReason | null {
+  if (s.heldServices[v.id]) return s.heldServices[v.id];
+  if (s.invoices.some((i) => i.customerId === v.customerId && i.suspended && isUnpaid(i))) return "payment";
+  return s.heldCustomers.includes(v.customerId) ? "manual" : null;
+}
 
 const customerName = (s: GameState, id: string) => s.customers.find((c) => c.id === id)?.name ?? id;
 

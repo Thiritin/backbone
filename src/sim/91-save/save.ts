@@ -1,4 +1,5 @@
-import { brandsOf, fillCpus, MODELS, modelById, RENAMED_MODELS } from "../10-catalog/hardware";
+import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
+import { freeSlots } from "../60-infra/status";
 import { leave } from "../90-actions/clusters";
 import { yearOf } from "../00-core/time";
 import { asImage } from "../10-catalog/server-os";
@@ -6,9 +7,10 @@ import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, nextAz, seedDcs } from "../
 import { fillAddresses } from "../60-infra/addresses";
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
+import { WALK } from "../80-business/walk";
 import { legacyRegistration } from "../80-business/office";
 import type { Employee } from "../47-staff/staff";
-import { deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState, type Location } from "../50-state";
+import { device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState, type Location } from "../50-state";
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
@@ -57,7 +59,7 @@ export function deserialize(raw: string): GameState {
     const defaults = deviceDefaults(model, d.boughtAt ?? 0);
     const sized = fillCpus(modelById(model), fillSizes(model, d.components ?? defaults.components));
     return {
-      ...defaults, ...d, model, brand: maker(model, d.brand), components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
+      ...defaults, ...d, model, brand: model === "home-router" ? "AVN" : maker(model, d.brand), components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
     };
   });
   const racks = (data.racks ?? base.racks).map((r) => ({ ...r, provided: r.provided ?? false, feedB: r.feedB ?? false, highDensity: r.highDensity ?? false, extraKw: r.extraKw ?? 0, extraKwAt: r.extraKwAt ?? null, flatKw: r.flatKw ?? 0, flatKwAt: r.flatKwAt ?? null, overSince: r.overSince ?? { a: null, b: null } }));
@@ -90,11 +92,12 @@ export function deserialize(raw: string): GameState {
     // Saves from before the trade office count as registered in the first hour.
     registration: data.registration === undefined ? legacyRegistration(base.seed) : data.registration,
     ips: { ...base.ips, ...data.ips },
+    netsvc: { ...base.netsvc, ...data.netsvc },
     marketing: { ...base.marketing, ...data.marketing, awareness: { ...base.marketing.awareness, ...data.marketing?.awareness } },
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.
     // The Sales app moved into Support and the Checklist into Getting started, so their ids are dropped; saves from before the Website app get it in the dock.
-    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id)).filter((id) => id !== "Sales" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", ...(data.registration === null ? [] : ["Marketing", "Security", "Applications"])])] : [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
+    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id)).filter((id) => id !== "Sales" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", ...(data.registration === null || data.arrived ? [] : ["Marketing", "Security", "Applications"])])] : [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [], credit: c.credit ?? 0 })),
@@ -111,10 +114,13 @@ export function deserialize(raw: string): GameState {
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
   legacyLeads(s);
+  shelveRouter(s);
   // Machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.licenses) s.licenses = heldLicenses(s);
   const media = data.media ?? base.media;
   s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
+  // Apps a save already has count as arrived, so they never send their email.
+  s.arrived = data.arrived ?? WALK.filter((id) => s.installed.includes(id));
   return s;
 }
 
@@ -135,4 +141,18 @@ function dropGone(gone: Set<string>, s: GameState): GameState {
   const held = (id: string | null) => !id || gone.has(id) || vms.has(id) ? null : id;
   s.ips = { ...s.ips, addresses: s.ips.addresses.map((a) => ({ ...a, holder: held(a.holder) })) };
   return s;
+}
+
+// Saves from before routers stood in the rack: the basement router leaves the carrier panel for the lowest free unit of a
+// basement rack (storage when none has room), and a line jack on the panel gets a cable to the router's DSL port.
+function shelveRouter(s: GameState): void {
+  const loc = s.locations.find((l) => !l.dc);
+  if (!loc || s.devices.some((d) => d.model === "line-jack")) return;
+  const jack = device(`dev${s.nextId++}`, "line-jack", "", null, 0, loc.id, `${loc.az}-line-01`, 0);
+  s.devices = [...s.devices, jack];
+  const gw = s.devices.find((d) => d.panel === loc.id && isOfficeRouter(modelById(d.model)));
+  if (!gw) return;
+  const rack = s.racks.find((r) => r.locationId === loc.id && r.arriveAt === null && freeSlots(s, r.id, 1).length);
+  Object.assign(gw, rack ? { panel: null, rackId: rack.id, slot: freeSlots(s, rack.id, 1)[0] } : { panel: null, store: loc.id });
+  if (rack) s.cables = [...s.cables, { id: `cab${s.nextId++}`, a: { device: jack.id, port: 0 }, b: { device: gw.id, port: wanPort(modelById(gw.model)) }, kind: "copper", color: null }];
 }

@@ -1,15 +1,16 @@
 import { modelById } from "../10-catalog/hardware";
 import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
+import { topTier } from "../10-catalog/licence-tiers";
 import { backsUp, balancerIn, fcGbit, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
-import { isSuspended } from "../45-billing/billing";
+import { serviceHeld } from "../45-billing/billing";
 import type { Device, GameState, MachineState } from "../50-state";
 import type { OsImage } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
 import type { VmSample } from "./stats";
-import { deviceVendor, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, working, burning } from "./status";
+import { deviceVendor, drivesOf, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
 import { coverage } from "./maintenance";
@@ -37,6 +38,12 @@ export interface Cluster {
   switching: { kind: SoftwareKind; to: string; doneAt: number } | null;
   backup: { targetId: string | null; every: BackupEvery };
   ramGuard?: boolean;
+  // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
+  oversell?: number | null;
+  // The update channel; missing is Release (channel.ts).
+  channel?: "stable" | "release" | "edge";
+  // The edition of a licensed panel: trialUntil is the end of the free trial until a tier is chosen, lapsedAt the hour an unpaid licence expired. Missing is the top tier without expiry.
+  licence?: { tier: string; trialUntil: number | null; lapsedAt: number | null };
   // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.
   compat?: boolean;
   // Whether the software updates itself at AUTO_UPDATE_HOUR when an update is due (software.ts).
@@ -95,6 +102,7 @@ export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, ho
   panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], packages: [], backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
   version: c.switching ? yearOf(c.switching.doneAt) : Math.max(START_YEAR, yearOf(hour) - 2), updatedAt: c.switching?.doneAt ?? hour, ...c,
   ha: { ...HA_OFF, ...c.ha },
+  ...(c.licence || !topTier(c.panel ?? null) ? {} : { licence: { tier: topTier(c.panel ?? null)!.id, trialUntil: null, lapsedAt: null } }),
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
 export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
@@ -106,8 +114,16 @@ const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcp
 // What a node holds: the vCPU of its physical cores and its installed RAM, and the disk it books up to (usable RAID times
 // OVERCOMMIT.disk); with s, the vCPU its cluster's compatibility mode leaves. Booking CPU and RAM past the physical amounts is
 // always allowed; it costs performance and freezes (usage.ts).
+// MinnIO erasure sets: parity drives hold no data, never more than half the set.
+export const effParity = (parity: number, n: number): number => Math.min(parity, Math.floor(n / 2));
+function ecFactor(s: GameState, d: Device): number {
+  const c = s.clusters.find((x) => x.nodes.some((n) => n.deviceId === d.id));
+  if (!c || (c.panel ?? c.platform) !== "minnio") return 1;
+  const set = Math.min(16, c.nodes.reduce((n, x) => n + drivesOf(s.devices.find((y) => y.id === x.deviceId) ?? d).length, 0));
+  return set ? (set - effParity(s.netsvc.ec[c.id] ?? 2, set)) / set : 1;
+}
 export function nodeCapacity(d: Device, s?: GameState): Resources {
-  return modelById(d.model).server ? { vcpu: s ? nodeVcpu(s, d) : installedVcpu(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
+  return modelById(d.model).server ? { vcpu: s ? nodeVcpu(s, d) : installedVcpu(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk * (s ? ecFactor(s, d) : 1) } : ZERO;
 }
 export const nodeVcpu = (s: GameState, d: Device): number => (clusterOf(s, d.id)?.compat ? Math.round(installedVcpu(d) * COMPAT_VCPU * 100) / 100 : installedVcpu(d));
 // Whether a VM moves live between two servers: their boards share a vendor, or both clusters run compatibility mode.
@@ -345,7 +361,10 @@ export function dropCluster(s: GameState, id: string) {
   if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };
   s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };
 }
-export const workloadsOf = (s: GameState, serviceId: string): Workload[] => s.workloads.filter((w) => w.serviceId === serviceId);
+export const workloadsOf = (s: GameState, serviceId: string): Workload[] => {
+  const by = sweepGroups(s, "workloads", () => s.workloads, (w) => w.serviceId);
+  return by ? by.get(serviceId) ?? [] : s.workloads.filter((w) => w.serviceId === serviceId);
+};
 export const workloadsOn = (s: GameState, deviceId: string): Workload[] => s.workloads.filter((w) => w.deviceId === deviceId);
 // A server taken by a cluster or rented whole as a dedicated server.
 export const serverTaken = (s: GameState, deviceId: string): boolean =>
@@ -452,7 +471,7 @@ export function computeTick(s: GameState): SimEvent[] {
     }
   }
   const ids = [...new Set(s.workloads.filter((w) => !isOwnVm(w)).map((w) => w.serviceId))];
-  const down = readOnlySweep(s, () => ids.filter((id) => !workloadsUp(s, id) && !isSuspended(s, s.services.find((v) => v.id === id)!.customerId)));
+  const down = readOnlySweep(s, () => ids.filter((id) => !workloadsUp(s, id) && !serviceHeld(s, serviceById(s, id)!)));
   // Hours inside an announced maintenance window are no downtime for the SLA; a late announcement counts half.
   const hours = (id: string) => coverage(s, s.services.find((v) => v.id === id)!)?.factor ?? 1;
   if (down.length) s.downHours = { ...s.downHours, ...Object.fromEntries(down.map((id) => [id, (s.downHours[id] ?? 0) + hours(id)])) };

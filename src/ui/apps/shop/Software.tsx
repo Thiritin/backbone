@@ -1,5 +1,5 @@
 import { Bot, Search, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useSessionState } from "../../session";
 import { euroCents } from "../../../sim/00-core/money";
 import { pricePerMTokens } from "../../../sim/47-staff/chad";
@@ -7,7 +7,7 @@ import { yearOf } from "../../../sim/00-core/time";
 import { isAvailable, skillFor } from "../../../sim/10-catalog/research";
 import { deskById, deskReady, seats } from "../../../sim/10-catalog/desks";
 import { storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
-import { cancel, install } from "../../../sim/90-actions/store";
+import { browseStore, cancel, install } from "../../../sim/90-actions/store";
 import { Confirm } from "../../desktop/Confirm";
 import { PearMark } from "../../desktop/Intro";
 import { appByName } from "../registry";
@@ -68,6 +68,9 @@ function featuredId(installed: string[], learned: string[]): string {
 
 export function Software() {
   const game = useStore((s) => s.game);
+  const act = useStore((s) => s.act);
+  const browsing = !!game.registration && !game.arrived.includes("Research") && !game.installed.includes("Research");
+  useEffect(() => { if (browsing) act(browseStore); }, [browsing, act]);
   const [open, setOpen] = useSessionState<string | null>("software.sel", null);
   const price = (item: StoreItem) => (item.monthly ? `${t("shop.priceMonthly", { price: euroCents(subscriptionPrice(item, yearOf(game.hour))), seat: item.perSeat ? 1 : 0 })}${item.id === "chadGpt" ? ` + ${t("shop.priceTokens", { price: euroCents(pricePerMTokens(yearOf(game.hour))) })}` : ""}` : t("shop.free"));
   const detail = open && storeItem(open);

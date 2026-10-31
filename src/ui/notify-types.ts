@@ -15,7 +15,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Migration offers", "moveAccepted", "moveDeclined", "moveWindow", "moveDone", "moveMissed"),
     type("Orders and sales", "order", "orderAccepted", "orderQuoted", "orderFailed", "orderDeclined", "orderPaid", "sales*"),
     type("Sponsoring requests", "sponsorRequest", "boardApplication"),
-    type("Notices and legal", "seized", "breach"),
+    type("Notices and legal", "seized", "breach", "vpnIntrusion", "vpnCertSoon", "bucketExposed", "linkLeaked"),
     type("Power", "gridDark", "gridCarried", "feedDark", "feedCarried", "feedCascade", "coolingFailed", "overheated"),
   ],
   Browser: [
@@ -32,7 +32,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Hand work", "workDone"),
     type("Workloads and migrations", "migrated", "migrationFailed", "failedOver", "failoverStuck"),
     type("Backups", "backupFailed"),
-    type("Installs", "installed", "switched"),
+    type("Installs", "installed", "switched", "updateBroke"),
     type("Uplinks and peering", "uplinkReady", "peeringRequest"),
     type("Attacks and saturation", "ddos", "saturated"),
     type("Addresses", "addressListed"),
@@ -48,7 +48,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   Billing: [type("Payments and dunning", "collected", "invoices", "suspended", "suspendedLeft", "chargeback", "chargebackWarning", "chargebackFees"), type("Domains", "domainExpired", "domainExpiring")],
   Research: [type("Unlocks", "trainingDone")],
   Shop: [type("Used market", "used*")],
-  News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu", "news.models", "news.shape", "news.vendor"), type("Software", "news.software", "news.autoUpdate", "news.feature", "news.desk", "news.training", "news.release"), type("Internet", "news.ipv6*", "news.ripe*", "news.homeLines", "news.ports"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*", "news.freeSsl")],
+  News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu", "news.models", "news.shape", "news.vendor"), type("Software", "news.software", "news.autoUpdate", "news.feature", "news.desk", "news.training", "news.release", "news.app"), type("Internet", "news.ipv6*", "news.ripe*", "news.homeLines", "news.ports"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*", "news.freeSsl")],
 };
 
 const OTHER: NotifyType = { id: "other", label: t("core.notify.other"), match: () => true };

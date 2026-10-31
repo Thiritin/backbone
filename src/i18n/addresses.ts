@@ -36,6 +36,6 @@ export const ADDRESSES_EN: Record<string, (p: Params) => string> = {
   "error.needsInternet": () => "The internet does not reach this host yet.",
   "error.needsBgpRouter": () => "Needs a router with a full routing table at this location.",
   "error.basementOnly": () => "Only the basement takes this router.",
-  "error.panelRouter": () => "This router replaces the basement router and does not go into a rack.",
+  "error.noRouter": () => "No router is mounted here.",
   "error.notOfficeRouter": () => "Only a small-office router replaces the basement router.",
 };

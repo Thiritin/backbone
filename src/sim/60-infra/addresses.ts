@@ -10,7 +10,10 @@ import type { Product } from "../30-customers/customers";
 import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry, Location } from "../50-state";
 import { isOwnVm, vmById, type Workload } from "./cluster";
-import { locationOf } from "./status";
+import { isSuspended } from "../45-billing/billing";
+import { bounceFactor, listingTick, mailQueueTick } from "./netsvc-mail";
+import { jacked, locationOf } from "./status";
+import { mountedRouter } from "./routers";
 import type { SimEvent } from "../88-tick/tick";
 
 // line: comes with the home line; lineExtra: bought on a business line; provider: rented in a datacenter; lir: from an own block.
@@ -220,9 +223,10 @@ const mailMachine = (s: GameState, clusterId: string): string | undefined => {
   const c = s.clusters.find((x) => x.id === clusterId);
   return c?.vm ?? c?.nodes[0]?.deviceId;
 };
-// The address a panel host's mail leaves from: its server's, or its panel VM's.
+// The address a panel host's mail leaves from: its relay's, its server's, or its panel VM's.
 export const mailAddress = (s: GameState, clusterId: string): Address | undefined => {
-  const machine = mailMachine(s, clusterId);
+  const via = s.netsvc.relay[clusterId];
+  const machine = mailMachine(s, via && s.clusters.some((c) => c.id === via) ? via : clusterId);
   if (!machine) return undefined;
   return addressesOf(s, machine).find((a) => a.v === 4) ?? (machineLocation(s, machine)?.dc ? undefined : sharedAddress(s));
 };
@@ -232,7 +236,7 @@ export const mailAddress = (s: GameState, clusterId: string): Address | undefine
 // The home line's addresses: the router's, dynamic and listed on dynamic lines, plus four more on a static line.
 function syncLine(s: GameState): void {
   const loc = homeLoc(s), line = lineActive(s) ? homeLineById(s.homeLine.id) : null;
-  const gw = loc && s.devices.find((d) => d.panel === loc.id && modelById(d.model).kind === "gateway");
+  const router = loc && mountedRouter(s, loc.id), gw = router && jacked(s, router.id);
   const want = line && gw ? `gw:${line.id}` : null;
   const ofLine = (a: Address) => (a.source === "line" || a.source === "lineExtra") && a.v === 4;
   const current = s.ips.addresses.filter(ofLine);
@@ -327,9 +331,10 @@ function abuseHits(s: GameState): void {
 // Daily: spam and abuse lower reputation, a listing follows below the threshold, clean days bring it back, delist requests clear.
 function reputation(s: GameState, events: SimEvent[]): void {
   abuseHits(s);
-  const hacked = s.security.hacked, shady = new Set(s.customers.filter((c) => c.shady && c.churnedAt === null).map((c) => c.id));
-  for (const id of hacked) { const machine = mailMachine(s, id); if (machine) addSpam(s, machine, SPAM.hacked); }
-  for (const v of s.services.filter((x) => x.endedAt === null && shady.has(x.customerId))) addSpam(s, v.id, SPAM.shady);
+  const hacked = s.security.hacked, shady = new Set(s.customers.filter((c) => c.shady && c.churnedAt === null && !isSuspended(s, c.id)).map((c) => c.id));
+  const spamTo = (a: Address | undefined, n: number) => a && patch(s, a.id, { spam: s.ips.addresses.find((x) => x.id === a.id)!.spam + n });
+  for (const id of hacked) spamTo(mailAddress(s, id), SPAM.hacked);
+  for (const v of s.services.filter((x) => x.endedAt === null && shady.has(x.customerId))) spamTo(serviceAddress(s, v.id), SPAM.shady);
   // A defaced customer site sends from its host's address.
   for (const id of s.sites.defaced) {
     const host = s.workloads.find((w) => w.serviceId === id)?.clusterId, machine = host ? mailMachine(s, host) : undefined;
@@ -351,11 +356,13 @@ function reputation(s: GameState, events: SimEvent[]): void {
 // Mail customers behind a listed address write in when their mail bounces.
 function bounces(s: GameState): void {
   for (const c of s.clusters.filter((x) => x.kind === "panel")) {
-    if (!mailAddress(s, c.id)?.listed) continue;
+    const addr = mailAddress(s, c.id);
+    if (!addr?.listed) continue;
+    const chance = BOUNCE_CHANCE * bounceFactor(s, addr.id);
     const ids = new Set(s.workloads.filter((w) => w.clusterId === c.id && w.serviceId).map((w) => w.serviceId));
     for (const v of s.services.filter((x) => ids.has(x.id) && x.endedAt === null && x.spec.mailboxes > 0)) {
       const cust = s.customers.find((x) => x.id === v.customerId);
-      if (!cust || cust.churnedAt !== null || rand(hashRng(s.seed, s.hour, Number(v.id.replace(/\D/g, "")), 263)) >= BOUNCE_CHANCE) continue;
+      if (!cust || cust.churnedAt !== null || rand(hashRng(s.seed, s.hour, Number(v.id.replace(/\D/g, "")), 263)) >= chance) continue;
       if (s.tickets.some((t) => t.customerId === cust.id && t.topic === "bounce" && !isFinal(t))) continue;
       createTicket(s, cust, "howTo", v.id, "bounce");
     }
@@ -372,6 +379,8 @@ export function addressTick(s: GameState): SimEvent[] {
   if (s.hour % 24 === RECONNECT_HOUR && dynamicLine(s)) reconnect(s);
   if (s.hour % 24 === 0) {
     reputation(s, events);
+    listingTick(s);
+    mailQueueTick(s);
     bounces(s);
   }
   return events;

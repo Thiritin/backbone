@@ -42,3 +42,12 @@
 .pk-card .cx-btn { justify-content: center; padding: 8px; }
 .pk-card .pk-logo { color: var(--accent); }
 .pk-login[data-era="early"] .pk-card { border: 1px solid #6f9fd8; }
+
+.pk-adv-body { display: flex; gap: 20px; align-items: center; }
+.pk-adv-body ul { flex: 1; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.pk-adv-body li { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pk-ring { display: grid; place-items: center; width: 84px; height: 84px; flex: none; border-radius: 50%; background: conic-gradient(var(--ring) var(--score), var(--line) 0); position: relative; --ring: #2e9b4f; }
+.pk-ring[data-level="warn"] { --ring: #d9962b; }
+.pk-ring[data-level="bad"] { --ring: #cf3b3b; }
+.pk-ring::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: var(--panel); }
+.pk-ring b { position: relative; font-size: 22px; }

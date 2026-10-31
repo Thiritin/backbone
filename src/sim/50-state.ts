@@ -7,7 +7,7 @@ import { yearOf } from "./00-core/time";
 import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
-import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
+import type { BillingRules, HoldReason, Invoice, Loan } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
 import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
@@ -32,6 +32,7 @@ import type { Rates } from "./10-catalog/products";
 import type { Domain } from "./30-customers/registry";
 import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 import { newIps, type Ips } from "./60-infra/addresses";
+import { newNetSvc, type NetSvc } from "./60-infra/netsvc";
 import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
 import type { Listing } from "./10-catalog/used";
@@ -57,7 +58,7 @@ export interface Rack { id: string; model: RackModel; locationId: string; positi
   // The hour each feed went above its continuous load, null while below.
   overSince: { a: number | null; b: number | null } }
 // slot is the lowest unit the device occupies, counted from 1 at the bottom.
-// A gateway sits on its location's carrier panel: rackId null, panel = location id. A stored unit has store = its zone's location id;
+// A datacenter handoff and the basement's line jack sit on their location's carrier panel: rackId null, panel = location id. A stored unit has store = its zone's location id;
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.
 // docs/design/software.md, section 3: what a server's or own VM's disk holds. os null is an empty disk; a software whose
 // doneAt is still ahead is installing. An OS whose installedAt is ahead is installing, or upgrading in place from the
@@ -165,12 +166,17 @@ export interface GameState {
   autoOrders: boolean;
   // Whether server orders wait for a review by hand (45-billing/fraud.ts).
   reviewOrders: boolean;
+  // Whether MaxMined screens standard orders (needs the fraudScreening skill), and the checks billed next month start.
+  screenOrders: boolean;
+  screenChecks: number;
   // How many monthly checks in a row the payment provider found too many chargebacks: 1 warned, 2 higher fees.
   chargebackStrikes: number;
   // The shop system that takes orders, its modules and stock (docs/design/shop.md).
   shop: ShopState;
   // Customers whose services the player holds offline.
   heldCustomers: string[];
+  // Panel hosts: services the player holds offline one by one, with the reason shown in the consoles.
+  heldServices: Record<string, HoldReason>;
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
   tickets: Ticket[];
   playerBusyUntil: number;
@@ -259,6 +265,8 @@ export interface GameState {
   chadUsage: ChadUsage;
   // Public addresses, the LIR membership and its blocks (60-infra/addresses.ts).
   ips: Ips;
+  // Mail queues and broken DNS, certificates and storage sets of the infrastructure consoles (60-infra/netsvc.ts).
+  netsvc: NetSvc;
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
@@ -278,6 +286,8 @@ export interface GameState {
   trend: TrendPoint[];
   // The trade office registration (80-business/office.ts); null until the player registers, which installs the starter apps.
   registration: Registration | null;
+  // Apps that arrived by their trigger (80-business/walk.ts), installed or offered once.
+  arrived: string[];
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -316,19 +326,21 @@ export function fillCards(modelId: string, components: Component[]): Component[]
 export const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>
   ({ id, model, brand, rackId, slot, panel, name, bond: "none", groups: [], price, boughtAt: 0, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults(model, 0) });
 
-// Starting infrastructure: an empty 24U basement rack and the home router. The player buys, mounts and cables the first server.
+// Starting infrastructure: an empty 24U basement rack, the line jack on its panel and the flat's router in storage. The player
+// mounts the router, buys, mounts and cables the first server.
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: START_CASH, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
-  devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
+  devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
   ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
-  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, chargebackStrikes: 0,
+  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
+  heldServices: {},
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
   homeLine: { id: MOMS_DSL.id, next: null },
@@ -346,10 +358,11 @@ export const newGame = (seed: number): GameState => ({
   registrar: null,
   chadUsage: newChadUsage(),
   ips: newIps(),
+  netsvc: newNetSvc(),
   news: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
-  log: [], challenge: null, registration: null, score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
+  log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
