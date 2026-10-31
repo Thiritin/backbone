@@ -1,7 +1,8 @@
-import { Home, LogOut, Settings, type LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { Home, KeyRound, LogOut, Settings, type LucideIcon } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
+import { IdentityCerts } from "./IdentityCerts";
 import { tenants } from "../services";
 import "./anyconnekt.css";
 
@@ -9,7 +10,7 @@ import "./anyconnekt.css";
 const ERAS = erasFrom(2005, 2016);
 
 export function AnyConnekt(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f);
+  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), ts = tenants(p.game, p.c);
   const logo = <span className="sy-logo"><i aria-hidden>{"|||.|||."}</i>SYSKO <b>AnyConnekt</b></span>;
   if (!p.signedIn) return (
@@ -24,12 +25,14 @@ export function AnyConnekt(p: PanelProps) {
     <div className="cx sy" data-era={era}>
       <header className="sy-top">
         {logo}
-        <nav>{nav.map(([id, label, Icon]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}><Icon size={era === "early" ? 22 : 15} aria-hidden />{label}</button>)}</nav>
+        <nav>{nav.map(([id, label, Icon]) => <button key={id} aria-pressed={tab === id && !certs} onClick={() => { setTab(id); setCerts(false); }}><Icon size={era === "early" ? 22 : 15} aria-hidden />{label}</button>)}
+          <button aria-pressed={certs} onClick={() => setCerts(true)}><KeyRound size={era === "early" ? 22 : 15} aria-hidden />{t("netsvc.certificates")}</button></nav>
         <span className="cx-host">{p.host}</span>
         <button className="sy-out" onClick={p.logout}><LogOut size={14} aria-hidden />{t("browser-consoles-1.logout")}</button>
       </header>
       <main className="sy-main">
-        {tab === "objects" && <>
+        {certs && <IdentityCerts game={p.game} c={p.c} era={era} />}
+        {!certs && tab === "objects" && <>
           {box(t("browser-consoles-1.acDeviceInfo"), <Facts facts={[{ label: t("browser-consoles-1.software"), value: `AnyConnekt ${p.c.version}`, num: true }, { label: t("browser-consoles-1.acVpnSessions"), value: String(sessions), num: true }, { label: t("browser-consoles-1.acGateways"), value: String(rows.length), num: true }]} />)}
           {box(t("browser-consoles-1.acVpnGateways"), (
             <table className="cx-table">
@@ -49,7 +52,7 @@ export function AnyConnekt(p: PanelProps) {
             </table>
           ))}
         </>}
-        {tab === "software" && box(t("browser-consoles-1.softwareUpdates"), <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>)}
+        {!certs && tab === "software" && box(t("browser-consoles-1.softwareUpdates"), <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>)}
       </main>
     </div>
   );

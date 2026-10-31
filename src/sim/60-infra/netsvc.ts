@@ -4,6 +4,7 @@ import type { GameState } from "../50-state";
 import { isMonthStart } from "../00-core/time";
 import type { SimEvent } from "../88-tick/tick";
 import { dnsTick, type ZoneEdit } from "./netsvc-dns";
+import { vpnTick, type VpnState } from "./netsvc-vpn";
 import { quotaTick, type QuotaState } from "./netsvc-quota";
 
 // Per mail address: the deferred queue, the happiness lost to the current listing, the hours of past listings, when the current listing began and when the queue was last deleted.
@@ -14,10 +15,11 @@ export interface NetSvc {
   relay: Record<string, string>; // panel cluster id -> mail cluster id
   quotas: Record<string, QuotaState>; // by service id
   zones: Record<string, ZoneEdit>; // by zone name
+  vpn: Record<string, VpnState>; // by service id
   broken: Record<string, { cause: "dns" | "cert" | "storage"; since: number }>; // by service id
 }
 
-export const newNetSvc = (): NetSvc => ({ mail: {}, relay: {}, quotas: {}, zones: {}, broken: {} });
+export const newNetSvc = (): NetSvc => ({ mail: {}, relay: {}, quotas: {}, zones: {}, vpn: {}, broken: {} });
 
 // A service whose DNS, certificate or storage set is broken is offline for its customer; `serviceOnline` reads this.
 export const netsvcBroken = (s: GameState, serviceId: string): boolean => serviceId in s.netsvc.broken;
@@ -26,5 +28,5 @@ export const netsvcBroken = (s: GameState, serviceId: string): boolean => servic
 export function netsvcTick(s: GameState): SimEvent[] {
   if (isMonthStart(s.hour)) quotaTick(s);
   dnsTick(s);
-  return [];
+  return vpnTick(s);
 }
