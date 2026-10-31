@@ -91,3 +91,6 @@
 .cx-tile.danger { border-color: var(--bad); color: var(--bad); }
 .cx-tile.danger svg { color: var(--bad); }
 .cx-log { margin: 8px 0 0; padding: 8px 10px; max-height: 360px; overflow: auto; border: 1px solid var(--line); border-radius: 4px; font: 11.5px/1.5 var(--mono, monospace); white-space: pre-wrap; word-break: break-all; }
+
+.cx-banner { margin: 0 0 8px; padding: 6px 10px; border-radius: 3px; }
+.cx-banner.bad { color: #fff; background: var(--bad); }

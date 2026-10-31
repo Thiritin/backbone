@@ -51,4 +51,13 @@ export default {
   "host.overallocate": () => "Sovrallocazione (%)",
   "host.noCap": () => "Nessun limite",
   "host.set": () => "Imposta",
+  "host.edition": () => "Edizione",
+  "host.of": (p) => `${p.n} su ${p.cap}`,
+  "host.unlimited": (p) => `${p.n}, illimitati`,
+  "host.expires": () => "Scade",
+  "host.never": () => "Mai",
+  "host.lapsed": () => "Scaduta",
+  "host.trialUntil": (p) => `La prova termina ${p.date}`,
+  "host.perMonth": (p) => `${p.fee} al mese`,
+  "host.perAccount": (p) => `${p.fee} per account`,
 } satisfies Dict;

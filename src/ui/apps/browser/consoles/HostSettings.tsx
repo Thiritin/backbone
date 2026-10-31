@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { t } from "../../../../i18n/en";
+import { euroPrice } from "../../../../sim/00-core/money";
 import { formatClock } from "../../../../sim/00-core/time";
 import type { GameState } from "../../../../sim/50-state";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
@@ -7,6 +8,9 @@ import { bookedOn, oversellRatio, oversold, physicalOf } from "../../../../sim/6
 import { workloadUse } from "../../../../sim/60-infra/usage";
 import { familyOf } from "../../../../sim/60-infra/vulns";
 import { setOversell } from "../../../../sim/90-actions/oversell";
+import { tiersOf } from "../../../../sim/10-catalog/licence-tiers";
+import { accountsOn, licenceExpired, tierOf } from "../../../../sim/60-infra/licence";
+import { setLicenceTier } from "../../../../sim/90-actions/licence";
 import { useStore } from "../../../store";
 import { ram } from "../../hw";
 import { Facts, type Fact } from "./PanelBase";
@@ -44,7 +48,32 @@ export function Oversell({ game, c }: { game: GameState; c: Cluster }) {
   );
 }
 
+// The red notice a console shows while new accounts are refused.
+export const LicenceBanner = ({ game, c }: { game: GameState; c: Cluster }) =>
+  tiersOf(c.panel).length > 0 && licenceExpired(game, c) ? <p className="cx-banner bad" role="alert">{t("error.licenceExpired")}</p> : null;
+
+// Edition, accounts against the cap, expiry and the editions to switch to.
+export function LicenceTiers({ game, c }: { game: GameState; c: Cluster }) {
+  const act = useStore((s) => s.act), tier = tierOf(c);
+  if (!tier) return null;
+  const lic = c.licence, fee = (x: typeof tier) => t(x.kind === "account" ? "host.perAccount" : "host.perMonth", { fee: euroPrice(x.fee) });
+  const facts: Fact[] = [
+    { label: t("host.edition"), value: tier.name },
+    { label: t("host.accounts"), value: tier.cap === null ? t("host.unlimited", { n: accountsOn(game, c) }) : t("host.of", { n: accountsOn(game, c), cap: tier.cap }), num: true },
+    { label: t("host.expires"), value: lic?.lapsedAt != null ? t("host.lapsed") : lic?.trialUntil != null ? t("host.trialUntil", { date: formatClock(lic.trialUntil) }) : t("host.never"), num: true },
+  ];
+  return (
+    <>
+      <LicenceBanner game={game} c={c} />
+      <Facts facts={facts} />
+      <div className="cx-tools">
+        {tiersOf(c.panel).map((x) => <button key={x.id} className="cx-chip" aria-pressed={x.id === tier.id && !licenceExpired(game, c)} onClick={() => act(setLicenceTier, c.id, x.id)}>{`${x.name} · ${fee(x)}`}</button>)}
+      </div>
+    </>
+  );
+}
+
 // What the software page of a panel or game host adds under its actions.
 export function HostSettings({ game, c }: { game: GameState; c: Cluster }) {
-  return oversold(c) ? <div className="cx-host-settings"><Oversell game={game} c={c} /></div> : null;
+  return oversold(c) ? <div className="cx-host-settings"><LicenceBanner game={game} c={c} /><Oversell game={game} c={c} /></div> : null;
 }
