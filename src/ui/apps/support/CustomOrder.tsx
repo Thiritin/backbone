@@ -174,7 +174,10 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
       <ol className="steps">
         {!r.form && row("quote", t("support.quote"), quoteValue, !waiting && <QuoteFields key={r.attempts} tk={tk} r={r} locked={locked} />)}
         {row("account", t("support.customerAccount"), done.account ? t("support.created") : t("support.none"),
-          <button className="btn primary" disabled={locked} onClick={() => act(createAccount, tk.id)}><UserPlus />{t("support.createAccount")}</button>)}
+          <div className="step-col">
+            <button className="btn primary" disabled={locked} onClick={() => act(createAccount, tk.id)}><UserPlus />{t("support.createAccount")}</button>
+            <button className="btn" onClick={() => openApp("Customers", { kind: "newCustomer", id: tk.id })}>{t("pkg.newCustomer")}</button>
+          </div>)}
         {row("invoice", t("support.orderConfirmation"), done.invoice ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : t("support.notSent"),
           <button className="btn primary" disabled={locked} onClick={() => act(confirmOrder, tk.id)}><Send />{t("support.confirmOrder")}</button>)}
         {web && row("domain", r.owned ? t("support.domainTransfer") : t("support.domain"), done.domain ? t("support.registered") : t("support.domainLine", { domain: r.domain!, registry: registryOf(r.domain!).name, price: euroCents(cost) }),

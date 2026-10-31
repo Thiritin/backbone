@@ -13,6 +13,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
 import { addPackage } from "../src/sim/90-actions/packages";
 import { ProvisionForm } from "../src/ui/apps/browser/consoles/PackageForms";
+import { accountChoices, NewCustomer } from "../src/ui/apps/customers/NewCustomer";
 import { panelVm, readyGame } from "./fixtures";
 
 let s0: GameState;
@@ -125,5 +126,16 @@ describe("create account form", () => {
     const add = console_(s, c, "/Services/Create");
     expect(add).toContain(t("pkg.order"));
     expect(add).toContain(t("pkg.custom"));
+  });
+
+  it("lists accepted orders without an account in New customer and creates the account like the action", () => {
+    const { s, id, req } = order(45, false);
+    expect(accountChoices(s).map((o) => [o.ticketId, o.error])).toEqual([[id, null]]);
+    const html = renderToString(<NewCustomer game={s} initial={id} onDone={() => {}} />);
+    expect(html).toContain(req().contact);
+    expect(html).toContain(t("pkg.addClient"));
+    must(createAccount(s, id));
+    expect(accountChoices(s)).toEqual([]);
+    expect(s.sales.requests.find((x) => x.id === req().id)!.customerId).toBeTruthy();
   });
 });
