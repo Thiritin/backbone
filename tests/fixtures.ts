@@ -165,5 +165,7 @@ export const buyCart = landing(buyCartReal);
 // Clears competitors out of every datacenter, so any space fits.
 export const freeFloor = (s: GameState): GameState => { s.dcs = Object.fromEntries(Object.keys(s.dcs).map((id) => [id, { others: 0 }])); return s; };
 
-// Sends every draft invoice, as the player does in Books.
-export const sendDrafts = (s: GameState) => { for (const i of s.invoices) if (i.status === "draft") sendInvoice(s, i.id); };
+// Sends every draft invoice as the player does in Books; the payments then settle them as if matched on arrival (books.test.ts covers matching).
+export const sendDrafts = (s: GameState) => {
+  for (const i of s.invoices) if (i.status === "draft" && sendInvoice(s, i.id).ok) delete i.bank;
+};

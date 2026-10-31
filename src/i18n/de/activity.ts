@@ -23,6 +23,7 @@ export default {
   "activity.checkInvoice": (p) => `Rechnung ${p.invoice} geprüft`,
   "activity.reminder": (p) => `Zahlungserinnerung für Rechnung ${p.invoice} gesendet`,
   "activity.sendInvoice": (p) => `Rechnung ${p.invoice} als PDF versendet`,
+  "activity.matchTransfer": (p) => `Überweisung auf Rechnung ${p.invoice} gebucht`,
   "activity.dunning": (p) => `Mahnung für Rechnung ${p.invoice} gesendet`,
   "activity.final": (p) => `Letzte Mahnung für Rechnung ${p.invoice} gesendet`,
   "activity.collections": (p) => `Rechnung ${p.invoice} an das Inkasso übergeben`,

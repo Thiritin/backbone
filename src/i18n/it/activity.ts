@@ -23,6 +23,7 @@ export default {
   "activity.checkInvoice": (p) => `Controllata la fattura ${p.invoice}`,
   "activity.reminder": (p) => `Inviato un promemoria di pagamento per la fattura ${p.invoice}`,
   "activity.sendInvoice": (p) => `Inviata la fattura ${p.invoice} in PDF`,
+  "activity.matchTransfer": (p) => `Bonifico registrato sulla fattura ${p.invoice}`,
   "activity.dunning": (p) => `Inviato un sollecito per la fattura ${p.invoice}`,
   "activity.final": (p) => `Inviato l'ultimo sollecito per la fattura ${p.invoice}`,
   "activity.collections": (p) => `Fattura ${p.invoice} passata al recupero crediti`,
