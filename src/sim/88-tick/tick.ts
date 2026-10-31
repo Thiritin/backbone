@@ -36,6 +36,7 @@ import { freezeTick } from "../60-infra/usage";
 import { statsTick } from "../60-infra/stats";
 import { networkTick } from "../60-infra/network";
 import { appsTick } from "../60-infra/apps";
+import { gamesTick } from "../60-infra/games";
 import { securityTick } from "../60-infra/security";
 import { usageTick } from "../60-infra/usage";
 import { productsTick } from "../85-products/products";
@@ -325,6 +326,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...migrationTick(state));
   events.push(...productsTick(state));
   events.push(...usageTick(state));
+  gamesTick(state);
   statsTick(state);
   events.push(...billingTick(state));
   events.push(...fraudTick(state));

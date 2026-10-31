@@ -23,6 +23,7 @@ import { hiddenTraits } from "../45-billing/fraud";
 import { domainFor } from "../30-customers/domains";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
+import { growSlots } from "../60-infra/games";
 import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
 import { withAddressNeeds } from "../10-catalog/addresses";
@@ -249,6 +250,7 @@ function replyUpgrade(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   if (accepts) {
     say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
     if (!resize(s, v, r.spec!, r.route ?? "auto", r.city).ok) return loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
+    growSlots(s, v.id, r.spec!.ramGb / v.spec.ramGb);
     s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730, before: undefined } : x));
     say(s, r.id, "you", "sales.you.upgradeDone", { price });
     editRequest(s, r.id, () => ({ status: "won", replyAt: null }));
