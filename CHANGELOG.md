@@ -17,6 +17,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-31
 
+- The Getting started step after registering no longer asks you to name your company again, only to pick its logo and colour.
 - Update notes are now headed by a version named after the release date.
 - The website now appears as a channel card next to email, with a Manage button that opens its settings.
 
