@@ -4,6 +4,9 @@ import { companyDomain } from "../../../../../sim/30-customers/domains";
 import { Actions, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import { hash, mailboxes } from "../services";
 import { Blacklist, Relays } from "./Blacklist";
+import { CustomerQuotas, mb } from "./Quotas";
+import { defaultQuotaMb } from "../../../../../sim/60-infra/netsvc-quota";
+import { yearOf } from "../../../../../sim/00-core/time";
 import { MailQueue } from "./MailQueue";
 import { t } from "../../../../../i18n/en";
 import "./mailpig.css";
@@ -27,10 +30,10 @@ export function Mailpig(p: PanelProps) {
       <main className="mp-main">
         <nav className="mp-tabs">{TABS.map((x) => <button key={x} aria-pressed={tab === x} onClick={() => setTab(x)}>{TAB_LABELS[x]}</button>)}</nav>
         <section className="mp-pane">
-          {tab === "Mailboxes" && <table className="cx-table">
+          {tab === "Mailboxes" && <><CustomerQuotas game={p.game} clusterId={p.c.id} /><table className="cx-table">
             <thead><tr><th>{t("browser-consoles-1.mpUsername")}</th><th>{t("browser-consoles-1.mpQuota")}</th><th>{t("browser-consoles-1.mpMessages")}</th><th>{t("browser-consoles-1.mpActive")}</th></tr></thead>
-            <tbody>{boxes.map((b) => <tr key={b}><td><b>{b}</b></td><td className="num">{t("browser-consoles-1.mpQuotaOf", { n: (hash(b) % 900) + 40 })}</td><td className="num">{hash(`${b}m`) % 4000}</td><td><span className="cx-state ok">{t("browser-consoles-1.yes")}</span></td></tr>)}</tbody>
-          </table>}
+            <tbody>{boxes.map((b) => <tr key={b}><td><b>{b}</b></td><td className="num">{mb(defaultQuotaMb("mailbox", yearOf(p.game.hour)))}</td><td className="num">{hash(`${b}m`) % 4000}</td><td><span className="cx-state ok">{t("browser-consoles-1.yes")}</span></td></tr>)}</tbody>
+          </table></>}
           {tab === "Domains" && <table className="cx-table">
             <thead><tr><th>{t("browser-consoles-1.domain")}</th><th>{t("browser-consoles-1.mpMailboxes")}</th><th>{t("browser-consoles-1.mpAliases")}</th><th>{t("browser-consoles-1.mpActive")}</th></tr></thead>
             <tbody><tr><td><b>{domain}</b></td><td className="num">{boxes.length}</td><td className="num">2</td><td><span className="cx-state ok">{t("browser-consoles-1.yes")}</span></td></tr></tbody>

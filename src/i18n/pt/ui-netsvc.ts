@@ -30,4 +30,12 @@ export default {
   "netsvc.suspend": () => "Suspender",
   "netsvc.panelHost": () => "Host do painel",
   "netsvc.relayHost": () => "Reencaminhar por este servidor",
+  "netsvc.mb": (p) => `${p.n} MB`,
+  "netsvc.used": () => "Usado",
+  "error.quotaNoDisk": () => "As cotas reservariam mais disco do que este host tem.",
+  "error.quotaInvalid": () => "Indique uma cota de pelo menos 1 MB.",
+  "ticket.howTo.mailFull.subject": () => "A minha caixa de correio está cheia",
+  "ticket.howTo.mailFull.text": (p) => `As nossas caixas${p.domain ? ` em ${p.domain}` : ""} estão cheias e o correio novo é recusado. Deem-nos mais espaço, por favor.`,
+  "ticket.howTo.quotaFull.subject": () => "O meu armazenamento na nuvem está cheio",
+  "ticket.howTo.quotaFull.text": () => "O armazenamento partilhado está cheio e ninguém consegue enviar ficheiros. Aumentem a cota, por favor.",
 } satisfies Dict;

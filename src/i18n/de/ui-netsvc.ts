@@ -30,4 +30,12 @@ export default {
   "netsvc.suspend": () => "Sperren",
   "netsvc.panelHost": () => "Panel-Host",
   "netsvc.relayHost": () => "Über diesen Server weiterleiten",
+  "netsvc.mb": (p) => `${p.n} MB`,
+  "netsvc.used": () => "Belegt",
+  "error.quotaNoDisk": () => "Die Kontingente würden mehr Speicher belegen, als dieser Host hat.",
+  "error.quotaInvalid": () => "Gib ein Kontingent von mindestens 1 MB ein.",
+  "ticket.howTo.mailFull.subject": () => "Mein Postfach ist voll",
+  "ticket.howTo.mailFull.text": (p) => `Unsere Postfächer${p.domain ? ` auf ${p.domain}` : ""} sind voll und neue Mails werden abgewiesen. Bitte gebt uns mehr Platz.`,
+  "ticket.howTo.quotaFull.subject": () => "Mein Cloud-Speicher ist voll",
+  "ticket.howTo.quotaFull.text": () => "Unser gemeinsamer Speicher ist voll und niemand kann mehr Dateien hochladen. Bitte erhöht das Kontingent.",
 } satisfies Dict;

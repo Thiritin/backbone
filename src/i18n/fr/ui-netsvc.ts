@@ -30,4 +30,12 @@ export default {
   "netsvc.suspend": () => "Suspendre",
   "netsvc.panelHost": () => "Hôte du panneau",
   "netsvc.relayHost": () => "Relayer via ce serveur",
+  "netsvc.mb": (p) => `${p.n} Mo`,
+  "netsvc.used": () => "Utilisé",
+  "error.quotaNoDisk": () => "Les quotas réserveraient plus de disque que cet hôte n'en a.",
+  "error.quotaInvalid": () => "Saisissez un quota d'au moins 1 Mo.",
+  "ticket.howTo.mailFull.subject": () => "Ma boîte mail est pleine",
+  "ticket.howTo.mailFull.text": (p) => `Nos boîtes mail${p.domain ? ` sur ${p.domain}` : ""} sont pleines et les nouveaux messages sont refusés. Merci de nous donner plus d'espace.`,
+  "ticket.howTo.quotaFull.subject": () => "Mon stockage cloud est plein",
+  "ticket.howTo.quotaFull.text": () => "Notre stockage partagé est plein et plus personne ne peut déposer de fichiers. Merci d'augmenter le quota.",
 } satisfies Dict;

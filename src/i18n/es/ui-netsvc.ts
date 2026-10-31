@@ -30,4 +30,12 @@ export default {
   "netsvc.suspend": () => "Suspender",
   "netsvc.panelHost": () => "Host del panel",
   "netsvc.relayHost": () => "Retransmitir por este servidor",
+  "netsvc.mb": (p) => `${p.n} MB`,
+  "netsvc.used": () => "Usado",
+  "error.quotaNoDisk": () => "Las cuotas reservarían más disco del que tiene este host.",
+  "error.quotaInvalid": () => "Introduce una cuota de al menos 1 MB.",
+  "ticket.howTo.mailFull.subject": () => "Mi buzón está lleno",
+  "ticket.howTo.mailFull.text": (p) => `Nuestros buzones${p.domain ? ` de ${p.domain}` : ""} están llenos y el correo nuevo se rechaza. Por favor, danos más espacio.`,
+  "ticket.howTo.quotaFull.subject": () => "Mi almacenamiento en la nube está lleno",
+  "ticket.howTo.quotaFull.text": () => "Nuestro almacenamiento compartido está lleno y nadie puede subir archivos. Por favor, aumenta la cuota.",
 } satisfies Dict;

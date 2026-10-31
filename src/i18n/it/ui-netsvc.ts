@@ -30,4 +30,12 @@ export default {
   "netsvc.suspend": () => "Sospendi",
   "netsvc.panelHost": () => "Host del pannello",
   "netsvc.relayHost": () => "Inoltra tramite questo server",
+  "netsvc.mb": (p) => `${p.n} MB`,
+  "netsvc.used": () => "Usato",
+  "error.quotaNoDisk": () => "Le quote prenoterebbero più disco di quanto ne abbia questo host.",
+  "error.quotaInvalid": () => "Inserisci una quota di almeno 1 MB.",
+  "ticket.howTo.mailFull.subject": () => "La mia casella è piena",
+  "ticket.howTo.mailFull.text": (p) => `Le nostre caselle${p.domain ? ` su ${p.domain}` : ""} sono piene e la posta nuova viene rifiutata. Dateci più spazio, per favore.`,
+  "ticket.howTo.quotaFull.subject": () => "Il mio spazio cloud è pieno",
+  "ticket.howTo.quotaFull.text": () => "Lo spazio condiviso è pieno e nessuno riesce più a caricare file. Aumentate la quota, per favore.",
 } satisfies Dict;
