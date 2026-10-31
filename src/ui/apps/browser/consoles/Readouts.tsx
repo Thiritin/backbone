@@ -39,12 +39,12 @@ export function TaskPage({ game, c }: { game: GameState; c: Cluster }) {
 
 const LOG_LIMIT = 60;
 
-export function LogPage({ game, c }: { game: GameState; c: Cluster }) {
-  const [source, setSource] = useState<LogSource>("access");
+export function LogPage({ game, c, only }: { game: GameState; c: Cluster; only?: LogSource }) {
+  const [pick, setSource] = useState<LogSource>("access"), source = only ?? pick;
   const list = logLines(game, c, source, LOG_LIMIT);
   return (
     <div className="cx-readout">
-      <div className="cx-tools">{LOG_SOURCES.map((x) => <button key={x} className={`cx-btn ${x === source ? "primary" : ""}`} onClick={() => setSource(x)}>{t(`readouts.log.${x}`)}</button>)}</div>
+      {!only && <div className="cx-tools">{LOG_SOURCES.map((x) => <button key={x} className={`cx-btn ${x === source ? "primary" : ""}`} onClick={() => setSource(x)}>{t(`readouts.log.${x}`)}</button>)}</div>}
       <pre className="cx-log">{list.length === 0 ? t("readouts.noLines") : list.map((x) => `${formatClock(x.hour)} ${t(`readouts.line.${x.key}`, { ...x.params, ...(x.key === "system.device" ? { event: t(String(x.params.event)) } : {}) })}`).join("\n")}</pre>
     </div>
   );

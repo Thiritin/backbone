@@ -78,7 +78,8 @@ describe("rewards", () => {
     for (let seed = 300; seed < 300 + n; seed++) {
       const s = reseeded(asked(300, "chaosClub"), seed);
       const known = new Set(s.candidates.map((c) => c.id));
-      if (!through(s)) continue;
+      // An outage during the event forfeits the reward.
+      if (!through(s) || !s.sponsorships[0].reward) continue;
       ran++;
       const fresh = s.candidates.filter((c) => !known.has(c.id) && c.id.startsWith("cand"));
       expect(fresh.length).toBe(s.sponsorships[0].reward!.recommendation ? 1 : 0);

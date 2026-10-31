@@ -1,6 +1,8 @@
+import { FileText } from "lucide-react";
 import { Database, LogOut, Settings, type LucideIcon } from "lucide-react";
 import { disk } from "../../../hw";
 import { Actions, Bar, erasFrom, eraAt, Facts, LoginForm, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { hash } from "../services";
 import "./minnio.css";
@@ -10,14 +12,14 @@ const ERAS = erasFrom(2016, 2021);
 
 export function MinnIO(p: PanelProps) {
   const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f);
-  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
+  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   const logo = <span className="mn-logo">MINN<b>IO</b></span>;
   if (!p.signedIn) return (
     <div className="cx mn mn-login" data-era={era}>
       <LoginForm className="mn-card" onLogin={p.login} button={t("browser-consoles-1.login")}>{logo}<div className="cx-host">{p.host}</div></LoginForm>
     </div>
   );
-  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-1.mnBuckets"), Database], ["software", t("browser-consoles-1.settings"), Settings]];
+  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-1.mnBuckets"), Database], ["software", t("browser-consoles-1.settings"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [Tab, string, LucideIcon])];
   return (
     <div className="cx mn" data-era={era}>
       <aside className="mn-side">
@@ -42,6 +44,7 @@ export function MinnIO(p: PanelProps) {
             </section>
           ))}
         </div>}
+        {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {tab === "software" && <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>}
       </main>
     </div>

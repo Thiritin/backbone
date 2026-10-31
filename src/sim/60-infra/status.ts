@@ -5,8 +5,10 @@ import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
+import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
 import type { Component, Device, End, GameState, Location, NetFail, Rack, SpaceKind } from "../50-state";
+import type { Workload } from "./cluster";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
 
@@ -269,15 +271,43 @@ function computeRackPower(s: GameState, rackId: string): RackPower {
   return { watts: a + b, a, b, limitWatts, tripped: a > limitWatts || b > limitWatts };
 }
 
-// Link and rack power results memoised for one sweep. Only for code that reads the infrastructure and never changes it.
+// Link, rack power and lookup results memoised for one sweep. Only for code that reads the infrastructure and never changes it.
 // a and b are the draw on each feed; limitWatts is the limit of one feed.
 type RackPower = { watts: number; a: number; b: number; limitWatts: number; tripped: boolean };
-let memo: { s: GameState; link: Map<string, LinkStatus>; power: Map<string, RackPower> } | null = null;
+let memo: { s: GameState; link: Map<string, LinkStatus>; power: Map<string, RackPower>; groups: Map<string, Map<string, unknown[]>> } | null = null;
 export function readOnlySweep<T>(s: GameState, fn: () => T): T {
   if (memo) return fn();
-  memo = { s, link: new Map(), power: new Map() };
+  memo = { s, link: new Map(), power: new Map(), groups: new Map() };
   try { return fn(); } finally { memo = null; }
 }
+// Items grouped by key in state order, built once per sweep; null outside a sweep, where callers scan instead.
+export function sweepGroups<T>(s: GameState, name: string, items: () => T[], key: (t: T) => string): Map<string, T[]> | null {
+  if (memo?.s !== s) return null;
+  let groups = memo.groups.get(name) as Map<string, T[]> | undefined;
+  if (!groups) {
+    groups = new Map();
+    for (const t of items()) {
+      const list = groups.get(key(t));
+      if (list) list.push(t);
+      else groups.set(key(t), [t]);
+    }
+    memo.groups.set(name, groups);
+  }
+  return groups;
+}
+export const serviceById = (s: GameState, id: string): Service | undefined => {
+  const by = sweepGroups(s, "service", () => s.services, (v) => v.id);
+  return by ? by.get(id)?.[0] : s.services.find((v) => v.id === id);
+};
+export const liveServices = (s: GameState, customerId: string): Service[] => {
+  const by = sweepGroups(s, "live", () => s.services.filter((v) => v.endedAt === null), (v) => v.customerId);
+  return by ? by.get(customerId) ?? [] : activeServices(s.services, customerId);
+};
+// The workloads of a customer's services, or every workload outside a sweep; callers filter by service.
+export const customerWorkloads = (s: GameState, customerId: string): Workload[] => {
+  const by = sweepGroups(s, "customerWorkloads", () => s.workloads, (w) => serviceById(s, w.serviceId)?.customerId ?? "");
+  return by ? by.get(customerId) ?? [] : s.workloads;
+};
 const memoised = <V>(s: GameState, key: string, pick: (m: NonNullable<typeof memo>) => Map<string, V>, compute: () => V): V => {
   if (memo?.s !== s) return compute();
   const map = pick(memo);

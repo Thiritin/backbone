@@ -1,6 +1,6 @@
 # Plan: billing by hand
 
-Lane ids: `books`, `walk`, `order-steps`, `vendor-sites`, `registrar-form`, `shop-link`, `payment-methods`. Mockup: `docs/design/mockups/bookkeeping.html`. Related design: `docs/design/gdd.md` (Custom orders, the five order steps), `docs/design/economy.md` (Billing and payment habits), `docs/design/shop.md` (shop systems, modules, variants), `docs/design/plans/shop-portal.md`.
+Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-form`, `shop-link`, `payment-methods`. Mockup: `docs/design/mockups/bookkeeping.html`. Related design: `docs/design/gdd.md` (Custom orders, the five order steps), `docs/design/economy.md` (Billing and payment habits), `docs/design/shop.md` (shop systems, modules, variants), `docs/design/plans/shop-portal.md`.
 
 ## 1. Decisions
 
@@ -22,13 +22,14 @@ Lane ids: `books`, `walk`, `order-steps`, `vendor-sites`, `registrar-form`, `sho
 | --- | --- | --- |
 | `books` | The Books app: Customers with addresses, Invoices as drafts with A4 preview and manual Send, Bank with transfers and manual matching, Reminders moved from Billing; Billing app removed | none |
 | `walk` | Starter dock trimmed, trigger-based app unlocks, Getting started extended | none |
+| `bank` | Banks to choose from, the bank's website with PIN and TAN, payables paid by hand, credit card and overdraft, mandates and standing orders, HBCI | `books` for payables and the statement, earlier milestones none |
 | `order-steps` | Address on order emails and customers, order ticket steps 2 and 3 move into Books, quotes with drag onto the ticket, Helpdesk link module | `books` |
 | `vendor-sites` | Vendor pages in the Browser, licence key email and Register dialog, Lexwear modules (Monthly run, Match by reference, Automatic reminders, Helpdesk link), bookkeeper staff role | `books` |
 | `registrar-form` | Register and Transfer domain as a Browser form on the registrar's site, click-fill from the customer record; shop registrar module skips it | `order-steps` |
 | `shop-link` | Source and synced flags, Import from shop, Shop link module, bundled gateway payouts | `books`, `vendor-sites`, shop systems in code |
 | `payment-methods` | Method catalog, profile preference, lost sales by method, fees, chargebacks and returns as negative transfers, crypto abuse | `shop-link` |
 
-Build `books` and `walk` first, in parallel. Then `order-steps` and `vendor-sites` in parallel. Then `registrar-form` and `shop-link`. Then `payment-methods`.
+Build `books` and `walk` first, in parallel, with `bank` starting on its first three milestones at the same time. Then `order-steps` and `vendor-sites` in parallel. Then `registrar-form` and `shop-link`. Then `payment-methods`.
 
 ## 3. Lane `books`
 
@@ -84,15 +85,43 @@ Milestones:
 
 Methods in `src/sim/10-catalog/payments.ts`, each a shop module with year, fee and effect: bank transfer (2005, none), direct debit (2005, returns with fee), PayPlus (2005, instant, disputes), card (2006, chargebacks, fraud orders), paysafecard (2007, prepaid, no dunning, churn), Instantly (2008, instant, clean reference), crypto (2012, prepaid, abuse). Each profile has a preference; a lead whose method is missing converts less or not at all, shown as a lost sale reason in Market. Prepaid methods skip dunning. Chargebacks and returns are negative transfers the player matches, reopening the invoice. Crypto share raises the abuse ticket rate. Economy numbers go into `docs/design/economy.md` under a new "Payment methods" heading when the lane starts. `tests/payment-methods.test.ts`.
 
+## 9b. Lane `bank`
+
+Money leaves by hand too. Supplier invoices are payables the player pays on the bank's website, and every chore has an automation that history offered.
+
+Banks are a catalog in `src/sim/10-catalog/banks.ts`, each a row of numbers and a site skin:
+
+| Bank (pun on) | From | Account a month | Transfer | TAN | Card a year | Overdraft | Loans | Character |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Sparklasse (Sparkasse) | 2005 | 8 | next day | iTAN list, mTAN 2009, pushTAN 2014 | 30, easy | 11% | big, slow | local, orange, branch look |
+| Volksbunk (Volksbank) | 2005 | 6 | next day | iTAN, card reader 2007 | 25 | 10% | fair, likes small firms | blue and orange frames |
+| Deutsche Bunk (Deutsche Bank) | 2005 | 12 | same day | iTAN, photoTAN 2012 | 60, higher limit | 13% | large sums only | corporate |
+| Postbunk (Postbank) | 2005 | 4 | next day | iTAN, mTAN 2008 | 20 | 12% | small, quick | yellow, cheap |
+| netbunk (direct banks) | 2005 | 0 | next day | iTAN, mTAN | 0 first year | 9% | none | web only, HBCI from day one |
+| Fidorr (Fidor) | 2009 | 0 | instant | mTAN | 0 | 14% | small | startup crowd, API 2013 |
+| Quonto (Qonto, Holvi) | 2016 | 9 | instant | app | included, virtual cards | none | none | fintech, API, no HBCI |
+
+Milestones:
+
+1. **Catalog and account.** `banks.ts` with the table. `s.bank: { id, number, opened, tan: "itan" | "mtan" | "push" | "app", card: Card | null, overdraft: number, mandates: string[], standingOrders: StandingOrder[] }`. Cash stays `s.cash`, the one account's balance. Old saves get Sparklasse. The account fee is a monthly cost line.
+2. **Choice.** The trade office registration asks for the bank (the walk lane edits `office.ts` for the dock only; add the bank step beside it). Banks available by year only.
+3. **Bank site.** A page per bank in the Browser from one shared frame that swaps colours, logo and TAN flow: login with account number and PIN, statement from the ledger, transfer form (account number and bank code until 2008, IBAN after), standing orders, cards, overdraft, loans (the loan offers move here from Finance, Finance keeps the list of running loans). iTAN: a transfer asks for TAN number n, the TAN list is a document on the desktop next to Getting started, the player types it. mTAN: the code arrives as an email a minute later. pushTAN and app: a confirm click.
+4. **Payables.** Supplier invoices arrive by email and land in Books under a Payables tab: `s.payables: Payable[]` with `{ id, supplier, number, amount, issuedAt, dueAt, paidAt, consequence }`. Pay opens the bank's transfer form prefilled, TAN still needed. Consequences past due: the upstream line throttles after 7 days and cuts after 14, power cuts after 30, a licence expires, a domain lapses, an unpaid hardware shop does not ship the next order. Costs the tick deducts today move to payables one supplier at a time: upstream, electricity, rent, registrar, Pear subscriptions, hardware orders. Old saves keep the direct deduction for a supplier until its first new invoice. Needs the `books` lane merged; merge main before this milestone.
+5. **Card and overdraft.** Apply on the bank site, approved after a few days, limit from account history, yearly fee. Hardware shop checkout gets a payment choice: prepay by transfer (ships when the money arrives, one to two days), invoice after three paid orders, card ships now. SuperMacro and other foreign vendors take card only. The card bill is a monthly payable. Overdraft up to the bank's limit at its rate.
+6. **Automation.** A direct debit mandate per supplier, set up once on the supplier's site, after which that supplier debits itself. Standing orders on the bank site. HBCI module (sold by `vendor-sites` on Lexwear's site, effect built here): Books pulls the statement, pays every due payable with one click, later automatically. Fintech API from 2013 is the same effect without the module.
+7. **Switching banks**, last and optional: a second account, customers keep paying to the old one until told, both statements in Books, the old account closes when empty for a month.
+8. `tests/bank.test.ts`: fee charged, TAN flow accepts the right TAN and refuses a wrong one, a payable paid on time and one past due with its consequence, card approval and prepay shipping delay, mandate stops the manual payable, HBCI pays all due, old save loads with Sparklasse and keeps paying.
+
 ## 10. Shared files
 
 | File | Lanes | Rule |
 | --- | --- | --- |
 | `src/sim/50-state.ts` and `newGame` | books (`transfers`), order-steps (`quotes`), vendor-sites (`modules`), walk (`unlocks`) | One field per lane on its own line, default in `newGame`, filled in `deserialize` |
-| `src/sim/88-tick/tick.ts` | books, vendor-sites, walk | One call per lane on its own line |
+| `src/sim/88-tick/tick.ts` | books, vendor-sites, walk, bank | One call per lane on its own line |
 | `src/sim/10-catalog/store.ts` (`STARTER_APPS`) | books, walk | books swaps Billing for Books; walk trims the list afterwards |
 | `src/sim/90-actions/orders.ts` | order-steps, registrar-form | order-steps lands first |
-| `src/sim/80-business/browser.ts` | vendor-sites, registrar-form | vendor-sites adds the page frame first |
+| `src/sim/80-business/browser.ts` | bank, vendor-sites, registrar-form | bank adds the shared site frame first, the others reuse it |
+| `src/sim/80-business/office.ts` | walk, bank | walk edits the dock list, bank adds the bank choice |
 
 ## 11. Open questions, with recommendations
 
