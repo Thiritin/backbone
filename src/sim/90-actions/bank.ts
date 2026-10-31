@@ -2,7 +2,7 @@
 import { nowMinutes, yearOf } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { tanMethods, type TanMethod } from "../10-catalog/banks";
-import { APPROVAL_HOURS, bankOf, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft } from "../46-finance/bank";
+import { APPROVAL_HOURS, bankOf, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft } from "../46-finance/bank";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
@@ -98,5 +98,28 @@ export function applyOverdraft(s: GameState): ActionResult {
   if (bank.overdraft === null) return fail("error.noOverdraft");
   if (s.bank.overdraftAt !== null) return fail("error.applied");
   s.bank = { ...s.bank, overdraftAt: s.hour + APPROVAL_HOURS };
+  return { ok: true };
+}
+
+// A direct debit mandate for one supplier, set up or cancelled on the supplier's portal; its next invoices debit themselves.
+export function setMandate(s: GameState, name: string, on: boolean): ActionResult {
+  if (!s.bank) return fail("error.noBank");
+  if (!s.payables.some((p) => p.name === name)) return fail("error.unknownSupplier");
+  const rest = s.bank.mandates.filter((x) => x !== name);
+  s.bank = { ...s.bank, mandates: on ? [...rest, name] : rest };
+  return { ok: true };
+}
+
+export function payAllDue(s: GameState): ActionResult {
+  if (!s.bank) return fail("error.noBank");
+  if (!hbci(s)) return fail("error.noHbci");
+  payAll(s);
+  return { ok: true };
+}
+
+export function setAutoPay(s: GameState, on: boolean): ActionResult {
+  if (!s.bank) return fail("error.noBank");
+  if (!hbci(s)) return fail("error.noHbci");
+  s.bank = { ...s.bank, autoPay: on };
   return { ok: true };
 }

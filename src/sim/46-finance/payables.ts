@@ -1,6 +1,7 @@
 // docs/design/plans/billing-by-hand.md, 9b milestone 4: supplier invoices the player pays on the bank's site, and what each
 // supplier does when one stays unpaid.
 import { hashRng, rand } from "../00-core/rng";
+import { registrarHost, REGISTRARS } from "../10-catalog/registrars";
 import { storeItem } from "../10-catalog/store";
 import { deliverMail } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
@@ -39,6 +40,13 @@ export const supplierAccount = (supplier: SupplierId): string => {
 export const supplierIban = (supplier: SupplierId): string => iban(SUPPLIER_CODE, supplierAccount(supplier));
 export const supplierCode = SUPPLIER_CODE;
 
+// A supplier's customer portal, where the player sets up a direct debit mandate; a registrar's sits on its own site.
+export function supplierHost(name: string): string {
+  const r = REGISTRARS.find((x) => x.name === name);
+  return r ? registrarHost(r) : `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.de`;
+}
+export const supplierUrl = (name: string): string => `www.${supplierHost(name)}/account`;
+
 export const open = (s: GameState): Payable[] => s.payables.filter((p) => p.paidAt === null);
 export const overdue = (s: GameState, p: Payable): boolean => p.paidAt === null && s.hour > p.dueAt;
 // The consequence a supplier applies right now, if any of its invoices has run long enough past due.
@@ -66,12 +74,12 @@ export function invoice(s: GameState, supplier: SupplierId, name: string, lines:
   const amount = cents(-lines.reduce((n, e) => n + e.amount, 0));
   const id = `pay${s.nextId++}`;
   const p: Payable = { id, supplier, name, number: `${supplier.slice(0, 2).toUpperCase()}-${id.slice(3)}`, amount, issuedAt: s.hour, dueAt: s.hour + days * 24, paidAt: null, consequence: null, lines, sent: 0 };
-  if (s.bank?.mandates.includes(supplier)) {
+  if (s.bank?.mandates.includes(name)) {
     book(s, lines);
     p.sent = amount;
     p.paidAt = s.hour;
     deliverMail(s, name, "debit", { name, number: p.number, amount });
-  } else deliverMail(s, name, "invoice", { name, number: p.number, amount, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE });
+  } else deliverMail(s, name, "invoice", { name, number: p.number, amount, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) });
   s.payables = [...s.payables, p];
   return p;
 }

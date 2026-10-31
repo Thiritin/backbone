@@ -2,9 +2,10 @@ import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 import { euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { bankOf, ibanEra } from "../../../sim/46-finance/bank";
+import { bankOf, hbci, ibanEra } from "../../../sim/46-finance/bank";
 import { overdue, supplierAccount, supplierCode, supplierIban, type Payable } from "../../../sim/46-finance/payables";
 import type { GameState } from "../../../sim/50-state";
+import { payAllDue, setAutoPay } from "../../../sim/90-actions/bank";
 import { useStore } from "../../store";
 
 const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
@@ -19,11 +20,17 @@ export function payUrl(s: GameState, p: Payable): string {
 }
 
 export function Payables({ game }: { game: GameState }) {
-  const openApp = useStore((s) => s.openApp);
+  const openApp = useStore((s) => s.openApp), act = useStore((s) => s.act);
   const rows = [...game.payables].reverse();
   const status = (p: Payable) => p.paidAt !== null ? t("bank.pay.paid") : p.sent >= p.amount - 0.005 ? t("bank.pay.sent") : overdue(game, p) ? t("bank.pay.overdue") : t("bank.pay.open");
   return (
     <div className="fin-scroll">
+      {hbci(game) && (
+        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
+          <button className="btn" onClick={() => act(payAllDue)}>{t("bank.pay.all")}</button>
+          <label><input type="checkbox" checked={!!game.bank?.autoPay} onChange={(e) => act(setAutoPay, e.target.checked)} /> {t("bank.pay.auto")}</label>
+        </div>
+      )}
       <table className="table">
         <thead><tr><th>{t("bank.pay.supplier")}</th><th>{t("bank.pay.number")}</th><th>{t("bank.pay.due")}</th><th className="r">{t("misc.amount")}</th><th>{t("bank.pay.status")}</th><th /></tr></thead>
         <tbody>

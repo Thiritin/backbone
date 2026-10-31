@@ -4,10 +4,10 @@ import { iban, openAccount, type Draft } from "../src/sim/46-finance/bank";
 import { buyCart, deliveryWait, PREPAY_HOURS, type CartLine } from "../src/sim/90-actions/hardware";
 import { applyCard, applyOverdraft, deleteStandingOrder, startStandingOrder } from "../src/sim/90-actions/bank";
 import { withServer } from "./fixtures";
-import { lineCut, lineFactor, supplierAccount, supplierCode, type Payable } from "../src/sim/46-finance/payables";
+import { lineCut, lineFactor, supplierAccount, supplierCode, supplierHost, type Payable } from "../src/sim/46-finance/payables";
 import { resolve } from "../src/sim/80-business/browser";
 import { tickMinute } from "../src/sim/88-tick/tick";
-import { cancelTransfer, confirmTransfer, setTanMethod, startTransfer } from "../src/sim/90-actions/bank";
+import { cancelTransfer, confirmTransfer, payAllDue, setAutoPay, setMandate, setTanMethod, startTransfer } from "../src/sim/90-actions/bank";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { registerCompany } from "../src/sim/90-actions/company";
@@ -259,5 +259,41 @@ describe("payables", () => {
     expect(bill.name).toBe("Alternatte");
     run(s, bill.dueAt + 1 - s.hour);
     expect(buyCart(s, CART, { kind: "prepay" }, "loc1")).toEqual({ ok: false, error: "error.shopUnpaid" });
+  });
+});
+
+describe("mandates and HBCI", () => {
+  it("lets a supplier with a mandate debit its next invoice, so nothing waits to be paid by hand", () => {
+    const s = banked();
+    run(s, FEB - s.hour);
+    const line = s.payables.find((p) => p.supplier === "upstream")!;
+    expect(resolve(s, `www.${supplierHost(line.name)}/account`).page).toEqual({ kind: "supplier", name: "Deutsche Telekomm" });
+    expect(setMandate(s, line.name, true).ok).toBe(true);
+    const cash = s.cash;
+    run(s, hourOf(new Date(Date.UTC(2005, 2, 1))) - s.hour);
+    const next = s.payables.filter((p) => p.supplier === "upstream").at(-1)!;
+    expect(next.id).not.toBe(line.id);
+    expect(next.paidAt).not.toBeNull();
+    expect(s.tickets.some((t) => t.topic === "debit" && t.mail!.params.number === next.number)).toBe(true);
+    expect(s.cash).toBeLessThan(cash - 58);
+  });
+
+  it("pays every open invoice in one go and later by itself once the account has HBCI", () => {
+    const s = banked();
+    run(s, FEB - s.hour);
+    expect(payAllDue(s)).toEqual({ ok: false, error: "error.noHbci" });
+    s.modules = ["hbci"];
+    const due = s.payables.filter((p) => p.paidAt === null).length;
+    expect(due).toBeGreaterThan(1);
+    expect(payAllDue(s).ok).toBe(true);
+    expect(s.bank!.outgoing.filter((o) => o.payableId)).toHaveLength(due);
+    run(s, 25);
+    expect(s.payables.every((p) => p.paidAt !== null)).toBe(true);
+    expect(setAutoPay(s, true).ok).toBe(true);
+    run(s, hourOf(new Date(Date.UTC(2005, 2, 1))) - s.hour);
+    const march = s.payables.filter((p) => p.paidAt === null);
+    expect(march.length).toBeGreaterThan(0);
+    run(s, 14 * 24);
+    expect(s.payables.every((p) => p.paidAt !== null)).toBe(true);
   });
 });

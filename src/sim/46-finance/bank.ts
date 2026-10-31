@@ -1,5 +1,5 @@
 // docs/design/plans/billing-by-hand.md, 9b: the company's bank account. Cash stays s.cash, the account's balance.
-import { arrived, bookPayment, cardBlocked, invoice, payableFor } from "./payables";
+import { arrived, bookPayment, cardBlocked, invoice, open, payableFor, supplierAccount, supplierIban } from "./payables";
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, nowMinutes, yearOf } from "../00-core/time";
@@ -34,6 +34,8 @@ export interface BankAccount {
   interest: number;
   // Whether the welcome email with the PIN went out; the first hour of the account sends it.
   welcomed: boolean;
+  // HBCI pays open invoices by itself shortly before they are due.
+  autoPay?: boolean;
 }
 
 export const TAN_COUNT = 100;
@@ -141,6 +143,25 @@ export function send(s: GameState, d: Draft, category = "transfers", key = "ledg
   return out;
 }
 
+// HBCI: the bought module, a bank that includes it, or a fintech's API from its year.
+export function hbci(s: GameState): boolean {
+  const b = bankOf(s);
+  return !!b && (s.modules.includes("hbci") || b.hbci || (b.api !== null && yearOf(s.hour) >= b.api));
+}
+export const AUTO_PAY_HOURS = 48;
+
+// Sends a transfer for every open invoice due by the given hour that no transfer covers yet, while the money lasts.
+export function payAll(s: GameState, before = Infinity): number {
+  let n = 0;
+  for (const p of open(s)) {
+    const rest = cents(p.amount - p.sent);
+    if (rest <= 0 || p.dueAt > before || rest > spendable(s)) continue;
+    send(s, { name: p.name, account: ibanEra(s) ? supplierIban(p.supplier) : supplierAccount(p.supplier), amount: rest, reference: p.number, payableId: p.id });
+    n++;
+  }
+  return n;
+}
+
 // The mTAN text arrives a minute after the transfer asks for it.
 export function tanTick(s: GameState): void {
   const p = s.bank?.pending;
@@ -206,5 +227,6 @@ export function bankTick(s: GameState): SimEvent[] {
     next = { ...next, interest: 0 };
   }
   s.bank = next;
+  if (next.autoPay && hbci(s)) payAll(s, s.hour + AUTO_PAY_HOURS);
   return events;
 }

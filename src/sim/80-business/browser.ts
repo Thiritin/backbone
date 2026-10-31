@@ -1,4 +1,5 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
+import { supplierHost } from "../46-finance/payables";
 import { monthIndexOf, yearOf } from "../00-core/time";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { registrarById, registrarHost, REGISTRARS, type RegistrarId } from "../10-catalog/registrars";
@@ -27,6 +28,7 @@ export type Page =
   | { kind: "vendor"; maker: string }
   | { kind: "registrar"; id: RegistrarId }
   | { kind: "bank"; id: BankId }
+  | { kind: "supplier"; name: string }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean }
   | { kind: "ipmi"; deviceId: string }
@@ -161,6 +163,9 @@ export function resolve(s: GameState, raw: string): Resolved {
   const bank = BANKS.find((b) => named(b.host) && b.from <= year);
   if (bank) return out({ kind: "bank", id: bank.id });
   const registrar = REGISTRARS.find((r) => named(registrarHost(r)));
+  // A supplier's portal opens once it has sent an invoice; a registrar's sits under /account of its site.
+  const supplier = [...new Set(s.payables.filter((p) => p.supplier !== "card").map((p) => p.name))].find((n) => named(supplierHost(n)));
+  if (supplier && (!registrar || path.startsWith("/account"))) return out({ kind: "supplier", name: supplier });
   if (registrar) return out({ kind: "registrar", id: registrar.id });
   if (named(VIDEO_HOST)) {
     return /[?&]v=uptime(&|$)/.test(path) ? out({ kind: "video" }) : out({ kind: "notfound" });
