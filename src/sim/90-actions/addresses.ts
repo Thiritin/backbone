@@ -1,8 +1,9 @@
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
-import { DELIST_HOURS, freeBlock, LIR_FEES, transferPrice } from "../10-catalog/addresses";
+import { freeBlock, LIR_FEES, transferPrice } from "../10-catalog/addresses";
 import type { GameState } from "../50-state";
 import { buyLineExtra, buyProvider, dynamicLine, holderOf, lineActive, machineLocation, takeAddress, v6Offered } from "../60-infra/addresses";
+import { delistHours, spamSenders } from "../60-infra/netsvc-mail";
 import { fullTableAt } from "../60-infra/routers";
 import type { ActionResult } from "./hardware";
 
@@ -66,8 +67,8 @@ export function requestDelist(s: GameState, id: string): ActionResult {
   if (!a.listed) return fail("error.notListed");
   if (a.source === "line" && dynamicLine(s)) return fail("error.dynamicRange");
   if (a.delistAt !== null) return fail("error.delistRequested");
-  if (a.spam > 0) return fail("error.stillSpamming");
-  s.ips = { ...s.ips, addresses: s.ips.addresses.map((x) => (x.id === id ? { ...x, delistAt: s.hour + DELIST_HOURS } : x)) };
+  if (a.spam > 0 || spamSenders(s, id).length > 0) return fail("error.stillSpamming");
+  s.ips = { ...s.ips, addresses: s.ips.addresses.map((x) => (x.id === id ? { ...x, delistAt: s.hour + delistHours(s, id) } : x)) };
   return { ok: true };
 }
 

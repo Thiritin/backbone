@@ -3,6 +3,7 @@ import { Globe, ListChecks, LogOut, Network, Wrench, type LucideIcon } from "luc
 import type { ReactNode } from "react";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { useReadoutPages } from "../Readouts";
+import { Advisor } from "./Advisor";
 import "./pleskit.css";
 
 // docs/design/software.md, section 10: the 8.x icon grids until 2015, then white with a dark sidebar and flat cards.
@@ -38,6 +39,7 @@ export function Pleskit(p: PanelProps) {
         </aside>
         <main className="pk-main">
           <h1>{nav.find(([id]) => id === tab)?.[1]}</h1>
+          {tab === "objects" && era === "late" && <Advisor game={p.game} c={p.c} onFix={() => setTab("software")} />}
           {tab === "objects" && card(t("browser-consoles-2.domains"), <RowsTable rows={rows} name={t("browser-consoles-2.domain")} />)}
           {tab === "nodes" && card(t("browser-consoles-2.nodes"), <Nodes game={p.game} c={p.c} />)}
           {pages.map((g) => tab === g.id && card(g.label, g.body))}
