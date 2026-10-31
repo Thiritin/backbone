@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { STARTER_APPS } from "../src/sim/10-catalog/store";
 import { newGame } from "../src/sim/50-state";
 import { ALREADY_PAID_HAPPINESS, DUE_DAYS, billingTick, owed } from "../src/sim/45-billing/billing";
 import type { Profile } from "../src/sim/30-customers/customers";
@@ -176,5 +177,18 @@ describe("bank transfers", () => {
     expect(old.invoices[0].status).toBe("paid");
     expect(old.transfers).toEqual([]);
     expect(old.cash).toBe(cash + 12);
+  });
+});
+
+describe("the Books app", () => {
+  it("replaces Billing in new games and in saves that had it in the dock", () => {
+    const s = newGame(9);
+    expect(STARTER_APPS).toContain("Books");
+    expect(STARTER_APPS).not.toContain("Billing");
+    const raw = JSON.parse(serialize(s));
+    raw.installed = ["Browser", "Billing", "Customers"];
+    const installed = deserialize(JSON.stringify(raw)).installed;
+    expect(installed).toContain("Books");
+    expect(installed).not.toContain("Billing");
   });
 });
