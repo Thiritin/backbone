@@ -33,11 +33,16 @@
 .menu-versions ul { margin: 0; padding: 0 14px 10px 28px; }
 .menu-versions li { font-size: 13px; color: var(--text-2); margin: 4px 0; }
 .menu-page {
-  grid-column: 1; grid-row: 2; align-self: center; display: grid; gap: 10px; width: min(460px, 100%); padding: 16px 18px; border-radius: 14px;
+  grid-column: 1; grid-row: 2; align-self: end; align-content: start; display: grid; gap: 8px; width: 320px; padding: 12px 14px; border-radius: 14px;
   background: var(--banner); color: var(--text); box-shadow: var(--shadow-win); backdrop-filter: blur(30px) saturate(1.6);
 }
 .menu-page h2 { font-size: 15px; font-weight: 700; margin: 0; }
-.menu-page .btn.ghost { justify-self: start; }
+.menu-page h3 { font-size: 12px; font-weight: 600; color: var(--text-2); margin: 8px 0 0; }
+.menu-page .pick { padding: 7px 8px; font-size: 12.5px; }
+.menu-page .btn.ghost { width: 100%; }
+.menu-page-title { margin-left: auto; font-weight: 700; }
+.menu-page .picks { grid-template-columns: repeat(2, 1fr); }
+.menu-page .picks.three { grid-template-columns: repeat(3, 1fr); }
 .start-swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 @media (max-width: 900px) {
   .menu { grid-template-columns: 1fr; padding: 24px; }

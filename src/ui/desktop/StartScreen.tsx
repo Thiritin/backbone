@@ -53,21 +53,18 @@ function SettingsPage({ onBack }: { onBack: () => void }) {
   const { theme, setTheme } = useStore();
   return (
     <section className="menu-page">
-      <button className="btn ghost" {...hear} onClick={choose(onBack, "back")}><ChevronLeft />{t("desktop.start.back")}</button>
-      <h2>{t("desktop.start.settings")}</h2>
-      <div className="settings-group">
-        <div className="settings-line">
-          <span>{t("desktop.menu.language")}</span>
-          <select value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
-            {Object.entries(LANGS).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-          </select>
-        </div>
-        <div className="settings-line">
-          <span>{t("apps.settings.theme")}</span>
-          <div className="seg" role="group" aria-label={t("apps.settings.theme")}>
-            {THEMES.map(([id, label]) => <button key={id} aria-pressed={theme === id} onClick={() => setTheme(id)}>{label}</button>)}
-          </div>
-        </div>
+      <button className="btn ghost" {...hear} onClick={choose(onBack, "back")}><ChevronLeft />{t("desktop.start.back")}<span className="menu-page-title">{t("desktop.start.settings")}</span></button>
+      <h3>{t("desktop.menu.language")}</h3>
+      <div className="picks">
+        {Object.entries(LANGS).map(([id, name]) => (
+          <button key={id} className="pick" {...hear} aria-pressed={lang === id} onClick={() => { uiSound("select"); setLang(id as Lang); }}><strong>{name}</strong></button>
+        ))}
+      </div>
+      <h3>{t("apps.settings.theme")}</h3>
+      <div className="picks three">
+        {THEMES.map(([id, label]) => (
+          <button key={id} className="pick" {...hear} aria-pressed={theme === id} onClick={() => { uiSound("select"); setTheme(id); }}><strong>{label}</strong></button>
+        ))}
       </div>
     </section>
   );
@@ -83,7 +80,7 @@ export function StartScreen() {
     <main className="menu">
       <MenuBackdrop />
       <h1 className="menu-title"><img className="menu-logo" src="favicon.svg" alt="" width={56} height={56} />Backbone</h1>
-      {page === "settings" ? <SettingsPage onBack={() => setPage("main")} /> : <>
+      {page === "settings" ? <SettingsPage onBack={() => setPage("main")} /> :
         <nav className="menu-bars">
           {canContinue && <button className="btn primary" autoFocus {...hear} onClick={choose(continueGame)}>{t("desktop.start.continue")}</button>}
           <button className={`btn${canContinue ? "" : " primary"}`} autoFocus={!canContinue} {...hear} onClick={choose(startGame)}>{t("desktop.newGame")}</button>
@@ -91,9 +88,8 @@ export function StartScreen() {
           <button className="btn" {...hear} onClick={choose(() => file.current?.click())}>{t("desktop.start.import")}</button>
           <button className="btn" {...hear} onClick={choose(() => setIntro(true))}>{t("desktop.start.intro")}</button>
           <button className="btn" {...hear} onClick={choose(() => setPage("settings"))}>{t("desktop.start.settings")}</button>
-        </nav>
-        <News />
-      </>}
+        </nav>}
+      <News />
       {intro && <Intro onClose={() => setIntro(false)} />}
       <input ref={file} type="file" accept="application/json,.json" hidden onChange={async (e) => {
         const f = e.target.files?.[0];
