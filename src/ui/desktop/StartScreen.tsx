@@ -24,11 +24,11 @@ function News() {
     <aside className="menu-news">
       <h2>{t("desktop.start.news")}</h2>
       <div className="menu-versions">
-        {EMBEDDED.map((d) => {
+        {EMBEDDED.map((d, n) => {
           const fresh = isNew(seen, d.version ?? 0);
           return (
-            <details key={d.date} onToggle={(e) => e.currentTarget.open && read(d.version ?? 0)}>
-              <summary>
+            <details key={d.date} open={n === 0 || undefined}>
+              <summary onClick={() => read(d.version ?? 0)}>
                 <span>{t("desktop.changes.version", { version: versionLabel(d.date) })}</span>
                 <small>{d.date}</small>
                 {fresh && <b className="menu-new">{t("desktop.start.new")}</b>}
