@@ -43,6 +43,7 @@ import { firstHostNo } from "./30-customers/hostnames";
 import { newShop, type ShopState } from "./80-business/shop";
 import type { BankAccount } from "./46-finance/bank";
 import type { Payable } from "./46-finance/payables";
+import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
 
 // 3: GPU line servers carry their preset cards.
@@ -134,8 +135,9 @@ export type RebuildRate = "low" | "medium" | "high";
 export interface HostFiles { since: number; paths: Record<string, string | boolean> }
 
 // A desktop document; x and y are its icon position on the desktop in pixels.
-// An "app" doc is a desktop link whose title is the app name.
-export interface Doc { id: string; kind: "guide" | "note" | "app"; title: string; body: string; x: number; y: number }
+// An "app" doc is a desktop link whose title is the app name; a "form" doc is a downloaded application to sign.
+export interface Doc { id: string; kind: "guide" | "note" | "app" | "form"; title: string; body: string; x: number; y: number; form?: DocForm }
+export interface DocForm { form: string; signed: number | null }
 // domain is the company's own domain once registered; mail is its email service.
 export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string }
 export interface Registration { hour: number; owner: string; form: string; number: number }
@@ -311,6 +313,10 @@ export interface GameState {
   bank: BankAccount | null;
   // Supplier invoices to pay by transfer (46-finance/payables.ts).
   payables: Payable[];
+  // Paper post, delivered and on its way (40-support/letters.ts).
+  letters: Letter[];
+  // The last calendar year the chamber of commerce billed; 0 before the first bill (80-business/paperwork.ts).
+  chamberYear: number;
   // Bought software modules by id; "hbci" lets Books talk to the bank.
   modules: string[];
 }
@@ -393,6 +399,8 @@ export const newGame = (seed: number): GameState => ({
   log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
   bank: null,
   payables: [],
+  letters: [],
+  chamberYear: 0,
   modules: [],
 });
 

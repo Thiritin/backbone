@@ -28,7 +28,6 @@ import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
 import { LexwearSite } from "./sites/lexwear/LexwearSite";
 import { WikiSite } from "./sites/wiki/WikiSite";
-import { OFFICE_TITLE } from "../../../sim/80-business/office";
 import { LEXWEAR } from "../../../sim/80-business/lexwear";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
@@ -72,8 +71,8 @@ function titleOf(game: GameState, r: Resolved): string {
     case "video": return VIDEO_TITLE;
     case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(p.sender).name });
     case "sponsorboard": return BOARD_TITLE;
-    case "index": return "Yahoy! Directory";
-    case "office": return OFFICE_TITLE;
+    case "index": return t("browser-sites-1.ix.title");
+    case "office": return t("browser-sites-1.of.title");
     case "lexwear": return LEXWEAR;
     case "wiki": return WIKI_TITLE;
     case "software": return softwareById(p.id).name;

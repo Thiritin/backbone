@@ -7,6 +7,9 @@ import { registerCompany } from "../../../../../sim/90-actions/company";
 import { banksOpen, DEFAULT_BANK, monthlyFee, type BankId } from "../../../../../sim/10-catalog/banks";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { useStore } from "../../../../store";
+import { euro } from "../../../../../sim/00-core/money";
+import { applyError, FEES, FILED_WITH, FORM_RANK, SHARE_CAPITAL } from "../../../../../sim/80-business/paperwork";
+import { downloadForm } from "../../../../../sim/90-actions/docs";
 import "./office.css";
 
 const DAYS = [t("browser-sites-1.of.day0"), t("browser-sites-1.of.day1"), t("browser-sites-1.of.day2"), t("browser-sites-1.of.day3"), t("browser-sites-1.of.day4"), t("browser-sites-1.of.day5"), t("browser-sites-1.of.day6")];
@@ -112,6 +115,38 @@ function Extract({ game }: { game: GameState }) {
   );
 }
 
+// The application forms for a higher legal form; the form downloads to the desktop.
+function Forms({ game }: { game: GameState }) {
+  const act = useStore((s) => s.act);
+  const r = game.registration;
+  if (!r) return <p>{t("paperwork.of.registerFirst")}</p>;
+  const next = Object.keys(FORM_RANK).filter((f) => FORM_RANK[f] > FORM_RANK[r.form]);
+  if (!next.length) return <p>{t("paperwork.of.top")}</p>;
+  const fee = (f: string) => f === "limited" ? t("paperwork.of.feeLimited", { notary: euro(FEES.notary), register: euro(FEES.register), capital: euro(SHARE_CAPITAL) }) : euro(FEES.change);
+  return (
+    <>
+      <p className="to-closed">{t("paperwork.of.final")}</p>
+      <table className="to-hours">
+        <thead><tr><th>{t("paperwork.of.form")}</th><th>{t("paperwork.of.sendTo")}</th><th>{t("paperwork.of.fee")}</th><th /></tr></thead>
+        <tbody>
+          {next.map((f) => {
+            const err = applyError(game, f), have = game.docs.some((d) => d.form?.form === f);
+            return (
+              <tr key={f}>
+                <td>{t(`doc.form.${f}`)}</td>
+                <td>{FILED_WITH[f]}</td>
+                <td>{fee(f)}</td>
+                <td>{err === "error.changePending" ? t("paperwork.of.pending") : err ? t(err) : have ? t("paperwork.of.downloaded")
+                  : <a href="#download" onClick={(e) => { e.preventDefault(); act(downloadForm, f); }}>{t("paperwork.of.download")}</a>}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
 function Body({ game, path, go }: { game: GameState; path: string; go: (url: string) => void }) {
   if (path === "/" || path === "") {
     return (
@@ -124,6 +159,7 @@ function Body({ game, path, go }: { game: GameState; path: string; go: (url: str
       </>
     );
   }
+  if (path.replace(/\/$/, "") === "/forms") return <><h1>{t("browser-sites-1.of.menuForms")}</h1><Forms game={game} /></>;
   if (path.replace(/\/$/, "") !== "/eservice") {
     return (
       <>

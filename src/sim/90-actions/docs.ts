@@ -1,6 +1,7 @@
 import { t } from "../../i18n/en";
 import { guideDoc, type Doc, type GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import { applyError } from "../80-business/paperwork";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const STEP_X = 100, STEP_Y = 100, ROWS = 6, ORIGIN = guideDoc();
@@ -66,5 +67,25 @@ export function addAppLink(s: GameState, app: string, at?: { x: number; y: numbe
 export function setDocked(s: GameState, app: string, docked: boolean): ActionResult {
   if (!s.installed.includes(app)) return fail("error.appNotInstalled");
   s.undocked = docked ? s.undocked.filter((a) => a !== app) : [...new Set([...s.undocked, app])];
+  return { ok: true };
+}
+
+// The office site's application form for the next legal form lands on the desktop.
+export function downloadForm(s: GameState, form: string): ActionResult {
+  const err = applyError(s, form);
+  if (err) return fail(err);
+  const have = s.docs.find((d) => d.kind === "form" && d.form?.form === form && !d.form.signed);
+  if (have) return { ok: true, id: have.id };
+  const id = `doc${s.nextId++}`;
+  s.docs = [...s.docs, { id, kind: "form", title: t(`doc.form.${form}`), body: "", ...freeSpot(s), form: { form, signed: null } }];
+  return { ok: true, id };
+}
+
+export function signForm(s: GameState, id: string): ActionResult {
+  const doc = s.docs.find((d) => d.id === id);
+  if (!doc?.form) return fail("error.unknownDoc");
+  if (doc.form.signed !== null) return fail("error.formSigned");
+  if (!s.registration) return fail("error.notRegistered");
+  s.docs = s.docs.map((d) => (d.id === id ? { ...d, form: { ...d.form!, signed: s.hour } } : d));
   return { ok: true };
 }
