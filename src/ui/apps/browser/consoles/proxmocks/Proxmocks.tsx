@@ -5,11 +5,12 @@ import { vmStats } from "../../../../../sim/60-infra/stats";
 import { useStore } from "../../../../store";
 import { Chart, niceMax } from "../Chart";
 import { AlarmList, ALL, MediaMenu, NodeList, osText, ResourceBars, summaryOf, SizeFields, TaskLog, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Sel, type Vm } from "../HypervisorBase";
-import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
+import { Actions, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import "./proxmocks.css";
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen } from "../PackageForms";
+import { JobsPanel, PointsPanel } from "../backup/Jobs";
 
 // docs/design/software.md, section 9: the grey ExtJS manager from 2008, the flat white one with the orange mark from 2015.
 const ERAS = erasFrom(2008, 2015);
@@ -120,7 +121,7 @@ export function Proxmocks(p: PanelProps) {
                 </>
               )}
               {vm && shown === "Options" && <Facts facts={[{ label: t("browser-consoles-2.name"), value: vm.name }, { label: t("browser-consoles-2.osType"), value: vm.own ? osText(vm.w) : vm.sub }, { label: t("browser-consoles-2.bootOrder"), value: vm.media ? "ide2, scsi0" : "scsi0" }]} />}
-              {vm && facts && shown === "Backup" && <Facts facts={[facts.backup]} />}
+              {vm && facts && shown === "Backup" && <><Facts facts={[facts.backup]} /><PointsPanel game={game} c={c} w={vm.w} /></>}
               {!vm && sel.kind !== "plans" && shown === "Summary" && (
                 <>
                   <section className="pmx-panel">
@@ -143,7 +144,7 @@ export function Proxmocks(p: PanelProps) {
                 </>
               )}
               {!vm && shown === "Cluster" && <NodeList game={game} c={c} f={f} />}
-              {!vm && shown === "Backup" && <Backups game={game} c={c} />}
+              {!vm && shown === "Backup" && <JobsPanel game={game} source={c} skin="proxmocks" />}
               {node && shown === "Updates" && (
                 <>
                   <Facts facts={sw.facts} />
