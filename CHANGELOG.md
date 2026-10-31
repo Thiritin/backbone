@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-31
 
+- You now choose a bank when you register the company and run the business account on its website, confirming every transfer with a TAN from your TAN list, a text message or the bank's app, and you can apply there for a credit card, an overdraft and standing orders.
+- Your line, power, datacenter, Pear and registrar bills now arrive as invoices by email that you pay by transfer before they are due, or that a supplier debits by itself once you set up a direct debit on its website, and an invoice left unpaid slows or cuts your line, switches the power off, pauses subscriptions or suspends domains.
 - Picking the USB stick in the boot menu now starts its installer right away instead of dropping back to the POST screen.
 - A new company starts with fewer apps in the dock, and Finance, Customers, Marketing, Security and Research arrive with an email from Pear once you need them, while Staff and Market are offered in the Pear Store.
 - Düsseldorf has a fourth datacenter, myLoch DUS, the cheapest rack space in town with power billed by the kWh or as a flat rate.
