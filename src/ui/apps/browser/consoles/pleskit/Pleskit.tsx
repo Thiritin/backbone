@@ -1,12 +1,13 @@
 import { t } from "../../../../../i18n/en";
 import { Globe, ListChecks, LogOut, Network, Package, ShieldBan, UserPlus, Wrench, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
 import { useReadoutPages } from "../Readouts";
 import { Advisor } from "./Advisor";
 import { Fail2Ban } from "./Fail2Ban";
+import { SubscriptionList } from "./SubscriptionList";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { FAIL2BAN_FROM } from "../../../../../sim/60-infra/bans";
 import "./pleskit.css";
@@ -46,7 +47,7 @@ export function Pleskit(p: PanelProps) {
         <main className="pk-main">
           <h1>{nav.find(([id]) => id === tab)?.[1]}</h1>
           {tab === "objects" && era === "late" && <Advisor game={p.game} c={p.c} onFix={() => setTab("software")} />}
-          {tab === "objects" && card(t("browser-consoles-2.domains"), <RowsTable rows={rows} name={t("browser-consoles-2.domain")} />)}
+          {tab === "objects" && card(t("web.sub.title"), <SubscriptionList game={p.game} c={p.c} rows={rows} late={era === "late"} />)}
           {tab === "create" && card(t("pkg.pkAdd"), <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} sections={{ order: t("pkg.order"), account: t("pkg.account"), plan: t("pkg.settings") }} />)}
           {tab === "packages" && card(t("pkg.pkPlans"), <PackagesScreen game={p.game} c={p.c} />)}
           {tab === "nodes" && card(t("browser-consoles-2.nodes"), <Nodes game={p.game} c={p.c} />)}
