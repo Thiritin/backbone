@@ -59,3 +59,6 @@
 .cus-chart text { font-size: 10px; fill: var(--text-3); }
 .cus-chart .grid { stroke: var(--line); stroke-width: 0.5; }
 .cus-chart .line { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; }
+.cus-chart svg { cursor: crosshair; }
+.cus-chart .cross { stroke: var(--text-3); stroke-width: 0.5; stroke-dasharray: 3 3; }
+.cus-chart .dot { fill: var(--accent); stroke: var(--win); stroke-width: 1.5; }
